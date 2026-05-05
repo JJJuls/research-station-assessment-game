@@ -62,6 +62,8 @@ class ResearchRuntime {
   logInteraction(event: {
     scene: string;
     object_id: string;
+    episode?: string;
+    event_type?: string;
     x?: number;
     y?: number;
     state_before?: string;

@@ -9,6 +9,7 @@ import {
   TilemapObject,
   TILESET_NAME,
 } from '../constants';
+import { researchInteractions } from '../data/researchInteractions';
 import { Player } from '../sprites';
 import { state } from '../state';
 import { researchRuntime } from '../systems';
@@ -130,9 +131,13 @@ export class Main extends Phaser.Scene {
 
           state.isTypewriting = true;
 
+          const interaction = researchInteractions.sign;
+
           researchRuntime.logInteraction({
             scene: key.scene.main,
-            object_id: 'sign',
+            episode: interaction.episode,
+            event_type: interaction.event_type,
+            object_id: interaction.object_id,
             x: this.player.x,
             y: this.player.y,
             state_before: stateBefore,
