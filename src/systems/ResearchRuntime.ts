@@ -5,9 +5,15 @@ import type { GameSummaryVariables } from './ScoringManager';
 import { computeSummary } from './ScoringManager';
 import { SessionState } from './SessionState';
 
+interface DebugCompletionResult {
+  summary: GameSummaryVariables;
+  returnUrl: string | null;
+}
+
 declare global {
   interface Window {
     researchRuntime?: {
+      completeDebugSession: () => DebugCompletionResult;
       getSummary: () => GameSummaryVariables;
       printSummary: () => GameSummaryVariables;
     };
@@ -71,10 +77,11 @@ class ResearchRuntime {
     });
   }
 
-  getSummary() {
+  getSummary(completed = false) {
     return computeSummary({
       metadata: this.sessionState.getMetadata(),
       elapsed_seconds: this.sessionState.getElapsedSeconds(),
+      completed,
       events: this.eventLogger.getEvents(),
       data_quality: this.dataQualityTracker.getMetrics(),
     });
@@ -91,12 +98,38 @@ class ResearchRuntime {
     return summary;
   }
 
+  completeDebugSession(): DebugCompletionResult {
+    const metadata = this.sessionState.getMetadata();
+
+    this.eventLogger.log({
+      session_id: metadata.game_session_id,
+      timestamp_ms: Date.now(),
+      scene: 'runtime',
+      event_type: 'game_complete',
+    });
+
+    const summary = this.getSummary(true);
+    const returnUrl = this.qualtricsBridge.buildReturnUrl(summary);
+    const developerConsole = globalThis['console'];
+
+    if (developerConsole !== undefined) {
+      developerConsole.table(summary);
+
+      if (returnUrl !== null) {
+        developerConsole.info('Qualtrics return URL:', returnUrl);
+      }
+    }
+
+    return { summary, returnUrl };
+  }
+
   private installDeveloperHelper() {
     if (!import.meta.env.DEV || typeof window === 'undefined') {
       return;
     }
 
     window.researchRuntime = {
+      completeDebugSession: () => this.completeDebugSession(),
       getSummary: () => this.getSummary(),
       printSummary: () => this.printSummary(),
     };
