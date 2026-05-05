@@ -11,6 +11,7 @@ import {
 } from '../constants';
 import { Player } from '../sprites';
 import { state } from '../state';
+import { researchRuntime } from '../systems';
 
 interface Sign extends Phaser.Physics.Arcade.StaticBody {
   text?: string;
@@ -27,6 +28,8 @@ export class Main extends Phaser.Scene {
   }
 
   create() {
+    researchRuntime.logSceneStart(key.scene.main);
+
     this.tilemap = this.make.tilemap({ key: key.tilemap.tuxemon });
 
     // Parameters are the name you gave the tileset in Tiled and

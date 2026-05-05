@@ -1,10 +1,13 @@
 import Phaser from 'phaser';
 
 import * as scenes from './scenes';
+import { researchRuntime } from './systems';
 
 /**
  * https://rexrainbow.github.io/phaser3-rex-notes/docs/site/game/
  */
+researchRuntime.start();
+
 new Phaser.Game({
   width: 800, // 1024
   height: 600, // 768
