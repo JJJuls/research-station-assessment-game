@@ -53,6 +53,24 @@ class ResearchRuntime {
     });
   }
 
+  logInteraction(event: {
+    scene: string;
+    object_id: string;
+    x?: number;
+    y?: number;
+    state_before?: string;
+    state_after?: string;
+  }) {
+    const metadata = this.sessionState.getMetadata();
+
+    this.eventLogger.log({
+      session_id: metadata.game_session_id,
+      timestamp_ms: Date.now(),
+      event_type: 'interaction',
+      ...event,
+    });
+  }
+
   getSummary() {
     return computeSummary({
       metadata: this.sessionState.getMetadata(),

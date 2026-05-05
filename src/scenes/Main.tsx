@@ -126,7 +126,18 @@ export class Main extends Phaser.Scene {
       this.player.selector as unknown as ArcadeColliderType,
       (sign) => {
         if (this.player.cursors.space.isDown && !state.isTypewriting) {
+          const stateBefore = String(state.isTypewriting);
+
           state.isTypewriting = true;
+
+          researchRuntime.logInteraction({
+            scene: key.scene.main,
+            object_id: 'sign',
+            x: this.player.x,
+            y: this.player.y,
+            state_before: stateBefore,
+            state_after: String(state.isTypewriting),
+          });
 
           render(
             <Typewriter
