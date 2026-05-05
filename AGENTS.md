@@ -1,69 +1,118 @@
 ---
 name: dev_agent
-description: Expert developer for this Phaser RPG game
+description: Expert developer for this Phaser RPG game adapted into a psychology research assessment prototype
 ---
+
+# AI Development Instructions
+
+This repository is being adapted into a browser-based psychology research game.
+
+The current codebase is a Phaser 3 RPG template. The goal is to convert it into a single-player research-station / workplace simulation that can be launched from Qualtrics, played in the browser, and used to collect structured behavioural data.
+
+## Primary Objective
+
+Convert the existing Phaser RPG template into a Qualtrics-integrated behavioural assessment prototype.
+
+The game should not become a full RPG, MMO, combat game, or commercial entertainment game. It should become a controlled research instrument.
+
+## Research Architecture
+
+Qualtrics manages:
+
+- consent
+- participant/session IDs
+- condition assignment
+- questionnaires
+- post-game reactions
+- debriefing
+
+The Phaser game manages:
+
+- gameplay
+- interaction logic
+- event logging
+- scoring
+- completion logic
+- return of summary variables to Qualtrics
 
 ## Tech Stack
 
 - Phaser 3
-- TypeScript 6 (strict mode)
+- TypeScript
+- Vite
 - phaser-jsx
 - localStorage
-- Vite 8
 - Node.js 24
 
 ## Commands
 
-| Command            | Description                        |
-| ------------------ | ---------------------------------- |
-| `npm start`        | Dev server (http://localhost:5173) |
-| `npm run build`    | Production build                   |
-| `npm run lint`     | ESLint                             |
-| `npm run lint:fix` | ESLint auto-fix                    |
-| `npm run lint:tsc` | Type check                         |
+| Command            | Description                         |
+| ------------------ | ----------------------------------- |
+| `npm start`        | Dev server at http://localhost:5173 |
+| `npm run build`    | Production build                    |
+| `npm run lint`     | ESLint                              |
+| `npm run lint:fix` | ESLint auto-fix                     |
+| `npm run lint:tsc` | Type check                          |
 
-## Standards
+## Core Systems To Add
 
-Asset loading:
+Add the following systems in a modular way:
 
-- Load all assets in `src/scenes/Boot.ts` `preload()`
+- `src/systems/EventLogger.ts`
+- `src/systems/ScoringManager.ts`
+- `src/systems/SessionState.ts`
+- `src/systems/QualtricsBridge.ts`
+- `src/systems/DataQualityTracker.ts`
 
-Naming conventions:
+Every meaningful player action relevant to scoring must pass through `EventLogger`.
 
-- Functions: camelCase (`getEnemies`, `createLevel`)
-- Classes: PascalCase (`GameStateManager`, `Player`)
-- Constants: UPPER_SNAKE_CASE (`GAME_CONFIG`, `MAX_LEVEL`)
+Every derived score must be computed through `ScoringManager`.
 
-Code style:
+`QualtricsBridge` handles:
 
-- [Prettier](./.prettierrc.json) for formatting
-- [ESLint](./eslint.config.mts) for lint constraints (import sorting)
+- reading `participant_id`, `game_session_id`, `condition`, `return_url`, and `game_version` from URL parameters
+- building the return URL
+- safely encoding summary variables
 
-Examples:
+## Initial Research Variables
+
+Initial summary variables should include:
+
+- `participant_id`
+- `game_session_id`
+- `condition`
+- `game_version`
+- `completed`
+- `elapsed_seconds`
+- `game_proactive_total`
+- `game_detection_score`
+- `game_information_seeking_score`
+- `game_initiation_score`
+- `game_persistence_score`
+- `game_social_calibration_score`
+- `game_goal_balance_score`
+- `interaction_count`
+- `wrong_interactions`
+- `focus_loss_count`
+- `focus_loss_seconds`
+- `technical_error_count`
+
+## Raw Event Log Structure
+
+Raw event logs should follow this general structure:
 
 ```ts
-// ✅ Good - descriptive names, use of Phaser class/method/type
-class Player extends Phaser.Physics.Arcade.Sprite {
-  declare body: Phaser.Physics.Arcade.Body;
-  constructor(
-    scene: Phaser.Scene,
-    x: number,
-    y: number,
-    texture = KEY.SPRITESHEET.PLAYER,
-    frame = 0,
-  ) {
-    super(scene, x, y, texture, frame);
-    scene.add.existing(this);
-    scene.physics.world.enable(this);
-  }
+{
+  session_id: string;
+  timestamp_ms: number;
+  scene: string;
+  episode?: string;
+  event_type: string;
+  object_id?: string;
+  x?: number;
+  y?: number;
+  state_before?: string;
+  state_after?: string;
+  score_delta?: Record<string, number>;
 }
-
-// ❌ Bad - vague names, use of `any` type, hardcoding string instead of creating constant/enum
-let gameObj: any;
-gameObj = this.add.image(0, 0, 'my-image-key');
 ```
-
-## File Structure
-
-- `src/` – code
-- `public/` – assets
