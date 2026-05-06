@@ -1,4 +1,5 @@
 import { DataQualityTracker } from './DataQualityTracker';
+import type { RawGameEvent } from './EventLogger';
 import { EventLogger } from './EventLogger';
 import { QualtricsBridge } from './QualtricsBridge';
 import type { GameSummaryVariables } from './ScoringManager';
@@ -14,7 +15,10 @@ declare global {
   interface Window {
     researchRuntime?: {
       completeDebugSession: () => DebugCompletionResult;
+      exportEventsJSON: () => string;
+      getEvents: () => RawGameEvent[];
       getSummary: () => GameSummaryVariables;
+      printEvents: () => RawGameEvent[];
       printSummary: () => GameSummaryVariables;
     };
   }
@@ -100,6 +104,25 @@ class ResearchRuntime {
     return summary;
   }
 
+  getEvents() {
+    return this.eventLogger.getEvents();
+  }
+
+  printEvents() {
+    const events = this.getEvents();
+    const developerConsole = globalThis['console'];
+
+    if (developerConsole !== undefined) {
+      developerConsole.table(events);
+    }
+
+    return events;
+  }
+
+  exportEventsJSON() {
+    return this.eventLogger.toJSON();
+  }
+
   completeDebugSession(): DebugCompletionResult {
     const metadata = this.sessionState.getMetadata();
 
@@ -132,7 +155,10 @@ class ResearchRuntime {
 
     window.researchRuntime = {
       completeDebugSession: () => this.completeDebugSession(),
+      exportEventsJSON: () => this.exportEventsJSON(),
+      getEvents: () => this.getEvents(),
       getSummary: () => this.getSummary(),
+      printEvents: () => this.printEvents(),
       printSummary: () => this.printSummary(),
     };
   }
