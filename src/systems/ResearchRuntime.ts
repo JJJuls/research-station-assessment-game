@@ -72,6 +72,7 @@ class ResearchRuntime {
     y?: number;
     state_before?: string;
     state_after?: string;
+    score_delta?: Record<string, number>;
   }) {
     const metadata = this.sessionState.getMetadata();
 
@@ -89,7 +90,6 @@ class ResearchRuntime {
       elapsed_seconds: this.sessionState.getElapsedSeconds(),
       completed,
       events: this.eventLogger.getEvents(),
-      data_quality: this.dataQualityTracker.getMetrics(),
     });
   }
 
@@ -130,7 +130,7 @@ class ResearchRuntime {
       session_id: metadata.game_session_id,
       timestamp_ms: Date.now(),
       scene: 'runtime',
-      event_type: 'game_complete',
+      event_type: 'objective_completed',
     });
 
     const summary = this.getSummary(true);

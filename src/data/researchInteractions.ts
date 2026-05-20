@@ -7,11 +7,32 @@ export interface ResearchInteraction {
 }
 
 export const researchInteractions = {
+  archiveAccessTerminal: {
+    object_id: 'archive_access_terminal',
+    label: 'Archive Access Terminal',
+    episode: 'mps_archive_access',
+    event_type: 'archive_attempt',
+    score_tags: ['difficulty_persistence'],
+  },
+  hazardUncertaintyWarning: {
+    object_id: 'hazard_uncertainty_warning',
+    label: 'Hazard / Uncertainty Warning',
+    episode: 'mps_hazard_uncertainty',
+    event_type: 'hazard_warning_seen',
+    score_tags: ['uncertainty_persistence'],
+  },
   sign: {
     object_id: 'sign',
     label: 'Welcome sign',
     episode: 'template_intro',
     event_type: 'interaction',
     score_tags: [],
+  },
+  systemsRepairFailure: {
+    object_id: 'systems_repair_failure',
+    label: 'Systems Repair Failure',
+    episode: 'mps_systems_repair',
+    event_type: 'repair_attempt',
+    score_tags: ['difficulty_persistence'],
   },
 } satisfies Record<string, ResearchInteraction>;
