@@ -22,6 +22,7 @@ type MpsInteractionKey =
   | 'archiveAccessTerminal'
   | 'engineerReportBack'
   | 'hazardUncertaintyWarning'
+  | 'inventoryPrepChecklist'
   | 'systemsRepairFailure';
 
 interface MpsStation extends Phaser.Physics.Arcade.StaticBody {
@@ -46,6 +47,7 @@ interface MpsState {
   archiveLastWrongCode: string | null;
   engineerReportSubmitted: boolean;
   hazardInfoChecked: boolean;
+  inventoryPrepCompleted: boolean;
   objectiveCompleted: boolean;
   repairCompleted: boolean;
   repairLastFailedSequence: string | null;
@@ -71,6 +73,7 @@ export class Main extends Phaser.Scene {
     archiveLastWrongCode: null,
     engineerReportSubmitted: false,
     hazardInfoChecked: false,
+    inventoryPrepCompleted: false,
     objectiveCompleted: false,
     repairCompleted: false,
     repairLastFailedSequence: null,
@@ -245,6 +248,12 @@ export class Main extends Phaser.Scene {
         x: spawnX + 480,
         y: spawnY - 48,
       },
+      {
+        interactionKey: 'inventoryPrepChecklist',
+        label: 'Inventory Prep',
+        x: spawnX + 608,
+        y: spawnY - 48,
+      },
     ];
 
     this.stationLabels = this.add.container(0, 0);
@@ -307,13 +316,26 @@ export class Main extends Phaser.Scene {
       this.logMpsEvent(interactionKey, 'engineer_report_opened');
     }
 
+    if (interactionKey === 'inventoryPrepChecklist') {
+      if (this.mpsState.inventoryPrepCompleted) {
+        this.showFeedbackMessage(
+          'The checklist system has already logged your preparation. Continue with the remaining station tasks.',
+        );
+        return;
+      }
+
+      this.logMpsEvent(interactionKey, 'inventory_prep_opened');
+    }
+
     const options = this.getPromptOptions(interactionKey);
     const interaction = researchInteractions[interactionKey];
     const { centerX } = this.cameras.main;
     const promptBody =
       interactionKey === 'engineerReportBack'
         ? '\n\nThe station engineer asks for a status report before the next repair cycle. How do you respond?'
-        : '';
+        : interactionKey === 'inventoryPrepChecklist'
+          ? '\n\nThe checklist system asks you to prepare a repair kit before the next station cycle. How do you proceed?'
+          : '';
     const optionText = options
       .map((option, index) => `${index + 1}. ${option.label}`)
       .join('\n');
@@ -430,6 +452,49 @@ export class Main extends Phaser.Scene {
             ],
             onSelected: () => {
               this.markEngineerReportSubmitted();
+            },
+          },
+        ];
+
+      case 'inventoryPrepChecklist':
+        return [
+          {
+            label: 'Grab tools quickly without checking the list.',
+            feedback:
+              'You move quickly, but the kit is incomplete and the workspace is left unresolved.',
+            getEventTypes: () => [
+              'inventory_prep_shortcut',
+              'inventory_required_item_missed',
+              'inventory_disorganized_action',
+            ],
+            onSelected: () => {
+              this.markInventoryPrepCompleted();
+            },
+          },
+          {
+            label: 'Open the checklist and pack the required tools in order.',
+            feedback:
+              'You follow the checklist and prepare the required tools in a clear order.',
+            getEventTypes: () => [
+              'inventory_checklist_used',
+              'inventory_required_tools_packed',
+              'inventory_systematic_prep',
+            ],
+            onSelected: () => {
+              this.markInventoryPrepCompleted();
+            },
+          },
+          {
+            label: 'Sort the workspace and verify the kit before leaving.',
+            feedback:
+              'You leave the prep area tidy and verify that the repair kit is ready.',
+            getEventTypes: () => [
+              'inventory_workspace_sorted',
+              'inventory_kit_verified',
+              'inventory_cleanup_completed',
+            ],
+            onSelected: () => {
+              this.markInventoryPrepCompleted();
             },
           },
         ];
@@ -565,6 +630,11 @@ export class Main extends Phaser.Scene {
   private markEngineerReportSubmitted() {
     // One-shot guard prevents repeated assessment submissions from inflating responsibility scores.
     this.mpsState.engineerReportSubmitted = true;
+  }
+
+  private markInventoryPrepCompleted() {
+    // One-shot guard prevents repeated assessment submissions from inflating organization scores.
+    this.mpsState.inventoryPrepCompleted = true;
   }
 
   private addPrototypeInstruction() {

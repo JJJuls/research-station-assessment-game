@@ -28,6 +28,13 @@ export const researchInteractions = {
     event_type: 'hazard_warning_seen',
     score_tags: ['uncertainty_persistence'],
   },
+  inventoryPrepChecklist: {
+    object_id: 'inventory_prep_checklist',
+    label: 'Quartermaster - Inventory Prep',
+    episode: 'bfi_organization_prep',
+    event_type: 'inventory_prep_opened',
+    score_tags: ['organization', 'preparation', 'prudence'],
+  },
   sign: {
     object_id: 'sign',
     label: 'Welcome sign',

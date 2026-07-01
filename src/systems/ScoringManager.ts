@@ -23,6 +23,13 @@ export interface GameSummaryVariables {
   responsibility_shortcut_count: number;
   responsibility_supervision_used: boolean;
   responsibility_prepared_report: boolean;
+  organization_prep_count: number;
+  organization_systematic_count: number;
+  organization_disorganized_count: number;
+  organization_cleanup_count: number;
+  organization_checklist_used: boolean;
+  organization_kit_verified: boolean;
+  organization_shortcut_count: number;
 }
 
 export interface ComputeSummaryInput {
@@ -83,6 +90,13 @@ export function computeSummary(
     eventCounts.engineer_evidence_reviewed > 0 ||
     eventCounts.engineer_report_submitted_prepared > 0 ||
     eventCounts.engineer_report_submitted_supervised > 0;
+  const organizationPrepCount =
+    eventCounts.inventory_prep_shortcut +
+    eventCounts.inventory_systematic_prep +
+    eventCounts.inventory_cleanup_completed;
+  const organizationCleanupCount =
+    eventCounts.inventory_workspace_sorted +
+    eventCounts.inventory_cleanup_completed;
 
   return {
     participant_id: input.metadata.participant_id,
@@ -107,6 +121,13 @@ export function computeSummary(
     responsibility_supervision_used:
       eventCounts.engineer_clarification_requested > 0,
     responsibility_prepared_report: responsibilityPreparedReport,
+    organization_prep_count: organizationPrepCount,
+    organization_systematic_count: eventCounts.inventory_systematic_prep,
+    organization_disorganized_count: eventCounts.inventory_disorganized_action,
+    organization_cleanup_count: organizationCleanupCount,
+    organization_checklist_used: eventCounts.inventory_checklist_used > 0,
+    organization_kit_verified: eventCounts.inventory_kit_verified > 0,
+    organization_shortcut_count: eventCounts.inventory_prep_shortcut,
   };
 }
 
@@ -163,6 +184,22 @@ function countEventTypes(events: readonly RawGameEvent[]) {
       events,
       'engineer_evidence_reviewed',
     ),
+    inventory_prep_shortcut: countEvents(events, 'inventory_prep_shortcut'),
+    inventory_systematic_prep: countEvents(events, 'inventory_systematic_prep'),
+    inventory_cleanup_completed: countEvents(
+      events,
+      'inventory_cleanup_completed',
+    ),
+    inventory_disorganized_action: countEvents(
+      events,
+      'inventory_disorganized_action',
+    ),
+    inventory_workspace_sorted: countEvents(
+      events,
+      'inventory_workspace_sorted',
+    ),
+    inventory_checklist_used: countEvents(events, 'inventory_checklist_used'),
+    inventory_kit_verified: countEvents(events, 'inventory_kit_verified'),
   };
 }
 
