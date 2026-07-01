@@ -20,6 +20,7 @@ interface Sign extends Phaser.Physics.Arcade.StaticBody {
 
 type MpsInteractionKey =
   | 'archiveAccessTerminal'
+  | 'engineerReportBack'
   | 'hazardUncertaintyWarning'
   | 'systemsRepairFailure';
 
@@ -43,6 +44,7 @@ interface ActivePrompt {
 interface MpsState {
   archiveCompleted: boolean;
   archiveLastWrongCode: string | null;
+  engineerReportSubmitted: boolean;
   hazardInfoChecked: boolean;
   objectiveCompleted: boolean;
   repairCompleted: boolean;
@@ -67,6 +69,7 @@ export class Main extends Phaser.Scene {
   private mpsState: MpsState = {
     archiveCompleted: false,
     archiveLastWrongCode: null,
+    engineerReportSubmitted: false,
     hazardInfoChecked: false,
     objectiveCompleted: false,
     repairCompleted: false,
@@ -236,6 +239,12 @@ export class Main extends Phaser.Scene {
         x: spawnX + 352,
         y: spawnY - 48,
       },
+      {
+        interactionKey: 'engineerReportBack',
+        label: 'Engineer Hub',
+        x: spawnX + 480,
+        y: spawnY - 48,
+      },
     ];
 
     this.stationLabels = this.add.container(0, 0);
@@ -287,25 +296,41 @@ export class Main extends Phaser.Scene {
       this.logMpsEvent(interactionKey, 'hazard_warning_seen');
     }
 
+    if (interactionKey === 'engineerReportBack') {
+      if (this.mpsState.engineerReportSubmitted) {
+        this.showFeedbackMessage(
+          'Engineer Kai has already logged your report. Continue with the remaining station tasks.',
+        );
+        return;
+      }
+
+      this.logMpsEvent(interactionKey, 'engineer_report_opened');
+    }
+
     const options = this.getPromptOptions(interactionKey);
     const interaction = researchInteractions[interactionKey];
     const { centerX } = this.cameras.main;
+    const promptBody =
+      interactionKey === 'engineerReportBack'
+        ? '\n\nThe station engineer asks for a status report before the next repair cycle. How do you respond?'
+        : '';
     const optionText = options
       .map((option, index) => `${index + 1}. ${option.label}`)
       .join('\n');
     const background = this.add
-      .rectangle(0, 0, 520, 190, 0x101820, 0.96)
+      .rectangle(0, 0, 560, 230, 0x101820, 0.96)
       .setOrigin(0);
     const text = this.add.text(
       18,
       16,
-      `${interaction.label}\n\n${optionText}\n\nPress 1, 2, or 3 to choose.`,
+      `${interaction.label}${promptBody}\n\n${optionText}\n\nPress 1, 2, or 3 to choose.`,
       {
         color: '#ffffff',
         font: '16px monospace',
+        wordWrap: { width: 524 },
       },
     );
-    const panel = this.add.container(centerX - 260, 72, [background, text]);
+    const panel = this.add.container(centerX - 280, 72, [background, text]);
 
     panel.setDepth(Depth.AboveWorld);
     panel.setScrollFactor(0);
@@ -363,6 +388,48 @@ export class Main extends Phaser.Scene {
             onSelected: () => {
               this.mpsState.archiveCompleted = true;
               this.logObjectiveIfComplete();
+            },
+          },
+        ];
+
+      case 'engineerReportBack':
+        return [
+          {
+            label: 'Submit a quick report from memory.',
+            feedback:
+              'You give a fast answer, but miss several uncertainties that should have been checked.',
+            getEventTypes: () => [
+              'engineer_report_submitted_unprepared',
+              'engineer_responsibility_shortcut',
+            ],
+            onSelected: () => {
+              this.markEngineerReportSubmitted();
+            },
+          },
+          {
+            label: 'Review station evidence, then report.',
+            feedback:
+              'You check the available evidence and give a clearer, more dependable report.',
+            getEventTypes: () => [
+              'engineer_evidence_reviewed',
+              'engineer_report_submitted_prepared',
+              'engineer_responsibility_adaptive',
+            ],
+            onSelected: () => {
+              this.markEngineerReportSubmitted();
+            },
+          },
+          {
+            label: 'Ask Engineer Kai for clarification before reporting.',
+            feedback:
+              'You clarify expectations before reporting, reducing the risk of a misleading update.',
+            getEventTypes: () => [
+              'engineer_clarification_requested',
+              'engineer_report_submitted_supervised',
+              'engineer_responsibility_adaptive',
+            ],
+            onSelected: () => {
+              this.markEngineerReportSubmitted();
             },
           },
         ];
@@ -493,6 +560,11 @@ export class Main extends Phaser.Scene {
 
     this.mpsState.objectiveCompleted = true;
     this.logMpsEvent('archiveAccessTerminal', 'objective_completed');
+  }
+
+  private markEngineerReportSubmitted() {
+    // One-shot guard prevents repeated assessment submissions from inflating responsibility scores.
+    this.mpsState.engineerReportSubmitted = true;
   }
 
   private addPrototypeInstruction() {

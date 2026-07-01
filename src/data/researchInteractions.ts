@@ -14,6 +14,13 @@ export const researchInteractions = {
     event_type: 'archive_attempt',
     score_tags: ['difficulty_persistence'],
   },
+  engineerReportBack: {
+    object_id: 'engineer_report_back',
+    label: 'Engineer Kai - Status Report',
+    episode: 'bfi_responsibility_report',
+    event_type: 'engineer_report_opened',
+    score_tags: ['responsibility', 'dependability', 'organization'],
+  },
   hazardUncertaintyWarning: {
     object_id: 'hazard_uncertainty_warning',
     label: 'Hazard / Uncertainty Warning',

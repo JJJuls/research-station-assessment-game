@@ -18,6 +18,11 @@ export interface GameSummaryVariables {
   abandonment_count: number;
   manual_or_feedback_used: boolean;
   objective_completed: boolean;
+  responsibility_report_count: number;
+  responsibility_adaptive_count: number;
+  responsibility_shortcut_count: number;
+  responsibility_supervision_used: boolean;
+  responsibility_prepared_report: boolean;
 }
 
 export interface ComputeSummaryInput {
@@ -70,6 +75,14 @@ export function computeSummary(
       Math.max(failureAdaptationIndex, 0) -
       gameInappropriatePersistence,
   );
+  const responsibilityReportCount =
+    eventCounts.engineer_report_submitted_unprepared +
+    eventCounts.engineer_report_submitted_prepared +
+    eventCounts.engineer_report_submitted_supervised;
+  const responsibilityPreparedReport =
+    eventCounts.engineer_evidence_reviewed > 0 ||
+    eventCounts.engineer_report_submitted_prepared > 0 ||
+    eventCounts.engineer_report_submitted_supervised > 0;
 
   return {
     participant_id: input.metadata.participant_id,
@@ -88,6 +101,12 @@ export function computeSummary(
     abandonment_count: abandonmentCount,
     manual_or_feedback_used: manualOrFeedbackUsed,
     objective_completed: objectiveCompleted,
+    responsibility_report_count: responsibilityReportCount,
+    responsibility_adaptive_count: eventCounts.engineer_responsibility_adaptive,
+    responsibility_shortcut_count: eventCounts.engineer_responsibility_shortcut,
+    responsibility_supervision_used:
+      eventCounts.engineer_clarification_requested > 0,
+    responsibility_prepared_report: responsibilityPreparedReport,
   };
 }
 
@@ -116,6 +135,34 @@ function countEventTypes(events: readonly RawGameEvent[]) {
     hazard_informed_continue: countEvents(events, 'hazard_informed_continue'),
     hazard_avoidance: countEvents(events, 'hazard_avoidance'),
     objective_completed: countEvents(events, 'objective_completed'),
+    engineer_report_submitted_unprepared: countEvents(
+      events,
+      'engineer_report_submitted_unprepared',
+    ),
+    engineer_report_submitted_prepared: countEvents(
+      events,
+      'engineer_report_submitted_prepared',
+    ),
+    engineer_report_submitted_supervised: countEvents(
+      events,
+      'engineer_report_submitted_supervised',
+    ),
+    engineer_responsibility_adaptive: countEvents(
+      events,
+      'engineer_responsibility_adaptive',
+    ),
+    engineer_responsibility_shortcut: countEvents(
+      events,
+      'engineer_responsibility_shortcut',
+    ),
+    engineer_clarification_requested: countEvents(
+      events,
+      'engineer_clarification_requested',
+    ),
+    engineer_evidence_reviewed: countEvents(
+      events,
+      'engineer_evidence_reviewed',
+    ),
   };
 }
 
