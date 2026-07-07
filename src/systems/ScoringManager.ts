@@ -36,6 +36,19 @@ export interface GameSummaryVariables {
   productiveness_difficulty_abandonment_count: number;
   productiveness_persistent_completion_count: number;
   productiveness_started_side_task: boolean;
+  consistency_interruption_count: number;
+  consistency_return_to_task_count: number;
+  consistency_focus_lost_count: number;
+  consistency_alert_acknowledged: boolean;
+  consistency_alert_ignored: boolean;
+  consistency_possible_rigidity_count: number;
+  consistency_adaptive_switching_count: number;
+  control_tutorial_count: number;
+  control_tutorial_completed: boolean;
+  control_tutorial_skipped: boolean;
+  control_instruction_followed: boolean;
+  control_movement_practiced: boolean;
+  control_familiarisation_used: boolean;
 }
 
 export interface ComputeSummaryInput {
@@ -107,6 +120,12 @@ export function computeSummary(
     eventCounts.side_repair_ignored +
     eventCounts.side_repair_abandoned_after_difficulty +
     eventCounts.side_repair_completed;
+  const consistencyInterruptionCount =
+    eventCounts.interruption_new_task_chosen +
+    eventCounts.interruption_returned_to_original_task +
+    eventCounts.interruption_alert_ignored;
+  const controlTutorialCount =
+    eventCounts.dock_tutorial_skipped + eventCounts.dock_tutorial_completed;
 
   return {
     participant_id: input.metadata.participant_id,
@@ -147,6 +166,23 @@ export function computeSummary(
     productiveness_persistent_completion_count:
       eventCounts.side_repair_productive_persistence,
     productiveness_started_side_task: eventCounts.side_repair_started > 0,
+    consistency_interruption_count: consistencyInterruptionCount,
+    consistency_return_to_task_count:
+      eventCounts.interruption_returned_to_original_task,
+    consistency_focus_lost_count: eventCounts.interruption_focus_lost,
+    consistency_alert_acknowledged:
+      eventCounts.interruption_alert_acknowledged > 0,
+    consistency_alert_ignored: eventCounts.interruption_alert_ignored > 0,
+    consistency_possible_rigidity_count:
+      eventCounts.interruption_possible_rigidity,
+    consistency_adaptive_switching_count:
+      eventCounts.interruption_focus_maintained,
+    control_tutorial_count: controlTutorialCount,
+    control_tutorial_completed: eventCounts.dock_tutorial_completed > 0,
+    control_tutorial_skipped: eventCounts.dock_tutorial_skipped > 0,
+    control_instruction_followed: eventCounts.dock_instruction_followed > 0,
+    control_movement_practiced: eventCounts.dock_movement_practiced > 0,
+    control_familiarisation_used: eventCounts.dock_control_familiarisation > 0,
   };
 }
 
@@ -231,6 +267,39 @@ function countEventTypes(events: readonly RawGameEvent[]) {
       'side_repair_productive_persistence',
     ),
     side_repair_started: countEvents(events, 'side_repair_started'),
+    interruption_new_task_chosen: countEvents(
+      events,
+      'interruption_new_task_chosen',
+    ),
+    interruption_returned_to_original_task: countEvents(
+      events,
+      'interruption_returned_to_original_task',
+    ),
+    interruption_alert_ignored: countEvents(
+      events,
+      'interruption_alert_ignored',
+    ),
+    interruption_focus_lost: countEvents(events, 'interruption_focus_lost'),
+    interruption_alert_acknowledged: countEvents(
+      events,
+      'interruption_alert_acknowledged',
+    ),
+    interruption_possible_rigidity: countEvents(
+      events,
+      'interruption_possible_rigidity',
+    ),
+    interruption_focus_maintained: countEvents(
+      events,
+      'interruption_focus_maintained',
+    ),
+    dock_tutorial_skipped: countEvents(events, 'dock_tutorial_skipped'),
+    dock_tutorial_completed: countEvents(events, 'dock_tutorial_completed'),
+    dock_instruction_followed: countEvents(events, 'dock_instruction_followed'),
+    dock_movement_practiced: countEvents(events, 'dock_movement_practiced'),
+    dock_control_familiarisation: countEvents(
+      events,
+      'dock_control_familiarisation',
+    ),
   };
 }
 

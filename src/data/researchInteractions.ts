@@ -14,6 +14,13 @@ export const researchInteractions = {
     event_type: 'archive_attempt',
     score_tags: ['difficulty_persistence'],
   },
+  dockArrivalTutorial: {
+    object_id: 'dock_arrival_tutorial',
+    label: 'Dock AI - Arrival Tutorial',
+    episode: 'control_dock_arrival',
+    event_type: 'dock_tutorial_opened',
+    score_tags: ['tutorial', 'control', 'movement', 'instruction_following'],
+  },
   engineerReportBack: {
     object_id: 'engineer_report_back',
     label: 'Engineer Kai - Status Report',
@@ -34,6 +41,13 @@ export const researchInteractions = {
     episode: 'bfi_organization_prep',
     event_type: 'inventory_prep_opened',
     score_tags: ['organization', 'preparation', 'prudence'],
+  },
+  interruptionCorridor: {
+    object_id: 'interruption_corridor',
+    label: 'Comms AI - Interruption',
+    episode: 'grit_consistency_interruption',
+    event_type: 'interruption_opened',
+    score_tags: ['consistency', 'return_to_task', 'focus', 'task_switching'],
   },
   optionalSideRepair: {
     object_id: 'optional_side_repair',

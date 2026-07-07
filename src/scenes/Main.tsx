@@ -20,9 +20,11 @@ interface Sign extends Phaser.Physics.Arcade.StaticBody {
 
 type MpsInteractionKey =
   | 'archiveAccessTerminal'
+  | 'dockArrivalTutorial'
   | 'engineerReportBack'
   | 'hazardUncertaintyWarning'
   | 'inventoryPrepChecklist'
+  | 'interruptionCorridor'
   | 'optionalSideRepair'
   | 'systemsRepairFailure';
 
@@ -46,9 +48,11 @@ interface ActivePrompt {
 interface MpsState {
   archiveCompleted: boolean;
   archiveLastWrongCode: string | null;
+  dockArrivalTutorialCompleted: boolean;
   engineerReportSubmitted: boolean;
   hazardInfoChecked: boolean;
   inventoryPrepCompleted: boolean;
+  interruptionCorridorCompleted: boolean;
   objectiveCompleted: boolean;
   optionalSideRepairCompleted: boolean;
   repairCompleted: boolean;
@@ -73,9 +77,11 @@ export class Main extends Phaser.Scene {
   private mpsState: MpsState = {
     archiveCompleted: false,
     archiveLastWrongCode: null,
+    dockArrivalTutorialCompleted: false,
     engineerReportSubmitted: false,
     hazardInfoChecked: false,
     inventoryPrepCompleted: false,
+    interruptionCorridorCompleted: false,
     objectiveCompleted: false,
     optionalSideRepairCompleted: false,
     repairCompleted: false,
@@ -226,42 +232,55 @@ export class Main extends Phaser.Scene {
   }
 
   private addMpsInteractions(spawnX: number, spawnY: number) {
+    // Temporary prototype hub layout until proper room maps and door transitions are implemented.
     const stations: MpsStationConfig[] = [
+      {
+        interactionKey: 'dockArrivalTutorial',
+        label: 'Dock Tutorial',
+        x: spawnX - 208,
+        y: spawnY - 96,
+      },
       {
         interactionKey: 'archiveAccessTerminal',
         label: 'Archive Terminal',
-        x: spawnX + 96,
-        y: spawnY - 48,
+        x: spawnX - 128,
+        y: spawnY - 256,
       },
       {
         interactionKey: 'systemsRepairFailure',
         label: 'Repair Panel',
-        x: spawnX + 224,
-        y: spawnY - 48,
+        x: spawnX + 32,
+        y: spawnY - 256,
       },
       {
         interactionKey: 'hazardUncertaintyWarning',
         label: 'Hazard Warning',
-        x: spawnX + 352,
-        y: spawnY - 48,
+        x: spawnX + 192,
+        y: spawnY - 256,
       },
       {
         interactionKey: 'engineerReportBack',
         label: 'Engineer Hub',
-        x: spawnX + 480,
-        y: spawnY - 48,
+        x: spawnX + 352,
+        y: spawnY - 256,
       },
       {
         interactionKey: 'inventoryPrepChecklist',
         label: 'Inventory Prep',
-        x: spawnX + 608,
-        y: spawnY - 48,
+        x: spawnX - 48,
+        y: spawnY - 96,
       },
       {
         interactionKey: 'optionalSideRepair',
         label: 'Side Repair Bay',
-        x: spawnX + 736,
-        y: spawnY - 48,
+        x: spawnX + 112,
+        y: spawnY - 96,
+      },
+      {
+        interactionKey: 'interruptionCorridor',
+        label: 'Comms Interruption',
+        x: spawnX + 272,
+        y: spawnY - 96,
       },
     ];
 
@@ -310,6 +329,17 @@ export class Main extends Phaser.Scene {
   }
 
   private showMpsPrompt(interactionKey: MpsInteractionKey) {
+    if (interactionKey === 'dockArrivalTutorial') {
+      if (this.mpsState.dockArrivalTutorialCompleted) {
+        this.showFeedbackMessage(
+          'The dock tutorial has already been logged. Continue with the station tasks.',
+        );
+        return;
+      }
+
+      this.logMpsEvent(interactionKey, 'dock_tutorial_opened');
+    }
+
     if (interactionKey === 'hazardUncertaintyWarning') {
       this.logMpsEvent(interactionKey, 'hazard_warning_seen');
     }
@@ -347,17 +377,32 @@ export class Main extends Phaser.Scene {
       this.logMpsEvent(interactionKey, 'side_repair_opened');
     }
 
+    if (interactionKey === 'interruptionCorridor') {
+      if (this.mpsState.interruptionCorridorCompleted) {
+        this.showFeedbackMessage(
+          'The comms interruption has already been logged. Continue with the remaining station tasks.',
+        );
+        return;
+      }
+
+      this.logMpsEvent(interactionKey, 'interruption_opened');
+    }
+
     const options = this.getPromptOptions(interactionKey);
     const interaction = researchInteractions[interactionKey];
     const { centerX } = this.cameras.main;
     const promptBody =
       interactionKey === 'engineerReportBack'
         ? '\n\nThe station engineer asks for a status report before the next repair cycle. How do you respond?'
-        : interactionKey === 'inventoryPrepChecklist'
-          ? '\n\nThe checklist system asks you to prepare a repair kit before the next station cycle. How do you proceed?'
-          : interactionKey === 'optionalSideRepair'
-            ? '\n\nA maintenance bot flags an optional repair. It is not required for the main cycle, but completing it would improve station stability. What do you do?'
-            : '';
+        : interactionKey === 'dockArrivalTutorial'
+          ? '\n\nThe dock system checks whether you understand the basic controls before station tasks begin. What do you do?'
+          : interactionKey === 'inventoryPrepChecklist'
+            ? '\n\nThe checklist system asks you to prepare a repair kit before the next station cycle. How do you proceed?'
+            : interactionKey === 'optionalSideRepair'
+              ? '\n\nA maintenance bot flags an optional repair. It is not required for the main cycle, but completing it would improve station stability. What do you do?'
+              : interactionKey === 'interruptionCorridor'
+                ? '\n\nA new comms alert interrupts your current station work with a different request. How do you respond?'
+                : '';
     const optionText = options
       .map((option, index) => `${index + 1}. ${option.label}`)
       .join('\n');
@@ -432,6 +477,48 @@ export class Main extends Phaser.Scene {
             onSelected: () => {
               this.mpsState.archiveCompleted = true;
               this.logObjectiveIfComplete();
+            },
+          },
+        ];
+
+      case 'dockArrivalTutorial':
+        return [
+          {
+            label: 'Skip the tutorial and continue.',
+            feedback:
+              'You skip the orientation. The station tasks remain available, but baseline comprehension is unclear.',
+            getEventTypes: () => [
+              'dock_tutorial_skipped',
+              'dock_instruction_shortcut',
+            ],
+            onSelected: () => {
+              this.markDockArrivalTutorialCompleted();
+            },
+          },
+          {
+            label: 'Review the controls and confirm readiness.',
+            feedback:
+              'You review the basic controls and confirm that you are ready to continue.',
+            getEventTypes: () => [
+              'dock_controls_reviewed',
+              'dock_tutorial_completed',
+              'dock_instruction_followed',
+            ],
+            onSelected: () => {
+              this.markDockArrivalTutorialCompleted();
+            },
+          },
+          {
+            label: 'Practice movement briefly, then confirm readiness.',
+            feedback:
+              'You take a moment to practise movement before starting the station tasks.',
+            getEventTypes: () => [
+              'dock_movement_practiced',
+              'dock_tutorial_completed',
+              'dock_control_familiarisation',
+            ],
+            onSelected: () => {
+              this.markDockArrivalTutorialCompleted();
             },
           },
         ];
@@ -517,6 +604,52 @@ export class Main extends Phaser.Scene {
             ],
             onSelected: () => {
               this.markInventoryPrepCompleted();
+            },
+          },
+        ];
+
+      case 'interruptionCorridor':
+        return [
+          {
+            label:
+              'Switch fully to the new request and leave the previous task.',
+            feedback:
+              'You follow the new alert, but the previous task is left unfinished.',
+            getEventTypes: () => [
+              'interruption_new_task_chosen',
+              'interruption_previous_task_abandoned',
+              'interruption_focus_lost',
+            ],
+            onSelected: () => {
+              this.markInterruptionCorridorCompleted();
+            },
+          },
+          {
+            label:
+              'Acknowledge the alert, then return to the unfinished station task.',
+            feedback:
+              'You note the alert without losing track of the original task.',
+            getEventTypes: () => [
+              'interruption_alert_acknowledged',
+              'interruption_returned_to_original_task',
+              'interruption_focus_maintained',
+            ],
+            onSelected: () => {
+              this.markInterruptionCorridorCompleted();
+            },
+          },
+          {
+            label:
+              'Ignore the alert completely and continue without checking it.',
+            feedback:
+              'You stay focused, but you may miss relevant station information.',
+            getEventTypes: () => [
+              'interruption_alert_ignored',
+              'interruption_single_task_focus',
+              'interruption_possible_rigidity',
+            ],
+            onSelected: () => {
+              this.markInterruptionCorridorCompleted();
             },
           },
         ];
@@ -695,9 +828,19 @@ export class Main extends Phaser.Scene {
     this.mpsState.engineerReportSubmitted = true;
   }
 
+  private markDockArrivalTutorialCompleted() {
+    // One-shot guard prevents repeated tutorial interactions from inflating baseline control variables.
+    this.mpsState.dockArrivalTutorialCompleted = true;
+  }
+
   private markInventoryPrepCompleted() {
     // One-shot guard prevents repeated assessment submissions from inflating organization scores.
     this.mpsState.inventoryPrepCompleted = true;
+  }
+
+  private markInterruptionCorridorCompleted() {
+    // One-shot guard prevents repeated assessment submissions from inflating return-to-task scores.
+    this.mpsState.interruptionCorridorCompleted = true;
   }
 
   private markOptionalSideRepairCompleted() {
