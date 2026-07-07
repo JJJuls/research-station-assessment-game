@@ -35,6 +35,18 @@ export const researchInteractions = {
     event_type: 'inventory_prep_opened',
     score_tags: ['organization', 'preparation', 'prudence'],
   },
+  optionalSideRepair: {
+    object_id: 'optional_side_repair',
+    label: 'Maintenance Bot - Side Repair',
+    episode: 'bfi_productiveness_side_repair',
+    event_type: 'side_repair_opened',
+    score_tags: [
+      'productiveness',
+      'diligence',
+      'perseverance',
+      'optional_effort',
+    ],
+  },
   sign: {
     object_id: 'sign',
     label: 'Welcome sign',

@@ -23,6 +23,7 @@ type MpsInteractionKey =
   | 'engineerReportBack'
   | 'hazardUncertaintyWarning'
   | 'inventoryPrepChecklist'
+  | 'optionalSideRepair'
   | 'systemsRepairFailure';
 
 interface MpsStation extends Phaser.Physics.Arcade.StaticBody {
@@ -49,6 +50,7 @@ interface MpsState {
   hazardInfoChecked: boolean;
   inventoryPrepCompleted: boolean;
   objectiveCompleted: boolean;
+  optionalSideRepairCompleted: boolean;
   repairCompleted: boolean;
   repairLastFailedSequence: string | null;
 }
@@ -75,6 +77,7 @@ export class Main extends Phaser.Scene {
     hazardInfoChecked: false,
     inventoryPrepCompleted: false,
     objectiveCompleted: false,
+    optionalSideRepairCompleted: false,
     repairCompleted: false,
     repairLastFailedSequence: null,
   };
@@ -254,6 +257,12 @@ export class Main extends Phaser.Scene {
         x: spawnX + 608,
         y: spawnY - 48,
       },
+      {
+        interactionKey: 'optionalSideRepair',
+        label: 'Side Repair Bay',
+        x: spawnX + 736,
+        y: spawnY - 48,
+      },
     ];
 
     this.stationLabels = this.add.container(0, 0);
@@ -327,6 +336,17 @@ export class Main extends Phaser.Scene {
       this.logMpsEvent(interactionKey, 'inventory_prep_opened');
     }
 
+    if (interactionKey === 'optionalSideRepair') {
+      if (this.mpsState.optionalSideRepairCompleted) {
+        this.showFeedbackMessage(
+          'The maintenance bot has already logged your side repair decision. Continue with the remaining station tasks.',
+        );
+        return;
+      }
+
+      this.logMpsEvent(interactionKey, 'side_repair_opened');
+    }
+
     const options = this.getPromptOptions(interactionKey);
     const interaction = researchInteractions[interactionKey];
     const { centerX } = this.cameras.main;
@@ -335,7 +355,9 @@ export class Main extends Phaser.Scene {
         ? '\n\nThe station engineer asks for a status report before the next repair cycle. How do you respond?'
         : interactionKey === 'inventoryPrepChecklist'
           ? '\n\nThe checklist system asks you to prepare a repair kit before the next station cycle. How do you proceed?'
-          : '';
+          : interactionKey === 'optionalSideRepair'
+            ? '\n\nA maintenance bot flags an optional repair. It is not required for the main cycle, but completing it would improve station stability. What do you do?'
+            : '';
     const optionText = options
       .map((option, index) => `${index + 1}. ${option.label}`)
       .join('\n');
@@ -499,6 +521,47 @@ export class Main extends Phaser.Scene {
           },
         ];
 
+      case 'optionalSideRepair':
+        return [
+          {
+            label: 'Ignore the optional repair and move on.',
+            feedback:
+              'You skip the optional repair. The main path remains open, but the station issue is left unresolved.',
+            getEventTypes: () => [
+              'side_repair_ignored',
+              'side_repair_low_effort',
+            ],
+            onSelected: () => {
+              this.markOptionalSideRepairCompleted();
+            },
+          },
+          {
+            label: 'Start the repair, but stop after the first difficulty.',
+            feedback:
+              'You begin the repair, but stop when the task becomes difficult.',
+            getEventTypes: () => [
+              'side_repair_started',
+              'side_repair_abandoned_after_difficulty',
+            ],
+            onSelected: () => {
+              this.markOptionalSideRepairCompleted();
+            },
+          },
+          {
+            label: 'Work through the difficulty and complete the repair.',
+            feedback:
+              'You stay with the difficult repair until the issue is resolved.',
+            getEventTypes: () => [
+              'side_repair_started',
+              'side_repair_completed',
+              'side_repair_productive_persistence',
+            ],
+            onSelected: () => {
+              this.markOptionalSideRepairCompleted();
+            },
+          },
+        ];
+
       case 'systemsRepairFailure':
         return [
           {
@@ -635,6 +698,11 @@ export class Main extends Phaser.Scene {
   private markInventoryPrepCompleted() {
     // One-shot guard prevents repeated assessment submissions from inflating organization scores.
     this.mpsState.inventoryPrepCompleted = true;
+  }
+
+  private markOptionalSideRepairCompleted() {
+    // One-shot guard prevents repeated assessment submissions from inflating productiveness scores.
+    this.mpsState.optionalSideRepairCompleted = true;
   }
 
   private addPrototypeInstruction() {

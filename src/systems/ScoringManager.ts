@@ -30,6 +30,12 @@ export interface GameSummaryVariables {
   organization_checklist_used: boolean;
   organization_kit_verified: boolean;
   organization_shortcut_count: number;
+  productiveness_side_task_count: number;
+  productiveness_completed_optional_task: boolean;
+  productiveness_low_effort_count: number;
+  productiveness_difficulty_abandonment_count: number;
+  productiveness_persistent_completion_count: number;
+  productiveness_started_side_task: boolean;
 }
 
 export interface ComputeSummaryInput {
@@ -97,6 +103,10 @@ export function computeSummary(
   const organizationCleanupCount =
     eventCounts.inventory_workspace_sorted +
     eventCounts.inventory_cleanup_completed;
+  const productivenessSideTaskCount =
+    eventCounts.side_repair_ignored +
+    eventCounts.side_repair_abandoned_after_difficulty +
+    eventCounts.side_repair_completed;
 
   return {
     participant_id: input.metadata.participant_id,
@@ -128,6 +138,15 @@ export function computeSummary(
     organization_checklist_used: eventCounts.inventory_checklist_used > 0,
     organization_kit_verified: eventCounts.inventory_kit_verified > 0,
     organization_shortcut_count: eventCounts.inventory_prep_shortcut,
+    productiveness_side_task_count: productivenessSideTaskCount,
+    productiveness_completed_optional_task:
+      eventCounts.side_repair_completed > 0,
+    productiveness_low_effort_count: eventCounts.side_repair_low_effort,
+    productiveness_difficulty_abandonment_count:
+      eventCounts.side_repair_abandoned_after_difficulty,
+    productiveness_persistent_completion_count:
+      eventCounts.side_repair_productive_persistence,
+    productiveness_started_side_task: eventCounts.side_repair_started > 0,
   };
 }
 
@@ -200,6 +219,18 @@ function countEventTypes(events: readonly RawGameEvent[]) {
     ),
     inventory_checklist_used: countEvents(events, 'inventory_checklist_used'),
     inventory_kit_verified: countEvents(events, 'inventory_kit_verified'),
+    side_repair_ignored: countEvents(events, 'side_repair_ignored'),
+    side_repair_abandoned_after_difficulty: countEvents(
+      events,
+      'side_repair_abandoned_after_difficulty',
+    ),
+    side_repair_completed: countEvents(events, 'side_repair_completed'),
+    side_repair_low_effort: countEvents(events, 'side_repair_low_effort'),
+    side_repair_productive_persistence: countEvents(
+      events,
+      'side_repair_productive_persistence',
+    ),
+    side_repair_started: countEvents(events, 'side_repair_started'),
   };
 }
 
