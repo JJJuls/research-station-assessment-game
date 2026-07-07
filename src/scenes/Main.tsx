@@ -22,6 +22,7 @@ type MpsInteractionKey =
   | 'archiveAccessTerminal'
   | 'dockArrivalTutorial'
   | 'engineerReportBack'
+  | 'finalCoreIntegration'
   | 'hazardUncertaintyWarning'
   | 'inventoryPrepChecklist'
   | 'interruptionCorridor'
@@ -50,6 +51,7 @@ interface MpsState {
   archiveLastWrongCode: string | null;
   dockArrivalTutorialCompleted: boolean;
   engineerReportSubmitted: boolean;
+  finalCoreCompleted: boolean;
   hazardInfoChecked: boolean;
   inventoryPrepCompleted: boolean;
   interruptionCorridorCompleted: boolean;
@@ -79,6 +81,7 @@ export class Main extends Phaser.Scene {
     archiveLastWrongCode: null,
     dockArrivalTutorialCompleted: false,
     engineerReportSubmitted: false,
+    finalCoreCompleted: false,
     hazardInfoChecked: false,
     inventoryPrepCompleted: false,
     interruptionCorridorCompleted: false,
@@ -265,6 +268,12 @@ export class Main extends Phaser.Scene {
         y: spawnY - 256,
       },
       {
+        interactionKey: 'finalCoreIntegration',
+        label: 'Final Core',
+        x: spawnX + 512,
+        y: spawnY - 256,
+      },
+      {
         interactionKey: 'inventoryPrepChecklist',
         label: 'Inventory Prep',
         x: spawnX - 48,
@@ -340,6 +349,17 @@ export class Main extends Phaser.Scene {
       this.logMpsEvent(interactionKey, 'dock_tutorial_opened');
     }
 
+    if (interactionKey === 'finalCoreIntegration') {
+      if (this.mpsState.finalCoreCompleted) {
+        this.showFeedbackMessage(
+          'The core interface has already logged the final integration decision.',
+        );
+        return;
+      }
+
+      this.logMpsEvent(interactionKey, 'final_core_opened');
+    }
+
     if (interactionKey === 'hazardUncertaintyWarning') {
       this.logMpsEvent(interactionKey, 'hazard_warning_seen');
     }
@@ -396,13 +416,15 @@ export class Main extends Phaser.Scene {
         ? '\n\nThe station engineer asks for a status report before the next repair cycle. How do you respond?'
         : interactionKey === 'dockArrivalTutorial'
           ? '\n\nThe dock system checks whether you understand the basic controls before station tasks begin. What do you do?'
-          : interactionKey === 'inventoryPrepChecklist'
-            ? '\n\nThe checklist system asks you to prepare a repair kit before the next station cycle. How do you proceed?'
-            : interactionKey === 'optionalSideRepair'
-              ? '\n\nA maintenance bot flags an optional repair. It is not required for the main cycle, but completing it would improve station stability. What do you do?'
-              : interactionKey === 'interruptionCorridor'
-                ? '\n\nA new comms alert interrupts your current station work with a different request. How do you respond?'
-                : '';
+          : interactionKey === 'finalCoreIntegration'
+            ? '\n\nThe core interface asks you to review the station status before closing the mission cycle. How do you proceed?'
+            : interactionKey === 'inventoryPrepChecklist'
+              ? '\n\nThe checklist system asks you to prepare a repair kit before the next station cycle. How do you proceed?'
+              : interactionKey === 'optionalSideRepair'
+                ? '\n\nA maintenance bot flags an optional repair. It is not required for the main cycle, but completing it would improve station stability. What do you do?'
+                : interactionKey === 'interruptionCorridor'
+                  ? '\n\nA new comms alert interrupts your current station work with a different request. How do you respond?'
+                  : '';
     const optionText = options
       .map((option, index) => `${index + 1}. ${option.label}`)
       .join('\n');
@@ -561,6 +583,50 @@ export class Main extends Phaser.Scene {
             ],
             onSelected: () => {
               this.markEngineerReportSubmitted();
+            },
+          },
+        ];
+
+      case 'finalCoreIntegration':
+        return [
+          {
+            label: 'Start final synchronization immediately.',
+            feedback:
+              'You start synchronization quickly, but unresolved station issues remain unreviewed.',
+            getEventTypes: () => [
+              'final_core_quick_sync',
+              'final_core_unresolved_issues_ignored',
+              'final_core_low_quality_completion',
+            ],
+            onSelected: () => {
+              this.markFinalCoreCompleted();
+            },
+          },
+          {
+            label: 'Review station status, then integrate completed work.',
+            feedback:
+              'You review the station status and integrate the completed work in a structured sequence.',
+            getEventTypes: () => [
+              'final_core_status_reviewed',
+              'final_core_prior_results_integrated',
+              'final_core_structured_completion',
+            ],
+            onSelected: () => {
+              this.markFinalCoreCompleted();
+            },
+          },
+          {
+            label:
+              'Resolve remaining issue flags before final synchronization.',
+            feedback:
+              'You address remaining issue flags before completing the final synchronization.',
+            getEventTypes: () => [
+              'final_core_status_reviewed',
+              'final_core_remaining_issues_resolved',
+              'final_core_high_quality_completion',
+            ],
+            onSelected: () => {
+              this.markFinalCoreCompleted();
             },
           },
         ];
@@ -831,6 +897,11 @@ export class Main extends Phaser.Scene {
   private markDockArrivalTutorialCompleted() {
     // One-shot guard prevents repeated tutorial interactions from inflating baseline control variables.
     this.mpsState.dockArrivalTutorialCompleted = true;
+  }
+
+  private markFinalCoreCompleted() {
+    // One-shot guard prevents repeated final-core submissions from inflating integration scores.
+    this.mpsState.finalCoreCompleted = true;
   }
 
   private markInventoryPrepCompleted() {

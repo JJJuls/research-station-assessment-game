@@ -28,6 +28,19 @@ export const researchInteractions = {
     event_type: 'engineer_report_opened',
     score_tags: ['responsibility', 'dependability', 'organization'],
   },
+  finalCoreIntegration: {
+    object_id: 'final_core_integration',
+    label: 'Core AI - Final Integration',
+    episode: 'final_core_integration',
+    event_type: 'final_core_opened',
+    score_tags: [
+      'final_integration',
+      'responsibility',
+      'organization',
+      'productiveness',
+      'perseverance',
+    ],
+  },
   hazardUncertaintyWarning: {
     object_id: 'hazard_uncertainty_warning',
     label: 'Hazard / Uncertainty Warning',

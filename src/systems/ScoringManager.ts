@@ -49,6 +49,15 @@ export interface GameSummaryVariables {
   control_instruction_followed: boolean;
   control_movement_practiced: boolean;
   control_familiarisation_used: boolean;
+  final_core_review_count: number;
+  final_core_integrated_count: number;
+  final_core_resolved_count: number;
+  final_core_quick_sync_count: number;
+  final_core_low_quality_count: number;
+  final_core_high_quality_count: number;
+  final_core_completed: boolean;
+  final_core_unresolved_issue_count: number;
+  final_core_completion_quality: 'low' | 'structured' | 'high' | 'none';
 }
 
 export interface ComputeSummaryInput {
@@ -126,6 +135,14 @@ export function computeSummary(
     eventCounts.interruption_alert_ignored;
   const controlTutorialCount =
     eventCounts.dock_tutorial_skipped + eventCounts.dock_tutorial_completed;
+  const finalCoreIntegratedCount =
+    eventCounts.final_core_prior_results_integrated +
+    eventCounts.final_core_structured_completion;
+  const finalCoreCompleted =
+    eventCounts.final_core_quick_sync > 0 ||
+    eventCounts.final_core_structured_completion > 0 ||
+    eventCounts.final_core_high_quality_completion > 0;
+  const finalCoreCompletionQuality = getFinalCoreCompletionQuality(eventCounts);
 
   return {
     participant_id: input.metadata.participant_id,
@@ -183,6 +200,17 @@ export function computeSummary(
     control_instruction_followed: eventCounts.dock_instruction_followed > 0,
     control_movement_practiced: eventCounts.dock_movement_practiced > 0,
     control_familiarisation_used: eventCounts.dock_control_familiarisation > 0,
+    final_core_review_count: eventCounts.final_core_status_reviewed,
+    final_core_integrated_count: finalCoreIntegratedCount,
+    final_core_resolved_count: eventCounts.final_core_remaining_issues_resolved,
+    final_core_quick_sync_count: eventCounts.final_core_quick_sync,
+    final_core_low_quality_count: eventCounts.final_core_low_quality_completion,
+    final_core_high_quality_count:
+      eventCounts.final_core_high_quality_completion,
+    final_core_completed: finalCoreCompleted,
+    final_core_unresolved_issue_count:
+      eventCounts.final_core_unresolved_issues_ignored,
+    final_core_completion_quality: finalCoreCompletionQuality,
   };
 }
 
@@ -300,7 +328,54 @@ function countEventTypes(events: readonly RawGameEvent[]) {
       events,
       'dock_control_familiarisation',
     ),
+    final_core_quick_sync: countEvents(events, 'final_core_quick_sync'),
+    final_core_status_reviewed: countEvents(
+      events,
+      'final_core_status_reviewed',
+    ),
+    final_core_prior_results_integrated: countEvents(
+      events,
+      'final_core_prior_results_integrated',
+    ),
+    final_core_remaining_issues_resolved: countEvents(
+      events,
+      'final_core_remaining_issues_resolved',
+    ),
+    final_core_unresolved_issues_ignored: countEvents(
+      events,
+      'final_core_unresolved_issues_ignored',
+    ),
+    final_core_low_quality_completion: countEvents(
+      events,
+      'final_core_low_quality_completion',
+    ),
+    final_core_structured_completion: countEvents(
+      events,
+      'final_core_structured_completion',
+    ),
+    final_core_high_quality_completion: countEvents(
+      events,
+      'final_core_high_quality_completion',
+    ),
   };
+}
+
+function getFinalCoreCompletionQuality(
+  eventCounts: ReturnType<typeof countEventTypes>,
+) {
+  if (eventCounts.final_core_low_quality_completion > 0) {
+    return 'low';
+  }
+
+  if (eventCounts.final_core_structured_completion > 0) {
+    return 'structured';
+  }
+
+  if (eventCounts.final_core_high_quality_completion > 0) {
+    return 'high';
+  }
+
+  return 'none';
 }
 
 function countEvents(events: readonly RawGameEvent[], eventType: string) {
