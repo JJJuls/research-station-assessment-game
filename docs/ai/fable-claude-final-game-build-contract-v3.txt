@@ -1,0 +1,1300 @@
+REMOTE OUTPOST ASSESSMENT
+FABLE + CLAUDE CODE FINAL BUILD CONTRACT — V3
+Prepared for: Juls JayJay
+Project branch: fable-final-game-prep-from-prototype
+Target repo path: docs\ai\fable-claude-final-game-build-contract-v3.txt
+Local repo: C:\Users\Juls\Desktop\research-station-assessment-game
+
+================================================================================
+0. DOCUMENT PURPOSE
+================================================================================
+
+This document was developed as the operating build contract for using Fable/Claude
+Code to turn the existing Remote Outpost prototype into a complete research-grade
+2D behavioural assessment game.
+
+The project uses two starting points:
+
+1. Existing technical/game foundation
+   - Phaser 3 + TypeScript + Vite.
+   - Existing top-down Phaser RPG / Pokemon-like movement and scene foundation.
+   - Existing Remote Outpost behavioural prototype work.
+   - Existing EventLogger, SessionState, QualtricsBridge, DataQualityTracker,
+     ScoringManager, and ResearchRuntime systems.
+   - Existing branch:
+       fable-final-game-prep-from-prototype
+     created from:
+       prototype/bfi-grit-behavioural-mapping
+
+2. Production method inspired by Stardew-like/Fable game-building workflow
+   - Spec-first implementation.
+   - Connected 2D world.
+   - Room-by-room build.
+   - Clear definition of done.
+   - PixelLab MCP for asset generation/polish.
+   - Playwright/browser testing.
+   - Autonomous build beats only after the specification and verification contract
+     are explicit.
+
+The target game is not a Stardew clone and not a new project from scratch. It is a
+remote research outpost / expedition-station behavioural assessment, built on the
+existing Phaser RPG top-down foundation and upgraded into a connected, coherent,
+room-based game world.
+
+================================================================================
+1. NON-NEGOTIABLE SCIENTIFIC POSITION
+================================================================================
+
+The game is a behavioural analogue layer, not a questionnaire replacement.
+
+The validated self-report scales remain in the Qualtrics survey. The game produces
+event-log indicators that can be compared against those scales for convergent and
+discriminant validation.
+
+Primary source of truth:
+  remote_outpost_MASTER_33_alignment_LOCKED_v0_2.xlsx
+
+Secondary source of truth:
+  remote_outpost_behavioural_blueprint_MASTER_corrected_v1_0.xlsx
+
+Exact-item reference:
+  remote_outpost_exact_33_item_list_ALIGNED_to_blueprint.xlsx
+
+Core rules:
+1. Q01-Q33 is the stable reference key.
+2. All rooms, mini-games, event names, derived variables, and scoring rules must
+   trace back to Q01-Q33 or be explicitly labelled as control/usability data.
+3. Do not show validated questionnaire item wording in player-facing dialogue.
+4. Do not collapse the behavioural output into one global “good player” score.
+5. Compute separate subindices first:
+   - organisation
+   - productiveness
+   - responsibility
+   - prudence/carefulness
+   - adaptive persistence
+   - inappropriate persistence
+   - optional goal-time preference / delayed-benefit proxy
+6. Inappropriate Persistence is maladaptive. Higher values mean more blind or
+   counterproductive persistence, not better persistence.
+7. Goal-Time Preference is optional/exploratory. A short game cannot directly
+   measure literal multi-year goal orientation.
+8. Grit-S Consistency of Interest is partly weak/exploratory in a short game.
+   Score return-to-task and unresolved non-return, not mere switching.
+9. Q04 is cleanup/disorder. It must not be implemented as the old planning-before-
+   acting construct.
+10. Engineer Hub / NPC Report-Back is a priority module because it fills the
+    responsibility/dependability gap without changing the persistence scoring model.
+
+================================================================================
+2. FINAL GAME CONCEPT
+================================================================================
+
+Working title:
+  Remote Outpost Assessment
+
+Setting:
+  A remote research outpost / expedition station where critical systems must be
+  stabilised before final core activation.
+
+Player role:
+  A newly arrived station assistant / field researcher who must inspect, repair,
+  report, prepare, respond to warnings, manage interruptions, and finalize the
+  outpost core.
+
+Format:
+  Short 2D top-down browser game.
+  Approximate target playtime: 15-20 minutes for pilot; can be shortened for study.
+
+Core player loop:
+  move -> inspect -> choose action -> receive feedback -> revise/continue/skip ->
+  task state updates -> events logged -> room outcome influences final core.
+
+World structure:
+  Dock / Arrival Bay
+     -> Station Hub
+        -> Archive Room
+        -> Systems Repair Room
+        -> Engineer Hub / NPC Report
+        -> Inventory / Preparation Room
+        -> Hazard Control Room
+        -> Optional Side Repair Bay
+        -> Interruption Corridor
+        -> Final Core Room
+
+Progression:
+  The participant should experience the station as one connected world. Rooms may be
+  implemented one-by-one, but the final game must connect all rooms into one flow.
+
+No traditional RPG progression:
+  Do not add money, shops, XP, skill levels, combat, stat boosts, power upgrades, or
+  mechanics that change task difficulty across participants.
+
+Allowed progress indicators:
+  - mission checklist
+  - active/unresolved objective tracker
+  - station stability meter
+  - non-power-changing badges/status labels
+  - final core status board
+
+================================================================================
+3. OVERARCHING SYSTEMS REQUIRED
+================================================================================
+
+3.1 Game state / mission state
+Required persistent state:
+- current_room_id
+- completed_rooms
+- active_objectives
+- unresolved_objectives
+- accepted_duties
+- skipped_duties
+- prepared_items
+- workspace_status
+- hazard_status
+- side_repair_status
+- interruption_status
+- final_core_status
+
+3.2 Event logging
+All meaningful player actions must log through ResearchRuntime/EventLogger.
+
+Minimum event payload fields:
+- session_id
+- participant_id
+- game_session_id
+- condition
+- game_version
+- timestamp_ms
+- elapsed_seconds
+- room_id
+- task_id
+- study_item_ids
+- construct_id
+- event_type
+- object_id
+- choice_value
+- attempt_number
+- previous_state
+- new_state
+- success
+- x
+- y
+- metadata
+
+3.3 Debug/runtime API
+window.researchRuntime must remain available in dev/debug mode:
+- printSummary()
+- completeDebugSession()
+- getEvents()
+- printEvents()
+- exportEventsJSON()
+
+3.4 Qualtrics launch/return
+The game must parse:
+- participant_id
+- game_session_id
+- condition
+- return_url
+- game_version
+
+The game must prepare/preview summary variables for Qualtrics without overwriting
+raw logs.
+
+3.5 UI systems
+Required UI modules:
+- dialogue box
+- terminal panel
+- checklist panel
+- choice prompt
+- status board
+- active objective tracker
+- final summary/debug panel
+- optional PixelLab-polished UI skin later
+
+3.6 Room/task abstraction
+Each task should be implemented through a reusable pattern:
+- enter room
+- show objective
+- interact with NPC/object
+- present mini-game
+- update task state
+- log event
+- update mission state
+- update derived variables
+- allow exit/return where appropriate
+
+================================================================================
+4. ROOM AND MINI-GAME CONTRACT
+================================================================================
+
+--------------------------------------------------------------------------------
+ROOM 0 — DOCK / ARRIVAL BAY
+--------------------------------------------------------------------------------
+
+Purpose:
+  Tutorial, baseline controls, movement competence, instruction comprehension.
+
+Mapped study items:
+  None. Control variables only.
+
+NPCs/systems:
+  Station AI / arrival terminal.
+
+Core player task:
+  Player arrives at the dock, receives movement/interaction instructions, moves to
+  marker, interacts with terminal/door, and confirms readiness.
+
+Mini-game mechanics:
+  - movement to highlighted target
+  - first SPACE/interaction prompt
+  - simple instruction confirmation
+  - optional help prompt if idle/confused
+
+Raw events:
+  dock_started
+  movement_instruction_shown
+  first_movement
+  first_interaction
+  tutorial_help_shown
+  tutorial_completed
+  control_error_count
+  baseline_idle_seconds
+
+Derived variables:
+  control_competence_flag
+  baseline_navigation_latency
+  tutorial_completion_time
+  baseline_idle_seconds
+  baseline_interaction_latency
+
+Scoring:
+  Do not score personality here. Use as covariates/control variables.
+
+Done test:
+  Participant can move and interact before construct tasks begin.
+
+--------------------------------------------------------------------------------
+ROOM 1 — ARCHIVE ROOM
+--------------------------------------------------------------------------------
+
+Purpose:
+  Response to setback, feedback use, revision after failure, blind repetition.
+
+Mapped study items:
+  Q13, Q22, Q23, Q24, Q25, Q26
+
+Main constructs:
+  Perseverance of Effort, Persistence Despite Difficulty, adaptive persistence,
+  inappropriate persistence, productiveness after failure.
+
+NPCs/systems:
+  Archive AI, archive terminal, log shelves/data panels.
+
+Core player task:
+  Recover an access log/code. The first or naive attempt fails. Feedback is shown.
+  The player can inspect logs, use feedback, revise the query/code, repeat the same
+  wrong response, leave, return, or complete.
+
+Mini-game mechanics:
+  - terminal code/query input or multiple-choice query selection
+  - feedback panel after wrong attempt
+  - optional log comparison step
+  - revised query submission
+  - same-wrong-code detection
+  - completion flag sent to mission checklist
+
+Raw events:
+  archive_room_entered
+  archive_terminal_opened
+  archive_code_entered
+  archive_wrong_code
+  archive_feedback_shown
+  archive_feedback_used
+  archive_log_compared
+  archive_strategy_revision
+  archive_same_wrong_code_repeated
+  archive_abandoned
+  archive_returned_after_failure
+  archive_completed
+
+Derived variables:
+  post_failure_reengagement
+  adaptive_persistence_count
+  blind_retry_count
+  strategy_revision_count
+  archive_completion_flag
+  abandonment_after_failure_count
+  game_inappropriate_persistence_component
+
+Validity caution:
+  Feedback must be understandable. This must measure response to setback, not hidden
+  puzzle ability or reading difficulty.
+
+Implementation status:
+  Already partly implemented in the prototype. Fable must audit before rewriting.
+
+--------------------------------------------------------------------------------
+ROOM 2 — SYSTEMS REPAIR ROOM
+--------------------------------------------------------------------------------
+
+Purpose:
+  Task initiation, repair after failure, manual use, revised sequence, productive
+  persistence.
+
+Mapped study items:
+  Q05, Q06, Q14, Q21, Q23, Q24, Q25, Q26
+
+Main constructs:
+  Productiveness, Perseverance of Effort, Persistence Despite Difficulty, adaptive
+  persistence, inappropriate persistence.
+
+NPCs/systems:
+  Systems console, repair panel, repair manual station.
+
+Core player task:
+  Stabilise a failed system. The default repair sequence fails. Player can repeat
+  the failed sequence, open the manual, apply revised sequence, leave unresolved,
+  or complete repair.
+
+Mini-game mechanics:
+  - repair panel with selectable sequence
+  - scripted first failure or default failure
+  - repair manual/log hints
+  - revised sequence validation
+  - repeated failed sequence detection
+  - completion updates station stability
+
+Raw events:
+  repair_room_entered
+  repair_panel_opened
+  task_started
+  repair_sequence_submitted
+  repair_failed
+  repair_manual_opened
+  manual_page_reviewed
+  repair_manual_used
+  repair_strategy_revision
+  repair_same_sequence_repeated
+  repair_abandoned
+  repair_returned_after_failure
+  repair_completed
+
+Derived variables:
+  task_initiation_latency
+  productiveness_action_ratio
+  difficulty_persistence_score
+  manual_use_flag
+  manual_or_feedback_used
+  failure_recovery_score
+  required_completion_rate
+  blind_retry_count
+  reengagement_after_failure
+  game_difficulty_persistence
+
+Validity caution:
+  Score manual use only when followed by relevant revision. Do not treat raw time
+  alone as effort.
+
+Implementation status:
+  Strong current implemented core. Fable must preserve existing working logic unless
+  there is a concrete reason to refactor.
+
+--------------------------------------------------------------------------------
+ROOM 3 — ENGINEER HUB / NPC REPORT-BACK
+--------------------------------------------------------------------------------
+
+Purpose:
+  Interpersonal accountability, dependable reporting, accepted duty follow-through.
+
+Mapped study items:
+  Q09, Q10, Q11
+
+Main constructs:
+  Responsibility, dependability, accountability, organisation in reporting.
+
+NPCs/systems:
+  Engineer Kai, report console, duty board, mission checklist.
+
+Core player task:
+  Engineer Kai asks for a status report. The player can review evidence, ask for
+  clarification, submit a prepared report, submit a shortcut/unprepared report,
+  accept/decline a relay supervision duty, and later complete or skip accepted duty.
+
+Mini-game mechanics:
+  - NPC dialogue with plausible time pressure
+  - report console with evidence/status options
+  - prepared vs unprepared report submission
+  - duty board persistent objective
+  - later follow-through check at Final Core or related station point
+
+Raw events:
+  engineer_hub_entered
+  engineer_report_opened
+  engineer_evidence_reviewed
+  engineer_clarification_requested
+  engineer_report_submitted_prepared
+  engineer_report_submitted_unprepared
+  engineer_report_accuracy_scored
+  engineer_supervision_assigned
+  engineer_supervision_accepted
+  engineer_supervision_declined
+  engineer_supervision_completed
+  engineer_supervision_skipped
+  accepted_duty_unresolved
+
+Derived variables:
+  prepared_report_flag
+  report_accuracy_score
+  responsibility_report_count
+  responsibility_adaptive_count
+  commitment_followthrough_rate
+  duty_followthrough_rate
+  accepted_duty_unresolved_count
+  accountability_review_flag
+
+Validity caution:
+  Do not make the responsible option morally obvious. The shortcut option should be
+  plausible, for example “send quick status now” under time pressure.
+
+Implementation priority:
+  Very high. This is the safest next module because it adds responsibility and
+  dependability coverage without changing persistence scoring.
+
+--------------------------------------------------------------------------------
+ROOM 4 — INVENTORY / PREPARATION ROOM
+--------------------------------------------------------------------------------
+
+Purpose:
+  Orderliness, preparation, systematic organisation, cleanup/disorder, readiness
+  verification.
+
+Mapped study items:
+  Q01, Q02, Q03, Q04, Q30
+
+Main constructs:
+  Organisation, productiveness, prudence, cleanup/disorder, exploratory short-term
+  shortcut proxy.
+
+NPCs/systems:
+  Quartermaster console, storage system, prep bench, kit crate.
+
+Core player task:
+  Prepare a field kit using a checklist. Player can open checklist, sort items,
+  select tools, assemble kit, verify readiness, clean/resolve workspace, skip
+  verification, or leave disorder that can be flagged in Final Core.
+
+Mini-game mechanics:
+  - simple checklist/item selection
+  - visible labelled bins/items
+  - kit assembly slots
+  - verification prompt
+  - cleanup/confirm workspace step
+  - missing item consequences later
+
+Raw events:
+  inventory_room_entered
+  inventory_checklist_opened
+  inventory_item_sorted_correct
+  inventory_item_misplaced
+  inventory_sequence_followed
+  inventory_sequence_completed
+  inventory_verification_skipped
+  inventory_verified_complete
+  correct_tool_selected
+  wrong_tool_selected
+  prepared_tool_used
+  readiness_verified
+  missing_item
+  workspace_tidy_confirmed
+  workspace_left_disordered
+  cleanup_completed
+  final_core_missing_item_flagged
+  final_core_workspace_issue_flagged
+
+Derived variables:
+  organisation_checklist_use
+  organisation_accuracy_score
+  sequence_quality
+  avoidable_omission_count
+  organisation_error_count
+  prepared_resource_use
+  tool_retrieval_accuracy
+  workspace_tidy_score
+  cleanup_failure_count
+  unresolved_workspace_issue_count
+  short_term_shortcut_count
+  preparation_delay_benefit
+
+Validity caution:
+  Q04 must be cleanup/disorder. Do not implement Q04 as planning-before-action.
+  Keep interface simple so it measures organisation, not drag-and-drop skill.
+
+--------------------------------------------------------------------------------
+ROOM 5 — HAZARD CONTROL ROOM
+--------------------------------------------------------------------------------
+
+Purpose:
+  Information seeking and decision quality under uncertainty. This is prudence and
+  carefulness, not fear induction.
+
+Mapped study items:
+  Q12, Q27, Q31
+
+Main constructs:
+  Prudence/carefulness, responsibility, reckless continuation, inappropriate
+  persistence under warning, optional immediate-vs-informed route proxy.
+
+NPCs/systems:
+  Hazard alert terminal, warning details panel, route decision console.
+
+Core player task:
+  Player receives a warning. They can inspect details, proceed informed, proceed
+  recklessly without checking, or resolve resulting issue.
+
+Mini-game mechanics:
+  - warning screen
+  - details/inspection option
+  - route decision prompt
+  - informed route vs fast/reckless route
+  - later consequence state in Final Core
+
+Raw events:
+  hazard_room_entered
+  hazard_warning_seen
+  hazard_info_checked
+  hazard_informed_continue
+  hazard_reckless_continue
+  hazard_issue_created
+  hazard_issue_resolved
+  final_hazard_issue
+
+Derived variables:
+  prudence_check_rate
+  reckless_shortcut_count
+  uncertainty_inappropriate_count
+  informed_delay_choice
+  risky_shortcut_count
+  game_uncertainty_persistence
+
+Validity caution:
+  Do not claim to measure fear. The room measures consequence checking, prudence,
+  responsibility, and reckless continuation despite available information.
+
+Implementation status:
+  Implemented as placeholder; later improve panel/detail mechanics and visuals.
+
+--------------------------------------------------------------------------------
+ROOM 6 — OPTIONAL SIDE REPAIR BAY
+--------------------------------------------------------------------------------
+
+Purpose:
+  Voluntary effort beyond minimum requirements, diligence, optional follow-through,
+  delayed-benefit proxy, start-then-drop behaviour.
+
+Mapped study items:
+  Q07, Q16, Q20, Q29, Q32
+
+Main constructs:
+  Productiveness, perseverance, diligence, responsibility, exploratory Goal-Time
+  Preference / delayed benefit.
+
+NPCs/systems:
+  Utility Bot, repair arm, work console, parts shelves.
+
+Core player task:
+  Utility Bot offers an optional stabiliser repair. It is not required for immediate
+  progression, but it improves final station stability. Player can skip, accept,
+  start, complete steps, formally defer, abandon, or complete.
+
+Mini-game mechanics:
+  - optional task offer with clear delayed benefit
+  - multi-step repair sequence
+  - no gameplay power upgrade
+  - visible final-status benefit only
+  - defer option to distinguish strategic postponement from abandonment
+
+Raw events:
+  side_repair_discovered
+  stabiliser_option_offered
+  stabiliser_accepted
+  side_repair_accepted
+  side_repair_first_step
+  side_repair_step_completed
+  side_repair_abandoned
+  side_repair_abandoned_after_start
+  side_repair_deferred
+  side_repair_completed
+  final_core_stability_bonus
+  final_bonus_unlocked
+
+Derived variables:
+  voluntary_effort_count
+  optional_completion_score
+  diligence_step_count
+  optional_task_completion
+  start_without_sustain_count
+  optional_followthrough_rate
+  delayed_benefit_investment
+  optional_future_benefit_score
+  final_stability_gain
+
+Validity caution:
+  Completionism and curiosity are confounds. Log accepted, started, deferred,
+  abandoned, and completed separately. Use as secondary/optional indicator.
+
+--------------------------------------------------------------------------------
+ROOM 7 — INTERRUPTION CORRIDOR
+--------------------------------------------------------------------------------
+
+Purpose:
+  Task switching, return-to-task, follow-through after interruption, exploratory
+  Grit-S Consistency of Interest analogues.
+
+Mapped study items:
+  Q08, Q15, Q17, Q18, Q19, Q20
+
+Main constructs:
+  Return-to-task, started-task completion, low productive engagement/avoidance,
+  consistency proxies, task switching.
+
+NPCs/systems:
+  Comms AI, signal beacon, door controller, mission checklist.
+
+Core player task:
+  A competing objective appears while another objective remains active. Player can
+  evaluate the interruption, switch, return, abandon previous goal, or complete the
+  original task.
+
+Mini-game mechanics:
+  - corridor branch or comms alert
+  - active objective reminder
+  - competing task offer
+  - return route to unfinished task
+  - final unresolved-state check
+
+Raw events:
+  interruption_corridor_entered
+  objective_active
+  interruption_received
+  competing_task_viewed
+  new_goal_offered
+  switched_task
+  goal_switch_accepted
+  return_to_unfinished_task
+  returned_to_original_task
+  prior_goal_completed
+  prior_goal_abandoned
+  task_completed_after_interruption
+  final_unresolved_due_to_nonreturn
+  task_avoidance
+  excessive_idle_after_instruction
+
+Derived variables:
+  return_to_task_rate
+  started_task_completion_rate
+  distraction_switch_rate
+  return_after_switch_flag
+  longitudinal_focus_proxy
+  unresolved_after_interruption
+  goal_switch_without_return_count
+  low_productive_engagement_proxy
+  avoidance_count
+  start_without_sustain_count
+
+Validity caution:
+  Switching can be rational. Score unresolved non-return and abandoned prior goals,
+  not switching alone. Months-long interest stability cannot be reproduced; label
+  Q18 and related CI outputs as weak/exploratory proxies.
+
+--------------------------------------------------------------------------------
+ROOM 8 — FINAL CORE ROOM
+--------------------------------------------------------------------------------
+
+Purpose:
+  Integration, final accountability, unresolved issue review, force-continuing
+  despite explicit blockers, delayed finalization vs rushing.
+
+Mapped study items:
+  Q04, Q10, Q11, Q28, Q29, Q33
+
+Main constructs:
+  Responsibility, organisation cleanup, final quality, inappropriate persistence,
+  optional delayed-benefit / Goal-Time proxy.
+
+NPCs/systems:
+  Core Interface AI, status monitors, mission checklist, station stability meter.
+
+Core player task:
+  Final Core displays prior states: missing items, messy workspace, unresolved duty,
+  hazard consequences, unresolved blocker, optional stabiliser benefit. Player can
+  review, resolve, force continue, rush finalization, or complete after resolving
+  issues.
+
+Mini-game mechanics:
+  - final status board
+  - unresolved issue list
+  - resolve issue buttons/routes
+  - force continue option
+  - final quality/stability summary
+  - Qualtrics return preview/debug completion
+
+Raw events:
+  final_core_entered
+  final_core_status_reviewed
+  final_core_missing_item_flagged
+  final_core_workspace_issue_flagged
+  final_core_blocker_shown
+  unresolved_issue_reviewed
+  issue_resolution_attempted
+  final_core_issue_resolved
+  final_core_force_continue
+  final_core_rushed
+  final_core_completed
+  final_core_stability_bonus
+  final_quality_score_computed
+  final_summary_previewed
+  qualtrics_return_previewed
+
+Derived variables:
+  unresolved_issue_count
+  accountability_review_flag
+  final_quality_score
+  blocker_ignored_count
+  force_continue_count
+  delayed_finalization_score
+  rush_to_finish_count
+  final_stability_gain
+  accepted_duty_unresolved_count
+  unresolved_workspace_issue_count
+
+Validity caution:
+  Final Core is an outcome/integration room. It must not replace all subindices or
+  become one global good-player score.
+
+================================================================================
+5. Q01-Q33 IMPLEMENTATION COVERAGE MATRIX
+================================================================================
+
+Q01 Organisation / systematic approach
+  Room: Inventory / Prep
+  Mini-game: checklist, sorting, ordered kit assembly
+  Events: inventory_checklist_opened; inventory_item_sorted_correct;
+          inventory_sequence_followed
+  Variables: organisation_checklist_use; organisation_accuracy_score; sequence_quality
+
+Q02 Organisation / disorganisation reverse
+  Room: Inventory / Prep; Final Core
+  Mini-game: incomplete kit and preventable omission tracking
+  Events: inventory_item_misplaced; inventory_verification_skipped;
+          final_core_missing_item_flagged
+  Variables: avoidable_omission_count; organisation_error_count
+
+Q03 Organisation / neat resource management
+  Room: Inventory / Prep
+  Mini-game: correct tool retrieval and tidy storage
+  Events: correct_tool_selected; wrong_tool_selected; prepared_tool_used;
+          workspace_tidy_confirmed
+  Variables: prepared_resource_use; tool_retrieval_accuracy; workspace_tidy_score
+
+Q04 Organisation / cleanup-disorder reverse
+  Room: Inventory / Prep; Final Core
+  Mini-game: cleanup/verify workspace before leaving; final flags unresolved mess
+  Events: workspace_left_disordered; cleanup_completed; final_core_workspace_issue_flagged
+  Variables: cleanup_failure_count; unresolved_workspace_issue_count
+
+Q05 Productiveness / task initiation reverse
+  Room: Repair; Archive
+  Mini-game: start active objective after instruction
+  Events: task_started; time_to_first_task; irrelevant_interaction_count
+  Variables: task_initiation_latency; productiveness_action_ratio
+
+Q06 Productiveness / efficient completion
+  Room: Repair; Archive; Final Core
+  Mini-game: complete required objectives without avoidable waste
+  Events: repair_completed; archive_completed; final_core_completed; objective_completed
+  Variables: required_completion_rate; productiveness_completion_score
+
+Q07 Productiveness / works until finished
+  Room: Optional Side Repair; Repair
+  Mini-game: continue useful task until complete
+  Events: side_repair_accepted; side_repair_step_completed; side_repair_completed
+  Variables: voluntary_effort_count; optional_completion_score
+
+Q08 Productiveness / low engagement reverse
+  Room: Interruption Corridor; Repair
+  Mini-game: active objective remains unresolved while participant avoids/idle/drifts
+  Events: task_avoidance; excessive_idle_after_instruction; unresolved_required_task
+  Variables: avoidance_count; low_productive_engagement_proxy
+
+Q09 Responsibility / dependable report-back
+  Room: Engineer Hub
+  Mini-game: evidence-based status report
+  Events: engineer_report_opened; engineer_evidence_reviewed;
+          engineer_report_submitted_prepared
+  Variables: prepared_report_flag; report_accuracy_score
+
+Q10 Responsibility / keeps accepted duties
+  Room: Engineer Hub; Final Core
+  Mini-game: accepted duty persists across rooms and must be completed or skipped
+  Events: engineer_supervision_accepted; engineer_supervision_completed;
+          accepted_duty_unresolved
+  Variables: commitment_followthrough_rate; accepted_duty_unresolved_count
+
+Q11 Responsibility / irresponsible outcome handling reverse
+  Room: Final Core; Engineer Hub
+  Mini-game: review/resolve issues vs rush finalization
+  Events: final_core_status_reviewed; unresolved_issue_reviewed; final_core_rushed
+  Variables: unresolved_issue_count; accountability_review_flag; final_quality_score
+
+Q12 Responsibility/prudence / careless warning handling reverse
+  Room: Hazard Control
+  Mini-game: warning details checked vs reckless continuation
+  Events: hazard_warning_seen; hazard_info_checked; hazard_reckless_continue
+  Variables: prudence_check_rate; reckless_shortcut_count
+
+Q13 Grit-S PE / continues after setback
+  Room: Archive
+  Mini-game: wrong code -> feedback -> revise/complete or abandon
+  Events: archive_wrong_code; archive_feedback_used; archive_strategy_revision;
+          archive_completed
+  Variables: post_failure_reengagement; adaptive_persistence_count
+
+Q14 Grit-S PE / effort in demanding task
+  Room: Repair
+  Mini-game: failed repair -> manual -> revised sequence -> completion
+  Events: repair_failed; repair_manual_used; repair_strategy_revision; repair_completed
+  Variables: difficulty_persistence_score; manual_use_flag
+
+Q15 Grit-S PE / finishes what is started
+  Room: Interruption Corridor; Final Core
+  Mini-game: interruption while task active, return and complete
+  Events: task_started; interruption_received; return_to_unfinished_task; task_completed
+  Variables: return_to_task_rate; started_task_completion_rate
+
+Q16 Grit-S PE / diligence
+  Room: Optional Side Repair
+  Mini-game: optional multi-step repair with sustained accuracy
+  Events: side_repair_accepted; side_repair_step_completed; side_repair_completed
+  Variables: diligence_step_count; optional_task_completion
+
+Q17 Grit-S CI / distracted by new task reverse
+  Room: Interruption Corridor
+  Mini-game: competing task offered while objective remains active
+  Events: interruption_received; competing_task_viewed; switched_task;
+          returned_to_original_task
+  Variables: distraction_switch_rate; return_after_switch_flag
+
+Q18 Grit-S CI / long focus reverse, weak proxy
+  Room: Interruption Corridor; Final Core
+  Mini-game: multi-room objective remains active and final checks whether revisited
+  Events: objective_active; objective_revisited; final_unresolved_due_to_nonreturn
+  Variables: longitudinal_focus_proxy; unresolved_after_interruption
+
+Q19 Grit-S CI / changes goals before finishing reverse
+  Room: Interruption Corridor
+  Mini-game: new side goal offered while prior duty pending
+  Events: new_goal_offered; goal_switch_accepted; prior_goal_completed;
+          prior_goal_abandoned
+  Variables: goal_switch_without_return_count
+
+Q20 Grit-S CI / starts then disengages reverse
+  Room: Optional Side Repair; Interruption Corridor
+  Mini-game: accept optional task, do first step, abandon as effort rises
+  Events: side_repair_accepted; side_repair_first_step;
+          side_repair_abandoned_after_start
+  Variables: start_without_sustain_count; optional_followthrough_rate
+
+Q21 PDD / keeps working when hard
+  Room: Repair
+  Mini-game: failed repair creates difficulty; player uses support/revision and continues
+  Events: repair_failed; repair_manual_used; repair_strategy_revision; repair_completed
+  Variables: game_difficulty_persistence; failure_recovery_score
+
+Q22 PDD / works through difficult information
+  Room: Archive; Repair
+  Mini-game: feedback/manual/log use followed by revision
+  Events: archive_feedback_used; repair_manual_used; manual_page_reviewed;
+          strategy_revision
+  Variables: manual_or_feedback_used; strategy_revision_count
+
+Q23 PDD / keeps trying when hard
+  Room: Archive; Repair
+  Mini-game: continue after difficulty, ideally with adaptive revision
+  Events: failure_feedback_shown; task_retry_after_failure; strategy_revision;
+          task_completed_after_failure
+  Variables: difficulty_retry_count; adaptive_retry_quality
+
+Q24 PDD / not discouraged by setbacks
+  Room: Archive; Repair
+  Mini-game: setback occurs; player re-engages instead of disengaging
+  Events: failure_feedback_shown; station_left_after_failure;
+          station_reengaged; task_abandoned_unresolved
+  Variables: reengagement_after_failure; abandonment_after_failure_count
+
+Q25 PDD / sticks with difficult task
+  Room: Archive; Repair
+  Mini-game: unresolved station remains; player returns/re-engages
+  Events: failure_feedback_shown; station_left_after_failure;
+          station_reengaged; task_abandoned_unresolved
+  Variables: abandonment_after_failure_count; reengagement_after_failure
+
+Q26 Inappropriate Persistence / repeated ineffective response
+  Room: Archive; Repair
+  Mini-game: repeat same wrong code/default sequence after feedback
+  Events: archive_same_wrong_code_repeated; repair_same_sequence_repeated
+  Variables: blind_retry_count; game_inappropriate_persistence
+
+Q27 Inappropriate Persistence / continuation despite poor basis
+  Room: Hazard Control
+  Mini-game: proceed despite warning and available information
+  Events: hazard_info_checked; hazard_reckless_continue
+  Variables: reckless_shortcut_count; uncertainty_inappropriate_count
+
+Q28 Inappropriate Persistence / force through known blocker
+  Room: Final Core
+  Mini-game: explicit blocker shown; player can resolve or force continue
+  Events: final_core_blocker_shown; final_core_force_continue;
+          issue_resolution_attempted
+  Variables: force_continue_count; blocker_ignored_count
+
+Q29 Goal-Time / delayed benefit proxy
+  Room: Optional Side Repair; Final Core
+  Mini-game: optional stabiliser costs time now and improves later final stability
+  Events: stabiliser_option_offered; stabiliser_accepted; stabiliser_completed;
+          final_core_stability_bonus
+  Variables: delayed_benefit_investment; final_stability_gain
+
+Q30 Goal-Time / short-term shortcut proxy
+  Room: Inventory / Prep
+  Mini-game: skip verification for quick progress vs prepare for later quality
+  Events: inventory_verified_complete; inventory_verification_skipped;
+          final_missing_item_flagged
+  Variables: short_term_shortcut_count; preparation_delay_benefit
+
+Q31 Goal-Time / immediate path vs slower quality proxy
+  Room: Hazard Control
+  Mini-game: faster reckless route vs slower informed route
+  Events: hazard_info_checked; hazard_informed_continue; hazard_reckless_continue
+  Variables: informed_delay_choice; risky_shortcut_count
+
+Q32 Goal-Time / extra work for future benefit proxy
+  Room: Optional Side Repair
+  Mini-game: complete optional side repair that helps final status later
+  Events: side_repair_accepted; side_repair_completed; final_bonus_unlocked
+  Variables: optional_future_benefit_score
+
+Q33 Goal-Time / rush finish vs resolve before finish proxy
+  Room: Final Core
+  Mini-game: finalize now or spend time resolving preventable issues
+  Events: final_core_status_reviewed; final_core_issue_resolved;
+          final_core_rushed; final_core_completed
+  Variables: delayed_finalization_score; rush_to_finish_count
+
+================================================================================
+6. SCORING CONTRACT
+================================================================================
+
+ScoringManager must produce:
+1. Raw event export.
+2. Room-level summaries.
+3. Construct-level subindices.
+4. Optional/exploratory proxies clearly labelled.
+5. Qualtrics summary variables.
+
+Required subindices:
+- organisation_checklist_use
+- organisation_accuracy_score
+- organisation_error_count
+- cleanup_failure_count
+- productiveness_action_ratio
+- task_initiation_latency
+- required_completion_rate
+- productiveness_completion_score
+- responsibility_report_count
+- prepared_report_flag
+- report_accuracy_score
+- commitment_followthrough_rate
+- accepted_duty_unresolved_count
+- prudence_check_rate
+- reckless_shortcut_count
+- game_difficulty_persistence
+- failure_recovery_score
+- adaptive_persistence_count
+- blind_retry_count
+- game_inappropriate_persistence
+- abandonment_after_failure_count
+- return_to_task_rate
+- goal_switch_without_return_count
+- optional_future_benefit_score
+- delayed_benefit_investment
+- final_quality_score
+
+Composite examples:
+- failure_adaptation_index =
+    strategy_revision_count
+  + support_use_after_failure
+  + completion_after_failure
+  - blind_retry_count
+  - unresolved_abandonment
+
+- game_inappropriate_persistence =
+    archive_same_wrong_code_repeated
+  + repair_same_sequence_repeated
+  + hazard_reckless_continue
+  + final_core_force_continue
+
+Do not compute:
+- one global personality score
+- one global good-player score
+- one mixed persistence score combining adaptive and maladaptive persistence
+- unqualified Goal-Time score
+
+================================================================================
+7. PIXELLAB / MCP CONTRACT
+================================================================================
+
+Use PixelLab through MCP only after placeholder mechanics and logging work.
+
+PixelLab sequence:
+1. Confirm mechanics and logging with placeholders.
+2. Generate one style anchor.
+3. Generate player sprite / researcher.
+4. Generate minimal station tile style.
+5. Generate assets room-by-room.
+6. Save asset prompts and metadata in docs/assets/pixellab-asset-manifest.md.
+7. Reject inconsistent assets rather than force them into the game.
+
+Visual target:
+- top-down 2D pixel art
+- 32x32-compatible tile scale
+- remote research outpost / expedition station
+- terminals, warning panels, repair panels, storage shelves, kit crates, NPCs,
+  status monitors, final core/reactor
+- consistent palette and readable interactables
+
+Avoid:
+- farming/crops
+- medieval fantasy
+- combat assets
+- corporate office cubicles
+- player-power upgrades
+- inconsistent isometric/top-down mixing unless deliberately chosen and normalized
+
+MCP servers:
+- PixelLab MCP: local scope only because it uses a token.
+- Playwright MCP: local scope for browser verification.
+- GitHub MCP: not required initially; use existing Git CLI and GitHub remote.
+
+================================================================================
+8. CLAUDE PROJECT SKILLS AND AGENTS
+================================================================================
+
+Required project-local skills:
+- .claude/skills/research-game-architect/SKILL.md
+- .claude/skills/room-builder/SKILL.md
+- .claude/skills/psychometric-task-design/SKILL.md
+- .claude/skills/qualtrics-logging-review/SKILL.md
+- .claude/skills/pixellab-asset-pipeline/SKILL.md
+- .claude/skills/playwright-game-verify/SKILL.md
+
+Required project-local review agents:
+- .claude/agents/research-data-reviewer.md
+- .claude/agents/gameplay-implementation-reviewer.md
+- .claude/agents/browser-qa-reviewer.md
+
+Restrictions:
+- Do not create a broad autonomous manager agent.
+- Do not create an asset-generation agent with uncontrolled PixelLab access.
+- Do not create GitHub push/release agents.
+- Review agents should primarily inspect and report.
+
+================================================================================
+9. TESTING CONTRACT
+================================================================================
+
+Every build beat must verify:
+
+Code:
+- npm.cmd run build
+- npm.cmd run lint:tsc
+- npm.cmd run lint when practical
+
+Runtime:
+- npm.cmd run start
+- game loads in browser
+- no fatal console errors
+- window.researchRuntime exists
+- printSummary works
+- printEvents works
+- exportEventsJSON works
+
+Playwright tests to create:
+- launch_with_research_params.spec.ts
+- movement_and_first_interaction.spec.ts
+- archive_room_logging.spec.ts
+- repair_room_logging.spec.ts
+- engineer_hub_logging.spec.ts
+- inventory_prep_logging.spec.ts
+- hazard_control_logging.spec.ts
+- final_core_summary.spec.ts
+
+Each room must have:
+- manual test checklist
+- at least one log-verification path
+- clear done test
+- event names documented
+- scoring variables documented
+
+================================================================================
+10. FABLE BUILD BEATS
+================================================================================
+
+Beat 0 — Audit only
+  Inspect current repo, implemented rooms, event registry, scoring, missing docs,
+  missing skills, missing agents, missing MCP, missing tests. No code changes.
+
+Beat 1 — Documentation source-of-truth
+  Create:
+  - PROJECT_SPEC.md
+  - CLAUDE.md
+  - docs/research/MASTER_33_ALIGNMENT.md
+  - docs/research/event-schema.md
+  - docs/research/scoring-plan.md
+  - docs/game/rooms/*.md
+  - docs/assets/pixellab-asset-manifest.md
+  - docs/testing/playwright-smoke-plan.md
+
+Beat 2 — Architecture stabilisation
+  Stabilise scene/world/task abstraction without deleting existing working prototype.
+
+Beat 3 — Dock / Arrival Bay
+Beat 4 — Archive Room refinement
+Beat 5 — Systems Repair refinement
+Beat 6 — Engineer Hub / NPC Report-Back
+Beat 7 — Inventory / Preparation Room
+Beat 8 — Hazard Control refinement
+Beat 9 — Optional Side Repair Bay
+Beat 10 — Interruption Corridor
+Beat 11 — Final Core Room
+Beat 12 — Connected world pass
+Beat 13 — Full ScoringManager subindices
+Beat 14 — Qualtrics return/summary preview
+Beat 15 — Playwright smoke suite
+Beat 16 — PixelLab room-by-room asset pass
+Beat 17 — Pilot-readiness polish
+
+At the end of each beat:
+- summarize objective
+- list changed files
+- list events added/changed
+- list scoring variables affected
+- run build/tests
+- report unresolved risks
+- stop before next beat unless explicitly approved
+
+================================================================================
+11. FIRST FABLE PROMPT
+================================================================================
+
+Use Fable-level reasoning, but operate conservatively.
+
+You are working in:
+C:\Users\Juls\Desktop\research-station-assessment-game
+
+Branch:
+fable-final-game-prep-from-prototype
+
+This is an existing Phaser 3 + TypeScript + Vite Remote Outpost behavioural
+assessment prototype. It began from a Phaser RPG / Pokemon-like top-down foundation
+and should now be upgraded using a Stardew-like production workflow: spec-first,
+connected world, room-by-room build, PixelLab MCP art pipeline, Playwright/browser
+verification, and strict done tests.
+
+Read first:
+- docs/ai/fable-claude-final-game-build-contract-v3.txt
+- PROJECT_SPEC.md if present
+- CLAUDE.md if present
+- docs/research/MASTER_33_ALIGNMENT.md if present
+- docs/research/event-schema.md if present
+- docs/research/scoring-plan.md if present
+- docs/game/rooms/*.md if present
+- src/systems/EventLogger.ts
+- src/systems/SessionState.ts
+- src/systems/QualtricsBridge.ts
+- src/systems/DataQualityTracker.ts
+- src/systems/ScoringManager.ts
+- src/systems/ResearchRuntime.ts
+- src/data/researchInteractions.ts
+- src/scenes/*.ts
+- src/scenes/*.tsx
+
+Use these project skills when relevant:
+- research-game-architect
+- room-builder
+- psychometric-task-design
+- qualtrics-logging-review
+- playwright-game-verify
+
+Use pixellab-asset-pipeline only when I explicitly approve an asset pass.
+
+Use review subagents only for review:
+- research-data-reviewer
+- gameplay-implementation-reviewer
+- browser-qa-reviewer
+
+Do not:
+- start a new repo
+- discard existing research systems
+- remove working prototype logic without justification
+- show questionnaire item wording in player-facing dialogue
+- collapse all behaviour into one global score
+- use PixelLab before placeholder mechanics and logging work
+- push to GitHub
+- create a PR
+- use broad autonomous/manager/ship workflows
+
+Start with Beat 0 only:
+1. Inspect the current repo.
+2. Confirm current implemented rooms/interactions.
+3. Compare current implementation against this build contract.
+4. Report missing docs, skills, agents, MCP config, and tests.
+5. Propose the smallest safe next step.
+6. Do not modify files yet.
+
+Stop after Beat 0 and wait for approval.
+
+================================================================================
+12. HUMAN OPERATOR COMMANDS
+================================================================================
+
+Save this file as:
+  docs\ai\fable-claude-final-game-build-contract-v3.txt
+
+Then run:
+  git status
+  git add docs\ai\fable-claude-final-game-build-contract-v3.txt
+  git commit -m "docs: add final fable claude game build contract"
+  git push
+
+Use this V3 file as the main Fable build contract.
+Keep older notes only as setup/history notes, not the main implementation contract.
+
+================================================================================
+13. FINAL PRINCIPLE
+================================================================================
+
+The objective is a defensible research instrument:
+
+- playable
+- coherent
+- connected
+- logged
+- scored
+- testable
+- Qualtrics-compatible
+- aligned to Q01-Q33
+- scientifically cautious about weak/exploratory proxies
+- visually clear enough for participants
+- technically stable enough for a pilot study
+
+Fable can accelerate production, but this contract determines what counts as correct.
