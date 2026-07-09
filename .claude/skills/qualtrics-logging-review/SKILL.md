@@ -1,6 +1,6 @@
----
+﻿---
 name: qualtrics-logging-review
-description: Use when reviewing or modifying EventLogger, ResearchRuntime, ScoringManager, DataQualityTracker, SessionState, QualtricsBridge, participant/session metadata, summary variables, or Qualtrics return_url handling in Remote Outpost Assessment. Trigger this for any change or review touching event payloads, the debug/runtime API (window.researchRuntime), launch-parameter parsing, or how summary scores get handed back to Qualtrics — even if the user just says "check the logging" or "does this event get captured". This is the data-integrity gate: it exists to make sure raw logs stay exportable and summary scores never overwrite them.
+description: Use when reviewing or modifying EventLogger, ResearchRuntime, ScoringManager, DataQualityTracker, SessionState, QualtricsBridge, participant/session metadata, summary variables, or Qualtrics return_url handling in Remote Outpost Assessment. Trigger this for any change or review touching event payloads, the debug/runtime API (window.researchRuntime), launch-parameter parsing, or how summary scores get handed back to Qualtrics  -  even if the user just says "check the logging" or "does this event get captured". This is the data-integrity gate: it exists to make sure raw logs stay exportable and summary scores never overwrite them.
 ---
 
 # Qualtrics Logging Review
@@ -61,12 +61,12 @@ reaches a pilot participant.
 
 - Do not compute or ship a single global "good player" / personality score.
 - Do not let any summary-generation code path delete, truncate, or mutate the raw
-  event log — summaries must be derived, additive views.
+  event log - summaries must be derived, additive views.
 - Do not remove or stub out `window.researchRuntime` debug methods to "clean up"
   production code without an explicit, separate dev/prod gating decision approved
   by the user.
 - Do not silently change event names or payload field names that other rooms or
-  Playwright tests already depend on — treat renames as breaking changes requiring
+  Playwright tests already depend on - treat renames as breaking changes requiring
   explicit callout.
 - Do not modify `package.json`.
 - Do not push to GitHub or create a PR as part of a review.
@@ -75,18 +75,18 @@ reaches a pilot participant.
 
 Produce a review report with:
 
-1. **Scope** — which systems/files were reviewed or changed.
-2. **Payload/field check** — any missing or inconsistent event payload fields.
-3. **Raw-vs-summary integrity** — explicit confirmation (or list of violations)
+1. **Scope** - which systems/files were reviewed or changed.
+2. **Payload/field check** - any missing or inconsistent event payload fields.
+3. **Raw-vs-summary integrity** - explicit confirmation (or list of violations)
    that raw logs are not overwritten by summary/scoring/Qualtrics-return code.
-4. **Debug API status** — pass/fail for each of the five `window.researchRuntime`
+4. **Debug API status** - pass/fail for each of the five `window.researchRuntime`
    methods.
-5. **Qualtrics parameter handling** — confirmation of launch parsing and
+5. **Qualtrics parameter handling** - confirmation of launch parsing and
    return/preview behavior.
-6. **Scoring contract compliance** — subindices present/missing, and any
+6. **Scoring contract compliance** - subindices present/missing, and any
    improperly-labelled or collapsed scores found.
-7. **Issues found** — ranked by severity, each with file/line reference where
+7. **Issues found** - ranked by severity, each with file/line reference where
    possible.
-8. **Recommended fixes** — concrete, minimal changes; hand off actual
+8. **Recommended fixes** - concrete, minimal changes; hand off actual
    implementation to `room-builder` or the relevant system owner if the fix is
    nontrivial.

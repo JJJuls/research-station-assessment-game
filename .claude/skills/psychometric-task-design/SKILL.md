@@ -1,6 +1,6 @@
----
+﻿---
 name: psychometric-task-design
-description: Use when translating Q01-Q33 questionnaire constructs (BFI/Grit-S-derived organisation, productiveness, responsibility, prudence, persistence, Goal-Time preference, Consistency of Interest) into behavioural game mechanics, mini-games, event names, or derived/scoring variables for Remote Outpost Assessment. Trigger this whenever the user asks "how should we measure Q_", designs a new mini-game meant to stand in for a construct, names a personality/Grit/BFI construct directly, or asks whether a mechanic is a valid behavioural analogue. This is the scientific-validity gate for the project — use it before any construct-to-mechanic decision is finalized.
+description: Use when translating Q01-Q33 questionnaire constructs (BFI/Grit-S-derived organisation, productiveness, responsibility, prudence, persistence, Goal-Time preference, Consistency of Interest) into behavioural game mechanics, mini-games, event names, or derived/scoring variables for Remote Outpost Assessment. Trigger this whenever the user asks "how should we measure Q_", designs a new mini-game meant to stand in for a construct, names a personality/Grit/BFI construct directly, or asks whether a mechanic is a valid behavioural analogue. This is the scientific-validity gate for the project  -  use it before any construct-to-mechanic decision is finalized.
 ---
 
 # Psychometric Task Design
@@ -38,18 +38,18 @@ those failures before they're built, not after.
    share a combined variable.** Adaptive persistence (revision + re-engagement
    after failure) is desirable; inappropriate persistence (repeating the same
    failed action, forcing through a known blocker, reckless continuation past a
-   warning) is maladaptive — higher is _worse_, not better (Section 1, rule 6).
+   warning) is maladaptive - higher is _worse_, not better (Section 1, rule 6).
    When in doubt which bucket a behaviour belongs in, ask: did the player change
    their approach, or repeat/force it unchanged? Repetition/forcing -> inappropriate.
 5. **Label exploratory proxies cautiously, every time they appear:**
-   - **Goal-Time Preference / delayed-benefit proxy** — a short game cannot measure
+   - **Goal-Time Preference / delayed-benefit proxy** - a short game cannot measure
      literal multi-year goal orientation. Any variable here (e.g.
      `delayed_benefit_investment`, `optional_future_benefit_score`,
      `final_stability_gain`) must be documented as optional/exploratory, not a
      direct Goal-Time measure.
-   - **Grit-S Consistency of Interest (Q17-Q20)** — treat as partly weak/exploratory
+   - **Grit-S Consistency of Interest (Q17-Q20)** - treat as partly weak/exploratory
      in a short game. Score **return-to-task and unresolved non-return**, not mere
-     task-switching by itself — switching can be rational behaviour. Variables like
+     task-switching by itself - switching can be rational behaviour. Variables like
      `longitudinal_focus_proxy` must be flagged as weak/exploratory in any doc or
      comment describing them.
 6. **Q04 is cleanup/disorder, not planning-before-acting.** Confirm any Q04-linked
@@ -71,9 +71,9 @@ those failures before they're built, not after.
   inappropriate persistence (Section 6 explicitly forbids this).
 - Do not compute one global personality score or one global "good player" score.
 - Do not present a Goal-Time or Consistency-of-Interest variable as if it were a
-  validated, direct measure — it must carry an exploratory/weak-proxy label
+  validated, direct measure - it must carry an exploratory/weak-proxy label
   wherever it's documented or surfaced.
-- Do not treat raw time-on-task alone as "effort" or "persistence" — persistence
+- Do not treat raw time-on-task alone as "effort" or "persistence" - persistence
   must be tied to revision/re-engagement behaviour, not duration.
 - Do not design a mechanic whose difficulty depends on reading ability, puzzle
   skill, or motor dexterity in a way that would confound the intended construct
@@ -83,16 +83,16 @@ those failures before they're built, not after.
 
 For each construct-to-mechanic design decision, produce:
 
-1. **Construct(s)** — Q-item id(s), name, and room.
-2. **Proposed mechanic** — the in-fiction behavioural task, described in terms of
+1. **Construct(s)** - Q-item id(s), name, and room.
+2. **Proposed mechanic** - the in-fiction behavioural task, described in terms of
    what the player does, not the underlying construct.
-3. **Event names** — exact raw event names this mechanic will log, cross-checked
+3. **Event names** - exact raw event names this mechanic will log, cross-checked
    against Section 4/5 naming.
-4. **Derived variables** — which subindices/proxies this feeds, and their valence
+4. **Derived variables** - which subindices/proxies this feeds, and their valence
    (higher = better/worse/context-dependent).
-5. **Validity notes** — confounds, exploratory/weak-proxy labels, and anything that
+5. **Validity notes** - confounds, exploratory/weak-proxy labels, and anything that
    needs a validity caution in the room doc.
-6. **Wording check** — explicit confirmation that no player-facing text restates
+6. **Wording check** - explicit confirmation that no player-facing text restates
    questionnaire wording.
 
 Hand off actual implementation to `room-builder`, and logging/scoring
