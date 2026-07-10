@@ -17,6 +17,10 @@
 # docs/testing/ explicitly; raw session logs stay untracked)
 /.playwright-mcp
 
+# Playwright test runner output
+/test-results
+/playwright-report
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
