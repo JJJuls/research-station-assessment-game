@@ -88,15 +88,32 @@ events with correct `room_id: "dock_arrival"`).
 
 ## Implementation notes
 
-Current implementation (`dockArrivalTutorial` in `src/scenes/Main.tsx` /
-`src/data/researchInteractions.ts`) is a single proximity station with a 3-option
-prompt, not the movement-to-marker + first-interaction sequence V3's mini-game
-mechanics describe. Event names diverge from canonical (see
-`docs/research/event-schema.md`); `control_error_count` and
-`baseline_idle_seconds` have no current implementation at all. This room has the
-lowest implementation priority relative to the construct-mapped rooms, but it
-gates the "done test": _participant can move and interact before construct
-tasks begin_ — worth closing before relying on baseline covariates in analysis.
+**Implemented as a real room in Phase B of the V1 slice** (`src/scenes/DockScene.ts`,
+a `RoomScene` subclass; commit `d211ed8`): arrival spawn → station-AI movement
+instruction → highlighted movement marker → first terminal SPACE interaction →
+3-option readiness confirm/skip (legacy option set preserved verbatim).
+Canonical events `dock_started`, `movement_instruction_shown`, `first_movement`,
+`first_interaction` fire once per session (module-level guards that survive
+room transitions); `tutorial_completed` fires additively on every completion
+path with `metadata.skipped`/`metadata.path`; `control_error_count` fires once
+at completion with the aggregate in `metadata.count` (out-of-range SPACE
+presses). All events carry `study_item_ids: []` and no `construct_id`.
+
+**Open parameter (blocked, user decision required):** the idle watcher for
+`tutorial_help_shown` + `baseline_idle_seconds` is implemented but disabled
+(`DOCK_IDLE_HELP_THRESHOLD_MS = null` in DockScene) because no authoritative
+document defines the idle threshold or the exact "idle" definition. Supplying
+those values is a scientific decision — do not enable autonomously.
+
+The exit door to the Station Hub is sealed until the Hub exists (slice
+Phase C). The legacy single-station dock remains reachable via
+`?scene=prototype`. Visual-affordance note: ported rooms use the cyan
+interactable cue from the visual bible; the prototype scene keeps its original
+white-stroke markers during the transition period.
+
+Done test status: _participant can move and interact before construct tasks
+begin_ — **passes** (Playwright-verified, evidence in
+`docs/testing/slice-evidence/phaseB/`).
 
 ## Anti-leakage note
 
