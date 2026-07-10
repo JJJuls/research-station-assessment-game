@@ -69,6 +69,21 @@ interface LocalInteractionState {
   repairLastFailedSequence: string | null;
 }
 
+/**
+ * One-shot guards for the four canonical Dock / Arrival Bay baseline-control
+ * events (V3 §4 Room 0: dock_started, movement_instruction_shown,
+ * first_movement, first_interaction). Kept separate from
+ * LocalInteractionState because these guard baseline covariate logging that
+ * happens outside the station-prompt flow (scene entry, free movement),
+ * rather than prompt-option gating.
+ */
+interface DockBaselineState {
+  dockStartedLogged: boolean;
+  firstInteractionLogged: boolean;
+  firstMovementLogged: boolean;
+  movementInstructionShownLogged: boolean;
+}
+
 interface MpsStationConfig {
   interactionKey: MpsInteractionKey;
   label: string;
@@ -107,6 +122,12 @@ const CANONICAL_EVENT_CONTEXT: Partial<Record<string, CanonicalEventContext>> =
     dock_instruction_followed: { study_item_ids: [] },
     dock_movement_practiced: { study_item_ids: [] },
     dock_control_familiarisation: { study_item_ids: [] },
+    // Beat 3B.1 — canonical V3 §4 Room 0 baseline-control events, additive
+    // alongside the legacy dock_* events above (none renamed/removed/folded).
+    dock_started: { study_item_ids: [] },
+    movement_instruction_shown: { study_item_ids: [] },
+    first_movement: { study_item_ids: [] },
+    first_interaction: { study_item_ids: [] },
 
     // Archive Room (MASTER_33_ALIGNMENT.md Q13/Q22/Q23/Q26 "Events" columns).
     // success: false — docs/game/rooms/01-archive-room.md Task flow step 2:
@@ -245,6 +266,12 @@ interface MpsStationRuntime extends MpsStationConfig {
 export class Main extends Phaser.Scene {
   private activePrompt: ActivePrompt | null = null;
   private activeStation: MpsStationRuntime | null = null;
+  private dockBaselineState: DockBaselineState = {
+    dockStartedLogged: false,
+    firstInteractionLogged: false,
+    firstMovementLogged: false,
+    movementInstructionShownLogged: false,
+  };
   private feedbackMessage: Phaser.GameObjects.Text | null = null;
   private localState: LocalInteractionState = {
     archiveLastWrongCode: null,
@@ -327,6 +354,7 @@ export class Main extends Phaser.Scene {
       />,
       this,
     );
+    this.logMovementInstructionShownIfNeeded();
 
     this.input.keyboard!.on('keydown-ESC', () => {
       this.scene.pause(key.scene.main);
@@ -343,6 +371,7 @@ export class Main extends Phaser.Scene {
     )!;
 
     this.player = new Player(this, spawnPoint.x!, spawnPoint.y!);
+    this.logDockStartedIfNeeded();
     this.addPlayerSignInteraction();
     this.addMpsInteractions(spawnPoint.x!, spawnPoint.y!);
 
@@ -507,6 +536,8 @@ export class Main extends Phaser.Scene {
 
   private showMpsPrompt(interactionKey: MpsInteractionKey) {
     if (interactionKey === 'dockArrivalTutorial') {
+      this.logFirstDockInteractionIfNeeded();
+
       if (this.localState.dockArrivalTutorialCompleted) {
         this.showFeedbackMessage(
           'The dock tutorial has already been logged. Continue with the station tasks.',
@@ -1107,6 +1138,68 @@ export class Main extends Phaser.Scene {
     researchRuntime.sessionState.markRoomCompleted('dock_arrival');
   }
 
+  /**
+   * V3 §4 Room 0 baseline event: player enters the session at the Dock
+   * spawn. Logged once per Main instance, guarded by dockBaselineState.
+   */
+  private logDockStartedIfNeeded() {
+    if (this.dockBaselineState.dockStartedLogged) {
+      return;
+    }
+
+    this.dockBaselineState.dockStartedLogged = true;
+    this.logMpsEvent('dockArrivalTutorial', 'dock_started');
+  }
+
+  /**
+   * V3 §4 Room 0 baseline event: the movement/control instruction
+   * (the "WASD or arrow keys to move." typewriter intro) is displayed.
+   */
+  private logMovementInstructionShownIfNeeded() {
+    if (this.dockBaselineState.movementInstructionShownLogged) {
+      return;
+    }
+
+    this.dockBaselineState.movementInstructionShownLogged = true;
+    this.logMpsEvent('dockArrivalTutorial', 'movement_instruction_shown');
+  }
+
+  /**
+   * V3 §4 Room 0 baseline event: the player's first real movement of the
+   * session, detected from live player velocity rather than the
+   * "practice movement" dialogue option — that option logs the separate,
+   * unchanged dock_movement_practiced event.
+   */
+  private logFirstMovementIfNeeded() {
+    if (this.dockBaselineState.firstMovementLogged) {
+      return;
+    }
+
+    const { velocity } = this.player.body;
+
+    if (velocity.x === 0 && velocity.y === 0) {
+      return;
+    }
+
+    this.dockBaselineState.firstMovementLogged = true;
+    this.logMpsEvent('dockArrivalTutorial', 'first_movement');
+  }
+
+  /**
+   * V3 §4 Room 0 baseline event: the player's first successful Dock
+   * station interaction (in proximity range and pressed SPACE). Only
+   * reachable via showMpsPrompt('dockArrivalTutorial'), so an out-of-range
+   * SPACE press or a different station never triggers it.
+   */
+  private logFirstDockInteractionIfNeeded() {
+    if (this.dockBaselineState.firstInteractionLogged) {
+      return;
+    }
+
+    this.dockBaselineState.firstInteractionLogged = true;
+    this.logMpsEvent('dockArrivalTutorial', 'first_interaction');
+  }
+
   private markFinalCoreCompleted() {
     // One-shot guard prevents repeated final-core submissions from inflating integration scores.
     this.localState.finalCoreCompleted = true;
@@ -1217,6 +1310,7 @@ export class Main extends Phaser.Scene {
 
   update() {
     this.player.update();
+    this.logFirstMovementIfNeeded();
     this.updateMpsProximityPrompt();
   }
 }
