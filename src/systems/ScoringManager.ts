@@ -1,3 +1,4 @@
+import type { DataQualityMetrics } from './DataQualityTracker';
 import type { RawGameEvent } from './EventLogger';
 import type { SessionMetadata } from './SessionState';
 
@@ -8,6 +9,9 @@ export interface GameSummaryVariables {
   game_version: string;
   completed: boolean;
   elapsed_seconds: number;
+  data_quality_focus_loss_count: number;
+  data_quality_focus_loss_seconds: number;
+  data_quality_technical_error_count: number;
   game_persistence_total: number;
   game_difficulty_persistence: number;
   game_uncertainty_persistence: number;
@@ -65,6 +69,7 @@ export interface ComputeSummaryInput {
   elapsed_seconds: number;
   completed?: boolean;
   events?: readonly RawGameEvent[];
+  data_quality?: DataQualityMetrics;
 }
 
 export function computeSummary(
@@ -143,6 +148,7 @@ export function computeSummary(
     eventCounts.final_core_structured_completion > 0 ||
     eventCounts.final_core_high_quality_completion > 0;
   const finalCoreCompletionQuality = getFinalCoreCompletionQuality(eventCounts);
+  const dataQuality = input.data_quality;
 
   return {
     participant_id: input.metadata.participant_id,
@@ -151,6 +157,9 @@ export function computeSummary(
     game_version: input.metadata.game_version,
     completed: objectiveCompleted,
     elapsed_seconds: input.elapsed_seconds,
+    data_quality_focus_loss_count: dataQuality?.focus_loss_count ?? 0,
+    data_quality_focus_loss_seconds: dataQuality?.focus_loss_seconds ?? 0,
+    data_quality_technical_error_count: dataQuality?.technical_error_count ?? 0,
     game_persistence_total: gamePersistenceTotal,
     game_difficulty_persistence: gameDifficultyPersistence,
     game_uncertainty_persistence: gameUncertaintyPersistence,

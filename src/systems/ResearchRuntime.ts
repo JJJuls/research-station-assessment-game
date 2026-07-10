@@ -4,6 +4,7 @@ import { EventLogger } from './EventLogger';
 import { QualtricsBridge } from './QualtricsBridge';
 import type { GameSummaryVariables } from './ScoringManager';
 import { computeSummary } from './ScoringManager';
+import type { SessionMetadata } from './SessionState';
 import { SessionState } from './SessionState';
 
 interface DebugCompletionResult {
@@ -47,6 +48,7 @@ class ResearchRuntime {
       timestamp_ms: metadata.started_at_ms,
       scene: 'runtime',
       event_type: 'session_start',
+      ...this.buildContextFields(metadata),
     });
 
     this.installDeveloperHelper();
@@ -60,6 +62,7 @@ class ResearchRuntime {
       timestamp_ms: Date.now(),
       scene,
       event_type: 'scene_start',
+      ...this.buildContextFields(metadata),
     });
   }
 
@@ -73,14 +76,30 @@ class ResearchRuntime {
     state_before?: string;
     state_after?: string;
     score_delta?: Record<string, number>;
+    room_id?: string;
+    task_id?: string;
+    construct_id?: string;
+    study_item_ids?: string[];
+    choice_value?: string | number | null;
+    attempt_number?: number;
+    previous_state?: string;
+    new_state?: string;
+    success?: boolean | null;
+    metadata?: Record<string, unknown>;
   }) {
     const metadata = this.sessionState.getMetadata();
 
+    // Caller-supplied event-specific fields (event_type, scene, object_id,
+    // room_id, task_id, ...) are spread first so ResearchRuntime's own
+    // session-context fields always win on any key collision — session_id,
+    // timestamp_ms, and the buildContextFields() context are authoritative
+    // and must never be overridable by a caller.
     this.eventLogger.log({
-      session_id: metadata.game_session_id,
-      timestamp_ms: Date.now(),
       event_type: 'interaction',
       ...event,
+      session_id: metadata.game_session_id,
+      timestamp_ms: Date.now(),
+      ...this.buildContextFields(metadata),
     });
   }
 
@@ -90,7 +109,24 @@ class ResearchRuntime {
       elapsed_seconds: this.sessionState.getElapsedSeconds(),
       completed,
       events: this.eventLogger.getEvents(),
+      data_quality: this.dataQualityTracker.getMetrics(),
     });
+  }
+
+  /**
+   * Canonical launch/session context (V3 §3.2) that ResearchRuntime can
+   * always populate reliably from SessionState, regardless of caller — does
+   * not invent room_id/task_id/construct_id/study_item_ids/success/choice
+   * fields, which only the calling site (Main.tsx / future room code) knows.
+   */
+  private buildContextFields(metadata: SessionMetadata) {
+    return {
+      participant_id: metadata.participant_id,
+      game_session_id: metadata.game_session_id,
+      condition: metadata.condition,
+      game_version: metadata.game_version,
+      elapsed_seconds: this.sessionState.getElapsedSeconds(),
+    };
   }
 
   printSummary() {
@@ -131,6 +167,7 @@ class ResearchRuntime {
       timestamp_ms: Date.now(),
       scene: 'runtime',
       event_type: 'objective_completed',
+      ...this.buildContextFields(metadata),
     });
 
     const summary = this.getSummary(true);
