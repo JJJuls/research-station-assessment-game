@@ -12,6 +12,7 @@ import { researchRuntime } from '../systems';
  * no research station may disappear).
  */
 const SCENE_PARAM_TO_KEY: Record<string, string> = {
+  dock: key.scene.dock,
   prototype: key.scene.main,
 };
 
@@ -23,7 +24,8 @@ export function resolveStartSceneKey(): string {
     return SCENE_PARAM_TO_KEY[requested];
   }
 
-  return key.scene.main;
+  // Phase B: the connected world starts at the Dock / Arrival Bay.
+  return key.scene.dock;
 }
 
 /**

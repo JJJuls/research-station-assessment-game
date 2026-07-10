@@ -45,6 +45,20 @@ export const CANONICAL_EVENT_CONTEXT: Partial<
   movement_instruction_shown: { study_item_ids: [] },
   first_movement: { study_item_ids: [] },
   first_interaction: { study_item_ids: [] },
+  // Phase B (Beat 3) — remaining canonical V3 §4 Room 0 events, additive
+  // alongside the legacy dock_* events (event-schema.md §4 Dock table).
+  // All control/usability data: study_item_ids [], no construct_id.
+  // tutorial_completed carries metadata.skipped/metadata.path per the
+  // schema table's fold recommendations; control_error_count carries the
+  // aggregate count in metadata (payload placement documented in
+  // event-schema.md §4). baseline_idle_seconds is registered but NOT
+  // emitted until the user supplies the idle definition/threshold
+  // (approved plan §12 — missing scientific parameter, never chosen
+  // autonomously).
+  tutorial_completed: { study_item_ids: [] },
+  tutorial_help_shown: { study_item_ids: [] },
+  control_error_count: { study_item_ids: [] },
+  baseline_idle_seconds: { study_item_ids: [] },
 
   // Archive Room (MASTER_33_ALIGNMENT.md Q13/Q22/Q23/Q26 "Events" columns).
   // success: false — docs/game/rooms/01-archive-room.md Task flow step 2:

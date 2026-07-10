@@ -446,6 +446,13 @@ export abstract class RoomScene extends Phaser.Scene {
 
     if (this.activeTarget === null) {
       this.proximityPrompt.setVisible(false);
+
+      // Out-of-range interaction attempt: no target reachable. Rooms that
+      // track control errors (Dock baseline covariates) hook this.
+      if (Phaser.Input.Keyboard.JustDown(this.player.cursors.space)) {
+        this.onEmptyInteract();
+      }
+
       return;
     }
 
@@ -461,6 +468,9 @@ export abstract class RoomScene extends Phaser.Scene {
       }
     }
   }
+
+  /** SPACE pressed with no station/door in range. Default: no-op. */
+  protected onEmptyInteract(): void {}
 
   update() {
     this.player.update();
