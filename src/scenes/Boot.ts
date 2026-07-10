@@ -2,6 +2,7 @@ import { Scene } from 'phaser';
 
 import * as assets from '../assets';
 import { key } from '../constants';
+import { resolveStartSceneKey } from '../world';
 
 export class Boot extends Scene {
   constructor() {
@@ -19,6 +20,10 @@ export class Boot extends Scene {
   }
 
   create() {
-    this.scene.start(key.scene.main);
+    // Scene routing via ?scene= query param (SceneRouter). Default remains
+    // the prototype scene until the Dock room exists (plan Phase B);
+    // ?scene=prototype stays permanently routable so no prototype research
+    // station disappears before its room is ported.
+    this.scene.start(resolveStartSceneKey());
   }
 }
