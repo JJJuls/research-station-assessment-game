@@ -46,8 +46,16 @@ interface ActivePrompt {
   panel: Phaser.GameObjects.Container;
 }
 
-interface MpsState {
-  archiveCompleted: boolean;
+/**
+ * Room-local/transient interaction state: retry-comparison data, one-shot
+ * prompt guards, and prototype-only combined-objective tracking that no
+ * other room needs to read. Cross-room completion state now lives in
+ * SessionState's shared MissionState (researchRuntime.sessionState) — the
+ * mark*Completed() methods below update both this local guard and the
+ * shared MissionState.completed_rooms list, since they serve different
+ * purposes (local prompt gating vs. cross-room/Final-Core readable state).
+ */
+interface LocalInteractionState {
   archiveLastWrongCode: string | null;
   dockArrivalTutorialCompleted: boolean;
   engineerReportSubmitted: boolean;
@@ -57,7 +65,6 @@ interface MpsState {
   interruptionCorridorCompleted: boolean;
   objectiveCompleted: boolean;
   optionalSideRepairCompleted: boolean;
-  repairCompleted: boolean;
   repairLastFailedSequence: string | null;
 }
 
@@ -76,8 +83,7 @@ export class Main extends Phaser.Scene {
   private activePrompt: ActivePrompt | null = null;
   private activeStation: MpsStationRuntime | null = null;
   private feedbackMessage: Phaser.GameObjects.Text | null = null;
-  private mpsState: MpsState = {
-    archiveCompleted: false,
+  private localState: LocalInteractionState = {
     archiveLastWrongCode: null,
     dockArrivalTutorialCompleted: false,
     engineerReportSubmitted: false,
@@ -87,7 +93,6 @@ export class Main extends Phaser.Scene {
     interruptionCorridorCompleted: false,
     objectiveCompleted: false,
     optionalSideRepairCompleted: false,
-    repairCompleted: false,
     repairLastFailedSequence: null,
   };
   private mpsStations: MpsStationRuntime[] = [];
@@ -339,7 +344,7 @@ export class Main extends Phaser.Scene {
 
   private showMpsPrompt(interactionKey: MpsInteractionKey) {
     if (interactionKey === 'dockArrivalTutorial') {
-      if (this.mpsState.dockArrivalTutorialCompleted) {
+      if (this.localState.dockArrivalTutorialCompleted) {
         this.showFeedbackMessage(
           'The dock tutorial has already been logged. Continue with the station tasks.',
         );
@@ -350,7 +355,7 @@ export class Main extends Phaser.Scene {
     }
 
     if (interactionKey === 'finalCoreIntegration') {
-      if (this.mpsState.finalCoreCompleted) {
+      if (this.localState.finalCoreCompleted) {
         this.showFeedbackMessage(
           'The core interface has already logged the final integration decision.',
         );
@@ -365,7 +370,7 @@ export class Main extends Phaser.Scene {
     }
 
     if (interactionKey === 'engineerReportBack') {
-      if (this.mpsState.engineerReportSubmitted) {
+      if (this.localState.engineerReportSubmitted) {
         this.showFeedbackMessage(
           'Engineer Kai has already logged your report. Continue with the remaining station tasks.',
         );
@@ -376,7 +381,7 @@ export class Main extends Phaser.Scene {
     }
 
     if (interactionKey === 'inventoryPrepChecklist') {
-      if (this.mpsState.inventoryPrepCompleted) {
+      if (this.localState.inventoryPrepCompleted) {
         this.showFeedbackMessage(
           'The checklist system has already logged your preparation. Continue with the remaining station tasks.',
         );
@@ -387,7 +392,7 @@ export class Main extends Phaser.Scene {
     }
 
     if (interactionKey === 'optionalSideRepair') {
-      if (this.mpsState.optionalSideRepairCompleted) {
+      if (this.localState.optionalSideRepairCompleted) {
         this.showFeedbackMessage(
           'The maintenance bot has already logged your side repair decision. Continue with the remaining station tasks.',
         );
@@ -398,7 +403,7 @@ export class Main extends Phaser.Scene {
     }
 
     if (interactionKey === 'interruptionCorridor') {
-      if (this.mpsState.interruptionCorridorCompleted) {
+      if (this.localState.interruptionCorridorCompleted) {
         this.showFeedbackMessage(
           'The comms interruption has already been logged. Continue with the remaining station tasks.',
         );
@@ -471,9 +476,9 @@ export class Main extends Phaser.Scene {
             label: 'Enter access code A17',
             feedback: 'Access failed. Terminal feedback available.',
             getEventTypes: () => {
-              const didRepeat = this.mpsState.archiveLastWrongCode === 'A17';
+              const didRepeat = this.localState.archiveLastWrongCode === 'A17';
 
-              this.mpsState.archiveLastWrongCode = 'A17';
+              this.localState.archiveLastWrongCode = 'A17';
 
               return [
                 'archive_attempt',
@@ -497,7 +502,7 @@ export class Main extends Phaser.Scene {
               'archive_completed',
             ],
             onSelected: () => {
-              this.mpsState.archiveCompleted = true;
+              researchRuntime.sessionState.markRoomCompleted('archive_room');
               this.logObjectiveIfComplete();
             },
           },
@@ -768,9 +773,9 @@ export class Main extends Phaser.Scene {
             feedback: 'Repair failed. Manual may help.',
             getEventTypes: () => {
               const didRepeat =
-                this.mpsState.repairLastFailedSequence === 'default';
+                this.localState.repairLastFailedSequence === 'default';
 
-              this.mpsState.repairLastFailedSequence = 'default';
+              this.localState.repairLastFailedSequence = 'default';
 
               return [
                 'repair_attempt',
@@ -792,7 +797,9 @@ export class Main extends Phaser.Scene {
               'repair_completed',
             ],
             onSelected: () => {
-              this.mpsState.repairCompleted = true;
+              researchRuntime.sessionState.markRoomCompleted(
+                'systems_repair_room',
+              );
               this.logObjectiveIfComplete();
             },
           },
@@ -805,14 +812,14 @@ export class Main extends Phaser.Scene {
             feedback: 'Hazard details checked.',
             getEventTypes: () => ['hazard_info_checked'],
             onSelected: () => {
-              this.mpsState.hazardInfoChecked = true;
+              this.localState.hazardInfoChecked = true;
             },
           },
           {
             label: 'Continue through warning',
             feedback: 'You proceeded after checking hazard information.',
             getEventTypes: () => [
-              this.mpsState.hazardInfoChecked
+              this.localState.hazardInfoChecked
                 ? 'hazard_informed_continue'
                 : 'hazard_reckless_continue',
             ],
@@ -877,46 +884,54 @@ export class Main extends Phaser.Scene {
   }
 
   private logObjectiveIfComplete() {
+    const missionState = researchRuntime.sessionState.getMissionState();
+
     if (
-      this.mpsState.objectiveCompleted ||
-      !this.mpsState.archiveCompleted ||
-      !this.mpsState.repairCompleted
+      this.localState.objectiveCompleted ||
+      !missionState.completed_rooms.includes('archive_room') ||
+      !missionState.completed_rooms.includes('systems_repair_room')
     ) {
       return;
     }
 
-    this.mpsState.objectiveCompleted = true;
+    this.localState.objectiveCompleted = true;
     this.logMpsEvent('archiveAccessTerminal', 'objective_completed');
   }
 
   private markEngineerReportSubmitted() {
     // One-shot guard prevents repeated assessment submissions from inflating responsibility scores.
-    this.mpsState.engineerReportSubmitted = true;
+    this.localState.engineerReportSubmitted = true;
+    researchRuntime.sessionState.markRoomCompleted('engineer_hub');
   }
 
   private markDockArrivalTutorialCompleted() {
     // One-shot guard prevents repeated tutorial interactions from inflating baseline control variables.
-    this.mpsState.dockArrivalTutorialCompleted = true;
+    this.localState.dockArrivalTutorialCompleted = true;
+    researchRuntime.sessionState.markRoomCompleted('dock_arrival');
   }
 
   private markFinalCoreCompleted() {
     // One-shot guard prevents repeated final-core submissions from inflating integration scores.
-    this.mpsState.finalCoreCompleted = true;
+    this.localState.finalCoreCompleted = true;
+    researchRuntime.sessionState.markRoomCompleted('final_core_room');
   }
 
   private markInventoryPrepCompleted() {
     // One-shot guard prevents repeated assessment submissions from inflating organization scores.
-    this.mpsState.inventoryPrepCompleted = true;
+    this.localState.inventoryPrepCompleted = true;
+    researchRuntime.sessionState.markRoomCompleted('inventory_prep_room');
   }
 
   private markInterruptionCorridorCompleted() {
     // One-shot guard prevents repeated assessment submissions from inflating return-to-task scores.
-    this.mpsState.interruptionCorridorCompleted = true;
+    this.localState.interruptionCorridorCompleted = true;
+    researchRuntime.sessionState.markRoomCompleted('interruption_corridor');
   }
 
   private markOptionalSideRepairCompleted() {
     // One-shot guard prevents repeated assessment submissions from inflating productiveness scores.
-    this.mpsState.optionalSideRepairCompleted = true;
+    this.localState.optionalSideRepairCompleted = true;
+    researchRuntime.sessionState.markRoomCompleted('optional_side_repair_bay');
   }
 
   private addPrototypeInstruction() {
