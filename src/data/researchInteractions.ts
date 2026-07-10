@@ -4,6 +4,17 @@ export interface ResearchInteraction {
   episode: string;
   event_type: string;
   score_tags: string[];
+  /**
+   * Canonical V3 §3.2 `room_id` for this station, per the naming table in
+   * docs/research/event-schema.md §2. Unset for interactions that have no
+   * canonical room mapping (e.g. `sign`, a leftover template interaction).
+   */
+  room_id?: string;
+  /**
+   * Canonical V3 §3.2 `task_id`, set only where event-schema.md §2/§6
+   * documents an explicit canonical task_id string for this station.
+   */
+  task_id?: string;
 }
 
 export const researchInteractions = {
@@ -13,6 +24,8 @@ export const researchInteractions = {
     episode: 'mps_archive_access',
     event_type: 'archive_attempt',
     score_tags: ['difficulty_persistence'],
+    room_id: 'archive_room',
+    task_id: 'archive_code_entry',
   },
   dockArrivalTutorial: {
     object_id: 'dock_arrival_tutorial',
@@ -20,6 +33,7 @@ export const researchInteractions = {
     episode: 'control_dock_arrival',
     event_type: 'dock_tutorial_opened',
     score_tags: ['tutorial', 'control', 'movement', 'instruction_following'],
+    room_id: 'dock_arrival',
   },
   engineerReportBack: {
     object_id: 'engineer_report_back',
@@ -27,6 +41,8 @@ export const researchInteractions = {
     episode: 'bfi_responsibility_report',
     event_type: 'engineer_report_opened',
     score_tags: ['responsibility', 'dependability', 'organization'],
+    room_id: 'engineer_hub',
+    task_id: 'engineer_report_submission',
   },
   finalCoreIntegration: {
     object_id: 'final_core_integration',
@@ -40,6 +56,7 @@ export const researchInteractions = {
       'productiveness',
       'perseverance',
     ],
+    room_id: 'final_core_room',
   },
   hazardUncertaintyWarning: {
     object_id: 'hazard_uncertainty_warning',
@@ -47,6 +64,8 @@ export const researchInteractions = {
     episode: 'mps_hazard_uncertainty',
     event_type: 'hazard_warning_seen',
     score_tags: ['uncertainty_persistence'],
+    room_id: 'hazard_control_room',
+    task_id: 'hazard_route_decision',
   },
   inventoryPrepChecklist: {
     object_id: 'inventory_prep_checklist',
@@ -54,6 +73,7 @@ export const researchInteractions = {
     episode: 'bfi_organization_prep',
     event_type: 'inventory_prep_opened',
     score_tags: ['organization', 'preparation', 'prudence'],
+    room_id: 'inventory_prep_room',
   },
   interruptionCorridor: {
     object_id: 'interruption_corridor',
@@ -61,6 +81,7 @@ export const researchInteractions = {
     episode: 'grit_consistency_interruption',
     event_type: 'interruption_opened',
     score_tags: ['consistency', 'return_to_task', 'focus', 'task_switching'],
+    room_id: 'interruption_corridor',
   },
   optionalSideRepair: {
     object_id: 'optional_side_repair',
@@ -73,6 +94,7 @@ export const researchInteractions = {
       'perseverance',
       'optional_effort',
     ],
+    room_id: 'optional_side_repair_bay',
   },
   sign: {
     object_id: 'sign',
@@ -87,5 +109,7 @@ export const researchInteractions = {
     episode: 'mps_systems_repair',
     event_type: 'repair_attempt',
     score_tags: ['difficulty_persistence'],
+    room_id: 'systems_repair_room',
+    task_id: 'repair_sequence_selection',
   },
 } satisfies Record<string, ResearchInteraction>;
