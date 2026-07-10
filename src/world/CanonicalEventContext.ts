@@ -60,6 +60,13 @@ export const CANONICAL_EVENT_CONTEXT: Partial<
   control_error_count: { study_item_ids: [] },
   baseline_idle_seconds: { study_item_ids: [] },
 
+  // Station Hub (Phase C) — control/usability navigation area, NOT a V3
+  // assessment room; documented additively in event-schema.md §2. Never
+  // Q-mapped, never construct-scored (governance: approved plan §11).
+  station_hub_entered: { study_item_ids: [] },
+  station_hub_status_board_viewed: { study_item_ids: [] },
+  station_hub_sealed_door_attempted: { study_item_ids: [] },
+
   // Archive Room (MASTER_33_ALIGNMENT.md Q13/Q22/Q23/Q26 "Events" columns).
   // success: false — docs/game/rooms/01-archive-room.md Task flow step 2:
   // "Player attempts a code/query — the naive first attempt fails."

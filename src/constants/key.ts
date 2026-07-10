@@ -10,6 +10,7 @@ const image = {
 const scene = {
   boot: 'boot',
   dock: 'dock',
+  hub: 'hub',
   main: 'main',
   menu: 'menu',
 } as const;

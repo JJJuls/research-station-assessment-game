@@ -13,6 +13,7 @@ import { researchRuntime } from '../systems';
  */
 const SCENE_PARAM_TO_KEY: Record<string, string> = {
   dock: key.scene.dock,
+  hub: key.scene.hub,
   prototype: key.scene.main,
 };
 

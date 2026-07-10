@@ -56,6 +56,8 @@ export interface RoomDoorConfig {
   sealedMessage?: string;
   /** Event type logged on activation (documented in event-schema.md). */
   eventType?: string;
+  /** Metadata attached to the door event (e.g. { door: target room_id }). */
+  eventMetadata?: Record<string, unknown>;
   /** Interaction used for room_id/object_id context on door events. */
   interactionKey: InteractionKey;
 }
@@ -384,7 +386,13 @@ export abstract class RoomScene extends Phaser.Scene {
 
   private activateDoor(door: RoomDoorConfig) {
     if (door.eventType !== undefined) {
-      this.logRoomEvent(door.interactionKey, door.eventType);
+      this.logRoomEvent(
+        door.interactionKey,
+        door.eventType,
+        door.eventMetadata !== undefined
+          ? { metadata: door.eventMetadata }
+          : undefined,
+      );
     }
 
     if (door.target === undefined) {

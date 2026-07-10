@@ -96,6 +96,16 @@ export const researchInteractions = {
     ],
     room_id: 'optional_side_repair_bay',
   },
+  stationHub: {
+    object_id: 'station_hub_navigation',
+    label: 'Station Hub',
+    episode: 'control_station_hub',
+    event_type: 'station_hub_entered',
+    score_tags: ['control', 'navigation'],
+    // Control/usability navigation area, not a V3 assessment room — see
+    // event-schema.md §2 "station_hub" (additive). Never Q-mapped.
+    room_id: 'station_hub',
+  },
   sign: {
     object_id: 'sign',
     label: 'Welcome sign',

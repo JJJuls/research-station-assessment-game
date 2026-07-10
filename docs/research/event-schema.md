@@ -56,6 +56,19 @@ work is unambiguous when it happens. **No source code is changed by this beat.**
   `systems_repair_room`, `engineer_hub`, `inventory_prep_room`,
   `hazard_control_room`, `optional_side_repair_bay`, `interruption_corridor`,
   `final_core_room`.
+  - **`station_hub`** (additive, V1 slice Phase C) — the connecting
+    navigation area between the Dock and the assessment rooms. **Not a V3
+    assessment room and not Q-mapped**: it exists as control/usability data
+    only, under the same labelling rule as the Dock (V3 §1 rule 1). Every
+    `station_hub` event carries `study_item_ids: []` and no `construct_id`,
+    is excluded from all construct scoring (no ScoringManager formula may
+    reference a `station_hub` event name), and entering/re-entering the Hub
+    never re-fires assessment-room completion or Dock baseline events.
+    Hub event names (documented before/with the code that emits them):
+    `station_hub_entered` (each entry into the Hub),
+    `station_hub_status_board_viewed` (mission checklist board opened),
+    `station_hub_sealed_door_attempted` (sealed bulkhead interaction;
+    `metadata.door` carries the target room's `room_id`).
 - **`task_id`** — lowercase snake_case, scoped to the room (e.g.
   `archive_code_entry`, `repair_sequence_selection`, `engineer_report_submission`).
 - **`event_type`** — lowercase snake*case, `<room_prefix>*<verb_or_state>`(e.g.`archive_wrong_code`, `repair_manual_used`, `hazard_reckless_continue`). Prefer

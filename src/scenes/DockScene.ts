@@ -64,8 +64,15 @@ export class DockScene extends RoomScene {
     };
   }
 
-  protected getSpawn(): { x: number; y: number } {
-    // Bottom-center, just inside the arrival airlock.
+  protected getSpawn(data?: { spawn?: string }): { x: number; y: number } {
+    // Returning from the Hub spawns just inside the top door; a fresh
+    // arrival spawns bottom-center, just inside the arrival airlock.
+    // Just outside the hub door's 72px interaction radius (no accidental
+    // immediate bounce-back on SPACE).
+    if (data?.spawn === 'station_hub') {
+      return { x: 12 * 32, y: 4 * 32 };
+    }
+
     return { x: 12 * 32, y: 11 * 32 };
   }
 
@@ -95,14 +102,17 @@ export class DockScene extends RoomScene {
       },
     });
 
-    // Sealed door to the Station Hub (opens in Phase C).
+    // Door to the Station Hub (opened in Phase C).
     this.addDoor({
       x: 12 * 32 - 16,
       y: 1 * 32 + 16,
       label: 'Station Hub',
       interactionKey: 'dockArrivalTutorial',
-      sealedMessage:
-        'Station Hub airlock is still pressurising — clearance pending.',
+      target: {
+        sceneKey: key.scene.hub,
+        roomId: 'station_hub',
+        spawn: 'dock_arrival',
+      },
     });
 
     // Highlighted movement target (V3 Room 0 mini-game: "movement to
