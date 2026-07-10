@@ -8,6 +8,7 @@ const image = {
 } as const;
 
 const scene = {
+  archive: 'archive',
   boot: 'boot',
   dock: 'dock',
   hub: 'hub',

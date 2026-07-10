@@ -1,3 +1,4 @@
+export * from './ArchiveScene';
 export * from './Boot';
 export * from './DockScene';
 export * from './HubScene';

@@ -93,12 +93,68 @@ instead of a duplicate `archive_wrong_code`.
 
 ## Implementation notes
 
-Contract status: "already partly implemented in the prototype. Fable must audit
-before rewriting" — confirmed true in Beat 0. Preserve the existing
-wrong-code/feedback/revision logic; the missing pieces are
-`archive_room_entered`, `archive_terminal_opened`, `archive_feedback_shown`
-(distinct from `_used`), `archive_log_compared`, `archive_abandoned`, and
-`archive_returned_after_failure` — additive event logging, not a rewrite.
+**Implemented as a real room in Phase D of the V1 slice**
+(`src/scenes/ArchiveScene.ts`, a `RoomScene` subclass): terminal alcove, log
+shelves (the canonical "optional log comparison step" → `archive_log_compared`),
+and a Hub door supporting the leave/return path. The prototype's
+wrong-code/feedback/revision logic was ported verbatim (labels, feedback
+strings, event sequences, `didRepeat` check); all previously-missing canonical
+events now fire additively. The prototype station remains reachable via
+`?scene=prototype`.
+
+### Forced-failure manipulation record (approved plan §12)
+
+- **Authority:** V3 §4 Room 1 ("The first or naive attempt fails. Feedback is
+  shown.") and this doc's task flow step 2.
+- **Triggering rule:** access code A17 is deterministically incorrect on every
+  submission for every participant; no randomisation exists in the scene; the
+  first outcome cannot vary between participants in a condition.
+- **Measured post-setback behaviour:** revise (`archive_strategy_revision`),
+  repeat identical wrong code (`archive_same_wrong_code_repeated` — never
+  merged with adaptive variables), use feedback/logs (`archive_feedback_used`,
+  `archive_log_compared`), leave unresolved (`archive_abandoned`), return
+  (`archive_returned_after_failure`), complete (`archive_completed`).
+- **Puzzle-ability control:** labelled option selection (no free-text); wrong-
+  code feedback and log-shelf text are plainly readable and in-fiction.
+- **Pilot/debrief implications:** the scripted first failure is mild deception
+  (a failing default presented as real); the study debrief must disclose that
+  the first failure was standardized for all participants; pilot testing must
+  confirm the feedback text is comprehensible (comprehension failure would
+  confound the setback response).
+
+### Event-mapping status (Phase D)
+
+- 5 pre-existing mapped events: byte-identical mappings preserved (verified
+  by research-data-reviewer, no drift).
+- `archive_abandoned` → `study_item_ids: ["Q24"]`,
+  `archive_returned_after_failure` → `["Q24","Q25"]` per
+  MASTER_33_ALIGNMENT's Events columns. **`construct_id` deliberately unset
+  for both — PENDING psychometric decision** (abandonment is disengagement
+  evidence; assigning it to `adaptive_persistence` would be wrong-signed;
+  routed to the user / psychometric-task-design).
+- `archive_room_entered`, `archive_terminal_opened`, `archive_code_entered`,
+  `archive_feedback_shown`, `archive_log_compared`: in no Q-row Events
+  column → carry `room_id`/`task_id` only (no invented mappings).
+
+### Reviewer-confirmed behaviour notes
+
+- `archive_abandoned` requires a prior failed attempt (leaving with zero
+  attempts logs nothing) — narrower than this doc's edge-case sentence but the
+  scientifically defensible reading of Q24 (setback required). **Pending user
+  confirmation**; update the edge-case wording if approved.
+- Option 3 (revised query) is selectable before any failure, so completion
+  without experiencing the manipulation is possible — ported prototype design,
+  flagged for the refinement beat (`psychometric-task-design`).
+- Room-transit events reuse the terminal's `object_id`
+  (`archive_access_terminal`) — cosmetic; interpret via `event_type`.
+
+Done test (fail → feedback → revise → complete, plus repeat-wrong-code
+variant): **passes in the connected world** (Playwright-verified; adaptive
+summary `strategy_revision_count=1, game_inappropriate_persistence=0`;
+maladaptive summary `blind_retry_count=1, game_inappropriate_persistence=1,
+strategy_revision_count=0`; abandon/return cycle logs exactly one
+`archive_abandoned` + one `archive_returned_after_failure`). Evidence:
+`docs/testing/slice-evidence/phaseD/`.
 
 ## Anti-leakage note
 

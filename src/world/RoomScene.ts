@@ -403,9 +403,16 @@ export abstract class RoomScene extends Phaser.Scene {
       return;
     }
 
+    // Exit hook fires before the transition so rooms can log
+    // leave-in-progress states (e.g. archive_abandoned) with the player
+    // still positioned in the room.
+    this.onRoomExit();
     this.transitioning = true;
     transitionToRoom(this, door.target);
   }
+
+  /** Called once when an open door is activated, before the transition. */
+  protected onRoomExit(): void {}
 
   private updateProximity() {
     if (

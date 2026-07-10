@@ -27,6 +27,17 @@ export const researchInteractions = {
     room_id: 'archive_room',
     task_id: 'archive_code_entry',
   },
+  archiveLogShelves: {
+    object_id: 'archive_log_shelves',
+    label: 'Archive Log Shelves',
+    episode: 'mps_archive_access',
+    // Canonical V3 §4 Room 1 mini-game mechanic: "optional log comparison
+    // step". Same room/task as the terminal; distinct object.
+    event_type: 'archive_log_compared',
+    score_tags: ['difficulty_persistence'],
+    room_id: 'archive_room',
+    task_id: 'archive_code_entry',
+  },
   dockArrivalTutorial: {
     object_id: 'dock_arrival_tutorial',
     label: 'Dock AI - Arrival Tutorial',

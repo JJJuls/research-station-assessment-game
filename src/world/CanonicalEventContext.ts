@@ -106,6 +106,22 @@ export const CANONICAL_EVENT_CONTEXT: Partial<
     study_item_ids: ['Q06', 'Q13'],
     success: true,
   },
+  // Phase D (research-data-reviewer finding F1): these two events ARE
+  // listed in MASTER_33_ALIGNMENT.md's Events columns — Q24 lists both
+  // (line "Q24 | PDD / not discouraged by setbacks"), Q25 lists
+  // archive_returned_after_failure — so study_item_ids follow the matrix
+  // per this map's population rule. construct_id is intentionally left
+  // unset for both: Q24/Q25 sit in the adaptive-persistence family, but
+  // abandonment is disengagement evidence, not adaptive persistence — the
+  // construct assignment is a psychometric decision routed to the user/
+  // psychometric-task-design, not auto-assigned (approved plan §13.1b).
+  // No source assigns a success value to either event; omitted.
+  archive_abandoned: {
+    study_item_ids: ['Q24'],
+  },
+  archive_returned_after_failure: {
+    study_item_ids: ['Q24', 'Q25'],
+  },
 
   // Systems Repair Room (MASTER_33_ALIGNMENT.md Q06/Q14/Q21/Q22/Q23/Q26).
   // success: false — docs/game/rooms/02-systems-repair-room.md Task flow

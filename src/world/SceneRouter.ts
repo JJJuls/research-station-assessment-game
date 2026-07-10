@@ -12,6 +12,7 @@ import { researchRuntime } from '../systems';
  * no research station may disappear).
  */
 const SCENE_PARAM_TO_KEY: Record<string, string> = {
+  archive: key.scene.archive,
   dock: key.scene.dock,
   hub: key.scene.hub,
   prototype: key.scene.main,

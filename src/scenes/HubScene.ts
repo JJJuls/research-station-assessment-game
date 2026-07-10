@@ -75,7 +75,13 @@ export class HubScene extends RoomScene {
     // bulkhead (fiction-consistent, control/usability logging only).
     const doors: HubDoorSpec[] = [
       // Top wall doorways (centers of the '--' pairs), left to right:
-      { label: 'Archive', roomId: 'archive_room', x: 4 * 32, y: 1 * 32 + 16 },
+      {
+        label: 'Archive',
+        roomId: 'archive_room',
+        x: 4 * 32,
+        y: 1 * 32 + 16,
+        targetSceneKey: key.scene.archive,
+      },
       {
         label: 'Systems Repair',
         roomId: 'systems_repair_room',
