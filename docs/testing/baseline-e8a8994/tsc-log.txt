@@ -1,0 +1,4 @@
+
+> phaser-rpg@1.0.0-alpha lint:tsc
+> tsc --noEmit
+

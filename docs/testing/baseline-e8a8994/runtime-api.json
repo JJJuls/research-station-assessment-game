@@ -1,0 +1,43 @@
+{
+  "capturedAt": "2026-07-11",
+  "commit": "e8a8994",
+  "note": "window.researchRuntime own-property surface in DEV mode, enumerated in-browser via Playwright MCP browser_evaluate. Prototype-chain entries (Object.prototype) excluded.",
+  "apiSurface": {
+    "completeDebugSession": "function",
+    "exportEventsJSON": "function",
+    "getEvents": "function",
+    "getSummary": "function",
+    "printEvents": "function",
+    "printSummary": "function"
+  },
+  "bootEventTypes": [
+    "session_start",
+    "scene_start",
+    "dock_started",
+    "movement_instruction_shown"
+  ],
+  "rawEventFieldOrder": [
+    "session_id",
+    "timestamp_ms",
+    "scene",
+    "event_type",
+    "participant_id",
+    "game_session_id",
+    "condition",
+    "game_version",
+    "elapsed_seconds",
+    "score_delta",
+    "study_item_ids",
+    "metadata"
+  ],
+  "launchParamCheck": {
+    "url": "?participant_id=BASELINE_P1&game_session_id=BASELINE_S1&condition=baseline&game_version=e8a8994&return_url=https%3A%2F%2Fexample.org%2Freturn",
+    "reflected": {
+      "session_id": "BASELINE_S1",
+      "participant_id": "BASELINE_P1",
+      "game_session_id": "BASELINE_S1",
+      "condition": "baseline",
+      "game_version": "e8a8994"
+    }
+  }
+}
