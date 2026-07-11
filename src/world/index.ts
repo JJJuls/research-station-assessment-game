@@ -7,6 +7,14 @@ export type {
   RoomStationConfig,
 } from './RoomScene';
 export { RoomScene, runOncePerSession } from './RoomScene';
+export type { FailedTaskState, RoomTaskStateHandle } from './roomTaskState';
+export {
+  createFailedTaskState,
+  createRoomTaskState,
+  recordFailedAttempt,
+  shouldLogAbandonedOnExit,
+  shouldLogReturnedOnEnter,
+} from './roomTaskState';
 export type { RoomTransitionTarget } from './SceneRouter';
 export {
   isSceneRouteRegistered,
