@@ -9,7 +9,7 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 ## Current status
 
-- **Last commit**: `6afac6b` — U5 registry-driven Hub status board
+- **Last commit**: `9bbb5cc` — U6 e2e station-driving fixtures
 - **Completed**:
   1. `dd498f2` — `REMAINING-STATION-INVENTORY.md` (7 stations: sources,
      study_item_ids, construct_ids, semantics, legacy+canonical events,
@@ -59,12 +59,27 @@ Live checkpoint file. Updated after every commit. Newest entry first.
      exposes every V3 §3.1 field + setter, and status vocabularies are
      room-beat decisions per its documented rule — pre-building wrappers
      would invent vocabulary. Build + tsc PASS.
-- **Exact next action**: implement **U6 — reusable acceptance-test
-  fixtures**: extend `e2e/helpers.ts` with room-driving fixtures (navigate
-  Dock→Hub→room via registry route param, open station prompt, select
-  option k, read events via `window.researchRuntime`). Compile-checked only
-  (Playwright execution disabled this session). Then station beat 1:
-  Systems Repair Room via room-builder discipline.
+  9. `9bbb5cc` — **U6**: `e2e/helpers.ts` gains `hubToStationDoor` (8
+     door-ring routes, wall-clamp choreography; sealed-room routes must be
+     tuned in each room's verification pass), exported `waitForRoomEntry`,
+     `selectPromptOption`, `findEvent(s)`, `eventContext`. Compile-checked
+     only (Playwright disabled this session). tsc + build PASS.
+
+**Shared-architecture phase (U1–U6) complete.**
+
+- **Exact next action**: **Station beat 1 — Systems Repair Room**
+  (room-builder discipline): reconfirm `docs/game/rooms/02-systems-repair-room.md`;
+  port audit-first from `Main.tsx` case `'systemsRepairFailure'` (legacy
+  events/labels/feedback/didRepeat verbatim) as `RepairScene extends
+RoomScene` using U2 `FailedTaskState` helpers; additive canonical events
+  `repair_room_entered`, `repair_panel_opened`, `repair_sequence_submitted`,
+  `repair_manual_opened`, `manual_page_reviewed`, `repair_abandoned`,
+  `repair_returned_after_failure` (task_started SKIPPED — doc conflict, see
+  Unresolved issues); flip registry entry (sceneKey `repair`, route param
+  `repair`, statusBoardLabel); keep `objective_completed` prototype
+  semantics via session-level guard; add `repair_room_logging.spec.ts`
+  (compile-only). Build + tsc; commit; update room doc + this file; then
+  stop-check before Engineer Hub beat.
 
 ## Unresolved issues (user-owned; never decided autonomously)
 
@@ -94,3 +109,5 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 | `a57bab4` | U4     | Canonical event registrations |
 | `20d6bff` | Docs   | State checkpoint after U4     |
 | `6afac6b` | U5     | Registry-driven status board  |
+| `cc8d597` | Docs   | State checkpoint after U5     |
+| `9bbb5cc` | U6     | e2e station-driving fixtures  |
