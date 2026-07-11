@@ -11,6 +11,7 @@ const scene = {
   archive: 'archive',
   boot: 'boot',
   dock: 'dock',
+  engineer: 'engineer',
   hub: 'hub',
   main: 'main',
   menu: 'menu',

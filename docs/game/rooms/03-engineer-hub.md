@@ -107,6 +107,29 @@ Section 3.1), not just an event rename — flag as a priority item for whichever
 beat implements this room, consistent with the contract's "very high" priority
 note.
 
+**Wave 1A status (2026-07-12)**: room implemented as `EngineerScene`
+(`src/scenes/EngineerScene.ts`, `?scene=engineer`, Hub door open via the
+station registry). Report path ported audit-first: legacy option labels,
+feedback strings, event sequences (including the unmapped
+`engineer_report_submitted_supervised` and the derived-style
+`engineer_responsibility_*` events), Kai's prompt body, and the exact
+already-submitted gate text preserved verbatim; one-shot guard now
+session-level via `completed_rooms`. **Supervision duty implemented**: after
+any report submission a chained prompt stage (U3) offers the relay
+supervision duty — `engineer_supervision_assigned` on offer;
+accept → `engineer_supervision_accepted` (Q10, responsibility) +
+`SessionState.addAcceptedDuty('relay_supervision')` + active objective;
+decline → `engineer_supervision_declined` + `addSkippedDuty`, framed as a
+plausible workload decision with no penalty. The report option's legacy
+feedback string is displayed verbatim as the first paragraph of the duty
+stage body (U3 suppresses the toast when a stage chains). Duty
+completion/skip and `accepted_duty_unresolved` are **deferred to the Final
+Core beat** — the contract places the follow-through check "at Final Core or
+related station point"; inventing an earlier check would be an undocumented
+scientific decision. Additive `engineer_hub_entered` on every entry.
+Playwright spec `e2e/engineer_hub_logging.spec.ts` authored compile-only —
+**runtime/browser verification still owed** before any "works" claim.
+
 ## Anti-leakage note
 
 No responsibility/dependability item wording (Q09-Q11) may appear in Kai's

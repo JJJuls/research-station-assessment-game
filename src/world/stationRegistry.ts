@@ -75,8 +75,10 @@ export const STATION_REGISTRY: readonly StationRegistration[] = [
     roomId: 'engineer_hub',
     label: 'Engineer Hub',
     routeParam: 'engineer',
+    sceneKey: key.scene.engineer,
     hubDoor: { x: 16 * 32, y: 1 * 32 + 16 },
     hubSpawn: { x: 16 * 32, y: 4 * 32 },
+    statusBoardLabel: 'Engineer report',
   },
   {
     roomId: 'inventory_prep_room',
