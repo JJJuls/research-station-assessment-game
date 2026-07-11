@@ -102,7 +102,7 @@ export async function getSummary(page: Page): Promise<Record<string, unknown>> {
  * arrow key is partially swallowed and the route silently under-shoots
  * (observed as the hub status board eating the archive-door SPACE).
  */
-async function waitForRoomEntry(page: Page, eventType: string) {
+export async function waitForRoomEntry(page: Page, eventType: string) {
   await page.waitForFunction(
     (type) =>
       (
@@ -146,4 +146,125 @@ export async function hubToArchive(page: Page) {
 export async function openArchiveTerminal(page: Page) {
   await hold(page, 'ArrowUp', 900);
   await press(page, 'Space');
+}
+
+/* ————————————————————————————————————————————————————————————————————
+ * Wave 1A (U6) reusable room fixtures.
+ *
+ * Hub door-ring routes for the remaining stations, mirroring the verified
+ * hubToArchive pattern: every route starts with wall clamps (position-
+ * independent, load-robust), then one short tolerance leg to the door.
+ * Door coordinates come from src/world/stationRegistry.ts. Routes for
+ * still-sealed rooms are choreography prepared ahead of their build beat —
+ * each room's playwright-game-verify pass MUST tune/verify its route
+ * before the room's spec is trusted (this session is compile-only).
+ * ———————————————————————————————————————————————————————————————————— */
+
+/** Canonical room_ids for the door-ring stations (registry order). */
+export type HubStationRoomId =
+  | 'archive_room'
+  | 'systems_repair_room'
+  | 'engineer_hub'
+  | 'inventory_prep_room'
+  | 'hazard_control_room'
+  | 'optional_side_repair_bay'
+  | 'interruption_corridor'
+  | 'final_core_room';
+
+/**
+ * Walks from anywhere in the Hub to the given station door and presses
+ * SPACE. Does NOT wait for a room-entry event (sealed doors only log
+ * station_hub_sealed_door_attempted; entry event names are per-room) —
+ * compose with waitForRoomEntry(page, '<room>_entered') once the room
+ * exists.
+ */
+export async function hubToStationDoor(page: Page, roomId: HubStationRoomId) {
+  switch (roomId) {
+    // Top-wall doors, from the north-west corner clamp:
+    case 'archive_room': // door x 128
+      await hold(page, 'ArrowLeft', 2400);
+      await hold(page, 'ArrowUp', 2600);
+      await hold(page, 'ArrowRight', 500);
+      break;
+    case 'systems_repair_room': // door x 320 (~238 px from corner)
+      await hold(page, 'ArrowLeft', 2400);
+      await hold(page, 'ArrowUp', 2600);
+      await hold(page, 'ArrowRight', 1500);
+      break;
+    // Top-wall doors nearer the north-east corner clamp:
+    case 'engineer_hub': // door x 512 (~238 px from east corner)
+      await hold(page, 'ArrowRight', 3000);
+      await hold(page, 'ArrowUp', 2600);
+      await hold(page, 'ArrowLeft', 1500);
+      break;
+    case 'inventory_prep_room': // door x 704 (~46 px from east corner)
+      await hold(page, 'ArrowRight', 3000);
+      await hold(page, 'ArrowUp', 2600);
+      await hold(page, 'ArrowLeft', 400);
+      break;
+    // Left-wall doors, from the north-west corner clamp (door x 24 is
+    // inside the wall; the west clamp already puts the player in x-range):
+    case 'hazard_control_room': // door y 208 (~126 px below corner)
+      await hold(page, 'ArrowLeft', 2400);
+      await hold(page, 'ArrowUp', 2600);
+      await hold(page, 'ArrowDown', 800);
+      break;
+    case 'optional_side_repair_bay': // door y 304 (~222 px below corner)
+      await hold(page, 'ArrowLeft', 2400);
+      await hold(page, 'ArrowUp', 2600);
+      await hold(page, 'ArrowDown', 1400);
+      break;
+    // Right-wall doors, mirrored:
+    case 'interruption_corridor': // door y 208
+      await hold(page, 'ArrowRight', 3000);
+      await hold(page, 'ArrowUp', 2600);
+      await hold(page, 'ArrowDown', 800);
+      break;
+    case 'final_core_room': // door y 304
+      await hold(page, 'ArrowRight', 3000);
+      await hold(page, 'ArrowUp', 2600);
+      await hold(page, 'ArrowDown', 1400);
+      break;
+  }
+
+  await press(page, 'Space');
+}
+
+/**
+ * Selects a numbered prompt option (U3 renderer: numeric keys in declared
+ * option order, 1-based).
+ */
+export async function selectPromptOption(page: Page, optionNumber: number) {
+  await press(page, `${optionNumber}`);
+}
+
+/** First event of the given type, or undefined. */
+export function findEvent(
+  events: RawEventLike[],
+  eventType: string,
+): RawEventLike | undefined {
+  return events.find((e) => e.event_type === eventType);
+}
+
+/** All events of the given type, in log order. */
+export function findEvents(
+  events: RawEventLike[],
+  eventType: string,
+): RawEventLike[] {
+  return events.filter((e) => e.event_type === eventType);
+}
+
+/**
+ * Asserts-by-return the canonical context of one logged event; specs
+ * compare against the committed CANONICAL_EVENT_CONTEXT values (study
+ * item ids / construct / success are frozen scientific data — specs must
+ * always pin them exactly, never loosely).
+ */
+export function eventContext(event: RawEventLike | undefined) {
+  return {
+    room_id: event?.room_id,
+    study_item_ids: event?.study_item_ids,
+    construct_id: event?.construct_id,
+    success: event?.success,
+  };
 }
