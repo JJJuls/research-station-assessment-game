@@ -9,7 +9,7 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 ## Current status
 
-- **Last commit**: `cb9eabf` — U3 N-option/multi-stage prompts
+- **Last commit**: `a57bab4` — U4 canonical event-context registrations
 - **Completed**:
   1. `dd498f2` — `REMAINING-STATION-INVENTORY.md` (7 stations: sources,
      study_item_ids, construct_ids, semantics, legacy+canonical events,
@@ -40,20 +40,26 @@ Live checkpoint file. Updated after every commit. Newest entry first.
      chained follow-up stages; ≤3-option prompts byte-identical to V1 slice
      (panel 560×230, "Press 1, 2, or 3 to choose."). Files:
      `src/world/RoomScene.ts`, `src/world/index.ts`. Build + tsc PASS.
-- **Exact next action**: implement **U4 — canonical event-context
-  registrations** in `src/world/CanonicalEventContext.ts` for the remaining
-  stations' matrix-listed canonical events, following the committed
-  population rule: `study_item_ids` = union of MASTER_33_ALIGNMENT Events-
-  column rows listing the event; `construct_id` only where all listing rows
-  share one documented construct; dual-listed or valence-mismatched events
-  left unset with source comments (precedents: `archive_completed`,
-  `hazard_info_checked`, `archive_abandoned`); no `success` values (no
-  documented examples). Skip as ambiguous (documented, not guessed):
-  `task_started` (V3 §5 lists under Q05+Q15, MASTER mirror under Q05 only),
-  `objective_completed` (V3 §5 Q06 lists it, MASTER mirror dropped it).
-  Registration ≠ emission — nothing fires until its room beat.
-- **Then**: U5 mission-state helpers → U6 e2e fixtures → station beats in
-  plan order (Repair first).
+  7. `a57bab4` — **U4**: ~40 canonical registrations added to
+     `CanonicalEventContext.ts` per the population rule. construct_id unset
+     (documented) for: `inventory_verification_skipped` (Q02+Q30),
+     `side_repair_accepted` (Q07+Q16+Q20), `side_repair_step_completed`
+     (Q07+Q16), `interruption_received` (Q15+Q17), `final_core_rushed`
+     (Q11+Q33), `final_core_completed` (Q06+Q33), `repair_abandoned` /
+     `repair_returned_after_failure` (F1 precedent),
+     `issue_resolution_attempted` (valence mismatch vs Q28). Skipped as
+     doc-conflict: `task_started`, `objective_completed`. Deferred to room
+     beats (live prototype emissions, Phase-0 baseline protection):
+     `side_repair_completed`, `final_core_status_reviewed`. Build + tsc
+     PASS.
+- **Exact next action**: implement **U5 — cross-room mission-state
+  helpers**: documented write/read surface over SessionState's unused V3
+  §3.1 fields (`prepared_items`, `workspace_status`, `hazard_status`,
+  `side_repair_status`, `interruption_status`, duties) for upstream writers
+  and the Final Core reader; status vocabularies stay open strings per
+  SessionState's documented rule. No ScoringManager/QualtricsBridge
+  changes. Build + tsc; commit; update this file.
+- **Then**: U6 e2e fixtures → station beats in plan order (Repair first).
 
 ## Unresolved issues (user-owned; never decided autonomously)
 
@@ -79,3 +85,5 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 | `72c6bc9` | U2     | Room task-state factory       |
 | `35599ac` | Docs   | State checkpoint after U2     |
 | `cb9eabf` | U3     | N-option/multi-stage prompts  |
+| `ffc817b` | Docs   | State checkpoint after U3     |
+| `a57bab4` | U4     | Canonical event registrations |
