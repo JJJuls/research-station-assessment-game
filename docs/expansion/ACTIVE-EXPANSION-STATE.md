@@ -9,7 +9,7 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 ## Current status
 
-- **Last commit**: `9bbb5cc` — U6 e2e station-driving fixtures
+- **Last commit**: `26379ce` — Station beat 1: Systems Repair Room
 - **Completed**:
   1. `dd498f2` — `REMAINING-STATION-INVENTORY.md` (7 stations: sources,
      study_item_ids, construct_ids, semantics, legacy+canonical events,
@@ -67,19 +67,33 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 **Shared-architecture phase (U1–U6) complete.**
 
-- **Exact next action**: **Station beat 1 — Systems Repair Room**
-  (room-builder discipline): reconfirm `docs/game/rooms/02-systems-repair-room.md`;
-  port audit-first from `Main.tsx` case `'systemsRepairFailure'` (legacy
-  events/labels/feedback/didRepeat verbatim) as `RepairScene extends
-RoomScene` using U2 `FailedTaskState` helpers; additive canonical events
-  `repair_room_entered`, `repair_panel_opened`, `repair_sequence_submitted`,
-  `repair_manual_opened`, `manual_page_reviewed`, `repair_abandoned`,
-  `repair_returned_after_failure` (task_started SKIPPED — doc conflict, see
-  Unresolved issues); flip registry entry (sceneKey `repair`, route param
-  `repair`, statusBoardLabel); keep `objective_completed` prototype
-  semantics via session-level guard; add `repair_room_logging.spec.ts`
-  (compile-only). Build + tsc; commit; update room doc + this file; then
-  stop-check before Engineer Hub beat.
+10. `26379ce` — **Station beat 1: Systems Repair Room.** `RepairScene`
+    (`?scene=repair`, Hub door open, registry flip, statusBoardLabel
+    'Systems repair'); audit-first port, legacy events verbatim; additive
+    canonical events incl. abandon/return via U2 helpers; new
+    `repairManualStation` interactable (`repair_manual_opened` +
+    `manual_page_reviewed`); `task_started` NOT emitted (doc conflict —
+    unresolved issue 8); `objective_completed` connected-world parity via
+    `RoomScene.logObjectiveCompletedIfBothDone()` (called from Archive +
+    Repair completion; archive-terminal payload context preserved);
+    `e2e/repair_room_logging.spec.ts` authored compile-only. Room doc +
+    event-schema §4 updated. Build + tsc PASS. **Runtime/browser
+    verification owed** (Playwright disabled this session) — room is
+    implemented, not yet verified "working".
+
+- **Exact next action**: **Station beat 2 — Engineer Hub** (room-builder
+  discipline): reconfirm `docs/game/rooms/03-engineer-hub.md`; port report
+  path audit-first (legacy events/labels verbatim, incl.
+  `engineer_report_submitted_supervised` unmapped); additive canonical
+  `engineer_hub_entered`; build the supervision-duty mechanic per V3 §4
+  Room 3 (duty offer via U3 `nextStage` after report submission:
+  accept → `engineer_supervision_assigned`+`engineer_supervision_accepted`
+  - SessionState.addAcceptedDuty + addActiveObjective; decline →
+    `engineer_supervision_declined` + addSkippedDuty, no penalty); duty
+    completion/skip and `accepted_duty_unresolved` emission DEFERRED to the
+    Final Core beat (contract: checked "at Final Core or related station
+    point" — do not invent an earlier check). One-shot guards session-level.
+    Registry flip (`engineer` route), spec compile-only, docs update.
 
 ## Unresolved issues (user-owned; never decided autonomously)
 
@@ -92,6 +106,13 @@ RoomScene` using U2 `FailedTaskState` helpers; additive canonical events
 5. `interruption_alert_acknowledged` mapping (non-blocking).
 6. Beat-13 scoring fixes bundle (out of Wave 1A scope by design).
 7. Stimulus-freeze reviewer dispositions (gate participants, not this wave).
+8. `task_started` Q-listing conflict: V3 §5 lists it under Q05 **and** Q15;
+   `MASTER_33_ALIGNMENT.md` lists it under Q05 only. Event stays unemitted
+   and unregistered until resolved (affects Repair, Archive, Interruption).
+9. Runtime/browser verification debt: RepairScene (beat 1) and all
+   subsequent Wave 1A rooms are implemented + compile-verified only;
+   a `playwright-game-verify` pass (incl. prototype-fixture regression and
+   route tuning for `hubToStationDoor`) is owed before any "works" claim.
 
 ## Commit log (wave)
 
@@ -111,3 +132,5 @@ RoomScene` using U2 `FailedTaskState` helpers; additive canonical events
 | `6afac6b` | U5     | Registry-driven status board  |
 | `cc8d597` | Docs   | State checkpoint after U5     |
 | `9bbb5cc` | U6     | e2e station-driving fixtures  |
+| `0a61fe2` | Docs   | State checkpoint after U6     |
+| `26379ce` | Room 2 | Systems Repair Room beat      |
