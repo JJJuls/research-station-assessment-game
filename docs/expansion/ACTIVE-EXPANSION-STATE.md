@@ -9,7 +9,7 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 ## Current status
 
-- **Last commit**: `a57bab4` — U4 canonical event-context registrations
+- **Last commit**: `6afac6b` — U5 registry-driven Hub status board
 - **Completed**:
   1. `dd498f2` — `REMAINING-STATION-INVENTORY.md` (7 stations: sources,
      study_item_ids, construct_ids, semantics, legacy+canonical events,
@@ -52,14 +52,19 @@ Live checkpoint file. Updated after every commit. Newest entry first.
      beats (live prototype emissions, Phase-0 baseline protection):
      `side_repair_completed`, `final_core_status_reviewed`. Build + tsc
      PASS.
-- **Exact next action**: implement **U5 — cross-room mission-state
-  helpers**: documented write/read surface over SessionState's unused V3
-  §3.1 fields (`prepared_items`, `workspace_status`, `hazard_status`,
-  `side_repair_status`, `interruption_status`, duties) for upstream writers
-  and the Final Core reader; status vocabularies stay open strings per
-  SessionState's documented rule. No ScoringManager/QualtricsBridge
-  changes. Build + tsc; commit; update this file.
-- **Then**: U6 e2e fixtures → station beats in plan order (Repair first).
+  8. `6afac6b` — **U5 (rescoped)**: registry-driven Hub status board
+     (`statusBoardLabel` per open station, collective sealed line;
+     byte-identical output today). Original U5 (mission-state vocabulary
+     helpers) **deliberately deferred to room beats**: SessionState already
+     exposes every V3 §3.1 field + setter, and status vocabularies are
+     room-beat decisions per its documented rule — pre-building wrappers
+     would invent vocabulary. Build + tsc PASS.
+- **Exact next action**: implement **U6 — reusable acceptance-test
+  fixtures**: extend `e2e/helpers.ts` with room-driving fixtures (navigate
+  Dock→Hub→room via registry route param, open station prompt, select
+  option k, read events via `window.researchRuntime`). Compile-checked only
+  (Playwright execution disabled this session). Then station beat 1:
+  Systems Repair Room via room-builder discipline.
 
 ## Unresolved issues (user-owned; never decided autonomously)
 
@@ -87,3 +92,5 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 | `cb9eabf` | U3     | N-option/multi-stage prompts  |
 | `ffc817b` | Docs   | State checkpoint after U3     |
 | `a57bab4` | U4     | Canonical event registrations |
+| `20d6bff` | Docs   | State checkpoint after U4     |
+| `6afac6b` | U5     | Registry-driven status board  |
