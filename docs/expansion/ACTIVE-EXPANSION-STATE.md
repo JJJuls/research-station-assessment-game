@@ -9,7 +9,7 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 ## Current status
 
-- **Last commit**: `2fbbd57` — U1 station registry
+- **Last commit**: `72c6bc9` — U2 task-state factory
 - **Completed**:
   1. `dd498f2` — `REMAINING-STATION-INVENTORY.md` (7 stations: sources,
      study_item_ids, construct_ids, semantics, legacy+canonical events,
@@ -27,16 +27,23 @@ Live checkpoint file. Updated after every commit. Newest entry first.
      `src/world/index.ts`, `src/scenes/HubScene.ts`, `src/scenes/Boot.ts`.
      Build + tsc PASS. ESLint: 353 pre-existing repo-wide CRLF/prettier
      errors only (not introduced by this wave).
-- **Exact next action**: implement **U2 — deterministic per-room task-state
-  factory** (`src/world/roomTaskState.ts`): generalize the
-  `archiveSessionState` pattern (module-scope session lifetime; failure /
-  left-after-failure / returned-after-failure / last-wrong-response
-  tracking) + test-only reset alongside `resetSessionOnceFlags`. ArchiveScene
-  NOT migrated in this unit (adopt only in a later pass if event order is
-  provably identical). Build + tsc; commit; update this file.
-- **Then**: U3 N-option/multi-stage prompts → U4 canonical event-context
-  registrations → U5 mission-state helpers → U6 e2e fixtures → station beats
-  in plan order (Repair first).
+  5. `72c6bc9` — **U2**: `src/world/roomTaskState.ts` —
+     `createRoomTaskState` (module-scope session-lifetime store, duplicate
+     key throws, test-only `resetAllRoomTaskStates` not barrel-exported per
+     `resetSessionOnceFlags` precedent) + shared `FailedTaskState` helpers
+     (`recordFailedAttempt` didRepeat check, `shouldLogAbandonedOnExit`,
+     `shouldLogReturnedOnEnter` — ArchiveScene semantics byte-for-byte).
+     ArchiveScene deliberately not migrated. Files:
+     `src/world/roomTaskState.ts`, `src/world/index.ts`. Build + tsc PASS.
+- **Exact next action**: implement **U3 — controlled-option prompt
+  rendering** in `RoomScene`: N numbered options (deterministic order, no
+  randomisation) instead of the fixed 1–3 keymap, plus chained prompt
+  stages (PromptOption gains an optional follow-up prompt). Existing
+  3-option stations must render byte-identically ("Press 1, 2, or 3 to
+  choose." retained for 3-option prompts). Build + tsc; commit; update this
+  file.
+- **Then**: U4 canonical event-context registrations → U5 mission-state
+  helpers → U6 e2e fixtures → station beats in plan order (Repair first).
 
 ## Unresolved issues (user-owned; never decided autonomously)
 
@@ -58,3 +65,5 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 | `f1db32f` | Docs 2 | Wave 1 plan (ranking + units) |
 | `ed2a39b` | Docs 3 | Active expansion state file   |
 | `2fbbd57` | U1     | Station registry + routing    |
+| `b9b4d49` | Docs   | State checkpoint after U1     |
+| `72c6bc9` | U2     | Room task-state factory       |
