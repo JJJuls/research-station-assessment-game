@@ -9,7 +9,7 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 ## Current status
 
-- **Last commit**: `72c6bc9` — U2 task-state factory
+- **Last commit**: `cb9eabf` — U3 N-option/multi-stage prompts
 - **Completed**:
   1. `dd498f2` — `REMAINING-STATION-INVENTORY.md` (7 stations: sources,
      study_item_ids, construct_ids, semantics, legacy+canonical events,
@@ -35,15 +35,25 @@ Live checkpoint file. Updated after every commit. Newest entry first.
      `shouldLogReturnedOnEnter` — ArchiveScene semantics byte-for-byte).
      ArchiveScene deliberately not migrated. Files:
      `src/world/roomTaskState.ts`, `src/world/index.ts`. Build + tsc PASS.
-- **Exact next action**: implement **U3 — controlled-option prompt
-  rendering** in `RoomScene`: N numbered options (deterministic order, no
-  randomisation) instead of the fixed 1–3 keymap, plus chained prompt
-  stages (PromptOption gains an optional follow-up prompt). Existing
-  3-option stations must render byte-identically ("Press 1, 2, or 3 to
-  choose." retained for 3-option prompts). Build + tsc; commit; update this
-  file.
-- **Then**: U4 canonical event-context registrations → U5 mission-state
-  helpers → U6 e2e fixtures → station beats in plan order (Repair first).
+  6. `cb9eabf` — **U3**: RoomScene prompts generalized — N options (1..9,
+     declared order, never randomised), `PromptStage` + `PromptOption.nextStage`
+     chained follow-up stages; ≤3-option prompts byte-identical to V1 slice
+     (panel 560×230, "Press 1, 2, or 3 to choose."). Files:
+     `src/world/RoomScene.ts`, `src/world/index.ts`. Build + tsc PASS.
+- **Exact next action**: implement **U4 — canonical event-context
+  registrations** in `src/world/CanonicalEventContext.ts` for the remaining
+  stations' matrix-listed canonical events, following the committed
+  population rule: `study_item_ids` = union of MASTER_33_ALIGNMENT Events-
+  column rows listing the event; `construct_id` only where all listing rows
+  share one documented construct; dual-listed or valence-mismatched events
+  left unset with source comments (precedents: `archive_completed`,
+  `hazard_info_checked`, `archive_abandoned`); no `success` values (no
+  documented examples). Skip as ambiguous (documented, not guessed):
+  `task_started` (V3 §5 lists under Q05+Q15, MASTER mirror under Q05 only),
+  `objective_completed` (V3 §5 Q06 lists it, MASTER mirror dropped it).
+  Registration ≠ emission — nothing fires until its room beat.
+- **Then**: U5 mission-state helpers → U6 e2e fixtures → station beats in
+  plan order (Repair first).
 
 ## Unresolved issues (user-owned; never decided autonomously)
 
@@ -67,3 +77,5 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 | `2fbbd57` | U1     | Station registry + routing    |
 | `b9b4d49` | Docs   | State checkpoint after U1     |
 | `72c6bc9` | U2     | Room task-state factory       |
+| `35599ac` | Docs   | State checkpoint after U2     |
+| `cb9eabf` | U3     | N-option/multi-stage prompts  |
