@@ -17,15 +17,72 @@ export type InteractionKey = keyof typeof researchInteractions;
 
 export interface PromptOption {
   label: string;
+  /**
+   * Transient message shown after selection. Suppressed when `nextStage`
+   * opens a follow-up stage (the stage panel replaces it) — chained
+   * intermediate options should use an empty string.
+   */
   feedback: string;
   getEventTypes: () => string[];
   onSelected?: () => void;
+  /**
+   * Optional follow-up prompt stage (U3): evaluated after this option's
+   * events are logged and `onSelected` has run. Returning a stage opens it
+   * immediately (same interaction context, same deterministic renderer);
+   * returning null ends the prompt normally. Enables contract-required
+   * multi-step flows (e.g. report choice → duty offer) without ever
+   * randomising or reordering options.
+   */
+  nextStage?: () => PromptStage | null;
+}
+
+/** One prompt panel: fixed, deterministically ordered options (max 9). */
+export interface PromptStage {
+  /** Extra body text below the interaction label (in-fiction). */
+  body?: string;
+  options: PromptOption[];
 }
 
 interface ActivePrompt {
   interactionKey: InteractionKey;
   options: PromptOption[];
   panel: Phaser.GameObjects.Container;
+}
+
+/**
+ * Phaser keydown event suffixes for the numeric option keys, in option
+ * order. Prompt option count is capped at this list's length.
+ */
+const PROMPT_KEY_NAMES = [
+  'ONE',
+  'TWO',
+  'THREE',
+  'FOUR',
+  'FIVE',
+  'SIX',
+  'SEVEN',
+  'EIGHT',
+  'NINE',
+] as const;
+
+/**
+ * Instruction line for an N-option prompt. Must stay byte-identical to the
+ * V1 slice for 3 options: "Press 1, 2, or 3 to choose."
+ */
+function buildPromptInstruction(optionCount: number): string {
+  const numbers = Array.from({ length: optionCount }, (_, i) => `${i + 1}`);
+
+  if (numbers.length === 1) {
+    return `Press 1 to choose.`;
+  }
+
+  if (numbers.length === 2) {
+    return `Press 1 or 2 to choose.`;
+  }
+
+  const head = numbers.slice(0, -1).join(', ');
+
+  return `Press ${head}, or ${numbers[numbers.length - 1]} to choose.`;
 }
 
 export interface RoomStationConfig {
@@ -343,20 +400,47 @@ export abstract class RoomScene extends Phaser.Scene {
       return;
     }
 
-    const options = this.getPromptOptions(station.interactionKey);
-    const interaction = researchInteractions[station.interactionKey];
+    this.renderPromptStage(station.interactionKey, {
+      body: station.promptBody,
+      options: this.getPromptOptions(station.interactionKey),
+    });
+  }
+
+  /**
+   * Renders one prompt stage: numbered options in declared order, numeric
+   * keys 1..N (N ≤ 9), fixed panel geometry. For ≤3 options the panel and
+   * text are byte-identical to the V1-slice renderer (research constraint:
+   * prompt presentation must not vary between rooms or participants —
+   * option order is the author's declared order, never randomised).
+   */
+  private renderPromptStage(
+    interactionKey: InteractionKey,
+    stage: PromptStage,
+  ) {
+    const { options } = stage;
+
+    if (options.length === 0 || options.length > PROMPT_KEY_NAMES.length) {
+      throw new Error(
+        `Prompt stage for "${interactionKey}" has ${options.length} options; expected 1-${PROMPT_KEY_NAMES.length}`,
+      );
+    }
+
+    const interaction = researchInteractions[interactionKey];
     const { centerX } = this.cameras.main;
-    const promptBody = station.promptBody ? `\n\n${station.promptBody}` : '';
+    const promptBody = stage.body ? `\n\n${stage.body}` : '';
     const optionText = options
       .map((option, index) => `${index + 1}. ${option.label}`)
       .join('\n');
+    // 230px matches the V1 slice for up to 3 options; each further option
+    // extends the panel by one 24px text row (deterministic, content-only).
+    const panelHeight = 230 + Math.max(0, options.length - 3) * 24;
     const background = this.add
-      .rectangle(0, 0, 560, 230, 0x101820, 0.96)
+      .rectangle(0, 0, 560, panelHeight, 0x101820, 0.96)
       .setOrigin(0);
     const text = this.add.text(
       18,
       16,
-      `${interaction.label}${promptBody}\n\n${optionText}\n\nPress 1, 2, or 3 to choose.`,
+      `${interaction.label}${promptBody}\n\n${optionText}\n\n${buildPromptInstruction(options.length)}`,
       {
         color: '#ffffff',
         font: '16px monospace',
@@ -371,25 +455,27 @@ export abstract class RoomScene extends Phaser.Scene {
     this.proximityPrompt.setVisible(false);
 
     this.activePrompt = {
-      interactionKey: station.interactionKey,
+      interactionKey,
       options,
       panel,
     };
 
-    this.input.keyboard!.on('keydown-ONE', this.selectPromptOptionOne, this);
-    this.input.keyboard!.on('keydown-TWO', this.selectPromptOptionTwo, this);
-    this.input.keyboard!.on(
-      'keydown-THREE',
-      this.selectPromptOptionThree,
-      this,
-    );
+    for (let index = 0; index < options.length; index++) {
+      this.input.keyboard!.on(
+        `keydown-${PROMPT_KEY_NAMES[index]}`,
+        this.promptKeyHandlers[index],
+        this,
+      );
+    }
   }
 
-  private selectPromptOptionOne = () => this.selectPromptOption(0);
-
-  private selectPromptOptionTwo = () => this.selectPromptOption(1);
-
-  private selectPromptOptionThree = () => this.selectPromptOption(2);
+  /**
+   * One stable handler per numeric key so on/off pairs match exactly
+   * (allocated once per scene instance; index = option position).
+   */
+  private readonly promptKeyHandlers: (() => void)[] = PROMPT_KEY_NAMES.map(
+    (_, index) => () => this.selectPromptOption(index),
+  );
 
   private selectPromptOption(index: number) {
     if (this.activePrompt === null) {
@@ -408,18 +494,29 @@ export abstract class RoomScene extends Phaser.Scene {
     }
 
     option.onSelected?.();
+
+    const nextStage = option.nextStage?.() ?? null;
+
     this.closePrompt();
+
+    if (nextStage !== null) {
+      this.renderPromptStage(interactionKey, nextStage);
+      return;
+    }
+
     this.showFeedbackMessage(option.feedback);
   }
 
   private closePrompt() {
-    this.input.keyboard!.off('keydown-ONE', this.selectPromptOptionOne, this);
-    this.input.keyboard!.off('keydown-TWO', this.selectPromptOptionTwo, this);
-    this.input.keyboard!.off(
-      'keydown-THREE',
-      this.selectPromptOptionThree,
-      this,
-    );
+    if (this.activePrompt !== null) {
+      for (let index = 0; index < this.activePrompt.options.length; index++) {
+        this.input.keyboard!.off(
+          `keydown-${PROMPT_KEY_NAMES[index]}`,
+          this.promptKeyHandlers[index],
+          this,
+        );
+      }
+    }
 
     this.activePrompt?.panel.destroy();
     this.activePrompt = null;

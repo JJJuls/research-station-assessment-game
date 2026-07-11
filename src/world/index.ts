@@ -3,6 +3,7 @@ export { CANONICAL_EVENT_CONTEXT } from './CanonicalEventContext';
 export type {
   InteractionKey,
   PromptOption,
+  PromptStage,
   RoomDoorConfig,
   RoomStationConfig,
 } from './RoomScene';
