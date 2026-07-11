@@ -18,6 +18,17 @@
  * MASTER_33_ALIGNMENT.md, or event-schema.md — if a mapping is missing or
  * contradictory across those documents, stop and report instead of guessing
  * (approved plan §13.1b).
+ *
+ * Wave 1A (U4) note: entries now also cover canonical V3 event names for
+ * stations whose rooms are not yet built. Registration here is NOT
+ * emission — nothing fires until the room's own beat logs it (precedent:
+ * baseline_idle_seconds, registered but blocked). Two matrix events are
+ * deliberately NOT registered because the authoritative documents disagree
+ * (rule above: never guess):
+ * - `task_started` — V3 §5 lists it under Q05 and Q15; the
+ *   MASTER_33_ALIGNMENT.md mirror lists it under Q05 only.
+ * - `objective_completed` — V3 §5 lists it under Q06; the mirror's Q06 row
+ *   omits it (the legacy prototype event keeps logging unmapped, as today).
  */
 export interface CanonicalEventContext {
   study_item_ids?: string[];
@@ -210,6 +221,268 @@ export const CANONICAL_EVENT_CONTEXT: Partial<
     study_item_ids: ['Q12', 'Q27', 'Q31'],
     construct_id: 'inappropriate_persistence',
     success: null,
+  },
+
+  // ————————————————————————————————————————————————————————————————————
+  // Wave 1A (U4): canonical V3 event registrations for the seven remaining
+  // stations, populated strictly from MASTER_33_ALIGNMENT.md's Events
+  // columns (study_item_ids = union of listing rows). construct_id is set
+  // only where every listing row shares one documented construct from
+  // event-schema.md §2's vocabulary; dual-construct listings and
+  // valence-mismatched events are left unset with the source comment
+  // (committed precedents: archive_completed, hazard_info_checked,
+  // archive_abandoned). No success values: no source documents one for any
+  // event below. Registration ≠ emission — each event first fires in its
+  // room's own build beat.
+  // ————————————————————————————————————————————————————————————————————
+
+  // Systems Repair Room — Wave 1A additions.
+  // Q22 (PDD) lists manual_page_reviewed; adaptive_persistence per the
+  // committed repair_manual_used precedent (Q14/Q21/Q22).
+  manual_page_reviewed: {
+    study_item_ids: ['Q22'],
+    construct_id: 'adaptive_persistence',
+  },
+  // Q24 lists repair_abandoned; Q24+Q25 list repair_returned_after_failure.
+  // construct_id intentionally unset — identical open psychometric decision
+  // as archive_abandoned/archive_returned_after_failure (research-data-
+  // reviewer F1): abandonment is disengagement evidence, never auto-assigned.
+  repair_abandoned: {
+    study_item_ids: ['Q24'],
+  },
+  repair_returned_after_failure: {
+    study_item_ids: ['Q24', 'Q25'],
+  },
+
+  // Engineer Hub — Q10 (responsibility) Events column lists exactly these
+  // three; the other supervision events (assigned/declined/skipped) and
+  // engineer_hub_entered/engineer_report_accuracy_scored have no Events-
+  // column listing and stay unmapped (engineer_clarification_requested
+  // precedent).
+  engineer_supervision_accepted: {
+    study_item_ids: ['Q10'],
+    construct_id: 'responsibility',
+  },
+  engineer_supervision_completed: {
+    study_item_ids: ['Q10'],
+    construct_id: 'responsibility',
+  },
+  accepted_duty_unresolved: {
+    study_item_ids: ['Q10'],
+    construct_id: 'responsibility',
+  },
+
+  // Inventory / Preparation Room — Q01-Q04 are organisation rows.
+  inventory_checklist_opened: {
+    study_item_ids: ['Q01'],
+    construct_id: 'organisation',
+  },
+  inventory_item_sorted_correct: {
+    study_item_ids: ['Q01'],
+    construct_id: 'organisation',
+  },
+  inventory_sequence_followed: {
+    study_item_ids: ['Q01'],
+    construct_id: 'organisation',
+  },
+  inventory_item_misplaced: {
+    study_item_ids: ['Q02'],
+    construct_id: 'organisation',
+  },
+  // Q02 (organisation) and Q30 (Goal-Time exploratory) both list this
+  // event; construct_id intentionally unset (hazard_info_checked precedent).
+  inventory_verification_skipped: {
+    study_item_ids: ['Q02', 'Q30'],
+  },
+  correct_tool_selected: {
+    study_item_ids: ['Q03'],
+    construct_id: 'organisation',
+  },
+  wrong_tool_selected: {
+    study_item_ids: ['Q03'],
+    construct_id: 'organisation',
+  },
+  prepared_tool_used: {
+    study_item_ids: ['Q03'],
+    construct_id: 'organisation',
+  },
+  workspace_tidy_confirmed: {
+    study_item_ids: ['Q03'],
+    construct_id: 'organisation',
+  },
+  workspace_left_disordered: {
+    study_item_ids: ['Q04'],
+    construct_id: 'organisation',
+  },
+  cleanup_completed: {
+    study_item_ids: ['Q04'],
+    construct_id: 'organisation',
+  },
+  // Q30 — optional/exploratory Goal-Time proxy (labelled per scoring-plan §8).
+  inventory_verified_complete: {
+    study_item_ids: ['Q30'],
+    construct_id: 'goal_time_exploratory',
+  },
+
+  // Optional Side Repair Bay. Multi-row listings (Q07 productiveness,
+  // Q16 Grit-S PE/adaptive family, Q20/Q32 exploratory) leave construct_id
+  // unset per the dual-listing precedent.
+  // DEFERRED (not registered here): side_repair_completed — the prototype
+  // already emits this exact string, so registering it now would change
+  // live prototype payloads and break the Phase-0 baseline fixture
+  // invariant without runtime re-verification; its mapping
+  // (Q07/Q16/Q32, construct unset) is added in the Side Repair Bay build
+  // beat, which re-verifies the prototype fixture.
+  side_repair_accepted: {
+    study_item_ids: ['Q07', 'Q16', 'Q20'],
+  },
+  side_repair_step_completed: {
+    study_item_ids: ['Q07', 'Q16'],
+  },
+  // Q20 (Grit-S CI, weak/exploratory) single-row listings.
+  side_repair_first_step: {
+    study_item_ids: ['Q20'],
+    construct_id: 'consistency_of_interest_exploratory',
+  },
+  side_repair_abandoned_after_start: {
+    study_item_ids: ['Q20'],
+    construct_id: 'consistency_of_interest_exploratory',
+  },
+  // Q29 (Goal-Time exploratory) single-row listings.
+  stabiliser_option_offered: {
+    study_item_ids: ['Q29'],
+    construct_id: 'goal_time_exploratory',
+  },
+  stabiliser_accepted: {
+    study_item_ids: ['Q29'],
+    construct_id: 'goal_time_exploratory',
+  },
+  // Q32 (Goal-Time exploratory).
+  final_bonus_unlocked: {
+    study_item_ids: ['Q32'],
+    construct_id: 'goal_time_exploratory',
+  },
+
+  // Interruption Corridor. Q08 = productiveness; Q15 = Grit-S PE (adaptive
+  // family per the committed archive/repair precedent); Q17-Q19 = Grit-S CI
+  // weak/exploratory.
+  task_avoidance: {
+    study_item_ids: ['Q08'],
+    construct_id: 'productiveness',
+  },
+  // Registered but NOT emitted until the user supplies the idle
+  // definition/threshold (baseline_idle_seconds precedent — open parameter,
+  // never chosen autonomously).
+  excessive_idle_after_instruction: {
+    study_item_ids: ['Q08'],
+    construct_id: 'productiveness',
+  },
+  // Q15 (adaptive family) and Q17 (CI exploratory) both list
+  // interruption_received; construct_id intentionally unset.
+  interruption_received: {
+    study_item_ids: ['Q15', 'Q17'],
+  },
+  return_to_unfinished_task: {
+    study_item_ids: ['Q15'],
+    construct_id: 'adaptive_persistence',
+  },
+  task_completed_after_interruption: {
+    study_item_ids: ['Q15'],
+    construct_id: 'adaptive_persistence',
+  },
+  competing_task_viewed: {
+    study_item_ids: ['Q17'],
+    construct_id: 'consistency_of_interest_exploratory',
+  },
+  switched_task: {
+    study_item_ids: ['Q17'],
+    construct_id: 'consistency_of_interest_exploratory',
+  },
+  returned_to_original_task: {
+    study_item_ids: ['Q17'],
+    construct_id: 'consistency_of_interest_exploratory',
+  },
+  objective_active: {
+    study_item_ids: ['Q18'],
+    construct_id: 'consistency_of_interest_exploratory',
+  },
+  final_unresolved_due_to_nonreturn: {
+    study_item_ids: ['Q18'],
+    construct_id: 'consistency_of_interest_exploratory',
+  },
+  new_goal_offered: {
+    study_item_ids: ['Q19'],
+    construct_id: 'consistency_of_interest_exploratory',
+  },
+  goal_switch_accepted: {
+    study_item_ids: ['Q19'],
+    construct_id: 'consistency_of_interest_exploratory',
+  },
+  prior_goal_completed: {
+    study_item_ids: ['Q19'],
+    construct_id: 'consistency_of_interest_exploratory',
+  },
+  prior_goal_abandoned: {
+    study_item_ids: ['Q19'],
+    construct_id: 'consistency_of_interest_exploratory',
+  },
+
+  // Final Core Room. Q11 = responsibility; Q28 = inappropriate persistence
+  // (maladaptive); Q33/Q29 = Goal-Time exploratory; Q02/Q04 = organisation
+  // (cross-room flags fed by Inventory via SessionState).
+  final_core_missing_item_flagged: {
+    study_item_ids: ['Q02'],
+    construct_id: 'organisation',
+  },
+  final_core_workspace_issue_flagged: {
+    study_item_ids: ['Q04'],
+    construct_id: 'organisation',
+  },
+  // DEFERRED (not registered here): final_core_status_reviewed — same
+  // live-prototype-collision reason as side_repair_completed above; its
+  // mapping (Q11, responsibility) is added in the Final Core build beat.
+  unresolved_issue_reviewed: {
+    study_item_ids: ['Q11'],
+    construct_id: 'responsibility',
+  },
+  // Q11 (responsibility) and Q33 (Goal-Time exploratory) both list
+  // final_core_rushed; construct_id intentionally unset.
+  final_core_rushed: {
+    study_item_ids: ['Q11', 'Q33'],
+  },
+  // hazard_warning_seen precedent: system-display event carries the single
+  // listing row's construct.
+  final_core_blocker_shown: {
+    study_item_ids: ['Q28'],
+    construct_id: 'inappropriate_persistence',
+  },
+  final_core_force_continue: {
+    study_item_ids: ['Q28'],
+    construct_id: 'inappropriate_persistence',
+  },
+  // Q28 lists issue_resolution_attempted, but attempting to RESOLVE an
+  // issue is the adaptive alternative to forcing through it — assigning
+  // inappropriate_persistence would invert the behaviour's valence.
+  // construct_id intentionally unset; psychometric decision routed to the
+  // user (archive_abandoned/F1 precedent for valence-mismatched listings).
+  issue_resolution_attempted: {
+    study_item_ids: ['Q28'],
+  },
+  final_core_issue_resolved: {
+    study_item_ids: ['Q33'],
+    construct_id: 'goal_time_exploratory',
+  },
+  // Q06 (productiveness) and Q33 (Goal-Time exploratory) both list
+  // final_core_completed; construct_id intentionally unset
+  // (archive_completed precedent).
+  final_core_completed: {
+    study_item_ids: ['Q06', 'Q33'],
+  },
+  // Q29 (Goal-Time exploratory) — emitted at Final Core, fed by the Side
+  // Repair Bay outcome.
+  final_core_stability_bonus: {
+    study_item_ids: ['Q29'],
+    construct_id: 'goal_time_exploratory',
   },
 };
 
