@@ -139,11 +139,30 @@ export class HubScene extends RoomScene {
     const done = (roomId: string) =>
       mission.completed_rooms.includes(roomId) ? 'logged' : 'pending';
 
-    return [
+    // Registry-driven board (U5): one line per OPEN station (in door-ring
+    // order), then a single collective line while any station stays sealed.
+    // Output is byte-identical to the V1 slice while Archive is the only
+    // open room. Allowed progress UI only: status labels, never scores.
+    const lines = [
       'STATION STATUS',
       `Arrival check-in: ${done('dock_arrival')}`,
-      `Archive access: ${done('archive_room')}`,
-      'Remaining sections: sealed — pressurisation pending.',
-    ].join('\n');
+    ];
+    let anySealed = false;
+
+    for (const station of STATION_REGISTRY) {
+      if (station.sceneKey !== undefined) {
+        if (station.statusBoardLabel !== undefined) {
+          lines.push(`${station.statusBoardLabel}: ${done(station.roomId)}`);
+        }
+      } else {
+        anySealed = true;
+      }
+    }
+
+    if (anySealed) {
+      lines.push('Remaining sections: sealed — pressurisation pending.');
+    }
+
+    return lines.join('\n');
   }
 }

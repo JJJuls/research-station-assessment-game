@@ -37,6 +37,13 @@ export interface StationRegistration {
    * (Archive/V1 precedent). Each room's build beat re-verifies its value.
    */
   hubSpawn: { x: number; y: number };
+  /**
+   * Line label on the Hub status board once the room is open (allowed
+   * progress UI: checklist/status labels only, V3 §2 — no scores, no
+   * personality feedback). Defined per room build beat alongside sceneKey;
+   * sealed rooms are never listed individually.
+   */
+  statusBoardLabel?: string;
 }
 
 /**
@@ -53,6 +60,7 @@ export const STATION_REGISTRY: readonly StationRegistration[] = [
     sceneKey: key.scene.archive,
     hubDoor: { x: 4 * 32, y: 1 * 32 + 16 },
     hubSpawn: { x: 4 * 32, y: 4 * 32 },
+    statusBoardLabel: 'Archive access',
   },
   {
     roomId: 'systems_repair_room',
