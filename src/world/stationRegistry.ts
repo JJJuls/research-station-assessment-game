@@ -66,8 +66,10 @@ export const STATION_REGISTRY: readonly StationRegistration[] = [
     roomId: 'systems_repair_room',
     label: 'Systems Repair',
     routeParam: 'repair',
+    sceneKey: key.scene.repair,
     hubDoor: { x: 10 * 32, y: 1 * 32 + 16 },
     hubSpawn: { x: 10 * 32, y: 4 * 32 },
+    statusBoardLabel: 'Systems repair',
   },
   {
     roomId: 'engineer_hub',

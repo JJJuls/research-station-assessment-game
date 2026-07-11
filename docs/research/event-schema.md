@@ -143,24 +143,29 @@ the contract's note that Archive is "already partly implemented."
 
 ### Systems Repair Room (`systems_repair_room`)
 
-| Canonical (V3)                  | Current prototype               | Status  | Notes                                           |
-| ------------------------------- | ------------------------------- | ------- | ----------------------------------------------- |
-| `repair_room_entered`           | —                               | missing |                                                 |
-| `repair_panel_opened`           | —                               | missing |                                                 |
-| `task_started`                  | —                               | missing |                                                 |
-| `repair_sequence_submitted`     | `repair_attempt`                | rename  |                                                 |
-| `repair_failed`                 | `repair_failed`                 | exact   |                                                 |
-| `repair_manual_opened`          | —                               | missing | Current jumps straight to `repair_manual_used`. |
-| `manual_page_reviewed`          | —                               | missing |                                                 |
-| `repair_manual_used`            | `repair_manual_used`            | exact   |                                                 |
-| `repair_strategy_revision`      | `repair_strategy_revision`      | exact   |                                                 |
-| `repair_same_sequence_repeated` | `repair_same_sequence_repeated` | exact   |                                                 |
-| `repair_abandoned`              | —                               | missing |                                                 |
-| `repair_returned_after_failure` | —                               | missing |                                                 |
-| `repair_completed`              | `repair_completed`              | exact   |                                                 |
+| Canonical (V3)                  | Current prototype               | Status            | Notes                                                                                                                                                        |
+| ------------------------------- | ------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `repair_room_entered`           | —                               | exact (Wave 1A)   | Emitted by RepairScene on every entry (Archive precedent).                                                                                                   |
+| `repair_panel_opened`           | —                               | exact (Wave 1A)   | Emitted when the repair panel prompt opens (archive_terminal_opened precedent).                                                                              |
+| `task_started`                  | —                               | missing (blocked) | **Documentation conflict, never guessed**: V3 §5 lists it under Q05 and Q15; MASTER_33_ALIGNMENT.md lists it under Q05 only. Needs a user/source resolution. |
+| `repair_sequence_submitted`     | `repair_attempt`                | exact (additive)  | Canonical emitted additively alongside the unchanged legacy `repair_attempt` on both sequence submissions (archive_code_entered precedent).                  |
+| `repair_failed`                 | `repair_failed`                 | exact             |                                                                                                                                                              |
+| `repair_manual_opened`          | —                               | exact (Wave 1A)   | Emitted by the new repair manual station (distinct object; archiveLogShelves precedent).                                                                     |
+| `manual_page_reviewed`          | —                               | exact (Wave 1A)   | Emitted with `repair_manual_opened` — the station displays the manual page content on interaction, so open + review co-occur.                                |
+| `repair_manual_used`            | `repair_manual_used`            | exact             | Legacy panel option unchanged.                                                                                                                               |
+| `repair_strategy_revision`      | `repair_strategy_revision`      | exact             |                                                                                                                                                              |
+| `repair_same_sequence_repeated` | `repair_same_sequence_repeated` | exact             |                                                                                                                                                              |
+| `repair_abandoned`              | —                               | exact (Wave 1A)   | Q24; construct_id deliberately unset (F1 precedent). Fires on exit after failure with the repair incomplete.                                                 |
+| `repair_returned_after_failure` | —                               | exact (Wave 1A)   | Q24+Q25; construct_id deliberately unset. Fires on re-entry after such an exit while still incomplete.                                                       |
+| `repair_completed`              | `repair_completed`              | exact             |                                                                                                                                                              |
 
 Repair also has strong alignment (5 exact matches) — consistent with the
-contract's "strong current implemented core" note.
+contract's "strong current implemented core" note. **Wave 1A: the room is
+ported to a connected RoomScene (`?scene=repair`, Hub door open) with all
+canonical events except the blocked `task_started` emitted additively; the
+prototype station is unchanged.** `objective_completed` (legacy, spans
+Archive+Repair) now also fires in the connected world, once per session when
+both rooms complete, with the prototype's archive-terminal payload context.
 
 ### Engineer Hub (`engineer_hub`)
 

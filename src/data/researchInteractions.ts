@@ -124,6 +124,18 @@ export const researchInteractions = {
     event_type: 'interaction',
     score_tags: [],
   },
+  repairManualStation: {
+    object_id: 'repair_manual_station',
+    label: 'Repair Manual Station',
+    episode: 'mps_systems_repair',
+    // Canonical V3 §4 Room 2 system: "repair manual station", distinct from
+    // the repair panel's legacy manual option (repair_manual_used). Same
+    // room/task as the panel; distinct object (archiveLogShelves precedent).
+    event_type: 'repair_manual_opened',
+    score_tags: ['difficulty_persistence'],
+    room_id: 'systems_repair_room',
+    task_id: 'repair_sequence_selection',
+  },
   systemsRepairFailure: {
     object_id: 'systems_repair_failure',
     label: 'Systems Repair Failure',

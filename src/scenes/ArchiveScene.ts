@@ -195,6 +195,10 @@ export class ArchiveScene extends RoomScene {
         ],
         onSelected: () => {
           researchRuntime.sessionState.markRoomCompleted('archive_room');
+          // Prototype parity (Repair beat): objective_completed fires once
+          // when Archive + Repair are both complete, whichever finishes
+          // second (see RoomScene.logObjectiveCompletedIfBothDone).
+          this.logObjectiveCompletedIfBothDone();
         },
       },
     ];

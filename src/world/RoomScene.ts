@@ -553,6 +553,31 @@ export abstract class RoomScene extends Phaser.Scene {
   /** Called once when an open door is activated, before the transition. */
   protected onRoomExit(): void {}
 
+  /**
+   * Prototype parity (Main.tsx logObjectiveIfComplete): the legacy
+   * objective_completed event fires exactly once per session, at the moment
+   * BOTH the Archive and Systems Repair rooms are complete, and always with
+   * the archive terminal's interaction context — matching the prototype's
+   * payload byte-for-byte. Called from both rooms' completion paths so
+   * either completion order emits it. The event is deliberately unmapped in
+   * CANONICAL_EVENT_CONTEXT (V3 §5 vs MASTER_33_ALIGNMENT.md disagree on
+   * its Q-listing — see the U4 header note).
+   */
+  protected logObjectiveCompletedIfBothDone() {
+    const mission = researchRuntime.sessionState.getMissionState();
+
+    if (
+      !mission.completed_rooms.includes('archive_room') ||
+      !mission.completed_rooms.includes('systems_repair_room')
+    ) {
+      return;
+    }
+
+    runOncePerSession('objective_completed', () => {
+      this.logRoomEvent('archiveAccessTerminal', 'objective_completed');
+    });
+  }
+
   private updateProximity() {
     if (
       this.activePrompt !== null ||

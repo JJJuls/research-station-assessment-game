@@ -98,6 +98,24 @@ Beat 0. Missing pieces are `repair_room_entered`, `repair_panel_opened`,
 `manual_page_reviewed`, `repair_abandoned`, `repair_returned_after_failure` —
 additive, not a rewrite.
 
+**Wave 1A status (2026-07-12)**: room implemented as `RepairScene`
+(`src/scenes/RepairScene.ts`, `?scene=repair`, Hub door open via the station
+registry). Audit-first port: legacy option labels, feedback strings, event
+sequences, and the didRepeat check preserved verbatim; prototype station
+untouched. All canonical events above are emitted additively **except
+`task_started`**, which stays unemitted pending a documentation-conflict
+resolution (V3 §5 lists it under Q05+Q15; MASTER_33_ALIGNMENT.md under Q05
+only — user decision, never guessed). The abandon/return pair carries Q24 /
+Q24+Q25 with `construct_id` deliberately unset (F1 precedent). The manual
+station is a distinct interactable (`repair_manual_station`) logging
+`repair_manual_opened` + `manual_page_reviewed`; the panel's legacy manual
+option (`repair_manual_used`) is unchanged. `objective_completed` fires once
+per session when Archive + Repair are both complete (prototype payload
+parity: archive-terminal context). Playwright spec
+`e2e/repair_room_logging.spec.ts` authored compile-only — **runtime/browser
+verification is still owed in a playwright-game-verify pass** before any
+"works" claim.
+
 ## Anti-leakage note
 
 No PDD/Grit-S item wording (Q05, Q06, Q14, Q21, Q23-Q26) may appear in panel

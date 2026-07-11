@@ -14,6 +14,7 @@ const scene = {
   hub: 'hub',
   main: 'main',
   menu: 'menu',
+  repair: 'repair',
 } as const;
 
 const tilemap = {
