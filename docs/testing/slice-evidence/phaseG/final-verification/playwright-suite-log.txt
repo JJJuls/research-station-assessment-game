@@ -1,0 +1,33 @@
+﻿
+Running 6 tests using 1 worker
+
+  ✘  1 e2e\archive_room_logging.spec.ts:21:7 › archive room logging › adaptive path: wrong code -> feedback -> revised query (1.0m)
+  ✓  2 e2e\archive_room_logging.spec.ts:21:7 › archive room logging › adaptive path: wrong code -> feedback -> revised query (retry #1) (22.1s)
+  ✓  3 e2e\archive_room_logging.spec.ts:80:7 › archive room logging › blind retry logs the repeated variant, not a duplicate wrong_code (20.8s)
+  ✓  4 e2e\launch_with_research_params.spec.ts:10:7 › launch with research params › parses the five launch params and reflects them in every event (3.6s)
+  ✓  5 e2e\launch_with_research_params.spec.ts:40:7 › launch with research params › debug API surface works and completeDebugSession preserves the return URL (3.7s)
+  ✓  6 e2e\launch_with_research_params.spec.ts:110:7 › launch with research params › missing params fall back to generated ids without crashing (1.6s)
+  ✓  7 e2e\movement_and_first_interaction.spec.ts:11:5 › dock movement, first interaction, and tutorial completion log canonically (12.9s)
+
+
+  1) e2e\archive_room_logging.spec.ts:21:7 › archive room logging › adaptive path: wrong code -> feedback -> revised query 
+
+    TimeoutError: page.waitForFunction: Timeout 60000ms exceeded.
+
+       at helpers.ts:54
+
+      52 |
+      53 |   await page.goto(`/?${search.toString()}`);
+    > 54 |   await page.waitForFunction(
+         |              ^
+      55 |     () =>
+      56 |       (
+      57 |         window as unknown as {
+        at bootGame (C:\Users\Juls\Desktop\research-station-assessment-game\e2e\helpers.ts:54:14)
+        at C:\Users\Juls\Desktop\research-station-assessment-game\e2e\archive_room_logging.spec.ts:24:5
+
+    Error Context: test-results\archive_room_logging-archi-09b98----feedback---revised-query\error-context.md
+
+  1 flaky
+    e2e\archive_room_logging.spec.ts:21:7 › archive room logging › adaptive path: wrong code -> feedback -> revised query 
+  5 passed (2.2m)

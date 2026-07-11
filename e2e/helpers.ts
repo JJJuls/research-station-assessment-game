@@ -95,23 +95,55 @@ export async function getSummary(page: Page): Promise<Record<string, unknown>> {
   );
 }
 
-/** Verified route: Dock spawn -> Hub (straight up through the top door). */
+/**
+ * Waits until the given canonical room-entry event has been logged, then a
+ * settle delay for the fade-in. A fixed post-transition timeout is not
+ * enough under load: if the fade + scene boot outlasts it, the next held
+ * arrow key is partially swallowed and the route silently under-shoots
+ * (observed as the hub status board eating the archive-door SPACE).
+ */
+async function waitForRoomEntry(page: Page, eventType: string) {
+  await page.waitForFunction(
+    (type) =>
+      (
+        window as unknown as {
+          researchRuntime: { getEvents: () => { event_type: string }[] };
+        }
+      ).researchRuntime
+        .getEvents()
+        .some((e) => e.event_type === type),
+    eventType,
+    { timeout: 15_000 },
+  );
+  await page.waitForTimeout(800);
+}
+
+/**
+ * Route rule: every movement leg OVERSHOOTS against a clamping wall.
+ * Under CPU load Phaser's frame-delta cap makes a held key deliver less
+ * distance than wall-clock duration promises, so exact-duration legs
+ * under-shoot doors intermittently. Legs that end pressed into a wall or
+ * doorway are load-independent.
+ */
+
+/** Dock spawn -> Hub: straight up, clamps inside the top doorway. */
 export async function dockToHub(page: Page) {
-  await hold(page, 'ArrowUp', 1900);
+  await hold(page, 'ArrowUp', 2800);
   await press(page, 'Space');
-  await page.waitForTimeout(900);
+  await waitForRoomEntry(page, 'station_hub_entered');
 }
 
-/** Verified route: Hub spawn -> Archive (left, up, through the door). */
+/** Hub spawn -> Archive: clamp west wall, clamp top wall, short right. */
 export async function hubToArchive(page: Page) {
-  await hold(page, 'ArrowLeft', 1750);
-  await hold(page, 'ArrowUp', 1900);
+  await hold(page, 'ArrowLeft', 2400); // clamps at the west wall
+  await hold(page, 'ArrowUp', 2600); // clamps at the top wall (~y 82)
+  await hold(page, 'ArrowRight', 500); // any delivery in 16-145 px is in range
   await press(page, 'Space');
-  await page.waitForTimeout(900);
+  await waitForRoomEntry(page, 'archive_room_entered');
 }
 
-/** Verified route: Archive spawn -> terminal, opens the prompt. */
+/** Archive spawn -> terminal: up clamps under the terminal alcove. */
 export async function openArchiveTerminal(page: Page) {
-  await hold(page, 'ArrowUp', 600);
+  await hold(page, 'ArrowUp', 900);
   await press(page, 'Space');
 }

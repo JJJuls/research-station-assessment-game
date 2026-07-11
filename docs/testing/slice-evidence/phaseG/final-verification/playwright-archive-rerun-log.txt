@@ -1,0 +1,49 @@
+﻿
+Running 2 tests using 1 worker
+
+  ✓  1 e2e\archive_room_logging.spec.ts:21:7 › archive room logging › adaptive path: wrong code -> feedback -> revised query (39.8s)
+  ✘  2 e2e\archive_room_logging.spec.ts:80:7 › archive room logging › blind retry logs the repeated variant, not a duplicate wrong_code (18.4s)
+  ✘  3 e2e\archive_room_logging.spec.ts:80:7 › archive room logging › blind retry logs the repeated variant, not a duplicate wrong_code (retry #1) (19.8s)
+
+
+  1) e2e\archive_room_logging.spec.ts:80:7 › archive room logging › blind retry logs the repeated variant, not a duplicate wrong_code 
+
+    Error: expect(received).toHaveLength(expected)
+
+    Expected length: 1
+    Received length: 0
+    Received array:  []
+
+       97 |     const types = await getEventTypes(page);
+       98 |
+    >  99 |     expect(types.filter((t) => t === 'archive_wrong_code')).toHaveLength(1);
+          |                                                             ^
+      100 |     expect(
+      101 |       types.filter((t) => t === 'archive_same_wrong_code_repeated'),
+      102 |     ).toHaveLength(1);
+        at C:\Users\Juls\Desktop\research-station-assessment-game\e2e\archive_room_logging.spec.ts:99:61
+
+    Error Context: test-results\archive_room_logging-archi-36c97--not-a-duplicate-wrong-code\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: expect(received).toHaveLength(expected)
+
+    Expected length: 1
+    Received length: 0
+    Received array:  []
+
+       97 |     const types = await getEventTypes(page);
+       98 |
+    >  99 |     expect(types.filter((t) => t === 'archive_wrong_code')).toHaveLength(1);
+          |                                                             ^
+      100 |     expect(
+      101 |       types.filter((t) => t === 'archive_same_wrong_code_repeated'),
+      102 |     ).toHaveLength(1);
+        at C:\Users\Juls\Desktop\research-station-assessment-game\e2e\archive_room_logging.spec.ts:99:61
+
+    Error Context: test-results\archive_room_logging-archi-36c97--not-a-duplicate-wrong-code-retry1\error-context.md
+
+  1 failed
+    e2e\archive_room_logging.spec.ts:80:7 › archive room logging › blind retry logs the repeated variant, not a duplicate wrong_code 
+  1 passed (1.4m)
