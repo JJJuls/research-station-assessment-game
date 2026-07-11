@@ -9,7 +9,7 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 ## Current status
 
-- **Last commit**: `26379ce` — Station beat 1: Systems Repair Room
+- **Last commit**: `871105c` — Station beat 2: Engineer Hub
 - **Completed**:
   1. `dd498f2` — `REMAINING-STATION-INVENTORY.md` (7 stations: sources,
      study_item_ids, construct_ids, semantics, legacy+canonical events,
@@ -81,19 +81,33 @@ Live checkpoint file. Updated after every commit. Newest entry first.
     verification owed** (Playwright disabled this session) — room is
     implemented, not yet verified "working".
 
-- **Exact next action**: **Station beat 2 — Engineer Hub** (room-builder
-  discipline): reconfirm `docs/game/rooms/03-engineer-hub.md`; port report
-  path audit-first (legacy events/labels verbatim, incl.
-  `engineer_report_submitted_supervised` unmapped); additive canonical
-  `engineer_hub_entered`; build the supervision-duty mechanic per V3 §4
-  Room 3 (duty offer via U3 `nextStage` after report submission:
-  accept → `engineer_supervision_assigned`+`engineer_supervision_accepted`
-  - SessionState.addAcceptedDuty + addActiveObjective; decline →
-    `engineer_supervision_declined` + addSkippedDuty, no penalty); duty
-    completion/skip and `accepted_duty_unresolved` emission DEFERRED to the
-    Final Core beat (contract: checked "at Final Core or related station
-    point" — do not invent an earlier check). One-shot guards session-level.
-    Registry flip (`engineer` route), spec compile-only, docs update.
+11. `871105c` — **Station beat 2: Engineer Hub.** `EngineerScene`
+    (`?scene=engineer`, Hub door open, statusBoardLabel 'Engineer report').
+    Report path audit-first verbatim (incl. one-shot gate text). Duty
+    mechanic: chained U3 stage after any report — `engineer_supervision_assigned`
+    on offer; accept → `engineer_supervision_accepted` (Q10) +
+    `relay_supervision` (constant in `src/data/duties.ts`) into
+    accepted_duties + active_objectives; decline →
+    `engineer_supervision_declined` + skipped_duties, no penalty framing.
+    `engineer_supervision_completed/skipped` + `accepted_duty_unresolved`
+    deferred to Final Core beat per contract wording. Additive
+    `engineer_hub_entered`. Spec `engineer_hub_logging.spec.ts`
+    compile-only. Room doc + event-schema updated. Build + tsc PASS.
+    Runtime verification owed (issue 9).
+
+- **Exact next action**: **Station beat 3 — Inventory / Preparation Room**
+  (room-builder discipline): reconfirm
+  `docs/game/rooms/04-inventory-preparation-room.md`; port the legacy
+  3-option combined choice verbatim (labels/feedback/events incl.
+  `inventory_prep_opened` gate); add the separable canonical sub-steps the
+  contract requires via U3 stages WITHOUT altering legacy option meanings:
+  canonical events `inventory_room_entered`, `inventory_checklist_opened`,
+  and the per-path additive canonical equivalents from event-schema §4
+  (renames emitted additively alongside legacy names, never replacing);
+  record `prepared_items`/`workspace_status` in SessionState for the Final
+  Core flags (vocabulary defined in this beat, documented in the room doc).
+  Keep interface simple (organisation, not dexterity). Registry flip
+  (`inventory`), spec compile-only, docs update.
 
 ## Unresolved issues (user-owned; never decided autonomously)
 
@@ -134,3 +148,5 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 | `9bbb5cc` | U6     | e2e station-driving fixtures  |
 | `0a61fe2` | Docs   | State checkpoint after U6     |
 | `26379ce` | Room 2 | Systems Repair Room beat      |
+| `cf48ff6` | Docs   | State checkpoint after beat 1 |
+| `871105c` | Room 3 | Engineer Hub beat             |
