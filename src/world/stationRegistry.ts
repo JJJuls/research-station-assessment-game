@@ -84,8 +84,10 @@ export const STATION_REGISTRY: readonly StationRegistration[] = [
     roomId: 'inventory_prep_room',
     label: 'Inventory / Prep',
     routeParam: 'inventory',
+    sceneKey: key.scene.inventory,
     hubDoor: { x: 22 * 32, y: 1 * 32 + 16 },
     hubSpawn: { x: 22 * 32, y: 4 * 32 },
+    statusBoardLabel: 'Kit preparation',
   },
   // Left wall doorways (rows 6 and 9):
   {

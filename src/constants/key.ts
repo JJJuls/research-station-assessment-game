@@ -13,6 +13,7 @@ const scene = {
   dock: 'dock',
   engineer: 'engineer',
   hub: 'hub',
+  inventory: 'inventory',
   main: 'main',
   menu: 'menu',
   repair: 'repair',

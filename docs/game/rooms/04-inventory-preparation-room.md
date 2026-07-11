@@ -115,6 +115,41 @@ and `final_core_workspace_issue_flagged` also require `SessionState` to carry
 `prepared_items`/`workspace_status` across rooms (V3 Section 3.1), which is not
 yet implemented.
 
+**Wave 1A status (2026-07-12)**: room implemented as `InventoryScene`
+(`src/scenes/InventoryScene.ts`, `?scene=inventory`, Hub door open via the
+registry). Legacy 3-option prompt preserved verbatim (labels, feedback,
+event sequences, one-shot gate text). Contract-required sub-steps added as
+chained stages **after the systematic option only**: verification prompt
+(run check → `inventory_verified_complete`; plausible skip →
+`inventory_verification_skipped`) then cleanup/confirm step (sort →
+`workspace_tidy_confirmed` + `cleanup_completed`; leave →
+`workspace_left_disordered`). The shortcut and sort-and-verify options keep
+their legacy asserted outcomes and end immediately (chaining after them
+would contradict their feedback text); their canonical equivalents are
+emitted additively per the alias table.
+
+**Emission placement decision (documented, matrix-grounded)**:
+`inventory_checklist_opened` (Q01, organisation) fires on the "Open the
+checklist..." option, NOT on prompt open — the alias table's mechanical
+`inventory_prep_opened` rename would credit checklist use to shortcut
+players; MASTER_33_ALIGNMENT.md defines Q01 as checklist-driven behaviour.
+Prompt open keeps legacy `inventory_prep_opened` only (unmapped).
+
+**Still unemitted (needs a per-item mini-game, a task-design decision
+beyond an audit-first port)**: `inventory_item_sorted_correct`,
+`inventory_item_misplaced`, `wrong_tool_selected`, `prepared_tool_used`,
+`readiness_verified`, `inventory_sequence_completed`.
+
+**SessionState propagation (vocabulary defined this beat,
+`src/data/missionVocabulary.ts`)**: `prepared_items` gains `field_kit` on
+every complete-kit path (systematic terminal options, sort-and-verify);
+deliberately absent on the shortcut path → Final Core derives
+`final_core_missing_item_flagged` from its absence. `workspace_status` set
+to `tidy`/`disordered` → Final Core derives
+`final_core_workspace_issue_flagged`. Playwright spec
+`e2e/inventory_prep_logging.spec.ts` authored compile-only —
+**runtime/browser verification still owed** before any "works" claim.
+
 ## Anti-leakage note
 
 No organisation/BFI item wording (Q01-Q04, Q30) may appear in checklist text,
