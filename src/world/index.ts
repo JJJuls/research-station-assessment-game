@@ -9,6 +9,7 @@ export type {
 export { RoomScene, runOncePerSession } from './RoomScene';
 export type { RoomTransitionTarget } from './SceneRouter';
 export {
+  isSceneRouteRegistered,
   registerSceneRoute,
   resolveStartSceneKey,
   transitionToRoom,
@@ -21,3 +22,9 @@ export {
   WANG_TILESET_KEY,
   WANG_TILESET_URL,
 } from './StationMapBuilder';
+export type { StationRegistration } from './stationRegistry';
+export {
+  getStationByRoomId,
+  registerBuiltStationRoutes,
+  STATION_REGISTRY,
+} from './stationRegistry';

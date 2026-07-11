@@ -30,6 +30,11 @@ export function resolveStartSceneKey(): string {
   return key.scene.dock;
 }
 
+/** Whether a `?scene=` alias is already routable. */
+export function isSceneRouteRegistered(param: string): boolean {
+  return param in SCENE_PARAM_TO_KEY;
+}
+
 /**
  * Registers an additional `?scene=` alias once its scene exists (used by
  * room build phases so unbuilt scenes are never routable).

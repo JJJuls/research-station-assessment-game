@@ -14,6 +14,7 @@ import {
 import {
   DOCK_PAD_TILESET_KEY,
   DOCK_PAD_TILESET_URL,
+  registerBuiltStationRoutes,
   resolveStartSceneKey,
   WANG_TILESET_KEY,
   WANG_TILESET_URL,
@@ -74,7 +75,9 @@ export class Boot extends Scene {
   create() {
     // Scene routing via ?scene= query param (SceneRouter). ?scene=prototype
     // stays permanently routable so no prototype research station
-    // disappears before its room is ported.
+    // disappears before its room is ported. Built assessment stations
+    // register their aliases from the station registry first.
+    registerBuiltStationRoutes();
     this.scene.start(resolveStartSceneKey());
   }
 }
