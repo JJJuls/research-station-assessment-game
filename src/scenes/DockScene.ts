@@ -55,9 +55,9 @@ export class DockScene extends RoomScene {
         '#......................#',
         '#......####............#',
         '#......####............#',
-        '#......................#',
-        '#......................#',
-        '#......................#',
+        '#........PPPPPP........#',
+        '#........PPPPPP........#',
+        '#........PPPPPP........#',
         '###########--###########',
         '########################',
       ],
@@ -81,6 +81,7 @@ export class DockScene extends RoomScene {
     this.addStation({
       interactionKey: 'dockArrivalTutorial',
       label: 'Arrival Terminal',
+      texture: 'prop-dock-terminal',
       x: 3 * 32,
       y: 3 * 32,
       promptBody:
@@ -107,6 +108,7 @@ export class DockScene extends RoomScene {
       x: 12 * 32 - 16,
       y: 1 * 32 + 16,
       label: 'Station Hub',
+      texture: 'prop-dock-airlock',
       interactionKey: 'dockArrivalTutorial',
       target: {
         sceneKey: key.scene.hub,
@@ -114,6 +116,13 @@ export class DockScene extends RoomScene {
         spawn: 'dock_arrival',
       },
     });
+
+    // Set dressing (decorative only; never obstructs interactables).
+    this.addDecor(12 * 32 - 16, 12 * 32 + 8, 'prop-dock-airlock'); // arrival airlock
+    this.addDecor(6 * 32, 1 * 32 + 12, 'prop-dock-signage');
+    // Crates sit on the collidable crate block only — decor on open floor
+    // would let the player walk through it (visual-integrity rule).
+    this.addDecor(8.5 * 32, 7 * 32, 'prop-dock-crates');
 
     // Highlighted movement target (V3 Room 0 mini-game: "movement to
     // highlighted target"). Reaching it is a mechanic, not an event — no

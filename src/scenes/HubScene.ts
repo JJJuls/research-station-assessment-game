@@ -136,6 +136,7 @@ export class HubScene extends RoomScene {
         y: spec.y,
         label: spec.label,
         interactionKey: 'stationHub',
+        texture: isOpen ? 'prop-hub-door-frame' : 'prop-hub-locked-door',
         ...(isOpen
           ? {
               target: {
@@ -157,6 +158,7 @@ export class HubScene extends RoomScene {
       x: 13 * 32,
       y: 14 * 32 + 16,
       label: 'Dock / Arrival Bay',
+      texture: 'prop-hub-door-frame',
       interactionKey: 'stationHub',
       target: {
         sceneKey: key.scene.dock,
@@ -168,9 +170,14 @@ export class HubScene extends RoomScene {
     // Mission status board (allowed progress UI: checklist/status labels,
     // V3 §2 — no scores, no personality feedback). Mounted on the central
     // console block.
+    // Central console dressing (decorative).
+    this.addDecor(12 * 32, 8.5 * 32, 'prop-hub-console');
+    this.addDecor(14 * 32, 8.5 * 32, 'prop-hub-console');
+
     this.addStation({
       interactionKey: 'stationHub',
       label: 'Status Board',
+      texture: 'prop-hub-status-board',
       x: 13 * 32,
       y: 7.5 * 32,
       onPromptOpened: () => {

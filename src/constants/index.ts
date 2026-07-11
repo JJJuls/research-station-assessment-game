@@ -1,3 +1,4 @@
+export * from './assets';
 export * from './depth';
 export * from './env';
 export * from './key';

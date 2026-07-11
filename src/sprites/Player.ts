@@ -1,6 +1,14 @@
 import Phaser from 'phaser';
 
-import { key } from '../constants';
+import {
+  key,
+  RESEARCHER_IDLE_FRAMES,
+  RESEARCHER_WALK_FRAMES,
+  type ResearcherDirection,
+  researcherIdleFrameKey,
+  researcherRotationKey,
+  researcherWalkFrameKey,
+} from '../constants';
 
 enum Animation {
   Left = 'player_left',
@@ -8,6 +16,29 @@ enum Animation {
   Up = 'player_up',
   Down = 'player_down',
 }
+
+/**
+ * Phase F visual upgrade: when the committed PixelLab researcher textures
+ * are loaded, the player renders with them; otherwise the template Misa
+ * atlas remains as fallback. STRICT equivalence rules (approved plan §10
+ * measurement check 5/6): movement code, velocities, body size (32×42),
+ * selector geometry, and walk frameRate (10) are identical in both skins —
+ * only textures/animation sources differ. Diagonals map to the nearest
+ * cardinal animation (movement itself is unchanged).
+ */
+type PlayerSkin = 'misa' | 'researcher';
+
+const ANIMATION_TO_DIRECTION: Record<Animation, ResearcherDirection> = {
+  [Animation.Left]: 'west',
+  [Animation.Right]: 'east',
+  [Animation.Up]: 'north',
+  [Animation.Down]: 'south',
+};
+
+const researcherWalkAnim = (dir: ResearcherDirection) =>
+  `researcher_walk_${dir}`;
+const researcherIdleAnim = (dir: ResearcherDirection) =>
+  `researcher_idle_${dir}`;
 
 type Cursors = Record<
   'w' | 'a' | 's' | 'd' | 'up' | 'left' | 'down' | 'right' | 'space',
@@ -23,15 +54,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   body!: Phaser.Physics.Arcade.Body;
   cursors: Cursors;
   selector: Phaser.Physics.Arcade.StaticBody;
+  private readonly skin: PlayerSkin;
 
-  constructor(
-    scene: Phaser.Scene,
-    x: number,
-    y: number,
-    texture = key.atlas.player,
-    frame = 'misa-front',
-  ) {
-    super(scene, x, y, texture, frame);
+  private static hasResearcherTextures(scene: Phaser.Scene): boolean {
+    return scene.textures.exists(researcherWalkFrameKey('south', 0));
+  }
+
+  constructor(scene: Phaser.Scene, x: number, y: number) {
+    const skin: PlayerSkin = Player.hasResearcherTextures(scene)
+      ? 'researcher'
+      : 'misa';
+
+    if (skin === 'researcher') {
+      super(scene, x, y, researcherRotationKey('south'));
+    } else {
+      super(scene, x, y, key.atlas.player, 'misa-front');
+    }
+
+    this.skin = skin;
 
     // Add the sprite to the scene
     scene.add.existing(this);
@@ -39,9 +79,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Enable physics for the sprite
     scene.physics.world.enable(this);
 
-    // The image has a bit of whitespace so use setSize and
-    // setOffset to control the size of the player's body
-    this.setSize(32, 42).setOffset(0, 22);
+    // Identical 32×42 collision body in both skins (art swaps must never
+    // change collision footprints). Offsets center the body within each
+    // skin's frame: Misa frames are 32×64 (offset 0,22); researcher
+    // frames are 96×96 with a ~48px character centered (offset 32,30
+    // aligns the body to the visible torso/feet).
+    if (this.skin === 'researcher') {
+      this.setSize(32, 42).setOffset(32, 30);
+    } else {
+      this.setSize(32, 42).setOffset(0, 22);
+    }
 
     // Collide the sprite body with the world boundary
     this.setCollideWorldBounds(true);
@@ -71,6 +118,36 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private createAnimations() {
     const anims = this.scene.anims;
+
+    if (this.skin === 'researcher') {
+      // Same frameRate as the Misa walk (10) — animation timing must be
+      // identical across skins and paths (plan §10 check 5).
+      for (const dir of ['south', 'west', 'east', 'north'] as const) {
+        if (!anims.exists(researcherWalkAnim(dir))) {
+          anims.create({
+            key: researcherWalkAnim(dir),
+            frames: Array.from({ length: RESEARCHER_WALK_FRAMES }, (_, i) => ({
+              key: researcherWalkFrameKey(dir, i),
+            })),
+            frameRate: 10,
+            repeat: -1,
+          });
+        }
+
+        if (!anims.exists(researcherIdleAnim(dir))) {
+          anims.create({
+            key: researcherIdleAnim(dir),
+            frames: Array.from({ length: RESEARCHER_IDLE_FRAMES }, (_, i) => ({
+              key: researcherIdleFrameKey(dir, i),
+            })),
+            frameRate: 6,
+            repeat: -1,
+          });
+        }
+      }
+
+      return;
+    }
 
     // Create left animation
     if (!anims.exists(Animation.Left)) {
@@ -131,6 +208,47 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         repeat: -1,
       });
     }
+  }
+
+  /** Plays the walking animation for the given logical direction. */
+  private playWalk(animation: Animation) {
+    if (this.skin === 'researcher') {
+      this.anims.play(
+        researcherWalkAnim(ANIMATION_TO_DIRECTION[animation]),
+        true,
+      );
+    } else {
+      this.anims.play(animation, true);
+    }
+
+    this.moveSelector(animation);
+  }
+
+  /** Shows the idle pose/animation for the given logical direction. */
+  private showIdle(animation: Animation) {
+    if (this.skin === 'researcher') {
+      this.anims.play(
+        researcherIdleAnim(ANIMATION_TO_DIRECTION[animation]),
+        true,
+      );
+    } else {
+      switch (animation) {
+        case Animation.Left:
+          this.setTexture(key.atlas.player, 'misa-left');
+          break;
+        case Animation.Right:
+          this.setTexture(key.atlas.player, 'misa-right');
+          break;
+        case Animation.Up:
+          this.setTexture(key.atlas.player, 'misa-back');
+          break;
+        case Animation.Down:
+          this.setTexture(key.atlas.player, 'misa-front');
+          break;
+      }
+    }
+
+    this.moveSelector(animation);
   }
 
   private moveSelector(animation: Animation) {
@@ -199,52 +317,53 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     switch (true) {
       case cursors.left.isDown:
       case cursors.a.isDown:
-        anims.play(Animation.Left, true);
-        this.moveSelector(Animation.Left);
+        this.playWalk(Animation.Left);
         break;
 
       case cursors.right.isDown:
       case cursors.d.isDown:
-        anims.play(Animation.Right, true);
-        this.moveSelector(Animation.Right);
+        this.playWalk(Animation.Right);
         break;
 
       case cursors.up.isDown:
       case cursors.w.isDown:
-        anims.play(Animation.Up, true);
-        this.moveSelector(Animation.Up);
+        this.playWalk(Animation.Up);
         break;
 
       case cursors.down.isDown:
       case cursors.s.isDown:
-        anims.play(Animation.Down, true);
-        this.moveSelector(Animation.Down);
+        this.playWalk(Animation.Down);
         break;
 
       default:
-        anims.stop();
+        if (this.skin !== 'researcher') {
+          anims.stop();
+        }
 
-        // If we were moving, pick an idle frame to use
+        // If we were moving, pick an idle pose facing the last direction
         switch (true) {
           case prevVelocity.x < 0:
-            this.setTexture(key.atlas.player, 'misa-left');
-            this.moveSelector(Animation.Left);
+            this.showIdle(Animation.Left);
             break;
 
           case prevVelocity.x > 0:
-            this.setTexture(key.atlas.player, 'misa-right');
-            this.moveSelector(Animation.Right);
+            this.showIdle(Animation.Right);
             break;
 
           case prevVelocity.y < 0:
-            this.setTexture(key.atlas.player, 'misa-back');
-            this.moveSelector(Animation.Up);
+            this.showIdle(Animation.Up);
             break;
 
           case prevVelocity.y > 0:
-            this.setTexture(key.atlas.player, 'misa-front');
-            this.moveSelector(Animation.Down);
+            this.showIdle(Animation.Down);
             break;
+
+          default:
+            // Standing still with no prior movement: keep the researcher
+            // idle loop running if that skin is active.
+            if (this.skin === 'researcher' && !this.anims.isPlaying) {
+              this.showIdle(Animation.Down);
+            }
         }
     }
   }

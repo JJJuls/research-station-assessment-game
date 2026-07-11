@@ -33,6 +33,13 @@ export interface RoomStationConfig {
   label: string;
   x: number;
   y: number;
+  /**
+   * Committed prop texture key (Phase F). When the texture is loaded the
+   * station renders as this sprite instead of the placeholder rectangle;
+   * the interaction position/radius is unchanged either way (art swaps
+   * never alter interaction regions — plan §10 check 6).
+   */
+  texture?: string;
   /** Extra prompt body text below the interaction label (in-fiction). */
   promptBody?: string;
   /**
@@ -47,6 +54,8 @@ export interface RoomDoorConfig {
   x: number;
   y: number;
   label: string;
+  /** Committed prop texture key (see RoomStationConfig.texture). */
+  texture?: string;
   target?: RoomTransitionTarget;
   /**
    * Sealed doors (unbuilt rooms) show this fiction-consistent message
@@ -203,9 +212,13 @@ export abstract class RoomScene extends Phaser.Scene {
 
   /** Adds a proximity interaction station (prototype marker mechanics). */
   protected addStation(config: RoomStationConfig) {
-    const marker = this.add
-      .rectangle(config.x, config.y, 40, 40, 0x1f7a8c, 0.8)
-      .setStrokeStyle(2, 0x5fd3c4);
+    const marker = this.buildInteractableVisual(
+      config.x,
+      config.y,
+      config.texture,
+      0x1f7a8c,
+      0x5fd3c4,
+    );
     const label = this.add
       .text(config.x, config.y - 42, config.label, {
         backgroundColor: '#000',
@@ -219,19 +232,48 @@ export abstract class RoomScene extends Phaser.Scene {
     this.stations.push(config);
   }
 
+  /**
+   * Purely decorative set dressing: renders only when its committed
+   * texture is loaded; never collides, never interacts, never obstructs
+   * (placement is the room's responsibility per plan §10 decorative rule).
+   */
+  protected addDecor(x: number, y: number, texture: string) {
+    if (this.textures.exists(texture)) {
+      this.add.image(x, y, texture);
+    }
+  }
+
+  /**
+   * Prop sprite when its committed texture is loaded, placeholder
+   * rectangle otherwise. Every interactable keeps the same cyan accent
+   * cue (uniform affordance across objects and participants).
+   */
+  private buildInteractableVisual(
+    x: number,
+    y: number,
+    texture: string | undefined,
+    fillColor: number,
+    strokeColor: number,
+  ): Phaser.GameObjects.GameObject {
+    if (texture !== undefined && this.textures.exists(texture)) {
+      return this.add.image(x, y, texture);
+    }
+
+    return this.add
+      .rectangle(x, y, 40, 40, fillColor, 0.8)
+      .setStrokeStyle(2, strokeColor);
+  }
+
   /** Adds a door (open transition or sealed bulkhead). */
   protected addDoor(config: RoomDoorConfig) {
     const isSealed = config.target === undefined;
-    const marker = this.add
-      .rectangle(
-        config.x,
-        config.y,
-        40,
-        40,
-        isSealed ? 0x46586b : 0x3f5a66,
-        0.9,
-      )
-      .setStrokeStyle(2, isSealed ? 0x2b3a4a : 0x5fd3c4);
+    const marker = this.buildInteractableVisual(
+      config.x,
+      config.y,
+      config.texture,
+      isSealed ? 0x46586b : 0x3f5a66,
+      isSealed ? 0x2b3a4a : 0x5fd3c4,
+    );
     const label = this.add
       .text(config.x, config.y - 42, config.label, {
         backgroundColor: '#000',

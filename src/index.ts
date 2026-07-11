@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 
+import { ASSET_SET_VERSION } from './constants';
 import * as scenes from './scenes';
 import { researchRuntime } from './systems';
 
@@ -11,9 +12,12 @@ researchRuntime.start();
 new Phaser.Game({
   width: 800, // 1024
   height: 600, // 768
-  title: 'Phaser RPG',
+  title: 'Remote Outpost Assessment',
   url: import.meta.env.VITE_APP_HOMEPAGE,
-  version: import.meta.env.VITE_APP_VERSION,
+  // Frozen-stimuli identifier rides in the engine version banner so every
+  // session's console shows (game_version, asset_set_version) provenance
+  // (approved plan §8; formally locked at the stimulus-freeze gate).
+  version: `${import.meta.env.VITE_APP_VERSION ?? 'dev'}+${ASSET_SET_VERSION}`,
   scene: [
     scenes.Boot,
     ...Object.values(scenes).filter((scene) => scene !== scenes.Boot),

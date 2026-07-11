@@ -77,6 +77,7 @@ export class ArchiveScene extends RoomScene {
     this.addStation({
       interactionKey: 'archiveAccessTerminal',
       label: 'Archive Terminal',
+      texture: 'prop-archive-terminal',
       x: 10 * 32 - 16,
       y: 5.5 * 32,
       onPromptOpened: () => {
@@ -91,6 +92,7 @@ export class ArchiveScene extends RoomScene {
     this.addStation({
       interactionKey: 'archiveLogShelves',
       label: 'Log Shelves',
+      texture: 'prop-archive-shelves',
       x: 3 * 32,
       y: 6.5 * 32,
       onPromptOpened: () => {
@@ -101,6 +103,11 @@ export class ArchiveScene extends RoomScene {
         return false;
       },
     });
+
+    // Set dressing (decorative only).
+    this.addDecor(16.5 * 32, 3.5 * 32, 'prop-archive-racks'); // right stack
+    this.addDecor(16.5 * 32, 6.5 * 32, 'prop-archive-panels');
+    this.addDecor(3 * 32, 3.5 * 32, 'prop-archive-racks'); // left-top stack
 
     // Door back to the Station Hub. archive_abandoned fires on exit while
     // an attempt has failed and the task is incomplete (room doc edge
