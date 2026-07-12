@@ -161,8 +161,8 @@ export async function dockToHub(page: Page) {
 
 /** Hub spawn -> Archive: clamp west wall, clamp top wall, short right. */
 export async function hubToArchive(page: Page) {
-  await hold(page, 'ArrowLeft', 2400); // clamps at the west wall
-  await hold(page, 'ArrowUp', 2600); // clamps at the top wall (~y 82)
+  await hold(page, 'ArrowLeft', 4600); // clamps at the west wall
+  await hold(page, 'ArrowUp', 3000); // clamps at the top wall (~y 82)
   await hold(page, 'ArrowRight', 500); // any delivery in 16-145 px is in range
   await press(page, 'Space');
   await waitForRoomEntry(page, 'archive_room_entered');
@@ -204,51 +204,64 @@ export type HubStationRoomId =
  * compose with waitForRoomEntry(page, '<room>_entered') once the room
  * exists.
  */
+/**
+ * Normalizes the player to the Hub's north-west corner from ANY position
+ * (Sprint A A3 finding: routes that clamp horizontally at mid-height wedge
+ * against the central console block from side-wall return spawns, and
+ * naive south/top clamps can trap the player in a doorway pocket).
+ *
+ * 1. Down-clamp: ends at the south corridor, on the console-block top, or
+ *    inside the dock-door pocket (cols 12-13) — the only three outcomes.
+ * 2. Short Up hop (~70 px): escapes any pocket/block-top onto an
+ *    always-clear traversal row (rows 5 or 11-13 — never the side-door
+ *    rows 6/9, never the block row 8).
+ * 3. West-clamp along that clear row, then Up-clamp the obstacle-free
+ *    west wall column to the corner.
+ */
+async function hubToNorthWestAnchor(page: Page) {
+  await hold(page, 'ArrowDown', 3200);
+  await hold(page, 'ArrowUp', 400);
+  await hold(page, 'ArrowLeft', 4600);
+  await hold(page, 'ArrowUp', 3000);
+}
+
 export async function hubToStationDoor(page: Page, roomId: HubStationRoomId) {
+  // Every route starts at the NW anchor (position independence); east-side
+  // doors then clamp across the clear top row (row 2) to the NE corner.
+  await hubToNorthWestAnchor(page);
+
   switch (roomId) {
-    // Top-wall doors, from the north-west corner clamp:
-    case 'archive_room': // door x 128
-      await hold(page, 'ArrowLeft', 2400);
-      await hold(page, 'ArrowUp', 2600);
+    // Top-wall doors from the north-west corner:
+    case 'archive_room': // door x 128 (~84 px from corner)
       await hold(page, 'ArrowRight', 500);
       break;
-    case 'systems_repair_room': // door x 320 (~238 px from corner)
-      await hold(page, 'ArrowLeft', 2400);
-      await hold(page, 'ArrowUp', 2600);
+    case 'systems_repair_room': // door x 320 (~276 px from corner)
       await hold(page, 'ArrowRight', 1500);
       break;
-    // Top-wall doors nearer the north-east corner clamp:
-    case 'engineer_hub': // door x 512 (~238 px from east corner)
-      await hold(page, 'ArrowRight', 3000);
-      await hold(page, 'ArrowUp', 2600);
+    // Top-wall doors from the north-east corner:
+    case 'engineer_hub': // door x 512 (~276 px from east corner)
+      await hold(page, 'ArrowRight', 4600);
       await hold(page, 'ArrowLeft', 1500);
       break;
-    case 'inventory_prep_room': // door x 704 (~46 px from east corner)
-      await hold(page, 'ArrowRight', 3000);
-      await hold(page, 'ArrowUp', 2600);
+    case 'inventory_prep_room': // door x 704 (~84 px from east corner)
+      await hold(page, 'ArrowRight', 4600);
       await hold(page, 'ArrowLeft', 400);
       break;
-    // Left-wall doors, from the north-west corner clamp (door x 24 is
-    // inside the wall; the west clamp already puts the player in x-range):
+    // Left-wall doors (door x 24 is inside the wall; the west clamp
+    // already puts the player in x-range):
     case 'hazard_control_room': // door y 208 (~126 px below corner)
-      await hold(page, 'ArrowLeft', 2400);
-      await hold(page, 'ArrowUp', 2600);
       await hold(page, 'ArrowDown', 800);
       break;
     case 'optional_side_repair_bay': // door y 304 (~222 px below corner)
-      await hold(page, 'ArrowLeft', 2400);
-      await hold(page, 'ArrowUp', 2600);
       await hold(page, 'ArrowDown', 1400);
       break;
-    // Right-wall doors, mirrored:
+    // Right-wall doors, from the north-east corner:
     case 'interruption_corridor': // door y 208
-      await hold(page, 'ArrowRight', 3000);
-      await hold(page, 'ArrowUp', 2600);
+      await hold(page, 'ArrowRight', 4600);
       await hold(page, 'ArrowDown', 800);
       break;
     case 'final_core_room': // door y 304
-      await hold(page, 'ArrowRight', 3000);
-      await hold(page, 'ArrowUp', 2600);
+      await hold(page, 'ArrowRight', 4600);
       await hold(page, 'ArrowDown', 1400);
       break;
   }
