@@ -7,7 +7,30 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
   via CLI only; no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — SPRINT A PHASE A3 COMPLETE (this commit)
+## Current status — SPRINT A PHASE A4 COMPLETE (this commit)
+
+- **Base**: `71cadfb` (A3 checkpoint). This commit adds
+  `e2e/connected_participant_journeys.spec.ts` (3 sessions), journey.ts
+  in-room helpers (openStationAlcove, completeDockTutorial,
+  position-independent dockToHubJourney), and the evidence record
+  `docs/testing/connected-journey/CONNECTED-JOURNEY-EVIDENCE.md`.
+- **3/3 connected journeys PASS through real doors** — P1 adaptive/informed
+  /duty-completed/high-quality-core (+ return flow), P2 shortcut/declined/
+  switched/partial-repair/reckless/forced-core, P3 practice/defer-then-
+  complete/avoided/ignored/blind-retry/rushed-core. Hazard branches split
+  across sessions (scientific validity). Zero game defects; zero console
+  errors; mission-state, event-order, one-shot, metadata, and frozen-summary
+  spot checks all live-verified.
+- **New Beat-13 observation (user-owned)**: ScoringManager organization
+  formulas count only the legacy option-3 inventory names; the chained
+  systematic path emits canonical names only, so organization_kit_verified
+  stays false on that path (raw events fully logged; analytically
+  recoverable). Details in the evidence doc §Observation.
+- **Exact next action**: Phase A5 — cross-room integration contract doc
+  (incl. the Hazard available/consumed/unspecified split), then A6
+  robustness/delegation architecture.
+
+## Prior status — SPRINT A PHASE A3 COMPLETE (71cadfb)
 
 - **Base**: `54ba3e8` (A2). Commits: `76c91f2` (journey helpers + route
   rework), `167837e` (navigation smoke spec), this state/handoff commit.

@@ -179,13 +179,47 @@ export async function bootJourney(
   await page.waitForTimeout(2200);
 }
 
-/** Dock spawn -> Hub through the top door (count-aware; re-entry safe). */
+/**
+ * Dock -> Hub through the top door, from ANY position (pocket/crate-safe
+ * anchor: south clamp, 200 ms up-hop — sized so the traversal row clears
+ * BOTH the crate block rows 7-8 and the bottom doorway pocket — west
+ * clamp, north clamp, timed east leg to the door at x 368).
+ */
 export async function dockToHubJourney(page: Page) {
   const before = await eventCount(page, 'scene_start', 'hub');
 
-  await hold(page, 'ArrowUp', 2800);
+  await hold(page, 'ArrowDown', 3000);
+  await hold(page, 'ArrowUp', 200);
+  await hold(page, 'ArrowLeft', 4600);
+  await hold(page, 'ArrowUp', 3000);
+  await hold(page, 'ArrowRight', 1850);
   await press(page, 'Space');
   await waitForEventCount(page, 'scene_start', 'hub', before + 1);
+}
+
+/**
+ * Opens the room's primary station prompt from the room's entry spawn:
+ * every primary alcove (all eight stations + the Dock hub-door column) sits
+ * directly north of its spawn behind a clamping alcove wall (Up 900
+ * overshoots and clamps in interaction range — openArchiveTerminal
+ * precedent, verified per room in the wave specs).
+ */
+export async function openStationAlcove(page: Page) {
+  await hold(page, 'ArrowUp', 900);
+  await press(page, 'Space');
+}
+
+/**
+ * Dock tutorial from ANY dock position: west clamp (crate-safe at every
+ * spawn row), north clamp to the terminal corner (96, 96), SPACE, then the
+ * chosen option (1 skip / 2 review+confirm / 3 practice+confirm — labels
+ * frozen, option order is the author's declared order).
+ */
+export async function completeDockTutorial(page: Page, option: 1 | 2 | 3) {
+  await hold(page, 'ArrowLeft', 2400);
+  await hold(page, 'ArrowUp', 2400);
+  await press(page, 'Space');
+  await press(page, `${option}`);
 }
 
 /** Hub bottom door -> Dock (count-aware; re-entry safe). */
