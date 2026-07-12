@@ -9,7 +9,7 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 ## Current status
 
-- **Last commit**: `cc10ed9` — Station beat 3: Inventory / Preparation Room
+- **Last commit**: `6e09afc` — Station beat 4: Optional Side Repair Bay
 - **Completed**:
   1. `dd498f2` — `REMAINING-STATION-INVENTORY.md` (7 stations: sources,
      study_item_ids, construct_ids, semantics, legacy+canonical events,
@@ -107,23 +107,43 @@ Live checkpoint file. Updated after every commit. Newest entry first.
     `workspace_status` tidy/disordered (`src/data/missionVocabulary.ts`).
     Spec compile-only. Build + tsc PASS. Runtime verification owed.
 
-- **Exact next action**: **Station beat 4 — Optional Side Repair Bay**
+13. `6e09afc` — **Station beat 4: Optional Side Repair Bay.**
+    `SideRepairScene` (`?scene=side_repair`, statusBoardLabel 'Stabiliser
+    repair'). Legacy 3 options verbatim; additive canonical:
+    `side_repair_discovered` (once, first entry), `stabiliser_option_offered`
+    (each offer), accept/start decomposition (`stabiliser_accepted` +
+    `side_repair_accepted` + `side_repair_first_step`),
+    `side_repair_abandoned_after_start`, `final_bonus_unlocked`. **Defer
+    branch added** (option 4, `side_repair_deferred`) — does not complete
+    the room, offer reopens; defer ≠ abandon (confound control).
+    `side_repair_completed` mapping (Q07/Q16/Q32, unset construct) now
+    registered — **intentional prototype-payload change; re-baseline the
+    Phase-0 fixture field during the verification pass** (issue 9).
+    `side_repair_status` vocabulary: ignored/abandoned_after_start/
+    deferred/completed. Unemitted, documented: `side_repair_step_completed`
+    (needs multi-step mini-game), canonical `side_repair_abandoned` (not
+    matrix-listed). Spec compile-only. Build + tsc PASS.
+
+- **Exact next action**: **Station beat 5 — Interruption Corridor**
   (room-builder discipline): reconfirm
-  `docs/game/rooms/06-optional-side-repair-bay.md`; port legacy 3 options
-  verbatim (`side_repair_opened` gate, `side_repair_ignored`+`low_effort`,
-  `side_repair_started`+`abandoned_after_difficulty`,
-  `side_repair_started`+`side_repair_completed`+`productive_persistence`);
-  additive canonical: `side_repair_discovered` (room entry or first
-  proximity — decide from V3 §4 wording), `stabiliser_option_offered`
-  (prompt open), `stabiliser_accepted`/`side_repair_accepted`+
-  `side_repair_first_step` (start paths), `side_repair_abandoned_after_start`
-  (alias of abandoned_after_difficulty), and the **required defer branch**
-  (`side_repair_deferred`, confound control) as a 4th option via U3
-  N-option support — additive per explicit V3 requirement, distinct from
-  ignore; `side_repair_completed` gains its deferred U4 mapping
-  (Q07/Q16/Q32, construct unset) in this beat with prototype-fixture note.
-  SessionState `side_repair_status` vocabulary for the Final Core bonus.
-  Registry flip (`side_repair`), spec compile-only, docs update.
+  `docs/game/rooms/07-interruption-corridor.md`; port legacy 3 options
+  verbatim (`interruption_opened` gate + the three legacy triples,
+  including the derived-style `interruption_focus_*`/`possible_rigidity`
+  events kept verbatim — NO new interpretation-at-log-time events may be
+  added, scoring-plan §9); additive canonical:
+  `interruption_corridor_entered` (every entry), `objective_active` (on
+  entry while a prior objective is active — use SessionState
+  active_objectives/relay duty as the documented objective source),
+  `interruption_received` (prompt open, beside legacy), per-option raw
+  additions per alias table (`switched_task`+`goal_switch_accepted`+
+  `prior_goal_abandoned` beside switch triple; `returned_to_original_task`
+  beside return triple — NOTE legacy is `interruption_returned_to_original_task`,
+  different string; `task_avoidance` beside ignore triple;
+  `competing_task_viewed` where factual). `excessive_idle_after_instruction`
+  stays registered-not-emitted (idle parameter, issue 1);
+  `final_unresolved_due_to_nonreturn` deferred to Final Core beat.
+  `interruption_status` vocabulary for Final Core. Registry flip
+  (`interruption`), spec compile-only, docs update.
 
 ## Unresolved issues (user-owned; never decided autonomously)
 
@@ -168,3 +188,5 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 | `871105c` | Room 3 | Engineer Hub beat             |
 | `078589e` | Docs   | State checkpoint after beat 2 |
 | `cc10ed9` | Room 4 | Inventory/Prep beat           |
+| `5b5050c` | Docs   | State checkpoint after beat 3 |
+| `6e09afc` | Room 5 | Side Repair Bay beat          |
