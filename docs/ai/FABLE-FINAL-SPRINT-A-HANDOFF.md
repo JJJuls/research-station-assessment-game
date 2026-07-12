@@ -8,7 +8,11 @@ Authoritative continuation state for Sprint A (unattended Fable session,
 ## Current HEAD
 
 - See `git log` — this file is updated in/beside each checkpoint commit.
-- Working state at last update: Phases A1–A5 complete.
+- Working state at last update: **ALL Sprint phases complete** (A1–A6 +
+  lifecycle audit + technical freeze audit + continuation architecture).
+  **`docs/ai/POST-FABLE-MASTER-HANDOFF.md` is now the authoritative
+  continuation document** — read it first; this file remains as the
+  Sprint A phase record.
 
 ## Commits produced in Sprint A
 
@@ -21,7 +25,14 @@ Authoritative continuation state for Sprint A (unattended Fable session,
 | `167837e` | A3    | Connected-world navigation smoke (full door ring)       |
 | `71cadfb` | A3    | State + handoff checkpoint                              |
 | `278f9ef` | A4    | 3 connected participant journeys + evidence record      |
-| (this)    | A5    | Cross-room integration contract + state/handoff update  |
+| `d58ddd7` | A5    | Cross-room integration contract + state/handoff update  |
+| `9d6406d` | A6    | Room-acceptance + connected-journey test templates      |
+| `fe325db` | A6    | Station conventions + debugging checklist               |
+| `3ee9424` | A6    | Prettier-mangle fix in conventions doc                  |
+| `d6a5a84` | P5    | Technical stimulus-freeze audit (17 hashes verified)    |
+| `1c3f492` | P6    | Sonnet continuation guide                               |
+| `900cd61` | P4    | Participant-lifecycle audit + launch-failure spec       |
+| (this)    | P6    | Post-Fable master handoff + final checkpoint            |
 
 ## Completed phases
 
@@ -54,24 +65,23 @@ Authoritative continuation state for Sprint A (unattended Fable session,
 
 ## Current coherent unit
 
-- A5 checkpoint (this commit). Next unit: Phase A6 robustness +
-  delegation architecture.
+- Final checkpoint (this commit). Sprint complete; continuation is
+  defined in `POST-FABLE-MASTER-HANDOFF.md` §10.
 
 ## Exact next action
 
-- Phase A6: (1) reusable templates for later models —
-  `docs/testing/ROOM-ACCEPTANCE-TEMPLATE.md`,
-  `docs/testing/CONNECTED-JOURNEY-TEMPLATE.md`, room-registration/
-  state-lifetime conventions doc; (2) fragile-architecture notes +
-  model-independent debugging checklist; (3) only demonstrated-defect
-  fixes (invalid-route/reload already runtime-covered in A2 spec);
-  (4) phase-boundary full Playwright suite run (36 tests).
+- Post-Fable: Sonnet runs the independent Hazard review (S1 in
+  `SONNET-CONTINUATION-GUIDE.md`); user rules on D2 + the Dock
+  decor-airlock disposition; Beat-13 follows D2.
 
 ## Tests passing
 
-- Full suite **33/33 PASS (18.8m), zero retries** at `167837e`.
-- A4 journeys **3/3 PASS** at `278f9ef` (suite now 36 tests; full-suite
-  run scheduled at the A6 phase boundary).
+- Phase-boundary full suite **GREEN** (`test-results/.last-run.json`
+  status passed, 0 failed; 31.7 min; 36 tests collected — the
+  RTK-compressed console count line read "PASS (35)", Playwright's own
+  record is authoritative).
+- `e2e/participant_lifecycle.spec.ts` added after that run: **2/2 PASS**
+  targeted. Suite is now **38 tests / 14 spec files**.
 
 ## Known failures
 

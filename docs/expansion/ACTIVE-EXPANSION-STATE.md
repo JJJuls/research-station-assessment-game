@@ -30,10 +30,15 @@ Live checkpoint file. Updated after every commit. Newest entry first.
   SHA-256 records byte-verified; no unmanifested art since `556e273`;
   pre-pilot work split technical (T1–T4) vs user-owned scientific. Freeze
   NOT approved (user-owned).
-- **Phase 6 (in progress)**: `1c3f492` sonnet continuation guide.
-- **Exact next action**: write `docs/ai/POST-FABLE-MASTER-HANDOFF.md`,
-  update the Sprint A handoff to final state, then session-end checkpoint
-  (build + tsc + diff --check + clean tree).
+- **Phase 6 COMPLETE**: `1c3f492` sonnet continuation guide; this commit
+  adds `docs/ai/POST-FABLE-MASTER-HANDOFF.md` (authoritative
+  continuation document — commit ledger, world/test inventory, defect
+  status, decision registry, work split, next task) and finalizes the
+  Sprint A handoff.
+- **Exact next action**: post-Fable per master handoff §10 — Sonnet:
+  independent Hazard review; user: D2 + Dock decor-airlock rulings.
+  Any remaining Fable capacity this session: Phase-7 hardening only,
+  one committed unit at a time.
 
 ## Prior status — SPRINT A PHASE A5 COMPLETE (d58ddd7)
 
