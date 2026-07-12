@@ -7,7 +7,31 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
   via CLI only; no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — SPRINT A PHASE A1 COMPLETE (this commit)
+## Current status — SPRINT A PHASE A2 COMPLETE (this commit)
+
+- **Base**: `6424697` (A2 audit doc) on `2c455c7` (A1). This commit adds
+  `e2e/state_session_continuity.spec.ts` (4 tests: reload semantics, direct
+  room launch + current_room_id, invalid `?scene=` fallback with error
+  listeners, door-transition current_room_id + getSummary purity) and one
+  **test-infra fix** in `playwright.config.ts`.
+- **Flake root cause found & fixed (infra, not game)**: the historical
+  "cold-Vite first-load timeout" was actually Phaser's WebGL renderer boot
+  failing on the FIRST context of every fresh headless Chromium
+  ("Framebuffer status: Framebuffer Unsupported" + context loss, visible in
+  the Vite client-error stream). Fixed by forcing deterministic software GL
+  (`--use-gl=angle --use-angle=swiftshader`). Result: **full suite 32/32
+  PASS in 11.1 min with ZERO first-attempt failures** (previously the
+  run's first test always burned a retry).
+- **A2 audit (docs/architecture/STATE-AND-SESSION-CONTINUITY.md)**: zero
+  demonstrated game defects. Three observations documented for user rulings
+  (dock controlErrorCount per-visit lifetime; debug completeDebugSession
+  unguarded objective_completed; reload double-session_start analysis
+  caveat).
+- **Exact next action**: Phase A3 — reusable connected-journey Playwright
+  helpers (door-driven navigation, mission/event/metadata assertions,
+  error capture), checkpointed separately from the journey specs.
+
+## Prior status — SPRINT A PHASE A1 COMPLETE (2c455c7)
 
 - **Base**: `201c8fa` (tag `hazard-control-verified-201c8fa`). Sprint A
   (final Fable window) running per the Sprint A brief; continuous handoff at

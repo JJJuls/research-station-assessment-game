@@ -16,6 +16,15 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5173',
     viewport: { width: 800, height: 600 },
+    // The first WebGL context of a fresh headless Chromium on this machine
+    // fails Phaser's renderer boot ("Framebuffer status: Framebuffer
+    // Unsupported" + context loss), so the run's FIRST test always burned
+    // its first attempt (the historical "cold-Vite first-load" flake —
+    // misattributed). SwiftShader software GL is deterministic from the
+    // first context onward.
+    launchOptions: {
+      args: ['--use-gl=angle', '--use-angle=swiftshader'],
+    },
   },
   webServer: {
     command: 'npx vite --port 5173 --strictPort',
