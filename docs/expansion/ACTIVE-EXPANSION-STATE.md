@@ -1,14 +1,35 @@
-# Active Expansion State — Wave 1A / 1B
+# Active Expansion State — Wave 1A / 1B / Sprint A
 
 Live checkpoint file. Updated after every commit. Newest entry first.
 
 - **Branch**: `fable-autonomous-game-build-v1` (V1 slice frozen at `556e273`)
 - **Protected branch**: `fable-final-game-prep-from-prototype` @ `e8a8994` — untouched
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
-  MCP enabled for the Wave 1B verification session only;
-  no push/merge/PR/rebase/reset/branch-switch.
+  via CLI only; no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — HAZARD CONTROL VERIFIED (this commit)
+## Current status — SPRINT A PHASE A1 COMPLETE (this commit)
+
+- **Base**: `201c8fa` (tag `hazard-control-verified-201c8fa`). Sprint A
+  (final Fable window) running per the Sprint A brief; continuous handoff at
+  `docs/ai/FABLE-FINAL-SPRINT-A-HANDOFF.md`.
+- **A1 — connected-world transition contract**: full static audit (scene
+  registrations, `?scene=` routes incl. invalid fallback→dock, Hub door
+  ring, spawns vs 72px radius, exits, collision/world bounds, camera/FIT,
+  transition-event emission, session-metadata preservation, prototype
+  route). **Zero demonstrated defects; zero fixes.** Deliverables:
+  `docs/architecture/CONNECTED-WORLD-TRANSITION-CONTRACT.md` +
+  `docs/architecture/transition-inventory.json` (machine-readable, entry
+  events verified against scene sources). tsc PASS (docs-only change).
+- **Notable audit observations (non-defects, §10 of contract)**: sealed-door
+  branch now unreachable (kept as safety net); double `setCurrentRoom` per
+  transition (idempotent, covers direct launches); unknown `?scene=` silent
+  dock fallback (documented intent).
+- **Exact next action**: Phase A2 — state/session continuity audit + tests
+  (re-entry semantics, one-shot guards, reload, direct launch, metadata
+  continuity, debug API, scoring-summary consistency, Hazard state, Final
+  Core consumption). Checkpoint per coherent unit.
+
+## Prior status — HAZARD CONTROL VERIFIED (201c8fa)
 
 - **Base**: `fbe98bf` (verification plan) on `ecd2256` (implementation).
   This commit adds `e2e/hazard_control_logging.spec.ts` (4 tests, incl.

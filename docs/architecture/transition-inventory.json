@@ -1,0 +1,272 @@
+{
+  "$comment": "Machine-readable connected-world transition inventory. Audited at 201c8fa (Phase A1). Mirrors src/world/stationRegistry.ts + scene populateRoom() door configs; regenerate by re-auditing those sources. Consumed by e2e connected-journey specs. Coordinates are pixels. interactionRadiusPx applies to all doors/stations.",
+  "auditedAtCommit": "201c8fa",
+  "interactionRadiusPx": 72,
+  "playerSpeedPxPerSec": 175,
+  "canvas": { "width": 800, "height": 600, "scaleMode": "FIT" },
+  "sceneKeys": {
+    "boot": "boot",
+    "dock": "dock",
+    "hub": "hub",
+    "archive": "archive",
+    "repair": "repair",
+    "engineer": "engineer",
+    "inventory": "inventory",
+    "hazard": "hazard",
+    "side_repair": "side_repair",
+    "interruption": "interruption",
+    "final_core": "final_core",
+    "prototype": "main",
+    "menu": "menu"
+  },
+  "queryRoutes": {
+    "dock": "dock",
+    "hub": "hub",
+    "archive": "archive",
+    "repair": "repair",
+    "engineer": "engineer",
+    "inventory": "inventory",
+    "hazard": "hazard",
+    "side_repair": "side_repair",
+    "interruption": "interruption",
+    "final_core": "final_core",
+    "prototype": "main"
+  },
+  "invalidSceneFallback": "dock",
+  "rooms": {
+    "dock_arrival": {
+      "sceneKey": "dock",
+      "kind": "control",
+      "sizePx": { "width": 768, "height": 448 },
+      "entryEvent": "dock_started",
+      "entryEventOncePerSession": true,
+      "sceneStartEvent": true,
+      "spawns": {
+        "default": { "x": 384, "y": 352 },
+        "station_hub": { "x": 384, "y": 128 }
+      },
+      "doors": [
+        {
+          "label": "Station Hub",
+          "at": { "x": 368, "y": 48 },
+          "targetSceneKey": "hub",
+          "targetRoomId": "station_hub",
+          "spawnData": "dock_arrival"
+        }
+      ]
+    },
+    "station_hub": {
+      "sceneKey": "hub",
+      "kind": "control",
+      "sizePx": { "width": 832, "height": 512 },
+      "entryEvent": "station_hub_entered",
+      "entryEventOncePerSession": false,
+      "sceneStartEvent": true,
+      "spawns": {
+        "default": { "x": 416, "y": 368 },
+        "archive_room": { "x": 128, "y": 128 },
+        "systems_repair_room": { "x": 320, "y": 128 },
+        "engineer_hub": { "x": 512, "y": 128 },
+        "inventory_prep_room": { "x": 704, "y": 128 },
+        "hazard_control_room": { "x": 104, "y": 208 },
+        "optional_side_repair_bay": { "x": 104, "y": 304 },
+        "interruption_corridor": { "x": 728, "y": 208 },
+        "final_core_room": { "x": 728, "y": 304 }
+      },
+      "doors": [
+        {
+          "label": "Archive",
+          "at": { "x": 128, "y": 48 },
+          "targetSceneKey": "archive",
+          "targetRoomId": "archive_room",
+          "spawnData": "station_hub"
+        },
+        {
+          "label": "Systems Repair",
+          "at": { "x": 320, "y": 48 },
+          "targetSceneKey": "repair",
+          "targetRoomId": "systems_repair_room",
+          "spawnData": "station_hub"
+        },
+        {
+          "label": "Engineer Hub",
+          "at": { "x": 512, "y": 48 },
+          "targetSceneKey": "engineer",
+          "targetRoomId": "engineer_hub",
+          "spawnData": "station_hub"
+        },
+        {
+          "label": "Inventory / Prep",
+          "at": { "x": 704, "y": 48 },
+          "targetSceneKey": "inventory",
+          "targetRoomId": "inventory_prep_room",
+          "spawnData": "station_hub"
+        },
+        {
+          "label": "Hazard Control",
+          "at": { "x": 24, "y": 208 },
+          "targetSceneKey": "hazard",
+          "targetRoomId": "hazard_control_room",
+          "spawnData": "station_hub"
+        },
+        {
+          "label": "Side Repair Bay",
+          "at": { "x": 24, "y": 304 },
+          "targetSceneKey": "side_repair",
+          "targetRoomId": "optional_side_repair_bay",
+          "spawnData": "station_hub"
+        },
+        {
+          "label": "Interruption Corridor",
+          "at": { "x": 808, "y": 208 },
+          "targetSceneKey": "interruption",
+          "targetRoomId": "interruption_corridor",
+          "spawnData": "station_hub"
+        },
+        {
+          "label": "Final Core",
+          "at": { "x": 808, "y": 304 },
+          "targetSceneKey": "final_core",
+          "targetRoomId": "final_core_room",
+          "spawnData": "station_hub"
+        },
+        {
+          "label": "Dock / Arrival Bay",
+          "at": { "x": 416, "y": 464 },
+          "targetSceneKey": "dock",
+          "targetRoomId": "dock_arrival",
+          "spawnData": "station_hub"
+        }
+      ]
+    },
+    "archive_room": {
+      "sceneKey": "archive",
+      "kind": "assessment",
+      "entryEvent": "archive_room_entered",
+      "sceneStartEvent": true,
+      "spawns": { "default": { "x": 320, "y": 272 } },
+      "doors": [
+        {
+          "label": "Station Hub",
+          "at": { "x": 320, "y": 368 },
+          "targetSceneKey": "hub",
+          "targetRoomId": "station_hub",
+          "spawnData": "archive_room"
+        }
+      ]
+    },
+    "systems_repair_room": {
+      "sceneKey": "repair",
+      "kind": "assessment",
+      "entryEvent": "repair_room_entered",
+      "sceneStartEvent": true,
+      "spawns": { "default": { "x": 320, "y": 272 } },
+      "doors": [
+        {
+          "label": "Station Hub",
+          "at": { "x": 320, "y": 368 },
+          "targetSceneKey": "hub",
+          "targetRoomId": "station_hub",
+          "spawnData": "systems_repair_room"
+        }
+      ]
+    },
+    "engineer_hub": {
+      "sceneKey": "engineer",
+      "kind": "assessment",
+      "entryEvent": "engineer_hub_entered",
+      "sceneStartEvent": true,
+      "spawns": { "default": { "x": 320, "y": 272 } },
+      "doors": [
+        {
+          "label": "Station Hub",
+          "at": { "x": 320, "y": 368 },
+          "targetSceneKey": "hub",
+          "targetRoomId": "station_hub",
+          "spawnData": "engineer_hub"
+        }
+      ]
+    },
+    "inventory_prep_room": {
+      "sceneKey": "inventory",
+      "kind": "assessment",
+      "entryEvent": "inventory_room_entered",
+      "sceneStartEvent": true,
+      "spawns": { "default": { "x": 320, "y": 272 } },
+      "doors": [
+        {
+          "label": "Station Hub",
+          "at": { "x": 320, "y": 368 },
+          "targetSceneKey": "hub",
+          "targetRoomId": "station_hub",
+          "spawnData": "inventory_prep_room"
+        }
+      ]
+    },
+    "hazard_control_room": {
+      "sceneKey": "hazard",
+      "kind": "assessment",
+      "entryEvent": "hazard_room_entered",
+      "sceneStartEvent": true,
+      "spawns": { "default": { "x": 320, "y": 272 } },
+      "doors": [
+        {
+          "label": "Station Hub",
+          "at": { "x": 320, "y": 368 },
+          "targetSceneKey": "hub",
+          "targetRoomId": "station_hub",
+          "spawnData": "hazard_control_room"
+        }
+      ]
+    },
+    "optional_side_repair_bay": {
+      "sceneKey": "side_repair",
+      "kind": "assessment",
+      "entryEvent": "side_repair_discovered",
+      "entryEventOncePerSession": true,
+      "sceneStartEvent": true,
+      "spawns": { "default": { "x": 320, "y": 272 } },
+      "doors": [
+        {
+          "label": "Station Hub",
+          "at": { "x": 320, "y": 368 },
+          "targetSceneKey": "hub",
+          "targetRoomId": "station_hub",
+          "spawnData": "optional_side_repair_bay"
+        }
+      ]
+    },
+    "interruption_corridor": {
+      "sceneKey": "interruption",
+      "kind": "assessment",
+      "entryEvent": "interruption_corridor_entered",
+      "sceneStartEvent": true,
+      "spawns": { "default": { "x": 384, "y": 160 } },
+      "doors": [
+        {
+          "label": "Station Hub",
+          "at": { "x": 384, "y": 240 },
+          "targetSceneKey": "hub",
+          "targetRoomId": "station_hub",
+          "spawnData": "interruption_corridor"
+        }
+      ]
+    },
+    "final_core_room": {
+      "sceneKey": "final_core",
+      "kind": "assessment",
+      "entryEvent": "final_core_entered",
+      "sceneStartEvent": true,
+      "spawns": { "default": { "x": 320, "y": 272 } },
+      "doors": [
+        {
+          "label": "Station Hub",
+          "at": { "x": 320, "y": 368 },
+          "targetSceneKey": "hub",
+          "targetRoomId": "station_hub",
+          "spawnData": "final_core_room"
+        }
+      ]
+    }
+  }
+}
