@@ -85,7 +85,13 @@ Authoritative continuation state for Sprint A (unattended Fable session,
 
 ## Known failures
 
-- None.
+- None outstanding. One observed retry in the phase-boundary full run:
+  the hazard scene-restart test left a retry artifact (final run status
+  passed; RTK console line counted 35 non-flaky passes of 36 collected).
+  Targeted re-run afterwards: 4/4 hazard tests first-attempt PASS
+  (2.1 min), so this is a one-off under long serial load, not a
+  reproducible flake. If it recurs in full runs, treat per
+  `docs/ai/DEBUGGING-CHECKLIST.md` §1 before changing anything.
 
 ## Defects fixed in Sprint A
 

@@ -120,8 +120,8 @@ board). Routes: `?scene=` params per registry + `dock`/`hub`/`archive`/
 - **Sonnet**: Hazard review (S1); suite upkeep/extension (S2–S3);
   pre-pilot T1–T3; route tuning. See `SONNET-CONTINUATION-GUIDE.md`.
 - **Codex**: mechanical spec authoring from `transition-inventory.json`
-  - templates; repo-wide CRLF/lint cleanup (353 pre-existing, never
-    blocking).
+  plus the A6 templates; repo-wide CRLF/lint cleanup (353 pre-existing,
+  never blocking).
 - **User**: every item in §7; PixelLab approvals (T4); freeze approval.
 - **Top-tier model**: Beat-13 implementation (after D2);
   Hazard→Final Core consequence (after ruling); any change to canonical
