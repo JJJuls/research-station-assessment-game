@@ -8,7 +8,33 @@ Live checkpoint file. Updated after every commit. Newest entry first.
   MCP enabled for the Wave 1B verification session only;
   no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — D1 RULING RECORDED: HAZARD CONTROL UNBLOCKED (this commit)
+## Current status — HAZARD CONTROL IMPLEMENTED, VERIFICATION PENDING (this commit)
+
+- **Base**: `ecd2256` (Hazard Control implementation, station beat 7) on
+  `f27130d` (D1 ruling recorded). Build + tsc PASS at `ecd2256`.
+- **Implemented per D1 (Option A)**: `HazardScene` (`?scene=hazard`), registry
+  `sceneKey` flip + statusBoardLabel 'Hazard control'; audit-first port
+  (labels/feedback/legacy events verbatim; warning on every prompt open;
+  repeatable prompt — no invented one-shot gate; live
+  `metadata.info_checked_before_continuing` on reckless). Session-lifetime
+  `infoChecked` via U2 factory (leave-and-return keeps informed
+  classification). Additive canonical: `hazard_room_entered` (unmapped
+  precedent), `hazard_route_avoided` (D1: `study_item_ids []`, no construct,
+  telemetry-only, registered in `CANONICAL_EVENT_CONTEXT`). `hazard_status`
+  vocabulary: informed_continue / reckless_continue / route_avoided.
+- **Deliberately unemitted (documented)**: `hazard_issue_created`,
+  `hazard_issue_resolved` (no documented emission semantics/resolve
+  mechanic), `final_hazard_issue` (Final Core side; `hazard_status` now
+  provides its SessionState source). ScoringManager/QualtricsBridge
+  untouched (Beat-13 stays user-gated; `abandonment_count` continues to
+  derive from legacy `hazard_avoidance` — ScoringManager.ts:88 unchanged).
+- **Exact next action**: run the consolidated verification gate per
+  `docs/expansion/HAZARD-VERIFICATION-PLAN.md` (Playwright enabled for the
+  gate only): author `e2e/hazard_control_logging.spec.ts`, run the full
+  suite, fix only demonstrated defects, final verification commit + report.
+  Reviewers are dispatched only after the room passes verification.
+
+## D1 ruling recorded (f27130d)
 
 - **Base**: `317e07b` (Wave 1 review gate `c22ad7d` + user decision brief).
   Review gate result: CONDITIONAL PASS (0 blockers; 1 user-owned major = Beat-13
