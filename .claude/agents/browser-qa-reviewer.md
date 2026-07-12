@@ -1,6 +1,7 @@
 ﻿---
 name: browser-qa-reviewer
-description: Use to review browser/runtime verification for Remote Outpost Assessment  -  movement, interactions, room transitions, event logging, window.researchRuntime (printSummary/printEvents/exportEventsJSON), launch-with-URL-parameters, Qualtrics return preview, and Playwright/manual test coverage. Treats npm run build as necessary but not sufficient. Review-only: reports verification gaps, does not edit files unless explicitly instructed. Invoke whenever a room/system change is claimed "done" or "working" and needs runtime evidence, not just a green build.
+description: Use to review browser/runtime verification for Remote Outpost Assessment  -  movement, interactions, room transitions, event logging, window.researchRuntime (printSummary/printEvents/exportEventsJSON), launch-with-URL-parameters, Qualtrics return preview, and Playwright/manual test coverage. Treats npm run build as necessary but not sufficient. Review-only: reports verification gaps, does not edit files unless explicitly instructed. Invoke only at explicit runtime-verification gates, whenever a room/system change is claimed "done" or "working" and needs runtime evidence, not just a green build.
+model: sonnet
 tools: Read, Grep, Glob, Bash
 ---
 
