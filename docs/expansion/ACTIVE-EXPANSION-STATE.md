@@ -9,7 +9,11 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 ## Current status
 
-- **Last commit**: `76be9f0` — Station beat 5: Interruption Corridor
+- **Last commit**: `5f206e5` — Station beat 6: Final Core Room
+- **WAVE 1A BUILD PHASE COMPLETE** except Hazard Control (user-blocked, see
+  below). 6 of 7 remaining stations implemented; connected world now spans
+  Dock → Hub → Archive/Repair/Engineer/Inventory/Side Repair/Interruption/
+  Final Core, with cross-room propagation live end-to-end.
 - **Completed**:
   1. `dd498f2` — `REMAINING-STATION-INVENTORY.md` (7 stations: sources,
      study_item_ids, construct_ids, semantics, legacy+canonical events,
@@ -141,31 +145,44 @@ Live checkpoint file. Updated after every commit. Newest entry first.
       `interruption_status`: switched_away/returned_to_task/alert_ignored.
       Spec compile-only. Build + tsc PASS.
 
-- **Exact next action**: **Station beat 6 — Final Core Room** (room-builder
-  discipline; Hazard Control stays BLOCKED on the `hazard_avoidance` user
-  decision, so Final Core is the last unblocked room): reconfirm
-  `docs/game/rooms/08-final-core-room.md`; port legacy 3 options verbatim
-  (`final_core_opened` gate + quality-tier triples). Additive canonical:
-  `final_core_entered` (beside legacy on prompt open? NO — entered = room
-  entry, opened = prompt; emit `final_core_entered` on every room entry,
-  keep legacy `final_core_opened` on prompt open),
-  `final_core_status_reviewed` gains its deferred U4 mapping (Q11,
-  responsibility — intentional prototype-payload change, fixture
-  re-baseline note), cross-room review stage reading SessionState
-  (missing kit → `final_core_missing_item_flagged`; workspace disordered →
-  `final_core_workspace_issue_flagged`; accepted relay duty unresolved →
-  `accepted_duty_unresolved`; side repair completed →
-  `final_core_stability_bonus`; interruption switched_away →
-  `final_unresolved_due_to_nonreturn`), blocker + force-continue branch
-  (Q28: `final_core_blocker_shown`, `final_core_force_continue`,
-  `issue_resolution_attempted`/`final_core_issue_resolved`),
-  `final_core_rushed` (rushed path, beside legacy quick-sync events),
-  `final_core_completed` (all completion paths, beside legacy tier events).
-  Engineer duty completion/skip (`engineer_supervision_completed/skipped`)
-  emitted here per contract check-point. `qualtrics_return_previewed` /
-  `final_summary_previewed` / `final_quality_score_computed`: only if
-  emission points are unambiguous (debug completion path) — else document.
-  Registry flip (`final_core`), spec compile-only, docs update.
+15. `5f206e5` — **Station beat 6: Final Core Room.** `FinalCoreScene`
+    (`?scene=final_core`, statusBoardLabel 'Core synchronization'). Legacy
+    3 options verbatim. System flag events once per session at entry from
+    real SessionState: `final_core_missing_item_flagged`,
+    `final_core_workspace_issue_flagged`, `final_unresolved_due_to_nonreturn`,
+    `final_core_stability_bonus`. Q28 blocker: prompt body lists
+    outstanding flags (`final_core_blocker_shown`); appended option 4 =
+    `final_core_force_continue`; issue-free sessions see exactly the legacy
+    prompt. Duty follow-through: resolve path →
+    `engineer_supervision_completed` + objective cleared; other completion
+    paths with duty active → `accepted_duty_unresolved`.
+    `engineer_supervision_skipped` unemitted (no formal skip action —
+    documented). Additive: `final_core_entered` (room entry),
+    `final_core_rushed`, `final_core_completed`,
+    `unresolved_issue_reviewed`/`issue_resolution_attempted`/
+    `final_core_issue_resolved` (real-state conditioned).
+    `final_core_status_reviewed` Q11 mapping registered (fixture
+    re-baseline flagged). Missing, documented:
+    `final_quality_score_computed`, `final_summary_previewed`,
+    `qualtrics_return_previewed` (ScoringManager/QualtricsBridge gate),
+    hazard consequence flags (upstream blocked). Spec compile-only.
+    Build + tsc PASS.
+
+- **Exact next action (BLOCKED — requires user input)**: the only
+  remaining station is **Hazard Control**, explicitly gated on the
+  user-owned `hazard_avoidance` canonical resolution (unresolved issue 3;
+  event-schema §4 requires the decision "before this room's implementation
+  beat"). No further station or scoring work can proceed autonomously:
+  Beat-13 scoring fixes are user-flagged (issue 6), the
+  ScoringManager/QualtricsBridge event emissions are gated behind
+  qualtrics-logging-review, and the runtime-verification pass (issue 9)
+  requires Playwright, disabled this session. **When resuming**: (1) get
+  the hazard_avoidance decision → build Hazard Control (last room beat,
+  smallest); (2) run the playwright-game-verify pass over all six new
+  rooms + prototype fixture re-baseline (side_repair_completed,
+  final_core_status_reviewed payload fields); (3) dispatch
+  research-data-reviewer + gameplay-implementation-reviewer over the wave;
+  (4) schedule the supervised Beat-13 scoring beat.
 
 ## Unresolved issues (user-owned; never decided autonomously)
 
@@ -214,3 +231,5 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 | `6e09afc` | Room 5 | Side Repair Bay beat          |
 | `1dc94e2` | Docs   | State checkpoint after beat 4 |
 | `76be9f0` | Room 6 | Interruption Corridor beat    |
+| `12947d1` | Docs   | State checkpoint after beat 5 |
+| `5f206e5` | Room 7 | Final Core Room beat          |
