@@ -101,6 +101,32 @@ and `final_bonus_unlocked` require Final Core to read this room's outcome via
 `SessionState`'s `side_repair_status` field (V3 Section 3.1), which doesn't
 exist yet.
 
+**Wave 1A status (2026-07-12)**: room implemented as `SideRepairScene`
+(`src/scenes/SideRepairScene.ts`, `?scene=side_repair`, Hub door open via
+the registry, statusBoardLabel 'Stabiliser repair'). Legacy 3 options
+verbatim (labels, feedback, event sequences, one-shot gate text). Additive
+canonical: `side_repair_discovered` (once, first entry),
+`stabiliser_option_offered` (each offer, beside legacy
+`side_repair_opened`), `stabiliser_accepted` + `side_repair_accepted` +
+`side_repair_first_step` (both start paths — the accept/start
+decomposition), `side_repair_abandoned_after_start` (beside legacy),
+`final_bonus_unlocked` (completion path). **Formal defer branch added** as
+option 4 (`side_repair_deferred`, appended so legacy ordering is frozen):
+deferring records `side_repair_status = deferred` and does NOT complete the
+room — the offer reopens on return, and any later completion keeps the
+interim defer visible in the raw log. `side_repair_completed` now carries
+its matrix mapping (Q07/Q16/Q32, construct unset) — this intentionally
+changes prototype payloads; re-baseline that fixture field during the next
+verification pass. Still unemitted: `side_repair_step_completed` (needs a
+multi-step mini-game — task-design decision), canonical
+`side_repair_abandoned` (never-accepted branch keeps legacy
+`side_repair_ignored`; canonical name not matrix-listed).
+`side_repair_status` vocabulary: `ignored` / `abandoned_after_start` /
+`deferred` / `completed` (`src/data/missionVocabulary.ts`); Final Core
+reads `completed` for the stability bonus. Spec
+`e2e/side_repair_logging.spec.ts` authored compile-only —
+**runtime/browser verification still owed** before any "works" claim.
+
 ## Anti-leakage note
 
 No productiveness/Grit-S/Goal-Time item wording (Q07, Q16, Q20, Q29, Q32) may

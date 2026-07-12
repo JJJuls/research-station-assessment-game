@@ -101,8 +101,10 @@ export const STATION_REGISTRY: readonly StationRegistration[] = [
     roomId: 'optional_side_repair_bay',
     label: 'Side Repair Bay',
     routeParam: 'side_repair',
+    sceneKey: key.scene.sideRepair,
     hubDoor: { x: 24, y: 9 * 32 + 16 },
     hubSpawn: { x: 24 + 80, y: 9 * 32 + 16 },
+    statusBoardLabel: 'Stabiliser repair',
   },
   // Right wall doorways (rows 6 and 9):
   {

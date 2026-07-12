@@ -7,3 +7,4 @@ export * from './InventoryScene';
 export * from './Main';
 export * from './Menu';
 export * from './RepairScene';
+export * from './SideRepairScene';

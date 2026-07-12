@@ -327,17 +327,20 @@ export const CANONICAL_EVENT_CONTEXT: Partial<
   // Optional Side Repair Bay. Multi-row listings (Q07 productiveness,
   // Q16 Grit-S PE/adaptive family, Q20/Q32 exploratory) leave construct_id
   // unset per the dual-listing precedent.
-  // DEFERRED (not registered here): side_repair_completed — the prototype
-  // already emits this exact string, so registering it now would change
-  // live prototype payloads and break the Phase-0 baseline fixture
-  // invariant without runtime re-verification; its mapping
-  // (Q07/Q16/Q32, construct unset) is added in the Side Repair Bay build
-  // beat, which re-verifies the prototype fixture.
   side_repair_accepted: {
     study_item_ids: ['Q07', 'Q16', 'Q20'],
   },
   side_repair_step_completed: {
     study_item_ids: ['Q07', 'Q16'],
+  },
+  // Registered in the Side Repair Bay build beat (deferred out of U4): the
+  // prototype emits this exact string, so this mapping intentionally
+  // changes live prototype payloads — matrix-grounded (Q07/Q16/Q32) and
+  // additive, but the Phase-0 baseline fixture comparison must be
+  // re-baselined for this field in the next runtime-verification pass
+  // (recorded in ACTIVE-EXPANSION-STATE.md).
+  side_repair_completed: {
+    study_item_ids: ['Q07', 'Q16', 'Q32'],
   },
   // Q20 (Grit-S CI, weak/exploratory) single-row listings.
   side_repair_first_step: {
