@@ -9,7 +9,7 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 ## Current status
 
-- **Last commit**: `871105c` — Station beat 2: Engineer Hub
+- **Last commit**: `cc10ed9` — Station beat 3: Inventory / Preparation Room
 - **Completed**:
   1. `dd498f2` — `REMAINING-STATION-INVENTORY.md` (7 stations: sources,
      study_item_ids, construct_ids, semantics, legacy+canonical events,
@@ -95,19 +95,35 @@ Live checkpoint file. Updated after every commit. Newest entry first.
     compile-only. Room doc + event-schema updated. Build + tsc PASS.
     Runtime verification owed (issue 9).
 
-- **Exact next action**: **Station beat 3 — Inventory / Preparation Room**
+12. `cc10ed9` — **Station beat 3: Inventory / Preparation Room.**
+    `InventoryScene` (`?scene=inventory`, statusBoardLabel 'Kit
+    preparation'). Legacy 3-option prompt verbatim; contract sub-steps as
+    chained stages after the systematic option only (verify vs plausible
+    skip → cleanup vs leave); canonical equivalents additive on all paths.
+    Documented emission placement: `inventory_checklist_opened` on the
+    checklist option, never on prompt open (Q01 contamination guard).
+    Per-item events unemitted (need per-item mini-game — user decision).
+    SessionState: `field_kit` prepared item (absent on shortcut),
+    `workspace_status` tidy/disordered (`src/data/missionVocabulary.ts`).
+    Spec compile-only. Build + tsc PASS. Runtime verification owed.
+
+- **Exact next action**: **Station beat 4 — Optional Side Repair Bay**
   (room-builder discipline): reconfirm
-  `docs/game/rooms/04-inventory-preparation-room.md`; port the legacy
-  3-option combined choice verbatim (labels/feedback/events incl.
-  `inventory_prep_opened` gate); add the separable canonical sub-steps the
-  contract requires via U3 stages WITHOUT altering legacy option meanings:
-  canonical events `inventory_room_entered`, `inventory_checklist_opened`,
-  and the per-path additive canonical equivalents from event-schema §4
-  (renames emitted additively alongside legacy names, never replacing);
-  record `prepared_items`/`workspace_status` in SessionState for the Final
-  Core flags (vocabulary defined in this beat, documented in the room doc).
-  Keep interface simple (organisation, not dexterity). Registry flip
-  (`inventory`), spec compile-only, docs update.
+  `docs/game/rooms/06-optional-side-repair-bay.md`; port legacy 3 options
+  verbatim (`side_repair_opened` gate, `side_repair_ignored`+`low_effort`,
+  `side_repair_started`+`abandoned_after_difficulty`,
+  `side_repair_started`+`side_repair_completed`+`productive_persistence`);
+  additive canonical: `side_repair_discovered` (room entry or first
+  proximity — decide from V3 §4 wording), `stabiliser_option_offered`
+  (prompt open), `stabiliser_accepted`/`side_repair_accepted`+
+  `side_repair_first_step` (start paths), `side_repair_abandoned_after_start`
+  (alias of abandoned_after_difficulty), and the **required defer branch**
+  (`side_repair_deferred`, confound control) as a 4th option via U3
+  N-option support — additive per explicit V3 requirement, distinct from
+  ignore; `side_repair_completed` gains its deferred U4 mapping
+  (Q07/Q16/Q32, construct unset) in this beat with prototype-fixture note.
+  SessionState `side_repair_status` vocabulary for the Final Core bonus.
+  Registry flip (`side_repair`), spec compile-only, docs update.
 
 ## Unresolved issues (user-owned; never decided autonomously)
 
@@ -150,3 +166,5 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 | `26379ce` | Room 2 | Systems Repair Room beat      |
 | `cf48ff6` | Docs   | State checkpoint after beat 1 |
 | `871105c` | Room 3 | Engineer Hub beat             |
+| `078589e` | Docs   | State checkpoint after beat 2 |
+| `cc10ed9` | Room 4 | Inventory/Prep beat           |
