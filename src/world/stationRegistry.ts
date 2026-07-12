@@ -120,8 +120,10 @@ export const STATION_REGISTRY: readonly StationRegistration[] = [
     roomId: 'final_core_room',
     label: 'Final Core',
     routeParam: 'final_core',
+    sceneKey: key.scene.finalCore,
     hubDoor: { x: 25 * 32 + 8, y: 9 * 32 + 16 },
     hubSpawn: { x: 25 * 32 + 8 - 80, y: 9 * 32 + 16 },
+    statusBoardLabel: 'Core synchronization',
   },
 ];
 

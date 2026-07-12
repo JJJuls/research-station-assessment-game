@@ -36,3 +36,13 @@ export const SIDE_REPAIR_STATUS_COMPLETED = 'completed';
 export const INTERRUPTION_STATUS_SWITCHED_AWAY = 'switched_away';
 export const INTERRUPTION_STATUS_RETURNED = 'returned_to_task';
 export const INTERRUPTION_STATUS_ALERT_IGNORED = 'alert_ignored';
+
+/**
+ * final_core_status written by the Final Core room: which completion path
+ * closed the mission cycle. Path labels only — never a score (Final Core
+ * must not become a global quality rollup).
+ */
+export const FINAL_CORE_STATUS_LOW_QUALITY = 'completed_low_quality';
+export const FINAL_CORE_STATUS_STRUCTURED = 'completed_structured';
+export const FINAL_CORE_STATUS_HIGH_QUALITY = 'completed_high_quality';
+export const FINAL_CORE_STATUS_FORCED = 'completed_forced';

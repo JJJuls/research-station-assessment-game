@@ -441,9 +441,15 @@ export const CANONICAL_EVENT_CONTEXT: Partial<
     study_item_ids: ['Q04'],
     construct_id: 'organisation',
   },
-  // DEFERRED (not registered here): final_core_status_reviewed — same
-  // live-prototype-collision reason as side_repair_completed above; its
-  // mapping (Q11, responsibility) is added in the Final Core build beat.
+  // Registered in the Final Core build beat (deferred out of U4): the
+  // prototype emits this exact string, so this mapping intentionally
+  // changes live prototype payloads — matrix-grounded (Q11,
+  // responsibility) and additive; re-baseline the Phase-0 fixture field
+  // in the next runtime-verification pass (with side_repair_completed).
+  final_core_status_reviewed: {
+    study_item_ids: ['Q11'],
+    construct_id: 'responsibility',
+  },
   unresolved_issue_reviewed: {
     study_item_ids: ['Q11'],
     construct_id: 'responsibility',

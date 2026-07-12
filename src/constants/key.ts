@@ -12,6 +12,7 @@ const scene = {
   boot: 'boot',
   dock: 'dock',
   engineer: 'engineer',
+  finalCore: 'final_core',
   hub: 'hub',
   interruption: 'interruption',
   inventory: 'inventory',

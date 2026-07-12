@@ -117,6 +117,40 @@ rooms' and `SessionState`'s implementation work, not just this room's own event
 names — flag this dependency explicitly when scheduling this room's beat
 (likely late, per V3 Section 10's beat ordering, Beat 11 after Beats 3-10).
 
+**Wave 1A status (2026-07-12)**: room implemented as `FinalCoreScene`
+(`src/scenes/FinalCoreScene.ts`, `?scene=final_core`, statusBoardLabel
+'Core synchronization') — first consumer of the Wave 1A SessionState
+writers. Legacy 3 options verbatim (labels, feedback, event sequences,
+one-shot gate text). **System flag events** fire once per session at room
+entry, independent of player choice: `final_core_missing_item_flagged`
+(no `field_kit` in prepared_items), `final_core_workspace_issue_flagged`
+(workspace disordered), `final_unresolved_due_to_nonreturn` (interruption
+switched_away), `final_core_stability_bonus` (side repair completed).
+**Q28 blocker**: with outstanding issues, the prompt body lists them
+("Outstanding core flags: …" — the explicit blocker display,
+`final_core_blocker_shown`) and an appended 4th option allows
+`final_core_force_continue`; with no issues the prompt is exactly the
+legacy three options. **Duty follow-through at this check point**: the
+resolve path completes an active relay duty
+(`engineer_supervision_completed` + objective removal); every completion
+path leaving the duty active logs `accepted_duty_unresolved` at completion.
+`engineer_supervision_skipped` stays unemitted (no distinct formal
+skip-duty action exists — task-design decision). Additive per-path events:
+`final_core_rushed` (beside quick-sync), `final_core_completed` (all
+paths), `unresolved_issue_reviewed` / `issue_resolution_attempted` /
+`final_core_issue_resolved` (conditioned on real issues).
+`final_core_entered` fires on room entry (legacy `final_core_opened` stays
+on prompt open). `final_core_status_reviewed` gains its Q11 mapping —
+intentional prototype-payload change; re-baseline with
+`side_repair_completed` in the verification pass. Still missing:
+`final_quality_score_computed`, `final_summary_previewed`,
+`qualtrics_return_previewed` (ScoringManager/QualtricsBridge emission
+points — qualtrics-logging-review gate), hazard consequence display
+(Hazard Control blocked). `final_core_status` records the completion path
+label only (`src/data/missionVocabulary.ts`), never a score. Spec
+`e2e/final_core_summary.spec.ts` authored compile-only —
+**runtime/browser verification still owed** before any "works" claim.
+
 ## Anti-leakage note
 
 No responsibility/inappropriate-persistence/Goal-Time item wording (Q04, Q10,
