@@ -7,7 +7,35 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
   via CLI only; no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — SPRINT A PHASE A5 COMPLETE (this commit)
+## Current status — SPRINT PHASES A6 + 4 + 5 COMPLETE (this commit)
+
+- **Phase-boundary full suite: GREEN** (`.last-run.json` status passed, 0
+  failed; 31.7 min; RTK-compressed count line read "PASS (35)" for the
+  36 tests collected at start — Playwright's own record is authoritative).
+- **A6 (robustness + delegation)**: `9d6406d` room-acceptance +
+  connected-journey templates; `fe325db` station implementation
+  conventions (registration/state-lifetime rules, explicit
+  no-further-centralization ruling, fragile-points list) +
+  `docs/ai/DEBUGGING-CHECKLIST.md`; `3ee9424` prettier-mangle fix. No code
+  changes — A2 spec already covers invalid-route/reload runtime behavior;
+  no demonstrated defect justified touching verified scenes.
+- **Phase 4 (participant lifecycle)**: this commit —
+  `docs/architecture/PARTICIPANT-LIFECYCLE.md` (launch→return audit,
+  zero defects; fallback-identity and return-URL failure paths were the
+  only uncovered areas) + `e2e/participant_lifecycle.spec.ts` (2/2 PASS
+  targeted: bare launch → fallback ids + null return; malformed
+  return_url → null, no crash). Suite is now 38 tests.
+- **Phase 5 (technical stimulus-freeze audit)**: `d6a5a84` —
+  `docs/research/STIMULUS-FREEZE-TECHNICAL-AUDIT.md`; all 17 manifest
+  SHA-256 records byte-verified; no unmanifested art since `556e273`;
+  pre-pilot work split technical (T1–T4) vs user-owned scientific. Freeze
+  NOT approved (user-owned).
+- **Phase 6 (in progress)**: `1c3f492` sonnet continuation guide.
+- **Exact next action**: write `docs/ai/POST-FABLE-MASTER-HANDOFF.md`,
+  update the Sprint A handoff to final state, then session-end checkpoint
+  (build + tsc + diff --check + clean tree).
+
+## Prior status — SPRINT A PHASE A5 COMPLETE (d58ddd7)
 
 - **Base**: `278f9ef` (A4). This commit adds
   `docs/architecture/CROSS-ROOM-INTEGRATION.md` — the cross-room
