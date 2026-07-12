@@ -7,7 +7,28 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
   via CLI only; no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — SPRINT A PHASE A4 COMPLETE (this commit)
+## Current status — SPRINT A PHASE A5 COMPLETE (this commit)
+
+- **Base**: `278f9ef` (A4). This commit adds
+  `docs/architecture/CROSS-ROOM-INTEGRATION.md` — the cross-room
+  integration contract: full writers→readers matrix for every SessionState
+  mission field (each row pinned to its runtime verification in the A2/A3/
+  A4 specs), status-board consumption rules, and the mandatory three-layer
+  Hazard→Final Core split (technically available: `hazard_status` written
+  - verified on all branches / currently consumed: nothing / scientifically
+    unspecified: `hazard_issue_created`/`hazard_issue_resolved`/
+    `final_hazard_issue` — user-owned, MUST NOT be implemented autonomously).
+- **Audit result: zero technical defects with authoritative semantics.**
+  Known asymmetries documented as user-owned: inventory organization
+  scoring naming split (Beat-13), forced-path summary quality derivation
+  (Beat-13), Hazard board line permanently `pending` (D1 consequence).
+- **Docs-only unit** — no code changes; tsc clean.
+- **Exact next action**: Phase A6 — robustness + delegation architecture
+  (invalid-route/reload resilience already runtime-covered in A2; add
+  reusable conventions/templates for later models, fragile-architecture
+  notes; no cosmetic refactoring), then phase-boundary full suite (36).
+
+## Prior status — SPRINT A PHASE A4 COMPLETE (278f9ef)
 
 - **Base**: `71cadfb` (A3 checkpoint). This commit adds
   `e2e/connected_participant_journeys.spec.ts` (3 sessions), journey.ts

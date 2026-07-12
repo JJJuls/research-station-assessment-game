@@ -8,7 +8,7 @@ Authoritative continuation state for Sprint A (unattended Fable session,
 ## Current HEAD
 
 - See `git log` — this file is updated in/beside each checkpoint commit.
-- Working state at last update: Phase A3 complete.
+- Working state at last update: Phases A1–A5 complete.
 
 ## Commits produced in Sprint A
 
@@ -19,7 +19,9 @@ Authoritative continuation state for Sprint A (unattended Fable session,
 | `54ba3e8` | A2    | Continuity spec + WebGL first-context flake fix (infra) |
 | `76c91f2` | A3    | Journey helpers + position-independent hub routes       |
 | `167837e` | A3    | Connected-world navigation smoke (full door ring)       |
-| (this)    | A3    | State + handoff checkpoint                              |
+| `71cadfb` | A3    | State + handoff checkpoint                              |
+| `278f9ef` | A4    | 3 connected participant journeys + evidence record      |
+| (this)    | A5    | Cross-room integration contract + state/handoff update  |
 
 ## Completed phases
 
@@ -37,29 +39,39 @@ Authoritative continuation state for Sprint A (unattended Fable session,
   wait baseline must be captured before the triggering action; hub door
   routes normalize via a pocket-safe NW anchor (old mid-height clamps
   wedged on the console block / undershot from side-wall return spawns).
+- **A4 — Connected participant journeys**: 3/3 PASS through real doors
+  (`e2e/connected_participant_journeys.spec.ts`), hazard/duty/interruption
+  branches split across sessions for scientific validity. Zero game
+  defects; zero console errors; mission-state, event-order, one-shot,
+  metadata, and frozen-summary spot checks live-verified. Evidence:
+  `docs/testing/connected-journey/CONNECTED-JOURNEY-EVIDENCE.md`.
+- **A5 — Cross-room integration contract**:
+  `docs/architecture/CROSS-ROOM-INTEGRATION.md` — writers→readers matrix
+  for all mission fields (runtime-verification pointers per row),
+  status-board rules, the three-layer Hazard→Final Core split
+  (available / consumed:nothing / unspecified:user-owned), documented
+  asymmetries. Zero technical defects with authoritative semantics.
 
 ## Current coherent unit
 
-- A3 checkpoint (this commit). Next unit: Phase A4 journeys.
+- A5 checkpoint (this commit). Next unit: Phase A6 robustness +
+  delegation architecture.
 
 ## Exact next action
 
-- Phase A4: author `e2e/connected_participant_journeys.spec.ts` — three
-  sessions (hazard branches split): P1 adaptive completer (dock review 2,
-  inventory systematic 2-1-1, engineer prepared+accept 2-1, side repair
-  complete 3, interruption return 2, hazard informed 1 then 2, archive
-  1-2-3, repair 1-2-3 [objective_completed parity], final core resolve 3,
-  return flow); P2 shortcut/interrupted (dock skip 1, inventory shortcut 1,
-  engineer unprepared+decline 1-2, interruption switch 1, repair
-  fail-leave-return partial, hazard reckless 2, final core force 4); P3
-  avoid/defer (dock practice 3, side repair defer 4 → return + complete 3,
-  hazard avoid 3, interruption ignore 3, archive same-wrong 1-1 then 2-3,
-  final core quick sync 1). Evidence in docs/testing/connected-journey/.
+- Phase A6: (1) reusable templates for later models —
+  `docs/testing/ROOM-ACCEPTANCE-TEMPLATE.md`,
+  `docs/testing/CONNECTED-JOURNEY-TEMPLATE.md`, room-registration/
+  state-lifetime conventions doc; (2) fragile-architecture notes +
+  model-independent debugging checklist; (3) only demonstrated-defect
+  fixes (invalid-route/reload already runtime-covered in A2 spec);
+  (4) phase-boundary full Playwright suite run (36 tests).
 
 ## Tests passing
 
-- Full suite **33/33 PASS (18.8m), zero retries** at `167837e` (9
-  legacy/wave specs + hazard + continuity + navigation smoke).
+- Full suite **33/33 PASS (18.8m), zero retries** at `167837e`.
+- A4 journeys **3/3 PASS** at `278f9ef` (suite now 36 tests; full-suite
+  run scheduled at the A6 phase boundary).
 
 ## Known failures
 
@@ -85,6 +97,13 @@ Authoritative continuation state for Sprint A (unattended Fable session,
    `final_hazard_issue`) — technically available state documented in A5;
    scientific consequence NOT invented.
 8. Pending independent Hazard review — explicitly deferred to Sonnet.
+9. **Inventory organization scoring naming split (found in A4)**:
+   ScoringManager organization formulas count only the legacy option-3
+   names (`inventory_kit_verified`/`inventory_cleanup_completed`/
+   `inventory_workspace_sorted`); the chained systematic path emits only
+   canonical names, so `organization_kit_verified` stays false on that
+   path. Raw events fully logged (analytically recoverable). Whether the
+   frozen formulas should also count canonical names is Beat-13 scope.
 
 ## Sprint B priorities
 
