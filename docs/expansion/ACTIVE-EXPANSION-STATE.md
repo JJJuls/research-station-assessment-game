@@ -1,4 +1,4 @@
-# Active Expansion State — Wave 1A
+# Active Expansion State — Wave 1A / 1B
 
 Live checkpoint file. Updated after every commit. Newest entry first.
 
@@ -7,9 +7,56 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Session constraints**: main Fable agent only; Playwright + PixelLab disabled;
   no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status
+## Current status — Wave 1B preparation (this commit)
 
-- **Last commit**: `5f206e5` — Station beat 6: Final Core Room
+- **Base commit**: `7a76cf4` (Wave 1A build phase complete + final state doc);
+  this docs checkpoint is HEAD. Working tree otherwise clean; branch ahead of
+  origin by local commits only (no push).
+- **Preparation results** (2026-07-12):
+  - `npm.cmd run build` PASS (pre-existing chunk-size warning only);
+    `npm.cmd run lint:tsc` PASS.
+  - All six Wave 1A specs exist and compile; every pinned
+    `study_item_ids`/`construct_id`/`success` value statically verified
+    against the frozen `CANONICAL_EVENT_CONTEXT` — zero mismatches.
+  - `researchRuntime.sessionState.getMissionState()` debug surface confirmed
+    (`src/systems/ResearchRuntime.ts:32`).
+  - Baseline fixtures `docs/testing/baseline-e8a8994/*.json` verified to
+    contain NO `side_repair_completed`/`final_core_status_reviewed` events —
+    the flagged "re-baseline" is a live-prototype payload-delta check plus
+    additive documentation, not a fixture rewrite.
+- **Verification plan**: `docs/expansion/WAVE-1B-VERIFICATION-PLAN.md` —
+  per-room expected navigation/events/science/state (§3), the exact spec
+  updates owed (§4: route tuning; ONE coverage gap — `objective_completed`
+  Archive+Repair parity test; prototype regression procedure §5), and the
+  execution order (§6).
+- **Exact Playwright paths** (config `playwright.config.ts`, serial,
+  port 5173): `e2e/launch_with_research_params.spec.ts`,
+  `e2e/movement_and_first_interaction.spec.ts`,
+  `e2e/archive_room_logging.spec.ts` (V1 regression, run first);
+  `e2e/repair_room_logging.spec.ts`, `e2e/engineer_hub_logging.spec.ts`,
+  `e2e/inventory_prep_logging.spec.ts`, `e2e/side_repair_logging.spec.ts`,
+  `e2e/interruption_corridor_logging.spec.ts`,
+  `e2e/final_core_summary.spec.ts` (Wave 1A, build order); shared fixtures
+  `e2e/helpers.ts` (`hubToStationDoor` routes untuned except archive).
+- **Expected assertions**: as pinned in the six specs (registry-verified this
+  session) and enumerated per room in the verification plan §3 — event
+  presence/absence, one-shot counts, science-context pins, mission-state
+  probes, summary separation invariant (adaptive path leaves
+  `game_inappropriate_persistence` = 0 / `blind_retry_count` = 0).
+- **Blocked scientific decisions** (user-owned, unchanged — full list §7 of
+  the plan and "Unresolved issues" below): hazard_avoidance (blocks Hazard
+  beat), idle threshold, abandon/return construct_id, supervised-report and
+  alert-acknowledged mappings, Beat-13 scoring bundle, task_started
+  dual-listing.
+- **Next action**: user enables Playwright → run the Wave 1B verification
+  pass per plan §6 (`playwright-game-verify` skill). No further autonomous
+  build work exists: Hazard Control stays blocked on the hazard_avoidance
+  decision; Beat-13 scoring and ScoringManager/QualtricsBridge remain out of
+  scope.
+
+## Wave 1A final status (base `7a76cf4`)
+
+- **Last build commit**: `5f206e5` — Station beat 6: Final Core Room
 - **WAVE 1A BUILD PHASE COMPLETE** except Hazard Control (user-blocked, see
   below). 6 of 7 remaining stations implemented; connected world now spans
   Dock → Hub → Archive/Repair/Engineer/Inventory/Side Repair/Interruption/
