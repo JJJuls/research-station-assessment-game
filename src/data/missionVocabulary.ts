@@ -16,6 +16,20 @@ export const WORKSPACE_STATUS_TIDY = 'tidy';
 export const WORKSPACE_STATUS_DISORDERED = 'disordered';
 
 /**
+ * hazard_status written by the Hazard Control room: which documented route
+ * decision the player last took (V3 §4 Room 5 outcomes: informed continue,
+ * reckless continue, avoid the uncertain route). Decision labels only —
+ * avoidance is its own outcome category, never scored as reckless and never
+ * conflated with task abandonment (user ruling D1 + room-doc edge cases).
+ * The room ports the prototype's repeatable prompt (no one-shot decision
+ * gate exists in the legacy scene), so this field reflects the most recent
+ * decision.
+ */
+export const HAZARD_STATUS_INFORMED_CONTINUE = 'informed_continue';
+export const HAZARD_STATUS_RECKLESS_CONTINUE = 'reckless_continue';
+export const HAZARD_STATUS_ROUTE_AVOIDED = 'route_avoided';
+
+/**
  * side_repair_status written by the Optional Side Repair Bay. The contract
  * requires accepted/started/deferred/abandoned/completed to stay separate
  * (completionism/curiosity confound control); 'deferred' must never be

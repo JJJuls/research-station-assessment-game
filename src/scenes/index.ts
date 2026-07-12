@@ -3,6 +3,7 @@ export * from './Boot';
 export * from './DockScene';
 export * from './EngineerScene';
 export * from './FinalCoreScene';
+export * from './HazardScene';
 export * from './HubScene';
 export * from './InterruptionScene';
 export * from './InventoryScene';

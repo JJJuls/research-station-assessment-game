@@ -222,6 +222,15 @@ export const CANONICAL_EVENT_CONTEXT: Partial<
     construct_id: 'inappropriate_persistence',
     success: null,
   },
+  // User ruling D1 (2026-07-12, Option A — WAVE1-USER-DECISION-BRIEF.md §A):
+  // additive canonical event for the "avoid uncertain route" branch,
+  // alongside the legacy hazard_avoidance (which stays emitted verbatim).
+  // Raw behavioural telemetry only: study_item_ids [], construct_id unset,
+  // never construct-scored, never referenced by ScoringManager formulas, no
+  // Q-item mapping inferred, no success semantics (none documented). NOT a
+  // fold under hazard_info_checked — that event stays reserved for actual
+  // information-checking behaviour.
+  hazard_route_avoided: { study_item_ids: [] },
 
   // ————————————————————————————————————————————————————————————————————
   // Wave 1A (U4): canonical V3 event registrations for the seven remaining

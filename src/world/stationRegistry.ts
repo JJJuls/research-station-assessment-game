@@ -94,8 +94,10 @@ export const STATION_REGISTRY: readonly StationRegistration[] = [
     roomId: 'hazard_control_room',
     label: 'Hazard Control',
     routeParam: 'hazard',
+    sceneKey: key.scene.hazard,
     hubDoor: { x: 24, y: 6 * 32 + 16 },
     hubSpawn: { x: 24 + 80, y: 6 * 32 + 16 },
+    statusBoardLabel: 'Hazard control',
   },
   {
     roomId: 'optional_side_repair_bay',

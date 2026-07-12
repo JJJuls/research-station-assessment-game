@@ -41,17 +41,24 @@ decision console are available.
 ## Canonical events
 
 `hazard_room_entered`, `hazard_warning_seen`, `hazard_info_checked`,
-`hazard_informed_continue`, `hazard_reckless_continue`, `hazard_issue_created`,
-`hazard_issue_resolved`, `final_hazard_issue`.
+`hazard_informed_continue`, `hazard_reckless_continue`, `hazard_route_avoided`
+(user ruling D1), `hazard_issue_created`, `hazard_issue_resolved`,
+`final_hazard_issue`.
 
 Current-to-canonical alias table: `docs/research/event-schema.md` §4, "Hazard
 Control Room" — **strongest alignment of any room**, 4 exact matches
 (`hazard_warning_seen`, `hazard_info_checked`, `hazard_informed_continue`,
-`hazard_reckless_continue`). One current-only event, `hazard_avoidance` (the
-"avoid uncertain route" choice), has no canonical V3 equivalent — flagged in
-`event-schema.md` as needing an explicit decision (propose a canonical
-`hazard_route_avoided` addition, or fold under `hazard_info_checked` metadata)
-before this room's implementation beat.
+`hazard_reckless_continue`).
+
+**RESOLVED — user ruling D1 (2026-07-12, Option A,
+`docs/expansion/reviews/WAVE1-USER-DECISION-BRIEF.md` §A):** the
+"avoid uncertain route" choice now has the additive canonical event
+`hazard_route_avoided` — `study_item_ids: []`, `construct_id` unset, raw
+behavioural telemetry only, never construct-scored, never referenced by
+ScoringManager formulas. The legacy `hazard_avoidance` stays emitted verbatim
+alongside it (the legacy `abandonment_count` derivation continues to read the
+legacy event). `hazard_info_checked` remains reserved exclusively for actual
+information-checking behaviour.
 
 ## Derived variables
 
@@ -81,13 +88,36 @@ currently folding in `hazard_info_checked`, which needs correction).
   this as a real gap, not just a naming one, since the contract's Final Core
   room explicitly expects to display hazard consequences.
 
+## SessionState
+
+`hazard_status` (V3 §3.1) is written from the three documented decisions using
+`src/data/missionVocabulary.ts` tokens: `informed_continue`,
+`reckless_continue`, `route_avoided`. Decision labels only, never a score;
+because the ported prompt is repeatable (see Implementation notes), the field
+reflects the most recent decision. Neutral until a decision is made.
+
 ## Playwright verification targets
 
 `hazard_control_logging.spec.ts` — drive check-then-continue path (confirm
 `hazard_info_checked` then `hazard_informed_continue`), continue-without-checking
-path (confirm `hazard_reckless_continue` with no prior `hazard_info_checked`),
-and avoid path (confirm `hazard_avoidance`) — all with `room_id:
-"hazard_control_room"`.
+path (confirm `hazard_reckless_continue` with no prior `hazard_info_checked`
+and live `metadata.info_checked_before_continuing: false`), and avoid path
+(confirm legacy `hazard_avoidance` plus canonical `hazard_route_avoided` with
+`study_item_ids: []` and no `construct_id`) — all with `room_id:
+"hazard_control_room"`. Also confirm `hazard_room_entered` on entry,
+`hazard_warning_seen` on every prompt open (repeatable, no one-shot),
+`hazard_status` propagation, and that no summary construct variable moves in
+response to `hazard_route_avoided`/`hazard_avoidance` alone.
+
+## Done test
+
+From the Hub, the Hazard Control door is open; entering logs
+`hazard_room_entered`; the alert terminal opens the ported 3-option prompt
+(warning logged on every open); each of the three decision branches logs its
+exact legacy event (plus `hazard_route_avoided` additively on avoid, and the
+informed/reckless split driven by session-lifetime `infoChecked` state);
+`hazard_status` updates; the player can return to the Hub. Build + tsc pass
+and the room's Playwright spec passes against a live browser.
 
 ## Implementation notes
 
@@ -95,9 +125,24 @@ Contract status: "implemented as placeholder; later improve panel/detail
 mechanics and visuals." Confirmed accurate in Beat 0 — the decision logic is
 sound and event names are the closest to canonical of any room, but there's no
 separate warning-details panel UI yet (just a 3-option text prompt), and no
-Final Core consequence propagation. Resolve the `hazard_avoidance` canonical-name
-question before or during this room's implementation beat, since it affects
-whether a new canonical event needs proposing.
+Final Core consequence propagation.
+
+**Hazard beat (Wave 1, post-D1):** `HazardScene` (`?scene=hazard`, registry
+`sceneKey` flip, statusBoardLabel 'Hazard control') ports the prototype
+audit-first: option labels, feedback strings, legacy event names, the
+warning-on-every-prompt-open emission, the repeatable prompt (the prototype
+has no one-shot decision gate, so none was invented), and the live
+`metadata.info_checked_before_continuing` on `hazard_reckless_continue` are
+verbatim. `hazardInfoChecked` moved to a U2 session-lifetime task state so
+informed-vs-reckless classification survives leave-and-return, matching the
+prototype's session-long Main-scene local state. Additive canonical:
+`hazard_room_entered` (every entry, unmapped per repair/inventory precedent)
+and `hazard_route_avoided` (ruling D1). **Still unemitted, documented gap:**
+`hazard_issue_created`/`hazard_issue_resolved` (no documented emission
+semantics or resolve mechanic exists — defining them is a task-design
+decision, not an audit-first port) and cross-room `final_hazard_issue`
+(Final Core side; `hazard_status` now provides the SessionState source for
+that future pass).
 
 ## Anti-leakage note
 
