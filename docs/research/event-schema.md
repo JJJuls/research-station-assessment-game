@@ -260,28 +260,28 @@ Only 1 exact match. The defer/abandon confound-control distinction that
 
 ### Interruption Corridor (`interruption_corridor`)
 
-| Canonical (V3)                      | Current prototype                        | Status          | Notes                                                                                                              |
-| ----------------------------------- | ---------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `interruption_corridor_entered`     | —                                        | missing         |                                                                                                                    |
-| `objective_active`                  | —                                        | missing         |                                                                                                                    |
-| `interruption_received`             | `interruption_opened`                    | rename          |                                                                                                                    |
-| `competing_task_viewed`             | —                                        | missing         |                                                                                                                    |
-| `new_goal_offered`                  | —                                        | missing         |                                                                                                                    |
-| `switched_task`                     | `interruption_new_task_chosen`           | rename          |                                                                                                                    |
-| `goal_switch_accepted`              | —                                        | missing         |                                                                                                                    |
-| `return_to_unfinished_task`         | —                                        | missing         |                                                                                                                    |
-| `returned_to_original_task`         | `interruption_returned_to_original_task` | exact           |                                                                                                                    |
-| `prior_goal_completed`              | —                                        | missing         |                                                                                                                    |
-| `prior_goal_abandoned`              | `interruption_previous_task_abandoned`   | rename          |                                                                                                                    |
-| `task_completed_after_interruption` | —                                        | missing         |                                                                                                                    |
-| `final_unresolved_due_to_nonreturn` | —                                        | missing         |                                                                                                                    |
-| `task_avoidance`                    | `interruption_alert_ignored`             | rename (approx) |                                                                                                                    |
-| `excessive_idle_after_instruction`  | —                                        | missing         |                                                                                                                    |
-| —                                   | `interruption_focus_lost`                | legacy-only     | Derived-style label logged as raw event; recommend deriving instead (see scoring-plan.md §"raw vs. derived" note). |
-| —                                   | `interruption_alert_acknowledged`        | legacy-only     | Approx overlap with `competing_task_viewed`; needs explicit mapping decision.                                      |
-| —                                   | `interruption_focus_maintained`          | legacy-only     | Derived-style label; recommend deriving instead.                                                                   |
-| —                                   | `interruption_single_task_focus`         | legacy-only     | Overlaps with `task_avoidance`'s "ignore" branch; needs de-duplication.                                            |
-| —                                   | `interruption_possible_rigidity`         | legacy-only     | Derived-style label; recommend deriving instead.                                                                   |
+| Canonical (V3)                      | Current prototype                        | Status            | Notes                                                                                                                |
+| ----------------------------------- | ---------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `interruption_corridor_entered`     | —                                        | exact (Wave 1A)   | Emitted by InterruptionScene on every entry (unmapped).                                                              |
+| `objective_active`                  | —                                        | exact (Wave 1A)   | State-grounded: once per session, only while SessionState.active_objectives is non-empty (e.g. accepted relay duty). |
+| `interruption_received`             | `interruption_opened`                    | exact (Wave 1A)   | Canonical emitted additively alongside the unchanged legacy name on prompt open.                                     |
+| `competing_task_viewed`             | —                                        | missing           | Open mapping decision vs legacy `interruption_alert_acknowledged` — deliberately unemitted until resolved.           |
+| `new_goal_offered`                  | —                                        | missing           | Needs real objective mechanics, not a fiction-only assertion.                                                        |
+| `switched_task`                     | `interruption_new_task_chosen`           | exact (Wave 1A)   | Additive alongside the unchanged legacy name.                                                                        |
+| `goal_switch_accepted`              | —                                        | missing           | Needs real objective mechanics.                                                                                      |
+| `return_to_unfinished_task`         | —                                        | missing           | Needs a real return-route mechanic (Q15) — a dialogue assertion is not a return act.                                 |
+| `returned_to_original_task`         | `interruption_returned_to_original_task` | exact (Wave 1A)   | Canonical string emitted additively alongside the (differently-named) legacy event.                                  |
+| `prior_goal_completed`              | —                                        | missing           | Needs real objective mechanics.                                                                                      |
+| `prior_goal_abandoned`              | `interruption_previous_task_abandoned`   | exact (Wave 1A)   | Additive alongside the unchanged legacy name.                                                                        |
+| `task_completed_after_interruption` | —                                        | missing           | Needs real objective mechanics.                                                                                      |
+| `final_unresolved_due_to_nonreturn` | —                                        | missing           | Emission belongs to the Final Core beat (reads interruption_status = switched_away).                                 |
+| `task_avoidance`                    | `interruption_alert_ignored`             | exact (Wave 1A)   | Room-doc-directed mapping: additive alongside the unchanged legacy name on the ignore path.                          |
+| `excessive_idle_after_instruction`  | —                                        | missing (blocked) | Registered, never emitted: awaits the user-owned idle definition/threshold (Dock precedent).                         |
+| —                                   | `interruption_focus_lost`                | legacy-only       | Derived-style label logged as raw event; recommend deriving instead (see scoring-plan.md §"raw vs. derived" note).   |
+| —                                   | `interruption_alert_acknowledged`        | legacy-only       | Approx overlap with `competing_task_viewed`; needs explicit mapping decision.                                        |
+| —                                   | `interruption_focus_maintained`          | legacy-only       | Derived-style label; recommend deriving instead.                                                                     |
+| —                                   | `interruption_single_task_focus`         | legacy-only       | Overlaps with `task_avoidance`'s "ignore" branch; needs de-duplication.                                              |
+| —                                   | `interruption_possible_rigidity`         | legacy-only       | Derived-style label; recommend deriving instead.                                                                     |
 
 Only 1 exact match. Several current events assert an _interpretation_
 (`focus_lost`, `focus_maintained`, `possible_rigidity`) rather than logging the

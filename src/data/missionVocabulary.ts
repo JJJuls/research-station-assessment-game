@@ -26,3 +26,13 @@ export const SIDE_REPAIR_STATUS_IGNORED = 'ignored';
 export const SIDE_REPAIR_STATUS_ABANDONED_AFTER_START = 'abandoned_after_start';
 export const SIDE_REPAIR_STATUS_DEFERRED = 'deferred';
 export const SIDE_REPAIR_STATUS_COMPLETED = 'completed';
+
+/**
+ * interruption_status written by the Interruption Corridor. Switching is
+ * never scored negatively by itself — Final Core reads 'switched_away'
+ * only as the candidate state for final_unresolved_due_to_nonreturn
+ * (unresolved non-return, not mere switching).
+ */
+export const INTERRUPTION_STATUS_SWITCHED_AWAY = 'switched_away';
+export const INTERRUPTION_STATUS_RETURNED = 'returned_to_task';
+export const INTERRUPTION_STATUS_ALERT_IGNORED = 'alert_ignored';

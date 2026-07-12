@@ -106,6 +106,32 @@ interpretation into `ScoringManager` and keep the raw log strictly behavioural
 (`final_unresolved_due_to_nonreturn`) needs cross-room state that doesn't exist
 in `SessionState` yet.
 
+**Wave 1A status (2026-07-12)**: room implemented as `InterruptionScene`
+(`src/scenes/InterruptionScene.ts`, `?scene=interruption`, Hub door open,
+statusBoardLabel 'Comms interruption'). Audit-first port: legacy options,
+feedback, event sequences — including the legacy derived-style events —
+preserved verbatim; per scoring-plan §9 **no new interpretation-at-log-time
+events were added**; interpretation stays a ScoringManager concern.
+Canonical additions limited to direct alias renames + state-grounded
+events: `interruption_corridor_entered` (every entry), `objective_active`
+(Q18; once per session, only while `active_objectives` is genuinely
+non-empty — e.g. the accepted relay supervision duty),
+`interruption_received` (beside legacy on prompt open), `switched_task` +
+`prior_goal_abandoned` (switch path), `returned_to_original_task` (return
+path), `task_avoidance` (ignore path, this doc's directed mapping).
+Deliberately unemitted, documented per event in `event-schema.md` §4:
+`competing_task_viewed` (open mapping decision), `new_goal_offered`,
+`goal_switch_accepted`, `return_to_unfinished_task`, `prior_goal_completed`,
+`task_completed_after_interruption` (all need real cross-room objective
+mechanics), `final_unresolved_due_to_nonreturn` (Final Core beat),
+`excessive_idle_after_instruction` (user-owned idle parameter).
+`interruption_status` vocabulary: `switched_away` / `returned_to_task` /
+`alert_ignored` (`src/data/missionVocabulary.ts`) — Final Core reads
+`switched_away` as the unresolved-non-return candidate only (switching
+alone is never penalised). Spec
+`e2e/interruption_corridor_logging.spec.ts` authored compile-only —
+**runtime/browser verification still owed** before any "works" claim.
+
 ## Anti-leakage note
 
 No Grit-S Consistency of Interest / productiveness item wording (Q08, Q15,

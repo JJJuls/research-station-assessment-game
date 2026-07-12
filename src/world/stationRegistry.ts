@@ -111,8 +111,10 @@ export const STATION_REGISTRY: readonly StationRegistration[] = [
     roomId: 'interruption_corridor',
     label: 'Interruption Corridor',
     routeParam: 'interruption',
+    sceneKey: key.scene.interruption,
     hubDoor: { x: 25 * 32 + 8, y: 6 * 32 + 16 },
     hubSpawn: { x: 25 * 32 + 8 - 80, y: 6 * 32 + 16 },
+    statusBoardLabel: 'Comms interruption',
   },
   {
     roomId: 'final_core_room',
