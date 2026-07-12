@@ -7,7 +7,27 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
   via CLI only; no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — SPRINT A PHASE A2 COMPLETE (this commit)
+## Current status — SPRINT A PHASE A3 COMPLETE (this commit)
+
+- **Base**: `54ba3e8` (A2). Commits: `76c91f2` (journey helpers + route
+  rework), `167837e` (navigation smoke spec), this state/handoff commit.
+- **A3 deliverables**: `e2e/journey.ts` (count-aware transition waits,
+  door-driven legs, error capture, mission-state probe, subsequence/
+  metadata/return-flow assertions) + `e2e/connected_world_smoke.spec.ts`
+  (full door ring, one navigation-only session).
+- **Two test-infra defects found & fixed during bring-up** (game code
+  untouched): (1) count-after-action race — the transition-wait baseline
+  must be captured BEFORE the triggering action; (2) `hubToStationDoor`
+  mid-height clamp legs wedged against the Hub console block / undershot
+  from side-wall return spawns — all routes now normalize via a pocket-safe
+  north-west anchor (down-clamp, 400ms up-hop, west-clamp, north-clamp).
+- **Full suite 33/33 PASS (18.8m), zero retries** under SwiftShader.
+- **Exact next action**: Phase A4 — three connected participant journeys
+  (P1 adaptive/informed, P2 shortcut/interrupted/reckless, P3
+  avoid/defer/rushed; hazard branches split across sessions), evidence in
+  docs/testing/connected-journey/.
+
+## Prior status — SPRINT A PHASE A2 COMPLETE (54ba3e8)
 
 - **Base**: `6424697` (A2 audit doc) on `2c455c7` (A1). This commit adds
   `e2e/state_session_continuity.spec.ts` (4 tests: reload semantics, direct
