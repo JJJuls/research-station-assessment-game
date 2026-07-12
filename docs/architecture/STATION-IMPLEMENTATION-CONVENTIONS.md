@@ -9,9 +9,8 @@ continuity contract (A2), cross-room integration contract (A5),
 
 ## 1. Adding a station (registration convention)
 
-One station = one entry in `src/world/stationRegistry.ts` + one scene class
-
-- one route registration. In order:
+One station = one entry in `src/world/stationRegistry.ts`, one scene
+class, and one route registration. In order:
 
 1. **Registry row** (`STATION_REGISTRY`): `roomId` (canonical, from V3),
    `routeParam` (`?scene=` value), `sceneKey`, `hubDoor` (door-ring coords),
