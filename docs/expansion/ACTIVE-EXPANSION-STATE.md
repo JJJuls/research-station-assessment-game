@@ -8,7 +8,41 @@ Live checkpoint file. Updated after every commit. Newest entry first.
   MCP enabled for the Wave 1B verification session only;
   no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — HAZARD CONTROL IMPLEMENTED, VERIFICATION PENDING (this commit)
+## Current status — HAZARD CONTROL VERIFIED (this commit)
+
+- **Base**: `fbe98bf` (verification plan) on `ecd2256` (implementation).
+  This commit adds `e2e/hazard_control_logging.spec.ts` (4 tests, incl.
+  console-error listeners) and the evidence doc
+  `docs/testing/hazard-verification/HAZARD-EVIDENCE.md`.
+- **Consolidated verification: 28/28 PASS, 0 failures** — full suite (9
+  prior specs, 24 tests) + the new hazard spec (4 tests); all 4 hazard
+  tests first-attempt PASS in the full run. Two pass-on-retry cases were
+  the documented cold-Vite first-load timeout on pre-existing specs — no
+  behavioural assertion ever failed. **Zero game defects found; zero fixes
+  applied.** The U6 hazard door route worked as authored.
+- **Verified live (H1-H11 + D1 invariants)**: all three branches with exact
+  `study_item_ids`/`construct_id`/`success` pins; `hazard_route_avoided`
+  additive beside verbatim legacy `hazard_avoidance`, telemetry-only
+  (`[]`, no construct), moving NO construct variable;
+  `abandonment_count = 1` from the legacy event only; reckless metadata
+  live; warning repeatable; leave-and-return keeps informed classification;
+  `hazard_status` propagation; Qualtrics params on every event; no console
+  errors; no invented completion gate.
+- **Wave 1 build is now COMPLETE: all 8 stations implemented and
+  runtime-verified.** Remaining work is decision-gated, not build-gated:
+  Beat-13 supervised scoring bundle (D2, includes `final_core_force_continue`
+  - `strategy_revision_count` fixes + `final_quality_score` +
+    exploratory-label mechanism), then Beat 14 Qualtrics return preview;
+    hazard consequence propagation into Final Core
+    (`hazard_issue_created/resolved`, `final_hazard_issue`) stays a
+    documented gap pending task-design semantics (hazard_status source now
+    exists).
+- **Exact next action**: dispatch `research-data-reviewer` +
+  `gameplay-implementation-reviewer` sequentially over the Hazard beat
+  range (`317e07b..HEAD`) per the routing policy — the room has passed its
+  consolidated verification, so reviewer dispatch is now permitted.
+
+## Hazard implementation checkpoint (fbe98bf)
 
 - **Base**: `ecd2256` (Hazard Control implementation, station beat 7) on
   `f27130d` (D1 ruling recorded). Build + tsc PASS at `ecd2256`.
