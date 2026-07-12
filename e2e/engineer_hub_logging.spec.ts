@@ -38,16 +38,14 @@ async function getMissionState(page: import('@playwright/test').Page) {
     (
       window as unknown as {
         researchRuntime: {
-          sessionState: {
-            getMissionState: () => {
-              accepted_duties: string[];
-              skipped_duties: string[];
-              active_objectives: string[];
-            };
+          getMissionState: () => {
+            accepted_duties: string[];
+            skipped_duties: string[];
+            active_objectives: string[];
           };
         };
       }
-    ).researchRuntime.sessionState.getMissionState(),
+    ).researchRuntime.getMissionState(),
   );
 }
 

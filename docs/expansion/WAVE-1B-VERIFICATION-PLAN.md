@@ -19,9 +19,13 @@ mappings, formulas, semantics, stimuli, thresholds, or event contracts.
   Wave 1A specs were statically cross-checked against the frozen
   `CANONICAL_EVENT_CONTEXT` (`src/world/CanonicalEventContext.ts`) — **all
   match**; no spec pins a value the registry does not commit.
-- `window.researchRuntime.sessionState` is a public readonly field on
+- ~~`window.researchRuntime.sessionState` is a public readonly field on
   `ResearchRuntime` (`src/systems/ResearchRuntime.ts:32`), so the specs'
-  `sessionState.getMissionState()` probes are valid dev-mode API usage.
+  `sessionState.getMissionState()` probes are valid dev-mode API usage.~~
+  **Corrected during the verification pass:** the class field exists, but
+  the `window.researchRuntime` helper is a 6-method literal that never
+  exposed it. Resolved by the gated additive `getMissionState()` debug
+  method — see `docs/testing/wave1b-verification/WAVE1B-EVIDENCE.md` §3.
 - Baseline fixtures `docs/testing/baseline-e8a8994/*.json` contain **no**
   `side_repair_completed` or `final_core_status_reviewed` events (verified by
   content grep) — see §5 for what "re-baseline" therefore actually means.

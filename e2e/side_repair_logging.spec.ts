@@ -42,12 +42,10 @@ async function getSideRepairStatus(page: import('@playwright/test').Page) {
       (
         window as unknown as {
           researchRuntime: {
-            sessionState: {
-              getMissionState: () => { side_repair_status: string };
-            };
+            getMissionState: () => { side_repair_status: string };
           };
         }
-      ).researchRuntime.sessionState.getMissionState().side_repair_status,
+      ).researchRuntime.getMissionState().side_repair_status,
   );
 }
 

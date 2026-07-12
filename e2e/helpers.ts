@@ -119,6 +119,32 @@ export async function waitForRoomEntry(page: Page, eventType: string) {
 }
 
 /**
+ * Waits until the given event type has been logged at least `count` times.
+ * Needed for re-entry paths: waitForRoomEntry matches the FIRST occurrence,
+ * so on a second visit it returns instantly while the transition is still
+ * in flight and assertions race the re-entry logging.
+ */
+export async function waitForNthEvent(
+  page: Page,
+  eventType: string,
+  count: number,
+) {
+  await page.waitForFunction(
+    ({ type, n }) =>
+      (
+        window as unknown as {
+          researchRuntime: { getEvents: () => { event_type: string }[] };
+        }
+      ).researchRuntime
+        .getEvents()
+        .filter((e) => e.event_type === type).length >= n,
+    { type: eventType, n: count },
+    { timeout: 15_000 },
+  );
+  await page.waitForTimeout(800);
+}
+
+/**
  * Route rule: every movement leg OVERSHOOTS against a clamping wall.
  * Under CPU load Phaser's frame-delta cap makes a held key deliver less
  * distance than wall-clock duration promises, so exact-duration legs

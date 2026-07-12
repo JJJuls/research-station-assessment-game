@@ -18,6 +18,7 @@ declare global {
       completeDebugSession: () => DebugCompletionResult;
       exportEventsJSON: () => string;
       getEvents: () => RawGameEvent[];
+      getMissionState: () => ReturnType<SessionState['getMissionState']>;
       getSummary: () => GameSummaryVariables;
       printEvents: () => RawGameEvent[];
       printSummary: () => GameSummaryVariables;
@@ -194,6 +195,12 @@ class ResearchRuntime {
       completeDebugSession: () => this.completeDebugSession(),
       exportEventsJSON: () => this.exportEventsJSON(),
       getEvents: () => this.getEvents(),
+      // Additive (Wave 1B): read-only mission-state probe for runtime
+      // verification — returns SessionState's defensive copy, so console/
+      // test code can never mutate live mission state through it. The six
+      // baseline methods above are unchanged (baseline-e8a8994 invariant
+      // is a minimum surface, additive extension is allowed dev-only).
+      getMissionState: () => this.sessionState.getMissionState(),
       getSummary: () => this.getSummary(),
       printEvents: () => this.printEvents(),
       printSummary: () => this.printSummary(),

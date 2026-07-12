@@ -88,10 +88,14 @@ test.describe('launch with research params', () => {
       };
     });
 
+    // Baseline six methods plus getMissionState (Wave 1B additive,
+    // read-only mission-state probe; baseline-e8a8994's 6-method surface
+    // is a minimum, extended deliberately for runtime verification).
     expect(result.surface).toEqual([
       'completeDebugSession',
       'exportEventsJSON',
       'getEvents',
+      'getMissionState',
       'getSummary',
       'printEvents',
       'printSummary',

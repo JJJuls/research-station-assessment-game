@@ -4,10 +4,60 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 - **Branch**: `fable-autonomous-game-build-v1` (V1 slice frozen at `556e273`)
 - **Protected branch**: `fable-final-game-prep-from-prototype` @ `e8a8994` — untouched
-- **Session constraints**: main Fable agent only; Playwright + PixelLab disabled;
+- **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
+  MCP enabled for the Wave 1B verification session only;
   no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — Wave 1B preparation (this commit)
+## Current status — WAVE 1B VERIFICATION COMPLETE (this commit)
+
+- **Base**: `d9d4789` (verification-prep checkpoint); this commit adds the
+  verification results. Full evidence:
+  `docs/testing/wave1b-verification/WAVE1B-EVIDENCE.md` (+ raw prototype
+  drive report JSON alongside).
+- **Consolidated Playwright suite: 24/24 PASS, 0 flaky** (final run) — all
+  six Wave 1A rooms (repair, engineer, inventory, side_repair,
+  interruption, final_core) plus the three V1 regression specs; every
+  spec-pinned `study_item_ids`/`construct_id`/`success` verified against
+  live events; scoring separation invariants verified in both directions;
+  mission-state propagation verified via debug probe.
+- **Defect found & fixed (1, genuine)**: SideRepairScene grid row 7 central
+  block overlapped the spawn and made the Utility Bot unreachable (all
+  paths dead). Fixed by clearing the central segment (placeholder geometry
+  only — no scientific change). Evidence §2.
+- **Debug API (gated via qualtrics-logging-review)**: additive dev-only,
+  read-only `getMissionState()` on `window.researchRuntime` (7th method;
+  baseline six unchanged; defensive copy — no mutation path). The prep-doc
+  claim that `sessionState` was already exposed was wrong (corrected in the
+  plan). Launch spec's pinned surface updated accordingly. Evidence §3.
+- **Test-side fixes**: `waitForNthEvent` helper (re-entry race);
+  repair test 3 exit re-choreographed (block-vs-wall clamp ambiguity); NEW
+  `objective_completed` Archive+Repair parity test (fires exactly once,
+  archive-terminal payload context). `hubToStationDoor` door-ring routes
+  needed **no** tuning — verified as authored for all six stations.
+- **Prototype regression (`?scene=prototype`, headed drive)**: dock,
+  archive-adaptive, archive-maladaptive event sequences = **0 diffs** vs
+  `baseline-e8a8994` fixtures on all stable fields; append-only + return-URL
+  invariants hold. The two documented additive payload deltas verified
+  live: `side_repair_completed` +`study_item_ids [Q07,Q16,Q32]` (no
+  construct), `final_core_status_reviewed` +`[Q11]`/`responsibility`;
+  names/order/one-shots/co-events byte-identical; fixture JSONs untouched.
+  Evidence §5.
+- **Final gates**: build PASS, tsc PASS, `git diff --check` clean, zero
+  diff to CanonicalEventContext/ScoringManager/QualtricsBridge/EventLogger/
+  SessionState/DataQualityTracker; Hazard Control confirmed unimplemented
+  (no scene, no sceneKey, sealed door).
+- **Runtime-verification debt (issue 9): CLEARED** for all six Wave 1A
+  rooms — they are now verified working in a real browser, not just
+  compiled.
+- **Exact next action**: (1) dispatch `research-data-reviewer` +
+  `gameplay-implementation-reviewer` over the Wave 1A+1B diff (per Wave 1A
+  plan step 3); (2) user decisions remain the only build blockers —
+  `hazard_avoidance` → Hazard Control beat (+ its spec), then the
+  supervised Beat-13 scoring beat (ScoringManager/QualtricsBridge,
+  `final_quality_score_computed`/`final_summary_previewed`/
+  `qualtrics_return_previewed`).
+
+## Wave 1B preparation (d9d4789)
 
 - **Base commit**: `7a76cf4` (Wave 1A build phase complete + final state doc);
   this docs checkpoint is HEAD. Working tree otherwise clean; branch ahead of

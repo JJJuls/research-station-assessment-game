@@ -60,7 +60,11 @@ export class SideRepairScene extends RoomScene {
         '#.##....####....##.#',
         '#..................#',
         '#..................#',
-        '#.##....####....##.#',
+        // Central segment kept clear: with the 32x42 player body a block
+        // here overlaps the spawn (320,272) and seals the only approach
+        // lane to the Utility Bot (Wave 1B runtime finding — the bot was
+        // unreachable). Flanking parts shelves preserved.
+        '#.##............##.#',
         '#..................#',
         '#..................#',
         '#..................#',
