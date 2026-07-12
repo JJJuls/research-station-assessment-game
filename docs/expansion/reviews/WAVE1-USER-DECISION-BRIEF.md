@@ -15,7 +15,8 @@ Sources: `WAVE1-REVIEW-GATE.md`, `WAVE1-RESEARCH-DATA-REVIEW.md`,
 `docs/research/stimulus-freeze-checklist.md`, V3 contract §4/§5/§6/§10,
 `docs/mps_vertical_slice.md`.
 
-**Totals: 8 decisions. Required immediately: 1 (D1). Required before the supervised
+**Totals: 8 decisions. ~~Required immediately: 1 (D1)~~ — D1 RESOLVED by user
+ruling 2026-07-12 (Option A, see Section A). Required before the supervised
 scoring beat / any deployment: 1 (D2). Safely deferrable now: 6 (D3–D8), two of
 which (D7, D8) gate the pilot/stimulus freeze rather than any build work.**
 
@@ -23,7 +24,24 @@ which (D7, D8) gate the pilot/stimulus freeze rather than any build work.**
 
 ## Section A — Hazard Control decisions
 
-### D1. `hazard_avoidance` canonical resolution — REQUIRED IMMEDIATELY (blocks Hazard Control)
+### D1. `hazard_avoidance` canonical resolution — **RESOLVED BY USER RULING (2026-07-12): Option A**
+
+> **User ruling (verbatim scope):** Authorize Option A. Create a new canonical
+> event `hazard_route_avoided` with `study_item_ids: []` and `construct_id`
+> unset/omitted — raw behavioural telemetry only; it must not contribute to
+> construct scoring, must not be added to ScoringManager formulas, and no
+> questionnaire-item mapping may be inferred. Existing success semantics are
+> preserved only where already explicitly defined (none are documented for this
+> branch — none invented). The required legacy `hazard_avoidance` event stays
+> emitted verbatim with its existing semantics, and the existing
+> `abandonment_count` derivation is preserved. `hazard_info_checked` is reserved
+> exclusively for actual information-checking behaviour and is NOT the canonical
+> representation of route avoidance. Route avoidance must remain analytically
+> distinguishable from: checking information, attempting the hazardous route,
+> reckless continuation, and task abandonment.
+>
+> This unblocks the Hazard Control implementation beat. The original decision
+> record is preserved below unchanged for audit.
 
 1. **Exact question:** When the player chooses "avoid the uncertain route" in Hazard
    Control, how should the legacy `hazard_avoidance` event be represented in the
@@ -311,13 +329,13 @@ or (b) above — and if (a), supply the new canonical event's
 
 ## Summary table
 
-| #   | Decision                                       | Blocks build now?            | Required when                                       |
-| --- | ---------------------------------------------- | ---------------------------- | --------------------------------------------------- |
-| D1  | `hazard_avoidance` canonical resolution        | **Yes — sole build blocker** | Immediately (before the Hazard Control beat)        |
-| D2  | Beat-13 scoring bundle (4 sub-items)           | No                           | Before the supervised scoring beat / any deployment |
-| D3  | Idle threshold/definition                      | No                           | Before stimulus freeze / pilot                      |
-| D4  | Abandon/return `construct_id` (Q24/Q25)        | No                           | Before stimulus freeze                              |
-| D5  | `engineer_report_submitted_supervised` mapping | No                           | Deferrable (non-blocking)                           |
-| D6  | `interruption_alert_acknowledged` mapping      | No                           | Deferrable (non-blocking)                           |
-| D7  | `task_started` Q05/Q15 dual-listing            | No                           | With event-schema freeze                            |
-| D8  | Stimulus-freeze asset dispositions (5 items)   | No                           | Before any pilot (item 1 MAJOR)                     |
+| #   | Decision                                       | Blocks build now?                    | Required when                                           |
+| --- | ---------------------------------------------- | ------------------------------------ | ------------------------------------------------------- |
+| D1  | `hazard_avoidance` canonical resolution        | **RESOLVED — Option A (2026-07-12)** | Ruled: canonical `hazard_route_avoided`, telemetry-only |
+| D2  | Beat-13 scoring bundle (4 sub-items)           | No                                   | Before the supervised scoring beat / any deployment     |
+| D3  | Idle threshold/definition                      | No                                   | Before stimulus freeze / pilot                          |
+| D4  | Abandon/return `construct_id` (Q24/Q25)        | No                                   | Before stimulus freeze                                  |
+| D5  | `engineer_report_submitted_supervised` mapping | No                                   | Deferrable (non-blocking)                               |
+| D6  | `interruption_alert_acknowledged` mapping      | No                                   | Deferrable (non-blocking)                               |
+| D7  | `task_started` Q05/Q15 dual-listing            | No                                   | With event-schema freeze                                |
+| D8  | Stimulus-freeze asset dispositions (5 items)   | No                                   | Before any pilot (item 1 MAJOR)                         |

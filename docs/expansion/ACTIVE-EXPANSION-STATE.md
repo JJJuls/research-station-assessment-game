@@ -8,7 +8,31 @@ Live checkpoint file. Updated after every commit. Newest entry first.
   MCP enabled for the Wave 1B verification session only;
   no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — WAVE 1B VERIFICATION COMPLETE (this commit)
+## Current status — D1 RULING RECORDED: HAZARD CONTROL UNBLOCKED (this commit)
+
+- **Base**: `317e07b` (Wave 1 review gate `c22ad7d` + user decision brief).
+  Review gate result: CONDITIONAL PASS (0 blockers; 1 user-owned major = Beat-13
+  RD-1; details in `docs/expansion/reviews/WAVE1-REVIEW-GATE.md`).
+- **USER RULING D1 (2026-07-12) — `hazard_avoidance` canonical resolution:
+  Option A authorized.** New additive canonical event `hazard_route_avoided`:
+  `study_item_ids: []`, `construct_id` unset — raw behavioural telemetry only,
+  never construct-scored, never in ScoringManager formulas, no Q-item mapping
+  inferred, no success semantics invented. Legacy `hazard_avoidance` stays
+  emitted verbatim (existing semantics; `abandonment_count` derivation
+  preserved). `hazard_info_checked` reserved exclusively for actual
+  information-checking. Avoidance stays analytically distinguishable from
+  info-checking, informed continuation, reckless continuation, and
+  abandonment. Recorded in: this file; `WAVE1-USER-DECISION-BRIEF.md` §A;
+  `docs/research/event-schema.md` §4 Hazard table (new `approved` row).
+- **Unresolved issue 3 is RESOLVED** (list below updated). Issues 1-2, 4-8
+  remain open and user-owned; Beat-13 (issue 6) stays out of scope for the
+  Hazard beat — ScoringManager/QualtricsBridge remain untouched.
+- **Exact next action**: implement Hazard Control (last Wave 1 room beat) per
+  `docs/game/rooms/05-hazard-control.md` + the D1 ruling; then build/tsc, a
+  clean implementation commit, a consolidated Playwright verification plan,
+  and the runtime verification gate before any reviewer dispatch.
+
+## Wave 1B verification complete (89e9597)
 
 - **Base**: `d9d4789` (verification-prep checkpoint); this commit adds the
   verification results. Full evidence:
@@ -287,7 +311,10 @@ Live checkpoint file. Updated after every commit. Newest entry first.
    `tutorial_help_shown` watcher, `excessive_idle_after_instruction`).
 2. `construct_id` for abandon/return events (Q24/Q25 family) — ports keep
    unset per committed precedent.
-3. `hazard_avoidance` canonical resolution — **blocks Hazard Control beat**.
+3. ~~`hazard_avoidance` canonical resolution~~ — **RESOLVED by user ruling D1
+   (2026-07-12, Option A): canonical `hazard_route_avoided`, study_item_ids
+   `[]`, construct unset, telemetry-only; legacy event + `abandonment_count`
+   preserved. Hazard Control beat unblocked.**
 4. `engineer_report_submitted_supervised` canonical mapping (non-blocking).
 5. `interruption_alert_acknowledged` mapping (non-blocking).
 6. Beat-13 scoring fixes bundle (out of Wave 1A scope by design).
