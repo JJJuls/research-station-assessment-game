@@ -133,3 +133,21 @@ board). Routes: `?scene=` params per registry + `dock`/`hub`/`archive`/
 Sonnet: run the independent Hazard review (S1). User: rule on D2 (the
 pilot-critical gate) and the Dock decor-airlock disposition. After D2:
 Beat-13 bundle by a top-tier model per V3 + the decision brief.
+
+## 11. Ranked implementation backlog (all known work, in order)
+
+| #   | Item                                                                                                      | Owner                           | Blocked by               |
+| --- | --------------------------------------------------------------------------------------------------------- | ------------------------------- | ------------------------ |
+| 1   | Independent Hazard review (S1)                                                                            | Sonnet                          | —                        |
+| 2   | D2 Beat-13 ruling + Dock decor-airlock disposition                                                        | User                            | —                        |
+| 3   | Remaining rulings: idle threshold, Q24/Q25 construct, D3–D8, shelf geometry                               | User                            | —                        |
+| 4   | Beat-13 scoring bundle (incl. inventory naming + forced-path quality + strategy_revision_count decisions) | Top-tier                        | 2                        |
+| 5   | Hazard→Final Core consequence implementation                                                              | Top-tier                        | User ruling on semantics |
+| 6   | Qualtrics return preview (Beat 14)                                                                        | Top-tier/Sonnet                 | 4                        |
+| 7   | Archive exit-door texture (T4)                                                                            | Sonnet + user PixelLab approval | —                        |
+| 8   | Freeze commit, then T1 bundle re-hash, T2 version pair, T3 archived suite run                             | Sonnet                          | 2–5, freeze approval     |
+| 9   | `research-data-reviewer` approval of the freeze checklist                                                 | User-triggered review           | 8                        |
+| 10  | CRLF/lint repo cleanup (non-blocking)                                                                     | Codex                           | —                        |
+
+Items 1–3 can start immediately and in parallel. Nothing in this table
+is optional before pilot except item 10.

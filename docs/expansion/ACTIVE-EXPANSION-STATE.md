@@ -39,6 +39,11 @@ Live checkpoint file. Updated after every commit. Newest entry first.
   independent Hazard review; user: D2 + Dock decor-airlock rulings.
   Any remaining Fable capacity this session: Phase-7 hardening only,
   one committed unit at a time.
+- **Phase 7 (this commit)**: flake investigation closed (one-off hazard
+  retry documented, targeted 4/4 first-attempt); ranked implementation
+  backlog added as master handoff §11. Duplication reduction and
+  recovery hardening intentionally NOT done — A6 ruling + zero
+  demonstrated failures (boundary: no speculative refactoring).
 
 ## Prior status — SPRINT A PHASE A5 COMPLETE (d58ddd7)
 
