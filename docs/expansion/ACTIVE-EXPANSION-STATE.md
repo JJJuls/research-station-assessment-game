@@ -9,7 +9,7 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 ## Current status
 
-- **Last commit**: `6e09afc` — Station beat 4: Optional Side Repair Bay
+- **Last commit**: `76be9f0` — Station beat 5: Interruption Corridor
 - **Completed**:
   1. `dd498f2` — `REMAINING-STATION-INVENTORY.md` (7 stations: sources,
      study_item_ids, construct_ids, semantics, legacy+canonical events,
@@ -124,26 +124,48 @@ Live checkpoint file. Updated after every commit. Newest entry first.
     (needs multi-step mini-game), canonical `side_repair_abandoned` (not
     matrix-listed). Spec compile-only. Build + tsc PASS.
 
-- **Exact next action**: **Station beat 5 — Interruption Corridor**
-  (room-builder discipline): reconfirm
-  `docs/game/rooms/07-interruption-corridor.md`; port legacy 3 options
-  verbatim (`interruption_opened` gate + the three legacy triples,
-  including the derived-style `interruption_focus_*`/`possible_rigidity`
-  events kept verbatim — NO new interpretation-at-log-time events may be
-  added, scoring-plan §9); additive canonical:
-  `interruption_corridor_entered` (every entry), `objective_active` (on
-  entry while a prior objective is active — use SessionState
-  active_objectives/relay duty as the documented objective source),
-  `interruption_received` (prompt open, beside legacy), per-option raw
-  additions per alias table (`switched_task`+`goal_switch_accepted`+
-  `prior_goal_abandoned` beside switch triple; `returned_to_original_task`
-  beside return triple — NOTE legacy is `interruption_returned_to_original_task`,
-  different string; `task_avoidance` beside ignore triple;
-  `competing_task_viewed` where factual). `excessive_idle_after_instruction`
-  stays registered-not-emitted (idle parameter, issue 1);
-  `final_unresolved_due_to_nonreturn` deferred to Final Core beat.
-  `interruption_status` vocabulary for Final Core. Registry flip
-  (`interruption`), spec compile-only, docs update.
+14. `76be9f0` — **Station beat 5: Interruption Corridor.**
+    `InterruptionScene` (`?scene=interruption`, statusBoardLabel 'Comms
+    interruption'). Legacy options + derived-style events verbatim; NO new
+    interpretation-at-log-time events (scoring-plan §9). Canonical
+    additions = direct alias renames only (`interruption_received`,
+    `switched_task`, `prior_goal_abandoned`, `returned_to_original_task`,
+    `task_avoidance` per room-doc mapping) + `interruption_corridor_entered`
+    - state-grounded `objective_active` (Q18; once per session, only while
+      active_objectives non-empty). Unemitted with per-event docs:
+      `competing_task_viewed` (open decision), `new_goal_offered`,
+      `goal_switch_accepted`, `return_to_unfinished_task`,
+      `prior_goal_completed`, `task_completed_after_interruption` (need real
+      objective mechanics), `final_unresolved_due_to_nonreturn` (Final Core),
+      `excessive_idle_after_instruction` (idle parameter).
+      `interruption_status`: switched_away/returned_to_task/alert_ignored.
+      Spec compile-only. Build + tsc PASS.
+
+- **Exact next action**: **Station beat 6 — Final Core Room** (room-builder
+  discipline; Hazard Control stays BLOCKED on the `hazard_avoidance` user
+  decision, so Final Core is the last unblocked room): reconfirm
+  `docs/game/rooms/08-final-core-room.md`; port legacy 3 options verbatim
+  (`final_core_opened` gate + quality-tier triples). Additive canonical:
+  `final_core_entered` (beside legacy on prompt open? NO — entered = room
+  entry, opened = prompt; emit `final_core_entered` on every room entry,
+  keep legacy `final_core_opened` on prompt open),
+  `final_core_status_reviewed` gains its deferred U4 mapping (Q11,
+  responsibility — intentional prototype-payload change, fixture
+  re-baseline note), cross-room review stage reading SessionState
+  (missing kit → `final_core_missing_item_flagged`; workspace disordered →
+  `final_core_workspace_issue_flagged`; accepted relay duty unresolved →
+  `accepted_duty_unresolved`; side repair completed →
+  `final_core_stability_bonus`; interruption switched_away →
+  `final_unresolved_due_to_nonreturn`), blocker + force-continue branch
+  (Q28: `final_core_blocker_shown`, `final_core_force_continue`,
+  `issue_resolution_attempted`/`final_core_issue_resolved`),
+  `final_core_rushed` (rushed path, beside legacy quick-sync events),
+  `final_core_completed` (all completion paths, beside legacy tier events).
+  Engineer duty completion/skip (`engineer_supervision_completed/skipped`)
+  emitted here per contract check-point. `qualtrics_return_previewed` /
+  `final_summary_previewed` / `final_quality_score_computed`: only if
+  emission points are unambiguous (debug completion path) — else document.
+  Registry flip (`final_core`), spec compile-only, docs update.
 
 ## Unresolved issues (user-owned; never decided autonomously)
 
@@ -190,3 +212,5 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 | `cc10ed9` | Room 4 | Inventory/Prep beat           |
 | `5b5050c` | Docs   | State checkpoint after beat 3 |
 | `6e09afc` | Room 5 | Side Repair Bay beat          |
+| `1dc94e2` | Docs   | State checkpoint after beat 4 |
+| `76be9f0` | Room 6 | Interruption Corridor beat    |
