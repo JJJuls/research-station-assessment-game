@@ -17,7 +17,10 @@ Read `docs/ai/POST-FABLE-MASTER-HANDOFF.md` first for full repo state.
 
 - `93d8aa6` Priority A: research traceability matrix (MD + JSON + validator).
 - `c734645` Priority B: ranked adversarial journey plan (ADV-1..11).
-- (this commit) Priority C unit 1: ADV-1 cross-session isolation spec.
+- `dfefc8d` ADV-1 cross-session isolation spec.
+- `14bc470` ADV-2 reload-during-partial-state spec.
+- `ff28f3d` ADV-3 archive abandon/return cycles spec.
+- (this commit) ADV-4 repeated hazard decisions spec.
 
 ## Completed tasks
 
@@ -32,34 +35,36 @@ Read `docs/ai/POST-FABLE-MASTER-HANDOFF.md` first for full repo state.
   `docs/testing/ADVERSARIAL-JOURNEY-PLAN.md` — 17 mandated case families
   inventoried against the 38-test baseline; 11 ranked cases; ADV-1..4 are
   the Priority C implementation order.
-- **Priority C in progress**: ADV-1
-  (`e2e/adversarial_session_isolation.spec.ts`) PASSES targeted (1/1, 45 s):
-  a second participant in the same tab inherits zero events / mission state
-  / summary values from the first.
+- **Priority C: all four P0 cases COMPLETE**, each 1/1 first-attempt PASS
+  targeted, zero game defects found (test-side assumption fixes only):
+  ADV-1 `adversarial_session_isolation.spec.ts` (45 s) — zero cross-participant
+  bleed; ADV-2 `adversarial_reload_partial_state.spec.ts` (26 s) — no phantom
+  Q24/Q25 classification across reload; ADV-3
+  `adversarial_archive_abandon_return.spec.ts` (2.2 min) — first live
+  coverage of `archive_returned_after_failure`, per-departure semantics
+  pinned; ADV-4 `adversarial_hazard_repeat_decisions.spec.ts` (77 s) —
+  repeatable-prompt decision semantics, last-write hazard_status,
+  abandonment_count accumulation, informed classification persistence.
 
 ## Current coherent unit
 
-- ADV-3 unit — complete, committed with this handoff update.
+- ADV-4 unit — complete, committed with this handoff update.
 
 ## Exact next action
 
-- **ADV-2**: `e2e/adversarial_reload_partial_state.spec.ts` — direct
-  `?scene=repair` launch, fail once (option 1), full reload via re-`goto`,
-  assert fresh log (no phantom `repair_returned_after_failure`, exactly one
-  `session_start`, metadata preserved from URL), then complete (options 2
-  then 3) and assert normal completion post-reload. Then **ADV-3** (archive
-  abandon/return multi-cycle — first live coverage of the registered
-  `archive_returned_after_failure`), then **ADV-4** (repeated hazard
-  decisions across re-entries, separate session). Details:
-  ADVERSARIAL-JOURNEY-PLAN.md §2; authored semantics pinned from
-  `src/world/roomTaskState.ts` + `ArchiveScene.ts` (abandoned fires on
-  EVERY exit-after-failure while incomplete; returned once per departure;
-  nothing after completion).
+- P1 cases in plan order: **ADV-5** status-board text vs SessionState after
+  each completion; **ADV-6** hostile launch/return battery; **ADV-7** input
+  spam during prompts; **ADV-8** direct launch → ordinary navigation. Then
+  P2: ADV-9 append-only invariant harness, ADV-10 interrupted return flow,
+  ADV-11 repeated defer loop. One spec + commit per case
+  (ADVERSARIAL-JOURNEY-PLAN.md §2).
 
 ## Tests passing / failing
 
 - Baseline: 38 tests / 14 spec files all passing (Sprint A record).
-- New: ADV-1, ADV-2, ADV-3 all 1/1 targeted PASS. Suite now 41 tests / 17 files.
+- New: ADV-1..4 all 1/1 targeted first-attempt PASS. Suite now 42 tests /
+  18 files. No failures; full-suite run not yet done this sprint (planned
+  at the Part 1 phase boundary).
 
 ## Uncommitted files
 

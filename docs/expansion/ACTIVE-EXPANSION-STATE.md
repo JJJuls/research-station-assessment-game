@@ -18,9 +18,14 @@ Live checkpoint file. Updated after every commit. Newest entry first.
   the same tab: zero event/mission-state/summary bleed, fresh module
   stores, per-event identity pinned. Targeted 1/1 PASS (45 s); suite now
   39 tests / 15 files. tsc PASS; no game-code changes; zero defects found.
-- **Exact next action**: ADV-2 reload-during-partial-state spec, then ADV-3
-  archive abandon/return cycle, then ADV-4 repeated hazard decisions (plan
-  §2 P0 order).
+- **Priority C P0 COMPLETE (`dfefc8d`, `14bc470`, `ff28f3d`, this commit)**:
+  ADV-1 session isolation, ADV-2 reload-partial-state, ADV-3 archive
+  abandon/return (first `archive_returned_after_failure` coverage), ADV-4
+  repeated hazard decisions. All 1/1 first-attempt targeted PASS; suite now
+  42 tests / 18 files; zero game defects found.
+- **Exact next action**: P1 cases ADV-5 (status board), ADV-6 (hostile
+  launch battery), ADV-7 (input spam), ADV-8 (direct launch → navigation),
+  one commit each; then a full-suite phase-boundary run.
 
 ## Prior status — SPRINT B PART 1: PRIORITY A COMPLETE (93d8aa6)
 
