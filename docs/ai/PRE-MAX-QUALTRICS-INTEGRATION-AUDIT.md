@@ -40,6 +40,9 @@ is possible today via the debug API.
   cases complete (per `FABLE-SPRINT-B-PART1-HANDOFF.md`).
 - Test inventory: **49 tests / 22 spec files** (confirmed by `e2e/*.spec.ts`
   count). Full-suite run deferred to the Part-1 phase boundary (not run here).
+  **Update (`474b7ee`, OPUS technical gate):** the full suite has since been
+  run green **×2** (49/49, 0 retries, ~46 min each) with a passing production-
+  artifact smoke — see `docs/ai/OPUS-OVERNIGHT-PRE-PILOT-TECHNICAL-GATE.md`.
 - Verification this audit: `npm.cmd run lint:tsc` **clean**; `npm.cmd run build`
   **passed** (89 modules, 1.92 s); `git diff --check` clean (docs-only changes).
 - No uncommitted/unexpected tracked files at start; ignored artifacts only

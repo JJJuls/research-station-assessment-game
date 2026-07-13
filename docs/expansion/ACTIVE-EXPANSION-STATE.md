@@ -7,7 +7,40 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
   via CLI only; no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — PRE-MAX QUALTRICS INTEGRATION AUDIT (this commit)
+## Current status — OPUS OVERNIGHT PRE-PILOT TECHNICAL GATE (this commit)
+
+- **Checkpoint**: independent technical verification + deployment-artifact
+  audit from `474b7ee` (clean tree, 49 tests / 22 specs). Deliverable:
+  `docs/ai/OPUS-OVERNIGHT-PRE-PILOT-TECHNICAL-GATE.md` (new). Docs-only; no
+  `src/` or scientific/stimulus/scoring/event-semantics change; no
+  decision-gated Qualtrics pipeline implemented.
+- **Executable evidence**: `lint:tsc` **clean**; ordinary `npm run build`
+  **passes** (89 modules) and deployment `npm run bundle` **passes** (88
+  modules, base `./`, external unpkg + ribbon stripped); `git diff --check`
+  clean. **Full Playwright suite green ×2**: pass 1 **49/49** (46.2 min,
+  exit 0, 0 retries) and pass 2 **49/49** (46.1 min, exit 0, 0 retries);
+  timing variance < 2 s on the longest specs; **no flake, no third run
+  needed**. Production-artifact smoke (bundle via `vite preview`) **3/3**:
+  canvas boots, launch params parse, reload/no-`return_url` graceful, **DEV
+  APIs (`researchRuntime`, `__lastRoomFeedbackText`) absent in prod**, zero
+  page/console errors; nested-path host (`/study/game/`) serves the bundle
+  200 (relative base is subpath-portable).
+- **`npm run lint`** fails locally with **352 CRLF-only** `prettier/prettier`
+  errors — environmental (`core.autocrlf=true` on Windows; git blobs are LF;
+  CI on Linux passes). Known non-blocking (POST-FABLE §11.10). Not a defect.
+- **Verdict**: repository is a **technically stable, reproducible baseline**
+  for the Max integration sprint. **Ready for internal developer testing** and
+  **supervised usability testing** (serve the `bundle` artifact, not `build`).
+  **NOT research-pilot / data-collection ready** — blocked by the unchanged,
+  decision-gated P0 cluster (P0-1 return/export, P0-2 raw export, P0-3
+  persistence, P0-4 Beat-13/D2), not by any technical instability. **P1-6**
+  (default `build` ships unpkg + ribbon + base `/`) fully characterised with
+  artifact evidence; mitigated today by using `npm run bundle`.
+- **Next authorised action**: unchanged — Max **Unit 0** (user rules INT-1/
+  INT-2/INT-5 + D2 scope), then **Unit 1** verbatim from
+  `PRE-MAX-QUALTRICS-INTEGRATION-AUDIT.md §19`. Implementation has NOT begun.
+
+## Current status — PRE-MAX QUALTRICS INTEGRATION AUDIT (previous commit)
 
 - **Checkpoint**: read-only end-to-end integration audit from `0c3529c` (clean
   tree, 49 tests / 22 specs, ADV-1..8 + all P0/P1 adversarial cases done).
