@@ -23,7 +23,8 @@ Read `docs/ai/POST-FABLE-MASTER-HANDOFF.md` first for full repo state.
 - `db6380d` ADV-4 repeated hazard decisions spec.
 - `653780d` ADV-6 hostile launch/return battery spec.
 - `034c05b` ADV-7 rapid repeated input spec.
-- (this commit) ADV-8 direct launch → ordinary navigation spec (recovery unit).
+- `ec7d4e1` ADV-8 direct launch → ordinary navigation spec (recovery unit).
+- (this commit) ADV-5 status-board display spec (last P1 case).
 
 ## Completed tasks
 
@@ -48,9 +49,8 @@ Read `docs/ai/POST-FABLE-MASTER-HANDOFF.md` first for full repo state.
   pinned; ADV-4 `adversarial_hazard_repeat_decisions.spec.ts` (77 s) —
   repeatable-prompt decision semantics, last-write hazard_status,
   abandonment_count accumulation, informed classification persistence.
-- **Priority C P1: ADV-6, ADV-7, ADV-8 COMPLETE** (ADV-5 skipped ahead,
-  still open — see Exact next action). ADV-6
-  `adversarial_hostile_launch.spec.ts` (3/3 PASS) — duplicate/oversized/
+- **Priority C P1 COMPLETE (all four cases): ADV-5, ADV-6, ADV-7, ADV-8.**
+  ADV-6 `adversarial_hostile_launch.spec.ts` (3/3 PASS) — duplicate/oversized/
   encoded/empty launch params and relative/blank/`javascript:` return_url
   shapes, all pinned to code-defined behaviour; two frozen-as-is
   observations routed to the user (empty-string identities bypass the `??`
@@ -66,27 +66,57 @@ Read `docs/ai/POST-FABLE-MASTER-HANDOFF.md` first for full repo state.
   `side_repair_discovered`. Status strings (`ignored`, `alert_ignored`)
   verified byte-for-byte against `src/data/missionVocabulary.ts` before
   the spec was trusted.
+  ADV-5 `adversarial_status_board_display.spec.ts` (1/1 PASS twice,
+  ~604-609 s each clean run) — the last P1 case. Drives all eight stations
+  plus dock through completion, an archive fail/abandon/return cycle, a
+  side-repair defer-then-complete cycle, and two repeated Hazard decisions,
+  reading the Hub status board after every Hub return and asserting the
+  rendered text against `getMissionState()` byte-for-byte (labels/order
+  pinned verbatim from `stationRegistry.ts`/`HubScene.buildStatusBoardText`).
+  Zero game defects: the board was already an accurate, deterministic
+  rendering, including the documented D1 consequence that Hazard Control's
+  line stays `pending` forever (no `markRoomCompleted` call exists for that
+  room) even after repeated, last-write-wins hazard decisions. Also verified
+  fresh-session isolation (a second participant in the same browser context
+  sees an all-`pending` board, no leakage from the first). **One small,
+  additive, dev-only technical scaffolding change was needed to make the
+  rendered board text observable to Playwright at all** (Phaser draws to
+  canvas; there was no existing DOM/debug path to read displayed text):
+  `RoomScene.showFeedbackMessage` now also writes the shown message to a
+  presentation-only, `import.meta.env.DEV`-gated `window.__lastRoomFeedbackText`
+  probe (mirrors the `getMissionState()` precedent — read-only, no
+  research/event/scoring surface, deliberately kept separate from
+  `window.researchRuntime`). `e2e/helpers.ts` gained the matching
+  `hubToStatusBoard`/`getLastFeedbackText` helpers and exported the
+  previously-private `hubToNorthWestAnchor`. No event/scoring/task/Qualtrics
+  code touched. The spec's `test.setTimeout` needed 900 s, not the initially
+  tried 600 s — the full 8-station-plus-second-session journey runs ~604-609 s
+  wall-clock, and one run's first attempt legitimately hit a 600 s ceiling
+  (retry passed); re-run twice clean at 900 s with zero retries.
 
 ## Current coherent unit
 
-- ADV-8 unit — complete, committed with this handoff update.
+- ADV-5 unit — complete, committed with this handoff update. **All four P1
+  cases (ADV-5, ADV-6, ADV-7, ADV-8) are now done.**
 
 ## Exact next action
 
-- **ADV-5** (status-board text vs `SessionState` after each completion) is
-  the only P1 case still open — implement it next, one spec + commit. Then
-  P2: ADV-9 append-only invariant harness, ADV-10 interrupted return flow,
-  ADV-11 repeated defer loop (ADVERSARIAL-JOURNEY-PLAN.md §2). After P2, run
-  the full suite once at the Part 1 phase boundary (not before — brief
-  requires targeted-only runs during implementation).
+- P1 is fully complete. Next: P2 — ADV-9 append-only invariant harness,
+  ADV-10 interrupted return flow, ADV-11 repeated defer loop
+  (ADVERSARIAL-JOURNEY-PLAN.md §2). After P2, run the full suite once at the
+  Part 1 phase boundary (not before — brief requires targeted-only runs
+  during implementation).
 
 ## Tests passing / failing
 
 - Baseline: 38 tests / 14 spec files all passing (Sprint A record).
 - New: ADV-1 (1), ADV-2 (1), ADV-3 (1), ADV-4 (1), ADV-6 (3), ADV-7 (2),
-  ADV-8 (1) — every targeted run 1st-attempt PASS, 0 failures. Suite now
-  48 tests / 21 spec files. Full-suite run not yet done this sprint
-  (deferred to the Part 1 phase boundary per the sprint brief).
+  ADV-8 (1), ADV-5 (1) — every targeted run 1st-attempt PASS at its final
+  timeout budget, 0 failures (ADV-5's first pass at an initially-tried 600 s
+  budget hit that ceiling once and passed only on retry; re-run twice clean
+  at 900 s with zero retries before being trusted). Suite now 49 tests / 22
+  spec files. Full-suite run not yet done this sprint (deferred to the
+  Part 1 phase boundary per the sprint brief).
 
 ## Uncommitted files
 
@@ -112,9 +142,9 @@ Read `docs/ai/POST-FABLE-MASTER-HANDOFF.md` first for full repo state.
 
 ## Part 2 priorities
 
-- Remaining Priority C case: ADV-5 (status-board vs SessionState), then P2
-  cases ADV-9 (append-only invariant harness), ADV-10 (interrupted return
-  flow), ADV-11 (repeated defer loop).
+- Priority C (P0 + all P1) is fully complete. Next: P2 cases ADV-9
+  (append-only invariant harness), ADV-10 (interrupted return flow), ADV-11
+  (repeated defer loop).
 - Then a full-suite phase-boundary run (not yet done this sprint).
 - Then POST-FABLE-MASTER-HANDOFF.md §11 backlog (items 1–3 are user/Sonnet;
   next Fable-suitable work is decision-gated).

@@ -218,7 +218,7 @@ export type HubStationRoomId =
  * 3. West-clamp along that clear row, then Up-clamp the obstacle-free
  *    west wall column to the corner.
  */
-async function hubToNorthWestAnchor(page: Page) {
+export async function hubToNorthWestAnchor(page: Page) {
   await hold(page, 'ArrowDown', 3200);
   await hold(page, 'ArrowUp', 400);
   await hold(page, 'ArrowLeft', 4600);
@@ -267,6 +267,34 @@ export async function hubToStationDoor(page: Page, roomId: HubStationRoomId) {
   }
 
   await press(page, 'Space');
+}
+
+/**
+ * Walks from anywhere in the Hub to the Status Board (console block, HubScene
+ * x=13*32/y=7.5*32) and presses SPACE. Same NW-anchor as hubToStationDoor,
+ * then east along the clear top corridor to the board's column, then a
+ * generous south hold that clamps on the console block's top edge — well
+ * inside the board's 72px interaction radius regardless of load variance.
+ */
+export async function hubToStatusBoard(page: Page) {
+  await hubToNorthWestAnchor(page);
+  await hold(page, 'ArrowRight', 2150); // board column x 416, same leg as the dock door
+  await hold(page, 'ArrowDown', 1000); // clamps on the console block just north of the board
+  await press(page, 'Space');
+}
+
+/**
+ * Reads the dev-only, presentation-only feedback-text probe (RoomScene.ts)
+ * populated synchronously by showFeedbackMessage — safe to read immediately
+ * after the corresponding event (e.g. station_hub_status_board_viewed) is
+ * observed, since both happen in the same tick.
+ */
+export async function getLastFeedbackText(page: Page): Promise<string | null> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __lastRoomFeedbackText?: string | null })
+        .__lastRoomFeedbackText ?? null,
+  );
 }
 
 /**

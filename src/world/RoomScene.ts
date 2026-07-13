@@ -164,6 +164,25 @@ export function resetSessionOnceFlags() {
 }
 
 /**
+ * Dev-only, read-only runtime-verification hook (getMissionState()
+ * precedent): exposes the most recently rendered feedback/status-board
+ * message text so Playwright specs can verify DISPLAYED content against
+ * SessionState without adding any new scientific surface. Presentation-only
+ * — deliberately separate from window.researchRuntime (not research data,
+ * not an event, not scoring); gated the same way ResearchRuntime gates its
+ * own debug installer.
+ */
+declare global {
+  interface Window {
+    __lastRoomFeedbackText?: string | null;
+  }
+}
+
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  window.__lastRoomFeedbackText = null;
+}
+
+/**
  * Base scene for real station rooms (Dock, Hub, Archive, ...). Ports the
  * prototype's proximity-station / SPACE-prompt / 1-2-3 option mechanics
  * from Main.tsx so every room shares identical interaction affordances
@@ -373,6 +392,10 @@ export abstract class RoomScene extends Phaser.Scene {
   }
 
   protected showFeedbackMessage(message: string) {
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__lastRoomFeedbackText = message;
+    }
+
     this.feedbackMessage?.destroy();
 
     const { centerX } = this.cameras.main;
