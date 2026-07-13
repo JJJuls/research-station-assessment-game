@@ -7,7 +7,48 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
   via CLI only; no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — SPRINT B PART 1: PRIORITIES A+B DONE, C P0+P1 ALL DONE (this commit)
+## Current status — PRE-MAX QUALTRICS INTEGRATION AUDIT (this commit)
+
+- **Checkpoint**: read-only end-to-end integration audit from `0c3529c` (clean
+  tree, 49 tests / 22 specs, ADV-1..8 + all P0/P1 adversarial cases done).
+  Deliverables: `docs/integration/QUALTRICS-END-TO-END-CONTRACT.md` (new) and
+  `docs/ai/PRE-MAX-QUALTRICS-INTEGRATION-AUDIT.md` (new). Verified this commit:
+  `lint:tsc` clean, `build` passes (89 modules, 1.92 s), `git diff --check` clean.
+  **Docs-only; no `src/` or scientific content changed; no isolated code fix
+  applied (none met the "unambiguously authoritative intended behaviour" bar).**
+- **Integration status**: the data-capture spine (launch parse, immutable
+  pseudonymous identity, condition read-through, full §3.2 event payload, 12-field
+  mission state, pure non-destructive scoring) is IMPLEMENTED+VERIFIED and the
+  raw-vs-summary invariant HOLDS. The **completion→return→export half exists only
+  on the DEV-gated `window.researchRuntime` path** — a `vite build` artifact never
+  installs it, never navigates to `return_url`, and never exports raw events
+  (in-memory only; no localStorage/server sink). This is known/decision-gated
+  (V3 Beat 14, backlog #6, gated on Beat-13/D2), not a regression.
+- **Remaining phases** (audit §14): Unit 0 user decisions → Unit 1 identity/
+  validation → Unit 2 event persistence/sequencing/recovery → Unit 3 completion/
+  export/return → Unit 4 malformed-launch/return-failure coverage → Unit 5 deploy
+  build + hosted round-trip → Unit 6 dataset/codebook reproducibility → Unit 7
+  full regression + pilot gate.
+- **P0 blockers**: P0-1 no production completion/return/export path; P0-2 raw
+  events never exported / scores not reproducible; P0-3 no persistence (reload/
+  crash data loss); P0-4 Beat-13/D2 scoring bundle (brief marks D2 "REQUIRED
+  BEFORE ANY DEPLOYMENT").
+- **P1 blockers**: P1-5 empty-string identity bypasses fallback; P1-6 default
+  `build` ships external unpkg script + GitHub ribbon + base `/` (only
+  `npm run bundle` strips it); P1-7 no completion-status taxonomy; P1-8
+  `asset_set_version` absent from payloads; P1-9 no event sequence numbers /
+  ADV-9 unbuilt.
+- **Next authorised action**: Unit 0 — user rules INT-1 (return mechanism),
+  INT-2 (raw-event export channel), INT-5 (completion-status taxonomy) and D2
+  scope. Then the first Max session runs **Unit 1** verbatim from audit §19.
+  **Implementation has NOT begun.**
+- **Scientific decisions still requiring the user**: D2 (deployment-gating),
+  D3, D4, D5, D6, D7, D8-item-1, plus integration decisions INT-1..INT-6
+  (audit §8): production return mechanism, raw-event export channel,
+  empty-identity handling, non-`http(s)` return-scheme handling, completion-status
+  taxonomy, and authorising an `asset_set_version` payload field.
+
+## Current status — SPRINT B PART 1: PRIORITIES A+B DONE, C P0+P1 ALL DONE (previous commit)
 
 - **Priority B (`c734645`)**: `docs/testing/ADVERSARIAL-JOURNEY-PLAN.md` —
   17 mandated adversarial case families inventoried; 11 ranked cases
