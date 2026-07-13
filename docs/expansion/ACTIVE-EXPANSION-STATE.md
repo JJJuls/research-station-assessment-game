@@ -1,4 +1,4 @@
-# Active Expansion State — Wave 1A / 1B / Sprint A
+# Active Expansion State — Wave 1A / 1B / Sprint A / Sprint B
 
 Live checkpoint file. Updated after every commit. Newest entry first.
 
@@ -6,6 +6,31 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Protected branch**: `fable-final-game-prep-from-prototype` @ `e8a8994` — untouched
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
   via CLI only; no push/merge/PR/rebase/reset/branch-switch.
+
+## Current status — SPRINT B PART 1: PRIORITY A COMPLETE (this commit)
+
+- **Research traceability matrix shipped**:
+  `docs/research/RESEARCH-TRACEABILITY-MATRIX.md` (human-readable) +
+  `docs/research/research-traceability-matrix.json` (machine-validated) +
+  `scripts/validate-traceability-matrix.mjs` (generator/validator —
+  `--write` regenerates mechanical sections; default mode fails on any
+  drift vs CanonicalEventContext/ScoringManager/scenes/e2e). Validation
+  PASSES: 165 events, 33 items, 59 summary variables; all 90
+  registrations byte-agree with `CanonicalEventContext.ts`.
+- **No scientific semantics touched**; no `src/` changes. Divergences
+  catalogued, never resolved: task_started D7 conflict;
+  objective_completed Q06 listing conflict; archive_strategy_revision
+  registration-vs-matrix-row divergence (Q23 footnote); six stale
+  "missing" rows in event-schema §4 Archive; stale MASTER_33 Q10/status
+  notes; stale scoring-plan §5 data-quality claim; A4 inventory naming
+  split (D2).
+- **Machine-derived coverage gaps recorded** (Priority-C input): 10
+  ScoringManager inputs with no spec reference (incl. the whole legacy
+  inventory organization family) + 17 emitted events lacking direct test
+  coverage (incl. registered Q24/Q25 `archive_returned_after_failure`).
+- **Exact next action**: Sprint B Part 1 Priority B — adversarial
+  coverage inventory + ranked plan (`docs/testing/ADVERSARIAL-JOURNEY-PLAN.md`),
+  committed separately, then Priority C highest-risk tests.
 
 ## Current status — SPRINT PHASES A6 + 4 + 5 COMPLETE (this commit)
 

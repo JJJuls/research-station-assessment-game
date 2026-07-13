@@ -1,0 +1,3551 @@
+{
+  "meta": {
+    "title": "Remote Outpost Q01-Q33 research traceability matrix",
+    "generated": "2026-07-13",
+    "regenerate": "node scripts/validate-traceability-matrix.mjs --write",
+    "validate": "node scripts/validate-traceability-matrix.mjs",
+    "maintenance": "events / meta.derived_counts / findings.scoring_terms_without_tested_sources / findings.events_lacking_direct_test_coverage are machine-derived from src+e2e — never hand-edit them. All other sections are hand-authored and only referentially validated. item.events = union of the MASTER_33_ALIGNMENT.md events column and the study_item_ids registered in CanonicalEventContext.ts (both authoritative; divergences are listed under findings.mapping_inconsistencies, never silently resolved).",
+    "derived_counts": {
+      "events_total": 165,
+      "registered": 90,
+      "scoring_inputs": 57,
+      "summary_variables": 59,
+      "with_code_references": 141,
+      "with_spec_references": 128
+    }
+  },
+  "events": {
+    "accepted_duty_unresolved": {
+      "rooms": ["engineer_hub", "final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q10"],
+      "construct_id": "responsibility",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/engineer_hub_logging.spec.ts",
+        "e2e/final_core_summary.spec.ts"
+      ]
+    },
+    "archive_abandoned": {
+      "rooms": ["archive_room"],
+      "registered": true,
+      "study_item_ids": ["Q24"],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/ArchiveScene.ts"],
+      "spec_references": ["e2e/archive_room_logging.spec.ts"]
+    },
+    "archive_attempt": {
+      "rooms": ["archive_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/ArchiveScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": []
+    },
+    "archive_code_entered": {
+      "rooms": ["archive_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/ArchiveScene.ts"],
+      "spec_references": ["e2e/archive_room_logging.spec.ts"]
+    },
+    "archive_completed": {
+      "rooms": ["archive_room"],
+      "registered": true,
+      "study_item_ids": ["Q06", "Q13"],
+      "construct_id": null,
+      "success": "true",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/ArchiveScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/archive_room_logging.spec.ts",
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/repair_room_logging.spec.ts"
+      ]
+    },
+    "archive_feedback_shown": {
+      "rooms": ["archive_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/ArchiveScene.ts"],
+      "spec_references": ["e2e/archive_room_logging.spec.ts"]
+    },
+    "archive_feedback_used": {
+      "rooms": ["archive_room"],
+      "registered": true,
+      "study_item_ids": ["Q13", "Q22"],
+      "construct_id": "adaptive_persistence",
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/ArchiveScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/archive_room_logging.spec.ts"]
+    },
+    "archive_log_compared": {
+      "rooms": ["archive_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/ArchiveScene.ts"
+      ],
+      "spec_references": []
+    },
+    "archive_returned_after_failure": {
+      "rooms": ["archive_room"],
+      "registered": true,
+      "study_item_ids": ["Q24", "Q25"],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/ArchiveScene.ts"],
+      "spec_references": []
+    },
+    "archive_room_entered": {
+      "rooms": ["archive_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/ArchiveScene.ts"],
+      "spec_references": [
+        "e2e/archive_room_logging.spec.ts",
+        "e2e/connected_world_smoke.spec.ts",
+        "e2e/helpers.ts"
+      ]
+    },
+    "archive_same_wrong_code_repeated": {
+      "rooms": ["archive_room"],
+      "registered": true,
+      "study_item_ids": ["Q26"],
+      "construct_id": "inappropriate_persistence",
+      "success": "false",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/ArchiveScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/archive_room_logging.spec.ts",
+        "e2e/connected_participant_journeys.spec.ts"
+      ]
+    },
+    "archive_strategy_revision": {
+      "rooms": ["archive_room"],
+      "registered": true,
+      "study_item_ids": ["Q13", "Q22", "Q26"],
+      "construct_id": "adaptive_persistence",
+      "success": "true",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/ArchiveScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/archive_room_logging.spec.ts"]
+    },
+    "archive_terminal_opened": {
+      "rooms": ["archive_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/ArchiveScene.ts"],
+      "spec_references": ["e2e/archive_room_logging.spec.ts"]
+    },
+    "archive_wrong_code": {
+      "rooms": ["archive_room"],
+      "registered": true,
+      "study_item_ids": ["Q13"],
+      "construct_id": "adaptive_persistence",
+      "success": "false",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/ArchiveScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/archive_room_logging.spec.ts"]
+    },
+    "baseline_idle_seconds": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "cleanup_completed": {
+      "rooms": ["inventory_prep_room"],
+      "registered": true,
+      "study_item_ids": ["Q04"],
+      "construct_id": "organisation",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InventoryScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/inventory_prep_logging.spec.ts"
+      ]
+    },
+    "competing_task_viewed": {
+      "rooms": ["interruption_corridor"],
+      "registered": true,
+      "study_item_ids": ["Q17"],
+      "construct_id": "consistency_of_interest_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "control_error_count": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/DockScene.ts"],
+      "spec_references": ["e2e/movement_and_first_interaction.spec.ts"]
+    },
+    "correct_tool_selected": {
+      "rooms": ["inventory_prep_room"],
+      "registered": true,
+      "study_item_ids": ["Q03"],
+      "construct_id": "organisation",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InventoryScene.ts"],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+    },
+    "dock_control_familiarisation": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/DockScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": []
+    },
+    "dock_controls_reviewed": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/DockScene.ts", "src/scenes/Main.tsx"],
+      "spec_references": ["e2e/movement_and_first_interaction.spec.ts"]
+    },
+    "dock_instruction_followed": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/DockScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/movement_and_first_interaction.spec.ts"]
+    },
+    "dock_instruction_shortcut": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/DockScene.ts", "src/scenes/Main.tsx"],
+      "spec_references": []
+    },
+    "dock_movement_practiced": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/DockScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/connected_participant_journeys.spec.ts"]
+    },
+    "dock_started": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/DockScene.ts", "src/scenes/Main.tsx"],
+      "spec_references": [
+        "e2e/connected_world_smoke.spec.ts",
+        "e2e/launch_with_research_params.spec.ts",
+        "e2e/movement_and_first_interaction.spec.ts",
+        "e2e/state_session_continuity.spec.ts"
+      ]
+    },
+    "dock_tutorial_completed": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/DockScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/movement_and_first_interaction.spec.ts"
+      ]
+    },
+    "dock_tutorial_opened": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/DockScene.ts",
+        "src/scenes/Main.tsx"
+      ],
+      "spec_references": ["e2e/movement_and_first_interaction.spec.ts"]
+    },
+    "dock_tutorial_skipped": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/DockScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/connected_participant_journeys.spec.ts"]
+    },
+    "engineer_clarification_requested": {
+      "rooms": ["engineer_hub"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/EngineerScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": []
+    },
+    "engineer_evidence_reviewed": {
+      "rooms": ["engineer_hub"],
+      "registered": true,
+      "study_item_ids": ["Q09"],
+      "construct_id": "responsibility",
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/EngineerScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/engineer_hub_logging.spec.ts"]
+    },
+    "engineer_hub_entered": {
+      "rooms": ["engineer_hub"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/EngineerScene.ts"],
+      "spec_references": [
+        "e2e/connected_world_smoke.spec.ts",
+        "e2e/engineer_hub_logging.spec.ts",
+        "e2e/final_core_summary.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
+      ]
+    },
+    "engineer_report_opened": {
+      "rooms": ["engineer_hub"],
+      "registered": true,
+      "study_item_ids": ["Q09"],
+      "construct_id": "responsibility",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/EngineerScene.ts",
+        "src/scenes/Main.tsx"
+      ],
+      "spec_references": ["e2e/engineer_hub_logging.spec.ts"]
+    },
+    "engineer_report_submitted_prepared": {
+      "rooms": ["engineer_hub"],
+      "registered": true,
+      "study_item_ids": ["Q09"],
+      "construct_id": "responsibility",
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/EngineerScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/engineer_hub_logging.spec.ts"
+      ]
+    },
+    "engineer_report_submitted_supervised": {
+      "rooms": ["engineer_hub"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/EngineerScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": []
+    },
+    "engineer_report_submitted_unprepared": {
+      "rooms": ["engineer_hub"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/EngineerScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/engineer_hub_logging.spec.ts"
+      ]
+    },
+    "engineer_responsibility_adaptive": {
+      "rooms": ["engineer_hub"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/EngineerScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/engineer_hub_logging.spec.ts"]
+    },
+    "engineer_responsibility_shortcut": {
+      "rooms": ["engineer_hub"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/EngineerScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/engineer_hub_logging.spec.ts"]
+    },
+    "engineer_supervision_accepted": {
+      "rooms": ["engineer_hub"],
+      "registered": true,
+      "study_item_ids": ["Q10"],
+      "construct_id": "responsibility",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/EngineerScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/engineer_hub_logging.spec.ts"
+      ]
+    },
+    "engineer_supervision_assigned": {
+      "rooms": ["engineer_hub"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/EngineerScene.ts"],
+      "spec_references": ["e2e/engineer_hub_logging.spec.ts"]
+    },
+    "engineer_supervision_completed": {
+      "rooms": ["final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q10"],
+      "construct_id": "responsibility",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/final_core_summary.spec.ts"
+      ]
+    },
+    "engineer_supervision_declined": {
+      "rooms": ["engineer_hub"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/EngineerScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/engineer_hub_logging.spec.ts"
+      ]
+    },
+    "engineer_supervision_skipped": {
+      "rooms": ["engineer_hub"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "excessive_idle_after_instruction": {
+      "rooms": ["interruption_corridor"],
+      "registered": true,
+      "study_item_ids": ["Q08"],
+      "construct_id": "productiveness",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "final_bonus_unlocked": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": true,
+      "study_item_ids": ["Q32"],
+      "construct_id": "goal_time_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/SideRepairScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/side_repair_logging.spec.ts"
+      ]
+    },
+    "final_core_blocker_shown": {
+      "rooms": ["final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q28"],
+      "construct_id": "inappropriate_persistence",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/final_core_summary.spec.ts"
+      ]
+    },
+    "final_core_completed": {
+      "rooms": ["final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q06", "Q33"],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": ["e2e/final_core_summary.spec.ts"]
+    },
+    "final_core_entered": {
+      "rooms": ["final_core_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": [
+        "e2e/connected_world_smoke.spec.ts",
+        "e2e/final_core_summary.spec.ts"
+      ]
+    },
+    "final_core_force_continue": {
+      "rooms": ["final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q28"],
+      "construct_id": "inappropriate_persistence",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/final_core_summary.spec.ts"
+      ]
+    },
+    "final_core_high_quality_completion": {
+      "rooms": ["final_core_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/FinalCoreScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/final_core_summary.spec.ts"
+      ]
+    },
+    "final_core_issue_resolved": {
+      "rooms": ["final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q33"],
+      "construct_id": "goal_time_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": ["e2e/final_core_summary.spec.ts"]
+    },
+    "final_core_low_quality_completion": {
+      "rooms": ["final_core_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/FinalCoreScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/final_core_summary.spec.ts"
+      ]
+    },
+    "final_core_missing_item_flagged": {
+      "rooms": ["final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q02"],
+      "construct_id": "organisation",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/final_core_summary.spec.ts"
+      ]
+    },
+    "final_core_opened": {
+      "rooms": ["final_core_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/FinalCoreScene.ts",
+        "src/scenes/Main.tsx"
+      ],
+      "spec_references": []
+    },
+    "final_core_prior_results_integrated": {
+      "rooms": ["final_core_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/FinalCoreScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": []
+    },
+    "final_core_quick_sync": {
+      "rooms": ["final_core_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/FinalCoreScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/final_core_summary.spec.ts"
+      ]
+    },
+    "final_core_remaining_issues_resolved": {
+      "rooms": ["final_core_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/FinalCoreScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/final_core_summary.spec.ts"]
+    },
+    "final_core_rushed": {
+      "rooms": ["final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q11", "Q33"],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/final_core_summary.spec.ts"
+      ]
+    },
+    "final_core_stability_bonus": {
+      "rooms": ["final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q29"],
+      "construct_id": "goal_time_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/final_core_summary.spec.ts"
+      ]
+    },
+    "final_core_status_reviewed": {
+      "rooms": ["final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q11"],
+      "construct_id": "responsibility",
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/FinalCoreScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/final_core_summary.spec.ts"]
+    },
+    "final_core_structured_completion": {
+      "rooms": ["final_core_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/FinalCoreScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": []
+    },
+    "final_core_unresolved_issues_ignored": {
+      "rooms": ["final_core_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/FinalCoreScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/final_core_summary.spec.ts"]
+    },
+    "final_core_workspace_issue_flagged": {
+      "rooms": ["final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q04"],
+      "construct_id": "organisation",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/final_core_summary.spec.ts"
+      ]
+    },
+    "final_hazard_issue": {
+      "rooms": ["final_core_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "final_quality_score_computed": {
+      "rooms": ["scoring_layer"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "final_summary_previewed": {
+      "rooms": ["scoring_layer"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "final_unresolved_due_to_nonreturn": {
+      "rooms": ["final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q18"],
+      "construct_id": "consistency_of_interest_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/final_core_summary.spec.ts"
+      ]
+    },
+    "first_interaction": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/DockScene.ts", "src/scenes/Main.tsx"],
+      "spec_references": ["e2e/movement_and_first_interaction.spec.ts"]
+    },
+    "first_movement": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/DockScene.ts", "src/scenes/Main.tsx"],
+      "spec_references": ["e2e/movement_and_first_interaction.spec.ts"]
+    },
+    "goal_switch_accepted": {
+      "rooms": ["interruption_corridor"],
+      "registered": true,
+      "study_item_ids": ["Q19"],
+      "construct_id": "consistency_of_interest_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "hazard_avoidance": {
+      "rooms": ["hazard_control_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/HazardScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/hazard_control_logging.spec.ts"
+      ]
+    },
+    "hazard_info_checked": {
+      "rooms": ["hazard_control_room"],
+      "registered": true,
+      "study_item_ids": ["Q12", "Q27"],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/HazardScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/hazard_control_logging.spec.ts"
+      ]
+    },
+    "hazard_informed_continue": {
+      "rooms": ["hazard_control_room"],
+      "registered": true,
+      "study_item_ids": ["Q31"],
+      "construct_id": "goal_time_exploratory",
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/HazardScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/hazard_control_logging.spec.ts"
+      ]
+    },
+    "hazard_issue_created": {
+      "rooms": ["hazard_control_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "hazard_issue_resolved": {
+      "rooms": ["hazard_control_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "hazard_reckless_continue": {
+      "rooms": ["hazard_control_room"],
+      "registered": true,
+      "study_item_ids": ["Q12", "Q27", "Q31"],
+      "construct_id": "inappropriate_persistence",
+      "success": "null",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/HazardScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/hazard_control_logging.spec.ts"
+      ]
+    },
+    "hazard_room_entered": {
+      "rooms": ["hazard_control_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/HazardScene.ts"],
+      "spec_references": [
+        "e2e/connected_world_smoke.spec.ts",
+        "e2e/hazard_control_logging.spec.ts"
+      ]
+    },
+    "hazard_route_avoided": {
+      "rooms": ["hazard_control_room"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/HazardScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/hazard_control_logging.spec.ts"
+      ]
+    },
+    "hazard_warning_seen": {
+      "rooms": ["hazard_control_room"],
+      "registered": true,
+      "study_item_ids": ["Q12"],
+      "construct_id": "prudence",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/HazardScene.ts",
+        "src/scenes/Main.tsx"
+      ],
+      "spec_references": ["e2e/hazard_control_logging.spec.ts"]
+    },
+    "interruption_alert_acknowledged": {
+      "rooms": ["interruption_corridor"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "interruption_alert_ignored": {
+      "rooms": ["interruption_corridor"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
+      ]
+    },
+    "interruption_corridor_entered": {
+      "rooms": ["interruption_corridor"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InterruptionScene.ts"],
+      "spec_references": [
+        "e2e/connected_world_smoke.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
+      ]
+    },
+    "interruption_focus_lost": {
+      "rooms": ["interruption_corridor"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "interruption_focus_maintained": {
+      "rooms": ["interruption_corridor"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "interruption_new_task_chosen": {
+      "rooms": ["interruption_corridor"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "interruption_opened": {
+      "rooms": ["interruption_corridor"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/Main.tsx"
+      ],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "interruption_possible_rigidity": {
+      "rooms": ["interruption_corridor"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "interruption_previous_task_abandoned": {
+      "rooms": ["interruption_corridor"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/Main.tsx"
+      ],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "interruption_received": {
+      "rooms": ["interruption_corridor"],
+      "registered": true,
+      "study_item_ids": ["Q15", "Q17"],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InterruptionScene.ts"],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "interruption_returned_to_original_task": {
+      "rooms": ["interruption_corridor"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
+      ]
+    },
+    "interruption_single_task_focus": {
+      "rooms": ["interruption_corridor"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/Main.tsx"
+      ],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "inventory_checklist_opened": {
+      "rooms": ["inventory_prep_room"],
+      "registered": true,
+      "study_item_ids": ["Q01"],
+      "construct_id": "organisation",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InventoryScene.ts"],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+    },
+    "inventory_checklist_used": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InventoryScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+    },
+    "inventory_cleanup_completed": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InventoryScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": []
+    },
+    "inventory_disorganized_action": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InventoryScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+    },
+    "inventory_item_misplaced": {
+      "rooms": ["inventory_prep_room"],
+      "registered": true,
+      "study_item_ids": ["Q02"],
+      "construct_id": "organisation",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "inventory_item_sorted_correct": {
+      "rooms": ["inventory_prep_room"],
+      "registered": true,
+      "study_item_ids": ["Q01"],
+      "construct_id": "organisation",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "inventory_kit_verified": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InventoryScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": []
+    },
+    "inventory_prep_opened": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/InventoryScene.ts",
+        "src/scenes/Main.tsx"
+      ],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+    },
+    "inventory_prep_shortcut": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InventoryScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/inventory_prep_logging.spec.ts"
+      ]
+    },
+    "inventory_required_item_missed": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/scenes/InventoryScene.ts",
+        "src/scenes/Main.tsx"
+      ],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+    },
+    "inventory_required_tools_packed": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/scenes/InventoryScene.ts",
+        "src/scenes/Main.tsx"
+      ],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+    },
+    "inventory_room_entered": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InventoryScene.ts"],
+      "spec_references": [
+        "e2e/connected_world_smoke.spec.ts",
+        "e2e/inventory_prep_logging.spec.ts"
+      ]
+    },
+    "inventory_sequence_completed": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "inventory_sequence_followed": {
+      "rooms": ["inventory_prep_room"],
+      "registered": true,
+      "study_item_ids": ["Q01"],
+      "construct_id": "organisation",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InventoryScene.ts"],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+    },
+    "inventory_systematic_prep": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InventoryScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/inventory_prep_logging.spec.ts"
+      ]
+    },
+    "inventory_verification_skipped": {
+      "rooms": ["inventory_prep_room"],
+      "registered": true,
+      "study_item_ids": ["Q02", "Q30"],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InventoryScene.ts"],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+    },
+    "inventory_verified_complete": {
+      "rooms": ["inventory_prep_room"],
+      "registered": true,
+      "study_item_ids": ["Q30"],
+      "construct_id": "goal_time_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InventoryScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/inventory_prep_logging.spec.ts"
+      ]
+    },
+    "inventory_workspace_sorted": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/InventoryScene.ts",
+        "src/scenes/Main.tsx",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": []
+    },
+    "issue_resolution_attempted": {
+      "rooms": ["final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q28"],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": ["e2e/final_core_summary.spec.ts"]
+    },
+    "manual_page_reviewed": {
+      "rooms": ["systems_repair_room"],
+      "registered": true,
+      "study_item_ids": ["Q22"],
+      "construct_id": "adaptive_persistence",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/RepairScene.ts"],
+      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+    },
+    "missing_item": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InventoryScene.ts"],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+    },
+    "movement_instruction_shown": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/DockScene.ts", "src/scenes/Main.tsx"],
+      "spec_references": [
+        "e2e/launch_with_research_params.spec.ts",
+        "e2e/movement_and_first_interaction.spec.ts"
+      ]
+    },
+    "new_goal_offered": {
+      "rooms": ["interruption_corridor"],
+      "registered": true,
+      "study_item_ids": ["Q19"],
+      "construct_id": "consistency_of_interest_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "objective_active": {
+      "rooms": ["interruption_corridor"],
+      "registered": true,
+      "study_item_ids": ["Q18"],
+      "construct_id": "consistency_of_interest_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InterruptionScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
+      ]
+    },
+    "objective_completed": {
+      "rooms": ["archive_room", "systems_repair_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/Main.tsx",
+        "src/systems/ResearchRuntime.ts",
+        "src/systems/ScoringManager.ts",
+        "src/world/RoomScene.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/repair_room_logging.spec.ts"
+      ]
+    },
+    "prepared_tool_used": {
+      "rooms": ["inventory_prep_room"],
+      "registered": true,
+      "study_item_ids": ["Q03"],
+      "construct_id": "organisation",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "prior_goal_abandoned": {
+      "rooms": ["interruption_corridor"],
+      "registered": true,
+      "study_item_ids": ["Q19"],
+      "construct_id": "consistency_of_interest_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InterruptionScene.ts"],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "prior_goal_completed": {
+      "rooms": ["interruption_corridor"],
+      "registered": true,
+      "study_item_ids": ["Q19"],
+      "construct_id": "consistency_of_interest_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "qualtrics_return_previewed": {
+      "rooms": ["scoring_layer"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "readiness_verified": {
+      "rooms": ["inventory_prep_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "repair_abandoned": {
+      "rooms": ["systems_repair_room"],
+      "registered": true,
+      "study_item_ids": ["Q24"],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/RepairScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/repair_room_logging.spec.ts"
+      ]
+    },
+    "repair_attempt": {
+      "rooms": ["systems_repair_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/Main.tsx",
+        "src/scenes/RepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+    },
+    "repair_completed": {
+      "rooms": ["systems_repair_room"],
+      "registered": true,
+      "study_item_ids": ["Q06", "Q14", "Q21"],
+      "construct_id": null,
+      "success": "true",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/Main.tsx",
+        "src/scenes/RepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/repair_room_logging.spec.ts"
+      ]
+    },
+    "repair_failed": {
+      "rooms": ["systems_repair_room"],
+      "registered": true,
+      "study_item_ids": ["Q14", "Q21"],
+      "construct_id": "adaptive_persistence",
+      "success": "false",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/Main.tsx",
+        "src/scenes/RepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/repair_room_logging.spec.ts"
+      ]
+    },
+    "repair_manual_opened": {
+      "rooms": ["systems_repair_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/RepairScene.ts"
+      ],
+      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+    },
+    "repair_manual_used": {
+      "rooms": ["systems_repair_room"],
+      "registered": true,
+      "study_item_ids": ["Q14", "Q21", "Q22"],
+      "construct_id": "adaptive_persistence",
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/Main.tsx",
+        "src/scenes/RepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+    },
+    "repair_panel_opened": {
+      "rooms": ["systems_repair_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/RepairScene.ts"],
+      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+    },
+    "repair_returned_after_failure": {
+      "rooms": ["systems_repair_room"],
+      "registered": true,
+      "study_item_ids": ["Q24", "Q25"],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/RepairScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/repair_room_logging.spec.ts"
+      ]
+    },
+    "repair_room_entered": {
+      "rooms": ["systems_repair_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/RepairScene.ts"],
+      "spec_references": [
+        "e2e/connected_world_smoke.spec.ts",
+        "e2e/repair_room_logging.spec.ts",
+        "e2e/state_session_continuity.spec.ts"
+      ]
+    },
+    "repair_same_sequence_repeated": {
+      "rooms": ["systems_repair_room"],
+      "registered": true,
+      "study_item_ids": ["Q26"],
+      "construct_id": "inappropriate_persistence",
+      "success": "false",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/Main.tsx",
+        "src/scenes/RepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+    },
+    "repair_sequence_submitted": {
+      "rooms": ["systems_repair_room"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/RepairScene.ts"],
+      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+    },
+    "repair_strategy_revision": {
+      "rooms": ["systems_repair_room"],
+      "registered": true,
+      "study_item_ids": ["Q14", "Q21", "Q23"],
+      "construct_id": "adaptive_persistence",
+      "success": "true",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/Main.tsx",
+        "src/scenes/RepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+    },
+    "return_to_unfinished_task": {
+      "rooms": ["interruption_corridor"],
+      "registered": true,
+      "study_item_ids": ["Q15"],
+      "construct_id": "adaptive_persistence",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "returned_to_original_task": {
+      "rooms": ["interruption_corridor"],
+      "registered": true,
+      "study_item_ids": ["Q17"],
+      "construct_id": "consistency_of_interest_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InterruptionScene.ts"],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+    },
+    "scene_start": {
+      "rooms": ["system"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/systems/ResearchRuntime.ts"],
+      "spec_references": [
+        "e2e/journey.ts",
+        "e2e/launch_with_research_params.spec.ts",
+        "e2e/participant_lifecycle.spec.ts",
+        "e2e/state_session_continuity.spec.ts"
+      ]
+    },
+    "session_start": {
+      "rooms": ["system"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/systems/ResearchRuntime.ts"],
+      "spec_references": [
+        "e2e/connected_world_smoke.spec.ts",
+        "e2e/launch_with_research_params.spec.ts",
+        "e2e/participant_lifecycle.spec.ts",
+        "e2e/state_session_continuity.spec.ts"
+      ]
+    },
+    "side_repair_abandoned": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "side_repair_abandoned_after_difficulty": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/Main.tsx",
+        "src/scenes/SideRepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": []
+    },
+    "side_repair_abandoned_after_start": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": true,
+      "study_item_ids": ["Q20"],
+      "construct_id": "consistency_of_interest_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/SideRepairScene.ts"],
+      "spec_references": ["e2e/side_repair_logging.spec.ts"]
+    },
+    "side_repair_accepted": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": true,
+      "study_item_ids": ["Q07", "Q16", "Q20"],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/SideRepairScene.ts"],
+      "spec_references": ["e2e/side_repair_logging.spec.ts"]
+    },
+    "side_repair_completed": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": true,
+      "study_item_ids": ["Q07", "Q16", "Q32"],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/Main.tsx",
+        "src/scenes/SideRepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/side_repair_logging.spec.ts"
+      ]
+    },
+    "side_repair_deferred": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/SideRepairScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/side_repair_logging.spec.ts"
+      ]
+    },
+    "side_repair_discovered": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/SideRepairScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/connected_world_smoke.spec.ts",
+        "e2e/side_repair_logging.spec.ts"
+      ]
+    },
+    "side_repair_first_step": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": true,
+      "study_item_ids": ["Q20"],
+      "construct_id": "consistency_of_interest_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/SideRepairScene.ts"],
+      "spec_references": ["e2e/side_repair_logging.spec.ts"]
+    },
+    "side_repair_ignored": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/Main.tsx",
+        "src/scenes/SideRepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/side_repair_logging.spec.ts"]
+    },
+    "side_repair_low_effort": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/Main.tsx",
+        "src/scenes/SideRepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/side_repair_logging.spec.ts"]
+    },
+    "side_repair_opened": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/Main.tsx",
+        "src/scenes/SideRepairScene.ts"
+      ],
+      "spec_references": ["e2e/side_repair_logging.spec.ts"]
+    },
+    "side_repair_productive_persistence": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/Main.tsx",
+        "src/scenes/SideRepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/side_repair_logging.spec.ts"]
+    },
+    "side_repair_started": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": true,
+      "code_references": [
+        "src/scenes/Main.tsx",
+        "src/scenes/SideRepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "spec_references": ["e2e/side_repair_logging.spec.ts"]
+    },
+    "side_repair_step_completed": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": true,
+      "study_item_ids": ["Q07", "Q16"],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "stabiliser_accepted": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": true,
+      "study_item_ids": ["Q29"],
+      "construct_id": "goal_time_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/SideRepairScene.ts"],
+      "spec_references": ["e2e/side_repair_logging.spec.ts"]
+    },
+    "stabiliser_option_offered": {
+      "rooms": ["optional_side_repair_bay"],
+      "registered": true,
+      "study_item_ids": ["Q29"],
+      "construct_id": "goal_time_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/SideRepairScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/side_repair_logging.spec.ts"
+      ]
+    },
+    "station_hub_entered": {
+      "rooms": ["station_hub"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/HubScene.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_world_smoke.spec.ts",
+        "e2e/final_core_summary.spec.ts",
+        "e2e/hazard_control_logging.spec.ts",
+        "e2e/helpers.ts",
+        "e2e/interruption_corridor_logging.spec.ts",
+        "e2e/repair_room_logging.spec.ts"
+      ]
+    },
+    "station_hub_sealed_door_attempted": {
+      "rooms": ["station_hub"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/HubScene.ts"],
+      "spec_references": []
+    },
+    "station_hub_status_board_viewed": {
+      "rooms": ["station_hub"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/HubScene.ts"],
+      "spec_references": []
+    },
+    "switched_task": {
+      "rooms": ["interruption_corridor"],
+      "registered": true,
+      "study_item_ids": ["Q17"],
+      "construct_id": "consistency_of_interest_exploratory",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InterruptionScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
+      ]
+    },
+    "task_avoidance": {
+      "rooms": ["interruption_corridor"],
+      "registered": true,
+      "study_item_ids": ["Q08"],
+      "construct_id": "productiveness",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InterruptionScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
+      ]
+    },
+    "task_completed_after_interruption": {
+      "rooms": ["interruption_corridor"],
+      "registered": true,
+      "study_item_ids": ["Q15"],
+      "construct_id": "adaptive_persistence",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    },
+    "task_started": {
+      "rooms": ["archive_room", "systems_repair_room", "interruption_corridor"],
+      "registered": false,
+      "study_item_ids": null,
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+    },
+    "tutorial_completed": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/DockScene.ts"],
+      "spec_references": ["e2e/movement_and_first_interaction.spec.ts"]
+    },
+    "tutorial_help_shown": {
+      "rooms": ["dock_arrival"],
+      "registered": true,
+      "study_item_ids": [],
+      "construct_id": null,
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/DockScene.ts"],
+      "spec_references": []
+    },
+    "unresolved_issue_reviewed": {
+      "rooms": ["final_core_room"],
+      "registered": true,
+      "study_item_ids": ["Q11"],
+      "construct_id": "responsibility",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": ["e2e/final_core_summary.spec.ts"]
+    },
+    "workspace_left_disordered": {
+      "rooms": ["inventory_prep_room"],
+      "registered": true,
+      "study_item_ids": ["Q04"],
+      "construct_id": "organisation",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InventoryScene.ts"],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+    },
+    "workspace_tidy_confirmed": {
+      "rooms": ["inventory_prep_room"],
+      "registered": true,
+      "study_item_ids": ["Q03"],
+      "construct_id": "organisation",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": ["src/scenes/InventoryScene.ts"],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+    },
+    "wrong_tool_selected": {
+      "rooms": ["inventory_prep_room"],
+      "registered": true,
+      "study_item_ids": ["Q03"],
+      "construct_id": "organisation",
+      "success": "unset",
+      "scoring_input": false,
+      "code_references": [],
+      "spec_references": []
+    }
+  },
+  "findings": {
+    "scoring_terms_without_tested_sources": [
+      "archive_attempt",
+      "dock_control_familiarisation",
+      "engineer_clarification_requested",
+      "engineer_report_submitted_supervised",
+      "final_core_prior_results_integrated",
+      "final_core_structured_completion",
+      "inventory_cleanup_completed",
+      "inventory_kit_verified",
+      "inventory_workspace_sorted",
+      "side_repair_abandoned_after_difficulty"
+    ],
+    "events_lacking_direct_test_coverage": [
+      "archive_attempt",
+      "archive_log_compared",
+      "archive_returned_after_failure",
+      "dock_control_familiarisation",
+      "dock_instruction_shortcut",
+      "engineer_clarification_requested",
+      "engineer_report_submitted_supervised",
+      "final_core_opened",
+      "final_core_prior_results_integrated",
+      "final_core_structured_completion",
+      "inventory_cleanup_completed",
+      "inventory_kit_verified",
+      "inventory_workspace_sorted",
+      "side_repair_abandoned_after_difficulty",
+      "station_hub_sealed_door_attempted",
+      "station_hub_status_board_viewed",
+      "tutorial_help_shown"
+    ],
+    "items_without_full_operationalisation": [
+      {
+        "id": "Q05",
+        "gap": "task_started blocked by the D7 dual-listing conflict; no initiation-latency capture exists",
+        "blocked_by": "D7"
+      },
+      {
+        "id": "Q01",
+        "gap": "inventory_item_sorted_correct needs a per-item sorting mini-game",
+        "blocked_by": "task-design (user-owned)"
+      },
+      {
+        "id": "Q02",
+        "gap": "inventory_item_misplaced needs a per-item mini-game",
+        "blocked_by": "task-design (user-owned)"
+      },
+      {
+        "id": "Q03",
+        "gap": "wrong_tool_selected / prepared_tool_used need per-item + cross-room mechanics",
+        "blocked_by": "task-design (user-owned)"
+      },
+      {
+        "id": "Q07",
+        "gap": "side_repair_step_completed needs a multi-step mini-game",
+        "blocked_by": "task-design (user-owned)"
+      },
+      {
+        "id": "Q08",
+        "gap": "excessive_idle_after_instruction awaits the idle threshold/definition",
+        "blocked_by": "D3"
+      },
+      {
+        "id": "Q15",
+        "gap": "return_to_unfinished_task / task_completed_after_interruption need a real return-route mechanic",
+        "blocked_by": "task-design (user-owned)"
+      },
+      {
+        "id": "Q16",
+        "gap": "side_repair_step_completed (shared with Q07)",
+        "blocked_by": "task-design (user-owned)"
+      },
+      {
+        "id": "Q17",
+        "gap": "competing_task_viewed deliberately unemitted pending mapping ruling",
+        "blocked_by": "D6"
+      },
+      {
+        "id": "Q19",
+        "gap": "new_goal_offered / goal_switch_accepted / prior_goal_completed need real objective mechanics",
+        "blocked_by": "task-design (user-owned)"
+      }
+    ],
+    "events_without_approved_mappings": [
+      {
+        "event": "engineer_report_submitted_supervised",
+        "status": "emitted legacy, unmapped",
+        "decision": "D5"
+      },
+      {
+        "event": "interruption_alert_acknowledged",
+        "status": "emitted legacy, mapping to competing_task_viewed deferred",
+        "decision": "D6"
+      },
+      {
+        "event": "interruption_single_task_focus",
+        "status": "emitted legacy, overlaps task_avoidance — de-duplication undecided",
+        "decision": "none recorded"
+      },
+      {
+        "event": "final_core_unresolved_issues_ignored",
+        "status": "emitted legacy, overlaps final_core_force_continue — mapping undecided",
+        "decision": "none recorded"
+      },
+      {
+        "event": "side_repair_abandoned",
+        "status": "canonical name not matrix-listed; semantics flagged for decision",
+        "decision": "none recorded"
+      },
+      {
+        "event": "task_started",
+        "status": "unregistered: authoritative sources conflict",
+        "decision": "D7"
+      },
+      {
+        "event": "objective_completed",
+        "status": "unregistered: V3 §5 lists under Q06, MASTER_33 mirror omits it — logs unmapped by documented conflict",
+        "decision": "none recorded"
+      }
+    ],
+    "mapping_inconsistencies": [
+      "task_started: V3 §5 lists Q05+Q15; MASTER_33_ALIGNMENT.md lists Q05 only (D7 — unemitted until resolved).",
+      "objective_completed: V3 §5 lists it under Q06; the MASTER_33 mirror Q06 row omits it (event stays unregistered, logging unmapped).",
+      "archive_strategy_revision registration carries Q13+Q22+Q26 (event-schema §6 worked example) while the MASTER_33 events columns list it under Q13/Q23 rows only — the item rows here take the union.",
+      "event-schema.md §4 Archive table marks archive_room_entered / archive_terminal_opened / archive_code_entered / archive_feedback_shown / archive_abandoned / archive_returned_after_failure as \"missing\", but ArchiveScene emits all six (stale status rows; doc refresh owed, not a code defect).",
+      "MASTER_33_ALIGNMENT.md Q10 note \"cross-room mechanic, currently unimplemented\" and the closing \"Current implementation status\" section predate Wave 1A — the duty mechanic and all eight rooms are implemented and runtime-verified.",
+      "scoring-plan.md §5 says DataQualityTracker metrics are \"captured and then dropped\" — stale: ComputeSummaryInput.data_quality now flows into the three data_quality_* summary fields.",
+      "organization_kit_verified / organization_cleanup_count count only legacy option-3 inventory names; the chained systematic path emits canonical names only (A4 observation; Beat-13/D2 scope)."
+    ],
+    "ambiguous_behavioural_meanings": [
+      {
+        "event": "engineer_responsibility_adaptive",
+        "issue": "interpretation asserted at log time (raw-vs-derived, scoring-plan §9)"
+      },
+      {
+        "event": "engineer_responsibility_shortcut",
+        "issue": "interpretation asserted at log time"
+      },
+      {
+        "event": "interruption_focus_lost",
+        "issue": "interpretation asserted at log time"
+      },
+      {
+        "event": "interruption_focus_maintained",
+        "issue": "interpretation asserted at log time"
+      },
+      {
+        "event": "interruption_possible_rigidity",
+        "issue": "interpretation asserted at log time"
+      },
+      {
+        "event": "side_repair_low_effort",
+        "issue": "interpretation asserted at log time"
+      },
+      {
+        "event": "side_repair_productive_persistence",
+        "issue": "interpretation asserted at log time"
+      },
+      {
+        "event": "interruption_single_task_focus",
+        "issue": "meaning overlaps task_avoidance ignore branch"
+      },
+      {
+        "event": "final_core_unresolved_issues_ignored",
+        "issue": "meaning overlaps final_core_force_continue"
+      },
+      {
+        "event": "engineer_report_submitted_supervised",
+        "issue": "conflates clarification-seeking with duty acceptance (D5)"
+      },
+      {
+        "event": "dock_instruction_followed",
+        "issue": "approximate first-interaction marker only"
+      }
+    ],
+    "blocked_by_user_decisions": {
+      "D2": "Beat-13 bundle: strategy_revision_count prudence-mixing fix; game_inappropriate_persistence 4th term (final_core_force_continue); final_quality_score shape; exploratory-label mechanism; inventory naming split; final_quality_score_computed / final_summary_previewed / qualtrics_return_previewed emissions.",
+      "D3": "Idle threshold/definition: baseline_idle_seconds, tutorial_help_shown watcher, excessive_idle_after_instruction.",
+      "D4": "construct_id for archive/repair abandon+return events (Q24/Q25) — all four ship with construct unset.",
+      "D5": "engineer_report_submitted_supervised canonical mapping.",
+      "D6": "interruption_alert_acknowledged → competing_task_viewed mapping (Q17 lane receives no competing_task_viewed observations meanwhile).",
+      "D7": "task_started Q05-vs-Q05+Q15 listing conflict — event unemitted+unregistered in three rooms.",
+      "D8": "Asset dispositions incl. MAJOR Dock decor-airlock control_error_count inflation (covariate definition) and Archive log-shelf geometry (archive_log_compared counts).",
+      "UD-HAZARD-CONSEQUENCE": "hazard_issue_created / hazard_issue_resolved / final_hazard_issue semantics unspecified; hazard_status written+verified, consumed by nothing."
+    }
+  },
+  "items": [
+    {
+      "id": "Q01",
+      "construct_id": "organisation",
+      "construct_label": "Organisation / systematic approach",
+      "proxy_status": "direct",
+      "rooms": ["inventory_prep_room"],
+      "events": [
+        "inventory_checklist_opened",
+        "inventory_item_sorted_correct",
+        "inventory_sequence_followed"
+      ],
+      "canonical_derived_variables": [
+        "organisation_checklist_use",
+        "organisation_accuracy_score",
+        "sequence_quality"
+      ],
+      "operationalisation": "partial",
+      "gaps": [
+        "inventory_item_sorted_correct unemitted — needs a per-item sorting mini-game (task-design decision, user-owned)"
+      ],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q02",
+      "construct_id": "organisation",
+      "construct_label": "Organisation / disorganisation (reverse)",
+      "proxy_status": "direct",
+      "rooms": ["inventory_prep_room", "final_core_room"],
+      "events": [
+        "inventory_item_misplaced",
+        "inventory_verification_skipped",
+        "final_core_missing_item_flagged"
+      ],
+      "canonical_derived_variables": [
+        "avoidable_omission_count",
+        "organisation_error_count"
+      ],
+      "operationalisation": "partial",
+      "gaps": [
+        "inventory_item_misplaced unemitted — needs a per-item mini-game (task-design decision, user-owned)"
+      ],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q03",
+      "construct_id": "organisation",
+      "construct_label": "Organisation / neat resource management",
+      "proxy_status": "direct",
+      "rooms": ["inventory_prep_room"],
+      "events": [
+        "correct_tool_selected",
+        "wrong_tool_selected",
+        "prepared_tool_used",
+        "workspace_tidy_confirmed"
+      ],
+      "canonical_derived_variables": [
+        "prepared_resource_use",
+        "tool_retrieval_accuracy",
+        "workspace_tidy_score"
+      ],
+      "operationalisation": "partial",
+      "gaps": [
+        "wrong_tool_selected unemitted — needs a per-item mini-game (task-design decision)",
+        "prepared_tool_used unemitted — needs a later cross-room tool-use mechanic"
+      ],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q04",
+      "construct_id": "organisation",
+      "construct_label": "Organisation / cleanup-disorder (reverse)",
+      "proxy_status": "direct",
+      "rooms": ["inventory_prep_room", "final_core_room"],
+      "events": [
+        "workspace_left_disordered",
+        "cleanup_completed",
+        "final_core_workspace_issue_flagged"
+      ],
+      "canonical_derived_variables": [
+        "cleanup_failure_count",
+        "unresolved_workspace_issue_count"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [
+        "Q04 is cleanup/disorder only — never planning-before-acting (MASTER_33 confirmation)"
+      ],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q05",
+      "construct_id": "productiveness",
+      "construct_label": "Productiveness / task initiation (reverse)",
+      "proxy_status": "direct",
+      "rooms": ["systems_repair_room", "archive_room"],
+      "events": ["task_started"],
+      "canonical_derived_variables": [
+        "task_initiation_latency",
+        "productiveness_action_ratio"
+      ],
+      "operationalisation": "blocked",
+      "gaps": [
+        "task_started unemitted+unregistered: V3 §5 lists Q05+Q15, MASTER_33 lists Q05 only (documented conflict)",
+        "no initiation-latency capture exists anywhere in the systems layer"
+      ],
+      "unresolved_decisions": ["D7"]
+    },
+    {
+      "id": "Q06",
+      "construct_id": "productiveness",
+      "construct_label": "Productiveness / efficient completion",
+      "proxy_status": "direct",
+      "rooms": ["systems_repair_room", "archive_room", "final_core_room"],
+      "events": [
+        "repair_completed",
+        "archive_completed",
+        "final_core_completed"
+      ],
+      "canonical_derived_variables": [
+        "required_completion_rate",
+        "productiveness_completion_score"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q07",
+      "construct_id": "productiveness",
+      "construct_label": "Productiveness / works until finished",
+      "proxy_status": "direct",
+      "rooms": ["optional_side_repair_bay", "systems_repair_room"],
+      "events": [
+        "side_repair_accepted",
+        "side_repair_step_completed",
+        "side_repair_completed"
+      ],
+      "canonical_derived_variables": [
+        "voluntary_effort_count",
+        "optional_completion_score"
+      ],
+      "operationalisation": "partial",
+      "gaps": [
+        "side_repair_step_completed unemitted — needs a multi-step mini-game (task-design decision)"
+      ],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q08",
+      "construct_id": "productiveness",
+      "construct_label": "Productiveness / low engagement (reverse)",
+      "proxy_status": "direct",
+      "rooms": ["interruption_corridor", "systems_repair_room"],
+      "events": ["task_avoidance", "excessive_idle_after_instruction"],
+      "canonical_derived_variables": [
+        "avoidance_count",
+        "low_productive_engagement_proxy"
+      ],
+      "operationalisation": "partial",
+      "gaps": [
+        "excessive_idle_after_instruction registered but unemitted — awaits the user idle threshold/definition"
+      ],
+      "unresolved_decisions": ["D3"]
+    },
+    {
+      "id": "Q09",
+      "construct_id": "responsibility",
+      "construct_label": "Responsibility / dependable report-back",
+      "proxy_status": "direct",
+      "rooms": ["engineer_hub"],
+      "events": [
+        "engineer_report_opened",
+        "engineer_evidence_reviewed",
+        "engineer_report_submitted_prepared"
+      ],
+      "canonical_derived_variables": [
+        "prepared_report_flag",
+        "report_accuracy_score"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [
+        "engineer_report_accuracy_scored unemitted — no accuracy-scoring mechanic exists (report_accuracy_score has no source)"
+      ],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q10",
+      "construct_id": "responsibility",
+      "construct_label": "Responsibility / keeps accepted duties",
+      "proxy_status": "direct",
+      "rooms": ["engineer_hub", "final_core_room"],
+      "events": [
+        "engineer_supervision_accepted",
+        "engineer_supervision_completed",
+        "accepted_duty_unresolved"
+      ],
+      "canonical_derived_variables": [
+        "commitment_followthrough_rate",
+        "accepted_duty_unresolved_count"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [
+        "MASTER_33 Q10 note \"currently unimplemented\" is stale — duty mechanic shipped in Wave 1A beats 3+6 and is journey-verified"
+      ],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q11",
+      "construct_id": "responsibility",
+      "construct_label": "Responsibility / irresponsible outcome handling (reverse)",
+      "proxy_status": "direct",
+      "rooms": ["final_core_room", "engineer_hub"],
+      "events": [
+        "final_core_status_reviewed",
+        "unresolved_issue_reviewed",
+        "final_core_rushed"
+      ],
+      "canonical_derived_variables": [
+        "unresolved_issue_count",
+        "accountability_review_flag",
+        "final_quality_score"
+      ],
+      "operationalisation": "implemented",
+      "gaps": ["final_quality_score shape undecided (D2 sub-item 3)"],
+      "unresolved_decisions": ["D2"]
+    },
+    {
+      "id": "Q12",
+      "construct_id": "prudence",
+      "construct_label": "Responsibility/prudence / careless warning handling (reverse)",
+      "proxy_status": "direct",
+      "rooms": ["hazard_control_room"],
+      "events": [
+        "hazard_warning_seen",
+        "hazard_info_checked",
+        "hazard_reckless_continue"
+      ],
+      "canonical_derived_variables": [
+        "prudence_check_rate",
+        "reckless_shortcut_count"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [
+        "prudence_check_rate missing: hazard_info_checked currently folds into strategy_revision_count (construct mixing, D2 sub-item 1)"
+      ],
+      "unresolved_decisions": ["D2"]
+    },
+    {
+      "id": "Q13",
+      "construct_id": "adaptive_persistence",
+      "construct_label": "Grit-S PE / continues after setback",
+      "proxy_status": "direct",
+      "rooms": ["archive_room"],
+      "events": [
+        "archive_wrong_code",
+        "archive_feedback_used",
+        "archive_strategy_revision",
+        "archive_completed"
+      ],
+      "canonical_derived_variables": [
+        "post_failure_reengagement",
+        "adaptive_persistence_count"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q14",
+      "construct_id": "adaptive_persistence",
+      "construct_label": "Grit-S PE / effort in demanding task",
+      "proxy_status": "direct",
+      "rooms": ["systems_repair_room"],
+      "events": [
+        "repair_failed",
+        "repair_manual_used",
+        "repair_strategy_revision",
+        "repair_completed"
+      ],
+      "canonical_derived_variables": [
+        "difficulty_persistence_score",
+        "manual_use_flag"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q15",
+      "construct_id": "adaptive_persistence",
+      "construct_label": "Grit-S PE / finishes what is started",
+      "proxy_status": "direct",
+      "rooms": ["interruption_corridor", "final_core_room"],
+      "events": [
+        "interruption_received",
+        "return_to_unfinished_task",
+        "task_completed_after_interruption"
+      ],
+      "canonical_derived_variables": [
+        "return_to_task_rate",
+        "started_task_completion_rate"
+      ],
+      "operationalisation": "partial",
+      "gaps": [
+        "return_to_unfinished_task and task_completed_after_interruption unemitted — need a real return-route/objective mechanic (a dialogue assertion is not a return act)"
+      ],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q16",
+      "construct_id": "adaptive_persistence",
+      "construct_label": "Grit-S PE / diligence",
+      "proxy_status": "direct",
+      "rooms": ["optional_side_repair_bay"],
+      "events": [
+        "side_repair_accepted",
+        "side_repair_step_completed",
+        "side_repair_completed"
+      ],
+      "canonical_derived_variables": [
+        "diligence_step_count",
+        "optional_task_completion"
+      ],
+      "operationalisation": "partial",
+      "gaps": [
+        "side_repair_step_completed unemitted — needs a multi-step mini-game (shared with Q07)"
+      ],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q17",
+      "construct_id": "consistency_of_interest_exploratory",
+      "construct_label": "Grit-S CI / distracted by new task (reverse)",
+      "proxy_status": "weak_exploratory",
+      "rooms": ["interruption_corridor"],
+      "events": [
+        "interruption_received",
+        "competing_task_viewed",
+        "switched_task",
+        "returned_to_original_task"
+      ],
+      "canonical_derived_variables": [
+        "distraction_switch_rate",
+        "return_after_switch_flag"
+      ],
+      "operationalisation": "partial",
+      "gaps": [
+        "competing_task_viewed registered but deliberately unemitted pending the interruption_alert_acknowledged mapping ruling"
+      ],
+      "unresolved_decisions": ["D6"]
+    },
+    {
+      "id": "Q18",
+      "construct_id": "consistency_of_interest_exploratory",
+      "construct_label": "Grit-S CI / long focus (reverse)",
+      "proxy_status": "weak_exploratory",
+      "rooms": ["interruption_corridor", "final_core_room"],
+      "events": ["objective_active", "final_unresolved_due_to_nonreturn"],
+      "canonical_derived_variables": [
+        "longitudinal_focus_proxy",
+        "unresolved_after_interruption"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q19",
+      "construct_id": "consistency_of_interest_exploratory",
+      "construct_label": "Grit-S CI / changes goals before finishing (reverse)",
+      "proxy_status": "weak_exploratory",
+      "rooms": ["interruption_corridor"],
+      "events": [
+        "new_goal_offered",
+        "goal_switch_accepted",
+        "prior_goal_completed",
+        "prior_goal_abandoned"
+      ],
+      "canonical_derived_variables": ["goal_switch_without_return_count"],
+      "operationalisation": "partial",
+      "gaps": [
+        "only prior_goal_abandoned is emitted; the other three need real objective mechanics (task-design decision)"
+      ],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q20",
+      "construct_id": "consistency_of_interest_exploratory",
+      "construct_label": "Grit-S CI / starts then disengages (reverse)",
+      "proxy_status": "weak_exploratory",
+      "rooms": ["optional_side_repair_bay", "interruption_corridor"],
+      "events": [
+        "side_repair_accepted",
+        "side_repair_first_step",
+        "side_repair_abandoned_after_start"
+      ],
+      "canonical_derived_variables": [
+        "start_without_sustain_count",
+        "optional_followthrough_rate"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q21",
+      "construct_id": "adaptive_persistence",
+      "construct_label": "PDD / keeps working when hard",
+      "proxy_status": "direct",
+      "rooms": ["systems_repair_room"],
+      "events": [
+        "repair_failed",
+        "repair_manual_used",
+        "repair_strategy_revision",
+        "repair_completed"
+      ],
+      "canonical_derived_variables": [
+        "game_difficulty_persistence",
+        "failure_recovery_score"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q22",
+      "construct_id": "adaptive_persistence",
+      "construct_label": "PDD / works through difficult information",
+      "proxy_status": "direct",
+      "rooms": ["archive_room", "systems_repair_room"],
+      "events": [
+        "archive_feedback_used",
+        "repair_manual_used",
+        "manual_page_reviewed",
+        "archive_strategy_revision"
+      ],
+      "canonical_derived_variables": [
+        "manual_or_feedback_used",
+        "strategy_revision_count"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [
+        "strategy_revision_count formula mixes in hazard_info_checked (prudence) — documented construct mixing, D2 sub-item 1"
+      ],
+      "unresolved_decisions": ["D2"]
+    },
+    {
+      "id": "Q23",
+      "construct_id": "adaptive_persistence",
+      "construct_label": "PDD / keeps trying when hard",
+      "proxy_status": "direct",
+      "rooms": ["archive_room", "systems_repair_room"],
+      "events": ["archive_strategy_revision", "repair_strategy_revision"],
+      "canonical_derived_variables": [
+        "difficulty_retry_count",
+        "adaptive_retry_quality"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q24",
+      "construct_id": "unset_pending_user_ruling",
+      "construct_label": "PDD / not discouraged by setbacks",
+      "proxy_status": "direct",
+      "rooms": ["archive_room", "systems_repair_room"],
+      "events": [
+        "archive_abandoned",
+        "archive_returned_after_failure",
+        "repair_abandoned",
+        "repair_returned_after_failure"
+      ],
+      "canonical_derived_variables": [
+        "reengagement_after_failure",
+        "abandonment_after_failure_count"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [
+        "all four events emit with construct_id intentionally unset (F1 precedent) — psychometric ruling pending"
+      ],
+      "unresolved_decisions": ["D4"]
+    },
+    {
+      "id": "Q25",
+      "construct_id": "unset_pending_user_ruling",
+      "construct_label": "PDD / sticks with difficult task",
+      "proxy_status": "direct",
+      "rooms": ["archive_room", "systems_repair_room"],
+      "events": [
+        "archive_returned_after_failure",
+        "repair_returned_after_failure"
+      ],
+      "canonical_derived_variables": [
+        "abandonment_after_failure_count",
+        "reengagement_after_failure"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": ["D4"]
+    },
+    {
+      "id": "Q26",
+      "construct_id": "inappropriate_persistence",
+      "construct_label": "Inappropriate Persistence / repeated ineffective response",
+      "proxy_status": "direct_maladaptive",
+      "rooms": ["archive_room", "systems_repair_room"],
+      "events": [
+        "archive_same_wrong_code_repeated",
+        "repair_same_sequence_repeated",
+        "archive_strategy_revision"
+      ],
+      "canonical_derived_variables": [
+        "blind_retry_count",
+        "game_inappropriate_persistence"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q27",
+      "construct_id": "inappropriate_persistence",
+      "construct_label": "Inappropriate Persistence / continuation despite poor basis",
+      "proxy_status": "direct_maladaptive",
+      "rooms": ["hazard_control_room"],
+      "events": ["hazard_info_checked", "hazard_reckless_continue"],
+      "canonical_derived_variables": [
+        "reckless_shortcut_count",
+        "uncertainty_inappropriate_count"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q28",
+      "construct_id": "inappropriate_persistence",
+      "construct_label": "Inappropriate Persistence / force through known blocker",
+      "proxy_status": "direct_maladaptive",
+      "rooms": ["final_core_room"],
+      "events": [
+        "final_core_blocker_shown",
+        "final_core_force_continue",
+        "issue_resolution_attempted"
+      ],
+      "canonical_derived_variables": [
+        "force_continue_count",
+        "blocker_ignored_count"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [
+        "final_core_force_continue is emitted+logged raw but summed into NO summary variable — the game_inappropriate_persistence 4th term is D2 sub-item 2 (review-gate RD-1)"
+      ],
+      "unresolved_decisions": ["D2"]
+    },
+    {
+      "id": "Q29",
+      "construct_id": "goal_time_exploratory",
+      "construct_label": "Goal-Time / delayed benefit proxy",
+      "proxy_status": "optional_exploratory",
+      "rooms": ["optional_side_repair_bay", "final_core_room"],
+      "events": [
+        "stabiliser_option_offered",
+        "stabiliser_accepted",
+        "final_core_stability_bonus"
+      ],
+      "canonical_derived_variables": [
+        "delayed_benefit_investment",
+        "final_stability_gain"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q30",
+      "construct_id": "goal_time_exploratory",
+      "construct_label": "Goal-Time / short-term shortcut proxy",
+      "proxy_status": "optional_exploratory",
+      "rooms": ["inventory_prep_room"],
+      "events": [
+        "inventory_verified_complete",
+        "inventory_verification_skipped"
+      ],
+      "canonical_derived_variables": [
+        "short_term_shortcut_count",
+        "preparation_delay_benefit"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q31",
+      "construct_id": "goal_time_exploratory",
+      "construct_label": "Goal-Time / immediate path vs slower quality proxy",
+      "proxy_status": "optional_exploratory",
+      "rooms": ["hazard_control_room"],
+      "events": ["hazard_informed_continue", "hazard_reckless_continue"],
+      "canonical_derived_variables": [
+        "informed_delay_choice",
+        "risky_shortcut_count"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q32",
+      "construct_id": "goal_time_exploratory",
+      "construct_label": "Goal-Time / extra work for future benefit proxy",
+      "proxy_status": "optional_exploratory",
+      "rooms": ["optional_side_repair_bay"],
+      "events": ["side_repair_completed", "final_bonus_unlocked"],
+      "canonical_derived_variables": ["optional_future_benefit_score"],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    },
+    {
+      "id": "Q33",
+      "construct_id": "goal_time_exploratory",
+      "construct_label": "Goal-Time / rush finish vs resolve before finish proxy",
+      "proxy_status": "optional_exploratory",
+      "rooms": ["final_core_room"],
+      "events": [
+        "final_core_issue_resolved",
+        "final_core_rushed",
+        "final_core_completed"
+      ],
+      "canonical_derived_variables": [
+        "delayed_finalization_score",
+        "rush_to_finish_count"
+      ],
+      "operationalisation": "implemented",
+      "gaps": [],
+      "unresolved_decisions": []
+    }
+  ],
+  "annotations": {
+    "baseline_idle_seconds": {
+      "emission": "blocked",
+      "blocking_decisions": ["D3"],
+      "notes": "Registered, never emitted: idle definition/threshold is user-owned."
+    },
+    "tutorial_help_shown": {
+      "emission": "wired_disabled",
+      "blocking_decisions": ["D3"],
+      "notes": "DockScene idle watcher wired but disabled (DOCK_IDLE_HELP_THRESHOLD_MS null)."
+    },
+    "excessive_idle_after_instruction": {
+      "emission": "blocked",
+      "blocking_decisions": ["D3"],
+      "notes": "Registered, unemitted (Dock idle precedent); specs assert absence."
+    },
+    "task_started": {
+      "emission": "blocked",
+      "blocking_decisions": ["D7"],
+      "notes": "Unemitted AND unregistered: V3 §5 (Q05+Q15) conflicts with MASTER_33 (Q05 only); specs assert absence."
+    },
+    "competing_task_viewed": {
+      "emission": "blocked",
+      "blocking_decisions": ["D6"],
+      "notes": "Registered (Q17), deliberately unemitted pending the interruption_alert_acknowledged mapping ruling."
+    },
+    "hazard_issue_created": {
+      "emission": "not_implemented",
+      "blocking_decisions": ["UD-HAZARD-CONSEQUENCE"],
+      "notes": "No documented emission semantics or resolve mechanic; SessionState.hazard_status provides the future source."
+    },
+    "hazard_issue_resolved": {
+      "emission": "not_implemented",
+      "blocking_decisions": ["UD-HAZARD-CONSEQUENCE"]
+    },
+    "final_hazard_issue": {
+      "emission": "not_implemented",
+      "blocking_decisions": ["UD-HAZARD-CONSEQUENCE"],
+      "notes": "Hazard→Final Core consequence unspecified (CROSS-ROOM-INTEGRATION.md §3); hazard_status currently has no reader (documented non-defect)."
+    },
+    "final_quality_score_computed": {
+      "emission": "not_implemented",
+      "blocking_decisions": ["D2"],
+      "notes": "Beat-13 emission point in ScoringManager (qualtrics-logging-review gate); specs assert absence."
+    },
+    "final_summary_previewed": {
+      "emission": "not_implemented",
+      "blocking_decisions": ["D2"]
+    },
+    "qualtrics_return_previewed": {
+      "emission": "not_implemented",
+      "blocking_decisions": ["D2"],
+      "notes": "buildReturnUrl() invocation is not itself logged yet (scoring-plan §6)."
+    },
+    "final_core_force_continue": {
+      "emission": "emitted",
+      "blocking_decisions": ["D2"],
+      "notes": "Emitted+logged raw; summed into NO summary variable until the D2 bundle adds the game_inappropriate_persistence 4th term (RD-1)."
+    },
+    "hazard_route_avoided": {
+      "emission": "emitted",
+      "notes": "User ruling D1 (Option A): telemetry-only — study_item_ids [], construct unset, never in ScoringManager formulas."
+    },
+    "hazard_avoidance": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "notes": "Preserved verbatim per D1; sole source of abandonment_count."
+    },
+    "inventory_item_sorted_correct": {
+      "emission": "not_implemented",
+      "notes": "Needs a per-item sorting mini-game."
+    },
+    "inventory_item_misplaced": {
+      "emission": "not_implemented",
+      "notes": "Needs a per-item mini-game."
+    },
+    "inventory_sequence_completed": {
+      "emission": "not_implemented",
+      "notes": "Needs a per-item mini-game."
+    },
+    "wrong_tool_selected": {
+      "emission": "not_implemented",
+      "notes": "Needs a per-item mini-game."
+    },
+    "prepared_tool_used": {
+      "emission": "not_implemented",
+      "notes": "Belongs to a later cross-room tool-use mechanic."
+    },
+    "readiness_verified": {
+      "emission": "deliberately_unemitted",
+      "notes": "Not matrix-listed; no distinct action exists — would double-log with inventory_verified_complete from one click."
+    },
+    "side_repair_step_completed": {
+      "emission": "not_implemented",
+      "notes": "Needs a multi-step mini-game (step-count granularity is a task-design decision)."
+    },
+    "side_repair_abandoned": {
+      "emission": "not_implemented",
+      "notes": "Canonical name not matrix-listed; never-accepted branch keeps legacy side_repair_ignored; semantics flagged for decision."
+    },
+    "new_goal_offered": {
+      "emission": "not_implemented",
+      "notes": "Needs real objective mechanics."
+    },
+    "goal_switch_accepted": {
+      "emission": "not_implemented",
+      "notes": "Needs real objective mechanics."
+    },
+    "prior_goal_completed": {
+      "emission": "not_implemented",
+      "notes": "Needs real objective mechanics."
+    },
+    "return_to_unfinished_task": {
+      "emission": "not_implemented",
+      "notes": "Q15 core return act — needs a real return-route mechanic."
+    },
+    "task_completed_after_interruption": {
+      "emission": "not_implemented",
+      "notes": "Needs real objective mechanics."
+    },
+    "engineer_supervision_skipped": {
+      "emission": "not_implemented",
+      "notes": "No formal skip action exists at Final Core (documented)."
+    },
+    "engineer_report_submitted_supervised": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "blocking_decisions": ["D5"],
+      "notes": "Unmapped legacy; conflates \"asked for clarification\" with \"accepted a duty\" — needs a design decision, not a blind rename."
+    },
+    "interruption_alert_acknowledged": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "blocking_decisions": ["D6"],
+      "notes": "Approx overlap with competing_task_viewed; mapping deferred."
+    },
+    "interruption_single_task_focus": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "notes": "Overlaps task_avoidance ignore branch; needs de-duplication decision."
+    },
+    "final_core_unresolved_issues_ignored": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "notes": "Approx overlap with final_core_force_continue; needs explicit mapping decision."
+    },
+    "engineer_responsibility_adaptive": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "derived_style": true
+    },
+    "engineer_responsibility_shortcut": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "derived_style": true
+    },
+    "interruption_focus_lost": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "derived_style": true
+    },
+    "interruption_focus_maintained": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "derived_style": true
+    },
+    "interruption_possible_rigidity": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "derived_style": true
+    },
+    "side_repair_low_effort": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "derived_style": true
+    },
+    "side_repair_productive_persistence": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "derived_style": true
+    },
+    "inventory_kit_verified": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "blocking_decisions": ["D2"],
+      "notes": "organization_kit_verified counts ONLY this legacy name; the chained systematic path emits canonical inventory_verified_complete only, so the flag stays false there (A4 observation; raw events fully logged)."
+    },
+    "inventory_cleanup_completed": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "blocking_decisions": ["D2"],
+      "notes": "Same legacy-vs-canonical naming split as inventory_kit_verified (organization formulas)."
+    },
+    "inventory_workspace_sorted": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "blocking_decisions": ["D2"],
+      "notes": "Same naming-split family (organization_cleanup_count)."
+    },
+    "objective_completed": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "notes": "Unregistered by documented conflict (V3 §5 Q06 vs MASTER_33 omission); spans Archive+Repair, fires once per session when both complete."
+    },
+    "inventory_checklist_opened": {
+      "emission": "emitted",
+      "notes": "Fires on the checklist option, never on prompt open (Q01 contamination guard)."
+    },
+    "dock_instruction_followed": {
+      "emission": "emitted",
+      "required_legacy": true,
+      "notes": "Approx overlap only with canonical first_interaction; not a true first-interaction marker."
+    },
+    "session_start": {
+      "emission": "emitted",
+      "notes": "Runtime infrastructure event; reload emits a second session_start in the same browser session (documented A2 analysis caveat)."
+    },
+    "scene_start": {
+      "emission": "emitted",
+      "notes": "Runtime infrastructure event."
+    }
+  },
+  "summary_variable_sources": {
+    "participant_id": {
+      "events": [],
+      "source": "session_metadata"
+    },
+    "game_session_id": {
+      "events": [],
+      "source": "session_metadata"
+    },
+    "condition": {
+      "events": [],
+      "source": "session_metadata"
+    },
+    "game_version": {
+      "events": [],
+      "source": "session_metadata"
+    },
+    "completed": {
+      "events": ["objective_completed"],
+      "source": "events_or_completed_flag"
+    },
+    "elapsed_seconds": {
+      "events": [],
+      "source": "session_metadata"
+    },
+    "data_quality_focus_loss_count": {
+      "events": [],
+      "source": "data_quality_tracker"
+    },
+    "data_quality_focus_loss_seconds": {
+      "events": [],
+      "source": "data_quality_tracker"
+    },
+    "data_quality_technical_error_count": {
+      "events": [],
+      "source": "data_quality_tracker"
+    },
+    "game_persistence_total": {
+      "events": [
+        "archive_feedback_used",
+        "archive_strategy_revision",
+        "archive_completed",
+        "repair_manual_used",
+        "repair_strategy_revision",
+        "repair_completed",
+        "hazard_info_checked",
+        "hazard_informed_continue",
+        "archive_same_wrong_code_repeated",
+        "repair_same_sequence_repeated",
+        "hazard_reckless_continue",
+        "hazard_avoidance"
+      ],
+      "source": "composite",
+      "notes": "difficulty + uncertainty + max(failure_adaptation_index,0) − inappropriate; persistence-family composite, never cross-construct"
+    },
+    "game_difficulty_persistence": {
+      "events": [
+        "archive_feedback_used",
+        "archive_strategy_revision",
+        "archive_completed",
+        "repair_manual_used",
+        "repair_strategy_revision",
+        "repair_completed"
+      ],
+      "source": "event_counts"
+    },
+    "game_uncertainty_persistence": {
+      "events": ["hazard_info_checked", "hazard_informed_continue"],
+      "source": "event_counts"
+    },
+    "game_inappropriate_persistence": {
+      "events": [
+        "archive_same_wrong_code_repeated",
+        "repair_same_sequence_repeated",
+        "hazard_reckless_continue"
+      ],
+      "source": "event_counts",
+      "notes": "canonical V3 §6 formula also includes final_core_force_continue — 4th term pending D2 (RD-1)"
+    },
+    "failure_adaptation_index": {
+      "events": [
+        "archive_strategy_revision",
+        "repair_strategy_revision",
+        "hazard_info_checked",
+        "archive_feedback_used",
+        "repair_manual_used",
+        "archive_completed",
+        "repair_completed",
+        "hazard_informed_continue",
+        "archive_same_wrong_code_repeated",
+        "repair_same_sequence_repeated",
+        "hazard_reckless_continue",
+        "hazard_avoidance"
+      ],
+      "source": "composite"
+    },
+    "blind_retry_count": {
+      "events": [
+        "archive_same_wrong_code_repeated",
+        "repair_same_sequence_repeated",
+        "hazard_reckless_continue"
+      ],
+      "source": "event_counts"
+    },
+    "strategy_revision_count": {
+      "events": [
+        "archive_strategy_revision",
+        "repair_strategy_revision",
+        "hazard_info_checked"
+      ],
+      "source": "event_counts",
+      "notes": "documented construct mixing: hazard_info_checked is a prudence signal folded into an adaptive-persistence count (D2 sub-item 1)"
+    },
+    "abandonment_count": {
+      "events": ["hazard_avoidance"],
+      "source": "event_counts",
+      "notes": "legacy event only, per D1"
+    },
+    "manual_or_feedback_used": {
+      "events": ["archive_feedback_used", "repair_manual_used"],
+      "source": "event_counts"
+    },
+    "objective_completed": {
+      "events": ["objective_completed"],
+      "source": "events_or_completed_flag"
+    },
+    "responsibility_report_count": {
+      "events": [
+        "engineer_report_submitted_unprepared",
+        "engineer_report_submitted_prepared",
+        "engineer_report_submitted_supervised"
+      ],
+      "source": "event_counts"
+    },
+    "responsibility_adaptive_count": {
+      "events": ["engineer_responsibility_adaptive"],
+      "source": "event_counts"
+    },
+    "responsibility_shortcut_count": {
+      "events": ["engineer_responsibility_shortcut"],
+      "source": "event_counts"
+    },
+    "responsibility_supervision_used": {
+      "events": ["engineer_clarification_requested"],
+      "source": "event_counts"
+    },
+    "responsibility_prepared_report": {
+      "events": [
+        "engineer_evidence_reviewed",
+        "engineer_report_submitted_prepared",
+        "engineer_report_submitted_supervised"
+      ],
+      "source": "event_counts"
+    },
+    "organization_prep_count": {
+      "events": [
+        "inventory_prep_shortcut",
+        "inventory_systematic_prep",
+        "inventory_cleanup_completed"
+      ],
+      "source": "event_counts"
+    },
+    "organization_systematic_count": {
+      "events": ["inventory_systematic_prep"],
+      "source": "event_counts"
+    },
+    "organization_disorganized_count": {
+      "events": ["inventory_disorganized_action"],
+      "source": "event_counts"
+    },
+    "organization_cleanup_count": {
+      "events": ["inventory_workspace_sorted", "inventory_cleanup_completed"],
+      "source": "event_counts"
+    },
+    "organization_checklist_used": {
+      "events": ["inventory_checklist_used"],
+      "source": "event_counts"
+    },
+    "organization_kit_verified": {
+      "events": ["inventory_kit_verified"],
+      "source": "event_counts",
+      "notes": "legacy name only — canonical-path sessions leave this false (A4 naming split, D2)"
+    },
+    "organization_shortcut_count": {
+      "events": ["inventory_prep_shortcut"],
+      "source": "event_counts"
+    },
+    "productiveness_side_task_count": {
+      "events": [
+        "side_repair_ignored",
+        "side_repair_abandoned_after_difficulty",
+        "side_repair_completed"
+      ],
+      "source": "event_counts"
+    },
+    "productiveness_completed_optional_task": {
+      "events": ["side_repair_completed"],
+      "source": "event_counts"
+    },
+    "productiveness_low_effort_count": {
+      "events": ["side_repair_low_effort"],
+      "source": "event_counts"
+    },
+    "productiveness_difficulty_abandonment_count": {
+      "events": ["side_repair_abandoned_after_difficulty"],
+      "source": "event_counts"
+    },
+    "productiveness_persistent_completion_count": {
+      "events": ["side_repair_productive_persistence"],
+      "source": "event_counts"
+    },
+    "productiveness_started_side_task": {
+      "events": ["side_repair_started"],
+      "source": "event_counts"
+    },
+    "consistency_interruption_count": {
+      "events": [
+        "interruption_new_task_chosen",
+        "interruption_returned_to_original_task",
+        "interruption_alert_ignored"
+      ],
+      "source": "event_counts"
+    },
+    "consistency_return_to_task_count": {
+      "events": ["interruption_returned_to_original_task"],
+      "source": "event_counts"
+    },
+    "consistency_focus_lost_count": {
+      "events": ["interruption_focus_lost"],
+      "source": "event_counts"
+    },
+    "consistency_alert_acknowledged": {
+      "events": ["interruption_alert_acknowledged"],
+      "source": "event_counts"
+    },
+    "consistency_alert_ignored": {
+      "events": ["interruption_alert_ignored"],
+      "source": "event_counts"
+    },
+    "consistency_possible_rigidity_count": {
+      "events": ["interruption_possible_rigidity"],
+      "source": "event_counts"
+    },
+    "consistency_adaptive_switching_count": {
+      "events": ["interruption_focus_maintained"],
+      "source": "event_counts"
+    },
+    "control_tutorial_count": {
+      "events": ["dock_tutorial_skipped", "dock_tutorial_completed"],
+      "source": "event_counts"
+    },
+    "control_tutorial_completed": {
+      "events": ["dock_tutorial_completed"],
+      "source": "event_counts"
+    },
+    "control_tutorial_skipped": {
+      "events": ["dock_tutorial_skipped"],
+      "source": "event_counts"
+    },
+    "control_instruction_followed": {
+      "events": ["dock_instruction_followed"],
+      "source": "event_counts"
+    },
+    "control_movement_practiced": {
+      "events": ["dock_movement_practiced"],
+      "source": "event_counts"
+    },
+    "control_familiarisation_used": {
+      "events": ["dock_control_familiarisation"],
+      "source": "event_counts"
+    },
+    "final_core_review_count": {
+      "events": ["final_core_status_reviewed"],
+      "source": "event_counts"
+    },
+    "final_core_integrated_count": {
+      "events": [
+        "final_core_prior_results_integrated",
+        "final_core_structured_completion"
+      ],
+      "source": "event_counts"
+    },
+    "final_core_resolved_count": {
+      "events": ["final_core_remaining_issues_resolved"],
+      "source": "event_counts"
+    },
+    "final_core_quick_sync_count": {
+      "events": ["final_core_quick_sync"],
+      "source": "event_counts"
+    },
+    "final_core_low_quality_count": {
+      "events": ["final_core_low_quality_completion"],
+      "source": "event_counts"
+    },
+    "final_core_high_quality_count": {
+      "events": ["final_core_high_quality_completion"],
+      "source": "event_counts"
+    },
+    "final_core_completed": {
+      "events": [
+        "final_core_quick_sync",
+        "final_core_structured_completion",
+        "final_core_high_quality_completion"
+      ],
+      "source": "event_counts"
+    },
+    "final_core_unresolved_issue_count": {
+      "events": ["final_core_unresolved_issues_ignored"],
+      "source": "event_counts"
+    },
+    "final_core_completion_quality": {
+      "events": [
+        "final_core_low_quality_completion",
+        "final_core_structured_completion",
+        "final_core_high_quality_completion"
+      ],
+      "source": "event_counts",
+      "notes": "categorical 'low'|'structured'|'high'|'none'; canonical final_quality_score shape is D2 sub-item 3"
+    }
+  },
+  "sources": {
+    "alignment": "docs/research/MASTER_33_ALIGNMENT.md",
+    "event_schema": "docs/research/event-schema.md",
+    "scoring_plan": "docs/research/scoring-plan.md",
+    "contract": "docs/ai/fable-claude-final-game-build-contract-v3.txt",
+    "registrations": "src/world/CanonicalEventContext.ts",
+    "scoring": "src/systems/ScoringManager.ts",
+    "qualtrics": "src/systems/QualtricsBridge.ts",
+    "session_state": "src/systems/SessionState.ts",
+    "decisions": "docs/expansion/reviews/WAVE1-USER-DECISION-BRIEF.md",
+    "evidence": [
+      "docs/testing/wave1b-verification/WAVE1B-EVIDENCE.md",
+      "docs/testing/hazard-verification/HAZARD-EVIDENCE.md",
+      "docs/testing/connected-journey/CONNECTED-JOURNEY-EVIDENCE.md",
+      "docs/architecture/CROSS-ROOM-INTEGRATION.md",
+      "docs/architecture/PARTICIPANT-LIFECYCLE.md"
+    ]
+  },
+  "qualtrics_contract": {
+    "launch_params": [
+      "participant_id",
+      "game_session_id",
+      "condition",
+      "return_url",
+      "game_version"
+    ],
+    "launch_fallbacks": "SessionState substitutes participant-/session-UUID fallbacks, condition=default, game_version from VITE_APP_VERSION/unknown; QualtricsBridge keeps raw nulls (verified: e2e/participant_lifecycle.spec.ts, e2e/launch_with_research_params.spec.ts)",
+    "return_mechanism": "QualtricsBridge.buildReturnUrl(summary) appends every GameSummaryVariables key as a query param to return_url; null/empty/malformed return_url yields null without crash (verified: e2e/participant_lifecycle.spec.ts)",
+    "session_fields": [
+      "current_room_id",
+      "completed_rooms",
+      "active_objectives",
+      "unresolved_objectives",
+      "accepted_duties",
+      "skipped_duties",
+      "prepared_items",
+      "workspace_status",
+      "hazard_status",
+      "side_repair_status",
+      "interruption_status",
+      "final_core_status"
+    ],
+    "session_field_contract": "writers/readers matrix incl. runtime-verification pointers per field: docs/architecture/CROSS-ROOM-INTEGRATION.md"
+  },
+  "known_listing_divergences": [
+    {
+      "item": "Q23",
+      "event": "archive_strategy_revision",
+      "source": "MASTER_33_ALIGNMENT.md Q23 events column lists it; the registration follows event-schema.md §6 worked example (Q13/Q22/Q26). Divergence catalogued in findings.mapping_inconsistencies — user-owned to reconcile."
+    }
+  ]
+}
