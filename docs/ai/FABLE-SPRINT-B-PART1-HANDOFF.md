@@ -39,7 +39,7 @@ Read `docs/ai/POST-FABLE-MASTER-HANDOFF.md` first for full repo state.
 
 ## Current coherent unit
 
-- ADV-2 unit — complete, committed with this handoff update.
+- ADV-3 unit — complete, committed with this handoff update.
 
 ## Exact next action
 
@@ -59,7 +59,7 @@ Read `docs/ai/POST-FABLE-MASTER-HANDOFF.md` first for full repo state.
 ## Tests passing / failing
 
 - Baseline: 38 tests / 14 spec files all passing (Sprint A record).
-- New: ADV-1 1/1 PASS; ADV-2 1/1 PASS (26 s). Suite now 40 tests / 16 files.
+- New: ADV-1, ADV-2, ADV-3 all 1/1 targeted PASS. Suite now 41 tests / 17 files.
 
 ## Uncommitted files
 
