@@ -7,25 +7,31 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
   via CLI only; no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — SPRINT B PART 1: PRIORITIES A+B DONE, C UNDERWAY (this commit)
+## Current status — SPRINT B PART 1: PRIORITIES A+B DONE, C P0 DONE, P1 3/4 DONE (this commit)
 
 - **Priority B (`c734645`)**: `docs/testing/ADVERSARIAL-JOURNEY-PLAN.md` —
   17 mandated adversarial case families inventoried; 11 ranked cases
   (ADV-1..11) by scientific-data / state-corruption / event-duplication /
   participant-flow risk and evidence gap.
-- **Priority C unit 1 (this commit)**: ADV-1
-  `e2e/adversarial_session_isolation.spec.ts` — sequential participants in
-  the same tab: zero event/mission-state/summary bleed, fresh module
-  stores, per-event identity pinned. Targeted 1/1 PASS (45 s); suite now
-  39 tests / 15 files. tsc PASS; no game-code changes; zero defects found.
-- **Priority C P0 COMPLETE (`dfefc8d`, `14bc470`, `ff28f3d`, this commit)**:
+- **Priority C P0 COMPLETE (`dfefc8d`, `14bc470`, `ff28f3d`, `db6380d`)**:
   ADV-1 session isolation, ADV-2 reload-partial-state, ADV-3 archive
   abandon/return (first `archive_returned_after_failure` coverage), ADV-4
-  repeated hazard decisions. All 1/1 first-attempt targeted PASS; suite now
-  42 tests / 18 files; zero game defects found.
-- **Exact next action**: P1 cases ADV-5 (status board), ADV-6 (hostile
-  launch battery), ADV-7 (input spam), ADV-8 (direct launch → navigation),
-  one commit each; then a full-suite phase-boundary run.
+  repeated hazard decisions. All 1/1 first-attempt targeted PASS; zero
+  game defects found.
+- **Priority C P1 (`653780d`, `034c05b`, this commit)**: ADV-6 hostile
+  launch/return battery (3/3 PASS) — duplicate/oversized/encoded/empty
+  launch params and relative/blank/`javascript:` return_url shapes, all
+  code-defined behaviour frozen; ADV-7 rapid repeated input (2/2 PASS) —
+  option-key hammering yields exactly one decision event set, space-spam
+  stays inert; ADV-8 direct launch → ordinary navigation (1/1 PASS,
+  recovery unit) — direct `?scene=side_repair` launch flows into normal
+  door navigation (Hub → Interruption Corridor) with metadata,
+  `current_room_id`, and status vocabulary intact, and re-entry via a door
+  does not re-fire `side_repair_discovered`. ADV-5 (status board) is the
+  one P1 case still open. Suite now 48 tests / 21 spec files; zero game
+  defects found across the whole adversarial series so far.
+- **Exact next action**: ADV-5 (status-board text vs SessionState), then
+  P2 cases ADV-9..11, then a full-suite phase-boundary run.
 
 ## Prior status — SPRINT B PART 1: PRIORITY A COMPLETE (93d8aa6)
 

@@ -20,7 +20,10 @@ Read `docs/ai/POST-FABLE-MASTER-HANDOFF.md` first for full repo state.
 - `dfefc8d` ADV-1 cross-session isolation spec.
 - `14bc470` ADV-2 reload-during-partial-state spec.
 - `ff28f3d` ADV-3 archive abandon/return cycles spec.
-- (this commit) ADV-4 repeated hazard decisions spec.
+- `db6380d` ADV-4 repeated hazard decisions spec.
+- `653780d` ADV-6 hostile launch/return battery spec.
+- `034c05b` ADV-7 rapid repeated input spec.
+- (this commit) ADV-8 direct launch → ordinary navigation spec (recovery unit).
 
 ## Completed tasks
 
@@ -45,26 +48,45 @@ Read `docs/ai/POST-FABLE-MASTER-HANDOFF.md` first for full repo state.
   pinned; ADV-4 `adversarial_hazard_repeat_decisions.spec.ts` (77 s) —
   repeatable-prompt decision semantics, last-write hazard_status,
   abandonment_count accumulation, informed classification persistence.
+- **Priority C P1: ADV-6, ADV-7, ADV-8 COMPLETE** (ADV-5 skipped ahead,
+  still open — see Exact next action). ADV-6
+  `adversarial_hostile_launch.spec.ts` (3/3 PASS) — duplicate/oversized/
+  encoded/empty launch params and relative/blank/`javascript:` return_url
+  shapes, all pinned to code-defined behaviour; two frozen-as-is
+  observations routed to the user (empty-string identities bypass the `??`
+  fallback; `buildReturnUrl` passes non-http(s) schemes through unchanged).
+  ADV-7 `adversarial_input_spam.spec.ts` (2/2 PASS) — option-key hammering
+  yields exactly one decision event set; space-spam only toggles the
+  prompt, zero decision events, monotonic timestamps. ADV-8
+  `adversarial_direct_launch_navigation.spec.ts` (1/1 PASS, 71 s,
+  recovery unit this session) — direct `?scene=side_repair` launch flows
+  into ordinary door navigation through the Hub into Interruption Corridor
+  with metadata/`current_room_id`/status vocabulary intact throughout, and
+  re-entering the launch room via a door does not re-fire
+  `side_repair_discovered`. Status strings (`ignored`, `alert_ignored`)
+  verified byte-for-byte against `src/data/missionVocabulary.ts` before
+  the spec was trusted.
 
 ## Current coherent unit
 
-- ADV-4 unit — complete, committed with this handoff update.
+- ADV-8 unit — complete, committed with this handoff update.
 
 ## Exact next action
 
-- P1 cases in plan order: **ADV-5** status-board text vs SessionState after
-  each completion; **ADV-6** hostile launch/return battery; **ADV-7** input
-  spam during prompts; **ADV-8** direct launch → ordinary navigation. Then
+- **ADV-5** (status-board text vs `SessionState` after each completion) is
+  the only P1 case still open — implement it next, one spec + commit. Then
   P2: ADV-9 append-only invariant harness, ADV-10 interrupted return flow,
-  ADV-11 repeated defer loop. One spec + commit per case
-  (ADVERSARIAL-JOURNEY-PLAN.md §2).
+  ADV-11 repeated defer loop (ADVERSARIAL-JOURNEY-PLAN.md §2). After P2, run
+  the full suite once at the Part 1 phase boundary (not before — brief
+  requires targeted-only runs during implementation).
 
 ## Tests passing / failing
 
 - Baseline: 38 tests / 14 spec files all passing (Sprint A record).
-- New: ADV-1..4 all 1/1 targeted first-attempt PASS. Suite now 42 tests /
-  18 files. No failures; full-suite run not yet done this sprint (planned
-  at the Part 1 phase boundary).
+- New: ADV-1 (1), ADV-2 (1), ADV-3 (1), ADV-4 (1), ADV-6 (3), ADV-7 (2),
+  ADV-8 (1) — every targeted run 1st-attempt PASS, 0 failures. Suite now
+  48 tests / 21 spec files. Full-suite run not yet done this sprint
+  (deferred to the Part 1 phase boundary per the sprint brief).
 
 ## Uncommitted files
 
@@ -90,8 +112,9 @@ Read `docs/ai/POST-FABLE-MASTER-HANDOFF.md` first for full repo state.
 
 ## Part 2 priorities
 
-- Remaining Priority C cases after ADV-1..4: ADV-5 (status-board vs
-  SessionState), ADV-6 (hostile launch/return battery), ADV-7 (input spam),
-  ADV-8 (direct launch → navigation), then P2 cases ADV-9..11.
+- Remaining Priority C case: ADV-5 (status-board vs SessionState), then P2
+  cases ADV-9 (append-only invariant harness), ADV-10 (interrupted return
+  flow), ADV-11 (repeated defer loop).
+- Then a full-suite phase-boundary run (not yet done this sprint).
 - Then POST-FABLE-MASTER-HANDOFF.md §11 backlog (items 1–3 are user/Sonnet;
   next Fable-suitable work is decision-gated).
