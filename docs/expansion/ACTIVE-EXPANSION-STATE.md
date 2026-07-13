@@ -7,7 +7,22 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
   via CLI only; no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — SPRINT B PART 1: PRIORITY A COMPLETE (this commit)
+## Current status — SPRINT B PART 1: PRIORITIES A+B DONE, C UNDERWAY (this commit)
+
+- **Priority B (`c734645`)**: `docs/testing/ADVERSARIAL-JOURNEY-PLAN.md` —
+  17 mandated adversarial case families inventoried; 11 ranked cases
+  (ADV-1..11) by scientific-data / state-corruption / event-duplication /
+  participant-flow risk and evidence gap.
+- **Priority C unit 1 (this commit)**: ADV-1
+  `e2e/adversarial_session_isolation.spec.ts` — sequential participants in
+  the same tab: zero event/mission-state/summary bleed, fresh module
+  stores, per-event identity pinned. Targeted 1/1 PASS (45 s); suite now
+  39 tests / 15 files. tsc PASS; no game-code changes; zero defects found.
+- **Exact next action**: ADV-2 reload-during-partial-state spec, then ADV-3
+  archive abandon/return cycle, then ADV-4 repeated hazard decisions (plan
+  §2 P0 order).
+
+## Prior status — SPRINT B PART 1: PRIORITY A COMPLETE (93d8aa6)
 
 - **Research traceability matrix shipped**:
   `docs/research/RESEARCH-TRACEABILITY-MATRIX.md` (human-readable) +

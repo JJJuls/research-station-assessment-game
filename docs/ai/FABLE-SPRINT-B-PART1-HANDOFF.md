@@ -11,47 +11,55 @@ Read `docs/ai/POST-FABLE-MASTER-HANDOFF.md` first for full repo state.
 
 ## Current HEAD
 
-- Priority A commit (see `git log` — this file is committed with it).
+- See `git log` — this file is updated in/beside each checkpoint commit.
 
 ## Commits created this sprint
 
-- (this commit) Priority A: research traceability matrix (MD + JSON +
-  validator script) + this handoff + state update.
+- `93d8aa6` Priority A: research traceability matrix (MD + JSON + validator).
+- `c734645` Priority B: ranked adversarial journey plan (ADV-1..11).
+- (this commit) Priority C unit 1: ADV-1 cross-session isolation spec.
 
 ## Completed tasks
 
 - Pre-flight verified (branch, tag, clean tree, continuation docs).
-- **Priority A COMPLETE**: `docs/research/RESEARCH-TRACEABILITY-MATRIX.md`,
-  `docs/research/research-traceability-matrix.json`,
+- **Priority A COMPLETE** (`93d8aa6`): traceability matrix MD + JSON +
   `scripts/validate-traceability-matrix.mjs`. Validator PASSES (165 events /
   33 items / 59 summary variables; registrations byte-agree with
   `CanonicalEventContext.ts`; code/spec references derived live from the
-  tree). All gaps identified without resolving anything scientific — see the
-  MD §3–§7 and JSON `findings`.
+  tree). All gaps identified, nothing scientific resolved — see MD §3–§7 and
+  JSON `findings`.
+- **Priority B COMPLETE** (`c734645`):
+  `docs/testing/ADVERSARIAL-JOURNEY-PLAN.md` — 17 mandated case families
+  inventoried against the 38-test baseline; 11 ranked cases; ADV-1..4 are
+  the Priority C implementation order.
+- **Priority C in progress**: ADV-1
+  (`e2e/adversarial_session_isolation.spec.ts`) PASSES targeted (1/1, 45 s):
+  a second participant in the same tab inherits zero events / mission state
+  / summary values from the first.
 
 ## Current coherent unit
 
-- Priority A unit — complete, being committed with this handoff.
+- ADV-1 unit — complete, committed with this handoff update.
 
 ## Exact next action
 
-- **Priority B**: inventory current adversarial coverage across the 14 e2e
-  specs, then write and commit `docs/testing/ADVERSARIAL-JOURNEY-PLAN.md`
-  (ranked: scientific-data risk > state corruption > event duplication >
-  participant flow > evidence gap) covering the 17 mandated case families.
-  Inputs already computed: `findings.scoring_terms_without_tested_sources`
-  (10 events) and `findings.events_lacking_direct_test_coverage` (17 events)
-  in the matrix JSON.
-- Then **Priority C**: implement highest-risk unblocked tests in order:
-  cross-session leakage, reload during partial progress, duplicate one-shot
-  events, repeated Hazard decisions, stale Hub/mission displays, malformed
-  launch/return data. Separate sessions for mutually exclusive branches.
+- **ADV-2**: `e2e/adversarial_reload_partial_state.spec.ts` — direct
+  `?scene=repair` launch, fail once (option 1), full reload via re-`goto`,
+  assert fresh log (no phantom `repair_returned_after_failure`, exactly one
+  `session_start`, metadata preserved from URL), then complete (options 2
+  then 3) and assert normal completion post-reload. Then **ADV-3** (archive
+  abandon/return multi-cycle — first live coverage of the registered
+  `archive_returned_after_failure`), then **ADV-4** (repeated hazard
+  decisions across re-entries, separate session). Details:
+  ADVERSARIAL-JOURNEY-PLAN.md §2; authored semantics pinned from
+  `src/world/roomTaskState.ts` + `ArchiveScene.ts` (abandoned fires on
+  EVERY exit-after-failure while incomplete; returned once per departure;
+  nothing after completion).
 
 ## Tests passing / failing
 
-- Baseline: 38 tests / 14 spec files, all passing (Sprint A phase-boundary
-  record). No test runs needed for Priority A (docs+script only; tsc PASS,
-  `git diff --check` clean, matrix validator PASS).
+- Baseline: 38 tests / 14 spec files all passing (Sprint A record).
+- New: ADV-1 targeted 1/1 PASS. Suite now 39 tests / 15 files. No failures.
 
 ## Uncommitted files
 
@@ -69,9 +77,16 @@ Read `docs/ai/POST-FABLE-MASTER-HANDOFF.md` first for full repo state.
   3. Doc refreshes owed (stale rows/notes in event-schema §4 Archive,
      MASTER_33 Q10/status section, scoring-plan §5) — factual updates to
      scientific docs left to the user or an explicitly-scoped doc pass.
+- Observation (no action taken): station prompts are repeatable by authored
+  port design, so re-selecting a completion option after completion logs the
+  completion events again (raw log; `completed_rooms` stays unique). Whether
+  repeat-completions should be summary-scored differently is Beat-13/D2
+  territory — flagged only.
 
 ## Part 2 priorities
 
-- Any Priority B/C work not finished in Part 1.
+- Remaining Priority C cases after ADV-1..4: ADV-5 (status-board vs
+  SessionState), ADV-6 (hostile launch/return battery), ADV-7 (input spam),
+  ADV-8 (direct launch → navigation), then P2 cases ADV-9..11.
 - Then POST-FABLE-MASTER-HANDOFF.md §11 backlog (items 1–3 are user/Sonnet;
   next Fable-suitable work is decision-gated).
