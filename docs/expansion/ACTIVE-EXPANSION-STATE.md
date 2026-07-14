@@ -7,7 +7,53 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
   via CLI only; no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — OPUS OVERNIGHT PRE-PILOT TECHNICAL GATE (this commit)
+## Current status — INT-1/INT-2/INT-5 + D2 DECISION PACKAGE (this commit)
+
+- **Checkpoint**: bounded, evidence-grounded **pre-implementation decision
+  package** produced from `24afcad` (clean tree, 49/22 suite green ×2 at the
+  Opus gate). **Documentation-only decision-support; no decision adopted, no
+  implementation begun.** Deliverables (new):
+  `docs/decisions/QUALTRICS-INTEGRATION-DECISION-PACK.md` (INT-1/2/5),
+  `docs/decisions/D2-BEAT13-SCORING-DECISION-PACK.md` (D2/Beat-13),
+  `docs/decisions/RESEARCH-OWNER-RULING-FORM.md` (copy-paste ruling form).
+  Pointer added to `docs/ai/PRE-MAX-QUALTRICS-INTEGRATION-AUDIT.md`.
+- **Scope**: reduces the four Unit-0 decisions (INT-1 return mechanism, INT-2
+  raw-event export channel, INT-5 status taxonomy, D2 Beat-13 scoring scope) to
+  explicit options, consequences, evidence-cited recommendations, and exact
+  ruling forms. Every recommendation is marked **RECOMMENDATION ONLY — NOT YET
+  AUTHORISED**.
+- **Recommendations prepared (non-authoritative)**: INT-1 = primary
+  same-window `return_url` navigation (Option A) + manual "return to survey"
+  fallback, **conditional on a standalone launch** (switch to postMessage/hybrid
+  if embedded); INT-2 = hybrid (summary→Qualtrics via INT-1; raw→dedicated HTTPS
+  ingestion endpoint) implemented via a **local durable buffer + acked export**
+  (also discharges P0-3), idempotency = composite natural key, with a
+  formally-recorded **summaries-only** fallback if no endpoint exists; INT-5 =
+  **Model B orthogonal dimensions** (`launch_mode`/`session_status`/
+  `completion_reason`/`export_status`/`return_status`), holding `abandoned` until
+  D3; D2 = **scope package α (minimal remediation)** — wire
+  `final_core_force_continue` (6A, closes RD-1), de-mix `strategy_revision_count`
+  (5A), label exploratory proxies (8A/8B), stamp `scoring_version` — **not** the
+  full β V3 §6 migration (β would require uncaptured signals/undocumented
+  formulas → invented science, forbidden).
+- **Verified this commit**: `lint:tsc` clean; `build` passes; `git diff --check`
+  clean; **docs-only** (three new files under `docs/decisions/` + additive
+  pointers; no `src/`, test, scoring, event-schema, or scientific-contract
+  change).
+- **Still awaiting owner approval (nothing adopted)**: INT-1 mechanism +
+  launch-mode confirmation `[EXTERNAL]`; INT-2 channel + ingestion-endpoint
+  feasibility `[EXTERNAL]` + reproducibility-vs-summaries-only; INT-5 taxonomy;
+  D2 scope + sub-items 5/6/7/8 (7 `final_quality_score` = **evidence
+  insufficient, researcher input required**) + repeated-response rule + scoring
+  version string. Unresolved D2 rulings enumerated in the ruling form and pack §7.
+- **Exact implementation gate**: **Unit 0** = owner completes
+  `docs/decisions/RESEARCH-OWNER-RULING-FORM.md` (INT-1/2/5 + D2 scope). Until
+  every gating field is APPROVED, **no production integration or scoring
+  implementation may begin.** After sign-off → **Unit 1** verbatim from
+  `PRE-MAX-QUALTRICS-INTEGRATION-AUDIT.md §19`, then Units 2–7.
+- **No decision has been adopted and no implementation has begun.**
+
+## Current status — OPUS OVERNIGHT PRE-PILOT TECHNICAL GATE (previous commit)
 
 - **Checkpoint**: independent technical verification + deployment-artifact
   audit from `474b7ee` (clean tree, 49 tests / 22 specs). Deliverable:
@@ -671,31 +717,32 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 ## Commit log (wave)
 
-| SHA       | Unit   | Content                       |
-| --------- | ------ | ----------------------------- |
-| `dd498f2` | Docs 1 | Remaining-station inventory   |
-| `f1db32f` | Docs 2 | Wave 1 plan (ranking + units) |
-| `ed2a39b` | Docs 3 | Active expansion state file   |
-| `2fbbd57` | U1     | Station registry + routing    |
-| `b9b4d49` | Docs   | State checkpoint after U1     |
-| `72c6bc9` | U2     | Room task-state factory       |
-| `35599ac` | Docs   | State checkpoint after U2     |
-| `cb9eabf` | U3     | N-option/multi-stage prompts  |
-| `ffc817b` | Docs   | State checkpoint after U3     |
-| `a57bab4` | U4     | Canonical event registrations |
-| `20d6bff` | Docs   | State checkpoint after U4     |
-| `6afac6b` | U5     | Registry-driven status board  |
-| `cc8d597` | Docs   | State checkpoint after U5     |
-| `9bbb5cc` | U6     | e2e station-driving fixtures  |
-| `0a61fe2` | Docs   | State checkpoint after U6     |
-| `26379ce` | Room 2 | Systems Repair Room beat      |
-| `cf48ff6` | Docs   | State checkpoint after beat 1 |
-| `871105c` | Room 3 | Engineer Hub beat             |
-| `078589e` | Docs   | State checkpoint after beat 2 |
-| `cc10ed9` | Room 4 | Inventory/Prep beat           |
-| `5b5050c` | Docs   | State checkpoint after beat 3 |
-| `6e09afc` | Room 5 | Side Repair Bay beat          |
-| `1dc94e2` | Docs   | State checkpoint after beat 4 |
-| `76be9f0` | Room 6 | Interruption Corridor beat    |
-| `12947d1` | Docs   | State checkpoint after beat 5 |
-| `5f206e5` | Room 7 | Final Core Room beat          |
+| SHA       | Unit   | Content                                             |
+| --------- | ------ | --------------------------------------------------- |
+| `dd498f2` | Docs 1 | Remaining-station inventory                         |
+| `f1db32f` | Docs 2 | Wave 1 plan (ranking + units)                       |
+| `ed2a39b` | Docs 3 | Active expansion state file                         |
+| `2fbbd57` | U1     | Station registry + routing                          |
+| `b9b4d49` | Docs   | State checkpoint after U1                           |
+| `72c6bc9` | U2     | Room task-state factory                             |
+| `35599ac` | Docs   | State checkpoint after U2                           |
+| `cb9eabf` | U3     | N-option/multi-stage prompts                        |
+| `ffc817b` | Docs   | State checkpoint after U3                           |
+| `a57bab4` | U4     | Canonical event registrations                       |
+| `20d6bff` | Docs   | State checkpoint after U4                           |
+| `6afac6b` | U5     | Registry-driven status board                        |
+| `cc8d597` | Docs   | State checkpoint after U5                           |
+| `9bbb5cc` | U6     | e2e station-driving fixtures                        |
+| `0a61fe2` | Docs   | State checkpoint after U6                           |
+| `26379ce` | Room 2 | Systems Repair Room beat                            |
+| `cf48ff6` | Docs   | State checkpoint after beat 1                       |
+| `871105c` | Room 3 | Engineer Hub beat                                   |
+| `078589e` | Docs   | State checkpoint after beat 2                       |
+| `cc10ed9` | Room 4 | Inventory/Prep beat                                 |
+| `5b5050c` | Docs   | State checkpoint after beat 3                       |
+| `6e09afc` | Room 5 | Side Repair Bay beat                                |
+| `1dc94e2` | Docs   | State checkpoint after beat 4                       |
+| `76be9f0` | Room 6 | Interruption Corridor beat                          |
+| `12947d1` | Docs   | State checkpoint after beat 5                       |
+| `5f206e5` | Room 7 | Final Core Room beat                                |
+| _pending_ | Docs   | INT-1/2/5 + D2 decision package (docs/decisions/\*) |

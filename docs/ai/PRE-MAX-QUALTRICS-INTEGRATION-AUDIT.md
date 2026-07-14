@@ -4,6 +4,17 @@ Read-only architecture, evidence, and readiness audit of the complete research
 deployment flow, produced to seed the upcoming Fable Max 5× integration sprint.
 Companion contract: `docs/integration/QUALTRICS-END-TO-END-CONTRACT.md`.
 
+> **Decision package (Unit 0) — added after this audit.** The user-owned
+> decisions this audit surfaced (§8) are now decomposed into options,
+> consequences, evidence-cited recommendations, and copy-paste ruling forms:
+> `docs/decisions/QUALTRICS-INTEGRATION-DECISION-PACK.md` (INT-1 return
+> mechanism, INT-2 raw-event export channel, INT-5 status taxonomy),
+> `docs/decisions/D2-BEAT13-SCORING-DECISION-PACK.md` (D2 / Beat-13 scoring),
+> and `docs/decisions/RESEARCH-OWNER-RULING-FORM.md` (the form that issues the
+> binding rulings). Every recommendation there is marked **RECOMMENDATION ONLY —
+> NOT YET AUTHORISED**; no decision is adopted and no implementation has begun.
+> Unit 0 completes when the ruling form is signed off.
+
 ## 1. Executive assessment
 
 The **research data spine is sound**: launch parsing, immutable pseudonymous
