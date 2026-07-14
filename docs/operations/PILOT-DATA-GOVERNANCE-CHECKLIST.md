@@ -2,8 +2,12 @@
 
 Operational checklists for running the Remote Outpost Assessment safely from
 internal testing through study closeout. Companion to
-`docs/security/RESEARCH-DATA-PRIVACY-THREAT-MODEL.md` (finding IDs `PS-n`) and
-`docs/ai/OPUS-PRE-PILOT-PRIVACY-SECURITY-GATE.md`.
+`docs/security/RESEARCH-DATA-PRIVACY-THREAT-MODEL.md` (finding IDs `PS-n`),
+`docs/ai/OPUS-PRE-PILOT-PRIVACY-SECURITY-GATE.md`, and — for the supported
+participant browser/device boundary (`PXA-n`) —
+`docs/ai/OPUS-PARTICIPANT-EXPERIENCE-ACCESSIBILITY-GATE.md` +
+`docs/testing/PARTICIPANT-BROWSER-DEVICE-MATRIX.md` +
+`docs/operations/SUPERVISED-USABILITY-TEST-PROTOCOL.md`.
 
 - **Prepared against**: `fable-autonomous-game-build-v1` @ `1f2c972`.
 - Every item lists **Owner**, **Evidence required**, **Blocking?**, **Current
@@ -51,30 +55,33 @@ data collection.
 
 ## 2. Before supervised usability testing (L2, non-study data)
 
-| #   | Item                                                                                           | Owner          | Evidence required | Blocking?    | Status                    | Reference   |
-| --- | ---------------------------------------------------------------------------------------------- | -------------- | ----------------- | ------------ | ------------------------- | ----------- |
-| 2.1 | Serve the **participant bundle** (`npm run bundle`), not `npm run build`                       | dev            | bundle build log  | blocking     | OPEN (procedure)          | PS-1 / P1-6 |
-| 2.2 | External-URL check: `grep -oE "https?://" dist/index.html` = none                              | dev            | grep output       | blocking     | PASS (verified this gate) | PS-1        |
-| 2.3 | Confirm **no real participant data** collected; sessions are staff/role-play                   | supervisor     | session log       | blocking     | OPEN                      | PS-2        |
-| 2.4 | Tag sessions `launch_mode=test` if INT-5 signal available                                      | research owner | param convention  | non-blocking | BLOCKED (INT-5)           | INT-5 §5.8  |
-| 2.5 | Accept that **no data returns/exports** (P0-1/P0-2 open)                                       | supervisor     | attestation       | blocking     | OPEN                      | P0-1, P0-2  |
-| 2.6 | Clear browser state between participants (no persistence today makes this automatic on reload) | supervisor     | procedure note    | non-blocking | PASS (volatile)           | PS-3        |
+| #   | Item                                                                                                                                                    | Owner          | Evidence required | Blocking?    | Status                    | Reference     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | ----------------- | ------------ | ------------------------- | ------------- |
+| 2.1 | Serve the **participant bundle** (`npm run bundle`), not `npm run build`                                                                                | dev            | bundle build log  | blocking     | OPEN (procedure)          | PS-1 / P1-6   |
+| 2.2 | External-URL check: `grep -oE "https?://" dist/index.html` = none                                                                                       | dev            | grep output       | blocking     | PASS (verified this gate) | PS-1          |
+| 2.3 | Confirm **no real participant data** collected; sessions are staff/role-play                                                                            | supervisor     | session log       | blocking     | OPEN                      | PS-2          |
+| 2.4 | Tag sessions `launch_mode=test` if INT-5 signal available                                                                                               | research owner | param convention  | non-blocking | BLOCKED (INT-5)           | INT-5 §5.8    |
+| 2.5 | Accept that **no data returns/exports** (P0-1/P0-2 open)                                                                                                | supervisor     | attestation       | blocking     | OPEN                      | P0-1, P0-2    |
+| 2.6 | Clear browser state between participants (no persistence today makes this automatic on reload)                                                          | supervisor     | procedure note    | non-blocking | PASS (volatile)           | PS-3          |
+| 2.7 | Run on a **supported environment**: current Chromium-family desktop browser (Chrome/Edge), viewport ≥1280×720; follow the supervised-usability protocol | supervisor     | environment note  | blocking     | OPEN (procedure)          | PXA-1, matrix |
 
 ## 3. Before pilot launch (L3, supervised, real participants)
 
-| #    | Item                                                                  | Owner                   | Evidence required              | Blocking? | Status            | Reference |
-| ---- | --------------------------------------------------------------------- | ----------------------- | ------------------------------ | --------- | ----------------- | --------- |
-| 3.1  | PS-0 return-scheme/host **allowlist** implemented + tested            | Max + research owner    | hostile-`return_url` test pass | blocking  | BLOCKED (INT-4)   | PS-0      |
-| 3.2  | PS-1 deployment pinned to `npm run bundle` on approved host           | infra                   | deploy runbook                 | blocking  | OPEN              | PS-1      |
-| 3.3  | PS-2 test/production separation signal live (`launch_mode`)           | research owner          | INT-5 ruling + payload field   | blocking  | BLOCKED (INT-5)   | PS-2      |
-| 3.4  | PS-3 persistence/data-loss ruling + durable buffer (or accepted risk) | research owner + Max    | P0-3 ruling + buffer tests     | blocking  | BLOCKED (P0-3)    | PS-3      |
-| 3.5  | P0-1 production completion→return path validated (round-trip)         | Max                     | hosted round-trip evidence     | blocking  | BLOCKED (INT-1)   | P0-1      |
-| 3.6  | P0-2 raw-event export + reproducibility (or formal summaries-only)    | Max + research owner    | mocked-endpoint payload assert | blocking  | BLOCKED (INT-2)   | P0-2      |
-| 3.7  | P1-5/INT-3 empty-identity handling                                    | research owner + Max    | rule + test                    | blocking  | BLOCKED (INT-3)   | PS-8      |
-| 3.8  | Ethics protocol + consent approved                                    | `[OWNER: ethics board]` | approval ref `[EXTERNAL]`      | blocking  | BLOCKED           | X1, X2    |
-| 3.9  | Storage region/provider approved                                      | `[OWNER: institution]`  | policy ref `[EXTERNAL]`        | blocking  | BLOCKED           | X4, X5    |
-| 3.10 | Fallback "data may not have saved" UI present                         | Max                     | UI evidence                    | blocking  | BLOCKED (INT-1.6) | PS-4      |
-| 3.11 | Incident/breach path defined                                          | `[OWNER: institution]`  | procedure `[EXTERNAL]`         | blocking  | BLOCKED           | X8        |
+| #    | Item                                                                                                                                                                | Owner                   | Evidence required                      | Blocking? | Status                  | Reference |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | -------------------------------------- | --------- | ----------------------- | --------- |
+| 3.1  | PS-0 return-scheme/host **allowlist** implemented + tested                                                                                                          | Max + research owner    | hostile-`return_url` test pass         | blocking  | BLOCKED (INT-4)         | PS-0      |
+| 3.2  | PS-1 deployment pinned to `npm run bundle` on approved host                                                                                                         | infra                   | deploy runbook                         | blocking  | OPEN                    | PS-1      |
+| 3.3  | PS-2 test/production separation signal live (`launch_mode`)                                                                                                         | research owner          | INT-5 ruling + payload field           | blocking  | BLOCKED (INT-5)         | PS-2      |
+| 3.4  | PS-3 persistence/data-loss ruling + durable buffer (or accepted risk)                                                                                               | research owner + Max    | P0-3 ruling + buffer tests             | blocking  | BLOCKED (P0-3)          | PS-3      |
+| 3.5  | P0-1 production completion→return path validated (round-trip)                                                                                                       | Max                     | hosted round-trip evidence             | blocking  | BLOCKED (INT-1)         | P0-1      |
+| 3.6  | P0-2 raw-event export + reproducibility (or formal summaries-only)                                                                                                  | Max + research owner    | mocked-endpoint payload assert         | blocking  | BLOCKED (INT-2)         | P0-2      |
+| 3.7  | P1-5/INT-3 empty-identity handling                                                                                                                                  | research owner + Max    | rule + test                            | blocking  | BLOCKED (INT-3)         | PS-8      |
+| 3.8  | Ethics protocol + consent approved                                                                                                                                  | `[OWNER: ethics board]` | approval ref `[EXTERNAL]`              | blocking  | BLOCKED                 | X1, X2    |
+| 3.9  | Storage region/provider approved                                                                                                                                    | `[OWNER: institution]`  | policy ref `[EXTERNAL]`                | blocking  | BLOCKED                 | X4, X5    |
+| 3.10 | Fallback "data may not have saved" UI present                                                                                                                       | Max                     | UI evidence                            | blocking  | BLOCKED (INT-1.6)       | PS-4      |
+| 3.11 | Incident/breach path defined                                                                                                                                        | `[OWNER: institution]`  | procedure `[EXTERNAL]`                 | blocking  | BLOCKED                 | X8        |
+| 3.12 | **Supported participant browser pinned** (Chromium-family) or non-Chromium engine verified; loading-indicator (PXA-8) + transient-instruction (PXA-3) items bounded | research owner + Max    | browser lock or cross-browser evidence | blocking  | BLOCKED (PXA-1, PXA-X2) | PXA-1     |
+| 3.13 | **Accessibility eligibility ruled** (canvas-only game, no AT support — PXA-2)                                                                                       | `[OWNER: ethics board]` | inclusion-criteria ruling `[EXTERNAL]` | blocking  | BLOCKED (PXA-X1)        | PXA-2     |
 
 ## 4. Before formal data collection (L4)
 

@@ -7,7 +7,53 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
   via CLI only; no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — PRE-PILOT PRIVACY/SECURITY GATE (this commit)
+## Current status — PARTICIPANT-EXPERIENCE / ACCESSIBILITY / BROWSER-DEVICE GATE (this commit)
+
+- **Checkpoint**: bounded, evidence-grounded **participant-experience,
+  accessibility, browser-compatibility and device-readiness gate** produced from
+  `a1be19d` (clean tree). **No INT-1/INT-2/INT-5/PSA/D2 decision adopted; no
+  Qualtrics completion/return/export implemented; no scientific contract,
+  scoring, event semantics, study mapping, task semantics, option wording or
+  option ordering changed.** Deliverables (new):
+  `docs/ai/OPUS-PARTICIPANT-EXPERIENCE-ACCESSIBILITY-GATE.md`,
+  `docs/testing/PARTICIPANT-BROWSER-DEVICE-MATRIX.md`,
+  `docs/operations/SUPERVISED-USABILITY-TEST-PROTOCOL.md`. Test-only addition:
+  `e2e/participant_viewport_display.spec.ts` (viewport FIT / no-overflow matrix,
+  6 tests). Additive update: `docs/operations/PILOT-DATA-GOVERNANCE-CHECKLIST.md`
+  (supported participant-environment control).
+- **Two checkpoint commits** (per policy): (1) the test-only spec; (2) the docs.
+- **Scope**: full participant task-flow inventory; Chromium browser matrix;
+  desktop viewport matrix (1920×1080…1024×768 + narrow); zoom/DPR; keyboard/
+  input accessibility; canvas semantic-exposure audit; legibility; timing/
+  progress; error/recovery; performance observations; instruction adequacy +
+  supervised-usability protocol; coverage assessment; P0/P1/P2 register
+  (PXA-1..PXA-10) + external-verification register (PXA-X1..PXA-X5).
+- **Key executable evidence (this commit)**: `Scale.FIT` + `CENTER_BOTH` keeps
+  the 800×600 (4:3) canvas fully inside every tested desktop viewport, 4:3
+  preserved, **no horizontal overflow, zero page/console errors** (committed
+  spec 6/6; bundle-served visual matrix 8/8 + direct-scene + ESC specs pass);
+  whole 55-test suite is **keyboard-only** (mouse-free completion proven);
+  ESC pause is keyboard-recoverable (no trap); `lint:tsc` clean; `build` passes;
+  `git diff --check` clean. Suite now **55 tests / 23 spec files**.
+- **New participant-experience findings**: **PXA-1** verified on **Chromium
+  only** (Firefox/WebKit not installed, unverified — browser-dependent-data risk;
+  P0 for pilot/formal, controllable P1 for supervised via a browser lock);
+  **PXA-2** canvas-only, **zero DOM/ARIA exposure** (accessibility eligibility is
+  external — PXA-X1); **PXA-3** transient (~1.6 s) instructions/feedback; **PXA-8**
+  no loading indicator (black screen on slow initial load). PXA-6/7/9/10 are P2.
+- **Verdict**: participant experience is a sufficient baseline for **supervised
+  usability testing** (serve `npm run bundle`, current Chromium-family desktop,
+  ≥1280×720, synthetic data, no persistence/return). L1 internal-dev READY; L2
+  supervised-usability READY-with-conditions; **L3 pilot / L4 formal collection
+  NOT READY** — unchanged data-pipeline P0 cluster **plus** PXA-1/PXA-3/PXA-8 to
+  bound and PXA-X1/PXA-X2 to rule. This gate does **not** move the pilot line.
+- **Next authorised action**: research owner rules PXA-X1 (accessibility
+  eligibility) + PXA-X2 (supported/pinned participant browser); supervised
+  usability testing may proceed under the new protocol (synthetic data). Max
+  sessions may address PXA-1/PXA-3/PXA-8/PXA-10 as technical (non-scientific)
+  work alongside the data-pipeline units. **No integration implementation begun.**
+
+## Current status — PRE-PILOT PRIVACY/SECURITY GATE (previous commit)
 
 - **Checkpoint**: bounded, evidence-grounded **privacy / security /
   data-governance gate** produced from `1f2c972` (clean tree). **Documentation-
