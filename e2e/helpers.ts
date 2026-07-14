@@ -270,16 +270,91 @@ export async function hubToStationDoor(page: Page, roomId: HubStationRoomId) {
 }
 
 /**
- * Walks from anywhere in the Hub to the Status Board (console block, HubScene
- * x=13*32/y=7.5*32) and presses SPACE. Same NW-anchor as hubToStationDoor,
- * then east along the clear top corridor to the board's column, then a
- * generous south hold that clamps on the console block's top edge — well
- * inside the board's 72px interaction radius regardless of load variance.
+ * Live active-scene player position from the dev-only, read-only probe
+ * (RoomScene.update writes it every frame; stripped from production builds).
+ * Returns null before the first framed update or if the hook is absent.
+ */
+export async function playerProbe(
+  page: Page,
+): Promise<{ scene: string; x: number; y: number } | null> {
+  return page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          __playerProbe?: { scene: string; x: number; y: number } | null;
+        }
+      ).__playerProbe ?? null,
+  );
+}
+
+/**
+ * Real-keyboard movement synchronised on OBSERVED player position: holds the
+ * arrow key toward `target` on one axis in short bursts, re-reading the
+ * dev-only position probe after each, until the player is within `tolerance`
+ * of the target OR has stopped advancing on that axis (a wall/obstacle clamp).
+ *
+ * Unlike a fixed-duration hold, this cannot silently under-deliver when CPU
+ * load caps Phaser's per-frame delta — it keeps moving until the game itself
+ * reports arrival. Movement is genuine held-key input (no teleport, no state
+ * mutation); the bounded burst count is only an anti-hang safety stop, never
+ * an interaction retry.
+ */
+async function driveAxisTo(
+  page: Page,
+  axis: 'x' | 'y',
+  target: number,
+  tolerance: number,
+) {
+  let previous: number | null = null;
+
+  for (let burst = 0; burst < 80; burst++) {
+    const probe = await playerProbe(page);
+    if (probe === null) {
+      return;
+    }
+
+    const current = probe[axis];
+    if (Math.abs(current - target) <= tolerance) {
+      return;
+    }
+    // Advanced < 2px since the last burst => clamped against a wall on this
+    // axis; this is as close as the axis can get, so stop (the caller's
+    // waypoints are chosen so a wall clamp lands inside range).
+    if (previous !== null && Math.abs(current - previous) < 2) {
+      return;
+    }
+    previous = current;
+
+    const forward = current < target;
+    const key =
+      axis === 'x'
+        ? forward
+          ? 'ArrowRight'
+          : 'ArrowLeft'
+        : forward
+          ? 'ArrowDown'
+          : 'ArrowUp';
+    await hold(page, key, 100);
+  }
+}
+
+/**
+ * Walks from anywhere in the Hub to the Status Board and presses SPACE. The
+ * board (HubScene x=13*32, y=7.5*32) is the one interactable with no wall
+ * inside its 72px radius — it floats above the central console block — so a
+ * fixed-duration approach leg silently under-shoots under CPU load and the
+ * SPACE lands out of range. Instead we drive through the hub's guaranteed-
+ * clear corridors, ending each leg on the OBSERVED player position:
+ *   1. clamp the west wall  (clear vertical corridor, reachable from anywhere);
+ *   2. rise to a row well north of the console block (clear across);
+ *   3. move east to the board's column (now over the block);
+ *   4. descend — clamps on the block top, ~26px from the board, in range.
  */
 export async function hubToStatusBoard(page: Page) {
-  await hubToNorthWestAnchor(page);
-  await hold(page, 'ArrowRight', 2150); // board column x 416, same leg as the dock door
-  await hold(page, 'ArrowDown', 1000); // clamps on the console block just north of the board
+  await driveAxisTo(page, 'x', 30, 24); // west wall (stalls at the clear column)
+  await driveAxisTo(page, 'y', 180, 24); // clear row north of the console block
+  await driveAxisTo(page, 'x', 416, 24); // board column, over the block
+  await driveAxisTo(page, 'y', 260, 20); // descend; stalls on the block top (~232)
   await press(page, 'Space');
 }
 

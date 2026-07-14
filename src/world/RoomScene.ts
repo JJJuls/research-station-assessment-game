@@ -164,22 +164,27 @@ export function resetSessionOnceFlags() {
 }
 
 /**
- * Dev-only, read-only runtime-verification hook (getMissionState()
- * precedent): exposes the most recently rendered feedback/status-board
- * message text so Playwright specs can verify DISPLAYED content against
- * SessionState without adding any new scientific surface. Presentation-only
- * — deliberately separate from window.researchRuntime (not research data,
- * not an event, not scoring); gated the same way ResearchRuntime gates its
- * own debug installer.
+ * Dev-only, read-only runtime-verification hooks (getMissionState()
+ * precedent): expose the most recently rendered feedback/status-board
+ * message text, and the active scene's live player position, so Playwright
+ * specs can verify DISPLAYED content and drive real keyboard navigation that
+ * synchronises on observed position instead of frame-rate-sensitive elapsed
+ * time. Presentation/telemetry only — deliberately separate from
+ * window.researchRuntime (not research data, not an event, not scoring),
+ * strictly read-only (nothing reads these back into gameplay), and gated the
+ * same way ResearchRuntime gates its own debug installer, so both are
+ * dead-code-eliminated from production builds (import.meta.env.DEV === false).
  */
 declare global {
   interface Window {
     __lastRoomFeedbackText?: string | null;
+    __playerProbe?: { scene: string; x: number; y: number } | null;
   }
 }
 
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
   window.__lastRoomFeedbackText = null;
+  window.__playerProbe = null;
 }
 
 /**
@@ -678,6 +683,18 @@ export abstract class RoomScene extends Phaser.Scene {
     this.player.update();
     this.onRoomUpdate();
     this.updateProximity();
+
+    // Dev-only, read-only position telemetry for runtime verification (see
+    // the __playerProbe note above). Never read back into gameplay; stripped
+    // from production builds. Placed last so it reflects this frame's final
+    // player position after movement/physics have resolved.
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__playerProbe = {
+        scene: this.scene.key,
+        x: this.player.x,
+        y: this.player.y,
+      };
+    }
   }
 
   /** Per-frame hook for room-specific instrumentation (e.g. Dock baselines). */
