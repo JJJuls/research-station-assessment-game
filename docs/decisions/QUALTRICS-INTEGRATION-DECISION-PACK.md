@@ -564,6 +564,15 @@ number.
 
 ## 6. Shared privacy / security implications
 
+> **See also**: the dedicated pre-pilot privacy/security gate
+> (`docs/ai/OPUS-PRE-PILOT-PRIVACY-SECURITY-GATE.md`), threat model
+> (`docs/security/RESEARCH-DATA-PRIVACY-THREAT-MODEL.md` — data inventory,
+> flow model, `PS-0..PS-13` register, §7 mandatory constraint set, §8
+> per-option compatibility), and the operational gates
+> (`docs/operations/PILOT-DATA-GOVERNANCE-CHECKLIST.md`). The privacy/security
+> constraints on INT-1/INT-2/INT-5 in those documents are **implementation
+> requirements** for the later Max work; no option is adopted there either.
+
 - `[FACT]` Pseudonymous ids only; no PII collected (contract §17). Identities +
   `return_url` travel in the URL (history/referrer/host logs) — note host logging
   posture `[EXTERNAL]`.

@@ -15,6 +15,20 @@ Companion contract: `docs/integration/QUALTRICS-END-TO-END-CONTRACT.md`.
 > NOT YET AUTHORISED**; no decision is adopted and no implementation has begun.
 > Unit 0 completes when the ruling form is signed off.
 
+> **Privacy/security gate — added after this audit.** A dedicated pre-pilot
+> privacy, security and data-governance gate now extends this audit's §7 P0/P1
+> register into a privacy/security `PS-0..PS-13` register with a data
+> inventory, data-flow/trust-boundary model, an implementation-ready constraint
+> set for the Max sessions, per-option (INT-1/2/5/D2) compatibility, and
+> distinct L1–L4 readiness gates:
+> `docs/ai/OPUS-PRE-PILOT-PRIVACY-SECURITY-GATE.md`,
+> `docs/security/RESEARCH-DATA-PRIVACY-THREAT-MODEL.md`,
+> `docs/operations/PILOT-DATA-GOVERNANCE-CHECKLIST.md`. It confirms this audit's
+> deployment finding (the participant bundle strips the external `unpkg`
+> dependency and GitHub ribbon; the ordinary build does not) and adds a
+> Privacy/Security addendum (PSA-1..PSA-4) to the ruling form. No option or
+> scientific decision was adopted.
+
 ## 1. Executive assessment
 
 The **research data spine is sound**: launch parsing, immutable pseudonymous

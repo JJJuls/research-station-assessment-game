@@ -255,12 +255,50 @@ definition (category→value, issue netting, range, valence): `__________`.
 
 ---
 
+## Privacy/Security addendum (added by the pre-pilot privacy/security gate)
+
+These fields were added by `docs/ai/OPUS-PRE-PILOT-PRIVACY-SECURITY-GATE.md`
+(analysis: `docs/security/RESEARCH-DATA-PRIVACY-THREAT-MODEL.md`). They are
+**new** and **not adopted**; each requires **owner or institutional approval**.
+No existing field above was altered.
+
+**PSA-1 — Test/production separation signal (PS-2)** — permitted:
+`launch_mode axis (INT-5) + reserved test-id convention` / `custom`.
+`«REC» launch_mode=production|test|development + exclude non-production in analysis`.
+**Requires owner approval; gates L3.**
+
+- Selected: `__________` Test signal source: `__________` — APPROVED / NOT APPROVED
+
+**PSA-2 — Return-URL identity minimisation (PS-4)** — must the return URL echo
+`participant_id`? permitted: `no (Qualtrics already holds the mapping)` /
+`yes (echo participant_id)` / `custom`. `«REC» minimise — summary fields only`.
+**Requires owner approval.** (Raw events must NEVER travel in a URL — fixed constraint.)
+
+- Selected: `__________` — APPROVED / NOT APPROVED
+
+**PSA-3 — Ingestion endpoint region/provider/retention (PS-5, PS-12) `[EXTERNAL]`**
+— permitted: `institutionally-approved host+region+retention` / `no endpoint (summaries-only, F)` / `custom`.
+**Requires institutional approval; gates L4.**
+
+- Host/region: `__________` Provider: `__________` Retention: `__________`
+  Approval ref `[EXTERNAL]`: `__________` — APPROVED / NOT APPROVED
+
+**PSA-4 — Participant withdrawal / deletion procedure (X6) `[EXTERNAL]`** —
+permitted: `institution/ethics-defined procedure` / `custom`.
+**Requires ethics/institutional approval; gates L4.** No withdrawal right or
+retention period is assumed by this repository.
+
+- Procedure ref `[EXTERNAL]`: `__________` — APPROVED / NOT APPROVED
+
+---
+
 ## Sign-off
 
 - INT-1 complete: APPROVED / NOT APPROVED
 - INT-2 complete: APPROVED / NOT APPROVED
 - INT-5 complete: APPROVED / NOT APPROVED
 - D2 complete: APPROVED / NOT APPROVED
+- Privacy/Security addendum (PSA-1..PSA-4) complete: APPROVED / NOT APPROVED
 - Signature: `__________` Date: `__________`
 
 **Next authorised action after sign-off**: Unit 0 recorded → begin **Unit 1**

@@ -7,7 +7,46 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 - **Session constraints**: main Fable agent only; PixelLab disabled; Playwright
   via CLI only; no push/merge/PR/rebase/reset/branch-switch.
 
-## Current status — INT-1/INT-2/INT-5 + D2 DECISION PACKAGE (this commit)
+## Current status — PRE-PILOT PRIVACY/SECURITY GATE (this commit)
+
+- **Checkpoint**: bounded, evidence-grounded **privacy / security /
+  data-governance gate** produced from `1f2c972` (clean tree). **Documentation-
+  only; no decision adopted, no INT-1/INT-2/INT-5/D2 option taken, no scientific
+  decision made, no source/test/scoring/schema/stimulus/deploy-script change.**
+  Deliverables (new): `docs/security/RESEARCH-DATA-PRIVACY-THREAT-MODEL.md`,
+  `docs/operations/PILOT-DATA-GOVERNANCE-CHECKLIST.md`,
+  `docs/ai/OPUS-PRE-PILOT-PRIVACY-SECURITY-GATE.md`. Updated (additive):
+  `docs/decisions/RESEARCH-OWNER-RULING-FORM.md` (new Privacy/Security addendum
+  PSA-1..PSA-4, marked not-adopted), pointers added to
+  `docs/decisions/QUALTRICS-INTEGRATION-DECISION-PACK.md` and
+  `docs/ai/PRE-MAX-QUALTRICS-INTEGRATION-AUDIT.md`.
+- **Scope**: data inventory (23 datums classified DI/PID/LNK/RSP/DRV/OPS/DIAG),
+  data-flow + trust-boundary model, privacy/security `PS-0..PS-13` register
+  cross-mapped to the technical P0/P1 findings, an implementation-ready
+  constraint set (return-scheme allowlist, postMessage constraints, endpoint
+  constraints, durable-buffer isolation, deployment artifact), per-option
+  (INT-1/2/5/D2) privacy/security compatibility, an external-verification
+  register (X1..X11), and distinct L1–L4 readiness gates.
+- **Key evidence (verified this commit)**: zero `localStorage`/`sessionStorage`/
+  `indexedDB`/`cookie` and zero `fetch`/`postMessage`/`sendBeacon` in `src/`; no
+  secrets/endpoints; no source maps; DEV probes (`researchRuntime`,
+  `__lastRoomFeedbackText`) and analytics absent from both production artifacts
+  (grep 0); **participant bundle strips the `unpkg` script + GitHub ribbon
+  (base `./`), ordinary `npm run build` does not** — confirmed by fresh build.
+- **Privacy/security P0s** (block a supervised pilot / formal collection):
+  PS-0 return-`return_url` scheme/host allowlist (INT-4, latent until INT-1
+  navigation lands), PS-1 ship `npm run bundle` not `npm run build` (P1-6),
+  PS-2 test/production separation signal (INT-5), PS-3 persistence/data-loss +
+  buffer isolation (P0-3). **Real participant data (L4) prohibited until PS-0/
+  1/2/3 + P0-1..P0-4 closed and X1..X11 confirmed.**
+- **Verdict**: L1 internal dev READY; L2 supervised usability READY-with-
+  conditions (serve `npm run bundle`, no real data); L3 pilot NOT READY; L4
+  formal collection NOT READY.
+- **Next authorised action**: research owner completes the ruling form incl. the
+  new PSA-1..PSA-4 fields; begin X1..X11 external verifications. No integration
+  implementation until the gating fields are APPROVED.
+
+## Current status — INT-1/INT-2/INT-5 + D2 DECISION PACKAGE (previous commit)
 
 - **Checkpoint**: bounded, evidence-grounded **pre-implementation decision
   package** produced from `24afcad` (clean tree, 49/22 suite green ×2 at the
@@ -717,32 +756,33 @@ Live checkpoint file. Updated after every commit. Newest entry first.
 
 ## Commit log (wave)
 
-| SHA       | Unit   | Content                                             |
-| --------- | ------ | --------------------------------------------------- |
-| `dd498f2` | Docs 1 | Remaining-station inventory                         |
-| `f1db32f` | Docs 2 | Wave 1 plan (ranking + units)                       |
-| `ed2a39b` | Docs 3 | Active expansion state file                         |
-| `2fbbd57` | U1     | Station registry + routing                          |
-| `b9b4d49` | Docs   | State checkpoint after U1                           |
-| `72c6bc9` | U2     | Room task-state factory                             |
-| `35599ac` | Docs   | State checkpoint after U2                           |
-| `cb9eabf` | U3     | N-option/multi-stage prompts                        |
-| `ffc817b` | Docs   | State checkpoint after U3                           |
-| `a57bab4` | U4     | Canonical event registrations                       |
-| `20d6bff` | Docs   | State checkpoint after U4                           |
-| `6afac6b` | U5     | Registry-driven status board                        |
-| `cc8d597` | Docs   | State checkpoint after U5                           |
-| `9bbb5cc` | U6     | e2e station-driving fixtures                        |
-| `0a61fe2` | Docs   | State checkpoint after U6                           |
-| `26379ce` | Room 2 | Systems Repair Room beat                            |
-| `cf48ff6` | Docs   | State checkpoint after beat 1                       |
-| `871105c` | Room 3 | Engineer Hub beat                                   |
-| `078589e` | Docs   | State checkpoint after beat 2                       |
-| `cc10ed9` | Room 4 | Inventory/Prep beat                                 |
-| `5b5050c` | Docs   | State checkpoint after beat 3                       |
-| `6e09afc` | Room 5 | Side Repair Bay beat                                |
-| `1dc94e2` | Docs   | State checkpoint after beat 4                       |
-| `76be9f0` | Room 6 | Interruption Corridor beat                          |
-| `12947d1` | Docs   | State checkpoint after beat 5                       |
-| `5f206e5` | Room 7 | Final Core Room beat                                |
-| _pending_ | Docs   | INT-1/2/5 + D2 decision package (docs/decisions/\*) |
+| SHA       | Unit   | Content                                                          |
+| --------- | ------ | ---------------------------------------------------------------- |
+| `dd498f2` | Docs 1 | Remaining-station inventory                                      |
+| `f1db32f` | Docs 2 | Wave 1 plan (ranking + units)                                    |
+| `ed2a39b` | Docs 3 | Active expansion state file                                      |
+| `2fbbd57` | U1     | Station registry + routing                                       |
+| `b9b4d49` | Docs   | State checkpoint after U1                                        |
+| `72c6bc9` | U2     | Room task-state factory                                          |
+| `35599ac` | Docs   | State checkpoint after U2                                        |
+| `cb9eabf` | U3     | N-option/multi-stage prompts                                     |
+| `ffc817b` | Docs   | State checkpoint after U3                                        |
+| `a57bab4` | U4     | Canonical event registrations                                    |
+| `20d6bff` | Docs   | State checkpoint after U4                                        |
+| `6afac6b` | U5     | Registry-driven status board                                     |
+| `cc8d597` | Docs   | State checkpoint after U5                                        |
+| `9bbb5cc` | U6     | e2e station-driving fixtures                                     |
+| `0a61fe2` | Docs   | State checkpoint after U6                                        |
+| `26379ce` | Room 2 | Systems Repair Room beat                                         |
+| `cf48ff6` | Docs   | State checkpoint after beat 1                                    |
+| `871105c` | Room 3 | Engineer Hub beat                                                |
+| `078589e` | Docs   | State checkpoint after beat 2                                    |
+| `cc10ed9` | Room 4 | Inventory/Prep beat                                              |
+| `5b5050c` | Docs   | State checkpoint after beat 3                                    |
+| `6e09afc` | Room 5 | Side Repair Bay beat                                             |
+| `1dc94e2` | Docs   | State checkpoint after beat 4                                    |
+| `76be9f0` | Room 6 | Interruption Corridor beat                                       |
+| `12947d1` | Docs   | State checkpoint after beat 5                                    |
+| `5f206e5` | Room 7 | Final Core Room beat                                             |
+| `1f2c972` | Docs   | INT-1/2/5 + D2 decision package (docs/decisions/\*)              |
+| _pending_ | Docs   | Pre-pilot privacy/security gate (docs/security, docs/operations) |
