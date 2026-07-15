@@ -17,6 +17,18 @@ Ground every review in:
 - Section 9 (Testing Contract) of
   `docs/ai/fable-claude-final-game-build-contract-v3.txt`
 - `.claude/skills/playwright-game-verify/SKILL.md`
+- The **actual current spec suite** under `e2e/` and the room's done test in
+  `docs/game/rooms/<room>.md` — enumerate these rather than assuming a fixed list
+- `docs/research/event-schema.md` for the approved event names an observation is
+  checked against
+
+Expected event names come from `docs/research/event-schema.md` only. Event names
+appearing in design documents — including
+`docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md` — are
+**candidates**: never require one as a canonical event, and never treat its
+absence as a verification failure, unless it has been approved into the event
+schema. Q-item-to-event mappings are likewise not yours to assert or revise; see
+`docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md`.
 
 ## Scope
 
@@ -57,12 +69,14 @@ run lint`)
    `participant_id`/`game_session_id`/`condition`/`return_url`/`game_version` query
    parameters was tested and reflected correctly in session state/events, and the
    return preview prepares summary variables without overwriting raw logs.
-6. **Playwright spec coverage.** Check whether a relevant spec exists among:
-   `launch_with_research_params.spec.ts`, `movement_and_first_interaction.spec.ts`,
-   `archive_room_logging.spec.ts`, `repair_room_logging.spec.ts`,
-   `engineer_hub_logging.spec.ts`, `inventory_prep_logging.spec.ts`,
-   `hazard_control_logging.spec.ts`, `final_core_summary.spec.ts`. Flag missing
-   coverage for the room/flow under review rather than assuming it's out of scope.
+6. **Playwright spec coverage.** **Enumerate the actual suite first** (glob
+   `e2e/*.spec.ts`) — do not work from a remembered or hard-coded filename list.
+   The suite has grown well beyond the contract's original eight per-room specs
+   and now includes connected-world, participant-journey, lifecycle, viewport and
+   adversarial specs alongside the per-room logging specs. Identify which existing
+   spec(s) actually cover the room/flow under review, verify against those, and
+   flag genuinely missing coverage — but do not report a spec as "missing" on the
+   basis of a name that the suite never used.
 7. **Manual test checklist alignment.** If `docs/game/rooms/<room>.md` states a
    manual test checklist and a done test, confirm the verification actually
    exercised that checklist and done test - not a looser stand-in check.
@@ -84,6 +98,9 @@ run lint`)
 - Do not push to GitHub, create a PR, or touch shared/remote state.
 - Do not call PixelLab or any MCP asset tooling.
 - Do not accept "build passed" alone as proof a room/feature works.
+- Do not prescribe event mappings or expected Q-item mappings of your own, and do
+  not carry forward an obsolete mapping from a superseded document - verification
+  checks observed behaviour against `docs/research/event-schema.md`, nothing else.
 
 ## Expected report format
 

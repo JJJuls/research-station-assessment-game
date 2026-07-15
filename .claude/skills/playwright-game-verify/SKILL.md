@@ -45,15 +45,28 @@ observation, not just a green build.
    `participant_id`, `game_session_id`, `condition`, `return_url`, and
    `game_version` query parameters and confirm they're parsed and reflected in
    session state/events.
-5. **Playwright spec coverage** - check whether a relevant spec already exists
-   under the project's Playwright test directory before writing a new one. The
-   contract calls for (create as needed, one per room/flow, not all at once unless
-   asked): `launch_with_research_params.spec.ts`,
-   `movement_and_first_interaction.spec.ts`, `archive_room_logging.spec.ts`,
-   `repair_room_logging.spec.ts`, `engineer_hub_logging.spec.ts`,
-   `inventory_prep_logging.spec.ts`, `hazard_control_logging.spec.ts`,
-   `final_core_summary.spec.ts`.
-6. **Done test alignment** - confirm the room's stated done test (from its
+5. **Playwright spec coverage** - **enumerate the actual suite first** (glob
+   `e2e/*.spec.ts`); do not work from a remembered or hard-coded filename list. The
+   suite has grown well past the contract's original eight per-room specs and now
+   also covers connected-world flow, participant journeys, session lifecycle,
+   viewport/display and adversarial paths. Find the spec(s) that actually cover the
+   room/flow in question and verify against those; write a new one only when
+   coverage is genuinely absent (one per room/flow, not all at once unless asked).
+6. **Refined mechanics are verified as opportunity -> choice -> process ->
+   outcome** - when a mechanic implements an approved behavioural rationale from
+   `docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md`, verify all four:
+   that the **opportunity** was presented and functionally accessible; that the
+   **choice** the participant made was recorded (including, for a goal-horizon
+   choice, that the initial choice is logged **before** any interruption); that the
+   **process order** is preserved in the event sequence (failure -> feedback ->
+   revision -> return -> completion); and that the **outcome** is logged. A single
+   event firing is not verification of a mechanic.
+7. **Expected event names come from the approved schema only** - check observed
+   events against `docs/research/event-schema.md`. Event names appearing only in a
+   design document (including the measurement specification) are **candidates**:
+   never assert one as a required canonical event, and never report its absence as
+   a failure, unless it has been approved into the event schema.
+8. **Done test alignment** - confirm the room's stated done test (from its
    `docs/game/rooms/*.md` doc, per `room-builder`) is actually what gets checked,
    not a looser stand-in.
 
@@ -71,6 +84,10 @@ observation, not just a green build.
 - Do not modify game/room source code to make a test pass unless the failure is
   clearly a test bug - a failing runtime check on real game logic is a finding to
   report, not something to quietly patch around.
+- Do not turn a candidate event into a required canonical event by asserting it in
+  a spec. A test that requires an unapproved name silently promotes it into the
+  schema; that promotion is a research-owner decision
+  (`docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md`).
 
 ## Expected output format
 

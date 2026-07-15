@@ -17,9 +17,20 @@ Ground every review in:
 
 - `docs/ai/fable-claude-final-game-build-contract-v3.txt`, Section 2 (world
   structure), Section 3.6 (room/task abstraction), Section 4 (per-room contract),
-  Section 10 (Fable Build Beats)
+  Section 10 (Fable Build Beats) — architecture and build discipline
+- `docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md` — the approved
+  **behavioural rationale** an implementation must follow
+- `docs/research/event-schema.md` — the approved **production event names** an
+  implementation must use
+- `docs/research/scoring-plan.md` — the approved derived variables
+- `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md` — approved decisions and
+  the open-decision queue
 - `.claude/skills/research-game-architect/SKILL.md`
 - `.claude/skills/room-builder/SKILL.md`
+
+Authority is domain-specific (see `CLAUDE.md`). The measurement specification
+governs _why_ a mechanic is shaped the way it is; `event-schema.md` governs _what
+the events are called_. Neither substitutes for the other.
 
 ## Scope
 
@@ -62,16 +73,38 @@ Review changes to (or the current state of, if asked for a standing audit):
    implemented core," per Section 4) and calls into EventLogger/SessionState/
    ScoringManager/ResearchRuntime are not deleted, bypassed, or stubbed without a
    concrete, stated reason. Removal without justification is a blocking finding.
-8. **No scope creep.** Flag RPG progression mechanics forbidden by the contract
-   (money, shops, XP, skill levels, combat, stat boosts, power upgrades, or any
-   mechanic that changes task difficulty across participants) and any UI/feature
-   addition not called for by the room's contract entry or the user's request.
-9. **Build safety / TypeScript risk.** Run `npm.cmd run build` and `npm.cmd run
+8. **Approved behavioural rationale is followed.** Where the room implements a
+   Q-mapped mechanic, check it against that Q-item's entry in
+   `docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md` — the newer
+   approved rationale wins over an older mechanic rationale in the contract or
+   `MASTER_33_ALIGNMENT.md`. Concretely: Q04 must be explicit cleanup/restoration,
+   never planning-before-action; Q27's primary analogue is continuation after an
+   explicit utility-stop signal, with the participant clearly informed that
+   further cycles give no operational benefit (Hazard stays prudence/carefulness);
+   Q29/Q31 share one goal-horizon module whose options are **not** labelled
+   short-/long-term and whose initial choice is logged **before** any interruption;
+   Q30 is a goal-granularity choice, not skipped preparation. Flag an
+   implementation that contradicts the approved rationale, and flag one that
+   _silently changes_ a live registration to chase it — the second is an
+   event-schema decision, not an implementation choice.
+9. **Exact production event names, no candidate promotion.** Every event the room
+   emits must use an approved canonical name from `docs/research/event-schema.md`.
+   Event names appearing only in the measurement specification are **candidates**.
+   **Flag as blocking any implementation that promotes a candidate event name into
+   production** (or invents a new name, or renames a live event) without a recorded
+   research-owner event-schema decision — see
+   `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md`. "The specification says so"
+   is not an approval.
+10. **No scope creep.** Flag RPG progression mechanics forbidden by the contract
+    (money, shops, XP, skill levels, combat, stat boosts, power upgrades, or any
+    mechanic that changes task difficulty across participants) and any UI/feature
+    addition not called for by the room's contract entry or the user's request.
+11. **Build safety / TypeScript risk.** Run `npm.cmd run build` and `npm.cmd run
 lint:tsc` (and `npm.cmd run lint` when practical) and report pass/fail. Look for
-   `any`-typing that erases meaningful state, unsafe casts, unhandled nulls/
-   undefined on state that other rooms depend on, and circular or tightly-coupled
-   imports between room scenes.
-10. **Done test presence.** Confirm the room/task has an explicit, checkable done
+    `any`-typing that erases meaningful state, unsafe casts, unhandled nulls/
+    undefined on state that other rooms depend on, and circular or tightly-coupled
+    imports between room scenes.
+12. **Done test presence.** Confirm the room/task has an explicit, checkable done
     test (from `docs/game/rooms/<room>.md` if present) and that the implementation
     actually satisfies it, not a looser stand-in.
 
@@ -90,6 +123,9 @@ lint:tsc` (and `npm.cmd run lint` when practical) and report pass/fail. Look for
   evidence is `browser-qa-reviewer`'s gated job.
 - Do not spawn nested agents/subagents.
 - Do not approve building multiple rooms in a single uncontrolled pass.
+- Do not approve a candidate event name into production, resolve an entry in
+  `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md`, or accept a scientific
+  mapping invented by the implementer - those belong to the research owner.
 - Shell use is limited to the existing verification commands (`npm.cmd run build`,
   `npm.cmd run lint:tsc`, `npm.cmd run lint`, existing test commands) and
   read-only git inspection (`git status`, `git diff`, `git log`); never install

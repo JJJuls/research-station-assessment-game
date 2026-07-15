@@ -6,11 +6,27 @@ description: Use when planning or reasoning about overall game architecture for 
 # Research Game Architect
 
 You are planning architecture for a research-grade behavioural assessment game, not
-a conventional game feature. The main build contract is
-`docs/ai/fable-claude-final-game-build-contract-v3.txt` - read it (or reread the
-relevant section) before proposing any architectural change. If `PROJECT_SPEC.md`,
-`CLAUDE.md`, or `docs/research/*.md` exist, treat them as living elaborations of the
-contract and read those too.
+a conventional game feature. The build contract
+`docs/ai/fable-claude-final-game-build-contract-v3.txt` governs architecture and
+build discipline - read it (or reread the relevant section) before proposing any
+architectural change.
+
+Authority is domain-specific (`CLAUDE.md`). Bring all four of these into any
+architectural review, and keep straight what each one settles:
+
+- `docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md` - the approved
+  **behavioural rationale**: what a mechanic must let the player do, and why.
+  Where it conflicts with an older mechanic rationale (contract §5,
+  `MASTER_33_ALIGNMENT.md`), it governs the rationale.
+- `docs/research/event-schema.md` - the approved **implementation contract** for
+  event names and payloads.
+- `docs/research/scoring-plan.md` - the approved **implementation contract** for
+  derived variables and formulas.
+- `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md` - approved decisions and
+  the open queue.
+
+`PROJECT_SPEC.md` and `docs/research/*.md` are living elaborations of the
+contract; read those too.
 
 ## Why this matters
 
@@ -38,6 +54,20 @@ _more_ trustworthy - never the reverse.
 4. Verify the proposed world structure keeps the station as one connected flow
    (Dock -> Station Hub -> the eight rooms) rather than a set of disconnected demo
    scenes.
+5. **Design goal-horizon and goal-granularity as shared modules, not five
+   minigames.** Q29-Q33 are exploratory and share behavioural dimensions: Q29/Q31
+   are opposite ends of **one** goal-horizon choice; Q30 is a goal-granularity
+   choice; Q32 and Q33 are **derived** from those same self-selected opportunities
+   and get no module of their own. Architect **one** goal-horizon module and
+   **one** goal-granularity module, reused at their approved points, whose initial
+   choice is recorded before any interruption. Five repetitive disguised
+   questionnaire choices are a design failure, not thorough coverage.
+6. **Do not schedule implementation ahead of its decisions.** Before a unit of work
+   enters the beat sequence, confirm that the event-schema and scoring decisions
+   that unit depends on are **approved** (`event-schema.md` / `scoring-plan.md`).
+   If a unit needs a candidate event promoted or a formula settled, the plan's next
+   step is a research-owner decision - not code. State which decision blocks it,
+   and sequence the unit after that decision, never around it.
 
 ## Forbidden
 
@@ -69,9 +99,11 @@ Produce a short architecture note (inline in the response, or as a doc under
    files/modules, how they connect to existing systems, what state or events they
    add.
 5. **Sequencing** - where this sits relative to the Fable build beats, and what
-   must happen before/after.
+   must happen before/after. State explicitly which event-schema and/or
+   scoring-plan decisions must be **approved before** this unit can be
+   implemented; if any are open, the unit is not schedulable yet.
 6. **Risks / open questions** - anything that could break existing systems or
-   needs the user's decision before proceeding.
+   needs the research owner's decision before proceeding.
 
 Hand off actual room implementation to `room-builder`, construct-to-mechanic
 translation to `psychometric-task-design`, logging/scoring review to

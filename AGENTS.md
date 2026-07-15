@@ -1,39 +1,46 @@
 ---
 name: dev_agent
-description: Expert developer for this Phaser RPG game adapted into a psychology research assessment prototype
+description: Expert developer for this Phaser RPG foundation adapted into a psychology research assessment instrument
 ---
 
 # AI Development Instructions
 
-This repository is being adapted into a browser-based psychology research game.
+This repository is a browser-based psychology research game, built on a Phaser 3
+RPG foundation. It is a single-player research-station / workplace simulation
+launched from Qualtrics, played in the browser, and used to collect structured
+behavioural data.
 
-The current codebase is a Phaser 3 RPG template. The goal is to convert it into a single-player research-station / workplace simulation that can be launched from Qualtrics, played in the browser, and used to collect structured behavioural data.
+`CLAUDE.md` governs _how_ to work and carries the domain-specific authority
+hierarchy. `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md` carries the
+approved scientific decisions and the open-decision queue. Read both before
+changing anything described here.
 
 ## Primary Objective
 
-Convert the existing Phaser RPG template into a Qualtrics-integrated behavioural assessment prototype.
-
-The game should not become a full RPG, MMO, combat game, or commercial entertainment game. It should become a controlled research instrument.
+Keep the game a controlled **research instrument**, not a full RPG, MMO, combat
+game, or commercial entertainment game.
 
 ## Research Architecture
 
-Qualtrics manages:
+**Qualtrics** manages:
 
 - consent
-- participant/session IDs
+- participant/session identifiers
 - condition assignment
-- questionnaires
+- questionnaires (the validated Q01-Q33 battery, administered post-game)
 - post-game reactions
 - debriefing
 
-The Phaser game manages:
+**The Phaser game** manages:
 
-- gameplay
-- interaction logic
-- event logging
-- scoring
-- completion logic
-- return of summary variables to Qualtrics
+- gameplay and interaction logic
+- raw behavioural event collection
+- research state
+- approved summary preparation and return to Qualtrics
+
+The 33 validated items stay in Qualtrics as a post-game self-report battery. The
+game supplies behavioural analogues for convergent and discriminant analysis —
+it never reproduces item wording as disguised questions.
 
 ## Tech Stack
 
@@ -54,36 +61,52 @@ The Phaser game manages:
 | `npm run lint:fix` | ESLint auto-fix                     |
 | `npm run lint:tsc` | Type check                          |
 
-## Core Systems To Add
+## Core Systems — these already exist
 
-Add the following systems in a modular way:
+The research systems are implemented under `src/systems/` and are **not** to be
+re-added, re-invented, or replaced. Extend them; never bypass them.
 
-- `src/systems/EventLogger.ts`
-- `src/systems/ScoringManager.ts`
-- `src/systems/SessionState.ts`
-- `src/systems/QualtricsBridge.ts`
-- `src/systems/DataQualityTracker.ts`
+| System                              | Role                                                                        |
+| ----------------------------------- | --------------------------------------------------------------------------- |
+| `src/systems/EventLogger.ts`        | Append-only raw event log. Every scoring-relevant action passes through it. |
+| `src/systems/ScoringManager.ts`     | Derives every summary variable, read-only, from raw events.                 |
+| `src/systems/SessionState.ts`       | Persistent mission/session state across rooms.                              |
+| `src/systems/QualtricsBridge.ts`    | Launch-parameter parsing and return-URL/summary preparation.                |
+| `src/systems/DataQualityTracker.ts` | Covariates (focus loss, technical errors) kept separate from trait signal.  |
+| `src/systems/ResearchRuntime.ts`    | Runtime wiring and the `window.researchRuntime` debug API.                  |
 
-Every meaningful player action relevant to scoring must pass through `EventLogger`.
+`QualtricsBridge` reads `participant_id`, `game_session_id`, `condition`,
+`return_url` and `game_version` from URL parameters, builds the return URL, and
+safely encodes summary variables — without ever mutating the raw log.
 
-Every derived score must be computed through `ScoringManager`.
+## Where the schema and the scoring model actually live
 
-`QualtricsBridge` handles:
+This file is **not** a schema. Do not derive event names, payload fields, or
+summary variables from it.
 
-- reading `participant_id`, `game_session_id`, `condition`, `return_url`, and `game_version` from URL parameters
-- building the return URL
-- safely encoding summary variables
+| Question                                       | Authoritative source                                            |
+| ---------------------------------------------- | --------------------------------------------------------------- |
+| Approved event names and payload fields        | `docs/research/event-schema.md`                                 |
+| Approved derived variables and formulas        | `docs/research/scoring-plan.md`                                 |
+| How a Q-item becomes a gameplay opportunity    | `docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md` |
+| Architecture, room structure, build discipline | `docs/ai/fable-claude-final-game-build-contract-v3.txt` (V3)    |
+| Approved decisions and the open-decision queue | `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md`            |
 
-## Initial Research Variables
+**Candidate events and candidate derived indicators appearing in design
+documents — including the Q01-Q33 measurement specification — are not
+automatically production schema.** A candidate becomes canonical only through an
+explicit research-owner event-schema or scoring-plan decision.
 
-Initial summary variables should include:
+## Obsolete — do not use
 
-- `participant_id`
-- `game_session_id`
-- `condition`
-- `game_version`
-- `completed`
-- `elapsed_seconds`
+The following material from earlier drafts of this file is **superseded and kept
+only so it is recognisable as stale**. It must not be implemented, restored, or
+cited as a schema.
+
+**Obsolete initial summary-variable list.** These names do not exist in
+`ScoringManager`, trace to no approved scoring plan, and reflect an abandoned
+"proactivity" model rather than the current construct subindices:
+
 - `game_proactive_total`
 - `game_detection_score`
 - `game_information_seeking_score`
@@ -91,28 +114,37 @@ Initial summary variables should include:
 - `game_persistence_score`
 - `game_social_calibration_score`
 - `game_goal_balance_score`
-- `interaction_count`
-- `wrong_interactions`
-- `focus_loss_count`
-- `focus_loss_seconds`
-- `technical_error_count`
 
-## Raw Event Log Structure
+The identifier and covariate fields that earlier accompanied that list
+(`participant_id`, `game_session_id`, `condition`, `game_version`, `completed`,
+`elapsed_seconds`, `interaction_count`, `wrong_interactions`, `focus_loss_count`,
+`focus_loss_seconds`, `technical_error_count`) are not obsolete as concepts, but
+their approved names and shapes are governed by `docs/research/scoring-plan.md`,
+not by this file.
 
-Raw event logs should follow this general structure:
+**Obsolete minimal raw-event structure.** An earlier draft showed a small
+`{ session_id, timestamp_ms, scene, episode, event_type, object_id, x, y,
+state_before, state_after, score_delta }` shape as the governing schema. It is
+**not** the governing schema — the canonical `RawGameEvent` payload is defined in
+`docs/research/event-schema.md` §1 (which uses `room_id`/`previous_state`/
+`new_state` and adds `participant_id`, `task_id`, `study_item_ids`,
+`construct_id`, `choice_value`, `attempt_number`, `success`, `metadata`, and
+others).
 
-```ts
-{
-  session_id: string;
-  timestamp_ms: number;
-  scene: string;
-  episode?: string;
-  event_type: string;
-  object_id?: string;
-  x?: number;
-  y?: number;
-  state_before?: string;
-  state_after?: string;
-  score_delta?: Record<string, number>;
-}
-```
+## Non-negotiable research constraints
+
+- No single global "good player" or personality score, ever.
+- Adaptive persistence and inappropriate persistence stay separate variables with
+  opposite interpretation; higher inappropriate persistence is always worse.
+- Raw duration alone is neither persistence nor effort.
+- Raw events, process variables and construct subindices stay distinguishable, as
+  do opportunity, choice, process, outcome and control variables.
+- Never reproduce exact or near-exact questionnaire wording in player-facing text.
+- Candidate gameplay indicators are not validated item scores.
+
+## Forbidden RPG progression mechanics
+
+No money, shops, XP, skill levels, combat, stat boosts, or power-ups — and no
+mechanic that changes task difficulty across participants. The station is an
+assessment environment; progression fantasy would confound every construct it
+touches.

@@ -27,7 +27,12 @@ plan (`docs/ai/COST-CONTROLLED-AGENT-ROUTING.md`); stay narrow and stay short.
 - No git operations (no staging, commits, branches, pushes).
 - No shell commands, builds, tests, or dev servers.
 - No scientific, psychometric, or scoring judgements - if the question requires
-  interpreting the research contract, say so and stop; do not guess.
+  interpreting the research contract or the authority hierarchy, say so and stop;
+  do not guess. Authority is domain-specific and is defined in `CLAUDE.md` and
+  `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md`; you may **point** a caller
+  to those, but you never apply them. In particular, do not report an event name
+  found only in a design document as if it were canonical - approved event names
+  live in `docs/research/event-schema.md`.
 - No review verdicts (pass/fail, sound/blocked) - that is the Sonnet reviewers'
   job.
 - No nested agents / subagents.

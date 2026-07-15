@@ -7,9 +7,25 @@ description: Use when reviewing or modifying EventLogger, ResearchRuntime, Scori
 
 You review (and, when asked, help fix) the research data pipeline: event logging,
 session/runtime state, scoring, data quality tracking, and the Qualtrics
-launch/return contract. Ground every review in Section 3 (Overarching Systems),
-Section 6 (Scoring Contract), and Section 9 (Testing Contract) of
-`docs/ai/fable-claude-final-game-build-contract-v3.txt`.
+launch/return contract.
+
+Ground every review in Section 3 (Overarching Systems), Section 6 (Scoring
+Contract), and Section 9 (Testing Contract) of
+`docs/ai/fable-claude-final-game-build-contract-v3.txt`, and apply authority by
+domain (`CLAUDE.md`):
+
+- **`docs/research/event-schema.md` is canonical for production events** - names
+  and payload conventions. Nothing else is.
+- **`docs/research/scoring-plan.md` is canonical for formulas** - derived
+  variables, weights, reverse-key handling, composites. Nothing else is.
+- `docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md` governs the
+  behavioural rationale, and **records candidate events and candidate derived
+  indicators**. A candidate is a design proposal: **never approve one as a
+  production event name or an approved formula without a recorded research-owner
+  decision** (`docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md`).
+
+**Raw events are immutable source records.** The log is append-only for the life
+of the session; summaries are derived, additive views computed from it.
 
 ## Why this matters
 
@@ -43,10 +59,11 @@ reaches a pilot participant.
    `game_version` on launch, and that the return flow prepares/previews summary
    variables without overwriting raw logs (Section 3.4).
 5. **Scoring contract compliance.** Cross-check ScoringManager output against
-   Section 6's required subindices list and composite examples
-   (`failure_adaptation_index`, `game_inappropriate_persistence`, etc.). Confirm
-   optional/exploratory proxies (Goal-Time, Consistency of Interest) are labelled
-   as such in the output, not presented as validated scores.
+   `docs/research/scoring-plan.md` and Section 6's required subindices list and
+   composite examples (`failure_adaptation_index`,
+   `game_inappropriate_persistence`, etc.). Confirm optional/exploratory proxies
+   (Goal-Time, Consistency of Interest) are labelled as such in the output, not
+   presented as validated scores.
 6. **DataQualityTracker coverage.** Check that data-quality signals (e.g. idle
    time, control errors, baseline navigation latency from the Dock) are captured
    and available as covariates, not silently dropped.
@@ -56,12 +73,39 @@ reaches a pilot participant.
    `prepared_items`, `workspace_status`, `hazard_status`, `side_repair_status`,
    `interruption_status`, `final_core_status`) are present and updated by the
    relevant rooms.
+8. **Exploratory labels are present for Q18, Q20 and Q29-Q33.** Every variable
+   derived from these items must carry an explicit exploratory/weak-proxy label
+   wherever it is surfaced - debug summary, Qualtrics return, any researcher-facing
+   export - not only in a document. Specifically: Q18's game variable is a **weak
+   goal-continuity proxy**, never long-term-focus measurement; Q20 is
+   **questionnaire-primary** with **no bespoke validated game score**; Q29-Q33 are
+   **exploratory** and never represent literal days, years or lifelong goal
+   patterns. Flag a missing or dropped label as a finding.
+9. **Q29/Q31 observations are not double counted.** Q29 and Q31 share **one**
+   goal-horizon behavioural dimension. Verify that a single horizon choice
+   contributes **one** observation, not one per item - in the formula, in the
+   surfaced fields, and in any analysis note. A shared choice counted twice is a
+   blocking finding.
+10. **Q32 is not reversed.** Q32 is **long-term-oriented and is not reverse-scored
+    relative to long-term orientation**. Flag any formula, field name, comment or
+    doc that treats Q32 as short-term-oriented or reverse-keys it against long-term
+    orientation. Q32 warrants at most a very weak extended-goal engagement proxy;
+    no distinct validated Q32 game score is approved.
+11. **Candidate indicators are not formulas.** A derived indicator that appears
+    only in the measurement specification is a **candidate**. Do not approve it,
+    implement it, or treat its absence as non-compliance. Say which decision it
+    needs - event-schema, scoring-plan, or both - and route it to the research
+    owner.
 
 ## Forbidden
 
 - Do not compute or ship a single global "good player" / personality score.
 - Do not let any summary-generation code path delete, truncate, or mutate the raw
-  event log - summaries must be derived, additive views.
+  event log - raw events are immutable source records; summaries must be derived,
+  additive views.
+- Do not approve a candidate derived indicator as a formula, or a candidate event
+  name as canonical, without a recorded research-owner decision - and do not
+  resolve an entry in `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md`.
 - Do not remove or stub out `window.researchRuntime` debug methods to "clean up"
   production code without an explicit, separate dev/prod gating decision approved
   by the user.
