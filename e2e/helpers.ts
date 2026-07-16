@@ -39,6 +39,8 @@ export interface LaunchParams {
   game_version?: string;
   return_url?: string;
   scene?: string;
+  /** Test-only ingestion unit: only `test` ever enables the exporter. */
+  launch_mode?: string;
 }
 
 /** Navigates with Qualtrics-style launch params and waits for boot. */

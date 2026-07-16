@@ -5,6 +5,12 @@ interface ImportMetaEnv {
   readonly VITE_APP_NAME: string;
   readonly VITE_APP_VERSION: string;
   readonly VITE_GOOGLE_ANALYTICS_ID: string;
+  // Test-only research ingestion (development Supabase Edge Function).
+  // Deliberately `| undefined`: neither variable ships in tracked env
+  // files — real values live only in the untracked `.env.local` (see
+  // `.env.example`), so callers must handle the unset case.
+  readonly VITE_RESEARCH_INGEST_URL: string | undefined;
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY: string | undefined;
 }
 
 interface ImportMeta {

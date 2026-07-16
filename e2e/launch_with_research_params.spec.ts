@@ -89,16 +89,20 @@ test.describe('launch with research params', () => {
     });
 
     // Baseline six methods plus getMissionState (Wave 1B additive,
-    // read-only mission-state probe; baseline-e8a8994's 6-method surface
-    // is a minimum, extended deliberately for runtime verification).
+    // read-only mission-state probe) plus getLastExportResult /
+    // submitSessionExport (test-only ingestion unit, additive dev-only
+    // export surface; baseline-e8a8994's 6-method surface is a minimum,
+    // extended deliberately for runtime verification).
     expect(result.surface).toEqual([
       'completeDebugSession',
       'exportEventsJSON',
       'getEvents',
+      'getLastExportResult',
       'getMissionState',
       'getSummary',
       'printEvents',
       'printSummary',
+      'submitSessionExport',
     ]);
     expect(result.exportedLength).toBe(result.before);
     // Append-only: completing a session adds events, never removes.
