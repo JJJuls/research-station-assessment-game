@@ -23,6 +23,11 @@ export class DataQualityTracker {
     window.addEventListener('blur', this.handleFocusLoss);
     window.addEventListener('focus', this.handleFocusReturn);
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    window.addEventListener('error', this.handleGlobalTechnicalError);
+    window.addEventListener(
+      'unhandledrejection',
+      this.handleGlobalTechnicalError,
+    );
     this.isStarted = true;
   }
 
@@ -36,6 +41,11 @@ export class DataQualityTracker {
     document.removeEventListener(
       'visibilitychange',
       this.handleVisibilityChange,
+    );
+    window.removeEventListener('error', this.handleGlobalTechnicalError);
+    window.removeEventListener(
+      'unhandledrejection',
+      this.handleGlobalTechnicalError,
     );
     this.endFocusLoss();
     this.isStarted = false;
@@ -52,6 +62,19 @@ export class DataQualityTracker {
   recordTechnicalError() {
     this.metrics.technical_error_count++;
   }
+
+  /**
+   * Uncaught window errors and unhandled promise rejections are counted as
+   * a data-quality covariate ONLY — the error/reason payload is deliberately
+   * never read or stored (no message, stack, URL or rejection value), so
+   * non-Error rejection values are safe by construction and no participant
+   * or environment detail can leak into research data. The event is not
+   * cancelled, preserving the browser's default console reporting. The
+   * handler body cannot throw: it only increments a counter.
+   */
+  private readonly handleGlobalTechnicalError = () => {
+    this.recordTechnicalError();
+  };
 
   private readonly handleFocusLoss = () => {
     this.beginFocusLoss();
