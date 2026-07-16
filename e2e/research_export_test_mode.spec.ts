@@ -30,6 +30,14 @@ const INGEST_PATH = '/__e2e-mock__/functions/v1/ingest-research-session';
 const INGEST_ROUTE = `**${INGEST_PATH}`;
 const MOCK_KEY = 'sb_publishable_e2e_mock_only';
 
+/**
+ * Dev-server host the suite runs against. Mirrors playwright.config.ts:
+ * PW_DEV_PORT overrides the port so parallel checkouts/worktrees run their
+ * own server — the "stayed on the game page" assertions must follow it
+ * instead of assuming the default :5173.
+ */
+const DEV_HOST = `localhost:${Number(process.env.PW_DEV_PORT ?? 5173)}`;
+
 const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -295,7 +303,7 @@ test.describe('research export (test mode only)', () => {
     // No Qualtrics redirect: the return URL stays a console preview and the
     // page never navigates away from the game.
     expect(completion.returnUrl).toContain('https://example.org/return');
-    expect(page.url()).toContain('localhost:5173');
+    expect(page.url()).toContain(DEV_HOST);
     expect(page.url()).toContain('launch_mode=test');
   });
 
@@ -643,6 +651,6 @@ test.describe('research export (test mode only)', () => {
     // Participant completion finished; the exporter never woke up.
     expect(captured).toHaveLength(0);
     expect(await getLastExportResult(page)).toBeNull();
-    expect(page.url()).toContain('localhost:5173');
+    expect(page.url()).toContain(DEV_HOST);
   });
 });
