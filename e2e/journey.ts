@@ -2,7 +2,13 @@ import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 import type { HubStationRoomId, LaunchParams, RawEventLike } from './helpers';
-import { getEvents, hold, hubToStationDoor, press } from './helpers';
+import {
+  driveAxisTo,
+  getEvents,
+  hold,
+  hubToStationDoor,
+  press,
+} from './helpers';
 
 /**
  * Sprint A (A3): reusable connected-journey helpers. Journeys drive the
@@ -28,19 +34,23 @@ export const SCENE_KEY: Record<HubStationRoomId, string> = {
 };
 
 /**
- * Timed east leg (ms) from the west-wall clamp to each room's Hub door
- * along the clear bottom corridor. 20×13 rooms: door x 320 (verified value
- * from the Wave 1B repair spec); 24×9 interruption corridor: door x 384.
+ * Exit-door x per room, for the position-synced east leg from the west-wall
+ * clamp along the clear bottom corridor. 20×13 rooms: door x 320 (verified
+ * value from the Wave 1B repair spec); 24×9 interruption corridor: door
+ * x 384. (Replaces the former fixed-duration 1550/1950 ms legs — the known
+ * movement-undershoot flake genre: under CPU load Phaser's frame-delta cap
+ * under-delivers a timed hold, observed live on this leg during the
+ * pilot-slice bring-up.)
  */
-const EXIT_EAST_LEG_MS: Record<HubStationRoomId, number> = {
-  archive_room: 1550,
-  systems_repair_room: 1550,
-  engineer_hub: 1550,
-  inventory_prep_room: 1550,
-  hazard_control_room: 1550,
-  optional_side_repair_bay: 1550,
-  interruption_corridor: 1950,
-  final_core_room: 1550,
+const EXIT_DOOR_X: Record<HubStationRoomId, number> = {
+  archive_room: 320,
+  systems_repair_room: 320,
+  engineer_hub: 320,
+  inventory_prep_room: 320,
+  hazard_control_room: 320,
+  optional_side_repair_bay: 320,
+  interruption_corridor: 384,
+  final_core_room: 320,
 };
 
 export interface ErrorCapture {
@@ -58,6 +68,18 @@ export function captureErrors(page: Page): ErrorCapture {
   page.on('pageerror', (error) => capture.pageErrors.push(String(error)));
   page.on('console', (message) => {
     if (message.type() === 'error') {
+      // Headless-environment noise, not an app error: Chromium's WebAudio
+      // renderer intermittently fails against the machine's audio device
+      // (SwiftShader/headless session). Nothing in the game reads audio
+      // state; every genuine app failure still fails the gate.
+      if (
+        message
+          .text()
+          .includes('The AudioContext encountered an error from the audio')
+      ) {
+        return;
+      }
+
       capture.consoleErrors.push(message.text());
     }
   });
@@ -188,11 +210,15 @@ export async function bootJourney(
 export async function dockToHubJourney(page: Page) {
   const before = await eventCount(page, 'scene_start', 'hub');
 
+  // Anchor legs stay fixed-duration clamps; the west/north/east legs are
+  // position-synced (driveAxisTo ends on the OBSERVED position or a wall
+  // stall, so CPU load can never silently under-deliver them — the former
+  // timed east leg to the door at x 368 failed under load).
   await hold(page, 'ArrowDown', 3000);
   await hold(page, 'ArrowUp', 200);
-  await hold(page, 'ArrowLeft', 4600);
-  await hold(page, 'ArrowUp', 3000);
-  await hold(page, 'ArrowRight', 1850);
+  await driveAxisTo(page, 'x', 30, 24);
+  await driveAxisTo(page, 'y', 40, 16);
+  await driveAxisTo(page, 'x', 368, 16);
   await press(page, 'Space');
   await waitForEventCount(page, 'scene_start', 'hub', before + 1);
 }
@@ -227,14 +253,14 @@ export async function hubToDockJourney(page: Page) {
   const before = await eventCount(page, 'scene_start', 'dock');
 
   // Pocket/block-safe normalization (see hubToStationDoor): south clamp,
-  // short Up hop onto a clear row, west clamp, re-clamp south along the
-  // obstacle-free west column, then the timed east leg to the dock door
-  // (x 416 ≈ 372 px from the west wall).
+  // short Up hop onto a clear row, then position-synced west, south and
+  // east legs to the dock door column (x 416; the door sits in the bottom
+  // wall, in range from the bottom corridor row).
   await hold(page, 'ArrowDown', 3200);
   await hold(page, 'ArrowUp', 400);
-  await hold(page, 'ArrowLeft', 4600);
-  await hold(page, 'ArrowDown', 3200);
-  await hold(page, 'ArrowRight', 2150);
+  await driveAxisTo(page, 'x', 44, 12);
+  await driveAxisTo(page, 'y', 424, 12);
+  await driveAxisTo(page, 'x', 416, 12);
   await press(page, 'Space');
   await waitForEventCount(page, 'scene_start', 'dock', before + 1);
 }
@@ -266,10 +292,12 @@ export async function stationToHubJourney(
   const before = await eventCount(page, 'scene_start', 'hub');
 
   // Clamp legs sized for the full room extents (20×13 rooms: worst
-  // horizontal traverse ≈ 552 px), so the exit works from ANY position.
+  // horizontal traverse ≈ 552 px), so the exit works from ANY position;
+  // the final east leg is position-synced on the observed player x so CPU
+  // load can never make it silently under-shoot the door column.
   await hold(page, 'ArrowDown', 2400);
   await hold(page, 'ArrowLeft', 3400);
-  await hold(page, 'ArrowRight', EXIT_EAST_LEG_MS[roomId]);
+  await driveAxisTo(page, 'x', EXIT_DOOR_X[roomId], 20);
   await press(page, 'Space');
   await waitForEventCount(page, 'scene_start', 'hub', before + 1);
 }

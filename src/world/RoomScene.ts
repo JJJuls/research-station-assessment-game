@@ -396,6 +396,38 @@ export abstract class RoomScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * Logs a pilot-scenario telemetry event (src/scenarios framework):
+   * interaction context plus a first-class choice_value and free-form
+   * metadata. Deliberately additive beside logRoomEvent — scenario events
+   * are unmapped pilot telemetry (no CANONICAL_EVENT_CONTEXT entry exists
+   * for them by governance), so this path never spreads canonical context.
+   */
+  protected logScenarioEvent(
+    interactionKey: InteractionKey,
+    eventType: string,
+    context?: {
+      choice_value?: string | number | null;
+      metadata?: Record<string, unknown>;
+    },
+  ) {
+    const interaction: ResearchInteraction =
+      researchInteractions[interactionKey];
+
+    researchRuntime.logInteraction({
+      scene: this.scene.key,
+      episode: interaction.episode,
+      event_type: eventType,
+      object_id: interaction.object_id,
+      x: this.player.x,
+      y: this.player.y,
+      room_id: interaction.room_id,
+      task_id: interaction.task_id,
+      choice_value: context?.choice_value,
+      metadata: context?.metadata,
+    });
+  }
+
   protected showFeedbackMessage(message: string) {
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
       window.__lastRoomFeedbackText = message;
@@ -500,10 +532,20 @@ export abstract class RoomScene extends Phaser.Scene {
   /**
    * One stable handler per numeric key so on/off pairs match exactly
    * (allocated once per scene instance; index = option position).
+   *
+   * OS key autorepeat is ignored (KeyboardEvent.repeat): a held numeric key
+   * must select exactly once, never cascade through chained prompt stages
+   * (U3 nextStage flows — duty offers, scenario briefings/evidence). Only
+   * the initial physical keypress selects; discrete presses are unaffected.
    */
-  private readonly promptKeyHandlers: (() => void)[] = PROMPT_KEY_NAMES.map(
-    (_, index) => () => this.selectPromptOption(index),
-  );
+  private readonly promptKeyHandlers: ((event: KeyboardEvent) => void)[] =
+    PROMPT_KEY_NAMES.map((_, index) => (event: KeyboardEvent) => {
+      if (event.repeat) {
+        return;
+      }
+
+      this.selectPromptOption(index);
+    });
 
   private selectPromptOption(index: number) {
     if (this.activePrompt === null) {

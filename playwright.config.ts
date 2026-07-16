@@ -3,8 +3,15 @@ import { defineConfig } from '@playwright/test';
 /**
  * V1-slice smoke suite (docs/testing/playwright-smoke-plan.md; V3 §9).
  * Run with: npx playwright test
- * Reuses a dev server already running on :5173, otherwise starts one.
+ * Reuses a dev server already running on the port, otherwise starts one.
+ *
+ * PW_DEV_PORT overrides the dev-server port (default 5173) so parallel
+ * checkouts/worktrees can run their own server instead of silently reusing
+ * another tree's :5173 instance (reuseExistingServer would otherwise test
+ * the WRONG code — observed live during the pilot-slice bring-up).
  */
+const port = Number(process.env.PW_DEV_PORT ?? 5173);
+
 export default defineConfig({
   testDir: './e2e',
   timeout: 120_000,
@@ -14,7 +21,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: `http://localhost:${port}`,
     viewport: { width: 800, height: 600 },
     // The first WebGL context of a fresh headless Chromium on this machine
     // fails Phaser's renderer boot ("Framebuffer status: Framebuffer
@@ -27,8 +34,8 @@ export default defineConfig({
     },
   },
   webServer: {
-    command: 'npx vite --port 5173 --strictPort',
-    url: 'http://localhost:5173',
+    command: `npx vite --port ${port} --strictPort`,
+    url: `http://localhost:${port}`,
     reuseExistingServer: true,
     timeout: 60_000,
   },

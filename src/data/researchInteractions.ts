@@ -46,6 +46,17 @@ export const researchInteractions = {
     score_tags: ['tutorial', 'control', 'movement', 'instruction_following'],
     room_id: 'dock_arrival',
   },
+  engineerCalibrationBench: {
+    object_id: 'engineer_calibration_bench',
+    label: 'Calibration Bench',
+    // Pilot ethical-decision scenario station (src/scenarios framework).
+    // scenario_* events are pilot-development telemetry only: no canonical
+    // task_id, no Q-mapping, no construct scoring (scenarioTypes.ts note).
+    episode: 'pilot_scenario_calibration_anomaly',
+    event_type: 'scenario_entered',
+    score_tags: [],
+    room_id: 'engineer_hub',
+  },
   engineerReportBack: {
     object_id: 'engineer_report_back',
     label: 'Engineer Kai - Status Report',
@@ -77,6 +88,17 @@ export const researchInteractions = {
     score_tags: ['uncertainty_persistence'],
     room_id: 'hazard_control_room',
     task_id: 'hazard_route_decision',
+  },
+  hubPriorityAllocation: {
+    object_id: 'hub_priority_allocation_console',
+    label: 'Priority Allocation Console',
+    // Pilot ethical-decision scenario station (src/scenarios framework);
+    // same governance note as engineerCalibrationBench. Lives in the Hub
+    // control area — scenario_* telemetry stays control/pilot data.
+    episode: 'pilot_scenario_priority_allocation',
+    event_type: 'scenario_entered',
+    score_tags: [],
+    room_id: 'station_hub',
   },
   inventoryPrepChecklist: {
     object_id: 'inventory_prep_checklist',

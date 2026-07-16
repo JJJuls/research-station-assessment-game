@@ -1,4 +1,5 @@
 import { key } from '../constants';
+import { priorityAllocationScenario, ScenarioController } from '../scenarios';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 import { getStationByRoomId, RoomScene, STATION_REGISTRY } from '../world';
@@ -14,6 +15,15 @@ import { getStationByRoomId, RoomScene, STATION_REGISTRY } from '../world';
 export class HubScene extends RoomScene {
   protected readonly roomId = 'station_hub';
   protected readonly roomInteractionKey: InteractionKey = 'stationHub';
+
+  /**
+   * Pilot Scenario B (priority allocation) — additive station driven by
+   * the src/scenarios framework. Its scenario_* events are pilot telemetry
+   * with study_item_ids/construct absent, so the Hub's "never Q-mapped"
+   * rule is preserved. Recreated per scene instance; progress lives at
+   * framework module scope.
+   */
+  private allocationScenario: ScenarioController | null = null;
 
   constructor() {
     super(key.scene.hub);
@@ -119,6 +129,28 @@ export class HubScene extends RoomScene {
         return false;
       },
     });
+
+    // Pilot Scenario B: priority allocation console on the SOUTH face of
+    // the central console block, west end (11.5*32, 9.5*32) — 80 px from
+    // the Dock-entry spawn (416, 368), keeping the registry rule that no
+    // spawn lands inside a 72 px interaction radius, and 80+ px from the
+    // status board (approached from the north), so each interactable stays
+    // the strict nearest target on its own side. Clear of every door route
+    // and of hubToStatusBoard's position-synced driving legs.
+    this.allocationScenario = new ScenarioController(
+      priorityAllocationScenario,
+      {
+        logScenarioEvent: (eventType, context) =>
+          this.logScenarioEvent('hubPriorityAllocation', eventType, context),
+        showFeedback: (message) => this.showFeedbackMessage(message),
+      },
+    );
+    this.addStation(
+      this.allocationScenario.buildStationConfig({
+        x: 11.5 * 32,
+        y: 9.5 * 32,
+      }),
+    );
   }
 
   protected onRoomEntered(): void {
@@ -128,10 +160,20 @@ export class HubScene extends RoomScene {
     this.logRoomEvent('stationHub', 'station_hub_entered');
   }
 
-  protected getPromptOptions(): PromptOption[] {
-    // The Hub has no choice prompts; its single station short-circuits in
-    // onPromptOpened. Returning an empty list keeps the base class safe.
+  protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
+    // Pilot Scenario B prompt tree; the Status Board keeps short-circuiting
+    // in its own onPromptOpened (no options ever render for it).
+    if (interactionKey === 'hubPriorityAllocation') {
+      return this.allocationScenario?.getRootOptions() ?? [];
+    }
+
     return [];
+  }
+
+  protected onRoomExit(): void {
+    // Leaving the Hub with the allocation scenario entered but uncommitted
+    // is measured abandonment telemetry (framework logs once per departure).
+    this.allocationScenario?.handleRoomExit();
   }
 
   private buildStatusBoardText(): string {

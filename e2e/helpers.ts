@@ -221,50 +221,62 @@ export type HubStationRoomId =
  *    west wall column to the corner.
  */
 export async function hubToNorthWestAnchor(page: Page) {
+  // Down-clamp + short up-hop stay fixed-duration (their outcome is a
+  // clamp/pocket-escape, not a position); the long west/north legs are
+  // position-synced — the former full-width Left-4600 hold had only ~8%
+  // delivery margin from the east side and under-shot under CPU load.
   await hold(page, 'ArrowDown', 3200);
   await hold(page, 'ArrowUp', 400);
-  await hold(page, 'ArrowLeft', 4600);
-  await hold(page, 'ArrowUp', 3000);
+  await driveAxisTo(page, 'x', 44, 12);
+  await driveAxisTo(page, 'y', 76, 12);
 }
 
 export async function hubToStationDoor(page: Page, roomId: HubStationRoomId) {
-  // Every route starts at the NW anchor (position independence); east-side
-  // doors then clamp across the clear top row (row 2) to the NE corner.
+  // Every route starts at the NW anchor (position independence). The final
+  // leg to each door is position-synced on the observed player position
+  // (driveAxisTo) instead of a fixed-duration hold — the former timed legs
+  // were the known movement-undershoot flake genre (under CPU load Phaser's
+  // frame-delta cap under-delivers a hold; observed live on the engineer
+  // leg during the pilot-slice bring-up). Route shapes are unchanged: the
+  // top row (row 2), the west-wall column, and the east-wall column are
+  // audited-clear traversal lanes.
   await hubToNorthWestAnchor(page);
 
   switch (roomId) {
-    // Top-wall doors from the north-west corner:
-    case 'archive_room': // door x 128 (~84 px from corner)
-      await hold(page, 'ArrowRight', 500);
+    // Top-wall doors (y 48; the corner clamp row y≈76 is in vertical
+    // range, so only x needs driving):
+    case 'archive_room':
+      await driveAxisTo(page, 'x', 128, 20);
       break;
-    case 'systems_repair_room': // door x 320 (~276 px from corner)
-      await hold(page, 'ArrowRight', 1500);
+    case 'systems_repair_room':
+      await driveAxisTo(page, 'x', 320, 20);
       break;
-    // Top-wall doors from the north-east corner:
-    case 'engineer_hub': // door x 512 (~276 px from east corner)
-      await hold(page, 'ArrowRight', 4600);
-      await hold(page, 'ArrowLeft', 1500);
+    case 'engineer_hub':
+      await driveAxisTo(page, 'x', 512, 20);
       break;
-    case 'inventory_prep_room': // door x 704 (~84 px from east corner)
-      await hold(page, 'ArrowRight', 4600);
-      await hold(page, 'ArrowLeft', 400);
+    case 'inventory_prep_room':
+      await driveAxisTo(page, 'x', 704, 20);
       break;
     // Left-wall doors (door x 24 is inside the wall; the west clamp
     // already puts the player in x-range):
-    case 'hazard_control_room': // door y 208 (~126 px below corner)
-      await hold(page, 'ArrowDown', 800);
+    case 'hazard_control_room':
+      await driveAxisTo(page, 'y', 208, 20);
       break;
-    case 'optional_side_repair_bay': // door y 304 (~222 px below corner)
-      await hold(page, 'ArrowDown', 1400);
+    case 'optional_side_repair_bay':
+      await driveAxisTo(page, 'y', 304, 20);
       break;
-    // Right-wall doors, from the north-east corner:
-    case 'interruption_corridor': // door y 208
-      await hold(page, 'ArrowRight', 4600);
-      await hold(page, 'ArrowDown', 800);
+    // Right-wall doors (door x 808 is inside the wall; drive to the east
+    // wall along the clear top row first, then drive y). The former timed
+    // Right-4600 clamp had only ~8% delivery margin over the full hub
+    // width — under CPU load it fell short of the wall and left the door
+    // out of range (observed live on the final-core leg).
+    case 'interruption_corridor':
+      await driveAxisTo(page, 'x', 788, 12);
+      await driveAxisTo(page, 'y', 208, 20);
       break;
-    case 'final_core_room': // door y 304
-      await hold(page, 'ArrowRight', 4600);
-      await hold(page, 'ArrowDown', 1400);
+    case 'final_core_room':
+      await driveAxisTo(page, 'x', 788, 12);
+      await driveAxisTo(page, 'y', 304, 20);
       break;
   }
 
@@ -301,7 +313,7 @@ export async function playerProbe(
  * mutation); the bounded burst count is only an anti-hang safety stop, never
  * an interaction retry.
  */
-async function driveAxisTo(
+export async function driveAxisTo(
   page: Page,
   axis: 'x' | 'y',
   target: number,
@@ -336,7 +348,12 @@ async function driveAxisTo(
         : forward
           ? 'ArrowDown'
           : 'ArrowUp';
-    await hold(page, key, 100);
+
+    // Adaptive burst: long remaining distances use longer holds (~70 px at
+    // 175 px/s) so cross-room legs stay fast; the final approach drops to
+    // short 100 ms bursts (~17 px) for precision. Stall detection above is
+    // unaffected — any wall clamp still ends the leg.
+    await hold(page, key, Math.abs(current - target) > 120 ? 400 : 100);
   }
 }
 
@@ -358,6 +375,78 @@ export async function hubToStatusBoard(page: Page) {
   await driveAxisTo(page, 'x', 416, 24); // board column, over the block
   await driveAxisTo(page, 'y', 260, 20); // descend; stalls on the block top (~232)
   await press(page, 'Space');
+}
+
+/**
+ * Walks from anywhere in the Hub to the Priority Allocation console (pilot
+ * Scenario B; HubScene x=11.5*32, y=9.5*32 on the SOUTH face of the central
+ * console block) and presses SPACE. Position-synced like hubToStatusBoard:
+ *   1. clamp the west wall (clear vertical corridor from any spawn);
+ *   2. descend to the clear south corridor row;
+ *   3. move east to the console's column along that clear row;
+ *   4. rise — clamps under the console block within a few px of the
+ *      console itself.
+ * The status board (80+ px away through the block) is always the farther
+ * target from the south approach, so SPACE binds to the console.
+ */
+export async function hubToAllocationConsole(page: Page) {
+  await driveAxisTo(page, 'x', 30, 24); // west wall (clear vertical corridor)
+  await driveAxisTo(page, 'y', 368, 24); // clear south corridor row
+  await driveAxisTo(page, 'x', 368, 12); // console column
+  await driveAxisTo(page, 'y', 304, 12); // rise; clamps at the block face
+  await press(page, 'Space');
+}
+
+/**
+ * Walks from anywhere in the Engineer Hub to the Calibration Bench (pilot
+ * Scenario A; EngineerScene x=16*32, y=5.5*32) and presses SPACE.
+ * Position-synced route through audited-clear lanes: row 8 (fully open) to
+ * column 14 (open from row 1 to row 10 — the col 12-14 corridor between
+ * the bench blocks), then up to the bench row. The SPACE press lands ~64 px
+ * from the bench and ~144 px from Kai, so the bench is the nearest target.
+ */
+export async function engineerToCalibrationBench(page: Page) {
+  await driveAxisTo(page, 'y', 272, 16); // clear row 8 (fully open)
+  await driveAxisTo(page, 'x', 448, 12); // column 14 (open corridor)
+  await driveAxisTo(page, 'y', 176, 16); // rise beside the bench
+  await press(page, 'Space');
+}
+
+/** Shape of one scenario's dev-only progress probe (ScenarioController). */
+export interface ScenarioProbeLike {
+  entered: boolean;
+  enteredAtMs: number | null;
+  briefingOpens: number;
+  evidenceViewed: string[];
+  evidenceOpens: number;
+  optionalInfoRequests: number;
+  selectedValue: string | null;
+  selectionChanges: number;
+  committedValue: string | null;
+  consequenceShown: boolean;
+  completed: boolean;
+  interruptions: number;
+  abandonments: number;
+}
+
+/**
+ * Reads the dev-only, read-only scenario progress probe
+ * (window.__scenarioProbe, ScenarioController.ts; stripped from production
+ * builds). Returns null when the scenario has not been touched yet.
+ */
+export async function scenarioProbe(
+  page: Page,
+  scenarioId: string,
+): Promise<ScenarioProbeLike | null> {
+  return page.evaluate(
+    (id) =>
+      (
+        window as unknown as {
+          __scenarioProbe?: Record<string, never> | null;
+        }
+      ).__scenarioProbe?.[id] ?? null,
+    scenarioId,
+  );
 }
 
 /**

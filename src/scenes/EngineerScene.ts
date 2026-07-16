@@ -1,5 +1,6 @@
 import { key } from '../constants';
 import { RELAY_SUPERVISION_DUTY_ID } from '../data/duties';
+import { calibrationAnomalyScenario, ScenarioController } from '../scenarios';
 import { researchRuntime } from '../systems';
 import type {
   InteractionKey,
@@ -40,6 +41,13 @@ import { RoomScene } from '../world';
 export class EngineerScene extends RoomScene {
   protected readonly roomId = 'engineer_hub';
   protected readonly roomInteractionKey: InteractionKey = 'engineerReportBack';
+
+  /**
+   * Pilot Scenario A (calibration anomaly) — additive station driven by the
+   * src/scenarios framework; the legacy Kai report task is untouched.
+   * Recreated per scene instance; progress lives at framework module scope.
+   */
+  private calibrationScenario: ScenarioController | null = null;
 
   constructor() {
     super(key.scene.engineer);
@@ -98,6 +106,21 @@ export class EngineerScene extends RoomScene {
       },
     });
 
+    // Pilot Scenario A: calibration bench in the east work-bench area,
+    // well clear of Kai's alcove (192 px away — the 72 px interaction
+    // radii can never overlap) and of the exit door path.
+    this.calibrationScenario = new ScenarioController(
+      calibrationAnomalyScenario,
+      {
+        logScenarioEvent: (eventType, context) =>
+          this.logScenarioEvent('engineerCalibrationBench', eventType, context),
+        showFeedback: (message) => this.showFeedbackMessage(message),
+      },
+    );
+    this.addStation(
+      this.calibrationScenario.buildStationConfig({ x: 16 * 32, y: 5.5 * 32 }),
+    );
+
     // Door back to the Station Hub.
     this.addDoor({
       x: 10 * 32, // center of the bottom '--'
@@ -112,11 +135,21 @@ export class EngineerScene extends RoomScene {
     });
   }
 
+  protected onRoomExit(): void {
+    // Leaving with the calibration scenario entered but uncommitted is
+    // measured abandonment telemetry (framework logs once per departure).
+    this.calibrationScenario?.handleRoomExit();
+  }
+
   protected onRoomEntered(): void {
     this.logRoomEvent('engineerReportBack', 'engineer_hub_entered');
   }
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
+    if (interactionKey === 'engineerCalibrationBench') {
+      return this.calibrationScenario?.getRootOptions() ?? [];
+    }
+
     if (interactionKey !== 'engineerReportBack') {
       return [];
     }
