@@ -2,11 +2,12 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="favicon.ico" />
+    <!-- Empty favicon: suppresses the browser's automatic /favicon.ico
+         request; the participant artifact ships no icon asset. -->
+    <link rel="icon" href="data:," />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Game created using Phaser RPG" />
-    <link rel="apple-touch-icon" href="logo192.png" />
+    <meta name="description" content="Remote Outpost Assessment" />
 
     <!--
       manifest.json provides metadata used when your web app is installed on a
@@ -38,12 +39,15 @@
     </style>
     <% } %>
 
-    <title>Phaser RPG | remarkablegames</title>
+    <title>Remote Outpost Assessment</title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to play this game.</noscript>
 
-    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <!-- Global site tag (gtag.js) - Google Analytics.
+         Inert stub, dev-only: the participant bundle (BUNDLE=true) must ship
+         no analytics surface (PS-1 / P2-10). -->
+    <% if (process.env.BUNDLE !== 'true') { %>
     <script>
       window.dataLayer = window.dataLayer || [];
       window.gtag = function () {
@@ -51,6 +55,7 @@
       };
       gtag('js', new Date());
     </script>
+    <% } %>
 
     <script type="module" src="src/index.ts"></script>
   </body>

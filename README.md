@@ -1,17 +1,10 @@
-<p align="center">
-  <img src="public/logo192.png" alt="Phaser RPG">
-</p>
+# Remote Outpost Assessment
 
-# Phaser RPG
-
-[![release](https://img.shields.io/github/v/release/remarkablegames/phaser-rpg)](https://github.com/remarkablegames/phaser-rpg/releases)
-[![build](https://github.com/remarkablegames/phaser-rpg/actions/workflows/build.yml/badge.svg)](https://github.com/remarkablegames/phaser-rpg/actions/workflows/build.yml)
-
-<kbd>phaser-rpg</kbd> is a template for making [Phaser](https://phaser.io/) RPG games. The template is inspired by [`phaser-3-tilemap-blog-posts`](https://github.com/mikewesthad/phaser-3-tilemap-blog-posts/tree/master/examples/post-1) (read the [Medium story](https://medium.com/@michaelwesthadley/958fc7e6bbd6)).
-
-Play the game on:
-
-- [remarkablegames](https://remarkablegames.org/phaser-rpg/)
+A browser-based psychology research assessment instrument built on a Phaser 3 +
+TypeScript + Vite foundation. It is launched from Qualtrics and collects
+structured behavioural data. `CLAUDE.md` and `AGENTS.md` govern how work in
+this repository is done; participant deployment is governed by
+[docs/operations/PARTICIPANT-DEPLOYMENT.md](docs/operations/PARTICIPANT-DEPLOYMENT.md).
 
 ## Prerequisites
 
@@ -35,25 +28,6 @@ Install the dependencies:
 ```sh
 npm install
 ```
-
-Rename the project:
-
-```sh
-git grep -l phaser-rpg | xargs sed -i '' -e 's/phaser-rpg/my-game/g'
-```
-
-```sh
-git grep -l 'Phaser RPG' | xargs sed -i '' -e 's/Phaser RPG/My Game/g'
-```
-
-Update the files:
-
-- [ ] `README.md`
-- [ ] `index.html`
-- [ ] `package.json`
-- [ ] `public/*.png`
-- [ ] `public/manifest.json`
-- [ ] `src/index.ts`
 
 ## Environment Variables
 
@@ -81,19 +55,23 @@ You will also see any errors in the console.
 
 ### `npm run build`
 
-Builds the game for production to the `dist` folder.
+Builds the game for production to the `dist` folder (minified, hashed filenames).
 
-It correctly bundles in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.
-
-Your game is ready to be deployed!
+**This output is not the participant deployment artifact.** It uses an absolute
+`/` base and, outside `BUNDLE=true`, includes development-only shell extras. It
+must never be served to participants — see
+[docs/operations/PARTICIPANT-DEPLOYMENT.md](docs/operations/PARTICIPANT-DEPLOYMENT.md).
 
 ### `npm run bundle`
 
-Builds the game and compresses the contents into a ZIP archive in the `dist` folder.
+Builds the participant deployment artifact into the `dist` folder (external
+scripts stripped, relative `./` base) and, outside CI, compresses it into a ZIP
+archive.
 
-Your game can be uploaded to your server, [itch.io](https://itch.io/), [newgrounds](https://www.newgrounds.com/), etc.
+This is the **only** command whose output may be served to participants. The
+exact invocation (including `CI=true` on Windows) and the verification
+checklist live in
+[docs/operations/PARTICIPANT-DEPLOYMENT.md](docs/operations/PARTICIPANT-DEPLOYMENT.md).
 
 ## License
 
