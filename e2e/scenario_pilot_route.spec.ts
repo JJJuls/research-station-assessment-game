@@ -1,11 +1,13 @@
 import { expect, test } from '@playwright/test';
 
 import {
+  archiveToReconciliationDesk,
   driveAxisTo,
   engineerToCalibrationBench,
   findEvents,
   getEvents,
   hubToAllocationConsole,
+  inventoryToSealLog,
   selectPromptOption,
 } from './helpers';
 import {
@@ -25,20 +27,31 @@ import {
 } from './journey';
 
 /**
- * Pilot vertical-slice route: the complete development play loop
+ * Pilot four-scenario route: the complete development play loop
  *
  *   launch -> Dock check-in -> Hub -> Scenario B (priority allocation)
  *   -> Engineer Hub -> Scenario A (calibration anomaly) -> Kai report
+ *   -> Archive -> Scenario C (incident reconciliation)
+ *   -> Inventory/Prep -> Scenario D (colleague protocol breach)
  *   -> Final Core synchronization -> debug completion/return flow
  *
  * Drives REAL doors and transitions end to end (journey.ts discipline) and
- * asserts both scenarios complete, consequences fire, the run closes, and
- * every event carries the launch metadata. This is the automated
- * start-to-finish playthrough required for the pilot slice.
+ * asserts all four scenarios complete, consequences fire, the scenarios
+ * stay isolated per room, the run closes, and every event carries the
+ * launch metadata. This is the automated start-to-finish playthrough
+ * required for the pilot slice.
  */
 
-test.describe('pilot vertical-slice route', () => {
-  test('full run: dock -> hub allocation -> engineer calibration -> report -> final core -> return flow', async ({
+/** Expected host scene per scenario id, for the isolation sweep. */
+const SCENARIO_SCENES: Record<string, string> = {
+  priority_allocation: 'hub',
+  calibration_anomaly: 'engineer',
+  incident_reconciliation: 'archive',
+  protocol_breach: 'inventory',
+};
+
+test.describe('pilot four-scenario route', () => {
+  test('full run: dock -> hub allocation -> engineer calibration -> report -> archive reconciliation -> inventory breach -> final core -> return flow', async ({
     page,
   }) => {
     test.setTimeout(600_000);
@@ -114,6 +127,43 @@ test.describe('pilot vertical-slice route', () => {
     );
     await stationToHubJourney(page, 'engineer_hub');
 
+    // — Archive: Scenario C at the records reconciliation desk —
+    await hubToStationJourney(page, 'archive_room');
+    await archiveToReconciliationDesk(page);
+    await waitForEventCount(page, 'scenario_entered', 'archive', 1);
+    await selectPromptOption(page, 1); // sensor record evidence
+    await waitForEventCount(page, 'scenario_evidence_opened', 'archive', 1);
+    await selectPromptOption(page, 1); // return to overview
+    await selectPromptOption(page, 4); // file the reconciliation entry
+    await selectPromptOption(page, 1); // file the records as they stand
+    await waitForEventCount(page, 'scenario_option_selected', 'archive', 1);
+    await selectPromptOption(page, 1); // commit
+    await waitForEventCount(page, 'scenario_decision_committed', 'archive', 1);
+    await selectPromptOption(page, 1); // acknowledge the consequence
+    await waitForEventCount(page, 'scenario_completed', 'archive', 1);
+    await stationToHubJourney(page, 'archive_room');
+
+    // — Inventory/Prep: Scenario D at the supply airlock seal log —
+    await hubToStationJourney(page, 'inventory_prep_room');
+    await inventoryToSealLog(page);
+    await waitForEventCount(page, 'scenario_entered', 'inventory', 1);
+    await selectPromptOption(page, 2); // interlock fault ticket evidence
+    await waitForEventCount(page, 'scenario_evidence_opened', 'inventory', 1);
+    await selectPromptOption(page, 1); // return to overview
+    await selectPromptOption(page, 4); // enter your review sign-off
+    await selectPromptOption(page, 3); // require the correcting report
+    await waitForEventCount(page, 'scenario_option_selected', 'inventory', 1);
+    await selectPromptOption(page, 1); // commit
+    await waitForEventCount(
+      page,
+      'scenario_decision_committed',
+      'inventory',
+      1,
+    );
+    await selectPromptOption(page, 1); // acknowledge the consequence
+    await waitForEventCount(page, 'scenario_completed', 'inventory', 1);
+    await stationToHubJourney(page, 'inventory_prep_room');
+
     // — Final Core: close the mission cycle —
     await hubToStationJourney(page, 'final_core_room');
     await openStationAlcove(page);
@@ -138,20 +188,41 @@ test.describe('pilot vertical-slice route', () => {
       'scenario_consequence_shown',
       'scenario_completed',
       'engineer_report_opened',
+      'archive_room_entered',
+      'scenario_decision_committed',
+      'scenario_consequence_shown',
+      'scenario_completed',
+      'inventory_room_entered',
+      'scenario_decision_committed',
+      'scenario_consequence_shown',
+      'scenario_completed',
       'final_core_entered',
       'final_core_completed',
     ]);
 
-    // Both scenarios completed, one commit each, in their own rooms.
+    // All four scenarios completed, one commit each, in their own rooms.
     const completions = findEvents(events, 'scenario_completed');
 
-    expect(completions).toHaveLength(2);
+    expect(completions).toHaveLength(4);
     expect(completions.map((e) => e.metadata?.scenario_id).sort()).toEqual([
       'calibration_anomaly',
+      'incident_reconciliation',
       'priority_allocation',
+      'protocol_breach',
     ]);
-    expect(findEvents(events, 'scenario_decision_committed')).toHaveLength(2);
+    expect(findEvents(events, 'scenario_decision_committed')).toHaveLength(4);
     expect(findEvents(events, 'scenario_abandoned')).toHaveLength(0);
+
+    // Scenario isolation: every scenario_* event belongs to exactly its
+    // scenario's host scene — no cross-contamination between scenarios.
+    for (const event of events) {
+      if (String(event.event_type).startsWith('scenario_')) {
+        const scenarioId = String(event.metadata?.scenario_id);
+
+        expect(Object.keys(SCENARIO_SCENES)).toContain(scenarioId);
+        expect(event.scene).toBe(SCENARIO_SCENES[scenarioId]);
+      }
+    }
 
     const mission = await missionState(page);
 
@@ -159,6 +230,9 @@ test.describe('pilot vertical-slice route', () => {
     expect(mission.completed_rooms).toContain('engineer_hub');
     expect(mission.completed_rooms).toContain('final_core_room');
     expect(mission.final_core_status).toBe('completed_structured');
+    // Scenarios are station-level pilot tasks, never room completions.
+    expect(mission.completed_rooms).not.toContain('archive_room');
+    expect(mission.completed_rooms).not.toContain('inventory_prep_room');
 
     expectSessionMetadata(events, {
       participant_id: 'PILOT_R1',

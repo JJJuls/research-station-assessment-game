@@ -1,4 +1,8 @@
 import { key } from '../constants';
+import {
+  incidentReconciliationScenario,
+  ScenarioController,
+} from '../scenarios';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 import { RoomScene } from '../world';
@@ -40,6 +44,14 @@ export class ArchiveScene extends RoomScene {
   protected readonly roomId = 'archive_room';
   protected readonly roomInteractionKey: InteractionKey =
     'archiveAccessTerminal';
+
+  /**
+   * Pilot Scenario C (incident reconciliation) — additive station driven by
+   * the src/scenarios framework; the canonical archive code-entry task and
+   * its Q13/Q22–Q26 measurement are untouched. Recreated per scene
+   * instance; progress lives at framework module scope.
+   */
+  private reconciliationScenario: ScenarioController | null = null;
 
   constructor() {
     super(key.scene.archive);
@@ -109,6 +121,31 @@ export class ArchiveScene extends RoomScene {
     this.addDecor(16.5 * 32, 6.5 * 32, 'prop-archive-panels');
     this.addDecor(3 * 32, 3.5 * 32, 'prop-archive-racks'); // left-top stack
 
+    // Pilot Scenario C: records reconciliation desk in the open south-east
+    // floor area (16*32, 9*32), just south of the right shelf stack —
+    // 193+ px from the entry spawn, 208 px from the Hub door, and 236+ px
+    // from the terminal and log shelves, so no 72 px interaction radius
+    // overlaps and every existing interactable stays the strict nearest
+    // target on its own approach.
+    this.reconciliationScenario = new ScenarioController(
+      incidentReconciliationScenario,
+      {
+        logScenarioEvent: (eventType, context) =>
+          this.logScenarioEvent(
+            'archiveReconciliationDesk',
+            eventType,
+            context,
+          ),
+        showFeedback: (message) => this.showFeedbackMessage(message),
+      },
+    );
+    this.addStation(
+      this.reconciliationScenario.buildStationConfig({
+        x: 16 * 32,
+        y: 9 * 32,
+      }),
+    );
+
     // Door back to the Station Hub. archive_abandoned fires on exit while
     // an attempt has failed and the task is incomplete (room doc edge
     // case: "never revises and leaves without completing").
@@ -147,9 +184,17 @@ export class ArchiveScene extends RoomScene {
       archiveSessionState.leftAfterFailure = true;
       this.logRoomEvent('archiveAccessTerminal', 'archive_abandoned');
     }
+
+    // Leaving with the reconciliation scenario entered but uncommitted is
+    // measured abandonment telemetry (framework logs once per departure).
+    this.reconciliationScenario?.handleRoomExit();
   }
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
+    if (interactionKey === 'archiveReconciliationDesk') {
+      return this.reconciliationScenario?.getRootOptions() ?? [];
+    }
+
     if (interactionKey !== 'archiveAccessTerminal') {
       return [];
     }

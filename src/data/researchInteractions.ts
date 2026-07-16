@@ -38,6 +38,19 @@ export const researchInteractions = {
     room_id: 'archive_room',
     task_id: 'archive_code_entry',
   },
+  archiveReconciliationDesk: {
+    object_id: 'archive_reconciliation_desk',
+    label: 'Records Reconciliation Desk',
+    // Pilot ethical-decision scenario station (src/scenarios framework);
+    // same governance note as engineerCalibrationBench: scenario_* events
+    // are pilot-development telemetry only — no canonical task_id, no
+    // Q-mapping, no construct scoring (scenarioTypes.ts note). Additive
+    // beside the room's canonical archive task, which is untouched.
+    episode: 'pilot_scenario_incident_reconciliation',
+    event_type: 'scenario_entered',
+    score_tags: [],
+    room_id: 'archive_room',
+  },
   dockArrivalTutorial: {
     object_id: 'dock_arrival_tutorial',
     label: 'Dock AI - Arrival Tutorial',
@@ -106,6 +119,17 @@ export const researchInteractions = {
     episode: 'bfi_organization_prep',
     event_type: 'inventory_prep_opened',
     score_tags: ['organization', 'preparation', 'prudence'],
+    room_id: 'inventory_prep_room',
+  },
+  inventorySealLog: {
+    object_id: 'inventory_seal_log_terminal',
+    label: 'Supply Airlock Seal Log',
+    // Pilot ethical-decision scenario station (src/scenarios framework);
+    // same governance note as engineerCalibrationBench. Additive beside
+    // the quartermaster prep console, whose canonical task is untouched.
+    episode: 'pilot_scenario_protocol_breach',
+    event_type: 'scenario_entered',
+    score_tags: [],
     room_id: 'inventory_prep_room',
   },
   interruptionCorridor: {

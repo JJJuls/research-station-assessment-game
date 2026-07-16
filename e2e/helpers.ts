@@ -402,13 +402,53 @@ export async function hubToAllocationConsole(page: Page) {
  * Scenario A; EngineerScene x=16*32, y=5.5*32) and presses SPACE.
  * Position-synced route through audited-clear lanes: row 8 (fully open) to
  * column 14 (open from row 1 to row 10 — the col 12-14 corridor between
- * the bench blocks), then up to the bench row. The SPACE press lands ~64 px
- * from the bench and ~144 px from Kai, so the bench is the nearest target.
+ * the bench blocks), up to the bench row, then east toward the bench. The
+ * final leg either reaches its waypoint or wall-clamps on the row-4 east
+ * block's collision band — every outcome lands ~34-50 px from the bench,
+ * strictly inside the 72 px radius (the former 3-leg route could stop
+ * ~78 px away at tolerance extremes, the suite's dominant load flake) and
+ * 160+ px from Kai, so the bench is always the strict nearest target.
  */
 export async function engineerToCalibrationBench(page: Page) {
   await driveAxisTo(page, 'y', 272, 16); // clear row 8 (fully open)
   await driveAxisTo(page, 'x', 448, 12); // column 14 (open corridor)
-  await driveAxisTo(page, 'y', 176, 16); // rise beside the bench
+  await driveAxisTo(page, 'y', 176, 12); // rise beside the bench row
+  await driveAxisTo(page, 'x', 480, 12); // east; clamps in bench range
+  await press(page, 'Space');
+}
+
+/**
+ * Walks from anywhere in the Archive Room to the Records Reconciliation
+ * Desk (pilot Scenario C; ArchiveScene x=16*32, y=9*32 in the open
+ * south-east floor) and presses SPACE. Position-synced route through
+ * audited-clear lanes: row 9 (open across the room, south of both shelf
+ * blocks) east to column ~14.75. The SPACE press lands ~25-60 px from the
+ * desk (strictly inside the 72 px interaction radius even at tolerance
+ * extremes); the Hub door (~150+ px) and terminal/shelves (220+ px) are
+ * always farther, so the desk is the strict nearest target.
+ */
+export async function archiveToReconciliationDesk(page: Page) {
+  await driveAxisTo(page, 'y', 288, 16); // clear row 9 (open across)
+  await driveAxisTo(page, 'x', 472, 16); // just west of the desk
+  await press(page, 'Space');
+}
+
+/**
+ * Walks from anywhere in the Inventory / Prep Room to the Supply Airlock
+ * Seal Log (pilot Scenario D; InventoryScene x=4*32, y=7.5*32 on the left
+ * storage block) and presses SPACE. The player body (32×42, top edge 18 px
+ * above the probe point) collides with the block (rows to y 256) whenever
+ * probe y < 274, so the route first drops BELOW that collision band, drives
+ * west along the guaranteed-clear row 9, then rises until the body clamps
+ * on the block's south face (~probe y 274) — a load-independent wall clamp
+ * ~36 px from the terminal. The quartermaster console and Hub door
+ * (170+ px) are always farther, so the seal log is the strict nearest
+ * target.
+ */
+export async function inventoryToSealLog(page: Page) {
+  await driveAxisTo(page, 'y', 292, 12); // clear row 9, below the block band
+  await driveAxisTo(page, 'x', 140, 12); // terminal's column, along row 9
+  await driveAxisTo(page, 'y', 276, 8); // rise; clamps on the block face
   await press(page, 'Space');
 }
 

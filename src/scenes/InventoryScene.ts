@@ -4,6 +4,7 @@ import {
   WORKSPACE_STATUS_DISORDERED,
   WORKSPACE_STATUS_TIDY,
 } from '../data/missionVocabulary';
+import { protocolBreachScenario, ScenarioController } from '../scenarios';
 import { researchRuntime } from '../systems';
 import type {
   InteractionKey,
@@ -47,6 +48,14 @@ export class InventoryScene extends RoomScene {
   protected readonly roomId = 'inventory_prep_room';
   protected readonly roomInteractionKey: InteractionKey =
     'inventoryPrepChecklist';
+
+  /**
+   * Pilot Scenario D (colleague protocol breach) — additive station driven
+   * by the src/scenarios framework; the quartermaster prep task and its
+   * Q01-Q04/Q30 measurement are untouched. Recreated per scene instance;
+   * progress lives at framework module scope.
+   */
+  private breachScenario: ScenarioController | null = null;
 
   constructor() {
     super(key.scene.inventory);
@@ -103,6 +112,23 @@ export class InventoryScene extends RoomScene {
       },
     });
 
+    // Pilot Scenario D: supply airlock seal log on the left storage block
+    // (4*32, 7.5*32), approached from the open row below — 194+ px from
+    // the entry spawn, 202 px from the quartermaster console, and 230+ px
+    // from the Hub door, so no 72 px interaction radius overlaps and each
+    // interactable stays the strict nearest target on its own approach.
+    this.breachScenario = new ScenarioController(protocolBreachScenario, {
+      logScenarioEvent: (eventType, context) =>
+        this.logScenarioEvent('inventorySealLog', eventType, context),
+      showFeedback: (message) => this.showFeedbackMessage(message),
+    });
+    this.addStation(
+      this.breachScenario.buildStationConfig({
+        x: 4 * 32,
+        y: 7.5 * 32,
+      }),
+    );
+
     // Door back to the Station Hub.
     this.addDoor({
       x: 10 * 32, // center of the bottom '--'
@@ -117,11 +143,21 @@ export class InventoryScene extends RoomScene {
     });
   }
 
+  protected onRoomExit(): void {
+    // Leaving with the breach scenario entered but uncommitted is measured
+    // abandonment telemetry (framework logs once per departure).
+    this.breachScenario?.handleRoomExit();
+  }
+
   protected onRoomEntered(): void {
     this.logRoomEvent('inventoryPrepChecklist', 'inventory_room_entered');
   }
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
+    if (interactionKey === 'inventorySealLog') {
+      return this.breachScenario?.getRootOptions() ?? [];
+    }
+
     if (interactionKey !== 'inventoryPrepChecklist') {
       return [];
     }
