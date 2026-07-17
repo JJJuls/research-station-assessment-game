@@ -1,0 +1,1024 @@
+{
+  "meta": {
+    "title": "Q01-Q33 feature traceability (playable-game blueprint)",
+    "generated": "2026-07-17",
+    "base_commit": "bfca741",
+    "branch": "fable-q01-q33-playable-blueprint-v1",
+    "documentation_only": true,
+    "authority_note": "Approved event names live only in docs/research/event-schema.md; approved formulas only in docs/research/scoring-plan.md. Every candidate_* entry requires a research-owner decision. No open decision (SA-1..SA-7, D2-D8, INT-1..INT-6) is resolved by this file.",
+    "approved_events_semantics": "q_items[].approved_events lists module-relevant names approved in event-schema.md — NOT a claim that each name carries a live CanonicalEventContext registration to that q_item. Live study_item_ids registrations are exactly those in src/world/CanonicalEventContext.ts; consumers must not infer or create mappings from these arrays. Known divergences: Q11 lists final_core_force_continue (registered Q28); Q16 lists inventory_verified_complete (registered Q30, SA-4 stale tag); Q17 includes competing_task_viewed (blocked by D6, unemitted); Q09 includes engineer_report_accuracy_scored (schema-listed, deliberately unmapped in CEC).",
+    "status_vocabulary": [
+      "ALIGNED",
+      "PARTIAL",
+      "STALE",
+      "BLOCKED",
+      "WORKING",
+      "MISSING"
+    ],
+    "classification_vocabulary": [
+      "MANDATORY_RESEARCH",
+      "MANDATORY_PLAYABLE_FOUNDATION",
+      "OPTIONAL_POST_PILOT",
+      "CONTROL_OR_USABILITY",
+      "ENGAGEMENT_ONLY_UNSCORED",
+      "EXCLUDED"
+    ]
+  },
+  "q_items": [
+    {
+      "id": "Q01",
+      "meaning": "systematic ordered approach",
+      "construct": "organisation",
+      "source": "BFI-C-04",
+      "strength": "strong",
+      "module": "inventory_prep_room",
+      "status": "PARTIAL",
+      "gate": null,
+      "approved_events": [
+        "inventory_checklist_opened",
+        "inventory_item_sorted_correct",
+        "inventory_sequence_followed",
+        "inventory_sequence_completed",
+        "readiness_verified"
+      ],
+      "candidate_events": [
+        "inventory_checklist_available",
+        "inventory_item_placed",
+        "inventory_item_corrected"
+      ]
+    },
+    {
+      "id": "Q02",
+      "meaning": "disorganisation (reverse)",
+      "construct": "organisation",
+      "source": "BFI-C-01",
+      "strength": "strong_reverse",
+      "module": "inventory_prep_room+final_core_room",
+      "status": "PARTIAL",
+      "gate": "SA-4 (Q30 co-tag only)",
+      "approved_events": [
+        "inventory_item_misplaced",
+        "inventory_verification_skipped",
+        "missing_item",
+        "final_core_missing_item_flagged"
+      ],
+      "candidate_events": ["inventory_item_corrected"]
+    },
+    {
+      "id": "Q03",
+      "meaning": "maintained order and retrieval",
+      "construct": "organisation",
+      "source": "BFI-C-07",
+      "strength": "strong",
+      "module": "inventory_prep_room+retrieval_episode",
+      "status": "PARTIAL",
+      "gate": null,
+      "approved_events": [
+        "correct_tool_selected",
+        "wrong_tool_selected",
+        "prepared_tool_used",
+        "workspace_tidy_confirmed"
+      ],
+      "candidate_events": [
+        "workspace_order_state",
+        "tool_returned_to_storage",
+        "tool_bin_opened"
+      ]
+    },
+    {
+      "id": "Q04",
+      "meaning": "leaves mess / no cleanup (reverse)",
+      "construct": "organisation",
+      "source": "BFI-C-10",
+      "strength": "strong_reverse",
+      "module": "inventory_prep_room",
+      "status": "ALIGNED",
+      "gate": "closed: cleanup only, never planning-before-action",
+      "approved_events": [
+        "workspace_left_disordered",
+        "cleanup_completed",
+        "final_core_workspace_issue_flagged"
+      ],
+      "candidate_events": [
+        "cleanup_opportunity_shown",
+        "cleanup_started",
+        "tool_restored",
+        "waste_cleared"
+      ]
+    },
+    {
+      "id": "Q05",
+      "meaning": "difficulty getting started (reverse)",
+      "construct": "productiveness",
+      "source": "BFI-C-05",
+      "strength": "moderate_reverse",
+      "module": "systems_repair_room",
+      "status": "BLOCKED",
+      "gate": "D7",
+      "approved_events": ["task_started"],
+      "candidate_events": [
+        "objective_confirmed",
+        "control_restored",
+        "task_relevant_info_opened",
+        "first_goal_directed_action",
+        "irrelevant_interaction",
+        "idle_interval"
+      ]
+    },
+    {
+      "id": "Q06",
+      "meaning": "efficient completion",
+      "construct": "productiveness",
+      "source": "BFI-C-08",
+      "strength": "strong",
+      "module": "cross_room_required",
+      "status": "PARTIAL",
+      "gate": "D2 (rate wiring)",
+      "approved_events": [
+        "archive_completed",
+        "repair_completed",
+        "final_core_completed"
+      ],
+      "candidate_events": [
+        "objective_started",
+        "goal_relevant_action",
+        "unnecessary_action",
+        "objective_abandoned"
+      ]
+    },
+    {
+      "id": "Q07",
+      "meaning": "works until finished",
+      "construct": "productiveness",
+      "source": "BFI-C-11",
+      "strength": "strong_moderate",
+      "module": "optional_side_repair_bay",
+      "status": "PARTIAL",
+      "gate": null,
+      "approved_events": [
+        "stabiliser_option_offered",
+        "side_repair_accepted",
+        "side_repair_step_completed",
+        "side_repair_deferred",
+        "side_repair_abandoned_after_start",
+        "side_repair_completed"
+      ],
+      "candidate_events": ["side_repair_returned"]
+    },
+    {
+      "id": "Q08",
+      "meaning": "low engagement (reverse)",
+      "construct": "productiveness",
+      "source": "BFI-C-02",
+      "strength": "moderate_reverse",
+      "module": "multi_room_duties",
+      "status": "PARTIAL",
+      "gate": "D3 (idle)",
+      "approved_events": ["task_avoidance", "excessive_idle_after_instruction"],
+      "candidate_events": [
+        "required_duty_available",
+        "duty_started",
+        "duty_deferred",
+        "unrelated_optional_action",
+        "prolonged_idle",
+        "duty_completed",
+        "duty_unresolved"
+      ]
+    },
+    {
+      "id": "Q09",
+      "meaning": "dependable reporting",
+      "construct": "responsibility",
+      "source": "BFI-C-03",
+      "strength": "strong",
+      "module": "engineer_hub",
+      "status": "ALIGNED",
+      "gate": "D5 (legacy event)",
+      "approved_events": [
+        "engineer_report_opened",
+        "engineer_evidence_reviewed",
+        "engineer_clarification_requested",
+        "engineer_report_submitted_prepared",
+        "engineer_report_submitted_unprepared",
+        "engineer_report_accuracy_scored"
+      ],
+      "candidate_events": []
+    },
+    {
+      "id": "Q10",
+      "meaning": "reliable follow-through",
+      "construct": "responsibility",
+      "source": "BFI-C-09",
+      "strength": "strong",
+      "module": "engineer_hub+final_core_room",
+      "status": "ALIGNED",
+      "gate": null,
+      "approved_events": [
+        "engineer_supervision_assigned",
+        "engineer_supervision_accepted",
+        "engineer_supervision_declined",
+        "engineer_supervision_completed",
+        "accepted_duty_unresolved"
+      ],
+      "candidate_events": ["duty_details_viewed", "duty_deferred"]
+    },
+    {
+      "id": "Q11",
+      "meaning": "irresponsible outcome handling (reverse)",
+      "construct": "responsibility",
+      "source": "BFI-C-12",
+      "strength": "strong_reverse",
+      "module": "final_core_room",
+      "status": "ALIGNED",
+      "gate": "D2 (quality shape)",
+      "approved_events": [
+        "final_core_status_reviewed",
+        "unresolved_issue_reviewed",
+        "issue_resolution_attempted",
+        "final_core_issue_resolved",
+        "final_core_rushed",
+        "final_core_force_continue"
+      ],
+      "candidate_events": ["issue_acknowledged"]
+    },
+    {
+      "id": "Q12",
+      "meaning": "careless with available information (reverse)",
+      "construct": "prudence",
+      "source": "BFI-C-06",
+      "strength": "strong_reverse",
+      "module": "hazard_control_room",
+      "status": "ALIGNED",
+      "gate": "D2 (prudence split); SA-1/SA-3 co-tags",
+      "approved_events": [
+        "hazard_warning_seen",
+        "hazard_info_checked",
+        "hazard_informed_continue",
+        "hazard_reckless_continue",
+        "hazard_route_avoided"
+      ],
+      "candidate_events": ["hazard_clarification_requested"]
+    },
+    {
+      "id": "Q13",
+      "meaning": "undeterred by setback",
+      "construct": "adaptive_persistence",
+      "source": "GRIT-02",
+      "strength": "strong",
+      "module": "archive_room",
+      "status": "ALIGNED",
+      "gate": null,
+      "approved_events": [
+        "archive_wrong_code",
+        "archive_feedback_shown",
+        "archive_feedback_used",
+        "archive_strategy_revision",
+        "archive_returned_after_failure",
+        "archive_completed",
+        "archive_abandoned"
+      ],
+      "candidate_events": []
+    },
+    {
+      "id": "Q14",
+      "meaning": "hard useful work",
+      "construct": "adaptive_persistence",
+      "source": "GRIT-04",
+      "strength": "moderate_strong",
+      "module": "systems_repair_room",
+      "status": "ALIGNED",
+      "gate": null,
+      "approved_events": [
+        "repair_sequence_submitted",
+        "repair_failed",
+        "repair_manual_used",
+        "repair_strategy_revision",
+        "repair_completed"
+      ],
+      "candidate_events": [
+        "repair_diagnostic_completed",
+        "repair_step_completed"
+      ]
+    },
+    {
+      "id": "Q15",
+      "meaning": "finishes what is begun",
+      "construct": "adaptive_persistence",
+      "source": "GRIT-07",
+      "strength": "strong",
+      "module": "interruption_corridor",
+      "status": "PARTIAL",
+      "gate": "D7 (task_started listing)",
+      "approved_events": [
+        "interruption_received",
+        "switched_task",
+        "return_to_unfinished_task",
+        "returned_to_original_task",
+        "prior_goal_abandoned",
+        "task_completed_after_interruption",
+        "final_unresolved_due_to_nonreturn"
+      ],
+      "candidate_events": ["task_deferred"]
+    },
+    {
+      "id": "Q16",
+      "meaning": "diligent multi-step accuracy",
+      "construct": "adaptive_persistence",
+      "source": "GRIT-08",
+      "strength": "strong_moderate",
+      "module": "optional_side_repair_bay+inventory_prep_room",
+      "status": "PARTIAL",
+      "gate": null,
+      "approved_events": [
+        "side_repair_step_completed",
+        "inventory_verified_complete",
+        "side_repair_completed"
+      ],
+      "candidate_events": [
+        "multi_step_task_accepted",
+        "task_step_completed",
+        "task_error_corrected",
+        "task_verified"
+      ]
+    },
+    {
+      "id": "Q17",
+      "meaning": "diverted by new options (reverse)",
+      "construct": "consistency_of_interest_exploratory",
+      "source": "GRIT-01",
+      "strength": "moderate_exploratory",
+      "module": "interruption_corridor",
+      "status": "PARTIAL",
+      "gate": "D6",
+      "approved_events": [
+        "interruption_received",
+        "switched_task",
+        "returned_to_original_task",
+        "competing_task_viewed"
+      ],
+      "candidate_events": ["competing_task_offered"]
+    },
+    {
+      "id": "Q18",
+      "meaning": "sustaining long-project focus (reverse)",
+      "construct": "consistency_of_interest_exploratory",
+      "source": "GRIT-06",
+      "strength": "weak_questionnaire_primary",
+      "module": "background_objective",
+      "status": "ALIGNED",
+      "gate": "SA-7 (label wording)",
+      "approved_events": [
+        "objective_active",
+        "final_unresolved_due_to_nonreturn"
+      ],
+      "candidate_events": [
+        "background_objective_offered",
+        "background_objective_accepted",
+        "background_stage_completed",
+        "background_objective_deferred",
+        "objective_revisited",
+        "reminder_shown",
+        "background_objective_completed"
+      ]
+    },
+    {
+      "id": "Q19",
+      "meaning": "switches goals before finishing (reverse)",
+      "construct": "consistency_of_interest_exploratory",
+      "source": "GRIT-05",
+      "strength": "moderate_exploratory",
+      "module": "interruption_corridor",
+      "status": "PARTIAL",
+      "gate": null,
+      "approved_events": [
+        "new_goal_offered",
+        "goal_switch_accepted",
+        "prior_goal_completed",
+        "prior_goal_abandoned"
+      ],
+      "candidate_events": [
+        "new_goal_accepted",
+        "prior_goal_deferred",
+        "prior_goal_revisited"
+      ]
+    },
+    {
+      "id": "Q20",
+      "meaning": "early interest not sustained (reverse)",
+      "construct": "consistency_of_interest_exploratory",
+      "source": "GRIT-03",
+      "strength": "very_weak_questionnaire_primary",
+      "module": "optional_side_repair_bay",
+      "status": "ALIGNED",
+      "gate": "SA-7 (label wording); no bespoke score by closed decision",
+      "approved_events": [
+        "side_repair_accepted",
+        "side_repair_first_step",
+        "side_repair_abandoned_after_start"
+      ],
+      "candidate_events": [
+        "anomaly_discovered",
+        "anomaly_investigation_started",
+        "anomaly_first_stage_completed",
+        "anomaly_deferred",
+        "anomaly_revisited",
+        "anomaly_abandoned_after_start",
+        "anomaly_completed"
+      ]
+    },
+    {
+      "id": "Q21",
+      "meaning": "continues when difficult",
+      "construct": "adaptive_persistence",
+      "source": "PDD-01",
+      "strength": "strong",
+      "module": "systems_repair_room",
+      "status": "ALIGNED",
+      "gate": null,
+      "approved_events": [
+        "repair_failed",
+        "repair_manual_used",
+        "repair_strategy_revision",
+        "repair_returned_after_failure",
+        "repair_completed",
+        "repair_abandoned"
+      ],
+      "candidate_events": ["repair_reengaged"]
+    },
+    {
+      "id": "Q22",
+      "meaning": "works through difficult information",
+      "construct": "adaptive_persistence",
+      "source": "PDD-03",
+      "strength": "strong_with_reading_controls",
+      "module": "archive_room+systems_repair_room",
+      "status": "ALIGNED",
+      "gate": "D2 (applied-use nuance)",
+      "approved_events": [
+        "archive_feedback_used",
+        "archive_log_compared",
+        "repair_manual_opened",
+        "manual_page_reviewed",
+        "repair_manual_used"
+      ],
+      "candidate_events": [
+        "support_available",
+        "clarification_requested",
+        "support_applied",
+        "unchanged_retry"
+      ]
+    },
+    {
+      "id": "Q23",
+      "meaning": "keeps trying adaptively",
+      "construct": "adaptive_persistence",
+      "source": "PDD-05",
+      "strength": "strong",
+      "module": "archive_room+systems_repair_room",
+      "status": "ALIGNED",
+      "gate": null,
+      "approved_events": [
+        "archive_strategy_revision",
+        "repair_strategy_revision",
+        "archive_same_wrong_code_repeated",
+        "repair_same_sequence_repeated"
+      ],
+      "candidate_events": ["adaptive_retry", "identical_retry"]
+    },
+    {
+      "id": "Q24",
+      "meaning": "recovers after setback",
+      "construct": "adaptive_persistence",
+      "source": "PDD-04",
+      "strength": "strong",
+      "module": "systems_repair_room",
+      "status": "ALIGNED",
+      "gate": "D4 (construct label)",
+      "approved_events": [
+        "repair_abandoned",
+        "repair_returned_after_failure",
+        "repair_completed",
+        "repair_strategy_revision"
+      ],
+      "candidate_events": ["repair_setback", "repair_completed_after_failure"]
+    },
+    {
+      "id": "Q25",
+      "meaning": "sticks with difficult task",
+      "construct": "adaptive_persistence",
+      "source": "PDD-02",
+      "strength": "moderate",
+      "module": "archive_room+systems_repair_room",
+      "status": "PARTIAL",
+      "gate": "D4",
+      "approved_events": [
+        "archive_abandoned",
+        "archive_returned_after_failure",
+        "repair_abandoned",
+        "repair_returned_after_failure"
+      ],
+      "candidate_events": [
+        "difficulty_onset",
+        "station_left_after_failure",
+        "task_deferred",
+        "station_reengaged",
+        "task_unresolved_at_end"
+      ]
+    },
+    {
+      "id": "Q26",
+      "meaning": "repeats identical failed action (maladaptive)",
+      "construct": "inappropriate_persistence",
+      "source": "IP-02",
+      "strength": "strong_maladaptive",
+      "module": "archive_room+systems_repair_room",
+      "status": "ALIGNED",
+      "gate": null,
+      "approved_events": [
+        "archive_same_wrong_code_repeated",
+        "repair_same_sequence_repeated"
+      ],
+      "candidate_events": ["failed_action_identified", "feedback_shown"]
+    },
+    {
+      "id": "Q27",
+      "meaning": "continues past zero utility (maladaptive)",
+      "construct": "inappropriate_persistence",
+      "source": "IP-01",
+      "strength": "moderate_strong_maladaptive",
+      "module": "utility_stop_module_absent",
+      "status": "STALE",
+      "gate": "SA-1 + SA-2",
+      "approved_events": [],
+      "candidate_events": [
+        "utility_stop_signal",
+        "no_additional_benefit_explained",
+        "unnecessary_cycle_started",
+        "unnecessary_cycle_completed",
+        "task_stopped_appropriately"
+      ]
+    },
+    {
+      "id": "Q28",
+      "meaning": "forces known-futile action (maladaptive)",
+      "construct": "inappropriate_persistence",
+      "source": "IP-03",
+      "strength": "strong_maladaptive",
+      "module": "final_core_room",
+      "status": "ALIGNED",
+      "gate": "D2 (4th term)",
+      "approved_events": [
+        "final_core_blocker_shown",
+        "final_core_force_continue",
+        "issue_resolution_attempted",
+        "final_core_issue_resolved"
+      ],
+      "candidate_events": [
+        "blocker_acknowledged",
+        "prerequisite_available",
+        "strategy_changed",
+        "blocker_resolved"
+      ]
+    },
+    {
+      "id": "Q29",
+      "meaning": "longer-horizon goal preference (exploratory)",
+      "construct": "goal_time_exploratory",
+      "source": "GTP-01",
+      "strength": "moderate_exploratory",
+      "module": "goal_horizon_module_absent",
+      "status": "STALE",
+      "gate": "SA-3",
+      "approved_events": [],
+      "candidate_events": [
+        "horizon_choice_offered",
+        "option_details_viewed",
+        "immediate_goal_selected",
+        "distributed_goal_selected",
+        "distributed_goal_revisited",
+        "distributed_goal_completed"
+      ]
+    },
+    {
+      "id": "Q30",
+      "meaning": "small-goal granularity preference (exploratory)",
+      "construct": "goal_time_exploratory",
+      "source": "GTP-03",
+      "strength": "moderate_if_repeated",
+      "module": "goal_granularity_module_absent",
+      "status": "STALE",
+      "gate": "SA-4",
+      "approved_events": [],
+      "candidate_events": [
+        "goal_structure_choice_offered",
+        "small_goal_set_selected",
+        "integrated_goal_selected",
+        "small_goal_completed",
+        "integrated_goal_completed"
+      ]
+    },
+    {
+      "id": "Q31",
+      "meaning": "shorter-horizon goal preference (exploratory, shared with Q29)",
+      "construct": "goal_time_exploratory",
+      "source": "GTP-04",
+      "strength": "moderate_exploratory_shared",
+      "module": "goal_horizon_module_absent",
+      "status": "STALE",
+      "gate": "SA-3",
+      "approved_events": [],
+      "candidate_events": [
+        "horizon_choice_offered",
+        "immediate_goal_selected",
+        "distributed_goal_selected"
+      ]
+    },
+    {
+      "id": "Q32",
+      "meaning": "extended-goal engagement (long-term-oriented, NOT reverse)",
+      "construct": "goal_time_exploratory",
+      "source": "GTP-02",
+      "strength": "very_weak_questionnaire_primary",
+      "module": "derived_no_module",
+      "status": "BLOCKED",
+      "gate": "SA-5 (tag confirmation); no distinct score by closed decision",
+      "approved_events": ["side_repair_completed", "final_bonus_unlocked"],
+      "candidate_events": [
+        "distributed_stage_completed",
+        "distributed_goal_unresolved"
+      ]
+    },
+    {
+      "id": "Q33",
+      "meaning": "short-goal completion portfolio (exploratory)",
+      "construct": "goal_time_exploratory",
+      "source": "GTP-05",
+      "strength": "weak_questionnaire_primary",
+      "module": "derived_portfolio_no_module",
+      "status": "STALE",
+      "gate": "SA-6 (behind SA-3/SA-4)",
+      "approved_events": [],
+      "candidate_events": [
+        "short_goal_completion_share_inputs_from_SA3_SA4_families"
+      ]
+    }
+  ],
+  "rooms": [
+    {
+      "room_id": "dock_arrival",
+      "role": "controls/tutorial only",
+      "class": "CONTROL_OR_USABILITY",
+      "q_items": [],
+      "status": "WORKING"
+    },
+    {
+      "room_id": "station_hub",
+      "role": "connector, routing, control-only",
+      "class": "CONTROL_OR_USABILITY",
+      "q_items": [],
+      "status": "WORKING"
+    },
+    {
+      "room_id": "archive_room",
+      "role": "failure-feedback-revision (ARC)",
+      "class": "MANDATORY_RESEARCH",
+      "q_items": ["Q13", "Q22", "Q23", "Q25", "Q26", "Q06"],
+      "status": "WORKING"
+    },
+    {
+      "room_id": "systems_repair_room",
+      "role": "difficulty persistence (REP)",
+      "class": "MANDATORY_RESEARCH",
+      "q_items": [
+        "Q14",
+        "Q21",
+        "Q24",
+        "Q22",
+        "Q23",
+        "Q25",
+        "Q26",
+        "Q05",
+        "Q06"
+      ],
+      "status": "WORKING"
+    },
+    {
+      "room_id": "engineer_hub",
+      "role": "report-back + commitment",
+      "class": "MANDATORY_RESEARCH",
+      "q_items": ["Q09", "Q10", "Q11", "Q18"],
+      "status": "WORKING"
+    },
+    {
+      "room_id": "inventory_prep_room",
+      "role": "organisation + cleanup (+GRA post-SA-4)",
+      "class": "MANDATORY_RESEARCH",
+      "q_items": ["Q01", "Q02", "Q03", "Q04", "Q16"],
+      "status": "PARTIAL"
+    },
+    {
+      "room_id": "hazard_control_room",
+      "role": "prudence/carefulness",
+      "class": "MANDATORY_RESEARCH",
+      "q_items": ["Q12"],
+      "status": "WORKING"
+    },
+    {
+      "room_id": "optional_side_repair_bay",
+      "role": "optional work / anomaly arc (OPT)",
+      "class": "MANDATORY_RESEARCH",
+      "q_items": ["Q07", "Q16", "Q20"],
+      "status": "PARTIAL"
+    },
+    {
+      "room_id": "interruption_corridor",
+      "role": "interruption/return (INT)",
+      "class": "MANDATORY_RESEARCH",
+      "q_items": ["Q15", "Q17", "Q18", "Q19", "Q08"],
+      "status": "PARTIAL"
+    },
+    {
+      "room_id": "final_core_room",
+      "role": "integration/accountability",
+      "class": "MANDATORY_RESEARCH",
+      "q_items": ["Q11", "Q28", "Q10", "Q18", "Q02", "Q04"],
+      "status": "WORKING"
+    }
+  ],
+  "shared_modules": [
+    {
+      "id": "goal_horizon",
+      "items": ["Q29", "Q31", "Q32"],
+      "rule": "one module, one shared variable, initial choice pre-interruption",
+      "gate": "SA-3",
+      "status": "MISSING"
+    },
+    {
+      "id": "goal_granularity",
+      "items": ["Q30", "Q33"],
+      "rule": "repeated (>=2) balanced structure choices; never from carelessness",
+      "gate": "SA-4",
+      "status": "MISSING"
+    },
+    {
+      "id": "utility_stop",
+      "items": ["Q27"],
+      "rule": "explicit zero-benefit signal before any continuation counts",
+      "gate": "SA-2 (+SA-1)",
+      "status": "MISSING"
+    }
+  ],
+  "systems": [
+    {
+      "name": "interaction_targeting",
+      "classification": "MANDATORY_PLAYABLE_FOUNDATION",
+      "q_ids": ["all"],
+      "stage": "exists"
+    },
+    {
+      "name": "action_verbs_inspect_use_open_collect_deliver_talk",
+      "classification": "MANDATORY_PLAYABLE_FOUNDATION",
+      "q_ids": ["Q01", "Q02", "Q03", "Q04", "Q09", "Q10", "Q12", "Q22"],
+      "stage": "1-2"
+    },
+    {
+      "name": "contextual_item_registry",
+      "classification": "MANDATORY_PLAYABLE_FOUNDATION",
+      "q_ids": ["Q01", "Q02", "Q03", "Q07", "Q16"],
+      "stage": "1"
+    },
+    {
+      "name": "small_inventory_carried_items",
+      "classification": "MANDATORY_PLAYABLE_FOUNDATION",
+      "q_ids": ["Q01", "Q02", "Q03", "Q07", "Q16"],
+      "stage": "2"
+    },
+    {
+      "name": "equipment_tool_requirements",
+      "classification": "MANDATORY_RESEARCH",
+      "q_ids": ["Q02", "Q03"],
+      "stage": "2"
+    },
+    {
+      "name": "task_objective_state",
+      "classification": "MANDATORY_RESEARCH",
+      "q_ids": ["Q10", "Q15", "Q17", "Q18", "Q19"],
+      "stage": "exists"
+    },
+    {
+      "name": "npc_dialogue_report_back",
+      "classification": "MANDATORY_RESEARCH",
+      "q_ids": ["Q09", "Q10", "Q11"],
+      "stage": "exists+polish"
+    },
+    {
+      "name": "room_transitions",
+      "classification": "MANDATORY_PLAYABLE_FOUNDATION",
+      "q_ids": ["all"],
+      "stage": "exists"
+    },
+    {
+      "name": "persistent_room_task_state",
+      "classification": "MANDATORY_RESEARCH",
+      "q_ids": ["Q24", "Q25", "Q15", "Q07", "Q16"],
+      "stage": "exists"
+    },
+    {
+      "name": "feedback_consequence_presentation",
+      "classification": "MANDATORY_RESEARCH",
+      "q_ids": ["Q02", "Q04", "Q12", "Q13", "Q22"],
+      "stage": "exists+polish"
+    },
+    {
+      "name": "interruption_handling",
+      "classification": "MANDATORY_RESEARCH",
+      "q_ids": ["Q15", "Q17", "Q18", "Q19"],
+      "stage": "1"
+    },
+    {
+      "name": "final_core_gating",
+      "classification": "MANDATORY_RESEARCH",
+      "q_ids": ["Q10", "Q11", "Q18", "Q28"],
+      "stage": "exists+arm-config"
+    },
+    {
+      "name": "session_save_recovery",
+      "classification": "MANDATORY_RESEARCH",
+      "q_ids": ["all"],
+      "stage": "3",
+      "gate": "P0-3/INT-2/INT-5"
+    },
+    {
+      "name": "keyboard_first_accessibility",
+      "classification": "CONTROL_OR_USABILITY",
+      "q_ids": ["all"],
+      "stage": "exists"
+    },
+    {
+      "name": "optional_mouse_support",
+      "classification": "OPTIONAL_POST_PILOT",
+      "q_ids": [],
+      "stage": "5"
+    },
+    {
+      "name": "telemetry_adapters",
+      "classification": "MANDATORY_RESEARCH",
+      "q_ids": ["all"],
+      "stage": "exists+INT-gated-production"
+    },
+    {
+      "name": "ethical_decision_scenarios",
+      "classification": "ENGAGEMENT_ONLY_UNSCORED",
+      "q_ids": [],
+      "stage": "exists",
+      "note": "separate exploratory layer; scenario_* events never Q-mapped; placement ruling pending"
+    }
+  ],
+  "excluded_features": [
+    "fishing",
+    "bait_and_fish_tables",
+    "recreational_angling",
+    "farming",
+    "combat",
+    "weapons",
+    "conventional_currency",
+    "shops_trading_economy",
+    "crafting",
+    "romance",
+    "social_simulation_schedules",
+    "large_open_world_exploration",
+    "unrelated_collectables",
+    "procedural_filler_quests",
+    "item_rarity_without_rationale",
+    "xp_skill_levels_stat_boosts",
+    "free_item_drop_world_littering",
+    "environmental_biological_sample_collection_pilot"
+  ],
+  "event_classes": {
+    "research": { "mapped": true, "scoring_eligible": true },
+    "raw_exploratory_scenario": {
+      "mapped": false,
+      "scoring_eligible": false,
+      "events": [
+        "scenario_entered",
+        "scenario_briefing_opened",
+        "scenario_evidence_opened",
+        "scenario_evidence_closed",
+        "scenario_optional_info_requested",
+        "scenario_option_selected",
+        "scenario_option_changed",
+        "scenario_decision_committed",
+        "scenario_consequence_shown",
+        "scenario_completed",
+        "scenario_interrupted",
+        "scenario_abandoned",
+        "final_core_blocked_pending_decisions"
+      ]
+    },
+    "general_gameplay": { "mapped": false, "scoring_eligible": false },
+    "control_usability": {
+      "mapped": false,
+      "scoring_eligible": "control_fields_only"
+    },
+    "technical_error": {
+      "mapped": false,
+      "scoring_eligible": "covariate_only"
+    },
+    "data_quality": { "mapped": false, "scoring_eligible": "covariate_only" }
+  },
+  "open_decisions": {
+    "scientific": ["SA-1", "SA-2", "SA-3", "SA-4", "SA-5", "SA-6", "SA-7"],
+    "scoring_schema": [
+      "D2",
+      "D3",
+      "D4",
+      "D5",
+      "D6",
+      "D7",
+      "D8",
+      "P1-9-sequence-numbers",
+      "UD-HAZARD-CONSEQUENCE"
+    ],
+    "integration": [
+      "INT-1",
+      "INT-2",
+      "INT-3",
+      "INT-4",
+      "INT-5",
+      "INT-6",
+      "P0-3-persistence"
+    ],
+    "blueprint_new_requests": [
+      "ethical-scenario placement/arm split and combined-session timing (blueprint section 6)",
+      "scenario route-gate arm configuration (Stage 3.8)"
+    ]
+  },
+  "roadmap_stages": [
+    {
+      "stage": 0,
+      "name": "current pilot repair",
+      "state": "essentially complete at bfca741",
+      "remaining": [
+        "full-suite x2 confirmation",
+        "live synthetic Supabase test",
+        "scenario placement ruling request"
+      ]
+    },
+    {
+      "stage": 1,
+      "name": "canonical assessment coverage",
+      "units": [
+        "FABLE-NEXT-01",
+        "FABLE-NEXT-02",
+        "FABLE-NEXT-05(A)",
+        "FABLE-NEXT-04",
+        "FABLE-NEXT-03"
+      ],
+      "blocked_units": [
+        "HOR (SA-3)",
+        "GRA (SA-4)",
+        "utility-stop (SA-1/SA-2)",
+        "Q05 latency (D7)",
+        "idle family (D3)",
+        "hazard consequence (UD)"
+      ]
+    },
+    {
+      "stage": 2,
+      "name": "connected playable foundation",
+      "units": [
+        "item registry+carried HUD",
+        "prepared-tool consequence",
+        "dialogue unification",
+        "feedback style",
+        "Q03 retrieval episode"
+      ]
+    },
+    {
+      "stage": 3,
+      "name": "research validation",
+      "units": [
+        "INT-1 return",
+        "INT-2 export",
+        "INT-5 taxonomy",
+        "P0-3 persistence",
+        "D2+SA-7 scoring bundle",
+        "SA-1..SA-6 edits/modules",
+        "opportunity-flag completeness",
+        "scenario-gate arm config",
+        "pilot calibration"
+      ],
+      "note": "ruling-driven"
+    },
+    {
+      "stage": 4,
+      "name": "visual/audio production",
+      "gate": "explicit human approval per PixelLab pass; mechanics+logging green first"
+    },
+    {
+      "stage": 5,
+      "name": "optional post-pilot expansion",
+      "rule": "approved non-scored content only; assessment frozen during collection"
+    }
+  ]
+}
