@@ -11,7 +11,7 @@
       "scoring_inputs": 57,
       "summary_variables": 59,
       "with_code_references": 141,
-      "with_spec_references": 128
+      "with_spec_references": 143
     }
   },
   "events": {
@@ -37,7 +37,11 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": ["src/scenes/ArchiveScene.ts"],
-      "spec_references": ["e2e/archive_room_logging.spec.ts"]
+      "spec_references": [
+        "e2e/adversarial_archive_abandon_return.spec.ts",
+        "e2e/archive_room_logging.spec.ts",
+        "e2e/scenario_reconciliation_logging.spec.ts"
+      ]
     },
     "archive_attempt": {
       "rooms": ["archive_room"],
@@ -52,7 +56,7 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": []
+      "spec_references": ["e2e/archive_room_logging.spec.ts"]
     },
     "archive_code_entered": {
       "rooms": ["archive_room"],
@@ -77,9 +81,12 @@
         "src/systems/ScoringManager.ts"
       ],
       "spec_references": [
+        "e2e/adversarial_archive_abandon_return.spec.ts",
+        "e2e/adversarial_status_board_display.spec.ts",
         "e2e/archive_room_logging.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
-        "e2e/repair_room_logging.spec.ts"
+        "e2e/repair_room_logging.spec.ts",
+        "e2e/scenario_reconciliation_logging.spec.ts"
       ]
     },
     "archive_feedback_shown": {
@@ -104,7 +111,11 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/archive_room_logging.spec.ts"]
+      "spec_references": [
+        "e2e/adversarial_archive_abandon_return.spec.ts",
+        "e2e/archive_room_logging.spec.ts",
+        "e2e/scenario_reconciliation_logging.spec.ts"
+      ]
     },
     "archive_log_compared": {
       "rooms": ["archive_room"],
@@ -117,7 +128,7 @@
         "src/data/researchInteractions.ts",
         "src/scenes/ArchiveScene.ts"
       ],
-      "spec_references": []
+      "spec_references": ["e2e/archive_room_logging.spec.ts"]
     },
     "archive_returned_after_failure": {
       "rooms": ["archive_room"],
@@ -127,7 +138,7 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": ["src/scenes/ArchiveScene.ts"],
-      "spec_references": []
+      "spec_references": ["e2e/adversarial_archive_abandon_return.spec.ts"]
     },
     "archive_room_entered": {
       "rooms": ["archive_room"],
@@ -140,7 +151,8 @@
       "spec_references": [
         "e2e/archive_room_logging.spec.ts",
         "e2e/connected_world_smoke.spec.ts",
-        "e2e/helpers.ts"
+        "e2e/helpers.ts",
+        "e2e/scenario_pilot_route.spec.ts"
       ]
     },
     "archive_same_wrong_code_repeated": {
@@ -156,6 +168,7 @@
         "src/systems/ScoringManager.ts"
       ],
       "spec_references": [
+        "e2e/adversarial_archive_abandon_return.spec.ts",
         "e2e/archive_room_logging.spec.ts",
         "e2e/connected_participant_journeys.spec.ts"
       ]
@@ -182,7 +195,10 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": ["src/scenes/ArchiveScene.ts"],
-      "spec_references": ["e2e/archive_room_logging.spec.ts"]
+      "spec_references": [
+        "e2e/archive_room_logging.spec.ts",
+        "e2e/scenario_reconciliation_logging.spec.ts"
+      ]
     },
     "archive_wrong_code": {
       "rooms": ["archive_room"],
@@ -196,7 +212,12 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/archive_room_logging.spec.ts"]
+      "spec_references": [
+        "e2e/adversarial_archive_abandon_return.spec.ts",
+        "e2e/adversarial_status_board_display.spec.ts",
+        "e2e/archive_room_logging.spec.ts",
+        "e2e/scenario_reconciliation_logging.spec.ts"
+      ]
     },
     "baseline_idle_seconds": {
       "rooms": ["dock_arrival"],
@@ -218,7 +239,8 @@
       "code_references": ["src/scenes/InventoryScene.ts"],
       "spec_references": [
         "e2e/connected_participant_journeys.spec.ts",
-        "e2e/inventory_prep_logging.spec.ts"
+        "e2e/inventory_prep_logging.spec.ts",
+        "e2e/scenario_breach_logging.spec.ts"
       ]
     },
     "competing_task_viewed": {
@@ -263,7 +285,7 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": []
+      "spec_references": ["e2e/dock_tutorial_paths.spec.ts"]
     },
     "dock_controls_reviewed": {
       "rooms": ["dock_arrival"],
@@ -273,7 +295,10 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": ["src/scenes/DockScene.ts", "src/scenes/Main.tsx"],
-      "spec_references": ["e2e/movement_and_first_interaction.spec.ts"]
+      "spec_references": [
+        "e2e/dock_tutorial_paths.spec.ts",
+        "e2e/movement_and_first_interaction.spec.ts"
+      ]
     },
     "dock_instruction_followed": {
       "rooms": ["dock_arrival"],
@@ -287,7 +312,10 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/movement_and_first_interaction.spec.ts"]
+      "spec_references": [
+        "e2e/dock_tutorial_paths.spec.ts",
+        "e2e/movement_and_first_interaction.spec.ts"
+      ]
     },
     "dock_instruction_shortcut": {
       "rooms": ["dock_arrival"],
@@ -297,7 +325,7 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": ["src/scenes/DockScene.ts", "src/scenes/Main.tsx"],
-      "spec_references": []
+      "spec_references": ["e2e/dock_tutorial_paths.spec.ts"]
     },
     "dock_movement_practiced": {
       "rooms": ["dock_arrival"],
@@ -311,7 +339,10 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/connected_participant_journeys.spec.ts"]
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/dock_tutorial_paths.spec.ts"
+      ]
     },
     "dock_started": {
       "rooms": ["dock_arrival"],
@@ -342,6 +373,7 @@
       ],
       "spec_references": [
         "e2e/connected_participant_journeys.spec.ts",
+        "e2e/dock_tutorial_paths.spec.ts",
         "e2e/movement_and_first_interaction.spec.ts"
       ]
     },
@@ -371,7 +403,11 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/connected_participant_journeys.spec.ts"]
+      "spec_references": [
+        "e2e/adversarial_session_isolation.spec.ts",
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/dock_tutorial_paths.spec.ts"
+      ]
     },
     "engineer_clarification_requested": {
       "rooms": ["engineer_hub"],
@@ -385,7 +421,7 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": []
+      "spec_references": ["e2e/engineer_hub_logging.spec.ts"]
     },
     "engineer_evidence_reviewed": {
       "rooms": ["engineer_hub"],
@@ -413,7 +449,8 @@
         "e2e/connected_world_smoke.spec.ts",
         "e2e/engineer_hub_logging.spec.ts",
         "e2e/final_core_summary.spec.ts",
-        "e2e/interruption_corridor_logging.spec.ts"
+        "e2e/interruption_corridor_logging.spec.ts",
+        "e2e/scenario_pilot_route.spec.ts"
       ]
     },
     "engineer_report_opened": {
@@ -428,7 +465,11 @@
         "src/scenes/EngineerScene.ts",
         "src/scenes/Main.tsx"
       ],
-      "spec_references": ["e2e/engineer_hub_logging.spec.ts"]
+      "spec_references": [
+        "e2e/engineer_hub_logging.spec.ts",
+        "e2e/scenario_calibration_logging.spec.ts",
+        "e2e/scenario_pilot_route.spec.ts"
+      ]
     },
     "engineer_report_submitted_prepared": {
       "rooms": ["engineer_hub"],
@@ -459,7 +500,7 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": []
+      "spec_references": ["e2e/engineer_hub_logging.spec.ts"]
     },
     "engineer_report_submitted_unprepared": {
       "rooms": ["engineer_hub"],
@@ -527,7 +568,12 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": ["src/scenes/EngineerScene.ts"],
-      "spec_references": ["e2e/engineer_hub_logging.spec.ts"]
+      "spec_references": [
+        "e2e/adversarial_status_board_display.spec.ts",
+        "e2e/engineer_hub_logging.spec.ts",
+        "e2e/scenario_calibration_logging.spec.ts",
+        "e2e/scenario_pilot_route.spec.ts"
+      ]
     },
     "engineer_supervision_completed": {
       "rooms": ["final_core_room"],
@@ -551,8 +597,11 @@
       "scoring_input": false,
       "code_references": ["src/scenes/EngineerScene.ts"],
       "spec_references": [
+        "e2e/adversarial_status_board_display.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
-        "e2e/engineer_hub_logging.spec.ts"
+        "e2e/engineer_hub_logging.spec.ts",
+        "e2e/scenario_calibration_logging.spec.ts",
+        "e2e/scenario_pilot_route.spec.ts"
       ]
     },
     "engineer_supervision_skipped": {
@@ -609,7 +658,13 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": ["src/scenes/FinalCoreScene.ts"],
-      "spec_references": ["e2e/final_core_summary.spec.ts"]
+      "spec_references": [
+        "e2e/adversarial_status_board_display.spec.ts",
+        "e2e/final_core_summary.spec.ts",
+        "e2e/research_export_test_mode.spec.ts",
+        "e2e/scenario_pilot_route.spec.ts",
+        "e2e/scenario_route_gate.spec.ts"
+      ]
     },
     "final_core_entered": {
       "rooms": ["final_core_room"],
@@ -621,7 +676,9 @@
       "code_references": ["src/scenes/FinalCoreScene.ts"],
       "spec_references": [
         "e2e/connected_world_smoke.spec.ts",
-        "e2e/final_core_summary.spec.ts"
+        "e2e/final_core_summary.spec.ts",
+        "e2e/research_export_test_mode.spec.ts",
+        "e2e/scenario_pilot_route.spec.ts"
       ]
     },
     "final_core_force_continue": {
@@ -706,7 +763,10 @@
         "src/scenes/FinalCoreScene.ts",
         "src/scenes/Main.tsx"
       ],
-      "spec_references": []
+      "spec_references": [
+        "e2e/scenario_pilot_route.spec.ts",
+        "e2e/scenario_route_gate.spec.ts"
+      ]
     },
     "final_core_prior_results_integrated": {
       "rooms": ["final_core_room"],
@@ -720,7 +780,7 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": []
+      "spec_references": ["e2e/scenario_pilot_route.spec.ts"]
     },
     "final_core_quick_sync": {
       "rooms": ["final_core_room"],
@@ -805,7 +865,7 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": []
+      "spec_references": ["e2e/scenario_pilot_route.spec.ts"]
     },
     "final_core_unresolved_issues_ignored": {
       "rooms": ["final_core_room"],
@@ -920,6 +980,7 @@
         "src/systems/ScoringManager.ts"
       ],
       "spec_references": [
+        "e2e/adversarial_hazard_repeat_decisions.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/hazard_control_logging.spec.ts"
       ]
@@ -937,6 +998,8 @@
         "src/systems/ScoringManager.ts"
       ],
       "spec_references": [
+        "e2e/adversarial_hazard_repeat_decisions.spec.ts",
+        "e2e/adversarial_status_board_display.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/hazard_control_logging.spec.ts"
       ]
@@ -954,6 +1017,8 @@
         "src/systems/ScoringManager.ts"
       ],
       "spec_references": [
+        "e2e/adversarial_hazard_repeat_decisions.spec.ts",
+        "e2e/adversarial_status_board_display.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/hazard_control_logging.spec.ts"
       ]
@@ -991,6 +1056,7 @@
         "src/systems/ScoringManager.ts"
       ],
       "spec_references": [
+        "e2e/adversarial_hazard_repeat_decisions.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/hazard_control_logging.spec.ts"
       ]
@@ -1017,6 +1083,8 @@
       "scoring_input": false,
       "code_references": ["src/scenes/HazardScene.ts"],
       "spec_references": [
+        "e2e/adversarial_hazard_repeat_decisions.spec.ts",
+        "e2e/adversarial_status_board_display.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/hazard_control_logging.spec.ts"
       ]
@@ -1033,7 +1101,10 @@
         "src/scenes/HazardScene.ts",
         "src/scenes/Main.tsx"
       ],
-      "spec_references": ["e2e/hazard_control_logging.spec.ts"]
+      "spec_references": [
+        "e2e/adversarial_hazard_repeat_decisions.spec.ts",
+        "e2e/hazard_control_logging.spec.ts"
+      ]
     },
     "interruption_alert_acknowledged": {
       "rooms": ["interruption_corridor"],
@@ -1062,6 +1133,7 @@
         "src/systems/ScoringManager.ts"
       ],
       "spec_references": [
+        "e2e/adversarial_status_board_display.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/interruption_corridor_logging.spec.ts"
       ]
@@ -1224,7 +1296,10 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+      "spec_references": [
+        "e2e/inventory_prep_logging.spec.ts",
+        "e2e/scenario_breach_logging.spec.ts"
+      ]
     },
     "inventory_cleanup_completed": {
       "rooms": ["inventory_prep_room"],
@@ -1238,7 +1313,10 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": []
+      "spec_references": [
+        "e2e/adversarial_status_board_display.spec.ts",
+        "e2e/inventory_prep_logging.spec.ts"
+      ]
     },
     "inventory_disorganized_action": {
       "rooms": ["inventory_prep_room"],
@@ -1286,7 +1364,7 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": []
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
     },
     "inventory_prep_opened": {
       "rooms": ["inventory_prep_room"],
@@ -1300,7 +1378,10 @@
         "src/scenes/InventoryScene.ts",
         "src/scenes/Main.tsx"
       ],
-      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+      "spec_references": [
+        "e2e/inventory_prep_logging.spec.ts",
+        "e2e/scenario_breach_logging.spec.ts"
+      ]
     },
     "inventory_prep_shortcut": {
       "rooms": ["inventory_prep_room"],
@@ -1355,7 +1436,8 @@
       "code_references": ["src/scenes/InventoryScene.ts"],
       "spec_references": [
         "e2e/connected_world_smoke.spec.ts",
-        "e2e/inventory_prep_logging.spec.ts"
+        "e2e/inventory_prep_logging.spec.ts",
+        "e2e/scenario_pilot_route.spec.ts"
       ]
     },
     "inventory_sequence_completed": {
@@ -1415,7 +1497,8 @@
       "code_references": ["src/scenes/InventoryScene.ts"],
       "spec_references": [
         "e2e/connected_participant_journeys.spec.ts",
-        "e2e/inventory_prep_logging.spec.ts"
+        "e2e/inventory_prep_logging.spec.ts",
+        "e2e/scenario_breach_logging.spec.ts"
       ]
     },
     "inventory_workspace_sorted": {
@@ -1430,7 +1513,7 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": []
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
     },
     "issue_resolution_attempted": {
       "rooms": ["final_core_room"],
@@ -1512,8 +1595,10 @@
         "src/world/RoomScene.ts"
       ],
       "spec_references": [
+        "e2e/adversarial_archive_abandon_return.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
-        "e2e/repair_room_logging.spec.ts"
+        "e2e/repair_room_logging.spec.ts",
+        "e2e/research_export_test_mode.spec.ts"
       ]
     },
     "prepared_tool_used": {
@@ -1575,6 +1660,7 @@
       "scoring_input": false,
       "code_references": ["src/scenes/RepairScene.ts"],
       "spec_references": [
+        "e2e/adversarial_reload_partial_state.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/repair_room_logging.spec.ts"
       ]
@@ -1592,7 +1678,10 @@
         "src/scenes/RepairScene.ts",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+      "spec_references": [
+        "e2e/adversarial_input_spam.spec.ts",
+        "e2e/repair_room_logging.spec.ts"
+      ]
     },
     "repair_completed": {
       "rooms": ["systems_repair_room"],
@@ -1607,6 +1696,8 @@
         "src/systems/ScoringManager.ts"
       ],
       "spec_references": [
+        "e2e/adversarial_reload_partial_state.spec.ts",
+        "e2e/adversarial_status_board_display.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/repair_room_logging.spec.ts"
       ]
@@ -1624,6 +1715,8 @@
         "src/systems/ScoringManager.ts"
       ],
       "spec_references": [
+        "e2e/adversarial_input_spam.spec.ts",
+        "e2e/adversarial_reload_partial_state.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/repair_room_logging.spec.ts"
       ]
@@ -1653,7 +1746,11 @@
         "src/scenes/RepairScene.ts",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+      "spec_references": [
+        "e2e/adversarial_input_spam.spec.ts",
+        "e2e/adversarial_reload_partial_state.spec.ts",
+        "e2e/repair_room_logging.spec.ts"
+      ]
     },
     "repair_panel_opened": {
       "rooms": ["systems_repair_room"],
@@ -1663,7 +1760,10 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": ["src/scenes/RepairScene.ts"],
-      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+      "spec_references": [
+        "e2e/adversarial_input_spam.spec.ts",
+        "e2e/repair_room_logging.spec.ts"
+      ]
     },
     "repair_returned_after_failure": {
       "rooms": ["systems_repair_room"],
@@ -1674,6 +1774,7 @@
       "scoring_input": false,
       "code_references": ["src/scenes/RepairScene.ts"],
       "spec_references": [
+        "e2e/adversarial_reload_partial_state.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/repair_room_logging.spec.ts"
       ]
@@ -1687,6 +1788,7 @@
       "scoring_input": false,
       "code_references": ["src/scenes/RepairScene.ts"],
       "spec_references": [
+        "e2e/adversarial_reload_partial_state.spec.ts",
         "e2e/connected_world_smoke.spec.ts",
         "e2e/repair_room_logging.spec.ts",
         "e2e/state_session_continuity.spec.ts"
@@ -1704,7 +1806,10 @@
         "src/scenes/RepairScene.ts",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+      "spec_references": [
+        "e2e/adversarial_input_spam.spec.ts",
+        "e2e/repair_room_logging.spec.ts"
+      ]
     },
     "repair_sequence_submitted": {
       "rooms": ["systems_repair_room"],
@@ -1714,7 +1819,10 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": ["src/scenes/RepairScene.ts"],
-      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+      "spec_references": [
+        "e2e/adversarial_input_spam.spec.ts",
+        "e2e/repair_room_logging.spec.ts"
+      ]
     },
     "repair_strategy_revision": {
       "rooms": ["systems_repair_room"],
@@ -1759,6 +1867,7 @@
       "scoring_input": false,
       "code_references": ["src/systems/ResearchRuntime.ts"],
       "spec_references": [
+        "e2e/adversarial_hostile_launch.spec.ts",
         "e2e/journey.ts",
         "e2e/launch_with_research_params.spec.ts",
         "e2e/participant_lifecycle.spec.ts",
@@ -1774,9 +1883,12 @@
       "scoring_input": false,
       "code_references": ["src/systems/ResearchRuntime.ts"],
       "spec_references": [
+        "e2e/adversarial_reload_partial_state.spec.ts",
+        "e2e/adversarial_session_isolation.spec.ts",
         "e2e/connected_world_smoke.spec.ts",
         "e2e/launch_with_research_params.spec.ts",
         "e2e/participant_lifecycle.spec.ts",
+        "e2e/scenario_pilot_route.spec.ts",
         "e2e/state_session_continuity.spec.ts"
       ]
     },
@@ -1802,7 +1914,7 @@
         "src/scenes/SideRepairScene.ts",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": []
+      "spec_references": ["e2e/side_repair_logging.spec.ts"]
     },
     "side_repair_abandoned_after_start": {
       "rooms": ["optional_side_repair_bay"],
@@ -1850,6 +1962,7 @@
       "scoring_input": false,
       "code_references": ["src/scenes/SideRepairScene.ts"],
       "spec_references": [
+        "e2e/adversarial_status_board_display.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/side_repair_logging.spec.ts"
       ]
@@ -1863,6 +1976,7 @@
       "scoring_input": false,
       "code_references": ["src/scenes/SideRepairScene.ts"],
       "spec_references": [
+        "e2e/adversarial_direct_launch_navigation.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/connected_world_smoke.spec.ts",
         "e2e/side_repair_logging.spec.ts"
@@ -1890,7 +2004,11 @@
         "src/scenes/SideRepairScene.ts",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/side_repair_logging.spec.ts"]
+      "spec_references": [
+        "e2e/adversarial_direct_launch_navigation.spec.ts",
+        "e2e/adversarial_status_board_display.spec.ts",
+        "e2e/side_repair_logging.spec.ts"
+      ]
     },
     "side_repair_low_effort": {
       "rooms": ["optional_side_repair_bay"],
@@ -1993,12 +2111,14 @@
         "src/scenes/HubScene.ts"
       ],
       "spec_references": [
+        "e2e/adversarial_session_isolation.spec.ts",
         "e2e/connected_world_smoke.spec.ts",
         "e2e/final_core_summary.spec.ts",
         "e2e/hazard_control_logging.spec.ts",
         "e2e/helpers.ts",
         "e2e/interruption_corridor_logging.spec.ts",
-        "e2e/repair_room_logging.spec.ts"
+        "e2e/repair_room_logging.spec.ts",
+        "e2e/scenario_pilot_route.spec.ts"
       ]
     },
     "station_hub_sealed_door_attempted": {
@@ -2019,7 +2139,10 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": ["src/scenes/HubScene.ts"],
-      "spec_references": []
+      "spec_references": [
+        "e2e/adversarial_status_board_display.spec.ts",
+        "e2e/scenario_allocation_logging.spec.ts"
+      ]
     },
     "switched_task": {
       "rooms": ["interruption_corridor"],
@@ -2043,6 +2166,7 @@
       "scoring_input": false,
       "code_references": ["src/scenes/InterruptionScene.ts"],
       "spec_references": [
+        "e2e/adversarial_direct_launch_navigation.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/interruption_corridor_logging.spec.ts"
       ]
@@ -2075,7 +2199,11 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": ["src/scenes/DockScene.ts"],
-      "spec_references": ["e2e/movement_and_first_interaction.spec.ts"]
+      "spec_references": [
+        "e2e/dock_tutorial_paths.spec.ts",
+        "e2e/movement_and_first_interaction.spec.ts",
+        "e2e/scenario_pilot_route.spec.ts"
+      ]
     },
     "tutorial_help_shown": {
       "rooms": ["dock_arrival"],
@@ -2129,35 +2257,9 @@
     }
   },
   "findings": {
-    "scoring_terms_without_tested_sources": [
-      "archive_attempt",
-      "dock_control_familiarisation",
-      "engineer_clarification_requested",
-      "engineer_report_submitted_supervised",
-      "final_core_prior_results_integrated",
-      "final_core_structured_completion",
-      "inventory_cleanup_completed",
-      "inventory_kit_verified",
-      "inventory_workspace_sorted",
-      "side_repair_abandoned_after_difficulty"
-    ],
+    "scoring_terms_without_tested_sources": [],
     "events_lacking_direct_test_coverage": [
-      "archive_attempt",
-      "archive_log_compared",
-      "archive_returned_after_failure",
-      "dock_control_familiarisation",
-      "dock_instruction_shortcut",
-      "engineer_clarification_requested",
-      "engineer_report_submitted_supervised",
-      "final_core_opened",
-      "final_core_prior_results_integrated",
-      "final_core_structured_completion",
-      "inventory_cleanup_completed",
-      "inventory_kit_verified",
-      "inventory_workspace_sorted",
-      "side_repair_abandoned_after_difficulty",
       "station_hub_sealed_door_attempted",
-      "station_hub_status_board_viewed",
       "tutorial_help_shown"
     ],
     "items_without_full_operationalisation": [
