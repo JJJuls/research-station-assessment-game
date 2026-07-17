@@ -12,6 +12,7 @@ import {
   press,
   waitForRoomEntry,
 } from './helpers';
+import { completeAllPilotDecisions } from './journey';
 
 /**
  * V3 §9 spec: final_core_summary.spec.ts — Final Core integration through
@@ -19,6 +20,12 @@ import {
  * blocker/force-continue branch, duty follow-through, and completion
  * paths. The debug-session/Qualtrics-return preview remains covered by
  * launch_with_research_params.spec.ts (V1 slice).
+ *
+ * Route gate (pilot route repair): Final Core is locked until all four
+ * pilot decisions are completed, so every test completes them first
+ * (completeAllPilotDecisions — normal controls, Hub -> Hub). Kit prep,
+ * workspace and duty state are untouched by the scenarios, so every
+ * legacy flag/blocker assertion below is preserved.
  *
  * NOTE (Wave 1A): authored compile-only — Playwright execution is disabled
  * in the authoring session; routes/choreography must be tuned/verified in
@@ -40,6 +47,8 @@ test.describe('final core integration', () => {
   test('fresh session: missing-kit flag, blocker shown, force continue (Q28)', async ({
     page,
   }) => {
+    test.setTimeout(900_000);
+
     await bootGame(page, {
       participant_id: 'E2E_P9',
       game_session_id: 'E2E_CORE_S1',
@@ -47,6 +56,9 @@ test.describe('final core integration', () => {
       game_version: 'e2e',
     });
     await dockToHub(page);
+    // Route gate: complete the four pilot decisions first (kit prep stays
+    // untouched, so the missing-kit flag below is preserved).
+    await completeAllPilotDecisions(page);
     await hubToFinalCore(page);
 
     const typesOnEntry = await getEventTypes(page);
@@ -93,6 +105,8 @@ test.describe('final core integration', () => {
   test('resolve path completes the accepted duty (Q10 follow-through)', async ({
     page,
   }) => {
+    test.setTimeout(900_000);
+
     await bootGame(page, {
       participant_id: 'E2E_P9',
       game_session_id: 'E2E_CORE_S2',
@@ -100,6 +114,8 @@ test.describe('final core integration', () => {
       game_version: 'e2e',
     });
     await dockToHub(page);
+    // Route gate: complete the four pilot decisions first.
+    await completeAllPilotDecisions(page);
 
     // Accept the relay duty at the Engineer Hub first.
     await hubToStationDoor(page, 'engineer_hub');
@@ -151,6 +167,8 @@ test.describe('final core integration', () => {
   test('rushed path with unresolved duty logs accepted_duty_unresolved', async ({
     page,
   }) => {
+    test.setTimeout(900_000);
+
     await bootGame(page, {
       participant_id: 'E2E_P9',
       game_session_id: 'E2E_CORE_S3',
@@ -158,6 +176,8 @@ test.describe('final core integration', () => {
       game_version: 'e2e',
     });
     await dockToHub(page);
+    // Route gate: complete the four pilot decisions first.
+    await completeAllPilotDecisions(page);
 
     // Accept the duty, then never resolve it.
     await hubToStationDoor(page, 'engineer_hub');

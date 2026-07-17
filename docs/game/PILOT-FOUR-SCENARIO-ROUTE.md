@@ -99,6 +99,39 @@ and the dev-only `window.__scenarioProbe`.
 - Participant-mode submission stays disabled and no Qualtrics redirect is
   activated (re-verified by the export spec battery after integration).
 
+### Route legibility and enforcement (pilot route repair)
+
+The first supervised human run exposed that the route above existed only in
+documentation: the participant found A/C/D incidentally, stepped away from
+each without committing, never encountered B, and Final Core still closed
+the mission cycle. Repaired per `FABLE-AUTONOMOUS-PILOT-ROUTE-REPAIR`:
+
+- **Duty-roster HUD** (RoomScene, every room, allowed progress UI only —
+  checklist/status labels, no scores): a persistent line showing the dock
+  check-in directive, then `station decisions D/4 — next: <station>
+(<room>)` in route order, then `synchronize at the Final Core`, then
+  `mission cycle complete`. Driven by `src/scenarios/pilotRoute.ts` +
+  explicit scenario completion state; deliberately NOT SessionState
+  (`active_objectives` feeds the Q18-relevant `objective_active` event and
+  must stay untouched by pilot scenarios).
+- **Final Core route gate** (FinalCoreScene, in front of the legacy
+  options, after the one-shot completed check): until all four scenarios
+  are completed, the core interface opens a LOCKED prompt listing every
+  remaining decision with a single step-back option. `final_core_opened`
+  fires only when the real decision prompt opens; blocked attempts log
+  `final_core_blocked_pending_decisions` (raw pilot telemetry with
+  `remaining_count` + `remaining_scenario_ids`). Gating reads explicit
+  per-scenario completion state — never event counts — so progress
+  survives room transitions and no debug/test surface satisfies the route.
+  The legacy three options, the Q28 blocker/force branch and all canonical
+  Final Core events are unchanged once the gate is satisfied.
+- Scenario COMPLETION is now enforced before Final Core; the B→A→C→D
+  ORDER remains a development convention (any completion order unlocks).
+- New dev-only, read-only probes for runtime verification:
+  `window.__routeObjectiveText` (rendered HUD line) and
+  `window.__lastPromptBody` (rendered prompt-stage text), both
+  presentation-only and stripped from production builds.
+
 ## Raw telemetry identifiers
 
 Unchanged framework event set, now emitted by four scenario ids
@@ -111,6 +144,13 @@ Unchanged framework event set, now emitted by four scenario ids
 `scenario_decision_committed` (choice_value + latency/evidence metadata),
 `scenario_consequence_shown`, `scenario_completed`,
 `scenario_interrupted`, `scenario_abandoned`.
+
+Route-gate marker (pilot route repair, same unmapped pilot-telemetry
+governance; Final Core interaction context, no `scenario_id`):
+`final_core_blocked_pending_decisions` (`metadata.remaining_count`,
+`metadata.remaining_scenario_ids` in route order). A clean completion run
+emits exactly one `scenario_decision_committed` and one
+`scenario_completed` per scenario id and zero route-gate markers.
 
 New evidence ids: C — `sensor_record`, `duty_report`, `clock_history`
 (optional); D — `cycle_log`, `fault_ticket`, `outbound_manifest`
@@ -199,7 +239,9 @@ structured completion; debug return flow.
   canonical task shifts behaviour on that task is a study-design question
   for the research owner, not something these tests can rule out.
 - Scenario order on the route is a development convention; nothing
-  enforces B→A→C→D for a free-roaming participant.
+  enforces B→A→C→D for a free-roaming participant. Completion of all four
+  IS enforced before Final Core (route gate, pilot route repair); the
+  duty-roster HUD always directs to the first pending stop in route order.
 - The two known environmental test flakes remain: CPU-load movement
   undershoot on long journeys and the cold first WebGL context (both
   documented pre-existing genres; retries absorb them).

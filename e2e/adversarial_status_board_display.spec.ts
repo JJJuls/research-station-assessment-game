@@ -11,6 +11,7 @@ import type { MissionStateLike } from './journey';
 import {
   bootJourney,
   captureErrors,
+  completeAllPilotDecisions,
   completeDockTutorial,
   dockToHubJourney,
   expectNoRuntimeErrors,
@@ -110,7 +111,7 @@ test.describe('adversarial: Hub status-board display', () => {
   test('board lines are an accurate, deterministic rendering of SessionState across completion, defer, and hazard-decision states', async ({
     page,
   }) => {
-    test.setTimeout(900_000);
+    test.setTimeout(1_500_000);
 
     const capture = captureErrors(page);
 
@@ -272,6 +273,11 @@ test.describe('adversarial: Hub status-board display', () => {
     expect(mission.hazard_status).toBe('informed_continue'); // overwrote route_avoided
     expect(mission.completed_rooms).not.toContain('hazard_control_room'); // still pending
     expect(board).toBe(expectedBoardText(mission));
+
+    // — Route gate: complete the four pilot decisions (normal controls)
+    //   first — Final Core is locked otherwise. The board vocabulary they
+    //   must NOT touch is re-pinned byte-for-byte below —
+    await completeAllPilotDecisions(page);
 
     // — Final Core: complete last, so the aggregate check below has every
     //   station decided —

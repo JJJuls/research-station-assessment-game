@@ -6,6 +6,7 @@ import {
   engineerToCalibrationBench,
   findEvents,
   getEvents,
+  getRouteObjectiveText,
   hubToAllocationConsole,
   inventoryToSealLog,
   selectPromptOption,
@@ -200,18 +201,35 @@ test.describe('pilot four-scenario route', () => {
       'final_core_completed',
     ]);
 
-    // All four scenarios completed, one commit each, in their own rooms.
+    // All four scenarios completed, EXACTLY one commit and one completion
+    // per scenario id, in their own rooms.
     const completions = findEvents(events, 'scenario_completed');
-
-    expect(completions).toHaveLength(4);
-    expect(completions.map((e) => e.metadata?.scenario_id).sort()).toEqual([
+    const commits = findEvents(events, 'scenario_decision_committed');
+    const routeIds = [
       'calibration_anomaly',
       'incident_reconciliation',
       'priority_allocation',
       'protocol_breach',
-    ]);
-    expect(findEvents(events, 'scenario_decision_committed')).toHaveLength(4);
+    ];
+
+    expect(completions).toHaveLength(4);
+    expect(completions.map((e) => e.metadata?.scenario_id).sort()).toEqual(
+      routeIds,
+    );
+    expect(commits.map((e) => e.metadata?.scenario_id).sort()).toEqual(
+      routeIds,
+    );
+    // Clean first-time route: no unintended abandonment or interruption,
+    // and the Final Core route gate never fired (every decision was
+    // completed before the core attempt).
     expect(findEvents(events, 'scenario_abandoned')).toHaveLength(0);
+    expect(findEvents(events, 'scenario_interrupted')).toHaveLength(0);
+    expect(types).not.toContain('final_core_blocked_pending_decisions');
+
+    // Duty-roster HUD end state: the mission cycle reads complete.
+    expect(await getRouteObjectiveText(page)).toBe(
+      'Duty roster: mission cycle complete.',
+    );
 
     // Scenario isolation: every scenario_* event belongs to exactly its
     // scenario's host scene — no cross-contamination between scenarios.

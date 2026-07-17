@@ -3,10 +3,14 @@ import { expect } from '@playwright/test';
 
 import type { HubStationRoomId, LaunchParams, RawEventLike } from './helpers';
 import {
+  archiveToReconciliationDesk,
   driveAxisTo,
+  engineerToCalibrationBench,
   getEvents,
   hold,
+  hubToAllocationConsole,
   hubToStationDoor,
+  inventoryToSealLog,
   press,
 } from './helpers';
 
@@ -291,6 +295,20 @@ export async function stationToHubJourney(
 ) {
   const before = await eventCount(page, 'scene_start', 'hub');
 
+  // Engineer Hub: from the calibration-bench corner (rows 5-6 beside the
+  // east work blocks) the generic down-clamp wedges on the row-7 east
+  // block and strands the player ~180 px from the exit door (observed
+  // live: every route-repair suite failure shared this signature).
+  // Normalize first: west along the open rows 5-6 corridor to the door
+  // column, then down the always-clear central column — position-synced
+  // and stall-safe from every legitimate engineer position
+  // (scenario_pilot_route's bench-return precedent, folded in here so
+  // every caller inherits it).
+  if (roomId === 'engineer_hub') {
+    await driveAxisTo(page, 'x', 320, 12);
+    await driveAxisTo(page, 'y', 272, 16);
+  }
+
   // Clamp legs sized for the full room extents (20×13 rooms: worst
   // horizontal traverse ≈ 552 px), so the exit works from ANY position;
   // the final east leg is position-synced on the observed player x so CPU
@@ -399,4 +417,129 @@ export async function completeReturnFlow(page: Page) {
 /** All raw events (re-exported for journey specs' single import). */
 export async function journeyEvents(page: Page): Promise<RawEventLike[]> {
   return getEvents(page);
+}
+
+/** The four pilot ethical-decision scenarios (route order; pilotRoute.ts). */
+export type PilotScenarioId =
+  | 'priority_allocation'
+  | 'calibration_anomaly'
+  | 'incident_reconciliation'
+  | 'protocol_breach';
+
+/** Host scene key per pilot scenario id (scenario_pilot_route precedent). */
+export const PILOT_SCENARIO_SCENE: Record<PilotScenarioId, string> = {
+  priority_allocation: 'hub',
+  calibration_anomaly: 'engineer',
+  incident_reconciliation: 'archive',
+  protocol_breach: 'inventory',
+};
+
+/**
+ * Completes one pilot scenario through NORMAL controls (position-synced
+ * station approach + numbered prompt keys — never direct controller calls),
+ * taking the shortest legitimate path: decide -> first choice (per slot for
+ * the ordered allocation) -> commit -> acknowledge. The player must already
+ * be in the scenario's host room; the scenario must not be completed yet.
+ * Count-aware throughout, so it is safe on re-visits and mid-journey.
+ */
+export async function completePilotScenario(
+  page: Page,
+  scenarioId: PilotScenarioId,
+) {
+  const scene = PILOT_SCENARIO_SCENE[scenarioId];
+  const briefingBefore = await eventCount(
+    page,
+    'scenario_briefing_opened',
+    scene,
+  );
+  const selectedBefore = await eventCount(
+    page,
+    'scenario_option_selected',
+    scene,
+  );
+  const committedBefore = await eventCount(
+    page,
+    'scenario_decision_committed',
+    scene,
+  );
+  const completedBefore = await eventCount(page, 'scenario_completed', scene);
+
+  switch (scenarioId) {
+    case 'priority_allocation':
+      await hubToAllocationConsole(page);
+      break;
+    case 'calibration_anomaly':
+      await engineerToCalibrationBench(page);
+      break;
+    case 'incident_reconciliation':
+      await archiveToReconciliationDesk(page);
+      break;
+    case 'protocol_breach':
+      await inventoryToSealLog(page);
+      break;
+  }
+
+  // The approach ends with SPACE; sync on the briefing render before the
+  // first option key (count-aware waits rule — an unsynchronized press can
+  // be swallowed under cold-start CPU load).
+  await waitForEventCount(
+    page,
+    'scenario_briefing_opened',
+    scene,
+    briefingBefore + 1,
+  );
+
+  // Briefing stage: 3 evidence entries, then the decide option at 4.
+  await press(page, '4');
+  await press(page, '1'); // first decision option / priority slot 1
+  await waitForEventCount(
+    page,
+    'scenario_option_selected',
+    scene,
+    selectedBefore + 1,
+  );
+
+  if (scenarioId === 'priority_allocation') {
+    await press(page, '1'); // priority slot 2 (first remaining candidate)
+    await waitForEventCount(
+      page,
+      'scenario_option_selected',
+      scene,
+      selectedBefore + 2,
+    );
+  }
+
+  await press(page, '1'); // commit the decision/allocation
+  await waitForEventCount(
+    page,
+    'scenario_decision_committed',
+    scene,
+    committedBefore + 1,
+  );
+  await press(page, '1'); // acknowledge the consequence
+  await waitForEventCount(
+    page,
+    'scenario_completed',
+    scene,
+    completedBefore + 1,
+  );
+}
+
+/**
+ * Completes all four pilot decisions in route order through normal
+ * controls. Starts AND ends in the Station Hub — the standard prelude for
+ * specs that must complete Final Core (the route gate blocks it until
+ * every decision is logged).
+ */
+export async function completeAllPilotDecisions(page: Page) {
+  await completePilotScenario(page, 'priority_allocation');
+  await hubToStationJourney(page, 'engineer_hub');
+  await completePilotScenario(page, 'calibration_anomaly');
+  await stationToHubJourney(page, 'engineer_hub');
+  await hubToStationJourney(page, 'archive_room');
+  await completePilotScenario(page, 'incident_reconciliation');
+  await stationToHubJourney(page, 'archive_room');
+  await hubToStationJourney(page, 'inventory_prep_room');
+  await completePilotScenario(page, 'protocol_breach');
+  await stationToHubJourney(page, 'inventory_prep_room');
 }

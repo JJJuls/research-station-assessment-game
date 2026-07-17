@@ -10,6 +10,8 @@ import {
   SIDE_REPAIR_STATUS_COMPLETED,
   WORKSPACE_STATUS_DISORDERED,
 } from '../data/missionVocabulary';
+import type { PilotRouteStop } from '../scenarios';
+import { getRemainingPilotDecisions } from '../scenarios';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 import { RoomScene, runOncePerSession } from '../world';
@@ -35,6 +37,15 @@ import { RoomScene, runOncePerSession } from '../world';
  * - side_repair_status = completed  -> final_core_stability_bonus
  * (hazard consequence flags stay unemitted: Hazard Control is blocked on a
  * user decision and writes no state yet.)
+ *
+ * Pilot route gate (in FRONT of everything below, after the one-shot
+ * completed check): the mission cycle cannot close until all four pilot
+ * scenarios (src/scenarios/pilotRoute.ts) are completed. A locked prompt
+ * lists the remaining decisions and offers only a step-back option;
+ * final_core_opened fires only when the real decision prompt opens, and
+ * blocked attempts log final_core_blocked_pending_decisions (pilot
+ * telemetry, unmapped like the scenario_* set). The Q28 blocker semantics
+ * below are unchanged once the gate is satisfied.
  *
  * Q28 blocker: when unresolved issues exist at prompt open, the prompt
  * body lists them as outstanding core flags and final_core_blocker_shown
@@ -63,6 +74,17 @@ export class FinalCoreScene extends RoomScene {
 
   /** Mutated at prompt open so the body lists live outstanding flags. */
   private coreStationConfig: { promptBody?: string } | null = null;
+
+  /**
+   * Pilot route gate (FABLE-AUTONOMOUS-PILOT-ROUTE-REPAIR): the decisions
+   * still pending when the prompt was last opened. Non-empty means the
+   * current prompt is the LOCKED display (remaining-decision list + a
+   * single step-back option) instead of the legacy completion options.
+   * Reads EXPLICIT per-scenario completion state (pilotRoute.ts) — never
+   * event counts — so leaving/re-entering rooms preserves progress and no
+   * debug/test surface can satisfy the route without real completions.
+   */
+  private routeGateRemaining: PilotRouteStop[] = [];
 
   constructor() {
     super(key.scene.finalCore);
@@ -109,6 +131,32 @@ export class FinalCoreScene extends RoomScene {
             'The core interface has already logged the final integration decision.',
           );
           return false;
+        }
+
+        // Pilot route gate: the mission cycle cannot close until all four
+        // station decisions are completed. The locked display lists every
+        // remaining decision; the legacy final_core_opened event fires only
+        // when the real decision prompt actually opens. The gate marker is
+        // pilot-development telemetry (unmapped, like the scenario_* set).
+        this.routeGateRemaining = getRemainingPilotDecisions();
+
+        if (this.routeGateRemaining.length > 0) {
+          this.logScenarioEvent(
+            'finalCoreIntegration',
+            'final_core_blocked_pending_decisions',
+            {
+              metadata: {
+                remaining_count: this.routeGateRemaining.length,
+                remaining_scenario_ids: this.routeGateRemaining.map(
+                  (stop) => stop.scenarioId,
+                ),
+              },
+            },
+          );
+          this.coreStationConfig!.promptBody = this.buildRouteGateBody(
+            this.routeGateRemaining,
+          );
+          return true;
         }
 
         this.logRoomEvent('finalCoreIntegration', 'final_core_opened');
@@ -187,6 +235,21 @@ export class FinalCoreScene extends RoomScene {
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
     if (interactionKey !== 'finalCoreIntegration') {
       return [];
+    }
+
+    // Route gate active: the only option steps back — no completion path
+    // exists until every station decision is logged. The moment the fourth
+    // decision completes, the next interaction opens the legacy options
+    // immediately (routeGateRemaining is recomputed on every prompt open).
+    if (this.routeGateRemaining.length > 0) {
+      return [
+        {
+          label: 'Step back from the interface.',
+          feedback:
+            'The core interface stays locked until every station decision is logged.',
+          getEventTypes: () => [],
+        },
+      ];
     }
 
     const hasIssues = this.getOutstandingIssueLabels().length > 0;
@@ -276,6 +339,27 @@ export class FinalCoreScene extends RoomScene {
     }
 
     return options;
+  }
+
+  /**
+   * Locked-display body: the count and the in-fiction station list of every
+   * remaining decision (kept compact — the prompt panel's fixed geometry
+   * budgets ~11 lines). Labels come from the shared pilot route table, so
+   * this list always matches the duty-roster HUD direction.
+   */
+  private buildRouteGateBody(remaining: PilotRouteStop[]): string {
+    const noun =
+      remaining.length === 1
+        ? 'station decision remains'
+        : 'station decisions remain';
+    const lines = remaining.map(
+      (stop) => `- ${stop.stationLabel} (${stop.roomLabel})`,
+    );
+
+    return (
+      `Core synchronization is locked — ${remaining.length} ${noun}:\n` +
+      lines.join('\n')
+    );
   }
 
   /**

@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import { Depth, key } from '../constants';
 import type { ResearchInteraction } from '../data/researchInteractions';
 import { researchInteractions } from '../data/researchInteractions';
+import { getRemainingPilotDecisions, PILOT_DECISION_TOTAL } from '../scenarios';
 import { Player } from '../sprites';
 import { state } from '../state';
 import { researchRuntime } from '../systems';
@@ -179,12 +180,16 @@ declare global {
   interface Window {
     __lastRoomFeedbackText?: string | null;
     __playerProbe?: { scene: string; x: number; y: number } | null;
+    __routeObjectiveText?: string | null;
+    __lastPromptBody?: string | null;
   }
 }
 
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
   window.__lastRoomFeedbackText = null;
   window.__playerProbe = null;
+  window.__routeObjectiveText = null;
+  window.__lastPromptBody = null;
 }
 
 /**
@@ -209,6 +214,7 @@ export abstract class RoomScene extends Phaser.Scene {
   private doors: RoomDoorConfig[] = [];
   private feedbackMessage: Phaser.GameObjects.Text | null = null;
   private proximityPrompt!: Phaser.GameObjects.Text;
+  private routeObjective!: Phaser.GameObjects.Text;
   private stationLabels!: Phaser.GameObjects.Container;
   private stations: RoomStationConfig[] = [];
   private transitioning = false;
@@ -280,6 +286,22 @@ export abstract class RoomScene extends Phaser.Scene {
       .setDepth(Depth.AboveWorld)
       .setVisible(false);
 
+    // Route-objective HUD line (pilot route repair): the persistent duty
+    // roster directive that makes the mandatory four-decision route legible
+    // in-game. Allowed progress UI only — checklist/status labels (V3 §2):
+    // a completion count and the next station, never scores, never
+    // personality feedback, identical presentation for every participant.
+    this.routeObjective = this.add
+      .text(8, 8, '', {
+        backgroundColor: '#101820',
+        color: '#ffffff',
+        font: '13px monospace',
+        padding: { x: 6, y: 3 },
+      })
+      .setOrigin(0)
+      .setDepth(Depth.AboveWorld)
+      .setScrollFactor(0);
+
     // Same pause affordance as the prototype scene; Menu resumes this room
     // via the resumeKey launch data.
     this.input.keyboard!.on('keydown-ESC', () => {
@@ -289,6 +311,58 @@ export abstract class RoomScene extends Phaser.Scene {
 
     this.populateRoom();
     this.onRoomEntered();
+    this.refreshRouteObjective();
+  }
+
+  /**
+   * The duty-roster directive for the current progress state. Reads the
+   * EXPLICIT scenario completion state (pilotRoute.ts) plus two mission
+   * facts (dock check-in, Final Core completion) — never event counts.
+   */
+  private buildRouteObjectiveText(): string {
+    const mission = researchRuntime.sessionState.getMissionState();
+
+    if (!mission.completed_rooms.includes('dock_arrival')) {
+      return 'Duty roster: check in at the Arrival Terminal (Dock).';
+    }
+
+    const remaining = getRemainingPilotDecisions();
+    const done = PILOT_DECISION_TOTAL - remaining.length;
+
+    if (remaining.length > 0) {
+      const next = remaining[0];
+
+      return (
+        `Duty roster: station decisions ${done}/${PILOT_DECISION_TOTAL} — ` +
+        `next: ${next.stationLabel} (${next.roomLabel}).`
+      );
+    }
+
+    if (!mission.completed_rooms.includes('final_core_room')) {
+      return (
+        `Duty roster: station decisions ` +
+        `${PILOT_DECISION_TOTAL}/${PILOT_DECISION_TOTAL} — synchronize at ` +
+        `the Final Core.`
+      );
+    }
+
+    return 'Duty roster: mission cycle complete.';
+  }
+
+  /**
+   * Recomputes the HUD line. Called on scene entry and after every prompt
+   * selection — the only two moments its inputs can change (dock check-in,
+   * scenario completion and Final Core completion all happen through
+   * prompt options).
+   */
+  private refreshRouteObjective() {
+    const text = this.buildRouteObjectiveText();
+
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__routeObjectiveText = text;
+    }
+
+    this.routeObjective.setText(text);
   }
 
   /** Adds a proximity interaction station (prototype marker mechanics). */
@@ -491,22 +565,26 @@ export abstract class RoomScene extends Phaser.Scene {
     const optionText = options
       .map((option, index) => `${index + 1}. ${option.label}`)
       .join('\n');
+    const panelText = `${interaction.label}${promptBody}\n\n${optionText}\n\n${buildPromptInstruction(options.length)}`;
+
+    // Dev-only, read-only displayed-prompt probe (__lastRoomFeedbackText
+    // precedent): lets runtime verification assert rendered prompt content
+    // (e.g. the Final Core route gate's remaining-decision list). Never
+    // read back into gameplay; stripped from production builds.
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__lastPromptBody = panelText;
+    }
     // 230px matches the V1 slice for up to 3 options; each further option
     // extends the panel by one 24px text row (deterministic, content-only).
     const panelHeight = 230 + Math.max(0, options.length - 3) * 24;
     const background = this.add
       .rectangle(0, 0, 560, panelHeight, 0x101820, 0.96)
       .setOrigin(0);
-    const text = this.add.text(
-      18,
-      16,
-      `${interaction.label}${promptBody}\n\n${optionText}\n\n${buildPromptInstruction(options.length)}`,
-      {
-        color: '#ffffff',
-        font: '16px monospace',
-        wordWrap: { width: 524 },
-      },
-    );
+    const text = this.add.text(18, 16, panelText, {
+      color: '#ffffff',
+      font: '16px monospace',
+      wordWrap: { width: 524 },
+    });
     const panel = this.add.container(centerX - 280, 72, [background, text]);
 
     panel.setDepth(Depth.AboveWorld);
@@ -568,6 +646,10 @@ export abstract class RoomScene extends Phaser.Scene {
     const nextStage = option.nextStage?.() ?? null;
 
     this.closePrompt();
+
+    // Every progress state the duty-roster HUD reflects changes through a
+    // prompt selection, so this is the one refresh point besides create().
+    this.refreshRouteObjective();
 
     if (nextStage !== null) {
       this.renderPromptStage(interactionKey, nextStage);

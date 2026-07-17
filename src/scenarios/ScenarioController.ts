@@ -103,6 +103,15 @@ export function resetAllScenarioStates() {
 }
 
 /**
+ * Read-only EXPLICIT completion state for one scenario (route-gate and
+ * progress-display source of truth — never an event-count heuristic).
+ * Untouched scenarios read as not completed.
+ */
+export function isScenarioCompleted(scenarioId: string): boolean {
+  return scenarioStates.get(scenarioId)?.completed === true;
+}
+
+/**
  * Dev-only, read-only progress probe for runtime verification (Playwright),
  * mirroring window.__playerProbe: presentation/telemetry only, never read
  * back into gameplay, dead-code-eliminated from production builds.

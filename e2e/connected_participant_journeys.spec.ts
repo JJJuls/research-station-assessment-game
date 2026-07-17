@@ -5,6 +5,7 @@ import {
   bootJourney,
   captureErrors,
   completeDockTutorial,
+  completePilotScenario,
   completeReturnFlow,
   dockToHubJourney,
   expectEventSubsequence,
@@ -37,7 +38,7 @@ test.describe('connected participant journeys', () => {
   test('P1 adaptive completer: systematic prep, duty follow-through, informed hazard, high-quality core', async ({
     page,
   }) => {
-    test.setTimeout(600_000);
+    test.setTimeout(1_200_000);
 
     const errors = captureErrors(page);
     const params = {
@@ -59,12 +60,18 @@ test.describe('connected participant journeys', () => {
 
     await dockToHubJourney(page);
 
-    // Inventory: checklist -> verify -> cleanup (systematic path).
+    // Route-gate prerequisite: the four pilot decisions are completed at
+    // their stations along this journey (Final Core is locked otherwise).
+    await completePilotScenario(page, 'priority_allocation');
+
+    // Inventory: checklist -> verify -> cleanup (systematic path), then
+    // the seal-log decision (Scenario D) beside the legacy task.
     await hubToStationJourney(page, 'inventory_prep_room');
     await openStationAlcove(page);
     await selectPromptOption(page, 2);
     await selectPromptOption(page, 1);
     await selectPromptOption(page, 1);
+    await completePilotScenario(page, 'protocol_breach');
     await stationToHubJourney(page, 'inventory_prep_room');
 
     let mission = await missionState(page);
@@ -72,11 +79,13 @@ test.describe('connected participant journeys', () => {
     expect(mission.prepared_items).toContain('field_kit');
     expect(mission.workspace_status).toBe('tidy');
 
-    // Engineer: prepared report, accept the relay supervision duty.
+    // Engineer: prepared report, accept the relay supervision duty, then
+    // the calibration decision (Scenario A) at the bench.
     await hubToStationJourney(page, 'engineer_hub');
     await openStationAlcove(page);
     await selectPromptOption(page, 2);
     await selectPromptOption(page, 1);
+    await completePilotScenario(page, 'calibration_anomaly');
     await stationToHubJourney(page, 'engineer_hub');
 
     mission = await missionState(page);
@@ -113,7 +122,8 @@ test.describe('connected participant journeys', () => {
 
     expect((await missionState(page)).hazard_status).toBe('informed_continue');
 
-    // Archive: fail, read feedback, revise (adaptive completion).
+    // Archive: fail, read feedback, revise (adaptive completion), then
+    // the records decision (Scenario C) at the reconciliation desk.
     await hubToStationJourney(page, 'archive_room');
     await openStationAlcove(page);
     await selectPromptOption(page, 1);
@@ -121,6 +131,7 @@ test.describe('connected participant journeys', () => {
     await selectPromptOption(page, 2);
     await openStationAlcove(page);
     await selectPromptOption(page, 3);
+    await completePilotScenario(page, 'incident_reconciliation');
     await stationToHubJourney(page, 'archive_room');
 
     // Repair: fail, open the manual, revise — completes the legacy
@@ -187,6 +198,9 @@ test.describe('connected participant journeys', () => {
     expect(types).not.toContain('hazard_reckless_continue');
     expect(types).not.toContain('hazard_avoidance');
     expect(types).not.toContain('accepted_duty_unresolved');
+    // All four decisions were completed before the core attempt: the
+    // route gate must never have fired.
+    expect(types).not.toContain('final_core_blocked_pending_decisions');
     // System entry flags that must NOT fire on the prepared path.
     expect(types).not.toContain('final_core_missing_item_flagged');
     expect(types).not.toContain('final_core_workspace_issue_flagged');
@@ -219,7 +233,7 @@ test.describe('connected participant journeys', () => {
   test('P2 shortcut/interrupted: skipped tutorial, declined duty, task switch, partial repair re-entry, reckless hazard, forced core', async ({
     page,
   }) => {
-    test.setTimeout(600_000);
+    test.setTimeout(1_200_000);
 
     const errors = captureErrors(page);
     const params = {
@@ -233,19 +247,27 @@ test.describe('connected participant journeys', () => {
     await completeDockTutorial(page, 1); // skip the tutorial
     await dockToHubJourney(page);
 
-    // Inventory: grab tools quickly (shortcut — no kit, workspace suffers).
+    // Route-gate prerequisite: even the shortcut journey completes the
+    // four pilot decisions (the gate blocks Final Core otherwise).
+    await completePilotScenario(page, 'priority_allocation');
+
+    // Inventory: grab tools quickly (shortcut — no kit, workspace suffers),
+    // then the seal-log decision (Scenario D).
     await hubToStationJourney(page, 'inventory_prep_room');
     await openStationAlcove(page);
     await selectPromptOption(page, 1);
+    await completePilotScenario(page, 'protocol_breach');
     await stationToHubJourney(page, 'inventory_prep_room');
 
     expect((await missionState(page)).prepared_items).toEqual([]);
 
-    // Engineer: unprepared quick report, decline the duty.
+    // Engineer: unprepared quick report, decline the duty, then the
+    // calibration decision (Scenario A).
     await hubToStationJourney(page, 'engineer_hub');
     await openStationAlcove(page);
     await selectPromptOption(page, 1);
     await selectPromptOption(page, 2);
+    await completePilotScenario(page, 'calibration_anomaly');
     await stationToHubJourney(page, 'engineer_hub');
 
     const missionAfterEngineer = await missionState(page);
@@ -278,6 +300,12 @@ test.describe('connected participant journeys', () => {
     await stationToHubJourney(page, 'hazard_control_room');
 
     expect((await missionState(page)).hazard_status).toBe('reckless_continue');
+
+    // Scenario C (Archive) — required by the route gate; the legacy
+    // archive terminal stays untouched on this journey.
+    await hubToStationJourney(page, 'archive_room');
+    await completePilotScenario(page, 'incident_reconciliation');
+    await stationToHubJourney(page, 'archive_room');
 
     // Final Core: outstanding flags shown, force the synchronization.
     await hubToStationJourney(page, 'final_core_room');
@@ -340,7 +368,7 @@ test.describe('connected participant journeys', () => {
   test('P3 avoid/defer: practiced tutorial, deferred-then-completed side repair, avoided hazard, ignored alert, repeated wrong code, rushed core', async ({
     page,
   }) => {
-    test.setTimeout(600_000);
+    test.setTimeout(1_200_000);
 
     const errors = captureErrors(page);
     const params = {
@@ -353,6 +381,10 @@ test.describe('connected participant journeys', () => {
     await bootJourney(page, params);
     await completeDockTutorial(page, 3); // practice movement first
     await dockToHubJourney(page);
+
+    // Route-gate prerequisite: the four pilot decisions are completed on
+    // the way (Final Core is locked otherwise).
+    await completePilotScenario(page, 'priority_allocation');
 
     // Side repair: formally defer, leave, return, then complete (defer
     // must NOT complete the room; the offer must reopen on re-entry).
@@ -391,7 +423,14 @@ test.describe('connected participant journeys', () => {
       'alert_ignored',
     );
 
-    // Archive: same wrong code twice (blind retry), then feedback + revise.
+    // Scenario A (Engineer Hub) — required by the route gate; Kai's
+    // report-back task stays untouched on this journey.
+    await hubToStationJourney(page, 'engineer_hub');
+    await completePilotScenario(page, 'calibration_anomaly');
+    await stationToHubJourney(page, 'engineer_hub');
+
+    // Archive: same wrong code twice (blind retry), then feedback +
+    // revise, then the records decision (Scenario C).
     await hubToStationJourney(page, 'archive_room');
     await openStationAlcove(page);
     await selectPromptOption(page, 1);
@@ -401,7 +440,14 @@ test.describe('connected participant journeys', () => {
     await selectPromptOption(page, 2);
     await openStationAlcove(page);
     await selectPromptOption(page, 3);
+    await completePilotScenario(page, 'incident_reconciliation');
     await stationToHubJourney(page, 'archive_room');
+
+    // Scenario D (Inventory / Prep) — required by the route gate; kit
+    // prep is deliberately left untouched (missing-kit blocker preserved).
+    await hubToStationJourney(page, 'inventory_prep_room');
+    await completePilotScenario(page, 'protocol_breach');
+    await stationToHubJourney(page, 'inventory_prep_room');
 
     // Final Core: start synchronization immediately (rushed, low quality;
     // the missing-kit blocker exists but options 1-3 stay available).

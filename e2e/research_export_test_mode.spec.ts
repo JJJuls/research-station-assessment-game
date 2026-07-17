@@ -10,6 +10,7 @@ import {
   press,
   waitForRoomEntry,
 } from './helpers';
+import { completeAllPilotDecisions } from './journey';
 
 /**
  * Test-only game-to-Supabase export integration (development ingestion
@@ -612,6 +613,8 @@ test.describe('research export (test mode only)', () => {
   test('participant-style completion through the Final Core never calls the transport', async ({
     page,
   }) => {
+    test.setTimeout(900_000);
+
     const captured: CapturedRequest[] = [];
 
     // Config IS present — the launch mode alone must keep the exporter off.
@@ -626,6 +629,9 @@ test.describe('research export (test mode only)', () => {
     });
 
     await dockToHub(page);
+    // Route gate: participant-style completion now requires all four pilot
+    // decisions before the Final Core unlocks (normal-control route).
+    await completeAllPilotDecisions(page);
     await hubToStationDoor(page, 'final_core_room');
     await waitForRoomEntry(page, 'final_core_entered');
 

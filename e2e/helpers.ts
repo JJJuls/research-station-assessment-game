@@ -504,6 +504,38 @@ export async function getLastFeedbackText(page: Page): Promise<string | null> {
 }
 
 /**
+ * Reads the dev-only, presentation-only route-objective HUD probe
+ * (RoomScene.ts window.__routeObjectiveText; stripped from production
+ * builds). Mirrors getLastFeedbackText: written synchronously whenever the
+ * HUD line is (re)computed, so it is safe to read after any prompt action
+ * or scene entry.
+ */
+export async function getRouteObjectiveText(
+  page: Page,
+): Promise<string | null> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __routeObjectiveText?: string | null })
+        .__routeObjectiveText ?? null,
+  );
+}
+
+/**
+ * Reads the dev-only, presentation-only prompt-body probe (RoomScene.ts
+ * window.__lastPromptBody): the full text content of the most recently
+ * rendered prompt stage. Lets specs assert DISPLAYED prompt content (e.g.
+ * the Final Core route gate's remaining-decision list) the same way
+ * getLastFeedbackText asserts displayed feedback text.
+ */
+export async function getLastPromptBody(page: Page): Promise<string | null> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __lastPromptBody?: string | null })
+        .__lastPromptBody ?? null,
+  );
+}
+
+/**
  * Selects a numbered prompt option (U3 renderer: numeric keys in declared
  * option order, 1-based).
  */
