@@ -4,8 +4,10 @@ import {
   bootGame,
   dockToHub,
   findEvent,
+  findEvents,
   getEvents,
   getEventTypes,
+  getSummary,
   hold,
   hubToStationDoor,
   press,
@@ -194,5 +196,79 @@ test.describe('inventory prep logging', () => {
     // outcome: skipped verification + disorder both recorded.
     expect(mission.prepared_items).toContain('field_kit');
     expect(mission.workspace_status).toBe('disordered');
+  });
+
+  test('sort-and-verify path: canonical inventory events beside their legacy aliases', async ({
+    page,
+  }) => {
+    await bootGame(page, {
+      participant_id: 'E2E_P6',
+      game_session_id: 'E2E_INV_S4',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+    await hubToInventory(page);
+
+    await openConsole(page);
+    await press(page, '3'); // sort the workspace and verify the kit
+
+    const types = await getEventTypes(page);
+
+    for (const expected of [
+      'inventory_workspace_sorted',
+      'workspace_tidy_confirmed',
+      'inventory_kit_verified',
+      'inventory_verified_complete',
+      'inventory_cleanup_completed',
+      'cleanup_completed',
+    ]) {
+      expect(types, `${expected} must be logged`).toContain(expected);
+    }
+    expect(types).not.toContain('inventory_prep_shortcut');
+    expect(types).not.toContain('inventory_checklist_used');
+    expect(types).not.toContain('inventory_checklist_opened');
+    expect(types).not.toContain('workspace_left_disordered');
+    expect(types).not.toContain('inventory_verification_skipped');
+
+    const events = await getEvents(page);
+
+    // The three canonical option-3 names stay unregistered raw telemetry:
+    // no research mapping fields (frozen data — the D2 naming-split
+    // question is open, tests document reality, never anticipate rulings).
+    for (const name of [
+      'inventory_workspace_sorted',
+      'inventory_kit_verified',
+      'inventory_cleanup_completed',
+    ]) {
+      const matched = findEvents(events, name);
+
+      expect(matched, `${name} fires exactly once`).toHaveLength(1);
+      expect(matched[0].room_id).toBe('inventory_prep_room');
+      expect(matched[0].study_item_ids).toBeUndefined();
+      expect(matched[0].construct_id).toBeUndefined();
+      expect(matched[0].success).toBeUndefined();
+    }
+
+    // Registered legacy aliases keep their frozen registrations.
+    const tidy = findEvent(events, 'workspace_tidy_confirmed');
+
+    expect(tidy?.study_item_ids).toEqual(['Q03']);
+    expect(tidy?.construct_id).toBe('organisation');
+
+    // Scoring separation: option-3 names feed exactly the organisation
+    // aggregates (kit-verified flag, cleanup count = sorted + cleanup).
+    const summary = await getSummary(page);
+
+    expect(summary.organization_kit_verified).toBe(true);
+    expect(summary.organization_cleanup_count).toBe(2);
+    expect(summary.organization_prep_count).toBe(1);
+    expect(summary.organization_checklist_used).toBe(false);
+    expect(summary.organization_shortcut_count).toBe(0);
+
+    const mission = await getMissionState(page);
+
+    expect(mission.prepared_items).toContain('field_kit');
+    expect(mission.workspace_status).toBe('tidy');
   });
 });

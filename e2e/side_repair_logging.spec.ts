@@ -7,6 +7,7 @@ import {
   findEvents,
   getEvents,
   getEventTypes,
+  getSummary,
   hold,
   hubToStationDoor,
   press,
@@ -173,5 +174,78 @@ test.describe('side repair bay logging', () => {
 
     expect(findEvents(events, 'side_repair_completed')).toHaveLength(0);
     expect(findEvents(events, 'stabiliser_option_offered')).toHaveLength(1);
+  });
+
+  test('abandon-after-difficulty path: started then stopped, distinct from ignore and defer', async ({
+    page,
+  }) => {
+    await bootGame(page, {
+      participant_id: 'E2E_P7',
+      game_session_id: 'E2E_SIDE_S4',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+    await hubToSideRepair(page);
+
+    await openBotPrompt(page);
+    await press(page, '2'); // start, then stop after the first difficulty
+
+    const types = await getEventTypes(page);
+
+    for (const expected of [
+      'side_repair_started',
+      'stabiliser_accepted',
+      'side_repair_accepted',
+      'side_repair_first_step',
+      'side_repair_abandoned_after_difficulty',
+      'side_repair_abandoned_after_start',
+    ]) {
+      expect(types, `${expected} must be logged`).toContain(expected);
+    }
+    // Separation: abandonment-after-start is neither completion, formal
+    // deferral, nor never-accepted ignoring.
+    expect(types).not.toContain('side_repair_completed');
+    expect(types).not.toContain('side_repair_deferred');
+    expect(types).not.toContain('side_repair_ignored');
+    expect(types).not.toContain('side_repair_low_effort');
+    expect(types).not.toContain('final_bonus_unlocked');
+    expect(types).not.toContain('side_repair_productive_persistence');
+
+    const events = await getEvents(page);
+    const abandonedDifficulty = findEvents(
+      events,
+      'side_repair_abandoned_after_difficulty',
+    );
+    const abandonedStart = findEvent(
+      events,
+      'side_repair_abandoned_after_start',
+    );
+
+    // Canonical difficulty-abandonment name stays unregistered raw
+    // telemetry: no research mapping fields (frozen data).
+    expect(abandonedDifficulty).toHaveLength(1);
+    expect(abandonedDifficulty[0].room_id).toBe('optional_side_repair_bay');
+    expect(abandonedDifficulty[0].study_item_ids).toBeUndefined();
+    expect(abandonedDifficulty[0].construct_id).toBeUndefined();
+    expect(abandonedDifficulty[0].success).toBeUndefined();
+
+    // Registered legacy alias keeps its frozen registration.
+    expect(abandonedStart?.study_item_ids).toEqual(['Q20']);
+    expect(abandonedStart?.construct_id).toBe(
+      'consistency_of_interest_exploratory',
+    );
+
+    // Scoring separation: the difficulty abandonment feeds exactly the
+    // productiveness aggregates; completion stays untouched.
+    const summary = await getSummary(page);
+
+    expect(summary.productiveness_difficulty_abandonment_count).toBe(1);
+    expect(summary.productiveness_side_task_count).toBe(1);
+    expect(summary.productiveness_started_side_task).toBe(true);
+    expect(summary.productiveness_completed_optional_task).toBe(false);
+    expect(summary.productiveness_low_effort_count).toBe(0);
+
+    expect(await getSideRepairStatus(page)).toBe('abandoned_after_start');
   });
 });

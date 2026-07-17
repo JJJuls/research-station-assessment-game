@@ -4,8 +4,10 @@ import {
   bootGame,
   dockToHub,
   findEvent,
+  findEvents,
   getEvents,
   getEventTypes,
+  getSummary,
   hold,
   hubToStationDoor,
   press,
@@ -149,5 +151,77 @@ test.describe('engineer hub logging', () => {
     expect(
       typesAfter.filter((t) => t === 'engineer_supervision_assigned'),
     ).toHaveLength(1);
+  });
+
+  test('clarification path: supervised report telemetry, duty declined', async ({
+    page,
+  }) => {
+    await bootGame(page, {
+      participant_id: 'E2E_P5',
+      game_session_id: 'E2E_ENG_S3',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+    await hubToEngineer(page);
+
+    await openKaiPrompt(page);
+    await press(page, '3'); // ask Kai for clarification, then report
+    await press(page, '2'); // duty offer stage: decline
+
+    const types = await getEventTypes(page);
+
+    for (const expected of [
+      'engineer_clarification_requested',
+      'engineer_report_submitted_supervised',
+      'engineer_responsibility_adaptive',
+      'engineer_supervision_assigned',
+      'engineer_supervision_declined',
+    ]) {
+      expect(types, `${expected} must be logged`).toContain(expected);
+    }
+    // Emission placement rule: the clarify option never fires the
+    // prepared/unprepared families.
+    expect(types).not.toContain('engineer_evidence_reviewed');
+    expect(types).not.toContain('engineer_report_submitted_prepared');
+    expect(types).not.toContain('engineer_report_submitted_unprepared');
+    expect(types).not.toContain('engineer_responsibility_shortcut');
+
+    const events = await getEvents(page);
+    const clarification = findEvents(
+      events,
+      'engineer_clarification_requested',
+    );
+    const supervised = findEvents(
+      events,
+      'engineer_report_submitted_supervised',
+    );
+
+    // Both stay unregistered raw telemetry: no research mapping fields
+    // (frozen data — the D5 mapping question is open, tests document
+    // reality, never anticipate rulings).
+    expect(clarification).toHaveLength(1);
+    expect(supervised).toHaveLength(1);
+    for (const event of [clarification[0], supervised[0]]) {
+      expect(event.room_id).toBe('engineer_hub');
+      expect(event.study_item_ids).toBeUndefined();
+      expect(event.construct_id).toBeUndefined();
+      expect(event.success).toBeUndefined();
+    }
+
+    // Scoring separation: the supervised report feeds the report-count and
+    // prepared-report variables, and only the supervision flag flips.
+    const summary = await getSummary(page);
+
+    expect(summary.responsibility_supervision_used).toBe(true);
+    expect(summary.responsibility_report_count).toBe(1);
+    expect(summary.responsibility_prepared_report).toBe(true);
+    expect(summary.responsibility_shortcut_count).toBe(0);
+    expect(summary.responsibility_adaptive_count).toBe(1);
+
+    const mission = await getMissionState(page);
+
+    expect(mission.skipped_duties).toContain('relay_supervision');
+    expect(mission.accepted_duties).not.toContain('relay_supervision');
   });
 });

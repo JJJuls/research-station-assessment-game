@@ -242,6 +242,24 @@ test.describe('pilot four-scenario route', () => {
       }
     }
 
+    // Structured-completion additive events fire exactly once each and
+    // stay unregistered raw telemetry: no research mapping fields (frozen
+    // data — CanonicalEventContext has no entry for either name).
+    const integrated = findEvents(
+      events,
+      'final_core_prior_results_integrated',
+    );
+    const structured = findEvents(events, 'final_core_structured_completion');
+
+    expect(integrated).toHaveLength(1);
+    expect(structured).toHaveLength(1);
+    for (const event of [integrated[0], structured[0]]) {
+      expect(event.room_id).toBe('final_core_room');
+      expect(event.study_item_ids).toBeUndefined();
+      expect(event.construct_id).toBeUndefined();
+      expect(event.success).toBeUndefined();
+    }
+
     const mission = await missionState(page);
 
     expect(mission.completed_rooms).toContain('dock_arrival');
@@ -262,6 +280,12 @@ test.describe('pilot four-scenario route', () => {
     const { summary } = await completeReturnFlow(page);
 
     expect(summary).toBeTruthy();
+    // Scoring separation: the structured path feeds exactly the
+    // final-core aggregates (integrated count = both additive events).
+    expect(summary.final_core_integrated_count).toBe(2);
+    expect(summary.final_core_completion_quality).toBe('structured');
+    expect(summary.final_core_completed).toBe(true);
+    expect(summary.final_core_quick_sync_count).toBe(0);
 
     // Record the approximate play duration for the implementation report.
     const durationSeconds = Math.round((Date.now() - startedAt) / 1000);

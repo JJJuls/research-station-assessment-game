@@ -3,8 +3,11 @@ import { expect, test } from '@playwright/test';
 import {
   bootGame,
   dockToHub,
+  driveAxisTo,
+  findEvents,
   getEvents,
   getEventTypes,
+  getLastFeedbackText,
   getSummary,
   hubToArchive,
   openArchiveTerminal,
@@ -67,6 +70,19 @@ test.describe('archive room logging', () => {
     expect(revision?.study_item_ids).toEqual(['Q13', 'Q22', 'Q26']);
     expect(revision?.success).toBe(true);
 
+    // Legacy archive_attempt fires alongside archive_code_entered on BOTH
+    // code submissions and stays unregistered raw telemetry (no research
+    // mapping fields — frozen data, CanonicalEventContext has no entry).
+    const attempts = findEvents(events, 'archive_attempt');
+
+    expect(attempts).toHaveLength(2);
+    for (const attempt of attempts) {
+      expect(attempt.room_id).toBe('archive_room');
+      expect(attempt.study_item_ids).toBeUndefined();
+      expect(attempt.construct_id).toBeUndefined();
+      expect(attempt.success).toBeUndefined();
+    }
+
     // Separation invariant: a purely adaptive path never touches the
     // inappropriate-persistence variables.
     const summary = await getSummary(page);
@@ -118,5 +134,53 @@ test.describe('archive room logging', () => {
     expect(summary.blind_retry_count).toBe(1);
     expect(summary.strategy_revision_count).toBe(0);
     expect(summary.game_difficulty_persistence).toBe(0);
+  });
+
+  test('log shelves comparison logs archive_log_compared without touching the terminal task', async ({
+    page,
+  }) => {
+    await bootGame(page, {
+      participant_id: 'E2E_P3',
+      game_session_id: 'E2E_ARCH_S3',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+    await hubToArchive(page);
+
+    // Spawn (320, 272) -> shelves (96, 208) on the left shelf block
+    // (cols 2-4, rows 6-7). Drop fully into the clear row 9 band first
+    // (body top clears the block bottom at y 256), drive west along it to
+    // the shelves' column, then rise until the body wall-clamps on the
+    // block's south face (probe y ~274, 66 px from the shelves — inside
+    // the strict 72 px radius, load-independent; inventoryToSealLog
+    // precedent). Terminal, desk and Hub door are all 220+ px away, so
+    // SPACE binds to the shelves.
+    await driveAxisTo(page, 'y', 288, 8);
+    await driveAxisTo(page, 'x', 96, 8);
+    await driveAxisTo(page, 'y', 260, 8);
+    await press(page, 'Space');
+
+    const events = await getEvents(page);
+    const types = events.map((e) => e.event_type);
+    const compared = findEvents(events, 'archive_log_compared');
+
+    expect(compared).toHaveLength(1);
+    // Unregistered raw telemetry: no research mapping fields (frozen data).
+    expect(compared[0].room_id).toBe('archive_room');
+    expect(compared[0].study_item_ids).toBeUndefined();
+    expect(compared[0].construct_id).toBeUndefined();
+    expect(compared[0].success).toBeUndefined();
+
+    // The shelves are a feedback-only interactable: no prompt opens and
+    // the terminal task is untouched.
+    expect(types).not.toContain('archive_terminal_opened');
+    expect(types).not.toContain('archive_attempt');
+    expect(types).not.toContain('archive_code_entered');
+
+    // Frozen stimulus text (byte-for-byte, ADV-5 precedent).
+    expect(await getLastFeedbackText(page)).toBe(
+      'Access logs: code A17 was rotated out last cycle. Current entries reference the revised archive query format.',
+    );
   });
 });
