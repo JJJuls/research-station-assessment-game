@@ -1,0 +1,1245 @@
+{
+  "manifest_version": 1,
+  "status": "SPEC_ONLY_BINARY_GENERATION_PENDING",
+  "produced_on_branch": "fable-canonical-asset-production-v1",
+  "base_commit": "e9d3e21",
+  "date": "2026-07-18",
+  "note": "No PixelLab MCP or other approved image-generation tool was available in the producing session. Every record below is a fully specified candidate awaiting generation. Full prompts = style_preamble + prompt + variant delta (see CANONICAL-ASSET-PROMPT-PACK.md). Filenames are the planned paths for generated files; job IDs, SHA-256 hashes and measured dimensions are appended at generation time.",
+  "style_preamble": "Top-down pixel art for a cold polar research outpost interior, consistent with an existing asset set: muted desaturated slate-blue and gunmetal palette, single color dark outline, basic shading, medium detail, low top-down view, clean readable silhouettes at 32 px tile scale. No text, no letters, no numbers, no logos, no watermark. Transparent background.",
+  "defaults": {
+    "transparency": true,
+    "generation_tool": "PixelLab MCP (planned; unavailable in producing session)",
+    "generation_settings": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "basic shading",
+      "detail": "medium detail",
+      "seed": null,
+      "seed_note": "PixelLab API exposes no seed; record job/generation IDs instead"
+    },
+    "licence_provenance": "PixelLab subscription generation for this project (planned); no third-party or copyrighted reference imagery permitted",
+    "integration_status": "NOT_GENERATED",
+    "human_approval": "PENDING",
+    "contact_sheet": "public/assets/generated/contact-sheets/<family>-contact-sheet-01.png (pending generation)"
+  },
+  "excluded_by_ruling": [
+    {
+      "item": "sample container icon",
+      "reason": "environmental/biological sample collection is EXCLUDED for the pilot (GAME-SYSTEM-ADMISSION-AND-EXCLUSION-MATRIX.md section 2)"
+    },
+    {
+      "item": "anomaly scanner icon",
+      "reason": "anomaly scanning/classification is OPTIONAL_POST_PILOT with CANDIDATE events; do not build ahead of the research-owner decision"
+    }
+  ],
+  "assets": [
+    {
+      "asset_id": "NPC-KAI",
+      "family": "npcs",
+      "label": "Engineer Kai NPC sprite",
+      "filenames": "public/assets/generated/candidates/npcs/npc-kai-{a,b}/{rotations,idle/<dir>,walk/<dir>}/*.png",
+      "dimensions": "96x96 per frame",
+      "tile_frame_size": "frame 96x96; collision-equivalent body 32x42",
+      "animation": "4 cardinal directions; idle 4 frames (breathing-idle); walk 8 frames (walking-8-frames, optional for pilot; M1 minimum = static south idle)",
+      "rooms": ["engineer_hub"],
+      "q_ids": ["Q09", "Q10", "Q11", "Q18"],
+      "admission_class": "MANDATORY_PLAYABLE_FOUNDATION (presentation of the MANDATORY_RESEARCH report-back module; sprite itself never scored)",
+      "prompt": "Station engineer character in a slate-teal insulated utility suit with a darker harness and small shoulder tool pouch, short practical hair, calm neutral expression, standing at ease, same body proportions and outline style as a 96x96 top-down pixel art researcher character.",
+      "variants": [
+        {
+          "candidate_id": "NPC-KAI-A",
+          "delta": "slate-teal suit with thin gunmetal trim, sleeves rolled, a compact diagnostic tool clipped at the hip."
+        },
+        {
+          "candidate_id": "NPC-KAI-B",
+          "delta": "deeper teal-grey coverall with a light utility vest, work gloves tucked in the belt, no visible tools."
+        }
+      ],
+      "neutrality_risk": "cold-neutral suit hue only (player keeps the only warm mid-tone); calm-neutral expression matched to Vale; no authority costume; no moral signalling",
+      "accessibility_risk": "must remain distinguishable from the player at 1x by silhouette and hue; outline language identical to player"
+    },
+    {
+      "asset_id": "NPC-VALE",
+      "family": "npcs",
+      "label": "Quartermaster Vale NPC sprite",
+      "filenames": "public/assets/generated/candidates/npcs/npc-vale-{a,b}/{rotations,idle/<dir>,walk/<dir>}/*.png",
+      "dimensions": "96x96 per frame",
+      "tile_frame_size": "frame 96x96; collision-equivalent body 32x42",
+      "animation": "4 cardinal directions; idle 4 frames; walk 8 frames optional (M1b minimum = static south idle)",
+      "rooms": ["inventory_prep_room"],
+      "q_ids": ["Q01", "Q02", "Q03", "Q04"],
+      "admission_class": "MANDATORY_PLAYABLE_FOUNDATION (presentation of the Q01-Q04 room host; sprite never scored)",
+      "prompt": "Station quartermaster character in a grey-green insulated work suit with a storage-webbing vest, practical build, neutral attentive expression, standing at ease, same proportions and outline style as the 96x96 top-down pixel art researcher character.",
+      "variants": [
+        {
+          "candidate_id": "NPC-VALE-A",
+          "delta": "grey-green suit with a slate apron front and a small strap-secured pouch row across the chest."
+        },
+        {
+          "candidate_id": "NPC-VALE-B",
+          "delta": "muted olive-grey coverall with rolled cuffs and a single cross-body satchel strap, no apron."
+        }
+      ],
+      "neutrality_risk": "Vale is Scenario D's subject: appearance must carry no suspect/furtive/dishevelled cues; same neutral register as Kai",
+      "accessibility_risk": "as NPC-KAI"
+    },
+    {
+      "asset_id": "NPC-NOOR",
+      "family": "npcs",
+      "label": "Records Officer Noor (optional, post-pilot embodiment)",
+      "filenames": "public/assets/generated/candidates/npcs/npc-noor-a/idle/south/*.png",
+      "dimensions": "96x96 per frame",
+      "tile_frame_size": "frame 96x96",
+      "animation": "static south idle (4-frame breathing optional)",
+      "rooms": ["archive_room"],
+      "q_ids": [],
+      "admission_class": "OPTIONAL_POST_PILOT (NPC spec 3.4: lowest-priority human NPC; scenario-C persona is text-only for pilot)",
+      "prompt": "Station records officer in a slate-blue administrative uniform jacket over a grey base layer, neat appearance, neutral professionally-weary expression, same proportions and outline style as the researcher character.",
+      "variants": [
+        {
+          "candidate_id": "NPC-NOOR-A",
+          "delta": "single variant (optional asset)."
+        }
+      ],
+      "neutrality_risk": "must not visually amplify Scenario C deadline pressure",
+      "accessibility_risk": "as NPC-KAI"
+    },
+    {
+      "asset_id": "NPC-TECH",
+      "family": "npcs",
+      "label": "Neutral station technician (optional background NPC)",
+      "filenames": "public/assets/generated/candidates/npcs/npc-tech-a/idle/south/*.png",
+      "dimensions": "96x96 per frame",
+      "tile_frame_size": "frame 96x96",
+      "animation": "static south idle",
+      "rooms": [
+        "unassigned (post-pilot; never on the pilot route without a decision)"
+      ],
+      "q_ids": [],
+      "admission_class": "ENGAGEMENT_ONLY_UNSCORED (post-pilot; Hub placement excluded for pilot per visual plan 3.2)",
+      "prompt": "Generic station technician in a plain cold-grey insulated jumpsuit with no markings, neutral face, same proportions and outline style as the researcher character.",
+      "variants": [
+        {
+          "candidate_id": "NPC-TECH-A",
+          "delta": "single variant (optional asset)."
+        }
+      ],
+      "neutrality_risk": "must remain plainer than all task-relevant NPCs",
+      "accessibility_risk": "as NPC-KAI"
+    },
+    {
+      "asset_id": "ITEM-CRED",
+      "family": "items",
+      "label": "Access credential icon",
+      "filenames": "public/assets/generated/candidates/items/item-access-credential-{a,b}.png",
+      "dimensions": "32x32",
+      "tile_frame_size": "icon grid 32x32, content within 28x28",
+      "animation": "none",
+      "rooms": ["archive_room"],
+      "q_ids": ["Q13"],
+      "admission_class": "MANDATORY_RESEARCH substrate (access credentials, admission matrix section 1)",
+      "prompt": "Small station access credential card, slate-grey with a subtle cyan chip contact and a blank label plate.",
+      "variants": [
+        {
+          "candidate_id": "ITEM-CRED-A",
+          "delta": "flat keycard with chamfered corner."
+        },
+        {
+          "candidate_id": "ITEM-CRED-B",
+          "delta": "rigid tag on a short clip, blank face."
+        }
+      ],
+      "neutrality_risk": "none specific; no rarity styling",
+      "accessibility_risk": "readable at 1x inventory scale on #101820"
+    },
+    {
+      "asset_id": "ITEM-TABLET",
+      "family": "items",
+      "label": "Checklist/data tablet icon",
+      "filenames": "public/assets/generated/candidates/items/item-checklist-tablet-{a,b}.png",
+      "dimensions": "32x32",
+      "tile_frame_size": "icon grid 32x32",
+      "animation": "none",
+      "rooms": ["inventory_prep_room"],
+      "q_ids": ["Q01", "Q16"],
+      "admission_class": "MANDATORY_RESEARCH substrate (checklist use)",
+      "prompt": "Handheld data tablet with a dark screen showing faint abstract list lines (no letters), gunmetal frame.",
+      "variants": [
+        {
+          "candidate_id": "ITEM-TABLET-A",
+          "delta": "portrait tablet, thin bezel."
+        },
+        {
+          "candidate_id": "ITEM-TABLET-B",
+          "delta": "rugged tablet with corner bumpers and a hand strap."
+        }
+      ],
+      "neutrality_risk": "screen lines must stay abstract (no legible checklist wording)",
+      "accessibility_risk": "as ITEM-CRED"
+    },
+    {
+      "asset_id": "ITEM-CALTOOL",
+      "family": "items",
+      "label": "Calibration tool icon",
+      "filenames": "public/assets/generated/candidates/items/item-calibration-tool-{a,b}.png",
+      "dimensions": "32x32",
+      "tile_frame_size": "icon grid 32x32",
+      "animation": "none",
+      "rooms": [
+        "inventory_prep_room",
+        "systems_repair_room",
+        "final_core_room"
+      ],
+      "q_ids": ["Q02", "Q03"],
+      "admission_class": "MANDATORY_RESEARCH substrate (correct-tool selection / prepared-tool consequence)",
+      "prompt": "Compact calibration instrument with a small dial and probe tip, gunmetal body, single cyan indicator dot.",
+      "variants": [
+        {
+          "candidate_id": "ITEM-CALTOOL-A",
+          "delta": "pen-style probe with dial at base."
+        },
+        {
+          "candidate_id": "ITEM-CALTOOL-B",
+          "delta": "handheld meter with short probe lead."
+        }
+      ],
+      "neutrality_risk": "must not resemble the ethical-scenario calibration bench styling",
+      "accessibility_risk": "as ITEM-CRED"
+    },
+    {
+      "asset_id": "ITEM-COMP",
+      "family": "items",
+      "label": "Repair component icon",
+      "filenames": "public/assets/generated/candidates/items/item-repair-component-{a,b}.png",
+      "dimensions": "32x32",
+      "tile_frame_size": "icon grid 32x32",
+      "animation": "none",
+      "rooms": ["systems_repair_room", "optional_side_repair_bay"],
+      "q_ids": ["Q07", "Q14", "Q16"],
+      "admission_class": "MANDATORY_PLAYABLE_FOUNDATION (fetch-and-fit effort-step substrate; Systems-Repair step events remain CANDIDATES)",
+      "prompt": "Replaceable machine component module, boxy slate housing with visible connector pins and a handle notch.",
+      "variants": [
+        {
+          "candidate_id": "ITEM-COMP-A",
+          "delta": "cube module with two connector pins."
+        },
+        {
+          "candidate_id": "ITEM-COMP-B",
+          "delta": "flat cartridge module with a pull tab."
+        }
+      ],
+      "neutrality_risk": "none specific",
+      "accessibility_risk": "as ITEM-CRED"
+    },
+    {
+      "asset_id": "ITEM-SEALKIT",
+      "family": "items",
+      "label": "Seal kit icon",
+      "filenames": "public/assets/generated/candidates/items/item-seal-kit-{a,b}.png",
+      "dimensions": "32x32",
+      "tile_frame_size": "icon grid 32x32",
+      "animation": "none",
+      "rooms": ["inventory_prep_room"],
+      "q_ids": ["Q01", "Q02", "Q03"],
+      "admission_class": "MANDATORY_RESEARCH substrate (kit item, per-item sort/place minigame)",
+      "prompt": "Small sealed maintenance kit pouch with a strap and a blank status plate, muted grey-blue fabric.",
+      "variants": [
+        {
+          "candidate_id": "ITEM-SEALKIT-A",
+          "delta": "zip pouch with moulded corners."
+        },
+        {
+          "candidate_id": "ITEM-SEALKIT-B",
+          "delta": "hard clamshell mini-case with latch."
+        }
+      ],
+      "neutrality_risk": "must not visually reference the Scenario D seal log station",
+      "accessibility_risk": "as ITEM-CRED"
+    },
+    {
+      "asset_id": "ITEM-DATAMOD",
+      "family": "items",
+      "label": "Archive data module icon",
+      "filenames": "public/assets/generated/candidates/items/item-archive-data-module-{a,b}.png",
+      "dimensions": "32x32",
+      "tile_frame_size": "icon grid 32x32",
+      "animation": "none",
+      "rooms": ["archive_room"],
+      "q_ids": ["Q22"],
+      "admission_class": "MANDATORY_RESEARCH substrate (records/logs information source)",
+      "prompt": "Data storage module, dark slate cartridge with a faint cyan activity strip and a blank index plate.",
+      "variants": [
+        {
+          "candidate_id": "ITEM-DATAMOD-A",
+          "delta": "vertical cartridge with grip ridges."
+        },
+        {
+          "candidate_id": "ITEM-DATAMOD-B",
+          "delta": "flat disk caddy with a window slot."
+        }
+      ],
+      "neutrality_risk": "none specific",
+      "accessibility_risk": "as ITEM-CRED"
+    },
+    {
+      "asset_id": "ITEM-SUPPLY",
+      "family": "items",
+      "label": "Labelled supply container icon",
+      "filenames": "public/assets/generated/candidates/items/item-supply-container-{a,b}.png",
+      "dimensions": "32x32",
+      "tile_frame_size": "icon grid 32x32",
+      "animation": "none",
+      "rooms": ["inventory_prep_room"],
+      "q_ids": ["Q01", "Q03"],
+      "admission_class": "MANDATORY_RESEARCH substrate (labelled supplies gathering-and-placing loop)",
+      "prompt": "Small supply canister with a prominent blank label plate, muted grey body with a slate lid.",
+      "variants": [
+        { "candidate_id": "ITEM-SUPPLY-A", "delta": "cylindrical canister." },
+        {
+          "candidate_id": "ITEM-SUPPLY-B",
+          "delta": "rectangular tub with clip lid."
+        }
+      ],
+      "neutrality_risk": "label plate blank (runtime labels keep wording changeable and leak-checked)",
+      "accessibility_risk": "as ITEM-CRED; container variants must differ by shape, not colour alone"
+    },
+    {
+      "asset_id": "ITEM-WARNTAG",
+      "family": "items",
+      "label": "Warning tag icon",
+      "filenames": "public/assets/generated/candidates/items/item-warning-tag-{a,b}.png",
+      "dimensions": "32x32",
+      "tile_frame_size": "icon grid 32x32",
+      "animation": "none",
+      "rooms": ["hazard_control_room"],
+      "q_ids": ["Q12"],
+      "admission_class": "MANDATORY_RESEARCH substrate (warning inspection); amber permitted (hazard semantics)",
+      "prompt": "Warning tag: small amber-bordered tag with a blank face and a short attachment loop, matte finish, no symbols.",
+      "variants": [
+        { "candidate_id": "ITEM-WARNTAG-A", "delta": "diamond tag shape." },
+        {
+          "candidate_id": "ITEM-WARNTAG-B",
+          "delta": "rectangular tag with rounded corners."
+        }
+      ],
+      "neutrality_risk": "restrained amber only; factual not alarming; no exclamation/skull symbols",
+      "accessibility_risk": "amber border must also differ by shape from other tags (no colour-only signal)"
+    },
+    {
+      "asset_id": "ITEM-MANUAL",
+      "family": "items",
+      "label": "Manual/log icon",
+      "filenames": "public/assets/generated/candidates/items/item-manual-log-{a,b}.png",
+      "dimensions": "32x32",
+      "tile_frame_size": "icon grid 32x32",
+      "animation": "none",
+      "rooms": ["systems_repair_room", "archive_room", "engineer_hub"],
+      "q_ids": ["Q22"],
+      "admission_class": "MANDATORY_RESEARCH substrate (manuals/logs/evidence records)",
+      "prompt": "Compact technical manual, dark cover with a blank spine plate and faint page edge lines, slate-blue binding.",
+      "variants": [
+        { "candidate_id": "ITEM-MANUAL-A", "delta": "ring-bound flip manual." },
+        {
+          "candidate_id": "ITEM-MANUAL-B",
+          "delta": "hard-cover log book with an elastic band."
+        }
+      ],
+      "neutrality_risk": "cover blank; no legible titles",
+      "accessibility_risk": "as ITEM-CRED"
+    },
+    {
+      "asset_id": "PROP-KAI-CONSOLE",
+      "family": "props",
+      "label": "Engineer report-back console",
+      "filenames": "public/assets/generated/candidates/props/engineer-report-console-{a,b}.png",
+      "dimensions": "48x48 canvas (export may trim)",
+      "tile_frame_size": "footprint 1x1 tiles (32 px grid)",
+      "animation": "none",
+      "rooms": ["engineer_hub"],
+      "q_ids": ["Q09", "Q10"],
+      "admission_class": "MANDATORY_RESEARCH module surface (NPC report-back)",
+      "prompt": "Engineer's report console: standing work console with an angled dark screen showing faint abstract status rows (no letters), cable run to the floor, gunmetal frame with a single cyan power indicator.",
+      "variants": [
+        {
+          "candidate_id": "PROP-KAI-CONSOLE-A",
+          "delta": "single-pillar console, screen facing south."
+        },
+        {
+          "candidate_id": "PROP-KAI-CONSOLE-B",
+          "delta": "console with a small side desk wing and document tray (blank)."
+        }
+      ],
+      "neutrality_risk": "no salience advantage over other canonical stations",
+      "accessibility_risk": "silhouette distinct from the scenario console in the same room"
+    },
+    {
+      "asset_id": "PROP-DUTYBOARD",
+      "family": "props",
+      "label": "Duty roster display board",
+      "filenames": "public/assets/generated/candidates/props/engineer-duty-board-{a,b}.png",
+      "dimensions": "64x48 canvas",
+      "tile_frame_size": "footprint 2x1 tiles",
+      "animation": "none",
+      "rooms": ["engineer_hub"],
+      "q_ids": ["Q10", "Q18"],
+      "admission_class": "MANDATORY_RESEARCH opportunity surface (duty roster stays labels-only; must never read as a score display)",
+      "prompt": "Wall-mounted duty board: dark panel with abstract row separators and small neutral slot markers (no letters, no numbers, no bars that read as scores), gunmetal bezel.",
+      "variants": [
+        {
+          "candidate_id": "PROP-DUTYBOARD-A",
+          "delta": "three-row board with subtle pin points."
+        },
+        {
+          "candidate_id": "PROP-DUTYBOARD-B",
+          "delta": "two-column board with faint grid lines."
+        }
+      ],
+      "neutrality_risk": "HIGH-attention item: nothing on the board may resemble progress bars, stars, grades or scores",
+      "accessibility_risk": "rows must be distinguishable at 1x"
+    },
+    {
+      "asset_id": "PROP-SCENARIO-CONSOLE",
+      "family": "props",
+      "label": "Shared ethical-scenario console (allocation console / calibration bench / reconciliation desk / seal log)",
+      "filenames": "public/assets/generated/candidates/props/scenario-console-{a,b}.png",
+      "dimensions": "48x48 canvas",
+      "tile_frame_size": "footprint 1x1 tiles",
+      "animation": "none",
+      "rooms": [
+        "station_hub",
+        "engineer_hub",
+        "archive_room",
+        "inventory_prep_room"
+      ],
+      "q_ids": [],
+      "admission_class": "ENGAGEMENT_ONLY_UNSCORED pilot ethics layer (scenario events unmapped by rule); ONE identical visual at all four stations — art direction 2.4 salience-uniformity requirement; a distinct calibration-bench prop is deliberately not offered",
+      "prompt": "Freestanding station console with a flat angled top screen showing a faint neutral abstract diagram (no letters), slate body, thin gunmetal legs, one small cyan standby dot. Deliberately plain and symmetrical.",
+      "variants": [
+        {
+          "candidate_id": "PROP-SCENARIO-CONSOLE-A",
+          "delta": "lectern-style single pedestal."
+        },
+        {
+          "candidate_id": "PROP-SCENARIO-CONSOLE-B",
+          "delta": "twin-pedestal desk form with a closed cable tray."
+        }
+      ],
+      "neutrality_risk": "HIGHEST in the pack: must not look more official, warmer, or more urgent than canonical stations; identical across all four scenario sites; no amber",
+      "accessibility_risk": "distinguishable from canonical stations by silhouette only, never by stronger cue"
+    },
+    {
+      "asset_id": "PROP-BINSET",
+      "family": "props",
+      "label": "Labelled storage bin row",
+      "filenames": "public/assets/generated/candidates/props/inventory-bin-set-{a,b}.png",
+      "dimensions": "64x48 canvas",
+      "tile_frame_size": "footprint 2x1 tiles; reads as 3 distinct bins",
+      "animation": "none",
+      "rooms": ["inventory_prep_room"],
+      "q_ids": ["Q01", "Q03"],
+      "admission_class": "MANDATORY_RESEARCH (labelled storage bins, admission matrix section 1)",
+      "prompt": "Row of three open-top storage bins on a low rack, each with a large blank label plate, muted grey-blue bodies with slightly different lid colours in the same cold family (slate, grey-teal, gunmetal) and shape markers (notch, handle, plain).",
+      "variants": [
+        {
+          "candidate_id": "PROP-BINSET-A",
+          "delta": "three equal square bins."
+        },
+        {
+          "candidate_id": "PROP-BINSET-B",
+          "delta": "three bins of slightly different widths with front cut-outs."
+        }
+      ],
+      "neutrality_risk": "bins visually equal in quality (no bin looks 'better')",
+      "accessibility_risk": "bins must differ by shape marker as well as hue — colour-only coding is banned"
+    },
+    {
+      "asset_id": "PROP-QM-CONSOLE",
+      "family": "props",
+      "label": "Quartermaster checklist console",
+      "filenames": "public/assets/generated/candidates/props/inventory-qm-console-{a,b}.png",
+      "dimensions": "48x48 canvas",
+      "tile_frame_size": "footprint 1x1 tiles",
+      "animation": "none",
+      "rooms": ["inventory_prep_room"],
+      "q_ids": ["Q01"],
+      "admission_class": "MANDATORY_RESEARCH module surface (checklist source)",
+      "prompt": "Quartermaster's counter console: waist-high counter with an embedded dark checklist screen showing abstract tick-row lines (no letters, no check marks), storage cubbies below.",
+      "variants": [
+        {
+          "candidate_id": "PROP-QM-CONSOLE-A",
+          "delta": "counter with side clipboard hook (blank clipboard)."
+        },
+        {
+          "candidate_id": "PROP-QM-CONSOLE-B",
+          "delta": "corner-form counter with a small parcel shelf."
+        }
+      ],
+      "neutrality_risk": "screen must not display anything readable as completed/failed states",
+      "accessibility_risk": "distinct silhouette from the seal-log scenario console in the same room"
+    },
+    {
+      "asset_id": "PROP-KITCRATE",
+      "family": "props",
+      "label": "Field-kit crate",
+      "filenames": "public/assets/generated/candidates/props/inventory-kit-crate-{a,b}.png",
+      "dimensions": "48x48 canvas",
+      "tile_frame_size": "footprint 1x1 tiles",
+      "animation": "none",
+      "rooms": ["inventory_prep_room"],
+      "q_ids": ["Q01", "Q02", "Q03"],
+      "admission_class": "MANDATORY_RESEARCH substrate (kit assembly target)",
+      "prompt": "Open field-kit crate with moulded interior slots visible from above, slate shell, blank stencil plate on the front, no contents.",
+      "variants": [
+        {
+          "candidate_id": "PROP-KITCRATE-A",
+          "delta": "lid open against the back edge."
+        },
+        {
+          "candidate_id": "PROP-KITCRATE-B",
+          "delta": "lid removed, resting beside (single sprite)."
+        }
+      ],
+      "neutrality_risk": "empty slots must read neutral, not accusatory",
+      "accessibility_risk": "slot wells visible at 1x"
+    },
+    {
+      "asset_id": "PROP-PREPBENCH",
+      "family": "props",
+      "label": "Preparation workbench",
+      "filenames": "public/assets/generated/candidates/props/inventory-prep-bench-{a,b}.png",
+      "dimensions": "64x48 canvas",
+      "tile_frame_size": "footprint 2x1 tiles",
+      "animation": "none",
+      "rooms": ["inventory_prep_room"],
+      "q_ids": ["Q01", "Q02", "Q03", "Q04"],
+      "admission_class": "MANDATORY_RESEARCH context surface (prep bench; tidy baseline state)",
+      "prompt": "Preparation workbench with a clean brushed-metal top, under-bench drawers, a small rail for hanging tools (empty), cold grey-blue tones.",
+      "variants": [
+        { "candidate_id": "PROP-PREPBENCH-A", "delta": "straight bench." },
+        {
+          "candidate_id": "PROP-PREPBENCH-B",
+          "delta": "bench with a raised back panel and pegboard holes (empty)."
+        }
+      ],
+      "neutrality_risk": "baseline state is tidy-neutral; pairs with PROP-CLUTTER-SET (gated)",
+      "accessibility_risk": "none specific"
+    },
+    {
+      "asset_id": "PROP-CLUTTER-SET",
+      "family": "props",
+      "label": "Bench clutter overlay (cleanup/restoration indicator)",
+      "filenames": "public/assets/generated/candidates/props/inventory-clutter-overlay-{a,b}.png",
+      "dimensions": "64x48 canvas (overlay aligned to PROP-PREPBENCH)",
+      "tile_frame_size": "footprint 2x1 tiles (overlay)",
+      "animation": "none",
+      "rooms": ["inventory_prep_room"],
+      "q_ids": ["Q04"],
+      "admission_class": "MANDATORY_RESEARCH signal surface — GATED: state-dependent bench visuals interact with the Q04 cleanup measurement and require psychometric sign-off before integration (visual plan 3.5); generation may proceed, integration may not",
+      "prompt": "Bench clutter overlay: scattered sorting trays, loose wrappers and an open small pouch on a workbench top, muted dull tones, clearly untidy but not dirty or damaged.",
+      "variants": [
+        {
+          "candidate_id": "PROP-CLUTTER-SET-A",
+          "delta": "clutter concentrated on one bench half."
+        },
+        {
+          "candidate_id": "PROP-CLUTTER-SET-B",
+          "delta": "clutter spread across the full top, lighter density."
+        }
+      ],
+      "neutrality_risk": "clutter must read as state, never as fault: no hazard colours, no broken/dirty items, no moralising cues",
+      "accessibility_risk": "tidy-vs-cluttered difference must be visible without colour reliance"
+    },
+    {
+      "asset_id": "PROP-REPCONSOLE",
+      "family": "props",
+      "label": "Systems repair panel",
+      "filenames": "public/assets/generated/candidates/props/repair-panel-{a,b}.png",
+      "dimensions": "48x48 canvas",
+      "tile_frame_size": "footprint 1x1 tiles",
+      "animation": "none",
+      "rooms": ["systems_repair_room"],
+      "q_ids": ["Q14", "Q21", "Q24"],
+      "admission_class": "MANDATORY_RESEARCH module surface (difficulty episode host)",
+      "prompt": "Wall repair panel with the cover swung open showing a dark module bay and dim diagnostic strip (no letters), gunmetal housing, one small cyan status dot.",
+      "variants": [
+        {
+          "candidate_id": "PROP-REPCONSOLE-A",
+          "delta": "hinged cover open left."
+        },
+        {
+          "candidate_id": "PROP-REPCONSOLE-B",
+          "delta": "removed cover leaning at the base."
+        }
+      ],
+      "neutrality_risk": "failed state must not look catastrophic (no smoke, no sparks) — difficulty is procedural",
+      "accessibility_risk": "open-bay detail readable at 1x"
+    },
+    {
+      "asset_id": "PROP-MANUAL-STATION",
+      "family": "props",
+      "label": "Repair-manual / evidence reader station",
+      "filenames": "public/assets/generated/candidates/props/manual-station-{a,b}.png",
+      "dimensions": "32x48 canvas",
+      "tile_frame_size": "footprint 1x1 tiles",
+      "animation": "none",
+      "rooms": ["systems_repair_room", "archive_room", "engineer_hub"],
+      "q_ids": ["Q22"],
+      "admission_class": "MANDATORY_RESEARCH module surface (difficult-information source)",
+      "prompt": "Standing reader lectern with an open technical manual, pages showing faint abstract line blocks (no letters), slate frame.",
+      "variants": [
+        {
+          "candidate_id": "PROP-MANUAL-STATION-A",
+          "delta": "lectern with a small lamp arm (off)."
+        },
+        {
+          "candidate_id": "PROP-MANUAL-STATION-B",
+          "delta": "wall-mounted flip-manual rack."
+        }
+      ],
+      "neutrality_risk": "no page content readable as words",
+      "accessibility_risk": "distinct from repair panel silhouette in the same room"
+    },
+    {
+      "asset_id": "PROP-PARTSSHELF",
+      "family": "props",
+      "label": "Parts shelf (component pickup source)",
+      "filenames": "public/assets/generated/candidates/props/parts-shelf-{a,b}.png",
+      "dimensions": "64x48 canvas",
+      "tile_frame_size": "footprint 2x1 tiles",
+      "animation": "none",
+      "rooms": ["optional_side_repair_bay", "systems_repair_room"],
+      "q_ids": ["Q07", "Q14", "Q16"],
+      "admission_class": "MANDATORY_PLAYABLE_FOUNDATION (fetch-and-fit component source; Systems-Repair step events remain CANDIDATES)",
+      "prompt": "Open parts shelf with a few boxy component modules in cubbies, each cubby with a blank tag plate, dull slate tones.",
+      "variants": [
+        {
+          "candidate_id": "PROP-PARTSSHELF-A",
+          "delta": "two-tier shelf, sparse stock."
+        },
+        {
+          "candidate_id": "PROP-PARTSSHELF-B",
+          "delta": "three-tier narrow rack, one empty cubby."
+        }
+      ],
+      "neutrality_risk": "stock sparse and uniform (no rarity read)",
+      "accessibility_risk": "cubby contents readable at 1x"
+    },
+    {
+      "asset_id": "PROP-WARNPANEL",
+      "family": "props",
+      "label": "Hazard warning/control panel",
+      "filenames": "public/assets/generated/candidates/props/hazard-warning-panel-{a,b}.png",
+      "dimensions": "48x48 canvas",
+      "tile_frame_size": "footprint 1x1 tiles",
+      "animation": "none",
+      "rooms": ["hazard_control_room"],
+      "q_ids": ["Q12"],
+      "admission_class": "MANDATORY_RESEARCH module surface (warning inspection); amber permitted here by the reservation rule",
+      "prompt": "Hazard warning terminal: dark panel with a restrained amber warning chevron band across the top and a dim screen with abstract caution layout (no letters, no exclamation marks), gunmetal body.",
+      "variants": [
+        {
+          "candidate_id": "PROP-WARNPANEL-A",
+          "delta": "single chevron band, screen centred."
+        },
+        {
+          "candidate_id": "PROP-WARNPANEL-B",
+          "delta": "amber corner wedges instead of a band, slightly wider panel."
+        }
+      ],
+      "neutrality_risk": "risk framed neutrally, never fear: restrained amber (< ~15% of pixels), no red, no flashing framing",
+      "accessibility_risk": "warning readable without colour (chevron/wedge shape carries the signal)"
+    },
+    {
+      "asset_id": "PROP-ROUTECONSOLE",
+      "family": "props",
+      "label": "Hazard route decision console",
+      "filenames": "public/assets/generated/candidates/props/hazard-route-console-{a,b}.png",
+      "dimensions": "48x48 canvas",
+      "tile_frame_size": "footprint 1x1 tiles",
+      "animation": "none",
+      "rooms": ["hazard_control_room"],
+      "q_ids": ["Q12"],
+      "admission_class": "MANDATORY_RESEARCH module surface (informed/unchecked-continue decision host)",
+      "prompt": "Route control console with a schematic-style dark map screen showing abstract path lines (no letters), two mechanical rocker controls, slate body, no amber.",
+      "variants": [
+        { "candidate_id": "PROP-ROUTECONSOLE-A", "delta": "upright console." },
+        {
+          "candidate_id": "PROP-ROUTECONSOLE-B",
+          "delta": "angled desk console with a guard rail."
+        }
+      ],
+      "neutrality_risk": "console itself carries no warning colour (the warning lives on PROP-WARNPANEL) so continue/avoid options stay visually unweighted",
+      "accessibility_risk": "distinct from warning panel silhouette"
+    },
+    {
+      "asset_id": "PROP-CORE-INTERFACE",
+      "family": "props",
+      "label": "Final Core integration console",
+      "filenames": "public/assets/generated/candidates/props/final-core-interface-{a,b}.png",
+      "dimensions": "64x64 canvas",
+      "tile_frame_size": "footprint 2x2 tiles",
+      "animation": "none",
+      "rooms": ["final_core_room"],
+      "q_ids": ["Q11", "Q28"],
+      "admission_class": "MANDATORY_RESEARCH module surface (issue review / resolution vs forcing host)",
+      "prompt": "Core integration console: broad standing console facing a reactor wall, wide dark screen with faint abstract status tiles (no letters), heavy cable trunks into the floor, cold slate and gunmetal, one cyan standby strip.",
+      "variants": [
+        {
+          "candidate_id": "PROP-CORE-INTERFACE-A",
+          "delta": "single wide console."
+        },
+        {
+          "candidate_id": "PROP-CORE-INTERFACE-B",
+          "delta": "console with two narrow side towers."
+        }
+      ],
+      "neutrality_risk": "must not read as a final-judgement altar: procedural, not dramatic; no countdown/alarm styling",
+      "accessibility_risk": "status tiles abstract, not readable as scores"
+    },
+    {
+      "asset_id": "PROP-CORE-MONITORS",
+      "family": "props",
+      "label": "Final Core status-monitor wall (decor)",
+      "filenames": "public/assets/generated/candidates/props/final-core-monitor-wall-a.png",
+      "dimensions": "64x48 canvas",
+      "tile_frame_size": "footprint 2x1 tiles",
+      "animation": "none",
+      "rooms": ["final_core_room"],
+      "q_ids": [],
+      "admission_class": "CONTROL_OR_USABILITY decor (stability/status visibility; must stay duller than the core interface — data-panels salience rule)",
+      "prompt": "Bank of dark wall monitors with very dim abstract readouts (no letters), matte bezels, no glow.",
+      "variants": [
+        {
+          "candidate_id": "PROP-CORE-MONITORS-A",
+          "delta": "single variant (decor)."
+        }
+      ],
+      "neutrality_risk": "readouts must never resemble scores/verdicts",
+      "accessibility_risk": "deliberately dim — must not compete with interactables"
+    },
+    {
+      "asset_id": "PROP-BEACON",
+      "family": "props",
+      "label": "Comms beacon (interruption delivery)",
+      "filenames": "public/assets/generated/candidates/props/corridor-comms-beacon-{a,b}.png",
+      "dimensions": "32x48 canvas",
+      "tile_frame_size": "footprint 1x1 tiles",
+      "animation": "none",
+      "rooms": ["interruption_corridor"],
+      "q_ids": ["Q15", "Q17", "Q19"],
+      "admission_class": "MANDATORY_RESEARCH module surface (controlled-interruption delivery point)",
+      "prompt": "Corridor comms beacon: slim pole-mounted unit with a ring antenna and a small dark message screen (no letters), one cyan ready dot, slate body.",
+      "variants": [
+        { "candidate_id": "PROP-BEACON-A", "delta": "floor-standing pole." },
+        {
+          "candidate_id": "PROP-BEACON-B",
+          "delta": "wall bracket unit with a short mast."
+        }
+      ],
+      "neutrality_risk": "must not look urgent by default — the competing offer's balance is a validity requirement",
+      "accessibility_risk": "visible against corridor walls at 1x"
+    },
+    {
+      "asset_id": "PROP-COMPETING-STATION",
+      "family": "props",
+      "label": "Competing-task station (corridor second task)",
+      "filenames": "public/assets/generated/candidates/props/corridor-competing-station-{a,b}.png",
+      "dimensions": "48x48 canvas",
+      "tile_frame_size": "footprint 1x1 tiles",
+      "animation": "none",
+      "rooms": ["interruption_corridor"],
+      "q_ids": ["Q15"],
+      "admission_class": "MANDATORY_RESEARCH module surface (the real competing objective, FABLE-NEXT-05 rebuild)",
+      "prompt": "Compact auxiliary work console with a small open access hatch and a dark screen (no letters), visually plainer and duller than a room's main console, slate-grey.",
+      "variants": [
+        {
+          "candidate_id": "PROP-COMPETING-STATION-A",
+          "delta": "hatch on the left face."
+        },
+        {
+          "candidate_id": "PROP-COMPETING-STATION-B",
+          "delta": "hatch on top, tool clips on the side (empty)."
+        }
+      ],
+      "neutrality_risk": "VALIDITY-CRITICAL: must not be more attractive or urgent-looking than original-task stations; deliberately plain",
+      "accessibility_risk": "still clearly interactable-readable when cued"
+    },
+    {
+      "asset_id": "PROP-UTILITYBOT",
+      "family": "props",
+      "label": "Utility Bot (Side Repair offer host)",
+      "filenames": "public/assets/generated/candidates/props/side-repair-utility-bot-a.png",
+      "dimensions": "48x48 canvas",
+      "tile_frame_size": "footprint 1x1 tiles",
+      "animation": "none (2-frame idle bob optional post-pilot)",
+      "rooms": ["optional_side_repair_bay"],
+      "q_ids": ["Q07", "Q16", "Q20"],
+      "admission_class": "MANDATORY_RESEARCH module surface (OPT arc owner) — room off the priority-six list, so single optional-capacity variant",
+      "prompt": "Small squat utility robot on rubber treads, boxy slate shell with one round neutral optical sensor (not cute, not menacing), folded manipulator arm, single cyan status dot.",
+      "variants": [
+        {
+          "candidate_id": "PROP-UTILITYBOT-A",
+          "delta": "single variant (optional capacity)."
+        }
+      ],
+      "neutrality_risk": "not cute (would bias acceptance of the optional task), not menacing (would bias decline); offer neutrality is measured",
+      "accessibility_risk": "reads as an agent, not decor, at 1x"
+    },
+    {
+      "asset_id": "UI-PANEL9",
+      "family": "ui",
+      "label": "Prompt/dialog 9-slice frame",
+      "filenames": "public/assets/generated/candidates/ui/panel-frame-9s-{a,b}.png",
+      "dimensions": "48x48 (16 px slice borders)",
+      "tile_frame_size": "9-slice 16/16/16",
+      "animation": "none",
+      "rooms": ["global"],
+      "q_ids": [],
+      "admission_class": "PLAYABLE_FOUNDATION (presentation of the existing prompt panel; #101820-compatible)",
+      "prompt": "Square UI panel frame for slicing: dark blue-black fill, thin gunmetal border with subtle corner rivets, flat, no gloss.",
+      "variants": [
+        { "candidate_id": "UI-PANEL9-A", "delta": "plain border." },
+        {
+          "candidate_id": "UI-PANEL9-B",
+          "delta": "border with faint inner hairline."
+        }
+      ],
+      "neutrality_risk": "identical frame for every prompt (no per-room or per-outcome framing variance)",
+      "accessibility_risk": "16 px text on the fill must keep >= current contrast"
+    },
+    {
+      "asset_id": "UI-SLOTCELL",
+      "family": "ui",
+      "label": "Inventory/prep slot board cell (4-state strip)",
+      "filenames": "public/assets/generated/candidates/ui/slot-cell-states-{a,b}.png",
+      "dimensions": "160x40 (4 states of 40x40: active | focus | disabled | completed)",
+      "tile_frame_size": "cell 40x40",
+      "animation": "none (states, not frames)",
+      "rooms": ["inventory_prep_room", "global carried-items HUD"],
+      "q_ids": ["Q01", "Q02", "Q03"],
+      "admission_class": "MANDATORY_RESEARCH minigame surface (per-item sort/place board) + S4 carried-items HUD",
+      "prompt": "Single square item slot: recessed dark well with a thin slate rim. Four states: normal; keyboard-focus with 2 px light outline ring and corner ticks; disabled at 40 percent brightness with a diagonal notch; completed with a filled slot glyph and de-emphasised border. No green, no red, no check marks.",
+      "variants": [
+        { "candidate_id": "UI-SLOTCELL-A", "delta": "rounded-corner well." },
+        { "candidate_id": "UI-SLOTCELL-B", "delta": "chamfered-corner well." }
+      ],
+      "neutrality_risk": "completed state reads settled, not rewarded",
+      "accessibility_risk": "state differences carried by shape/brightness, never hue alone; focus ring visible at 1x"
+    },
+    {
+      "asset_id": "UI-BINPLATE",
+      "family": "ui",
+      "label": "Labelled-bin interface plate (4-state strip)",
+      "filenames": "public/assets/generated/candidates/ui/bin-label-plate-states-{a,b}.png",
+      "dimensions": "384x32 (4 states of 96x32)",
+      "tile_frame_size": "plate 96x32",
+      "animation": "none",
+      "rooms": ["inventory_prep_room"],
+      "q_ids": ["Q01", "Q03"],
+      "admission_class": "MANDATORY_RESEARCH minigame surface (bin choice UI; runtime text labels)",
+      "prompt": "Wide blank label plate with a fastening screw at each end, matte grey-blue. Same four-state treatment as the slot cell.",
+      "variants": [
+        { "candidate_id": "UI-BINPLATE-A", "delta": "flat plate." },
+        {
+          "candidate_id": "UI-BINPLATE-B",
+          "delta": "plate with a subtle bracket frame."
+        }
+      ],
+      "neutrality_risk": "plates identical across bins (label text is the only differentiator)",
+      "accessibility_risk": "runtime label text needs >= 14 px effective on the plate"
+    },
+    {
+      "asset_id": "UI-CHECKPANEL",
+      "family": "ui",
+      "label": "Checklist/manual panel frame + row-state markers",
+      "filenames": "public/assets/generated/candidates/ui/checklist-panel-{a,b}.png",
+      "dimensions": "48x48 frame (16 px slices) + 64x16 row-marker strip (4 states of 16x16)",
+      "tile_frame_size": "9-slice + 16x16 markers",
+      "animation": "none",
+      "rooms": ["inventory_prep_room", "systems_repair_room", "archive_room"],
+      "q_ids": ["Q01", "Q16", "Q22"],
+      "admission_class": "MANDATORY_RESEARCH minigame surface (checklist/manual presentation)",
+      "prompt": "UI frame variant with a header band, plus a small square row-state marker set: empty outline square, focus ring square, dimmed square, filled square. No check marks, no crosses.",
+      "variants": [
+        { "candidate_id": "UI-CHECKPANEL-A", "delta": "square markers." },
+        { "candidate_id": "UI-CHECKPANEL-B", "delta": "circular markers." }
+      ],
+      "neutrality_risk": "filled marker = recorded, not correct: no tick/cross valence",
+      "accessibility_risk": "marker states distinct at 1x without colour"
+    },
+    {
+      "asset_id": "UI-EVIDENCE",
+      "family": "ui",
+      "label": "Evidence-comparison column frame + tab chips",
+      "filenames": "public/assets/generated/candidates/ui/evidence-ledger-{a,b}.png",
+      "dimensions": "column header 300x24; tab chip strip 288x20 (4 states of 72x20)",
+      "tile_frame_size": "header 300x24, chip 72x20",
+      "animation": "none",
+      "rooms": ["archive_room", "scenario stages (all four)"],
+      "q_ids": ["Q22"],
+      "admission_class": "Serves Evidence Ledger V1 (minigame UX spec Part A) — presentation-only; V1 itself is scheduled post-pilot unless the pilot start slips",
+      "prompt": "Slim column header bar and a small rectangular tab chip, dark fill, thin border, flat. Four chip states as the shared state treatment.",
+      "variants": [
+        { "candidate_id": "UI-EVIDENCE-A", "delta": "square tab corners." },
+        { "candidate_id": "UI-EVIDENCE-B", "delta": "trapezoid tab." }
+      ],
+      "neutrality_risk": "both columns identical framing (no source looks more credible)",
+      "accessibility_risk": "two 300 px columns at 14 px monospace is the readability floor — headers must not shrink text further"
+    },
+    {
+      "asset_id": "UI-SEQBUTTON",
+      "family": "ui",
+      "label": "Repair/calibration sequence key (4-state strip)",
+      "filenames": "public/assets/generated/candidates/ui/sequence-key-states-{a,b}.png",
+      "dimensions": "128x32 (4 states of 32x32)",
+      "tile_frame_size": "key 32x32",
+      "animation": "none",
+      "rooms": ["systems_repair_room", "optional_side_repair_bay"],
+      "q_ids": ["Q14", "Q21"],
+      "admission_class": "MANDATORY_RESEARCH minigame surface (sequence selection presentation)",
+      "prompt": "Square mechanical key cap UI element, dark top with a thin rim, flat pixel style. Shared four-state treatment.",
+      "variants": [
+        { "candidate_id": "UI-SEQBUTTON-A", "delta": "flat cap." },
+        { "candidate_id": "UI-SEQBUTTON-B", "delta": "slightly domed cap." }
+      ],
+      "neutrality_risk": "no per-key colour that could hint at the correct sequence",
+      "accessibility_risk": "runtime digit label needs contrast on the cap"
+    },
+    {
+      "asset_id": "UI-WARNFRAME",
+      "family": "ui",
+      "label": "Warning inspection panel frame (hazard)",
+      "filenames": "public/assets/generated/candidates/ui/warning-frame-{a,b}.png",
+      "dimensions": "48x48 (16 px slices)",
+      "tile_frame_size": "9-slice",
+      "animation": "none",
+      "rooms": ["hazard_control_room"],
+      "q_ids": ["Q12"],
+      "admission_class": "MANDATORY_RESEARCH minigame surface (warning detail panel); amber permitted (hazard semantics)",
+      "prompt": "UI panel frame variant with a restrained amber top edge band on gunmetal border, dark fill, no symbols.",
+      "variants": [
+        { "candidate_id": "UI-WARNFRAME-A", "delta": "solid amber band." },
+        { "candidate_id": "UI-WARNFRAME-B", "delta": "amber corner wedges." }
+      ],
+      "neutrality_risk": "factual-warning framing, not fear: no red, no pulsing border",
+      "accessibility_risk": "band shape (not colour) carries the warning identity"
+    },
+    {
+      "asset_id": "UI-RECORDCARD",
+      "family": "ui",
+      "label": "Commit/confirm station-record card frame",
+      "filenames": "public/assets/generated/candidates/ui/record-card-frame-{a,b}.png",
+      "dimensions": "64x48 (16 px slices)",
+      "tile_frame_size": "9-slice",
+      "animation": "none",
+      "rooms": ["all four scenario stations", "confirmable canonical stages"],
+      "q_ids": [],
+      "admission_class": "Serves Commit Record Console V3 (minigame UX spec Part A; recommended first variant) — presentation-only over the existing confirm stage",
+      "prompt": "Bordered record-card frame: double hairline border, small header band, dark fill, flat and formal, no seal, no stamp.",
+      "variants": [
+        { "candidate_id": "UI-RECORDCARD-A", "delta": "double border." },
+        {
+          "candidate_id": "UI-RECORDCARD-B",
+          "delta": "single heavy border with corner brackets."
+        }
+      ],
+      "neutrality_risk": "identical card for all four scenarios and all options (uniform commit salience is the requirement)",
+      "accessibility_risk": "header state carried by text at runtime, not colour"
+    },
+    {
+      "asset_id": "UI-RESUME",
+      "family": "ui",
+      "label": "Interruption/resume indicator chip (4-state strip)",
+      "filenames": "public/assets/generated/candidates/ui/resume-chip-states-{a,b}.png",
+      "dimensions": "96x24 (4 states of 24x24)",
+      "tile_frame_size": "chip 24x24",
+      "animation": "none",
+      "rooms": ["interruption_corridor", "global duty roster line"],
+      "q_ids": ["Q15", "Q17"],
+      "admission_class": "MANDATORY_RESEARCH signposting surface (return route must be signposted — corridor contract accessibility row)",
+      "prompt": "Small circular chip with a neutral pause/return glyph made of two abstract bars and a curved arrow, monochrome slate on dark. Shared four-state treatment.",
+      "variants": [
+        { "candidate_id": "UI-RESUME-A", "delta": "bars + arrow glyph." },
+        { "candidate_id": "UI-RESUME-B", "delta": "split-ring glyph." }
+      ],
+      "neutrality_risk": "signposts the return option without urging it (no pulsing, no warm colour)",
+      "accessibility_risk": "glyph legible at 24 px"
+    },
+    {
+      "asset_id": "UI-PROGRESS",
+      "family": "ui",
+      "label": "Neutral progress label chip (pending/logged)",
+      "filenames": "public/assets/generated/candidates/ui/progress-chip-states-{a,b}.png",
+      "dimensions": "144x20 (2 states of 72x20)",
+      "tile_frame_size": "chip 72x20",
+      "animation": "none",
+      "rooms": ["duty roster / status surfaces"],
+      "q_ids": [],
+      "admission_class": "GATED: progress display only where scientifically approved — status-board additions are blocked on the research-owner ruling and the ADV-5 byte-pin re-baseline (backlog S1); generate last, integrate only after that ruling",
+      "prompt": "Small wide label chip, dark fill with thin border; second state visually settled: slightly dimmer fill, filled corner notch. No bars, no percentages, no stars.",
+      "variants": [
+        { "candidate_id": "UI-PROGRESS-A", "delta": "rectangular chip." },
+        { "candidate_id": "UI-PROGRESS-B", "delta": "chip with rounded ends." }
+      ],
+      "neutrality_risk": "labels-only rule: nothing countable/rankable; never a score display",
+      "accessibility_risk": "state difference visible without colour"
+    },
+    {
+      "asset_id": "FX-PULSE",
+      "family": "effects",
+      "label": "Nearest-interactable pulse",
+      "filenames": "public/assets/generated/candidates/effects/interact-pulse-{a,b}.png",
+      "dimensions": "128x32 (4 frames of 32x32)",
+      "tile_frame_size": "frame 32x32",
+      "animation": "4 frames, ~700 ms yoyo (matches Dock marker tween values)",
+      "rooms": ["global"],
+      "q_ids": [],
+      "admission_class": "PLAYABLE_FOUNDATION guidance (backlog M4: uniform nearest-interactable cue; equal guidance strength everywhere is the scientific point)",
+      "prompt": "Soft cyan ring pulse: thin circular ring expanding and fading over four frames, single hue #5fd3c4, no sparkle.",
+      "variants": [
+        { "candidate_id": "FX-PULSE-A", "delta": "circular ring." },
+        {
+          "candidate_id": "FX-PULSE-B",
+          "delta": "rounded-square ring matching a tile footprint."
+        }
+      ],
+      "neutrality_risk": "identical pulse for every station type including scenario consoles",
+      "accessibility_risk": "visible at 1x against slate deck; not the only cue (label + prompt text remain)"
+    },
+    {
+      "asset_id": "FX-PICKUP",
+      "family": "effects",
+      "label": "Pickup/collection feedback",
+      "filenames": "public/assets/generated/candidates/effects/pickup-feedback-{a,b}.png",
+      "dimensions": "192x32 (6 frames of 32x32)",
+      "tile_frame_size": "frame 32x32",
+      "animation": "6 frames, one-shot",
+      "rooms": [
+        "inventory_prep_room",
+        "systems_repair_room",
+        "optional_side_repair_bay"
+      ],
+      "q_ids": ["Q01", "Q03", "Q07", "Q16"],
+      "admission_class": "PLAYABLE_FOUNDATION feedback (collect/deliver observability support)",
+      "prompt": "Brief collect feedback: small cyan ring collapsing to a dot with two rising faint motes, six frames, restrained.",
+      "variants": [
+        { "candidate_id": "FX-PICKUP-A", "delta": "ring collapse." },
+        {
+          "candidate_id": "FX-PICKUP-B",
+          "delta": "short upward shimmer, no ring."
+        }
+      ],
+      "neutrality_risk": "restrained, identical for every item (no reward escalation)",
+      "accessibility_risk": "not the only pickup confirmation (HUD line updates too)"
+    },
+    {
+      "asset_id": "FX-LOGGED",
+      "family": "effects",
+      "label": "Logged/completed marker",
+      "filenames": "public/assets/generated/candidates/effects/logged-marker-{a,b}.png",
+      "dimensions": "72x24 (static 24x24 + 2-frame settle)",
+      "tile_frame_size": "marker 24x24",
+      "animation": "2-frame settle (bright-to-dim), then static",
+      "rooms": ["global (one-shot stations)"],
+      "q_ids": [],
+      "admission_class": "PLAYABLE_FOUNDATION state display (settled/logged read; pairs with the ' — logged' label suffix, backlog M4)",
+      "prompt": "Small neutral recorded marker: dim slate rounded tag with a filled corner notch, monochrome, calm; two-frame settle from slightly bright to dim.",
+      "variants": [
+        { "candidate_id": "FX-LOGGED-A", "delta": "tag with notch." },
+        {
+          "candidate_id": "FX-LOGGED-B",
+          "delta": "flat disk with an inset line."
+        }
+      ],
+      "neutrality_risk": "settled, never rewarded: no green, no check mark, no shine",
+      "accessibility_risk": "distinguishable from the pulse cue at 1x"
+    },
+    {
+      "asset_id": "FX-WARNPULSE",
+      "family": "effects",
+      "label": "Warning pulse (hazard-only)",
+      "filenames": "public/assets/generated/candidates/effects/warning-pulse-{a,b}.png",
+      "dimensions": "128x32 (4 frames of 32x32)",
+      "tile_frame_size": "frame 32x32",
+      "animation": "4 frames, slow yoyo",
+      "rooms": ["hazard_control_room"],
+      "q_ids": ["Q12"],
+      "admission_class": "MANDATORY_RESEARCH visibility support (warning must be seen before any decision — opportunity flag); amber permitted (hazard reservation)",
+      "prompt": "Restrained amber edge pulse: thin amber ring brightening and dimming over four frames, matte, never flashing white.",
+      "variants": [
+        { "candidate_id": "FX-WARNPULSE-A", "delta": "ring." },
+        {
+          "candidate_id": "FX-WARNPULSE-B",
+          "delta": "chevron-shaped pulse matching the warning band."
+        }
+      ],
+      "neutrality_risk": "ensures warning visibility without fear framing; slow, matte, no strobe",
+      "accessibility_risk": "no photosensitivity risk: low contrast delta, slow cycle"
+    },
+    {
+      "asset_id": "FX-FOCUSRING",
+      "family": "effects",
+      "label": "Accessible keyboard focus ring",
+      "filenames": "public/assets/generated/candidates/effects/focus-ring-{a,b}.png",
+      "dimensions": "40x40 static (optional 2-frame subtle breathe)",
+      "tile_frame_size": "ring 40x40 (stretchable)",
+      "animation": "static (optional 2-frame)",
+      "rooms": ["global UI"],
+      "q_ids": [],
+      "admission_class": "CONTROL_OR_USABILITY (keyboard-first accessibility, S14)",
+      "prompt": "High-contrast keyboard focus ring: 2 px near-white dashed rectangle with corner ticks, crisp, no glow.",
+      "variants": [
+        { "candidate_id": "FX-FOCUSRING-A", "delta": "dashed rectangle." },
+        {
+          "candidate_id": "FX-FOCUSRING-B",
+          "delta": "solid rectangle with corner brackets only."
+        }
+      ],
+      "neutrality_risk": "none (uniform everywhere)",
+      "accessibility_risk": "must be visible on #101820 and on slate deck; the core accessibility asset"
+    },
+    {
+      "asset_id": "FX-CONSEQ",
+      "family": "effects",
+      "label": "Neutral consequence reveal",
+      "filenames": "public/assets/generated/candidates/effects/consequence-reveal-{a,b}.png",
+      "dimensions": "256x8 (4 frames of 64x8 edge strip)",
+      "tile_frame_size": "strip 64x8 (stretchable)",
+      "animation": "4 frames, one-shot",
+      "rooms": ["global (consequence panels)"],
+      "q_ids": [],
+      "admission_class": "MANDATORY_RESEARCH presentation support (S10 consequence display — identical for every outcome, valence-ambiguous by rule)",
+      "prompt": "Neutral panel reveal: a thin cool grey-blue edge strip that sweeps from dim to steady in four frames, no colour shift, no flash.",
+      "variants": [
+        { "candidate_id": "FX-CONSEQ-A", "delta": "left-to-right sweep." },
+        { "candidate_id": "FX-CONSEQ-B", "delta": "centre-out sweep." }
+      ],
+      "neutrality_risk": "VALIDITY-CRITICAL: the same reveal for good and bad consequences; no colour valence ever",
+      "accessibility_risk": "subtle by design; never the only cue (panel text carries content)"
+    },
+    {
+      "asset_id": "FX-OBJCOMPLETE",
+      "family": "effects",
+      "label": "Room-objective completion marker",
+      "filenames": "public/assets/generated/candidates/effects/objective-complete-{a,b}.png",
+      "dimensions": "48x16 (3 frames of 16x16)",
+      "tile_frame_size": "glyph 16x16",
+      "animation": "3 frames, one-shot",
+      "rooms": ["global duty-roster HUD line"],
+      "q_ids": [],
+      "admission_class": "PLAYABLE_FOUNDATION (roster stays labels-only; the glyph marks recorded completion, no score)",
+      "prompt": "Tiny neutral completion glyph: an outline square filling to a solid square over three frames, monochrome slate, no check mark, no green.",
+      "variants": [
+        { "candidate_id": "FX-OBJCOMPLETE-A", "delta": "square fill." },
+        { "candidate_id": "FX-OBJCOMPLETE-B", "delta": "circle fill." }
+      ],
+      "neutrality_risk": "recorded-not-rewarded register",
+      "accessibility_risk": "legible at 16 px in the HUD line"
+    },
+    {
+      "asset_id": "TILE-MAINT",
+      "family": "tiles",
+      "label": "Maintenance detail floor decal (optional)",
+      "filenames": "public/assets/generated/candidates/props/decal-maintenance-a.png",
+      "dimensions": "32x32 overlay",
+      "tile_frame_size": "1 tile overlay, chained to interior-v3 deck base 06c4f6e8",
+      "animation": "none",
+      "rooms": ["systems_repair_room", "optional_side_repair_bay"],
+      "q_ids": [],
+      "admission_class": "ENGAGEMENT_ONLY_UNSCORED dressing — optional family: generate only if a canonical module's layout needs it; existing Wang tilesets cover all floors/walls",
+      "prompt": "Floor overlay decal: recessed cable run channel with a small vent grate, dull slate tones, subtle.",
+      "variants": [
+        {
+          "candidate_id": "TILE-MAINT-A",
+          "delta": "single variant (optional)."
+        }
+      ],
+      "neutrality_risk": "duller than every interactable",
+      "accessibility_risk": "must not read as an interaction cue"
+    },
+    {
+      "asset_id": "TILE-STORAGE",
+      "family": "tiles",
+      "label": "Storage placement-zone floor marking (optional)",
+      "filenames": "public/assets/generated/candidates/props/decal-storage-zone-a.png",
+      "dimensions": "32x32 overlay",
+      "tile_frame_size": "1 tile overlay",
+      "animation": "none",
+      "rooms": ["inventory_prep_room"],
+      "q_ids": ["Q01", "Q03"],
+      "admission_class": "Optional spatial-logic support for the bin area; generate only if the Inventory pass needs floor guidance",
+      "prompt": "Floor overlay decal: thin pale outline rectangle marking a storage placement zone, worn matte paint look, no letters.",
+      "variants": [
+        {
+          "candidate_id": "TILE-STORAGE-A",
+          "delta": "single variant (optional)."
+        }
+      ],
+      "neutrality_risk": "guides placement without ranking bins",
+      "accessibility_risk": "outline visible on slate deck without colour reliance"
+    },
+    {
+      "asset_id": "TILE-HAZARD",
+      "family": "tiles",
+      "label": "Hazard-zone floor marking (optional; hazard rooms only)",
+      "filenames": "public/assets/generated/candidates/props/decal-hazard-zone-a.png",
+      "dimensions": "32x32 overlay",
+      "tile_frame_size": "1 tile overlay",
+      "animation": "none",
+      "rooms": ["hazard_control_room"],
+      "q_ids": ["Q12"],
+      "admission_class": "Optional hazard-context dressing; amber permitted (hazard reservation); never outside hazard semantics",
+      "prompt": "Floor overlay decal: restrained amber-and-slate diagonal hatch strip along one tile edge, worn matte paint, no symbols.",
+      "variants": [
+        {
+          "candidate_id": "TILE-HAZARD-A",
+          "delta": "single variant (optional)."
+        }
+      ],
+      "neutrality_risk": "context, not fear; worn matte finish",
+      "accessibility_risk": "hatch shape carries the signal, not colour alone"
+    },
+    {
+      "asset_id": "TILE-DATAWALL",
+      "family": "tiles",
+      "label": "Archive data-wall variant decal (optional)",
+      "filenames": "public/assets/generated/candidates/props/decal-data-wall-a.png",
+      "dimensions": "32x32 overlay",
+      "tile_frame_size": "1 tile overlay (wall)",
+      "animation": "none",
+      "rooms": ["archive_room"],
+      "q_ids": [],
+      "admission_class": "ENGAGEMENT_ONLY_UNSCORED dressing; must stay dimmer than the log shelves (data-panels salience-inversion rule)",
+      "prompt": "Wall overlay decal: recessed data-conduit panel with faint dark cartridge slots, dimmer than any interactable, no glow.",
+      "variants": [
+        {
+          "candidate_id": "TILE-DATAWALL-A",
+          "delta": "single variant (optional)."
+        }
+      ],
+      "neutrality_risk": "explicitly dimmer than interactables",
+      "accessibility_risk": "must not read as interactable"
+    },
+    {
+      "asset_id": "TILE-COREMACH",
+      "family": "tiles",
+      "label": "Final Core machinery detail decal (optional)",
+      "filenames": "public/assets/generated/candidates/props/decal-core-machinery-a.png",
+      "dimensions": "32x32 overlay",
+      "tile_frame_size": "1 tile overlay (wall)",
+      "animation": "none",
+      "rooms": ["final_core_room"],
+      "q_ids": [],
+      "admission_class": "ENGAGEMENT_ONLY_UNSCORED dressing",
+      "prompt": "Wall overlay decal: heavy conduit flange cluster with bolted plates, dark gunmetal, matte, no glow.",
+      "variants": [
+        {
+          "candidate_id": "TILE-COREMACH-A",
+          "delta": "single variant (optional)."
+        }
+      ],
+      "neutrality_risk": "duller than the core interface",
+      "accessibility_risk": "must not read as interactable"
+    }
+  ]
+}
