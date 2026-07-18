@@ -292,6 +292,33 @@ retention period is assumed by this repository.
 
 ---
 
+## SA-8 — Q09 registration for `engineer_report_accuracy_scored` (FABLE-NEXT-04)
+
+Added by the FABLE-NEXT-04 unit. The event is emitted (once per submission, at
+report-content selection in the Engineer Hub) as **unmapped raw telemetry**; no
+CanonicalEventContext registration exists — withheld on purpose. Payload is
+documented in `event-schema.md` §4 (additive clarification): `success` =
+all-checkable-facts-correct boolean; `metadata.accuracy` = 0-1 proportion, plus
+report_mode/facts/claimed/actual keys. This ruling decides ONLY the
+registration; any scoring use of `report_accuracy_score` stays gated by D2.
+
+**SA-8.1 Q09 registration** — permitted:
+`add study_item_ids ['Q09'], construct_id 'responsibility'` / `keep unmapped` / `custom`.
+`«REC» add ['Q09'] + responsibility` (the specification lists report accuracy as
+a primary Q09 measurement; the emission already exists and is payload-pinned).
+
+- Selected: `__________` — APPROVED / NOT APPROVED
+
+**SA-8.2 Success-field semantics** — permitted:
+`keep both (success boolean + metadata.accuracy proportion, as emitted)` /
+`success only` / `metadata.accuracy only` / `custom`.
+`«REC» keep both` (already emitted and spec-pinned; either alone loses
+information).
+
+- Selected: `__________` — APPROVED / NOT APPROVED
+
+---
+
 ## Sign-off
 
 - INT-1 complete: APPROVED / NOT APPROVED

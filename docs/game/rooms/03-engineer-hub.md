@@ -38,10 +38,15 @@ plausible time pressure. A report console and duty board are available.
 - Submit a quick report from memory (unprepared/shortcut).
 - Review station evidence, then report (prepared).
 - Ask Engineer Kai for clarification before reporting (prepared, supervised).
+- Then (FABLE-NEXT-04): choose which status update is actually sent — four
+  operational status statements in fixed order covering both checkable
+  mission facts (systems repair cycle complete?, field kit packed?); exactly
+  one matches the logged state.
+- Then: accept or decline the relay supervision duty (chained offer stage).
 
-**Missing from current implementation**: the duty-board accept/decline step and
-any later follow-through check (see Implementation notes) — this is the core of
-the room's Q10 mapping and is not yet built, not just misnamed.
+The duty accept/decline step and the Final Core follow-through check
+(complete / unresolved) are implemented and spec-covered end-to-end — the
+older "missing" note below in Implementation notes is historical.
 
 ## Canonical events
 
@@ -56,8 +61,10 @@ Current-to-canonical alias table: `docs/research/event-schema.md` §4, "Engineer
 Hub" — 5 exact matches on the report-submission path
 (`engineer_report_opened`, `engineer_evidence_reviewed`,
 `engineer_clarification_requested`, `engineer_report_submitted_prepared`,
-`engineer_report_submitted_unprepared`); the entire supervision/duty mechanic is
-unimplemented.
+`engineer_report_submitted_unprepared`); the supervision/duty mechanic is
+implemented (offer/accept/decline here, complete/unresolved at Final Core),
+and `engineer_report_accuracy_scored` is emitted as unmapped raw telemetry
+since FABLE-NEXT-04 (see the schema table for its payload clarification).
 
 ## Derived variables
 
@@ -129,6 +136,52 @@ related station point"; inventing an earlier check would be an undocumented
 scientific decision. Additive `engineer_hub_entered` on every entry.
 Playwright spec `e2e/engineer_hub_logging.spec.ts` authored compile-only —
 **runtime/browser verification still owed** before any "works" claim.
+
+**FABLE-NEXT-04 status (2026-07-18)**: report-accuracy evaluation substrate
+(Q09) implemented. The report flow is now mode → **report content** → duty
+offer:
+
+- The response-mode options (labels, feedback strings, event sequences —
+  including the legacy `engineer_report_submitted_supervised` and
+  `engineer_responsibility_*` names) stay verbatim; the one-shot
+  already-submitted gate and `markRoomCompleted('engineer_hub')` timing are
+  unchanged; the duty offer still logs `engineer_supervision_assigned` at
+  the moment it is shown (it now chains one stage later).
+- The new content stage (`buildReportContentStage`) offers the four
+  combinations of the two checkable facts as operational status statements
+  in **fixed template order** (`src/utils/reportAccuracy.ts` REPORT_CLAIMS —
+  never reordered by state): systems repair cycle complete/still open ×
+  field kit packed/not packed. Facts read live from SessionState
+  (`completed_rooms ∋ systems_repair_room`, `prepared_items ∋ field_kit`) —
+  few, concrete, and visible earlier in the session (memory confound
+  control).
+- Mode-specific stage help: quick = "from memory" only; evidence review =
+  station log extract showing the actual values (evidence genuinely
+  accessible); clarification = Kai names the two facts he needs, no answers
+  (clarification genuinely helps).
+- Selecting a statement emits `engineer_report_accuracy_scored` once per
+  submission — **unmapped raw telemetry** (no CanonicalEventContext
+  registration, `engineer_hub_entered` precedent). Payload: `success` =
+  all checkable facts correct; `metadata.accuracy` = 0-1 proportion; plus
+  report_mode/facts/claimed/actual keys — placement recorded in
+  event-schema.md §4 (additive clarification, `control_error_count`
+  precedent).
+- The evaluation is **silent**: identical neutral acknowledgement ("Kai
+  logs your status update.") for every claim; no grade, no moralising. The
+  legacy mode feedback string now heads the content stage body; the neutral
+  acknowledgement heads the duty stage body (display-only re-anchoring; no
+  event change).
+- **Open (research owner)**: a Q09 registration for
+  `engineer_report_accuracy_scored` (the event improves raw telemetry but
+  does not close Q09's outcome side); D5's
+  `engineer_report_submitted_supervised` mapping question stays open;
+  `report_accuracy_score` (approved scoring-plan target) remains D2-family
+  work — not computed here.
+- Spec coverage: `engineer_hub_logging.spec.ts` (accurate-prepared,
+  inaccurate-unprepared, clarify-then-accurate, payload pinning,
+  once-per-submission with the one-shot gate); duty-loop regression in
+  `final_core_summary.spec.ts` (accept→complete, accept→unresolved,
+  no-duty paths — Q10 verified end-to-end).
 
 ## Anti-leakage note
 
