@@ -10,6 +10,10 @@ import {
   getSummary,
   hold,
   hubToStationDoor,
+  inventoryToConsole,
+  inventoryToKitCrate,
+  inventoryToPrepBench,
+  inventoryToStorageBin,
   press,
   waitForRoomEntry,
 } from './helpers';
@@ -269,6 +273,435 @@ test.describe('inventory prep logging', () => {
     const mission = await getMissionState(page);
 
     expect(mission.prepared_items).toContain('field_kit');
+    expect(mission.workspace_status).toBe('tidy');
+  });
+
+  // ——————————————————————————————————————————————————————————————————
+  // FABLE-NEXT-02 per-item preparation mode (console option 4). The
+  // legacy tests above are extended, never weakened: options 1-3 keep
+  // their verbatim behaviour, and these tests drive the additive per-item
+  // sort/place → correction → verify → cleanup flow.
+  // ——————————————————————————————————————————————————————————————————
+
+  /** Engage per-item mode: console option 4, from the entry spawn. */
+  async function engagePerItemMode(page: import('@playwright/test').Page) {
+    await inventoryToConsole(page);
+    await press(page, '4');
+  }
+
+  /** Take the Nth bench option, walk to the kit crate, pack (option 1). */
+  async function takeAndPack(
+    page: import('@playwright/test').Page,
+    benchOption: string,
+  ) {
+    await inventoryToPrepBench(page);
+    await press(page, benchOption);
+    await inventoryToKitCrate(page);
+    await press(page, '1');
+  }
+
+  /** Take the Nth bench option, walk to a bin, stow (option 1). */
+  async function takeAndStow(
+    page: import('@playwright/test').Page,
+    benchOption: string,
+    bin: 'hand_tools' | 'consumables' | 'electronics',
+  ) {
+    await inventoryToPrepBench(page);
+    await press(page, benchOption);
+    await inventoryToStorageBin(page, bin);
+    await press(page, '1');
+  }
+
+  test('per-item systematic path: checklist, ordered placement, review, verify, reset', async ({
+    page,
+  }) => {
+    test.setTimeout(300_000);
+    await bootGame(page, {
+      participant_id: 'E2E_P6',
+      game_session_id: 'E2E_INV_S5',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+    await hubToInventory(page);
+
+    await engagePerItemMode(page);
+
+    // Engagement emits NO event (checklist credit belongs to checklist
+    // actions only; no approved name exists for mode engagement).
+    let types = await getEventTypes(page);
+
+    expect(types).not.toContain('inventory_checklist_opened');
+    expect(types).not.toContain('inventory_checklist_used');
+
+    // Checklist action at the console (player is still at the console).
+    await press(page, 'Space');
+    await press(page, '1'); // check the requisition list
+    await press(page, '1'); // close the list
+
+    // Kit items in checklist order (bench lists items in registry order,
+    // so the first remaining item is always option 1), then stray gear.
+    await takeAndPack(page, '1'); // torque_driver
+    await takeAndPack(page, '1'); // diagnostic_probe
+    await takeAndPack(page, '1'); // coolant_cartridge
+    await takeAndPack(page, '1'); // fuse_pack
+    await takeAndPack(page, '1'); // patch_tape
+    await takeAndStow(page, '1', 'hand_tools'); // hex_spanner
+    await takeAndStow(page, '1', 'consumables'); // sealant_canister
+    await takeAndStow(page, '1', 'electronics'); // relay_board
+
+    // Close out: review (clean) -> readiness check -> reset the bench.
+    await inventoryToConsole(page);
+    await press(page, '2'); // close out the prep
+    await press(page, '1'); // review clean: proceed to the readiness check
+    await press(page, '1'); // run the readiness verification
+    await press(page, '1'); // reset the bench
+
+    types = await getEventTypes(page);
+
+    for (const expected of [
+      'inventory_checklist_opened',
+      'inventory_item_sorted_correct',
+      'correct_tool_selected',
+      'inventory_sequence_followed',
+      'inventory_sequence_completed',
+      'inventory_verified_complete',
+      'workspace_tidy_confirmed',
+      'cleanup_completed',
+    ]) {
+      expect(types, `${expected} must be logged`).toContain(expected);
+    }
+
+    // No error/skip/legacy-alias events on the clean per-item path.
+    for (const absent of [
+      'inventory_item_misplaced',
+      'wrong_tool_selected',
+      'missing_item',
+      'inventory_verification_skipped',
+      'workspace_left_disordered',
+      'inventory_prep_shortcut',
+      'inventory_checklist_used',
+      'inventory_systematic_prep',
+      'inventory_required_tools_packed',
+      'inventory_workspace_sorted',
+      'inventory_kit_verified',
+      'inventory_cleanup_completed',
+    ]) {
+      expect(types, `${absent} must NOT be logged`).not.toContain(absent);
+    }
+
+    // Event order: checklist before the first placement; the sort pass
+    // completes before verification; cleanup is last.
+    expect(types.indexOf('inventory_checklist_opened')).toBeLessThan(
+      types.indexOf('correct_tool_selected'),
+    );
+    expect(types.indexOf('inventory_sequence_completed')).toBeLessThan(
+      types.indexOf('inventory_verified_complete'),
+    );
+    expect(types.indexOf('inventory_verified_complete')).toBeLessThan(
+      types.indexOf('cleanup_completed'),
+    );
+
+    const events = await getEvents(page);
+    const kitPlacements = findEvents(events, 'correct_tool_selected');
+    const binPlacements = findEvents(events, 'inventory_item_sorted_correct');
+
+    // Per-item payloads: object_id = registry item_id, attempt_number = 1,
+    // pinned canonical contexts untouched.
+    expect(kitPlacements).toHaveLength(5);
+    expect(kitPlacements.map((e) => e.object_id)).toEqual([
+      'torque_driver',
+      'diagnostic_probe',
+      'coolant_cartridge',
+      'fuse_pack',
+      'patch_tape',
+    ]);
+
+    for (const placement of kitPlacements) {
+      expect(placement.attempt_number).toBe(1);
+      expect(placement.study_item_ids).toEqual(['Q03']);
+      expect(placement.construct_id).toBe('organisation');
+      expect(placement.room_id).toBe('inventory_prep_room');
+    }
+
+    expect(binPlacements).toHaveLength(3);
+    expect(binPlacements.map((e) => e.object_id)).toEqual([
+      'hex_spanner',
+      'sealant_canister',
+      'relay_board',
+    ]);
+
+    for (const placement of binPlacements) {
+      expect(placement.attempt_number).toBe(1);
+      expect(placement.study_item_ids).toEqual(['Q01']);
+      expect(placement.construct_id).toBe('organisation');
+    }
+
+    // Task-level milestones carry the console's task context and the Q01
+    // registration (sequence_completed stays unmapped raw telemetry).
+    const followed = findEvent(events, 'inventory_sequence_followed');
+    const completed = findEvent(events, 'inventory_sequence_completed');
+
+    expect(followed?.object_id).toBe('inventory_prep_checklist');
+    expect(followed?.study_item_ids).toEqual(['Q01']);
+    expect(followed?.construct_id).toBe('organisation');
+    expect(completed?.object_id).toBe('inventory_prep_checklist');
+    expect(completed?.study_item_ids).toBeUndefined();
+    expect(completed?.construct_id).toBeUndefined();
+
+    // Outcome state: the kit's actual contents (registry order) + the
+    // legacy-compatible field_kit completeness marker.
+    const mission = await getMissionState(page);
+
+    expect(mission.prepared_items).toEqual([
+      'torque_driver',
+      'diagnostic_probe',
+      'coolant_cartridge',
+      'fuse_pack',
+      'patch_tape',
+      'field_kit',
+    ]);
+    expect(mission.workspace_status).toBe('tidy');
+
+    // Scoring boundary: ScoringManager aggregates only legacy names, so
+    // the per-item path changes NO organization_* summary field.
+    const summary = await getSummary(page);
+
+    expect(summary.organization_checklist_used).toBe(false);
+    expect(summary.organization_kit_verified).toBe(false);
+    expect(summary.organization_prep_count).toBe(0);
+    expect(summary.organization_cleanup_count).toBe(0);
+    expect(summary.organization_shortcut_count).toBe(0);
+
+    // One-shot: the console is closed out after completion.
+    const eventCountBefore = (await getEvents(page)).length;
+
+    await press(page, 'Space');
+    await press(page, '1');
+
+    const eventsAfter = await getEvents(page);
+
+    expect(eventsAfter.length).toBe(eventCountBefore);
+  });
+
+  test('per-item misplacement path: unmissable review, correction, higher attempt numbers', async ({
+    page,
+  }) => {
+    test.setTimeout(300_000);
+    await bootGame(page, {
+      participant_id: 'E2E_P6',
+      game_session_id: 'E2E_INV_S6',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+    await hubToInventory(page);
+
+    await engagePerItemMode(page);
+
+    // Two deliberate errors: the Torque Driver (kit requisition) goes into
+    // the Hand Tools Rack; the Hex Spanner (rack-tagged) goes into the kit.
+    await takeAndStow(page, '1', 'hand_tools'); // torque_driver -> misplaced
+    await takeAndPack(page, '5'); // hex_spanner -> wrong tool
+    // Remaining items to their correct destinations.
+    await takeAndPack(page, '1'); // diagnostic_probe
+    await takeAndPack(page, '1'); // coolant_cartridge
+    await takeAndPack(page, '1'); // fuse_pack
+    await takeAndPack(page, '1'); // patch_tape
+    await takeAndStow(page, '1', 'consumables'); // sealant_canister
+    await takeAndStow(page, '1', 'electronics'); // relay_board
+
+    // Close out: the review flags the staging issues once; go back.
+    await inventoryToConsole(page);
+    await press(page, '2'); // close out -> review (missing_item logged)
+    await press(page, '1'); // go back and adjust the staging
+
+    // Correction: retrieve the Torque Driver from the wrong rack and pack
+    // it; retrieve the Hex Spanner from the kit and stow it correctly.
+    await inventoryToStorageBin(page, 'hand_tools');
+    await press(page, '1'); // take the Torque Driver back out
+    await inventoryToKitCrate(page);
+    await press(page, '1'); // pack it (attempt 2)
+    await inventoryToKitCrate(page);
+    await press(page, '6'); // take the Hex Spanner back out (6th kit item)
+    await inventoryToStorageBin(page, 'hand_tools');
+    await press(page, '1'); // stow it (attempt 2)
+
+    // Close out again: clean review -> verify -> reset.
+    await inventoryToConsole(page);
+    await press(page, '2');
+    await press(page, '1'); // clean review: proceed
+    await press(page, '1'); // run the readiness verification
+    await press(page, '1'); // reset the bench
+
+    const events = await getEvents(page);
+    const types = events.map((e) => e.event_type);
+
+    // The two first-pass errors, with attempt_number 1.
+    const misplaced = findEvent(events, 'inventory_item_misplaced');
+    const wrongTool = findEvent(events, 'wrong_tool_selected');
+
+    expect(misplaced?.object_id).toBe('torque_driver');
+    expect(misplaced?.attempt_number).toBe(1);
+    expect(misplaced?.study_item_ids).toEqual(['Q02']);
+    expect(misplaced?.construct_id).toBe('organisation');
+    expect(wrongTool?.object_id).toBe('hex_spanner');
+    expect(wrongTool?.attempt_number).toBe(1);
+    expect(wrongTool?.study_item_ids).toEqual(['Q03']);
+
+    // The review flagged the preventable omission exactly once, with the
+    // item as object_id, unmapped (no canonical registration).
+    const missing = findEvents(events, 'missing_item');
+
+    expect(missing).toHaveLength(1);
+    expect(missing[0].object_id).toBe('torque_driver');
+    expect(missing[0].study_item_ids).toBeUndefined();
+
+    // Corrected re-placements carry attempt_number 2 (correction telemetry
+    // is derivable; inventory_item_corrected stays a CANDIDATE).
+    const torquePacked = findEvents(events, 'correct_tool_selected').find(
+      (e) => e.object_id === 'torque_driver',
+    );
+    const hexStowed = findEvents(events, 'inventory_item_sorted_correct').find(
+      (e) => e.object_id === 'hex_spanner',
+    );
+
+    expect(torquePacked?.attempt_number).toBe(2);
+    expect(hexStowed?.attempt_number).toBe(2);
+
+    // Sequence: error -> review flag -> corrected re-placement.
+    const torquePackedIndex = events.findIndex(
+      (e) =>
+        e.event_type === 'correct_tool_selected' &&
+        e.object_id === 'torque_driver',
+    );
+
+    expect(types.indexOf('inventory_item_misplaced')).toBeLessThan(
+      types.indexOf('missing_item'),
+    );
+    expect(types.indexOf('missing_item')).toBeLessThan(torquePackedIndex);
+
+    // Order compliance was judged at first kit completion (which happened
+    // out of checklist order), so inventory_sequence_followed must NOT
+    // fire; the sort pass itself did complete.
+    expect(types).not.toContain('inventory_sequence_followed');
+    expect(types).toContain('inventory_sequence_completed');
+    expect(types).toContain('inventory_verified_complete');
+
+    // Outcome: every requisition item packed after correction.
+    const mission = await getMissionState(page);
+
+    expect(mission.prepared_items).toContain('field_kit');
+    expect(mission.prepared_items).toContain('torque_driver');
+    expect(mission.prepared_items).not.toContain('hex_spanner');
+    expect(mission.workspace_status).toBe('tidy');
+  });
+
+  test('per-item rushed path: skip items, skip verification, disorder chosen at the cleanup stage', async ({
+    page,
+  }) => {
+    test.setTimeout(240_000);
+    await bootGame(page, {
+      participant_id: 'E2E_P6',
+      game_session_id: 'E2E_INV_S7',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+    await hubToInventory(page);
+
+    await engagePerItemMode(page);
+
+    // Pack only two requisition items, then close out immediately.
+    await takeAndPack(page, '1'); // torque_driver
+    await takeAndPack(page, '1'); // diagnostic_probe
+
+    await inventoryToConsole(page);
+    await press(page, '2'); // close out -> review flags the omissions
+    await press(page, '2'); // proceed to the readiness check anyway
+    await press(page, '2'); // skip the check and close out now
+    await press(page, '2'); // head out and leave the bench as it is
+
+    const events = await getEvents(page);
+    const types = events.map((e) => e.event_type);
+
+    // The rushed path still passed through review, verification choice and
+    // the cleanup stage: disorder is CHOSEN (exactly one disorder event —
+    // never the legacy shortcut's asserted cascade).
+    expect(types).toContain('inventory_verification_skipped');
+    expect(types).toContain('workspace_left_disordered');
+    expect(findEvents(events, 'workspace_left_disordered')).toHaveLength(1);
+    expect(types).not.toContain('inventory_verified_complete');
+    expect(types).not.toContain('workspace_tidy_confirmed');
+    expect(types).not.toContain('cleanup_completed');
+    expect(types).not.toContain('inventory_prep_shortcut');
+    expect(types).not.toContain('inventory_sequence_completed');
+    expect(types).not.toContain('inventory_sequence_followed');
+    expect(types).not.toContain('inventory_checklist_opened');
+
+    // Preventable omissions logged once each at the review, item-scoped.
+    const missing = findEvents(events, 'missing_item');
+
+    expect(missing.map((e) => e.object_id)).toEqual([
+      'coolant_cartridge',
+      'fuse_pack',
+      'patch_tape',
+    ]);
+
+    // Outcome: partial kit contents recorded, field_kit absent (Final Core
+    // missing-item flag source), workspace disordered.
+    const mission = await getMissionState(page);
+
+    expect(mission.prepared_items).toEqual([
+      'torque_driver',
+      'diagnostic_probe',
+    ]);
+    expect(mission.prepared_items).not.toContain('field_kit');
+    expect(mission.workspace_status).toBe('disordered');
+  });
+
+  test('per-item stations stay gated before engagement and after completion', async ({
+    page,
+  }) => {
+    await bootGame(page, {
+      participant_id: 'E2E_P6',
+      game_session_id: 'E2E_INV_S8',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+    await hubToInventory(page);
+
+    // Before engagement: the bench is inert — no prompt, no events.
+    const countBefore = (await getEvents(page)).length;
+
+    await inventoryToPrepBench(page);
+    await press(page, '1');
+
+    expect((await getEvents(page)).length).toBe(countBefore);
+
+    // Complete prep via the legacy sort-and-verify option (path parity:
+    // options 1-3 keep their verbatim behaviour beside the new mode).
+    await inventoryToConsole(page);
+    await press(page, '3');
+
+    const types = await getEventTypes(page);
+
+    expect(types).toContain('inventory_workspace_sorted');
+    expect(types).toContain('workspace_tidy_confirmed');
+
+    // After completion: per-item stations are closed out — still no
+    // placement events possible.
+    const countAfter = (await getEvents(page)).length;
+
+    await inventoryToKitCrate(page);
+    await press(page, '1');
+
+    expect((await getEvents(page)).length).toBe(countAfter);
+
+    const mission = await getMissionState(page);
+
+    expect(mission.prepared_items).toEqual(['field_kit']);
     expect(mission.workspace_status).toBe('tidy');
   });
 });

@@ -452,6 +452,83 @@ export async function inventoryToSealLog(page: Page) {
   await press(page, 'Space');
 }
 
+/**
+ * FABLE-NEXT-02 per-item stations (InventoryScene). Every route first
+ * normalises into the col 6-7 corridor (x 224) — the one column open from
+ * row 1 to row 10 and clear along every station resting row — so each
+ * helper is valid from ANY per-item station, the console, the seal log or
+ * the spawn. All legs are position-synced (driveAxisTo) and end either on
+ * the waypoint or on an audited wall clamp strictly inside the target's
+ * 72 px radius, with every other interactable ≥72 px away.
+ */
+
+/**
+ * Quartermaster console (10,5.5 tiles): corridor → row 6 → console column
+ * → rise until the body clamps under the top-center block (~probe y 178,
+ * ~2-20 px from the console; Bin B is 112+ px away, always farther).
+ */
+export async function inventoryToConsole(page: Page) {
+  await driveAxisTo(page, 'x', 224, 12); // col 6-7 corridor
+  await driveAxisTo(page, 'y', 200, 10); // clear row 6
+  await driveAxisTo(page, 'x', 320, 10); // console column
+  await driveAxisTo(page, 'y', 180, 8); // rise; clamps under the alcove
+  await press(page, 'Space');
+}
+
+/**
+ * Prep Bench (16,7.5 tiles — right row-7 block, seal-log mirror): row 9
+ * below the block band, east to the bench column, rise to the block-face
+ * clamp (~probe y 276, ~36-40 px from the bench; Electronics Shelf and the
+ * kit crate stay 170+ px away).
+ */
+export async function inventoryToPrepBench(page: Page) {
+  await driveAxisTo(page, 'x', 224, 12); // col 6-7 corridor
+  await driveAxisTo(page, 'y', 292, 12); // clear row 9
+  await driveAxisTo(page, 'x', 500, 12); // bench column, along row 9
+  await driveAxisTo(page, 'y', 276, 8); // rise; clamps on the block face
+  await press(page, 'Space');
+}
+
+/**
+ * Field Kit Crate (6,10.5 tiles — open south-west floor): row 10 west leg;
+ * no clamp needed (the crate floats ≥115 px from the seal log and ≥132 px
+ * from the Hub door, so the crate is the strict nearest target).
+ */
+export async function inventoryToKitCrate(page: Page) {
+  await driveAxisTo(page, 'x', 224, 12); // col 6-7 corridor
+  await driveAxisTo(page, 'y', 336, 10); // row 10, south of the block band
+  await driveAxisTo(page, 'x', 192, 10); // crate column
+  await press(page, 'Space');
+}
+
+/** Labelled storage bins on the top corridor (row 2, y 64). */
+const INVENTORY_BIN_X: Record<
+  'hand_tools' | 'consumables' | 'electronics',
+  number
+> = {
+  hand_tools: 128,
+  consumables: 320,
+  electronics: 512,
+};
+
+/**
+ * A labelled storage bin (4/10/16, 2 tiles): corridor → top corridor row
+ * (probe band ~50-64: below the top-wall clamp at probe ~50, above the
+ * body-bottom limit ~71 where the row 3-4 block tops start colliding, so
+ * the east-west leg stays clear) → bin column. The console (112+ px below
+ * Bin B, through the block) and the other bins (192 px apart) are always
+ * farther than the target bin.
+ */
+export async function inventoryToStorageBin(
+  page: Page,
+  bin: 'hand_tools' | 'consumables' | 'electronics',
+) {
+  await driveAxisTo(page, 'x', 224, 12); // col 6-7 corridor
+  await driveAxisTo(page, 'y', 56, 8); // top corridor row (clamp band)
+  await driveAxisTo(page, 'x', INVENTORY_BIN_X[bin], 10); // bin column
+  await press(page, 'Space');
+}
+
 /** Shape of one scenario's dev-only progress probe (ScenarioController). */
 export interface ScenarioProbeLike {
   entered: boolean;

@@ -10,8 +10,8 @@
       "registered": 90,
       "scoring_inputs": 57,
       "summary_variables": 59,
-      "with_code_references": 141,
-      "with_spec_references": 143
+      "with_code_references": 145,
+      "with_spec_references": 147
     }
   },
   "events": {
@@ -270,7 +270,10 @@
       "construct_id": "organisation",
       "success": "unset",
       "scoring_input": false,
-      "code_references": ["src/scenes/InventoryScene.ts"],
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/InventoryScene.ts"
+      ],
       "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
     },
     "dock_control_familiarisation": {
@@ -1339,8 +1342,8 @@
       "construct_id": "organisation",
       "success": "unset",
       "scoring_input": false,
-      "code_references": [],
-      "spec_references": []
+      "code_references": ["src/scenes/InventoryScene.ts"],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
     },
     "inventory_item_sorted_correct": {
       "rooms": ["inventory_prep_room"],
@@ -1349,8 +1352,11 @@
       "construct_id": "organisation",
       "success": "unset",
       "scoring_input": false,
-      "code_references": [],
-      "spec_references": []
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/InventoryScene.ts"
+      ],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
     },
     "inventory_kit_verified": {
       "rooms": ["inventory_prep_room"],
@@ -1447,8 +1453,8 @@
       "construct_id": null,
       "success": "unset",
       "scoring_input": false,
-      "code_references": [],
-      "spec_references": []
+      "code_references": ["src/scenes/InventoryScene.ts"],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
     },
     "inventory_sequence_followed": {
       "rooms": ["inventory_prep_room"],
@@ -2252,8 +2258,8 @@
       "construct_id": "organisation",
       "success": "unset",
       "scoring_input": false,
-      "code_references": [],
-      "spec_references": []
+      "code_references": ["src/scenes/InventoryScene.ts"],
+      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
     }
   },
   "findings": {

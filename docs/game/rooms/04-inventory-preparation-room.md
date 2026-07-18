@@ -139,6 +139,138 @@ Prompt open keeps legacy `inventory_prep_opened` only (unmapped).
 beyond an audit-first port)**: `inventory_item_sorted_correct`,
 `inventory_item_misplaced`, `wrong_tool_selected`, `prepared_tool_used`,
 `readiness_verified`, `inventory_sequence_completed`.
+_(Superseded by the FABLE-NEXT-02 section below: all of these except
+`prepared_tool_used` — a later unit — and `readiness_verified` — no
+distinct action — are now emitted by the per-item mode.)_
+
+## FABLE-NEXT-02 per-item preparation mode (2026-07-18)
+
+Contract: `docs/game/CANONICAL-ROOM-AND-MINIGAME-CONTRACTS.md` §R4 target
+minigame; task file `FABLE-NEXT-02-INVENTORY-PREP-Q01-Q04.md`. Additive:
+the three legacy console options, their labels, feedback strings, event
+cascades and one-shot gate text are preserved verbatim, and every
+pre-existing spec/journey choreography (which only ever presses options
+1-3) is untouched. A fourth console option — "Stage the kit yourself at
+the bench, item by item." — engages the per-item mode.
+
+### Mechanic
+
+- `src/data/itemRegistry.ts`: 8 registry items — 5 kit-required (checklist
+  order: Torque Driver, Diagnostic Probe, Coolant Cartridge, Spare Fuse
+  Pack, Patch Tape) + 3 stray items homed to 3 labelled bins (Hex Spanner →
+  Hand Tools Rack, Sealant Canister → Consumables Bin, Relay Board →
+  Electronics Shelf). Deliberately the smallest carried-item substrate: one
+  carried item at a time, locations, attempt counts — no generic backpack,
+  stacking, crafting, rarity, currency or cross-room item use (the Q03
+  retrieval episode is a later unit).
+- Stations (all gated inert until the mode is engaged, and closed out after
+  prep completion so repeated interactions can never inflate counts): Prep
+  Bench (16,7.5 tiles — mirrors the seal log on the right block), Hand
+  Tools Rack (4,2), Consumables Bin (10,2), Electronics Shelf (16,2), Field
+  Kit Crate (6,10.5). Every interactable pair stays ≥72 px separated; the
+  seal log, console and Hub door remain strict nearest targets on their
+  audited approaches.
+- Flow: engage at console → collect one item at a time at the bench (each
+  take-option names the item AND its destination tag — transparency
+  safeguard: label ambiguity must never mimic disorganisation) → place into
+  a bin or the kit crate (neutral feedback; items can be taken back out at
+  any time) → close out at the console → **unmissable bench review** (the
+  ONE correction opportunity; lists still-out/missing/out-of-place items
+  without moral framing) → go back and correct, or proceed → verify or skip
+  → **restore-vs-leave cleanup stage** → completion. Keyboard only, no
+  timers, no colour-only cues, accuracy over speed.
+
+### Emission placement (per-item mode; approved names only)
+
+- One placement = one event, `object_id` = registry `item_id`,
+  `attempt_number` = that item's placement count: bins log
+  `inventory_item_sorted_correct` / `inventory_item_misplaced`; the kit
+  crate logs `correct_tool_selected` / `wrong_tool_selected`. Collecting or
+  taking an item back emits nothing — the corrected RE-placement (higher
+  `attempt_number` after a misplacement event) is the logged act, which is
+  why `inventory_item_corrected` stays a CANDIDATE and is not emitted.
+- `inventory_checklist_opened` fires only on checklist ACTIONS ("Check the
+  kit requisition list."), never on prompt open and never on mode
+  engagement (shortcut-credit rule). Mode engagement itself emits no event
+  (no approved name; derivable from the per-item events that follow).
+- `inventory_sequence_completed` (once, console context): every registry
+  item has been placed at some destination.
+- `inventory_sequence_followed` (once, console context): judged exactly
+  once, at the first moment the kit holds all required items; fires iff
+  their first placements into the kit happened in checklist order.
+- `missing_item` (once per item per session, `object_id` = item_id): logged
+  at the close-out review that surfaces the still-missing requisition item.
+  Unmapped raw telemetry (no CanonicalEventContext entry, by schema).
+- Review step: structurally guaranteed on every close-out path — its
+  occurrence is derivable from event order (any
+  `inventory_verified_complete`/`inventory_verification_skipped` implies a
+  review preceded it). No dedicated review/opportunity event exists;
+  `cleanup_opportunity_shown` and a correction-opportunity-shown event stay
+  CANDIDATES for the research owner.
+- Verification stage: `inventory_verified_complete` (run) or
+  `inventory_verification_skipped` (plausible skip). The verification act
+  fires regardless of kit completeness; the result is shown honestly in the
+  cleanup-stage body text and is derivable from the event stream (no new
+  metadata keys added). `readiness_verified` stays deliberately unemitted —
+  no distinct readiness action exists and it must never be double-logged
+  from the same click.
+- Cleanup stage: `workspace_tidy_confirmed` + `cleanup_completed` (reset)
+  or `workspace_left_disordered` (leave). Reached from EVERY close-out
+  path, including the rushed one — disorder is chosen, never asserted
+  (Q04 closed decision).
+- Q30 tags on the verification events are SA-4's question: untouched,
+  unextended.
+
+### State propagation
+
+- Kit state (locations/attempts/carried item) lives at module scope in
+  `itemRegistry.ts`, so room re-entry preserves it (contract §R4
+  interruption/return); a page (re)load starts a fresh session and a fresh
+  state.
+- On completion: `prepared_items` gains the kit crate's ACTUAL contents
+  (registry order — including any wrongly packed stray that survived
+  correction), then `field_kit` iff every required item is packed. The
+  field keeps its `string[]` shape; `field_kit` membership semantics for
+  the Final Core flags are identical to the legacy paths. A carried item is
+  set back on the bench at completion (it is not packed, so a required item
+  left in hand keeps `field_kit` absent). `workspace_status` is written by
+  the cleanup choice. Exiting the room mid-flow leaves prep incomplete
+  (`field_kit` absent → Final Core missing-item flag), with kit state
+  preserved for return.
+- No new SessionState field was needed (`kit_item_state` reserved as the
+  additive option if per-item placement detail must ever be exported).
+
+### Scoring boundary (unchanged this unit)
+
+ScoringManager aggregates only legacy names, so the per-item mode changes
+NO summary field (`organization_*` counts stay driven by the legacy
+options). `organisation_accuracy_score`, `organisation_error_count`,
+`cleanup_failure_count` remain approved TARGETS for a later D2-family
+scoring pass; this unit only guarantees their raw inputs exist.
+
+### Validity notes (psychometric-task-design gate record)
+
+- Q01 (systematic, +): checklist-before-action (`inventory_checklist_opened`
+  ordering vs first placement), ordered placement
+  (`inventory_sequence_followed`), verification
+  (`inventory_verified_complete`). Strong analogue per spec §3.
+- Q02 (disorganised, R): only errors SURVIVING the review's correction
+  opportunity are trait-relevant — first mistakes are never flagged at
+  placement time (neutral feedback) and the correction opportunity is
+  structurally unmissable and sequence-derivable. Missing-item consequence
+  propagates to Final Core via `field_kit` absence.
+- Q03 (maintained order, +): tidy storage state via bin sorting and
+  tool-selection events; the RETRIEVAL episode is explicitly a later unit.
+- Q04 (cleanup, R — closed decision): explicit restore-vs-leave stage on
+  every close-out path; never planning-before-action, never a labelled
+  "wrong" choice.
+- Confound controls: destination tags in plain text on every take-option
+  (reading/label-ambiguity safeguard), no timers (speed pressure), no
+  colour-only cues, one-shot completion gate (no score inflation), no
+  checklist credit on shortcut/engagement clicks.
+- Wording check: all player-facing text uses operational language ("stage",
+  "stow", "pack", "reset the bench", "rack tag") — no Q01-Q04/BFI item
+  wording appears in labels, bodies or feedback.
 
 **SessionState propagation (vocabulary defined this beat,
 `src/data/missionVocabulary.ts`)**: `prepared_items` gains `field_kit` on

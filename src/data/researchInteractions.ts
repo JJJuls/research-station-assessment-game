@@ -113,6 +113,52 @@ export const researchInteractions = {
     score_tags: [],
     room_id: 'station_hub',
   },
+  // FABLE-NEXT-02 per-item preparation stations (contract §R4 target
+  // minigame). Additive beside the quartermaster console; the `event_type`
+  // field documents each station's representative emitted event only —
+  // RoomScene prompt options log their own explicit event names, and
+  // per-item placement events override `object_id` with the registry
+  // `item_id` (task-file payload rule).
+  inventoryBinConsumables: {
+    object_id: 'inventory_bin_consumables',
+    label: 'Consumables Bin',
+    episode: 'bfi_organization_prep',
+    event_type: 'inventory_item_sorted_correct',
+    score_tags: ['organization', 'preparation'],
+    room_id: 'inventory_prep_room',
+  },
+  inventoryBinElectronics: {
+    object_id: 'inventory_bin_electronics',
+    label: 'Electronics Shelf',
+    episode: 'bfi_organization_prep',
+    event_type: 'inventory_item_sorted_correct',
+    score_tags: ['organization', 'preparation'],
+    room_id: 'inventory_prep_room',
+  },
+  inventoryBinHandTools: {
+    object_id: 'inventory_bin_hand_tools',
+    label: 'Hand Tools Rack',
+    episode: 'bfi_organization_prep',
+    event_type: 'inventory_item_sorted_correct',
+    score_tags: ['organization', 'preparation'],
+    room_id: 'inventory_prep_room',
+  },
+  inventoryKitCrate: {
+    object_id: 'inventory_kit_crate',
+    label: 'Field Kit Crate',
+    episode: 'bfi_organization_prep',
+    event_type: 'correct_tool_selected',
+    score_tags: ['organization', 'preparation'],
+    room_id: 'inventory_prep_room',
+  },
+  inventoryPrepBench: {
+    object_id: 'inventory_prep_bench',
+    label: 'Prep Bench',
+    episode: 'bfi_organization_prep',
+    event_type: 'inventory_prep_opened',
+    score_tags: ['organization', 'preparation'],
+    room_id: 'inventory_prep_room',
+  },
   inventoryPrepChecklist: {
     object_id: 'inventory_prep_checklist',
     label: 'Quartermaster - Inventory Prep',
