@@ -272,6 +272,39 @@ scoring pass; this unit only guarantees their raw inputs exist.
   "stow", "pack", "reset the bench", "rack tag") — no Q01-Q04/BFI item
   wording appears in labels, bodies or feedback.
 
+### Recorded deviations and follow-ups (review pass, 2026-07-18)
+
+- **Contract §R4 "restore/partial/leave" vs implemented "restore/leave"**:
+  the cleanup stage is binary. No approved event name exists for a partial
+  restore (spec Q04 lists `partial_cleanup_count` only as a candidate
+  derived indicator), so the partial option would require an event-schema
+  decision — recorded here as an OPEN point for the research owner, not
+  silently narrowed.
+- **`missing_item` fires at the first review (pre-correction) and is
+  once-per-session per item**: the later D2-family scoring pass must not
+  count a `missing_item` event as an unresolved preventable omission
+  without checking final state (`prepared_items`/`field_kit`) — the
+  correction may have resolved it (Q02 rule: only post-correction errors
+  are trait evidence).
+- **`inventory_prep_opened` count is mode-dependent**: the per-item flow
+  requires 3+ console opens vs 1 on legacy paths. Unmapped raw telemetry,
+  feeds no aggregate; analysts should not compare its raw count across
+  modes.
+- **event-schema.md §4 Inventory status column now stale** ("missing —
+  needs a per-item mini-game" rows that are now emitted; checklist
+  emission-placement note lacks the second per-item source). Schema edits
+  were out of scope for FABLE-NEXT-02 by task file; research-owner/docs
+  pass to refresh.
+- **Secondary-surface runtime coverage gaps** (follow-up
+  playwright-game-verify pass): prompt/feedback text assertions
+  (checklist body, review issue lines, gate feedback via
+  `__lastRoomFeedbackText`/`__lastPromptBody`), put-back/keep-hold/
+  step-back/empty-bench options, verification run on an incomplete kit,
+  close-out while carrying an item, bin-to-wrong-bin misplacement, a
+  wrongly packed stray surviving to `prepared_items`, pre-engagement
+  gating of bins/crate, and mid-flow room exit + re-entry preserving
+  module-scope kit state.
+
 **SessionState propagation (vocabulary defined this beat,
 `src/data/missionVocabulary.ts`)**: `prepared_items` gains `field_kit` on
 every complete-kit path (systematic terminal options, sort-and-verify);

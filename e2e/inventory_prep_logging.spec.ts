@@ -21,11 +21,16 @@ import {
 /**
  * V3 §9 spec: inventory_prep_logging.spec.ts — shortcut, systematic
  * (+ verification/cleanup sub-steps), and sort-and-verify paths, with
- * SessionState propagation for the Final Core flags.
+ * SessionState propagation for the Final Core flags, plus the
+ * FABLE-NEXT-02 per-item preparation paths (systematic, misplacement +
+ * correction, rushed, gating).
  *
- * NOTE (Wave 1A): authored compile-only — Playwright execution is disabled
- * in the authoring session; routes/choreography must be tuned/verified in
- * this room's playwright-game-verify pass.
+ * Runtime status: executed green (8/8) in the FABLE-NEXT-02 worktree on
+ * PW_DEV_PORT=5297 (2026-07-18) — the Wave 1A "authored compile-only"
+ * caveat no longer applies. Secondary-surface coverage gaps (prompt/
+ * feedback text, put-back/keep-hold/step-back options, incomplete-kit
+ * verification, mid-flow exit + re-entry persistence) are listed in the
+ * room doc for a follow-up playwright-game-verify pass.
  */
 
 async function hubToInventory(page: import('@playwright/test').Page) {

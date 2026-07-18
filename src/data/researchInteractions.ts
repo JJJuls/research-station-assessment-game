@@ -155,6 +155,9 @@ export const researchInteractions = {
     object_id: 'inventory_prep_bench',
     label: 'Prep Bench',
     episode: 'bfi_organization_prep',
+    // The bench itself emits NO station-level event (collect/put-back are
+    // deliberately unlogged; placement is the measured act at the
+    // destination stations). Inert documentation value only.
     event_type: 'inventory_prep_opened',
     score_tags: ['organization', 'preparation'],
     room_id: 'inventory_prep_room',
