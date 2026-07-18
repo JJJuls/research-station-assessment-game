@@ -2,6 +2,11 @@ import { key } from '../constants';
 import { RELAY_SUPERVISION_DUTY_ID } from '../data/duties';
 import { calibrationAnomalyScenario, ScenarioController } from '../scenarios';
 import { researchRuntime } from '../systems';
+import {
+  evaluateReportAccuracy,
+  getReportFacts,
+  REPORT_CLAIMS,
+} from '../utils/reportAccuracy';
 import type {
   InteractionKey,
   PromptOption,
@@ -37,6 +42,25 @@ import { RoomScene } from '../world';
  *
  * Additive canonical event: engineer_hub_entered (every entry; unmapped —
  * no Events-column listing).
+ *
+ * FABLE-NEXT-04 — report-accuracy evaluation substrate (Q09 raw
+ * telemetry). Between the (verbatim) response-mode options and the duty
+ * offer, a report-CONTENT stage now asks which status update is actually
+ * sent: all four combinations of the two checkable mission facts
+ * (systems repair cycle complete? field kit packed?) in fixed template
+ * order — exactly one is fully accurate against the live SessionState.
+ * The stage body differs by mode: quick = from memory only; evidence
+ * review = a station log extract showing the actual values (evidence
+ * genuinely accessible); clarification = Kai names which two facts he
+ * needs (genuinely narrows scope, no answers). Selecting a statement is
+ * the content submission: it emits engineer_report_accuracy_scored ONCE
+ * per submission — unmapped raw telemetry (no CanonicalEventContext
+ * registration, engineer_hub_entered precedent; adding a Q09 registration
+ * is an explicit research-owner event-schema decision). The evaluation is
+ * silent: identical neutral acknowledgement for every claim, no grade, no
+ * moralising. All pre-existing events keep firing unchanged at their
+ * original observed moments (the duty offer simply chains one stage
+ * later, still logged when shown).
  */
 export class EngineerScene extends RoomScene {
   protected readonly roomId = 'engineer_hub';
@@ -170,7 +194,8 @@ export class EngineerScene extends RoomScene {
         ],
         onSelected: () => this.markReportSubmitted(),
         nextStage: () =>
-          this.buildDutyOfferStage(
+          this.buildReportContentStage(
+            'unprepared',
             'You give a fast answer, but miss several uncertainties that should have been checked.',
           ),
       },
@@ -185,7 +210,8 @@ export class EngineerScene extends RoomScene {
         ],
         onSelected: () => this.markReportSubmitted(),
         nextStage: () =>
-          this.buildDutyOfferStage(
+          this.buildReportContentStage(
+            'prepared',
             'You check the available evidence and give a clearer, more dependable report.',
           ),
       },
@@ -200,11 +226,92 @@ export class EngineerScene extends RoomScene {
         ],
         onSelected: () => this.markReportSubmitted(),
         nextStage: () =>
-          this.buildDutyOfferStage(
+          this.buildReportContentStage(
+            'supervised',
             'You clarify expectations before reporting, reducing the risk of a misleading update.',
           ),
       },
     ];
+  }
+
+  /**
+   * FABLE-NEXT-04 report-content stage: the actual status update sent to
+   * Kai. Claims come from REPORT_CLAIMS in fixed template order (never
+   * reordered by state — U3 determinism rule); exactly one is fully
+   * accurate against the live SessionState. report_mode uses the existing
+   * submitted-event vocabulary (unprepared/prepared/supervised).
+   *
+   * Mode-specific help (validity risk: the clarification path must
+   * genuinely help, and evidence must be genuinely accessible):
+   * - unprepared: memory only, no extract;
+   * - prepared: station log extract showing the two actual values;
+   * - supervised: Kai names the two facts he needs (no answers).
+   *
+   * Selecting a claim emits engineer_report_accuracy_scored once per
+   * submission (session one-shot via the existing already-submitted gate)
+   * with success = every checkable fact correct and metadata.accuracy =
+   * 0-1 proportion (payload placement recorded additively in
+   * event-schema.md §4 — control_error_count precedent). Feedback is the
+   * same neutral acknowledgement for every claim: the evaluation is
+   * silent, no grade is shown, and the duty offer chains exactly as
+   * before.
+   */
+  private buildReportContentStage(
+    reportMode: 'unprepared' | 'prepared' | 'supervised',
+    reportFeedback: string,
+  ): PromptStage {
+    const mission = researchRuntime.sessionState.getMissionState();
+    const facts = getReportFacts(mission);
+
+    let modeHelp: string;
+
+    if (reportMode === 'prepared') {
+      modeHelp = `Station log — systems repair cycle: ${
+        facts.systems_repair_complete ? 'logged complete' : 'still open'
+      }. Field kit: ${facts.field_kit_packed ? 'packed' : 'not packed'}.`;
+    } else if (reportMode === 'supervised') {
+      modeHelp =
+        'Kai narrows the request: he needs the systems repair cycle state and whether the field kit is packed.';
+    } else {
+      modeHelp = 'You compile the update from memory.';
+    }
+
+    return {
+      body: `${reportFeedback}\n\n${modeHelp}\n\nWhich status update do you send?`,
+      options: REPORT_CLAIMS.map((claim) => ({
+        label: claim.label,
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => {
+          const result = evaluateReportAccuracy(
+            claim,
+            researchRuntime.sessionState.getMissionState(),
+          );
+
+          this.logRoomEvent(
+            'engineerReportBack',
+            'engineer_report_accuracy_scored',
+            {
+              success: result.success,
+              metadata: {
+                report_mode: reportMode,
+                accuracy: result.accuracy,
+                facts_total: result.facts_total,
+                facts_correct: result.facts_correct,
+                claimed_systems_repair_complete:
+                  claim.claimed_systems_repair_complete,
+                claimed_field_kit_packed: claim.claimed_field_kit_packed,
+                actual_systems_repair_complete:
+                  result.actual_systems_repair_complete,
+                actual_field_kit_packed: result.actual_field_kit_packed,
+              },
+            },
+          );
+        },
+        nextStage: () =>
+          this.buildDutyOfferStage('Kai logs your status update.'),
+      })),
+    };
   }
 
   /**

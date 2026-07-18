@@ -577,14 +577,25 @@ export abstract class RoomScene extends Phaser.Scene {
     // 230px matches the V1 slice for up to 3 options; each further option
     // extends the panel by one 24px text row (deterministic, content-only).
     const panelHeight = 230 + Math.max(0, options.length - 3) * 24;
-    const background = this.add
-      .rectangle(0, 0, 560, panelHeight, 0x101820, 0.96)
-      .setOrigin(0);
     const text = this.add.text(18, 16, panelText, {
       color: '#ffffff',
       font: '16px monospace',
       wordWrap: { width: 524 },
     });
+    // The background must never be shorter than the wrapped text (long
+    // stage bodies / wrapped option labels overflowed the fixed-height
+    // rectangle — gameplay-review finding, FABLE-NEXT-04). Purely visual:
+    // grows with rendered content, never shrinks below the V1 baseline.
+    const background = this.add
+      .rectangle(
+        0,
+        0,
+        560,
+        Math.max(panelHeight, Math.ceil(text.height) + 32),
+        0x101820,
+        0.96,
+      )
+      .setOrigin(0);
     const panel = this.add.container(centerX - 280, 72, [background, text]);
 
     panel.setDepth(Depth.AboveWorld);
