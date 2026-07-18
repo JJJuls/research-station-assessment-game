@@ -202,6 +202,23 @@ export const researchInteractions = {
     ],
     room_id: 'optional_side_repair_bay',
   },
+  sideRepairPartsShelf: {
+    object_id: 'side_repair_parts_shelf',
+    label: 'Parts Shelf',
+    episode: 'bfi_productiveness_side_repair',
+    // FABLE-NEXT-03 step substrate: the fetch-component step of the
+    // accepted multi-step stabiliser repair (V3 §4 Room 6 "parts
+    // shelves"). Same room as the Utility Bot; distinct object
+    // (archiveLogShelves precedent).
+    event_type: 'side_repair_step_completed',
+    score_tags: [
+      'productiveness',
+      'diligence',
+      'perseverance',
+      'optional_effort',
+    ],
+    room_id: 'optional_side_repair_bay',
+  },
   stationHub: {
     object_id: 'station_hub_navigation',
     label: 'Station Hub',

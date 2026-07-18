@@ -1,9 +1,13 @@
 import { key } from '../constants';
+import type { ResearchInteraction } from '../data/researchInteractions';
+import { researchInteractions } from '../data/researchInteractions';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 import {
+  CANONICAL_EVENT_CONTEXT,
   createFailedTaskState,
   createRoomTaskState,
+  type FailedTaskState,
   recordFailedAttempt,
   RoomScene,
   shouldLogAbandonedOnExit,
@@ -15,10 +19,32 @@ import {
  * repeat-same-failed-sequence comparison and returned-after-failure
  * detection must survive scene restarts, docs/game/rooms/
  * 02-systems-repair-room.md failure/edge cases).
+ *
+ * FABLE-NEXT-03 (task B) additions, same session lifetime so the bounded
+ * multi-cycle sequence survives room exit and return without resetting:
+ * - attemptCount: 1-indexed cycle counter; every submitted sequence
+ *   (default, unguided adjustment, manual-guided revision) increments it
+ *   and carries it as attempt_number on the canonical submission-family
+ *   events (approved §3 payload field; legacy repair_attempt unchanged).
+ * - manualGuided: the player has consulted repair guidance this session
+ *   (panel manual option or the manual station). The revised sequence
+ *   succeeds only when manual-guided — an unguided adjustment is a real,
+ *   distinct failing cycle (Q23 safeguard: revision must reflect
+ *   support/feedback, or a guessed option would masquerade as strategy
+ *   revision).
  */
-const repairTaskState = createRoomTaskState(
+interface RepairTaskState extends FailedTaskState {
+  attemptCount: number;
+  manualGuided: boolean;
+}
+
+const repairTaskState = createRoomTaskState<RepairTaskState>(
   'systems_repair_room',
-  createFailedTaskState,
+  () => ({
+    ...createFailedTaskState(),
+    attemptCount: 0,
+    manualGuided: false,
+  }),
 );
 
 /**
@@ -38,6 +64,26 @@ const repairTaskState = createRoomTaskState(
  * its Q-listing (open documentation conflict; never guessed). The
  * abandon/return pair carries Q24/Q25 via CANONICAL_EVENT_CONTEXT with
  * construct_id deliberately unset (research-data-reviewer F1 precedent).
+ *
+ * FABLE-NEXT-03 (task B): the repair is a bounded multi-cycle difficulty
+ * sequence. Each submitted sequence is a distinct cycle with
+ * attempt_number on the canonical events (repair_sequence_submitted /
+ * repair_failed / repair_same_sequence_repeated / repair_strategy_revision
+ * / repair_completed — approved names only, no new names). The default
+ * sequence always fails; an UNGUIDED "revised" adjustment fails as its own
+ * distinct cycle; resubmitting the same failed sequence still logs the
+ * repeated variant instead of a duplicate failure (didRepeat, unchanged
+ * semantics); only the manual-guided revision succeeds and fires
+ * repair_strategy_revision (registered success: true) + repair_completed.
+ * Bounded in VARIETY, not submissions: only two failing sequence ids
+ * exist (default, unguided adjustment). Repeat detection keeps the
+ * preserved didRepeat semantics — it compares against the immediately
+ * previous wrong submission only, so ALTERNATING the two failing
+ * sequences logs a fresh repair_failed each time (never the repeated
+ * variant); the D2-family scoring pass must account for this when
+ * re-checking blind_retry_count/adaptive_retry_count. Legacy
+ * repair_attempt fires on every submission with its payload unchanged.
+ * Abandon/return (Q24/Q25) semantics are untouched.
  */
 export class RepairScene extends RoomScene {
   protected readonly roomId = 'systems_repair_room';
@@ -87,6 +133,18 @@ export class RepairScene extends RoomScene {
       y: 5.5 * 32,
       onPromptOpened: () => {
         this.logRoomEvent('systemsRepairFailure', 'repair_panel_opened');
+
+        // FABLE-NEXT-03: completed repairs stay completed — the sequence
+        // options never reopen, so a return visit can never double-log
+        // repair_completed or grow attempt_number (no-duplicate-completion
+        // persistence requirement; side-repair one-shot precedent).
+        if (this.isRepairCompleted()) {
+          this.showFeedbackMessage(
+            'The system reads nominal — the repair is already complete.',
+          );
+          return false;
+        }
+
         return true;
       },
     });
@@ -103,6 +161,10 @@ export class RepairScene extends RoomScene {
       onPromptOpened: () => {
         this.logRoomEvent('repairManualStation', 'repair_manual_opened');
         this.logRoomEvent('repairManualStation', 'manual_page_reviewed');
+        // Manual consultation makes the next revised sequence
+        // manual-guided (either manual surface counts — panel option or
+        // this station).
+        repairTaskState.get().manualGuided = true;
         this.showFeedbackMessage(
           'Maintenance manual: the default repair sequence predates the last calibration cycle. Current pages describe the revised sequence.',
         );
@@ -153,47 +215,101 @@ export class RepairScene extends RoomScene {
       return [];
     }
 
-    // Options ported verbatim from the prototype (labels, feedback, legacy
-    // event sequences, didRepeat check). Canonical addition:
-    // repair_sequence_submitted alongside legacy repair_attempt on both
-    // sequence submissions (archive_code_entered precedent).
+    // Option labels and the legacy repair_attempt / feedback strings are
+    // ported verbatim from the prototype. Events are logged in onSelected
+    // (getEventTypes stays empty) so the canonical submission-family
+    // events can carry attempt_number — the same-order equivalent of the
+    // previous getEventTypes lists (InventoryScene logItemEvent
+    // precedent).
     return [
       {
         label: 'Run default repair sequence',
         feedback: 'Repair failed. Manual may help.',
-        getEventTypes: () => {
-          const didRepeat = recordFailedAttempt(
-            repairTaskState.get(),
-            'default',
-          );
-
-          return [
-            'repair_attempt',
-            'repair_sequence_submitted',
-            didRepeat ? 'repair_same_sequence_repeated' : 'repair_failed',
-          ];
+        getEventTypes: () => [],
+        onSelected: () => {
+          this.submitFailingSequence('default');
         },
       },
       {
         label: 'Open repair manual',
         feedback: 'Manual reviewed.',
         getEventTypes: () => ['repair_manual_used'],
+        onSelected: () => {
+          repairTaskState.get().manualGuided = true;
+        },
       },
       {
         label: 'Apply revised repair sequence',
-        feedback: 'Repair sequence revised successfully.',
-        getEventTypes: () => [
-          'repair_attempt',
-          'repair_sequence_submitted',
-          'repair_strategy_revision',
-          'repair_completed',
-        ],
+        feedback: repairTaskState.get().manualGuided
+          ? 'Repair sequence revised successfully.'
+          : 'The adjusted sequence fails. The calibration values do not match — the manual lists the current ones.',
+        getEventTypes: () => [],
         onSelected: () => {
+          const state = repairTaskState.get();
+
+          if (!state.manualGuided) {
+            // Unguided adjustment: a real, distinct failing cycle (or a
+            // detected identical repeat of it) — never a strategy
+            // revision (Q23: revision requires support/feedback).
+            this.submitFailingSequence('unguided_revision');
+            return;
+          }
+
+          state.attemptCount += 1;
+          this.logRoomEvent('systemsRepairFailure', 'repair_attempt');
+          this.logCycleEvent('repair_sequence_submitted', state.attemptCount);
+          this.logCycleEvent('repair_strategy_revision', state.attemptCount);
+          this.logCycleEvent('repair_completed', state.attemptCount);
           researchRuntime.sessionState.markRoomCompleted('systems_repair_room');
           this.logObjectiveCompletedIfBothDone();
         },
       },
     ];
+  }
+
+  /**
+   * One failing submission cycle: legacy repair_attempt (payload
+   * unchanged), canonical repair_sequence_submitted, then either
+   * repair_failed (first failure of this sequence) or
+   * repair_same_sequence_repeated (identical resubmission — didRepeat
+   * check unchanged; the repeat REPLACES the failure event, never
+   * duplicates it), all with the incremented attempt_number.
+   */
+  private submitFailingSequence(sequenceId: string) {
+    const state = repairTaskState.get();
+    const didRepeat = recordFailedAttempt(state, sequenceId);
+
+    state.attemptCount += 1;
+    this.logRoomEvent('systemsRepairFailure', 'repair_attempt');
+    this.logCycleEvent('repair_sequence_submitted', state.attemptCount);
+    this.logCycleEvent(
+      didRepeat ? 'repair_same_sequence_repeated' : 'repair_failed',
+      state.attemptCount,
+    );
+  }
+
+  /**
+   * logRoomEvent's payload shape with attempt_number attached (approved
+   * event-schema §3 field; InventoryScene.logItemEvent precedent).
+   * Canonical study_item_ids/construct_id/success context still comes
+   * from CANONICAL_EVENT_CONTEXT — registrations untouched.
+   */
+  private logCycleEvent(eventType: string, attemptNumber: number) {
+    const interaction: ResearchInteraction =
+      researchInteractions.systemsRepairFailure;
+
+    researchRuntime.logInteraction({
+      scene: this.scene.key,
+      episode: interaction.episode,
+      event_type: eventType,
+      object_id: interaction.object_id,
+      x: this.player.x,
+      y: this.player.y,
+      room_id: interaction.room_id,
+      task_id: interaction.task_id,
+      attempt_number: attemptNumber,
+      ...CANONICAL_EVENT_CONTEXT[eventType],
+    });
   }
 
   private isRepairCompleted(): boolean {

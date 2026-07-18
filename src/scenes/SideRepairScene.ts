@@ -7,7 +7,51 @@ import {
 } from '../data/missionVocabulary';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
-import { RoomScene, runOncePerSession } from '../world';
+import { createRoomTaskState, RoomScene, runOncePerSession } from '../world';
+
+/**
+ * Ordered step ids of the accepted stabiliser repair (FABLE-NEXT-03 task A:
+ * fetch component at the parts shelf, fit it at the work console, run the
+ * system check). Recorded in each side_repair_step_completed event's
+ * metadata.step (additive payload placement documented in event-schema.md,
+ * control_error_count precedent). Steps are motorically trivial by design —
+ * effort is observed as completed steps, never dexterity or duration.
+ */
+const SIDE_REPAIR_STEPS = [
+  'fetch_component',
+  'fit_component',
+  'run_check',
+] as const;
+
+/**
+ * Cross-entry side-repair task state (FABLE-NEXT-03; session lifetime —
+ * accepted-task progress must survive scene restarts so defer-and-return
+ * keeps completed steps, and a walk-away after real work is detectable at
+ * the exit door). Follows the U2 roomTaskState factory precedent
+ * (RepairScene/repairTaskState).
+ */
+interface SideRepairTaskState {
+  /** Player explicitly accepted the repair (offer stage completed). */
+  accepted: boolean;
+  /** Count of completed SIDE_REPAIR_STEPS entries, in fixed order. */
+  stepsCompleted: number;
+  /**
+   * Last decision was a formal deferral with no step completed since:
+   * suppresses the walk-away abandonment on exit (defer is strategic
+   * postponement, never abandonment — V3 confound control). Cleared by
+   * the next completed step.
+   */
+  deferredSinceLastStep: boolean;
+}
+
+const sideRepairTaskState = createRoomTaskState<SideRepairTaskState>(
+  'optional_side_repair_bay',
+  () => ({
+    accepted: false,
+    stepsCompleted: 0,
+    deferredSinceLastStep: false,
+  }),
+);
 
 /**
  * Optional Side Repair Bay — V3 §4 Room 6,
@@ -17,27 +61,33 @@ import { RoomScene, runOncePerSession } from '../world';
  * required for progression, no gameplay power upgrade — only a visible
  * final-stability benefit.
  *
- * Ported audit-first from the prototype station: the three legacy options
- * (labels, feedback, event sequences) and the one-shot gate text are
- * preserved verbatim. Canonical events are added alongside
- * (stabiliser_option_offered on offer; stabiliser_accepted +
- * side_repair_accepted + side_repair_first_step on both start paths;
- * side_repair_abandoned_after_start beside the legacy
- * abandoned_after_difficulty; final_bonus_unlocked on completion).
+ * FABLE-NEXT-03 (task A): the one-press outcome assertions of the legacy
+ * options 2-3 are retired and replaced by an observed multi-step task.
+ * After acceptance the player completes three real steps (parts shelf ->
+ * console fit -> system check); deferring keeps progress; leaving the room
+ * after >=1 completed step without deferring is a real walk-away. Every
+ * retired legacy event still fires at its observed semantic moment:
+ * - accept family (side_repair_started + stabiliser_accepted +
+ *   side_repair_accepted) on the explicit accept choice;
+ * - abandonment pair (side_repair_abandoned_after_difficulty +
+ *   side_repair_abandoned_after_start) at the observed walk-away (room
+ *   exit), no longer as a self-reported one-press outcome;
+ * - completion family (side_repair_completed + final_bonus_unlocked +
+ *   side_repair_productive_persistence) when the final step completes.
+ * side_repair_first_step fires at its semantic moment — the first
+ * completed step — instead of being asserted at the accept press.
+ * side_repair_step_completed (registered Q07/Q16) fires once per step with
+ * metadata.step. The legacy ignore path (option 1) is preserved verbatim.
  *
- * NEW per explicit V3 confound-control requirement: a 4th "formally defer"
- * option (side_repair_deferred) distinguishing strategic postponement from
- * abandonment — deferring does NOT complete the room, so the offer can be
- * revisited later; accepted/started/deferred/abandoned/completed stay
- * separate signals and are never collapsed. Appended after the legacy
- * options (their order/meaning is frozen; U3 N-option support).
+ * Offer events (side_repair_opened + stabiliser_option_offered) fire only
+ * while the task is unaccepted: after acceptance the bot prompt is the
+ * work console, not an offer (re-entry never inflates Q29-tagged offers).
  *
- * Deliberately unemitted: side_repair_step_completed (no multi-step
- * mechanic exists in this single-choice interface — inventing step
- * granularity is a task-design decision beyond an audit-first port) and
- * canonical side_repair_abandoned (never-accepted branch is the legacy
- * side_repair_ignored; the canonical name is not matrix-listed and its
- * never-accepted vs post-accept semantics are flagged in event-schema §4).
+ * Deliberately unemitted (candidates flagged in event-schema §4, never
+ * built here): canonical side_repair_abandoned (the accepted-but-no-step
+ * walk-away therefore emits nothing and stays resumable) and
+ * side_repair_returned (return after defer is visible from the event
+ * sequence). Any anomaly-arc or utility-stop mechanic stays SA-2-gated.
  */
 export class SideRepairScene extends RoomScene {
   protected readonly roomId = 'optional_side_repair_bay';
@@ -88,8 +138,14 @@ export class SideRepairScene extends RoomScene {
       label: 'Utility Bot',
       x: 10 * 32,
       y: 5.5 * 32,
-      promptBody:
-        'A maintenance bot flags an optional repair. It is not required for the main cycle, but completing it would improve station stability. What do you do?',
+      // Stage-dependent body (evaluated on every prompt open): the offer
+      // framing must not re-present over the post-acceptance work-console
+      // stages — the prompt is then a work console, not an offer.
+      get promptBody() {
+        return sideRepairTaskState.get().accepted
+          ? 'The maintenance bot tracks the accepted stabiliser repair on its work order.'
+          : 'A maintenance bot flags an optional repair. It is not required for the main cycle, but completing it would improve station stability. What do you do?';
+      },
       onPromptOpened: () => {
         // Prototype one-shot gate, exact feedback text preserved. A
         // DEFERRED decision does not close the offer — the defer branch
@@ -101,10 +157,27 @@ export class SideRepairScene extends RoomScene {
           return false;
         }
 
+        // Accepted task in progress: the prompt is the work console, not
+        // a fresh offer — no offer events (they would inflate the
+        // Q29-tagged opportunity count on every resume).
+        if (sideRepairTaskState.get().accepted) {
+          return true;
+        }
+
         this.logRoomEvent('optionalSideRepair', 'side_repair_opened');
         this.logRoomEvent('optionalSideRepair', 'stabiliser_option_offered');
         return true;
       },
+    });
+
+    // Parts shelf (left flanking block beside the floor lane): the fetch
+    // step of the accepted repair. Placeholder marker (see above).
+    this.addStation({
+      interactionKey: 'sideRepairPartsShelf',
+      label: 'Parts Shelf',
+      x: 3 * 32,
+      y: 7 * 32 + 16,
+      onPromptOpened: () => this.onPartsShelfOpened(),
     });
 
     // Door back to the Station Hub.
@@ -131,15 +204,59 @@ export class SideRepairScene extends RoomScene {
     });
   }
 
+  /**
+   * Observed walk-away (FABLE-NEXT-03): leaving the room after completing
+   * at least one real step, without a formal deferral since the last
+   * completed step, is the abandonment the legacy option 2 could only
+   * assert. Both legacy alias and canonical name fire here, in the legacy
+   * option's order; the decision then closes one-shot (legacy semantics).
+   * An accepted task with zero completed steps stays resumable and emits
+   * nothing — canonical side_repair_abandoned (accepted-but-never-started
+   * semantics) is an unresolved candidate, flagged, never invented here.
+   */
+  protected onRoomExit(): void {
+    const state = sideRepairTaskState.get();
+
+    if (
+      state.accepted &&
+      state.stepsCompleted >= 1 &&
+      state.stepsCompleted < SIDE_REPAIR_STEPS.length &&
+      !state.deferredSinceLastStep &&
+      !this.isDecisionLogged()
+    ) {
+      this.logRoomEvent(
+        'optionalSideRepair',
+        'side_repair_abandoned_after_difficulty',
+      );
+      this.logRoomEvent(
+        'optionalSideRepair',
+        'side_repair_abandoned_after_start',
+      );
+      researchRuntime.sessionState.setSideRepairStatus(
+        SIDE_REPAIR_STATUS_ABANDONED_AFTER_START,
+      );
+      this.markDecisionLogged();
+    }
+  }
+
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
+    if (interactionKey === 'sideRepairPartsShelf') {
+      return this.getPartsShelfOptions();
+    }
+
     if (interactionKey !== 'optionalSideRepair') {
       return [];
     }
 
-    // Options 1-3 ported verbatim from the prototype (labels, feedback,
-    // legacy event order); canonical equivalents inserted adjacent to
-    // their legacy alias. Option 4 (formal defer) is the contract-required
-    // confound-control addition, appended so legacy order is untouched.
+    if (sideRepairTaskState.get().accepted) {
+      return this.getWorkConsoleOptions();
+    }
+
+    // Offer stage. Option 1 is the legacy ignore path verbatim (label,
+    // feedback, event order, one-shot). The legacy one-press options 2-3
+    // (asserted stop-after-difficulty / asserted completion) are retired
+    // in favour of the observed multi-step task behind option 2; the
+    // formal defer branch keeps its Wave 1A label/feedback/event.
     return [
       {
         label: 'Ignore the optional repair and move on.',
@@ -154,42 +271,19 @@ export class SideRepairScene extends RoomScene {
         },
       },
       {
-        label: 'Start the repair, but stop after the first difficulty.',
+        label: 'Start the stabiliser repair.',
         feedback:
-          'You begin the repair, but stop when the task becomes difficult.',
+          'You take on the stabiliser repair. First step: collect the replacement part from the parts shelf.',
+        // Legacy accept family at its unchanged semantic moment (the
+        // explicit accept choice). side_repair_first_step now fires at
+        // the observed first step instead of being asserted here.
         getEventTypes: () => [
           'side_repair_started',
           'stabiliser_accepted',
           'side_repair_accepted',
-          'side_repair_first_step',
-          'side_repair_abandoned_after_difficulty',
-          'side_repair_abandoned_after_start',
         ],
         onSelected: () => {
-          researchRuntime.sessionState.setSideRepairStatus(
-            SIDE_REPAIR_STATUS_ABANDONED_AFTER_START,
-          );
-          this.markDecisionLogged();
-        },
-      },
-      {
-        label: 'Work through the difficulty and complete the repair.',
-        feedback:
-          'You stay with the difficult repair until the issue is resolved.',
-        getEventTypes: () => [
-          'side_repair_started',
-          'stabiliser_accepted',
-          'side_repair_accepted',
-          'side_repair_first_step',
-          'side_repair_completed',
-          'final_bonus_unlocked',
-          'side_repair_productive_persistence',
-        ],
-        onSelected: () => {
-          researchRuntime.sessionState.setSideRepairStatus(
-            SIDE_REPAIR_STATUS_COMPLETED,
-          );
-          this.markDecisionLogged();
+          sideRepairTaskState.get().accepted = true;
         },
       },
       {
@@ -207,6 +301,139 @@ export class SideRepairScene extends RoomScene {
         },
       },
     ];
+  }
+
+  /**
+   * Work-console stages of the accepted repair. The step-2 label states
+   * the misaligned mounting BEFORE the player commits, so the mild
+   * difficulty rise is visible at the choice point (stable utility, no
+   * stop signal — the Q27 utility-stop stage stays SA-2-gated and is NOT
+   * built here). Deferring from any stage keeps progress.
+   */
+  private getWorkConsoleOptions(): PromptOption[] {
+    const state = sideRepairTaskState.get();
+    const deferOption: PromptOption = {
+      label: 'Log the remaining work for later in the cycle.',
+      feedback:
+        'You log the remaining stabiliser work for later in the cycle. The bot notes the deferral.',
+      getEventTypes: () => ['side_repair_deferred'],
+      onSelected: () => {
+        state.deferredSinceLastStep = true;
+        researchRuntime.sessionState.setSideRepairStatus(
+          SIDE_REPAIR_STATUS_DEFERRED,
+        );
+      },
+    };
+
+    if (state.stepsCompleted === 0) {
+      return [
+        {
+          label: 'Review the work order.',
+          feedback:
+            'Work order: fetch the replacement stabiliser part from the parts shelf, then fit it here.',
+          getEventTypes: () => [],
+        },
+        deferOption,
+      ];
+    }
+
+    if (state.stepsCompleted === 1) {
+      return [
+        {
+          label: 'Adjust the misaligned mounting and seat the part.',
+          feedback:
+            'The mounting resists, but careful adjustment seats the part. Last step: run the system check.',
+          getEventTypes: () => [],
+          onSelected: () => {
+            this.completeStep('optionalSideRepair');
+          },
+        },
+        deferOption,
+      ];
+    }
+
+    return [
+      {
+        label: 'Run the system check.',
+        feedback:
+          'The stabiliser check passes. The bot logs the repair complete — station stability improves.',
+        getEventTypes: () => [],
+        onSelected: () => {
+          this.completeStep('optionalSideRepair');
+          // Legacy completion family at its unchanged semantic moment
+          // (the repair actually finishing), in the legacy order.
+          this.logRoomEvent('optionalSideRepair', 'side_repair_completed');
+          this.logRoomEvent('optionalSideRepair', 'final_bonus_unlocked');
+          this.logRoomEvent(
+            'optionalSideRepair',
+            'side_repair_productive_persistence',
+          );
+          researchRuntime.sessionState.setSideRepairStatus(
+            SIDE_REPAIR_STATUS_COMPLETED,
+          );
+          this.markDecisionLogged();
+        },
+      },
+      deferOption,
+    ];
+  }
+
+  /** Parts shelf gate: only the accepted fetch step interacts. */
+  private onPartsShelfOpened(): boolean {
+    const state = sideRepairTaskState.get();
+
+    if (!state.accepted || this.isDecisionLogged()) {
+      this.showFeedbackMessage(
+        'Racked stabiliser parts. The maintenance bot manages the work order.',
+      );
+      return false;
+    }
+
+    if (state.stepsCompleted >= 1) {
+      this.showFeedbackMessage(
+        'You already carry the replacement part. Fit it at the work console.',
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  private getPartsShelfOptions(): PromptOption[] {
+    return [
+      {
+        label: 'Collect the replacement stabiliser part.',
+        feedback:
+          'You collect the replacement stabiliser part. Fit it at the work console.',
+        getEventTypes: () => [],
+        onSelected: () => {
+          // The observed first step: side_repair_first_step (Q20
+          // weak/exploratory early-engagement marker) fires at its
+          // semantic moment, then the step record itself.
+          this.logRoomEvent('sideRepairPartsShelf', 'side_repair_first_step');
+          this.completeStep('sideRepairPartsShelf');
+        },
+      },
+    ];
+  }
+
+  /**
+   * Records the next step in fixed order: one act = one
+   * side_repair_step_completed with metadata.step (event-schema §4
+   * additive payload placement; control_error_count precedent). A
+   * completed step also clears any pending deferral — new real work
+   * re-opens walk-away detection.
+   */
+  private completeStep(interactionKey: InteractionKey) {
+    const state = sideRepairTaskState.get();
+    const step = SIDE_REPAIR_STEPS[state.stepsCompleted];
+
+    state.stepsCompleted += 1;
+    state.deferredSinceLastStep = false;
+
+    this.logRoomEvent(interactionKey, 'side_repair_step_completed', {
+      metadata: { step },
+    });
   }
 
   private markDecisionLogged() {
