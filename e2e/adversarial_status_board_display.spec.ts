@@ -158,10 +158,14 @@ test.describe('adversarial: Hub status-board display', () => {
     expect(board).toBe(expectedBoardText(mission));
     expect(board).not.toBe(boardAfterAbandon); // no stale text carried over
 
-    // — Systems Repair: complete —
+    // — Systems Repair: complete (manual first — FABLE-NEXT-03: the
+    // revised sequence succeeds only when manual-guided) —
     await hubToStationJourney(page, 'systems_repair_room');
     await openStationAlcove(page);
-    await selectPromptOption(page, 3); // revised sequence — completes
+    await selectPromptOption(page, 2); // open repair manual
+    await waitForEventCount(page, 'repair_manual_used', undefined, 1);
+    await openStationAlcove(page);
+    await selectPromptOption(page, 3); // guided revised sequence — completes
     await waitForEventCount(page, 'repair_completed', undefined, 1);
     await stationToHubJourney(page, 'systems_repair_room');
 
@@ -206,7 +210,7 @@ test.describe('adversarial: Hub status-board display', () => {
     // — Optional Side Repair Bay: DEFER first (must NOT flip the line) —
     await hubToStationJourney(page, 'optional_side_repair_bay');
     await openStationAlcove(page);
-    await selectPromptOption(page, 4); // formally defer
+    await selectPromptOption(page, 3); // formally defer (FABLE-NEXT-03 order)
     await waitForEventCount(page, 'side_repair_deferred', undefined, 1);
     await stationToHubJourney(page, 'optional_side_repair_bay');
 

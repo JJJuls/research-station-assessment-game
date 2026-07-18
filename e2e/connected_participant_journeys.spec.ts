@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test';
 
-import { getSummary, selectPromptOption } from './helpers';
+import {
+  driveAxisTo,
+  getSummary,
+  hold,
+  press,
+  selectPromptOption,
+} from './helpers';
 import {
   bootJourney,
   captureErrors,
@@ -93,10 +99,21 @@ test.describe('connected participant journeys', () => {
     expect(mission.accepted_duties).toContain('relay_supervision');
     expect(mission.active_objectives).toContain('relay_supervision');
 
-    // Side repair: work through and complete.
+    // Side repair (FABLE-NEXT-03 observed multi-step task): accept at the
+    // bot, fetch the part at the shelf (row-8 lane, west clamp against
+    // the flanking block), fit and check back at the console.
     await hubToStationJourney(page, 'optional_side_repair_bay');
     await openStationAlcove(page);
-    await selectPromptOption(page, 3);
+    await selectPromptOption(page, 2); // accept the stabiliser repair
+    await driveAxisTo(page, 'y', 272, 12);
+    await hold(page, 'ArrowLeft', 2400);
+    await press(page, 'Space');
+    await selectPromptOption(page, 1); // collect the replacement part
+    await driveAxisTo(page, 'x', 320, 12);
+    await openStationAlcove(page);
+    await selectPromptOption(page, 1); // seat the part
+    await press(page, 'Space');
+    await selectPromptOption(page, 1); // run the system check -> complete
     await stationToHubJourney(page, 'optional_side_repair_bay');
 
     expect((await missionState(page)).side_repair_status).toBe('completed');
@@ -390,7 +407,7 @@ test.describe('connected participant journeys', () => {
     // must NOT complete the room; the offer must reopen on re-entry).
     await hubToStationJourney(page, 'optional_side_repair_bay');
     await openStationAlcove(page);
-    await selectPromptOption(page, 4);
+    await selectPromptOption(page, 3); // formally defer (FABLE-NEXT-03 order)
     await stationToHubJourney(page, 'optional_side_repair_bay');
 
     let mission = await missionState(page);
@@ -398,9 +415,20 @@ test.describe('connected participant journeys', () => {
     expect(mission.side_repair_status).toBe('deferred');
     expect(mission.completed_rooms).not.toContain('optional_side_repair_bay');
 
+    // Reopened offer -> the observed multi-step task (accept, fetch at
+    // the shelf, fit and check at the console — FABLE-NEXT-03).
     await hubToStationJourney(page, 'optional_side_repair_bay');
     await openStationAlcove(page);
-    await selectPromptOption(page, 3);
+    await selectPromptOption(page, 2); // accept the stabiliser repair
+    await driveAxisTo(page, 'y', 272, 12);
+    await hold(page, 'ArrowLeft', 2400);
+    await press(page, 'Space');
+    await selectPromptOption(page, 1); // collect the replacement part
+    await driveAxisTo(page, 'x', 320, 12);
+    await openStationAlcove(page);
+    await selectPromptOption(page, 1); // seat the part
+    await press(page, 'Space');
+    await selectPromptOption(page, 1); // run the system check -> complete
     await stationToHubJourney(page, 'optional_side_repair_bay');
 
     expect((await missionState(page)).side_repair_status).toBe('completed');

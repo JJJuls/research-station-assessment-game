@@ -23,10 +23,12 @@ import {
  * manual-then-revision path and blind repeat-failed-sequence path, plus
  * the adaptive-vs-inappropriate persistence separation invariant.
  *
- * NOTE (Wave 1A): authored compile-only — Playwright execution is disabled
- * in the authoring session; the hubToStationDoor route and in-room
- * choreography must be tuned/verified in this room's
- * playwright-game-verify pass before results are trusted.
+ * FABLE-NEXT-03 (task B): the repair is a bounded multi-cycle sequence —
+ * every submitted sequence carries an incrementing attempt_number on the
+ * canonical events (legacy repair_attempt payload unchanged), an unguided
+ * revised submission fails as a distinct cycle, only the manual-guided
+ * revision succeeds, and cycle state (attempt counter, guidance flag,
+ * didRepeat memory) survives room exit/return.
  */
 
 async function hubToRepair(page: import('@playwright/test').Page) {
@@ -93,6 +95,21 @@ test.describe('repair room logging', () => {
     expect(completed?.study_item_ids).toEqual(['Q06', 'Q14', 'Q21']);
     expect(completed?.construct_id).toBeUndefined();
 
+    // FABLE-NEXT-03: distinct cycles carry the incrementing attempt_number
+    // on the canonical events; the legacy repair_attempt payload is frozen
+    // (never gains the field).
+    expect(failed?.attempt_number).toBe(1);
+    expect(revision?.attempt_number).toBe(2);
+    expect(completed?.attempt_number).toBe(2);
+    expect(
+      findEvents(events, 'repair_sequence_submitted').map(
+        (e) => e.attempt_number,
+      ),
+    ).toEqual([1, 2]);
+    for (const legacy of findEvents(events, 'repair_attempt')) {
+      expect(legacy.attempt_number).toBeUndefined();
+    }
+
     // Separation invariant: a purely adaptive path never touches the
     // inappropriate-persistence variables.
     const summary = await getSummary(page);
@@ -131,11 +148,121 @@ test.describe('repair room logging', () => {
     expect(repeated?.study_item_ids).toEqual(['Q26']);
     expect(repeated?.construct_id).toBe('inappropriate_persistence');
     expect(repeated?.success).toBe(false);
+    // The identical resubmission is still its own cycle.
+    expect(repeated?.attempt_number).toBe(2);
 
     const summary = await getSummary(page);
 
     expect(summary.game_inappropriate_persistence).toBe(1);
     expect(summary.blind_retry_count).toBe(1);
+  });
+
+  test('multi-cycle adaptive: unguided revision fails as a distinct cycle, manual-guided revision succeeds', async ({
+    page,
+  }) => {
+    await bootGame(page, {
+      participant_id: 'E2E_P4',
+      game_session_id: 'E2E_REP_S5',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+    await hubToRepair(page);
+
+    await openRepairPanel(page);
+    await press(page, '1'); // default sequence — cycle 1 fails
+    await press(page, 'Space');
+    await press(page, '3'); // UNGUIDED adjusted sequence — cycle 2 fails
+    await press(page, 'Space');
+    await press(page, '2'); // open repair manual (guidance acquired)
+    await press(page, 'Space');
+    await press(page, '3'); // manual-guided revision — cycle 3 succeeds
+
+    const events = await getEvents(page);
+    const types = events.map((e) => e.event_type);
+
+    // Two DISTINCT failing cycles (never a detected repeat), then the
+    // guided success — with the attempt counter spanning all three.
+    expect(
+      findEvents(events, 'repair_failed').map((e) => e.attempt_number),
+    ).toEqual([1, 2]);
+    expect(types).not.toContain('repair_same_sequence_repeated');
+    expect(
+      findEvents(events, 'repair_sequence_submitted').map(
+        (e) => e.attempt_number,
+      ),
+    ).toEqual([1, 2, 3]);
+    expect(findEvent(events, 'repair_strategy_revision')?.attempt_number).toBe(
+      3,
+    );
+    expect(findEvent(events, 'repair_completed')?.attempt_number).toBe(3);
+    expect(findEvents(events, 'repair_attempt')).toHaveLength(3);
+    // Strategy revision fires ONLY on the manual-guided success: exactly
+    // one revision despite two "revised sequence" submissions.
+    expect(findEvents(events, 'repair_strategy_revision')).toHaveLength(1);
+
+    // Separation invariant: distinct-cycle failures are never
+    // inappropriate persistence.
+    const summary = await getSummary(page);
+
+    expect(summary.game_inappropriate_persistence).toBe(0);
+    expect(summary.blind_retry_count).toBe(0);
+
+    // Completed repairs stay completed: reopening the panel logs the
+    // panel-open telemetry but never a duplicate completion cycle.
+    await press(page, 'Space');
+    await press(page, '3');
+
+    const finalEvents = await getEvents(page);
+
+    expect(findEvents(finalEvents, 'repair_completed')).toHaveLength(1);
+    expect(findEvents(finalEvents, 'repair_sequence_submitted')).toHaveLength(
+      3,
+    );
+  });
+
+  test('multi-cycle identical repeats: each resubmitted failed sequence logs the repeated variant with its cycle number', async ({
+    page,
+  }) => {
+    await bootGame(page, {
+      participant_id: 'E2E_P4',
+      game_session_id: 'E2E_REP_S6',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+    await hubToRepair(page);
+
+    await openRepairPanel(page);
+    await press(page, '3'); // unguided adjustment — cycle 1 fails
+    await press(page, 'Space');
+    await press(page, '3'); // SAME unguided adjustment — detected repeat
+    await press(page, 'Space');
+    await press(page, '1'); // default — different sequence, real failure
+    await press(page, 'Space');
+    await press(page, '1'); // SAME default again — detected repeat
+
+    const events = await getEvents(page);
+
+    expect(
+      findEvents(events, 'repair_failed').map((e) => e.attempt_number),
+    ).toEqual([1, 3]);
+    expect(
+      findEvents(events, 'repair_same_sequence_repeated').map(
+        (e) => e.attempt_number,
+      ),
+    ).toEqual([2, 4]);
+    expect(
+      findEvents(events, 'repair_sequence_submitted').map(
+        (e) => e.attempt_number,
+      ),
+    ).toEqual([1, 2, 3, 4]);
+    expect(findEvents(events, 'repair_attempt')).toHaveLength(4);
+
+    const summary = await getSummary(page);
+
+    expect(summary.blind_retry_count).toBe(2);
+    expect(summary.game_inappropriate_persistence).toBe(2);
   });
 
   test('manual station logs opened + page reviewed; leave-and-return logs abandoned + returned', async ({
@@ -199,6 +326,23 @@ test.describe('repair room logging', () => {
     expect(abandoned?.construct_id).toBeUndefined();
     expect(returned?.study_item_ids).toEqual(['Q24', 'Q25']);
     expect(returned?.construct_id).toBeUndefined();
+
+    // FABLE-NEXT-03 persistence: the cycle counter AND the manual-guidance
+    // flag (set at the manual station before leaving) survive the round
+    // trip — the guided revision now completes as cycle 2, not cycle 1.
+    await openRepairPanel(page);
+    await press(page, '3');
+
+    const finalEvents = await getEvents(page);
+    const completedAfterReturn = findEvent(finalEvents, 'repair_completed');
+
+    expect(completedAfterReturn?.attempt_number).toBe(2);
+    expect(
+      findEvent(finalEvents, 'repair_strategy_revision')?.attempt_number,
+    ).toBe(2);
+    expect(
+      finalEvents.filter((e) => e.event_type === 'repair_failed'),
+    ).toHaveLength(1);
   });
 
   test('objective_completed fires exactly once when Archive AND Repair complete', async ({
@@ -229,6 +373,8 @@ test.describe('repair room logging', () => {
     await waitForNthEvent(page, 'station_hub_entered', 2);
     await hubToRepair(page);
     await openRepairPanel(page);
+    await press(page, '2'); // manual first — the revision must be guided
+    await press(page, 'Space');
     await press(page, '3');
 
     const events = await getEvents(page);
