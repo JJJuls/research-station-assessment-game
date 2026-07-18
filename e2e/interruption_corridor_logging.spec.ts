@@ -104,6 +104,7 @@ test.describe('interruption corridor logging', () => {
     await hold(page, 'ArrowUp', 900);
     await press(page, 'Space');
     await press(page, '2'); // prepared report
+    await press(page, '4'); // NEXT-04 content stage: accurate claim
     await press(page, '1'); // accept the duty
     await hold(page, 'ArrowDown', 2200); // back to the Hub door
     await press(page, 'Space');

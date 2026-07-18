@@ -123,6 +123,7 @@ test.describe('final core integration', () => {
     await hold(page, 'ArrowUp', 900);
     await press(page, 'Space');
     await press(page, '2'); // prepared report
+    await press(page, '4'); // NEXT-04 content stage: accurate claim
     await press(page, '1'); // accept the duty
     await hold(page, 'ArrowDown', 2200);
     await press(page, 'Space');
@@ -185,6 +186,7 @@ test.describe('final core integration', () => {
     await hold(page, 'ArrowUp', 900);
     await press(page, 'Space');
     await press(page, '1'); // quick report
+    await press(page, '1'); // NEXT-04 content stage: quick claim from memory
     await press(page, '1'); // accept the duty
     await hold(page, 'ArrowDown', 2200);
     await press(page, 'Space');

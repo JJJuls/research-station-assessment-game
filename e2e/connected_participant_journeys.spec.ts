@@ -85,11 +85,14 @@ test.describe('connected participant journeys', () => {
     expect(mission.prepared_items).toContain('field_kit');
     expect(mission.workspace_status).toBe('tidy');
 
-    // Engineer: prepared report, accept the relay supervision duty, then
-    // the calibration decision (Scenario A) at the bench.
+    // Engineer: prepared report, accurate status claim (kit packed, repair
+    // still open at this point in the route — NEXT-04 content stage),
+    // accept the relay supervision duty, then the calibration decision
+    // (Scenario A) at the bench.
     await hubToStationJourney(page, 'engineer_hub');
     await openStationAlcove(page);
     await selectPromptOption(page, 2);
+    await selectPromptOption(page, 3);
     await selectPromptOption(page, 1);
     await completePilotScenario(page, 'calibration_anomaly');
     await stationToHubJourney(page, 'engineer_hub');
@@ -223,6 +226,24 @@ test.describe('connected participant journeys', () => {
     expect(types).not.toContain('final_core_workspace_issue_flagged');
     expect(types).not.toContain('final_unresolved_due_to_nonreturn');
 
+    // NEXT-04 state-varied accuracy evidence: at the engineer visit the
+    // kit was already packed but Systems Repair was still open, so the
+    // accurate claim differs from the fresh-session one — the evaluation
+    // must follow live SessionState, not a fixed answer key.
+    const accuracyEvent = events.find(
+      (e) => e.event_type === 'engineer_report_accuracy_scored',
+    );
+
+    expect(accuracyEvent?.success).toBe(true);
+    expect(accuracyEvent?.metadata).toMatchObject({
+      report_mode: 'prepared',
+      accuracy: 1,
+      claimed_systems_repair_complete: false,
+      claimed_field_kit_packed: true,
+      actual_systems_repair_complete: false,
+      actual_field_kit_packed: true,
+    });
+
     // Frozen-summary spot checks (separation invariants).
     const summary = await getSummary(page);
 
@@ -278,10 +299,12 @@ test.describe('connected participant journeys', () => {
 
     expect((await missionState(page)).prepared_items).toEqual([]);
 
-    // Engineer: unprepared quick report, decline the duty, then the
-    // calibration decision (Scenario A).
+    // Engineer: unprepared quick report, inaccurate from-memory claim
+    // (NEXT-04 content stage), decline the duty, then the calibration
+    // decision (Scenario A).
     await hubToStationJourney(page, 'engineer_hub');
     await openStationAlcove(page);
+    await selectPromptOption(page, 1);
     await selectPromptOption(page, 1);
     await selectPromptOption(page, 2);
     await completePilotScenario(page, 'calibration_anomaly');

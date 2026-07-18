@@ -176,7 +176,8 @@ test.describe('adversarial: Hub status-board display', () => {
     // — Engineer Hub: quick report, then decline the duty offer —
     await hubToStationJourney(page, 'engineer_hub');
     await openStationAlcove(page);
-    await selectPromptOption(page, 1); // quick report -> chains the duty offer
+    await selectPromptOption(page, 1); // quick report -> chains the content stage
+    await selectPromptOption(page, 1); // NEXT-04 content stage -> duty offer
     await waitForEventCount(
       page,
       'engineer_supervision_assigned',
