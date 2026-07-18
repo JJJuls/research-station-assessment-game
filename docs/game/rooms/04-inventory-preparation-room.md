@@ -42,11 +42,12 @@ The player prepares a field kit using a checklist before the next station cycle.
 - Open the checklist and pack the required tools in order (systematic path).
 - Sort the workspace and verify the kit before leaving (cleanup/verification
   path).
+- Stage the kit yourself at the bench, item by item (per-item preparation
+  mode, FABLE-NEXT-02 — see the dated section below).
 
-(Current prototype implements these three as one combined choice rather than
-three separable steps — canonical design implies checklist-use, tool-selection,
-and cleanup/verification as distinguishable sub-steps; see Implementation
-notes.)
+(The three legacy options remain one combined choice each, preserved verbatim;
+the separable checklist-use / item-placement / verification / cleanup sub-steps
+the canonical design calls for are implemented by the per-item mode.)
 
 ## Canonical events
 
@@ -60,9 +61,12 @@ notes.)
 `final_core_missing_item_flagged`, `final_core_workspace_issue_flagged`.
 
 Current-to-canonical alias table: `docs/research/event-schema.md` §4,
-"Inventory / Preparation Room" — **zero exact string matches**, the weakest
-naming alignment of any room, though the underlying
-shortcut-vs-systematic-vs-cleanup mechanic conceptually exists.
+"Inventory / Preparation Room" — refreshed 2026-07-18 for FABLE-NEXT-02. Every
+canonical event above is now emitted except `prepared_tool_used` (registered
+but unemitted — the Q03 retrieval episode is a later cross-room unit) and
+`readiness_verified` (deliberately unemitted — no distinct readiness action
+exists); `inventory_sequence_completed` is emitted but unregistered/unmapped
+(open research-owner decision, see the schema table).
 
 ## Derived variables
 
@@ -82,26 +86,35 @@ Goal-Time proxies — label accordingly wherever surfaced.
 
 ## Failure/edge cases
 
-- Player selects a wrong tool: should log `wrong_tool_selected` distinctly from
-  `missing_item` — currently neither is distinguished from the general shortcut
-  path.
-- Player skips verification but the kit happens to be complete: should still log
-  `inventory_verification_skipped` (process signal) independent of
-  `inventory_verified_complete` (outcome signal) — currently conflated into one
-  combined choice.
-- Player leaves the workspace disordered: should propagate to Final Core as
-  `final_core_workspace_issue_flagged` — currently no cross-room propagation
-  exists (depends on `SessionState`'s `workspace_status` field, per V3 Section
-  3.1, which doesn't exist yet).
+- Player selects a wrong tool: in per-item mode `wrong_tool_selected` (stray
+  item packed into the kit crate; `object_id` = registry `item_id`,
+  `attempt_number`) is logged distinctly from `missing_item` (still-missing
+  requisition item, logged once per session per item at the first close-out
+  review that surfaces it — i.e. pre-correction). On the legacy shortcut
+  option the distinction still does not exist: only the combined legacy
+  cascade (with additive `missing_item`) fires there.
+- Player skips verification but the kit happens to be complete:
+  `inventory_verification_skipped` (process signal) and
+  `inventory_verified_complete` (the verification act) are independent events
+  on BOTH verification stages (legacy option-2 chain and per-item close-out);
+  the skip fires regardless of kit completeness.
+- Player leaves the workspace disordered: propagates via
+  `SessionState.workspace_status = disordered` (V3 Section 3.1) to Final Core,
+  where `final_core_workspace_issue_flagged` is emitted at room entry
+  (Wave 1A).
 
 ## Playwright verification targets
 
-`inventory_prep_logging.spec.ts` — drive shortcut path (confirm
-`inventory_item_misplaced`/`workspace_left_disordered`-equivalent events),
-systematic path (confirm `inventory_checklist_opened`-equivalent +
-`inventory_sequence_followed`-equivalent), and cleanup/verify path (confirm
-`workspace_tidy_confirmed`/`readiness_verified`-equivalents) — using current
-event names until the room is migrated, then re-run against canonical names.
+`inventory_prep_logging.spec.ts` — drives the three legacy console paths
+(canonical aliases asserted additively beside the unchanged legacy events) and
+the FABLE-NEXT-02 per-item flows: systematic placement (checklist, ordered
+placement, review, verify, reset), misplacement + correction (higher
+`attempt_number` re-placement), rushed path (skip items/verification, disorder
+chosen at the cleanup stage), and pre-engagement/post-completion station
+gating. `readiness_verified` has no spec target — it is deliberately
+unemitted. Remaining secondary-surface runtime gaps are listed in the
+review-pass section below; runtime/browser verification of the per-item flows
+is still owed (spec authored compile-only).
 
 ## Implementation notes
 
@@ -290,11 +303,15 @@ scoring pass; this unit only guarantees their raw inputs exist.
   requires 3+ console opens vs 1 on legacy paths. Unmapped raw telemetry,
   feeds no aggregate; analysts should not compare its raw count across
   modes.
-- **event-schema.md §4 Inventory status column now stale** ("missing —
-  needs a per-item mini-game" rows that are now emitted; checklist
-  emission-placement note lacks the second per-item source). Schema edits
-  were out of scope for FABLE-NEXT-02 by task file; research-owner/docs
-  pass to refresh.
+- **event-schema.md §4 Inventory status column stale** ("missing — needs a
+  per-item mini-game" rows that are now emitted; checklist
+  emission-placement note lacked the second per-item source). Schema edits
+  were out of scope for FABLE-NEXT-02 by task file. **Resolved 2026-07-18**
+  by the follow-up docs-only refresh pass: §4 Inventory table and this doc
+  updated to the implemented emission sources; no gameplay source, event
+  identifier, registration, mapping or scoring change; the open
+  research-owner decisions (partial restoration, `inventory_sequence_completed`
+  registration, candidate events) are recorded as OPEN, not resolved.
 - **Secondary-surface runtime coverage gaps** (follow-up
   playwright-game-verify pass): prompt/feedback text assertions
   (checklist body, review issue lines, gate feedback via
