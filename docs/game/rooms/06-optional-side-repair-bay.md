@@ -127,10 +127,48 @@ reads `completed` for the stability bonus. Spec
 `e2e/side_repair_logging.spec.ts` authored compile-only —
 **runtime/browser verification still owed** before any "works" claim.
 
+**FABLE-NEXT-03 status (2026-07-18)**: real multi-step task implemented
+(task A). After acceptance ("Start the stabiliser repair.") the repair is
+three motorically trivial observed steps — fetch the replacement part at the
+new Parts Shelf station (`side_repair_parts_shelf`, left flanking block),
+seat it at the work console (the step-2 label states the misaligned mounting
+before the player commits — the mild difficulty rise, stable utility, no
+stop signal; SA-2's utility-stop stage is NOT built), run the system check.
+Each step logs `side_repair_step_completed` with `metadata.step`
+(`fetch_component`/`fit_component`/`run_check`). The legacy one-press
+options 2-3 are retired; their events fire at observed moments instead
+(see event-schema §4): accept family on accept, abandonment pair at the
+real walk-away (room exit with ≥1 step, no deferral since the last step —
+then one-shot close, legacy semantics), completion family on the final
+step. `side_repair_first_step` fires at the observed first step. Deferral
+is available at the offer AND from the work console; it keeps step progress
+(session-lifetime `sideRepairTaskState`, U2 factory) and never counts as
+abandonment. Accepted-with-zero-steps walk-away emits nothing and stays
+resumable — canonical `side_repair_abandoned`/`side_repair_returned` stay
+flagged CANDIDATES for the research owner. The ignore path (option 1) is
+legacy-verbatim. No scoring edits; `optional_followthrough_rate`,
+`accepted_task_completion_rate` stay CANDIDATES (D2-family pass). Q20
+remains questionnaire-primary: start-without-sustain is now observable but
+carries no score.
+
+Research-owner interpretation caveats (research-data-reviewer, FABLE-NEXT-03
+pass — recorded, not resolved): (1) the legacy alias
+`side_repair_abandoned_after_difficulty` fires together with the canonical
+abandonment on any ≥1-step walk-away, including a fetch-then-exit that never
+opened the console's step-2 difficulty text — whether such an exit should
+count toward `productiveness_difficulty_abandonment_count` is a D2-family
+scoring-pass question; (2) a single unqualified exit after ≥1 step closes the
+decision one-shot (legacy semantics) — there is no side-repair return window
+analogous to the Systems Repair Q24/Q25 abandon/return pair
+(`side_repair_returned` stays an unapproved candidate), so an
+interruption-driven accidental exit becomes an irreversible abandonment
+record.
+
 ## Anti-leakage note
 
 No productiveness/Grit-S/Goal-Time item wording (Q07, Q16, Q20, Q29, Q32) may
-appear in the Utility Bot's dialogue or option labels. Current labels ("Ignore
-the optional repair and move on", "Start the repair, but stop after the first
-difficulty", "Work through the difficulty and complete the repair") stay
-in-fiction — keep this register.
+appear in the Utility Bot's dialogue or option labels. Legacy labels kept
+("Ignore the optional repair and move on", "Log the repair for later in the
+cycle") and the new step labels ("Start the stabiliser repair.", "Collect the
+replacement stabiliser part.", "Adjust the misaligned mounting and seat the
+part.", "Run the system check.") stay in-fiction — keep this register.

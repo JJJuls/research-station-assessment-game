@@ -167,6 +167,40 @@ prototype station is unchanged.** `objective_completed` (legacy, spans
 Archive+Repair) now also fires in the connected world, once per session when
 both rooms complete, with the prototype's archive-terminal payload context.
 
+**FABLE-NEXT-03 (task B) — bounded multi-cycle sequence.** Approved names
+only; payload/emission clarifications:
+
+- Every submitted sequence is a distinct cycle: `attempt_number` (approved
+  §3 field, 1-indexed, session lifetime — survives room exit/return) is now
+  attached to `repair_sequence_submitted`, `repair_failed`,
+  `repair_same_sequence_repeated`, `repair_strategy_revision` and
+  `repair_completed`. Legacy `repair_attempt` still fires on every
+  submission with its payload **unchanged** (no `attempt_number`).
+- An **unguided** "Apply revised repair sequence" submission fails as its
+  own distinct cycle (`repair_sequence_submitted` + `repair_failed`);
+  resubmitting any identical failed sequence still logs
+  `repair_same_sequence_repeated` **instead of** a duplicate
+  `repair_failed` (didRepeat semantics unchanged).
+- `repair_strategy_revision` (registered success: true) fires only on the
+  **manual-guided** successful revision — manual consultation via the
+  panel's manual option (`repair_manual_used`) or the manual station
+  (`repair_manual_opened`/`manual_page_reviewed`) both count (Q23
+  safeguard: revision must reflect support, not a guessed option).
+  Bounded in variety, not submissions: only two failing sequence ids exist
+  (default, unguided adjustment). Repeat detection keeps the preserved
+  didRepeat semantics — it compares against the **immediately previous**
+  wrong submission only, so alternating the two failing sequences logs a
+  fresh `repair_failed` each time, never the repeated variant (a
+  `blind_retry_count`/`adaptive_retry_count` consideration for the
+  D2-family scoring pass).
+- After completion the panel's sequence options never reopen
+  (`repair_panel_opened` still logs; a feedback line reports the repair
+  complete) — a return visit can never double-log `repair_completed` or
+  grow `attempt_number` (no-duplicate-completion persistence rule).
+- CANDIDATES flagged, not built (need event-schema decisions):
+  `repair_step_completed` / `repair_diagnostic_completed` (Systems Repair
+  step granularity below the sequence-cycle level).
+
 ### Engineer Hub (`engineer_hub`)
 
 | Canonical (V3)                         | Current prototype                      | Status          | Notes                                                                                                                                                                                                                  |
@@ -269,25 +303,53 @@ Ruling record: `docs/expansion/reviews/WAVE1-USER-DECISION-BRIEF.md` §A (D1).
 
 ### Optional Side Repair Bay (`optional_side_repair_bay`)
 
-| Canonical (V3)                      | Current prototype                        | Status          | Notes                                                                                                                                                                                              |
-| ----------------------------------- | ---------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `side_repair_discovered`            | —                                        | exact (Wave 1A) | Once per session on first room entry (discovery is a first-encounter fact).                                                                                                                        |
-| `stabiliser_option_offered`         | `side_repair_opened`                     | exact (Wave 1A) | Canonical emitted additively alongside the unchanged legacy name on every offer.                                                                                                                   |
-| `stabiliser_accepted`               | —                                        | exact (Wave 1A) | Both start paths (legacy conflates accept+start; canonical decomposition emitted additively).                                                                                                      |
-| `side_repair_accepted`              | `side_repair_started`                    | exact (Wave 1A) | Additive alongside the unchanged legacy name on both start paths.                                                                                                                                  |
-| `side_repair_first_step`            | —                                        | exact (Wave 1A) | Both start paths.                                                                                                                                                                                  |
-| `side_repair_step_completed`        | —                                        | missing         | Needs a multi-step mini-game (step-count granularity is a task-design decision, not in the audit-first port).                                                                                      |
-| `side_repair_abandoned`             | `side_repair_ignored`                    | legacy-only     | Unchanged: never-accepted branch keeps legacy `side_repair_ignored` only; the canonical name is not matrix-listed and its semantics stay flagged for decision.                                     |
-| `side_repair_abandoned_after_start` | `side_repair_abandoned_after_difficulty` | exact (Wave 1A) | Additive alongside the unchanged legacy name.                                                                                                                                                      |
-| `side_repair_deferred`              | —                                        | exact (Wave 1A) | NEW 4th option (appended; legacy order untouched). Deferring does not close the offer — reopenable, distinct from abandonment (confound control).                                                  |
-| `side_repair_completed`             | `side_repair_completed`                  | exact           | Wave 1A: gains its CANONICAL_EVENT_CONTEXT mapping (Q07/Q16/Q32, construct unset) — intentionally changes prototype payloads; re-baseline the Phase-0 fixture field in the next verification pass. |
-| `final_core_stability_bonus`        | —                                        | missing         | Emission belongs to the Final Core beat (reads side_repair_status = completed).                                                                                                                    |
-| `final_bonus_unlocked`              | —                                        | exact (Wave 1A) | Emitted on the completion path (Room 6 raw event; Q32).                                                                                                                                            |
-| —                                   | `side_repair_low_effort`                 | legacy-only     | Derived-style label; recommend deriving instead of logging directly.                                                                                                                               |
-| —                                   | `side_repair_productive_persistence`     | legacy-only     | Derived-style label; recommend deriving instead of logging directly.                                                                                                                               |
+| Canonical (V3)                      | Current prototype                        | Status                | Notes                                                                                                                                                                                                                                                                                                               |
+| ----------------------------------- | ---------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `side_repair_discovered`            | —                                        | exact (Wave 1A)       | Once per session on first room entry (discovery is a first-encounter fact).                                                                                                                                                                                                                                         |
+| `stabiliser_option_offered`         | `side_repair_opened`                     | exact (Wave 1A)       | Canonical emitted additively alongside the unchanged legacy name on every offer.                                                                                                                                                                                                                                    |
+| `stabiliser_accepted`               | —                                        | exact (Wave 1A)       | Both start paths (legacy conflates accept+start; canonical decomposition emitted additively).                                                                                                                                                                                                                       |
+| `side_repair_accepted`              | `side_repair_started`                    | exact (Wave 1A)       | Additive alongside the unchanged legacy name on both start paths.                                                                                                                                                                                                                                                   |
+| `side_repair_first_step`            | —                                        | exact (Wave 1A)       | Both start paths.                                                                                                                                                                                                                                                                                                   |
+| `side_repair_step_completed`        | —                                        | exact (FABLE-NEXT-03) | One event per completed step of the accepted multi-step repair. **Payload placement (additive clarification, `control_error_count` precedent)**: the step id is carried in `metadata.step` — `fetch_component` (parts shelf), `fit_component` (console), `run_check` (console), in fixed order. Registered Q07/Q16. |
+| `side_repair_abandoned`             | `side_repair_ignored`                    | legacy-only           | Unchanged: never-accepted branch keeps legacy `side_repair_ignored` only; the canonical name is not matrix-listed and its semantics stay flagged for decision.                                                                                                                                                      |
+| `side_repair_abandoned_after_start` | `side_repair_abandoned_after_difficulty` | exact (Wave 1A)       | Additive alongside the unchanged legacy name.                                                                                                                                                                                                                                                                       |
+| `side_repair_deferred`              | —                                        | exact (Wave 1A)       | Formal-defer branch (Wave 1A; FABLE-NEXT-03 moves it to option 3 of the 3-option offer stage and adds a work-console defer that keeps step progress). Deferring never closes the offer/task — reopenable, distinct from abandonment (confound control).                                                             |
+| `side_repair_completed`             | `side_repair_completed`                  | exact                 | Wave 1A: gains its CANONICAL_EVENT_CONTEXT mapping (Q07/Q16/Q32, construct unset) — intentionally changes prototype payloads; re-baseline the Phase-0 fixture field in the next verification pass.                                                                                                                  |
+| `final_core_stability_bonus`        | —                                        | missing               | Emission belongs to the Final Core beat (reads side_repair_status = completed).                                                                                                                                                                                                                                     |
+| `final_bonus_unlocked`              | —                                        | exact (Wave 1A)       | Emitted on the completion path (Room 6 raw event; Q32).                                                                                                                                                                                                                                                             |
+| —                                   | `side_repair_low_effort`                 | legacy-only           | Derived-style label; recommend deriving instead of logging directly.                                                                                                                                                                                                                                                |
+| —                                   | `side_repair_productive_persistence`     | legacy-only           | Derived-style label; recommend deriving instead of logging directly.                                                                                                                                                                                                                                                |
 
-Only 1 exact match. The defer/abandon confound-control distinction that
-`psychometric-task-design` explicitly calls out as required is currently absent.
+**FABLE-NEXT-03 (task A) — observed multi-step substrate.** The one-press
+outcome assertions of the legacy options 2-3 are retired; the accepted repair
+is now three real steps (parts shelf fetch → console fit → system check).
+Emission-moment clarifications (names and payloads otherwise unchanged):
+
+- Offer events (`side_repair_opened` + `stabiliser_option_offered`) fire only
+  while the task is **unaccepted** — after acceptance the bot prompt is the
+  work console, so resuming never inflates the Q29-tagged opportunity count.
+- The accept family (`side_repair_started` + `stabiliser_accepted` +
+  `side_repair_accepted`) fires on the explicit accept choice, unchanged.
+- `side_repair_first_step` fires at its semantic moment — the first
+  **observed** step (the parts-shelf fetch) — no longer asserted at the
+  accept press. Payload-context consequence: its `object_id` is now
+  `side_repair_parts_shelf` (the station where the observed step happens)
+  instead of `optional_side_repair`; episode, `room_id` and the Q20
+  registration are unchanged.
+- The abandonment pair (`side_repair_abandoned_after_difficulty` +
+  `side_repair_abandoned_after_start`, legacy order) fires at the observed
+  walk-away: room exit with ≥1 completed step, task incomplete, and no
+  formal deferral since the last completed step. The decision then closes
+  one-shot (legacy semantics).
+- The completion family (`side_repair_completed` + `final_bonus_unlocked` +
+  `side_repair_productive_persistence`, legacy order) fires when the final
+  step actually completes.
+- `side_repair_deferred` may now also fire from the work console
+  (mid-task deferral keeps step progress; each deferral is a real act).
+- An **accepted-but-no-step** walk-away emits nothing and stays resumable:
+  canonical `side_repair_abandoned` (accepted-never-started semantics) and
+  `side_repair_returned` remain flagged CANDIDATES — research-owner
+  event-schema decisions, deliberately not built.
 
 ### Interruption Corridor (`interruption_corridor`)
 

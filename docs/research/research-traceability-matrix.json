@@ -10,8 +10,8 @@
       "registered": 90,
       "scoring_inputs": 57,
       "summary_variables": 59,
-      "with_code_references": 145,
-      "with_spec_references": 147
+      "with_code_references": 146,
+      "with_spec_references": 148
     }
   },
   "events": {
@@ -1755,6 +1755,7 @@
       "spec_references": [
         "e2e/adversarial_input_spam.spec.ts",
         "e2e/adversarial_reload_partial_state.spec.ts",
+        "e2e/adversarial_status_board_display.spec.ts",
         "e2e/repair_room_logging.spec.ts"
       ]
     },
@@ -1877,6 +1878,7 @@
         "e2e/journey.ts",
         "e2e/launch_with_research_params.spec.ts",
         "e2e/participant_lifecycle.spec.ts",
+        "e2e/side_repair_logging.spec.ts",
         "e2e/state_session_continuity.spec.ts"
       ]
     },
@@ -2079,8 +2081,11 @@
       "construct_id": null,
       "success": "unset",
       "scoring_input": false,
-      "code_references": [],
-      "spec_references": []
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/SideRepairScene.ts"
+      ],
+      "spec_references": ["e2e/side_repair_logging.spec.ts"]
     },
     "stabiliser_accepted": {
       "rooms": ["optional_side_repair_bay"],
@@ -2124,7 +2129,8 @@
         "e2e/helpers.ts",
         "e2e/interruption_corridor_logging.spec.ts",
         "e2e/repair_room_logging.spec.ts",
-        "e2e/scenario_pilot_route.spec.ts"
+        "e2e/scenario_pilot_route.spec.ts",
+        "e2e/side_repair_logging.spec.ts"
       ]
     },
     "station_hub_sealed_door_attempted": {

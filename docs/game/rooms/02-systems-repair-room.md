@@ -116,9 +116,30 @@ parity: archive-terminal context). Playwright spec
 verification is still owed in a playwright-game-verify pass** before any
 "works" claim.
 
+**FABLE-NEXT-03 status (2026-07-18)**: bounded multi-cycle difficulty
+sequence implemented (task B). Option labels, feedback string of the default
+path, legacy `repair_attempt`, the didRepeat check and the abandon/return
+pair are unchanged. Changes: every submitted sequence increments a
+session-lifetime `attempt_number` carried on the five canonical
+submission-family events; an unguided "Apply revised repair sequence"
+submission is a real distinct failing cycle (its identical resubmission logs
+`repair_same_sequence_repeated`); the revision succeeds only when
+manual-guided (panel manual option or manual station — both set the guidance
+flag, which persists across room exit/return like the didRepeat state); after
+completion the panel's sequence options never reopen (no duplicate
+completion, no attempt_number growth). Multi-cycle state lives in the
+module-scope `repairTaskState` (U2 factory) and resets only on reload —
+matching the documented reload semantics (`adversarial_reload_partial_state`).
+`repair_step_completed`/`repair_diagnostic_completed` stay CANDIDATES
+(event-schema decision, not built). Scoring formulas untouched;
+`adaptive_retry_count` and the `blind_retry_count` semantics re-check stay
+with the D2-family scoring pass.
+
 ## Anti-leakage note
 
 No PDD/Grit-S item wording (Q05, Q06, Q14, Q21, Q23-Q26) may appear in panel
 text, manual text, or option labels. Current labels ("Run default repair
 sequence", "Open repair manual", "Apply revised repair sequence") stay in-fiction
-— keep this register.
+— keep this register. The unguided-adjustment failure feedback ("The adjusted
+sequence fails. The calibration values do not match — the manual lists the
+current ones.") is in-fiction support signalling, not item wording.
