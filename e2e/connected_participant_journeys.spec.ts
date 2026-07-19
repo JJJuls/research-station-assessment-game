@@ -315,15 +315,24 @@ test.describe('connected participant journeys', () => {
     expect(missionAfterEngineer.skipped_duties).toContain('relay_supervision');
     expect(missionAfterEngineer.active_objectives).toEqual([]);
 
-    // Interruption: switch fully to the new request (task unfinished).
+    // Interruption: switch fully to the new request and actually run the
+    // competing junction task (NEXT-05 real mechanic). The duty was
+    // declined, so nothing is genuinely pending — the recorded
+    // no-opportunity state; no return/abandonment observation is
+    // interpretable on this journey.
     await hubToStationJourney(page, 'interruption_corridor');
     await openStationAlcove(page);
-    await selectPromptOption(page, 1);
+    await selectPromptOption(page, 1); // commit to the competing request
+    await driveAxisTo(page, 'x', 576, 12);
+    await press(page, 'Space'); // junction: switched_task at first interaction
+    await selectPromptOption(page, 1); // realign the feed
+    await selectPromptOption(page, 1); // confirm the realignment
     await stationToHubJourney(page, 'interruption_corridor');
 
-    expect((await missionState(page)).interruption_status).toBe(
-      'switched_away',
-    );
+    const missionAfterCorridor = await missionState(page);
+
+    expect(missionAfterCorridor.interruption_status).toBe('switched_away');
+    expect(missionAfterCorridor.competing_task_status).toBe('completed');
 
     // Repair: fail once, abandon (exit), return, leave unfinished again.
     await hubToStationJourney(page, 'systems_repair_room');
@@ -366,6 +375,7 @@ test.describe('connected participant journeys', () => {
       'inventory_prep_shortcut',
       'engineer_report_submitted_unprepared',
       'engineer_supervision_declined',
+      'goal_switch_accepted',
       'switched_task',
       'repair_failed',
       'repair_abandoned',
@@ -385,6 +395,14 @@ test.describe('connected participant journeys', () => {
     // Duty was declined, never active: no unresolved-duty event may fire.
     expect(types).not.toContain('accepted_duty_unresolved');
     expect(types).not.toContain('objective_active');
+    // NEXT-05 no-opportunity state: nothing was genuinely pending at the
+    // switch, so no return act and no prior-goal closure is interpretable —
+    // prior_goal_abandoned must NOT fire even though the switch never
+    // returned (only non-return with a valid original is negative).
+    expect(types).not.toContain('prior_goal_abandoned');
+    expect(types).not.toContain('return_to_unfinished_task');
+    expect(types).not.toContain('returned_to_original_task');
+    expect(types).not.toContain('prior_goal_completed');
     expect(types).not.toContain('final_core_stability_bonus');
 
     const reckless = events.find(

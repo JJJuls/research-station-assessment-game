@@ -339,6 +339,10 @@ export interface MissionStateLike {
   side_repair_status: string;
   interruption_status: string;
   final_core_status: string;
+  // FABLE-NEXT-05 additive corridor records.
+  competing_task_status: string;
+  relay_checkpoint_status: string;
+  switch_original_task_id: string;
 }
 
 /** Live mission state via the dev-only debug API (defensive copy). */
