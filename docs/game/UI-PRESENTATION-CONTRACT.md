@@ -128,8 +128,9 @@ condition is triggered**.
 
 1. Phase 1 — this contract (docs).
 2. Phase 2 — shared primitives (`renderPromptStage` card panel + hooks).
-3. Phase 3 — Inventory presentation (status side panel: requisition
-   checklist, carried slot, kit contents) + complete Inventory suite.
+3. Phase 3 — Inventory presentation (status side panel: carried slot +
+   bench contents; requisition display withheld pending SA-11) +
+   complete Inventory suite.
 4. Phase 4 — Repair / Side Repair / Engineer presentation (current-step
    and report-state panels) + suites.
 5. Phase 5 — Hazard / Interruption / Final Core presentation (status

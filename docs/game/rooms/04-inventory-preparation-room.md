@@ -334,7 +334,7 @@ to `tidy`/`disordered` → Final Core derives
 
 **FABLE-NEXT-06 presentation (2026-07-19)**: participant interactions
 run through the shared visual choice-card panel (mouse + keyboard;
-numeric keys retained as hidden dev/test shortcuts) - card panel + prep status side panel (requisition checklist, carried slot, bench contents).
+numeric keys retained as hidden dev/test shortcuts) - card panel + prep status side panel (carried slot + bench contents; the mandated requisition display is withheld pending SA-11 - a live packed-state list would pre-empt the checklist-consultation and verify-vs-skip measurements).
 Contract: `docs/game/UI-PRESENTATION-CONTRACT.md`. No event, payload,
 mapping, scoring or task-state change.
 
