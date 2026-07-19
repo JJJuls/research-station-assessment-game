@@ -157,9 +157,6 @@ previously-flaky pilot-route full run passes 3/3 at `--retries 0`.
   completed-station suffix)** implemented as resolved: "Vale" exists
   only as an internal texture-key name; the settled state is the
   absence of the pulse.
-- **Phase 7(a) vignette retained** — legibility review found the edge
-  falloff subtle (≈7% per channel at the extreme edge, zero at centre);
-  labels/panels render above it.
 
 ## 6. Reviewer outcomes (review-only agents, per §9 cadence)
 
