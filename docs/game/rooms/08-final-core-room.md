@@ -151,6 +151,12 @@ label only (`src/data/missionVocabulary.ts`), never a score. Spec
 `e2e/final_core_summary.spec.ts` authored compile-only —
 **runtime/browser verification still owed** before any "works" claim.
 
+**FABLE-NEXT-06 presentation (2026-07-19)**: participant interactions
+run through the shared visual choice-card panel (mouse + keyboard;
+numeric keys retained as hidden dev/test shortcuts) - card panel + minimal synchronization side panel (no flag list, no path labels by design).
+Contract: `docs/game/UI-PRESENTATION-CONTRACT.md`. No event, payload,
+mapping, scoring or task-state change.
+
 ## Anti-leakage note
 
 No responsibility/inappropriate-persistence/Goal-Time item wording (Q04, Q10,

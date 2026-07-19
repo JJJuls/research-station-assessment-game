@@ -67,7 +67,10 @@ plus "Press 1..N to choose." ceases to be the primary interaction.
   text).
 - **Status side panel** (Phases 3-5) — a compact, always-visible room
   state panel primitive (checklist rows / current-step / slot lines) used
-  by Inventory (requisition checklist, carried slot, bench contents),
+  by Inventory (carried slot + bench contents; the mandated requisition
+  display is SA-11 — a live packed-state list would pre-empt the
+  checklist-consultation and verify-vs-skip measurements, so nothing is
+  shown until the research owner rules),
   Repair (cycle count — deliberately NOT manual/guidance state, which
   would nudge and confound manual-use measurement), Side Repair
   (current-step indicator), Engineer (one-shot report state; duty outcome
@@ -112,7 +115,10 @@ drive `press(page, 'N')` therefore remain valid behavioural paths
 
 ## 5. Surfaces that cannot be converted without measurement change
 
-None identified. Every canonical surface is a selection among discrete
+One identified post-review: the task-mandated **Inventory requisition
+checklist display** cannot show live packed state without changing the
+measurement environment (SA-11 — research-owner ruling requested; the
+shipped panel conservatively omits it). All other conversions: Every canonical surface is a selection among discrete
 options whose semantics live in the selection handler, not the input
 device. No conversion requires a new event identifier, a changed observed
 moment, a scoring change, or a changed task outcome — **no operator stop

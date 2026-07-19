@@ -332,6 +332,12 @@ to `tidy`/`disordered` → Final Core derives
 `e2e/inventory_prep_logging.spec.ts` authored compile-only —
 **runtime/browser verification still owed** before any "works" claim.
 
+**FABLE-NEXT-06 presentation (2026-07-19)**: participant interactions
+run through the shared visual choice-card panel (mouse + keyboard;
+numeric keys retained as hidden dev/test shortcuts) - card panel + prep status side panel (requisition checklist, carried slot, bench contents).
+Contract: `docs/game/UI-PRESENTATION-CONTRACT.md`. No event, payload,
+mapping, scoring or task-state change.
+
 ## Anti-leakage note
 
 No organisation/BFI item wording (Q01-Q04, Q30) may appear in checklist text,

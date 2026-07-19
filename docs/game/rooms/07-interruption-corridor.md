@@ -218,6 +218,12 @@ competing objective with an observed return act.
   Final-Core-side frozen-gate discriminator (7 tests, payload pinning and
   once-per-session assertions throughout).
 
+**FABLE-NEXT-06 presentation (2026-07-19)**: participant interactions
+run through the shared visual choice-card panel (mouse + keyboard;
+numeric keys retained as hidden dev/test shortcuts) - card panel; deliberately NO side panel (map width + return-reminder measurement neutrality).
+Contract: `docs/game/UI-PRESENTATION-CONTRACT.md`. No event, payload,
+mapping, scoring or task-state change.
+
 ## Anti-leakage note
 
 No Grit-S Consistency of Interest / productiveness item wording (Q08, Q15,

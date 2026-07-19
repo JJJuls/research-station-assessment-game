@@ -156,6 +156,12 @@ strategy_revision_count=0`; abandon/return cycle logs exactly one
 `archive_abandoned` + one `archive_returned_after_failure`). Evidence:
 `docs/testing/slice-evidence/phaseD/`.
 
+**FABLE-NEXT-06 presentation (2026-07-19)**: participant interactions
+run through the shared visual choice-card panel (mouse + keyboard;
+numeric keys retained as hidden dev/test shortcuts) - card panel (all prompts).
+Contract: `docs/game/UI-PRESENTATION-CONTRACT.md`. No event, payload,
+mapping, scoring or task-state change.
+
 ## Anti-leakage note
 
 No Grit-S/BFI item wording (Q13, Q22-Q26) may appear in terminal text, feedback

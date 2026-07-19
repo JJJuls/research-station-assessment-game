@@ -183,6 +183,12 @@ offer:
   `final_core_summary.spec.ts` (accept→complete, accept→unresolved,
   no-duty paths — Q10 verified end-to-end).
 
+**FABLE-NEXT-06 presentation (2026-07-19)**: participant interactions
+run through the shared visual choice-card panel (mouse + keyboard;
+numeric keys retained as hidden dev/test shortcuts) - card panel + Report Desk status side panel (no pending-duty reminders by design).
+Contract: `docs/game/UI-PRESENTATION-CONTRACT.md`. No event, payload,
+mapping, scoring or task-state change.
+
 ## Anti-leakage note
 
 No responsibility/dependability item wording (Q09-Q11) may appear in Kai's

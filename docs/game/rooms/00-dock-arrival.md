@@ -115,6 +115,12 @@ Done test status: _participant can move and interact before construct tasks
 begin_ — **passes** (Playwright-verified, evidence in
 `docs/testing/slice-evidence/phaseB/`).
 
+**FABLE-NEXT-06 presentation (2026-07-19)**: participant interactions
+run through the shared visual choice-card panel (mouse + keyboard;
+numeric keys retained as hidden dev/test shortcuts) - card panel (all prompts).
+Contract: `docs/game/UI-PRESENTATION-CONTRACT.md`. No event, payload,
+mapping, scoring or task-state change.
+
 ## Anti-leakage note
 
 No validated questionnaire wording appears in this room's dialogue (it has no

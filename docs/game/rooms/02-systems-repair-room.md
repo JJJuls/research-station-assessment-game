@@ -135,6 +135,12 @@ matching the documented reload semantics (`adversarial_reload_partial_state`).
 `adaptive_retry_count` and the `blind_retry_count` semantics re-check stay
 with the D2-family scoring pass.
 
+**FABLE-NEXT-06 presentation (2026-07-19)**: participant interactions
+run through the shared visual choice-card panel (mouse + keyboard;
+numeric keys retained as hidden dev/test shortcuts) - card panel + Systems Bay cycle-status side panel (no manual/guidance display by design).
+Contract: `docs/game/UI-PRESENTATION-CONTRACT.md`. No event, payload,
+mapping, scoring or task-state change.
+
 ## Anti-leakage note
 
 No PDD/Grit-S item wording (Q05, Q06, Q14, Q21, Q23-Q26) may appear in panel

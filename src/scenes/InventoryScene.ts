@@ -257,13 +257,13 @@ export class InventoryScene extends RoomScene {
       return;
     }
 
-    const lines: string[] = ['PREP STATUS', '', 'Requisition:'];
-
-    for (const itemId of KIT_REQUIRED_ITEM_IDS) {
-      const packed = kitPreparationState.locations[itemId] === 'kit_crate';
-
-      lines.push(`${packed ? '[x]' : '[ ]'} ${getRegistryItem(itemId).label}`);
-    }
+    // SA-11 (research-owner ruling pending): the NEXT-06 task mandates a
+    // visible requisition checklist, but a live packed-state display
+    // pre-empts the checklist-consultation and verify-vs-skip
+    // measurements (research-data-review finding). Until ruled, the panel
+    // deliberately shows only the fiction-self-evident state: what is in
+    // hand and what is still on the bench. No requisition display here.
+    const lines: string[] = ['PREP STATUS'];
 
     const carried = carriedItemId();
 

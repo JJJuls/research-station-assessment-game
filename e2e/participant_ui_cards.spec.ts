@@ -242,9 +242,12 @@ test.describe('participant card panel (NEXT-06)', () => {
     let panel = await readPanel();
 
     expect(panel).toContain('PREP STATUS');
-    expect(panel).toContain('[ ] Torque Driver');
     expect(panel).toContain('(hands free)');
     expect(panel).toContain('Bench (8 out):');
+    // SA-11: no requisition/packed-state display until the research owner
+    // rules on the mandated checklist presentation (see ruling form).
+    expect(panel).not.toContain('Requisition');
+    expect(panel).not.toContain('[x]');
 
     // Engage per-item mode, take the first bench item: the carried slot
     // updates and the bench count drops.
@@ -262,8 +265,8 @@ test.describe('participant card panel (NEXT-06)', () => {
     await press(page, '1');
 
     panel = await readPanel();
-    expect(panel).toContain('[x] Torque Driver');
     expect(panel).toContain('(hands free)');
+    expect(panel).not.toContain('Torque Driver'); // packed, off bench, no ticks
 
     // The panel is read-only presentation: no research event may have
     // fired from rendering it (the placement event fired from the ACT).

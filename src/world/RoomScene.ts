@@ -559,11 +559,13 @@ export abstract class RoomScene extends Phaser.Scene {
   }
 
   /**
-   * Renders one prompt stage: numbered options in declared order, numeric
-   * keys 1..N (N ≤ 9), fixed panel geometry. For ≤3 options the panel and
-   * text are byte-identical to the V1-slice renderer (research constraint:
-   * prompt presentation must not vary between rooms or participants —
-   * option order is the author's declared order, never randomised).
+   * Renders one prompt stage as the FABLE-NEXT-06 card panel. Research
+   * constraint (unchanged in substance): presentation is uniform across
+   * rooms and participants — interaction salience must never vary — and
+   * options render in their declared order, never randomised or
+   * reordered. (The pre-NEXT-06 byte-identity constraint with the V1
+   * numbered-list renderer is consciously superseded by the
+   * UI-PRESENTATION-CONTRACT.)
    */
   private renderPromptStage(
     interactionKey: InteractionKey,

@@ -146,7 +146,7 @@ export class RepairScene extends RoomScene {
         ? '[x] repair logged'
         : cycles === 0
           ? '[ ] awaiting first sequence'
-          : '[ ] sequence rejected - revise',
+          : '[ ] sequence rejected',
       '',
       `Cycles logged: ${cycles}`,
     ];

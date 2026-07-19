@@ -144,6 +144,12 @@ decision, not an audit-first port) and cross-room `final_hazard_issue`
 (Final Core side; `hazard_status` now provides the SessionState source for
 that future pass).
 
+**FABLE-NEXT-06 presentation (2026-07-19)**: participant interactions
+run through the shared visual choice-card panel (mouse + keyboard;
+numeric keys retained as hidden dev/test shortcuts) - card panel + valence-neutral route side panel (continued/rerouted only).
+Contract: `docs/game/UI-PRESENTATION-CONTRACT.md`. No event, payload,
+mapping, scoring or task-state change.
+
 ## Anti-leakage note
 
 No prudence/inappropriate-persistence item wording (Q12, Q27, Q31) may appear in

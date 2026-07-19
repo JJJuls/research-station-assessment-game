@@ -277,7 +277,9 @@ Each records a conflict between the **approved newer rationale** (tier 2) and a
 
 | **SA-10** | **`task_completed_after_interruption` and the ignore branch (FABLE-NEXT-05).** The Q15 carrier fires at the original check-in's completion whenever the beacon interruption "occurred earlier in the session" — currently a temporal reading that includes the IGNORE branch (the participant saw the alert, ignored it, and later completed the check-in). Whether an ignored alert counts as "interrupted" for this shared-evidence carrier, or the event should be restricted to acknowledged/switched branches, is a trigger-semantics question the binding table leaves ambiguous. Deliberately not decided locally; current behaviour (temporal reading) is documented and spec-pinned on the acknowledge branch. | `src/scenes/InterruptionScene.ts` (completeCheckpoint); task file FABLE-NEXT-05 events table; room doc 07 | **Event-schema** |
 
-Request form: `docs/decisions/RESEARCH-OWNER-RULING-FORM.md` §SA-8, §SA-9, §SA-10.
+| **SA-11** | **Inventory requisition-checklist display (FABLE-NEXT-06).** The NEXT-06 task file mandates a visible "requisition checklist" in the Inventory visual interface, but a live packed-state display pre-empts the checklist-consultation measurement (`inventory_checklist_opened` is the only Q01 checklist-credit event) and the verify-vs-skip choice (`inventory_verified_complete` / `inventory_verification_skipped`), and makes the legacy "without checking the list" option incoherent. The shipped panel conservatively shows only fiction-self-evident state (carried slot, bench contents) with NO requisition display until ruled. Options: live ticks (accept + record the confound), static names-only list, checklist-action-gated display, or keep none. | `src/scenes/InventoryScene.ts` (refreshPrepStatusPanel SA-11 comment); NEXT-06 task file §B; UI-PRESENTATION-CONTRACT.md §2 | **Measurement-environment ruling** (event-schema unaffected) |
+
+Request form: `docs/decisions/RESEARCH-OWNER-RULING-FORM.md` §SA-8, §SA-9, §SA-10, §SA-11.
 
 ### 9.2 Pre-existing open decisions (unchanged by this pass)
 

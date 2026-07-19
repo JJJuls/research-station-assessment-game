@@ -359,6 +359,27 @@ branch context stays recoverable from the co-logged branch events either way).
 
 ---
 
+## SA-11 — Inventory requisition-checklist display (FABLE-NEXT-06)
+
+Added by the FABLE-NEXT-06 unit. The task file mandates a visible
+"requisition checklist" in the Inventory visual interface; the
+research-data review found that a live packed-state display pre-empts the
+checklist-consultation (Q01 credit) and verify-vs-skip measurements. The
+shipped panel conservatively shows only the carried slot and bench
+contents (no requisition display) until this ruling.
+
+**SA-11.1 Requisition display** — permitted:
+`none (as shipped)` / `static names-only list` /
+`live [x]/[ ] packed-state ticks (accept + record the confound)` /
+`display gated behind a checklist action` / `custom`.
+`«REC» static names-only list` (satisfies the task-file mandate; the
+required-item names are already freely available via item destination
+tags, while packed-state ticks would newly pre-empt verification).
+
+- Selected: `__________` — APPROVED / NOT APPROVED
+
+---
+
 ## Sign-off
 
 - INT-1 complete: APPROVED / NOT APPROVED

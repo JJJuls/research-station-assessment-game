@@ -164,6 +164,12 @@ analogous to the Systems Repair Q24/Q25 abandon/return pair
 interruption-driven accidental exit becomes an irreversible abandonment
 record.
 
+**FABLE-NEXT-06 presentation (2026-07-19)**: participant interactions
+run through the shared visual choice-card panel (mouse + keyboard;
+numeric keys retained as hidden dev/test shortcuts) - card panel + Side Bay current-step side panel.
+Contract: `docs/game/UI-PRESENTATION-CONTRACT.md`. No event, payload,
+mapping, scoring or task-state change.
+
 ## Anti-leakage note
 
 No productiveness/Grit-S/Goal-Time item wording (Q07, Q16, Q20, Q29, Q32) may
