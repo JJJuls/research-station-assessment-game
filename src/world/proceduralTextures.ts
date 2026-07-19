@@ -347,6 +347,27 @@ function drawPanelWarning(g: Graphics) {
   rect(g, 32, 42, 6, 4, OUTLINE);
 }
 
+/**
+ * Comms beacon family (Phase 4c): tall thin mast — base, pole, cross
+ * rungs, offset dish. Used by the Comms Beacon and (nearest honest
+ * family, §5) the Antenna Junction. Cyan tip light = interactable cue.
+ */
+function drawBeaconComms(g: Graphics) {
+  // Base plinth.
+  box(g, 8, 52, 16, 8, CARD, BORDER);
+  // Mast pole.
+  box(g, 14, 8, 4, 44, BORDER, MUTED);
+  // Cross rungs.
+  rect(g, 8, 16, 16, 2, BORDER);
+  rect(g, 10, 28, 12, 2, BORDER);
+  rect(g, 8, 40, 16, 2, BORDER);
+  // Offset relay dish.
+  box(g, 20, 18, 8, 7, CARD, MUTED);
+  rect(g, 22, 20, 4, 3, PANEL);
+  // Cyan tip light (interactable cue; static, no flashing).
+  rect(g, 14, 5, 4, 3, ACCENT);
+}
+
 interface TextureBuilder {
   width: number;
   height: number;
@@ -378,6 +399,7 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   'proc-crate-fieldkit': { width: 48, height: 48, draw: drawCrateFieldKit },
   'proc-console-scenario': { width: 48, height: 52, draw: drawConsoleScenario },
   'proc-panel-warning': { width: 48, height: 48, draw: drawPanelWarning },
+  'proc-beacon-comms': { width: 32, height: 64, draw: drawBeaconComms },
 };
 
 /** Fixed manifest (key → dimensions) for determinism coverage. */

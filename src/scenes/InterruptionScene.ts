@@ -133,6 +133,7 @@ export class InterruptionScene extends RoomScene {
       label: 'Comms Beacon',
       x: 12 * 32,
       y: 2.5 * 32,
+      texture: 'proc-beacon-comms',
       promptBody:
         'A new comms alert interrupts your current station work with a different request: the auxiliary antenna feed at the corridor junction has drifted off-axis and needs a manual realignment — a task of comparable size to your current work. How do you respond?',
       onPromptOpened: () => {
@@ -162,6 +163,7 @@ export class InterruptionScene extends RoomScene {
       label: 'Relay Checkpoint',
       x: 6 * 32,
       y: 2.5 * 32,
+      texture: 'proc-console-wall',
       promptBody:
         'Relay checkpoint — the supervision log is due for a check-in.',
       onPromptOpened: () => this.onCheckpointOpened(),
@@ -173,6 +175,7 @@ export class InterruptionScene extends RoomScene {
       label: 'Antenna Junction',
       x: 18 * 32,
       y: 2.5 * 32,
+      texture: 'proc-beacon-comms',
       promptBody: 'Auxiliary antenna feed access panel.',
       onPromptOpened: () => this.onJunctionOpened(),
     });
@@ -182,6 +185,7 @@ export class InterruptionScene extends RoomScene {
       x: 12 * 32, // center of the bottom '--'
       y: 7 * 32 + 16,
       label: 'Station Hub',
+      texture: 'prop-hub-door-frame',
       interactionKey: 'interruptionCorridor',
       target: {
         sceneKey: key.scene.hub,

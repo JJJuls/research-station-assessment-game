@@ -33,6 +33,7 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-crate-fieldkit': { width: 48, height: 48 },
   'proc-console-scenario': { width: 48, height: 52 },
   'proc-panel-warning': { width: 48, height: 48 },
+  'proc-beacon-comms': { width: 32, height: 64 },
 };
 
 interface ProcTexturesProbe {
