@@ -139,13 +139,16 @@ export class InventoryScene extends RoomScene {
   }
 
   protected populateRoom(): void {
-    // Quartermaster console (top-center alcove). No committed texture for
-    // this room in outpost-assets-v1 — placeholder marker by design.
+    // Quartermaster console (top-center alcove). NEXT-07 Phase 2:
+    // procedural wall-console texture; position, radius, label, prompt
+    // strings and events unchanged (art swaps never alter interaction
+    // regions).
     this.addStation({
       interactionKey: 'inventoryPrepChecklist',
       label: 'Quartermaster Console',
       x: 10 * 32,
       y: 5.5 * 32,
+      texture: 'proc-console-quartermaster',
       promptBody:
         'The checklist system asks you to prepare a repair kit before the next station cycle. How do you proceed?',
       onPromptOpened: () => {
@@ -174,6 +177,7 @@ export class InventoryScene extends RoomScene {
       label: 'Hand Tools Rack',
       x: 4 * 32,
       y: 2 * 32,
+      texture: 'proc-rack-tools',
       promptBody: 'Labelled station storage.',
       onPromptOpened: () => this.openPerItemStation(),
     });
@@ -182,6 +186,7 @@ export class InventoryScene extends RoomScene {
       label: 'Consumables Bin',
       x: 10 * 32,
       y: 2 * 32,
+      texture: 'proc-bin-consumables',
       promptBody: 'Labelled station storage.',
       onPromptOpened: () => this.openPerItemStation(),
     });
@@ -190,6 +195,7 @@ export class InventoryScene extends RoomScene {
       label: 'Electronics Shelf',
       x: 16 * 32,
       y: 2 * 32,
+      texture: 'proc-shelf-electronics',
       promptBody: 'Labelled station storage.',
       onPromptOpened: () => this.openPerItemStation(),
     });
@@ -198,6 +204,7 @@ export class InventoryScene extends RoomScene {
       label: 'Prep Bench',
       x: 16 * 32,
       y: 7.5 * 32,
+      texture: 'proc-bench-prep',
       promptBody:
         'Requisition gear is staged on the bench, each piece tagged for the kit or a storage rack.',
       onPromptOpened: () => this.openPerItemStation(),
@@ -207,6 +214,7 @@ export class InventoryScene extends RoomScene {
       label: 'Field Kit Crate',
       x: 6 * 32,
       y: 10.5 * 32,
+      texture: 'proc-crate-fieldkit',
       promptBody: 'The field kit crate sits open, ready to pack.',
       onPromptOpened: () => this.openPerItemStation(),
     });
@@ -228,11 +236,23 @@ export class InventoryScene extends RoomScene {
       }),
     );
 
+    // NEXT-07 Phase 2 dressing. The Quartermaster figure stands beside
+    // (east of) the console — non-colliding, non-interactive decor with
+    // no label (D-N07-1 resolved default: the console label carries the
+    // role) and no cyan, clear of the bin-approach corridors (x 192-256
+    // and 384-448) and of the console's south approach. Committed props
+    // dress the flanking storage blocks (A2 reuse, visual plan §3.5),
+    // duller than the room's stations.
+    this.addDecor(372, 176, 'proc-npc-vale');
+    this.addDecor(96, 128, 'prop-dock-crates');
+    this.addDecor(512, 128, 'prop-archive-shelves');
+
     // Door back to the Station Hub.
     this.addDoor({
       x: 10 * 32, // center of the bottom '--'
       y: 11 * 32 + 16,
       label: 'Station Hub',
+      texture: 'prop-hub-door-frame',
       interactionKey: 'inventoryPrepChecklist',
       target: {
         sceneKey: key.scene.hub,
