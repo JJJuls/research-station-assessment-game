@@ -113,6 +113,7 @@ test.describe('pilot four-scenario route', () => {
     await openStationAlcove(page);
     await waitForEventCount(page, 'engineer_report_opened', 'engineer', 1);
     await selectPromptOption(page, 2); // review evidence, then report
+    await selectPromptOption(page, 4); // NEXT-04 content stage: accurate claim
     await waitForEventCount(
       page,
       'engineer_supervision_assigned',

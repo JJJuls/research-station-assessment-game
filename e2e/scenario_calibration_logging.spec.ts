@@ -275,7 +275,8 @@ test.describe('pilot scenario: calibration anomaly', () => {
     // — Legacy Kai report still works beside the scenario station —
     await openStationAlcove(page);
     await waitForEventCount(page, 'engineer_report_opened', 'engineer', 1);
-    await selectPromptOption(page, 1); // quick report -> duty offer chains
+    await selectPromptOption(page, 1); // quick report -> content stage chains
+    await selectPromptOption(page, 1); // NEXT-04 content stage -> duty offer
     await waitForEventCount(
       page,
       'engineer_supervision_assigned',
