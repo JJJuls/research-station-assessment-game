@@ -367,4 +367,59 @@ test.describe('participant card panel (NEXT-06)', () => {
     expect(panel).toContain('Step 1 of 3');
     expect(panel).toContain('fetch the component');
   });
+
+  test('hazard and core status panels stay valence-neutral (phase 5)', async ({
+    page,
+  }) => {
+    test.setTimeout(300_000);
+
+    await bootGame(page, {
+      participant_id: 'E2E_UI',
+      game_session_id: 'E2E_UI_S7',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+
+    const readPanel = () =>
+      page.evaluate(
+        () =>
+          (window as unknown as { __roomStatusText?: string | null })
+            .__roomStatusText ?? null,
+      );
+
+    // Hazard: the reckless branch renders the SAME neutral label as the
+    // informed branch — no moral/construct language anywhere.
+    await hubToStationDoor(page, 'hazard_control_room');
+    await waitForRoomEntry(page, 'hazard_room_entered');
+
+    let panel = await readPanel();
+
+    expect(panel).toContain('HAZARD CONTROL');
+    expect(panel).toContain('[ ] undecided');
+
+    await hold(page, 'ArrowUp', 900);
+    await press(page, 'Space');
+    await press(page, '2'); // continue WITHOUT checking (reckless branch)
+
+    panel = await readPanel();
+    expect(panel).toContain('[x] continued');
+    expect(panel!.toLowerCase()).not.toContain('reckless');
+    expect(panel!.toLowerCase()).not.toContain('informed');
+
+    // Final Core: synchronization state only — no flag list, no path
+    // labels (blocked here by the route gate, which is exactly the point:
+    // the panel must not leak more than the interface shows).
+    await hold(page, 'ArrowDown', 2200);
+    await press(page, 'Space');
+    await waitForRoomEntry(page, 'station_hub_entered');
+    await hubToStationDoor(page, 'final_core_room');
+    await waitForRoomEntry(page, 'final_core_entered');
+
+    panel = await readPanel();
+    expect(panel).toContain('CORE CHAMBER');
+    expect(panel).toContain('[ ] pending');
+    expect(panel!.toLowerCase()).not.toContain('quality');
+    expect(panel!.toLowerCase()).not.toContain('flag');
+  });
 });

@@ -67,10 +67,23 @@ plus "Press 1..N to choose." ceases to be the primary interaction.
   text).
 - **Status side panel** (Phases 3-5) — a compact, always-visible room
   state panel primitive (checklist rows / current-step / slot lines) used
-  by Inventory (requisition checklist, carried slot, kit contents), Repair
-  and Side Repair (current step / cycle), Engineer (report state), and
-  Final Core (status flags). Read-only rendering of existing SessionState /
-  room task state; never a new input surface, never a score display.
+  by Inventory (requisition checklist, carried slot, bench contents),
+  Repair (cycle count — deliberately NOT manual/guidance state, which
+  would nudge and confound manual-use measurement), Side Repair
+  (current-step indicator), Engineer (one-shot report state; duty outcome
+  only after the offer was decided — no pending reminders), Hazard
+  (valence-neutral route state: continued/rerouted, never
+  informed/reckless), and Final Core (synchronization state only — the
+  outstanding-flag list stays exclusive to the interface's blocker
+  display so the panel never pre-empts the "review status" choice).
+  Read-only rendering of existing SessionState / room task state; never a
+  new input surface, never a score display.
+  **The Interruption Corridor deliberately has NO status side panel**:
+  (a) its 768px-wide map leaves no viewport margin, and (b) a persistent
+  corridor panel would act as a pending-original reminder cue and alter
+  the return-to-task measurement environment (same reasoning as the
+  skipped duty-roster competing-task label). Corridor state is conveyed
+  by the three station labels and the in-fiction prompt bodies only.
 
 ## 3. Retained numeric mappings (hidden)
 

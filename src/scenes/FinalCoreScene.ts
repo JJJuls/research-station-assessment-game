@@ -119,7 +119,39 @@ export class FinalCoreScene extends RoomScene {
     return { x: 10 * 32, y: 8.5 * 32 };
   }
 
+  /**
+   * FABLE-NEXT-06 Phase 5: read-only core status side panel (shared
+   * primitive). Deliberately MINIMAL: only the synchronization one-shot
+   * state. The outstanding-issue list stays exclusive to the interface's
+   * blocker display - a persistent flag list would pre-empt the "review
+   * station status" choice (Q11 measurement); completion-path labels
+   * carry valence and are never shown.
+   */
+  private statusPanel: { setText: (value: string) => void } | null = null;
+
+  private refreshStatusPanel(): void {
+    if (this.statusPanel === null) {
+      return;
+    }
+
+    this.statusPanel.setText(
+      [
+        'CORE CHAMBER',
+        '',
+        'Synchronization:',
+        this.isFinalCoreCompleted() ? '[x] complete' : '[ ] pending',
+      ].join('\n'),
+    );
+  }
+
+  protected onRoomUpdate(): void {
+    this.refreshStatusPanel();
+  }
+
   protected populateRoom(): void {
+    this.statusPanel = this.addStatusSidePanel();
+    this.refreshStatusPanel();
+
     const config = {
       interactionKey: 'finalCoreIntegration' as InteractionKey,
       label: 'Core Interface',

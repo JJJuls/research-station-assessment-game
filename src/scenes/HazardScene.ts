@@ -97,7 +97,45 @@ export class HazardScene extends RoomScene {
     return { x: 10 * 32, y: 8.5 * 32 };
   }
 
+  /**
+   * FABLE-NEXT-06 Phase 5: read-only hazard status side panel (shared
+   * primitive). Deliberately VALENCE-NEUTRAL: the route decision is shown
+   * as continued/rerouted only - never "informed"/"reckless" (moral or
+   * construct labelling is forbidden), and whether information was
+   * checked is never displayed (it is the measurement).
+   */
+  private statusPanel: { setText: (value: string) => void } | null = null;
+
+  private refreshStatusPanel(): void {
+    if (this.statusPanel === null) {
+      return;
+    }
+
+    const status = researchRuntime.sessionState.getMissionState().hazard_status;
+    const lines = ['HAZARD CONTROL', '', 'Sector route:'];
+
+    if (
+      status === HAZARD_STATUS_INFORMED_CONTINUE ||
+      status === HAZARD_STATUS_RECKLESS_CONTINUE
+    ) {
+      lines.push('[x] continued');
+    } else if (status === HAZARD_STATUS_ROUTE_AVOIDED) {
+      lines.push('[x] rerouted');
+    } else {
+      lines.push('[ ] undecided');
+    }
+
+    this.statusPanel.setText(lines.join('\n'));
+  }
+
+  protected onRoomUpdate(): void {
+    this.refreshStatusPanel();
+  }
+
   protected populateRoom(): void {
+    this.statusPanel = this.addStatusSidePanel();
+    this.refreshStatusPanel();
+
     // Hazard alert terminal (top-center alcove). Placeholder marker by
     // design — no committed texture for this room in outpost-assets-v1;
     // art is a future PixelLab decision. Label matches the prototype
