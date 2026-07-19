@@ -35,9 +35,22 @@ objective remains active. A door controller and mission checklist track state.
 
 ## Valid choices/actions (current)
 
-- Switch fully to the new request and leave the previous task.
+At the Comms Beacon (legacy options verbatim):
+
+- Switch fully to the new request and leave the previous task (the commit —
+  the competing task then actually becomes available at the Antenna Junction).
 - Acknowledge the alert, then return to the unfinished station task.
 - Ignore the alert completely and continue without checking it.
+
+At the Antenna Junction (FABLE-NEXT-05, after a committed switch): realign the
+feed, then confirm — the competing task actually runs (two chained
+interactions).
+
+At the Relay Checkpoint (FABLE-NEXT-05, while the accepted relay-supervision
+duty is active): review the relay log, then log the check-in as complete —
+re-engaging it after a committed switch is the observed return act; completing
+it is the original objective's completion interaction. The checkpoint stays
+available until Final Core (the guaranteed later return opportunity).
 
 ## Canonical events
 
@@ -49,11 +62,15 @@ objective remains active. A door controller and mission checklist track state.
 `task_avoidance`, `excessive_idle_after_instruction`.
 
 Current-to-canonical alias table: `docs/research/event-schema.md` §4,
-"Interruption Corridor" — only 1 exact match (`returned_to_original_task`).
-Several current events (`interruption_focus_lost`, `interruption_focus_maintained`,
-`interruption_possible_rigidity`) assert an interpretation at log time rather
-than logging raw behaviour — flagged as a design smell to fix during this
-room's rebuild (see `scoring-plan.md` §9).
+"Interruption Corridor" — since FABLE-NEXT-05 the canonical offer, commit,
+switch, return and completion events are all emitted at observed moments (see
+the table's per-row triggers and the SA-9 co-fire flag). The legacy
+derived-style events (`interruption_focus_lost`,
+`interruption_focus_maintained`, `interruption_possible_rigidity` and
+siblings) keep firing verbatim at their dialogue moments —
+`interruption_focus_lost`/`interruption_alert_acknowledged` are consumed by
+ScoringManager summary formulas; the raw-vs-derived cleanup stays D2-family
+work (`scoring-plan.md` §9).
 
 ## Derived variables
 
@@ -131,6 +148,75 @@ mechanics), `final_unresolved_due_to_nonreturn` (Final Core beat),
 alone is never penalised). Spec
 `e2e/interruption_corridor_logging.spec.ts` authored compile-only —
 **runtime/browser verification still owed** before any "works" claim.
+
+**FABLE-NEXT-05 status (2026-07-19)**: corridor rebuilt around a genuinely
+competing objective with an observed return act.
+
+- Stations: Comms Beacon (center, offer — legacy options/labels/feedback/
+  event sequences verbatim; prompt body now offers the competing task
+  concretely with balanced framing), Relay Checkpoint (west,
+  `object_id: relay_checkpoint`), Antenna Junction (east,
+  `object_id: aux_antenna_junction`). Two additive `researchInteractions`
+  entries (sideRepairPartsShelf precedent).
+- The original objective is the relay check-in, genuinely pending while the
+  accepted relay-supervision duty is active (`relay_checkpoint_status`
+  `pending`, set lazily on corridor entry; the duty itself and its Q10
+  events at Engineer Hub / Final Core are untouched). The competing task is
+  the antenna realignment (`competing_task_status`); its completion has NO
+  canonical event (none schema-listed — recorded in state only).
+- Canonical observed moments (schema §4 per-row triggers, task-file binding
+  table): `new_goal_offered` at beacon open (beside the frozen
+  `interruption_received`; metadata framing/original_task_id/
+  competing_task_id — `original_task_id: null` records the no-opportunity
+  state; the formal spec §8.2 opportunity-flag convention stays open);
+  `goal_switch_accepted` at the switch commit; `switched_task` at the
+  junction's first interaction; `return_to_unfinished_task` +
+  `returned_to_original_task` co-fired at the physical return act (**SA-9**:
+  co-fire vs fold is a research-owner decision — not decided locally);
+  `prior_goal_completed` (+ `task_completed_after_interruption` when the
+  interruption occurred earlier) at check-in completion;
+  `prior_goal_abandoned` at Final-Core-bound closure (FinalCoreScene,
+  completion-time, only with a genuinely-pending never-completed original).
+- interruption_status: legacy writes verbatim; additive transition —
+  completing the check-in after a committed switch settles `switched_away`
+  → `returned_to_task`, so `final_unresolved_due_to_nonreturn` (entry) and
+  `prior_goal_abandoned` (completion) reflect the observed return. Known
+  edge: entering Final Core while switched-away fires the entry flag even
+  if the player then walks back and completes the check-in before
+  finishing (entry-time vs completion-time observations stay
+  distinguishable; documented in schema §4).
+- Duty-roster HUD: deliberately NOT extended with a competing-task label —
+  the HUD is a single-line pilot-route tracker with exact-string spec pins;
+  the optional label (task file: "may gain") was skipped to avoid
+  destabilising the route-gate pins. Station labels provide the in-room
+  visibility.
+- Q29/Q31 (SA-3) dependency: corridor entry order stays configurable — the
+  corridor imposes no ordering constraint on any future horizon-choice
+  module; nothing here logs before/after any other room by design.
+- Commit-time opportunity freeze: `switch_original_task_id` (additive
+  SessionState) records whether the check-in was genuinely pending at the
+  switch commit; the return act, the status settle and Final Core's
+  `prior_goal_abandoned` are gated on this frozen value (a duty accepted
+  after an opportunity-less switch never retroactively creates the
+  observation). Once Final Core completes, the checkpoint no longer opens
+  (terminal closure guard — late acts can never contradict the emitted
+  closure).
+- Residual trigger ambiguity flagged as **SA-10** (research owner):
+  `task_completed_after_interruption` currently fires on ANY earlier beacon
+  interruption, including the ignore branch (temporal reading of "an
+  interruption occurred earlier in the session") — whether the ignore
+  branch counts as "interrupted" for the Q15 carrier is not decided
+  locally.
+- Deliberately unemitted: `competing_task_viewed` (D6 — legacy
+  `interruption_alert_acknowledged` kept as-is), `task_deferred`
+  (CANDIDATE), `task_started` (D7), `excessive_idle_after_instruction`
+  (D3).
+- Spec `e2e/interruption_corridor_logging.spec.ts` rebuilt: switched-and-
+  returned arc, switch-never-return Final Core closure (incl. terminal
+  guard), acknowledge-and-complete, ignore one-shot, no-opportunity
+  session, duty-after-switch frozen gate at the checkpoint, and the
+  Final-Core-side frozen-gate discriminator (7 tests, payload pinning and
+  once-per-session assertions throughout).
 
 ## Anti-leakage note
 

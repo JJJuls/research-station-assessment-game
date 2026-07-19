@@ -319,6 +319,46 @@ information).
 
 ---
 
+## SA-9 — Interruption return-act co-fire (FABLE-NEXT-05)
+
+Added by the FABLE-NEXT-05 unit. The observed physical return act (re-engaging
+the Relay Checkpoint after a committed switch while the original check-in is
+still pending) currently co-fires `return_to_unfinished_task` (Q15,
+adaptive_persistence) and `returned_to_original_task` (Q17, CI-exploratory) at
+the same moment — one shared observation carrying two Q-items, per the task
+file's binding trigger table. Shared-evidence rule applies either way: this
+moment must never be analysed as two independent observations (spec §8).
+
+**SA-9.1 Return-act event shape** — permitted:
+`keep the co-fire (both names, shared-evidence documented)` /
+`fold returned_to_original_task into return_to_unfinished_task (single Q15+Q17 event)` /
+`fold return_to_unfinished_task into returned_to_original_task` / `custom`.
+`«REC» keep the co-fire` (already emitted and spec-pinned; a fold is a
+lossless rename the D2-family pass can still apply downstream).
+
+- Selected: `__________` — APPROVED / NOT APPROVED
+
+---
+
+## SA-10 — `task_completed_after_interruption` trigger scope (FABLE-NEXT-05)
+
+Added by the FABLE-NEXT-05 unit. The Q15 shared-evidence carrier fires with
+`prior_goal_completed` when the beacon interruption "occurred earlier in the
+session". The live implementation reads this temporally: ANY earlier beacon
+decision counts, including the ignore branch. The alternative reading
+restricts it to sessions where the participant actually engaged the
+interruption (acknowledge or switch).
+
+**SA-10.1 Trigger scope** — permitted:
+`temporal (any earlier beacon decision, as implemented)` /
+`engaged-only (acknowledge or switch branches)` / `custom`.
+`«REC» temporal` (the alert exposure itself is the interruption stimulus;
+branch context stays recoverable from the co-logged branch events either way).
+
+- Selected: `__________` — APPROVED / NOT APPROVED
+
+---
+
 ## Sign-off
 
 - INT-1 complete: APPROVED / NOT APPROVED

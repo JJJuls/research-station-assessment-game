@@ -10,8 +10,8 @@
       "registered": 90,
       "scoring_inputs": 57,
       "summary_variables": 59,
-      "with_code_references": 146,
-      "with_spec_references": 148
+      "with_code_references": 151,
+      "with_spec_references": 152
     }
   },
   "events": {
@@ -26,7 +26,8 @@
       "spec_references": [
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/engineer_hub_logging.spec.ts",
-        "e2e/final_core_summary.spec.ts"
+        "e2e/final_core_summary.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
       ]
     },
     "archive_abandoned": {
@@ -664,6 +665,7 @@
       "spec_references": [
         "e2e/adversarial_status_board_display.spec.ts",
         "e2e/final_core_summary.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts",
         "e2e/research_export_test_mode.spec.ts",
         "e2e/scenario_pilot_route.spec.ts",
         "e2e/scenario_route_gate.spec.ts"
@@ -680,6 +682,7 @@
       "spec_references": [
         "e2e/connected_world_smoke.spec.ts",
         "e2e/final_core_summary.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts",
         "e2e/research_export_test_mode.spec.ts",
         "e2e/scenario_pilot_route.spec.ts"
       ]
@@ -937,7 +940,8 @@
       "code_references": ["src/scenes/FinalCoreScene.ts"],
       "spec_references": [
         "e2e/connected_participant_journeys.spec.ts",
-        "e2e/final_core_summary.spec.ts"
+        "e2e/final_core_summary.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
       ]
     },
     "first_interaction": {
@@ -967,8 +971,11 @@
       "construct_id": "consistency_of_interest_exploratory",
       "success": "unset",
       "scoring_input": false,
-      "code_references": [],
-      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+      "code_references": ["src/scenes/InterruptionScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
+      ]
     },
     "hazard_avoidance": {
       "rooms": ["hazard_control_room"],
@@ -1571,8 +1578,8 @@
       "construct_id": "consistency_of_interest_exploratory",
       "success": "unset",
       "scoring_input": false,
-      "code_references": [],
-      "spec_references": []
+      "code_references": ["src/scenes/InterruptionScene.ts"],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
     },
     "objective_active": {
       "rooms": ["interruption_corridor"],
@@ -1618,14 +1625,17 @@
       "spec_references": []
     },
     "prior_goal_abandoned": {
-      "rooms": ["interruption_corridor"],
+      "rooms": ["interruption_corridor", "final_core_room"],
       "registered": true,
       "study_item_ids": ["Q19"],
       "construct_id": "consistency_of_interest_exploratory",
       "success": "unset",
       "scoring_input": false,
-      "code_references": ["src/scenes/InterruptionScene.ts"],
-      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+      "code_references": ["src/scenes/FinalCoreScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
+      ]
     },
     "prior_goal_completed": {
       "rooms": ["interruption_corridor"],
@@ -1634,8 +1644,11 @@
       "construct_id": "consistency_of_interest_exploratory",
       "success": "unset",
       "scoring_input": false,
-      "code_references": [],
-      "spec_references": []
+      "code_references": ["src/scenes/InterruptionScene.ts"],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
+      ]
     },
     "qualtrics_return_previewed": {
       "rooms": ["scoring_layer"],
@@ -1852,8 +1865,14 @@
       "construct_id": "adaptive_persistence",
       "success": "unset",
       "scoring_input": false,
-      "code_references": [],
-      "spec_references": []
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/InterruptionScene.ts"
+      ],
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
+      ]
     },
     "returned_to_original_task": {
       "rooms": ["interruption_corridor"],
@@ -1863,7 +1882,10 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": ["src/scenes/InterruptionScene.ts"],
-      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
+      "spec_references": [
+        "e2e/connected_participant_journeys.spec.ts",
+        "e2e/interruption_corridor_logging.spec.ts"
+      ]
     },
     "scene_start": {
       "rooms": ["system"],
@@ -2163,7 +2185,10 @@
       "construct_id": "consistency_of_interest_exploratory",
       "success": "unset",
       "scoring_input": false,
-      "code_references": ["src/scenes/InterruptionScene.ts"],
+      "code_references": [
+        "src/data/researchInteractions.ts",
+        "src/scenes/InterruptionScene.ts"
+      ],
       "spec_references": [
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/interruption_corridor_logging.spec.ts"
@@ -2190,8 +2215,8 @@
       "construct_id": "adaptive_persistence",
       "success": "unset",
       "scoring_input": false,
-      "code_references": [],
-      "spec_references": []
+      "code_references": ["src/scenes/InterruptionScene.ts"],
+      "spec_references": ["e2e/interruption_corridor_logging.spec.ts"]
     },
     "task_started": {
       "rooms": ["archive_room", "systems_repair_room", "interruption_corridor"],
@@ -2201,7 +2226,10 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": [],
-      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+      "spec_references": [
+        "e2e/interruption_corridor_logging.spec.ts",
+        "e2e/repair_room_logging.spec.ts"
+      ]
     },
     "tutorial_completed": {
       "rooms": ["dock_arrival"],
@@ -2307,8 +2335,8 @@
       },
       {
         "id": "Q15",
-        "gap": "return_to_unfinished_task / task_completed_after_interruption need a real return-route mechanic",
-        "blocked_by": "task-design (user-owned)"
+        "gap": "closed by FABLE-NEXT-05: the return act and post-interruption completion are observed at the Relay Checkpoint (SA-9 co-fire question open)",
+        "blocked_by": "none (SA-9 co-fire ruling pending)"
       },
       {
         "id": "Q16",
@@ -2322,8 +2350,8 @@
       },
       {
         "id": "Q19",
-        "gap": "new_goal_offered / goal_switch_accepted / prior_goal_completed need real objective mechanics",
-        "blocked_by": "task-design (user-owned)"
+        "gap": "closed by FABLE-NEXT-05: offer/commit/completion observed at real stations; prior_goal_abandoned moved to Final-Core-bound closure (final_core_room emission)",
+        "blocked_by": "none"
       }
     ],
     "events_without_approved_mappings": [
@@ -2732,10 +2760,10 @@
         "started_task_completion_rate"
       ],
       "operationalisation": "partial",
-      "gaps": [
-        "return_to_unfinished_task and task_completed_after_interruption unemitted — need a real return-route/objective mechanic (a dialogue assertion is not a return act)"
-      ],
-      "unresolved_decisions": []
+      "gaps": [],
+      "unresolved_decisions": [
+        "SA-9: return-act co-fire (return_to_unfinished_task Q15 + returned_to_original_task Q17) — keep or fold; shared evidence either way"
+      ]
     },
     {
       "id": "Q16",
@@ -2800,7 +2828,7 @@
       "construct_id": "consistency_of_interest_exploratory",
       "construct_label": "Grit-S CI / changes goals before finishing (reverse)",
       "proxy_status": "weak_exploratory",
-      "rooms": ["interruption_corridor"],
+      "rooms": ["interruption_corridor", "final_core_room"],
       "events": [
         "new_goal_offered",
         "goal_switch_accepted",
@@ -2809,10 +2837,10 @@
       ],
       "canonical_derived_variables": ["goal_switch_without_return_count"],
       "operationalisation": "partial",
-      "gaps": [
-        "only prior_goal_abandoned is emitted; the other three need real objective mechanics (task-design decision)"
-      ],
-      "unresolved_decisions": []
+      "gaps": [],
+      "unresolved_decisions": [
+        "prior_goal_abandoned emits at Final-Core-bound closure (final_core_room context) gated on the commit-time frozen opportunity state; no-opportunity sessions are excluded via metadata.original_task_id null"
+      ]
     },
     {
       "id": "Q20",

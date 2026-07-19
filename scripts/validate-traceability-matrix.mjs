@@ -172,6 +172,10 @@ const SEED_EVENTS = [
 
 const ROOM_OVERRIDES = {
   accepted_duty_unresolved: ['engineer_hub', 'final_core_room'],
+  // FABLE-NEXT-05: Final-Core-bound closure — emitted by FinalCoreScene at
+  // completion time with final_core_room context (the corridor's dialogue
+  // moment keeps only the legacy name).
+  prior_goal_abandoned: ['interruption_corridor', 'final_core_room'],
   engineer_supervision_completed: ['final_core_room'],
   final_unresolved_due_to_nonreturn: ['final_core_room'],
   manual_page_reviewed: ['systems_repair_room'],
