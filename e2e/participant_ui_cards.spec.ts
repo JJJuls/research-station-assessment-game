@@ -8,6 +8,9 @@ import {
   getEventTypes,
   hold,
   hubToStationDoor,
+  inventoryToConsole,
+  inventoryToKitCrate,
+  inventoryToPrepBench,
   press,
   waitForRoomEntry,
 } from './helpers';
@@ -211,5 +214,61 @@ test.describe('participant card panel (NEXT-06)', () => {
     expect(
       types.filter((t) => t === 'engineer_supervision_assigned'),
     ).toHaveLength(1);
+  });
+
+  test('inventory prep status panel reflects live kit state (phase 3)', async ({
+    page,
+  }) => {
+    test.setTimeout(300_000);
+
+    await bootGame(page, {
+      participant_id: 'E2E_UI',
+      game_session_id: 'E2E_UI_S4',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+    await hubToStationDoor(page, 'inventory_prep_room');
+    await waitForRoomEntry(page, 'inventory_room_entered');
+
+    const readPanel = () =>
+      page.evaluate(
+        () =>
+          (window as unknown as { __prepStatusText?: string | null })
+            .__prepStatusText ?? null,
+      );
+
+    // Fresh room: requisition open, hands free, full bench.
+    let panel = await readPanel();
+
+    expect(panel).toContain('PREP STATUS');
+    expect(panel).toContain('[ ] Torque Driver');
+    expect(panel).toContain('(hands free)');
+    expect(panel).toContain('Bench (8 out):');
+
+    // Engage per-item mode, take the first bench item: the carried slot
+    // updates and the bench count drops.
+    await inventoryToConsole(page);
+    await press(page, '4');
+    await inventoryToPrepBench(page);
+    await press(page, '1'); // take Torque Driver
+
+    panel = await readPanel();
+    expect(panel).toContain('Carried:\nTorque Driver');
+    expect(panel).toContain('Bench (7 out):');
+
+    // Pack it into the kit crate: requisition line flips to packed.
+    await inventoryToKitCrate(page);
+    await press(page, '1');
+
+    panel = await readPanel();
+    expect(panel).toContain('[x] Torque Driver');
+    expect(panel).toContain('(hands free)');
+
+    // The panel is read-only presentation: no research event may have
+    // fired from rendering it (the placement event fired from the ACT).
+    const types = await getEventTypes(page);
+
+    expect(types.filter((t) => t === 'correct_tool_selected')).toHaveLength(1);
   });
 });

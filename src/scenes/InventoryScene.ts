@@ -1,4 +1,4 @@
-import { key } from '../constants';
+import { Depth, key } from '../constants';
 import type { PlacementDestination, StorageBinId } from '../data/itemRegistry';
 import {
   allItemsPlaced,
@@ -72,10 +72,32 @@ import { CANONICAL_EVENT_CONTEXT, RoomScene } from '../world';
  *   action exists, and it must never be double-logged from the same click
  *   as inventory_verified_complete.
  */
+declare global {
+  interface Window {
+    /**
+     * FABLE-NEXT-06 Phase 3 DEV probe: the rendered prep status side
+     * panel text (participant labels only). Read-only; never read back
+     * into gameplay.
+     */
+    __prepStatusText?: string | null;
+  }
+}
+
 export class InventoryScene extends RoomScene {
   protected readonly roomId = 'inventory_prep_room';
   protected readonly roomInteractionKey: InteractionKey =
     'inventoryPrepChecklist';
+
+  /**
+   * FABLE-NEXT-06 Phase 3: persistent read-only prep status side panel
+   * (UI-PRESENTATION-CONTRACT.md par.2 "status side panel") — requisition
+   * checklist, single carried slot, and bench contents rendered from the
+   * existing kitPreparationState. Sits in the viewport margin right of
+   * the 640px room map; never an input surface, never a score display,
+   * glyph-based state cues (non-colour-only).
+   */
+  private prepStatusText: Phaser.GameObjects.Text | null = null;
+  private prepStatusValue = '';
 
   /**
    * Pilot Scenario D (colleague protocol breach) — additive station driven
@@ -218,6 +240,75 @@ export class InventoryScene extends RoomScene {
         spawn: 'inventory_prep_room',
       },
     });
+
+    // FABLE-NEXT-06 Phase 3: prep status side panel (right margin).
+    const panelBackground = this.add
+      .rectangle(650, 8, 146, 584, 0x101820, 0.92)
+      .setOrigin(0)
+      .setDepth(Depth.AboveWorld)
+      .setScrollFactor(0);
+    const panelText = this.add
+      .text(658, 16, '', {
+        color: '#ffffff',
+        font: '12px monospace',
+        lineSpacing: 3,
+        wordWrap: { width: 132 },
+      })
+      .setDepth(Depth.AboveWorld)
+      .setScrollFactor(0);
+
+    panelBackground.setStrokeStyle(1, 0x33475a);
+    this.prepStatusText = panelText;
+    this.prepStatusValue = '';
+    this.refreshPrepStatusPanel();
+  }
+
+  /**
+   * Recomposes the side panel from live kit state (change-detected; cheap
+   * string build over 8 items). Called per frame from onRoomUpdate so
+   * every prompt selection's effect is visible immediately.
+   */
+  private refreshPrepStatusPanel(): void {
+    if (this.prepStatusText === null) {
+      return;
+    }
+
+    const lines: string[] = ['PREP STATUS', '', 'Requisition:'];
+
+    for (const itemId of KIT_REQUIRED_ITEM_IDS) {
+      const packed = kitPreparationState.locations[itemId] === 'kit_crate';
+
+      lines.push(`${packed ? '[x]' : '[ ]'} ${getRegistryItem(itemId).label}`);
+    }
+
+    const carried = carriedItemId();
+
+    lines.push('', 'Carried:');
+    lines.push(
+      carried === null ? '(hands free)' : getRegistryItem(carried).label,
+    );
+
+    const bench = itemsAtLocation('prep_bench');
+
+    lines.push('', `Bench (${bench.length} out):`);
+    for (const itemId of bench) {
+      lines.push(`- ${getRegistryItem(itemId).label}`);
+    }
+
+    const value = lines.join('\n');
+
+    if (value !== this.prepStatusValue) {
+      this.prepStatusValue = value;
+      this.prepStatusText.setText(value);
+
+      if (typeof window !== 'undefined' && import.meta.env.DEV) {
+        window.__prepStatusText = value;
+      }
+    }
+  }
+
+  protected onRoomUpdate(): void {
+    this.refreshPrepStatusPanel();
   }
 
   protected onRoomExit(): void {
