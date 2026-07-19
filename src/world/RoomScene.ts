@@ -44,10 +44,17 @@ export interface PromptStage {
   options: PromptOption[];
 }
 
+interface PromptCard {
+  background: Phaser.GameObjects.Rectangle;
+  marker: Phaser.GameObjects.Text;
+}
+
 interface ActivePrompt {
   interactionKey: InteractionKey;
   options: PromptOption[];
   panel: Phaser.GameObjects.Container;
+  cards: PromptCard[];
+  focusedIndex: number;
 }
 
 /**
@@ -67,24 +74,14 @@ const PROMPT_KEY_NAMES = [
 ] as const;
 
 /**
- * Instruction line for an N-option prompt. Must stay byte-identical to the
- * V1 slice for 3 options: "Press 1, 2, or 3 to choose."
+ * FABLE-NEXT-06: the participant instruction no longer references number
+ * keys — cards are the primary interaction (pointer, or arrow keys +
+ * Enter). Keys 1-9 keep working as HIDDEN deterministic shortcuts
+ * (docs/game/UI-PRESENTATION-CONTRACT.md §3); both input paths converge
+ * on selectPromptOption, so duplicate emission is impossible.
  */
-function buildPromptInstruction(optionCount: number): string {
-  const numbers = Array.from({ length: optionCount }, (_, i) => `${i + 1}`);
-
-  if (numbers.length === 1) {
-    return `Press 1 to choose.`;
-  }
-
-  if (numbers.length === 2) {
-    return `Press 1 or 2 to choose.`;
-  }
-
-  const head = numbers.slice(0, -1).join(', ');
-
-  return `Press ${head}, or ${numbers[numbers.length - 1]} to choose.`;
-}
+const PROMPT_INSTRUCTION =
+  'Select an option — point and click, or use the arrow keys and Enter.';
 
 export interface RoomStationConfig {
   interactionKey: InteractionKey;
@@ -182,6 +179,21 @@ declare global {
     __playerProbe?: { scene: string; x: number; y: number } | null;
     __routeObjectiveText?: string | null;
     __lastPromptBody?: string | null;
+    /**
+     * FABLE-NEXT-06 semantic test hook: screen rects of the visible
+     * choice cards of the open prompt (participant label text only —
+     * never researcher language). DEV-only, read-only, cleared on close.
+     */
+    __promptCards?:
+      | {
+          index: number;
+          label: string;
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+        }[]
+      | null;
   }
 }
 
@@ -190,6 +202,7 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
   window.__playerProbe = null;
   window.__routeObjectiveText = null;
   window.__lastPromptBody = null;
+  window.__promptCards = null;
 }
 
 /**
@@ -565,7 +578,7 @@ export abstract class RoomScene extends Phaser.Scene {
     const optionText = options
       .map((option, index) => `${index + 1}. ${option.label}`)
       .join('\n');
-    const panelText = `${interaction.label}${promptBody}\n\n${optionText}\n\n${buildPromptInstruction(options.length)}`;
+    const panelText = `${interaction.label}${promptBody}\n\n${optionText}\n\n${PROMPT_INSTRUCTION}`;
 
     // Dev-only, read-only displayed-prompt probe (__lastRoomFeedbackText
     // precedent): lets runtime verification assert rendered prompt content
@@ -574,40 +587,121 @@ export abstract class RoomScene extends Phaser.Scene {
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
       window.__lastPromptBody = panelText;
     }
-    // 230px matches the V1 slice for up to 3 options; each further option
-    // extends the panel by one 24px text row (deterministic, content-only).
-    const panelHeight = 230 + Math.max(0, options.length - 3) * 24;
-    const text = this.add.text(18, 16, panelText, {
-      color: '#ffffff',
-      font: '16px monospace',
-      wordWrap: { width: 524 },
-    });
-    // The background must never be shorter than the wrapped text (long
-    // stage bodies / wrapped option labels overflowed the fixed-height
-    // rectangle — gameplay-review finding, FABLE-NEXT-04). Purely visual:
-    // grows with rendered content, never shrinks below the V1 baseline.
-    const background = this.add
-      .rectangle(
-        0,
-        0,
-        560,
-        Math.max(panelHeight, Math.ceil(text.height) + 32),
-        0x101820,
-        0.96,
-      )
+
+    // FABLE-NEXT-06 card panel (UI-PRESENTATION-CONTRACT.md par.2): header
+    // text (title + in-fiction body, strings unchanged), one selectable
+    // card per option (pointer hover/click; arrow keys + Enter; hidden
+    // numeric shortcuts), visible non-colour-only focus state (thicker
+    // cyan border + marker glyph), instruction line without number keys.
+    const PANEL_WIDTH = 560;
+    const PADDING = 18;
+    const CARD_WIDTH = PANEL_WIDTH - PADDING * 2;
+    const CARD_GUTTER = 22;
+    const CARD_PAD_Y = 7;
+    const CARD_GAP = 8;
+
+    const children: Phaser.GameObjects.GameObject[] = [];
+    const header = this.add.text(
+      PADDING,
+      16,
+      `${interaction.label}${promptBody}`,
+      {
+        color: '#ffffff',
+        font: '16px monospace',
+        wordWrap: { width: CARD_WIDTH - 12 },
+      },
+    );
+
+    let cursorY = 16 + Math.ceil(header.height) + 14;
+    const cards: PromptCard[] = [];
+    const cardRects: {
+      index: number;
+      label: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }[] = [];
+
+    for (let index = 0; index < options.length; index++) {
+      const option = options[index];
+      const label = this.add.text(
+        PADDING + CARD_GUTTER,
+        cursorY + CARD_PAD_Y,
+        `${index + 1}. ${option.label}`,
+        {
+          color: '#ffffff',
+          font: '15px monospace',
+          wordWrap: { width: CARD_WIDTH - CARD_GUTTER - 12 },
+        },
+      );
+      const cardHeight = Math.ceil(label.height) + CARD_PAD_Y * 2;
+      const background = this.add
+        .rectangle(PADDING, cursorY, CARD_WIDTH, cardHeight, 0x1a2733, 1)
+        .setOrigin(0)
+        .setStrokeStyle(1, 0x33475a);
+      const marker = this.add
+        .text(PADDING + 6, cursorY + CARD_PAD_Y, '\u25b8', {
+          color: '#5fd3c4',
+          font: '15px monospace',
+        })
+        .setVisible(false);
+
+      background.setInteractive({ useHandCursor: true });
+      background.on('pointerover', () => this.focusPromptCard(index));
+      background.on('pointerdown', () => this.selectPromptOption(index));
+
+      children.push(background, label, marker);
+      cards.push({ background, marker });
+      cardRects.push({
+        index,
+        label: option.label,
+        x: centerX - PANEL_WIDTH / 2 + PADDING,
+        y: 72 + cursorY,
+        width: CARD_WIDTH,
+        height: cardHeight,
+      });
+      cursorY += cardHeight + CARD_GAP;
+    }
+
+    const instruction = this.add.text(
+      PADDING,
+      cursorY + 8,
+      PROMPT_INSTRUCTION,
+      {
+        color: '#9fb2c1',
+        font: '14px monospace',
+        wordWrap: { width: CARD_WIDTH },
+      },
+    );
+    const panelHeight = cursorY + 8 + Math.ceil(instruction.height) + 16;
+    const backdrop = this.add
+      .rectangle(0, 0, PANEL_WIDTH, Math.max(230, panelHeight), 0x101820, 0.96)
       .setOrigin(0);
-    const panel = this.add.container(centerX - 280, 72, [background, text]);
+    const panel = this.add.container(centerX - PANEL_WIDTH / 2, 72, [
+      backdrop,
+      header,
+      ...children,
+      instruction,
+    ]);
 
     panel.setDepth(Depth.AboveWorld);
     panel.setScrollFactor(0);
     this.stationLabels.setVisible(false);
     this.proximityPrompt.setVisible(false);
 
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__promptCards = cardRects;
+    }
+
     this.activePrompt = {
       interactionKey,
       options,
       panel,
+      cards,
+      focusedIndex: -1,
     };
+    this.focusPromptCard(0);
 
     for (let index = 0; index < options.length; index++) {
       this.input.keyboard!.on(
@@ -616,7 +710,68 @@ export abstract class RoomScene extends Phaser.Scene {
         this,
       );
     }
+    this.input.keyboard!.on('keydown-UP', this.promptFocusUpHandler, this);
+    this.input.keyboard!.on('keydown-DOWN', this.promptFocusDownHandler, this);
+    this.input.keyboard!.on('keydown-ENTER', this.promptConfirmHandler, this);
   }
+
+  /**
+   * Card focus (FABLE-NEXT-06): visible, non-colour-only state — the
+   * focused card gets a thicker cyan border AND a marker glyph. Pure
+   * presentation: focusing never logs and never changes task state.
+   */
+  private focusPromptCard(index: number) {
+    if (this.activePrompt === null) {
+      return;
+    }
+
+    const { cards } = this.activePrompt;
+
+    if (cards.length === 0 || index < 0 || index >= cards.length) {
+      return;
+    }
+
+    this.activePrompt.focusedIndex = index;
+
+    for (let i = 0; i < cards.length; i++) {
+      const focused = i === index;
+
+      cards[i].background.setStrokeStyle(
+        focused ? 2 : 1,
+        focused ? 0x5fd3c4 : 0x33475a,
+      );
+      cards[i].background.setFillStyle(focused ? 0x22303e : 0x1a2733, 1);
+      cards[i].marker.setVisible(focused);
+    }
+  }
+
+  private readonly promptFocusUpHandler = (event: KeyboardEvent) => {
+    if (event.repeat || this.activePrompt === null) {
+      return;
+    }
+
+    const count = this.activePrompt.options.length;
+
+    this.focusPromptCard((this.activePrompt.focusedIndex - 1 + count) % count);
+  };
+
+  private readonly promptFocusDownHandler = (event: KeyboardEvent) => {
+    if (event.repeat || this.activePrompt === null) {
+      return;
+    }
+
+    const count = this.activePrompt.options.length;
+
+    this.focusPromptCard((this.activePrompt.focusedIndex + 1) % count);
+  };
+
+  private readonly promptConfirmHandler = (event: KeyboardEvent) => {
+    if (event.repeat || this.activePrompt === null) {
+      return;
+    }
+
+    this.selectPromptOption(this.activePrompt.focusedIndex);
+  };
 
   /**
    * One stable handler per numeric key so on/off pairs match exactly
@@ -679,6 +834,21 @@ export abstract class RoomScene extends Phaser.Scene {
           this,
         );
       }
+      this.input.keyboard!.off('keydown-UP', this.promptFocusUpHandler, this);
+      this.input.keyboard!.off(
+        'keydown-DOWN',
+        this.promptFocusDownHandler,
+        this,
+      );
+      this.input.keyboard!.off(
+        'keydown-ENTER',
+        this.promptConfirmHandler,
+        this,
+      );
+    }
+
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__promptCards = null;
     }
 
     this.activePrompt?.panel.destroy();
@@ -815,7 +985,15 @@ export abstract class RoomScene extends Phaser.Scene {
   protected onEmptyInteract(): void {}
 
   update() {
-    this.player.update();
+    // FABLE-NEXT-06: the avatar holds still while a prompt is open — the
+    // arrow keys belong to card focus there (presentation-only; selection
+    // remains the only way a prompt closes, so no task state is affected).
+    if (this.activePrompt === null) {
+      this.player.update();
+    } else {
+      (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0);
+    }
+
     this.onRoomUpdate();
     this.updateProximity();
 
