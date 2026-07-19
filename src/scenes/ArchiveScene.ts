@@ -158,6 +158,7 @@ export class ArchiveScene extends RoomScene {
       x: 10 * 32, // center of the bottom '--'
       y: 11 * 32 + 16,
       label: 'Station Hub',
+      texture: 'prop-hub-door-frame',
       interactionKey: 'archiveAccessTerminal',
       target: {
         sceneKey: key.scene.hub,
