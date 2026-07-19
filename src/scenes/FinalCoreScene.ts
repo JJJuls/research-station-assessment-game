@@ -157,6 +157,7 @@ export class FinalCoreScene extends RoomScene {
       label: 'Core Interface',
       x: 10 * 32,
       y: 5.5 * 32,
+      texture: 'proc-core-interface',
       promptBody: '',
       onPromptOpened: () => {
         // Prototype one-shot gate, exact feedback text preserved.
@@ -217,11 +218,21 @@ export class FinalCoreScene extends RoomScene {
     this.coreStationConfig = config;
     this.addStation(config);
 
+    // NEXT-07 Phase 4d dressing (visual plan §3.6): committed props as
+    // core machinery — status board high on the monitor wall, server
+    // racks on the flanking blocks. prop-archive-panels deliberately
+    // skipped (standing salience caveat). Decorative only, duller than
+    // the interface.
+    this.addDecor(320, 120, 'prop-hub-status-board');
+    this.addDecor(96, 120, 'prop-archive-racks');
+    this.addDecor(544, 120, 'prop-archive-racks');
+
     // Door back to the Station Hub.
     this.addDoor({
       x: 10 * 32, // center of the bottom '--'
       y: 11 * 32 + 16,
       label: 'Station Hub',
+      texture: 'prop-hub-door-frame',
       interactionKey: 'finalCoreIntegration',
       target: {
         sceneKey: key.scene.hub,

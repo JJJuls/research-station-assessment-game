@@ -368,6 +368,36 @@ function drawBeaconComms(g: Graphics) {
   rect(g, 14, 5, 4, 3, ACCENT);
 }
 
+/**
+ * Core interface (Phase 4d): wide monitor bank — three screens over a
+ * long console base, deliberately the broadest interactable silhouette
+ * in the game (the closeout surface). Cyan readouts = interactable cue.
+ */
+function drawCoreInterface(g: Graphics) {
+  // Console base.
+  box(g, 4, 40, 56, 12, CARD, BORDER);
+  rect(g, 8, 43, 6, 3, MUTED);
+  rect(g, 17, 43, 6, 3, MUTED);
+  rect(g, 50, 43, 4, 3, ACCENT);
+  // Central primary screen.
+  box(g, 20, 6, 24, 22, CARD, BORDER);
+  rect(g, 22, 8, 20, 18, PANEL);
+  rect(g, 24, 11, 14, 2, ACCENT);
+  rect(g, 24, 15, 10, 2, MUTED);
+  rect(g, 24, 19, 12, 2, MUTED);
+  // Flanking side screens.
+  box(g, 5, 12, 12, 16, CARD, BORDER);
+  rect(g, 7, 14, 8, 12, PANEL);
+  rect(g, 8, 17, 6, 2, MUTED);
+  box(g, 47, 12, 12, 16, CARD, BORDER);
+  rect(g, 49, 14, 8, 12, PANEL);
+  rect(g, 50, 17, 6, 2, MUTED);
+  // Screen support pillars.
+  rect(g, 29, 28, 6, 12, BORDER);
+  rect(g, 9, 28, 4, 12, BORDER);
+  rect(g, 51, 28, 4, 12, BORDER);
+}
+
 interface TextureBuilder {
   width: number;
   height: number;
@@ -400,6 +430,7 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   'proc-console-scenario': { width: 48, height: 52, draw: drawConsoleScenario },
   'proc-panel-warning': { width: 48, height: 48, draw: drawPanelWarning },
   'proc-beacon-comms': { width: 32, height: 64, draw: drawBeaconComms },
+  'proc-core-interface': { width: 64, height: 56, draw: drawCoreInterface },
 };
 
 /** Fixed manifest (key → dimensions) for determinism coverage. */

@@ -34,6 +34,7 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-console-scenario': { width: 48, height: 52 },
   'proc-panel-warning': { width: 48, height: 48 },
   'proc-beacon-comms': { width: 32, height: 64 },
+  'proc-core-interface': { width: 64, height: 56 },
 };
 
 interface ProcTexturesProbe {
