@@ -229,12 +229,15 @@ export class InventoryScene extends RoomScene {
         this.logScenarioEvent('inventorySealLog', eventType, context),
       showFeedback: (message) => this.showFeedbackMessage(message),
     });
-    this.addStation(
-      this.breachScenario.buildStationConfig({
-        x: 4 * 32,
-        y: 7.5 * 32,
-      }),
-    );
+    // NEXT-07 Phase 3: shared scenario-console texture (identical ×4;
+    // set in place so the config's promptBody closure stays intact).
+    const breachConfig = this.breachScenario.buildStationConfig({
+      x: 4 * 32,
+      y: 7.5 * 32,
+    });
+
+    breachConfig.texture = 'proc-console-scenario';
+    this.addStation(breachConfig);
 
     // NEXT-07 Phase 2 dressing. The Quartermaster figure stands beside
     // (east of) the console — non-colliding, non-interactive decor with

@@ -287,6 +287,34 @@ function drawCrateFieldKit(g: Graphics) {
   rect(g, 20, 33, 8, 3, ACCENT);
 }
 
+/**
+ * Shared scenario console (Phase 3): ONE silhouette applied identically
+ * to all four ethical-scenario stations (Priority Allocation,
+ * Calibration Bench, Reconciliation Desk, Seal Log) so the four
+ * decisions stay visually interchangeable (visual plan §2.4). Dual-panel
+ * desk silhouette — distinguishable from every canonical-task family by
+ * shape only, with a comparable (never stronger) cyan emissive area.
+ */
+function drawConsoleScenario(g: Graphics) {
+  // Desk base with pedestal.
+  box(g, 4, 36, 40, 11, CARD, BORDER);
+  rect(g, 20, 31, 8, 5, BORDER);
+  // Main screen (left) with readout lines.
+  box(g, 5, 8, 23, 19, CARD, BORDER);
+  rect(g, 7, 10, 19, 15, PANEL);
+  rect(g, 9, 13, 13, 2, ACCENT);
+  rect(g, 9, 17, 9, 2, MUTED);
+  rect(g, 9, 21, 11, 2, MUTED);
+  // Side panel (right), muted.
+  box(g, 31, 13, 12, 14, CARD, BORDER);
+  rect(g, 33, 15, 8, 10, PANEL);
+  rect(g, 34, 17, 6, 2, MUTED);
+  // Desk button strip with a single cyan dot.
+  rect(g, 9, 39, 4, 3, MUTED);
+  rect(g, 15, 39, 4, 3, MUTED);
+  rect(g, 35, 39, 3, 3, ACCENT);
+}
+
 interface TextureBuilder {
   width: number;
   height: number;
@@ -315,6 +343,7 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   },
   'proc-bench-prep': { width: 64, height: 40, draw: drawBenchPrep },
   'proc-crate-fieldkit': { width: 48, height: 48, draw: drawCrateFieldKit },
+  'proc-console-scenario': { width: 48, height: 52, draw: drawConsoleScenario },
 };
 
 /** Fixed manifest (key → dimensions) for determinism coverage. */

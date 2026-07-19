@@ -179,9 +179,15 @@ export class EngineerScene extends RoomScene {
         showFeedback: (message) => this.showFeedbackMessage(message),
       },
     );
-    this.addStation(
-      this.calibrationScenario.buildStationConfig({ x: 16 * 32, y: 5.5 * 32 }),
-    );
+    // NEXT-07 Phase 3: shared scenario-console texture (identical ×4;
+    // set in place so the config's promptBody closure stays intact).
+    const calibrationConfig = this.calibrationScenario.buildStationConfig({
+      x: 16 * 32,
+      y: 5.5 * 32,
+    });
+
+    calibrationConfig.texture = 'proc-console-scenario';
+    this.addStation(calibrationConfig);
 
     // Workshop dressing on the flanking bench blocks (NEXT-07 Phase 1,
     // A2 reuse per visual plan §3.3): committed props as machinery/parts

@@ -30,6 +30,7 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-shelf-electronics': { width: 48, height: 56 },
   'proc-bench-prep': { width: 64, height: 40 },
   'proc-crate-fieldkit': { width: 48, height: 48 },
+  'proc-console-scenario': { width: 48, height: 52 },
 };
 
 interface ProcTexturesProbe {

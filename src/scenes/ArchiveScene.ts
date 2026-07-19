@@ -139,12 +139,17 @@ export class ArchiveScene extends RoomScene {
         showFeedback: (message) => this.showFeedbackMessage(message),
       },
     );
-    this.addStation(
-      this.reconciliationScenario.buildStationConfig({
+    // NEXT-07 Phase 3: shared scenario-console texture (identical ×4;
+    // set in place so the config's promptBody closure stays intact).
+    const reconciliationConfig = this.reconciliationScenario.buildStationConfig(
+      {
         x: 16 * 32,
         y: 9 * 32,
-      }),
+      },
     );
+
+    reconciliationConfig.texture = 'proc-console-scenario';
+    this.addStation(reconciliationConfig);
 
     // Door back to the Station Hub. archive_abandoned fires on exit while
     // an attempt has failed and the task is incomplete (room doc edge

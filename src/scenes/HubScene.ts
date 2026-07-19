@@ -145,12 +145,17 @@ export class HubScene extends RoomScene {
         showFeedback: (message) => this.showFeedbackMessage(message),
       },
     );
-    this.addStation(
-      this.allocationScenario.buildStationConfig({
-        x: 11.5 * 32,
-        y: 9.5 * 32,
-      }),
-    );
+    // NEXT-07 Phase 3: the shared scenario-console texture, identical
+    // across all four ethical-scenario stations (uniform salience —
+    // visual plan §2.4). Set in place on the controller's config so its
+    // per-open promptBody closure keeps mutating the same object.
+    const allocationConfig = this.allocationScenario.buildStationConfig({
+      x: 11.5 * 32,
+      y: 9.5 * 32,
+    });
+
+    allocationConfig.texture = 'proc-console-scenario';
+    this.addStation(allocationConfig);
   }
 
   protected onRoomEntered(): void {
