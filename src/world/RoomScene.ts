@@ -310,12 +310,13 @@ export abstract class RoomScene extends Phaser.Scene {
     );
     this.cameras.main.fadeIn(200, 0, 0, 0);
 
-    // NEXT-07 Phase 7a: uniform edge vignette — the same screen-sized
-    // texture at the same alpha in every room (never per-room tints).
-    // Depth 15: over the world art, under every label/panel/prompt.
-    if (this.textures.exists('proc-vignette')) {
-      this.add.image(400, 300, 'proc-vignette').setDepth(15).setScrollFactor(0);
-    }
+    // NEXT-07 Phase 7a vignette: REMOVED under the contract's own
+    // admissibility clause. The full-screen alpha-blended quad collapsed
+    // the software-GL (SwiftShader) frame budget in the Playwright
+    // verification environment, making chained prompt-stage key presses
+    // flaky — bisected to the Phase 7 commit and reproduced/cleared by
+    // toggling the vignette alone. Uniformity is preserved by absence
+    // (identical treatment in every room: none).
 
     this.stationLabels = this.add.container(0, 0);
     this.stationLabels.setDepth(Depth.AboveWorld);

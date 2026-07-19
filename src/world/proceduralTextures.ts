@@ -426,27 +426,6 @@ function drawBotUtility(g: Graphics) {
   rect(g, 42, 22, 3, 8, KAI_SUIT_SHADE);
 }
 
-/**
- * Uniform edge vignette (Phase 7a): one screen-sized texture rendered
- * identically in every room — 20 concentric 4 px frame rings whose
- * alpha falls off quadratically from 0.3 at the screen edge to ~0 at
- * 80 px in. Uniformity is the point: no per-room variation exists.
- */
-function drawVignette(g: Graphics) {
-  for (let ring = 0; ring < 20; ring++) {
-    const alpha = 0.3 * ((20 - ring) / 20) ** 2;
-    const inset = ring * 4;
-
-    g.fillStyle(0x000000, alpha);
-    // Top / bottom strips.
-    g.fillRect(inset, inset, 800 - inset * 2, 4);
-    g.fillRect(inset, 600 - inset - 4, 800 - inset * 2, 4);
-    // Left / right strips (between the horizontal strips).
-    g.fillRect(inset, inset + 4, 4, 600 - inset * 2 - 8);
-    g.fillRect(800 - inset - 4, inset + 4, 4, 600 - inset * 2 - 8);
-  }
-}
-
 interface TextureBuilder {
   width: number;
   height: number;
@@ -481,7 +460,6 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   'proc-beacon-comms': { width: 32, height: 64, draw: drawBeaconComms },
   'proc-core-interface': { width: 64, height: 56, draw: drawCoreInterface },
   'proc-bot-utility': { width: 48, height: 48, draw: drawBotUtility },
-  'proc-vignette': { width: 800, height: 600, draw: drawVignette },
 };
 
 /** Fixed manifest (key → dimensions) for determinism coverage. */
