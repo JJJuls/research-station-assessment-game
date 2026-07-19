@@ -398,6 +398,34 @@ function drawCoreInterface(g: Graphics) {
   rect(g, 51, 28, 4, 12, BORDER);
 }
 
+/**
+ * Utility bot (Phase 4e): squat rounded chassis — stepped dome, body,
+ * side tracks, tool arm. Cyan sensor strip = interactable cue.
+ */
+function drawBotUtility(g: Graphics) {
+  // Side tracks.
+  box(g, 4, 30, 10, 14, CARD, BORDER);
+  box(g, 34, 30, 10, 14, CARD, BORDER);
+  rect(g, 6, 34, 6, 2, OUTLINE);
+  rect(g, 36, 34, 6, 2, OUTLINE);
+  rect(g, 6, 39, 6, 2, OUTLINE);
+  rect(g, 36, 39, 6, 2, OUTLINE);
+  // Chassis body.
+  box(g, 10, 18, 28, 22, BORDER, MUTED);
+  // Stepped dome (rounded silhouette).
+  rect(g, 14, 13, 20, 6, BORDER);
+  rect(g, 17, 10, 14, 4, BORDER);
+  rect(g, 14, 13, 20, 1, MUTED);
+  rect(g, 17, 10, 14, 1, MUTED);
+  // Cyan sensor strip on the dome (interactable cue; static).
+  rect(g, 19, 14, 10, 3, ACCENT);
+  // Front hatch + tool arm.
+  rect(g, 18, 26, 12, 8, CARD);
+  rect(g, 20, 28, 8, 2, MUTED);
+  rect(g, 38, 22, 6, 3, KAI_SUIT_SHADE);
+  rect(g, 42, 22, 3, 8, KAI_SUIT_SHADE);
+}
+
 interface TextureBuilder {
   width: number;
   height: number;
@@ -431,6 +459,7 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   'proc-panel-warning': { width: 48, height: 48, draw: drawPanelWarning },
   'proc-beacon-comms': { width: 32, height: 64, draw: drawBeaconComms },
   'proc-core-interface': { width: 64, height: 56, draw: drawCoreInterface },
+  'proc-bot-utility': { width: 48, height: 48, draw: drawBotUtility },
 };
 
 /** Fixed manifest (key → dimensions) for determinism coverage. */

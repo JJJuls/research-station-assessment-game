@@ -185,6 +185,7 @@ export class SideRepairScene extends RoomScene {
       label: 'Utility Bot',
       x: 10 * 32,
       y: 5.5 * 32,
+      texture: 'proc-bot-utility',
       // Stage-dependent body (evaluated on every prompt open): the offer
       // framing must not re-present over the post-acceptance work-console
       // stages — the prompt is then a work console, not an offer.
@@ -224,6 +225,7 @@ export class SideRepairScene extends RoomScene {
       label: 'Parts Shelf',
       x: 3 * 32,
       y: 7 * 32 + 16,
+      texture: 'proc-shelf-electronics',
       onPromptOpened: () => this.onPartsShelfOpened(),
     });
 
@@ -232,6 +234,7 @@ export class SideRepairScene extends RoomScene {
       x: 10 * 32, // center of the bottom '--'
       y: 11 * 32 + 16,
       label: 'Station Hub',
+      texture: 'prop-hub-door-frame',
       interactionKey: 'optionalSideRepair',
       target: {
         sceneKey: key.scene.hub,
