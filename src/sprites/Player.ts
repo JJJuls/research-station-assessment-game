@@ -55,6 +55,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   cursors: Cursors;
   selector: Phaser.Physics.Arcade.StaticBody;
   private readonly skin: PlayerSkin;
+  /** NEXT-07 Phase 7b: uniform static drop shadow under the body —
+   * identical ellipse in every room, purely visual, no physics. */
+  private shadow: Phaser.GameObjects.Ellipse;
 
   private static hasResearcherTextures(scene: Phaser.Scene): boolean {
     return scene.textures.exists(researcherWalkFrameKey('south', 0));
@@ -96,6 +99,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Set the camera to follow the game object
     scene.cameras.main.startFollow(this);
     scene.cameras.main.setZoom(1);
+
+    // Drop shadow below the render depths of the player and the room's
+    // dual-grid visual layers' contents (world layer sits at -1/-0.5).
+    this.shadow = scene.add
+      .ellipse(x, y + 22, 26, 10, 0x000000, 0.25)
+      .setDepth(-0.25);
 
     // Add cursor keys
     this.cursors = this.createCursorKeys();
@@ -280,6 +289,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   update() {
     const { anims, body, cursors } = this;
     const prevVelocity = body.velocity.clone();
+
+    // Keep the drop shadow under the feet (position-only; no state).
+    this.shadow.setPosition(this.x, this.y + 22);
 
     // Stop any previous movement from the last frame
     body.setVelocity(0);
