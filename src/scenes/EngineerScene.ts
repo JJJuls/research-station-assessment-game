@@ -104,7 +104,42 @@ export class EngineerScene extends RoomScene {
     return { x: 10 * 32, y: 8.5 * 32 };
   }
 
+  /**
+   * FABLE-NEXT-06 Phase 4: read-only report-desk status side panel
+   * (shared primitive) — the one-shot report state and, once the offer
+   * was decided, the relay-duty outcome. Deliberately shows NO pending
+   * reminders beyond what the player already decided (no duty nudge, no
+   * checkpoint reminder - measurement-neutral presentation).
+   */
+  private statusPanel: { setText: (value: string) => void } | null = null;
+
+  private refreshStatusPanel(): void {
+    if (this.statusPanel === null) {
+      return;
+    }
+
+    const mission = researchRuntime.sessionState.getMissionState();
+    const lines = ['REPORT DESK', '', 'Status report:'];
+
+    lines.push(this.isReportSubmitted() ? '[x] logged' : '[ ] pending');
+
+    if (mission.accepted_duties.includes(RELAY_SUPERVISION_DUTY_ID)) {
+      lines.push('', 'Relay duty:', 'accepted');
+    } else if (mission.skipped_duties.includes(RELAY_SUPERVISION_DUTY_ID)) {
+      lines.push('', 'Relay duty:', 'reassigned');
+    }
+
+    this.statusPanel.setText(lines.join('\n'));
+  }
+
+  protected onRoomUpdate(): void {
+    this.refreshStatusPanel();
+  }
+
   protected populateRoom(): void {
+    this.statusPanel = this.addStatusSidePanel();
+    this.refreshStatusPanel();
+
     // Engineer Kai at the report console (top-center alcove). No committed
     // texture exists for this room in outpost-assets-v1 — placeholder
     // marker by design (placeholder-first rule; a Kai sprite is a future

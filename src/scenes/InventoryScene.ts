@@ -1,4 +1,4 @@
-import { Depth, key } from '../constants';
+import { key } from '../constants';
 import type { PlacementDestination, StorageBinId } from '../data/itemRegistry';
 import {
   allItemsPlaced,
@@ -96,7 +96,7 @@ export class InventoryScene extends RoomScene {
    * the 640px room map; never an input surface, never a score display,
    * glyph-based state cues (non-colour-only).
    */
-  private prepStatusText: Phaser.GameObjects.Text | null = null;
+  private prepStatusPanel: { setText: (value: string) => void } | null = null;
   private prepStatusValue = '';
 
   /**
@@ -241,24 +241,8 @@ export class InventoryScene extends RoomScene {
       },
     });
 
-    // FABLE-NEXT-06 Phase 3: prep status side panel (right margin).
-    const panelBackground = this.add
-      .rectangle(650, 8, 146, 584, 0x101820, 0.92)
-      .setOrigin(0)
-      .setDepth(Depth.AboveWorld)
-      .setScrollFactor(0);
-    const panelText = this.add
-      .text(658, 16, '', {
-        color: '#ffffff',
-        font: '12px monospace',
-        lineSpacing: 3,
-        wordWrap: { width: 132 },
-      })
-      .setDepth(Depth.AboveWorld)
-      .setScrollFactor(0);
-
-    panelBackground.setStrokeStyle(1, 0x33475a);
-    this.prepStatusText = panelText;
+    // FABLE-NEXT-06 Phase 3: prep status side panel (shared primitive).
+    this.prepStatusPanel = this.addStatusSidePanel();
     this.prepStatusValue = '';
     this.refreshPrepStatusPanel();
   }
@@ -269,7 +253,7 @@ export class InventoryScene extends RoomScene {
    * every prompt selection's effect is visible immediately.
    */
   private refreshPrepStatusPanel(): void {
-    if (this.prepStatusText === null) {
+    if (this.prepStatusPanel === null) {
       return;
     }
 
@@ -299,7 +283,7 @@ export class InventoryScene extends RoomScene {
 
     if (value !== this.prepStatusValue) {
       this.prepStatusValue = value;
-      this.prepStatusText.setText(value);
+      this.prepStatusPanel.setText(value);
 
       if (typeof window !== 'undefined' && import.meta.env.DEV) {
         window.__prepStatusText = value;

@@ -129,7 +129,54 @@ export class SideRepairScene extends RoomScene {
     return { x: 10 * 32, y: 8.5 * 32 };
   }
 
+  /**
+   * FABLE-NEXT-06 Phase 4: read-only stabiliser status side panel (shared
+   * primitive) — the current-step indicator for the accepted multi-step
+   * task, plus the defer/complete state the player has already produced.
+   * State labels are operational only (never construct language).
+   */
+  private statusPanel: { setText: (value: string) => void } | null = null;
+
+  private refreshStatusPanel(): void {
+    if (this.statusPanel === null) {
+      return;
+    }
+
+    const state = sideRepairTaskState.get();
+    const mission = researchRuntime.sessionState.getMissionState();
+    const lines = ['SIDE BAY', '', 'Stabiliser repair:'];
+
+    if (mission.side_repair_status === SIDE_REPAIR_STATUS_COMPLETED) {
+      lines.push('[x] repair complete');
+    } else if (!state.accepted) {
+      lines.push('[ ] no work order accepted');
+    } else {
+      lines.push('[ ] in progress');
+      lines.push('', `Step ${Math.min(state.stepsCompleted + 1, 3)} of 3:`);
+      lines.push(
+        state.stepsCompleted === 0
+          ? 'fetch the component'
+          : state.stepsCompleted === 1
+            ? 'fit the component'
+            : 'run the system check',
+      );
+
+      if (mission.side_repair_status === SIDE_REPAIR_STATUS_DEFERRED) {
+        lines.push('', '(deferred - resume any time)');
+      }
+    }
+
+    this.statusPanel.setText(lines.join('\n'));
+  }
+
+  protected onRoomUpdate(): void {
+    this.refreshStatusPanel();
+  }
+
   protected populateRoom(): void {
+    this.statusPanel = this.addStatusSidePanel();
+    this.refreshStatusPanel();
+
     // Utility Bot at the work console (top-center alcove). Placeholder
     // marker by design — no committed texture for this room in
     // outpost-assets-v1; a bot sprite is a future PixelLab decision.

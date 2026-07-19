@@ -271,4 +271,100 @@ test.describe('participant card panel (NEXT-06)', () => {
 
     expect(types.filter((t) => t === 'correct_tool_selected')).toHaveLength(1);
   });
+
+  test('repair and engineer status panels reflect task state (phase 4)', async ({
+    page,
+  }) => {
+    test.setTimeout(300_000);
+
+    await bootGame(page, {
+      participant_id: 'E2E_UI',
+      game_session_id: 'E2E_UI_S5',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+
+    const readPanel = () =>
+      page.evaluate(
+        () =>
+          (window as unknown as { __roomStatusText?: string | null })
+            .__roomStatusText ?? null,
+      );
+
+    // Systems Repair: cycle counter follows submitted sequences.
+    await hubToStationDoor(page, 'systems_repair_room');
+    await waitForRoomEntry(page, 'repair_room_entered');
+
+    let panel = await readPanel();
+
+    expect(panel).toContain('SYSTEMS BAY');
+    expect(panel).toContain('[ ] awaiting first sequence');
+    expect(panel).toContain('Cycles logged: 0');
+
+    await hold(page, 'ArrowUp', 900);
+    await press(page, 'Space');
+    await press(page, '1'); // first sequence attempt (fails by design)
+
+    panel = await readPanel();
+    expect(panel).toContain('Cycles logged: 1');
+    expect(panel).toContain('sequence rejected');
+
+    // Back to the Hub, then the Engineer report desk state.
+    await hold(page, 'ArrowDown', 2200);
+    await press(page, 'Space');
+    await waitForRoomEntry(page, 'station_hub_entered');
+    await openKaiPrompt(page);
+
+    // Panel exists behind the prompt; report still pending.
+    panel = await readPanel();
+    expect(panel).toContain('REPORT DESK');
+    expect(panel).toContain('[ ] pending');
+    expect(panel).not.toContain('Relay duty');
+
+    await press(page, '1'); // quick report
+    await press(page, '1'); // claim 1
+    await press(page, '2'); // decline duty
+
+    panel = await readPanel();
+    expect(panel).toContain('[x] logged');
+    expect(panel).toContain('reassigned');
+  });
+
+  test('side repair status panel tracks the step indicator (phase 4)', async ({
+    page,
+  }) => {
+    test.setTimeout(300_000);
+
+    await bootGame(page, {
+      participant_id: 'E2E_UI',
+      game_session_id: 'E2E_UI_S6',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+    await hubToStationDoor(page, 'optional_side_repair_bay');
+    await waitForRoomEntry(page, 'side_repair_discovered');
+
+    const readPanel = () =>
+      page.evaluate(
+        () =>
+          (window as unknown as { __roomStatusText?: string | null })
+            .__roomStatusText ?? null,
+      );
+
+    let panel = await readPanel();
+
+    expect(panel).toContain('SIDE BAY');
+    expect(panel).toContain('[ ] no work order accepted');
+
+    await hold(page, 'ArrowUp', 900);
+    await press(page, 'Space');
+    await press(page, '2'); // accept the stabiliser repair
+
+    panel = await readPanel();
+    expect(panel).toContain('[ ] in progress');
+    expect(panel).toContain('Step 1 of 3');
+    expect(panel).toContain('fetch the component');
+  });
 });

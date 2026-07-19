@@ -121,7 +121,47 @@ export class RepairScene extends RoomScene {
     return { x: 10 * 32, y: 8.5 * 32 };
   }
 
+  /**
+   * FABLE-NEXT-06 Phase 4: read-only systems status side panel (shared
+   * primitive) — current repair-cycle count and completion state only.
+   * Deliberately does NOT display manual/guidance state: surfacing "manual
+   * not consulted" would nudge manual use and confound its measurement.
+   */
+  private statusPanel: { setText: (value: string) => void } | null = null;
+
+  private refreshStatusPanel(): void {
+    if (this.statusPanel === null) {
+      return;
+    }
+
+    const cycles = repairTaskState.get().attemptCount;
+    const complete = researchRuntime.sessionState
+      .getMissionState()
+      .completed_rooms.includes('systems_repair_room');
+    const lines = [
+      'SYSTEMS BAY',
+      '',
+      'Repair task:',
+      complete
+        ? '[x] repair logged'
+        : cycles === 0
+          ? '[ ] awaiting first sequence'
+          : '[ ] sequence rejected - revise',
+      '',
+      `Cycles logged: ${cycles}`,
+    ];
+
+    this.statusPanel.setText(lines.join('\n'));
+  }
+
+  protected onRoomUpdate(): void {
+    this.refreshStatusPanel();
+  }
+
   protected populateRoom(): void {
+    this.statusPanel = this.addStatusSidePanel();
+    this.refreshStatusPanel();
+
     // Repair panel (top-center, on the '####' alcove). No committed
     // texture exists for this room in outpost-assets-v1 — placeholder
     // rectangle by design (placeholder-first rule; PixelLab needs fresh

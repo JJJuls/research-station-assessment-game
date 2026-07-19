@@ -194,6 +194,11 @@ declare global {
           height: number;
         }[]
       | null;
+    /**
+     * FABLE-NEXT-06 status side panel probe: the current room's rendered
+     * read-only status panel text (participant labels only). DEV-only.
+     */
+    __roomStatusText?: string | null;
   }
 }
 
@@ -885,6 +890,55 @@ export abstract class RoomScene extends Phaser.Scene {
 
   /** Called once when an open door is activated, before the transition. */
   protected onRoomExit(): void {}
+
+  /**
+   * FABLE-NEXT-06 shared status side panel
+   * (docs/game/UI-PRESENTATION-CONTRACT.md par.2): a persistent read-only
+   * room-state panel in the viewport margin right of the 640px room map.
+   * Change-detected setText; glyph-based cues only (non-colour-only rule);
+   * never an input surface, never a score display, never a new event
+   * source. DEV probe: window.__roomStatusText.
+   */
+  protected addStatusSidePanel(): { setText: (value: string) => void } {
+    const background = this.add
+      .rectangle(650, 8, 146, 584, 0x101820, 0.92)
+      .setOrigin(0)
+      .setDepth(Depth.AboveWorld)
+      .setScrollFactor(0);
+
+    background.setStrokeStyle(1, 0x33475a);
+
+    const text = this.add
+      .text(658, 16, '', {
+        color: '#ffffff',
+        font: '12px monospace',
+        lineSpacing: 3,
+        wordWrap: { width: 132 },
+      })
+      .setDepth(Depth.AboveWorld)
+      .setScrollFactor(0);
+
+    let current = '';
+
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__roomStatusText = '';
+    }
+
+    return {
+      setText: (value: string) => {
+        if (value === current) {
+          return;
+        }
+
+        current = value;
+        text.setText(value);
+
+        if (typeof window !== 'undefined' && import.meta.env.DEV) {
+          window.__roomStatusText = value;
+        }
+      },
+    };
+  }
 
   /**
    * Prototype parity (Main.tsx logObjectiveIfComplete): the legacy
