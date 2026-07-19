@@ -6,7 +6,7 @@
  * docs/assets/pixellab-asset-manifest.md; formally locked at the
  * stimulus-freeze gate (plan §17b) before any pilot/formal data collection.
  */
-export const ASSET_SET_VERSION = 'outpost-assets-v1';
+export const ASSET_SET_VERSION = 'outpost-assets-v2';
 
 /** Player character texture keys (PixelLab player-researcher-v1). */
 export const RESEARCHER_DIRECTIONS = [
