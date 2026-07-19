@@ -275,7 +275,10 @@
         "src/data/researchInteractions.ts",
         "src/scenes/InventoryScene.ts"
       ],
-      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+      "spec_references": [
+        "e2e/inventory_prep_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts"
+      ]
     },
     "dock_control_familiarisation": {
       "rooms": ["dock_arrival"],
@@ -425,7 +428,10 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/engineer_hub_logging.spec.ts"]
+      "spec_references": [
+        "e2e/engineer_hub_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts"
+      ]
     },
     "engineer_evidence_reviewed": {
       "rooms": ["engineer_hub"],
@@ -439,7 +445,10 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/engineer_hub_logging.spec.ts"]
+      "spec_references": [
+        "e2e/engineer_hub_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts"
+      ]
     },
     "engineer_hub_entered": {
       "rooms": ["engineer_hub"],
@@ -454,6 +463,7 @@
         "e2e/engineer_hub_logging.spec.ts",
         "e2e/final_core_summary.spec.ts",
         "e2e/interruption_corridor_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts",
         "e2e/scenario_pilot_route.spec.ts"
       ]
     },
@@ -471,6 +481,7 @@
       ],
       "spec_references": [
         "e2e/engineer_hub_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts",
         "e2e/scenario_calibration_logging.spec.ts",
         "e2e/scenario_pilot_route.spec.ts"
       ]
@@ -489,7 +500,8 @@
       ],
       "spec_references": [
         "e2e/connected_participant_journeys.spec.ts",
-        "e2e/engineer_hub_logging.spec.ts"
+        "e2e/engineer_hub_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts"
       ]
     },
     "engineer_report_submitted_supervised": {
@@ -504,7 +516,10 @@
         "src/scenes/Main.tsx",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/engineer_hub_logging.spec.ts"]
+      "spec_references": [
+        "e2e/engineer_hub_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts"
+      ]
     },
     "engineer_report_submitted_unprepared": {
       "rooms": ["engineer_hub"],
@@ -520,7 +535,8 @@
       ],
       "spec_references": [
         "e2e/connected_participant_journeys.spec.ts",
-        "e2e/engineer_hub_logging.spec.ts"
+        "e2e/engineer_hub_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts"
       ]
     },
     "engineer_responsibility_adaptive": {
@@ -561,7 +577,8 @@
       "code_references": ["src/scenes/EngineerScene.ts"],
       "spec_references": [
         "e2e/connected_participant_journeys.spec.ts",
-        "e2e/engineer_hub_logging.spec.ts"
+        "e2e/engineer_hub_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts"
       ]
     },
     "engineer_supervision_assigned": {
@@ -575,6 +592,7 @@
       "spec_references": [
         "e2e/adversarial_status_board_display.spec.ts",
         "e2e/engineer_hub_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts",
         "e2e/scenario_calibration_logging.spec.ts",
         "e2e/scenario_pilot_route.spec.ts"
       ]
@@ -604,6 +622,7 @@
         "e2e/adversarial_status_board_display.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/engineer_hub_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts",
         "e2e/scenario_calibration_logging.spec.ts",
         "e2e/scenario_pilot_route.spec.ts"
       ]
@@ -683,6 +702,7 @@
         "e2e/connected_world_smoke.spec.ts",
         "e2e/final_core_summary.spec.ts",
         "e2e/interruption_corridor_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts",
         "e2e/research_export_test_mode.spec.ts",
         "e2e/scenario_pilot_route.spec.ts"
       ]
@@ -1081,7 +1101,8 @@
       "code_references": ["src/scenes/HazardScene.ts"],
       "spec_references": [
         "e2e/connected_world_smoke.spec.ts",
-        "e2e/hazard_control_logging.spec.ts"
+        "e2e/hazard_control_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts"
       ]
     },
     "hazard_route_avoided": {
@@ -1450,6 +1471,7 @@
       "spec_references": [
         "e2e/connected_world_smoke.spec.ts",
         "e2e/inventory_prep_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts",
         "e2e/scenario_pilot_route.spec.ts"
       ]
     },
@@ -1810,6 +1832,7 @@
       "spec_references": [
         "e2e/adversarial_reload_partial_state.spec.ts",
         "e2e/connected_world_smoke.spec.ts",
+        "e2e/participant_ui_cards.spec.ts",
         "e2e/repair_room_logging.spec.ts",
         "e2e/state_session_continuity.spec.ts"
       ]
@@ -2009,6 +2032,7 @@
         "e2e/adversarial_direct_launch_navigation.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
         "e2e/connected_world_smoke.spec.ts",
+        "e2e/participant_ui_cards.spec.ts",
         "e2e/side_repair_logging.spec.ts"
       ]
     },
@@ -2150,6 +2174,7 @@
         "e2e/hazard_control_logging.spec.ts",
         "e2e/helpers.ts",
         "e2e/interruption_corridor_logging.spec.ts",
+        "e2e/participant_ui_cards.spec.ts",
         "e2e/repair_room_logging.spec.ts",
         "e2e/scenario_pilot_route.spec.ts",
         "e2e/side_repair_logging.spec.ts"
