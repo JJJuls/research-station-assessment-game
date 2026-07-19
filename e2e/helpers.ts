@@ -617,7 +617,34 @@ export async function getLastPromptBody(page: Page): Promise<string | null> {
  * option order, 1-based).
  */
 export async function selectPromptOption(page: Page, optionNumber: number) {
+  const before = await page.evaluate(() =>
+    JSON.stringify(
+      (window as unknown as { __promptCards?: { label: string }[] | null })
+        .__promptCards ?? null,
+    ),
+  );
+
   await press(page, `${optionNumber}`);
+
+  // Deterministic settle (count-aware-waits discipline, NEXT-07): a
+  // selection either re-renders the card panel (chained stage) or closes
+  // it, both observable through the __promptCards probe. Waiting for that
+  // change before returning means the caller's next press can never race
+  // the renderer under CPU load — the classic swallowed-chained-press
+  // flake this suite documents. Falls through quietly after 4 s so
+  // identical re-renders and deliberate no-op presses (input-spam specs)
+  // keep their old semantics; by then any pending render has landed.
+  await page
+    .waitForFunction(
+      (prev) =>
+        JSON.stringify(
+          (window as unknown as { __promptCards?: { label: string }[] | null })
+            .__promptCards ?? null,
+        ) !== prev,
+      before,
+      { timeout: 4_000 },
+    )
+    .catch(() => undefined);
 }
 
 /** First event of the given type, or undefined. */
