@@ -165,11 +165,13 @@ function drawNpcVale(g: Graphics) {
 }
 
 /**
- * Quartermaster Console (Phase 2): terminal-on-stand silhouette from the
- * wall-console family — monitor head, pedestal, base. The screen carries
- * the cyan emissive cue (interactable station).
+ * Wall-console family (Phase 2/4a): terminal-on-stand silhouette —
+ * monitor head, pedestal, base. The screen carries the cyan emissive cue
+ * (interactable stations only). Used by the Quartermaster Console and,
+ * per the §5 nearest-honest-family reuse rule, by stations without a
+ * bespoke family (Repair Panel, Repair Manual, Relay Checkpoint).
  */
-function drawConsoleQuartermaster(g: Graphics) {
+function drawConsoleWall(g: Graphics) {
   box(g, 8, 46, 24, 7, CARD, BORDER);
   box(g, 16, 34, 8, 12, BORDER);
   box(g, 4, 6, 32, 26, CARD, BORDER);
@@ -332,8 +334,9 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   'proc-console-quartermaster': {
     width: 40,
     height: 56,
-    draw: drawConsoleQuartermaster,
+    draw: drawConsoleWall,
   },
+  'proc-console-wall': { width: 40, height: 56, draw: drawConsoleWall },
   'proc-rack-tools': { width: 48, height: 56, draw: drawRackTools },
   'proc-bin-consumables': { width: 48, height: 40, draw: drawBinConsumables },
   'proc-shelf-electronics': {

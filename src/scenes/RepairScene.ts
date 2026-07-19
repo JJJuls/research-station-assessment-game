@@ -171,6 +171,7 @@ export class RepairScene extends RoomScene {
       label: 'Repair Panel',
       x: 10 * 32 - 16,
       y: 5.5 * 32,
+      texture: 'proc-console-wall',
       onPromptOpened: () => {
         this.logRoomEvent('systemsRepairFailure', 'repair_panel_opened');
 
@@ -198,6 +199,7 @@ export class RepairScene extends RoomScene {
       label: 'Repair Manual',
       x: 3 * 32,
       y: 6.5 * 32,
+      texture: 'proc-console-wall',
       onPromptOpened: () => {
         this.logRoomEvent('repairManualStation', 'repair_manual_opened');
         this.logRoomEvent('repairManualStation', 'manual_page_reviewed');
@@ -219,6 +221,7 @@ export class RepairScene extends RoomScene {
       x: 10 * 32, // center of the bottom '--'
       y: 11 * 32 + 16,
       label: 'Station Hub',
+      texture: 'prop-hub-door-frame',
       interactionKey: 'systemsRepairFailure',
       target: {
         sceneKey: key.scene.hub,

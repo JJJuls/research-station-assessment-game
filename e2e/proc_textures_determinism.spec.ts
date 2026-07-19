@@ -25,6 +25,7 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-npc-kai': { width: 64, height: 64 },
   'proc-npc-vale': { width: 40, height: 56 },
   'proc-console-quartermaster': { width: 40, height: 56 },
+  'proc-console-wall': { width: 40, height: 56 },
   'proc-rack-tools': { width: 48, height: 56 },
   'proc-bin-consumables': { width: 48, height: 40 },
   'proc-shelf-electronics': { width: 48, height: 56 },
