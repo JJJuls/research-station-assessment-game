@@ -611,6 +611,7 @@ export abstract class RoomScene extends Phaser.Scene {
         backgroundColor: '#101820',
         color: '#ffffff',
         font: '15px monospace',
+        lineSpacing: 4,
         padding: { x: 10, y: 6 },
         wordWrap: { width: 520 },
       })
@@ -618,7 +619,9 @@ export abstract class RoomScene extends Phaser.Scene {
       .setDepth(Depth.AboveWorld)
       .setScrollFactor(0);
 
-    this.time.delayedCall(1600, () => {
+    // NEXT-07 Phase 6: 2200 ms display window (was 1600). Display-only
+    // timer — it blocks no input and delays no event.
+    this.time.delayedCall(2200, () => {
       this.feedbackMessage?.destroy();
       this.feedbackMessage = null;
     });
@@ -687,16 +690,17 @@ export abstract class RoomScene extends Phaser.Scene {
     const children: Phaser.GameObjects.GameObject[] = [];
     const header = this.add.text(
       PADDING,
-      16,
+      PADDING,
       `${interaction.label}${promptBody}`,
       {
         color: '#ffffff',
         font: '16px monospace',
+        lineSpacing: 4,
         wordWrap: { width: CARD_WIDTH - 12 },
       },
     );
 
-    let cursorY = 16 + Math.ceil(header.height) + 14;
+    let cursorY = PADDING + Math.ceil(header.height) + 12;
     const cards: PromptCard[] = [];
     const cardRects: {
       index: number;
@@ -716,6 +720,7 @@ export abstract class RoomScene extends Phaser.Scene {
         {
           color: '#ffffff',
           font: '15px monospace',
+          lineSpacing: 4,
           wordWrap: { width: CARD_WIDTH - CARD_GUTTER - 12 },
         },
       );
@@ -750,15 +755,16 @@ export abstract class RoomScene extends Phaser.Scene {
 
     const instruction = this.add.text(
       PADDING,
-      cursorY + 8,
+      cursorY + 12,
       PROMPT_INSTRUCTION,
       {
         color: '#9fb2c1',
         font: '14px monospace',
+        lineSpacing: 4,
         wordWrap: { width: CARD_WIDTH },
       },
     );
-    const panelHeight = cursorY + 8 + Math.ceil(instruction.height) + 16;
+    const panelHeight = cursorY + 12 + Math.ceil(instruction.height) + PADDING;
     const backdrop = this.add
       .rectangle(0, 0, PANEL_WIDTH, Math.max(230, panelHeight), 0x101820, 0.96)
       .setOrigin(0);
@@ -986,6 +992,14 @@ export abstract class RoomScene extends Phaser.Scene {
       .setScrollFactor(0);
 
     background.setStrokeStyle(1, 0x33475a);
+
+    // NEXT-07 Phase 6: rule line separating the panel's one-line header
+    // from its body (pure presentation; the text value is unchanged).
+    this.add
+      .rectangle(658, 34, 130, 1, 0x33475a)
+      .setOrigin(0)
+      .setDepth(Depth.AboveWorld)
+      .setScrollFactor(0);
 
     const text = this.add
       .text(658, 16, '', {
