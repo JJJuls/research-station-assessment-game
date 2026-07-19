@@ -140,15 +140,18 @@ export class EngineerScene extends RoomScene {
     this.statusPanel = this.addStatusSidePanel();
     this.refreshStatusPanel();
 
-    // Engineer Kai at the report console (top-center alcove). No committed
-    // texture exists for this room in outpost-assets-v1 — placeholder
-    // marker by design (placeholder-first rule; a Kai sprite is a future
-    // PixelLab decision needing fresh explicit approval).
+    // Engineer Kai at the report console (top-center alcove). NEXT-07
+    // Phase 1: procedural person-at-console composite (proc-npc-kai) — a
+    // placeholder-tier stand-in documented as procedural art, pending the
+    // gated external NPC pass. The station position, radius, label and
+    // interaction are unchanged (art swaps never alter interaction
+    // regions).
     this.addStation({
       interactionKey: 'engineerReportBack',
       label: 'Engineer Kai',
       x: 10 * 32 - 16,
       y: 5.5 * 32,
+      texture: 'proc-npc-kai',
       promptBody:
         'The station engineer asks for a status report before the next repair cycle. How do you respond?',
       onPromptOpened: () => {
@@ -180,11 +183,18 @@ export class EngineerScene extends RoomScene {
       this.calibrationScenario.buildStationConfig({ x: 16 * 32, y: 5.5 * 32 }),
     );
 
+    // Workshop dressing on the flanking bench blocks (NEXT-07 Phase 1,
+    // A2 reuse per visual plan §3.3): committed props as machinery/parts
+    // stock. Decorative only — duller than the two stations, no cyan.
+    this.addDecor(96, 120, 'prop-archive-racks');
+    this.addDecor(544, 120, 'prop-dock-crates');
+
     // Door back to the Station Hub.
     this.addDoor({
       x: 10 * 32, // center of the bottom '--'
       y: 11 * 32 + 16,
       label: 'Station Hub',
+      texture: 'prop-hub-door-frame',
       interactionKey: 'engineerReportBack',
       target: {
         sceneKey: key.scene.hub,

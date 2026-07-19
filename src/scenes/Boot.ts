@@ -14,6 +14,8 @@ import {
 import {
   DOCK_PAD_TILESET_KEY,
   DOCK_PAD_TILESET_URL,
+  ensureProceduralTextures,
+  PROCEDURAL_TEXTURE_MANIFEST,
   registerBuiltStationRoutes,
   resolveStartSceneKey,
   WANG_TILESET_KEY,
@@ -73,6 +75,29 @@ export class Boot extends Scene {
   }
 
   create() {
+    // NEXT-07 procedural texture foundry: all proc-* textures generate
+    // once, deterministically, before any room scene starts.
+    const generated = ensureProceduralTextures(this);
+
+    // DEV-only determinism probe (read-only, __playerProbe precedent):
+    // the second ensure call must add nothing (idempotence), and every
+    // manifest key must exist at its manifest dimensions. Dead-code
+    // eliminated from production builds.
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__procTextures = {
+        manifest: { ...PROCEDURAL_TEXTURE_MANIFEST },
+        firstRun: generated,
+        secondRunAdded: ensureProceduralTextures(this),
+        textures: Object.fromEntries(
+          Object.keys(PROCEDURAL_TEXTURE_MANIFEST).map((textureKey) => {
+            const source = this.textures.get(textureKey).getSourceImage();
+
+            return [textureKey, { width: source.width, height: source.height }];
+          }),
+        ),
+      };
+    }
+
     // Scene routing via ?scene= query param (SceneRouter). ?scene=prototype
     // stays permanently routable so no prototype research station
     // disappears before its room is ported. Built assessment stations

@@ -1,5 +1,9 @@
 export type { CanonicalEventContext } from './CanonicalEventContext';
 export { CANONICAL_EVENT_CONTEXT } from './CanonicalEventContext';
+export {
+  ensureProceduralTextures,
+  PROCEDURAL_TEXTURE_MANIFEST,
+} from './proceduralTextures';
 export type {
   InteractionKey,
   PromptOption,
