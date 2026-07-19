@@ -25,6 +25,20 @@ export interface MissionState {
   side_repair_status: string;
   interruption_status: string;
   final_core_status: string;
+  /**
+   * FABLE-NEXT-05 additive corridor records (task-file-authorised
+   * "additive SessionState record for the competing objective"; never
+   * touches active_objectives semantics — Q18 frozen). Vocabulary in
+   * src/data/missionVocabulary.ts.
+   */
+  competing_task_status: string;
+  relay_checkpoint_status: string;
+  /**
+   * Opportunity state frozen at the switch commit (see missionVocabulary
+   * SWITCH_ORIGINAL_NONE) - a later-accepted duty never retroactively
+   * makes an opportunity-less switch interpretable.
+   */
+  switch_original_task_id: string;
 }
 
 // Transitional neutral placeholder — no source document defines a status
@@ -127,6 +141,18 @@ export class SessionState {
   setFinalCoreStatus(status: string) {
     this.missionState.final_core_status = status;
   }
+
+  setCompetingTaskStatus(status: string) {
+    this.missionState.competing_task_status = status;
+  }
+
+  setRelayCheckpointStatus(status: string) {
+    this.missionState.relay_checkpoint_status = status;
+  }
+
+  setSwitchOriginalTaskId(taskId: string) {
+    this.missionState.switch_original_task_id = taskId;
+  }
 }
 
 function createDefaultMissionState(): MissionState {
@@ -147,6 +173,9 @@ function createDefaultMissionState(): MissionState {
     side_repair_status: NEUTRAL_MISSION_STATUS,
     interruption_status: NEUTRAL_MISSION_STATUS,
     final_core_status: NEUTRAL_MISSION_STATUS,
+    competing_task_status: NEUTRAL_MISSION_STATUS,
+    relay_checkpoint_status: NEUTRAL_MISSION_STATUS,
+    switch_original_task_id: NEUTRAL_MISSION_STATUS,
   };
 }
 

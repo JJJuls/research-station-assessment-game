@@ -52,6 +52,41 @@ export const INTERRUPTION_STATUS_RETURNED = 'returned_to_task';
 export const INTERRUPTION_STATUS_ALERT_IGNORED = 'alert_ignored';
 
 /**
+ * FABLE-NEXT-05 corridor task ids (event metadata `original_task_id` /
+ * `competing_task_id`) and the two additive SessionState status fields.
+ *
+ * competing_task_status — the beacon's real competing task (antenna
+ * alignment at the corridor junction): not_started -> accepted (switch
+ * committed) -> started (first junction interaction; switched_task
+ * observed) -> completed. relay_checkpoint_status — the genuinely pending
+ * original objective (relay check-in, available only while the accepted
+ * relay-supervision duty is active): not_started -> pending -> completed.
+ * Vocabulary defined by the corridor beat per SessionState's documented
+ * open-vocabulary rule; Final Core reads relay_checkpoint 'pending' +
+ * interruption 'switched_away' as the prior_goal_abandoned closure
+ * condition (a no-opportunity session — nothing genuinely pending — can
+ * never produce that closure event).
+ */
+export const RELAY_CHECKPOINT_TASK_ID = 'relay_checkpoint';
+export const AUX_ANTENNA_TASK_ID = 'aux_antenna_alignment';
+/**
+ * switch_original_task_id — the opportunity state FROZEN at the moment the
+ * switch is committed (gameplay-review finding: a duty accepted AFTER an
+ * opportunity-less switch must not retroactively make the switch's
+ * return/abandonment observations interpretable — the task file defines
+ * "no switch/return observation is interpretable" for the no-opportunity
+ * state). Values: RELAY_CHECKPOINT_TASK_ID (a check-in was genuinely
+ * pending at commit) | SWITCH_ORIGINAL_NONE (nothing pending at commit) |
+ * 'not_started' (no switch committed yet).
+ */
+export const SWITCH_ORIGINAL_NONE = 'none';
+export const COMPETING_TASK_STATUS_ACCEPTED = 'accepted';
+export const COMPETING_TASK_STATUS_STARTED = 'started';
+export const COMPETING_TASK_STATUS_COMPLETED = 'completed';
+export const RELAY_CHECKPOINT_STATUS_PENDING = 'pending';
+export const RELAY_CHECKPOINT_STATUS_COMPLETED = 'completed';
+
+/**
  * final_core_status written by the Final Core room: which completion path
  * closed the mission cycle. Path labels only — never a score (Final Core
  * must not become a global quality rollup).

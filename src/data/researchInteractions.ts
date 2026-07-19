@@ -189,6 +189,30 @@ export const researchInteractions = {
     score_tags: ['consistency', 'return_to_task', 'focus', 'task_switching'],
     room_id: 'interruption_corridor',
   },
+  // FABLE-NEXT-05: the genuinely pending original objective's own station
+  // (relay check-in, available while the accepted relay-supervision duty
+  // is active). Distinct object in the same room (sideRepairPartsShelf
+  // precedent) — the observed return act and the original's completion
+  // are physical interactions here, never dialogue assertions.
+  interruptionRelayCheckpoint: {
+    object_id: 'relay_checkpoint',
+    label: 'Relay Checkpoint',
+    episode: 'grit_consistency_interruption',
+    event_type: 'return_to_unfinished_task',
+    score_tags: ['consistency', 'return_to_task', 'follow_through'],
+    room_id: 'interruption_corridor',
+  },
+  // FABLE-NEXT-05: the competing task's station — the beacon's offer
+  // actually runs here (1-2 interactions). switched_task is observed at
+  // the first real interaction, not at the beacon dialogue.
+  interruptionAuxJunction: {
+    object_id: 'aux_antenna_junction',
+    label: 'Antenna Junction',
+    episode: 'grit_consistency_interruption',
+    event_type: 'switched_task',
+    score_tags: ['consistency', 'task_switching'],
+    room_id: 'interruption_corridor',
+  },
   optionalSideRepair: {
     object_id: 'optional_side_repair',
     label: 'Maintenance Bot - Side Repair',

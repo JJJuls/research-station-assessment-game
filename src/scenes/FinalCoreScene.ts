@@ -7,6 +7,8 @@ import {
   FINAL_CORE_STATUS_LOW_QUALITY,
   FINAL_CORE_STATUS_STRUCTURED,
   INTERRUPTION_STATUS_SWITCHED_AWAY,
+  RELAY_CHECKPOINT_STATUS_PENDING,
+  RELAY_CHECKPOINT_TASK_ID,
   SIDE_REPAIR_STATUS_COMPLETED,
   WORKSPACE_STATUS_DISORDERED,
 } from '../data/missionVocabulary';
@@ -270,6 +272,7 @@ export class FinalCoreScene extends RoomScene {
           'final_core_low_quality_completion',
           'final_core_completed',
           ...this.dutyUnresolvedEvents(),
+          ...this.priorGoalClosureEvents(),
         ],
         onSelected: () =>
           this.markFinalCoreCompleted(FINAL_CORE_STATUS_LOW_QUALITY),
@@ -285,6 +288,7 @@ export class FinalCoreScene extends RoomScene {
           'final_core_structured_completion',
           'final_core_completed',
           ...this.dutyUnresolvedEvents(),
+          ...this.priorGoalClosureEvents(),
         ],
         onSelected: () =>
           this.markFinalCoreCompleted(FINAL_CORE_STATUS_STRUCTURED),
@@ -306,6 +310,7 @@ export class FinalCoreScene extends RoomScene {
             ...(dutyActive ? ['engineer_supervision_completed'] : []),
             'final_core_high_quality_completion',
             'final_core_completed',
+            ...this.priorGoalClosureEvents(),
           ];
         },
         onSelected: () => {
@@ -333,6 +338,7 @@ export class FinalCoreScene extends RoomScene {
           'final_core_force_continue',
           'final_core_completed',
           ...this.dutyUnresolvedEvents(),
+          ...this.priorGoalClosureEvents(),
         ],
         onSelected: () => this.markFinalCoreCompleted(FINAL_CORE_STATUS_FORCED),
       });
@@ -393,6 +399,31 @@ export class FinalCoreScene extends RoomScene {
   /** accepted_duty_unresolved fires at completion while the duty is open. */
   private dutyUnresolvedEvents(): string[] {
     return this.isRelayDutyActive() ? ['accepted_duty_unresolved'] : [];
+  }
+
+  /**
+   * FABLE-NEXT-05 Final-Core-bound closure (binding trigger table):
+   * prior_goal_abandoned fires at completion time when the corridor switch
+   * was committed (interruption_status still switched_away — an observed
+   * return would have settled it to returned_to_task) AND the original
+   * objective was genuinely pending and never completed
+   * (relay_checkpoint_status pending) AND the switch was committed WHILE
+   * the check-in was pending (frozen switch_original_task_id — a duty
+   * accepted after an opportunity-less switch never retroactively makes
+   * the closure interpretable). A no-opportunity session can never emit
+   * it (validity rule: only non-return with a valid original is
+   * negative). Mirrors
+   * dutyUnresolvedEvents' completion-time semantics; once per session via
+   * the final-core one-shot completion gate.
+   */
+  private priorGoalClosureEvents(): string[] {
+    const mission = researchRuntime.sessionState.getMissionState();
+
+    return mission.interruption_status === INTERRUPTION_STATUS_SWITCHED_AWAY &&
+      mission.relay_checkpoint_status === RELAY_CHECKPOINT_STATUS_PENDING &&
+      mission.switch_original_task_id === RELAY_CHECKPOINT_TASK_ID
+      ? ['prior_goal_abandoned']
+      : [];
   }
 
   private isRelayDutyActive(): boolean {
