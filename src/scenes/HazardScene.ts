@@ -146,6 +146,7 @@ export class HazardScene extends RoomScene {
       label: 'Hazard Warning',
       x: 10 * 32,
       y: 5.5 * 32,
+      texture: 'proc-panel-warning',
       onPromptOpened: () => {
         // Prototype semantics preserved: the warning fires on every prompt
         // open (Main.tsx has no one-shot guard for this interaction).
@@ -159,6 +160,7 @@ export class HazardScene extends RoomScene {
       x: 10 * 32, // center of the bottom '--'
       y: 11 * 32 + 16,
       label: 'Station Hub',
+      texture: 'prop-hub-door-frame',
       interactionKey: 'hazardUncertaintyWarning',
       target: {
         sceneKey: key.scene.hub,

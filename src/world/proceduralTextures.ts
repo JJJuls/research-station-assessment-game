@@ -28,6 +28,11 @@ const CARD = 0x1a2733;
 const BORDER = 0x33475a;
 const ACCENT = 0x5fd3c4;
 const MUTED = 0x9fb2c1;
+/** Hazard amber (§5): appears ONLY in the Hazard Control warning-panel
+ * texture — matte band, never flashing, the single warm accent besides
+ * the player's rust-orange (§7.3). */
+const HAZARD_AMBER = 0xd9a441;
+const HAZARD_AMBER_SHADE = 0xb08334;
 
 /** NPC suit hues (NPC spec §2): cold-neutral so the player's rust-orange
  * stays the only warm mid-tone. Kai slate-teal; the Quartermaster
@@ -317,6 +322,31 @@ function drawConsoleScenario(g: Graphics) {
   rect(g, 35, 39, 3, 3, ACCENT);
 }
 
+/**
+ * Hazard warning panel (Phase 4b): wide wall panel carrying the game's
+ * ONLY amber — one matte diagonal-notched band. Static, never animated,
+ * never flashing (§7.8); the small cyan dot keeps the uniform
+ * interactable cue.
+ */
+function drawPanelWarning(g: Graphics) {
+  // Mounted wall panel.
+  box(g, 4, 6, 40, 36, CARD, BORDER);
+  // Matte amber band with dark notches (non-colour-only hazard glyph).
+  rect(g, 7, 12, 34, 8, HAZARD_AMBER);
+  rect(g, 7, 18, 34, 2, HAZARD_AMBER_SHADE);
+  rect(g, 11, 12, 4, 8, OUTLINE);
+  rect(g, 21, 12, 4, 8, OUTLINE);
+  rect(g, 31, 12, 4, 8, OUTLINE);
+  // Muted readout lines below the band.
+  rect(g, 9, 26, 22, 2, MUTED);
+  rect(g, 9, 31, 16, 2, MUTED);
+  // Interactable cyan dot.
+  rect(g, 36, 36, 3, 3, ACCENT);
+  // Mounting feet.
+  rect(g, 10, 42, 6, 4, OUTLINE);
+  rect(g, 32, 42, 6, 4, OUTLINE);
+}
+
 interface TextureBuilder {
   width: number;
   height: number;
@@ -347,6 +377,7 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   'proc-bench-prep': { width: 64, height: 40, draw: drawBenchPrep },
   'proc-crate-fieldkit': { width: 48, height: 48, draw: drawCrateFieldKit },
   'proc-console-scenario': { width: 48, height: 52, draw: drawConsoleScenario },
+  'proc-panel-warning': { width: 48, height: 48, draw: drawPanelWarning },
 };
 
 /** Fixed manifest (key → dimensions) for determinism coverage. */
