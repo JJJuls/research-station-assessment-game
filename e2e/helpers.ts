@@ -617,34 +617,49 @@ export async function getLastPromptBody(page: Page): Promise<string | null> {
  * option order, 1-based).
  */
 export async function selectPromptOption(page: Page, optionNumber: number) {
-  const before = await page.evaluate(() =>
-    JSON.stringify(
-      (window as unknown as { __promptCards?: { label: string }[] | null })
-        .__promptCards ?? null,
-    ),
-  );
+  const cardsSnapshot = () =>
+    page.evaluate(() =>
+      JSON.stringify(
+        (window as unknown as { __promptCards?: { label: string }[] | null })
+          .__promptCards ?? null,
+      ),
+    );
+  const settleAfterPress = async (prev: string, timeout: number) => {
+    await press(page, `${optionNumber}`);
 
-  await press(page, `${optionNumber}`);
+    return page
+      .waitForFunction(
+        (p) =>
+          JSON.stringify(
+            (
+              window as unknown as {
+                __promptCards?: { label: string }[] | null;
+              }
+            ).__promptCards ?? null,
+          ) !== p,
+        prev,
+        { timeout },
+      )
+      .then(
+        () => true,
+        () => false,
+      );
+  };
 
-  // Deterministic settle (count-aware-waits discipline, NEXT-07): a
-  // selection either re-renders the card panel (chained stage) or closes
-  // it, both observable through the __promptCards probe. Waiting for that
-  // change before returning means the caller's next press can never race
-  // the renderer under CPU load — the classic swallowed-chained-press
-  // flake this suite documents. Falls through quietly after 4 s so
-  // identical re-renders and deliberate no-op presses (input-spam specs)
-  // keep their old semantics; by then any pending render has landed.
-  await page
-    .waitForFunction(
-      (prev) =>
-        JSON.stringify(
-          (window as unknown as { __promptCards?: { label: string }[] | null })
-            .__promptCards ?? null,
-        ) !== prev,
-      before,
-      { timeout: 4_000 },
-    )
-    .catch(() => undefined);
+  // Deterministic settle + verify-and-retry (count-aware-waits
+  // discipline, NEXT-07): a selection always either re-renders the card
+  // panel (chained stage) or closes it — both observable through the
+  // __promptCards probe. If nothing observable happened within the
+  // settle window, the press was swallowed (the documented
+  // intermittent input loss of the SwiftShader/headless environment,
+  // seen live on chained prompt stages), so press the same option once
+  // more. Deliberate no-op presses (input-spam specs) keep their
+  // semantics — one extra spam press changes nothing they assert.
+  const before = await cardsSnapshot();
+
+  if (!(await settleAfterPress(before, 4_000))) {
+    await settleAfterPress(before, 6_000);
+  }
 }
 
 /** First event of the given type, or undefined. */
