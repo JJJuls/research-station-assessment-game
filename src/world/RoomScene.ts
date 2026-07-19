@@ -237,6 +237,22 @@ export abstract class RoomScene extends Phaser.Scene {
   private stations: RoomStationConfig[] = [];
   private transitioning = false;
 
+  /**
+   * NEXT-07 Phase 5 guidance pulse. Marker visuals keyed by their
+   * station/door config so the proximity scan's nearest target can be
+   * mapped back to its rendered marker; exactly one marker pulses at a
+   * time (the currently nearest eligible in-range interactable), with
+   * the Dock movement-target's committed tween values so guidance
+   * strength is uniform everywhere. Pure presentation: pulsing never
+   * logs, never gates input, never changes task state.
+   */
+  private interactableMarkers = new Map<
+    RoomStationConfig | RoomDoorConfig,
+    Phaser.GameObjects.GameObject
+  >();
+  private pulseTween: Phaser.Tweens.Tween | null = null;
+  private pulseMarker: Phaser.GameObjects.GameObject | null = null;
+
   /** Room layout grid; see StationMapBuilder for the character legend. */
   protected abstract getLayout(): RoomLayout;
   /** Player spawn in pixels, possibly depending on the entry door. */
@@ -266,6 +282,9 @@ export abstract class RoomScene extends Phaser.Scene {
     this.stations = [];
     this.transitioning = false;
     this.feedbackMessage = null;
+    this.interactableMarkers = new Map();
+    this.pulseTween = null;
+    this.pulseMarker = null;
 
     researchRuntime.logSceneStart(this.scene.key);
     researchRuntime.sessionState.setCurrentRoom(this.roomId);
@@ -392,17 +411,80 @@ export abstract class RoomScene extends Phaser.Scene {
       0x1f7a8c,
       0x5fd3c4,
     );
+
+    this.stationLabels.add([
+      marker,
+      ...this.buildLabelChip(config.x, config.y - 42, config.label),
+    ]);
+    this.interactableMarkers.set(config, marker);
+    this.stations.push(config);
+  }
+
+  /**
+   * NEXT-07 Phase 5: station/door label chip in the shared panel
+   * language (panel fill @ 0.92 + 1 px border) instead of the raw black
+   * text background. Label text content is byte-identical to the config
+   * string; the chip is pure presentation behind it.
+   */
+  private buildLabelChip(
+    x: number,
+    y: number,
+    text: string,
+  ): Phaser.GameObjects.GameObject[] {
     const label = this.add
-      .text(config.x, config.y - 42, config.label, {
-        backgroundColor: '#000',
+      .text(x, y, text, {
         color: '#fff',
         font: '12px monospace',
         padding: { x: 4, y: 2 },
       })
       .setOrigin(0.5);
+    const chip = this.add
+      .rectangle(
+        x,
+        y,
+        Math.ceil(label.width),
+        Math.ceil(label.height),
+        0x101820,
+        0.92,
+      )
+      .setStrokeStyle(1, 0x33475a);
 
-    this.stationLabels.add([marker, label]);
-    this.stations.push(config);
+    // Chip behind, text in front (container render order is add order).
+    return [chip, label];
+  }
+
+  /**
+   * NEXT-07 Phase 5: retargets the guidance pulse. Exactly one marker —
+   * the currently nearest eligible in-range interactable — pulses with
+   * the Dock movement-target's committed tween values (700 ms, alpha
+   * 1→0.4, yoyo); passing null stops the pulse and restores full
+   * alpha (the settled state is simply the absence of the pulse —
+   * D-N07-2: no completed-state copy exists).
+   */
+  private setPulseMarker(marker: Phaser.GameObjects.GameObject | null) {
+    if (marker === this.pulseMarker) {
+      return;
+    }
+
+    if (this.pulseTween !== null) {
+      this.pulseTween.stop();
+      this.pulseTween = null;
+    }
+
+    (this.pulseMarker as { setAlpha?: (a: number) => void } | null)?.setAlpha?.(
+      1,
+    );
+    this.pulseMarker = marker;
+
+    if (marker !== null) {
+      this.pulseTween = this.tweens.add({
+        targets: marker,
+        alpha: { from: 1, to: 0.4 },
+        duration: 700,
+        repeat: -1,
+        yoyo: true,
+      });
+    }
   }
 
   /**
@@ -447,16 +529,11 @@ export abstract class RoomScene extends Phaser.Scene {
       isSealed ? 0x46586b : 0x3f5a66,
       isSealed ? 0x2b3a4a : 0x5fd3c4,
     );
-    const label = this.add
-      .text(config.x, config.y - 42, config.label, {
-        backgroundColor: '#000',
-        color: '#fff',
-        font: '12px monospace',
-        padding: { x: 4, y: 2 },
-      })
-      .setOrigin(0.5);
-
-    this.stationLabels.add([marker, label]);
+    this.stationLabels.add([
+      marker,
+      ...this.buildLabelChip(config.x, config.y - 42, config.label),
+    ]);
+    this.interactableMarkers.set(config, marker);
     this.doors.push(config);
   }
 
@@ -975,6 +1052,9 @@ export abstract class RoomScene extends Phaser.Scene {
     ) {
       this.activeTarget = null;
       this.proximityPrompt.setVisible(false);
+      // No interaction is eligible (prompt open / typewriter /
+      // transition) — the guidance pulse ceases naturally (Phase 5).
+      this.setPulseMarker(null);
       return;
     }
 
@@ -1011,6 +1091,16 @@ export abstract class RoomScene extends Phaser.Scene {
     }
 
     this.activeTarget = nearest;
+
+    // Phase 5 guidance pulse: exactly the nearest eligible in-range
+    // marker pulses; out of range, the pulse ceases (null clears it).
+    this.setPulseMarker(
+      nearest === null
+        ? null
+        : (this.interactableMarkers.get(
+            nearest.kind === 'station' ? nearest.station! : nearest.door!,
+          ) ?? null),
+    );
 
     if (this.activeTarget === null) {
       this.proximityPrompt.setVisible(false);
