@@ -2,11 +2,14 @@ import { expect, test } from '@playwright/test';
 
 import {
   bootGame,
+  clickPromptCard,
   dockToHub,
   findEvent,
   findEvents,
   getEvents,
   getEventTypes,
+  getLastPromptBody,
+  getMinigameSurface,
   getSummary,
   hold,
   hubToStationDoor,
@@ -298,6 +301,81 @@ test.describe('engineer hub logging', () => {
 
     expect(mission.skipped_duties).toContain('relay_supervision');
     expect(mission.accepted_duties).not.toContain('relay_supervision');
+  });
+
+  test('NEXT-08 evidence/claim surfaces: __lastPromptBody byte-identical, mouse path event-identical', async ({
+    page,
+  }) => {
+    test.setTimeout(600_000);
+
+    /**
+     * §6.4 checks + Route A discipline: the report-content stage keeps
+     * its exact panel-text composition with the inset/record-card
+     * treatments applied (the mode-help sentence renders inside the
+     * log-extract inset with byte-identical text), no task-surface
+     * activators exist on any engineer stage, and a mouse-only run
+     * (including clicking a record-treated claim card) emits the
+     * identical event stream to the keyboard-only run.
+     */
+    const runFlow = async (sessionId: string, useMouse: boolean) => {
+      const select = async (index: number) => {
+        if (useMouse) {
+          await clickPromptCard(page, index);
+        } else {
+          await press(page, `${index + 1}`);
+        }
+      };
+
+      await bootGame(page, {
+        participant_id: 'E2E_P3',
+        game_session_id: sessionId,
+        condition: 'pilot',
+        game_version: 'e2e',
+      });
+      await dockToHub(page);
+      await hubToEngineer(page);
+      await openKaiPrompt(page);
+
+      await select(1); // review station evidence, then report
+
+      // Fresh session: repair still open, kit not packed — the extract
+      // shows the two actual values, byte-identical inside the inset.
+      const body = await getLastPromptBody(page);
+
+      expect(body).toContain(
+        'Station log — systems repair cycle: still open. Field kit: not packed.',
+      );
+      expect(body).toContain('Which status update do you send?');
+      // No task-surface activators anywhere on engineer stages (§6.4:
+      // insets and record cards only — never a fact-grid or activator).
+      expect(await getMinigameSurface(page)).toBeNull();
+
+      await select(3); // claim 4 (record-card treatment; accurate here)
+      await select(1); // decline the relay duty
+
+      const events = await getEvents(page);
+
+      return events.map((e) => ({
+        event_type: e.event_type,
+        object_id: e.object_id ?? null,
+        success: e.success ?? null,
+        metadata_keys:
+          e.metadata !== undefined && e.metadata !== null
+            ? Object.keys(e.metadata as Record<string, unknown>).sort()
+            : null,
+      }));
+    };
+
+    const keyboardStream = await runFlow('E2E_ENG_S5K', false);
+    const mouseStream = await runFlow('E2E_ENG_S5M', true);
+
+    expect(mouseStream).toEqual(keyboardStream);
+
+    const streamTypes = keyboardStream.map((e) => e.event_type);
+
+    expect(streamTypes).toContain('engineer_evidence_reviewed');
+    expect(streamTypes).toContain('engineer_report_accuracy_scored');
+    expect(streamTypes).toContain('engineer_supervision_declined');
   });
 
   test('partially accurate claim scores the 0.5 proportion', async ({

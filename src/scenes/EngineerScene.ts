@@ -329,6 +329,22 @@ export class EngineerScene extends RoomScene {
 
     return {
       body: `${reportFeedback}\n\n${modeHelp}\n\nWhich status update do you send?`,
+      // NEXT-08 Phase 5 (§6.4): the mode-specific help sentence renders
+      // inside a visually distinct inset — the log-extract treatment in
+      // evidence-review mode, a plain inset otherwise — with the text
+      // byte-identical (bodyInset carves the exact substring out of the
+      // body; __lastPromptBody composition is untouched). The four claim
+      // cards take the record-card treatment, labels verbatim, template
+      // order. Deliberately NO fact-grid, tick-mark or decomposition:
+      // the comparison work between claims is the Q09 measurement
+      // substance. The mode stage and duty offer stay plain cards.
+      presentation: {
+        bodyInset: {
+          text: modeHelp,
+          treatment: reportMode === 'prepared' ? 'log' : 'plain',
+        },
+        recordCards: [0, 1, 2, 3],
+      },
       options: REPORT_CLAIMS.map((claim) => ({
         label: claim.label,
         feedback: '',
