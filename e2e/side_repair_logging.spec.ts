@@ -2,12 +2,14 @@ import { expect, test } from '@playwright/test';
 
 import {
   bootGame,
+  clickPromptCard,
   dockToHub,
   driveAxisTo,
   findEvent,
   findEvents,
   getEvents,
   getEventTypes,
+  getMinigameSurface,
   getSummary,
   hold,
   hubToStationDoor,
@@ -385,6 +387,124 @@ test.describe('side repair bay logging', () => {
 
     expect(findEvents(events, 'side_repair_completed')).toHaveLength(0);
     expect(findEvents(events, 'stabiliser_option_offered')).toHaveLength(1);
+  });
+
+  test('NEXT-08 step tracker mirrors stepsCompleted; mouse path event-identical', async ({
+    page,
+  }) => {
+    test.setTimeout(600_000);
+
+    /**
+     * §6.3 checks + Route A discipline: the work-console step-tracker
+     * tiles reuse the side panel's exact step strings and mirror
+     * stepsCompleted (inert, glyph-state only); the offer stage stays a
+     * plain card stage (no surface); the complete accept→fetch→fit→check
+     * flow driven mouse-only emits the identical event stream to the
+     * keyboard-only run.
+     */
+    const expectTiles = async (
+      states: ('pending' | 'current' | 'done')[] | null,
+    ) => {
+      const surface = await getMinigameSurface(page);
+
+      if (states === null) {
+        expect(surface).toBeNull();
+        return;
+      }
+
+      const tiles = surface?.filter((e) => e.kind === 'steps') ?? [];
+
+      expect(tiles.map((t) => t.label)).toEqual([
+        'fetch the component',
+        'fit the component',
+        'run the system check',
+      ]);
+      expect(tiles.map((t) => t.state)).toEqual(states);
+
+      for (const tile of tiles) {
+        expect(tile.activates).toBeNull();
+      }
+    };
+
+    const runFlow = async (sessionId: string, useMouse: boolean) => {
+      const select = async (index: number) => {
+        if (useMouse) {
+          await clickPromptCard(page, index);
+        } else {
+          await press(page, `${index + 1}`);
+        }
+      };
+
+      await bootGame(page, {
+        participant_id: 'E2E_P7',
+        game_session_id: sessionId,
+        condition: 'pilot',
+        game_version: 'e2e',
+      });
+      await dockToHub(page);
+      await hubToSideRepair(page);
+
+      await openBotPrompt(page);
+
+      if (useMouse) {
+        // Offer stage: stance choices — plain cards, no task surface.
+        await expectTiles(null);
+      }
+
+      await select(1); // accept: start the stabiliser repair
+
+      await press(page, 'Space'); // re-open: now the work console
+
+      if (useMouse) {
+        await expectTiles(['current', 'pending', 'pending']);
+      }
+
+      await select(0); // review the work order (no events, closes)
+
+      await driveAxisTo(page, 'y', 272, 12);
+      await hold(page, 'ArrowLeft', 2400);
+      await press(page, 'Space');
+      await select(0); // collect the replacement part (fetch step)
+
+      await openBotPrompt(page);
+
+      if (useMouse) {
+        await expectTiles(['done', 'current', 'pending']);
+      }
+
+      await select(0); // adjust the mounting, seat the part (fit step)
+      await press(page, 'Space');
+
+      if (useMouse) {
+        await expectTiles(['done', 'done', 'current']);
+      }
+
+      await select(0); // run the system check -> completion
+
+      const events = await getEvents(page);
+
+      return events.map((e) => ({
+        event_type: e.event_type,
+        object_id: e.object_id ?? null,
+        metadata_step:
+          (e.metadata as { step?: string } | undefined)?.step ?? null,
+      }));
+    };
+
+    const keyboardStream = await runFlow('E2E_SIDE_S7K', false);
+    const mouseStream = await runFlow('E2E_SIDE_S7M', true);
+
+    expect(mouseStream).toEqual(keyboardStream);
+
+    const streamTypes = keyboardStream.map((e) => e.event_type);
+
+    expect(streamTypes).toContain('side_repair_first_step');
+    expect(streamTypes).toContain('side_repair_completed');
+    expect(
+      keyboardStream
+        .filter((e) => e.event_type === 'side_repair_step_completed')
+        .map((e) => e.metadata_step),
+    ).toEqual(['fetch_component', 'fit_component', 'run_check']);
   });
 
   test('walk-away after two real steps logs the observed abandonment pair once', async ({

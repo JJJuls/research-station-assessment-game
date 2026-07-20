@@ -6,8 +6,19 @@ import {
   SIDE_REPAIR_STATUS_IGNORED,
 } from '../data/missionVocabulary';
 import { researchRuntime } from '../systems';
-import type { InteractionKey, PromptOption, RoomLayout } from '../world';
-import { createRoomTaskState, RoomScene, runOncePerSession } from '../world';
+import type {
+  InteractionKey,
+  PromptOption,
+  RoomLayout,
+  StagePresentation,
+  SurfaceStepTile,
+} from '../world';
+import {
+  createRoomTaskState,
+  ICON_TEXTURES,
+  RoomScene,
+  runOncePerSession,
+} from '../world';
 
 /**
  * Ordered step ids of the accepted stabiliser repair (FABLE-NEXT-03 task A:
@@ -287,6 +298,75 @@ export class SideRepairScene extends RoomScene {
       );
       this.markDecisionLogged();
     }
+  }
+
+  /**
+   * NEXT-08 Phase 4 (§6.3): fetch-fit-check made visible. The accepted
+   * work-console stages render a step-tracker strip of three inert tiles
+   * whose labels reuse the side panel's exact step strings and whose
+   * glyph states (pending/current/done — never colour-only) mirror
+   * stepsCompleted, state the side panel already shows in text. After
+   * fetching (carried state), the stabiliser-part icon appears on the
+   * fit tile. The current step's option card carries a matching glyph
+   * when that card IS the step act (fit/check); the defer option and the
+   * offer stage (ignore/accept/defer — the voluntary-effort decision)
+   * stay plain cards. The parts shelf's collect option carries the part
+   * icon. No event, gate, defer or walk-away semantics change.
+   */
+  protected getStagePresentation(
+    interactionKey: InteractionKey,
+  ): StagePresentation | undefined {
+    const state = sideRepairTaskState.get();
+
+    if (
+      !state.accepted ||
+      this.isDecisionLogged() ||
+      state.stepsCompleted >= SIDE_REPAIR_STEPS.length
+    ) {
+      return undefined;
+    }
+
+    if (interactionKey === 'sideRepairPartsShelf') {
+      return { optionIcons: { 0: ICON_TEXTURES.stabiliserPart } };
+    }
+
+    if (interactionKey !== 'optionalSideRepair') {
+      return undefined;
+    }
+
+    const tiles: SurfaceStepTile[] = [
+      'fetch the component',
+      'fit the component',
+      'run the system check',
+    ].map((label, index) => ({
+      label,
+      state:
+        index < state.stepsCompleted
+          ? 'done'
+          : index === state.stepsCompleted
+            ? 'current'
+            : 'pending',
+    }));
+
+    return {
+      surface: [
+        {
+          kind: 'steps',
+          tiles,
+          partIcon:
+            state.stepsCompleted === 1
+              ? { icon: ICON_TEXTURES.stabiliserPart, tileIndex: 1 }
+              : undefined,
+        },
+      ],
+      // The step-act card (fit at step 2, check at step 3) carries the
+      // current-step glyph; the step-1 console card is the work-order
+      // review, not the fetch act (that act lives at the parts shelf).
+      optionIcons:
+        state.stepsCompleted >= 1
+          ? { 0: ICON_TEXTURES.stepCurrent }
+          : undefined,
+    };
   }
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
