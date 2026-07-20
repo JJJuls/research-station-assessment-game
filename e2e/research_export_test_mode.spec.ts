@@ -276,7 +276,7 @@ test.describe('research export (test mode only)', () => {
 
     // Payload comes from existing instrumentation, not invented values.
     expect(envelope.payload.game_version).toBe('e2e');
-    expect(envelope.payload.asset_set_version).toBe('outpost-assets-v2');
+    expect(envelope.payload.asset_set_version).toBe('outpost-assets-v3');
     expect(Object.keys(envelope.payload.summary).sort()).toEqual(
       Object.keys(completion.summary).sort(),
     );
