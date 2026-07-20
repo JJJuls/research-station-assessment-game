@@ -1333,6 +1333,12 @@ export abstract class RoomScene extends Phaser.Scene {
       }
 
       case 'steps': {
+        if (element.tiles.length === 0) {
+          // Authoring guard (Phase 1 review finding): an empty tile list
+          // must degrade to nothing, never to NaN layout arithmetic.
+          return cursorY;
+        }
+
         const gap = 8;
         const count = element.tiles.length;
         const tileWidth = Math.floor(

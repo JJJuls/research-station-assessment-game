@@ -26,8 +26,13 @@ import type {
   PromptOption,
   PromptStage,
   RoomLayout,
+  StagePresentation,
 } from '../world';
-import { CANONICAL_EVENT_CONTEXT, RoomScene } from '../world';
+import {
+  CANONICAL_EVENT_CONTEXT,
+  itemIconTextureKey,
+  RoomScene,
+} from '../world';
 
 /**
  * Inventory / Preparation Room — V3 §4 Room 4,
@@ -436,6 +441,141 @@ export class InventoryScene extends RoomScene {
   }
 
   // ————————————————————————————————————————————————————————————————————
+  // NEXT-08 Phase 2 — stage presentations (§6.1). Presentation only:
+  // every element is a redundant activator of an option the stage already
+  // declares; every string is an existing room string, verbatim; no
+  // destination ever previews placement correctness (§5.7); the legacy
+  // console options 1-4, the engaged-console options, verify-or-skip,
+  // cleanup, and the seal-log scenario stay plain cards.
+  // ————————————————————————————————————————————————————————————————————
+
+  protected getStagePresentation(
+    interactionKey: InteractionKey,
+  ): StagePresentation | undefined {
+    // Only the per-item stations are enriched, and only while the
+    // per-item task is live (their onPromptOpened gates already enforce
+    // engagement/completion — this mirrors, never widens, those gates).
+    if (!kitPreparationState.engaged || this.isPrepCompleted()) {
+      return undefined;
+    }
+
+    if (interactionKey === 'inventoryPrepBench') {
+      return this.buildBenchPresentation();
+    }
+
+    if (interactionKey === 'inventoryKitCrate') {
+      return this.buildDestinationPresentation(
+        'kit_crate',
+        'proc-crate-fieldkit',
+        'Field Kit Crate',
+      );
+    }
+
+    const binId = BIN_IDS_BY_INTERACTION[interactionKey];
+
+    if (binId !== undefined) {
+      return this.buildDestinationPresentation(
+        binId,
+        BIN_TEXTURES[binId],
+        getBinLabel(binId),
+      );
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Bench presentation (§6.1, geometry-adapted). MEASURED REALITY at the
+   * base (§8.0 "reality governs", recorded deviation): the hands-free
+   * bench stage already renders 9 option cards that reach the bottom of
+   * the 600 px canvas — a separate 8-row tray above them cannot satisfy
+   * the §7.4 readability floor (measured overflow to y≈962). The per-item
+   * presentation therefore rides ON the mandated option cards themselves:
+   * each "Take the …" card carries its item's icon, and each card's
+   * existing label already contains the item label + destination-tag
+   * text. Carrying: the set-down card carries the carried item's icon and
+   * the remaining bench items render as a compact INERT tray (fits: only
+   * two option cards on that stage).
+   */
+  private buildBenchPresentation(): StagePresentation | undefined {
+    const carried = carriedItemId();
+    const bench = itemsAtLocation('prep_bench');
+
+    if (carried !== null) {
+      const entries = bench.map((itemId) => ({
+        icon: itemIconTextureKey(itemId),
+        label: getRegistryItem(itemId).label,
+      }));
+
+      return {
+        surface: entries.length > 0 ? [{ kind: 'tray', entries }] : undefined,
+        optionIcons: { 0: itemIconTextureKey(carried) },
+      };
+    }
+
+    if (bench.length === 0) {
+      return undefined;
+    }
+
+    const optionIcons: Partial<Record<number, string>> = {};
+
+    bench.forEach((itemId, index) => {
+      optionIcons[index] = itemIconTextureKey(itemId);
+    });
+
+    return { optionIcons };
+  }
+
+  /**
+   * Destination surface (§6.1): the destination's existing station
+   * silhouette + label. Carrying: silhouette and carried-item row both
+   * redundantly activate the stow/pack option (index 0), and that option
+   * card carries the item icon; "Keep hold of it." stays a plain card.
+   * Hands free: the silhouette is inert and each "Take the … back out"
+   * option carries its item icon. Never any correctness preview.
+   */
+  private buildDestinationPresentation(
+    destination: PlacementDestination,
+    texture: string,
+    label: string,
+  ): StagePresentation {
+    const carried = carriedItemId();
+
+    if (carried !== null) {
+      const icon = itemIconTextureKey(carried);
+
+      return {
+        surface: [
+          {
+            kind: 'station',
+            texture,
+            label,
+            activates: 0,
+            carried: {
+              icon,
+              label: getRegistryItem(carried).label,
+              activates: 0,
+            },
+          },
+        ],
+        optionIcons: { 0: icon },
+      };
+    }
+
+    const stored = itemsAtLocation(destination);
+    const optionIcons: Partial<Record<number, string>> = {};
+
+    stored.forEach((itemId, index) => {
+      optionIcons[index] = itemIconTextureKey(itemId);
+    });
+
+    return {
+      surface: [{ kind: 'station', texture, label }],
+      optionIcons,
+    };
+  }
+
+  // ————————————————————————————————————————————————————————————————————
   // Per-item preparation mode (FABLE-NEXT-02)
   // ————————————————————————————————————————————————————————————————————
 
@@ -510,6 +650,14 @@ export class InventoryScene extends RoomScene {
           getEventTypes: () => [],
         },
       ],
+      // NEXT-08 §6.1: item icons beside the existing requisition lines —
+      // body content (and __lastPromptBody) unchanged.
+      presentation: {
+        bodyLineIcons: KIT_REQUIRED_ITEM_IDS.map((itemId, index) => ({
+          line: `${index + 1}. ${getRegistryItem(itemId).label}`,
+          icon: itemIconTextureKey(itemId),
+        })),
+      },
     };
   }
 
@@ -538,7 +686,7 @@ export class InventoryScene extends RoomScene {
     }
 
     return {
-      body: `Bench review:\n${issues.join('\n')}`,
+      body: `Bench review:\n${issues.map((issue) => issue.text).join('\n')}`,
       options: [
         {
           label: 'Go back to the bench and adjust the staging.',
@@ -552,25 +700,45 @@ export class InventoryScene extends RoomScene {
           nextStage: () => this.buildPerItemVerificationStage(),
         },
       ],
+      // NEXT-08 §6.1: the named item's icon beside each single-item issue
+      // line (aggregate lines naming several items stay icon-free). The
+      // review surface is never a placement surface — icons only, body
+      // text unchanged, correction still means walking back to the bench.
+      presentation: {
+        bodyLineIcons: issues
+          .filter((issue) => issue.itemId !== null)
+          .map((issue) => ({
+            line: issue.text,
+            icon: itemIconTextureKey(issue.itemId as string),
+          })),
+      },
     };
   }
 
-  /** Neutral staging-issue lines for the review body. */
-  private describeStagingIssues(): string[] {
-    const issues: string[] = [];
+  /**
+   * Neutral staging-issue lines for the review body. itemId names the
+   * single registry item a line is about (icon anchor, NEXT-08 §6.1) or
+   * null for aggregate lines — line TEXT is unchanged from FABLE-NEXT-02.
+   */
+  private describeStagingIssues(): { text: string; itemId: string | null }[] {
+    const issues: { text: string; itemId: string | null }[] = [];
     const onBench = itemsAtLocation('prep_bench');
     const carried = carriedItemId();
 
     if (onBench.length > 0) {
-      issues.push(
-        `Still on the bench: ${onBench
+      issues.push({
+        text: `Still on the bench: ${onBench
           .map((itemId) => getRegistryItem(itemId).label)
           .join(', ')}.`,
-      );
+        itemId: onBench.length === 1 ? onBench[0] : null,
+      });
     }
 
     if (carried !== null) {
-      issues.push(`In hand: ${getRegistryItem(carried).label}.`);
+      issues.push({
+        text: `In hand: ${getRegistryItem(carried).label}.`,
+        itemId: carried,
+      });
     }
 
     const missing = missingKitItemIds().filter(
@@ -578,11 +746,12 @@ export class InventoryScene extends RoomScene {
     );
 
     if (missing.length > 0) {
-      issues.push(
-        `Missing from the kit requisition: ${missing
+      issues.push({
+        text: `Missing from the kit requisition: ${missing
           .map((itemId) => getRegistryItem(itemId).label)
           .join(', ')}.`,
-      );
+        itemId: missing.length === 1 ? missing[0] : null,
+      });
     }
 
     for (const itemId of misplacedItemIds()) {
@@ -593,9 +762,10 @@ export class InventoryScene extends RoomScene {
           ? 'the kit crate'
           : `the ${getBinLabel(location as StorageBinId)}`;
 
-      issues.push(
-        `${item.label} is in ${locationLabel}; its tag says ${getDestinationTag(item)}.`,
-      );
+      issues.push({
+        text: `${item.label} is in ${locationLabel}; its tag says ${getDestinationTag(item)}.`,
+        itemId,
+      });
     }
 
     return issues;
@@ -1024,4 +1194,15 @@ const BIN_IDS_BY_INTERACTION: Partial<Record<InteractionKey, StorageBinId>> = {
   inventoryBinHandTools: 'bin_hand_tools',
   inventoryBinConsumables: 'bin_consumables',
   inventoryBinElectronics: 'bin_electronics',
+};
+
+/**
+ * Bin ids → existing NEXT-07 station silhouette textures (NEXT-08 §6.1
+ * destination surfaces — the same textures the stations already render in
+ * the world; presentation-layer mapping only).
+ */
+const BIN_TEXTURES: Record<StorageBinId, string> = {
+  bin_hand_tools: 'proc-rack-tools',
+  bin_consumables: 'proc-bin-consumables',
+  bin_electronics: 'proc-shelf-electronics',
 };

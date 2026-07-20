@@ -662,6 +662,163 @@ export async function selectPromptOption(page: Page, optionNumber: number) {
   }
 }
 
+/**
+ * NEXT-08 task-surface probe row (window.__minigameSurface, RoomScene.ts):
+ * screen rects + participant labels of the open stage's surface elements,
+ * with the option index an activator redundantly activates (null = inert).
+ */
+export interface MinigameSurfaceEntryLike {
+  kind: 'tray' | 'station' | 'steps' | 'schematic';
+  label: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  activates: number | null;
+  state?: 'pending' | 'current' | 'done';
+}
+
+export async function getMinigameSurface(
+  page: Page,
+): Promise<MinigameSurfaceEntryLike[] | null> {
+  return page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          __minigameSurface?: MinigameSurfaceEntryLike[] | null;
+        }
+      ).__minigameSurface ?? null,
+  );
+}
+
+/** Card rects of the open prompt (window.__promptCards). */
+export async function getPromptCards(page: Page): Promise<
+  | {
+      index: number;
+      label: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    }[]
+  | null
+> {
+  return page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          __promptCards?:
+            | {
+                index: number;
+                label: string;
+                x: number;
+                y: number;
+                width: number;
+                height: number;
+              }[]
+            | null;
+        }
+      ).__promptCards ?? null,
+  );
+}
+
+/**
+ * Clicks the centre of a game-coordinate rect via real mouse input on the
+ * canvas (FIT-scaled), then settles on the __promptCards probe changing —
+ * a selection always re-renders or closes the panel — and retries the
+ * same click once if nothing observable happened (the documented
+ * intermittent input loss of the SwiftShader/headless environment;
+ * selectPromptOption keyboard precedent).
+ */
+export async function clickGameRect(
+  page: Page,
+  rect: { x: number; y: number; width: number; height: number },
+) {
+  const cardsSnapshot = () =>
+    page.evaluate(() =>
+      JSON.stringify(
+        (window as unknown as { __promptCards?: { label: string }[] | null })
+          .__promptCards ?? null,
+      ),
+    );
+  const clickOnce = async () => {
+    const canvas = page.locator('canvas');
+    const box = await canvas.boundingBox();
+
+    if (box === null) {
+      throw new Error('game canvas not found');
+    }
+
+    const scaleX = box.width / 800;
+    const scaleY = box.height / 600;
+
+    await page.mouse.click(
+      box.x + (rect.x + rect.width / 2) * scaleX,
+      box.y + (rect.y + rect.height / 2) * scaleY,
+    );
+  };
+  const settle = async (prev: string, timeout: number) => {
+    await clickOnce();
+
+    return page
+      .waitForFunction(
+        (p) =>
+          JSON.stringify(
+            (
+              window as unknown as {
+                __promptCards?: { label: string }[] | null;
+              }
+            ).__promptCards ?? null,
+          ) !== p,
+        prev,
+        { timeout },
+      )
+      .then(
+        () => true,
+        () => false,
+      );
+  };
+  const before = await cardsSnapshot();
+
+  if (!(await settle(before, 4_000))) {
+    await settle(before, 6_000);
+  }
+
+  await page.waitForTimeout(200);
+}
+
+/** Clicks the option card at the given declared index (0-based). */
+export async function clickPromptCard(page: Page, index: number) {
+  const cards = await getPromptCards(page);
+  const card = cards?.find((c) => c.index === index);
+
+  if (card === undefined) {
+    throw new Error(`prompt card ${index} not found`);
+  }
+
+  await clickGameRect(page, card);
+}
+
+/**
+ * Clicks the task-surface element with the given participant label. The
+ * element must be an activator (activates !== null) — clicking an inert
+ * element is a spec-authoring error, surfaced loudly here.
+ */
+export async function clickSurfaceEntry(page: Page, label: string) {
+  const surface = await getMinigameSurface(page);
+  const entry = surface?.find((e) => e.label === label);
+
+  if (entry === undefined) {
+    throw new Error(`surface entry "${label}" not found`);
+  }
+
+  if (entry.activates === null) {
+    throw new Error(`surface entry "${label}" is inert`);
+  }
+
+  await clickGameRect(page, entry);
+}
+
 /** First event of the given type, or undefined. */
 export function findEvent(
   events: RawEventLike[],

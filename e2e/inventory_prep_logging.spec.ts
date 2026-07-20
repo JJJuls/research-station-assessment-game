@@ -2,11 +2,16 @@ import { expect, test } from '@playwright/test';
 
 import {
   bootGame,
+  clickPromptCard,
+  clickSurfaceEntry,
   dockToHub,
   findEvent,
   findEvents,
   getEvents,
   getEventTypes,
+  getLastPromptBody,
+  getMinigameSurface,
+  getPromptCards,
   getSummary,
   hold,
   hubToStationDoor,
@@ -663,6 +668,129 @@ test.describe('inventory prep logging', () => {
     ]);
     expect(mission.prepared_items).not.toContain('field_kit');
     expect(mission.workspace_status).toBe('disordered');
+  });
+
+  test('NEXT-08 task surfaces: mouse-only and keyboard-only runs emit identical event streams', async ({
+    page,
+  }) => {
+    test.setTimeout(600_000);
+
+    /**
+     * Route A discipline (NEXT-08 §10): the same per-item flow twice in
+     * fresh sessions — once keyboard-only (hidden numerics), once
+     * mouse-only for every SELECTION (cards, the destination silhouette,
+     * the carried-item row). Event types, order, object_ids and
+     * attempt_numbers must be identical; SPACE only opens prompts (the
+     * proximity interact has no pointer equivalent by design).
+     */
+    const CHECKLIST_BODY =
+      'Kit requisition — pack into the kit crate, in this order:\n' +
+      '1. Torque Driver\n2. Diagnostic Probe\n3. Coolant Cartridge\n' +
+      '4. Spare Fuse Pack\n5. Patch Tape\n\n' +
+      'Stray gear on the bench carries a rack tag naming its storage rack.';
+
+    const runFlow = async (sessionId: string, useMouse: boolean) => {
+      const select = async (index: number) => {
+        if (useMouse) {
+          await clickPromptCard(page, index);
+        } else {
+          await press(page, `${index + 1}`);
+        }
+      };
+
+      await bootGame(page, {
+        participant_id: 'E2E_P6',
+        game_session_id: sessionId,
+        condition: 'pilot',
+        game_version: 'e2e',
+      });
+      await dockToHub(page);
+      await hubToInventory(page);
+
+      // Engage per-item mode, then the checklist action (byte-identical
+      // panel text on the icon-enriched checklist stage, §3.5).
+      await inventoryToConsole(page);
+      await select(3); // stage the kit yourself
+      await press(page, 'Space');
+      await select(0); // check the kit requisition list
+      expect(await getLastPromptBody(page)).toContain(CHECKLIST_BODY);
+      await select(0); // close the list
+
+      // Torque driver -> kit crate. Mouse path packs by clicking the
+      // destination silhouette (station activator).
+      await inventoryToPrepBench(page);
+      await select(0); // take the torque driver
+      await inventoryToKitCrate(page);
+
+      if (useMouse) {
+        const surface = await getMinigameSurface(page);
+        const station = surface?.find((e) => e.kind === 'station');
+
+        expect(station?.label).toBe('Field Kit Crate');
+        expect(station?.activates).toBe(0);
+        await clickSurfaceEntry(page, 'Field Kit Crate');
+      } else {
+        await press(page, '1');
+      }
+
+      // Hex spanner -> hand tools rack. Mouse path stows by clicking the
+      // carried-item row (tray activator).
+      await inventoryToPrepBench(page);
+
+      if (useMouse) {
+        // Icon-enriched cards; enriched panel fully on-canvas (§7.4).
+        const cards = await getPromptCards(page);
+        const last = cards![cards!.length - 1];
+
+        expect(last.y + last.height).toBeLessThanOrEqual(600);
+      }
+
+      await select(4); // take the hex spanner (5th remaining bench item)
+      await inventoryToStorageBin(page, 'hand_tools');
+
+      if (useMouse) {
+        const surface = await getMinigameSurface(page);
+        const carriedRow = surface?.find((e) => e.kind === 'tray');
+
+        expect(carriedRow?.label).toBe('Hex Spanner');
+        expect(carriedRow?.activates).toBe(0);
+        await clickSurfaceEntry(page, 'Hex Spanner');
+        // Probe cleared once the selection closed the prompt (§3.5).
+        expect(await getMinigameSurface(page)).toBeNull();
+      } else {
+        await press(page, '1');
+      }
+
+      // Close out: review (issues listed), proceed, skip, leave.
+      await inventoryToConsole(page);
+      await select(1); // close out the prep
+      await select(1); // proceed to the readiness check anyway
+      await select(1); // skip the check and close out now
+      await select(1); // head out and leave the bench as it is
+
+      const events = await getEvents(page);
+
+      return events.map((e) => ({
+        event_type: e.event_type,
+        object_id: e.object_id ?? null,
+        attempt_number: e.attempt_number ?? null,
+      }));
+    };
+
+    const keyboardStream = await runFlow('E2E_INV_S9K', false);
+    const mouseStream = await runFlow('E2E_INV_S9M', true);
+
+    // Route A: identical event types, order, object_ids, attempt_numbers.
+    expect(mouseStream).toEqual(keyboardStream);
+
+    // Sanity: the flow actually exercised the placement family.
+    const streamTypes = keyboardStream.map((e) => e.event_type);
+
+    expect(streamTypes).toContain('correct_tool_selected');
+    expect(streamTypes).toContain('inventory_item_sorted_correct');
+    expect(streamTypes).toContain('inventory_checklist_opened');
+    expect(streamTypes).toContain('inventory_verification_skipped');
+    expect(streamTypes).toContain('workspace_left_disordered');
   });
 
   test('per-item stations stay gated before engagement and after completion', async ({
