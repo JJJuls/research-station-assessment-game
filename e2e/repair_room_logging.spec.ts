@@ -2,11 +2,13 @@ import { expect, test } from '@playwright/test';
 
 import {
   bootGame,
+  clickPromptCard,
   dockToHub,
   findEvent,
   findEvents,
   getEvents,
   getEventTypes,
+  getMinigameSurface,
   getSummary,
   hold,
   hubToArchive,
@@ -343,6 +345,108 @@ test.describe('repair room logging', () => {
     expect(
       finalEvents.filter((e) => e.event_type === 'repair_failed'),
     ).toHaveLength(1);
+  });
+
+  test('NEXT-08 tactile panel: schematic mirrors the side panel only, mouse path event-identical', async ({
+    page,
+  }) => {
+    test.setTimeout(600_000);
+
+    /**
+     * §6.2 honesty checks + Route A discipline: the schematic strip's
+     * readout re-renders ONLY the status side panel's text (verbatim),
+     * never manual/guidance state or which sequence is loaded; the
+     * adaptive flow driven mouse-only emits the identical event stream
+     * to the keyboard-only run.
+     */
+    const readStatusPanel = () =>
+      page.evaluate(
+        () =>
+          (window as unknown as { __roomStatusText?: string | null })
+            .__roomStatusText ?? null,
+      );
+
+    const runFlow = async (sessionId: string, useMouse: boolean) => {
+      const select = async (index: number) => {
+        if (useMouse) {
+          await clickPromptCard(page, index);
+        } else {
+          await press(page, `${index + 1}`);
+        }
+      };
+
+      await bootGame(page, {
+        participant_id: 'E2E_P4',
+        game_session_id: sessionId,
+        condition: 'pilot',
+        game_version: 'e2e',
+      });
+      await dockToHub(page);
+      await hubToRepair(page);
+      await openRepairPanel(page);
+
+      if (useMouse) {
+        const surface = await getMinigameSurface(page);
+        const schematic = surface?.find((e) => e.kind === 'schematic');
+
+        expect(schematic).toBeDefined();
+        // Inert dressing: never an activator.
+        expect(schematic!.activates).toBeNull();
+        // Verbatim side-panel strings only.
+        expect(schematic!.label).toBe(
+          '[ ] awaiting first sequence\nCycles logged: 0',
+        );
+      }
+
+      await select(0); // default sequence — deterministic failure (cycle 1)
+      await press(page, 'Space');
+
+      if (useMouse) {
+        const surface = await getMinigameSurface(page);
+        const schematic = surface?.find((e) => e.kind === 'schematic');
+
+        expect(schematic!.label).toBe(
+          '[ ] sequence rejected\nCycles logged: 1',
+        );
+
+        // Every readout line is text the side panel already shows —
+        // and none of it leaks manual/guidance or loaded-sequence state.
+        const status = await readStatusPanel();
+
+        for (const line of schematic!.label.split('\n')) {
+          expect(status).toContain(line);
+        }
+
+        expect(schematic!.label.toLowerCase()).not.toContain('manual');
+        expect(schematic!.label.toLowerCase()).not.toContain('guid');
+        expect(schematic!.label.toLowerCase()).not.toContain('default');
+        expect(schematic!.label.toLowerCase()).not.toContain('revised');
+      }
+
+      await select(1); // open repair manual (guidance acquired)
+      await press(page, 'Space');
+      await select(2); // manual-guided revision — success
+
+      const events = await getEvents(page);
+
+      return events.map((e) => ({
+        event_type: e.event_type,
+        object_id: e.object_id ?? null,
+        attempt_number: e.attempt_number ?? null,
+      }));
+    };
+
+    const keyboardStream = await runFlow('E2E_REP_S7K', false);
+    const mouseStream = await runFlow('E2E_REP_S7M', true);
+
+    expect(mouseStream).toEqual(keyboardStream);
+
+    const streamTypes = keyboardStream.map((e) => e.event_type);
+
+    expect(streamTypes).toContain('repair_failed');
+    expect(streamTypes).toContain('repair_manual_used');
+    expect(streamTypes).toContain('repair_strategy_revision');
+    expect(streamTypes).toContain('repair_completed');
   });
 
   test('objective_completed fires exactly once when Archive AND Repair complete', async ({

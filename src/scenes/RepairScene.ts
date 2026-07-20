@@ -2,12 +2,18 @@ import { key } from '../constants';
 import type { ResearchInteraction } from '../data/researchInteractions';
 import { researchInteractions } from '../data/researchInteractions';
 import { researchRuntime } from '../systems';
-import type { InteractionKey, PromptOption, RoomLayout } from '../world';
+import type {
+  InteractionKey,
+  PromptOption,
+  RoomLayout,
+  StagePresentation,
+} from '../world';
 import {
   CANONICAL_EVENT_CONTEXT,
   createFailedTaskState,
   createRoomTaskState,
   type FailedTaskState,
+  ICON_TEXTURES,
   recordFailedAttempt,
   RoomScene,
   shouldLogAbandonedOnExit,
@@ -251,6 +257,47 @@ export class RepairScene extends RoomScene {
     ) {
       this.logRoomEvent('systemsRepairFailure', 'repair_abandoned');
     }
+  }
+
+  /**
+   * NEXT-08 Phase 3 (§6.2): tactile panel presentation for the repair
+   * panel stage only. The schematic strip is static dressing (three slot
+   * chips + component/manual glyphs, identical every visit); the
+   * diagnostic readout re-renders ONLY the two lines the status side
+   * panel already shows in text — the awaiting/rejected state line and
+   * the cycle-count line, verbatim — and never which sequence is loaded,
+   * whether the manual was consulted, or any cue distinguishing the
+   * default from the revised sequence (§5.7; manualGuided is never
+   * rendered). Option glyphs: sequence chip on options 1 and 3 (the same
+   * glyph — deliberately indistinguishable), manual/document on option 2.
+   */
+  protected getStagePresentation(
+    interactionKey: InteractionKey,
+  ): StagePresentation | undefined {
+    if (interactionKey !== 'systemsRepairFailure' || this.isRepairCompleted()) {
+      return undefined;
+    }
+
+    const cycles = repairTaskState.get().attemptCount;
+
+    return {
+      surface: [
+        {
+          kind: 'schematic',
+          readout: [
+            cycles === 0
+              ? '[ ] awaiting first sequence'
+              : '[ ] sequence rejected',
+            `Cycles logged: ${cycles}`,
+          ],
+        },
+      ],
+      optionIcons: {
+        0: ICON_TEXTURES.slotChip,
+        1: ICON_TEXTURES.manual,
+        2: ICON_TEXTURES.slotChip,
+      },
+    };
   }
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
