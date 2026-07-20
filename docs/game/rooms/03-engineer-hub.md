@@ -197,3 +197,19 @@ report from memory", "Review station evidence, then report", "Ask Engineer Kai
 for clarification before reporting") stay in-fiction — keep this register, and
 keep the shortcut option framed as a plausible time-pressure choice, not an
 obviously "wrong" one.
+
+## NEXT-08 presentation (evidence and claim surfaces)
+
+FABLE-NEXT-08 gave the report-content stage its evidence/claim
+presentation (§6.4; presentation only — accuracy scoring, metadata, the
+silent identical acknowledgement and duty chaining are unchanged,
+verified by the parity spec): the mode-specific help sentence renders
+inside a visually distinct inset — the log-extract treatment (left
+rule + corner mark) in evidence-review mode, a plain inset in the other
+two modes — with byte-identical text and unchanged `__lastPromptBody`
+composition; the four claim cards take an identical record-card
+treatment, labels verbatim, fixed template order. Deliberately no
+fact-grid, tick-mark or claim decomposition: the between-claims
+comparison is the Q09 measurement substance. The mode stage and the
+duty offer stay plain cards; the calibration-bench scenario console
+stays an unenriched NEXT-06 card panel.

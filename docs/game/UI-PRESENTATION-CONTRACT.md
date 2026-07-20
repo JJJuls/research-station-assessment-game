@@ -143,3 +143,40 @@ Card textures, NPC portraits (Kai), station props and icons remain
 **candidates** in the unapproved asset pack (`fable-canonical-asset-production-v1`);
 this pass uses Phaser graphics primitives and the committed placeholder
 style only. No PixelLab call, no fabricated provenance.
+
+## 8. FABLE-NEXT-08 addendum (stage-surface presentation pass)
+
+Recorded per NEXT-08 contract §3.6. Within the presentation domain only,
+two §4 boundary statements above are consciously amended by the NEXT-08
+unit (`FABLE-NEXT-08-RICH-MINIGAME-INTERFACES.md`); the §4 wording itself
+stays as history.
+
+1. **Drag-and-drop.** Drag remains **never required**. NEXT-08 §6.1
+   authorised an _optional, redundant_ drag path in the Inventory
+   minigame under the §5 telemetry invariants, with click-select-and-
+   place staying the primary and complete model. That optional phase was
+   **deferred in full under its own admissibility clause**: the specified
+   bench drag source (a separate hands-free bench tray) was cut by the
+   measured §7.4 readability adaptation, and adding drag to the existing
+   pointerdown-synchronous activators would have altered selection-timing
+   semantics (§5.2). No drag shipped; the §4 statement remains true of
+   the shipped game.
+2. **One renderer.** The one-renderer principle is preserved:
+   `renderPromptStage` remains the single prompt renderer, now carrying
+   an **optional, additive `PromptStage.presentation` layer** (NEXT-08
+   §3.1) used by the four task minigames — task surfaces between header
+   and cards, inline option icons, record-card and inset treatments, and
+   a 560-640 px width clamp. Stages without a presentation render
+   byte-for-byte as before. Every interactive surface element is a
+   redundant activator of an existing option index converging on
+   `selectPromptOption` (§3.2); hidden numeric shortcuts, arrows + Enter
+   and card clicks work identically on every enriched stage, and the
+   additive DEV probe `window.__minigameSurface` mirrors `__promptCards`.
+
+Everything else in this contract is unchanged by NEXT-08: Escape-dismiss
+stays absent, hover/focus/panel-open still never log, status side panels
+stay read-only with their deliberate omissions (Repair's hidden manual
+state; Inventory's SA-11 withholding; the Corridor's no-panel rule), the
+choice-card-only surfaces (scenario consoles, status board, Corridor,
+Final Core, duty offers) keep the unenriched NEXT-06 card panel, and no
+gameplay string changed.

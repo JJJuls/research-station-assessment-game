@@ -178,3 +178,19 @@ appear in the Utility Bot's dialogue or option labels. Legacy labels kept
 cycle") and the new step labels ("Start the stabiliser repair.", "Collect the
 replacement stabiliser part.", "Adjust the misaligned mounting and seat the
 part.", "Run the system check.") stay in-fiction — keep this register.
+
+## NEXT-08 presentation (fetch-fit-check tracker)
+
+FABLE-NEXT-08 made the accepted repair's progress visible (§6.3;
+presentation only — offer gating, step events with metadata.step, defer
+semantics, walk-away detection and one-shot closure are unchanged,
+verified by the parity spec): the work-console stages render a
+step-tracker strip of three inert tiles whose labels reuse the side
+panel's exact step strings (shared constant) and whose
+glyph-differentiated pending/current/done states mirror
+`stepsCompleted`; the stabiliser-part icon appears on the fit tile
+exactly while the part is carried; the step-act option card (fit/check)
+carries the current-step glyph; the parts shelf's collect option
+carries the part icon. The offer stage (ignore/accept/defer — the
+Q07/Q29 voluntary-effort decision) and every defer option stay plain
+cards.

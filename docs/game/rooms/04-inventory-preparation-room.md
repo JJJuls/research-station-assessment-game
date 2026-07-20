@@ -345,3 +345,33 @@ quartermaster dialogue, or option labels. Current labels ("Grab tools quickly
 without checking the list", "Open the checklist and pack the required tools in
 order", "Sort the workspace and verify the kit before leaving") stay in-fiction —
 keep this register.
+
+## NEXT-08 presentation (stage surfaces)
+
+FABLE-NEXT-08 gave the per-item preparation task a graphical task
+surface (presentation only; every event, payload, attempt number, gate
+and outcome above is unchanged, verified by the Route-A parity spec):
+
+- **Destination stages** (three bins + kit crate) render the station's
+  existing silhouette texture + label as a redundant activator of the
+  stow/pack option; while carrying, the carried item's icon row is a
+  second redundant activator of the same option. Hands free, the
+  silhouette is inert and take-back options carry their item icons. No
+  destination previews placement correctness (§5.7), and no destination
+  shows the item's tag text (information availability unchanged).
+- **Bench stages**: the hands-free stage's "Take the …" option cards
+  carry per-item icons (measured-geometry deviation, recorded: the
+  contract's separate bench tray plus the 9 mandated cards cannot meet
+  the §7.4 readability floor at 800×600 — the icon-equipped cards ARE
+  the tray presentation); while carrying, the remaining bench items
+  render as a compact inert tray and the set-down card carries the
+  carried item's icon.
+- **Console stages**: the checklist stage renders item icons beside its
+  existing requisition lines; the bench review renders the named item's
+  icon beside each single-item issue line (aggregate lines stay
+  icon-free). Body text and `__lastPromptBody` are byte-identical.
+  Verify-or-skip and restore-vs-leave cleanup stay plain cards; bench
+  clutter stays non-visual (PROP-CLUTTER-SET/Q04 open decision).
+- **Untouched**: legacy options 1-3, the seal-log scenario console
+  (unenriched NEXT-06 cards), SA-11 withholding, the optional drag path
+  (deferred in full — see UI-PRESENTATION-CONTRACT §8).

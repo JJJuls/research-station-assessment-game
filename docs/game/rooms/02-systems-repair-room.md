@@ -149,3 +149,19 @@ sequence", "Open repair manual", "Apply revised repair sequence") stay in-fictio
 — keep this register. The unguided-adjustment failure feedback ("The adjusted
 sequence fails. The calibration values do not match — the manual lists the
 current ones.") is in-fiction support signalling, not item wording.
+
+## NEXT-08 presentation (tactile panel)
+
+FABLE-NEXT-08 gave the repair panel a tactile presentation (§6.2;
+presentation only — cycles, attempt_number, didRepeat, abandon/return
+and one-shot completion are unchanged, verified by the honesty/parity
+spec): a schematic strip of static slot-chip/component/manual dressing
+(identical every visit) plus a diagnostic readout that re-renders
+exactly the status side panel's two lines (awaiting/rejected state,
+cycle count) from shared constants — never which sequence is loaded,
+never manual/guidance state (`manualGuided` stays unrendered), never
+any default-vs-revised cue beyond the existing option labels. Option
+glyphs: an identical sequence chip on options 1 and 3, the manual/
+document glyph on option 2. Both manual surfaces remain feedback
+toasts. Completed panels render no presentation (the prompt stays
+gated closed).
