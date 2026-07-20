@@ -42,11 +42,115 @@ export interface PromptStage {
   /** Extra body text below the interaction label (in-fiction). */
   body?: string;
   options: PromptOption[];
+  /**
+   * FABLE-NEXT-08 stage-surface model (contract §3.1): optional,
+   * presentation-only enrichment consumed exclusively by renderPromptStage.
+   * Absent → the panel renders byte-for-byte as before NEXT-08. Present →
+   * a task surface may render between the header and the option cards,
+   * option cards may carry inline icons, and the panel may widen to
+   * 640 px. The declared option list, order, labels, instruction line,
+   * header text, focus/selection behaviour and keyboard model are never
+   * altered by a presentation.
+   */
+  presentation?: StagePresentation;
+}
+
+/**
+ * A task-surface row/element wired as a REDUNDANT ACTIVATOR (NEXT-08
+ * §3.2): activating it calls the same selectPromptOption(index) the
+ * option card's click already calls — never a second selection path,
+ * never its own logging. `activates` omitted = inert dressing (rendered
+ * identically, no pointer handler — never a disabled-looking option).
+ */
+export interface SurfaceActivator {
+  /** Texture key from the proc-icon or proc family (identity only, §3.3). */
+  icon?: string;
+  /** Existing participant string, verbatim (zero-new-copy rule, §3.4). */
+  label: string;
+  /** Option index this element redundantly activates. */
+  activates?: number;
+}
+
+/** Step-tracker tile (Side Repair §6.3): glyph-differentiated state. */
+export interface SurfaceStepTile {
+  /** Existing side-panel step string, verbatim. */
+  label: string;
+  /** Mirrors state already shown in text; never colour-only (§7.3). */
+  state: 'pending' | 'current' | 'done';
+}
+
+/**
+ * Task-surface elements (§6): each renders between the panel header and
+ * the option cards, in declared order, as a pure function of existing
+ * visible state — fixed order, no randomness, identical every session.
+ */
+export type StageSurfaceElement =
+  | { kind: 'tray'; entries: SurfaceActivator[] }
+  | {
+      kind: 'station';
+      /** Existing station silhouette texture (e.g. proc-rack-tools). */
+      texture: string;
+      /** Existing station label, verbatim. */
+      label: string;
+      activates?: number;
+      /** Carried-item entry rendered beside the silhouette (§6.1). */
+      carried?: SurfaceActivator;
+    }
+  | {
+      kind: 'steps';
+      tiles: SurfaceStepTile[];
+      /** Fetched-part icon shown on one tile (§6.3), or absent. */
+      partIcon?: { icon: string; tileIndex: number };
+    }
+  | {
+      kind: 'schematic';
+      /**
+       * Diagnostic readout lines — verbatim re-renders of text the room's
+       * status side panel already shows (§6.2); never sequence/manual
+       * state.
+       */
+      readout: string[];
+    };
+
+/** NEXT-08 §3.1 optional presentation layer for one prompt stage. */
+export interface StagePresentation {
+  /** Panel width override, clamped to 560-640 px (§3.1). */
+  panelWidth?: number;
+  /** Task-surface elements rendered between header and option cards. */
+  surface?: StageSurfaceElement[];
+  /** Inline icon texture per option index (icons never replace text). */
+  optionIcons?: Readonly<Partial<Record<number, string>>>;
+  /** Option indices rendered with the record-card treatment (§6.4). */
+  recordCards?: readonly number[];
+  /**
+   * Renders this exact substring of `body` inside a visually distinct
+   * inset (§6.4). Text is byte-identical; __lastPromptBody composition is
+   * unchanged. If the substring is absent from `body`, the stage falls
+   * back to the plain header (deterministic, spec-covered).
+   */
+  bodyInset?: { text: string; treatment: 'plain' | 'log' };
+  /**
+   * Icons drawn beside body lines whose text matches `line` exactly
+   * (§6.1 checklist/review) — body content itself is unchanged.
+   */
+  bodyLineIcons?: readonly { line: string; icon: string }[];
 }
 
 interface PromptCard {
   background: Phaser.GameObjects.Rectangle;
   marker: Phaser.GameObjects.Text;
+}
+
+/** NEXT-08 __minigameSurface probe row (see the Window declaration). */
+interface MinigameSurfaceProbeEntry {
+  kind: 'tray' | 'station' | 'steps' | 'schematic';
+  label: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  activates: number | null;
+  state?: 'pending' | 'current' | 'done';
 }
 
 interface ActivePrompt {
@@ -199,6 +303,24 @@ declare global {
      * read-only status panel text (participant labels only). DEV-only.
      */
     __roomStatusText?: string | null;
+    /**
+     * FABLE-NEXT-08 task-surface probe (__promptCards precedent): screen
+     * rects + participant labels of the open stage's task-surface
+     * elements, with the option index an activator redundantly activates
+     * (null = inert dressing). DEV-only, read-only, cleared on close.
+     */
+    __minigameSurface?:
+      | {
+          kind: 'tray' | 'station' | 'steps' | 'schematic';
+          label: string;
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+          activates: number | null;
+          state?: 'pending' | 'current' | 'done';
+        }[]
+      | null;
   }
 }
 
@@ -208,6 +330,7 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
   window.__routeObjectiveText = null;
   window.__lastPromptBody = null;
   window.__promptCards = null;
+  window.__minigameSurface = null;
 }
 
 /**
@@ -643,7 +766,22 @@ export abstract class RoomScene extends Phaser.Scene {
     this.renderPromptStage(station.interactionKey, {
       body: station.promptBody,
       options: this.getPromptOptions(station.interactionKey),
+      presentation: this.getStagePresentation(station.interactionKey),
     });
+  }
+
+  /**
+   * NEXT-08 §3.1 adoption hook: a room may attach a StagePresentation to a
+   * station's INITIAL prompt stage (chained stages carry their own
+   * `presentation` field on the returned PromptStage). Default: none —
+   * every surface renders exactly as before NEXT-08.
+   */
+  protected getStagePresentation(
+    interactionKey: InteractionKey,
+  ): StagePresentation | undefined {
+    void interactionKey;
+
+    return undefined;
   }
 
   /**
@@ -688,27 +826,52 @@ export abstract class RoomScene extends Phaser.Scene {
     // card per option (pointer hover/click; arrow keys + Enter; hidden
     // numeric shortcuts), visible non-colour-only focus state (thicker
     // cyan border + marker glyph), instruction line without number keys.
-    const PANEL_WIDTH = 560;
+    // FABLE-NEXT-08 (\u00a73.1): an optional stage presentation may widen the
+    // panel to 640 px, render a task surface between header and cards,
+    // and attach inline icons/treatments to cards \u2014 never altering the
+    // option list, order, labels, instruction line, or input model.
+    const presentation = stage.presentation;
+    const PANEL_WIDTH =
+      presentation?.panelWidth !== undefined
+        ? Math.max(560, Math.min(640, Math.floor(presentation.panelWidth)))
+        : 560;
     const PADDING = 18;
     const CARD_WIDTH = PANEL_WIDTH - PADDING * 2;
     const CARD_GUTTER = 22;
     const CARD_PAD_Y = 7;
     const CARD_GAP = 8;
+    const panelX = centerX - PANEL_WIDTH / 2;
+    const PANEL_Y = 72;
 
     const children: Phaser.GameObjects.GameObject[] = [];
-    const header = this.add.text(
+    const surfaceProbe: MinigameSurfaceProbeEntry[] = [];
+
+    let cursorY = this.renderPromptHeader(
+      interaction.label,
+      stage.body,
+      presentation,
       PADDING,
-      PADDING,
-      `${interaction.label}${promptBody}`,
-      {
-        color: '#ffffff',
-        font: '16px monospace',
-        lineSpacing: 4,
-        wordWrap: { width: CARD_WIDTH - 12 },
-      },
+      CARD_WIDTH,
+      children,
     );
 
-    let cursorY = PADDING + Math.ceil(header.height) + 12;
+    if (presentation?.surface !== undefined) {
+      for (const element of presentation.surface) {
+        cursorY = this.renderSurfaceElement(
+          element,
+          PADDING,
+          CARD_WIDTH,
+          cursorY,
+          panelX,
+          PANEL_Y,
+          children,
+          surfaceProbe,
+        );
+      }
+
+      cursorY += 4;
+    }
+
     const cards: PromptCard[] = [];
     const cardRects: {
       index: number;
@@ -721,24 +884,36 @@ export abstract class RoomScene extends Phaser.Scene {
 
     for (let index = 0; index < options.length; index++) {
       const option = options[index];
+      const iconKey = presentation?.optionIcons?.[index];
+      const hasIcon = iconKey !== undefined && this.textures.exists(iconKey);
+      const isRecord = presentation?.recordCards?.includes(index) === true;
+      const labelYOffset = CARD_PAD_Y + (isRecord ? 6 : 0);
       const label = this.add.text(
-        PADDING + CARD_GUTTER,
-        cursorY + CARD_PAD_Y,
+        PADDING + CARD_GUTTER + (hasIcon ? 30 : 0),
+        cursorY + labelYOffset,
         `${index + 1}. ${option.label}`,
         {
           color: '#ffffff',
           font: '15px monospace',
           lineSpacing: 4,
-          wordWrap: { width: CARD_WIDTH - CARD_GUTTER - 12 },
+          wordWrap: {
+            width: CARD_WIDTH - CARD_GUTTER - 12 - (hasIcon ? 30 : 0),
+          },
         },
       );
-      const cardHeight = Math.ceil(label.height) + CARD_PAD_Y * 2;
+      let cardHeight =
+        Math.ceil(label.height) + CARD_PAD_Y * 2 + (isRecord ? 6 : 0);
+
+      if (hasIcon) {
+        cardHeight = Math.max(cardHeight, 30 + (isRecord ? 6 : 0));
+      }
+
       const background = this.add
         .rectangle(PADDING, cursorY, CARD_WIDTH, cardHeight, 0x1a2733, 1)
         .setOrigin(0)
         .setStrokeStyle(1, 0x33475a);
       const marker = this.add
-        .text(PADDING + 6, cursorY + CARD_PAD_Y, '\u25b8', {
+        .text(PADDING + 6, cursorY + labelYOffset, '\u25b8', {
           color: '#5fd3c4',
           font: '15px monospace',
         })
@@ -748,7 +923,35 @@ export abstract class RoomScene extends Phaser.Scene {
       background.on('pointerover', () => this.focusPromptCard(index));
       background.on('pointerdown', () => this.selectPromptOption(index));
 
-      children.push(background, label, marker);
+      children.push(background);
+
+      if (isRecord) {
+        // \u00a76.4 record-card treatment: a header band + rule drawn from the
+        // existing panel language. Identical on every record card of the
+        // stage \u2014 identity only, never a ranking or correctness cue.
+        children.push(
+          this.add
+            .rectangle(PADDING, cursorY, CARD_WIDTH, 5, 0x101820, 1)
+            .setOrigin(0),
+          this.add
+            .rectangle(PADDING, cursorY + 5, CARD_WIDTH, 1, 0x33475a, 1)
+            .setOrigin(0),
+        );
+      }
+
+      if (hasIcon) {
+        // Inline option icon (\u00a73.3): identity beside the unchanged label
+        // text \u2014 icons never replace text (\u00a73.4).
+        children.push(
+          this.add.image(
+            PADDING + CARD_GUTTER + 14,
+            cursorY + Math.round(cardHeight / 2),
+            iconKey,
+          ),
+        );
+      }
+
+      children.push(label, marker);
       cards.push({ background, marker });
       cardRects.push({
         index,
@@ -776,9 +979,8 @@ export abstract class RoomScene extends Phaser.Scene {
     const backdrop = this.add
       .rectangle(0, 0, PANEL_WIDTH, Math.max(230, panelHeight), 0x101820, 0.96)
       .setOrigin(0);
-    const panel = this.add.container(centerX - PANEL_WIDTH / 2, 72, [
+    const panel = this.add.container(panelX, PANEL_Y, [
       backdrop,
-      header,
       ...children,
       instruction,
     ]);
@@ -790,6 +992,7 @@ export abstract class RoomScene extends Phaser.Scene {
 
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
       window.__promptCards = cardRects;
+      window.__minigameSurface = surfaceProbe.length > 0 ? surfaceProbe : null;
     }
 
     this.activePrompt = {
@@ -811,6 +1014,460 @@ export abstract class RoomScene extends Phaser.Scene {
     this.input.keyboard!.on('keydown-UP', this.promptFocusUpHandler, this);
     this.input.keyboard!.on('keydown-DOWN', this.promptFocusDownHandler, this);
     this.input.keyboard!.on('keydown-ENTER', this.promptConfirmHandler, this);
+  }
+
+  /**
+   * NEXT-08 header renderer. Default path (no bodyInset/bodyLineIcons):
+   * byte-for-byte the pre-NEXT-08 single header text. The two decorated
+   * paths re-render the SAME strings — the interaction label and the
+   * stage body, unmodified — in styled blocks; __lastPromptBody is
+   * composed earlier from stage.body and is untouched by any of this.
+   * Returns the local cursor y where the next panel section starts.
+   */
+  private renderPromptHeader(
+    interactionLabel: string,
+    body: string | undefined,
+    presentation: StagePresentation | undefined,
+    padding: number,
+    contentWidth: number,
+    children: Phaser.GameObjects.GameObject[],
+  ): number {
+    const headerStyle = {
+      color: '#ffffff',
+      font: '16px monospace',
+      lineSpacing: 4,
+      wordWrap: { width: contentWidth - 12 },
+    };
+    const inset = presentation?.bodyInset;
+    const lineIcons = presentation?.bodyLineIcons;
+
+    if (
+      inset !== undefined &&
+      body !== undefined &&
+      body.includes(inset.text)
+    ) {
+      // §6.4: one exact substring of the body renders inside a distinct
+      // inset (log-extract or plain treatment); text is byte-identical.
+      const at = body.indexOf(inset.text);
+      const before = body.slice(0, at).replace(/\n+$/, '');
+      const after = body.slice(at + inset.text.length).replace(/^\n+/, '');
+      let cursorY = padding;
+      const head = this.add.text(
+        padding,
+        cursorY,
+        before.length > 0
+          ? `${interactionLabel}\n\n${before}`
+          : interactionLabel,
+        headerStyle,
+      );
+
+      children.push(head);
+      cursorY += Math.ceil(head.height) + 10;
+
+      const isLog = inset.treatment === 'log';
+      const insetTextX = padding + (isLog ? 16 : 10);
+      const insetText = this.add.text(insetTextX, cursorY + 8, inset.text, {
+        ...headerStyle,
+        wordWrap: { width: contentWidth - (insetTextX - padding) - 30 },
+      });
+      const insetHeight = Math.ceil(insetText.height) + 16;
+      const insetBox = this.add
+        .rectangle(padding, cursorY, contentWidth, insetHeight, 0x101820, 1)
+        .setOrigin(0)
+        .setStrokeStyle(1, 0x33475a);
+
+      children.push(insetBox);
+
+      if (isLog) {
+        // Log-extract treatment (§6.4): left rule + corner mark glyph.
+        children.push(
+          this.add
+            .rectangle(
+              padding + 5,
+              cursorY + 6,
+              3,
+              insetHeight - 12,
+              0x33475a,
+              1,
+            )
+            .setOrigin(0),
+        );
+
+        if (this.textures.exists('proc-icon-log-mark')) {
+          children.push(
+            this.add.image(
+              padding + contentWidth - 14,
+              cursorY + 12,
+              'proc-icon-log-mark',
+            ),
+          );
+        }
+      }
+
+      children.push(insetText);
+      cursorY += insetHeight + 10;
+
+      if (after.length > 0) {
+        const tail = this.add.text(padding, cursorY, after, headerStyle);
+
+        children.push(tail);
+        cursorY += Math.ceil(tail.height) + 10;
+      }
+
+      return cursorY + 2;
+    }
+
+    if (lineIcons !== undefined && lineIcons.length > 0 && body !== undefined) {
+      // §6.1: identity icons beside existing body lines (exact line-text
+      // match); every line renders verbatim, icon or not.
+      let cursorY = padding;
+      const title = this.add.text(
+        padding,
+        cursorY,
+        interactionLabel,
+        headerStyle,
+      );
+
+      children.push(title);
+      cursorY += Math.ceil(title.height) + 10;
+
+      for (const line of body.split('\n')) {
+        if (line.length === 0) {
+          cursorY += 8;
+          continue;
+        }
+
+        const iconKey = lineIcons.find((entry) => entry.line === line)?.icon;
+        const hasIcon = iconKey !== undefined && this.textures.exists(iconKey);
+        const text = this.add.text(
+          padding + (hasIcon ? 30 : 0),
+          cursorY,
+          line,
+          {
+            ...headerStyle,
+            wordWrap: { width: contentWidth - 12 - (hasIcon ? 30 : 0) },
+          },
+        );
+
+        children.push(text);
+
+        if (hasIcon) {
+          children.push(
+            this.add.image(
+              padding + 12,
+              cursorY + Math.round(Math.ceil(text.height) / 2),
+              iconKey,
+            ),
+          );
+        }
+
+        cursorY += Math.ceil(text.height) + 4;
+      }
+
+      return cursorY + 8;
+    }
+
+    const header = this.add.text(
+      padding,
+      padding,
+      body ? `${interactionLabel}\n\n${body}` : interactionLabel,
+      headerStyle,
+    );
+
+    children.push(header);
+
+    return padding + Math.ceil(header.height) + 12;
+  }
+
+  /**
+   * NEXT-08 task-surface renderer (§6). Every interactive element is a
+   * redundant activator of an existing option index (§3.2): pointerdown
+   * calls the same selectPromptOption the option card's click calls, and
+   * pointerover focuses the linked card (presentation only — focus never
+   * logs). Elements without `activates` render identically but take no
+   * pointer handler. Returns the local cursor y after the element.
+   */
+  private renderSurfaceElement(
+    element: StageSurfaceElement,
+    padding: number,
+    contentWidth: number,
+    startY: number,
+    panelX: number,
+    panelY: number,
+    children: Phaser.GameObjects.GameObject[],
+    probe: MinigameSurfaceProbeEntry[],
+  ): number {
+    let cursorY = startY;
+
+    switch (element.kind) {
+      case 'tray': {
+        for (const entry of element.entries) {
+          const iconKey = entry.icon;
+          const hasIcon =
+            iconKey !== undefined && this.textures.exists(iconKey);
+          const label = this.add.text(padding + 34, 0, entry.label, {
+            color: '#ffffff',
+            font: '15px monospace',
+            lineSpacing: 4,
+            wordWrap: { width: contentWidth - 46 },
+          });
+          const rowHeight = Math.max(32, Math.ceil(label.height) + 14);
+          const row = this.add
+            .rectangle(padding, cursorY, contentWidth, rowHeight, 0x101820, 1)
+            .setOrigin(0)
+            .setStrokeStyle(1, 0x33475a);
+
+          label.setPosition(
+            padding + 34,
+            cursorY + Math.round((rowHeight - label.height) / 2),
+          );
+          children.push(row);
+
+          if (hasIcon) {
+            children.push(
+              this.add.image(
+                padding + 17,
+                cursorY + Math.round(rowHeight / 2),
+                iconKey,
+              ),
+            );
+          }
+
+          children.push(label);
+
+          if (entry.activates !== undefined) {
+            const optionIndex = entry.activates;
+
+            row.setInteractive({ useHandCursor: true });
+            row.on('pointerover', () => this.focusPromptCard(optionIndex));
+            row.on('pointerdown', () => this.selectPromptOption(optionIndex));
+          }
+
+          probe.push({
+            kind: 'tray',
+            label: entry.label,
+            x: panelX + padding,
+            y: panelY + cursorY,
+            width: contentWidth,
+            height: rowHeight,
+            activates: entry.activates ?? null,
+          });
+          cursorY += rowHeight + 6;
+        }
+
+        return cursorY + 2;
+      }
+
+      case 'station': {
+        const hasTexture = this.textures.exists(element.texture);
+        const textureHeight = hasTexture
+          ? this.textures.get(element.texture).getSourceImage().height
+          : 40;
+        const boxHeight = Math.max(64, textureHeight + 16);
+        const row = this.add
+          .rectangle(padding, cursorY, contentWidth, boxHeight, 0x101820, 1)
+          .setOrigin(0)
+          .setStrokeStyle(1, 0x33475a);
+
+        children.push(row);
+
+        if (hasTexture) {
+          children.push(
+            this.add.image(
+              padding + 40,
+              cursorY + Math.round(boxHeight / 2),
+              element.texture,
+            ),
+          );
+        }
+
+        const label = this.add.text(padding + 80, 0, element.label, {
+          color: '#ffffff',
+          font: '15px monospace',
+          lineSpacing: 4,
+          wordWrap: { width: contentWidth - 92 },
+        });
+
+        label.setPosition(
+          padding + 80,
+          cursorY + Math.round((boxHeight - label.height) / 2),
+        );
+        children.push(label);
+
+        if (element.activates !== undefined) {
+          const optionIndex = element.activates;
+
+          row.setInteractive({ useHandCursor: true });
+          row.on('pointerover', () => this.focusPromptCard(optionIndex));
+          row.on('pointerdown', () => this.selectPromptOption(optionIndex));
+        }
+
+        probe.push({
+          kind: 'station',
+          label: element.label,
+          x: panelX + padding,
+          y: panelY + cursorY,
+          width: contentWidth,
+          height: boxHeight,
+          activates: element.activates ?? null,
+        });
+        cursorY += boxHeight + 6;
+
+        if (element.carried !== undefined) {
+          // Carried-item row (§6.1): same redundant-activator wiring.
+          cursorY = this.renderSurfaceElement(
+            { kind: 'tray', entries: [element.carried] },
+            padding,
+            contentWidth,
+            cursorY,
+            panelX,
+            panelY,
+            children,
+            probe,
+          );
+
+          return cursorY;
+        }
+
+        return cursorY + 2;
+      }
+
+      case 'steps': {
+        const gap = 8;
+        const count = element.tiles.length;
+        const tileWidth = Math.floor(
+          (contentWidth - gap * (count - 1)) / count,
+        );
+        const labels = element.tiles.map((tile, index) =>
+          this.add.text(
+            padding + index * (tileWidth + gap) + 8,
+            cursorY + 30,
+            tile.label,
+            {
+              color: '#ffffff',
+              font: '14px monospace',
+              lineSpacing: 3,
+              wordWrap: { width: tileWidth - 16 },
+            },
+          ),
+        );
+        const labelMax = Math.max(
+          ...labels.map((label) => Math.ceil(label.height)),
+        );
+        const tileHeight = 30 + labelMax + 10;
+
+        element.tiles.forEach((tile, index) => {
+          const tileX = padding + index * (tileWidth + gap);
+          const tileBox = this.add
+            .rectangle(tileX, cursorY, tileWidth, tileHeight, 0x101820, 1)
+            .setOrigin(0)
+            .setStrokeStyle(1, 0x33475a);
+
+          children.push(tileBox);
+
+          // Glyph-differentiated state (never colour-only, §7.3).
+          const glyphKey =
+            tile.state === 'done'
+              ? 'proc-icon-step-done'
+              : tile.state === 'current'
+                ? 'proc-icon-step-current'
+                : 'proc-icon-step-pending';
+
+          if (this.textures.exists(glyphKey)) {
+            children.push(this.add.image(tileX + 16, cursorY + 16, glyphKey));
+          }
+
+          if (
+            element.partIcon !== undefined &&
+            element.partIcon.tileIndex === index &&
+            this.textures.exists(element.partIcon.icon)
+          ) {
+            children.push(
+              this.add.image(
+                tileX + tileWidth - 16,
+                cursorY + 16,
+                element.partIcon.icon,
+              ),
+            );
+          }
+
+          children.push(labels[index]);
+          probe.push({
+            kind: 'steps',
+            label: tile.label,
+            x: panelX + tileX,
+            y: panelY + cursorY,
+            width: tileWidth,
+            height: tileHeight,
+            activates: null,
+            state: tile.state,
+          });
+        });
+
+        return cursorY + tileHeight + 8;
+      }
+
+      case 'schematic': {
+        // §6.2: static slot/component dressing (identical every visit)
+        // plus a readout that re-renders only strings the status side
+        // panel already shows — never sequence or manual/guidance state.
+        const readout = this.add.text(
+          padding + 112,
+          cursorY + 10,
+          element.readout.join('\n'),
+          {
+            color: '#ffffff',
+            font: '14px monospace',
+            lineSpacing: 4,
+            wordWrap: { width: contentWidth - 124 },
+          },
+        );
+        const boxHeight = Math.max(72, Math.ceil(readout.height) + 20);
+        const frame = this.add
+          .rectangle(padding, cursorY, contentWidth, boxHeight, 0x101820, 1)
+          .setOrigin(0)
+          .setStrokeStyle(1, 0x33475a);
+
+        children.push(frame);
+
+        for (let slot = 0; slot < 3; slot++) {
+          if (this.textures.exists('proc-icon-slot-chip')) {
+            children.push(
+              this.add.image(
+                padding + 18 + slot * 30,
+                cursorY + 22,
+                'proc-icon-slot-chip',
+              ),
+            );
+          }
+        }
+
+        if (this.textures.exists('proc-icon-component')) {
+          children.push(
+            this.add.image(padding + 26, cursorY + 52, 'proc-icon-component'),
+          );
+        }
+
+        if (this.textures.exists('proc-icon-manual')) {
+          children.push(
+            this.add.image(padding + 58, cursorY + 52, 'proc-icon-manual'),
+          );
+        }
+
+        children.push(readout);
+        probe.push({
+          kind: 'schematic',
+          label: element.readout.join('\n'),
+          x: panelX + padding,
+          y: panelY + cursorY,
+          width: contentWidth,
+          height: boxHeight,
+          activates: null,
+        });
+
+        return cursorY + boxHeight + 8;
+      }
+    }
   }
 
   /**
@@ -947,6 +1604,7 @@ export abstract class RoomScene extends Phaser.Scene {
 
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
       window.__promptCards = null;
+      window.__minigameSurface = null;
     }
 
     this.activePrompt?.panel.destroy();

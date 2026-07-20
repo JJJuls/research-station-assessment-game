@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-import { PROCEDURAL_TEXTURE_MANIFEST } from '../src/world/proceduralTextures';
+import { KIT_ITEM_REGISTRY } from '../src/data/itemRegistry';
+import {
+  ICON_TEXTURES,
+  itemIconTextureKey,
+  PROCEDURAL_TEXTURE_MANIFEST,
+} from '../src/world/proceduralTextures';
 import { bootGame } from './helpers';
 
 /**
@@ -17,7 +22,7 @@ import { bootGame } from './helpers';
  */
 
 /**
- * Pinned manifest snapshot. Grows only when a NEXT-07 phase adds
+ * Pinned manifest snapshot. Grows only when a NEXT-07/NEXT-08 phase adds
  * textures; every entry must match src/world/proceduralTextures.ts
  * exactly. Update deliberately, per phase — never loosen to a wildcard.
  */
@@ -36,6 +41,24 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-beacon-comms': { width: 32, height: 64 },
   'proc-core-interface': { width: 64, height: 56 },
   'proc-bot-utility': { width: 48, height: 48 },
+  // NEXT-08 §3.3 proc-icon-* family: registry-item icons...
+  'proc-icon-torque-driver': { width: 24, height: 24 },
+  'proc-icon-diagnostic-probe': { width: 24, height: 24 },
+  'proc-icon-coolant-cartridge': { width: 24, height: 24 },
+  'proc-icon-fuse-pack': { width: 24, height: 24 },
+  'proc-icon-patch-tape': { width: 24, height: 24 },
+  'proc-icon-hex-spanner': { width: 24, height: 24 },
+  'proc-icon-sealant-canister': { width: 24, height: 24 },
+  'proc-icon-relay-board': { width: 24, height: 24 },
+  'proc-icon-stabiliser-part': { width: 24, height: 24 },
+  // ...and glyph icons (slot chip, manual, component, step states, log mark).
+  'proc-icon-slot-chip': { width: 24, height: 24 },
+  'proc-icon-manual': { width: 24, height: 24 },
+  'proc-icon-component': { width: 24, height: 24 },
+  'proc-icon-step-pending': { width: 20, height: 20 },
+  'proc-icon-step-current': { width: 20, height: 20 },
+  'proc-icon-step-done': { width: 20, height: 20 },
+  'proc-icon-log-mark': { width: 16, height: 16 },
 };
 
 interface ProcTexturesProbe {
@@ -76,5 +99,24 @@ test.describe('procedural texture foundry (NEXT-07)', () => {
 
     // ...and every generated texture has its manifest dimensions.
     expect(probe!.textures).toEqual(EXPECTED_MANIFEST);
+  });
+
+  test('NEXT-08 icon family covers the item registry and glyph set', () => {
+    // Every inventory registry item resolves to a manifest icon via the
+    // presentation-layer key mapping (itemRegistry.ts is not edited).
+    for (const item of KIT_ITEM_REGISTRY) {
+      expect(
+        PROCEDURAL_TEXTURE_MANIFEST[itemIconTextureKey(item.item_id)],
+        `missing icon for ${item.item_id}`,
+      ).toBeDefined();
+    }
+
+    // Every named glyph icon is a manifest entry.
+    for (const textureKey of Object.values(ICON_TEXTURES)) {
+      expect(
+        PROCEDURAL_TEXTURE_MANIFEST[textureKey],
+        `missing glyph ${textureKey}`,
+      ).toBeDefined();
+    }
   });
 });

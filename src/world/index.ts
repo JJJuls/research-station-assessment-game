@@ -2,6 +2,8 @@ export type { CanonicalEventContext } from './CanonicalEventContext';
 export { CANONICAL_EVENT_CONTEXT } from './CanonicalEventContext';
 export {
   ensureProceduralTextures,
+  ICON_TEXTURES,
+  itemIconTextureKey,
   PROCEDURAL_TEXTURE_MANIFEST,
 } from './proceduralTextures';
 export type {
@@ -10,6 +12,10 @@ export type {
   PromptStage,
   RoomDoorConfig,
   RoomStationConfig,
+  StagePresentation,
+  StageSurfaceElement,
+  SurfaceActivator,
+  SurfaceStepTile,
 } from './RoomScene';
 export { RoomScene, runOncePerSession } from './RoomScene';
 export type { FailedTaskState, RoomTaskStateHandle } from './roomTaskState';
