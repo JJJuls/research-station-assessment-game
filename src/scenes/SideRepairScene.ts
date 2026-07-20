@@ -35,6 +35,18 @@ const SIDE_REPAIR_STEPS = [
 ] as const;
 
 /**
+ * Participant step labels, in SIDE_REPAIR_STEPS order (NEXT-08 Phase 7,
+ * reviewer finding): the §6.3 step tracker must reuse the side panel's
+ * exact step strings, so both surfaces read from this one constant — a
+ * wording edit can never silently diverge tracker from panel.
+ */
+const SIDE_REPAIR_STEP_LABELS = [
+  'fetch the component',
+  'fit the component',
+  'run the system check',
+] as const;
+
+/**
  * Cross-entry side-repair task state (FABLE-NEXT-03; session lifetime —
  * accepted-task progress must survive scene restarts so defer-and-return
  * keeps completed steps, and a walk-away after real work is detectable at
@@ -164,13 +176,7 @@ export class SideRepairScene extends RoomScene {
     } else {
       lines.push('[ ] in progress');
       lines.push('', `Step ${Math.min(state.stepsCompleted + 1, 3)} of 3:`);
-      lines.push(
-        state.stepsCompleted === 0
-          ? 'fetch the component'
-          : state.stepsCompleted === 1
-            ? 'fit the component'
-            : 'run the system check',
-      );
+      lines.push(SIDE_REPAIR_STEP_LABELS[Math.min(state.stepsCompleted, 2)]);
 
       if (mission.side_repair_status === SIDE_REPAIR_STATUS_DEFERRED) {
         lines.push('', '(deferred - resume any time)');
@@ -334,19 +340,17 @@ export class SideRepairScene extends RoomScene {
       return undefined;
     }
 
-    const tiles: SurfaceStepTile[] = [
-      'fetch the component',
-      'fit the component',
-      'run the system check',
-    ].map((label, index) => ({
-      label,
-      state:
-        index < state.stepsCompleted
-          ? 'done'
-          : index === state.stepsCompleted
-            ? 'current'
-            : 'pending',
-    }));
+    const tiles: SurfaceStepTile[] = SIDE_REPAIR_STEP_LABELS.map(
+      (label, index) => ({
+        label,
+        state:
+          index < state.stepsCompleted
+            ? 'done'
+            : index === state.stepsCompleted
+              ? 'current'
+              : 'pending',
+      }),
+    );
 
     return {
       surface: [

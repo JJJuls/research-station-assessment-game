@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import {
   bootGame,
+  clickGameRect,
   clickPromptCard,
   clickSurfaceEntry,
   dockToHub,
@@ -791,6 +792,134 @@ test.describe('inventory prep logging', () => {
     expect(streamTypes).toContain('inventory_checklist_opened');
     expect(streamTypes).toContain('inventory_verification_skipped');
     expect(streamTypes).toContain('workspace_left_disordered');
+  });
+
+  test('NEXT-08 coherence: bin silhouettes, carrying tray, take-back path, review pin, inert clicks', async ({
+    page,
+  }) => {
+    test.setTimeout(600_000);
+
+    /**
+     * Phase 7 audit coverage (Phase 2 review carry-forwards): the two
+     * remaining bin silhouette surfaces, the carrying-stage inert bench
+     * tray (fit + inertness), the take-back correction mouse path, a
+     * byte-pin on the review-stage body, the §7.4 fit bound on the
+     * FIRST (9-card) bench stage, and a no-op click on an inert element.
+     */
+    await bootGame(page, {
+      participant_id: 'E2E_P6',
+      game_session_id: 'E2E_INV_S10',
+      condition: 'pilot',
+      game_version: 'e2e',
+    });
+    await dockToHub(page);
+    await hubToInventory(page);
+
+    await inventoryToConsole(page);
+    await clickPromptCard(page, 3); // engage per-item mode
+
+    // FIRST bench visit: 9 cards; §7.4 fit incl. instruction headroom.
+    await inventoryToPrepBench(page);
+
+    let cards = await getPromptCards(page);
+
+    expect(cards).toHaveLength(9);
+
+    let last = cards![cards!.length - 1];
+
+    expect(last.y + last.height).toBeLessThanOrEqual(560);
+
+    // Take the Sealant Canister (option 7 on the full bench).
+    await clickPromptCard(page, 6);
+
+    // Carrying-stage bench tray: reopen the bench — remaining 7 items
+    // render as INERT tray rows; panel still fits; an inert click is a
+    // no-op (no event, prompt unchanged).
+    await press(page, 'Space');
+
+    const carryingSurface = await getMinigameSurface(page);
+    const trayRows = carryingSurface?.filter((e) => e.kind === 'tray') ?? [];
+
+    expect(trayRows).toHaveLength(7);
+    expect(trayRows.map((r) => r.label)).toEqual([
+      'Torque Driver',
+      'Diagnostic Probe',
+      'Coolant Cartridge',
+      'Spare Fuse Pack',
+      'Patch Tape',
+      'Hex Spanner',
+      'Relay Board',
+    ]);
+    for (const row of trayRows) {
+      expect(row.activates).toBeNull();
+    }
+
+    cards = await getPromptCards(page);
+    last = cards![cards!.length - 1];
+    expect(last.y + last.height).toBeLessThanOrEqual(560);
+
+    const eventsBeforeInertClick = (await getEvents(page)).length;
+    const cardsBeforeInertClick = JSON.stringify(cards);
+
+    await clickGameRect(page, trayRows[0]); // inert: must change nothing
+
+    expect((await getEvents(page)).length).toBe(eventsBeforeInertClick);
+    expect(JSON.stringify(await getPromptCards(page))).toBe(
+      cardsBeforeInertClick,
+    );
+
+    await clickPromptCard(page, 1); // step back (closes the prompt)
+
+    // Consumables Bin silhouette surface: stow via the silhouette click.
+    await inventoryToStorageBin(page, 'consumables');
+
+    let surface = await getMinigameSurface(page);
+    let station = surface?.find((e) => e.kind === 'station');
+
+    expect(station?.label).toBe('Consumables Bin');
+    expect(station?.activates).toBe(0);
+    await clickSurfaceEntry(page, 'Consumables Bin');
+
+    // Take-back correction mouse path: back out via the take-back card,
+    // then the Electronics Shelf silhouette surface (wrong destination —
+    // the surface itself must render identically; §5.7 is event-side).
+    await press(page, 'Space');
+
+    surface = await getMinigameSurface(page);
+    station = surface?.find((e) => e.kind === 'station');
+    expect(station?.label).toBe('Consumables Bin');
+    expect(station?.activates).toBeNull(); // hands free: inert silhouette
+    await clickPromptCard(page, 0); // take the Sealant Canister back out
+
+    await inventoryToStorageBin(page, 'electronics');
+    surface = await getMinigameSurface(page);
+    station = surface?.find((e) => e.kind === 'station');
+    expect(station?.label).toBe('Electronics Shelf');
+    expect(station?.activates).toBe(0);
+    await clickSurfaceEntry(page, 'Electronics Shelf'); // misplacement
+
+    // Review-stage body byte-pin (issues text unchanged by NEXT-08).
+    await inventoryToConsole(page);
+    await clickPromptCard(page, 1); // close out the prep
+
+    const reviewBody = await getLastPromptBody(page);
+
+    expect(reviewBody).toContain(
+      'Sealant Canister is in the Electronics Shelf; its tag says rack tag: Consumables Bin.',
+    );
+    expect(reviewBody).toContain('Still on the bench:');
+
+    // Events: one correct stow (attempt 1), one misplacement (attempt 2).
+    const events = await getEvents(page);
+    const sorted = findEvents(events, 'inventory_item_sorted_correct');
+    const misplaced = findEvents(events, 'inventory_item_misplaced');
+
+    expect(sorted.map((e) => [e.object_id, e.attempt_number])).toEqual([
+      ['sealant_canister', 1],
+    ]);
+    expect(misplaced.map((e) => [e.object_id, e.attempt_number])).toEqual([
+      ['sealant_canister', 2],
+    ]);
   });
 
   test('per-item stations stay gated before engagement and after completion', async ({

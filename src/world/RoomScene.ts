@@ -126,7 +126,8 @@ export interface StagePresentation {
    * Renders this exact substring of `body` inside a visually distinct
    * inset (§6.4). Text is byte-identical; __lastPromptBody composition is
    * unchanged. If the substring is absent from `body`, the stage falls
-   * back to the plain header (deterministic, spec-covered).
+   * back to the plain default header (deterministic authoring guard; no
+   * shipping stage takes this path).
    */
   bodyInset?: { text: string; treatment: 'plain' | 'log' };
   /**
@@ -864,6 +865,7 @@ export abstract class RoomScene extends Phaser.Scene {
           cursorY,
           panelX,
           PANEL_Y,
+          options.length,
           children,
           surfaceProbe,
         );
@@ -1185,7 +1187,10 @@ export abstract class RoomScene extends Phaser.Scene {
    * calls the same selectPromptOption the option card's click calls, and
    * pointerover focuses the linked card (presentation only — focus never
    * logs). Elements without `activates` render identically but take no
-   * pointer handler. Returns the local cursor y after the element.
+   * pointer handler; an `activates` index outside the declared option
+   * list is treated as inert too (Phase 7 authoring guard — a
+   * mis-authored surface must never carry a hand cursor to a no-op).
+   * Returns the local cursor y after the element.
    */
   private renderSurfaceElement(
     element: StageSurfaceElement,
@@ -1194,10 +1199,15 @@ export abstract class RoomScene extends Phaser.Scene {
     startY: number,
     panelX: number,
     panelY: number,
+    optionCount: number,
     children: Phaser.GameObjects.GameObject[],
     probe: MinigameSurfaceProbeEntry[],
   ): number {
     let cursorY = startY;
+    const validActivates = (index: number | undefined): number | undefined =>
+      index !== undefined && index >= 0 && index < optionCount
+        ? index
+        : undefined;
 
     switch (element.kind) {
       case 'tray': {
@@ -1235,12 +1245,14 @@ export abstract class RoomScene extends Phaser.Scene {
 
           children.push(label);
 
-          if (entry.activates !== undefined) {
-            const optionIndex = entry.activates;
+          const entryActivates = validActivates(entry.activates);
 
+          if (entryActivates !== undefined) {
             row.setInteractive({ useHandCursor: true });
-            row.on('pointerover', () => this.focusPromptCard(optionIndex));
-            row.on('pointerdown', () => this.selectPromptOption(optionIndex));
+            row.on('pointerover', () => this.focusPromptCard(entryActivates));
+            row.on('pointerdown', () =>
+              this.selectPromptOption(entryActivates),
+            );
           }
 
           probe.push({
@@ -1250,7 +1262,7 @@ export abstract class RoomScene extends Phaser.Scene {
             y: panelY + cursorY,
             width: contentWidth,
             height: rowHeight,
-            activates: entry.activates ?? null,
+            activates: entryActivates ?? null,
           });
           cursorY += rowHeight + 6;
         }
@@ -1294,12 +1306,14 @@ export abstract class RoomScene extends Phaser.Scene {
         );
         children.push(label);
 
-        if (element.activates !== undefined) {
-          const optionIndex = element.activates;
+        const stationActivates = validActivates(element.activates);
 
+        if (stationActivates !== undefined) {
           row.setInteractive({ useHandCursor: true });
-          row.on('pointerover', () => this.focusPromptCard(optionIndex));
-          row.on('pointerdown', () => this.selectPromptOption(optionIndex));
+          row.on('pointerover', () => this.focusPromptCard(stationActivates));
+          row.on('pointerdown', () =>
+            this.selectPromptOption(stationActivates),
+          );
         }
 
         probe.push({
@@ -1309,7 +1323,7 @@ export abstract class RoomScene extends Phaser.Scene {
           y: panelY + cursorY,
           width: contentWidth,
           height: boxHeight,
-          activates: element.activates ?? null,
+          activates: stationActivates ?? null,
         });
         cursorY += boxHeight + 6;
 
@@ -1322,6 +1336,7 @@ export abstract class RoomScene extends Phaser.Scene {
             cursorY,
             panelX,
             panelY,
+            optionCount,
             children,
             probe,
           );

@@ -54,6 +54,16 @@ const repairTaskState = createRoomTaskState<RepairTaskState>(
 );
 
 /**
+ * Shared side-panel/schematic strings (NEXT-08 Phase 7, reviewer
+ * finding): the §6.2 diagnostic readout must re-render EXACTLY what the
+ * status side panel shows, so both surfaces read from one constant set —
+ * a wording edit can never silently diverge tracker from panel.
+ */
+const REPAIR_STATE_AWAITING = '[ ] awaiting first sequence';
+const REPAIR_STATE_REJECTED = '[ ] sequence rejected';
+const REPAIR_CYCLES_LINE = (cycles: number) => `Cycles logged: ${cycles}`;
+
+/**
  * Systems Repair Room — V3 §4 Room 2, docs/game/rooms/02-systems-repair-room.md.
  * Q05/Q06/Q14/Q21/Q23-Q26: task initiation, repair after failure, manual
  * use, revised sequence, productive persistence. The default-sequence
@@ -151,10 +161,10 @@ export class RepairScene extends RoomScene {
       complete
         ? '[x] repair logged'
         : cycles === 0
-          ? '[ ] awaiting first sequence'
-          : '[ ] sequence rejected',
+          ? REPAIR_STATE_AWAITING
+          : REPAIR_STATE_REJECTED,
       '',
-      `Cycles logged: ${cycles}`,
+      REPAIR_CYCLES_LINE(cycles),
     ];
 
     this.statusPanel.setText(lines.join('\n'));
@@ -285,10 +295,8 @@ export class RepairScene extends RoomScene {
         {
           kind: 'schematic',
           readout: [
-            cycles === 0
-              ? '[ ] awaiting first sequence'
-              : '[ ] sequence rejected',
-            `Cycles logged: ${cycles}`,
+            cycles === 0 ? REPAIR_STATE_AWAITING : REPAIR_STATE_REJECTED,
+            REPAIR_CYCLES_LINE(cycles),
           ],
         },
       ],
