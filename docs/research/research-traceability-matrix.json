@@ -10,8 +10,8 @@
       "registered": 90,
       "scoring_inputs": 57,
       "summary_variables": 59,
-      "with_code_references": 151,
-      "with_spec_references": 152
+      "with_code_references": 152,
+      "with_spec_references": 153
     }
   },
   "events": {
@@ -1643,8 +1643,11 @@
       "construct_id": "organisation",
       "success": "unset",
       "scoring_input": false,
-      "code_references": [],
-      "spec_references": []
+      "code_references": ["src/scenes/RepairScene.ts"],
+      "spec_references": [
+        "e2e/repair_tool_retrieval.spec.ts",
+        "e2e/route_g_telemetry.spec.ts"
+      ]
     },
     "prior_goal_abandoned": {
       "rooms": ["interruption_corridor", "final_core_room"],
@@ -1703,7 +1706,8 @@
       "spec_references": [
         "e2e/adversarial_reload_partial_state.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
-        "e2e/repair_room_logging.spec.ts"
+        "e2e/repair_room_logging.spec.ts",
+        "e2e/repair_tool_retrieval.spec.ts"
       ]
     },
     "repair_attempt": {
@@ -1721,7 +1725,9 @@
       ],
       "spec_references": [
         "e2e/adversarial_input_spam.spec.ts",
-        "e2e/repair_room_logging.spec.ts"
+        "e2e/repair_room_logging.spec.ts",
+        "e2e/repair_tool_retrieval.spec.ts",
+        "e2e/route_g_telemetry.spec.ts"
       ]
     },
     "repair_completed": {
@@ -1740,7 +1746,8 @@
         "e2e/adversarial_reload_partial_state.spec.ts",
         "e2e/adversarial_status_board_display.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
-        "e2e/repair_room_logging.spec.ts"
+        "e2e/repair_room_logging.spec.ts",
+        "e2e/repair_tool_retrieval.spec.ts"
       ]
     },
     "repair_failed": {
@@ -1759,7 +1766,8 @@
         "e2e/adversarial_input_spam.spec.ts",
         "e2e/adversarial_reload_partial_state.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
-        "e2e/repair_room_logging.spec.ts"
+        "e2e/repair_room_logging.spec.ts",
+        "e2e/repair_tool_retrieval.spec.ts"
       ]
     },
     "repair_manual_opened": {
@@ -1804,7 +1812,9 @@
       "code_references": ["src/scenes/RepairScene.ts"],
       "spec_references": [
         "e2e/adversarial_input_spam.spec.ts",
-        "e2e/repair_room_logging.spec.ts"
+        "e2e/repair_room_logging.spec.ts",
+        "e2e/repair_tool_retrieval.spec.ts",
+        "e2e/route_g_telemetry.spec.ts"
       ]
     },
     "repair_returned_after_failure": {
@@ -1818,7 +1828,8 @@
       "spec_references": [
         "e2e/adversarial_reload_partial_state.spec.ts",
         "e2e/connected_participant_journeys.spec.ts",
-        "e2e/repair_room_logging.spec.ts"
+        "e2e/repair_room_logging.spec.ts",
+        "e2e/repair_tool_retrieval.spec.ts"
       ]
     },
     "repair_room_entered": {
@@ -1864,7 +1875,8 @@
       "code_references": ["src/scenes/RepairScene.ts"],
       "spec_references": [
         "e2e/adversarial_input_spam.spec.ts",
-        "e2e/repair_room_logging.spec.ts"
+        "e2e/repair_room_logging.spec.ts",
+        "e2e/repair_tool_retrieval.spec.ts"
       ]
     },
     "repair_strategy_revision": {
@@ -1879,7 +1891,10 @@
         "src/scenes/RepairScene.ts",
         "src/systems/ScoringManager.ts"
       ],
-      "spec_references": ["e2e/repair_room_logging.spec.ts"]
+      "spec_references": [
+        "e2e/repair_room_logging.spec.ts",
+        "e2e/repair_tool_retrieval.spec.ts"
+      ]
     },
     "return_to_unfinished_task": {
       "rooms": ["interruption_corridor"],
@@ -2318,7 +2333,10 @@
       "success": "unset",
       "scoring_input": false,
       "code_references": ["src/scenes/InventoryScene.ts"],
-      "spec_references": ["e2e/inventory_prep_logging.spec.ts"]
+      "spec_references": [
+        "e2e/inventory_prep_logging.spec.ts",
+        "e2e/repair_tool_retrieval.spec.ts"
+      ]
     }
   },
   "findings": {
@@ -2345,8 +2363,8 @@
       },
       {
         "id": "Q03",
-        "gap": "wrong_tool_selected closed by FABLE-NEXT-02 (kit-crate placement path); prepared_tool_used still needs the cross-room retrieval episode (emission moment fixed by NEXT-09-OD-3)",
-        "blocked_by": "task-design (user-owned; NEXT-09 Phase 2 approval-gated)"
+        "gap": "closed by NEXT-09 Phase 2: prepared_tool_used emitted at the Repair Panel retrieval micro-step per NEXT-09-OD-3 (wrong_tool_selected closed by FABLE-NEXT-02, kit-crate placement path)",
+        "blocked_by": "none"
       },
       {
         "id": "Q07",
@@ -2527,7 +2545,7 @@
       "construct_id": "organisation",
       "construct_label": "Organisation / neat resource management",
       "proxy_status": "direct",
-      "rooms": ["inventory_prep_room"],
+      "rooms": ["inventory_prep_room", "systems_repair_room"],
       "events": [
         "correct_tool_selected",
         "wrong_tool_selected",
@@ -2539,10 +2557,8 @@
         "tool_retrieval_accuracy",
         "workspace_tidy_score"
       ],
-      "operationalisation": "partial",
-      "gaps": [
-        "prepared_tool_used unemitted — needs the cross-room retrieval episode (NEXT-09 Phase 2 candidate, approval-gated; emission moment fixed by NEXT-09-OD-3)"
-      ],
+      "operationalisation": "implemented",
+      "gaps": [],
       "unresolved_decisions": []
     },
     {
@@ -3198,8 +3214,8 @@
       "notes": "Emitted since FABLE-NEXT-02: kit-crate placement path (InventoryScene)."
     },
     "prepared_tool_used": {
-      "emission": "not_implemented",
-      "notes": "Belongs to the cross-room retrieval episode (unbuilt; NEXT-09 Phase 2 candidate, approval-gated). Emission moment fixed by NEXT-09-OD-3: exactly once, on retrieval of a previously packed task-relevant tool from its stored location plus first application to Systems Repair — never on container opening, item selection, display, or carrying; no qualifying packed tool = no-opportunity state."
+      "emission": "emitted",
+      "notes": "Emitted since NEXT-09 Phase 2: the Repair Panel retrieval micro-step (RepairScene) fires it exactly once per session, at the explicit fit act — retrieval of the previously packed Diagnostic Probe (object_id diagnostic_probe) from its actual stored location (kitPreparationState, read-only) plus first application to Systems Repair, per NEXT-09-OD-3. Never on container opening, item selection, display, or carrying; no qualifying packed tool = no-opportunity state (panel unchanged). Cross-room event: emitted in systems_repair_room; schema home table stays Inventory."
     },
     "readiness_verified": {
       "emission": "deliberately_unemitted",

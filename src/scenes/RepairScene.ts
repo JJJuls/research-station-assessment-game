@@ -1,10 +1,18 @@
 import { key } from '../constants';
+import type { ItemLocation, PlacementDestination } from '../data/itemRegistry';
+import {
+  getRegistryItem,
+  itemsAtLocation,
+  kitPreparationState,
+  STORAGE_BINS,
+} from '../data/itemRegistry';
 import type { ResearchInteraction } from '../data/researchInteractions';
 import { researchInteractions } from '../data/researchInteractions';
 import { researchRuntime } from '../systems';
 import type {
   InteractionKey,
   PromptOption,
+  PromptStage,
   RoomLayout,
   StagePresentation,
 } from '../world';
@@ -42,6 +50,13 @@ import {
 interface RepairTaskState extends FailedTaskState {
   attemptCount: number;
   manualGuided: boolean;
+  /**
+   * NEXT-09 Phase 2 (Q03, NEXT-09-OD-3): the prepared tool has been
+   * applied to the repair this session. Session lifetime like the other
+   * fields, so `prepared_tool_used` stays exactly-once across room
+   * exit/return and the applied state never re-offers the micro-step.
+   */
+  preparedToolApplied: boolean;
 }
 
 const repairTaskState = createRoomTaskState<RepairTaskState>(
@@ -50,8 +65,45 @@ const repairTaskState = createRoomTaskState<RepairTaskState>(
     ...createFailedTaskState(),
     attemptCount: 0,
     manualGuided: false,
+    preparedToolApplied: false,
   }),
 );
+
+/**
+ * NEXT-09 Phase 2 — Q03 prepared-tool retrieval episode (coverage
+ * contract §6-Q03; emission definition NEXT-09-OD-3, SA register §9.1c).
+ * The task-relevant tool is ONE named kit-requisition item so the
+ * retrieval target is deterministic; the identity is fiction-tier (it
+ * matches the panel's existing diagnostic-readout register) and is
+ * recorded in the room doc for research-owner wording review. The
+ * emission moment is OD-3 verbatim; the qualifying-state test adds the
+ * prep-close-out condition from the contract's "when (and only when) the
+ * session packed the kit" wording (§6-Q03) — it also keeps the mirrored
+ * storage stable (§12: the live inventory substrate is frozen mid-prep).
+ * That condition is flagged for research-owner confirmation in the
+ * Phase 2 report.
+ */
+const REPAIR_REQUIRED_TOOL_ITEM_ID = 'diagnostic_probe';
+
+/**
+ * Storage containers mirrored as neutral cards on the panel (§6-Q03:
+ * "kit crate vs bins"): the field kit crate, then the labelled bins in
+ * registry order. Labels are the containers' existing station labels.
+ */
+const MIRRORED_STORAGE_CONTAINERS: readonly {
+  destination: PlacementDestination;
+  label: string;
+}[] = [
+  { destination: 'kit_crate', label: 'Field Kit Crate' },
+  ...STORAGE_BINS.map((bin) => ({
+    destination: bin.bin_id as PlacementDestination,
+    label: bin.label,
+  })),
+];
+
+/** In-fiction body of the retrieval stage (root and chained renders). */
+const TOOL_RETRIEVAL_BODY =
+  'Panel diagnostics list the Diagnostic Probe for this repair sequence. Station storage access is mirrored on this panel.';
 
 /**
  * Shared side-panel/schematic strings (NEXT-08 Phase 7, reviewer
@@ -288,6 +340,23 @@ export class RepairScene extends RoomScene {
       return undefined;
     }
 
+    // NEXT-09 Phase 2: when the retrieval micro-step is the initial
+    // stage, it renders as plain cards; the schematic stays attached to
+    // the (chained) sequence stage via buildSequenceStage.
+    if (this.hasPreparedToolOpportunity()) {
+      return undefined;
+    }
+
+    return this.buildSequencePresentation();
+  }
+
+  /**
+   * The NEXT-08 §6.2 tactile presentation of the SEQUENCE stage —
+   * unchanged content, extracted so the initial-stage path (kit-less
+   * sessions) and the chained-stage path (after the retrieval micro-step)
+   * render one identical panel.
+   */
+  private buildSequencePresentation(): StagePresentation {
     const cycles = repairTaskState.get().attemptCount;
 
     return {
@@ -308,11 +377,42 @@ export class RepairScene extends RoomScene {
     };
   }
 
+  /**
+   * NEXT-09 Phase 2 initial-stage body: names the needed tool while the
+   * retrieval micro-step is live. No-opportunity sessions resolve to
+   * undefined — the pre-Phase-2 panel byte-for-byte.
+   */
+  protected getPromptBody(interactionKey: InteractionKey): string | undefined {
+    if (
+      interactionKey === 'systemsRepairFailure' &&
+      this.hasPreparedToolOpportunity()
+    ) {
+      return TOOL_RETRIEVAL_BODY;
+    }
+
+    return undefined;
+  }
+
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
     if (interactionKey !== 'systemsRepairFailure') {
       return [];
     }
 
+    // NEXT-09 Phase 2: qualifying packed-tool sessions get the retrieval
+    // micro-step as the panel's first stage; every other session gets the
+    // unchanged sequence options directly.
+    if (this.hasPreparedToolOpportunity()) {
+      return this.buildToolRetrievalOptions();
+    }
+
+    return this.buildSequenceOptions();
+  }
+
+  /**
+   * The unchanged three sequence options (verbatim pre-Phase-2 content,
+   * extracted so the retrieval micro-step can chain into them).
+   */
+  private buildSequenceOptions(): PromptOption[] {
     // Option labels and the legacy repair_attempt / feedback strings are
     // ported verbatim from the prototype. Events are logged in onSelected
     // (getEventTypes stays empty) so the canonical submission-family
@@ -363,6 +463,212 @@ export class RepairScene extends RoomScene {
         },
       },
     ];
+  }
+
+  // ————————————————————————————————————————————————————————————————————
+  // NEXT-09 Phase 2 — Q03 prepared-tool retrieval micro-step. Emits ONLY
+  // the already-canonical, already-registered `prepared_tool_used`, and
+  // only at the explicit fit act (NEXT-09-OD-3: never on container
+  // opening, item selection, display, or carrying). Reads the inventory
+  // per-item substrate strictly read-only — retrieval can never alter
+  // bench state, prepared_items, or any Final Core flag.
+  // ————————————————————————————————————————————————————————————————————
+
+  /** Stored containers a tool can be retrieved from (never bench/hand). */
+  private isStoredContainer(
+    location: ItemLocation,
+  ): location is PlacementDestination {
+    return (
+      location === 'kit_crate' ||
+      STORAGE_BINS.some((bin) => bin.bin_id === location)
+    );
+  }
+
+  /**
+   * OD-3 qualifying state: the inventory prep is closed out, the
+   * Diagnostic Probe was previously PACKED into the kit crate
+   * (`kit_first_placement_order` — the existing was-ever-packed record),
+   * and it currently sits in a stored container (its ACTUAL stored
+   * location — a bin when the participant re-stowed it). Legacy checklist
+   * prep has no per-item storage substrate, a bench/carried probe has no
+   * stored location, and a stowed-but-never-packed probe was never
+   * packed: all are no-opportunity states and get the pre-Phase-2 panel
+   * unchanged. One-shot: never re-offered after the fit act.
+   */
+  private hasPreparedToolOpportunity(): boolean {
+    if (repairTaskState.get().preparedToolApplied || this.isRepairCompleted()) {
+      return false;
+    }
+
+    const prepClosedOut = researchRuntime.sessionState
+      .getMissionState()
+      .completed_rooms.includes('inventory_prep_room');
+
+    return (
+      prepClosedOut &&
+      kitPreparationState.kit_first_placement_order.includes(
+        REPAIR_REQUIRED_TOOL_ITEM_ID,
+      ) &&
+      this.isStoredContainer(
+        kitPreparationState.locations[REPAIR_REQUIRED_TOOL_ITEM_ID],
+      )
+    );
+  }
+
+  /**
+   * Retrieval stage: the mirrored storage containers as neutral cards,
+   * plus a direct route to the unchanged sequence controls (spec-§8.2
+   * opportunity/choice separation: using the prepared tool must be a
+   * choice, so declining is always available and keeps the opportunity
+   * open for later visits). No option here logs anything.
+   */
+  private buildToolRetrievalOptions(): PromptOption[] {
+    const containerOptions: PromptOption[] = MIRRORED_STORAGE_CONTAINERS.map(
+      ({ destination, label }) => ({
+        label: `Open the ${label}.`,
+        feedback: '',
+        getEventTypes: () => [],
+        nextStage: () => this.buildContainerStage(destination, label),
+      }),
+    );
+
+    return [
+      ...containerOptions,
+      {
+        label: 'Go straight to the sequence controls.',
+        feedback: '',
+        getEventTypes: () => [],
+        nextStage: () => this.buildSequenceStage(),
+      },
+    ];
+  }
+
+  /** The retrieval stage as a chained render (close-container return). */
+  private buildToolRetrievalStage(): PromptStage {
+    return {
+      body: TOOL_RETRIEVAL_BODY,
+      options: this.buildToolRetrievalOptions(),
+    };
+  }
+
+  /**
+   * One opened container: contents are DISPLAYED (registry order, no
+   * event — OD-3), and only the container actually holding the probe
+   * offers the take option. A wrong container emits nothing of any kind
+   * (`wrong_tool_selected` stays Inventory-scoped by schema rule).
+   */
+  private buildContainerStage(
+    destination: PlacementDestination,
+    label: string,
+  ): PromptStage {
+    const toolLabel = getRegistryItem(REPAIR_REQUIRED_TOOL_ITEM_ID).label;
+    const stored = itemsAtLocation(destination);
+    const holdsTool =
+      kitPreparationState.locations[REPAIR_REQUIRED_TOOL_ITEM_ID] ===
+      destination;
+    const contents = stored
+      .map((itemId) => getRegistryItem(itemId).label)
+      .join(', ');
+    const body =
+      stored.length === 0
+        ? `The ${label} is empty.`
+        : holdsTool
+          ? `Inside the ${label}: ${contents}.`
+          : `Inside the ${label}: ${contents}. The ${toolLabel} is not here.`;
+    const options: PromptOption[] = [];
+
+    if (holdsTool) {
+      options.push({
+        label: `Take the ${toolLabel} to the panel.`,
+        feedback: '',
+        getEventTypes: () => [],
+        // Taking = selection + carrying: no event (OD-3). The carried
+        // state is transient to this prompt — leaving before the fit act
+        // discards it and the full micro-step re-offers later.
+        nextStage: () => this.buildToolApplicationStage(),
+      });
+    }
+
+    options.push({
+      label: 'Close the container.',
+      feedback: '',
+      getEventTypes: () => [],
+      nextStage: () => this.buildToolRetrievalStage(),
+    });
+
+    return { body, options };
+  }
+
+  /**
+   * The application stage: the explicit fit act is the SINGLE emission
+   * moment of `prepared_tool_used` (retrieved from its actual stored
+   * location + first applied to the repair). Setting the tool aside is
+   * the neutral non-use path; both continue into the unchanged sequence
+   * stage.
+   */
+  private buildToolApplicationStage(): PromptStage {
+    const toolLabel = getRegistryItem(REPAIR_REQUIRED_TOOL_ITEM_ID).label;
+
+    return {
+      body: `The ${toolLabel} is at the panel.`,
+      options: [
+        {
+          label: `Fit the ${toolLabel} for the calibration steps.`,
+          feedback: '',
+          getEventTypes: () => [],
+          onSelected: () => {
+            const state = repairTaskState.get();
+
+            if (!state.preparedToolApplied) {
+              state.preparedToolApplied = true;
+              this.logPreparedToolUsed();
+            }
+          },
+          nextStage: () => this.buildSequenceStage(),
+        },
+        {
+          label: `Set the ${toolLabel} aside.`,
+          feedback: '',
+          getEventTypes: () => [],
+          nextStage: () => this.buildSequenceStage(),
+        },
+      ],
+    };
+  }
+
+  /**
+   * The unchanged sequence panel as a chained stage: same options, same
+   * schematic presentation, no body — byte-identical panel text to the
+   * pre-Phase-2 initial stage.
+   */
+  private buildSequenceStage(): PromptStage {
+    return {
+      options: this.buildSequenceOptions(),
+      presentation: this.buildSequencePresentation(),
+    };
+  }
+
+  /**
+   * `prepared_tool_used` with the per-item payload rule (`object_id` =
+   * registry item_id; InventoryScene.logItemEvent precedent, no
+   * attempt_number — the act is exactly-once by definition). Canonical
+   * Q03/organisation context comes from the existing registration.
+   */
+  private logPreparedToolUsed() {
+    const interaction: ResearchInteraction =
+      researchInteractions.systemsRepairFailure;
+
+    researchRuntime.logInteraction({
+      scene: this.scene.key,
+      episode: interaction.episode,
+      event_type: 'prepared_tool_used',
+      object_id: REPAIR_REQUIRED_TOOL_ITEM_ID,
+      x: this.player.x,
+      y: this.player.y,
+      room_id: interaction.room_id,
+      task_id: interaction.task_id,
+      ...CANONICAL_EVENT_CONTEXT.prepared_tool_used,
+    });
   }
 
   /**

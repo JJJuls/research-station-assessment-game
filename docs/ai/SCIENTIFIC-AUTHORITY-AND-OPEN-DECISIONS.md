@@ -297,6 +297,23 @@ is promoted by this record.
 | **NEXT-09-OD-2** | **APPROVED (documentation-only).** The `scenario_*` family and `final_core_blocked_pending_decisions` are to be documented in `event-schema.md`'s raw unmapped-telemetry section as emitted reality — with no study-item mapping and no scoring promotion of any kind. The `event-schema.md` edit is **not** part of Phase 1 (not an authorised Phase 1 file); it is owed to a later approved documentation pass.                                         |
 | **NEXT-09-OD-3** | **APPROVED.** `prepared_tool_used` fires exactly once, and only when a previously packed task-relevant tool is retrieved from its stored location and first applied to the Systems Repair task — never on container opening, item selection, display, or carrying. A session with no qualifying packed tool is a no-opportunity state. This fixes the emission definition only; building the retrieval episode remains gated on NEXT-09 Phase 2 approval. |
 
+### 9.1d Research-owner rulings on NEXT-09 Phase 2 implementation questions
+
+Issued by the research owner after the Phase 2 landing (`81c36bb`,
+2026-07-25) and mirrored here verbatim. Each ruling closes exactly the
+question it names and resolves nothing else.
+
+| ID                | Ruling                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **NEXT-09-P2-R1** | **APPROVED.** The Diagnostic Probe is the approved task-relevant tool for the Q03 prepared-tool retrieval episode. Its identity is fiction-tier, has no independent construct, scoring or validity meaning, and may later be visually or fictionally replaced without changing the storage, retrieval and first-application measurement semantics.                                                                                                            |
+| **NEXT-09-P2-R2** | **APPROVED.** A qualifying opportunity exists only after Inventory preparation has been closed out. The Diagnostic Probe must previously have been packed into the Field Kit Crate and must currently be in a stored container. Its current stored location governs retrieval. A probe left on the bench, stored without previously being packed, or present during unfinished preparation is a no-opportunity state rather than participant non-performance. |
+
+Both Phase 2 report items are now closed: R1 rules the tool identity, R2
+rules the qualifying-state definition (confirming the implemented
+prep-close-out + previously-packed + currently-stored test and its
+no-opportunity coding). The live implementation at `81c36bb` conforms to
+both rulings as coded; no code change results from this record.
+
 ### 9.2 Pre-existing open decisions (unchanged by this pass)
 
 Recorded here for completeness; owned by their existing packs.

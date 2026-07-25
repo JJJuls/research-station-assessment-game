@@ -56,7 +56,7 @@ nothing can emit until a user ruling.
 | --- | ----------------------------------- | -------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------- | --------- |
 | Q01 | organisation                        | direct               | inventory_prep_room                                | inventory_checklist_opened<br>inventory_item_sorted_correct<br>inventory_sequence_followed                          | implemented | —         |
 | Q02 | organisation                        | direct               | inventory_prep_room, final_core_room               | inventory_item_misplaced<br>inventory_verification_skipped<br>final_core_missing_item_flagged                       | implemented | —         |
-| Q03 | organisation                        | direct               | inventory_prep_room                                | correct_tool_selected<br>wrong_tool_selected<br>prepared_tool_used ✗<br>workspace_tidy_confirmed                    | partial     | —         |
+| Q03 | organisation                        | direct               | inventory_prep_room, systems_repair_room           | correct_tool_selected<br>wrong_tool_selected<br>prepared_tool_used<br>workspace_tidy_confirmed                      | implemented | —         |
 | Q04 | organisation                        | direct               | inventory_prep_room, final_core_room               | workspace_left_disordered<br>cleanup_completed<br>final_core_workspace_issue_flagged                                | implemented | —         |
 | Q05 | productiveness                      | direct               | systems_repair_room, archive_room                  | task_started ⛔                                                                                                     | blocked     | D7        |
 | Q06 | productiveness                      | direct               | systems_repair_room, archive_room, final_core_room | repair_completed<br>archive_completed<br>final_core_completed                                                       | implemented | —         |
@@ -104,17 +104,17 @@ sub-item 4).
 
 Identified only — resolutions are user-owned task-design or D-decisions.
 
-| Q#      | Missing                                                                                                                                    | Blocked by                           |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
-| Q05     | `task_started` (entire item) + no initiation-latency capture anywhere                                                                      | **D7**                               |
-| Q01     | — closed by FABLE-NEXT-02: per-item prep emits `inventory_item_sorted_correct` at each placement                                           | — (closed)                           |
-| Q02     | — closed by FABLE-NEXT-02: `inventory_item_misplaced` emitted at the per-item misplacement act                                             | — (closed)                           |
-| Q03     | `prepared_tool_used` — cross-room retrieval episode (`wrong_tool_selected` closed by FABLE-NEXT-02; emission moment fixed by NEXT-09-OD-3) | task-design (NEXT-09 Phase 2, gated) |
-| Q07/Q16 | — closed by FABLE-NEXT-03: multi-step side repair emits `side_repair_step_completed` once per step                                         | — (closed)                           |
-| Q08     | `excessive_idle_after_instruction`                                                                                                         | **D3**                               |
-| Q15     | — closed by FABLE-NEXT-05: observed return act + post-interruption completion at the Relay Checkpoint (SA-9 co-fire ruling open)           | — (closed)                           |
-| Q17     | `competing_task_viewed`                                                                                                                    | **D6**                               |
-| Q19     | — closed by FABLE-NEXT-05: offer/commit/completion observed at real stations; `prior_goal_abandoned` moved to Final-Core-bound closure     | — (closed)                           |
+| Q#      | Missing                                                                                                                                | Blocked by |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Q05     | `task_started` (entire item) + no initiation-latency capture anywhere                                                                  | **D7**     |
+| Q01     | — closed by FABLE-NEXT-02: per-item prep emits `inventory_item_sorted_correct` at each placement                                       | — (closed) |
+| Q02     | — closed by FABLE-NEXT-02: `inventory_item_misplaced` emitted at the per-item misplacement act                                         | — (closed) |
+| Q03     | — closed by NEXT-09 Phase 2: `prepared_tool_used` emitted at the Repair Panel retrieval micro-step per NEXT-09-OD-3                    | — (closed) |
+| Q07/Q16 | — closed by FABLE-NEXT-03: multi-step side repair emits `side_repair_step_completed` once per step                                     | — (closed) |
+| Q08     | `excessive_idle_after_instruction`                                                                                                     | **D3**     |
+| Q15     | — closed by FABLE-NEXT-05: observed return act + post-interruption completion at the Relay Checkpoint (SA-9 co-fire ruling open)       | — (closed) |
+| Q17     | `competing_task_viewed`                                                                                                                | **D6**     |
+| Q19     | — closed by FABLE-NEXT-05: offer/commit/completion observed at real stations; `prior_goal_abandoned` moved to Final-Core-bound closure | — (closed) |
 
 ## 4. Events without approved research mappings
 

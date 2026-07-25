@@ -4,8 +4,9 @@
  * SMALLEST kit substrate the Q01-Q04 measurement needs: a fixed item list,
  * one carried item at a time, and per-item location/attempt state. It is
  * NOT a general inventory system — no stacking, no rarity, no currency,
- * no crafting, no cross-room item use (the Q03 retrieval episode is a
- * later unit).
+ * no crafting. The one cross-room consumer is the Q03 retrieval episode
+ * at the Repair Panel (NEXT-09 Phase 2), which reads this state strictly
+ * read-only.
  *
  * Labels are operational fiction only (anti-leakage rule, room doc): no
  * BFI/organisation item wording, and every item names its correct

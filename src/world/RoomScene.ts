@@ -765,10 +765,23 @@ export abstract class RoomScene extends Phaser.Scene {
     }
 
     this.renderPromptStage(station.interactionKey, {
-      body: station.promptBody,
+      body: this.getPromptBody(station.interactionKey) ?? station.promptBody,
       options: this.getPromptOptions(station.interactionKey),
       presentation: this.getStagePresentation(station.interactionKey),
     });
+  }
+
+  /**
+   * NEXT-09 Phase 2 adoption hook (getStagePresentation precedent): a room
+   * may attach an in-fiction body to a station's INITIAL prompt stage at
+   * open time (chained stages carry their own `body` on the returned
+   * PromptStage). Default: undefined — the station's static `promptBody`
+   * applies and every existing surface renders byte-identically.
+   */
+  protected getPromptBody(interactionKey: InteractionKey): string | undefined {
+    void interactionKey;
+
+    return undefined;
   }
 
   /**

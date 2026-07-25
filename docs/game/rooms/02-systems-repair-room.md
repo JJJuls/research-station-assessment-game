@@ -10,7 +10,9 @@ persistence.
 
 ## Mapped Q-items
 
-Q05, Q06, Q14, Q21, Q23, Q24, Q25, Q26.
+Q05, Q06, Q14, Q21, Q23, Q24, Q25, Q26; Q03 hosts its cross-room
+prepared-tool retrieval episode here (NEXT-09 Phase 2 — see the dedicated
+section below).
 
 ## Construct targets
 
@@ -140,6 +142,75 @@ run through the shared visual choice-card panel (mouse + keyboard;
 numeric keys retained as hidden dev/test shortcuts) - card panel + Systems Bay cycle-status side panel (no manual/guidance display by design).
 Contract: `docs/game/UI-PRESENTATION-CONTRACT.md`. No event, payload,
 mapping, scoring or task-state change.
+
+## NEXT-09 Phase 2 — Q03 prepared-tool retrieval episode (2026-07-25)
+
+The Repair Panel hosts the Q03 cross-room retrieval episode
+(`FABLE-NEXT-09-Q01-Q33-GAMEPLAY-COVERAGE.md` §6-Q03; emission definition
+fixed by NEXT-09-OD-3, SA register §9.1c). It emits only the
+already-canonical, already-registered `prepared_tool_used` (Q03,
+organisation) — no other new event, no scoring change, no SessionState
+change, and no change to any existing repair event, payload, attempt
+number, emission moment, manual-guided-revision semantic, or completion
+guard.
+
+- **Task-relevant tool**: the Diagnostic Probe (`diagnostic_probe`, kit
+  requisition item 2). One named tool keeps the retrieval target
+  deterministic; the identity is fiction-tier (it matches the panel's
+  existing diagnostic-readout register). **Approved by research-owner
+  ruling NEXT-09-P2-R1** (SA register §9.1d): the identity has no
+  independent construct, scoring or validity meaning, and the probe may
+  later be visually or fictionally replaced without changing the
+  storage, retrieval and first-application measurement semantics.
+- **Qualifying opportunity (no-opportunity coding)** — **approved by
+  research-owner ruling NEXT-09-P2-R2** (SA register §9.1d): the
+  micro-step is offered iff the inventory prep is closed out
+  (`completed_rooms` includes `inventory_prep_room`), the probe was
+  previously PACKED into the kit crate at some point
+  (`kitPreparationState.kit_first_placement_order` — the existing
+  was-ever-packed record), and the probe currently sits in a stored
+  container (`kitPreparationState.locations` = kit crate or a labelled
+  bin — its ACTUAL stored location, which governs retrieval and is a bin
+  when the participant re-stowed it). Legacy checklist prep has no
+  per-item storage substrate, so it is a no-opportunity state; so are a
+  probe left on the bench, a probe stowed but never packed, and a probe
+  present during unfinished preparation — all no-opportunity, never
+  participant non-performance. No-opportunity sessions get the
+  pre-Phase-2 panel byte-identically (Route G kit-less replay: zero
+  diffs).
+- **Card flow (additive first stage, `renderPromptStage` only)**: the
+  panel's first stage names the probe and mirrors station storage as
+  neutral cards — Field Kit Crate, Hand Tools Rack, Consumables Bin,
+  Electronics Shelf — plus "Go straight to the sequence controls." (the
+  opportunity/choice separation requires a use-or-not choice; declining
+  keeps the opportunity available on later visits). Opening a container
+  displays its contents; the probe's container offers "Take the
+  Diagnostic Probe to the panel."; the panel then offers "Fit the
+  Diagnostic Probe for the calibration steps." or "Set the Diagnostic
+  Probe aside." Container opening, item display, selection and carrying
+  emit NOTHING (OD-3), and `wrong_tool_selected` stays Inventory-scoped —
+  a wrong container emits no event of any kind. Only the explicit fit act
+  emits `prepared_tool_used` (object_id `diagnostic_probe`, standard
+  interaction payload, no `attempt_number`), exactly once per session
+  (`repairTaskState.preparedToolApplied`, session lifetime, survives room
+  re-entry). Every stage then chains into the UNCHANGED sequence stage
+  (same options, same schematic presentation, byte-identical panel text).
+- **Read-only storage consumption**: the episode reads
+  `kitPreparationState` and never mutates it — retrieval cannot alter
+  bench-review text, `prepared_items`, `field_kit`, or any Final Core
+  flag. The in-prompt "taken" state is transient; leaving the prompt
+  before fitting discards it and re-offers the full micro-step later.
+- **Non-emission boundaries**: completed repairs never open the panel
+  (unchanged gate), so no retrieval after completion; applying the tool is
+  impossible twice; sessions without the qualifying tool can never emit.
+- **Verification**: `e2e/repair_tool_retrieval.spec.ts` (opportunity,
+  actual-stored-location including the re-stowed-bin case, premature
+  non-emission, exactly-once, three no-opportunity variants, re-entry
+  persistence, keyboard/mouse stream parity) and
+  `e2e/route_g_telemetry.spec.ts` (§11.4 Route G: kit-less replay
+  zero-diff vs the committed f222fc6 baseline; kit-packed replay adds
+  exactly one allowlisted `prepared_tool_used` between
+  `repair_panel_opened` and `repair_attempt`).
 
 ## Anti-leakage note
 
