@@ -281,6 +281,22 @@ Each records a conflict between the **approved newer rationale** (tier 2) and a
 
 Request form: `docs/decisions/RESEARCH-OWNER-RULING-FORM.md` §SA-8, §SA-9, §SA-10, §SA-11.
 
+### 9.1c Recorded dispositions from the FABLE-NEXT-09 coverage audit (closed)
+
+Raised by the Q01-Q33 gameplay-coverage audit
+(`FABLE-NEXT-09-Q01-Q33-GAMEPLAY-COVERAGE.md` §13, audit baseline `d4d9bf1`)
+and **approved as recorded in that contract**. Mirrored here 2026-07-25 by the
+NEXT-09 Phase 1 documentation pass. These dispositions are **closed**; they
+resolve nothing else — every SA-/D-/INT- entry above and below stands
+unchanged, and no event name, mapping, formula, or participant-facing content
+is promoted by this record.
+
+| ID               | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **NEXT-09-OD-1** | **RESOLVED (framing-only).** Archive and Systems Repair become assigned duties on the participant duty roster; they remain skippable; omissions remain observable at Final Core; the existing four-scenario Final Core gate remains unchanged. Route-gate extension is removed as an option under the NEXT-09 contract. The framing change itself lands only in its own approved implementation pass (nothing is coded by Phase 1).                       |
+| **NEXT-09-OD-2** | **APPROVED (documentation-only).** The `scenario_*` family and `final_core_blocked_pending_decisions` are to be documented in `event-schema.md`'s raw unmapped-telemetry section as emitted reality — with no study-item mapping and no scoring promotion of any kind. The `event-schema.md` edit is **not** part of Phase 1 (not an authorised Phase 1 file); it is owed to a later approved documentation pass.                                         |
+| **NEXT-09-OD-3** | **APPROVED.** `prepared_tool_used` fires exactly once, and only when a previously packed task-relevant tool is retrieved from its stored location and first applied to the Systems Repair task — never on container opening, item selection, display, or carrying. A session with no qualifying packed tool is a no-opportunity state. This fixes the emission definition only; building the retrieval episode remains gated on NEXT-09 Phase 2 approval. |
+
 ### 9.2 Pre-existing open decisions (unchanged by this pass)
 
 Recorded here for completeness; owned by their existing packs.

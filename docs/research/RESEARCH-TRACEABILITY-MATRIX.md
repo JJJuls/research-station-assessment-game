@@ -2,8 +2,9 @@
 
 Human-readable companion to the machine-validated matrix
 `docs/research/research-traceability-matrix.json` (Sprint B Part 1,
-2026-07-13). Where this file and the JSON disagree, the JSON wins — it is
-validated against the live source tree on every run.
+2026-07-13; hand-authored emission statuses trued up against the live tree
+2026-07-25, FABLE-NEXT-09 Phase 1). Where this file and the JSON disagree,
+the JSON wins — it is validated against the live source tree on every run.
 
 - **Regenerate mechanical sections**: `node scripts/validate-traceability-matrix.mjs --write`
 - **Validate** (fails on any drift between the matrix, `CanonicalEventContext.ts`,
@@ -53,13 +54,13 @@ nothing can emit until a user ruling.
 
 | Q#  | Construct                           | Proxy                | Room(s)                                            | Events                                                                                                              | Status      | Decisions |
 | --- | ----------------------------------- | -------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------- | --------- |
-| Q01 | organisation                        | direct               | inventory_prep_room                                | inventory_checklist_opened<br>inventory_item_sorted_correct ✗<br>inventory_sequence_followed                        | partial     | —         |
-| Q02 | organisation                        | direct               | inventory_prep_room, final_core_room               | inventory_item_misplaced ✗<br>inventory_verification_skipped<br>final_core_missing_item_flagged                     | partial     | —         |
-| Q03 | organisation                        | direct               | inventory_prep_room                                | correct_tool_selected<br>wrong_tool_selected ✗<br>prepared_tool_used ✗<br>workspace_tidy_confirmed                  | partial     | —         |
+| Q01 | organisation                        | direct               | inventory_prep_room                                | inventory_checklist_opened<br>inventory_item_sorted_correct<br>inventory_sequence_followed                          | implemented | —         |
+| Q02 | organisation                        | direct               | inventory_prep_room, final_core_room               | inventory_item_misplaced<br>inventory_verification_skipped<br>final_core_missing_item_flagged                       | implemented | —         |
+| Q03 | organisation                        | direct               | inventory_prep_room                                | correct_tool_selected<br>wrong_tool_selected<br>prepared_tool_used ✗<br>workspace_tidy_confirmed                    | partial     | —         |
 | Q04 | organisation                        | direct               | inventory_prep_room, final_core_room               | workspace_left_disordered<br>cleanup_completed<br>final_core_workspace_issue_flagged                                | implemented | —         |
 | Q05 | productiveness                      | direct               | systems_repair_room, archive_room                  | task_started ⛔                                                                                                     | blocked     | D7        |
 | Q06 | productiveness                      | direct               | systems_repair_room, archive_room, final_core_room | repair_completed<br>archive_completed<br>final_core_completed                                                       | implemented | —         |
-| Q07 | productiveness                      | direct               | optional_side_repair_bay, systems_repair_room      | side_repair_accepted<br>side_repair_step_completed ✗<br>side_repair_completed                                       | partial     | —         |
+| Q07 | productiveness                      | direct               | optional_side_repair_bay, systems_repair_room      | side_repair_accepted<br>side_repair_step_completed<br>side_repair_completed                                         | implemented | —         |
 | Q08 | productiveness                      | direct               | interruption_corridor, systems_repair_room         | task_avoidance<br>excessive_idle_after_instruction ⛔                                                               | partial     | D3        |
 | Q09 | responsibility                      | direct               | engineer_hub                                       | engineer_report_opened<br>engineer_evidence_reviewed<br>engineer_report_submitted_prepared                          | implemented | —         |
 | Q10 | responsibility                      | direct               | engineer_hub, final_core_room                      | engineer_supervision_accepted<br>engineer_supervision_completed<br>accepted_duty_unresolved                         | implemented | —         |
@@ -67,11 +68,11 @@ nothing can emit until a user ruling.
 | Q12 | prudence                            | direct               | hazard_control_room                                | hazard_warning_seen<br>hazard_info_checked<br>hazard_reckless_continue                                              | implemented | D2        |
 | Q13 | adaptive_persistence                | direct               | archive_room                                       | archive_wrong_code<br>archive_feedback_used<br>archive_strategy_revision<br>archive_completed                       | implemented | —         |
 | Q14 | adaptive_persistence                | direct               | systems_repair_room                                | repair_failed<br>repair_manual_used<br>repair_strategy_revision<br>repair_completed                                 | implemented | —         |
-| Q15 | adaptive_persistence                | direct               | interruption_corridor, final_core_room             | interruption_received<br>return_to_unfinished_task ✗<br>task_completed_after_interruption ✗                         | partial     | —         |
-| Q16 | adaptive_persistence                | direct               | optional_side_repair_bay                           | side_repair_accepted<br>side_repair_step_completed ✗<br>side_repair_completed                                       | partial     | —         |
+| Q15 | adaptive_persistence                | direct               | interruption_corridor, final_core_room             | interruption_received<br>return_to_unfinished_task<br>task_completed_after_interruption                             | implemented | —         |
+| Q16 | adaptive_persistence                | direct               | optional_side_repair_bay                           | side_repair_accepted<br>side_repair_step_completed<br>side_repair_completed                                         | implemented | —         |
 | Q17 | consistency_of_interest_exploratory | weak_exploratory     | interruption_corridor                              | interruption_received<br>competing_task_viewed ⛔<br>switched_task<br>returned_to_original_task                     | partial     | D6        |
 | Q18 | consistency_of_interest_exploratory | weak_exploratory     | interruption_corridor, final_core_room             | objective_active<br>final_unresolved_due_to_nonreturn                                                               | implemented | —         |
-| Q19 | consistency_of_interest_exploratory | weak_exploratory     | interruption_corridor                              | new_goal_offered ✗<br>goal_switch_accepted ✗<br>prior_goal_completed ✗<br>prior_goal_abandoned                      | partial     | —         |
+| Q19 | consistency_of_interest_exploratory | weak_exploratory     | interruption_corridor                              | new_goal_offered<br>goal_switch_accepted<br>prior_goal_completed<br>prior_goal_abandoned                            | implemented | —         |
 | Q20 | consistency_of_interest_exploratory | weak_exploratory     | optional_side_repair_bay, interruption_corridor    | side_repair_accepted<br>side_repair_first_step<br>side_repair_abandoned_after_start                                 | implemented | —         |
 | Q21 | adaptive_persistence                | direct               | systems_repair_room                                | repair_failed<br>repair_manual_used<br>repair_strategy_revision<br>repair_completed                                 | implemented | —         |
 | Q22 | adaptive_persistence                | direct               | archive_room, systems_repair_room                  | archive_feedback_used<br>repair_manual_used<br>manual_page_reviewed<br>archive_strategy_revision                    | implemented | D2        |
@@ -103,17 +104,17 @@ sub-item 4).
 
 Identified only — resolutions are user-owned task-design or D-decisions.
 
-| Q#      | Missing                                                                                       | Blocked by  |
-| ------- | --------------------------------------------------------------------------------------------- | ----------- |
-| Q05     | `task_started` (entire item) + no initiation-latency capture anywhere                         | **D7**      |
-| Q01     | `inventory_item_sorted_correct` — per-item sorting mini-game                                  | task-design |
-| Q02     | `inventory_item_misplaced` — per-item mini-game                                               | task-design |
-| Q03     | `wrong_tool_selected`, `prepared_tool_used`                                                   | task-design |
-| Q07/Q16 | `side_repair_step_completed` — multi-step mini-game                                           | task-design |
-| Q08     | `excessive_idle_after_instruction`                                                            | **D3**      |
-| Q15     | `return_to_unfinished_task`, `task_completed_after_interruption` — real return-route mechanic | task-design |
-| Q17     | `competing_task_viewed`                                                                       | **D6**      |
-| Q19     | `new_goal_offered`, `goal_switch_accepted`, `prior_goal_completed`                            | task-design |
+| Q#      | Missing                                                                                                                                    | Blocked by                           |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
+| Q05     | `task_started` (entire item) + no initiation-latency capture anywhere                                                                      | **D7**                               |
+| Q01     | — closed by FABLE-NEXT-02: per-item prep emits `inventory_item_sorted_correct` at each placement                                           | — (closed)                           |
+| Q02     | — closed by FABLE-NEXT-02: `inventory_item_misplaced` emitted at the per-item misplacement act                                             | — (closed)                           |
+| Q03     | `prepared_tool_used` — cross-room retrieval episode (`wrong_tool_selected` closed by FABLE-NEXT-02; emission moment fixed by NEXT-09-OD-3) | task-design (NEXT-09 Phase 2, gated) |
+| Q07/Q16 | — closed by FABLE-NEXT-03: multi-step side repair emits `side_repair_step_completed` once per step                                         | — (closed)                           |
+| Q08     | `excessive_idle_after_instruction`                                                                                                         | **D3**                               |
+| Q15     | — closed by FABLE-NEXT-05: observed return act + post-interruption completion at the Relay Checkpoint (SA-9 co-fire ruling open)           | — (closed)                           |
+| Q17     | `competing_task_viewed`                                                                                                                    | **D6**                               |
+| Q19     | — closed by FABLE-NEXT-05: offer/commit/completion observed at real stations; `prior_goal_abandoned` moved to Final-Core-bound closure     | — (closed)                           |
 
 ## 4. Events without approved research mappings
 
@@ -132,6 +133,13 @@ documented precedent and are not listed):
   sources conflict (D7 / V3-vs-mirror Q06 row).
 - `side_repair_abandoned` (canonical name) — not matrix-listed; semantics
   undecided (never-accepted branch keeps legacy `side_repair_ignored`).
+- `engineer_report_accuracy_scored` — emitted (once per submission, at the
+  record-card claim scored against live mission state; FABLE-NEXT-04/NEXT-08)
+  but **deliberately unmapped raw telemetry**: the Q09 registration is
+  withheld pending **SA-8**, so `report_accuracy_score` still has no approved
+  source. Not in the JSON `events` universe (unregistered, not a
+  ScoringManager input, not seeded) — seeding it is a validator change owned
+  by a later approved pass, not by the Phase 1 docs truth-up.
 
 ## 5. Scoring terms without direct spec coverage
 

@@ -2335,23 +2335,23 @@
       },
       {
         "id": "Q01",
-        "gap": "inventory_item_sorted_correct needs a per-item sorting mini-game",
-        "blocked_by": "task-design (user-owned)"
+        "gap": "closed by FABLE-NEXT-02: per-item prep mode emits inventory_item_sorted_correct at each placement (object_id + attempt_number)",
+        "blocked_by": "none"
       },
       {
         "id": "Q02",
-        "gap": "inventory_item_misplaced needs a per-item mini-game",
-        "blocked_by": "task-design (user-owned)"
+        "gap": "closed by FABLE-NEXT-02: inventory_item_misplaced emitted at the per-item misplacement act",
+        "blocked_by": "none"
       },
       {
         "id": "Q03",
-        "gap": "wrong_tool_selected / prepared_tool_used need per-item + cross-room mechanics",
-        "blocked_by": "task-design (user-owned)"
+        "gap": "wrong_tool_selected closed by FABLE-NEXT-02 (kit-crate placement path); prepared_tool_used still needs the cross-room retrieval episode (emission moment fixed by NEXT-09-OD-3)",
+        "blocked_by": "task-design (user-owned; NEXT-09 Phase 2 approval-gated)"
       },
       {
         "id": "Q07",
-        "gap": "side_repair_step_completed needs a multi-step mini-game",
-        "blocked_by": "task-design (user-owned)"
+        "gap": "closed by FABLE-NEXT-03: multi-step side repair emits side_repair_step_completed once per step",
+        "blocked_by": "none"
       },
       {
         "id": "Q08",
@@ -2365,8 +2365,8 @@
       },
       {
         "id": "Q16",
-        "gap": "side_repair_step_completed (shared with Q07)",
-        "blocked_by": "task-design (user-owned)"
+        "gap": "closed by FABLE-NEXT-03 (shared side-repair steps with Q07)",
+        "blocked_by": "none"
       },
       {
         "id": "Q17",
@@ -2499,10 +2499,8 @@
         "organisation_accuracy_score",
         "sequence_quality"
       ],
-      "operationalisation": "partial",
-      "gaps": [
-        "inventory_item_sorted_correct unemitted — needs a per-item sorting mini-game (task-design decision, user-owned)"
-      ],
+      "operationalisation": "implemented",
+      "gaps": [],
       "unresolved_decisions": []
     },
     {
@@ -2520,10 +2518,8 @@
         "avoidable_omission_count",
         "organisation_error_count"
       ],
-      "operationalisation": "partial",
-      "gaps": [
-        "inventory_item_misplaced unemitted — needs a per-item mini-game (task-design decision, user-owned)"
-      ],
+      "operationalisation": "implemented",
+      "gaps": [],
       "unresolved_decisions": []
     },
     {
@@ -2545,8 +2541,7 @@
       ],
       "operationalisation": "partial",
       "gaps": [
-        "wrong_tool_selected unemitted — needs a per-item mini-game (task-design decision)",
-        "prepared_tool_used unemitted — needs a later cross-room tool-use mechanic"
+        "prepared_tool_used unemitted — needs the cross-room retrieval episode (NEXT-09 Phase 2 candidate, approval-gated; emission moment fixed by NEXT-09-OD-3)"
       ],
       "unresolved_decisions": []
     },
@@ -2623,10 +2618,8 @@
         "voluntary_effort_count",
         "optional_completion_score"
       ],
-      "operationalisation": "partial",
-      "gaps": [
-        "side_repair_step_completed unemitted — needs a multi-step mini-game (task-design decision)"
-      ],
+      "operationalisation": "implemented",
+      "gaps": [],
       "unresolved_decisions": []
     },
     {
@@ -2663,7 +2656,7 @@
       ],
       "operationalisation": "implemented",
       "gaps": [
-        "engineer_report_accuracy_scored unemitted — no accuracy-scoring mechanic exists (report_accuracy_score has no source)"
+        "engineer_report_accuracy_scored IS emitted (once per submission, at the record-card claim scored against live mission state — FABLE-NEXT-04/NEXT-08) but stays deliberately unmapped raw telemetry: Q09 registration withheld pending SA-8, so report_accuracy_score still has no approved source (SA-8, then D2-family)"
       ],
       "unresolved_decisions": []
     },
@@ -2784,7 +2777,7 @@
         "return_to_task_rate",
         "started_task_completion_rate"
       ],
-      "operationalisation": "partial",
+      "operationalisation": "implemented",
       "gaps": [],
       "unresolved_decisions": [
         "SA-9: return-act co-fire (return_to_unfinished_task Q15 + returned_to_original_task Q17) — keep or fold; shared evidence either way"
@@ -2805,10 +2798,8 @@
         "diligence_step_count",
         "optional_task_completion"
       ],
-      "operationalisation": "partial",
-      "gaps": [
-        "side_repair_step_completed unemitted — needs a multi-step mini-game (shared with Q07)"
-      ],
+      "operationalisation": "implemented",
+      "gaps": [],
       "unresolved_decisions": []
     },
     {
@@ -2861,7 +2852,7 @@
         "prior_goal_abandoned"
       ],
       "canonical_derived_variables": ["goal_switch_without_return_count"],
-      "operationalisation": "partial",
+      "operationalisation": "implemented",
       "gaps": [],
       "unresolved_decisions": [
         "prior_goal_abandoned emits at Final-Core-bound closure (final_core_room context) gated on the commit-time frozen opportunity state; no-opportunity sessions are excluded via metadata.original_task_id null"
@@ -3191,56 +3182,56 @@
       "notes": "Preserved verbatim per D1; sole source of abandonment_count."
     },
     "inventory_item_sorted_correct": {
-      "emission": "not_implemented",
-      "notes": "Needs a per-item sorting mini-game."
+      "emission": "emitted",
+      "notes": "Emitted since FABLE-NEXT-02: per-item prep placement act with object_id + attempt_number (InventoryScene)."
     },
     "inventory_item_misplaced": {
-      "emission": "not_implemented",
-      "notes": "Needs a per-item mini-game."
+      "emission": "emitted",
+      "notes": "Emitted since FABLE-NEXT-02: per-item misplacement act; corrections re-log with attempt_number >= 2 (InventoryScene)."
     },
     "inventory_sequence_completed": {
-      "emission": "not_implemented",
-      "notes": "Needs a per-item mini-game."
+      "emission": "emitted",
+      "notes": "Emitted since FABLE-NEXT-02 at the kit-full sort close in per-item mode (InventoryScene); canonical registration still open."
     },
     "wrong_tool_selected": {
-      "emission": "not_implemented",
-      "notes": "Needs a per-item mini-game."
+      "emission": "emitted",
+      "notes": "Emitted since FABLE-NEXT-02: kit-crate placement path (InventoryScene)."
     },
     "prepared_tool_used": {
       "emission": "not_implemented",
-      "notes": "Belongs to a later cross-room tool-use mechanic."
+      "notes": "Belongs to the cross-room retrieval episode (unbuilt; NEXT-09 Phase 2 candidate, approval-gated). Emission moment fixed by NEXT-09-OD-3: exactly once, on retrieval of a previously packed task-relevant tool from its stored location plus first application to Systems Repair — never on container opening, item selection, display, or carrying; no qualifying packed tool = no-opportunity state."
     },
     "readiness_verified": {
       "emission": "deliberately_unemitted",
       "notes": "Not matrix-listed; no distinct action exists — would double-log with inventory_verified_complete from one click."
     },
     "side_repair_step_completed": {
-      "emission": "not_implemented",
-      "notes": "Needs a multi-step mini-game (step-count granularity is a task-design decision)."
+      "emission": "emitted",
+      "notes": "Emitted since FABLE-NEXT-03: fires once per step (fetch / fit / run-check) with metadata.step (SideRepairScene)."
     },
     "side_repair_abandoned": {
       "emission": "not_implemented",
       "notes": "Canonical name not matrix-listed; never-accepted branch keeps legacy side_repair_ignored; semantics flagged for decision."
     },
     "new_goal_offered": {
-      "emission": "not_implemented",
-      "notes": "Needs real objective mechanics."
+      "emission": "emitted",
+      "notes": "Emitted since FABLE-NEXT-05: beacon prompt open, co-emitted with the frozen interruption_received moment; balanced-framing metadata (InterruptionScene)."
     },
     "goal_switch_accepted": {
-      "emission": "not_implemented",
-      "notes": "Needs real objective mechanics."
+      "emission": "emitted",
+      "notes": "Emitted since FABLE-NEXT-05: switch commit at the beacon dialogue (InterruptionScene)."
     },
     "prior_goal_completed": {
-      "emission": "not_implemented",
-      "notes": "Needs real objective mechanics."
+      "emission": "emitted",
+      "notes": "Emitted since FABLE-NEXT-05: relay check-in completion interaction (InterruptionScene)."
     },
     "return_to_unfinished_task": {
-      "emission": "not_implemented",
-      "notes": "Q15 core return act — needs a real return-route mechanic."
+      "emission": "emitted",
+      "notes": "Emitted since FABLE-NEXT-05: observed return act at the Relay Checkpoint; co-fires with returned_to_original_task (SA-9 keep-or-fold open)."
     },
     "task_completed_after_interruption": {
-      "emission": "not_implemented",
-      "notes": "Needs real objective mechanics."
+      "emission": "emitted",
+      "notes": "Emitted since FABLE-NEXT-05 at the original check-in's completion when the beacon interruption occurred earlier in the session; ignore-branch inclusion is SA-10."
     },
     "engineer_supervision_skipped": {
       "emission": "not_implemented",
