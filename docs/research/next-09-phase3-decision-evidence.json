@@ -1,0 +1,733 @@
+{
+  "meta": {
+    "id": "next-09-phase3-decision-evidence",
+    "version": "1.0.0",
+    "generated": "2026-07-26",
+    "base_commit": "015bc0e",
+    "branch": "fable-next-09-phase3-decision-dossier-v1",
+    "status": "DECISION-EVIDENCE ONLY — nothing here is approved; recommended_disposition entries are RECOMMENDATION_ONLY and resolve no register entry",
+    "companion_document": "docs/research/NEXT-09-PHASE-3-SCIENTIFIC-DECISION-DOSSIER.md",
+    "governing_sources": {
+      "register": "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md#9.1",
+      "contract": "FABLE-NEXT-09-Q01-Q33-GAMEPLAY-COVERAGE.md",
+      "specification": "docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md",
+      "event_schema": "docs/research/event-schema.md",
+      "scoring_plan": "docs/research/scoring-plan.md",
+      "ruling_form": "docs/decisions/RESEARCH-OWNER-RULING-FORM.md"
+    },
+    "constraints": {
+      "burden_budget_minutes": "approximately 8-10 added median minutes for all required NEXT-09 additions together (contract §9)",
+      "q18_q20": "optional, non-blocking, outside the burden budget",
+      "counterbalanced_horizon_requirement": "two valid counterbalanced instances of the one shared Q29/Q31 choice (contract §9; spec §Q29/§Q31)",
+      "q32_q33_blocked": "Q32 and Q33 treated as blocked until SA-5 and SA-6 are ruled, independent of module availability"
+    }
+  },
+  "decisions": [
+    {
+      "id": "SA-1",
+      "title": "Q27's live Hazard mapping and inappropriate-persistence scoring term",
+      "requires": ["event-schema", "scoring-plan"],
+      "source_refs": [
+        "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md#9.1 SA-1 row",
+        "src/world/CanonicalEventContext.ts:215-224 (hazard_reckless_continue ['Q12','Q27','Q31'], construct inappropriate_persistence)",
+        "src/world/CanonicalEventContext.ts:199-203 (hazard_info_checked ['Q12','Q27'])",
+        "src/systems/ScoringManager.ts:80-83,102-117 (blind_retry_count -> game_inappropriate_persistence, failure_adaptation_index, game_persistence_total)",
+        "src/scenes/HazardScene.ts:216-224 (emission, no one-shot guard)",
+        "docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md:560-576 (Q27 entry)",
+        "docs/research/MASTER_33_ALIGNMENT.md:69 (Q27 row)"
+      ],
+      "dependencies": {
+        "blocked_by": [],
+        "blocks": ["NEXT-09-P3-retag-hazard-slice"],
+        "coordinates_with": [
+          "SA-2 (replacement Q27 analogue, out of dossier scope)",
+          "SA-3 (shares the hazard_reckless_continue registration line for 'Q31')",
+          "D2 (scoring-formula family)"
+        ]
+      },
+      "options": [
+        {
+          "id": "SA-1-A",
+          "class": "conservative_no_change",
+          "summary": "Retain Q27 tags and scoring term; document as secondary superseded-rationale evidence",
+          "added_median_minutes": 0,
+          "impacted_files": [
+            "docs/research/event-schema.md",
+            "docs/research/research-traceability-matrix.json",
+            "docs/research/RESEARCH-TRACEABILITY-MATRIX.md",
+            "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md",
+            "docs/game/rooms/05-hazard-control.md"
+          ],
+          "expected_events": [],
+          "telemetry_changes": "none",
+          "migration": "none",
+          "expected_tests": ["full suite green unchanged", "Route G zero-diff"]
+        },
+        {
+          "id": "SA-1-B",
+          "class": "minimal_defensible",
+          "summary": "Remove Q27 from hazard_reckless_continue and hazard_info_checked; scoring formulas untouched pending D2/SA-2",
+          "added_median_minutes": 0,
+          "impacted_files": [
+            "src/world/CanonicalEventContext.ts",
+            "e2e/hazard_control_logging.spec.ts",
+            "docs/research/event-schema.md",
+            "docs/research/research-traceability-matrix.json",
+            "docs/research/RESEARCH-TRACEABILITY-MATRIX.md",
+            "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md",
+            "docs/game/rooms/05-hazard-control.md"
+          ],
+          "expected_events": [],
+          "telemetry_changes": "study_item_ids value-only change on 2 registrations; no emission or payload-shape change",
+          "migration": "Q27 tag column ends at change date; raw event names unchanged so event-level exports stay mergeable",
+          "expected_tests": [
+            "e2e/hazard_control_logging.spec.ts:123,169 value assertions updated",
+            "full suite green",
+            "Route G zero-diff"
+          ]
+        },
+        {
+          "id": "SA-1-C",
+          "class": "fuller",
+          "summary": "SA-1-B plus remove hazard_reckless_continue from blind_retry_count, changing four summary variables; scoring-plan updated with formula-version marker",
+          "added_median_minutes": 0,
+          "impacted_files": [
+            "src/world/CanonicalEventContext.ts",
+            "src/systems/ScoringManager.ts",
+            "docs/research/scoring-plan.md",
+            "e2e/hazard_control_logging.spec.ts",
+            "docs/research/research-traceability-matrix.json",
+            "docs/research/RESEARCH-TRACEABILITY-MATRIX.md",
+            "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md",
+            "docs/game/rooms/05-hazard-control.md"
+          ],
+          "expected_events": [],
+          "telemetry_changes": "summary variables blind_retry_count, game_inappropriate_persistence, failure_adaptation_index, game_persistence_total change composition; raw stream unchanged",
+          "migration": "summary-level comparability break; requires formula-version flag; only safe before pilot data depends on old formula",
+          "expected_tests": [
+            "formula expectation updates in any getSummary-asserting spec (executor greps)",
+            "full suite green",
+            "Route G zero-diff"
+          ]
+        }
+      ],
+      "recommended_disposition": {
+        "option": "SA-1-B",
+        "status": "RECOMMENDATION_ONLY"
+      }
+    },
+    {
+      "id": "SA-3",
+      "title": "Q29/Q31 shared goal-horizon module and superseded stabiliser/hazard tags",
+      "requires": ["event-schema", "scoring-plan"],
+      "source_refs": [
+        "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md#9.1 SA-3 row",
+        "src/world/CanonicalEventContext.ts:363-371 (stabiliser_option_offered/stabiliser_accepted ['Q29'])",
+        "src/world/CanonicalEventContext.ts:499-504 (final_core_stability_bonus ['Q29'])",
+        "src/world/CanonicalEventContext.ts:204-224 (hazard_informed_continue ['Q31']; hazard_reckless_continue carries 'Q31')",
+        "src/scenes/FinalCoreScene.ts:250,274-275 (stability bonus = system entry flag, not a choice)",
+        "src/systems/ScoringManager.ts:100-101 (hazard_informed_continue feeds game_uncertainty_persistence)",
+        "docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md:598-614 (Q29 entry) and 632-648 (Q31 entry)",
+        "docs/game/rooms/07-interruption-corridor.md:193-195 (corridor imposes no ordering constraint)",
+        "FABLE-NEXT-09-Q01-Q33-GAMEPLAY-COVERAGE.md §6 Q29/Q31, §9, §10 Phase 5"
+      ],
+      "dependencies": {
+        "blocked_by": [],
+        "blocks": [
+          "NEXT-09-P3-retag-stabiliser-hazard-slice",
+          "NEXT-09-P5-horizon-module",
+          "Q32-derived-treatment-inputs",
+          "Q33-portfolio-horizon-inputs"
+        ],
+        "coordinates_with": [
+          "SA-1 (same hazard_reckless_continue line)",
+          "SA-5",
+          "SA-6"
+        ]
+      },
+      "options": [
+        {
+          "id": "SA-3-A",
+          "class": "conservative_no_change",
+          "summary": "No module; retain superseded tags with formal superseded-status caveat; Q29/Q31 questionnaire-only",
+          "added_median_minutes": 0,
+          "counterbalanced_horizon_requirement_satisfied": false,
+          "impacted_files": [
+            "docs/research/event-schema.md",
+            "docs/research/research-traceability-matrix.json",
+            "docs/research/RESEARCH-TRACEABILITY-MATRIX.md",
+            "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md",
+            "docs/game/rooms/06-optional-side-repair-bay.md",
+            "docs/game/rooms/08-final-core-room.md"
+          ],
+          "expected_events": [],
+          "telemetry_changes": "none",
+          "migration": "none",
+          "expected_tests": ["suite unchanged"]
+        },
+        {
+          "id": "SA-3-B",
+          "class": "minimal_defensible",
+          "summary": "Two counterbalanced one-shot horizon-choice instances (instance 1 pre-Corridor-beacon), six canonical events, one shared goal_horizon_preference variable, Q29/Q31 tag cleanup",
+          "added_median_minutes": 3.5,
+          "counterbalanced_horizon_requirement_satisfied": true,
+          "impacted_files": [
+            "src/scenes/HubScene.ts",
+            "src/data/researchInteractions.ts",
+            "src/systems/SessionState.ts",
+            "src/world/CanonicalEventContext.ts",
+            "src/systems/ScoringManager.ts",
+            "e2e/horizon_choice_logging.spec.ts (new)",
+            "e2e/route_g_telemetry.spec.ts allowlist",
+            "e2e/hazard_control_logging.spec.ts",
+            "e2e/adversarial_hazard_repeat_decisions.spec.ts",
+            "docs/research/event-schema.md",
+            "docs/research/scoring-plan.md",
+            "docs/research/research-traceability-matrix.json",
+            "docs/research/RESEARCH-TRACEABILITY-MATRIX.md",
+            "docs/game/rooms (hosts)",
+            "docs/game/UI-MANUAL-ACCEPTANCE-ROUTES.md (Route 14)",
+            "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md"
+          ],
+          "expected_events": [
+            "horizon_choice_offered",
+            "option_details_viewed",
+            "immediate_goal_selected",
+            "distributed_goal_selected",
+            "distributed_goal_revisited",
+            "distributed_goal_completed"
+          ],
+          "telemetry_changes": "6 additive canonical events with metadata.instance_id/option_order; 5 registrations edited (Q29/Q31 removals); 1 derived variable goal_horizon_preference (exploratory label mandatory)",
+          "migration": "old Q29/Q31 tag columns end; shared variable begins; legacy events keep firing unchanged",
+          "expected_tests": [
+            "choice logged before interruption",
+            "both counterbalance orders exercised",
+            "one-shot per instance",
+            "single shared variable (no Q29-only/Q31-only variable)",
+            "keyboard/mouse parity",
+            "readability at 800x600",
+            "Route G legacy replay zero-diff + allowlisted additions",
+            "updated mapping-value assertions"
+          ],
+          "risks": "counterbalanced order collides with the RoomScene.ts:801-808 uniform declared-order constraint — needs an owner-acknowledged amendment (deterministic per-session order, uniform within a session); beacon gating imposes ordering on a free-roam route (possible backtracking travel)"
+        },
+        {
+          "id": "SA-3-C",
+          "class": "fuller",
+          "summary": "SA-3-B plus staged distributed objective across stations (distributed_stage_completed, distributed_goal_unresolved)",
+          "added_median_minutes": 5.5,
+          "counterbalanced_horizon_requirement_satisfied": true,
+          "impacted_files": [
+            "SA-3-B set plus 2-3 station scenes hosting stages"
+          ],
+          "expected_events": [
+            "SA-3-B set",
+            "distributed_stage_completed",
+            "distributed_goal_unresolved"
+          ],
+          "telemetry_changes": "SA-3-B plus 2 events",
+          "migration": "as SA-3-B",
+          "expected_tests": ["SA-3-B set plus per-stage unlock/ordering tests"],
+          "risks": "burden-budget overrun risk once SA-2 and Q05 additions land (dossier §8)"
+        }
+      ],
+      "recommended_disposition": {
+        "option": "SA-3-B",
+        "status": "RECOMMENDATION_ONLY"
+      }
+    },
+    {
+      "id": "SA-4",
+      "title": "Q30 granularity module and prohibited verification-skip tags",
+      "requires": ["event-schema", "scoring-plan"],
+      "source_refs": [
+        "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md#9.1 SA-4 row",
+        "src/world/CanonicalEventContext.ts:301-305,330-334 (inventory_verification_skipped ['Q02','Q30']; inventory_verified_complete ['Q30'])",
+        "src/scenes/InventoryScene.ts:379,415,786,800,1121,1130 (emission sites); :159-166 (one-shot close-out)",
+        "docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md:615-631 (Q30 entry)",
+        "docs/game/rooms/04-inventory-preparation-room.md:234-235 (SA-4 tags untouched note)",
+        "FABLE-NEXT-09-Q01-Q33-GAMEPLAY-COVERAGE.md §6 Q30, §8.2"
+      ],
+      "dependencies": {
+        "blocked_by": [],
+        "blocks": [
+          "NEXT-09-P3-retag-inventory-slice",
+          "NEXT-09-P5-granularity-module",
+          "Q33-portfolio-granularity-inputs"
+        ],
+        "coordinates_with": ["SA-6"]
+      },
+      "options": [
+        {
+          "id": "SA-4-A",
+          "class": "conservative_no_change",
+          "summary": "No module; retain prohibited Q30 tags with formal caveat; Q30 questionnaire-only",
+          "added_median_minutes": 0,
+          "impacted_files": [
+            "docs only (schema, matrix, register, room doc 04)"
+          ],
+          "expected_events": [],
+          "telemetry_changes": "none",
+          "migration": "none",
+          "expected_tests": ["suite unchanged"]
+        },
+        {
+          "id": "SA-4-B",
+          "class": "minimal_defensible",
+          "summary": "Two balanced structure-choice instances (Quartermaster Console pre-prep + non-inventory second host); five canonical events; goal_granularity_preference; Q30 tag removal",
+          "added_median_minutes": 2.5,
+          "impacted_files": [
+            "src/scenes/InventoryScene.ts",
+            "second-host scene",
+            "src/data/researchInteractions.ts",
+            "src/systems/SessionState.ts",
+            "src/world/CanonicalEventContext.ts",
+            "src/systems/ScoringManager.ts",
+            "e2e/goal_structure_logging.spec.ts (new)",
+            "e2e/route_g_telemetry.spec.ts allowlist",
+            "e2e/inventory_prep_logging.spec.ts",
+            "docs/research/event-schema.md",
+            "docs/research/scoring-plan.md",
+            "docs/research/research-traceability-matrix.json",
+            "docs/research/RESEARCH-TRACEABILITY-MATRIX.md",
+            "docs/game/rooms/04-inventory-preparation-room.md",
+            "docs/game/UI-MANUAL-ACCEPTANCE-ROUTES.md (Route 15)",
+            "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md"
+          ],
+          "expected_events": [
+            "goal_structure_choice_offered",
+            "small_goal_set_selected",
+            "integrated_goal_selected",
+            "small_goal_completed",
+            "integrated_goal_completed"
+          ],
+          "telemetry_changes": "5 additive canonical events; 2 registrations edited; 1 derived variable (exploratory label mandatory)",
+          "migration": "Q30 tag column ends; Q02 continuity preserved on inventory_verification_skipped",
+          "expected_tests": [
+            "at least 2 instances per session",
+            "copy balance audit",
+            "choice precedes outcome feedback",
+            "inventory close-out stream byte-identical on integrated-order replay (Route G)",
+            "keyboard/mouse parity",
+            "readability at 800x600 (offer card carries both structure descriptions)",
+            "updated mapping-value assertions",
+            "absence assertion on removed tags"
+          ],
+          "risks": "instance-2 host bundle does not exist at 015bc0e (Hub terminal is new under SA-3-B; calibration bench has no work bundle and is the optional Q18 arc's proposed host — a required Q30 instance must not depend on optional content); counterbalanced order needs an owner-acknowledged amendment to the RoomScene.ts:801-808 declared-order constraint (deterministic per-session order)"
+        },
+        {
+          "id": "SA-4-C",
+          "class": "fuller",
+          "summary": "SA-4-B plus interactive Quartermaster Vale host and restructure-before-begin option (goal_structure_changed)",
+          "added_median_minutes": 3.5,
+          "impacted_files": ["SA-4-B set plus Vale interaction wiring"],
+          "expected_events": ["SA-4-B set", "goal_structure_changed"],
+          "telemetry_changes": "SA-4-B plus 1 event",
+          "migration": "as SA-4-B",
+          "expected_tests": [
+            "SA-4-B set plus restructure-path and Vale/console stream-equivalence tests"
+          ],
+          "risks": "first-vs-final response retention is a spec-§8.2 open principle; more wording-review surface"
+        }
+      ],
+      "recommended_disposition": {
+        "option": "SA-4-B",
+        "status": "RECOMMENDATION_ONLY"
+      }
+    },
+    {
+      "id": "SA-5",
+      "title": "Q32 weak-proxy raw tags; no Q32 score",
+      "requires": [
+        "event-schema",
+        "scoring-plan only if a proxy variable is authorised"
+      ],
+      "source_refs": [
+        "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md#9.1 SA-5 row",
+        "src/world/CanonicalEventContext.ts:345-353,372-376 (side_repair_completed ['Q07','Q16','Q32']; final_bonus_unlocked ['Q32'])",
+        "src/scenes/SideRepairScene.ts:499-500 (emission on completion act)",
+        "src/systems/ScoringManager.ts:133-136,187-188 (side_repair_completed feeds productiveness variables by event name; Q32 tag feeds nothing)",
+        "docs/research/scoring-plan.md:50 (optional_future_benefit_score missing)",
+        "docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md:649-665 (Q32 entry)"
+      ],
+      "dependencies": {
+        "blocked_by": [],
+        "blocks": ["NEXT-09-P3-q32-slice", "Q32-derived-treatment"],
+        "coordinates_with": [
+          "SA-3 (distributed_goal_* are the intended future Q32 inputs)"
+        ]
+      },
+      "options": [
+        {
+          "id": "SA-5-A",
+          "class": "conservative_no_change",
+          "summary": "Confirm tags stay as weak-proxy raw telemetry; optional_future_benefit_score confirmed not-to-implement; no Q32 variable",
+          "added_median_minutes": 0,
+          "impacted_files": [
+            "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md",
+            "docs/research/event-schema.md"
+          ],
+          "expected_events": [],
+          "telemetry_changes": "none",
+          "migration": "none",
+          "expected_tests": [
+            "suite unchanged",
+            "standing absence rule: no Q32-specific surface"
+          ]
+        },
+        {
+          "id": "SA-5-B",
+          "class": "minimal_trim",
+          "summary": "Remove Q32 from side_repair_completed and final_bonus_unlocked; Q32 has no game telemetry until horizon inputs exist",
+          "added_median_minutes": 0,
+          "impacted_files": [
+            "src/world/CanonicalEventContext.ts",
+            "e2e/side_repair_logging.spec.ts",
+            "docs/research/event-schema.md",
+            "docs/research/research-traceability-matrix.json",
+            "docs/research/RESEARCH-TRACEABILITY-MATRIX.md",
+            "docs/game/rooms/06-optional-side-repair-bay.md",
+            "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md"
+          ],
+          "expected_events": [],
+          "telemetry_changes": "value-only tag removal (construct_id keep/remove sub-choice; removal needs Route G re-baseline)",
+          "migration": "Q32 tag column ends at change date",
+          "expected_tests": [
+            "e2e/side_repair_logging.spec.ts:182,184-185 updated",
+            "Route G zero-diff or reviewed re-baseline",
+            "absence rule unchanged"
+          ]
+        },
+        {
+          "id": "SA-5-C",
+          "class": "fuller_conditional",
+          "summary": "SA-5-A now plus conditional authorisation of extended_goal_engagement_proxy computed solely from SA-3 distributed_goal_* events after Phase 5 lands",
+          "added_median_minutes": 0,
+          "impacted_files": [
+            "now: register/schema notes; post-Phase-5: src/systems/ScoringManager.ts, docs/research/scoring-plan.md, matrix"
+          ],
+          "expected_events": [],
+          "telemetry_changes": "1 derived variable post-Phase-5, exploratory label mandatory, never reverse-scored",
+          "migration": "variable exists only for post-Phase-5 sessions",
+          "expected_tests": [
+            "post-Phase-5: proxy computed only from distributed_goal_* events",
+            "no-opportunity below 2 valid opportunities",
+            "label presence",
+            "absence rule unchanged"
+          ]
+        }
+      ],
+      "recommended_disposition": {
+        "option": "SA-5-A",
+        "status": "RECOMMENDATION_ONLY"
+      }
+    },
+    {
+      "id": "SA-6",
+      "title": "Q33 Final-Core tags; end-session portfolio authorisation",
+      "requires": ["event-schema", "scoring-plan"],
+      "source_refs": [
+        "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md#9.1 SA-6 row",
+        "src/world/CanonicalEventContext.ts:466-470,489-498 (final_core_rushed ['Q11','Q33']; final_core_issue_resolved ['Q33']; final_core_completed ['Q06','Q33'])",
+        "src/scenes/FinalCoreScene.ts:313,316,332,351,355,376-387 (emission on required gated room)",
+        "src/systems/ScoringManager.ts:146-149 (summary boolean uses legacy quality-tier events, not these)",
+        "docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md:666-682 (Q33 entry)"
+      ],
+      "dependencies": {
+        "blocked_by": [
+          "portfolio option additionally blocked by SA-3 and SA-4 module landings"
+        ],
+        "blocks": [
+          "NEXT-09-P3-retag-final-core-slice",
+          "Q33-portfolio-derivation"
+        ],
+        "coordinates_with": ["SA-3", "SA-4"]
+      },
+      "options": [
+        {
+          "id": "SA-6-A",
+          "class": "conservative_no_change",
+          "summary": "Retain Q33 tags with formal caveat; no portfolio",
+          "added_median_minutes": 0,
+          "impacted_files": [
+            "docs only (schema, matrix, register, room doc 08)"
+          ],
+          "expected_events": [],
+          "telemetry_changes": "none",
+          "migration": "none",
+          "expected_tests": ["suite unchanged"],
+          "risks": "highest-risk status quo: prohibited inference stays live on a required gated room"
+        },
+        {
+          "id": "SA-6-B",
+          "class": "minimal_defensible",
+          "summary": "Remove Q33 from final_core_rushed/final_core_completed/final_core_issue_resolved; Q33 questionnaire-only until a separate portfolio ruling",
+          "added_median_minutes": 0,
+          "impacted_files": [
+            "src/world/CanonicalEventContext.ts",
+            "e2e/final_core_summary.spec.ts",
+            "docs/research/event-schema.md",
+            "docs/research/research-traceability-matrix.json",
+            "docs/research/RESEARCH-TRACEABILITY-MATRIX.md",
+            "docs/game/rooms/08-final-core-room.md",
+            "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md"
+          ],
+          "expected_events": [],
+          "telemetry_changes": "value-only tag removal (construct_id keep/remove sub-choice on final_core_issue_resolved)",
+          "migration": "Q33 tag column ends at change date; Q11/Q06 readings untouched",
+          "expected_tests": [
+            "e2e/final_core_summary.spec.ts:101,217 updated",
+            "Route G zero-diff or reviewed re-baseline",
+            "absence rule: no Q33-specific surface"
+          ]
+        },
+        {
+          "id": "SA-6-C",
+          "class": "fuller_conditional",
+          "summary": "SA-6-B plus conditional authorisation of the end-session exploratory portfolio (short_goal_completion_share, self_selected_goal_portfolio) over self-selected SA-3/SA-4 opportunities only, blocked until both modules land",
+          "added_median_minutes": 0,
+          "impacted_files": [
+            "SA-6-B set now; post-Phase-5: src/systems/ScoringManager.ts, docs/research/scoring-plan.md, matrix"
+          ],
+          "expected_events": [],
+          "telemetry_changes": "2 derived variables post-Phase-5, exploratory label mandatory",
+          "migration": "portfolio exists only for post-Phase-5 sessions",
+          "expected_tests": [
+            "post-Phase-5: required-task exclusion asserted (null portfolio + no-opportunity coding when no self-selected opportunities)",
+            "label presence",
+            "absence rule unchanged"
+          ]
+        }
+      ],
+      "recommended_disposition": {
+        "option": "SA-6-B",
+        "status": "RECOMMENDATION_ONLY"
+      }
+    }
+  ],
+  "dependency_graph": {
+    "nodes": [
+      "SA-1",
+      "SA-2(out-of-scope)",
+      "SA-3",
+      "SA-4",
+      "SA-5",
+      "SA-6",
+      "D7+D3(out-of-scope)",
+      "P3-retag-execution",
+      "P4-utility-stop",
+      "P5-horizon",
+      "P5-granularity",
+      "P5x-derived-treatments",
+      "P6-initiation",
+      "P8-docs-closure",
+      "Q27",
+      "Q29",
+      "Q30",
+      "Q31",
+      "Q32",
+      "Q33"
+    ],
+    "edges": [
+      { "from": "SA-1", "to": "P3-retag-execution", "type": "unblocks" },
+      { "from": "SA-3", "to": "P3-retag-execution", "type": "unblocks" },
+      { "from": "SA-4", "to": "P3-retag-execution", "type": "unblocks" },
+      { "from": "SA-5", "to": "P3-retag-execution", "type": "unblocks" },
+      { "from": "SA-6", "to": "P3-retag-execution", "type": "unblocks" },
+      {
+        "from": "SA-2(out-of-scope)",
+        "to": "P4-utility-stop",
+        "type": "unblocks"
+      },
+      {
+        "from": "SA-1",
+        "to": "P4-utility-stop",
+        "type": "coordination (scoring-term question pairs with the replacement Q27 signal)"
+      },
+      { "from": "SA-2(out-of-scope)", "to": "Q27", "type": "embodiment" },
+      { "from": "SA-1", "to": "Q27", "type": "mapping-hygiene" },
+      { "from": "SA-3", "to": "P5-horizon", "type": "unblocks" },
+      { "from": "SA-3", "to": "Q29", "type": "embodiment" },
+      { "from": "SA-3", "to": "Q31", "type": "embodiment" },
+      { "from": "SA-4", "to": "P5-granularity", "type": "unblocks" },
+      { "from": "SA-4", "to": "Q30", "type": "embodiment" },
+      { "from": "P5-horizon", "to": "Q32", "type": "provides-inputs" },
+      {
+        "from": "SA-5",
+        "to": "Q32",
+        "type": "treatment-ruling (Q32 blocked until ruled)"
+      },
+      { "from": "P5-horizon", "to": "Q33", "type": "provides-inputs" },
+      { "from": "P5-granularity", "to": "Q33", "type": "provides-inputs" },
+      {
+        "from": "SA-6",
+        "to": "Q33",
+        "type": "treatment-ruling (Q33 blocked until ruled)"
+      },
+      {
+        "from": "SA-5",
+        "to": "P5x-derived-treatments",
+        "type": "conditional (option C only)"
+      },
+      {
+        "from": "SA-6",
+        "to": "P5x-derived-treatments",
+        "type": "conditional (option C only)"
+      },
+      {
+        "from": "P5-horizon",
+        "to": "P5x-derived-treatments",
+        "type": "prerequisite"
+      },
+      {
+        "from": "P5-granularity",
+        "to": "P5x-derived-treatments",
+        "type": "prerequisite (Q33 portfolio)"
+      },
+      {
+        "from": "D7+D3(out-of-scope)",
+        "to": "P6-initiation",
+        "type": "unblocks"
+      },
+      {
+        "from": "P3-retag-execution",
+        "to": "P8-docs-closure",
+        "type": "prerequisite"
+      },
+      {
+        "from": "P4-utility-stop",
+        "to": "P8-docs-closure",
+        "type": "prerequisite"
+      },
+      { "from": "P5-horizon", "to": "P8-docs-closure", "type": "prerequisite" },
+      {
+        "from": "P5-granularity",
+        "to": "P8-docs-closure",
+        "type": "prerequisite"
+      },
+      {
+        "from": "P6-initiation",
+        "to": "P8-docs-closure",
+        "type": "prerequisite"
+      }
+    ]
+  },
+  "burden_rollup": {
+    "budget": "approximately 8-10 added median minutes (contract §9), Q18/Q20 outside budget",
+    "landed_phase2_q03_minutes": 0.75,
+    "recommended_package_minutes": {
+      "SA-1": 0,
+      "SA-3-B": 3.5,
+      "SA-4-B": 2.5,
+      "SA-5": 0,
+      "SA-6": 0,
+      "total_with_phase2": 6.75
+    },
+    "out_of_scope_placeholders_minutes": {
+      "SA-2-module": 1.5,
+      "Q05-confirmation": 0.5
+    },
+    "recommended_total_projection": 8.75,
+    "recommended_worst_case_total": 10.25,
+    "fuller_package_minutes": {
+      "SA-3-C": 5.5,
+      "SA-4-C": 3.5,
+      "total_with_phase2_and_placeholders": 11.75,
+      "range": "10-13"
+    },
+    "verdict": "recommended package fits the budget at point estimates; worst-case row pairing touches/just passes the 10-minute ceiling with zero contingency; fuller package risks exceeding the budget",
+    "assumptions": [
+      "SA-3-B median assumes distributed-closure travel is absorbed by the existing end-of-route walk; consistent distributed-choosers may reach 4-6 min",
+      "SA-4-B figure assumes both instances restructure existing work; a new instance-2 bundle adds ~1-2 min",
+      "beacon gating on horizon instance 1 can add small uncounted backtracking travel",
+      "all figures are pre-pilot medians pending pilot calibration"
+    ]
+  },
+  "sequencing": [
+    {
+      "step": "P3a",
+      "commit": "retag execution (whatever subset of SA-1/3/4/5/6 tag rulings arrive)",
+      "rollback": "single git revert; no re-baseline unless a construct_id key is removed or SA-1-C changes formulas"
+    },
+    {
+      "step": "P4",
+      "commit": "SA-2 utility-stop module (own ruling, out of dossier scope)",
+      "rollback": "revert + discard Route G re-baseline"
+    },
+    {
+      "step": "P5h",
+      "commit": "goal-horizon module (SA-3 module ruling)",
+      "rollback": "revert restores byte-identical telemetry (additive events)"
+    },
+    {
+      "step": "P5g",
+      "commit": "goal-granularity module (SA-4 module ruling), separate commit from P5h",
+      "rollback": "independent revert"
+    },
+    {
+      "step": "P5x",
+      "commit": "Q32/Q33 derived treatments (only if SA-5-C/SA-6-C ruled; after P5h/P5g)",
+      "rollback": "revert; no participant-facing surface"
+    },
+    {
+      "step": "P6",
+      "commit": "Q05 initiation window (D7+D3, out of scope)",
+      "rollback": "revert"
+    },
+    {
+      "step": "P8",
+      "commit": "docs closure incl. matrix --write, manual routes 12-18, NEXT-09-OD-2 schema section",
+      "rollback": "revert"
+    }
+  ],
+  "validation": {
+    "matrix_governance_finding": "items rows Q27/Q29/Q30/Q31/Q32/Q33 still read operationalisation=implemented with empty gaps/unresolved_decisions and list superseded events and never-implemented MASTER_33 derived names; SA-1..SA-6 appear nowhere in the matrix; validator ALLOWED_DECISIONS excludes SA-* so ruling references must stay in notes text",
+    "route_g_shape_rule": "study_item_ids value edits are Route-G-invisible; construct_id key removal diffs both baselines (44 occurrences each) and requires a reviewed re-baseline"
+  },
+  "reviewers": {
+    "note": "full record and reconciliation in companion dossier §10; the research-data and gameplay reviews were rerun to completion on a different model tier after a usage-limit interruption",
+    "results": [
+      {
+        "id": "traceability-governance",
+        "verdict": "PASS WITH NOTES",
+        "blockers": 0,
+        "dispositions": "2 MINOR reconciled (reviewer-record tense, burden drift); 4 NOTEs applied/recorded"
+      },
+      {
+        "id": "research-data-validity",
+        "verdict": "PASS WITH NOTES",
+        "blockers": 0,
+        "constraint_checklist": "a-f all PASS",
+        "recommendation_agreement": {
+          "SA-1-B": "AGREE",
+          "SA-3-B": "AGREE",
+          "SA-4-B": "AGREE",
+          "SA-5-A": "AGREE",
+          "SA-6-B": "AGREE"
+        },
+        "dispositions": "1 MAJOR (reviewer-record overclaim) resolved by §10; sub-field (iv) now has no default"
+      },
+      {
+        "id": "participant-burden-accessibility",
+        "verdict": "PASS WITH NOTES",
+        "blockers": 0,
+        "dispositions": "2 MAJOR corrected (fuller-package 10-13; SA-4-B instance-2 host caveat + Q18 collision); worst-case 10.25 stated; reviewer's wider ranges recorded as alternative estimates, arbitration deferred to pilot calibration"
+      },
+      {
+        "id": "gameplay-implementation-feasibility",
+        "verdict": "PASS WITH NOTES",
+        "blockers": 0,
+        "recommendation_agreement": {
+          "SA-1-B": "AGREE",
+          "SA-3-B": "AGREE (conditions now met)",
+          "SA-4-B": "AGREE",
+          "SA-5-A": "AGREE",
+          "SA-6-B": "AGREE"
+        },
+        "dispositions": "3 MAJOR corrected (room-doc-07 ordering contradiction cited + ruling sub-field (iv); P5h rollback claim qualified; full presentation-constraint quote); file lists extended (proc-* textures, e2e helpers)"
+      }
+    ],
+    "unresolved_blocking_disagreements": 0,
+    "open_status_confirmation": "all five rulings remain formally open; no recommendation was treated as approved"
+  }
+}
