@@ -1,0 +1,2001 @@
+{
+  "schema_version": "1.0.0",
+  "title": "NEXT-09 Q01-Q33 item measurement ownership, independence and carryover register",
+  "status": "documentation_only",
+  "generated": "2026-07-29",
+  "baseline_commit": "f64d1ce4f9ccc3cf200efb32e2a644bf66ea4753",
+  "branch": "fable-next-09-global-measurement-ruling-v1",
+  "authority": {
+    "global_ruling": "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md#13-global-scientific-ruling",
+    "behavioural_translation": "docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md (v0.2)",
+    "event_names": "docs/research/event-schema.md",
+    "scoring": "docs/research/scoring-plan.md",
+    "plan": "docs/research/NEXT-09-ITEM-SEPARATION-AND-CARRYOVER-CONTROL-PLAN.md"
+  },
+  "conventions": {
+    "candidate_names": "Every proposed event family and variable name is a CANDIDATE pending event-schema/scoring-plan rulings; nothing in this file promotes a name.",
+    "contamination_default": "Per ruling section 9: a contaminated or absent opportunity is missing/invalid measurement, never behavioural non-performance, and is never assigned a low trait score. Raw data must record opportunity id, order/counterbalance condition, entry-state validity, prior module exposure, technical/comprehension failure, and a contamination flag.",
+    "shared_context_default": "Room entry/exit, movement, scenario_* pilot telemetry, dock control covariates, hub navigation and DEV-probe traffic are permissible shared context and must remain unscored for every item.",
+    "evidence_status_vocabulary": [
+      "strong",
+      "strong_moderate",
+      "moderate_strong",
+      "moderate",
+      "moderate_exploratory",
+      "weak_questionnaire_primary",
+      "very_weak_questionnaire_primary"
+    ],
+    "implementation_status_vocabulary": [
+      "compliant_pending_coding_rules",
+      "partially_compliant",
+      "shared_stream_noncompliant",
+      "opportunity_gated_noncompliant",
+      "entry_state_noncompliant",
+      "absent_blocked",
+      "questionnaire_primary_no_module"
+    ]
+  },
+  "items": [
+    {
+      "item_id": "Q01",
+      "construct": "BFI-2 Conscientiousness / Organisation (BFI-C-04): systematic, keeps things in order",
+      "direction": "positive",
+      "evidence_status": "strong",
+      "primary_opportunity": "Inventory/Prep checklist-guided kit preparation (checklist availability through readiness verification)",
+      "primary_measurement_window": "inventory prep open -> readiness verification (per-session, one instance)",
+      "primary_event_ownership": "Q01-exclusive checklist/placement/sequence acts (live: inventory_checklist_opened, inventory_item_sorted_correct, inventory_sequence_followed - all singly tagged)",
+      "primary_variable_ownership": "candidate organisation checklist-guided preparation quality (scoring-plan organisation_checklist_use family; rename pending)",
+      "shared_context_events": [
+        "room entry/exit",
+        "scenario_* (Scenario D console)",
+        "movement",
+        "prompt-open acts (never checklist credit)"
+      ],
+      "prohibited_inputs": [
+        "Q02 misplacement/verification events",
+        "Q04 cleanup events",
+        "Q03 retrieval events",
+        "legacy inventory_* composite names read by ScoringManager"
+      ],
+      "current_event_reuse": [],
+      "current_variable_reuse": [
+        "organization_prep_count sums legacy shortcut+systematic+cleanup names (valence mixing, unregistered legacy events)"
+      ],
+      "upstream_dependencies": [],
+      "entry_state_requirements": "Identical bench/checklist/bin state at prep start for every session; SA-11 requisition display stays withheld pending ruling",
+      "opportunity_gating": "None (room freely reachable); prep never opened = no-opportunity",
+      "carryover_controls": [
+        "Q01 events may not feed Q02-Q04 primaries",
+        "window boundary coding at close-out"
+      ],
+      "counterbalance_requirements": "Option-position counterbalance (or documented fixed order + export) for prep console options",
+      "contamination_rules": "Default (conventions.contamination_default); no-opportunity if console never opened",
+      "implementation_status": "compliant_pending_coding_rules",
+      "minimum_remediation": "Declare window boundaries + opportunity id; D2 scoring alignment; no gameplay change required",
+      "affected_files": [
+        "src/scenes/InventoryScene.ts",
+        "src/world/CanonicalEventContext.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "proposed_tests": [
+        "automated: existing inventory specs stay green; window-boundary event-order assertion",
+        "manual: acceptance route 1 unchanged"
+      ]
+    },
+    {
+      "item_id": "Q02",
+      "construct": "BFI-2 Conscientiousness / Organisation (BFI-C-01): tends to be disorganized",
+      "direction": "reverse",
+      "evidence_status": "strong",
+      "primary_opportunity": "Preventable misplacements/omissions left after the unmissable close-out correction opportunity",
+      "primary_measurement_window": "first placement -> final verification/skip at close-out (Final Core consequence = secondary only)",
+      "primary_event_ownership": "Q02-exclusive misplacement-after-correction acts (live: inventory_item_misplaced singly tagged; inventory_verification_skipped currently dual-tagged Q02/Q30)",
+      "primary_variable_ownership": "candidate unresolved preventable-error count (organisation_error_count family)",
+      "shared_context_events": [
+        "room entry/exit",
+        "scenario_*",
+        "missing_item raw telemetry (unmapped by D2 rule)"
+      ],
+      "prohibited_inputs": [
+        "Q01 checklist acts",
+        "Q30 granularity inference from verification skip (SA-4 prohibited)",
+        "final_core_missing_item_flagged as primary (secondary consequence telemetry only)"
+      ],
+      "current_event_reuse": ["inventory_verification_skipped -> Q02+Q30"],
+      "current_variable_reuse": [
+        "organization_disorganized_count reads legacy inventory_disorganized_action (unregistered name)"
+      ],
+      "upstream_dependencies": [
+        "shares physical prep flow with Q01 (window separation required)"
+      ],
+      "entry_state_requirements": "Same item set and correction opportunity for every session",
+      "opportunity_gating": "Requires placement activity; none = no-opportunity",
+      "carryover_controls": [
+        "Final Core missing-kit flag = recorded exposure onto Q11/Q28 entry state (edge Q02->Q11/Q28)",
+        "verification-skip event may serve only one primary (SA-4)"
+      ],
+      "counterbalance_requirements": "As Q01",
+      "contamination_rules": "Default; first mistakes never trait evidence; only post-correction unresolved errors count",
+      "implementation_status": "partially_compliant",
+      "minimum_remediation": "SA-4 ruling removes/retains the Q30 tag; standardise or contamination-code the Final Core consequence exposure",
+      "affected_files": [
+        "src/scenes/InventoryScene.ts",
+        "src/scenes/FinalCoreScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated: misplace/review specs unchanged; assertion that verification-skip fires once per close-out",
+        "manual: route 2 unchanged"
+      ]
+    },
+    {
+      "item_id": "Q03",
+      "construct": "BFI-2 Conscientiousness / Organisation (BFI-C-07): keeps things neat and tidy",
+      "direction": "positive",
+      "evidence_status": "strong",
+      "primary_opportunity": "REQUIRED-INDEPENDENT: a Q03-specific standardised retrieval/maintained-order opportunity not gated by prior Inventory behaviour (ruling section 11; SA-12). Existing prepared-tool retrieval episode = secondary ecological evidence only",
+      "primary_measurement_window": "pending SA-12 design (existing episode window: repair-panel retrieval stage -> first application)",
+      "primary_event_ownership": "pending SA-12; live Q03-tagged events (correct_tool_selected, wrong_tool_selected, prepared_tool_used, workspace_tidy_confirmed) are singly tagged but opportunity-gated",
+      "primary_variable_ownership": "candidate independent retrieval/maintained-order accuracy; none compliant today (prepared_tool_used read by no formula)",
+      "shared_context_events": [
+        "room entry/exit",
+        "repair task surface rendering"
+      ],
+      "prohibited_inputs": [
+        "Q01 checklist score duplication",
+        "wrong_tool_selected cross-room reuse (Inventory-scoped by schema rule)"
+      ],
+      "current_event_reuse": [],
+      "current_variable_reuse": [],
+      "upstream_dependencies": [
+        "opportunity requires inventory_prep_room completed + diagnostic_probe previously packed + currently stored (RepairScene.hasPreparedToolOpportunity)"
+      ],
+      "entry_state_requirements": "Pending remedy: retrieval opportunity must exist for every session from a standardised stored-state, independent of earlier packing choices",
+      "opportunity_gating": "Currently gated on Q01/Q02-window behaviour (NEXT-09-P2-R2 no-opportunity coding holds and remains correct)",
+      "carryover_controls": [
+        "retain episode as secondary telemetry (ruling section 11)",
+        "record opportunity-validity flag distinguishing gated vs standardised instances"
+      ],
+      "counterbalance_requirements": "Container-choice option positions counterbalanced or documented-fixed",
+      "contamination_rules": "Default; no qualifying packed tool = no-opportunity (never untidy)",
+      "implementation_status": "opportunity_gated_noncompliant",
+      "minimum_remediation": "SA-12 research-owner ruling on the independent Q03 opportunity (design + events); until then no Q03 primary indicator",
+      "affected_files": [
+        "src/scenes/RepairScene.ts",
+        "src/scenes/InventoryScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated: existing kit-packed/kit-less parity specs stay green; post-remedy: every-session opportunity assertion",
+        "manual: route 12 unchanged until SA-12"
+      ]
+    },
+    {
+      "item_id": "Q04",
+      "construct": "BFI-2 Conscientiousness / Organisation (BFI-C-10): leaves a mess, doesn't clean up",
+      "direction": "reverse",
+      "evidence_status": "strong",
+      "primary_opportunity": "Explicit restore-vs-leave choice at the Inventory close-out after task completion (cleanup only, never planning - approved decision)",
+      "primary_measurement_window": "task completion -> exit-with-state (cleanup opportunity shown -> workspace state at exit)",
+      "primary_event_ownership": "Q04-exclusive cleanup acts (live: cleanup_completed, workspace_left_disordered - singly tagged; workspace_tidy_confirmed carries Q03)",
+      "primary_variable_ownership": "candidate cleanup completion/failure state (cleanup_failure_count - missing; never conflated with action counts)",
+      "shared_context_events": ["room entry/exit", "scenario_*"],
+      "prohibited_inputs": [
+        "planning events (prohibited mapping)",
+        "final_core_workspace_issue_flagged as primary (secondary consequence)"
+      ],
+      "current_event_reuse": [
+        "workspace_tidy_confirmed -> Q03 (tidy-confirm act shared between Q03/Q04 windows)"
+      ],
+      "current_variable_reuse": [
+        "organization_cleanup_count reads legacy names (unregistered)"
+      ],
+      "upstream_dependencies": [
+        "cleanup content depends on how the bench was used earlier in the same room (within-room, to standardise)"
+      ],
+      "entry_state_requirements": "Cleanup opportunity must present an equivalent disordered-bench state for every session regardless of earlier tidiness",
+      "opportunity_gating": "Cleanup card not shown = no-opportunity",
+      "carryover_controls": [
+        "Final Core workspace flag = exposure onto Q11/Q28 entry state (edge Q04->Q11/Q28)"
+      ],
+      "counterbalance_requirements": "Restore-vs-leave option positions counterbalanced or documented-fixed",
+      "contamination_rules": "Default",
+      "implementation_status": "partially_compliant",
+      "minimum_remediation": "Standardise/code the cleanup entry state; keep workspace_tidy_confirmed single-owner by ruling; contamination-code the Final Core exposure",
+      "affected_files": [
+        "src/scenes/InventoryScene.ts",
+        "src/scenes/FinalCoreScene.ts"
+      ],
+      "proposed_tests": [
+        "automated: cleanup branch specs unchanged",
+        "manual: route 3 unchanged"
+      ]
+    },
+    {
+      "item_id": "Q05",
+      "construct": "BFI-2 Conscientiousness / Productiveness (BFI-C-05): difficulty getting started",
+      "direction": "reverse",
+      "evidence_status": "moderate",
+      "primary_opportunity": "ABSENT - initiation-latency window after an explicit objective-confirmation act (blocked on D7 event listing + D3 idle definition)",
+      "primary_measurement_window": "objective_confirmed + control restored -> first goal-directed action (candidate)",
+      "primary_event_ownership": "candidate Q05-exclusive family (objective_confirmed, first_goal_directed_action; task_started per D7 resolution)",
+      "primary_variable_ownership": "candidate task_initiation_latency (scoring-plan: missing)",
+      "shared_context_events": [
+        "duty-roster HUD display",
+        "reading/manual acts (never avoidance)"
+      ],
+      "prohibited_inputs": [
+        "Q08 avoidance events",
+        "Q10 acceptance acts",
+        "movement speed"
+      ],
+      "current_event_reuse": [],
+      "current_variable_reuse": [],
+      "upstream_dependencies": [
+        "D7, D3 rulings; duty-roster confirmation surface (unbuilt)"
+      ],
+      "entry_state_requirements": "Standardised instruction wording, option positions and route position of the confirmation act; identical for every session",
+      "opportunity_gating": "None permitted - the window must open for every session",
+      "carryover_controls": [
+        "fixed route position documented + order exported (practice carryover)",
+        "comprehension check before window validity"
+      ],
+      "counterbalance_requirements": "Fixed-order rationale documented + order exported (window position cannot be freely counterbalanced on a free-roam route)",
+      "contamination_rules": "Default; technical/comprehension failure = invalid opportunity, never slow initiation",
+      "implementation_status": "absent_blocked",
+      "minimum_remediation": "D7 + D3 rulings, then the confirmation interaction and window in its own approved pass",
+      "affected_files": [
+        "src/scenes/HubScene.ts",
+        "src/scenes/DockScene.ts",
+        "src/world/CanonicalEventContext.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "proposed_tests": [
+        "automated (post-ruling): window opens exactly once; reading excluded from avoidance; no-opportunity distinguishable",
+        "manual: route 16 (planned)"
+      ]
+    },
+    {
+      "item_id": "Q06",
+      "construct": "BFI-2 Conscientiousness / Productiveness (BFI-C-08): efficient, gets things done",
+      "direction": "positive",
+      "evidence_status": "strong",
+      "primary_opportunity": "Required-duty completion portfolio across assigned duties (NEXT-09-OD-1 framing) - requires its own duty-level event family, not other items' window events",
+      "primary_measurement_window": "repeated item-specific windows: each assigned duty's availability -> closure state at Final Core",
+      "primary_event_ownership": "NONE COMPLIANT - current evidence rides archive_completed (Q06/Q13), repair_completed (Q06/Q14/Q21), final_core_completed (Q06/Q33); candidate duty-level completion acts pending event-schema ruling",
+      "primary_variable_ownership": "candidate required_completion_rate / productiveness_completion_score (scoring-plan: missing)",
+      "shared_context_events": [
+        "duty roster display",
+        "room completions as narrative state"
+      ],
+      "prohibited_inputs": [
+        "events inside Q13/Q14/Q21 persistence windows",
+        "pure speed",
+        "final_core_completed while it serves Q33 questions (SA-6)"
+      ],
+      "current_event_reuse": [
+        "archive_completed -> Q06+Q13",
+        "repair_completed -> Q06+Q14+Q21",
+        "final_core_completed -> Q06+Q33"
+      ],
+      "current_variable_reuse": [
+        "failure_adaptation_index and game_persistence_total consume the same completion events (cross-construct composites)"
+      ],
+      "upstream_dependencies": [
+        "NEXT-09-OD-1 duty framing pass (approved framing-only, unimplemented)"
+      ],
+      "entry_state_requirements": "Identical duty roster for every session",
+      "opportunity_gating": "Duties must all be presented; unreached room = no-opportunity for that duty",
+      "carryover_controls": [
+        "duty-portfolio events distinct from persistence-window events (ruling sections 1, 6)"
+      ],
+      "counterbalance_requirements": "Free-roam duty order self-selected: export visit order as a control variable (documented fixed-route alternative rejected)",
+      "contamination_rules": "Default; skipped-but-presented vs unreachable distinguished",
+      "implementation_status": "shared_stream_noncompliant",
+      "minimum_remediation": "Event-schema ruling defining Q06-exclusive duty-completion events + scoring ruling for the rate variable",
+      "affected_files": [
+        "src/scenes/ArchiveScene.ts",
+        "src/scenes/RepairScene.ts",
+        "src/scenes/FinalCoreScene.ts",
+        "src/world/CanonicalEventContext.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "proposed_tests": [
+        "automated (post-ruling): duty events fire once per duty closure; portfolio excludes persistence-window internals",
+        "manual: duty roster lists assigned duties; skippability preserved"
+      ]
+    },
+    {
+      "item_id": "Q07",
+      "construct": "BFI-2 Conscientiousness / Productiveness (BFI-C-11): persistent, works until finished",
+      "direction": "positive",
+      "evidence_status": "strong_moderate",
+      "primary_opportunity": "Accepted optional Side Repair task: acceptance -> completion (within-item longitudinal, ruling section 3)",
+      "primary_measurement_window": "side_repair acceptance -> completion/abandonment/Final Core closure, one opportunity id across defer/return",
+      "primary_event_ownership": "CONTESTED - side_repair_accepted (Q07/Q16/Q20), side_repair_step_completed (Q07/Q16), side_repair_completed (Q07/Q16/Q32); Q07 primary requires exclusive follow-through acts",
+      "primary_variable_ownership": "candidate accepted_task_completion_rate (missing)",
+      "shared_context_events": ["bay entry/exit", "Utility Bot presence"],
+      "prohibited_inputs": [
+        "Q16 step-accuracy acts",
+        "Q20 start-without-sustain acts",
+        "Q32 weak-proxy reuse"
+      ],
+      "current_event_reuse": [
+        "side_repair_accepted -> Q07+Q16+Q20",
+        "side_repair_step_completed -> Q07+Q16",
+        "side_repair_completed -> Q07+Q16+Q32"
+      ],
+      "current_variable_reuse": [
+        "productiveness_side_task_count / productiveness_completed_optional_task read side_repair_completed (multi-tag)"
+      ],
+      "upstream_dependencies": [],
+      "entry_state_requirements": "Offer identical for every session (wording, position, prior exposure); offer fires only while unaccepted (protects opportunity count)",
+      "opportunity_gating": "Declined/never-offered = no-opportunity for follow-through (decline never penalised)",
+      "carryover_controls": [
+        "ownership split of the arc between Q07/Q16/Q20 by event-schema ruling",
+        "defer vs abandon stays distinguishable"
+      ],
+      "counterbalance_requirements": "Offer option positions counterbalanced or documented-fixed",
+      "contamination_rules": "Default",
+      "implementation_status": "shared_stream_noncompliant",
+      "minimum_remediation": "Event-schema ownership ruling for the side-repair stream (Q07 vs Q16 vs Q20 vs Q32 tags)",
+      "affected_files": [
+        "src/scenes/SideRepairScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated: offer-once and defer/abandon specs unchanged",
+        "manual: route 5 unchanged"
+      ]
+    },
+    {
+      "item_id": "Q08",
+      "construct": "BFI-2 Conscientiousness / Productiveness (BFI-C-02): tends to be lazy",
+      "direction": "reverse",
+      "evidence_status": "moderate",
+      "primary_opportunity": "Pattern across >=2 required-duty engagement-vs-avoidance windows (partially absent: one live context + D3-blocked idle half)",
+      "primary_measurement_window": "repeated: each required duty's presentation -> engagement/deferral/non-resolution",
+      "primary_event_ownership": "partial - task_avoidance (Q08, corridor ignore path) + candidate engagement/avoidance acts per duty; excessive_idle_after_instruction registered-blocked (D3)",
+      "primary_variable_ownership": "candidate productive_engagement_rate (missing)",
+      "shared_context_events": [
+        "duty roster",
+        "corridor beacon context (shared with Q15/Q17/Q19 opportunities)"
+      ],
+      "prohibited_inputs": [
+        "single-delay inference",
+        "Q05 initiation latency",
+        "Q10 duty-resolution acts",
+        "accepted_duty_unresolved (Q10-owned)"
+      ],
+      "current_event_reuse": [],
+      "current_variable_reuse": [],
+      "upstream_dependencies": [
+        "D3 idle ruling; NEXT-09-OD-1 duty framing; corridor context shared with Q15/Q17"
+      ],
+      "entry_state_requirements": "Duty availability/framing identical across sessions",
+      "opportunity_gating": ">=2 valid presented opportunities required before any pattern",
+      "carryover_controls": [
+        "avoidance acts distinct from Q06 completion portfolio and Q10 duty events"
+      ],
+      "counterbalance_requirements": "As Q06 (order export on free-roam route)",
+      "contamination_rules": "Default; fatigue/comprehension/accessibility coded before any avoidance inference",
+      "implementation_status": "partially_compliant",
+      "minimum_remediation": "D3 ruling + duty-framing pass + event-schema family for engagement/avoidance acts",
+      "affected_files": [
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/HubScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated (post-ruling): idle events only per ruled definition; ignore path unchanged",
+        "manual: no single-delay scoring anywhere"
+      ]
+    },
+    {
+      "item_id": "Q09",
+      "construct": "BFI-2 Conscientiousness / Responsibility (BFI-C-03): dependable, steady",
+      "direction": "positive",
+      "evidence_status": "strong",
+      "primary_opportunity": "Engineer Hub report-back: evidence review/clarification vs unverified answer, accuracy vs live state",
+      "primary_measurement_window": "report request -> submission (after relevant evidence exists)",
+      "primary_event_ownership": "Q09-exclusive (engineer_report_opened, engineer_evidence_reviewed, engineer_report_submitted_prepared; accuracy event unmapped pending SA-8)",
+      "primary_variable_ownership": "responsibility_report_count (exact) + candidate report_accuracy_score (blocked on SA-8/D2)",
+      "shared_context_events": [
+        "Kai presence/dialogue shell",
+        "scenario_* (Scenario A)"
+      ],
+      "prohibited_inputs": [
+        "persistence events",
+        "duty events (Q10)",
+        "engineer_responsibility_adaptive/shortcut legacy interpretive events"
+      ],
+      "current_event_reuse": [],
+      "current_variable_reuse": [
+        "responsibility_prepared_report mixes evidence-review with submission-type flags (single construct, acceptable pending D2)"
+      ],
+      "upstream_dependencies": [
+        "report content scored against participant's own prior task state (state inheritance)"
+      ],
+      "entry_state_requirements": "Claim-card set and scoring rule reachable/equivalent for every prior-state configuration; Kai wording invariant to earlier outcomes",
+      "opportunity_gating": "Report never requested = no-opportunity",
+      "carryover_controls": [
+        "prior-module exposure recorded for validity coding",
+        "no accuracy feedback surfaced to participant (feedback firewall holds)"
+      ],
+      "counterbalance_requirements": "Claim-card option positions counterbalanced or documented-fixed",
+      "contamination_rules": "Default",
+      "implementation_status": "compliant_pending_coding_rules",
+      "minimum_remediation": "SA-8 registration ruling; record prior-state configuration in validity coding",
+      "affected_files": [
+        "src/scenes/EngineerScene.ts",
+        "src/utils/reportAccuracy.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated: report specs unchanged; no accuracy leakage assertion",
+        "manual: route 6 unchanged"
+      ]
+    },
+    {
+      "item_id": "Q10",
+      "construct": "BFI-2 Conscientiousness / Responsibility (BFI-C-09): reliable, counted on",
+      "direction": "positive",
+      "evidence_status": "strong",
+      "primary_opportunity": "Accepted relay duty follow-through across rooms to Final Core (within-item longitudinal, ruling section 3 named example)",
+      "primary_measurement_window": "duty assignment -> resolution/non-resolution at Final Core, one opportunity id",
+      "primary_event_ownership": "Q10-exclusive (engineer_supervision_accepted/_completed, accepted_duty_unresolved; decline unmapped, penalty-free)",
+      "primary_variable_ownership": "candidate commitment_followthrough_rate (missing)",
+      "shared_context_events": ["Kai dialogue shell", "duty-roster HUD"],
+      "prohibited_inputs": ["Q15/Q17 corridor acts", "Q09 report acts"],
+      "current_event_reuse": [],
+      "current_variable_reuse": [],
+      "upstream_dependencies": [],
+      "entry_state_requirements": "Duty offer identical for every session",
+      "opportunity_gating": "Declining = no-opportunity for follow-through (never penalised)",
+      "carryover_controls": [
+        "MAJOR: duty acceptance gates the corridor opportunity for Q15/Q17/Q19 (edges Q10->Q15/Q17/Q19); remedy or contamination coding required",
+        "duty-unresolved consequence joins Q11/Q28 entry-state exposure"
+      ],
+      "counterbalance_requirements": "Offer option positions counterbalanced or documented-fixed",
+      "contamination_rules": "Default",
+      "implementation_status": "partially_compliant",
+      "minimum_remediation": "Ruling on de-gating the corridor opportunity (or coding dependent sessions); no Q10-internal change needed",
+      "affected_files": [
+        "src/scenes/EngineerScene.ts",
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/FinalCoreScene.ts"
+      ],
+      "proposed_tests": [
+        "automated: duty lifecycle specs unchanged",
+        "manual: routes 6/9 unchanged"
+      ]
+    },
+    {
+      "item_id": "Q11",
+      "construct": "BFI-2 Conscientiousness / Responsibility (BFI-C-12): sometimes behaves irresponsibly",
+      "direction": "reverse",
+      "evidence_status": "strong",
+      "primary_opportunity": "Final Core review/resolve/acknowledge vs force-finalisation with preventable issues",
+      "primary_measurement_window": "final status display -> final completion",
+      "primary_event_ownership": "mostly Q11-exclusive (final_core_status_reviewed, unresolved_issue_reviewed); final_core_rushed dual-tagged Q11/Q33 (SA-6)",
+      "primary_variable_ownership": "candidate preventable_unresolved_count / accountability_review_flag (missing; final_quality_score shape = D2)",
+      "shared_context_events": [
+        "core interface shell",
+        "route-gate telemetry (final_core_blocked_pending_decisions, never scored)"
+      ],
+      "prohibited_inputs": [
+        "Q28 force/blocker acts",
+        "Q33 rushing inference (SA-6)",
+        "issue flags as trait evidence for their source items"
+      ],
+      "current_event_reuse": ["final_core_rushed -> Q11+Q33"],
+      "current_variable_reuse": [
+        "final_core_completion_quality ladder reads legacy quality events (unregistered)"
+      ],
+      "upstream_dependencies": [
+        "issue set inherited from Q02 (kit), Q04 (workspace), Q10 (duty), corridor non-return (Q15/Q19)"
+      ],
+      "entry_state_requirements": "NONCOMPLIANT TODAY: opportunity content, option set (force option conditional) and difficulty depend on earlier item outcomes; remedy = standardised baseline issue component every session, or per-session entry-state validity coding",
+      "opportunity_gating": "Final Core reachable only after four scenarios (route gate, frozen); unreached = no-opportunity",
+      "carryover_controls": [
+        "standardised baseline issue (pending ruling)",
+        "participant-caused issues retained as secondary ecological telemetry",
+        "fatigue/session-position export"
+      ],
+      "counterbalance_requirements": "Card option positions counterbalanced or documented-fixed; fixed late-route position documented + exported",
+      "contamination_rules": "Default; clean-session (no issues) coded no-opportunity for the force choice, never high responsibility",
+      "implementation_status": "entry_state_noncompliant",
+      "minimum_remediation": "Research-owner ruling on the standardised baseline issue set + SA-6 on the Q33 tag",
+      "affected_files": [
+        "src/scenes/FinalCoreScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated (post-ruling): baseline issue present every session; force option conditionality per ruling",
+        "manual: route 9"
+      ]
+    },
+    {
+      "item_id": "Q12",
+      "construct": "BFI-2 Conscientiousness / Responsibility (BFI-C-06): can be somewhat careless (prudence)",
+      "direction": "reverse",
+      "evidence_status": "strong",
+      "primary_opportunity": "Hazard warning -> informed vs unchecked action (prudence/carefulness; approved: Hazard stays prudence)",
+      "primary_measurement_window": "hazard_warning_seen -> action confirmation",
+      "primary_event_ownership": "CONTESTED TAGS - hazard_warning_seen (Q12); hazard_info_checked (Q12/Q27); hazard_reckless_continue (Q12/Q27/Q31); Q27/Q31 tags are superseded rationale (SA-1/SA-3)",
+      "primary_variable_ownership": "candidate prudence_check_rate / reckless action count (missing; currently folded into mixed composites)",
+      "shared_context_events": [
+        "hazard room entry",
+        "hazard_route_avoided (D1: telemetry-only, never scored)"
+      ],
+      "prohibited_inputs": [
+        "goal-time inference",
+        "fear/risk-appetite framing",
+        "Q27 persistence inference (SA-1)"
+      ],
+      "current_event_reuse": [
+        "hazard_info_checked -> Q12+Q27",
+        "hazard_reckless_continue -> Q12+Q27+Q31"
+      ],
+      "current_variable_reuse": [
+        "strategy_revision_count folds hazard_info_checked (prudence into persistence-revision)",
+        "blind_retry_count/game_inappropriate_persistence fold hazard_reckless_continue",
+        "game_uncertainty_persistence mixes hazard_info_checked + hazard_informed_continue"
+      ],
+      "upstream_dependencies": [],
+      "entry_state_requirements": "Warning presentation standardised (already); repeatable-prompt first-response retention = open section-8.2 principle",
+      "opportunity_gating": "Warning never seen = no-opportunity",
+      "carryover_controls": [
+        "single-ownership of hazard events for Q12 primary (SA-1/SA-3 rulings)",
+        "repetition recorded for validity coding"
+      ],
+      "counterbalance_requirements": "Option positions counterbalanced or documented-fixed",
+      "contamination_rules": "Default",
+      "implementation_status": "partially_compliant",
+      "minimum_remediation": "SA-1/SA-3 re-scoped rulings on the Q27/Q31 tags; D2 split of prudence terms out of mixed composites",
+      "affected_files": [
+        "src/scenes/HazardScene.ts",
+        "src/world/CanonicalEventContext.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "proposed_tests": [
+        "automated: hazard branch specs unchanged",
+        "manual: route 7 unchanged"
+      ]
+    },
+    {
+      "item_id": "Q13",
+      "construct": "Grit-S Perseverance of Effort (GRIT-02): setbacks don't discourage me",
+      "direction": "positive",
+      "evidence_status": "strong",
+      "primary_opportunity": "Archive standardised failure -> feedback -> revision -> completion",
+      "primary_measurement_window": "first failure -> completion or validated abandonment",
+      "primary_event_ownership": "CONTESTED - archive_wrong_code (Q13); archive_feedback_used (Q13/Q22); archive_strategy_revision (Q13/Q22/Q26); archive_completed (Q06/Q13); Q13 primary needs exclusive post-setback re-engagement acts",
+      "primary_variable_ownership": "candidate post_failure_reengagement (missing); game_difficulty_persistence is a shared construct composite, not a Q13 primary",
+      "shared_context_events": [
+        "archive terminal shell",
+        "scenario_* (Scenario C)",
+        "log-shelf hint browsing"
+      ],
+      "prohibited_inputs": [
+        "Q22 application acts",
+        "Q26 repetition acts",
+        "Q06 completion portfolio"
+      ],
+      "current_event_reuse": [
+        "archive_feedback_used -> Q13+Q22",
+        "archive_strategy_revision -> Q13+Q22+Q26",
+        "archive_completed -> Q06+Q13"
+      ],
+      "current_variable_reuse": [
+        "game_difficulty_persistence spans archive+repair streams",
+        "failure_adaptation_index/game_persistence_total consume the same events"
+      ],
+      "upstream_dependencies": [],
+      "entry_state_requirements": "Scripted deterministic failure (compliant); feedback text frozen",
+      "opportunity_gating": "Task never attempted = no-opportunity",
+      "carryover_controls": [
+        "EXPORTS practice/feedback carryover to Systems Repair items (edge Q13->Q14/Q21/Q23/Q24); order export + pilot dependency test",
+        "neutral transition between failure modules where practical"
+      ],
+      "counterbalance_requirements": "Archive/Repair module order self-selected: export order; option positions per prompt",
+      "contamination_rules": "Default",
+      "implementation_status": "shared_stream_noncompliant",
+      "minimum_remediation": "Event-schema ownership split of the archive stream (Q13 vs Q22 vs Q26 vs Q06)",
+      "affected_files": [
+        "src/scenes/ArchiveScene.ts",
+        "src/world/CanonicalEventContext.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "proposed_tests": [
+        "automated: archive specs unchanged",
+        "manual: scripted failure invariant"
+      ]
+    },
+    {
+      "item_id": "Q14",
+      "construct": "Grit-S Perseverance of Effort (GRIT-04): I am a hard worker",
+      "direction": "positive",
+      "evidence_status": "moderate_strong",
+      "primary_opportunity": "Systems Repair sustained useful effort (diagnosis, manual, steps, revised sequence)",
+      "primary_measurement_window": "repair start -> completion/abandonment",
+      "primary_event_ownership": "CONTESTED - repair_failed (Q14/Q21); repair_manual_used (Q14/Q21/Q22); repair_strategy_revision (Q14/Q21/Q23); repair_completed (Q06/Q14/Q21); Q14 primary = useful-effort breadth, needs exclusive acts",
+      "primary_variable_ownership": "candidate useful_effort_count (missing)",
+      "shared_context_events": ["repair panel shell", "schematic surface"],
+      "prohibited_inputs": [
+        "raw action counts/time",
+        "Q21 continuation acts",
+        "Q23 retry-quality acts",
+        "Q06 completion portfolio"
+      ],
+      "current_event_reuse": [
+        "repair_failed -> Q14+Q21",
+        "repair_manual_used -> Q14+Q21+Q22",
+        "repair_strategy_revision -> Q14+Q21+Q23",
+        "repair_completed -> Q06+Q14+Q21"
+      ],
+      "current_variable_reuse": [
+        "game_difficulty_persistence spans archive+repair",
+        "failure_adaptation_index/game_persistence_total"
+      ],
+      "upstream_dependencies": [
+        "practice carryover from Archive if visited first (edge Q13->Q14)"
+      ],
+      "entry_state_requirements": "Standardised always-fails-first sequence (compliant)",
+      "opportunity_gating": "Repair never started = no-opportunity",
+      "carryover_controls": [
+        "order export",
+        "ownership split from Q21/Q22/Q23"
+      ],
+      "counterbalance_requirements": "As Q13",
+      "contamination_rules": "Default",
+      "implementation_status": "shared_stream_noncompliant",
+      "minimum_remediation": "Event-schema ownership split of the repair stream",
+      "affected_files": [
+        "src/scenes/RepairScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated: route 4 specs unchanged",
+        "manual: manual-guided-success semantics frozen"
+      ]
+    },
+    {
+      "item_id": "Q15",
+      "construct": "Grit-S Perseverance of Effort (GRIT-07): I finish whatever I begin",
+      "direction": "positive",
+      "evidence_status": "strong",
+      "primary_opportunity": "Return to and completion of the started relay check-in after the beacon interruption (within-item longitudinal, ruling section 3 named example)",
+      "primary_measurement_window": "original task start -> return/completion or non-return at Final Core, one opportunity id",
+      "primary_event_ownership": "CONTESTED at two points - interruption_received (Q15/Q17); return act co-fires return_to_unfinished_task (Q15) + returned_to_original_task (Q17) (SA-9); task_completed_after_interruption ignore-branch semantics (SA-10)",
+      "primary_variable_ownership": "candidate started_task_completion_rate (missing); consistency_return_to_task_count reads legacy names",
+      "shared_context_events": [
+        "corridor geometry",
+        "beacon presence",
+        "antenna task surface (competing task)"
+      ],
+      "prohibited_inputs": [
+        "Q17 switch-pattern acts",
+        "Q19 abandonment closure",
+        "switching itself as negative evidence"
+      ],
+      "current_event_reuse": [
+        "interruption_received -> Q15+Q17",
+        "SA-9 co-fire pair over one physical act"
+      ],
+      "current_variable_reuse": [
+        "consistency_interruption_count mixes adaptive and maladaptive corridor events (legacy)"
+      ],
+      "upstream_dependencies": [
+        "opportunity exists only when Q10 relay duty accepted (edge Q10->Q15)"
+      ],
+      "entry_state_requirements": "Beacon timing/wording standardised; original_task_id null = no-opportunity (compliant coding exists)",
+      "opportunity_gating": "Gated on Q10 acceptance - carryover exposure requiring remedy or contamination coding",
+      "carryover_controls": [
+        "SA-9 single-owner assignment of the return act",
+        "de-gating remedy or dependency coding"
+      ],
+      "counterbalance_requirements": "Beacon option positions counterbalanced or documented-fixed",
+      "contamination_rules": "Default",
+      "implementation_status": "opportunity_gated_noncompliant",
+      "minimum_remediation": "SA-9/SA-10 rulings + corridor de-gating ruling",
+      "affected_files": [
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/EngineerScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated: route 8 specs unchanged; co-fire pair untouched until SA-9",
+        "manual: one moment never two observations"
+      ]
+    },
+    {
+      "item_id": "Q16",
+      "construct": "Grit-S Perseverance of Effort (GRIT-08): I am diligent",
+      "direction": "positive",
+      "evidence_status": "strong_moderate",
+      "primary_opportunity": "REQUIRED-INDEPENDENT: a Q16-specific multi-step execution-accuracy window (currently borrows the Q07-owned side-repair arc and Q01/Q02-owned inventory verification)",
+      "primary_measurement_window": "pending ownership ruling (candidate: own task instance acceptance -> verified completion)",
+      "primary_event_ownership": "NONE COMPLIANT - side_repair_* multi-tagged (Q07/Q16/Q20/Q32); inventory verification acts owned by Q02/Q30 questions",
+      "primary_variable_ownership": "candidate diligence_step_accuracy / verified_completion_rate (missing)",
+      "shared_context_events": [
+        "side repair bay shell",
+        "inventory room shell"
+      ],
+      "prohibited_inputs": [
+        "Q07 follow-through acts",
+        "Q01 checklist acts",
+        "Q02 verification-skip acts"
+      ],
+      "current_event_reuse": [
+        "side_repair_accepted -> Q07+Q16+Q20",
+        "side_repair_step_completed -> Q07+Q16",
+        "side_repair_completed -> Q07+Q16+Q32"
+      ],
+      "current_variable_reuse": [],
+      "upstream_dependencies": ["side-repair arc shared with Q07/Q20"],
+      "entry_state_requirements": "Identical steps/verification per session for whichever instance is ruled",
+      "opportunity_gating": "Task never accepted = no-opportunity",
+      "carryover_controls": [
+        "own instance/state container per ruling section 6, or explicit ownership split of the arc"
+      ],
+      "counterbalance_requirements": "Step-option positions counterbalanced or documented-fixed",
+      "contamination_rules": "Default",
+      "implementation_status": "shared_stream_noncompliant",
+      "minimum_remediation": "Event-schema ruling: Q16-exclusive execution-accuracy family (own instance or ruled arc split)",
+      "affected_files": [
+        "src/scenes/SideRepairScene.ts",
+        "src/scenes/InventoryScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated: routes 1/5 unchanged",
+        "manual: no double count with Q07"
+      ]
+    },
+    {
+      "item_id": "Q17",
+      "construct": "Grit-S Consistency of Interest (GRIT-01): new projects distract me (exploratory)",
+      "direction": "reverse",
+      "evidence_status": "moderate_exploratory",
+      "primary_opportunity": "Attractive non-mandatory competing objective while a task is unfinished; switch-without-return pattern",
+      "primary_measurement_window": "competing-task offer -> switch/return/non-return closure",
+      "primary_event_ownership": "CONTESTED - interruption_received (Q15/Q17); switched_task (Q17); returned_to_original_task (Q17, SA-9 co-fire with Q15's return act); competing_task_viewed registered-unemitted (D6)",
+      "primary_variable_ownership": "candidate switch_without_return_count (missing; exploratory label SA-7)",
+      "shared_context_events": ["corridor geometry", "beacon"],
+      "prohibited_inputs": [
+        "Q15 return/completion acts",
+        "Q19 abandonment closure",
+        "switching alone as negative"
+      ],
+      "current_event_reuse": [
+        "interruption_received -> Q15+Q17",
+        "SA-9 co-fire"
+      ],
+      "current_variable_reuse": ["consistency_interruption_count (legacy mix)"],
+      "upstream_dependencies": ["corridor gated on Q10 duty (edge Q10->Q17)"],
+      "entry_state_requirements": "Competing-task attractiveness/framing standardised (balanced framing metadata frozen)",
+      "opportunity_gating": "As Q15 (gating exposure)",
+      "carryover_controls": [
+        "SA-9/D6 single-owner assignments",
+        "de-gating remedy or coding"
+      ],
+      "counterbalance_requirements": "Offer option positions counterbalanced; second instance (if ever) order-counterbalanced",
+      "contamination_rules": "Default; discriminant/exploratory only",
+      "implementation_status": "opportunity_gated_noncompliant",
+      "minimum_remediation": "SA-9 + D6 rulings + corridor de-gating ruling",
+      "affected_files": [
+        "src/scenes/InterruptionScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated: route 8 unchanged",
+        "manual: balanced framing invariant"
+      ]
+    },
+    {
+      "item_id": "Q18",
+      "construct": "Grit-S Consistency of Interest (GRIT-06): focus over months (questionnaire-primary)",
+      "direction": "reverse",
+      "evidence_status": "weak_questionnaire_primary",
+      "primary_opportunity": "NONE PERMITTED AS PRIMARY TODAY - questionnaire-primary; optional background-calibration arc (unbuilt, own event-schema decision) would be the weak-proxy opportunity",
+      "primary_measurement_window": "if built: assignment -> stage continuity -> Final Core status, one Q18 opportunity id (ruling section 3 background-continuity example)",
+      "primary_event_ownership": "none - live objective_active / final_unresolved_due_to_nonreturn are corridor/final-core machinery shadows (secondary only under ruling section 1)",
+      "primary_variable_ownership": "none authorised; weak-proxy label mandatory (SA-7)",
+      "shared_context_events": ["corridor/final-core machinery emissions"],
+      "prohibited_inputs": [
+        "any other item's primary events",
+        "any long-term-focus claim"
+      ],
+      "current_event_reuse": [],
+      "current_variable_reuse": [],
+      "upstream_dependencies": [
+        "arc unbuilt; stage unlocks must never depend on other items' outcomes"
+      ],
+      "entry_state_requirements": "If built: stage unlocks by standardised progress conditions, never waiting, never other-item outcomes",
+      "opportunity_gating": "No module = no opportunity (correctly coded as absent)",
+      "carryover_controls": [
+        "stages share one Q18 opportunity id and serve no other item's primary"
+      ],
+      "counterbalance_requirements": "n/a until built; then fixed-order rationale documented + exported",
+      "contamination_rules": "Default",
+      "implementation_status": "questionnaire_primary_no_module",
+      "minimum_remediation": "None required (questionnaire-primary); optional arc needs its own event-schema ruling",
+      "affected_files": [
+        "src/scenes/EngineerScene.ts",
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/FinalCoreScene.ts"
+      ],
+      "proposed_tests": [
+        "automated (if built): unlock-by-progress-only; non-blocking Final Core flag",
+        "manual: route 17 (planned)"
+      ]
+    },
+    {
+      "item_id": "Q19",
+      "construct": "Grit-S Consistency of Interest (GRIT-05): set a goal, later pursue a different one (exploratory)",
+      "direction": "reverse",
+      "evidence_status": "moderate_exploratory",
+      "primary_opportunity": "Credible new option after an accepted original goal; abandonment/non-return scored, never switching",
+      "primary_measurement_window": "new-goal offer -> both opportunities closed (Final-Core-bound closure)",
+      "primary_event_ownership": "Q19-exclusive (new_goal_offered, goal_switch_accepted, prior_goal_completed, prior_goal_abandoned)",
+      "primary_variable_ownership": "candidate goal_switch_without_return_count (missing; exploratory)",
+      "shared_context_events": ["corridor geometry", "beacon"],
+      "prohibited_inputs": [
+        "Q15 return acts",
+        "Q17 switch pattern",
+        "switching alone"
+      ],
+      "current_event_reuse": [],
+      "current_variable_reuse": [],
+      "upstream_dependencies": [
+        "corridor gated on Q10 duty (edge Q10->Q19)",
+        "closure requires reaching Final Core (censoring)"
+      ],
+      "entry_state_requirements": "Offer framing/urgency balance standardised (frozen)",
+      "opportunity_gating": "Gating exposure as Q15/Q17; skipped Final Core = censored observation",
+      "carryover_controls": [
+        "censoring coded as missing, never negative",
+        "single-owner separation from Q15/Q17 (SA-9/D6 adjacencies)"
+      ],
+      "counterbalance_requirements": "Offer option positions counterbalanced or documented-fixed",
+      "contamination_rules": "Default",
+      "implementation_status": "opportunity_gated_noncompliant",
+      "minimum_remediation": "Corridor de-gating ruling + censoring-coding rule (section 8.2 family)",
+      "affected_files": [
+        "src/scenes/InterruptionScene.ts",
+        "src/scenes/FinalCoreScene.ts"
+      ],
+      "proposed_tests": [
+        "automated: route 8 unchanged; no-opportunity session can never emit abandonment",
+        "manual: balanced framing"
+      ]
+    },
+    {
+      "item_id": "Q20",
+      "construct": "Grit-S Consistency of Interest (GRIT-03): initial obsession, later loss of interest (questionnaire-primary)",
+      "direction": "reverse",
+      "evidence_status": "very_weak_questionnaire_primary",
+      "primary_opportunity": "NONE PERMITTED AS PRIMARY - questionnaire-primary, no bespoke score (approved); optional anomaly arc (unbuilt) would be a Q20-specific supplementary instance",
+      "primary_measurement_window": "if built: discovery -> staged continuation/abandonment under one Q20 opportunity id",
+      "primary_event_ownership": "none compliant - current acts ride the Q07-owned arc (side_repair_accepted Q07/Q16/Q20; side_repair_first_step and side_repair_abandoned_after_start singly Q20-tagged but inside Q07's window)",
+      "primary_variable_ownership": "none authorised (no Q20 score - approved decision)",
+      "shared_context_events": ["side repair bay shell", "Utility Bot"],
+      "prohibited_inputs": ["Q07 follow-through acts", "any bespoke Q20 score"],
+      "current_event_reuse": ["side_repair_accepted -> Q07+Q16+Q20"],
+      "current_variable_reuse": [],
+      "upstream_dependencies": ["single arc shared with Q07/Q16"],
+      "entry_state_requirements": "If built: stages of stable stated utility; no gating by other items' outcomes",
+      "opportunity_gating": "Arc never started = no-opportunity",
+      "carryover_controls": [
+        "own instance/state container if the anomaly arc is ever ruled (ruling section 6)",
+        "prior failure/affect exposure recorded"
+      ],
+      "counterbalance_requirements": "n/a until built",
+      "contamination_rules": "Default; stopping with rational cause never start-without-sustain",
+      "implementation_status": "questionnaire_primary_no_module",
+      "minimum_remediation": "None required; anomaly arc needs its own event-schema ruling (lowest priority)",
+      "affected_files": ["src/scenes/SideRepairScene.ts"],
+      "proposed_tests": [
+        "automated (if built): stage availability + utility statements",
+        "manual: route 17 (planned)"
+      ]
+    },
+    {
+      "item_id": "Q21",
+      "construct": "Persistence Despite Difficulty (PDD-01): keep going when the going gets tough",
+      "direction": "positive",
+      "evidence_status": "strong",
+      "primary_opportunity": "Systems Repair standardised setback -> support -> adaptive continuation",
+      "primary_measurement_window": "first repair failure -> completion or validated abandonment",
+      "primary_event_ownership": "CONTESTED - shares the full repair stream with Q14/Q22/Q23 (see Q14); Q21 primary = post-failure continuation acts",
+      "primary_variable_ownership": "candidate failure_recovery_score (missing); game_difficulty_persistence is construct-level, not item-level",
+      "shared_context_events": ["repair panel shell", "manual station"],
+      "prohibited_inputs": [
+        "raw retries",
+        "Q14 effort-breadth acts",
+        "Q23 retry-quality acts"
+      ],
+      "current_event_reuse": [
+        "repair_failed -> Q14+Q21",
+        "repair_manual_used -> Q14+Q21+Q22",
+        "repair_strategy_revision -> Q14+Q21+Q23",
+        "repair_completed -> Q06+Q14+Q21"
+      ],
+      "current_variable_reuse": [
+        "game_difficulty_persistence",
+        "failure_adaptation_index",
+        "game_persistence_total"
+      ],
+      "upstream_dependencies": [
+        "practice/feedback carryover from Archive (edge Q13->Q21)"
+      ],
+      "entry_state_requirements": "Standardised scripted difficulty (compliant)",
+      "opportunity_gating": "No failure encountered = no-opportunity",
+      "carryover_controls": [
+        "order export",
+        "neutral transition between failure modules where practical",
+        "ownership split"
+      ],
+      "counterbalance_requirements": "As Q13/Q14",
+      "contamination_rules": "Default",
+      "implementation_status": "shared_stream_noncompliant",
+      "minimum_remediation": "Event-schema ownership split of the repair stream",
+      "affected_files": [
+        "src/scenes/RepairScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated: route 4 unchanged",
+        "manual: difficulty standardisation frozen"
+      ]
+    },
+    {
+      "item_id": "Q22",
+      "construct": "Persistence Despite Difficulty (PDD-03): works through difficult information",
+      "direction": "positive",
+      "evidence_status": "strong",
+      "primary_opportunity": "Support consulted AND applied (next action reflects the information) - needs its own declared window across support episodes",
+      "primary_measurement_window": "support availability -> next meaningful task action (per episode)",
+      "primary_event_ownership": "CONTESTED - archive_feedback_used (Q13/Q22), repair_manual_used (Q14/Q21/Q22), manual_page_reviewed (Q22 only); application acts pending exclusive assignment",
+      "primary_variable_ownership": "candidate manual_or_feedback_used applied-information flag (current boolean exists; strategy_revision_count is defective - includes hazard_info_checked)",
+      "shared_context_events": ["archive terminal", "manual station"],
+      "prohibited_inputs": [
+        "hazard_info_checked (Q12 prudence)",
+        "Q13/Q21 continuation acts"
+      ],
+      "current_event_reuse": [
+        "archive_feedback_used -> Q13+Q22",
+        "repair_manual_used -> Q14+Q21+Q22"
+      ],
+      "current_variable_reuse": [
+        "strategy_revision_count mixes prudence into the family (D2 defect)"
+      ],
+      "upstream_dependencies": [
+        "support episodes exist only inside Q13/Q14-owned failure windows (shared context permitted; events not)"
+      ],
+      "entry_state_requirements": "Support content identical across sessions (frozen text)",
+      "opportunity_gating": "Support never available = no-opportunity",
+      "carryover_controls": ["ownership split; reading-control covariates"],
+      "counterbalance_requirements": "As host modules",
+      "contamination_rules": "Default; open-without-apply never counted",
+      "implementation_status": "shared_stream_noncompliant",
+      "minimum_remediation": "Event-schema ownership split + D2 removal of hazard term",
+      "affected_files": [
+        "src/scenes/ArchiveScene.ts",
+        "src/scenes/RepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "proposed_tests": [
+        "automated: guided-only revision semantics unchanged",
+        "manual: routes 4 + archive unchanged"
+      ]
+    },
+    {
+      "item_id": "Q23",
+      "construct": "Persistence Despite Difficulty (PDD-05): keep trying when hard (adaptive retries)",
+      "direction": "positive",
+      "evidence_status": "strong",
+      "primary_opportunity": "Adaptive-retry quality distinguished from identical repetition across failure episodes",
+      "primary_measurement_window": "per failure episode: failed attempt -> next attempt classification",
+      "primary_event_ownership": "CONTESTED - repair_strategy_revision (Q14/Q21/Q23); archive_strategy_revision registered Q13/Q22/Q26 (catalogued divergence vs Q23 listing)",
+      "primary_variable_ownership": "candidate adaptive_retry_count (missing); blind_retry_count exact but polluted (hazard term)",
+      "shared_context_events": [
+        "archive/repair failure windows (context only)"
+      ],
+      "prohibited_inputs": [
+        "Q26 identical-repetition acts (contrast class, Q26-owned)",
+        "hazard_reckless_continue"
+      ],
+      "current_event_reuse": [
+        "repair_strategy_revision -> Q14+Q21+Q23",
+        "archive_strategy_revision divergence"
+      ],
+      "current_variable_reuse": [
+        "blind_retry_count folds hazard_reckless_continue (D2/SA-1)"
+      ],
+      "upstream_dependencies": [
+        "practice carryover across modules (edge Q13->Q23)"
+      ],
+      "entry_state_requirements": "Standardised failures (compliant)",
+      "opportunity_gating": "No failure episode = no-opportunity",
+      "carryover_controls": [
+        "ownership split; registration divergence resolution",
+        "immediately-previous-only comparison semantics preserved"
+      ],
+      "counterbalance_requirements": "As host modules",
+      "contamination_rules": "Default",
+      "implementation_status": "shared_stream_noncompliant",
+      "minimum_remediation": "Event-schema assignment of revision acts + divergence fix + D2 hazard-term removal",
+      "affected_files": [
+        "src/scenes/ArchiveScene.ts",
+        "src/scenes/RepairScene.ts",
+        "src/world/CanonicalEventContext.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "proposed_tests": [
+        "automated: retry-classification specs unchanged",
+        "manual: adaptive vs identical distinction intact"
+      ]
+    },
+    {
+      "item_id": "Q24",
+      "construct": "Persistence Despite Difficulty (PDD-04): setbacks do not discourage me",
+      "direction": "positive",
+      "evidence_status": "strong",
+      "primary_opportunity": "Independent post-setback re-engagement in Systems Repair (replicates Q13's Archive episode at construct level, never double-counted)",
+      "primary_measurement_window": "repair setback -> re-engagement -> completion",
+      "primary_event_ownership": "CONTESTED - repair_abandoned (Q24); archive_abandoned (Q24); archive/repair_returned_after_failure (Q24/Q25 dual-tag); construct_id unset (D4)",
+      "primary_variable_ownership": "candidate post_setback_completion_score (missing)",
+      "shared_context_events": ["repair/archive room shells"],
+      "prohibited_inputs": [
+        "Q13 archive primary acts",
+        "Q25 leave-return pattern acts (pending split)"
+      ],
+      "current_event_reuse": [
+        "archive_returned_after_failure -> Q24+Q25",
+        "repair_returned_after_failure -> Q24+Q25"
+      ],
+      "current_variable_reuse": [],
+      "upstream_dependencies": ["practice carryover (edge Q13->Q24)"],
+      "entry_state_requirements": "Standardised setback (compliant)",
+      "opportunity_gating": "No setback = no-opportunity",
+      "carryover_controls": [
+        "Q24/Q25 return-act single-owner assignment (with D4)",
+        "Q13/Q24 redundancy handled as discriminant analysis (ruling section 10), never double counting"
+      ],
+      "counterbalance_requirements": "As host modules",
+      "contamination_rules": "Default",
+      "implementation_status": "shared_stream_noncompliant",
+      "minimum_remediation": "D4 + return-act ownership ruling",
+      "affected_files": [
+        "src/scenes/RepairScene.ts",
+        "src/scenes/ArchiveScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated: abandonment fires on exit-after-failure-incomplete only",
+        "manual: unchanged"
+      ]
+    },
+    {
+      "item_id": "Q25",
+      "construct": "Persistence Despite Difficulty (PDD-02): can stick at a difficult task",
+      "direction": "positive",
+      "evidence_status": "moderate",
+      "primary_opportunity": "Leave-then-return vs unresolved non-return after explicit difficulty (strategic pause allowed)",
+      "primary_measurement_window": "difficulty onset -> Final Core closure, one opportunity id (within-item longitudinal)",
+      "primary_event_ownership": "CONTESTED - archive/repair_returned_after_failure dual-tagged Q24/Q25",
+      "primary_variable_ownership": "candidate reengagement_after_failure (missing); abandonment_count mis-wired to legacy hazard_avoidance (D2 defect - no Q25 inference may use it)",
+      "shared_context_events": ["room shells", "Final Core flag display"],
+      "prohibited_inputs": [
+        "hazard_avoidance",
+        "Q24 re-engagement-completion acts (pending split)"
+      ],
+      "current_event_reuse": ["*_returned_after_failure -> Q24+Q25"],
+      "current_variable_reuse": [
+        "abandonment_count reads hazard_avoidance only (mis-wire)"
+      ],
+      "upstream_dependencies": [
+        "end-state component requires reaching Final Core (censoring)"
+      ],
+      "entry_state_requirements": "Standardised difficulty episodes (compliant)",
+      "opportunity_gating": "No difficulty episode = no-opportunity; unreached Final Core = censored",
+      "carryover_controls": [
+        "return-act ownership split (Q24/Q25)",
+        "censoring coding"
+      ],
+      "counterbalance_requirements": "As host modules",
+      "contamination_rules": "Default; exploration-leave never abandonment without unresolved non-return",
+      "implementation_status": "shared_stream_noncompliant",
+      "minimum_remediation": "Return-act ownership ruling + D2 abandonment_count fix",
+      "affected_files": [
+        "src/scenes/ArchiveScene.ts",
+        "src/scenes/RepairScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "proposed_tests": [
+        "automated: return/no-return specs unchanged",
+        "manual: unchanged"
+      ]
+    },
+    {
+      "item_id": "Q26",
+      "construct": "Inappropriate Persistence (IP-02): repeats the same thing (identical repetition)",
+      "direction": "positive_maladaptive",
+      "evidence_status": "strong",
+      "primary_opportunity": "Identical failed action repeated after explicit feedback (debounced), in Archive/Repair failure windows",
+      "primary_measurement_window": "post-feedback failed-action state -> repetition acts (per episode)",
+      "primary_event_ownership": "COMPLIANT AT EVENT LEVEL - archive_same_wrong_code_repeated (Q26), repair_same_sequence_repeated (Q26); archive_strategy_revision carries a catalogued Q26 tag (divergence to resolve)",
+      "primary_variable_ownership": "blind_retry_count (exact) but polluted by hazard_reckless_continue (Q12/Q27/Q31) - variable-level contamination",
+      "shared_context_events": ["failure windows (context only)"],
+      "prohibited_inputs": [
+        "hazard_reckless_continue",
+        "adaptive-persistence events (absolute valence separation)"
+      ],
+      "current_event_reuse": [
+        "archive_strategy_revision carries Q26 tag (divergence)"
+      ],
+      "current_variable_reuse": [
+        "blind_retry_count/game_inappropriate_persistence fold hazard_reckless_continue"
+      ],
+      "upstream_dependencies": [
+        "repetition opportunity exists only inside Q13/Q14 failure windows (shared context permitted)"
+      ],
+      "entry_state_requirements": "Standardised failures (compliant); debounce rules = open section-8.2 principle",
+      "opportunity_gating": "No failed-action state = no-opportunity",
+      "carryover_controls": ["D2/SA-1 variable cleanup", "window coding"],
+      "counterbalance_requirements": "As host modules",
+      "contamination_rules": "Default; input bounce excluded by debounce",
+      "implementation_status": "partially_compliant",
+      "minimum_remediation": "D2 variable cleanup + registration-divergence fix + debounce ruling",
+      "affected_files": [
+        "src/systems/ScoringManager.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated: repetition specs unchanged",
+        "manual: unchanged"
+      ]
+    },
+    {
+      "item_id": "Q27",
+      "construct": "Inappropriate Persistence (IP-01): continuing when there is no point",
+      "direction": "positive_maladaptive",
+      "evidence_status": "moderate_strong",
+      "primary_opportunity": "ABSENT - continuation after an explicit utility-stop signal (approved analogue); module unbuilt (SA-2, re-scoped under global ruling; recently discussed design = PENDING REVISED RULING, not approved)",
+      "primary_measurement_window": "if ruled/built: utility-stop signal shown -> stop/continue cycles while free to leave",
+      "primary_event_ownership": "none - candidate family (utility_stop_signal, unnecessary_cycle_started/_completed, task_stopped_appropriately) all CANDIDATES; live hazard tags (hazard_info_checked Q12/Q27, hazard_reckless_continue Q12/Q27/Q31) are superseded rationale (SA-1)",
+      "primary_variable_ownership": "candidate excess_continuation_count (nothing wired)",
+      "shared_context_events": ["side repair bay shell (candidate host)"],
+      "prohibited_inputs": [
+        "hazard events (Hazard stays prudence)",
+        "curiosity-driven continuation (signal must state no new information)"
+      ],
+      "current_event_reuse": [
+        "hazard_info_checked -> Q12+Q27 (contested)",
+        "hazard_reckless_continue -> Q12+Q27+Q31 (contested)"
+      ],
+      "current_variable_reuse": [
+        "game_inappropriate_persistence includes hazard_reckless_continue (carries the contested Q27 rationale)"
+      ],
+      "upstream_dependencies": [
+        "SA-1 + SA-2 rulings (re-scoped); candidate host = post-run_check side-repair stage (own instance/state container required)"
+      ],
+      "entry_state_requirements": "Stop signal shown identically to every session after a fixed number of useful cycles; free-leave state verified",
+      "opportunity_gating": "Signal never shown = no-opportunity",
+      "carryover_controls": [
+        "own instance/state container (ruling section 6)",
+        "neutral transition from adjacent persistence modules (ruling section 8)"
+      ],
+      "counterbalance_requirements": "Stop/continue option positions counterbalanced or documented-fixed",
+      "contamination_rules": "Default; immediate stopping valid, never penalised",
+      "implementation_status": "absent_blocked",
+      "minimum_remediation": "SA-1 + SA-2 revised rulings under the global authority, then the module in its own approved pass",
+      "affected_files": [
+        "src/scenes/SideRepairScene.ts",
+        "src/scenes/HazardScene.ts",
+        "src/world/CanonicalEventContext.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "proposed_tests": [
+        "automated (post-ruling): signal-once, cycle debounce, no penalty wording",
+        "manual: route 13 (planned)"
+      ]
+    },
+    {
+      "item_id": "Q28",
+      "construct": "Inappropriate Persistence (IP-03): keep trying knowing actions are worthless",
+      "direction": "positive_maladaptive",
+      "evidence_status": "strong",
+      "primary_opportunity": "Forcing a blocked action after an explicit blocker statement with an available valid alternative (Final Core)",
+      "primary_measurement_window": "blocker understood -> force/resolve/stop acts",
+      "primary_event_ownership": "Q28-exclusive (final_core_blocker_shown, final_core_force_continue; issue_resolution_attempted construct-unset by design)",
+      "primary_variable_ownership": "candidate force_continue_count (missing; 4th composite term = D2)",
+      "shared_context_events": ["core interface shell"],
+      "prohibited_inputs": [
+        "Q11 review/finalisation acts",
+        "generic failure without evidenced blocker comprehension"
+      ],
+      "current_event_reuse": [],
+      "current_variable_reuse": [],
+      "upstream_dependencies": [
+        "blocker existence depends on earlier item outcomes (issue set) - shared exposure with Q11"
+      ],
+      "entry_state_requirements": "NONCOMPLIANT TODAY: standardised baseline blocker per session, or explicit no-opportunity coding for clean sessions (never low inappropriate persistence)",
+      "opportunity_gating": "No outstanding issues = no-opportunity for the force choice",
+      "carryover_controls": [
+        "standardised baseline issue remedy (with Q11)",
+        "fatigue/session-position export"
+      ],
+      "counterbalance_requirements": "Option positions counterbalanced or documented-fixed; late-route position documented",
+      "contamination_rules": "Default; comprehension-evidence rule enforced before scoring",
+      "implementation_status": "entry_state_noncompliant",
+      "minimum_remediation": "Standardised-baseline-issue ruling (shared with Q11) + D2 composite term",
+      "affected_files": [
+        "src/scenes/FinalCoreScene.ts",
+        "src/systems/ScoringManager.ts"
+      ],
+      "proposed_tests": [
+        "automated: force option conditional appearance frozen (until ruled)",
+        "manual: route 9 unchanged"
+      ]
+    },
+    {
+      "item_id": "Q29",
+      "construct": "Goal-Time Preference (GTP-01): prefers long-term goals (exploratory; shared dimension with Q31)",
+      "direction": "long_term_pole",
+      "evidence_status": "moderate_exploratory",
+      "primary_opportunity": "ABSENT - balanced immediate-vs-distributed goal-horizon choice (authorised shared-construct exception with Q31); module unbuilt (SA-3, re-scoped; recently discussed design = PENDING REVISED RULING)",
+      "primary_measurement_window": "if ruled/built: two counterbalanced choice instances, each committed before the corridor interruption",
+      "primary_event_ownership": "none - candidate horizon-choice family; live tags (stabiliser_option_offered/accepted, final_core_stability_bonus -> Q29) are superseded rationale telemetry",
+      "primary_variable_ownership": "ONE SHARED construct-level goal_horizon_preference for Q29+Q31 (candidate) - never an independent Q29 score",
+      "shared_context_events": ["hub/planning terminal shell (candidate host)"],
+      "prohibited_inputs": [
+        "side-repair stabiliser events",
+        "hazard events",
+        "any second variable splitting the dimension"
+      ],
+      "current_event_reuse": [],
+      "current_variable_reuse": [],
+      "upstream_dependencies": [
+        "SA-3 ruling; placement before corridor; matched-option copy audit",
+        "TODAY: the superseded Q29 telemetry is physically entangled with the side-repair state machine - stabiliser_option_offered co-fires with the arc offer and stabiliser_accepted with the arc accept (same physical acts as side_repair_accepted), and final_core_stability_bonus is emitted at Final Core off the side-repair outcome; SA-3 must be ruled with this five-item (Q07/Q16/Q20/Q29/Q32) co-location in view"
+      ],
+      "entry_state_requirements": "Matched options (effort/value/difficulty/risk/attractiveness/social approval); no time labels; identical across sessions modulo counterbalance",
+      "opportunity_gating": "Choice never presented = no-opportunity",
+      "carryover_controls": [
+        "initial choice logged before interruption",
+        "completion/follow-through kept separate from preference",
+        "no reuse by Q32/Q33 (ruling section 2)"
+      ],
+      "counterbalance_requirements": "Option position + instance order counterbalanced across sessions; condition exported",
+      "contamination_rules": "Default",
+      "implementation_status": "absent_blocked",
+      "minimum_remediation": "SA-3 revised ruling under the global authority, then the module in its own approved pass",
+      "affected_files": [
+        "src/scenes/HubScene.ts",
+        "src/scenes/EngineerScene.ts",
+        "src/scenes/SideRepairScene.ts",
+        "src/scenes/FinalCoreScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated (post-ruling): choice-before-corridor assertion; single shared variable; both counterbalance orders",
+        "manual: route 14 (planned)"
+      ]
+    },
+    {
+      "item_id": "Q30",
+      "construct": "Goal-Time Preference (GTP-03): usually works towards small goals (goal granularity, exploratory)",
+      "direction": "small_goal_pole",
+      "evidence_status": "moderate_exploratory",
+      "primary_opportunity": "ABSENT - repeated balanced small-orders vs integrated-order structure choice (>=2 instances); module unbuilt (SA-4, re-scoped; recently discussed design = PENDING REVISED RULING)",
+      "primary_measurement_window": "if ruled/built: each structure-choice instance, choice recorded before outcome feedback",
+      "primary_event_ownership": "none - candidate granularity family; live tags (inventory_verification_skipped Q02/Q30, inventory_verified_complete Q30) are the PROHIBITED skipped-preparation inference",
+      "primary_variable_ownership": "candidate goal_granularity_preference (Q30-exclusive; no sharing with Q33)",
+      "shared_context_events": ["quartermaster console shell (candidate host)"],
+      "prohibited_inputs": [
+        "carelessness/skipped-preparation events",
+        "hazard events",
+        "required short tasks"
+      ],
+      "current_event_reuse": [
+        "inventory_verification_skipped -> Q02+Q30 (prohibited inference)"
+      ],
+      "current_variable_reuse": [],
+      "upstream_dependencies": [
+        "SA-4 ruling; second instance surface at a non-inventory station"
+      ],
+      "entry_state_requirements": "Matched total effort/benefit/difficulty; same work restructured, never changed in amount; independent of earlier item outcomes",
+      "opportunity_gating": "<2 valid instances = insufficient-opportunity (no pattern derived)",
+      "carryover_controls": [
+        "own state containers per instance (ruling section 6)",
+        "instance order counterbalanced"
+      ],
+      "counterbalance_requirements": "Option position + instance order counterbalanced; condition exported",
+      "contamination_rules": "Default",
+      "implementation_status": "absent_blocked",
+      "minimum_remediation": "SA-4 revised ruling under the global authority, then the module in its own approved pass",
+      "affected_files": [
+        "src/scenes/InventoryScene.ts",
+        "src/scenes/HubScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": [
+        "automated (post-ruling): >=2 instances; balance audit; no carelessness inference anywhere",
+        "manual: route 15 (planned)"
+      ]
+    },
+    {
+      "item_id": "Q31",
+      "construct": "Goal-Time Preference (GTP-04): prefers short-term goals (exploratory; shared dimension with Q29)",
+      "direction": "short_term_pole",
+      "evidence_status": "moderate_exploratory",
+      "primary_opportunity": "SAME shared goal-horizon module as Q29 (the one authorised shared-construct exception)",
+      "primary_measurement_window": "as Q29",
+      "primary_event_ownership": "none - as Q29; live tags (hazard_informed_continue Q31, hazard_reckless_continue Q12/Q27/Q31) are superseded rationale (Hazard is prudence; SA-3/SA-1 scope)",
+      "primary_variable_ownership": "the SAME single shared goal_horizon_preference as Q29 - never an independent Q31 score, never two observations from one choice",
+      "shared_context_events": ["as Q29"],
+      "prohibited_inputs": [
+        "hazard events",
+        "risk/recklessness inference",
+        "independent Q31 variable"
+      ],
+      "current_event_reuse": [
+        "hazard_reckless_continue -> Q12+Q27+Q31 (contested)"
+      ],
+      "current_variable_reuse": [
+        "game_uncertainty_persistence reads hazard_informed_continue (Q31-tagged) - cross-construct fold"
+      ],
+      "upstream_dependencies": ["SA-3 ruling (shared with Q29)"],
+      "entry_state_requirements": "as Q29",
+      "opportunity_gating": "as Q29",
+      "carryover_controls": ["as Q29"],
+      "counterbalance_requirements": "as Q29",
+      "contamination_rules": "Default",
+      "implementation_status": "absent_blocked",
+      "minimum_remediation": "SA-3 revised ruling (shared with Q29); SA-1 for the hazard tag",
+      "affected_files": [
+        "src/scenes/HazardScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": ["as Q29"],
+      "shared_construct_exception": "Q29/Q31 one shared goal-horizon indicator (ruling section 2) - the only authorised exception"
+    },
+    {
+      "item_id": "Q32",
+      "construct": "Goal-Time Preference (GTP-02): goals take years to finish (long-term-oriented, NOT reverse-scored; questionnaire-primary)",
+      "direction": "long_term_oriented",
+      "evidence_status": "very_weak_questionnaire_primary",
+      "primary_opportunity": "NONE PERMITTED - questionnaire-primary; no module, no distinct score (approved); reuse of Q29/Q31 horizon events NOT authorised under ruling sections 1-2",
+      "primary_measurement_window": "none",
+      "primary_event_ownership": "none - live weak-proxy tags (side_repair_completed Q07/Q16/Q32; final_bonus_unlocked Q32) remain raw secondary telemetry pending SA-5 (re-scoped; PENDING REVISED RULING)",
+      "primary_variable_ownership": "none authorised (optional_future_benefit_score intentionally unimplemented)",
+      "shared_context_events": ["side repair bay shell"],
+      "prohibited_inputs": [
+        "Q29/Q31 horizon events",
+        "any composite manufacturing a Q32 measure (ruling section 12)",
+        "any Q32-specific surface (absence tests exist)"
+      ],
+      "current_event_reuse": [
+        "side_repair_completed -> Q07+Q16+Q32 (weak-proxy tag)"
+      ],
+      "current_variable_reuse": [],
+      "upstream_dependencies": ["SA-5 revised ruling"],
+      "entry_state_requirements": "n/a",
+      "opportunity_gating": "n/a (no opportunity permitted)",
+      "carryover_controls": ["tags stay secondary; no promotion without SA-5"],
+      "counterbalance_requirements": "n/a",
+      "contamination_rules": "Default (any future derived treatment must code opportunity validity of its inputs)",
+      "implementation_status": "questionnaire_primary_no_module",
+      "minimum_remediation": "SA-5 revised ruling on retaining/trimming the weak-proxy tags; nothing else",
+      "affected_files": ["src/world/CanonicalEventContext.ts"],
+      "proposed_tests": [
+        "automated: absence tests - no Q32-specific surface may appear",
+        "manual: none"
+      ]
+    },
+    {
+      "item_id": "Q33",
+      "construct": "Goal-Time Preference (GTP-05): accomplished goals take only days (short-duration-oriented; questionnaire-primary)",
+      "direction": "short_duration_oriented",
+      "evidence_status": "weak_questionnaire_primary",
+      "primary_opportunity": "NONE PERMITTED - questionnaire-primary; the historical end-session portfolio is NOT currently authorised (would reuse Q29/Q31 events contrary to ruling sections 1-2); SA-6 re-scoped, PENDING REVISED RULING",
+      "primary_measurement_window": "none",
+      "primary_event_ownership": "none - live Final-Core tags (final_core_rushed Q11/Q33, final_core_issue_resolved Q33, final_core_completed Q06/Q33) are the prohibited rushing inference; contested secondary telemetry",
+      "primary_variable_ownership": "none authorised",
+      "shared_context_events": ["core interface shell"],
+      "prohibited_inputs": [
+        "Final Core rushing/quality/unresolved inference (approved prohibition)",
+        "required short tasks",
+        "Q29-Q31 module events (no reuse permission)"
+      ],
+      "current_event_reuse": [
+        "final_core_rushed -> Q11+Q33",
+        "final_core_completed -> Q06+Q33"
+      ],
+      "current_variable_reuse": [],
+      "upstream_dependencies": [
+        "SA-6 revised ruling; any future treatment blocked behind SA-3/SA-4 modules existing AND an explicit reuse/independence ruling"
+      ],
+      "entry_state_requirements": "n/a",
+      "opportunity_gating": "n/a",
+      "carryover_controls": [
+        "fatigue/session-position export required for any future end-session derivation"
+      ],
+      "counterbalance_requirements": "n/a",
+      "contamination_rules": "Default",
+      "implementation_status": "questionnaire_primary_no_module",
+      "minimum_remediation": "SA-6 revised ruling on the contested tags; any Q33 treatment needs its own independence ruling",
+      "affected_files": [
+        "src/scenes/FinalCoreScene.ts",
+        "src/world/CanonicalEventContext.ts"
+      ],
+      "proposed_tests": ["automated: absence tests as Q32", "manual: none"]
+    }
+  ],
+  "cross_item_edges": [
+    {
+      "source_item": "Q10",
+      "target_item": "Q15",
+      "category": "opportunity_gating",
+      "mechanism": "Interruption Corridor opportunity (beacon/original-task pair) exists only when the Q10 relay duty was accepted at Kai (original_task_id null otherwise)",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Q15's primary opportunity availability is determined by the Q10 outcome; self-selection bias in who receives a Q15 opportunity",
+      "required_control": "De-gating remedy (interruption opportunity independent of duty acceptance) or per-session dependency/contamination coding; pending research-owner ruling",
+      "residual_risk": "Even with coding, Q15 estimates conditional on duty acceptance; pilot dependency test required (ruling section 10)"
+    },
+    {
+      "source_item": "Q10",
+      "target_item": "Q17",
+      "category": "opportunity_gating",
+      "mechanism": "Same corridor gating as Q10->Q15",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Q17 switch-pattern opportunity conditional on Q10 acceptance",
+      "required_control": "Same remedy/coding as Q10->Q15",
+      "residual_risk": "Same as Q10->Q15"
+    },
+    {
+      "source_item": "Q10",
+      "target_item": "Q19",
+      "category": "opportunity_gating",
+      "mechanism": "Same corridor gating; Q19 closure additionally Final-Core-bound",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Q19 opportunity conditional on Q10 acceptance; censoring if Final Core unreached",
+      "required_control": "Same remedy/coding + censoring rule",
+      "residual_risk": "Censored observations reduce valid-N"
+    },
+    {
+      "source_item": "Q01",
+      "target_item": "Q03",
+      "category": "opportunity_gating",
+      "mechanism": "Prepared-tool retrieval stage requires inventory prep closed out AND diagnostic probe previously packed AND currently stored (RepairScene.hasPreparedToolOpportunity)",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Named directly by ruling section 11: Q03's only live opportunity depends on prior Inventory behaviour and cannot be the sole independent Q03 primary",
+      "required_control": "Q03-specific standardised opportunity or equivalent independence remedy (SA-12); episode retained as secondary ecological telemetry",
+      "residual_risk": "None once an independent opportunity exists; until then Q03 has no primary"
+    },
+    {
+      "source_item": "Q02",
+      "target_item": "Q03",
+      "category": "resource_inventory",
+      "mechanism": "Misplacement/verification behaviour determines where the probe is stored and whether it qualifies (stored-container test)",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "Q03 retrieval difficulty and validity co-vary with Q02-window behaviour",
+      "required_control": "Covered by the SA-12 independence remedy + opportunity-validity flags",
+      "residual_risk": "Low once remedied"
+    },
+    {
+      "source_item": "Q02",
+      "target_item": "Q11",
+      "category": "state_inheritance",
+      "mechanism": "Unresolved kit omissions create final_core_missing_item_flagged entries in the Final Core issue set",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Q11's reviewable-issue content, option set (force option conditional) and difficulty depend on the Q02 outcome",
+      "required_control": "Standardised baseline issue component every session (pending ruling) + entry-state validity coding",
+      "residual_risk": "Participant-caused issues remain ecologically informative but must stay secondary"
+    },
+    {
+      "source_item": "Q04",
+      "target_item": "Q11",
+      "category": "state_inheritance",
+      "mechanism": "workspace_left_disordered feeds final_core_workspace_issue_flagged into the Final Core issue set",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "As Q02->Q11",
+      "required_control": "As Q02->Q11",
+      "residual_risk": "As Q02->Q11"
+    },
+    {
+      "source_item": "Q10",
+      "target_item": "Q11",
+      "category": "state_inheritance",
+      "mechanism": "accepted_duty_unresolved joins the Final Core issue set",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "As Q02->Q11",
+      "required_control": "As Q02->Q11",
+      "residual_risk": "As Q02->Q11"
+    },
+    {
+      "source_item": "Q15",
+      "target_item": "Q11",
+      "category": "state_inheritance",
+      "mechanism": "Corridor non-return produces unresolved-state flags surfaced at Final Core",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "As Q02->Q11",
+      "required_control": "As Q02->Q11",
+      "residual_risk": "As Q02->Q11"
+    },
+    {
+      "source_item": "Q02",
+      "target_item": "Q28",
+      "category": "opportunity_gating",
+      "mechanism": "Q28's blocker/force opportunity exists only while issues are outstanding; the issue set is built from earlier item outcomes (kit/workspace/duty/non-return)",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "A conscientious earlier session removes the Q28 opportunity entirely; a careless one enlarges it - opportunity availability correlates with the constructs Q28 must discriminate from",
+      "required_control": "Standardised baseline blocker per session, or strict no-opportunity coding (clean session never low inappropriate persistence); pending ruling",
+      "residual_risk": "Pilot must test outcome-to-opportunity correlation (ruling section 10)"
+    },
+    {
+      "source_item": "Q04",
+      "target_item": "Q28",
+      "category": "opportunity_gating",
+      "mechanism": "As Q02->Q28 (workspace flag)",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "As Q02->Q28",
+      "required_control": "As Q02->Q28",
+      "residual_risk": "As Q02->Q28"
+    },
+    {
+      "source_item": "Q10",
+      "target_item": "Q28",
+      "category": "opportunity_gating",
+      "mechanism": "As Q02->Q28 (duty flag)",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "As Q02->Q28",
+      "required_control": "As Q02->Q28",
+      "residual_risk": "As Q02->Q28"
+    },
+    {
+      "source_item": "Q13",
+      "target_item": "Q14",
+      "category": "practice_learning",
+      "mechanism": "Archive failure->feedback->revision episode teaches the support-use/revision pattern before Systems Repair (self-selected room order)",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "Repair-window behaviour partly reflects trained strategy rather than trait expression",
+      "required_control": "Module-order export as a control variable; pilot order-effect test; counterbalance where narrative permits",
+      "residual_risk": "Order self-selection itself may be trait-correlated; model as covariate"
+    },
+    {
+      "source_item": "Q13",
+      "target_item": "Q21",
+      "category": "practice_learning",
+      "mechanism": "As Q13->Q14",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "As Q13->Q14",
+      "required_control": "As Q13->Q14",
+      "residual_risk": "As Q13->Q14"
+    },
+    {
+      "source_item": "Q13",
+      "target_item": "Q23",
+      "category": "practice_learning",
+      "mechanism": "Learned revision strategy alters retry-quality classification odds in later failure episodes",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "Adaptive-retry rates inflate with prior exposure",
+      "required_control": "Prior-exposure recording (ruling section 9) + order export",
+      "residual_risk": "Moderate; pilot practice-effect test"
+    },
+    {
+      "source_item": "Q13",
+      "target_item": "Q24",
+      "category": "feedback_affect",
+      "mechanism": "Experienced Archive failure/recovery changes affective state entering the Repair setback (frustration or mastery)",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "Q24 re-engagement partly reflects induced affect, not trait",
+      "required_control": "Neutral transition between failure modules where practical (ruling section 8); prior-exposure flag; pilot contrast test",
+      "residual_risk": "Cannot be fully removed in a connected world; testlet modelling fallback"
+    },
+    {
+      "source_item": "Q21",
+      "target_item": "Q27",
+      "category": "feedback_affect",
+      "mechanism": "Proposed utility-stop module (candidate host: after side-repair/diagnostic success) would sit adjacent to persistence modules that reward continuation",
+      "current_or_proposed": "proposed",
+      "severity": "medium",
+      "primary_measurement_impact": "Contrast effect: recent rewarded persistence biases continuation at the stop signal",
+      "required_control": "Neutral transition + module-separation (ruling section 8); pilot contrast test before validation",
+      "residual_risk": "Design-stage; to be assessed in SA-2 revised ruling"
+    },
+    {
+      "source_item": "Q09",
+      "target_item": "Q10",
+      "category": "npc_social",
+      "mechanism": "The relay-duty offer is hard-chained (nextStage) to open unconditionally on the very next screen after every report submission, with zero interstitial content - a deterministic adjacency, not merely shared-NPC social momentum (EngineerScene.ts report flow)",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Q10 acceptance is measured immediately inside the Q09 episode's affective/social context; ruling section 8's brief-neutral-transition requirement between closely related modules is not met",
+      "required_control": "Kai wording invariant to report outcome (verified: identical acknowledgement either way); a neutral transition or de-chaining decision routed to the research owner; order fixed and documented; pilot dependency test",
+      "residual_risk": "Deterministic adjacency remains until a transition/de-chaining ruling; monitor in pilot"
+    },
+    {
+      "source_item": "Q09",
+      "target_item": "Q18",
+      "category": "npc_social",
+      "mechanism": "Proposed Q18 background-calibration arc would also be assigned at the Engineer Hub bench (same NPC/room)",
+      "current_or_proposed": "proposed",
+      "severity": "low",
+      "primary_measurement_impact": "Uptake of the background objective could track Kai-interaction history",
+      "required_control": "Assignment surface neutral; wording invariant; recorded exposure",
+      "residual_risk": "Low (Q18 questionnaire-primary)"
+    },
+    {
+      "source_item": "Q01",
+      "target_item": "Q02",
+      "category": "state_inheritance",
+      "mechanism": "One physical prep flow: checklist-guided behaviour (Q01 window) determines how many correctable errors exist entering the Q02 window",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "Q02's error-opportunity volume depends on Q01-window behaviour (a tidy packer has nothing left to leave uncorrected)",
+      "required_control": "Window-boundary coding + opportunity-count export; construct-level interpretation (both organisation) tolerated but recorded; pilot discriminance test",
+      "residual_risk": "Within-construct dependency; acceptable if modelled, never counted twice"
+    },
+    {
+      "source_item": "Q07",
+      "target_item": "Q16",
+      "category": "event_reuse",
+      "mechanism": "side_repair_accepted/step_completed/completed multi-tagged Q07/Q16(/Q20/Q32)",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "One arc cannot supply both Q07 follow-through and Q16 diligence primaries (ruling section 1)",
+      "required_control": "Event-schema ownership ruling: split acts (follow-through vs step-accuracy) or give Q16 its own instance",
+      "residual_risk": "None once split; until then neither primary is compliant"
+    },
+    {
+      "source_item": "Q07",
+      "target_item": "Q20",
+      "category": "event_reuse",
+      "mechanism": "side_repair_accepted carries Q20; Q20's start/abandon acts sit inside Q07's acceptance-to-completion window",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "Q20 evidence is a re-reading of the Q07 arc (permitted only as secondary; Q20 questionnaire-primary)",
+      "required_control": "Keep Q20 secondary; own anomaly-arc instance if ever ruled",
+      "residual_risk": "Low while Q20 stays questionnaire-primary"
+    },
+    {
+      "source_item": "Q07",
+      "target_item": "Q32",
+      "category": "event_reuse",
+      "mechanism": "side_repair_completed carries a Q32 weak-proxy tag; final_bonus_unlocked (Q32) co-fires with it at arc completion",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "Prohibited as any Q32 item measure under ruling sections 1-2; tag stays raw secondary pending SA-5",
+      "required_control": "SA-5 revised ruling",
+      "residual_risk": "None while unscored"
+    },
+    {
+      "source_item": "Q07",
+      "target_item": "Q29",
+      "category": "event_reuse",
+      "mechanism": "The Q29-tagged stabiliser acts are the SAME physical acts as the side-repair arc's: stabiliser_option_offered co-fires with the arc offer and stabiliser_accepted with the arc accept (side_repair_started + stabiliser_accepted + side_repair_accepted fire together, SideRepairScene.ts)",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "The superseded Q29 telemetry is physically entangled with the Q07/Q16/Q20/Q32 state machine - one co-fired moment carries tags for up to five items; none of it can serve any primary while shared",
+      "required_control": "SA-3 revised ruling must address the stabiliser tags with the full five-item co-location in view; until then all stabiliser telemetry stays secondary",
+      "residual_risk": "None once SA-3 rules; under-scoping risk if SA-3 is ruled without this entanglement visible"
+    },
+    {
+      "source_item": "Q16",
+      "target_item": "Q29",
+      "category": "event_reuse",
+      "mechanism": "Same co-fired offer/accept acts as edge Q07->Q29 (Q16 rides the same arc events)",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "As Q07->Q29",
+      "required_control": "As Q07->Q29",
+      "residual_risk": "As Q07->Q29"
+    },
+    {
+      "source_item": "Q20",
+      "target_item": "Q29",
+      "category": "event_reuse",
+      "mechanism": "Same co-fired offer/accept acts as edge Q07->Q29 (Q20 rides the same arc events)",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "As Q07->Q29",
+      "required_control": "As Q07->Q29",
+      "residual_risk": "As Q07->Q29"
+    },
+    {
+      "source_item": "Q29",
+      "target_item": "Q32",
+      "category": "event_reuse",
+      "mechanism": "At arc completion, Q32-tagged side_repair_completed/final_bonus_unlocked fire from the same state machine whose offer/accept acts carry the Q29 stabiliser tags",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "The superseded Q29 and Q32 goal-time telemetry share one physical arc; neither may serve any item measure while shared (and Q32 never may without SA-5)",
+      "required_control": "SA-3 + SA-5 revised rulings over the same evidence set",
+      "residual_risk": "None while unscored"
+    },
+    {
+      "source_item": "Q07",
+      "target_item": "Q29",
+      "category": "state_inheritance",
+      "mechanism": "final_core_stability_bonus (Q29-tagged) is emitted at Final Core iff mission.side_repair_status is completed (FinalCoreScene.ts) - a Q07-outcome determines a Q29-tagged emission",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "Superseded Q29 telemetry is manufactured by the Q07 outcome; structurally identical to the Q02/Q04/Q10->Q11 inheritance edges",
+      "required_control": "SA-3 revised ruling (tag disposition); event stays secondary meanwhile",
+      "residual_risk": "None while unscored"
+    },
+    {
+      "source_item": "Q13",
+      "target_item": "Q22",
+      "category": "event_reuse",
+      "mechanism": "archive_feedback_used tagged Q13+Q22; archive_strategy_revision tagged Q13/Q22/Q26",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Support-use acts cannot feed both Q13 and Q22 primaries",
+      "required_control": "Event-schema ownership split (application acts vs re-engagement acts)",
+      "residual_risk": "None once split"
+    },
+    {
+      "source_item": "Q14",
+      "target_item": "Q22",
+      "category": "event_reuse",
+      "mechanism": "repair_manual_used tagged Q14/Q21/Q22",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "As Q13->Q22",
+      "required_control": "As Q13->Q22",
+      "residual_risk": "As Q13->Q22"
+    },
+    {
+      "source_item": "Q14",
+      "target_item": "Q21",
+      "category": "event_reuse",
+      "mechanism": "repair_failed/manual_used/strategy_revision/completed all tagged to both Q14 and Q21",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "One repair stream cannot supply both effort-breadth (Q14) and post-failure continuation (Q21) primaries",
+      "required_control": "Event-schema ownership split",
+      "residual_risk": "None once split"
+    },
+    {
+      "source_item": "Q14",
+      "target_item": "Q23",
+      "category": "event_reuse",
+      "mechanism": "repair_strategy_revision tagged Q14/Q21/Q23; archive_strategy_revision registration divergence (Q13/Q22/Q26 vs Q23 listing)",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Retry-quality acts not separable from effort/continuation acts",
+      "required_control": "Ownership split + divergence resolution",
+      "residual_risk": "None once split"
+    },
+    {
+      "source_item": "Q24",
+      "target_item": "Q25",
+      "category": "event_reuse",
+      "mechanism": "archive_returned_after_failure and repair_returned_after_failure dual-tagged Q24/Q25",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "One return act would feed two primaries",
+      "required_control": "Single-owner assignment (with D4 construct decision)",
+      "residual_risk": "None once assigned"
+    },
+    {
+      "source_item": "Q06",
+      "target_item": "Q13",
+      "category": "event_reuse",
+      "mechanism": "archive_completed tagged Q06+Q13",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Completion act inside Q13's window cannot also feed a Q06 primary",
+      "required_control": "Q06-exclusive duty-completion family (event-schema ruling)",
+      "residual_risk": "None once split"
+    },
+    {
+      "source_item": "Q06",
+      "target_item": "Q14",
+      "category": "event_reuse",
+      "mechanism": "repair_completed tagged Q06/Q14/Q21",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "As Q06->Q13",
+      "required_control": "As Q06->Q13",
+      "residual_risk": "As Q06->Q13"
+    },
+    {
+      "source_item": "Q06",
+      "target_item": "Q33",
+      "category": "event_reuse",
+      "mechanism": "final_core_completed tagged Q06+Q33",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "Q33 tag is a prohibited rushing/duration inference (SA-6); Q06 use pending its own family",
+      "required_control": "SA-6 revised ruling + Q06 family ruling",
+      "residual_risk": "None while unscored"
+    },
+    {
+      "source_item": "Q11",
+      "target_item": "Q33",
+      "category": "event_reuse",
+      "mechanism": "final_core_rushed tagged Q11+Q33",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "One act, two items; Q33 reading prohibited (SA-6)",
+      "required_control": "SA-6 revised ruling",
+      "residual_risk": "None while unscored"
+    },
+    {
+      "source_item": "Q12",
+      "target_item": "Q27",
+      "category": "event_reuse",
+      "mechanism": "hazard_info_checked (Q12/Q27) and hazard_reckless_continue (Q12/Q27/Q31) - superseded Q27 rationale",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Prudence acts cannot serve an inappropriate-persistence primary; approved analogue is the utility-stop module",
+      "required_control": "SA-1 revised ruling (tag removal/retention as secondary)",
+      "residual_risk": "None once ruled"
+    },
+    {
+      "source_item": "Q12",
+      "target_item": "Q31",
+      "category": "event_reuse",
+      "mechanism": "hazard_reckless_continue (Q12/Q27/Q31) and hazard_informed_continue (Q31) - superseded goal-time rationale",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Hazard prudence acts cannot serve the shared Q29/Q31 horizon indicator",
+      "required_control": "SA-3 (with SA-1) revised ruling",
+      "residual_risk": "None once ruled"
+    },
+    {
+      "source_item": "Q02",
+      "target_item": "Q30",
+      "category": "event_reuse",
+      "mechanism": "inventory_verification_skipped tagged Q02+Q30 - prohibited skipped-preparation inference for Q30",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Q30 may never be inferred from carelessness/skipped preparation (approved decision + ruling section 1)",
+      "required_control": "SA-4 revised ruling (tag removal)",
+      "residual_risk": "None once ruled"
+    },
+    {
+      "source_item": "Q15",
+      "target_item": "Q17",
+      "category": "event_reuse",
+      "mechanism": "interruption_received tagged Q15+Q17; the physical return act co-fires return_to_unfinished_task (Q15) and returned_to_original_task (Q17) (SA-9)",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "One observed moment would enter two primaries",
+      "required_control": "SA-9 single-owner assignment; never analysed as two independent observations meanwhile",
+      "residual_risk": "None once assigned"
+    },
+    {
+      "source_item": "Q29",
+      "target_item": "Q31",
+      "category": "variable_reuse",
+      "mechanism": "AUTHORISED shared construct-level goal_horizon_preference (ruling section 2) - one indicator, opposite poles",
+      "current_or_proposed": "proposed",
+      "severity": "low",
+      "primary_measurement_impact": "By design: one choice never two observations; no independent item scores",
+      "required_control": "Single shared variable assertion in any future implementation + SA-3 ruling",
+      "residual_risk": "None - this is the sanctioned exception"
+    },
+    {
+      "source_item": "Q26",
+      "target_item": "Q12",
+      "category": "variable_reuse",
+      "mechanism": "blind_retry_count / game_inappropriate_persistence formulas fold hazard_reckless_continue (Q12-tagged) into the Q26-family count",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Legacy composite mixes prudence telemetry into the maladaptive-persistence count (ruling section 12 separation defect)",
+      "required_control": "D2/SA-1 scoring cleanup; composites remain legacy-labelled meanwhile",
+      "residual_risk": "None once cleaned; variables remain legacy until then"
+    },
+    {
+      "source_item": "Q22",
+      "target_item": "Q12",
+      "category": "variable_reuse",
+      "mechanism": "strategy_revision_count folds hazard_info_checked (Q12) into the revision family",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "Construct mixing (adaptive persistence vs prudence) in one variable",
+      "required_control": "D2 split (prudence_check_rate stands alone)",
+      "residual_risk": "None once split"
+    },
+    {
+      "source_item": "Q31",
+      "target_item": "Q12",
+      "category": "variable_reuse",
+      "mechanism": "game_uncertainty_persistence mixes hazard_info_checked and hazard_informed_continue (Q31-tagged)",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "Goal-time-tagged telemetry inside a persistence-family variable",
+      "required_control": "D2-family cleanup with SA-1/SA-3",
+      "residual_risk": "None once cleaned"
+    },
+    {
+      "source_item": "Q13",
+      "target_item": "Q14",
+      "category": "variable_reuse",
+      "mechanism": "game_difficulty_persistence sums the archive stream (Q13-window) and repair stream (Q14/Q21-window) into one construct composite",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "Acceptable ONLY as an explicitly construct-level (never item-level) indicator; may not stand in for any item's primary variable",
+      "required_control": "Export-layer separation of item vs construct vs legacy composites (ruling section 12)",
+      "residual_risk": "Low if labelled; high if ever read as an item score"
+    },
+    {
+      "source_item": "Q11",
+      "target_item": "Q28",
+      "category": "state_inheritance",
+      "mechanism": "One Final Core interface hosts both windows over the same live issue-set state; resolving issues (Q11 window) removes Q28's blocker opportunity within the same visit",
+      "current_or_proposed": "current",
+      "severity": "high",
+      "primary_measurement_impact": "The two items' windows interact through shared scored task state (ruling section 6 prohibition)",
+      "required_control": "Item-specific state containers / standardised baseline blocker; ruling required",
+      "residual_risk": "Pilot must test Q11-Q28 local dependency"
+    },
+    {
+      "source_item": "Q28",
+      "target_item": "Q33",
+      "category": "order_contrast",
+      "mechanism": "Final Core hosts the last measurement windows; any future Q33 end-session derivation would sit after every other module",
+      "current_or_proposed": "proposed",
+      "severity": "low",
+      "primary_measurement_impact": "Maximal fatigue/order confound on late windows",
+      "required_control": "Session-position/elapsed-time export as control variables (ruling section 7)",
+      "residual_risk": "Inherent to end-of-session placement; model as covariate"
+    },
+    {
+      "source_item": "Q13",
+      "target_item": "Q28",
+      "category": "fatigue",
+      "mechanism": "Cumulative task load across Archive/Repair/corridor modules precedes the late Final Core windows (Q11/Q28) on every route",
+      "current_or_proposed": "current",
+      "severity": "medium",
+      "primary_measurement_impact": "Late-window maladaptive-persistence and responsibility behaviour partly reflects fatigue",
+      "required_control": "Elapsed-time and module-count export; pilot fatigue test (ruling section 10)",
+      "residual_risk": "Inherent; covariate modelling"
+    },
+    {
+      "source_item": "Q29",
+      "target_item": "Q30",
+      "category": "order_contrast",
+      "mechanism": "Proposed horizon and granularity modules are conceptually similar balanced choices; encountering one frames the other",
+      "current_or_proposed": "proposed",
+      "severity": "medium",
+      "primary_measurement_impact": "Contrast effect between the two goal-structure choices",
+      "required_control": "Module-order counterbalance where feasible (ruling section 7) + pilot contrast test; to be fixed in SA-3/SA-4 revised rulings",
+      "residual_risk": "Design-stage"
+    },
+    {
+      "source_item": "Q01",
+      "target_item": "Q30",
+      "category": "practice_learning",
+      "mechanism": "Proposed granularity instance at the Quartermaster console follows the Q01 prep flow in the same room",
+      "current_or_proposed": "proposed",
+      "severity": "low",
+      "primary_measurement_impact": "Familiarity with the console/work structure biases the structure choice",
+      "required_control": "Second instance at a non-inventory station (already contemplated); order export",
+      "residual_risk": "Low"
+    }
+  ]
+}

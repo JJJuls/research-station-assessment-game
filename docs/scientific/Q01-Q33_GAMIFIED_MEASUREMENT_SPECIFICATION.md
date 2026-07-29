@@ -10,10 +10,10 @@ REMOTE OUTPOST ASSESSMENT
 
 _How each questionnaire item is represented through gameplay opportunities, choices, process measures and outcomes_
 
-| Document status    | Research-owner review draft                                                                                                |
+| Document status    | Research-owner review draft — updated under the approved global item-separation, local-independence and carryover ruling   |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| Version            | 0.1                                                                                                                        |
-| Date               | 15 July 2026                                                                                                               |
+| Version            | 0.2                                                                                                                        |
+| Date               | 15 July 2026 (v0.1); 29 July 2026 (v0.2 — global-ruling application, NEXT-09)                                              |
 | Scientific battery | 33 items: BFI-2 Conscientiousness, Grit-S, Persistence Despite Difficulty, Inappropriate Persistence, Goal-Time Preference |
 | Purpose            | Consolidate the agreed translation logic before further implementation and scoring decisions                               |
 
@@ -68,6 +68,109 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
   | Optional Side Repair / Anomaly Arc | 1.5–3 min, optional and distributed | Diligence, follow-through, exploratory interest continuity | Acceptance, stages, deferment and return are separate. |
   | Interruption Corridor | Embedded across 1–2 min | Switching, return and continuity | Initial choice must be recorded before interruption. |
   | Final Core | 1.5–2.5 min | Issue review, integration and completion portfolio | Do not equate rushing with short-term preference. |
+
+## 1.5 Global item-separation, local-independence and carryover ruling (APPROVED 2026-07-29)
+
+The research owner has approved a **global scientific ruling on item
+separation, local independence and carryover control**. Its verbatim text and
+supersession register are recorded in
+`docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md` §13 — that record is the
+authoritative reference. This section restates the ruling's requirements as
+they apply to every Q01–Q33 item in this specification. Where any older wording
+in this document (notably §8's shared-module doctrine) conflicts, the ruling
+governs; the older wording is preserved below under explicit supersession
+marks. The ruling approves **no canonical event or payload name** (those remain
+event-schema decisions) and **no scoring formula**.
+
+Requirements applied to every item in §§3–7:
+
+1. **Item-specific primary measurement (ruling §1).** Every item must have one
+   declared primary measurement opportunity (or repeated set of item-specific
+   opportunities), one item-specific measurement window, one item-specific
+   primary event family, and one item-specific primary behavioural variable. A
+   primary item variable may use only behavioural events generated inside that
+   item's declared measurement window. No raw event, scored state, outcome or
+   derived variable may contribute to more than one primary item-level
+   variable.
+2. **Shared-construct exception (ruling §2).** The Q29/Q31 goal-horizon
+   dimension is the **only** currently authorised shared-construct exception:
+   one explicitly shared construct-level indicator, never two independent
+   game-item scores. No other item — explicitly including Q32 and Q33 — may
+   reuse those events or claim a shared indicator without a new ruling.
+3. **Within-item longitudinal state (ruling §3).** A measurement may span
+   rooms, interruptions or later return when the temporal sequence is part of
+   the same item's meaning (commitment follow-through, task return, background
+   continuity). All stages must share one item-specific opportunity identifier
+   and must not serve another item's primary variable.
+4. **Cross-item carryover firewall (ruling §4).** The outcome of one item must
+   not determine or materially alter another item's opportunity availability,
+   entry state, instructions or NPC wording, option number/position, task
+   difficulty, action count, expected duration, reward/consequence/social
+   approval, time pressure, available tools or inventory, completion route, or
+   scoring rule. Every primary item opportunity must begin from a standardised
+   or counterbalanced measurement-relevant entry state.
+5. **Narrative continuity (ruling §5).** Narrative/visual consequences may
+   persist only where they do not alter a later item's measurement-relevant
+   conditions. Cross-room ecological evidence may remain **secondary raw
+   telemetry** but may not replace or contaminate a later item's primary
+   indicator.
+6. **Shared rooms, NPCs and mechanics (ruling §6).** Items may share rooms,
+   NPCs, art, movement and generic interaction components. They may not share
+   scored task state, progress state, primary behavioural events, outcome
+   consequences, or item-variable inputs. Reused mechanics require a new
+   item-specific instance and state container.
+7. **Order, practice and contrast (ruling §7).** Counterbalance option
+   position within each choice, matched scenario forms, repeated-opportunity
+   order, and (where feasible) the order of conceptually similar modules.
+   Fixed order is permitted only when scientifically necessary, with a
+   documented rationale, and the order must be exported as a control variable.
+   Counterbalancing alone never establishes absence of carryover.
+8. **Feedback and affective contamination (ruling §8).** Before all
+   potentially related measures are complete, no feedback may reveal a
+   preferred/correct personality response, a trait interpretation, relative
+   performance, or praise/criticism capable of changing later motivation.
+   Operational consequences are shown only when required for the current item
+   and only where they do not change later measurement conditions. A brief
+   neutral transition should separate closely related failure, persistence,
+   stopping-rule and goal-time modules where practical.
+9. **Opportunity validity and contamination coding (ruling §9).** The raw data
+   must identify: item and measurement opportunity; presentation order and
+   counterbalance condition; entry-state validity; relevant prior module
+   exposure; technical/comprehension failure; suspected carryover
+   contamination; and primary-analysis validity. Exact canonical event and
+   payload names require a later event-schema ruling. A contaminated or absent
+   opportunity is **missing/invalid measurement, never a low trait score**.
+10. **Pilot validation (ruling §10).** Before any item variable or composite
+    is treated as validated: test order/scenario-form effects; practice,
+    fatigue and contrast effects; dependency between items sharing a room, NPC
+    or mechanic; whether earlier outcomes predict later item responses after
+    controlling for the intended construct; response variation and
+    missing-opportunity patterns; and discriminant relationships among
+    neighbouring item variables. Material residual dependency requires
+    redesign, testlet/context-effect modelling, or removal from primary item
+    scoring — never reinterpretation as reliability.
+11. **Existing implementation (ruling §11).** Existing shared or cross-room
+    events remain raw/secondary ecological telemetry; they are not
+    automatically independent primary item measurements. In particular the
+    Q03 prepared-tool retrieval episode stays valuable ecological evidence but
+    cannot be the sole independent Q03 primary measure (its opportunity
+    depends on prior Inventory behaviour); an independent Q03 remedy is
+    required.
+12. **Scoring separation (ruling §12).** Item-level variables, construct-level
+    indicators, exploratory proxies, legacy composites and control variables
+    stay separate in the export. No composite may manufacture a missing item
+    measure; no reliability claim may rest on duplicated or locally dependent
+    evidence.
+
+**Application in this document.** Each item entry in §§3–7 now carries a
+"Measurement independence and carryover (global ruling)" row declaring: the
+item's primary-opportunity ownership, its unique primary event family and
+primary variable (all names remain CANDIDATES pending event-schema/scoring
+rulings), its standardised-entry-state requirement, its known carryover
+exposures, and its opportunity/contamination coding. The recently discussed
+Q27–Q33 item-specific solutions are **pending revised rulings** under this
+global authority and are **not** recorded as approved anywhere in this
+document.
 
 # 2. Q01–Q33 summary matrix
 
@@ -125,6 +228,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The task directly samples an orderly, rule-guided approach to preparing materials. It preserves the item’s meaning without requiring complex puzzle ability. |
 > | Confounds and safeguards | Reading/UI skill, colour or label ambiguity and prior gaming experience. Use explicit labels, simple controls, no hidden knowledge, and Dock covariates. |
 > | Current design decision | Use order, accuracy and verification as primary evidence. Do not reward speed alone. |
+> | Measurement independence and carryover (global ruling) | Q01 owns the checklist-use/ordered-preparation opportunity as its primary. Primary event family (candidate designation): the checklist-open/placement/sequence acts inside the prep window; primary variable (candidate): checklist-guided preparation quality. The window (checklist availability → readiness verification) is shared physical context with Q02/Q03/Q04 but each item requires its own event family and none of Q01's primary events may feed Q02-Q04 primaries (ruling §§1, 6). Entry state: prep must start from one standardised bench/checklist state for every session. Coding: prep never opened = no-opportunity, never low organisation. |
 
 ## Q02 — Tends to be disorganized.
 
@@ -142,6 +246,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | Disorganisation is represented by preventable disorder and omission, not by the first ordinary mistake. The later consequence demonstrates whether the disordered state mattered. |
 > | Confounds and safeguards | Misunderstood labels can mimic disorganisation. The task must be transparent and errors must be correctable. |
 > | Current design decision | Score unresolved preventable errors; do not score first mistakes as trait evidence. |
+> | Measurement independence and carryover (global ruling) | Q02's primary is errors left after the correction opportunity — a window Q02 owns (review → verify-or-skip), distinct from Q01's checklist-use window even though both occur in one prep flow. `inventory_verification_skipped` is currently multi-tagged Q02/Q30; under ruling §1 it may serve at most one primary (the Q30 tag is a prohibited inference, SA-4). The later Final Core missing-item flag is **secondary consequence telemetry only** (ruling §5) — and because it changes the Final Core issue set it is a recorded carryover exposure onto Q11/Q28 entry states (ruling §4) requiring contamination coding or entry-state standardisation. Coding: no placement activity = no-opportunity. |
 
 ## Q03 — Keeps things neat and tidy.
 
@@ -159,6 +264,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | Neatness is represented as maintained order that remains functional later, separating it from one-time checklist compliance. |
 > | Confounds and safeguards | Speed and spatial memory. Prioritise accuracy and state maintenance over retrieval time. |
 > | Current design decision | Use persistent storage order plus later retrieval; do not duplicate Q01’s checklist score. |
+> | Measurement independence and carryover (global ruling) | Ruling §11 names Q03 directly: the implemented prepared-tool retrieval episode (Systems Repair; gated on Inventory close-out + the probe having been packed and currently stored) remains **valuable secondary ecological evidence** but cannot be the sole independent Q03 primary measure, because its opportunity availability is determined by prior Inventory behaviour (opportunity-gating + resource-inventory carryover, ruling §4). Required remedy: a Q03-specific standardised retrieval opportunity (or equivalent independence remedy) whose availability does not depend on earlier item outcomes — design and events pending a research-owner ruling (SA-12). Until then Q03 has no valid primary indicator; sessions without a qualifying packed tool stay no-opportunity (NEXT-09-P2-R2 holds). |
 
 ## Q04 — Leaves a mess, doesn’t clean up.
 
@@ -176,6 +282,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | This is the direct behavioural translation of leaving a mess. It corrects the stale planning-before-action mapping in the earlier workbook. |
 > | Confounds and safeguards | If cleanup is hidden or framed as irrelevant, leaving is rational. The expectation and practical purpose must be clear without moralising. |
 > | Current design decision | Use explicit restore-versus-leave behaviour. Do not use planning events as Q04 evidence. |
+> | Measurement independence and carryover (global ruling) | Q04 owns the post-completion restore-vs-leave window; its cleanup events are singly-owned today and must stay so. Entry state: the cleanup opportunity must present the same disordered-bench state regardless of how tidily the participant worked earlier — if prior Q01/Q02 behaviour changes what there is to clean, that is a carryover exposure to standardise or code (ruling §4). The Final Core workspace flag is secondary consequence telemetry (ruling §5) and, like Q02's flag, alters the Q11/Q28 entry state — a recorded exposure. Coding: cleanup opportunity not shown = no-opportunity. |
 
 ## Q05 — Has difficulty getting started on tasks.
 
@@ -193,6 +300,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The sequence captures initiation after the task is understood, rather than general movement speed. |
 > | Confounds and safeguards | Navigation difficulty, confusion and reading speed. Use Dock controls and exclude trials with failed comprehension or technical interruption. |
 > | Current design decision | No universal seconds cut-off. Calibrate latency distribution in pilot data. |
+> | Measurement independence and carryover (global ruling) | No Q05 opportunity exists (blocked on D7/D3). When built, Q05 must own an initiation window opened by an explicit objective-confirmation act with a standardised entry state (same instruction wording, same option positions, same prior-exposure conditions for every session), and its latency events may feed no other item's primary. The confirmation act must not double as Q08's avoidance evidence or Q10's acceptance act — separate event families per ruling §§1, 6. Practice carryover: initiation latency measured after many rooms differs from early measurement — the window's route position must be fixed and documented, and order exported as a control (ruling §7). Coding: comprehension failure or technical interruption = invalid opportunity, never slow initiation. |
 
 ## Q06 — Is efficient, gets things done.
 
@@ -210,6 +318,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The item combines completion and efficiency. A multi-task pattern is more defensible than one puzzle outcome. |
 > | Confounds and safeguards | Cognitive ability and game skill. Tasks must be simple after feedback and time must be adjusted by controls. |
 > | Current design decision | Completion plus process efficiency; never a pure speed score. |
+> | Measurement independence and carryover (global ruling) | Conflict to resolve: Q06's evidence today is the completion events of other items' windows (`archive_completed` also carries Q13; `repair_completed` also Q14/Q21; `final_core_completed` also Q33) — under ruling §1 those events cannot feed a Q06 primary while they serve other primaries. Q06 requires its own declared repeated opportunity set (a duty-completion portfolio across required duties) with its own event family (e.g. duty-level completion acts distinct from the persistence windows' internal events) — pending event-schema/scoring rulings. Until then Q06 has no compliant primary; existing completion telemetry stays secondary. Entry state: the assigned-duty framing (NEXT-09-OD-1) must present identical duty rosters to every session. |
 
 ## Q07 — Is persistent, works until the task is finished.
 
@@ -227,6 +336,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The player has committed to a defined task, allowing persistence-to-finish to be observed over time. |
 > | Confounds and safeguards | Curiosity and completionism. Acceptance and completion must be separated, and the task must have clear utility. |
 > | Current design decision | Use as secondary evidence alongside required-task completion, not as a sole work-ethic score. |
+> | Measurement independence and carryover (global ruling) | Q07 owns the acceptance-to-completion window of the accepted optional task (within-item longitudinal state, ruling §3 — one opportunity identifier across defer/return). Conflict: the side-repair events are multi-tagged (`side_repair_accepted` Q07/Q16/Q20; `side_repair_completed` Q07/Q16/Q32) — under ruling §1 one acceptance/completion stream cannot feed several primaries; Q07's primary (accepted-task follow-through) requires ownership separation from Q16 (execution accuracy) and Q20 (start-without-sustain), each needing its own event family or an explicit ruling. Entry state: the offer must be identical for every session (same wording, position, prior exposure). Coding: never offered / declined = no-opportunity for follow-through. |
 
 ## Q08 — Tends to be lazy.
 
@@ -244,6 +354,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | Low productive engagement is closer to the item than rational task switching or slow movement. |
 > | Confounds and safeguards | Fatigue, confusion, accessibility barriers and strategic prioritisation. Do not infer laziness from one delay. |
 > | Current design decision | Pattern-level exploratory score with Dock and comprehension controls. |
+> | Measurement independence and carryover (global ruling) | Q08 requires its own repeated engagement-vs-avoidance opportunity set (≥2 valid required-duty windows), each with its own opportunity identifier — the windows may be the same duties Q06 counts completions over only if Q06 and Q08 receive distinct primary event families (engagement/avoidance acts vs completion acts) and neither's primary reuses the other's events (ruling §1). Current single-context evidence (corridor ignore path) is shared with Q17/Q19 context and stays secondary. Idle events remain blocked on D3. Entry state: duty availability and framing identical across sessions; avoidance must never be inferred where a technical/comprehension failure is recorded (ruling §9). |
 
 ## Q09 — Is dependable, steady.
 
@@ -256,11 +367,12 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Player choices | Review evidence; ask clarification; report accurate status; report uncertain status; or submit an unverified answer. |
 > | Measurement window | From report request to submission, after relevant evidence has been generated. |
 > | Primary measurements | Evidence review; clarification use; report accuracy; consistency with logged state; prepared versus unprepared submission. |
-> | Candidate raw events | engineer_report_requested; engineer_evidence_reviewed; engineer_clarification_requested; engineer_report_submitted; report_accuracy_evaluated. |
+> | Candidate raw events | engineer*report_requested; engineer_evidence_reviewed; engineer_clarification_requested; engineer_report_submitted; report_accuracy_evaluated. |
 > | Candidate derived indicators | prepared_report_flag; report_accuracy_score; responsibility_report_count. |
 > | Why this translation is appropriate | Dependability is sampled through accurate, steady communication grounded in actual task state. |
 > | Confounds and safeguards | Memory and reading skill. Evidence must be accessible and report options must not be moral labels. |
 > | Current design decision | Primary responsibility indicator; separate from persistence scores. |
+> | Measurement independence and carryover (global ruling) | Q09 owns the report-request → submission window; its engineer-report events are singly-owned today (SA-8 registration for the accuracy event stays open) and must remain Q09-exclusive. Carryover exposure: the content the report is scored against is the participant's own prior task state — accuracy remains a valid correspondence measure, but the \_difficulty* of reporting accurately varies with how much was done earlier (state-inheritance exposure, ruling §4). Remedy: the claim-card set and scoring rule must be reachable and equivalent for every prior-state configuration, and prior-module exposure recorded for validity coding (ruling §9). NPC carryover: Kai's wording must not vary with earlier outcomes. Coding: report never requested = no-opportunity. |
 
 ## Q10 — Is reliable, can always be counted on.
 
@@ -278,6 +390,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | Reliability is best represented by delayed follow-through after a voluntary/explicit commitment. |
 > | Confounds and safeguards | Social desirability. Declining honestly should not be scored as unreliability; only broken accepted commitments are negative. |
 > | Current design decision | Score follow-through conditional on acceptance. |
+> | Measurement independence and carryover (global ruling) | Q10 is a within-item longitudinal measurement (ruling §3's named example: commitment follow-through) — assignment → resolution under one opportunity identifier; its duty events are singly-owned and must stay so. Major recorded exposure: accepting the relay duty currently **gates the Interruption Corridor opportunity** for Q15/Q17/Q19 (opportunity-gating carryover, ruling §4) — the interruption module's opportunity must be made independent of the Q10 outcome, or dependent sessions must be contamination-coded for those items (remedy pending research-owner ruling). The duty-unresolved consequence at Final Core also joins the Q11/Q28 entry-state exposure set. Declining stays penalty-free and is a no-opportunity state for follow-through. |
 
 ## Q11 — Sometimes behaves irresponsibly.
 
@@ -295,6 +408,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | Responsibility concerns ownership of consequences. The final integration stage makes those consequences visible. |
 > | Confounds and safeguards | Time pressure and unclear consequences. No countdown should coerce rushing unless time pressure is itself an experimental condition. |
 > | Current design decision | Separate final-quality outcome from specific responsibility events. |
+> | Measurement independence and carryover (global ruling) | Q11 owns the final status-review → finalisation window. Major recorded exposure: the issue set the participant reviews is **inherited from earlier item outcomes** (Q02 missing kit, Q04 workspace, Q10 duty, corridor non-return) — so Q11's opportunity content, option set (the force option appears only with outstanding issues) and difficulty are outcome-dependent, contrary to ruling §4. Remedy required (pending ruling): a standardised baseline issue component present for every session (so the review/resolve/force choice always exists on identical terms), with participant-caused issues retained as secondary ecological telemetry; plus per-session entry-state validity coding (ruling §9). Event-ownership conflict: `final_core_rushed` is multi-tagged Q11/Q33 — one act may not feed two primaries (SA-6 governs the Q33 tag). |
 
 ## Q12 — Can be somewhat careless.
 
@@ -312,6 +426,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | Carelessness is sampled as neglect of salient, accessible consequence information—not as willingness to face danger. |
 > | Confounds and safeguards | Risk preference, curiosity and reading comprehension. Keep risk levels clear and do not frame as fear. |
 > | Current design decision | Hazard is prudence/carefulness evidence, not Goal-Time or Persistence Despite Fear. |
+> | Measurement independence and carryover (global ruling) | Q12 owns the hazard warning → action-confirmation window and it is Q12's primary opportunity. Event-ownership conflict: the live registrations multi-tag `hazard_info_checked` (Q12/Q27) and `hazard_reckless_continue` (Q12/Q27/Q31) — under ruling §1 these may serve only Q12's primary; the Q27/Q31 tags are superseded rationale awaiting SA-1/SA-3 re-scoped rulings and until then those items take nothing from Hazard. Entry state: the warning presentation is already standardised; option positions must be counterbalanced or their fixed order documented and exported (ruling §7). Repeatable-prompt semantics: first-response retention remains an open §8.2 principle — record repetition for validity coding. Coding: warning never seen = no-opportunity. |
 
 # 4. Grit-S: Q13–Q20
 
@@ -331,6 +446,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The task standardises a setback and observes whether the player remains engaged productively. |
 > | Confounds and safeguards | Puzzle ability. Feedback must make the revised solution learnable. |
 > | Current design decision | Use ordered failure → feedback/revision → completion evidence. |
+> | Measurement independence and carryover (global ruling) | Q13 owns the Archive first-failure → completion window as its primary opportunity. Event-ownership conflict: the Archive stream is multi-tagged (`archive_feedback_used` Q13/Q22; `archive_strategy_revision` Q13/Q22/Q26; `archive_completed` Q06/Q13) — under ruling §1 Q13's primary (post-setback re-engagement/completion) must draw on events no other item's primary uses; Q22/Q26/Q06 need their own families (pending event-schema rulings). Practice/feedback carryover exported downstream: the Archive episode teaches failure→support→revision before Systems Repair (affects Q14/Q21/Q23/Q24) — module order must be recorded and, where feasible, counterbalanced (ruling §7), and pilot analysis must test the dependency (ruling §10). Entry state: scripted failure is already standardised. |
 
 ## Q14 — I am a hard worker.
 
@@ -348,6 +464,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | Hard work is represented by sustained, useful effort toward a demanding objective, not button presses or time spent. |
 > | Confounds and safeguards | Ability and task length. Keep mechanics simple and count effective effort rather than total actions. |
 > | Current design decision | Use as cross-task effort evidence, not a direct one-room score. |
+> | Measurement independence and carryover (global ruling) | The historical "cross-task effort evidence" framing is superseded as a primary-measurement doctrine (ruling §1): Q14 needs its own declared primary within the Systems Repair window — useful-effort breadth (diagnosis/manual/steps) as distinct from Q21's post-failure continuation, Q23's retry quality and Q24's re-engagement, even though all four currently share the repair stream (`repair_manual_used` Q14/Q21/Q22; `repair_strategy_revision` Q14/Q21/Q23; `repair_completed` Q06/Q14/Q21). Separation of these primaries is a pending event-schema decision. Practice carryover: Archive-first sessions arrive trained (recorded exposure; order export required). Entry state: the standardised always-fails-first sequence is compliant. |
 
 ## Q15 — I finish whatever I begin.
 
@@ -365,6 +482,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The item is directly about completion of initiated goals. The interruption prevents the measure from being trivial. |
 > | Confounds and safeguards | Rational prioritisation. Formal deferment and task urgency must be logged. |
 > | Current design decision | Non-return, not switching itself, is the negative evidence. |
+> | Measurement independence and carryover (global ruling) | Q15 is a within-item longitudinal measurement (ruling §3's named example: task return after interruption) — one opportunity identifier from original-task start through return/completion. Recorded exposures: (a) the opportunity currently exists only when the Q10 relay duty was accepted (opportunity-gating carryover, ruling §4 — remedy: an interruption opportunity independent of the Q10 outcome, or contamination coding); (b) the observed return act co-fires Q15 and Q17 events (SA-9) — under ruling §1 one physical act may not feed two primary variables; SA-9's resolution must assign the act to exactly one primary. Ignore-branch semantics stay SA-10. Entry state: beacon timing/wording standardised; option positions counterbalanced or documented-fixed. Coding: `original_task_id: null` sessions stay no-opportunity. |
 
 ## Q16 — I am diligent.
 
@@ -382,6 +500,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | Diligence is represented by careful, sustained execution across multiple steps. |
 > | Confounds and safeguards | Completionism and conscientious test-taking. Interpret with Q07 and organisation measures rather than alone. |
 > | Current design decision | Accuracy and follow-through are primary; duration is supporting. |
+> | Measurement independence and carryover (global ruling) | Q16 currently borrows two other items' opportunities (the Q07-owned side-repair arc; the Q01/Q02-owned inventory verification) — under ruling §§1 and 6 Q16 cannot take its primary from either while they serve those items. Required: a Q16-specific execution-accuracy window (its own instance/state container, e.g. its own multi-step task or an explicitly ruled ownership split of the side-repair arc in which Q16 owns step-accuracy events that no other item's primary touches). Pending event-schema decision; until then Q16 evidence is secondary. Entry state: the multi-step task must present identical steps/verification for every session. Coding: task never accepted = no-opportunity. |
 
 ## Q17 — New ideas and projects sometimes distract me from previous ones.
 
@@ -399,6 +518,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The situation samples susceptibility to diversion while preserving the distinction between curiosity and actual loss of goal focus. |
 > | Confounds and safeguards | Switching may be rational. The key negative pattern is switching without return when the original remains valid. |
 > | Current design decision | Exploratory/discriminant only. |
+> | Measurement independence and carryover (global ruling) | Q17's primary (switch-without-return pattern) shares the corridor module with Q15 and Q19; under ruling §1 the three need distinct primary event families: Q15 owns the return/completion acts, Q17 the attraction/switch-without-return pattern, Q19 the prior-goal abandonment closure — the SA-9 co-fire and the multi-tagged `interruption_received` (Q15/Q17) must be assigned to single owners by event-schema ruling. Opportunity-gating exposure as Q15 (relay-duty dependency). D6 (`competing_task_viewed`) stays open. Entry state: competing-task attractiveness/framing standardised and order-counterbalanced where a second instance ever exists. Exploratory label obligations (SA-7 family) unchanged. |
 
 ## Q18 — I have difficulty maintaining my focus on projects that take more than a few months to complete.
 
@@ -416,6 +536,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | This is the closest feasible short-session analogue of sustaining focus across time and competing demands. |
 > | Confounds and safeguards | It cannot represent months. Non-return may reflect prioritisation, memory or low task value. Keep the task visible and useful. |
 > | Current design decision | Questionnaire remains primary. Use only as a weak continuity proxy and do not call it long-term focus measurement. |
+> | Measurement independence and carryover (global ruling) | Q18 stays questionnaire-primary. If the background calibration arc is ever built (own event-schema decision), it is a within-item longitudinal measurement (ruling §3's named example: continuity of a background objective) and must carry one Q18-specific opportunity identifier across stages; its stages may not double as any other item's primary evidence, and stage unlocks must depend on standardised progress conditions, never on other items' outcomes (ruling §4). Today's telemetry (`objective_active`, `final_unresolved_due_to_nonreturn` — emitted by corridor/final-core machinery) is secondary shadow evidence only; under ruling §1 it cannot be a Q18 primary. Weak-proxy label obligations (SA-7) unchanged. |
 
 ## Q19 — I often set a goal but later choose to pursue a different one.
 
@@ -433,6 +554,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The item concerns changing goals before completion; the task makes the prior commitment and subsequent choice observable. |
 > | Confounds and safeguards | A switch may be strategic. Information about urgency and value must be balanced and logged. |
 > | Current design decision | Score abandonment/non-return, not switching alone. |
+> | Measurement independence and carryover (global ruling) | Q19's primary (prior-goal abandonment after a credible new option) must own its closure events (`prior_goal_abandoned` family) exclusively — separation from Q15 (return acts) and Q17 (switch pattern) per ruling §1, with SA-9/D6 assignments pending. Opportunity-gating exposure as Q15/Q17 (relay-duty dependency; abandonment closure is Final-Core-bound so a skipped Final Core is a censored, not negative, observation — validity coding per ruling §9). Entry state: new-goal offer framing/urgency balance standardised; option order counterbalanced. Exploratory treatment unchanged. |
 
 ## Q20 — I have been obsessed with a certain idea or project for a short time but later lost interest.
 
@@ -450,6 +572,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The design samples an initial-interest-versus-sustained-engagement pattern without directly asking about interest. |
 > | Confounds and safeguards | The game cannot establish “obsession” or true loss of interest. Stopping may reflect difficulty, priorities, reward or time. |
 > | Current design decision | No bespoke item score. Retain as supplementary process evidence only when continued utility and opportunity are clear. |
+> | Measurement independence and carryover (global ruling) | Q20 stays questionnaire-primary with no bespoke score. Its current evidence rides the Q07-owned side-repair arc (`side_repair_accepted`/`side_repair_first_step`/`side_repair_abandoned_after_start`, multi-tagged with Q07/Q16) — under ruling §1 this is secondary process evidence only and can never become a Q20 primary while shared. If the anomaly arc is ever built (own event-schema decision), it must be a Q20-specific instance with its own opportunity identifier and state container (ruling §6), stages of stable stated utility, and no gating by other items' outcomes. Feedback carryover: earlier failure/affect episodes precede voluntary continuation — prior-exposure recording required (ruling §9). |
 
 # 5. Persistence Despite Difficulty: Q21–Q25
 
@@ -469,6 +592,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The task creates a controlled difficulty episode and observes productive continuation. |
 > | Confounds and safeguards | Difficulty must be standardised and solvable after support. |
 > | Current design decision | Preserve event sequence; do not reward raw retries. |
+> | Measurement independence and carryover (global ruling) | Q21 owns post-failure continuation in the Systems Repair difficulty window as its primary opportunity, but its events are shared with Q14/Q22/Q23 (see Q14 row) — a compliant Q21 primary needs the continuation acts assigned to Q21 alone (pending event-schema ruling). Practice and feedback carryover from Archive (Q13) is a recorded exposure: order export + pilot dependency testing required (ruling §§7, 10); a brief neutral transition should separate the two failure/persistence modules where practical (ruling §8). Entry state: standardised scripted difficulty is compliant. Coding: repair never started = no-opportunity. |
 
 ## Q22 — Even if it’s difficult to understand, I will read an entire book until I “get” it.
 
@@ -486,6 +610,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The item’s core is persistence with difficult information. The game samples whether relevant information is worked through and used. |
 > | Confounds and safeguards | Reading comprehension and language proficiency. Keep text concise and allow clarification. |
 > | Current design decision | Count support use only when followed by a relevant behavioural change. |
+> | Measurement independence and carryover (global ruling) | Q22's primary (support consulted AND applied) currently spans two other items' windows (Archive: Q13-owned; Repair: Q14/Q21-owned) via multi-tagged events (`archive_feedback_used` Q13/Q22; `repair_manual_used` Q14/Q21/Q22; `manual_page_reviewed` Q22) — under ruling §1 Q22 needs its own declared window (support availability → next meaningful action) whose application events feed Q22 alone; pending event-schema ruling. Note `strategy_revision_count` currently folds `hazard_info_checked` (Q12) into this family — a cross-construct variable-reuse defect recorded for D2. Entry state: support content identical across sessions. Coding: support never available = no-opportunity. |
 
 ## Q23 — Even if something is hard, I will keep trying at it.
 
@@ -503,6 +628,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The design distinguishes persistence from rigid repetition, which is essential for construct validity. |
 > | Confounds and safeguards | A guessed new option may look like strategy revision. Require evidence of feedback/support or meaningful change. |
 > | Current design decision | Adaptive trying positive; identical repetition belongs to inappropriate persistence. |
+> | Measurement independence and carryover (global ruling) | Q23's primary (adaptive-retry quality) must be owned separately from Q13/Q14/Q21 (whose windows currently emit the same `*_strategy_revision` events, including the catalogued Q13/Q22/Q26-vs-Q23 registration divergence for `archive_strategy_revision`) — pending event-schema assignment. The contrast class (identical repetition) is Q26-owned and already singly-tagged; the adaptive/maladaptive separation stays absolute. Practice carryover across the two difficulty modules as Q21. Entry state: standardised failures compliant. Coding: no failure episode encountered = no-opportunity for retry-quality measurement. |
 
 ## Q24 — Setbacks do not discourage me.
 
@@ -520,6 +646,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | Using a second task avoids relying entirely on the same Archive event for Q13 and Q24. |
 > | Confounds and safeguards | The two items remain conceptually redundant; treat behavioural indicators as shared evidence, not independent item scores. |
 > | Current design decision | Use cross-task convergence, not double counting. |
+> | Measurement independence and carryover (global ruling) | The historical "cross-task convergence" framing survives only at construct level. As an item, Q24 needs its own primary event family inside the Systems Repair window (setback → re-engagement → completion), separated from Q14/Q21 (same stream today) and from Q25 (`repair_returned_after_failure` and `archive_returned_after_failure` are multi-tagged Q24/Q25 — one return act may not feed two primaries; assignment pending, with D4's construct question). Q13/Q24 conceptual redundancy is a discriminant-analysis matter (ruling §10), never double counting. Practice/order exposure as Q21. Coding: no setback encountered = no-opportunity. |
 
 ## Q25 — People describe me as someone who can stick at a task, even when it gets difficult.
 
@@ -537,6 +664,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | Sticking with a difficult task may include a strategic pause and return, not only uninterrupted effort. |
 > | Confounds and safeguards | Leaving can be exploration. Only no-return with unresolved objective is abandonment. |
 > | Current design decision | Moderate process indicator; no continuous-stay requirement. |
+> | Measurement independence and carryover (global ruling) | Q25's primary (leave-then-return vs unresolved non-return after explicit difficulty) is a within-item longitudinal window (ruling §3) needing its own opportunity identifier and exclusive ownership of its return/non-return events — currently shared with Q24 (see Q24 row; assignment pending). The end-state component (unresolved at session end) depends on Final Core being reached — censoring, coded per ruling §9, never negative evidence by itself. The current `abandonment_count` variable reads only legacy `hazard_avoidance` — a mis-wire recorded for D2; no Q25 inference may use it. Entry state: standardised difficulty episodes compliant. |
 
 # 6. Inappropriate Persistence: Q26–Q28
 
@@ -556,6 +684,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | This directly samples rigid repetition despite evidence that change is needed. |
 > | Confounds and safeguards | Input bounce and misunderstanding. Debounce and require distinct completed cycles. |
 > | Current design decision | Keep separate from adaptive persistence; higher values mean more maladaptive behaviour. |
+> | Measurement independence and carryover (global ruling) | Q26 is closest to compliant today: its identical-repetition events (`archive_same_wrong_code_repeated`, `repair_same_sequence_repeated`) are singly-owned. Two exposures remain: (a) variable-level contamination — `blind_retry_count`/`game_inappropriate_persistence` fold in `hazard_reckless_continue` (Q12/Q27/Q31 tags), mixing prudence/goal-time telemetry into the maladaptive count (recorded for D2/SA-1; ruling §12); (b) the repetition opportunity arises only inside Q13/Q14-owned failure windows — shared context permitted (ruling §6) provided Q26's primary uses only the repetition acts and its window is coded. Debounce rules stay §8.2-open. Coding: no failed-action state = no-opportunity. |
 
 ## Q27 — Sometimes I find myself continuing to do something, even when there is no point in carrying on.
 
@@ -573,6 +702,7 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The task makes “no point in carrying on” explicit without relying on risk-taking or moral judgement. |
 > | Confounds and safeguards | The signal must be credible and unambiguous. Continuing for curiosity should be minimised by stating that no new information or benefit will result. |
 > | Current design decision | Prefer this over the older Hazard shortcut mapping, which mainly measured prudence. |
+> | Measurement independence and carryover (global ruling) | Q27 has no compliant primary today: the utility-stop module does not exist, and the live Hazard tags are superseded-rationale telemetry owned by Q12's window (see Q12 row; SA-1). When the utility-stop module is ruled and built (SA-2, now re-scoped under the global authority — the recently discussed design is a **pending revised ruling**, not approved), it must be a Q27-specific instance with its own opportunity identifier and state container (ruling §6), a standardised entry state (the stop signal shown identically to every session, after a fixed number of useful cycles), events feeding Q27 alone, and a neutral transition separating it from adjacent persistence modules (ruling §8). Coding: signal never shown = no-opportunity; stopping immediately is a valid response, never penalised. |
 
 ## Q28 — I will keep trying at something, even if I know my actions are worthless.
 
@@ -590,10 +720,19 @@ Controls: Dock performance, gaming experience, keyboard comfort, instruction com
 > | Why this translation is appropriate | The design distinguishes knowledge of worthlessness from ordinary trial-and-error. |
 > | Confounds and safeguards | Knowledge must be evidenced. If the participant did not read/understand the blocker, the event cannot support Q28. |
 > | Current design decision | Require explicit blocker exposure and a feasible alternative before scoring. |
+> | Measurement independence and carryover (global ruling) | Q28 owns the blocker-understood → force/resolve window and its events (`final_core_blocker_shown`, `final_core_force_continue`) are singly-owned — compliant at event level. Major exposure shared with Q11: whether a blocker exists at all currently depends on earlier item outcomes (missing kit, workspace, duty, non-return feed the issue set) — opportunity-availability carryover contrary to ruling §4. Remedy pending ruling: a standardised baseline blocker present for every session, or explicit no-opportunity coding when no issues exist (a clean session must never read as low inappropriate persistence — ruling §9). The summary-term question (4th term of `game_inappropriate_persistence`) stays D2. Fatigue: latest-window item; session-position export required (ruling §7). |
 
 # 7. Goal-Time Preference: Q29–Q33
 
 Special rule for this section. Q29–Q33 remain part of the final 33-item questionnaire, but the gameplay evidence is exploratory. The design uses shared behavioural dimensions rather than five separate disguised questions.
+
+**Global-ruling qualification (2026-07-29, §1.5).** The sentence above is
+qualified by the approved global ruling: the only authorised shared behavioural
+dimension is the Q29/Q31 goal-horizon construct indicator (ruling §2). Q30
+requires its own independent repeated opportunity; Q32 and Q33 remain
+questionnaire-primary with **no** authorisation to reuse the horizon events or
+any other item's primary events. The recently discussed Q27–Q33 solutions are
+pending revised rulings and are not approved by this document.
 
 ## Q29 — I prefer to work on long-term goals.
 
@@ -611,6 +750,7 @@ Special rule for this section. Q29–Q33 remain part of the final 33-item questi
 > | Why this translation is appropriate | A concrete immediate-versus-distributed goal choice is more interpretable than inferring temporal preference from carelessness or risk. |
 > | Confounds and safeguards | Options must be matched on total effort, value, difficulty, risk, attractiveness and social approval. The distributed option must not be obviously virtuous. |
 > | Current design decision | Exploratory choice variable. Do not interpret completion as the same construct as initial preference. |
+> | Measurement independence and carryover (global ruling) | Q29 participates in the **only authorised shared-construct exception** (ruling §2): one Q29/Q31 goal-horizon construct-level indicator, never two independent game-item scores, and never events reusable by Q32, Q33 or any other item. No compliant module exists yet — the live stabiliser/final-core tags are superseded-rationale telemetry (SA-3, re-scoped; the recently discussed module design is a **pending revised ruling**, not approved). When ruled: standardised/counterbalanced entry state (matched options, option-position counterbalance, both instances before/independent of the corridor), one shared opportunity identifier per instance, order exported as a control (ruling §7), contamination coding per ruling §9. |
 
 ## Q30 — I usually work towards small goals.
 
@@ -628,6 +768,7 @@ Special rule for this section. Q29–Q33 remain part of the final 33-item questi
 > | Why this translation is appropriate | The item concerns the size/granularity of goals, not short cuts, carelessness or reward delay. |
 > | Confounds and safeguards | Breaking a large task into subgoals may reflect good planning. The two options must be genuinely different goal structures, not merely interface layouts. |
 > | Current design decision | Require at least two valid opportunities before deriving a behavioural pattern. |
+> | Measurement independence and carryover (global ruling) | Q30 has no compliant primary today: the granularity module does not exist and the live verification tags (`inventory_verification_skipped`/`inventory_verified_complete`) are the prohibited skipped-preparation inference (SA-4, re-scoped; the recently discussed module design is a **pending revised ruling**, not approved). When ruled: a Q30-specific repeated opportunity set (≥2 instances) with its own state containers (ruling §6), matched-structure options, counterbalanced option position and instance order, entry states independent of earlier item outcomes, and events/variable feeding Q30 alone (no sharing with Q33; ruling §§1-2 authorise no Q30 shared indicator). Coding: fewer than 2 valid opportunities = insufficient-opportunity, never a trait score. |
 
 ## Q31 — I prefer to work on short-term goals.
 
@@ -645,6 +786,7 @@ Special rule for this section. Q29–Q33 remain part of the final 33-item questi
 > | Why this translation is appropriate | Q29 and Q31 are opposite ends of the same behavioural preference dimension. |
 > | Confounds and safeguards | One binary choice cannot create two independent item scores. Order and framing must be counterbalanced. |
 > | Current design decision | Use one shared variable; never count the same choice independently for Q29 and Q31. |
+> | Measurement independence and carryover (global ruling) | Identical position to Q29: Q31 is the opposite pole of the one authorised shared goal-horizon construct indicator (ruling §2) — one shared variable, never an independent Q31 score. The live Hazard tags on `hazard_informed_continue`/`hazard_reckless_continue` are superseded-rationale telemetry owned by Q12's window (SA-3/SA-1 scope). All module, entry-state, counterbalance and coding requirements as the Q29 row; no other item may reuse the horizon events. |
 
 ## Q32 — Most of the goals I work on take years to finish.
 
@@ -662,6 +804,7 @@ Special rule for this section. Q29–Q33 remain part of the final 33-item questi
 > | Why this translation is appropriate | The game can sample willingness to engage with a longer, distributed objective, but cannot represent goals taking years or the word “most.” |
 > | Confounds and safeguards | Severe time-horizon mismatch and overlap with diligence/persistence. |
 > | Current design decision | Questionnaire-primary. No distinct Q32 game score and no reverse scoring relative to long-term orientation. |
+> | Measurement independence and carryover (global ruling) | Q32 stays questionnaire-primary with **no module and no distinct score** — and under ruling §§1-2 the historical "derived from the same self-selected opportunities" treatment is no longer an authorisation: Q32 may **not** reuse the Q29/Q31 horizon events (or `side_repair_completed`/`final_bonus_unlocked`, multi-tagged with Q07/Q16) as an item-level measure; the shared-construct exception covers Q29/Q31 only. The existing weak-proxy tags remain raw secondary telemetry pending SA-5 (re-scoped under the global authority; the recently discussed treatment is a **pending revised ruling**). No composite may manufacture a Q32 measure (ruling §12). |
 
 ## Q33 — Most goals I accomplish only take a few days to complete.
 
@@ -679,8 +822,20 @@ Special rule for this section. Q29–Q33 remain part of the final 33-item questi
 > | Why this translation is appropriate | A repeated portfolio is more defensible than interpreting rapid Final Core completion or unresolved issues as preference for short-duration goals. |
 > | Confounds and safeguards | Minutes are not days, and the behaviour overlaps with Q30/Q31. Required short tasks must be excluded. |
 > | Current design decision | Questionnaire-primary; use only as an exploratory portfolio variable. |
+> | Measurement independence and carryover (global ruling) | Q33 stays questionnaire-primary. The historical end-session portfolio treatment is **not currently authorised**: it would be built from Q29-Q31 module events, and under ruling §§1-2 those events serve the single shared Q29/Q31 indicator only — no permission exists for Q33 to reuse them. The live Final-Core tags (`final_core_rushed` Q11/Q33; `final_core_issue_resolved`; `final_core_completed` Q06/Q33) are the prohibited rushing inference and stay contested secondary telemetry (SA-6, re-scoped; the recently discussed portfolio solution is a **pending revised ruling**, not approved). Any future Q33 treatment requires its own ruling establishing either an independent Q33 opportunity or an explicitly approved construct-level extension. Fatigue/order exposure: end-of-session derivation would inherit maximal fatigue — session-position control export required (ruling §7). |
 
 # 8. Shared modules, dependencies and non-independence
+
+**Supersession banner (2026-07-29, §1.5).** The module list below is preserved
+as the historical shared-module description and remains accurate as a
+description of today's live shared telemetry. It is **superseded as a
+primary-measurement doctrine** by the global ruling (§1.5; authority record
+`docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md` §13): a module may remain
+shared _context_ (room, NPC, mechanics — ruling §6), but no module may supply
+the primary measurement for more than one item, no event sequence may feed more
+than one primary item variable, and "supporting evidence" is secondary
+telemetry only. The single authorised shared-construct exception is the Q29/Q31
+goal-horizon indicator (ruling §2).
 
 Archive failure-and-revision module: Primary evidence for Q13 and supporting evidence for Q22–Q26. The same event sequence must not be counted as six independent observations.
 Systems Repair difficulty module: Primary evidence for Q14, Q21 and Q24, with supporting evidence for Q22, Q23 and Q25.
@@ -700,6 +855,16 @@ Maladaptive stopping-rule module: Q26 concerns identical repetition, Q27 concern
 
 ## 8.2 Missing and repeated response principles still requiring approval
 
+**Note (2026-07-29).** The global ruling (§1.5) now fixes the _policy_ level of
+several of these principles: a contaminated or absent opportunity is missing or
+invalid measurement, never behavioural non-performance and never a low trait
+score (ruling §9); and the raw data must carry opportunity identifiers,
+order/counterbalance condition, entry-state validity, prior-exposure and
+contamination flags. The _operational_ coding — exact canonical event and
+payload names, debounce rules, first-vs-final retention, deferment definitions,
+incomplete-session handling and any composite weighting — still requires
+event-schema / scoring-plan approval and remains open below.
+
 - How no-opportunity cases are coded.
 - How repeated identical inputs are debounced and counted.
 - Whether first response, final response or both are retained for decision tasks.
@@ -709,18 +874,24 @@ Maladaptive stopping-rule module: Q26 concerns identical repetition, Q27 concern
 
 # 9. Implementation and validation checklist
 
-| Check                   | Acceptance criterion                                                                                                     | Status              |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------- |
-| Scientific traceability | Every event and derived variable links to a stated opportunity, item/construct rationale and contamination safeguard.    | To verify / approve |
-| Opportunity flags       | The dataset records whether each relevant task was presented and functionally accessible.                                | To verify / approve |
-| Sequence integrity      | Failure, feedback, revision, return and completion are preserved in event order.                                         | To verify / approve |
-| Versioning              | Payloads include game version, event-schema version, scoring version and asset-set version.                              | To verify / approve |
-| Controls                | Dock tutorial variables, gaming experience, keyboard comfort and comprehension are available as controls.                | To verify / approve |
-| Accessibility           | Keyboard/browser/device barriers are separated from behavioural non-performance.                                         | To verify / approve |
-| No double counting      | Shared modules are analysed as shared evidence, not independent item replications.                                       | To verify / approve |
-| Pilot calibration       | Latency distributions, task difficulty, option balance and wording are tested before thresholds are set.                 | To verify / approve |
-| Goal-horizon balance    | Immediate and distributed options are matched on total effort, expected value, risk, attractiveness and social approval. | To verify / approve |
-| Scientific claims       | Q18, Q20, Q32 and Q33 remain questionnaire-primary; game variables are described as proxies.                             | To verify / approve |
+| Check                    | Acceptance criterion                                                                                                                                                                                                                                                 | Status              |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| Scientific traceability  | Every event and derived variable links to a stated opportunity, item/construct rationale and contamination safeguard.                                                                                                                                                | To verify / approve |
+| Opportunity flags        | The dataset records whether each relevant task was presented and functionally accessible.                                                                                                                                                                            | To verify / approve |
+| Sequence integrity       | Failure, feedback, revision, return and completion are preserved in event order.                                                                                                                                                                                     | To verify / approve |
+| Versioning               | Payloads include game version, event-schema version, scoring version and asset-set version.                                                                                                                                                                          | To verify / approve |
+| Controls                 | Dock tutorial variables, gaming experience, keyboard comfort and comprehension are available as controls.                                                                                                                                                            | To verify / approve |
+| Accessibility            | Keyboard/browser/device barriers are separated from behavioural non-performance.                                                                                                                                                                                     | To verify / approve |
+| No double counting       | Shared modules are analysed as shared evidence, not independent item replications.                                                                                                                                                                                   | To verify / approve |
+| Pilot calibration        | Latency distributions, task difficulty, option balance and wording are tested before thresholds are set.                                                                                                                                                             | To verify / approve |
+| Goal-horizon balance     | Immediate and distributed options are matched on total effort, expected value, risk, attractiveness and social approval.                                                                                                                                             | To verify / approve |
+| Scientific claims        | Q18, Q20, Q32 and Q33 remain questionnaire-primary; game variables are described as proxies.                                                                                                                                                                         | To verify / approve |
+| Primary ownership        | Every item has one declared primary opportunity, window, event family and variable; no event/state/outcome feeds two primary item variables (Q29/Q31 shared indicator excepted).                                                                                     | To verify / approve |
+| Entry-state control      | Every primary opportunity starts from a standardised or counterbalanced measurement-relevant entry state; no item outcome alters another item's opportunity, options, difficulty, tools, duration or consequences.                                                   | To verify / approve |
+| Order and counterbalance | Option positions, matched forms and repeated-opportunity order counterbalanced; any scientifically-necessary fixed order documented and exported as a control variable.                                                                                              | To verify / approve |
+| Contamination coding     | Raw data identifies opportunity, order/counterbalance condition, entry-state validity, prior exposure, technical/comprehension failure, suspected contamination, and primary-analysis validity; contaminated/absent opportunities coded missing, never low-trait.    | To verify / approve |
+| Feedback firewall        | No pre-completion feedback reveals preferred responses, trait interpretations, relative performance or motivation-changing praise/criticism; neutral transitions between related modules where practical.                                                            | To verify / approve |
+| Carryover pilot tests    | Pilot analysis tests order/form, practice/fatigue/contrast, shared-room/NPC/mechanic dependencies, outcome-to-later-item prediction, missing-opportunity patterns and neighbouring-item discriminance; residual dependency → redesign, testlet modelling or removal. | To verify / approve |
 
 # 10. Source documents and references
 
@@ -735,4 +906,4 @@ Maladaptive stopping-rule module: Q26 concerns identical repetition, Q27 concern
 
 ## 10.1 Document authority statement
 
-This specification records the current research-owner discussion as of 15 July 2026. It is intended to become the authoritative behavioural-translation document after review. The exact questionnaire wording remains governed by the final 33-item source document. Final scoring and data-handling rules remain subject to the formal research-owner ruling process.
+This specification records the current research-owner discussion as of 15 July 2026, updated 29 July 2026 (v0.2) to apply the approved global item-separation, local-independence and carryover ruling (recorded verbatim in `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md` §13). It is the authoritative behavioural-translation source within the project's domain hierarchy (tier 2), while remaining a research-owner review draft as to its own wording. The exact questionnaire wording remains governed by the final 33-item source document. All event and indicator names in this document remain candidates; final event names, scoring and data-handling rules remain subject to the formal research-owner ruling process, and the pending Q27–Q33 item-specific solutions are not approved by this document.

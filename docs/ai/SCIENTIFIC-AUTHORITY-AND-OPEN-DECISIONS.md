@@ -14,6 +14,15 @@ and reading any one of them as governing everything produces silent scientific e
 This document **records** decisions; it does not make them. It approves no event
 name, no formula, and no mechanic on its own.
 
+**Update 2026-07-29 (NEXT-09 global-ruling adoption pass).** §13 records the
+research-owner-approved **global scientific ruling on item separation, local
+independence and carryover control**, verbatim, together with its supersession
+register. Where §13 conflicts with older shared-module, event-reuse, Q32/Q33
+no-module, local-independence or carryover assumptions elsewhere in this
+document, the historical wording is preserved and explicitly marked superseded
+in place — nothing is silently rewritten. §13 changes no event registration,
+no formula, and no participant-facing mechanic by itself.
+
 **Scope of the pass that created it.** Documentation and Claude-configuration only.
 No source code, test code, event schema, or scoring code was changed. The conflicts
 listed in §9 are therefore **recorded, not fixed** — the live tree still follows the
@@ -202,9 +211,33 @@ kept.
 - Do **not** implement five repetitive disguised questionnaire choices.
 - **Shared behavioural dimensions and repeated natural choices are preferred.**
 
+> **Supersession note (2026-07-29, §13).** The sentence above is historical
+> wording and is **partially superseded** by the global ruling (§13, ruling
+> §§1-2 and §12): shared behavioural dimensions remain permitted **only** as
+> explicitly approved shared **construct-level** indicators. The sole currently
+> authorised shared-construct exception is the Q29/Q31 goal-horizon dimension
+> (one shared indicator, never two independent game-item scores). No other
+> item — including Q32 and Q33 — is authorised to reuse those events or any
+> other item's primary events for an item-level measure. The recently discussed
+> Q27-Q33 solutions are **pending revised rulings** under §13 and are not
+> approved.
+
 ---
 
 ## 7. Shared-module and non-independence rules
+
+> **Supersession banner (2026-07-29).** This section is preserved as the
+> historical shared-module doctrine. It is **superseded in part** by the global
+> ruling recorded in §13 (ruling §§1, 2 and 6): a module may still be _shared
+> context_ (room, NPC, art, movement, generic interaction components), but it
+> may no longer supply the **primary** measurement for more than one item.
+> Every item requires its own declared primary opportunity, measurement window,
+> primary event family and primary behavioural variable; where similar
+> mechanics are reused, a new item-specific instance and state container are
+> required. "Supporting evidence" rows below remain valid **only** as
+> secondary/ecological telemetry, never as primary item inputs. The single
+> authorised shared-construct exception is Q29/Q31 (§13, ruling §2). Per-row
+> supersession marks follow the table.
 
 Shared evidence is shared, not multiplied. One event sequence must never be counted
 as several independent item observations (specification §8).
@@ -222,6 +255,22 @@ as several independent item observations (specification §8).
 **Architectural consequence.** Goal-horizon and goal-granularity are **shared
 modules**, not five separate minigames. Q32 and Q33 get **no module of their own** —
 they are derived from the same self-selected opportunities.
+
+> **Supersession note (2026-07-29, §13).** The historical sentence above is
+> preserved but **superseded in part** by the global ruling: "no module of
+> their own" still stands (no separate Q32/Q33 minigame is authorised), but the
+> clause "they are derived from the same self-selected opportunities" is no
+> longer an authorisation. Under §13 (ruling §§1-2, 11-12) Q32 and Q33 may
+> **not** reuse the Q29/Q31 goal-horizon events (or any other item's primary
+> events) as item-level measures; no composite may manufacture a missing item
+> measure. Any Q32/Q33 derived treatment is a **pending revised ruling**
+> (SA-5/SA-6 under the new global authority). Likewise, table rows above that
+> assign one module "primary" status for several items at once (Archive → Q13
+> with Q22-Q26 supporting; Systems Repair → Q14/Q21/Q24 primary) are
+> superseded as _primary-measurement_ claims by ruling §§1 and 6 — each item's
+> primary variable requires its own item-specific event family and window; the
+> historical rows remain accurate as a description of today's live shared
+> telemetry.
 
 ---
 
@@ -411,3 +460,247 @@ Therefore:
 A candidate name that appears in a spec assertion, a test expectation, or a code
 comment has been **silently promoted** — that is the failure mode this section
 exists to prevent.
+
+---
+
+## 13. Global scientific ruling — item separation, local independence and carryover control (APPROVED)
+
+**Provenance.** Issued by the research owner and received 2026-07-29
+(NEXT-09 global-ruling adoption pass, branch
+`fable-next-09-global-measurement-ruling-v1`). Recorded verbatim in §13.1.
+This ruling is **binding scientific authority** at tier 2 (behavioural
+translation / measurement design). Per its own §9, it approves **no canonical
+event or payload name** — exact names remain tier-3 event-schema decisions —
+and per §12 it authorises no new composite. It supersedes older rationale
+**within its own domain only** (CLAUDE.md authority hierarchy): live event
+registrations, scoring formulas and build discipline are untouched until their
+own rulings.
+
+### 13.1 Ruling text (verbatim)
+
+> GLOBAL-SCIENTIFIC-RULING — ITEM SEPARATION, LOCAL INDEPENDENCE
+> AND CARRYOVER CONTROL — APPROVED
+>
+> 1. ITEM-SPECIFIC PRIMARY MEASUREMENT
+>
+> Each Q-item behavioural analogue must have:
+>
+> - one declared primary measurement opportunity or repeated set of
+>   item-specific opportunities;
+> - one item-specific measurement window;
+> - one item-specific primary event family;
+> - one item-specific primary behavioural variable.
+>
+> A primary item variable may use only behavioural events generated inside
+> that item's declared measurement window.
+>
+> No raw behavioural event, scored state, outcome or derived variable may
+> contribute to more than one primary item-level variable.
+>
+> 2. SHARED CONSTRUCT EXCEPTION
+>
+> Where an approved scientific rationale treats multiple questionnaire items
+> as opposite expressions of one behavioural dimension, the game may produce
+> one explicitly shared construct-level indicator rather than false independent
+> item indicators.
+>
+> The currently approved Q29/Q31 goal-horizon dimension is such an exception.
+> The same horizon choices must not be reported as two independent game-item
+> scores.
+>
+> 3. WITHIN-ITEM LONGITUDINAL STATE
+>
+> A measurement may extend across rooms, interruptions or later return when
+> that temporal sequence is part of the meaning of the same item.
+>
+> All stages must share one item-specific opportunity identifier and must not
+> serve another item's primary variable.
+>
+> Examples include commitment follow-through, task return after interruption
+> and continuity of a background objective.
+>
+> 4. CROSS-ITEM CARRYOVER FIREWALL
+>
+> The outcome of one item must not determine or materially alter another
+> item's:
+>
+> - opportunity availability;
+> - entry state;
+> - instructions or NPC wording;
+> - option number or option position;
+> - task difficulty;
+> - action count;
+> - expected duration;
+> - reward, consequence or social approval;
+> - time pressure;
+> - available tools or inventory;
+> - completion route;
+> - scoring rule.
+>
+> Every primary item opportunity must begin from a standardised or
+> counterbalanced measurement-relevant entry state.
+>
+> 5. NARRATIVE CONTINUITY
+>
+> Narrative and visual consequences may persist across the game only when they
+> do not alter a later item's measurement-relevant conditions.
+>
+> Cross-room ecological evidence may be retained as secondary raw telemetry,
+> but it may not replace or contaminate the later item's primary indicator.
+>
+> 6. SHARED ROOMS, NPCS AND MECHANICS
+>
+> Items may share rooms, NPCs, art assets, movement controls or generic
+> interaction components.
+>
+> They may not share:
+>
+> - scored task state;
+> - progress state;
+> - primary behavioural events;
+> - outcome consequences;
+> - item-variable inputs.
+>
+> When similar mechanics are reused, a new item-specific instance and state
+> container are required.
+>
+> 7. ORDER, PRACTICE AND CONTRAST EFFECTS
+>
+> Order-sensitive measurement modules and matched scenario forms must be
+> counterbalanced where narrative prerequisites permit.
+>
+> At minimum, the design must counterbalance:
+>
+> - option position within each choice;
+> - matched scenario form;
+> - repeated opportunity order;
+> - order of conceptually similar modules where feasible.
+>
+> Fixed order is permitted only when scientifically necessary. Its rationale
+> must be documented and the order must be exported as a control variable.
+>
+> Counterbalancing does not by itself establish absence of carryover.
+>
+> 8. FEEDBACK AND AFFECTIVE CONTAMINATION
+>
+> Before all potentially related measures are complete, the game must not
+> provide feedback that reveals:
+>
+> - the preferred or correct personality response;
+> - a trait interpretation;
+> - relative performance;
+> - praise or criticism capable of changing later motivation.
+>
+> Operational consequences may be shown only when required for the current
+> item and when they do not change later measurement conditions.
+>
+> A brief neutral transition should separate closely related failure,
+> persistence, stopping-rule and goal-time modules where practical.
+>
+> 9. OPPORTUNITY VALIDITY AND CONTAMINATION
+>
+> The raw data must preserve enough information to identify:
+>
+> - item and measurement opportunity;
+> - presentation order and counterbalance condition;
+> - whether the entry state was valid and standardised;
+> - relevant prior module exposure;
+> - technical or comprehension failure;
+> - suspected carryover contamination;
+> - whether the opportunity is valid for primary analysis.
+>
+> Exact canonical event and payload names require a later event-schema ruling.
+>
+> A contaminated or absent opportunity is missing or invalid measurement,
+> not behavioural non-performance. It must never be assigned a low trait score.
+>
+> 10. PILOT VALIDATION
+>
+> Before item variables or construct composites are treated as validated
+> measures, pilot analysis must test:
+>
+> - order and scenario-form effects;
+> - practice, fatigue and contrast effects;
+> - dependency between items sharing a room, NPC or mechanic;
+> - whether earlier outcomes predict later item responses after controlling
+>   for the intended construct;
+> - response variation and missing-opportunity patterns;
+> - discriminant relationships among neighbouring item variables.
+>
+> Material residual dependency or carryover requires redesign, separate
+> modelling as a testlet/context effect, or removal from primary item scoring.
+> It must not be ignored or interpreted as reliability.
+>
+> 11. EXISTING IMPLEMENTATION
+>
+> Existing shared or cross-room events may remain as raw or secondary
+> ecological telemetry.
+>
+> They are not automatically authorised as independent primary item
+> measurements.
+>
+> In particular, the existing Q03 prepared-tool retrieval episode remains
+> valuable ecological evidence, but because its opportunity depends on prior
+> Inventory behaviour, it cannot be the sole independent Q03 primary measure
+> under this ruling. A later Q03-specific standardised opportunity or equivalent
+> independence remedy is required.
+>
+> 12. SCORING SEPARATION
+>
+> Item-level variables, construct-level indicators, exploratory proxies,
+> legacy composites and control variables must remain separate in the export.
+>
+> No composite may be used to manufacture a missing item measure, and no
+> apparently improved reliability may be claimed from duplicated or locally
+> dependent evidence.
+
+### 13.2 Supersession register
+
+Historical wording is preserved at its original location and marked in place;
+this register is the index. "Superseded" always means _superseded as
+rationale/authorisation within tier 2_ — live registrations and formulas remain
+in force until their own tier-3/tier-4 rulings (§9 queue).
+
+| #   | Historical statement (location, preserved verbatim)                                                                                                                                                                                                                                                                                                   | Status under §13                                                                                                                                                                                                                                                                               | Superseding section   |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| 1   | §7 shared-module table — modules supplying "primary" evidence to several items at once (Archive → Q13 + Q22-Q26 supporting; Systems Repair → Q14/Q21/Q24 primary), mirrored in specification §8                                                                                                                                                       | Superseded as a primary-measurement doctrine: one module may not supply more than one item's primary variable; shared rows remain valid as secondary/ecological telemetry description                                                                                                          | Ruling §§1, 6         |
+| 2   | §7 / §6 "Q29-Q33 overall" — "Shared behavioural dimensions and repeated natural choices are preferred"; "Q32 and Q33 … are derived from the same self-selected opportunities"                                                                                                                                                                         | Superseded in part: Q29/Q31 is the **only** authorised shared-construct indicator; Q32/Q33 reuse of Q29-Q31 events as item measures is not authorised; any derived treatment is a pending revised ruling                                                                                       | Ruling §§1, 2, 11, 12 |
+| 3   | Cross-item event reuse embedded in live registrations (`src/world/CanonicalEventContext.ts`: e.g. `hazard_reckless_continue` → Q12/Q27/Q31; `repair_strategy_revision` → Q14/Q21/Q23; `side_repair_completed` → Q07/Q16/Q32; `final_core_completed` → Q06/Q33; `inventory_verification_skipped` → Q02/Q30; `archive_strategy_revision` → Q13/Q22/Q26) | Superseded **as rationale only**: multi-item tags cannot feed more than one primary item variable. The registrations themselves stay live (tier 3) until event-schema rulings (SA-1, SA-3..SA-6, D-family)                                                                                     | Ruling §§1, 6, 11     |
+| 4   | Coverage-contract / Phase-2 working assumption that the landed Q03 prepared-tool retrieval episode closes Q03's measurement gap (`FABLE-NEXT-09-Q01-Q33-GAMEPLAY-COVERAGE.md` §6-Q03; NEXT-09-P2-R1/R2 remain valid rulings on tool identity and qualifying state)                                                                                    | Superseded in part: the episode remains valuable **secondary ecological evidence**, but because its opportunity depends on prior Inventory behaviour it cannot be the sole independent Q03 primary measure; an independent Q03 remedy is required                                              | Ruling §11            |
+| 5   | Local-independence and carryover assumptions implicit in the connected-world design (Final Core issue flags fed by earlier rooms; corridor opportunity gated on the accepted relay duty; retrieval episode gated on packing) — historical docs treat these as unproblematic ecological design                                                         | Superseded as an assumption: each such dependency is now a recorded carryover/opportunity-gating exposure requiring a standardised or counterbalanced entry state, contamination coding, or an independence remedy (see `docs/research/NEXT-09-ITEM-SEPARATION-AND-CARRYOVER-CONTROL-PLAN.md`) | Ruling §§4, 5, 9      |
+| 6   | Specification §8 shared-module wording and §7-mirrored module table (spec v0.1)                                                                                                                                                                                                                                                                       | Updated in place 2026-07-29 (spec v0.2) with the same supersession semantics; historical wording preserved there under explicit supersession marks                                                                                                                                             | Ruling §§1-12         |
+
+### 13.3 What this ruling does NOT do
+
+- It does **not** rename, add, remove or retag any event (§9 of the ruling:
+  canonical names require a later event-schema ruling).
+- It does **not** change any scoring formula, weight or composite.
+- It does **not** resolve SA-1..SA-11, D2..D8 or INT-1..INT-6. Those stay open
+  and are now to be evaluated **under** this global authority.
+- It does **not** approve the recently discussed Q27-Q33 item-specific
+  solutions (including every option and copy-paste ruling text in
+  `docs/research/NEXT-09-PHASE-3-SCIENTIFIC-DECISION-DOSSIER.md`). Those are
+  **pending revised rulings** under the new global authority; the dossier is a
+  historical decision-evidence record and is not modified by this pass.
+- It does **not** implement anything: no gameplay, no entry-state machinery,
+  no counterbalancing infrastructure exists merely because this ruling is
+  recorded. Implementation remains bounded, approval-gated work.
+
+### 13.4 Consequential open questions routed to the research owner
+
+Recorded as open; resolved only by the research owner (per §11):
+
+- **SA-12 (new) — Q03 independence remedy.** Ruling §11 requires a
+  Q03-specific standardised opportunity or equivalent independence remedy;
+  design options and their event/scoring implications need a ruling
+  (event-schema + measurement-environment).
+- **SA-13 (new) — entry-state and counterbalance machinery.** Ruling §§4, 7
+  and 9 require standardised/counterbalanced entry states, option-position
+  counterbalancing, order export as a control variable, and
+  opportunity-validity/contamination coding in the raw data. The concrete
+  payload/flag design is an event-schema decision; nothing is implemented
+  until ruled.
+- **Re-scoped SA-1/SA-3/SA-4/SA-5/SA-6** — the dossier's options must be
+  re-read against ruling §§1-12 before any is approved; several dossier
+  options predate the firewall requirements (e.g. counterbalanced entry
+  states, prohibition on outcome-dependent later opportunities).
