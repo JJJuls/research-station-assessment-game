@@ -294,6 +294,15 @@ export class HubScene extends RoomScene {
     this.addDecor(12 * 32, 8.5 * 32, 'prop-hub-console');
     this.addDecor(14 * 32, 8.5 * 32, 'prop-hub-console');
 
+    // Unit 4 density pass: corner/wall dressing so the hub reads as a
+    // working concourse rather than an empty hall. Decorative only —
+    // never colliding, clear of every station approach and door route,
+    // duller than interactables (no cyan).
+    this.addDecor(2.5 * 32, 4 * 32, 'prop-dock-crates');
+    this.addDecor(23.5 * 32, 3 * 32, 'prop-archive-racks');
+    this.addDecor(19 * 32, 12.75 * 32, 'prop-dock-crates');
+    this.addDecor(9 * 32, 12.75 * 32, 'prop-archive-racks');
+
     this.addStation({
       interactionKey: 'stationHub',
       label: 'Status Board',

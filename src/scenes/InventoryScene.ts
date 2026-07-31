@@ -244,14 +244,12 @@ export class InventoryScene extends RoomScene {
     breachConfig.texture = 'proc-console-scenario';
     this.addStation(breachConfig);
 
-    // NEXT-07 Phase 2 dressing. The Quartermaster figure stands beside
-    // (east of) the console — non-colliding, non-interactive decor with
-    // no label (D-N07-1 resolved default: the console label carries the
-    // role) and no cyan, clear of the bin-approach corridors (x 192-256
-    // and 384-448) and of the console's south approach. Committed props
-    // dress the flanking storage blocks (A2 reuse, visual plan §3.5),
-    // duller than the room's stations.
-    this.addDecor(372, 176, 'proc-npc-vale');
+    // NEXT-07 Phase 2 dressing, revised in the overnight Unit 4 pass:
+    // the Quartermaster figure decor is REMOVED — Vale now exists as the
+    // single interactive NPC at the Hub requisition desk (Unit 2), and a
+    // second identical silhouette here would be a duplicate character.
+    // Committed props keep dressing the flanking storage blocks (A2
+    // reuse, visual plan §3.5), duller than the room's stations.
     this.addDecor(96, 128, 'prop-dock-crates');
     this.addDecor(512, 128, 'prop-archive-shelves');
 

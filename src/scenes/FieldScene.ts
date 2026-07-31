@@ -87,22 +87,33 @@ export class FieldScene extends RoomScene {
   }
 
   protected getLayout(): RoomLayout {
-    // 22×11 exterior terrace: airlock back to the Hub at the top, rock
+    // 25×19 exterior terrace: airlock back to the Hub at the top, rock
     // outcrops for density, open work floor. 'P' pads mark the deck
-    // apron by the airlock (visual only).
+    // apron by the airlock (visual only). The play space is the original
+    // 22×11 interior; the extra wall mass on the right/bottom fills the
+    // 800×600 viewport so no dead black void renders (Unit 4) — it is
+    // unreachable and changes no interior coordinate.
     return {
       grid: [
-        '######################',
-        '#########--###########',
-        '#........PP..........#',
-        '#....................#',
-        '#..##................#',
-        '#....................#',
-        '#...............##...#',
-        '#....................#',
-        '#.##.................#',
-        '#....................#',
-        '######################',
+        '#########################',
+        '#########--##############',
+        '#........PP..........####',
+        '#....................####',
+        '#..##................####',
+        '#....................####',
+        '#...............##...####',
+        '#....................####',
+        '#.##.................####',
+        '#....................####',
+        '#########################',
+        '#########################',
+        '#########################',
+        '#########################',
+        '#########################',
+        '#########################',
+        '#########################',
+        '#########################',
+        '#########################',
       ],
     };
   }

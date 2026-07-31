@@ -25,7 +25,14 @@ new Phaser.Game({
   physics: {
     default: 'arcade',
     arcade: {
-      debug: import.meta.env.DEV,
+      // Overnight prototype (Unit 4): the physics debug overlay (magenta/
+      // cyan body outlines) is no longer shown in ordinary dev play — it
+      // now requires an explicit ?debug launch flag on top of a dev
+      // build, so participant-mode sessions never see debug geometry.
+      debug:
+        import.meta.env.DEV &&
+        typeof window !== 'undefined' &&
+        new URLSearchParams(window.location.search).has('debug'),
     },
   },
   disableContextMenu: import.meta.env.PROD,

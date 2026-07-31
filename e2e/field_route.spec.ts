@@ -186,9 +186,14 @@ test.describe('field survey route (Unit 2)', () => {
       'excavation_spade',
       'sample_case',
     ]);
-    // The quest HUD line clears once the route's tasks are all completed —
-    // direction falls back to the duty-roster line.
-    expect(await questObjective(page)).toBeNull();
+    // With the field route fully completed, the quest line moves on to
+    // the next accepted task (Unit 3 bench maintenance at the Hub
+    // Calibration Cabinet) — never stuck on a finished route task.
+    const finalObjective = await questObjective(page);
+
+    expect(finalObjective).not.toContain('Field requisition');
+    expect(finalObjective).not.toContain('Survey recovery');
+    expect(finalObjective).toContain('Bench maintenance');
 
     // — Telemetry: the full proto_* trail, with no canonical context.
     const events = await getEvents(page);

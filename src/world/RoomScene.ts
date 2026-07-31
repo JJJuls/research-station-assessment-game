@@ -401,6 +401,17 @@ export abstract class RoomScene extends Phaser.Scene {
   private npcActors = new Map<RoomStationConfig, NpcActor>();
 
   /**
+   * Unit 4 contextual labels: station/door name chips keyed by config —
+   * hidden by default, shown only while that interactable is the nearest
+   * eligible in-range target (no permanent name banners; NPC name chips
+   * already follow this rule via NpcActor).
+   */
+  private labelChips = new Map<
+    RoomStationConfig | RoomDoorConfig,
+    Phaser.GameObjects.GameObject[]
+  >();
+
+  /**
    * NEXT-07 Phase 5 guidance pulse. Marker visuals keyed by their
    * station/door config so the proximity scan's nearest target can be
    * mapped back to its rendered marker; exactly one marker pulses at a
@@ -449,6 +460,7 @@ export abstract class RoomScene extends Phaser.Scene {
     this.pulseTween = null;
     this.pulseMarker = null;
     this.npcActors = new Map();
+    this.labelChips = new Map();
 
     researchRuntime.logSceneStart(this.scene.key);
     researchRuntime.sessionState.setCurrentRoom(this.roomId);
@@ -666,13 +678,24 @@ export abstract class RoomScene extends Phaser.Scene {
       0x1f7a8c,
       0x5fd3c4,
     );
+    const chip = this.buildLabelChip(config.x, config.y - 42, config.label);
 
-    this.stationLabels.add([
-      marker,
-      ...this.buildLabelChip(config.x, config.y - 42, config.label),
-    ]);
+    this.stationLabels.add([marker, ...chip]);
+    this.registerLabelChip(config, chip);
     this.interactableMarkers.set(config, marker);
     this.stations.push(config);
+  }
+
+  /** Unit 4: contextual name chip — hidden until nearest-in-range. */
+  private registerLabelChip(
+    config: RoomStationConfig | RoomDoorConfig,
+    chip: Phaser.GameObjects.GameObject[],
+  ) {
+    for (const part of chip) {
+      (part as Phaser.GameObjects.Rectangle).setVisible(false);
+    }
+
+    this.labelChips.set(config, chip);
   }
 
   /**
@@ -784,10 +807,10 @@ export abstract class RoomScene extends Phaser.Scene {
       isSealed ? 0x46586b : 0x3f5a66,
       isSealed ? 0x2b3a4a : 0x5fd3c4,
     );
-    this.stationLabels.add([
-      marker,
-      ...this.buildLabelChip(config.x, config.y - 42, config.label),
-    ]);
+    const chip = this.buildLabelChip(config.x, config.y - 42, config.label);
+
+    this.stationLabels.add([marker, ...chip]);
+    this.registerLabelChip(config, chip);
     this.interactableMarkers.set(config, marker);
     this.doors.push(config);
   }
@@ -1891,8 +1914,20 @@ export abstract class RoomScene extends Phaser.Scene {
       this.activeTarget = null;
       this.proximityPrompt.setVisible(false);
       // No interaction is eligible (prompt open / typewriter / transition
-      // / timed world action) — the guidance pulse ceases naturally.
+      // / timed world action) — the guidance pulse ceases naturally and
+      // every contextual name chip hides with it (Unit 4).
       this.setPulseMarker(null);
+
+      for (const npc of this.npcActors.values()) {
+        npc.setNameVisible(false);
+      }
+
+      for (const chip of this.labelChips.values()) {
+        for (const part of chip) {
+          (part as Phaser.GameObjects.Rectangle).setVisible(false);
+        }
+      }
+
       return;
     }
 
@@ -1944,6 +1979,23 @@ export abstract class RoomScene extends Phaser.Scene {
     // nearest eligible in-range target (presentation only, never logs).
     for (const [config, npc] of this.npcActors) {
       npc.setNameVisible(nearest !== null && nearest.station === config);
+    }
+
+    // Unit 4 contextual station/door labels: same nearest-only rule (no
+    // permanent name banners; pure presentation, never logs).
+    const nearestConfig =
+      nearest === null
+        ? null
+        : nearest.kind === 'station'
+          ? nearest.station!
+          : nearest.door!;
+
+    for (const [config, chip] of this.labelChips) {
+      const visible = config === nearestConfig;
+
+      for (const part of chip) {
+        (part as Phaser.GameObjects.Rectangle).setVisible(visible);
+      }
     }
 
     if (this.activeTarget === null) {

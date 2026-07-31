@@ -66,7 +66,12 @@ export class NpcActor {
       .setStrokeStyle(1, 0x33475a);
 
     this.nameChipParts = [chip, label];
-    this.setNameVisible(false);
+
+    // Force-hide the freshly created parts (the state-guarded setter
+    // below would no-op on the initial `false`, leaving them visible).
+    for (const part of this.nameChipParts) {
+      (part as Phaser.GameObjects.Rectangle).setVisible(false);
+    }
   }
 
   setNameVisible(visible: boolean) {
