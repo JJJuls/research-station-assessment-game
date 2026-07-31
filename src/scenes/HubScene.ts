@@ -1,7 +1,26 @@
 import { key } from '../constants';
+import {
+  collectLockerItem,
+  FIELD_REQUISITION_TASK_ID,
+  getGameItem,
+  getTaskStatus,
+  isRequisitionKitComplete,
+  isRouteFinished,
+  performWorldAction,
+  refreshRequisitionObjective,
+  registerRouteTasks,
+  remainingLockerItems,
+  showFloatingText,
+} from '../gameplay';
+import { acceptTask, declineTask } from '../gameplay/tasks';
 import { priorityAllocationScenario, ScenarioController } from '../scenarios';
 import { researchRuntime } from '../systems';
-import type { InteractionKey, PromptOption, RoomLayout } from '../world';
+import type {
+  InteractionKey,
+  PromptOption,
+  PromptStage,
+  RoomLayout,
+} from '../world';
 import { getStationByRoomId, RoomScene, STATION_REGISTRY } from '../world';
 
 /**
@@ -49,7 +68,7 @@ export class HubScene extends RoomScene {
         '#........................#',
         '#........................#',
         '#........................#',
-        '############--############',
+        '#####--#####--############',
         '##########################',
       ],
     };
@@ -62,6 +81,12 @@ export class HubScene extends RoomScene {
     // airlock at the bottom.
     const from =
       data?.spawn !== undefined ? getStationByRoomId(data.spawn) : undefined;
+
+    // Returning from the Survey Terrace: just inside the exterior airlock,
+    // outside its 72px interaction radius (registry hubSpawn convention).
+    if (data?.spawn === 'proto_field_site') {
+      return { x: 6 * 32, y: 12 * 32 };
+    }
 
     return from?.hubSpawn ?? { x: 13 * 32, y: 11.5 * 32 };
   }
@@ -106,6 +131,45 @@ export class HubScene extends RoomScene {
       target: {
         sceneKey: key.scene.dock,
         roomId: 'dock_arrival',
+        spawn: 'station_hub',
+      },
+    });
+
+    // ——— Overnight-prototype field route (Unit 2): Vale + locker + airlock.
+    registerRouteTasks();
+
+    // Quartermaster Vale — visible NPC at the requisition desk (SW area,
+    // clear of the status board, allocation console, and every door path).
+    this.addNpc({
+      interactionKey: 'hubQuartermasterVale',
+      label: 'Quartermaster Vale',
+      npcName: 'Quartermaster Vale',
+      texture: 'proc-npc-vale',
+      x: 4.5 * 32,
+      y: 10.75 * 32,
+      onPromptOpened: () => this.onValeOpened(),
+    });
+
+    // Field Equipment Locker beside the desk.
+    this.addStation({
+      interactionKey: 'hubFieldLocker',
+      label: 'Field Equipment Locker',
+      texture: 'proc-locker-field',
+      x: 1.75 * 32,
+      y: 10.75 * 32,
+      onPromptOpened: () => this.onLockerOpened(),
+    });
+
+    // Exterior airlock to the Survey Terrace (new bottom-wall doorway).
+    this.addDoor({
+      x: 6 * 32,
+      y: 14 * 32 + 16,
+      label: 'Exterior Airlock',
+      texture: 'prop-dock-airlock',
+      interactionKey: 'stationHub',
+      target: {
+        sceneKey: key.scene.field,
+        roomId: 'proto_field_site',
         spawn: 'station_hub',
       },
     });
@@ -172,7 +236,179 @@ export class HubScene extends RoomScene {
       return this.allocationScenario?.getRootOptions() ?? [];
     }
 
+    if (interactionKey === 'hubQuartermasterVale') {
+      return this.buildValeOfferOptions();
+    }
+
+    if (interactionKey === 'hubFieldLocker') {
+      return this.buildLockerOptions();
+    }
+
     return [];
+  }
+
+  // ——————————————— Overnight-prototype field route (Unit 2) ———————————————
+
+  /**
+   * Vale's prompt gate: the offer opens only while the requisition is not
+   * yet accepted; every other state short-circuits to status feedback.
+   * All proto_* emissions are raw prototype telemetry (scenario_* rule).
+   */
+  private onValeOpened(): boolean {
+    this.logScenarioEvent('hubQuartermasterVale', 'proto_requisition_opened');
+
+    if (isRouteFinished()) {
+      this.showFeedbackMessage(
+        'Vale: "Kai already called it in — feed restored and the sample logged. Tidy work."',
+      );
+      return false;
+    }
+
+    const status = getTaskStatus(FIELD_REQUISITION_TASK_ID);
+
+    if (status === 'accepted') {
+      const remaining = remainingLockerItems();
+
+      this.showFeedbackMessage(
+        remaining.length > 0
+          ? `Vale: "Locker's open — still to collect: ${remaining
+              .map((itemId) => getGameItem(itemId).label)
+              .join(', ')}."`
+          : 'Vale: "Kit\'s complete. Exterior airlock is on the south wall — Kai\'s waiting on the terrace."',
+      );
+      return false;
+    }
+
+    if (status === 'completed') {
+      this.showFeedbackMessage(
+        'Vale: "Kai\'s got the survey in hand out on the terrace. Anything he flags, you\'ll hear about."',
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  private buildValeOfferOptions(): PromptOption[] {
+    const acceptOption: PromptOption = {
+      label: 'Take on the field requisition.',
+      feedback:
+        'Vale unlocks the equipment locker beside the desk. "Scanner, spade, sample case. Bring yourself back in one piece."',
+      getEventTypes: () => [],
+      onSelected: () => {
+        acceptTask(FIELD_REQUISITION_TASK_ID);
+        refreshRequisitionObjective();
+        this.logScenarioEvent(
+          'hubQuartermasterVale',
+          'proto_requisition_accepted',
+        );
+      },
+    };
+
+    return [
+      acceptOption,
+      {
+        label: 'Ask what the job involves.',
+        feedback: '',
+        getEventTypes: () => [],
+        nextStage: (): PromptStage => ({
+          body: 'Vale: "Storm knocked out the terrace antenna feed and buried the survey grid. Kai needs a runner with a scanner and a spade — he\'ll brief you at the airlock side."',
+          options: [
+            acceptOption,
+            {
+              label: 'Not right now.',
+              feedback: 'Vale nods. "The requisition stays on the ledger."',
+              getEventTypes: () => [],
+              onSelected: () => {
+                declineTask(FIELD_REQUISITION_TASK_ID);
+                this.logScenarioEvent(
+                  'hubQuartermasterVale',
+                  'proto_requisition_declined',
+                );
+              },
+            },
+          ],
+        }),
+      },
+      {
+        label: 'Not right now.',
+        feedback: 'Vale nods. "The requisition stays on the ledger."',
+        getEventTypes: () => [],
+        onSelected: () => {
+          declineTask(FIELD_REQUISITION_TASK_ID);
+          this.logScenarioEvent(
+            'hubQuartermasterVale',
+            'proto_requisition_declined',
+          );
+        },
+      },
+    ];
+  }
+
+  private onLockerOpened(): boolean {
+    if (getTaskStatus(FIELD_REQUISITION_TASK_ID) !== 'accepted') {
+      this.showFeedbackMessage(
+        'The locker is quartermaster-issued. Vale handles requisitions at the desk beside it.',
+      );
+      return false;
+    }
+
+    if (isRequisitionKitComplete()) {
+      this.showFeedbackMessage('The issued shelf is cleared.');
+      return false;
+    }
+
+    return true;
+  }
+
+  private buildLockerOptions(): PromptOption[] {
+    const lockerX = 1.75 * 32;
+    const lockerY = 10.75 * 32;
+    const options: PromptOption[] = remainingLockerItems().map((itemId) => {
+      const item = getGameItem(itemId);
+
+      return {
+        label: `Take the ${item.label}.`,
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => {
+          performWorldAction({
+            scene: this,
+            x: lockerX,
+            y: lockerY,
+            label: 'Collecting…',
+            durationMs: 800,
+            onComplete: () => {
+              if (!collectLockerItem(itemId)) {
+                this.showFeedbackMessage(
+                  'Your equipment belt is full — make room first.',
+                );
+                return;
+              }
+
+              this.logScenarioEvent('hubFieldLocker', 'proto_item_collected', {
+                metadata: { item_id: itemId },
+              });
+              showFloatingText(this, lockerX, lockerY, `+ ${item.label}`);
+
+              if (isRequisitionKitComplete()) {
+                this.showFeedbackMessage(
+                  'Kit complete. The Exterior Airlock is on the south wall — the Survey Terrace is through it.',
+                );
+              }
+            },
+          });
+        },
+      };
+    });
+
+    options.push({
+      label: 'Close the locker.',
+      feedback: 'You close the locker.',
+      getEventTypes: () => [],
+    });
+
+    return options;
   }
 
   protected onRoomExit(): void {

@@ -2,6 +2,7 @@ export * from './ArchiveScene';
 export * from './Boot';
 export * from './DockScene';
 export * from './EngineerScene';
+export * from './FieldScene';
 export * from './FinalCoreScene';
 export * from './HazardScene';
 export * from './HubScene';

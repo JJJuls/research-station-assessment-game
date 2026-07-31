@@ -1,0 +1,601 @@
+import { key } from '../constants';
+import {
+  acceptSurveyBriefing,
+  addInventoryItem,
+  ANOMALY_NODE_IDS,
+  completeInstallStep,
+  DIG_YIELD,
+  fieldRouteState,
+  flaggedNodesPendingDig,
+  getGameItem,
+  hasInventoryItem,
+  INSTALL_STEP_LABELS,
+  isRouteFinished,
+  isTaskAccepted,
+  markNodeDug,
+  markNodeScanned,
+  markSampleDelivered,
+  performWorldAction,
+  registerRouteTasks,
+  removeInventoryItem,
+  SCAN_NODE_IDS,
+  showFloatingText,
+  SURVEY_RECOVERY_TASK_ID,
+} from '../gameplay';
+import type {
+  InteractionKey,
+  PromptOption,
+  PromptStage,
+  RoomLayout,
+  StagePresentation,
+  SurfaceStepTile,
+} from '../world';
+import { RoomScene } from '../world';
+
+/**
+ * Survey Terrace — overnight playable-prototype field area (Unit 2).
+ *
+ * The embodied field loop: Kai briefs the survey, the player scans four
+ * survey markers with the field scanner, digs out the two flagged
+ * deposits with the excavation spade, installs the recovered relay
+ * coupling at the antenna feed housing (three-step tactile install), and
+ * delivers the recovered core sample back to Kai.
+ *
+ * This is a gameplay/route area, NOT an assessment station: it has no
+ * station-registry entry, `proto_field_site` is a provisional internal
+ * area id (not an event-schema §2 room_id), and every event here is raw
+ * prototype telemetry via logScenarioEvent (scenario_* precedent — no
+ * canonical context, no Q-mapping, no scoring).
+ */
+
+/** Fixed marker positions (px), matched to the layout's open floor. */
+const SCAN_NODE_POSITIONS: Readonly<Record<number, { x: number; y: number }>> =
+  {
+    1: { x: 5 * 32, y: 8.5 * 32 },
+    2: { x: 3 * 32, y: 5 * 32 },
+    3: { x: 13 * 32, y: 8.5 * 32 },
+    4: { x: 18 * 32, y: 4 * 32 },
+  };
+
+const KAI_POSITION = { x: 13 * 32, y: 3 * 32 };
+const FEED_HOUSING_POSITION = { x: 19 * 32, y: 8.5 * 32 };
+
+export class FieldScene extends RoomScene {
+  protected readonly roomId = 'proto_field_site';
+  protected readonly roomInteractionKey: InteractionKey = 'fieldKaiSupervisor';
+
+  /** Marker the currently open scan-node prompt belongs to. */
+  private activeNodeId = 0;
+  /** Per-node station configs so dig-state visuals can update in place. */
+  private nodeMounds = new Map<number, boolean>();
+
+  constructor() {
+    super(key.scene.field);
+  }
+
+  protected getLayout(): RoomLayout {
+    // 22×11 exterior terrace: airlock back to the Hub at the top, rock
+    // outcrops for density, open work floor. 'P' pads mark the deck
+    // apron by the airlock (visual only).
+    return {
+      grid: [
+        '######################',
+        '#########--###########',
+        '#........PP..........#',
+        '#....................#',
+        '#..##................#',
+        '#....................#',
+        '#...............##...#',
+        '#....................#',
+        '#.##.................#',
+        '#....................#',
+        '######################',
+      ],
+    };
+  }
+
+  protected getSpawn(): { x: number; y: number } {
+    // Just inside the airlock, outside the door's 72px radius.
+    return { x: 10 * 32, y: 4 * 32 };
+  }
+
+  protected populateRoom(): void {
+    registerRouteTasks();
+
+    // Engineer Kai supervising the survey (visible NPC, Unit 1 actor).
+    this.addNpc({
+      interactionKey: 'fieldKaiSupervisor',
+      label: 'Engineer Kai',
+      npcName: 'Engineer Kai',
+      texture: 'proc-npc-kai',
+      x: KAI_POSITION.x,
+      y: KAI_POSITION.y,
+      onPromptOpened: () => this.onKaiOpened(),
+    });
+
+    // Four survey markers.
+    for (const nodeId of SCAN_NODE_IDS) {
+      const position = SCAN_NODE_POSITIONS[nodeId];
+
+      this.addStation({
+        interactionKey: 'fieldScanNode',
+        label: `Survey Marker ${nodeId}`,
+        texture: 'proc-scan-node',
+        x: position.x,
+        y: position.y,
+        onPromptOpened: () => this.onScanNodeOpened(nodeId),
+      });
+
+      // Already-dug markers re-render their spoil mound on re-entry.
+      if (fieldRouteState.dug_nodes.includes(nodeId)) {
+        this.addDigMound(nodeId);
+      }
+    }
+
+    // Antenna feed housing (install target).
+    this.addStation({
+      interactionKey: 'fieldFeedHousing',
+      label: 'Antenna Feed Housing',
+      texture: 'proc-beacon-comms',
+      x: FEED_HOUSING_POSITION.x,
+      y: FEED_HOUSING_POSITION.y,
+      onPromptOpened: () => this.onFeedHousingOpened(),
+    });
+
+    // Airlock back to the Station Hub.
+    this.addDoor({
+      x: 10 * 32,
+      y: 1 * 32 + 16,
+      label: 'Station Hub',
+      texture: 'prop-hub-door-frame',
+      interactionKey: 'fieldKaiSupervisor',
+      target: {
+        sceneKey: key.scene.hub,
+        roomId: 'station_hub',
+        spawn: 'proto_field_site',
+      },
+    });
+
+    // Worksite dressing (decorative only).
+    this.addDecor(4 * 32, 2.5 * 32, 'prop-dock-crates');
+    this.addDecor(20 * 32, 2 * 32, 'prop-dock-crates');
+  }
+
+  protected onRoomEntered(): void {
+    this.logScenarioEvent('fieldKaiSupervisor', 'proto_field_site_entered');
+  }
+
+  /** Spoil-mound visual beside a dug marker (pure presentation). */
+  private addDigMound(nodeId: number) {
+    if (this.nodeMounds.get(nodeId) === true) {
+      return;
+    }
+
+    const position = SCAN_NODE_POSITIONS[nodeId];
+
+    this.nodeMounds.set(nodeId, true);
+    this.addDecor(position.x + 34, position.y + 12, 'proc-dig-mound');
+  }
+
+  // ————————————————————————— Engineer Kai —————————————————————————
+
+  private onKaiOpened(): boolean {
+    this.logScenarioEvent('fieldKaiSupervisor', 'proto_field_briefing_opened');
+
+    if (isRouteFinished()) {
+      this.showFeedbackMessage(
+        'Kai: "Good work out there. The feed is stable and the lab has its sample — check the duty roster for what\'s left."',
+      );
+      return false;
+    }
+
+    if (isTaskAccepted(SURVEY_RECOVERY_TASK_ID)) {
+      if (
+        fieldRouteState.dug_nodes.includes(4) &&
+        hasInventoryItem('core_sample')
+      ) {
+        return true; // delivery prompt
+      }
+
+      this.showFeedbackMessage(this.buildKaiProgressHint());
+      return false;
+    }
+
+    return true; // briefing prompt
+  }
+
+  private buildKaiProgressHint(): string {
+    if (fieldRouteState.scanned_nodes.length < SCAN_NODE_IDS.length) {
+      return 'Kai: "Run the scanner over all four survey markers first — the anomalies will flag themselves."';
+    }
+
+    if (flaggedNodesPendingDig().length > 0) {
+      return 'Kai: "Two markers flagged. Dig them out with the spade and see what the terrace is hiding."';
+    }
+
+    if (!fieldRouteState.coupling_installed) {
+      return 'Kai: "That coupling you turned up belongs in the antenna feed housing, east side."';
+    }
+
+    return 'Kai: "Bring me that core sample when you\'re ready."';
+  }
+
+  // ————————————————————————— Survey markers —————————————————————————
+
+  private onScanNodeOpened(nodeId: number): boolean {
+    this.activeNodeId = nodeId;
+
+    const scanned = fieldRouteState.scanned_nodes.includes(nodeId);
+    const dug = fieldRouteState.dug_nodes.includes(nodeId);
+    const isAnomaly = ANOMALY_NODE_IDS.includes(nodeId);
+
+    if (!isTaskAccepted(SURVEY_RECOVERY_TASK_ID) && !scanned) {
+      this.showFeedbackMessage(
+        'The survey marker is dormant. Engineer Kai coordinates the survey from the terrace platform.',
+      );
+      return false;
+    }
+
+    if (!scanned && !hasInventoryItem('field_scanner')) {
+      this.showFeedbackMessage(
+        'A subsurface reading needs the Field Scanner. Vale issues field equipment at the Hub requisition desk.',
+      );
+      return false;
+    }
+
+    if (scanned && !isAnomaly) {
+      this.showFeedbackMessage('Scan logged — no anomaly under this marker.');
+      return false;
+    }
+
+    if (scanned && isAnomaly && dug) {
+      this.showFeedbackMessage(
+        'The flagged deposit here is already recovered.',
+      );
+      return false;
+    }
+
+    if (scanned && isAnomaly && !hasInventoryItem('excavation_spade')) {
+      this.showFeedbackMessage(
+        'The flagged deposit needs the Excavation Spade. Vale issues field equipment at the Hub requisition desk.',
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  private buildScanNodeOptions(nodeId: number): PromptOption[] {
+    const scanned = fieldRouteState.scanned_nodes.includes(nodeId);
+    const position = SCAN_NODE_POSITIONS[nodeId];
+
+    if (!scanned) {
+      return [
+        {
+          label: 'Run a subsurface scan.',
+          feedback: '',
+          getEventTypes: () => [],
+          onSelected: () => {
+            performWorldAction({
+              scene: this,
+              x: position.x,
+              y: position.y,
+              label: 'Scanning…',
+              durationMs: 1100,
+              onComplete: () => this.finishScan(nodeId),
+            });
+          },
+        },
+        {
+          label: 'Leave the marker for now.',
+          feedback: 'You step back from the marker.',
+          getEventTypes: () => [],
+        },
+      ];
+    }
+
+    // Flagged anomaly, spade in hand: the dig action.
+    return [
+      {
+        label: 'Dig out the flagged deposit.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => {
+          performWorldAction({
+            scene: this,
+            x: position.x,
+            y: position.y,
+            label: 'Digging…',
+            durationMs: 1500,
+            onComplete: () => this.finishDig(nodeId),
+          });
+        },
+      },
+      {
+        label: 'Leave the deposit for now.',
+        feedback: 'You step back from the flagged marker.',
+        getEventTypes: () => [],
+      },
+    ];
+  }
+
+  private finishScan(nodeId: number) {
+    const isAnomaly = ANOMALY_NODE_IDS.includes(nodeId);
+    const position = SCAN_NODE_POSITIONS[nodeId];
+
+    markNodeScanned(nodeId);
+    this.logScenarioEvent('fieldScanNode', 'proto_scan_performed', {
+      metadata: { node_id: nodeId, anomaly: isAnomaly },
+    });
+
+    if (isAnomaly) {
+      showFloatingText(this, position.x, position.y, 'Anomaly flagged');
+      this.showFeedbackMessage(
+        'The scanner flags a dense subsurface deposit — the marker is staked for digging.',
+      );
+    } else {
+      showFloatingText(this, position.x, position.y, 'No anomaly');
+      this.showFeedbackMessage('Scan logged — no anomaly under this marker.');
+    }
+  }
+
+  private finishDig(nodeId: number) {
+    const yieldItemId = DIG_YIELD[nodeId];
+    const position = SCAN_NODE_POSITIONS[nodeId];
+
+    if (yieldItemId !== undefined && !addInventoryItem(yieldItemId)) {
+      this.showFeedbackMessage(
+        'Your equipment belt is full — make room before recovering the deposit.',
+      );
+      return;
+    }
+
+    markNodeDug(nodeId);
+    this.addDigMound(nodeId);
+    this.logScenarioEvent('fieldScanNode', 'proto_dig_performed', {
+      metadata: { node_id: nodeId, yield_item_id: yieldItemId ?? null },
+    });
+
+    if (yieldItemId !== undefined) {
+      const item = getGameItem(yieldItemId);
+
+      this.logScenarioEvent('fieldScanNode', 'proto_item_recovered', {
+        metadata: { node_id: nodeId, item_id: yieldItemId },
+      });
+      showFloatingText(this, position.x, position.y, `+ ${item.label}`);
+      this.showFeedbackMessage(
+        `Recovered: ${item.label}. ${
+          yieldItemId === 'relay_coupling'
+            ? 'It matches the antenna feed housing on the east side.'
+            : 'The survey lab will want this delivered to Kai.'
+        }`,
+      );
+    }
+  }
+
+  // ————————————————————————— Feed housing —————————————————————————
+
+  private onFeedHousingOpened(): boolean {
+    if (fieldRouteState.coupling_installed) {
+      this.showFeedbackMessage(
+        'The feed housing is sealed and the antenna feed reads nominal.',
+      );
+      return false;
+    }
+
+    const midInstall = fieldRouteState.install_steps_done > 0;
+
+    if (!midInstall && !hasInventoryItem('relay_coupling')) {
+      this.showFeedbackMessage(
+        'The feed housing is missing its relay coupling. The flagged survey deposits may turn one up.',
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  private buildFeedHousingOptions(): PromptOption[] {
+    const step = fieldRouteState.install_steps_done;
+    const stepLabel = INSTALL_STEP_LABELS[step];
+    const actionLabels = ['Aligning…', 'Seating…', 'Torquing…'];
+
+    return [
+      {
+        label: `${stepLabel}.`,
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => {
+          performWorldAction({
+            scene: this,
+            x: FEED_HOUSING_POSITION.x,
+            y: FEED_HOUSING_POSITION.y,
+            label: actionLabels[step],
+            durationMs: 900,
+            onComplete: () => this.finishInstallStep(),
+          });
+        },
+      },
+      {
+        label: 'Step away from the housing.',
+        feedback: 'You step back from the feed housing.',
+        getEventTypes: () => [],
+      },
+    ];
+  }
+
+  private finishInstallStep() {
+    const stepsDone = completeInstallStep();
+
+    this.logScenarioEvent('fieldFeedHousing', 'proto_install_step_completed', {
+      metadata: {
+        step: stepsDone,
+        step_label: INSTALL_STEP_LABELS[stepsDone - 1],
+      },
+    });
+
+    if (stepsDone === 2) {
+      // The coupling is physically seated at step 2.
+      removeInventoryItem('relay_coupling');
+    }
+
+    if (fieldRouteState.coupling_installed) {
+      this.logScenarioEvent('fieldFeedHousing', 'proto_coupling_installed');
+      showFloatingText(
+        this,
+        FEED_HOUSING_POSITION.x,
+        FEED_HOUSING_POSITION.y,
+        'Feed restored',
+      );
+      this.showFeedbackMessage(
+        'The relay coupling seats cleanly — the antenna feed hums back to life.',
+      );
+      this.logRouteCompletedIfFinished();
+    } else {
+      this.showFeedbackMessage(
+        `${INSTALL_STEP_LABELS[stepsDone - 1]} — done. Continue the installation.`,
+      );
+    }
+  }
+
+  private logRouteCompletedIfFinished() {
+    if (isRouteFinished()) {
+      this.logScenarioEvent('fieldKaiSupervisor', 'proto_route_completed');
+    }
+  }
+
+  // ————————————————————————— Prompt wiring —————————————————————————
+
+  protected getPromptBody(interactionKey: InteractionKey): string | undefined {
+    if (interactionKey === 'fieldKaiSupervisor') {
+      if (!isTaskAccepted(SURVEY_RECOVERY_TASK_ID)) {
+        return (
+          'Kai: "Glad Vale kitted you out. The terrace lost its antenna feed in the last storm and the survey grid is overdue: ' +
+          'scan the four markers, dig out anything the scanner flags, and get the feed housing whole again."'
+        );
+      }
+
+      return 'Kai holds out a gloved hand for the sample case.';
+    }
+
+    if (interactionKey === 'fieldFeedHousing') {
+      return 'The housing panel is open. The mounting bracket, coupling seat and torque fitting are all accessible.';
+    }
+
+    return undefined;
+  }
+
+  protected getStagePresentation(
+    interactionKey: InteractionKey,
+  ): StagePresentation | undefined {
+    if (interactionKey !== 'fieldFeedHousing') {
+      return undefined;
+    }
+
+    // Install step tracker (NEXT-08 steps surface, redundant-activator
+    // model — pure presentation over the same option).
+    const tiles: SurfaceStepTile[] = INSTALL_STEP_LABELS.map(
+      (label, index) => ({
+        label,
+        state:
+          index < fieldRouteState.install_steps_done
+            ? 'done'
+            : index === fieldRouteState.install_steps_done
+              ? 'current'
+              : 'pending',
+      }),
+    );
+
+    return { surface: [{ kind: 'steps', tiles }] };
+  }
+
+  protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
+    if (interactionKey === 'fieldScanNode') {
+      return this.buildScanNodeOptions(this.activeNodeId);
+    }
+
+    if (interactionKey === 'fieldFeedHousing') {
+      return this.buildFeedHousingOptions();
+    }
+
+    if (interactionKey !== 'fieldKaiSupervisor') {
+      return [];
+    }
+
+    if (!isTaskAccepted(SURVEY_RECOVERY_TASK_ID)) {
+      return [
+        {
+          label: 'Take the survey briefing.',
+          feedback:
+            'Kai marks the four survey points on your wrist display. "Scanner first, spade second. Shout if the grid surprises you."',
+          getEventTypes: () => [],
+          onSelected: () => {
+            acceptSurveyBriefing();
+            this.logScenarioEvent(
+              'fieldKaiSupervisor',
+              'proto_field_briefing_accepted',
+            );
+          },
+        },
+        {
+          label: 'Ask what happened out here.',
+          feedback: '',
+          getEventTypes: () => [],
+          nextStage: (): PromptStage => ({
+            body: 'Kai: "Storm sheared the antenna feed and buried half the survey grid. The markers still transmit — they just need a scanner pass to read what\'s underneath."',
+            options: [
+              {
+                label: 'Take the survey briefing.',
+                feedback:
+                  'Kai marks the four survey points on your wrist display. "Scanner first, spade second."',
+                getEventTypes: () => [],
+                onSelected: () => {
+                  acceptSurveyBriefing();
+                  this.logScenarioEvent(
+                    'fieldKaiSupervisor',
+                    'proto_field_briefing_accepted',
+                  );
+                },
+              },
+              {
+                label: 'Not yet — step back.',
+                feedback: 'Kai nods. "The grid will keep a little longer."',
+                getEventTypes: () => [],
+              },
+            ],
+          }),
+        },
+      ];
+    }
+
+    // Delivery prompt (gated by onKaiOpened: sample recovered + carried).
+    return [
+      {
+        label: 'Hand over the core sample.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => this.deliverSample(),
+      },
+      {
+        label: 'Hold on to it a little longer.',
+        feedback: 'Kai shrugs. "The lab queue isn\'t going anywhere."',
+        getEventTypes: () => [],
+      },
+    ];
+  }
+
+  private deliverSample() {
+    if (!removeInventoryItem('core_sample')) {
+      this.showFeedbackMessage('The sample case is empty.');
+      return;
+    }
+
+    markSampleDelivered();
+    this.logScenarioEvent('fieldKaiSupervisor', 'proto_sample_delivered');
+    showFloatingText(this, KAI_POSITION.x, KAI_POSITION.y, 'Sample delivered');
+    this.showFeedbackMessage(
+      'Kai seals the case and logs the recovery. "Clean work. The feed and the lab both owe you one."',
+    );
+    this.logRouteCompletedIfFinished();
+  }
+}

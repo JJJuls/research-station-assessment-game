@@ -253,6 +253,53 @@ export const researchInteractions = {
     // event-schema.md §2 "station_hub" (additive). Never Q-mapped.
     room_id: 'station_hub',
   },
+  // ——— Overnight playable-prototype route stations (Unit 2) ———
+  // proto_* interactions are INTERNAL/PROVISIONAL runtime identifiers for
+  // the embodied gameplay route. Their events are raw prototype telemetry
+  // logged via logScenarioEvent (scenario_* precedent): no canonical
+  // task_id, no Q-mapping, no construct scoring, and none of these names
+  // is an approved tier-3 event-schema entry. `proto_field_site` is a
+  // provisional area id, not a canonical event-schema §2 room_id.
+  hubQuartermasterVale: {
+    object_id: 'proto_quartermaster_vale',
+    label: 'Quartermaster Vale',
+    episode: 'proto_field_route',
+    event_type: 'proto_requisition_opened',
+    score_tags: [],
+    room_id: 'station_hub',
+  },
+  hubFieldLocker: {
+    object_id: 'proto_field_equipment_locker',
+    label: 'Field Equipment Locker',
+    episode: 'proto_field_route',
+    event_type: 'proto_item_collected',
+    score_tags: [],
+    room_id: 'station_hub',
+  },
+  fieldKaiSupervisor: {
+    object_id: 'proto_field_kai',
+    label: 'Engineer Kai',
+    episode: 'proto_field_route',
+    event_type: 'proto_field_briefing_opened',
+    score_tags: [],
+    room_id: 'proto_field_site',
+  },
+  fieldScanNode: {
+    object_id: 'proto_field_scan_node',
+    label: 'Survey Marker',
+    episode: 'proto_field_route',
+    event_type: 'proto_scan_performed',
+    score_tags: [],
+    room_id: 'proto_field_site',
+  },
+  fieldFeedHousing: {
+    object_id: 'proto_field_feed_housing',
+    label: 'Antenna Feed Housing',
+    episode: 'proto_field_route',
+    event_type: 'proto_install_step_completed',
+    score_tags: [],
+    room_id: 'proto_field_site',
+  },
   sign: {
     object_id: 'sign',
     label: 'Welcome sign',
