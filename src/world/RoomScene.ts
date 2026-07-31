@@ -3,6 +3,15 @@ import Phaser from 'phaser';
 import { Depth, key } from '../constants';
 import type { ResearchInteraction } from '../data/researchInteractions';
 import { researchInteractions } from '../data/researchInteractions';
+import {
+  getActiveObjectiveLine,
+  InventoryHud,
+  isWorldActionActive,
+  NpcActor,
+  onInventoryChange,
+  onTaskChange,
+  serializeInventory,
+} from '../gameplay';
 import { getRemainingPilotDecisions, PILOT_DECISION_TOTAL } from '../scenarios';
 import { Player } from '../sprites';
 import { state } from '../state';
@@ -210,6 +219,19 @@ export interface RoomStationConfig {
   onPromptOpened?: () => boolean;
 }
 
+/**
+ * NPC station (overnight prototype, Unit 1): a normal proximity station
+ * whose visual is a visible character (NpcActor) instead of a marker
+ * rectangle, with a name chip shown only in interaction proximity.
+ * Interaction/prompt/logging mechanics are identical to addStation.
+ */
+export interface RoomNpcConfig extends RoomStationConfig {
+  /** In-fiction display name shown on proximity. */
+  npcName: string;
+  /** Disable the idle bob (console-mounted figures). */
+  still?: boolean;
+}
+
 export interface RoomDoorConfig {
   x: number;
   y: number;
@@ -285,6 +307,16 @@ declare global {
     __routeObjectiveText?: string | null;
     __lastPromptBody?: string | null;
     /**
+     * Unit 1 gameplay probes (DEV-only, read-only, __playerProbe
+     * precedent): the rendered gameplay-task objective line and a
+     * serialised inventory snapshot. Never read back into gameplay.
+     */
+    __questObjectiveText?: string | null;
+    __inventoryProbe?: {
+      slots: (string | null)[];
+      selected_index: number | null;
+    } | null;
+    /**
      * FABLE-NEXT-06 semantic test hook: screen rects of the visible
      * choice cards of the open prompt (participant label text only —
      * never researcher language). DEV-only, read-only, cleared on close.
@@ -332,6 +364,8 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
   window.__lastPromptBody = null;
   window.__promptCards = null;
   window.__minigameSurface = null;
+  window.__questObjectiveText = null;
+  window.__inventoryProbe = null;
 }
 
 /**
@@ -357,9 +391,13 @@ export abstract class RoomScene extends Phaser.Scene {
   private feedbackMessage: Phaser.GameObjects.Text | null = null;
   private proximityPrompt!: Phaser.GameObjects.Text;
   private routeObjective!: Phaser.GameObjects.Text;
+  private questObjective!: Phaser.GameObjects.Text;
   private stationLabels!: Phaser.GameObjects.Container;
   private stations: RoomStationConfig[] = [];
   private transitioning = false;
+
+  /** Unit 1: visible NPC actors keyed by their station config. */
+  private npcActors = new Map<RoomStationConfig, NpcActor>();
 
   /**
    * NEXT-07 Phase 5 guidance pulse. Marker visuals keyed by their
@@ -409,6 +447,7 @@ export abstract class RoomScene extends Phaser.Scene {
     this.interactableMarkers = new Map();
     this.pulseTween = null;
     this.pulseMarker = null;
+    this.npcActors = new Map();
 
     researchRuntime.logSceneStart(this.scene.key);
     researchRuntime.sessionState.setCurrentRoom(this.roomId);
@@ -471,6 +510,41 @@ export abstract class RoomScene extends Phaser.Scene {
       .setDepth(Depth.AboveWorld)
       .setScrollFactor(0);
 
+    // Unit 1 gameplay-task objective line (second HUD line, under the duty
+    // roster): the FIRST accepted gameplay task's live objective. Allowed
+    // progress UI only — in-fiction checklist text, never scores. The duty
+    // roster line above keeps its exact legacy text and probe.
+    this.questObjective = this.add
+      .text(8, 32, '', {
+        backgroundColor: '#101820',
+        color: '#9fb2c1',
+        font: '13px monospace',
+        padding: { x: 6, y: 3 },
+      })
+      .setOrigin(0)
+      .setDepth(Depth.AboveWorld)
+      .setScrollFactor(0)
+      .setVisible(false);
+
+    const unsubscribeTasks = onTaskChange(() => this.refreshQuestObjective());
+    const unsubscribeInventory = onInventoryChange(() => {
+      if (typeof window !== 'undefined' && import.meta.env.DEV) {
+        window.__inventoryProbe = serializeInventory();
+      }
+    });
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      unsubscribeTasks();
+      unsubscribeInventory();
+    });
+
+    // Unit 1 visible inventory belt — identical in every room.
+    new InventoryHud(this);
+
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__inventoryProbe = serializeInventory();
+    }
+
     // Same pause affordance as the prototype scene; Menu resumes this room
     // via the resumeKey launch data.
     this.input.keyboard!.on('keydown-ESC', () => {
@@ -481,6 +555,22 @@ export abstract class RoomScene extends Phaser.Scene {
     this.populateRoom();
     this.onRoomEntered();
     this.refreshRouteObjective();
+    this.refreshQuestObjective();
+  }
+
+  /** Recomputes the gameplay-task objective HUD line (Unit 1). */
+  private refreshQuestObjective() {
+    const line = getActiveObjectiveLine();
+
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__questObjectiveText = line;
+    }
+
+    if (line === null) {
+      this.questObjective.setVisible(false);
+    } else {
+      this.questObjective.setText(line).setVisible(true);
+    }
   }
 
   /**
@@ -532,6 +622,34 @@ export abstract class RoomScene extends Phaser.Scene {
     }
 
     this.routeObjective.setText(text);
+  }
+
+  /**
+   * Adds a visible NPC as a proximity station (Unit 1): the NpcActor
+   * sprite replaces the marker rectangle, the name chip appears only in
+   * interaction proximity (contextual labelling), and prompt/logging
+   * mechanics are exactly addStation's.
+   */
+  protected addNpc(config: RoomNpcConfig) {
+    if (!this.textures.exists(config.texture ?? '')) {
+      // Foundry texture missing (never expected — proc textures generate
+      // at Boot): degrade to the standard station marker.
+      this.addStation(config);
+      return;
+    }
+
+    const npc = new NpcActor({
+      scene: this,
+      x: config.x,
+      y: config.y,
+      texture: config.texture!,
+      name: config.npcName,
+      still: config.still,
+    });
+
+    this.interactableMarkers.set(config, npc.sprite);
+    this.npcActors.set(config, npc);
+    this.stations.push(config);
   }
 
   /** Adds a proximity interaction station (prototype marker mechanics). */
@@ -1762,12 +1880,13 @@ export abstract class RoomScene extends Phaser.Scene {
     if (
       this.activePrompt !== null ||
       state.isTypewriting ||
-      this.transitioning
+      this.transitioning ||
+      isWorldActionActive()
     ) {
       this.activeTarget = null;
       this.proximityPrompt.setVisible(false);
-      // No interaction is eligible (prompt open / typewriter /
-      // transition) — the guidance pulse ceases naturally (Phase 5).
+      // No interaction is eligible (prompt open / typewriter / transition
+      // / timed world action) — the guidance pulse ceases naturally.
       this.setPulseMarker(null);
       return;
     }
@@ -1816,6 +1935,12 @@ export abstract class RoomScene extends Phaser.Scene {
           ) ?? null),
     );
 
+    // Unit 1 contextual NPC name chips: visible only while that NPC is the
+    // nearest eligible in-range target (presentation only, never logs).
+    for (const [config, npc] of this.npcActors) {
+      npc.setNameVisible(nearest !== null && nearest.station === config);
+    }
+
     if (this.activeTarget === null) {
       this.proximityPrompt.setVisible(false);
 
@@ -1848,7 +1973,9 @@ export abstract class RoomScene extends Phaser.Scene {
     // FABLE-NEXT-06: the avatar holds still while a prompt is open — the
     // arrow keys belong to card focus there (presentation-only; selection
     // remains the only way a prompt closes, so no task state is affected).
-    if (this.activePrompt === null) {
+    // Unit 1: the avatar also holds still while a timed world action runs
+    // (scan/dig/install progress bars are performed in place).
+    if (this.activePrompt === null && !isWorldActionActive()) {
       this.player.update();
     } else {
       (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0);

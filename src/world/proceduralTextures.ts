@@ -582,6 +582,107 @@ function drawIconLogMark(g: Graphics) {
 }
 
 /**
+ * Overnight-prototype gameplay icons (Unit 1): identity glyphs for the
+ * src/gameplay item registry. Same drawing language and determinism rule
+ * as the NEXT-08 family above; identity only, never validity, no cyan.
+ */
+
+/** Field Scanner: handheld body, readout, stub antenna. */
+function drawIconFieldScanner(g: Graphics) {
+  rect(g, 16, 2, 2, 5, MUTED);
+  box(g, 7, 6, 12, 14, CARD, BORDER);
+  rect(g, 9, 8, 8, 5, PANEL);
+  rect(g, 10, 9, 6, 1, MUTED);
+  rect(g, 10, 11, 4, 1, MUTED);
+  rect(g, 9, 15, 3, 3, MUTED);
+  rect(g, 14, 15, 3, 3, KAI_SUIT_SHADE);
+}
+
+/** Excavation Spade: shaft, grip, wide blade. */
+function drawIconExcavationSpade(g: Graphics) {
+  box(g, 10, 2, 5, 3, MUTED);
+  rect(g, 11, 5, 3, 9, KAI_SUIT_SHADE);
+  box(g, 7, 14, 11, 7, MUTED);
+  rect(g, 7, 19, 11, 2, BORDER);
+}
+
+/** Sample Case: latched carry case with handle. */
+function drawIconSampleCase(g: Graphics) {
+  rect(g, 9, 3, 6, 3, BORDER);
+  box(g, 4, 6, 16, 13, VALE_SUIT, VALE_SUIT_RIM);
+  rect(g, 4, 11, 16, 2, VALE_SUIT_SHADE);
+  rect(g, 10, 11, 4, 2, MUTED);
+}
+
+/** Core Sample: strata cylinder in a sleeve. */
+function drawIconCoreSample(g: Graphics) {
+  box(g, 8, 3, 8, 18, KAI_SUIT_SHADE, KAI_SUIT_RIM);
+  rect(g, 8, 6, 8, 2, MUTED);
+  rect(g, 8, 11, 8, 3, VALE_SUIT_SHADE);
+  rect(g, 8, 17, 8, 2, MUTED);
+}
+
+/** Relay Coupling: flanged ring with bolt marks. */
+function drawIconRelayCoupling(g: Graphics) {
+  box(g, 5, 5, 14, 14, MUTED);
+  rect(g, 9, 9, 6, 6, PANEL);
+  rect(g, 6, 6, 2, 2, OUTLINE);
+  rect(g, 16, 6, 2, 2, OUTLINE);
+  rect(g, 6, 16, 2, 2, OUTLINE);
+  rect(g, 16, 16, 2, 2, OUTLINE);
+}
+
+/** Flux Calibrator: bench unit with dial and lead. */
+function drawIconFluxCalibrator(g: Graphics) {
+  box(g, 4, 7, 16, 12, CARD, BORDER);
+  rect(g, 6, 9, 5, 5, PANEL);
+  rect(g, 7, 10, 3, 3, MUTED);
+  rect(g, 13, 9, 5, 2, KAI_SUIT_SHADE);
+  rect(g, 13, 13, 5, 2, KAI_SUIT_SHADE);
+  rect(g, 19, 4, 2, 4, MUTED);
+}
+
+/**
+ * Overnight-prototype field props (Unit 1/2): worksite silhouettes in the
+ * shared station drawing language (cyan only on interactable cues).
+ */
+
+/** Field equipment locker: tall double-door cabinet with vents. */
+function drawLockerField(g: Graphics) {
+  box(g, 4, 4, 40, 48, CARD, BORDER);
+  rect(g, 23, 6, 2, 44, BORDER);
+  rect(g, 8, 10, 12, 2, MUTED);
+  rect(g, 8, 14, 12, 2, MUTED);
+  rect(g, 28, 10, 12, 2, MUTED);
+  rect(g, 28, 14, 12, 2, MUTED);
+  rect(g, 18, 30, 3, 6, MUTED);
+  rect(g, 27, 30, 3, 6, MUTED);
+  // Cyan label chip (interactable cue).
+  rect(g, 20, 22, 8, 3, ACCENT);
+  rect(g, 2, 52, 44, 2, OUTLINE);
+}
+
+/** Survey scan node: staked marker with sensor head. */
+function drawScanNode(g: Graphics) {
+  box(g, 13, 4, 8, 8, CARD, BORDER);
+  rect(g, 15, 6, 4, 3, ACCENT);
+  rect(g, 16, 12, 2, 18, BORDER);
+  rect(g, 12, 30, 10, 3, MUTED);
+  rect(g, 10, 33, 14, 2, OUTLINE);
+}
+
+/** Dig mound: broken frozen regolith with loose rocks. */
+function drawDigMound(g: Graphics) {
+  rect(g, 6, 16, 28, 8, KAI_SUIT_SHADE);
+  rect(g, 10, 12, 20, 6, MUTED);
+  rect(g, 16, 9, 10, 5, KAI_SUIT_SHADE);
+  rect(g, 8, 22, 5, 3, BORDER);
+  rect(g, 27, 21, 6, 3, BORDER);
+  rect(g, 19, 6, 4, 4, MUTED);
+  rect(g, 4, 24, 32, 2, OUTLINE);
+}
+
+/**
  * Registry-item icon key: presentation-layer mapping from an inventory
  * `item_id` (src/data/itemRegistry.ts — deliberately not edited) to its
  * `proc-icon-*` texture. Every registry item has a manifest entry pinned
@@ -683,6 +784,33 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   },
   'proc-icon-step-done': { width: 20, height: 20, draw: drawIconStepDone },
   'proc-icon-log-mark': { width: 16, height: 16, draw: drawIconLogMark },
+  // Overnight-prototype gameplay icons (src/gameplay/items.ts).
+  'proc-icon-field-scanner': {
+    width: 24,
+    height: 24,
+    draw: drawIconFieldScanner,
+  },
+  'proc-icon-excavation-spade': {
+    width: 24,
+    height: 24,
+    draw: drawIconExcavationSpade,
+  },
+  'proc-icon-sample-case': { width: 24, height: 24, draw: drawIconSampleCase },
+  'proc-icon-core-sample': { width: 24, height: 24, draw: drawIconCoreSample },
+  'proc-icon-relay-coupling': {
+    width: 24,
+    height: 24,
+    draw: drawIconRelayCoupling,
+  },
+  'proc-icon-flux-calibrator': {
+    width: 24,
+    height: 24,
+    draw: drawIconFluxCalibrator,
+  },
+  // Overnight-prototype field props.
+  'proc-locker-field': { width: 48, height: 56, draw: drawLockerField },
+  'proc-scan-node': { width: 34, height: 38, draw: drawScanNode },
+  'proc-dig-mound': { width: 40, height: 28, draw: drawDigMound },
 };
 
 /** Fixed manifest (key → dimensions) for determinism coverage. */

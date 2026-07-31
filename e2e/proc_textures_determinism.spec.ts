@@ -59,6 +59,17 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-icon-step-current': { width: 20, height: 20 },
   'proc-icon-step-done': { width: 20, height: 20 },
   'proc-icon-log-mark': { width: 16, height: 16 },
+  // Overnight-prototype gameplay icons (src/gameplay/items.ts, Unit 1).
+  'proc-icon-field-scanner': { width: 24, height: 24 },
+  'proc-icon-excavation-spade': { width: 24, height: 24 },
+  'proc-icon-sample-case': { width: 24, height: 24 },
+  'proc-icon-core-sample': { width: 24, height: 24 },
+  'proc-icon-relay-coupling': { width: 24, height: 24 },
+  'proc-icon-flux-calibrator': { width: 24, height: 24 },
+  // Overnight-prototype field props (Unit 1).
+  'proc-locker-field': { width: 48, height: 56 },
+  'proc-scan-node': { width: 34, height: 38 },
+  'proc-dig-mound': { width: 40, height: 28 },
 };
 
 interface ProcTexturesProbe {

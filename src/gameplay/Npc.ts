@@ -1,0 +1,83 @@
+/**
+ * NPC actor presentation (overnight playable prototype, Unit 1).
+ *
+ * A visible station character: distinct sprite, drop shadow, gentle idle
+ * bob, and a name chip that appears only in interaction proximity
+ * (contextual labelling — no permanent banners). Interaction itself goes
+ * through the room's existing station mechanics; this class is pure
+ * presentation and never logs events.
+ */
+
+import Phaser from 'phaser';
+
+export interface NpcActorConfig {
+  scene: Phaser.Scene;
+  x: number;
+  y: number;
+  /** proc-npc-* / proc-bot-* texture key. */
+  texture: string;
+  /** In-fiction display name shown on proximity (e.g. "Engineer Kai"). */
+  name: string;
+  /** Disable the idle bob (e.g. seated/console-mounted figures). */
+  still?: boolean;
+}
+
+export class NpcActor {
+  readonly sprite: Phaser.GameObjects.Image;
+  private nameChipParts: Phaser.GameObjects.GameObject[];
+  private nameVisible = false;
+
+  constructor(config: NpcActorConfig) {
+    const { scene, x, y, texture, name } = config;
+
+    // Drop shadow (Player.ts shadow language: ellipse under the feet).
+    scene.add.ellipse(x, y + 24, 26, 9, 0x000000, 0.25).setDepth(-0.25);
+
+    this.sprite = scene.add.image(x, y, texture);
+
+    if (config.still !== true) {
+      scene.tweens.add({
+        targets: this.sprite,
+        y: y - 2,
+        duration: 1300,
+        repeat: -1,
+        yoyo: true,
+        ease: 'Sine.easeInOut',
+      });
+    }
+
+    // Name chip (buildLabelChip language), hidden until proximity.
+    const label = scene.add
+      .text(x, y - 44, name, {
+        color: '#fff',
+        font: '12px monospace',
+        padding: { x: 4, y: 2 },
+      })
+      .setOrigin(0.5);
+    const chip = scene.add
+      .rectangle(
+        x,
+        y - 44,
+        Math.ceil(label.width),
+        Math.ceil(label.height),
+        0x101820,
+        0.92,
+      )
+      .setStrokeStyle(1, 0x33475a);
+
+    this.nameChipParts = [chip, label];
+    this.setNameVisible(false);
+  }
+
+  setNameVisible(visible: boolean) {
+    if (this.nameVisible === visible) {
+      return;
+    }
+
+    this.nameVisible = visible;
+
+    for (const part of this.nameChipParts) {
+      (part as Phaser.GameObjects.Rectangle).setVisible(visible);
+    }
+  }
+}
