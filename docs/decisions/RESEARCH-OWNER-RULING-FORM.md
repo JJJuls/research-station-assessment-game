@@ -1,4 +1,4 @@
-# Research-Owner Ruling Form — INT-1, INT-2, INT-5, D2
+# Research-Owner Ruling Form — INT-1, INT-2, INT-5, D2, SA-family
 
 **Copy-paste form.** Fill in each field, mark **APPROVED** or **NOT APPROVED**, and
 add rationale. This form issues the binding rulings; the analysis behind each choice
@@ -6,6 +6,15 @@ is in `docs/decisions/QUALTRICS-INTEGRATION-DECISION-PACK.md` (INT-1/2/5) and
 `docs/decisions/D2-BEAT13-SCORING-DECISION-PACK.md` (D2). **Nothing here is adopted
 until you mark it APPROVED.** No implementation may begin before the fields that gate
 it are approved.
+
+> **Already issued — do not re-ask.** The section
+> "**Measurement rulings ISSUED 2026-07-30 (NEXT-10)**" near the end of this
+> form records rulings the research owner **has already issued** (SA-1, SA-2,
+> SA-3, SA-4, SA-5, SA-6, SA-12, SA-13, corridor de-gating, Final Core
+> baseline). Those fields are **APPROVED**, not pending. They approve
+> **measurement design only** — no canonical event name, no formula, no
+> implementation. Authoritative text:
+> `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md` §14.
 
 - Ruling issued by: `__________________` Date: `__________`
 - Repository checkpoint this form was prepared against: branch
@@ -380,6 +389,66 @@ tags, while packed-state ticks would newly pre-empt verification).
 
 ---
 
+## Measurement rulings ISSUED 2026-07-30 (NEXT-10) — APPROVED
+
+**These fields are not awaiting a decision.** They record rulings the research
+owner **has issued**, on 2026-07-30, adopting the previously accepted revised
+measurement directions. The authoritative ruling text is
+`docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md` §14.1; this section is the
+form-side record so that the form does not read as though these questions were
+still open.
+
+- Ruling issued by: research owner Date: `2026-07-30`
+- Repository checkpoint: branch `fable-next-10-research-owner-rulings-v1`,
+  base `a0f298f`.
+
+**Authority level of every field below: measurement design only.** None of them
+approves a canonical event name, a payload name, a variable, a weight, a
+threshold, a formula, or any implementation. Those remain event-schema (tier 3)
+and scoring-plan (tier 4) rulings and separately approved build passes.
+
+| Field                           | Ruling                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Status       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| **SA-1** Hazard ownership       | Hazard is principally the **Q12** prudence/carefulness opportunity. Q27 and Q31 may use no Hazard event, state, outcome or derived variable as primary evidence. Existing Hazard cross-tags remain temporarily as **explicitly labelled legacy/secondary ecological telemetry** pending the event-schema unit — not authorised primary inputs. Inappropriate-persistence formulas containing Hazard terms are **recorded as requiring a later scoring-plan correction**; no formula changes now.                                                                                                                                                                                                                                                                                                                                                                               | **APPROVED** |
+| **SA-2** Q27 utility-stop       | A dedicated **Q27 Utility Bot utility-stop module** is approved: bounded useful sequence first; standardised explicit no-further-benefit signal; primary window begins at the signal; stopping and continuing equally accessible and neutrally framed; own state and eventual event family; independent of Hazard and all other persistence measures; neutral transition and validity controls. **Independence is not limited to the persistence family — the full ruling §4 firewall applies; in particular the opportunity's availability and entry state must not depend on Side Repair engagement or outcome (Q07/Q16/Q20/Q32), and the module needs its own instance and state container even though the candidate host is that bay.** Canonical events and scoring **pending**.                                                                                          | **APPROVED** |
+| **SA-3** Q29/Q31 horizon        | **Two matched, counterbalanced situations** (one NPC-mediated, one terminal-mediated where feasible), each contrasting a self-contained immediate objective with a distributed objective of comparable total effort/value. Initial choice recorded **before** interruption or consequence; effort/benefit/difficulty/action count/duration/attractiveness/social approval approximately matched; option position, form and opportunity order counterbalanced. Produces **exactly one shared construct-level Q29/Q31 indicator** — never two independent game-item scores. Independent of Hazard, Side Repair, Q32, Q33 and Final Core. Legacy stabiliser/Hazard/shared-arc evidence **not authorised** as primary.                                                                                                                                                             | **APPROVED** |
+| **SA-4** Q30 granularity        | **At least two independent Q30 opportunities**: (1) Vale/Inventory work-order granularity; (2) telemetry-cache/map-movement granularity. Each compares several independently closable smaller objectives with one integrated multi-component objective, balanced on total effort/benefit/difficulty/action count/duration/attractiveness/social feedback, using Q30-specific instances and state, with form order and option position counterbalanced. **≥2 valid opportunities** required before a pattern is derived; absent/contaminated opportunities are **missing/invalid**. Q30 is **never** inferred from skipped verification, poor preparation, carelessness or Hazard behaviour.                                                                                                                                                                                    | **APPROVED** |
+| **SA-5** Q32 portfolio          | A **distinct Q32 Active Project Portfolio module** is approved, with its own opportunity, window, state container and eventual primary event family, independent of Q29/Q31, Side Repair and every other item's primary evidence; standardised or counterbalanced entry conditions; earlier item outcomes may not alter availability, project count, difficulty, benefit, feedback or measurement route. Any eventual indicator is an **exploratory short-session analogue only** — no claim to literal multi-year goal duration, never a validated item score. Legacy Q32 tags/proxies remain **labelled secondary ecological telemetry** pending schema disposition and **cannot feed the Q32 primary variable**.                                                                                                                                                            | **APPROVED** |
+| **SA-6** Q33 closure queue      | A **distinct Q33 Contract Closure Queue module** is approved, with its own self-selected Q33-specific closure opportunities, window, state container and eventual primary event family, independent of Final Core and of Q29/Q30/Q31/Q32 and other item outcomes. **Required short tasks and forced completions cannot count as Q33 evidence.** Earlier outcomes may not alter availability, queue content, difficulty, benefit, feedback or measurement route. Any eventual indicator is an **exploratory short-session analogue only** — the game establishes nothing about whether real-world goals take days, and it is never a validated item score. Final Core rushing, issue resolution, generic completion and other items' completion events are **not authorised** as primary Q33 evidence; they may remain labelled secondary telemetry pending schema disposition. | **APPROVED** |
+| **SA-12** Independent Q03       | A **new independently available, standardised Q03 retrieval/maintained-order opportunity** is approved. Its availability and entry state must not depend on earlier Inventory behaviour, on whether a particular tool was packed, or on any other item outcome. The existing prepared-tool/probe retrieval remains **secondary ecological evidence only** and cannot be the sole Q03 primary measure. Canonical events and scoring **pending**.                                                                                                                                                                                                                                                                                                                                                                                                                                | **APPROVED** |
+| **SA-13** Validity architecture | The **semantic architecture** is approved: raw data must distinguish item/shared-construct ownership; measurement opportunity and instance; form and presentation order; counterbalance condition and option position; entry-state standardisation/validity; relevant prior exposure; comprehension failure; technical failure; carryover/contamination status and reason; opportunity completion, absence or censoring; and validity for primary analysis. These are **required semantic data elements, not approved canonical field names** — exact names, types, enumerations and payload contracts are **reserved for the event-schema ruling**. A contaminated, technically failed, absent or otherwise invalid opportunity is **missing/invalid evidence and must never be converted into low trait evidence**.                                                          | **APPROVED** |
+| **Corridor de-gating**          | An interruption opportunity for **Q15/Q17/Q19 available independently of Q10 duty acceptance** is approved. Q10 outcomes must not alter its availability, entry state, wording, options, difficulty, action count, duration, reward, time pressure, tools, route or scoring. **SA-9, SA-10 and D6 still govern** item-specific event ownership and ignored-alert/acknowledgement semantics and are **not** resolved here.                                                                                                                                                                                                                                                                                                                                                                                                                                                      | **APPROVED** |
+| **Final Core baseline**         | An **identical baseline issue/blocker component for all participants** is approved for the Q11/Q28 measurement environment. Participant-created issues from prior rooms may remain visible as secondary narrative/ecological consequences but cannot alter the baseline opportunity or substitute for its primary evidence. **Q11/Q28 event ownership and scoring formulas are not resolved here.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | **APPROVED** |
+
+**Firewall scope for every field above.** Where a ruling names only some
+firewall dimensions, that is emphasis, **never a narrowing**. The **full global
+ruling §4 firewall applies to every opportunity authorised here**: no other
+item's outcome may determine or materially alter its opportunity availability,
+entry state, instructions or NPC wording, option number or option position,
+task difficulty, action count, expected duration, reward/consequence/social
+approval, time pressure, available tools or inventory, completion route, or
+scoring rule. For the Final Core baseline this is stated explicitly because
+Q11/Q28 is the global ruling's own worked example of a multi-dimension
+carryover exposure. Full itemisation: authority record §14.0 and the Final Core
+baseline entry in §14.1.
+
+**Consequential status corrections recorded by these rulings** (full text at
+§14.2 of the authority record): Q27/Q29-Q31/Q30/Q32/Q33 modules are
+**authorised but not implemented**; Q32 and Q33 no longer have "no distinct
+module permitted" as current authority; older "Q32/Q33 derived from shared
+opportunities" language is **superseded** (preserved in place, marked); Q32 and
+Q33 **remain questionnaire items in Qualtrics** and questionnaire-primary, with
+exploratory and separate game analogues that are **not validated replacements**;
+**Q29/Q31 remains the sole shared-construct exception**; candidate events and
+variables remain **noncanonical**; event-schema, infrastructure, module and
+scoring work remain **separate future units**.
+
+**Still awaiting a research-owner decision on this form** (unchanged by the
+above): INT-1, INT-2, INT-5, D2, PSA-1..PSA-4, **SA-7**, **SA-8**, **SA-9**,
+**SA-10**, **SA-11**, and D3..D8 in their own packs.
+
+---
+
 ## Sign-off
 
 - INT-1 complete: APPROVED / NOT APPROVED
@@ -387,6 +456,9 @@ tags, while packed-state ticks would newly pre-empt verification).
 - INT-5 complete: APPROVED / NOT APPROVED
 - D2 complete: APPROVED / NOT APPROVED
 - Privacy/Security addendum (PSA-1..PSA-4) complete: APPROVED / NOT APPROVED
+- NEXT-10 measurement rulings (SA-1..SA-6, SA-12, SA-13, corridor de-gating,
+  Final Core baseline): **ISSUED AND APPROVED 2026-07-30** — measurement design
+  only; event-schema, scoring and implementation gates remain open.
 - Signature: `__________` Date: `__________`
 
 **Next authorised action after sign-off**: Unit 0 recorded → begin **Unit 1**

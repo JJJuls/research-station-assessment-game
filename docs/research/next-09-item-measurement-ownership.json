@@ -1,19 +1,43 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "title": "NEXT-09 Q01-Q33 item measurement ownership, independence and carryover register",
   "status": "documentation_only",
   "generated": "2026-07-29",
   "baseline_commit": "f64d1ce4f9ccc3cf200efb32e2a644bf66ea4753",
   "branch": "fable-next-09-global-measurement-ruling-v1",
+  "last_revised": "2026-07-30",
+  "last_revised_baseline_commit": "a0f298ffe6e9e5bbd9c7cc2218da47a65a8d20d4",
+  "last_revised_branch": "fable-next-10-research-owner-rulings-v1",
+  "revisions": [
+    {
+      "unit": "FABLE-NEXT-09 global measurement ruling adoption",
+      "date": "2026-07-29",
+      "baseline_commit": "f64d1ce4f9ccc3cf200efb32e2a644bf66ea4753",
+      "branch": "fable-next-09-global-measurement-ruling-v1",
+      "scope": "Register created: all-33-item ownership, independence and carryover audit under the global ruling."
+    },
+    {
+      "unit": "FABLE-NEXT-10 research-owner measurement ruling adoption",
+      "date": "2026-07-30",
+      "baseline_commit": "a0f298ffe6e9e5bbd9c7cc2218da47a65a8d20d4",
+      "branch": "fable-next-10-research-owner-rulings-v1",
+      "scope": "Documentation-only. Records the adopted rulings SA-1, SA-2, SA-3, SA-4, SA-5, SA-6, SA-12, SA-13, corridor de-gating and the Final Core baseline issue/blocker component as APPROVED at measurement-design authority. The live tree audit is unchanged: no event was registered, retagged or renamed, no formula changed, and no module built."
+    }
+  ],
   "authority": {
     "global_ruling": "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md#13-global-scientific-ruling",
-    "behavioural_translation": "docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md (v0.2)",
+    "adopted_measurement_rulings": "docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md#14-adopted-research-owner-measurement-rulings (2026-07-30; SA-1, SA-2, SA-3, SA-4, SA-5, SA-6, SA-12, SA-13, corridor de-gating, Final Core baseline)",
+    "ruling_form_record": "docs/decisions/RESEARCH-OWNER-RULING-FORM.md (section: Measurement rulings ISSUED 2026-07-30)",
+    "behavioural_translation": "docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md (v0.3)",
     "event_names": "docs/research/event-schema.md",
     "scoring": "docs/research/scoring-plan.md",
     "plan": "docs/research/NEXT-09-ITEM-SEPARATION-AND-CARRYOVER-CONTROL-PLAN.md"
   },
   "conventions": {
     "candidate_names": "Every proposed event family and variable name is a CANDIDATE pending event-schema/scoring-plan rulings; nothing in this file promotes a name.",
+    "authority_level_separation": "Four statuses are tracked separately and must never be conflated. (1) authorised_design: whether the research owner has approved the measurement design. (2) implementation_status: whether anything exists in the tree. (3) canonical_event_status: whether canonical production event and payload names exist (event-schema, tier 3). (4) scoring_status: whether an approved variable, weight, threshold, formula or composite exists (scoring-plan, tier 4). As of 2026-07-30 every ruling recorded here is authorised_design only: nothing is implemented, no canonical event name is approved, and no formula is approved.",
+    "exploratory_analogue_rule": "Where an adopted ruling authorises a module for a questionnaire-primary item (Q32, Q33), any eventual indicator is an exploratory short-session analogue only. It is never a validated item score and never a replacement for the Qualtrics questionnaire item.",
+    "shared_construct_exception": "Q29/Q31 goal-horizon is the only authorised shared-construct exception (global ruling section 2). Authorising a dedicated module for another item is never a permission to reuse another item's primary evidence.",
     "contamination_default": "Per ruling section 9: a contaminated or absent opportunity is missing/invalid measurement, never behavioural non-performance, and is never assigned a low trait score. Raw data must record opportunity id, order/counterbalance condition, entry-state validity, prior module exposure, technical/comprehension failure, and a contamination flag.",
     "shared_context_default": "Room entry/exit, movement, scenario_* pilot telemetry, dock control covariates, hub navigation and DEV-probe traffic are permissible shared context and must remain unscored for every item.",
     "evidence_status_vocabulary": [
@@ -32,8 +56,10 @@
       "opportunity_gated_noncompliant",
       "entry_state_noncompliant",
       "absent_blocked",
-      "questionnaire_primary_no_module"
-    ]
+      "questionnaire_primary_no_module",
+      "authorised_design_not_implemented"
+    ],
+    "implementation_status_note": "authorised_design_not_implemented was added 2026-07-30: the measurement design is approved by the research owner and the module is NOT built; canonical events and scoring remain pending. It never means implemented."
   },
   "items": [
     {
@@ -133,9 +159,9 @@
       "construct": "BFI-2 Conscientiousness / Organisation (BFI-C-07): keeps things neat and tidy",
       "direction": "positive",
       "evidence_status": "strong",
-      "primary_opportunity": "REQUIRED-INDEPENDENT: a Q03-specific standardised retrieval/maintained-order opportunity not gated by prior Inventory behaviour (ruling section 11; SA-12). Existing prepared-tool retrieval episode = secondary ecological evidence only",
-      "primary_measurement_window": "pending SA-12 design (existing episode window: repair-panel retrieval stage -> first application)",
-      "primary_event_ownership": "pending SA-12; live Q03-tagged events (correct_tool_selected, wrong_tool_selected, prepared_tool_used, workspace_tidy_confirmed) are singly tagged but opportunity-gated",
+      "primary_opportunity": "AUTHORISED DESIGN, NOT BUILT - a new independently available, standardised Q03 retrieval/maintained-order opportunity (SA-12, APPROVED 2026-07-30) whose availability and entry state must not depend on earlier Inventory behaviour, on whether a particular tool was packed, or on any other item outcome (ruling section 11). The existing prepared-tool/probe retrieval episode remains secondary ecological evidence only and cannot be the sole Q03 primary measure.",
+      "primary_measurement_window": "the new opportunity's own window (design detail pending); existing episode window: repair-panel retrieval stage -> first application, secondary only",
+      "primary_event_ownership": "none yet - the authorised independent opportunity's event family is unnamed (canonical names = event-schema ruling). Live Q03-tagged events (correct_tool_selected, wrong_tool_selected, prepared_tool_used, workspace_tidy_confirmed) are singly tagged but opportunity-gated and stay secondary ecological evidence.",
       "primary_variable_ownership": "candidate independent retrieval/maintained-order accuracy; none compliant today (prepared_tool_used read by no formula)",
       "shared_context_events": [
         "room entry/exit",
@@ -159,7 +185,14 @@
       "counterbalance_requirements": "Container-choice option positions counterbalanced or documented-fixed",
       "contamination_rules": "Default; no qualifying packed tool = no-opportunity (never untidy)",
       "implementation_status": "opportunity_gated_noncompliant",
-      "minimum_remediation": "SA-12 research-owner ruling on the independent Q03 opportunity (design + events); until then no Q03 primary indicator",
+      "adopted_ruling_status": {
+        "ruling": "SA-12 (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - a new independently available, standardised Q03 retrieval/maintained-order opportunity, independent of earlier Inventory behaviour and of every other item outcome",
+        "implementation_status": "not_implemented - the only live Q03 opportunity is still the gated prepared-tool episode, which stays secondary",
+        "canonical_event_status": "no canonical events for the new opportunity; names and payloads reserved for the event-schema ruling",
+        "scoring_status": "no approved variable or formula; Q03 has no valid primary indicator until the new opportunity is built"
+      },
+      "minimum_remediation": "Event-schema ruling (events for the authorised independent opportunity) and scoring-plan ruling, then a separately approved implementation pass; until built, no Q03 primary indicator",
       "affected_files": [
         "src/scenes/RepairScene.ts",
         "src/scenes/InventoryScene.ts",
@@ -167,7 +200,7 @@
       ],
       "proposed_tests": [
         "automated: existing kit-packed/kit-less parity specs stay green; post-remedy: every-session opportunity assertion",
-        "manual: route 12 unchanged until SA-12"
+        "manual: route 12 unchanged until the authorised independent opportunity is built in its own approved pass"
       ]
     },
     {
@@ -453,13 +486,20 @@
       "entry_state_requirements": "Duty offer identical for every session",
       "opportunity_gating": "Declining = no-opportunity for follow-through (never penalised)",
       "carryover_controls": [
-        "MAJOR: duty acceptance gates the corridor opportunity for Q15/Q17/Q19 (edges Q10->Q15/Q17/Q19); remedy or contamination coding required",
+        "MAJOR: duty acceptance gates the corridor opportunity for Q15/Q17/Q19 (edges Q10->Q15/Q17/Q19); de-gating remedy APPROVED 2026-07-30, not yet implemented",
         "duty-unresolved consequence joins Q11/Q28 entry-state exposure"
       ],
       "counterbalance_requirements": "Offer option positions counterbalanced or documented-fixed",
       "contamination_rules": "Default",
       "implementation_status": "partially_compliant",
-      "minimum_remediation": "Ruling on de-gating the corridor opportunity (or coding dependent sessions); no Q10-internal change needed",
+      "adopted_ruling_status": {
+        "ruling": "Corridor de-gating (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - an interruption opportunity for Q15/Q17/Q19 available independently of Q10 duty acceptance; Q10 outcomes must not alter its availability, entry state, wording, options, difficulty, action count, duration, reward, time pressure, tools, route or scoring",
+        "implementation_status": "not_implemented - the live corridor is still gated on duty acceptance",
+        "canonical_event_status": "no canonical events approved; SA-9, SA-10 and D6 still govern item-specific event ownership and ignored-alert/acknowledgement semantics and are NOT resolved",
+        "scoring_status": "no approved variable or formula"
+      },
+      "minimum_remediation": "Corridor de-gating APPROVED - implement in its own approved pass; no Q10-internal change needed",
       "affected_files": [
         "src/scenes/EngineerScene.ts",
         "src/scenes/InterruptionScene.ts",
@@ -495,17 +535,24 @@
       "upstream_dependencies": [
         "issue set inherited from Q02 (kit), Q04 (workspace), Q10 (duty), corridor non-return (Q15/Q19)"
       ],
-      "entry_state_requirements": "NONCOMPLIANT TODAY: opportunity content, option set (force option conditional) and difficulty depend on earlier item outcomes; remedy = standardised baseline issue component every session, or per-session entry-state validity coding",
+      "entry_state_requirements": "NONCOMPLIANT TODAY: opportunity content, option set (force option conditional) and difficulty depend on earlier item outcomes. Remedy APPROVED 2026-07-30 (Final Core baseline): an identical baseline issue/blocker component for all participants, with participant-created issues retained only as secondary narrative/ecological consequences that cannot alter the baseline opportunity or substitute for its primary evidence; per-session entry-state validity coding still applies. The FULL ruling section 4 firewall applies to the baseline opportunity: availability, entry state, instructions/NPC wording, option number and position, difficulty, action count, expected duration, reward/consequence/social approval, time pressure, tools/inventory, completion route and scoring rule must all be invariant to earlier item outcomes. Not implemented.",
       "opportunity_gating": "Final Core reachable only after four scenarios (route gate, frozen); unreached = no-opportunity",
       "carryover_controls": [
-        "standardised baseline issue (pending ruling)",
+        "standardised baseline issue (APPROVED 2026-07-30; not implemented)",
         "participant-caused issues retained as secondary ecological telemetry",
         "fatigue/session-position export"
       ],
       "counterbalance_requirements": "Card option positions counterbalanced or documented-fixed; fixed late-route position documented + exported",
       "contamination_rules": "Default; clean-session (no issues) coded no-opportunity for the force choice, never high responsibility",
       "implementation_status": "entry_state_noncompliant",
-      "minimum_remediation": "Research-owner ruling on the standardised baseline issue set + SA-6 on the Q33 tag",
+      "adopted_ruling_status": {
+        "ruling": "Final Core baseline and SA-6 (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - an identical baseline issue/blocker component for all participants for the Q11/Q28 measurement environment; SA-6 bars the Q33 rushing inference from being primary evidence",
+        "implementation_status": "not_implemented - the live issue set is still inherited from earlier item outcomes",
+        "canonical_event_status": "no canonical events approved; Q11/Q28 event ownership and the final_core_rushed Q33 co-tag disposition remain event-schema decisions",
+        "scoring_status": "no approved variable or formula; final_quality_score shape stays with D2"
+      },
+      "minimum_remediation": "Final Core baseline APPROVED - implement in its own approved pass; event-schema ruling for Q11/Q28 ownership and the Q33 co-tag; D2 for the quality-score shape",
       "affected_files": [
         "src/scenes/FinalCoreScene.ts",
         "src/world/CanonicalEventContext.ts"
@@ -522,7 +569,7 @@
       "evidence_status": "strong",
       "primary_opportunity": "Hazard warning -> informed vs unchecked action (prudence/carefulness; approved: Hazard stays prudence)",
       "primary_measurement_window": "hazard_warning_seen -> action confirmation",
-      "primary_event_ownership": "CONTESTED TAGS - hazard_warning_seen (Q12); hazard_info_checked (Q12/Q27); hazard_reckless_continue (Q12/Q27/Q31); Q27/Q31 tags are superseded rationale (SA-1/SA-3)",
+      "primary_event_ownership": "Q12 OWNS the Hazard window (SA-1 APPROVED 2026-07-30: Hazard is principally the Q12 prudence/carefulness opportunity). Live tags: hazard_warning_seen (Q12); hazard_info_checked (Q12/Q27); hazard_reckless_continue (Q12/Q27/Q31). The Q27/Q31 tags are barred as those items' primary evidence and may remain only as labelled legacy/secondary ecological telemetry pending the event-schema unit.",
       "primary_variable_ownership": "candidate prudence_check_rate / reckless action count (missing; currently folded into mixed composites)",
       "shared_context_events": [
         "hazard room entry",
@@ -552,7 +599,14 @@
       "counterbalance_requirements": "Option positions counterbalanced or documented-fixed",
       "contamination_rules": "Default",
       "implementation_status": "partially_compliant",
-      "minimum_remediation": "SA-1/SA-3 re-scoped rulings on the Q27/Q31 tags; D2 split of prudence terms out of mixed composites",
+      "adopted_ruling_status": {
+        "ruling": "SA-1 and SA-3 (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - Hazard behaviour is principally the Q12 prudence/carefulness opportunity; Q27 and Q31 may use no Hazard event, state, outcome or derived variable as primary evidence",
+        "implementation_status": "not_implemented - registrations unchanged; the cross-tags are live",
+        "canonical_event_status": "no retag performed; removal versus labelled legacy/secondary retention of the Q27/Q31 cross-tags is reserved for the event-schema unit",
+        "scoring_status": "no formula changed. SA-1 records that inappropriate-persistence formulas containing Hazard terms require a later scoring-plan correction; the D2 split of prudence terms out of mixed composites remains open."
+      },
+      "minimum_remediation": "Event-schema ruling on the Q27/Q31 cross-tag disposition; scoring-plan correction of Hazard terms (recorded by SA-1) and the D2 split of prudence terms out of mixed composites",
       "affected_files": [
         "src/scenes/HazardScene.ts",
         "src/world/CanonicalEventContext.ts",
@@ -690,15 +744,22 @@
         "opportunity exists only when Q10 relay duty accepted (edge Q10->Q15)"
       ],
       "entry_state_requirements": "Beacon timing/wording standardised; original_task_id null = no-opportunity (compliant coding exists)",
-      "opportunity_gating": "Gated on Q10 acceptance - carryover exposure requiring remedy or contamination coding",
+      "opportunity_gating": "Gated on Q10 acceptance today - corridor de-gating APPROVED 2026-07-30 (opportunity available independently of Q10 duty acceptance), not yet implemented",
       "carryover_controls": [
-        "SA-9 single-owner assignment of the return act",
-        "de-gating remedy or dependency coding"
+        "SA-9 single-owner assignment of the return act (STILL OPEN)",
+        "corridor de-gating APPROVED; implementation pending"
       ],
       "counterbalance_requirements": "Beacon option positions counterbalanced or documented-fixed",
       "contamination_rules": "Default",
       "implementation_status": "opportunity_gated_noncompliant",
-      "minimum_remediation": "SA-9/SA-10 rulings + corridor de-gating ruling",
+      "adopted_ruling_status": {
+        "ruling": "Corridor de-gating (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - interruption opportunity available independently of Q10 duty acceptance; Q10 outcomes may not alter its availability, entry state, wording, options, difficulty, action count, duration, reward, time pressure, tools, route or scoring",
+        "implementation_status": "not_implemented - the live corridor is still gated",
+        "canonical_event_status": "no canonical events approved; SA-9 (return-act co-fire) and SA-10 (ignore-branch trigger scope) remain OPEN and are not resolved by this ruling",
+        "scoring_status": "no approved variable or formula"
+      },
+      "minimum_remediation": "Corridor de-gating APPROVED - implement in its own approved pass; SA-9/SA-10 rulings still required",
       "affected_files": [
         "src/scenes/InterruptionScene.ts",
         "src/scenes/EngineerScene.ts",
@@ -777,13 +838,20 @@
       "entry_state_requirements": "Competing-task attractiveness/framing standardised (balanced framing metadata frozen)",
       "opportunity_gating": "As Q15 (gating exposure)",
       "carryover_controls": [
-        "SA-9/D6 single-owner assignments",
-        "de-gating remedy or coding"
+        "SA-9/D6 single-owner assignments (STILL OPEN)",
+        "corridor de-gating APPROVED; implementation pending"
       ],
       "counterbalance_requirements": "Offer option positions counterbalanced; second instance (if ever) order-counterbalanced",
       "contamination_rules": "Default; discriminant/exploratory only",
       "implementation_status": "opportunity_gated_noncompliant",
-      "minimum_remediation": "SA-9 + D6 rulings + corridor de-gating ruling",
+      "adopted_ruling_status": {
+        "ruling": "Corridor de-gating (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - interruption opportunity available independently of Q10 duty acceptance, with Q10 outcomes barred from altering its measurement-relevant conditions",
+        "implementation_status": "not_implemented - the live corridor is still gated",
+        "canonical_event_status": "no canonical events approved; SA-9 (return-act co-fire) and D6 (competing_task_viewed mapping) remain OPEN and are not resolved by this ruling",
+        "scoring_status": "no approved variable or formula; the exploratory label question stays with SA-7"
+      },
+      "minimum_remediation": "Corridor de-gating APPROVED - implement in its own approved pass; SA-9 + D6 rulings still required",
       "affected_files": [
         "src/scenes/InterruptionScene.ts",
         "src/world/CanonicalEventContext.ts"
@@ -853,15 +921,23 @@
         "closure requires reaching Final Core (censoring)"
       ],
       "entry_state_requirements": "Offer framing/urgency balance standardised (frozen)",
-      "opportunity_gating": "Gating exposure as Q15/Q17; skipped Final Core = censored observation",
+      "opportunity_gating": "Gating exposure as Q15/Q17 (de-gating APPROVED 2026-07-30, not implemented); skipped Final Core = censored observation",
       "carryover_controls": [
         "censoring coded as missing, never negative",
-        "single-owner separation from Q15/Q17 (SA-9/D6 adjacencies)"
+        "single-owner separation from Q15/Q17 (SA-9/D6 adjacencies, STILL OPEN)",
+        "corridor de-gating APPROVED; implementation pending"
       ],
       "counterbalance_requirements": "Offer option positions counterbalanced or documented-fixed",
       "contamination_rules": "Default",
       "implementation_status": "opportunity_gated_noncompliant",
-      "minimum_remediation": "Corridor de-gating ruling + censoring-coding rule (section 8.2 family)",
+      "adopted_ruling_status": {
+        "ruling": "Corridor de-gating (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - interruption opportunity available independently of Q10 duty acceptance, with Q10 outcomes barred from altering its measurement-relevant conditions",
+        "implementation_status": "not_implemented - the live corridor is still gated",
+        "canonical_event_status": "no canonical events approved; SA-9 and D6 adjacencies remain OPEN",
+        "scoring_status": "no approved variable or formula; the censoring-coding rule stays with the section 8.2 family"
+      },
+      "minimum_remediation": "Corridor de-gating APPROVED - implement in its own approved pass; censoring-coding rule (section 8.2 family) still required",
       "affected_files": [
         "src/scenes/InterruptionScene.ts",
         "src/scenes/FinalCoreScene.ts"
@@ -1148,7 +1224,14 @@
       "counterbalance_requirements": "As host modules",
       "contamination_rules": "Default; input bounce excluded by debounce",
       "implementation_status": "partially_compliant",
-      "minimum_remediation": "D2 variable cleanup + registration-divergence fix + debounce ruling",
+      "adopted_ruling_status": {
+        "ruling": "SA-1 (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - Hazard belongs to Q12; hazard_reckless_continue carries no Q26-relevant persistence meaning and must not pollute the identical-repetition measure",
+        "implementation_status": "not_implemented - registrations and composites unchanged",
+        "canonical_event_status": "no retag performed; the archive_strategy_revision Q26 registration divergence remains an event-schema fix",
+        "scoring_status": "no formula changed. SA-1 records that inappropriate-persistence formulas containing Hazard terms (blind_retry_count, game_inappropriate_persistence) require a later scoring-plan correction."
+      },
+      "minimum_remediation": "Scoring-plan correction of the Hazard terms (recorded by SA-1) with the rest of the D2 variable cleanup + registration-divergence fix + debounce ruling",
       "affected_files": [
         "src/systems/ScoringManager.ts",
         "src/world/CanonicalEventContext.ts"
@@ -1163,9 +1246,9 @@
       "construct": "Inappropriate Persistence (IP-01): continuing when there is no point",
       "direction": "positive_maladaptive",
       "evidence_status": "moderate_strong",
-      "primary_opportunity": "ABSENT - continuation after an explicit utility-stop signal (approved analogue); module unbuilt (SA-2, re-scoped under global ruling; recently discussed design = PENDING REVISED RULING, not approved)",
-      "primary_measurement_window": "if ruled/built: utility-stop signal shown -> stop/continue cycles while free to leave",
-      "primary_event_ownership": "none - candidate family (utility_stop_signal, unnecessary_cycle_started/_completed, task_stopped_appropriately) all CANDIDATES; live hazard tags (hazard_info_checked Q12/Q27, hazard_reckless_continue Q12/Q27/Q31) are superseded rationale (SA-1)",
+      "primary_opportunity": "AUTHORISED DESIGN, NOT BUILT - dedicated Q27 Utility Bot utility-stop module (SA-2, APPROVED 2026-07-30): a bounded useful sequence occurs first; a standardised explicit signal then states that additional cycles provide no operational benefit; the primary window begins at that signal; stopping and continuing remain equally accessible and neutrally framed; own state and eventual event family; independent of Hazard and every other persistence measure; neutral transition and validity controls apply",
+      "primary_measurement_window": "utility-stop signal shown -> stop/continue cycles while free to leave (window begins at the signal); module unbuilt",
+      "primary_event_ownership": "none - candidate family (utility_stop_signal, unnecessary_cycle_started/_completed, task_stopped_appropriately) all CANDIDATES pending the event-schema ruling; live hazard tags (hazard_info_checked Q12/Q27, hazard_reckless_continue Q12/Q27/Q31) are barred as Q27 primary evidence by SA-1 (APPROVED) and may remain only as labelled legacy/secondary ecological telemetry pending schema disposition",
       "primary_variable_ownership": "candidate excess_continuation_count (nothing wired)",
       "shared_context_events": ["side repair bay shell (candidate host)"],
       "prohibited_inputs": [
@@ -1180,18 +1263,26 @@
         "game_inappropriate_persistence includes hazard_reckless_continue (carries the contested Q27 rationale)"
       ],
       "upstream_dependencies": [
-        "SA-1 + SA-2 rulings (re-scoped); candidate host = post-run_check side-repair stage (own instance/state container required)"
+        "SA-1 + SA-2 APPROVED 2026-07-30 (measurement design); candidate host = post-run_check side-repair stage (own instance/state container required); event-schema ruling for canonical events, scoring-plan ruling for any variable, then a separately approved implementation pass"
       ],
-      "entry_state_requirements": "Stop signal shown identically to every session after a fixed number of useful cycles; free-leave state verified",
+      "entry_state_requirements": "Stop signal shown identically to every session after a fixed number of useful cycles; free-leave state verified. Full ruling section 4 firewall applies: because the candidate host is the post-run_check Side Repair stage, the opportunity's availability and entry state must NOT depend on Side Repair engagement or outcome (Q07/Q16/Q20/Q32), nor on any other item outcome.",
       "opportunity_gating": "Signal never shown = no-opportunity",
       "carryover_controls": [
-        "own instance/state container (ruling section 6)",
-        "neutral transition from adjacent persistence modules (ruling section 8)"
+        "own instance/state container (ruling section 6) - required even though the candidate host bay is shared with Q07/Q16/Q20/Q32",
+        "neutral transition from adjacent persistence modules (ruling section 8)",
+        "availability and entry state independent of Side Repair engagement/outcome and of every other item outcome (ruling section 4)"
       ],
       "counterbalance_requirements": "Stop/continue option positions counterbalanced or documented-fixed",
       "contamination_rules": "Default; immediate stopping valid, never penalised",
-      "implementation_status": "absent_blocked",
-      "minimum_remediation": "SA-1 + SA-2 revised rulings under the global authority, then the module in its own approved pass",
+      "implementation_status": "authorised_design_not_implemented",
+      "adopted_ruling_status": {
+        "ruling": "SA-1 and SA-2 (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - dedicated Q27 Utility Bot utility-stop module; Hazard belongs to Q12 and supplies no Q27 primary evidence",
+        "implementation_status": "not_implemented - nothing exists in the tree",
+        "canonical_event_status": "no canonical events; names, payloads and Hazard cross-tag disposition reserved for the event-schema ruling",
+        "scoring_status": "no approved variable or formula. SA-1 records that inappropriate-persistence formulas containing Hazard terms require a later scoring-plan correction; no formula is changed."
+      },
+      "minimum_remediation": "Event-schema ruling (module events + Hazard cross-tag disposition) and scoring-plan ruling (incl. the recorded Hazard-term correction), then the module in its own approved pass",
       "affected_files": [
         "src/scenes/SideRepairScene.ts",
         "src/scenes/HazardScene.ts",
@@ -1222,7 +1313,7 @@
       "upstream_dependencies": [
         "blocker existence depends on earlier item outcomes (issue set) - shared exposure with Q11"
       ],
-      "entry_state_requirements": "NONCOMPLIANT TODAY: standardised baseline blocker per session, or explicit no-opportunity coding for clean sessions (never low inappropriate persistence)",
+      "entry_state_requirements": "NONCOMPLIANT TODAY. Remedy APPROVED 2026-07-30 (Final Core baseline): an identical baseline issue/blocker component for all participants; participant-created issues remain visible only as secondary narrative/ecological consequences and cannot alter the baseline opportunity or substitute for its primary evidence. Explicit no-opportunity coding still applies wherever the choice does not arise (never low inappropriate persistence). Not implemented.",
       "opportunity_gating": "No outstanding issues = no-opportunity for the force choice",
       "carryover_controls": [
         "standardised baseline issue remedy (with Q11)",
@@ -1231,7 +1322,14 @@
       "counterbalance_requirements": "Option positions counterbalanced or documented-fixed; late-route position documented",
       "contamination_rules": "Default; comprehension-evidence rule enforced before scoring",
       "implementation_status": "entry_state_noncompliant",
-      "minimum_remediation": "Standardised-baseline-issue ruling (shared with Q11) + D2 composite term",
+      "adopted_ruling_status": {
+        "ruling": "Final Core baseline (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - an identical baseline issue/blocker component for all participants for the Q11/Q28 measurement environment",
+        "implementation_status": "not_implemented - blocker existence still depends on earlier item outcomes",
+        "canonical_event_status": "no canonical events approved; Q11/Q28 event ownership remains an event-schema decision",
+        "scoring_status": "no formula changed; the 4th term of game_inappropriate_persistence stays with D2"
+      },
+      "minimum_remediation": "Final Core baseline APPROVED - implement in its own approved pass; event-schema ruling for Q11/Q28 ownership; D2 composite term",
       "affected_files": [
         "src/scenes/FinalCoreScene.ts",
         "src/systems/ScoringManager.ts"
@@ -1246,8 +1344,8 @@
       "construct": "Goal-Time Preference (GTP-01): prefers long-term goals (exploratory; shared dimension with Q31)",
       "direction": "long_term_pole",
       "evidence_status": "moderate_exploratory",
-      "primary_opportunity": "ABSENT - balanced immediate-vs-distributed goal-horizon choice (authorised shared-construct exception with Q31); module unbuilt (SA-3, re-scoped; recently discussed design = PENDING REVISED RULING)",
-      "primary_measurement_window": "if ruled/built: two counterbalanced choice instances, each committed before the corridor interruption",
+      "primary_opportunity": "AUTHORISED DESIGN, NOT BUILT - two matched, counterbalanced immediate-vs-distributed goal-horizon situations (SA-3, APPROVED 2026-07-30), one NPC-mediated and one terminal-mediated where feasible; each contrasts a self-contained objective with immediate closure/benefit against a distributed objective of comparable total effort/value with delayed closure/benefit; the authorised shared-construct exception with Q31",
+      "primary_measurement_window": "two counterbalanced choice instances, the initial choice recorded before interruption or consequence; module unbuilt",
       "primary_event_ownership": "none - candidate horizon-choice family; live tags (stabiliser_option_offered/accepted, final_core_stability_bonus -> Q29) are superseded rationale telemetry",
       "primary_variable_ownership": "ONE SHARED construct-level goal_horizon_preference for Q29+Q31 (candidate) - never an independent Q29 score",
       "shared_context_events": ["hub/planning terminal shell (candidate host)"],
@@ -1259,10 +1357,10 @@
       "current_event_reuse": [],
       "current_variable_reuse": [],
       "upstream_dependencies": [
-        "SA-3 ruling; placement before corridor; matched-option copy audit",
+        "SA-3 APPROVED 2026-07-30 (measurement design); placement before corridor; matched-option copy audit; event-schema ruling for canonical events, scoring-plan ruling for the single shared indicator, then a separately approved implementation pass",
         "TODAY: the superseded Q29 telemetry is physically entangled with the side-repair state machine - stabiliser_option_offered co-fires with the arc offer and stabiliser_accepted with the arc accept (same physical acts as side_repair_accepted), and final_core_stability_bonus is emitted at Final Core off the side-repair outcome; SA-3 must be ruled with this five-item (Q07/Q16/Q20/Q29/Q32) co-location in view"
       ],
-      "entry_state_requirements": "Matched options (effort/value/difficulty/risk/attractiveness/social approval); no time labels; identical across sessions modulo counterbalance",
+      "entry_state_requirements": "Matched options approximately equal on effort, benefit, difficulty, action count, duration, attractiveness and social approval; no time labels; identical across sessions modulo counterbalance; independent of Hazard, Side Repair, Q32, Q33 and Final Core outcomes",
       "opportunity_gating": "Choice never presented = no-opportunity",
       "carryover_controls": [
         "initial choice logged before interruption",
@@ -1271,8 +1369,15 @@
       ],
       "counterbalance_requirements": "Option position + instance order counterbalanced across sessions; condition exported",
       "contamination_rules": "Default",
-      "implementation_status": "absent_blocked",
-      "minimum_remediation": "SA-3 revised ruling under the global authority, then the module in its own approved pass",
+      "implementation_status": "authorised_design_not_implemented",
+      "adopted_ruling_status": {
+        "ruling": "SA-3 (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - two matched, counterbalanced horizon situations producing exactly ONE shared construct-level Q29/Q31 indicator; never two independent game-item scores. Legacy stabiliser, Hazard and shared-arc evidence is not authorised as primary Q29/Q31 evidence.",
+        "implementation_status": "not_implemented - nothing exists in the tree",
+        "canonical_event_status": "no canonical events; names, payloads and legacy stabiliser tag disposition reserved for the event-schema ruling",
+        "scoring_status": "no approved variable or formula; the single shared indicator requires a scoring-plan ruling"
+      },
+      "minimum_remediation": "Event-schema ruling (module events + stabiliser/final-core tag disposition) and scoring-plan ruling (one shared indicator), then the module in its own approved pass",
       "affected_files": [
         "src/scenes/HubScene.ts",
         "src/scenes/EngineerScene.ts",
@@ -1290,8 +1395,8 @@
       "construct": "Goal-Time Preference (GTP-03): usually works towards small goals (goal granularity, exploratory)",
       "direction": "small_goal_pole",
       "evidence_status": "moderate_exploratory",
-      "primary_opportunity": "ABSENT - repeated balanced small-orders vs integrated-order structure choice (>=2 instances); module unbuilt (SA-4, re-scoped; recently discussed design = PENDING REVISED RULING)",
-      "primary_measurement_window": "if ruled/built: each structure-choice instance, choice recorded before outcome feedback",
+      "primary_opportunity": "AUTHORISED DESIGN, NOT BUILT - at least two independent Q30 opportunities (SA-4, APPROVED 2026-07-30): (1) a Vale/Inventory work-order granularity situation and (2) a telemetry-cache/map-movement granularity situation, each comparing several independently closable smaller objectives against one integrated multi-component objective",
+      "primary_measurement_window": "each structure-choice instance, choice recorded before outcome feedback; module unbuilt",
       "primary_event_ownership": "none - candidate granularity family; live tags (inventory_verification_skipped Q02/Q30, inventory_verified_complete Q30) are the PROHIBITED skipped-preparation inference",
       "primary_variable_ownership": "candidate goal_granularity_preference (Q30-exclusive; no sharing with Q33)",
       "shared_context_events": ["quartermaster console shell (candidate host)"],
@@ -1305,9 +1410,9 @@
       ],
       "current_variable_reuse": [],
       "upstream_dependencies": [
-        "SA-4 ruling; second instance surface at a non-inventory station"
+        "SA-4 APPROVED 2026-07-30 (measurement design); second instance surface = the telemetry-cache/map-movement situation, at a non-inventory station; event-schema ruling for canonical events and for the prohibited inventory_verification_skipped Q30 tag, scoring-plan ruling for any variable, then a separately approved implementation pass"
       ],
-      "entry_state_requirements": "Matched total effort/benefit/difficulty; same work restructured, never changed in amount; independent of earlier item outcomes",
+      "entry_state_requirements": "Approximately balanced total effort, benefit, difficulty, action count, duration, attractiveness and social feedback; same work restructured, never changed in amount; independent of earlier item outcomes",
       "opportunity_gating": "<2 valid instances = insufficient-opportunity (no pattern derived)",
       "carryover_controls": [
         "own state containers per instance (ruling section 6)",
@@ -1315,8 +1420,15 @@
       ],
       "counterbalance_requirements": "Option position + instance order counterbalanced; condition exported",
       "contamination_rules": "Default",
-      "implementation_status": "absent_blocked",
-      "minimum_remediation": "SA-4 revised ruling under the global authority, then the module in its own approved pass",
+      "implementation_status": "authorised_design_not_implemented",
+      "adopted_ruling_status": {
+        "ruling": "SA-4 (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - at least two independent Q30 granularity opportunities (Vale/Inventory work-order; telemetry-cache/map-movement), Q30-specific instances and state, counterbalanced form order and option position. Q30 is never inferred from skipped verification, poor preparation, carelessness or Hazard behaviour; fewer than two valid opportunities = insufficient/missing, never a trait score.",
+        "implementation_status": "not_implemented - nothing exists in the tree",
+        "canonical_event_status": "no canonical events; names, payloads and the prohibited inventory_verification_skipped Q30 tag disposition reserved for the event-schema ruling",
+        "scoring_status": "no approved variable or formula"
+      },
+      "minimum_remediation": "Event-schema ruling (module events + Q30 tag removal/retention) and scoring-plan ruling, then the module in its own approved pass",
       "affected_files": [
         "src/scenes/InventoryScene.ts",
         "src/scenes/HubScene.ts",
@@ -1334,7 +1446,7 @@
       "evidence_status": "moderate_exploratory",
       "primary_opportunity": "SAME shared goal-horizon module as Q29 (the one authorised shared-construct exception)",
       "primary_measurement_window": "as Q29",
-      "primary_event_ownership": "none - as Q29; live tags (hazard_informed_continue Q31, hazard_reckless_continue Q12/Q27/Q31) are superseded rationale (Hazard is prudence; SA-3/SA-1 scope)",
+      "primary_event_ownership": "none - as Q29; live tags (hazard_informed_continue Q31, hazard_reckless_continue Q12/Q27/Q31) are barred as Q31 primary evidence by SA-1 (APPROVED 2026-07-30; Hazard is Q12's prudence opportunity) and may remain only as labelled legacy/secondary ecological telemetry pending schema disposition",
       "primary_variable_ownership": "the SAME single shared goal_horizon_preference as Q29 - never an independent Q31 score, never two observations from one choice",
       "shared_context_events": ["as Q29"],
       "prohibited_inputs": [
@@ -1348,14 +1460,23 @@
       "current_variable_reuse": [
         "game_uncertainty_persistence reads hazard_informed_continue (Q31-tagged) - cross-construct fold"
       ],
-      "upstream_dependencies": ["SA-3 ruling (shared with Q29)"],
+      "upstream_dependencies": [
+        "SA-3 APPROVED 2026-07-30 (shared with Q29); SA-1 APPROVED bars the Hazard tags as primary; event-schema and scoring-plan rulings, then a separately approved implementation pass"
+      ],
       "entry_state_requirements": "as Q29",
       "opportunity_gating": "as Q29",
       "carryover_controls": ["as Q29"],
       "counterbalance_requirements": "as Q29",
       "contamination_rules": "Default",
-      "implementation_status": "absent_blocked",
-      "minimum_remediation": "SA-3 revised ruling (shared with Q29); SA-1 for the hazard tag",
+      "implementation_status": "authorised_design_not_implemented",
+      "adopted_ruling_status": {
+        "ruling": "SA-3 and SA-1 (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - Q31 is the opposite pole of the one authorised shared Q29/Q31 goal-horizon construct indicator; never an independent Q31 score. Q31 takes no primary evidence from Hazard.",
+        "implementation_status": "not_implemented - nothing exists in the tree",
+        "canonical_event_status": "no canonical events; Hazard cross-tag disposition reserved for the event-schema ruling",
+        "scoring_status": "no approved variable or formula; the single shared indicator requires a scoring-plan ruling"
+      },
+      "minimum_remediation": "Event-schema ruling (module events + Hazard tag disposition) and scoring-plan ruling (one shared indicator), then the module in its own approved pass",
       "affected_files": [
         "src/scenes/HazardScene.ts",
         "src/world/CanonicalEventContext.ts"
@@ -1368,32 +1489,47 @@
       "construct": "Goal-Time Preference (GTP-02): goals take years to finish (long-term-oriented, NOT reverse-scored; questionnaire-primary)",
       "direction": "long_term_oriented",
       "evidence_status": "very_weak_questionnaire_primary",
-      "primary_opportunity": "NONE PERMITTED - questionnaire-primary; no module, no distinct score (approved); reuse of Q29/Q31 horizon events NOT authorised under ruling sections 1-2",
-      "primary_measurement_window": "none",
-      "primary_event_ownership": "none - live weak-proxy tags (side_repair_completed Q07/Q16/Q32; final_bonus_unlocked Q32) remain raw secondary telemetry pending SA-5 (re-scoped; PENDING REVISED RULING)",
-      "primary_variable_ownership": "none authorised (optional_future_benefit_score intentionally unimplemented)",
+      "primary_opportunity": "AUTHORISED DESIGN, NOT BUILT - dedicated Q32 Active Project Portfolio measurement module (SA-5, APPROVED 2026-07-30) with its own opportunity, window, state container and eventual primary event family, independent of Q29/Q31, Side Repair and every other item's primary evidence. Q32 remains a questionnaire item in Qualtrics and questionnaire-primary; any eventual indicator is an exploratory short-session analogue only, never a validated item score, and claims nothing about literal multi-year goal duration. SUPERSEDED: the earlier 'no module, no distinct score' and 'derived from shared self-selected opportunities' positions.",
+      "primary_measurement_window": "pending SA-5 module design detail; the window belongs to the Q32 module alone and may not overlap another item's primary window",
+      "primary_event_ownership": "none yet - the module's own primary event family is authorised but unnamed (canonical names = event-schema ruling). Live weak-proxy tags (side_repair_completed Q07/Q16/Q32; final_bonus_unlocked Q32) may remain ONLY as labelled secondary ecological telemetry pending schema disposition and CANNOT feed the Q32 primary variable.",
+      "primary_variable_ownership": "none authorised yet (optional_future_benefit_score intentionally unimplemented). Any future indicator is exploratory-only and requires a scoring-plan ruling.",
       "shared_context_events": ["side repair bay shell"],
       "prohibited_inputs": [
         "Q29/Q31 horizon events",
+        "Side Repair and every other item's primary evidence",
         "any composite manufacturing a Q32 measure (ruling section 12)",
-        "any Q32-specific surface (absence tests exist)"
+        "any description of an eventual indicator as a validated item score or as literal multi-year goal duration"
       ],
       "current_event_reuse": [
-        "side_repair_completed -> Q07+Q16+Q32 (weak-proxy tag)"
+        "side_repair_completed -> Q07+Q16+Q32 (legacy weak-proxy tag; secondary only)"
       ],
       "current_variable_reuse": [],
-      "upstream_dependencies": ["SA-5 revised ruling"],
-      "entry_state_requirements": "n/a",
-      "opportunity_gating": "n/a (no opportunity permitted)",
-      "carryover_controls": ["tags stay secondary; no promotion without SA-5"],
-      "counterbalance_requirements": "n/a",
-      "contamination_rules": "Default (any future derived treatment must code opportunity validity of its inputs)",
-      "implementation_status": "questionnaire_primary_no_module",
-      "minimum_remediation": "SA-5 revised ruling on retaining/trimming the weak-proxy tags; nothing else",
+      "upstream_dependencies": [
+        "SA-5 APPROVED 2026-07-30 (measurement design); event-schema ruling for canonical events and legacy tag disposition; scoring-plan ruling if any exploratory indicator is ever specified; separate approved implementation pass"
+      ],
+      "entry_state_requirements": "Standardised or counterbalanced entry conditions. Earlier item outcomes must not alter availability, project count, difficulty, benefit, feedback or measurement route - and the FULL ruling section 4 firewall applies (that list is emphasis, not a narrowing): also entry state, instructions/NPC wording, option number and position, action count, expected duration, reward/consequence/social approval, time pressure, available tools or inventory, completion route and scoring rule.",
+      "opportunity_gating": "Module not built - no Q32 opportunity exists today. Once built: opportunity never presented = no-opportunity, never a low trait score.",
+      "carryover_controls": [
+        "independent of Q29/Q31, Side Repair, Final Core and all other item outcomes (ruling section 4)",
+        "legacy tags stay labelled secondary; no promotion without an event-schema ruling"
+      ],
+      "counterbalance_requirements": "Entry conditions standardised or counterbalanced; option position and any form/instance order counterbalanced or documented-fixed, with condition exported",
+      "contamination_rules": "Default; contaminated, technically failed or absent opportunities are missing/invalid evidence, never low trait evidence",
+      "implementation_status": "authorised_design_not_implemented",
+      "adopted_ruling_status": {
+        "ruling": "SA-5 (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - distinct Q32 Active Project Portfolio measurement module",
+        "implementation_status": "not_implemented - nothing exists in the tree",
+        "canonical_event_status": "no canonical events; names, payloads and legacy tag disposition reserved for the event-schema ruling",
+        "scoring_status": "no approved variable, weight, threshold or formula; any eventual indicator is an exploratory short-session analogue only",
+        "questionnaire_status": "Q32 remains a questionnaire item administered in Qualtrics and questionnaire-primary"
+      },
+      "minimum_remediation": "Event-schema ruling (module event family + legacy weak-proxy tag disposition), then a separately approved implementation pass; scoring-plan ruling only if an exploratory indicator is ever specified",
       "affected_files": ["src/world/CanonicalEventContext.ts"],
       "proposed_tests": [
-        "automated: absence tests - no Q32-specific surface may appear",
-        "manual: none"
+        "automated: absence tests remain valid until the authorised module is built in its own approved pass - no Q32-specific surface may appear before then",
+        "automated (post-implementation): availability, project count, difficulty, benefit, feedback and route invariant to earlier item outcomes",
+        "manual: none until the module pass"
       ]
     },
     {
@@ -1401,38 +1537,54 @@
       "construct": "Goal-Time Preference (GTP-05): accomplished goals take only days (short-duration-oriented; questionnaire-primary)",
       "direction": "short_duration_oriented",
       "evidence_status": "weak_questionnaire_primary",
-      "primary_opportunity": "NONE PERMITTED - questionnaire-primary; the historical end-session portfolio is NOT currently authorised (would reuse Q29/Q31 events contrary to ruling sections 1-2); SA-6 re-scoped, PENDING REVISED RULING",
-      "primary_measurement_window": "none",
-      "primary_event_ownership": "none - live Final-Core tags (final_core_rushed Q11/Q33, final_core_issue_resolved Q33, final_core_completed Q06/Q33) are the prohibited rushing inference; contested secondary telemetry",
-      "primary_variable_ownership": "none authorised",
+      "primary_opportunity": "AUTHORISED DESIGN, NOT BUILT - dedicated Q33 Contract Closure Queue measurement module (SA-6, APPROVED 2026-07-30) with its own self-selected Q33-specific closure opportunities, own opportunity, window, state container and eventual primary event family, independent of Final Core and of Q29, Q30, Q31, Q32 and every other item's outcomes. Q33 remains a questionnaire item in Qualtrics and questionnaire-primary; any eventual indicator is an exploratory short-session analogue only, never a validated item score, and the game establishes nothing about whether real-world goals usually take days. SUPERSEDED: the historical end-session portfolio derived from Q29-Q31/Q30 opportunities, and the 'no module permitted' position.",
+      "primary_measurement_window": "pending SA-6 module design detail; the window belongs to the Q33 module alone and may not overlap another item's primary window",
+      "primary_event_ownership": "none yet - the module's own primary event family is authorised but unnamed (canonical names = event-schema ruling). Live Final-Core tags (final_core_rushed Q11/Q33, final_core_issue_resolved Q33, final_core_completed Q06/Q33) remain the prohibited rushing inference, are NOT authorised as primary Q33 evidence, and may remain only as labelled secondary telemetry pending schema disposition.",
+      "primary_variable_ownership": "none authorised yet. Any future indicator is exploratory-only and requires a scoring-plan ruling.",
       "shared_context_events": ["core interface shell"],
       "prohibited_inputs": [
         "Final Core rushing/quality/unresolved inference (approved prohibition)",
-        "required short tasks",
-        "Q29-Q31 module events (no reuse permission)"
+        "required short tasks and forced completions",
+        "Q29-Q31 and Q30 module events (no reuse permission)",
+        "other items' generic completion events",
+        "any description of an eventual indicator as a validated item score or as evidence about real-world goal duration"
       ],
       "current_event_reuse": [
-        "final_core_rushed -> Q11+Q33",
-        "final_core_completed -> Q06+Q33"
+        "final_core_rushed -> Q11+Q33 (prohibited as primary; secondary only)",
+        "final_core_completed -> Q06+Q33 (prohibited as primary; secondary only)"
       ],
       "current_variable_reuse": [],
       "upstream_dependencies": [
-        "SA-6 revised ruling; any future treatment blocked behind SA-3/SA-4 modules existing AND an explicit reuse/independence ruling"
+        "SA-6 APPROVED 2026-07-30 (measurement design) - no longer blocked behind SA-3/SA-4 because the module is independent, not derived; event-schema ruling for canonical events and Final-Core tag disposition; scoring-plan ruling if any exploratory indicator is ever specified; separate approved implementation pass"
       ],
-      "entry_state_requirements": "n/a",
-      "opportunity_gating": "n/a",
+      "entry_state_requirements": "Self-selected Q33-specific closure opportunities with standardised entry conditions. Earlier outcomes must not alter availability, queue content, difficulty, benefit, feedback or measurement route - and the FULL ruling section 4 firewall applies (that list is emphasis, not a narrowing): also entry state, instructions/NPC wording, option number and position, action count, expected duration, reward/consequence/social approval, time pressure, available tools or inventory, completion route and scoring rule.",
+      "opportunity_gating": "Module not built - no Q33 opportunity exists today. Once built: opportunity never presented = no-opportunity, never a low trait score; required short tasks and forced completions never count as evidence.",
       "carryover_controls": [
-        "fatigue/session-position export required for any future end-session derivation"
+        "independent of Final Core and of Q29/Q30/Q31/Q32 outcomes (ruling section 4)",
+        "fatigue/session-position export required for any end-of-session derivation",
+        "legacy Final-Core tags stay labelled secondary; no promotion without an event-schema ruling"
       ],
-      "counterbalance_requirements": "n/a",
-      "contamination_rules": "Default",
-      "implementation_status": "questionnaire_primary_no_module",
-      "minimum_remediation": "SA-6 revised ruling on the contested tags; any Q33 treatment needs its own independence ruling",
+      "counterbalance_requirements": "Entry conditions standardised or counterbalanced; option position and any form/instance order counterbalanced or documented-fixed, with condition exported",
+      "contamination_rules": "Default; contaminated, technically failed or absent opportunities are missing/invalid evidence, never low trait evidence",
+      "implementation_status": "authorised_design_not_implemented",
+      "adopted_ruling_status": {
+        "ruling": "SA-6 (FABLE-NEXT-10, 2026-07-30)",
+        "authorised_design": "APPROVED - distinct Q33 Contract Closure Queue measurement module",
+        "implementation_status": "not_implemented - nothing exists in the tree",
+        "canonical_event_status": "no canonical events; names, payloads and Final-Core tag disposition reserved for the event-schema ruling",
+        "scoring_status": "no approved variable, weight, threshold or formula; any eventual indicator is an exploratory short-session analogue only",
+        "questionnaire_status": "Q33 remains a questionnaire item administered in Qualtrics and questionnaire-primary"
+      },
+      "minimum_remediation": "Event-schema ruling (module event family + Final-Core tag disposition), then a separately approved implementation pass; scoring-plan ruling only if an exploratory indicator is ever specified",
       "affected_files": [
         "src/scenes/FinalCoreScene.ts",
         "src/world/CanonicalEventContext.ts"
       ],
-      "proposed_tests": ["automated: absence tests as Q32", "manual: none"]
+      "proposed_tests": [
+        "automated: absence tests remain valid until the authorised module is built in its own approved pass - no Q33-specific surface may appear before then",
+        "automated (post-implementation): availability, queue content, difficulty, benefit, feedback and route invariant to earlier item outcomes; required/forced completions excluded from evidence",
+        "manual: none until the module pass"
+      ]
     }
   ],
   "cross_item_edges": [
@@ -1444,7 +1596,7 @@
       "current_or_proposed": "current",
       "severity": "high",
       "primary_measurement_impact": "Q15's primary opportunity availability is determined by the Q10 outcome; self-selection bias in who receives a Q15 opportunity",
-      "required_control": "De-gating remedy (interruption opportunity independent of duty acceptance) or per-session dependency/contamination coding; pending research-owner ruling",
+      "required_control": "De-gating remedy APPROVED 2026-07-30: an interruption opportunity available independently of Q10 duty acceptance, with Q10 outcomes barred from altering availability, entry state, wording, options, difficulty, action count, duration, reward, time pressure, tools, route or scoring. NOT IMPLEMENTED - the live gating stands until its own approved pass; SA-9, SA-10 and D6 still govern event ownership and ignored-alert/acknowledgement semantics.",
       "residual_risk": "Even with coding, Q15 estimates conditional on duty acceptance; pilot dependency test required (ruling section 10)"
     },
     {
@@ -1477,7 +1629,7 @@
       "current_or_proposed": "current",
       "severity": "high",
       "primary_measurement_impact": "Named directly by ruling section 11: Q03's only live opportunity depends on prior Inventory behaviour and cannot be the sole independent Q03 primary",
-      "required_control": "Q03-specific standardised opportunity or equivalent independence remedy (SA-12); episode retained as secondary ecological telemetry",
+      "required_control": "SA-12 APPROVED 2026-07-30: a new independently available, standardised Q03 retrieval/maintained-order opportunity whose availability and entry state do not depend on earlier Inventory behaviour, on whether a particular tool was packed, or on any other item outcome; the existing episode is retained as secondary ecological telemetry only. NOT IMPLEMENTED - canonical events and scoring pending.",
       "residual_risk": "None once an independent opportunity exists; until then Q03 has no primary"
     },
     {
@@ -1499,7 +1651,7 @@
       "current_or_proposed": "current",
       "severity": "high",
       "primary_measurement_impact": "Q11's reviewable-issue content, option set (force option conditional) and difficulty depend on the Q02 outcome",
-      "required_control": "Standardised baseline issue component every session (pending ruling) + entry-state validity coding",
+      "required_control": "Final Core baseline APPROVED 2026-07-30: an identical baseline issue/blocker component for all participants; participant-created issues may remain visible as secondary narrative/ecological consequences but cannot alter the baseline opportunity or substitute for its primary evidence. Entry-state validity coding still applies. NOT IMPLEMENTED.",
       "residual_risk": "Participant-caused issues remain ecologically informative but must stay secondary"
     },
     {
@@ -1543,7 +1695,7 @@
       "current_or_proposed": "current",
       "severity": "high",
       "primary_measurement_impact": "A conscientious earlier session removes the Q28 opportunity entirely; a careless one enlarges it - opportunity availability correlates with the constructs Q28 must discriminate from",
-      "required_control": "Standardised baseline blocker per session, or strict no-opportunity coding (clean session never low inappropriate persistence); pending ruling",
+      "required_control": "Final Core baseline APPROVED 2026-07-30: an identical baseline issue/blocker component for all participants; strict no-opportunity coding still applies wherever the choice does not arise (a clean session is never low inappropriate persistence). NOT IMPLEMENTED.",
       "residual_risk": "Pilot must test outcome-to-opportunity correlation (ruling section 10)"
     },
     {
@@ -1621,7 +1773,7 @@
       "severity": "medium",
       "primary_measurement_impact": "Contrast effect: recent rewarded persistence biases continuation at the stop signal",
       "required_control": "Neutral transition + module-separation (ruling section 8); pilot contrast test before validation",
-      "residual_risk": "Design-stage; to be assessed in SA-2 revised ruling"
+      "residual_risk": "SA-2 APPROVED 2026-07-30 requires a neutral transition and an independent instance/state container; residual contrast risk is a design-and-pilot matter for the module's own implementation pass"
     },
     {
       "source_item": "Q09",
@@ -1686,7 +1838,7 @@
       "current_or_proposed": "current",
       "severity": "medium",
       "primary_measurement_impact": "Prohibited as any Q32 item measure under ruling sections 1-2; tag stays raw secondary pending SA-5",
-      "required_control": "SA-5 revised ruling",
+      "required_control": "SA-5 APPROVED 2026-07-30: Q32 receives its own independent Active Project Portfolio module, so the side-repair completion evidence is never its primary input; the legacy Q32 tag may remain only as labelled secondary ecological telemetry pending event-schema disposition. NOT IMPLEMENTED.",
       "residual_risk": "None while unscored"
     },
     {
@@ -1697,7 +1849,7 @@
       "current_or_proposed": "current",
       "severity": "high",
       "primary_measurement_impact": "The superseded Q29 telemetry is physically entangled with the Q07/Q16/Q20/Q32 state machine - one co-fired moment carries tags for up to five items; none of it can serve any primary while shared",
-      "required_control": "SA-3 revised ruling must address the stabiliser tags with the full five-item co-location in view; until then all stabiliser telemetry stays secondary",
+      "required_control": "SA-3 APPROVED 2026-07-30: the Q29/Q31 horizon evidence comes from two matched, counterbalanced situations of its own, independent of Side Repair; legacy stabiliser evidence is NOT authorised as primary Q29/Q31 evidence and stays secondary. The five-item co-location (Q07/Q16/Q20/Q29/Q32) tag disposition remains an event-schema decision. NOT IMPLEMENTED.",
       "residual_risk": "None once SA-3 rules; under-scoping risk if SA-3 is ruled without this entanglement visible"
     },
     {
@@ -1730,7 +1882,7 @@
       "current_or_proposed": "current",
       "severity": "medium",
       "primary_measurement_impact": "The superseded Q29 and Q32 goal-time telemetry share one physical arc; neither may serve any item measure while shared (and Q32 never may without SA-5)",
-      "required_control": "SA-3 + SA-5 revised rulings over the same evidence set",
+      "required_control": "SA-3 + SA-5 APPROVED 2026-07-30: the edge is dissolved by design - Q29/Q31 and Q32 each measure from their own independent module, and Q32 may not reuse the horizon events. Legacy tag disposition remains an event-schema decision. NOT IMPLEMENTED.",
       "residual_risk": "None while unscored"
     },
     {
@@ -1741,7 +1893,7 @@
       "current_or_proposed": "current",
       "severity": "medium",
       "primary_measurement_impact": "Superseded Q29 telemetry is manufactured by the Q07 outcome; structurally identical to the Q02/Q04/Q10->Q11 inheritance edges",
-      "required_control": "SA-3 revised ruling (tag disposition); event stays secondary meanwhile",
+      "required_control": "SA-3 APPROVED 2026-07-30: final_core_stability_bonus is not authorised as primary Q29/Q31 evidence and stays secondary; tag disposition remains an event-schema decision. NOT IMPLEMENTED.",
       "residual_risk": "None while unscored"
     },
     {
@@ -1829,7 +1981,7 @@
       "current_or_proposed": "current",
       "severity": "medium",
       "primary_measurement_impact": "Q33 tag is a prohibited rushing/duration inference (SA-6); Q06 use pending its own family",
-      "required_control": "SA-6 revised ruling + Q06 family ruling",
+      "required_control": "SA-6 APPROVED 2026-07-30: Q33 receives its own independent Contract Closure Queue module, so generic completion events are never its primary input and required/forced completions can never count as Q33 evidence; the legacy tag may remain only as labelled secondary telemetry pending event-schema disposition. The Q06-exclusive duty-completion family ruling is still required. NOT IMPLEMENTED.",
       "residual_risk": "None while unscored"
     },
     {
@@ -1840,7 +1992,7 @@
       "current_or_proposed": "current",
       "severity": "medium",
       "primary_measurement_impact": "One act, two items; Q33 reading prohibited (SA-6)",
-      "required_control": "SA-6 revised ruling",
+      "required_control": "SA-6 APPROVED 2026-07-30: Final Core rushing is not authorised as primary Q33 evidence - Q33 measures from its own Contract Closure Queue module; the final_core_rushed Q33 tag may remain only as labelled secondary telemetry pending event-schema disposition. NOT IMPLEMENTED.",
       "residual_risk": "None while unscored"
     },
     {
@@ -1851,7 +2003,7 @@
       "current_or_proposed": "current",
       "severity": "high",
       "primary_measurement_impact": "Prudence acts cannot serve an inappropriate-persistence primary; approved analogue is the utility-stop module",
-      "required_control": "SA-1 revised ruling (tag removal/retention as secondary)",
+      "required_control": "SA-1 APPROVED 2026-07-30: Hazard is principally the Q12 prudence/carefulness opportunity and Q27 may use no Hazard event, state, outcome or derived variable as primary evidence; the cross-tag may remain temporarily as explicitly labelled legacy/secondary ecological telemetry. Removal versus labelled retention is reserved for the event-schema unit. NOT IMPLEMENTED.",
       "residual_risk": "None once ruled"
     },
     {
@@ -1862,7 +2014,7 @@
       "current_or_proposed": "current",
       "severity": "high",
       "primary_measurement_impact": "Hazard prudence acts cannot serve the shared Q29/Q31 horizon indicator",
-      "required_control": "SA-3 (with SA-1) revised ruling",
+      "required_control": "SA-1 + SA-3 APPROVED 2026-07-30: Q31 may use no Hazard event, state, outcome or derived variable as primary evidence and measures only through the shared Q29/Q31 horizon indicator; the cross-tag may remain temporarily as labelled legacy/secondary ecological telemetry, with removal versus retention reserved for the event-schema unit. NOT IMPLEMENTED.",
       "residual_risk": "None once ruled"
     },
     {
@@ -1873,7 +2025,7 @@
       "current_or_proposed": "current",
       "severity": "high",
       "primary_measurement_impact": "Q30 may never be inferred from carelessness/skipped preparation (approved decision + ruling section 1)",
-      "required_control": "SA-4 revised ruling (tag removal)",
+      "required_control": "SA-4 APPROVED 2026-07-30: Q30 measures from at least two independent granularity opportunities of its own and is never inferred from skipped verification or preparation; removal versus retention of the inventory_verification_skipped Q30 tag is reserved for the event-schema unit. NOT IMPLEMENTED.",
       "residual_risk": "None once ruled"
     },
     {
@@ -1895,7 +2047,7 @@
       "current_or_proposed": "proposed",
       "severity": "low",
       "primary_measurement_impact": "By design: one choice never two observations; no independent item scores",
-      "required_control": "Single shared variable assertion in any future implementation + SA-3 ruling",
+      "required_control": "SA-3 APPROVED 2026-07-30: exactly ONE shared construct-level Q29/Q31 indicator, never two independent game-item scores; the single-shared-variable assertion is required in any implementation. This remains the only authorised shared-construct exception. NOT IMPLEMENTED.",
       "residual_risk": "None - this is the sanctioned exception"
     },
     {
@@ -1906,7 +2058,7 @@
       "current_or_proposed": "current",
       "severity": "high",
       "primary_measurement_impact": "Legacy composite mixes prudence telemetry into the maladaptive-persistence count (ruling section 12 separation defect)",
-      "required_control": "D2/SA-1 scoring cleanup; composites remain legacy-labelled meanwhile",
+      "required_control": "SA-1 APPROVED 2026-07-30 records that inappropriate-persistence formulas containing Hazard terms require a later scoring-plan correction; no formula is changed and composites remain legacy-labelled meanwhile (with the rest of the D2 cleanup). NOT IMPLEMENTED.",
       "residual_risk": "None once cleaned; variables remain legacy until then"
     },
     {
@@ -1928,7 +2080,7 @@
       "current_or_proposed": "current",
       "severity": "medium",
       "primary_measurement_impact": "Goal-time-tagged telemetry inside a persistence-family variable",
-      "required_control": "D2-family cleanup with SA-1/SA-3",
+      "required_control": "D2-family cleanup, informed by SA-1/SA-3 (APPROVED 2026-07-30): Hazard telemetry may not carry Q31 goal-time meaning, and the scoring-plan correction of Hazard terms is recorded but NOT APPLIED.",
       "residual_risk": "None once cleaned"
     },
     {
@@ -1950,7 +2102,7 @@
       "current_or_proposed": "current",
       "severity": "high",
       "primary_measurement_impact": "The two items' windows interact through shared scored task state (ruling section 6 prohibition)",
-      "required_control": "Item-specific state containers / standardised baseline blocker; ruling required",
+      "required_control": "Item-specific state containers; standardised baseline blocker APPROVED 2026-07-30 (Final Core baseline), NOT IMPLEMENTED. Q11/Q28 event ownership remains an event-schema decision.",
       "residual_risk": "Pilot must test Q11-Q28 local dependency"
     },
     {
@@ -1983,7 +2135,7 @@
       "current_or_proposed": "proposed",
       "severity": "medium",
       "primary_measurement_impact": "Contrast effect between the two goal-structure choices",
-      "required_control": "Module-order counterbalance where feasible (ruling section 7) + pilot contrast test; to be fixed in SA-3/SA-4 revised rulings",
+      "required_control": "Module-order counterbalance where feasible (ruling section 7) + pilot contrast test. SA-3 and SA-4 APPROVED 2026-07-30 require counterbalanced option position, matched form and opportunity/instance order within each module; the cross-module order between the horizon and granularity modules is settled in their implementation passes and exported as a control variable. NOT IMPLEMENTED.",
       "residual_risk": "Design-stage"
     },
     {

@@ -11,12 +11,36 @@ item-specific ruling. Companion machine-readable register:
   on item separation, local independence and carryover control**, recorded
   verbatim in `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md` §13.1
   (referenced below as "ruling §N"). The behavioural translation is
-  `docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md` v0.2.
+  `docs/scientific/Q01-Q33_GAMIFIED_MEASUREMENT_SPECIFICATION.md` v0.3
+  (v0.2 at this plan's original 2026-07-29 baseline; bumped by the 2026-07-30
+  adoption pass recorded in the banner below).
   Event names: `docs/research/event-schema.md`. Formulas:
   `docs/research/scoring-plan.md`. The NEXT-09 Phase 3 dossier
   (`docs/research/NEXT-09-PHASE-3-SCIENTIFIC-DECISION-DOSSIER.md`) is a
   historical decision-evidence record; its options and ruling texts are
   **pending revised rulings** under the new global authority.
+
+> **Adoption update — 30 July 2026 (FABLE-NEXT-10).** The research owner has
+> since **adopted** the previously accepted revised measurement directions.
+> **SA-1, SA-2, SA-3, SA-4, SA-5, SA-6, SA-12 and SA-13, plus corridor
+> de-gating and the Final Core baseline issue/blocker component, are APPROVED
+> at measurement-design authority** — ruling text at
+> `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md` §14, behavioural
+> restatement at the specification §1.6 (v0.3). The global ruling of §13
+> remains approved, binding and immutable, and §14 is issued under it.
+>
+> **This plan is unchanged in kind:** still DOCUMENTATION ONLY. The adopted
+> rulings approve **measurement design only** — no canonical event or payload
+> name, no variable, weight, threshold, formula or composite, and no
+> implementation. **No authorised module exists in the tree.** The audit of the
+> live tree below (baseline `f64d1ce`) therefore still describes the live tree
+> accurately: what changed is the _decision status_ of the remedies, not the
+> code. Passages below that describe a remedy as "pending a ruling" are
+> annotated in place where the ruling has since issued; the pending-status
+> wording is preserved, never deleted. **Q29/Q31 remains the sole
+> shared-construct exception**, and **Q32 and Q33 now have approved distinct
+> modules of their own** rather than any derived or reused treatment. Base for
+> the adoption unit: `a0f298f` on `fable-next-10-research-owner-rulings-v1`.
 
 ## 1. Executive scientific finding
 
@@ -50,6 +74,14 @@ systematic local dependence. Audited item by item at `f64d1ce`:
    Q27/Q29/Q30/Q31 blocked on re-scoped SA rulings; Q33 derivable only via a
    not-authorised reuse), and four are questionnaire-primary by approved
    design (Q18, Q20, Q32, Q33).
+   > **Update 30 July 2026.** The ruling blocks are gone: **SA-2 (Q27), SA-3
+   > (Q29/Q31) and SA-4 (Q30) are APPROVED**, so those items are
+   > _authorised-but-unbuilt_ rather than blocked. **Q32 (SA-5) and Q33 (SA-6)
+   > each have an approved distinct module** — Q33 no longer depends on a
+   > not-authorised reuse. Q18 and Q20 are unchanged, and **Q32 and Q33 remain
+   > questionnaire-primary Qualtrics items** whose approved modules can yield
+   > exploratory short-session analogues only, never validated item scores.
+   > Q05 remains blocked on D7/D3. Nothing is implemented.
 6. **The remedy path is bounded**: single-ownership rulings for five shared
    streams (inventory close-out, side-repair arc, archive failure, repair
    difficulty, corridor), two entry-state standardisations (Final Core
@@ -57,6 +89,13 @@ systematic local dependence. Audited item by item at `f64d1ce`:
    already-queued SA/D rulings, and export-layer separation. No item needs
    the connected world dismantled; ruling §5 explicitly preserves narrative
    continuity that does not alter measurement conditions.
+   > **Update 30 July 2026.** Three of these remedies are now **ruled at
+   > measurement-design authority**: the **Final Core baseline issue/blocker
+   > component**, **corridor de-gating**, and the **independent Q03
+   > opportunity (SA-12)**; **SA-13** approves the validity/counterbalance
+   > semantics that the export-layer and coding work depends on. Each still
+   > needs its event-schema/scoring ruling and its own implementation pass, and
+   > the five shared-stream single-ownership questions remain open.
 
 ## 2. Governing ruling
 
@@ -76,83 +115,94 @@ ruling §1**; every event/variable name remains a CANDIDATE pending
 event-schema/scoring rulings. "(pending)" = requires a ruling before any
 compliant primary exists. Full field-level detail per item: the JSON register.
 
-| Item | Construct (direction)       | Primary opportunity (declared/required)                      | Primary event family                                                                   | Primary variable                             |
-| ---- | --------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Q01  | Organisation (+)            | Inventory checklist-guided kit prep                          | Q01-exclusive checklist/placement/sequence acts (live, singly tagged)                  | checklist-guided preparation quality (cand.) |
-| Q02  | Organisation (−)            | Errors left after close-out correction                       | misplacement-after-correction acts (verification-skip tag contested, SA-4)             | unresolved preventable-error count (cand.)   |
-| Q03  | Organisation (+)            | **(pending SA-12)** independent standardised retrieval       | live Q03 events = gated episode, secondary only (ruling §11)                           | independent retrieval accuracy (cand.)       |
-| Q04  | Organisation (−)            | Restore-vs-leave at close-out                                | Q04-exclusive cleanup acts (live)                                                      | cleanup completion/failure state (cand.)     |
-| Q05  | Productiveness (−)          | **(pending D7/D3)** initiation window after confirmation act | objective-confirmation family (cand.)                                                  | task_initiation_latency (cand.)              |
-| Q06  | Productiveness (+)          | Required-duty completion portfolio (OD-1 framing)            | **(pending)** duty-level completion acts — current completions are other items' events | required_completion_rate (cand.)             |
-| Q07  | Productiveness (+)          | Accepted side-repair follow-through (ruling §3)              | **(pending split)** arc acts multi-tagged Q07/Q16/Q20/Q32                              | accepted_task_completion_rate (cand.)        |
-| Q08  | Productiveness (−)          | ≥2 required-duty engagement/avoidance windows                | partial (task_avoidance) + (pending D3 + duty framing)                                 | productive_engagement_rate (cand.)           |
-| Q09  | Responsibility (+)          | Kai report-back episode                                      | Q09-exclusive report acts (live; accuracy registration = SA-8)                         | report accuracy/preparedness (cand.)         |
-| Q10  | Responsibility (+)          | Accepted duty follow-through (ruling §3)                     | Q10-exclusive duty lifecycle (live)                                                    | commitment_followthrough_rate (cand.)        |
-| Q11  | Responsibility (−)          | Final Core review/resolve/force                              | mostly exclusive; `final_core_rushed` dual-tag (SA-6); **entry state noncompliant**    | preventable_unresolved_count (cand.)         |
-| Q12  | Responsibility/prudence (−) | Hazard warning → informed/unchecked action                   | Q12 window owns hazard acts; Q27/Q31 tags contested (SA-1/SA-3)                        | prudence_check_rate (cand.)                  |
-| Q13  | Grit-PE (+)                 | Archive failure → revision → completion                      | **(pending split)** archive stream multi-tagged Q13/Q22/Q26/Q06                        | post_failure_reengagement (cand.)            |
-| Q14  | Grit-PE (+)                 | Repair useful-effort breadth                                 | **(pending split)** repair stream multi-tagged Q14/Q21/Q22/Q23/Q06                     | useful_effort_count (cand.)                  |
-| Q15  | Grit-PE (+)                 | Return/completion after interruption (ruling §3)             | contested at SA-9 co-fire + `interruption_received` dual-tag; **gated on Q10**         | started_task_completion_rate (cand.)         |
-| Q16  | Grit-PE (+)                 | **(pending)** own execution-accuracy window                  | none compliant (borrows Q07 arc / Q01-Q02 verification)                                | diligence_step_accuracy (cand.)              |
-| Q17  | Grit-CI (−, expl.)          | Competing-task switch-without-return                         | contested (SA-9, D6, dual-tag); gated on Q10                                           | switch_without_return_count (cand.)          |
-| Q18  | Grit-CI (−, QP)             | none permitted as primary (questionnaire-primary)            | none (shadow telemetry secondary only)                                                 | none authorised                              |
-| Q19  | Grit-CI (−, expl.)          | New-goal offer → prior-goal closure                          | Q19-exclusive (live); gated on Q10; Final-Core-censored                                | goal_switch_without_return_count (cand.)     |
-| Q20  | Grit-CI (−, QP)             | none permitted as primary (questionnaire-primary)            | none compliant (rides Q07 arc)                                                         | none authorised                              |
-| Q21  | PDD (+)                     | Repair post-failure continuation                             | **(pending split)** shared repair stream                                               | failure_recovery_score (cand.)               |
-| Q22  | PDD (+)                     | Support consulted AND applied                                | **(pending split)** support acts multi-tagged                                          | applied-information flag (cand.)             |
-| Q23  | PDD (+)                     | Adaptive-retry quality                                       | **(pending split + divergence fix)**                                                   | adaptive_retry_count (cand.)                 |
-| Q24  | PDD (+)                     | Repair setback re-engagement                                 | **(pending Q24/Q25 split + D4)**                                                       | post_setback_completion_score (cand.)        |
-| Q25  | PDD (+)                     | Leave-then-return vs non-return                              | **(pending Q24/Q25 split)**; `abandonment_count` mis-wire noted                        | reengagement_after_failure (cand.)           |
-| Q26  | IP (+ maladaptive)          | Identical repetition after feedback                          | Q26-exclusive repetition events (live) — best-in-tree                                  | blind-repetition count (cand., de-polluted)  |
-| Q27  | IP (+ maladaptive)          | **(pending SA-1/SA-2 revised)** utility-stop continuation    | none (candidates only; hazard tags contested)                                          | excess_continuation_count (cand.)            |
-| Q28  | IP (+ maladaptive)          | Blocker-understood → force/resolve                           | Q28-exclusive events (live); **entry state noncompliant**                              | force_continue_count (cand.)                 |
-| Q29  | GTP long pole (expl.)       | **(pending SA-3 revised)** balanced horizon choice ×2        | none (candidates; stabiliser tags superseded)                                          | **one shared** goal_horizon_preference       |
-| Q30  | GTP small-goal (expl.)      | **(pending SA-4 revised)** granularity choice ×≥2            | none (verification tags prohibited)                                                    | goal_granularity_preference (cand.)          |
-| Q31  | GTP short pole (expl.)      | same shared module as Q29 (sole exception, ruling §2)        | none (hazard tags superseded)                                                          | the same single shared indicator             |
-| Q32  | GTP long (QP)               | none permitted — no module, no score                         | none (weak-proxy tags secondary, SA-5)                                                 | none authorised                              |
-| Q33  | GTP short (QP)              | none permitted — portfolio **not authorised** (reuse ban)    | none (final-core tags prohibited inference, SA-6)                                      | none authorised                              |
+| Item | Construct (direction)       | Primary opportunity (declared/required)                                                           | Primary event family                                                                   | Primary variable                                                        |
+| ---- | --------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Q01  | Organisation (+)            | Inventory checklist-guided kit prep                                                               | Q01-exclusive checklist/placement/sequence acts (live, singly tagged)                  | checklist-guided preparation quality (cand.)                            |
+| Q02  | Organisation (−)            | Errors left after close-out correction                                                            | misplacement-after-correction acts (verification-skip tag contested, SA-4)             | unresolved preventable-error count (cand.)                              |
+| Q03  | Organisation (+)            | **(SA-12 APPROVED 30 Jul; unbuilt)** independent standardised retrieval                           | live Q03 events = gated episode, secondary only (ruling §11)                           | independent retrieval accuracy (cand.)                                  |
+| Q04  | Organisation (−)            | Restore-vs-leave at close-out                                                                     | Q04-exclusive cleanup acts (live)                                                      | cleanup completion/failure state (cand.)                                |
+| Q05  | Productiveness (−)          | **(pending D7/D3)** initiation window after confirmation act                                      | objective-confirmation family (cand.)                                                  | task_initiation_latency (cand.)                                         |
+| Q06  | Productiveness (+)          | Required-duty completion portfolio (OD-1 framing)                                                 | **(pending)** duty-level completion acts — current completions are other items' events | required_completion_rate (cand.)                                        |
+| Q07  | Productiveness (+)          | Accepted side-repair follow-through (ruling §3)                                                   | **(pending split)** arc acts multi-tagged Q07/Q16/Q20/Q32                              | accepted_task_completion_rate (cand.)                                   |
+| Q08  | Productiveness (−)          | ≥2 required-duty engagement/avoidance windows                                                     | partial (task_avoidance) + (pending D3 + duty framing)                                 | productive_engagement_rate (cand.)                                      |
+| Q09  | Responsibility (+)          | Kai report-back episode                                                                           | Q09-exclusive report acts (live; accuracy registration = SA-8)                         | report accuracy/preparedness (cand.)                                    |
+| Q10  | Responsibility (+)          | Accepted duty follow-through (ruling §3)                                                          | Q10-exclusive duty lifecycle (live)                                                    | commitment_followthrough_rate (cand.)                                   |
+| Q11  | Responsibility (−)          | Final Core review/resolve/force                                                                   | mostly exclusive; `final_core_rushed` dual-tag (SA-6); **entry state noncompliant**    | preventable_unresolved_count (cand.)                                    |
+| Q12  | Responsibility/prudence (−) | Hazard warning → informed/unchecked action                                                        | Q12 window owns hazard acts; Q27/Q31 tags contested (SA-1/SA-3)                        | prudence_check_rate (cand.)                                             |
+| Q13  | Grit-PE (+)                 | Archive failure → revision → completion                                                           | **(pending split)** archive stream multi-tagged Q13/Q22/Q26/Q06                        | post_failure_reengagement (cand.)                                       |
+| Q14  | Grit-PE (+)                 | Repair useful-effort breadth                                                                      | **(pending split)** repair stream multi-tagged Q14/Q21/Q22/Q23/Q06                     | useful_effort_count (cand.)                                             |
+| Q15  | Grit-PE (+)                 | Return/completion after interruption (ruling §3)                                                  | contested at SA-9 co-fire + `interruption_received` dual-tag; **gated on Q10**         | started_task_completion_rate (cand.)                                    |
+| Q16  | Grit-PE (+)                 | **(pending)** own execution-accuracy window                                                       | none compliant (borrows Q07 arc / Q01-Q02 verification)                                | diligence_step_accuracy (cand.)                                         |
+| Q17  | Grit-CI (−, expl.)          | Competing-task switch-without-return                                                              | contested (SA-9, D6, dual-tag); gated on Q10                                           | switch_without_return_count (cand.)                                     |
+| Q18  | Grit-CI (−, QP)             | none permitted as primary (questionnaire-primary)                                                 | none (shadow telemetry secondary only)                                                 | none authorised                                                         |
+| Q19  | Grit-CI (−, expl.)          | New-goal offer → prior-goal closure                                                               | Q19-exclusive (live); gated on Q10; Final-Core-censored                                | goal_switch_without_return_count (cand.)                                |
+| Q20  | Grit-CI (−, QP)             | none permitted as primary (questionnaire-primary)                                                 | none compliant (rides Q07 arc)                                                         | none authorised                                                         |
+| Q21  | PDD (+)                     | Repair post-failure continuation                                                                  | **(pending split)** shared repair stream                                               | failure_recovery_score (cand.)                                          |
+| Q22  | PDD (+)                     | Support consulted AND applied                                                                     | **(pending split)** support acts multi-tagged                                          | applied-information flag (cand.)                                        |
+| Q23  | PDD (+)                     | Adaptive-retry quality                                                                            | **(pending split + divergence fix)**                                                   | adaptive_retry_count (cand.)                                            |
+| Q24  | PDD (+)                     | Repair setback re-engagement                                                                      | **(pending Q24/Q25 split + D4)**                                                       | post_setback_completion_score (cand.)                                   |
+| Q25  | PDD (+)                     | Leave-then-return vs non-return                                                                   | **(pending Q24/Q25 split)**; `abandonment_count` mis-wire noted                        | reengagement_after_failure (cand.)                                      |
+| Q26  | IP (+ maladaptive)          | Identical repetition after feedback                                                               | Q26-exclusive repetition events (live) — best-in-tree                                  | blind-repetition count (cand., de-polluted)                             |
+| Q27  | IP (+ maladaptive)          | **(SA-1/SA-2 APPROVED 30 Jul; unbuilt)** utility-stop continuation                                | none (candidates only; Hazard barred as primary, SA-1)                                 | excess_continuation_count (cand.)                                       |
+| Q28  | IP (+ maladaptive)          | Blocker-understood → force/resolve                                                                | Q28-exclusive events (live); **entry state noncompliant**                              | force_continue_count (cand.)                                            |
+| Q29  | GTP long pole (expl.)       | **(SA-3 APPROVED 30 Jul; unbuilt)** matched horizon choice ×2, counterbalanced                    | none (candidates; stabiliser tags superseded, not authorised as primary)               | **one shared** goal_horizon_preference                                  |
+| Q30  | GTP small-goal (expl.)      | **(SA-4 APPROVED 30 Jul; unbuilt)** granularity choice ×≥2 (Vale/Inventory + telemetry-cache/map) | none (verification tags prohibited)                                                    | goal_granularity_preference (cand.)                                     |
+| Q31  | GTP short pole (expl.)      | same shared module as Q29 (sole exception, ruling §2)                                             | none (hazard tags superseded)                                                          | the same single shared indicator                                        |
+| Q32  | GTP long (QP)               | **(SA-5 APPROVED 30 Jul; unbuilt)** Active Project Portfolio — own independent module             | none yet; legacy weak-proxy tags = labelled secondary only (SA-5)                      | none authorised yet; exploratory analogue only, never a validated score |
+| Q33  | GTP short (QP)              | **(SA-6 APPROVED 30 Jul; unbuilt)** Contract Closure Queue — own independent module               | none yet; final-core tags remain prohibited as primary (SA-6)                          | none authorised yet; exploratory analogue only, never a validated score |
 
 ## 4. All-33-item compliance and remediation table
 
 Status vocabulary (JSON `implementation_status`): compliant_pending_coding_rules ·
 partially_compliant · shared_stream_noncompliant · opportunity_gated_noncompliant ·
-entry_state_noncompliant · absent_blocked · questionnaire_primary_no_module.
+entry_state_noncompliant · absent_blocked · questionnaire_primary_no_module ·
+**authorised_design_not_implemented** (added 30 July 2026: the measurement
+design is approved and the module is **not built**; canonical events and
+scoring remain pending).
 
-| Item | Status                          | Minimum remediation (nothing implemented by this plan)                       |
-| ---- | ------------------------------- | ---------------------------------------------------------------------------- |
-| Q01  | compliant_pending_coding_rules  | Declare window boundaries + opportunity id; D2 scoring alignment             |
-| Q02  | partially_compliant             | SA-4 tag ruling; standardise/code the Final Core consequence exposure        |
-| Q03  | opportunity_gated_noncompliant  | **SA-12** independence remedy (ruling §11); episode stays secondary          |
-| Q04  | partially_compliant             | Standardise/code cleanup entry state; Final Core exposure coding             |
-| Q05  | absent_blocked                  | D7 + D3, then the confirmation act/window in its own pass                    |
-| Q06  | shared_stream_noncompliant      | Q06-exclusive duty-completion family (event-schema + scoring rulings)        |
-| Q07  | shared_stream_noncompliant      | Side-repair arc ownership split (Q07/Q16/Q20/Q32)                            |
-| Q08  | partially_compliant             | D3 + duty framing pass + engagement/avoidance family                         |
-| Q09  | compliant_pending_coding_rules  | SA-8; record prior-state configuration in validity coding                    |
-| Q10  | partially_compliant             | Corridor de-gating ruling or dependency coding (its own internals are sound) |
-| Q11  | entry_state_noncompliant        | Standardised baseline issue ruling; SA-6 for the Q33 co-tag                  |
-| Q12  | partially_compliant             | SA-1/SA-3 tag rulings; D2 composite splits                                   |
-| Q13  | shared_stream_noncompliant      | Archive stream ownership split                                               |
-| Q14  | shared_stream_noncompliant      | Repair stream ownership split                                                |
-| Q15  | opportunity_gated_noncompliant  | SA-9/SA-10 + corridor de-gating ruling                                       |
-| Q16  | shared_stream_noncompliant      | Q16-exclusive execution-accuracy family (own instance or ruled split)        |
-| Q17  | opportunity_gated_noncompliant  | SA-9 + D6 + corridor de-gating                                               |
-| Q18  | questionnaire_primary_no_module | None required; optional arc = own event-schema ruling                        |
-| Q19  | opportunity_gated_noncompliant  | Corridor de-gating + censoring-coding rule                                   |
-| Q20  | questionnaire_primary_no_module | None required; anomaly arc = own ruling (lowest priority)                    |
-| Q21  | shared_stream_noncompliant      | Repair stream ownership split                                                |
-| Q22  | shared_stream_noncompliant      | Support-act ownership + D2 hazard-term removal                               |
-| Q23  | shared_stream_noncompliant      | Revision-act ownership + registration-divergence fix                         |
-| Q24  | shared_stream_noncompliant      | Q24/Q25 return-act assignment + D4                                           |
-| Q25  | shared_stream_noncompliant      | Same split + D2 `abandonment_count` fix                                      |
-| Q26  | partially_compliant             | D2 de-pollution (hazard term) + debounce ruling                              |
-| Q27  | absent_blocked                  | SA-1 + SA-2 **revised** rulings, then module in its own pass                 |
-| Q28  | entry_state_noncompliant        | Standardised baseline blocker ruling (shared with Q11) + D2 term             |
-| Q29  | absent_blocked                  | SA-3 revised ruling, then module                                             |
-| Q30  | absent_blocked                  | SA-4 revised ruling, then module                                             |
-| Q31  | absent_blocked                  | SA-3 (shared) + SA-1 for hazard tag                                          |
-| Q32  | questionnaire_primary_no_module | SA-5 revised ruling on tags only                                             |
-| Q33  | questionnaire_primary_no_module | SA-6 revised ruling on tags; any treatment needs an independence ruling      |
+> **Status corrections, 30 July 2026.** Rows below that read "revised ruling"
+> or "ruling" for SA-1..SA-6, SA-12, SA-13, corridor de-gating or the Final
+> Core baseline are updated in place: **those rulings have issued**. The
+> remaining work in every such row is event-schema/scoring plus a separately
+> approved implementation pass. Items whose only blocker was one of those
+> rulings move from `absent_blocked` / `questionnaire_primary_no_module` to
+> `authorised_design_not_implemented`. **No status below means "implemented".**
+
+| Item | Status                            | Minimum remediation (nothing implemented by this plan)                                                                                                                   |
+| ---- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Q01  | compliant_pending_coding_rules    | Declare window boundaries + opportunity id; D2 scoring alignment                                                                                                         |
+| Q02  | partially_compliant               | SA-4 tag ruling; standardise/code the Final Core consequence exposure                                                                                                    |
+| Q03  | opportunity_gated_noncompliant    | **SA-12 APPROVED** — build the independent opportunity in its own pass (events + scoring pending); episode stays secondary                                               |
+| Q04  | partially_compliant               | Standardise/code cleanup entry state; Final Core exposure coding                                                                                                         |
+| Q05  | absent_blocked                    | D7 + D3, then the confirmation act/window in its own pass                                                                                                                |
+| Q06  | shared_stream_noncompliant        | Q06-exclusive duty-completion family (event-schema + scoring rulings)                                                                                                    |
+| Q07  | shared_stream_noncompliant        | Side-repair arc ownership split (Q07/Q16/Q20/Q32)                                                                                                                        |
+| Q08  | partially_compliant               | D3 + duty framing pass + engagement/avoidance family                                                                                                                     |
+| Q09  | compliant_pending_coding_rules    | SA-8; record prior-state configuration in validity coding                                                                                                                |
+| Q10  | partially_compliant               | Corridor de-gating **APPROVED** — implementation pass (its own internals are sound)                                                                                      |
+| Q11  | entry_state_noncompliant          | Final Core baseline issue **APPROVED** — implementation pass; SA-6 **APPROVED** bars the Q33 co-tag as primary (tag disposition = event-schema)                          |
+| Q12  | partially_compliant               | SA-1/SA-3 **APPROVED** (Hazard is Q12's; Q27/Q31 barred as primary) — tag disposition = event-schema; D2 composite splits                                                |
+| Q13  | shared_stream_noncompliant        | Archive stream ownership split                                                                                                                                           |
+| Q14  | shared_stream_noncompliant        | Repair stream ownership split                                                                                                                                            |
+| Q15  | opportunity_gated_noncompliant    | Corridor de-gating **APPROVED** — implementation pass; **SA-9/SA-10 still open**                                                                                         |
+| Q16  | shared_stream_noncompliant        | Q16-exclusive execution-accuracy family (own instance or ruled split)                                                                                                    |
+| Q17  | opportunity_gated_noncompliant    | Corridor de-gating **APPROVED** — implementation pass; **SA-9 + D6 still open**                                                                                          |
+| Q18  | questionnaire_primary_no_module   | None required; optional arc = own event-schema ruling                                                                                                                    |
+| Q19  | opportunity_gated_noncompliant    | Corridor de-gating **APPROVED** — implementation pass; + censoring-coding rule                                                                                           |
+| Q20  | questionnaire_primary_no_module   | None required; anomaly arc = own ruling (lowest priority)                                                                                                                |
+| Q21  | shared_stream_noncompliant        | Repair stream ownership split                                                                                                                                            |
+| Q22  | shared_stream_noncompliant        | Support-act ownership + D2 hazard-term removal                                                                                                                           |
+| Q23  | shared_stream_noncompliant        | Revision-act ownership + registration-divergence fix                                                                                                                     |
+| Q24  | shared_stream_noncompliant        | Q24/Q25 return-act assignment + D4                                                                                                                                       |
+| Q25  | shared_stream_noncompliant        | Same split + D2 `abandonment_count` fix                                                                                                                                  |
+| Q26  | partially_compliant               | D2 de-pollution — **SA-1 APPROVED** records the required scoring-plan correction of Hazard terms; + debounce ruling                                                      |
+| Q27  | authorised_design_not_implemented | **SA-1 + SA-2 APPROVED** — utility-stop module in its own pass; events + scoring pending; Hazard barred as primary                                                       |
+| Q28  | entry_state_noncompliant          | Final Core baseline blocker **APPROVED** (shared with Q11) — implementation pass; + D2 term                                                                              |
+| Q29  | authorised_design_not_implemented | **SA-3 APPROVED** — two matched counterbalanced situations in their own pass; one shared Q29/Q31 indicator; events + scoring pending                                     |
+| Q30  | authorised_design_not_implemented | **SA-4 APPROVED** — ≥2 independent granularity opportunities in their own pass; events + scoring pending                                                                 |
+| Q31  | authorised_design_not_implemented | **SA-3 APPROVED** (shared with Q29); **SA-1 APPROVED** bars the hazard tag as primary (tag disposition = event-schema)                                                   |
+| Q32  | authorised_design_not_implemented | **SA-5 APPROVED** — own Active Project Portfolio module in its own pass (questionnaire-primary item; exploratory analogue only); legacy tag disposition = event-schema   |
+| Q33  | authorised_design_not_implemented | **SA-6 APPROVED** — own Contract Closure Queue module in its own pass (questionnaire-primary item; exploratory analogue only); final-core tag disposition = event-schema |
 
 ## 5. Primary-event ownership table
 
@@ -185,6 +235,18 @@ no registration changes here.
 Singly-owned today and to be preserved: Q01 inventory acts, Q04 cleanup acts,
 Q09 report acts, Q10 duty acts, Q19 goal events, Q26 repetition events, Q28
 blocker/force events, Q12 `hazard_warning_seen`.
+
+> **Update 30 July 2026 — read the "Displaced tags become" column carefully.**
+> The proposals in that column are **still proposals for the event-schema
+> ruling**; no registration changes. Where a cell reads "removed (SA-1)",
+> "removed (SA-1/SA-3)" or "removed (SA-6)", the issued rulings say something
+> more precise: the displaced items (Q27, Q31, Q33) are **barred from using
+> those events as primary evidence**, while the existing cross-tags **may
+> remain temporarily as explicitly labelled legacy/secondary ecological
+> telemetry pending the later event-schema unit**. Removal versus labelled
+> retention is that unit's decision, not this table's. The Q30 cell is
+> unchanged in force: inferring Q30 from skipped preparation stays prohibited
+> (SA-4).
 
 ## 6. Primary-variable ownership table
 
@@ -280,6 +342,9 @@ prohibition here means _no primary variable may be built on them_:
 1. Any multi-tagged event feeding more than one item primary (§5 list).
 2. Q32/Q33 reuse of Q29-Q31 horizon/granularity events — no permission
    exists; the historical "derived portfolio" treatment is superseded.
+   **(Still prohibited after 30 July 2026. SA-5 and SA-6 resolve the gap the
+   other way: each item receives its own independent module — Q32 Active
+   Project Portfolio, Q33 Contract Closure Queue — never a reuse permission.)**
 3. Q27/Q31 reuse of Hazard events (Hazard is prudence — Q12's window).
 4. Q30 inference from `inventory_verification_skipped`/`inventory_verified_complete`
    (skipped preparation — prohibited by approved decision and ruling §1).
@@ -331,6 +396,16 @@ Per ruling §4, every primary opportunity must begin from a standardised or
 counterbalanced measurement-relevant entry state. Requirements (all pending
 rulings for the machinery; nothing implemented here):
 
+> **Update 30 July 2026.** Requirements 1, 2, 3 and 7 below are **no longer
+> pending a measurement-design ruling** — the Final Core baseline
+> issue/blocker component, corridor de-gating, the independent Q03 opportunity
+> (SA-12) and the module entry standardisations inside SA-2/SA-3/SA-4/SA-5/SA-6
+> are **APPROVED**. Requirement 8's validity-flag semantics are approved by
+> **SA-13**, with exact field names, types, enumerations and payload contracts
+> **reserved for the event-schema ruling**. Requirements 4, 5 and 6 remain
+> unruled. **Nothing here is implemented**, and every approved item still needs
+> its event-schema/scoring ruling and its own build pass.
+
 1. **Final Core baseline issue component** for Q11/Q28: identical review-and
    blocker material for every session; participant-caused issues retained as
    secondary ecological telemetry.
@@ -369,9 +444,16 @@ rulings for the machinery; nothing implemented here):
 Per ruling §9 the raw export must identify, per item opportunity: opportunity
 id; presentation order and counterbalance condition; entry-state validity;
 relevant prior module exposure; technical/comprehension failure; suspected
-carryover contamination; and a primary-analysis validity verdict. Canonical
-payload/flag names are an **event-schema decision (SA-13)** — nothing is
-implemented here. Coding principles already binding: a contaminated or absent
+carryover contamination; and a primary-analysis validity verdict. **SA-13 is
+APPROVED (30 July 2026)** as the _semantic_ architecture — it additionally
+requires the raw data to distinguish item or approved shared-construct
+ownership, measurement opportunity **and instance**, form and presentation
+order, counterbalance condition **and option position**, comprehension failure
+and technical failure **as separate causes**, contamination **status and
+reason**, and opportunity completion, absence or censoring. **These are
+required semantic data elements, not approved canonical field names**: exact
+field names, types, enumerations and event payload contracts remain **reserved
+for the later event-schema ruling**, and nothing is implemented here. Coding principles already binding: a contaminated or absent
 opportunity is missing/invalid measurement, never behavioural non-performance,
 never a low trait score; no-opportunity, censored (Final Core unreached),
 insufficient-opportunity (<2 instances where ≥2 required) and invalid-entry
@@ -392,6 +474,32 @@ states are distinguishable from every behavioural code.
   14–18-minute design envelope; if it does not, the research owner chooses
   cuts — never silent trimming of measurement controls.
 
+> **Burden update 30 July 2026 — this section's estimate is now STALE.** The
+> enumeration above ("horizon ×2, granularity ×2, utility-stop, confirmation
+> act: ≈8–10 added median minutes, unchanged") covers Q29/Q31, Q30, Q27 and
+> Q05 only. It predates SA-5 and SA-6, which authorise **two further
+> independent participant-facing modules** — the **Q32 Active Project
+> Portfolio** and the **Q33 Contract Closure Queue**. Under the superseded
+> design those two items added **no** participant time (they were "no module"
+> / derived from other items' opportunities); under the adopted rulings they
+> each require their own opportunity, window and state container, so they add
+> time that **this estimate does not include**.
+>
+> **Their added participant time is currently UNESTIMATED** — the modules are
+> not designed, and no number is invented here. Two consequences bind:
+>
+> 1. The "adds, at most … unchanged" claim above must be read as covering the
+>    **pre-SA-5/SA-6 module set only**.
+> 2. The pilot-calibration requirement in the bullet above must explicitly
+>    cover the Q32 and Q33 modules once designed — not just the previously
+>    budgeted set. If the total then exceeds the 14–18-minute envelope, the
+>    cut decision is the research owner's; measurement controls are never
+>    silently trimmed to make room.
+>
+> Sequencing note: because each module lands in its own approved pass, the
+> burden re-estimate is owed at each module's design step, and the envelope
+> check is owed before any pilot.
+
 ## 15. Proposed phased implementation sequence
 
 Every phase is approval-gated, one bounded unit, one commit; phases stop for
@@ -403,6 +511,13 @@ their named rulings. Nothing below is started by this plan.
   SA-4/SA-5/SA-6 (dossier options re-read under the ruling), SA-8..SA-11
   where touched, SA-12 (Q03), SA-13 (validity-coding payloads), corridor
   de-gating and Final Core baseline-issue decisions, D2..D7 as they choose.
+  > **Partially DONE 30 July 2026 (FABLE-NEXT-10).** Issued: **SA-1, SA-2,
+  > SA-3, SA-4, SA-5, SA-6, SA-12, SA-13, corridor de-gating, Final Core
+  > baseline** — all at **measurement-design authority only**. **Still
+  > outstanding in Phase B:** SA-7, SA-8, SA-9, SA-10, SA-11, D2..D8, the
+  > five shared-stream ownership questions, and the event-schema half of every
+  > ruling already issued (SA-13's field names, types, enumerations and payload
+  > contracts are expressly reserved for it).
 - **Phase C (event-schema pass):** apply ruled ownership splits/retags in
   `event-schema.md` + `CanonicalEventContext.ts` exactly as ruled; matrix
   truth-up; no mechanics.
@@ -462,3 +577,27 @@ events; Q16 instance-vs-split; Q24/Q25 return-act assignment (with **D4**);
 hazard-term pollution); **D3** idle; **D5/D6/D7**; §8.2 coding principles
 (debounce, first-vs-final, deferment, incomplete sessions, weights);
 INT-family export questions.
+
+> **Update 30 July 2026 (FABLE-NEXT-10) — what this list no longer covers.**
+> The following entries above are **RULED at measurement-design authority** and
+> are not open questions any more: **SA-1, SA-2, SA-3, SA-4, SA-5, SA-6,
+> SA-12, SA-13, the corridor de-gating decision and the Final Core
+> baseline-issue decision**. Ruling text:
+> `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md` §14.
+>
+> **Still unresolved, exactly as listed above:** **SA-7** (exploratory labels);
+> **SA-8** (Q09 accuracy registration); **SA-9/SA-10** (corridor co-fire and
+> ignore-branch semantics); **SA-11** (requisition display); **D6**
+> (`interruption_alert_acknowledged` mapping); Q01/Q02/Q04 window-boundary
+> declarations; Q06/Q08 duty-family events; Q16 instance-vs-split; Q24/Q25
+> return-act assignment (with **D4**); the **D2** family (composite cleanup
+> incl. the `abandonment_count` mis-wire and the Hazard-term pollution that
+> SA-1 records as requiring a scoring-plan correction); **D3** idle; **D5/D7**;
+> the §8.2 operational coding principles (debounce, first-vs-final, deferment,
+> incomplete sessions, weights); and the INT-family export questions.
+>
+> **Newly and explicitly outstanding for every ruling just issued:** its
+> **canonical event and payload names** (event-schema, tier 3), its **variables
+> and formulas** (scoring-plan, tier 4), and its **implementation pass**. An
+> approved measurement design is not an approved event, an approved formula, or
+> a built module.
