@@ -395,11 +395,13 @@ test.describe('connected participant journeys', () => {
     // Duty was declined, never active: no unresolved-duty event may fire.
     expect(types).not.toContain('accepted_duty_unresolved');
     expect(types).not.toContain('objective_active');
-    // NEXT-05 no-opportunity state: nothing was genuinely pending at the
-    // switch, so no return act and no prior-goal closure is interpretable —
-    // prior_goal_abandoned must NOT fire even though the switch never
-    // returned (only non-return with a valid original is negative).
-    expect(types).not.toContain('prior_goal_abandoned');
+    // NEXT-10 corridor de-gating (adopted ruling, 6154a82): the relay
+    // check-in is scheduled for every participant at corridor entry, so
+    // this duty-declined switch DID have a genuinely pending original —
+    // the never-returned arc now closes as abandonment at Final Core
+    // (previously a no-opportunity state with no interpretable closure).
+    expect(types).toContain('prior_goal_abandoned');
+    // The checkpoint was never re-engaged: no return act, no completion.
     expect(types).not.toContain('return_to_unfinished_task');
     expect(types).not.toContain('returned_to_original_task');
     expect(types).not.toContain('prior_goal_completed');

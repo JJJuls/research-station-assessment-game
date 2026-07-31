@@ -12,6 +12,14 @@ import {
   SIDE_REPAIR_STATUS_COMPLETED,
   WORKSPACE_STATUS_DISORDERED,
 } from '../data/missionVocabulary';
+import {
+  declareOpportunity,
+  FINAL_CORE_BASELINE_ISSUE_LABEL,
+  FINAL_CORE_BASELINE_VERSION,
+  markOpportunityOffered,
+  recordPriorExposure,
+  refreshValidityProbe,
+} from '../measurement';
 import type { PilotRouteStop } from '../scenarios';
 import { getRemainingPilotDecisions } from '../scenarios';
 import { researchRuntime } from '../systems';
@@ -245,6 +253,33 @@ export class FinalCoreScene extends RoomScene {
   protected onRoomEntered(): void {
     this.logRoomEvent('finalCoreIntegration', 'final_core_entered');
 
+    // NEXT-10 baseline recording: version tag + SA-13 entry-state record
+    // (once per session; recording only, never gating).
+    runOncePerSession('final_core_baseline_recorded', () => {
+      const mission = researchRuntime.sessionState.getMissionState();
+
+      this.logScenarioEvent(
+        'finalCoreBaseline',
+        'proto_final_core_baseline_presented',
+        { metadata: { baseline_version: FINAL_CORE_BASELINE_VERSION } },
+      );
+      declareOpportunity({
+        opportunity_id: 'proto_final_core_entry',
+        owner: 'Q11/Q28 (entry baseline; event ownership open)',
+        entry_state_version: FINAL_CORE_BASELINE_VERSION,
+      });
+      markOpportunityOffered('proto_final_core_entry');
+      recordPriorExposure(
+        'proto_final_core_entry',
+        `participant_issue_count:${this.getOutstandingIssueLabels().length - 1}`,
+      );
+      recordPriorExposure(
+        'proto_final_core_entry',
+        `interruption_status:${mission.interruption_status}`,
+      );
+      refreshValidityProbe();
+    });
+
     // System flag events: once per session, computed from SessionState —
     // facts about prior rooms, independent of what the player chooses here.
     runOncePerSession('final_core_entry_flags', () => {
@@ -418,7 +453,11 @@ export class FinalCoreScene extends RoomScene {
    */
   private getOutstandingIssueLabels(): string[] {
     const mission = researchRuntime.sessionState.getMissionState();
-    const labels: string[] = [];
+
+    // The identical baseline issue leads the list for every participant
+    // (NEXT-10 Final Core baseline); participant-created issues follow as
+    // secondary narrative consequences.
+    const labels: string[] = [FINAL_CORE_BASELINE_ISSUE_LABEL];
 
     if (!mission.prepared_items.includes(FIELD_KIT_ITEM_ID)) {
       labels.push('field kit incomplete');

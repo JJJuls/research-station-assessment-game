@@ -12,6 +12,7 @@ import {
   onTaskChange,
   serializeInventory,
 } from '../gameplay';
+import { noteRoomEntered, refreshValidityProbe } from '../measurement';
 import { getRemainingPilotDecisions, PILOT_DECISION_TOTAL } from '../scenarios';
 import { Player } from '../sprites';
 import { state } from '../state';
@@ -451,6 +452,10 @@ export abstract class RoomScene extends Phaser.Scene {
 
     researchRuntime.logSceneStart(this.scene.key);
     researchRuntime.sessionState.setCurrentRoom(this.roomId);
+    // Unit 3 (SA-13): room-entry feed for order/position bookkeeping and
+    // later-visit eligibility. Recording only — never gates anything.
+    noteRoomEntered(this.roomId);
+    refreshValidityProbe();
 
     this.roomMap = buildPlaceholderRoomMap(this, this.getLayout());
     this.physics.world.setBounds(

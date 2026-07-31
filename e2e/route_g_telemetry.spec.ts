@@ -356,7 +356,17 @@ test.describe('route G telemetry comparison (NEXT-09 §11.4)', () => {
     const stream = await captureStream(page);
 
     if (CAPTURE_MODE) {
-      writeBaseline('route-g-b', stream);
+      // The G-B baseline is stored WITHOUT the allowlisted retrieval
+      // event: the comparison below removes it from the live stream
+      // before comparing, so the stored shape must be the
+      // "everything-but-the-one-event" contract. (The original baseline
+      // came from pre-Phase-2 code where the event did not exist; a
+      // re-capture on current code must filter it to keep the same
+      // contract — overnight-prototype re-baseline note.)
+      writeBaseline(
+        'route-g-b',
+        stream.filter((entry) => entry.t !== 'prepared_tool_used'),
+      );
       expectNoRuntimeErrors(errors);
       return;
     }

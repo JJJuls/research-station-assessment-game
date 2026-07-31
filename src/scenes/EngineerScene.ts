@@ -1,5 +1,21 @@
 import { key } from '../constants';
 import { RELAY_SUPERVISION_DUTY_ID } from '../data/duties';
+import {
+  assignCounterbalance,
+  declareOpportunity,
+  HORIZON_SITUATIONS,
+  horizonConstructComplete,
+  horizonFormAnswered,
+  markHorizonDetailInspected,
+  markOpportunityCompleted,
+  markOpportunityEntered,
+  markOpportunityOffered,
+  Q29Q31_ENTRY_STATE_VERSION,
+  Q29Q31_OPPORTUNITY_ID,
+  Q29Q31_OWNER,
+  recordHorizonChoice,
+  refreshValidityProbe,
+} from '../measurement';
 import { calibrationAnomalyScenario, ScenarioController } from '../scenarios';
 import { researchRuntime } from '../systems';
 import {
@@ -195,6 +211,24 @@ export class EngineerScene extends RoomScene {
     this.addDecor(96, 120, 'prop-archive-racks');
     this.addDecor(544, 120, 'prop-dock-crates');
 
+    // ——— Unit 3: Q29/Q31 form A — Kai's planning slate (SA-3, the ONE
+    // shared goal-horizon construct; NPC-mediated situation). A distinct
+    // station with its own state (q29q31Horizon) — availability and
+    // wording never depend on the report/duty flow or any other item.
+    declareOpportunity({
+      opportunity_id: Q29Q31_OPPORTUNITY_ID,
+      owner: Q29Q31_OWNER,
+      entry_state_version: Q29Q31_ENTRY_STATE_VERSION,
+    });
+    this.addStation({
+      interactionKey: 'engineerPlanningSlate',
+      label: 'Kai — Planning Slate',
+      texture: 'proc-console-wall',
+      x: 4 * 32,
+      y: 5.5 * 32,
+      onPromptOpened: () => this.onPlanningSlateOpened(),
+    });
+
     // Door back to the Station Hub.
     this.addDoor({
       x: 10 * 32, // center of the bottom '--'
@@ -223,6 +257,10 @@ export class EngineerScene extends RoomScene {
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
     if (interactionKey === 'engineerCalibrationBench') {
       return this.calibrationScenario?.getRootOptions() ?? [];
+    }
+
+    if (interactionKey === 'engineerPlanningSlate') {
+      return this.buildPlanningSlateOptions();
     }
 
     if (interactionKey !== 'engineerReportBack') {
@@ -420,6 +458,99 @@ export class EngineerScene extends RoomScene {
         },
       ],
     };
+  }
+
+  // ————————— Unit 3: Q29/Q31 form A — Kai's planning slate —————————
+
+  protected getPromptBody(interactionKey: InteractionKey): string | undefined {
+    if (interactionKey === 'engineerPlanningSlate') {
+      return HORIZON_SITUATIONS[0].body;
+    }
+
+    return undefined;
+  }
+
+  private onPlanningSlateOpened(): boolean {
+    if (horizonFormAnswered('A_npc')) {
+      this.showFeedbackMessage("Kai's roster slot is already logged.");
+      return false;
+    }
+
+    this.logScenarioEvent('engineerPlanningSlate', 'proto_horizon_opened', {
+      metadata: { form: 'A_npc' },
+    });
+    markOpportunityOffered(Q29Q31_OPPORTUNITY_ID);
+    markOpportunityEntered(Q29Q31_OPPORTUNITY_ID);
+    refreshValidityProbe();
+
+    return true;
+  }
+
+  private horizonOptionOrder(): 'immediate_first' | 'distributed_first' {
+    return assignCounterbalance(
+      researchRuntime.sessionState.getMetadata().game_session_id,
+      'horizon_form_a',
+      ['immediate_first', 'distributed_first'] as const,
+    );
+  }
+
+  private buildPlanningSlateOptions(): PromptOption[] {
+    const situation = HORIZON_SITUATIONS[0];
+    const order = this.horizonOptionOrder();
+
+    const choose = (
+      choice: 'immediate' | 'distributed',
+      label: string,
+    ): PromptOption => ({
+      label,
+      feedback: 'Kai notes it on the slate. "On the roster."',
+      getEventTypes: () => [],
+      onSelected: () => {
+        const observation = recordHorizonChoice('A_npc', choice, order);
+
+        if (observation !== null) {
+          this.logScenarioEvent(
+            'engineerPlanningSlate',
+            'proto_horizon_choice',
+            { choice_value: choice, metadata: { ...observation } },
+          );
+
+          if (horizonConstructComplete()) {
+            markOpportunityCompleted(Q29Q31_OPPORTUNITY_ID);
+          }
+
+          refreshValidityProbe();
+        }
+      },
+    });
+
+    const immediate = choose('immediate', situation.immediateLabel);
+    const distributed = choose('distributed', situation.distributedLabel);
+    const ordered =
+      order === 'immediate_first'
+        ? [immediate, distributed]
+        : [distributed, immediate];
+
+    return [
+      ...ordered,
+      {
+        label: 'Ask for the request details.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => {
+          markHorizonDetailInspected('A_npc');
+          this.logScenarioEvent(
+            'engineerPlanningSlate',
+            'proto_horizon_detail_inspected',
+            { metadata: { form: 'A_npc' } },
+          );
+        },
+        nextStage: (): PromptStage => ({
+          body: situation.detail,
+          options: ordered,
+        }),
+      },
+    ];
   }
 
   private markReportSubmitted() {

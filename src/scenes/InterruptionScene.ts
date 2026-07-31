@@ -13,6 +13,12 @@ import {
   RELAY_CHECKPOINT_TASK_ID,
   SWITCH_ORIGINAL_NONE,
 } from '../data/missionVocabulary';
+import {
+  declareOpportunity,
+  markOpportunityOffered,
+  recordPriorExposure,
+  refreshValidityProbe,
+} from '../measurement';
 import { researchRuntime } from '../systems';
 import type {
   InteractionKey,
@@ -200,18 +206,52 @@ export class InterruptionScene extends RoomScene {
 
     const mission = researchRuntime.sessionState.getMissionState();
 
-    // NEXT-05: the relay check-in becomes the genuinely pending original
-    // objective while the accepted relay-supervision duty is active
-    // (lazily recorded — the Engineer Hub is out of this unit's scope).
+    // NEXT-10 CORRIDOR DE-GATING (adopted ruling, 6154a82): the relay
+    // check-in is scheduled for EVERY participant at first corridor
+    // entry, so the Q15/Q17/Q19 interruption opportunity exists
+    // independently of Q10 duty acceptance — declining or missing the
+    // Engineer duty no longer silently removes it. Wording, options,
+    // difficulty and route are identical either way; prior Q10 state is
+    // RECORDED (SA-13 exposure + proto event), never used to gate.
+    // SA-9/SA-10/D6 event-ownership semantics are untouched. (The
+    // pre-ruling behaviour scheduled the check-in only while the accepted
+    // relay-supervision duty was active.)
     if (
-      mission.active_objectives.includes(RELAY_SUPERVISION_DUTY_ID) &&
       mission.relay_checkpoint_status !== RELAY_CHECKPOINT_STATUS_PENDING &&
       mission.relay_checkpoint_status !== RELAY_CHECKPOINT_STATUS_COMPLETED
     ) {
       researchRuntime.sessionState.setRelayCheckpointStatus(
         RELAY_CHECKPOINT_STATUS_PENDING,
       );
+      this.logScenarioEvent(
+        'interruptionCheckinScheduler',
+        'proto_corridor_checkin_scheduled',
+        {
+          metadata: {
+            relay_duty_accepted: mission.accepted_duties.includes(
+              RELAY_SUPERVISION_DUTY_ID,
+            ),
+            relay_duty_active: mission.active_objectives.includes(
+              RELAY_SUPERVISION_DUTY_ID,
+            ),
+          },
+        },
+      );
     }
+
+    // SA-13 record for the de-gated corridor opportunity (recording
+    // only; no event-ownership change).
+    declareOpportunity({
+      opportunity_id: 'proto_corridor_interruption',
+      owner: 'Q15/Q17/Q19 (corridor; ownership splits open under SA-9/SA-10)',
+      entry_state_version: 'corridor-degated-v1',
+    });
+    markOpportunityOffered('proto_corridor_interruption');
+    recordPriorExposure(
+      'proto_corridor_interruption',
+      `q10_duty_accepted:${mission.accepted_duties.includes(RELAY_SUPERVISION_DUTY_ID)}`,
+    );
+    refreshValidityProbe();
 
     // Q18 (weak/exploratory): a multi-room objective is genuinely active
     // at this checkpoint. State-grounded — only fires when

@@ -318,6 +318,31 @@
     "m": []
   },
   {
+    "t": "proto_q03_stow_offered",
+    "k": [
+      "choice_value",
+      "condition",
+      "elapsed_seconds",
+      "episode",
+      "event_type",
+      "game_session_id",
+      "game_version",
+      "metadata",
+      "object_id",
+      "participant_id",
+      "room_id",
+      "scene",
+      "score_delta",
+      "session_id",
+      "study_item_ids",
+      "task_id",
+      "timestamp_ms",
+      "x",
+      "y"
+    ],
+    "m": []
+  },
+  {
     "t": "scenario_entered",
     "k": [
       "choice_value",
@@ -3372,6 +3397,31 @@
     "m": []
   },
   {
+    "t": "proto_corridor_checkin_scheduled",
+    "k": [
+      "choice_value",
+      "condition",
+      "elapsed_seconds",
+      "episode",
+      "event_type",
+      "game_session_id",
+      "game_version",
+      "metadata",
+      "object_id",
+      "participant_id",
+      "room_id",
+      "scene",
+      "score_delta",
+      "session_id",
+      "study_item_ids",
+      "task_id",
+      "timestamp_ms",
+      "x",
+      "y"
+    ],
+    "m": ["relay_duty_accepted", "relay_duty_active"]
+  },
+  {
     "t": "objective_active",
     "k": [
       "condition",
@@ -3774,6 +3824,31 @@
       "y"
     ],
     "m": []
+  },
+  {
+    "t": "proto_final_core_baseline_presented",
+    "k": [
+      "choice_value",
+      "condition",
+      "elapsed_seconds",
+      "episode",
+      "event_type",
+      "game_session_id",
+      "game_version",
+      "metadata",
+      "object_id",
+      "participant_id",
+      "room_id",
+      "scene",
+      "score_delta",
+      "session_id",
+      "study_item_ids",
+      "task_id",
+      "timestamp_ms",
+      "x",
+      "y"
+    ],
+    "m": ["baseline_version"]
   },
   {
     "t": "final_core_stability_bonus",

@@ -83,6 +83,7 @@ async function getMissionState(page: import('@playwright/test').Page) {
             competing_task_status: string;
             relay_checkpoint_status: string;
             switch_original_task_id: string;
+            accepted_duties: string[];
           };
         };
       }
@@ -456,7 +457,16 @@ test.describe('interruption corridor logging', () => {
     expect(typesAfter.filter((t) => t === 'new_goal_offered')).toHaveLength(1);
   });
 
-  test('no-opportunity state: null original task id, no closure observations', async ({
+  // NEXT-10 CORRIDOR DE-GATING (adopted ruling, 6154a82): the relay
+  // check-in is now scheduled for EVERY participant at first corridor
+  // entry, so the former "no-opportunity" arc (null original_task_id,
+  // no closure observations) no longer occurs on this path. This test —
+  // previously "no-opportunity state" — now pins the de-gated
+  // behaviour: a duty-free session still receives a genuine pending
+  // original, and the full switch/return arc is observable. Q18's
+  // objective_active stays state-grounded and untouched (no active
+  // objective exists without the duty).
+  test('de-gated corridor: duty-free switch carries the scheduled check-in as genuine original', async ({
     page,
   }) => {
     await bootGame(page, {
@@ -466,18 +476,15 @@ test.describe('interruption corridor logging', () => {
       game_version: 'e2e',
     });
     await dockToHub(page);
-    // No duty accepted: nothing is genuinely pending in this session.
+    // No duty accepted — the check-in is scheduled by the corridor.
     await hubToCorridor(page);
 
-    // The checkpoint has nothing scheduled and logs nothing.
-    await hold(page, 'ArrowUp', 900);
-    await openCheckpoint(page);
-    expect(await getLastFeedbackText(page)).toBe(
-      'No relay check-in is scheduled for you.',
-    );
+    const missionAtEntry = await getMissionState(page);
 
-    await driveAxisTo(page, 'x', 384, 12);
-    await press(page, 'Space');
+    expect(missionAtEntry.relay_checkpoint_status).toBe('pending');
+    expect(missionAtEntry.accepted_duties).toEqual([]);
+
+    await openBeacon(page);
     await press(page, '1'); // commit to the competing request
     await openJunction(page);
     await press(page, '1'); // realign the feed
@@ -487,35 +494,59 @@ test.describe('interruption corridor logging', () => {
     const offered = findEvent(events, 'new_goal_offered');
     const committed = findEvent(events, 'goal_switch_accepted');
     const switched = findEvent(events, 'switched_task');
+    const scheduled = findEvent(events, 'proto_corridor_checkin_scheduled');
 
-    // The recorded no-opportunity state: original_task_id null (the formal
-    // spec par.8.2 opportunity-flag convention stays an open decision).
-    expect(offered?.metadata).toEqual({
+    // De-gated opportunity: the genuinely pending original is recorded
+    // even though no duty was ever accepted; prior Q10 state is recorded
+    // on the scheduling event, never used to gate.
+    const offerMetadata = {
       framing: 'balanced',
-      original_task_id: null,
+      original_task_id: 'relay_checkpoint',
       competing_task_id: 'aux_antenna_alignment',
-    });
-    expect(committed?.metadata).toEqual({
-      framing: 'balanced',
-      original_task_id: null,
-      competing_task_id: 'aux_antenna_alignment',
-    });
+    };
+
+    expect(offered?.metadata).toEqual(offerMetadata);
+    expect(committed?.metadata).toEqual(offerMetadata);
     expect(switched?.metadata).toEqual({
-      original_task_id: null,
+      original_task_id: 'relay_checkpoint',
       competing_task_id: 'aux_antenna_alignment',
     });
+    expect(scheduled?.metadata).toEqual({
+      relay_duty_accepted: false,
+      relay_duty_active: false,
+    });
 
-    const types = events.map((e) => e.event_type);
+    // Q18 unchanged: no active objective exists without the duty.
+    expect(events.map((e) => e.event_type)).not.toContain('objective_active');
 
-    expect(types).not.toContain('objective_active');
-    expect(types).not.toContain('return_to_unfinished_task');
-    expect(types).not.toContain('returned_to_original_task');
-    expect(types).not.toContain('prior_goal_completed');
-    expect(types).not.toContain('task_completed_after_interruption');
-    expect(types).not.toContain('prior_goal_abandoned');
+    // The observed return + completion arc now exists duty-free.
+    await hold(page, 'ArrowUp', 900);
+    await openCheckpoint(page);
+    await press(page, '1'); // review the relay log
+    await press(page, '1'); // log the check-in as complete
+
+    const types = await getEventTypes(page);
+
+    expect(types).toContain('return_to_unfinished_task');
+    expect(types).toContain('returned_to_original_task');
+    expect(types).toContain('prior_goal_completed');
+    expect(types).toContain('task_completed_after_interruption');
+
+    const mission = await getMissionState(page);
+
+    expect(mission.interruption_status).toBe('returned_to_task');
+    expect(mission.relay_checkpoint_status).toBe('completed');
+    expect(mission.switch_original_task_id).toBe('relay_checkpoint');
   });
 
-  test('duty accepted after an opportunity-less switch never becomes a return', async ({
+  // NEXT-10 de-gating note: the pre-ruling premise of this test — a
+  // switch committed with NOTHING genuinely pending ("opportunity-less
+  // switch") — can no longer arise through the corridor, because the
+  // check-in is scheduled for everyone at entry. The commit-time freeze
+  // (switch_original_task_id) is retained as an invariant and pinned
+  // here from the de-gated angle; the scheduling is also pinned as
+  // once-per-session across re-entries and later duty acceptance.
+  test('de-gated scheduling is once per session and freezes the commit-time original', async ({
     page,
   }) => {
     test.setTimeout(300_000);
@@ -528,51 +559,39 @@ test.describe('interruption corridor logging', () => {
     });
     await dockToHub(page);
 
-    // Switch first, with nothing genuinely pending (no duty yet).
+    // Switch with the de-gated scheduled check-in pending (no duty).
     await hubToCorridor(page);
     await openBeacon(page);
-    await press(page, '1'); // commit — original_task_id null at commit
-    await openJunction(page);
-    await press(page, '1'); // realign the feed
-    await press(page, '1'); // confirm the realignment
+    await press(page, '1'); // commit — original frozen at commit time
     await driveAxisTo(page, 'x', 384, 12);
     await hold(page, 'ArrowDown', 2400);
     await press(page, 'Space');
     await waitForRoomEntry(page, 'station_hub_entered');
 
-    // NOW accept the relay duty and come back: the checkpoint becomes
-    // pending, but the switch's frozen opportunity state stays 'none'.
+    // Accept the duty AFTER the switch and re-enter: the schedule does
+    // not re-fire, and the frozen original stays the scheduled check-in.
     await acceptRelayDuty(page);
     await hubToCorridor(page);
 
-    const missionBefore = await getMissionState(page);
-
-    expect(missionBefore.relay_checkpoint_status).toBe('pending');
-    expect(missionBefore.switch_original_task_id).toBe('none');
-
-    // Re-engaging the checkpoint is NOT a return act (commit-time gate).
-    await hold(page, 'ArrowUp', 900);
-    await openCheckpoint(page);
-    await press(page, '1'); // review the relay log
-    await press(page, '1'); // log the check-in as complete
-
-    const types = await getEventTypes(page);
-
-    expect(types).not.toContain('return_to_unfinished_task');
-    expect(types).not.toContain('returned_to_original_task');
-    // The completion itself is still observed (the check-in was genuinely
-    // pending when completed) — with the interruption earlier in session.
-    expect(types).toContain('prior_goal_completed');
-    expect(types).toContain('task_completed_after_interruption');
-
     const mission = await getMissionState(page);
 
-    // No observed return: the switched-away status must NOT settle.
+    expect(mission.relay_checkpoint_status).toBe('pending');
+    expect(mission.switch_original_task_id).toBe('relay_checkpoint');
     expect(mission.interruption_status).toBe('switched_away');
-    expect(mission.relay_checkpoint_status).toBe('completed');
+
+    const events = await getEvents(page);
+
+    expect(
+      events.filter((e) => e.event_type === 'proto_corridor_checkin_scheduled'),
+    ).toHaveLength(1);
   });
 
-  test('opportunity-less switch with later duty: Final Core never emits prior_goal_abandoned', async ({
+  // NEXT-10 de-gating: a duty-free switch now has a genuinely pending
+  // original (the scheduled check-in), so non-return DOES close as
+  // abandonment at Final Core — previously this arc was uninterpretable
+  // ("opportunity-less") without the Q10 duty. Q10's own record
+  // (accepted_duty_unresolved) stays strictly duty-gated.
+  test('de-gated switch without return: Final Core emits prior_goal_abandoned duty-free', async ({
     page,
   }) => {
     test.setTimeout(900_000);
@@ -587,22 +606,14 @@ test.describe('interruption corridor logging', () => {
     // Route gate first, so the corridor arc below stays untouched.
     await completeAllPilotDecisions(page);
 
-    // Switch with nothing genuinely pending (frozen original: none).
+    // Switch with the scheduled check-in pending (no duty ever accepted).
     await hubToCorridor(page);
     await openBeacon(page);
-    await press(page, '1'); // commit — original_task_id null at commit
+    await press(page, '1'); // commit — original frozen: relay_checkpoint
     await openJunction(page);
     await press(page, '1'); // realign the feed
     await press(page, '1'); // confirm the realignment
     await driveAxisTo(page, 'x', 384, 12);
-    await hold(page, 'ArrowDown', 2400);
-    await press(page, 'Space');
-    await waitForRoomEntry(page, 'station_hub_entered');
-
-    // Accept the duty AFTER the switch; re-enter so the checkpoint
-    // becomes pending, then leave without ever engaging it.
-    await acceptRelayDuty(page);
-    await hubToCorridor(page);
     await hold(page, 'ArrowDown', 2400);
     await press(page, 'Space');
     await waitForRoomEntry(page, 'station_hub_entered');
@@ -618,17 +629,16 @@ test.describe('interruption corridor logging', () => {
     expect(types).toContain('final_core_completed');
     // Entry flag: legacy switched-away semantics (opportunity-agnostic).
     expect(types).toContain('final_unresolved_due_to_nonreturn');
-    // Duty accepted and never resolved: the Q10 record still fires.
-    expect(types).toContain('accepted_duty_unresolved');
-    // The discriminating pin (Final-Core-side frozen gate): the checkpoint
-    // is pending and the status is switched_away, but the switch itself
-    // had no genuinely pending original — no abandonment closure exists.
-    expect(types).not.toContain('prior_goal_abandoned');
+    // No duty was ever accepted: the Q10 record must NOT fire.
+    expect(types).not.toContain('accepted_duty_unresolved');
+    // De-gated closure: the switch had a genuinely pending original, the
+    // player never returned, so the abandonment closure now exists.
+    expect(types).toContain('prior_goal_abandoned');
 
     const mission = await getMissionState(page);
 
     expect(mission.interruption_status).toBe('switched_away');
     expect(mission.relay_checkpoint_status).toBe('pending');
-    expect(mission.switch_original_task_id).toBe('none');
+    expect(mission.switch_original_task_id).toBe('relay_checkpoint');
   });
 });

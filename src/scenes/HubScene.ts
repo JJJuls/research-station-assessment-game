@@ -12,7 +12,37 @@ import {
   remainingLockerItems,
   showFloatingText,
 } from '../gameplay';
-import { acceptTask, declineTask } from '../gameplay/tasks';
+import {
+  acceptTask,
+  completeTask,
+  declineTask,
+  registerTask,
+} from '../gameplay/tasks';
+import {
+  assignCounterbalance,
+  declareOpportunity,
+  getQ30Instance,
+  getRoomEntryLog,
+  markOpportunityCompleted,
+  markOpportunityEntered,
+  markOpportunityOffered,
+  markQ03RetrievalOffered,
+  markQ03StowOffered,
+  markQ30DetailInspected,
+  openQ03Slot,
+  Q03_ENTRY_STATE_VERSION,
+  Q03_OPPORTUNITY_ID,
+  Q03_SLOTS,
+  q03RetrievalEligible,
+  q03RetrievalSummary,
+  q03State,
+  Q30_ENTRY_STATE_VERSION,
+  q30InstanceAnswered,
+  recordQ30Choice,
+  refreshValidityProbe,
+  stowQ03Tool,
+  unstowedQ03Tools,
+} from '../measurement';
 import { priorityAllocationScenario, ScenarioController } from '../scenarios';
 import { researchRuntime } from '../systems';
 import type {
@@ -68,7 +98,7 @@ export class HubScene extends RoomScene {
         '#........................#',
         '#........................#',
         '#........................#',
-        '#####--#####--############',
+        '#####--#####--###--##--###',
         '##########################',
       ],
     };
@@ -82,10 +112,18 @@ export class HubScene extends RoomScene {
     const from =
       data?.spawn !== undefined ? getStationByRoomId(data.spawn) : undefined;
 
-    // Returning from the Survey Terrace: just inside the exterior airlock,
-    // outside its 72px interaction radius (registry hubSpawn convention).
+    // Returning from the overnight-prototype areas: just inside their
+    // doors, outside the 72px radius (registry hubSpawn convention).
     if (data?.spawn === 'proto_field_site') {
       return { x: 6 * 32, y: 12 * 32 };
+    }
+
+    if (data?.spawn === 'proto_utility_bay') {
+      return { x: 18 * 32, y: 12 * 32 };
+    }
+
+    if (data?.spawn === 'proto_ops_annex') {
+      return { x: 22 * 32, y: 12 * 32 };
     }
 
     return from?.hubSpawn ?? { x: 13 * 32, y: 11.5 * 32 };
@@ -174,6 +212,81 @@ export class HubScene extends RoomScene {
       },
     });
 
+    // ——— Unit 3 measurement-module areas (bottom-wall doorways).
+    this.addDoor({
+      x: 18 * 32,
+      y: 14 * 32 + 16,
+      label: 'Utility Bay',
+      texture: 'prop-hub-door-frame',
+      interactionKey: 'stationHub',
+      target: {
+        sceneKey: key.scene.utilityBay,
+        roomId: 'proto_utility_bay',
+        spawn: 'station_hub',
+      },
+    });
+    this.addDoor({
+      x: 22 * 32,
+      y: 14 * 32 + 16,
+      label: 'Operations Annex',
+      texture: 'prop-hub-door-frame',
+      interactionKey: 'stationHub',
+      target: {
+        sceneKey: key.scene.opsAnnex,
+        roomId: 'proto_ops_annex',
+        spawn: 'station_hub',
+      },
+    });
+
+    // ——— Unit 3: Q03 Calibration Cabinet (SA-12 independent retrieval).
+    declareOpportunity({
+      opportunity_id: Q03_OPPORTUNITY_ID,
+      owner: 'Q03',
+      entry_state_version: Q03_ENTRY_STATE_VERSION,
+    });
+    registerTask({
+      task_id: 'proto_bench_stowage',
+      title: 'Bench maintenance',
+      initialObjective:
+        'Stow the three returned bench tools at the Calibration Cabinet (NE wall).',
+    });
+    registerTask({
+      task_id: 'proto_bench_retrieval',
+      title: 'Bench maintenance',
+      initialObjective:
+        'Fetch the Flux Calibrator from the Calibration Cabinet (NE wall).',
+    });
+    registerTask({
+      task_id: 'proto_station_backlog',
+      title: 'Station backlog',
+      initialObjective:
+        'Optional work is open at the Utility Bay and Operations Annex (south doors).',
+    });
+    this.addStation({
+      interactionKey: 'hubCalibrationCabinet',
+      label: 'Calibration Cabinet',
+      texture: 'proc-cabinet-calibration',
+      x: 20 * 32,
+      y: 10 * 32,
+      onPromptOpened: () => this.onCabinetOpened(),
+    });
+
+    // ——— Unit 3: Q30 instance 1 — Work Order Board (SA-4).
+    declareOpportunity({
+      opportunity_id: getQ30Instance('work_orders').opportunity_id,
+      owner: 'Q30',
+      entry_state_version: Q30_ENTRY_STATE_VERSION,
+      counterbalance: this.q30OptionOrder(),
+    });
+    this.addStation({
+      interactionKey: 'hubWorkOrderBoard',
+      label: 'Work Order Board',
+      texture: 'proc-board-workorders',
+      x: 3 * 32,
+      y: 13 * 32 + 12,
+      onPromptOpened: () => this.onWorkOrderBoardOpened(),
+    });
+
     // Mission status board (allowed progress UI: checklist/status labels,
     // V3 §2 — no scores, no personality feedback). Mounted on the central
     // console block.
@@ -227,6 +340,51 @@ export class HubScene extends RoomScene {
     // deliberately NOT once-per-session — re-entries are legitimate
     // navigation data. Assessment/baseline events are guarded elsewhere.
     this.logRoomEvent('stationHub', 'station_hub_entered');
+
+    const mission = researchRuntime.sessionState.getMissionState();
+
+    if (!mission.completed_rooms.includes('dock_arrival')) {
+      return;
+    }
+
+    // Q03 stow phase: offered identically to EVERY participant on the
+    // first Hub visit after check-in (SA-12 standardised availability —
+    // independent of Inventory behaviour and of every other item).
+    if (!q03State.stow_offered) {
+      markQ03StowOffered();
+      markOpportunityOffered(Q03_OPPORTUNITY_ID);
+      acceptTask('proto_bench_stowage');
+      this.logScenarioEvent('hubCalibrationCabinet', 'proto_q03_stow_offered');
+      refreshValidityProbe();
+    }
+
+    // Q03 retrieval phase: offered on a Hub visit after at least one
+    // other room since the stow completed (same rule for everyone).
+    if (q03RetrievalEligible()) {
+      markQ03RetrievalOffered();
+      acceptTask('proto_bench_retrieval');
+      this.logScenarioEvent(
+        'hubCalibrationCabinet',
+        'proto_q03_retrieval_offered',
+      );
+      refreshValidityProbe();
+    }
+
+    // Optional-backlog guidance line (presentation only): points at the
+    // Unit 3 module areas; completes once both areas have been visited.
+    if (getTaskStatus('proto_station_backlog') === 'hidden') {
+      acceptTask('proto_station_backlog');
+    }
+
+    const roomLog = getRoomEntryLog();
+
+    if (
+      getTaskStatus('proto_station_backlog') === 'accepted' &&
+      roomLog.includes('proto_utility_bay') &&
+      roomLog.includes('proto_ops_annex')
+    ) {
+      completeTask('proto_station_backlog');
+    }
   }
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
@@ -244,7 +402,239 @@ export class HubScene extends RoomScene {
       return this.buildLockerOptions();
     }
 
+    if (interactionKey === 'hubCalibrationCabinet') {
+      return this.buildCabinetOptions();
+    }
+
+    if (interactionKey === 'hubWorkOrderBoard') {
+      return this.buildWorkOrderOptions();
+    }
+
     return [];
+  }
+
+  // ————————— Unit 3: Q03 Calibration Cabinet (SA-12) —————————
+
+  private onCabinetOpened(): boolean {
+    if (!q03State.stow_offered) {
+      this.showFeedbackMessage(
+        'The calibration cabinet is sealed until the bench return is logged.',
+      );
+      return false;
+    }
+
+    markOpportunityEntered(Q03_OPPORTUNITY_ID);
+    refreshValidityProbe();
+
+    if (!q03State.stow_completed) {
+      return true; // stow phase
+    }
+
+    if (!q03State.retrieval_offered) {
+      this.showFeedbackMessage('The cabinet is in order.');
+      return false;
+    }
+
+    if (q03State.retrieval_completed) {
+      this.showFeedbackMessage('The cabinet is in order.');
+      return false;
+    }
+
+    return true; // retrieval phase
+  }
+
+  private buildCabinetOptions(): PromptOption[] {
+    if (!q03State.stow_completed) {
+      return this.buildStowOptions();
+    }
+
+    return this.buildRetrievalOptions();
+  }
+
+  private buildStowOptions(): PromptOption[] {
+    const options: PromptOption[] = unstowedQ03Tools().map((tool) => ({
+      label: `Stow the ${tool.label}.`,
+      feedback: '',
+      getEventTypes: () => [],
+      nextStage: (): PromptStage => ({
+        body: `Where does the ${tool.label} go?`,
+        options: Q03_SLOTS.map((slot) => ({
+          label: `Place it on the ${slot.label}.`,
+          feedback: `The ${tool.label} is stowed.`,
+          getEventTypes: () => [],
+          onSelected: () => {
+            stowQ03Tool(tool.tool_id, slot.slot_id);
+            this.logScenarioEvent(
+              'hubCalibrationCabinet',
+              'proto_q03_tool_stowed',
+              { metadata: { tool_id: tool.tool_id, slot_id: slot.slot_id } },
+            );
+
+            if (q03State.stow_completed) {
+              completeTask('proto_bench_stowage');
+              this.logScenarioEvent(
+                'hubCalibrationCabinet',
+                'proto_q03_stow_completed',
+                { metadata: { stowed: { ...q03State.stowed } } },
+              );
+            }
+          },
+        })),
+      }),
+    }));
+
+    options.push({
+      label: 'Close the cabinet.',
+      feedback: 'You close the cabinet.',
+      getEventTypes: () => [],
+    });
+
+    return options;
+  }
+
+  private buildRetrievalOptions(): PromptOption[] {
+    const options: PromptOption[] = Q03_SLOTS.map((slot) => ({
+      label: `Open the ${slot.label}.`,
+      feedback: '',
+      getEventTypes: () => [],
+      onSelected: () => {
+        const found = openQ03Slot(slot.slot_id);
+
+        this.logScenarioEvent(
+          'hubCalibrationCabinet',
+          'proto_q03_slot_opened',
+          {
+            metadata: { slot_id: slot.slot_id, contained_target: found },
+          },
+        );
+
+        if (found) {
+          completeTask('proto_bench_retrieval');
+          markOpportunityCompleted(Q03_OPPORTUNITY_ID);
+          this.logScenarioEvent(
+            'hubCalibrationCabinet',
+            'proto_q03_retrieved',
+            {
+              metadata: { ...q03RetrievalSummary() },
+            },
+          );
+          refreshValidityProbe();
+          this.showFeedbackMessage(
+            'The Flux Calibrator goes into the bench chute. Request cleared.',
+          );
+        } else {
+          this.showFeedbackMessage('Not in this compartment.');
+        }
+      },
+    }));
+
+    options.push({
+      label: 'Close the cabinet.',
+      feedback: 'You close the cabinet.',
+      getEventTypes: () => [],
+    });
+
+    return options;
+  }
+
+  // ————————— Unit 3: Q30 instance 1 — Work Order Board (SA-4) —————————
+
+  private q30OptionOrder(): 'small_first' | 'integrated_first' {
+    return assignCounterbalance(
+      researchRuntime.sessionState.getMetadata().game_session_id,
+      'q30_work_orders',
+      ['small_first', 'integrated_first'] as const,
+    );
+  }
+
+  private onWorkOrderBoardOpened(): boolean {
+    if (q30InstanceAnswered('work_orders')) {
+      this.showFeedbackMessage(
+        'The stores round is already structured and queued.',
+      );
+      return false;
+    }
+
+    this.logScenarioEvent('hubWorkOrderBoard', 'proto_q30_opened', {
+      metadata: { instance_id: 'work_orders' },
+    });
+    markOpportunityEntered(getQ30Instance('work_orders').opportunity_id);
+    refreshValidityProbe();
+
+    return true;
+  }
+
+  private buildWorkOrderOptions(): PromptOption[] {
+    const instance = getQ30Instance('work_orders');
+    const order = this.q30OptionOrder();
+
+    const choose = (
+      choice: 'independent_small' | 'integrated_single',
+      label: string,
+    ): PromptOption => ({
+      label,
+      feedback: 'Logged. The stores round is structured and queued.',
+      getEventTypes: () => [],
+      onSelected: () => {
+        const observation = recordQ30Choice('work_orders', choice, order);
+
+        if (observation !== null) {
+          this.logScenarioEvent(
+            'hubWorkOrderBoard',
+            'proto_q30_structure_chosen',
+            { choice_value: choice, metadata: { ...observation } },
+          );
+          markOpportunityCompleted(instance.opportunity_id);
+          refreshValidityProbe();
+        }
+      },
+    });
+
+    const small = choose('independent_small', instance.smallLabel);
+    const integrated = choose('integrated_single', instance.integratedLabel);
+    const ordered =
+      order === 'small_first' ? [small, integrated] : [integrated, small];
+
+    return [
+      ...ordered,
+      {
+        label: 'Check the board details.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => {
+          markQ30DetailInspected('work_orders');
+          this.logScenarioEvent(
+            'hubWorkOrderBoard',
+            'proto_q30_detail_inspected',
+            { metadata: { instance_id: 'work_orders' } },
+          );
+        },
+        nextStage: (): PromptStage => ({
+          body: instance.detail,
+          options: ordered,
+        }),
+      },
+    ];
+  }
+
+  protected getPromptBody(interactionKey: InteractionKey): string | undefined {
+    if (interactionKey === 'hubCalibrationCabinet') {
+      if (!q03State.stow_completed) {
+        return 'Three bench tools have come back from the field. Stow each one where you want it kept — the compartments are yours to organise.';
+      }
+
+      if (q03State.retrieval_offered && !q03State.retrieval_completed) {
+        return 'Bench request slip: one Flux Calibrator, needed at the bench chute. The compartments sit exactly as you left them.';
+      }
+
+      return undefined;
+    }
+
+    if (interactionKey === 'hubWorkOrderBoard') {
+      return getQ30Instance('work_orders').body;
+    }
+
+    return undefined;
   }
 
   // ——————————————— Overnight-prototype field route (Unit 2) ———————————————

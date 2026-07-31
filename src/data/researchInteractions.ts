@@ -300,6 +300,93 @@ export const researchInteractions = {
     score_tags: [],
     room_id: 'proto_field_site',
   },
+  // ——— Overnight-prototype measurement modules (Unit 3) ———
+  // Same governance as the proto route stations above: internal/
+  // provisional identifiers, raw prototype telemetry via logScenarioEvent
+  // only, no canonical task_id, no Q-mapping, no scoring. The measurement
+  // DESIGNS follow the adopted NEXT-10 rulings (SA-2/3/4/5/6/12/13);
+  // canonical event names and scoring remain open research-owner
+  // decisions.
+  utilityBotDiagnostic: {
+    object_id: 'proto_utility_bot_diagnostic',
+    label: 'Utility Bot',
+    episode: 'proto_q27_utility_stop',
+    event_type: 'proto_q27_opened',
+    score_tags: [],
+    room_id: 'proto_utility_bay',
+  },
+  annexPlanningTerminal: {
+    object_id: 'proto_annex_planning_terminal',
+    label: 'Planning Terminal',
+    episode: 'proto_q29q31_goal_horizon',
+    event_type: 'proto_horizon_opened',
+    score_tags: [],
+    room_id: 'proto_ops_annex',
+  },
+  annexPortfolioBoard: {
+    object_id: 'proto_annex_portfolio_board',
+    label: 'Project Portfolio Board',
+    episode: 'proto_q32_portfolio',
+    event_type: 'proto_q32_board_opened',
+    score_tags: [],
+    room_id: 'proto_ops_annex',
+  },
+  annexClosureDesk: {
+    object_id: 'proto_annex_closure_desk',
+    label: 'Contract Closure Desk',
+    episode: 'proto_q33_closure_queue',
+    event_type: 'proto_q33_queue_opened',
+    score_tags: [],
+    room_id: 'proto_ops_annex',
+  },
+  hubCalibrationCabinet: {
+    object_id: 'proto_hub_calibration_cabinet',
+    label: 'Calibration Cabinet',
+    episode: 'proto_q03_retrieval',
+    event_type: 'proto_q03_slot_opened',
+    score_tags: [],
+    room_id: 'station_hub',
+  },
+  hubWorkOrderBoard: {
+    object_id: 'proto_hub_work_order_board',
+    label: 'Work Order Board',
+    episode: 'proto_q30_granularity',
+    event_type: 'proto_q30_structure_chosen',
+    score_tags: [],
+    room_id: 'station_hub',
+  },
+  engineerPlanningSlate: {
+    object_id: 'proto_engineer_planning_slate',
+    label: 'Kai — Planning Slate',
+    episode: 'proto_q29q31_goal_horizon',
+    event_type: 'proto_horizon_opened',
+    score_tags: [],
+    room_id: 'engineer_hub',
+  },
+  fieldTelemetryCache: {
+    object_id: 'proto_field_telemetry_cache',
+    label: 'Telemetry Cache Console',
+    episode: 'proto_q30_granularity',
+    event_type: 'proto_q30_structure_chosen',
+    score_tags: [],
+    room_id: 'proto_field_site',
+  },
+  interruptionCheckinScheduler: {
+    object_id: 'proto_corridor_checkin_scheduler',
+    label: 'Relay Schedule Panel',
+    episode: 'proto_corridor_degating',
+    event_type: 'proto_corridor_checkin_scheduled',
+    score_tags: [],
+    room_id: 'interruption_corridor',
+  },
+  finalCoreBaseline: {
+    object_id: 'proto_final_core_baseline',
+    label: 'Core Baseline Buffer',
+    episode: 'proto_final_core_baseline',
+    event_type: 'proto_final_core_baseline_presented',
+    score_tags: [],
+    room_id: 'final_core_room',
+  },
   sign: {
     object_id: 'sign',
     label: 'Welcome sign',

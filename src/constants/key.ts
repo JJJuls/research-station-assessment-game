@@ -20,8 +20,10 @@ const scene = {
   inventory: 'inventory',
   main: 'main',
   menu: 'menu',
+  opsAnnex: 'ops_annex',
   repair: 'repair',
   sideRepair: 'side_repair',
+  utilityBay: 'utility_bay',
 } as const;
 
 const tilemap = {

@@ -671,6 +671,64 @@ function drawScanNode(g: Graphics) {
   rect(g, 10, 33, 14, 2, OUTLINE);
 }
 
+/** Calibration cabinet (Q03 module): four labelled compartments. */
+function drawCabinetCalibration(g: Graphics) {
+  box(g, 4, 4, 40, 48, CARD, BORDER);
+  // Four compartment faces (2×2), each with a small label plate.
+  rect(g, 23, 6, 2, 44, BORDER);
+  rect(g, 6, 27, 36, 2, BORDER);
+  rect(g, 9, 12, 10, 3, MUTED);
+  rect(g, 29, 12, 10, 3, MUTED);
+  rect(g, 9, 34, 10, 3, MUTED);
+  rect(g, 29, 34, 10, 3, MUTED);
+  // Cyan issue-chute strip (interactable cue).
+  rect(g, 20, 22, 8, 2, ACCENT);
+  rect(g, 2, 52, 44, 2, OUTLINE);
+}
+
+/** Work order board (Q30 instance 1): pinned order cards on a frame. */
+function drawBoardWorkOrders(g: Graphics) {
+  box(g, 4, 4, 40, 32, CARD, BORDER);
+  rect(g, 8, 8, 10, 8, MUTED);
+  rect(g, 21, 8, 10, 8, MUTED);
+  rect(g, 34, 8, 6, 8, KAI_SUIT_SHADE);
+  rect(g, 8, 20, 14, 10, KAI_SUIT_SHADE);
+  rect(g, 25, 20, 15, 10, MUTED);
+  // Cyan header strip (interactable cue).
+  rect(g, 18, 5, 12, 2, ACCENT);
+  rect(g, 20, 36, 8, 4, BORDER);
+}
+
+/** Project portfolio board (Q32 module): four project lanes. */
+function drawBoardPortfolio(g: Graphics) {
+  box(g, 4, 4, 48, 40, CARD, BORDER);
+  for (let lane = 0; lane < 4; lane++) {
+    const y = 8 + lane * 9;
+
+    rect(g, 8, y, 12, 6, MUTED);
+    rect(g, 22, y + 2, 26, 2, PANEL);
+    rect(g, 22, y + 2, 6 + lane * 4, 2, KAI_SUIT_SHADE);
+  }
+  // Cyan header strip (interactable cue).
+  rect(g, 22, 5, 12, 2, ACCENT);
+  rect(g, 24, 44, 8, 6, BORDER);
+}
+
+/** Contract closure desk (Q33 module): desk with a filing tray stack. */
+function drawDeskClosure(g: Graphics) {
+  // Tray stack on the desk.
+  rect(g, 32, 6, 16, 3, MUTED);
+  rect(g, 32, 11, 16, 3, MUTED);
+  rect(g, 32, 16, 16, 3, KAI_SUIT_SHADE);
+  // Desk top and legs.
+  box(g, 4, 20, 48, 8, CARD, BORDER);
+  rect(g, 8, 28, 4, 10, BORDER);
+  rect(g, 44, 28, 4, 10, BORDER);
+  // Open ledger with a cyan stamp pad (interactable cue).
+  rect(g, 10, 21, 14, 6, MUTED);
+  rect(g, 26, 22, 4, 3, ACCENT);
+}
+
 /** Dig mound: broken frozen regolith with loose rocks. */
 function drawDigMound(g: Graphics) {
   rect(g, 6, 16, 28, 8, KAI_SUIT_SHADE);
@@ -811,6 +869,23 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   'proc-locker-field': { width: 48, height: 56, draw: drawLockerField },
   'proc-scan-node': { width: 34, height: 38, draw: drawScanNode },
   'proc-dig-mound': { width: 40, height: 28, draw: drawDigMound },
+  // Overnight-prototype measurement-module stations (Unit 3).
+  'proc-cabinet-calibration': {
+    width: 48,
+    height: 56,
+    draw: drawCabinetCalibration,
+  },
+  'proc-board-workorders': {
+    width: 48,
+    height: 42,
+    draw: drawBoardWorkOrders,
+  },
+  'proc-board-portfolio': {
+    width: 56,
+    height: 52,
+    draw: drawBoardPortfolio,
+  },
+  'proc-desk-closure': { width: 56, height: 40, draw: drawDeskClosure },
 };
 
 /** Fixed manifest (key → dimensions) for determinism coverage. */

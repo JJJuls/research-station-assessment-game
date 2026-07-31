@@ -70,6 +70,11 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-locker-field': { width: 48, height: 56 },
   'proc-scan-node': { width: 34, height: 38 },
   'proc-dig-mound': { width: 40, height: 28 },
+  // Overnight-prototype measurement-module stations (Unit 3).
+  'proc-cabinet-calibration': { width: 48, height: 56 },
+  'proc-board-workorders': { width: 48, height: 42 },
+  'proc-board-portfolio': { width: 56, height: 52 },
+  'proc-desk-closure': { width: 56, height: 40 },
 };
 
 interface ProcTexturesProbe {

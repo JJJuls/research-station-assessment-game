@@ -14,11 +14,14 @@ import { researchRuntime } from '../systems';
 const SCENE_PARAM_TO_KEY: Record<string, string> = {
   archive: key.scene.archive,
   dock: key.scene.dock,
-  // Overnight prototype: the Survey Terrace gameplay area (not an
-  // assessment station — no station-registry entry, control/route area).
+  // Overnight prototype: the Survey Terrace gameplay area and the two
+  // Unit 3 measurement-module areas (not assessment stations — no
+  // station-registry entries).
   field: key.scene.field,
   hub: key.scene.hub,
+  ops_annex: key.scene.opsAnnex,
   prototype: key.scene.main,
+  utility_bay: key.scene.utilityBay,
 };
 
 export function resolveStartSceneKey(): string {

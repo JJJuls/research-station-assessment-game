@@ -22,6 +22,19 @@ import {
   showFloatingText,
   SURVEY_RECOVERY_TASK_ID,
 } from '../gameplay';
+import {
+  assignCounterbalance,
+  declareOpportunity,
+  getQ30Instance,
+  markOpportunityCompleted,
+  markOpportunityEntered,
+  markQ30DetailInspected,
+  Q30_ENTRY_STATE_VERSION,
+  q30InstanceAnswered,
+  recordQ30Choice,
+  refreshValidityProbe,
+} from '../measurement';
+import { researchRuntime } from '../systems';
 import type {
   InteractionKey,
   PromptOption,
@@ -156,8 +169,26 @@ export class FieldScene extends RoomScene {
       },
     });
 
+    // ——— Unit 3: Q30 instance 2 — Telemetry Cache Console (SA-4, the
+    // non-inventory granularity opportunity). Availability and wording
+    // are fixed and independent of the route and every other item.
+    declareOpportunity({
+      opportunity_id: getQ30Instance('telemetry_cache').opportunity_id,
+      owner: 'Q30',
+      entry_state_version: Q30_ENTRY_STATE_VERSION,
+      counterbalance: this.q30OptionOrder(),
+    });
+    this.addStation({
+      interactionKey: 'fieldTelemetryCache',
+      label: 'Telemetry Cache Console',
+      texture: 'proc-console-wall',
+      x: 5 * 32,
+      y: 2.5 * 32,
+      onPromptOpened: () => this.onTelemetryCacheOpened(),
+    });
+
     // Worksite dressing (decorative only).
-    this.addDecor(4 * 32, 2.5 * 32, 'prop-dock-crates');
+    this.addDecor(3 * 32, 2.5 * 32, 'prop-dock-crates');
     this.addDecor(20 * 32, 2 * 32, 'prop-dock-crates');
   }
 
@@ -464,9 +495,93 @@ export class FieldScene extends RoomScene {
     }
   }
 
+  // ————————— Unit 3: Q30 instance 2 — Telemetry Cache Console —————————
+
+  private q30OptionOrder(): 'small_first' | 'integrated_first' {
+    return assignCounterbalance(
+      researchRuntime.sessionState.getMetadata().game_session_id,
+      'q30_telemetry_cache',
+      ['small_first', 'integrated_first'] as const,
+    );
+  }
+
+  private onTelemetryCacheOpened(): boolean {
+    if (q30InstanceAnswered('telemetry_cache')) {
+      this.showFeedbackMessage(
+        'The cache upload is already structured and queued.',
+      );
+      return false;
+    }
+
+    this.logScenarioEvent('fieldTelemetryCache', 'proto_q30_opened', {
+      metadata: { instance_id: 'telemetry_cache' },
+    });
+    markOpportunityEntered(getQ30Instance('telemetry_cache').opportunity_id);
+    refreshValidityProbe();
+
+    return true;
+  }
+
+  private buildTelemetryCacheOptions(): PromptOption[] {
+    const instance = getQ30Instance('telemetry_cache');
+    const order = this.q30OptionOrder();
+
+    const choose = (
+      choice: 'independent_small' | 'integrated_single',
+      label: string,
+    ): PromptOption => ({
+      label,
+      feedback: 'Logged. The upload queue is structured and running.',
+      getEventTypes: () => [],
+      onSelected: () => {
+        const observation = recordQ30Choice('telemetry_cache', choice, order);
+
+        if (observation !== null) {
+          this.logScenarioEvent(
+            'fieldTelemetryCache',
+            'proto_q30_structure_chosen',
+            { choice_value: choice, metadata: { ...observation } },
+          );
+          markOpportunityCompleted(instance.opportunity_id);
+          refreshValidityProbe();
+        }
+      },
+    });
+
+    const small = choose('independent_small', instance.smallLabel);
+    const integrated = choose('integrated_single', instance.integratedLabel);
+    const ordered =
+      order === 'small_first' ? [small, integrated] : [integrated, small];
+
+    return [
+      ...ordered,
+      {
+        label: 'Check the console details.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => {
+          markQ30DetailInspected('telemetry_cache');
+          this.logScenarioEvent(
+            'fieldTelemetryCache',
+            'proto_q30_detail_inspected',
+            { metadata: { instance_id: 'telemetry_cache' } },
+          );
+        },
+        nextStage: (): PromptStage => ({
+          body: instance.detail,
+          options: ordered,
+        }),
+      },
+    ];
+  }
+
   // ————————————————————————— Prompt wiring —————————————————————————
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {
+    if (interactionKey === 'fieldTelemetryCache') {
+      return getQ30Instance('telemetry_cache').body;
+    }
+
     if (interactionKey === 'fieldKaiSupervisor') {
       if (!isTaskAccepted(SURVEY_RECOVERY_TASK_ID)) {
         return (
@@ -516,6 +631,10 @@ export class FieldScene extends RoomScene {
 
     if (interactionKey === 'fieldFeedHousing') {
       return this.buildFeedHousingOptions();
+    }
+
+    if (interactionKey === 'fieldTelemetryCache') {
+      return this.buildTelemetryCacheOptions();
     }
 
     if (interactionKey !== 'fieldKaiSupervisor') {
