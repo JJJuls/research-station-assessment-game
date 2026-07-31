@@ -180,9 +180,9 @@ test.describe('measurement boundaries (Unit 3)', () => {
     await driveAxisTo(page, 'x', 640, 10);
     await driveAxisTo(page, 'y', 344, 10);
     for (let i = 0; i < 3; i++) {
-      await press(page, 'Space');
-      await press(page, '1');
-      await press(page, '1'); // Measurement shelf every time
+      await openPrompt(page);
+      await selectPromptOption(page, 1);
+      await selectPromptOption(page, 1); // Measurement shelf every time
     }
 
     events = await getEvents(page);
@@ -209,8 +209,8 @@ test.describe('measurement boundaries (Unit 3)', () => {
     await driveAxisTo(page, 'y', 368, 12);
     await driveAxisTo(page, 'x', 640, 10);
     await driveAxisTo(page, 'y', 344, 10);
-    await press(page, 'Space');
-    await press(page, '1');
+    await openPrompt(page);
+    await selectPromptOption(page, 1);
 
     events = await getEvents(page);
     const retrieved = findEvent(events, 'proto_q03_retrieved');
@@ -254,8 +254,8 @@ test.describe('measurement boundaries (Unit 3)', () => {
     await driveAxisTo(page, 'x', 288, 10);
     await driveAxisTo(page, 'y', 176, 10);
     for (let i = 0; i < 3; i++) {
-      await press(page, 'Space');
-      await press(page, '1');
+      await openPrompt(page);
+      await selectPromptOption(page, 1);
       await page.waitForTimeout(1500);
     }
 
@@ -264,14 +264,14 @@ test.describe('measurement boundaries (Unit 3)', () => {
     );
 
     // One post-signal cycle, then close — both equally accessible.
-    await press(page, 'Space');
+    await openPrompt(page);
     expect(await getLastPromptBody(page)).toContain('Diagnostic complete');
-    await press(page, '1');
+    await selectPromptOption(page, 1);
     await page.waitForTimeout(1500);
     expect(await getLastFeedbackText(page)).toContain('No new findings');
 
-    await press(page, 'Space');
-    await press(page, '2');
+    await openPrompt(page);
+    await selectPromptOption(page, 2);
 
     const events = await getEvents(page);
     const closed = findEvent(events, 'proto_q27_closed');
@@ -463,10 +463,10 @@ test.describe('measurement boundaries (Unit 3)', () => {
     // "No relay check-in is scheduled for you").
     await driveAxisTo(page, 'x', 192, 10);
     await driveAxisTo(page, 'y', 112, 10);
-    await press(page, 'Space');
+    await openPrompt(page);
     expect(await getLastPromptBody(page)).toContain('Relay checkpoint');
-    await press(page, '1');
-    await press(page, '1');
+    await selectPromptOption(page, 1);
+    await selectPromptOption(page, 1);
 
     const after = await getEvents(page);
 
