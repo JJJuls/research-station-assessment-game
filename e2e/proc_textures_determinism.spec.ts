@@ -29,6 +29,28 @@ import { bootGame } from './helpers';
 const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-npc-kai': { width: 64, height: 64 },
   'proc-npc-vale': { width: 40, height: 56 },
+  // Stardew-quality pass (Unit D): NPC reaction poses + core machinery.
+  'proc-npc-kai-work': { width: 64, height: 64 },
+  'proc-npc-kai-done': { width: 64, height: 64 },
+  'proc-npc-vale-ready': { width: 40, height: 56 },
+  'proc-core-column': { width: 40, height: 90 },
+  // Stardew-quality pass (Unit C): Survey Terrace worksite art.
+  'proc-antenna-damaged': { width: 32, height: 64 },
+  'proc-antenna-repaired': { width: 32, height: 64 },
+  'proc-station-module': { width: 96, height: 60 },
+  'proc-ground-disturbed': { width: 40, height: 24 },
+  'proc-footprints': { width: 10, height: 8 },
+  // Stardew-quality pass (Unit B): station-life dressing props.
+  'proc-window-exterior': { width: 48, height: 26 },
+  'proc-wall-pipes': { width: 48, height: 18 },
+  'proc-seat-bench': { width: 40, height: 22 },
+  'proc-hydroponics': { width: 40, height: 42 },
+  'proc-galley': { width: 48, height: 34 },
+  'proc-desk-reception': { width: 56, height: 36 },
+  'proc-cart-utility': { width: 42, height: 28 },
+  'proc-worker-hauler': { width: 40, height: 52 },
+  'proc-worker-tech': { width: 40, height: 52 },
+  'proc-light-pool': { width: 120, height: 64 },
   'proc-console-quartermaster': { width: 40, height: 56 },
   'proc-console-wall': { width: 40, height: 56 },
   'proc-rack-tools': { width: 48, height: 56 },

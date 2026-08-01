@@ -246,10 +246,51 @@ export async function openStationAlcove(page: Page) {
  * frozen, option order is the author's declared order).
  */
 export async function completeDockTutorial(page: Page, option: 1 | 2 | 3) {
-  await hold(page, 'ArrowLeft', 2400);
-  await hold(page, 'ArrowUp', 2400);
-  await press(page, 'Space');
-  await press(page, `${option}`);
+  // Position-synced approach to the Arrival Terminal (96, 96): timed
+  // clamp holds under-deliver under heavy CPU load; driveAxisTo ends on
+  // the OBSERVED position or a wall stall regardless of frame rate.
+  await driveAxisTo(page, 'x', 96, 20);
+  await driveAxisTo(page, 'y', 96, 20);
+
+  // Event-synced with a swallowed-press retry (SwiftShader input loss):
+  // the canonical tutorial_completed fires on ALL THREE option paths, so
+  // a lost SPACE or option key is re-pressed instead of silently leaving
+  // the whole session un-checked-in (the dominant flake of long runs).
+  const before = await eventCount(page, 'tutorial_completed', 'dock');
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await press(page, 'Space');
+    await press(page, `${option}`);
+
+    const landed = await page
+      .waitForFunction(
+        (wanted) =>
+          (
+            window as unknown as {
+              researchRuntime: {
+                getEvents: () => { event_type: string; scene?: string }[];
+              };
+            }
+          ).researchRuntime
+            .getEvents()
+            .filter(
+              (e) =>
+                e.event_type === 'tutorial_completed' && e.scene === 'dock',
+            ).length >= wanted,
+        before + 1,
+        { timeout: 6_000 },
+      )
+      .then(
+        () => true,
+        () => false,
+      );
+
+    if (landed) {
+      return;
+    }
+  }
+
+  throw new Error('dock tutorial did not complete after 3 attempts');
 }
 
 /** Hub bottom door -> Dock (count-aware; re-entry safe). */

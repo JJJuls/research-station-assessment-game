@@ -663,8 +663,16 @@ export async function selectPromptOption(page: Page, optionNumber: number) {
   // semantics — one extra spam press changes nothing they assert.
   const before = await cardsSnapshot();
 
-  if (!(await settleAfterPress(before, 4_000))) {
-    await settleAfterPress(before, 6_000);
+  if (!(await settleAfterPress(before, 8_000))) {
+    // Retry guard (clickGameRect precedent): re-snapshot first. If the
+    // first press's effect landed AFTER the settle window (slow stage
+    // transition under load), the probe has changed by now and a retry
+    // would select the SAME NUMBER on the follow-up stage — observed as
+    // e.g. "2" (systematic prep) re-firing as "2" (skip verification).
+    // Only a genuinely lost press (probe still identical) is retried.
+    if ((await cardsSnapshot()) === before) {
+      await settleAfterPress(before, 6_000);
+    }
   }
 }
 

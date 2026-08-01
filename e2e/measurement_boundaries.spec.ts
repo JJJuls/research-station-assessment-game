@@ -101,7 +101,9 @@ async function openPrompt(page: Page) {
             }
           ).__promptCards ?? null) !== null,
         undefined,
-        { timeout: 3000 },
+        // 8s: the card panel can render several seconds after SPACE under
+        // software-GL load (same window as the other hardened helpers).
+        { timeout: 8000 },
       )
       .then(
         () => true,
