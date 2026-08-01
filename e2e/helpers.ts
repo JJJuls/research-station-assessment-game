@@ -41,6 +41,8 @@ export interface LaunchParams {
   scene?: string;
   /** Test-only ingestion unit: only `test` ever enables the exporter. */
   launch_mode?: string;
+  /** DEV-only free-play unlock (Unit 7 ice salvage; ?debug precedent). */
+  freeplay?: string;
 }
 
 /** Navigates with Qualtrics-style launch params and waits for boot. */
@@ -1067,4 +1069,37 @@ export async function dragPhysicalObjectToContainer(
   await page.mouse.move(to.x, to.y, { steps: 8 });
   await page.mouse.up();
   await page.waitForTimeout(400);
+}
+
+/**
+ * SPACE-open with the documented SwiftShader input-loss retry (the
+ * measurement_boundaries openPrompt pattern, shared): presses SPACE and
+ * waits for the card panel; re-presses up to twice when nothing renders.
+ */
+export async function openNearbyPrompt(page: Page) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await press(page, 'Space');
+
+    const opened = await page
+      .waitForFunction(
+        () =>
+          ((
+            window as unknown as {
+              __promptCards?: { label: string }[] | null;
+            }
+          ).__promptCards ?? null) !== null,
+        undefined,
+        { timeout: 8000 },
+      )
+      .then(
+        () => true,
+        () => false,
+      );
+
+    if (opened) {
+      return;
+    }
+  }
+
+  throw new Error('prompt did not open after 3 SPACE presses');
 }

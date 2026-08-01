@@ -20,6 +20,13 @@ export interface NpcActorConfig {
   name: string;
   /** Disable the idle bob (e.g. seated/console-mounted figures). */
   still?: boolean;
+  /**
+   * Two-frame work cycle (Unit 6): when both textures exist and the
+   * actor's base texture is frames[0], the sprite alternates between the
+   * frames on a fixed cadence — a visible working loop instead of a
+   * static pose. Pure presentation; identical for every participant.
+   */
+  workFrames?: readonly [string, string];
 }
 
 export class NpcActor {
@@ -43,6 +50,30 @@ export class NpcActor {
         repeat: -1,
         yoyo: true,
         ease: 'Sine.easeInOut',
+      });
+    }
+
+    // Unit 6: two-frame work cycle (fixed 700 ms cadence, timer dies
+    // with the scene; texture flip only — position/radius untouched).
+    const frames = config.workFrames;
+
+    if (
+      frames !== undefined &&
+      texture === frames[0] &&
+      scene.textures.exists(frames[0]) &&
+      scene.textures.exists(frames[1])
+    ) {
+      let flip = false;
+
+      scene.time.addEvent({
+        delay: 700,
+        loop: true,
+        callback: () => {
+          if (this.sprite.active) {
+            flip = !flip;
+            this.sprite.setTexture(frames[flip ? 1 : 0]);
+          }
+        },
       });
     }
 

@@ -9,6 +9,7 @@ const image = {
 
 const scene = {
   archive: 'archive',
+  artifactSurvey: 'artifact_survey',
   boot: 'boot',
   dock: 'dock',
   engineer: 'engineer',

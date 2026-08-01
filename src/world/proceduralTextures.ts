@@ -1150,6 +1150,162 @@ function drawCrateComponents(g: Graphics) {
 }
 
 // ————————————————————————————————————————————————————————————————————
+// Physical-mechanics session (Unit 6): two-frame work-cycle B-poses.
+// Each B-frame calls its base draw and overpaints one small element, so
+// the pair reads as a working loop (NpcActor.workFrames alternation).
+// ————————————————————————————————————————————————————————————————————
+
+/** Kai working, frame B: a second reading line ticks onto the tablet. */
+function drawNpcKaiWorkB(g: Graphics) {
+  drawNpcKaiWork(g);
+  rect(g, 18, 26, 5, 1, MUTED);
+  rect(g, 18, 23, 5, 1, KAI_SUIT_RIM);
+}
+
+/** Vale at the desk, frame B: ledger slate raised under one hand. */
+function drawNpcValeB(g: Graphics) {
+  drawNpcVale(g);
+  box(g, 27, 24, 7, 5, CARD);
+  rect(g, 28, 26, 5, 1, MUTED);
+}
+
+/** Noor in the field, frame B: annex map card lifted for a check. */
+function drawNpcNoorB(g: Graphics) {
+  drawNpcNoor(g);
+  box(g, 4, 20, 8, 10, 0xdde9f2);
+  rect(g, 5, 22, 6, 1, BORDER);
+  rect(g, 5, 25, 6, 1, BORDER);
+}
+
+/** Utility Bot, frame B: tool arm extended, hatch line shifted. */
+function drawBotUtilityB(g: Graphics) {
+  drawBotUtility(g);
+  rect(g, 44, 21, 4, 3, KAI_SUIT_SHADE);
+  rect(g, 42, 30, 3, 2, KAI_SUIT_SHADE);
+  rect(g, 20, 30, 8, 1, BORDER);
+}
+
+// ————————————————————————————————————————————————————————————————————
+// Physical-mechanics session (Unit 7): ice-bore salvage art (free play).
+// ————————————————————————————————————————————————————————————————————
+
+/** Ice bore winch: tripod frame over a dark bore hole, spooled line. */
+function drawIceBore(g: Graphics) {
+  // Bore hole in packed snow.
+  rect(g, 8, 38, 32, 12, 0xaebfd0);
+  rect(g, 14, 41, 20, 7, PANEL);
+  rect(g, 16, 42, 16, 5, 0x0a1116);
+  // Tripod legs.
+  rect(g, 10, 10, 3, 32, BORDER);
+  rect(g, 35, 10, 3, 32, BORDER);
+  rect(g, 22, 4, 3, 40, BORDER);
+  rect(g, 10, 10, 28, 3, MUTED);
+  // Winch drum + crank.
+  box(g, 18, 12, 12, 8, KAI_SUIT_SHADE, KAI_SUIT_RIM);
+  rect(g, 30, 14, 5, 2, MUTED);
+  // Line down the bore.
+  rect(g, 23, 20, 1, 24, 0x9fb2c1);
+}
+
+/** Scrap bolt cluster (trash): rusty bolts on a bent plate. */
+function drawIconScrapBolt(g: Graphics) {
+  rect(g, 5, 12, 14, 8, 0x46586b);
+  rect(g, 7, 8, 4, 4, 0x6a5a44);
+  rect(g, 13, 7, 4, 4, 0x6a5a44);
+  rect(g, 10, 14, 4, 4, 0x6a5a44);
+  rect(g, 5, 19, 14, 1, OUTLINE);
+}
+
+/** Buckled tin panel (trash): creased sheet. */
+function drawIconTinPanel(g: Graphics) {
+  rect(g, 4, 7, 16, 11, MUTED);
+  rect(g, 8, 7, 2, 11, 0x8ba0b2);
+  rect(g, 14, 7, 2, 11, 0x8ba0b2);
+  rect(g, 4, 17, 16, 1, OUTLINE);
+}
+
+/** Frozen coolant slug (common): teal ice cylinder. */
+function drawIconCoolantSlug(g: Graphics) {
+  box(g, 8, 5, 8, 15, KAI_SUIT, KAI_SUIT_RIM);
+  rect(g, 8, 9, 8, 2, 0x77a8b1);
+  rect(g, 8, 14, 8, 2, 0x77a8b1);
+  rect(g, 9, 20, 6, 1, OUTLINE);
+}
+
+/** Sensor husk (common): dead sensor pod, lens dark. */
+function drawIconSensorHusk(g: Graphics) {
+  box(g, 6, 6, 12, 12, CARD, BORDER);
+  rect(g, 9, 9, 6, 6, PANEL);
+  rect(g, 10, 10, 2, 2, 0x2b3134);
+  rect(g, 4, 12, 2, 3, BORDER);
+  rect(g, 18, 12, 2, 3, BORDER);
+}
+
+/** Ice pearl (rare cosmetic): lucent sphere with a bright rim. */
+function drawIconIcePearl(g: Graphics) {
+  rect(g, 8, 6, 8, 2, 0xdde9f2);
+  rect(g, 6, 8, 12, 8, 0xbccbdb);
+  rect(g, 8, 16, 8, 2, 0x9fb2c6);
+  rect(g, 9, 8, 3, 2, 0xffffff);
+  rect(g, 7, 7, 1, 1, 0xffffff);
+}
+
+// ————————————————————————————————————————————————————————————————————
+// Physical-mechanics session (Unit 4): persistence-deepening art.
+// ————————————————————————————————————————————————————————————————————
+
+/** Auxiliary intake rig: ducted housing, intake grille, seat lever. */
+function drawRigIntake(g: Graphics) {
+  box(g, 6, 8, 32, 34, CARD, BORDER);
+  rect(g, 10, 12, 24, 10, PANEL);
+  for (const x of [12, 17, 22, 27]) {
+    rect(g, x, 13, 2, 8, BORDER);
+  }
+  box(g, 14, 26, 16, 8, KAI_SUIT_SHADE, KAI_SUIT_RIM);
+  rect(g, 30, 24, 4, 12, MUTED);
+  rect(g, 30, 24, 4, 1, 0xdde9f2);
+  rect(g, 4, 42, 36, 3, OUTLINE);
+}
+
+/** Gauge card: mounted plate with a dial and a values strip. */
+function drawGaugeCard(g: Graphics) {
+  box(g, 4, 4, 24, 32, CARD, BORDER);
+  rect(g, 8, 8, 16, 12, PANEL);
+  rect(g, 14, 10, 4, 4, MUTED);
+  rect(g, 15, 14, 2, 4, MUTED);
+  rect(g, 8, 24, 16, 2, MUTED);
+  rect(g, 8, 28, 12, 2, MUTED);
+  rect(g, 8, 32, 14, 2, BORDER);
+}
+
+/** Repair-bay machine, faulted: cracked casing, amber service lamp. */
+function drawMachineFault(g: Graphics) {
+  box(g, 5, 10, 36, 30, CARD, BORDER);
+  rect(g, 9, 14, 28, 8, PANEL);
+  rect(g, 12, 24, 6, 10, PANEL);
+  rect(g, 28, 24, 6, 10, PANEL);
+  // Crack seam across the casing.
+  rect(g, 20, 12, 2, 6, OUTLINE);
+  rect(g, 22, 18, 2, 8, OUTLINE);
+  rect(g, 20, 26, 2, 8, OUTLINE);
+  // Amber service lamp (matte, never flashing).
+  rect(g, 33, 4, 6, 6, HAZARD_AMBER_SHADE);
+  rect(g, 33, 4, 6, 1, HAZARD_AMBER);
+  rect(g, 3, 40, 40, 3, OUTLINE);
+}
+
+/** The same machine, repaired: seam sealed, lamp dark, vents even. */
+function drawMachineFixed(g: Graphics) {
+  box(g, 5, 10, 36, 30, CARD, BORDER);
+  rect(g, 9, 14, 28, 8, PANEL);
+  rect(g, 9, 14, 28, 1, KAI_SUIT_RIM);
+  rect(g, 12, 24, 6, 10, PANEL);
+  rect(g, 28, 24, 6, 10, PANEL);
+  rect(g, 33, 4, 6, 6, 0x2b3134);
+  rect(g, 3, 40, 40, 3, OUTLINE);
+}
+
+// ————————————————————————————————————————————————————————————————————
 // Physical-mechanics session (Unit 3): Ridge Annex artifact-survey art.
 // ————————————————————————————————————————————————————————————————————
 
@@ -1457,6 +1613,31 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   'proc-icon-ice-core': { width: 24, height: 24, draw: drawIconIceCore },
   'proc-icon-basalt': { width: 24, height: 24, draw: drawIconBasalt },
   'proc-icon-biosample': { width: 24, height: 24, draw: drawIconBiosample },
+  // Physical-mechanics session (Unit 4): persistence-deepening art.
+  'proc-rig-intake': { width: 44, height: 48, draw: drawRigIntake },
+  'proc-gauge-card': { width: 32, height: 40, draw: drawGaugeCard },
+  'proc-machine-fault': { width: 46, height: 44, draw: drawMachineFault },
+  'proc-machine-fixed': { width: 46, height: 44, draw: drawMachineFixed },
+  // Physical-mechanics session (Unit 6): work-cycle B-poses.
+  'proc-npc-kai-work-b': { width: 64, height: 64, draw: drawNpcKaiWorkB },
+  'proc-npc-vale-b': { width: 40, height: 56, draw: drawNpcValeB },
+  'proc-npc-noor-b': { width: 40, height: 56, draw: drawNpcNoorB },
+  'proc-bot-utility-b': { width: 48, height: 48, draw: drawBotUtilityB },
+  // Physical-mechanics session (Unit 7): ice-bore salvage art.
+  'proc-ice-bore': { width: 48, height: 52, draw: drawIceBore },
+  'proc-icon-scrap-bolt': { width: 24, height: 24, draw: drawIconScrapBolt },
+  'proc-icon-tin-panel': { width: 24, height: 24, draw: drawIconTinPanel },
+  'proc-icon-coolant-slug': {
+    width: 24,
+    height: 24,
+    draw: drawIconCoolantSlug,
+  },
+  'proc-icon-sensor-husk': {
+    width: 24,
+    height: 24,
+    draw: drawIconSensorHusk,
+  },
+  'proc-icon-ice-pearl': { width: 24, height: 24, draw: drawIconIcePearl },
 };
 
 /** Fixed manifest (key → dimensions) for determinism coverage. */

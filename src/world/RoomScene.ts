@@ -241,6 +241,8 @@ export interface RoomNpcConfig extends RoomStationConfig {
   npcName: string;
   /** Disable the idle bob (console-mounted figures). */
   still?: boolean;
+  /** Two-frame work cycle (Unit 6; see NpcActorConfig.workFrames). */
+  workFrames?: readonly [string, string];
 }
 
 export interface RoomDoorConfig {
@@ -697,6 +699,7 @@ export abstract class RoomScene extends Phaser.Scene {
       texture: config.texture!,
       name: config.npcName,
       still: config.still,
+      workFrames: config.workFrames,
     });
 
     this.interactableMarkers.set(config, npc.sprite);

@@ -38,6 +38,21 @@ export function isWorldActionActive(): boolean {
 }
 
 /**
+ * Manual world-action bracket (Unit 7): lets a custom interaction loop
+ * (the salvage tension phase) borrow the exact input isolation a timed
+ * action has — avatar holds still, no prompt can open — without a
+ * progress bar. Callers MUST pair begin/end (shutdown-safe callers end
+ * in their scene-shutdown handler).
+ */
+export function beginManualWorldAction() {
+  actionActive = true;
+}
+
+export function endManualWorldAction() {
+  actionActive = false;
+}
+
+/**
  * Runs one timed world action. Returns false (and does nothing) when an
  * action is already running. Cleans itself up if the scene shuts down
  * mid-action (room transition safety).

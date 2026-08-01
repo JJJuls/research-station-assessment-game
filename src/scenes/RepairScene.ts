@@ -8,6 +8,32 @@ import {
 } from '../data/itemRegistry';
 import type { ResearchInteraction } from '../data/researchInteractions';
 import { researchInteractions } from '../data/researchInteractions';
+import {
+  burstParticles,
+  cameraKick,
+  performWorldAction,
+  playActionAnimation,
+  ringPulse,
+  sfxComplete,
+  sfxInstall,
+  sfxMachineOn,
+  sparkle,
+} from '../gameplay';
+import {
+  attemptQ23Alignment,
+  declareOpportunity,
+  markOpportunityCompleted,
+  markOpportunityEntered,
+  markOpportunityOffered,
+  markQ23Engaged,
+  markQ23GaugeViewed,
+  Q23_ENTRY_STATE_VERSION,
+  Q23_OPPORTUNITY_ID,
+  q23State,
+  q23Summary,
+  recordPriorExposure,
+  refreshValidityProbe,
+} from '../measurement';
 import { researchRuntime } from '../systems';
 import type {
   InteractionKey,
@@ -295,6 +321,53 @@ export class RepairScene extends RoomScene {
     this.addDecor(5.5 * 32, 11 * 32 + 12, 'proc-wall-pipes');
     this.addDecor(15 * 32, 9.5 * 32, 'proc-cart-utility');
 
+    // ——— Physical-mechanics session (Unit 4): the repaired system is a
+    // VISIBLE machine — faulted casing beside the panel until the repair
+    // completes, sealed and calm after (presentation only; positions,
+    // radii, prompts and events unchanged).
+    if (this.textures.exists('proc-machine-fault')) {
+      this.machineImage = this.add.image(
+        11.5 * 32,
+        5.4 * 32,
+        this.isRepairCompleted() ? 'proc-machine-fixed' : 'proc-machine-fault',
+      );
+    }
+
+    // ——— Unit 4: Auxiliary Intake Rig — the separately bounded Q23
+    // retry-quality CANDIDATE (src/measurement/q23CalibrationRig.ts).
+    // Own station, own state container, own proto_q23_* family; the
+    // panel's contested canonical repair stream is untouched both ways.
+    declareOpportunity({
+      opportunity_id: Q23_OPPORTUNITY_ID,
+      owner: 'Q23 (candidate)',
+      entry_state_version: Q23_ENTRY_STATE_VERSION,
+    });
+    this.addStation({
+      interactionKey: 'repairIntakeRig',
+      label: 'Auxiliary Intake Rig',
+      texture: 'proc-rig-intake',
+      x: 17 * 32,
+      y: 6.5 * 32,
+      onPromptOpened: () => this.onRigOpened(),
+    });
+    this.addStation({
+      interactionKey: 'repairGaugeCard',
+      label: 'Gauge Card',
+      texture: 'proc-gauge-card',
+      x: 14.5 * 32,
+      y: 3.5 * 32,
+      onPromptOpened: () => {
+        // Feedback-only surface (repair-manual station precedent): the
+        // usable diagnostic support for the rig's revision.
+        markQ23GaugeViewed();
+        this.logScenarioEvent('repairGaugeCard', 'proto_q23_gauge_viewed');
+        this.showFeedbackMessage(
+          'Gauge card: intake pressure 2.4 bar, seat detent B. The rig came racked on the factory preset — it predates these values.',
+        );
+        return false;
+      },
+    });
+
     // Door back to the Station Hub. repair_abandoned fires on exit while
     // an attempt has failed and the repair is incomplete (room doc edge
     // case: "player leaves the repair unresolved").
@@ -407,6 +480,10 @@ export class RepairScene extends RoomScene {
   }
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
+    if (interactionKey === 'repairIntakeRig') {
+      return this.buildRigOptions();
+    }
+
     if (interactionKey !== 'systemsRepairFailure') {
       return [];
     }
@@ -473,6 +550,8 @@ export class RepairScene extends RoomScene {
           this.logCycleEvent('repair_completed', state.attemptCount);
           researchRuntime.sessionState.markRoomCompleted('systems_repair_room');
           this.logObjectiveCompletedIfBothDone();
+          // Unit 4 presentation: the machine casing seals and settles.
+          this.showMachineRepairedEffect();
         },
       },
     ];
@@ -703,6 +782,9 @@ export class RepairScene extends RoomScene {
       didRepeat ? 'repair_same_sequence_repeated' : 'repair_failed',
       state.attemptCount,
     );
+    // Unit 4 presentation: the faulted machine reacts to the rejected
+    // cycle (identical effect for every failing path; never logs).
+    this.showMachineFaultEffect();
   }
 
   /**
@@ -733,5 +815,173 @@ export class RepairScene extends RoomScene {
     return researchRuntime.sessionState
       .getMissionState()
       .completed_rooms.includes('systems_repair_room');
+  }
+
+  // ————————————————————————————————————————————————————————————————————
+  // Physical-mechanics session (Unit 4): Q21 visible machine consequence
+  // + the Auxiliary Intake Rig (Q23 candidate; module state in
+  // src/measurement/q23CalibrationRig.ts). Presentation effects never
+  // log; every rig act logs ONLY proto_q23_* raw telemetry.
+  // ————————————————————————————————————————————————————————————————————
+
+  private machineImage: Phaser.GameObjects.Image | null = null;
+
+  /** Failed panel submission: sparks off the faulted machine (visual). */
+  private showMachineFaultEffect() {
+    if (this.machineImage === null) {
+      return;
+    }
+
+    burstParticles(this, this.machineImage.x, this.machineImage.y - 6, {
+      colors: [0xd9a441, 0x9fb2c1, 0x46586b],
+      seed: 412,
+      count: 8,
+      speed: 42,
+    });
+    cameraKick(this, 0.0015);
+  }
+
+  /** Completed repair: the casing seals and the machine settles. */
+  private showMachineRepairedEffect() {
+    if (this.machineImage === null) {
+      return;
+    }
+
+    this.machineImage.setTexture('proc-machine-fixed');
+    ringPulse(this, this.machineImage.x, this.machineImage.y, {
+      endRadius: 48,
+      rings: 2,
+      durationMs: 550,
+    });
+    sfxMachineOn();
+  }
+
+  private onRigOpened(): boolean {
+    this.logScenarioEvent('repairIntakeRig', 'proto_q23_rig_opened');
+
+    if (q23State.completed) {
+      this.showFeedbackMessage(
+        'The intake runs even. The rig is logged for the shift.',
+      );
+      return false;
+    }
+
+    if (!q23State.engaged) {
+      markQ23Engaged();
+      markOpportunityOffered(Q23_OPPORTUNITY_ID);
+      // Recorded fact only (SA-13 prior exposure): how much repair-panel
+      // difficulty this session saw before engaging the rig.
+      recordPriorExposure(
+        Q23_OPPORTUNITY_ID,
+        `repair_panel_cycles:${repairTaskState.get().attemptCount}`,
+      );
+    }
+
+    markOpportunityEntered(Q23_OPPORTUNITY_ID);
+    refreshValidityProbe();
+
+    return true;
+  }
+
+  private buildRigOptions(): PromptOption[] {
+    if (q23State.attempts.length === 0) {
+      return [
+        {
+          label: 'Run the intake alignment.',
+          feedback: '',
+          getEventTypes: () => [],
+          onSelected: () => this.performRigAttempt('identical'),
+        },
+        { label: 'Step back.', feedback: '', getEventTypes: () => [] },
+      ];
+    }
+
+    return [
+      {
+        label: 'Run the same alignment again.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => this.performRigAttempt('identical'),
+      },
+      {
+        label: 'Adjust the seating by feel.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => this.performRigAttempt('unguided_change'),
+      },
+      {
+        label: 'Match the intake to the gauge card values.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => this.performRigAttempt('guided_change'),
+      },
+      { label: 'Step back.', feedback: '', getEventTypes: () => [] },
+    ];
+  }
+
+  private performRigAttempt(
+    strategy: 'identical' | 'unguided_change' | 'guided_change',
+  ) {
+    const RIG_X = 17 * 32;
+    const RIG_Y = 6.5 * 32;
+    const started = performWorldAction({
+      scene: this,
+      x: RIG_X,
+      y: RIG_Y,
+      label: 'Aligning…',
+      durationMs: 1200,
+      onComplete: () => {
+        const result = attemptQ23Alignment(strategy);
+
+        this.logScenarioEvent('repairIntakeRig', 'proto_q23_attempt', {
+          metadata: {
+            attempt_number: result.attemptNumber,
+            strategy: result.recorded,
+            success: result.success,
+          },
+        });
+
+        if (result.success) {
+          sfxComplete();
+          sparkle(this, RIG_X, RIG_Y - 12);
+          this.logScenarioEvent('repairIntakeRig', 'proto_q23_completed', {
+            metadata: { ...q23Summary() },
+          });
+          markOpportunityCompleted(Q23_OPPORTUNITY_ID);
+          refreshValidityProbe();
+          this.showFeedbackMessage(
+            'You set the intake to the gauge values. The flow evens out — the rig runs clean.',
+          );
+          return;
+        }
+
+        burstParticles(this, RIG_X, RIG_Y - 4, {
+          colors: [0x9fb2c1, 0x46586b],
+          seed: 618,
+          count: 6,
+          speed: 36,
+        });
+
+        this.showFeedbackMessage(
+          result.recorded === 'initial'
+            ? 'The intake jams — pressure mismatch. The gauge card lists the current values.'
+            : result.recorded === 'identical'
+              ? 'The intake jams the same way.'
+              : "The seating shifts but the intake still jams — the values don't match.",
+        );
+      },
+    });
+
+    if (started) {
+      sfxInstall();
+      playActionAnimation({
+        scene: this,
+        x: RIG_X,
+        y: RIG_Y,
+        kind: 'work',
+        icon: 'proc-icon-hex-spanner',
+        durationMs: 1200,
+      });
+    }
   }
 }

@@ -57,6 +57,17 @@ export class AmbientWorker {
       ease: 'Sine.easeInOut',
     });
 
+    // Unit 6: stride sway — a slight alternating lean in time with the
+    // bob, so patrols read as walking rather than gliding (visual only).
+    scene.tweens.add({
+      targets: this.sprite,
+      angle: { from: -2, to: 2 },
+      duration: 260,
+      repeat: -1,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
+    });
+
     if (waypoints.length > 1) {
       this.walkToNext();
     }

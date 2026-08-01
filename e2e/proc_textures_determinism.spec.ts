@@ -118,6 +118,23 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-icon-ice-core': { width: 24, height: 24 },
   'proc-icon-basalt': { width: 24, height: 24 },
   'proc-icon-biosample': { width: 24, height: 24 },
+  // Physical-mechanics session (Unit 4): persistence-deepening art.
+  'proc-rig-intake': { width: 44, height: 48 },
+  'proc-gauge-card': { width: 32, height: 40 },
+  'proc-machine-fault': { width: 46, height: 44 },
+  'proc-machine-fixed': { width: 46, height: 44 },
+  // Physical-mechanics session (Unit 6): work-cycle B-poses.
+  'proc-npc-kai-work-b': { width: 64, height: 64 },
+  'proc-npc-vale-b': { width: 40, height: 56 },
+  'proc-npc-noor-b': { width: 40, height: 56 },
+  'proc-bot-utility-b': { width: 48, height: 48 },
+  // Physical-mechanics session (Unit 7): ice-bore salvage art.
+  'proc-ice-bore': { width: 48, height: 52 },
+  'proc-icon-scrap-bolt': { width: 24, height: 24 },
+  'proc-icon-tin-panel': { width: 24, height: 24 },
+  'proc-icon-coolant-slug': { width: 24, height: 24 },
+  'proc-icon-sensor-husk': { width: 24, height: 24 },
+  'proc-icon-ice-pearl': { width: 24, height: 24 },
 };
 
 interface ProcTexturesProbe {

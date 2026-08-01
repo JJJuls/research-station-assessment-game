@@ -1,4 +1,5 @@
 export * from './ArchiveScene';
+export * from './ArtifactSurveyScene';
 export * from './Boot';
 export * from './DockScene';
 export * from './EngineerScene';

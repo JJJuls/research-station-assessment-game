@@ -4,12 +4,14 @@ import { key } from '../constants';
 import type { PhysicalPlacement } from '../gameplay';
 import {
   acceptSurveyBriefing,
+  acceptTask,
   addInventoryItem,
   ANOMALY_NODE_IDS,
   burstParticles,
   cameraKick,
   completeInstallStep,
   DIG_YIELD,
+  ensureSalvageSeed,
   fieldRouteState,
   flaggedNodesPendingDig,
   getGameItem,
@@ -22,9 +24,13 @@ import {
   markSampleDelivered,
   performWorldAction,
   PhysicalManipulationLayer,
+  playActionAnimation,
   registerRouteTasks,
+  registerTask,
   removeInventoryItem,
   ringPulse,
+  salvageLog,
+  salvagePullCount,
   SCAN_NODE_IDS,
   sfxComplete,
   sfxDig,
@@ -33,9 +39,9 @@ import {
   sfxPickup,
   sfxScan,
   showFloatingText,
-  showHeldTool,
   snowfall,
   sparkle,
+  startSalvageCast,
   SURVEY_RECOVERY_TASK_ID,
 } from '../gameplay';
 import {
@@ -49,6 +55,7 @@ import {
   markOpportunityCompleted,
   markOpportunityEntered,
   markOpportunityOffered,
+  markQ16Offered,
   markQ30DetailInspected,
   pickUpQ04Object,
   placeQ04Object,
@@ -74,7 +81,7 @@ import type {
   StagePresentation,
   SurfaceStepTile,
 } from '../world';
-import { RoomScene } from '../world';
+import { RoomScene, runOncePerSession } from '../world';
 
 /**
  * Survey Terrace — overnight playable-prototype field area (Unit 2).
@@ -156,7 +163,13 @@ export class FieldScene extends RoomScene {
     };
   }
 
-  protected getSpawn(): { x: number; y: number } {
+  protected getSpawn(data?: { spawn?: string }): { x: number; y: number } {
+    // Returning from the Ridge Annex: just inside the south path, outside
+    // the door's 72px radius (row 14 open floor).
+    if (data?.spawn === 'proto_artifact_field') {
+      return { x: 11 * 32, y: 14.5 * 32 };
+    }
+
     // Just inside the airlock, outside the door's 72px radius.
     return { x: 10 * 32, y: 4 * 32 };
   }
@@ -177,6 +190,7 @@ export class FieldScene extends RoomScene {
         : isTaskAccepted(SURVEY_RECOVERY_TASK_ID)
           ? 'proc-npc-kai-work'
           : 'proc-npc-kai',
+      workFrames: ['proc-npc-kai-work', 'proc-npc-kai-work-b'],
       x: KAI_POSITION.x,
       y: KAI_POSITION.y,
       onPromptOpened: () => this.onKaiOpened(),
@@ -227,6 +241,44 @@ export class FieldScene extends RoomScene {
         roomId: 'station_hub',
         spawn: 'proto_field_site',
       },
+    });
+
+    // ——— Physical-mechanics session (Unit 7): post-assessment ice-bore
+    // salvage (free play; src/gameplay/iceSalvage*.ts). Locked until the
+    // primary route completes (Final Core) or an explicit DEV ?freeplay
+    // launch flag; entirely outside measurement — no Q tags, no primary
+    // inventory contact, deterministic seeded loot only.
+    this.addStation({
+      interactionKey: 'fieldIceBore',
+      label: 'Ice Bore Winch',
+      texture: 'proc-ice-bore',
+      x: 2 * 32,
+      y: 14 * 32,
+      onPromptOpened: () => this.onIceBoreOpened(),
+    });
+
+    // ——— Physical-mechanics session (Unit 3): south path to the Ridge
+    // Annex artifact survey (ArtifactSurveyScene). The offer task is
+    // accepted identically for every participant at the first terrace
+    // entry (standardised availability — a route position, never another
+    // item's outcome).
+    this.addDoor({
+      x: 8 * 32,
+      y: 15 * 32 + 16,
+      label: 'Ridge Annex Path',
+      texture: 'prop-hub-door-frame',
+      interactionKey: 'artifactSurveyNoor',
+      target: {
+        sceneKey: key.scene.artifactSurvey,
+        roomId: 'proto_artifact_field',
+        spawn: 'proto_field_site',
+      },
+    });
+    registerTask({
+      task_id: 'proto_artifact_survey_offer',
+      title: 'Artifact survey',
+      initialObjective:
+        'Surveyor Noor is staging a specimen sweep — Ridge Annex, south path.',
     });
 
     // ——— Physical-mechanics session (Unit 2): Q04 standardised field
@@ -369,6 +421,14 @@ export class FieldScene extends RoomScene {
 
   protected onRoomEntered(): void {
     this.logScenarioEvent('fieldKaiSupervisor', 'proto_field_site_entered');
+
+    // Unit 3: the artifact-survey offer becomes visible for EVERY
+    // participant at the first terrace entry (fixed route position).
+    runOncePerSession('proto_artifact_survey_offer', () => {
+      acceptTask('proto_artifact_survey_offer');
+      this.logScenarioEvent('artifactSurveyNoor', 'proto_q16_offer_visible');
+      markQ16Offered();
+    });
   }
 
   protected onRoomUpdate(): void {
@@ -600,7 +660,14 @@ export class FieldScene extends RoomScene {
             if (started) {
               // Visible tool use + radial sweep while the scan runs.
               sfxScan();
-              showHeldTool(this, this.player, 'proc-icon-field-scanner', 1100);
+              playActionAnimation({
+                scene: this,
+                x: this.player.x,
+                y: this.player.y,
+                kind: 'scan',
+                icon: 'proc-icon-field-scanner',
+                durationMs: 1100,
+              });
               ringPulse(this, position.x, position.y, {
                 endRadius: 46,
                 rings: 2,
@@ -636,7 +703,14 @@ export class FieldScene extends RoomScene {
           if (started) {
             // Visible spade work: tool bubble + snow kicked up mid-dig.
             sfxDig();
-            showHeldTool(this, this.player, 'proc-icon-excavation-spade', 1500);
+            playActionAnimation({
+              scene: this,
+              x: this.player.x,
+              y: this.player.y,
+              kind: 'dig',
+              icon: 'proc-icon-excavation-spade',
+              durationMs: 1500,
+            });
             burstParticles(this, position.x, position.y + 8, {
               colors: [0xc9d9e6, 0xaebfd0, 0x8fa1ab],
               seed: 0x5eedd160 + nodeId,
@@ -979,7 +1053,109 @@ export class FieldScene extends RoomScene {
     return { surface: [{ kind: 'steps', tiles }] };
   }
 
+  // ————— Physical-mechanics session (Unit 7): ice-bore salvage —————
+
+  private salvageUnlocked(): boolean {
+    const routeComplete = researchRuntime.sessionState
+      .getMissionState()
+      .completed_rooms.includes('final_core_room');
+    const freeplay =
+      import.meta.env.DEV &&
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).has('freeplay');
+
+    return routeComplete || freeplay;
+  }
+
+  private onIceBoreOpened(): boolean {
+    if (!this.salvageUnlocked()) {
+      this.showFeedbackMessage('The ice bore is capped during the duty shift.');
+      return false;
+    }
+
+    const seed = ensureSalvageSeed(
+      researchRuntime.sessionState.getMetadata().game_session_id,
+    );
+
+    if (!this.salvageSeedLogged) {
+      this.salvageSeedLogged = true;
+      this.logScenarioEvent('fieldIceBore', 'proto_salvage_opened', {
+        metadata: { seed },
+      });
+    }
+
+    return true;
+  }
+
+  private salvageSeedLogged = false;
+
+  private buildIceBoreOptions(): PromptOption[] {
+    return [
+      {
+        label: 'Lower the magnet.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => {
+          startSalvageCast({
+            scene: this,
+            x: 2 * 32,
+            y: 14 * 32,
+            onResolved: (result) => {
+              if (result.outcome === 'miss') {
+                this.logScenarioEvent('fieldIceBore', 'proto_salvage_miss', {
+                  metadata: { ...salvageLog() },
+                });
+                this.showFeedbackMessage(
+                  'The magnet swings clear. The line comes up empty.',
+                );
+                return;
+              }
+
+              this.logScenarioEvent('fieldIceBore', 'proto_salvage_pull', {
+                metadata: {
+                  catch_id: result.draw.catch_id,
+                  tier: result.draw.tier,
+                  pull_number: salvagePullCount(),
+                },
+              });
+              this.showFeedbackMessage(
+                `The winch brings up a ${result.draw.label}. It goes on the salvage rack.`,
+              );
+            },
+          });
+        },
+      },
+      {
+        label: 'Check the salvage rack.',
+        feedback: '',
+        getEventTypes: () => [],
+        nextStage: (): PromptStage => {
+          const log = salvageLog();
+
+          return {
+            body:
+              log.pulls.length === 0
+                ? 'The salvage rack is empty.'
+                : `On the salvage rack: ${log.pulls.join(', ')}.`,
+            options: [
+              {
+                label: 'Back to the winch.',
+                feedback: '',
+                getEventTypes: () => [],
+              },
+            ],
+          };
+        },
+      },
+      { label: 'Step back.', feedback: '', getEventTypes: () => [] },
+    ];
+  }
+
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
+    if (interactionKey === 'fieldIceBore') {
+      return this.buildIceBoreOptions();
+    }
+
     if (interactionKey === 'fieldScanNode') {
       return this.buildScanNodeOptions(this.activeNodeId);
     }

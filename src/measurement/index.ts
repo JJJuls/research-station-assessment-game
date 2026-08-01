@@ -43,6 +43,45 @@ export {
   q04State,
   resetQ04State,
 } from './q04FieldCleanup';
+export type { Q16Artifact, Q16Site, Q16Tray } from './q16ArtifactSurvey';
+export {
+  acceptQ16Survey,
+  collectQ16Artifact,
+  digQ16Site,
+  getQ16Artifact,
+  getQ16Site,
+  getQ16Tray,
+  markQ16BriefRead,
+  markQ16Offered,
+  Q16_ARTIFACTS,
+  Q16_ENTRY_STATE_VERSION,
+  Q16_OPPORTUNITY_ID,
+  Q16_SITES,
+  Q16_TRAYS,
+  q16ManifestMismatches,
+  q16ReportAvailable,
+  q16SiteDug,
+  q16SiteScanned,
+  q16State,
+  q16Summary,
+  reportQ16Survey,
+  resetQ16State,
+  restowQ16Artifact,
+  runQ16ManifestCheck,
+  scanQ16Site,
+  storeQ16Artifact,
+} from './q16ArtifactSurvey';
+export type { Q23Strategy } from './q23CalibrationRig';
+export {
+  attemptQ23Alignment,
+  markQ23Engaged,
+  markQ23GaugeViewed,
+  Q23_ENTRY_STATE_VERSION,
+  Q23_OPPORTUNITY_ID,
+  q23State,
+  q23Summary,
+  resetQ23State,
+} from './q23CalibrationRig';
 export {
   closeDiagnostic,
   completeExtraCycle,

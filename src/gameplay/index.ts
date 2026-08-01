@@ -1,4 +1,8 @@
+export type { ActionAnimationKind } from './actionAnimations';
+export { playActionAnimation } from './actionAnimations';
 export {
+  beginManualWorldAction,
+  endManualWorldAction,
   isWorldActionActive,
   performWorldAction,
   resetWorldActionState,
@@ -33,6 +37,18 @@ export {
   snowfall,
   sparkle,
 } from './effects';
+export type { SalvageCatch } from './iceSalvage';
+export {
+  buildSalvageDeck,
+  drawSalvageCatch,
+  ensureSalvageSeed,
+  recordSalvageMiss,
+  resetSalvageState,
+  salvageLog,
+  salvagePullCount,
+  salvageSeedFromSession,
+} from './iceSalvage';
+export { startSalvageCast } from './iceSalvageController';
 export {
   addInventoryItem,
   getInventoryItems,

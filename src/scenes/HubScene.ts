@@ -199,6 +199,7 @@ export class HubScene extends RoomScene {
       texture: isRequisitionKitComplete()
         ? 'proc-npc-vale-ready'
         : 'proc-npc-vale',
+      workFrames: ['proc-npc-vale', 'proc-npc-vale-b'],
       x: 4.5 * 32,
       y: 10.75 * 32,
       onPromptOpened: () => this.onValeOpened(),

@@ -315,6 +315,88 @@ export const researchInteractions = {
     score_tags: [],
     room_id: 'proto_utility_bay',
   },
+  // ——— Physical-mechanics session (Unit 7): post-assessment free play ———
+  // NOT a measurement opportunity: locked until the assessment route is
+  // complete (or an explicit DEV free-play flag), no Q tags, secondary
+  // gameplay telemetry only (seed + pull history).
+  fieldIceBore: {
+    object_id: 'proto_field_ice_bore',
+    label: 'Ice Bore Winch',
+    episode: 'proto_post_ice_salvage',
+    event_type: 'proto_salvage_opened',
+    score_tags: [],
+    room_id: 'proto_field_site',
+  },
+  // ——— Physical-mechanics session (Unit 4): persistence-deepening proto
+  // stations. Same governance: provisional identifiers, raw telemetry via
+  // logScenarioEvent only, no canonical mapping, no scoring. The intake
+  // rig is the Q23 separately bounded retry-quality CANDIDATE (own
+  // instance/state — the contested repair-stream split stays open and
+  // untouched); the bay console hosts the SA-2 candidate switch-to-
+  // useful-action act for the Q27 window.
+  repairIntakeRig: {
+    object_id: 'proto_repair_intake_rig',
+    label: 'Auxiliary Intake Rig',
+    episode: 'proto_q23_retry_quality',
+    event_type: 'proto_q23_rig_opened',
+    score_tags: [],
+    room_id: 'systems_repair_room',
+  },
+  repairGaugeCard: {
+    object_id: 'proto_repair_gauge_card',
+    label: 'Gauge Card',
+    episode: 'proto_q23_retry_quality',
+    event_type: 'proto_q23_gauge_viewed',
+    score_tags: [],
+    room_id: 'systems_repair_room',
+  },
+  utilityBayConsole: {
+    object_id: 'proto_utility_bay_console',
+    label: 'Bay Console',
+    episode: 'proto_q27_utility_stop',
+    event_type: 'proto_q27_switched_to_useful',
+    score_tags: [],
+    room_id: 'proto_utility_bay',
+  },
+  // ——— Physical-mechanics session (Unit 3): Ridge Annex artifact survey ———
+  // Same governance as every proto area above: internal/provisional
+  // identifiers, raw prototype telemetry via logScenarioEvent only, no
+  // canonical task_id, no Q-mapping, no scoring. The module is the
+  // CANDIDATE exploratory Q16 prototype (own instance/state per the
+  // ruling's shared-stream remedy); canonical events and scoring remain
+  // open research-owner decisions.
+  artifactSurveyNoor: {
+    object_id: 'proto_artifact_survey_noor',
+    label: 'Surveyor Noor',
+    episode: 'proto_q16_artifact_survey',
+    event_type: 'proto_q16_noor_opened',
+    score_tags: [],
+    room_id: 'proto_artifact_field',
+  },
+  artifactSurveyNotebook: {
+    object_id: 'proto_artifact_survey_notebook',
+    label: 'Field Notebook',
+    episode: 'proto_q16_artifact_survey',
+    event_type: 'proto_q16_brief_read',
+    score_tags: [],
+    room_id: 'proto_artifact_field',
+  },
+  artifactSurveySite: {
+    object_id: 'proto_artifact_survey_site',
+    label: 'Survey Stake',
+    episode: 'proto_q16_artifact_survey',
+    event_type: 'proto_q16_site_scanned',
+    score_tags: [],
+    room_id: 'proto_artifact_field',
+  },
+  artifactSurveyCase: {
+    object_id: 'proto_artifact_survey_case',
+    label: 'Specimen Case',
+    episode: 'proto_q16_artifact_survey',
+    event_type: 'proto_q16_artifact_stored',
+    score_tags: [],
+    room_id: 'proto_artifact_field',
+  },
   annexPlanningTerminal: {
     object_id: 'proto_annex_planning_terminal',
     label: 'Planning Terminal',

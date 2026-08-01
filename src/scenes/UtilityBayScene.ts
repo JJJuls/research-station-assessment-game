@@ -112,6 +112,7 @@ export class UtilityBayScene extends RoomScene {
       label: 'Utility Bot',
       npcName: 'Utility Bot',
       texture: 'proc-bot-utility',
+      workFrames: ['proc-bot-utility', 'proc-bot-utility-b'],
       x: BOT_POSITION.x,
       y: BOT_POSITION.y,
       onPromptOpened: () => this.onBotOpened(),
@@ -129,6 +130,20 @@ export class UtilityBayScene extends RoomScene {
         roomId: 'station_hub',
         spawn: 'proto_utility_bay',
       },
+    });
+
+    // ——— Physical-mechanics session (Unit 4): bay console — the SA-2
+    // candidate "switch to useful action" during the utility-stop window.
+    // Always visible; filing the sweep results is a useful alternative
+    // act that closes the window as a valid stop. It reveals nothing,
+    // rewards nothing, and is neutrally framed like every other option.
+    this.addStation({
+      interactionKey: 'utilityBayConsole',
+      label: 'Bay Console',
+      texture: 'proc-console-wall',
+      x: 12 * 32,
+      y: 2.25 * 32,
+      onPromptOpened: () => this.onBayConsoleOpened(),
     });
 
     // Bay dressing (decorative only).
@@ -275,6 +290,10 @@ export class UtilityBayScene extends RoomScene {
   }
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
+    if (interactionKey === 'utilityBayConsole') {
+      return this.buildBayConsoleOptions();
+    }
+
     if (interactionKey !== 'utilityBotDiagnostic') {
       return [];
     }
@@ -434,6 +453,71 @@ export class UtilityBayScene extends RoomScene {
           options: this.buildWindowOptions().slice(0, 2),
         }),
       },
+      {
+        // Unit 4 (SA-2 candidate act): switching to a useful alternative
+        // is as accessible as continuing, closing or inspecting. The
+        // option itself logs nothing — the filing act at the console is
+        // the recorded switch.
+        label: 'Take the results to the bay console.',
+        feedback: 'You gather the sweep results for filing.',
+        getEventTypes: () => [],
+      },
+    ];
+  }
+
+  // ————— Physical-mechanics session (Unit 4): bay console (switch) —————
+
+  private onBayConsoleOpened(): boolean {
+    if (!q27State.stop_signal_shown) {
+      this.showFeedbackMessage(
+        'Nothing to file yet — the diagnostic sweep is still running.',
+      );
+      return false;
+    }
+
+    if (q27State.closed) {
+      this.showFeedbackMessage('The diagnostic session is closed out.');
+      return false;
+    }
+
+    return true;
+  }
+
+  private buildBayConsoleOptions(): PromptOption[] {
+    return [
+      {
+        label: 'File the sweep results.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => {
+          const started = performWorldAction({
+            scene: this,
+            x: 12 * 32,
+            y: 2.25 * 32,
+            label: 'Filing…',
+            durationMs: 1000,
+            onComplete: () => {
+              closeDiagnostic();
+              this.logScenarioEvent(
+                'utilityBayConsole',
+                'proto_q27_switched_to_useful',
+                { metadata: { extra_cycles: q27State.extra_cycles } },
+              );
+              markOpportunityCompleted(Q27_OPPORTUNITY_ID);
+              refreshValidityProbe();
+              this.refreshStatusPanel();
+              this.showFeedbackMessage(
+                'The sweep results are filed to station records.',
+              );
+            },
+          });
+
+          if (started) {
+            sfxScan();
+          }
+        },
+      },
+      { label: 'Step back.', feedback: '', getEventTypes: () => [] },
     ];
   }
 }
