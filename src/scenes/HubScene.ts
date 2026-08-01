@@ -11,6 +11,8 @@ import {
   refreshRequisitionObjective,
   registerRouteTasks,
   remainingLockerItems,
+  sfxComplete,
+  sfxPickup,
   showFloatingText,
 } from '../gameplay';
 import {
@@ -871,10 +873,12 @@ export class HubScene extends RoomScene {
               this.logScenarioEvent('hubFieldLocker', 'proto_item_collected', {
                 metadata: { item_id: itemId },
               });
+              sfxPickup();
               showFloatingText(this, lockerX, lockerY, `+ ${item.label}`);
 
               if (isRequisitionKitComplete()) {
                 // Vale visibly reacts to the completed kit (Unit D).
+                sfxComplete();
                 this.setStationTexture(
                   'hubQuartermasterVale',
                   'proc-npc-vale-ready',

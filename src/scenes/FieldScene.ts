@@ -24,6 +24,12 @@ import {
   removeInventoryItem,
   ringPulse,
   SCAN_NODE_IDS,
+  sfxComplete,
+  sfxDig,
+  sfxInstall,
+  sfxMachineOn,
+  sfxPickup,
+  sfxScan,
   showFloatingText,
   showHeldTool,
   snowfall,
@@ -425,6 +431,7 @@ export class FieldScene extends RoomScene {
 
             if (started) {
               // Visible tool use + radial sweep while the scan runs.
+              sfxScan();
               showHeldTool(this, this.player, 'proc-icon-field-scanner', 1100);
               ringPulse(this, position.x, position.y, {
                 endRadius: 46,
@@ -460,6 +467,7 @@ export class FieldScene extends RoomScene {
 
           if (started) {
             // Visible spade work: tool bubble + snow kicked up mid-dig.
+            sfxDig();
             showHeldTool(this, this.player, 'proc-icon-excavation-spade', 1500);
             burstParticles(this, position.x, position.y + 8, {
               colors: [0xc9d9e6, 0xaebfd0, 0x8fa1ab],
@@ -520,6 +528,7 @@ export class FieldScene extends RoomScene {
     markNodeDug(nodeId);
     this.addDigMound(nodeId);
     // The terrain visibly changes: spoil burst, churned ground, a kick.
+    sfxDig();
     burstParticles(this, position.x, position.y + 6, {
       colors: [0xc9d9e6, 0x8fa1ab, 0x5d6d80, 0x4a5869],
       seed: 0x5eedd1c0 + nodeId,
@@ -538,6 +547,7 @@ export class FieldScene extends RoomScene {
       this.logScenarioEvent('fieldScanNode', 'proto_item_recovered', {
         metadata: { node_id: nodeId, item_id: yieldItemId },
       });
+      sfxPickup();
       sparkle(this, position.x, position.y - 4);
       showFloatingText(this, position.x, position.y, `+ ${item.label}`);
       this.showFeedbackMessage(
@@ -617,11 +627,13 @@ export class FieldScene extends RoomScene {
     }
 
     // Each completed step gives tactile feedback at the housing.
+    sfxInstall();
     sparkle(this, FEED_HOUSING_POSITION.x, FEED_HOUSING_POSITION.y - 10);
 
     if (fieldRouteState.coupling_installed) {
       // Visible before/after: the tilted, dead mast becomes an upright,
       // braced antenna with a live tip light.
+      sfxMachineOn();
       this.setStationTexture('fieldFeedHousing', 'proc-antenna-repaired');
       ringPulse(this, FEED_HOUSING_POSITION.x, FEED_HOUSING_POSITION.y - 20, {
         endRadius: 60,
@@ -650,7 +662,9 @@ export class FieldScene extends RoomScene {
   private logRouteCompletedIfFinished() {
     if (isRouteFinished()) {
       // Kai acknowledges the finished job whichever act closed it out
-      // (pose swap only, Unit D).
+      // (pose swap only, Unit D). Restrained completion cue — identical
+      // for every completion in the game.
+      sfxComplete();
       this.setStationTexture('fieldKaiSupervisor', 'proc-npc-kai-done');
       this.logScenarioEvent('fieldKaiSupervisor', 'proto_route_completed');
     }

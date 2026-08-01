@@ -14,7 +14,7 @@ import {
   SIDE_REPAIR_STATUS_COMPLETED,
   WORKSPACE_STATUS_DISORDERED,
 } from '../data/missionVocabulary';
-import { ringPulse } from '../gameplay';
+import { ringPulse, sfxMachineOn } from '../gameplay';
 import {
   declareOpportunity,
   FINAL_CORE_BASELINE_ISSUE_LABEL,
@@ -170,6 +170,8 @@ export class FinalCoreScene extends RoomScene {
     // same visual on every completion path — the PATH is never shown).
     if (!this.wasCompleted && this.isFinalCoreCompleted()) {
       this.wasCompleted = true;
+      // Identical settle cue on every completion path (path never shown).
+      sfxMachineOn();
       ringPulse(this, 10 * 32, 5.1 * 32, {
         endRadius: 90,
         rings: 3,

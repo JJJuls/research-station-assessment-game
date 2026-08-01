@@ -9,6 +9,7 @@ import {
   researcherRotationKey,
   researcherWalkFrameKey,
 } from '../constants';
+import { sfxFootstep } from '../gameplay/audio';
 
 enum Animation {
   Left = 'player_left',
@@ -286,12 +287,34 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
+  /**
+   * Footstep cadence bookkeeping (Unit E audio; presentation only).
+   * Declared without initializers: this class's constructor calls super()
+   * conditionally per skin, which TypeScript only allows when no field
+   * initializers exist.
+   */
+  private stepTimerMs?: number;
+  private stepAlternate?: boolean;
+
   update() {
     const { anims, body, cursors } = this;
     const prevVelocity = body.velocity.clone();
 
     // Keep the drop shadow under the feet (position-only; no state).
     this.shadow.setPosition(this.x, this.y + 22);
+
+    // Footstep taps while moving (~280ms cadence, alternating pitch).
+    if (prevVelocity.x !== 0 || prevVelocity.y !== 0) {
+      this.stepTimerMs = (this.stepTimerMs ?? 220) + this.scene.game.loop.delta;
+
+      if (this.stepTimerMs >= 280) {
+        this.stepTimerMs = 0;
+        this.stepAlternate = this.stepAlternate !== true;
+        sfxFootstep(this.stepAlternate);
+      }
+    } else {
+      this.stepTimerMs = 220;
+    }
 
     // Stop any previous movement from the last frame
     body.setVelocity(0);

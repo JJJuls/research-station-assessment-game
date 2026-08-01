@@ -141,8 +141,21 @@ export function sparkle(
   }
 }
 
+/** Honour the OS reduced-motion preference for camera/particle effects. */
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
 /** Tiny camera kick for physical impacts (dig strike, machinery start). */
 export function cameraKick(scene: Phaser.Scene, intensity = 0.0035) {
+  if (prefersReducedMotion()) {
+    return;
+  }
+
   scene.cameras.main.shake(110, intensity);
 }
 
@@ -157,7 +170,10 @@ export function snowfall(
   options: { width: number; height: number; seed: number; count?: number },
 ) {
   const rand = mulberry32(options.seed);
-  const count = options.count ?? 34;
+  // Reduced motion: a sparse, calmer drift instead of the full weather.
+  const count = Math.round(
+    (options.count ?? 34) * (prefersReducedMotion() ? 0.25 : 1),
+  );
 
   for (let i = 0; i < count; i++) {
     const size = rand() > 0.7 ? 3 : 2;

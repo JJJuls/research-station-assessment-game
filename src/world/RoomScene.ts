@@ -11,6 +11,15 @@ import {
   onInventoryChange,
   onTaskChange,
   serializeInventory,
+  sfxDoor,
+  sfxPromptOpen,
+  sfxUiMove,
+  sfxUiSelect,
+  sfxUnavailable,
+  startAmbience,
+  stopAmbience,
+  toggleAudioMuted,
+  unlockAudio,
 } from '../gameplay';
 import { noteRoomEntered, refreshValidityProbe } from '../measurement';
 import { getRemainingPilotDecisions, PILOT_DECISION_TOTAL } from '../scenarios';
@@ -580,6 +589,20 @@ export abstract class RoomScene extends Phaser.Scene {
       this.scene.pause(this.scene.key);
       this.scene.launch(key.scene.menu, { resumeKey: this.scene.key });
     });
+
+    // ——— Unit E audio: procedural ambience + cue unlock. The ambient bed
+    // is presentation only; identical per room theme for everyone. M
+    // toggles mute (client display setting).
+    unlockAudio();
+    this.input.keyboard!.once('keydown', () => unlockAudio());
+    this.input.once('pointerdown', () => unlockAudio());
+    this.input.keyboard!.on('keydown-M', (event: KeyboardEvent) => {
+      if (!event.repeat) {
+        toggleAudioMuted();
+      }
+    });
+    startAmbience(layout.theme === 'exterior' ? 'exterior' : 'interior');
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => stopAmbience());
 
     this.populateRoom();
     this.onRoomEntered();
@@ -1211,6 +1234,7 @@ export abstract class RoomScene extends Phaser.Scene {
       cards,
       focusedIndex: -1,
     };
+    sfxPromptOpen();
     this.focusPromptCard(0);
 
     for (let index = 0; index < options.length; index++) {
@@ -1714,6 +1738,12 @@ export abstract class RoomScene extends Phaser.Scene {
       return;
     }
 
+    // Soft focus tick on every focus MOVE (not the initial focus with the
+    // prompt-open swish; identical tick for every card — uniform cue).
+    if (this.activePrompt.focusedIndex !== -1) {
+      sfxUiMove();
+    }
+
     this.activePrompt.focusedIndex = index;
 
     for (let i = 0; i < cards.length; i++) {
@@ -1786,6 +1816,9 @@ export abstract class RoomScene extends Phaser.Scene {
       return;
     }
 
+    // Uniform selection tick — byte-identical recipe for every option.
+    sfxUiSelect();
+
     for (const eventType of option.getEventTypes()) {
       this.logRoomEvent(interactionKey, eventType);
     }
@@ -1852,12 +1885,15 @@ export abstract class RoomScene extends Phaser.Scene {
     }
 
     if (door.target === undefined) {
+      sfxUnavailable();
       this.showFeedbackMessage(
         door.sealedMessage ??
           'This section is sealed — pressurisation pending.',
       );
       return;
     }
+
+    sfxDoor();
 
     // Exit hook fires before the transition so rooms can log
     // leave-in-progress states (e.g. archive_abandoned) with the player

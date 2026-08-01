@@ -7,6 +7,25 @@ export {
 export type { AmbientWorkerConfig } from './AmbientWorker';
 export { AmbientWorker } from './AmbientWorker';
 export {
+  isAudioMuted,
+  sfxComplete,
+  sfxDig,
+  sfxDoor,
+  sfxFootstep,
+  sfxInstall,
+  sfxMachineOn,
+  sfxPickup,
+  sfxPromptOpen,
+  sfxScan,
+  sfxUiMove,
+  sfxUiSelect,
+  sfxUnavailable,
+  startAmbience,
+  stopAmbience,
+  toggleAudioMuted,
+  unlockAudio,
+} from './audio';
+export {
   burstParticles,
   cameraKick,
   ringPulse,

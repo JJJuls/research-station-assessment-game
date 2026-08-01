@@ -1,7 +1,7 @@
 import type Phaser from 'phaser';
 
 import { key } from '../constants';
-import { performWorldAction, ringPulse, sparkle } from '../gameplay';
+import { performWorldAction, ringPulse, sfxScan, sparkle } from '../gameplay';
 import {
   closeDiagnostic,
   completeExtraCycle,
@@ -286,7 +286,7 @@ export class UtilityBayScene extends RoomScene {
           feedback: '',
           getEventTypes: () => [],
           onSelected: () => {
-            performWorldAction({
+            const started = performWorldAction({
               scene: this,
               x: BOT_POSITION.x,
               y: BOT_POSITION.y,
@@ -294,6 +294,11 @@ export class UtilityBayScene extends RoomScene {
               durationMs: 1000,
               onComplete: () => this.finishUsefulCycle(),
             });
+
+            if (started) {
+              // Same cycle sound as every other cycle (uniform cue).
+              sfxScan();
+            }
           },
         },
         {
@@ -371,7 +376,7 @@ export class UtilityBayScene extends RoomScene {
         feedback: '',
         getEventTypes: () => [],
         onSelected: () => {
-          performWorldAction({
+          const started = performWorldAction({
             scene: this,
             x: BOT_POSITION.x,
             y: BOT_POSITION.y,
@@ -389,6 +394,11 @@ export class UtilityBayScene extends RoomScene {
               this.showFeedbackMessage('The cycle completes. No new findings.');
             },
           });
+
+          if (started) {
+            // Same cycle sound as every other cycle (uniform cue).
+            sfxScan();
+          }
         },
       },
       {
