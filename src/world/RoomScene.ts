@@ -789,6 +789,26 @@ export abstract class RoomScene extends Phaser.Scene {
   }
 
   /**
+   * Swaps a station's rendered texture in place (Unit C: visible world
+   * consequences — e.g. damaged machinery becoming repaired). Pure
+   * presentation: position, interaction radius, label and events are
+   * untouched (art swaps never alter interaction regions).
+   */
+  protected setStationTexture(interactionKey: InteractionKey, texture: string) {
+    if (!this.textures.exists(texture)) {
+      return;
+    }
+
+    for (const station of this.stations) {
+      if (station.interactionKey === interactionKey) {
+        const marker = this.interactableMarkers.get(station);
+
+        (marker as Phaser.GameObjects.Image | undefined)?.setTexture?.(texture);
+      }
+    }
+  }
+
+  /**
    * Prop sprite when its committed texture is loaded, placeholder
    * rectangle otherwise. Every interactable keeps the same cyan accent
    * cue (uniform affordance across objects and participants).

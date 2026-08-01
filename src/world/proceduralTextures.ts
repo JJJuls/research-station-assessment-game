@@ -891,6 +891,101 @@ function drawLightPool(g: Graphics) {
   }
 }
 
+/**
+ * Stardew-quality pass (Unit C): Survey Terrace worksite art. Damaged vs
+ * repaired antenna states carry the field task's visible consequence.
+ */
+
+/** Antenna feed housing — DAMAGED: tilted mast, open panel, slack cable. */
+function drawAntennaDamaged(g: Graphics) {
+  // Base plinth with open access panel.
+  box(g, 6, 52, 20, 9, CARD, BORDER);
+  rect(g, 9, 54, 8, 5, PANEL);
+  rect(g, 10, 55, 6, 1, HAZARD_AMBER_SHADE);
+  // Tilted mast (stepped diagonal), leaning east.
+  box(g, 13, 40, 4, 12, BORDER, MUTED);
+  box(g, 15, 28, 4, 13, BORDER);
+  box(g, 18, 16, 4, 13, BORDER);
+  box(g, 21, 8, 4, 9, BORDER);
+  // Broken cross rung hanging.
+  rect(g, 11, 33, 7, 2, BORDER);
+  rect(g, 9, 35, 3, 2, BORDER);
+  // Slack cable drooping from the mast to the ground.
+  rect(g, 24, 14, 1, 2, OUTLINE);
+  rect(g, 25, 16, 1, 4, OUTLINE);
+  rect(g, 26, 20, 1, 6, OUTLINE);
+  rect(g, 27, 26, 1, 12, OUTLINE);
+  rect(g, 26, 38, 1, 8, OUTLINE);
+  rect(g, 25, 46, 1, 8, OUTLINE);
+  // Dead tip (no light) + detached dish on the ground.
+  rect(g, 22, 5, 4, 3, OUTLINE);
+  box(g, 2, 56, 8, 5, CARD, MUTED);
+}
+
+/** Antenna feed housing — REPAIRED: upright braced mast, seated dish. */
+function drawAntennaRepaired(g: Graphics) {
+  // Base plinth, closed panel.
+  box(g, 6, 52, 20, 9, CARD, BORDER);
+  rect(g, 9, 54, 8, 5, BORDER);
+  // Upright mast with cross rungs.
+  box(g, 14, 8, 4, 44, BORDER, MUTED);
+  rect(g, 8, 16, 16, 2, BORDER);
+  rect(g, 10, 28, 12, 2, BORDER);
+  rect(g, 8, 40, 16, 2, BORDER);
+  // Support braces.
+  rect(g, 9, 44, 2, 8, BORDER);
+  rect(g, 21, 44, 2, 8, BORDER);
+  // Seated relay dish.
+  box(g, 20, 18, 8, 7, CARD, MUTED);
+  rect(g, 22, 20, 4, 3, PANEL);
+  // Live cyan tip light (interactable cue; static).
+  rect(g, 14, 4, 4, 4, ACCENT);
+}
+
+/** Distant station habitat module (background silhouette, decor only). */
+function drawStationModule(g: Graphics) {
+  // Snow line on the roof.
+  rect(g, 8, 12, 80, 3, 0xdde9f2);
+  // Rounded hull (stepped).
+  box(g, 6, 14, 84, 40, CARD, BORDER);
+  rect(g, 12, 8, 72, 7, CARD);
+  rect(g, 12, 8, 72, 1, BORDER);
+  // Structural ribs.
+  for (const x of [22, 46, 70]) {
+    rect(g, x, 15, 2, 38, BORDER);
+  }
+  // Lit windows (warm interior glow — life inside).
+  for (const x of [14, 32, 56, 78]) {
+    rect(g, x, 24, 7, 6, 0xc9b268);
+    rect(g, x, 24, 7, 1, 0xe0cd8a);
+  }
+  // Entry hatch + footing skirt.
+  rect(g, 40, 38, 12, 16, PANEL);
+  rect(g, 41, 39, 10, 2, BORDER);
+  rect(g, 2, 54, 92, 4, BORDER);
+  // Roof beacon (dull amber, decor — never cyan).
+  rect(g, 46, 4, 3, 4, HAZARD_AMBER_SHADE);
+}
+
+/** Disturbed / churned snow patch left behind by digging. */
+function drawGroundDisturbed(g: Graphics) {
+  rect(g, 4, 8, 32, 12, 0xaebfd0);
+  rect(g, 7, 6, 26, 4, 0xbccbdb);
+  rect(g, 6, 18, 28, 4, 0x99abc0);
+  rect(g, 10, 10, 6, 3, KAI_SUIT_SHADE);
+  rect(g, 24, 12, 7, 3, KAI_SUIT_SHADE);
+  rect(g, 17, 15, 5, 2, MUTED);
+  rect(g, 2, 20, 36, 2, 0x93a5ba);
+}
+
+/** Boot print pair pressed into snow (fades out via alpha). */
+function drawFootprints(g: Graphics) {
+  rect(g, 1, 1, 3, 5, 0x9fb2c6);
+  rect(g, 2, 0, 2, 2, 0xaebfd0);
+  rect(g, 6, 3, 3, 5, 0x9fb2c6);
+  rect(g, 7, 2, 2, 2, 0xaebfd0);
+}
+
 /** Dig mound: broken frozen regolith with loose rocks. */
 function drawDigMound(g: Graphics) {
   rect(g, 6, 16, 28, 8, KAI_SUIT_SHADE);
@@ -1027,6 +1122,16 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
     height: 24,
     draw: drawIconFluxCalibrator,
   },
+  // Stardew-quality pass (Unit C): Survey Terrace worksite art.
+  'proc-antenna-damaged': { width: 32, height: 64, draw: drawAntennaDamaged },
+  'proc-antenna-repaired': { width: 32, height: 64, draw: drawAntennaRepaired },
+  'proc-station-module': { width: 96, height: 60, draw: drawStationModule },
+  'proc-ground-disturbed': {
+    width: 40,
+    height: 24,
+    draw: drawGroundDisturbed,
+  },
+  'proc-footprints': { width: 10, height: 8, draw: drawFootprints },
   // Stardew-quality pass (Unit B): station-life dressing props.
   'proc-window-exterior': { width: 48, height: 26, draw: drawWindowExterior },
   'proc-wall-pipes': { width: 48, height: 18, draw: drawWallPipes },

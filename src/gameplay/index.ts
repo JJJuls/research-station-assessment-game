@@ -7,6 +7,14 @@ export {
 export type { AmbientWorkerConfig } from './AmbientWorker';
 export { AmbientWorker } from './AmbientWorker';
 export {
+  burstParticles,
+  cameraKick,
+  ringPulse,
+  showHeldTool,
+  snowfall,
+  sparkle,
+} from './effects';
+export {
   addInventoryItem,
   getInventoryItems,
   getInventorySlots,

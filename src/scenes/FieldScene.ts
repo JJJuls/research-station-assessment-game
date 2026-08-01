@@ -1,8 +1,12 @@
+import Phaser from 'phaser';
+
 import { key } from '../constants';
 import {
   acceptSurveyBriefing,
   addInventoryItem,
   ANOMALY_NODE_IDS,
+  burstParticles,
+  cameraKick,
   completeInstallStep,
   DIG_YIELD,
   fieldRouteState,
@@ -18,8 +22,12 @@ import {
   performWorldAction,
   registerRouteTasks,
   removeInventoryItem,
+  ringPulse,
   SCAN_NODE_IDS,
   showFloatingText,
+  showHeldTool,
+  snowfall,
+  sparkle,
   SURVEY_RECOVERY_TASK_ID,
 } from '../gameplay';
 import {
@@ -93,6 +101,12 @@ export class FieldScene extends RoomScene {
     // 22×11 interior; the extra wall mass on the right/bottom fills the
     // 800×600 viewport so no dead black void renders (Unit 4) — it is
     // unreachable and changes no interior coordinate.
+    // Unit C terrace expansion: the original 22×11 interior (rows 0-9)
+    // keeps every wall cell and interactable coordinate EXACTLY as
+    // committed; rows 10-13 open additional snowfield to the south
+    // (walls only removed, never added, so every position-synced e2e
+    // drive line stays clear) and the ridge line below is broken up so
+    // the exterior reads as terrain rather than a wall slab.
     return {
       theme: 'exterior',
       grid: [
@@ -106,12 +120,12 @@ export class FieldScene extends RoomScene {
         '#....................####',
         '#.##.................####',
         '#....................####',
-        '#########################',
-        '#########################',
-        '#########################',
-        '#########################',
-        '#########################',
-        '#########################',
+        '#.....................###',
+        '#..##.............##..###',
+        '#.....................###',
+        '#......##.............###',
+        '##................#######',
+        '####.........############',
         '#########################',
         '#########################',
         '#########################',
@@ -157,11 +171,15 @@ export class FieldScene extends RoomScene {
       }
     }
 
-    // Antenna feed housing (install target).
+    // Antenna feed housing (install target). Unit C: its texture carries
+    // the task's visible consequence — damaged until the coupling is
+    // installed, repaired after (position/radius/events unchanged).
     this.addStation({
       interactionKey: 'fieldFeedHousing',
       label: 'Antenna Feed Housing',
-      texture: 'proc-beacon-comms',
+      texture: fieldRouteState.coupling_installed
+        ? 'proc-antenna-repaired'
+        : 'proc-antenna-damaged',
       x: FEED_HOUSING_POSITION.x,
       y: FEED_HOUSING_POSITION.y,
       onPromptOpened: () => this.onFeedHousingOpened(),
@@ -202,10 +220,80 @@ export class FieldScene extends RoomScene {
     // Worksite dressing (decorative only).
     this.addDecor(3 * 32, 2.5 * 32, 'prop-dock-crates');
     this.addDecor(20 * 32, 2 * 32, 'prop-dock-crates');
+
+    // ——— Unit C exterior atmosphere (deterministic set dressing only).
+    // Distant station structures on the unreachable ridge/wall mass give
+    // the terrace a horizon and tie it back to the station.
+    this.addDecor(22.6 * 32, 4.6 * 32, 'proc-station-module');
+    this.addDecor(20.5 * 32, 15 * 32, 'proc-station-module');
+    this.addDecor(23 * 32, 8.5 * 32, 'proc-beacon-comms');
+    this.addDecor(2.5 * 32, 15.2 * 32, 'proc-beacon-comms');
+    // South-field worksite props on the new open snow.
+    this.addDecor(4.5 * 32, 11 * 32, 'proc-cart-utility');
+    this.addDecor(16 * 32, 12.5 * 32, 'prop-dock-crates');
+    // Already-disturbed ground re-renders on re-entry beside dug markers
+    // (the mound handles the spoil; this keeps the terrain change).
+    for (const nodeId of fieldRouteState.dug_nodes) {
+      const position = SCAN_NODE_POSITIONS[nodeId];
+
+      this.addDecor(position.x - 2, position.y + 18, 'proc-ground-disturbed');
+    }
+
+    // Ambient snowfall across the terrace (fixed seed — identical
+    // weather for every participant; pure ambience).
+    snowfall(this, {
+      width: this.roomMap.widthInPixels,
+      height: this.roomMap.heightInPixels,
+      seed: 0x5eedf1ae,
+      count: 38,
+    });
+  }
+
+  /**
+   * Unit C footprints: the player's own movement presses boot prints into
+   * the snow, fading over a few seconds. Pure consequence-of-own-action
+   * presentation (never a stimulus difference between participants).
+   */
+  private lastPrintAt = { x: 0, y: 0 };
+
+  private stampFootprints(): void {
+    const distance = Phaser.Math.Distance.Between(
+      this.player.x,
+      this.player.y,
+      this.lastPrintAt.x,
+      this.lastPrintAt.y,
+    );
+
+    if (distance < 30) {
+      return;
+    }
+
+    this.lastPrintAt = { x: this.player.x, y: this.player.y };
+
+    if (!this.textures.exists('proc-footprints')) {
+      return;
+    }
+
+    const print = this.add
+      .image(this.player.x, this.player.y + 20, 'proc-footprints')
+      .setAlpha(0.55)
+      .setDepth(-0.4);
+
+    this.tweens.add({
+      targets: print,
+      alpha: 0,
+      duration: 6000,
+      ease: 'Linear',
+      onComplete: () => print.destroy(),
+    });
   }
 
   protected onRoomEntered(): void {
     this.logScenarioEvent('fieldKaiSupervisor', 'proto_field_site_entered');
+  }
+
+  protected onRoomUpdate(): void {
+    this.stampFootprints();
   }
 
   /** Spoil-mound visual beside a dug marker (pure presentation). */
@@ -319,7 +407,7 @@ export class FieldScene extends RoomScene {
           feedback: '',
           getEventTypes: () => [],
           onSelected: () => {
-            performWorldAction({
+            const started = performWorldAction({
               scene: this,
               x: position.x,
               y: position.y,
@@ -327,6 +415,16 @@ export class FieldScene extends RoomScene {
               durationMs: 1100,
               onComplete: () => this.finishScan(nodeId),
             });
+
+            if (started) {
+              // Visible tool use + radial sweep while the scan runs.
+              showHeldTool(this, this.player, 'proc-icon-field-scanner', 1100);
+              ringPulse(this, position.x, position.y, {
+                endRadius: 46,
+                rings: 2,
+                durationMs: 520,
+              });
+            }
           },
         },
         {
@@ -344,7 +442,7 @@ export class FieldScene extends RoomScene {
         feedback: '',
         getEventTypes: () => [],
         onSelected: () => {
-          performWorldAction({
+          const started = performWorldAction({
             scene: this,
             x: position.x,
             y: position.y,
@@ -352,6 +450,17 @@ export class FieldScene extends RoomScene {
             durationMs: 1500,
             onComplete: () => this.finishDig(nodeId),
           });
+
+          if (started) {
+            // Visible spade work: tool bubble + snow kicked up mid-dig.
+            showHeldTool(this, this.player, 'proc-icon-excavation-spade', 1500);
+            burstParticles(this, position.x, position.y + 8, {
+              colors: [0xc9d9e6, 0xaebfd0, 0x8fa1ab],
+              seed: 0x5eedd160 + nodeId,
+              count: 7,
+              speed: 40,
+            });
+          }
         },
       },
       {
@@ -371,7 +480,15 @@ export class FieldScene extends RoomScene {
       metadata: { node_id: nodeId, anomaly: isAnomaly },
     });
 
+    // Result revealed in the world: one closing pulse at the marker.
+    ringPulse(this, position.x, position.y, {
+      endRadius: 30,
+      rings: 1,
+      durationMs: 420,
+    });
+
     if (isAnomaly) {
+      sparkle(this, position.x, position.y - 6);
       showFloatingText(this, position.x, position.y, 'Anomaly flagged');
       this.showFeedbackMessage(
         'The scanner flags a dense subsurface deposit — the marker is staked for digging.',
@@ -395,6 +512,15 @@ export class FieldScene extends RoomScene {
 
     markNodeDug(nodeId);
     this.addDigMound(nodeId);
+    // The terrain visibly changes: spoil burst, churned ground, a kick.
+    burstParticles(this, position.x, position.y + 6, {
+      colors: [0xc9d9e6, 0x8fa1ab, 0x5d6d80, 0x4a5869],
+      seed: 0x5eedd1c0 + nodeId,
+      count: 12,
+      speed: 65,
+    });
+    cameraKick(this);
+    this.addDecor(position.x - 2, position.y + 18, 'proc-ground-disturbed');
     this.logScenarioEvent('fieldScanNode', 'proto_dig_performed', {
       metadata: { node_id: nodeId, yield_item_id: yieldItemId ?? null },
     });
@@ -405,6 +531,7 @@ export class FieldScene extends RoomScene {
       this.logScenarioEvent('fieldScanNode', 'proto_item_recovered', {
         metadata: { node_id: nodeId, item_id: yieldItemId },
       });
+      sparkle(this, position.x, position.y - 4);
       showFloatingText(this, position.x, position.y, `+ ${item.label}`);
       this.showFeedbackMessage(
         `Recovered: ${item.label}. ${
@@ -482,7 +609,19 @@ export class FieldScene extends RoomScene {
       removeInventoryItem('relay_coupling');
     }
 
+    // Each completed step gives tactile feedback at the housing.
+    sparkle(this, FEED_HOUSING_POSITION.x, FEED_HOUSING_POSITION.y - 10);
+
     if (fieldRouteState.coupling_installed) {
+      // Visible before/after: the tilted, dead mast becomes an upright,
+      // braced antenna with a live tip light.
+      this.setStationTexture('fieldFeedHousing', 'proc-antenna-repaired');
+      ringPulse(this, FEED_HOUSING_POSITION.x, FEED_HOUSING_POSITION.y - 20, {
+        endRadius: 60,
+        rings: 3,
+        durationMs: 650,
+      });
+      cameraKick(this, 0.002);
       this.logScenarioEvent('fieldFeedHousing', 'proto_coupling_installed');
       showFloatingText(
         this,
