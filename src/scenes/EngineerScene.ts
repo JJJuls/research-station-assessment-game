@@ -218,6 +218,14 @@ export class EngineerScene extends RoomScene {
     this.addDecor(96, 120, 'prop-archive-racks');
     this.addDecor(544, 120, 'prop-dock-crates');
 
+    // Unit D workshop ambience (deterministic dressing only).
+    this.addDecor(10 * 32, 5 * 32, 'proc-light-pool');
+    this.addDecor(5 * 32, 9.5 * 32, 'proc-light-pool');
+    this.addDecor(7 * 32, 46, 'proc-window-exterior');
+    this.addDecor(6 * 32, 11 * 32 + 12, 'proc-wall-pipes');
+    this.addDecor(14.5 * 32, 11 * 32 + 12, 'proc-wall-pipes');
+    this.addDecor(14 * 32, 9.5 * 32, 'proc-cart-utility');
+
     // ——— Unit 3: Q29/Q31 form A — Kai's planning slate (SA-3, the ONE
     // shared goal-horizon construct; NPC-mediated situation). A distinct
     // station with its own state (q29q31Horizon) — availability and

@@ -1,3 +1,5 @@
+import type Phaser from 'phaser';
+
 import { key } from '../constants';
 import { RELAY_SUPERVISION_DUTY_ID } from '../data/duties';
 import {
@@ -12,6 +14,7 @@ import {
   SIDE_REPAIR_STATUS_COMPLETED,
   WORKSPACE_STATUS_DISORDERED,
 } from '../data/missionVocabulary';
+import { ringPulse } from '../gameplay';
 import {
   declareOpportunity,
   FINAL_CORE_BASELINE_ISSUE_LABEL,
@@ -161,6 +164,30 @@ export class FinalCoreScene extends RoomScene {
 
   protected onRoomUpdate(): void {
     this.refreshStatusPanel();
+
+    // Completion transition: the moment the synchronization one-shot
+    // lands, the chamber visibly settles (satisfying completion state;
+    // same visual on every completion path — the PATH is never shown).
+    if (!this.wasCompleted && this.isFinalCoreCompleted()) {
+      this.wasCompleted = true;
+      ringPulse(this, 10 * 32, 5.1 * 32, {
+        endRadius: 90,
+        rings: 3,
+        durationMs: 800,
+      });
+      this.applyCompletedCoreVisual();
+    }
+  }
+
+  /** Core glow visuals (Unit D restage). */
+  private coreGlow: Phaser.GameObjects.Ellipse | null = null;
+  private coreGlowTween: Phaser.Tweens.Tween | null = null;
+  private wasCompleted = false;
+
+  /** Synchronized: the breathing settles into a steady calm glow. */
+  private applyCompletedCoreVisual(): void {
+    this.coreGlowTween?.stop();
+    this.coreGlow?.setAlpha(0.2);
   }
 
   protected populateRoom(): void {
@@ -241,6 +268,34 @@ export class FinalCoreScene extends RoomScene {
     this.addDecor(320, 120, 'prop-hub-status-board');
     this.addDecor(96, 120, 'prop-archive-racks');
     this.addDecor(544, 120, 'prop-archive-racks');
+
+    // ——— Unit D restage: the chamber reads as the station's reactor
+    // heart. Identical static staging for every participant.
+    this.addDecor(10 * 32, 8 * 32, 'proc-light-pool');
+    this.addDecor(6.5 * 32, 4.3 * 32, 'proc-core-column');
+    this.addDecor(13.5 * 32, 4.3 * 32, 'proc-core-column');
+    this.addDecor(4.5 * 32, 11 * 32 + 12, 'proc-wall-pipes');
+    this.addDecor(15.5 * 32, 11 * 32 + 12, 'proc-wall-pipes');
+
+    // Controlled core breathing: a slow, restrained glow behind the
+    // interface — steady rhythm before completion, calm and steady
+    // after. Never flashing, never gating, identical for everyone.
+    this.coreGlow = this.add
+      .ellipse(10 * 32, 5.1 * 32, 150, 60, 0x2e6b66, 0.16)
+      .setDepth(-0.5);
+    this.coreGlowTween = this.tweens.add({
+      targets: this.coreGlow,
+      alpha: { from: 0.1, to: 0.24 },
+      duration: 2400,
+      repeat: -1,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
+    });
+    this.wasCompleted = this.isFinalCoreCompleted();
+
+    if (this.wasCompleted) {
+      this.applyCompletedCoreVisual();
+    }
 
     // Door back to the Station Hub.
     this.addDoor({

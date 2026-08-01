@@ -1,3 +1,5 @@
+import type Phaser from 'phaser';
+
 import { key } from '../constants';
 import { performWorldAction, showFloatingText } from '../gameplay';
 import {
@@ -166,6 +168,85 @@ export class OpsAnnexScene extends RoomScene {
 
     // Annex dressing (decorative only).
     this.addDecor(16 * 32, 7.5 * 32, 'prop-archive-racks');
+
+    // ——— Unit D restage: the annex reads as a working operations room.
+    this.addDecor(9 * 32, 5 * 32, 'proc-light-pool');
+    this.addDecor(3 * 32, 6.5 * 32, 'proc-light-pool');
+    this.addDecor(13 * 32, 46, 'proc-window-exterior');
+    this.addDecor(4.5 * 32, 8 * 32 + 12, 'proc-wall-pipes');
+    this.addDecor(12.5 * 32, 7.6 * 32, 'proc-seat-bench');
+    this.addDecor(5.5 * 32, 4.5 * 32, 'proc-cart-utility');
+
+    // Q32 portfolio board — physical lane state: one pip per project
+    // showing its own status glyph position (dormant/parked = dark,
+    // active = lit, done = bright). Mirrors exactly the state the
+    // board's own prompt already lists; never a ranking or a score.
+    for (let lane = 0; lane < Q32_PROJECTS.length; lane++) {
+      this.q32LanePips.push(
+        this.add.rectangle(
+          BOARD_POSITION.x - 20 + lane * 13,
+          BOARD_POSITION.y + 34,
+          7,
+          7,
+          0x28323f,
+          1,
+        ),
+      );
+    }
+
+    // Q33 closure desk — physical dossier stack: one folder card per
+    // OPEN contract, removed as the participant closes contracts.
+    // Mirrors exactly the queue the desk's own prompt lists.
+    for (let slot = 0; slot < 5; slot++) {
+      this.q33Dossiers.push(
+        this.add
+          .rectangle(
+            DESK_POSITION.x + 40,
+            DESK_POSITION.y + 10 - slot * 5,
+            22,
+            4,
+            slot % 2 === 0 ? 0x9fb2c1 : 0x7d8fa0,
+            1,
+          )
+          .setStrokeStyle(1, 0x1d2937),
+      );
+    }
+    this.refreshOpsPhysicalState();
+  }
+
+  /** Q32 lane pips + Q33 dossier stack (presentation of module state). */
+  private q32LanePips: Phaser.GameObjects.Rectangle[] = [];
+  private q33Dossiers: Phaser.GameObjects.Rectangle[] = [];
+
+  private refreshOpsPhysicalState(): void {
+    Q32_PROJECTS.forEach((project, lane) => {
+      const state = q32State.projects[project.project_id];
+      const pip = this.q32LanePips[lane];
+
+      if (pip === undefined || state === undefined) {
+        return;
+      }
+
+      if (state.status === 'completed') {
+        pip.setFillStyle(0x9fb2c1, 1);
+      } else if (state.status === 'active') {
+        pip.setFillStyle(0x53707a, 1);
+      } else if (state.status === 'parked') {
+        pip.setFillStyle(0x4a4335, 1);
+      } else {
+        pip.setFillStyle(0x28323f, 1);
+      }
+    });
+
+    const openCount = q33OpenContracts().length;
+
+    this.q33Dossiers.forEach((dossier, slot) => {
+      dossier.setVisible(slot < openCount);
+    });
+  }
+
+  protected onRoomUpdate(): void {
+    this.refreshOpsPhysicalState();
   }
 
   protected onRoomEntered(): void {

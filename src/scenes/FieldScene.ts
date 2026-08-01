@@ -142,11 +142,18 @@ export class FieldScene extends RoomScene {
     registerRouteTasks();
 
     // Engineer Kai supervising the survey (visible NPC, Unit 1 actor).
+    // Unit D: Kai's pose tracks the field task — briefing stance before
+    // the survey, tablet-up while it runs, arm raised once the route is
+    // done (pose swaps only; position/radius/prompts/events unchanged).
     this.addNpc({
       interactionKey: 'fieldKaiSupervisor',
       label: 'Engineer Kai',
       npcName: 'Engineer Kai',
-      texture: 'proc-npc-kai',
+      texture: isRouteFinished()
+        ? 'proc-npc-kai-done'
+        : isTaskAccepted(SURVEY_RECOVERY_TASK_ID)
+          ? 'proc-npc-kai-work'
+          : 'proc-npc-kai',
       x: KAI_POSITION.x,
       y: KAI_POSITION.y,
       onPromptOpened: () => this.onKaiOpened(),
@@ -642,6 +649,9 @@ export class FieldScene extends RoomScene {
 
   private logRouteCompletedIfFinished() {
     if (isRouteFinished()) {
+      // Kai acknowledges the finished job whichever act closed it out
+      // (pose swap only, Unit D).
+      this.setStationTexture('fieldKaiSupervisor', 'proc-npc-kai-done');
       this.logScenarioEvent('fieldKaiSupervisor', 'proto_route_completed');
     }
   }
@@ -801,6 +811,7 @@ export class FieldScene extends RoomScene {
           getEventTypes: () => [],
           onSelected: () => {
             acceptSurveyBriefing();
+            this.setStationTexture('fieldKaiSupervisor', 'proc-npc-kai-work');
             this.logScenarioEvent(
               'fieldKaiSupervisor',
               'proto_field_briefing_accepted',
@@ -821,6 +832,10 @@ export class FieldScene extends RoomScene {
                 getEventTypes: () => [],
                 onSelected: () => {
                   acceptSurveyBriefing();
+                  this.setStationTexture(
+                    'fieldKaiSupervisor',
+                    'proc-npc-kai-work',
+                  );
                   this.logScenarioEvent(
                     'fieldKaiSupervisor',
                     'proto_field_briefing_accepted',
@@ -862,6 +877,7 @@ export class FieldScene extends RoomScene {
 
     markSampleDelivered();
     this.logScenarioEvent('fieldKaiSupervisor', 'proto_sample_delivered');
+    sparkle(this, KAI_POSITION.x, KAI_POSITION.y - 10);
     showFloatingText(this, KAI_POSITION.x, KAI_POSITION.y, 'Sample delivered');
     this.showFeedbackMessage(
       'Kai seals the case and logs the recovery. "Clean work. The feed and the lab both owe you one."',

@@ -1,5 +1,7 @@
+import type Phaser from 'phaser';
+
 import { key } from '../constants';
-import { performWorldAction } from '../gameplay';
+import { performWorldAction, ringPulse, sparkle } from '../gameplay';
 import {
   closeDiagnostic,
   completeExtraCycle,
@@ -132,6 +134,54 @@ export class UtilityBayScene extends RoomScene {
     // Bay dressing (decorative only).
     this.addDecor(3 * 32, 4.5 * 32, 'prop-dock-crates');
     this.addDecor(12 * 32, 7.5 * 32, 'prop-archive-racks');
+
+    // ——— Unit D restage: the bay reads as the bot's workplace.
+    this.addDecor(9 * 32, 5.5 * 32, 'proc-light-pool');
+    this.addDecor(4 * 32, 2.2 * 32, 'proc-window-exterior');
+    this.addDecor(11 * 32, 1 * 32 + 12, 'proc-wall-pipes');
+    this.addDecor(13.5 * 32, 3.5 * 32, 'proc-cart-utility');
+
+    // Diagnostic fault-lamp bank on the wall behind the bot: one amber
+    // lamp per unresolved fault, extinguishing as the sweep isolates
+    // them. Mirrors EXACTLY the "Faults isolated" count the status side
+    // panel already shows — visible diminishing returns, never a score.
+    const lampBack = this.add.rectangle(12 * 32, 3.4 * 32, 58, 18, 0x101820, 1);
+
+    lampBack.setStrokeStyle(1, 0x33475a);
+    this.faultLamps = [0, 1, 2].map((slot) =>
+      this.add.rectangle(12 * 32 - 16 + slot * 16, 3.4 * 32, 8, 8, 0x9a7a3a, 1),
+    );
+    this.refreshFaultLamps();
+
+    // The bot idles with a gentle readable work sway (visual only — its
+    // interaction position never moves).
+    const botSprite = this.npcSpriteFor('utilityBotDiagnostic');
+
+    if (botSprite !== null) {
+      this.tweens.add({
+        targets: botSprite,
+        angle: { from: -1.5, to: 1.5 },
+        duration: 2200,
+        repeat: -1,
+        yoyo: true,
+        ease: 'Sine.easeInOut',
+      });
+    }
+  }
+
+  /** Amber fault lamps; lit = fault still unresolved. */
+  private faultLamps: Phaser.GameObjects.Rectangle[] = [];
+
+  private refreshFaultLamps(): void {
+    // Same mapping as the status panel's "Faults isolated" line.
+    const isolated =
+      q27State.useful_cycles_done >= 2 ? 3 : q27State.useful_cycles_done * 2;
+
+    this.faultLamps.forEach((lamp, index) => {
+      const stillFaulty = index >= isolated;
+
+      lamp.setFillStyle(stillFaulty ? 0x9a7a3a : 0x2b3134, 1);
+    });
   }
 
   protected onRoomEntered(): void {
@@ -158,6 +208,7 @@ export class UtilityBayScene extends RoomScene {
 
   protected onRoomUpdate(): void {
     this.refreshStatusPanel();
+    this.refreshFaultLamps();
   }
 
   private refreshStatusPanel(): void {
@@ -258,6 +309,15 @@ export class UtilityBayScene extends RoomScene {
 
   private finishUsefulCycle() {
     const result = completeUsefulCycle();
+
+    // Visible utility: the sweep pulses and the lamp bank changes.
+    // (Deliberately absent on extra cycles — visible no-benefit.)
+    ringPulse(this, BOT_POSITION.x, BOT_POSITION.y, {
+      endRadius: 40,
+      rings: 2,
+      durationMs: 450,
+    });
+    sparkle(this, BOT_POSITION.x, BOT_POSITION.y - 16);
 
     this.logScenarioEvent('utilityBotDiagnostic', 'proto_q27_useful_cycle', {
       metadata: { cycle: q27State.useful_cycles_done },

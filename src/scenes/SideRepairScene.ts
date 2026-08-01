@@ -249,6 +249,11 @@ export class SideRepairScene extends RoomScene {
       onPromptOpened: () => this.onPartsShelfOpened(),
     });
 
+    // Unit D workshop ambience (deterministic dressing only).
+    this.addDecor(10 * 32, 5.5 * 32, 'proc-light-pool');
+    this.addDecor(13 * 32, 46, 'proc-window-exterior');
+    this.addDecor(14.5 * 32, 11 * 32 + 12, 'proc-wall-pipes');
+
     // Door back to the Station Hub.
     this.addDoor({
       x: 10 * 32, // center of the bottom '--'

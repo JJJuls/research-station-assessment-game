@@ -789,6 +789,22 @@ export abstract class RoomScene extends Phaser.Scene {
   }
 
   /**
+   * Read access to a visible NPC's sprite for presentation-only tweens
+   * (Unit D: idle work sway). Never used for interaction geometry.
+   */
+  protected npcSpriteFor(
+    interactionKey: InteractionKey,
+  ): Phaser.GameObjects.Image | null {
+    for (const [config, npc] of this.npcActors) {
+      if (config.interactionKey === interactionKey) {
+        return npc.sprite;
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Swaps a station's rendered texture in place (Unit C: visible world
    * consequences — e.g. damaged machinery becoming repaired). Pure
    * presentation: position, interaction radius, label and events are

@@ -181,6 +181,62 @@ function drawNpcVale(g: Graphics) {
 }
 
 /**
+ * Unit D pose variants: reaction poses swapped in by scenes as tasks
+ * progress (art swaps never alter interaction regions). Each pose keeps
+ * its base silhouette and simply repaints one arm.
+ */
+
+/** Vale — kit acknowledged: right arm raised in a small wave. */
+function drawNpcValeReady(g: Graphics) {
+  drawNpcVale(g);
+  // Repaint the right arm raised (base arm at cx+9=29, top+14..26).
+  rect(g, 28, 18, 6, 9, VALE_SUIT); // clear the lowered arm area
+  box(g, 30, 6, 4, 12, VALE_SUIT_SHADE); // raised arm
+  box(g, 30, 3, 5, 4, NPC_SKIN); // open hand
+}
+
+/** Kai — surveying: tablet raised to chest, studying readings. */
+function drawNpcKaiWork(g: Graphics) {
+  drawNpcKai(g);
+  // Tablet lifted from hip to chest height, head angled toward it.
+  rect(g, 14, 25, 8, 11, KAI_SUIT); // clear the hip tablet
+  box(g, 16, 20, 9, 12, CARD);
+  rect(g, 17, 22, 7, 6, BORDER);
+  rect(g, 18, 23, 5, 1, MUTED);
+}
+
+/** Kai — job done: free arm raised in acknowledgement. */
+function drawNpcKaiDone(g: Graphics) {
+  drawNpcKai(g);
+  // Repaint the right arm raised (base arm at cx+9=41, top+14..26).
+  rect(g, 40, 18, 6, 9, KAI_SUIT); // clear the lowered arm area
+  box(g, 42, 6, 4, 12, KAI_SUIT_SHADE);
+  box(g, 42, 3, 5, 4, NPC_SKIN);
+}
+
+/**
+ * Final Core machinery column (Unit D): tall reactor stack with coolant
+ * rings and a dull teal core line — the chamber's visual mass. Decor
+ * only; the cyan-cued interactable stays the core interface.
+ */
+function drawCoreColumn(g: Graphics) {
+  // Column body.
+  box(g, 8, 6, 24, 78, CARD, BORDER);
+  // Core sight-line slot with dull teal glow.
+  rect(g, 17, 10, 6, 70, PANEL);
+  rect(g, 19, 12, 2, 66, 0x2e6b66);
+  // Coolant rings.
+  for (const y of [16, 34, 52, 70]) {
+    rect(g, 4, y, 32, 4, BORDER);
+    rect(g, 4, y, 32, 1, MUTED);
+  }
+  // Base skirt + feed pipes.
+  rect(g, 2, 84, 36, 4, OUTLINE);
+  rect(g, 12, 2, 4, 4, BORDER);
+  rect(g, 24, 2, 4, 4, BORDER);
+}
+
+/**
  * Wall-console family (Phase 2/4a): terminal-on-stand silhouette —
  * monitor head, pedestal, base. The screen carries the cyan emissive cue
  * (interactable stations only). Used by the Quartermaster Console and,
@@ -1032,7 +1088,11 @@ interface TextureBuilder {
  */
 const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   'proc-npc-kai': { width: 64, height: 64, draw: drawNpcKai },
+  'proc-npc-kai-work': { width: 64, height: 64, draw: drawNpcKaiWork },
+  'proc-npc-kai-done': { width: 64, height: 64, draw: drawNpcKaiDone },
   'proc-npc-vale': { width: 40, height: 56, draw: drawNpcVale },
+  'proc-npc-vale-ready': { width: 40, height: 56, draw: drawNpcValeReady },
+  'proc-core-column': { width: 40, height: 90, draw: drawCoreColumn },
   'proc-console-quartermaster': {
     width: 40,
     height: 56,

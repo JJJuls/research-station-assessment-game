@@ -183,11 +183,15 @@ export class HubScene extends RoomScene {
 
     // Quartermaster Vale — visible NPC at the requisition desk (SW area,
     // clear of the status board, allocation console, and every door path).
+    // Unit D: Vale visibly acknowledges a completed kit (pose swap only —
+    // position, radius, prompts and events unchanged).
     this.addNpc({
       interactionKey: 'hubQuartermasterVale',
       label: 'Quartermaster Vale',
       npcName: 'Quartermaster Vale',
-      texture: 'proc-npc-vale',
+      texture: isRequisitionKitComplete()
+        ? 'proc-npc-vale-ready'
+        : 'proc-npc-vale',
       x: 4.5 * 32,
       y: 10.75 * 32,
       onPromptOpened: () => this.onValeOpened(),
@@ -870,6 +874,11 @@ export class HubScene extends RoomScene {
               showFloatingText(this, lockerX, lockerY, `+ ${item.label}`);
 
               if (isRequisitionKitComplete()) {
+                // Vale visibly reacts to the completed kit (Unit D).
+                this.setStationTexture(
+                  'hubQuartermasterVale',
+                  'proc-npc-vale-ready',
+                );
                 this.showFeedbackMessage(
                   'Kit complete. The Exterior Airlock is on the south wall — the Survey Terrace is through it.',
                 );

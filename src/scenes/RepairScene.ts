@@ -289,6 +289,12 @@ export class RepairScene extends RoomScene {
       },
     });
 
+    // Unit D workshop ambience (deterministic dressing only).
+    this.addDecor(10 * 32, 5 * 32, 'proc-light-pool');
+    this.addDecor(13 * 32, 46, 'proc-window-exterior');
+    this.addDecor(5.5 * 32, 11 * 32 + 12, 'proc-wall-pipes');
+    this.addDecor(15 * 32, 9.5 * 32, 'proc-cart-utility');
+
     // Door back to the Station Hub. repair_abandoned fires on exit while
     // an attempt has failed and the repair is incomplete (room doc edge
     // case: "player leaves the repair unresolved").
