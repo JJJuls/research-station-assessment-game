@@ -14,7 +14,7 @@ was pushed, merged, tagged, deployed or removed.
 | `ec74722` | C    | Survey Terrace transformation: expanded snowfield, horizon habitat modules, deterministic snowfall, fading footprints, scan rings, dig spoil + camera kick + churned ground, damaged→repaired antenna                                                       |
 | `68ffd9d` | D    | NPC reactions (Vale/Kai pose progression), Utility Bay fault-lamp bank + bot work sway, Ops Annex physical Q32 lane pips + Q33 dossier stack, Final Core reactor columns + breathing glow, workshop ambience                                                |
 | `709cee7` | E    | Procedural WebAudio kit: ambience (hum/wind), footsteps, doors, UI ticks, pickup/scan/dig/install cues, uniform completion chime; mute toggle; reduced-motion support                                                                                       |
-| (Unit G)  | G    | Full-route visual capture spec + screenshots + this report; `completeDockTutorial` event-synced                                                                                                                                                             |
+| `e94d705` | G    | Full-route visual capture spec + 17 participant-view screenshots + this report; test-helper hardenings; deliberate texture-manifest pin update                                                                                                              |
 
 ## Asset provenance
 
