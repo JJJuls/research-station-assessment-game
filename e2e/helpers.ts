@@ -154,9 +154,15 @@ export async function waitForNthEvent(
  * doorway are load-independent.
  */
 
-/** Dock spawn -> Hub: straight up, clamps inside the top doorway. */
+/**
+ * Dock spawn -> Hub: straight up the door column. Position-synced
+ * (driveAxisTo) instead of a fixed-duration hold: under CPU load the old
+ * timed 2800ms leg under-delivered and left the player short of the hub
+ * door's 72px radius (the documented timed-leg failure mode) — observed
+ * again when the Stardew-quality ambience raised software-GL frame cost.
+ */
 export async function dockToHub(page: Page) {
-  await hold(page, 'ArrowUp', 2800);
+  await driveAxisTo(page, 'y', 60, 14);
   await press(page, 'Space');
   await waitForRoomEntry(page, 'station_hub_entered');
 }
@@ -780,8 +786,15 @@ export async function clickGameRect(
   };
   const before = await cardsSnapshot();
 
-  if (!(await settle(before, 4_000))) {
-    await settle(before, 6_000);
+  if (!(await settle(before, 8_000))) {
+    // Retry guard: re-snapshot first. If the first click's effect landed
+    // AFTER the settle window (slow frame under load), the probe has
+    // changed by now and a retry would double-select on the follow-up
+    // prompt — the observed wrong-item drift. Only a genuinely lost
+    // click (probe still identical) is retried.
+    if ((await cardsSnapshot()) === before) {
+      await settle(before, 6_000);
+    }
   }
 
   await page.waitForTimeout(200);

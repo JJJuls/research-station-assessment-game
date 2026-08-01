@@ -84,7 +84,7 @@ interface FigureStyle {
   suitShade: number;
   suitRim: number;
   /** Distinct silhouette element — never a palette-swap-only variant. */
-  accessory: 'tablet' | 'satchel';
+  accessory: 'tablet' | 'satchel' | 'crate' | 'mug';
 }
 
 /**
@@ -121,12 +121,23 @@ function drawFigure(g: Graphics, cx: number, top: number, style: FigureStyle) {
     // Slate work tablet held at the left hip (Kai).
     box(g, cx - 18, top + 20, 8, 11, CARD);
     rect(g, cx - 17, top + 22, 6, 5, BORDER);
-  } else {
+  } else if (style.accessory === 'satchel') {
     // Shoulder strap + hip satchel (the Quartermaster).
     rect(g, cx - 7, top + 12, 3, 18, suitShade);
     rect(g, cx - 7, top + 12, 1, 18, OUTLINE);
     box(g, cx + 8, top + 24, 9, 8, suitShade);
     rect(g, cx + 9, top + 25, 7, 2, OUTLINE);
+  } else if (style.accessory === 'crate') {
+    // Carried supply crate held in front (ambient hauler silhouette).
+    box(g, cx - 11, top + 16, 22, 12, CARD, MUTED);
+    rect(g, cx - 11, top + 21, 22, 1, OUTLINE);
+    rect(g, cx - 4, top + 18, 8, 2, BORDER);
+  } else {
+    // Clipboard held at the chest (ambient technician silhouette).
+    box(g, cx + 6, top + 17, 8, 11, MUTED);
+    rect(g, cx + 7, top + 19, 6, 1, PANEL);
+    rect(g, cx + 7, top + 22, 6, 1, PANEL);
+    rect(g, cx + 8, top + 15, 4, 2, BORDER);
   }
 }
 
@@ -729,6 +740,157 @@ function drawDeskClosure(g: Graphics) {
   rect(g, 26, 22, 4, 3, ACCENT);
 }
 
+/**
+ * Stardew-quality pass (Unit B): station-life dressing props. Same
+ * drawing language and determinism rules. All decorative — no cyan
+ * except tiny dull screen glows well below interactable-cue strength.
+ */
+
+/** Exterior window: frame, snowscape view, horizon ridge, glass shine. */
+function drawWindowExterior(g: Graphics) {
+  box(g, 2, 2, 44, 22, BORDER, MUTED);
+  // Snow sky + ground seen through the glass.
+  rect(g, 4, 4, 40, 9, 0x8fa8bd);
+  rect(g, 4, 13, 40, 9, 0xdde9f2);
+  // Distant ridge line.
+  rect(g, 7, 11, 9, 2, 0x5d6d80);
+  rect(g, 14, 10, 6, 3, 0x6a7b8f);
+  rect(g, 28, 11, 11, 2, 0x5d6d80);
+  // Mullions + glass shine.
+  rect(g, 23, 4, 2, 18, BORDER);
+  rect(g, 6, 5, 7, 1, 0xcfe4f0);
+  rect(g, 30, 6, 5, 1, 0xcfe4f0);
+}
+
+/** Wall pipe run: two pipes, brackets, one valve wheel. */
+function drawWallPipes(g: Graphics) {
+  rect(g, 1, 4, 46, 4, KAI_SUIT_SHADE);
+  rect(g, 1, 4, 46, 1, KAI_SUIT_RIM);
+  rect(g, 1, 11, 46, 3, MUTED);
+  rect(g, 1, 11, 46, 1, 0xb8c6d0);
+  // Brackets.
+  for (const x of [6, 22, 38]) {
+    rect(g, x, 2, 3, 14, BORDER);
+    rect(g, x, 2, 1, 14, OUTLINE);
+  }
+  // Valve wheel.
+  box(g, 29, 1, 8, 8, HAZARD_AMBER_SHADE);
+  rect(g, 32, 3, 2, 4, OUTLINE);
+}
+
+/** Crew bench seat: slab, legs, cushion strip. */
+function drawSeatBench(g: Graphics) {
+  box(g, 2, 6, 36, 8, VALE_SUIT, VALE_SUIT_RIM);
+  rect(g, 2, 10, 36, 1, VALE_SUIT_SHADE);
+  box(g, 5, 14, 5, 7, CARD);
+  box(g, 30, 14, 5, 7, CARD);
+}
+
+/** Hydroponics rack: two lit shelves of station greens (life accent). */
+function drawHydroponics(g: Graphics) {
+  box(g, 2, 2, 36, 38, CARD, BORDER);
+  // Shelf beds.
+  rect(g, 4, 14, 32, 3, BORDER);
+  rect(g, 4, 30, 32, 3, BORDER);
+  // Greens (the one place a living green appears — small and matte).
+  for (const [x, y, w] of [
+    [6, 10, 5],
+    [13, 9, 4],
+    [19, 11, 6],
+    [27, 9, 5],
+    [6, 26, 4],
+    [12, 25, 6],
+    [20, 27, 4],
+    [26, 25, 6],
+  ]) {
+    rect(g, x, y, w, 4, 0x4e7a52);
+    rect(g, x + 1, y - 1, w - 2, 1, 0x6b9a6e);
+  }
+  // Grow-light strips (dull warm, never cyan).
+  rect(g, 5, 5, 30, 1, 0xc9b268);
+  rect(g, 5, 21, 30, 1, 0xc9b268);
+}
+
+/** Galley counter: worktop, kettle, mugs, storage below. */
+function drawGalley(g: Graphics) {
+  // Kettle + mugs on top.
+  box(g, 8, 3, 9, 8, MUTED);
+  rect(g, 17, 5, 2, 3, MUTED);
+  rect(g, 24, 6, 4, 5, KAI_SUIT_SHADE);
+  rect(g, 31, 6, 4, 5, VALE_SUIT_SHADE);
+  // Counter top and body.
+  box(g, 2, 11, 44, 6, BORDER, MUTED);
+  box(g, 4, 17, 40, 15, CARD, BORDER);
+  rect(g, 23, 19, 2, 11, BORDER);
+  rect(g, 8, 22, 10, 2, MUTED);
+  rect(g, 30, 22, 10, 2, MUTED);
+}
+
+/** Reception desk: angled counter with terminal and ledger. */
+function drawDeskReception(g: Graphics) {
+  // Terminal + ledger on the counter.
+  box(g, 8, 2, 12, 9, CARD, BORDER);
+  rect(g, 10, 4, 8, 5, PANEL);
+  rect(g, 11, 5, 6, 1, ACCENT);
+  rect(g, 34, 5, 12, 6, MUTED);
+  rect(g, 35, 7, 10, 1, PANEL);
+  // Counter top with lighter working edge; panelled front.
+  box(g, 2, 11, 52, 7, BORDER, MUTED);
+  box(g, 4, 18, 48, 16, CARD, BORDER);
+  rect(g, 6, 21, 44, 1, BORDER);
+  rect(g, 18, 20, 2, 12, BORDER);
+  rect(g, 36, 20, 2, 12, BORDER);
+}
+
+/** Utility push-cart: tray, handle, wheels, loose parts. */
+function drawCartUtility(g: Graphics) {
+  rect(g, 8, 6, 7, 4, MUTED);
+  rect(g, 18, 5, 9, 5, KAI_SUIT_SHADE);
+  box(g, 4, 10, 32, 7, CARD, BORDER);
+  rect(g, 37, 4, 3, 13, BORDER);
+  rect(g, 36, 4, 5, 2, MUTED);
+  box(g, 6, 17, 28, 4, CARD);
+  rect(g, 8, 21, 5, 5, OUTLINE);
+  rect(g, 26, 21, 5, 5, OUTLINE);
+  rect(g, 9, 22, 2, 2, MUTED);
+  rect(g, 27, 22, 2, 2, MUTED);
+}
+
+/** Ambient worker A: hauler carrying a supply crate (slate-blue suit). */
+function drawWorkerHauler(g: Graphics) {
+  drawFigure(g, 20, 5, {
+    suit: 0x566a82,
+    suitShade: 0x44546a,
+    suitRim: 0x74889f,
+    accessory: 'crate',
+  });
+}
+
+/** Ambient worker B: technician with a clipboard (dust-violet suit). */
+function drawWorkerTech(g: Graphics) {
+  drawFigure(g, 20, 5, {
+    suit: 0x6a5f7a,
+    suitShade: 0x544a63,
+    suitRim: 0x897d9a,
+    accessory: 'mug',
+  });
+}
+
+/**
+ * Soft ceiling light pool: concentric low-alpha ellipses, tinted
+ * cool-white. Rendered UNDER props at low opacity — ambience only; it
+ * never highlights one interactable over another (uniform-salience).
+ */
+function drawLightPool(g: Graphics) {
+  const cx = 60;
+  const cy = 32;
+
+  for (let ring = 5; ring >= 1; ring--) {
+    g.fillStyle(0xdcecf4, 0.028 * (6 - ring));
+    g.fillEllipse(cx, cy, ring * 22, ring * 12);
+  }
+}
+
 /** Dig mound: broken frozen regolith with loose rocks. */
 function drawDigMound(g: Graphics) {
   rect(g, 6, 16, 28, 8, KAI_SUIT_SHADE);
@@ -865,6 +1027,17 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
     height: 24,
     draw: drawIconFluxCalibrator,
   },
+  // Stardew-quality pass (Unit B): station-life dressing props.
+  'proc-window-exterior': { width: 48, height: 26, draw: drawWindowExterior },
+  'proc-wall-pipes': { width: 48, height: 18, draw: drawWallPipes },
+  'proc-seat-bench': { width: 40, height: 22, draw: drawSeatBench },
+  'proc-hydroponics': { width: 40, height: 42, draw: drawHydroponics },
+  'proc-galley': { width: 48, height: 34, draw: drawGalley },
+  'proc-desk-reception': { width: 56, height: 36, draw: drawDeskReception },
+  'proc-cart-utility': { width: 42, height: 28, draw: drawCartUtility },
+  'proc-worker-hauler': { width: 40, height: 52, draw: drawWorkerHauler },
+  'proc-worker-tech': { width: 40, height: 52, draw: drawWorkerTech },
+  'proc-light-pool': { width: 120, height: 64, draw: drawLightPool },
   // Overnight-prototype field props.
   'proc-locker-field': { width: 48, height: 56, draw: drawLockerField },
   'proc-scan-node': { width: 34, height: 38, draw: drawScanNode },

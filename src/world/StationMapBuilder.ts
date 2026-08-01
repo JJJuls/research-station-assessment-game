@@ -188,30 +188,58 @@ export function buildPlaceholderRoomMap(
   // visuals, so collision footprints are structurally unchangeable by art.
   const themedKey =
     layout.theme !== undefined ? themeTilesetKey(layout.theme) : undefined;
+  const visualLayers: Phaser.Tilemaps.TilemapLayer[] = [];
+  const hasPad =
+    scene.textures.exists(DOCK_PAD_TILESET_KEY) &&
+    layout.grid.some((row) => row.includes('P'));
 
   if (themedKey !== undefined && scene.textures.exists(themedKey)) {
-    addWangVisualLayer(scene, layout, tileSize, themedKey);
-    addVariantOverlayLayer(scene, layout, tileSize);
+    visualLayers.push(addWangVisualLayer(scene, layout, tileSize, themedKey));
 
-    if (
-      scene.textures.exists(DOCK_PAD_TILESET_KEY) &&
-      layout.grid.some((row) => row.includes('P'))
-    ) {
-      addPadVisualLayer(scene, layout, tileSize);
+    const variantLayer = addVariantOverlayLayer(scene, layout, tileSize);
+
+    if (variantLayer !== null) {
+      visualLayers.push(variantLayer);
+    }
+
+    if (hasPad) {
+      visualLayers.push(addPadVisualLayer(scene, layout, tileSize));
     }
 
     layer.setVisible(false);
   } else if (scene.textures.exists(WANG_TILESET_KEY)) {
-    addWangVisualLayer(scene, layout, tileSize, WANG_TILESET_KEY);
+    visualLayers.push(
+      addWangVisualLayer(scene, layout, tileSize, WANG_TILESET_KEY),
+    );
 
-    if (
-      scene.textures.exists(DOCK_PAD_TILESET_KEY) &&
-      layout.grid.some((row) => row.includes('P'))
-    ) {
-      addPadVisualLayer(scene, layout, tileSize);
+    if (hasPad) {
+      visualLayers.push(addPadVisualLayer(scene, layout, tileSize));
     }
 
     layer.setVisible(false);
+  }
+
+  // Performance bake: the visual tile layers are fully static, so draw
+  // them once into a single RenderTexture and destroy the per-tile
+  // layers — one texture blit per frame instead of ~1000 tile quads
+  // (the software-GL verification environment cannot absorb per-tile
+  // rendering at the padded 25×19 room sizes). Purely presentational:
+  // pixels are identical, collision comes from the invisible logical
+  // layer either way.
+  if (visualLayers.length > 0) {
+    const half = tileSize / 2;
+    const cols = Math.max(...layout.grid.map((row) => row.length));
+    const rows = layout.grid.length;
+    const baked = scene.add
+      .renderTexture(-half, -half, (cols + 1) * tileSize, (rows + 1) * tileSize)
+      .setOrigin(0);
+
+    for (const visualLayer of visualLayers) {
+      baked.draw(visualLayer, visualLayer.x + half, visualLayer.y + half);
+      visualLayer.destroy();
+    }
+
+    baked.setDepth(-1);
   }
 
   return {
@@ -227,7 +255,7 @@ function addWangVisualLayer(
   layout: RoomLayout,
   tileSize: number,
   tilesetTextureKey: string,
-) {
+): Phaser.Tilemaps.TilemapLayer {
   const rows = layout.grid.length;
   const cols = Math.max(...layout.grid.map((row) => row.length));
 
@@ -278,6 +306,8 @@ function addWangVisualLayer(
   }
 
   visualLayer.setDepth(-1);
+
+  return visualLayer;
 }
 
 /**
@@ -291,12 +321,12 @@ function addVariantOverlayLayer(
   scene: Phaser.Scene,
   layout: RoomLayout,
   tileSize: number,
-) {
+): Phaser.Tilemaps.TilemapLayer | null {
   const theme = STATION_THEMES[layout.theme!];
   const stripKey = themeVariantsKey(theme.id);
 
   if (!scene.textures.exists(stripKey)) {
-    return;
+    return null;
   }
 
   const rows = layout.grid.length;
@@ -342,6 +372,8 @@ function addVariantOverlayLayer(
   }
 
   overlayLayer.setDepth(-0.9);
+
+  return overlayLayer;
 }
 
 /**
@@ -363,7 +395,7 @@ function addPadVisualLayer(
   scene: Phaser.Scene,
   layout: RoomLayout,
   tileSize: number,
-) {
+): Phaser.Tilemaps.TilemapLayer {
   const rows = layout.grid.length;
   const cols = Math.max(...layout.grid.map((row) => row.length));
 
@@ -406,4 +438,6 @@ function addPadVisualLayer(
   }
 
   padLayer.setDepth(-0.5);
+
+  return padLayer;
 }

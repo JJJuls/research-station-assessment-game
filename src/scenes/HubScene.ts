@@ -1,5 +1,6 @@
 import { key } from '../constants';
 import {
+  AmbientWorker,
   collectLockerItem,
   FIELD_REQUISITION_TASK_ID,
   getGameItem,
@@ -306,6 +307,80 @@ export class HubScene extends RoomScene {
     this.addDecor(23.5 * 32, 3 * 32, 'prop-archive-racks');
     this.addDecor(19 * 32, 12.75 * 32, 'prop-dock-crates');
     this.addDecor(9 * 32, 12.75 * 32, 'prop-archive-racks');
+
+    // ——— Stardew-quality pass (Unit B): the hub as the centre of
+    // station life. Everything below is deterministic set dressing —
+    // fixed positions/loops, no collision, no interaction, no logging.
+
+    // Soft ceiling light pools (under props; ambience only).
+    this.addDecor(13 * 32, 7.2 * 32, 'proc-light-pool');
+    this.addDecor(4.4 * 32, 10.6 * 32, 'proc-light-pool');
+    this.addDecor(21.5 * 32, 5 * 32, 'proc-light-pool');
+    this.addDecor(13 * 32, 13 * 32, 'proc-light-pool');
+
+    // Exterior windows on the top wall between the door ring frames.
+    this.addDecor(7 * 32, 46, 'proc-window-exterior');
+    this.addDecor(13 * 32, 46, 'proc-window-exterior');
+    this.addDecor(19 * 32, 46, 'proc-window-exterior');
+
+    // Service pipes along the bottom wall face.
+    this.addDecor(9 * 32, 14 * 32 + 12, 'proc-wall-pipes');
+    this.addDecor(15.5 * 32, 14 * 32 + 12, 'proc-wall-pipes');
+
+    // Reception counter east of the Dock airlock (arrival function).
+    this.addDecor(15.5 * 32, 13 * 32, 'proc-desk-reception');
+
+    // Crew corner (NE): galley, seating, hydroponics greens.
+    this.addDecor(21.9 * 32, 4.6 * 32, 'proc-galley');
+    this.addDecor(23.1 * 32, 6 * 32, 'proc-seat-bench');
+    this.addDecor(20.6 * 32, 6.1 * 32, 'proc-seat-bench');
+    this.addDecor(8.5 * 32, 2.4 * 32, 'proc-hydroponics');
+
+    // Parked utility cart on the SE work floor.
+    this.addDecor(19.4 * 32, 11 * 32, 'proc-cart-utility');
+
+    // Small console status LEDs on the central block (dull tones only —
+    // static positions, gentle alpha pulse; never the interactable cyan).
+    for (const [x, y, color] of [
+      [11.7 * 32, 8.85 * 32, 0x8a6a35],
+      [14.3 * 32, 8.85 * 32, 0x3e6b74],
+    ] as const) {
+      const led = this.add.rectangle(x, y, 3, 3, color, 1);
+
+      this.tweens.add({
+        targets: led,
+        alpha: { from: 1, to: 0.35 },
+        duration: 1600,
+        repeat: -1,
+        yoyo: true,
+        ease: 'Sine.easeInOut',
+      });
+    }
+
+    // Two ambient crew members on fixed patrol loops (pure decor; their
+    // paths cross no station approach and they are never interactables).
+    new AmbientWorker({
+      scene: this,
+      texture: 'proc-worker-hauler',
+      waypoints: [
+        { x: 20 * 32, y: 4.4 * 32 },
+        { x: 23 * 32, y: 4.4 * 32 },
+        { x: 23 * 32, y: 7.2 * 32 },
+        { x: 20 * 32, y: 7.2 * 32 },
+      ],
+    });
+    new AmbientWorker({
+      scene: this,
+      texture: 'proc-worker-tech',
+      speed: 34,
+      pauseMs: 1500,
+      waypoints: [
+        { x: 4 * 32, y: 4.7 * 32 },
+        { x: 8 * 32, y: 4.7 * 32 },
+        { x: 8 * 32, y: 7 * 32 },
+        { x: 4 * 32, y: 7 * 32 },
+      ],
+    });
 
     this.addStation({
       interactionKey: 'stationHub',

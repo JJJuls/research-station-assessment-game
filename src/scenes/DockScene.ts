@@ -130,6 +130,36 @@ export class DockScene extends RoomScene {
     // would let the player walk through it (visual-integrity rule).
     this.addDecor(8.5 * 32, 7 * 32, 'prop-dock-crates');
 
+    // Stardew-quality pass (Unit B): arrival-bay ambience. Deterministic
+    // dressing only — fixed positions, no collision, no interaction.
+    this.addDecor(3 * 32, 3.4 * 32, 'proc-light-pool');
+    this.addDecor(12 * 32, 10 * 32, 'proc-light-pool');
+    this.addDecor(17 * 32, 46, 'proc-window-exterior');
+    this.addDecor(20.5 * 32, 46, 'proc-window-exterior');
+    this.addDecor(4.5 * 32, 12 * 32 + 10, 'proc-wall-pipes');
+    this.addDecor(19.5 * 32, 12 * 32 + 10, 'proc-wall-pipes');
+    this.addDecor(20.5 * 32, 3 * 32, 'proc-cart-utility');
+
+    // Landing-pad edge beacons: four dull-amber marker lights breathing
+    // slowly. Ambience only (never cyan, far dimmer than interactables).
+    for (const [x, y] of [
+      [9.4 * 32, 9.4 * 32],
+      [14.6 * 32, 9.4 * 32],
+      [9.4 * 32, 11.6 * 32],
+      [14.6 * 32, 11.6 * 32],
+    ] as const) {
+      const beacon = this.add.rectangle(x, y, 4, 4, 0x9a7a3a, 0.9);
+
+      this.tweens.add({
+        targets: beacon,
+        alpha: { from: 0.9, to: 0.3 },
+        duration: 2100,
+        repeat: -1,
+        yoyo: true,
+        ease: 'Sine.easeInOut',
+      });
+    }
+
     // Highlighted movement target (V3 Room 0 mini-game: "movement to
     // highlighted target"). Reaching it is a mechanic, not an event — no
     // canonical event exists for it and none is invented.

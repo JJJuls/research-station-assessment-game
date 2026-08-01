@@ -4,6 +4,8 @@ export {
   resetWorldActionState,
   showFloatingText,
 } from './actions';
+export type { AmbientWorkerConfig } from './AmbientWorker';
+export { AmbientWorker } from './AmbientWorker';
 export {
   addInventoryItem,
   getInventoryItems,

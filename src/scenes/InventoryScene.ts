@@ -260,6 +260,16 @@ export class InventoryScene extends RoomScene {
     this.addDecor(96, 128, 'prop-dock-crates');
     this.addDecor(512, 128, 'prop-archive-shelves');
 
+    // Stardew-quality pass (Unit B): workshop ambience — light pools,
+    // an exterior window, service pipes. Deterministic dressing only.
+    this.addDecor(10 * 32, 5 * 32, 'proc-light-pool');
+    this.addDecor(16 * 32, 7.5 * 32, 'proc-light-pool');
+    this.addDecor(6 * 32, 10 * 32, 'proc-light-pool');
+    this.addDecor(7 * 32, 46, 'proc-window-exterior');
+    this.addDecor(13 * 32, 46, 'proc-window-exterior');
+    this.addDecor(4 * 32, 11 * 32 + 12, 'proc-wall-pipes');
+    this.addDecor(15 * 32, 11 * 32 + 12, 'proc-wall-pipes');
+
     // Door back to the Station Hub.
     this.addDoor({
       x: 10 * 32, // center of the bottom '--'
@@ -278,6 +288,82 @@ export class InventoryScene extends RoomScene {
     this.prepStatusPanel = this.addStatusSidePanel();
     this.prepStatusValue = '';
     this.refreshPrepStatusPanel();
+    this.refreshBenchDisplay();
+  }
+
+  /**
+   * Stardew-quality pass (Unit B): staged gear rendered ON the prep bench,
+   * one icon per item currently at 'prep_bench' — items visibly leave the
+   * bench when picked up and return when set down. Pure presentation over
+   * kitPreparationState, change-detected per frame. Shows exactly the
+   * information the SA-11-constrained side panel already shows (bench
+   * membership) — never bin/kit contents, never correctness.
+   */
+  private benchDisplayIcons: Phaser.GameObjects.Image[] = [];
+  private benchDisplayValue = '__unset__';
+
+  private refreshBenchDisplay(): void {
+    const bench = itemsAtLocation('prep_bench');
+    const signature = bench.join(',');
+
+    if (signature === this.benchDisplayValue) {
+      return;
+    }
+
+    this.benchDisplayValue = signature;
+
+    for (const icon of this.benchDisplayIcons) {
+      icon.destroy();
+    }
+
+    this.benchDisplayIcons = [];
+
+    // Bench prop centre (16*32, 7.5*32); tabletop upper band. Up to 8
+    // icons in two rows of four across the tabletop.
+    bench.forEach((itemId, index) => {
+      const iconKey = itemIconTextureKey(itemId);
+
+      if (!this.textures.exists(iconKey)) {
+        return;
+      }
+
+      const col = index % 4;
+      const row = Math.floor(index / 4);
+
+      this.benchDisplayIcons.push(
+        this.add
+          .image(16 * 32 - 27 + col * 18, 7.5 * 32 - 12 + row * 16, iconKey)
+          .setScale(0.7),
+      );
+    });
+  }
+
+  /**
+   * Carried-item bubble: the item in hand rides beside the player —
+   * immediate physical carrying feedback (§11). Mirrors the side panel's
+   * "Carried:" line only.
+   */
+  private carriedBubble: Phaser.GameObjects.Image | null = null;
+  private carriedBubbleItem: string | null = null;
+
+  private refreshCarriedBubble(): void {
+    const carried = carriedItemId();
+
+    if (carried !== this.carriedBubbleItem) {
+      this.carriedBubbleItem = carried;
+      this.carriedBubble?.destroy();
+      this.carriedBubble = null;
+
+      if (carried !== null) {
+        const iconKey = itemIconTextureKey(carried);
+
+        if (this.textures.exists(iconKey)) {
+          this.carriedBubble = this.add.image(0, 0, iconKey).setScale(0.8);
+        }
+      }
+    }
+
+    this.carriedBubble?.setPosition(this.player.x + 16, this.player.y - 30);
   }
 
   /**
@@ -326,6 +412,8 @@ export class InventoryScene extends RoomScene {
 
   protected onRoomUpdate(): void {
     this.refreshPrepStatusPanel();
+    this.refreshBenchDisplay();
+    this.refreshCarriedBubble();
   }
 
   protected onRoomExit(): void {

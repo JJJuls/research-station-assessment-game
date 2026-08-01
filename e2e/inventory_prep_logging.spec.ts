@@ -836,6 +836,17 @@ test.describe('inventory prep logging', () => {
     // render as INERT tray rows; panel still fits; an inert click is a
     // no-op (no event, prompt unchanged).
     await press(page, 'Space');
+    // Under software-GL load the prompt can render after press()'s fixed
+    // settle; wait for the surface probe itself before asserting content.
+    await page
+      .waitForFunction(
+        () =>
+          (window as unknown as { __minigameSurface?: unknown[] | null })
+            .__minigameSurface != null,
+        undefined,
+        { timeout: 8_000 },
+      )
+      .catch(() => {});
 
     const carryingSurface = await getMinigameSurface(page);
     const trayRows = carryingSurface?.filter((e) => e.kind === 'tray') ?? [];
