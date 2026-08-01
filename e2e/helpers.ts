@@ -328,6 +328,7 @@ export async function driveAxisTo(
   tolerance: number,
 ) {
   let previous: number | null = null;
+  let stalledBursts = 0;
 
   for (let burst = 0; burst < 80; burst++) {
     const probe = await playerProbe(page);
@@ -339,11 +340,20 @@ export async function driveAxisTo(
     if (Math.abs(current - target) <= tolerance) {
       return;
     }
-    // Advanced < 2px since the last burst => clamped against a wall on this
-    // axis; this is as close as the axis can get, so stop (the caller's
-    // waypoints are chosen so a wall clamp lands inside range).
+    // Advanced < 2px since the last burst => clamped against a wall on
+    // this axis — but ONE stalled read can also be a dead frame window
+    // under load (observed live: the first 150ms burst right after a
+    // scene entry lands entirely between throttled frames and the leg
+    // aborts at the spawn). Require TWO consecutive stalled reads before
+    // treating it as a genuine wall clamp.
     if (previous !== null && Math.abs(current - previous) < 2) {
-      return;
+      stalledBursts += 1;
+
+      if (stalledBursts >= 2) {
+        return;
+      }
+    } else {
+      stalledBursts = 0;
     }
     previous = current;
 

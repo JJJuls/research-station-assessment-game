@@ -2030,6 +2030,31 @@
     "m": []
   },
   {
+    "t": "proto_q02_review_entered",
+    "k": [
+      "choice_value",
+      "condition",
+      "elapsed_seconds",
+      "episode",
+      "event_type",
+      "game_session_id",
+      "game_version",
+      "metadata",
+      "object_id",
+      "participant_id",
+      "room_id",
+      "scene",
+      "score_delta",
+      "session_id",
+      "study_item_ids",
+      "task_id",
+      "timestamp_ms",
+      "x",
+      "y"
+    ],
+    "m": ["issue_lines", "misplaced", "missing_from_kit", "still_out"]
+  },
+  {
     "t": "inventory_verified_complete",
     "k": [
       "condition",

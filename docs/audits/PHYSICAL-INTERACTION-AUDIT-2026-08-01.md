@@ -63,3 +63,36 @@ resolves an open decision.
   INT-1..INT-6 — all remain with the research owner. No canonical event
   name, payload, formula, weight or registration is added or changed in
   this session; every new runtime identifier is `proto_*` provisional.
+
+## End-of-session status addendum (post-implementation)
+
+Delivered this session (all proto\_\*, all provisional, focused specs green):
+
+- Q01 — PHYS: bench stock as manipulable world objects; placements converge
+  on the unchanged canonical emission points; card flow = keyboard path.
+- Q02 — review window unchanged; physical re-placement correction;
+  proto_q02_review_entered raw marker (window declarations still open).
+- Q03 — PHYS: tray-to-drawer stow (drag + click) and direct drawer-cell
+  retrieval over the same q03 state/proto events.
+- Q04 — PHYS NEW: standardised field work-site cleanup instance
+  (q04-field-mess-v1) with own proto*q04*\* family; legacy card stage and
+  canonical streams untouched.
+- Q16 — PHYS NEW: Ridge Annex artifact-survey candidate (q16-survey-v1):
+  brief → 6 fixed scans → 3 digs → collect → tray placement (correctable)
+  → manifest check → report; fully isolated event family + SA-13 record.
+- Q21 — visible machine consequence (fault → sealed) over unchanged
+  semantics. Q23 — NEW separately bounded Auxiliary Intake Rig candidate
+  (identical vs unguided vs gauge-informed acts distinct; zero canonical
+  repair events both ways). Q26 — verified cycle semantics beside the rig.
+  Q27 — switch-to-useful-action route (bay console) added to the window;
+  everything else unchanged.
+- Free play — post-assessment ice-bore salvage, locked until Final Core
+  (or DEV ?freeplay); deterministic seeded deck; zero primary contact.
+- Presentation — animated tool actions, two-frame NPC work cycles,
+  ambient stride sway, ~40 new deterministic textures (manifest-pinned).
+
+Still card-based/blocked, unchanged (deliberately): Q05 (D3), Q06/Q08,
+Q09, Q10, Q12, Q13, Q14, Q15/Q17/Q19, Q22, Q24/Q25 (D4), Q29/Q31, Q30,
+Q32, Q33 (both exploratory modules keep their physical state displays),
+Q18/Q20 questionnaire-primary. All shared-stream ownership splits and
+SA-7..SA-11 / D2-D8 / INT-1..INT-6 remain research-owner decisions.

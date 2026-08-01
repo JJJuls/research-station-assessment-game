@@ -48,8 +48,8 @@ async function inventorySlots(page: import('@playwright/test').Page) {
  * row 9, then down the clear col-2 column (row-11 rocks flank col 3).
  */
 async function walkToBore(page: import('@playwright/test').Page) {
-  await driveAxisTo(page, 'y', 331, 10); // row 10 (clears the row-8 rocks)
-  await driveAxisTo(page, 'x', 80, 8); // col-2 corridor
+  await driveAxisTo(page, 'y', 318, 8); // row 10 (clears the row-8 rocks)
+  await driveAxisTo(page, 'x', 80, 6); // col-2 corridor
   await driveAxisTo(page, 'y', 430, 14); // descend; clamps in bore range
 }
 
