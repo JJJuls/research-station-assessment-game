@@ -1,5 +1,13 @@
 import Phaser from 'phaser';
 
+import type { StationThemeId } from './proceduralTilesets';
+import {
+  STATION_THEMES,
+  THEME_VARIANT_FRAMES,
+  themeTilesetKey,
+  themeVariantsKey,
+} from './proceduralTilesets';
+
 /**
  * Programmatic room-map construction for the connected station world.
  *
@@ -20,6 +28,14 @@ import Phaser from 'phaser';
 export interface RoomLayout {
   grid: string[];
   tileSize?: number;
+  /**
+   * Station theme: selects the procedurally generated per-room tileset
+   * (proceduralTilesets.ts) for the dual-grid VISUAL layer plus the
+   * floor-variation overlay. Pure presentation — collision comes from the
+   * invisible logical layer either way. Omitted → committed v3 art (when
+   * loaded) → flat placeholder, exactly as before.
+   */
+  theme?: StationThemeId;
 }
 
 export interface BuiltRoomMap {
@@ -166,11 +182,27 @@ export function buildPlaceholderRoomMap(
 
   layer.setCollision(TILE_WALL);
 
-  // Phase F art swap: when the PixelLab Wang tileset is loaded, render it
-  // on a dual-grid layer and hide (never remove) the collision layer's
-  // visuals. Placeholder fallback stays fully functional without assets.
-  if (scene.textures.exists(WANG_TILESET_KEY)) {
-    addWangVisualLayer(scene, layout, tileSize);
+  // Visual layer preference: per-room THEME tileset (procedural foundry)
+  // → committed v3 Wang art → flat placeholder. Either art path renders on
+  // a dual-grid layer and hides (never removes) the collision layer's
+  // visuals, so collision footprints are structurally unchangeable by art.
+  const themedKey =
+    layout.theme !== undefined ? themeTilesetKey(layout.theme) : undefined;
+
+  if (themedKey !== undefined && scene.textures.exists(themedKey)) {
+    addWangVisualLayer(scene, layout, tileSize, themedKey);
+    addVariantOverlayLayer(scene, layout, tileSize);
+
+    if (
+      scene.textures.exists(DOCK_PAD_TILESET_KEY) &&
+      layout.grid.some((row) => row.includes('P'))
+    ) {
+      addPadVisualLayer(scene, layout, tileSize);
+    }
+
+    layer.setVisible(false);
+  } else if (scene.textures.exists(WANG_TILESET_KEY)) {
+    addWangVisualLayer(scene, layout, tileSize, WANG_TILESET_KEY);
 
     if (
       scene.textures.exists(DOCK_PAD_TILESET_KEY) &&
@@ -194,6 +226,7 @@ function addWangVisualLayer(
   scene: Phaser.Scene,
   layout: RoomLayout,
   tileSize: number,
+  tilesetTextureKey: string,
 ) {
   const rows = layout.grid.length;
   const cols = Math.max(...layout.grid.map((row) => row.length));
@@ -218,8 +251,8 @@ function addWangVisualLayer(
     height: rows + 1,
   });
   const tileset = visualMap.addTilesetImage(
-    WANG_TILESET_KEY,
-    WANG_TILESET_KEY,
+    tilesetTextureKey,
+    tilesetTextureKey,
     tileSize,
     tileSize,
     0,
@@ -245,6 +278,70 @@ function addWangVisualLayer(
   }
 
   visualLayer.setDepth(-1);
+}
+
+/**
+ * Floor-variation overlay: one tile-aligned decal layer over themed
+ * floors, breaking up plate repetition (vents, wear, cabling, drifts).
+ * Frame choice is a pure hash of the CELL COORDINATES and the theme seed —
+ * deterministic, identical for every participant and session, and purely
+ * decorative (never collides, never marks interactables).
+ */
+function addVariantOverlayLayer(
+  scene: Phaser.Scene,
+  layout: RoomLayout,
+  tileSize: number,
+) {
+  const theme = STATION_THEMES[layout.theme!];
+  const stripKey = themeVariantsKey(theme.id);
+
+  if (!scene.textures.exists(stripKey)) {
+    return;
+  }
+
+  const rows = layout.grid.length;
+  const cols = Math.max(...layout.grid.map((row) => row.length));
+  const overlayMap = scene.make.tilemap({
+    tileWidth: tileSize,
+    tileHeight: tileSize,
+    width: cols,
+    height: rows,
+  });
+  const tileset = overlayMap.addTilesetImage(
+    stripKey,
+    stripKey,
+    tileSize,
+    tileSize,
+    0,
+    0,
+  )!;
+  const overlayLayer = overlayMap.createBlankLayer('floor-variants', tileset)!;
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const ch = layout.grid[y][x];
+
+      if (ch !== '.' && ch !== 'P') {
+        continue;
+      }
+
+      // Deterministic coordinate hash (no randomness at runtime).
+      const h =
+        (Math.imul(x + 1, 73856093) ^
+          Math.imul(y + 1, 19349663) ^
+          theme.seed) >>>
+        0;
+
+      // ~62% of floor cells stay plain; the rest take one decal frame.
+      if (h % 100 < 62) {
+        continue;
+      }
+
+      overlayLayer.putTileAt(1 + (h % (THEME_VARIANT_FRAMES - 1)), x, y);
+    }
+  }
+
+  overlayLayer.setDepth(-0.9);
 }
 
 /**

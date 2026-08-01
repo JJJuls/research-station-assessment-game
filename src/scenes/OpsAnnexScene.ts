@@ -77,6 +77,7 @@ export class OpsAnnexScene extends RoomScene {
     // the viewport so no dead black void renders (Unit 4) —
     // unreachable, no interior change.
     return {
+      theme: 'ops',
       grid: [
         '#########################',
         '########--###############',

@@ -6,6 +6,14 @@ export {
   itemIconTextureKey,
   PROCEDURAL_TEXTURE_MANIFEST,
 } from './proceduralTextures';
+export type { StationTheme, StationThemeId } from './proceduralTilesets';
+export {
+  ensureThemeTilesets,
+  STATION_THEMES,
+  THEME_VARIANT_FRAMES,
+  themeTilesetKey,
+  themeVariantsKey,
+} from './proceduralTilesets';
 export type {
   InteractionKey,
   PromptOption,

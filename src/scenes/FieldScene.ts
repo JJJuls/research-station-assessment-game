@@ -94,6 +94,7 @@ export class FieldScene extends RoomScene {
     // 800×600 viewport so no dead black void renders (Unit 4) — it is
     // unreachable and changes no interior coordinate.
     return {
+      theme: 'exterior',
       grid: [
         '#########################',
         '#########--##############',

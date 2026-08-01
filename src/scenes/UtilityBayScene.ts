@@ -64,6 +64,7 @@ export class UtilityBayScene extends RoomScene {
     // interior; the extra wall mass fills the viewport so no dead black
     // void renders (Unit 4) — unreachable, no interior change.
     return {
+      theme: 'utility',
       grid: [
         '#########################',
         '#####--##################',

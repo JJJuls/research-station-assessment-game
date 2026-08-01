@@ -15,6 +15,7 @@ import {
   DOCK_PAD_TILESET_KEY,
   DOCK_PAD_TILESET_URL,
   ensureProceduralTextures,
+  ensureThemeTilesets,
   PROCEDURAL_TEXTURE_MANIFEST,
   registerBuiltStationRoutes,
   resolveStartSceneKey,
@@ -78,6 +79,10 @@ export class Boot extends Scene {
     // NEXT-07 procedural texture foundry: all proc-* textures generate
     // once, deterministically, before any room scene starts.
     const generated = ensureProceduralTextures(this);
+
+    // Stardew-quality pass: per-theme room tilesets + floor-variation
+    // strips (proceduralTilesets.ts) — same determinism rules.
+    ensureThemeTilesets(this);
 
     // DEV-only determinism probe (read-only, __playerProbe precedent):
     // the second ensure call must add nothing (idempotence), and every

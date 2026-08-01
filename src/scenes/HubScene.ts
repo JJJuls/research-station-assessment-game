@@ -83,6 +83,7 @@ export class HubScene extends RoomScene {
     // the top wall, one on each side wall at rows 6 and 9, central
     // console block.
     return {
+      theme: 'hub',
       grid: [
         '##########################',
         '###--####--####--####--###',
@@ -99,6 +100,9 @@ export class HubScene extends RoomScene {
         '#........................#',
         '#........................#',
         '#####--#####--###--##--###',
+        '##########################',
+        '##########################',
+        '##########################',
         '##########################',
       ],
     };

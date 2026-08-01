@@ -19,6 +19,7 @@ import { state } from '../state';
 import { researchRuntime } from '../systems';
 import type { CanonicalEventContext } from './CanonicalEventContext';
 import { CANONICAL_EVENT_CONTEXT } from './CanonicalEventContext';
+import { STATION_THEMES } from './proceduralTilesets';
 import type { RoomTransitionTarget } from './SceneRouter';
 import { transitionToRoom } from './SceneRouter';
 import type { BuiltRoomMap, RoomLayout } from './StationMapBuilder';
@@ -469,7 +470,18 @@ export abstract class RoomScene extends Phaser.Scene {
     noteRoomEntered(this.roomId);
     refreshValidityProbe();
 
-    this.roomMap = buildPlaceholderRoomMap(this, this.getLayout());
+    const layout = this.getLayout();
+
+    this.roomMap = buildPlaceholderRoomMap(this, layout);
+
+    // Themed rooms tint the camera clear colour so any area beyond the
+    // map bounds reads as that room's ambience, never a raw black band.
+    if (layout.theme !== undefined) {
+      this.cameras.main.setBackgroundColor(
+        STATION_THEMES[layout.theme].voidColor,
+      );
+    }
+
     this.physics.world.setBounds(
       0,
       0,
