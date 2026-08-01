@@ -1,4 +1,5 @@
 import { key } from '../constants';
+import type { PhysicalPlacement } from '../gameplay';
 import {
   AmbientWorker,
   collectLockerItem,
@@ -8,11 +9,13 @@ import {
   isRequisitionKitComplete,
   isRouteFinished,
   performWorldAction,
+  PhysicalManipulationLayer,
   refreshRequisitionObjective,
   registerRouteTasks,
   remainingLockerItems,
   sfxComplete,
   sfxPickup,
+  sfxUiSelect,
   showFloatingText,
 } from '../gameplay';
 import {
@@ -24,6 +27,7 @@ import {
 import {
   assignCounterbalance,
   declareOpportunity,
+  getQ03Tool,
   getQ30Instance,
   getRoomEntryLog,
   markOpportunityCompleted,
@@ -36,6 +40,7 @@ import {
   Q03_ENTRY_STATE_VERSION,
   Q03_OPPORTUNITY_ID,
   Q03_SLOTS,
+  Q03_TOOLS,
   q03RetrievalEligible,
   q03RetrievalSummary,
   q03State,
@@ -281,6 +286,7 @@ export class HubScene extends RoomScene {
       y: 10 * 32,
       onPromptOpened: () => this.onCabinetOpened(),
     });
+    this.initQ03Physical();
 
     // ——— Unit 3: Q30 instance 1 — Work Order Board (SA-4).
     declareOpportunity({
@@ -557,21 +563,7 @@ export class HubScene extends RoomScene {
           feedback: `The ${tool.label} is stowed.`,
           getEventTypes: () => [],
           onSelected: () => {
-            stowQ03Tool(tool.tool_id, slot.slot_id);
-            this.logScenarioEvent(
-              'hubCalibrationCabinet',
-              'proto_q03_tool_stowed',
-              { metadata: { tool_id: tool.tool_id, slot_id: slot.slot_id } },
-            );
-
-            if (q03State.stow_completed) {
-              completeTask('proto_bench_stowage');
-              this.logScenarioEvent(
-                'hubCalibrationCabinet',
-                'proto_q03_stow_completed',
-                { metadata: { stowed: { ...q03State.stowed } } },
-              );
-            }
+            this.applyQ03Stow(tool.tool_id, slot.slot_id);
           },
         })),
       }),
@@ -592,33 +584,7 @@ export class HubScene extends RoomScene {
       feedback: '',
       getEventTypes: () => [],
       onSelected: () => {
-        const found = openQ03Slot(slot.slot_id);
-
-        this.logScenarioEvent(
-          'hubCalibrationCabinet',
-          'proto_q03_slot_opened',
-          {
-            metadata: { slot_id: slot.slot_id, contained_target: found },
-          },
-        );
-
-        if (found) {
-          completeTask('proto_bench_retrieval');
-          markOpportunityCompleted(Q03_OPPORTUNITY_ID);
-          this.logScenarioEvent(
-            'hubCalibrationCabinet',
-            'proto_q03_retrieved',
-            {
-              metadata: { ...q03RetrievalSummary() },
-            },
-          );
-          refreshValidityProbe();
-          this.showFeedbackMessage(
-            'The Flux Calibrator goes into the bench chute. Request cleared.',
-          );
-        } else {
-          this.showFeedbackMessage('Not in this compartment.');
-        }
+        this.applyQ03Open(slot.slot_id);
       },
     }));
 
@@ -629,6 +595,217 @@ export class HubScene extends RoomScene {
     });
 
     return options;
+  }
+
+  /**
+   * Shared Q03 stow act (Unit 2): card path and physical drawer path both
+   * converge here — one stow = one state change + one proto event,
+   * whichever input produced it.
+   */
+  private applyQ03Stow(toolId: string, slotId: string) {
+    stowQ03Tool(toolId, slotId);
+    this.logScenarioEvent('hubCalibrationCabinet', 'proto_q03_tool_stowed', {
+      metadata: { tool_id: toolId, slot_id: slotId },
+    });
+
+    if (q03State.stow_completed) {
+      completeTask('proto_bench_stowage');
+      this.logScenarioEvent(
+        'hubCalibrationCabinet',
+        'proto_q03_stow_completed',
+        { metadata: { stowed: { ...q03State.stowed } } },
+      );
+    }
+  }
+
+  /** Shared Q03 retrieval open act (card + physical paths converge). */
+  private applyQ03Open(slotId: string) {
+    if (q03State.retrieval_completed) {
+      return;
+    }
+
+    const found = openQ03Slot(slotId);
+
+    this.logScenarioEvent('hubCalibrationCabinet', 'proto_q03_slot_opened', {
+      metadata: { slot_id: slotId, contained_target: found },
+    });
+
+    if (found) {
+      completeTask('proto_bench_retrieval');
+      markOpportunityCompleted(Q03_OPPORTUNITY_ID);
+      this.logScenarioEvent('hubCalibrationCabinet', 'proto_q03_retrieved', {
+        metadata: { ...q03RetrievalSummary() },
+      });
+      refreshValidityProbe();
+      this.showFeedbackMessage(
+        'The Flux Calibrator goes into the bench chute. Request cleared.',
+      );
+    } else {
+      this.showFeedbackMessage('Not in this compartment.');
+    }
+  }
+
+  // ————— Physical-mechanics session (Unit 2): Q03 physical cabinet —————
+
+  /**
+   * Direct-manipulation upgrade of the SA-12 cabinet: the three returned
+   * tools sit on a return tray as loose world objects; the participant
+   * physically carries each to one of four visible drawer cells (stow),
+   * and later opens drawer cells directly to search for the requested
+   * tool (retrieval). Both physical acts converge on the SAME state
+   * functions and proto events as the card path, which remains the
+   * keyboard-accessible equivalent. Drawer contents are never displayed;
+   * retrieval accuracy comes only from the participant's own stow memory/
+   * organisation, exactly as in the card flow.
+   */
+  private physicalLayer: PhysicalManipulationLayer | null = null;
+  /** Scene-transient physical carry (a tool lifted off the return tray). */
+  private q03CarriedToolId: string | null = null;
+  private q03PhaseSignature = '__unset__';
+
+  private initQ03Physical() {
+    // Drawer-cell visuals (persistent world state on the cabinet face).
+    for (const slot of Q03_SLOTS) {
+      const position = Q03_DRAWER_POSITIONS[slot.slot_id];
+
+      this.addDecor(position.x, position.y, 'proc-drawer-cell');
+    }
+
+    this.physicalLayer = new PhysicalManipulationLayer({
+      scene: this,
+      getPlayerPosition: () => ({ x: this.player.x, y: this.player.y }),
+      isEnabled: () => this.physicalInputEligible(),
+      onPickup: (toolId) => this.q03PhysicalPickup(toolId),
+      onPlace: (toolId, slotId) => this.q03PhysicalPlace(toolId, slotId),
+      getCarried: () => {
+        if (this.q03CarriedToolId === null) {
+          return null;
+        }
+
+        const tool = getQ03Tool(this.q03CarriedToolId);
+
+        return {
+          object_id: tool.tool_id,
+          label: tool.label,
+          icon: Q03_TOOL_ICONS[tool.tool_id],
+          category: 'bench_tool',
+        };
+      },
+      onFeedback: (message) => this.showFeedbackMessage(message),
+    });
+    this.syncQ03Physical();
+  }
+
+  private q03PhysicalPickup(toolId: string): boolean {
+    if (!q03State.stow_offered || q03State.stow_completed) {
+      return false;
+    }
+
+    if (this.q03CarriedToolId !== null) {
+      this.showFeedbackMessage(
+        'Your hands are full — stow the tool you are carrying first.',
+      );
+      return false;
+    }
+
+    this.q03CarriedToolId = toolId;
+
+    return true;
+  }
+
+  private q03PhysicalPlace(toolId: string, slotId: string): PhysicalPlacement {
+    if (
+      !q03State.stow_offered ||
+      q03State.stow_completed ||
+      this.q03CarriedToolId !== toolId
+    ) {
+      return { outcome: 'unavailable', feedback: 'The cabinet is in order.' };
+    }
+
+    this.q03CarriedToolId = null;
+    this.applyQ03Stow(toolId, slotId);
+    this.showFeedbackMessage(`The ${getQ03Tool(toolId).label} is stowed.`);
+
+    return { outcome: 'accepted' };
+  }
+
+  /**
+   * Re-renders the cabinet's physical surface from q03State. Change
+   * detected on a phase signature; objects re-sync every call (cheap,
+   * signature-guarded inside the layer).
+   */
+  private syncQ03Physical() {
+    if (this.physicalLayer === null) {
+      return;
+    }
+
+    const stowPhase = q03State.stow_offered && !q03State.stow_completed;
+    const retrievalPhase =
+      q03State.stow_completed &&
+      q03State.retrieval_offered &&
+      !q03State.retrieval_completed;
+    const signature = `${stowPhase}:${retrievalPhase}`;
+
+    if (signature !== this.q03PhaseSignature) {
+      this.q03PhaseSignature = signature;
+      this.physicalLayer.syncContainers(
+        stowPhase
+          ? Q03_SLOTS.map((slot) => ({
+              container_id: slot.slot_id,
+              label: slot.label,
+              x: Q03_DRAWER_POSITIONS[slot.slot_id].x,
+              y: Q03_DRAWER_POSITIONS[slot.slot_id].y,
+              halfWidth: 14,
+              halfHeight: 11,
+            }))
+          : [],
+      );
+    }
+
+    if (stowPhase) {
+      this.physicalLayer.syncObjects(
+        Q03_TOOLS.filter(
+          (tool) =>
+            q03State.stowed[tool.tool_id] === undefined &&
+            tool.tool_id !== this.q03CarriedToolId,
+        ).map((tool) => ({
+          spec: {
+            object_id: tool.tool_id,
+            label: tool.label,
+            icon: Q03_TOOL_ICONS[tool.tool_id],
+            category: 'bench_tool',
+          },
+          x: Q03_TRAY_POSITIONS[tool.tool_id].x,
+          y: Q03_TRAY_POSITIONS[tool.tool_id].y,
+        })),
+      );
+    } else if (retrievalPhase) {
+      // Drawer cells become direct activators: opening one IS the search
+      // act (uniform selection cue; result feedback mirrors the card path).
+      this.physicalLayer.syncObjects(
+        Q03_SLOTS.map((slot) => ({
+          spec: {
+            object_id: slot.slot_id,
+            label: slot.label,
+            icon: 'proc-drawer-cell',
+            category: 'drawer',
+          },
+          x: Q03_DRAWER_POSITIONS[slot.slot_id].x,
+          y: Q03_DRAWER_POSITIONS[slot.slot_id].y,
+          activate: () => {
+            sfxUiSelect();
+            this.applyQ03Open(slot.slot_id);
+          },
+        })),
+      );
+    } else {
+      this.physicalLayer.syncObjects([]);
+    }
+  }
+
+  protected onRoomUpdate(): void {
+    this.syncQ03Physical();
+    this.physicalLayer?.update();
   }
 
   // ————————— Unit 3: Q30 instance 1 — Work Order Board (SA-4) —————————
@@ -940,3 +1117,29 @@ export class HubScene extends RoomScene {
     return lines.join('\n');
   }
 }
+
+/**
+ * Q03 physical-cabinet geometry (Unit 2, physical-mechanics session):
+ * fixed drawer-cell and return-tray world positions around the cabinet
+ * prop at (640, 320) — identical every session (frozen-stimuli rule).
+ */
+const Q03_DRAWER_POSITIONS: Record<string, { x: number; y: number }> = {
+  slot_measurement: { x: 626, y: 304 },
+  slot_optics: { x: 654, y: 304 },
+  slot_fasteners: { x: 626, y: 332 },
+  slot_general: { x: 654, y: 332 },
+};
+
+/** Return-tray positions of the three returned bench tools. */
+const Q03_TRAY_POSITIONS: Record<string, { x: number; y: number }> = {
+  flux_calibrator_bench: { x: 596, y: 364 },
+  hex_gauge: { x: 628, y: 368 },
+  lens_kit: { x: 660, y: 364 },
+};
+
+/** Tool icons (presentation mapping; flux calibrator reuses its glyph). */
+const Q03_TOOL_ICONS: Record<string, string> = {
+  flux_calibrator_bench: 'proc-icon-flux-calibrator',
+  hex_gauge: 'proc-icon-hex-gauge',
+  lens_kit: 'proc-icon-lens-kit',
+};

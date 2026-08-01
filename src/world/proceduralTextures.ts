@@ -1053,6 +1053,206 @@ function drawDigMound(g: Graphics) {
   rect(g, 4, 24, 32, 2, OUTLINE);
 }
 
+// ————————————————————————————————————————————————————————————————————
+// Physical-mechanics session (Unit 2): organisation-suite art — Q03
+// cabinet drawer cells and tool icons, and the standardised Q04 field
+// work-site mess set (waste/tool/component icons + their return points).
+// Same drawing language and determinism rule as everything above.
+// ————————————————————————————————————————————————————————————————————
+
+/** Hex Gauge (Q03 bench tool): round dial with a hex socket window. */
+function drawIconHexGauge(g: Graphics) {
+  box(g, 5, 5, 14, 14, MUTED);
+  rect(g, 8, 8, 8, 8, PANEL);
+  rect(g, 10, 10, 4, 4, KAI_SUIT_SHADE);
+  rect(g, 11, 2, 2, 3, BORDER);
+}
+
+/** Lens Kit (Q03 bench tool): open case with two lens discs. */
+function drawIconLensKit(g: Graphics) {
+  box(g, 3, 8, 18, 11, CARD, BORDER);
+  rect(g, 3, 8, 18, 2, BORDER);
+  rect(g, 6, 12, 5, 5, MUTED);
+  rect(g, 7, 13, 3, 3, PANEL);
+  rect(g, 14, 12, 5, 5, MUTED);
+  rect(g, 15, 13, 3, 3, PANEL);
+}
+
+/** Calibration-cabinet drawer cell: front face with a bar handle. */
+function drawDrawerCell(g: Graphics) {
+  box(g, 2, 2, 24, 18, CARD, BORDER);
+  rect(g, 4, 4, 20, 14, PANEL);
+  rect(g, 9, 9, 10, 3, MUTED);
+  rect(g, 9, 9, 10, 1, BORDER);
+}
+
+/** Packing wrap (Q04 waste): crumpled foil sheet. */
+function drawIconPackingWrap(g: Graphics) {
+  rect(g, 4, 9, 16, 9, MUTED);
+  rect(g, 6, 6, 6, 5, 0xb5c6d4);
+  rect(g, 14, 7, 5, 4, 0xb5c6d4);
+  rect(g, 5, 15, 5, 3, 0x8ba0b2);
+  rect(g, 13, 14, 6, 4, 0x8ba0b2);
+  rect(g, 4, 9, 1, 9, BORDER);
+  rect(g, 19, 9, 1, 9, BORDER);
+}
+
+/** Mount clamp (Q04 field tool): C-body with a threaded spindle. */
+function drawIconMountClamp(g: Graphics) {
+  box(g, 6, 4, 12, 5, KAI_SUIT_SHADE);
+  box(g, 6, 15, 12, 5, KAI_SUIT_SHADE);
+  box(g, 5, 6, 4, 12, KAI_SUIT_SHADE);
+  rect(g, 17, 10, 5, 3, MUTED);
+  rect(g, 21, 9, 2, 5, BORDER);
+}
+
+/** Panel shim (Q04 displaced component): flat plate with bolt holes. */
+function drawIconPanelShim(g: Graphics) {
+  box(g, 4, 7, 16, 10, CARD, BORDER);
+  rect(g, 6, 9, 2, 2, PANEL);
+  rect(g, 16, 9, 2, 2, PANEL);
+  rect(g, 6, 13, 2, 2, PANEL);
+  rect(g, 16, 13, 2, 2, PANEL);
+}
+
+/** Field disposal unit (Q04 waste point): lidded bin with a chute. */
+function drawDisposalUnit(g: Graphics) {
+  box(g, 6, 14, 32, 30, CARD, BORDER);
+  rect(g, 6, 14, 32, 4, BORDER);
+  box(g, 10, 6, 24, 8, BORDER, MUTED);
+  rect(g, 16, 20, 12, 10, PANEL);
+  rect(g, 16, 20, 12, 2, OUTLINE);
+  rect(g, 10, 38, 24, 3, PANEL);
+  rect(g, 4, 44, 36, 3, OUTLINE);
+}
+
+/** Field tool rack (Q04 tool return): frame with two empty clips. */
+function drawRackFieldTools(g: Graphics) {
+  box(g, 4, 6, 36, 38, PANEL, BORDER);
+  rect(g, 8, 10, 28, 2, BORDER);
+  rect(g, 8, 24, 28, 2, BORDER);
+  rect(g, 12, 13, 6, 8, CARD);
+  rect(g, 26, 13, 6, 8, CARD);
+  rect(g, 12, 27, 6, 8, CARD);
+  rect(g, 26, 27, 6, 8, CARD);
+  rect(g, 2, 44, 40, 3, OUTLINE);
+}
+
+/** Component crate (Q04 component return): open crate, foam slots. */
+function drawCrateComponents(g: Graphics) {
+  box(g, 4, 8, 36, 28, KAI_SUIT_SHADE, KAI_SUIT_RIM);
+  rect(g, 7, 11, 30, 22, PANEL);
+  rect(g, 10, 14, 10, 7, CARD);
+  rect(g, 24, 14, 10, 7, CARD);
+  rect(g, 10, 24, 10, 7, CARD);
+  rect(g, 24, 24, 10, 7, CARD);
+  rect(g, 2, 36, 40, 3, OUTLINE);
+}
+
+// ————————————————————————————————————————————————————————————————————
+// Physical-mechanics session (Unit 3): Ridge Annex artifact-survey art.
+// ————————————————————————————————————————————————————————————————————
+
+/** Surveyor Noor: slate-blue field suit, satchel silhouette. */
+const NOOR_SUIT = 0x566b85;
+const NOOR_SUIT_SHADE = 0x44546a;
+const NOOR_SUIT_RIM = 0x74889e;
+
+function drawNpcNoor(g: Graphics) {
+  drawFigure(g, 20, 6, {
+    suit: NOOR_SUIT,
+    suitShade: NOOR_SUIT_SHADE,
+    suitRim: NOOR_SUIT_RIM,
+    accessory: 'satchel',
+  });
+}
+
+/** Survey stake: planted marker post with a signal vane (unscanned). */
+function drawSurveyStake(g: Graphics) {
+  box(g, 10, 4, 4, 26, MUTED);
+  rect(g, 10, 4, 4, 1, 0xdde9f2);
+  rect(g, 6, 6, 4, 6, KAI_SUIT_SHADE);
+  rect(g, 4, 30, 16, 4, 0xaebfd0);
+  rect(g, 6, 28, 12, 2, 0xdde9f2);
+}
+
+/** Scanned stake, flagged: raised twin vane (signal HIGH). */
+function drawSurveyStakeFlagged(g: Graphics) {
+  box(g, 10, 4, 4, 26, MUTED);
+  rect(g, 6, 4, 4, 6, HAZARD_AMBER_SHADE);
+  rect(g, 14, 4, 4, 6, HAZARD_AMBER_SHADE);
+  rect(g, 6, 4, 4, 1, HAZARD_AMBER);
+  rect(g, 14, 4, 4, 1, HAZARD_AMBER);
+  rect(g, 4, 30, 16, 4, 0xaebfd0);
+  rect(g, 6, 28, 12, 2, 0xdde9f2);
+}
+
+/** Scanned stake, clear: vane folded flat (no return). */
+function drawSurveyStakeClear(g: Graphics) {
+  box(g, 10, 4, 4, 26, KAI_SUIT_SHADE);
+  rect(g, 6, 12, 12, 3, KAI_SUIT_SHADE);
+  rect(g, 4, 30, 16, 4, 0xaebfd0);
+  rect(g, 6, 28, 12, 2, 0xdde9f2);
+}
+
+/** Specimen case: open field case with three tray wells. */
+function drawSpecimenCase(g: Graphics) {
+  // Raised lid.
+  box(g, 6, 2, 44, 10, CARD, BORDER);
+  rect(g, 8, 4, 40, 2, PANEL);
+  // Body with three foam wells.
+  box(g, 4, 12, 48, 24, KAI_SUIT_SHADE, KAI_SUIT_RIM);
+  rect(g, 8, 16, 11, 15, PANEL);
+  rect(g, 22, 16, 11, 15, PANEL);
+  rect(g, 36, 16, 11, 15, PANEL);
+  rect(g, 2, 36, 52, 3, OUTLINE);
+}
+
+/** One labelled case tray cell (drop target under the case). */
+function drawCaseTray(g: Graphics) {
+  box(g, 2, 2, 24, 18, KAI_SUIT_SHADE, KAI_SUIT_RIM);
+  rect(g, 4, 4, 20, 14, PANEL);
+  rect(g, 6, 6, 16, 10, CARD);
+}
+
+/** Field notebook stand: lectern with an open weatherproof log. */
+function drawNotebookStand(g: Graphics) {
+  box(g, 12, 4, 20, 12, 0xdde9f2, 0xffffff);
+  rect(g, 21, 5, 1, 10, BORDER);
+  rect(g, 14, 7, 6, 1, BORDER);
+  rect(g, 14, 10, 6, 1, BORDER);
+  rect(g, 23, 7, 6, 1, BORDER);
+  box(g, 14, 16, 16, 6, CARD, BORDER);
+  box(g, 19, 22, 6, 14, BORDER, MUTED);
+  rect(g, 14, 36, 16, 3, OUTLINE);
+}
+
+/** Ice core segment: banded translucent cylinder. */
+function drawIconIceCore(g: Graphics) {
+  box(g, 8, 3, 8, 18, 0xbccbdb, 0xdde9f2);
+  rect(g, 8, 7, 8, 2, 0x9fb2c6);
+  rect(g, 8, 12, 8, 2, 0x9fb2c6);
+  rect(g, 8, 17, 8, 2, 0x9fb2c6);
+  rect(g, 9, 21, 6, 1, OUTLINE);
+}
+
+/** Basalt fragment: angular dark shard with a fresh facet. */
+function drawIconBasalt(g: Graphics) {
+  rect(g, 6, 8, 12, 10, 0x2c3844);
+  rect(g, 9, 5, 8, 5, 0x2c3844);
+  rect(g, 4, 12, 4, 6, 0x2c3844);
+  rect(g, 10, 8, 5, 4, 0x46586b);
+  rect(g, 6, 17, 12, 2, OUTLINE);
+}
+
+/** Sealed biosample: capped vial with a suspended culture band. */
+function drawIconBiosample(g: Graphics) {
+  box(g, 9, 7, 6, 13, 0x8fa89b, 0xaec4b5);
+  rect(g, 9, 12, 6, 3, 0x6d8a7a);
+  box(g, 8, 3, 8, 4, BORDER);
+  rect(g, 10, 20, 4, 1, OUTLINE);
+}
+
 /**
  * Registry-item icon key: presentation-layer mapping from an inventory
  * `item_id` (src/data/itemRegistry.ts — deliberately not edited) to its
@@ -1224,6 +1424,39 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
     draw: drawBoardPortfolio,
   },
   'proc-desk-closure': { width: 56, height: 40, draw: drawDeskClosure },
+  // Physical-mechanics session (Unit 2): organisation-suite art.
+  'proc-icon-hex-gauge': { width: 24, height: 24, draw: drawIconHexGauge },
+  'proc-icon-lens-kit': { width: 24, height: 24, draw: drawIconLensKit },
+  'proc-drawer-cell': { width: 28, height: 22, draw: drawDrawerCell },
+  'proc-icon-packing-wrap': {
+    width: 24,
+    height: 24,
+    draw: drawIconPackingWrap,
+  },
+  'proc-icon-mount-clamp': { width: 24, height: 24, draw: drawIconMountClamp },
+  'proc-icon-panel-shim': { width: 24, height: 24, draw: drawIconPanelShim },
+  'proc-disposal-unit': { width: 44, height: 48, draw: drawDisposalUnit },
+  'proc-rack-fieldtools': { width: 44, height: 48, draw: drawRackFieldTools },
+  'proc-crate-components': { width: 44, height: 40, draw: drawCrateComponents },
+  // Physical-mechanics session (Unit 3): Ridge Annex artifact survey.
+  'proc-npc-noor': { width: 40, height: 56, draw: drawNpcNoor },
+  'proc-survey-stake': { width: 24, height: 36, draw: drawSurveyStake },
+  'proc-survey-stake-flagged': {
+    width: 24,
+    height: 36,
+    draw: drawSurveyStakeFlagged,
+  },
+  'proc-survey-stake-clear': {
+    width: 24,
+    height: 36,
+    draw: drawSurveyStakeClear,
+  },
+  'proc-specimen-case': { width: 56, height: 40, draw: drawSpecimenCase },
+  'proc-case-tray': { width: 28, height: 22, draw: drawCaseTray },
+  'proc-notebook-stand': { width: 44, height: 40, draw: drawNotebookStand },
+  'proc-icon-ice-core': { width: 24, height: 24, draw: drawIconIceCore },
+  'proc-icon-basalt': { width: 24, height: 24, draw: drawIconBasalt },
+  'proc-icon-biosample': { width: 24, height: 24, draw: drawIconBiosample },
 };
 
 /** Fixed manifest (key → dimensions) for determinism coverage. */

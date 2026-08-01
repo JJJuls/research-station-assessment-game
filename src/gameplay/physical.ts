@@ -57,6 +57,12 @@ export interface PhysicalObjectEntry {
   spec: PhysicalObjectSpec;
   x: number;
   y: number;
+  /**
+   * Activator object: an in-reach click invokes this instead of the
+   * pickup flow (no carry, no drag) — e.g. a drawer front that opens.
+   * The host owns all semantics and feedback.
+   */
+  activate?: () => void;
 }
 
 export interface PhysicalContainerEntry {
@@ -441,18 +447,39 @@ export class PhysicalManipulationLayer {
         }
 
         this.applyPlacement(carried.object_id, container);
+        return;
+      }
+
+      // A press on another loose object while carrying routes to the
+      // host's pickup gate so its refusal feedback ("hands are full")
+      // surfaces instead of a silent no-op.
+      for (const rendered of this.objects) {
+        if (
+          this.hitsObject(rendered, pointer.worldX, pointer.worldY) &&
+          this.withinReach(player, rendered.entry.x, rendered.entry.y) &&
+          rendered.entry.activate === undefined
+        ) {
+          this.config.onPickup(rendered.entry.spec.object_id);
+          return;
+        }
       }
 
       return;
     }
 
-    // Hands free: a press on a loose object begins click-or-drag.
+    // Hands free: a press on a loose object begins click-or-drag (or
+    // invokes an activator object directly).
     for (const rendered of this.objects) {
       if (this.hitsObject(rendered, pointer.worldX, pointer.worldY)) {
         if (!this.withinReach(player, rendered.entry.x, rendered.entry.y)) {
           this.config.onFeedback(
             `Move closer to reach the ${rendered.entry.spec.label}.`,
           );
+          return;
+        }
+
+        if (rendered.entry.activate !== undefined) {
+          rendered.entry.activate();
           return;
         }
 

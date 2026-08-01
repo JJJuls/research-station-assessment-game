@@ -20,6 +20,29 @@ export {
   stowQ03Tool,
   unstowedQ03Tools,
 } from './q03Retrieval';
+export type {
+  Q04Category,
+  Q04MessObject,
+  Q04ReturnPoint,
+} from './q04FieldCleanup';
+export {
+  closeQ04WindowOnExit,
+  dropQ04Carried,
+  getQ04MessObject,
+  getQ04ReturnPoint,
+  pickUpQ04Object,
+  placeQ04Object,
+  presentQ04Mess,
+  Q04_ENTRY_STATE_VERSION,
+  Q04_MESS_OBJECTS,
+  Q04_OPPORTUNITY_ID,
+  Q04_RETURN_POINTS,
+  q04ClearedCount,
+  q04RemainingObjects,
+  q04SiteRestored,
+  q04State,
+  resetQ04State,
+} from './q04FieldCleanup';
 export {
   closeDiagnostic,
   completeExtraCycle,

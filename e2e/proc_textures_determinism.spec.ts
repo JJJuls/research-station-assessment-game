@@ -97,6 +97,27 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-board-workorders': { width: 48, height: 42 },
   'proc-board-portfolio': { width: 56, height: 52 },
   'proc-desk-closure': { width: 56, height: 40 },
+  // Physical-mechanics session (Unit 2): organisation-suite art.
+  'proc-icon-hex-gauge': { width: 24, height: 24 },
+  'proc-icon-lens-kit': { width: 24, height: 24 },
+  'proc-drawer-cell': { width: 28, height: 22 },
+  'proc-icon-packing-wrap': { width: 24, height: 24 },
+  'proc-icon-mount-clamp': { width: 24, height: 24 },
+  'proc-icon-panel-shim': { width: 24, height: 24 },
+  'proc-disposal-unit': { width: 44, height: 48 },
+  'proc-rack-fieldtools': { width: 44, height: 48 },
+  'proc-crate-components': { width: 44, height: 40 },
+  // Physical-mechanics session (Unit 3): Ridge Annex artifact survey.
+  'proc-npc-noor': { width: 40, height: 56 },
+  'proc-survey-stake': { width: 24, height: 36 },
+  'proc-survey-stake-flagged': { width: 24, height: 36 },
+  'proc-survey-stake-clear': { width: 24, height: 36 },
+  'proc-specimen-case': { width: 56, height: 40 },
+  'proc-case-tray': { width: 28, height: 22 },
+  'proc-notebook-stand': { width: 44, height: 40 },
+  'proc-icon-ice-core': { width: 24, height: 24 },
+  'proc-icon-basalt': { width: 24, height: 24 },
+  'proc-icon-biosample': { width: 24, height: 24 },
 };
 
 interface ProcTexturesProbe {

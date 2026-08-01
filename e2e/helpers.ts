@@ -870,3 +870,201 @@ export function eventContext(event: RawEventLike | undefined) {
     success: event?.success,
   };
 }
+
+// ————————————————————————————————————————————————————————————————————
+// Physical-mechanics session (Unit 2): direct-manipulation helpers
+// ————————————————————————————————————————————————————————————————————
+
+export interface PhysicalProbeLike {
+  scene: string;
+  objects: {
+    id: string;
+    label: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }[];
+  containers: {
+    id: string;
+    label: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }[];
+  carried: string | null;
+  dragging: string | null;
+}
+
+/** The active scene's physical-layer probe (DEV-only, read-only). */
+export async function physicalProbe(
+  page: Page,
+): Promise<PhysicalProbeLike | null> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __physicalProbe?: PhysicalProbeLike | null })
+        .__physicalProbe ?? null,
+  );
+}
+
+/** Canvas-relative mouse position for a game-space point (FIT-scaled). */
+async function gamePointToMouse(page: Page, x: number, y: number) {
+  const canvas = page.locator('canvas');
+  const box = await canvas.boundingBox();
+
+  if (box === null) {
+    throw new Error('game canvas not found');
+  }
+
+  return {
+    x: box.x + (x * box.width) / 800,
+    y: box.y + (y * box.height) / 600,
+  };
+}
+
+/**
+ * Clicks the centre of a physical object/container rect via real mouse
+ * input, settling on the physical probe's carried/dragging/object-set
+ * state changing (a successful pickup/place always changes it), with the
+ * clickGameRect-style single re-snapshot retry for the documented
+ * SwiftShader input loss. Refused interactions (hands full, out of
+ * reach) do NOT change the probe — pass `expectChange: false` for those.
+ */
+export async function clickPhysicalRect(
+  page: Page,
+  rect: { x: number; y: number; width: number; height: number },
+  options?: { expectChange?: boolean },
+) {
+  const snapshot = () =>
+    page.evaluate(() => {
+      const probe = (
+        window as unknown as {
+          __physicalProbe?: {
+            objects: { id: string }[];
+            carried: string | null;
+          } | null;
+        }
+      ).__physicalProbe;
+
+      return JSON.stringify({
+        objects: probe?.objects.map((entry) => entry.id) ?? null,
+        carried: probe?.carried ?? null,
+      });
+    });
+  const point = await gamePointToMouse(
+    page,
+    rect.x + rect.width / 2,
+    rect.y + rect.height / 2,
+  );
+  const before = await snapshot();
+
+  await page.mouse.click(point.x, point.y);
+
+  if (options?.expectChange === false) {
+    await page.waitForTimeout(300);
+    return;
+  }
+
+  const settled = await page
+    .waitForFunction(
+      (prev) => {
+        const probe = (
+          window as unknown as {
+            __physicalProbe?: {
+              objects: { id: string }[];
+              carried: string | null;
+            } | null;
+          }
+        ).__physicalProbe;
+
+        return (
+          JSON.stringify({
+            objects: probe?.objects.map((entry) => entry.id) ?? null,
+            carried: probe?.carried ?? null,
+          }) !== prev
+        );
+      },
+      before,
+      { timeout: 6_000 },
+    )
+    .then(
+      () => true,
+      () => false,
+    );
+
+  if (!settled && (await snapshot()) === before) {
+    await page.mouse.click(point.x, point.y);
+    await page.waitForTimeout(600);
+  }
+
+  await page.waitForTimeout(150);
+}
+
+/** Clicks the physical object with the given id (probe lookup). */
+export async function clickPhysicalObject(
+  page: Page,
+  objectId: string,
+  options?: { expectChange?: boolean },
+) {
+  const probe = await physicalProbe(page);
+  const object = probe?.objects.find((entry) => entry.id === objectId);
+
+  if (object === undefined) {
+    throw new Error(`physical object ${objectId} not in probe`);
+  }
+
+  await clickPhysicalRect(page, object, options);
+}
+
+/** Clicks the physical container with the given id (probe lookup). */
+export async function clickPhysicalContainer(
+  page: Page,
+  containerId: string,
+  options?: { expectChange?: boolean },
+) {
+  const probe = await physicalProbe(page);
+  const container = probe?.containers.find((entry) => entry.id === containerId);
+
+  if (container === undefined) {
+    throw new Error(`physical container ${containerId} not in probe`);
+  }
+
+  await clickPhysicalRect(page, container, options);
+}
+
+/**
+ * Real mouse drag from a physical object to a physical container: press,
+ * threshold-crossing move, glide, release over the container centre.
+ */
+export async function dragPhysicalObjectToContainer(
+  page: Page,
+  objectId: string,
+  containerId: string,
+) {
+  const probe = await physicalProbe(page);
+  const object = probe?.objects.find((entry) => entry.id === objectId);
+  const container = probe?.containers.find((entry) => entry.id === containerId);
+
+  if (object === undefined || container === undefined) {
+    throw new Error(`drag endpoints missing: ${objectId} -> ${containerId}`);
+  }
+
+  const from = await gamePointToMouse(
+    page,
+    object.x + object.width / 2,
+    object.y + object.height / 2,
+  );
+  const to = await gamePointToMouse(
+    page,
+    container.x + container.width / 2,
+    container.y + container.height / 2,
+  );
+
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(from.x + 10, from.y + 10, { steps: 3 });
+  await page.mouse.move(to.x, to.y, { steps: 8 });
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+}

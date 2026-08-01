@@ -19,6 +19,8 @@ import {
 } from '../data/missionVocabulary';
 import type { ResearchInteraction } from '../data/researchInteractions';
 import { researchInteractions } from '../data/researchInteractions';
+import type { PhysicalPlacement } from '../gameplay';
+import { PhysicalManipulationLayer } from '../gameplay';
 import { protocolBreachScenario, ScenarioController } from '../scenarios';
 import { researchRuntime } from '../systems';
 import type {
@@ -288,82 +290,167 @@ export class InventoryScene extends RoomScene {
     this.prepStatusPanel = this.addStatusSidePanel();
     this.prepStatusValue = '';
     this.refreshPrepStatusPanel();
-    this.refreshBenchDisplay();
-  }
 
-  /**
-   * Stardew-quality pass (Unit B): staged gear rendered ON the prep bench,
-   * one icon per item currently at 'prep_bench' — items visibly leave the
-   * bench when picked up and return when set down. Pure presentation over
-   * kitPreparationState, change-detected per frame. Shows exactly the
-   * information the SA-11-constrained side panel already shows (bench
-   * membership) — never bin/kit contents, never correctness.
-   */
-  private benchDisplayIcons: Phaser.GameObjects.Image[] = [];
-  private benchDisplayValue = '__unset__';
+    // ——— Physical-mechanics session (Unit 2): direct-manipulation layer.
+    // The staged bench gear renders as loose world objects that the
+    // participant physically picks up (click or drag) and places into the
+    // bins/kit crate. Placement converges on the SAME state mutation and
+    // the SAME emission point as the prompt-card path (placeCarriedItem),
+    // so the two input paths are measurement-identical; the card flow
+    // stays available as the keyboard-accessible equivalent. No container
+    // renders its contents persistently (SA-11 constraint) and no drop
+    // affordance previews correctness — every container accepts every
+    // item, and errors surface only at the close-out review.
+    this.physicalLayer = new PhysicalManipulationLayer({
+      scene: this,
+      getPlayerPosition: () => ({ x: this.player.x, y: this.player.y }),
+      isEnabled: () => this.physicalInputEligible(),
+      onPickup: (objectId) => this.physicalPickup(objectId),
+      onPlace: (objectId, containerId) =>
+        this.physicalPlace(objectId, containerId),
+      getCarried: () => {
+        const carried = carriedItemId();
 
-  private refreshBenchDisplay(): void {
-    const bench = itemsAtLocation('prep_bench');
-    const signature = bench.join(',');
-
-    if (signature === this.benchDisplayValue) {
-      return;
-    }
-
-    this.benchDisplayValue = signature;
-
-    for (const icon of this.benchDisplayIcons) {
-      icon.destroy();
-    }
-
-    this.benchDisplayIcons = [];
-
-    // Bench prop centre (16*32, 7.5*32); tabletop upper band. Up to 8
-    // icons in two rows of four across the tabletop.
-    bench.forEach((itemId, index) => {
-      const iconKey = itemIconTextureKey(itemId);
-
-      if (!this.textures.exists(iconKey)) {
-        return;
-      }
-
-      const col = index % 4;
-      const row = Math.floor(index / 4);
-
-      this.benchDisplayIcons.push(
-        this.add
-          .image(16 * 32 - 27 + col * 18, 7.5 * 32 - 12 + row * 16, iconKey)
-          .setScale(0.7),
-      );
-    });
-  }
-
-  /**
-   * Carried-item bubble: the item in hand rides beside the player —
-   * immediate physical carrying feedback (§11). Mirrors the side panel's
-   * "Carried:" line only.
-   */
-  private carriedBubble: Phaser.GameObjects.Image | null = null;
-  private carriedBubbleItem: string | null = null;
-
-  private refreshCarriedBubble(): void {
-    const carried = carriedItemId();
-
-    if (carried !== this.carriedBubbleItem) {
-      this.carriedBubbleItem = carried;
-      this.carriedBubble?.destroy();
-      this.carriedBubble = null;
-
-      if (carried !== null) {
-        const iconKey = itemIconTextureKey(carried);
-
-        if (this.textures.exists(iconKey)) {
-          this.carriedBubble = this.add.image(0, 0, iconKey).setScale(0.8);
+        if (carried === null) {
+          return null;
         }
-      }
+
+        const item = getRegistryItem(carried);
+
+        return {
+          object_id: carried,
+          label: item.label,
+          icon: itemIconTextureKey(carried),
+          category: item.destination,
+        };
+      },
+      onFeedback: (message) => this.showFeedbackMessage(message),
+    });
+    this.physicalLayer.syncContainers([
+      {
+        container_id: 'bin_hand_tools',
+        label: 'Hand Tools Rack',
+        x: 4 * 32,
+        y: 2 * 32,
+      },
+      {
+        container_id: 'bin_consumables',
+        label: 'Consumables Bin',
+        x: 10 * 32,
+        y: 2 * 32,
+      },
+      {
+        container_id: 'bin_electronics',
+        label: 'Electronics Shelf',
+        x: 16 * 32,
+        y: 2 * 32,
+      },
+      {
+        container_id: 'kit_crate',
+        label: 'Field Kit Crate',
+        x: 6 * 32,
+        y: 10.5 * 32,
+      },
+    ]);
+    this.syncBenchObjects();
+  }
+
+  // ————————————————————————————————————————————————————————————————————
+  // Physical-mechanics session (Unit 2): Q01 direct manipulation
+  // ————————————————————————————————————————————————————————————————————
+
+  private physicalLayer: PhysicalManipulationLayer | null = null;
+
+  /** Renders bench items as loose objects at fixed staged positions. */
+  private syncBenchObjects(): void {
+    this.physicalLayer?.syncObjects(
+      itemsAtLocation('prep_bench').map((itemId) => {
+        const item = getRegistryItem(itemId);
+        const position = BENCH_STAGING_POSITIONS[itemId];
+
+        return {
+          spec: {
+            object_id: itemId,
+            label: item.label,
+            icon: itemIconTextureKey(itemId),
+            category: item.destination,
+          },
+          x: position.x,
+          y: position.y,
+        };
+      }),
+    );
+  }
+
+  /**
+   * Physical pickup — same gating as the per-item stations, same state
+   * mutation as the bench card's "Take the …" option (no event; the
+   * placement is the logged act).
+   */
+  private physicalPickup(itemId: string): boolean {
+    if (this.isPrepCompleted()) {
+      this.showFeedbackMessage('The prep cycle is closed out for this shift.');
+      return false;
     }
 
-    this.carriedBubble?.setPosition(this.player.x + 16, this.player.y - 30);
+    if (!kitPreparationState.engaged) {
+      this.showFeedbackMessage(
+        'The bench stock is racked and strapped. Use the quartermaster console to start preparation.',
+      );
+      return false;
+    }
+
+    if (carriedItemId() !== null) {
+      this.showFeedbackMessage(
+        'Your hands are full — place the item you are carrying first.',
+      );
+      return false;
+    }
+
+    if (kitPreparationState.locations[itemId] !== 'prep_bench') {
+      return false;
+    }
+
+    kitPreparationState.locations[itemId] = 'carried';
+
+    return true;
+  }
+
+  /**
+   * Physical placement — converges on placeCarriedItem, the card path's
+   * exact emission point (one placement = one event, object_id +
+   * attempt_number), then mirrors the card's neutral feedback string.
+   */
+  private physicalPlace(
+    itemId: string,
+    containerId: string,
+  ): PhysicalPlacement {
+    if (this.isPrepCompleted() || !kitPreparationState.engaged) {
+      return {
+        outcome: 'unavailable',
+        feedback: 'The prep cycle is not open.',
+      };
+    }
+
+    if (carriedItemId() !== itemId) {
+      return { outcome: 'unavailable', feedback: 'Nothing is in hand.' };
+    }
+
+    const destination = containerId as PlacementDestination;
+    const interactionKey =
+      destination === 'kit_crate'
+        ? 'inventoryKitCrate'
+        : INTERACTION_BY_BIN[destination];
+    const item = getRegistryItem(itemId);
+
+    this.placeCarriedItem(interactionKey, itemId, destination);
+    this.showFeedbackMessage(
+      destination === 'kit_crate'
+        ? `You pack the ${item.label} into the kit crate.`
+        : `You stow the ${item.label} in the ${getBinLabel(destination)}.`,
+    );
+
+    return { outcome: 'accepted' };
   }
 
   /**
@@ -412,8 +499,11 @@ export class InventoryScene extends RoomScene {
 
   protected onRoomUpdate(): void {
     this.refreshPrepStatusPanel();
-    this.refreshBenchDisplay();
-    this.refreshCarriedBubble();
+    // Unit 2: staged gear + carried bubble render via the physical layer
+    // (items visibly leave the bench when picked up, ride beside the
+    // avatar, and vanish into their destination on placement).
+    this.syncBenchObjects();
+    this.physicalLayer?.update();
   }
 
   protected onRoomExit(): void {
@@ -763,6 +853,25 @@ export class InventoryScene extends RoomScene {
    */
   private buildReviewStage(): PromptStage {
     const issues = this.describeStagingIssues();
+
+    // Physical-mechanics session (Unit 2): provisional raw marker of the
+    // Q02 correction-opportunity surface (scenario-telemetry path, no
+    // canonical context, no Q-mapping). The review's occurrence was
+    // already derivable from event order; this marker only makes the
+    // review-window entry explicit in the raw stream. Counts are neutral
+    // state facts, never a score.
+    this.logScenarioEvent(
+      'inventoryPrepChecklist',
+      'proto_q02_review_entered',
+      {
+        metadata: {
+          issue_lines: issues.length,
+          misplaced: misplacedItemIds().length,
+          missing_from_kit: missingKitItemIds().length,
+          still_out: itemsAtLocation('prep_bench').length,
+        },
+      },
+    );
 
     if (issues.length === 0) {
       return {
@@ -1287,6 +1396,30 @@ const BIN_IDS_BY_INTERACTION: Partial<Record<InteractionKey, StorageBinId>> = {
   inventoryBinHandTools: 'bin_hand_tools',
   inventoryBinConsumables: 'bin_consumables',
   inventoryBinElectronics: 'bin_electronics',
+};
+
+/** Bin ids → interaction keys (physical placement uses the same context). */
+const INTERACTION_BY_BIN: Record<StorageBinId, InteractionKey> = {
+  bin_hand_tools: 'inventoryBinHandTools',
+  bin_consumables: 'inventoryBinConsumables',
+  bin_electronics: 'inventoryBinElectronics',
+};
+
+/**
+ * Fixed staged positions of the bench stock (Unit 2): one world position
+ * per registry item across the bench tabletop, identical every session
+ * (frozen-stimuli rule). Items KEEP their position while on the bench —
+ * no reflow — so the physical scene state stays readable.
+ */
+const BENCH_STAGING_POSITIONS: Record<string, { x: number; y: number }> = {
+  torque_driver: { x: 466, y: 224 },
+  diagnostic_probe: { x: 498, y: 224 },
+  coolant_cartridge: { x: 530, y: 224 },
+  fuse_pack: { x: 562, y: 224 },
+  patch_tape: { x: 466, y: 256 },
+  hex_spanner: { x: 498, y: 256 },
+  sealant_canister: { x: 530, y: 256 },
+  relay_board: { x: 562, y: 256 },
 };
 
 /**

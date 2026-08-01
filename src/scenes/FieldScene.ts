@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 
 import { key } from '../constants';
+import type { PhysicalPlacement } from '../gameplay';
 import {
   acceptSurveyBriefing,
   addInventoryItem,
@@ -20,6 +21,7 @@ import {
   markNodeScanned,
   markSampleDelivered,
   performWorldAction,
+  PhysicalManipulationLayer,
   registerRouteTasks,
   removeInventoryItem,
   ringPulse,
@@ -38,11 +40,26 @@ import {
 } from '../gameplay';
 import {
   assignCounterbalance,
+  closeQ04WindowOnExit,
   declareOpportunity,
+  dropQ04Carried,
+  getQ04MessObject,
+  getQ04ReturnPoint,
   getQ30Instance,
   markOpportunityCompleted,
   markOpportunityEntered,
+  markOpportunityOffered,
   markQ30DetailInspected,
+  pickUpQ04Object,
+  placeQ04Object,
+  presentQ04Mess,
+  Q04_ENTRY_STATE_VERSION,
+  Q04_OPPORTUNITY_ID,
+  Q04_RETURN_POINTS,
+  q04ClearedCount,
+  q04RemainingObjects,
+  q04SiteRestored,
+  q04State,
   Q30_ENTRY_STATE_VERSION,
   q30InstanceAnswered,
   recordQ30Choice,
@@ -212,6 +229,55 @@ export class FieldScene extends RoomScene {
       },
     });
 
+    // ——— Physical-mechanics session (Unit 2): Q04 standardised field
+    // work-site cleanup (src/measurement/q04FieldCleanup.ts). The three
+    // return points are always visible along the south path; the
+    // standardised mess appears at install completion. Direct
+    // manipulation only — no prompt stations, no canonical events, all
+    // telemetry proto_* raw via the scenario path.
+    declareOpportunity({
+      opportunity_id: Q04_OPPORTUNITY_ID,
+      owner: 'Q04',
+      entry_state_version: Q04_ENTRY_STATE_VERSION,
+    });
+
+    for (const point of Q04_RETURN_POINTS) {
+      this.addDecor(point.x, point.y, point.texture);
+    }
+
+    this.q04Layer = new PhysicalManipulationLayer({
+      scene: this,
+      getPlayerPosition: () => ({ x: this.player.x, y: this.player.y }),
+      isEnabled: () => this.physicalInputEligible(),
+      onPickup: (objectId) => this.q04Pickup(objectId),
+      onPlace: (objectId, containerId) => this.q04Place(objectId, containerId),
+      getCarried: () => {
+        if (q04State.carried === null) {
+          return null;
+        }
+
+        const object = getQ04MessObject(q04State.carried);
+
+        return {
+          object_id: object.object_id,
+          label: object.label,
+          icon: object.icon,
+          category: object.category,
+        };
+      },
+      onFeedback: (message) => this.showFeedbackMessage(message),
+    });
+    this.q04Layer.syncContainers(
+      Q04_RETURN_POINTS.map((point) => ({
+        container_id: point.container_id,
+        label: point.label,
+        x: point.x,
+        y: point.y,
+        accepts: [point.accepts],
+      })),
+    );
+    this.syncQ04Objects();
+
     // ——— Unit 3: Q30 instance 2 — Telemetry Cache Console (SA-4, the
     // non-inventory granularity opportunity). Availability and wording
     // are fixed and independent of the route and every other item.
@@ -307,6 +373,108 @@ export class FieldScene extends RoomScene {
 
   protected onRoomUpdate(): void {
     this.stampFootprints();
+    this.syncQ04Objects();
+    this.q04Layer?.update();
+  }
+
+  protected onRoomExit(): void {
+    // A mess object in hand is set back down where it lay (put-back
+    // semantics; never lost).
+    if (q04State.carried !== null) {
+      dropQ04Carried();
+      this.logScenarioEvent('fieldFeedHousing', 'proto_q04_carried_set_down');
+    }
+
+    // The Q04 primary window closes at the FIRST terrace exit after the
+    // mess was presented; the site state at that moment is the record.
+    const snapshot = closeQ04WindowOnExit();
+
+    if (snapshot !== null) {
+      markOpportunityCompleted(Q04_OPPORTUNITY_ID);
+      this.logScenarioEvent(
+        'fieldFeedHousing',
+        'proto_q04_site_state_at_exit',
+        {
+          metadata: { ...snapshot, restored: snapshot.remaining === 0 },
+        },
+      );
+      refreshValidityProbe();
+    } else if (q04State.mess_presented) {
+      // Post-window exits: raw revisit telemetry only.
+      this.logScenarioEvent('fieldFeedHousing', 'proto_q04_revisit_exit', {
+        metadata: {
+          cleared: q04ClearedCount(),
+          remaining: q04RemainingObjects().length,
+        },
+      });
+    }
+  }
+
+  // ————— Physical-mechanics session (Unit 2): Q04 site cleanup —————
+
+  private q04Layer: PhysicalManipulationLayer | null = null;
+
+  private syncQ04Objects(): void {
+    this.q04Layer?.syncObjects(
+      q04State.mess_presented
+        ? q04RemainingObjects().map((object) => ({
+            spec: {
+              object_id: object.object_id,
+              label: object.label,
+              icon: object.icon,
+              category: object.category,
+            },
+            x: object.x,
+            y: object.y,
+          }))
+        : [],
+    );
+  }
+
+  private q04Pickup(objectId: string): boolean {
+    if (q04State.carried !== null) {
+      this.showFeedbackMessage(
+        'Your hands are full — set the item into its return point first.',
+      );
+      return false;
+    }
+
+    if (!pickUpQ04Object(objectId)) {
+      return false;
+    }
+
+    this.logScenarioEvent('fieldFeedHousing', 'proto_q04_item_lifted', {
+      metadata: { object_id: objectId },
+    });
+
+    return true;
+  }
+
+  private q04Place(objectId: string, containerId: string): PhysicalPlacement {
+    const point = getQ04ReturnPoint(containerId);
+
+    if (!placeQ04Object(objectId, containerId)) {
+      return {
+        outcome: 'unavailable',
+        feedback: `That doesn't go in the ${point.label}.`,
+      };
+    }
+
+    sparkle(this, point.x, point.y - 12);
+    this.logScenarioEvent('fieldFeedHousing', 'proto_q04_item_cleared', {
+      metadata: {
+        object_id: objectId,
+        container_id: containerId,
+        cleared_count: q04ClearedCount(),
+      },
+    });
+
+    if (q04SiteRestored()) {
+      this.logScenarioEvent('fieldFeedHousing', 'proto_q04_site_restored');
+      this.showFeedbackMessage('The work site is clear.');
+    }
+
+    return { outcome: 'accepted' };
   }
 
   /** Spoil-mound visual beside a dug marker (pure presentation). */
@@ -648,8 +816,20 @@ export class FieldScene extends RoomScene {
         FEED_HOUSING_POSITION.y,
         'Feed restored',
       );
+      // Unit 2: the install's completion is the Q04 presentation moment —
+      // the SAME standardised work-site disorder appears for every
+      // participant, with a neutral, identical statement of the practice
+      // and its return points. The work objective itself is complete and
+      // the airlock stays available throughout.
+      presentQ04Mess();
+      markOpportunityOffered(Q04_OPPORTUNITY_ID);
+      markOpportunityEntered(Q04_OPPORTUNITY_ID);
+      this.logScenarioEvent('fieldFeedHousing', 'proto_q04_mess_presented', {
+        metadata: { entry_state_version: Q04_ENTRY_STATE_VERSION },
+      });
+      refreshValidityProbe();
       this.showFeedbackMessage(
-        'The relay coupling seats cleanly — the antenna feed hums back to life.',
+        'The relay coupling seats cleanly — the antenna feed hums back to life.\n\nPacking, clamps and shims still litter the work site. Station practice is to clear a site before heading in — the disposal unit, tool rack and component crate stand along the south path.',
       );
       this.logRouteCompletedIfFinished();
     } else {
