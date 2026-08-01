@@ -53,6 +53,14 @@ export type { GameItemDefinition } from './items';
 export { GAME_ITEM_REGISTRY, getGameItem, isKnownGameItem } from './items';
 export type { NpcActorConfig } from './Npc';
 export { NpcActor } from './Npc';
+export type {
+  PhysicalContainerEntry,
+  PhysicalLayerConfig,
+  PhysicalObjectEntry,
+  PhysicalObjectSpec,
+  PhysicalPlacement,
+} from './physical';
+export { PhysicalManipulationLayer } from './physical';
 export type { FieldRouteState } from './routeTasks';
 export {
   acceptSurveyBriefing,

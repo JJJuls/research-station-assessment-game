@@ -2110,6 +2110,21 @@ export abstract class RoomScene extends Phaser.Scene {
   /** SPACE pressed with no station/door in range. Default: no-op. */
   protected onEmptyInteract(): void {}
 
+  /**
+   * Physical-layer eligibility (Unit 1, physical-mechanics session): a
+   * direct-manipulation layer accepts pointer input only while no prompt
+   * panel is open and no timed world action is running — the same
+   * eligibility rule updateProximity applies to stations/doors.
+   */
+  protected physicalInputEligible(): boolean {
+    return (
+      this.activePrompt === null &&
+      !state.isTypewriting &&
+      !this.transitioning &&
+      !isWorldActionActive()
+    );
+  }
+
   update() {
     // FABLE-NEXT-06: the avatar holds still while a prompt is open — the
     // arrow keys belong to card focus there (presentation-only; selection
