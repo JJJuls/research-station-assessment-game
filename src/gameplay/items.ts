@@ -79,6 +79,63 @@ export const GAME_ITEM_REGISTRY: readonly GameItemDefinition[] = [
       'Bench calibration unit for field instruments. Stored in the calibration locker.',
     tags: ['tool'],
   },
+  // ——— Coolant red line (action-assessment rebuild, Unit 2) ———
+  {
+    item_id: 'pipe_segment',
+    label: 'Pipe Segment',
+    icon: 'proc-icon-pipe-segment',
+    description:
+      'Straight coolant line section, reclaimed from the yard. The Pump House parts run wants it.',
+    tags: ['component'],
+  },
+  {
+    item_id: 'pipe_elbow',
+    label: 'Pipe Elbow',
+    icon: 'proc-icon-pipe-elbow',
+    description:
+      'Angled coolant line section, reclaimed from the yard. The Pump House parts run wants it.',
+    tags: ['component'],
+  },
+  {
+    item_id: 'ore_chunk',
+    label: 'Ore Chunk',
+    icon: 'proc-icon-ore-chunk',
+    description:
+      'Dense mineral chunk turned up by the survey. Goes to the materials tally at handover.',
+    tags: ['sample'],
+  },
+  {
+    item_id: 'scrap_plate',
+    label: 'Scrap Plate',
+    icon: 'proc-icon-scrap-plate',
+    description:
+      'Bent alloy plate from the old line. Goes to the reclaim tally at handover.',
+    tags: ['sample'],
+  },
+  {
+    item_id: 'heat_canister',
+    label: 'Heat Canister',
+    icon: 'proc-icon-heat-canister',
+    description:
+      'Single-use exothermic canister. Thaws frozen fittings and iced housings.',
+    tags: ['tool'],
+  },
+  {
+    item_id: 'pry_bar',
+    label: 'Pry Bar',
+    icon: 'proc-icon-pry-bar',
+    description:
+      'Hardened leverage bar. Frees seized housings once they have some give.',
+    tags: ['tool'],
+  },
+  {
+    item_id: 'coolant_coupling',
+    label: 'Coolant Coupling',
+    icon: 'proc-icon-coolant-coupling',
+    description:
+      'The heavy line coupling freed from the frozen housing. The pump intake needs it.',
+    tags: ['component'],
+  },
 ] as const;
 
 export function getGameItem(itemId: string): GameItemDefinition {

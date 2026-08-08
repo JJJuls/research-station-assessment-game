@@ -1,6 +1,7 @@
 export * from './ArchiveScene';
 export * from './ArtifactSurveyScene';
 export * from './Boot';
+export * from './CoolantYardScene';
 export * from './DockScene';
 export * from './EngineerScene';
 export * from './FieldScene';
@@ -12,6 +13,7 @@ export * from './InventoryScene';
 export * from './Main';
 export * from './Menu';
 export * from './OpsAnnexScene';
+export * from './PumpHouseScene';
 export * from './RepairScene';
 export * from './SideRepairScene';
 export * from './UtilityBayScene';

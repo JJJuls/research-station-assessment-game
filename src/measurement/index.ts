@@ -2,6 +2,38 @@ export {
   FINAL_CORE_BASELINE_ISSUE_LABEL,
   FINAL_CORE_BASELINE_VERSION,
 } from './finalCoreBaseline';
+export type { M23Act, M23ActKind } from './m23Excavation';
+export {
+  applyM23Act,
+  M23_ACT_PROGRESS,
+  M23_ENTRY_STATE_VERSION,
+  M23_OPPORTUNITY_ID,
+  M23_PROGRESS_TARGET,
+  M23_PRY_THRESHOLD,
+  m23State,
+  m23Summary,
+  markM23Engaged,
+  resetM23State,
+} from './m23Excavation';
+export type { M26State } from './m26DepletedField';
+export {
+  acknowledgeM26Depletion,
+  closeM26Window,
+  M26_DEPLETION_CERTIFICATE,
+  M26_ENTRY_STATE_VERSION,
+  M26_OPPORTUNITY_ID,
+  m26State,
+  m26Summary,
+  m26WindowOpen,
+  markM26AlternativeTaken,
+  markM26CertificateShown,
+  markM26DemoDig,
+  markM26DemoScan,
+  markM26VerificationScan,
+  recordM26PostAckDig,
+  recordM26PostAckScan,
+  resetM26State,
+} from './m26DepletedField';
 export {
   getQ03Slot,
   getQ03Tool,

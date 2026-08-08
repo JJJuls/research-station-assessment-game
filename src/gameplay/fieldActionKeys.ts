@@ -43,6 +43,13 @@ export interface FieldActionBinding {
    * refusals — presses are otherwise silent.
    */
   perform: (target: { x: number; y: number }) => void;
+  /**
+   * Key pressed with NO eligible target (invalid-location press). Hosts
+   * use this for neutral guidance feedback in contexts where the action
+   * concept applies (e.g. D pressed on unmarked ground inside a survey
+   * sector) and stay silent elsewhere. Optional; default is silence.
+   */
+  onIneligiblePress?: () => void;
 }
 
 interface HintChip {
@@ -91,10 +98,17 @@ export class FieldActionController {
         }
 
         const binding = this.bindings.find((entry) => entry.key === key);
-        const target = binding?.getTarget() ?? null;
 
-        if (binding !== undefined && target !== null) {
+        if (binding === undefined) {
+          return;
+        }
+
+        const target = binding.getTarget();
+
+        if (target !== null) {
           binding.perform(target);
+        } else {
+          binding.onIneligiblePress?.();
         }
       };
 

@@ -135,6 +135,18 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-icon-coolant-slug': { width: 24, height: 24 },
   'proc-icon-sensor-husk': { width: 24, height: 24 },
   'proc-icon-ice-pearl': { width: 24, height: 24 },
+  // Action-assessment rebuild (Unit 2): coolant-yard survey art.
+  'proc-icon-pipe-segment': { width: 24, height: 24 },
+  'proc-icon-pipe-elbow': { width: 24, height: 24 },
+  'proc-icon-ore-chunk': { width: 24, height: 24 },
+  'proc-icon-scrap-plate': { width: 24, height: 24 },
+  'proc-icon-heat-canister': { width: 24, height: 24 },
+  'proc-icon-pry-bar': { width: 24, height: 24 },
+  'proc-icon-coolant-coupling': { width: 24, height: 24 },
+  'proc-housing-frozen': { width: 52, height: 44 },
+  'proc-sector-post': { width: 16, height: 34 },
+  'proc-reclamation-post': { width: 40, height: 52 },
+  'proc-crate-supply': { width: 48, height: 40 },
 };
 
 interface ProcTexturesProbe {

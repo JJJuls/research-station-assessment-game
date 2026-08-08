@@ -173,6 +173,11 @@ export class FieldScene extends RoomScene {
       return { x: 11 * 32, y: 14.5 * 32 };
     }
 
+    // Returning from the Coolant Yard: just inside the east gate.
+    if (data?.spawn === 'proto_coolant_yard') {
+      return { x: 18.5 * 32, y: 10 * 32 };
+    }
+
     // Just inside the airlock, outside the door's 72px radius.
     return { x: 10 * 32, y: 4 * 32 };
   }
@@ -282,6 +287,21 @@ export class FieldScene extends RoomScene {
       title: 'Artifact survey',
       initialObjective:
         'Surveyor Noor is staging a specimen sweep — Ridge Annex, south path.',
+    });
+
+    // ——— Action-assessment rebuild (Unit 2): east gate to the Coolant
+    // Yard (the coolant red line's exterior work area).
+    this.addDoor({
+      x: 21 * 32,
+      y: 10 * 32,
+      label: 'Coolant Yard Gate',
+      texture: 'prop-hub-door-frame',
+      interactionKey: 'coolantYardArea',
+      target: {
+        sceneKey: key.scene.coolantYard,
+        roomId: 'proto_coolant_yard',
+        spawn: 'proto_field_site',
+      },
     });
 
     // ——— Physical-mechanics session (Unit 2): Q04 standardised field

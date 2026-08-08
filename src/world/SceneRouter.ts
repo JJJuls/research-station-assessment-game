@@ -15,6 +15,8 @@ const SCENE_PARAM_TO_KEY: Record<string, string> = {
   archive: key.scene.archive,
   // Physical-mechanics session (Unit 3): the Ridge Annex artifact survey.
   artifact_field: key.scene.artifactSurvey,
+  // Action-assessment rebuild (Unit 2): the coolant red line areas.
+  coolant_yard: key.scene.coolantYard,
   dock: key.scene.dock,
   // Overnight prototype: the Survey Terrace gameplay area and the two
   // Unit 3 measurement-module areas (not assessment stations — no
@@ -23,6 +25,7 @@ const SCENE_PARAM_TO_KEY: Record<string, string> = {
   hub: key.scene.hub,
   ops_annex: key.scene.opsAnnex,
   prototype: key.scene.main,
+  pump_house: key.scene.pumpHouse,
   utility_bay: key.scene.utilityBay,
 };
 

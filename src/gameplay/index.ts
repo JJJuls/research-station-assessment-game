@@ -31,6 +31,40 @@ export {
   unlockAudio,
 } from './audio';
 export { ControlsReference } from './controlsReference';
+export type {
+  CoolantRouteState,
+  YardDeposit,
+  YardSectorBounds,
+} from './coolantRoute';
+export {
+  acceptCoolantInvestigation,
+  COOLANT_INVESTIGATION_TASK_ID,
+  COOLANT_RECOVERY_TASK_ID,
+  coolantRouteState,
+  digDeposit,
+  flagDeposit,
+  getDeposit,
+  insideSector,
+  isDepositDug,
+  isDepositFlagged,
+  LINE_COMPONENT_ITEM_IDS,
+  lineComponentsRecovered,
+  markCouplingRecovered,
+  markWorkOrderRead,
+  RECLAIMED_SECTOR_BOUNDS,
+  recordSurveyScan,
+  refreshCoolantObjective,
+  registerCoolantTasks,
+  resetCoolantRouteState,
+  resolveSurveyScan,
+  SCAN_ACTIONABLE_RADIUS,
+  SCAN_WEAK_RADIUS,
+  SURVEY_SECTOR_BOUNDS,
+  takeHeatCanister,
+  takePryBar,
+  YARD_DEPOSITS,
+  yardRecoveryComplete,
+} from './coolantRoute';
 export {
   burstParticles,
   cameraKick,

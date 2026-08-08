@@ -315,6 +315,52 @@ export const researchInteractions = {
     score_tags: [],
     room_id: 'proto_utility_bay',
   },
+  // ——— Action-assessment rebuild (Unit 2): coolant red line ———
+  // Same governance as every proto_* block above: internal/provisional
+  // identifiers, raw telemetry via logScenarioEvent only, no canonical
+  // task_id, no Q-mapping, no scoring. proto_m23_* / proto_m26_* are
+  // item-local provisional M-battery families (M<->Q crosswalk is an
+  // open research-owner decision).
+  coolantYardArea: {
+    object_id: 'proto_coolant_yard_area',
+    label: 'Coolant Yard',
+    episode: 'proto_coolant_line',
+    event_type: 'proto_yard_entered',
+    score_tags: [],
+    room_id: 'proto_coolant_yard',
+  },
+  coolantSupplyCrate: {
+    object_id: 'proto_yard_supply_crate',
+    label: 'Yard Supply Crate',
+    episode: 'proto_coolant_line',
+    event_type: 'proto_supply_taken',
+    score_tags: [],
+    room_id: 'proto_coolant_yard',
+  },
+  coolantFrozenHousing: {
+    object_id: 'proto_m23_frozen_housing',
+    label: 'Frozen Coupling Housing',
+    episode: 'proto_m23_frozen_coupling',
+    event_type: 'proto_m23_engaged',
+    score_tags: [],
+    room_id: 'proto_coolant_yard',
+  },
+  coolantReclamationPost: {
+    object_id: 'proto_m26_reclamation_post',
+    label: 'Reclamation Post',
+    episode: 'proto_m26_reclaimed_sector',
+    event_type: 'proto_m26_certificate_shown',
+    score_tags: [],
+    room_id: 'proto_coolant_yard',
+  },
+  pumpPressureConsole: {
+    object_id: 'proto_pump_pressure_console',
+    label: 'Pressure Console',
+    episode: 'proto_coolant_line',
+    event_type: 'proto_work_order_read',
+    score_tags: [],
+    room_id: 'proto_pump_house',
+  },
   // ——— Physical-mechanics session (Unit 7): post-assessment free play ———
   // NOT a measurement opportunity: locked until the assessment route is
   // complete (or an explicit DEV free-play flag), no Q tags, secondary

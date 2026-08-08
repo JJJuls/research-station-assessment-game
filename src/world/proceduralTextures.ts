@@ -1638,7 +1638,152 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
     draw: drawIconSensorHusk,
   },
   'proc-icon-ice-pearl': { width: 24, height: 24, draw: drawIconIcePearl },
+  // Action-assessment rebuild (Unit 2): coolant-yard survey art.
+  'proc-icon-pipe-segment': {
+    width: 24,
+    height: 24,
+    draw: drawIconPipeSegment,
+  },
+  'proc-icon-pipe-elbow': { width: 24, height: 24, draw: drawIconPipeElbow },
+  'proc-icon-ore-chunk': { width: 24, height: 24, draw: drawIconOreChunk },
+  'proc-icon-scrap-plate': {
+    width: 24,
+    height: 24,
+    draw: drawIconScrapPlate,
+  },
+  'proc-icon-heat-canister': {
+    width: 24,
+    height: 24,
+    draw: drawIconHeatCanister,
+  },
+  'proc-icon-pry-bar': { width: 24, height: 24, draw: drawIconPryBar },
+  'proc-icon-coolant-coupling': {
+    width: 24,
+    height: 24,
+    draw: drawIconCoolantCoupling,
+  },
+  'proc-housing-frozen': { width: 52, height: 44, draw: drawHousingFrozen },
+  'proc-sector-post': { width: 16, height: 34, draw: drawSectorPost },
+  'proc-reclamation-post': {
+    width: 40,
+    height: 52,
+    draw: drawReclamationPost,
+  },
+  'proc-crate-supply': { width: 48, height: 40, draw: drawCrateSupply },
 };
+
+// ————————————————————————————————————————————————————————————————————
+// Action-assessment rebuild (Unit 2): coolant-yard survey art — line
+// component/tool icons and yard worksite props. Same drawing language
+// and determinism rule as everything above (cyan only on interactables).
+// ————————————————————————————————————————————————————————————————————
+
+/** Pipe Segment: straight flanged line section. */
+function drawIconPipeSegment(g: Graphics) {
+  box(g, 3, 9, 18, 6, MUTED);
+  rect(g, 3, 9, 18, 1, 0xc9d9e6);
+  rect(g, 2, 7, 3, 10, BORDER);
+  rect(g, 19, 7, 3, 10, BORDER);
+}
+
+/** Pipe Elbow: right-angle flanged section. */
+function drawIconPipeElbow(g: Graphics) {
+  box(g, 4, 9, 14, 6, MUTED);
+  box(g, 12, 9, 6, 12, MUTED);
+  rect(g, 4, 9, 14, 1, 0xc9d9e6);
+  rect(g, 3, 7, 3, 10, BORDER);
+  rect(g, 11, 19, 8, 3, BORDER);
+}
+
+/** Ore Chunk: faceted dense mineral lump. */
+function drawIconOreChunk(g: Graphics) {
+  rect(g, 6, 9, 12, 10, 0x46586b);
+  rect(g, 8, 6, 8, 6, 0x5d6d80);
+  rect(g, 9, 8, 4, 3, 0x8fa1ab);
+  rect(g, 13, 13, 4, 4, 0x2f3d4d);
+  rect(g, 5, 18, 14, 2, OUTLINE);
+}
+
+/** Scrap Plate: bent alloy plate with rivet holes. */
+function drawIconScrapPlate(g: Graphics) {
+  rect(g, 4, 10, 16, 8, 0x46586b);
+  rect(g, 6, 8, 12, 4, 0x5d6d80);
+  rect(g, 7, 12, 2, 2, PANEL);
+  rect(g, 15, 13, 2, 2, PANEL);
+  rect(g, 11, 15, 2, 2, PANEL);
+}
+
+/** Heat Canister: squat cylinder with a thermal band. */
+function drawIconHeatCanister(g: Graphics) {
+  box(g, 7, 5, 10, 15, CARD, BORDER);
+  rect(g, 9, 3, 6, 3, BORDER);
+  rect(g, 8, 10, 8, 3, 0xb08334);
+  rect(g, 8, 15, 8, 2, MUTED);
+}
+
+/** Pry Bar: angled leverage bar with a flattened tip. */
+function drawIconPryBar(g: Graphics) {
+  rect(g, 5, 16, 14, 3, MUTED);
+  rect(g, 16, 8, 3, 10, MUTED);
+  rect(g, 15, 5, 5, 4, 0xc9d9e6);
+  rect(g, 4, 15, 4, 5, BORDER);
+}
+
+/** Coolant Coupling: heavy double-flange ring, sibling of the relay
+ * coupling but visually distinct (round bore, twin flanges). */
+function drawIconCoolantCoupling(g: Graphics) {
+  box(g, 4, 6, 16, 12, KAI_SUIT_SHADE, KAI_SUIT_RIM);
+  rect(g, 2, 5, 3, 14, BORDER);
+  rect(g, 19, 5, 3, 14, BORDER);
+  rect(g, 9, 9, 6, 6, PANEL);
+  rect(g, 10, 10, 4, 4, 0x0a1116);
+}
+
+/** Frozen coupling housing: iced-over line housing, visibly seized. */
+function drawHousingFrozen(g: Graphics) {
+  // Buried line stubs either side.
+  rect(g, 0, 26, 10, 6, BORDER);
+  rect(g, 42, 26, 10, 6, BORDER);
+  // Housing block.
+  box(g, 10, 14, 32, 24, CARD, BORDER);
+  rect(g, 14, 18, 24, 6, KAI_SUIT_SHADE);
+  rect(g, 22, 26, 8, 8, PANEL);
+  // Ice sheath over the top and corners.
+  rect(g, 8, 10, 36, 6, 0xdde9f2);
+  rect(g, 6, 14, 8, 10, 0xc9d9e6);
+  rect(g, 38, 14, 8, 12, 0xc9d9e6);
+  rect(g, 12, 34, 10, 5, 0xc9d9e6);
+  rect(g, 30, 36, 12, 4, 0xdde9f2);
+}
+
+/** Sector boundary post with a small pennant (survey bounds marker). */
+function drawSectorPost(g: Graphics) {
+  rect(g, 7, 4, 2, 28, BORDER);
+  rect(g, 6, 30, 4, 3, OUTLINE);
+  rect(g, 9, 5, 6, 4, MUTED);
+}
+
+/** Reclamation post: certificate board on a short mast (M26 console). */
+function drawReclamationPost(g: Graphics) {
+  rect(g, 18, 20, 4, 28, BORDER);
+  rect(g, 16, 46, 8, 4, OUTLINE);
+  box(g, 6, 6, 28, 18, CARD, BORDER);
+  rect(g, 9, 9, 22, 2, MUTED);
+  rect(g, 9, 13, 16, 2, MUTED);
+  rect(g, 9, 17, 19, 2, MUTED);
+  // Interactable cue: small steady readout lamp.
+  rect(g, 29, 17, 3, 3, ACCENT);
+}
+
+/** Yard supply crate: banded lid, stencilled front. */
+function drawCrateSupply(g: Graphics) {
+  box(g, 4, 8, 40, 28, CARD, BORDER);
+  rect(g, 4, 14, 40, 3, BORDER);
+  rect(g, 8, 20, 10, 8, PANEL);
+  rect(g, 22, 20, 14, 2, MUTED);
+  rect(g, 22, 24, 14, 2, MUTED);
+  rect(g, 6, 4, 36, 5, KAI_SUIT_SHADE);
+}
 
 /** Fixed manifest (key → dimensions) for determinism coverage. */
 export const PROCEDURAL_TEXTURE_MANIFEST: Readonly<

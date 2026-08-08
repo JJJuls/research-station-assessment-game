@@ -329,6 +329,7 @@ export async function driveAxisTo(
 ) {
   let previous: number | null = null;
   let stalledBursts = 0;
+  let everMoved = false;
 
   for (let burst = 0; burst < 80; burst++) {
     const probe = await playerProbe(page);
@@ -345,14 +346,22 @@ export async function driveAxisTo(
     // under load (observed live: the first 150ms burst right after a
     // scene entry lands entirely between throttled frames and the leg
     // aborts at the spawn). Require TWO consecutive stalled reads before
-    // treating it as a genuine wall clamp.
+    // treating it as a genuine wall clamp — and (physical-mechanics
+    // report §15 recommended fix) require OBSERVED FORWARD MOTION first:
+    // until the leg has seen the player actually move, stall reads are
+    // treated as post-scene-entry jank and tolerated up to a longer
+    // bound (8) instead of aborting the leg at the spawn.
     if (previous !== null && Math.abs(current - previous) < 2) {
       stalledBursts += 1;
 
-      if (stalledBursts >= 2) {
+      if (stalledBursts >= (everMoved ? 2 : 8)) {
         return;
       }
     } else {
+      if (previous !== null) {
+        everMoved = true;
+      }
+
       stalledBursts = 0;
     }
     previous = current;
