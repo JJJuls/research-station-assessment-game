@@ -1091,6 +1091,133 @@ export async function dragPhysicalObjectToContainer(
 }
 
 /**
+ * State-aware card selection BY LABEL (action-assessment rebuild):
+ * opens the nearby prompt if needed, finds the option whose label
+ * contains `label`, presses its number key, and settles on the card
+ * panel changing (stage advance) or closing (selection resolved).
+ * Retries absorb swallowed presses without ever pressing a number key
+ * against the wrong stage — the label lookup re-reads live cards each
+ * attempt, which is what the blind fixed-index sequences could not do.
+ */
+/** Reads __promptCards until two consecutive reads agree (transient
+ * mid-transition renders otherwise poison stage-sequenced drivers). */
+async function stablePromptCards(page: Page) {
+  let previous = JSON.stringify(await getPromptCards(page));
+
+  for (let i = 0; i < 6; i++) {
+    await page.waitForTimeout(250);
+
+    const next = JSON.stringify(await getPromptCards(page));
+
+    if (next === previous) {
+      return JSON.parse(next) as { index: number; label: string }[] | null;
+    }
+
+    previous = next;
+  }
+
+  return JSON.parse(previous) as { index: number; label: string }[] | null;
+}
+
+export async function selectCardByLabel(page: Page, label: string) {
+  /** Card signature at the moment of the last press (late-settle guard:
+   * if a later read shows the stage moved past the target label, the
+   * press landed and re-pressing would hit the WRONG stage). */
+  let pressedSignature: string | null = null;
+
+  for (let attempt = 0; attempt < 4; attempt++) {
+    let cards = await stablePromptCards(page);
+
+    if (cards === null || cards.length === 0) {
+      if (pressedSignature !== null) {
+        // Prompt closed after our press — the selection resolved.
+        return;
+      }
+
+      await press(page, 'Space');
+      cards = await stablePromptCards(page);
+
+      if (cards === null || cards.length === 0) {
+        continue;
+      }
+    }
+
+    const signature = JSON.stringify(cards);
+    const index = cards.findIndex((card) => card.label.includes(label));
+
+    if (index < 0) {
+      if (pressedSignature !== null && signature !== pressedSignature) {
+        // The stage advanced past the target: the press landed late.
+        return;
+      }
+
+      throw new Error(
+        `card "${label}" not among [${cards.map((card) => card.label).join(' | ')}]`,
+      );
+    }
+
+    await press(page, `${index + 1}`);
+    pressedSignature = signature;
+
+    const settled = await page
+      .waitForFunction(
+        (prev) =>
+          JSON.stringify(
+            (window as unknown as { __promptCards?: unknown }).__promptCards ??
+              null,
+          ) !== prev,
+        signature,
+        { timeout: 5_000 },
+      )
+      .then(
+        () => true,
+        () => false,
+      );
+
+    if (settled) {
+      return;
+    }
+  }
+
+  throw new Error(`card "${label}" never selected`);
+}
+
+/**
+ * Closes an accidentally open prompt by selecting its LAST option
+ * (every prompt's final option is a neutral Back/Step back/Close).
+ * No-op when nothing is open. Used after real-time minigame phases
+ * where a settling SPACE can land on the station and open its prompt.
+ */
+export async function dismissOpenPrompt(page: Page) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const cards = await getPromptCards(page);
+
+    if (cards === null || cards.length === 0) {
+      return;
+    }
+
+    await press(page, `${cards.length}`);
+
+    const closed = await page
+      .waitForFunction(
+        () =>
+          ((window as unknown as { __promptCards?: unknown }).__promptCards ??
+            null) === null,
+        undefined,
+        { timeout: 3_000 },
+      )
+      .then(
+        () => true,
+        () => false,
+      );
+
+    if (closed) {
+      return;
+    }
+  }
+}
+
+/**
  * SPACE-open with the documented SwiftShader input-loss retry (the
  * measurement_boundaries openPrompt pattern, shared): presses SPACE and
  * waits for the card panel; re-presses up to twice when nothing renders.

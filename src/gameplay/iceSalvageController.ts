@@ -69,6 +69,53 @@ interface SalvageCastConfig {
 }
 
 /**
+ * Raw winch-cast variant (action-assessment rebuild, Unit 4): the exact
+ * same embodied presentation — lower, tension swing, hook, reel — but
+ * the CALLER resolves what (if anything) comes up on a hit. Used by the
+ * Recycler Catchment (M24 controlled deck); the ice-bore free-play cast
+ * below keeps its original deck semantics byte-for-byte.
+ */
+export interface WinchCastConfig {
+  scene: Phaser.Scene;
+  x: number;
+  y: number;
+  /** Hook resolution: hit = the hook set inside the band. */
+  onResolved: (hit: boolean) => void;
+}
+
+export function startWinchCast(config: WinchCastConfig): boolean {
+  const { scene, x, y } = config;
+
+  setProbe('lowering', false);
+
+  const started = performWorldAction({
+    scene,
+    x,
+    y,
+    label: 'Lowering…',
+    durationMs: 800,
+    onComplete: () =>
+      runTensionPhase(
+        {
+          scene,
+          x,
+          y,
+          onResolved: () => undefined,
+        },
+        config.onResolved,
+      ),
+  });
+
+  if (!started) {
+    setProbe('idle', false);
+  } else {
+    sfxScan();
+  }
+
+  return started;
+}
+
+/**
  * Runs one full cast (lower → tension → hook → reel/resolve). Returns
  * false when another action is already running.
  */
@@ -95,7 +142,10 @@ export function startSalvageCast(config: SalvageCastConfig): boolean {
   return started;
 }
 
-function runTensionPhase(config: SalvageCastConfig) {
+function runTensionPhase(
+  config: SalvageCastConfig,
+  rawResolve?: (hit: boolean) => void,
+) {
   const { scene, x, y } = config;
 
   beginManualWorldAction();
@@ -194,10 +244,20 @@ function runTensionPhase(config: SalvageCastConfig) {
     cleanup();
 
     if (!hit) {
-      recordSalvageMiss();
+      // Raw casts leave miss bookkeeping to the caller (the ice deck's
+      // miss counter belongs to the free-play activity only).
+      if (rawResolve === undefined) {
+        recordSalvageMiss();
+      }
+
       sfxUnavailable();
       setProbe('idle', false);
-      config.onResolved({ outcome: 'miss' });
+
+      if (rawResolve !== undefined) {
+        rawResolve(false);
+      } else {
+        config.onResolved({ outcome: 'miss' });
+      }
       return;
     }
 
@@ -210,11 +270,18 @@ function runTensionPhase(config: SalvageCastConfig) {
       label: 'Reeling…',
       durationMs: 900,
       onComplete: () => {
+        setProbe('idle', false);
+
+        if (rawResolve !== undefined) {
+          // The caller resolves and presents the raw cast's outcome.
+          rawResolve(true);
+          return;
+        }
+
         const draw = drawSalvageCatch();
 
         sfxComplete();
         showFloatingText(scene, x, y - 8, `+ ${draw.label}`);
-        setProbe('idle', false);
         config.onResolved({ outcome: 'hit', draw });
       },
     });

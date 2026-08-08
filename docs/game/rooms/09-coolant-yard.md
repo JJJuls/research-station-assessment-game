@@ -1,6 +1,6 @@
 # Coolant Yard (`proto_coolant_yard`)
 
-Status: PROVISIONAL — action-assessment rebuild Unit 2. Not an
+Status: PROVISIONAL — action-assessment rebuild Units 2 + 4. Not an
 assessment station (no station-registry entry); every identifier is
 `proto_*` raw telemetry with no canonical event names and no scoring.
 
@@ -30,6 +30,21 @@ main repair arc). Hosts:
   scan/dig acts are M26 evidence (`proto_m26_*`); pre-acknowledgement
   searching is secondary. A neutral useful alternative (continue the
   parts run) is always visible; leaving immediately is a valid outcome.
+
+- **M24 (provisional, Unit 4)** — Recycler Catchment rig (SW corner):
+  the F-key electromagnet winch. Useful phase = a FIXED six-pull reward
+  deck (2 scrap, 1 ore, 1 credit chit, 1 empty, 1 rare display piece)
+  whose ORDER is counterbalanced per session and recorded; rewards are
+  cosmetic reclaim credits only (visible tally chip; nothing eases any
+  scored task). The deck then empties BY CONSTRUCTION — no pull,
+  jackpot included, can occur afterwards. Exhaustion presents on the
+  rig readout, is verified by the participant's own scanner sweep (C at
+  the rig), and the M24 window opens only at the explicit
+  acknowledgement; only subsequent identical casts are M24 evidence
+  (`proto_m24_*`). Stopping and continuing stay equally accessible; a
+  neutral alternative records when the participant moves on. The
+  post-assessment ice-bore free-play salvage (Survey Terrace) is
+  untouched and still locked behind Final Core.
 
 ## Connections
 

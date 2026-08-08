@@ -74,6 +74,42 @@ export {
   markM23Engaged,
   resetM23State,
 } from './m23Excavation';
+export type { M24Pull, M24State } from './m24SalvageExhaustion';
+export {
+  acknowledgeM24Exhaustion,
+  closeM24Window,
+  drawM24Pull,
+  ensureM24DeckOrder,
+  M24_DECK_CONTENTS,
+  M24_DECK_ORDERS,
+  M24_ENTRY_STATE_VERSION,
+  M24_EXHAUSTION_READOUT,
+  M24_OPPORTUNITY_ID,
+  m24DeckRemaining,
+  m24Exhausted,
+  m24State,
+  m24Summary,
+  m24WindowOpen,
+  markM24AlternativeTaken,
+  markM24ExhaustionShown,
+  markM24VerificationScan,
+  recordM24PostAckCast,
+  resetM24State,
+} from './m24SalvageExhaustion';
+export type { M25State } from './m25PumpLock';
+export {
+  M25_CYCLE_READOUTS,
+  M25_ENTRY_STATE_VERSION,
+  M25_LOCK_STATEMENT,
+  M25_OPPORTUNITY_ID,
+  M25_USEFUL_CYCLES,
+  m25State,
+  m25Summary,
+  m25WindowOpen,
+  pressM25Prime,
+  resetM25Interlock,
+  resetM25State,
+} from './m25PumpLock';
 export type { M26State } from './m26DepletedField';
 export {
   acknowledgeM26Depletion,

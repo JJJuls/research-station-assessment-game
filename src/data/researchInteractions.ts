@@ -385,6 +385,22 @@ export const researchInteractions = {
     score_tags: [],
     room_id: 'proto_pump_house',
   },
+  coolantRecyclerRig: {
+    object_id: 'proto_m24_recycler_rig',
+    label: 'Recycler Catchment',
+    episode: 'proto_m24_recycler_catchment',
+    event_type: 'proto_m24_pull',
+    score_tags: [],
+    room_id: 'proto_coolant_yard',
+  },
+  pumpInterlockConsole: {
+    object_id: 'proto_m25_interlock_console',
+    label: 'Pump Interlock Console',
+    episode: 'proto_m25_pump_interlock',
+    event_type: 'proto_m25_prime_cycle',
+    score_tags: [],
+    room_id: 'proto_pump_house',
+  },
   // ——— Physical-mechanics session (Unit 7): post-assessment free play ———
   // NOT a measurement opportunity: locked until the assessment route is
   // complete (or an explicit DEV free-play flag), no Q tags, secondary

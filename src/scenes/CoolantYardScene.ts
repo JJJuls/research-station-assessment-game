@@ -34,21 +34,34 @@ import {
   sfxScan,
   showFloatingText,
   snowfall,
+  sparkle,
+  startWinchCast,
   SURVEY_SECTOR_BOUNDS,
   takeHeatCanister,
   takePryBar,
   YARD_DEPOSITS,
 } from '../gameplay';
 import {
+  acknowledgeM24Exhaustion,
   acknowledgeM26Depletion,
   applyM23Act,
+  assignCounterbalance,
+  closeM24Window,
   closeM26Window,
   declareOpportunity,
+  drawM24Pull,
+  ensureM24DeckOrder,
   m22State,
   m22WindowOpen,
   M23_ENTRY_STATE_VERSION,
   M23_OPPORTUNITY_ID,
   m23State,
+  M24_ENTRY_STATE_VERSION,
+  M24_EXHAUSTION_READOUT,
+  M24_OPPORTUNITY_ID,
+  m24Exhausted,
+  m24State,
+  m24WindowOpen,
   M26_DEPLETION_CERTIFICATE,
   M26_ENTRY_STATE_VERSION,
   M26_OPPORTUNITY_ID,
@@ -56,6 +69,9 @@ import {
   m26WindowOpen,
   markM22SpareSealFetched,
   markM23Engaged,
+  markM24AlternativeTaken,
+  markM24ExhaustionShown,
+  markM24VerificationScan,
   markM26AlternativeTaken,
   markM26CertificateShown,
   markM26DemoDig,
@@ -64,10 +80,12 @@ import {
   markOpportunityCompleted,
   markOpportunityEntered,
   markOpportunityOffered,
+  recordM24PostAckCast,
   recordM26PostAckDig,
   recordM26PostAckScan,
   refreshValidityProbe,
 } from '../measurement';
+import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption } from '../world';
 import { RoomScene } from '../world';
 import type { RoomLayout } from '../world/StationMapBuilder';
@@ -92,6 +110,7 @@ import type { RoomLayout } from '../world/StationMapBuilder';
 const SUPPLY_CRATE_POSITION = { x: 5 * 32, y: 3.5 * 32 };
 const HOUSING_POSITION = { x: 12 * 32, y: 14 * 32 };
 const RECLAMATION_POST_POSITION = { x: 13.5 * 32, y: 5.5 * 32 };
+const RECYCLER_RIG_POSITION = { x: 3 * 32, y: 14 * 32 };
 const YARD_TO_FIELD_DOOR = { x: 3.5 * 32, y: 1 * 32 + 16 };
 const YARD_TO_PUMP_DOOR = { x: 17.5 * 32, y: 1 * 32 + 16 };
 
@@ -105,6 +124,8 @@ export class CoolantYardScene extends RoomScene {
   /** M23 housing progress bar (world-space, above the housing). */
   private housingBarBack?: Phaser.GameObjects.Rectangle;
   private housingBarFill?: Phaser.GameObjects.Rectangle;
+  /** Reclaim-credit tally chip (Unit 4 cosmetic economy). */
+  private creditsChip?: Phaser.GameObjects.Text;
 
   constructor() {
     super(key.scene.coolantYard);
@@ -252,6 +273,45 @@ export class CoolantYardScene extends RoomScene {
       onPromptOpened: () => this.onReclamationPostOpened(),
     });
 
+    // ——— Unit 4: the Recycler Catchment rig (M24). The controlled
+    // reward deck's ORDER is counterbalanced per session and recorded;
+    // rewards are cosmetic reclaim credits only.
+    ensureM24DeckOrder(
+      assignCounterbalance(
+        researchRuntime.sessionState.getMetadata().game_session_id,
+        'm24_deck_order',
+        [0, 1, 2],
+      ),
+    );
+    declareOpportunity({
+      opportunity_id: M24_OPPORTUNITY_ID,
+      owner: 'M24 (provisional 26-battery)',
+      entry_state_version: M24_ENTRY_STATE_VERSION,
+      counterbalance: `deck_order_${m24State.deck_order}`,
+    });
+    markOpportunityOffered(M24_OPPORTUNITY_ID);
+    this.addStation({
+      interactionKey: 'coolantRecyclerRig',
+      label: 'Recycler Catchment',
+      texture: 'proc-rig-recycler',
+      x: RECYCLER_RIG_POSITION.x,
+      y: RECYCLER_RIG_POSITION.y,
+    });
+
+    // Participant-visible reclaim-credit tally (cosmetic economy only;
+    // never gates or eases any scored task).
+    this.creditsChip = this.add
+      .text(8, 56, '', {
+        backgroundColor: '#101820',
+        color: '#9fb2c1',
+        font: '12px monospace',
+        padding: { x: 6, y: 2 },
+      })
+      .setOrigin(0)
+      .setDepth(20)
+      .setScrollFactor(0)
+      .setVisible(false);
+
     // ——— Persistent world state re-render (flags, spoil, housing).
     for (const deposit of YARD_DEPOSITS) {
       if (isDepositDug(deposit.deposit_id)) {
@@ -304,6 +364,12 @@ export class CoolantYardScene extends RoomScene {
         },
       },
       {
+        key: 'F',
+        label: 'Winch',
+        getTarget: () => this.recyclerTarget(),
+        perform: () => this.startRecyclerCast(),
+      },
+      {
         key: 'D',
         label: 'Dig',
         getTarget: () => this.digTarget(),
@@ -337,6 +403,27 @@ export class CoolantYardScene extends RoomScene {
   protected onRoomUpdate(): void {
     this.actionController?.update();
     this.updateHousingProgressBar();
+    this.updateCreditsChip();
+
+    // M24 neutral alternative: with the window open, moving clear of
+    // the rig (back toward the shift's remaining work) is the
+    // alternative act — recorded once, never gated.
+    if (
+      m24WindowOpen() &&
+      !m24State.alternative_taken &&
+      Phaser.Math.Distance.Between(
+        this.player.x,
+        this.player.y,
+        RECYCLER_RIG_POSITION.x,
+        RECYCLER_RIG_POSITION.y,
+      ) > 150
+    ) {
+      markM24AlternativeTaken();
+      this.logScenarioEvent(
+        'coolantRecyclerRig',
+        'proto_m24_alternative_taken',
+      );
+    }
 
     // Taking the neutral alternative: with the M26 window open, moving
     // clear of the staked bounds (back toward the parts run) is the
@@ -364,6 +451,18 @@ export class CoolantYardScene extends RoomScene {
     // A cancellable action must never survive into a room transition.
     cancelActiveWorldAction();
 
+    if (m24WindowOpen()) {
+      closeM24Window();
+      markOpportunityCompleted(M24_OPPORTUNITY_ID);
+      this.logScenarioEvent('coolantRecyclerRig', 'proto_m24_closed', {
+        metadata: {
+          post_ack_casts: m24State.post_ack_casts,
+          alternative_taken: m24State.alternative_taken,
+        },
+      });
+      refreshValidityProbe();
+    }
+
     if (m26WindowOpen()) {
       closeM26Window();
       markOpportunityCompleted(M26_OPPORTUNITY_ID);
@@ -387,8 +486,23 @@ export class CoolantYardScene extends RoomScene {
     );
   }
 
-  /** C target: the player's own position inside an eligible sector. */
+  /** C target: the player's own position inside an eligible sector
+   * (handheld scanner), or the recycler rig once its exhaustion readout
+   * invites verification (the RIG'S OWN sonar head — no handheld
+   * required, so the verification is never gated by kit state). */
   private scanTarget(): { x: number; y: number } | null {
+    if (
+      m24State.exhaustion_shown &&
+      Phaser.Math.Distance.Between(
+        this.player.x,
+        this.player.y,
+        RECYCLER_RIG_POSITION.x,
+        RECYCLER_RIG_POSITION.y,
+      ) <= 96
+    ) {
+      return { x: RECYCLER_RIG_POSITION.x, y: RECYCLER_RIG_POSITION.y };
+    }
+
     if (!hasInventoryItem('field_scanner') || !this.insideAnySector()) {
       return null;
     }
@@ -429,6 +543,30 @@ export class CoolantYardScene extends RoomScene {
   }
 
   private finishYardScan(x: number, y: number) {
+    // M24 verification: a sweep over the exhausted catchment.
+    if (
+      m24State.exhaustion_shown &&
+      Phaser.Math.Distance.Between(
+        x,
+        y,
+        RECYCLER_RIG_POSITION.x,
+        RECYCLER_RIG_POSITION.y,
+      ) <= 96
+    ) {
+      if (!m24State.acknowledged && !m24State.verification_scan_done) {
+        markM24VerificationScan();
+        this.logScenarioEvent(
+          'coolantRecyclerRig',
+          'proto_m24_verification_scan',
+        );
+      }
+
+      this.showFeedbackMessage(
+        'Sonar sweep: zero return from the catchment — the sump is empty.',
+      );
+      return;
+    }
+
     if (insideSector(RECLAIMED_SECTOR_BOUNDS, x, y)) {
       this.finishReclaimedScan();
       return;
@@ -912,6 +1050,171 @@ export class CoolantYardScene extends RoomScene {
     markCouplingRecovered();
   }
 
+  // ————————————————————— M24 recycler catchment —————————————————————
+
+  /** F target: the rig, in reach (casting stays available always —
+   * stopping and continuing must remain equally accessible). */
+  private recyclerTarget(): { x: number; y: number } | null {
+    return Phaser.Math.Distance.Between(
+      this.player.x,
+      this.player.y,
+      RECYCLER_RIG_POSITION.x,
+      RECYCLER_RIG_POSITION.y,
+    ) <= 72
+      ? RECYCLER_RIG_POSITION
+      : null;
+  }
+
+  /** One full electromagnet cast — the single flow behind BOTH the F
+   * key and the rig's prompt-card option (identical deck, identical
+   * telemetry). */
+  private startRecyclerCast() {
+    startWinchCast({
+      scene: this,
+      x: RECYCLER_RIG_POSITION.x,
+      y: RECYCLER_RIG_POSITION.y,
+      onResolved: (hit) => this.resolveRecyclerCast(hit),
+    });
+  }
+
+  private resolveRecyclerCast(hit: boolean) {
+    // Post-acknowledgement identical casts: the M24 record. By deck
+    // construction NOTHING can come up — jackpot included.
+    if (m24WindowOpen()) {
+      const count = recordM24PostAckCast();
+
+      this.logScenarioEvent('coolantRecyclerRig', 'proto_m24_post_ack_cast', {
+        metadata: { post_ack_cast_number: count, hook_set: hit },
+      });
+      this.showFeedbackMessage(
+        hit
+          ? 'The magnet comes up bare — the catchment holds nothing.'
+          : 'The magnet swings clear and comes up bare.',
+      );
+      return;
+    }
+
+    // Between the exhaustion readout and the acknowledgement: recorded
+    // as pre-acknowledgement context, never primary evidence.
+    if (m24Exhausted()) {
+      this.logScenarioEvent('coolantRecyclerRig', 'proto_m24_pre_ack_cast', {
+        metadata: { hook_set: hit },
+      });
+      this.showFeedbackMessage(
+        'The magnet comes up bare. The rig readout stands: CATCHMENT CLEAR.',
+      );
+      return;
+    }
+
+    // Useful phase: misses cost only the cast; hits draw the deck.
+    if (!hit) {
+      this.logScenarioEvent('coolantRecyclerRig', 'proto_m24_miss');
+      this.showFeedbackMessage(
+        'The magnet swings clear of the sump grate. The line comes up empty.',
+      );
+      return;
+    }
+
+    const pull = drawM24Pull();
+
+    if (pull === null) {
+      return;
+    }
+
+    this.logScenarioEvent('coolantRecyclerRig', 'proto_m24_pull', {
+      metadata: {
+        pull_id: pull.pull_id,
+        tier: pull.tier,
+        credits: pull.credits,
+        pull_number: m24State.pulls.length,
+        deck_order: m24State.deck_order,
+      },
+    });
+    sfxComplete();
+    sparkle(this, RECYCLER_RIG_POSITION.x, RECYCLER_RIG_POSITION.y - 8);
+    showFloatingText(
+      this,
+      RECYCLER_RIG_POSITION.x,
+      RECYCLER_RIG_POSITION.y,
+      pull.credits > 0 ? `+ ${pull.label} (${pull.credits} cr)` : pull.label,
+    );
+    this.showFeedbackMessage(
+      pull.credits > 0
+        ? `The winch lands a ${pull.label} — ${pull.credits} reclaim credits to the yard tally.`
+        : 'The sling comes up empty this time.',
+    );
+
+    // The sixth pull empties the deck: the exhaustion readout presents
+    // IMMEDIATELY and no further pull can ever occur.
+    if (m24Exhausted()) {
+      markM24ExhaustionShown();
+      this.logScenarioEvent('coolantRecyclerRig', 'proto_m24_exhaustion_shown');
+      this.showFeedbackMessage(
+        'Rig readout — CATCHMENT CLEAR: the sump is empty; further casts return nothing. Verify with a scanner sweep (C) and log it at the rig.',
+      );
+    }
+  }
+
+  private buildRecyclerOptions(): PromptOption[] {
+    const options: PromptOption[] = [
+      {
+        label: 'Lower the magnet.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => this.startRecyclerCast(),
+      },
+    ];
+
+    if (m24State.exhaustion_shown && !m24State.acknowledged) {
+      options.push({
+        label: 'Acknowledge the empty catchment.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => {
+          if (acknowledgeM24Exhaustion()) {
+            markOpportunityEntered(M24_OPPORTUNITY_ID);
+            refreshValidityProbe();
+            this.logScenarioEvent(
+              'coolantRecyclerRig',
+              'proto_m24_acknowledged',
+              {
+                metadata: {
+                  verification_scan_done: m24State.verification_scan_done,
+                },
+              },
+            );
+            this.showFeedbackMessage(
+              'Acknowledged: the catchment holds nothing. The shift continues at the Pump House trench.',
+            );
+          }
+        },
+      });
+    }
+
+    options.push({
+      label: 'Step back.',
+      feedback: '',
+      getEventTypes: () => [],
+    });
+
+    return options;
+  }
+
+  private updateCreditsChip() {
+    if (this.creditsChip === undefined) {
+      return;
+    }
+
+    if (m24State.pulls.length === 0) {
+      this.creditsChip.setVisible(false);
+      return;
+    }
+
+    this.creditsChip
+      .setText(`Reclaim credits: ${m24State.credits}`)
+      .setVisible(true);
+  }
+
   // ————————————————————— M26 reclamation post —————————————————————
 
   private onReclamationPostOpened(): boolean {
@@ -1071,6 +1374,17 @@ export class CoolantYardScene extends RoomScene {
       return M26_DEPLETION_CERTIFICATE;
     }
 
+    if (interactionKey === 'coolantRecyclerRig') {
+      const recovered =
+        m24State.pulls.length === 0
+          ? 'Nothing recovered yet.'
+          : `Recovered so far: ${m24State.pulls.join(', ')} — ${m24State.credits} reclaim credits.`;
+
+      return m24State.exhaustion_shown
+        ? `${M24_EXHAUSTION_READOUT} ${recovered}`
+        : `Recycler Catchment — the winch reads reclaimable material in the sump. F casts the electromagnet. ${recovered}`;
+    }
+
     if (interactionKey === 'coolantFrozenHousing') {
       return m23State.completed || coolantRouteState.coupling_recovered
         ? 'The housing is open; the freed line stub is capped and safe.'
@@ -1083,6 +1397,10 @@ export class CoolantYardScene extends RoomScene {
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
     if (interactionKey === 'coolantSupplyCrate') {
       return this.buildSupplyOptions();
+    }
+
+    if (interactionKey === 'coolantRecyclerRig') {
+      return this.buildRecyclerOptions();
     }
 
     if (interactionKey === 'coolantFrozenHousing') {

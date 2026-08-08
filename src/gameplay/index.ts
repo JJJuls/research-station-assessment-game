@@ -86,7 +86,8 @@ export {
   salvagePullCount,
   salvageSeedFromSession,
 } from './iceSalvage';
-export { startSalvageCast } from './iceSalvageController';
+export type { WinchCastConfig } from './iceSalvageController';
+export { startSalvageCast, startWinchCast } from './iceSalvageController';
 export {
   addInventoryItem,
   getInventoryItems,

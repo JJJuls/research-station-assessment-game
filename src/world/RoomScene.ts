@@ -1861,7 +1861,12 @@ export abstract class RoomScene extends Phaser.Scene {
       return;
     }
 
-    this.showFeedbackMessage(option.feedback);
+    // Empty feedback = the option's onSelected surfaces its own message
+    // (or none); rendering an empty banner would only flash a blank
+    // chip and clobber the feedback the handler just showed.
+    if (option.feedback !== '') {
+      this.showFeedbackMessage(option.feedback);
+    }
   }
 
   private closePrompt() {

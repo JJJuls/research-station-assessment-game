@@ -27,9 +27,9 @@ import {
   driveAxisTo,
   findEvents,
   getEvents,
-  getPromptCards,
   physicalProbe,
   press,
+  selectCardByLabel,
 } from './helpers';
 import { captureErrors, eventCount, expectNoRuntimeErrors } from './journey';
 
@@ -120,24 +120,6 @@ async function waitForEventType(
  * side-effect-free: once the event landed no further keys are sent; a
  * surplus SPACE against an open prompt is inert by design).
  */
-async function pressForEvent(
-  page: import('@playwright/test').Page,
-  keys: string[],
-  eventType: string,
-  wantedCount: number,
-) {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    for (const keyName of keys) {
-      await press(page, keyName);
-    }
-
-    if (await waitForEventType(page, eventType, wantedCount, 5_000)) {
-      return;
-    }
-  }
-
-  throw new Error(`keys [${keys.join(',')}] never produced ${eventType}`);
-}
 
 /** Click-rotate a seated piece (slot container rect), event-synced
  * with a swallowed-click retry (count-guarded, so no double turns). */
@@ -268,7 +250,8 @@ test.describe('pipe puzzle, diagnosis and setback (Unit 3)', () => {
     // — Work order at the pressure console.
     await driveAxisTo(page, 'x', 160, 10);
     await driveAxisTo(page, 'y', 128, 10);
-    await pressForEvent(page, ['Space', '1'], 'proto_work_order_read', 1);
+    await selectCardByLabel(page, 'Log the work order');
+    expect(await waitForEventType(page, 'proto_work_order_read', 1)).toBe(true);
 
     // — Pointer path: drag the first elbow into A2, rotate it to [W,N].
     await driveAxisTo(page, 'x', 272, 8);
@@ -292,43 +275,52 @@ test.describe('pipe puzzle, diagnosis and setback (Unit 3)', () => {
     await driveAxisTo(page, 'x', 416, 8);
     await driveAxisTo(page, 'y', 224, 8);
 
-    const seatViaCards = (
-      pieceOption: number,
-      slotOption: number,
+    const seatViaCards = async (
+      typeLabel: string,
+      slotLabel: string,
       wantedPlacements: number,
-    ) =>
-      pressForEvent(
-        page,
-        ['Space', '2', `${pieceOption}`, `${slotOption}`],
-        'proto_m13_piece_placed',
-        wantedPlacements,
-      );
+    ) => {
+      await selectCardByLabel(page, 'Seat a section');
+      await selectCardByLabel(page, typeLabel);
+      await selectCardByLabel(page, slotLabel);
+      expect(
+        await waitForEventType(
+          page,
+          'proto_m13_piece_placed',
+          wantedPlacements,
+        ),
+      ).toBe(true);
+    };
+    const rotateViaCards = async (
+      slotLabel: string,
+      wantedRotations: number,
+    ) => {
+      await selectCardByLabel(page, 'Rotate a section');
+      await selectCardByLabel(page, slotLabel);
+      expect(
+        await waitForEventType(
+          page,
+          'proto_m13_piece_rotated',
+          wantedRotations,
+        ),
+      ).toBe(true);
+    };
 
-    // el2 -> A1 (pieces [st1,st2,el2,...] => 3; slots [A1,...] => 1).
-    await seatViaCards(3, 1, 2);
-    // rotate A1 once (seated [A1,A2] => option 1).
-    await pressForEvent(
-      page,
-      ['Space', '3', '1'],
-      'proto_m13_piece_rotated',
-      4,
-    );
-    // el3 -> C1 (pieces [st1,st2,el3,...] => 3; slots [B1,C1,...] => 2).
-    await seatViaCards(3, 2, 3);
-    // rotate C1 twice (seated [A1,C1,A2] => option 2).
-    for (const wanted of [5, 6]) {
-      await pressForEvent(
-        page,
-        ['Space', '3', '2'],
-        'proto_m13_piece_rotated',
-        wanted,
-      );
-    }
-    // el4 -> C2 (pieces [st1,st2,el4,...] => 3; slots [B1,C2,...] => 2).
-    await seatViaCards(3, 2, 4);
+    // el2 -> A1, rotated once to [E,S].
+    await seatViaCards('Elbow section', 'Mount A1.', 2);
+    await rotateViaCards('Mount A1.', 4);
+    // el3 -> C1, rotated twice to [S,W].
+    await seatViaCards('Elbow section', 'Mount C1.', 3);
+    await rotateViaCards('Mount C1.', 5);
+    await rotateViaCards('Mount C1.', 6);
+    // el4 -> C2 at rotation 0 ([N,E]).
+    await seatViaCards('Elbow section', 'Mount C2.', 4);
 
     // — Premature submission: honestly rejected, recorded, no completion.
-    await pressForEvent(page, ['Space', '1'], 'proto_m13_flow_submitted', 1);
+    await selectCardByLabel(page, 'Open the test flow');
+    expect(await waitForEventType(page, 'proto_m13_flow_submitted', 1)).toBe(
+      true,
+    );
 
     let events: RawEventLike[] = await getEvents(page);
     const firstSubmit = findEvents(events, 'proto_m13_flow_submitted')[0];
@@ -337,10 +329,10 @@ test.describe('pipe puzzle, diagnosis and setback (Unit 3)', () => {
     expect(findEvents(events, 'proto_m13_completed')).toHaveLength(0);
     expect(findEvents(events, 'proto_m18_fault_presented')).toHaveLength(0);
 
-    // — Seat the valve (pieces [st1,st2,te1,va1,cap1] => 4; slots [B1] => 1)
-    //   and submit the now-sealed run.
-    await seatViaCards(4, 1, 5);
-    await pressForEvent(page, ['Space', '1'], 'proto_m13_completed', 1);
+    // — Seat the valve and submit the now-sealed run.
+    await seatViaCards('Isolation valve', 'Mount B1.', 5);
+    await selectCardByLabel(page, 'Open the test flow');
+    expect(await waitForEventType(page, 'proto_m13_completed', 1)).toBe(true);
     events = await getEvents(page);
     expect(findEvents(events, 'proto_m18_fault_presented')).toHaveLength(1);
 
@@ -348,30 +340,16 @@ test.describe('pipe puzzle, diagnosis and setback (Unit 3)', () => {
     //   (option order is counterbalanced, so position is looked up).
     await driveAxisTo(page, 'x', 512, 8);
     await driveAxisTo(page, 'y', 140, 8);
-    await pressForEvent(page, ['Space', '3'], 'proto_m18_evidence_checked', 1);
-    await press(page, '1'); // Back (closes the prompt).
-
-    // Open the diagnosis stage (retry until its cards render).
-    let reliefIndex = -1;
-
-    for (let attempt = 0; attempt < 3 && reliefIndex < 0; attempt++) {
-      await press(page, 'Space');
-      await press(page, '5');
-
-      const cards = (await getPromptCards(page)) ?? [];
-
-      reliefIndex = cards.findIndex((card) =>
-        card.label.includes('Relief valve leaking'),
-      );
-    }
-
-    expect(reliefIndex).toBeGreaterThanOrEqual(0);
-    await pressForEvent(
-      page,
-      [`${reliefIndex + 1}`],
-      'proto_m18_diagnosis_submitted',
-      1,
+    await selectCardByLabel(page, 'Check Pump intake gauge');
+    expect(await waitForEventType(page, 'proto_m18_evidence_checked', 1)).toBe(
+      true,
     );
+    await selectCardByLabel(page, 'Back.');
+    await selectCardByLabel(page, 'Log the diagnosis');
+    await selectCardByLabel(page, 'Relief valve leaking');
+    expect(
+      await waitForEventType(page, 'proto_m18_diagnosis_submitted', 1),
+    ).toBe(true);
     events = await getEvents(page);
 
     const diagnosis = findEvents(events, 'proto_m18_diagnosis_submitted')[0];
@@ -384,7 +362,10 @@ test.describe('pipe puzzle, diagnosis and setback (Unit 3)', () => {
     // — M22: the shop-stock seal cracks on the first seating (setback).
     await driveAxisTo(page, 'x', 576, 8);
     await driveAxisTo(page, 'y', 288, 8);
-    await pressForEvent(page, ['Space', '1'], 'proto_m22_setback_shown', 1);
+    await selectCardByLabel(page, 'Fit the shop-stock seal');
+    expect(await waitForEventType(page, 'proto_m22_setback_shown', 1)).toBe(
+      true,
+    );
 
     // Recovery route: fetch the fresh seal from the yard supply crate.
     const beforeYard = await eventCount(page, 'scene_start', 'coolant_yard');
@@ -395,7 +376,10 @@ test.describe('pipe puzzle, diagnosis and setback (Unit 3)', () => {
     await page.waitForTimeout(1200);
     await driveAxisTo(page, 'x', 160, 10);
     await driveAxisTo(page, 'y', 176, 10);
-    await pressForEvent(page, ['Space', '1'], 'proto_m22_spare_seal_taken', 1);
+    await selectCardByLabel(page, 'Take a replacement valve seal');
+    expect(await waitForEventType(page, 'proto_m22_spare_seal_taken', 1)).toBe(
+      true,
+    );
 
     const beforePump = await eventCount(page, 'scene_start', 'pump_house');
 
@@ -405,7 +389,8 @@ test.describe('pipe puzzle, diagnosis and setback (Unit 3)', () => {
     await page.waitForTimeout(1200);
     await driveAxisTo(page, 'x', 576, 8);
     await driveAxisTo(page, 'y', 288, 8);
-    await pressForEvent(page, ['Space', '1'], 'proto_m22_recovered', 1);
+    await selectCardByLabel(page, 'Seat the fresh seal');
+    expect(await waitForEventType(page, 'proto_m22_recovered', 1)).toBe(true);
 
     // — Window independence: strict sequence and disjoint families.
     events = await getEvents(page);

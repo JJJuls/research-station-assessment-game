@@ -158,6 +158,8 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-valve-relief': { width: 40, height: 40 },
   'proc-diag-board': { width: 44, height: 52 },
   'proc-icon-valve-seal': { width: 24, height: 24 },
+  // Action-assessment rebuild (Unit 4): recycler-salvage rig.
+  'proc-rig-recycler': { width: 48, height: 52 },
 };
 
 interface ProcTexturesProbe {

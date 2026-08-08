@@ -1685,6 +1685,8 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   'proc-valve-relief': { width: 40, height: 40, draw: drawValveRelief },
   'proc-diag-board': { width: 44, height: 52, draw: drawDiagBoard },
   'proc-icon-valve-seal': { width: 24, height: 24, draw: drawIconValveSeal },
+  // Action-assessment rebuild (Unit 4): recycler-salvage rig.
+  'proc-rig-recycler': { width: 48, height: 52, draw: drawRigRecycler },
 };
 
 // ————————————————————————————————————————————————————————————————————
@@ -1907,6 +1909,29 @@ function drawDiagBoard(g: Graphics) {
   rect(g, 8, 27, 20, 2, MUTED);
   rect(g, 8, 32, 24, 2, MUTED);
   rect(g, 31, 36, 4, 4, ACCENT);
+}
+
+/** Recycler Catchment rig (M24 station): gantry winch over a sump
+ * grate, with an electromagnet head on the line. */
+function drawRigRecycler(g: Graphics) {
+  // Sump grate.
+  rect(g, 6, 40, 36, 10, OUTLINE);
+  rect(g, 8, 42, 32, 6, PANEL);
+  for (const gx of [10, 16, 22, 28, 34] as const) {
+    rect(g, gx, 42, 2, 6, BORDER);
+  }
+  // Gantry frame.
+  rect(g, 8, 8, 3, 34, BORDER);
+  rect(g, 37, 8, 3, 34, BORDER);
+  rect(g, 8, 8, 32, 3, MUTED);
+  // Winch drum + control box.
+  box(g, 18, 11, 12, 8, KAI_SUIT_SHADE, KAI_SUIT_RIM);
+  box(g, 31, 13, 7, 8, CARD, BORDER);
+  rect(g, 33, 15, 3, 2, ACCENT);
+  // Line + electromagnet head.
+  rect(g, 23, 19, 1, 14, 0x9fb2c1);
+  rect(g, 20, 33, 8, 5, OUTLINE);
+  rect(g, 21, 34, 6, 3, 0xc9d9e6);
 }
 
 /** Valve Seal (M22 item): gasket ring. */

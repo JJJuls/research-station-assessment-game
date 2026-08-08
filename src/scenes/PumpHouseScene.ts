@@ -40,6 +40,11 @@ import {
   M22_SETBACK_EXPLANATION,
   m22State,
   m22WindowOpen,
+  M25_ENTRY_STATE_VERSION,
+  M25_LOCK_STATEMENT,
+  M25_OPPORTUNITY_ID,
+  m25State,
+  m25WindowOpen,
   markM13Engaged,
   markM18FaultPresented,
   markM22FixAttempted,
@@ -49,9 +54,11 @@ import {
   markOpportunityEntered,
   markOpportunityOffered,
   placeM13Piece,
+  pressM25Prime,
   recordM18EvidenceCheck,
   refreshValidityProbe,
   removeM13Piece,
+  resetM25Interlock,
   rotateM13Piece,
   seatM22Seal,
   submitM13Flow,
@@ -88,6 +95,7 @@ import type { RoomLayout } from '../world/StationMapBuilder';
  */
 
 const PRESSURE_CONSOLE_POSITION = { x: 5 * 32, y: 2.5 * 32 };
+const INTERLOCK_CONSOLE_POSITION = { x: 10 * 32, y: 2.5 * 32 };
 const TRENCH_ORIGIN = { x: 8 * 32, y: 4 * 32 };
 const BENCH_ORIGIN = { x: 5 * 32, y: 8.5 * 32 };
 const TRENCH_CONSOLE_POSITION = { x: 13 * 32, y: 5 * 32 };
@@ -204,6 +212,21 @@ export class PumpHouseScene extends RoomScene {
       x: RELIEF_VALVE_POSITION.x,
       y: RELIEF_VALVE_POSITION.y,
       onPromptOpened: () => this.onReliefValveOpened(),
+    });
+
+    // ——— Unit 4: M25 pump restart interlock.
+    declareOpportunity({
+      opportunity_id: M25_OPPORTUNITY_ID,
+      owner: 'M25 (provisional 26-battery)',
+      entry_state_version: M25_ENTRY_STATE_VERSION,
+    });
+    this.addStation({
+      interactionKey: 'pumpInterlockConsole',
+      label: 'Pump Interlock Console',
+      texture: m25State.running ? 'proc-machine-fixed' : 'proc-machine-fault',
+      x: INTERLOCK_CONSOLE_POSITION.x,
+      y: INTERLOCK_CONSOLE_POSITION.y,
+      onPromptOpened: () => this.onInterlockOpened(),
     });
 
     // ——— The manifold trench (M13 direct-manipulation surface).
@@ -410,14 +433,36 @@ export class PumpHouseScene extends RoomScene {
   }
 
   private buildSeatStage(): PromptStage {
+    // Grouped by section type (identical pieces are interchangeable):
+    // the stage always fits the 9-option prompt limit, full bench
+    // included (5 types + Back), and the keyboard path stays compact.
+    const byType = new Map<
+      string,
+      { label: string; count: number; firstId: string }
+    >();
+
+    for (const piece of m13BenchPieces()) {
+      const entry = byType.get(piece.type);
+
+      if (entry === undefined) {
+        byType.set(piece.type, {
+          label: piece.label,
+          count: 1,
+          firstId: piece.piece_id,
+        });
+      } else {
+        entry.count += 1;
+      }
+    }
+
     return {
       body: 'Bench stock — pick a section to seat.',
       options: [
-        ...m13BenchPieces().map((piece) => ({
-          label: `${piece.label} (${piece.piece_id}).`,
+        ...[...byType.values()].map((entry) => ({
+          label: `${entry.label} (${entry.count} on the bench).`,
           feedback: '',
           getEventTypes: () => [],
-          nextStage: () => this.buildSlotStage(piece.piece_id),
+          nextStage: () => this.buildSlotStage(entry.firstId),
         })),
         { label: 'Back.', feedback: '', getEventTypes: () => [] },
       ],
@@ -786,6 +831,162 @@ export class PumpHouseScene extends RoomScene {
     }
   }
 
+  // ————————————————————— M25 pump interlock —————————————————————
+
+  private onInterlockOpened(): boolean {
+    if (!m22State.seal_seated) {
+      this.showFeedbackMessage(
+        'The pump waits on the relief-valve work before a restart is permitted.',
+      );
+      return false;
+    }
+
+    if (!this.m25Offered) {
+      this.m25Offered = true;
+      markOpportunityOffered(M25_OPPORTUNITY_ID);
+      refreshValidityProbe();
+    }
+
+    return true;
+  }
+
+  private m25Offered = false;
+
+  private buildInterlockOptions(): PromptOption[] {
+    if (m25State.running) {
+      return [
+        {
+          label: 'Step back.',
+          feedback: 'The pump runs steady. Loop B is restored.',
+          getEventTypes: () => [],
+        },
+      ];
+    }
+
+    const options: PromptOption[] = [
+      {
+        label: 'Run a prime cycle.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => this.startPrimeCycle(),
+      },
+    ];
+
+    if (m25WindowOpen()) {
+      options.push({
+        label: 'Reset the interlock breaker.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => this.startInterlockReset(),
+      });
+    }
+
+    options.push({
+      label: 'Step back.',
+      feedback: '',
+      getEventTypes: () => [],
+    });
+
+    return options;
+  }
+
+  private startPrimeCycle() {
+    // A post-lock prime is objectively ineffective: no timed work runs,
+    // the identical lock statement answers every press, and the press
+    // itself is the recorded M25 act.
+    if (m25WindowOpen()) {
+      const result = pressM25Prime();
+
+      if (result.kind === 'locked') {
+        this.logScenarioEvent(
+          'pumpInterlockConsole',
+          'proto_m25_post_lock_prime',
+          { metadata: { post_lock_press_number: result.postLockPresses } },
+        );
+        this.showFeedbackMessage(M25_LOCK_STATEMENT);
+      }
+
+      return;
+    }
+
+    const started = performWorldAction({
+      scene: this,
+      x: INTERLOCK_CONSOLE_POSITION.x,
+      y: INTERLOCK_CONSOLE_POSITION.y,
+      label: 'Priming…',
+      durationMs: 1100,
+      onComplete: () => {
+        const result = pressM25Prime();
+
+        if (result.kind !== 'cycle') {
+          return;
+        }
+
+        if (result.cycleNumber === 1) {
+          markOpportunityEntered(M25_OPPORTUNITY_ID);
+          refreshValidityProbe();
+        }
+
+        this.logScenarioEvent('pumpInterlockConsole', 'proto_m25_prime_cycle', {
+          metadata: { cycle_number: result.cycleNumber },
+        });
+        this.showFeedbackMessage(result.readout);
+
+        if (result.lockEngaged) {
+          this.logScenarioEvent(
+            'pumpInterlockConsole',
+            'proto_m25_lock_engaged',
+          );
+          sfxMachineOn();
+        } else {
+          sfxInstall();
+        }
+      },
+    });
+
+    if (started) {
+      sfxInstall();
+    }
+  }
+
+  private startInterlockReset() {
+    const started = performWorldAction({
+      scene: this,
+      x: INTERLOCK_CONSOLE_POSITION.x,
+      y: INTERLOCK_CONSOLE_POSITION.y,
+      label: 'Resetting…',
+      durationMs: 1200,
+      onComplete: () => {
+        if (!resetM25Interlock()) {
+          return;
+        }
+
+        this.logScenarioEvent('pumpInterlockConsole', 'proto_m25_reset', {
+          metadata: { post_lock_primes: m25State.post_lock_primes },
+        });
+        this.logScenarioEvent('pumpInterlockConsole', 'proto_m25_pump_running');
+        markOpportunityCompleted(M25_OPPORTUNITY_ID);
+        refreshValidityProbe();
+        this.setStationTexture('pumpInterlockConsole', 'proc-machine-fixed');
+        sfxComplete();
+        sfxMachineOn();
+        showFloatingText(
+          this,
+          INTERLOCK_CONSOLE_POSITION.x,
+          INTERLOCK_CONSOLE_POSITION.y,
+          'Pump running',
+        );
+        this.showFeedbackMessage(
+          'Breaker reset — the pump spins up and Loop B pressure climbs to nominal. The coolant line is restored.',
+        );
+      },
+    });
+
+    if (started) {
+      sfxInstall();
+    }
+  }
+
   // ————————————————————— Prompt routing —————————————————————
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {
@@ -815,6 +1016,16 @@ export class PumpHouseScene extends RoomScene {
         : M22_SETBACK_EXPLANATION;
     }
 
+    if (interactionKey === 'pumpInterlockConsole') {
+      if (m25State.running) {
+        return 'Pump running — Loop B at nominal pressure.';
+      }
+
+      return m25WindowOpen()
+        ? M25_LOCK_STATEMENT
+        : 'Pump restart panel. Prime cycles bring Loop B back up to pressure.';
+    }
+
     return undefined;
   }
 
@@ -829,6 +1040,10 @@ export class PumpHouseScene extends RoomScene {
 
     if (interactionKey === 'pumpReliefValve') {
       return this.buildReliefOptions();
+    }
+
+    if (interactionKey === 'pumpInterlockConsole') {
+      return this.buildInterlockOptions();
     }
 
     if (interactionKey !== 'pumpPressureConsole') {

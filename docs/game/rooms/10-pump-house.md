@@ -1,9 +1,8 @@
 # Pump House (`proto_pump_house`)
 
-Status: PROVISIONAL — action-assessment rebuild Units 2-3 (Unit 4 adds
-the pump restart interlock, M25). Every identifier is `proto_*`; no
-canonical names, no scoring, no Q-item claims (the M↔Q crosswalk is an
-open research-owner decision).
+Status: PROVISIONAL — action-assessment rebuild Units 2-4. Every
+identifier is `proto_*`; no canonical names, no scoring, no Q-item
+claims (the M↔Q crosswalk is an open research-owner decision).
 
 ## Purpose
 
@@ -36,6 +35,16 @@ provisional measurement windows in strict sequence:
   stays open: fresh seal in the Coolant Yard supply crate; M22 owns
   only post-setback recovery behaviour. Leaving mid-window is a
   recorded neutral fact (it is the recovery route).
+
+- **M25 — pump restart interlock** (`proto_m25_*`,
+  `src/measurement/m25PumpLock.ts`, Unit 4): after the seal work, the
+  Pump Interlock Console runs three USEFUL prime cycles (visible
+  pressure gains), then a salient safety interlock engages — the same
+  prime control becomes objectively ineffective, answers every press
+  with the identical lock statement, and the different strategy (the
+  breaker reset) is visible beside it the whole time. M25 owns only the
+  unchanged post-lock prime presses. The reset restores the pump and
+  completes the coolant line.
 
 ## Connections
 
