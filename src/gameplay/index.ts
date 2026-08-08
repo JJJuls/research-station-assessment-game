@@ -105,6 +105,12 @@ export {
 export { InventoryHud } from './InventoryHud';
 export type { GameItemDefinition } from './items';
 export { GAME_ITEM_REGISTRY, getGameItem, isKnownGameItem } from './items';
+export type { ManifoldAct, ManifoldTrenchConfig } from './manifoldTrench';
+export {
+  manifoldGrabCue,
+  ManifoldTrench,
+  PIPE_PIECE_TEXTURES,
+} from './manifoldTrench';
 export type { NpcActorConfig } from './Npc';
 export { NpcActor } from './Npc';
 export type {

@@ -1670,6 +1670,21 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
     draw: drawReclamationPost,
   },
   'proc-crate-supply': { width: 48, height: 40, draw: drawCrateSupply },
+  // Action-assessment rebuild (Unit 3): manifold puzzle + pump stations.
+  'proc-pipe-straight': { width: 32, height: 32, draw: drawPipeStraight },
+  'proc-pipe-elbow': { width: 32, height: 32, draw: drawPipeElbow },
+  'proc-pipe-tee': { width: 32, height: 32, draw: drawPipeTee },
+  'proc-pipe-valve': { width: 32, height: 32, draw: drawPipeValve },
+  'proc-pipe-cap': { width: 32, height: 32, draw: drawPipeCap },
+  'proc-pipe-slot': { width: 36, height: 36, draw: drawPipeSlot },
+  'proc-pipe-slot-broken': {
+    width: 36,
+    height: 36,
+    draw: drawPipeSlotBroken,
+  },
+  'proc-valve-relief': { width: 40, height: 40, draw: drawValveRelief },
+  'proc-diag-board': { width: 44, height: 52, draw: drawDiagBoard },
+  'proc-icon-valve-seal': { width: 24, height: 24, draw: drawIconValveSeal },
 };
 
 // ————————————————————————————————————————————————————————————————————
@@ -1773,6 +1788,134 @@ function drawReclamationPost(g: Graphics) {
   rect(g, 9, 17, 19, 2, MUTED);
   // Interactable cue: small steady readout lamp.
   rect(g, 29, 17, 3, 3, ACCENT);
+}
+
+// ————————————————————————————————————————————————————————————————————
+// Action-assessment rebuild (Unit 3): manifold-trench pipe pieces and
+// Pump House diagnosis/relief stations. Pipe pieces are 32×32 with
+// connectors flush to tile edges (N/E/S/W per m13PipePuzzle openings at
+// rotation 0); runtime rotation via image angle.
+// ————————————————————————————————————————————————————————————————————
+
+const PIPE_BODY = 0x8fa1ab;
+const PIPE_SHADE = 0x5d6d80;
+
+/** Straight section: W↔E tube. */
+function drawPipeStraight(g: Graphics) {
+  rect(g, 0, 10, 32, 12, OUTLINE);
+  rect(g, 0, 11, 32, 10, PIPE_BODY);
+  rect(g, 0, 11, 32, 2, 0xc9d9e6);
+  rect(g, 0, 19, 32, 2, PIPE_SHADE);
+  rect(g, 3, 9, 3, 14, BORDER);
+  rect(g, 26, 9, 3, 14, BORDER);
+}
+
+/** Elbow: N↔E bend. */
+function drawPipeElbow(g: Graphics) {
+  rect(g, 10, 0, 12, 22, OUTLINE);
+  rect(g, 10, 10, 22, 12, OUTLINE);
+  rect(g, 11, 0, 10, 20, PIPE_BODY);
+  rect(g, 12, 11, 20, 10, PIPE_BODY);
+  rect(g, 11, 0, 2, 20, 0xc9d9e6);
+  rect(g, 12, 11, 20, 2, 0xc9d9e6);
+  rect(g, 9, 3, 14, 3, BORDER);
+  rect(g, 26, 9, 3, 14, BORDER);
+  rect(g, 19, 19, 2, 2, PIPE_SHADE);
+}
+
+/** Tee: W↔N↔E junction. */
+function drawPipeTee(g: Graphics) {
+  rect(g, 0, 10, 32, 12, OUTLINE);
+  rect(g, 10, 0, 12, 12, OUTLINE);
+  rect(g, 0, 11, 32, 10, PIPE_BODY);
+  rect(g, 11, 0, 10, 12, PIPE_BODY);
+  rect(g, 0, 11, 32, 2, 0xc9d9e6);
+  rect(g, 11, 0, 2, 11, 0xc9d9e6);
+  rect(g, 9, 3, 14, 3, BORDER);
+  rect(g, 0, 19, 32, 2, PIPE_SHADE);
+}
+
+/** Inline isolation valve: W↔E tube with a hand-wheel. */
+function drawPipeValve(g: Graphics) {
+  rect(g, 0, 10, 32, 12, OUTLINE);
+  rect(g, 0, 11, 32, 10, PIPE_BODY);
+  rect(g, 0, 19, 32, 2, PIPE_SHADE);
+  box(g, 11, 8, 10, 16, CARD, BORDER);
+  rect(g, 13, 3, 6, 6, OUTLINE);
+  rect(g, 14, 4, 4, 4, MUTED);
+  rect(g, 15, 1, 2, 4, BORDER);
+}
+
+/** End cap: W stub, sealed face. */
+function drawPipeCap(g: Graphics) {
+  rect(g, 0, 10, 18, 12, OUTLINE);
+  rect(g, 0, 11, 16, 10, PIPE_BODY);
+  rect(g, 0, 11, 16, 2, 0xc9d9e6);
+  box(g, 15, 7, 6, 18, KAI_SUIT_SHADE, KAI_SUIT_RIM);
+}
+
+/** Empty trench mount: recessed frame with lug points. */
+function drawPipeSlot(g: Graphics) {
+  rect(g, 1, 1, 34, 34, OUTLINE);
+  rect(g, 2, 2, 32, 32, PANEL);
+  rect(g, 3, 3, 30, 30, 0x0a1116);
+  rect(g, 4, 4, 28, 1, BORDER);
+  rect(g, 4, 4, 1, 28, BORDER);
+  rect(g, 6, 6, 3, 3, BORDER);
+  rect(g, 27, 6, 3, 3, BORDER);
+  rect(g, 6, 27, 3, 3, BORDER);
+  rect(g, 27, 27, 3, 3, BORDER);
+}
+
+/** Fractured mount: cracked bed, no lug points, unusable. */
+function drawPipeSlotBroken(g: Graphics) {
+  rect(g, 1, 1, 34, 34, OUTLINE);
+  rect(g, 2, 2, 32, 32, PANEL);
+  rect(g, 3, 3, 30, 30, 0x0a1116);
+  // Crack lines.
+  rect(g, 6, 16, 9, 2, BORDER);
+  rect(g, 14, 10, 2, 8, BORDER);
+  rect(g, 15, 18, 10, 2, BORDER);
+  rect(g, 24, 12, 2, 8, BORDER);
+  rect(g, 10, 24, 8, 2, BORDER);
+  // Displaced shard.
+  rect(g, 21, 22, 6, 5, PIPE_SHADE);
+}
+
+/** Relief valve assembly (M22 station): body, stem, indicator. */
+function drawValveRelief(g: Graphics) {
+  rect(g, 4, 30, 32, 8, BORDER);
+  box(g, 8, 12, 24, 20, CARD, BORDER);
+  rect(g, 12, 16, 16, 6, KAI_SUIT_SHADE);
+  rect(g, 17, 4, 6, 9, OUTLINE);
+  rect(g, 18, 5, 4, 7, MUTED);
+  // Interactable cue lamp (steady).
+  rect(g, 27, 24, 3, 3, ACCENT);
+  rect(g, 0, 20, 8, 6, BORDER);
+  rect(g, 32, 20, 8, 6, BORDER);
+}
+
+/** Diagnostic board (M18 station): three gauges + valve panel row. */
+function drawDiagBoard(g: Graphics) {
+  rect(g, 18, 44, 8, 8, BORDER);
+  box(g, 4, 4, 36, 40, CARD, BORDER);
+  for (const column of [8, 20, 32] as const) {
+    rect(g, column - 2, 8, 8, 8, PANEL);
+    rect(g, column, 10, 3, 3, MUTED);
+  }
+  rect(g, 8, 22, 28, 2, MUTED);
+  rect(g, 8, 27, 20, 2, MUTED);
+  rect(g, 8, 32, 24, 2, MUTED);
+  rect(g, 31, 36, 4, 4, ACCENT);
+}
+
+/** Valve Seal (M22 item): gasket ring. */
+function drawIconValveSeal(g: Graphics) {
+  box(g, 5, 5, 14, 14, KAI_SUIT_SHADE, KAI_SUIT_RIM);
+  rect(g, 9, 9, 6, 6, PANEL);
+  rect(g, 10, 10, 4, 4, 0x0a1116);
+  rect(g, 5, 11, 2, 2, MUTED);
+  rect(g, 17, 11, 2, 2, MUTED);
 }
 
 /** Yard supply crate: banded lid, stencilled front. */

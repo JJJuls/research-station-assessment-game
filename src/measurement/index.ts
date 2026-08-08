@@ -2,6 +2,65 @@ export {
   FINAL_CORE_BASELINE_ISSUE_LABEL,
   FINAL_CORE_BASELINE_VERSION,
 } from './finalCoreBaseline';
+export type {
+  M13Piece,
+  M13PieceType,
+  M13Placement,
+  M13Rotation,
+  M13SlotId,
+  M13SubmitReason,
+  M13SubmitResult,
+} from './m13PipePuzzle';
+export {
+  getM13Piece,
+  M13_BROKEN_SLOT,
+  M13_ENTRY_STATE_VERSION,
+  M13_OPPORTUNITY_ID,
+  M13_OUTLET_SLOT,
+  M13_PIECES,
+  M13_SLOT_IDS,
+  M13_SOURCE_SLOT,
+  m13BenchPieces,
+  m13SlotPlacement,
+  m13State,
+  m13Summary,
+  markM13Engaged,
+  pieceOpenings,
+  placeM13Piece,
+  removeM13Piece,
+  resetM13State,
+  rotateM13Piece,
+  submitM13Flow,
+} from './m13PipePuzzle';
+export type { M18DiagnosisOption, M18EvidenceId } from './m18Diagnosis';
+export {
+  M18_ENTRY_STATE_VERSION,
+  M18_EVIDENCE,
+  M18_OPPORTUNITY_ID,
+  M18_OPTION_ORDERS,
+  M18_OPTIONS,
+  m18DiagnosisSubmitted,
+  m18State,
+  m18Summary,
+  markM18FaultPresented,
+  recordM18EvidenceCheck,
+  resetM18State,
+  submitM18Diagnosis,
+} from './m18Diagnosis';
+export {
+  M22_ENTRY_STATE_VERSION,
+  M22_OPPORTUNITY_ID,
+  M22_SETBACK_EXPLANATION,
+  m22State,
+  m22Summary,
+  m22WindowOpen,
+  markM22FixAttempted,
+  markM22LeftDuringWindow,
+  markM22SetbackShown,
+  markM22SpareSealFetched,
+  resetM22State,
+  seatM22Seal,
+} from './m22Setback';
 export type { M23Act, M23ActKind } from './m23Excavation';
 export {
   applyM23Act,

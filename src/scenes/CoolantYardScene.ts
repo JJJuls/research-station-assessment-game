@@ -44,6 +44,8 @@ import {
   applyM23Act,
   closeM26Window,
   declareOpportunity,
+  m22State,
+  m22WindowOpen,
   M23_ENTRY_STATE_VERSION,
   M23_OPPORTUNITY_ID,
   m23State,
@@ -52,6 +54,7 @@ import {
   M26_OPPORTUNITY_ID,
   m26State,
   m26WindowOpen,
+  markM22SpareSealFetched,
   markM23Engaged,
   markM26AlternativeTaken,
   markM26CertificateShown,
@@ -972,6 +975,37 @@ export class CoolantYardScene extends RoomScene {
 
   private buildSupplyOptions(): PromptOption[] {
     const options: PromptOption[] = [];
+
+    // M22 recovery route: the fresh seal is stocked here; the option
+    // exists exactly while the standardised setback window is open.
+    if (
+      m22WindowOpen() &&
+      !m22State.spare_seal_fetched &&
+      !hasInventoryItem('valve_seal')
+    ) {
+      options.push({
+        label: 'Take a replacement valve seal.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => {
+          if (addInventoryItem('valve_seal')) {
+            markM22SpareSealFetched();
+            sfxPickup();
+            this.logScenarioEvent(
+              'coolantSupplyCrate',
+              'proto_m22_spare_seal_taken',
+            );
+            this.showFeedbackMessage(
+              'Fresh valve seal stowed. The relief valve is in the Pump House, east side.',
+            );
+          } else {
+            this.showFeedbackMessage(
+              'Your equipment belt is full — make room first.',
+            );
+          }
+        },
+      });
+    }
 
     if (!coolantRouteState.heat_canister_taken) {
       options.push({

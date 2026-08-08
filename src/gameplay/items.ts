@@ -136,6 +136,14 @@ export const GAME_ITEM_REGISTRY: readonly GameItemDefinition[] = [
       'The heavy line coupling freed from the frozen housing. The pump intake needs it.',
     tags: ['component'],
   },
+  {
+    item_id: 'valve_seal',
+    label: 'Valve Seal',
+    icon: 'proc-icon-valve-seal',
+    description:
+      'Fresh relief-valve seat ring from the yard supply crate. Replaces the cracked shop-stock seal.',
+    tags: ['component'],
+  },
 ] as const;
 
 export function getGameItem(itemId: string): GameItemDefinition {

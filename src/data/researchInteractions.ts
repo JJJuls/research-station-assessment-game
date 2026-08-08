@@ -361,6 +361,30 @@ export const researchInteractions = {
     score_tags: [],
     room_id: 'proto_pump_house',
   },
+  pumpManifoldTrench: {
+    object_id: 'proto_m13_manifold_trench',
+    label: 'Manifold Trench',
+    episode: 'proto_m13_manifold_puzzle',
+    event_type: 'proto_m13_piece_placed',
+    score_tags: [],
+    room_id: 'proto_pump_house',
+  },
+  pumpDiagnosticBoard: {
+    object_id: 'proto_m18_diagnostic_board',
+    label: 'Diagnostic Board',
+    episode: 'proto_m18_pressure_diagnosis',
+    event_type: 'proto_m18_fault_presented',
+    score_tags: [],
+    room_id: 'proto_pump_house',
+  },
+  pumpReliefValve: {
+    object_id: 'proto_m22_relief_valve',
+    label: 'Relief Valve',
+    episode: 'proto_m22_seal_setback',
+    event_type: 'proto_m22_setback_shown',
+    score_tags: [],
+    room_id: 'proto_pump_house',
+  },
   // ——— Physical-mechanics session (Unit 7): post-assessment free play ———
   // NOT a measurement opportunity: locked until the assessment route is
   // complete (or an explicit DEV free-play flag), no Q tags, secondary

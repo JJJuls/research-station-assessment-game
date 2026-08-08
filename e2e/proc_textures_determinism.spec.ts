@@ -147,6 +147,17 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-sector-post': { width: 16, height: 34 },
   'proc-reclamation-post': { width: 40, height: 52 },
   'proc-crate-supply': { width: 48, height: 40 },
+  // Action-assessment rebuild (Unit 3): manifold puzzle + pump stations.
+  'proc-pipe-straight': { width: 32, height: 32 },
+  'proc-pipe-elbow': { width: 32, height: 32 },
+  'proc-pipe-tee': { width: 32, height: 32 },
+  'proc-pipe-valve': { width: 32, height: 32 },
+  'proc-pipe-cap': { width: 32, height: 32 },
+  'proc-pipe-slot': { width: 36, height: 36 },
+  'proc-pipe-slot-broken': { width: 36, height: 36 },
+  'proc-valve-relief': { width: 40, height: 40 },
+  'proc-diag-board': { width: 44, height: 52 },
+  'proc-icon-valve-seal': { width: 24, height: 24 },
 };
 
 interface ProcTexturesProbe {
