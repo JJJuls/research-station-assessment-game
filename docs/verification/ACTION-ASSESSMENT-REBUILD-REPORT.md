@@ -17,7 +17,7 @@ untouched.
 | `ee8031b` | 4    | Recycler rig (raw winch cast), M24 counterbalanced 6-pull cosmetic deck + objective exhaustion + acknowledged window, M25 pump interlock, reclaim-credit chip, seat-stage 9-option overflow fix, empty-feedback fix, label-driven spec helpers. 16 files. |
 | `4e21aaf` | 5    | PixelLab v1 player frame swap + Vale/Kai/Noor stills, ASSET_SET_VERSION v4, pixelab-v2 batch (6 generated / 0 promoted, dispositions recorded), provenance doc, interact-prompt clamp + NPC name contrast fixes. 82 files.                                |
 | `4d67220` | 6    | Loop B restoration task chain (milestone objectives), conditional Final Core coolant gate, complete-first-shift route spec (green at retries=0, milestone-order + duration assertions). 6 files.                                                          |
-| `<unit7>` | 7    | This report, rebuild screenshots, sweep results.                                                                                                                                                                                                          |
+| `3ea3d2e` | 7    | This report, rebuild screenshots, sweep results.                                                                                                                                                                                                          |
 
 Exact changed-file lists: `git show --stat <commit>`.
 
