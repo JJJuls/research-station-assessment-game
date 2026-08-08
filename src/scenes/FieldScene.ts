@@ -194,11 +194,11 @@ export class FieldScene extends RoomScene {
       label: 'Engineer Kai',
       npcName: 'Engineer Kai',
       texture: isRouteFinished()
-        ? 'proc-npc-kai-done'
+        ? 'plv1-kai-done'
         : isTaskAccepted(SURVEY_RECOVERY_TASK_ID)
-          ? 'proc-npc-kai-work'
-          : 'proc-npc-kai',
-      workFrames: ['proc-npc-kai-work', 'proc-npc-kai-work-b'],
+          ? 'plv1-kai-work-a'
+          : 'plv1-kai',
+      workFrames: ['plv1-kai-work-a', 'plv1-kai-work-b'],
       x: KAI_POSITION.x,
       y: KAI_POSITION.y,
       onPromptOpened: () => this.onKaiOpened(),
@@ -1071,7 +1071,7 @@ export class FieldScene extends RoomScene {
       // (pose swap only, Unit D). Restrained completion cue — identical
       // for every completion in the game.
       sfxComplete();
-      this.setStationTexture('fieldKaiSupervisor', 'proc-npc-kai-done');
+      this.setStationTexture('fieldKaiSupervisor', 'plv1-kai-done');
       this.logScenarioEvent('fieldKaiSupervisor', 'proto_route_completed');
     }
   }
@@ -1356,7 +1356,7 @@ export class FieldScene extends RoomScene {
           getEventTypes: () => [],
           onSelected: () => {
             acceptSurveyBriefing();
-            this.setStationTexture('fieldKaiSupervisor', 'proc-npc-kai-work');
+            this.setStationTexture('fieldKaiSupervisor', 'plv1-kai-work-a');
             this.logScenarioEvent(
               'fieldKaiSupervisor',
               'proto_field_briefing_accepted',
@@ -1379,7 +1379,7 @@ export class FieldScene extends RoomScene {
                   acceptSurveyBriefing();
                   this.setStationTexture(
                     'fieldKaiSupervisor',
-                    'proc-npc-kai-work',
+                    'plv1-kai-work-a',
                   );
                   this.logScenarioEvent(
                     'fieldKaiSupervisor',

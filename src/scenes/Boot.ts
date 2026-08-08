@@ -29,6 +29,22 @@ export class Boot extends Scene {
   }
 
   preload() {
+    // Action-assessment rebuild (Unit 5): PROVISIONAL MODEL-SELECTED
+    // PixelLab v1 NPC stills (docs/game/PIXELLAB-RUNTIME-ASSET-PROVENANCE.md).
+    for (const [key, file] of [
+      ['plv1-vale', 'vale-idle'],
+      ['plv1-vale-ready', 'vale-ready'],
+      ['plv1-vale-b', 'vale-work-b'],
+      ['plv1-kai', 'kai-idle'],
+      ['plv1-kai-work-a', 'kai-work-a'],
+      ['plv1-kai-work-b', 'kai-work-b'],
+      ['plv1-kai-done', 'kai-done'],
+      ['plv1-noor', 'noor-idle'],
+      ['plv1-noor-b', 'noor-work-b'],
+    ] as const) {
+      this.load.image(key, `assets/pixellab-runtime/npcs/${file}.png`);
+    }
+
     this.load.spritesheet(key.image.spaceman, assets.sprites.spaceman, {
       frameWidth: 16,
       frameHeight: 16,

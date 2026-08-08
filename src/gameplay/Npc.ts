@@ -80,7 +80,10 @@ export class NpcActor {
     // Name chip (buildLabelChip language), hidden until proximity.
     const label = scene.add
       .text(x, y - 44, name, {
-        color: '#fff',
+        // Guaranteed-contrast chip (defect fix: name read dark-on-dark
+        // over some interiors when the plate behind it was occluded).
+        backgroundColor: '#101820',
+        color: '#dce7f0',
         font: '12px monospace',
         padding: { x: 4, y: 2 },
       })

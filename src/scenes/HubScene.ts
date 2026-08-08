@@ -196,10 +196,8 @@ export class HubScene extends RoomScene {
       interactionKey: 'hubQuartermasterVale',
       label: 'Quartermaster Vale',
       npcName: 'Quartermaster Vale',
-      texture: isRequisitionKitComplete()
-        ? 'proc-npc-vale-ready'
-        : 'proc-npc-vale',
-      workFrames: ['proc-npc-vale', 'proc-npc-vale-b'],
+      texture: isRequisitionKitComplete() ? 'plv1-vale-ready' : 'plv1-vale',
+      workFrames: ['plv1-vale', 'plv1-vale-b'],
       x: 4.5 * 32,
       y: 10.75 * 32,
       onPromptOpened: () => this.onValeOpened(),
@@ -1059,7 +1057,7 @@ export class HubScene extends RoomScene {
                 sfxComplete();
                 this.setStationTexture(
                   'hubQuartermasterVale',
-                  'proc-npc-vale-ready',
+                  'plv1-vale-ready',
                 );
                 this.showFeedbackMessage(
                   'Kit complete. The Exterior Airlock is on the south wall — the Survey Terrace is through it.',

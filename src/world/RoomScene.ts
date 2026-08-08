@@ -2122,8 +2122,20 @@ export abstract class RoomScene extends Phaser.Scene {
       return;
     }
 
+    // Viewport clamp (defect fix): the interact label used to clip at
+    // the left edge and run under the right status panel; keep it fully
+    // inside the room viewport (0..640) with a 2px margin.
+    const promptHalf = this.proximityPrompt.width / 2;
+
     this.proximityPrompt
-      .setPosition(this.activeTarget.x, this.activeTarget.y - 72)
+      .setPosition(
+        Phaser.Math.Clamp(
+          this.activeTarget.x,
+          promptHalf + 2,
+          638 - promptHalf,
+        ),
+        this.activeTarget.y - 72,
+      )
       .setVisible(true);
 
     if (this.interactJustPressed()) {
