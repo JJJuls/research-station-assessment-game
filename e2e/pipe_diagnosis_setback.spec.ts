@@ -23,6 +23,7 @@ import {
 import type { RawEventLike } from './helpers';
 import {
   clickPhysicalContainer,
+  dismissOpenPrompt,
   dragPhysicalObjectToContainer,
   driveAxisTo,
   findEvents,
@@ -345,8 +346,22 @@ test.describe('pipe puzzle, diagnosis and setback (Unit 3)', () => {
       true,
     );
     await selectCardByLabel(page, 'Back.');
-    await selectCardByLabel(page, 'Log the diagnosis');
-    await selectCardByLabel(page, 'Relief valve leaking');
+    // Stage-jump defence (complete_first_shift staged() pattern): on a
+    // mismatch, close the prompt and replay the labelled pair.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await selectCardByLabel(page, 'Log the diagnosis');
+        await selectCardByLabel(page, 'Relief valve leaking');
+      } catch {
+        await dismissOpenPrompt(page);
+      }
+
+      if (
+        await waitForEventType(page, 'proto_m18_diagnosis_submitted', 1, 4_000)
+      ) {
+        break;
+      }
+    }
     expect(
       await waitForEventType(page, 'proto_m18_diagnosis_submitted', 1),
     ).toBe(true);
