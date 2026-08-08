@@ -4,6 +4,8 @@ import { Depth, key } from '../constants';
 import type { ResearchInteraction } from '../data/researchInteractions';
 import { researchInteractions } from '../data/researchInteractions';
 import {
+  cancelActiveWorldAction,
+  ControlsReference,
   getActiveObjectiveLine,
   InventoryHud,
   isWorldActionActive,
@@ -397,6 +399,8 @@ export abstract class RoomScene extends Phaser.Scene {
 
   protected player!: Player;
   protected roomMap!: BuiltRoomMap;
+  /** E — keyboard alias of SPACE for contextual interaction (Unit 1). */
+  private interactKeyE!: Phaser.Input.Keyboard.Key;
 
   private activePrompt: ActivePrompt | null = null;
   private activeTarget: ProximityTarget | null = null;
@@ -524,7 +528,7 @@ export abstract class RoomScene extends Phaser.Scene {
     this.stationLabels = this.add.container(0, 0);
     this.stationLabels.setDepth(Depth.AboveWorld);
     this.proximityPrompt = this.add
-      .text(0, 0, 'Press SPACE to interact', {
+      .text(0, 0, 'SPACE / E — interact', {
         backgroundColor: '#101820',
         color: '#ffffff',
         font: '14px monospace',
@@ -581,13 +585,29 @@ export abstract class RoomScene extends Phaser.Scene {
     // Unit 1 visible inventory belt — identical in every room.
     new InventoryHud(this);
 
+    // Action-assessment rebuild Unit 1: persistent compact controls
+    // legend (H toggles) — identical in every room.
+    new ControlsReference(this);
+
+    // E is the keyboard alias of SPACE for contextual interaction (the
+    // C/D/F field-action language groups E beside the action keys).
+    this.interactKeyE = this.input.keyboard!.addKey(
+      Phaser.Input.Keyboard.KeyCodes.E,
+    );
+
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
       window.__inventoryProbe = serializeInventory();
     }
 
-    // Same pause affordance as the prototype scene; Menu resumes this room
-    // via the resumeKey launch data.
+    // ESC first cancels a cancellable timed world action (never leaves
+    // the avatar frozen mid-action); otherwise it pauses to the Menu,
+    // which resumes this room via the resumeKey launch data.
     this.input.keyboard!.on('keydown-ESC', () => {
+      if (cancelActiveWorldAction()) {
+        this.showFeedbackMessage('Action cancelled.');
+        return;
+      }
+
       this.scene.pause(this.scene.key);
       this.scene.launch(key.scene.menu, { resumeKey: this.scene.key });
     });
@@ -2090,7 +2110,7 @@ export abstract class RoomScene extends Phaser.Scene {
 
       // Out-of-range interaction attempt: no target reachable. Rooms that
       // track control errors (Dock baseline covariates) hook this.
-      if (Phaser.Input.Keyboard.JustDown(this.player.cursors.space)) {
+      if (this.interactJustPressed()) {
         this.onEmptyInteract();
       }
 
@@ -2101,7 +2121,7 @@ export abstract class RoomScene extends Phaser.Scene {
       .setPosition(this.activeTarget.x, this.activeTarget.y - 72)
       .setVisible(true);
 
-    if (Phaser.Input.Keyboard.JustDown(this.player.cursors.space)) {
+    if (this.interactJustPressed()) {
       if (this.activeTarget.kind === 'station') {
         this.openStationPrompt(this.activeTarget.station!);
       } else {
@@ -2110,7 +2130,15 @@ export abstract class RoomScene extends Phaser.Scene {
     }
   }
 
-  /** SPACE pressed with no station/door in range. Default: no-op. */
+  /** SPACE and E converge on one contextual-interaction press (Unit 1). */
+  private interactJustPressed(): boolean {
+    return (
+      Phaser.Input.Keyboard.JustDown(this.player.cursors.space) ||
+      Phaser.Input.Keyboard.JustDown(this.interactKeyE)
+    );
+  }
+
+  /** SPACE/E pressed with no station/door in range. Default: no-op. */
   protected onEmptyInteract(): void {}
 
   /**

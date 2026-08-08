@@ -190,7 +190,7 @@ export class DockScene extends RoomScene {
     });
 
     this.showFeedbackMessage(
-      'Station AI: WASD or arrow keys to move. Reach the highlighted marker.',
+      'Station AI: arrow keys to move. Reach the highlighted marker.',
     );
     runOncePerSession('dock_movement_instruction_shown', () => {
       this.logRoomEvent('dockArrivalTutorial', 'movement_instruction_shown');
@@ -314,7 +314,7 @@ export class DockScene extends RoomScene {
       this.idleSinceMs = null;
       runOncePerSession('dock_tutorial_help_shown', () => {
         this.showFeedbackMessage(
-          'Station AI: use WASD or the arrow keys to move, and SPACE to interact.',
+          'Station AI: use the arrow keys to move, and SPACE or E to interact.',
         );
         this.logRoomEvent('dockArrivalTutorial', 'tutorial_help_shown');
       });

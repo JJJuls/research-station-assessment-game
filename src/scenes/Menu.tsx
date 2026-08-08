@@ -53,11 +53,15 @@ export class Menu extends Scene {
       [
         'Controls',
         '',
-        'Move — WASD or arrow keys',
-        'Interact — SPACE',
+        'Move — arrow keys',
+        'Interact — SPACE or E',
+        'Field scanner — C (in survey areas)',
+        'Dig / extract — D (at marked ground)',
+        'Salvage winch — F (at the rig)',
+        'Inventory — TAB cycles, click selects',
         'Choose an option — point and click,',
         'or arrow keys and Enter',
-        'Pause — ESC',
+        'Cancel / pause — ESC',
       ].join('\n'),
       {
         color: '#ffffff',

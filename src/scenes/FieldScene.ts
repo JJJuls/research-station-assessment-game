@@ -12,6 +12,7 @@ import {
   completeInstallStep,
   DIG_YIELD,
   ensureSalvageSeed,
+  FieldActionController,
   fieldRouteState,
   flaggedNodesPendingDig,
   getGameItem,
@@ -119,6 +120,8 @@ export class FieldScene extends RoomScene {
   private activeNodeId = 0;
   /** Per-node station configs so dig-state visuals can update in place. */
   private nodeMounds = new Map<number, boolean>();
+  /** C/D/F field-action key language (Unit 1, action rebuild). */
+  private actionController?: FieldActionController;
 
   constructor() {
     super(key.scene.field);
@@ -378,6 +381,118 @@ export class FieldScene extends RoomScene {
       seed: 0x5eedf1ae,
       count: 38,
     });
+
+    // ——— Unit 1 (action rebuild): the C/D/F key language as redundant
+    // activators over the SAME scan/dig/cast flows the prompt cards use
+    // (identical state mutation, identical telemetry — the NEXT-08 §3.2
+    // redundant-activator pattern extended to action keys).
+    this.actionController = new FieldActionController(this, () =>
+      this.physicalInputEligible(),
+    );
+    this.actionController.setBindings([
+      {
+        key: 'C',
+        label: 'Scan',
+        getTarget: () => this.nearestScannableNode()?.position ?? null,
+        perform: () => {
+          const node = this.nearestScannableNode();
+
+          if (node !== null) {
+            this.startScanAction(node.nodeId);
+          }
+        },
+      },
+      {
+        key: 'D',
+        label: 'Dig',
+        getTarget: () => this.nearestDiggableNode()?.position ?? null,
+        perform: () => {
+          const node = this.nearestDiggableNode();
+
+          if (node !== null) {
+            this.startDigAction(node.nodeId);
+          }
+        },
+      },
+      {
+        key: 'F',
+        label: 'Winch',
+        getTarget: () => this.salvageRigTarget(),
+        perform: () => this.startSalvageCastAction(),
+      },
+    ]);
+  }
+
+  /** Player-to-target reach for the C/D/F keys (station radius rule). */
+  private withinActionReach(x: number, y: number): boolean {
+    return (
+      Phaser.Math.Distance.Between(this.player.x, this.player.y, x, y) <= 72
+    );
+  }
+
+  /** Nearest in-reach marker the scanner can read right now, if any. */
+  private nearestScannableNode(): {
+    nodeId: number;
+    position: { x: number; y: number };
+  } | null {
+    if (
+      !isTaskAccepted(SURVEY_RECOVERY_TASK_ID) ||
+      !hasInventoryItem('field_scanner')
+    ) {
+      return null;
+    }
+
+    for (const nodeId of SCAN_NODE_IDS) {
+      if (fieldRouteState.scanned_nodes.includes(nodeId)) {
+        continue;
+      }
+
+      const position = SCAN_NODE_POSITIONS[nodeId];
+
+      if (this.withinActionReach(position.x, position.y)) {
+        return { nodeId, position };
+      }
+    }
+
+    return null;
+  }
+
+  /** Nearest in-reach flagged deposit the spade can dig right now. */
+  private nearestDiggableNode(): {
+    nodeId: number;
+    position: { x: number; y: number };
+  } | null {
+    if (!hasInventoryItem('excavation_spade')) {
+      return null;
+    }
+
+    for (const nodeId of ANOMALY_NODE_IDS) {
+      if (
+        !fieldRouteState.scanned_nodes.includes(nodeId) ||
+        fieldRouteState.dug_nodes.includes(nodeId)
+      ) {
+        continue;
+      }
+
+      const position = SCAN_NODE_POSITIONS[nodeId];
+
+      if (this.withinActionReach(position.x, position.y)) {
+        return { nodeId, position };
+      }
+    }
+
+    return null;
+  }
+
+  /** Ice-bore rig position when F can cast here/now (unlock rule). */
+  private salvageRigTarget(): { x: number; y: number } | null {
+    if (!this.salvageUnlocked()) {
+      return null;
+    }
+
+    const position = { x: 2 * 32, y: 14 * 32 };
+
+    return this.withinActionReach(position.x, position.y) ? position : null;
   }
 
   /**
@@ -435,6 +550,7 @@ export class FieldScene extends RoomScene {
     this.stampFootprints();
     this.syncQ04Objects();
     this.q04Layer?.update();
+    this.actionController?.update();
   }
 
   protected onRoomExit(): void {
@@ -639,7 +755,6 @@ export class FieldScene extends RoomScene {
 
   private buildScanNodeOptions(nodeId: number): PromptOption[] {
     const scanned = fieldRouteState.scanned_nodes.includes(nodeId);
-    const position = SCAN_NODE_POSITIONS[nodeId];
 
     if (!scanned) {
       return [
@@ -647,34 +762,7 @@ export class FieldScene extends RoomScene {
           label: 'Run a subsurface scan.',
           feedback: '',
           getEventTypes: () => [],
-          onSelected: () => {
-            const started = performWorldAction({
-              scene: this,
-              x: position.x,
-              y: position.y,
-              label: 'Scanning…',
-              durationMs: 1100,
-              onComplete: () => this.finishScan(nodeId),
-            });
-
-            if (started) {
-              // Visible tool use + radial sweep while the scan runs.
-              sfxScan();
-              playActionAnimation({
-                scene: this,
-                x: this.player.x,
-                y: this.player.y,
-                kind: 'scan',
-                icon: 'proc-icon-field-scanner',
-                durationMs: 1100,
-              });
-              ringPulse(this, position.x, position.y, {
-                endRadius: 46,
-                rings: 2,
-                durationMs: 520,
-              });
-            }
-          },
+          onSelected: () => this.startScanAction(nodeId),
         },
         {
           label: 'Leave the marker for now.',
@@ -690,35 +778,7 @@ export class FieldScene extends RoomScene {
         label: 'Dig out the flagged deposit.',
         feedback: '',
         getEventTypes: () => [],
-        onSelected: () => {
-          const started = performWorldAction({
-            scene: this,
-            x: position.x,
-            y: position.y,
-            label: 'Digging…',
-            durationMs: 1500,
-            onComplete: () => this.finishDig(nodeId),
-          });
-
-          if (started) {
-            // Visible spade work: tool bubble + snow kicked up mid-dig.
-            sfxDig();
-            playActionAnimation({
-              scene: this,
-              x: this.player.x,
-              y: this.player.y,
-              kind: 'dig',
-              icon: 'proc-icon-excavation-spade',
-              durationMs: 1500,
-            });
-            burstParticles(this, position.x, position.y + 8, {
-              colors: [0xc9d9e6, 0xaebfd0, 0x8fa1ab],
-              seed: 0x5eedd160 + nodeId,
-              count: 7,
-              speed: 40,
-            });
-          }
-        },
+        onSelected: () => this.startDigAction(nodeId),
       },
       {
         label: 'Leave the deposit for now.',
@@ -726,6 +786,78 @@ export class FieldScene extends RoomScene {
         getEventTypes: () => [],
       },
     ];
+  }
+
+  /**
+   * One subsurface scan at a marker — the single flow behind BOTH the
+   * prompt-card option and the C key (same state, same telemetry).
+   * Cancellable: ESC aborts with no state change and no event.
+   */
+  private startScanAction(nodeId: number) {
+    const position = SCAN_NODE_POSITIONS[nodeId];
+    const started = performWorldAction({
+      scene: this,
+      x: position.x,
+      y: position.y,
+      label: 'Scanning…',
+      durationMs: 1100,
+      cancellable: true,
+      onComplete: () => this.finishScan(nodeId),
+    });
+
+    if (started) {
+      // Visible tool use + radial sweep while the scan runs.
+      sfxScan();
+      playActionAnimation({
+        scene: this,
+        x: this.player.x,
+        y: this.player.y,
+        kind: 'scan',
+        icon: 'proc-icon-field-scanner',
+        durationMs: 1100,
+      });
+      ringPulse(this, position.x, position.y, {
+        endRadius: 46,
+        rings: 2,
+        durationMs: 520,
+      });
+    }
+  }
+
+  /**
+   * One dig at a flagged deposit — the single flow behind BOTH the
+   * prompt-card option and the D key. Cancellable before completion.
+   */
+  private startDigAction(nodeId: number) {
+    const position = SCAN_NODE_POSITIONS[nodeId];
+    const started = performWorldAction({
+      scene: this,
+      x: position.x,
+      y: position.y,
+      label: 'Digging…',
+      durationMs: 1500,
+      cancellable: true,
+      onComplete: () => this.finishDig(nodeId),
+    });
+
+    if (started) {
+      // Visible spade work: tool bubble + snow kicked up mid-dig.
+      sfxDig();
+      playActionAnimation({
+        scene: this,
+        x: this.player.x,
+        y: this.player.y,
+        kind: 'dig',
+        icon: 'proc-icon-excavation-spade',
+        durationMs: 1500,
+      });
+      burstParticles(this, position.x, position.y + 8, {
+        colors: [0xc9d9e6, 0xaebfd0, 0x8fa1ab],
+        seed: 0x5eedd160 + nodeId,
+        count: 7,
+        speed: 40,
+      });
+    }
   }
 
   private finishScan(nodeId: number) {
@@ -1089,41 +1221,64 @@ export class FieldScene extends RoomScene {
 
   private salvageSeedLogged = false;
 
+  /**
+   * One full salvage cast at the bore — the single flow behind BOTH the
+   * prompt-card option and the F key (identical deck, identical
+   * telemetry). The F path initialises/logs the session seed exactly
+   * like the prompt-open path so the two entries stay equivalent.
+   */
+  private startSalvageCastAction() {
+    if (!this.salvageUnlocked()) {
+      return;
+    }
+
+    const seed = ensureSalvageSeed(
+      researchRuntime.sessionState.getMetadata().game_session_id,
+    );
+
+    if (!this.salvageSeedLogged) {
+      this.salvageSeedLogged = true;
+      this.logScenarioEvent('fieldIceBore', 'proto_salvage_opened', {
+        metadata: { seed },
+      });
+    }
+
+    startSalvageCast({
+      scene: this,
+      x: 2 * 32,
+      y: 14 * 32,
+      onResolved: (result) => {
+        if (result.outcome === 'miss') {
+          this.logScenarioEvent('fieldIceBore', 'proto_salvage_miss', {
+            metadata: { ...salvageLog() },
+          });
+          this.showFeedbackMessage(
+            'The magnet swings clear. The line comes up empty.',
+          );
+          return;
+        }
+
+        this.logScenarioEvent('fieldIceBore', 'proto_salvage_pull', {
+          metadata: {
+            catch_id: result.draw.catch_id,
+            tier: result.draw.tier,
+            pull_number: salvagePullCount(),
+          },
+        });
+        this.showFeedbackMessage(
+          `The winch brings up a ${result.draw.label}. It goes on the salvage rack.`,
+        );
+      },
+    });
+  }
+
   private buildIceBoreOptions(): PromptOption[] {
     return [
       {
         label: 'Lower the magnet.',
         feedback: '',
         getEventTypes: () => [],
-        onSelected: () => {
-          startSalvageCast({
-            scene: this,
-            x: 2 * 32,
-            y: 14 * 32,
-            onResolved: (result) => {
-              if (result.outcome === 'miss') {
-                this.logScenarioEvent('fieldIceBore', 'proto_salvage_miss', {
-                  metadata: { ...salvageLog() },
-                });
-                this.showFeedbackMessage(
-                  'The magnet swings clear. The line comes up empty.',
-                );
-                return;
-              }
-
-              this.logScenarioEvent('fieldIceBore', 'proto_salvage_pull', {
-                metadata: {
-                  catch_id: result.draw.catch_id,
-                  tier: result.draw.tier,
-                  pull_number: salvagePullCount(),
-                },
-              });
-              this.showFeedbackMessage(
-                `The winch brings up a ${result.draw.label}. It goes on the salvage rack.`,
-              );
-            },
-          });
-        },
+        onSelected: () => this.startSalvageCastAction(),
       },
       {
         label: 'Check the salvage rack.',

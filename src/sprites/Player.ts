@@ -42,7 +42,7 @@ const researcherIdleAnim = (dir: ResearcherDirection) =>
   `researcher_idle_${dir}`;
 
 type Cursors = Record<
-  'w' | 'a' | 's' | 'd' | 'up' | 'left' | 'down' | 'right' | 'space',
+  'up' | 'left' | 'down' | 'right' | 'space',
   Phaser.Input.Keyboard.Key
 >;
 
@@ -118,11 +118,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
-   * Track the arrow keys & WASD.
+   * Track the arrow keys. Movement is arrows-only (action-assessment
+   * rebuild, Unit 1): the letter keys C/D/E/F belong to the field-action
+   * language (scan/dig/interact/salvage), so WASD movement would make a
+   * tap of D beside diggable terrain ambiguous between "walk right" and
+   * "dig" — an input-contamination risk for the search/dig measures.
    */
   private createCursorKeys() {
     return this.scene.input.keyboard!.addKeys(
-      'w,a,s,d,up,left,down,right,space',
+      'up,left,down,right,space',
     ) as Cursors;
   }
 
@@ -322,12 +326,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Horizontal movement
     switch (true) {
       case cursors.left.isDown:
-      case cursors.a.isDown:
         body.setVelocityX(-Velocity.Horizontal);
         break;
 
       case cursors.right.isDown:
-      case cursors.d.isDown:
         body.setVelocityX(Velocity.Horizontal);
         break;
     }
@@ -335,12 +337,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Vertical movement
     switch (true) {
       case cursors.up.isDown:
-      case cursors.w.isDown:
         body.setVelocityY(-Velocity.Vertical);
         break;
 
       case cursors.down.isDown:
-      case cursors.s.isDown:
         body.setVelocityY(Velocity.Vertical);
         break;
     }
@@ -351,22 +351,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Update the animation last and give left/right animations precedence over up/down animations
     switch (true) {
       case cursors.left.isDown:
-      case cursors.a.isDown:
         this.playWalk(Animation.Left);
         break;
 
       case cursors.right.isDown:
-      case cursors.d.isDown:
         this.playWalk(Animation.Right);
         break;
 
       case cursors.up.isDown:
-      case cursors.w.isDown:
         this.playWalk(Animation.Up);
         break;
 
       case cursors.down.isDown:
-      case cursors.s.isDown:
         this.playWalk(Animation.Down);
         break;
 

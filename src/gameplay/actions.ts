@@ -28,9 +28,18 @@ interface WorldActionConfig {
   label: string;
   durationMs: number;
   onComplete: () => void;
+  /**
+   * ESC (or a scene-driven cancel) may abort the action mid-run: the bar
+   * disappears, onComplete never fires, onCancel (if given) runs, and the
+   * player is immediately free — never frozen (Unit 1, action rebuild).
+   */
+  cancellable?: boolean;
+  onCancel?: () => void;
 }
 
 let actionActive = false;
+/** Cancel hook of the currently running cancellable action (or null). */
+let activeCancelHook: (() => void) | null = null;
 
 /** True while a timed world action is running (RoomScene freezes input). */
 export function isWorldActionActive(): boolean {
@@ -64,7 +73,7 @@ export function performWorldAction(config: WorldActionConfig): boolean {
 
   actionActive = true;
 
-  const { scene, x, y, label, durationMs, onComplete } = config;
+  const { scene, x, y, label, durationMs, onComplete, onCancel } = config;
   const barX = x - BAR_WIDTH / 2;
   const barY = y - 58;
 
@@ -91,6 +100,7 @@ export function performWorldAction(config: WorldActionConfig): boolean {
 
   const cleanup = () => {
     actionActive = false;
+    activeCancelHook = null;
     labelText.destroy();
     barBack.destroy();
     barFill.destroy();
@@ -105,7 +115,7 @@ export function performWorldAction(config: WorldActionConfig): boolean {
 
   scene.events.once(Phaser.Scenes.Events.SHUTDOWN, onShutdown);
 
-  scene.tweens.add({
+  const tween = scene.tweens.add({
     targets: barFill,
     width: BAR_WIDTH - 4,
     duration: durationMs,
@@ -121,6 +131,38 @@ export function performWorldAction(config: WorldActionConfig): boolean {
       onComplete();
     },
   });
+
+  if (config.cancellable === true) {
+    activeCancelHook = () => {
+      if (finished) {
+        return;
+      }
+
+      finished = true;
+      tween.remove();
+      scene.events.off(Phaser.Scenes.Events.SHUTDOWN, onShutdown);
+      cleanup();
+      onCancel?.();
+    };
+  }
+
+  return true;
+}
+
+/**
+ * Aborts the running world action if (and only if) it was started with
+ * `cancellable: true`. Returns true when an action was cancelled. Safe to
+ * call at any time; a non-cancellable action is left untouched.
+ */
+export function cancelActiveWorldAction(): boolean {
+  if (activeCancelHook === null) {
+    return false;
+  }
+
+  const hook = activeCancelHook;
+
+  activeCancelHook = null;
+  hook();
 
   return true;
 }
@@ -158,4 +200,5 @@ export function showFloatingText(
 /** Test-only escape hatch: clears a stuck action flag between specs. */
 export function resetWorldActionState() {
   actionActive = false;
+  activeCancelHook = null;
 }

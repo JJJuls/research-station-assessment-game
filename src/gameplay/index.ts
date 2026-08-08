@@ -2,6 +2,7 @@ export type { ActionAnimationKind } from './actionAnimations';
 export { playActionAnimation } from './actionAnimations';
 export {
   beginManualWorldAction,
+  cancelActiveWorldAction,
   endManualWorldAction,
   isWorldActionActive,
   performWorldAction,
@@ -29,6 +30,7 @@ export {
   toggleAudioMuted,
   unlockAudio,
 } from './audio';
+export { ControlsReference } from './controlsReference';
 export {
   burstParticles,
   cameraKick,
@@ -37,6 +39,8 @@ export {
   snowfall,
   sparkle,
 } from './effects';
+export type { FieldActionBinding, FieldActionKey } from './fieldActionKeys';
+export { FieldActionController } from './fieldActionKeys';
 export type { SalvageCatch } from './iceSalvage';
 export {
   buildSalvageDeck,
