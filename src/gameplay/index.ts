@@ -38,8 +38,10 @@ export type {
 } from './coolantRoute';
 export {
   acceptCoolantInvestigation,
+  completeRestoreTask,
   COOLANT_INVESTIGATION_TASK_ID,
   COOLANT_RECOVERY_TASK_ID,
+  COOLANT_RESTORE_TASK_ID,
   coolantRouteState,
   digDeposit,
   flagDeposit,
@@ -59,6 +61,7 @@ export {
   resolveSurveyScan,
   SCAN_ACTIONABLE_RADIUS,
   SCAN_WEAK_RADIUS,
+  setRestoreObjective,
   SURVEY_SECTOR_BOUNDS,
   takeHeatCanister,
   takePryBar,

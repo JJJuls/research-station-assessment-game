@@ -15,6 +15,7 @@ import {
   WORKSPACE_STATUS_DISORDERED,
 } from '../data/missionVocabulary';
 import { ringPulse, sfxMachineOn } from '../gameplay';
+import { coolantRouteState } from '../gameplay';
 import {
   declareOpportunity,
   FINAL_CORE_BASELINE_ISSUE_LABEL,
@@ -23,6 +24,7 @@ import {
   recordPriorExposure,
   refreshValidityProbe,
 } from '../measurement';
+import { m25State } from '../measurement';
 import type { PilotRouteStop } from '../scenarios';
 import { getRemainingPilotDecisions } from '../scenarios';
 import { researchRuntime } from '../systems';
@@ -208,6 +210,23 @@ export class FinalCoreScene extends RoomScene {
         if (this.isFinalCoreCompleted()) {
           this.showFeedbackMessage(
             'The core interface has already logged the final integration decision.',
+          );
+          return false;
+        }
+
+        // Action-assessment rebuild Unit 6: once the coolant work order
+        // has been logged, the shift's red line must be finished before
+        // synchronization — the pump must be running. Sessions that
+        // never opened the work order are unaffected (legacy routes and
+        // specs keep their exact behaviour). Provisional gate telemetry
+        // only (proto_*, scenario path).
+        if (coolantRouteState.work_order_read && !m25State.running) {
+          this.logScenarioEvent(
+            'finalCoreIntegration',
+            'proto_final_gate_coolant_pending',
+          );
+          this.showFeedbackMessage(
+            'Loop B restoration is still open — finish the coolant line (Pump House) before core synchronization.',
           );
           return false;
         }

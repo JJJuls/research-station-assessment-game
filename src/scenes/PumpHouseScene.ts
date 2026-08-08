@@ -2,6 +2,7 @@ import { key } from '../constants';
 import type { ManifoldAct } from '../gameplay';
 import {
   cancelActiveWorldAction,
+  completeRestoreTask,
   coolantRouteState,
   hasInventoryItem,
   ManifoldTrench,
@@ -11,6 +12,7 @@ import {
   registerCoolantTasks,
   removeInventoryItem,
   ringPulse,
+  setRestoreObjective,
   sfxComplete,
   sfxInstall,
   sfxMachineOn,
@@ -372,6 +374,9 @@ export class PumpHouseScene extends RoomScene {
     markOpportunityOffered(M18_OPPORTUNITY_ID);
     refreshValidityProbe();
     this.logScenarioEvent('pumpDiagnosticBoard', 'proto_m18_fault_presented');
+    setRestoreObjective(
+      'Diagnose the residual pressure fault at the Diagnostic Board.',
+    );
     this.showFeedbackMessage(
       'Test flow holds — but intake pressure stays low. The diagnostic board has the readouts.',
     );
@@ -682,6 +687,9 @@ export class PumpHouseScene extends RoomScene {
               );
               // Neutral hand-off regardless of correctness (no praise,
               // no correction — the prescribed action is identical).
+              setRestoreObjective(
+                'Replace the relief-valve seal (Relief Valve, east side).',
+              );
               this.showFeedbackMessage(
                 'Diagnosis logged. Prescribed action: replace the relief-valve seal (relief valve, east side).',
               );
@@ -770,6 +778,9 @@ export class PumpHouseScene extends RoomScene {
         markOpportunityEntered(M22_OPPORTUNITY_ID);
         refreshValidityProbe();
         this.logScenarioEvent('pumpReliefValve', 'proto_m22_setback_shown');
+        setRestoreObjective(
+          'Fetch a fresh valve seal from the Coolant Yard supply crate.',
+        );
         this.showFeedbackMessage(M22_SETBACK_EXPLANATION);
       },
     });
@@ -812,6 +823,7 @@ export class PumpHouseScene extends RoomScene {
           RELIEF_VALVE_POSITION.y,
           'Seal holding',
         );
+        setRestoreObjective('Restart the pump at the Interlock Console.');
         this.showFeedbackMessage(
           'The fresh seal seats clean and the relief indicator steadies. Loop B is ready for pump restart.',
         );
@@ -976,6 +988,7 @@ export class PumpHouseScene extends RoomScene {
           INTERLOCK_CONSOLE_POSITION.y,
           'Pump running',
         );
+        completeRestoreTask();
         this.showFeedbackMessage(
           'Breaker reset — the pump spins up and Loop B pressure climbs to nominal. The coolant line is restored.',
         );

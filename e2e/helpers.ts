@@ -1179,7 +1179,17 @@ export async function selectCardByLabel(page: Page, label: string) {
     }
   }
 
-  throw new Error(`card "${label}" never selected`);
+  const debug = JSON.stringify(
+    await page.evaluate(() => ({
+      player: (window as unknown as { __playerProbe?: unknown }).__playerProbe,
+      cards: (window as unknown as { __promptCards?: unknown }).__promptCards,
+      feedback: (
+        window as unknown as { __lastRoomFeedbackText?: string | null }
+      ).__lastRoomFeedbackText,
+    })),
+  );
+
+  throw new Error(`card "${label}" never selected: ${debug}`);
 }
 
 /**

@@ -26,6 +26,7 @@ import {
 
 export const COOLANT_INVESTIGATION_TASK_ID = 'proto_coolant_investigation';
 export const COOLANT_RECOVERY_TASK_ID = 'proto_coolant_recovery';
+export const COOLANT_RESTORE_TASK_ID = 'proto_coolant_restore';
 
 /** Rectangular tile-pixel bounds (inclusive) of a marked yard sector. */
 export interface YardSectorBounds {
@@ -136,6 +137,33 @@ export function registerCoolantTasks() {
     initialObjective:
       'Survey the yard with the scanner (C) and recover buried line components.',
   });
+  registerTask({
+    task_id: COOLANT_RESTORE_TASK_ID,
+    title: 'Loop B restoration',
+    initialObjective:
+      'Rebuild the manifold at the Pump House trench (drag sections in, or use the Trench Console).',
+  });
+}
+
+/**
+ * Unit 6 guidance: the restoration task carries the Pump House
+ * milestones once the yard recovery closes. Objective copy is
+ * in-fiction progress text only (allowed progress UI, never scores).
+ */
+export function setRestoreObjective(text: string) {
+  if (isTaskAccepted(COOLANT_RESTORE_TASK_ID)) {
+    setTaskObjective(COOLANT_RESTORE_TASK_ID, text);
+  }
+}
+
+export function completeRestoreTask() {
+  if (!isTaskCompleted(COOLANT_RESTORE_TASK_ID)) {
+    completeTask(COOLANT_RESTORE_TASK_ID);
+    setTaskObjective(
+      COOLANT_RESTORE_TASK_ID,
+      'Loop B restored - the station duty roster continues.',
+    );
+  }
 }
 
 export function acceptCoolantInvestigation() {
@@ -156,6 +184,7 @@ export function markWorkOrderRead() {
   }
 
   acceptTask(COOLANT_RECOVERY_TASK_ID);
+  acceptTask(COOLANT_RESTORE_TASK_ID);
   refreshCoolantObjective();
 }
 
