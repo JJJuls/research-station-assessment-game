@@ -217,3 +217,35 @@ user for a decision.
 - Never commit, push, or open a PR unless the user explicitly asks for that
   specific action in that turn — an earlier approval does not carry forward to a
   new request.
+
+## Operating mode (how a unit of work is run)
+
+The full process model — unit lifecycle, contract fields, model routing,
+permission policy, review policy, the verification loop and the current
+development order — lives in **`docs/ai/CLAUDE-OPERATING-MODE.md`**. Read it
+before starting a unit. It governs process only; the authority hierarchy above
+continues to govern all scientific content.
+
+- **Bounded units.** Use the `bounded-unit` skill
+  (`.claude/skills/bounded-unit/SKILL.md`) to start, run and close out a unit. It
+  verifies repository state first, requires a complete unit contract, enforces
+  the allowlist, and ends with one local commit and a standard handoff report.
+- **One main writer.** Exactly one agent edits files in a unit. Reviewers are
+  read-only and never fix what they find.
+- **Mandatory allowlists.** Every unit declares an exact allowed-file list. Work
+  outside it is a stop-and-report event, never a silent expansion. Export it as
+  `CLAUDE_UNIT_ALLOWLIST` so the `PreToolUse` guard
+  (`scripts/claude/pretool-guard.mjs`) enforces it, and check the result with
+  `node scripts/claude/verify-unit.mjs --allow <path> ...`.
+- **Human-only operations.** Claude never pushes, merges, tags, deploys, creates
+  a PR, deletes a branch, or removes/prunes a worktree — and never approves a
+  scientific decision. Claude stops after the single local commit and hands off.
+- **Scientific-authority boundaries are unchanged.** Candidate event names and
+  derived indicators stay provisional; open decisions in
+  `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md` are never resolved
+  autonomously.
+
+Review agents added by this layer, all read-only and all covered by the rules in
+"Review-agent usage rules" above: `scientific-reviewer` (opus),
+`gameplay-reviewer` (opus), `test-reviewer` (sonnet), `visual-reviewer` (opus).
+The four pre-existing agents remain valid and unchanged.
