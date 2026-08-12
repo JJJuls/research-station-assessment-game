@@ -1,4 +1,4 @@
-﻿---
+---
 name: playwright-game-verify
 description: Use when verifying actual browser/runtime behaviour of Remote Outpost Assessment  -  movement, room transitions, NPC/terminal interactions, event logging, the window.researchRuntime debug API, summary output, or Qualtrics launch-parameter handling. Trigger this any time the user wants to confirm something "actually works" in the game, asks to write or run a Playwright test, or after a room/system change is claimed done  -  a passing TypeScript build is not evidence the game works, only a browser run is.
 ---

@@ -1,4 +1,4 @@
-﻿---
+---
 name: research-data-reviewer
 description: Use to review whether a gameplay/logging/scoring change preserves research validity for Remote Outpost Assessment  -  Q01-Q33 traceability, questionnaire-wording leakage, adaptive-vs-inappropriate persistence separation, exploratory-proxy labelling, and correctness of EventLogger/ResearchRuntime/ScoringManager/DataQualityTracker/SessionState/QualtricsBridge output. Review-only: reports findings, does not edit files unless explicitly instructed. Invoke after a room, scoring, or logging change is claimed done, or whenever the user asks "does this hold up scientifically" / "check research validity".
 model: sonnet

@@ -1,4 +1,4 @@
-﻿---
+---
 name: psychometric-task-design
 description: Use when translating Q01-Q33 questionnaire constructs (BFI/Grit-S-derived organisation, productiveness, responsibility, prudence, persistence, Goal-Time preference, Consistency of Interest) into behavioural game mechanics, mini-games, event names, or derived/scoring variables for Remote Outpost Assessment. Trigger this whenever the user asks "how should we measure Q_", designs a new mini-game meant to stand in for a construct, names a personality/Grit/BFI construct directly, or asks whether a mechanic is a valid behavioural analogue. This is the scientific-validity gate for the project  -  use it before any construct-to-mechanic decision is finalized.
 ---

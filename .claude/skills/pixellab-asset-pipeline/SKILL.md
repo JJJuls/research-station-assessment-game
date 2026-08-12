@@ -1,4 +1,4 @@
-﻿---
+---
 name: pixellab-asset-pipeline
 description: Use only when the user has explicitly approved a PixelLab asset-generation pass for Remote Outpost Assessment (e.g. "let's do the art pass now", "generate assets for the Archive room", "approved, go ahead with PixelLab"). Governs style-anchor generation, room-by-room asset generation, and asset-manifest documentation via PixelLab MCP. Do not self-invoke based on general room-building or polish conversation  -  this skill requires an explicit, standalone approval from the user before any asset generation step, and requires placeholder mechanics and logging to already work.
 disable-model-invocation: true

@@ -550,3 +550,189 @@ test('the guard module lives where the settings hook expects it', () => {
   assert.equal(path.basename(GUARD), 'pretool-guard.mjs');
   assert.equal(path.basename(path.dirname(GUARD)), 'claude');
 });
+
+/* ------------------------------------------------------------------ *
+ * Session-scratchpad exception
+ * ------------------------------------------------------------------ */
+
+const TEMP_ROOT = 'C:\\Users\\dev\\AppData\\Local\\Temp';
+const SESSION = 'b1a339dc-4ff9-4ae7-a8e0-38ecfd40d1d6';
+const OTHER_SESSION = '11111111-2222-3333-4444-555555555555';
+const SLUG = 'C--Users-dev-outpost';
+const CLAUDE_TMP = `${TEMP_ROOT}\\claude\\${SLUG}`;
+const SCRATCH = `${CLAUDE_TMP}\\${SESSION}\\scratchpad`;
+const SCRATCH_ENV = { TEMP: TEMP_ROOT };
+
+/** Helper: assert a write target is permitted. */
+function fileAllowed(target, env = SCRATCH_ENV, allowlist = null) {
+  const verdict = checkFilePath(target, {
+    repoRoot: REPO_ROOT,
+    allowlist,
+    env,
+  });
+  assert.equal(
+    verdict.allow,
+    true,
+    `expected ALLOW for ${target}: ${verdict.reason}`,
+  );
+}
+
+/** Helper: assert a write target is blocked. */
+function fileBlocked(target, env = SCRATCH_ENV, allowlist = null) {
+  const verdict = checkFilePath(target, {
+    repoRoot: REPO_ROOT,
+    allowlist,
+    env,
+  });
+  assert.equal(verdict.allow, false, `expected BLOCK for ${target}`);
+  assert.match(verdict.reason, /^Blocked/, target);
+}
+
+test('writes inside the current-session scratchpad are allowed', () => {
+  fileAllowed(`${SCRATCH}\\probe.mjs`);
+  fileAllowed(`${SCRATCH}\\nested\\deeper\\out.json`);
+  fileAllowed(`${SCRATCH}/probe.mjs`);
+  fileAllowed(
+    `/c/Users/dev/AppData/Local/Temp/claude/${SLUG}/${SESSION}/scratchpad/probe.mjs`,
+  );
+});
+
+test('the scratchpad exception survives an allowlist that governs repo files', () => {
+  const allowlist = parseAllowlist('CLAUDE.md');
+  fileAllowed(`${SCRATCH}\\probe.mjs`, SCRATCH_ENV, allowlist);
+  // ...while repository allowlist enforcement is unchanged.
+  fileBlocked('src/scenes/HubScene.ts', SCRATCH_ENV, allowlist);
+  fileAllowed('CLAUDE.md', SCRATCH_ENV, allowlist);
+});
+
+test('prefix-confusion siblings of the scratchpad are blocked', () => {
+  fileBlocked(`${CLAUDE_TMP}\\${SESSION}\\scratchpad-evil\\x.md`);
+  fileBlocked(`${CLAUDE_TMP}\\${SESSION}\\scratchpadX\\x.md`);
+  fileBlocked(`${CLAUDE_TMP}\\${SESSION}\\scratchpad.bak\\x.md`);
+  fileBlocked(
+    `${TEMP_ROOT}\\claude-evil\\${SLUG}\\${SESSION}\\scratchpad\\x.md`,
+  );
+});
+
+test('sibling session state outside the scratchpad is blocked', () => {
+  fileBlocked(`${CLAUDE_TMP}\\${SESSION}\\tasks\\out.txt`);
+  fileBlocked(`${CLAUDE_TMP}\\${SESSION}\\x.md`);
+  fileBlocked(`${CLAUDE_TMP}\\x.md`);
+  fileBlocked(`${TEMP_ROOT}\\claude\\x.md`);
+  fileBlocked(`${TEMP_ROOT}\\x.md`);
+  // The scratchpad directory itself is not a write target.
+  fileBlocked(SCRATCH);
+});
+
+test('traversal out of the scratchpad is resolved and blocked', () => {
+  fileBlocked(`${SCRATCH}\\..\\tasks\\out.txt`);
+  fileBlocked(`${SCRATCH}\\..\\..\\..\\..\\.claude\\.credentials.json`);
+  fileBlocked(`${SCRATCH}\\nested\\..\\..\\tasks\\out.txt`);
+});
+
+test('a non-session directory in the session position is blocked', () => {
+  fileBlocked(`${CLAUDE_TMP}\\not-a-session\\scratchpad\\x.md`);
+  fileBlocked(`${CLAUDE_TMP}\\..\\claude\\${SLUG}\\scratchpad\\x.md`);
+});
+
+test('CLAUDE_SESSION_ID pins the exception to the current session', () => {
+  const pinned = { TEMP: TEMP_ROOT, CLAUDE_SESSION_ID: SESSION };
+  fileAllowed(`${SCRATCH}\\probe.mjs`, pinned);
+  fileBlocked(`${CLAUDE_TMP}\\${OTHER_SESSION}\\scratchpad\\probe.mjs`, pinned);
+});
+
+test('settings and credential filenames are blocked inside the scratchpad', () => {
+  fileBlocked(`${SCRATCH}\\.credentials.json`);
+  fileBlocked(`${SCRATCH}\\settings.local.json`);
+  fileBlocked(`${SCRATCH}\\settings.json`);
+  fileBlocked(`${SCRATCH}\\.claude.json`);
+  fileBlocked(`${SCRATCH}\\history.jsonl`);
+  fileBlocked(`${SCRATCH}\\.env`);
+  fileBlocked(`${SCRATCH}\\.env.local`);
+});
+
+test('with no temp root configured the scratchpad exception does not exist', () => {
+  fileBlocked(`${SCRATCH}\\probe.mjs`, {});
+});
+
+/* ------------------------------------------------------------------ *
+ * Shell write targets match the Write/Edit policy
+ * ------------------------------------------------------------------ */
+
+const SHELL_CTX = {
+  repoRoot: REPO_ROOT,
+  allowlist: parseAllowlist('CLAUDE.md,scripts/claude/**'),
+  env: SCRATCH_ENV,
+};
+
+/** Helper: assert a shell command is permitted under the path policy. */
+function shellAllowed(command) {
+  const verdict = checkBashCommand(command, SHELL_CTX);
+  assert.equal(
+    verdict.allow,
+    true,
+    `expected ALLOW for: ${command}\ngot: ${verdict.reason}`,
+  );
+}
+
+/** Helper: assert a shell command is blocked under the path policy. */
+function shellBlocked(command) {
+  const verdict = checkBashCommand(command, SHELL_CTX);
+  assert.equal(verdict.allow, false, `expected BLOCK for: ${command}`);
+}
+
+test('shell redirection cannot write where Write/Edit cannot', () => {
+  shellBlocked('echo x > package.json');
+  shellBlocked('echo x >> package.json');
+  shellBlocked('cat foo > .claude/settings.local.json');
+  shellBlocked('npm run build 2> docs/research/event-schema.md');
+  shellBlocked('echo x > src/scenes/HubScene.ts');
+});
+
+test('shell redirection to allowlisted and non-file sinks is allowed', () => {
+  shellAllowed('git diff > CLAUDE.md');
+  shellAllowed('node scripts/claude/verify-unit.mjs > scripts/claude/out.log');
+  shellAllowed('npm run build > /dev/null');
+  shellAllowed('npm run build > /dev/null 2>&1');
+  shellAllowed('npm.cmd run lint:tsc 2>&1');
+});
+
+test('shell redirection into the session scratchpad is allowed', () => {
+  shellAllowed(`node probe.mjs > "${SCRATCH.replace(/\\/g, '/')}/out.json"`);
+  shellBlocked(
+    `node probe.mjs > "${SCRATCH.replace(/\\/g, '/')}/../tasks/out.json"`,
+  );
+});
+
+test('a quoted redirection character is not a write target', () => {
+  shellAllowed('echo "a > b"');
+  shellAllowed("echo 'x >> package.json'");
+});
+
+test('file-writing programs are held to the same policy', () => {
+  shellBlocked('tee package.json');
+  shellBlocked('cat x | tee tsconfig.json');
+  shellBlocked('Out-File -FilePath package.json');
+  shellBlocked('Set-Content -Path .env -Value x');
+  shellAllowed('cat x | tee CLAUDE.md');
+});
+
+test('unresolvable variable targets fall back to the command rules', () => {
+  shellAllowed('cat foo > "$SCRATCH/probe.mjs"');
+  shellBlocked('git push origin master > "$SCRATCH/out.log"');
+});
+
+test('evaluate() applies the same policy to the PowerShell tool', () => {
+  const env = {
+    CLAUDE_PROJECT_DIR: REPO_ROOT,
+    CLAUDE_UNIT_ALLOWLIST: 'CLAUDE.md',
+    TEMP: TEMP_ROOT,
+  };
+  const run = (command) =>
+    evaluate({ tool_name: 'PowerShell', tool_input: { command } }, env).allow;
+  assert.equal(run('git status'), true);
+  assert.equal(run('git push origin master'), false);
+  assert.equal(run('Remove-Item -Recurse -Force dist'), false);
+  assert.equal(run('echo x > package.json'), false);
+  assert.equal(run('echo x > CLAUDE.md'), true);
+});

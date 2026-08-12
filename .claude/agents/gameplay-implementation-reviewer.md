@@ -1,4 +1,4 @@
-﻿---
+---
 name: gameplay-implementation-reviewer
 description: Use to review Phaser/TypeScript gameplay implementation for Remote Outpost Assessment  -  connected-world flow, room transitions, player interaction, scene structure, task state, one-room-at-a-time discipline, preservation of existing prototype/research logic, build safety, and TypeScript risk. Review-only: reports findings, does not edit files unless explicitly instructed. Invoke after a room or system implementation is claimed done, or whenever the user asks for an implementation/code review of gameplay changes.
 model: sonnet

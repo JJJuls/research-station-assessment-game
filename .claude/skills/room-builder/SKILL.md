@@ -1,4 +1,4 @@
-﻿---
+---
 name: room-builder
 description: Use when implementing or modifying a single room, NPC task, terminal task, mini-game, or room-to-room transition in Remote Outpost Assessment (Dock, Archive, Systems Repair, Engineer Hub, Inventory/Prep, Hazard Control, Optional Side Repair, Interruption Corridor, Final Core). Trigger this any time the user asks to build, fix, or refine a specific room or task  -  even if they just name the room ("let's do the hazard room next") without saying "implement". Always enforces one room at a time; refuses to build multiple rooms in a single uncontrolled pass.
 ---

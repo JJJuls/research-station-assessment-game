@@ -1,4 +1,4 @@
-﻿---
+---
 name: qualtrics-logging-review
 description: Use when reviewing or modifying EventLogger, ResearchRuntime, ScoringManager, DataQualityTracker, SessionState, QualtricsBridge, participant/session metadata, summary variables, or Qualtrics return_url handling in Remote Outpost Assessment. Trigger this for any change or review touching event payloads, the debug/runtime API (window.researchRuntime), launch-parameter parsing, or how summary scores get handed back to Qualtrics  -  even if the user just says "check the logging" or "does this event get captured". This is the data-integrity gate: it exists to make sure raw logs stay exportable and summary scores never overwrite them.
 ---

@@ -1,4 +1,4 @@
-﻿---
+---
 name: research-game-architect
 description: Use when planning or reasoning about overall game architecture for Remote Outpost Assessment  -  connected-world flow, scene structure, room/task abstraction, mission-state shape, or sequencing build beats. Trigger this whenever the user talks about how rooms connect, what order to build things in, how a new system should fit into the existing Phaser/TypeScript foundation, or asks for a plan/beat before writing room code. Push toward using this skill even if the user just says "what should we build next" or "how should this fit together"  -  architecture questions are exactly what this skill is for.
 ---

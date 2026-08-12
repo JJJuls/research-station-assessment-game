@@ -115,6 +115,165 @@ export function toRepoRelative(target, repoRoot) {
   return { relative: null, canonical: canonicalTarget, inside: false };
 }
 
+/**
+ * Split a canonical path into its drive/root prefix and its segments.
+ * @param {string} canonical
+ * @returns {{ prefix: string, segments: string[] }}
+ */
+export function pathSegments(canonical) {
+  const match = /^([a-z]:\/|\/)/.exec(canonical);
+  const prefix = match ? match[1] : '';
+  const rest = canonical.slice(prefix.length);
+  return { prefix, segments: rest === '' ? [] : rest.split('/') };
+}
+
+/**
+ * Return the segments of `target` below `root`, or null when `target` is not
+ * strictly beneath it. Comparison is segment-wise, never a string prefix, so
+ * "<root>/scratchpad-evil" is not treated as living under "<root>/scratchpad".
+ * @param {string} target
+ * @param {string} root
+ * @returns {string[]|null}
+ */
+export function segmentsUnder(target, root) {
+  const t = pathSegments(canonicalPath(target));
+  const r = pathSegments(canonicalPath(root));
+  if (r.prefix === '' || t.prefix.toLowerCase() !== r.prefix.toLowerCase()) {
+    return null;
+  }
+  if (t.segments.length <= r.segments.length) return null;
+  for (let i = 0; i < r.segments.length; i += 1) {
+    if (t.segments[i].toLowerCase() !== r.segments[i].toLowerCase())
+      return null;
+  }
+  return t.segments.slice(r.segments.length);
+}
+
+/* ------------------------------------------------------------------ *
+ * Session-scratchpad policy
+ *
+ * Claude Code requires a per-session scratchpad for temporary files. Its shape
+ * is fixed:
+ *
+ *   <temp>/claude/<project-slug>/<session-id>/scratchpad/<...>
+ *
+ * Only paths matching that exact shape are exempted from the
+ * outside-the-repository rule. The temp root, the "claude" directory, the
+ * project-slug directory and the session directory itself all remain
+ * unwritable, so sibling state (tasks/, transcripts, settings, credentials)
+ * is never reachable through this exception.
+ * ------------------------------------------------------------------ */
+
+const SCRATCHPAD_DIRNAME = 'scratchpad';
+
+/** A session directory is a UUID unless CLAUDE_SESSION_ID pins it exactly. */
+const SESSION_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Never writable even inside the scratchpad. */
+const SCRATCHPAD_DENIED_BASENAMES = new Set([
+  '.claude.json',
+  '.credentials.json',
+  'claude.json',
+  'history.jsonl',
+  'settings.json',
+  'settings.local.json',
+]);
+
+/**
+ * Candidate temporary roots, most specific first.
+ * @param {Record<string, string|undefined>} env
+ * @returns {string[]}
+ */
+export function tempRoots(env) {
+  const raw = [
+    env.CLAUDE_TEMP_DIR,
+    env.TEMP,
+    env.TMP,
+    env.TMPDIR,
+    env.LOCALAPPDATA ? `${env.LOCALAPPDATA}/Temp` : undefined,
+  ];
+  const seen = new Set();
+  const roots = [];
+  for (const entry of raw) {
+    if (!entry) continue;
+    const canonical = canonicalPath(entry);
+    if (canonical === '') continue;
+    const key = canonical.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    roots.push(canonical);
+  }
+  return roots;
+}
+
+/**
+ * Resolve a path to its scratchpad-relative tail, or null when it does not sit
+ * inside a current-session scratchpad.
+ * @param {string} filePath
+ * @param {Record<string, string|undefined>} [env]
+ * @returns {string|null}
+ */
+export function resolveScratchpadTail(filePath, env = process.env) {
+  const target = canonicalPath(filePath);
+  if (target === '') return null;
+
+  for (const root of tempRoots(env)) {
+    const segments = segmentsUnder(target, root);
+    // claude / <project-slug> / <session-id> / scratchpad / <at least one>
+    if (segments === null || segments.length < 5) continue;
+    if (segments[0].toLowerCase() !== 'claude') continue;
+    if (segments[3].toLowerCase() !== SCRATCHPAD_DIRNAME) continue;
+
+    const sessionId = segments[2];
+    const pinned = env.CLAUDE_SESSION_ID;
+    if (pinned) {
+      if (sessionId.toLowerCase() !== String(pinned).trim().toLowerCase()) {
+        continue;
+      }
+    } else if (!SESSION_ID_PATTERN.test(sessionId)) {
+      continue;
+    }
+
+    const tail = segments.slice(4);
+    if (tail.some((segment) => segment === '')) continue;
+    return tail.join('/');
+  }
+  return null;
+}
+
+/**
+ * Apply the permanent file rules to a scratchpad-relative path.
+ * @param {string} tail
+ * @returns {{ allow: boolean, reason?: string }}
+ */
+export function checkScratchpadPath(tail) {
+  const basename = (tail.split('/').pop() ?? '').toLowerCase();
+  if (SCRATCHPAD_DENIED_BASENAMES.has(basename)) {
+    return {
+      allow: false,
+      reason: `Blocked: "${basename}" is a settings/credential filename. The session-scratchpad exception never covers it.`,
+    };
+  }
+  for (const { rule, test } of IMMUTABLE_PATTERNS) {
+    if (test(tail)) {
+      return {
+        allow: false,
+        reason: `Blocked (immutable): a scratchpad path may not match ${rule}.`,
+      };
+    }
+  }
+  for (const { rule, test } of PROTECTED_PATTERNS) {
+    if (test(tail)) {
+      return {
+        allow: false,
+        reason: `Blocked (protected): a scratchpad path may not match ${rule}.`,
+      };
+    }
+  }
+  return { allow: true };
+}
+
 /* ------------------------------------------------------------------ *
  * File-write policy
  * ------------------------------------------------------------------ */
@@ -240,7 +399,7 @@ export function matchesAllowlist(relative, allowlist) {
 /**
  * Decide whether Claude may write to a path.
  * @param {string} filePath
- * @param {{ repoRoot: string, allowlist: string[]|null }} ctx
+ * @param {{ repoRoot: string, allowlist: string[]|null, env?: Record<string, string|undefined> }} ctx
  * @returns {{ allow: boolean, reason?: string }}
  */
 export function checkFilePath(filePath, ctx) {
@@ -248,10 +407,13 @@ export function checkFilePath(filePath, ctx) {
   const { relative, inside } = toRepoRelative(filePath, ctx.repoRoot);
 
   if (!inside || relative === null) {
+    // The one sanctioned exception: this session's own scratchpad.
+    const tail = resolveScratchpadTail(filePath, ctx.env ?? process.env);
+    if (tail !== null) return checkScratchpadPath(tail);
     return {
       allow: false,
       reason:
-        'Blocked: write target resolves outside the repository root. Units may only modify files inside the active worktree.',
+        'Blocked: write target resolves outside the repository root. Units may only modify files inside the active worktree or this session scratchpad.',
     };
   }
   if (relative === '') {
@@ -833,15 +995,141 @@ export function checkCommandSegment(segment) {
   return { allow: true };
 }
 
+/* ------------------------------------------------------------------ *
+ * Shell write targets (parity with the Write/Edit policy)
+ * ------------------------------------------------------------------ */
+
+/** Redirection sinks that are not files. */
+const REDIRECT_SAFE_TARGETS = new Set([
+  '/dev/null',
+  '/dev/stdout',
+  '/dev/stderr',
+  'nul',
+  'nul:',
+  'con',
+]);
+
+/** Programs whose arguments name files they overwrite or append to. */
+const SHELL_WRITE_PROGRAMS = new Set([
+  'add-content',
+  'out-file',
+  'set-content',
+  'tee',
+  'tee-object',
+]);
+
+const POWERSHELL_PATH_FLAGS = new Set(['-path', '-filepath', '-literalpath']);
+
+/**
+ * Extract file targets of `>`, `>>`, `2>` and `&>` redirections. Quoted `>`
+ * characters are literal, and `>&N` duplicates a descriptor rather than
+ * naming a file.
+ * @param {string} segment
+ * @returns {string[]}
+ */
+export function extractRedirectionTargets(segment) {
+  const source = String(segment ?? '');
+  const targets = [];
+  let quote = null;
+
+  for (let i = 0; i < source.length; i += 1) {
+    const ch = source[i];
+    if (quote) {
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      quote = ch;
+      continue;
+    }
+    if (ch !== '>') continue;
+
+    let j = i + 1;
+    if (source[j] === '>') j += 1;
+    if (source[j] === '&') {
+      i = j;
+      continue;
+    }
+    while (j < source.length && /\s/.test(source[j])) j += 1;
+
+    let token = '';
+    let inner = null;
+    for (; j < source.length; j += 1) {
+      const c = source[j];
+      if (inner) {
+        if (c === inner) inner = null;
+        else token += c;
+        continue;
+      }
+      if (c === '"' || c === "'") {
+        inner = c;
+        continue;
+      }
+      if (/\s/.test(c) || c === '|' || c === ';' || c === '&') break;
+      token += c;
+    }
+    i = j - 1;
+    if (token !== '') targets.push(token);
+  }
+  return targets;
+}
+
+/**
+ * Extract file targets named as arguments to a known file-writing program.
+ * @param {string[]} tokens
+ * @returns {string[]}
+ */
+export function extractProgramWriteTargets(tokens) {
+  if (tokens.length === 0) return [];
+  if (!SHELL_WRITE_PROGRAMS.has(programName(tokens[0]))) return [];
+  const targets = [];
+  for (let i = 1; i < tokens.length; i += 1) {
+    const token = tokens[i];
+    if (token.startsWith('-')) {
+      if (POWERSHELL_PATH_FLAGS.has(token.toLowerCase()) && tokens[i + 1]) {
+        targets.push(tokens[i + 1]);
+        i += 1;
+      }
+      continue;
+    }
+    targets.push(token);
+  }
+  return targets;
+}
+
 /**
  * Evaluate a full shell command string.
+ *
+ * When `ctx` is supplied, shell write targets are held to the same policy as
+ * the Write/Edit tools, so the two surfaces cannot contradict each other.
+ * Targets containing an unexpanded shell variable cannot be resolved
+ * statically and are left to the permanent command rules above.
+ *
  * @param {string} command
+ * @param {{ repoRoot: string, allowlist: string[]|null, env?: Record<string, string|undefined> }} [ctx]
  * @returns {{ allow: boolean, reason?: string }}
  */
-export function checkBashCommand(command) {
+export function checkBashCommand(command, ctx) {
   for (const segment of splitCommandSegments(command)) {
     const verdict = checkCommandSegment(segment);
     if (!verdict.allow) return verdict;
+    if (!ctx) continue;
+
+    const targets = [
+      ...extractRedirectionTargets(segment),
+      ...extractProgramWriteTargets(tokenize(segment)),
+    ];
+    for (const target of targets) {
+      if (REDIRECT_SAFE_TARGETS.has(target.toLowerCase())) continue;
+      if (/[$%`]/.test(target)) continue;
+      const targetVerdict = checkFilePath(target, ctx);
+      if (!targetVerdict.allow) {
+        return {
+          allow: false,
+          reason: `${targetVerdict.reason} (shell write target)`,
+        };
+      }
+    }
   }
   return { allow: true };
 }
@@ -868,7 +1156,11 @@ export function evaluate(payload, env = process.env) {
   const allowlist = parseAllowlist(env.CLAUDE_UNIT_ALLOWLIST);
 
   if (toolName === 'bash' || toolName === 'powershell') {
-    return checkBashCommand(String(toolInput.command ?? ''));
+    return checkBashCommand(String(toolInput.command ?? ''), {
+      repoRoot,
+      allowlist,
+      env,
+    });
   }
   if (WRITE_TOOLS.has(toolName)) {
     const target =
@@ -876,6 +1168,7 @@ export function evaluate(payload, env = process.env) {
     return checkFilePath(target === undefined ? '' : String(target), {
       repoRoot,
       allowlist,
+      env,
     });
   }
   return { allow: true };
