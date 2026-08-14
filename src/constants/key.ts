@@ -12,8 +12,12 @@ const scene = {
   artifactSurvey: 'artifact_survey',
   boot: 'boot',
   coolantYard: 'coolant_yard',
+  // Four-zone assessment route (map foundation unit): the participant
+  // route's four zone scenes. Keys double as their internal zone keys.
+  diagnosticsLaboratory: 'diagnostics_laboratory',
   dock: 'dock',
   engineer: 'engineer',
+  exteriorRecoveryYard: 'exterior_recovery_yard',
   field: 'field',
   finalCore: 'final_core',
   hazard: 'hazard',
@@ -26,7 +30,9 @@ const scene = {
   pumpHouse: 'pump_house',
   repair: 'repair',
   sideRepair: 'side_repair',
+  stationConcourse: 'station_concourse',
   utilityBay: 'utility_bay',
+  utilityCoreDeck: 'utility_core_deck',
 } as const;
 
 const tilemap = {

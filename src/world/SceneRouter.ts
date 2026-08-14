@@ -17,7 +17,13 @@ const SCENE_PARAM_TO_KEY: Record<string, string> = {
   artifact_field: key.scene.artifactSurvey,
   // Action-assessment rebuild (Unit 2): the coolant red line areas.
   coolant_yard: key.scene.coolantYard,
+  // Four-zone assessment route (map foundation unit): the four zone
+  // scenes. Direct aliases exist for regression/verification launches;
+  // the participant default (below) always enters the Station Concourse
+  // and the in-game route is forward-only.
+  diagnostics_laboratory: key.scene.diagnosticsLaboratory,
   dock: key.scene.dock,
+  exterior_recovery_yard: key.scene.exteriorRecoveryYard,
   // Overnight prototype: the Survey Terrace gameplay area and the two
   // Unit 3 measurement-module areas (not assessment stations — no
   // station-registry entries).
@@ -26,7 +32,9 @@ const SCENE_PARAM_TO_KEY: Record<string, string> = {
   ops_annex: key.scene.opsAnnex,
   prototype: key.scene.main,
   pump_house: key.scene.pumpHouse,
+  station_concourse: key.scene.stationConcourse,
   utility_bay: key.scene.utilityBay,
+  utility_core_deck: key.scene.utilityCoreDeck,
 };
 
 export function resolveStartSceneKey(): string {
@@ -37,8 +45,11 @@ export function resolveStartSceneKey(): string {
     return SCENE_PARAM_TO_KEY[requested];
   }
 
-  // Phase B: the connected world starts at the Dock / Arrival Bay.
-  return key.scene.dock;
+  // Four-zone map foundation: the participant route starts at the
+  // Station Concourse. Legacy rooms (Dock/Hub ring and the prototype)
+  // stay reachable ONLY through the explicit `?scene=` aliases above —
+  // developer/regression launches, never the participant default.
+  return key.scene.stationConcourse;
 }
 
 /** Whether a `?scene=` alias is already routable. */
