@@ -29,6 +29,9 @@ const SCENE_PARAM_TO_KEY: Record<string, string> = {
   // station-registry entries).
   field: key.scene.field,
   hub: key.scene.hub,
+  // Interactive inventory foundation: developer proving ground for the
+  // authoritative inventory system (never on the participant route).
+  inventory_lab: key.scene.inventoryLab,
   ops_annex: key.scene.opsAnnex,
   prototype: key.scene.main,
   pump_house: key.scene.pumpHouse,

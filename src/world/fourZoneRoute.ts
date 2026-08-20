@@ -9,6 +9,7 @@ import {
   toggleAudioMuted,
   unlockAudio,
 } from '../gameplay/audio';
+import { wireInventoryOverlayKey } from '../inventory/ui/openOverlay';
 import { Player } from '../sprites';
 import { STATION_THEMES } from './proceduralTilesets';
 import { RouteGuidanceHud } from './RouteGuidanceHud';
@@ -310,6 +311,14 @@ export abstract class ZoneScene extends Phaser.Scene {
 
       this.scene.pause(this.scene.key);
       this.scene.launch(key.scene.menu, { resumeKey: this.scene.key });
+    });
+
+    // Interactive inventory foundation — the minimum shared integration:
+    // I opens the modal inventory overlay (pause-and-launch, Menu
+    // precedent above). Presentation-only; the zone layer stays
+    // event-free and the overlay scene owns all inventory behaviour.
+    wireInventoryOverlayKey(this, {
+      isEligible: () => !this.transitioning,
     });
 
     // Audio: existing procedural ambience per theme; M toggles mute.

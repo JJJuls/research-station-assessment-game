@@ -24,6 +24,10 @@ const scene = {
   hub: 'hub',
   interruption: 'interruption',
   inventory: 'inventory',
+  // Interactive inventory foundation: the developer proving-ground scene
+  // and the shared modal inventory overlay.
+  inventoryLab: 'inventory_lab',
+  inventoryOverlay: 'inventory_overlay',
   main: 'main',
   menu: 'menu',
   opsAnnex: 'ops_annex',

@@ -1,20 +1,38 @@
 /**
- * Gameplay inventory state (overnight playable prototype, Unit 1).
+ * Gameplay inventory COMPATIBILITY ADAPTER (interactive inventory
+ * foundation).
  *
- * A real, visible inventory: fixed slot count, item identity, select /
- * use / remove, serialisable, session-lifetime (module scope — survives
- * scene.start() restarts exactly like roomTaskState; a page reload starts
- * a fresh session and therefore a fresh inventory).
+ * Before this unit, this module owned its own ten-slot module-scope
+ * state — one of two parallel inventory stores. It is now a thin,
+ * documented adapter over the single authoritative inventory domain
+ * (src/inventory/store.ts): the legacy belt IS the domain's ten-slot
+ * player hotbar container. Every legacy entry point keeps its exact
+ * name, signature and observable semantics (single items, first-free
+ * slot, selection rules, serialised probe shape), so RoomScene, the
+ * bottom belt HUD, route logic and existing specs are unchanged.
+ *
+ * The OBSOLETE PATH is the old private `inventory` object that lived
+ * here; it no longer exists. New code should use src/inventory/store.ts
+ * directly — this adapter exists only for the pre-foundation call sites.
  *
  * This is the gameplay carry layer only. It never reads or writes the
  * Q01-Q04 kit-preparation substrate (src/data/itemRegistry.ts) and never
- * feeds a measurement variable — raw prototype telemetry about pickups is
- * logged by the scenes that host them, not here.
+ * feeds a measurement variable.
  */
 
+import { CONTAINER_IDS, HOTBAR_CAPACITY } from '../inventory/model';
+import {
+  getInventoryState,
+  invAddItem,
+  invCycleHotbarSelection,
+  invSelectHotbarSlot,
+  invTakeStackOutForLegacyRemove,
+  onInventoryStoreChange,
+  resetInventoryStore,
+} from '../inventory/store';
 import { getGameItem } from './items';
 
-export const INVENTORY_CAPACITY = 10;
+export const INVENTORY_CAPACITY = HOTBAR_CAPACITY;
 
 export interface GameInventorySnapshot {
   slots: (string | null)[];
@@ -23,154 +41,100 @@ export interface GameInventorySnapshot {
 
 type InventoryListener = () => void;
 
-interface GameInventoryInternal {
-  slots: (string | null)[];
-  selectedIndex: number | null;
-}
+function hotbarSlots(): (string | null)[] {
+  const hotbar = getInventoryState().containers[CONTAINER_IDS.playerHotbar];
 
-function createInitialInventory(): GameInventoryInternal {
-  return {
-    slots: new Array<string | null>(INVENTORY_CAPACITY).fill(null),
-    selectedIndex: null,
-  };
-}
-
-let inventory = createInitialInventory();
-const listeners = new Set<InventoryListener>();
-
-function notify() {
-  for (const listener of listeners) {
-    listener();
-  }
+  return hotbar.slots.map((slot) => (slot === null ? null : slot.definitionId));
 }
 
 /** Subscribe to inventory changes; returns an unsubscribe function. */
 export function onInventoryChange(listener: InventoryListener): () => void {
-  listeners.add(listener);
-
-  return () => listeners.delete(listener);
+  return onInventoryStoreChange(() => listener());
 }
 
 /**
- * Adds one item to the first free slot. Returns false (no change) when the
- * inventory is full — callers surface the full-inventory feedback.
+ * Adds one item to the first free hotbar slot. Returns false (no change)
+ * when the belt is full — callers surface the full-inventory feedback.
  */
 export function addInventoryItem(itemId: string): boolean {
-  getGameItem(itemId); // validate id
+  getGameItem(itemId); // validate id (legacy contract: throws on unknown)
 
-  const freeIndex = inventory.slots.indexOf(null);
+  const change = invAddItem({
+    definitionId: itemId,
+    quantity: 1,
+    targetContainerIds: [CONTAINER_IDS.playerHotbar],
+    allOrNothing: true,
+  });
 
-  if (freeIndex === -1) {
-    return false;
-  }
-
-  inventory.slots[freeIndex] = itemId;
-
-  if (inventory.selectedIndex === null) {
-    inventory.selectedIndex = freeIndex;
-  }
-
-  notify();
-
-  return true;
+  return change.ok;
 }
 
 /**
- * Removes the first slot holding the item (use/install/deliver). Returns
- * false when the item is not carried.
+ * Removes the first hotbar slot holding the item (use/install/deliver).
+ * Returns false when the item is not carried.
  */
 export function removeInventoryItem(itemId: string): boolean {
-  const index = inventory.slots.indexOf(itemId);
+  const index = hotbarSlots().indexOf(itemId);
 
   if (index === -1) {
     return false;
   }
 
-  inventory.slots[index] = null;
-
-  if (inventory.selectedIndex === index) {
-    const nextHeld = inventory.slots.findIndex((slot) => slot !== null);
-
-    inventory.selectedIndex = nextHeld === -1 ? null : nextHeld;
-  }
-
-  notify();
-
-  return true;
+  return invTakeStackOutForLegacyRemove(CONTAINER_IDS.playerHotbar, index).ok;
 }
 
 export function hasInventoryItem(itemId: string): boolean {
-  return inventory.slots.includes(itemId);
+  return hotbarSlots().includes(itemId);
 }
 
 /** Item ids currently carried, in slot order (nulls skipped). */
 export function getInventoryItems(): string[] {
-  return inventory.slots.filter((slot): slot is string => slot !== null);
+  return hotbarSlots().filter((slot): slot is string => slot !== null);
 }
 
 export function getInventorySlots(): (string | null)[] {
-  return [...inventory.slots];
+  return hotbarSlots();
 }
 
 export function isInventoryFull(): boolean {
-  return !inventory.slots.includes(null);
+  return !hotbarSlots().includes(null);
 }
 
 /** Selects a slot by index (pointer path). No-op on empty slots. */
 export function selectInventorySlot(index: number) {
-  if (
-    index >= 0 &&
-    index < inventory.slots.length &&
-    inventory.slots[index] !== null &&
-    inventory.selectedIndex !== index
-  ) {
-    inventory.selectedIndex = index;
-    notify();
+  if (getInventoryState().hotbarSelection !== index) {
+    invSelectHotbarSlot(index);
   }
 }
 
 /** Cycles selection to the next held slot (keyboard path, TAB). */
 export function selectNextInventoryItem() {
-  const heldIndices = inventory.slots
-    .map((slot, index) => (slot !== null ? index : -1))
-    .filter((index) => index !== -1);
-
-  if (heldIndices.length === 0) {
-    return;
-  }
-
-  const currentPos =
-    inventory.selectedIndex === null
-      ? -1
-      : heldIndices.indexOf(inventory.selectedIndex);
-
-  inventory.selectedIndex = heldIndices[(currentPos + 1) % heldIndices.length];
-  notify();
+  invCycleHotbarSelection();
 }
 
 export function getSelectedInventoryItem(): string | null {
-  return inventory.selectedIndex === null
-    ? null
-    : inventory.slots[inventory.selectedIndex];
+  const selected = getInventoryState().hotbarSelection;
+
+  return selected === null ? null : hotbarSlots()[selected];
 }
 
 export function getSelectedInventoryIndex(): number | null {
-  return inventory.selectedIndex;
+  return getInventoryState().hotbarSelection;
 }
 
-/** Serialisable snapshot (DEV probe / tests). */
+/** Serialisable snapshot (DEV probe / tests) — legacy belt shape. */
 export function serializeInventory(): GameInventorySnapshot {
   return {
-    slots: [...inventory.slots],
-    selected_index: inventory.selectedIndex,
+    slots: hotbarSlots(),
+    selected_index: getInventoryState().hotbarSelection,
   };
 }
 
 /**
- * Test-only escape hatch (resetAllRoomTaskStates precedent): recreates the
- * inventory from scratch. Not used by gameplay code.
+ * Test-only escape hatch (resetAllRoomTaskStates precedent): recreates
+ * the WHOLE authoritative inventory from scratch. Not used by gameplay
+ * code.
  */
 export function resetGameplayInventory() {
-  inventory = createInitialInventory();
-  notify();
+  resetInventoryStore();
 }
