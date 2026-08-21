@@ -10,6 +10,11 @@ export * from './FieldScene';
 export * from './FinalCoreScene';
 export * from './HazardScene';
 export * from './HubScene';
+// Information Processing foundation: the proving-ground scene and the
+// terminal overlay class (re-exported by name: every value exported from
+// this barrel is registered as a Phaser scene).
+export { SignalTerminalScene } from '../informationProcessing/ui/SignalTerminalScene';
+export * from './InformationProcessingLabScene';
 export * from './InterruptionScene';
 // Interactive inventory foundation. The overlay class is re-exported by
 // name: every value exported from this barrel is registered as a Phaser

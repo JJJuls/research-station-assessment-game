@@ -29,6 +29,10 @@ const SCENE_PARAM_TO_KEY: Record<string, string> = {
   // station-registry entries).
   field: key.scene.field,
   hub: key.scene.hub,
+  // Information Processing foundation: developer proving ground for the
+  // signal-decoder / pipe-lattice / fault-diagnosis subsystem (never on
+  // the participant route).
+  information_processing_lab: key.scene.informationProcessingLab,
   // Interactive inventory foundation: developer proving ground for the
   // authoritative inventory system (never on the participant route).
   inventory_lab: key.scene.inventoryLab,
