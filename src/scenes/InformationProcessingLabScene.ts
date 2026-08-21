@@ -49,6 +49,14 @@ import {
   m15WindowStatus,
 } from '../informationProcessing/m15LayeredCipher';
 import {
+  declareM16,
+  m16WindowStatus,
+} from '../informationProcessing/m16ProtocolUpdate';
+import {
+  declareM17,
+  m17WindowStatus,
+} from '../informationProcessing/m17SyntaxAcquisition';
+import {
   declareM18Fault,
   m18FaultWindowStatus,
 } from '../informationProcessing/m18FaultDiagnosis';
@@ -104,6 +112,8 @@ export class InformationProcessingLabScene extends Phaser.Scene {
     declareTutorial();
     declareM14();
     declareM15();
+    declareM16();
+    declareM17();
     declareM13Lattice();
     declareM18Fault();
 
@@ -303,8 +313,8 @@ export class InformationProcessingLabScene extends Phaser.Scene {
       x: 552,
       y: 150,
       texture: 'proc-console-wall',
-      overlay: null,
-      verb: 'use',
+      overlay: { scene: key.scene.ipSignalTerminal, taskId: 'm16' },
+      verb: closedVerb(m16WindowStatus),
     });
     this.addStation({
       id: 'm17',
@@ -313,8 +323,8 @@ export class InformationProcessingLabScene extends Phaser.Scene {
       x: 704,
       y: 150,
       texture: 'proc-console-scenario',
-      overlay: null,
-      verb: 'use',
+      overlay: { scene: key.scene.ipSignalTerminal, taskId: 'm17' },
+      verb: closedVerb(m17WindowStatus),
     });
 
     this.signage(

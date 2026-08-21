@@ -30,6 +30,17 @@ import {
   removeLine,
 } from '../src/informationProcessing/programEngine';
 import {
+  M16_FORMS,
+  M16_GRAMMAR,
+  m16BaseDestination,
+  m16UpdatedDestination,
+} from '../src/informationProcessing/protocolForms';
+import {
+  evaluateTrial,
+  M17_FORMS,
+  M17_GRAMMAR,
+} from '../src/informationProcessing/syntaxForms';
+import {
   bootIpLab,
   clickTerminalButton,
   composeByClick,
@@ -578,5 +589,346 @@ test.describe('M15 layered cipher (browser)', () => {
     expect(
       (await ipValidity(page, 'proto_m15_layered_cipher')).invalid_reason,
     ).toBe('invalid_entry_state');
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * Unit 4 — M16 protocol update and M17 syntax acquisition
+ * ------------------------------------------------------------------ */
+
+test.describe('M16 / M17 forms (pure)', () => {
+  test('M16 forms matched: 3 base, 6 application, 3 rule-governed; update differs from base', () => {
+    for (const formId of ['A', 'B'] as const) {
+      const form = M16_FORMS[formId];
+
+      expect(form.base).toHaveLength(3);
+      expect(form.apply).toHaveLength(6);
+      expect(
+        form.apply.filter((r) => r.flags?.includes('CRITICAL')),
+      ).toHaveLength(3);
+      expect(form.base.some((r) => r.flags?.includes('CRITICAL'))).toBe(false);
+
+      const changed = form.apply.filter(
+        (r) => m16BaseDestination(r) !== m16UpdatedDestination(r),
+      );
+
+      expect(changed.length).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  test('M17 has its own grammar, matched trials, four feedback + one transfer, two operators each', () => {
+    const decoderVerbs = new Set([
+      ...M14_GRAMMAR.verbs.map((v) => v.verb),
+      ...M15_GRAMMAR.verbs.map((v) => v.verb),
+      ...M16_GRAMMAR.verbs.map((v) => v.verb),
+    ]);
+
+    for (const verb of M17_GRAMMAR.verbs) {
+      expect(decoderVerbs.has(verb.verb)).toBe(false);
+    }
+
+    for (const formId of ['A', 'B'] as const) {
+      const trials = M17_FORMS[formId].trials;
+
+      expect(trials).toHaveLength(5);
+      expect(trials.map((t) => t.type)).toEqual([
+        'feedback',
+        'feedback',
+        'feedback',
+        'feedback',
+        'transfer',
+      ]);
+
+      for (const t of trials) {
+        expect(t.reference).toHaveLength(2);
+
+        const lines = t.reference.map((text, seq) => {
+          const [verb, ...args] = text.split(' ');
+
+          return {
+            line_id: `ln_${seq}`,
+            seq,
+            input_mode: 'typed' as const,
+            command: { verb, args },
+          };
+        });
+
+        expect(
+          evaluateTrial(t, lines).goal_reached,
+          `${formId} trial ${t.index}`,
+        ).toBe(true);
+        expect(evaluateTrial(t, []).goal_reached).toBe(false);
+      }
+    }
+
+    // Operator mix matched trial by trial across forms.
+    for (let i = 0; i < 5; i++) {
+      const mixA = M17_FORMS.A.trials[i].reference
+        .map((r) => r.split(' ')[0])
+        .sort();
+      const mixB = M17_FORMS.B.trials[i].reference
+        .map((r) => r.split(' ')[0])
+        .sort();
+
+      expect(mixA).toEqual(mixB);
+    }
+  });
+});
+
+test.describe('M16 protocol update (browser)', () => {
+  test('base familiarisation → READY → reveal → ACKNOWLEDGE → first application captured separately', async ({
+    page,
+  }) => {
+    test.setTimeout(240_000);
+
+    const errors = captureErrors(page);
+
+    await bootIpLab(page, {
+      game_session_id: 'GS_IP_M16',
+      ip_form: 'A',
+      module: 'm16',
+    });
+    await waitTerminalOpen(page, true);
+
+    let probe = await terminalProbe(page);
+
+    expect(probe.stage).toContain('FAMILIARISATION');
+    expect(probe.chips).toHaveLength(3);
+    // The new rule is absent before the reveal.
+    expect(probe.codebook.join(' ')).not.toMatch(/CRITICAL|HOLD/);
+    expect(probe.chips.some((c) => c.label.includes('CRITICAL'))).toBe(false);
+
+    await dragChipToBin(page, 'B1', 'ARCHIVE');
+    await typeCommand(page, 'ROUTE B2 RELAY');
+    await typeCommand(page, 'ROUTE B3 ARCHIVE');
+    await waitBufferLength(page, 3);
+    await clickTerminalButton(page, 'submit');
+    probe = await terminalProbe(page);
+    expect(probe.console.join(' ')).toMatch(/Familiarisation recorded: 3 of 3/);
+    await clickTerminalButton(page, 'READY');
+    probe = await terminalProbe(page);
+    expect(probe.stage).toBe('PROTOCOL UPDATE');
+    expect(probe.codebook.join(' ')).toContain('!CRITICAL → HOLD');
+    expect(probe.chips).toHaveLength(0);
+
+    let m16 = await ipModule(page, 'm16');
+
+    expect(m16.new_rule_presented).toBe(true);
+    expect(m16.new_rule_acknowledged).toBe(false);
+
+    // Commands are not accepted during the reveal.
+    await typeCommand(page, 'ROUTE R1 HOLD');
+    probe = await terminalProbe(page);
+    expect(probe.buffer).toHaveLength(0);
+
+    await clickTerminalButton(page, 'ACKNOWLEDGE');
+    probe = await terminalProbe(page);
+    expect(probe.stage).toBe('APPLY UPDATED PROTOCOL');
+    expect(probe.chips).toHaveLength(6);
+    expect(
+      probe.chips.filter((c) => c.label.includes('!CRITICAL')),
+    ).toHaveLength(3);
+
+    // First application on a rule-governed report: deliberately the OLD
+    // rule (wrong), then revised.
+    await dragChipToBin(page, 'R2', 'ARCHIVE');
+    await waitBufferLength(page, 1);
+    m16 = await ipModule(page, 'm16');
+    expect(m16.first_application_correct).toBe(false);
+    expect(m16.new_rule_errors).toBe(1);
+    await dragChipToBin(page, 'R2', 'HOLD');
+    await typeCommand(page, 'ROUTE R1 RELAY');
+    await typeCommand(page, 'ROUTE R3 ARCHIVE');
+    await typeCommand(page, 'ROUTE R4 HOLD');
+    await typeCommand(page, 'ROUTE R5 HOLD');
+    await clickTerminalButton(page, 'reference'); // PROTOCOL consult (counted)
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(150);
+    await typeCommand(page, 'ROUTE R6 RELAY');
+    await waitBufferLength(page, 7);
+    await clickTerminalButton(page, 'submit');
+    await page.waitForTimeout(300);
+    probe = await terminalProbe(page);
+    expect(probe.closed).toBe(true);
+
+    m16 = await ipModule(page, 'm16');
+    expect(m16.window_status).toBe('completed');
+    expect(m16.base_protocol_complete).toBe(true);
+    expect(m16.new_rule_id).toBe('critical_override_hold');
+    expect(m16.new_rule_acknowledged).toBe(true);
+    expect(m16.first_application_correct).toBe(false);
+    expect(m16.final_applications_correct).toBe(3);
+    expect(m16.applications_governed).toBe(3);
+    expect(m16.new_rule_errors).toBe(1);
+    expect(m16.revisions_after_rule_presentation).toBe(1);
+    expect(m16.codebook_consults_after_rule_presentation).toBe(1);
+    expect(m16.units_correct).toBe(6);
+    expect(m16.input_mode).toBe('mixed');
+    expect(m16.active_ms_after_ready as number).toBeGreaterThan(0);
+    expect(m16.active_ms_after_ready as number).toBeLessThan(
+      m16.active_ms as number,
+    );
+
+    const events = await ipEvents(page);
+    const types = eventsOfFamily(events, 'proto_m16_protocol').map(
+      (e) => e.event_type,
+    );
+    const order = [
+      'proto_m16_protocol_base_submitted',
+      'proto_m16_protocol_ready_acknowledged',
+      'proto_m16_protocol_new_rule_presented',
+      'proto_m16_protocol_new_rule_acknowledged',
+      'proto_m16_protocol_first_application',
+      'proto_m16_protocol_submitted',
+      'proto_m16_protocol_completed',
+    ].map((type) => types.indexOf(type));
+
+    expect(order.every((index) => index >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expectProvisionalOnly(eventsOfFamily(events, 'proto_m16_protocol'));
+    expect(eventsOfFamily(events, 'proto_m15_cipher')).toHaveLength(0);
+    expect(eventsOfFamily(events, 'proto_m17_syntax')).toHaveLength(0);
+    expectNoRuntimeErrors(errors);
+  });
+});
+
+test.describe('M17 syntax acquisition (browser)', () => {
+  test('demonstration → READY → four feedback trials → transfer trial; trial-level records preserved, no learning score', async ({
+    page,
+  }) => {
+    test.setTimeout(300_000);
+
+    const errors = captureErrors(page);
+
+    await bootIpLab(page, { game_session_id: 'GS_IP_M17', ip_form: 'A' });
+    await completeTutorial(page);
+    await walkAndUseStation(page, 'm17');
+    await waitTerminalOpen(page, true);
+
+    let probe = await terminalProbe(page);
+
+    expect(probe.stage).toBe('DEMONSTRATION');
+    expect(probe.output.join(' ')).toContain('VEK B RED');
+    expect(probe.submit_enabled).toBe(false);
+    await clickTerminalButton(page, 'READY');
+    probe = await terminalProbe(page);
+    expect(probe.stage).toBe('TRIAL 1 OF 5');
+    expect(probe.chips.map((c) => c.id)).toEqual(['A', 'B', 'C']);
+
+    // Trial 1 typed (correct); syntax error first (refused, counted).
+    await typeCommand(page, 'VEK Q RED');
+    await typeCommand(page, 'ZOR A C');
+    await typeCommand(page, 'VEK B GRN');
+    await waitBufferLength(page, 2);
+    probe = await terminalProbe(page);
+    expect(probe.output.join(' ')).toContain('NOW    A:BLU  B:GRN  C:RED');
+    await clickTerminalButton(page, 'submit');
+    probe = await terminalProbe(page);
+    expect(probe.console.join(' ')).toMatch(/matches GOAL/);
+    await clickTerminalButton(page, 'NEXT');
+
+    // Trial 2 pointer + typed, deliberately wrong second operator.
+    await composeByClick(page, ['KAI', 'A']);
+    await typeCommand(page, 'VEK C BLU');
+    await waitBufferLength(page, 2);
+    await clickTerminalButton(page, 'submit');
+    probe = await terminalProbe(page);
+    expect(probe.console.join(' ')).toMatch(
+      /does not match GOAL.*Reference sequence/,
+    );
+    await clickTerminalButton(page, 'NEXT');
+
+    // Trials 3 and 4 typed, correct; a correction in trial 3.
+    await typeCommand(page, 'KAI A');
+    await typeCommand(page, 'REMOVE 1');
+    await typeCommand(page, 'ZOR A C');
+    await typeCommand(page, 'KAI B');
+    await waitBufferLength(page, 2);
+    await clickTerminalButton(page, 'submit');
+    await clickTerminalButton(page, 'NEXT');
+    await typeCommand(page, 'ZOR A C');
+    await typeCommand(page, 'VEK C BLU');
+    await waitBufferLength(page, 2);
+    await clickTerminalButton(page, 'submit');
+    await clickTerminalButton(page, 'NEXT');
+
+    // Transfer trial: no corrective feedback.
+    probe = await terminalProbe(page);
+    expect(probe.stage).toBe('TRANSFER TRIAL');
+    await typeCommand(page, 'ZOR A C');
+    await typeCommand(page, 'KAI B');
+    await waitBufferLength(page, 2);
+    await clickTerminalButton(page, 'submit');
+    await page.waitForTimeout(300);
+    probe = await terminalProbe(page);
+    expect(probe.closed).toBe(true);
+    expect(probe.console.join(' ')).not.toMatch(/Reference sequence/);
+
+    const m17 = await ipModule(page, 'm17');
+    const trials = m17.trials as Record<string, unknown>[];
+
+    expect(m17.window_status).toBe('completed');
+    expect(m17.trials_completed).toBe(5);
+    expect(trials.map((t) => t.trial_type)).toEqual([
+      'feedback',
+      'feedback',
+      'feedback',
+      'feedback',
+      'transfer',
+    ]);
+    expect(trials.map((t) => t.feedback_presented)).toEqual([
+      true,
+      true,
+      true,
+      true,
+      false,
+    ]);
+    expect(trials.map((t) => t.goal_reached)).toEqual([
+      true,
+      false,
+      true,
+      true,
+      true,
+    ]);
+    expect(trials[0].syntax_errors).toBe(1);
+    expect(trials[1].semantic_errors).toBe(1);
+    expect(trials[1].commands_correct).toBe(1);
+    expect(trials[1].input_mode).toBe('mixed');
+    expect(trials[2].corrections_before_submission).toBe(1);
+    expect(
+      trials.every(
+        (t) => t.commands_required === 2 && t.trial_complete === true,
+      ),
+    ).toBe(true);
+    expect(trials.every((t) => (t.active_ms_after_ready as number) > 0)).toBe(
+      true,
+    );
+    expect(Object.keys(m17).join(' ')).not.toMatch(/slope|criterion|score/i);
+    expect(
+      (await ipValidity(page, 'proto_m17_syntax_acquisition')).validity,
+    ).toBe('valid');
+
+    const events = await ipEvents(page);
+    const family = eventsOfFamily(events, 'proto_m17_syntax');
+
+    expect(
+      family.filter((e) => e.event_type === 'proto_m17_syntax_trial_started'),
+    ).toHaveLength(5);
+    expect(
+      family.filter((e) => e.event_type === 'proto_m17_syntax_trial_submitted'),
+    ).toHaveLength(5);
+    expect(
+      family.filter(
+        (e) => e.event_type === 'proto_m17_syntax_feedback_presented',
+      ),
+    ).toHaveLength(4);
+    expect(
+      family
+        .filter((e) => e.event_type === 'proto_m17_syntax_trial_submitted')
+        .map((e) => e.metadata?.trial_index),
+    ).toEqual([1, 2, 3, 4, 5]);
+    expectProvisionalOnly(family);
+    expect(eventsOfFamily(events, 'proto_m16_protocol')).toHaveLength(0);
+    expectNoRuntimeErrors(errors);
   });
 });

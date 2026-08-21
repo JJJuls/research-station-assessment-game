@@ -282,3 +282,62 @@ test('information processing lab visual capture — packet saturation and layere
   await page.keyboard.press('Escape');
   await waitTerminalOpen(page, false);
 });
+
+test('information processing lab visual capture — protocol update and syntax trainer', async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
+  mkdirSync(OUT, { recursive: true });
+
+  await bootIpLab(page, { game_session_id: 'GS_IP_CAP_4', ip_form: 'A' });
+
+  // 20 — M16 new-rule reveal; 21 — M16 application in progress.
+  await walkAndUseStation(page, 'm16');
+  await waitTerminalOpen(page, true);
+  await dragChipToBin(page, 'B1', 'ARCHIVE');
+  await typeCommand(page, 'ROUTE B2 RELAY');
+  await typeCommand(page, 'ROUTE B3 ARCHIVE');
+  await waitBufferLength(page, 3);
+  await clickTerminalButton(page, 'submit');
+  await clickTerminalButton(page, 'READY');
+  await shot(page, '20-m16-new-rule-reveal');
+  await clickTerminalButton(page, 'ACKNOWLEDGE');
+  await dragChipToBin(page, 'R1', 'RELAY');
+  await typeCommand(page, 'ROUTE R2 HOLD');
+  await waitBufferLength(page, 2);
+  await shot(page, '21-m16-application');
+  await page.keyboard.press('Escape');
+  await waitTerminalOpen(page, false);
+
+  // 22 — M17 early feedback trial (after submission); 23 — transfer trial.
+  await walkAndUseStation(page, 'm17');
+  await waitTerminalOpen(page, true);
+  await clickTerminalButton(page, 'READY');
+  await typeCommand(page, 'ZOR A C');
+  await composeByClick(page, ['VEK', 'B', 'GRN']);
+  await waitBufferLength(page, 2);
+  await clickTerminalButton(page, 'submit');
+  await shot(page, '22-m17-early-feedback-trial');
+
+  for (const pair of [
+    ['KAI A', 'VEK C RED'],
+    ['ZOR A C', 'KAI B'],
+    ['ZOR A C', 'VEK C BLU'],
+  ]) {
+    await clickTerminalButton(page, 'NEXT');
+    await typeCommand(page, pair[0]);
+    await typeCommand(page, pair[1]);
+    await waitBufferLength(page, 2);
+    await clickTerminalButton(page, 'submit');
+  }
+
+  await clickTerminalButton(page, 'NEXT');
+  await typeCommand(page, 'ZOR A C');
+  await waitBufferLength(page, 1);
+  await shot(page, '23-m17-transfer-trial');
+  await page.keyboard.press('Escape');
+  await waitTerminalOpen(page, false);
+
+  // 24 — final laboratory state after the suite.
+  await shot(page, '24-laboratory-after-suite');
+});
