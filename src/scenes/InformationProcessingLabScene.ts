@@ -41,6 +41,14 @@ import {
   m13LatticeWindowStatus,
 } from '../informationProcessing/m13PipeNetwork';
 import {
+  declareM14,
+  m14WindowStatus,
+} from '../informationProcessing/m14PacketSaturation';
+import {
+  declareM15,
+  m15WindowStatus,
+} from '../informationProcessing/m15LayeredCipher';
+import {
   declareM18Fault,
   m18FaultWindowStatus,
 } from '../informationProcessing/m18FaultDiagnosis';
@@ -94,6 +102,8 @@ export class InformationProcessingLabScene extends Phaser.Scene {
     this.overlayBusy = false;
 
     declareTutorial();
+    declareM14();
+    declareM15();
     declareM13Lattice();
     declareM18Fault();
 
@@ -263,6 +273,9 @@ export class InformationProcessingLabScene extends Phaser.Scene {
       overlay: { scene: key.scene.ipSignalTerminal, taskId: 'tutorial' },
       verb: 'use',
     });
+    const closedVerb = (status: () => string) => () =>
+      status() === 'unopened' || status() === 'open' ? 'use' : 'review';
+
     this.addStation({
       id: 'm14',
       label: 'Packet Intake Terminal',
@@ -270,8 +283,8 @@ export class InformationProcessingLabScene extends Phaser.Scene {
       x: 248,
       y: 150,
       texture: 'proc-console-scenario',
-      overlay: null,
-      verb: 'use',
+      overlay: { scene: key.scene.ipSignalTerminal, taskId: 'm14' },
+      verb: closedVerb(m14WindowStatus),
     });
     this.addStation({
       id: 'm15',
@@ -280,8 +293,8 @@ export class InformationProcessingLabScene extends Phaser.Scene {
       x: 400,
       y: 150,
       texture: 'proc-diag-board',
-      overlay: null,
-      verb: 'use',
+      overlay: { scene: key.scene.ipSignalTerminal, taskId: 'm15' },
+      verb: closedVerb(m15WindowStatus),
     });
     this.addStation({
       id: 'm16',
@@ -309,9 +322,6 @@ export class InformationProcessingLabScene extends Phaser.Scene {
       392,
       'CORE CONDUIT BAY — lattice reconstruction and diagnosis',
     );
-    const closedVerb = (status: () => string) => () =>
-      status() === 'unopened' || status() === 'open' ? 'use' : 'review';
-
     this.addStation({
       id: 'm13',
       label: 'Conduit Lattice Bench',

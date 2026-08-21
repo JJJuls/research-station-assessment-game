@@ -182,6 +182,11 @@ export interface TerminalView {
   editing: boolean;
   /** The window is terminally closed (read-only record view). */
   closed: boolean;
+  /**
+   * Optional in-task reference (e.g. a codebook table) opened through a
+   * dedicated control; each opening is a counted consult.
+   */
+  reference?: { label: string; title: string; lines: readonly string[] } | null;
 }
 
 export interface TerminalActionResult {
@@ -216,6 +221,8 @@ export interface TerminalTaskAdapter {
     nowMs: number,
   ): TerminalActionResult;
   help(mode: InputMode, nowMs: number): readonly string[];
+  /** Counted consult of the in-task reference (when `view().reference`). */
+  consultReference?(mode: InputMode, nowMs: number): readonly string[];
   /** Explicit "stop task" (window closes as `exited`). */
   stop(nowMs: number): void;
   /** Technical interruption (window closes as `technical_failure`). */

@@ -1,0 +1,582 @@
+/**
+ * Information Processing foundation — decoder opportunities M14 (Packet
+ * Saturation) and M15 (Layered Cipher) (Unit 3).
+ *
+ * Part 1 (pure): form structure and matching, the stable M14 rules, the
+ * M15 reconstruction engine (pairs, shifts, violations, revisability) and
+ * the volume-versus-relational-complexity separation.
+ *
+ * Part 2 (browser): real drag / click-composition / typed input through
+ * the Signal Terminal; practice → scored staging; omission vs misrouting;
+ * revision; tutorial gating; event-family isolation.
+ */
+
+import { expect, type Page, test } from '@playwright/test';
+
+import {
+  M15_FORMS,
+  M15_GRAMMAR,
+  reconstructCipher,
+} from '../src/informationProcessing/cipherForms';
+import type { GrammarSpec } from '../src/informationProcessing/model';
+import {
+  M14_FORMS,
+  M14_GRAMMAR,
+  m14CorrectDestination,
+} from '../src/informationProcessing/packetForms';
+import {
+  appendLine,
+  createProgramState,
+  removeLine,
+} from '../src/informationProcessing/programEngine';
+import {
+  bootIpLab,
+  clickTerminalButton,
+  composeByClick,
+  dragChipToBin,
+  dragChipToChip,
+  eventsOfFamily,
+  expectProvisionalOnly,
+  ipEvents,
+  ipModule,
+  ipValidity,
+  terminalProbe,
+  typeCommand,
+  waitBufferLength,
+  waitTerminalOpen,
+  walkAndUseStation,
+} from './ipHelpers';
+import { captureErrors, expectNoRuntimeErrors } from './journey';
+
+/* ------------------------------------------------------------------ *
+ * Part 1 — pure
+ * ------------------------------------------------------------------ */
+
+function verbCount(grammar: GrammarSpec) {
+  return grammar.verbs.length;
+}
+
+test.describe('M14 forms and rules (pure)', () => {
+  for (const formId of ['A', 'B'] as const) {
+    test(`form ${formId}: 4 practice + 12 scored, 4 per channel, 3 urgent, unique ids`, () => {
+      const form = M14_FORMS[formId];
+
+      expect(form.practice).toHaveLength(4);
+      expect(form.scored).toHaveLength(12);
+
+      for (const channel of ['ALPHA', 'BETA', 'GAMMA']) {
+        expect(form.scored.filter((p) => p.channel === channel)).toHaveLength(
+          4,
+        );
+      }
+
+      expect(
+        form.scored.filter((p) => p.flags?.includes('URGENT')),
+      ).toHaveLength(3);
+      expect(new Set(form.scored.map((p) => p.id)).size).toBe(12);
+      expect(new Set(form.practice.map((p) => p.id)).size).toBe(4);
+    });
+  }
+
+  test('the stable rules: channel map with the URGENT override', () => {
+    expect(
+      m14CorrectDestination({ id: 'x', channel: 'ALPHA', payload: '' }),
+    ).toBe('ARCHIVE');
+    expect(
+      m14CorrectDestination({ id: 'x', channel: 'BETA', payload: '' }),
+    ).toBe('RELAY');
+    expect(
+      m14CorrectDestination({ id: 'x', channel: 'GAMMA', payload: '' }),
+    ).toBe('HOLD');
+    expect(
+      m14CorrectDestination({
+        id: 'x',
+        channel: 'GAMMA',
+        payload: '',
+        flags: ['URGENT'],
+      }),
+    ).toBe('RELAY');
+  });
+
+  test('forms A and B are matched in structure and rule count', () => {
+    const a = M14_FORMS.A;
+    const b = M14_FORMS.B;
+
+    expect(a.scored.length).toBe(b.scored.length);
+    expect(a.practice.length).toBe(b.practice.length);
+    expect(a.scored.filter((p) => p.flags?.includes('URGENT')).length).toBe(
+      b.scored.filter((p) => p.flags?.includes('URGENT')).length,
+    );
+    // The practice and the scored run use the SAME rules (quantity only).
+    expect(M14_GRAMMAR.verbs.map((v) => v.verb)).toEqual(['ROUTE']);
+  });
+});
+
+test.describe('M15 reconstruction (pure)', () => {
+  for (const formId of ['A', 'B'] as const) {
+    test(`form ${formId}: six fragments, three keys, one required shift, valid target reachable`, () => {
+      const form = M15_FORMS[formId];
+
+      expect(form.fragments).toHaveLength(6);
+      expect(form.codebook).toHaveLength(8);
+
+      for (const key of ['K1', 'K2', 'K3']) {
+        const members = form.fragments.filter((f) => f.key === key);
+
+        expect(members).toHaveLength(2);
+        expect(members.map((f) => f.role).sort()).toEqual([
+          'header',
+          'payload',
+        ]);
+      }
+
+      expect(form.fragments.filter((f) => (f.shift ?? 0) > 0)).toHaveLength(1);
+
+      // Build the correct program: PAIR each key's members, SHIFT the one.
+      let state = createProgramState();
+      const context = {
+        sets: {
+          fragment: form.fragments.map((f) => f.id),
+          key: ['K1', 'K2', 'K3'],
+          amount: ['1', '2', '3'],
+        },
+      };
+
+      for (const key of ['K1', 'K2', 'K3']) {
+        const [a, b] = form.fragments.filter((f) => f.key === key);
+
+        state = appendLine(
+          state,
+          M15_GRAMMAR,
+          context,
+          { verb: 'PAIR', args: [a.id, b.id] },
+          'typed',
+        ).state;
+      }
+
+      const shifted = form.fragments.find((f) => (f.shift ?? 0) > 0)!;
+
+      // Without the shift: complete but NOT valid (one word off by rows).
+      const partial = reconstructCipher(form, state.lines);
+
+      expect(partial.complete).toBe(true);
+      expect(partial.valid).toBe(false);
+      expect(partial.relations_required).toBe(4);
+      expect(partial.relations_constructed).toBe(3);
+      expect(partial.relations_correct).toBe(3);
+      expect(partial.rule_violations).toBe(0);
+
+      state = appendLine(
+        state,
+        M15_GRAMMAR,
+        context,
+        { verb: 'SHIFT', args: [shifted.key, String(shifted.shift)] },
+        'typed',
+      ).state;
+
+      const full = reconstructCipher(form, state.lines);
+
+      expect(full.valid).toBe(true);
+      expect(full.message).toEqual([...form.target]);
+      expect(full.relations_constructed).toBe(4);
+      expect(full.relations_correct).toBe(4);
+      expect(full.rule_violations).toBe(0);
+    });
+  }
+
+  test('rule violations are counted and remain revisable before submission', () => {
+    const form = M15_FORMS.A;
+    const context = {
+      sets: {
+        fragment: form.fragments.map((f) => f.id),
+        key: ['K1', 'K2', 'K3'],
+        amount: ['1', '2', '3'],
+      },
+    };
+    let state = createProgramState();
+
+    // Two headers paired (same role) and a shift on a +0 key: 2 violations.
+    state = appendLine(
+      state,
+      M15_GRAMMAR,
+      context,
+      { verb: 'PAIR', args: ['F1', 'F3'] },
+      'pointer',
+    ).state;
+    state = appendLine(
+      state,
+      M15_GRAMMAR,
+      context,
+      { verb: 'SHIFT', args: ['K1', '1'] },
+      'typed',
+    ).state;
+
+    let reconstruction = reconstructCipher(form, state.lines);
+
+    expect(reconstruction.rule_violations).toBe(2);
+    expect(reconstruction.relations_correct).toBe(0);
+    expect(reconstruction.complete).toBe(false);
+
+    // Revise: remove both lines, then re-pair correctly — no residue.
+    state = removeLine(state, 1).state;
+    state = removeLine(state, 0).state;
+    reconstruction = reconstructCipher(form, state.lines);
+    expect(reconstruction.rule_violations).toBe(0);
+    expect(reconstruction.relations_constructed).toBe(0);
+
+    // A later PAIR involving an already-paired fragment supersedes (revision).
+    state = appendLine(
+      state,
+      M15_GRAMMAR,
+      context,
+      { verb: 'PAIR', args: ['F3', 'F1'] },
+      'pointer',
+    ).state;
+    state = appendLine(
+      state,
+      M15_GRAMMAR,
+      context,
+      { verb: 'PAIR', args: ['F3', 'F2'] },
+      'pointer',
+    ).state;
+    reconstruction = reconstructCipher(form, state.lines);
+    expect(reconstruction.keys.find((k) => k.key === 'K1')?.pair_correct).toBe(
+      true,
+    );
+    expect(reconstruction.rule_violations).toBe(0);
+  });
+
+  test('volume versus relational complexity: M14 many units / one verb, M15 few units / interdependent rules', () => {
+    expect(M14_FORMS.A.scored.length).toBeGreaterThan(
+      M15_FORMS.A.fragments.length * 1.5,
+    );
+    expect(verbCount(M14_GRAMMAR)).toBe(1);
+    expect(verbCount(M15_GRAMMAR)).toBe(2);
+    // M15 words depend on TWO fragments and a shift (relational); an M14
+    // packet's destination depends only on itself.
+    const m15 = reconstructCipher(M15_FORMS.A, []);
+
+    expect(m15.relations_required).toBe(4);
+    expect(
+      M14_FORMS.A.scored.every((p) => m14CorrectDestination(p) !== undefined),
+    ).toBe(true);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * Part 2 — browser
+ * ------------------------------------------------------------------ */
+
+/** Completes the terminal orientation quickly (drag + typed), then leaves. */
+async function completeTutorial(page: Page) {
+  await walkAndUseStation(page, 'tutorial');
+  await waitTerminalOpen(page, true);
+  await dragChipToBin(page, 'T1', 'ARCHIVE');
+  await waitBufferLength(page, 1);
+  await typeCommand(page, 'ROUTE T2 RELAY');
+  await typeCommand(page, 'ROUTE T3 ARCHIVE');
+  await waitBufferLength(page, 3);
+  await typeCommand(page, 'SUBMIT');
+  expect((await ipModule(page, 'tutorial')).status).toBe('complete');
+  await page.keyboard.press('Escape');
+  await waitTerminalOpen(page, false);
+}
+
+test.describe('M14 packet saturation (browser)', () => {
+  test('practice → intake with drag, click and typed routing; omission, misroute and revision are distinct', async ({
+    page,
+  }) => {
+    test.setTimeout(300_000);
+
+    const errors = captureErrors(page);
+
+    await bootIpLab(page, { game_session_id: 'GS_IP_M14_MIX', ip_form: 'A' });
+    await completeTutorial(page);
+    await walkAndUseStation(page, 'm14');
+    await waitTerminalOpen(page, true);
+
+    let probe = await terminalProbe(page);
+
+    expect(probe.task).toBe('m14');
+    expect(probe.stage).toContain('PRACTICE');
+    expect(probe.chips).toHaveLength(4);
+    expect(probe.bins.map((b) => b.id)).toEqual(['ARCHIVE', 'RELAY', 'HOLD']);
+
+    // Practice: route all four (one wrong on purpose — practice is never
+    // intake evidence), submit, begin intake.
+    const practice = M14_FORMS.A.practice;
+
+    for (const unit of practice.slice(0, 3)) {
+      await dragChipToBin(page, unit.id, m14CorrectDestination(unit));
+    }
+
+    await typeCommand(page, `ROUTE ${practice[3].id} HOLD`);
+    await waitBufferLength(page, 4);
+    await clickTerminalButton(page, 'submit');
+    probe = await terminalProbe(page);
+    expect(probe.console.join(' ')).toMatch(/Practice recorded/);
+    expect(probe.buttons.find((b) => b.id === 'BEGIN')).toBeTruthy();
+    await clickTerminalButton(page, 'BEGIN');
+    probe = await terminalProbe(page);
+    expect(probe.stage).toContain('INTAKE');
+    expect(probe.chips).toHaveLength(12);
+    expect(probe.buffer).toHaveLength(0);
+
+    // Intake: drag 5, click-compose 3, type 3 (one of them deliberately
+    // wrong), leave one unrouted.
+    const scored = M14_FORMS.A.scored;
+
+    for (const unit of scored.slice(0, 5)) {
+      await dragChipToBin(page, unit.id, m14CorrectDestination(unit));
+    }
+
+    for (const unit of scored.slice(5, 8)) {
+      await composeByClick(page, [
+        'ROUTE',
+        unit.id,
+        m14CorrectDestination(unit),
+      ]);
+    }
+
+    await typeCommand(
+      page,
+      `ROUTE ${scored[8].id} ${m14CorrectDestination(scored[8])}`,
+    );
+    await typeCommand(
+      page,
+      `ROUTE ${scored[9].id} ${m14CorrectDestination(scored[9])}`,
+    );
+    // Wrong on purpose (P11 GAMMA → ARCHIVE instead of HOLD).
+    await typeCommand(page, `ROUTE ${scored[10].id} ARCHIVE`);
+    await waitBufferLength(page, 11);
+
+    // First SUBMIT with one omission warns; nothing closes.
+    await clickTerminalButton(page, 'submit');
+    probe = await terminalProbe(page);
+    expect(probe.closed).toBe(false);
+    expect(probe.console.join(' ')).toMatch(
+      /1 packet\(s\) have no instruction/,
+    );
+
+    // Revise the wrong one (later instruction supersedes) and route the
+    // last; final SUBMIT closes the intake.
+    await dragChipToBin(page, scored[10].id, 'HOLD');
+    await dragChipToBin(page, scored[11].id, m14CorrectDestination(scored[11]));
+    await waitBufferLength(page, 13);
+    await clickTerminalButton(page, 'submit');
+    await page.waitForTimeout(300);
+    probe = await terminalProbe(page);
+    expect(probe.closed).toBe(true);
+
+    const m14 = await ipModule(page, 'm14');
+
+    expect(m14.window_status).toBe('completed');
+    expect(m14.units_presented).toBe(12);
+    expect(m14.units_processed).toBe(12);
+    expect(m14.units_correctly_routed).toBe(12);
+    expect(m14.units_misrouted).toBe(0);
+    expect(m14.units_omitted).toBe(0);
+    expect(m14.units_revised).toBe(1);
+    expect(m14.channels_used).toEqual(['ARCHIVE', 'HOLD', 'RELAY']);
+    expect(m14.submission_count).toBe(2);
+    expect(m14.submission_complete).toBe(true);
+    expect(m14.input_mode).toBe('mixed');
+    expect(m14.command_sequence_length).toBe(13);
+    expect(
+      (await ipValidity(page, 'proto_m14_packet_saturation')).validity,
+    ).toBe('valid');
+
+    const events = await ipEvents(page);
+    const family = eventsOfFamily(events, 'proto_m14_packet');
+    const types = family.map((event) => event.event_type);
+
+    expect(types).toContain('proto_m14_packet_practice_submitted');
+    expect(types).toContain('proto_m14_packet_scored_started');
+    expect(types).toContain('proto_m14_packet_submission_incomplete_warned');
+    expect(types).toContain('proto_m14_packet_completed');
+    expect(
+      family
+        .filter(
+          (event) => event.event_type === 'proto_m14_packet_command_added',
+        )
+        .filter((event) => event.metadata?.stage === 'practice'),
+    ).toHaveLength(4);
+    expect(family.every((event) => event.episode === 'proto_m14_packet')).toBe(
+      true,
+    );
+    expectProvisionalOnly(family);
+    expect(eventsOfFamily(events, 'proto_m15_cipher')).toHaveLength(0);
+    expect(eventsOfFamily(events, 'proto_m16_protocol')).toHaveLength(0);
+    expectNoRuntimeErrors(errors);
+  });
+
+  test('skipping the orientation flags the intake entry state (invalid, never low)', async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+
+    await bootIpLab(page, {
+      game_session_id: 'GS_IP_M14_NOTUT',
+      ip_form: 'B',
+      module: 'm14',
+    });
+    await waitTerminalOpen(page, true);
+
+    const validity = await ipValidity(page, 'proto_m14_packet_saturation');
+
+    expect(validity.validity).toBe('invalid');
+    expect(validity.invalid_reason).toBe('invalid_entry_state');
+    expect(validity.prior_exposure).toContain(
+      'terminal_orientation_not_completed',
+    );
+
+    const events = await ipEvents(page);
+
+    expect(
+      eventsOfFamily(events, 'proto_m14_packet').map((e) => e.event_type),
+    ).toContain('proto_m14_packet_entry_state_flagged');
+
+    // The window still runs (no gating) — typed-only lane on form B.
+    const probe = await terminalProbe(page);
+
+    expect(probe.chips).toHaveLength(4);
+  });
+});
+
+test.describe('M15 layered cipher (browser)', () => {
+  test('pairs by drag, click and typing; shift; codebook consult; violation revised; valid reconstruction', async ({
+    page,
+  }) => {
+    test.setTimeout(300_000);
+
+    const errors = captureErrors(page);
+
+    await bootIpLab(page, { game_session_id: 'GS_IP_M15_MIX', ip_form: 'A' });
+    await completeTutorial(page);
+    await walkAndUseStation(page, 'm15');
+    await waitTerminalOpen(page, true);
+
+    let probe = await terminalProbe(page);
+
+    expect(probe.task).toBe('m15');
+    expect(probe.chips).toHaveLength(6);
+    expect(probe.bins).toHaveLength(0);
+    expect(probe.buttons.find((b) => b.id === 'reference')?.label).toBe(
+      'CODEBOOK',
+    );
+
+    // Consult the codebook (counted).
+    await clickTerminalButton(page, 'reference');
+    probe = await terminalProbe(page);
+    expect(probe.help_open).toBe(true);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(150);
+
+    // A violating pair (two headers), then remove it.
+    await dragChipToChip(page, 'F1', 'F3');
+    await waitBufferLength(page, 1);
+    probe = await terminalProbe(page);
+    expect(probe.buffer[0].text).toBe('PAIR F1 F3');
+    await clickTerminalButton(page, 'clear');
+    await waitBufferLength(page, 0);
+
+    // K1 by drag, K2 by click-composition, K3 typed.
+    await dragChipToChip(page, 'F3', 'F2');
+    await waitBufferLength(page, 1);
+    await composeByClick(page, ['PAIR', 'F1', 'F5']);
+    await waitBufferLength(page, 2);
+    await typeCommand(page, 'PAIR F6 F4');
+    await waitBufferLength(page, 3);
+    probe = await terminalProbe(page);
+    expect(probe.output.join(' ')).toContain('CORE');
+    expect(probe.output.join(' ')).toContain('HOLDING');
+    expect(probe.output.join(' ')).toContain('STABLE'); // K2 before the shift
+
+    // Shift K2 by 2 → SEALED; message complete; submit.
+    await composeByClick(page, ['SHIFT', 'K2', '2']);
+    await waitBufferLength(page, 4);
+    probe = await terminalProbe(page);
+    expect(probe.output.join(' ')).toContain('MESSAGE: CORE SEALED HOLDING');
+    await clickTerminalButton(page, 'submit');
+    await page.waitForTimeout(300);
+    probe = await terminalProbe(page);
+    expect(probe.closed).toBe(true);
+
+    const m15 = await ipModule(page, 'm15');
+
+    expect(m15.window_status).toBe('completed');
+    expect(m15.rules_presented).toBe(4);
+    expect(m15.relations_required).toBe(4);
+    expect(m15.relations_constructed).toBe(4);
+    expect(m15.relations_correct_at_submission).toBe(4);
+    expect(m15.rule_violations_at_submission).toBe(0);
+    expect(m15.command_sequence_length).toBe(4);
+    expect(m15.revisions).toBe(1); // the cleared violating pair
+    expect(m15.codebook_consults).toBe(1);
+    expect(m15.final_reconstruction_valid).toBe(true);
+    expect(m15.final_message).toEqual(['CORE', 'SEALED', 'HOLDING']);
+    expect(m15.input_mode).toBe('mixed');
+    expect((await ipValidity(page, 'proto_m15_layered_cipher')).validity).toBe(
+      'valid',
+    );
+
+    const events = await ipEvents(page);
+    const family = eventsOfFamily(events, 'proto_m15_cipher');
+
+    expect(family.map((e) => e.event_type)).toContain(
+      'proto_m15_cipher_codebook_consulted',
+    );
+    expect(family.map((e) => e.event_type)).toContain(
+      'proto_m15_cipher_completed',
+    );
+    expect(family.every((event) => event.episode === 'proto_m15_cipher')).toBe(
+      true,
+    );
+    expectProvisionalOnly(family);
+    expect(eventsOfFamily(events, 'proto_m14_packet')).toHaveLength(0);
+    expectNoRuntimeErrors(errors);
+  });
+
+  test('typed-only lane on form B reaches the valid reconstruction; incomplete submission warns first', async ({
+    page,
+  }) => {
+    test.setTimeout(180_000);
+
+    await bootIpLab(page, {
+      game_session_id: 'GS_IP_M15_TYPED',
+      ip_form: 'B',
+      module: 'm15',
+    });
+    await waitTerminalOpen(page, true);
+
+    await typeCommand(page, 'PAIR F5 F6');
+    await typeCommand(page, 'PAIR F2 F3');
+    await waitBufferLength(page, 2);
+
+    // Incomplete: warned, not closed.
+    await typeCommand(page, 'SUBMIT');
+
+    let probe = await terminalProbe(page);
+
+    expect(probe.closed).toBe(false);
+    expect(probe.console.join(' ')).toMatch(/not complete/);
+
+    await typeCommand(page, 'PAIR F4 F1');
+    await typeCommand(page, 'SHIFT K3 2');
+    await waitBufferLength(page, 4);
+    probe = await terminalProbe(page);
+    expect(probe.output.join(' ')).toContain('MESSAGE: ANCHOR FEED SOUTH');
+    await typeCommand(page, 'SUBMIT');
+    probe = await terminalProbe(page);
+    expect(probe.closed).toBe(true);
+
+    const m15 = await ipModule(page, 'm15');
+
+    expect(m15.final_reconstruction_valid).toBe(true);
+    expect(m15.input_mode).toBe('typed');
+    expect(m15.submission_count).toBe(2);
+    expect(
+      (await ipValidity(page, 'proto_m15_layered_cipher')).invalid_reason,
+    ).toBe('invalid_entry_state');
+  });
+});

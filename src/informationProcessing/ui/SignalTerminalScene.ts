@@ -119,8 +119,8 @@ const L = {
   binsY: 366,
   binH: 34,
   codebookY: 146,
-  outputTitleY: 268,
-  outputY: 284,
+  outputTitleY: 262,
+  outputY: 276,
   paletteY: 146,
   bufferTitleY: 236,
   bufferY: 252,
@@ -133,6 +133,8 @@ const L = {
 
 const MAX_LINE_CHARS = 40;
 const META_WORDS = new Set(['REMOVE', 'CLEAR', 'SUBMIT', 'HELP', 'STOP']);
+/** Typed aliases for the optional reference control. */
+const REFERENCE_WORDS = new Set(['CODEBOOK', 'REFERENCE', 'TABLE']);
 
 export class SignalTerminalScene extends Phaser.Scene {
   private resumeKey: string = key.scene.stationConcourse;
@@ -142,6 +144,7 @@ export class SignalTerminalScene extends Phaser.Scene {
   private dynamic: Phaser.GameObjects.GameObject[] = [];
   private buttons: UiButton[] = [];
   private primaryButton: UiButton | null = null;
+  private referenceButton: UiButton | null = null;
   private submitButton: UiButton | null = null;
   private addButton: UiButton | null = null;
 
@@ -182,6 +185,7 @@ export class SignalTerminalScene extends Phaser.Scene {
     this.dynamic = [];
     this.buttons = [];
     this.primaryButton = null;
+    this.referenceButton = null;
     this.submitButton = null;
     this.addButton = null;
     this.lineText = '';
@@ -636,10 +640,10 @@ export class SignalTerminalScene extends Phaser.Scene {
       color: IP_TEXT.dim,
       font: IP_FONT.small,
     });
-    this.text(L.col2.x + 6, L.outputY - 4, view.output.join('\n'), {
+    this.text(L.col2.x + 6, L.outputY - 2, view.output.join('\n'), {
       color: IP_TEXT.accent,
-      font: IP_FONT.small,
-      lineSpacing: 2,
+      font: '10px monospace',
+      lineSpacing: 1,
     });
 
     // — Palette tokens.
@@ -773,6 +777,27 @@ export class SignalTerminalScene extends Phaser.Scene {
 
     this.primaryButton?.destroy();
     this.primaryButton = null;
+    this.referenceButton?.destroy();
+    this.referenceButton = null;
+
+    if (
+      view.reference !== null &&
+      view.reference !== undefined &&
+      !view.closed
+    ) {
+      const reference = view.reference;
+
+      this.referenceButton = new UiButton({
+        scene: this,
+        id: 'reference',
+        x: L.col1.x + 252,
+        y: L.buttonsY,
+        width: 96,
+        label: reference.label,
+        depth: IP_DEPTH.content,
+        onActivate: () => this.openReference('pointer'),
+      });
+    }
 
     if (view.primaryAction !== null && !view.closed) {
       this.primaryButton = new UiButton({
@@ -951,6 +976,10 @@ export class SignalTerminalScene extends Phaser.Scene {
       buttons.push(this.primaryButton);
     }
 
+    if (this.referenceButton !== null) {
+      buttons.push(this.referenceButton);
+    }
+
     for (const button of buttons) {
       const bounds = button.bounds();
 
@@ -1050,6 +1079,11 @@ export class SignalTerminalScene extends Phaser.Scene {
 
     if (META_WORDS.has(head)) {
       this.runMeta(head, rest, mode);
+      return;
+    }
+
+    if (REFERENCE_WORDS.has(head) && this.lastView?.reference) {
+      this.openReference(mode);
       return;
     }
 
@@ -1185,6 +1219,63 @@ export class SignalTerminalScene extends Phaser.Scene {
   /* ---------------------------------------------------------------- *
    * Help + stop confirm
    * ---------------------------------------------------------------- */
+
+  /** Opens the optional in-task reference (codebook table); counted. */
+  private openReference(mode: InputMode) {
+    const reference = this.lastView?.reference;
+
+    if (
+      this.adapter === null ||
+      this.helpOpen ||
+      this.confirmOpen ||
+      reference === null ||
+      reference === undefined
+    ) {
+      return;
+    }
+
+    const lines =
+      this.safely(() =>
+        this.adapter!.consultReference
+          ? this.adapter!.consultReference(mode, Date.now())
+          : reference.lines,
+      ) ?? reference.lines;
+
+    this.showReferencePanel(reference.title, [...lines]);
+  }
+
+  private showReferencePanel(title: string, lines: string[]) {
+    this.helpOpen = true;
+
+    const backdrop = this.add
+      .rectangle(400, 300, 520, 300, IP_COLORS.panel, 1)
+      .setStrokeStyle(1, IP_COLORS.accent)
+      .setDepth(IP_DEPTH.confirm)
+      .setInteractive();
+    const heading = this.add
+      .text(400, 168, title, { color: IP_TEXT.accent, font: IP_FONT.section })
+      .setOrigin(0.5)
+      .setDepth(IP_DEPTH.confirm + 1);
+    const body = this.add
+      .text(156, 190, lines.join('\n'), {
+        color: IP_TEXT.text,
+        font: IP_FONT.body,
+        lineSpacing: 4,
+        wordWrap: { width: 488 },
+      })
+      .setDepth(IP_DEPTH.confirm + 1);
+    const footer = this.add
+      .text(400, 432, 'ENTER / ESC / click — close', {
+        color: IP_TEXT.dim,
+        font: IP_FONT.small,
+      })
+      .setOrigin(0.5)
+      .setDepth(IP_DEPTH.confirm + 1);
+
+    backdrop.on('pointerup', () => this.closeHelp());
+    this.helpObjects = [backdrop, heading, body, footer];
+    this.refresh();
+  }
 
   private openHelp(mode: InputMode) {
     if (this.adapter === null || this.helpOpen || this.confirmOpen) {

@@ -18,8 +18,10 @@ import {
   clickDiagnosisRun,
   clickHypothesis,
   clickPipeButton,
+  clickTerminalButton,
   composeByClick,
   dragChipToBin,
+  dragChipToChip,
   dragPieceToCell,
   pipeBenchPiece,
   pipeCell,
@@ -223,4 +225,60 @@ test('information processing lab visual capture — lattice bench and diagnosis 
   await shot(page, '17-m18-diagnosis-logged');
   await page.keyboard.press('Escape');
   await waitDiagnosisOpen(page, false);
+});
+
+test('information processing lab visual capture — packet saturation and layered cipher', async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
+  mkdirSync(OUT, { recursive: true });
+
+  await bootIpLab(page, { game_session_id: 'GS_IP_CAP_3', ip_form: 'A' });
+
+  // Orientation first (valid entry state), then the two decoder stations.
+  await walkAndUseStation(page, 'tutorial');
+  await waitTerminalOpen(page, true);
+  await dragChipToBin(page, 'T1', 'ARCHIVE');
+  await waitBufferLength(page, 1);
+  await typeCommand(page, 'ROUTE T2 RELAY');
+  await typeCommand(page, 'ROUTE T3 ARCHIVE');
+  await waitBufferLength(page, 3);
+  await typeCommand(page, 'SUBMIT');
+  await page.keyboard.press('Escape');
+  await waitTerminalOpen(page, false);
+
+  // 18 — M14 packet saturation: intake stage, partly routed.
+  await walkAndUseStation(page, 'm14');
+  await waitTerminalOpen(page, true);
+  await dragChipToBin(page, 'Q1', 'ARCHIVE');
+  await typeCommand(page, 'ROUTE Q2 RELAY');
+  await typeCommand(page, 'ROUTE Q3 HOLD');
+  await typeCommand(page, 'ROUTE Q4 RELAY');
+  await waitBufferLength(page, 4);
+  await clickTerminalButton(page, 'submit');
+  await clickTerminalButton(page, 'BEGIN');
+  await dragChipToBin(page, 'P1', 'RELAY');
+  await dragChipToBin(page, 'P2', 'ARCHIVE');
+  await typeCommand(page, 'ROUTE P3 RELAY');
+  await typeCommand(page, 'ROUTE P4 ARCHIVE');
+  await typeCommand(page, 'ROUTE P5 HOLD');
+  await waitBufferLength(page, 5);
+  await shot(page, '18-m14-packet-saturation-intake');
+  await page.keyboard.press('Escape');
+  await waitTerminalOpen(page, false);
+
+  // 19 — M15 layered cipher: two keys paired, shift pending; codebook.
+  await walkAndUseStation(page, 'm15');
+  await waitTerminalOpen(page, true);
+  await dragChipToChip(page, 'F3', 'F2');
+  await waitBufferLength(page, 1);
+  await typeCommand(page, 'PAIR F1 F5');
+  await waitBufferLength(page, 2);
+  await shot(page, '19-m15-layered-cipher-reconstruction');
+  await clickTerminalButton(page, 'reference');
+  await shot(page, '19b-m15-codebook-reference');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(200);
+  await page.keyboard.press('Escape');
+  await waitTerminalOpen(page, false);
 });
