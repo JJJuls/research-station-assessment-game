@@ -151,8 +151,11 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
     super(key.scene.ipDiagnosisConsole);
   }
 
+  private hostContext: Record<string, unknown> = {};
+
   init(data?: IpOverlayLaunchData) {
     this.resumeKey = data?.resumeKey ?? key.scene.stationConcourse;
+    this.hostContext = data?.context ?? {};
   }
 
   create() {
@@ -300,7 +303,7 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
     this.wireKeyboard();
 
     try {
-      m18FaultOpen(Date.now());
+      m18FaultOpen(Date.now(), this.hostContext);
     } catch (error) {
       m18FaultFail(Date.now(), `open: ${String(error)}`);
     }
@@ -879,7 +882,12 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
   }
 
   private submit(mode: InputMode) {
-    if (this.helpOpen || this.confirmOpen || this.lastView?.closed) {
+    if (
+      this.helpOpen ||
+      this.rulesOpen ||
+      this.confirmOpen ||
+      this.lastView?.closed
+    ) {
       return;
     }
 
@@ -948,6 +956,12 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
 
     this.rulesOpen = true;
 
+    const scrim = this.add
+      .rectangle(0, 0, 800, 600, 0x000000, 0.5)
+      .setOrigin(0)
+      .setDepth(IP_DEPTH.confirm - 1)
+      .setInteractive();
+
     const backdrop = this.add
       .rectangle(400, 300, 600, 300, IP_COLORS.panel, 1)
       .setStrokeStyle(1, IP_COLORS.accent)
@@ -977,7 +991,7 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
       .setDepth(IP_DEPTH.confirm + 1);
 
     backdrop.on('pointerup', () => this.closeRules());
-    this.rulesObjects = [backdrop, title, body, footer];
+    this.rulesObjects = [scrim, backdrop, title, body, footer];
     this.refresh();
   }
 
@@ -1004,6 +1018,12 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
     const lines = m18FaultHelp(mode, Date.now());
 
     this.helpOpen = true;
+
+    const scrim = this.add
+      .rectangle(0, 0, 800, 600, 0x000000, 0.5)
+      .setOrigin(0)
+      .setDepth(IP_DEPTH.confirm - 1)
+      .setInteractive();
 
     const backdrop = this.add
       .rectangle(400, 300, 560, 250, IP_COLORS.panel, 1)
@@ -1034,7 +1054,7 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
       .setDepth(IP_DEPTH.confirm + 1);
 
     backdrop.on('pointerup', () => this.closeHelp());
-    this.helpObjects = [backdrop, title, body, footer];
+    this.helpObjects = [scrim, backdrop, title, body, footer];
     this.refresh();
   }
 
@@ -1054,7 +1074,12 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
   }
 
   private openStopConfirm() {
-    if (this.confirmOpen || this.helpOpen || this.lastView?.closed) {
+    if (
+      this.confirmOpen ||
+      this.helpOpen ||
+      this.rulesOpen ||
+      this.lastView?.closed
+    ) {
       return;
     }
 
@@ -1208,7 +1233,12 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
       }
     });
     on('keydown-I', (event) => {
-      if (!event.repeat && !this.confirmOpen && !this.helpOpen) {
+      if (
+        !event.repeat &&
+        !this.confirmOpen &&
+        !this.helpOpen &&
+        !this.rulesOpen
+      ) {
         this.leave();
       }
     });

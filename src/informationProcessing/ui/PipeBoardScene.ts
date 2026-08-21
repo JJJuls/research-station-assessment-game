@@ -375,7 +375,7 @@ export class PipeBoardScene extends Phaser.Scene {
       .text(
         400,
         L.helpLineY,
-        'Drag / click to pick up • click a mount to seat • R or right-click rotates • DEL returns • arrows move focus • T test flow • ESC leaves (work stays)',
+        'Drag / click to pick up • click a mount to seat • R or right-click rotates • DEL returns • arrows + SPACE move / pick / place • T test flow • H help • Q stop • ESC drops a held piece, then leaves (work stays)',
         {
           color: IP_TEXT.dim,
           font: IP_FONT.small,
@@ -507,7 +507,7 @@ export class PipeBoardScene extends Phaser.Scene {
     this.text(
       56,
       L.instrY,
-      'Reconstruct the core conduit: seat pieces from the bench so the FEED port reaches the INTAKE port as one sealed run, with the isolation valve inline and no open branch. The fractured centre mount seats nothing. TEST FLOW checks the run; you may revise and test again.',
+      'Reconstruct the core conduit: seat pieces from the bench so the FEED port reaches the INTAKE port as one sealed run, with the isolation valve inline and no open branch. The fractured centre mount seats nothing. TEST FLOW checks the run — up to four test runs; revise between them.',
       {
         color: IP_TEXT.dim,
         font: IP_FONT.small,
@@ -717,7 +717,7 @@ export class PipeBoardScene extends Phaser.Scene {
     this.text(
       L.consoleX + 6,
       L.consoleY + 330,
-      `Form ${view.form} · ${config.feed_label} → ${config.intake_label}`,
+      `${config.feed_label} → ${config.intake_label}`,
       {
         color: IP_TEXT.faint,
         font: '9px monospace',
@@ -1105,6 +1105,12 @@ export class PipeBoardScene extends Phaser.Scene {
 
     this.helpOpen = true;
 
+    const scrim = this.add
+      .rectangle(0, 0, 800, 600, 0x000000, 0.5)
+      .setOrigin(0)
+      .setDepth(IP_DEPTH.confirm - 1)
+      .setInteractive();
+
     const backdrop = this.add
       .rectangle(400, 300, 560, 280, IP_COLORS.panel, 1)
       .setStrokeStyle(1, IP_COLORS.accent)
@@ -1134,7 +1140,7 @@ export class PipeBoardScene extends Phaser.Scene {
       .setDepth(IP_DEPTH.confirm + 1);
 
     backdrop.on('pointerup', () => this.closeHelp());
-    this.helpObjects = [backdrop, title, body, footer];
+    this.helpObjects = [scrim, backdrop, title, body, footer];
     this.refresh();
   }
 
@@ -1524,6 +1530,20 @@ export class PipeBoardScene extends Phaser.Scene {
 
         if (target?.kind === 'cell' || target?.kind === 'cell_piece') {
           this.hoverSlot = target.slot ?? null;
+        }
+      },
+    );
+
+    this.input.on(
+      Phaser.Input.Events.GAMEOBJECT_OUT,
+      (_p: Phaser.Input.Pointer, object: Phaser.GameObjects.GameObject) => {
+        const target = this.targetOf(object);
+
+        if (
+          (target?.kind === 'cell' || target?.kind === 'cell_piece') &&
+          this.hoverSlot === target.slot
+        ) {
+          this.hoverSlot = null;
         }
       },
     );

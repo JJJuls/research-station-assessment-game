@@ -333,6 +333,13 @@ test.describe('M14 packet saturation (browser)', () => {
     expect(probe.chips).toHaveLength(12);
     expect(probe.buffer).toHaveLength(0);
 
+    // A refused typed command never touches the buffer and is recorded.
+    await typeCommand(page, 'LAUNCH P1 RELAY');
+    await typeCommand(page, 'ROUTE P1 NOWHERE');
+    probe = await terminalProbe(page);
+    expect(probe.buffer).toHaveLength(0);
+    expect(probe.console[0]).toMatch(/not a valid|not a command/);
+
     // Intake: drag 5, click-compose 3, type 3 (one of them deliberately
     // wrong), leave one unrouted.
     const scored = M14_FORMS.A.scored;
@@ -402,7 +409,10 @@ test.describe('M14 packet saturation (browser)', () => {
     const types = family.map((event) => event.event_type);
 
     expect(types).toContain('proto_m14_packet_practice_submitted');
-    expect(types).toContain('proto_m14_packet_scored_started');
+    expect(types).toContain('proto_m14_packet_intake_started');
+    expect(
+      family.filter((e) => e.event_type === 'proto_m14_packet_command_refused'),
+    ).toHaveLength(2);
     expect(types).toContain('proto_m14_packet_submission_incomplete_warned');
     expect(types).toContain('proto_m14_packet_completed');
     expect(

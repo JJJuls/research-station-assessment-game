@@ -44,7 +44,6 @@ import {
   IP_COLORS,
   IP_DEPTH,
   IP_FONT,
-  IP_LEAVE_HINT,
   IP_PANEL,
   IP_TEXT,
   IP_TONES,
@@ -152,6 +151,7 @@ export class SignalTerminalScene extends Phaser.Scene {
   private pointerTokens = 0;
   private typedChars = 0;
   private composerText!: Phaser.GameObjects.Text;
+  private footerText!: Phaser.GameObjects.Text;
   private caretTween: Phaser.Tweens.Tween | null = null;
 
   private dragging = false;
@@ -346,13 +346,13 @@ export class SignalTerminalScene extends Phaser.Scene {
     });
     this.buttons.push(this.submitButton);
 
-    this.add
-      .text(
-        400,
-        L.helpLineY,
-        `Type a command + ENTER • drag fragment → destination • ✕ removes a line • HELP • ${IP_LEAVE_HINT}`,
-        { color: IP_TEXT.dim, font: IP_FONT.small },
-      )
+    this.footerText = this.add
+      .text(400, L.helpLineY, '', {
+        color: IP_TEXT.dim,
+        font: IP_FONT.small,
+        align: 'center',
+        wordWrap: { width: 700 },
+      })
       .setOrigin(0.5)
       .setDepth(IP_DEPTH.content);
 
@@ -506,7 +506,7 @@ export class SignalTerminalScene extends Phaser.Scene {
       if (view.editing && !view.closed) {
         rect.setInteractive({
           useHandCursor: true,
-          draggable: true,
+          draggable: view.chipDropVerb !== null || view.chipPairVerb !== null,
           dropZone: view.chipPairVerb !== null,
         });
       }
@@ -813,8 +813,20 @@ export class SignalTerminalScene extends Phaser.Scene {
       });
     }
 
+    const dragHint =
+      view.chipDropVerb !== null
+        ? 'drag fragment → destination • '
+        : view.chipPairVerb !== null
+          ? 'drag fragment → partner fragment • '
+          : '';
+
+    this.footerText.setText(
+      `Type a command + ENTER (SUBMIT / CLEAR / REMOVE n / HELP / STOP${view.reference ? ` / ${view.reference.label}` : ''}${view.primaryAction ? ` / ${view.primaryAction.id}` : ''}) • ${dragHint}✕ removes a line • ESC clears the line, then leaves (work stays)`,
+    );
     this.composerText.setText(
-      view.editing && !view.closed ? `${this.lineText}▮` : '',
+      (view.editing || view.primaryAction !== null) && !view.closed
+        ? `${this.lineText}▮`
+        : '',
     );
     this.writeProbe(view);
   }
@@ -1049,11 +1061,16 @@ export class SignalTerminalScene extends Phaser.Scene {
     return this.pointerTokens > 0 ? 'pointer' : 'typed';
   }
 
+  /**
+   * The command line accepts input while the buffer is editable OR a stage
+   * action (READY / BEGIN / NEXT …) is available, so every stage control
+   * stays reachable by keyboard; the adapter refuses non-editable appends.
+   */
   private canEdit(): boolean {
     return (
       this.adapter !== null &&
       this.lastView !== null &&
-      this.lastView.editing &&
+      (this.lastView.editing || this.lastView.primaryAction !== null) &&
       !this.lastView.closed &&
       !this.helpOpen &&
       !this.confirmOpen
@@ -1247,6 +1264,12 @@ export class SignalTerminalScene extends Phaser.Scene {
   private showReferencePanel(title: string, lines: string[]) {
     this.helpOpen = true;
 
+    const scrim = this.add
+      .rectangle(0, 0, 800, 600, 0x000000, 0.5)
+      .setOrigin(0)
+      .setDepth(IP_DEPTH.confirm - 1)
+      .setInteractive();
+
     const backdrop = this.add
       .rectangle(400, 300, 520, 300, IP_COLORS.panel, 1)
       .setStrokeStyle(1, IP_COLORS.accent)
@@ -1273,7 +1296,7 @@ export class SignalTerminalScene extends Phaser.Scene {
       .setDepth(IP_DEPTH.confirm + 1);
 
     backdrop.on('pointerup', () => this.closeHelp());
-    this.helpObjects = [backdrop, heading, body, footer];
+    this.helpObjects = [scrim, backdrop, heading, body, footer];
     this.refresh();
   }
 
@@ -1286,6 +1309,12 @@ export class SignalTerminalScene extends Phaser.Scene {
     const view = this.lastView;
 
     this.helpOpen = true;
+
+    const scrim = this.add
+      .rectangle(0, 0, 800, 600, 0x000000, 0.5)
+      .setOrigin(0)
+      .setDepth(IP_DEPTH.confirm - 1)
+      .setInteractive();
 
     const backdrop = this.add
       .rectangle(400, 300, 560, 340, IP_COLORS.panel, 1)
@@ -1321,7 +1350,7 @@ export class SignalTerminalScene extends Phaser.Scene {
       .setDepth(IP_DEPTH.confirm + 1);
 
     backdrop.on('pointerup', () => this.closeHelp());
-    this.helpObjects = [backdrop, title, body, footer];
+    this.helpObjects = [scrim, backdrop, title, body, footer];
     this.refresh();
   }
 
@@ -1480,7 +1509,8 @@ export class SignalTerminalScene extends Phaser.Scene {
 
     this.input.on(Phaser.Input.Events.DRAG, (pointer: Phaser.Input.Pointer) => {
       if (this.dragging) {
-        this.ghost?.setPosition(pointer.x, pointer.y);
+        // Offset so the ghost never hides the target's own label.
+        this.ghost?.setPosition(pointer.x + 26, pointer.y - 22);
       }
     });
 

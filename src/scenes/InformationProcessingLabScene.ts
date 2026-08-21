@@ -75,6 +75,13 @@ import { buildPlaceholderRoomMap } from '../world/StationMapBuilder';
 
 const INTERACTION_RANGE = 72;
 
+declare global {
+  interface Window {
+    /** DEV-only: the last lab gate refusal shown (tests). */
+    __ipLabFeedback?: string | null;
+  }
+}
+
 interface LabStation {
   id: string;
   label: string;
@@ -87,6 +94,8 @@ interface LabStation {
   verb: string | (() => string);
   /** Sequencing guard: returns a refusal message, or null when usable. */
   gate?: () => string | null;
+  /** Closure context handed to the overlay on open (never evidence). */
+  context?: () => Record<string, unknown>;
 }
 
 export class InformationProcessingLabScene extends Phaser.Scene {
@@ -358,6 +367,11 @@ export class InformationProcessingLabScene extends Phaser.Scene {
         m13LatticeWindowStatus() === 'open'
           ? 'Finish or stop the lattice bench first — the console takes over afterwards.'
           : null,
+      // Closure state only (completed / exhausted / exited / unopened) —
+      // the console itself never reads any M13 state.
+      context: () => ({
+        prior_m13_window_status: m13LatticeWindowStatus(),
+      }),
     });
   }
 
@@ -375,13 +389,24 @@ export class InformationProcessingLabScene extends Phaser.Scene {
       sfxUnavailable();
       this.showFeedback(refusal);
 
+      if (typeof window !== 'undefined' && import.meta.env.DEV) {
+        window.__ipLabFeedback = refusal;
+      }
+
       return;
     }
 
     this.overlayBusy = true;
     sfxUiSelect();
 
-    if (!openIpOverlay(this, station.overlay.scene, station.overlay.taskId)) {
+    if (
+      !openIpOverlay(
+        this,
+        station.overlay.scene,
+        station.overlay.taskId,
+        station.context?.() ?? {},
+      )
+    ) {
       this.overlayBusy = false;
     }
   }

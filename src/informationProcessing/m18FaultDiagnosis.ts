@@ -214,7 +214,15 @@ export function m18FaultWindowStatus() {
   return ensure().window.status;
 }
 
-export function m18FaultOpen(nowMs: number) {
+/**
+ * Opens the console. `context` is optional CLOSURE context supplied by the
+ * host (e.g. the lattice bench window status at entry) — recorded for
+ * stratification only; the console never reads any M13 state itself.
+ */
+export function m18FaultOpen(
+  nowMs: number,
+  context: Record<string, unknown> = {},
+) {
   const s = ensure();
 
   declareM18Fault();
@@ -222,7 +230,7 @@ export function m18FaultOpen(nowMs: number) {
   const entry = enterIpWindow(s.window, nowMs);
 
   if (entry === 'opened') {
-    log('window_opened', { entry_snapshot: m18EntrySnapshot() });
+    log('window_opened', { entry_snapshot: m18EntrySnapshot(), ...context });
   } else if (entry === 'reopened') {
     log('window_reopened');
   }

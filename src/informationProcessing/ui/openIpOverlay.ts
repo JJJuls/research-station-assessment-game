@@ -22,12 +22,15 @@ export interface IpOverlayLaunchData {
   resumeKey: string;
   /** Module / task id the overlay should mount ('tutorial', 'm14'…). */
   taskId: string;
+  /** Optional host-supplied closure context (recorded on window open). */
+  context?: Record<string, unknown>;
 }
 
 export function openIpOverlay(
   host: Phaser.Scene,
   overlayKey: IpOverlayKey,
   taskId: string,
+  context: Record<string, unknown> = {},
 ): boolean {
   for (const candidate of [
     key.scene.ipSignalTerminal,
@@ -43,6 +46,7 @@ export function openIpOverlay(
   host.scene.launch(overlayKey, {
     resumeKey: host.scene.key,
     taskId,
+    context,
   } satisfies IpOverlayLaunchData);
 
   return true;

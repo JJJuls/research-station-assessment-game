@@ -121,6 +121,20 @@ export function declareIpWindow(window: IpWindow) {
 
 export type WindowEntry = 'opened' | 'reopened' | 'closed';
 
+/** Lab-level order of first openings (raw contextual data, never scored). */
+const openedOrder: string[] = [];
+
+export function ipWindowsOpenedBefore(window: IpWindow): string[] {
+  const index = openedOrder.indexOf(window.opportunity_id);
+
+  return index >= 0 ? openedOrder.slice(0, index) : [...openedOrder];
+}
+
+/** Test-only escape hatch. */
+export function resetIpWindowOrder() {
+  openedOrder.length = 0;
+}
+
 /**
  * The overlay opened for this window. First entry moves the window to
  * `open` and marks it entered on the register; later entries are
@@ -131,6 +145,7 @@ export function enterIpWindow(window: IpWindow, nowMs: number): WindowEntry {
 
   if (window.status === 'unopened') {
     window.status = 'open';
+    openedOrder.push(window.opportunity_id);
     markOpportunityEntered(window.opportunity_id);
     refreshValidityProbe();
     window.panel_open = true;
@@ -279,5 +294,6 @@ export function ipWindowFields(window: IpWindow, nowMs?: number) {
     submission_count: window.submission_count,
     invalid_reason: window.invalid_reason,
     open_count: window.open_count,
+    ip_windows_opened_before: ipWindowsOpenedBefore(window),
   };
 }

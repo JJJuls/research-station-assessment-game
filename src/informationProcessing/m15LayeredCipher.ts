@@ -224,7 +224,7 @@ function applyTutorialGate() {
     flagIpWindow(
       s.window,
       'comprehension_failure',
-      'terminal orientation failed before this opportunity',
+      'terminal orientation failed at first open of this opportunity',
     );
     s.entry_flagged = true;
     log('entry_state_flagged', { reason: 'comprehension_failure' });
@@ -233,7 +233,7 @@ function applyTutorialGate() {
     flagIpWindow(
       s.window,
       'invalid_entry_state',
-      'terminal orientation not completed before this opportunity',
+      'terminal orientation not completed at first open of this opportunity',
     );
     s.entry_flagged = true;
     log('entry_state_flagged', { reason: 'invalid_entry_state' });

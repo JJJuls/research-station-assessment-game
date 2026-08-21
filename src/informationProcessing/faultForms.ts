@@ -81,6 +81,7 @@ export const M18F_FORMS: Record<FormId, FaultForm> = {
     brief: [
       'Test run on the reference lattice: intake flow is LOW.',
       'Identify the single fault consistent with every reading.',
+      'SUBMIT DIAGNOSIS records ONE final answer.',
     ],
     hypotheses: HYPOTHESES,
     panels: [
@@ -153,6 +154,7 @@ export const M18F_FORMS: Record<FormId, FaultForm> = {
     brief: [
       'Test run on the reference lattice: intake flow is LOW.',
       'Identify the single fault consistent with every reading.',
+      'SUBMIT DIAGNOSIS records ONE final answer.',
     ],
     hypotheses: HYPOTHESES,
     panels: [

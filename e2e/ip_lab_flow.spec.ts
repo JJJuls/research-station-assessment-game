@@ -14,20 +14,29 @@ import { expect, test } from '@playwright/test';
 import { playerProbe } from './helpers';
 import {
   bootIpLab,
+  clickPipeButton,
   clickRect,
   clickTerminalButton,
   composeByClick,
   dragChipToBin,
+  dragPieceToCell,
   eventsOfFamily,
   expectBufferTexts,
   expectProvisionalOnly,
   holdKey,
   ipEvents,
   ipModule,
+  ipModules,
   ipValidity,
+  pipeCell,
+  pipeProbe,
+  rightClickRect,
   terminalProbe,
   typeCommand,
   waitBufferLength,
+  waitCellPiece,
+  waitDiagnosisOpen,
+  waitPipeOpen,
   waitTerminalOpen,
   walkAndUseStation,
 } from './ipHelpers';
@@ -305,4 +314,216 @@ test.describe('information processing lab — orientation terminal', () => {
     ).toHaveLength(2);
     expectNoRuntimeErrors(errors);
   });
+});
+
+/* ------------------------------------------------------------------ *
+ * Unit 5 — complete laboratory playthrough (one session, all stations)
+ * ------------------------------------------------------------------ */
+
+test('complete laboratory playthrough: every opportunity valid in one session (typed lane + pointer)', async ({
+  page,
+}) => {
+  test.setTimeout(600_000);
+
+  const errors = captureErrors(page);
+  const startedAt = Date.now();
+
+  await bootIpLab(page, { game_session_id: 'GS_IP_FULL_LAB', ip_form: 'A' });
+
+  // Orientation.
+  await walkAndUseStation(page, 'tutorial');
+  await waitTerminalOpen(page, true);
+  await dragChipToBin(page, 'T1', 'ARCHIVE');
+  await waitBufferLength(page, 1);
+  await typeCommand(page, 'ROUTE T2 RELAY');
+  await typeCommand(page, 'ROUTE T3 ARCHIVE');
+  await typeCommand(page, 'SUBMIT');
+  await page.keyboard.press('Escape');
+  await waitTerminalOpen(page, false);
+
+  // M14 (typed lane).
+  await walkAndUseStation(page, 'm14');
+  await waitTerminalOpen(page, true);
+
+  for (const [id, dest] of [
+    ['Q1', 'ARCHIVE'],
+    ['Q2', 'RELAY'],
+    ['Q3', 'HOLD'],
+    ['Q4', 'RELAY'],
+  ]) {
+    await typeCommand(page, `ROUTE ${id} ${dest}`);
+  }
+
+  await typeCommand(page, 'SUBMIT');
+  await typeCommand(page, 'BEGIN');
+
+  const scored: [string, string][] = [
+    ['P1', 'RELAY'],
+    ['P2', 'ARCHIVE'],
+    ['P3', 'RELAY'],
+    ['P4', 'ARCHIVE'],
+    ['P5', 'HOLD'],
+    ['P6', 'RELAY'],
+    ['P7', 'RELAY'],
+    ['P8', 'HOLD'],
+    ['P9', 'RELAY'],
+    ['P10', 'ARCHIVE'],
+    ['P11', 'HOLD'],
+    ['P12', 'RELAY'],
+  ];
+
+  for (const [id, dest] of scored) {
+    await typeCommand(page, `ROUTE ${id} ${dest}`);
+  }
+
+  await waitBufferLength(page, 12);
+  await typeCommand(page, 'SUBMIT');
+  await page.keyboard.press('Escape');
+  await waitTerminalOpen(page, false);
+
+  // M15.
+  await walkAndUseStation(page, 'm15');
+  await waitTerminalOpen(page, true);
+  await typeCommand(page, 'PAIR F3 F2');
+  await typeCommand(page, 'PAIR F1 F5');
+  await typeCommand(page, 'PAIR F6 F4');
+  await typeCommand(page, 'SHIFT K2 2');
+  await waitBufferLength(page, 4);
+  await typeCommand(page, 'SUBMIT');
+  await page.keyboard.press('Escape');
+  await waitTerminalOpen(page, false);
+
+  // M16.
+  await walkAndUseStation(page, 'm16');
+  await waitTerminalOpen(page, true);
+  await typeCommand(page, 'ROUTE B1 ARCHIVE');
+  await typeCommand(page, 'ROUTE B2 RELAY');
+  await typeCommand(page, 'ROUTE B3 ARCHIVE');
+  await typeCommand(page, 'SUBMIT');
+  await typeCommand(page, 'READY');
+  await typeCommand(page, 'ACKNOWLEDGE');
+
+  for (const [id, dest] of [
+    ['R1', 'RELAY'],
+    ['R2', 'HOLD'],
+    ['R3', 'ARCHIVE'],
+    ['R4', 'HOLD'],
+    ['R5', 'HOLD'],
+    ['R6', 'RELAY'],
+  ]) {
+    await typeCommand(page, `ROUTE ${id} ${dest}`);
+  }
+
+  await waitBufferLength(page, 6);
+  await typeCommand(page, 'SUBMIT');
+  await page.keyboard.press('Escape');
+  await waitTerminalOpen(page, false);
+
+  // M17.
+  await walkAndUseStation(page, 'm17');
+  await waitTerminalOpen(page, true);
+  await typeCommand(page, 'READY');
+
+  const trials = [
+    ['ZOR A C', 'VEK B GRN'],
+    ['KAI A', 'VEK C RED'],
+    ['ZOR A C', 'KAI B'],
+    ['ZOR A C', 'VEK C BLU'],
+    ['ZOR A C', 'KAI B'],
+  ];
+
+  for (let index = 0; index < trials.length; index++) {
+    if (index > 0) {
+      await typeCommand(page, 'NEXT');
+    }
+
+    await typeCommand(page, trials[index][0]);
+    await typeCommand(page, trials[index][1]);
+    await waitBufferLength(page, 2);
+    await typeCommand(page, 'SUBMIT');
+  }
+
+  await page.keyboard.press('Escape');
+  await waitTerminalOpen(page, false);
+
+  // M13 (pointer lane) then M18 (keyboard lane).
+  await walkAndUseStation(page, 'm13');
+  await waitPipeOpen(page, true);
+  await dragPieceToCell(page, 'el1', 'A2');
+  await waitCellPiece(page, 'A2', 'el1', 0);
+
+  for (let turn = 0; turn < 3; turn++) {
+    await rightClickRect(page, await pipeCell(page, 'A2'));
+  }
+
+  await dragPieceToCell(page, 'el2', 'A1');
+  await waitCellPiece(page, 'A1', 'el2', 0);
+  await rightClickRect(page, await pipeCell(page, 'A1'));
+  await dragPieceToCell(page, 'va1', 'B1');
+  await dragPieceToCell(page, 'el3', 'C1');
+  await waitCellPiece(page, 'C1', 'el3', 0);
+  await rightClickRect(page, await pipeCell(page, 'C1'));
+  await rightClickRect(page, await pipeCell(page, 'C1'));
+  await dragPieceToCell(page, 'el4', 'C2');
+  await waitCellPiece(page, 'C2', 'el4', 0);
+  await clickPipeButton(page, 'submit');
+  await page.waitForTimeout(300);
+  expect((await pipeProbe(page)).closed).toBe(true);
+  await page.keyboard.press('Escape');
+  await waitPipeOpen(page, false);
+
+  await walkAndUseStation(page, 'm18');
+  await waitDiagnosisOpen(page, true);
+  await page.keyboard.press('Enter'); // E1
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter'); // E3
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter'); // T2
+  await page.keyboard.press('3'); // select H3
+  await page.waitForTimeout(150);
+
+  for (let i = 0; i < 12; i++) {
+    await page.keyboard.press('ArrowDown');
+  }
+
+  await page.keyboard.press('Enter'); // submit
+  await page.waitForTimeout(300);
+  await page.keyboard.press('Escape');
+  await waitDiagnosisOpen(page, false);
+
+  const wallMs = Date.now() - startedAt;
+  const probe = await ipModules(page);
+
+  for (const id of [
+    'proto_ip_terminal_tutorial',
+    'proto_m14_packet_saturation',
+    'proto_m15_layered_cipher',
+    'proto_m16_protocol_update',
+    'proto_m17_syntax_acquisition',
+    'proto_m13_lattice_construction',
+    'proto_m18_lattice_fault_diagnosis',
+  ]) {
+    const record = probe.validity.find((r) => r.opportunity_id === id)!;
+
+    expect(record.validity, id).toBe('valid');
+    expect(record.completed, id).toBe(true);
+  }
+
+  expect(probe.modules.m14.units_correctly_routed).toBe(12);
+  expect(probe.modules.m15.final_reconstruction_valid).toBe(true);
+  expect(probe.modules.m16.final_applications_correct).toBe(3);
+  expect(probe.modules.m17.trials_completed).toBe(5);
+  expect(probe.modules.m13.final_network_valid).toBe(true);
+  expect(probe.modules.m18.final_solution_valid).toBe(true);
+
+  // Automated wall time (NOT human timing) — recorded for the report.
+  test.info().annotations.push({
+    type: 'automated_wall_ms',
+    description: String(wallMs),
+  });
+  expect(wallMs).toBeGreaterThan(0);
+  expectNoRuntimeErrors(errors);
 });

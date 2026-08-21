@@ -530,13 +530,13 @@ test.describe('M13 lattice bench (browser)', () => {
       await ipEvents(page),
       'proto_m13_lattice',
     );
+    const placedByKeyboard = keyboardEvents.filter(
+      (event) => event.event_type === 'proto_m13_lattice_piece_placed',
+    );
 
+    expect(placedByKeyboard.length).toBeGreaterThan(0);
     expect(
-      keyboardEvents
-        .filter(
-          (event) => event.event_type === 'proto_m13_lattice_piece_placed',
-        )
-        .every((event) => event.metadata?.input_mode === 'typed'),
+      placedByKeyboard.every((event) => event.metadata?.input_mode === 'typed'),
     ).toBe(true);
 
     // Stop the task explicitly (Q → ENTER): the window closes as exited,
@@ -645,8 +645,48 @@ async function openDiagnosisFromLab(page: Page) {
   await waitDiagnosisOpen(page, true);
 }
 
+/**
+ * The LIVE console state at entry: the pure entry snapshot, the raw M18
+ * module fields, and the rendered console (panels/tests/hypotheses/
+ * feedback) — everything a participant could perceive or the record could
+ * hold. Compared byte-for-byte across the M13 paths.
+ */
 async function m18Entry(page: Page) {
-  return (await ipModule(page, 'm18')).entry_snapshot;
+  const module = await ipModule(page, 'm18');
+  const probe = await diagnosisProbe(page);
+
+  return {
+    snapshot: module.entry_snapshot,
+    raw: {
+      form: module.form,
+      form_id: module.form_id,
+      entry_state_id: module.entry_state_id,
+      window_status: module.window_status,
+      evidence_panels_viewed: module.evidence_panels_viewed,
+      tests_run: module.tests_run,
+      hypotheses_selected: module.hypotheses_selected,
+      hypotheses_rejected: module.hypotheses_rejected,
+      hypothesis_revisions: module.hypothesis_revisions,
+      contradictions_present_at_submission:
+        module.contradictions_present_at_submission,
+      final_diagnosis_id: module.final_diagnosis_id,
+      submission_count: module.submission_count,
+    },
+    console: {
+      form: probe.form,
+      panels: probe.panels.map((p) => ({ id: p.id, viewed: p.viewed })),
+      tests: probe.tests.map((t) => ({ id: t.id, runs: t.runs })),
+      hypotheses: probe.hypotheses.map((h) => ({
+        id: h.id,
+        selected: h.selected,
+        rejected: h.rejected,
+      })),
+      detail_title: probe.detail_title,
+      feedback: probe.feedback,
+      submit_enabled: probe.submit_enabled,
+      closed: probe.closed,
+    },
+  };
 }
 
 test.describe('M18 fault diagnosis (browser)', () => {
@@ -853,6 +893,7 @@ test.describe('M18 fault diagnosis (browser)', () => {
       (event) => event.event_type === 'proto_m18_fault_hypothesis_selected',
     );
 
+    expect(placed.length).toBeGreaterThan(0);
     expect(
       placed.every((event) => event.metadata?.input_mode === 'typed'),
     ).toBe(true);
@@ -940,6 +981,15 @@ test.describe('M18 fault diagnosis (browser)', () => {
       await walkAndUseStation(page, 'm18');
       await page.waitForTimeout(600);
 
+      // The gate refusal itself is observed (not just "nothing opened").
+      const refusal = await page.evaluate(
+        () =>
+          (window as unknown as { __ipLabFeedback?: string | null })
+            .__ipLabFeedback ?? null,
+      );
+
+      expect(refusal).toMatch(/Finish or stop the lattice bench first/);
+
       const blocked = await page.evaluate(
         () =>
           (
@@ -954,6 +1004,13 @@ test.describe('M18 fault diagnosis (browser)', () => {
 
       await walkAndUseStation(page, 'm13');
       await waitPipeOpen(page, true);
+      // Re-entry: the seated piece survived and the re-entry was recorded.
+      await waitCellPiece(page, 'A2', 'el1', 0);
+      expect(
+        eventsOfFamily(await ipEvents(page), 'proto_m13_lattice').map(
+          (event) => event.event_type,
+        ),
+      ).toContain('proto_m13_lattice_window_reopened');
       await clickPipeButton(page, 'stop');
       await page.keyboard.press('Enter');
       await page.waitForTimeout(200);
@@ -995,9 +1052,16 @@ test.describe('M18 fault diagnosis (browser)', () => {
       expect(snapshot).toEqual(snapshots[0]);
     }
 
-    expect(snapshots[0].m13_dependency).toBe('none');
-    expect(snapshots[0].panels_viewed).toEqual([]);
-    expect(snapshots[0].selected).toBeNull();
+    const first = snapshots[0] as {
+      snapshot: Record<string, unknown>;
+      console: { closed: boolean; submit_enabled: boolean };
+    };
+
+    expect(first.snapshot.m13_dependency).toBe('none');
+    expect(first.snapshot.panels_viewed).toEqual([]);
+    expect(first.snapshot.selected).toBeNull();
+    expect(first.console.closed).toBe(false);
+    expect(first.console.submit_enabled).toBe(false);
   });
 
   test('console is modal and ESC leaves with the window open', async ({
@@ -1028,5 +1092,70 @@ test.describe('M18 fault diagnosis (browser)', () => {
 
     expect(m18.window_status).toBe('open');
     expect(m18.evidence_panels_viewed).toBe(1);
+  });
+});
+
+test.describe('form B browser lane', () => {
+  test('M13 form B sealed run (north → south) and M18 form B diagnosis', async ({
+    page,
+  }) => {
+    test.setTimeout(240_000);
+
+    await bootIpLab(page, {
+      game_session_id: 'GS_IP_FORM_B',
+      ip_form: 'B',
+      module: 'm13',
+    });
+    await waitPipeOpen(page, true);
+
+    let probe = await pipeProbe(page);
+
+    expect(probe.form).toBe('B');
+    expect(probe.cells.find((cell) => cell.slot === 'B1')?.port).toBe('feed');
+    expect(probe.cells.find((cell) => cell.slot === 'B3')?.port).toBe('intake');
+
+    // SOLUTION_B: B1 el1 r270, A1 el2 r90, A2 va1 r90, A3 el3 r0, B3 el4 r180.
+    await dragPieceToCell(page, 'el1', 'B1');
+    await waitCellPiece(page, 'B1', 'el1', 0);
+
+    for (let turn = 0; turn < 3; turn++) {
+      await rightClickRect(page, await pipeCell(page, 'B1'));
+    }
+
+    await dragPieceToCell(page, 'el2', 'A1');
+    await waitCellPiece(page, 'A1', 'el2', 0);
+    await rightClickRect(page, await pipeCell(page, 'A1'));
+    await dragPieceToCell(page, 'va1', 'A2');
+    await waitCellPiece(page, 'A2', 'va1', 0);
+    await rightClickRect(page, await pipeCell(page, 'A2'));
+    await dragPieceToCell(page, 'el3', 'A3');
+    await waitCellPiece(page, 'A3', 'el3', 0);
+    await dragPieceToCell(page, 'el4', 'B3');
+    await waitCellPiece(page, 'B3', 'el4', 0);
+    await rightClickRect(page, await pipeCell(page, 'B3'));
+    await rightClickRect(page, await pipeCell(page, 'B3'));
+    await waitCellPiece(page, 'B3', 'el4', 180);
+    await clickPipeButton(page, 'submit');
+    await page.waitForTimeout(300);
+    probe = await pipeProbe(page);
+    expect(probe.closed).toBe(true);
+    expect((await ipModule(page, 'm13')).final_network_valid).toBe(true);
+    await page.keyboard.press('Escape');
+    await waitPipeOpen(page, false);
+
+    await walkAndUseStation(page, 'm18');
+    await waitDiagnosisOpen(page, true);
+    expect((await diagnosisProbe(page)).form).toBe('B');
+    await clickDiagnosisPanel(page, 'pressure_map');
+    await clickDiagnosisRun(page, 'hold_test');
+    await clickHypothesis(page, 'feed_restriction', 'select');
+    await clickDiagnosisButton(page, 'submit');
+    await page.waitForTimeout(300);
+
+    const m18 = await ipModule(page, 'm18');
+
+    expect(m18.final_diagnosis_id).toBe('feed_restriction');
+    expect(m18.final_solution_valid).toBe(true);
+    expect(m18.contradictions_present_at_submission).toBe(0);
   });
 });

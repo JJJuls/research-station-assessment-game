@@ -75,7 +75,7 @@ export const M14_EVENT_TYPES = declareIpEvents('proto_m14_packet', [
   'line_removed',
   'buffer_cleared',
   'practice_submitted',
-  'scored_started',
+  'intake_started',
   'submission_incomplete_warned',
   'submitted',
   'completed',
@@ -96,7 +96,7 @@ export {
   m14CorrectDestination,
 } from './packetForms';
 
-export type M14Stage = 'practice' | 'scored';
+export type M14Stage = 'practice' | 'recorded';
 
 interface M14State {
   window: IpWindow;
@@ -224,7 +224,7 @@ function tally(stage: M14Stage) {
 
 function rawSummary() {
   const s = ensure();
-  const scored = tally('scored');
+  const scored = tally('recorded');
 
   return {
     ...ipWindowFields(s.window),
@@ -272,7 +272,7 @@ function applyTutorialGate() {
     flagIpWindow(
       s.window,
       'comprehension_failure',
-      'terminal orientation failed before this opportunity',
+      'terminal orientation failed at first open of this opportunity',
     );
     s.entry_flagged = true;
     log('entry_state_flagged', { reason: 'comprehension_failure' });
@@ -281,7 +281,7 @@ function applyTutorialGate() {
     flagIpWindow(
       s.window,
       'invalid_entry_state',
-      'terminal orientation not completed before this opportunity',
+      'terminal orientation not completed at first open of this opportunity',
     );
     s.entry_flagged = true;
     log('entry_state_flagged', { reason: 'invalid_entry_state' });
@@ -475,9 +475,9 @@ function append(
 
   const line = outcome.state.lines[outcome.state.lines.length - 1];
   const unit = line.command.args[0];
-  const revision = s.stage === 'scored' && before.routes[unit] !== undefined;
+  const revision = s.stage === 'recorded' && before.routes[unit] !== undefined;
 
-  if (s.stage === 'scored') {
+  if (s.stage === 'recorded') {
     if (mode === 'pointer') {
       s.pointer_commands += 1;
     } else {
@@ -604,7 +604,7 @@ function submit(mode: InputMode, nowMs: number): TerminalActionResult {
     return { ok: true, message: 'Practice recorded.' };
   }
 
-  const scored = tally('scored');
+  const scored = tally('recorded');
   const submission = bumpIpSubmission(s.window);
 
   if (scored.units_omitted > 0 && !s.incomplete_warned) {
@@ -651,9 +651,9 @@ function primary(
     return { ok: false, message: 'The intake is closed.' };
   }
 
-  s.stage = 'scored';
+  s.stage = 'recorded';
   s.scored_started_at_ms = nowMs;
-  log('scored_started', {
+  log('intake_started', {
     units: M14_FORMS[s.form].scored.length,
     input_mode: mode,
   });
@@ -719,7 +719,7 @@ export function m14Probe(): Record<string, unknown> {
         units_correctly_routed: practice.units_correctly_routed,
       };
     })(),
-    routes: tally('scored').evaluation.routes,
+    routes: tally('recorded').evaluation.routes,
     buffer: s.program.lines.map((line) => ({
       text: commandToText(line.command),
       input_mode: line.input_mode,
