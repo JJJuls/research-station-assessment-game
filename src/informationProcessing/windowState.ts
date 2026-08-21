@@ -80,7 +80,7 @@ export function createIpWindow(init: {
 
 /** DEV-only launch-parameter reader (`?ip_form=A`, `?module=m14`). */
 export function readDevParam(name: string): string | null {
-  if (!import.meta.env.DEV || typeof window === 'undefined') {
+  if (typeof window === 'undefined' || !import.meta.env.DEV) {
     return null;
   }
 

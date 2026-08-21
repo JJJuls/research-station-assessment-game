@@ -36,6 +36,14 @@ import {
   toggleAudioMuted,
   unlockAudio,
 } from '../gameplay/audio';
+import {
+  declareM13Lattice,
+  m13LatticeWindowStatus,
+} from '../informationProcessing/m13PipeNetwork';
+import {
+  declareM18Fault,
+  m18FaultWindowStatus,
+} from '../informationProcessing/m18FaultDiagnosis';
 import { refreshIpProbe } from '../informationProcessing/probe';
 import { declareTutorial } from '../informationProcessing/tutorial';
 import type { IpOverlayKey } from '../informationProcessing/ui/openIpOverlay';
@@ -61,6 +69,8 @@ interface LabStation {
   /** Overlay scene + task id; null = station not wired in this build. */
   overlay: { scene: IpOverlayKey; taskId: string } | null;
   verb: string | (() => string);
+  /** Sequencing guard: returns a refusal message, or null when usable. */
+  gate?: () => string | null;
 }
 
 export class InformationProcessingLabScene extends Phaser.Scene {
@@ -84,6 +94,8 @@ export class InformationProcessingLabScene extends Phaser.Scene {
     this.overlayBusy = false;
 
     declareTutorial();
+    declareM13Lattice();
+    declareM18Fault();
 
     const layout: RoomLayout = {
       theme: 'ops',
@@ -297,6 +309,9 @@ export class InformationProcessingLabScene extends Phaser.Scene {
       392,
       'CORE CONDUIT BAY — lattice reconstruction and diagnosis',
     );
+    const closedVerb = (status: () => string) => () =>
+      status() === 'unopened' || status() === 'open' ? 'use' : 'review';
+
     this.addStation({
       id: 'm13',
       label: 'Conduit Lattice Bench',
@@ -304,8 +319,8 @@ export class InformationProcessingLabScene extends Phaser.Scene {
       x: 240,
       y: 450,
       texture: 'proc-rig-intake',
-      overlay: null,
-      verb: 'use',
+      overlay: { scene: key.scene.ipPipeBoard, taskId: 'm13' },
+      verb: closedVerb(m13LatticeWindowStatus),
     });
     this.addStation({
       id: 'm18',
@@ -314,8 +329,15 @@ export class InformationProcessingLabScene extends Phaser.Scene {
       x: 560,
       y: 450,
       texture: 'proc-diag-board',
-      overlay: null,
-      verb: 'use',
+      overlay: { scene: key.scene.ipDiagnosisConsole, taskId: 'm18' },
+      verb: closedVerb(m18FaultWindowStatus),
+      // Sequencing only (never performance): the console waits while the
+      // lattice bench window is still in progress. Solved, failed,
+      // exhausted, stopped or never opened all lead to the SAME console.
+      gate: () =>
+        m13LatticeWindowStatus() === 'open'
+          ? 'Finish or stop the lattice bench first — the console takes over afterwards.'
+          : null,
     });
   }
 
@@ -323,6 +345,15 @@ export class InformationProcessingLabScene extends Phaser.Scene {
     if (station.overlay === null) {
       sfxUnavailable();
       this.showFeedback(`${station.label} is offline in this build.`);
+
+      return;
+    }
+
+    const refusal = station.gate?.() ?? null;
+
+    if (refusal !== null) {
+      sfxUnavailable();
+      this.showFeedback(refusal);
 
       return;
     }

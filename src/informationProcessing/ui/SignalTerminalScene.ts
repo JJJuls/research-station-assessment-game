@@ -204,6 +204,12 @@ export class SignalTerminalScene extends Phaser.Scene {
 
     this.adapter = getTerminalAdapter(this.taskId);
 
+    // Render above the host no matter where this class sorts in the
+    // alphabetical scene registry (src/index.ts spreads Object.values of
+    // the barrel, and module namespaces enumerate exports sorted by name;
+    // a scene that sorts before its host would otherwise render beneath it).
+    this.scene.bringToTop();
+
     this.input.mouse?.disableContextMenu();
     this.input.dragDistanceThreshold = 6;
     this.input.keyboard?.addCapture([

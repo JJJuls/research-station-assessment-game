@@ -413,3 +413,274 @@ export function expectProvisionalOnly(events: IpEventLike[]) {
     expect(event.success, event.event_type).toBeUndefined();
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * Lattice bench (M13) probe + actions
+ * ------------------------------------------------------------------ */
+
+export interface PipeProbeLike {
+  open: boolean;
+  form: string | null;
+  closed: boolean;
+  cells: (Rect & {
+    slot: string;
+    piece_id: string | null;
+    rotation: number | null;
+    broken: boolean;
+    port: string | null;
+  })[];
+  bench: (Rect & {
+    index: number;
+    piece_id: string | null;
+    type: string | null;
+  })[];
+  held: { piece_id: string; rotation: number; source: string } | null;
+  focus: { kind: 'cell' | 'bench'; id: string } | null;
+  buttons: (Rect & { id: string; label: string; enabled: boolean })[];
+  feedback: string[];
+  submissions_used: number;
+  max_submissions: number;
+  dragging: boolean;
+  drop_target: string | null;
+  drop_valid: boolean;
+  help_open: boolean;
+  confirm_open: boolean;
+}
+
+export async function pipeProbe(page: Page): Promise<PipeProbeLike> {
+  const probe = await page.evaluate(
+    () =>
+      (window as unknown as { __ipPipeProbe?: PipeProbeLike | null })
+        .__ipPipeProbe ?? null,
+  );
+
+  if (probe === null) {
+    throw new Error('pipe probe unavailable');
+  }
+
+  return probe;
+}
+
+export async function waitPipeOpen(page: Page, open: boolean) {
+  await page.waitForFunction(
+    (expected) =>
+      ((window as unknown as { __ipPipeProbe?: { open: boolean } | null })
+        .__ipPipeProbe?.open ?? false) === expected,
+    open,
+    { timeout: 10_000 },
+  );
+  await page.waitForTimeout(150);
+}
+
+export async function pipeCell(page: Page, slot: string) {
+  const probe = await pipeProbe(page);
+  const cell = probe.cells.find((candidate) => candidate.slot === slot);
+
+  if (cell === undefined) {
+    throw new Error(`pipe cell ${slot} not in probe`);
+  }
+
+  return cell;
+}
+
+export async function pipeBenchPiece(page: Page, pieceId: string) {
+  const probe = await pipeProbe(page);
+  const entry = probe.bench.find((candidate) => candidate.piece_id === pieceId);
+
+  if (entry === undefined) {
+    throw new Error(`piece ${pieceId} is not on the bench`);
+  }
+
+  return entry;
+}
+
+export async function pipeButton(page: Page, id: string) {
+  const probe = await pipeProbe(page);
+  const button = probe.buttons.find((candidate) => candidate.id === id);
+
+  if (button === undefined) {
+    throw new Error(`pipe button ${id} not present`);
+  }
+
+  return button;
+}
+
+export async function clickPipeButton(page: Page, id: string) {
+  await clickRect(page, await pipeButton(page, id));
+}
+
+/** Real drag of a bench piece onto a mount. */
+export async function dragPieceToCell(
+  page: Page,
+  pieceId: string,
+  slot: string,
+) {
+  // Piece images sit slightly above the bench-slot centre (-4 px).
+  const bench = await pipeBenchPiece(page, pieceId);
+  const source = { ...bench, y: bench.y - 8, h: bench.h };
+
+  await dragRectToRect(page, source, await pipeCell(page, slot));
+}
+
+/** Real drag of a seated piece onto another mount. */
+export async function dragCellToCell(page: Page, from: string, to: string) {
+  await dragRectToRect(
+    page,
+    await pipeCell(page, from),
+    await pipeCell(page, to),
+  );
+}
+
+/** Real drag of a seated piece back onto the bench area. */
+export async function dragCellToBench(page: Page, slot: string) {
+  const probe = await pipeProbe(page);
+  const benchSlot = probe.bench[probe.bench.length - 1];
+
+  await dragRectToRect(page, await pipeCell(page, slot), benchSlot);
+}
+
+export async function rightClickRect(page: Page, rect: Rect) {
+  const point = await rectCenter(page, rect);
+
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.click(point.x, point.y, { button: 'right' });
+  await page.waitForTimeout(200);
+}
+
+export async function waitCellPiece(
+  page: Page,
+  slot: string,
+  pieceId: string | null,
+  rotation?: number,
+) {
+  await page.waitForFunction(
+    (args) => {
+      const probe = (
+        window as unknown as { __ipPipeProbe?: PipeProbeLike | null }
+      ).__ipPipeProbe;
+      const cell = probe?.cells.find(
+        (candidate) => candidate.slot === args.slot,
+      );
+
+      if (cell === undefined) {
+        return false;
+      }
+
+      if (cell.piece_id !== args.pieceId) {
+        return false;
+      }
+
+      return args.rotation === undefined || cell.rotation === args.rotation;
+    },
+    { slot, pieceId, rotation },
+    { timeout: 8_000 },
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Diagnosis console (M18) probe + actions
+ * ------------------------------------------------------------------ */
+
+export interface DiagnosisProbeLike {
+  open: boolean;
+  form: string | null;
+  closed: boolean;
+  panels: (Rect & { id: string; viewed: boolean })[];
+  tests: (Rect & { id: string; runs: number; run_button: Rect })[];
+  hypotheses: (Rect & {
+    id: string;
+    selected: boolean;
+    rejected: boolean;
+    select: Rect;
+    reject: Rect;
+  })[];
+  buttons: (Rect & { id: string; label: string; enabled: boolean })[];
+  detail_title: string | null;
+  detail_lines: string[];
+  feedback: string[];
+  focus: string | null;
+  submit_enabled: boolean;
+  help_open: boolean;
+  rules_open: boolean;
+  confirm_open: boolean;
+}
+
+export async function diagnosisProbe(page: Page): Promise<DiagnosisProbeLike> {
+  const probe = await page.evaluate(
+    () =>
+      (window as unknown as { __ipDiagnosisProbe?: DiagnosisProbeLike | null })
+        .__ipDiagnosisProbe ?? null,
+  );
+
+  if (probe === null) {
+    throw new Error('diagnosis probe unavailable');
+  }
+
+  return probe;
+}
+
+export async function waitDiagnosisOpen(page: Page, open: boolean) {
+  await page.waitForFunction(
+    (expected) =>
+      ((window as unknown as { __ipDiagnosisProbe?: { open: boolean } | null })
+        .__ipDiagnosisProbe?.open ?? false) === expected,
+    open,
+    { timeout: 10_000 },
+  );
+  await page.waitForTimeout(150);
+}
+
+export async function clickDiagnosisPanel(page: Page, id: string) {
+  const probe = await diagnosisProbe(page);
+  const panel = probe.panels.find((candidate) => candidate.id === id);
+
+  if (panel === undefined) {
+    throw new Error(`panel ${id} not present`);
+  }
+
+  await clickRect(page, panel);
+}
+
+export async function clickDiagnosisRun(page: Page, id: string) {
+  const probe = await diagnosisProbe(page);
+  const test = probe.tests.find((candidate) => candidate.id === id);
+
+  if (test === undefined) {
+    throw new Error(`test ${id} not present`);
+  }
+
+  await clickRect(page, test.run_button);
+}
+
+export async function clickHypothesis(
+  page: Page,
+  id: string,
+  control: 'select' | 'reject' | 'card',
+) {
+  const probe = await diagnosisProbe(page);
+  const hypothesis = probe.hypotheses.find((candidate) => candidate.id === id);
+
+  if (hypothesis === undefined) {
+    throw new Error(`hypothesis ${id} not present`);
+  }
+
+  await clickRect(
+    page,
+    control === 'select'
+      ? hypothesis.select
+      : control === 'reject'
+        ? hypothesis.reject
+        : { x: hypothesis.x, y: hypothesis.y, w: hypothesis.w, h: 18 },
+  );
+}
+
+export async function clickDiagnosisButton(page: Page, id: string) {
+  const probe = await diagnosisProbe(page);
+  const button = probe.buttons.find((candidate) => candidate.id === id);
+
+  if (button === undefined) {
+    throw new Error(`diagnosis button ${id} not present`);
+  }
+
+  await clickRect(page, button);
+}

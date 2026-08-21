@@ -13,13 +13,26 @@ import { expect, type Page, test } from '@playwright/test';
 
 import {
   bootIpLab,
+  clickDiagnosisButton,
+  clickDiagnosisPanel,
+  clickDiagnosisRun,
+  clickHypothesis,
+  clickPipeButton,
   composeByClick,
   dragChipToBin,
+  dragPieceToCell,
+  pipeBenchPiece,
+  pipeCell,
+  pipeProbe,
   rectCenter,
+  rightClickRect,
   terminalChip,
   terminalProbe,
   typeCommand,
   waitBufferLength,
+  waitCellPiece,
+  waitDiagnosisOpen,
+  waitPipeOpen,
   waitTerminalOpen,
   walkAndUseStation,
 } from './ipHelpers';
@@ -106,4 +119,108 @@ test('information processing lab visual capture — terminal foundation', async 
   await shot(page, '08-terminal-orientation-complete');
   await page.keyboard.press('Escape');
   await waitTerminalOpen(page, false);
+});
+
+test('information processing lab visual capture — lattice bench and diagnosis console', async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
+  mkdirSync(OUT, { recursive: true });
+
+  await bootIpLab(page, { game_session_id: 'GS_IP_CAP_2', ip_form: 'A' });
+
+  // 09 — M13 untouched board.
+  await walkAndUseStation(page, 'm13');
+  await waitPipeOpen(page, true);
+  await shot(page, '09-m13-lattice-untouched');
+
+  // 10 — active manipulation: a piece mid-drag over a valid mount, with
+  // two pieces already seated and one rotated.
+  await dragPieceToCell(page, 'el1', 'A2');
+  await waitCellPiece(page, 'A2', 'el1', 0);
+
+  for (let turn = 0; turn < 3; turn++) {
+    await rightClickRect(page, await pipeCell(page, 'A2'));
+  }
+
+  await dragPieceToCell(page, 'el2', 'A1');
+  await waitCellPiece(page, 'A1', 'el2', 0);
+  await rightClickRect(page, await pipeCell(page, 'A1'));
+
+  const valve = await pipeBenchPiece(page, 'va1');
+  const target = await pipeCell(page, 'B1');
+  const from = await rectCenter(page, { ...valve, y: valve.y - 8 });
+  const to = await rectCenter(page, target);
+
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(from.x + 12, from.y + 10, { steps: 3 });
+  await page.mouse.move(to.x, to.y, { steps: 8 });
+  await page.waitForTimeout(250);
+  expect((await pipeProbe(page)).dragging).toBe(true);
+  await shot(page, '10-m13-active-manipulation-drag');
+
+  // 11 — invalid target: the same drag held over the fractured mount.
+  const broken = await rectCenter(page, await pipeCell(page, 'B2'));
+
+  await page.mouse.move(broken.x, broken.y, { steps: 8 });
+  await page.waitForTimeout(250);
+  await shot(page, '11-m13-invalid-target-feedback');
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+
+  // 12 — keyboard interaction state: focus ring on a mount with a
+  // keyboard-held piece hovering above it.
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await page.waitForTimeout(100);
+  await page.keyboard.press('ArrowRight'); // bench el3? (row0 col2 = el1 gone → empty); move on
+  await page.keyboard.press('ArrowDown'); // bench row1 col2 = el4
+  await page.waitForTimeout(100);
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(200);
+  await shot(page, '12-m13-keyboard-held-piece');
+  await page.keyboard.press('Escape'); // cancel held
+  await page.waitForTimeout(200);
+
+  // 13 — valid submitted network.
+  await dragPieceToCell(page, 'va1', 'B1');
+  await waitCellPiece(page, 'B1', 'va1', 0);
+  await dragPieceToCell(page, 'el3', 'C1');
+  await waitCellPiece(page, 'C1', 'el3', 0);
+  await rightClickRect(page, await pipeCell(page, 'C1'));
+  await rightClickRect(page, await pipeCell(page, 'C1'));
+  await dragPieceToCell(page, 'el4', 'C2');
+  await waitCellPiece(page, 'C2', 'el4', 0);
+  await clickPipeButton(page, 'submit');
+  await page.waitForTimeout(300);
+  expect((await pipeProbe(page)).closed).toBe(true);
+  await shot(page, '13-m13-valid-submitted-network');
+  await page.keyboard.press('Escape');
+  await waitPipeOpen(page, false);
+
+  // 14 — M18 evidence view (panel read, test run).
+  await walkAndUseStation(page, 'm18');
+  await waitDiagnosisOpen(page, true);
+  await shot(page, '14-m18-console-entry');
+  await clickDiagnosisPanel(page, 'pressure_map');
+  await clickDiagnosisRun(page, 'hold_test');
+  await shot(page, '15-m18-evidence-and-test-readout');
+
+  // 16 — hypothesis interaction: one ruled out, one selected, rules open.
+  await clickHypothesis(page, 'intake_sensor_fault', 'reject');
+  await clickHypothesis(page, 'intake_segment_leak', 'select');
+  await shot(page, '16-m18-hypothesis-interaction');
+  await clickDiagnosisButton(page, 'rules');
+  await shot(page, '16b-m18-rules-reference');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(200);
+  await clickDiagnosisButton(page, 'submit');
+  await page.waitForTimeout(300);
+  await shot(page, '17-m18-diagnosis-logged');
+  await page.keyboard.press('Escape');
+  await waitDiagnosisOpen(page, false);
 });

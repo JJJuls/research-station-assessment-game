@@ -13,6 +13,8 @@ export * from './HubScene';
 // Information Processing foundation: the proving-ground scene and the
 // terminal overlay class (re-exported by name: every value exported from
 // this barrel is registered as a Phaser scene).
+export { DiagnosisConsoleScene } from '../informationProcessing/ui/DiagnosisConsoleScene';
+export { PipeBoardScene } from '../informationProcessing/ui/PipeBoardScene';
 export { SignalTerminalScene } from '../informationProcessing/ui/SignalTerminalScene';
 export * from './InformationProcessingLabScene';
 export * from './InterruptionScene';

@@ -72,8 +72,14 @@ src/informationProcessing/
   windowState.ts      shared window lifecycle helper (open/reopen/close/active_ms/submission count),
                       validity-register bridge (one record per module)
   tutorial.ts         common terminal orientation (proto_ip_tutorial_*; never item evidence)
-  m13PipeNetwork.ts   pipe lattice engine (transactional board) + module store (proto_m13_lattice_*)
-  m18FaultDiagnosis.ts diagnosis engine + module store (proto_m18_fault_*)
+  pipeBoardEngine.ts  PURE transactional pipe board + the two lattice forms (Node-importable,
+                      no import.meta) — reuses validatePipePlacements from src/measurement/m13PipePuzzle.ts
+  m13PipeNetwork.ts   M13 module store over the engine (proto_m13_lattice_*): window, raw counters,
+                      bounded test runs, feedback, probe
+  faultForms.ts       PURE fault forms A/B + consistency helpers (consistentHypotheses,
+                      contradictionCount) — imports no M13 module
+  m18FaultDiagnosis.ts M18 module store over the forms (proto_m18_fault_*): panels, tests,
+                      reversible hypotheses, one-shot submission, entry snapshot
   m14PacketSaturation.ts / m15LayeredCipher.ts / m16ProtocolUpdate.ts / m17SyntaxAcquisition.ts
   probe.ts            DEV-only window.__ipModules aggregator
   ui/openIpOverlay.ts pause-and-launch + key wiring (inventory precedent)
@@ -125,3 +131,39 @@ same store functions (`appendCommand` etc.), recording `input_mode`.
 7. The bounded-unit skill's "stop before the next unit" rule is overridden
    by the mission's explicit authorisation to run Units 1–5 in sequence
    with one commit per unit.
+8. Playwright's Node transform cannot parse `import.meta`; every module a
+   Node-side spec imports (engines, forms, commands, programEngine) is kept
+   `import.meta`-free; runtime stores (which need `import.meta.env.DEV` for
+   probes/params) are exercised only through the browser.
+9. `src/index.ts` registers scenes from `Object.values(scenes)`; module
+   namespace objects enumerate exports **alphabetically**, so a scene whose
+   class name sorts before its host renders beneath it (DiagnosisConsoleScene
+   < InformationProcessingLabScene). Every IP overlay therefore calls
+   `this.scene.bringToTop()` in `create()`.
+
+## 6. Unit 2 — M13 lattice bench and M18 diagnosis console
+
+- **M13 mechanic:** 3×3 mounts, standard nine-piece bench, fractured B2,
+  FEED/INTAKE ports per form (A west→east, B north→south), drag or
+  click-pick, right-click/R rotate, DEL/drop-on-bench return, keyboard
+  focus ring across mounts+bench, explicit TEST FLOW (max 4 runs), neutral
+  structural feedback (connected / valve inline / open-branch count),
+  STOP TASK (confirmed) closes as `exited`.
+- **M18 mechanic:** reference lattice (constant), fault brief, 4 evidence
+  panels (E4 neutral), 3 reversible/repeatable tests, RULES reference panel,
+  4 hypotheses with SELECT / RULE OUT (reversible), one explicit SUBMIT
+  DIAGNOSIS. Form A: leak before intake; form B: supply restriction. Each
+  wrong hypothesis is contradicted by ≥2 items; the correct one by none.
+- **Independence:** `faultForms.ts`/`m18FaultDiagnosis.ts` import no M13
+  module; the M18 entry snapshot is a pure function of the M18 form; the lab
+  only _sequences_ (console refuses while the bench window is `open`), and
+  solved / exhausted / exited / never-opened benches all open the identical
+  console (proved by `ip_pipe_suite.spec.ts`).
+- **Finding (outside allowlist, not fixed):** `src/world/RoomScene.ts`
+  prompt number-key handlers are plain `keydown-*` listeners without
+  `guardKeyHandler`; under slow frames Phaser's keyboard-queue replay can
+  double-select and skip a card stage. Observed as an intermittent
+  `pipe_diagnosis_setback.spec.ts` (Pump House) failure during this unit's
+  runs (branch 2/5 fail, base 3/3 pass in a paired study); no changed line
+  is on that path (the validator extraction is behaviour-preserving and its
+  pure test passes). Routed to the route maintainers.
