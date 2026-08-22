@@ -10,9 +10,12 @@ export type {
   M13SlotId,
   M13SubmitReason,
   M13SubmitResult,
+  PipeBoardConfig,
+  PipeValidationDetail,
 } from './m13PipePuzzle';
 export {
   getM13Piece,
+  M13_BOARD_CONFIG,
   M13_BROKEN_SLOT,
   M13_ENTRY_STATE_VERSION,
   M13_OPPORTUNITY_ID,
@@ -31,6 +34,7 @@ export {
   resetM13State,
   rotateM13Piece,
   submitM13Flow,
+  validatePipePlacements,
 } from './m13PipePuzzle';
 export type { M18DiagnosisOption, M18EvidenceId } from './m18Diagnosis';
 export {

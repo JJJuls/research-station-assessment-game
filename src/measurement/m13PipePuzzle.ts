@@ -21,6 +21,10 @@
  *   pressurised run. Correctness is never previewed piece-by-piece.
  * - Multiple layouts are valid (any sealed routed run counts).
  *
+ * The connectivity validator is a PURE function (validatePipePlacements)
+ * shared with the Information Processing lattice bench; the module
+ * singleton below is the Pump House route's own state container.
+ *
  * OWNERSHIP: M13 owns ONLY placement/rotation/removal/submission acts
  * inside this window (proto_m13_* family, own state container).
  * Searching, digging, collection and delivery are never M13 evidence.
@@ -145,6 +149,144 @@ export interface M13SubmitResult {
   path_slots: M13SlotId[];
 }
 
+/** Structural facts of one connectivity check (raw, never a score). */
+export interface PipeValidationDetail extends M13SubmitResult {
+  endpoint_connected: boolean;
+  valve_inline: boolean;
+  /** Unmated openings on the pressurised run (0 when sealed). */
+  open_branch_count: number;
+  /** Source port seated and facing the feed. */
+  source_seated: boolean;
+}
+
+/** Board geometry: where the flow enters and leaves, and the broken mount. */
+export interface PipeBoardConfig {
+  source: { slot: M13SlotId; direction: number };
+  outlet: { slot: M13SlotId; direction: number };
+  broken: M13SlotId;
+}
+
+/** The Pump House manifold geometry (feed west of A2, intake east of C2). */
+export const M13_BOARD_CONFIG: PipeBoardConfig = {
+  source: { slot: M13_SOURCE_SLOT, direction: 3 },
+  outlet: { slot: M13_OUTLET_SLOT, direction: 1 },
+  broken: M13_BROKEN_SLOT,
+};
+
+/**
+ * PURE connectivity validation over a placements map (no module state).
+ * Floods the connected run from the source port: every opening must mate
+ * with a matching neighbour opening, or be the feed/intake port itself;
+ * anything else is an open branch. Shared by the Pump House trench and
+ * the Information Processing lattice bench.
+ */
+export function validatePipePlacements(
+  placements: Partial<Record<M13SlotId, M13Placement>>,
+  config: PipeBoardConfig = M13_BOARD_CONFIG,
+): PipeValidationDetail {
+  const source = placements[config.source.slot];
+  const sourceSeated =
+    source !== undefined &&
+    pieceOpenings(getM13Piece(source.piece_id).type, source.rotation).includes(
+      config.source.direction,
+    );
+
+  if (!sourceSeated) {
+    return {
+      valid: false,
+      reason: 'no_path',
+      path_slots: [],
+      endpoint_connected: false,
+      valve_inline: false,
+      open_branch_count: 0,
+      source_seated: false,
+    };
+  }
+
+  const connected = new Set<M13SlotId>([config.source.slot]);
+  const queue: M13SlotId[] = [config.source.slot];
+  let openBranches = 0;
+  let outletReached = false;
+
+  while (queue.length > 0) {
+    const slot = queue.shift()!;
+    const placement = placements[slot]!;
+    const openings = pieceOpenings(
+      getM13Piece(placement.piece_id).type,
+      placement.rotation,
+    );
+    const { x, y } = slotCoords(slot);
+
+    for (const direction of openings) {
+      if (
+        slot === config.source.slot &&
+        direction === config.source.direction
+      ) {
+        continue; // The feed port itself.
+      }
+
+      if (
+        slot === config.outlet.slot &&
+        direction === config.outlet.direction
+      ) {
+        outletReached = true;
+        continue; // The intake port itself.
+      }
+
+      const delta = DIRECTION_DELTAS[direction];
+      const neighbourSlot = coordsSlot(x + delta.dx, y + delta.dy);
+      const neighbour =
+        neighbourSlot === null ? undefined : placements[neighbourSlot];
+
+      if (neighbourSlot === null || neighbour === undefined) {
+        openBranches += 1;
+        continue;
+      }
+
+      const neighbourOpenings = pieceOpenings(
+        getM13Piece(neighbour.piece_id).type,
+        neighbour.rotation,
+      );
+
+      if (!neighbourOpenings.includes((direction + 2) % 4)) {
+        openBranches += 1;
+        continue;
+      }
+
+      if (!connected.has(neighbourSlot)) {
+        connected.add(neighbourSlot);
+        queue.push(neighbourSlot);
+      }
+    }
+  }
+
+  const pathSlots = [...connected];
+  const valveInline = pathSlots.some(
+    (slot) => getM13Piece(placements[slot]!.piece_id).type === 'valve',
+  );
+  const detail = {
+    path_slots: pathSlots,
+    endpoint_connected: outletReached,
+    valve_inline: valveInline,
+    open_branch_count: openBranches,
+    source_seated: true,
+  };
+
+  if (!outletReached) {
+    return { valid: false, reason: 'no_path', ...detail };
+  }
+
+  if (!valveInline) {
+    return { valid: false, reason: 'valve_missing', ...detail };
+  }
+
+  if (openBranches > 0) {
+    return { valid: false, reason: 'open_branch', ...detail };
+  }
+
+  return { valid: true, reason: 'valid', ...detail };
+}
+
 interface M13State {
   engaged: boolean;
   /** Seated pieces by slot. */
@@ -254,91 +396,11 @@ export function submitM13Flow(): M13SubmitResult {
 }
 
 function validateM13Layout(): M13SubmitResult {
-  const source = m13State.placements[M13_SOURCE_SLOT];
-
-  // The run starts at A2's west port.
-  if (
-    source === undefined ||
-    !pieceOpenings(getM13Piece(source.piece_id).type, source.rotation).includes(
-      3,
-    )
-  ) {
-    return { valid: false, reason: 'no_path', path_slots: [] };
-  }
-
-  // Flood the connected run from A2. Every opening must either mate
-  // with a matching neighbour opening, or be the feed (A2 west) or the
-  // intake (C2 east); anything else is an open branch.
-  const connected = new Set<M13SlotId>([M13_SOURCE_SLOT]);
-  const queue: M13SlotId[] = [M13_SOURCE_SLOT];
-  let openBranch = false;
-  let outletReached = false;
-
-  while (queue.length > 0) {
-    const slot = queue.shift()!;
-    const placement = m13State.placements[slot]!;
-    const openings = pieceOpenings(
-      getM13Piece(placement.piece_id).type,
-      placement.rotation,
-    );
-    const { x, y } = slotCoords(slot);
-
-    for (const direction of openings) {
-      if (slot === M13_SOURCE_SLOT && direction === 3) {
-        continue; // The feed port itself.
-      }
-
-      if (slot === M13_OUTLET_SLOT && direction === 1) {
-        outletReached = true;
-        continue; // The intake port itself.
-      }
-
-      const delta = DIRECTION_DELTAS[direction];
-      const neighbourSlot = coordsSlot(x + delta.dx, y + delta.dy);
-      const neighbour =
-        neighbourSlot === null ? undefined : m13State.placements[neighbourSlot];
-
-      if (neighbourSlot === null || neighbour === undefined) {
-        openBranch = true;
-        continue;
-      }
-
-      const neighbourOpenings = pieceOpenings(
-        getM13Piece(neighbour.piece_id).type,
-        neighbour.rotation,
-      );
-
-      if (!neighbourOpenings.includes((direction + 2) % 4)) {
-        openBranch = true;
-        continue;
-      }
-
-      if (!connected.has(neighbourSlot)) {
-        connected.add(neighbourSlot);
-        queue.push(neighbourSlot);
-      }
-    }
-  }
-
-  const pathSlots = [...connected];
-
-  if (!outletReached) {
-    return { valid: false, reason: 'no_path', path_slots: pathSlots };
-  }
-
-  const valveInline = pathSlots.some(
-    (slot) => getM13Piece(m13State.placements[slot]!.piece_id).type === 'valve',
+  const { valid, reason, path_slots } = validatePipePlacements(
+    m13State.placements,
   );
 
-  if (!valveInline) {
-    return { valid: false, reason: 'valve_missing', path_slots: pathSlots };
-  }
-
-  if (openBranch) {
-    return { valid: false, reason: 'open_branch', path_slots: pathSlots };
-  }
-
-  return { valid: true, reason: 'valid', path_slots: pathSlots };
+  return { valid, reason, path_slots };
 }
 
 export function m13Summary() {

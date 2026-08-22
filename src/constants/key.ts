@@ -27,10 +27,16 @@ const scene = {
   hub: 'hub',
   interruption: 'interruption',
   inventory: 'inventory',
+  // Information Processing foundation: the developer proving-ground scene
+  // and its three modal overlays (terminal, pipe board, diagnosis console).
+  informationProcessingLab: 'information_processing_lab',
   // Interactive inventory foundation: the developer proving-ground scene
   // and the shared modal inventory overlay.
   inventoryLab: 'inventory_lab',
   inventoryOverlay: 'inventory_overlay',
+  ipDiagnosisConsole: 'ip_diagnosis_console',
+  ipPipeBoard: 'ip_pipe_board',
+  ipSignalTerminal: 'ip_signal_terminal',
   main: 'main',
   menu: 'menu',
   opsAnnex: 'ops_annex',
