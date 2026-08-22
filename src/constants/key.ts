@@ -19,6 +19,9 @@ const scene = {
   engineer: 'engineer',
   exteriorRecoveryYard: 'exterior_recovery_yard',
   field: 'field',
+  // Field-actions foundation: developer proving ground for the reusable
+  // scan/dig/magnet subsystem (never on the participant route).
+  fieldActionsLab: 'field_actions_lab',
   finalCore: 'final_core',
   hazard: 'hazard',
   hub: 'hub',

@@ -24,6 +24,7 @@
 import Phaser from 'phaser';
 
 import { Depth } from '../constants';
+import { guardKeyHandler } from '../inventory/ui/keyGuard';
 
 export type FieldActionKey = 'C' | 'D' | 'F';
 
@@ -92,7 +93,11 @@ export class FieldActionController {
     this.isEnabled = isEnabled;
 
     for (const key of ['C', 'D', 'F'] as const) {
-      const handler = (event: KeyboardEvent) => {
+      // guardKeyHandler: once-per-DOM-event dedupe — Phaser 3.90 can
+      // re-emit queued keydowns inside one slow frame (see
+      // src/inventory/ui/keyGuard.ts); event.repeat alone does not
+      // cover that replay path (field-actions foundation).
+      const handler = guardKeyHandler((event: KeyboardEvent) => {
         if (event.repeat || this.destroyed || !this.isEnabled()) {
           return;
         }
@@ -110,7 +115,7 @@ export class FieldActionController {
         } else {
           binding.onIneligiblePress?.();
         }
-      };
+      });
 
       this.keyHandlers.set(key, handler);
       scene.input.keyboard!.on(`keydown-${key}`, handler);

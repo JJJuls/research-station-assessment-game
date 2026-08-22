@@ -401,6 +401,61 @@ export const researchInteractions = {
     score_tags: [],
     room_id: 'proto_pump_house',
   },
+  // ——— Field-actions foundation: developer proving-ground stations ———
+  // Same governance as every proto_* block above: internal/provisional
+  // identifiers, raw telemetry via logScenarioEvent only, no canonical
+  // task_id, no Q-mapping, no scoring. `proto_field_actions_lab` is a
+  // provisional developer-area id, never a canonical room_id. The three
+  // provisional measurement adapters under src/fieldActions/opportunities
+  // log their own disjoint families directly (m02Filing precedent).
+  fieldLabArea: {
+    object_id: 'proto_field_lab_area',
+    label: 'Field Actions Lab',
+    episode: 'proto_field_actions_lab',
+    event_type: 'proto_field_lab_entered',
+    score_tags: [],
+    room_id: 'proto_field_actions_lab',
+  },
+  fieldLabSupplyCrate: {
+    object_id: 'proto_field_lab_supply_crate',
+    label: 'Supply Crate',
+    episode: 'proto_field_actions_lab',
+    event_type: 'proto_field_lab_supply_taken',
+    score_tags: [],
+    room_id: 'proto_field_actions_lab',
+  },
+  fieldLabRangeConsole: {
+    object_id: 'proto_field_lab_range_console',
+    label: 'Range Control Console',
+    episode: 'proto_field_actions_lab',
+    event_type: 'proto_field_lab_console_exercise_opened',
+    score_tags: [],
+    room_id: 'proto_field_actions_lab',
+  },
+  fieldLabMaintenanceBench: {
+    object_id: 'proto_field_lab_maintenance_bench',
+    label: 'Maintenance Bench',
+    episode: 'proto_field_actions_lab',
+    event_type: 'proto_field_lab_bench_used',
+    score_tags: [],
+    room_id: 'proto_field_actions_lab',
+  },
+  fieldLabRecoveryRig: {
+    object_id: 'proto_field_lab_recovery_rig',
+    label: 'Recovery Rig Readout',
+    episode: 'proto_field_actions_lab',
+    event_type: 'proto_field_lab_rig_status',
+    score_tags: [],
+    room_id: 'proto_field_actions_lab',
+  },
+  fieldLabVerificationPost: {
+    object_id: 'proto_field_lab_verification_post',
+    label: 'Verification Post',
+    episode: 'proto_field_actions_lab',
+    event_type: 'proto_field_lab_certificate_viewed',
+    score_tags: [],
+    room_id: 'proto_field_actions_lab',
+  },
   // ——— Physical-mechanics session (Unit 7): post-assessment free play ———
   // NOT a measurement opportunity: locked until the assessment route is
   // complete (or an explicit DEV free-play flag), no Q tags, secondary

@@ -24,6 +24,9 @@ const SCENE_PARAM_TO_KEY: Record<string, string> = {
   diagnostics_laboratory: key.scene.diagnosticsLaboratory,
   dock: key.scene.dock,
   exterior_recovery_yard: key.scene.exteriorRecoveryYard,
+  // Field-actions foundation: developer proving ground for the reusable
+  // scan/dig/magnet subsystem (never the participant default).
+  field_actions_lab: key.scene.fieldActionsLab,
   // Overnight prototype: the Survey Terrace gameplay area and the two
   // Unit 3 measurement-module areas (not assessment stations — no
   // station-registry entries).

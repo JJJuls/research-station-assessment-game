@@ -52,13 +52,22 @@ export function isWorldActionActive(): boolean {
  * action has — avatar holds still, no prompt can open — without a
  * progress bar. Callers MUST pair begin/end (shutdown-safe callers end
  * in their scene-shutdown handler).
+ *
+ * Field-actions foundation: an optional onCancel joins the manual
+ * bracket to RoomScene's existing ESC convention (cancel-first,
+ * menu-second) exactly like a cancellable timed action. Re-calling
+ * beginManualWorldAction with no argument clears the hook while the
+ * bracket stays held (a running cycle passing its point of no return).
+ * Existing callers pass nothing and keep their behaviour unchanged.
  */
-export function beginManualWorldAction() {
+export function beginManualWorldAction(onCancel?: () => void) {
   actionActive = true;
+  activeCancelHook = onCancel ?? null;
 }
 
 export function endManualWorldAction() {
   actionActive = false;
+  activeCancelHook = null;
 }
 
 /**

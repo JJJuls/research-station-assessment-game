@@ -6,6 +6,9 @@ export * from './DiagnosticsLaboratoryScene';
 export * from './DockScene';
 export * from './EngineerScene';
 export * from './ExteriorRecoveryYardScene';
+// Field-actions foundation: developer proving ground (class export only —
+// every value exported from this barrel is registered as a Phaser scene).
+export { FieldActionsLabScene } from './FieldActionsLabScene';
 export * from './FieldScene';
 export * from './FinalCoreScene';
 export * from './HazardScene';
