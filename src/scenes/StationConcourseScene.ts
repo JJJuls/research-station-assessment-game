@@ -2,14 +2,42 @@
  * Station Concourse — pilot zone 1 (professional pilot route).
  *
  * The central hub: arrival from the Dock (south), Vale at the operations
- * desk, the Records & Logistics work area (west: filing workstation, two
- * press stations, storage locker, assembly bench, supply pickups), the
- * north door to the Diagnostics Laboratory and the east door to the
- * Utility & Core Deck. Unit 2 builds the topology, guidance and NPC beats;
- * Unit 3 activates the Records & Logistics stations (inventory overlay
- * modes). Every door is bidirectional; nothing here gates on performance.
+ * desk, the Records & Logistics work area (west), the north door to the
+ * Diagnostics Laboratory and the east door to the Utility & Core Deck.
+ *
+ * Records & Logistics (Unit 3) hosts the accepted interactive inventory
+ * unchanged at the domain level: the Incident Filing Workstation (M02
+ * overlay mode, `proto_m02_incident_filing`), the two Label Press stations
+ * (M03 occasions A/B, `proto_m03_reset_a/b`), the Component Locker
+ * (storage transfer), the Assembly Bench (recipes) and three incoming
+ * supply bundles (recoverable world items). Ambient inventory handling is
+ * secondary telemetry only; the M02/M03 windows own their own disjoint
+ * families. Every door is bidirectional; nothing gates on performance.
  */
 import { key } from '../constants';
+import { ensureInventoryIconTextures } from '../inventory/inventoryTextures';
+import {
+  declareM02Opportunity,
+  M02_OPPORTUNITY_ID,
+  m02Status,
+} from '../inventory/m02Filing';
+import type { M03OccasionId } from '../inventory/m03Reset';
+import {
+  declareM03Opportunities,
+  M03_OPPORTUNITY_IDS,
+  m03OccasionStatus,
+} from '../inventory/m03Reset';
+import { ensureLabStorageSeeded } from '../inventory/store';
+import {
+  installInventoryTelemetry,
+  setInventoryTelemetryScene,
+} from '../inventory/telemetry';
+import { openInventoryOverlay } from '../inventory/ui/openOverlay';
+import { recordPriorExposure } from '../measurement/validity';
+import {
+  refreshPilotCoverageProbe,
+  stampContaminationNotes,
+} from '../pilot/pilotCoverage';
 import {
   advancePilotStage,
   pilotStage,
@@ -31,9 +59,6 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   protected getLayout(): RoomLayout {
-    // 25×19 concourse: doorways north (Laboratory), south (Dock) and east
-    // (Utility & Core Deck); two rail stubs frame the west work area and
-    // the east operations area.
     return {
       theme: 'hub',
       grid: [
@@ -61,7 +86,6 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   protected getSpawn(data?: { spawn?: string }): { x: number; y: number } {
-    // ≥80 px inside every door (72 px interaction radius; no bounce-back).
     switch (data?.spawn) {
       case 'diagnostics_laboratory':
         return { x: 12 * TILE, y: 4.2 * TILE };
@@ -73,8 +97,24 @@ export class StationConcourseScene extends PilotZoneScene {
     }
   }
 
+  create(data?: { spawn?: string }) {
+    // Inventory foundation wiring (InventoryLabScene precedent): icons,
+    // secondary telemetry bridge, the Component Locker's one-time seed and
+    // the M02/M03 declarations (register: declared + offered; idempotent).
+    ensureInventoryIconTextures(this);
+    installInventoryTelemetry();
+    setInventoryTelemetryScene(key.scene.stationConcourse);
+    ensureLabStorageSeeded();
+    declareM02Opportunity();
+    declareM03Opportunities();
+    stampContaminationNotes();
+
+    super.create(data);
+
+    refreshPilotCoverageProbe();
+  }
+
   protected populateRoom(): void {
-    // ——— Doors (bidirectional by construction: declared in both zones) ———
     this.addPilotDoor({ to: 'dock', spawn: 'station_concourse' });
     this.addPilotDoor({
       to: 'diagnostics_laboratory',
@@ -96,7 +136,6 @@ export class StationConcourseScene extends PilotZoneScene {
     });
     this.addDecor(vale.x, vale.y + 30, 'proc-desk-reception');
     this.addSignageText(vale.x, vale.y - 64, 'OPERATIONS');
-
     registerPilotStation({
       id: 'npc_vale',
       zone: 'station_concourse',
@@ -108,7 +147,6 @@ export class StationConcourseScene extends PilotZoneScene {
       order: 0,
     });
 
-    // ——— Records & Logistics (west) — Unit 3 activates these ———
     this.addSignageText(6 * TILE, 2 * TILE - 8, 'RECORDS & LOGISTICS');
     this.populateRecordsArea();
 
@@ -130,70 +168,151 @@ export class StationConcourseScene extends PilotZoneScene {
     this.addSignageText(22.2 * TILE, 7.2 * TILE, 'UTILITY DECK  ▶');
   }
 
-  /** Unit 2 placeholders; Unit 3 replaces the activations with overlays. */
+  /**
+   * Records & Logistics: incoming items (bundles) → visible destinations
+   * (locker / bench), the filing surface (M02) and the two press benches
+   * (M03 A/B). Explicit submit/leave controls live inside the overlays.
+   */
   private populateRecordsArea() {
     const S = CONCOURSE_STATIONS;
-    const place = (
-      id: string,
-      label: string,
-      at: { x: number; y: number },
-      texture: string,
-      order: number,
-    ) => {
-      this.addStation({
-        interactionKey: 'pilotStation',
-        label,
-        texture,
-        x: at.x,
-        y: at.y,
-        onPromptOpened: () => {
-          this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
-            metadata: { station_id: id, zone: this.zoneKey },
-          });
-          this.showFeedbackMessage(
-            `${label} — not yet connected in this build.`,
-          );
-          return false;
-        },
-      });
-      registerPilotStation({
-        id,
-        zone: 'station_concourse',
-        x: at.x,
-        y: at.y,
-        label,
-        stages: ['records'],
-        isDone: () => false,
-        order,
-      });
-    };
 
-    place(
-      'filing_desk',
-      'Incident Filing Workstation',
-      S.filingDesk,
-      'proc-desk-closure',
-      1,
-    );
-    place('press_a', 'Label Press A', S.pressA, 'proc-rig-intake', 2);
-    place('press_b', 'Label Press B', S.pressB, 'proc-rig-intake', 3);
-    place(
-      'storage_locker',
-      'Component Locker',
-      S.storageLocker,
-      'proc-crate-components',
-      4,
-    );
-    place(
-      'assembly_bench',
-      'Assembly Bench',
-      S.assemblyBench,
-      'proc-bench-prep',
-      5,
-    );
-    this.addDecor(S.supplyA.x, S.supplyA.y, 'proc-crate-supply');
-    this.addDecor(S.supplyB.x, S.supplyB.y, 'proc-crate-supply');
-    this.addDecor(S.supplyC.x, S.supplyC.y, 'proc-crate-supply');
+    // Incoming supplies — recoverable world items (secondary telemetry only).
+    this.bundles.spawn('Component bundle', S.supplyA.x, S.supplyA.y, [
+      { definitionId: 'fuse_contact', quantity: 2 },
+      { definitionId: 'relay_housing', quantity: 1 },
+    ]);
+    this.bundles.spawn('Sample kit', S.supplyB.x, S.supplyB.y, [
+      { definitionId: 'sample_vial', quantity: 1 },
+      { definitionId: 'seal_cap', quantity: 1 },
+    ]);
+    this.bundles.spawn('Wire and wrap', S.supplyC.x, S.supplyC.y, [
+      { definitionId: 'wire_spool', quantity: 2 },
+      { definitionId: 'insulation_wrap', quantity: 2 },
+    ]);
+    this.addSignageText(5.5 * TILE, 4.2 * TILE, 'INCOMING SUPPLIES');
+
+    // Incident Filing Workstation — M02 (own overlay mode, own family).
+    this.addStation({
+      interactionKey: 'pilotStation',
+      label: 'Incident Filing Workstation',
+      texture: 'proc-desk-closure',
+      x: S.filingDesk.x,
+      y: S.filingDesk.y,
+      onPromptOpened: () => {
+        this.logStationOpened('filing_desk');
+        openInventoryOverlay(this, { mode: 'm02', allowWorldDrop: true });
+        return false;
+      },
+    });
+    registerPilotStation({
+      id: 'filing_desk',
+      zone: 'station_concourse',
+      x: S.filingDesk.x,
+      y: S.filingDesk.y,
+      label: 'Incident Filing Workstation',
+      stages: ['records'],
+      isDone: () => m02Status() === 'committed',
+      order: 1,
+    });
+
+    // Label Press A / B — M03 occasions (own overlay mode, own family).
+    this.addPressStation('a', 'Label Press A', S.pressA, 2);
+    this.addPressStation('b', 'Label Press B', S.pressB, 3);
+
+    // Component Locker — storage transfer (ordinary inventory, secondary).
+    this.addStation({
+      interactionKey: 'pilotStation',
+      label: 'Component Locker',
+      texture: 'proc-crate-components',
+      x: S.storageLocker.x,
+      y: S.storageLocker.y,
+      onPromptOpened: () => {
+        this.logStationOpened('storage_locker');
+        openInventoryOverlay(this, { mode: 'container', allowWorldDrop: true });
+        return false;
+      },
+    });
+
+    // Assembly Bench — recipes (ordinary inventory, secondary).
+    this.addStation({
+      interactionKey: 'pilotStation',
+      label: 'Assembly Bench',
+      texture: 'proc-bench-prep',
+      x: S.assemblyBench.x,
+      y: S.assemblyBench.y,
+      onPromptOpened: () => {
+        this.logStationOpened('assembly_bench');
+        openInventoryOverlay(this, { mode: 'workbench', allowWorldDrop: true });
+        return false;
+      },
+    });
+    this.addSignageText(6 * TILE, 12.6 * TILE, 'STORAGE  ·  ASSEMBLY');
+  }
+
+  private addPressStation(
+    occasion: M03OccasionId,
+    label: string,
+    at: { x: number; y: number },
+    order: number,
+  ) {
+    this.addStation({
+      interactionKey: 'pilotStation',
+      label,
+      texture: 'proc-rig-intake',
+      x: at.x,
+      y: at.y,
+      onPromptOpened: () => {
+        this.logStationOpened(`press_${occasion}`);
+
+        if (m03OccasionStatus(occasion) === 'closed') {
+          this.showFeedbackMessage('Press station idle. The batch is done.');
+          return false;
+        }
+
+        // Coded prior exposure (REV-MIN-6): M02 committed or the other
+        // occasion closed before this occasion opens.
+        if (m03OccasionStatus(occasion) === 'idle') {
+          if (m02Status() === 'committed') {
+            recordPriorExposure(
+              M03_OPPORTUNITY_IDS[occasion],
+              `exposure:${M02_OPPORTUNITY_ID}_committed_before`,
+            );
+          }
+
+          const other: M03OccasionId = occasion === 'a' ? 'b' : 'a';
+
+          if (m03OccasionStatus(other) === 'closed') {
+            recordPriorExposure(
+              M03_OPPORTUNITY_IDS[occasion],
+              `exposure:${M03_OPPORTUNITY_IDS[other]}_closed_before`,
+            );
+          }
+        }
+
+        openInventoryOverlay(this, {
+          mode: 'm03',
+          m03Occasion: occasion,
+          allowWorldDrop: true,
+        });
+        return false;
+      },
+    });
+    registerPilotStation({
+      id: `press_${occasion}`,
+      zone: 'station_concourse',
+      x: at.x,
+      y: at.y,
+      label,
+      stages: ['records'],
+      isDone: () => m03OccasionStatus(occasion) === 'closed',
+      order,
+    });
+  }
+
+  private logStationOpened(stationId: string) {
+    this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
+      metadata: { station_id: stationId, zone: this.zoneKey },
+    });
   }
 
   private addSignageText(x: number, y: number, text: string) {
@@ -232,7 +351,7 @@ export class StationConcourseScene extends PilotZoneScene {
         return {
           body:
             'Vale: Good — you made it through the storm. Records are a mess and the coolant line is down.\n' +
-            'Start in Records & Logistics, west side: file the incident sheets and run the two press batches. Come back to me when you are done there.',
+            'Start in Records & Logistics, west side: file the incident sheets at the desk and run both label press batches. Incoming supplies can go in the locker or to the bench. Come back to me when you are done there.',
           options: [
             {
               label: 'Understood.',
@@ -245,7 +364,7 @@ export class StationConcourseScene extends PilotZoneScene {
               label: 'Where exactly is Records & Logistics?',
               tag: 'briefing_where',
               feedback:
-                'Vale: West side of this hall — the desk, the two presses and the locker.',
+                'Vale: West side of this hall — the desk, the two presses, the locker and the bench.',
               onSelected: () => {
                 advancePilotStage('records', Date.now());
               },

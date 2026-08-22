@@ -57,6 +57,8 @@ export const PILOT = {
     filingDesk: { x: 96, y: 272 },
     pressA: { x: 192, y: 272 },
     pressB: { x: 288, y: 272 },
+    storageLocker: { x: 96, y: 448 },
+    assemblyBench: { x: 288, y: 448 },
     northDoor: { x: 384, y: 48 },
     southDoor: { x: 384, y: 496 },
     eastDoor: { x: 752, y: 272 },

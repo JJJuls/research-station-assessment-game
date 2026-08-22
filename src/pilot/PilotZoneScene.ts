@@ -37,6 +37,7 @@ import {
   pilotRouteSummary,
   pilotStage,
 } from './pilotRoute';
+import { WorldBundleLayer } from './worldBundles';
 
 /** Beacon hides inside this radius (mission §8: disappears on arrival). */
 const BEACON_ARRIVAL_RANGE = 120;
@@ -70,6 +71,12 @@ declare global {
     } | null;
     /** DEV-only: last zone title card text (cleared on each zone create). */
     __pilotZoneTitle?: string | null;
+    /** DEV-only: world bundles in the current zone. */
+    __pilotBundles?: {
+      count: number;
+      nearest: string | null;
+      bundles: { id: string; label: string; x: number; y: number }[];
+    } | null;
   }
 }
 
@@ -100,6 +107,9 @@ export interface PilotNpcBeat {
 
 export abstract class PilotZoneScene extends RoomScene {
   protected abstract readonly zoneKey: PilotZoneKey;
+
+  /** Recoverable world items (Unit 3); pickups go through the inventory store. */
+  protected bundles!: WorldBundleLayer;
 
   private beaconRing: Phaser.GameObjects.Ellipse | null = null;
   private beaconArrow: Phaser.GameObjects.Text | null = null;
@@ -148,6 +158,12 @@ export abstract class PilotZoneScene extends RoomScene {
       this.logScenarioEvent('pilotRoute', eventType, { metadata }),
     );
 
+    // The bundle layer exists before populateRoom() (called by super.create)
+    // so zones can spawn incoming supplies while populating.
+    this.bundles = new WorldBundleLayer(this, (message) =>
+      this.showFeedbackMessage(message),
+    );
+
     super.create(data);
 
     notePilotZoneEntered(this.zoneKey, Date.now());
@@ -172,8 +188,12 @@ export abstract class PilotZoneScene extends RoomScene {
     this.events.on(Phaser.Scenes.Events.RESUME, () => {
       this.mapOpen = false;
       this.input.keyboard?.resetKeys();
+      // Confirmed overlay world drops land at the participant's feet as
+      // recoverable bundles (never destroyed).
+      this.bundles.materialiseDrops(this.player.x, this.player.y);
       this.refreshRouteObjective();
       this.retargetBeacon();
+      refreshPilotCoverageProbe();
     });
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -403,11 +423,30 @@ export abstract class PilotZoneScene extends RoomScene {
         launch_mode: pilotLaunchMode(),
         route: pilotRouteSummary(),
       };
+      window.__pilotBundles = {
+        count: this.bundles.count(),
+        nearest:
+          this.bundles.nearest(this.player.x, this.player.y)?.label ?? null,
+        bundles: this.bundles.serialize(),
+      };
     }
   }
 
   /** Zone-specific per-frame hook (field actions, etc.). */
   protected onPilotUpdate(): void {}
+
+  /** SPACE/E with no station/door in range collects a bundle in reach. */
+  protected onEmptyInteract(): void {
+    this.bundles.tryCollectNearest(this.player.x, this.player.y);
+  }
+
+  /** Pilot zones allow overlay world drops (materialised as bundles). */
+  protected inventoryOverlayLaunchData(): {
+    mode: 'backpack';
+    allowWorldDrop?: boolean;
+  } {
+    return { mode: 'backpack', allowWorldDrop: true };
+  }
 
   /** Default: no prompt options unless a subclass declares them. */
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {

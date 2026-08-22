@@ -597,6 +597,7 @@ export abstract class RoomScene extends Phaser.Scene {
     // input (same eligibility rule as the physical layer).
     wireInventoryOverlayKey(this, {
       isEligible: () => this.physicalInputEligible(),
+      launchData: () => this.inventoryOverlayLaunchData(),
     });
 
     // E is the keyboard alias of SPACE for contextual interaction (the
@@ -681,6 +682,14 @@ export abstract class RoomScene extends Phaser.Scene {
   /** Right clamp for the proximity prompt (640-px rooms keep the panel margin). */
   protected promptClampMaxX(): number {
     return 638;
+  }
+
+  /** Launch data for the I inventory overlay (pilot zones allow world drops). */
+  protected inventoryOverlayLaunchData(): {
+    mode: 'backpack';
+    allowWorldDrop?: boolean;
+  } {
+    return { mode: 'backpack' };
   }
 
   /** Whether a door transition is in progress (read-only). */
