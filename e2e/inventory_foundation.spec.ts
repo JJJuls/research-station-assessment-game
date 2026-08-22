@@ -1023,12 +1023,12 @@ test.describe('participant input', () => {
       expect(xAfter).not.toBe(xBefore);
     }
 
-    // The participant default launch is untouched: zone 1, no overlay.
+    // The participant default launch is the Dock (pilot route), no overlay.
     await page.goto('/?participant_id=PT_INV_D&game_session_id=GS_INV_D');
     await page.waitForFunction(
       () =>
         (window as unknown as { __playerProbe?: { scene: string } | null })
-          .__playerProbe?.scene === 'station_concourse',
+          .__playerProbe?.scene === 'dock',
       undefined,
       { timeout: 60_000 },
     );

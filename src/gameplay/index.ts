@@ -30,6 +30,7 @@ export {
   toggleAudioMuted,
   unlockAudio,
 } from './audio';
+export type { ControlsReferenceOptions } from './controlsReference';
 export { ControlsReference } from './controlsReference';
 export type {
   CoolantRouteState,

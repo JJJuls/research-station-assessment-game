@@ -638,4 +638,66 @@ export const researchInteractions = {
     room_id: 'systems_repair_room',
     task_id: 'repair_sequence_selection',
   },
+  // ——— Professional pilot route (Unit 2+): unmapped route telemetry ———
+  // Same governance as every proto_* / scenario_* block above: internal
+  // provisional identifiers logged via logScenarioEvent only — no canonical
+  // room_id/task_id, no Q-mapping, no scoring, no study item. `pilot_*`
+  // events describe navigation, guidance and NPC beats; the measurement
+  // windows the route hosts log their own disjoint proto_* families.
+  pilotRoute: {
+    object_id: 'pilot_route_guidance',
+    label: 'Route guidance',
+    episode: 'pilot_route',
+    event_type: 'pilot_zone_entered',
+    score_tags: [],
+  },
+  pilotDoor: {
+    object_id: 'pilot_zone_door',
+    label: 'Zone door',
+    episode: 'pilot_route',
+    event_type: 'pilot_door_used',
+    score_tags: [],
+  },
+  pilotOpening: {
+    object_id: 'pilot_opening',
+    label: 'Arrival opening',
+    episode: 'pilot_route',
+    event_type: 'pilot_opening_shown',
+    score_tags: [],
+  },
+  pilotVale: {
+    object_id: 'pilot_npc_vale',
+    label: 'Vale',
+    episode: 'pilot_route',
+    event_type: 'pilot_npc_beat',
+    score_tags: [],
+  },
+  pilotKai: {
+    object_id: 'pilot_npc_kai',
+    label: 'Kai',
+    episode: 'pilot_route',
+    event_type: 'pilot_npc_beat',
+    score_tags: [],
+  },
+  pilotNoor: {
+    object_id: 'pilot_npc_noor',
+    label: 'Noor',
+    episode: 'pilot_route',
+    event_type: 'pilot_npc_beat',
+    score_tags: [],
+  },
+  pilotStation: {
+    object_id: 'pilot_station',
+    label: 'Station',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
+  pilotCoreConsole: {
+    object_id: 'pilot_core_console',
+    label: 'Core Synchronisation Console',
+    episode: 'pilot_route',
+    event_type: 'pilot_core_console_opened',
+    score_tags: [],
+  },
 } satisfies Record<string, ResearchInteraction>;

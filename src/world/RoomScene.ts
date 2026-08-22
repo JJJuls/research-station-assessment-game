@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import { Depth, key } from '../constants';
 import type { ResearchInteraction } from '../data/researchInteractions';
 import { researchInteractions } from '../data/researchInteractions';
+import type { ControlsReferenceOptions } from '../gameplay';
 import {
   cancelActiveWorldAction,
   ControlsReference,
@@ -23,6 +24,7 @@ import {
   toggleAudioMuted,
   unlockAudio,
 } from '../gameplay';
+import { wireInventoryOverlayKey } from '../inventory/ui/openOverlay';
 import { noteRoomEntered, refreshValidityProbe } from '../measurement';
 import { getRemainingPilotDecisions, PILOT_DECISION_TOTAL } from '../scenarios';
 import { Player } from '../sprites';
@@ -586,8 +588,16 @@ export abstract class RoomScene extends Phaser.Scene {
     new InventoryHud(this);
 
     // Action-assessment rebuild Unit 1: persistent compact controls
-    // legend (H toggles) — identical in every room.
-    new ControlsReference(this);
+    // legend (H toggles). Pilot zones start it hidden with the pilot key
+    // list (mission §8: no permanent wall of controls).
+    new ControlsReference(this, this.controlsReferenceOptions());
+
+    // Interactive inventory overlay (I) — the single inventory system,
+    // available in every room; inert while a prompt/action/transition owns
+    // input (same eligibility rule as the physical layer).
+    wireInventoryOverlayKey(this, {
+      isEligible: () => this.physicalInputEligible(),
+    });
 
     // E is the keyboard alias of SPACE for contextual interaction (the
     // C/D/F field-action language groups E beside the action keys).
@@ -618,11 +628,13 @@ export abstract class RoomScene extends Phaser.Scene {
     unlockAudio();
     this.input.keyboard!.once('keydown', () => unlockAudio());
     this.input.once('pointerdown', () => unlockAudio());
-    this.input.keyboard!.on('keydown-M', (event: KeyboardEvent) => {
-      if (!event.repeat) {
-        toggleAudioMuted();
-      }
-    });
+    if (this.muteKeyEnabled()) {
+      this.input.keyboard!.on('keydown-M', (event: KeyboardEvent) => {
+        if (!event.repeat) {
+          toggleAudioMuted();
+        }
+      });
+    }
     startAmbience(layout.theme === 'exterior' ? 'exterior' : 'interior');
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => stopAmbience());
 
@@ -634,7 +646,7 @@ export abstract class RoomScene extends Phaser.Scene {
 
   /** Recomputes the gameplay-task objective HUD line (Unit 1). */
   private refreshQuestObjective() {
-    const line = getActiveObjectiveLine();
+    const line = this.questLineEnabled() ? getActiveObjectiveLine() : null;
 
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
       window.__questObjectiveText = line;
@@ -647,12 +659,42 @@ export abstract class RoomScene extends Phaser.Scene {
     }
   }
 
+  // ——— Pilot-route presentation hooks (professional pilot, Unit 2). Each
+  // has the legacy behaviour as its default so every existing room renders
+  // byte-identically; PilotZoneScene overrides them.
+
+  /** Whether the second (gameplay-task) HUD line is shown. */
+  protected questLineEnabled(): boolean {
+    return true;
+  }
+
+  /** Whether M toggles mute in this room (pilot zones use M for the map). */
+  protected muteKeyEnabled(): boolean {
+    return true;
+  }
+
+  /** Controls legend options (visibility / key list). */
+  protected controlsReferenceOptions(): ControlsReferenceOptions | undefined {
+    return undefined;
+  }
+
+  /** Right clamp for the proximity prompt (640-px rooms keep the panel margin). */
+  protected promptClampMaxX(): number {
+    return 638;
+  }
+
+  /** Whether a door transition is in progress (read-only). */
+  protected isTransitioning(): boolean {
+    return this.transitioning;
+  }
+
   /**
    * The duty-roster directive for the current progress state. Reads the
    * EXPLICIT scenario completion state (pilotRoute.ts) plus two mission
    * facts (dock check-in, Final Core completion) — never event counts.
+   * Overridable: pilot zones show the pilot route objective instead.
    */
-  private buildRouteObjectiveText(): string {
+  protected buildRouteObjectiveText(): string {
     const mission = researchRuntime.sessionState.getMissionState();
 
     if (!mission.completed_rooms.includes('dock_arrival')) {
@@ -688,7 +730,7 @@ export abstract class RoomScene extends Phaser.Scene {
    * scenario completion and Final Core completion all happen through
    * prompt options).
    */
-  private refreshRouteObjective() {
+  protected refreshRouteObjective() {
     const text = this.buildRouteObjectiveText();
 
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
@@ -2132,7 +2174,7 @@ export abstract class RoomScene extends Phaser.Scene {
         Phaser.Math.Clamp(
           this.activeTarget.x,
           promptHalf + 2,
-          638 - promptHalf,
+          this.promptClampMaxX() - promptHalf,
         ),
         this.activeTarget.y - 72,
       )

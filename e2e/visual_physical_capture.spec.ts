@@ -75,7 +75,9 @@ test.describe('physical-mechanics visual capture (Unit 8)', () => {
 
     const errors = captureErrors(page);
 
-    await page.goto('/?participant_id=PT_CAP_ORG&game_session_id=GS_CAP_ORG');
+    await page.goto(
+      '/?participant_id=PT_CAP_ORG&game_session_id=GS_CAP_ORG&route=legacy',
+    );
     await page.waitForFunction(
       () =>
         (window as unknown as { __playerProbe?: { scene: string } | null })
@@ -375,7 +377,9 @@ test.describe('physical-mechanics visual capture (Unit 8)', () => {
 
     const errors = captureErrors(page);
 
-    await page.goto('/?participant_id=PT_CAP_Q04&game_session_id=GS_CAP_Q04');
+    await page.goto(
+      '/?participant_id=PT_CAP_Q04&game_session_id=GS_CAP_Q04&route=legacy',
+    );
     await page.waitForFunction(
       () =>
         (window as unknown as { __playerProbe?: { scene: string } | null })

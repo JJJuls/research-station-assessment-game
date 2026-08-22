@@ -261,7 +261,7 @@ test.describe('complete first shift (Unit 6)', () => {
     const errors = captureErrors(page);
 
     await page.goto(
-      '/?participant_id=PT_FIRST_SHIFT&game_session_id=GS_FIRST_SHIFT',
+      '/?participant_id=PT_FIRST_SHIFT&game_session_id=GS_FIRST_SHIFT&route=legacy',
     );
     await page.waitForFunction(
       () =>

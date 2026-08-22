@@ -39,6 +39,10 @@ const scene = {
   ipSignalTerminal: 'ip_signal_terminal',
   main: 'main',
   menu: 'menu',
+  // Professional pilot route: the skippable opening overlay and the station
+  // map overlay (M), both modal over a paused pilot zone.
+  pilotOpening: 'pilot_opening',
+  pilotStationMap: 'pilot_station_map',
   opsAnnex: 'ops_annex',
   pumpHouse: 'pump_house',
   repair: 'repair',

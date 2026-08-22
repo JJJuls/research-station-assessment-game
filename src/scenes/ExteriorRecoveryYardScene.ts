@@ -1,52 +1,58 @@
-import { key } from '../constants';
-import { snowfall } from '../gameplay/effects';
-import type { RoomLayout } from '../world';
-import { ZoneScene } from '../world/fourZoneRoute';
-
 /**
- * Zone 3 — Exterior Recovery Yard (four-zone assessment route).
+ * Exterior Recovery Yard — pilot zone 3 (professional pilot route).
  *
- * A convincing polar exterior: entrance airlock south-west, one
- * clearly readable clockwise service path around a central
- * environmental landmark (the relay module and mast, visible from most
- * of the map), five inactive work pads positioned clockwise along the
- * path, and the single forward transition (Utility Deck airlock)
- * north-east. No branching scene exits. Path legibility comes from the
- * ring geometry, footprints, pad foundations and safety lighting — not
- * from a painted arrow.
+ * Storm-damaged exterior reached through the laboratory airlock (the same
+ * airlock leads back). Noor at the apron; the east recovery plot, the yard
+ * pump and relay housing, the Metal Recovery Yard magnet rig and the
+ * south-west verification plots. Unit 2 builds topology, guidance and
+ * Noor's beats; Unit 5 wires the field actions (C/D/F) and the five
+ * measurement windows. The only door is the airlock (bidirectional).
  */
-export class ExteriorRecoveryYardScene extends ZoneScene {
-  protected readonly zoneKey = key.scene.exteriorRecoveryYard;
+import { key } from '../constants';
+import { snowfall } from '../gameplay';
+import {
+  advancePilotStage,
+  pilotStage,
+  registerPilotStation,
+} from '../pilot/pilotRoute';
+import { PilotZoneScene } from '../pilot/PilotZoneScene';
+import { YARD_SITES } from '../pilot/zoneSites';
+import type { InteractionKey, PromptOption, RoomLayout } from '../world';
+
+const TILE = 32;
+
+export class ExteriorRecoveryYardScene extends PilotZoneScene {
+  protected readonly roomId = 'exterior_recovery_yard';
+  protected readonly roomInteractionKey: InteractionKey = 'pilotRoute';
+  protected readonly zoneKey = 'exterior_recovery_yard' as const;
 
   constructor() {
     super(key.scene.exteriorRecoveryYard);
   }
 
   protected getLayout(): RoomLayout {
-    // 25×19 yard. The central rock/structure block (rows 7-11, cols
-    // 9-15) forms the landmark island the service path rings; the
-    // doorway at row 1 (cols 21-22) is the north-east Utility Deck
-    // airlock. Map-edge ridge walls are the boundary fence line.
+    // 25×19 open yard: airlock doorway south (cols 11-12), a relay mast
+    // block north-centre, otherwise registered terrain (Unit 5 zones).
     return {
       theme: 'exterior',
       grid: [
         '#########################',
-        '#####################--##',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#........#######........#',
-        '#........#######........#',
-        '#........#######........#',
-        '#........#######........#',
-        '#........#######........#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
         '#########################',
+        '#..........###..........#',
+        '#..........###..........#',
+        '#.......................#',
+        '#.......................#',
+        '#.......................#',
+        '#.......................#',
+        '#.......................#',
+        '#.......................#',
+        '#.......................#',
+        '#.......................#',
+        '#.......................#',
+        '#.......................#',
+        '#.......................#',
+        '#.......................#',
+        '###########--############',
         '#########################',
         '#########################',
       ],
@@ -54,130 +60,219 @@ export class ExteriorRecoveryYardScene extends ZoneScene {
   }
 
   protected getSpawn(): { x: number; y: number } {
-    // The zone's single entrance: the south-west airlock apron.
-    return { x: 96, y: 480 };
+    // Apron, 95 px from the airlock and 140 px from Noor.
+    return { x: 13.75 * TILE, y: 13.1 * TILE };
   }
 
-  protected populateZone(): void {
-    // — Forward transition: Utility Deck airlock, north-east.
-    this.setForward({
-      x: 704,
-      y: 48,
-      label: 'Utility Deck Airlock',
-      targetSceneKey: key.scene.utilityCoreDeck,
+  protected populateRoom(): void {
+    this.addPilotDoor({
+      to: 'diagnostics_laboratory',
+      spawn: 'exterior_recovery_yard',
     });
-    // West of the airlock on the ridge band — clear of the door marker
-    // and of the pre-existing top-right overlay icon. Flanking amber
-    // safety lights lift the exit's salience against the snow.
-    this.addSignage(616, 46, 'UTILITY DECK');
-    this.addSafetyLight(664, 100);
-    this.addSafetyLight(744, 100);
 
-    // — Entrance airlock dressing (south-west; arrival only, no door).
-    this.addDecor(96, 522, 'proc-wall-pipes');
-    this.addSignage(96, 448, 'AIRLOCK APRON');
-    this.addSafetyLight(64, 500);
-    this.addSafetyLight(128, 500);
+    const noor = YARD_SITES.noor;
 
-    // — Central environmental landmark: relay module + mast on the rock
-    // island, visible from most of the yard.
-    this.addDecor(384, 270, 'proc-station-module');
-    this.addDecor(472, 250, 'proc-beacon-comms');
-    this.addSafetyLight(300, 230);
-    this.addSafetyLight(468, 366);
-    this.addSignage(384, 312, 'RELAY 04');
+    this.addNpc({
+      interactionKey: 'pilotNoor',
+      label: 'Noor',
+      npcName: 'Noor — field recovery',
+      texture: 'plv1-noor',
+      workFrames: ['plv1-noor', 'plv1-noor-b'],
+      x: noor.x,
+      y: noor.y,
+    });
+    registerPilotStation({
+      id: 'npc_noor',
+      zone: 'exterior_recovery_yard',
+      x: noor.x,
+      y: noor.y,
+      label: 'Noor',
+      stages: ['exterior_briefing', 'exterior_work'],
+      isDone: () => false,
+      order: 0,
+    });
 
-    // — Five inactive work pads, clockwise along the service path.
-    const pads: {
-      label: string;
-      description: string;
-      x: number;
-      y: number;
-      texture: string;
-    }[] = [
-      {
-        label: 'Pressure Regulation Station',
-        description:
-          'Pressure Regulation Station. External pressure lines are managed here. Offline during route orientation.',
-        x: 96,
-        y: 320,
-        texture: 'proc-valve-relief',
-      },
-      {
-        label: 'Antenna Alignment Platform',
-        description:
-          'Antenna Alignment Platform. The relay antenna is aligned from this platform. Offline during route orientation.',
-        x: 128,
-        y: 128,
-        texture: 'proc-antenna-damaged',
-      },
-      {
-        label: 'Field Manual Station',
-        description:
-          'Field Manual Station. Field procedures are consulted here. Offline during route orientation.',
-        x: 368,
-        y: 100,
-        texture: 'proc-notebook-stand',
-      },
-      {
-        label: 'Power Relay Junction',
-        description:
-          'Power Relay Junction. Exterior power routing is switched here. Offline during route orientation.',
-        x: 560,
-        y: 120,
-        texture: 'proc-panel-warning',
-      },
-      {
-        label: 'Core Sample Extraction Rig',
-        description:
-          'Core Sample Extraction Rig. Ground samples are extracted here. Offline during route orientation.',
-        x: 688,
-        y: 208,
-        texture: 'proc-ice-bore',
-      },
-    ];
+    // Work sites (Unit 5 wires mechanics; positions fixed here).
+    this.placeholder(
+      'relay_housing',
+      'Relay Housing',
+      YARD_SITES.relayHousing,
+      'proc-housing-frozen',
+      3,
+    );
+    this.placeholder(
+      'yard_pump',
+      'Yard Coolant Pump',
+      YARD_SITES.pumpPrime,
+      'proc-rig-intake',
+      2,
+    );
+    this.placeholder(
+      'magnet_rig',
+      'Magnet Recovery Rig',
+      YARD_SITES.magnetRig,
+      'proc-rig-recycler',
+      4,
+    );
+    this.placeholder(
+      'verification_post',
+      'Verification Post',
+      YARD_SITES.verificationPost,
+      'proc-reclamation-post',
+      5,
+    );
+    this.addDecor(
+      YARD_SITES.supplyCrate.x,
+      YARD_SITES.supplyCrate.y,
+      'proc-crate-supply',
+    );
+    this.addDecor(
+      YARD_SITES.pumpBreaker.x,
+      YARD_SITES.pumpBreaker.y,
+      'proc-panel-warning',
+    );
+    this.addDecor(
+      YARD_SITES.magnetTray.x,
+      YARD_SITES.magnetTray.y,
+      'proc-case-tray',
+    );
+    this.addDecor(
+      YARD_SITES.relayMast.x,
+      YARD_SITES.relayMast.y + 20,
+      'proc-antenna-damaged',
+    );
 
-    for (const pad of pads) {
-      // Equipment foundation plate under each pad, plus a safety light.
-      this.addFoundation(pad.x, pad.y + 14, 64, 44);
-      this.addShell(pad);
-      this.addSafetyLight(pad.x - 40, pad.y + 28);
-    }
+    // Landmarks and plots (overlays drawn by Unit 5; signage now).
+    this.signage(12 * TILE, 4.3 * TILE, 'RELAY MAST 04');
+    this.signage(19.5 * TILE, 6 * TILE, 'EAST RECOVERY PLOT');
+    this.signage(3 * TILE, 2.6 * TILE, 'CONTROL PLOT');
+    this.signage(4 * TILE, 7.6 * TILE, 'RECLAIMED SECTOR');
+    this.signage(21 * TILE, 1.5 * TILE, 'METAL RECOVERY YARD');
+    this.signage(12 * TILE, 17.5 * TILE, '▼  AIRLOCK — LABORATORY');
+    this.signage(19 * TILE, 12.8 * TILE, 'SUPPLY CRATE');
 
-    // — Footprint trails tracing the clockwise service path (decals).
     for (const [x, y] of [
-      [96, 432],
-      [92, 384],
-      [100, 260],
-      [96, 192],
-      [112, 160],
-      [180, 116],
-      [256, 104],
-      [320, 108],
-      [432, 104],
-      [496, 112],
-      [608, 128],
-      [656, 160],
-      [688, 128],
-      [700, 96],
+      [2 * TILE, 3 * TILE],
+      [4 * TILE, 3 * TILE],
+      [2 * TILE, 5.5 * TILE],
+      [4 * TILE, 5.5 * TILE],
+      [17 * TILE, 6.5 * TILE],
+      [22.5 * TILE, 6.5 * TILE],
+      [17 * TILE, 11.5 * TILE],
+      [22.5 * TILE, 11.5 * TILE],
     ] as const) {
-      this.addDecor(x, y, 'proc-footprints');
+      this.addDecor(x, y, 'proc-sector-post');
     }
 
-    // — Boundary fencing: sector posts inside the south and east ridge.
-    for (const x of [192, 320, 448, 576] as const) {
-      this.addDecor(x, 496, 'proc-sector-post');
-    }
-    this.addDecor(736, 384, 'proc-sector-post');
-    this.addDecor(736, 256, 'proc-sector-post');
+    this.addDecor(6 * TILE, 6 * TILE, 'proc-ground-disturbed');
+    this.addDecor(10 * TILE, 7 * TILE, 'proc-footprints');
+    this.addDecor(12.5 * TILE, 10 * TILE, 'proc-footprints');
+    this.addDecor(16 * TILE, 15 * TILE, 'proc-wall-pipes');
+    this.addDecor(8 * TILE, 15.6 * TILE, 'proc-wall-pipes');
 
-    // — Ground response + worked terrain near the pads.
-    this.addDecor(200, 152, 'proc-ground-disturbed');
-    this.addDecor(640, 232, 'proc-ground-disturbed');
-    this.addDecor(160, 360, 'proc-dig-mound');
-
-    // — Restrained weather: the existing deterministic snowfall system
-    // (reduced-motion aware) at a calm density.
     snowfall(this, { width: 800, height: 608, seed: 0x5eed4003, count: 26 });
+  }
+
+  private placeholder(
+    id: string,
+    label: string,
+    at: { x: number; y: number },
+    texture: string,
+    order: number,
+  ) {
+    this.addStation({
+      interactionKey: 'pilotStation',
+      label,
+      texture,
+      x: at.x,
+      y: at.y,
+      onPromptOpened: () => {
+        this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
+          metadata: { station_id: id, zone: this.zoneKey },
+        });
+        this.showFeedbackMessage(`${label} — not yet connected in this build.`);
+        return false;
+      },
+    });
+    registerPilotStation({
+      id,
+      zone: 'exterior_recovery_yard',
+      x: at.x,
+      y: at.y,
+      label,
+      stages: ['exterior_work'],
+      isDone: () => false,
+      order,
+    });
+  }
+
+  private signage(x: number, y: number, text: string) {
+    this.add
+      .text(x, y, text, { color: '#9fb2c1', font: '11px monospace' })
+      .setOrigin(0.5)
+      .setDepth(2);
+  }
+
+  protected getPromptBody(interactionKey: InteractionKey): string | undefined {
+    return interactionKey === 'pilotNoor' ? this.noorBeat().body : undefined;
+  }
+
+  protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
+    return interactionKey === 'pilotNoor'
+      ? this.npcBeatOptions('pilotNoor', this.noorBeat())
+      : [];
+  }
+
+  private noorBeat() {
+    switch (pilotStage()) {
+      case 'exterior_briefing':
+        return {
+          body:
+            'Noor: Storm took the mast and buried half the yard. I have jobs for you — take them in the order I call them.\n' +
+            'Scanner (C) and spade (D) are yours; the rig works with F. Come back to me between jobs.',
+          options: [
+            {
+              label: 'Ready.',
+              tag: 'yard_brief_ack',
+              onSelected: () => {
+                advancePilotStage('exterior_work', Date.now());
+              },
+            },
+          ],
+        };
+      case 'exterior_work':
+        return {
+          body: 'Noor: Jobs are on the board. Tell me when you are done out here.',
+          options: [
+            {
+              label: 'I am done outside.',
+              tag: 'yard_done',
+              feedback:
+                'Noor: Logged. Back through the airlock — Kai wants your report.',
+              onSelected: () => {
+                advancePilotStage('report_kai', Date.now());
+              },
+            },
+            {
+              label: 'Still working.',
+              tag: 'yard_continue',
+              feedback: 'Noor: Go on.',
+            },
+          ],
+        };
+      case 'report_kai':
+      case 'report_vale':
+      case 'deck_review':
+      case 'complete':
+        return {
+          body: 'Noor: Yard work is logged. Kai and Vale are inside.',
+          options: [{ label: 'Understood.', tag: 'redirect_inside' }],
+        };
+      default:
+        return {
+          body: 'Noor: Kai sends people out here once the laboratory work is through.',
+          options: [{ label: 'Understood.', tag: 'redirect_lab' }],
+        };
+    }
   }
 }

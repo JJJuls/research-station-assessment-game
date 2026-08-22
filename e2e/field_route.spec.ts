@@ -79,7 +79,7 @@ test.describe('field survey route (Unit 2)', () => {
     const errors = captureErrors(page);
 
     await page.goto(
-      '/?participant_id=PT_FIELD_ROUTE&game_session_id=GS_FIELD_ROUTE',
+      '/?participant_id=PT_FIELD_ROUTE&game_session_id=GS_FIELD_ROUTE&route=legacy',
     );
     await page.waitForFunction(
       () =>
@@ -237,7 +237,7 @@ test.describe('field survey route (Unit 2)', () => {
     test.setTimeout(240_000);
 
     await page.goto(
-      '/?participant_id=PT_FIELD_GATE&game_session_id=GS_FIELD_GATE',
+      '/?participant_id=PT_FIELD_GATE&game_session_id=GS_FIELD_GATE&route=legacy',
     );
     await page.waitForFunction(
       () =>

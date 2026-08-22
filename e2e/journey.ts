@@ -12,6 +12,7 @@ import {
   hubToStationDoor,
   inventoryToSealLog,
   press,
+  withLegacyRoute,
 } from './helpers';
 
 /**
@@ -173,11 +174,12 @@ export async function bootJourney(
   params: LaunchParams,
   expectedSceneKey = 'dock',
 ) {
+  // Legacy journeys drive the historical Dock → Hub ring (route=legacy);
+  // pilot-route specs use e2e/pilotHelpers.ts instead.
   const search = new URLSearchParams(
-    Object.entries(params).filter(([, v]) => v !== undefined) as [
-      string,
-      string,
-    ][],
+    Object.entries(withLegacyRoute(params)).filter(
+      ([, v]) => v !== undefined,
+    ) as [string, string][],
   );
 
   await page.goto(`/?${search.toString()}`);

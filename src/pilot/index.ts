@@ -8,3 +8,4 @@
  */
 export * from './coverageSchedule';
 export * from './pilotCoverage';
+export * from './pilotRoute';

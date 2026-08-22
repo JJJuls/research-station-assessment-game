@@ -43,15 +43,33 @@ export interface LaunchParams {
   launch_mode?: string;
   /** DEV-only free-play unlock (Unit 7 ice salvage; ?debug precedent). */
   freeplay?: string;
+  /**
+   * Route mode. The legacy regression specs drive the historical Dock → Hub
+   * ring (`legacy`); the pilot route is the participant default. bootGame
+   * and bootJourney default this to 'legacy' when no scene alias (or the
+   * Dock) is requested, so every legacy spec explicitly selects the route
+   * it was written against. Pilot-route specs use e2e/pilotHelpers.ts.
+   */
+  route?: string;
+}
+
+/** Adds the explicit legacy route to a legacy boot (see LaunchParams.route). */
+export function withLegacyRoute(params: LaunchParams): LaunchParams {
+  return {
+    route:
+      params.scene === undefined || params.scene === 'dock'
+        ? 'legacy'
+        : undefined,
+    ...params,
+  };
 }
 
 /** Navigates with Qualtrics-style launch params and waits for boot. */
 export async function bootGame(page: Page, params: LaunchParams) {
   const search = new URLSearchParams(
-    Object.entries(params).filter(([, v]) => v !== undefined) as [
-      string,
-      string,
-    ][],
+    Object.entries(withLegacyRoute(params)).filter(
+      ([, v]) => v !== undefined,
+    ) as [string, string][],
   );
 
   await page.goto(`/?${search.toString()}`);

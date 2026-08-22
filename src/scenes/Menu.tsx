@@ -3,6 +3,7 @@ import { render } from 'phaser-jsx';
 
 import { Button, Overlay } from '../components';
 import { key } from '../constants';
+import { isAudioMuted, toggleAudioMuted } from '../gameplay';
 
 export class Menu extends Scene {
   /**
@@ -21,7 +22,7 @@ export class Menu extends Scene {
   }
 
   create() {
-    this.input.keyboard!.on('keydown-ESC', this.exit, this);
+    this.input.keyboard!.on('keydown-ESC', this.onEscape, this);
     const { centerX, centerY } = this.cameras.main;
 
     render(
@@ -34,11 +35,30 @@ export class Menu extends Scene {
           onClick={this.exit}
           text="Resume"
           x={centerX}
-          y={centerY}
+          y={centerY - 10}
         />
       </>,
       this,
     );
+
+    // Sound toggle (client display setting). The pilot zones use M for the
+    // station map, so mute lives here for every room.
+    const soundLabel = () => `Sound: ${isAudioMuted() ? 'off' : 'on'}`;
+    const soundText = this.add
+      .text(centerX, centerY + 34, soundLabel(), {
+        color: '#9fb2c1',
+        font: '13px monospace',
+        backgroundColor: '#101820',
+        padding: { x: 10, y: 5 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(1);
+
+    soundText.on('pointerdown', () => {
+      toggleAudioMuted();
+      soundText.setText(soundLabel());
+    });
 
     // NEXT-07 Phase 6: static controls card — the contract's single
     // authorised piece of new participant-facing copy (§4.4).
@@ -55,10 +75,11 @@ export class Menu extends Scene {
         '',
         'Move — arrow keys',
         'Interact — SPACE or E',
+        'Inventory — I',
         'Field scanner — C (in survey areas)',
         'Dig / extract — D (at marked ground)',
-        'Salvage winch — F (at the rig)',
-        'Inventory — TAB cycles, click selects',
+        'Magnet recovery — F (at the rig)',
+        'Station map — M · Controls — H',
         'Choose an option — point and click,',
         'or arrow keys and Enter',
         'Cancel / pause — ESC',
@@ -76,6 +97,14 @@ export class Menu extends Scene {
       .setOrigin(0)
       .setStrokeStyle(1, 0x33475a);
     controlsText.setDepth(1);
+  }
+
+  private onEscape(event: KeyboardEvent) {
+    if (event.repeat) {
+      return;
+    }
+
+    this.exit();
   }
 
   private exit() {

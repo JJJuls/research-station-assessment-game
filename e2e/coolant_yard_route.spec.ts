@@ -200,7 +200,7 @@ test.describe('coolant yard route (Unit 2)', () => {
     const errors = captureErrors(page);
 
     await page.goto(
-      '/?participant_id=PT_COOLANT_YARD&game_session_id=GS_COOLANT_YARD',
+      '/?participant_id=PT_COOLANT_YARD&game_session_id=GS_COOLANT_YARD&route=legacy',
     );
     await page.waitForFunction(
       () =>

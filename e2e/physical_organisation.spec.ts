@@ -57,7 +57,9 @@ import {
 type Pg = import('@playwright/test').Page;
 
 async function bootToDock(page: Pg, tag: string) {
-  await page.goto(`/?participant_id=PT_${tag}&game_session_id=GS_${tag}`);
+  await page.goto(
+    `/?participant_id=PT_${tag}&game_session_id=GS_${tag}&route=legacy`,
+  );
   await page.waitForFunction(
     () =>
       (window as unknown as { __playerProbe?: { scene: string } | null })

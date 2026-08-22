@@ -39,7 +39,7 @@ async function bootAtViewport(
     if (m.type() === 'error') errors.push(m.text());
   });
 
-  await page.goto('/?participant_id=VPT&game_session_id=vpt-1');
+  await page.goto('/?participant_id=VPT&game_session_id=vpt-1&route=legacy');
   await page.waitForSelector('canvas', { timeout: 30_000 });
   await page.waitForFunction(
     () => {

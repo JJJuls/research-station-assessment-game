@@ -1,9 +1,13 @@
 import Phaser from 'phaser';
 
 import { Depth, key } from '../constants';
+import { pilotLaunchMode } from '../pilot/pilotCoverage';
+import { notePilotZoneEntered, pilotObjective } from '../pilot/pilotRoute';
+import { PILOT_CONTROLS_LINES } from '../pilot/PilotZoneScene';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 import { RoomScene, runOncePerSession } from '../world';
+import { isLegacyRoute } from '../world/SceneRouter';
 
 /**
  * Idle-help parameters — OPEN SCIENTIFIC PARAMETERS (approved plan §12/§16.11).
@@ -75,11 +79,32 @@ export class DockScene extends RoomScene {
     // arrival spawns bottom-center, just inside the arrival airlock.
     // Just outside the hub door's 72px interaction radius (no accidental
     // immediate bounce-back on SPACE).
-    if (data?.spawn === 'station_hub') {
+    if (data?.spawn === 'station_hub' || data?.spawn === 'station_concourse') {
       return { x: 12 * 32, y: 4 * 32 };
     }
 
     return { x: 12 * 32, y: 11 * 32 };
+  }
+
+  /**
+   * Professional pilot route: the north door leads into the Station
+   * Concourse (participant default). `?route=legacy` keeps the historical
+   * Hub target for the legacy regression specs.
+   */
+  private northDoorTarget() {
+    if (isLegacyRoute()) {
+      return {
+        sceneKey: key.scene.hub,
+        roomId: 'station_hub',
+        spawn: 'dock_arrival',
+      };
+    }
+
+    return {
+      sceneKey: key.scene.stationConcourse,
+      roomId: 'station_concourse',
+      spawn: 'dock',
+    };
   }
 
   protected populateRoom(): void {
@@ -109,18 +134,17 @@ export class DockScene extends RoomScene {
       },
     });
 
-    // Door to the Station Hub (opened in Phase C).
+    // North door: Station Concourse on the pilot route (Phase C's Hub
+    // target survives under ?route=legacy).
+    const northTarget = this.northDoorTarget();
+
     this.addDoor({
       x: 12 * 32 - 16,
       y: 1 * 32 + 16,
-      label: 'Station Hub',
+      label: isLegacyRoute() ? 'Station Hub' : 'Station Concourse',
       texture: 'prop-dock-airlock',
       interactionKey: 'dockArrivalTutorial',
-      target: {
-        sceneKey: key.scene.hub,
-        roomId: 'station_hub',
-        spawn: 'dock_arrival',
-      },
+      target: northTarget,
     });
 
     // Set dressing (decorative only; never obstructs interactables).
@@ -184,11 +208,99 @@ export class DockScene extends RoomScene {
       .setDepth(Depth.AboveWorld);
   }
 
+  /** Participant pilot launch (not the legacy Hub ring, not a dev alias). */
+  private isPilotRoute(): boolean {
+    return pilotLaunchMode() === 'participant' && !isLegacyRoute();
+  }
+
+  create(data?: { spawn?: string }) {
+    super.create(data);
+
+    if (!this.isPilotRoute()) {
+      return;
+    }
+
+    // Pilot guidance in the Dock: the route objective line, the station
+    // map on M and the zone-entry bookkeeping (discovery + re-entry count).
+    notePilotZoneEntered('dock', Date.now());
+    this.refreshRouteObjective();
+    this.input.keyboard!.on('keydown-M', (event: KeyboardEvent) => {
+      if (event.repeat || !this.physicalInputEligible()) {
+        return;
+      }
+
+      this.logScenarioEvent('pilotRoute', 'pilot_map_opened', {
+        metadata: { zone: 'dock' },
+      });
+      this.scene.pause(this.scene.key);
+      this.scene.launch(key.scene.pilotStationMap, {
+        resumeKey: this.scene.key,
+        zone: 'dock',
+      });
+    });
+    this.events.on(Phaser.Scenes.Events.RESUME, () => {
+      this.input.keyboard?.resetKeys();
+    });
+  }
+
+  protected buildRouteObjectiveText(): string {
+    return this.isPilotRoute()
+      ? pilotObjective()
+      : super.buildRouteObjectiveText();
+  }
+
+  protected muteKeyEnabled(): boolean {
+    return !this.isPilotRoute();
+  }
+
+  protected questLineEnabled(): boolean {
+    return !this.isPilotRoute();
+  }
+
+  protected controlsReferenceOptions() {
+    return this.isPilotRoute()
+      ? { startVisible: false, lines: PILOT_CONTROLS_LINES, panelY: 404 }
+      : undefined;
+  }
+
   protected onRoomEntered(): void {
     runOncePerSession('dock_started', () => {
       this.logRoomEvent('dockArrivalTutorial', 'dock_started');
     });
 
+    // Professional pilot route: a brief, skippable in-engine opening plays
+    // ONCE per session before control is handed over (participant launches
+    // only; never under ?route=legacy or a developer alias). Skipping or
+    // finishing changes no measurement entry state — the instruction below
+    // and every Dock event are identical either way.
+    let openingShown = false;
+
+    if (pilotLaunchMode() === 'participant' && !isLegacyRoute()) {
+      runOncePerSession('pilot_opening_shown', () => {
+        openingShown = true;
+        this.logScenarioEvent('pilotOpening', 'pilot_opening_shown');
+        this.scene.pause(this.scene.key);
+        this.scene.launch(key.scene.pilotOpening, {
+          resumeKey: this.scene.key,
+          onDone: (outcome: 'completed' | 'skipped') => {
+            this.logScenarioEvent(
+              'pilotOpening',
+              outcome === 'skipped'
+                ? 'pilot_opening_skipped'
+                : 'pilot_opening_completed',
+            );
+            this.showMovementInstruction();
+          },
+        });
+      });
+    }
+
+    if (!openingShown) {
+      this.showMovementInstruction();
+    }
+  }
+
+  private showMovementInstruction() {
     this.showFeedbackMessage(
       'Station AI: arrow keys to move. Reach the highlighted marker.',
     );

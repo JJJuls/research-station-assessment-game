@@ -89,7 +89,7 @@ test.describe('action and inventory foundation (Unit 1)', () => {
     const errors = captureErrors(page);
 
     await page.goto(
-      '/?participant_id=PT_ACTION_FOUNDATION&game_session_id=GS_ACTION_FOUNDATION',
+      '/?participant_id=PT_ACTION_FOUNDATION&game_session_id=GS_ACTION_FOUNDATION&route=legacy',
     );
     await page.waitForFunction(
       () =>

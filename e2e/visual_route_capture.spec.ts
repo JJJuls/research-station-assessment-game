@@ -98,7 +98,7 @@ test('first shift: full route with participant-view captures', async ({
   const errors = captureErrors(page);
 
   await page.goto(
-    '/?participant_id=PT_VISUAL_ROUTE&game_session_id=GS_VISUAL_ROUTE',
+    '/?participant_id=PT_VISUAL_ROUTE&game_session_id=GS_VISUAL_ROUTE&route=legacy',
   );
   await page.waitForFunction(
     () =>

@@ -53,7 +53,9 @@ function assignCounterbalance<T>(
 }
 
 async function bootToDock(page: Page, participant: string, session: string) {
-  await page.goto(`/?participant_id=${participant}&game_session_id=${session}`);
+  await page.goto(
+    `/?participant_id=${participant}&game_session_id=${session}&route=legacy`,
+  );
   await page.waitForFunction(
     () =>
       (window as unknown as { __playerProbe?: { scene: string } | null })

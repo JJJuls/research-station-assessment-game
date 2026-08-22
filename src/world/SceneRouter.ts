@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 
 import { key } from '../constants';
+import { setPilotLaunchMode } from '../pilot/pilotCoverage';
 import { researchRuntime } from '../systems';
 
 /**
@@ -47,19 +48,48 @@ const SCENE_PARAM_TO_KEY: Record<string, string> = {
   utility_core_deck: key.scene.utilityCoreDeck,
 };
 
+/**
+ * Participant-route scene keys: launching at any of these is a PARTICIPANT
+ * launch (the default and `?scene=dock`). Every other alias is a developer
+ * launch — legacy rooms, proving-ground labs, direct zone skips — and is
+ * recorded as such in the pilot coverage registry (session contamination).
+ */
+const PARTICIPANT_START_KEYS = new Set<string>([key.scene.dock]);
+
 export function resolveStartSceneKey(): string {
   const params = new URLSearchParams(window.location.search);
   const requested = params.get('scene');
+  const resolved =
+    requested !== null && requested in SCENE_PARAM_TO_KEY
+      ? SCENE_PARAM_TO_KEY[requested]
+      : // Professional pilot route: the participant default is the Dock
+        // (arrival + control tutorial). Legacy rooms (Hub ring, prototype),
+        // the proving-ground labs and direct zone aliases stay reachable
+        // ONLY through the explicit `?scene=` aliases above.
+        key.scene.dock;
 
-  if (requested !== null && requested in SCENE_PARAM_TO_KEY) {
-    return SCENE_PARAM_TO_KEY[requested];
+  setPilotLaunchMode(
+    PARTICIPANT_START_KEYS.has(resolved) && !isLegacyRoute()
+      ? 'participant'
+      : 'developer',
+    resolved,
+  );
+
+  return resolved;
+}
+
+/**
+ * `?route=legacy` keeps the historical Dock → Hub ring route for the legacy
+ * regression specs and developer walkthroughs: the Dock's north door then
+ * targets the Station Hub instead of the pilot Concourse. Never the
+ * participant default; recorded as a developer launch.
+ */
+export function isLegacyRoute(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
   }
 
-  // Four-zone map foundation: the participant route starts at the
-  // Station Concourse. Legacy rooms (Dock/Hub ring and the prototype)
-  // stay reachable ONLY through the explicit `?scene=` aliases above —
-  // developer/regression launches, never the participant default.
-  return key.scene.stationConcourse;
+  return new URLSearchParams(window.location.search).get('route') === 'legacy';
 }
 
 /** Whether a `?scene=` alias is already routable. */
