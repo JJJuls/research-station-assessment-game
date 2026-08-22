@@ -373,7 +373,10 @@ export class PumpHouseScene extends RoomScene {
     markM18FaultPresented();
     markOpportunityOffered(M18_OPPORTUNITY_ID);
     refreshValidityProbe();
-    this.logScenarioEvent('pumpDiagnosticBoard', 'proto_m18_fault_presented');
+    this.logScenarioEvent(
+      'pumpDiagnosticBoard',
+      'proto_m18_pressure_fault_presented',
+    );
     setRestoreObjective(
       'Diagnose the residual pressure fault at the Diagnostic Board.',
     );

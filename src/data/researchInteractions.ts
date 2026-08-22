@@ -373,7 +373,7 @@ export const researchInteractions = {
     object_id: 'proto_m18_diagnostic_board',
     label: 'Diagnostic Board',
     episode: 'proto_m18_pressure_diagnosis',
-    event_type: 'proto_m18_fault_presented',
+    event_type: 'proto_m18_pressure_fault_presented',
     score_tags: [],
     room_id: 'proto_pump_house',
   },

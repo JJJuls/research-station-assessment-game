@@ -328,14 +328,18 @@ test.describe('pipe puzzle, diagnosis and setback (Unit 3)', () => {
 
     expect((firstSubmit.metadata as { valid?: boolean }).valid).toBe(false);
     expect(findEvents(events, 'proto_m13_completed')).toHaveLength(0);
-    expect(findEvents(events, 'proto_m18_fault_presented')).toHaveLength(0);
+    expect(
+      findEvents(events, 'proto_m18_pressure_fault_presented'),
+    ).toHaveLength(0);
 
     // — Seat the valve and submit the now-sealed run.
     await seatViaCards('Isolation valve', 'Mount B1.', 5);
     await selectCardByLabel(page, 'Open the test flow');
     expect(await waitForEventType(page, 'proto_m13_completed', 1)).toBe(true);
     events = await getEvents(page);
-    expect(findEvents(events, 'proto_m18_fault_presented')).toHaveLength(1);
+    expect(
+      findEvents(events, 'proto_m18_pressure_fault_presented'),
+    ).toHaveLength(1);
 
     // — M18: check the intake gauge, then log the diagnosis by LABEL
     //   (option order is counterbalanced, so position is looked up).
@@ -413,7 +417,7 @@ test.describe('pipe puzzle, diagnosis and setback (Unit 3)', () => {
     const indexOf = (type: string) =>
       events.findIndex((event) => event.event_type === type);
 
-    expect(indexOf('proto_m18_fault_presented')).toBeGreaterThan(
+    expect(indexOf('proto_m18_pressure_fault_presented')).toBeGreaterThan(
       indexOf('proto_m13_completed'),
     );
     expect(indexOf('proto_m22_setback_shown')).toBeGreaterThan(
@@ -428,7 +432,7 @@ test.describe('pipe puzzle, diagnosis and setback (Unit 3)', () => {
     }
 
     // No M13 manipulation act fired after the M18 window opened.
-    const faultIndex = indexOf('proto_m18_fault_presented');
+    const faultIndex = indexOf('proto_m18_pressure_fault_presented');
     const lateM13 = events.filter(
       (event, index) =>
         index > faultIndex &&
