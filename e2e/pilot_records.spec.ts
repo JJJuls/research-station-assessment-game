@@ -149,6 +149,21 @@ async function clickButton(page: import('@playwright/test').Page, id: string) {
   await page.waitForTimeout(260);
 }
 
+function playerSlotBy(probe: UiProbe, predicate: (slot: ProbeSlot) => boolean) {
+  const slot = probe.slots.find(
+    (s) =>
+      (s.container_id === 'player_hotbar' ||
+        s.container_id === 'player_backpack') &&
+      predicate(s),
+  );
+
+  if (slot === undefined) {
+    throw new Error('no matching player slot');
+  }
+
+  return slot;
+}
+
 function playerItemCount(probe: UiProbe): number {
   return probe.slots
     .filter(
@@ -341,7 +356,7 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
     await enterConcourse(page, 'inv');
 
     // Collect the component bundle (SPACE with no station in range).
-    await walkTo(page, 96, 130, { yFirst: true });
+    await walkTo(page, 96, 112, { yFirst: true });
 
     const bundleProbe = await page.evaluate(
       () =>
@@ -378,19 +393,14 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
     probe = (await uiProbe(page))!;
     expect(probe.mode).toBe('workbench');
 
-    const fuse = slotBy(
-      probe,
-      'player_hotbar',
-      (s) => s.definition_id === 'fuse_contact',
-    );
+    const fuse = playerSlotBy(probe, (s) => s.definition_id === 'fuse_contact');
     const input0 = slotBy(probe, 'workbench_input', (s) => s.slot_index === 0);
 
     await dragSlot(page, fuse, input0);
     probe = (await uiProbe(page))!;
 
-    const housing = slotBy(
+    const housing = playerSlotBy(
       probe,
-      'player_hotbar',
       (s) => s.definition_id === 'relay_housing',
     );
     const input1 = slotBy(probe, 'workbench_input', (s) => s.slot_index === 1);
@@ -430,9 +440,8 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
     probe = (await uiProbe(page))!;
     expect(probe.mode).toBe('container');
 
-    const cartridge = slotBy(
+    const cartridge = playerSlotBy(
       probe,
-      'player_hotbar',
       (s) => s.definition_id === 'fused_relay_cartridge',
     );
     const emptyLocker = slotBy(
@@ -456,7 +465,8 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
 
     // Pick up the sample kit, then cross into the laboratory and back: the
     // hotbar survives the transition (store is session scope).
-    await walkTo(page, 176, 130, { yFirst: true });
+    await walkTo(page, 60, 112);
+    await walkTo(page, 176, 112);
     await press(page, 'Space');
     await page.waitForTimeout(400);
     await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {

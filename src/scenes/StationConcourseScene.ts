@@ -27,7 +27,6 @@ import {
   M03_OPPORTUNITY_IDS,
   m03OccasionStatus,
 } from '../inventory/m03Reset';
-import { ensureLabStorageSeeded } from '../inventory/store';
 import {
   installInventoryTelemetry,
   setInventoryTelemetryScene,
@@ -99,12 +98,12 @@ export class StationConcourseScene extends PilotZoneScene {
 
   create(data?: { spawn?: string }) {
     // Inventory foundation wiring (InventoryLabScene precedent): icons,
-    // secondary telemetry bridge, the Component Locker's one-time seed and
-    // the M02/M03 declarations (register: declared + offered; idempotent).
+    // secondary telemetry bridge and the M02/M03 declarations (the Component
+    // Locker starts EMPTY on the route — incoming supplies are stowed there;
+    // the proving-ground seed is lab-only) (register: declared + offered; idempotent).
     ensureInventoryIconTextures(this);
     installInventoryTelemetry();
     setInventoryTelemetryScene(key.scene.stationConcourse);
-    ensureLabStorageSeeded();
     declareM02Opportunity();
     declareM03Opportunities();
     stampContaminationNotes();

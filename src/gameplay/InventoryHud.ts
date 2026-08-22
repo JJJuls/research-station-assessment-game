@@ -13,6 +13,10 @@ import Phaser from 'phaser';
 
 import { Depth } from '../constants';
 import {
+  getItemDefinition,
+  isKnownItemDefinition,
+} from '../inventory/itemDefs';
+import {
   getInventorySlots,
   getSelectedInventoryIndex,
   getSelectedInventoryItem,
@@ -21,7 +25,33 @@ import {
   selectInventorySlot,
   selectNextInventoryItem,
 } from './inventory';
-import { getGameItem } from './items';
+import { getGameItem, isKnownGameItem } from './items';
+
+/**
+ * Belt presentation for any stack the authoritative inventory can hold:
+ * legacy carry items keep their gameplay registry entry; every other
+ * inventory definition (supplies, records, components) falls back to its
+ * inventory definition. Never throws — the belt must never abort a store
+ * change listener (professional pilot, Unit 3 fix).
+ */
+function beltPresentation(itemId: string): {
+  icon: string | null;
+  label: string;
+} {
+  if (isKnownGameItem(itemId)) {
+    const item = getGameItem(itemId);
+
+    return { icon: item.icon, label: item.label };
+  }
+
+  if (isKnownItemDefinition(itemId)) {
+    const definition = getItemDefinition(itemId);
+
+    return { icon: definition.icon, label: definition.displayName };
+  }
+
+  return { icon: null, label: itemId };
+}
 
 const SLOT_SIZE = 34;
 const SLOT_GAP = 4;
@@ -95,7 +125,7 @@ export class InventoryHud {
       );
 
       const existingIcon = this.slotIcons[index];
-      const iconKey = itemId !== null ? getGameItem(itemId).icon : null;
+      const iconKey = itemId !== null ? beltPresentation(itemId).icon : null;
 
       if (existingIcon !== null) {
         existingIcon.destroy();
@@ -117,7 +147,9 @@ export class InventoryHud {
     const selectedItem = getSelectedInventoryItem();
 
     if (selectedItem !== null) {
-      this.nameChip.setText(getGameItem(selectedItem).label).setVisible(true);
+      this.nameChip
+        .setText(beltPresentation(selectedItem).label)
+        .setVisible(true);
     } else {
       this.nameChip.setVisible(false);
     }

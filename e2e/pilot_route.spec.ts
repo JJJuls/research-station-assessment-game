@@ -130,11 +130,8 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
     probe = await pilotProbe(page);
     expect(probe?.beacon?.visible).toBe(false);
 
-    // Station placeholders answer neutrally and emit only route telemetry.
-    await press(page, 'Space');
-    await page.waitForTimeout(400);
-    expect(await pilotEventTypes(page)).toContain('pilot_station_opened');
-    await expectNoMeasurementEvents(page);
+    // (The filing workstation is a live M02 window since Unit 3 — the bare
+    // topology walk deliberately never opens a measurement station.)
 
     // M station map: current + destination + discovery.
     await press(page, 'm');
