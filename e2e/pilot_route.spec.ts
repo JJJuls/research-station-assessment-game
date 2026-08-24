@@ -298,6 +298,11 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
     }).catch(() => undefined);
     expect(await pilotEventTypes(page)).toContain('pilot_core_console_opened');
 
+    // Unit 7: the console is live — leave via the explicit return
+    // option (nothing committed, the record stays open).
+    await selectPromptOption(page, 2);
+    await page.waitForTimeout(400);
+
     // Map from the deck: every zone discovered, current = deck.
     await press(page, 'm');
     await page.waitForFunction(
