@@ -31,6 +31,13 @@ import type { ScanRecord } from '../scanController';
 // entered / completed / invalid) belongs to the hosting scene — exactly
 // the CoolantYard ↔ m23Excavation division of responsibility.
 
+let hostScene = 'field_actions_lab';
+
+/** Pilot hosts re-home the scene field on family events (additive). */
+export function setM23FieldRecoveryHostScene(scene: string): void {
+  hostScene = scene;
+}
+
 export const M23FR_OPPORTUNITY_ID = 'proto_m23_field_recovery';
 export const M23FR_ENTRY_STATE_VERSION = 'm23-field-recovery-v1';
 export const M23FR_WINDOW_ID = 'm23fr_w1';
@@ -74,6 +81,7 @@ export const M23FR_EVENT_TYPES = [
 
 export type M23FieldRecoveryExitStatus =
   | 'completed'
+  | 'next_job'
   | 'reset'
   | 'scene_exit'
   | 'technical_failure';
@@ -129,7 +137,7 @@ export const m23FieldRecoveryState: M23FieldRecoveryState =
 
 function logM23FR(eventType: string, metadata: Record<string, unknown> = {}) {
   emitFieldActionLog({
-    scene: 'field_actions_lab',
+    scene: hostScene,
     episode: 'proto_m23_field_recovery',
     event_type: eventType,
     object_id: 'm23_field_recovery_plot',

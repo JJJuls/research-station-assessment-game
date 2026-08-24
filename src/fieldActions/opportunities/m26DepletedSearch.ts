@@ -33,6 +33,13 @@ import type { ScanRecord } from '../scanController';
 // through the injected field-action log sink; validity-register
 // bookkeeping belongs to the hosting scene.
 
+let hostScene = 'field_actions_lab';
+
+/** Pilot hosts re-home the scene field on family events (additive). */
+export function setM26DepletedSearchHostScene(scene: string): void {
+  hostScene = scene;
+}
+
 export const M26DS_OPPORTUNITY_ID = 'proto_m26_depleted_search';
 export const M26DS_ENTRY_STATE_VERSION = 'm26-depleted-search-v1';
 export const M26DS_WINDOW_ID = 'm26ds_w1';
@@ -79,6 +86,7 @@ export type M26DepletedSearchPhase =
   | 'closed';
 
 export type M26DepletedSearchExitStatus =
+  | 'next_job'
   | 'reset'
   | 'scene_exit'
   | 'technical_failure';
@@ -128,7 +136,7 @@ export const m26DepletedSearchState: M26DepletedSearchState =
 
 function logM26DS(eventType: string, metadata: Record<string, unknown> = {}) {
   emitFieldActionLog({
-    scene: 'field_actions_lab',
+    scene: hostScene,
     episode: 'proto_m26_depleted_search',
     event_type: eventType,
     object_id: 'm26_depleted_search_plots',

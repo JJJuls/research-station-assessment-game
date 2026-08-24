@@ -242,10 +242,12 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
     });
     await selectPromptOption(page, 1);
     expect((await pilotProbe(page))?.stage).toBe('exterior_work');
+    // Unit 5: Noor's exterior_work beat is the job queue — option 1
+    // accepts the first job, option 2 is always "I am done outside".
     await openPromptAt(page, PILOT.yard.noor, {
       approachOffset: { x: 0, y: 40 },
     });
-    await selectPromptOption(page, 1);
+    await selectPromptOption(page, 2);
     probe = await pilotProbe(page);
     expect(probe?.stage).toBe('report_kai');
     expect(probe?.beacon?.kind).toBe('door');

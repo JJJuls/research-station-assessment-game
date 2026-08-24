@@ -130,3 +130,85 @@ export function m25Summary() {
 export function resetM25State() {
   Object.assign(m25State, createInitialM25State());
 }
+
+/* ————————————————————— Unit 5: fresh-instance factory ————————————————— */
+
+/**
+ * Yard-host instance factory (pilot Unit 5, REV-BLOCK-3): a FRESH M25
+ * state container, fully independent of the legacy Pump House singleton
+ * above (which stays untouched for the dev-only host). The pilot's
+ * Yard Coolant Pump host owns its own opportunity id
+ * (`proto_m25_yardpump_interlock`) and event family
+ * (`proto_m25_yardpump_*`); the standardised lock rules (three useful
+ * cycles, identical readouts, identical lock statement) are shared via
+ * the exported constants. No logging, no scoring.
+ */
+export function createM25PumpLockState() {
+  const state = createInitialM25State();
+
+  return {
+    get state(): Readonly<M25State> {
+      return state;
+    },
+    /** One press of the prime control (identical rules to pressM25Prime). */
+    pressPrime():
+      | {
+          kind: 'cycle';
+          cycleNumber: number;
+          readout: string;
+          lockEngaged: boolean;
+        }
+      | { kind: 'locked'; postLockPresses: number }
+      | { kind: 'running' } {
+      if (state.running) {
+        return { kind: 'running' };
+      }
+
+      if (state.lock_engaged && !state.reset_done) {
+        state.post_lock_primes += 1;
+
+        return { kind: 'locked', postLockPresses: state.post_lock_primes };
+      }
+
+      state.useful_cycles += 1;
+
+      const readout = M25_CYCLE_READOUTS[state.useful_cycles - 1] ?? '';
+
+      if (state.useful_cycles >= M25_USEFUL_CYCLES) {
+        state.lock_engaged = true;
+      }
+
+      return {
+        kind: 'cycle',
+        cycleNumber: state.useful_cycles,
+        readout,
+        lockEngaged: state.lock_engaged,
+      };
+    },
+    windowOpen(): boolean {
+      return state.lock_engaged && !state.reset_done;
+    },
+    /** The visible different strategy: resetting the breaker. */
+    resetInterlock(): boolean {
+      if (!state.lock_engaged || state.reset_done) {
+        return false;
+      }
+
+      state.reset_done = true;
+      state.running = true;
+
+      return true;
+    },
+    summary() {
+      return {
+        useful_cycles: state.useful_cycles,
+        lock_engaged: state.lock_engaged,
+        post_lock_primes: state.post_lock_primes,
+        reset_done: state.reset_done,
+        running: state.running,
+      };
+    },
+  };
+}
+
+export type M25PumpLockInstance = ReturnType<typeof createM25PumpLockState>;

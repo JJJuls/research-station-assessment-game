@@ -105,3 +105,71 @@ export function m22Summary() {
 export function resetM22State() {
   Object.assign(m22State, createInitialM22State());
 }
+
+/* ————————————————————— Unit 5: fresh-instance factory ————————————————— */
+
+/**
+ * Yard-host instance factory (pilot Unit 5, REV-BLOCK-3): a FRESH M22
+ * state container, fully independent of the legacy Pump House singleton
+ * above (which stays untouched for the dev-only host). The pilot's
+ * Relay Housing host owns its own opportunity id
+ * (`proto_m22_housing_seal_setback`) and event family
+ * (`proto_m22_housing_*`); this factory provides only the standardised
+ * setback state machine — identical transition rules to the singleton,
+ * instance-scoped state. No logging, no scoring, no affect inference.
+ */
+export function createM22SetbackState() {
+  const state = createInitialM22State();
+
+  return {
+    get state(): Readonly<M22State> {
+      return state;
+    },
+    markFixAttempted() {
+      state.fix_attempted = true;
+    },
+    markSetbackShown() {
+      state.setback_shown = true;
+    },
+    windowOpen(): boolean {
+      return state.setback_shown && !state.closed;
+    },
+    markSpareSealFetched() {
+      if (state.setback_shown) {
+        state.spare_seal_fetched = true;
+      }
+    },
+    /** Seats the fresh seal (recovery completion). False before fetch. */
+    seatSeal(): boolean {
+      if (!state.setback_shown || !state.spare_seal_fetched) {
+        return false;
+      }
+
+      state.seal_seated = true;
+      state.closed = true;
+
+      return true;
+    },
+    markLeftDuringWindow() {
+      if (state.setback_shown && !state.closed) {
+        state.left_during_window = true;
+      }
+    },
+    /** Terminal close without recovery (Final Core / departure code). */
+    close() {
+      state.closed = true;
+    },
+    summary() {
+      return {
+        fix_attempted: state.fix_attempted,
+        setback_shown: state.setback_shown,
+        spare_seal_fetched: state.spare_seal_fetched,
+        seal_seated: state.seal_seated,
+        left_during_window: state.left_during_window,
+        closed: state.closed,
+      };
+    },
+  };
+}
+
+export type M22SetbackInstance = ReturnType<typeof createM22SetbackState>;

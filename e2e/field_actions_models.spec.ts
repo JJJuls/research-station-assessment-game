@@ -118,6 +118,7 @@ const cycleRecord = (
   deck_form: 'A',
   post_depletion: false,
   depleted_now: false,
+  cycle_duration_ms: 1500,
   ...overrides,
 });
 

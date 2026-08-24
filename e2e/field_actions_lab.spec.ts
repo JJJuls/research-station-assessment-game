@@ -316,9 +316,9 @@ async function faceCellFromNorth(page: Page, cx: number, cy: number) {
 
 /**
  * Runs full cycles (locking inside the band) until the deck position
- * reaches the target. A mistimed lock is a MISS by design (it costs
- * the cycle, never a deck position), so under automation latency the
- * loop simply casts again — exactly what a participant would do.
+ * reaches the target. EVERY committed cycle consumes a position (M24
+ * standardisation correction) — in-band locking is kept so automation
+ * exercises the canonical clean-catch path deterministically.
  */
 async function pullUntilDeckPosition(
   page: Page,
@@ -735,10 +735,13 @@ test.describe('field actions lab', () => {
 
     await walkToRig(page);
 
-    // Deterministic timing-boundary check: a lock committed OUTSIDE the
-    // band is a miss — the cycle resolves, the event records
-    // hook_set=true / locked_in_band=false, and NO deck position is
-    // consumed. (Rare in-band drift is detected and retried honestly.)
+    // Deterministic timing-boundary check (M24 standardisation
+    // correction): a lock committed OUTSIDE the band still resolves the
+    // cycle AND consumes a deck position — the event records
+    // hook_set=true / locked_in_band=false, and timing accuracy stays
+    // secondary motor telemetry that never changes the outcome. (Rare
+    // in-band drift is detected and retried honestly; every committed
+    // attempt consumes a position either way.)
     let missProven = false;
 
     for (let attempt = 0; attempt < 3 && !missProven; attempt++) {
@@ -761,39 +764,45 @@ test.describe('field actions lab', () => {
       await page.keyboard.press('Space');
       await waitMagnetPhase(page, 'idle');
 
-      if ((await faProbe(page))!.magnet.deckPosition === posBefore) {
-        const cycles = (await getEvents(page)).filter(
-          (e) => e.event_type === 'secondary_field_action_magnet_cycle',
-        );
-        const last = (cycles[cycles.length - 1].metadata ?? {}) as Record<
-          string,
-          unknown
-        >;
+      const cycles = (await getEvents(page)).filter(
+        (e) => e.event_type === 'secondary_field_action_magnet_cycle',
+      );
+      const last = (cycles[cycles.length - 1].metadata ?? {}) as Record<
+        string,
+        unknown
+      >;
 
-        expect(last.hook_set).toBe(true);
-        expect(last.locked_in_band).toBe(false);
+      expect((await faProbe(page))!.magnet.deckPosition).toBe(posBefore + 1);
+      expect(last.hook_set).toBe(true);
+      expect(last.pull_position).toBe(posBefore + 1);
+      expect(typeof last.cycle_duration_ms).toBe('number');
+
+      if (last.locked_in_band === false) {
         missProven = true;
       }
     }
 
     expect(missProven).toBe(true);
 
-    // Keyboard route: cycles until deck position 1 is consumed (a
-    // mistimed lock is a miss and costs no deck position).
-    await pullUntilDeckPosition(page, 1, 'keyboard');
+    // Keyboard route: one more committed cycle via the keyboard lock
+    // (every committed cycle consumes exactly one position).
+    const posAfterMiss = (await faProbe(page))!.magnet.deckPosition;
+
+    await pullUntilDeckPosition(page, posAfterMiss + 1, 'keyboard');
 
     const afterFirst = await faProbe(page);
 
-    expect(afterFirst!.magnet.deckPosition).toBe(1);
+    expect(afterFirst!.magnet.deckPosition).toBe(posAfterMiss + 1);
     expect(afterFirst!.magnet.depleted).toBe(false);
 
-    // ESC during the timing window cancels the cycle (no menu pause).
+    // ESC during the timing window cancels the cycle (no menu pause) —
+    // a CANCELLED cycle is the one case that consumes nothing.
     await pressExpectingEffect(page, 'F');
     await waitMagnetPhase(page, 'timing_window', 10_000);
     await page.keyboard.press('Escape');
     await waitMagnetPhase(page, 'idle', 10_000);
     probe = await faProbe(page);
-    expect(probe!.magnet.deckPosition).toBe(1);
+    expect(probe!.magnet.deckPosition).toBe(posAfterMiss + 1);
 
     // The scene is still live (the menu did not open): movement works.
     const before = await playerProbe(page);
@@ -801,14 +810,14 @@ test.describe('field actions lab', () => {
     await driveAxisTo(page, 'x', before.x - 30, 8);
 
     // Pointer route: the click sets the lock through the SAME
-    // transition function; deck position 2 is consumed.
+    // transition function; the next deck position is consumed.
     await driveAxisTo(page, 'x', 750, 10);
-    await pullUntilDeckPosition(page, 2, 'pointer');
+    await pullUntilDeckPosition(page, posAfterMiss + 2, 'pointer');
     probe = await faProbe(page);
-    expect(probe!.magnet.deckPosition).toBe(2);
+    expect(probe!.magnet.deckPosition).toBe(posAfterMiss + 2);
 
-    // Every cycle (resolved pulls, misses AND the cancelled one) is
-    // recorded exactly once: cycles = pulls + misses + 1 cancel.
+    // Every cycle (committed pulls AND the cancelled one) is recorded
+    // exactly once.
     const cycleEvents = (await getEventTypes(page)).filter(
       (t) => t === 'secondary_field_action_magnet_cycle',
     );
@@ -823,7 +832,7 @@ test.describe('field actions lab', () => {
     await bootLab(page, 'depletion');
     await walkToRig(page);
 
-    // Consume all six deck positions (misses cost nothing; retry).
+    // Consume all six deck positions (every committed cycle consumes).
     for (let attempt = 0; attempt < 18; attempt++) {
       const magnet = await faProbe(page);
 

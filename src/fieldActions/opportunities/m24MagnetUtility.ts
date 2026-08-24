@@ -26,6 +26,13 @@ import type { MagnetCycleRecord } from '../magnetWinchController';
 // through the injected field-action log sink; validity-register
 // bookkeeping belongs to the hosting scene.
 
+let hostScene = 'field_actions_lab';
+
+/** Pilot hosts re-home the scene field on family events (additive). */
+export function setM24MagnetUtilityHostScene(scene: string): void {
+  hostScene = scene;
+}
+
 export const M24MU_OPPORTUNITY_ID = 'proto_m24_magnet_utility';
 export const M24MU_ENTRY_STATE_VERSION = 'm24-magnet-utility-v1';
 export const M24MU_WINDOW_ID = 'm24mu_w1';
@@ -47,6 +54,7 @@ export const M24MU_EVENT_TYPES = [
 ] as const;
 
 export type M24MagnetUtilityExitStatus =
+  | 'next_job'
   | 'reset'
   | 'scene_exit'
   | 'technical_failure';
@@ -91,7 +99,7 @@ export const m24MagnetUtilityState: M24MagnetUtilityState =
 
 function logM24MU(eventType: string, metadata: Record<string, unknown> = {}) {
   emitFieldActionLog({
-    scene: 'field_actions_lab',
+    scene: hostScene,
     episode: 'proto_m24_magnet_utility',
     event_type: eventType,
     object_id: 'm24_magnet_utility_rig',
@@ -186,6 +194,7 @@ export function noteM24MagnetUtilityCycle(
     item_id: record.item_id,
     item_delivery: record.item_delivery,
     pull_position: record.pull_position,
+    cycle_duration_ms: record.cycle_duration_ms,
     post_depletion: record.post_depletion,
     post_signal: postSignal,
     cycle_number_pre_signal: state.cycle_count_pre_signal,

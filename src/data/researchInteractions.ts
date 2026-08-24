@@ -693,6 +693,20 @@ export const researchInteractions = {
     event_type: 'pilot_station_opened',
     score_tags: [],
   },
+  pilotRigReadout: {
+    object_id: 'pilot_rig_readout',
+    label: 'Recovery Rig Readout',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
+  pilotVerificationPost: {
+    object_id: 'pilot_verification_post',
+    label: 'Verification Post',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
   pilotCoreConsole: {
     object_id: 'pilot_core_console',
     label: 'Core Synchronisation Console',

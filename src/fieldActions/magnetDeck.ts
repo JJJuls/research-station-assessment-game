@@ -9,9 +9,12 @@
  *
  * Composition per form (6 positions): 2 × low-value scrap, 1 × modest
  * useful material, 1 × uncommon high-utility candidate item, 2 × empty
- * pull. Only successful (in-band) locks consume a deck position — a
- * timing miss costs the cycle, never a deck position, so mistimed play
- * cannot shrink the participant's outcome opportunity.
+ * pull. EVERY committed (non-cancelled) cycle consumes one deck
+ * position and receives that position's outcome regardless of
+ * timing-band accuracy (M24 standardisation correction, pilot Unit 5):
+ * timing is secondary motor telemetry only, so every participant who
+ * commits six cycles receives the identical outcome multiset and the
+ * identical depletion exposure.
  *
  * After the deck is exhausted the rig is objectively depleted: every
  * later pull is empty BY CONSTRUCTION (no later pull may secretly
@@ -81,7 +84,7 @@ export const MAGNET_DECK_FORMS: Record<
 
 export interface MagnetDeckState {
   form: MagnetDeckForm | null;
-  /** Successful pulls resolved so far (deck positions consumed). */
+  /** Committed pulls resolved so far (deck positions consumed). */
   position: number;
   /** Total pulls resolved including post-depletion pulls. */
   total_pulls: number;
@@ -124,8 +127,8 @@ export interface MagnetPullResult {
 }
 
 /**
- * Resolves one successful (in-band) pull. Post-depletion pulls are
- * mechanically identical but always empty.
+ * Resolves one committed pull. Post-depletion pulls are mechanically
+ * identical but always empty.
  */
 export function drawMagnetPull(): MagnetPullResult {
   if (magnetDeckState.form === null) {

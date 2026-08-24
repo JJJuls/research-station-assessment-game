@@ -79,6 +79,8 @@ export interface MagnetCycleRecord {
   deck_form: string | null;
   post_depletion: boolean;
   depleted_now: boolean;
+  /** Full cycle duration, start (F) → resolution (REV-MIN-8). */
+  cycle_duration_ms: number | null;
 }
 
 export interface MagnetWinchConfig {
@@ -88,7 +90,7 @@ export interface MagnetWinchConfig {
   /** Collection tray position (inventory-full caches appear here). */
   tray: { x: number; y: number };
   caches: FieldCacheManager;
-  /** Finite-deck draw for a successful in-band lock. */
+  /** Finite-deck draw for a committed (non-cancelled) cycle. */
   drawOutcome: () => MagnetPullResult;
   onCycleResolved: (record: MagnetCycleRecord) => void;
   showFeedback: (message: string) => void;
@@ -131,6 +133,7 @@ export class MagnetWinchController {
   private lowerTween: Phaser.Tweens.Tween | null = null;
   private reelTween: Phaser.Tweens.Tween | null = null;
   private cooldownTimer: Phaser.Time.TimerEvent | null = null;
+  private cycleStartedAt = 0;
 
   constructor(config: MagnetWinchConfig) {
     this.config = config;
@@ -186,6 +189,7 @@ export class MagnetWinchController {
     const { scene } = this.config;
 
     beginManualWorldAction(() => this.cancelCycle());
+    this.cycleStartedAt = Date.now();
     this.phase = 'lowering';
     sfxMachineOn();
 
@@ -339,43 +343,36 @@ export class MagnetWinchController {
     // action's cancel hook while keeping the input isolation.
     beginManualWorldAction();
 
+    // M24 standardisation correction (pilot Unit 5): EVERY committed
+    // (non-cancelled) cycle consumes one deck position and receives that
+    // position's outcome, whether or not the lock fell inside the band.
+    // Timing accuracy (`locked_in_band`, lock source, marker phase) is
+    // recorded as secondary motor telemetry only — it never changes the
+    // outcome, so every participant who commits six cycles receives the
+    // identical outcome multiset and the identical depletion exposure.
+    const pull = this.config.drawOutcome();
+
     if (inBand) {
       sfxPickup();
-      const pull = this.config.drawOutcome();
-
-      this.attachPayload(pull.outcome.item_id);
-      this.reelUp({
-        completed: true,
-        cancelled: false,
-        hook_set: true,
-        locked_in_band: true,
-        lock_source: source,
-        outcome_tier: pull.outcome.tier,
-        item_id: pull.outcome.item_id,
-        item_delivery: null,
-        pull_position: pull.pull_position,
-        deck_form: pull.form,
-        post_depletion: pull.post_depletion,
-        depleted_now: pull.depleted_now,
-      });
-
-      return;
+    } else {
+      sfxUnavailable();
     }
 
-    sfxUnavailable();
+    this.attachPayload(pull.outcome.item_id);
     this.reelUp({
       completed: true,
       cancelled: false,
       hook_set: true,
-      locked_in_band: false,
+      locked_in_band: inBand,
       lock_source: source,
-      outcome_tier: null,
-      item_id: null,
+      outcome_tier: pull.outcome.tier,
+      item_id: pull.outcome.item_id,
       item_delivery: null,
-      pull_position: null,
-      deck_form: null,
-      post_depletion: false,
-      depleted_now: false,
+      pull_position: pull.pull_position,
+      deck_form: pull.form,
+      post_depletion: pull.post_depletion,
+      depleted_now: pull.depleted_now,
+      cycle_duration_ms: null,
     });
   }
 
@@ -419,11 +416,12 @@ export class MagnetWinchController {
 
     this.phase = 'resolved';
 
-    const finished: MagnetCycleRecord = { ...record };
+    const finished: MagnetCycleRecord = {
+      ...record,
+      cycle_duration_ms: Date.now() - this.cycleStartedAt,
+    };
 
-    if (!record.locked_in_band) {
-      showFloatingText(scene, rig.x, rig.y - 10, 'Mistimed — nothing held');
-    } else if (record.item_id === null) {
+    if (record.item_id === null) {
       showFloatingText(scene, rig.x, rig.y - 10, 'Nothing on the magnet');
     } else {
       const item = getGameItem(record.item_id);
@@ -503,6 +501,7 @@ export class MagnetWinchController {
       deck_form: null,
       post_depletion: false,
       depleted_now: false,
+      cycle_duration_ms: Date.now() - this.cycleStartedAt,
     });
   }
 
