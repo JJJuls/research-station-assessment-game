@@ -100,6 +100,7 @@ import { snowfall } from '../gameplay';
 import { isWorldActionActive, performWorldAction } from '../gameplay/actions';
 import { FieldActionController } from '../gameplay/fieldActionKeys';
 import { addInventoryItem, hasInventoryItem } from '../gameplay/inventory';
+import { playSheetEffect } from '../gameplay/sheetEffects';
 import { M25_LOCK_STATEMENT } from '../measurement/m25PumpLock';
 import {
   assignCounterbalance,
@@ -697,14 +698,31 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
           this.scanController.isCoolingDown()
             ? null
             : { x: this.player.x, y: this.player.y },
-        perform: () => this.scanController.performScan(),
+        perform: () => {
+          if (this.scanController.performScan()) {
+            // Presentation only (pilot Unit 6): facing-aware action
+            // animation + one-shot pulse. No mechanic reads these.
+            this.player.playActionAnim('scan');
+            playSheetEffect(
+              this,
+              'plv1-fx-scan-pulse',
+              this.player.x,
+              this.player.y - 8,
+            );
+          }
+        },
         onIneligiblePress: () => this.scanController.showCooldownFeedback(),
       },
       {
         key: 'D',
         label: 'Dig',
         getTarget: () => this.digController.getDigTarget(),
-        perform: (target) => this.digController.performDig(target),
+        perform: (target) => {
+          if (this.digController.performDig(target)) {
+            this.player.playActionAnim('dig');
+            playSheetEffect(this, 'plv1-fx-dig-dust', target.x, target.y - 6);
+          }
+        },
         onIneligiblePress: () => this.digController.handleIneligiblePress(),
       },
       {
@@ -1070,6 +1088,16 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
 
   private onMagnetCycleResolved(record: MagnetCycleRecord): void {
     logSecondaryFieldAction('magnet_cycle', { ...record });
+
+    if (!record.cancelled) {
+      // Presentation only: spark burst at the pit as the cycle resolves.
+      playSheetEffect(
+        this,
+        'plv1-fx-sparks',
+        YARD_SITES.magnetRig.x,
+        YARD_SITES.magnetRig.y + 22,
+      );
+    }
 
     const now = Date.now();
 
@@ -1634,6 +1662,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       return;
     }
 
+    this.player.playActionAnim('pickup');
     this.showFeedbackMessage('Cache collected.');
     logSecondaryFieldAction('cache_recovered', {
       cache_id: result.entry.cache_id,

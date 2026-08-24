@@ -2,6 +2,11 @@ import Phaser from 'phaser';
 
 import {
   key,
+  PLAYER_ACTION_FRAMES_PER_ROW,
+  PLAYER_ACTION_KINDS,
+  PLAYER_ACTION_ROW,
+  type PlayerActionKind,
+  playerActionSheetKey,
   RESEARCHER_IDLE_FRAMES,
   RESEARCHER_WALK_FRAMES,
   type ResearcherDirection,
@@ -40,6 +45,20 @@ const researcherWalkAnim = (dir: ResearcherDirection) =>
   `researcher_walk_${dir}`;
 const researcherIdleAnim = (dir: ResearcherDirection) =>
   `researcher_idle_${dir}`;
+const researcherActionAnim = (
+  kind: PlayerActionKind,
+  dir: ResearcherDirection,
+) => `researcher_action_${kind}_${dir}`;
+
+/**
+ * Pilot Unit 6: playback rates spreading each 6-frame action sheet over
+ * its world-action duration (scan 1000 ms, dig 1500 ms, pickup ~750 ms).
+ */
+const ACTION_ANIM_FRAME_RATES: Record<PlayerActionKind, number> = {
+  scan: 6,
+  dig: 4,
+  pickup: 8,
+};
 
 type Cursors = Record<
   'up' | 'left' | 'down' | 'right' | 'space',
@@ -158,6 +177,30 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             repeat: -1,
           });
         }
+
+        // Pilot Unit 6: PROVISIONAL action sheets (presentation only;
+        // created only when the Boot-loaded spritesheet exists).
+        for (const kind of PLAYER_ACTION_KINDS) {
+          const sheet = playerActionSheetKey(kind);
+          const animKey = researcherActionAnim(kind, dir);
+
+          if (this.scene.textures.exists(sheet) && !anims.exists(animKey)) {
+            const row = PLAYER_ACTION_ROW[dir];
+
+            anims.create({
+              key: animKey,
+              frames: anims.generateFrameNumbers(sheet, {
+                start: row * PLAYER_ACTION_FRAMES_PER_ROW,
+                end:
+                  row * PLAYER_ACTION_FRAMES_PER_ROW +
+                  PLAYER_ACTION_FRAMES_PER_ROW -
+                  1,
+              }),
+              frameRate: ACTION_ANIM_FRAME_RATES[kind],
+              repeat: 0,
+            });
+          }
+        }
       }
 
       return;
@@ -265,8 +308,32 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.moveSelector(animation);
   }
 
+  /**
+   * Pilot Unit 6 (presentation only): plays a one-shot PROVISIONAL
+   * PixelLab action animation facing the current direction. No-op on
+   * the Misa fallback skin or when the sheets are not loaded. RoomScene
+   * skips update() while a world action runs, so the animation persists
+   * for the action's duration; normal idle/walk resumes afterwards.
+   */
+  playActionAnim(kind: PlayerActionKind): void {
+    if (this.skin !== 'researcher') {
+      return;
+    }
+
+    const animKey = researcherActionAnim(kind, this.facing ?? 'south');
+
+    if (this.scene.anims.exists(animKey)) {
+      this.anims.play(animKey, true);
+    }
+  }
+
+  /** Last logical facing (no initializer — see stepTimerMs note). */
+  private facing?: ResearcherDirection;
+
   private moveSelector(animation: Animation) {
     const { body, selector } = this;
+
+    this.facing = ANIMATION_TO_DIRECTION[animation];
 
     switch (animation) {
       case Animation.Left:

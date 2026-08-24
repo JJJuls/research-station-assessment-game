@@ -437,7 +437,10 @@ export abstract class PilotZoneScene extends RoomScene {
 
   /** SPACE/E with no station/door in range collects a bundle in reach. */
   protected onEmptyInteract(): void {
-    this.bundles.tryCollectNearest(this.player.x, this.player.y);
+    if (this.bundles.tryCollectNearest(this.player.x, this.player.y)) {
+      // Presentation only (pilot Unit 6): one-shot pickup animation.
+      this.player.playActionAnim('pickup');
+    }
   }
 
   /** Pilot zones allow overlay world drops (materialised as bundles). */

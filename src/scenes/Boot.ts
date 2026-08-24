@@ -2,7 +2,11 @@ import { Scene } from 'phaser';
 
 import * as assets from '../assets';
 import {
+  EFFECT_SHEET_URLS,
   key,
+  PLAYER_ACTION_KINDS,
+  PLAYER_ACTION_SHEET_URLS,
+  playerActionSheetKey,
   PROP_TEXTURES,
   RESEARCHER_DIRECTIONS,
   RESEARCHER_IDLE_FRAMES,
@@ -88,6 +92,22 @@ export class Boot extends Scene {
           `assets/characters/player/idle/${dir}/${i}.png`,
         );
       }
+    }
+
+    // Pilot Unit 6: PROVISIONAL MODEL-SELECTED player action sheets and
+    // one-shot effect sheets, loaded pixel-exact as spritesheets
+    // (docs/game/PILOT-ASSET-SELECTION-AND-PROVENANCE.md — NOT final
+    // art approval; presentation only, no mechanic reads them).
+    for (const kind of PLAYER_ACTION_KINDS) {
+      this.load.spritesheet(
+        playerActionSheetKey(kind),
+        PLAYER_ACTION_SHEET_URLS[kind],
+        { frameWidth: 96, frameHeight: 96 },
+      );
+    }
+
+    for (const [fxKey, url] of Object.entries(EFFECT_SHEET_URLS)) {
+      this.load.spritesheet(fxKey, url, { frameWidth: 64, frameHeight: 64 });
     }
   }
 

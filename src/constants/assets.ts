@@ -6,7 +6,7 @@
  * docs/assets/pixellab-asset-manifest.md; formally locked at the
  * stimulus-freeze gate (plan §17b) before any pilot/formal data collection.
  */
-export const ASSET_SET_VERSION = 'outpost-assets-v4';
+export const ASSET_SET_VERSION = 'outpost-assets-v5';
 
 /** Player character texture keys (PixelLab player-researcher-v1). */
 export const RESEARCHER_DIRECTIONS = [
@@ -46,4 +46,42 @@ export const PROP_TEXTURES: Record<string, string> = {
   'prop-archive-shelves': 'assets/props/archive/log-shelves.png',
   'prop-archive-panels': 'assets/props/archive/data-panels.png',
   'prop-archive-racks': 'assets/props/archive/server-racks.png',
+};
+
+/**
+ * Pilot Unit 6 — PROVISIONAL MODEL-SELECTED PixelLab v1 sheets
+ * (PROVISIONAL — USER-AUTHORISED FOR EXPERIMENTAL PILOT INTEGRATION —
+ * NOT FINAL ART APPROVAL). Selection + verification:
+ * docs/game/PILOT-ASSET-SELECTION-AND-PROVENANCE.md. Sheets load as
+ * Phaser spritesheets (pixel-exact, no retouching): player action
+ * sheets are 576×384 (6 frames × rows S/W/E/N of 96×96, feet-line
+ * y=71); effect sheets are 448×64 (7 one-shot frames of 64×64).
+ */
+export const PLAYER_ACTION_KINDS = ['scan', 'dig', 'pickup'] as const;
+export type PlayerActionKind = (typeof PLAYER_ACTION_KINDS)[number];
+
+export const playerActionSheetKey = (kind: PlayerActionKind) =>
+  `plv1-action-${kind}`;
+
+export const PLAYER_ACTION_SHEET_URLS: Record<PlayerActionKind, string> = {
+  scan: 'assets/pixellab-runtime/player-actions/scan-sweep.png',
+  dig: 'assets/pixellab-runtime/player-actions/dig.png',
+  pickup: 'assets/pixellab-runtime/player-actions/pickup.png',
+};
+
+export const PLAYER_ACTION_FRAMES_PER_ROW = 6;
+
+/** Sheet row per facing (pack contract: rows south/west/east/north). */
+export const PLAYER_ACTION_ROW: Record<ResearcherDirection, number> = {
+  south: 0,
+  west: 1,
+  east: 2,
+  north: 3,
+};
+
+/** One-shot effect sheets (texture key → URL; 7 frames of 64×64). */
+export const EFFECT_SHEET_URLS: Record<string, string> = {
+  'plv1-fx-dig-dust': 'assets/pixellab-runtime/effects/dig-dust.png',
+  'plv1-fx-scan-pulse': 'assets/pixellab-runtime/effects/scan-pulse.png',
+  'plv1-fx-sparks': 'assets/pixellab-runtime/effects/repair-sparks.png',
 };
