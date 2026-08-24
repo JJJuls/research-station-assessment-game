@@ -1,15 +1,64 @@
 /**
  * Diagnostics & Signal Laboratory — pilot zone 2 (professional pilot route).
  *
- * One coherent laboratory with two physically distinct work areas: the
- * ANALYSIS TERMINALS bank (west wall: terminal orientation + four decoder
- * terminals, layout counterbalanced per session) and the CONDUIT BAY (east
- * wall: the lattice bench and the fault-diagnosis console). Kai stands at
- * the centre bench. South door → Concourse; north airlock → Exterior
- * Recovery Yard. Unit 2 builds topology, guidance and Kai's beats; Unit 4
- * activates the workstations (IP overlays).
+ * One coherent laboratory with two physically distinct work areas:
+ * - ANALYSIS TERMINALS (west bank): the terminal orientation (common
+ *   tutorial, never item evidence) and the four decoder terminals — M14
+ *   packet intake (bins), M15 cipher (chip pairing), M16 protocol (staged
+ *   rule update), M17 syntax trainer (register slots). Their assignment to
+ *   the four bank positions is COUNTERBALANCED per session
+ *   (`ip_decoder_layout`) and exported; realised order rides every IP event
+ *   (`ip_windows_opened_before`).
+ * - CONDUIT BAY (east): the M13 conduit lattice bench (physical pipe board)
+ *   and the M18 fault-diagnosis console (evidence/tests/hypotheses).
+ *   Sequencing only: the console waits while the lattice window is OPEN;
+ *   solved, exhausted, stopped or never opened all lead to the identical
+ *   console (never a performance gate, no M13 state read by M18).
+ * Kai stands at the centre bench. South door → Concourse; north airlock →
+ * Exterior Recovery Yard. Every IP overlay keeps its accepted semantic
+ * contract (Unit 4 changes no module); stations differ in silhouette,
+ * dressing and the overlay's own interaction rhythm.
  */
 import { key } from '../constants';
+import {
+  declareM13Lattice,
+  m13LatticeWindowStatus,
+} from '../informationProcessing/m13PipeNetwork';
+import {
+  declareM14,
+  m14WindowStatus,
+} from '../informationProcessing/m14PacketSaturation';
+import {
+  declareM15,
+  m15WindowStatus,
+} from '../informationProcessing/m15LayeredCipher';
+import {
+  declareM16,
+  m16WindowStatus,
+} from '../informationProcessing/m16ProtocolUpdate';
+import {
+  declareM17,
+  m17WindowStatus,
+} from '../informationProcessing/m17SyntaxAcquisition';
+import {
+  declareM18Fault,
+  m18FaultWindowStatus,
+} from '../informationProcessing/m18FaultDiagnosis';
+import { refreshIpProbe } from '../informationProcessing/probe';
+import {
+  declareTutorial,
+  tutorialStatus,
+} from '../informationProcessing/tutorial';
+import type { IpOverlayKey } from '../informationProcessing/ui/openIpOverlay';
+import { openIpOverlay } from '../informationProcessing/ui/openIpOverlay';
+import {
+  assignCounterbalance,
+  recordPriorExposure,
+} from '../measurement/validity';
+import {
+  refreshPilotCoverageProbe,
+  stampContaminationNotes,
+} from '../pilot/pilotCoverage';
 import {
   advancePilotStage,
   pilotStage,
@@ -17,23 +66,69 @@ import {
 } from '../pilot/pilotRoute';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
 import { LAB_STATIONS } from '../pilot/zoneSites';
+import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 
 const TILE = 32;
+
+type DecoderId = 'm14' | 'm15' | 'm16' | 'm17';
+
+interface DecoderSpec {
+  id: DecoderId;
+  label: string;
+  texture: string;
+  status: () => string;
+  opportunityId: string;
+}
+
+const DECODERS: readonly DecoderSpec[] = [
+  {
+    id: 'm14',
+    label: 'Packet Intake Terminal',
+    texture: 'proc-console-scenario',
+    status: m14WindowStatus,
+    opportunityId: 'proto_m14_packet_saturation',
+  },
+  {
+    id: 'm15',
+    label: 'Cipher Workstation',
+    texture: 'proc-diag-board',
+    status: m15WindowStatus,
+    opportunityId: 'proto_m15_layered_cipher',
+  },
+  {
+    id: 'm16',
+    label: 'Protocol Console',
+    texture: 'proc-console-wall',
+    status: m16WindowStatus,
+    opportunityId: 'proto_m16_protocol_update',
+  },
+  {
+    id: 'm17',
+    label: 'Syntax Trainer',
+    texture: 'proc-shelf-electronics',
+    status: m17WindowStatus,
+    opportunityId: 'proto_m17_syntax_acquisition',
+  },
+];
+
+/** Terminal = no longer a guided beacon destination (never gates anything). */
+function windowTerminal(status: string): boolean {
+  return status !== 'unopened' && status !== 'open';
+}
 
 export class DiagnosticsLaboratoryScene extends PilotZoneScene {
   protected readonly roomId = 'diagnostics_laboratory';
   protected readonly roomInteractionKey: InteractionKey = 'pilotRoute';
   protected readonly zoneKey = 'diagnostics_laboratory' as const;
 
+  private decoderLayout: 'layout_a' | 'layout_b' = 'layout_a';
+
   constructor() {
     super(key.scene.diagnosticsLaboratory);
   }
 
   protected getLayout(): RoomLayout {
-    // 25×19 laboratory: airlock doorway north, Concourse doorway south, a
-    // briefing display wall (row 4) with a two-tile corridor above it, and
-    // a centre bench block for Kai.
     return {
       theme: 'ops',
       grid: [
@@ -63,12 +158,45 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
   protected getSpawn(data?: { spawn?: string }): { x: number; y: number } {
     switch (data?.spawn) {
       case 'exterior_recovery_yard':
-        // Left of the briefing wall, 140 px from the airlock.
         return { x: 7.5 * TILE, y: 3 * TILE };
       case 'station_concourse':
       default:
         return { x: 12 * TILE, y: 12.8 * TILE };
     }
+  }
+
+  create(data?: { spawn?: string }) {
+    // Declarations (register: declared + offered; idempotent) — every IP
+    // window is declared at zone entry whether or not it is ever entered.
+    declareTutorial();
+    declareM13Lattice();
+    declareM14();
+    declareM15();
+    declareM16();
+    declareM17();
+    declareM18Fault();
+
+    // Decoder bank layout — counterbalanced per session and exported as a
+    // control note on each decoder's register record + a pilot event.
+    const sessionId =
+      researchRuntime.sessionState.getMetadata().game_session_id;
+
+    this.decoderLayout = assignCounterbalance(sessionId, 'ip_decoder_layout', [
+      'layout_a',
+      'layout_b',
+    ] as const);
+
+    stampContaminationNotes();
+    super.create(data);
+    refreshIpProbe();
+    refreshPilotCoverageProbe();
+  }
+
+  /** Decoders in bank order for this session (layout_b = reversed). */
+  private decoderOrder(): readonly DecoderSpec[] {
+    return this.decoderLayout === 'layout_a'
+      ? DECODERS
+      : [...DECODERS].reverse();
   }
 
   protected populateRoom(): void {
@@ -111,57 +239,107 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       .setStrokeStyle(1, 0x33475a);
     this.signage(11.5 * TILE, 4.25 * TILE, 'DIAGNOSTICS BRIEFING');
 
-    // Work areas (Unit 4 activates).
+    // ——— Analysis terminals (west bank) ———
     this.signage(5 * TILE, 4 * TILE, 'ANALYSIS TERMINALS');
-    this.signage(21 * TILE, 4.6 * TILE, 'CONDUIT BAY');
-    this.placeholder(
-      'orientation_terminal',
-      'Terminal Orientation',
-      LAB_STATIONS.orientation,
-      'proc-console-wall',
-      1,
-    );
-    this.placeholder(
-      'decoder_1',
-      'Analysis Terminal 1',
+    this.ipStation({
+      id: 'orientation_terminal',
+      label: 'Terminal Orientation',
+      texture: 'proc-console-wall',
+      at: LAB_STATIONS.orientation,
+      overlay: key.scene.ipSignalTerminal,
+      taskId: 'tutorial',
+      status: () => tutorialStatus(),
+      isDone: () =>
+        tutorialStatus() !== 'not_attempted' &&
+        tutorialStatus() !== 'in_progress',
+      order: 1,
+    });
+
+    const bankSlots = [
       LAB_STATIONS.decoder1,
-      'proc-console-scenario',
-      3,
-    );
-    this.placeholder(
-      'decoder_2',
-      'Analysis Terminal 2',
       LAB_STATIONS.decoder2,
-      'proc-console-scenario',
-      4,
-    );
-    this.placeholder(
-      'decoder_3',
-      'Analysis Terminal 3',
       LAB_STATIONS.decoder3,
-      'proc-console-scenario',
-      5,
-    );
-    this.placeholder(
-      'decoder_4',
-      'Analysis Terminal 4',
       LAB_STATIONS.decoder4,
-      'proc-console-scenario',
-      6,
+    ];
+
+    this.decoderOrder().forEach((decoder, position) => {
+      recordPriorExposure(
+        decoder.opportunityId,
+        `control:decoder_layout=${this.decoderLayout};bank_position=${position + 1}`,
+      );
+      this.ipStation({
+        id: `decoder_${decoder.id}`,
+        label: decoder.label,
+        texture: decoder.texture,
+        at: bankSlots[position],
+        overlay: key.scene.ipSignalTerminal,
+        taskId: decoder.id,
+        status: decoder.status,
+        isDone: () => windowTerminal(decoder.status()),
+        order: 3 + position,
+      });
+    });
+
+    this.logScenarioEvent('pilotRoute', 'pilot_decoder_layout', {
+      metadata: {
+        layout: this.decoderLayout,
+        bank_order: this.decoderOrder().map((decoder) => decoder.id),
+      },
+    });
+
+    // ——— Conduit bay (east) ———
+    this.signage(21 * TILE, 4.6 * TILE, 'CONDUIT BAY');
+    this.ipStation({
+      id: 'lattice_bench',
+      label: 'Conduit Lattice Bench',
+      texture: 'proc-rig-intake',
+      at: LAB_STATIONS.lattice,
+      overlay: key.scene.ipPipeBoard,
+      taskId: 'm13',
+      status: m13LatticeWindowStatus,
+      isDone: () => windowTerminal(m13LatticeWindowStatus()),
+      order: 2,
+    });
+    this.addDecor(
+      LAB_STATIONS.lattice.x - 52,
+      LAB_STATIONS.lattice.y + 6,
+      'proc-pipe-elbow',
     );
-    this.placeholder(
-      'lattice_bench',
-      'Conduit Lattice Bench',
-      LAB_STATIONS.lattice,
-      'proc-rig-intake',
-      2,
+    this.addDecor(
+      LAB_STATIONS.lattice.x - 52,
+      LAB_STATIONS.lattice.y - 26,
+      'proc-pipe-straight',
     );
-    this.placeholder(
-      'diagnosis_console',
-      'Fault Diagnosis Console',
-      LAB_STATIONS.diagnosis,
-      'proc-diag-board',
-      7,
+    this.addDecor(
+      LAB_STATIONS.lattice.x + 44,
+      LAB_STATIONS.lattice.y - 10,
+      'proc-pipe-valve',
+    );
+
+    this.ipStation({
+      id: 'diagnosis_console',
+      label: 'Fault Diagnosis Console',
+      texture: 'proc-diag-board',
+      at: LAB_STATIONS.diagnosis,
+      overlay: key.scene.ipDiagnosisConsole,
+      taskId: 'm18',
+      status: m18FaultWindowStatus,
+      isDone: () => windowTerminal(m18FaultWindowStatus()),
+      order: 7,
+      // Sequencing only (never performance): the console waits while the
+      // lattice bench window is still OPEN; solved, exhausted, stopped or
+      // never opened all lead to the same console.
+      gate: () =>
+        m13LatticeWindowStatus() === 'open'
+          ? 'Finish or stop the lattice bench first — the console takes over afterwards.'
+          : null,
+      // Closure state only — a prior-exposure control, never an M18 input.
+      context: () => ({ prior_m13_window_status: m13LatticeWindowStatus() }),
+    });
+    this.addDecor(
+      LAB_STATIONS.diagnosis.x - 50,
+      LAB_STATIONS.diagnosis.y,
+      'proc-gauge-card',
     );
 
     // Dressing.
@@ -173,42 +351,64 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     this.addDecor(17.5 * TILE, 9 * TILE, 'proc-gauge-card');
     this.addDecor(10.5 * TILE, 9 * TILE, 'proc-gauge-card');
     this.addDecor(18 * TILE, 14.8 * TILE, 'proc-rack-tools');
-    this.addDecor(21 * TILE, 14.8 * TILE, 'proc-shelf-electronics');
     this.addDecor(3.5 * TILE, 15 * TILE, 'proc-cart-utility');
     this.signage(12 * TILE, 1.5 * TILE, 'EXTERIOR AIRLOCK  ▲');
     this.signage(12 * TILE, 17.5 * TILE, '▼  CONCOURSE');
   }
 
-  private placeholder(
-    id: string,
-    label: string,
-    at: { x: number; y: number },
-    texture: string,
-    order: number,
-  ) {
+  private ipStation(spec: {
+    id: string;
+    label: string;
+    texture: string;
+    at: { x: number; y: number };
+    overlay: IpOverlayKey;
+    taskId: string;
+    status: () => string;
+    isDone: () => boolean;
+    order: number;
+    gate?: () => string | null;
+    context?: () => Record<string, unknown>;
+  }) {
     this.addStation({
       interactionKey: 'pilotStation',
-      label,
-      texture,
-      x: at.x,
-      y: at.y,
+      label: spec.label,
+      texture: spec.texture,
+      x: spec.at.x,
+      y: spec.at.y,
       onPromptOpened: () => {
         this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
-          metadata: { station_id: id, zone: this.zoneKey },
+          metadata: {
+            station_id: spec.id,
+            zone: this.zoneKey,
+            window_status: spec.status(),
+          },
         });
-        this.showFeedbackMessage(`${label} — not yet connected in this build.`);
+
+        const refusal = spec.gate?.() ?? null;
+
+        if (refusal !== null) {
+          this.showFeedbackMessage(refusal);
+
+          if (typeof window !== 'undefined' && import.meta.env.DEV) {
+            window.__ipLabFeedback = refusal;
+          }
+
+          return false;
+        }
+
+        openIpOverlay(this, spec.overlay, spec.taskId, spec.context?.() ?? {});
         return false;
       },
     });
     registerPilotStation({
-      id,
+      id: spec.id,
       zone: 'diagnostics_laboratory',
-      x: at.x,
-      y: at.y,
-      label,
+      x: spec.at.x,
+      y: spec.at.y,
+      label: spec.label,
       stages: ['lab_work'],
-      isDone: () => false,
-      order,
+      isDone: spec.isDone,
+      order: spec.order,
     });
   }
 
@@ -242,7 +442,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
         return {
           body:
             'Kai: The storm left a recovered transmission we cannot read and a fractured conduit lattice.\n' +
-            'Start with the terminal orientation, then work through the analysis terminals and the conduit bay. Come back when you have been through them.',
+            'Start with the terminal orientation on the west bank, then the lattice bench, the four analysis terminals and the diagnosis console. Come back when you have been through them.',
           options: [
             {
               label: 'Understood.',
