@@ -28,15 +28,26 @@ import Phaser from 'phaser';
 
 import { key } from '../constants';
 import { beginManualWorldAction } from '../gameplay/actions';
+import { markOpportunityInvalid } from '../measurement/validity';
 import {
   closePilotCoverageAtFinalCore,
   pilotCompletionSummary,
   pilotFinalCoreClosed,
   refreshPilotCoverageProbe,
 } from '../pilot/pilotCoverage';
-import { advancePilotStage, registerPilotStation } from '../pilot/pilotRoute';
+import {
+  advancePilotStage,
+  pilotStage,
+  registerPilotStation,
+} from '../pilot/pilotRoute';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
-import { finalizeYardAmbientWindows } from '../pilot/yardJobs';
+import {
+  finalizeYardAmbientWindows,
+  YARD_M22_OPPORTUNITY_ID,
+  YARD_M25_OPPORTUNITY_ID,
+  yardM22WindowOpen,
+  yardM25WindowOpen,
+} from '../pilot/yardJobs';
 import { DECK_SITES } from '../pilot/zoneSites';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
@@ -115,6 +126,8 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
   }
 
   protected populateRoom(): void {
+    // Fresh confirmation state per entry (gameplay review round 2).
+    this.confirming = false;
     this.addPilotDoor({ to: 'station_concourse', spawn: 'utility_core_deck' });
 
     const core = DECK_SITES.coreConsole;
@@ -227,8 +240,8 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
       return (
         'CONFIRM SYNCHRONISATION\n' +
         'Synchronising closes the station record exactly as it stands. ' +
-        'Anything unfinished is recorded as unfinished — nothing is scored, ' +
-        'and the record cannot be reopened this shift.\n' +
+        'Anything unfinished is simply recorded as unfinished, and the ' +
+        'record cannot be reopened this shift.\n' +
         'You can still return to the station first.'
       );
     }
@@ -240,7 +253,12 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
     ];
 
     if (summary.neverEnteredLabels.length > 0) {
-      lines.push(`Not yet visited: ${summary.neverEnteredLabels.join(', ')}.`);
+      const shown = summary.neverEnteredLabels.slice(0, 3);
+      const more = summary.neverEnteredLabels.length - shown.length;
+
+      lines.push(
+        `Not yet visited: ${shown.join(', ')}${more > 0 ? ` and ${more} more` : ''}.`,
+      );
     }
 
     lines.push(
@@ -288,6 +306,21 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
       ];
     }
 
+    // Gameplay review round 2 (BLOCKER): synchronisation is offered
+    // only at the deck_review stage — an early explorer can review and
+    // leave, but can never irreversibly end the session before the
+    // route reaches its review step. Never a performance check.
+    if (pilotStage() !== 'deck_review') {
+      return [
+        {
+          label: 'Return to the station',
+          feedback:
+            'Vale has not signed the shift off yet — the record stays open.',
+          getEventTypes: () => ['pilot_final_core_review_left'],
+        },
+      ];
+    }
+
     return [
       {
         label: 'Begin core synchronisation',
@@ -321,7 +354,30 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
 
     // 1. Ambient yard windows get their explicit terminal departure
     //    codes (never completed, never participant_absent — D-X-4).
+    //    Scientific review round 2: the code is ALSO written onto the
+    //    SA-13 register (censored + the code as detail) so departure-
+    //    closed windows stay distinguishable from ordinary end-of-
+    //    session censoring.
+    const m22Open = yardM22WindowOpen();
+    const m25Open = yardM25WindowOpen();
+
     finalizeYardAmbientWindows(now);
+
+    if (m22Open) {
+      markOpportunityInvalid(
+        YARD_M22_OPPORTUNITY_ID,
+        'censored',
+        'closed_departed_without_recovery',
+      );
+    }
+
+    if (m25Open) {
+      markOpportunityInvalid(
+        YARD_M25_OPPORTUNITY_ID,
+        'censored',
+        'closed_departed_without_reset',
+      );
+    }
 
     // 2. Explicit terminal closure of every scheduled opportunity
     //    (censored / participant_absent / no_opportunity — never

@@ -709,6 +709,12 @@ export async function selectPromptOption(page: Page, optionNumber: number) {
     // would select the SAME NUMBER on the follow-up stage — observed as
     // e.g. "2" (systematic prep) re-firing as "2" (skip verification).
     // Only a genuinely lost press (probe still identical) is retried.
+    // Unit 8: a press can land AFTER the settle window AND after an
+    // immediate re-snapshot (observed live: the follow-up stage then
+    // received the retried digit — e.g. "2" skip-verification). Give a
+    // late landing time to render before deciding the press was lost.
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+
     if ((await cardsSnapshot()) === before) {
       await settleAfterPress(before, 6_000);
     }

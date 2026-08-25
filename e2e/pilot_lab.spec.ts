@@ -421,8 +421,13 @@ test.describe('pilot route — Diagnostics & Signal Laboratory (Unit 4)', () => 
     await openIpStation(page, LAB.lattice, EAST, '__ipPipeProbe');
     await clickPipeButton(page, 'stop');
     await clickPipeButton(page, 'confirm_stop');
-    await page.waitForTimeout(300);
-    expect((await pipeProbe(page)).closed).toBe(true);
+    await page.waitForFunction(
+      () =>
+        (window as unknown as { __ipPipeProbe?: { closed: boolean } | null })
+          .__ipPipeProbe?.closed === true,
+      undefined,
+      { timeout: 8000 },
+    );
     await page.keyboard.press('Escape');
     await waitPipeOpen(page, false);
 
@@ -454,8 +459,16 @@ test.describe('pilot route — Diagnostics & Signal Laboratory (Unit 4)', () => 
     // explicit-return contract as the lattice board).
     await clickDiagnosisButton(page, 'stop');
     await clickDiagnosisButton(page, 'confirm_stop');
-    await page.waitForTimeout(300);
-    expect((await diagnosisProbe(page)).closed).toBe(true);
+    await page.waitForFunction(
+      () =>
+        (
+          window as unknown as {
+            __ipDiagnosisProbe?: { closed: boolean } | null;
+          }
+        ).__ipDiagnosisProbe?.closed === true,
+      undefined,
+      { timeout: 8000 },
+    );
     await page.keyboard.press('Escape');
     await waitDiagnosisOpen(page, false);
 

@@ -329,7 +329,10 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
 
     expect(byItem.get('M02')?.status).toBe('completed');
     expect(byItem.get('M03')?.status).toBe('completed');
-    expect(coverage!.summary.closed).toBe(2);
+    // Round-2 S2 rule: stopping-rule (reviewNaming never) items are
+    // excluded from the participant-facing OPEN count, so closed =
+    // 2 completed here + those 4 items = 6.
+    expect(coverage!.summary.closed).toBe(6);
     route = await pilotProbe(page);
     expect(route?.beacon?.label).toBe('Vale');
 

@@ -154,7 +154,19 @@ async function driveAndEnter(
     }
   }
 
-  throw new Error(`drive+enter never reached ${sceneName}`);
+  // Diagnostic-rich failure (Unit 8): where the avatar actually ended up.
+  const probe = await page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          __playerProbe?: { scene: string; x: number; y: number } | null;
+        }
+      ).__playerProbe ?? null,
+  );
+
+  throw new Error(
+    `drive+enter never reached ${sceneName} — player ${JSON.stringify(probe)}`,
+  );
 }
 
 /** Field terrace (from-yard spawn) -> Station Hub airlock. */
@@ -197,7 +209,12 @@ async function hubToYard(page: import('@playwright/test').Page) {
   await driveAndEnter(
     page,
     async () => {
-      await driveAxisTo(page, 'y', 320, 10);
+      // y=308±6: the y=320±10 lane can settle as low as y≈329 under
+      // SwiftShader jank, and the terrace-expansion ridge blocks at
+      // row 11 (cols 18-19) then clip the x-drive at x≈560. From
+      // (640, 308) the yard gate at (672, 320) is still well inside
+      // the 72px interaction radius.
+      await driveAxisTo(page, 'y', 308, 6);
       await driveAxisTo(page, 'x', 640, 10);
     },
     'coolant_yard',

@@ -57,6 +57,57 @@ test.describe('connected participant journeys', () => {
 
     await bootJourney(page, params);
 
+    // Unit 8 repair: chained-stage selects are anchored to the marker
+    // event each option MUST emit — a stage-desync press (the residual
+    // late-landing race the selectPromptOption guard cannot fully
+    // close) now fails loudly at the exact step instead of corrupting
+    // the journey downstream; a genuinely swallowed press is retried.
+    const selectExpectingEvent = async (option: number, eventType: string) => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        await selectPromptOption(page, option);
+
+        const landed = await page
+          .waitForFunction(
+            (wanted) =>
+              (
+                window as unknown as {
+                  researchRuntime: {
+                    getEvents: () => { event_type: string }[];
+                  };
+                }
+              ).researchRuntime
+                .getEvents()
+                .some((event) => event.event_type === wanted),
+            eventType,
+            { timeout: 4000 },
+          )
+          .then(
+            () => true,
+            () => false,
+          );
+
+        if (landed) {
+          return;
+        }
+      }
+
+      const tail = await page.evaluate(() =>
+        (
+          window as unknown as {
+            researchRuntime: { getEvents: () => { event_type: string }[] };
+          }
+        ).researchRuntime
+          .getEvents()
+          .slice(-8)
+          .map((event) => event.event_type)
+          .join(', '),
+      );
+
+      throw new Error(
+        `option ${option} never produced ${eventType} — recent events: [${tail}]`,
+      );
+    };
+
     // Dock tutorial: review controls and confirm readiness (option 2).
     await completeDockTutorial(page, 2);
 
@@ -74,9 +125,9 @@ test.describe('connected participant journeys', () => {
     // the seal-log decision (Scenario D) beside the legacy task.
     await hubToStationJourney(page, 'inventory_prep_room');
     await openStationAlcove(page);
-    await selectPromptOption(page, 2);
-    await selectPromptOption(page, 1);
-    await selectPromptOption(page, 1);
+    await selectExpectingEvent(2, 'inventory_required_tools_packed');
+    await selectExpectingEvent(1, 'inventory_verified_complete');
+    await selectExpectingEvent(1, 'cleanup_completed');
     await completePilotScenario(page, 'protocol_breach');
     await stationToHubJourney(page, 'inventory_prep_room');
 
@@ -91,9 +142,9 @@ test.describe('connected participant journeys', () => {
     // (Scenario A) at the bench.
     await hubToStationJourney(page, 'engineer_hub');
     await openStationAlcove(page);
-    await selectPromptOption(page, 2);
-    await selectPromptOption(page, 3);
-    await selectPromptOption(page, 1);
+    await selectExpectingEvent(2, 'engineer_report_submitted_prepared');
+    await selectExpectingEvent(3, 'engineer_report_accuracy_scored');
+    await selectExpectingEvent(1, 'engineer_supervision_accepted');
     await completePilotScenario(page, 'calibration_anomaly');
     await stationToHubJourney(page, 'engineer_hub');
 
@@ -234,7 +285,8 @@ test.describe('connected participant journeys', () => {
       (e) => e.event_type === 'engineer_report_accuracy_scored',
     );
 
-    expect(accuracyEvent?.success).toBe(true);
+    // Metadata first (Unit 8 diagnostic ordering): a mismatch prints the
+    // full received object instead of a bare success boolean.
     expect(accuracyEvent?.metadata).toMatchObject({
       report_mode: 'prepared',
       accuracy: 1,
@@ -243,6 +295,7 @@ test.describe('connected participant journeys', () => {
       actual_systems_repair_complete: false,
       actual_field_kit_packed: true,
     });
+    expect(accuracyEvent?.success).toBe(true);
 
     // Frozen-summary spot checks (separation invariants).
     const summary = await getSummary(page);

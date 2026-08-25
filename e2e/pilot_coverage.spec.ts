@@ -150,10 +150,24 @@ test.describe('pilot coverage schedule (pure)', () => {
     ].map((dir) => dir.replace(/\//g, '\\'));
     const files = listTsFiles(join(__dirname, '..', 'src'));
     const offenders: string[] = [];
+    // Pilot host scenes legitimately reference their items' opportunity
+    // ids (declare/open wiring); they are hosts, not legacy rooms.
+    const PILOT_HOST_SCENES = [
+      'src/scenes/StationConcourseScene.ts',
+      'src/scenes/DiagnosticsLaboratoryScene.ts',
+      'src/scenes/ExteriorRecoveryYardScene.ts',
+      'src/scenes/UtilityCoreDeckScene.ts',
+    ];
 
     for (const file of files) {
       const rel = file.replace(join(__dirname, '..') + '\\', '');
       const text = readFileSync(file, 'utf8');
+
+      if (
+        PILOT_HOST_SCENES.includes(rel.split(String.fromCharCode(92)).join('/'))
+      ) {
+        continue;
+      }
 
       for (const prefix of prefixes) {
         const pattern = new RegExp(`'${prefix}[a-z0-9_]*'`, 'g');
@@ -328,8 +342,10 @@ test.describe('pilot coverage schedule (pure)', () => {
     const summary = operationalCompletionSummary(coverage);
 
     expect(summary.scheduled).toBe(13);
-    expect(summary.closed).toBe(0);
-    expect(summary.open).toBe(13);
+    // Round-2 S2 rule: the four reviewNaming-never stopping-rule items
+    // are excluded from the participant-facing OPEN count.
+    expect(summary.closed).toBe(4);
+    expect(summary.open).toBe(9);
     // 9 reviewable (M02, M03, M13–M18, M23) — M22/M24/M25/M26 never named.
     expect(summary.neverEnteredLabels.length).toBe(9);
     expect(summary.neverEnteredLabels.join(' ')).not.toMatch(
@@ -343,7 +359,9 @@ test.describe('pilot coverage schedule (pure)', () => {
     ]);
     const enteredSummary = operationalCompletionSummary(entered);
 
-    expect(enteredSummary.open).toBe(13);
+    // Round-2 S2 rule: the four reviewNaming-never items are excluded
+    // from the participant-facing OPEN count (13 entered - 4 = 9).
+    expect(enteredSummary.open).toBe(9);
     expect(enteredSummary.neverEnteredLabels.length).toBe(8);
     expect(enteredSummary.neverEnteredLabels.join(' ')).not.toMatch(/filing/i);
   });

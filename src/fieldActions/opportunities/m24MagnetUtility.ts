@@ -276,9 +276,10 @@ export function m24MagnetUtilitySummary() {
 
 /**
  * Explicit window close (console reset / scene exit) — NEVER a function
- * of whether the participant stopped or continued. The opportunity
- * counts as completed observation either way once the window closes
- * after the depletion signal was displayed.
+ * of whether the participant stopped or continued. Register semantics
+ * live with the HOST (pilot rule, REV-BLOCK-1): completed only when the
+ * depletion signal was displayed AND acknowledged; never displayed →
+ * missing (no_opportunity); displayed-unacknowledged stays pending.
  */
 export function closeM24MagnetUtilityWindow(
   nowMs: number,

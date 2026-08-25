@@ -342,7 +342,7 @@ export class DockScene extends RoomScene {
       {
         label: 'Skip the tutorial and continue.',
         feedback:
-          'You skip the orientation. The station tasks remain available, but baseline comprehension is unclear.',
+          'You skip the orientation and head in. The station tasks are all available.',
         getEventTypes: () => [
           'dock_tutorial_skipped',
           'dock_instruction_shortcut',

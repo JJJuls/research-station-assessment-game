@@ -402,16 +402,33 @@ async function useStationUntil(
   offset: { x: number; y: number },
   condition: () => Promise<boolean>,
 ) {
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 4; attempt++) {
     await interactAt(page, at, { approachOffset: offset });
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(900);
 
     if (await condition()) {
       return;
     }
   }
 
-  throw new Error(`station at ${at.x},${at.y} condition never held`);
+  // Diagnostic-rich failure (Unit 8): where the avatar is and what the
+  // yard-job probe holds when the condition never comes true.
+  const diag = await page.evaluate(() => {
+    const w = window as unknown as {
+      __playerProbe?: { x: number; y: number } | null;
+      __yardJobsProbe?: { m22: unknown; m25: unknown } | null;
+      __lastRoomFeedbackText?: string | null;
+    };
+
+    return JSON.stringify({
+      player: w.__playerProbe ?? null,
+      m22: w.__yardJobsProbe?.m22 ?? null,
+      m25: w.__yardJobsProbe?.m25 ?? null,
+      feedback: w.__lastRoomFeedbackText ?? null,
+    });
+  });
+
+  throw new Error(`station at ${at.x},${at.y} condition never held — ${diag}`);
 }
 
 /* ------------------------------------------------------------------ *

@@ -60,7 +60,12 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
 
     const coverage = await pilotCoverage(page);
 
-    expect(coverage?.launch_mode ?? 'participant').toBe('participant');
+    // The coverage probe first materialises inside a pilot ZONE scene;
+    // at the Dock it is legitimately null — assert participant mode
+    // whenever it exists, and never let a null read as developer.
+    if (coverage !== null) {
+      expect(coverage.launch_mode).toBe('participant');
+    }
 
     // The Dock tutorial path is unchanged (every path emits tutorial_completed).
     await completeDockTutorial(page, 2);
@@ -344,6 +349,8 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
     const objectives = (await getEvents(page))
       .filter((event) => event.event_type === 'pilot_stage_advanced')
       .map((event) => JSON.stringify(event.metadata));
+
+    expect(objectives.length).toBeGreaterThan(0);
 
     for (const text of objectives) {
       expect(text).not.toMatch(/proto_|\bM\d{2}\b|\bQ\d{2}\b/);

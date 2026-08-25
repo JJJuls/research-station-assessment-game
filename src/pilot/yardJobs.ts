@@ -43,7 +43,7 @@ export const YARD_M22_ENTRY_STATE_VERSION = 'm22-housing-seal-v1';
  * names the yard supply crate, never the legacy Coolant Yard.
  */
 export const YARD_M22_SETBACK_EXPLANATION =
-  'The replacement seal cracks as it seats — brittle from cold storage, a known batch fault. Not a workmanship issue. A fresh seal is stocked in the yard supply crate on the east side.';
+  'The seal cracks as it seats — a known cold-storage batch fault, not your work. A fresh seal is in the yard supply crate, east side.';
 
 export const YARD_M25_OPPORTUNITY_ID = 'proto_m25_yardpump_interlock';
 export const YARD_M25_ENTRY_STATE_VERSION = 'm25-yardpump-v1';

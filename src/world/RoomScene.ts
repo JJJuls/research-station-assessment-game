@@ -1857,6 +1857,17 @@ export abstract class RoomScene extends Phaser.Scene {
       return;
     }
 
+    // Same one-physical-press rule as the numeric handlers (Unit 8).
+    if (
+      event.timeStamp === this.lastPromptSelectStamp &&
+      Date.now() - this.lastPromptSelectAt < 0
+    ) {
+      return;
+    }
+
+    this.lastPromptSelectStamp = event.timeStamp;
+    this.lastPromptSelectAt = Date.now();
+
     this.selectPromptOption(this.activePrompt.focusedIndex);
   };
 
@@ -1869,16 +1880,55 @@ export abstract class RoomScene extends Phaser.Scene {
    * (U3 nextStage flows — duty offers, scenario briefings/evidence). Only
    * the initial physical keypress selects; discrete presses are unaffected.
    */
+  private lastPromptSelectStamp = -1;
+
+  private lastPromptSelectAt = 0;
+
   private readonly promptKeyHandlers: ((event: KeyboardEvent) => void)[] =
     PROMPT_KEY_NAMES.map((_, index) => (event: KeyboardEvent) => {
       if (event.repeat) {
         return;
       }
 
+      // Unit 8 (P1 journey root cause): one PHYSICAL press must select
+      // exactly once. A stage chained from this same press re-registers
+      // these handlers, and the still-travelling keydown would otherwise
+      // select the SAME NUMBER on the new stage (observed live: press 2
+      // = checklist AND skip-verification). Ignore number keys briefly
+      // after every stage render.
+      if (
+        event.timeStamp === this.lastPromptSelectStamp &&
+        Date.now() - this.lastPromptSelectAt < 0
+      ) {
+        return;
+      }
+
+      this.lastPromptSelectStamp = event.timeStamp;
+      this.lastPromptSelectAt = Date.now();
       this.selectPromptOption(index);
     });
 
   private selectPromptOption(index: number) {
+    // Unit 8 FINAL cascade guard: a stage chained from this selection
+    // re-registers the key handlers, and the same still-dispatching
+    // physical event would re-enter here synchronously. Re-entrancy is
+    // the exact discriminator - no timing heuristics.
+    if (this.promptSelectionInProgress) {
+      return;
+    }
+
+    this.promptSelectionInProgress = true;
+
+    try {
+      this.selectPromptOptionInner(index);
+    } finally {
+      this.promptSelectionInProgress = false;
+    }
+  }
+
+  private promptSelectionInProgress = false;
+
+  private selectPromptOptionInner(index: number) {
     if (this.activePrompt === null) {
       return;
     }

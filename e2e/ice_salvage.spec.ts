@@ -48,9 +48,17 @@ async function inventorySlots(page: import('@playwright/test').Page) {
  * row 9, then down the clear col-2 column (row-11 rocks flank col 3).
  */
 async function walkToBore(page: import('@playwright/test').Page) {
+  // Unit 8 repair (merge-era lane clamp, complete_first_shift class):
+  // an x≈86 settle puts the body edge against the row-11 wall (col 3
+  // starts at x=96) and the descent then strands the avatar out of the
+  // bore's 72px range. Target deeper into the col-2 corridor and
+  // re-drive both axes once so drift under load self-corrects.
   await driveAxisTo(page, 'y', 318, 8); // row 10 (clears the row-8 rocks)
-  await driveAxisTo(page, 'x', 80, 6); // col-2 corridor
-  await driveAxisTo(page, 'y', 430, 14); // descend; clamps in bore range
+
+  for (let pass = 0; pass < 2; pass++) {
+    await driveAxisTo(page, 'x', 76, 4); // col-2 corridor, wall-safe
+    await driveAxisTo(page, 'y', 430, 14); // descend; clamps in bore range
+  }
 }
 
 test.describe('post-assessment ice salvage (Unit 7)', () => {

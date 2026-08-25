@@ -101,7 +101,6 @@ import { isWorldActionActive, performWorldAction } from '../gameplay/actions';
 import { FieldActionController } from '../gameplay/fieldActionKeys';
 import { addInventoryItem, hasInventoryItem } from '../gameplay/inventory';
 import { playSheetEffect } from '../gameplay/sheetEffects';
-import { M25_LOCK_STATEMENT } from '../measurement/m25PumpLock';
 import {
   assignCounterbalance,
   declareOpportunity,
@@ -915,7 +914,11 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     if (result.kind === 'cycle') {
       this.showFeedbackMessage(result.readout);
     } else if (result.kind === 'locked') {
-      this.showFeedbackMessage(M25_LOCK_STATEMENT);
+      // Shortened for the ~2.2s toast (burden review round 2); same
+      // meaning as the module's canonical lock statement.
+      this.showFeedbackMessage(
+        'Interlock active — primes do nothing now. Reset the breaker beside the control.',
+      );
     } else {
       this.showFeedbackMessage(
         'The pump is running smoothly — nothing to prime.',
@@ -956,8 +959,13 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       onComplete: () => {
         const now = Date.now();
 
-        markM24MagnetUtilityAlternativeActivity(now);
-        markM26DepletedSearchAlternativeActivity(now);
+        // Exclusive dispatch (scientific review round 2): the bench
+        // notifies only the single open window — never both.
+        if (m24MagnetUtilityWindowOpen()) {
+          markM24MagnetUtilityAlternativeActivity(now);
+        } else if (m26DepletedSearchWindowOpen()) {
+          markM26DepletedSearchAlternativeActivity(now);
+        }
         this.showFeedbackMessage(
           'Component stock sorted — the bench log is up to date.',
         );
@@ -1146,9 +1154,11 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       return null;
     }
 
-    // Post-depletion cycles stay available ONLY inside the M24 window
-    // (outside it the rig refuses with the depleted notice).
-    if (magnetDeckDepleted() && !m24MagnetUtilityWindowOpen()) {
+    // Scientific review round 2: cycles run ONLY inside the open M24
+    // window — the deck and its depletion transition are the M24
+    // stimulus, so nothing may consume them before the job
+    // standardises the entry state.
+    if (!m24MagnetUtilityWindowOpen()) {
       return null;
     }
 
@@ -1160,9 +1170,11 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       return;
     }
 
-    if (magnetDeckDepleted() && !m24MagnetUtilityWindowOpen()) {
+    if (!m24MagnetUtilityWindowOpen()) {
       this.showFeedbackMessage(
-        'The catchment is depleted — no recoverable material remains.',
+        magnetDeckDepleted()
+          ? 'The catchment is depleted — no recoverable material remains.'
+          : 'Take the salvage job from Noor before running the rig.',
       );
 
       return;
@@ -1196,7 +1208,11 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       this.digRegistry.setZoneEnabled('m23_plot', false);
     }
 
-    if (m24MagnetUtilityWindowOpen()) {
+    // Scientific review round 2: a yard exit must never terminally
+    // destroy a still-current one-shot window — M24/M26 stay OPEN
+    // across re-entry and close only at job hand-over or Final Core
+    // (where they censor with their honest signal-exposure state).
+    if (reason !== 'scene_exit' && m24MagnetUtilityWindowOpen()) {
       const state = m24MagnetUtilityState;
 
       if (
@@ -1215,7 +1231,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       closeM24MagnetUtilityWindow(now, reason);
     }
 
-    if (m26DepletedSearchWindowOpen()) {
+    if (reason !== 'scene_exit' && m26DepletedSearchWindowOpen()) {
       const state = m26DepletedSearchState;
 
       if (

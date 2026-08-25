@@ -458,9 +458,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
           default:
             // Standing still with no prior movement: keep the researcher
-            // idle loop running if that skin is active.
+            // idle loop running if that skin is active — facing the last
+            // logical direction, never snapping to south (Unit 8).
             if (this.skin === 'researcher' && !this.anims.isPlaying) {
-              this.showIdle(Animation.Down);
+              const idleAnim: Record<ResearcherDirection, Animation> = {
+                west: Animation.Left,
+                east: Animation.Right,
+                north: Animation.Up,
+                south: Animation.Down,
+              };
+
+              this.showIdle(idleAnim[this.facing ?? 'south']);
             }
         }
     }

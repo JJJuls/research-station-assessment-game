@@ -472,7 +472,13 @@ export function operationalCompletionSummary(
   neverEnteredLabels: string[];
 } {
   const scheduled = coverage.filter((item) => item.status !== 'not_applicable');
-  const open = scheduled.filter((item) => !isTerminal(item.status));
+  // REV-MAJ-9 (scientific review round 2): stopping-rule windows
+  // (reviewNaming 'never') are excluded from the participant-facing
+  // open count — an "open" mention would prompt exactly the return the
+  // naming rule forbids. They still close at Final Core.
+  const open = scheduled.filter(
+    (item) => !isTerminal(item.status) && item.reviewNaming !== 'never',
+  );
   const neverEntered = open.filter(
     (item) =>
       item.reviewNaming === 'never_entered_only' &&
