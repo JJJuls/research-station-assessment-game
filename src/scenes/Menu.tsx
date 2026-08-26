@@ -22,6 +22,10 @@ export class Menu extends Scene {
   }
 
   create() {
+    // Same registration-order rule as the inventory overlay: the ESC pause
+    // menu must draw above the paused host scene, not under it.
+    this.scene.bringToTop();
+
     this.input.keyboard!.on('keydown-ESC', this.onEscape, this);
     const { centerX, centerY } = this.cameras.main;
 

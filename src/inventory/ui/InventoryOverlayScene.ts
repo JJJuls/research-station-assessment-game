@@ -193,6 +193,17 @@ export class InventoryOverlayScene extends Phaser.Scene {
   }
 
   create() {
+    // Render ABOVE the paused host scene (StationMapScene / PilotOpeningScene
+    // / the Information-Processing consoles precedent). Phaser draws active
+    // scenes in SceneManager registration order, and this game registers
+    // `Object.values(scenes)` — an ES module namespace, so the order is
+    // alphabetical by export name. Without this, every host whose export name
+    // sorts after `InventoryOverlayScene` (StationConcourseScene,
+    // UtilityBay/UtilityCoreDeck, Ops Annex, Pump House, Repair, Side Repair,
+    // InventoryScene) paused itself and then drew straight over the overlay:
+    // the participant saw a frozen room and no panel.
+    this.scene.bringToTop();
+
     // Per-instance resets (scene objects are reused across launches).
     this.grids = [];
     this.buttons = [];
