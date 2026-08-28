@@ -322,7 +322,7 @@ async function enterWorkshop(page: Page, tag: string) {
 }
 
 test.describe('station concourse interaction lifecycle', () => {
-  test('A/D — incident filing opens on E and on SPACE; I never recovers', async ({
+  test('A/D — the case workspace opens on E and on SPACE; I never recovers', async ({
     page,
   }) => {
     const errors = captureErrors(page);
@@ -334,7 +334,7 @@ test.describe('station concourse interaction lifecycle', () => {
       page,
       PILOT.workshop.filingDesk,
       'KeyE',
-      'm02',
+      'm02case',
       'filing-station-open',
     );
 
@@ -348,7 +348,7 @@ test.describe('station concourse interaction lifecycle', () => {
     await closeAndMove(page);
 
     // ——— SPACE — the same interaction, no inventory involved ———
-    await openStation(page, PILOT.workshop.filingDesk, 'Space', 'm02');
+    await openStation(page, PILOT.workshop.filingDesk, 'Space', 'm02case');
     await closeAndMove(page);
 
     // ——— D: the inventory still opens and closes on its own ———
@@ -383,11 +383,20 @@ test.describe('station concourse interaction lifecycle', () => {
     await page.waitForTimeout(500);
     await expectCanMove(page);
 
-    // Label Press A / B — M03 occasions.
+    // Label Press A — M03 occasion 1 (E). Press B is scheduled for the
+    // return shift only (v2 Unit 2): SPACE there shows the refusal line and
+    // opens nothing — the world stays live.
     await openStation(page, PILOT.workshop.pressA, 'KeyE', 'm03');
     await closeAndMove(page);
-    await openStation(page, PILOT.workshop.pressB, 'Space', 'm03');
-    await closeAndMove(page);
+    await travelTo(
+      page,
+      PILOT.workshop.pressB.x + APPROACH.x,
+      PILOT.workshop.pressB.y + APPROACH.y,
+    );
+    await press(page, 'Space');
+    await page.waitForTimeout(400);
+    expect((await overlayProbe(page))?.open ?? false).toBe(false);
+    await expectCanMove(page);
 
     // Component Locker — container transfer.
     await openStation(
@@ -431,7 +440,7 @@ test.describe('station concourse interaction lifecycle', () => {
       (event) =>
         event.event_type === 'pilot_station_opened' &&
         (event.metadata as { station_id?: string } | undefined)?.station_id ===
-          'filing_desk',
+          'case_workspace',
     ).length;
 
     // Rapid alternating E/SPACE inside one interaction window.
@@ -449,7 +458,7 @@ test.describe('station concourse interaction lifecycle', () => {
       (event) =>
         event.event_type === 'pilot_station_opened' &&
         (event.metadata as { station_id?: string } | undefined)?.station_id ===
-          'filing_desk',
+          'case_workspace',
     ).length;
 
     // Exactly one dispatch — the burst cannot stack overlays or chain stages.
@@ -472,7 +481,7 @@ test.describe('station concourse interaction lifecycle', () => {
       (event) =>
         event.event_type === 'pilot_station_opened' &&
         (event.metadata as { station_id?: string } | undefined)?.station_id ===
-          'filing_desk',
+          'case_workspace',
     ).length;
 
     expect(opensHeld - opensAfter).toBe(1);

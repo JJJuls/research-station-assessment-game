@@ -453,6 +453,11 @@ export async function routeToWorkshopWork(page: Page) {
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'workshop_work');
+  // Step down onto the clear y=272 lane before any spec walks west: from
+  // the board approach point (y ≈ 192-216) an x-first leg west clamps on
+  // the upper machinery block (x 416-543, y 128-191) because the 42 px
+  // body's top edge overlaps it (D-V2-2 root cause).
+  await walkTo(page, PILOT.workshop.board.x, 272, { yFirst: true });
 }
 
 /** Full spine from the Dock (after the tutorial) to the Laboratory at stage lab_work. */

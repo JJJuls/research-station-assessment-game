@@ -438,6 +438,10 @@ export interface PipeProbeLike {
   focus: { kind: 'cell' | 'bench'; id: string } | null;
   buttons: (Rect & { id: string; label: string; enabled: boolean })[];
   feedback: string[];
+  last_action: string | null;
+  undo_available: boolean;
+  seated_count: number;
+  snap_slot: string | null;
   submissions_used: number;
   max_submissions: number;
   dragging: boolean;

@@ -9,6 +9,13 @@
  * SPACE/ENTER pick/place, R rotates, DEL returns, T tests the flow.
  * Both paths call exactly `m13LatticeAct` with the same semantic actions.
  *
+ * Usability pass (evidence-led pilot v2, Unit 2; sheet 09 M13 "fix
+ * usability: snap/rotate feedback, undo/reset, no sloppy hit targets"):
+ * every seat/rotate flashes the mount and writes a one-line description
+ * to the console; UNDO (U) reverts the last committed change and CLEAR
+ * (C) returns every seated piece; both ride `m13LatticeAct` and log their
+ * own raw acts. The connectivity validator is untouched.
+ *
  * Submission is explicit (TEST FLOW); the board never auto-completes.
  * Invalid runs get neutral structural feedback and can be revised; the
  * window closes on a valid run, on the bounded test-run count, or on an
@@ -85,6 +92,12 @@ export interface PipeProbe {
   focus: { kind: 'cell' | 'bench'; id: string } | null;
   buttons: (ProbeRect & { id: string; label: string; enabled: boolean })[];
   feedback: string[];
+  /** One-line neutral description of the last successful board act. */
+  last_action: string | null;
+  undo_available: boolean;
+  seated_count: number;
+  /** Mount currently showing the seat/rotate flash (null when none). */
+  snap_slot: string | null;
   submissions_used: number;
   max_submissions: number;
   dragging: boolean;
@@ -187,6 +200,9 @@ export class PipeBoardScene extends Phaser.Scene {
   private confirmOpen = false;
   private confirmObjects: Phaser.GameObjects.GameObject[] = [];
   private lastView: LatticeView | null = null;
+  /** Seat/rotate flash: the mount that just changed (static highlight). */
+  private snapSlot: M13SlotId | null = null;
+  private snapTimer: Phaser.Time.TimerEvent | null = null;
 
   constructor() {
     super(key.scene.ipPipeBoard);
@@ -320,9 +336,9 @@ export class PipeBoardScene extends Phaser.Scene {
       new UiButton({
         scene: this,
         id: 'rotate',
-        x: 56,
+        x: 40,
         y: L.buttonsY,
-        width: 96,
+        width: 92,
         label: 'ROTATE (R)',
         depth: IP_DEPTH.content,
         onActivate: () => this.rotateFocused('pointer'),
@@ -330,19 +346,39 @@ export class PipeBoardScene extends Phaser.Scene {
       new UiButton({
         scene: this,
         id: 'return',
-        x: 160,
+        x: 138,
         y: L.buttonsY,
-        width: 104,
+        width: 100,
         label: 'RETURN (DEL)',
         depth: IP_DEPTH.content,
         onActivate: () => this.returnFocused('pointer'),
       }),
       new UiButton({
         scene: this,
-        id: 'help',
-        x: 272,
+        id: 'undo',
+        x: 244,
         y: L.buttonsY,
-        width: 64,
+        width: 84,
+        label: 'UNDO (U)',
+        depth: IP_DEPTH.content,
+        onActivate: () => this.undoLast('pointer'),
+      }),
+      new UiButton({
+        scene: this,
+        id: 'reset',
+        x: 334,
+        y: L.buttonsY,
+        width: 88,
+        label: 'CLEAR (C)',
+        depth: IP_DEPTH.content,
+        onActivate: () => this.resetBoard('pointer'),
+      }),
+      new UiButton({
+        scene: this,
+        id: 'help',
+        x: 428,
+        y: L.buttonsY,
+        width: 60,
         label: 'HELP',
         depth: IP_DEPTH.content,
         onActivate: () => this.openHelp('pointer'),
@@ -350,9 +386,9 @@ export class PipeBoardScene extends Phaser.Scene {
       new UiButton({
         scene: this,
         id: 'stop',
-        x: 344,
+        x: 494,
         y: L.buttonsY,
-        width: 94,
+        width: 96,
         label: 'STOP TASK',
         kind: 'caution',
         depth: IP_DEPTH.content,
@@ -375,7 +411,7 @@ export class PipeBoardScene extends Phaser.Scene {
       .text(
         400,
         L.helpLineY,
-        'Drag / click to pick up • click a mount to seat • R or right-click rotates • DEL returns • arrows + SPACE move / pick / place • T test flow • H help • Q stop • ESC drops a held piece, then leaves (work stays)',
+        'Drag or click a piece, click a mount to seat it • R / right-click rotates • DEL returns • U undo • C clear\nArrows + SPACE do the same by keyboard • T test flow • H help • Q stop • ESC drops a held piece, then leaves (work stays)',
         {
           color: IP_TEXT.dim,
           font: IP_FONT.small,
@@ -540,8 +576,8 @@ export class PipeBoardScene extends Phaser.Scene {
         )
         .setOrigin(0)
         .setStrokeStyle(
-          1,
-          isDrop && this.dropValid
+          this.snapSlot === slot ? 3 : 1,
+          (isDrop && this.dropValid) || this.snapSlot === slot
             ? IP_COLORS.accent
             : broken
               ? 0x5a3a3a
@@ -702,6 +738,11 @@ export class PipeBoardScene extends Phaser.Scene {
       wordWrap: { width: L.consoleW - 12 },
     });
 
+    this.text(L.consoleX + 6, L.consoleY + 258, view.last_action ?? '', {
+      color: IP_TEXT.accent,
+      font: IP_FONT.small,
+      wordWrap: { width: L.consoleW - 12 },
+    });
     this.text(
       L.consoleX + 6,
       L.consoleY + 300,
@@ -776,6 +817,10 @@ export class PipeBoardScene extends Phaser.Scene {
         button.id === 'stop'
       ) {
         button.setEnabled(!closed);
+      } else if (button.id === 'undo') {
+        button.setEnabled(!closed && view.undo_available);
+      } else if (button.id === 'reset') {
+        button.setEnabled(!closed && view.seated_count > 0);
       }
     }
 
@@ -806,6 +851,10 @@ export class PipeBoardScene extends Phaser.Scene {
       focus: null,
       buttons: [],
       feedback: [],
+      last_action: null,
+      undo_available: false,
+      seated_count: 0,
+      snap_slot: null,
       submissions_used: 0,
       max_submissions: 0,
       dragging: false,
@@ -832,6 +881,10 @@ export class PipeBoardScene extends Phaser.Scene {
           ? { kind: 'cell', id: M13_SLOT_IDS[this.focus.index] }
           : { kind: 'bench', id: String(this.focus.index) },
       feedback: [...view.feedback],
+      last_action: view.last_action,
+      undo_available: view.undo_available,
+      seated_count: view.seated_count,
+      snap_slot: this.snapSlot,
       submissions_used: view.submissions_used,
       max_submissions: view.max_submissions,
       dragging: this.dragging,
@@ -953,6 +1006,14 @@ export class PipeBoardScene extends Phaser.Scene {
 
       if (result.ok) {
         sfxUiSelect();
+
+        // Snap / rotate feedback: the changed mount flashes (static
+        // highlight — reduced-motion safe) for a short beat.
+        if (action.kind === 'place' || action.kind === 'rotate_slot') {
+          this.markSnap(action.slot as M13SlotId);
+        } else if (action.kind === 'rotate_held') {
+          this.markSnap(null);
+        }
       } else if (
         result.reason !== 'not_holding' &&
         result.reason !== 'empty_slot'
@@ -973,6 +1034,81 @@ export class PipeBoardScene extends Phaser.Scene {
       !this.helpOpen &&
       !this.confirmOpen
     );
+  }
+
+  /**
+   * Static seat/rotate highlight on one mount (700 ms), then cleared. The
+   * timer never rebuilds the board while a drag is in flight (a rebuild
+   * would destroy the dragged piece); the highlight then simply drops at
+   * the next act-driven refresh.
+   */
+  private markSnap(slot: M13SlotId | null) {
+    this.snapSlot = slot;
+    this.snapTimer?.remove(false);
+    this.snapTimer = null;
+
+    if (slot !== null) {
+      this.snapTimer = this.time.delayedCall(700, () => {
+        this.snapTimer = null;
+
+        if (this.snapSlot === slot) {
+          this.snapSlot = null;
+
+          // Restyle the mount in place — never rebuild from a timer.
+          const rect = this.cellRects.get(slot);
+
+          if (rect !== undefined && rect.active) {
+            rect.setStrokeStyle(
+              1,
+              (rect.getData('baseStroke') as number | undefined) ??
+                IP_COLORS.slotStroke,
+            );
+          }
+
+          if (this.lastView !== null) {
+            this.writeProbe(this.lastView);
+          }
+        }
+      });
+    }
+  }
+
+  /** UNDO (U / button): revert the last committed board change. */
+  private undoLast(mode: InputMode) {
+    if (!this.canEdit() || this.lastView === null) {
+      return;
+    }
+
+    if (this.lastView.held !== null) {
+      this.cancelHeld();
+    }
+
+    if (!this.act({ kind: 'undo' }, mode)) {
+      sfxUnavailable();
+    }
+
+    this.destroyGhost();
+    this.markSnap(null);
+    this.refresh();
+  }
+
+  /** CLEAR (C / button): every seated piece returns to the bench. */
+  private resetBoard(mode: InputMode) {
+    if (!this.canEdit() || this.lastView === null) {
+      return;
+    }
+
+    if (this.lastView.held !== null) {
+      this.cancelHeld();
+    }
+
+    if (!this.act({ kind: 'reset_board' }, mode)) {
+      sfxUnavailable();
+    }
+
+    this.destroyGhost();
+    this.markSnap(null);
+    this.refresh();
   }
 
   /** SPACE / click semantics: pick up, or place/return the held piece. */
@@ -1711,6 +1847,16 @@ export class PipeBoardScene extends Phaser.Scene {
     on('keydown-BACKSPACE', (event) => {
       if (!event.repeat) {
         this.returnFocused('typed');
+      }
+    });
+    on('keydown-U', (event) => {
+      if (!event.repeat) {
+        this.undoLast('typed');
+      }
+    });
+    on('keydown-C', (event) => {
+      if (!event.repeat) {
+        this.resetBoard('typed');
       }
     });
     on('keydown-T', (event) => {

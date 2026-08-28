@@ -414,13 +414,15 @@ export function commitM02CWorkspace(
   }
 
   s.phase = 'retrieve';
-  m02cWindow.spec.windowId = M02C_WINDOW_IDS.retrieval;
+  // The commit belongs to the WORKSPACE window; the retrieval window id
+  // applies from the first retrieval probe onward.
   m02cWindow.log('workspace_committed', {
     ...m02cWorkspaceSummary(),
     move_count: s.moveCount,
     label_changes: s.labelChanges,
     input_mode: inputMode,
   });
+  m02cWindow.spec.windowId = M02C_WINDOW_IDS.retrieval;
   m02cWindow.log('retrieval_requested', {
     probe_index: 0,
     requested_case: RETRIEVAL_PROBES[s.form][0],

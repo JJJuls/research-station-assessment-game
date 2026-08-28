@@ -33,49 +33,54 @@ export interface M04Debris {
   dy: number;
 }
 
-/** Six standardised objects at fixed offsets (identical for everyone). */
+/**
+ * Six standardised objects at fixed offsets (identical for everyone). The
+ * scatter stays compact (dx within ±64, dy 0..64) so every object lands on
+ * open floor beside the bench and none sits under a station, the chute or
+ * the workshop machinery block (x ≥ 416 on rows 12-13).
+ */
 export const M04_DEBRIS: readonly M04Debris[] = [
   {
     object_id: 'm04_offcut_a',
     label: 'Coupon offcut',
     icon: 'proc-icon-packing-wrap',
-    dx: -60,
-    dy: 40,
+    dx: -28,
+    dy: 44,
   },
   {
     object_id: 'm04_offcut_b',
     label: 'Coupon offcut',
     icon: 'proc-icon-packing-wrap',
-    dx: 64,
-    dy: 36,
+    dx: 28,
+    dy: 44,
   },
   {
     object_id: 'm04_swarf_a',
     label: 'Swarf tray',
     icon: 'proc-icon-panel-shim',
-    dx: -28,
-    dy: 62,
+    dx: -8,
+    dy: 64,
   },
   {
     object_id: 'm04_swarf_b',
     label: 'Swarf tray',
     icon: 'proc-icon-panel-shim',
-    dx: 36,
-    dy: 66,
+    dx: 52,
+    dy: 60,
   },
   {
     object_id: 'm04_wrap_a',
     label: 'Blade wrap',
     icon: 'proc-icon-mount-clamp',
-    dx: -92,
-    dy: 12,
+    dx: -64,
+    dy: 8,
   },
   {
     object_id: 'm04_wrap_b',
     label: 'Blade wrap',
     icon: 'proc-icon-mount-clamp',
-    dx: 96,
-    dy: 8,
+    dx: 52,
+    dy: 0,
   },
 ];
 
@@ -127,8 +132,17 @@ export function m04JobRun(): boolean {
   return state.jobRun;
 }
 
-/** Debris still lying at the bench (not carried, not disposed). */
+/**
+ * Debris still lying at the bench (not carried, not disposed). Nothing
+ * exists before the sample job ran: the objects are CREATED by the job
+ * (D-V2-1 fix — the six objects used to be materialised at scene creation,
+ * so "six rendered objects" was never evidence that the job ran).
+ */
 export function m04RemainingDebris(): M04Debris[] {
+  if (!state.jobRun) {
+    return [];
+  }
+
   return M04_DEBRIS.filter(
     (d) =>
       !state.disposed.includes(d.object_id) && state.carried !== d.object_id,

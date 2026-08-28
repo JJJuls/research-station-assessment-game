@@ -595,6 +595,107 @@ test.describe('M13 lattice bench (browser)', () => {
     });
   });
 
+  test('usability pass: seat/rotate feedback, UNDO and CLEAR by pointer and keyboard, validator untouched', async ({
+    page,
+  }) => {
+    test.setTimeout(200_000);
+
+    const errors = captureErrors(page);
+
+    await bootIpLab(page, {
+      game_session_id: 'GS_IP_M13_USABILITY',
+      ip_form: 'A',
+      module: 'm13',
+    });
+    await waitPipeOpen(page, true);
+
+    let probe = await pipeProbe(page);
+
+    // Undo/clear are present but inert on an empty board (nothing to revert).
+    expect(probe.buttons.find((b) => b.id === 'undo')?.enabled).toBe(false);
+    expect(probe.buttons.find((b) => b.id === 'reset')?.enabled).toBe(false);
+
+    // Seating a piece flashes its mount and describes the act in one line.
+    await dragPieceToCell(page, 'el1', 'A2');
+    await waitCellPiece(page, 'A2', 'el1', 0);
+    probe = await pipeProbe(page);
+    expect(probe.snap_slot).toBe('A2');
+    expect(probe.last_action).toMatch(/Seated .* at A2/);
+    expect(probe.undo_available).toBe(true);
+    expect(probe.seated_count).toBe(1);
+
+    // Rotation feedback names the mount and the new angle.
+    await rightClickRect(page, await pipeCell(page, 'A2'));
+    await waitCellPiece(page, 'A2', 'el1', 90);
+    probe = await pipeProbe(page);
+    expect(probe.last_action).toMatch(/Rotated A2 → 90°/);
+
+    // UNDO (pointer) reverts the rotation only; UNDO (keyboard) the seat.
+    await clickPipeButton(page, 'undo');
+    await waitCellPiece(page, 'A2', 'el1', 0);
+    await page.keyboard.press('u');
+    await waitCellPiece(page, 'A2', null);
+    await expect(pipeBenchPiece(page, 'el1')).resolves.toBeTruthy();
+    probe = await pipeProbe(page);
+    expect(probe.undo_available).toBe(false);
+    expect(probe.last_action).toMatch(/Undid/);
+
+    // Seat two pieces, CLEAR by keyboard returns both; UNDO restores them.
+    await dragPieceToCell(page, 'el1', 'A2');
+    await waitCellPiece(page, 'A2', 'el1', 0);
+    await dragPieceToCell(page, 'el2', 'A1');
+    await waitCellPiece(page, 'A1', 'el2', 0);
+    await page.keyboard.press('c');
+    await waitCellPiece(page, 'A2', null);
+    await waitCellPiece(page, 'A1', null);
+    probe = await pipeProbe(page);
+    expect(probe.seated_count).toBe(0);
+    expect(probe.last_action).toMatch(/Board cleared/);
+    await clickPipeButton(page, 'undo');
+    await waitCellPiece(page, 'A2', 'el1', 0);
+    await waitCellPiece(page, 'A1', 'el2', 0);
+    // CLEAR by pointer empties the board again for the sealed run below.
+    await clickPipeButton(page, 'reset');
+    await waitCellPiece(page, 'A2', null);
+    await waitCellPiece(page, 'A1', null);
+
+    // Raw acts are recorded as their own events — never merged, never scored.
+    const m13 = await ipModule(page, 'm13');
+
+    expect(m13.undos).toBe(3);
+    expect(m13.resets).toBe(2);
+    expect(m13.window_status).toBe('open');
+
+    const events = await ipEvents(page);
+    const family = eventsOfFamily(events, 'proto_m13_lattice');
+    const types = family.map((event) => event.event_type);
+
+    expect(types.filter((t) => t === 'proto_m13_lattice_undone')).toHaveLength(
+      3,
+    );
+    expect(
+      types.filter((t) => t === 'proto_m13_lattice_board_reset'),
+    ).toHaveLength(2);
+    expect(
+      family
+        .filter((e) => e.event_type === 'proto_m13_lattice_undone')
+        .map((e) => e.metadata?.input_mode),
+    ).toEqual(['pointer', 'typed', 'pointer']);
+    expectProvisionalOnly(family);
+
+    // The validator is untouched: the same sealed run still completes.
+    await solveLatticeByMouse(page);
+    await dragPieceToCell(page, 'va1', 'B1');
+    await waitCellPiece(page, 'B1', 'va1', 0);
+    await clickPipeButton(page, 'submit');
+    await page.waitForTimeout(300);
+    probe = await pipeProbe(page);
+    expect(probe.closed).toBe(true);
+    expect(probe.feedback.join(' ')).toMatch(/holds pressure/);
+    expect(probe.buttons.find((b) => b.id === 'undo')?.enabled).toBe(false);
+    expectNoRuntimeErrors(errors);
+  });
+
   test('bounded closure: four invalid test runs exhaust the window; the station reports review', async ({
     page,
   }) => {

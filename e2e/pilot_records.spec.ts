@@ -1,17 +1,26 @@
 /**
- * Pilot route — Records & Logistics integration (Unit 3).
+ * Pilot route — Records Workshop evidence windows (evidence-led pilot v2,
+ * Unit 2 closure). REWRITTEN around the M02 open case workspace.
  *
- * Real input + DEV probes. Asserts on the participant route (Dock →
- * Concourse): the filing workstation opens the M02 overlay and a commit
- * records its own family with the opportunity id; the press stations run
- * M03 occasions A (pointer) and B (keyboard parity) and close as completed;
- * supply bundles are recoverable world items whose pickup, locker transfer
- * and assembly conserve items and emit only secondary telemetry; the
- * inventory survives a scene transition; the coverage registry reflects
- * completed / open windows; and abandonment (close without commit) keeps
- * the window open while the route still advances (fail-forward).
+ * The v1 "file sheets into the correct folder" workstation (an answer-key
+ * task) is gone from the participant route. M02 is now an OPEN workspace:
+ * the participant organises six heterogeneous cases across four trays with
+ * optional self-chosen labels, hands the workspace over, then retrieves two
+ * counterbalanced cases from wherever they put them. Nothing here compares
+ * the layout to a designer-preferred arrangement — every raw component is
+ * defined against the participant's OWN labels (misfile = a case in a tray
+ * whose chosen label names a different kind; untraceable = a case in an
+ * unlabelled tray) or against functional retrieval.
+ *
+ * Real keyboard/pointer input against DEV probes. Proves: organisation and
+ * retrieval record raw organisation/retrieval components only; the two
+ * window ids (workspace / retrieval) are stamped correctly; the M02 family
+ * never touches M03/M04/M06/M07/M12/M13; abandonment keeps the window open
+ * and the route still advances; the two M03 press occasions are distinct
+ * registered opportunities (A on the restoration shift, B refused until the
+ * return); ordinary inventory play emits secondary telemetry only.
  */
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 import { getEvents, selectPromptOption } from './helpers';
 import {
@@ -21,11 +30,12 @@ import {
 } from './journey';
 import {
   bootPilot,
+  expectStage,
+  interactAt,
   openPromptAt,
   PILOT,
   pilotCoverage,
   pilotEventTypes,
-  pilotProbe,
   press,
   routeToWorkshopWork,
   useDoor,
@@ -48,6 +58,7 @@ interface ProbeSlot {
 interface UiProbe {
   open: boolean;
   mode: string;
+  focus: { container_id: string; slot_index: number } | null;
   slots: ProbeSlot[];
   buttons: {
     id: string;
@@ -60,9 +71,28 @@ interface UiProbe {
   }[];
 }
 
-async function uiProbe(
-  page: import('@playwright/test').Page,
-): Promise<UiProbe | null> {
+interface RegisterRecord {
+  opportunity_id: string;
+  owner: string;
+  entered: boolean;
+  completed: boolean;
+  invalid_reason: string | null;
+  form?: string | null;
+}
+
+const TRAY = (n: number) => `m02c_tray_${n}`;
+const DESK = 'm02c_desk';
+const M02_FAMILY = 'proto_m02_case_';
+const OTHER_WORKSHOP_FAMILIES = [
+  'proto_m03_',
+  'proto_m04_',
+  'proto_m06_',
+  'proto_m07_',
+  'proto_m12_',
+  'proto_m13_',
+];
+
+async function uiProbe(page: Page): Promise<UiProbe | null> {
   return page.evaluate(
     () =>
       (window as unknown as { __inventoryUiProbe?: UiProbe | null })
@@ -70,10 +100,7 @@ async function uiProbe(
   );
 }
 
-async function waitOverlay(
-  page: import('@playwright/test').Page,
-  open: boolean,
-) {
+async function waitOverlay(page: Page, open: boolean) {
   await page.waitForFunction(
     (expected) =>
       ((window as unknown as { __inventoryUiProbe?: { open: boolean } | null })
@@ -84,11 +111,7 @@ async function waitOverlay(
   await page.waitForTimeout(200);
 }
 
-async function gamePoint(
-  page: import('@playwright/test').Page,
-  x: number,
-  y: number,
-) {
+async function gamePoint(page: Page, x: number, y: number) {
   const box = await page.locator('canvas').boundingBox();
 
   if (box === null) {
@@ -117,11 +140,17 @@ function slotBy(
   return slot;
 }
 
-async function dragSlot(
-  page: import('@playwright/test').Page,
-  from: ProbeSlot,
-  to: ProbeSlot,
-) {
+function slotOfCase(probe: UiProbe, definitionId: string) {
+  const slot = probe.slots.find((s) => s.definition_id === definitionId);
+
+  if (slot === undefined) {
+    throw new Error(`case ${definitionId} not on any surface`);
+  }
+
+  return slot;
+}
+
+async function dragSlot(page: Page, from: ProbeSlot, to: ProbeSlot) {
   const a = await gamePoint(page, from.x + from.w / 2, from.y + from.h / 2);
   const b = await gamePoint(page, to.x + to.w / 2, to.y + to.h / 2);
 
@@ -133,7 +162,14 @@ async function dragSlot(
   await page.waitForTimeout(300);
 }
 
-async function clickButton(page: import('@playwright/test').Page, id: string) {
+async function clickSlot(page: Page, slot: ProbeSlot) {
+  const point = await gamePoint(page, slot.x + slot.w / 2, slot.y + slot.h / 2);
+
+  await page.mouse.click(point.x, point.y);
+  await page.waitForTimeout(260);
+}
+
+async function clickButton(page: Page, id: string) {
   const probe = (await uiProbe(page))!;
   const button = probe.buttons.find((b) => b.id === id);
 
@@ -176,121 +212,377 @@ function playerItemCount(probe: UiProbe): number {
     .reduce((sum, s) => sum + s.quantity, 0);
 }
 
+async function register(page: Page): Promise<RegisterRecord[]> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __measurementValidity?: RegisterRecord[] })
+        .__measurementValidity ?? [],
+  );
+}
+
+async function m02Events(page: Page) {
+  return (await getEvents(page)).filter((e) =>
+    e.event_type.startsWith(M02_FAMILY),
+  );
+}
+
+function metadataOf(event: { metadata?: unknown }) {
+  return (event.metadata ?? {}) as Record<string, unknown>;
+}
+
 /** Dock -> Concourse (Vale's handover beats) -> Records Workshop at stage workshop_work. */
-async function enterWorkshop(
-  page: import('@playwright/test').Page,
-  tag: string,
-) {
+async function enterWorkshop(page: Page, tag: string) {
   await bootPilot(page, tag);
   await completeDockTutorial(page, 1);
   await routeToWorkshopWork(page);
 }
 
-// SUPERSEDED (evidence-led pilot v2, Unit 2): the v1 Incident Filing
-// Workstation (file sheets into the correct folder) was replaced on the
-// participant route by the M02 open case workspace (mandatory correction
-// C7), so these v1 assertions no longer describe the route. Coverage of the
-// v2 windows lives in e2e/pilot_episodes_1_2.spec.ts; the press/bundle
-// paths here need a rewrite against the workshop (open item, Unit 7).
-test.describe
-  .skip('pilot route — Records & Logistics (Unit 3) [superseded by v2]', () => {
-  test('M02 filing and M03 press occasions run on the route with their own families; beacon follows; coverage completes', async ({
+async function openCaseWorkspace(page: Page) {
+  await interactAt(page, PILOT.workshop.filingDesk, {
+    approachOffset: { x: 0, y: 44 },
+  });
+  await waitOverlay(page, true);
+
+  const probe = (await uiProbe(page))!;
+
+  expect(probe.mode).toBe('m02case');
+
+  return probe;
+}
+
+test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', () => {
+  test("M02 open workspace: free organisation, functional retrieval, raw components against the participant's own labels, independent of every other workshop family", async ({
     page,
   }) => {
     test.setTimeout(480_000);
     const errors = captureErrors(page);
 
-    await enterWorkshop(page, 'rec');
+    await enterWorkshop(page, 'm02');
 
-    // Filing workstation → M02 overlay.
-    await openPromptAt(page, PILOT.workshop.filingDesk, {
-      approachOffset: { x: 0, y: 44 },
-    }).catch(() => undefined);
-    await waitOverlay(page, true);
+    let probe = await openCaseWorkspace(page);
 
-    let probe = (await uiProbe(page))!;
+    // Entry state: six cases on the intake tray, four empty 2×2 trays, no
+    // sort/answer buttons — labels are the participant's own choice.
+    expect(
+      probe.slots.filter((s) => s.container_id === DESK && s.definition_id),
+    ).toHaveLength(6);
 
-    expect(probe.mode).toBe('m02');
-    expect(probe.buttons.filter((b) => b.id.startsWith('sort_'))).toHaveLength(
-      0,
-    );
+    for (let n = 1; n <= 4; n += 1) {
+      const slots = probe.slots.filter((s) => s.container_id === TRAY(n));
 
-    const d01 = slotBy(probe, 'm02_desk', (s) => s.code === 'D-01');
-    const ir12 = slotBy(
-      probe,
-      'm02_folder_ir12',
-      (s) => s.definition_id === null,
-    );
+      expect(slots).toHaveLength(4);
+      expect(slots.every((s) => s.definition_id === null)).toBe(true);
+    }
 
-    await dragSlot(page, d01, ir12);
-    probe = (await uiProbe(page))!;
-
-    const d02 = slotBy(probe, 'm02_desk', (s) => s.code === 'D-02');
-    const ir19 = slotBy(
-      probe,
-      'm02_folder_ir19',
-      (s) => s.definition_id === null,
-    );
-
-    await dragSlot(page, d02, ir19);
-    await clickButton(page, 'm02_commit');
-    await page.keyboard.press('Escape');
-    await waitOverlay(page, false);
-
-    let events = await getEvents(page);
-    const m02 = events.filter((e) =>
-      (e.event_type as string).startsWith('proto_m02_'),
-    );
-
-    expect(m02.map((e) => e.event_type)).toEqual(
+    expect(probe.buttons.map((b) => b.id)).toEqual(
       expect.arrayContaining([
-        'proto_m02_opportunity_opened',
-        'proto_m02_item_moved',
-        'proto_m02_committed',
+        'm02c_label_1',
+        'm02c_label_2',
+        'm02c_label_3',
+        'm02c_label_4',
+        'm02c_handover',
       ]),
     );
+    expect(probe.buttons.some((b) => /sort|answer|check/i.test(b.id))).toBe(
+      false,
+    );
 
-    for (const event of m02) {
-      const metadata = event.metadata as Record<string, unknown>;
+    let types = await pilotEventTypes(page);
 
-      expect(metadata.opportunity_id).toBe('proto_m02_incident_filing');
-      expect(event.study_item_ids).toBeUndefined();
-      expect(event.construct_id).toBeUndefined();
-      expect(event.success).toBeUndefined();
+    expect(types).toContain('proto_m02_case_opportunity_opened');
+
+    // Organise by pointer: an own schema that is deliberately imperfect.
+    //   tray 1  S-14 + I-22   (label SAMPLES → I-22 misfiled by OWN label)
+    //   tray 2  R-07          (label REPAIRS)
+    //   tray 3  K-03          (no label → untraceable)
+    //   tray 4  empty         (label SAMPLES again → duplicate)
+    //   intake  S-15, R-09    (left on intake)
+    const moves: [string, number, number][] = [
+      ['m02c_case_s14', 1, 0],
+      ['m02c_case_i22', 1, 1],
+      ['m02c_case_r07', 2, 0],
+      ['m02c_case_k03', 3, 0],
+    ];
+
+    for (const [caseId, tray, index] of moves) {
+      probe = (await uiProbe(page))!;
+      await dragSlot(
+        page,
+        slotOfCase(probe, caseId),
+        slotBy(probe, TRAY(tray), (s) => s.slot_index === index),
+      );
     }
 
-    const committed = m02.find((e) => e.event_type === 'proto_m02_committed')!
-      .metadata as Record<string, unknown>;
-
-    expect(committed.misfiled_count).toBe(1);
-    expect(committed.unfiled_count).toBe(10);
-
-    // Beacon moves to the next guided station (Press A).
-    let route = await pilotProbe(page);
-
-    expect(route?.beacon?.label).toBe('Label Press A');
-
-    // Press A — pointer path: three press cycles, then close = departure.
-    await openPromptAt(page, PILOT.workshop.pressA, {
-      approachOffset: { x: 0, y: 44 },
-    }).catch(() => undefined);
-    await waitOverlay(page, true);
     probe = (await uiProbe(page))!;
-    expect(probe.mode).toBe('m03');
+    expect(slotOfCase(probe, 'm02c_case_i22').container_id).toBe(TRAY(1));
+    expect(slotOfCase(probe, 'm02c_case_k03').container_id).toBe(TRAY(3));
+    expect(slotOfCase(probe, 'm02c_case_s15').container_id).toBe(DESK);
 
-    for (let cycle = 0; cycle < 3; cycle += 1) {
-      await clickButton(page, 'm03_press');
-      await page.waitForTimeout(900);
+    // Labels: pointer on trays 1 and 2, keyboard (L on the focused tray) on
+    // tray 4 — the same semantic act by either input mode.
+    await clickButton(page, 'm02c_label_1'); // SAMPLES
+    await clickButton(page, 'm02c_label_2'); // SAMPLES
+    await clickButton(page, 'm02c_label_2'); // REPAIRS
+    probe = (await uiProbe(page))!;
+    await clickSlot(
+      page,
+      slotBy(probe, TRAY(4), (s) => s.slot_index === 0),
+    );
+    probe = (await uiProbe(page))!;
+    expect(probe.focus?.container_id).toBe(TRAY(4));
+    await press(page, 'l'); // SAMPLES (duplicate of tray 1)
+    probe = (await uiProbe(page))!;
+    expect(probe.buttons.find((b) => b.id === 'm02c_label_1')?.label).toBe(
+      'LABEL: SAMPLES',
+    );
+    expect(probe.buttons.find((b) => b.id === 'm02c_label_2')?.label).toBe(
+      'LABEL: REPAIRS',
+    );
+    expect(probe.buttons.find((b) => b.id === 'm02c_label_3')?.label).toBe(
+      'LABEL: none',
+    );
+    expect(probe.buttons.find((b) => b.id === 'm02c_label_4')?.label).toBe(
+      'LABEL: SAMPLES',
+    );
+
+    // HAND OVER (pointer) commits the workspace as it is.
+    await clickButton(page, 'm02c_handover');
+    await page.waitForTimeout(300);
+
+    let events = await m02Events(page);
+    const committed = events.find(
+      (e) => e.event_type === 'proto_m02_case_workspace_committed',
+    );
+
+    expect(committed).toBeDefined();
+
+    const commitMeta = metadataOf(committed!);
+
+    expect(commitMeta.window_id).toBe('m02_workspace_w1');
+    expect(commitMeta.opportunity_id).toBe('proto_m02_case_workspace');
+    expect(commitMeta.tray_labels).toEqual({
+      [TRAY(1)]: 'SAMPLES',
+      [TRAY(2)]: 'REPAIRS',
+      [TRAY(3)]: null,
+      [TRAY(4)]: 'SAMPLES',
+    });
+    expect(commitMeta.misfile_count).toBe(1); // I-22 under the OWN label SAMPLES
+    expect(commitMeta.untraceable_case_count).toBe(1); // K-03 in the unlabelled tray
+    expect(commitMeta.duplicate_count).toBe(1); // SAMPLES used twice
+    expect(commitMeta.cases_left_on_intake).toBe(2);
+    expect(commitMeta.move_count).toBe(4);
+    expect(commitMeta.label_changes).toBe(4);
+    expect(commitMeta.case_location_at_close).toMatchObject({
+      m02c_case_i22: { container: TRAY(1), label: 'SAMPLES', kind: 'incident' },
+      m02c_case_k03: { container: TRAY(3), label: null, kind: 'supply' },
+    });
+    // No designer key anywhere: the v1 answer-key fields do not exist and
+    // no field compares the layout to an expected arrangement.
+    for (const key of Object.keys(commitMeta)) {
+      expect(key).not.toMatch(
+        /misfiled_count|unfiled|expected|designer|target/,
+      );
+    }
+
+    // Retrieval: the requested case is read from the probe event (fixed by
+    // form, never by the layout); one wrong pick, then the correct slot;
+    // the second probe is answered directly. Retrieval events carry the
+    // retrieval window id.
+    for (let probeIndex = 0; probeIndex < 2; probeIndex += 1) {
+      events = await m02Events(page);
+
+      const requested = events
+        .filter((e) => e.event_type === 'proto_m02_case_retrieval_requested')
+        .map((e) => metadataOf(e))
+        .find((m) => m.probe_index === probeIndex);
+
+      expect(requested).toBeDefined();
+      expect(requested!.window_id).toBe('m02_retrieval_w1');
+
+      const requestedCase = requested!.requested_case as string;
+
+      probe = (await uiProbe(page))!;
+
+      if (probeIndex === 0) {
+        const wrong = probe.slots.find(
+          (s) => s.definition_id !== null && s.definition_id !== requestedCase,
+        )!;
+
+        await clickSlot(page, wrong);
+        probe = (await uiProbe(page))!;
+      }
+
+      await clickSlot(page, slotOfCase(probe, requestedCase));
+    }
+
+    await page.waitForTimeout(300);
+    events = await m02Events(page);
+
+    const closed = events.find(
+      (e) => e.event_type === 'proto_m02_case_window_closed',
+    );
+
+    expect(closed).toBeDefined();
+
+    const raw = metadataOf(closed!).raw_components as Record<string, unknown>;
+
+    expect(metadataOf(closed!).exit_state).toBe('completed');
+    expect(raw.retrieval_actions).toBe(3);
+    expect(raw.retrieval_errors).toBe(1);
+    expect(raw.retrieval_success).toBe(2);
+    expect(raw.retrievals).toHaveLength(3);
+    expect((raw.retrieval_route as string[]).length).toBeGreaterThan(0);
+    expect(raw.misfile_count).toBe(1);
+    expect(raw.untraceable_case_count).toBe(1);
+
+    const picks = events.filter(
+      (e) => e.event_type === 'proto_m02_case_retrieval_pick',
+    );
+
+    expect(picks.map((e) => metadataOf(e).correct)).toEqual([
+      false,
+      true,
+      true,
+    ]);
+
+    // Every M02 event: one opportunity, a recorded form = counterbalance,
+    // no canonical study item / construct / success.
+    const forms = new Set<string>();
+
+    for (const event of events) {
+      const m = metadataOf(event);
+
+      expect(m.measure_id).toBe('M02');
+      expect(m.opportunity_id).toBe('proto_m02_case_workspace');
+      expect(['form_a', 'form_b']).toContain(m.form);
+      expect(m.counterbalance).toBe(m.form);
+      forms.add(m.form as string);
+      expect(event.study_item_ids ?? undefined).toBeUndefined();
+      expect(event.construct_id ?? undefined).toBeUndefined();
+      expect(event.success ?? undefined).toBeUndefined();
+    }
+
+    expect(forms.size).toBe(1);
+
+    // Independence: nothing the workspace did touched another workshop
+    // family, and no other family fired during the whole M02 flow.
+    types = await pilotEventTypes(page);
+
+    for (const family of OTHER_WORKSHOP_FAMILIES) {
+      expect(
+        types.filter((t) => t.startsWith(family)),
+        `${family} events during the M02 flow`,
+      ).toEqual([]);
     }
 
     await page.keyboard.press('Escape');
     await waitOverlay(page, false);
+    expect(
+      (await pilotCoverage(page))!.items.find((i) => i.item === 'M02')?.status,
+    ).toBe('completed');
+    expect(
+      (await register(page)).find(
+        (r) => r.opportunity_id === 'proto_m02_case_workspace',
+      ),
+    ).toMatchObject({ owner: 'M02', entered: true, completed: true });
+    expectNoRuntimeErrors(errors);
+  });
 
-    // Press B — keyboard parity: C runs the press cycle.
-    await openPromptAt(page, PILOT.workshop.pressB, {
+  test('M02 abandonment fail-forward: closing without hand-over keeps the window open, reopening resumes the same workspace, the board sign-off still advances', async ({
+    page,
+  }) => {
+    test.setTimeout(420_000);
+    const errors = captureErrors(page);
+
+    await enterWorkshop(page, 'm02ab');
+
+    let probe = await openCaseWorkspace(page);
+
+    await dragSlot(
+      page,
+      slotOfCase(probe, 'm02c_case_r09'),
+      slotBy(probe, TRAY(2), (s) => s.slot_index === 0),
+    );
+    await page.keyboard.press('Escape');
+    await waitOverlay(page, false);
+
+    let events = await m02Events(page);
+    const abandoned = events.find(
+      (e) => e.event_type === 'proto_m02_case_panel_closed_without_handover',
+    );
+
+    expect(abandoned).toBeDefined();
+    expect(metadataOf(abandoned!).phase).toBe('organise');
+    expect(metadataOf(abandoned!).cases_left_on_intake).toBe(5);
+    expect(
+      events.some((e) => e.event_type === 'proto_m02_case_workspace_committed'),
+    ).toBe(false);
+    expect(
+      events.some((e) => e.event_type === 'proto_m02_case_window_closed'),
+    ).toBe(false);
+    expect(
+      (await pilotCoverage(page))!.items.find((i) => i.item === 'M02')?.status,
+    ).toBe('open');
+
+    // Reopen: the same workspace (no re-seed, no reset), recorded as a
+    // panel reopen, and the earlier move persists.
+    probe = await openCaseWorkspace(page);
+    expect(slotOfCase(probe, 'm02c_case_r09').container_id).toBe(TRAY(2));
+    events = await m02Events(page);
+    expect(
+      events.filter(
+        (e) => e.event_type === 'proto_m02_case_opportunity_opened',
+      ),
+    ).toHaveLength(1);
+    expect(
+      events.some((e) => e.event_type === 'proto_m02_case_panel_reopened'),
+    ).toBe(true);
+    await page.keyboard.press('Escape');
+    await waitOverlay(page, false);
+
+    // The board lets the participant sign off regardless (no performance
+    // gate); the window stays open and the review never names it as
+    // never-entered.
+    await openPromptAt(page, PILOT.workshop.board, {
       approachOffset: { x: 0, y: 44 },
-    }).catch(() => undefined);
+    });
+    await selectPromptOption(page, 1);
+    await expectStage(page, 'lab_briefing');
+
+    const coverage = (await pilotCoverage(page))!;
+
+    expect(coverage.items.find((i) => i.item === 'M02')?.status).toBe('open');
+    expect(coverage.summary.neverEnteredLabels.join(' ')).not.toMatch(
+      /case workspace/i,
+    );
+    expectNoRuntimeErrors(errors);
+  });
+
+  test('M03 occasions stay distinct: press A runs on the restoration shift under its own ids; press B refuses until the return; both are separately registered', async ({
+    page,
+  }) => {
+    test.setTimeout(420_000);
+    const errors = captureErrors(page);
+
+    await enterWorkshop(page, 'm03');
+
+    // Both occasions are declared + offered on entry, neither entered.
+    let records = await register(page);
+
+    expect(
+      records
+        .filter((r) => r.opportunity_id.startsWith('proto_m03_reset_'))
+        .map((r) => r.opportunity_id)
+        .sort(),
+    ).toEqual(['proto_m03_reset_a', 'proto_m03_reset_b']);
+
+    // Press A — keyboard path: C runs the press cycle; the third cycle
+    // opens the window; closing the panel is the departure observation.
+    await interactAt(page, PILOT.workshop.pressA, {
+      approachOffset: { x: 0, y: 44 },
+    });
     await waitOverlay(page, true);
+    expect((await uiProbe(page))!.mode).toBe('m03');
 
     for (let cycle = 0; cycle < 3; cycle += 1) {
       await page.keyboard.press('c');
@@ -300,58 +592,56 @@ test.describe
     await page.keyboard.press('Escape');
     await waitOverlay(page, false);
 
-    events = await getEvents(page);
-
-    const m03 = events.filter((e) =>
-      (e.event_type as string).startsWith('proto_m03_'),
-    );
-    const m03Closed = m03.filter(
-      (e) => e.event_type === 'proto_m03_window_closed',
+    const m03 = (await getEvents(page)).filter((e) =>
+      e.event_type.startsWith('proto_m03_'),
     );
 
-    expect(m03Closed).toHaveLength(2);
-    expect(
-      new Set(
-        m03Closed.map(
-          (e) => (e.metadata as Record<string, unknown>).opportunity_id,
-        ),
-      ),
-    ).toEqual(new Set(['proto_m03_reset_a', 'proto_m03_reset_b']));
-    // Coded prior exposure on the occasions (M02 committed before).
-    for (const event of m03.filter(
-      (e) => e.event_type === 'proto_m03_opportunity_opened',
-    )) {
-      expect(
-        (event.metadata as Record<string, unknown>).opportunity_id,
-      ).toMatch(/proto_m03_reset_[ab]/);
+    expect(m03.map((e) => e.event_type)).toEqual(
+      expect.arrayContaining([
+        'proto_m03_press_cycle',
+        'proto_m03_opportunity_opened',
+        'proto_m03_surface_state_at_departure',
+        'proto_m03_window_closed',
+      ]),
+    );
+
+    for (const event of m03) {
+      const m = metadataOf(event);
+
+      expect(m.opportunity_id).toBe('proto_m03_reset_a');
+      expect(m.window_id).toBe('m03_reset_window_a');
+      expect(event.object_id).toBe('m03_press_bench_a');
+      expect(event.study_item_ids ?? undefined).toBeUndefined();
+      expect(event.success ?? undefined).toBeUndefined();
     }
 
-    // Coverage registry: M02 and M03 completed; beacon falls back to Vale.
-    const coverage = await pilotCoverage(page);
-    const byItem = new Map(coverage!.items.map((item) => [item.item, item]));
-
-    expect(byItem.get('M02')?.status).toBe('completed');
-    expect(byItem.get('M03')?.status).toBe('completed');
-    // Round-2 S2 rule: stopping-rule (reviewNaming never) items are
-    // excluded from the participant-facing OPEN count, so closed =
-    // 2 completed here + those 4 items = 6.
-    expect(coverage!.summary.closed).toBe(6);
-    route = await pilotProbe(page);
-    // Every guided station terminal → the beacon falls back to the stage
-    // anchor (the Work Order Board signs the workshop off).
-    expect(route?.beacon?.label).toBe('Work Order Board');
-
-    // Families stay disjoint from each other and from secondary telemetry.
-    const types = await pilotEventTypes(page);
-
+    // Press B is scheduled for the return shift: no window, no B event.
+    await interactAt(page, PILOT.workshop.pressB, {
+      approachOffset: { x: 0, y: 44 },
+    });
+    await page.waitForTimeout(500);
+    expect((await uiProbe(page))?.open ?? false).toBe(false);
     expect(
-      types.filter((t) => t.startsWith('proto_m02_') && t.includes('m03')),
-    ).toEqual([]);
-    expect(
-      types.filter(
-        (t) => t.startsWith('secondary_inventory_') && /m02|m03/.test(t),
+      await page.evaluate(
+        () =>
+          (window as unknown as { __lastRoomFeedbackText?: string | null })
+            .__lastRoomFeedbackText ?? null,
       ),
-    ).toEqual([]);
+    ).toMatch(/No batch scheduled/);
+    expect(
+      (await pilotEventTypes(page)).filter((t) => t.startsWith('proto_m03_')),
+    ).toHaveLength(m03.length);
+
+    // Register: A completed, B still offered-only (distinct records, one
+    // owner, identical fixed starting condition recorded as the form).
+    records = await register(page);
+
+    const a = records.find((r) => r.opportunity_id === 'proto_m03_reset_a')!;
+    const b = records.find((r) => r.opportunity_id === 'proto_m03_reset_b')!;
+
+    expect(a).toMatchObject({ owner: 'M03', entered: true, completed: true });
+    expect(b).toMatchObject({ owner: 'M03', entered: false, completed: false });
+    expect(a.form).toBe(b.form);
     expectNoRuntimeErrors(errors);
   });
 
@@ -363,8 +653,8 @@ test.describe
 
     await enterWorkshop(page, 'inv');
 
-    // Collect the component bundle (SPACE with no station in range). Go
-    // x-first: the board's body sits on the x=640 column above the spawn.
+    // Collect the component bundle (SPACE with no station in range):
+    // west along the y=272 lane, then north up the clear x=96 column.
     await walkTo(page, 96, 112, { yFirst: false });
 
     const bundleProbe = await page.evaluate(
@@ -494,52 +784,5 @@ test.describe
     expect(types.filter((t) => t.startsWith('proto_m0'))).toEqual([]);
     expect(types).toContain('secondary_inventory_commit_recipe');
     expectNoRuntimeErrors(errors);
-  });
-
-  test('abandonment fail-forward: a filing window closed without commit stays open; the route still advances', async ({
-    page,
-  }) => {
-    test.setTimeout(360_000);
-
-    await enterWorkshop(page, 'aband');
-
-    await openPromptAt(page, PILOT.workshop.filingDesk, {
-      approachOffset: { x: 0, y: 44 },
-    }).catch(() => undefined);
-    await waitOverlay(page, true);
-
-    const probe = (await uiProbe(page))!;
-    const d03 = slotBy(probe, 'm02_desk', (s) => s.code === 'D-03');
-    const ir7 = slotBy(
-      probe,
-      'm02_folder_ir7',
-      (s) => s.definition_id === null,
-    );
-
-    await dragSlot(page, d03, ir7);
-    await page.keyboard.press('Escape');
-    await waitOverlay(page, false);
-
-    const types = await pilotEventTypes(page);
-
-    expect(types).toContain('proto_m02_panel_closed_without_commit');
-    expect(types).not.toContain('proto_m02_committed');
-
-    let coverage = await pilotCoverage(page);
-
-    expect(coverage!.items.find((i) => i.item === 'M02')?.status).toBe('open');
-
-    // The board lets the participant sign off regardless (no performance gate).
-    await openPromptAt(page, PILOT.workshop.board, {
-      approachOffset: { x: 0, y: 44 },
-    });
-    await selectPromptOption(page, 1);
-    expect((await pilotProbe(page))?.stage).toBe('lab_briefing');
-    coverage = await pilotCoverage(page);
-    expect(coverage!.items.find((i) => i.item === 'M02')?.status).toBe('open');
-    // The review never names an entered-but-unfinished window.
-    expect(coverage!.summary.neverEnteredLabels.join(' ')).not.toMatch(
-      /filing/i,
-    );
   });
 });

@@ -46,11 +46,11 @@ const CONCOURSE = {
 const WORKSHOP = {
   caseWorkspace: { x: 96, y: 272 },
   pressB: { x: 288, y: 272 },
-  sampleCutter: { x: 320, y: 352 },
+  sampleCutter: { x: 352, y: 384 },
   dispatchConsole: { x: 640, y: 448 },
   calibrationBench: { x: 352, y: 96 },
   qcPacket: { x: 544, y: 448 },
-  latticeBench: { x: 608, y: 96 },
+  latticeBench: { x: 704, y: 416 },
   sealLog: { x: 704, y: 160 },
 } as const;
 
@@ -361,23 +361,32 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     );
     expect(await itemStatus(page, 'M02')).toBe('open');
 
-    // Sample cutter: the neutral job scatters six debris objects (physical layer).
+    // Sample cutter: NO debris exists before the job (the objects are created
+    // by the job, so rendered debris is evidence only together with the
+    // job_run event); the neutral job then scatters six objects (physical
+    // layer) and opens the M04 window once.
+    const debrisCount = () =>
+      page.evaluate(
+        () =>
+          (
+            window as unknown as {
+              __physicalProbe?: { objects: unknown[] } | null;
+            }
+          ).__physicalProbe?.objects.length ?? 0,
+      );
+
+    expect(await debrisCount()).toBe(0);
     await interactAt(page, WORKSHOP.sampleCutter, {
       approachOffset: { x: 0, y: -44 },
     });
     await page.waitForTimeout(600);
-    const physical = await page.evaluate(
-      () =>
-        (
-          window as unknown as {
-            __physicalProbe?: { objects: unknown[] } | null;
-          }
-        ).__physicalProbe ?? null,
-    );
-
-    expect(physical?.objects.length).toBe(6);
     types = await pilotEventTypes(page);
     expect(types).toContain('proto_m04_debris_job_run');
+    expect(
+      types.filter((t) => t === 'proto_m04_debris_opportunity_opened'),
+    ).toHaveLength(1);
+    expect(await debrisCount()).toBe(6);
+    expect(await itemStatus(page, 'M04')).toBe('open');
 
     // Dispatch console: practice line via token buttons (pointer), dispatched.
     await openSurfaceAt(page, WORKSHOP.dispatchConsole, 'm06_dispatch_console');
@@ -421,7 +430,7 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
 
     // Lattice bench opens the physical pipe board above the host.
     await interactAt(page, WORKSHOP.latticeBench, {
-      approachOffset: { x: 0, y: 44 },
+      approachOffset: { x: 0, y: -44 },
     });
     await page
       .waitForFunction(

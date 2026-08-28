@@ -88,6 +88,8 @@ export const M13L_EVENT_TYPES = declareIpEvents('proto_m13_lattice', [
   'piece_returned',
   'piece_rotated',
   'placement_refused',
+  'undone',
+  'board_reset',
   'submitted',
   'completed',
   'exhausted',
@@ -134,7 +136,14 @@ export type PipeAction =
   | { kind: 'return_held' }
   | { kind: 'return_slot'; slot: string }
   | { kind: 'rotate_held' }
-  | { kind: 'rotate_slot'; slot: string };
+  | { kind: 'rotate_slot'; slot: string }
+  /** Usability pass (v2 Unit 2): revert the last board change. */
+  | { kind: 'undo' }
+  /** Usability pass (v2 Unit 2): return every seated piece to the bench. */
+  | { kind: 'reset_board' };
+
+/** Bounded undo history (board snapshots before each committed change). */
+export const M13L_UNDO_DEPTH = 64;
 
 interface SubmissionRecord {
   submission: number;
@@ -156,8 +165,14 @@ interface M13LatticeState {
   rotations: number;
   returns: number;
   refused: number;
+  undos: number;
+  resets: number;
   submissions: SubmissionRecord[];
   feedback: string[];
+  /** One-line neutral description of the last successful board act (UI). */
+  last_action: string | null;
+  /** Board snapshots before each committed change (undo stack). */
+  history: PipeBoardState[];
   final_network_valid: boolean | null;
 }
 
@@ -176,8 +191,12 @@ function createInitialState(form: FormId): M13LatticeState {
     rotations: 0,
     returns: 0,
     refused: 0,
+    undos: 0,
+    resets: 0,
     submissions: [],
     feedback: [],
+    last_action: null,
+    history: [],
     final_network_valid: null,
   };
 }
@@ -208,6 +227,8 @@ function rawSummary() {
     rotations: s.rotations,
     returns: s.returns,
     placements_refused: s.refused,
+    undos: s.undos,
+    resets: s.resets,
     constraints_total: M13L_CONSTRAINTS.length,
     constraints_satisfied_at_submission: last?.constraints_satisfied ?? null,
     open_branch_count_at_submission: last?.open_branch_count ?? null,
@@ -318,6 +339,12 @@ export function m13LatticeAct(
     case 'rotate_slot':
       outcome = pipeRotateSlot(s.board, action.slot);
       break;
+    case 'undo':
+      outcome = undoOutcome(s);
+      break;
+    case 'reset_board':
+      outcome = resetOutcome(s);
+      break;
     default:
       outcome = {
         state: s.board,
@@ -346,6 +373,30 @@ export function m13LatticeAct(
 
   const before = s.board;
 
+  // Undo stack: every committed change to what is SEATED (place / return
+  // / rotate / reset) pushes the prior board; picks, cancels and undo
+  // itself never do. Bounded depth; oldest entries fall away.
+  if (
+    action.kind === 'place' ||
+    action.kind === 'return_held' ||
+    action.kind === 'return_slot' ||
+    action.kind === 'rotate_held' ||
+    action.kind === 'rotate_slot' ||
+    action.kind === 'reset_board'
+  ) {
+    // Snapshots always describe SEATED state: a piece held mid-act goes
+    // home in the snapshot, so an undo never leaves a piece in the hand.
+    s.history.push(
+      structuredClone(
+        before.held === null ? before : pipeCancelHeld(before).state,
+      ),
+    );
+
+    if (s.history.length > M13L_UNDO_DEPTH) {
+      s.history.shift();
+    }
+  }
+
   s.board = outcome.state;
 
   switch (action.kind) {
@@ -356,12 +407,17 @@ export function m13LatticeAct(
         source: s.board.held?.source,
         input_mode: mode,
       });
+      s.last_action =
+        s.board.held === null
+          ? null
+          : `Holding ${getM13Piece(s.board.held.piece_id).label}.`;
       break;
     case 'place': {
       const detail = outcome.result.detail as {
         source: string;
         relocation: boolean;
       };
+      const seated = s.board.placements[action.slot as M13SlotId];
 
       if (detail.relocation) {
         s.moves += 1;
@@ -370,17 +426,22 @@ export function m13LatticeAct(
       }
 
       log('piece_placed', {
-        piece_id: s.board.placements[action.slot as M13SlotId]?.piece_id,
+        piece_id: seated?.piece_id,
         slot: action.slot,
-        rotation: s.board.placements[action.slot as M13SlotId]?.rotation,
+        rotation: seated?.rotation,
         source: detail.source,
         relocation: detail.relocation,
         input_mode: mode,
       });
+      s.last_action =
+        seated === undefined
+          ? null
+          : `Seated ${getM13Piece(seated.piece_id).label} at ${action.slot} · ${seated.rotation}°.`;
       break;
     }
     case 'cancel':
       // Safe restore — no raw act recorded (the piece is where it was).
+      s.last_action = null;
       break;
     case 'return_held':
     case 'return_slot':
@@ -389,6 +450,7 @@ export function m13LatticeAct(
         ...(outcome.result.detail ?? {}),
         input_mode: mode,
       });
+      s.last_action = 'Returned to the bench.';
       break;
     case 'rotate_held':
       s.rotations += 1;
@@ -398,15 +460,37 @@ export function m13LatticeAct(
         rotation: s.board.held?.rotation,
         input_mode: mode,
       });
+      s.last_action = `Rotated (held) → ${s.board.held?.rotation}°.`;
       break;
-    case 'rotate_slot':
+    case 'rotate_slot': {
+      const seated = s.board.placements[action.slot as M13SlotId];
+
       s.rotations += 1;
       log('piece_rotated', {
-        piece_id: s.board.placements[action.slot as M13SlotId]?.piece_id,
+        piece_id: seated?.piece_id,
         target: action.slot,
-        rotation: s.board.placements[action.slot as M13SlotId]?.rotation,
+        rotation: seated?.rotation,
         input_mode: mode,
       });
+      s.last_action = `Rotated ${action.slot} → ${seated?.rotation}°.`;
+      break;
+    }
+    case 'undo':
+      s.undos += 1;
+      log('undone', {
+        ...(outcome.result.detail ?? {}),
+        history_remaining: s.history.length,
+        input_mode: mode,
+      });
+      s.last_action = 'Undid the last change.';
+      break;
+    case 'reset_board':
+      s.resets += 1;
+      log('board_reset', {
+        ...(outcome.result.detail ?? {}),
+        input_mode: mode,
+      });
+      s.last_action = 'Board cleared — every piece is back on the bench.';
       break;
     default:
       break;
@@ -415,6 +499,62 @@ export function m13LatticeAct(
   refreshIpProbe();
 
   return outcome.result;
+}
+
+/** Undo: restore the board snapshot taken before the last committed change. */
+function undoOutcome(s: M13LatticeState): PipeOutcome {
+  if (s.history.length === 0) {
+    return {
+      state: s.board,
+      result: {
+        ok: false,
+        reason: 'not_holding',
+        detail: 'Nothing to undo.',
+      },
+    };
+  }
+
+  // The restored snapshot never holds a piece (snapshots are taken of
+  // seated state), so a held piece is never lost by an undo.
+  const restored = s.history.pop()!;
+
+  return {
+    state: restored,
+    result: {
+      ok: true,
+      detail: { seated_after: Object.keys(restored.placements).length },
+    },
+  };
+}
+
+/** Reset: every seated piece returns to the bench (one committed change). */
+function resetOutcome(s: M13LatticeState): PipeOutcome {
+  let board = s.board.held === null ? s.board : pipeCancelHeld(s.board).state;
+  const seated = Object.keys(board.placements) as M13SlotId[];
+
+  if (seated.length === 0) {
+    return {
+      state: s.board,
+      result: {
+        ok: false,
+        reason: 'not_holding',
+        detail: 'The board is already clear.',
+      },
+    };
+  }
+
+  for (const slot of seated) {
+    const step = pipeReturnSlot(board, slot);
+
+    if (step.result.ok) {
+      board = step.state;
+    }
+  }
+
+  return {
+    state: board,
+    result: { ok: true, detail: { pieces_returned: seated.length } },
+  };
 }
 
 /** Neutral structural feedback lines for a validation result. */
@@ -468,6 +608,7 @@ export function m13LatticeSubmit(
 
   s.submissions.push(record);
   s.final_network_valid = detail.valid;
+  s.last_action = null;
   log('submitted', {
     ...record,
     layout: s.board.placements,
@@ -520,6 +661,7 @@ export function m13LatticeHelp(mode: InputMode, nowMs: number): string[] {
     'left open). The fractured centre mount seats nothing.',
     'Drag or click a piece to pick it up, click a mount to seat it.',
     'Right-click / R rotates a piece. DEL / drop on bench returns it.',
+    'UNDO (U) reverts the last change; CLEAR (C) returns every piece.',
     'TEST FLOW checks the run; you may revise and test again.',
   ];
 }
@@ -558,6 +700,9 @@ export interface LatticeView {
   held: PipeHeld | null;
   bench: M13Piece[];
   feedback: string[];
+  last_action: string | null;
+  undo_available: boolean;
+  seated_count: number;
   submissions_used: number;
   max_submissions: number;
   status: IpWindow['status'];
@@ -574,6 +719,9 @@ export function m13LatticeView(): LatticeView {
     held: s.board.held === null ? null : { ...s.board.held },
     bench: pipeBenchPieces(s.board),
     feedback: [...s.feedback],
+    last_action: s.last_action,
+    undo_available: s.history.length > 0,
+    seated_count: Object.keys(s.board.placements).length,
     submissions_used: s.window.submission_count,
     max_submissions: M13L_MAX_SUBMISSIONS,
     status: s.window.status,

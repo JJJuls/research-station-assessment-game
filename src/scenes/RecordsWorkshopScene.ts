@@ -95,15 +95,26 @@ import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 
 const TILE = 32;
 
-/** Episode-2 stations off the y=272 lane (the lane stays clear for walking). */
+/**
+ * Episode-2 stations off the y=272 lane (the lane stays clear for walking).
+ *
+ * Placement rule (D-V2-1 root cause): a station's natural approach point
+ * (44 px off its centre) must have NO other station nearer than the
+ * station itself, even with a ±12 px landing error — otherwise SPACE/E
+ * silently targets the neighbour. The cutter used to sit 86 px from
+ * Press B and the lattice bench 71 px from the Work Order Board; both
+ * approach points were contested. Stations also sit in columns clear of
+ * the two machinery blocks (x 416-543; the 32 px body needs the column
+ * centre ≥ 576 or ≤ 384) so x-then-y walks never stall.
+ */
 const WS = {
-  sampleCutter: { x: 10 * TILE, y: 11 * TILE },
-  disposalChute: { x: 11.5 * TILE, y: 14 * TILE },
+  sampleCutter: { x: 11 * TILE, y: 12 * TILE },
+  disposalChute: { x: 13 * TILE, y: 10.75 * TILE },
   dispatchConsole: { x: 20 * TILE, y: 14 * TILE },
   calibrationBench: { x: 11 * TILE, y: 3 * TILE },
   qcPacket: { x: 17 * TILE, y: 14 * TILE },
   sealLog: { x: 22 * TILE, y: 5 * TILE },
-  latticeBench: { x: 19 * TILE, y: 3 * TILE },
+  latticeBench: { x: 22 * TILE, y: 13 * TILE },
 } as const;
 
 export class RecordsWorkshopScene extends PilotZoneScene {
@@ -280,7 +291,14 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         this.logStationOpened('sample_cutter');
 
         if (m04JobRun()) {
-          this.showFeedbackMessage('Coupon cut. The cutter is idle.');
+          // Keyboard parity: the debris lies inside the cutter's own
+          // interaction radius, so SPACE/E here must act on the debris
+          // (dispose at the chute / pick up the nearest piece) exactly as
+          // it does with no station in range — never re-open the idle bench.
+          if (!this.tryDebrisInteract('keyboard')) {
+            this.showFeedbackMessage('Coupon cut. The cutter is idle.');
+          }
+
           return false;
         }
 
@@ -622,8 +640,21 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     this.physical?.update();
   }
 
-  /** SPACE/E with nothing in range: carried debris drops at the chute if in reach, else bundle pickup. */
+  /** SPACE/E with nothing in range: carried debris drops at the chute if in reach, else pickup, else bundle pickup. */
   protected onEmptyInteract(): void {
+    if (this.tryDebrisInteract('keyboard')) {
+      return;
+    }
+
+    super.onEmptyInteract();
+  }
+
+  /**
+   * One keyboard debris action (shared by the empty-interact path and the
+   * idle cutter prompt): dispose the carried piece when the chute is in
+   * reach, otherwise pick up the nearest loose piece within reach.
+   */
+  private tryDebrisInteract(inputMode: 'keyboard'): boolean {
     const carried = m04Carried();
 
     if (carried !== null) {
@@ -633,11 +664,13 @@ export class RecordsWorkshopScene extends PilotZoneScene {
           this.player.y - WS.disposalChute.y,
         ) <= 96;
 
-      if (near && disposeM04(carried.object_id, Date.now(), 'keyboard')) {
+      if (near && disposeM04(carried.object_id, Date.now(), inputMode)) {
         this.showFeedbackMessage('Disposed.');
         this.physical?.syncObjects(this.debrisEntries());
-        return;
+        return true;
       }
+
+      return false;
     }
 
     // Keyboard debris pickup: nearest loose debris within reach.
@@ -651,15 +684,14 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
     if (
       nearest !== undefined &&
-      carried === null &&
-      pickUpM04(nearest.entry.spec.object_id, 'keyboard')
+      pickUpM04(nearest.entry.spec.object_id, inputMode)
     ) {
       this.player.playActionAnim('pickup');
       this.physical?.syncObjects(this.debrisEntries());
-      return;
+      return true;
     }
 
-    super.onEmptyInteract();
+    return false;
   }
 
   protected onRoomExit(): void {

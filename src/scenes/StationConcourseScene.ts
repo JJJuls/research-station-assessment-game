@@ -11,7 +11,10 @@
  * never gates another. Doors are always bidirectional.
  */
 import { key } from '../constants';
-import { beginManualWorldAction } from '../gameplay/actions';
+import {
+  beginManualWorldAction,
+  endManualWorldAction,
+} from '../gameplay/actions';
 import {
   refreshPilotCoverageProbe,
   stampContaminationNotes,
@@ -310,9 +313,22 @@ export class StationConcourseScene extends PilotZoneScene {
         }
 
         if (initiateM05('o1', Date.now(), 'keyboard')) {
+          // Manual world-action bracket: the avatar holds still and no
+          // prompt opens for the neutral 2 s fix. The bracket MUST be
+          // ended (D-V2-4 fix: it never was, so every later interaction
+          // and all movement on the Concourse stayed frozen) — on the
+          // timer, and on scene shutdown if the participant leaves first.
           beginManualWorldAction();
+
+          const endBracket = () => {
+            endManualWorldAction();
+            this.events.off('shutdown', endBracket);
+          };
+
+          this.events.once('shutdown', endBracket);
           this.time.delayedCall(M05_FIX_MS, () => {
             completeM05Fix('o1', Date.now(), 'keyboard');
+            endBracket();
             this.lampFlicker?.setVisible(false);
             this.showFeedbackMessage('Lamp connector reseated.');
           });
