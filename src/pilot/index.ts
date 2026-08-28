@@ -7,5 +7,6 @@
  * trait; every identifier is provisional.
  */
 export * from './coverageSchedule';
+export * from './evidenceLedger';
 export * from './pilotCoverage';
 export * from './pilotRoute';
