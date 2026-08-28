@@ -1,19 +1,27 @@
 /**
- * Station map overlay (M) — professional pilot route, Unit 2.
+ * Station map + mission log overlay (M) — evidence-led pilot v2 (Unit 1).
  *
- * A compact schematic of the six participant areas (Dock, Concourse,
- * Records & Logistics, Diagnostics Laboratory, Exterior Recovery Yard,
- * Utility & Core Deck) with the current position, the current destination
- * and discovered/undiscovered state. Modal over a paused pilot zone
- * (pause-and-launch, inventory-overlay precedent); M or ESC closes.
- * Presentation only: shows no measurement logic, no status of any task.
+ * A compact schematic of the six participant zones (Dock, Concourse,
+ * Records Workshop, Diagnostics Laboratory, Recovery Yard, Utility Deck &
+ * Core) with the current position, the current destination and
+ * discovered/undiscovered state, plus the concise mission log (open
+ * obligations, projects and notes registered by the hosting windows).
+ * Modal over a paused pilot zone (pause-and-launch, inventory-overlay
+ * precedent); M or ESC closes. Presentation only: shows no measurement
+ * logic, no validity state, no score.
  */
 import Phaser from 'phaser';
 
 import { key } from '../../constants';
 import { guardKeyHandler } from '../../inventory/ui/keyGuard';
 import type { PilotZoneKey } from '../pilotRoute';
-import { pilotMapModel, pilotObjective } from '../pilotRoute';
+import {
+  PILOT_EPISODE_NAMES,
+  pilotEpisode,
+  pilotMapModel,
+  pilotMissionLog,
+  pilotObjective,
+} from '../pilotRoute';
 
 interface StationMapLaunchData {
   resumeKey: string;
@@ -21,7 +29,7 @@ interface StationMapLaunchData {
 }
 
 interface MapBox {
-  zone: PilotZoneKey | 'records';
+  zone: PilotZoneKey;
   label: string;
   x: number;
   y: number;
@@ -29,58 +37,62 @@ interface MapBox {
   h: number;
 }
 
+/** Map column (left 480 px); the mission log occupies the right column. */
 const BOXES: readonly MapBox[] = [
   {
     zone: 'exterior_recovery_yard',
-    label: 'Exterior Recovery Yard',
-    x: 400,
-    y: 118,
-    w: 220,
-    h: 54,
+    label: 'Recovery Yard',
+    x: 262,
+    y: 128,
+    w: 170,
+    h: 46,
   },
   {
     zone: 'diagnostics_laboratory',
-    label: 'Diagnostics & Signal Laboratory',
-    x: 400,
-    y: 222,
-    w: 250,
-    h: 54,
+    label: 'Diagnostics Laboratory',
+    x: 262,
+    y: 216,
+    w: 190,
+    h: 46,
   },
   {
-    zone: 'records',
-    label: 'Records & Logistics',
-    x: 168,
-    y: 326,
-    w: 170,
+    zone: 'records_workshop',
+    label: 'Records Workshop',
+    x: 104,
+    y: 304,
+    w: 150,
     h: 46,
   },
   {
     zone: 'station_concourse',
     label: 'Station Concourse',
-    x: 400,
-    y: 326,
-    w: 200,
-    h: 54,
+    x: 262,
+    y: 304,
+    w: 150,
+    h: 46,
   },
   {
     zone: 'utility_core_deck',
-    label: 'Utility & Core Deck',
-    x: 632,
-    y: 326,
-    w: 190,
-    h: 54,
+    label: 'Utility Deck & Core',
+    x: 420,
+    y: 304,
+    w: 150,
+    h: 46,
   },
-  { zone: 'dock', label: 'Dock', x: 400, y: 430, w: 150, h: 46 },
+  { zone: 'dock', label: 'Dock', x: 262, y: 392, w: 120, h: 40 },
 ];
 
 /** Corridor lines between box centres (drawn beneath the boxes). */
-const LINKS: readonly [MapBox['zone'], MapBox['zone']][] = [
+const LINKS: readonly [PilotZoneKey, PilotZoneKey][] = [
   ['dock', 'station_concourse'],
   ['station_concourse', 'diagnostics_laboratory'],
   ['diagnostics_laboratory', 'exterior_recovery_yard'],
   ['station_concourse', 'utility_core_deck'],
-  ['records', 'station_concourse'],
+  ['records_workshop', 'station_concourse'],
 ];
+
+const LOG_X = 528;
+const LOG_W = 244;
 
 declare global {
   interface Window {
@@ -90,6 +102,7 @@ declare global {
       current: string | null;
       destination: string | null;
       discovered: string[];
+      log_entries: string[];
     } | null;
   }
 }
@@ -114,28 +127,34 @@ export class StationMapScene extends Phaser.Scene {
     const byZone = new Map(model.map((node) => [node.zone, node]));
     const current = model.find((node) => node.current)?.zone ?? this.zone;
     const destination = model.find((node) => node.destination)?.zone ?? null;
+    const log = pilotMissionLog();
+    const episode = pilotEpisode();
 
     this.add.rectangle(400, 300, 800, 600, 0x05080c, 0.62).setInteractive();
     this.add
-      .rectangle(400, 300, 720, 516, 0x101820, 0.97)
+      .rectangle(400, 300, 740, 520, 0x101820, 0.97)
       .setStrokeStyle(1, 0x33475a);
     this.add
-      .text(400, 66, 'STATION DIRECTORY', {
+      .text(262, 62, 'STATION MAP', {
         color: '#dfe9f1',
-        font: '18px monospace',
+        font: '16px monospace',
       })
       .setOrigin(0.5);
     this.add
-      .text(400, 88, pilotObjective(), {
-        color: '#9fb2c1',
-        font: '12px monospace',
-        wordWrap: { width: 640 },
-        align: 'center',
-      })
+      .text(
+        262,
+        84,
+        `Shift segment ${episode} — ${PILOT_EPISODE_NAMES[episode]}`,
+        {
+          color: '#9fb2c1',
+          font: '11px monospace',
+          wordWrap: { width: 440 },
+          align: 'center',
+        },
+      )
       .setOrigin(0.5);
 
-    const centre = (zone: MapBox['zone']) =>
-      BOXES.find((b) => b.zone === zone)!;
+    const centre = (zone: PilotZoneKey) => BOXES.find((b) => b.zone === zone)!;
 
     for (const [a, b] of LINKS) {
       const from = centre(a);
@@ -146,10 +165,7 @@ export class StationMapScene extends Phaser.Scene {
     }
 
     for (const box of BOXES) {
-      const node =
-        box.zone === 'records'
-          ? byZone.get('station_concourse')
-          : byZone.get(box.zone);
+      const node = byZone.get(box.zone);
       const discovered = node?.discovered ?? false;
       const isCurrent = box.zone === current;
       const isDestination = box.zone === destination;
@@ -166,44 +182,85 @@ export class StationMapScene extends Phaser.Scene {
         .rectangle(box.x, box.y, box.w, box.h, fill, 1)
         .setStrokeStyle(isDestination ? 3 : 2, stroke);
       this.add
-        .text(box.x, box.y - (discovered ? 6 : 0), box.label, {
+        .text(box.x, box.y - 7, box.label, {
           color: discovered ? '#dfe9f1' : '#6f8498',
-          font: '12px monospace',
+          font: '11px monospace',
           align: 'center',
-          wordWrap: { width: box.w - 16 },
+          wordWrap: { width: box.w - 12 },
         })
         .setOrigin(0.5);
 
-      if (!discovered) {
+      const tag = isCurrent
+        ? 'YOU ARE HERE'
+        : isDestination
+          ? 'DESTINATION'
+          : discovered
+            ? ''
+            : 'not yet visited';
+
+      if (tag.length > 0) {
         this.add
-          .text(box.x, box.y + 14, 'not yet visited', {
-            color: '#56687a',
-            font: '10px monospace',
-          })
-          .setOrigin(0.5);
-      } else if (isCurrent) {
-        this.add
-          .text(box.x, box.y + 14, 'YOU ARE HERE', {
-            color: '#5fd3c4',
-            font: '10px monospace',
-          })
-          .setOrigin(0.5);
-      } else if (isDestination) {
-        this.add
-          .text(box.x, box.y + 14, 'DESTINATION', {
-            color: '#e6c68f',
-            font: '10px monospace',
+          .text(box.x, box.y + 12, tag, {
+            color: isCurrent
+              ? '#5fd3c4'
+              : isDestination
+                ? '#e6c68f'
+                : '#56687a',
+            font: '9px monospace',
           })
           .setOrigin(0.5);
       }
+    }
 
-      if (isDestination && !discovered) {
-        this.add
-          .text(box.x, box.y + 14, 'DESTINATION', {
-            color: '#e6c68f',
-            font: '10px monospace',
-          })
-          .setOrigin(0.5);
+    // ——— Mission log (right column) ———
+    this.add
+      .rectangle(LOG_X + LOG_W / 2, 300, LOG_W + 16, 440, 0x0c1219, 1)
+      .setStrokeStyle(1, 0x33475a);
+    this.add
+      .text(LOG_X + LOG_W / 2, 100, 'MISSION LOG', {
+        color: '#dfe9f1',
+        font: '16px monospace',
+      })
+      .setOrigin(0.5);
+    this.add
+      .text(LOG_X, 124, 'CURRENT OBJECTIVE', {
+        color: '#7f95a8',
+        font: '9px monospace',
+      })
+      .setOrigin(0, 0.5);
+    this.add.text(LOG_X, 136, pilotObjective(), {
+      color: '#dfe9f1',
+      font: '11px monospace',
+      wordWrap: { width: LOG_W },
+    });
+
+    let y = 214;
+
+    this.add
+      .text(LOG_X, y, 'OPEN ITEMS', { color: '#7f95a8', font: '9px monospace' })
+      .setOrigin(0, 0.5);
+    y += 14;
+
+    if (log.length === 0) {
+      this.add.text(LOG_X, y, 'No open obligations.', {
+        color: '#9fb2c1',
+        font: '11px monospace',
+      });
+    } else {
+      for (const entry of log.slice(0, 7)) {
+        const glyph =
+          entry.kind === 'obligation'
+            ? '●'
+            : entry.kind === 'project'
+              ? '◆'
+              : '·';
+        const text = this.add.text(LOG_X, y, `${glyph} ${entry.text}`, {
+          color: entry.kind === 'note' ? '#9fb2c1' : '#dfe9f1',
+          font: '11px monospace',
+          wordWrap: { width: LOG_W },
+        });
+
+        y += text.height + 6;
       }
     }
 
@@ -211,8 +268,8 @@ export class StationMapScene extends Phaser.Scene {
     this.add
       .text(
         400,
-        516,
-        'cyan = you are here   ·   amber = destination   ·   grey = not yet visited\nM or ESC closes the map',
+        528,
+        'cyan = you are here   ·   amber = destination   ·   grey = not yet visited\nM or ESC closes',
         {
           color: '#9fb2c1',
           font: '11px monospace',
@@ -232,6 +289,7 @@ export class StationMapScene extends Phaser.Scene {
     });
 
     this.input.keyboard!.on('keydown', close);
+    this.input.once('pointerdown', () => this.close());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.keyboard?.off('keydown', close);
 
@@ -241,6 +299,7 @@ export class StationMapScene extends Phaser.Scene {
           current: null,
           destination: null,
           discovered: [],
+          log_entries: [],
         };
       }
     });
@@ -251,6 +310,7 @@ export class StationMapScene extends Phaser.Scene {
         current,
         destination,
         discovered: model.filter((n) => n.discovered).map((n) => n.zone),
+        log_entries: log.map((entry) => entry.text),
       };
     }
   }

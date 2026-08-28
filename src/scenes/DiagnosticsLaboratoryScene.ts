@@ -228,7 +228,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       x: kai.x,
       y: kai.y,
       label: 'Kai',
-      stages: ['lab_briefing', 'lab_work', 'exterior_briefing', 'report_kai'],
+      stages: ['lab_briefing', 'lab_work', 'exterior_briefing'],
       isDone: () => false,
       order: 0,
     });
@@ -432,10 +432,12 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
   private kaiBeat() {
     switch (pilotStage()) {
       case 'arrival':
-      case 'meet_vale':
-      case 'records':
+      case 'handover_briefing':
+      case 'incident_handover':
+      case 'workshop':
+      case 'workshop_work':
         return {
-          body: 'Kai: Vale will brief you first — operations desk in the Concourse.',
+          body: 'Kai: Vale briefs first — incident desk in the Concourse; the workshop orders come before the laboratory.',
           options: [{ label: 'Understood.', tag: 'redirect_vale' }],
         };
       case 'lab_briefing':
@@ -479,18 +481,10 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
           body: 'Kai: Noor is waiting in the Exterior Recovery Yard — north airlock. Report back to me afterwards.',
           options: [{ label: 'On my way.', tag: 'redirect_yard' }],
         };
-      case 'report_kai':
+      case 'return_hub':
         return {
-          body: 'Kai: Yard work logged. Vale wants a word — Concourse, south door.',
-          options: [
-            {
-              label: 'Heading to Vale.',
-              tag: 'report_ack',
-              onSelected: () => {
-                advancePilotStage('report_vale', Date.now());
-              },
-            },
-          ],
+          body: 'Kai: Back from outside — Vale is waiting at the incident desk, Concourse, south door.',
+          options: [{ label: 'Heading to Vale.', tag: 'return_redirect' }],
         };
       default:
         return {

@@ -1,47 +1,23 @@
 /**
- * Station Concourse — pilot zone 1 (professional pilot route).
+ * Station Concourse — the hub of the evidence-led pilot v2 (Unit 1: route
+ * shell). Episode 1 (Storm Arrival & Incident Handover) and the return
+ * check-in of episode 5 happen here.
  *
- * The central hub: arrival from the Dock (south), Vale at the operations
- * desk, the Records & Logistics work area (west), the north door to the
- * Diagnostics Laboratory and the east door to the Utility & Core Deck.
- *
- * Records & Logistics (Unit 3) hosts the accepted interactive inventory
- * unchanged at the domain level: the Incident Filing Workstation (M02
- * overlay mode, `proto_m02_incident_filing`), the two Label Press stations
- * (M03 occasions A/B, `proto_m03_reset_a/b`), the Component Locker
- * (storage transfer), the Assembly Bench (recipes) and three incoming
- * supply bundles (recoverable world items). Ambient inventory handling is
- * secondary telemetry only; the M02/M03 windows own their own disjoint
- * families. Every door is bidirectional; nothing gates on performance.
+ * Doors (all bidirectional): south → Dock, west → Records Workshop,
+ * north → Diagnostics Laboratory, east → Utility Deck. Vale at the incident
+ * desk is the anchor NPC of the Concourse stages. Unit 2 adds the episode-1
+ * windows (plan board, QC packet, incident desk, monitor watch, promise);
+ * Unit 4 adds the return-shift obligations. Nothing gates on performance;
+ * every beat offers "move on".
  */
 import { key } from '../constants';
-import { ensureInventoryIconTextures } from '../inventory/inventoryTextures';
-import {
-  declareM02Opportunity,
-  M02_OPPORTUNITY_ID,
-  m02Status,
-} from '../inventory/m02Filing';
-import type { M03OccasionId } from '../inventory/m03Reset';
-import {
-  declareM03Opportunities,
-  M03_OPPORTUNITY_IDS,
-  m03OccasionStatus,
-} from '../inventory/m03Reset';
-import {
-  installInventoryTelemetry,
-  setInventoryTelemetryScene,
-} from '../inventory/telemetry';
-import { openInventoryOverlay } from '../inventory/ui/openOverlay';
-import { recordPriorExposure } from '../measurement/validity';
-import {
-  refreshPilotCoverageProbe,
-  stampContaminationNotes,
-} from '../pilot/pilotCoverage';
+import { refreshPilotCoverageProbe } from '../pilot/pilotCoverage';
 import {
   advancePilotStage,
   pilotStage,
   registerPilotStation,
 } from '../pilot/pilotRoute';
+import type { PilotNpcBeat } from '../pilot/PilotZoneScene';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
 import { CONCOURSE_STATIONS } from '../pilot/zoneSites';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
@@ -58,6 +34,8 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   protected getLayout(): RoomLayout {
+    // 25×19 hub: doorways north (Laboratory), south (Dock), east (Utility
+    // Deck) and west (Records Workshop) — rows 8-9 on both side walls.
     return {
       theme: 'hub',
       grid: [
@@ -69,8 +47,8 @@ export class StationConcourseScene extends PilotZoneScene {
         '#..####...........####..#',
         '#.......................#',
         '#.......................#',
-        '#.......................-',
-        '#.......................-',
+        '-.......................-',
+        '-.......................-',
         '#.......................#',
         '#..####...........####..#',
         '#.......................#',
@@ -90,6 +68,8 @@ export class StationConcourseScene extends PilotZoneScene {
         return { x: 12 * TILE, y: 4.2 * TILE };
       case 'utility_core_deck':
         return { x: 20.5 * TILE, y: 8.5 * TILE };
+      case 'records_workshop':
+        return { x: 3.5 * TILE, y: 8.5 * TILE };
       case 'dock':
       default:
         return { x: 12 * TILE, y: 12.5 * TILE };
@@ -97,31 +77,20 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   create(data?: { spawn?: string }) {
-    // Inventory foundation wiring (InventoryLabScene precedent): icons,
-    // secondary telemetry bridge and the M02/M03 declarations (the Component
-    // Locker starts EMPTY on the route — incoming supplies are stowed there;
-    // the proving-ground seed is lab-only) (register: declared + offered; idempotent).
-    ensureInventoryIconTextures(this);
-    installInventoryTelemetry();
-    setInventoryTelemetryScene(key.scene.stationConcourse);
-    declareM02Opportunity();
-    declareM03Opportunities();
-    stampContaminationNotes();
-
     super.create(data);
-
     refreshPilotCoverageProbe();
   }
 
   protected populateRoom(): void {
     this.addPilotDoor({ to: 'dock', spawn: 'station_concourse' });
+    this.addPilotDoor({ to: 'records_workshop', spawn: 'station_concourse' });
     this.addPilotDoor({
       to: 'diagnostics_laboratory',
       spawn: 'station_concourse',
     });
     this.addPilotDoor({ to: 'utility_core_deck', spawn: 'station_concourse' });
 
-    // ——— Vale — operations desk (anchor NPC of the Concourse stages) ———
+    // ——— Vale — incident desk (anchor NPC of the Concourse stages) ———
     const vale = CONCOURSE_STATIONS.vale;
 
     this.addNpc({
@@ -134,23 +103,20 @@ export class StationConcourseScene extends PilotZoneScene {
       y: vale.y,
     });
     this.addDecor(vale.x, vale.y + 30, 'proc-desk-reception');
-    this.addSignageText(vale.x, vale.y - 64, 'OPERATIONS');
+    this.signage(vale.x, vale.y - 64, 'INCIDENT DESK');
     registerPilotStation({
       id: 'npc_vale',
       zone: 'station_concourse',
       x: vale.x,
       y: vale.y,
       label: 'Vale',
-      stages: ['meet_vale', 'records', 'report_vale'],
+      stages: ['handover_briefing', 'incident_handover', 'return_hub'],
       isDone: () => false,
       order: 0,
     });
 
-    this.addSignageText(6 * TILE, 2 * TILE - 8, 'RECORDS & LOGISTICS');
-    this.populateRecordsArea();
-
     // ——— Dressing ———
-    this.addDecor(3 * TILE, 3.4 * TILE, 'proc-light-pool');
+    this.addDecor(4 * TILE, 3.4 * TILE, 'proc-light-pool');
     this.addDecor(12 * TILE, 3.2 * TILE, 'proc-light-pool');
     this.addDecor(15.5 * TILE, 8.2 * TILE, 'proc-light-pool');
     this.addDecor(19 * TILE, 1.4 * TILE, 'proc-window-exterior');
@@ -161,160 +127,14 @@ export class StationConcourseScene extends PilotZoneScene {
     this.addDecor(21.5 * TILE, 13.5 * TILE, 'proc-board-portfolio');
     this.addDecor(17.5 * TILE, 12 * TILE, 'proc-cart-utility');
     this.addDecor(13.5 * TILE, 4.6 * TILE, 'proc-console-wall');
-    this.addSignageText(20.5 * TILE, 12.2 * TILE, 'DUTY BOARDS');
-    this.addSignageText(12 * TILE, 1.5 * TILE, 'DIAGNOSTICS LABORATORY  ▲');
-    this.addSignageText(12 * TILE, 17.5 * TILE, '▼  DOCK');
-    this.addSignageText(22.2 * TILE, 7.2 * TILE, 'UTILITY DECK  ▶');
+    this.signage(20.5 * TILE, 12.2 * TILE, 'DUTY BOARDS');
+    this.signage(12 * TILE, 1.5 * TILE, 'DIAGNOSTICS LABORATORY  ▲');
+    this.signage(12 * TILE, 17.5 * TILE, '▼  DOCK');
+    this.signage(22.2 * TILE, 7.2 * TILE, 'UTILITY DECK  ▶');
+    this.signage(2.8 * TILE, 7.2 * TILE, '◀  RECORDS WORKSHOP');
   }
 
-  /**
-   * Records & Logistics: incoming items (bundles) → visible destinations
-   * (locker / bench), the filing surface (M02) and the two press benches
-   * (M03 A/B). Explicit submit/leave controls live inside the overlays.
-   */
-  private populateRecordsArea() {
-    const S = CONCOURSE_STATIONS;
-
-    // Incoming supplies — recoverable world items (secondary telemetry only).
-    this.bundles.spawn('Component bundle', S.supplyA.x, S.supplyA.y, [
-      { definitionId: 'fuse_contact', quantity: 2 },
-      { definitionId: 'relay_housing', quantity: 1 },
-    ]);
-    this.bundles.spawn('Sample kit', S.supplyB.x, S.supplyB.y, [
-      { definitionId: 'sample_vial', quantity: 1 },
-      { definitionId: 'seal_cap', quantity: 1 },
-    ]);
-    this.bundles.spawn('Wire and wrap', S.supplyC.x, S.supplyC.y, [
-      { definitionId: 'wire_spool', quantity: 2 },
-      { definitionId: 'insulation_wrap', quantity: 2 },
-    ]);
-    this.addSignageText(5.5 * TILE, 4.2 * TILE, 'INCOMING SUPPLIES');
-
-    // Incident Filing Workstation — M02 (own overlay mode, own family).
-    this.addStation({
-      interactionKey: 'pilotStation',
-      label: 'Incident Filing Workstation',
-      texture: 'proc-desk-closure',
-      x: S.filingDesk.x,
-      y: S.filingDesk.y,
-      onPromptOpened: () => {
-        this.logStationOpened('filing_desk');
-        openInventoryOverlay(this, { mode: 'm02', allowWorldDrop: true });
-        return false;
-      },
-    });
-    registerPilotStation({
-      id: 'filing_desk',
-      zone: 'station_concourse',
-      x: S.filingDesk.x,
-      y: S.filingDesk.y,
-      label: 'Incident Filing Workstation',
-      stages: ['records'],
-      isDone: () => m02Status() === 'committed',
-      order: 1,
-    });
-
-    // Label Press A / B — M03 occasions (own overlay mode, own family).
-    this.addPressStation('a', 'Label Press A', S.pressA, 2);
-    this.addPressStation('b', 'Label Press B', S.pressB, 3);
-
-    // Component Locker — storage transfer (ordinary inventory, secondary).
-    this.addStation({
-      interactionKey: 'pilotStation',
-      label: 'Component Locker',
-      texture: 'proc-crate-components',
-      x: S.storageLocker.x,
-      y: S.storageLocker.y,
-      onPromptOpened: () => {
-        this.logStationOpened('storage_locker');
-        openInventoryOverlay(this, { mode: 'container', allowWorldDrop: true });
-        return false;
-      },
-    });
-
-    // Assembly Bench — recipes (ordinary inventory, secondary).
-    this.addStation({
-      interactionKey: 'pilotStation',
-      label: 'Assembly Bench',
-      texture: 'proc-bench-prep',
-      x: S.assemblyBench.x,
-      y: S.assemblyBench.y,
-      onPromptOpened: () => {
-        this.logStationOpened('assembly_bench');
-        openInventoryOverlay(this, { mode: 'workbench', allowWorldDrop: true });
-        return false;
-      },
-    });
-    this.addSignageText(6 * TILE, 12.6 * TILE, 'STORAGE  ·  ASSEMBLY');
-  }
-
-  private addPressStation(
-    occasion: M03OccasionId,
-    label: string,
-    at: { x: number; y: number },
-    order: number,
-  ) {
-    this.addStation({
-      interactionKey: 'pilotStation',
-      label,
-      texture: 'proc-rig-intake',
-      x: at.x,
-      y: at.y,
-      onPromptOpened: () => {
-        this.logStationOpened(`press_${occasion}`);
-
-        if (m03OccasionStatus(occasion) === 'closed') {
-          this.showFeedbackMessage('Press station idle. The batch is done.');
-          return false;
-        }
-
-        // Coded prior exposure (REV-MIN-6): M02 committed or the other
-        // occasion closed before this occasion opens.
-        if (m03OccasionStatus(occasion) === 'idle') {
-          if (m02Status() === 'committed') {
-            recordPriorExposure(
-              M03_OPPORTUNITY_IDS[occasion],
-              `exposure:${M02_OPPORTUNITY_ID}_committed_before`,
-            );
-          }
-
-          const other: M03OccasionId = occasion === 'a' ? 'b' : 'a';
-
-          if (m03OccasionStatus(other) === 'closed') {
-            recordPriorExposure(
-              M03_OPPORTUNITY_IDS[occasion],
-              `exposure:${M03_OPPORTUNITY_IDS[other]}_closed_before`,
-            );
-          }
-        }
-
-        openInventoryOverlay(this, {
-          mode: 'm03',
-          m03Occasion: occasion,
-          allowWorldDrop: true,
-        });
-        return false;
-      },
-    });
-    registerPilotStation({
-      id: `press_${occasion}`,
-      zone: 'station_concourse',
-      x: at.x,
-      y: at.y,
-      label,
-      stages: ['records'],
-      isDone: () => m03OccasionStatus(occasion) === 'closed',
-      order,
-    });
-  }
-
-  private logStationOpened(stationId: string) {
-    this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
-      metadata: { station_id: stationId, zone: this.zoneKey },
-    });
-  }
-
-  private addSignageText(x: number, y: number, text: string) {
+  private signage(x: number, y: number, text: string) {
     this.add
       .text(x, y, text, {
         color: '#7f95a8',
@@ -341,86 +161,86 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   /** Vale's beat depends only on the route stage (navigation), never on outcomes. */
-  private valeBeat() {
-    const stage = pilotStage();
-
-    switch (stage) {
+  private valeBeat(): PilotNpcBeat {
+    switch (pilotStage()) {
       case 'arrival':
-      case 'meet_vale':
+      case 'handover_briefing':
         return {
           body:
-            'Vale: Good — you made it through the storm. Records are a mess and the coolant line is down.\n' +
-            'Start in Records & Logistics, west side: file the incident sheets at the desk and run both label press batches. Incoming supplies can go in the locker or to the bench. Come back to me when you are done there.',
+            'Vale: Good — you made it through the storm. This desk is the incident handover: the storm packet is on the work surface.\n' +
+            'Work through it, then confirm the handover with me.',
           options: [
             {
               label: 'Understood.',
               tag: 'briefing_ack',
               onSelected: () => {
-                advancePilotStage('records', Date.now());
-              },
-            },
-            {
-              label: 'Where exactly is Records & Logistics?',
-              tag: 'briefing_where',
-              feedback:
-                'Vale: West side of this hall — the desk, the two presses, the locker and the bench.',
-              onSelected: () => {
-                advancePilotStage('records', Date.now());
+                advancePilotStage('incident_handover', Date.now());
               },
             },
           ],
         };
-      case 'records':
+      case 'incident_handover':
         return {
-          body: 'Vale: How is Records & Logistics going? Anything you leave open stays open until the core is synchronised.',
+          body: 'Vale: How is the handover going? Anything you leave open stays open for the shift.',
           options: [
             {
-              label: 'I am done there — what is next?',
-              tag: 'records_done',
+              label: 'Handover confirmed — what is next?',
+              tag: 'handover_done',
               feedback:
-                'Vale: Kai needs you in the Diagnostics Laboratory — north door.',
+                'Vale: The Records Workshop needs restoring — west door. The work orders are on the board.',
               onSelected: () => {
-                advancePilotStage('lab_briefing', Date.now());
+                advancePilotStage('workshop', Date.now());
               },
             },
             {
               label: 'Still working on it.',
-              tag: 'records_continue',
+              tag: 'handover_continue',
               feedback: 'Vale: Take your time.',
             },
           ],
+        };
+      case 'workshop':
+      case 'workshop_work':
+        return {
+          body: 'Vale: The Records Workshop is through the west door — the work orders are on the board there.',
+          options: [{ label: 'On my way.', tag: 'redirect_workshop' }],
         };
       case 'lab_briefing':
       case 'lab_work':
       case 'exterior_briefing':
       case 'exterior_work':
-      case 'report_kai':
         return {
-          body: 'Vale: Kai is waiting in the Diagnostics Laboratory, north door. Report back to me once the outside work is done.',
+          body: 'Vale: Kai is waiting in the Diagnostics Laboratory, north door. Check in with me when you are back from outside.',
           options: [{ label: 'On my way.', tag: 'redirect_lab' }],
         };
-      case 'report_vale':
+      case 'return_hub':
         return {
-          body: 'Vale: Outside work logged. Last stop: the Utility & Core Deck, east door — review completion at the Core console and synchronise.',
+          body: 'Vale: Back inside — good. Anything you accepted earlier is still yours to close. The return shift finishes in the Records Workshop, west door.',
           options: [
             {
-              label: 'Heading to the deck.',
-              tag: 'report_ack',
+              label: 'Heading to the workshop.',
+              tag: 'return_ack',
               onSelected: () => {
-                advancePilotStage('deck_review', Date.now());
+                advancePilotStage('workshop_return', Date.now());
               },
             },
           ],
         };
-      case 'deck_review':
+      case 'workshop_return':
         return {
-          body: 'Vale: The Core console is on the Utility & Core Deck, east door.',
+          body: 'Vale: The return shift closes in the Records Workshop — west door. Sign the board there when you are done.',
+          options: [{ label: 'Understood.', tag: 'redirect_workshop_return' }],
+        };
+      case 'deck_closure':
+      case 'core_stabilise':
+        return {
+          body: 'Vale: The Utility Deck is through the east door — the shift review panel is there, then the Core.',
           options: [{ label: 'Understood.', tag: 'redirect_deck' }],
         };
       case 'complete':
       default:
         return {
-          body: 'Vale: Core synchronised. Thank you.',
+          body: 'Vale: Core stable. Thank you.',
           options: [{ label: 'Understood.', tag: 'complete_ack' }],
         };
     }

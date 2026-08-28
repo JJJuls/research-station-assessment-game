@@ -43,10 +43,12 @@ const scene = {
   // map overlay (M), both modal over a paused pilot zone.
   pilotOpening: 'pilot_opening',
   pilotStationMap: 'pilot_station_map',
+  pilotWorkSurface: 'pilot_work_surface',
   opsAnnex: 'ops_annex',
   pumpHouse: 'pump_house',
   repair: 'repair',
   sideRepair: 'side_repair',
+  recordsWorkshop: 'records_workshop',
   stationConcourse: 'station_concourse',
   utilityBay: 'utility_bay',
   utilityCoreDeck: 'utility_core_deck',

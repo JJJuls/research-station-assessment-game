@@ -118,6 +118,7 @@ import {
 import {
   advancePilotStage,
   pilotStage,
+  pilotStageAtOrAfter,
   registerPilotStation,
 } from '../pilot/pilotRoute';
 import type { PilotNpcBeat } from '../pilot/PilotZoneScene';
@@ -681,7 +682,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
 
     // ——— Tool issue: Noor grants at the briefing; re-entry after the
     // briefing re-checks so a dropped tool can never soft-lock work.
-    if (pilotStage() !== 'arrival' && pilotStage() !== 'meet_vale') {
+    if (pilotStageAtOrAfter('exterior_briefing')) {
       this.ensureFieldTools();
     }
 
@@ -1415,12 +1416,13 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
         };
       case 'exterior_work':
         return this.noorJobBeat();
-      case 'report_kai':
-      case 'report_vale':
-      case 'deck_review':
+      case 'return_hub':
+      case 'workshop_return':
+      case 'deck_closure':
+      case 'core_stabilise':
       case 'complete':
         return {
-          body: 'Noor: Yard work is logged. Kai and Vale are inside.',
+          body: 'Noor: Yard work is logged. Vale is waiting inside at the incident desk.',
           options: [{ label: 'Understood.', tag: 'redirect_inside' }],
         };
       default:
@@ -1437,10 +1439,10 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       label: 'I am done outside.',
       tag: 'yard_done',
       feedback:
-        'Noor: Logged. Back through the airlock — Kai wants your report.',
+        'Noor: Logged. Back through the airlock and inside — Vale is waiting at the incident desk.',
       onSelected: () => {
         this.closeOpenWindowsWithValidity('next_job');
-        advancePilotStage('report_kai', Date.now());
+        advancePilotStage('return_hub', Date.now());
       },
     };
 

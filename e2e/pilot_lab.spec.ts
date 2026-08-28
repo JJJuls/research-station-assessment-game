@@ -52,6 +52,7 @@ import {
 } from './journey';
 import {
   bootPilot,
+  concourseToWorkshop,
   hold,
   interactAt,
   openPromptAt,
@@ -61,7 +62,10 @@ import {
   pilotProbe,
   press,
   useDoor,
+  valeHandover,
   walkTo,
+  workshopSignOff,
+  workshopToConcourse,
 } from './pilotHelpers';
 
 /** Lab workstation coordinates (src/pilot/zoneSites.ts LAB_STATIONS). */
@@ -92,9 +96,9 @@ const DECODER_OPPORTUNITY: Record<string, string> = {
 const FORBIDDEN_IDENTIFIERS = /proto_|\bM(0[1-9]|1[0-9]|2[0-6])\b|\bdev\b/i;
 
 /**
- * Real participant navigation: Dock → Concourse (Vale advances to
- * lab_briefing without requiring records work — fail-forward) → Laboratory
- * → Kai's briefing (stage lab_work).
+ * Real participant navigation (v2 spine): Dock → Concourse (Vale's
+ * handover beats) → Records Workshop (board sign-off, no records work —
+ * fail-forward) → Laboratory → Kai's briefing (stage lab_work).
  */
 async function enterLab(page: Page, tag: string) {
   await bootPilot(page, tag);
@@ -103,14 +107,10 @@ async function enterLab(page: Page, tag: string) {
   await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
     approachOffset: { x: 0, y: 20 },
   });
-  await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1);
-  await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1);
+  await valeHandover(page);
+  await concourseToWorkshop(page);
+  await workshopSignOff(page);
+  await workshopToConcourse(page);
   await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
     approachOffset: { x: 0, y: 20 },
     yFirst: false,

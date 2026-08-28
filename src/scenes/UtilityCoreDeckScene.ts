@@ -37,7 +37,7 @@ import {
 } from '../pilot/pilotCoverage';
 import {
   advancePilotStage,
-  pilotStage,
+  pilotStageAtOrAfter,
   registerPilotStation,
 } from '../pilot/pilotRoute';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
@@ -162,7 +162,7 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
       x: core.x,
       y: core.y,
       label: 'Core Synchronisation Console',
-      stages: ['deck_review'],
+      stages: ['deck_closure', 'core_stabilise'],
       isDone: () => pilotFinalCoreClosed(),
       order: 0,
     });
@@ -307,10 +307,10 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
     }
 
     // Gameplay review round 2 (BLOCKER): synchronisation is offered
-    // only at the deck_review stage — an early explorer can review and
-    // leave, but can never irreversibly end the session before the
-    // route reaches its review step. Never a performance check.
-    if (pilotStage() !== 'deck_review') {
+    // only once the route reaches the closure stage — an early explorer
+    // can review and leave, but can never irreversibly end the session
+    // before the route reaches its review step. Never a performance check.
+    if (!pilotStageAtOrAfter('deck_closure')) {
       return [
         {
           label: 'Return to the station',

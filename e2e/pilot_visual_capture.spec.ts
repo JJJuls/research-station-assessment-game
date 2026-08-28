@@ -15,13 +15,20 @@ import { driveAxisTo, selectPromptOption } from './helpers';
 import { completeDockTutorial } from './journey';
 import {
   bootPilot,
+  concourseToDeck,
+  concourseToWorkshop,
   hold,
   interactAt,
   openPromptAt,
   PILOT,
   press,
+  returnShiftToDeckClosure,
   useDoor,
+  valeHandover,
   walkTo,
+  workshopSignOff,
+  workshopToConcourse,
+  yardReturnToConcourse,
 } from './pilotHelpers';
 
 const OUT = 'docs/verification/screenshots-professional-pilot';
@@ -106,7 +113,7 @@ async function waitIpOpen(
   return false;
 }
 
-test('pilot route visual capture — dock, concourse, records', async ({
+test('pilot route visual capture — dock, concourse, workshop', async ({
   page,
 }) => {
   test.setTimeout(480_000);
@@ -156,6 +163,11 @@ test('pilot route visual capture — dock, concourse, records', async ({
   });
   await shot(page, '06-vale-briefing');
   await selectPromptOption(page, 1);
+  await openPromptAt(page, PILOT.concourse.vale, {
+    approachOffset: { x: 0, y: 40 },
+  });
+  await selectPromptOption(page, 1);
+  await concourseToWorkshop(page);
 
   // 07 — a supply bundle in reach (world pickup surface).
   await walkTo(page, 96, 112, { yFirst: true });
@@ -168,25 +180,25 @@ test('pilot route visual capture — dock, concourse, records', async ({
   // x=96 clamps on it (pilot_deck precedent).
   await walkTo(page, 60, 112, { yFirst: false });
   await walkTo(page, 60, 312, { yFirst: true });
-  await openOverlayAt(page, PILOT.concourse.filingDesk, { x: 0, y: 44 });
+  await openOverlayAt(page, PILOT.workshop.filingDesk, { x: 0, y: 44 });
   await shot(page, '08-m02-filing-overlay');
   await page.keyboard.press('Escape');
   await waitOverlay(page, false);
 
   // 09 — M03 label press overlay (occasion A).
-  await openOverlayAt(page, PILOT.concourse.pressA, { x: 0, y: 44 });
+  await openOverlayAt(page, PILOT.workshop.pressA, { x: 0, y: 44 });
   await shot(page, '09-m03-press-overlay');
   await page.keyboard.press('Escape');
   await waitOverlay(page, false);
 
   // 10 — component locker overlay (storage transfer).
-  await openOverlayAt(page, PILOT.concourse.storageLocker, { x: 0, y: 44 });
+  await openOverlayAt(page, PILOT.workshop.storageLocker, { x: 0, y: 44 });
   await shot(page, '10-locker-overlay');
   await page.keyboard.press('Escape');
   await waitOverlay(page, false);
 
   // 11 — assembly bench overlay (recipes).
-  await openOverlayAt(page, PILOT.concourse.assemblyBench, { x: 0, y: 44 });
+  await openOverlayAt(page, PILOT.workshop.assemblyBench, { x: 0, y: 44 });
   await shot(page, '11-assembly-bench-overlay');
   await page.keyboard.press('Escape');
   await waitOverlay(page, false);
@@ -204,14 +216,10 @@ test('pilot route visual capture — diagnostics laboratory', async ({
   await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
     approachOffset: { x: 0, y: 20 },
   });
-  await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1);
-  await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1);
+  await valeHandover(page);
+  await concourseToWorkshop(page);
+  await workshopSignOff(page);
+  await workshopToConcourse(page);
   await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
     approachOffset: { x: 0, y: 20 },
     yFirst: false,
@@ -301,14 +309,10 @@ test('pilot route visual capture — yard, deck, completion', async ({
   await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
     approachOffset: { x: 0, y: 20 },
   });
-  await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1);
-  await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1);
+  await valeHandover(page);
+  await concourseToWorkshop(page);
+  await workshopSignOff(page);
+  await workshopToConcourse(page);
   await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
     approachOffset: { x: 0, y: 20 },
     yFirst: false,
@@ -440,28 +444,10 @@ test('pilot route visual capture — yard, deck, completion', async ({
   await shot(page, '26-verification-post');
   await selectPromptOption(page, 1);
 
-  // Done outside → back through the route to the deck.
-  await openPromptAt(page, PILOT.yard.noor, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 2);
-  await walkTo(page, 384, 400, { yFirst: false });
-  await useDoor(page, PILOT.yard.airlock, 'diagnostics_laboratory', {
-    approachOffset: { x: 0, y: -40 },
-  });
-  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 40, y: 44 } });
-  await selectPromptOption(page, 1);
-  await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
-    approachOffset: { x: 0, y: -40 },
-  });
-  await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1);
-  await useDoor(page, PILOT.concourse.eastDoor, 'utility_core_deck', {
-    approachOffset: { x: -40, y: 0 },
-    yFirst: true,
-  });
+  // Done outside → the ONE purposeful return (Concourse → Workshop) → deck.
+  await yardReturnToConcourse(page);
+  await returnShiftToDeckClosure(page);
+  await concourseToDeck(page);
 
   // 27 — Utility & Core Deck overview.
   await shot(page, '27-deck-overview');

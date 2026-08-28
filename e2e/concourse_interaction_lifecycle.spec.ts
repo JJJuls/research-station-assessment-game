@@ -29,12 +29,14 @@ import {
 } from './journey';
 import {
   bootPilot,
+  concourseToWorkshop,
+  dockToConcourse,
   hold,
   openPromptAt,
   PILOT,
   press,
   useDoor,
-  walkTo,
+  valeHandover,
 } from './pilotHelpers';
 
 const OUT = 'docs/verification/screenshots-concourse-hotfix';
@@ -310,13 +312,13 @@ async function expectCanMove(page: Page): Promise<void> {
   expect(Math.abs(now.x - start.x)).toBeGreaterThan(6);
 }
 
-async function enterConcourse(page: Page, tag: string) {
+/** Dock -> Concourse -> Records Workshop (v2: the inventory surfaces live in the workshop). */
+async function enterWorkshop(page: Page, tag: string) {
   await bootPilot(page, tag);
   await completeDockTutorial(page, 1);
-  await walkTo(page, 96, 60, { yFirst: true });
-  await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
-    approachOffset: { x: 0, y: 20 },
-  });
+  await dockToConcourse(page);
+  await valeHandover(page);
+  await concourseToWorkshop(page);
 }
 
 test.describe('station concourse interaction lifecycle', () => {
@@ -325,12 +327,12 @@ test.describe('station concourse interaction lifecycle', () => {
   }) => {
     const errors = captureErrors(page);
 
-    await enterConcourse(page, 'CIL_A');
+    await enterWorkshop(page, 'CIL_A');
 
     // ——— E ———
     await openStation(
       page,
-      PILOT.concourse.filingDesk,
+      PILOT.workshop.filingDesk,
       'KeyE',
       'm02',
       'filing-station-open',
@@ -346,7 +348,7 @@ test.describe('station concourse interaction lifecycle', () => {
     await closeAndMove(page);
 
     // ——— SPACE — the same interaction, no inventory involved ———
-    await openStation(page, PILOT.concourse.filingDesk, 'Space', 'm02');
+    await openStation(page, PILOT.workshop.filingDesk, 'Space', 'm02');
     await closeAndMove(page);
 
     // ——— D: the inventory still opens and closes on its own ———
@@ -366,31 +368,31 @@ test.describe('station concourse interaction lifecycle', () => {
     expectNoRuntimeErrors(errors);
   });
 
-  test('B — every other concourse E/SPACE surface opens, closes and releases the world', async ({
+  test('B — every other workshop E/SPACE surface opens, closes and releases the world', async ({
     page,
   }) => {
     const errors = captureErrors(page);
 
-    await enterConcourse(page, 'CIL_B');
+    await enterWorkshop(page, 'CIL_B');
 
-    // Vale — an in-scene prompt card (no overlay, no pause).
-    await openPromptAt(page, PILOT.concourse.vale, {
-      approachOffset: { x: 0, y: 40 },
+    // Work Order Board — an in-scene prompt card (no overlay, no pause).
+    await openPromptAt(page, PILOT.workshop.board, {
+      approachOffset: { x: 0, y: 44 },
     });
     await selectPromptOption(page, 1);
     await page.waitForTimeout(500);
     await expectCanMove(page);
 
     // Label Press A / B — M03 occasions.
-    await openStation(page, PILOT.concourse.pressA, 'KeyE', 'm03');
+    await openStation(page, PILOT.workshop.pressA, 'KeyE', 'm03');
     await closeAndMove(page);
-    await openStation(page, PILOT.concourse.pressB, 'Space', 'm03');
+    await openStation(page, PILOT.workshop.pressB, 'Space', 'm03');
     await closeAndMove(page);
 
     // Component Locker — container transfer.
     await openStation(
       page,
-      PILOT.concourse.storageLocker,
+      PILOT.workshop.storageLocker,
       'KeyE',
       'container',
       'component-locker-open',
@@ -398,12 +400,7 @@ test.describe('station concourse interaction lifecycle', () => {
     await closeAndMove(page);
 
     // Assembly Bench — recipes.
-    await openStation(
-      page,
-      PILOT.concourse.assemblyBench,
-      'Space',
-      'workbench',
-    );
+    await openStation(page, PILOT.workshop.assemblyBench, 'Space', 'workbench');
     await closeAndMove(page);
 
     // Supply bundle — an E/SPACE surface with no overlay at all: it must
@@ -423,11 +420,11 @@ test.describe('station concourse interaction lifecycle', () => {
   }) => {
     const errors = captureErrors(page);
 
-    await enterConcourse(page, 'CIL_C');
+    await enterWorkshop(page, 'CIL_C');
     await travelTo(
       page,
-      PILOT.concourse.filingDesk.x + APPROACH.x,
-      PILOT.concourse.filingDesk.y + APPROACH.y,
+      PILOT.workshop.filingDesk.x + APPROACH.x,
+      PILOT.workshop.filingDesk.y + APPROACH.y,
     );
 
     const opensBefore = (await getEvents(page)).filter(
@@ -464,8 +461,8 @@ test.describe('station concourse interaction lifecycle', () => {
     // A HELD key (auto-repeat) is still exactly one interaction.
     await travelTo(
       page,
-      PILOT.concourse.filingDesk.x + APPROACH.x,
-      PILOT.concourse.filingDesk.y + APPROACH.y,
+      PILOT.workshop.filingDesk.x + APPROACH.x,
+      PILOT.workshop.filingDesk.y + APPROACH.y,
     );
     await hold(page, 'KeyE', 900);
     await waitOverlay(page, true);
@@ -482,6 +479,18 @@ test.describe('station concourse interaction lifecycle', () => {
     await closeAndMove(page);
 
     // ——— E: route safety — every door still operates, both ways ———
+    await useDoor(page, PILOT.workshop.eastDoor, 'station_concourse', {
+      approachOffset: { x: -20, y: 0 },
+      yFirst: true,
+    });
+    await useDoor(page, PILOT.concourse.westDoor, 'records_workshop', {
+      approachOffset: { x: 20, y: 0 },
+      yFirst: true,
+    });
+    await useDoor(page, PILOT.workshop.eastDoor, 'station_concourse', {
+      approachOffset: { x: -20, y: 0 },
+      yFirst: true,
+    });
     await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
       approachOffset: { x: 0, y: 20 },
     });

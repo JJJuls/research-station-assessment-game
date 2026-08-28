@@ -33,6 +33,8 @@ import {
   PILOT_DOORS,
   PILOT_ZONE_NAMES,
   pilotBeaconTarget,
+  pilotEpisode,
+  pilotMissionLog,
   pilotObjective,
   pilotRouteSummary,
   pilotStage,
@@ -50,8 +52,8 @@ export const PILOT_CONTROLS_LINES = [
   'I        inventory',
   'C        scan',
   'D        dig',
-  'F        magnet',
-  'M        map',
+  'F        magnet rig',
+  'M        map / log',
   'ESC      close/pause',
 ] as const;
 
@@ -64,10 +66,12 @@ declare global {
     __pilotProbe?: {
       zone: string;
       stage: string;
+      episode: number;
       objective: string;
       beacon: (PilotBeaconTarget & { visible: boolean }) | null;
       launch_mode: string;
       route: ReturnType<typeof pilotRouteSummary>;
+      mission_log: ReturnType<typeof pilotMissionLog>;
     } | null;
     /** DEV-only: last zone title card text (cleared on each zone create). */
     __pilotZoneTitle?: string | null;
@@ -253,7 +257,7 @@ export abstract class PilotZoneScene extends RoomScene {
    * `pilot_npc_beat` event (npc + tag) — navigation telemetry, no construct.
    */
   protected npcBeatOptions(
-    npcKey: 'pilotVale' | 'pilotKai' | 'pilotNoor',
+    npcKey: 'pilotVale' | 'pilotKai' | 'pilotNoor' | 'pilotWorkOrderBoard',
     beat: PilotNpcBeat,
   ): PromptOption[] {
     if (beat.options.length === 0 || beat.options.length > 4) {
@@ -417,11 +421,13 @@ export abstract class PilotZoneScene extends RoomScene {
       window.__pilotProbe = {
         zone: this.zoneKey,
         stage: pilotStage(),
+        episode: pilotEpisode(),
         objective: pilotObjective(),
         beacon:
           this.beaconTarget === null ? null : { ...this.beaconTarget, visible },
         launch_mode: pilotLaunchMode(),
         route: pilotRouteSummary(),
+        mission_log: pilotMissionLog(),
       };
       window.__pilotBundles = {
         count: this.bundles.count(),

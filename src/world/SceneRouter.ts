@@ -43,6 +43,9 @@ const SCENE_PARAM_TO_KEY: Record<string, string> = {
   ops_annex: key.scene.opsAnnex,
   prototype: key.scene.main,
   pump_house: key.scene.pumpHouse,
+  // Evidence-led pilot v2 (Unit 1): the Records Workshop zone (episodes 2
+  // and 5). Direct alias = developer launch, like every other zone alias.
+  records_workshop: key.scene.recordsWorkshop,
   station_concourse: key.scene.stationConcourse,
   utility_bay: key.scene.utilityBay,
   utility_core_deck: key.scene.utilityCoreDeck,

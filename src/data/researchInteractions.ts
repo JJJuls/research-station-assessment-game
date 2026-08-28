@@ -707,6 +707,13 @@ export const researchInteractions = {
     event_type: 'pilot_station_opened',
     score_tags: [],
   },
+  pilotWorkOrderBoard: {
+    object_id: 'pilot_work_order_board',
+    label: 'Work Order Board',
+    episode: 'pilot_route',
+    event_type: 'pilot_npc_beat',
+    score_tags: [],
+  },
   pilotCoreConsole: {
     object_id: 'pilot_core_console',
     label: 'Core Synchronisation Console',

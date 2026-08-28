@@ -27,8 +27,10 @@ import {
   pilotEventTypes,
   pilotProbe,
   press,
+  routeToWorkshopWork,
   useDoor,
   walkTo,
+  workshopToConcourse,
 } from './pilotHelpers';
 
 interface ProbeSlot {
@@ -174,20 +176,14 @@ function playerItemCount(probe: UiProbe): number {
     .reduce((sum, s) => sum + s.quantity, 0);
 }
 
-async function enterConcourse(
+/** Dock -> Concourse (Vale's handover beats) -> Records Workshop at stage workshop_work. */
+async function enterWorkshop(
   page: import('@playwright/test').Page,
   tag: string,
 ) {
   await bootPilot(page, tag);
   await completeDockTutorial(page, 1);
-  await walkTo(page, 96, 60, { yFirst: true });
-  await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
-    approachOffset: { x: 0, y: 20 },
-  });
-  await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1);
+  await routeToWorkshopWork(page);
 }
 
 test.describe('pilot route — Records & Logistics (Unit 3)', () => {
@@ -197,10 +193,10 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
     test.setTimeout(480_000);
     const errors = captureErrors(page);
 
-    await enterConcourse(page, 'rec');
+    await enterWorkshop(page, 'rec');
 
     // Filing workstation → M02 overlay.
-    await openPromptAt(page, PILOT.concourse.filingDesk, {
+    await openPromptAt(page, PILOT.workshop.filingDesk, {
       approachOffset: { x: 0, y: 44 },
     }).catch(() => undefined);
     await waitOverlay(page, true);
@@ -268,7 +264,7 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
     expect(route?.beacon?.label).toBe('Label Press A');
 
     // Press A — pointer path: three press cycles, then close = departure.
-    await openPromptAt(page, PILOT.concourse.pressA, {
+    await openPromptAt(page, PILOT.workshop.pressA, {
       approachOffset: { x: 0, y: 44 },
     }).catch(() => undefined);
     await waitOverlay(page, true);
@@ -284,7 +280,7 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
     await waitOverlay(page, false);
 
     // Press B — keyboard parity: C runs the press cycle.
-    await openPromptAt(page, PILOT.concourse.pressB, {
+    await openPromptAt(page, PILOT.workshop.pressB, {
       approachOffset: { x: 0, y: 44 },
     }).catch(() => undefined);
     await waitOverlay(page, true);
@@ -334,7 +330,9 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
     // 2 completed here + those 4 items = 6.
     expect(coverage!.summary.closed).toBe(6);
     route = await pilotProbe(page);
-    expect(route?.beacon?.label).toBe('Vale');
+    // Every guided station terminal → the beacon falls back to the stage
+    // anchor (the Work Order Board signs the workshop off).
+    expect(route?.beacon?.label).toBe('Work Order Board');
 
     // Families stay disjoint from each other and from secondary telemetry.
     const types = await pilotEventTypes(page);
@@ -356,10 +354,11 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
     test.setTimeout(420_000);
     const errors = captureErrors(page);
 
-    await enterConcourse(page, 'inv');
+    await enterWorkshop(page, 'inv');
 
-    // Collect the component bundle (SPACE with no station in range).
-    await walkTo(page, 96, 112, { yFirst: true });
+    // Collect the component bundle (SPACE with no station in range). Go
+    // x-first: the board's body sits on the x=640 column above the spawn.
+    await walkTo(page, 96, 112, { yFirst: false });
 
     const bundleProbe = await page.evaluate(
       () =>
@@ -389,7 +388,7 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
     await waitOverlay(page, false);
 
     // Assembly bench: move both stacks into the workbench input, assemble.
-    await openPromptAt(page, PILOT.concourse.assemblyBench, {
+    await openPromptAt(page, PILOT.workshop.assemblyBench, {
       approachOffset: { x: 0, y: 44 },
     }).catch(() => undefined);
     await waitOverlay(page, true);
@@ -436,7 +435,7 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
     await waitOverlay(page, false);
 
     // Locker transfer: put the cartridge into the Component Locker.
-    await openPromptAt(page, PILOT.concourse.storageLocker, {
+    await openPromptAt(page, PILOT.workshop.storageLocker, {
       approachOffset: { x: 0, y: 44 },
     }).catch(() => undefined);
     await waitOverlay(page, true);
@@ -472,6 +471,7 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
     await walkTo(page, 176, 112);
     await press(page, 'Space');
     await page.waitForTimeout(400);
+    await workshopToConcourse(page);
     await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
       approachOffset: { x: 0, y: 20 },
     });
@@ -494,9 +494,9 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
   }) => {
     test.setTimeout(360_000);
 
-    await enterConcourse(page, 'aband');
+    await enterWorkshop(page, 'aband');
 
-    await openPromptAt(page, PILOT.concourse.filingDesk, {
+    await openPromptAt(page, PILOT.workshop.filingDesk, {
       approachOffset: { x: 0, y: 44 },
     }).catch(() => undefined);
     await waitOverlay(page, true);
@@ -522,9 +522,9 @@ test.describe('pilot route — Records & Logistics (Unit 3)', () => {
 
     expect(coverage!.items.find((i) => i.item === 'M02')?.status).toBe('open');
 
-    // Vale lets the participant move on regardless (no performance gate).
-    await openPromptAt(page, PILOT.concourse.vale, {
-      approachOffset: { x: 0, y: 40 },
+    // The board lets the participant sign off regardless (no performance gate).
+    await openPromptAt(page, PILOT.workshop.board, {
+      approachOffset: { x: 0, y: 44 },
     });
     await selectPromptOption(page, 1);
     expect((await pilotProbe(page))?.stage).toBe('lab_briefing');

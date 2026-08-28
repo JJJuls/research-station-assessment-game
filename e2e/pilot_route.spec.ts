@@ -1,14 +1,17 @@
 /**
- * Pilot route — topology, guidance and launch-mode specs (Unit 2).
+ * Pilot route — topology, guidance and launch-mode specs (evidence-led
+ * pilot v2, Unit 1).
  *
  * Real keyboard input, DEV probes only. Asserts: the participant default is
- * the Dock with a skippable opening; the four-zone topology is walkable in
- * BOTH directions through every ordinary door; exactly one objective line
- * at a time; the beacon hides on arrival; the M map reports position,
- * destination and discovery; H toggles the controls overlay; the
- * participant cannot be trapped (Core deck → Concourse); no measurement
- * event fires anywhere on the bare route; developer aliases are recorded as
- * developer launches; `?route=legacy` keeps the Dock → Hub ring.
+ * the Dock with a skippable opening; the six-zone hub-and-loop is walkable
+ * in BOTH directions through every ordinary door; exactly one objective
+ * line at a time; the beacon hides on arrival; the M map/log reports
+ * position, destination, discovery and the (empty) mission log; H toggles
+ * the controls overlay; the route's ONE purposeful return (Yard → Concourse
+ * → Workshop) is walked; the participant cannot be trapped (Deck →
+ * Concourse); no measurement event fires anywhere on the bare route;
+ * developer aliases are recorded as developer launches; `?route=legacy`
+ * keeps the Dock → Hub ring.
  */
 import { expect, test } from '@playwright/test';
 
@@ -22,7 +25,12 @@ import {
 import {
   bootPilot,
   bootPilotScene,
+  concourseToDeck,
+  concourseToLabBriefed,
+  concourseToWorkshop,
+  dockToConcourse,
   expectNoMeasurementEvents,
+  expectStage,
   openPromptAt,
   PILOT,
   pilotCoverage,
@@ -30,12 +38,53 @@ import {
   pilotProbe,
   playerScene,
   press,
+  returnShiftToDeckClosure,
   useDoor,
+  valeHandover,
   waitScene,
   walkTo,
+  workshopSignOff,
+  workshopToConcourse,
+  yardReturnToConcourse,
 } from './pilotHelpers';
 
-test.describe('pilot route — topology and guidance (Unit 2)', () => {
+interface MapProbe {
+  open: boolean;
+  current: string | null;
+  destination: string | null;
+  discovered: string[];
+  log_entries: string[];
+}
+
+async function openMap(page: import('@playwright/test').Page) {
+  await press(page, 'm');
+  await page.waitForFunction(
+    () =>
+      (window as unknown as { __pilotMapProbe?: { open: boolean } | null })
+        .__pilotMapProbe?.open === true,
+    undefined,
+    { timeout: 5000 },
+  );
+
+  return page.evaluate(
+    () =>
+      (window as unknown as { __pilotMapProbe?: MapProbe | null })
+        .__pilotMapProbe ?? null,
+  );
+}
+
+async function closeMap(page: import('@playwright/test').Page) {
+  await press(page, 'Escape');
+  await page.waitForFunction(
+    () =>
+      (window as unknown as { __pilotMapProbe?: { open: boolean } | null })
+        .__pilotMapProbe?.open === false,
+    undefined,
+    { timeout: 5000 },
+  );
+}
+
+test.describe('pilot route v2 — topology and guidance (Unit 1)', () => {
   test('default launch is the Dock with a skippable opening; the skip changes nothing measurable', async ({
     page,
   }) => {
@@ -52,7 +101,6 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
     expect(types.indexOf('dock_started')).toBeLessThan(
       types.indexOf('pilot_opening_shown'),
     );
-    // The Dock's control instruction still fires once (identical either way).
     expect(
       types.filter((t) => t === 'movement_instruction_shown'),
     ).toHaveLength(1);
@@ -60,39 +108,33 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
 
     const coverage = await pilotCoverage(page);
 
-    // The coverage probe first materialises inside a pilot ZONE scene;
-    // at the Dock it is legitimately null — assert participant mode
-    // whenever it exists, and never let a null read as developer.
     if (coverage !== null) {
       expect(coverage.launch_mode).toBe('participant');
     }
 
-    // The Dock tutorial path is unchanged (every path emits tutorial_completed).
     await completeDockTutorial(page, 2);
     expect(await pilotEventTypes(page)).toContain('tutorial_completed');
     await expectNoMeasurementEvents(page);
     expectNoRuntimeErrors(errors);
   });
 
-  test('four-zone topology: every ordinary door is bidirectional, one objective, beacon hides on arrival, map and controls overlay work, no dead end', async ({
+  test('six-zone hub-and-loop: every door bidirectional, one objective, beacon hides on arrival, map/log and controls work, one purposeful return, no dead end', async ({
     page,
   }) => {
-    test.setTimeout(600_000);
+    test.setTimeout(900_000);
     const errors = captureErrors(page);
 
     await bootPilot(page, 'topo');
     await completeDockTutorial(page, 1);
 
-    // Dock → Concourse through the north door.
-    await walkTo(page, 96, 60, { yFirst: true });
-    await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
-      approachOffset: { x: 0, y: 20 },
-    });
+    // ——— Episode 1: Dock → Concourse ———
+    await dockToConcourse(page);
 
     let probe = await pilotProbe(page);
 
     expect(probe?.zone).toBe('station_concourse');
-    expect(probe?.stage).toBe('meet_vale');
+    expect(probe?.stage).toBe('handover_briefing');
+    expect(probe?.episode).toBe(1);
     expect(probe?.objective).toContain('Vale');
     // Exactly one objective line: the legacy quest line is disabled.
     expect(
@@ -104,8 +146,9 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
     ).toBeNull();
     expect(probe?.beacon?.kind).toBe('npc');
     expect(probe?.beacon?.visible).toBe(true);
+    expect(probe?.mission_log).toEqual([]);
 
-    // Concourse → Dock and back (bidirectional).
+    // Concourse ↔ Dock (bidirectional).
     await useDoor(page, PILOT.concourse.southDoor, 'dock', {
       approachOffset: { x: 0, y: -40 },
     });
@@ -115,67 +158,30 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
       approachOffset: { x: 0, y: 20 },
     });
 
-    // Vale briefing advances to the records stage; beacon retargets to a station.
-    await openPromptAt(page, PILOT.concourse.vale, {
-      approachOffset: { x: 0, y: 40 },
-    });
-    await selectPromptOption(page, 1);
+    // Vale's beats: briefing → incident_handover → workshop.
+    await valeHandover(page);
     probe = await pilotProbe(page);
-    expect(probe?.stage).toBe('records');
-    expect(probe?.objective).toMatch(/Records & Logistics/);
-    expect(probe?.beacon?.kind).toBe('station');
-    expect(probe?.beacon?.label).toBe('Incident Filing Workstation');
+    expect(probe?.stage).toBe('workshop');
+    expect(probe?.episode).toBe(2);
+    expect(probe?.beacon?.kind).toBe('door');
+    expect(probe?.beacon?.label).toBe('Records Workshop');
 
-    // Beacon hides on arrival (< 120 px).
-    await walkTo(
-      page,
-      PILOT.concourse.filingDesk.x,
-      PILOT.concourse.filingDesk.y + 40,
-    );
+    // Beacon hides on arrival (< 120 px of the west door).
+    await walkTo(page, 100, 272, { yFirst: true });
     probe = await pilotProbe(page);
     expect(probe?.beacon?.visible).toBe(false);
 
-    // (The filing workstation is a live M02 window since Unit 3 — the bare
-    // topology walk deliberately never opens a measurement station.)
-
-    // M station map: current + destination + discovery.
-    await press(page, 'm');
-    await page.waitForFunction(
-      () =>
-        (window as unknown as { __pilotMapProbe?: { open: boolean } | null })
-          .__pilotMapProbe?.open === true,
-      undefined,
-      { timeout: 5000 },
-    );
-
-    const map = await page.evaluate(
-      () =>
-        (
-          window as unknown as {
-            __pilotMapProbe?: {
-              open: boolean;
-              current: string | null;
-              destination: string | null;
-              discovered: string[];
-            } | null;
-          }
-        ).__pilotMapProbe ?? null,
-    );
+    // M station map + mission log: current, destination, discovery, empty log.
+    let map = await openMap(page);
 
     expect(map?.current).toBe('station_concourse');
-    expect(map?.destination).toBe('station_concourse');
+    expect(map?.destination).toBe('records_workshop');
     expect(map?.discovered).toEqual(
       expect.arrayContaining(['dock', 'station_concourse']),
     );
-    expect(map?.discovered).not.toContain('diagnostics_laboratory');
-    await press(page, 'Escape');
-    await page.waitForFunction(
-      () =>
-        (window as unknown as { __pilotMapProbe?: { open: boolean } | null })
-          .__pilotMapProbe?.open === false,
-      undefined,
-      { timeout: 5000 },
-    );
+    expect(map?.discovered).not.toContain('records_workshop');
+    expect(map?.log_entries).toEqual([]);
+    await closeMap(page);
     expect(await pilotEventTypes(page)).toContain('pilot_map_opened');
 
     // H toggles the controls overlay (hidden by default → shown → hidden).
@@ -190,17 +196,26 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
       toggles.map((event) => (event.metadata as { shown: boolean }).shown),
     ).toEqual([true, false]);
 
-    // Vale → move on → laboratory stage.
-    await openPromptAt(page, PILOT.concourse.vale, {
-      approachOffset: { x: 0, y: 40 },
-    });
-    await selectPromptOption(page, 1);
+    // ——— Episode 2: Concourse ↔ Workshop (bidirectional), board sign-off ———
+    await concourseToWorkshop(page);
+    probe = await pilotProbe(page);
+    expect(probe?.zone).toBe('records_workshop');
+    expect(probe?.beacon?.kind).toBe('station');
+    expect(probe?.beacon?.label).toBe('Work Order Board');
+    await workshopToConcourse(page);
+    expect(await playerScene(page)).toBe('station_concourse');
+    await concourseToWorkshop(page);
+    await workshopSignOff(page);
     probe = await pilotProbe(page);
     expect(probe?.stage).toBe('lab_briefing');
+    expect(probe?.episode).toBe(3);
     expect(probe?.beacon?.kind).toBe('door');
-    expect(probe?.beacon?.label).toBe('Diagnostics Laboratory');
+    expect(probe?.beacon?.label).toBe('Station Concourse');
 
-    // Concourse → Lab → Concourse → Lab (bidirectional).
+    // ——— Episode 3: Concourse ↔ Lab (bidirectional), Kai's beats ———
+    await workshopToConcourse(page);
+    probe = await pilotProbe(page);
+    expect(probe?.beacon?.label).toBe('Diagnostics Laboratory');
     await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
       approachOffset: { x: 0, y: 20 },
       yFirst: false,
@@ -208,25 +223,17 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
     await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
       approachOffset: { x: 0, y: -40 },
     });
-    await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
-      approachOffset: { x: 0, y: 20 },
-    });
-
-    // Kai briefing → lab work → done → exterior stage.
-    await openPromptAt(page, PILOT.lab.kai, {
-      approachOffset: { x: 40, y: 44 },
-    });
-    await selectPromptOption(page, 1);
+    await concourseToLabBriefed(page);
     expect((await pilotProbe(page))?.stage).toBe('lab_work');
+
+    // ——— Episode 4: Lab ↔ Yard (bidirectional), Noor's beats ———
     await openPromptAt(page, PILOT.lab.kai, {
       approachOffset: { x: 40, y: 44 },
     });
     await selectPromptOption(page, 1);
+    await expectStage(page, 'exterior_briefing');
     probe = await pilotProbe(page);
-    expect(probe?.stage).toBe('exterior_briefing');
     expect(probe?.beacon?.label).toBe('Exterior Airlock');
-
-    // Lab → Yard through the airlock (route around the briefing wall), and back.
     await walkTo(page, 240, 70, { yFirst: false });
     await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {
       approachOffset: { x: 0, y: 20 },
@@ -236,124 +243,103 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
       approachOffset: { x: 0, y: -40 },
     });
     expect(await playerScene(page)).toBe('diagnostics_laboratory');
-    await walkTo(page, 240, 70, { yFirst: false });
-    await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {
-      approachOffset: { x: 0, y: 20 },
-    });
-
-    // Noor briefing → work → done → report stage.
-    await openPromptAt(page, PILOT.yard.noor, {
-      approachOffset: { x: 0, y: 40 },
-    });
-    await selectPromptOption(page, 1);
-    expect((await pilotProbe(page))?.stage).toBe('exterior_work');
-    // Unit 5: Noor's exterior_work beat is the job queue — option 1
-    // accepts the first job, option 2 is always "I am done outside".
-    await openPromptAt(page, PILOT.yard.noor, {
-      approachOffset: { x: 0, y: 40 },
-    });
-    await selectPromptOption(page, 2);
-    probe = await pilotProbe(page);
-    expect(probe?.stage).toBe('report_kai');
-    expect(probe?.beacon?.kind).toBe('door');
-
-    // Back inside: Kai → Vale → Deck.
-    await useDoor(page, PILOT.yard.airlock, 'diagnostics_laboratory', {
-      approachOffset: { x: 0, y: -40 },
-    });
+    // Kai at exterior_briefing only redirects (no stage change).
     await openPromptAt(page, PILOT.lab.kai, {
       approachOffset: { x: 40, y: 44 },
     });
     await selectPromptOption(page, 1);
-    expect((await pilotProbe(page))?.stage).toBe('report_vale');
-    await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
-      approachOffset: { x: 0, y: -40 },
+    expect((await pilotProbe(page))?.stage).toBe('exterior_briefing');
+    await walkTo(page, 240, 70, { yFirst: false });
+    await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {
+      approachOffset: { x: 0, y: 20 },
     });
-    await openPromptAt(page, PILOT.concourse.vale, {
+    await openPromptAt(page, PILOT.yard.noor, {
       approachOffset: { x: 0, y: 40 },
     });
     await selectPromptOption(page, 1);
-    probe = await pilotProbe(page);
-    expect(probe?.stage).toBe('deck_review');
-    expect(probe?.beacon?.label).toBe('Utility & Core Deck');
+    await expectStage(page, 'exterior_work');
+    expect((await pilotProbe(page))?.episode).toBe(4);
 
-    await useDoor(page, PILOT.concourse.eastDoor, 'utility_core_deck', {
-      approachOffset: { x: -40, y: 0 },
-      yFirst: true,
-    });
+    // ——— Episode 5: the ONE purposeful return ———
+    await yardReturnToConcourse(page);
+    probe = await pilotProbe(page);
+    expect(probe?.stage).toBe('return_hub');
+    expect(probe?.episode).toBe(5);
+    expect(probe?.zone).toBe('station_concourse');
+    expect(probe?.beacon?.kind).toBe('npc');
+    expect(probe?.beacon?.label).toBe('Vale');
+    await returnShiftToDeckClosure(page);
+    probe = await pilotProbe(page);
+    expect(probe?.stage).toBe('deck_closure');
+    expect(probe?.episode).toBe(6);
+    expect(probe?.beacon?.label).toBe('Utility Deck');
+
+    // ——— Episode 6: Concourse ↔ Deck (bidirectional), no dead end ———
+    await concourseToDeck(page);
     probe = await pilotProbe(page);
     expect(probe?.zone).toBe('utility_core_deck');
     expect(probe?.beacon?.label).toBe('Core Synchronisation Console');
-
-    // No dead end: the deck door returns to the Concourse, and back again.
     await useDoor(page, PILOT.deck.westDoor, 'station_concourse', {
       approachOffset: { x: 40, y: 0 },
       yFirst: true,
     });
     expect(await playerScene(page)).toBe('station_concourse');
-    await useDoor(page, PILOT.concourse.eastDoor, 'utility_core_deck', {
-      approachOffset: { x: -40, y: 0 },
-      yFirst: true,
-    });
+    await concourseToDeck(page);
 
-    // Core console placeholder (Unit 7 activates it).
+    // The console is live — leave via the explicit return option
+    // (nothing committed, the record stays open).
     await openPromptAt(page, PILOT.deck.coreConsole, {
       approachOffset: { x: 0, y: 44 },
       yFirst: false,
-    }).catch(() => undefined);
+    });
     expect(await pilotEventTypes(page)).toContain('pilot_core_console_opened');
-
-    // Unit 7: the console is live — leave via the explicit return
-    // option (nothing committed, the record stays open).
     await selectPromptOption(page, 2);
     await page.waitForTimeout(400);
 
     // Map from the deck: every zone discovered, current = deck.
-    await press(page, 'm');
-    await page.waitForFunction(
-      () =>
-        (window as unknown as { __pilotMapProbe?: { open: boolean } | null })
-          .__pilotMapProbe?.open === true,
-      undefined,
-      { timeout: 5000 },
-    );
-
-    const finalMap = await page.evaluate(
-      () =>
-        (
-          window as unknown as {
-            __pilotMapProbe?: {
-              current: string | null;
-              discovered: string[];
-            } | null;
-          }
-        ).__pilotMapProbe ?? null,
-    );
-
-    expect(finalMap?.current).toBe('utility_core_deck');
-    expect(finalMap?.discovered.sort()).toEqual(
+    map = await openMap(page);
+    expect(map?.current).toBe('utility_core_deck');
+    expect([...(map?.discovered ?? [])].sort()).toEqual(
       [
         'diagnostics_laboratory',
         'dock',
         'exterior_recovery_yard',
+        'records_workshop',
         'station_concourse',
         'utility_core_deck',
       ].sort(),
     );
-    await press(page, 'm');
+    await closeMap(page);
+
+    // The stage machine walked every stage in order through the beats.
+    const advanced = (await getEvents(page))
+      .filter((event) => event.event_type === 'pilot_stage_advanced')
+      .map((event) => (event.metadata as { to: string }).to);
+
+    expect(advanced).toEqual([
+      'handover_briefing',
+      'incident_handover',
+      'workshop',
+      'workshop_work',
+      'lab_briefing',
+      'lab_work',
+      'exterior_briefing',
+      'exterior_work',
+      'return_hub',
+      'workshop_return',
+      'deck_closure',
+    ]);
 
     // Zero measurement events across the whole bare route; no runtime errors.
     await expectNoMeasurementEvents(page);
 
-    // No participant-visible item/proto/Q identifiers in any objective shown.
-    const objectives = (await getEvents(page))
-      .filter((event) => event.event_type === 'pilot_stage_advanced')
-      .map((event) => JSON.stringify(event.metadata));
-
-    expect(objectives.length).toBeGreaterThan(0);
-
-    for (const text of objectives) {
-      expect(text).not.toMatch(/proto_|\bM\d{2}\b|\bQ\d{2}\b/);
+    // No participant-visible item/proto/Q identifiers in any stage telemetry.
+    for (const event of (await getEvents(page)).filter(
+      (e) => e.event_type === 'pilot_stage_advanced',
+    )) {
+      expect(JSON.stringify(event.metadata)).not.toMatch(
+        /proto_|\bM\d{2}\b|\bQ\d{2}\b/,
+      );
     }
 
     expectNoRuntimeErrors(errors);
@@ -372,9 +358,11 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
     expect(dev?.developer_scenes_visited).toContain('inventory_lab');
 
     // Direct zone aliases are developer launches too (the route is entered
-    // mid-way; recorded, never the participant default).
-    await bootPilotScene(page, 'devzone', 'diagnostics_laboratory');
+    // mid-way; recorded, never the participant default). The new Records
+    // Workshop alias is routable and recorded the same way.
+    await bootPilotScene(page, 'devzone', 'records_workshop');
     expect((await pilotProbe(page))?.launch_mode).toBe('developer');
+    expect((await pilotProbe(page))?.zone).toBe('records_workshop');
   });
 
   test('route=legacy keeps the historical Dock → Hub ring for the legacy specs', async ({
@@ -388,7 +376,6 @@ test.describe('pilot route — topology and guidance (Unit 2)', () => {
     await waitScene(page, 'dock', 60_000);
     await page.waitForTimeout(1600);
 
-    // No opening under the legacy route.
     expect(await pilotEventTypes(page)).not.toContain('pilot_opening_shown');
     await completeDockTutorial(page, 1);
     await dockToHubJourney(page);

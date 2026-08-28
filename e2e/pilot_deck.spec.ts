@@ -29,14 +29,22 @@ import {
 } from './journey';
 import {
   bootPilot,
+  concourseToDeck,
+  concourseToLabBriefed,
+  concourseToWorkshop,
+  dockToConcourse,
   interactAt,
+  labToYardBriefed,
   openPromptAt,
   PILOT,
   pilotCoverage,
   pilotEventTypes,
   pilotProbe,
+  returnShiftToDeckClosure,
   useDoor,
-  walkTo,
+  valeHandover,
+  workshopToConcourse,
+  yardReturnToConcourse,
 } from './pilotHelpers';
 
 const FORBIDDEN_IDENTIFIERS =
@@ -90,29 +98,22 @@ async function routeToDeck(
 ) {
   await bootPilot(page, tag, { extra: options?.extra });
   await completeDockTutorial(page, 1);
-  await walkTo(page, 96, 60, { yFirst: true });
-  await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
-    approachOffset: { x: 0, y: 20 },
+  await dockToConcourse(page);
+  await valeHandover(page);
+  await concourseToWorkshop(page);
+  await openPromptAt(page, PILOT.workshop.board, {
+    approachOffset: { x: 0, y: 44 },
   });
-  await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1);
-  await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1);
+  await selectPromptOption(page, 1); // take the orders -> workshop_work
 
   if (options?.touchFilingDesk === true) {
     // Enter the M02 filing window and abandon it (entered, unfinished)
     // so the Final Core closure has a genuine CENSORED case to code.
-    // Approach straight from Vale along the y≈312 lane — a northern
-    // approach down x=96 clamps on the rail stub at row 5.
-    // (Space presses are retried — SwiftShader input-loss precedent.)
+    // (Space presses are retried - SwiftShader input-loss precedent.)
     let overlayOpen = false;
 
     for (let attempt = 0; attempt < 3 && !overlayOpen; attempt++) {
-      await interactAt(page, PILOT.concourse.filingDesk, {
+      await interactAt(page, PILOT.workshop.filingDesk, {
         approachOffset: { x: 0, y: 44 },
       });
       overlayOpen = await page
@@ -146,45 +147,18 @@ async function routeToDeck(
     );
   }
 
-  await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
-    approachOffset: { x: 0, y: 20 },
-    yFirst: false,
+  await openPromptAt(page, PILOT.workshop.board, {
+    approachOffset: { x: 0, y: 44 },
   });
-  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 40, y: 44 } });
-  await selectPromptOption(page, 1);
-  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 40, y: 44 } });
-  await selectPromptOption(page, 1);
-  await walkTo(page, 240, 70, { yFirst: false });
-  await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {
-    approachOffset: { x: 0, y: 20 },
-  });
-  await openPromptAt(page, PILOT.yard.noor, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1); // Ready → exterior_work
-  await openPromptAt(page, PILOT.yard.noor, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 2); // I am done outside → report_kai
-  await walkTo(page, 384, 400, { yFirst: false });
-  await useDoor(page, PILOT.yard.airlock, 'diagnostics_laboratory', {
-    approachOffset: { x: 0, y: -40 },
-  });
-  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 40, y: 44 } });
-  await selectPromptOption(page, 1); // → report_vale
-  await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
-    approachOffset: { x: 0, y: -40 },
-  });
-  await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1); // → deck_review
-  await useDoor(page, PILOT.concourse.eastDoor, 'utility_core_deck', {
-    approachOffset: { x: -40, y: 0 },
-    yFirst: true,
-  });
+  await selectPromptOption(page, 1); // sign off -> lab_briefing
+  await workshopToConcourse(page);
+  await concourseToLabBriefed(page);
+  await labToYardBriefed(page);
+  await yardReturnToConcourse(page); // Noor "done outside" -> return_hub
+  await returnShiftToDeckClosure(page); // Vale -> workshop board -> deck_closure
+  await concourseToDeck(page);
 
-  expect((await pilotProbe(page))?.stage).toBe('deck_review');
+  expect((await pilotProbe(page))?.stage).toBe('deck_closure');
 }
 
 async function openConsole(page: Page) {

@@ -34,7 +34,9 @@ export * from './OpsAnnexScene';
 // every value exported from this barrel is registered as a Phaser scene).
 export { PilotOpeningScene } from '../pilot/ui/PilotOpeningScene';
 export { StationMapScene } from '../pilot/ui/StationMapScene';
+export { WorkSurfaceScene } from '../pilot/ui/WorkSurfaceScene';
 export * from './PumpHouseScene';
+export * from './RecordsWorkshopScene';
 export * from './RepairScene';
 export * from './SideRepairScene';
 export * from './StationConcourseScene';

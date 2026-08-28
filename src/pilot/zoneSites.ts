@@ -1,14 +1,26 @@
 /**
- * Pilot zone work-site positions (professional pilot route, Unit 2).
+ * Pilot zone work-site positions (evidence-led pilot v2).
  *
  * Shared between the zone scenes and the units that activate the stations
- * (Unit 3 records, Unit 4 laboratory, Unit 5 exterior, Unit 7 deck) so
- * positions are declared exactly once. Pixel coordinates on 25×19 maps.
+ * so positions are declared exactly once. Pixel coordinates on 25×19 maps.
  */
 const TILE = 32;
 
-/** Records & Logistics stations (Concourse west area) + Vale. */
+/** Station Concourse — episode 1 (incident desk) and episode 5 (return). */
 export const CONCOURSE_STATIONS = {
+  vale: { x: 15.5 * TILE, y: 8.5 * TILE },
+  /** Kai's return-shift position (episode 5 handover) beside the desk. */
+  kaiReturn: { x: 18.5 * TILE, y: 8.5 * TILE },
+  planBoard: { x: 4 * TILE, y: 5 * TILE },
+  incidentDesk: { x: 8 * TILE, y: 5 * TILE },
+  qcPacket: { x: 4 * TILE, y: 13 * TILE },
+  monitorGauge: { x: 8 * TILE, y: 13 * TILE },
+  concourseFault: { x: 19 * TILE, y: 13.5 * TILE },
+} as const;
+
+/** Records Workshop — episode 2 (restoration) and episode 5 (return). */
+export const WORKSHOP_STATIONS = {
+  workOrderBoard: { x: 20 * TILE, y: 5 * TILE },
   filingDesk: { x: 3 * TILE, y: 8.5 * TILE },
   pressA: { x: 6 * TILE, y: 8.5 * TILE },
   pressB: { x: 9 * TILE, y: 8.5 * TILE },
@@ -17,7 +29,6 @@ export const CONCOURSE_STATIONS = {
   supplyA: { x: 3 * TILE, y: 3 * TILE },
   supplyB: { x: 5.5 * TILE, y: 3 * TILE },
   supplyC: { x: 8 * TILE, y: 3 * TILE },
-  vale: { x: 15.5 * TILE, y: 8.5 * TILE },
 } as const;
 
 /** Laboratory workstations + Kai. */

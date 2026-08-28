@@ -31,6 +31,7 @@ import {
 } from './journey';
 import {
   bootPilot,
+  concourseToWorkshop,
   hold,
   interactAt,
   openPromptAt,
@@ -39,7 +40,10 @@ import {
   pilotProbe,
   press,
   useDoor,
+  valeHandover,
   walkTo,
+  workshopSignOff,
+  workshopToConcourse,
 } from './pilotHelpers';
 
 /** Yard geometry (src/scenes/ExteriorRecoveryYardScene.ts). */
@@ -338,7 +342,7 @@ async function waitDigOutcome(page: Page, outcome: string) {
  * ------------------------------------------------------------------ */
 
 /**
- * Dock → Concourse (Vale ×2) → Laboratory (Kai ×2) → airlock → Yard →
+ * Dock → Concourse (Vale ×2) → Workshop (board ×2) → Laboratory (Kai ×2) → airlock → Yard →
  * Noor's briefing ("Ready." issues the field tools, stage
  * exterior_work). Pure fail-forward path — no measurement work done.
  */
@@ -349,14 +353,10 @@ async function enterYard(page: Page, tag: string) {
   await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
     approachOffset: { x: 0, y: 20 },
   });
-  await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1);
-  await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1);
+  await valeHandover(page);
+  await concourseToWorkshop(page);
+  await workshopSignOff(page);
+  await workshopToConcourse(page);
   await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
     approachOffset: { x: 0, y: 20 },
     yFirst: false,

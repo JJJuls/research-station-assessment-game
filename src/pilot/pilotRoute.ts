@@ -1,22 +1,35 @@
 /**
- * Pilot route — the ONE active objective, the destination beacon and the
- * station-map model of the professional pilot route (Unit 2).
+ * Pilot route — the ONE active objective, the destination beacon, the
+ * station map model and the concise mission log of the evidence-led
+ * professional assessment pilot v2 (Unit 1: route and guidance shell).
  *
  * PURE module (no Phaser, no import.meta; logging is an injected sink so the
  * stage machine is Node-testable). Session-scope singleton state: survives
  * scene transitions for the page lifetime; a reload is a new session.
  *
- * Scientific boundary: the route stage is NAVIGATION state only. Advancing a
- * stage never requires a correct answer, a completed window, persistence or
- * any performance; every NPC beat offers "move on". Station completion
- * predicates (registered by the zone scenes) steer only the beacon and the
- * Core completeness review; they never gate a door. Every `pilot_*` event is
- * unmapped route telemetry (no canonical context, no study item).
+ * Route architecture (decision workbook sheet 11): five assessment
+ * episodes plus one non-scored closure on a hub-and-loop topology with
+ * bidirectional doors and EXACTLY ONE purposeful return —
+ *
+ *   1 Storm Arrival & Incident Handover   Dock → Station Concourse
+ *   2 Records & Workshop Restoration      Records Workshop
+ *   3 Signal Analysis Incident            Diagnostics Laboratory
+ *   4 Exterior Recovery                   Recovery Yard (+ Metal Yard)
+ *   5 Return, Revision & Handover         Concourse → Workshop (return)
+ *   6 Utility & Core Closure              Utility Deck → Core Chamber
+ *
+ * Scientific boundary: the route stage is NAVIGATION state only. Advancing
+ * a stage never requires a correct answer, a completed window, persistence
+ * or any performance; every NPC/board beat offers "move on". Station
+ * completion predicates (registered by the zone scenes) steer only the
+ * beacon; they never gate a door. Every `pilot_*` event is unmapped route
+ * telemetry (no canonical context, no study item, never a score).
  */
 
 export type PilotZoneKey =
   | 'dock'
   | 'station_concourse'
+  | 'records_workshop'
   | 'diagnostics_laboratory'
   | 'exterior_recovery_yard'
   | 'utility_core_deck';
@@ -24,6 +37,7 @@ export type PilotZoneKey =
 export const PILOT_ZONE_KEYS: readonly PilotZoneKey[] = [
   'dock',
   'station_concourse',
+  'records_workshop',
   'diagnostics_laboratory',
   'exterior_recovery_yard',
   'utility_core_deck',
@@ -32,81 +46,130 @@ export const PILOT_ZONE_KEYS: readonly PilotZoneKey[] = [
 export const PILOT_ZONE_NAMES: Record<PilotZoneKey, string> = {
   dock: 'Dock',
   station_concourse: 'Station Concourse',
-  diagnostics_laboratory: 'Diagnostics & Signal Laboratory',
-  exterior_recovery_yard: 'Exterior Recovery Yard',
-  utility_core_deck: 'Utility & Core Deck',
+  records_workshop: 'Records Workshop',
+  diagnostics_laboratory: 'Diagnostics Laboratory',
+  exterior_recovery_yard: 'Recovery Yard',
+  utility_core_deck: 'Utility Deck & Core',
+};
+
+/** The six route episodes (sheet 11). Episode 6 hosts no measurement window. */
+export type PilotEpisode = 1 | 2 | 3 | 4 | 5 | 6;
+
+export const PILOT_EPISODE_NAMES: Record<PilotEpisode, string> = {
+  1: 'Storm Arrival & Incident Handover',
+  2: 'Records & Workshop Restoration',
+  3: 'Signal Analysis Incident',
+  4: 'Exterior Recovery',
+  5: 'Return, Revision & Handover',
+  6: 'Utility & Core Closure',
 };
 
 /**
  * Route stages in order. Each stage has exactly one objective sentence and
- * one destination rule. Stages advance through explicit NPC/console beats,
- * never through performance.
+ * one destination rule. Stages advance through explicit NPC/board beats,
+ * never through performance, and never move backwards.
  */
 export type PilotStage =
   | 'arrival'
-  | 'meet_vale'
-  | 'records'
+  | 'handover_briefing'
+  | 'incident_handover'
+  | 'workshop'
+  | 'workshop_work'
   | 'lab_briefing'
   | 'lab_work'
   | 'exterior_briefing'
   | 'exterior_work'
-  | 'report_kai'
-  | 'report_vale'
-  | 'deck_review'
+  | 'return_hub'
+  | 'workshop_return'
+  | 'deck_closure'
+  | 'core_stabilise'
   | 'complete';
 
 export const PILOT_STAGES: readonly PilotStage[] = [
   'arrival',
-  'meet_vale',
-  'records',
+  'handover_briefing',
+  'incident_handover',
+  'workshop',
+  'workshop_work',
   'lab_briefing',
   'lab_work',
   'exterior_briefing',
   'exterior_work',
-  'report_kai',
-  'report_vale',
-  'deck_review',
+  'return_hub',
+  'workshop_return',
+  'deck_closure',
+  'core_stabilise',
   'complete',
 ];
 
-/** One concise sentence per stage (mission §8: never longer). */
+/** One concise sentence per stage — the ONE objective line. */
 export const PILOT_OBJECTIVES: Record<PilotStage, string> = {
   arrival:
     'Check in at the Arrival Terminal, then take the north door into the Concourse.',
-  meet_vale: 'Report to Vale at the operations desk.',
-  records:
-    'Work through the Records & Logistics stations, then report back to Vale.',
-  lab_briefing: 'Go north to the Diagnostics Laboratory and report to Kai.',
-  lab_work: 'Work through the laboratory stations, then report to Kai.',
+  handover_briefing: 'Report to Vale at the incident desk.',
+  incident_handover:
+    'Work the incident desk, then confirm the handover with Vale.',
+  workshop: 'Take the west door to the Records Workshop.',
+  workshop_work:
+    'Work through the workshop orders, then sign the board when you are done.',
+  lab_briefing:
+    'Go to the Diagnostics Laboratory — Concourse north door — and report to Kai.',
+  lab_work: 'Work the signal analysis case, then report to Kai.',
   exterior_briefing:
-    'Take the airlock to the Exterior Recovery Yard and report to Noor.',
-  exterior_work: "Work through Noor's yard jobs, then report back to Noor.",
-  report_kai: 'Return through the airlock and report to Kai.',
-  report_vale: 'Report to Vale in the Concourse.',
-  deck_review:
-    'Take the east door to the Utility & Core Deck and review completion at the Core console.',
-  complete: 'Mission complete — the core is synchronised.',
+    'Take the airlock to the Recovery Yard and report to Noor.',
+  exterior_work: "Work Noor's recovery jobs, then report to Noor.",
+  return_hub: 'Return inside to the Concourse and check in with Vale.',
+  workshop_return:
+    'Finish the shift in the Records Workshop, then sign the board.',
+  deck_closure:
+    'Take the east door to the Utility Deck and close the shift at the review panel.',
+  core_stabilise:
+    'Bring the Core back online: coolant valve, calibration breaker, distribution bus.',
+  complete: 'Shift complete — the Core is stable.',
 };
 
 /** Which zone each stage's destination lives in (null = route complete). */
 const STAGE_ZONE: Record<PilotStage, PilotZoneKey | null> = {
   arrival: 'dock',
-  meet_vale: 'station_concourse',
-  records: 'station_concourse',
+  handover_briefing: 'station_concourse',
+  incident_handover: 'station_concourse',
+  workshop: 'records_workshop',
+  workshop_work: 'records_workshop',
   lab_briefing: 'diagnostics_laboratory',
   lab_work: 'diagnostics_laboratory',
   exterior_briefing: 'exterior_recovery_yard',
   exterior_work: 'exterior_recovery_yard',
-  report_kai: 'diagnostics_laboratory',
-  report_vale: 'station_concourse',
-  deck_review: 'utility_core_deck',
+  return_hub: 'station_concourse',
+  workshop_return: 'records_workshop',
+  deck_closure: 'utility_core_deck',
+  core_stabilise: 'utility_core_deck',
   complete: null,
+};
+
+/** Which episode each stage belongs to. */
+export const STAGE_EPISODE: Record<PilotStage, PilotEpisode> = {
+  arrival: 1,
+  handover_briefing: 1,
+  incident_handover: 1,
+  workshop: 2,
+  workshop_work: 2,
+  lab_briefing: 3,
+  lab_work: 3,
+  exterior_briefing: 4,
+  exterior_work: 4,
+  return_hub: 5,
+  workshop_return: 5,
+  deck_closure: 6,
+  core_stabilise: 6,
+  complete: 6,
 };
 
 /**
  * Zone graph: for each zone, the door to take toward every other zone.
  * Door positions are the in-map interactable positions (declared by the
  * zone scenes; mirrored here for the beacon so the model stays pure).
+ * Every door is declared in BOTH zones (bidirectional by construction —
+ * asserted by the pure route-model spec).
  */
 export interface PilotDoorRef {
   /** Destination zone of this door. */
@@ -122,13 +185,17 @@ export const PILOT_DOORS: Record<PilotZoneKey, readonly PilotDoorRef[]> = {
   ],
   station_concourse: [
     { to: 'dock', x: 384, y: 496, label: 'Dock' },
+    { to: 'records_workshop', x: 48, y: 272, label: 'Records Workshop' },
     {
       to: 'diagnostics_laboratory',
       x: 384,
       y: 48,
       label: 'Diagnostics Laboratory',
     },
-    { to: 'utility_core_deck', x: 752, y: 272, label: 'Utility & Core Deck' },
+    { to: 'utility_core_deck', x: 752, y: 272, label: 'Utility Deck' },
+  ],
+  records_workshop: [
+    { to: 'station_concourse', x: 752, y: 272, label: 'Station Concourse' },
   ],
   diagnostics_laboratory: [
     { to: 'station_concourse', x: 384, y: 496, label: 'Station Concourse' },
@@ -188,6 +255,50 @@ export function nextHopDoor(
 }
 
 /**
+ * The stage destination sequence with consecutive duplicates collapsed —
+ * the zones the route visits, in order (pure helper for the route-model
+ * spec's "exactly one purposeful return" assertion).
+ */
+export function stageDestinationSequence(): PilotZoneKey[] {
+  const sequence: PilotZoneKey[] = [];
+
+  for (const stage of PILOT_STAGES) {
+    const zone = STAGE_ZONE[stage];
+
+    if (zone !== null && sequence[sequence.length - 1] !== zone) {
+      sequence.push(zone);
+    }
+  }
+
+  return sequence;
+}
+
+/**
+ * Number of purposeful return legs: maximal runs of already-visited zones
+ * in the destination sequence. The v2 route has exactly ONE (Recovery
+ * Yard → Concourse → Workshop), which hosts the prospective-memory windows.
+ */
+export function purposefulReturnLegs(): number {
+  const visited = new Set<PilotZoneKey>();
+  let legs = 0;
+  let inReturn = false;
+
+  for (const zone of stageDestinationSequence()) {
+    if (visited.has(zone)) {
+      if (!inReturn) {
+        legs += 1;
+        inReturn = true;
+      }
+    } else {
+      inReturn = false;
+      visited.add(zone);
+    }
+  }
+
+  return legs;
+}
+
+/**
  * Route stations: zone scenes register their guided stations (position +
  * completion predicate) on create so the beacon can point at the next
  * unfinished one. Completion predicates are read by the beacon ONLY.
@@ -213,6 +324,26 @@ export interface PilotBeaconTarget {
   kind: 'station' | 'door' | 'npc';
 }
 
+/**
+ * Concise mission log: obligations, projects and open work the participant
+ * accepted or left mid-way. Entries are registered by the hosting windows
+ * (Units 2–5); their text is OPERATIONAL only (never an item id, validity
+ * word, score or evaluative label). Presentation only — the log never
+ * gates a door or a stage.
+ */
+export type MissionLogKind = 'obligation' | 'project' | 'note';
+
+export interface MissionLogEntry {
+  id: string;
+  kind: MissionLogKind;
+  /** Current operational line (re-read on every render). */
+  text: () => string;
+  /** Hidden once true (e.g. obligation fulfilled) — the record stays. */
+  isClosed: () => boolean;
+  /** Display order (lower first). */
+  order: number;
+}
+
 interface PilotRouteState {
   stage: PilotStage;
   visited: Set<PilotZoneKey>;
@@ -235,6 +366,7 @@ function createInitialState(): PilotRouteState {
 
 let state = createInitialState();
 const stations = new Map<string, PilotRouteStation>();
+const missionLog = new Map<string, MissionLogEntry>();
 const listeners = new Set<() => void>();
 
 export type PilotRouteLogSink = (
@@ -250,7 +382,11 @@ export function installPilotRouteLogSink(sink: PilotRouteLogSink | null) {
 }
 
 function emit(eventType: string, metadata: Record<string, unknown>) {
-  logSink?.(eventType, { stage: state.stage, ...metadata });
+  logSink?.(eventType, {
+    stage: state.stage,
+    episode: STAGE_EPISODE[state.stage],
+    ...metadata,
+  });
 }
 
 function notify() {
@@ -275,8 +411,17 @@ export function pilotObjective(): string {
   return PILOT_OBJECTIVES[state.stage];
 }
 
+export function pilotEpisode(): PilotEpisode {
+  return STAGE_EPISODE[state.stage];
+}
+
 export function pilotStageIndex(stage: PilotStage = state.stage): number {
   return PILOT_STAGES.indexOf(stage);
+}
+
+/** True once the route has reached `stage` (or any later stage). */
+export function pilotStageAtOrAfter(stage: PilotStage): boolean {
+  return pilotStageIndex(state.stage) >= pilotStageIndex(stage);
 }
 
 /**
@@ -312,9 +457,10 @@ export function notePilotZoneEntered(zone: PilotZoneKey, nowMs: number) {
 
   emit('pilot_zone_entered', { zone, entry_count: count });
 
-  // Arrival → meet Vale flips on first Concourse entry (navigation only).
+  // Arrival → handover briefing flips on first Concourse entry
+  // (navigation only).
   if (zone === 'station_concourse' && state.stage === 'arrival') {
-    advancePilotStage('meet_vale', nowMs);
+    advancePilotStage('handover_briefing', nowMs);
   }
 
   notify();
@@ -337,6 +483,10 @@ export function pilotDestinationZone(): PilotZoneKey | null {
   return STAGE_ZONE[state.stage];
 }
 
+export function pilotStageZone(stage: PilotStage): PilotZoneKey | null {
+  return STAGE_ZONE[stage];
+}
+
 export function registerPilotStation(station: PilotRouteStation) {
   stations.set(station.id, station);
 }
@@ -353,7 +503,7 @@ export function pilotStationsInZone(zone: PilotZoneKey): PilotRouteStation[] {
  * - stage destination in this zone → the first unfinished guided station
  *   for this stage, else the stage's NPC/anchor station (order 0);
  * - route complete → none.
- * Exactly one target, or none (mission §8: never two highlights).
+ * Exactly one target, or none (never two highlights).
  */
 export function pilotBeaconTarget(
   zone: PilotZoneKey,
@@ -375,7 +525,7 @@ export function pilotBeaconTarget(
   }
 
   // Guided work stations first (order > 0); the stage anchor (order 0,
-  // the NPC/console that advances the stage) is the fallback below.
+  // the NPC/board that advances the stage) is the fallback below.
   const guided = pilotStationsInZone(zone).filter(
     (station) => station.order > 0 && station.stages.includes(state.stage),
   );
@@ -391,17 +541,48 @@ export function pilotBeaconTarget(
   }
 
   // Every guided station terminal → fall back to the stage anchor (the NPC
-  // or console that advances the stage), declared with `order: 0`.
+  // or board that advances the stage), declared with `order: 0`.
   const anchor = pilotStationsInZone(zone).find(
     (station) => station.order === 0 && station.stages.includes(state.stage),
   );
 
   return anchor === undefined
     ? null
-    : { x: anchor.x, y: anchor.y, label: anchor.label, kind: 'npc' };
+    : {
+        x: anchor.x,
+        y: anchor.y,
+        label: anchor.label,
+        kind: anchor.id.startsWith('npc_') ? 'npc' : 'station',
+      };
 }
 
-/** Station-map model (M key). */
+// ——— Mission log ————————————————————————————————————————————————————————
+
+export function registerMissionLogEntry(entry: MissionLogEntry) {
+  missionLog.set(entry.id, entry);
+  notify();
+}
+
+export function removeMissionLogEntry(id: string) {
+  if (missionLog.delete(id)) {
+    notify();
+  }
+}
+
+/** Open (not closed) entries, in display order. Concise by construction. */
+export function pilotMissionLog(): {
+  id: string;
+  kind: MissionLogKind;
+  text: string;
+}[] {
+  return [...missionLog.values()]
+    .filter((entry) => !entry.isClosed())
+    .sort((a, b) => a.order - b.order)
+    .map((entry) => ({ id: entry.id, kind: entry.kind, text: entry.text() }));
+}
+
+// ——— Station map ————————————————————————————————————————————————————————
+
 export interface PilotMapNode {
   zone: PilotZoneKey;
   name: string;
@@ -425,6 +606,7 @@ export function pilotMapModel(): PilotMapNode[] {
 export function pilotRouteSummary() {
   return {
     stage: state.stage,
+    episode: STAGE_EPISODE[state.stage],
     current_zone: state.currentZone,
     visited: [...state.visited],
     entry_counts: Object.fromEntries(state.entryCounts),
@@ -437,4 +619,5 @@ export function pilotRouteSummary() {
 export function resetPilotRouteState() {
   state = createInitialState();
   stations.clear();
+  missionLog.clear();
 }
