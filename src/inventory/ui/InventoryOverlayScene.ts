@@ -26,6 +26,21 @@ import {
   sfxUiSelect,
   sfxUnavailable,
 } from '../../gameplay/audio';
+import {
+  closeM02CPanel,
+  commitM02CWorkspace,
+  M02C_CASES,
+  M02C_TRAY_IDS,
+  m02cCase,
+  m02cPhase,
+  m02cRequestedCase,
+  m02cState,
+  nextM02CTrayLabel,
+  noteM02CRetrievalProbe,
+  openM02CWorkspace,
+  pickM02CRetrieval,
+  setM02CTrayLabel,
+} from '../../pilot/windows/m02CaseWorkspace';
 import { ensureInventoryIconTextures } from '../inventoryTextures';
 import { getItemDefinition, M02_DOCUMENTS } from '../itemDefs';
 import {
@@ -74,6 +89,7 @@ export type InventoryOverlayMode =
   | 'container'
   | 'workbench'
   | 'm02'
+  | 'm02case'
   | 'm03';
 
 export interface InventoryOverlayLaunchData {
@@ -174,6 +190,9 @@ export class InventoryOverlayScene extends Phaser.Scene {
   private statusBanner: Phaser.GameObjects.Text | null = null;
   private m03CycleText: Phaser.GameObjects.Text | null = null;
   private m03PressButton: UiButton | null = null;
+  private m02cLabelButtons: UiButton[] = [];
+  private m02cBanner: Phaser.GameObjects.Text | null = null;
+  private m02cHandOverButton: UiButton | null = null;
   private referencePanel: Phaser.GameObjects.Container | null = null;
   private referenceBackground: Phaser.GameObjects.Rectangle | null = null;
 
@@ -220,6 +239,9 @@ export class InventoryOverlayScene extends Phaser.Scene {
     this.statusBanner = null;
     this.m03CycleText = null;
     this.m03PressButton = null;
+    this.m02cLabelButtons = [];
+    this.m02cBanner = null;
+    this.m02cHandOverButton = null;
     this.referencePanel = null;
     this.referenceBackground = null;
     this.confirmOpen = false;
@@ -355,6 +377,8 @@ export class InventoryOverlayScene extends Phaser.Scene {
 
       if (this.mode === 'm02') {
         closeM02Panel(Date.now());
+      } else if (this.mode === 'm02case') {
+        closeM02CPanel(Date.now());
       } else if (this.mode === 'm03') {
         closeM03Window(this.m03Occasion, Date.now());
       }
@@ -390,6 +414,8 @@ export class InventoryOverlayScene extends Phaser.Scene {
         return 'ASSEMBLY BENCH';
       case 'm02':
         return 'INCIDENT FILING WORKSTATION';
+      case 'm02case':
+        return 'CASE WORKSPACE — HANDOVER';
       case 'm03':
         return `PRESS STATION ${this.m03Occasion.toUpperCase()} — WORK SURFACE`;
     }
@@ -398,6 +424,12 @@ export class InventoryOverlayScene extends Phaser.Scene {
   private helpLineFor(): string {
     if (this.mode === 'm02') {
       return 'Drag or SPACE to move sheets • Arrows focus • C commit • V reference • I / ESC close';
+    }
+
+    if (this.mode === 'm02case') {
+      return m02cPhase() === 'retrieve'
+        ? 'Select the slot holding the requested case • SPACE/ENTER or click picks • I / ESC close'
+        : 'Drag or SPACE to move cases • Arrows focus • L label focused tray • C hand over • I / ESC close';
     }
 
     if (this.mode === 'm03') {
@@ -633,6 +665,82 @@ export class InventoryOverlayScene extends Phaser.Scene {
         break;
       }
 
+      case 'm02case': {
+        const codeBadges = Object.fromEntries(
+          M02C_CASES.map((c) => [c.definitionId, c.code]),
+        );
+        const phase = openM02CWorkspace(Date.now());
+
+        this.addGrid({
+          containerId: CONTAINER_IDS.m02cDesk,
+          label: 'INTAKE TRAY',
+          x: 96,
+          y: 112,
+          cols: 6,
+          rows: 1,
+          codeBadges,
+          containerChrome: true,
+        });
+
+        M02C_TRAY_IDS.forEach((trayId, index) => {
+          const x = 96 + index * 162;
+
+          this.addGrid({
+            containerId: trayId,
+            label: `TRAY ${index + 1}`,
+            x,
+            y: 204,
+            cols: 2,
+            rows: 2,
+            codeBadges,
+            containerChrome: true,
+          });
+
+          const button = new UiButton({
+            scene: this,
+            id: `m02c_label_${index + 1}`,
+            x,
+            y: 318,
+            width: 120,
+            label: this.m02cLabelText(trayId),
+            onActivate: () => this.handleM02CLabel(trayId),
+            depth: DEPTH.grid,
+          });
+
+          this.m02cLabelButtons.push(button);
+          this.buttons.push(button);
+        });
+
+        this.m02cHandOverButton = new UiButton({
+          scene: this,
+          id: 'm02c_handover',
+          x: 600,
+          y: PANEL.y + 350,
+          width: 144,
+          label: 'HAND OVER',
+          kind: 'accent',
+          onActivate: () => this.handleM02CHandOver(),
+          depth: DEPTH.grid,
+        });
+        this.buttons.push(this.m02cHandOverButton);
+
+        this.m02cBanner = this.add
+          .text(400, PANEL.y + 66, '', {
+            backgroundColor: '#1c3b3a',
+            color: INV_TEXT.accent,
+            font: INV_FONT.section,
+            padding: { x: 10, y: 4 },
+          })
+          .setOrigin(0.5)
+          .setDepth(DEPTH.grid + 2)
+          .setVisible(false);
+
+        if (phase === 'retrieve' || phase === 'closed') {
+          this.refreshM02CPhase();
+        }
+        break;
+      }
+
       case 'm03': {
         const occasion = this.m03Occasion;
         const { surface, store } = M03_CONTAINERS[occasion];
@@ -695,6 +803,129 @@ export class InventoryOverlayScene extends Phaser.Scene {
         break;
       }
     }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * M02 open case workspace (evidence-led pilot v2)
+   * ---------------------------------------------------------------- */
+
+  private m02cLabelText(trayId: string): string {
+    const label = m02cState().labels[trayId] ?? null;
+
+    return label === null ? 'LABEL: none' : `LABEL: ${label}`;
+  }
+
+  private handleM02CLabel(
+    trayId: string,
+    inputMode: 'pointer' | 'keyboard' = 'pointer',
+  ) {
+    if (this.confirmOpen || m02cPhase() !== 'organise') {
+      return;
+    }
+
+    const current = m02cState().labels[trayId] ?? null;
+
+    if (setM02CTrayLabel(trayId, nextM02CTrayLabel(current), inputMode)) {
+      sfxUiSelect();
+      this.refresh();
+    }
+  }
+
+  private handleM02CHandOver() {
+    if (this.confirmOpen || m02cPhase() !== 'organise') {
+      return;
+    }
+
+    if (getInventoryState().held !== null) {
+      this.showFeedback(FAILURE_TEXT.holding);
+      return;
+    }
+
+    if (commitM02CWorkspace(Date.now(), 'pointer')) {
+      sfxUiSelect();
+      this.refreshM02CPhase();
+      this.refresh();
+    }
+  }
+
+  /** Retrieval-phase pick: the case in the addressed slot is the answer. */
+  private m02cRetrievalPick(
+    address: SlotAddress,
+    inputMode: 'pointer' | 'keyboard',
+  ) {
+    const stack =
+      getInventoryState().containers[address.containerId]?.slots[
+        address.slotIndex
+      ] ?? null;
+
+    noteM02CRetrievalProbe(address.containerId, inputMode);
+    this.focus = address;
+
+    if (stack === null) {
+      this.showFeedback('Empty slot.');
+      this.refresh();
+      return;
+    }
+
+    const outcome = pickM02CRetrieval(
+      stack.definitionId,
+      inputMode,
+      Date.now(),
+    );
+
+    if (outcome === 'correct') {
+      sfxUiSelect();
+      this.showFeedback(
+        m02cPhase() === 'closed'
+          ? 'Handed over. Workspace closed.'
+          : `${m02cCase(stack.definitionId)?.label ?? 'Case'} handed over.`,
+      );
+    } else if (outcome === 'wrong') {
+      this.showFeedback('Not the requested case.');
+    }
+
+    this.refreshM02CPhase();
+    this.refresh();
+  }
+
+  /** Reflects the workspace phase on the banner and controls. */
+  private refreshM02CPhase() {
+    const phase = m02cPhase();
+
+    if (this.m02cBanner === null) {
+      return;
+    }
+
+    if (phase === 'retrieve') {
+      const requested = m02cRequestedCase();
+
+      this.m02cBanner
+        .setText(
+          requested === null
+            ? 'RETRIEVAL'
+            : `RETRIEVE: ${requested.label} — select the slot holding it`,
+        )
+        .setVisible(true);
+      this.m02cHandOverButton?.setEnabled(false);
+
+      for (const button of this.m02cLabelButtons) {
+        button.setEnabled(false);
+      }
+    } else if (phase === 'closed') {
+      this.m02cBanner.setText('HANDOVER COMPLETE — read-only').setVisible(true);
+      this.inputLocked = true;
+      this.m02cHandOverButton?.setEnabled(false);
+
+      for (const button of this.m02cLabelButtons) {
+        button.setEnabled(false);
+      }
+    } else {
+      this.m02cBanner.setVisible(false);
+    }
+  }
+
+  private m02cRetrieving(): boolean {
+    return this.mode === 'm02case' && m02cPhase() === 'retrieve';
   }
 
   private buildM02Reference() {
@@ -808,6 +1039,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
           address === null ||
           this.inputLocked ||
           this.confirmOpen ||
+          this.m02cRetrieving() ||
           pointer.rightButtonDown() ||
           getInventoryState().held !== null
         ) {
@@ -1029,6 +1261,11 @@ export class InventoryOverlayScene extends Phaser.Scene {
   }
 
   private handleLeftClick(address: SlotAddress, shiftKey: boolean) {
+    if (this.m02cRetrieving()) {
+      this.m02cRetrievalPick(address, 'pointer');
+      return;
+    }
+
     const state = getInventoryState();
 
     if (state.held !== null) {
@@ -1083,6 +1320,11 @@ export class InventoryOverlayScene extends Phaser.Scene {
   }
 
   private handleRightClick(address: SlotAddress, shiftKey: boolean) {
+    if (this.m02cRetrieving()) {
+      this.m02cRetrievalPick(address, 'pointer');
+      return;
+    }
+
     const state = getInventoryState();
 
     if (state.held !== null) {
@@ -1400,6 +1642,11 @@ export class InventoryOverlayScene extends Phaser.Scene {
         return;
       }
 
+      if (this.m02cRetrieving()) {
+        this.m02cRetrievalPick(this.focus, 'keyboard');
+        return;
+      }
+
       const state = getInventoryState();
 
       if (state.held !== null) {
@@ -1491,6 +1738,23 @@ export class InventoryOverlayScene extends Phaser.Scene {
 
     // Mode-action hotkeys: full keyboard parity for the pointer buttons
     // (assemble / commit filing / run press, and the reference consult).
+    on('keydown-L', (event: KeyboardEvent) => {
+      if (
+        event.repeat ||
+        this.mode !== 'm02case' ||
+        this.focus === null ||
+        this.confirmOpen
+      ) {
+        return;
+      }
+
+      if (
+        (M02C_TRAY_IDS as readonly string[]).includes(this.focus.containerId)
+      ) {
+        this.handleM02CLabel(this.focus.containerId, 'keyboard');
+      }
+    });
+
     on('keydown-C', (event: KeyboardEvent) => {
       if (event.repeat || this.confirmOpen) {
         return;
@@ -1498,6 +1762,8 @@ export class InventoryOverlayScene extends Phaser.Scene {
 
       if (this.mode === 'workbench') {
         this.handleAssemble();
+      } else if (this.mode === 'm02case') {
+        this.handleM02CHandOver();
       } else if (this.mode === 'm02') {
         this.handleM02Commit();
       } else if (this.mode === 'm03') {
@@ -1947,6 +2213,13 @@ export class InventoryOverlayScene extends Phaser.Scene {
       this.updateM03ActivityPanel();
     }
 
+    if (this.mode === 'm02case') {
+      M02C_TRAY_IDS.forEach((trayId, index) => {
+        this.m02cLabelButtons[index]?.setLabel(this.m02cLabelText(trayId));
+      });
+      this.refreshM02CPhase();
+    }
+
     this.refreshDetail();
     this.refreshProbe();
   }
@@ -2011,6 +2284,8 @@ export class InventoryOverlayScene extends Phaser.Scene {
 
     if (this.mode === 'm02') {
       closeM02Panel(Date.now());
+    } else if (this.mode === 'm02case') {
+      closeM02CPanel(Date.now());
     } else if (this.mode === 'm03') {
       closeM03Window(this.m03Occasion, Date.now());
     } else {

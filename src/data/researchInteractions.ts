@@ -707,6 +707,13 @@ export const researchInteractions = {
     event_type: 'pilot_station_opened',
     score_tags: [],
   },
+  pilotSealLog: {
+    object_id: 'pilot_seal_log',
+    label: 'Sample Seal Log',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
   pilotWorkOrderBoard: {
     object_id: 'pilot_work_order_board',
     label: 'Work Order Board',

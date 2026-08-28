@@ -24,6 +24,7 @@ import {
   primaryFamilyPrefixes,
   scheduledOpportunityIds,
 } from '../src/pilot/coverageSchedule';
+import { EVIDENCE_LEDGER } from '../src/pilot/evidenceLedger';
 
 function record(
   overrides: Partial<CoverageRecordLike> & { opportunity_id: string },
@@ -73,21 +74,13 @@ test.describe('pilot coverage schedule (pure)', () => {
       (entry) => entry.disposition === 'PRIMARY-CANDIDATE',
     );
 
-    expect(primaries.map((entry) => entry.item)).toEqual([
-      'M02',
-      'M03',
-      'M13',
-      'M14',
-      'M15',
-      'M16',
-      'M17',
-      'M18',
-      'M22',
-      'M23',
-      'M24',
-      'M25',
-      'M26',
-    ]);
+    // Route-primary candidates = every strong/conditional ledger item plus
+    // the M25 transparent probe window (questionnaire-primary, hybrid).
+    expect(primaries.map((entry) => entry.item)).toEqual(
+      EVIDENCE_LEDGER.filter(
+        (entry) => entry.disposition_class !== 'questionnaire_primary',
+      ).map((entry) => entry.id),
+    );
 
     const allIds = scheduledOpportunityIds();
 
@@ -102,10 +95,9 @@ test.describe('pilot coverage schedule (pure)', () => {
         expect(['mission_brief', 'module_header']).toContain(
           entry.itemIdentity,
         );
-      } else {
+      } else if (entry.item !== 'M25') {
         expect(entry.opportunityIds).toEqual([]);
         expect(entry.familyPrefixes).toEqual([]);
-        expect(entry.itemIdentity).toBe('none');
       }
     }
 
@@ -126,7 +118,7 @@ test.describe('pilot coverage schedule (pure)', () => {
   test('route-primary event-family prefixes are pairwise disjoint and never swallow a legacy proto_* event', () => {
     const prefixes = primaryFamilyPrefixes();
 
-    expect(prefixes.length).toBe(13);
+    expect(prefixes.length).toBe(24);
 
     for (const a of prefixes) {
       for (const b of prefixes) {
@@ -323,31 +315,18 @@ test.describe('pilot coverage schedule (pure)', () => {
       coverage
         .filter((item) => item.status === 'not_applicable')
         .map((item) => item.item),
-    ).toEqual([
-      'M01',
-      'M04',
-      'M05',
-      'M06',
-      'M07',
-      'M08',
-      'M09',
-      'M10',
-      'M11',
-      'M12',
-      'M19',
-      'M20',
-      'M21',
-    ]);
+    ).toEqual(['M08', 'M11']);
 
     const summary = operationalCompletionSummary(coverage);
 
-    expect(summary.scheduled).toBe(13);
+    // 24 scheduled = 23 game candidates + the M25 transparent probe window.
+    expect(summary.scheduled).toBe(24);
     // Round-2 S2 rule: the four reviewNaming-never stopping-rule items
     // are excluded from the participant-facing OPEN count.
     expect(summary.closed).toBe(4);
-    expect(summary.open).toBe(9);
-    // 9 reviewable (M02, M03, M13–M18, M23) — M22/M24/M25/M26 never named.
-    expect(summary.neverEnteredLabels.length).toBe(9);
+    expect(summary.open).toBe(20);
+    // 20 reviewable — M22/M24/M25/M26 are never named.
+    expect(summary.neverEnteredLabels.length).toBe(20);
     expect(summary.neverEnteredLabels.join(' ')).not.toMatch(
       /Magnet|Sector|seal|pump/i,
     );
@@ -355,15 +334,17 @@ test.describe('pilot coverage schedule (pure)', () => {
 
     // An entered-but-unfinished reviewable window is counted open but NOT named.
     const entered = deriveCoverage([
-      record({ opportunity_id: 'proto_m02_incident_filing', entered: true }),
+      record({ opportunity_id: 'proto_m02_case_workspace', entered: true }),
     ]);
     const enteredSummary = operationalCompletionSummary(entered);
 
     // Round-2 S2 rule: the four reviewNaming-never items are excluded
-    // from the participant-facing OPEN count (13 entered - 4 = 9).
-    expect(enteredSummary.open).toBe(9);
-    expect(enteredSummary.neverEnteredLabels.length).toBe(8);
-    expect(enteredSummary.neverEnteredLabels.join(' ')).not.toMatch(/filing/i);
+    // from the participant-facing OPEN count (24 scheduled - 4 = 20).
+    expect(enteredSummary.open).toBe(20);
+    expect(enteredSummary.neverEnteredLabels.length).toBe(19);
+    expect(enteredSummary.neverEnteredLabels.join(' ')).not.toMatch(
+      /Case workspace/,
+    );
   });
 
   test('contamination notes are carried per opportunity', () => {

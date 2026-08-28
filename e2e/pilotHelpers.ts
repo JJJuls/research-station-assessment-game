@@ -276,10 +276,19 @@ export async function pilotEventTypes(page: Page): Promise<string[]> {
   return (await getEvents(page)).map((event) => event.event_type);
 }
 
+/**
+ * The bare route emits no behavioural measurement event. Exposure records
+ * (`*_presented` — an offer or fault was shown) are the only proto_* events
+ * tolerated: they carry the required presented timestamp and never a value.
+ */
 export async function expectNoMeasurementEvents(page: Page) {
   const types = await pilotEventTypes(page);
 
-  expect(types.filter((type) => type.startsWith('proto_'))).toEqual([]);
+  expect(
+    types.filter(
+      (type) => type.startsWith('proto_') && !type.endsWith('_presented'),
+    ),
+  ).toEqual([]);
 }
 
 export async function expectStage(page: Page, stage: string) {
@@ -303,13 +312,22 @@ export async function dockToConcourse(page: Page) {
   await expectStage(page, 'handover_briefing');
 }
 
-/** Vale's briefing (→ incident_handover) then the handover confirmation (→ workshop). */
+/**
+ * Vale's briefing (→ incident_handover), the chained voluntary offers left
+ * UNANSWERED (dismissed — no behavioural event, only the exposure record),
+ * then the handover confirmation (→ workshop).
+ */
 export async function valeHandover(page: Page) {
   await openPromptAt(page, PILOT.concourse.vale, {
     approachOffset: { x: 0, y: 40 },
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'incident_handover');
+  await page.waitForTimeout(400);
+  await selectPromptOption(page, 3); // watch offer: ask me later
+  await page.waitForTimeout(400);
+  await selectPromptOption(page, 3); // delivery offer: ask me later
+  await page.waitForTimeout(300);
   await openPromptAt(page, PILOT.concourse.vale, {
     approachOffset: { x: 0, y: 40 },
   });

@@ -1,41 +1,115 @@
 /**
- * Station Concourse — the hub of the evidence-led pilot v2 (Unit 1: route
- * shell). Episode 1 (Storm Arrival & Incident Handover) and the return
- * check-in of episode 5 happen here.
+ * Station Concourse — the hub of the evidence-led pilot v2. Episode 1
+ * (Storm Arrival & Incident Handover) and the return check-in of episode 5
+ * happen here (Unit 2).
  *
- * Doors (all bidirectional): south → Dock, west → Records Workshop,
- * north → Diagnostics Laboratory, east → Utility Deck. Vale at the incident
- * desk is the anchor NPC of the Concourse stages. Unit 2 adds the episode-1
- * windows (plan board, QC packet, incident desk, monitor watch, promise);
- * Unit 4 adds the return-shift obligations. Nothing gates on performance;
- * every beat offers "move on".
+ * Episode-1 windows (ledger): M01 plan board, M05 initiation occasion 1
+ * (the flickering desk lamp — nobody mentions it), M09 monitor watch
+ * (offered by Vale; two gauge checks), M10 component promise (offered by
+ * Vale; standardised interruption), M12 quality packet 1, M14 incident
+ * desk. Every packet is its own object on the work surface; completing one
+ * never gates another. Doors are always bidirectional.
  */
 import { key } from '../constants';
-import { refreshPilotCoverageProbe } from '../pilot/pilotCoverage';
+import { beginManualWorldAction } from '../gameplay/actions';
+import {
+  refreshPilotCoverageProbe,
+  stampContaminationNotes,
+} from '../pilot/pilotCoverage';
 import {
   advancePilotStage,
   pilotStage,
+  pilotStageAtOrAfter,
   registerPilotStation,
 } from '../pilot/pilotRoute';
 import type { PilotNpcBeat } from '../pilot/PilotZoneScene';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
+import {
+  activeWorkSurface,
+  openWorkSurface,
+} from '../pilot/ui/WorkSurfaceScene';
+import {
+  closeM01Surface,
+  declareM01,
+  m01Window,
+  openM01,
+  resumeM01Surface,
+} from '../pilot/windows/m01PlanBoard';
+import {
+  censorM05,
+  completeM05Fix,
+  declareM05,
+  initiateM05,
+  m05Open,
+  m05Presented,
+  presentM05,
+} from '../pilot/windows/m05Initiation';
+import {
+  answerM09Offer,
+  closeM09Check,
+  declareM09,
+  m09Accepted,
+  m09State,
+  noteM09NpcMention,
+  openM09Check2,
+  presentM09Offer,
+  readM09Gauge,
+} from '../pilot/windows/m09MonitorWatch';
+import {
+  answerM10Offer,
+  declareM10,
+  handOverM10,
+  M10_COMPONENT_LABEL,
+  M10_INTERRUPTION_TEXT,
+  m10Carrying,
+  m10State,
+  noteM10InterruptionAcknowledged,
+  noteM10InterruptionShown,
+  noteM10KaiEncounter,
+  presentM10Offer,
+} from '../pilot/windows/m10ComponentPromise';
+import {
+  closeM12Surface,
+  declareM12,
+  m12Windows,
+  openM12,
+  resumeM12Surface,
+} from '../pilot/windows/m12QualityControl';
+import {
+  closeM14Surface,
+  declareM14,
+  m14Window,
+  openM14,
+  resumeM14Surface,
+} from '../pilot/windows/m14IncidentDesk';
+import {
+  m01SurfaceModel,
+  m12SurfaceModel,
+  m14SurfaceModel,
+} from '../pilot/windows/surfaceModels';
 import { CONCOURSE_STATIONS } from '../pilot/zoneSites';
-import type { InteractionKey, PromptOption, RoomLayout } from '../world';
+import type {
+  InteractionKey,
+  PromptOption,
+  PromptStage,
+  RoomLayout,
+} from '../world';
 
 const TILE = 32;
+const M05_FIX_MS = 2000;
 
 export class StationConcourseScene extends PilotZoneScene {
   protected readonly roomId = 'station_concourse';
   protected readonly roomInteractionKey: InteractionKey = 'pilotRoute';
   protected readonly zoneKey = 'station_concourse' as const;
 
+  private lampFlicker: Phaser.GameObjects.Rectangle | null = null;
+
   constructor() {
     super(key.scene.stationConcourse);
   }
 
   protected getLayout(): RoomLayout {
-    // 25×19 hub: doorways north (Laboratory), south (Dock), east (Utility
-    // Deck) and west (Records Workshop) — rows 8-9 on both side walls.
     return {
       theme: 'hub',
       grid: [
@@ -77,7 +151,28 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   create(data?: { spawn?: string }) {
+    declareM01();
+    declareM05('o1');
+    declareM09();
+    declareM10();
+    declareM12('o1');
+    declareM14();
+    stampContaminationNotes();
+
     super.create(data);
+
+    // Return milestone: the second gauge check becomes due on the return.
+    if (pilotStageAtOrAfter('return_hub')) {
+      openM09Check2(Date.now());
+    }
+
+    this.events.on('resume', () => {
+      const now = Date.now();
+
+      resumeM01Surface(now);
+      resumeM12Surface('o1', now);
+      resumeM14Surface(now);
+    });
     refreshPilotCoverageProbe();
   }
 
@@ -90,84 +185,315 @@ export class StationConcourseScene extends PilotZoneScene {
     });
     this.addPilotDoor({ to: 'utility_core_deck', spawn: 'station_concourse' });
 
-    // ——— Vale — incident desk (anchor NPC of the Concourse stages) ———
-    const vale = CONCOURSE_STATIONS.vale;
+    const S = CONCOURSE_STATIONS;
 
+    // ——— Vale — incident desk (anchor NPC) ———
     this.addNpc({
       interactionKey: 'pilotVale',
       label: 'Vale',
       npcName: 'Vale — operations',
       texture: 'plv1-vale',
       workFrames: ['plv1-vale', 'plv1-vale-b'],
-      x: vale.x,
-      y: vale.y,
+      x: S.vale.x,
+      y: S.vale.y,
     });
-    this.addDecor(vale.x, vale.y + 30, 'proc-desk-reception');
-    this.signage(vale.x, vale.y - 64, 'INCIDENT DESK');
+    this.addDecor(S.vale.x, S.vale.y + 30, 'proc-desk-reception');
+    this.signage(S.vale.x, S.vale.y - 64, 'INCIDENT DESK');
     registerPilotStation({
       id: 'npc_vale',
       zone: 'station_concourse',
-      x: vale.x,
-      y: vale.y,
+      x: S.vale.x,
+      y: S.vale.y,
       label: 'Vale',
       stages: ['handover_briefing', 'incident_handover', 'return_hub'],
       isDone: () => false,
       order: 0,
     });
 
+    // ——— Kai on the return shift (handover recipient beside the desk) ———
+    if (pilotStageAtOrAfter('return_hub')) {
+      this.addNpc({
+        interactionKey: 'pilotKai',
+        label: 'Kai',
+        npcName: 'Kai — diagnostics',
+        texture: 'plv1-kai',
+        workFrames: ['plv1-kai-work-a', 'plv1-kai-work-b'],
+        x: S.kaiReturn.x,
+        y: S.kaiReturn.y,
+      });
+    }
+
+    // ——— Episode-1 work surface ———
+    this.signage(6 * TILE, 3 * TILE, 'STORM PACKET — WORK SURFACE');
+    this.surfaceStation(
+      'plan_board',
+      'Plan Board',
+      'proc-board-workorders',
+      S.planBoard,
+      1,
+      () => m01Window.isClosed(),
+      () => {
+        openM01(Date.now());
+        openWorkSurface(this, {
+          surfaceId: 'm01_plan_board',
+          model: () => m01SurfaceModel(this.surfaceHost()),
+          onClose: () => closeM01Surface(Date.now()),
+        });
+      },
+    );
+    this.surfaceStation(
+      'qc_packet_o1',
+      'Quality Packet',
+      'proc-desk-closure',
+      S.qcPacket,
+      2,
+      () => m12Windows.o1.isClosed(),
+      () => {
+        openM12('o1', Date.now());
+        openWorkSurface(this, {
+          surfaceId: 'm12_qc_packet_o1',
+          model: () => m12SurfaceModel('o1', this.surfaceHost()),
+          onClose: () => closeM12Surface('o1', Date.now()),
+        });
+      },
+    );
+    this.surfaceStation(
+      'incident_desk',
+      'Incident Desk',
+      'proc-console-scenario',
+      S.incidentDesk,
+      3,
+      () => m14Window.isClosed(),
+      () => {
+        openM14(Date.now());
+        openWorkSurface(this, {
+          surfaceId: 'm14_incident_desk',
+          model: () => m14SurfaceModel(this.surfaceHost()),
+          onClose: () => closeM14Surface(Date.now()),
+        });
+      },
+    );
+
+    // ——— Monitor gauge (M09 checks) — always readable ———
+    this.addStation({
+      interactionKey: 'pilotStation',
+      label: 'Monitor Gauge',
+      texture: 'proc-gauge-card',
+      x: S.monitorGauge.x,
+      y: S.monitorGauge.y,
+      onPromptOpened: () => {
+        this.logStationOpened('monitor_gauge');
+        readM09Gauge(Date.now(), 'keyboard');
+        this.showFeedbackMessage(
+          'Gauge read: loop 1.6 bar · bus 26.8 V · relay LOCK.',
+        );
+        return false;
+      },
+    });
+    this.signage(S.monitorGauge.x, S.monitorGauge.y - 40, 'MONITOR');
+
+    // ——— Desk lamp fault (M05 occasion 1) — never mentioned ———
+    this.addStation({
+      interactionKey: 'pilotStation',
+      label: 'Desk Lamp',
+      texture: 'proc-light-pool',
+      x: S.concourseFault.x,
+      y: S.concourseFault.y,
+      onPromptOpened: () => {
+        this.logStationOpened('desk_lamp');
+
+        if (!m05Open('o1')) {
+          this.showFeedbackMessage(
+            m05Presented('o1') ? 'Lamp steady.' : 'Lamp steady.',
+          );
+          return false;
+        }
+
+        if (initiateM05('o1', Date.now(), 'keyboard')) {
+          beginManualWorldAction();
+          this.time.delayedCall(M05_FIX_MS, () => {
+            completeM05Fix('o1', Date.now(), 'keyboard');
+            this.lampFlicker?.setVisible(false);
+            this.showFeedbackMessage('Lamp connector reseated.');
+          });
+        }
+
+        return false;
+      },
+    });
+    this.lampFlicker = this.add
+      .rectangle(
+        S.concourseFault.x,
+        S.concourseFault.y - 22,
+        14,
+        6,
+        0xe6c68f,
+        0.9,
+      )
+      .setDepth(3)
+      .setVisible(false);
+
     // ——— Dressing ———
-    this.addDecor(4 * TILE, 3.4 * TILE, 'proc-light-pool');
     this.addDecor(12 * TILE, 3.2 * TILE, 'proc-light-pool');
     this.addDecor(15.5 * TILE, 8.2 * TILE, 'proc-light-pool');
     this.addDecor(19 * TILE, 1.4 * TILE, 'proc-window-exterior');
     this.addDecor(22 * TILE, 1.4 * TILE, 'proc-window-exterior');
     this.addDecor(5 * TILE, 16 * TILE + 10, 'proc-wall-pipes');
     this.addDecor(20 * TILE, 16 * TILE + 10, 'proc-wall-pipes');
-    this.addDecor(19.5 * TILE, 13.5 * TILE, 'proc-board-workorders');
     this.addDecor(21.5 * TILE, 13.5 * TILE, 'proc-board-portfolio');
     this.addDecor(17.5 * TILE, 12 * TILE, 'proc-cart-utility');
     this.addDecor(13.5 * TILE, 4.6 * TILE, 'proc-console-wall');
-    this.signage(20.5 * TILE, 12.2 * TILE, 'DUTY BOARDS');
     this.signage(12 * TILE, 1.5 * TILE, 'DIAGNOSTICS LABORATORY  ▲');
     this.signage(12 * TILE, 17.5 * TILE, '▼  DOCK');
     this.signage(22.2 * TILE, 7.2 * TILE, 'UTILITY DECK  ▶');
     this.signage(2.8 * TILE, 7.2 * TILE, '◀  RECORDS WORKSHOP');
   }
 
+  private surfaceStation(
+    id: string,
+    label: string,
+    texture: string,
+    at: { x: number; y: number },
+    order: number,
+    isDone: () => boolean,
+    open: () => void,
+  ) {
+    this.addStation({
+      interactionKey: 'pilotStation',
+      label,
+      texture,
+      x: at.x,
+      y: at.y,
+      onPromptOpened: () => {
+        this.logStationOpened(id);
+        open();
+        return false;
+      },
+    });
+    this.signage(at.x, at.y - 40, label.toUpperCase());
+    registerPilotStation({
+      id,
+      zone: 'station_concourse',
+      x: at.x,
+      y: at.y,
+      label,
+      stages: ['incident_handover'],
+      isDone,
+      order,
+    });
+  }
+
+  private surfaceHost() {
+    return {
+      now: () => Date.now(),
+      close: () => activeWorkSurface(this)?.close(),
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+    };
+  }
+
+  /** M05 occasion 1: presented at the first quiet moment after comprehension. */
+  protected onPilotUpdate(): void {
+    if (
+      !m05Presented('o1') &&
+      pilotStageAtOrAfter('incident_handover') &&
+      this.physicalInputEligible()
+    ) {
+      const S = CONCOURSE_STATIONS.concourseFault;
+
+      presentM05('o1', Date.now(), {
+        eligible: true,
+        distance: Math.hypot(this.player.x - S.x, this.player.y - S.y),
+        comprehension: 'passed',
+      });
+      this.lampFlicker?.setVisible(true);
+    }
+
+    if (this.lampFlicker?.visible) {
+      this.lampFlicker.setAlpha(
+        Math.floor(this.time.now / 260) % 3 === 0 ? 0.25 : 0.9,
+      );
+    }
+  }
+
+  protected onRoomExit(): void {
+    const now = Date.now();
+
+    if (m05Open('o1')) {
+      censorM05('o1', now, 'left_zone');
+      this.lampFlicker?.setVisible(false);
+    }
+
+    // Leaving the Concourse passes the first gauge-check milestone.
+    if (m09Accepted() && m09State().checks.check1.closedAtMs === null) {
+      closeM09Check('check1', now, 'milestone_passed');
+    }
+  }
+
+  private logStationOpened(stationId: string) {
+    this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
+      metadata: { station_id: stationId, zone: this.zoneKey },
+    });
+  }
+
   private signage(x: number, y: number, text: string) {
     this.add
-      .text(x, y, text, {
-        color: '#7f95a8',
-        font: '11px monospace',
-      })
+      .text(x, y, text, { color: '#7f95a8', font: '11px monospace' })
       .setOrigin(0.5)
       .setDepth(2);
   }
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {
-    if (interactionKey !== 'pilotVale') {
-      return undefined;
+    if (interactionKey === 'pilotVale') {
+      return this.valeBeat().body;
     }
 
-    return this.valeBeat().body;
+    if (interactionKey === 'pilotKai') {
+      noteM10KaiEncounter();
+
+      return m10Carrying()
+        ? `Kai: Back inside — do you have the ${M10_COMPONENT_LABEL.toLowerCase()}?`
+        : 'Kai: Good to have you back inside. Vale has the return-shift orders.';
+    }
+
+    return undefined;
   }
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
-    if (interactionKey !== 'pilotVale') {
-      return [];
+    if (interactionKey === 'pilotVale') {
+      return this.npcBeatOptions('pilotVale', this.valeBeat());
     }
 
-    return this.npcBeatOptions('pilotVale', this.valeBeat());
+    if (interactionKey === 'pilotKai') {
+      return this.npcBeatOptions('pilotKai', {
+        body: '',
+        options: [
+          ...(m10Carrying()
+            ? [
+                {
+                  label: `Hand over the ${M10_COMPONENT_LABEL.toLowerCase()}.`,
+                  tag: 'm10_handover',
+                  feedback: 'Kai: Got it. Thanks.',
+                  onSelected: () => handOverM10(Date.now(), 'kai', 'keyboard'),
+                },
+              ]
+            : []),
+          { label: 'Understood.', tag: 'kai_return_ack' },
+        ],
+      });
+    }
+
+    return [];
   }
 
-  /** Vale's beat depends only on the route stage (navigation), never on outcomes. */
+  /** Vale's beats depend only on the route stage — never on outcomes. */
   private valeBeat(): PilotNpcBeat {
     switch (pilotStage()) {
       case 'arrival':
       case 'handover_briefing':
         return {
           body:
-            'Vale: Good — you made it through the storm. This desk is the incident handover: the storm packet is on the work surface.\n' +
+            'Vale: Good — you made it through the storm. This desk is the incident handover: the storm packet is on the work surface — plan board, quality packet, incident desk.\n' +
             'Work through it, then confirm the handover with me.',
           options: [
             {
@@ -175,7 +501,9 @@ export class StationConcourseScene extends PilotZoneScene {
               tag: 'briefing_ack',
               onSelected: () => {
                 advancePilotStage('incident_handover', Date.now());
+                presentM09Offer(Date.now());
               },
+              nextStage: () => this.watchOfferStage(),
             },
           ],
         };
@@ -188,15 +516,31 @@ export class StationConcourseScene extends PilotZoneScene {
               tag: 'handover_done',
               feedback:
                 'Vale: The Records Workshop needs restoring — west door. The work orders are on the board.',
-              onSelected: () => {
-                advancePilotStage('workshop', Date.now());
-              },
+              onSelected: () => advancePilotStage('workshop', Date.now()),
             },
             {
               label: 'Still working on it.',
               tag: 'handover_continue',
               feedback: 'Vale: Take your time.',
             },
+            ...(m09State().accepted === null
+              ? [
+                  {
+                    label: 'About the monitor watch…',
+                    tag: 'watch_offer_again',
+                    nextStage: () => this.watchOfferStage(),
+                  },
+                ]
+              : []),
+            ...(m10State().accepted === null
+              ? [
+                  {
+                    label: 'About the delivery…',
+                    tag: 'promise_offer_again',
+                    nextStage: () => this.promiseOfferStage(),
+                  },
+                ]
+              : []),
           ],
         };
       case 'workshop':
@@ -214,15 +558,19 @@ export class StationConcourseScene extends PilotZoneScene {
           options: [{ label: 'On my way.', tag: 'redirect_lab' }],
         };
       case 'return_hub':
+        noteM09NpcMention('check2');
+
         return {
-          body: 'Vale: Back inside — good. Anything you accepted earlier is still yours to close. The return shift finishes in the Records Workshop, west door.',
+          body:
+            'Vale: Back inside — good. Anything you accepted earlier is still yours to close' +
+            (m09Accepted() ? ' (the monitor gauge is where it was)' : '') +
+            '. The return shift finishes in the Records Workshop, west door.',
           options: [
             {
               label: 'Heading to the workshop.',
               tag: 'return_ack',
-              onSelected: () => {
-                advancePilotStage('workshop_return', Date.now());
-              },
+              onSelected: () =>
+                advancePilotStage('workshop_return', Date.now()),
             },
           ],
         };
@@ -244,5 +592,90 @@ export class StationConcourseScene extends PilotZoneScene {
           options: [{ label: 'Understood.', tag: 'complete_ack' }],
         };
     }
+  }
+
+  /** M09: explicit, voluntary watch offer (accept or decline — both valid). */
+  private watchOfferStage(): PromptStage | null {
+    if (m09State().accepted !== null) {
+      return null;
+    }
+
+    presentM09Offer(Date.now());
+
+    return {
+      body: 'Vale: One more thing — would you take the monitor watch this shift? Two gauge readings: one before you leave the Concourse, one when you are back inside. The gauge is on the work surface.',
+      options: this.npcBeatOptions('pilotVale', {
+        body: '',
+        options: [
+          {
+            label: 'I will take the watch.',
+            tag: 'watch_accept',
+            onSelected: () => answerM09Offer(true, Date.now(), 'keyboard'),
+            nextStage: () => this.promiseOfferStage(),
+          },
+          {
+            label: 'Not this shift.',
+            tag: 'watch_decline',
+            onSelected: () => answerM09Offer(false, Date.now(), 'keyboard'),
+            nextStage: () => this.promiseOfferStage(),
+          },
+          {
+            label: 'Ask me again later.',
+            tag: 'watch_defer',
+            nextStage: () => this.promiseOfferStage(),
+          },
+        ],
+      }),
+    };
+  }
+
+  /** M10: explicit, voluntary delivery promise; acceptance is followed by the standardised interruption. */
+  private promiseOfferStage(): PromptStage | null {
+    if (m10State().accepted !== null) {
+      return null;
+    }
+
+    presentM10Offer(Date.now());
+
+    return {
+      body: `Vale: Kai asked for the ${M10_COMPONENT_LABEL.toLowerCase()}. Would you carry it and hand it to Kai when you see them?`,
+      options: this.npcBeatOptions('pilotVale', {
+        body: '',
+        options: [
+          {
+            label: 'I will hand it to Kai.',
+            tag: 'promise_accept',
+            onSelected: () => answerM10Offer(true, Date.now(), 'keyboard'),
+            nextStage: () => this.interruptionStage(),
+          },
+          {
+            label: 'Better ask someone else.',
+            tag: 'promise_decline',
+            onSelected: () => answerM10Offer(false, Date.now(), 'keyboard'),
+          },
+          { label: 'Ask me again later.', tag: 'promise_defer' },
+        ],
+      }),
+    };
+  }
+
+  /** The identical, non-choice interruption shown right after acceptance. */
+  private interruptionStage(): PromptStage {
+    noteM10InterruptionShown(Date.now());
+
+    return {
+      body: M10_INTERRUPTION_TEXT,
+      options: this.npcBeatOptions('pilotVale', {
+        body: '',
+        options: [
+          {
+            label: 'Alarm cleared — continue.',
+            tag: 'interruption_ack',
+            onSelected: () =>
+              noteM10InterruptionAcknowledged(Date.now(), 'keyboard'),
+          },
+        ],
+      }),
+    };
   }
 }

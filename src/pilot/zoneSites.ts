@@ -13,8 +13,8 @@ export const CONCOURSE_STATIONS = {
   kaiReturn: { x: 18.5 * TILE, y: 8.5 * TILE },
   planBoard: { x: 4 * TILE, y: 5 * TILE },
   incidentDesk: { x: 8 * TILE, y: 5 * TILE },
-  qcPacket: { x: 4 * TILE, y: 13 * TILE },
-  monitorGauge: { x: 8 * TILE, y: 13 * TILE },
+  qcPacket: { x: 8 * TILE, y: 13 * TILE },
+  monitorGauge: { x: 11 * TILE, y: 13 * TILE },
   concourseFault: { x: 19 * TILE, y: 13.5 * TILE },
 } as const;
 

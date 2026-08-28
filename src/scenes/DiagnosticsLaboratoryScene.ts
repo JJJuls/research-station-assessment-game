@@ -65,6 +65,12 @@ import {
   registerPilotStation,
 } from '../pilot/pilotRoute';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
+import {
+  handOverM10,
+  M10_COMPONENT_LABEL,
+  m10Carrying,
+  noteM10KaiEncounter,
+} from '../pilot/windows/m10ComponentPromise';
 import { LAB_STATIONS } from '../pilot/zoneSites';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
@@ -287,34 +293,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       },
     });
 
-    // ——— Conduit bay (east) ———
-    this.signage(21 * TILE, 4.6 * TILE, 'CONDUIT BAY');
-    this.ipStation({
-      id: 'lattice_bench',
-      label: 'Conduit Lattice Bench',
-      texture: 'proc-rig-intake',
-      at: LAB_STATIONS.lattice,
-      overlay: key.scene.ipPipeBoard,
-      taskId: 'm13',
-      status: m13LatticeWindowStatus,
-      isDone: () => windowTerminal(m13LatticeWindowStatus()),
-      order: 2,
-    });
-    this.addDecor(
-      LAB_STATIONS.lattice.x - 52,
-      LAB_STATIONS.lattice.y + 6,
-      'proc-pipe-elbow',
-    );
-    this.addDecor(
-      LAB_STATIONS.lattice.x - 52,
-      LAB_STATIONS.lattice.y - 26,
-      'proc-pipe-straight',
-    );
-    this.addDecor(
-      LAB_STATIONS.lattice.x + 44,
-      LAB_STATIONS.lattice.y - 10,
-      'proc-pipe-valve',
-    );
+    // (The conduit lattice bench now lives in the Records Workshop — v2.)
 
     this.ipStation({
       id: 'diagnosis_console',
@@ -424,9 +403,29 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
   }
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
-    return interactionKey === 'pilotKai'
-      ? this.npcBeatOptions('pilotKai', this.kaiBeat())
-      : [];
+    if (interactionKey !== 'pilotKai') {
+      return [];
+    }
+
+    noteM10KaiEncounter();
+
+    const beat = this.kaiBeat();
+
+    // M10: the hand-over is available whenever the component is carried
+    // (recipient always available; never gated on anything else).
+    if (m10Carrying()) {
+      beat.options = [
+        {
+          label: `Hand over the ${M10_COMPONENT_LABEL.toLowerCase()}.`,
+          tag: 'm10_handover',
+          feedback: 'Kai: Got it. Thanks.',
+          onSelected: () => handOverM10(Date.now(), 'kai', 'keyboard'),
+        },
+        ...beat.options,
+      ].slice(0, 4);
+    }
+
+    return this.npcBeatOptions('pilotKai', beat);
   }
 
   private kaiBeat() {

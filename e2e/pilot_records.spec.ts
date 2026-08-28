@@ -186,7 +186,14 @@ async function enterWorkshop(
   await routeToWorkshopWork(page);
 }
 
-test.describe('pilot route — Records & Logistics (Unit 3)', () => {
+// SUPERSEDED (evidence-led pilot v2, Unit 2): the v1 Incident Filing
+// Workstation (file sheets into the correct folder) was replaced on the
+// participant route by the M02 open case workspace (mandatory correction
+// C7), so these v1 assertions no longer describe the route. Coverage of the
+// v2 windows lives in e2e/pilot_episodes_1_2.spec.ts; the press/bundle
+// paths here need a rewrite against the workshop (open item, Unit 7).
+test.describe
+  .skip('pilot route — Records & Logistics (Unit 3) [superseded by v2]', () => {
   test('M02 filing and M03 press occasions run on the route with their own families; beacon follows; coverage completes', async ({
     page,
   }) => {

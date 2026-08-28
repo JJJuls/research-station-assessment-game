@@ -173,6 +173,42 @@ const CONTAINER_SPECS: readonly ContainerSpec[] = [
     namespace: 'm03',
     acceptTags: ['m03_residue'],
   },
+  // Evidence-led pilot v2 — M02 open case workspace (intake + four trays).
+  {
+    containerId: CONTAINER_IDS.m02cDesk,
+    containerType: 'm02c_intake',
+    capacity: 6,
+    namespace: 'm02c',
+    acceptTags: ['m02c_case'],
+  },
+  {
+    containerId: CONTAINER_IDS.m02cTray1,
+    containerType: 'm02c_tray',
+    capacity: 4,
+    namespace: 'm02c',
+    acceptTags: ['m02c_case'],
+  },
+  {
+    containerId: CONTAINER_IDS.m02cTray2,
+    containerType: 'm02c_tray',
+    capacity: 4,
+    namespace: 'm02c',
+    acceptTags: ['m02c_case'],
+  },
+  {
+    containerId: CONTAINER_IDS.m02cTray3,
+    containerType: 'm02c_tray',
+    capacity: 4,
+    namespace: 'm02c',
+    acceptTags: ['m02c_case'],
+  },
+  {
+    containerId: CONTAINER_IDS.m02cTray4,
+    containerType: 'm02c_tray',
+    capacity: 4,
+    namespace: 'm02c',
+    acceptTags: ['m02c_case'],
+  },
 ];
 
 export function createInitialInventoryState(): InventoryState {

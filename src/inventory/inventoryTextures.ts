@@ -129,6 +129,37 @@ const ICON_PAINTERS: Record<string, IconPainter> = {
     g.fillStyle(0x8c4a4a);
     g.fillRect(6, 4, 16, 3);
   },
+  // Evidence-led pilot v2 — M02 open case workspace bundles (four kinds,
+  // distinguished by shape AND tone; never a validity cue).
+  'inv-icon-m02c-sample': (g) => {
+    outlinedBox(g, 6, 5, 16, 18, 0x2f4a3e, 0x7f95a8);
+    g.fillStyle(0x9fd3c4);
+    g.fillCircle(14, 14, 4);
+    g.lineStyle(1, 0xd7dde2);
+    g.lineBetween(9, 8, 19, 8);
+  },
+  'inv-icon-m02c-repair': (g) => {
+    outlinedBox(g, 6, 5, 16, 18, 0x4a3b2f, 0x7f95a8);
+    g.lineStyle(2, 0xd9a066);
+    g.lineBetween(9, 18, 19, 10);
+    g.fillStyle(0xd9a066);
+    g.fillRect(17, 8, 4, 4);
+  },
+  'inv-icon-m02c-supply': (g) => {
+    outlinedBox(g, 6, 5, 16, 18, 0x2b3a4a, 0x7f95a8);
+    g.lineStyle(1, 0xb8c4cc);
+    g.strokeRect(9.5, 9.5, 9, 9);
+    g.lineBetween(9, 14, 19, 14);
+    g.lineBetween(14, 9, 14, 19);
+  },
+  'inv-icon-m02c-incident': (g) => {
+    outlinedBox(g, 6, 5, 16, 18, 0x4a2f33, 0x7f95a8);
+    g.fillStyle(0xe6c68f);
+    g.fillTriangle(14, 8, 9, 18, 19, 18);
+    g.fillStyle(0x4a2f33);
+    g.fillRect(13, 11, 2, 4);
+    g.fillRect(13, 16, 2, 1);
+  },
   'inv-icon-m03-spent-cartridge': (g) => {
     outlinedBox(g, 7, 9, 14, 10, 0x62788a, 0x3d4956);
     g.fillStyle(0x2b3a4a);

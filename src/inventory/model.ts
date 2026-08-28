@@ -69,9 +69,16 @@ export type ContainerType =
   | 'm02_desk'
   | 'm02_folder'
   | 'm03_surface'
-  | 'm03_store';
+  | 'm03_store'
+  | 'm02c_intake'
+  | 'm02c_tray';
 
-export type ContainerNamespace = 'general' | 'm02' | 'm03';
+/**
+ * `m02c` = the evidence-led pilot v2 open case workspace (M02 correction
+ * C7): its cases and trays are namespace-bound exactly like the legacy
+ * `m02` filing objects, and disjoint from them.
+ */
+export type ContainerNamespace = 'general' | 'm02' | 'm03' | 'm02c';
 
 export interface Container {
   containerId: string;
@@ -168,6 +175,11 @@ export const CONTAINER_IDS = {
   m03StoreA: 'm03_store_a',
   m03SurfaceB: 'm03_surface_b',
   m03StoreB: 'm03_store_b',
+  m02cDesk: 'm02c_desk',
+  m02cTray1: 'm02c_tray_1',
+  m02cTray2: 'm02c_tray_2',
+  m02cTray3: 'm02c_tray_3',
+  m02cTray4: 'm02c_tray_4',
 } as const;
 
 export const PLAYER_CONTAINER_IDS: readonly string[] = [

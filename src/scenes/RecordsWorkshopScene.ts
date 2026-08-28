@@ -1,28 +1,23 @@
 /**
- * Records Workshop — pilot zone of episodes 2 (Records & Workshop
- * Restoration) and 5 (Return, Revision & Handover) of the evidence-led
- * pilot v2 (Unit 1: route shell).
+ * Records Workshop — episodes 2 (Records & Workshop Restoration) and 5
+ * (Return, Revision & Handover) of the evidence-led pilot v2 (Unit 2).
  *
- * Entered through the Concourse west door; the only door leads back east
- * (bidirectional). Unit 1 hosts the accepted interactive-inventory
- * foundation unchanged at the domain level, moved here from the v1
- * Concourse: the Incident Filing Workstation (M02 overlay mode), the two
- * Label Press stations (M03 occasions A/B), the Component Locker, the
- * Assembly Bench and three incoming supply bundles. Unit 2 replaces the
- * filing workstation with the open case workspace and adds the remaining
- * episode-2 windows; Unit 4/5 add the return-shift stations.
+ * Episode-2 windows (ledger): M02 open case workspace, M03 press occasion 1,
+ * M04 sample-cutter debris, M06 dispatch console, M07 calibration bench
+ * (start), M11 seal log (secondary), M12 quality packet 2, M13 conduit
+ * lattice bench. Episode 5 (Unit 4): M03 occasion 2, M07 end and the
+ * return-shift stations. M08 secondary telemetry: the locker stow and the
+ * optional filter swap on the board.
  *
- * The Work Order Board is the stage anchor of both workshop stages: it is
- * how the participant signs off ("done here") — never a performance check.
- * Every `pilot_*` event is unmapped route telemetry.
+ * Every window owns distinct objects, events and validity state; nothing
+ * gates on performance; the east door is always open. The Work Order Board
+ * is the stage anchor (sign-off only — never a check).
  */
 import { key } from '../constants';
+import { PhysicalManipulationLayer } from '../gameplay/physical';
+import { declareM13Lattice } from '../informationProcessing/m13PipeNetwork';
+import { openIpOverlay } from '../informationProcessing/ui/openIpOverlay';
 import { ensureInventoryIconTextures } from '../inventory/inventoryTextures';
-import {
-  declareM02Opportunity,
-  M02_OPPORTUNITY_ID,
-  m02Status,
-} from '../inventory/m02Filing';
 import type { M03OccasionId } from '../inventory/m03Reset';
 import {
   declareM03Opportunities,
@@ -42,28 +37,87 @@ import {
 import {
   advancePilotStage,
   pilotStage,
+  pilotStageAtOrAfter,
   registerPilotStation,
 } from '../pilot/pilotRoute';
 import type { PilotNpcBeat } from '../pilot/PilotZoneScene';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
+import {
+  activeWorkSurface,
+  openWorkSurface,
+} from '../pilot/ui/WorkSurfaceScene';
+import { declareM02C, m02cWindow } from '../pilot/windows/m02CaseWorkspace';
+import {
+  declareM04,
+  disposeM04,
+  dropM04Carried,
+  M04_DEBRIS,
+  m04Carried,
+  m04JobRun,
+  m04RemainingDebris,
+  m04Window,
+  pickUpM04,
+  runM04SampleJob,
+} from '../pilot/windows/m04Debris';
+import {
+  closeM06Surface,
+  declareM06,
+  m06Window,
+  openM06,
+  resumeM06Surface,
+} from '../pilot/windows/m06RoutineDispatch';
+import {
+  closeM07Surface,
+  declareM07,
+  m07State,
+  openM07,
+} from '../pilot/windows/m07Calibration';
+import {
+  closeM12Surface,
+  declareM12,
+  m12Windows,
+  openM12,
+  resumeM12Surface,
+} from '../pilot/windows/m12QualityControl';
+import {
+  acknowledgeM11Obligation,
+  noteM08JobEngaged,
+  noteM08JobOffered,
+  secondaryState,
+} from '../pilot/windows/secondaryTelemetry';
+import {
+  m06SurfaceModel,
+  m07SurfaceModel,
+  m12SurfaceModel,
+} from '../pilot/windows/surfaceModels';
 import { WORKSHOP_STATIONS } from '../pilot/zoneSites';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 
 const TILE = 32;
+
+/** Episode-2 stations off the y=272 lane (the lane stays clear for walking). */
+const WS = {
+  sampleCutter: { x: 10 * TILE, y: 11 * TILE },
+  disposalChute: { x: 11.5 * TILE, y: 14 * TILE },
+  dispatchConsole: { x: 20 * TILE, y: 14 * TILE },
+  calibrationBench: { x: 11 * TILE, y: 3 * TILE },
+  qcPacket: { x: 17 * TILE, y: 14 * TILE },
+  sealLog: { x: 22 * TILE, y: 5 * TILE },
+  latticeBench: { x: 19 * TILE, y: 3 * TILE },
+} as const;
 
 export class RecordsWorkshopScene extends PilotZoneScene {
   protected readonly roomId = 'records_workshop';
   protected readonly roomInteractionKey: InteractionKey = 'pilotRoute';
   protected readonly zoneKey = 'records_workshop' as const;
 
+  private physical: PhysicalManipulationLayer | null = null;
+
   constructor() {
     super(key.scene.recordsWorkshop);
   }
 
   protected getLayout(): RoomLayout {
-    // 25×19 workshop: the Concourse doorway on the EAST wall (rows 8-9),
-    // two machinery blocks off the main lane so the y=272 lane from the
-    // door to the west stations is always clear.
     return {
       theme: 'workshop',
       grid: [
@@ -95,47 +149,56 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   create(data?: { spawn?: string }) {
-    // Inventory foundation wiring (v1 Concourse precedent): icons, the
-    // secondary telemetry bridge and the M02/M03 declarations (declared +
-    // offered; idempotent). The Component Locker starts EMPTY on the route.
     ensureInventoryIconTextures(this);
     installInventoryTelemetry();
     setInventoryTelemetryScene(key.scene.recordsWorkshop);
-    declareM02Opportunity();
+    // Declarations (register: declared + offered; idempotent).
+    declareM02C();
     declareM03Opportunities();
+    declareM04();
+    declareM06();
+    declareM07();
+    declareM12('o2');
+    declareM13Lattice();
     stampContaminationNotes();
 
     super.create(data);
 
+    noteM08JobOffered('stow_supplies');
+    this.events.on('resume', () => {
+      const now = Date.now();
+
+      resumeM06Surface(now);
+      resumeM12Surface('o2', now);
+      this.physical?.syncObjects(this.debrisEntries());
+    });
     refreshPilotCoverageProbe();
   }
 
   protected populateRoom(): void {
     this.addPilotDoor({ to: 'station_concourse', spawn: 'records_workshop' });
 
-    // ——— Work Order Board — the stage anchor of both workshop stages ———
-    const board = WORKSHOP_STATIONS.workOrderBoard;
+    const S = WORKSHOP_STATIONS;
 
+    // ——— Work Order Board (stage anchor) ———
     this.addStation({
       interactionKey: 'pilotWorkOrderBoard',
       label: 'Work Order Board',
       texture: 'proc-board-workorders',
-      x: board.x,
-      y: board.y,
+      x: S.workOrderBoard.x,
+      y: S.workOrderBoard.y,
       onPromptOpened: () => {
-        this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
-          metadata: { station_id: 'work_order_board', zone: this.zoneKey },
-        });
-
+        this.logStationOpened('work_order_board');
+        noteM08JobOffered('filter_swap');
         return true;
       },
     });
-    this.signage(board.x, board.y - 44, 'WORK ORDERS');
+    this.signage(S.workOrderBoard.x, S.workOrderBoard.y - 44, 'WORK ORDERS');
     registerPilotStation({
       id: 'work_order_board',
       zone: 'records_workshop',
-      x: board.x,
-      y: board.y,
+      x: S.workOrderBoard.x,
+      y: S.workOrderBoard.y,
       label: 'Work Order Board',
       stages: ['workshop', 'workshop_work', 'workshop_return'],
       isDone: () => false,
@@ -143,28 +206,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     });
 
     this.signage(6 * TILE, 2 * TILE - 8, 'RECORDS & RESTORATION');
-    this.populateRecordsArea();
-
-    // ——— Dressing ———
-    this.addDecor(3 * TILE, 3.4 * TILE, 'proc-light-pool');
-    this.addDecor(14 * TILE, 3.2 * TILE, 'proc-light-pool');
-    this.addDecor(20 * TILE, 8.2 * TILE, 'proc-light-pool');
-    this.addDecor(5 * TILE, 16 * TILE + 10, 'proc-wall-pipes');
-    this.addDecor(20 * TILE, 16 * TILE + 10, 'proc-wall-pipes');
-    this.addDecor(14.5 * TILE, 4.6 * TILE, 'proc-console-wall');
-    this.addDecor(14.5 * TILE, 12.6 * TILE, 'proc-cabinet-calibration');
-    this.addDecor(18.5 * TILE, 13 * TILE, 'proc-cart-utility');
-    this.signage(22.2 * TILE, 7.2 * TILE, 'CONCOURSE  ▶');
-  }
-
-  /**
-   * Records & restoration stations: incoming items (bundles) → visible
-   * destinations (locker / bench), the filing surface (M02) and the two
-   * press benches (M03 A/B). Explicit submit/leave controls live inside
-   * the overlays.
-   */
-  private populateRecordsArea() {
-    const S = WORKSHOP_STATIONS;
 
     // Incoming supplies — recoverable world items (secondary telemetry only).
     this.bundles.spawn('Component bundle', S.supplyA.x, S.supplyA.y, [
@@ -181,62 +222,271 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     ]);
     this.signage(5.5 * TILE, 4.2 * TILE, 'INCOMING SUPPLIES');
 
-    // Incident Filing Workstation — M02 (own overlay mode, own family).
-    this.addStation({
-      interactionKey: 'pilotStation',
-      label: 'Incident Filing Workstation',
-      texture: 'proc-desk-closure',
-      x: S.filingDesk.x,
-      y: S.filingDesk.y,
-      onPromptOpened: () => {
-        this.logStationOpened('filing_desk');
-        openInventoryOverlay(this, { mode: 'm02', allowWorldDrop: true });
-        return false;
+    // ——— M02 case workspace (open organisation + retrieval) ———
+    this.station(
+      'case_workspace',
+      'Case Workspace',
+      'proc-desk-closure',
+      S.filingDesk,
+      () => {
+        openInventoryOverlay(this, { mode: 'm02case', allowWorldDrop: false });
       },
-    });
-    registerPilotStation({
-      id: 'filing_desk',
-      zone: 'records_workshop',
-      x: S.filingDesk.x,
-      y: S.filingDesk.y,
-      label: 'Incident Filing Workstation',
-      stages: ['workshop_work'],
-      isDone: () => m02Status() === 'committed',
-      order: 1,
-    });
+    );
+    this.guided(
+      'case_workspace',
+      S.filingDesk,
+      'Case Workspace',
+      ['workshop_work'],
+      1,
+      () => m02cWindow.isClosed(),
+    );
 
-    // Label Press A / B — M03 occasions (own overlay mode, own family).
-    this.addPressStation('a', 'Label Press A', S.pressA, 2);
-    this.addPressStation('b', 'Label Press B', S.pressB, 3);
+    // ——— M03 press occasions: A in episode 2, B on the return shift ———
+    this.addPressStation('a', 'Label Press A', S.pressA, 2, ['workshop_work']);
+    this.addPressStation('b', 'Label Press B', S.pressB, 2, [
+      'workshop_return',
+    ]);
 
-    // Component Locker — storage transfer (ordinary inventory, secondary).
-    this.addStation({
-      interactionKey: 'pilotStation',
-      label: 'Component Locker',
-      texture: 'proc-crate-components',
-      x: S.storageLocker.x,
-      y: S.storageLocker.y,
-      onPromptOpened: () => {
-        this.logStationOpened('storage_locker');
+    // ——— Component Locker / Assembly Bench (secondary inventory) ———
+    this.station(
+      'storage_locker',
+      'Component Locker',
+      'proc-crate-components',
+      S.storageLocker,
+      () => {
+        noteM08JobEngaged('stow_supplies', Date.now());
         openInventoryOverlay(this, { mode: 'container', allowWorldDrop: true });
-        return false;
       },
-    });
+    );
+    this.station(
+      'assembly_bench',
+      'Assembly Bench',
+      'proc-bench-prep',
+      S.assemblyBench,
+      () => {
+        openInventoryOverlay(this, { mode: 'workbench', allowWorldDrop: true });
+      },
+    );
+    this.signage(6 * TILE, 12.6 * TILE, 'STORAGE  ·  ASSEMBLY');
 
-    // Assembly Bench — recipes (ordinary inventory, secondary).
+    // ——— M04 sample cutter + disposal chute (physical debris) ———
     this.addStation({
       interactionKey: 'pilotStation',
-      label: 'Assembly Bench',
-      texture: 'proc-bench-prep',
-      x: S.assemblyBench.x,
-      y: S.assemblyBench.y,
+      label: 'Sample Cutter',
+      texture: 'proc-rig-intake',
+      x: WS.sampleCutter.x,
+      y: WS.sampleCutter.y,
       onPromptOpened: () => {
-        this.logStationOpened('assembly_bench');
-        openInventoryOverlay(this, { mode: 'workbench', allowWorldDrop: true });
+        this.logStationOpened('sample_cutter');
+
+        if (m04JobRun()) {
+          this.showFeedbackMessage('Coupon cut. The cutter is idle.');
+          return false;
+        }
+
+        runM04SampleJob(Date.now(), 'keyboard');
+        this.player.playActionAnim('dig');
+        this.showFeedbackMessage('Test coupon cut.');
+        this.physical?.syncObjects(this.debrisEntries());
         return false;
       },
     });
-    this.signage(6 * TILE, 12.6 * TILE, 'STORAGE  ·  ASSEMBLY');
+    this.signage(WS.sampleCutter.x, WS.sampleCutter.y - 40, 'SAMPLE CUTTER');
+    this.guided(
+      'sample_cutter',
+      WS.sampleCutter,
+      'Sample Cutter',
+      ['workshop_work'],
+      3,
+      () => m04JobRun(),
+    );
+    this.addDecor(WS.disposalChute.x, WS.disposalChute.y, 'proc-disposal-unit');
+    this.signage(WS.disposalChute.x, WS.disposalChute.y - 36, 'DISPOSAL');
+    this.buildPhysicalLayer();
+
+    // ——— M06 dispatch console ———
+    this.station(
+      'dispatch_console',
+      'Dispatch Console',
+      'proc-console-scenario',
+      WS.dispatchConsole,
+      () => {
+        openM06(Date.now());
+        openWorkSurface(this, {
+          surfaceId: 'm06_dispatch_console',
+          model: () => m06SurfaceModel(this.surfaceHost()),
+          onClose: () => closeM06Surface(Date.now()),
+        });
+      },
+    );
+    this.signage(WS.dispatchConsole.x, WS.dispatchConsole.y - 40, 'DISPATCH');
+    this.guided(
+      'dispatch_console',
+      WS.dispatchConsole,
+      'Dispatch Console',
+      ['workshop_work'],
+      4,
+      () => m06Window.isClosed(),
+    );
+
+    // ——— M07 calibration bench (start; natural return in episode 5) ———
+    this.station(
+      'calibration_bench',
+      'Calibration Bench',
+      'proc-cabinet-calibration',
+      WS.calibrationBench,
+      () => {
+        const stage = pilotStage();
+
+        openM07(
+          Date.now(),
+          stage === 'workshop_work'
+            ? 'workshop_work'
+            : stage === 'workshop_return'
+              ? 'workshop_return'
+              : 'other',
+        );
+        openWorkSurface(this, {
+          surfaceId: 'm07_calibration_bench',
+          model: () => m07SurfaceModel(this.surfaceHost()),
+          onClose: () => closeM07Surface(Date.now()),
+        });
+      },
+    );
+    this.signage(
+      WS.calibrationBench.x,
+      WS.calibrationBench.y - 40,
+      'CALIBRATION',
+    );
+    this.guided(
+      'calibration_bench',
+      WS.calibrationBench,
+      'Calibration Bench',
+      ['workshop_work'],
+      5,
+      () => m07State().visits > 0,
+    );
+
+    // ——— M12 quality packet (occasion 2) ———
+    this.station(
+      'qc_packet_o2',
+      'Quality Packet',
+      'proc-desk-reception',
+      WS.qcPacket,
+      () => {
+        openM12('o2', Date.now());
+        openWorkSurface(this, {
+          surfaceId: 'm12_qc_packet_o2',
+          model: () => m12SurfaceModel('o2', this.surfaceHost()),
+          onClose: () => closeM12Surface('o2', Date.now()),
+        });
+      },
+    );
+    this.signage(WS.qcPacket.x, WS.qcPacket.y - 40, 'QUALITY');
+    this.guided(
+      'qc_packet_o2',
+      WS.qcPacket,
+      'Quality Packet',
+      ['workshop_work'],
+      6,
+      () => m12Windows.o2.isClosed(),
+    );
+
+    // ——— M13 conduit lattice bench (physical pipe board) ———
+    this.station(
+      'lattice_bench',
+      'Conduit Lattice Bench',
+      'proc-pipe-valve',
+      WS.latticeBench,
+      () => {
+        openIpOverlay(this, key.scene.ipPipeBoard, 'm13', {});
+      },
+    );
+    this.signage(WS.latticeBench.x, WS.latticeBench.y - 40, 'CONDUIT LATTICE');
+    this.guided(
+      'lattice_bench',
+      WS.latticeBench,
+      'Conduit Lattice Bench',
+      ['workshop_work'],
+      7,
+      () => false,
+    );
+
+    // ——— M11 seal log (secondary only) ———
+    this.addStation({
+      interactionKey: 'pilotSealLog',
+      label: 'Sample Seal Log',
+      texture: 'proc-board-portfolio',
+      x: WS.sealLog.x,
+      y: WS.sealLog.y,
+      onPromptOpened: () => {
+        this.logStationOpened('seal_log');
+        return true;
+      },
+    });
+    this.signage(WS.sealLog.x, WS.sealLog.y - 40, 'SEAL LOG');
+
+    // ——— Dressing ———
+    this.addDecor(3 * TILE, 3.4 * TILE, 'proc-light-pool');
+    this.addDecor(14 * TILE, 8.2 * TILE, 'proc-light-pool');
+    this.addDecor(20 * TILE, 8.2 * TILE, 'proc-light-pool');
+    this.addDecor(5 * TILE, 16 * TILE + 10, 'proc-wall-pipes');
+    this.addDecor(20 * TILE, 16 * TILE + 10, 'proc-wall-pipes');
+    this.addDecor(14.5 * TILE, 4.6 * TILE, 'proc-console-wall');
+    this.addDecor(14.5 * TILE, 12.6 * TILE, 'proc-rack-tools');
+    this.signage(22.2 * TILE, 7.2 * TILE, 'CONCOURSE  ▶');
+  }
+
+  // ——— helpers ————————————————————————————————————————————————————————
+
+  private station(
+    id: string,
+    label: string,
+    texture: string,
+    at: { x: number; y: number },
+    open: () => void,
+  ) {
+    this.addStation({
+      interactionKey: 'pilotStation',
+      label,
+      texture,
+      x: at.x,
+      y: at.y,
+      onPromptOpened: () => {
+        this.logStationOpened(id);
+        open();
+        return false;
+      },
+    });
+  }
+
+  private guided(
+    id: string,
+    at: { x: number; y: number },
+    label: string,
+    stages: ('workshop_work' | 'workshop_return')[],
+    order: number,
+    isDone: () => boolean,
+  ) {
+    registerPilotStation({
+      id,
+      zone: 'records_workshop',
+      x: at.x,
+      y: at.y,
+      label,
+      stages,
+      isDone,
+      order,
+    });
+  }
+
+  private surfaceHost() {
+    return {
+      now: () => Date.now(),
+      close: () => activeWorkSurface(this)?.close(),
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+    };
   }
 
   private addPressStation(
@@ -244,7 +494,13 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     label: string,
     at: { x: number; y: number },
     order: number,
+    stages: ('workshop_work' | 'workshop_return')[],
   ) {
+    const scheduled = () =>
+      occasion === 'a'
+        ? !pilotStageAtOrAfter('return_hub')
+        : pilotStageAtOrAfter('workshop_return');
+
     this.addStation({
       interactionKey: 'pilotStation',
       label,
@@ -259,16 +515,14 @@ export class RecordsWorkshopScene extends PilotZoneScene {
           return false;
         }
 
-        // Coded prior exposure: M02 committed or the other occasion closed
-        // before this occasion opens.
-        if (m03OccasionStatus(occasion) === 'idle') {
-          if (m02Status() === 'committed') {
-            recordPriorExposure(
-              M03_OPPORTUNITY_IDS[occasion],
-              `exposure:${M02_OPPORTUNITY_ID}_committed_before`,
-            );
-          }
+        if (!scheduled()) {
+          this.showFeedbackMessage(
+            'No batch scheduled on this press right now.',
+          );
+          return false;
+        }
 
+        if (m03OccasionStatus(occasion) === 'idle') {
           const other: M03OccasionId = occasion === 'a' ? 'b' : 'a';
 
           if (m03OccasionStatus(other) === 'closed') {
@@ -293,10 +547,130 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       x: at.x,
       y: at.y,
       label,
-      stages: ['workshop_work'],
+      stages,
       isDone: () => m03OccasionStatus(occasion) === 'closed',
       order,
     });
+  }
+
+  private debrisEntries() {
+    return m04RemainingDebris().map((d) => ({
+      spec: {
+        object_id: d.object_id,
+        label: d.label,
+        icon: d.icon,
+        category: 'debris',
+      },
+      x: WS.sampleCutter.x + d.dx,
+      y: WS.sampleCutter.y + d.dy,
+    }));
+  }
+
+  private buildPhysicalLayer() {
+    this.physical = new PhysicalManipulationLayer({
+      scene: this,
+      getPlayerPosition: () => ({ x: this.player.x, y: this.player.y }),
+      isEnabled: () => this.physicalInputEligible(),
+      onPickup: (objectId) => {
+        if (!pickUpM04(objectId, 'pointer')) {
+          this.showFeedbackMessage('Hands full.');
+          return false;
+        }
+
+        this.physical?.syncObjects(this.debrisEntries());
+        return true;
+      },
+      onPlace: (objectId, containerId) => {
+        if (
+          containerId === 'm04_disposal' &&
+          disposeM04(objectId, Date.now(), 'pointer')
+        ) {
+          this.physical?.syncObjects(this.debrisEntries());
+          return { outcome: 'accepted' };
+        }
+
+        return { outcome: 'unavailable', feedback: 'That does not go there.' };
+      },
+      getCarried: () => {
+        const carried = m04Carried();
+
+        return carried === null
+          ? null
+          : {
+              object_id: carried.object_id,
+              label: carried.label,
+              icon: carried.icon,
+              category: 'debris',
+            };
+      },
+      onFeedback: (message) => this.showFeedbackMessage(message),
+    });
+    this.physical.syncContainers([
+      {
+        container_id: 'm04_disposal',
+        label: 'Disposal chute',
+        x: WS.disposalChute.x,
+        y: WS.disposalChute.y,
+        accepts: ['debris'],
+      },
+    ]);
+    this.physical.syncObjects(this.debrisEntries());
+    void M04_DEBRIS;
+  }
+
+  protected onPilotUpdate(): void {
+    this.physical?.update();
+  }
+
+  /** SPACE/E with nothing in range: carried debris drops at the chute if in reach, else bundle pickup. */
+  protected onEmptyInteract(): void {
+    const carried = m04Carried();
+
+    if (carried !== null) {
+      const near =
+        Math.hypot(
+          this.player.x - WS.disposalChute.x,
+          this.player.y - WS.disposalChute.y,
+        ) <= 96;
+
+      if (near && disposeM04(carried.object_id, Date.now(), 'keyboard')) {
+        this.showFeedbackMessage('Disposed.');
+        this.physical?.syncObjects(this.debrisEntries());
+        return;
+      }
+    }
+
+    // Keyboard debris pickup: nearest loose debris within reach.
+    const nearest = this.debrisEntries()
+      .map((entry) => ({
+        entry,
+        d: Math.hypot(this.player.x - entry.x, this.player.y - entry.y),
+      }))
+      .filter((c) => c.d <= 64)
+      .sort((a, b) => a.d - b.d)[0];
+
+    if (
+      nearest !== undefined &&
+      carried === null &&
+      pickUpM04(nearest.entry.spec.object_id, 'keyboard')
+    ) {
+      this.player.playActionAnim('pickup');
+      this.physical?.syncObjects(this.debrisEntries());
+      return;
+    }
+
+    super.onEmptyInteract();
+  }
+
+  protected onRoomExit(): void {
+    const now = Date.now();
+
+    // M04: the first exit after the debris appeared closes the window.
+    if (m04Window.isOpen()) {
+      void closeM04OnExitLazy(now);
+    }
+
+    dropM04Carried();
   }
 
   private logStationOpened(stationId: string) {
@@ -307,41 +681,68 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
   private signage(x: number, y: number, text: string) {
     this.add
-      .text(x, y, text, {
-        color: '#7f95a8',
-        font: '11px monospace',
-      })
+      .text(x, y, text, { color: '#7f95a8', font: '11px monospace' })
       .setOrigin(0.5)
       .setDepth(2);
   }
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {
-    return interactionKey === 'pilotWorkOrderBoard'
-      ? this.boardBeat().body
-      : undefined;
+    if (interactionKey === 'pilotWorkOrderBoard') {
+      return this.boardBeat().body;
+    }
+
+    if (interactionKey === 'pilotSealLog') {
+      return secondaryState().m11.acknowledged
+        ? 'SAMPLE SEAL LOG\nObligation acknowledged: sealed samples only leave through the locker.'
+        : 'SAMPLE SEAL LOG\nStation rule: any sample stored or transferred must carry an intact seal. Acknowledge to sign the log.';
+    }
+
+    return undefined;
   }
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
-    return interactionKey === 'pilotWorkOrderBoard'
-      ? this.npcBeatOptions('pilotWorkOrderBoard', this.boardBeat())
-      : [];
+    if (interactionKey === 'pilotWorkOrderBoard') {
+      return this.npcBeatOptions('pilotWorkOrderBoard', this.boardBeat());
+    }
+
+    if (interactionKey === 'pilotSealLog') {
+      return secondaryState().m11.acknowledged
+        ? [{ label: 'Close log', feedback: '', getEventTypes: () => [] }]
+        : [
+            {
+              label: 'Acknowledge the seal rule',
+              feedback: 'Signed.',
+              getEventTypes: () => [],
+              onSelected: () =>
+                acknowledgeM11Obligation(Date.now(), 'keyboard'),
+            },
+            { label: 'Close log', feedback: '', getEventTypes: () => [] },
+          ];
+    }
+
+    return [];
   }
 
   /** The board's beat depends only on the route stage, never on outcomes. */
   private boardBeat(): PilotNpcBeat {
+    const optional = {
+      label: 'Optional: swap the intake filter',
+      tag: 'optional_filter_swap',
+      feedback: 'Filter swapped.',
+      onSelected: () => noteM08JobEngaged('filter_swap', Date.now()),
+    };
+
     switch (pilotStage()) {
       case 'workshop':
         return {
           body:
             'WORK ORDERS — RESTORATION SHIFT\n' +
-            'Filing desk, both label press batches, locker and bench are listed. Incoming supplies can go in the locker or to the bench. Sign the board when you are done here.',
+            'Case workspace, press batch A, sample coupon, dispatch lines, calibration bench, quality packet, conduit lattice. Sign the board when you are done here.',
           options: [
             {
               label: 'Take the orders.',
               tag: 'workshop_orders_taken',
-              onSelected: () => {
-                advancePilotStage('workshop_work', Date.now());
-              },
+              onSelected: () => advancePilotStage('workshop_work', Date.now()),
             },
           ],
         };
@@ -354,15 +755,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
               tag: 'workshop_signoff',
               feedback:
                 'Signed. Kai needs you in the Diagnostics Laboratory — Concourse north door.',
-              onSelected: () => {
-                advancePilotStage('lab_briefing', Date.now());
-              },
+              onSelected: () => advancePilotStage('lab_briefing', Date.now()),
             },
-            {
-              label: 'Still working.',
-              tag: 'workshop_continue',
-              feedback: '',
-            },
+            { label: 'Still working.', tag: 'workshop_continue', feedback: '' },
+            ...(secondaryState().m08.filter_swap.engaged ? [] : [optional]),
           ],
         };
       case 'workshop_return':
@@ -374,9 +770,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
               tag: 'workshop_return_signoff',
               feedback:
                 'Signed. The Utility Deck is through the Concourse, east door.',
-              onSelected: () => {
-                advancePilotStage('deck_closure', Date.now());
-              },
+              onSelected: () => advancePilotStage('deck_closure', Date.now()),
             },
             {
               label: 'Still working.',
@@ -399,4 +793,11 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         };
     }
   }
+}
+
+/** Deferred import guard (module order): the M04 exit closure. */
+async function closeM04OnExitLazy(nowMs: number) {
+  const { closeM04OnExit } = await import('../pilot/windows/m04Debris');
+
+  closeM04OnExit(nowMs);
 }

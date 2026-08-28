@@ -74,6 +74,8 @@ export const PILOT_ITEM_IDS: readonly PilotItemId[] = [
 ];
 
 /** Crosswalk participant-route status (mission §4). */
+import { EVIDENCE_LEDGER } from './evidenceLedger';
+
 export type PilotRouteDisposition =
   | 'PRIMARY-CANDIDATE'
   | 'SHARED-AUTHORISED'
@@ -84,8 +86,9 @@ export type PilotRouteDisposition =
 
 /**
  * How the item NUMBER is bound to the opportunity — always provisional.
- * - `mission_brief`: the mission brief adopted this slot reading for the
- *   pilot route (M02/M03; historical numbering collision SCI-1 open).
+ * - `mission_brief`: the item identity is fixed by the research owner's
+ *   decision workbook (sheet 09, evidence-led pilot v2) — exact wording
+ *   recorded in the docs-side ledger.
  * - `module_header`: the only repository source is the implementing module's
  *   own header comment (M13–M18 BESSI wording; M22–M26 battery wording) —
  *   the number-to-item binding is an assumption, not a ruling.
@@ -96,6 +99,7 @@ export type PilotItemIdentityBasis = 'mission_brief' | 'module_header' | 'none';
 export type PilotZoneId =
   | 'dock'
   | 'station_concourse'
+  | 'records_workshop'
   | 'diagnostics_laboratory'
   | 'exterior_recovery_yard'
   | 'utility_core_deck';
@@ -114,187 +118,88 @@ export interface PilotScheduleEntry {
   itemIdentity: PilotItemIdentityBasis;
   /**
    * Provisional opportunity ids whose SA-13 records feed this item. Several
-   * ids = one opportunity with matched instances (M03 occasions A/B).
+   * ids = one opportunity with matched instances/occasions.
    * Empty = no scheduled opportunity on the participant route.
    */
   opportunityIds: readonly string[];
-  /**
-   * Primary event-family prefixes. Pairwise disjoint across items AND never
-   * a prefix of any legacy (dev-only) family: route M22/M25 use the
-   * `_housing_` / `_yardpump_` infix so the legacy `proto_m22_*` /
-   * `proto_m25_*` Pump House families are never swallowed.
-   */
+  /** Primary event-family prefixes (pairwise disjoint across items). */
   familyPrefixes: readonly string[];
   zone: PilotZoneId | null;
-  /**
-   * Participant-facing OPERATIONAL label (never an item id, trait or
-   * evaluative word). Used by the Core console completeness review.
-   */
+  /** Participant-facing OPERATIONAL label (never an item id or evaluative word). */
   operationalLabel: string | null;
   reviewNaming: PilotReviewNaming;
 }
 
-function unscheduled(
-  item: PilotItemId,
-  disposition: 'QUESTIONNAIRE-PRIMARY' | 'MISSING',
-): PilotScheduleEntry {
-  return {
-    item,
-    disposition,
-    itemIdentity: 'none',
-    opportunityIds: [],
-    familyPrefixes: [],
-    zone: null,
-    operationalLabel: null,
-    reviewNaming: 'never',
-  };
-}
+const EPISODE_ZONE: Record<number, PilotZoneId> = {
+  1: 'station_concourse',
+  2: 'records_workshop',
+  3: 'diagnostics_laboratory',
+  4: 'exterior_recovery_yard',
+  5: 'records_workshop',
+  6: 'utility_core_deck',
+};
 
-export const PILOT_SCHEDULE: readonly PilotScheduleEntry[] = [
-  unscheduled('M01', 'QUESTIONNAIRE-PRIMARY'),
-  {
-    item: 'M02',
-    disposition: 'PRIMARY-CANDIDATE',
-    itemIdentity: 'mission_brief',
-    opportunityIds: ['proto_m02_incident_filing'],
-    familyPrefixes: ['proto_m02_'],
-    zone: 'station_concourse',
-    operationalLabel: 'Incident filing (Records & Logistics)',
-    reviewNaming: 'never_entered_only',
-  },
-  {
-    item: 'M03',
-    disposition: 'PRIMARY-CANDIDATE',
-    itemIdentity: 'mission_brief',
-    opportunityIds: ['proto_m03_reset_a', 'proto_m03_reset_b'],
-    familyPrefixes: ['proto_m03_'],
-    zone: 'station_concourse',
-    operationalLabel: 'Label press batches A and B (Records & Logistics)',
-    reviewNaming: 'never_entered_only',
-  },
-  unscheduled('M04', 'QUESTIONNAIRE-PRIMARY'),
-  unscheduled('M05', 'MISSING'),
-  unscheduled('M06', 'MISSING'),
-  unscheduled('M07', 'MISSING'),
-  unscheduled('M08', 'MISSING'),
-  unscheduled('M09', 'MISSING'),
-  unscheduled('M10', 'MISSING'),
-  unscheduled('M11', 'MISSING'),
-  unscheduled('M12', 'MISSING'),
-  {
-    item: 'M13',
-    disposition: 'PRIMARY-CANDIDATE',
-    itemIdentity: 'module_header',
-    opportunityIds: ['proto_m13_lattice_construction'],
-    familyPrefixes: ['proto_m13_lattice_'],
-    zone: 'diagnostics_laboratory',
-    operationalLabel: 'Conduit lattice bench (Laboratory)',
-    reviewNaming: 'never_entered_only',
-  },
-  {
-    item: 'M14',
-    disposition: 'PRIMARY-CANDIDATE',
-    itemIdentity: 'module_header',
-    opportunityIds: ['proto_m14_packet_saturation'],
-    familyPrefixes: ['proto_m14_packet_'],
-    zone: 'diagnostics_laboratory',
-    operationalLabel: 'Packet intake terminal (Laboratory)',
-    reviewNaming: 'never_entered_only',
-  },
-  {
-    item: 'M15',
-    disposition: 'PRIMARY-CANDIDATE',
-    itemIdentity: 'module_header',
-    opportunityIds: ['proto_m15_layered_cipher'],
-    familyPrefixes: ['proto_m15_cipher_'],
-    zone: 'diagnostics_laboratory',
-    operationalLabel: 'Cipher workstation (Laboratory)',
-    reviewNaming: 'never_entered_only',
-  },
-  {
-    item: 'M16',
-    disposition: 'PRIMARY-CANDIDATE',
-    itemIdentity: 'module_header',
-    opportunityIds: ['proto_m16_protocol_update'],
-    familyPrefixes: ['proto_m16_protocol_'],
-    zone: 'diagnostics_laboratory',
-    operationalLabel: 'Protocol console (Laboratory)',
-    reviewNaming: 'never_entered_only',
-  },
-  {
-    item: 'M17',
-    disposition: 'PRIMARY-CANDIDATE',
-    itemIdentity: 'module_header',
-    opportunityIds: ['proto_m17_syntax_acquisition'],
-    familyPrefixes: ['proto_m17_syntax_'],
-    zone: 'diagnostics_laboratory',
-    operationalLabel: 'Syntax trainer (Laboratory)',
-    reviewNaming: 'never_entered_only',
-  },
-  {
-    item: 'M18',
-    disposition: 'PRIMARY-CANDIDATE',
-    itemIdentity: 'module_header',
-    opportunityIds: ['proto_m18_lattice_fault_diagnosis'],
-    familyPrefixes: ['proto_m18_fault_'],
-    zone: 'diagnostics_laboratory',
-    operationalLabel: 'Fault diagnosis console (Laboratory)',
-    reviewNaming: 'never_entered_only',
-  },
-  unscheduled('M19', 'MISSING'),
-  unscheduled('M20', 'MISSING'),
-  unscheduled('M21', 'MISSING'),
-  {
-    item: 'M22',
-    disposition: 'PRIMARY-CANDIDATE',
-    itemIdentity: 'module_header',
-    opportunityIds: ['proto_m22_housing_seal_setback'],
-    familyPrefixes: ['proto_m22_housing_'],
-    zone: 'exterior_recovery_yard',
-    operationalLabel: 'Relay housing seal (Exterior)',
-    reviewNaming: 'never',
-  },
-  {
-    item: 'M23',
-    disposition: 'PRIMARY-CANDIDATE',
-    itemIdentity: 'module_header',
-    opportunityIds: ['proto_m23_field_recovery'],
-    familyPrefixes: ['proto_m23_field_recovery_'],
-    zone: 'exterior_recovery_yard',
-    operationalLabel: 'Relay coupling recovery (Exterior)',
-    reviewNaming: 'never_entered_only',
-  },
-  {
-    item: 'M24',
-    disposition: 'PRIMARY-CANDIDATE',
-    itemIdentity: 'module_header',
-    opportunityIds: ['proto_m24_magnet_utility'],
-    familyPrefixes: ['proto_m24_magnet_utility_'],
-    zone: 'exterior_recovery_yard',
-    operationalLabel: 'Magnet recovery rig (Exterior)',
-    reviewNaming: 'never',
-  },
-  {
-    item: 'M25',
-    disposition: 'PRIMARY-CANDIDATE',
-    itemIdentity: 'module_header',
-    opportunityIds: ['proto_m25_yardpump_interlock'],
-    familyPrefixes: ['proto_m25_yardpump_'],
-    zone: 'exterior_recovery_yard',
-    operationalLabel: 'Yard pump restart (Exterior)',
-    reviewNaming: 'never',
-  },
-  {
-    item: 'M26',
-    disposition: 'PRIMARY-CANDIDATE',
-    itemIdentity: 'module_header',
-    opportunityIds: ['proto_m26_depleted_search'],
-    familyPrefixes: ['proto_m26_depleted_search_'],
-    zone: 'exterior_recovery_yard',
-    operationalLabel: 'Sector verification (Exterior)',
-    reviewNaming: 'never',
-  },
-];
+/** Stopping-rule windows the review never names (MAJ-9). */
+const NEVER_NAMED: readonly PilotItemId[] = ['M22', 'M24', 'M25', 'M26'];
+
+/** Operational labels (route location; no item id, no evaluative word). */
+const OPERATIONAL_LABELS: Partial<Record<PilotItemId, string>> = {
+  M01: 'Plan board (Concourse)',
+  M02: 'Case workspace (Workshop)',
+  M03: 'Press stations (Workshop)',
+  M04: 'Sample cutter (Workshop)',
+  M05: 'Fault report (Concourse / Yard)',
+  M06: 'Dispatch console (Workshop)',
+  M07: 'Calibration bench (Workshop)',
+  M09: 'Monitor watch (Concourse)',
+  M10: 'Component delivery (Concourse)',
+  M12: 'Quality packets (Concourse / Workshop)',
+  M13: 'Conduit lattice bench (Workshop)',
+  M14: 'Incident desk (Concourse)',
+  M15: 'Signal case — causal model (Laboratory)',
+  M16: 'Signal case — protocol (Laboratory)',
+  M17: 'Signal case — transfer (Laboratory)',
+  M18: 'Signal case — diagnosis (Laboratory)',
+  M19: 'Valve coupling (Yard)',
+  M20: 'Antenna restoration (Yard / Workshop)',
+  M21: 'Manual repair (Workshop)',
+  M22: 'Shift report (Workshop)',
+  M23: 'Excavation plot (Yard)',
+  M24: 'Magnet rig (Metal Yard)',
+  M25: 'Shift question (Workshop)',
+  M26: 'Channel post (Yard)',
+};
+
+/**
+ * The schedule is DERIVED from the frozen evidence ledger (Unit 0) so the
+ * runtime registry can never drift from the workbook: strong/conditional
+ * game candidates are route-primary candidates with the ledger's
+ * provisional opportunity ids and family prefixes; questionnaire-primary
+ * items keep no behavioural window (M25's transparent probe is scheduled as
+ * a presentation window, never as behavioural evidence).
+ */
+export const PILOT_SCHEDULE: readonly PilotScheduleEntry[] =
+  EVIDENCE_LEDGER.map((entry): PilotScheduleEntry => {
+    const scheduled = entry.route.opportunity_ids.length > 0;
+
+    return {
+      item: entry.id,
+      disposition:
+        entry.disposition_class === 'questionnaire_primary'
+          ? 'QUESTIONNAIRE-PRIMARY'
+          : 'PRIMARY-CANDIDATE',
+      itemIdentity: 'mission_brief',
+      opportunityIds: [...entry.route.opportunity_ids],
+      familyPrefixes: [...entry.route.family_prefixes],
+      zone: scheduled ? (EPISODE_ZONE[entry.route.episodes[0]] ?? null) : null,
+      operationalLabel: scheduled
+        ? (OPERATIONAL_LABELS[entry.id] ?? null)
+        : null,
+      reviewNaming: NEVER_NAMED.includes(entry.id)
+        ? 'never'
+        : 'never_entered_only',
+    };
+  });
 
 /** Coverage status of one scheduled item (mission §13). */
 export type PilotCoverageStatus =

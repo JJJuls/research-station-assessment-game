@@ -259,6 +259,69 @@ const M02_DEFINITIONS: ItemDefinition[] = M02_DOCUMENTS.map((doc) => ({
 }));
 
 /* ------------------------------------------------------------------ *
+ * M02 (evidence-led pilot v2) — open case workspace bundles (six kinds)
+ * ------------------------------------------------------------------ */
+
+export const M02C_CASE_SPECS: readonly {
+  definitionId: string;
+  code: string;
+  kind: 'sample' | 'repair' | 'supply' | 'incident';
+  displayName: string;
+}[] = [
+  {
+    definitionId: 'm02c_case_s14',
+    code: 'S-14',
+    kind: 'sample',
+    displayName: 'Sample case S-14',
+  },
+  {
+    definitionId: 'm02c_case_r07',
+    code: 'R-07',
+    kind: 'repair',
+    displayName: 'Repair ticket R-07',
+  },
+  {
+    definitionId: 'm02c_case_k03',
+    code: 'K-03',
+    kind: 'supply',
+    displayName: 'Supply note K-03',
+  },
+  {
+    definitionId: 'm02c_case_i22',
+    code: 'I-22',
+    kind: 'incident',
+    displayName: 'Incident sheet I-22',
+  },
+  {
+    definitionId: 'm02c_case_s15',
+    code: 'S-15',
+    kind: 'sample',
+    displayName: 'Sample case S-15',
+  },
+  {
+    definitionId: 'm02c_case_r09',
+    code: 'R-09',
+    kind: 'repair',
+    displayName: 'Repair ticket R-09',
+  },
+];
+
+const M02C_DEFINITIONS: ItemDefinition[] = M02C_CASE_SPECS.map((spec) => ({
+  definitionId: spec.definitionId,
+  displayName: spec.displayName,
+  description: `Case bundle ${spec.code} (${spec.kind}). Organise it wherever it makes sense to you.`,
+  category: 'record',
+  icon: `inv-icon-m02c-${spec.kind}`,
+  maxStack: 1,
+  tags: ['m02c_case'],
+  usable: false,
+  droppable: false,
+  discardable: false,
+  recipeRoles: [],
+  boundNamespace: 'm02c',
+}));
+
+/* ------------------------------------------------------------------ *
  * M03 — residual objects (five standardised types, shared by A and B)
  * ------------------------------------------------------------------ */
 
@@ -314,6 +377,7 @@ export const ITEM_DEFINITIONS: readonly ItemDefinition[] = [
   ...LEGACY_DEFINITIONS,
   ...LAB_DEFINITIONS,
   ...M02_DEFINITIONS,
+  ...M02C_DEFINITIONS,
   ...M03_DEFINITIONS,
 ];
 

@@ -41,6 +41,7 @@ import {
   registerPilotStation,
 } from '../pilot/pilotRoute';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
+import { closeEpisodeWindowsAtReview } from '../pilot/windows/reviewClosure';
 import {
   finalizeYardAmbientWindows,
   YARD_M22_OPPORTUNITY_ID,
@@ -378,6 +379,10 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
         'closed_departed_without_reset',
       );
     }
+
+    // 1b. Evidence-led v2 item windows close explicitly (absent /
+    //     closed_at_review — never a low value).
+    closeEpisodeWindowsAtReview(now);
 
     // 2. Explicit terminal closure of every scheduled opportunity
     //    (censored / participant_absent / no_opportunity — never
