@@ -1,37 +1,45 @@
 /**
- * Diagnostics & Signal Laboratory — pilot zone 2 (professional pilot route).
+ * Diagnostics Laboratory — pilot zone 3, the SIGNAL ANALYSIS INCIDENT
+ * (evidence-led pilot v2, Unit 3).
  *
- * One coherent laboratory with two physically distinct work areas:
- * - ANALYSIS TERMINALS (west bank): the terminal orientation (common
- *   tutorial, never item evidence) and the four decoder terminals — M14
- *   packet intake (bins), M15 cipher (chip pairing), M16 protocol (staged
- *   rule update), M17 syntax trainer (register slots). Their assignment to
- *   the four bank positions is COUNTERBALANCED per session
- *   (`ip_decoder_layout`) and exported; realised order rides every IP event
- *   (`ip_windows_opened_before`).
- * - CONDUIT BAY (east): the M13 conduit lattice bench (physical pipe board)
- *   and the M18 fault-diagnosis console (evidence/tests/hypotheses).
- *   Sequencing only: the console waits while the lattice window is OPEN;
- *   solved, exhausted, stopped or never opened all lead to the identical
- *   console (never a performance gate, no M13 state read by M18).
- * Kai stands at the centre bench. South door → Concourse; north airlock →
- * Exterior Recovery Yard. Every IP overlay keeps its accepted semantic
- * contract (Unit 4 changes no module); stations differ in silhouette,
- * dressing and the overlay's own interaction rhythm.
+ * One coherent professional case instead of a bank of look-alike
+ * consoles: an unknown transmission was recovered from the storm relay
+ * (Noor, outside, on the intercom). The participant works four visually
+ * and mechanically distinct phases around ONE central signal-analysis
+ * workstation whose wall display changes after every recorded phase:
+ *
+ *   1  Evidence Table   — M15  causal model of the receiver chain
+ *   2  Protocol Console — M16  the transmission's handling protocol
+ *   3  Training Rig     — M17  register syntax: demo → practice → transfer
+ *   4  Diagnostic Board — M18  the receiver fault behind the anomaly
+ *
+ * Each phase is its own opportunity, window, event family, form, entry
+ * snapshot and validity record (sheet 11: a shared incident is a route,
+ * never permission to share evidence). Phases are PRESENTED in order (the
+ * beacon and the display's phase indicator point at the next unrecorded
+ * one) but every bench is independently enterable whenever no other
+ * phase surface is open — no phase's outcome gates another (G2).
+ * The Console Orientation is a common tutorial (never item evidence) that
+ * the terminal-based phases record as an entry-state control.
+ *
+ * M18 ↔ M13: the diagnostic board reads NOTHING from the lattice bench
+ * (which now lives in the Records Workshop); the former "wait while the
+ * lattice window is open" sequencing gate is gone. The lattice closure
+ * state is passed to the M18 open event as route context only.
+ *
+ * Kai stands at the briefing desk (route anchor, M10 recipient). South
+ * door → Concourse; north airlock → Exterior Recovery Yard.
  */
-import { key } from '../constants';
+import Phaser from 'phaser';
+
+import { Depth, key } from '../constants';
+import { m13LatticeWindowStatus } from '../informationProcessing/m13PipeNetwork';
 import {
-  declareM13Lattice,
-  m13LatticeWindowStatus,
-} from '../informationProcessing/m13PipeNetwork';
-import {
-  declareM14,
-  m14WindowStatus,
-} from '../informationProcessing/m14PacketSaturation';
-import {
-  declareM15,
-  m15WindowStatus,
-} from '../informationProcessing/m15LayeredCipher';
+  declareM15Causal,
+  leaveM15Causal,
+  m15CausalWindowStatus,
+  openM15Causal,
+} from '../informationProcessing/m15CausalModel';
 import {
   declareM16,
   m16WindowStatus,
@@ -51,10 +59,7 @@ import {
 } from '../informationProcessing/tutorial';
 import type { IpOverlayKey } from '../informationProcessing/ui/openIpOverlay';
 import { openIpOverlay } from '../informationProcessing/ui/openIpOverlay';
-import {
-  assignCounterbalance,
-  recordPriorExposure,
-} from '../measurement/validity';
+import { prefersReducedMotion } from '../inventory/ui/theme';
 import {
   refreshPilotCoverageProbe,
   stampContaminationNotes,
@@ -66,61 +71,120 @@ import {
 } from '../pilot/pilotRoute';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
 import {
+  activeWorkSurface,
+  openWorkSurface,
+} from '../pilot/ui/WorkSurfaceScene';
+import {
   handOverM10,
   M10_COMPONENT_LABEL,
   m10Carrying,
   noteM10KaiEncounter,
 } from '../pilot/windows/m10ComponentPromise';
+import { m15CausalSurfaceModel } from '../pilot/windows/signalSurfaceModels';
 import { LAB_STATIONS } from '../pilot/zoneSites';
-import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 
 const TILE = 32;
 
-type DecoderId = 'm14' | 'm15' | 'm16' | 'm17';
+type PhaseId = 'm15' | 'm16' | 'm17' | 'm18';
 
-interface DecoderSpec {
-  id: DecoderId;
-  label: string;
+interface PhaseSpec {
+  id: PhaseId;
+  index: number;
+  name: string;
+  bench: string;
+  signage: string;
   texture: string;
+  at: { x: number; y: number };
   status: () => string;
   opportunityId: string;
 }
 
-const DECODERS: readonly DecoderSpec[] = [
-  {
-    id: 'm14',
-    label: 'Packet Intake Terminal',
-    texture: 'proc-console-scenario',
-    status: m14WindowStatus,
-    opportunityId: 'proto_m14_packet_saturation',
-  },
+/** Terminal = recorded (completed / exhausted / exited / failed); never a beacon destination again. */
+function windowTerminal(status: string): boolean {
+  return status !== 'unopened' && status !== 'open';
+}
+
+const PHASES: readonly PhaseSpec[] = [
   {
     id: 'm15',
-    label: 'Cipher Workstation',
-    texture: 'proc-diag-board',
-    status: m15WindowStatus,
+    index: 1,
+    name: 'Causal model',
+    bench: 'Evidence Table',
+    signage: 'EVIDENCE TABLE',
+    texture: 'proc-desk-closure',
+    at: LAB_STATIONS.evidenceTable,
+    status: m15CausalWindowStatus,
     opportunityId: 'proto_m15_layered_cipher',
   },
   {
     id: 'm16',
-    label: 'Protocol Console',
-    texture: 'proc-console-wall',
+    index: 2,
+    name: 'Handling protocol',
+    bench: 'Protocol Console',
+    signage: 'PROTOCOL CONSOLE',
+    texture: 'proc-console-scenario',
+    at: LAB_STATIONS.protocolConsole,
     status: m16WindowStatus,
     opportunityId: 'proto_m16_protocol_update',
   },
   {
     id: 'm17',
-    label: 'Syntax Trainer',
+    index: 3,
+    name: 'Register syntax',
+    bench: 'Training Rig',
+    signage: 'TRAINING RIG',
     texture: 'proc-shelf-electronics',
+    at: LAB_STATIONS.trainingRig,
     status: m17WindowStatus,
     opportunityId: 'proto_m17_syntax_acquisition',
   },
+  {
+    id: 'm18',
+    index: 4,
+    name: 'Fault diagnosis',
+    bench: 'Diagnostic Board',
+    signage: 'DIAGNOSTIC BOARD',
+    texture: 'proc-diag-board',
+    at: LAB_STATIONS.diagnosticBoard,
+    status: m18FaultWindowStatus,
+    opportunityId: 'proto_m18_lattice_fault_diagnosis',
+  },
 ];
 
-/** Terminal = no longer a guided beacon destination (never gates anything). */
-function windowTerminal(status: string): boolean {
-  return status !== 'unopened' && status !== 'open';
+/**
+ * Noor on the intercom — one line per NEXT unrecorded phase (never a
+ * dialogue card, never a statement about the outcome of a phase).
+ */
+const NOOR_LINES: Record<PhaseId | 'done', string> = {
+  m15: 'NOOR · relay: Pulled this off the storm relay before it dropped. Structure first — the evidence table.',
+  m16: 'NOOR · relay: The handling protocol is on the console.',
+  m17: 'NOOR · relay: The training rig has the register syntax.',
+  m18: 'NOOR · relay: The test rig the storm left faulted is on the diagnostic board.',
+  done: 'NOOR · relay: Case logged on my side.',
+};
+
+/** Deterministic pseudo-noise for the raw trace (identical for everyone). */
+function noise(i: number): number {
+  const v = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
+
+  return v - Math.floor(v);
+}
+
+declare global {
+  interface Window {
+    /** DEV-only, read-only signal display probe (phase state only). */
+    __signalDisplayProbe?: {
+      phases_recorded: string[];
+      next_phase: string | null;
+      indicator: string;
+      intercom: string;
+    } | null;
+  }
+}
+
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  window.__signalDisplayProbe = null;
 }
 
 export class DiagnosticsLaboratoryScene extends PilotZoneScene {
@@ -128,7 +192,10 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
   protected readonly roomInteractionKey: InteractionKey = 'pilotRoute';
   protected readonly zoneKey = 'diagnostics_laboratory' as const;
 
-  private decoderLayout: 'layout_a' | 'layout_b' = 'layout_a';
+  private displayGraphics: Phaser.GameObjects.Graphics | null = null;
+  private displayIndicator: Phaser.GameObjects.Text | null = null;
+  private displayIntercom: Phaser.GameObjects.Text | null = null;
+  private benchLamps = new Map<PhaseId, Phaser.GameObjects.Rectangle>();
 
   constructor() {
     super(key.scene.diagnosticsLaboratory);
@@ -172,37 +239,29 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
   }
 
   create(data?: { spawn?: string }) {
-    // Declarations (register: declared + offered; idempotent) — every IP
-    // window is declared at zone entry whether or not it is ever entered.
+    // Declarations (register: declared + offered; idempotent) — every
+    // phase window is declared at zone entry whether or not it is entered.
     declareTutorial();
-    declareM13Lattice();
-    declareM14();
-    declareM15();
+    declareM15Causal();
     declareM16();
     declareM17();
     declareM18Fault();
-
-    // Decoder bank layout — counterbalanced per session and exported as a
-    // control note on each decoder's register record + a pilot event.
-    const sessionId =
-      researchRuntime.sessionState.getMetadata().game_session_id;
-
-    this.decoderLayout = assignCounterbalance(sessionId, 'ip_decoder_layout', [
-      'layout_a',
-      'layout_b',
-    ] as const);
-
     stampContaminationNotes();
+
     super.create(data);
+
+    this.events.on(Phaser.Scenes.Events.RESUME, () => {
+      this.refreshSignalDisplay();
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (typeof window !== 'undefined' && import.meta.env.DEV) {
+        window.__signalDisplayProbe = null;
+      }
+    });
+
+    this.refreshSignalDisplay();
     refreshIpProbe();
     refreshPilotCoverageProbe();
-  }
-
-  /** Decoders in bank order for this session (layout_b = reversed). */
-  private decoderOrder(): readonly DecoderSpec[] {
-    return this.decoderLayout === 'layout_a'
-      ? DECODERS
-      : [...DECODERS].reverse();
   }
 
   protected populateRoom(): void {
@@ -215,7 +274,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       spawn: 'diagnostics_laboratory',
     });
 
-    // Kai — centre bench (anchor NPC of the laboratory stages).
+    // ——— Kai — briefing desk (route anchor of the laboratory stages) ———
     const kai = LAB_STATIONS.kai;
 
     this.addNpc({
@@ -227,7 +286,8 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       x: kai.x,
       y: kai.y,
     });
-    this.addDecor(kai.x, kai.y + 34, 'proc-diag-board');
+    this.addDecor(kai.x + 40, kai.y + 6, 'proc-notebook-stand');
+    this.signage(kai.x, kai.y - 44, 'BRIEFING DESK');
     registerPilotStation({
       id: 'npc_kai',
       zone: 'diagnostics_laboratory',
@@ -239,87 +299,110 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       order: 0,
     });
 
-    // Briefing display (raw, non-interactive).
-    this.add
-      .rectangle(11.5 * TILE, 4.5 * TILE, 140, 34, 0x1b2633, 1)
-      .setStrokeStyle(1, 0x33475a);
-    this.signage(11.5 * TILE, 4.25 * TILE, 'DIAGNOSTICS BRIEFING');
+    // ——— Central signal-analysis workstation + wall display ———
+    const ws = LAB_STATIONS.workstation;
 
-    // ——— Analysis terminals (west bank) ———
-    this.signage(5 * TILE, 4 * TILE, 'ANALYSIS TERMINALS');
+    this.buildSignalDisplay();
+    this.addStation({
+      interactionKey: 'pilotSignalWorkstation',
+      label: 'Signal Analysis Workstation',
+      texture: 'proc-console-wall',
+      x: ws.x,
+      y: ws.y,
+      onPromptOpened: () => {
+        this.logStationOpened('signal_workstation');
+        return true;
+      },
+    });
+    this.signage(ws.x, ws.y + 30, 'SIGNAL ANALYSIS');
+
+    // ——— Console orientation (common tutorial; never item evidence) ———
     this.ipStation({
       id: 'orientation_terminal',
-      label: 'Terminal Orientation',
-      texture: 'proc-console-wall',
+      label: 'Console Orientation',
+      texture: 'proc-console-scenario',
       at: LAB_STATIONS.orientation,
       overlay: key.scene.ipSignalTerminal,
       taskId: 'tutorial',
       status: () => tutorialStatus(),
+      // Terminal once run — or once the participant has moved on to any
+      // phase, so the beacon never stays pinned to the orientation.
       isDone: () =>
-        tutorialStatus() !== 'not_attempted' &&
-        tutorialStatus() !== 'in_progress',
+        (tutorialStatus() !== 'not_attempted' &&
+          tutorialStatus() !== 'in_progress') ||
+        PHASES.some((phase) => phase.status() !== 'unopened'),
       order: 1,
+      signage: 'CONSOLE ORIENTATION',
     });
 
-    const bankSlots = [
-      LAB_STATIONS.decoder1,
-      LAB_STATIONS.decoder2,
-      LAB_STATIONS.decoder3,
-      LAB_STATIONS.decoder4,
-    ];
+    // ——— The four phase benches (in presented order) ———
+    for (const phase of PHASES) {
+      if (phase.id === 'm15') {
+        this.addStation({
+          interactionKey: 'pilotStation',
+          label: phase.bench,
+          texture: phase.texture,
+          x: phase.at.x,
+          y: phase.at.y,
+          onPromptOpened: () => {
+            this.logPhaseOpened(phase);
 
-    this.decoderOrder().forEach((decoder, position) => {
-      recordPriorExposure(
-        decoder.opportunityId,
-        `control:decoder_layout=${this.decoderLayout};bank_position=${position + 1}`,
+            if (this.anyPhaseSurfaceOpen()) {
+              return false;
+            }
+
+            openM15Causal(Date.now());
+            openWorkSurface(this, {
+              surfaceId: 'm15_evidence_table',
+              model: () => m15CausalSurfaceModel(this.surfaceHost()),
+              onClose: () => {
+                leaveM15Causal(Date.now());
+              },
+            });
+            return false;
+          },
+        });
+        this.registerPhaseStation(phase);
+      } else {
+        const overlay: IpOverlayKey =
+          phase.id === 'm18'
+            ? key.scene.ipDiagnosisConsole
+            : key.scene.ipSignalTerminal;
+
+        this.ipStation({
+          id: `phase_${phase.id}`,
+          label: phase.bench,
+          texture: phase.texture,
+          at: phase.at,
+          overlay,
+          taskId: phase.id,
+          status: phase.status,
+          isDone: () => windowTerminal(phase.status()),
+          order: 1 + phase.index,
+          signage: phase.signage,
+          // Route context only (never an M18 input): the lattice bench
+          // closure state at the moment the board opens.
+          context:
+            phase.id === 'm18'
+              ? () => ({ prior_m13_window_status: m13LatticeWindowStatus() })
+              : undefined,
+        });
+      }
+
+      // Phase lamp: lit = recorded, pulsing = next, dim = later (state
+      // is glyph + position, never colour alone: the display names it).
+      const lamp = this.add
+        .rectangle(phase.at.x + 30, phase.at.y - 26, 8, 8, 0x33475a, 1)
+        .setStrokeStyle(1, 0x5fd3c4, 0.7)
+        .setDepth(3);
+
+      this.benchLamps.set(phase.id, lamp);
+      this.signage(
+        phase.at.x,
+        phase.at.y - 40,
+        `${phase.index}  ${phase.signage}`,
       );
-      this.ipStation({
-        id: `decoder_${decoder.id}`,
-        label: decoder.label,
-        texture: decoder.texture,
-        at: bankSlots[position],
-        overlay: key.scene.ipSignalTerminal,
-        taskId: decoder.id,
-        status: decoder.status,
-        isDone: () => windowTerminal(decoder.status()),
-        order: 3 + position,
-      });
-    });
-
-    this.logScenarioEvent('pilotRoute', 'pilot_decoder_layout', {
-      metadata: {
-        layout: this.decoderLayout,
-        bank_order: this.decoderOrder().map((decoder) => decoder.id),
-      },
-    });
-
-    // (The conduit lattice bench now lives in the Records Workshop — v2.)
-
-    this.ipStation({
-      id: 'diagnosis_console',
-      label: 'Fault Diagnosis Console',
-      texture: 'proc-diag-board',
-      at: LAB_STATIONS.diagnosis,
-      overlay: key.scene.ipDiagnosisConsole,
-      taskId: 'm18',
-      status: m18FaultWindowStatus,
-      isDone: () => windowTerminal(m18FaultWindowStatus()),
-      order: 7,
-      // Sequencing only (never performance): the console waits while the
-      // lattice bench window is still OPEN; solved, exhausted, stopped or
-      // never opened all lead to the same console.
-      gate: () =>
-        m13LatticeWindowStatus() === 'open'
-          ? 'Finish or stop the lattice bench first — the console takes over afterwards.'
-          : null,
-      // Closure state only — a prior-exposure control, never an M18 input.
-      context: () => ({ prior_m13_window_status: m13LatticeWindowStatus() }),
-    });
-    this.addDecor(
-      LAB_STATIONS.diagnosis.x - 50,
-      LAB_STATIONS.diagnosis.y,
-      'proc-gauge-card',
-    );
+    }
 
     // Dressing.
     this.addDecor(6 * TILE, 9 * TILE, 'proc-light-pool');
@@ -327,12 +410,250 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     this.addDecor(12 * TILE, 2.6 * TILE, 'proc-light-pool');
     this.addDecor(6.5 * TILE, 1.4 * TILE, 'proc-window-exterior');
     this.addDecor(20 * TILE, 1.4 * TILE, 'proc-window-exterior');
-    this.addDecor(17.5 * TILE, 9 * TILE, 'proc-gauge-card');
-    this.addDecor(10.5 * TILE, 9 * TILE, 'proc-gauge-card');
+    this.addDecor(22 * TILE, 8 * TILE, 'proc-gauge-card');
+    this.addDecor(2.5 * TILE, 8 * TILE, 'proc-wall-pipes');
     this.addDecor(18 * TILE, 14.8 * TILE, 'proc-rack-tools');
     this.addDecor(3.5 * TILE, 15 * TILE, 'proc-cart-utility');
+    this.addDecor(22 * TILE, 13.6 * TILE, 'proc-seat-bench');
     this.signage(12 * TILE, 1.5 * TILE, 'EXTERIOR AIRLOCK  ▲');
-    this.signage(12 * TILE, 17.5 * TILE, '▼  CONCOURSE');
+    this.signage(12 * TILE, 16.6 * TILE, '▼  CONCOURSE');
+  }
+
+  // ——— Signal display —————————————————————————————————————————————————
+
+  private buildSignalDisplay() {
+    const d = LAB_STATIONS.display;
+
+    // Wall panel drawn beneath every sprite (a participant crossing the top
+    // band is never occluded); only the indicator text sits above.
+    this.add
+      .rectangle(d.x, d.y + 6, 264, 78, 0x0b1117, 1)
+      .setStrokeStyle(1, 0x33475a)
+      .setDepth(-0.6);
+    this.displayGraphics = this.add.graphics().setDepth(-0.5);
+    this.displayIndicator = this.add
+      .text(d.x - 126, d.y - 32, '', {
+        color: '#5fd3c4',
+        font: 'bold 11px monospace',
+      })
+      .setOrigin(0, 0)
+      .setDepth(-0.4);
+    // Noor's intercom line is a timed subtitle in the top-right HUD band
+    // (wall row — no sprite, label or door there), shown on arrival and
+    // whenever the recorded phase set changes.
+    this.displayIntercom = this.add
+      .text(790, 34, '', {
+        color: '#dfe9f1',
+        font: '11px monospace',
+        backgroundColor: '#101820',
+        padding: { x: 8, y: 3 },
+        wordWrap: { width: 300 },
+        align: 'right',
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(Depth.AboveWorld + 1)
+      .setVisible(false);
+  }
+
+  private recordedPhases(): PhaseId[] {
+    return PHASES.filter((phase) => windowTerminal(phase.status())).map(
+      (phase) => phase.id,
+    );
+  }
+
+  private nextPhase(): PhaseSpec | null {
+    return PHASES.find((phase) => !windowTerminal(phase.status())) ?? null;
+  }
+
+  /** Redraws the wall display from the four window states (no scores). */
+  private refreshSignalDisplay() {
+    const graphics = this.displayGraphics;
+
+    if (graphics === null) {
+      return;
+    }
+
+    const d = LAB_STATIONS.display;
+    const recorded = this.recordedPhases();
+    const next = this.nextPhase();
+    const left = d.x - 124;
+    const top = d.y - 14;
+    const width = 248;
+    const height = 48;
+    const mid = top + height / 2;
+
+    graphics.clear();
+
+    // Raw trace: jagged until the causal model is recorded, then the
+    // structure bands appear beneath a calmer trace.
+    const jitter = recorded.includes('m15') ? 4 : 12;
+
+    if (recorded.includes('m15')) {
+      for (let band = 0; band < 3; band += 1) {
+        graphics.fillStyle(0x16342f, 1);
+        graphics.fillRect(left + 8 + band * 80, top + 6, 70, height - 12);
+      }
+    }
+
+    graphics.lineStyle(1.5, recorded.includes('m18') ? 0x5fd3c4 : 0x9fb2c1, 1);
+    graphics.beginPath();
+
+    for (let i = 0; i <= 60; i += 1) {
+      const x = left + 4 + (i * (width - 8)) / 60;
+      const wave = Math.sin(i / 3.2) * 9;
+      const y = mid + wave + (noise(i) - 0.5) * jitter;
+
+      if (i === 0) {
+        graphics.moveTo(x, y);
+      } else {
+        graphics.lineTo(x, y);
+      }
+    }
+
+    graphics.strokePath();
+
+    // Protocol lanes (M16): three lane ticks along the base line.
+    if (recorded.includes('m16')) {
+      graphics.lineStyle(1, 0x5fd3c4, 0.9);
+
+      for (let lane = 0; lane < 3; lane += 1) {
+        const x = left + 44 + lane * 80;
+
+        graphics.lineBetween(x, top + height - 6, x, top + height - 2);
+      }
+    }
+
+    // Register marks (M17): three small squares above the trace.
+    if (recorded.includes('m17')) {
+      graphics.fillStyle(0xe6c68f, 1);
+
+      for (let slot = 0; slot < 3; slot += 1) {
+        graphics.fillRect(left + 40 + slot * 80, top + 4, 5, 5);
+      }
+    }
+
+    // Fault resolved (M18): the anomaly marker becomes a closed bracket.
+    if (recorded.includes('m18')) {
+      graphics.fillStyle(0x16342f, 1);
+      graphics.fillRect(left + width - 40, top + 8, 28, height - 16);
+      graphics.lineStyle(2, 0x5fd3c4, 1);
+      graphics.strokeRect(left + width - 40, top + 8, 28, height - 16);
+    } else {
+      graphics.lineStyle(1, 0xe08c8c, 0.9);
+      graphics.lineBetween(
+        left + width - 26,
+        top + 8,
+        left + width - 26,
+        top + height - 8,
+      );
+    }
+
+    const indicator =
+      next === null
+        ? 'CASE RECORDED  4 / 4'
+        : `PHASE ${next.index} / 4 — ${next.name.toUpperCase()}`;
+    const intercom = NOOR_LINES[next?.id ?? 'done'];
+
+    this.displayIndicator?.setText(indicator);
+    this.showIntercom(intercom);
+
+    for (const phase of PHASES) {
+      const lamp = this.benchLamps.get(phase.id);
+
+      if (lamp === undefined) {
+        continue;
+      }
+
+      const done = recorded.includes(phase.id);
+      const isNext = next?.id === phase.id;
+
+      lamp.setFillStyle(done ? 0x5fd3c4 : isNext ? 0x1f7a8c : 0x33475a, 1);
+      lamp.setScale(isNext && !prefersReducedMotion() ? 1.25 : 1);
+    }
+
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__signalDisplayProbe = {
+        phases_recorded: recorded,
+        next_phase: next?.id ?? null,
+        indicator,
+        intercom,
+      };
+    }
+  }
+
+  private intercomShown: string | null = null;
+  private intercomTimer: Phaser.Time.TimerEvent | null = null;
+
+  /** Timed subtitle (8 s); the same line is never re-shown twice in a row. */
+  private showIntercom(line: string) {
+    if (this.displayIntercom === null || this.intercomShown === line) {
+      return;
+    }
+
+    this.intercomShown = line;
+    this.intercomTimer?.remove(false);
+    this.displayIntercom.setText(line).setAlpha(1).setVisible(true);
+    this.intercomTimer = this.time.delayedCall(8000, () => {
+      this.intercomTimer = null;
+
+      if (this.displayIntercom === null) {
+        return;
+      }
+
+      if (prefersReducedMotion()) {
+        this.displayIntercom.setVisible(false);
+      } else {
+        this.tweens.add({
+          targets: this.displayIntercom,
+          alpha: 0,
+          duration: 500,
+          onComplete: () => this.displayIntercom?.setVisible(false),
+        });
+      }
+    });
+  }
+
+  // ——— Stations ————————————————————————————————————————————————————————
+
+  private anyPhaseSurfaceOpen(): boolean {
+    return (
+      activeWorkSurface(this) !== null ||
+      this.scene.isActive(key.scene.ipSignalTerminal) ||
+      this.scene.isActive(key.scene.ipDiagnosisConsole)
+    );
+  }
+
+  private surfaceHost() {
+    return {
+      now: () => Date.now(),
+      close: () => activeWorkSurface(this)?.close(),
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+    };
+  }
+
+  private logPhaseOpened(phase: PhaseSpec) {
+    this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
+      metadata: {
+        station_id: `phase_${phase.id}`,
+        zone: this.zoneKey,
+        window_status: phase.status(),
+      },
+    });
+  }
+
+  private registerPhaseStation(phase: PhaseSpec) {
+    registerPilotStation({
+      id: `phase_${phase.id}`,
+      zone: 'diagnostics_laboratory',
+      x: phase.at.x,
+      y: phase.at.y,
+      label: phase.bench,
+      stages: ['lab_work'],
+      isDone: () => windowTerminal(phase.status()),
+      order: 1 + phase.index,
+    });
   }
 
   private ipStation(spec: {
@@ -345,7 +666,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     status: () => string;
     isDone: () => boolean;
     order: number;
-    gate?: () => string | null;
+    signage: string;
     context?: () => Record<string, unknown>;
   }) {
     this.addStation({
@@ -363,15 +684,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
           },
         });
 
-        const refusal = spec.gate?.() ?? null;
-
-        if (refusal !== null) {
-          this.showFeedbackMessage(refusal);
-
-          if (typeof window !== 'undefined' && import.meta.env.DEV) {
-            window.__ipLabFeedback = refusal;
-          }
-
+        if (this.anyPhaseSurfaceOpen()) {
           return false;
         }
 
@@ -379,6 +692,11 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
         return false;
       },
     });
+
+    if (spec.id === 'orientation_terminal') {
+      this.signage(spec.at.x, spec.at.y - 40, spec.signage);
+    }
+
     registerPilotStation({
       id: spec.id,
       zone: 'diagnostics_laboratory',
@@ -391,6 +709,12 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     });
   }
 
+  private logStationOpened(stationId: string) {
+    this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
+      metadata: { station_id: stationId, zone: this.zoneKey },
+    });
+  }
+
   private signage(x: number, y: number, text: string) {
     this.add
       .text(x, y, text, { color: '#7f95a8', font: '11px monospace' })
@@ -398,11 +722,56 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       .setDepth(2);
   }
 
+  // ——— Prompts ——————————————————————————————————————————————————————————
+
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {
-    return interactionKey === 'pilotKai' ? this.kaiBeat().body : undefined;
+    if (interactionKey === 'pilotKai') {
+      return this.kaiBeat().body;
+    }
+
+    if (interactionKey === 'pilotSignalWorkstation') {
+      return this.caseBrief();
+    }
+
+    return undefined;
+  }
+
+  /** Concise, reviewable case brief (the ONE place the whole case is described). */
+  private caseBrief(): string {
+    const recorded = this.recordedPhases();
+    const line = (phase: PhaseSpec) =>
+      `${recorded.includes(phase.id) ? '■' : '□'} ${phase.index}  ${phase.bench} — ${phase.name}`;
+
+    return [
+      'SIGNAL ANALYSIS — RECOVERED TRANSMISSION',
+      'An unknown transmission came off the storm relay. Reconstruct its structure, learn its handling protocol and register syntax, then diagnose the pressurised test rig the storm left faulted.',
+      '',
+      ...PHASES.map(line),
+      '',
+      'Benches are presented in order; each records on its own. ESC leaves any surface with the work kept.',
+    ].join('\n');
   }
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
+    if (interactionKey === 'pilotSignalWorkstation') {
+      return [
+        {
+          label: 'Back to the bench.',
+          feedback: '',
+          getEventTypes: () => [],
+          onSelected: () => {
+            this.logScenarioEvent(
+              'pilotSignalWorkstation',
+              'pilot_case_brief_reviewed',
+              {
+                metadata: { zone: this.zoneKey, stage: pilotStage() },
+              },
+            );
+          },
+        },
+      ];
+    }
+
     if (interactionKey !== 'pilotKai') {
       return [];
     }
@@ -442,8 +811,8 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       case 'lab_briefing':
         return {
           body:
-            'Kai: The storm left a recovered transmission we cannot read and a fractured conduit lattice.\n' +
-            'Start with the terminal orientation on the west bank, then the lattice bench, the four analysis terminals and the diagnosis console. Come back when you have been through them.',
+            'Kai: Noor pulled a transmission off the storm relay before it went down. The signal analysis workstation holds the case: four benches, in order — evidence table, protocol console, training rig, diagnostic board.\n' +
+            'Run the console orientation first. Come back when the case is recorded.',
           options: [
             {
               label: 'Understood.',
@@ -456,7 +825,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
         };
       case 'lab_work':
         return {
-          body: 'Kai: How are the stations? Anything you leave stays as you left it.',
+          body: 'Kai: How is the case? Anything you leave stays as you left it.',
           options: [
             {
               label: 'I am done here — what is next?',

@@ -714,6 +714,13 @@ export const researchInteractions = {
     event_type: 'pilot_station_opened',
     score_tags: [],
   },
+  pilotSignalWorkstation: {
+    object_id: 'pilot_signal_workstation',
+    label: 'Signal Analysis Workstation',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
   pilotWorkOrderBoard: {
     object_id: 'pilot_work_order_board',
     label: 'Work Order Board',

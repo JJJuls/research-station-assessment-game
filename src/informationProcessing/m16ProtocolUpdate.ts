@@ -194,6 +194,7 @@ function log(suffix: string, metadata: Record<string, unknown> = {}) {
 
   logIpEvent('proto_m16_protocol', OBJECT_ID, suffix, {
     ...ipWindowFields(s.window),
+    window_id: 'm16_protocol_w1',
     stage: s.stage,
     ...metadata,
   });
@@ -398,7 +399,7 @@ function view(): TerminalView {
               ];
 
   return {
-    title: 'PROTOCOL CONSOLE — REPORT ROUTING',
+    title: 'SIGNAL CASE — PHASE 2 · HANDLING PROTOCOL',
     stageLabel,
     instructions:
       s.stage === 'base'

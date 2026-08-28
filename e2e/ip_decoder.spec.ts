@@ -626,7 +626,7 @@ test.describe('M16 / M17 forms (pure)', () => {
     }
   });
 
-  test('M17 has its own grammar, matched trials, four feedback + one transfer, two operators each', () => {
+  test('M17 has its own grammar, matched cases, one practice + one changed transfer, two operators each', () => {
     const decoderVerbs = new Set([
       ...M14_GRAMMAR.verbs.map((v) => v.verb),
       ...M15_GRAMMAR.verbs.map((v) => v.verb),
@@ -640,14 +640,8 @@ test.describe('M16 / M17 forms (pure)', () => {
     for (const formId of ['A', 'B'] as const) {
       const trials = M17_FORMS[formId].trials;
 
-      expect(trials).toHaveLength(5);
-      expect(trials.map((t) => t.type)).toEqual([
-        'feedback',
-        'feedback',
-        'feedback',
-        'feedback',
-        'transfer',
-      ]);
+      expect(trials).toHaveLength(2);
+      expect(trials.map((t) => t.type)).toEqual(['feedback', 'transfer']);
 
       for (const t of trials) {
         expect(t.reference).toHaveLength(2);
@@ -671,8 +665,8 @@ test.describe('M16 / M17 forms (pure)', () => {
       }
     }
 
-    // Operator mix matched trial by trial across forms.
-    for (let i = 0; i < 5; i++) {
+    // Operator mix matched case by case across forms.
+    for (let i = 0; i < 2; i++) {
       const mixA = M17_FORMS.A.trials[i].reference
         .map((r) => r.split(' ')[0])
         .sort();
@@ -803,7 +797,7 @@ test.describe('M16 protocol update (browser)', () => {
 });
 
 test.describe('M17 syntax acquisition (browser)', () => {
-  test('demonstration → READY → four feedback trials → transfer trial; trial-level records preserved, no learning score', async ({
+  test('demonstration → READY → one practice case with feedback → one changed transfer case; attempt-level records preserved, no learning score', async ({
     page,
   }) => {
     test.setTimeout(300_000);
@@ -822,49 +816,41 @@ test.describe('M17 syntax acquisition (browser)', () => {
     expect(probe.submit_enabled).toBe(false);
     await clickTerminalButton(page, 'READY');
     probe = await terminalProbe(page);
-    expect(probe.stage).toBe('TRIAL 1 OF 5');
+    expect(probe.stage).toBe('PRACTICE');
     expect(probe.chips.map((c) => c.id)).toEqual(['A', 'B', 'C']);
 
-    // Trial 1 typed (correct); syntax error first (refused, counted).
+    // Practice attempt 1: a syntax error first (refused, counted), then a
+    // wrong second operator → corrective feedback with the reference.
     await typeCommand(page, 'VEK Q RED');
-    await typeCommand(page, 'ZOR A C');
-    await typeCommand(page, 'VEK B GRN');
-    await waitBufferLength(page, 2);
-    probe = await terminalProbe(page);
-    expect(probe.output.join(' ')).toContain('NOW    A:BLU  B:GRN  C:RED');
-    await clickTerminalButton(page, 'submit');
-    probe = await terminalProbe(page);
-    expect(probe.console.join(' ')).toMatch(/matches GOAL/);
-    await clickTerminalButton(page, 'NEXT');
-
-    // Trial 2 pointer + typed, deliberately wrong second operator.
-    await composeByClick(page, ['KAI', 'A']);
-    await typeCommand(page, 'VEK C BLU');
+    await typeCommand(page, 'ZOR A B');
+    await composeByClick(page, ['VEK', 'C', 'RED']);
     await waitBufferLength(page, 2);
     await clickTerminalButton(page, 'submit');
     probe = await terminalProbe(page);
+    expect(probe.stage).toBe('PRACTICE');
     expect(probe.console.join(' ')).toMatch(
       /does not match GOAL.*Reference sequence/,
     );
-    await clickTerminalButton(page, 'NEXT');
 
-    // Trials 3 and 4 typed, correct; a correction in trial 3.
-    await typeCommand(page, 'KAI A');
-    await typeCommand(page, 'REMOVE 1');
-    await typeCommand(page, 'ZOR A C');
-    await typeCommand(page, 'KAI B');
+    // Practice attempt 2: a correction, then the goal.
+    await typeCommand(page, 'REMOVE 2');
+    await typeCommand(page, 'VEK C GRN');
     await waitBufferLength(page, 2);
-    await clickTerminalButton(page, 'submit');
-    await clickTerminalButton(page, 'NEXT');
-    await typeCommand(page, 'ZOR A C');
-    await typeCommand(page, 'VEK C BLU');
-    await waitBufferLength(page, 2);
-    await clickTerminalButton(page, 'submit');
-    await clickTerminalButton(page, 'NEXT');
-
-    // Transfer trial: no corrective feedback.
     probe = await terminalProbe(page);
-    expect(probe.stage).toBe('TRANSFER TRIAL');
+    expect(probe.output.join(' ')).toContain('NOW    A:NUL  B:RED  C:GRN');
+    await clickTerminalButton(page, 'submit');
+    probe = await terminalProbe(page);
+    expect(probe.console.join(' ')).toMatch(/matches GOAL/);
+    expect(probe.stage).toBe('PRACTICE RECORDED');
+    await clickTerminalButton(page, 'NEXT');
+
+    // Transfer: the demonstration can be reviewed; no corrective feedback.
+    probe = await terminalProbe(page);
+    expect(probe.stage).toBe('TRANSFER');
+    await clickTerminalButton(page, 'reference');
+    await page.waitForTimeout(200);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
     await typeCommand(page, 'ZOR A C');
     await typeCommand(page, 'KAI B');
     await waitBufferLength(page, 2);
@@ -875,45 +861,41 @@ test.describe('M17 syntax acquisition (browser)', () => {
     expect(probe.console.join(' ')).not.toMatch(/Reference sequence/);
 
     const m17 = await ipModule(page, 'm17');
-    const trials = m17.trials as Record<string, unknown>[];
+    const attempts = m17.attempts as Record<string, unknown>[];
 
     expect(m17.window_status).toBe('completed');
-    expect(m17.trials_completed).toBe(5);
-    expect(trials.map((t) => t.trial_type)).toEqual([
-      'feedback',
-      'feedback',
-      'feedback',
-      'feedback',
-      'transfer',
+    expect(m17.trials_completed).toBe(2);
+    expect(attempts.map((t) => [t.trial_type, t.attempt])).toEqual([
+      ['feedback', 1],
+      ['feedback', 2],
+      ['transfer', 1],
     ]);
-    expect(trials.map((t) => t.feedback_presented)).toEqual([
-      true,
-      true,
+    expect(attempts.map((t) => t.feedback_presented)).toEqual([
       true,
       true,
       false,
     ]);
-    expect(trials.map((t) => t.goal_reached)).toEqual([
-      true,
-      false,
-      true,
-      true,
-      true,
-    ]);
-    expect(trials[0].syntax_errors).toBe(1);
-    expect(trials[1].semantic_errors).toBe(1);
-    expect(trials[1].commands_correct).toBe(1);
-    expect(trials[1].input_mode).toBe('mixed');
-    expect(trials[2].corrections_before_submission).toBe(1);
+    expect(attempts.map((t) => t.goal_reached)).toEqual([false, true, true]);
+    expect(attempts[0].syntax_errors).toBe(1);
+    expect(attempts[0].semantic_errors).toBe(1);
+    expect(attempts[0].commands_correct).toBe(1);
+    expect(attempts[0].input_mode).toBe('mixed');
+    expect(attempts[1].corrections_before_submission).toBe(1);
+    expect(attempts[2].demonstration_reviews).toBe(1);
+    expect(m17.practice_attempts).toBe(2);
+    expect(m17.practice_criterion_met).toBe(true);
+    expect(m17.transfer_attempts).toBe(1);
+    expect(m17.transfer_first_attempt_goal_reached).toBe(true);
+    expect(m17.demonstration_exposures).toBe(2);
     expect(
-      trials.every(
+      attempts.every(
         (t) => t.commands_required === 2 && t.trial_complete === true,
       ),
     ).toBe(true);
-    expect(trials.every((t) => (t.active_ms_after_ready as number) > 0)).toBe(
+    expect(attempts.every((t) => (t.active_ms_after_ready as number) > 0)).toBe(
       true,
     );
-    expect(Object.keys(m17).join(' ')).not.toMatch(/slope|criterion|score/i);
+    expect(Object.keys(m17).join(' ')).not.toMatch(/slope|score/i);
     expect(
       (await ipValidity(page, 'proto_m17_syntax_acquisition')).validity,
     ).toBe('valid');
@@ -923,20 +905,25 @@ test.describe('M17 syntax acquisition (browser)', () => {
 
     expect(
       family.filter((e) => e.event_type === 'proto_m17_syntax_trial_started'),
-    ).toHaveLength(5);
+    ).toHaveLength(2);
     expect(
       family.filter((e) => e.event_type === 'proto_m17_syntax_trial_submitted'),
-    ).toHaveLength(5);
+    ).toHaveLength(3);
     expect(
       family.filter(
         (e) => e.event_type === 'proto_m17_syntax_feedback_presented',
       ),
-    ).toHaveLength(4);
+    ).toHaveLength(2);
+    expect(
+      family.filter(
+        (e) => e.event_type === 'proto_m17_syntax_demonstration_viewed',
+      ),
+    ).toHaveLength(1);
     expect(
       family
         .filter((e) => e.event_type === 'proto_m17_syntax_trial_submitted')
         .map((e) => e.metadata?.trial_index),
-    ).toEqual([1, 2, 3, 4, 5]);
+    ).toEqual([1, 1, 2]);
     expectProvisionalOnly(family);
     expect(eventsOfFamily(events, 'proto_m16_protocol')).toHaveLength(0);
     expectNoRuntimeErrors(errors);

@@ -61,12 +61,25 @@ export interface SurfaceElement {
   align?: 'left' | 'center';
 }
 
+/**
+ * A directed link drawn between two elements (Unit 3: causal-model
+ * board). Rendered as an arrow behind the elements; never focusable —
+ * links are created and removed through the elements' own activations.
+ */
+export interface SurfaceLink {
+  from: string;
+  to: string;
+  state?: 'idle' | 'disabled';
+}
+
 export interface WorkSurfaceModel {
   title: string;
   subtitle?: string;
   /** Short operational status line under the title (never evaluative). */
   status?: string;
   elements: SurfaceElement[];
+  /** Directed links between elements (drawn under them). */
+  links?: SurfaceLink[];
   /** Footer help line (controls). */
   help?: string;
   /** Neutral feedback line shown briefly after an action. */
@@ -113,6 +126,7 @@ declare global {
         h: number;
         focusable: boolean;
       }[];
+      links: { from: string; to: string }[];
     } | null;
   }
 }
@@ -157,6 +171,8 @@ export class WorkSurfaceScene extends Phaser.Scene {
   private feedbackTimer: Phaser.Time.TimerEvent | null = null;
   private closing = false;
   private lastFocusId: string | null = null;
+  private linkGraphics: Phaser.GameObjects.Graphics | null = null;
+  private lastLinks: SurfaceLink[] = [];
 
   constructor() {
     super(key.scene.pilotWorkSurface);
@@ -240,6 +256,7 @@ export class WorkSurfaceScene extends Phaser.Scene {
       .setStrokeStyle(2, COLOR.accent, 1)
       .setDepth(DEPTH.focus)
       .setVisible(false);
+    this.linkGraphics = this.add.graphics().setDepth(DEPTH.element - 1);
 
     const onKey = guardKeyHandler((event: KeyboardEvent) => {
       if (event.repeat || this.closing) {
@@ -268,6 +285,7 @@ export class WorkSurfaceScene extends Phaser.Scene {
           focus: null,
           feedback: null,
           elements: [],
+          links: [],
         };
       }
     });
@@ -302,6 +320,9 @@ export class WorkSurfaceScene extends Phaser.Scene {
     for (const element of model.elements) {
       this.rendered.push(this.renderElement(element));
     }
+
+    this.lastLinks = model.links ?? [];
+    this.renderLinks(this.lastLinks);
 
     if (model.feedback) {
       this.showFeedback(model.feedback);
@@ -347,6 +368,55 @@ export class WorkSurfaceScene extends Phaser.Scene {
     this.scene.resume(this.data_.resumeKey);
     this.scene.stop();
     this.data_.onClosed?.();
+  }
+
+  /** Directed arrows between element centres (drawn under the elements). */
+  private renderLinks(links: SurfaceLink[]) {
+    const graphics = this.linkGraphics;
+
+    if (graphics === null) {
+      return;
+    }
+
+    graphics.clear();
+
+    for (const link of links) {
+      const from = this.rendered.find((item) => item.element.id === link.from);
+      const to = this.rendered.find((item) => item.element.id === link.to);
+
+      if (from === undefined || to === undefined) {
+        continue;
+      }
+
+      const colour =
+        link.state === 'disabled' ? COLOR.tileStroke : COLOR.accent;
+      const dx = to.box.x - from.box.x;
+      const dy = to.box.y - from.box.y;
+      const length = Math.hypot(dx, dy) || 1;
+      const ux = dx / length;
+      const uy = dy / length;
+      // Trim both ends to the element boxes so the arrow head is visible.
+      const startX = from.box.x + ux * (from.element.w / 2 + 2);
+      const startY = from.box.y + uy * (from.element.h / 2 + 2);
+      const endX = to.box.x - ux * (to.element.w / 2 + 4);
+      const endY = to.box.y - uy * (to.element.h / 2 + 4);
+
+      graphics.lineStyle(2, colour, 0.95);
+      graphics.beginPath();
+      graphics.moveTo(startX, startY);
+      graphics.lineTo(endX, endY);
+      graphics.strokePath();
+      // Arrow head.
+      graphics.fillStyle(colour, 0.95);
+      graphics.fillTriangle(
+        endX,
+        endY,
+        endX - ux * 10 - uy * 5,
+        endY - uy * 10 + ux * 5,
+        endX - ux * 10 + uy * 5,
+        endY - uy * 10 - ux * 5,
+      );
+    }
   }
 
   private renderElement(element: SurfaceElement): Rendered {
@@ -610,6 +680,7 @@ export class WorkSurfaceScene extends Phaser.Scene {
           item.element.onActivate !== undefined &&
           item.element.state !== 'disabled',
       })),
+      links: this.lastLinks.map((link) => ({ from: link.from, to: link.to })),
     };
   }
 }

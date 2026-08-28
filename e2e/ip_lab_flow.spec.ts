@@ -424,11 +424,9 @@ test('complete laboratory playthrough: every opportunity valid in one session (t
   await waitTerminalOpen(page, true);
   await typeCommand(page, 'READY');
 
+  // One practice case, then the changed transfer case (v2 Unit 3).
   const trials = [
-    ['ZOR A C', 'VEK B GRN'],
-    ['KAI A', 'VEK C RED'],
-    ['ZOR A C', 'KAI B'],
-    ['ZOR A C', 'VEK C BLU'],
+    ['ZOR A B', 'VEK C GRN'],
     ['ZOR A C', 'KAI B'],
   ];
 
@@ -515,7 +513,7 @@ test('complete laboratory playthrough: every opportunity valid in one session (t
   expect(probe.modules.m14.units_correctly_routed).toBe(12);
   expect(probe.modules.m15.final_reconstruction_valid).toBe(true);
   expect(probe.modules.m16.final_applications_correct).toBe(3);
-  expect(probe.modules.m17.trials_completed).toBe(5);
+  expect(probe.modules.m17.trials_completed).toBe(2);
   expect(probe.modules.m13.final_network_valid).toBe(true);
   expect(probe.modules.m18.final_solution_valid).toBe(true);
 

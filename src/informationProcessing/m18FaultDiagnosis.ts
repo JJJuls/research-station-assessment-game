@@ -19,6 +19,15 @@
  * - No M13 event, act count, submission or layout is read here; the
  *   `proto_m18_fault_*` family shares no raw event with `proto_m13_*`.
  *
+ * Evidence-led pilot v2 (Unit 3, signal-analysis incident phase 4): the
+ * console is the DIAGNOSTIC BOARD — hypotheses are fault tags moved
+ * between OPEN / WORKING DIAGNOSIS / RULED OUT zones (drag, click or
+ * keyboard). Ruling a tag out ATTACHES the evidence currently in the
+ * readout as the cited reason (optional); the engine records whether the
+ * cited panel/test in fact contradicts that hypothesis (sheet 09 H:
+ * contradictions_eliminated, evidence_consistent_steps, redundant_tests,
+ * tests_selected). Reasoning-process components only — never a score.
+ *
  * SCIENTIFIC BOUNDARY: raw observables (panels viewed, view order, tests
  * run, hypothesis selections/rejections/revisions, contradictions present
  * at submission, final diagnosis id, validity) are recorded, never scored.
@@ -50,7 +59,8 @@ import {
 
 export const M18F_OPPORTUNITY_ID = 'proto_m18_lattice_fault_diagnosis';
 export const M18F_ENTRY_STATE_VERSION = 'm18-fault-v1';
-const OBJECT_ID = 'ip_diagnosis_console';
+export const M18F_WINDOW_ID = 'm18_diagnosis_w1';
+const OBJECT_ID = 'signal_diagnostic_board';
 
 export const M18F_EVENT_TYPES = declareIpEvents('proto_m18_fault', [
   'window_opened',
@@ -98,6 +108,12 @@ interface M18FaultState {
   selected: string | null;
   selection_history: string[];
   rejected: string[];
+  /** Every rule-out act with the evidence cited at the time (raw). */
+  rejections: {
+    hypothesis_id: string;
+    cited_evidence: string | null;
+    evidence_consistent: boolean | null;
+  }[];
   revisions: number;
   final_diagnosis_id: string | null;
   final_solution_valid: boolean | null;
@@ -122,6 +138,7 @@ function createInitialState(form: FormId): M18FaultState {
     selected: null,
     selection_history: [],
     rejected: [],
+    rejections: [],
     revisions: 0,
     final_diagnosis_id: null,
     final_solution_valid: null,
@@ -183,9 +200,24 @@ function rawSummary() {
     tests_run: s.tests_run.length,
     test_order: [...s.tests_run],
     rules_views: s.rules_views,
+    tests_selected: [...new Set(s.tests_run)],
+    redundant_tests: s.tests_run.length - new Set(s.tests_run).size,
     hypotheses_available: form.hypotheses.length,
     hypotheses_selected: [...s.selection_history],
     hypotheses_rejected: [...s.rejected],
+    rejections: s.rejections.map((entry) => ({ ...entry })),
+    contradictions_eliminated: s.rejected.filter(
+      (id) => contradictionCount(form, id, s.panels_viewed, s.tests_run) > 0,
+    ).length,
+    evidence_consistent_steps: s.rejections.filter(
+      (entry) => entry.evidence_consistent === true,
+    ).length,
+    evidence_inconsistent_steps: s.rejections.filter(
+      (entry) => entry.evidence_consistent === false,
+    ).length,
+    uncited_rule_outs: s.rejections.filter(
+      (entry) => entry.cited_evidence === null,
+    ).length,
     hypothesis_revisions: s.revisions,
     contradictions_present_at_submission:
       s.contradictions_present_at_submission,
@@ -197,9 +229,52 @@ function rawSummary() {
 function log(suffix: string, metadata: Record<string, unknown> = {}) {
   logIpEvent('proto_m18_fault', OBJECT_ID, suffix, {
     ...ipWindowFields(ensure().window),
+    window_id: M18F_WINDOW_ID,
     ...metadata,
   });
   refreshIpProbe();
+}
+
+/** Whether a panel/test id documents a contradiction of the hypothesis. */
+function evidenceContradicts(
+  form: FaultForm,
+  evidenceId: string,
+  hypothesisId: string,
+): boolean | null {
+  const panel = form.panels.find((candidate) => candidate.id === evidenceId);
+
+  if (panel !== undefined) {
+    return panel.contradicts.includes(hypothesisId);
+  }
+
+  const test = form.tests.find((candidate) => candidate.id === evidenceId);
+
+  if (test !== undefined) {
+    return test.contradicts.includes(hypothesisId);
+  }
+
+  return null;
+}
+
+/** The evidence currently shown in the readout (panel or test id), if any. */
+function readoutEvidenceId(s: M18FaultState, form: FaultForm): string | null {
+  if (s.detail === null) {
+    return null;
+  }
+
+  const panel = form.panels.find(
+    (candidate) => candidate.title === s.detail!.title,
+  );
+
+  if (panel !== undefined) {
+    return panel.id;
+  }
+
+  const test = form.tests.find(
+    (candidate) => `${candidate.label} — result` === s.detail!.title,
+  );
+
+  return test?.id ?? null;
 }
 
 export function declareM18Fault() {
@@ -256,7 +331,8 @@ export type DiagnosisAction =
   | { kind: 'run_test'; id: string }
   | { kind: 'view_rules' }
   | { kind: 'select'; id: string }
-  | { kind: 'reject'; id: string };
+  /** Rule out (reversible). `cite` attaches the evidence currently in the readout. */
+  | { kind: 'reject'; id: string; cite?: boolean };
 
 export interface DiagnosisResult {
   ok: boolean;
@@ -396,14 +472,29 @@ export function m18FaultAct(
         s.revisions += 1;
       }
 
+      const cited = action.cite === false ? null : readoutEvidenceId(s, form);
+      const consistent =
+        cited === null ? null : evidenceContradicts(form, cited, hypothesis.id);
+
+      s.rejections.push({
+        hypothesis_id: hypothesis.id,
+        cited_evidence: cited,
+        evidence_consistent: consistent,
+      });
       log('hypothesis_rejected', {
         hypothesis_id: hypothesis.id,
+        cited_evidence: cited,
+        evidence_consistent: consistent,
+        rejection_index: s.rejections.length,
         input_mode: mode,
       });
 
       return {
         ok: true,
-        message: `${hypothesis.label}: ruled out (reversible).`,
+        message:
+          cited === null
+            ? `${hypothesis.label}: ruled out (reversible).`
+            : `${hypothesis.label}: ruled out, citing the readout (reversible).`,
       };
     }
     default:
@@ -524,7 +615,11 @@ export interface DiagnosisView {
     label: string;
     selected: boolean;
     rejected: boolean;
+    /** Evidence cited when the tag was last ruled out (label), if any. */
+    citedEvidence: string | null;
   }[];
+  /** Evidence currently in the readout (id), attachable to a rule-out. */
+  readoutEvidenceId: string | null;
   panels: { id: string; title: string; viewed: boolean }[];
   tests: { id: string; label: string; runs: number }[];
   detail: { title: string; lines: string[] } | null;
@@ -543,12 +638,30 @@ export function m18FaultView(): DiagnosisView {
     brief: form.brief,
     reference: M18F_REFERENCE_LATTICE,
     rules: form.rules,
-    hypotheses: form.hypotheses.map((hypothesis) => ({
-      id: hypothesis.id,
-      label: hypothesis.label,
-      selected: s.selected === hypothesis.id,
-      rejected: s.rejected.includes(hypothesis.id),
-    })),
+    hypotheses: form.hypotheses.map((hypothesis) => {
+      const lastRejection = [...s.rejections]
+        .reverse()
+        .find((entry) => entry.hypothesis_id === hypothesis.id);
+      const citedId =
+        s.rejected.includes(hypothesis.id) && lastRejection !== undefined
+          ? lastRejection.cited_evidence
+          : null;
+      const citedLabel =
+        citedId === null
+          ? null
+          : (form.panels.find((panel) => panel.id === citedId)?.title ??
+            form.tests.find((test) => test.id === citedId)?.label ??
+            null);
+
+      return {
+        id: hypothesis.id,
+        label: hypothesis.label,
+        selected: s.selected === hypothesis.id,
+        rejected: s.rejected.includes(hypothesis.id),
+        citedEvidence: citedLabel,
+      };
+    }),
+    readoutEvidenceId: readoutEvidenceId(s, form),
     panels: form.panels.map((panel) => ({
       id: panel.id,
       title: panel.title,

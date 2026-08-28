@@ -1,14 +1,19 @@
 /**
- * Fault Diagnosis Console overlay (M18 — Information Processing
- * foundation).
+ * Diagnostic Board overlay (M18 — signal-analysis incident, phase 4;
+ * Information Processing foundation engine).
  *
- * A standardised reference lattice, a fault brief, four evidence panels,
+ * A standardised reference chain, a fault brief, four evidence panels,
  * three reversible diagnostic tests, the full interpretation rule set,
- * four hypotheses with reversible SELECT / RULE OUT toggles, and one
- * explicit SUBMIT DIAGNOSIS. Mouse: click panels, RUN buttons, toggles.
- * Keyboard: arrows move a focus ring through panels → tests →
- * hypotheses → submit; ENTER activates; X rules the focused hypothesis
- * out; 1–4 select a hypothesis; R opens the rules. Both paths call
+ * and a FAULT BOARD: the four hypotheses are tags that live in one of
+ * three zones — OPEN, WORKING DIAGNOSIS (one tag) and RULED OUT — and are
+ * moved by drag, click or keyboard (no answer cards, no per-card
+ * buttons). Ruling a tag out attaches the evidence currently in the
+ * readout as the cited reason; the engine records whether that evidence
+ * actually contradicts the hypothesis. One explicit SUBMIT DIAGNOSIS.
+ * Mouse: click panels / RUN / tags, drag tags between zones, right-click
+ * a tag to rule it out or reopen it. Keyboard: arrows move a focus ring
+ * through panels → tests → tags → submit; ENTER/SPACE select; X rules
+ * out / reopens; 1–4 select a tag; R opens the rules. Both paths call
  * exactly `m18FaultAct` / `m18FaultSubmit`.
  *
  * The console reads NOTHING from the lattice bench: every reading is a
@@ -64,6 +69,7 @@ export interface DiagnosisProbe {
     reject: ProbeRect;
   })[];
   buttons: (ProbeRect & { id: string; label: string; enabled: boolean })[];
+  zones: (ProbeRect & { id: string })[];
   detail_title: string | null;
   detail_lines: string[];
   feedback: string[];
@@ -72,6 +78,7 @@ export interface DiagnosisProbe {
   help_open: boolean;
   rules_open: boolean;
   confirm_open: boolean;
+  dragging: boolean;
 }
 
 declare global {
@@ -88,9 +95,11 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
 const KIND_KEY = 'ipDiagKind';
 
 interface Target {
-  kind: 'panel' | 'test' | 'hypothesis';
+  kind: 'panel' | 'test' | 'hypothesis' | 'zone' | 'tag_action';
   id: string;
 }
+
+type Zone = 'open' | 'diagnosis' | 'ruled_out';
 
 const L = {
   titleY: 56,
@@ -109,8 +118,11 @@ const L = {
   detailTitleY: 228,
   detailY: 244,
   hypTitleY: 118,
-  hypY: 136,
-  hypRowH: 70,
+  zoneTop: 136,
+  zoneGap: 6,
+  tagH: 30,
+  tagRuledH: 42,
+  tagGap: 3,
   consoleY: 466,
   buttonsY: 506,
   helpLineY: 544,
@@ -146,6 +158,12 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
   private lastView: DiagnosisView | null = null;
   private rowRects = new Map<string, ProbeRect>();
   private toggleRects = new Map<string, ProbeRect>();
+  private zoneRects = new Map<Zone, ProbeRect>();
+  private zoneObjects = new Map<Zone, Phaser.GameObjects.Rectangle>();
+  private dropZone: Zone | null = null;
+  private dragging = false;
+  private dragGhost: Phaser.GameObjects.Container | null = null;
+  private justDragged = false;
 
   constructor() {
     super(key.scene.ipDiagnosisConsole);
@@ -173,6 +191,12 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
     this.lastView = null;
     this.rowRects = new Map();
     this.toggleRects = new Map();
+    this.zoneRects = new Map();
+    this.zoneObjects = new Map();
+    this.dropZone = null;
+    this.dragging = false;
+    this.dragGhost = null;
+    this.justDragged = false;
 
     // Render above the host no matter where this class sorts in the
     // alphabetical scene registry (src/index.ts spreads Object.values of
@@ -212,7 +236,7 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
       .text(
         IP_PANEL.x + 16,
         L.titleY,
-        'FAULT DIAGNOSIS CONSOLE — REFERENCE LATTICE',
+        'SIGNAL CASE — PHASE 4 · DIAGNOSTIC BOARD',
         {
           color: IP_TEXT.text,
           font: IP_FONT.title,
@@ -226,17 +250,17 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
     this.section(L.col1.x, L.panelsTitleY - 6, L.col1.w, 130); // panels
     this.section(L.col2.x, L.bandY, L.col2.w, 98); // tests
     this.section(L.col2.x, L.detailTitleY - 6, L.col2.w, 216); // readout
-    this.section(L.col3.x, L.bandY, L.col3.w, 326); // hypotheses
+    this.section(L.col3.x, L.bandY, L.col3.w, 326); // fault board
     this.section(L.col1.x, L.consoleY - 6, 688, 36); // console
 
     this.buttons.push(
       new UiButton({
         scene: this,
         id: 'close',
-        x: IP_PANEL.x + IP_PANEL.width - 40,
+        x: IP_PANEL.x + IP_PANEL.width - 56,
         y: IP_PANEL.y + 4,
-        width: 32,
-        label: 'X',
+        width: 48,
+        label: 'ESC',
         depth: IP_DEPTH.panel + 1,
         onActivate: () => this.leave(),
       }),
@@ -288,7 +312,7 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
       .text(
         400,
         L.helpLineY,
-        'Click a panel to read it • RUN a test (repeatable) • RULES • SELECT / RULE OUT hypotheses • arrows + ENTER • X rules out • 1–4 select • ESC leaves (work stays)',
+        'Click a panel or RUN a test • drag a fault tag between OPEN / DIAGNOSIS / RULED OUT (or click = select, right-click = rule out) • arrows + ENTER • X rules out • 1–4 select • R rules • H help • Q stop • ESC leaves (work stays)',
         {
           color: IP_TEXT.dim,
           font: IP_FONT.small,
@@ -361,6 +385,8 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
     this.rowButtons = [];
     this.rowRects.clear();
     this.toggleRects.clear();
+    this.zoneRects.clear();
+    this.zoneObjects.clear();
 
     const view = m18FaultView();
 
@@ -393,7 +419,7 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
     this.text(
       56,
       L.instrY,
-      `${view.brief.join(' ')} Open panels, run tests (all reversible), consult RULES, rule hypotheses out, pick one working diagnosis, then SUBMIT DIAGNOSIS.`,
+      `${view.brief.join(' ')} Rule out what the evidence contradicts (the readout is cited), place one working diagnosis, then SUBMIT DIAGNOSIS.`,
       {
         color: IP_TEXT.dim,
         font: IP_FONT.small,
@@ -624,109 +650,196 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
       },
     );
 
-    // — Hypotheses.
-    this.text(L.col3.x + 6, L.hypTitleY + 4, 'HYPOTHESES — pick one', {
+    // — Fault board: three zones with draggable tags.
+    this.text(L.col3.x + 6, L.hypTitleY + 4, 'FAULT BOARD — move the tags', {
       color: IP_TEXT.dim,
       font: IP_FONT.small,
     });
-    view.hypotheses.forEach((hypothesis, index) => {
-      const y = L.hypY + 2 + index * L.hypRowH;
-      const isFocus =
-        focused.kind === 'hypothesis' && focused.id === hypothesis.id;
+
+    // Zone heights follow their tag counts so every tag (two lines, plus
+    // the cited evidence on ruled-out tags) always fits inside its zone.
+    const counts = {
+      diagnosis: view.hypotheses.filter((h) => h.selected).length,
+      open: view.hypotheses.filter((h) => !h.selected && !h.rejected).length,
+      ruled_out: view.hypotheses.filter((h) => h.rejected).length,
+    };
+    const zoneHeight = (zone: Zone) =>
+      16 +
+      Math.max(1, counts[zone]) *
+        ((zone === 'ruled_out' ? L.tagRuledH : L.tagH) + L.tagGap) +
+      4;
+    const zones: { id: Zone; y: number; h: number; label: string }[] = [];
+    let zoneY = L.zoneTop;
+
+    for (const spec of [
+      { id: 'diagnosis' as const, label: 'WORKING DIAGNOSIS — one tag' },
+      { id: 'open' as const, label: 'OPEN' },
+      { id: 'ruled_out' as const, label: 'RULED OUT — cites the readout' },
+    ]) {
+      const h = zoneHeight(spec.id);
+
+      zones.push({ id: spec.id, y: zoneY, h, label: spec.label });
+      zoneY += h + L.zoneGap;
+    }
+
+    for (const zone of zones) {
       const rect = this.add
         .rectangle(
           L.col3.x + 6,
-          y,
+          zone.y,
           L.col3.w - 12,
-          L.hypRowH - 6,
-          hypothesis.selected
-            ? 0x1c3b3a
-            : hypothesis.rejected
+          zone.h,
+          zone.id === 'diagnosis'
+            ? 0x16342f
+            : zone.id === 'ruled_out'
               ? 0x1a1f24
               : IP_COLORS.slot,
           1,
         )
         .setOrigin(0)
         .setStrokeStyle(
-          isFocus ? 2 : 1,
-          hypothesis.selected
-            ? IP_COLORS.accent
-            : isFocus
-              ? IP_COLORS.accent
-              : IP_COLORS.slotStroke,
+          1,
+          this.dropZone === zone.id ? IP_COLORS.accent : IP_COLORS.slotStroke,
         )
         .setDepth(IP_DEPTH.content);
 
-      rect.setData(KIND_KEY, {
-        kind: 'hypothesis',
-        id: hypothesis.id,
-      } satisfies Target);
+      rect.setData(KIND_KEY, { kind: 'zone', id: zone.id } satisfies Target);
 
       if (!closed) {
-        rect.setInteractive({ useHandCursor: true });
+        rect.setInteractive({ dropZone: true });
       }
 
       this.dynamic.push(rect);
-      this.rowRects.set(hypothesis.id, {
+      this.zoneObjects.set(zone.id, rect);
+      this.zoneRects.set(zone.id, {
         x: rect.x,
         y: rect.y,
         w: rect.width,
         h: rect.height,
       });
       this.text(
-        L.col3.x + 12,
-        y + 4,
-        `H${index + 1}  ${hypothesis.label}`,
-        {
-          color: hypothesis.rejected ? IP_TEXT.faint : IP_TEXT.text,
-          font: '10px monospace',
-          lineSpacing: 1,
-          wordWrap: { width: L.col3.w - 24 },
-        },
+        L.col3.x + 10,
+        zone.y + 3,
+        zone.label,
+        { color: IP_TEXT.faint, font: '9px monospace' },
         IP_DEPTH.content + 1,
       );
+    }
 
-      const select = new UiButton({
-        scene: this,
-        id: `select_${hypothesis.id}`,
-        x: L.col3.x + 12,
-        y: y + L.hypRowH - 32,
-        width: 70,
-        label: hypothesis.selected ? 'SELECTED' : 'SELECT',
-        kind: hypothesis.selected ? 'accent' : 'plain',
-        depth: IP_DEPTH.chip,
-        onActivate: () =>
-          this.act({ kind: 'select', id: hypothesis.id }, 'pointer'),
-      });
-      const reject = new UiButton({
-        scene: this,
-        id: `reject_${hypothesis.id}`,
-        x: L.col3.x + 90,
-        y: y + L.hypRowH - 32,
-        width: 86,
-        label: hypothesis.rejected ? 'RULED OUT' : 'RULE OUT',
-        kind: hypothesis.rejected ? 'caution' : 'plain',
-        depth: IP_DEPTH.chip,
-        onActivate: () =>
-          this.act({ kind: 'reject', id: hypothesis.id }, 'pointer'),
-      });
+    const byZone: Record<Zone, typeof view.hypotheses> = {
+      diagnosis: view.hypotheses.filter((h) => h.selected),
+      open: view.hypotheses.filter((h) => !h.selected && !h.rejected),
+      ruled_out: view.hypotheses.filter((h) => h.rejected),
+    };
 
-      select.setEnabled(!closed);
-      reject.setEnabled(!closed);
-      this.rowButtons.push(select, reject);
-      this.toggleRects.set(`select_${hypothesis.id}`, {
-        x: select.bounds().x,
-        y: select.bounds().y,
-        w: select.bounds().width,
-        h: select.bounds().height,
+    for (const zone of zones) {
+      byZone[zone.id].forEach((hypothesis, index) => {
+        const tagH = zone.id === 'ruled_out' ? L.tagRuledH : L.tagH;
+        const y = zone.y + 16 + index * (tagH + L.tagGap);
+        const isFocus =
+          focused.kind === 'hypothesis' && focused.id === hypothesis.id;
+        const order = view.hypotheses.findIndex((h) => h.id === hypothesis.id);
+        const tag = this.add
+          .rectangle(
+            L.col3.x + 12,
+            y,
+            L.col3.w - 24,
+            tagH,
+            hypothesis.selected
+              ? 0x1c3b3a
+              : hypothesis.rejected
+                ? 0x121a22
+                : 0x1b2633,
+            1,
+          )
+          .setOrigin(0)
+          .setStrokeStyle(
+            isFocus ? 2 : 1,
+            hypothesis.selected || isFocus
+              ? IP_COLORS.accent
+              : IP_COLORS.slotStroke,
+          )
+          .setDepth(IP_DEPTH.chip);
+
+        tag.setData(KIND_KEY, {
+          kind: 'hypothesis',
+          id: hypothesis.id,
+        } satisfies Target);
+
+        if (!closed) {
+          tag.setInteractive({ draggable: true, useHandCursor: true });
+        }
+
+        this.dynamic.push(tag);
+        this.rowRects.set(hypothesis.id, {
+          x: tag.x,
+          y: tag.y,
+          w: tag.width,
+          h: tag.height,
+        });
+        this.text(
+          L.col3.x + 18,
+          y + 5,
+          `${hypothesis.rejected ? '✕' : hypothesis.selected ? '◆' : '▫'} ${order + 1}  ${hypothesis.label}`,
+          {
+            color: hypothesis.rejected ? IP_TEXT.faint : IP_TEXT.text,
+            font: '9px monospace',
+            lineSpacing: 1,
+            wordWrap: { width: L.col3.w - 62 },
+          },
+          IP_DEPTH.chip + 1,
+        );
+
+        if (hypothesis.rejected) {
+          this.text(
+            L.col3.x + 18,
+            y + 29,
+            hypothesis.citedEvidence === null
+              ? 'no evidence cited'
+              : `cites: ${hypothesis.citedEvidence}`,
+            { color: IP_TEXT.faint, font: '9px monospace' },
+            IP_DEPTH.chip + 1,
+          );
+        }
+
+        // Tag action glyph: ✕ rules out (citing the readout) / ↺ reopens.
+        const glyph = this.add
+          .rectangle(L.col3.x + L.col3.w - 34, y + 2, 20, 18, 0x223244, 1)
+          .setOrigin(0)
+          .setStrokeStyle(1, IP_COLORS.slotStroke)
+          .setDepth(IP_DEPTH.chip + 1);
+
+        glyph.setData(KIND_KEY, {
+          kind: 'tag_action',
+          id: hypothesis.id,
+        } satisfies Target);
+
+        if (!closed) {
+          glyph.setInteractive({ useHandCursor: true });
+        }
+
+        this.dynamic.push(glyph);
+        this.text(
+          L.col3.x + L.col3.w - 24,
+          y + 11,
+          hypothesis.rejected ? '↺' : '✕',
+          { color: IP_TEXT.accent, font: 'bold 11px monospace' },
+          IP_DEPTH.chip + 2,
+        ).setOrigin(0.5);
+        this.toggleRects.set(`select_${hypothesis.id}`, {
+          x: tag.x,
+          y: tag.y,
+          w: tag.width - 40,
+          h: tag.height,
+        });
+        this.toggleRects.set(`reject_${hypothesis.id}`, {
+          x: glyph.x,
+          y: glyph.y,
+          w: glyph.width,
+          h: glyph.height,
+        });
       });
-      this.toggleRects.set(`reject_${hypothesis.id}`, {
-        x: reject.bounds().x,
-        y: reject.bounds().y,
-        w: reject.bounds().width,
-        h: reject.bounds().height,
-      });
-    });
+    }
 
     // — Console + buttons.
     this.text(
@@ -735,8 +848,10 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
       view.feedback.length > 0
         ? view.feedback.join(' ')
         : view.hypotheses.some((hypothesis) => hypothesis.selected)
-          ? 'Working diagnosis selected. Review the evidence, then SUBMIT DIAGNOSIS.'
-          : 'No working diagnosis selected yet.',
+          ? 'Working diagnosis placed. Review the evidence, then SUBMIT DIAGNOSIS.'
+          : view.readoutEvidenceId === null
+            ? 'No working diagnosis placed yet. Ruling a tag out cites whatever the readout shows.'
+            : 'No working diagnosis placed yet. The readout evidence is cited by any rule-out now.',
       { color: IP_TEXT.caution, font: IP_FONT.small, wordWrap: { width: 676 } },
     );
 
@@ -763,6 +878,7 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
       tests: [],
       hypotheses: [],
       buttons: [],
+      zones: [],
       detail_title: null,
       detail_lines: [],
       feedback: [],
@@ -771,6 +887,7 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
       help_open: false,
       rules_open: false,
       confirm_open: false,
+      dragging: false,
     };
   }
 
@@ -793,7 +910,12 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
       help_open: this.helpOpen,
       rules_open: this.rulesOpen,
       confirm_open: this.confirmOpen,
+      dragging: this.dragging,
     };
+
+    for (const [id, rect] of this.zoneRects) {
+      probe.zones.push({ ...rect, id });
+    }
 
     for (const panel of view.panels) {
       const rect = this.rowRects.get(panel.id);
@@ -1191,12 +1313,176 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
           this.act({ kind: 'view_panel', id: target.id }, 'pointer');
         } else if (target.kind === 'test') {
           this.act({ kind: 'run_test', id: target.id }, 'pointer');
-        } else {
-          // Clicking the hypothesis card body selects it (toggles).
+        } else if (target.kind === 'tag_action') {
+          // ✕ rules the tag out (citing the readout) / ↺ reopens it.
+          this.act({ kind: 'reject', id: target.id, cite: true }, 'pointer');
+        } else if (target.kind === 'hypothesis') {
+          if (this.justDragged) {
+            this.justDragged = false;
+
+            return;
+          }
+
+          // Clicking a tag places it as the working diagnosis (toggles).
           this.act({ kind: 'select', id: target.id }, 'pointer');
         }
       },
     );
+
+    // Right-click on a tag: rule out / reopen (citing the readout).
+    this.input.on(
+      Phaser.Input.Events.GAMEOBJECT_DOWN,
+      (
+        pointer: Phaser.Input.Pointer,
+        object: Phaser.GameObjects.GameObject,
+      ) => {
+        const target = (object.getData(KIND_KEY) as Target | undefined) ?? null;
+
+        if (target?.kind === 'hypothesis' && pointer.rightButtonDown()) {
+          this.act({ kind: 'reject', id: target.id, cite: true }, 'pointer');
+        }
+      },
+    );
+
+    // Drag a tag between zones.
+    this.input.dragDistanceThreshold = 6;
+    this.input.on(
+      Phaser.Input.Events.DRAG_START,
+      (
+        pointer: Phaser.Input.Pointer,
+        object: Phaser.GameObjects.GameObject,
+      ) => {
+        const target = (object.getData(KIND_KEY) as Target | undefined) ?? null;
+
+        if (target?.kind !== 'hypothesis' || this.lastView?.closed) {
+          return;
+        }
+
+        const hypothesis = this.lastView?.hypotheses.find(
+          (candidate) => candidate.id === target.id,
+        );
+
+        this.dragging = true;
+        this.dropZone = null;
+        this.dragGhost?.destroy();
+
+        const label = this.add
+          .text(0, 0, hypothesis?.label ?? target.id, {
+            color: IP_TEXT.text,
+            font: '10px monospace',
+            backgroundColor: '#1c3b3a',
+            padding: { x: 6, y: 3 },
+          })
+          .setOrigin(0.5);
+
+        this.dragGhost = this.add
+          .container(pointer.x, pointer.y, [label])
+          .setDepth(IP_DEPTH.ghost)
+          .setAlpha(0.9);
+        this.writeProbe(this.lastView!);
+      },
+    );
+    this.input.on(Phaser.Input.Events.DRAG, (pointer: Phaser.Input.Pointer) => {
+      if (!this.dragging) {
+        return;
+      }
+
+      this.dragGhost?.setPosition(pointer.x, pointer.y);
+
+      const zone = this.zoneAt(pointer.x, pointer.y);
+
+      // Restyle the zones in place — a rebuild would destroy the dragged tag.
+      if (zone !== this.dropZone) {
+        this.dropZone = zone;
+
+        for (const [id, object] of this.zoneObjects) {
+          object.setStrokeStyle(
+            1,
+            id === zone ? IP_COLORS.accent : IP_COLORS.slotStroke,
+          );
+        }
+
+        if (this.lastView !== null) {
+          this.writeProbe(this.lastView);
+        }
+      }
+    });
+    this.input.on(
+      Phaser.Input.Events.DRAG_END,
+      (
+        pointer: Phaser.Input.Pointer,
+        object: Phaser.GameObjects.GameObject,
+      ) => {
+        if (!this.dragging) {
+          return;
+        }
+
+        const target = (object.getData(KIND_KEY) as Target | undefined) ?? null;
+        const zone = this.zoneAt(pointer.x, pointer.y);
+
+        this.dragging = false;
+        this.dropZone = null;
+        this.dragGhost?.destroy();
+        this.dragGhost = null;
+        this.justDragged = true;
+        this.time.delayedCall(80, () => {
+          this.justDragged = false;
+        });
+
+        if (target?.kind === 'hypothesis' && zone !== null) {
+          this.moveTagToZone(target.id, zone);
+        } else {
+          sfxUnavailable();
+          this.refresh();
+        }
+      },
+    );
+  }
+
+  private zoneAt(x: number, y: number): Zone | null {
+    for (const [id, rect] of this.zoneRects) {
+      if (
+        x >= rect.x &&
+        x <= rect.x + rect.w &&
+        y >= rect.y &&
+        y <= rect.y + rect.h
+      ) {
+        return id;
+      }
+    }
+
+    return null;
+  }
+
+  /** A dropped tag becomes the semantic act its destination zone means. */
+  private moveTagToZone(id: string, zone: Zone) {
+    const hypothesis = this.lastView?.hypotheses.find((h) => h.id === id);
+
+    if (hypothesis === undefined) {
+      this.refresh();
+
+      return;
+    }
+
+    if (zone === 'diagnosis') {
+      if (!hypothesis.selected) {
+        this.act({ kind: 'select', id }, 'pointer');
+      } else {
+        this.refresh();
+      }
+    } else if (zone === 'ruled_out') {
+      if (!hypothesis.rejected) {
+        this.act({ kind: 'reject', id, cite: true }, 'pointer');
+      } else {
+        this.refresh();
+      }
+    } else if (hypothesis.rejected) {
+      this.act({ kind: 'reject', id, cite: false }, 'pointer'); // reopen
+    } else if (hypothesis.selected) {
+      this.act({ kind: 'select', id }, 'pointer'); // deselect
+    } else {
+      this.refresh();
+    }
   }
 
   private wireKeyboard() {
@@ -1270,7 +1556,7 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
       const entry = this.focusList[this.focusIndex];
 
       if (!event.repeat && entry?.kind === 'hypothesis') {
-        this.act({ kind: 'reject', id: entry.id }, 'typed');
+        this.act({ kind: 'reject', id: entry.id, cite: true }, 'typed');
       }
     });
     on('keydown-R', (event) => {

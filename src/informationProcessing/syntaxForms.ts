@@ -8,16 +8,24 @@
  *   VEK <slot> <token>  — the slot becomes the token
  *   ZOR <slot> <slot>   — the two slots exchange tokens
  *   KAI <slot>          — the slot is cleared (NUL)
- * Every trial needs exactly two operators; forms are matched trial by
- * trial in operator mix (ZOR+VEK, KAI+VEK, ZOR+KAI, ZOR+VEK, ZOR+KAI).
+ * Every case needs exactly two operators. Evidence-led pilot v2 (sheet 09
+ * M17: "one demo + one practice + one changed transfer"): each form has
+ * ONE practice case (ZOR+VEK — both operators appear in the demonstration
+ * as the two "set / exchange" moves) and ONE transfer case (ZOR+KAI — the
+ * same length and register, a changed goal, and the KAI operator that the
+ * practice never used). No practice reference command recurs in the
+ * transfer reference, so the practice's corrective feedback can never
+ * hand out a transfer step (scientific review BL-1). Forms are matched
+ * case by case in operator mix. Up to M17_MAX_ATTEMPTS attempts per case.
  */
 
 import type { FormId, GrammarSpec, ProgramLine } from './model';
 
 export const M17_SLOTS = ['A', 'B', 'C'] as const;
 export const M17_TOKENS = ['RED', 'BLU', 'GRN', 'NUL'] as const;
-export const M17_FEEDBACK_TRIALS = 4;
-export const M17_TRIALS_TOTAL = 5;
+export const M17_FEEDBACK_TRIALS = 1;
+export const M17_TRIALS_TOTAL = 2;
+export const M17_MAX_ATTEMPTS = 3;
 export const M17_COMMANDS_REQUIRED = 2;
 
 export const M17_GRAMMAR: GrammarSpec = {
@@ -97,32 +105,11 @@ export const M17_FORMS: Record<FormId, SyntaxForm> = {
         1,
         'feedback',
         ['RED', 'NUL', 'BLU'],
-        ['BLU', 'GRN', 'RED'],
-        ['ZOR A C', 'VEK B GRN'],
+        ['NUL', 'RED', 'GRN'],
+        ['ZOR A B', 'VEK C GRN'],
       ),
       trial(
         2,
-        'feedback',
-        ['GRN', 'BLU', 'NUL'],
-        ['NUL', 'BLU', 'RED'],
-        ['KAI A', 'VEK C RED'],
-      ),
-      trial(
-        3,
-        'feedback',
-        ['BLU', 'RED', 'GRN'],
-        ['GRN', 'NUL', 'BLU'],
-        ['ZOR A C', 'KAI B'],
-      ),
-      trial(
-        4,
-        'feedback',
-        ['NUL', 'GRN', 'RED'],
-        ['RED', 'GRN', 'BLU'],
-        ['ZOR A C', 'VEK C BLU'],
-      ),
-      trial(
-        5,
         'transfer',
         ['RED', 'BLU', 'GRN'],
         ['GRN', 'NUL', 'RED'],
@@ -153,32 +140,11 @@ export const M17_FORMS: Record<FormId, SyntaxForm> = {
         1,
         'feedback',
         ['BLU', 'RED', 'NUL'],
-        ['NUL', 'RED', 'GRN'],
-        ['ZOR A C', 'VEK C GRN'],
+        ['GRN', 'NUL', 'RED'],
+        ['ZOR B C', 'VEK A GRN'],
       ),
       trial(
         2,
-        'feedback',
-        ['NUL', 'GRN', 'BLU'],
-        ['RED', 'GRN', 'NUL'],
-        ['KAI C', 'VEK A RED'],
-      ),
-      trial(
-        3,
-        'feedback',
-        ['GRN', 'BLU', 'RED'],
-        ['RED', 'NUL', 'GRN'],
-        ['ZOR A C', 'KAI B'],
-      ),
-      trial(
-        4,
-        'feedback',
-        ['BLU', 'NUL', 'GRN'],
-        ['GRN', 'RED', 'BLU'],
-        ['ZOR A C', 'VEK B RED'],
-      ),
-      trial(
-        5,
         'transfer',
         ['GRN', 'RED', 'BLU'],
         ['BLU', 'NUL', 'GRN'],

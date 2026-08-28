@@ -225,17 +225,17 @@ test('pilot route visual capture — diagnostics laboratory', async ({
     yFirst: false,
   });
 
-  // 12 — laboratory overview.
+  // 12 — laboratory overview (signal display, phase benches, Kai).
   await shot(page, '12-laboratory-overview');
 
   // 13 — Kai's briefing prompt.
-  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 40, y: 44 } });
+  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 0, y: 44 } });
   await shot(page, '13-kai-briefing');
   await selectPromptOption(page, 1);
 
-  // 14 — terminal orientation overlay.
+  // 14 — console orientation overlay.
   await interactAt(page, PILOT.lab.orientation, {
-    approachOffset: { x: 44, y: 0 },
+    approachOffset: { x: 0, y: 44 },
   });
 
   if (await waitIpOpen(page, '__ipTerminalProbe')) {
@@ -244,57 +244,48 @@ test('pilot route visual capture — diagnostics laboratory', async ({
     await page.waitForTimeout(600);
   }
 
-  // 15 — decoder bank (world view, counterbalanced layout).
-  await walkTo(page, 156, 336, { yFirst: true });
+  // 15 — the phase benches (world view, presented order).
+  await walkTo(page, 400, 300, { yFirst: true });
   await shot(page, '15-decoder-bank');
 
-  // 16 — first decoder overlay (whichever module the layout assigned).
-  await interactAt(
-    page,
-    { x: 112, y: 256 },
-    { approachOffset: { x: 44, y: 0 } },
-  );
+  // 16 — phase 1 evidence table (work surface; left without stopping).
+  await interactAt(page, PILOT.lab.evidenceTable, {
+    approachOffset: { x: 0, y: 44 },
+  });
+  await page
+    .waitForFunction(
+      () =>
+        (window as unknown as { __workSurfaceProbe?: { open: boolean } | null })
+          .__workSurfaceProbe?.open === true,
+      undefined,
+      { timeout: 6000 },
+    )
+    .catch(() => undefined);
+  await shot(page, '16-decoder-overlay');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(700);
 
-  if (await waitIpOpen(page, '__ipTerminalProbe')) {
-    await shot(page, '16-decoder-overlay');
-
-    // Leave WITHOUT stopping (the window stays open — fail-forward).
-    const closeClicked = await page.evaluate(() => {
-      const probe = (
-        window as unknown as {
-          __ipTerminalProbe?: {
-            buttons: { id: string; x: number; y: number }[];
-          } | null;
-        }
-      ).__ipTerminalProbe;
-
-      return probe?.buttons.find((b) => b.id === 'close') ?? null;
-    });
-
-    if (closeClicked !== null) {
-      await page.keyboard.press('Escape');
-    }
-
-    await page.waitForTimeout(700);
-  }
-
-  // 17 — conduit lattice board (M13 physical pipe puzzle).
-  await interactAt(page, PILOT.lab.lattice, {
-    approachOffset: { x: -48, y: 0 },
+  // 17 — phase 3 training rig (terminal surface, demonstration stage).
+  await interactAt(page, PILOT.lab.trainingRig, {
+    approachOffset: { x: 0, y: 44 },
   });
 
-  if (await waitIpOpen(page, '__ipPipeProbe')) {
+  if (await waitIpOpen(page, '__ipTerminalProbe')) {
     await shot(page, '17-lattice-board');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(700);
   }
 
-  // 18 — fault diagnosis console refusal while the lattice is open.
-  await interactAt(page, PILOT.lab.diagnosis, {
-    approachOffset: { x: -48, y: 0 },
+  // 18 — phase 4 diagnostic board (opens with no lattice gate).
+  await interactAt(page, PILOT.lab.diagnosticBoard, {
+    approachOffset: { x: 0, y: 44 },
   });
-  await page.waitForTimeout(800);
-  await shot(page, '18-diagnosis-deferred');
+
+  if (await waitIpOpen(page, '__ipDiagnosisProbe')) {
+    await shot(page, '18-diagnosis-deferred');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(700);
+  }
 });
 
 test('pilot route visual capture — yard, deck, completion', async ({
@@ -317,9 +308,9 @@ test('pilot route visual capture — yard, deck, completion', async ({
     approachOffset: { x: 0, y: 20 },
     yFirst: false,
   });
-  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 40, y: 44 } });
+  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 0, y: 44 } });
   await selectPromptOption(page, 1);
-  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 40, y: 44 } });
+  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 0, y: 44 } });
   await selectPromptOption(page, 1);
   await walkTo(page, 240, 70, { yFirst: false });
   await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {

@@ -599,6 +599,7 @@ export interface DiagnosisProbeLike {
     reject: Rect;
   })[];
   buttons: (Rect & { id: string; label: string; enabled: boolean })[];
+  zones: (Rect & { id: string })[];
   detail_title: string | null;
   detail_lines: string[];
   feedback: string[];
@@ -607,6 +608,7 @@ export interface DiagnosisProbeLike {
   help_open: boolean;
   rules_open: boolean;
   confirm_open: boolean;
+  dragging: boolean;
 }
 
 export async function diagnosisProbe(page: Page): Promise<DiagnosisProbeLike> {

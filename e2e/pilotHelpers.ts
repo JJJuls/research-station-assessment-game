@@ -84,10 +84,13 @@ export const PILOT = {
     eastDoor: { x: 752, y: 272 },
   },
   lab: {
-    kai: { x: 448, y: 304 },
-    orientation: { x: 112, y: 176 },
-    lattice: { x: 672, y: 224 },
-    diagnosis: { x: 672, y: 384 },
+    kai: { x: 592, y: 208 },
+    workstation: { x: 368, y: 211.2 },
+    orientation: { x: 128, y: 208 },
+    evidenceTable: { x: 128, y: 352 },
+    protocolConsole: { x: 288, y: 352 },
+    trainingRig: { x: 512, y: 352 },
+    diagnosticBoard: { x: 672, y: 352 },
     airlock: { x: 384, y: 48 },
     southDoor: { x: 384, y: 496 },
   },
@@ -281,12 +284,23 @@ export async function pilotEventTypes(page: Page): Promise<string[]> {
  * (`*_presented` — an offer or fault was shown) are the only proto_* events
  * tolerated: they carry the required presented timestamp and never a value.
  */
+const SYSTEM_DRIVEN = new Set([
+  'proto_m05_initiation_opportunity_opened',
+  'proto_m05_initiation_window_closed',
+]);
+
 export async function expectNoMeasurementEvents(page: Page) {
   const types = await pilotEventTypes(page);
 
   expect(
     types.filter(
-      (type) => type.startsWith('proto_') && !type.endsWith('_presented'),
+      (type) =>
+        type.startsWith('proto_') &&
+        !type.endsWith('_presented') &&
+        // System-driven registrations (a silently presented window opening
+        // and censoring on departure, input_mode 'system') are not
+        // participant acts; the bare route must emit no participant act.
+        !SYSTEM_DRIVEN.has(type),
     ),
   ).toEqual([]);
 }
@@ -371,18 +385,14 @@ export async function concourseToLabBriefed(page: Page) {
     approachOffset: { x: 0, y: 20 },
     yFirst: false,
   });
-  await openPromptAt(page, PILOT.lab.kai, {
-    approachOffset: { x: 40, y: 44 },
-  });
+  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 0, y: 44 } });
   await selectPromptOption(page, 1);
   await expectStage(page, 'lab_work');
 }
 
 /** Kai "done" (→ exterior_briefing), airlock → Yard, Noor "Ready" (→ exterior_work). */
 export async function labToYardBriefed(page: Page) {
-  await openPromptAt(page, PILOT.lab.kai, {
-    approachOffset: { x: 40, y: 44 },
-  });
+  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 0, y: 44 } });
   await selectPromptOption(page, 1);
   await expectStage(page, 'exterior_briefing');
   await walkTo(page, 240, 70, { yFirst: false });

@@ -31,16 +31,24 @@ export const WORKSHOP_STATIONS = {
   supplyC: { x: 8 * TILE, y: 3 * TILE },
 } as const;
 
-/** Laboratory workstations + Kai. */
+/**
+ * Laboratory — the signal-analysis incident (Unit 3). Placement rule
+ * (D-V2-1 lesson): every approach point (44 px off a station) must have
+ * no other station nearer than the station itself, even ±12 px, and the
+ * walking columns stay clear of the wall block (x 288-447, y 128-159).
+ * Wall display + workstation on the top band, Kai at the briefing desk
+ * top-right, the orientation console top-left, the four phase benches
+ * on one row (y = 11 tiles) in presented order.
+ */
 export const LAB_STATIONS = {
-  orientation: { x: 3.5 * TILE, y: 5.5 * TILE },
-  decoder1: { x: 3.5 * TILE, y: 8 * TILE },
-  decoder2: { x: 3.5 * TILE, y: 10.5 * TILE },
-  decoder3: { x: 3.5 * TILE, y: 13 * TILE },
-  decoder4: { x: 7 * TILE, y: 13 * TILE },
-  lattice: { x: 21 * TILE, y: 7 * TILE },
-  diagnosis: { x: 21 * TILE, y: 12 * TILE },
-  kai: { x: 14 * TILE, y: 9.5 * TILE },
+  display: { x: 11.5 * TILE, y: 3.7 * TILE },
+  workstation: { x: 11.5 * TILE, y: 6.6 * TILE },
+  orientation: { x: 4 * TILE, y: 6.5 * TILE },
+  kai: { x: 18.5 * TILE, y: 6.5 * TILE },
+  evidenceTable: { x: 4 * TILE, y: 11 * TILE },
+  protocolConsole: { x: 9 * TILE, y: 11 * TILE },
+  trainingRig: { x: 16 * TILE, y: 11 * TILE },
+  diagnosticBoard: { x: 21 * TILE, y: 11 * TILE },
 } as const;
 
 /** Exterior yard work sites + Noor. */

@@ -309,27 +309,16 @@ test('information processing lab visual capture — protocol update and syntax t
   await page.keyboard.press('Escape');
   await waitTerminalOpen(page, false);
 
-  // 22 — M17 early feedback trial (after submission); 23 — transfer trial.
+  // 22 — M17 practice case (after submission, feedback shown); 23 — the
+  // changed transfer case (no corrective feedback).
   await walkAndUseStation(page, 'm17');
   await waitTerminalOpen(page, true);
   await clickTerminalButton(page, 'READY');
-  await typeCommand(page, 'ZOR A C');
-  await composeByClick(page, ['VEK', 'B', 'GRN']);
+  await typeCommand(page, 'ZOR A B');
+  await composeByClick(page, ['VEK', 'C', 'GRN']);
   await waitBufferLength(page, 2);
   await clickTerminalButton(page, 'submit');
   await shot(page, '22-m17-early-feedback-trial');
-
-  for (const pair of [
-    ['KAI A', 'VEK C RED'],
-    ['ZOR A C', 'KAI B'],
-    ['ZOR A C', 'VEK C BLU'],
-  ]) {
-    await clickTerminalButton(page, 'NEXT');
-    await typeCommand(page, pair[0]);
-    await typeCommand(page, pair[1]);
-    await waitBufferLength(page, 2);
-    await clickTerminalButton(page, 'submit');
-  }
 
   await clickTerminalButton(page, 'NEXT');
   await typeCommand(page, 'ZOR A C');

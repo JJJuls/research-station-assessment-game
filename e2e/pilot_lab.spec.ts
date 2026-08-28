@@ -1,28 +1,25 @@
 /**
- * Pilot route — Diagnostics & Signal Laboratory (Unit 4).
+ * Pilot route — Diagnostics Laboratory: the signal-analysis incident
+ * (evidence-led pilot v2, Unit 3).
  *
- * Verifies the six information-processing workstations ON THE PARTICIPANT
- * ROUTE (real navigation from the Dock; no developer scene boots, so the
- * sessions stay uncontaminated):
+ * Verifies the laboratory ON THE PARTICIPANT ROUTE (real navigation from
+ * the Dock; no developer scene boots, so the sessions stay uncontaminated):
  *
- * 1. Orientation + the counterbalanced decoder bank: the four analysis
- *    terminals open exactly the module the session layout assigned to their
- *    bank position, the layout is exported (`pilot_decoder_layout` + a
- *    per-record control note), the four decoders present four different
- *    task surfaces, modal ownership holds while an overlay is open, and no
- *    participant-visible surface carries an M/proto/dev identifier.
- * 2. M13 lattice ↔ M18 console sequencing: the console defers ONLY while
- *    the lattice window is open (never a performance gate), explicit
- *    two-step stops close windows as participant_absent, and stopped
- *    stations never block the route (fail-forward through Kai + airlock).
- * 3. M18 independence: a never-opened lattice leads to the identical
- *    console (`prior_m13_window_status` is context only), and using the
- *    console leaves the untouched lattice pending.
- *
- * All checks read DEV probes (`__ipTerminalProbe`, `__ipPipeProbe`,
- * `__ipDiagnosisProbe`, `__ipModules`, `__pilotProbe`, `__pilotCoverage`,
- * `__ipLabFeedback`) and the research event buffer; input is real keyboard
- * and pointer traffic.
+ * 1. Arrival + case brief: Kai's briefing, the workstation's reviewable
+ *    brief, the wall display's phase indicator and Noor's intercom line;
+ *    the console orientation; the four phase benches present four
+ *    DIFFERENT surfaces (evidence table / protocol console / training rig
+ *    / diagnostic board); modal ownership holds while any surface is open;
+ *    no participant-visible surface carries an M/proto/dev identifier;
+ *    entered-and-left windows stay open (never auto-failed).
+ * 2. Explicit stops close windows as participant_absent (missing, never
+ *    low); a stopped phase never blocks the next bench or the route
+ *    (fail-forward through Kai + airlock); the diagnostic board never
+ *    waits for the lattice bench (which lives in the workshop).
+ * 3. M18 independence on the route: the board opens to the identical
+ *    entry snapshot whether the lattice bench was never opened or was
+ *    explicitly exited in the workshop; using the board leaves M13
+ *    untouched; no M13 event is ever emitted from the laboratory.
  */
 import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
@@ -38,7 +35,6 @@ import {
   dragChipToBin,
   expectProvisionalOnly,
   ipValidity,
-  pipeProbe,
   terminalProbe,
   typeCommand,
   waitDiagnosisOpen,
@@ -52,7 +48,7 @@ import {
 } from './journey';
 import {
   bootPilot,
-  concourseToWorkshop,
+  expectStage,
   hold,
   interactAt,
   openPromptAt,
@@ -61,77 +57,40 @@ import {
   pilotEventTypes,
   pilotProbe,
   press,
+  routeToLabWork,
+  routeToWorkshopWork,
   useDoor,
-  valeHandover,
   walkTo,
-  workshopSignOff,
   workshopToConcourse,
 } from './pilotHelpers';
 
-/** Lab workstation coordinates (src/pilot/zoneSites.ts LAB_STATIONS). */
-const LAB = {
-  orientation: { x: 112, y: 176 },
-  bank: [
-    { x: 112, y: 256 },
-    { x: 112, y: 336 },
-    { x: 112, y: 416 },
-    { x: 224, y: 416 },
-  ],
-  lattice: { x: 672, y: 224 },
-  diagnosis: { x: 672, y: 384 },
-} as const;
+/** Benches are approached from below (their approach points are uncontested). */
+const BELOW = { x: 0, y: 44 } as const;
 
-/** Stand east of the west-bank stations, west of the conduit-bay ones. */
-const WEST = { x: 44, y: 0 };
-const EAST = { x: -48, y: 0 };
-
-const DECODER_OPPORTUNITY: Record<string, string> = {
-  m14: 'proto_m14_packet_saturation',
+const PHASE_OPPORTUNITY: Record<string, string> = {
   m15: 'proto_m15_layered_cipher',
   m16: 'proto_m16_protocol_update',
   m17: 'proto_m17_syntax_acquisition',
+  m18: 'proto_m18_lattice_fault_diagnosis',
 };
 
 /** No participant-visible study identifiers, ever (mission §20). */
 const FORBIDDEN_IDENTIFIERS = /proto_|\bM(0[1-9]|1[0-9]|2[0-6])\b|\bdev\b/i;
 
-/**
- * Real participant navigation (v2 spine): Dock → Concourse (Vale's
- * handover beats) → Records Workshop (board sign-off, no records work —
- * fail-forward) → Laboratory → Kai's briefing (stage lab_work).
- */
-async function enterLab(page: Page, tag: string) {
-  await bootPilot(page, tag);
-  await completeDockTutorial(page, 1);
-  await walkTo(page, 96, 60, { yFirst: true });
-  await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
-    approachOffset: { x: 0, y: 20 },
-  });
-  await valeHandover(page);
-  await concourseToWorkshop(page);
-  await workshopSignOff(page);
-  await workshopToConcourse(page);
-  await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
-    approachOffset: { x: 0, y: 20 },
-    yFirst: false,
-  });
-  await openPromptAt(page, PILOT.lab.kai, {
-    approachOffset: { x: 40, y: 44 },
-  });
-  await selectPromptOption(page, 1);
-}
+type ProbeKey =
+  | '__ipTerminalProbe'
+  | '__ipPipeProbe'
+  | '__ipDiagnosisProbe'
+  | '__workSurfaceProbe';
 
-type IpProbeKey = '__ipTerminalProbe' | '__ipPipeProbe' | '__ipDiagnosisProbe';
-
-/** Walks to a workstation and opens its overlay (retrying swallowed keys). */
-async function openIpStation(
+/** Walks to a bench and opens its overlay (retrying swallowed keys). */
+async function openBench(
   page: Page,
   at: { x: number; y: number },
-  offset: { x: number; y: number },
-  probeKey: IpProbeKey,
+  probeKey: ProbeKey,
 ) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await interactAt(page, at, { approachOffset: offset });
+    await interactAt(page, at, { approachOffset: BELOW });
 
     const opened = await page
       .waitForFunction(
@@ -154,7 +113,41 @@ async function openIpStation(
     }
   }
 
-  throw new Error(`station at ${at.x},${at.y} did not open ${probeKey}`);
+  throw new Error(`bench at ${at.x},${at.y} did not open ${probeKey}`);
+}
+
+async function signalDisplay(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          __signalDisplayProbe?: {
+            phases_recorded: string[];
+            next_phase: string | null;
+            indicator: string;
+            intercom: string;
+          } | null;
+        }
+      ).__signalDisplayProbe ?? null,
+  );
+}
+
+async function workSurface(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          __workSurfaceProbe?: {
+            open: boolean;
+            surface_id: string | null;
+            title: string | null;
+            status: string | null;
+            elements: { id: string; label: string; state: string }[];
+            links: { from: string; to: string }[];
+          } | null;
+        }
+      ).__workSurfaceProbe ?? null,
+  );
 }
 
 async function playerX(page: Page): Promise<number> {
@@ -169,14 +162,6 @@ async function playerX(page: Page): Promise<number> {
   }
 
   return x;
-}
-
-async function labFeedback(page: Page): Promise<string | null> {
-  return page.evaluate(
-    () =>
-      (window as unknown as { __ipLabFeedback?: string | null })
-        .__ipLabFeedback ?? null,
-  );
 }
 
 interface PilotEventLike {
@@ -204,53 +189,58 @@ async function itemStatus(page: Page, item: string): Promise<string> {
   return row.status;
 }
 
-test.describe('pilot route — Diagnostics & Signal Laboratory (Unit 4)', () => {
-  test('orientation, counterbalanced decoder bank, four distinct decoder surfaces, modal ownership and no identifier leakage', async ({
+async function enterLab(page: Page, tag: string) {
+  await bootPilot(page, tag, { extra: '&ip_form=A' });
+  await completeDockTutorial(page, 1);
+  await routeToLabWork(page);
+}
+
+test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident (Unit 3)', () => {
+  test('arrival and case brief, orientation, four distinct phase surfaces, modal ownership and no identifier leakage', async ({
     page,
   }) => {
-    test.setTimeout(540_000);
+    test.setTimeout(600_000);
 
     const errors = captureErrors(page);
 
-    await enterLab(page, 'bank');
+    await enterLab(page, 'sig');
 
-    // Stage + guidance: the first unfinished station is the orientation.
+    // Stage + guidance: the first unfinished bench is the orientation; the
+    // wall display points at phase 1 with Noor on the intercom.
     let probe = await pilotProbe(page);
 
     expect(probe?.stage).toBe('lab_work');
-    expect(probe?.beacon?.label).toBe('Terminal Orientation');
+    expect(probe?.beacon?.label).toBe('Console Orientation');
 
-    // Counterbalanced bank layout, exported as a pilot event…
-    const layoutEvents = await eventsByType(page, 'pilot_decoder_layout');
+    let display = await signalDisplay(page);
 
-    expect(layoutEvents.length).toBeGreaterThan(0);
+    expect(display?.phases_recorded).toEqual([]);
+    expect(display?.next_phase).toBe('m15');
+    expect(display?.indicator).toMatch(/PHASE 1 \/ 4/);
+    expect(display?.intercom).toMatch(/^NOOR/);
 
-    const layout = layoutEvents[0].metadata?.layout as string;
-    const bankOrder = layoutEvents[0].metadata?.bank_order as string[];
+    // The workstation's case brief is reviewable and lists the four phases.
+    await openPromptAt(page, PILOT.lab.workstation, { approachOffset: BELOW });
 
-    expect(['layout_a', 'layout_b']).toContain(layout);
-    expect(bankOrder).toEqual(
-      layout === 'layout_a'
-        ? ['m14', 'm15', 'm16', 'm17']
-        : ['m17', 'm16', 'm15', 'm14'],
+    const brief = await page.evaluate(
+      () =>
+        (window as unknown as { __lastPromptBody?: string | null })
+          .__lastPromptBody ?? '',
     );
 
-    // …and as a control note on each decoder's register record.
-    for (const [position, moduleId] of bankOrder.entries()) {
-      const validity = await ipValidity(page, DECODER_OPPORTUNITY[moduleId]);
-
-      expect(validity.prior_exposure).toContain(
-        `control:decoder_layout=${layout};bank_position=${position + 1}`,
-      );
-    }
+    expect(brief).toMatch(/SIGNAL ANALYSIS/);
+    expect(brief).toMatch(/Evidence Table/);
+    expect(brief).toMatch(/Diagnostic Board/);
+    expect(brief).not.toMatch(FORBIDDEN_IDENTIFIERS);
+    await selectPromptOption(page, 1);
+    await page.waitForTimeout(300);
 
     // Orientation: pointer drag, pointer click-composition, typed command.
-    await openIpStation(page, LAB.orientation, WEST, '__ipTerminalProbe');
+    await openBench(page, PILOT.lab.orientation, '__ipTerminalProbe');
 
     let terminal = await terminalProbe(page);
 
     expect(terminal.task).toBe('tutorial');
-
     await dragChipToBin(page, 'T1', 'ARCHIVE');
     await composeByClick(page, ['ROUTE', 'T2', 'RELAY']);
     await typeCommand(page, 'ROUTE T3 ARCHIVE');
@@ -263,48 +253,69 @@ test.describe('pilot route — Diagnostics & Signal Laboratory (Unit 4)', () => 
     await page.keyboard.press('Escape');
     await waitTerminalOpen(page, false);
 
-    // Guidance moves on once the orientation is complete.
+    // Guidance moves on to phase 1.
     probe = await pilotProbe(page);
-    expect(probe?.beacon?.label).toBe('Conduit Lattice Bench');
+    expect(probe?.beacon?.label).toBe('Evidence Table');
 
-    // Each bank position opens exactly the module the layout assigned to
-    // it; the four decoders present four different task surfaces.
-    const surfaces: string[] = [];
     const visibleText: string[] = [];
 
-    for (const [position, moduleId] of bankOrder.entries()) {
-      await openIpStation(page, LAB.bank[position], WEST, '__ipTerminalProbe');
+    // Phase 1 — evidence table (work surface): distinct surface, modal.
+    await openBench(page, PILOT.lab.evidenceTable, '__workSurfaceProbe');
+
+    const table = (await workSurface(page))!;
+
+    expect(table.surface_id).toBe('m15_evidence_table');
+    expect(
+      table.elements.filter((e) => e.id.startsWith('source_')),
+    ).toHaveLength(4);
+    expect(table.elements.filter((e) => e.id.startsWith('node_'))).toHaveLength(
+      5,
+    );
+    visibleText.push(
+      table.title ?? '',
+      table.status ?? '',
+      ...table.elements.map((e) => e.label),
+    );
+
+    // Modal ownership: the paused host neither moves nor opens the map.
+    const before = await playerX(page);
+
+    await hold(page, 'ArrowRight', 350);
+    expect(Math.abs((await playerX(page)) - before)).toBeLessThan(2);
+    await press(page, 'm');
+    expect(
+      await page.evaluate(
+        () =>
+          (window as unknown as { __pilotMapProbe?: { open: boolean } | null })
+            .__pilotMapProbe?.open ?? false,
+      ),
+    ).toBe(false);
+    await press(page, 'Escape');
+    await page.waitForFunction(
+      () =>
+        (window as unknown as { __workSurfaceProbe?: { open: boolean } | null })
+          .__workSurfaceProbe?.open !== true,
+      undefined,
+      { timeout: 8000 },
+    );
+
+    // Phases 2 and 3 — terminal surfaces with different task contracts.
+    const surfaces: string[] = [];
+
+    for (const [at, task] of [
+      [PILOT.lab.protocolConsole, 'm16'],
+      [PILOT.lab.trainingRig, 'm17'],
+    ] as const) {
+      await openBench(page, at, '__ipTerminalProbe');
 
       const decoder = await terminalProbe(page);
 
-      expect(decoder.task).toBe(moduleId);
-
-      if (position === 0) {
-        // Modal ownership: the paused host neither moves nor opens the map.
-        const before = await playerX(page);
-
-        await hold(page, 'ArrowRight', 350);
-        expect(Math.abs((await playerX(page)) - before)).toBeLessThan(2);
-        await press(page, 'm');
-
-        const mapOpen = await page.evaluate(
-          () =>
-            (
-              window as unknown as {
-                __pilotMapProbe?: { open: boolean } | null;
-              }
-            ).__pilotMapProbe?.open ?? false,
-        );
-
-        expect(mapOpen).toBe(false);
-      }
-
+      expect(decoder.task).toBe(task);
       surfaces.push(
         JSON.stringify({
           chips: decoder.chips.map((chip) => chip.id).sort(),
           bins: decoder.bins.map((bin) => bin.id).sort(),
           palette: decoder.palette.map((entry) => entry.token).sort(),
-          codebook: decoder.codebook.length,
           stage: decoder.stage,
         }),
       );
@@ -316,29 +327,42 @@ test.describe('pilot route — Diagnostics & Signal Laboratory (Unit 4)', () => 
         ...decoder.buttons.map((button) => button.label),
         decoder.line,
       );
-
-      // Leave without stopping: the window stays open (fail-forward).
       await clickTerminalButton(page, 'close');
       await waitTerminalOpen(page, false);
     }
 
-    expect(new Set(surfaces).size).toBe(4);
+    expect(new Set(surfaces).size).toBe(2);
+
+    // Phase 4 — diagnostic board (its own scene, no lattice gate).
+    await openBench(page, PILOT.lab.diagnosticBoard, '__ipDiagnosisProbe');
+
+    const board = await diagnosisProbe(page);
+
+    expect(board.form).toBe('A');
+    expect(board.zones.map((zone) => zone.id).sort()).toEqual([
+      'diagnosis',
+      'open',
+      'ruled_out',
+    ]);
+    expect(board.hypotheses).toHaveLength(4);
+    visibleText.push(...board.detail_lines, ...board.feedback);
+    await clickDiagnosisButton(page, 'close');
+    await waitDiagnosisOpen(page, false);
 
     // Entered-and-left windows stay OPEN — never auto-failed.
-    for (const moduleId of bankOrder) {
-      const validity = await ipValidity(page, DECODER_OPPORTUNITY[moduleId]);
+    for (const id of ['m15', 'm16', 'm17', 'm18']) {
+      const validity = await ipValidity(page, PHASE_OPPORTUNITY[id]);
 
-      expect(validity.entered).toBe(true);
-      expect(validity.completed).toBe(false);
-      expect(validity.invalid_reason).toBeNull();
+      expect(validity.entered, id).toBe(true);
+      expect(validity.completed, id).toBe(false);
+      expect(validity.invalid_reason, id).toBeNull();
+      expect(await itemStatus(page, id.toUpperCase())).toBe('open');
     }
 
-    for (const item of ['M14', 'M15', 'M16', 'M17']) {
-      expect(await itemStatus(page, item)).toBe('open');
-    }
+    display = await signalDisplay(page);
+    expect(display?.phases_recorded).toEqual([]);
 
-    // No participant-visible study identifiers on any surface the
-    // participant actually sees.
+    // No participant-visible study identifiers on any visible surface.
     const kaiBody = await page.evaluate(
       () =>
         (window as unknown as { __lastPromptBody?: string | null })
@@ -351,12 +375,13 @@ test.describe('pilot route — Diagnostics & Signal Laboratory (Unit 4)', () => 
       probe?.objective ?? '',
       probe?.beacon?.label ?? '',
       kaiBody,
+      display?.indicator ?? '',
+      display?.intercom ?? '',
       ...visibleText,
     ]) {
       expect(text).not.toMatch(FORBIDDEN_IDENTIFIERS);
     }
 
-    // Every measurement event stays provisional (no canonical context).
     const events = (await getEvents(page)) as unknown as IpEventLike[];
 
     expectProvisionalOnly(
@@ -365,98 +390,64 @@ test.describe('pilot route — Diagnostics & Signal Laboratory (Unit 4)', () => 
     expectNoRuntimeErrors(errors);
   });
 
-  test('lattice bench and diagnosis console: sequencing without performance gating, explicit stops, fail-forward to the airlock', async ({
+  test('explicit stops record missing (never low), a stopped phase never blocks the next bench, and the route fails forward to the airlock', async ({
     page,
   }) => {
-    test.setTimeout(540_000);
+    test.setTimeout(600_000);
 
     const errors = captureErrors(page);
 
-    await enterLab(page, 'seq');
+    await enterLab(page, 'stop');
 
-    // Lattice open → leave: the M13 window STAYS open and re-enterable.
-    await openIpStation(page, LAB.lattice, EAST, '__ipPipeProbe');
-
-    const pipe = await pipeProbe(page);
-
-    expect(pipe.form).not.toBeNull();
-    await clickPipeButton(page, 'close');
-    await waitPipeOpen(page, false);
-    expect(await itemStatus(page, 'M13')).toBe('open');
-
-    // While the lattice window is open the console defers — sequencing
-    // only, and the refusal is plain guidance, not an error.
-    let refusal: string | null = null;
-
-    for (let attempt = 0; attempt < 3 && refusal === null; attempt += 1) {
-      await interactAt(page, LAB.diagnosis, { approachOffset: EAST });
-      await page.waitForTimeout(700);
-      refusal = await labFeedback(page);
-    }
-
-    expect(refusal).toContain('lattice bench');
-
-    const diagnosisOpen = await page.evaluate(
-      () =>
-        (window as unknown as { __ipDiagnosisProbe?: { open: boolean } | null })
-          .__ipDiagnosisProbe?.open ?? false,
-    );
-
-    expect(diagnosisOpen).toBe(false);
-
-    // The deferred attempt was still logged with the console's OWN window
-    // status (unopened) — station telemetry never borrows M13 state.
-    const stationOpens = (
-      await eventsByType(page, 'pilot_station_opened')
-    ).filter((event) => event.metadata?.station_id === 'diagnosis_console');
-
-    expect(stationOpens.length).toBeGreaterThan(0);
-    expect(stationOpens[stationOpens.length - 1].metadata?.window_status).toBe(
-      'unopened',
-    );
-
-    // Re-enter the lattice, then stop it via the explicit two-step stop.
-    // A confirmed stop shows the closed state IN the overlay (return is a
-    // separate, explicit act — no auto-eject); Escape then leaves.
-    await openIpStation(page, LAB.lattice, EAST, '__ipPipeProbe');
-    await clickPipeButton(page, 'stop');
-    await clickPipeButton(page, 'confirm_stop');
+    // Phase 1 stopped from the evidence table (STOP TASK) → exited/missing.
+    await openBench(page, PILOT.lab.evidenceTable, '__workSurfaceProbe');
+    await press(page, 'q'); // arms
+    await press(page, 'q'); // confirms
+    await page.waitForTimeout(300);
+    expect(
+      (await workSurface(page))?.elements.find((e) => e.id === 'submit')?.label,
+    ).toBe('RECORDED'); // the record view stays visible; nothing auto-ejects
+    await press(page, 'Escape');
     await page.waitForFunction(
       () =>
-        (window as unknown as { __ipPipeProbe?: { closed: boolean } | null })
-          .__ipPipeProbe?.closed === true,
+        (window as unknown as { __workSurfaceProbe?: { open: boolean } | null })
+          .__workSurfaceProbe?.open !== true,
       undefined,
       { timeout: 8000 },
     );
+
+    const m15 = await ipValidity(page, PHASE_OPPORTUNITY.m15);
+
+    expect(m15.entered).toBe(true);
+    expect(m15.invalid_reason).toBe('participant_absent');
+    expect(await itemStatus(page, 'M15')).toBe('missing');
+
+    // The display counts a stopped phase as recorded (neutral), never as low.
+    let display = await signalDisplay(page);
+
+    expect(display?.phases_recorded).toEqual(['m15']);
+    expect(display?.next_phase).toBe('m16');
+
+    // Phase 2 still opens fully — a stopped phase gates nothing — and is
+    // stopped the explicit two-step way (STOP → confirm), then left.
+    await openBench(page, PILOT.lab.protocolConsole, '__ipTerminalProbe');
+    expect((await terminalProbe(page)).task).toBe('m16');
+    await typeCommand(page, 'STOP');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(200);
+    expect((await terminalProbe(page)).closed).toBe(true);
     await page.keyboard.press('Escape');
-    await waitPipeOpen(page, false);
+    await waitTerminalOpen(page, false);
+    expect(await itemStatus(page, 'M16')).toBe('missing');
 
-    const m13 = await ipValidity(page, 'proto_m13_lattice_construction');
-
-    expect(m13.entered).toBe(true);
-    expect(m13.invalid_reason).toBe('participant_absent');
-    // An explicit stop is MISSING data (declined opportunity), never an
-    // invalid record and never a low score (SA-13 missing≠low).
-    expect(await itemStatus(page, 'M13')).toBe('missing');
-
-    // The console now opens fully — an abandoned lattice never gates it,
-    // and the closure state arrives as CONTEXT ONLY on the open event.
-    await openIpStation(page, LAB.diagnosis, EAST, '__ipDiagnosisProbe');
-
-    const diagnosis = await diagnosisProbe(page);
-
-    expect(diagnosis.form).not.toBeNull();
-    expect(diagnosis.panels.length).toBeGreaterThan(0);
-    expect(diagnosis.tests.length).toBeGreaterThan(0);
-    expect(diagnosis.hypotheses.length).toBeGreaterThan(0);
+    // Phase 4 opens with no lattice involved at all (the lattice bench is
+    // in the workshop; the board never waits for it).
+    await openBench(page, PILOT.lab.diagnosticBoard, '__ipDiagnosisProbe');
 
     const opened = await eventsByType(page, 'proto_m18_fault_window_opened');
 
     expect(opened).toHaveLength(1);
-    expect(opened[0].metadata?.prior_m13_window_status).toBe('exited');
-
-    // Stop the console the same explicit way (same stopped-state-then-
-    // explicit-return contract as the lattice board).
+    expect(opened[0].metadata?.prior_m13_window_status).toBe('unopened');
     await clickDiagnosisButton(page, 'stop');
     await clickDiagnosisButton(page, 'confirm_stop');
     await page.waitForFunction(
@@ -472,14 +463,24 @@ test.describe('pilot route — Diagnostics & Signal Laboratory (Unit 4)', () => 
     await page.keyboard.press('Escape');
     await waitDiagnosisOpen(page, false);
 
-    const m18 = await ipValidity(page, 'proto_m18_lattice_fault_diagnosis');
+    const m18 = await ipValidity(page, PHASE_OPPORTUNITY.m18);
 
     expect(m18.invalid_reason).toBe('participant_absent');
     expect(await itemStatus(page, 'M18')).toBe('missing');
 
-    // Fail-forward: stopped stations never block the route.
+    // Never-opened phase 3 stays pending — no value invented.
+    const m17 = await ipValidity(page, PHASE_OPPORTUNITY.m17);
+
+    expect(m17.entered).toBe(false);
+    expect(await itemStatus(page, 'M17')).toBe('pending');
+
+    display = await signalDisplay(page);
+    expect(display?.phases_recorded).toEqual(['m15', 'm16', 'm18']);
+    expect(display?.next_phase).toBe('m17');
+
+    // Fail-forward: stopped phases never block the route.
     await openPromptAt(page, PILOT.lab.kai, {
-      approachOffset: { x: 40, y: 44 },
+      approachOffset: { x: 0, y: 44 },
     });
     await selectPromptOption(page, 1);
     expect((await pilotProbe(page))?.stage).toBe('exterior_briefing');
@@ -493,48 +494,125 @@ test.describe('pilot route — Diagnostics & Signal Laboratory (Unit 4)', () => 
     expectNoRuntimeErrors(errors);
   });
 
-  test('the diagnosis console never requires the lattice: never-opened leads to the identical console and leaves M13 untouched', async ({
-    page,
+  test('M18 independence on the route: never-opened and explicitly-exited lattice histories open the identical board; the board never touches M13', async ({
+    browser,
   }) => {
-    test.setTimeout(480_000);
+    test.setTimeout(900_000);
 
-    const errors = captureErrors(page);
+    const snapshots: Record<string, unknown>[] = [];
+    const contexts: string[] = [];
 
-    await enterLab(page, 'nolat');
+    // History 1 — the lattice bench was never opened.
+    {
+      const context = await browser.newContext();
+      const page = await context.newPage();
 
-    await openIpStation(page, LAB.diagnosis, EAST, '__ipDiagnosisProbe');
+      await enterLab(page, 'h1');
+      await openBench(page, PILOT.lab.diagnosticBoard, '__ipDiagnosisProbe');
 
-    const diagnosis = await diagnosisProbe(page);
+      const opened = await eventsByType(page, 'proto_m18_fault_window_opened');
 
-    expect(diagnosis.form).not.toBeNull();
-    expect(diagnosis.panels.length).toBeGreaterThan(0);
-    expect(diagnosis.hypotheses.length).toBeGreaterThan(0);
+      expect(opened).toHaveLength(1);
+      snapshots.push(
+        opened[0].metadata?.entry_snapshot as Record<string, unknown>,
+      );
+      contexts.push(String(opened[0].metadata?.prior_m13_window_status));
+      await clickDiagnosisButton(page, 'close');
+      await waitDiagnosisOpen(page, false);
 
-    const opened = await eventsByType(page, 'proto_m18_fault_window_opened');
+      const m13 = await ipValidity(page, 'proto_m13_lattice_construction');
 
-    expect(opened).toHaveLength(1);
-    expect(opened[0].metadata?.prior_m13_window_status).toBe('unopened');
+      expect(m13.entered).toBe(false);
+      expect(await itemStatus(page, 'M13')).toBe('pending');
+      expect(
+        (await pilotEventTypes(page)).filter((t) => t.startsWith('proto_m13_')),
+      ).toEqual([]);
+      await context.close();
+    }
 
-    // Leave without stopping: the console window stays open; the untouched
-    // lattice stays pending — M18 use never contaminates M13.
-    await clickDiagnosisButton(page, 'close');
-    await waitDiagnosisOpen(page, false);
+    // History 2 — the lattice bench was opened in the workshop and STOPPED.
+    {
+      const context = await browser.newContext();
+      const page = await context.newPage();
 
-    const m18 = await ipValidity(page, 'proto_m18_lattice_fault_diagnosis');
+      await bootPilot(page, 'h2', { extra: '&ip_form=A' });
+      await completeDockTutorial(page, 1);
+      await routeToWorkshopWork(page);
+      await interactAt(
+        page,
+        { x: 704, y: 416 },
+        { approachOffset: { x: 0, y: -44 } },
+      );
+      await waitPipeOpen(page, true);
+      await clickPipeButton(page, 'stop');
+      await clickPipeButton(page, 'confirm_stop');
+      await page.waitForFunction(
+        () =>
+          (window as unknown as { __ipPipeProbe?: { closed: boolean } | null })
+            .__ipPipeProbe?.closed === true,
+        undefined,
+        { timeout: 8000 },
+      );
+      await page.keyboard.press('Escape');
+      await waitPipeOpen(page, false);
+      expect(await itemStatus(page, 'M13')).toBe('missing');
 
-    expect(m18.entered).toBe(true);
-    expect(m18.invalid_reason).toBeNull();
+      // The restoration shift is already signed in; one more sign-off
+      // releases the workshop toward the laboratory.
+      await openPromptAt(page, PILOT.workshop.board, {
+        approachOffset: { x: 0, y: 44 },
+      });
+      await selectPromptOption(page, 1);
+      await expectStage(page, 'lab_briefing');
+      await workshopToConcourse(page);
+      await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
+        approachOffset: { x: 0, y: 20 },
+        yFirst: false,
+      });
+      await openPromptAt(page, PILOT.lab.kai, {
+        approachOffset: { x: 0, y: 44 },
+      });
+      await selectPromptOption(page, 1);
+      await openBench(page, PILOT.lab.diagnosticBoard, '__ipDiagnosisProbe');
 
-    const m13 = await ipValidity(page, 'proto_m13_lattice_construction');
+      const opened = await eventsByType(page, 'proto_m18_fault_window_opened');
 
-    expect(m13.entered).toBe(false);
-    expect(await itemStatus(page, 'M18')).toBe('open');
-    expect(await itemStatus(page, 'M13')).toBe('pending');
+      expect(opened).toHaveLength(1);
+      snapshots.push(
+        opened[0].metadata?.entry_snapshot as Record<string, unknown>,
+      );
+      contexts.push(String(opened[0].metadata?.prior_m13_window_status));
 
-    // No M13 family event was ever emitted.
-    const types = await pilotEventTypes(page);
+      const board = await diagnosisProbe(page);
 
-    expect(types.filter((t) => t.startsWith('proto_m13_lattice_'))).toEqual([]);
-    expectNoRuntimeErrors(errors);
+      expect(board.panels.every((panel) => !panel.viewed)).toBe(true);
+      expect(board.hypotheses.every((h) => !h.selected && !h.rejected)).toBe(
+        true,
+      );
+      await clickDiagnosisButton(page, 'close');
+      await waitDiagnosisOpen(page, false);
+
+      // Using the board changed nothing on the M13 record and emitted no
+      // M13 event from the laboratory.
+      const m13 = await ipValidity(page, 'proto_m13_lattice_construction');
+
+      expect(m13.invalid_reason).toBe('participant_absent');
+
+      const labEvents = (await getEvents(page)).filter(
+        (e) => (e as { scene?: string }).scene === 'diagnostics_laboratory',
+      );
+
+      expect(
+        labEvents.filter((e) => e.event_type.startsWith('proto_m13_')),
+      ).toEqual([]);
+      await context.close();
+    }
+
+    // The two histories differ ONLY in the route context; the entry
+    // snapshot (form, reference, hypotheses, panels, tests, rules, empty
+    // working state, m13_dependency: none) is byte-identical.
+    expect(contexts).toEqual(['unopened', 'exited']);
+    expect(JSON.stringify(snapshots[0])).toBe(JSON.stringify(snapshots[1]));
+    expect(snapshots[0].m13_dependency).toBe('none');
   });
 });
