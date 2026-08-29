@@ -1,6 +1,6 @@
-# Professional Assessment Pilot V2 — Report (Units 0–4)
+# Professional Assessment Pilot V2 — Report (Units 0–5)
 
-**Status: IN PROGRESS — Unit 4 committed; Units 5–7 not started.** Nothing
+**Status: IN PROGRESS — Unit 5 committed; Units 6–7 not started.** Nothing
 was pushed, merged, tagged, deployed or removed; every commit is local.
 
 ## 1. Branch, base, HEAD
@@ -18,7 +18,7 @@ was pushed, merged, tagged, deployed or removed; every commit is local.
 | --------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `b1a8be5` | fix(game): complete records workshop evidence windows | `src/pilot/windows/{m04Debris,m02CaseWorkspace}.ts`, `src/scenes/{RecordsWorkshopScene,StationConcourseScene}.ts`, `src/informationProcessing/{m13PipeNetwork,ui/PipeBoardScene}.ts`, `e2e/{pilot_episodes_1_2,pilot_records,concourse_interaction_lifecycle,ip_pipe_suite}.spec.ts`, `e2e/{pilotHelpers,ipHelpers}.ts`, one refreshed lifecycle screenshot |
 | `fb161c6` | feat(game): unify signal analysis assessment          | see §5                                                                                                                                                                                                                                                                                                                                                      |
-| (Unit 4)  | feat(game): integrate exterior recovery assessment    | see §11.1                                                                                                                                                                                                                                                                                                                                                   |
+| `7ec425d` | feat(game): integrate exterior recovery assessment    | see §11.1                                                                                                                                                                                                                                                                                                                                                   |
 
 ## 3. D-V2-1 — root cause and fix
 
@@ -722,9 +722,426 @@ merged, tagged, deployed, PR'd, deleted or removed.
 
 ### 11.16 Checkpoint for the next session
 
-Branch `fable-evidence-led-pilot-v2`, HEAD = the Unit 4 commit (see §2),
+Branch `fable-evidence-led-pilot-v2`, HEAD = the Unit 4 commit `7ec425d` (see §2),
 working tree clean. Next: Unit 5 (Return, Revision & Handover — M03(2),
 M07-end, M09-end, M10-end, **M20-end/resume** via the Workshop Return feed
 console using `M20_RESUME_WINDOW_ID` and the open start window, M21, M22,
 M25 questionnaire probe), starting with a base-checkout run of the two
 pre-existing failures above.
+
+## 12. Unit 5 — Return, Revision & Handover (M03(2), M07/M09/M10 end, M20 resume, M21, M22, M25)
+
+### 12.1 Inherited-failure classification (Part A)
+
+Both Unit 4 regression failures were re-run isolated twice at
+`--retries=0 --workers=1` (`PW_DEV_PORT=5321`) before any Unit 5 edit.
+
+| Failure                                                    | Run 1                                                                     | Run 2       | Classification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `magnet_salvage_ip.spec.ts` "recycler rig"                 | ✓ 1.1 min                                                                 | ✓ 42 s      | **Not deterministic.** Passes in isolation; every file on its path (`e2e/magnet_salvage_ip.spec.ts`, `e2e/helpers.ts`, `e2e/journey.ts`, `src/scenes/CoolantYardScene.ts`, `src/gameplay/**`, `src/measurement/**`, `src/fieldActions/**`, `src/world/RoomScene.ts`, `src/systems/**`, both configs) is byte-identical to base `0e1a8aa` (`git diff --stat` empty). The Unit 4 batch failure (`cast never produced proto_m24_pull #5` inside a 40-minute batch) is a load flake on base-identical code. **No fix** (not deterministic).                                                                                                                                                                                                                          |
+| `pilot_visual_capture.spec.ts` "dock, concourse, workshop" | ✘ `door at 48,272 did not reach records_workshop` (`pilotHelpers.ts:275`) | ✘ identical | **Deterministic, spec-driver defect.** Root cause: the capture spec pressed option 1 twice at Vale; since Unit 2 (`7824ab0`) "Understood." chains the voluntary watch/delivery offers as follow-up stages, and prompts confirm on **ENTER only** (`RoomScene.ts:1323`; SPACE does nothing while a prompt is open), so the offer stage stayed open and the avatar could never reach the west door. The participant path is sound (the same door passes in `pilot_route`, `pilot_episodes_1_2`, `concourse_interaction_lifecycle`). **Fixed in the spec only**: the spine's dismissal sequence ("Ask me again later" ×2, then the handover confirmation) now runs before the door; no assertion weakened, no sleep added, no screenshot replaced to hide anything. |
+
+Base execution: the two clean worktrees at `0e1a8aa`
+(`opus-concourse-interaction-hotfix`, `fable-professional-assessment-pilot`)
+have no usable `node_modules` (no `@playwright`, no `vite`) and installing
+is disallowed, so **no base execution was run**; the classification rests
+on the isolated reruns and the byte-identical code-path comparison. The
+capture spec is not claimed pre-existing at base (its Vale step was
+rewritten in Unit 1 and broken by Unit 2's scene change).
+
+### 12.2 Exact changed files
+
+| Area                        | Files                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pure models (Node-testable) | `src/pilot/return/{returnEpisodeModel,m21ManualModel,m22ReportModel,m25HandoffModel}.ts` (new); `src/pilot/exterior/m20AntennaModel.ts` (resume/end phase)                                                                                                                                                                                                                                                                |
+| Window adapters / surfaces  | `src/pilot/windows/returnWindows.ts` (new), `returnSurfaceModels.ts` (new), `reviewClosure.ts` (M03 / M20-resume / M21 / M22 / M25 closures), `exteriorWindows.ts` (mission-log closure on completion; review comment), `m07Calibration.ts` (`presentM07End`, phase metadata, `start_state`), `m09MonitorWatch.ts` (check window ids per phase, `m09Check2Due`), `m10ComponentPromise.ts` (phase metadata, `handed_over`) |
+| Inventory / items           | `src/inventory/m03Reset.ts` (ledger window ids `m03_reset_o1/o2`, occasion + episode fields, ledger raw names, exposure rule, `closeM03AtReview`); `src/gameplay/items.ts` (`relay_unit`)                                                                                                                                                                                                                                 |
+| Scenes / sites / keys       | `src/scenes/RecordsWorkshopScene.ts` (four return stations, surfaces, handover desk + M25 notice, chips, probe), `src/scenes/StationConcourseScene.ts` (neutral Vale/Kai return beats, changed gauge reading, status strip, check-1 mention), `src/pilot/zoneSites.ts`, `src/data/researchInteractions.ts` (four `pilot*` keys)                                                                                           |
+| Tests                       | `e2e/returnHelpers.ts` (new), `e2e/pilot_return_models.spec.ts` (14 pure, new), `e2e/pilot_return.spec.ts` (3 route, new), `e2e/pilot_return_capture.spec.ts` (frames 22–34, new), `e2e/pilot_visual_capture.spec.ts` (Part A driver fix), `e2e/pilot_records.spec.ts` (M03 window-id pin), `e2e/pilot_exterior_models.spec.ts` (M20 resume now implemented)                                                              |
+| Docs                        | `docs/game/rooms/12-workshop-return.md` (new), this report, `docs/verification/screenshots-evidence-led-pilot-v2/22–34*.png`                                                                                                                                                                                                                                                                                              |
+
+Untouched: the workbook, the ledger, `event-schema.md`, `scoring-plan.md`,
+`ScoringManager`, `EventLogger`, `SessionState`, `QualtricsBridge`,
+`DataQualityTracker`, `ResearchRuntime`, `package*.json`, `yardJobs.ts`
+(still an unused no-op host; retirement stays an owner decision).
+
+### 12.3 Route
+
+Sheet 11 row 5 — the ONE purposeful return: Recovery Yard airlock →
+Diagnostics Laboratory (Kai redirects) → Station Concourse (status strip
+`exterior shift logged · return shift open`; Kai beside the desk; the
+gauge chip shows the CHANGED reading `loop 1.4 bar ▼ · bus 26.1 V ▼`) →
+Vale's check-in (`workshop_return`) → Records Workshop return shift. The
+workshop keeps every Unit 2 station and adds four return stations placed
+by the D-V2-1 rule off the y = 272 lane: Station Feed Console (480, 224),
+Relay Bench (192, 384), Shift Report Desk (608, 320), Outbound Handover
+Desk (608, 96). Guided order (beacon only): Press B → Relay Bench → Report
+Desk → Handover Desk → board; the feed console and the calibration bench
+are deliberately never guided (uncommanded resume / natural return) and
+the board copy names neither. Sign-off → `deck_closure`; the core console
+still offers only "Return to the station" before that stage (route test
+2). No Utility/Core closure, completion or Qualtrics return was touched.
+Kai is also an M10 recipient in the laboratory (episode 3, Unit 2
+design): a participant may hand the component over there; the route
+tests withhold it to exercise the return handover.
+
+### 12.4 M03 occasion 2
+
+Press B (existing matched-occasion architecture): three press cycles seed
+the same five residuals in the same slots (`fixed_identical_layout`,
+recorded as `form`); the panel close is the observation. Window ids now
+match the ledger (`m03_reset_o1` / `m03_reset_o2`, with `occasion` and
+`episode_number` on every event); the closure writes the ledger raw names
+(`objects_restored`, `homes_correct` — one marked home — `close_state`)
+beside the surface state. Distinguished: no exposure (batch never run →
+absent at review), insufficient exposure (panel closed < 2000 ms →
+`insufficient_opportunity`, invalid — route test 3), exited untouched
+with sufficient exposure (a valid observation — route test 2), technical
+failure (seed failure, unchanged). One occasion never writes the other
+(pure test 1; route test 1 asserts occasion A untouched by B).
+
+### 12.5 M07 / M09 / M10 start–end linking
+
+Every two-phase event carries `phase`, `start_window_id` and
+`end_window_id` (`phaseMetadata`, one table in `returnEpisodeModel.ts`
+proven against the ledger by pure tests 3–6). M07: `end_presented` on the
+return entry with `start_state` present / missing / completed; a bench
+first opened on the return logs `end_opened_without_start` and closes
+with `start_state: 'missing'` — never a low value (route test 2). M09:
+check 1 / check 2 own `m09_check_1` / `m09_check_2`; check 2 is due at
+`return_hub` and is never closed by a detour; the return reading is a
+changed operational state; Vale's return line is the same neutral "still
+yours" mention as the incident beat (equal exposure; the gauge
+parenthetical was removed). M10: Kai's line is neutral (never asks); the
+handover is an option chosen while carrying; feedback "Received — logged
+with the calibration set." M09 and M10 use different stations, modules
+and events (pure test 6; route tests 1–3 cover complete / omitted in
+every combination).
+
+### 12.6 M20 resume semantics and state histories
+
+The SAME opportunity (`proto_m20_antenna_restoration`) continues at the
+feed console under `m20_antenna_resume` (`M20_RESUME_WINDOW_ID`): the
+window id switches when the resume opportunity is PRESENTED (workshop
+entry at ≥ `return_hub` with a valid start), every later event carries
+`phase: 'end'` + both window ids, and `window_closed` exists only in the
+resume phase. Sequence: valid start → unresolved feed (chip `ALIGNMENT
+PENDING`) → return → console available → resume / delay / inspect / leave
+→ three routine console stages (power → align → lock, timed on the
+surface clock) → completion, or closure at the review as a COMPLETED
+observation (`returned` / `completion` as they stand) whenever the resume
+was presented (a never-presented start still censors, Unit 4 rule). Raw
+(ledger names): `progress_pre_interruption`, `returned`, `resume_latency`
+(presentation → resume act), `useful_resume_actions`, `completion`;
+context: `start_history`, stage lists, `interruption_to_return_ms`,
+console inspections / departures. Histories (pure test 8; route tests
+1–3): valid, exited (`start_not_interrupted`), missing
+(`resume_unavailable` once, no fabricated start, no resume), invalid
+(presented; record stays invalid), technical failure (console offline),
+closed, partial outdoor start (console stages completable, `completion`
+stays false — never manufactured), scene recreation (state re-rendered).
+No M19/M23/M24/M26 outcome is read anywhere on the path.
+
+### 12.7 M21 manual-based repair
+
+Relay bench work surface: a storm-damaged distribution relay unit (plate
+read by INSPECT, posts J1–J4, line selector L1–L3 initially L2), an
+informative BENCH TEST (jumper mismatch / line class mismatch / pass —
+never which post), FIT, SET ASIDE (explicit stop), LEAVE (departure,
+window open). Drawer manual: four concise cross-referenced sections (§1
+identify → §2 jumper rule → §4 variant table; §1 → §3 selector rule),
+each in TEXT and an equivalent DIAGRAM mode; the answer follows from the
+plate code through two rule hops and is stated nowhere. Two matched forms
+(`RELAY 7K/B` → J1 J3 L3; `RELAY 7R/C` → J2 J4 L1). Pointer and keyboard
+converge on the surface's single `onActivate` path (system, keyboard and
+pointer input modes asserted on the live stream). Recorded (ledger names
+first): `reference_sections_used`, `cross_reference_depth` (hops followed
+inside the manual), `reengagement` (manual after a failed test; bench
+reopened unfinished), `correct_rule_application`, `completion`; context:
+section visits, reference follows, mode switches, plate inspections,
+repair actions, invalid actions, revisions (changes after a test), tests,
+time by phase (manual / unit, active only), departures, stop choice,
+output delivery. Nothing infers the construct from opening the manual;
+reading time is context only. The fitted unit is a physical output
+(`relay_unit`): belt full → a recoverable bench bundle (route test 3, belt
+filled outside beforehand).
+
+### 12.8 M22 setback and revision
+
+Shift report desk work surface: assemble ≥ 3 of six fixed subsystem lines
+into four ordered slots (direct assembly, no cards), SUBMIT. The first
+valid submission is RETURNED with one standardised criterion — every line
+must carry its work-order tag from a register that only now opens beside
+the report (visibly changed evidence; identical for every form; not a
+misleading control). ACKNOWLEDGE (comprehension) before editing; attach
+tags; resubmit. Feedback names how many lines still lack a matching tag
+(actionable, never which). Distinguished raw facts: initial action,
+setback presented, setback comprehension, inspection (register opened),
+strategy change (first consistent edit), repeated unchanged action,
+useful revision (`feedback_consistent_edits`, mismatched tags counted
+separately), other edits, progress, `resubmitted`, `recovery_complete`,
+exit (departures; WITHDRAW = explicit stop), technical failure. Closure:
+accepted → completed; withdrawn after the acknowledgement → completed
+observation (recovery false); setback never acknowledged →
+`insufficient_opportunity`; never submitted → censored at review. No
+loop, no random success, no endurance.
+
+### 12.9 M21 / M22 independence
+
+Different opportunity / window ids, families (`proto_m21_manual_` vs
+`proto_m22_report_`), objects (`m21_relay_bench` vs `m22_report_desk`),
+state objects and counters; the pure models never import each other; the
+adapter's M21 block never reads M22 state and vice versa (pure test 11);
+M22 runs to recovery with M21 never entered / exited / set aside (pure
+test 11; route test 2 exits M21 early then completes M22). The handover
+desk offers a neutral equivalent (the notice, no relay unit) when M21 has
+no output.
+
+### 12.10 M25 decision
+
+Workbook: QUESTIONNAIRE-PRIMARY / HYBRID REQUIRED; no in-game probe
+wording is authorised anywhere in the repository (CLAUDE.md forbids
+questionnaire wording in player-facing text; no approved hybrid prompt
+exists; `QualtricsBridge` carries no M25 item). Implemented: the
+**handoff shell only** — a transparent notice at the outbound handover
+desk ("SHIFT QUESTIONNAIRE NOTICE … Nothing is answered here …") with one
+acknowledgement; window `m25_probe_w1` is a presentation record
+(`direct_belief_probe: null`, `administration:
+questionnaire_primary_pending_external`, `in_game_response: null`); no
+locked-command repetition task is hosted; nothing is inferred from M22 /
+M24 / M26. The exact item stays in Qualtrics. Recorded as an open owner
+decision (§12.17).
+
+### 12.11 Event-family isolation
+
+Families `proto_m03_`, `proto_m07_calibration_`, `proto_m09_watch_`,
+`proto_m10_promise_`, `proto_m20_antenna_`, `proto_m21_manual_`,
+`proto_m22_report_`, `proto_m25_probe_` are pairwise disjoint from each
+other, from every Unit 4 family and from the secondary families (pure
+test 14); every Unit 5 event type is unique; every item-owned event
+carries opportunity id, window id, validity status and input mode; no
+`study_item_ids`, `construct_id` or `success` on any event (route test 1).
+`ScoringManager`, `event-schema.md` and `scoring-plan.md` mention no Unit
+5 family (pure test 14). Navigation (`pilot_*`) and the handover tray
+(`pilot_handover_placed`) remain unmapped route telemetry.
+
+### 12.12 Missing / invalid handling
+
+Absent (never opened → `markAbsent` / `participant_absent`), censored
+(entered, unfinished at review; M03 unfinished batch), invalid
+(`insufficient_opportunity`: M03 exposure < 2 s, M22 unacknowledged
+setback; technical failure via the kit), stopped observations (M21 set
+aside, M22 withdrawn, M20 presented-not-resumed at review, M07 unfinished
+at review) are distinct register states; none is a low value (pure tests
+8, 13; route tests 2–3).
+
+### 12.13 Timing (automated; not a human estimate)
+
+Planning target 265 s. Route test 1 (full return shift by real input,
+from the Dock): **item-owned active 91 s** — work surfaces 74 s
+(`active_ms` of the M07 / M20 / M21 / M22 / M25 closures, paused whenever
+a surface is closed), M03 occasion 2 exposure 6 s, M09 check 2 due→read
+11 s; the M10 handover is one prompt option (a few seconds; its window
+spans the whole route by design and is not summed). Wall **287 s** from
+the Dock including the whole Unit 1–4 spine; the return episode alone is
+roughly 150 s of wall time. Route/transition overhead (yard → laboratory
+→ Concourse → workshop, three doors) ≈ 25 s; modal/instruction time
+(Vale, Kai, board, notice prompts) ≈ 15 s. Automation walks faster than a
+person and never pauses to read, so no human duration is claimed; the
+envelope is asserted (≤ 265 s) not the human estimate.
+
+### 12.14 Tests (retries=0, workers=1, `PW_DEV_PORT=5321`/`5322`)
+
+- `lint:tsc` ✓ · production build ✓ (`vite build`, 2.2 s) · scoped ESLint
+  ✓ (autofix for formatting only) · `git diff --check` ✓.
+- Pure: `pilot_return_models.spec.ts` **14/14**; `pilot_exterior_models.spec.ts`
+  **12/12** (test 5 updated: the resume phase now exists; every end field
+  is still null before the return).
+- Route: `pilot_return.spec.ts` **3/3** after the correction round (test 1 the
+  complete shift; test 2 omissions, missing starts, overlays between start
+  and end, core locked, M21 exited then M22 completed, Press B untouched,
+  repeated entry, set-aside; test 3 handover with the gauge omitted,
+  partial antenna start resumed but not completable, insufficient-exposure
+  Press B recorded, held ENTER, belt-full relay unit as a bench bundle,
+  M22 withdrawn, world frozen under a surface). Seven driver defects were
+  found and fixed on the way (all e2e-only): the offer-stage dismissal at
+  Vale, Kai's lab handover option shifting the briefing card, Kai's boxed
+  column (rows 5/11 blocks) and the gauge's contested approach (48 px from
+  the Dock door — a production placement hazard recorded for the owner),
+  the handover column (x = 564 → 576), probe staleness under a paused host
+  (probe now refreshed from surface rebuilds), and the M07 settle
+  re-render (a Unit 2 bench defect: the ADVANCE control stayed
+  "Settling…" until another activation — fixed via the surface clock).
+- Capture: `pilot_return_capture.spec.ts` green (frames 22–34, regenerated after
+  the correction round so 32–34 show the accepted state).
+- Regression scope: 23 spec files, 159 tests, 1.2 h: **150 passed, 9 failed**, every
+  failure diagnosed: (a) ×3 the M03 exposure floor invalidating quick
+  panel closes (`inventory_measurement_isolation` M03, `pilot_records` M03,
+  `pilot_deck` review) — **reverted** in the correction round (exposure is
+  recorded, never a validity marker; the generic Final Core closure
+  handles M03 as before); (b) `pilot_episodes_1_2` episode 1 and (c) the
+  two Unit 5 route tests — the contested gauge approach and the handover
+  column, driver fixes above; (d) `pilot_records` "supply bundles" asserts
+  no `proto_m0*` event on a spine that has emitted the Unit 2 system-driven
+  presentations since `7824ab0` — pre-existing, not in Unit 4's green list,
+  recorded (not silenced); (e) `pilot_route` topology walk — the known
+  intermittent Concourse→Dock door timeout under long batches (Unit 3 §6);
+  (f) `pilot_visual_capture` leg 1 now passes the fixed Vale step and
+  stalls at the M02 overlay under batch load. Targeted rerun after the
+  correction: 49 passed, 5 failed — failing: 6 e2e\pilot_deck.spec.ts:172:7 › review, explici; 27 e2e\pilot_records.spec.ts:650:7 › supply b; 36 e2e\pilot_return_models.spec.ts:372:7 › 8. every M2; 47 e2e\pilot_route.spec.ts:121:7 › six-zone hub-and-loop:; 50 e2e\pilot_visual_capture.spec.ts:117:5 › pilot route visual capture — dock, concourse, workshop (1.9m). Green in the batch: evidence_ledger 11,
+  pilot_coverage 8, pilot_route_model 8, signal_incident_models 10,
+  field_actions_models, pilot_exterior_models 12, pilot_return_models 14,
+  concourse_interaction_lifecycle 3, inventory_foundation,
+  inventory_measurement_isolation (all but M03), field_actions_lab,
+  field_actions_measurement, pilot_lab 3, pilot_signal_incident 2,
+  pilot_yard 3, pilot_exterior_isolation 2, the other pilot_deck / route /
+  records / capture tests.
+- Allowlist: run without `CLAUDE_UNIT_ALLOWLIST`; the commit stages the
+  Unit 5 files by explicit path (§12.2).
+
+### 12.15 Screenshots
+
+`docs/verification/screenshots-evidence-led-pilot-v2/`:
+`22-return-airlock-entry`, `23-station-status-changed`,
+`23b-workshop-return-overview`, `24-m03-occasion-2-workspace`,
+`25-m07-end-opportunity`, `26-m09-gauge-opportunity`,
+`27-m10-handover-opportunity`, `28-m20-feed-console-persisted`,
+`28b-m20-console-stage-in-progress`, `29-m21-manual-inspection`,
+`30-m21-repair-manipulation`, `31-m22-setback`,
+`32-m22-revised-recovered`, `33-m25-questionnaire-handoff`,
+`34-final-objective-utility-deck` (800×600 participant view, real input).
+Inspected at full resolution by the writer: 23, 23b, 28, 29, 31, 33 (and
+23b/31 again after the fixes); all 15 by the visual reviewer. Corrected
+from the first pass: the M22 criterion overflowing the feedback strip
+(short feedback + wrapped strip), the console chip colliding with the
+report-desk proximity labels, the tray chip vs "WORK ORDERS", the bench
+chip vs "STORAGE · ASSEMBLY", the Concourse status strip over the
+incident-desk decor.
+
+### 12.16 Reviews and correction disposition
+
+Two waves of two, read-only. **Correction rounds used: 1 of 1.**
+
+- **Scientific (Opus)** — no scoring/authority breach; ids and families
+  match the ledger and are disjoint; missing/invalid/censored distinct.
+  BLOCKER B1 (M20 `completion` structurally false for a partial outdoor
+  start; refused mast attempts unlogged) — **fixed** in part: `completion`
+  is now `null` while an outdoor stage remains (never false by
+  construction); reopening the outdoor stages after the return and
+  logging a refused attempt are owner decisions (§12.17.1). MAJ A (M22
+  lines named "Mast 04" and cued the uncommanded resume) — **fixed**
+  (line replaced by "Coolant loop — pressure log"). MAJ C (resume window
+  id stamped on unavailable histories) — **fixed** (logged on the start
+  window). MAJ E (`end_presented` after a completed M07) — **fixed**
+  (nothing presented for a completed project). MAJ F (M09 mention
+  asymmetry) — **fixed** (the offer line counts as the check-1 mention).
+  MAJ B (`resume_latency` anchored at workshop entry, confounded with
+  M03/M21/M22 time) and MAJ D (`homes_correct` = `objects_restored` with
+  one home) — owner decisions (§12.17.3–4). Minors fixed: M03 `scene`
+  (`records_workshop`), no fabricated interruption at the review,
+  `M20_RESUME_WINDOW_ID` imported. Minors recorded: `revision_started`
+  ⇔ consistent edits, unequal M22 tag ceiling, M21 reengagement kinds
+  merged into one count (split by event `kind`), M25 acknowledgement is a
+  presentation record.
+- **Gameplay (Opus)** — no blockers. **Fixed**: silent M22 slot
+  activations now give feedback; the belt-full delivery is said; hotkeys
+  R/A and K documented; set-aside / withdraw feedback readable (1.6 s);
+  the deck lock names the Work Order Board; the board is live at
+  `return_hub`; §1 diagram fits the wrap width; the M22 tray no longer
+  names the antenna. **Recorded / owner**: the gauge chip may satisfy
+  "read the gauge" by looking (M09 semantics); the gauge's approach from
+  below is contested by the Dock door (Unit 2 placement — production
+  move is an owner/gameplay decision; drivers approach from above);
+  Press A/B unsigned and sharing the cutter texture; keyboard focus order
+  places FIT / SET ASIDE before the manual and no confirmation on the
+  explicit stops (measurement-relevant — owner); M20 chip vs no M07 chip
+  (unequal cue exposure — owner); the hidden controls legend (foundation);
+  map dismiss-on-any-click (foundation); assemble-note gives no basis for
+  which lines (owner).
+- **Test quality (Sonnet)** — tsc ✓, ESLint ✓; pure proofs 1–14 all
+  COVERED with real state-invariance checks (no vacuous assertion, no
+  window mutation); route proofs COVERED across the three tests; the
+  reviewer ran out of budget before the helper file, so the "drivers use
+  real input" claim rests on the writer's evidence (every driver walks,
+  presses and clicks; the only `window` reads are DEV probes).
+- **Visual (Opus)** — BLOCKER 1 (frame 34's objective named a door the
+  workshop lacks) — **fixed** (`deck_closure` objective now routes via
+  the Concourse east door); BLOCKER 2 (stale 32–34) — **regenerated**.
+  Majors recorded as foundation/asset work for Unit 6: the interaction
+  prompt drawn over the avatar, chip vs prop-label weight, duplicate
+  "INCIDENT DESK" labels and title-card overlaps, gauge salience (text
+  only), setback salience (measurement-relevant — owner), FIT button
+  salience vs BENCH TEST (owner), the 1.2× non-integer upscale, ~14
+  interchangeable bench rectangles, the "Fiel" hotbar clip under modals,
+  dead floor bands. Asset gaps: distinct silhouettes for interactive
+  stations, an analogue gauge face, report state art, door/exit markers
+  incl. a Utility Deck marker, legible manual diagram art, grid item
+  icons, NPC palette match, a speaker portrait for the handover desk, a
+  prompt frame anchored above the target.
+
+### 12.17 Open research-owner decisions (Unit 5)
+
+1. **M25**: no in-game probe wording is authorised — the handoff shell
+   records `direct_belief_probe: null` pending external administration.
+   Authorise (or not) a transparent hybrid probe text and its storage.
+2. **M03 exposure floor**: 2000 ms of residual visibility before a "left
+   as it stands" departure counts as a valid observation; below it the
+   occasion is `insufficient_opportunity`. Confirm the threshold.
+3. **M20 review closure**: a PRESENTED resume opportunity that was never
+   taken closes as a completed observation (`returned: false`) at the
+   review; a start never re-encountered inside still censors.
+   `resume_latency` is measured from the console's availability, not from
+   the interruption (both recorded).
+4. **M07 missing start**: the end opportunity is presented and recorded
+   with `start_state: 'missing'`; whether such records are analysable is
+   an owner call (never low).
+5. **M21 / M22 explicit stops** follow the Unit 4 ruling (explicit stop =
+   completed observation; review = censored); M22's unacknowledged setback
+   is invalid, like the unacknowledged M24/M26 closures.
+6. **M21 definitions**: `reengagement` (first manual consult after a
+   failed test; bench reopened unfinished) and `cross_reference_depth`
+   (reference hops followed inside the manual) are implementation
+   definitions of the ledger names.
+7. **M09 equal reminder**: the check-1 mention rides Vale's incident beat
+   and the check-2 mention the return beat, both the neutral "still yours"
+   line; the mission-log line remains the one directive reminder per
+   check.
+8. **M10 in the laboratory**: Kai already accepts the component in
+   episode 3 (Unit 2 design); the return handover is therefore one of two
+   fulfilment points. Confirm, or restrict the recipient to the return.
+9. `yardJobs.ts` (old ambient M22/M25) remains an unused no-op host —
+   retire in the verification unit or by owner decision.
+10. **M20 partial outdoor start** (scientific B1): the console cannot
+    finish a restoration whose outdoor stage remains; `completion` is
+    now `null` for that history. Options: keep it structurally
+    non-completable, or reopen the outdoor stages after the return (a
+    second exterior trip) and log refused mast attempts.
+11. **M03 `homes_correct`** (scientific D): one marked home makes it equal
+    to `objects_restored`; decide whether the occasion needs ≥ 2 homes.
+12. **Concourse gauge placement** (gameplay 2): the natural approach from
+    below lies 48 px from the Dock door (Unit 2 layout); a mis-press walks
+    the participant out and closes check 1 — move the gauge or the door,
+    or accept and record.
+13. **Gauge chip vs check** (gameplay 1): the live reading chip could let a
+    participant satisfy "read the gauge" by looking without the E read
+    that records check 2; keep the chip (state visibility) or hide the
+    values until read.
+
+### 12.18 Confirmations
+
+No disposition, canonical event, scoring formula, weight, trait label or
+score was created or changed; no assessment completion, Utility/Core
+closure or Qualtrics return was implemented; no questionnaire wording
+appears in `src/` (pure test 14, source + comments); the workbook and the
+ledger are unmodified. Nothing was pushed, merged, tagged, deployed,
+PR'd, deleted or removed.
+
+### 12.19 Checkpoint for Unit 6
+
+Branch `fable-evidence-led-pilot-v2`, HEAD = the Unit 5 commit (see §2),
+working tree clean. Next: **Unit 6 — Utility & Core closure** (sheet 11
+row 6: non-scored finale; Core unlocks only after every required window
+is completed/missing/invalid; explicit review; no early irreversible
+completion), then Unit 7 (verification: full-suite sweep, the two
+pre-existing intermittents, the visual-integration asset gaps above).
+Nothing here implements assessment completion or the Qualtrics return.

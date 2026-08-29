@@ -233,8 +233,9 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     expect(await itemStatus(page, 'M12')).toBe('pending'); // occasion 2 undeclared until the workshop
 
     // Gauge check 1 completes the first watch window.
+    // From ABOVE: the point below the gauge lies 48 px from the Dock door.
     await interactAt(page, CONCOURSE.monitorGauge, {
-      approachOffset: { x: 0, y: 44 },
+      approachOffset: { x: 0, y: -44 },
     });
     await page.waitForTimeout(400);
     types = await pilotEventTypes(page);

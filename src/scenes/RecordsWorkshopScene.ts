@@ -1,19 +1,32 @@
 /**
  * Records Workshop — episodes 2 (Records & Workshop Restoration) and 5
- * (Return, Revision & Handover) of the evidence-led pilot v2 (Unit 2).
+ * (Return, Revision & Handover) of the evidence-led pilot v2 (Units 2, 5).
  *
  * Episode-2 windows (ledger): M02 open case workspace, M03 press occasion 1,
  * M04 sample-cutter debris, M06 dispatch console, M07 calibration bench
  * (start), M11 seal log (secondary), M12 quality packet 2, M13 conduit
- * lattice bench. Episode 5 (Unit 4): M03 occasion 2, M07 end and the
- * return-shift stations. M08 secondary telemetry: the locker stow and the
- * optional filter swap on the board.
+ * lattice bench. Episode 5 (Unit 5, the return shift): M03 occasion 2
+ * (Press B), M07 end (the same bench), M20 resume/end (station feed
+ * console), M21 manual-based repair (relay bench + drawer manual), M22
+ * setback/revision (shift report desk), M25 questionnaire-primary handoff
+ * (notice at the outbound handover desk). M08 secondary telemetry: the
+ * locker stow and the optional filter swap on the board.
  *
  * Every window owns distinct objects, events and validity state; nothing
  * gates on performance; the east door is always open. The Work Order Board
- * is the stage anchor (sign-off only — never a check).
+ * is the stage anchor (sign-off only — never a check). The feed console
+ * and the calibration bench are never guided on the return: both
+ * opportunities must stay uncommanded.
  */
+import Phaser from 'phaser';
+
 import { key } from '../constants';
+import {
+  addInventoryItem,
+  hasInventoryItem,
+  isInventoryFull,
+  removeInventoryItem,
+} from '../gameplay/inventory';
 import { PhysicalManipulationLayer } from '../gameplay/physical';
 import { declareM13Lattice } from '../informationProcessing/m13PipeNetwork';
 import { openIpOverlay } from '../informationProcessing/ui/openIpOverlay';
@@ -42,6 +55,8 @@ import {
 } from '../pilot/pilotRoute';
 import type { PilotNpcBeat } from '../pilot/PilotZoneScene';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
+import { M25_HANDOFF_TEXT } from '../pilot/return/m25HandoffModel';
+import { RETURN_BOARD_BODY } from '../pilot/return/returnEpisodeModel';
 import {
   activeWorkSurface,
   openWorkSurface,
@@ -71,6 +86,7 @@ import {
   declareM07,
   m07State,
   openM07,
+  presentM07End,
 } from '../pilot/windows/m07Calibration';
 import {
   closeM12Surface,
@@ -79,6 +95,34 @@ import {
   openM12,
   resumeM12Surface,
 } from '../pilot/windows/m12QualityControl';
+import {
+  m20FeedConsoleSurfaceModel,
+  m21RelayBenchSurfaceModel,
+  m22ReportDeskSurfaceModel,
+  type ReturnSurfaceHost,
+} from '../pilot/windows/returnSurfaceModels';
+import {
+  declareReturnWindows,
+  handoverTray,
+  m20ConsoleLeave,
+  m20ConsoleOpen,
+  m20ConsolePresent,
+  m20ConsoleStatusLine,
+  m21BenchLeave,
+  m21BenchOpen,
+  m21Present,
+  m21State,
+  m22DeskLeave,
+  m22DeskOpen,
+  m22Present,
+  m22State,
+  m25AcknowledgeNotice,
+  m25PresentNotice,
+  m25State,
+  m25ViewNotice,
+  noteHandoverPlaced,
+  returnProbeSnapshot,
+} from '../pilot/windows/returnWindows';
 import {
   acknowledgeM11Obligation,
   noteM08JobEngaged,
@@ -91,7 +135,19 @@ import {
   m12SurfaceModel,
 } from '../pilot/windows/surfaceModels';
 import { WORKSHOP_STATIONS } from '../pilot/zoneSites';
-import type { InteractionKey, PromptOption, RoomLayout } from '../world';
+import type {
+  InteractionKey,
+  PromptOption,
+  PromptStage,
+  RoomLayout,
+} from '../world';
+
+declare global {
+  interface Window {
+    /** DEV-only, read-only return-shift probe (Unit 5). */
+    __returnProbe?: ReturnType<typeof returnProbeSnapshot> | null;
+  }
+}
 
 const TILE = 32;
 
@@ -123,9 +179,18 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   protected readonly zoneKey = 'records_workshop' as const;
 
   private physical: PhysicalManipulationLayer | null = null;
+  private consoleChip: Phaser.GameObjects.Text | null = null;
+  private benchChip: Phaser.GameObjects.Text | null = null;
+  private deskChip: Phaser.GameObjects.Text | null = null;
+  private trayChip: Phaser.GameObjects.Text | null = null;
 
   constructor() {
     super(key.scene.recordsWorkshop);
+  }
+
+  /** The return shift is live: stage at or after the Concourse check-in. */
+  private returnShift(): boolean {
+    return pilotStageAtOrAfter('return_hub');
   }
 
   protected getLayout(): RoomLayout {
@@ -171,18 +236,40 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     declareM07();
     declareM12('o2');
     declareM13Lattice();
+    declareReturnWindows();
     stampContaminationNotes();
 
     super.create(data);
 
     noteM08JobOffered('stow_supplies');
+
+    // The return shift (Unit 5): the end opportunities are PRESENTED on
+    // entry — M07 end (bench available), M20 resume (feed console with the
+    // persisted start), M21 / M22 surfaces. Never a reminder, never a gate.
+    if (this.returnShift()) {
+      const now = Date.now();
+
+      presentM07End(now);
+      m20ConsolePresent(now);
+      m21Present(now);
+      m22Present(now);
+    }
+
     this.events.on('resume', () => {
       const now = Date.now();
 
       resumeM06Surface(now);
       resumeM12Surface('o2', now);
       this.physical?.syncObjects(this.debrisEntries());
+      this.refreshReturnChips();
     });
+    this.events.once('shutdown', () => {
+      if (typeof window !== 'undefined' && import.meta.env.DEV) {
+        window.__returnProbe = null;
+      }
+    });
+
+    this.refreshReturnChips();
     refreshPilotCoverageProbe();
   }
 
@@ -366,7 +453,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         );
         openWorkSurface(this, {
           surfaceId: 'm07_calibration_bench',
-          model: () => m07SurfaceModel(this.surfaceHost()),
+          model: () => m07SurfaceModel(this.returnSurfaceHost()),
           onClose: () => closeM07Surface(Date.now()),
         });
       },
@@ -444,6 +531,8 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     });
     this.signage(WS.sealLog.x, WS.sealLog.y - 40, 'SEAL LOG');
 
+    this.populateReturnShift();
+
     // ——— Dressing ———
     this.addDecor(3 * TILE, 3.4 * TILE, 'proc-light-pool');
     this.addDecor(14 * TILE, 8.2 * TILE, 'proc-light-pool');
@@ -453,6 +542,386 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     this.addDecor(14.5 * TILE, 4.6 * TILE, 'proc-console-wall');
     this.addDecor(14.5 * TILE, 12.6 * TILE, 'proc-rack-tools');
     this.signage(22.2 * TILE, 7.2 * TILE, 'CONCOURSE  ▶');
+  }
+
+  // ——— Return shift (Unit 5) ———————————————————————————————————————————
+
+  /**
+   * The four return-shift stations exist in every stage (one consistent
+   * world); their windows open only on the return. Placement follows the
+   * D-V2-1 rule (see zoneSites.ts). The feed console sits on the upper
+   * machinery block and shows the PERSISTED antenna state on its chip —
+   * visible state, never a reminder.
+   */
+  private populateReturnShift(): void {
+    const S = WORKSHOP_STATIONS;
+
+    // ——— M20 station feed console ———
+    this.addStation({
+      interactionKey: 'pilotFeedConsole',
+      label: 'Station Feed Console',
+      texture: 'proc-console-wall',
+      x: S.feedConsole.x,
+      y: S.feedConsole.y,
+      onPromptOpened: () => {
+        this.logStationOpened('feed_console');
+
+        if (!this.returnShift()) {
+          // Standby before the exterior shift is logged: a plain prompt,
+          // no M20 event (the resume opportunity is not presented yet).
+          return true;
+        }
+
+        const availability = m20ConsoleOpen(Date.now(), 'keyboard');
+
+        if (!availability.available) {
+          return true; // unavailable history: prompt states it, no surface
+        }
+
+        this.openReturnSurface('m20_feed_console', () =>
+          m20FeedConsoleSurfaceModel(this.returnSurfaceHost()),
+        );
+        return false;
+      },
+    });
+    this.signage(S.feedConsole.x, S.feedConsole.y - 40, 'FEED CONSOLE');
+    this.consoleChip = this.chip(S.feedConsole.x, S.feedConsole.y - 62, '');
+
+    // ——— M21 relay bench (drawer manual) ———
+    this.addStation({
+      interactionKey: 'pilotRelayBench',
+      label: 'Relay Bench',
+      texture: 'proc-bench-prep',
+      x: S.relayBench.x,
+      y: S.relayBench.y,
+      onPromptOpened: () => {
+        this.logStationOpened('relay_bench');
+
+        if (!this.returnShift()) {
+          return true;
+        }
+
+        m21BenchOpen(Date.now(), 'keyboard');
+        this.openReturnSurface('m21_relay_bench', () =>
+          m21RelayBenchSurfaceModel(this.returnSurfaceHost()),
+        );
+        return false;
+      },
+    });
+    this.signage(S.relayBench.x, S.relayBench.y - 40, 'RELAY BENCH');
+    this.benchChip = this.chip(S.relayBench.x, S.relayBench.y - 58, '');
+    this.guided(
+      'relay_bench',
+      S.relayBench,
+      'Relay Bench',
+      ['workshop_return'],
+      3,
+      () => m21State().closed,
+    );
+
+    // ——— M22 shift report desk ———
+    this.addStation({
+      interactionKey: 'pilotReportDesk',
+      label: 'Shift Report Desk',
+      texture: 'proc-desk-closure',
+      x: S.reportDesk.x,
+      y: S.reportDesk.y,
+      onPromptOpened: () => {
+        this.logStationOpened('report_desk');
+
+        if (!this.returnShift()) {
+          return true;
+        }
+
+        m22DeskOpen(Date.now(), 'keyboard');
+        this.openReturnSurface('m22_report_desk', () =>
+          m22ReportDeskSurfaceModel(this.returnSurfaceHost()),
+        );
+        return false;
+      },
+    });
+    this.signage(S.reportDesk.x, S.reportDesk.y - 40, 'REPORT DESK');
+    this.deskChip = this.chip(S.reportDesk.x, S.reportDesk.y + 34, '');
+    this.guided(
+      'report_desk',
+      S.reportDesk,
+      'Shift Report Desk',
+      ['workshop_return'],
+      4,
+      () => m22State().phase === 'accepted' || m22State().phase === 'closed',
+    );
+
+    // ——— Outbound handover desk (tray + the M25 questionnaire notice) ———
+    this.addStation({
+      interactionKey: 'pilotHandoverDesk',
+      label: 'Outbound Handover Desk',
+      texture: 'proc-desk-reception',
+      x: S.handoverDesk.x,
+      y: S.handoverDesk.y,
+      onPromptOpened: () => {
+        this.logStationOpened('handover_desk');
+
+        if (this.returnShift()) {
+          m25PresentNotice(Date.now());
+        }
+
+        return true;
+      },
+    });
+    this.signage(S.handoverDesk.x, S.handoverDesk.y - 54, 'OUTBOUND HANDOVER');
+    this.trayChip = this.chip(S.handoverDesk.x, S.handoverDesk.y - 36, '');
+    this.guided(
+      'handover_desk',
+      S.handoverDesk,
+      'Outbound Handover Desk',
+      ['workshop_return'],
+      5,
+      () => m25State().handoff === 'acknowledged',
+    );
+  }
+
+  private openReturnSurface(
+    surfaceId: 'm20_feed_console' | 'm21_relay_bench' | 'm22_report_desk',
+    model: () => ReturnType<typeof m20FeedConsoleSurfaceModel>,
+  ) {
+    openWorkSurface(this, {
+      surfaceId,
+      // The host is paused under the surface, so the DEV probe is
+      // refreshed from every model rebuild (each activation / timer).
+      model: () => {
+        const built = model();
+
+        if (typeof window !== 'undefined' && import.meta.env.DEV) {
+          window.__returnProbe = returnProbeSnapshot();
+        }
+
+        return built;
+      },
+      onClose: () => {
+        const now = Date.now();
+
+        if (surfaceId === 'm20_feed_console') {
+          m20ConsoleLeave(now);
+        } else if (surfaceId === 'm21_relay_bench') {
+          m21BenchLeave(now);
+        } else {
+          m22DeskLeave(now);
+        }
+      },
+      onClosed: () => this.refreshReturnChips(),
+    });
+  }
+
+  private returnSurfaceHost(): ReturnSurfaceHost {
+    return {
+      ...this.surfaceHost(),
+      later: (ms, fn) => {
+        const surface = activeWorkSurface(this);
+
+        if (surface === null) {
+          fn();
+          return;
+        }
+
+        surface.time.delayedCall(ms, () => {
+          fn();
+          activeWorkSurface(this)?.refresh();
+        });
+      },
+      deliverRelayUnit: () => this.deliverRelayUnit(),
+    };
+  }
+
+  /**
+   * The fitted relay unit is a physical output: it goes to the belt, or —
+   * belt full — becomes a recoverable bundle beside the bench (lossless).
+   */
+  private deliverRelayUnit(): 'inventory' | 'bench_bundle' {
+    if (!isInventoryFull() && addInventoryItem('relay_unit')) {
+      return 'inventory';
+    }
+
+    const at = WORKSHOP_STATIONS.relayBench;
+
+    this.bundles.spawn('Relay unit', at.x + 48, at.y + 8, [
+      { definitionId: 'relay_unit', quantity: 1 },
+    ]);
+
+    return 'bench_bundle';
+  }
+
+  /** World chips reflect participant state (persisted across creations). */
+  private refreshReturnChips(): void {
+    const live = this.returnShift();
+
+    this.consoleChip?.setText(
+      live
+        ? m20ConsoleStatusLine().replace('FEED CONSOLE · ', '')
+        : 'standby — exterior shift not logged',
+    );
+
+    const m21 = m21State();
+
+    this.benchChip?.setText(
+      !live
+        ? 'no unit issued'
+        : m21.closed
+          ? m21.fitted
+            ? 'relay unit fitted · released'
+            : 'relay unit set aside'
+          : m21.entered
+            ? 'relay unit on bench · in work'
+            : 'storm-damaged relay unit on bench',
+    );
+
+    const m22 = m22State();
+
+    this.deskChip?.setText(
+      !live
+        ? 'no report due'
+        : m22.phase === 'accepted'
+          ? 'shift report accepted'
+          : m22.phase === 'returned'
+            ? 'shift report RETURNED — revision open'
+            : m22.phase === 'closed'
+              ? 'shift report closed'
+              : 'shift report due',
+    );
+
+    const tray = handoverTray();
+    const placed = [
+      tray.relay_unit ? 'relay unit' : null,
+      tray.relay_coupling ? 'relay coupling' : null,
+    ].filter((entry): entry is string => entry !== null);
+
+    this.trayChip?.setText(
+      !live
+        ? 'tray empty'
+        : placed.length === 0
+          ? 'outbound tray empty'
+          : `outbound: ${placed.join(' · ')}`,
+    );
+
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__returnProbe = returnProbeSnapshot();
+    }
+  }
+
+  private chip(x: number, y: number, text: string): Phaser.GameObjects.Text {
+    return this.add
+      .text(x, y, text, {
+        backgroundColor: '#101820',
+        color: '#dce7f0',
+        font: '10px monospace',
+        padding: { x: 4, y: 2 },
+      })
+      .setOrigin(0.5)
+      .setDepth(3);
+  }
+
+  /** Handover desk prompt body: tray state (operational; no outcomes). */
+  private handoverBody(): string {
+    if (!this.returnShift()) {
+      return 'OUTBOUND HANDOVER\nNothing goes out until the return shift.';
+    }
+
+    const tray = handoverTray();
+
+    return (
+      'OUTBOUND HANDOVER — RETURN SHIFT\n' +
+      `Tray: relay unit ${tray.relay_unit ? 'placed' : '—'} · recovered relay coupling ${tray.relay_coupling ? 'placed' : '—'}.`
+    );
+  }
+
+  private handoverOptions(): PromptOption[] {
+    if (!this.returnShift()) {
+      return [{ label: 'Step away', feedback: '', getEventTypes: () => [] }];
+    }
+
+    const tray = handoverTray();
+    const options: PromptOption[] = [];
+
+    if (!tray.relay_unit && hasInventoryItem('relay_unit')) {
+      options.push({
+        label: 'Place the relay unit in the outbound tray',
+        feedback: 'Relay unit placed in the outbound tray.',
+        getEventTypes: () => [],
+        onSelected: () => {
+          if (
+            removeInventoryItem('relay_unit') &&
+            noteHandoverPlaced('relay_unit')
+          ) {
+            this.logScenarioEvent(
+              'pilotHandoverDesk',
+              'pilot_handover_placed',
+              {
+                metadata: { item: 'relay_unit', zone: this.zoneKey },
+              },
+            );
+            this.refreshReturnChips();
+          }
+        },
+      });
+    }
+
+    if (!tray.relay_coupling && hasInventoryItem('relay_coupling')) {
+      options.push({
+        label: 'Place the recovered relay coupling in the tray',
+        feedback: 'Relay coupling placed in the outbound tray.',
+        getEventTypes: () => [],
+        onSelected: () => {
+          if (
+            removeInventoryItem('relay_coupling') &&
+            noteHandoverPlaced('relay_coupling')
+          ) {
+            this.logScenarioEvent(
+              'pilotHandoverDesk',
+              'pilot_handover_placed',
+              {
+                metadata: { item: 'relay_coupling', zone: this.zoneKey },
+              },
+            );
+            this.refreshReturnChips();
+          }
+        },
+      });
+    }
+
+    options.push({
+      label:
+        m25State().handoff === 'acknowledged'
+          ? 'Read the questionnaire notice again'
+          : 'Read the questionnaire notice',
+      feedback: '',
+      getEventTypes: () => [],
+      onSelected: () => m25ViewNotice(),
+      nextStage: () => this.questionnaireNoticeStage(),
+    });
+    options.push({ label: 'Step away', feedback: '', getEventTypes: () => [] });
+
+    return options;
+  }
+
+  /** M25 handoff shell: the transparent notice with one acknowledgement. */
+  private questionnaireNoticeStage(): PromptStage {
+    const acknowledged = m25State().handoff === 'acknowledged';
+
+    return {
+      body: M25_HANDOFF_TEXT,
+      options: [
+        {
+          label: acknowledged ? 'Close the notice' : 'Noted.',
+          feedback: '',
+          getEventTypes: () => [],
+          onSelected: () => {
+            if (!acknowledged) {
+              m25AcknowledgeNotice(Date.now(), 'keyboard');
+              this.refreshReturnChips();
+            }
+          },
+        },
+      ],
+    };
   }
 
   // ——— helpers ————————————————————————————————————————————————————————
@@ -638,6 +1107,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
   protected onPilotUpdate(): void {
     this.physical?.update();
+
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__returnProbe = returnProbeSnapshot();
+    }
   }
 
   /** SPACE/E with nothing in range: carried debris drops at the chute if in reach, else pickup, else bundle pickup. */
@@ -723,6 +1196,26 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       return this.boardBeat().body;
     }
 
+    if (interactionKey === 'pilotFeedConsole') {
+      // Only reached when no surface opened: standby or an unavailable
+      // start history (operational statement; no reminder, no directive).
+      return this.returnShift()
+        ? m20ConsoleStatusLine()
+        : 'FEED CONSOLE · standby — nothing to align until the exterior shift is logged.';
+    }
+
+    if (interactionKey === 'pilotRelayBench') {
+      return 'RELAY BENCH\nNo unit issued to this bench yet.';
+    }
+
+    if (interactionKey === 'pilotReportDesk') {
+      return 'SHIFT REPORT DESK\nNo report is due before the return shift.';
+    }
+
+    if (interactionKey === 'pilotHandoverDesk') {
+      return this.handoverBody();
+    }
+
     if (interactionKey === 'pilotSealLog') {
       return secondaryState().m11.acknowledged
         ? 'SAMPLE SEAL LOG\nObligation acknowledged: sealed samples only leave through the locker.'
@@ -735,6 +1228,18 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
     if (interactionKey === 'pilotWorkOrderBoard') {
       return this.npcBeatOptions('pilotWorkOrderBoard', this.boardBeat());
+    }
+
+    if (
+      interactionKey === 'pilotFeedConsole' ||
+      interactionKey === 'pilotRelayBench' ||
+      interactionKey === 'pilotReportDesk'
+    ) {
+      return [{ label: 'Step away', feedback: '', getEventTypes: () => [] }];
+    }
+
+    if (interactionKey === 'pilotHandoverDesk') {
+      return this.handoverOptions();
     }
 
     if (interactionKey === 'pilotSealLog') {
@@ -793,9 +1298,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
             ...(secondaryState().m08.filter_swap.engaged ? [] : [optional]),
           ],
         };
+      case 'return_hub':
       case 'workshop_return':
         return {
-          body: 'WORK ORDERS — RETURN SHIFT\nClose out what you can here. Sign the board to close the shift; the Utility Deck review follows.',
+          body: RETURN_BOARD_BODY,
           options: [
             {
               label: 'Sign off — close the shift here.',

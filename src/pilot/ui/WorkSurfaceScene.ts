@@ -247,6 +247,7 @@ export class WorkSurfaceScene extends Phaser.Scene {
         color: COLOR.amber,
         font: '11px monospace',
         align: 'center',
+        wordWrap: { width: PANEL.width - 36 },
       })
       .setOrigin(0.5)
       .setDepth(DEPTH.element);

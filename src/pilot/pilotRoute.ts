@@ -122,7 +122,7 @@ export const PILOT_OBJECTIVES: Record<PilotStage, string> = {
   workshop_return:
     'Finish the shift in the Records Workshop, then sign the board.',
   deck_closure:
-    'Take the east door to the Utility Deck and close the shift at the review panel.',
+    'Go to the Utility Deck — Concourse east door — and close the shift at the review panel.',
   core_stabilise:
     'Bring the Core back online: coolant valve, calibration breaker, distribution bus.',
   complete: 'Shift complete — the Core is stable.',

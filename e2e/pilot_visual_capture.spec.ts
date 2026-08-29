@@ -17,6 +17,7 @@ import {
   bootPilot,
   concourseToDeck,
   concourseToWorkshop,
+  expectStage,
   hold,
   interactAt,
   openPromptAt,
@@ -157,16 +158,26 @@ test('pilot route visual capture — dock, concourse, workshop', async ({
   // 05 — Concourse overview with the route beacon.
   await shot(page, '05-concourse-overview');
 
-  // 06 — Vale's briefing prompt.
+  // 06 — Vale's briefing prompt. Since Unit 2 "Understood." chains the
+  // voluntary watch / delivery offers as follow-up stages; prompts confirm
+  // on ENTER only, so the spine's dismissal sequence (ask me again later ×2)
+  // must run before the west door is reachable (Unit 5 driver fix).
   await openPromptAt(page, PILOT.concourse.vale, {
     approachOffset: { x: 0, y: 40 },
   });
   await shot(page, '06-vale-briefing');
   await selectPromptOption(page, 1);
+  await expectStage(page, 'incident_handover');
+  await page.waitForTimeout(400);
+  await selectPromptOption(page, 3); // watch offer: ask me later
+  await page.waitForTimeout(400);
+  await selectPromptOption(page, 3); // delivery offer: ask me later
+  await page.waitForTimeout(300);
   await openPromptAt(page, PILOT.concourse.vale, {
     approachOffset: { x: 0, y: 40 },
   });
   await selectPromptOption(page, 1);
+  await expectStage(page, 'workshop');
   await concourseToWorkshop(page);
 
   // 07 — a supply bundle in reach (world pickup surface).

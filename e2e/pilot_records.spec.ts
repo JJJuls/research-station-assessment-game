@@ -609,7 +609,9 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
       const m = metadataOf(event);
 
       expect(m.opportunity_id).toBe('proto_m03_reset_a');
-      expect(m.window_id).toBe('m03_reset_window_a');
+      // Ledger window id (Unit 5 aligned the module to sheet 09).
+      expect(m.window_id).toBe('m03_reset_o1');
+      expect(m.occasion).toBe('o1');
       expect(event.object_id).toBe('m03_press_bench_a');
       expect(event.study_item_ids ?? undefined).toBeUndefined();
       expect(event.success ?? undefined).toBeUndefined();

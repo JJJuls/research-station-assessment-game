@@ -20,6 +20,7 @@
  * (open at the review → 'unfulfilled_at_review').
  */
 import { registerMissionLogEntry } from '../pilotRoute';
+import { phaseMetadata } from '../return/returnEpisodeModel';
 import { type InputMode, ItemWindow } from './windowKit';
 
 export const M10_OPPORTUNITY_ID = 'proto_m10_component_promise';
@@ -67,6 +68,23 @@ export function declareM10() {
   m10Window.declare();
 }
 
+/**
+ * Unit 5: every event carries its phase and BOTH ledger window ids
+ * (accept / handover) so the two phases stay traceably linked without
+ * ever sharing a raw event. The handover phase begins at the
+ * standardised interruption (window id switch, Unit 2).
+ */
+function m10Phase() {
+  return phaseMetadata(
+    'M10',
+    m10Window.spec.windowId === 'm10_promise_handover' ? 'end' : 'start',
+  );
+}
+
+function logM10(suffix: string, metadata: Record<string, unknown>) {
+  m10Window.log(suffix, { ...m10Phase(), ...metadata });
+}
+
 export function m10State(): Readonly<M10State> {
   return state;
 }
@@ -97,7 +115,7 @@ export function answerM10Offer(
   state.accepted = accepted;
   state.acceptedAtMs = nowMs;
   m10Window.open(nowMs, { accepted });
-  m10Window.log('offer_answered', { accepted, input_mode: inputMode });
+  logM10('offer_answered', { accepted, input_mode: inputMode });
 
   if (accepted) {
     registerMissionLogEntry({
@@ -134,7 +152,7 @@ export function noteM10InterruptionShown(nowMs: number) {
 
   state.interruptionShownAtMs = nowMs;
   m10Window.spec.windowId = 'm10_promise_handover';
-  m10Window.log('interruption_shown', { input_mode: 'system' });
+  logM10('interruption_shown', { input_mode: 'system' });
 }
 
 export function noteM10InterruptionAcknowledged(
@@ -149,7 +167,7 @@ export function noteM10InterruptionAcknowledged(
   }
 
   state.interruptionAcknowledgedAtMs = nowMs;
-  m10Window.log('interruption_acknowledged', { input_mode: inputMode });
+  logM10('interruption_acknowledged', { input_mode: inputMode });
 }
 
 export function noteM10ReminderLogViewed() {
@@ -162,7 +180,7 @@ export function noteM10ReminderLogViewed() {
 export function noteM10KaiEncounter() {
   if (m10Carrying()) {
     state.kaiEncounters += 1;
-    m10Window.log('recipient_available', {
+    logM10('recipient_available', {
       encounter: state.kaiEncounters,
       input_mode: 'system',
     });
@@ -177,9 +195,11 @@ export function handOverM10(nowMs: number, npc: string, inputMode: InputMode) {
 
   state.handedOverAtMs = nowMs;
   state.handoverNpc = npc;
+  logM10('handed_over', { npc, input_mode: inputMode });
   m10Window.complete(
     nowMs,
     {
+      ...m10Phase(),
       promise_accepted: true,
       promise_fulfilled: true,
       handover_delay_ms: nowMs - (state.acceptedAtMs ?? nowMs),
@@ -218,6 +238,7 @@ export function closeM10AtReview(nowMs: number) {
     m10Window.complete(
       nowMs,
       {
+        ...m10Phase(),
         promise_accepted: true,
         promise_fulfilled: false,
         handover_delay_ms: null,

@@ -72,6 +72,14 @@ export const GAME_ITEM_REGISTRY: readonly GameItemDefinition[] = [
     tags: ['component'],
   },
   {
+    item_id: 'relay_unit',
+    label: 'Relay Unit',
+    icon: 'proc-icon-relay-board',
+    description:
+      'Distribution relay unit released from the workshop relay bench on the return shift. Goes to the outbound handover tray.',
+    tags: ['component'],
+  },
+  {
     item_id: 'flux_calibrator',
     label: 'Flux Calibrator',
     icon: 'proc-icon-flux-calibrator',

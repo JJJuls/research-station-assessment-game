@@ -316,7 +316,7 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
         {
           label: 'Return to the station',
           feedback:
-            'Vale has not signed the shift off yet — the record stays open.',
+            'The shift has not been signed off at the Work Order Board yet — the record stays open.',
           getEventTypes: () => ['pilot_final_core_review_left'],
         },
       ];

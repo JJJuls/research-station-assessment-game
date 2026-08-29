@@ -52,6 +52,7 @@ import {
   closeM09Check,
   declareM09,
   m09Accepted,
+  m09Check2Due,
   m09State,
   noteM09NpcMention,
   openM09Check2,
@@ -101,12 +102,32 @@ import type {
 const TILE = 32;
 const M05_FIX_MS = 2000;
 
+/**
+ * Monitor gauge readings (Unit 5): the monitored loop drifts while the
+ * participant is outside, so the return reading is a visibly CHANGED
+ * operational state — the physical consequence the second check reads.
+ * Values only; no directive, no reminder.
+ */
+const GAUGE_READING = {
+  before: 'loop 1.6 bar · bus 26.8 V · relay LOCK',
+  after: 'loop 1.4 bar ▼ · bus 26.1 V ▼ · relay LOCK',
+} as const;
+
 export class StationConcourseScene extends PilotZoneScene {
   protected readonly roomId = 'station_concourse';
   protected readonly roomInteractionKey: InteractionKey = 'pilotRoute';
   protected readonly zoneKey = 'station_concourse' as const;
 
   private lampFlicker: Phaser.GameObjects.Rectangle | null = null;
+
+  /** The return leg of the route (episode 5) is live. */
+  private returned(): boolean {
+    return pilotStageAtOrAfter('return_hub');
+  }
+
+  private gaugeReading(): string {
+    return this.returned() ? GAUGE_READING.after : GAUGE_READING.before;
+  }
 
   constructor() {
     super(key.scene.stationConcourse);
@@ -287,13 +308,40 @@ export class StationConcourseScene extends PilotZoneScene {
       onPromptOpened: () => {
         this.logStationOpened('monitor_gauge');
         readM09Gauge(Date.now(), 'keyboard');
-        this.showFeedbackMessage(
-          'Gauge read: loop 1.6 bar · bus 26.8 V · relay LOCK.',
-        );
+        this.showFeedbackMessage(`Gauge read: ${this.gaugeReading()}.`);
         return false;
       },
     });
     this.signage(S.monitorGauge.x, S.monitorGauge.y - 40, 'MONITOR');
+    // Live reading beside the gauge (state, never a directive).
+    this.add
+      .text(S.monitorGauge.x, S.monitorGauge.y + 34, this.gaugeReading(), {
+        backgroundColor: '#101820',
+        color: '#dce7f0',
+        font: '10px monospace',
+        padding: { x: 4, y: 2 },
+      })
+      .setOrigin(0.5)
+      .setDepth(3);
+
+    // Station status strip on the wall console: a concise operational
+    // update that changes on the return (no item, no directive).
+    this.add
+      .text(
+        14.4 * TILE,
+        2.6 * TILE,
+        this.returned()
+          ? 'STATION STATUS · exterior shift logged · return shift open'
+          : 'STATION STATUS · storm recovery in progress',
+        {
+          backgroundColor: '#101820',
+          color: '#9fb2c1',
+          font: '10px monospace',
+          padding: { x: 4, y: 2 },
+        },
+      )
+      .setOrigin(0.5)
+      .setDepth(3);
 
     // ——— Desk lamp fault (M05 occasion 1) — never mentioned ———
     this.addStation({
@@ -440,8 +488,14 @@ export class StationConcourseScene extends PilotZoneScene {
       this.lampFlicker?.setVisible(false);
     }
 
-    // Leaving the Concourse passes the first gauge-check milestone.
-    if (m09Accepted() && m09State().checks.check1.closedAtMs === null) {
+    // Leaving the Concourse passes the first gauge-check milestone (the
+    // check-1 window only; check 2 stays due until the deck review so the
+    // return opportunity is never cut short by a detour).
+    if (
+      m09Accepted() &&
+      m09State().checks.check1.closedAtMs === null &&
+      !m09Check2Due()
+    ) {
       closeM09Check('check1', now, 'milestone_passed');
     }
   }
@@ -467,9 +521,10 @@ export class StationConcourseScene extends PilotZoneScene {
     if (interactionKey === 'pilotKai') {
       noteM10KaiEncounter();
 
-      return m10Carrying()
-        ? `Kai: Back inside — do you have the ${M10_COMPONENT_LABEL.toLowerCase()}?`
-        : 'Kai: Good to have you back inside. Vale has the return-shift orders.';
+      // Neutral: Kai never asks for the component (the mission-log line
+      // is the one authorised reminder); the handover is an option the
+      // participant chooses while carrying it.
+      return 'Kai: Back inside — the laboratory is quiet again. Vale has the return-shift orders.';
     }
 
     return undefined;
@@ -489,7 +544,7 @@ export class StationConcourseScene extends PilotZoneScene {
                 {
                   label: `Hand over the ${M10_COMPONENT_LABEL.toLowerCase()}.`,
                   tag: 'm10_handover',
-                  feedback: 'Kai: Got it. Thanks.',
+                  feedback: 'Kai: Received — logged with the calibration set.',
                   onSelected: () => handOverM10(Date.now(), 'kai', 'keyboard'),
                 },
               ]
@@ -524,6 +579,10 @@ export class StationConcourseScene extends PilotZoneScene {
           ],
         };
       case 'incident_handover':
+        // Equal reminder exposure (Unit 5): the same neutral "still yours"
+        // line as the return beat; recorded for check 1 while it is due.
+        noteM09NpcMention('check1');
+
         return {
           body: 'Vale: How is the handover going? Anything you leave open stays open for the shift.',
           options: [
@@ -574,13 +633,12 @@ export class StationConcourseScene extends PilotZoneScene {
           options: [{ label: 'On my way.', tag: 'redirect_lab' }],
         };
       case 'return_hub':
+        // Neutral, equal to the check-1 mention: no gauge named, no
+        // directive — the registered form's one NPC mention per check.
         noteM09NpcMention('check2');
 
         return {
-          body:
-            'Vale: Back inside — good. Anything you accepted earlier is still yours to close' +
-            (m09Accepted() ? ' (the monitor gauge is where it was)' : '') +
-            '. The return shift finishes in the Records Workshop, west door.',
+          body: 'Vale: Back inside — good. The exterior shift is logged. Anything you accepted earlier is still yours to close. The return shift finishes in the Records Workshop, west door.',
           options: [
             {
               label: 'Heading to the workshop.',

@@ -765,6 +765,36 @@ export const researchInteractions = {
     event_type: 'pilot_station_opened',
     score_tags: [],
   },
+  // Return, Revision & Handover stations (pilot v2 Unit 5): route
+  // telemetry only — the item windows they host log their own families.
+  pilotFeedConsole: {
+    object_id: 'pilot_feed_console',
+    label: 'Station Feed Console',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
+  pilotRelayBench: {
+    object_id: 'pilot_relay_bench',
+    label: 'Relay Bench',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
+  pilotReportDesk: {
+    object_id: 'pilot_report_desk',
+    label: 'Shift Report Desk',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
+  pilotHandoverDesk: {
+    object_id: 'pilot_handover_desk',
+    label: 'Outbound Handover Desk',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
   pilotSignalWorkstation: {
     object_id: 'pilot_signal_workstation',
     label: 'Signal Analysis Workstation',

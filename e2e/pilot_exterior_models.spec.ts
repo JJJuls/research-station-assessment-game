@@ -532,7 +532,10 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     expect(snapshot.completion).toBeNull();
     expect(snapshot.resume_latency).toBeNull();
     expect(snapshot.useful_resume_actions).toBeNull();
-    expect(snapshot.resume_window_implemented).toBe(false);
+    // Unit 5 implemented the resume phase; before the return every
+    // end-of-task field is still null (never written by the start phase).
+    expect(snapshot.resume_window_implemented).toBe(true);
+    expect(snapshot.resume_presented).toBe(false);
 
     expect(m20RecordInterruption(state, 900)).toBe(true);
     expect(state.progress_pre_interruption).toBe(2);

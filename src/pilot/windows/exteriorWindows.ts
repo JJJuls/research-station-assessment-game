@@ -58,8 +58,10 @@ import {
   M20_ENTRY_STATE_VERSION,
   M20_FAMILY,
   M20_OPPORTUNITY_ID,
+  M20_RESUME_WINDOW_ID,
   M20_START_WINDOW_ID,
   m20Accept,
+  m20Complete,
   m20CompleteStage,
   m20Depart,
   m20MissionLogText,
@@ -442,7 +444,9 @@ function ensureMissionLog() {
     id: 'm20_antenna_obligation',
     kind: 'project',
     text: () => m20MissionLogText(exteriorEpisode().m20),
-    isClosed: () => !exteriorEpisode().m20.accepted,
+    // Hidden once the restoration is complete (Unit 5) — the record stays.
+    isClosed: () =>
+      !exteriorEpisode().m20.accepted || m20Complete(exteriorEpisode().m20),
     order: 40,
   });
 }
@@ -1139,7 +1143,7 @@ export function endExteriorShift(nowMs: number) {
     exteriorWindows().m20.log('interruption_recorded', {
       progress_pre_interruption: state.m20.progress_pre_interruption,
       outdoor_complete: m20OutdoorComplete(state.m20),
-      resume_window: M20_START_WINDOW_ID.replace('start', 'resume'),
+      resume_window: M20_RESUME_WINDOW_ID,
       input_mode: 'system',
     });
     exteriorWindows().m20.pause(nowMs);
@@ -1149,8 +1153,11 @@ export function endExteriorShift(nowMs: number) {
 /**
  * Review closure (Utility Deck): never-presented windows record absence;
  * still-open windows close as at the shift end with `closed_at_review`.
- * The M20 start window, if still open, is CENSORED here — the resume
- * window (episode 5) is not part of this unit, so no M20 outcome exists.
+ * The M20 window, if still open here, is CENSORED: the return episode's
+ * `closeM20ResumeAtReview` (returnWindows.ts, called first by the review
+ * closure) has already completed the observation whenever the resume
+ * opportunity was PRESENTED; reaching this branch means the participant
+ * never came back to the feed console — no M20 outcome exists.
  */
 export function closeExteriorWindowsAtReview(nowMs: number) {
   const state = exteriorEpisode();
@@ -1175,7 +1182,7 @@ export function closeExteriorWindowsAtReview(nowMs: number) {
   if (w.m20.windowStatus() === 'unopened') {
     w.m20.markAbsent('antenna restoration never accepted before the review');
   } else if (w.m20.isOpen()) {
-    m20RecordInterruption(state.m20, nowMs);
+    // Censored as it stands: no interruption is fabricated at the review.
     w.m20.stop(
       nowMs,
       'closed_at_review',

@@ -18,7 +18,19 @@ export const CONCOURSE_STATIONS = {
   concourseFault: { x: 19 * TILE, y: 13.5 * TILE },
 } as const;
 
-/** Records Workshop — episode 2 (restoration) and episode 5 (return). */
+/**
+ * Records Workshop — episode 2 (restoration) and episode 5 (return).
+ * Return-shift stations (Unit 5) follow the D-V2-1 placement rule: each
+ * 44 px approach point has no other interactable nearer than the station
+ * itself even ±12 px, and its walking column clears the two machinery
+ * blocks (x 416–543 at rows 4–5 and 12–13; the 32 px body needs the
+ * column centre ≤ 384 or ≥ 576 to pass them).
+ *   feed console (480, 224) — approach from the y = 272 lane (480, 268);
+ *   relay bench (192, 384) — approach from below (192, 428);
+ *   report desk (608, 320) — approach from the lane (608, 276);
+ *   handover desk (608, 96) — approach from the west (576, 96) up the
+ *   x = 576 column (clear of the block even with a ±12 px landing error).
+ */
 export const WORKSHOP_STATIONS = {
   workOrderBoard: { x: 20 * TILE, y: 5 * TILE },
   filingDesk: { x: 3 * TILE, y: 8.5 * TILE },
@@ -29,6 +41,10 @@ export const WORKSHOP_STATIONS = {
   supplyA: { x: 3 * TILE, y: 3 * TILE },
   supplyB: { x: 5.5 * TILE, y: 3 * TILE },
   supplyC: { x: 8 * TILE, y: 3 * TILE },
+  feedConsole: { x: 15 * TILE, y: 7 * TILE },
+  relayBench: { x: 6 * TILE, y: 12 * TILE },
+  reportDesk: { x: 19 * TILE, y: 10 * TILE },
+  handoverDesk: { x: 19 * TILE, y: 3 * TILE },
 } as const;
 
 /**

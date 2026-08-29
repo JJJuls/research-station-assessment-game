@@ -30,6 +30,10 @@ import {
   markOpportunityOffered,
   refreshValidityProbe,
 } from '../measurement/validity';
+import {
+  M03_WINDOW_IDS,
+  m03ExposureSufficient,
+} from '../pilot/return/returnEpisodeModel';
 import { researchRuntime } from '../systems';
 import { M03_RESIDUAL_IDS } from './itemDefs';
 import { CONTAINER_IDS } from './model';
@@ -51,6 +55,15 @@ export const M03_ENTRY_STATE_VERSION = 'm03-reset-v1';
 
 /** Identical starting state for both occasions (recorded, not varied). */
 export const M03_STARTING_CONDITION = 'fixed_identical_layout';
+
+/** Ledger occasion tags / episodes per occasion (o1 = episode 2, o2 = episode 5). */
+export const M03_OCCASIONS: Record<
+  M03OccasionId,
+  { occasion: 'o1' | 'o2'; episode: 2 | 5; window_id: string }
+> = {
+  a: { occasion: 'o1', episode: 2, window_id: M03_WINDOW_IDS.a },
+  b: { occasion: 'o2', episode: 5, window_id: M03_WINDOW_IDS.b },
+};
 
 export const M03_CONTAINERS: Record<
   M03OccasionId,
@@ -104,14 +117,16 @@ function logM03(
   metadata: Record<string, unknown> = {},
 ) {
   researchRuntime.logInteraction({
-    scene: 'inventory_lab',
+    scene: 'records_workshop',
     object_id: `m03_press_bench_${occasionId}`,
     episode: 'proto_m03',
     event_type: eventType,
     metadata: {
       measure_id: 'M03',
       opportunity_id: M03_OPPORTUNITY_IDS[occasionId],
-      window_id: `m03_reset_window_${occasionId}`,
+      window_id: M03_OCCASIONS[occasionId].window_id,
+      occasion: M03_OCCASIONS[occasionId].occasion,
+      episode_number: M03_OCCASIONS[occasionId].episode,
       entry_state_version: M03_ENTRY_STATE_VERSION,
       // Not a counterbalance assignment: both occasions share one fixed
       // recorded starting condition (register `form` carries the same).
@@ -292,7 +307,12 @@ export function runM03PressCycle(
 /**
  * Departure/window close: captures the surface state exactly as left.
  * This is the observation — completing WITHOUT tidying is fully valid,
- * so closure marks the opportunity completed either way.
+ * so closure marks the opportunity completed either way, PROVIDED the
+ * residual surface was visible for the minimum exposure
+ * (`M03_MIN_EXPOSURE_MS`, Unit 5): a panel closed sooner is an
+ * insufficient opportunity (invalid — never a low value). Ledger raw
+ * names (`objects_restored`, `homes_correct`, `close_state`) are written
+ * beside the surface state; the store tray is the single marked home.
  */
 export function closeM03Window(
   occasionId: M03OccasionId,
@@ -310,18 +330,36 @@ export function closeM03Window(
   occasion.unsubscribe?.();
   occasion.unsubscribe = null;
 
+  const surface = m03SurfaceState(occasionId);
+  const sufficient = m03ExposureSufficient(occasion.activeMs);
+  const closeState = sufficient ? 'panel_closed' : 'panel_closed_early';
+
   // The panel IS the work surface, so closing the panel is the only
-  // departure path; a single close reason is recorded (no dead variants).
+  // departure path; the close state records whether exposure sufficed.
   logM03(occasionId, 'proto_m03_surface_state_at_departure', {
-    ...m03SurfaceState(occasionId),
+    ...surface,
+    objects_restored: surface.stored_count,
+    homes_correct: surface.stored_count,
+    homes_total: 1,
+    residual_total: M03_RESIDUAL_IDS.length,
+    close_state: closeState,
     move_count: occasion.moves,
     close_reason: 'panel_closed',
+    exposure_ms: occasion.activeMs,
+    exposure_sufficient: sufficient,
     elapsed_active_ms: occasion.activeMs,
   });
   logM03(occasionId, 'proto_m03_window_closed', {
     close_reason: 'panel_closed',
+    close_state: closeState,
+    exposure_sufficient: sufficient,
   });
+
+  // Exposure below the floor is RECORDED (`exposure_sufficient: false`,
+  // `close_state: 'panel_closed_early'`) and never a validity marker: the
+  // foundation contract keeps every departure a completed observation.
   markOpportunityCompleted(M03_OPPORTUNITY_IDS[occasionId]);
+
   refreshValidityProbe();
 
   return true;

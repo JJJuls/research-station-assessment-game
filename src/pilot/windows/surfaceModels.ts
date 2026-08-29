@@ -40,6 +40,7 @@ import {
 } from './m06RoutineDispatch';
 import {
   advanceM07,
+  M07_SETTLE_MS,
   M07_STAGES,
   m07Settling,
   m07State,
@@ -72,6 +73,8 @@ import type { InputMode } from './windowKit';
 
 interface SurfaceHost {
   now: () => number;
+  /** Optional surface-clock scheduler (re-renders after the callback). */
+  later?: (ms: number, fn: () => void) => void;
   /** Closes the surface (host resumes). */
   close: () => void;
   /** Neutral feedback line on the surface. */
@@ -858,6 +861,9 @@ export function m07SurfaceModel(host: SurfaceHost): WorkSurfaceModel {
       : (mode) => {
           if (advanceM07(host.now(), mode)) {
             host.feedback('Stage advancing.');
+            // Re-render once the settle ends (the host is paused under the
+            // surface, so only the surface clock can do this).
+            host.later?.(M07_SETTLE_MS + 60, () => undefined);
           }
         },
   });

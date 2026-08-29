@@ -19,6 +19,12 @@ import { closeM09AtReview } from './m09MonitorWatch';
 import { closeM10AtReview } from './m10ComponentPromise';
 import { m12Windows } from './m12QualityControl';
 import { m14Window } from './m14IncidentDesk';
+import {
+  closeM20ResumeAtReview,
+  closeM21AtReview,
+  closeM22AtReview,
+  closeM25AtReview,
+} from './returnWindows';
 import type { ItemWindow } from './windowKit';
 
 function closeSurfaceWindow(window: ItemWindow, nowMs: number, detail: string) {
@@ -29,7 +35,7 @@ function closeSurfaceWindow(window: ItemWindow, nowMs: number, detail: string) {
   }
 }
 
-/** Closes every episode 1-2 window at the review (idempotent). */
+/** Closes every episode 1-5 window at the review (idempotent). */
 export function closeEpisodeWindowsAtReview(nowMs: number) {
   closeSurfaceWindow(
     m01Window,
@@ -68,8 +74,14 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
     nowMs,
     'incident desk never opened before the review',
   );
+  // Episode 5 (Unit 5): a PRESENTED M20 resume opportunity closes as a
+  // completed observation (returned / completion as they stand) BEFORE
+  // the exterior closure, which censors only a never-resumed start.
+  closeM20ResumeAtReview(nowMs);
   // Episode 4 (Unit 4): M19 / M23 / M24 / M26 close with their honest
-  // dispositions; the M20 START window censors (its resume window is
-  // episode 5 and not implemented) — never a manufactured outcome.
+  // dispositions; a still-open M20 start window censors.
   closeExteriorWindowsAtReview(nowMs);
+  closeM21AtReview(nowMs);
+  closeM22AtReview(nowMs);
+  closeM25AtReview(nowMs);
 }

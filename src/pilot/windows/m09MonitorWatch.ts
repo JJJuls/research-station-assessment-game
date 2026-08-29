@@ -25,6 +25,7 @@
  * when not read), reminder_exposure (log opened / Vale mention while due).
  */
 import { registerMissionLogEntry } from '../pilotRoute';
+import { phaseMetadata } from '../return/returnEpisodeModel';
 import { type InputMode, ItemWindow } from './windowKit';
 
 export const M09_OPPORTUNITY_ID = 'proto_m09_monitor_watch';
@@ -85,6 +86,15 @@ export function declareM09() {
   m09Window.declare();
 }
 
+/**
+ * Unit 5: check events carry their phase (check 1 = start, check 2 = end)
+ * and BOTH ledger window ids, so the two scheduled checks stay traceably
+ * linked while each keeps its own window id and never shares a raw event.
+ */
+function checkPhase(check: M09Check) {
+  return phaseMetadata('M09', check === 'check1' ? 'start' : 'end');
+}
+
 export function m09State(): Readonly<M09State> {
   return state;
 }
@@ -115,12 +125,18 @@ export function answerM09Offer(
   state.acceptedAtMs = nowMs;
 
   if (accepted) {
+    // Phase 1 (check 1) owns the window id from acceptance; phase 2 takes
+    // over at the return milestone (`openM09Check2`).
+    m09Window.spec.windowId = M09_WINDOW_IDS.check1;
     m09Window.open(nowMs, { accepted: true });
-    // Check 1 is due from acceptance (before leaving the Concourse).
+    // Check 1 is due from acceptance (before leaving the Concourse); the
+    // offer line itself is its one NPC mention (equal to check 2's).
     state.checks.check1.dueAtMs = nowMs;
+    state.checks.check1.reminderNpcMentions += 1;
     m09Window.log('check_window_opened', {
       check: 'check1',
       window_id: M09_WINDOW_IDS.check1,
+      ...checkPhase('check1'),
       input_mode: 'system',
     });
     registerMissionLogEntry({
@@ -190,9 +206,11 @@ export function openM09Check2(nowMs: number) {
   }
 
   state.checks.check2.dueAtMs = nowMs;
+  m09Window.spec.windowId = M09_WINDOW_IDS.check2;
   m09Window.log('check_window_opened', {
     check: 'check2',
     window_id: M09_WINDOW_IDS.check2,
+    ...checkPhase('check2'),
     input_mode: 'system',
   });
 }
@@ -234,6 +252,7 @@ export function readM09Gauge(nowMs: number, inputMode: InputMode) {
   m09Window.log('check_completed', {
     check,
     window_id: M09_WINDOW_IDS[check],
+    ...checkPhase(check),
     due_delta_ms: c.readAtMs - (c.dueAtMs ?? c.readAtMs),
     input_mode: inputMode,
   });
@@ -256,6 +275,7 @@ export function closeM09Check(
   m09Window.log('check_window_closed', {
     check,
     window_id: M09_WINDOW_IDS[check],
+    ...checkPhase(check),
     completed: c.readAtMs !== null,
     reason,
     reminder_exposure: {
@@ -336,6 +356,13 @@ export function closeM09AtReview(nowMs: number) {
   }
 }
 
+/** Whether check 2 is currently due (the return opportunity is open). */
+export function m09Check2Due(): boolean {
+  const c = state.checks.check2;
+
+  return m09Accepted() && c.dueAtMs !== null && c.closedAtMs === null;
+}
+
 /** Test-only escape hatch. */
 export function resetM09State() {
   state = {
@@ -346,4 +373,5 @@ export function resetM09State() {
     gaugeReadings: 0,
   };
   m09Window.reset();
+  m09Window.spec.windowId = 'm09_monitor_watch';
 }
