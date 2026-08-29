@@ -98,9 +98,23 @@ export const PILOT = {
     noor: { x: 300.8, y: 428.8 },
     airlock: { x: 384, y: 496 },
   },
+  // Unit 6 (mirrors src/pilot/zoneSites.ts DECK_SITES / CORE_SITES +
+  // PILOT_DOORS): the review panel and systems board on the north wall,
+  // three feeds along the south machinery wall (west → east), the gated
+  // Core door in the north alcove; the chamber's Core over its block.
   deck: {
-    coreConsole: { x: 400, y: 134.4 },
+    reviewPanel: { x: 288, y: 144 },
+    systemsBoard: { x: 176, y: 144 },
+    coolantValve: { x: 160, y: 384 },
+    calibrationBreaker: { x: 400, y: 384 },
+    distributionBus: { x: 640, y: 384 },
+    coreDoor: { x: 400, y: 120 },
     westDoor: { x: 64, y: 272 },
+  },
+  core: {
+    core: { x: 400, y: 297.6 },
+    kai: { x: 592, y: 256 },
+    southDoor: { x: 400, y: 496 },
   },
 } as const;
 
@@ -287,6 +301,10 @@ export async function pilotEventTypes(page: Page): Promise<string[]> {
 const SYSTEM_DRIVEN = new Set([
   'proto_m05_initiation_opportunity_opened',
   'proto_m05_initiation_window_closed',
+  // Unit 5: the feed console logs `resume_unavailable` once (input_mode
+  // 'system') when the workshop is entered on the return without an
+  // antenna start — a system-driven availability record, not an act.
+  'proto_m20_antenna_resume_unavailable',
 ]);
 
 export async function expectNoMeasurementEvents(page: Page) {

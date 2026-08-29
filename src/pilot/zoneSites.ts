@@ -102,8 +102,34 @@ export const YARD_RIG_PAD = {
   maxY: 6.5 * TILE,
 } as const;
 
-/** Utility & Core Deck sites. */
+/**
+ * Utility Deck (Unit 6 — non-scored closure). Placement rule (D-V2-1):
+ * every 44 px approach point has no other interactable nearer than the
+ * station itself (±12 px); the three feeds sit ≥ 100 px apart along the
+ * south machinery wall in their operational order (west → east), the
+ * review panel and systems board on the north-west wall by the entry, the
+ * Core door in the north alcove (PILOT_DOORS: 400, 120).
+ */
 export const DECK_SITES = {
-  coreConsole: { x: 12.5 * TILE, y: 4.2 * TILE },
-  systemsBoard: { x: 18 * TILE, y: 9.5 * TILE },
+  reviewPanel: { x: 9 * TILE, y: 4.5 * TILE },
+  systemsBoard: { x: 5.5 * TILE, y: 4.5 * TILE },
+  coolantValve: { x: 5 * TILE, y: 12 * TILE },
+  calibrationBreaker: { x: 12.5 * TILE, y: 12 * TILE },
+  distributionBus: { x: 20 * TILE, y: 12 * TILE },
+  /** Three-feed manifold indicator on the north wall beside the alcove. */
+  manifold: { x: 17.5 * TILE, y: 4.5 * TILE },
+  /**
+   * Core Chamber door (mirrors PILOT_DOORS.utility_core_deck): inside the
+   * alcove at row 3.75 so the proximity prompt (drawn 72 px above) clears
+   * the objective HUD line.
+   */
+  coreDoor: { x: 12.5 * TILE, y: 3.75 * TILE },
+} as const;
+
+/** Core Chamber (Unit 6): the Core over its central block, Kai's console east. */
+export const CORE_SITES = {
+  core: { x: 12.5 * TILE, y: 9.3 * TILE },
+  coreVisual: { x: 12.5 * TILE, y: 7.4 * TILE },
+  kai: { x: 18.5 * TILE, y: 8 * TILE },
+  statusConsole: { x: 6.5 * TILE, y: 8 * TILE },
 } as const;

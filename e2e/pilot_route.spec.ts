@@ -278,7 +278,7 @@ test.describe('pilot route v2 — topology and guidance (Unit 1)', () => {
     await concourseToDeck(page);
     probe = await pilotProbe(page);
     expect(probe?.zone).toBe('utility_core_deck');
-    expect(probe?.beacon?.label).toBe('Core Synchronisation Console');
+    expect(probe?.beacon?.label).toBe('Shift Review Panel');
     await useDoor(page, PILOT.deck.westDoor, 'station_concourse', {
       approachOffset: { x: 40, y: 0 },
       yFirst: true,
@@ -286,17 +286,20 @@ test.describe('pilot route v2 — topology and guidance (Unit 1)', () => {
     expect(await playerScene(page)).toBe('station_concourse');
     await concourseToDeck(page);
 
-    // The console is live — leave via the explicit return option
-    // (nothing committed, the record stays open).
-    await openPromptAt(page, PILOT.deck.coreConsole, {
+    // The review panel is live — leave via the explicit return option
+    // (nothing committed, the record stays open; Unit 6).
+    await openPromptAt(page, PILOT.deck.reviewPanel, {
       approachOffset: { x: 0, y: 44 },
       yFirst: false,
     });
-    expect(await pilotEventTypes(page)).toContain('pilot_core_console_opened');
+    expect(await pilotEventTypes(page)).toContain(
+      'pilot_closure_review_opened',
+    );
     await selectPromptOption(page, 2);
     await page.waitForTimeout(400);
 
-    // Map from the deck: every zone discovered, current = deck.
+    // Map from the deck: every zone discovered except the Core Chamber
+    // (behind the readiness-gated door, Unit 6), current = deck.
     map = await openMap(page);
     expect(map?.current).toBe('utility_core_deck');
     expect([...(map?.discovered ?? [])].sort()).toEqual(

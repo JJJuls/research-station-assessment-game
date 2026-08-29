@@ -12,6 +12,9 @@ const scene = {
   artifactSurvey: 'artifact_survey',
   boot: 'boot',
   coolantYard: 'coolant_yard',
+  // Evidence-led pilot v2 (Unit 6): the Core Chamber zone behind the
+  // Utility Deck's readiness-gated door, and the physical feed panel overlay.
+  coreChamber: 'core_chamber',
   // Four-zone assessment route (map foundation unit): the participant
   // route's four zone scenes. Keys double as their internal zone keys.
   diagnosticsLaboratory: 'diagnostics_laboratory',
@@ -41,6 +44,7 @@ const scene = {
   menu: 'menu',
   // Professional pilot route: the skippable opening overlay and the station
   // map overlay (M), both modal over a paused pilot zone.
+  pilotFeedPanel: 'pilot_feed_panel',
   pilotOpening: 'pilot_opening',
   pilotStationMap: 'pilot_station_map',
   pilotWorkSurface: 'pilot_work_surface',

@@ -94,6 +94,12 @@ export interface PilotDoorSpec {
   /** Spawn hint the destination reads (its getSpawn data). */
   spawn: string;
   texture?: string;
+  /**
+   * Dynamic gate (Unit 6 Core door): a neutral sealed message keeps the
+   * door shut this time; null opens it. Navigation only — never reads
+   * task performance (RoomDoorConfig.gate).
+   */
+  gate?: () => string | null;
 }
 
 /** A short NPC beat: ≤3 lines of body and ≤4 options. */
@@ -245,6 +251,7 @@ export abstract class PilotZoneScene extends RoomScene {
         roomId: spec.to,
         spawn: spec.spawn,
       },
+      gate: spec.gate,
     };
 
     this.addDoor(config);

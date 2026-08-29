@@ -1,82 +1,125 @@
 /**
- * Utility & Core Deck — pilot zone 4 (professional pilot route).
+ * Utility Deck — pilot zone 6, part 1 (evidence-led pilot v2, Unit 6).
  *
- * The completeness review and the Final Core (Unit 7). No measurement
- * window lives here (scientific review BLOCK-2.3); the console is pure
- * route infrastructure:
+ * The NON-SCORED closure of the shift (decision workbook sheet 11 row 6):
+ * no item window lives here. The deck hosts —
  *
- * - REVIEW: a participant-safe operational summary (counts + the labels
- *   of never-entered reviewable stations only — no item ids, no
- *   validity words, no scores, no evaluative language).
- * - EXPLICIT RETURN: the Concourse door stays open and the console
- *   itself offers "Return to the station" before AND during the
- *   confirmation step — synchronising is never sprung on the
- *   participant and completeness never gates it (fail-forward).
- * - SYNCHRONISE: finalises the yard's ambient windows (departure
- *   codes), calls `closePilotCoverageAtFinalCore()` (censored /
- *   participant_absent / no_opportunity — terminal dispositions, never
- *   success), advances the route to `complete`, and shows a neutral
- *   completion screen.
- * - QUALTRICS RETURN: only when a `return_url` launch parameter is
- *   legitimately configured (`QualtricsBridge.buildReturnUrl` returns
- *   non-null) does the page navigate; otherwise the completion screen
- *   simply states the session is complete. Automated tests perform no
- *   external write (test navigation targets the same origin;
- *   `submitSessionExport` refuses outside launch_mode=test).
+ * - the SHIFT REVIEW PANEL: the explicit, two-step closure of the station
+ *   record (the committed review-closure model of Units 2–5: every open
+ *   window closes with its honest disposition — censored / observation /
+ *   absent — never a low value). This is the readiness step: Core access
+ *   depends on every scheduled opportunity being TERMINAL in the live
+ *   register afterwards, never on task success;
+ * - three PHYSICAL feeds in operational order — coolant feed valve →
+ *   calibration breaker → distribution bus — each a close-up manipulation
+ *   (FeedPanelScene) whose result is visible in the world (station art,
+ *   conduits, manifold lamps, the Core door lamp);
+ * - the CORE CHAMBER door (north alcove): gated on readiness + the three
+ *   feeds; sealed attempts get one concise neutral operational reason;
+ *   bidirectional once open.
+ *
+ * Every event here is `pilot_closure_*` route context (non-scored); the
+ * scene never reads a task outcome, never computes a score, never
+ * performs a Qualtrics return (a future unit) and never calls the
+ * runtime's debug completion (which would touch the summary/scoring path).
  */
 import Phaser from 'phaser';
 
-import { key } from '../constants';
-import { beginManualWorldAction } from '../gameplay/actions';
-import { markOpportunityInvalid } from '../measurement/validity';
+import { Depth, key } from '../constants';
+import { sfxMachineOn, sfxUnavailable } from '../gameplay/audio';
+import { prefersReducedMotion } from '../inventory/ui/theme';
 import {
-  closePilotCoverageAtFinalCore,
-  pilotCompletionSummary,
-  pilotFinalCoreClosed,
-  refreshPilotCoverageProbe,
-} from '../pilot/pilotCoverage';
+  armRecordReview,
+  closeStationRecord,
+  closureFeeds,
+  coreAccessReady,
+  currentRouteReadiness,
+  currentUtilityState,
+  devInspectionActive,
+  disarmRecordReview,
+  installClosureLogSink,
+  noteCoreDoor,
+  noteFeedPanelOpened,
+  noteFeedRefused,
+  refreshClosureProbe,
+  reviewArmed,
+  stationRecordClosed,
+  syncCoreAccess,
+} from '../pilot/closure/closureSession';
 import {
-  advancePilotStage,
+  allFeedsReady,
+  FEED_ORDER,
+  feedAvailability,
+  type FeedId,
+  feedReady,
+  sealedCoreReason,
+} from '../pilot/closure/utilityCoreClosure';
+import { pilotCompletionSummary } from '../pilot/pilotCoverage';
+import {
+  pilotStage,
   pilotStageAtOrAfter,
   registerPilotStation,
 } from '../pilot/pilotRoute';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
-import { closeEpisodeWindowsAtReview } from '../pilot/windows/reviewClosure';
-import {
-  finalizeYardAmbientWindows,
-  YARD_M22_OPPORTUNITY_ID,
-  YARD_M25_OPPORTUNITY_ID,
-  yardM22WindowOpen,
-  yardM25WindowOpen,
-} from '../pilot/yardJobs';
+import { openFeedPanel } from '../pilot/ui/FeedPanelScene';
 import { DECK_SITES } from '../pilot/zoneSites';
-import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 
 const TILE = 32;
 
-/** Delay before the (configured-only) survey return navigation. */
-const RETURN_NAVIGATION_DELAY_MS = 2400;
+const FEED_KEY: Record<FeedId, InteractionKey> = {
+  coolant: 'pilotCoolantValve',
+  calibration: 'pilotCalibrationBreaker',
+  distribution: 'pilotDistributionBus',
+};
+
+const FEED_SITE: Record<FeedId, { x: number; y: number }> = {
+  coolant: DECK_SITES.coolantValve,
+  calibration: DECK_SITES.calibrationBreaker,
+  distribution: DECK_SITES.distributionBus,
+};
+
+const FEED_TEXTURE: Record<FeedId, { before: string; after: string }> = {
+  coolant: {
+    before: 'proc-valve-wheel-closed',
+    after: 'proc-valve-wheel-open',
+  },
+  calibration: {
+    before: 'proc-breaker-bank-off',
+    after: 'proc-breaker-bank-on',
+  },
+  distribution: {
+    before: 'proc-bus-cabinet-open',
+    after: 'proc-bus-cabinet-seated',
+  },
+};
+
+const FEED_STATION_LABEL: Record<FeedId, string> = {
+  coolant: 'Coolant Feed Valve',
+  calibration: 'Calibration Breaker',
+  distribution: 'Distribution Bus',
+};
+
+const FEED_SIGN: Record<FeedId, string> = {
+  coolant: 'FEED 1 · COOLANT',
+  calibration: 'FEED 2 · CALIBRATION',
+  distribution: 'FEED 3 · DISTRIBUTION',
+};
+
+const ACCENT = 0x5fd3c4;
+const DORMANT = 0x1f3a3d;
+const AMBER = 0xe6c68f;
 
 declare global {
   interface Window {
-    /** DEV-only, read-only completion probe (never read back). */
-    __pilotCompletionProbe?: {
-      confirming: boolean;
-      closed: boolean;
-      return_url_configured: boolean;
-      navigate_scheduled: boolean;
-      closure_counts: {
-        censored: number;
-        absent: number;
-        no_opportunity: number;
-        errors: number;
-      } | null;
-      summary: {
-        scheduled: number;
-        closed: number;
-        open: number;
-      } | null;
+    /** DEV-only, read-only deck probe (chips + door lamp as rendered). */
+    __deckProbe?: {
+      utility_state: string;
+      feed_chips: Record<string, string>;
+      manifold: string;
+      door_open: boolean;
+      board: string;
+      dev_label_visible: boolean;
     } | null;
   }
 }
@@ -86,22 +129,30 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
   protected readonly roomInteractionKey: InteractionKey = 'pilotRoute';
   protected readonly zoneKey = 'utility_core_deck' as const;
 
-  private confirming = false;
-  private boardStatus?: Phaser.GameObjects.Text;
+  private conduits: Phaser.GameObjects.Graphics | null = null;
+  private manifoldLamps: Phaser.GameObjects.Graphics | null = null;
+  private doorLamp: Phaser.GameObjects.Rectangle | null = null;
+  private doorChip: Phaser.GameObjects.Text | null = null;
+  private boardStatus: Phaser.GameObjects.Text | null = null;
+  private feedChips = new Map<FeedId, Phaser.GameObjects.Text>();
+  private manifoldText: Phaser.GameObjects.Text | null = null;
+  private devLabel: Phaser.GameObjects.Text | null = null;
 
   constructor() {
     super(key.scene.utilityCoreDeck);
   }
 
   protected getLayout(): RoomLayout {
-    // 25×19 deck: Core Chamber alcove (rows 2-4, cols 10-14) with funnel
-    // shoulders, the Concourse doorway on the WEST wall (rows 8-9).
+    // 25×19 deck: the Core Chamber alcove (rows 2-4, cols 10-14) with the
+    // north doorway at row 2, funnel shoulders on row 5, the Concourse
+    // doorway on the WEST wall (rows 8-9), and three machinery blocks
+    // under the feed stations along the south wall (rows 13-14).
     return {
       theme: 'utility',
       grid: [
         '#########################',
         '#########################',
-        '##########.....##########',
+        '###########---###########',
         '##########.....##########',
         '##########.....##########',
         '#####...............#####',
@@ -112,8 +163,8 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
         '#.......................#',
         '#.......................#',
         '#.......................#',
-        '#.......................#',
-        '#.......................#',
+        '#..####....####....####.#',
+        '#..####....####....####.#',
         '#.......................#',
         '#########################',
         '#########################',
@@ -122,91 +173,235 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
     };
   }
 
-  protected getSpawn(): { x: number; y: number } {
-    return { x: 5 * TILE, y: 8.5 * TILE };
+  protected getSpawn(data?: { spawn?: string }): { x: number; y: number } {
+    switch (data?.spawn) {
+      case 'core_chamber':
+        return { x: 12.5 * TILE, y: 5.5 * TILE };
+      case 'station_concourse':
+      default:
+        return { x: 5 * TILE, y: 8.5 * TILE };
+    }
+  }
+
+  create(data?: { spawn?: string }) {
+    installClosureLogSink((eventType, metadata, interactionKey) =>
+      this.logScenarioEvent(
+        (interactionKey ?? 'pilotRoute') as InteractionKey,
+        eventType,
+        { metadata },
+      ),
+    );
+
+    super.create(data);
+
+    syncCoreAccess(Date.now());
+
+    this.events.on(Phaser.Scenes.Events.RESUME, () => {
+      // A feed panel (or the map / inventory) closed: latched keys reset
+      // by the base class; the world reflects the persisted feed state.
+      syncCoreAccess(Date.now());
+      this.refreshDeckVisuals();
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      installClosureLogSink(null);
+
+      if (typeof window !== 'undefined' && import.meta.env.DEV) {
+        window.__deckProbe = null;
+      }
+    });
+
+    this.refreshDeckVisuals();
   }
 
   protected populateRoom(): void {
-    // Fresh confirmation state per entry (gameplay review round 2).
-    this.confirming = false;
     this.addPilotDoor({ to: 'station_concourse', spawn: 'utility_core_deck' });
+    this.addPilotDoor({
+      to: 'core_chamber',
+      spawn: 'utility_core_deck',
+      texture: 'proc-door-core',
+      gate: () => this.coreDoorGate(),
+    });
+    registerPilotStation({
+      id: 'core_door',
+      zone: 'utility_core_deck',
+      x: DECK_SITES.coreDoor.x,
+      y: DECK_SITES.coreDoor.y,
+      label: 'Core Chamber',
+      stages: ['core_stabilise'],
+      isDone: () => false,
+      order: 0,
+    });
 
-    const core = DECK_SITES.coreConsole;
+    // ——— Shift Review Panel (the explicit readiness step) ———
+    const review = DECK_SITES.reviewPanel;
 
     this.addStation({
-      interactionKey: 'pilotCoreConsole',
-      label: 'Core Synchronisation Console',
-      texture: 'proc-core-interface',
-      x: core.x,
-      y: core.y,
+      interactionKey: 'pilotReviewPanel',
+      label: 'Shift Review Panel',
+      texture: 'proc-review-panel',
+      x: review.x,
+      y: review.y,
       onPromptOpened: () => {
-        const summary = pilotCompletionSummary();
+        const readiness = currentRouteReadiness();
 
-        this.logScenarioEvent('pilotCoreConsole', 'pilot_core_console_opened', {
-          metadata: {
-            zone: this.zoneKey,
-            confirming: this.confirming,
-            final_core_closed: pilotFinalCoreClosed(),
-            scheduled: summary.scheduled,
-            closed: summary.closed,
-            open: summary.open,
+        this.logScenarioEvent(
+          'pilotReviewPanel',
+          'pilot_closure_review_opened',
+          {
+            metadata: {
+              non_scored: true,
+              record_closed: stationRecordClosed(),
+              review_armed: reviewArmed(),
+              ready: readiness.ready,
+              counts: readiness.counts,
+              dev_inspection: readiness.dev_inspection,
+            },
           },
-        });
-        this.refreshCompletionProbe();
+        );
+        refreshClosureProbe();
 
         return true;
       },
     });
+    this.signage(review.x, review.y - 46, 'SHIFT REVIEW');
     registerPilotStation({
-      id: 'core_console',
+      id: 'review_panel',
       zone: 'utility_core_deck',
-      x: core.x,
-      y: core.y,
-      label: 'Core Synchronisation Console',
-      stages: ['deck_closure', 'core_stabilise'],
-      isDone: () => pilotFinalCoreClosed(),
+      x: review.x,
+      y: review.y,
+      label: 'Shift Review Panel',
+      stages: ['deck_closure'],
+      isDone: () => stationRecordClosed(),
       order: 0,
     });
 
-    this.addDecor(core.x, 1.4 * TILE, 'proc-core-column');
-    this.signage(core.x, 5.6 * TILE, 'CORE CHAMBER');
-    this.addDecor(core.x, 3.75 * TILE, 'proc-light-pool');
-    this.addDecor(10.5 * TILE, 5.25 * TILE, 'proc-light-pool');
-    this.addDecor(14.5 * TILE, 5.25 * TILE, 'proc-light-pool');
+    // ——— Station systems board (labels only; reflects the record state) ———
+    const board = DECK_SITES.systemsBoard;
 
-    // Station systems board — reflects the record state (labels only).
-    this.addDecor(
-      DECK_SITES.systemsBoard.x,
-      DECK_SITES.systemsBoard.y,
-      'proc-board-workorders',
-    );
-    this.signage(
-      DECK_SITES.systemsBoard.x,
-      DECK_SITES.systemsBoard.y - 44,
-      'STATION SYSTEMS',
-    );
+    this.addDecor(board.x, board.y, 'proc-board-workorders');
+    this.signage(board.x, board.y - 40, 'STATION SYSTEMS');
     this.boardStatus = this.add
-      .text(DECK_SITES.systemsBoard.x, DECK_SITES.systemsBoard.y + 40, '', {
+      .text(board.x, board.y + 36, '', {
         color: '#9fb2c1',
         font: '10px monospace',
         align: 'center',
       })
       .setOrigin(0.5)
       .setDepth(2);
-    this.refreshBoardStatus();
 
-    // Dressing.
-    this.addDecor(6 * TILE, 13 * TILE, 'proc-rig-intake');
-    this.addDecor(19 * TILE, 13.5 * TILE, 'proc-cabinet-calibration');
-    this.addDecor(12 * TILE, 13 * TILE, 'proc-bench-prep');
-    this.addDecor(12 * TILE, 9 * TILE, 'proc-light-pool');
-    this.addDecor(8 * TILE, 16 * TILE + 10, 'proc-wall-pipes');
-    this.addDecor(17 * TILE, 16 * TILE + 10, 'proc-wall-pipes');
-    this.signage(6 * TILE, 11.8 * TILE, 'COOLANT INTAKE');
-    this.signage(19 * TILE, 12.2 * TILE, 'CALIBRATION');
+    // ——— Three physical feeds (operational order west → east) ———
+    for (const [index, feed] of FEED_ORDER.entries()) {
+      const site = FEED_SITE[feed];
+
+      this.addStation({
+        interactionKey: FEED_KEY[feed],
+        label: FEED_STATION_LABEL[feed],
+        texture: FEED_TEXTURE[feed].before,
+        x: site.x,
+        y: site.y,
+        onPromptOpened: () => {
+          this.tryOpenFeed(feed);
+
+          return false;
+        },
+      });
+      this.signage(site.x, site.y - 52, FEED_SIGN[feed]);
+      this.feedChips.set(
+        feed,
+        this.add
+          .text(site.x, site.y + 42, '', {
+            backgroundColor: '#101820',
+            color: '#9fb2c1',
+            font: '10px monospace',
+            padding: { x: 4, y: 2 },
+          })
+          .setOrigin(0.5, 0)
+          .setDepth(2),
+      );
+      registerPilotStation({
+        id: `feed_${feed}`,
+        zone: 'utility_core_deck',
+        x: site.x,
+        y: site.y,
+        label: FEED_STATION_LABEL[feed],
+        stages: ['core_stabilise'],
+        isDone: () => feedReady(this.feeds(), feed),
+        order: index + 1,
+      });
+    }
+
+    // ——— Manifold (three-feed indicator) + door lamp ———
+    const manifold = DECK_SITES.manifold;
+
+    this.addDecor(manifold.x, manifold.y, 'proc-manifold-panel');
+    this.signage(manifold.x, manifold.y - 34, 'CORE FEED MANIFOLD');
+    this.manifoldLamps = this.add.graphics().setDepth(3);
+    this.manifoldText = this.add
+      .text(manifold.x, manifold.y + 30, '', {
+        color: '#9fb2c1',
+        font: '10px monospace',
+        align: 'center',
+      })
+      .setOrigin(0.5, 0)
+      .setDepth(2);
+    this.doorLamp = this.add
+      .rectangle(
+        DECK_SITES.coreDoor.x,
+        DECK_SITES.coreDoor.y - 26,
+        16,
+        4,
+        DORMANT,
+        1,
+      )
+      .setDepth(3);
+    this.signage(DECK_SITES.coreDoor.x, 2.2 * TILE, 'CORE CHAMBER');
+    // Door state as text beside the lamp (never colour-only).
+    this.doorChip = this.add
+      .text(DECK_SITES.coreDoor.x + 62, DECK_SITES.coreDoor.y, '', {
+        backgroundColor: '#101820',
+        color: '#9fb2c1',
+        font: '10px monospace',
+        padding: { x: 4, y: 2 },
+      })
+      .setOrigin(0.5)
+      .setDepth(2);
+
+    // ——— Conduits (floor runs from each feed to the alcove) ———
+    this.conduits = this.add.graphics().setDepth(0.5);
+
+    // ——— Dressing: machinery mass, pipes, light pools, a utility bot ———
+    this.addDecor(4.5 * TILE, 13.9 * TILE, 'proc-rig-intake');
+    this.addDecor(12.5 * TILE, 13.9 * TILE, 'proc-cabinet-calibration');
+    this.addDecor(20.5 * TILE, 13.9 * TILE, 'proc-crate-components');
+    this.addDecor(8.5 * TILE, 13.75 * TILE, 'proc-wall-pipes');
+    this.addDecor(16.5 * TILE, 13.75 * TILE, 'proc-wall-pipes');
+    this.addDecor(2.5 * TILE, 4.6 * TILE, 'proc-wall-pipes');
+    this.addDecor(22 * TILE, 4.6 * TILE, 'proc-wall-pipes');
+    this.addDecor(22 * TILE, 8 * TILE, 'proc-rack-tools');
+    this.addDecor(2.5 * TILE, 11.5 * TILE, 'proc-bin-consumables');
+    this.addDecor(12.5 * TILE, 4.2 * TILE, 'proc-light-pool');
+    this.addDecor(8 * TILE, 9.5 * TILE, 'proc-light-pool');
+    this.addDecor(17 * TILE, 9.5 * TILE, 'proc-light-pool');
+    this.addDecor(21.5 * TILE, 10.5 * TILE, 'proc-bot-utility');
     this.signage(2.6 * TILE, 7.2 * TILE, '◀  CONCOURSE');
 
-    this.refreshCompletionProbe();
+    if (devInspectionActive()) {
+      this.devLabel = this.add
+        .text(792, 8, 'DEV INSPECTION — no participant record', {
+          color: '#e6c68f',
+          font: 'bold 11px monospace',
+          backgroundColor: '#2a1f0a',
+          padding: { x: 6, y: 3 },
+        })
+        .setOrigin(1, 0)
+        .setDepth(Depth.AboveWorld + 3)
+        .setScrollFactor(0);
+    }
+  }
+
+  /** The session-scope feed state (persists across scene transitions). */
+  private feeds() {
+    return closureFeeds();
   }
 
   private signage(x: number, y: number, text: string) {
@@ -216,40 +411,123 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
       .setDepth(2);
   }
 
-  private refreshBoardStatus(): void {
-    const summary = pilotCompletionSummary();
+  // ————————————————————————————————— Core door gate ——
 
-    this.boardStatus?.setText(
-      pilotFinalCoreClosed()
-        ? 'STATION RECORD: CLOSED'
-        : `STATION RECORD: OPEN\n${summary.closed}/${summary.scheduled} tasks closed`,
-    );
+  private coreDoorGate(): string | null {
+    if (coreAccessReady()) {
+      noteCoreDoor(true, null);
+
+      return null;
+    }
+
+    const readiness = currentRouteReadiness();
+    let reason: string;
+
+    if (!readiness.ready && !readiness.dev_inspection) {
+      reason = sealedCoreReason(readiness);
+    } else {
+      const missing = FEED_ORDER.filter(
+        (feed) => !feedReady(this.feeds(), feed),
+      );
+
+      reason = `Core sealed — feeds still down: ${missing
+        .map((feed) => FEED_STATION_LABEL[feed].toLowerCase())
+        .join(', ')}. Bring the feeds up in order.`;
+    }
+
+    noteCoreDoor(false, reason);
+
+    return reason;
   }
 
-  // ————————————————————————————————— console prompt ——
+  // ————————————————————————————————— feeds ——
+
+  private tryOpenFeed(feed: FeedId) {
+    const availability = feedAvailability(
+      this.feeds(),
+      feed,
+      stationRecordClosed() || devInspectionActive(),
+    );
+
+    if (availability !== 'ok' && availability !== 'already_ready') {
+      let message: string;
+
+      switch (availability) {
+        case 'record_not_closed':
+          message = pilotStageAtOrAfter('deck_closure')
+            ? 'Feeds stay isolated until the station record is closed at the Shift Review Panel.'
+            : 'Feeds stay isolated until the shift is signed off at the Work Order Board.';
+          break;
+        case 'out_of_order': {
+          const previous = FEED_ORDER[FEED_ORDER.indexOf(feed) - 1];
+
+          message =
+            feed === 'calibration'
+              ? 'Calibration line unpowered — open the coolant feed valve first.'
+              : `Distribution bus isolated — bring up the ${FEED_STATION_LABEL[previous].toLowerCase()} first.`;
+          break;
+        }
+        default:
+          message = 'This feed is not available now.';
+          break;
+      }
+
+      noteFeedRefused(feed, availability, 'keyboard');
+      sfxUnavailable();
+      this.showFeedbackMessage(message);
+
+      return;
+    }
+
+    noteFeedPanelOpened(feed, 'keyboard');
+    openFeedPanel(this, {
+      feed,
+      onClosed: () => {
+        syncCoreAccess(Date.now());
+        this.refreshDeckVisuals();
+        this.refreshGuidance();
+      },
+    });
+  }
+
+  // ————————————————————————————————— review panel prompt ——
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {
-    if (interactionKey !== 'pilotCoreConsole') {
+    if (interactionKey !== 'pilotReviewPanel') {
       return undefined;
     }
 
-    if (pilotFinalCoreClosed()) {
-      return 'Core synchronised. The station record is closed for this shift.';
+    if (devInspectionActive()) {
+      return (
+        'DEV INSPECTION — the station record is NOT touched in this mode.\n' +
+        'Feeds and the Core door are available for inspection only.'
+      );
     }
 
-    if (this.confirming) {
+    if (!pilotStageAtOrAfter('deck_closure')) {
       return (
-        'CONFIRM SYNCHRONISATION\n' +
-        'Synchronising closes the station record exactly as it stands. ' +
-        'Anything unfinished is simply recorded as unfinished, and the ' +
-        'record cannot be reopened this shift.\n' +
-        'You can still return to the station first.'
+        'STATION RECORD — open.\n' +
+        'The shift has not been signed off at the Work Order Board (Records Workshop) yet.'
+      );
+    }
+
+    if (stationRecordClosed()) {
+      return this.closedRecordBody();
+    }
+
+    if (reviewArmed()) {
+      return (
+        'CONFIRM RECORD CLOSURE\n' +
+        'Closing files every station task exactly as it stands: unfinished work is ' +
+        'recorded as unfinished — never as a result — and the record cannot be ' +
+        'reopened this shift.\n' +
+        'The station stays open to you either way; you can still return first.'
       );
     }
 
     const summary = pilotCompletionSummary();
     const lines = [
-      'Station record — end-of-shift review.',
+      'STATION RECORD — end-of-shift review.',
       `Scheduled station tasks: ${summary.scheduled}. Closed: ${summary.closed}. Still open: ${summary.open}.`,
     ];
 
@@ -263,82 +541,96 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
     }
 
     lines.push(
-      'Synchronising the core ends the shift and closes the record as it stands. The Concourse door stays open until you confirm.',
+      'Closing the record files every task as it stands and readies the feeds. Confirming closes the record only — the station stays open to you.',
     );
 
     return lines.join('\n');
   }
 
+  private closedRecordBody(): string {
+    const readiness = currentRouteReadiness();
+    const c = readiness.counts;
+    const feeds = this.feeds();
+    const lamp = (feed: FeedId) => (feedReady(feeds, feed) ? '●' : '○');
+
+    return [
+      'STATION RECORD — closed.',
+      `Recorded: ${c.recorded} · Recorded with limited evidence: ${c.recorded_limited} · Not observed: ${c.not_observed} · Technical state recorded: ${c.technical}.`,
+      'Questionnaire handoff: prepared — administered outside the station.',
+      `Feeds: coolant ${lamp('coolant')} · calibration ${lamp('calibration')} · distribution ${lamp('distribution')}.`,
+      readiness.ready
+        ? allFeedsReady(feeds)
+          ? 'Core Chamber access: OPEN — north door.'
+          : 'Core Chamber access: opens once the three feeds are up.'
+        : sealedCoreReason(readiness),
+    ].join('\n');
+  }
+
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
-    if (interactionKey !== 'pilotCoreConsole') {
+    if (interactionKey !== 'pilotReviewPanel') {
       return [];
     }
 
-    if (pilotFinalCoreClosed()) {
+    if (
+      devInspectionActive() ||
+      stationRecordClosed() ||
+      !pilotStageAtOrAfter('deck_closure')
+    ) {
       return [
         {
-          label: 'Step away',
-          feedback: '',
+          label:
+            stationRecordClosed() || devInspectionActive()
+              ? 'Step away'
+              : 'Return to the station',
+          feedback:
+            stationRecordClosed() || devInspectionActive()
+              ? ''
+              : 'The shift has not been signed off at the Work Order Board yet — the record stays open.',
           getEventTypes: () => [],
         },
       ];
     }
 
-    if (this.confirming) {
+    if (reviewArmed()) {
       return [
         {
-          label: 'Confirm — synchronise and close the record',
+          label: 'Confirm — close the station record',
           feedback: '',
-          getEventTypes: () => ['pilot_final_core_confirmed'],
-          onSelected: () => this.synchroniseCore(),
+          getEventTypes: () => [],
+          onSelected: () => this.confirmRecordClosure(),
         },
         {
           label: 'Not yet — return to the station',
           feedback: '',
-          getEventTypes: () => ['pilot_final_core_confirm_declined'],
+          getEventTypes: () => [],
           onSelected: () => {
-            this.confirming = false;
-            this.refreshCompletionProbe();
+            disarmRecordReview();
+            refreshClosureProbe();
             this.showFeedbackMessage(
-              'The console stands by. The Concourse door is open.',
+              'The record stays open. The Concourse door is to the west.',
             );
           },
         },
       ];
     }
 
-    // Gameplay review round 2 (BLOCKER): synchronisation is offered
-    // only once the route reaches the closure stage — an early explorer
-    // can review and leave, but can never irreversibly end the session
-    // before the route reaches its review step. Never a performance check.
-    if (!pilotStageAtOrAfter('deck_closure')) {
-      return [
-        {
-          label: 'Return to the station',
-          feedback:
-            'The shift has not been signed off at the Work Order Board yet — the record stays open.',
-          getEventTypes: () => ['pilot_final_core_review_left'],
-        },
-      ];
-    }
-
     return [
       {
-        label: 'Begin core synchronisation',
+        label: 'Close the station record as it stands',
         feedback: '',
-        getEventTypes: () => ['pilot_final_core_confirm_opened'],
+        getEventTypes: () => [],
         onSelected: () => {
-          this.confirming = true;
-          this.refreshCompletionProbe();
+          armRecordReview();
+          refreshClosureProbe();
           this.showFeedbackMessage(
-            'Confirmation required — open the console again to confirm or step back.',
+            'Confirmation required — open the panel again to confirm or step back.',
           );
         },
       },
       {
-        label: 'Return to the station',
+        label: 'Not yet — return to the station',
         feedback: '',
-        getEventTypes: () => ['pilot_final_core_review_left'],
+        getEventTypes: () => [],
         onSelected: () => {
           this.showFeedbackMessage(
             'The record stays open — the Concourse door is to the west.',
@@ -348,171 +640,182 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
     ];
   }
 
-  // ————————————————————————————————— synchronisation ——
+  private confirmRecordClosure() {
+    const closure = closeStationRecord(Date.now());
 
-  private synchroniseCore(): void {
-    const now = Date.now();
+    if (closure === null) {
+      this.showFeedbackMessage('The record is already closed.');
+      this.refreshDeckVisuals();
 
-    // 1. Ambient yard windows get their explicit terminal departure
-    //    codes (never completed, never participant_absent — D-X-4).
-    //    Scientific review round 2: the code is ALSO written onto the
-    //    SA-13 register (censored + the code as detail) so departure-
-    //    closed windows stay distinguishable from ordinary end-of-
-    //    session censoring.
-    const m22Open = yardM22WindowOpen();
-    const m25Open = yardM25WindowOpen();
-
-    finalizeYardAmbientWindows(now);
-
-    if (m22Open) {
-      markOpportunityInvalid(
-        YARD_M22_OPPORTUNITY_ID,
-        'censored',
-        'closed_departed_without_recovery',
-      );
-    }
-
-    if (m25Open) {
-      markOpportunityInvalid(
-        YARD_M25_OPPORTUNITY_ID,
-        'censored',
-        'closed_departed_without_reset',
-      );
-    }
-
-    // 1b. Evidence-led v2 item windows close explicitly (absent /
-    //     closed_at_review — never a low value).
-    closeEpisodeWindowsAtReview(now);
-
-    // 2. Explicit terminal closure of every scheduled opportunity
-    //    (censored / participant_absent / no_opportunity — never
-    //    success, already-terminal records never overwritten).
-    const closure = closePilotCoverageAtFinalCore();
-
-    // 3. Route completes (one-way; the stage machine never reverses).
-    advancePilotStage('complete', now);
-
-    const summary = pilotCompletionSummary();
-
-    this.logScenarioEvent('pilotCoreConsole', 'pilot_final_core_synchronised', {
-      metadata: {
-        censored: closure.censored,
-        absent: closure.absent,
-        no_opportunity: closure.noOpportunity,
-        error_count: closure.errors.length,
-        scheduled: summary.scheduled,
-        closed: summary.closed,
-        open: summary.open,
-      },
-    });
-
-    // 4. Session completion via the accepted runtime surface: summary +
-    //    (configured-only) Qualtrics return URL. No scores are computed
-    //    here; submitSessionExport refuses outside launch_mode=test.
-    const { returnUrl } = researchRuntime.completeDebugSession();
-
-    this.refreshBoardStatus();
-    this.showCompletionScreen(returnUrl);
-  }
-
-  private showCompletionScreen(returnUrl: string | null): void {
-    // Structural input isolation for the end state (no cancel hook):
-    // movement, prompts and stations are inert behind the modal.
-    beginManualWorldAction();
-    this.input.keyboard?.resetKeys();
-
-    const depth = 4000;
-
-    this.add.rectangle(400, 300, 800, 600, 0x060a10, 0.94).setDepth(depth);
-    this.add
-      .rectangle(400, 300, 620, 260, 0x0e1620, 1)
-      .setStrokeStyle(1, 0x33475a)
-      .setDepth(depth + 1);
-    this.add
-      .text(400, 224, 'SHIFT COMPLETE', {
-        color: '#5fd3c4',
-        font: 'bold 22px monospace',
-      })
-      .setOrigin(0.5)
-      .setDepth(depth + 2);
-    this.add
-      .text(
-        400,
-        290,
-        'Core synchronised — the station record is closed.\n' +
-          'Thank you. Your relief shift at the outpost is over.',
-        {
-          color: '#dce7f0',
-          font: '14px monospace',
-          align: 'center',
-        },
-      )
-      .setOrigin(0.5)
-      .setDepth(depth + 2);
-
-    const navigateScheduled = returnUrl !== null;
-
-    this.add
-      .text(
-        400,
-        362,
-        navigateScheduled
-          ? 'Returning you to the survey…'
-          : 'Session complete. You may close this window.',
-        {
-          color: '#9fb2c1',
-          font: '12px monospace',
-          align: 'center',
-        },
-      )
-      .setOrigin(0.5)
-      .setDepth(depth + 2);
-
-    if (navigateScheduled && returnUrl !== null) {
-      // Legitimately configured Qualtrics return only — the ONLY
-      // navigation the pilot ever performs.
-      this.time.delayedCall(RETURN_NAVIGATION_DELAY_MS, () => {
-        if (typeof window !== 'undefined') {
-          window.location.assign(returnUrl);
-        }
-      });
-    }
-
-    this.refreshCompletionProbe(navigateScheduled, returnUrl !== null);
-    refreshPilotCoverageProbe();
-  }
-
-  private refreshCompletionProbe(
-    navigateScheduled = false,
-    returnConfigured = false,
-  ): void {
-    if (typeof window === 'undefined' || !import.meta.env.DEV) {
       return;
     }
 
-    const closed = pilotFinalCoreClosed();
-    const summary = pilotCompletionSummary();
-    const closure = window.__pilotCoverage?.final_core_closure ?? null;
+    syncCoreAccess(Date.now());
+    sfxMachineOn();
+    this.showFeedbackMessage(
+      'Station record closed. Bring the feeds up — coolant feed valve first.',
+    );
+    this.refreshDeckVisuals();
+    this.refreshGuidance();
+  }
 
-    window.__pilotCompletionProbe = {
-      confirming: this.confirming,
-      closed,
-      return_url_configured: returnConfigured,
-      navigate_scheduled: navigateScheduled,
-      closure_counts:
-        closure === null
-          ? null
-          : {
-              censored: closure.censored.length,
-              absent: closure.absent.length,
-              no_opportunity: closure.noOpportunity.length,
-              errors: closure.errors.length,
-            },
-      summary: {
-        scheduled: summary.scheduled,
-        closed: summary.closed,
-        open: summary.open,
-      },
-    };
+  // ————————————————————————————————— world state rendering ——
+
+  private refreshDeckVisuals() {
+    const feeds = this.feeds();
+    const state = currentUtilityState();
+    const doorOpen = coreAccessReady();
+
+    for (const feed of FEED_ORDER) {
+      const ready = feedReady(feeds, feed);
+
+      this.setStationTexture(
+        FEED_KEY[feed],
+        ready ? FEED_TEXTURE[feed].after : FEED_TEXTURE[feed].before,
+      );
+      this.feedChips.get(feed)?.setText(this.feedChipText(feed));
+    }
+
+    // Conduits: each feed's floor run lights when its feed is ready.
+    const g = this.conduits;
+
+    if (g !== null) {
+      g.clear();
+
+      const mouth = { x: DECK_SITES.coreDoor.x, y: 5.6 * TILE };
+
+      for (const feed of FEED_ORDER) {
+        const site = FEED_SITE[feed];
+        const ready = feedReady(feeds, feed);
+        const lane = 7.4 * TILE + FEED_ORDER.indexOf(feed) * 10;
+
+        g.lineStyle(6, 0x0f171e, 1);
+        g.lineBetween(site.x, site.y - 26, site.x, lane);
+        g.lineBetween(site.x, lane, mouth.x, lane);
+        g.lineBetween(mouth.x, lane, mouth.x, mouth.y);
+        g.lineStyle(2, ready ? ACCENT : DORMANT, 1);
+        g.lineBetween(site.x, site.y - 26, site.x, lane);
+        g.lineBetween(site.x, lane, mouth.x, lane);
+        g.lineBetween(mouth.x, lane, mouth.x, mouth.y);
+      }
+    }
+
+    // Manifold lamps (glyph + fill; never colour alone).
+    const lamps = this.manifoldLamps;
+    const manifold = DECK_SITES.manifold;
+
+    if (lamps !== null) {
+      lamps.clear();
+
+      for (const [index, feed] of FEED_ORDER.entries()) {
+        const x = manifold.x - 26 + index * 20;
+        const y = manifold.y - 6;
+        const ready = feedReady(feeds, feed);
+
+        if (ready) {
+          lamps.fillStyle(ACCENT, 1);
+          lamps.fillRect(x - 5, y - 5, 10, 10);
+        } else {
+          lamps.lineStyle(2, DORMANT, 1);
+          lamps.strokeRect(x - 5, y - 5, 10, 10);
+        }
+      }
+    }
+
+    // One token per feed everywhere (gameplay review): the sign words.
+    const manifoldLine = FEED_ORDER.map(
+      (feed) => `${feed.toUpperCase()} ${feedReady(feeds, feed) ? '●' : '○'}`,
+    ).join(' · ');
+
+    this.manifoldText?.setText(manifoldLine);
+    this.doorChip?.setText(doorOpen ? 'DOOR · OPEN' : 'DOOR · SEALED');
+    this.doorLamp?.setFillStyle(
+      doorOpen ? ACCENT : state === 'core_access_ready' ? AMBER : DORMANT,
+      1,
+    );
+
+    const boardLine = devInspectionActive()
+      ? 'DEV INSPECTION\nrecord untouched'
+      : stationRecordClosed()
+        ? `STATION RECORD: CLOSED\nfeeds ${FEED_ORDER.filter((feed) => feedReady(feeds, feed)).length}/3 up`
+        : pilotStageAtOrAfter('deck_closure')
+          ? `STATION RECORD: OPEN\n${pilotCompletionSummary().closed}/${pilotCompletionSummary().scheduled} tasks closed`
+          : // Before the closure stage: the state word only — no mid-route
+            // coverage counter (scientific review F3 / owner decision OD-3).
+            'STATION RECORD: OPEN\nreview at shift end';
+
+    this.boardStatus?.setText(boardLine);
+
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__deckProbe = {
+        utility_state: state,
+        feed_chips: Object.fromEntries(
+          FEED_ORDER.map((feed) => [feed, this.feedChipText(feed)]),
+        ),
+        manifold: manifoldLine,
+        door_open: doorOpen,
+        board: boardLine,
+        dev_label_visible: this.devLabel?.visible ?? false,
+      };
+    }
+
+    refreshClosureProbe();
+  }
+
+  private feedChipText(feed: FeedId): string {
+    const feeds = this.feeds();
+
+    if (feedReady(feeds, feed)) {
+      return feed === 'coolant'
+        ? 'OPEN · flowing'
+        : feed === 'calibration'
+          ? 'ENGAGED · live'
+          : 'CONNECTED · live';
+    }
+
+    const availability = feedAvailability(
+      feeds,
+      feed,
+      stationRecordClosed() || devInspectionActive(),
+    );
+
+    if (availability === 'ok') {
+      return feed === 'coolant'
+        ? 'SHUT · ready to open'
+        : feed === 'calibration'
+          ? 'OPEN · ready to set'
+          : 'OPEN · ready to connect';
+    }
+
+    return 'ISOLATED';
+  }
+
+  /**
+   * The ONE objective line narrows once the three feeds are up (Recovery
+   * Yard precedent): the stage objective would otherwise describe finished
+   * work while the beacon points at the door (gameplay review F-1).
+   */
+  protected buildRouteObjectiveText(): string {
+    if (
+      pilotStage() === 'core_stabilise' &&
+      allFeedsReady(this.feeds()) &&
+      coreAccessReady()
+    ) {
+      return 'Feeds up — enter the Core Chamber through the north door.';
+    }
+
+    return super.buildRouteObjectiveText();
+  }
+
+  protected onPilotUpdate(): void {
+    // Restrained ambient: the open door lamp breathes slowly (no flashing);
+    // reduced motion keeps it steady.
+    if (
+      this.doorLamp !== null &&
+      !prefersReducedMotion() &&
+      coreAccessReady()
+    ) {
+      this.doorLamp.setAlpha(0.75 + 0.25 * Math.sin(this.time.now / 900));
+    }
   }
 }

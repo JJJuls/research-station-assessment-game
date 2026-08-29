@@ -18,6 +18,10 @@ const SCENE_PARAM_TO_KEY: Record<string, string> = {
   artifact_field: key.scene.artifactSurvey,
   // Action-assessment rebuild (Unit 2): the coolant red line areas.
   coolant_yard: key.scene.coolantYard,
+  // Evidence-led pilot v2 (Unit 6): the Core Chamber. Direct alias =
+  // developer launch (readiness rules still apply; `&dev_closure=inspect`
+  // is the visibly labelled DEV-only inspection bypass).
+  core_chamber: key.scene.coreChamber,
   // Four-zone assessment route (map foundation unit): the four zone
   // scenes. Direct aliases exist for regression/verification launches;
   // the participant default (below) always enters the Station Concourse

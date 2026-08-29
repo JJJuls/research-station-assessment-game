@@ -1,7 +1,9 @@
 # Professional Assessment Pilot V2 — Report (Units 0–5)
 
-**Status: IN PROGRESS — Unit 5 committed; Units 6–7 not started.** Nothing
-was pushed, merged, tagged, deployed or removed; every commit is local.
+**Status: IN PROGRESS — Unit 6 (non-scored Utility & Core closure) built
+and verified, see §13; Units 7–8 (presentation, final verification) not
+started.** Nothing was pushed, merged, tagged, deployed or removed; every
+commit is local.
 
 ## 1. Branch, base, HEAD
 
@@ -1145,3 +1147,440 @@ is completed/missing/invalid; explicit review; no early irreversible
 completion), then Unit 7 (verification: full-suite sweep, the two
 pre-existing intermittents, the visual-integration asset gaps above).
 Nothing here implements assessment completion or the Qualtrics return.
+
+## 13. Unit 6 — Utility & Core closure (non-scored finale)
+
+### 13.1 Scope
+
+Sheet 11 row 6 (`NONE — non-scored closure`; "Professional payoff only. No
+new trait inference, no click-card answer test, no irreversible early
+completion") and row 16 ("Core unlocks only after all required windows are
+completed/missing/invalid; physical feed sequence is non-scored"). Built:
+the Utility Deck (record review + three physical feeds + gated Core door)
+and a new Core Chamber zone (inspect, compact operational review, two-step
+confirmation, visible stabilisation, neutral completion notice). No item
+window, no `proto_*` event, no score, no trait label, no Qualtrics
+redirect, no `completeDebugSession` call. M25 stays questionnaire-primary /
+pending external administration. The Unit 2 M02-overlay finding was not
+investigated (it does not block the Unit 6 participant path — §13.17).
+
+### 13.2 Exact changed files
+
+| Area                  | Files                                                                                                                                                                                                                                                                                                                                                             |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pure model / session  | `src/pilot/closure/utilityCoreClosure.ts` (new, Node-testable), `src/pilot/closure/closureSession.ts` (new, session-scope singleton + the only register contact)                                                                                                                                                                                                  |
+| Scenes / overlay      | `src/scenes/UtilityCoreDeckScene.ts` (rewritten), `src/scenes/CoreChamberScene.ts` (new), `src/pilot/ui/FeedPanelScene.ts` (new physical overlay), `src/scenes/index.ts`                                                                                                                                                                                          |
+| Route / world         | `src/pilot/pilotRoute.ts` (zone `core_chamber`, stage `core_sync`, doors, objectives, chamber-entry flip), `src/pilot/zoneSites.ts`, `src/pilot/ui/StationMapScene.ts` (7th box + link), `src/world/RoomScene.ts` (`RoomDoorConfig.gate`, additive), `src/pilot/PilotZoneScene.ts` (gate passthrough), `src/world/SceneRouter.ts` (alias), `src/constants/key.ts` |
+| Copy / registry / art | `src/scenes/StationConcourseScene.ts` (Vale `core_sync` beat), `src/scenes/ExteriorRecoveryYardScene.ts` (Noor stage case), `src/data/researchInteractions.ts` (5 `pilot*` keys), `src/world/proceduralTextures.ts` (10 deterministic textures)                                                                                                                   |
+| Tests                 | `e2e/closureHelpers.ts` (new), `e2e/pilot_closure_models.spec.ts` (19 pure, new), `e2e/pilot_closure.spec.ts` (3 route, new), `e2e/pilot_closure_capture.spec.ts` (frames 35–47, new), `e2e/pilot_deck.spec.ts` (rewritten), `e2e/{pilot_route_model,pilot_route,pilot_visual_capture,proc_textures_determinism}.spec.ts`, `e2e/{pilotHelpers,returnHelpers}.ts`  |
+| Docs                  | `docs/game/rooms/13-utility-core-closure.md` (new), this report, `docs/verification/screenshots-evidence-led-pilot-v2/35–47*.png`                                                                                                                                                                                                                                 |
+
+Untouched: the workbook, the ledger, `event-schema.md`, `scoring-plan.md`,
+`ScoringManager`, `EventLogger`, `SessionState`, `QualtricsBridge`,
+`DataQualityTracker`, `ResearchRuntime`, `reviewClosure.ts`, every window
+module, `package*.json`.
+
+### 13.3 Readiness model
+
+`deriveRouteReadiness(coverage, { routeAtClosureStage, recordReviewed,
+closureErrors })` is a pure READ of the live coverage registry
+(`pilotCoverage()` → `deriveCoverage(serializeOpportunities())`), never a
+hand-maintained list. Per scheduled item: `completed` → _recorded_;
+`censored` / non-technical `invalid` → _recorded with limited evidence_;
+`missing` → _not observed_; technical-failure `invalid` → _technical state
+recorded_; M25 (questionnaire-primary, presentation window) → _questionnaire
+handoff prepared_ (route-terminal once reviewed; research-pending always);
+M08/M11 → not scheduled. `pending` (never entered) and `open` (entered,
+unfinished) are NOT terminal. Ready ⇔ route ≥ `deck_closure` ∧ record
+reviewed ∧ every scheduled item route-terminal ∧ no closure error. Sealed
+reasons are one neutral sentence naming a location/task class (operational
+label; MAJ-9 stopping-rule windows never named), never an item id, a
+validity word, a score or the desired behaviour.
+
+### 13.4 Terminal-state treatment (the explicit review)
+
+The Shift Review Panel's **two-step record closure** (arm → reopen →
+confirm, with "Not yet — return to the station" at both steps and the
+Concourse door open throughout) runs the committed review-closure model
+unchanged: `closeEpisodeWindowsAtReview` (module rules: absent / censored
+`closed_at_review` / completed observation) then
+`closePilotCoverageAtFinalCore` (generic: censored / `participant_absent` /
+`no_opportunity`; already-terminal records never overwritten). It is
+offered only at stage ≥ `deck_closure` (board sign-off) and refused under
+DEV inspection. This is the readiness step: afterwards every scheduled
+item is terminal and the feeds become available. Route test 1 asserts:
+nothing pending was promoted to `completed`; obligations closed as
+observations; the SA-13 register is byte-identical from the closure to the
+stable Core (feeds + synchronisation mutate no prior record).
+
+Design note for the research owner: the record closes at the Utility
+review (before the physical finale), not at the Core confirmation as the
+old console did — row 16's "Core unlocks only after all required windows
+are completed/missing/invalid" is read literally. The Core confirmation
+closes the **gameplay route** only. Recorded as §13.14 open decision 1.
+
+### 13.5 M25 external-pending treatment
+
+`closeM25AtReview` (Unit 5) closes the presentation window as a
+presentation record (`direct_belief_probe: null`, `administration:
+questionnaire_primary_pending_external`). Readiness class
+`external_pending`: route-terminal after the review, research-pending
+regardless of the presentation record (`externalQuestionnairePending`
+always true; pure test 5). Participant copy: "Questionnaire handoff:
+prepared — administered outside the station (pending)". No response is
+invented; nothing marks M25 completed; the finale never blocks on it.
+
+### 13.6 Three physical feeds (FeedPanelScene over one pure state machine)
+
+Operational order coolant → calibration → distribution (placards, chips,
+objective; out-of-order attempts refused neutrally at the station:
+"Calibration line unpowered — open the coolant feed valve first."). Each
+feed completes exactly once; partial states persist across scene
+transitions; ESC always leaves a recoverable state.
+
+1. **Coolant feed valve** — hand wheel: drag the knob clockwise around the
+   hub (angle-delta integration) or hold → (← turns back), wall-clock
+   integrated (Phaser's smoothed delta under-delivers on SwiftShader);
+   travel 0..1 latches OPEN at full travel; gauge needle, sight-glass fill,
+   travel arc and label change; world: valve sprite → open, chip `OPEN ·
+flowing`, conduit lit, manifold `COOL ●`.
+2. **Calibration breaker** — lever on an index scale (drag, or ↑/↓ steps)
+   to the placard index 7, then ENGAGE (click / ENTER / SPACE / E);
+   off-index engage refused neutrally ("Lever at index n — the placard
+   names index 7. Align the lever, then engage."), lever stays; three lamp
+   indicators glyph+fill; engaged once; world: bank sprite → on, chip
+   `ENGAGED · live`.
+3. **Distribution bus** — the single coupler in a tray: lift (drag / SPACE),
+   slide along a constrained rail (drag / hold →), SEAT inside the socket
+   zone (drop / SPACE); a drop outside the socket or ESC returns the
+   coupler to the tray (transactional, `returns_to_tray` counted); seat
+   short of the socket refused ("Not seated — slide the coupler into the
+   socket, then seat it."); power band propagates → CORE; world: cabinet
+   sprite → seated, chip `CONNECTED · live`, door lamp cyan.
+
+No answer cards, no random outcome, no timer pressure, no colour-only
+state, no reuse of any M-item evidence, no trait inference from order or
+mistakes (refusals are emitted as non-scored `pilot_closure_feed_refused`
+context events with their reason and input mode, and counted in the DEV
+probe; they are excluded from analysis — §13.14 OD-4).
+
+### 13.7 Core lifecycle
+
+`sealed → accessible → review_open → confirmation_armed → synchronizing →
+stable` (`coreCommand`; every transition validates its source state,
+rejected commands change nothing, `stable` is final). The deck door's
+`gate` re-derives sealed/accessible on every activation
+(`coreAccessReady()` = readiness valid ∧ three feeds). Visual states:
+inactive (dormant teal sight column), prepared (amber collars/lamps),
+synchronising (2.4 s counter tween — 300 ms under reduced motion — fills
+the sight column and lights the four collar lamps, `sfxMachineOn`, world
+input inert for the ramp only), stable (steady cyan, light pool breathing
+at ~3 s, `sfxComplete`, Kai `plv1-kai` → `plv1-kai-done`, status console
+`STABLE`). The chamber is entered and left freely before the confirmation
+(door sealed only during the ramp).
+
+### 13.8 Explicit confirmation
+
+Core prompt → "Open the synchronisation review" (WorkSurfaceScene,
+`core_sync_review`) → `ARM SYNCHRONISATION` → the surface re-renders with
+`STAND DOWN` (focus index 0) and `CONFIRM SYNCHRONISATION` (a separate
+control, different position) → confirm. One physical press cannot arm and
+confirm (the prompt option and the surface are separate keydowns; the
+surface ignores `repeat`; after arming the keyboard focus sits on STAND
+DOWN, so a held ENTER stands down exactly once — asserted). ESC while
+armed stands down and keeps the review open; ESC again closes it. After
+the ramp the neutral completion notice opens (`core_completion_notice`,
+closable, reopenable from the Core); the Core then offers only the notice;
+no second synchronisation exists; map/inventory/doors keep working.
+
+### 13.9 Non-scored event boundaries
+
+Events: `pilot_closure_review_opened`, `_record_review_armed`,
+`_record_review_stood_down`, `_record_closed`, `_feed_panel_opened`,
+`_feed_refused`, `_feed_ready`, `_core_door`, `_core_inspected`,
+`_core_{unseal,seal,open_review,close_review,arm,stand_down,confirm,finish}`,
+`_synchronised`, `_stable`, `_completion_notice_opened` — all unmapped route
+telemetry via `logScenarioEvent` (no canonical context, no study item, no
+`success`) carrying `non_scored: true`, `closure_context_only: true` and
+`dev_inspection`. Static (pure test 19, code with comments stripped): no
+`'proto_m…'` literal, no `ScoringManager` / `CANONICAL_EVENT_CONTEXT`, no
+`QualtricsBridge` / `buildReturnUrl` / `completeDebugSession` /
+`location.assign` / `return_url`, no `Q\d\d`, no weight/cut-score. Dynamic
+(route test 1): the `proto_*` event count is unchanged from the record
+closure to the stable Core; the validity register is deep-equal; no
+`objective_completed`, no `pilot_final_core_*`; `page.url()` never
+navigates even with a configured same-origin `return_url`
+(`pilot_deck.spec.ts`). The four closure facts are reported separately
+(`ClosureContext`) — never one boolean.
+
+### 13.10 Navigation / exit
+
+Concourse ⇄ Utility Deck (always), Utility Deck ⇄ Core Chamber (gated on
+the deck side; sealed → one neutral reason; the chamber side sealed only
+during the 2.4 s ramp). Stages `deck_closure` (beacon: review panel) →
+`core_stabilise` (beacon: next feed, then the door) → `core_sync` (flips
+on chamber entry; beacon: the Core) → `complete` (no beacon). Map: seventh
+box "Core Chamber" north of "Utility Deck" (renamed from "Utility Deck &
+Core"), linked; discovered only once entered. Vale's `core_sync` beat
+redirects east then north; Noor's return beat unchanged.
+
+### 13.11 Tests (retries=0, workers=1, `PW_DEV_PORT=5321`)
+
+- `lint:tsc` ✓ · production build ✓ (`vite build`, 2.7 s) · scoped ESLint
+  ✓ (autofix for formatting/import order only) · `git diff --check` ✓ ·
+  `verify-unit.mjs` run with every changed path allowed (explicit list;
+  no `CLAUDE_UNIT_ALLOWLIST` env, Unit 4/5 precedent).
+- Pure: `pilot_closure_models.spec.ts` **19/19**; `pilot_route_model.spec.ts`
+  **8/8** (7 zones, `core_chamber` leaf, sequence ends `utility_core_deck →
+core_chamber`, still one purposeful return); `pilot_coverage.spec.ts`
+  **8/8**; `evidence_ledger.spec.ts` **11/11**.
+- Route (final, on the corrected code): `pilot_closure.spec.ts` **3/3**
+  (test 1 participant path 4.9 min; test 2 pointer/refusals/parity/
+  recreation 3.5 min; test 3 developer launches 1.6 min);
+  `pilot_deck.spec.ts` **1/1** (configured same-origin `return_url` →
+  no navigation, no `objective_completed`, M01 censored, only
+  review-observation windows read completed); `pilot_closure_capture.spec.ts`
+  **1/1** (frames 35–47 regenerated after the correction round).
+- Test defects found and fixed on the way (all e2e-only): forbidden-text
+  regex matched the `non_scored` flag; the Dock never publishes
+  `__pilotCoverage` (test 3 now walks to the Concourse); the former M02
+  filing-desk driver step is the deferred Unit 2 overlay finding (the
+  censored case now uses the M01 plan board); M05's review disposition
+  is a completed observation; the encoded `return_url` parameter contains
+  the substring the old no-navigation check looked for; a refusal helper
+  that read a stale feedback line on a swallowed key press now retries
+  the press and waits for a NEW line.
+- Regression scope (20 spec files, sequential, 1.1 h, on the corrected
+  code): **green** — `proc_textures_determinism` 2 (manifest pin updated
+  for the 10 Unit 6 textures), `pilot_return_models` 14, `pilot_exterior_models`
+  12, `signal_incident_models` 10, `field_actions_models` 21, `ip_engine` 15,
+  `ip_boundaries` 3, `pilot_return` 3 (Unit 5 endpoint → deck lock →
+  workshop), `pilot_yard` 3, `pilot_exterior_isolation` 2,
+  `pilot_signal_incident` 2, `pilot_lab` 3, `concourse_interaction_lifecycle`
+  3, `inventory_foundation` 26, `inventory_measurement_isolation` 5,
+  `field_actions_lab` 8, `field_actions_measurement` 4; plus 3 of 4 in
+  `pilot_records`, 1 of 2 in `pilot_episodes_1_2`, 3 of 4 in `pilot_route`.
+  **Three failures, none in Unit 6 code**: (a) `pilot_records` "supply
+  bundles" — the pre-existing Unit 2 system-driven-presentation assertion
+  (Unit 5 §12.14 (d), unchanged); (b) `pilot_route` "six-zone" —
+  `expectNoMeasurementEvents` met `proto_m20_antenna_resume_unavailable`,
+  the Unit 5 system-driven availability record (`input_mode: 'system'`)
+  logged once when the workshop is entered on the return without an
+  antenna start; the bare-route helper's tolerance set never learned it —
+  **helper fixed** (e2e only, no assertion weakened: the record is not a
+  participant act) and the test re-run in isolation (result below);
+  (c) `pilot_episodes_1_2` "episode 1" — the M05 initiation press after a
+  bare 2.6 s driver sleep produced no `initiated` event under sweep load;
+  re-run in isolation (result below); the driver's sleep-based wait is
+  queued for the final verification unit.
+- Isolated re-runs (retries=0): `pilot_episodes_1_2` episode 1 **passed**
+  (1.2 min) — a load flake of the sleep-based M05 driver, not
+  deterministic; `pilot_route` "six-zone" **failed again, earlier**, on
+  `door at 384,496 did not reach dock` — the known Concourse→Dock door
+  intermittent (Unit 3 §6, Unit 5 §12.14 (e)), before the leg the helper
+  fix addresses; the helper fix is therefore verified by inspection only
+  (the tolerated event is the `input_mode: 'system'` availability record)
+  and the test stays on the final verification unit's list. No Unit 6
+  code path is involved in either failure.
+
+### 13.12 Screenshots (participant view, 800×600, real input)
+
+`docs/verification/screenshots-evidence-led-pilot-v2/`: `35-utility-arrival`,
+`36-core-sealed-early-access`, `37a/37b-coolant-valve-before/after`,
+`38a/38b-calibration-breaker-before/after`, `39a/39b-distribution-bus-before/after`,
+`40-all-feeds-ready`, `41-core-chamber-accessible`, `42-core-inactive`,
+`43-operational-review`, `44-confirmation-armed`, `45-synchronising`,
+`46-stable-core`, `47-neutral-completion`. Inspected at full resolution by
+the writer (first pass: 35, 36, 37b, 38a, 39a, 40, 42, 43, 44, 46, 47);
+corrected from the first pass: the Core door's interaction prompt
+colliding with the objective HUD line (door moved into the alcove at
+y = 120), the valve panel's feedback line over the `FEED · FLOWING` label
+(riser shortened), the breaker's index-10 mark over the readout (track
+lowered), the Core rendering as the default placeholder rectangle (now
+`proc-core-interface` pedestal) and thin machinery mass around the vessel
+(flanking coolant towers + four props); the frames were regenerated after
+the correction round. The visual reviewer's frame-by-frame findings are in
+§13.14.
+
+### 13.13 Timing (automated; not a human estimate)
+
+Planning target 75 s. Route test 1 (real input, participant path with
+obligations accepted, calibration started, partial antenna start) on the
+corrected code: **73.8 s wall from the record-closure confirmation to the
+stable Core** — including the test's own detours (re-reading the closed
+panel, the deliberate out-of-order refusal, re-opening the finished valve
+panel, entering and leaving the chamber, ESC/stand-down exercises);
+feeds 30.6 s wall (13.2 s inside the three panels); Core review → armed →
+confirmed → stable 19.4 s; 95.5 s from deck arrival including the early
+sealed-door attempt, the refused feed and a Concourse round trip. The
+sealed-door reason, the panels' help lines and the ramp (2.4 s) are the
+only fixed waits. Automation walks faster than a person and never pauses
+to read, so no human duration is claimed; the closure envelope is met by
+automation with slack for reading time.
+
+### 13.14 Reviewer findings and correction disposition
+
+Two waves of two, read-only (scientific + gameplay, then test-quality +
+visual). **Correction rounds used: 1 of 1** (consolidated; re-verified by
+the final focused run in §13.11).
+
+- **Scientific (Opus)** — verdict: no blocker; terminality-not-success,
+  M25 external, MAJ-9, no canonical/scoring contact and the DEV bypass all
+  confirmed. **Fixed**: F1 (mission log kept inviting closed work) — after
+  the record closes the log shows one neutral notice
+  (`setMissionLogNotice`, presentation only, no window touched); F3 (live
+  coverage counter on the deck board at any stage) — the numeric count now
+  appears only at stage ≥ `deck_closure`, the state word before; F5
+  (event attribution) — feed events carry their station's interaction key
+  and Core events `pilotCore`; the registry names the event that fires;
+  F7 — the raw event count and the "n of 6" numeral left the review
+  ("session record active", "all six"); F8 — "four" → "five" closure
+  facts. **Recorded, not changed**: F2 → §13.14 owner decisions below
+  (OD-1…OD-6); F4 — the "no prior record mutated" claim is narrowed to the
+  tested path (register byte-identical from the closure to the stable
+  Core without revisiting a measured station; a post-closure revisit
+  assertion is queued for the final verification unit); F6 —
+  `pilot_closure_*` process data (refusals, stand-downs, arm→confirm
+  latency) exist in the export and are **excluded from all analysis by
+  this unit's written rule** (room doc) pending OD-4; §13.6's "DEV probe
+  only" wording corrected here: refusal reasons are emitted as non-scored
+  events, not probe-only counters; F9 (hint label "Calibration bench
+  (Workshop)" vs the deck's "Calibration Breaker") — hygiene, the hint
+  names the Workshop; F10 — the legacy yard-window parity writes are
+  inert on the v2 route.
+- **Gameplay (Opus)** — verdict: usable, no blocker; sequence
+  understandable, Core never a trap, confirmation deliberate, finale
+  satisfying without answer cards; copy audit clean. **Fixed**: F-1 stale
+  objective once the feeds are up (deck overrides the line: "Feeds up —
+  enter the Core Chamber through the north door."); F-2 closure copy
+  implying the exit closes ("Confirming closes the record only — the
+  station stays open to you."); F-3 help-line legibility (11 px, faint
+  rather than dim); F-4 armed-state signposting ("move focus right (→) to
+  CONFIRM"); F-5 a plain click on the coupler tray now lifts it instead of
+  rolling back; F-6 door state as text (`DOOR · SEALED/OPEN` chip beside
+  the lamp); F-7 Core pedestal texture; F-8 "CORE CHAMBER" sign off the
+  approach point; F-10 Vale's `core_stabilise` beat now points at the
+  feeds; abbreviations — one token per feed everywhere (sign words).
+  **Recorded**: F-9 ESC during the 2.4 s ramp opens the pause menu (the
+  ramp resumes cleanly; foundation ESC convention — Unit 8); F-11 the
+  shared `sfxComplete` triad is the project-wide completion cue (owner
+  call whether the finale should use a flatter cue); the review-panel
+  counts + never-entered labels invite late remediation (Unit 1/2 design,
+  MAJ-9 scoped — owner call, OD-5); `short_attempts`/`returns_to_tray`
+  are input-mode-asymmetric context counters (excluded from analysis, OD-4).
+- **Test quality (Sonnet)** — tsc ✓, ESLint ✓, pure 35/35 run by the
+  reviewer; all 19 pure proofs COVERED with real state shapes; route
+  proofs COVERED; no state injection, no vacuous assertions, positive
+  readiness evidence present. **Fixed**: the two sleep-only negative waits
+  (`attemptFeedRefused`, `attemptCoreDoorSealed` now wait for the actual
+  feedback line), dead code in the timing reducer, `\blow\b`/`\bhigh\b`
+  anchoring, quote-agnostic `proto_m` scan. **Recorded**: route-level
+  `invalid` / `technical_failure` dispositions are proven at the pure
+  level only (the participant spine produces neither without return-shift
+  work) and no "all tasks correct" route run exists in this unit —
+  both belong to the complete-route run of the final verification unit.
+- **Visual (Opus)** — every one of the 16 frames inspected; verdict:
+  readable with noted defects, no blocker, register adult throughout, no
+  trait/score/item-id language, no flashing (ramp/breathing restrained and
+  reduced-motion gated). The consolidated correction round was already
+  spent, so the majors are **recorded for Unit 7 (presentation)**, in
+  priority order: (V1) the host's `SPACE / E — interact` prompt survives
+  as a sliced fragment at the feed-panel edges (hide the proximity prompt
+  while an overlay is open, `RoomScene`); (V2) breaker-panel copy
+  overlaps (readout vs `CALIBRATION LINE` header; lamp label over its
+  glyph, `FeedPanelScene.ts`); (V3) the `CORE · SYNCHRONISING` chip covers
+  the avatar at the interaction point (move the chip above the pedestal);
+  (V4) the blast door has one texture — open state carried only by the
+  lamp + `DOOR · OPEN` chip (open-leaf variant); (V5) the objective line
+  inside the chamber still says "Enter the Core Chamber …" (chamber
+  override, deck precedent); (V6) duplicated "ENTER or ESC" lines in every
+  panel's ready state (drop the suffix from the feedback string). Minors:
+  refusal banner over the door prompt; name chip over the `CORE CHAMBER`
+  sign; `FEED 3` sign over the utility bot; the `core` theme's walls
+  nearly invisible against the void; oversized completion card and
+  strip-shaped bus panel; modal panels clip the hotbar caption
+  ("Fiel"); Kai unlabeled/static in the chamber; `→ CORE · LIVE` on the
+  same-hue band; `dimText` help at 10 px on the WorkSurface. Deferred
+  polish: bare mid-deck and chamber floor bands. Asset gaps (none
+  promoted): door open-leaf variant, Core vessel state frames, `core`-theme
+  bulkhead/perimeter art, deck floor dressing, textured wheel/lever/
+  coupler/socket, distinct interactive silhouettes for the three feed
+  machines, NPC register mismatch (raster Kai beside procedural props),
+  Kai idle/nameplate. The board's `n/24 tasks closed` line is routed to
+  OD-3/OD-5.
+
+**Open research-owner decisions (Unit 6)** — recorded, none resolved:
+
+1. **OD-1 Closure placement.** (a) record closure at the Shift Review
+   Panel before the feeds and the Core confirmation (as built; row 16 read
+   literally), (b) at the Core confirmation as the old console did with the
+   gate reading "terminal-or-closeable", or (c) at the review with the
+   Concourse door sealed afterwards. Row 6's "no irreversible early
+   completion" pulls toward (b)/(c).
+2. **OD-2 Mission log after closure.** Hidden behind one notice (as built,
+   presentation only), left visible, or reworded.
+3. **OD-3 Mid-route coverage counter.** Numeric count only at stage ≥
+   `deck_closure` (as built), never, or always; and whether the count's
+   treatment of pending stopping-rule windows as closed (MAJ-9 exclusion)
+   is acceptable on a participant surface.
+4. **OD-4 `pilot_closure_*` process data.** Excluded from analysis by
+   written rule (as built), retained as usability/control variables, or
+   reserved.
+5. **OD-5 Data-quality numerals on participant surfaces.** Counts shown
+   (as built), words only, or not shown; and whether the pre-closure
+   review's counts/never-entered labels (Unit 1/2 design) may invite late
+   remediation.
+6. **OD-6 Event-name registration.** `pilot_closure_*` stay unmapped route
+   telemetry (Units 1–5 precedent); which document is the export's data
+   dictionary (`event-schema.md` carries no `pilot_*` entry).
+
+### 13.15 Remaining asset gaps (recorded for Unit 7, none promoted)
+
+See also the visual reviewer's gap list in §13.14.
+
+Valve/breaker/bus station art (procedural 56×64 / 64×64 silhouettes),
+the Core vessel (procedural 112×136), the blast door, a manifold plate,
+a review-panel screen; Kai's chamber pose set (`plv1-kai` idle/done reused);
+conduit/cover-plate floor art (drawn with Graphics); a Core emissive sheet
+(drawn with Graphics); the Core Chamber has no dedicated wall/floor set
+(shared `core` theme).
+
+### 13.16 Confirmations
+
+No disposition, canonical event, scoring formula, weight, trait label or
+score was created or changed; `ScoringManager`, `EventLogger`,
+`SessionState`, `QualtricsBridge`, `DataQualityTracker`, `ResearchRuntime`,
+`event-schema.md`, `scoring-plan.md`, the workbook and the ledger are
+unmodified; no questionnaire wording appears in `src/`; the Qualtrics
+return is not implemented (the old console's navigation was removed from
+the Core path — the redirect is a separate future unit); the M25 decision
+is preserved. Nothing was pushed, merged, tagged, deployed, PR'd, deleted
+or removed.
+
+### 13.18 Checkpoint for the next session
+
+Branch `fable-evidence-led-pilot-v2`, HEAD = the Unit 6 commit (see §2),
+working tree clean, base `0e1a8aa`. The overnight addendum's next steps:
+**Unit 7 — Professional Presentation Integration** (baseline capture of the
+whole route first; the PixelLab candidate pack read-only at
+`.claude/worktrees/fable-pixelab-asset-candidates/asset-candidates/pixelab-v1`;
+every runtime promotion "PROVISIONAL MODEL-SELECTED — NOT HUMAN-APPROVED"
+with a provenance document; the visual majors V1–V6 and minors of §13.14
+are its first work items; commit `art(game): integrate professional outpost
+presentation` or `chore(assets): …`), then **Unit 8 — Final Pilot
+Verification** (M02 overlay positive verification, the `pilot_episodes_1_2`
+M05 driver sleep, the `pilot_records` supply-bundle assertion, a
+post-closure station-revisit assertion, route-level `invalid`/`technical`
+closure cases, full manifest sweep in documented chunks, complete
+participant route with timing, burden gate, five reviews). This session
+stopped after Unit 6 because its context budget was nearly exhausted (the
+addendum's ~85 % rule), not because of a gate failure.
+
+### 13.17 Deferred to the final verification unit
+
+The Unit 2 M02 filing/workspace overlay failure on the capture/pilot_deck
+path (`pilot_deck.spec.ts` still exercises `touchFilingDesk` — see §13.11
+for its result); the `pilot_route` topology-walk intermittent; the legacy
+recycler-rig intermittent; the professional-pilot capture set (frames
+27–30 re-targeted to the review panel in `pilot_visual_capture.spec.ts`,
+not re-captured here).

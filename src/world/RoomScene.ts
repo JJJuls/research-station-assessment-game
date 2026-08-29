@@ -268,6 +268,15 @@ export interface RoomDoorConfig {
   eventMetadata?: Record<string, unknown>;
   /** Interaction used for room_id/object_id context on door events. */
   interactionKey: InteractionKey;
+  /**
+   * Dynamic gate (pilot Unit 6): evaluated on every activation of an
+   * otherwise-open door. Returning a string keeps the door sealed THIS
+   * time and shows that neutral operational message instead of
+   * transitioning (the door event still logs, with `sealed: true`);
+   * returning null opens it. Presentation/navigation only — a gate never
+   * reads task performance and never closes a measurement window.
+   */
+  gate?: () => string | null;
 }
 
 interface ProximityTarget {
@@ -2003,14 +2012,28 @@ export abstract class RoomScene extends Phaser.Scene {
   }
 
   private activateDoor(door: RoomDoorConfig) {
+    const sealedNow =
+      door.target !== undefined ? (door.gate?.() ?? null) : null;
+
     if (door.eventType !== undefined) {
       this.logRoomEvent(
         door.interactionKey,
         door.eventType,
-        door.eventMetadata !== undefined
-          ? { metadata: door.eventMetadata }
+        door.eventMetadata !== undefined || sealedNow !== null
+          ? {
+              metadata: {
+                ...door.eventMetadata,
+                ...(sealedNow !== null ? { sealed: true } : {}),
+              },
+            }
           : undefined,
       );
+    }
+
+    if (sealedNow !== null) {
+      sfxUnavailable();
+      this.showFeedbackMessage(sealedNow);
+      return;
     }
 
     if (door.target === undefined) {

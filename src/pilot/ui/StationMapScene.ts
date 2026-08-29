@@ -1,9 +1,9 @@
 /**
  * Station map + mission log overlay (M) — evidence-led pilot v2 (Unit 1).
  *
- * A compact schematic of the six participant zones (Dock, Concourse,
- * Records Workshop, Diagnostics Laboratory, Recovery Yard, Utility Deck &
- * Core) with the current position, the current destination and
+ * A compact schematic of the seven participant zones (Dock, Concourse,
+ * Records Workshop, Diagnostics Laboratory, Recovery Yard, Utility Deck,
+ * Core Chamber) with the current position, the current destination and
  * discovered/undiscovered state, plus the concise mission log (open
  * obligations, projects and notes registered by the hosting windows).
  * Modal over a paused pilot zone (pause-and-launch, inventory-overlay
@@ -73,10 +73,19 @@ const BOXES: readonly MapBox[] = [
   },
   {
     zone: 'utility_core_deck',
-    label: 'Utility Deck & Core',
+    label: 'Utility Deck',
     x: 420,
     y: 304,
     w: 150,
+    h: 46,
+  },
+  // Unit 6: the Core Chamber sits north of the Utility Deck (gated door).
+  {
+    zone: 'core_chamber',
+    label: 'Core Chamber',
+    x: 440,
+    y: 216,
+    w: 124,
     h: 46,
   },
   { zone: 'dock', label: 'Dock', x: 262, y: 392, w: 120, h: 40 },
@@ -88,6 +97,7 @@ const LINKS: readonly [PilotZoneKey, PilotZoneKey][] = [
   ['station_concourse', 'diagnostics_laboratory'],
   ['diagnostics_laboratory', 'exterior_recovery_yard'],
   ['station_concourse', 'utility_core_deck'],
+  ['utility_core_deck', 'core_chamber'],
   ['records_workshop', 'station_concourse'],
 ];
 

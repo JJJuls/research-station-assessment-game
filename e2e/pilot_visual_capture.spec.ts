@@ -429,34 +429,37 @@ test('pilot route visual capture — yard, deck, completion', async ({
   // 27 — Utility & Core Deck overview.
   await shot(page, '27-deck-overview');
 
-  // 28 — core console end-of-shift review.
-  await openPromptAt(page, PILOT.deck.coreConsole, {
+  // 28 — the Shift Review Panel's end-of-shift review (Unit 6: the record
+  // closure moved here from the old core console).
+  await openPromptAt(page, PILOT.deck.reviewPanel, {
     approachOffset: { x: 0, y: 44 },
     yFirst: false,
   });
   await shot(page, '28-core-review');
-  await selectPromptOption(page, 1); // Begin
+  await selectPromptOption(page, 1); // Close the record as it stands (arms)
   await page.waitForTimeout(500);
 
   // 29 — the explicit confirmation step.
-  await openPromptAt(page, PILOT.deck.coreConsole, {
+  await openPromptAt(page, PILOT.deck.reviewPanel, {
     approachOffset: { x: 0, y: 44 },
     yFirst: false,
   });
   await shot(page, '29-core-confirm');
-  await selectPromptOption(page, 1); // Confirm
+  await selectPromptOption(page, 1); // Confirm — close the station record
 
-  // 30 — the neutral completion screen (no return configured).
+  // 30 — the record closed; the deck's feeds become available (the
+  // physical finale itself is captured by pilot_closure_capture.spec.ts).
   await page.waitForFunction(
     () =>
       (
         window as unknown as {
-          __pilotCompletionProbe?: { closed: boolean } | null;
+          __closureProbe?: { record_closed: boolean } | null;
         }
-      ).__pilotCompletionProbe?.closed === true,
+      ).__closureProbe?.record_closed === true,
     undefined,
     { timeout: 10_000 },
   );
+  await page.waitForTimeout(600);
   await shot(page, '30-shift-complete');
 
   expect(true).toBe(true);

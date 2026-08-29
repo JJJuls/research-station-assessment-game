@@ -654,10 +654,19 @@ export class StationConcourseScene extends PilotZoneScene {
           options: [{ label: 'Understood.', tag: 'redirect_workshop_return' }],
         };
       case 'deck_closure':
-      case 'core_stabilise':
         return {
           body: 'Vale: The Utility Deck is through the east door — the shift review panel is there, then the Core.',
           options: [{ label: 'Understood.', tag: 'redirect_deck' }],
+        };
+      case 'core_stabilise':
+        return {
+          body: 'Vale: The record is closed. Bring the feeds up on the Utility Deck — east door — coolant, calibration, then distribution.',
+          options: [{ label: 'Understood.', tag: 'redirect_feeds' }],
+        };
+      case 'core_sync':
+        return {
+          body: 'Vale: The feeds are up. The Core Chamber is off the Utility Deck — east door, then north.',
+          options: [{ label: 'Understood.', tag: 'redirect_core' }],
         };
       case 'complete':
       default:

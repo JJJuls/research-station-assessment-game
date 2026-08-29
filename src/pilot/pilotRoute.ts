@@ -17,6 +17,9 @@
  *   4 Exterior Recovery                   Recovery Yard (+ Metal Yard)
  *   5 Return, Revision & Handover         Concourse → Workshop (return)
  *   6 Utility & Core Closure              Utility Deck → Core Chamber
+ *                                         (non-scored; Unit 6 — the Core
+ *                                         Chamber is its own zone behind
+ *                                         a readiness-gated door)
  *
  * Scientific boundary: the route stage is NAVIGATION state only. Advancing
  * a stage never requires a correct answer, a completed window, persistence
@@ -32,7 +35,8 @@ export type PilotZoneKey =
   | 'records_workshop'
   | 'diagnostics_laboratory'
   | 'exterior_recovery_yard'
-  | 'utility_core_deck';
+  | 'utility_core_deck'
+  | 'core_chamber';
 
 export const PILOT_ZONE_KEYS: readonly PilotZoneKey[] = [
   'dock',
@@ -41,6 +45,7 @@ export const PILOT_ZONE_KEYS: readonly PilotZoneKey[] = [
   'diagnostics_laboratory',
   'exterior_recovery_yard',
   'utility_core_deck',
+  'core_chamber',
 ];
 
 export const PILOT_ZONE_NAMES: Record<PilotZoneKey, string> = {
@@ -49,7 +54,8 @@ export const PILOT_ZONE_NAMES: Record<PilotZoneKey, string> = {
   records_workshop: 'Records Workshop',
   diagnostics_laboratory: 'Diagnostics Laboratory',
   exterior_recovery_yard: 'Recovery Yard',
-  utility_core_deck: 'Utility Deck & Core',
+  utility_core_deck: 'Utility Deck',
+  core_chamber: 'Core Chamber',
 };
 
 /** The six route episodes (sheet 11). Episode 6 hosts no measurement window. */
@@ -83,6 +89,7 @@ export type PilotStage =
   | 'workshop_return'
   | 'deck_closure'
   | 'core_stabilise'
+  | 'core_sync'
   | 'complete';
 
 export const PILOT_STAGES: readonly PilotStage[] = [
@@ -99,6 +106,7 @@ export const PILOT_STAGES: readonly PilotStage[] = [
   'workshop_return',
   'deck_closure',
   'core_stabilise',
+  'core_sync',
   'complete',
 ];
 
@@ -122,9 +130,11 @@ export const PILOT_OBJECTIVES: Record<PilotStage, string> = {
   workshop_return:
     'Finish the shift in the Records Workshop, then sign the board.',
   deck_closure:
-    'Go to the Utility Deck — Concourse east door — and close the shift at the review panel.',
+    'Utility Deck — Concourse east door: close the station record at the Shift Review Panel.',
   core_stabilise:
-    'Bring the Core back online: coolant valve, calibration breaker, distribution bus.',
+    'Bring the feeds up in order: coolant valve, calibration breaker, distribution bus.',
+  core_sync:
+    'Enter the Core Chamber — north door — and confirm synchronisation at the Core.',
   complete: 'Shift complete — the Core is stable.',
 };
 
@@ -143,6 +153,7 @@ const STAGE_ZONE: Record<PilotStage, PilotZoneKey | null> = {
   workshop_return: 'records_workshop',
   deck_closure: 'utility_core_deck',
   core_stabilise: 'utility_core_deck',
+  core_sync: 'core_chamber',
   complete: null,
 };
 
@@ -161,6 +172,7 @@ export const STAGE_EPISODE: Record<PilotStage, PilotEpisode> = {
   workshop_return: 5,
   deck_closure: 6,
   core_stabilise: 6,
+  core_sync: 6,
   complete: 6,
 };
 
@@ -216,6 +228,12 @@ export const PILOT_DOORS: Record<PilotZoneKey, readonly PilotDoorRef[]> = {
   ],
   utility_core_deck: [
     { to: 'station_concourse', x: 64, y: 272, label: 'Station Concourse' },
+    // Unit 6: the Core Chamber door (north alcove). Gated by the deck on
+    // route readiness + the three feeds; bidirectional once open.
+    { to: 'core_chamber', x: 400, y: 120, label: 'Core Chamber' },
+  ],
+  core_chamber: [
+    { to: 'utility_core_deck', x: 400, y: 496, label: 'Utility Deck' },
   ],
 };
 
@@ -463,6 +481,13 @@ export function notePilotZoneEntered(zone: PilotZoneKey, nowMs: number) {
     advancePilotStage('handover_briefing', nowMs);
   }
 
+  // Unit 6: entering the Core Chamber (only reachable once the deck's gated
+  // door opened) flips the closure stage to the synchronisation step —
+  // navigation only, never a performance check.
+  if (zone === 'core_chamber' && state.stage === 'core_stabilise') {
+    advancePilotStage('core_sync', nowMs);
+  }
+
   notify();
 }
 
@@ -569,12 +594,29 @@ export function removeMissionLogEntry(id: string) {
   }
 }
 
+/**
+ * Unit 6: once the station record is closed at the Utility Deck review,
+ * the log shows ONE neutral notice instead of the accepted obligations —
+ * presentation only (no window is touched); it stops inviting work the
+ * closed record could no longer receive. Null = the ordinary log.
+ */
+let missionLogNotice: string | null = null;
+
+export function setMissionLogNotice(text: string | null) {
+  missionLogNotice = text;
+  notify();
+}
+
 /** Open (not closed) entries, in display order. Concise by construction. */
 export function pilotMissionLog(): {
   id: string;
   kind: MissionLogKind;
   text: string;
 }[] {
+  if (missionLogNotice !== null) {
+    return [{ id: 'record_closed', kind: 'note', text: missionLogNotice }];
+  }
+
   return [...missionLog.values()]
     .filter((entry) => !entry.isClosed())
     .sort((a, b) => a.order - b.order)
@@ -620,4 +662,5 @@ export function resetPilotRouteState() {
   state = createInitialState();
   stations.clear();
   missionLog.clear();
+  missionLogNotice = null;
 }

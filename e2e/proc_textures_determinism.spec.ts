@@ -160,6 +160,17 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-icon-valve-seal': { width: 24, height: 24 },
   // Action-assessment rebuild (Unit 4): recycler-salvage rig.
   'proc-rig-recycler': { width: 48, height: 52 },
+  // Evidence-led pilot v2 (Unit 6): non-scored Utility & Core closure art.
+  'proc-valve-wheel-closed': { width: 56, height: 64 },
+  'proc-valve-wheel-open': { width: 56, height: 64 },
+  'proc-breaker-bank-off': { width: 56, height: 64 },
+  'proc-breaker-bank-on': { width: 56, height: 64 },
+  'proc-bus-cabinet-open': { width: 64, height: 64 },
+  'proc-bus-cabinet-seated': { width: 64, height: 64 },
+  'proc-review-panel': { width: 48, height: 60 },
+  'proc-manifold-panel': { width: 72, height: 44 },
+  'proc-core-vessel': { width: 112, height: 136 },
+  'proc-door-core': { width: 64, height: 56 },
 };
 
 interface ProcTexturesProbe {

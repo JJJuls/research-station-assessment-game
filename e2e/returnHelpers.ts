@@ -745,12 +745,12 @@ export async function valeReturnCheckIn(page: Page) {
   await page.waitForTimeout(400);
 }
 
-/** Workshop → Concourse → Utility Deck: the core console offers only a return before the sign-off; back to the workshop. */
+/** Workshop → Concourse → Utility Deck: the review panel offers only a return before the sign-off; back to the workshop. */
 export async function assertCoreLockedThenReturn(page: Page) {
   await walkTo(page, PILOT.workshop.board.x, RETURN.laneY, { yFirst: true });
   await workshopToConcourse(page);
   await concourseToDeck(page);
-  await openPromptAt(page, PILOT.deck.coreConsole, {
+  await openPromptAt(page, PILOT.deck.reviewPanel, {
     approachOffset: { x: 0, y: 44 },
   });
 

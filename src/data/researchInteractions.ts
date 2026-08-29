@@ -816,4 +816,42 @@ export const researchInteractions = {
     event_type: 'pilot_core_console_opened',
     score_tags: [],
   },
+  // ——— Unit 6: non-scored Utility & Core closure (pilot_closure_* only) ———
+  // Physical feeds, the record review panel, the gated Core door and the
+  // Core itself. No item window, no proto_* family, no score_tags.
+  pilotReviewPanel: {
+    object_id: 'pilot_review_panel',
+    label: 'Shift Review Panel',
+    episode: 'pilot_route',
+    event_type: 'pilot_closure_review_opened',
+    score_tags: [],
+  },
+  pilotCoolantValve: {
+    object_id: 'pilot_coolant_valve',
+    label: 'Coolant Feed Valve',
+    episode: 'pilot_route',
+    event_type: 'pilot_closure_feed_panel_opened',
+    score_tags: [],
+  },
+  pilotCalibrationBreaker: {
+    object_id: 'pilot_calibration_breaker',
+    label: 'Calibration Breaker',
+    episode: 'pilot_route',
+    event_type: 'pilot_closure_feed_panel_opened',
+    score_tags: [],
+  },
+  pilotDistributionBus: {
+    object_id: 'pilot_distribution_bus',
+    label: 'Distribution Bus',
+    episode: 'pilot_route',
+    event_type: 'pilot_closure_feed_panel_opened',
+    score_tags: [],
+  },
+  pilotCore: {
+    object_id: 'pilot_core',
+    label: 'Core',
+    episode: 'pilot_route',
+    event_type: 'pilot_closure_core_inspected',
+    score_tags: [],
+  },
 } satisfies Record<string, ResearchInteraction>;

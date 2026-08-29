@@ -1687,6 +1687,42 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   'proc-icon-valve-seal': { width: 24, height: 24, draw: drawIconValveSeal },
   // Action-assessment rebuild (Unit 4): recycler-salvage rig.
   'proc-rig-recycler': { width: 48, height: 52, draw: drawRigRecycler },
+  // Evidence-led pilot v2 (Unit 6): non-scored Utility & Core closure art.
+  // Before/after pairs are glyph + geometry differences, never colour-only.
+  'proc-valve-wheel-closed': {
+    width: 56,
+    height: 64,
+    draw: (g) => drawValveWheel(g, false),
+  },
+  'proc-valve-wheel-open': {
+    width: 56,
+    height: 64,
+    draw: (g) => drawValveWheel(g, true),
+  },
+  'proc-breaker-bank-off': {
+    width: 56,
+    height: 64,
+    draw: (g) => drawBreakerBank(g, false),
+  },
+  'proc-breaker-bank-on': {
+    width: 56,
+    height: 64,
+    draw: (g) => drawBreakerBank(g, true),
+  },
+  'proc-bus-cabinet-open': {
+    width: 64,
+    height: 64,
+    draw: (g) => drawBusCabinet(g, false),
+  },
+  'proc-bus-cabinet-seated': {
+    width: 64,
+    height: 64,
+    draw: (g) => drawBusCabinet(g, true),
+  },
+  'proc-review-panel': { width: 48, height: 60, draw: drawReviewPanel },
+  'proc-manifold-panel': { width: 72, height: 44, draw: drawManifoldPanel },
+  'proc-core-vessel': { width: 112, height: 136, draw: drawCoreVessel },
+  'proc-door-core': { width: 64, height: 56, draw: drawCoreDoor },
 };
 
 // ————————————————————————————————————————————————————————————————————
@@ -1951,6 +1987,221 @@ function drawCrateSupply(g: Graphics) {
   rect(g, 22, 20, 14, 2, MUTED);
   rect(g, 22, 24, 14, 2, MUTED);
   rect(g, 6, 4, 36, 5, KAI_SUIT_SHADE);
+}
+
+// ——— Evidence-led pilot v2, Unit 6: Utility & Core closure art ————————————
+// Restrained industrial machinery in the shared drawing language. Cyan
+// (ACCENT) marks only live/ready operational elements; the muted teal
+// 0x2e6b66 is the dormant emissive; state changes are geometry + glyph.
+
+const FLOW = 0x3fa8a0;
+const STEEL = 0x4b5964;
+const STEEL_SHADE = 0x37434c;
+const STEEL_RIM = 0x6b7c88;
+
+/** Coolant feed valve: flanged riser, hand wheel (closed: spokes horizontal /
+ * flow band empty; open: spokes rotated, flow band filled, gauge needle up). */
+function drawValveWheel(g: Graphics, open: boolean) {
+  // Riser pipe + flanges.
+  box(g, 22, 4, 12, 56, STEEL, STEEL_RIM);
+  rect(g, 18, 8, 20, 4, STEEL_SHADE);
+  rect(g, 18, 50, 20, 4, STEEL_SHADE);
+  // Flow band inside the riser (sight glass).
+  rect(g, 25, 14, 6, 34, PANEL);
+  rect(g, 26, 15, 4, 32, open ? FLOW : 0x16232a);
+
+  if (open) {
+    for (const y of [18, 26, 34, 42]) {
+      rect(g, 26, y, 4, 2, ACCENT);
+    }
+  }
+
+  // Gauge (left): dial with needle.
+  box(g, 2, 6, 16, 16, CARD, BORDER);
+  rect(g, 4, 8, 12, 12, PANEL);
+
+  if (open) {
+    rect(g, 9, 9, 2, 6, ACCENT);
+  } else {
+    rect(g, 5, 14, 6, 2, MUTED);
+  }
+
+  // Hand wheel (right): rim + hub + spokes.
+  box(g, 34, 22, 20, 20, STEEL_SHADE, STEEL_RIM);
+  rect(g, 37, 25, 14, 14, CARD);
+  rect(g, 42, 30, 4, 4, STEEL_RIM);
+
+  if (open) {
+    // Rotated spokes (diagonal) — the wheel has been turned through.
+    for (let i = 0; i < 6; i++) {
+      rect(g, 38 + i, 26 + i, 2, 2, MUTED);
+      rect(g, 49 - i, 26 + i, 2, 2, MUTED);
+    }
+
+    rect(g, 38, 38, 12, 1, ACCENT);
+  } else {
+    rect(g, 37, 31, 14, 2, MUTED);
+    rect(g, 43, 25, 2, 14, MUTED);
+  }
+
+  // Base plate.
+  rect(g, 14, 60, 28, 3, OUTLINE);
+}
+
+/** Calibration breaker bank: cabinet, lever on an index scale, three
+ * lamp indicators (off: hollow squares, lever low; on: filled + glyph bar,
+ * lever at index). */
+function drawBreakerBank(g: Graphics, on: boolean) {
+  box(g, 6, 4, 44, 56, CARD, BORDER);
+  rect(g, 8, 6, 40, 3, BORDER);
+  // Index scale (left column).
+  rect(g, 12, 14, 2, 36, MUTED);
+
+  for (let i = 0; i <= 5; i++) {
+    rect(g, 10, 14 + i * 7, 6, 1, MUTED);
+  }
+
+  // Lever: low (off) or at the upper index (on).
+  const leverY = on ? 20 : 44;
+
+  rect(g, 16, leverY, 14, 6, STEEL);
+  rect(g, 16, leverY, 14, 1, STEEL_RIM);
+  rect(g, 28, leverY - 2, 5, 10, on ? ACCENT : MUTED);
+  // Lamp column (right): three indicators.
+  for (let i = 0; i < 3; i++) {
+    const y = 16 + i * 12;
+
+    box(g, 36, y, 9, 8, PANEL, BORDER);
+
+    if (on) {
+      rect(g, 38, y + 2, 5, 4, ACCENT);
+    } else {
+      rect(g, 39, y + 3, 3, 2, 0x2e6b66);
+    }
+  }
+
+  // Placard slot + feet.
+  rect(g, 18, 52, 20, 4, PANEL);
+  rect(g, 8, 60, 10, 3, OUTLINE);
+  rect(g, 38, 60, 10, 3, OUTLINE);
+}
+
+/** Distribution bus cabinet: open front, bus bars, a coupler socket at the
+ * right (open: coupler in the tray, socket empty; seated: coupler in the
+ * socket, bars bridged, power band lit). */
+function drawBusCabinet(g: Graphics, seated: boolean) {
+  box(g, 4, 4, 56, 56, CARD, BORDER);
+  rect(g, 6, 6, 52, 3, BORDER);
+  // Bus bars (three horizontal).
+  for (const y of [18, 28, 38]) {
+    rect(g, 10, y, 30, 4, STEEL);
+    rect(g, 10, y, 30, 1, STEEL_RIM);
+  }
+
+  // Socket housing (right).
+  box(g, 42, 14, 14, 30, STEEL_SHADE, STEEL_RIM);
+  rect(g, 45, 18, 8, 22, PANEL);
+
+  if (seated) {
+    // Coupler seated: bridge block inside the socket + lit power band.
+    rect(g, 46, 20, 6, 18, STEEL_RIM);
+    rect(g, 40, 22, 6, 14, STEEL);
+    rect(g, 10, 46, 46, 3, ACCENT);
+    rect(g, 12, 50, 8, 2, ACCENT);
+  } else {
+    // Coupler waiting in the tray (bottom left) + dark power band.
+    rect(g, 10, 46, 46, 3, 0x16232a);
+    box(g, 12, 50, 12, 6, STEEL, STEEL_RIM);
+    rect(g, 47, 27, 4, 4, 0x2e6b66);
+  }
+
+  rect(g, 6, 60, 12, 3, OUTLINE);
+  rect(g, 46, 60, 12, 3, OUTLINE);
+}
+
+/** Shift review panel: wall-mounted screen with a record ledger motif. */
+function drawReviewPanel(g: Graphics) {
+  box(g, 6, 4, 36, 44, CARD, BORDER);
+  rect(g, 9, 7, 30, 30, PANEL);
+  rect(g, 11, 10, 18, 2, ACCENT);
+  for (let i = 0; i < 5; i++) {
+    rect(g, 11, 15 + i * 4, 22 - (i % 2) * 6, 2, MUTED);
+    rect(g, 35, 15 + i * 4, 2, 2, i < 3 ? 0x2e6b66 : BORDER);
+  }
+  rect(g, 11, 33, 26, 1, BORDER);
+  // Wall bracket + conduit.
+  rect(g, 20, 48, 8, 8, STEEL_SHADE);
+  rect(g, 16, 56, 16, 3, OUTLINE);
+}
+
+/** Three-feed manifold: a wall plate with three labelled ports (state is
+ * drawn live by the scene on top; the plate itself is neutral). */
+function drawManifoldPanel(g: Graphics) {
+  box(g, 4, 6, 64, 32, CARD, BORDER);
+  rect(g, 6, 8, 60, 3, BORDER);
+
+  for (let i = 0; i < 3; i++) {
+    const x = 10 + i * 20;
+
+    box(g, x, 16, 14, 14, PANEL, BORDER);
+    rect(g, x + 5, 30, 4, 8, STEEL_SHADE);
+  }
+
+  rect(g, 4, 38, 64, 3, OUTLINE);
+}
+
+/** The Core: a tall pressure vessel on a plinth — banded rings, a central
+ * sight column, coolant collars, four feed stubs. The emissive state
+ * (inactive / prepared / synchronising / stable) is drawn live by the
+ * scene over the sight column; the vessel itself is neutral steel. */
+function drawCoreVessel(g: Graphics) {
+  // Plinth.
+  rect(g, 8, 122, 96, 10, OUTLINE);
+  box(g, 14, 112, 84, 10, STEEL_SHADE, STEEL_RIM);
+  // Vessel body.
+  box(g, 26, 14, 60, 100, STEEL, STEEL_RIM);
+  // Dome cap.
+  box(g, 34, 6, 44, 10, STEEL_SHADE, STEEL_RIM);
+  rect(g, 44, 2, 24, 4, STEEL_SHADE);
+  // Sight column (dark — the scene lights it).
+  rect(g, 50, 20, 12, 88, PANEL);
+  rect(g, 52, 22, 8, 84, 0x0a1116);
+  // Coolant collars / bands.
+  for (const y of [30, 52, 74, 96]) {
+    rect(g, 22, y, 68, 5, STEEL_SHADE);
+    rect(g, 22, y, 68, 1, STEEL_RIM);
+  }
+  // Feed stubs (left + right).
+  for (const y of [40, 84]) {
+    rect(g, 10, y, 16, 6, STEEL);
+    rect(g, 10, y, 16, 1, STEEL_RIM);
+    rect(g, 86, y, 16, 6, STEEL);
+    rect(g, 86, y, 16, 1, STEEL_RIM);
+  }
+  // Inspection hatch + bolts.
+  box(g, 30, 60, 14, 12, CARD, BORDER);
+  rect(g, 32, 62, 2, 2, MUTED);
+  rect(g, 40, 62, 2, 2, MUTED);
+  rect(g, 32, 68, 2, 2, MUTED);
+  rect(g, 40, 68, 2, 2, MUTED);
+}
+
+/** Core Chamber blast door: heavy frame, split leaves, a status lamp slot
+ * (the scene lights the slot when the door is open). */
+function drawCoreDoor(g: Graphics) {
+  box(g, 4, 4, 56, 48, STEEL_SHADE, STEEL_RIM);
+  rect(g, 8, 8, 22, 40, STEEL);
+  rect(g, 34, 8, 22, 40, STEEL);
+  rect(g, 8, 8, 22, 1, STEEL_RIM);
+  rect(g, 34, 8, 22, 1, STEEL_RIM);
+  rect(g, 30, 8, 4, 40, OUTLINE);
+  // Warning chevrons (muted) on both leaves.
+  for (let i = 0; i < 3; i++) {
+    rect(g, 12 + i * 6, 40, 4, 4, MUTED);
+    rect(g, 38 + i * 6, 40, 4, 4, MUTED);
+  }
+  // Lamp slot above the leaves.
+  rect(g, 24, 2, 16, 4, PANEL);
 }
 
 /** Fixed manifest (key → dimensions) for determinism coverage. */

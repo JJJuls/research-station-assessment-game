@@ -1593,6 +1593,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       case 'workshop_return':
       case 'deck_closure':
       case 'core_stabilise':
+      case 'core_sync':
       case 'complete':
         return {
           body: 'Noor: Yard work is logged. Vale is waiting inside at the incident desk.',

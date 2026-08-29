@@ -2,6 +2,7 @@ export * from './ArchiveScene';
 export * from './ArtifactSurveyScene';
 export * from './Boot';
 export * from './CoolantYardScene';
+export * from './CoreChamberScene';
 export * from './DiagnosticsLaboratoryScene';
 export * from './DockScene';
 export * from './EngineerScene';
@@ -32,6 +33,7 @@ export * from './Menu';
 export * from './OpsAnnexScene';
 // Professional pilot route: the two modal overlays (class exports only —
 // every value exported from this barrel is registered as a Phaser scene).
+export { FeedPanelScene } from '../pilot/ui/FeedPanelScene';
 export { PilotOpeningScene } from '../pilot/ui/PilotOpeningScene';
 export { StationMapScene } from '../pilot/ui/StationMapScene';
 export { WorkSurfaceScene } from '../pilot/ui/WorkSurfaceScene';

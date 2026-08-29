@@ -94,15 +94,27 @@ test.describe('pilot route model (pure)', () => {
       'station_concourse',
       'records_workshop',
       'utility_core_deck',
+      'core_chamber',
     ]);
     expect(purposefulReturnLegs()).toBe(1);
 
-    // Episode 6 (closure) lives on the deck and hosts no ledger window.
+    // Episode 6 (closure) lives on the deck and in the Core Chamber behind
+    // its gated door (Unit 6); it hosts no ledger window.
     for (const stage of PILOT_STAGES) {
       if (STAGE_EPISODE[stage] === 6 && stage !== 'complete') {
-        expect(pilotStageZone(stage)).toBe('utility_core_deck');
+        expect(['utility_core_deck', 'core_chamber']).toContain(
+          pilotStageZone(stage),
+        );
       }
     }
+
+    expect(pilotStageZone('core_sync')).toBe('core_chamber');
+    // The chamber is a leaf behind the deck: one door each way, never a trap.
+    expect(PILOT_DOORS.core_chamber).toHaveLength(1);
+    expect(PILOT_DOORS.utility_core_deck.map((door) => door.to)).toEqual([
+      'station_concourse',
+      'core_chamber',
+    ]);
 
     // Every ledger window's episode is a route episode that actually
     // occurs in the stage sequence (no orphan episode).
@@ -198,12 +210,13 @@ test.describe('pilot route model (pure)', () => {
     expect(pilotBeaconTarget('records_workshop')).toBeNull();
   });
 
-  test('map model tracks discovery, current and destination for all six zones', () => {
+  test('map model tracks discovery, current and destination for all seven zones', () => {
     notePilotZoneEntered('dock', 1);
     notePilotZoneEntered('station_concourse', 2);
 
     const model = pilotMapModel();
 
+    expect(PILOT_ZONE_KEYS).toHaveLength(7);
     expect(model.map((node) => node.zone)).toEqual([...PILOT_ZONE_KEYS]);
     expect(model.filter((node) => node.discovered).map((n) => n.zone)).toEqual([
       'dock',
