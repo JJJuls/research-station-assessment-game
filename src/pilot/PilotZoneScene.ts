@@ -409,6 +409,16 @@ export abstract class PilotZoneScene extends RoomScene {
     });
   }
 
+  /**
+   * Zone-driven guidance refresh (Unit 4): a zone whose guided stations
+   * become terminal WITHOUT a route-stage change (the exterior sites)
+   * re-reads the objective line and retargets the beacon here.
+   */
+  protected refreshGuidance(): void {
+    this.refreshRouteObjective();
+    this.retargetBeacon();
+  }
+
   /** Per-frame guidance refresh; subclasses override onPilotUpdate. */
   protected onRoomUpdate(): void {
     const visible = this.beaconVisibleNow();
@@ -422,7 +432,9 @@ export abstract class PilotZoneScene extends RoomScene {
         zone: this.zoneKey,
         stage: pilotStage(),
         episode: pilotEpisode(),
-        objective: pilotObjective(),
+        // The displayed line (a zone may narrow the route objective to
+        // its current site — Unit 4); never a second line.
+        objective: this.buildRouteObjectiveText(),
         beacon:
           this.beaconTarget === null ? null : { ...this.beaconTarget, visible },
         launch_mode: pilotLaunchMode(),

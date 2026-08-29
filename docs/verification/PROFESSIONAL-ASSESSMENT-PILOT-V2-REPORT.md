@@ -1,6 +1,6 @@
-# Professional Assessment Pilot V2 — Report (Units 0–3)
+# Professional Assessment Pilot V2 — Report (Units 0–4)
 
-**Status: IN PROGRESS — Unit 3 committed; Units 4–7 not started.** Nothing
+**Status: IN PROGRESS — Unit 4 committed; Units 5–7 not started.** Nothing
 was pushed, merged, tagged, deployed or removed; every commit is local.
 
 ## 1. Branch, base, HEAD
@@ -17,7 +17,8 @@ was pushed, merged, tagged, deployed or removed; every commit is local.
 | Commit    | Subject                                               | Files                                                                                                                                                                                                                                                                                                                                                       |
 | --------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `b1a8be5` | fix(game): complete records workshop evidence windows | `src/pilot/windows/{m04Debris,m02CaseWorkspace}.ts`, `src/scenes/{RecordsWorkshopScene,StationConcourseScene}.ts`, `src/informationProcessing/{m13PipeNetwork,ui/PipeBoardScene}.ts`, `e2e/{pilot_episodes_1_2,pilot_records,concourse_interaction_lifecycle,ip_pipe_suite}.spec.ts`, `e2e/{pilotHelpers,ipHelpers}.ts`, one refreshed lifecycle screenshot |
-| (Unit 3)  | feat(game): unify signal analysis assessment          | see §5 — file list in the commit                                                                                                                                                                                                                                                                                                                            |
+| `fb161c6` | feat(game): unify signal analysis assessment          | see §5                                                                                                                                                                                                                                                                                                                                                      |
+| (Unit 4)  | feat(game): integrate exterior recovery assessment    | see §11.1                                                                                                                                                                                                                                                                                                                                                   |
 
 ## 3. D-V2-1 — root cause and fix
 
@@ -339,3 +340,391 @@ No disposition, canonical event, scoring formula, weight, trait label or
 score was created or changed; `ScoringManager`, `CanonicalEventContext`,
 `event-schema.md` and `scoring-plan.md` do not reference any phase family
 (asserted). Nothing pushed, merged, tagged, deployed, PR'd or removed.
+
+## 11. Unit 4 — Exterior Recovery (M05 o2, M19, M20-start, M23, M24, M26)
+
+### 11.1 Scope and files
+
+Sheet 11 row 4 (Exterior Recovery, 300 s): M05(2), M19, M20-start, M23,
+M24, M26 — valve difficulty → antenna start → scan/dig recovery → magnet
+deck/depletion → disconnected channel. Not in this unit: M20 end/return,
+M21, M22, M25, Utility/Core, scoring, trait labels (sheet 13 G0/G6).
+
+| Area                                         | Files                                                                                                                                                                                                                                                                                               |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pure item models (Node-testable)             | `src/pilot/exterior/{m19CouplingModel,m20AntennaModel,m23ExcavationModel,m24MagnetRigModel,m26ChannelModel,exteriorEpisodeModel}.ts` (new)                                                                                                                                                          |
+| Window adapters (ItemWindow kit, ledger ids) | `src/pilot/windows/exteriorWindows.ts` (new); `windowKit.ts` (`complete(..., {exitState})`); `reviewClosure.ts` (episode-4 closure)                                                                                                                                                                 |
+| Scene                                        | `src/scenes/ExteriorRecoveryYardScene.ts` (rewritten); `src/pilot/zoneSites.ts` (`YARD_SITES`, `YARD_RIG_PAD`); `src/pilot/PilotZoneScene.ts` (`refreshGuidance()`, probe objective = displayed line); `src/data/researchInteractions.ts` (six `pilot*` site keys)                                  |
+| Tests                                        | `e2e/pilot_exterior_models.spec.ts` (12 pure), `e2e/pilot_yard.spec.ts` (rewritten, 3 route tests), `e2e/pilot_exterior_isolation.spec.ts` (2), `e2e/pilot_exterior_capture.spec.ts` (13 frames), `e2e/exteriorHelpers.ts` (new), `e2e/pilot_visual_capture.spec.ts` (yard frames 19–26 retargeted) |
+| Docs                                         | `docs/game/rooms/11-exterior-recovery-yard.md` (new), this report, `docs/verification/screenshots-evidence-led-pilot-v2/09–21*.png`                                                                                                                                                                 |
+
+Untouched on purpose: the field-actions foundation
+(`src/fieldActions/**` — controllers, deck, registries, the developer-lab
+adapters), `src/pilot/yardJobs.ts` (the old M22/M25 ambient orchestration
+is no longer hosted by the yard; the Utility Deck's finalisation calls
+remain harmless no-ops), the ledger, the workbook, every protected
+authority file.
+
+### 11.2 Route and subarea design
+
+One connected 25×19 exterior (theme `exterior`), reached through the
+laboratory airlock; the same airlock is the only door and leads back
+(`▼ AIRLOCK — RETURN TO STATION`). Rock ridges shape seven legible
+subareas without a maze: airlock apron (Noor, supply crate, the M05 cable
+flag), the frozen coupling with its heat-gun rack (west), Mast 04 over its
+rock footing (north-centre), the staked 7×6 excavation field with a dashed
+outline and corner posts (east), the Metal Recovery Yard compound behind a
+south ridge with a darker scrap floor, rig, tray and sorting bench
+(north-east), and the uplink posts A/B with the line-status panel and a
+drawn conduit (north-west). Every interactable follows the D-V2-1
+placement rule (no other interactable nearer than the station at its
+44 px approach point).
+
+Guidance: at `exterior_work` the ONE objective line is the current site
+in operational order (coupling → mast → excavation → rig → uplink → "Report
+to Noor, then return inside through the airlock"), each with its tool hint
+only where relevant; the beacon points at the first non-terminal site and
+hides on arrival; stable landmark names; the M map/log lists the antenna
+obligation neutrally once accepted. The order is guidance only: every site
+is independently enterable, no outcome gates another, "I am finished
+outside." is available at every Noor visit, and the airlock is never
+gated. Noor's brief lists the five sites once; each site carries its own
+panel brief (comprehension exposure recorded as `presented` /
+`comprehension_state: passed`).
+
+### 11.3 M05 occasion 2
+
+`m05Initiation.ts` (Unit 2) hosts o2 unchanged: a loose guy-line cable
+flag on the apron (`proc-survey-stake-flagged` + a flapping marker),
+never mentioned, presented at the first quiet moment after Noor's
+"Ready." (comprehension = brief acknowledged; `input_mode: system`,
+`presented_at_ms`, `distance_px` recorded), E = the initiation act with a
+2 s neutral fix under the manual world-action bracket (ended on the timer
+and on shutdown). Censored `left_zone` at the airlock and `stage_advanced`
+at Noor's shift end; `closeM05AtReview('o2')` at the review. Occasion
+number, window id `m05_initiation_o2`, form/order fields ride every event;
+entry never reads occasion 1 (the route spec proves o2 presents after an
+uninitiated, censored o1); nothing aggregates the two occasions.
+
+### 11.4 M19 — frozen coolant coupling
+
+Mechanic (`m19CouplingModel.ts`): a valve wheel on a frozen coupling. TURN
+(E → "Turn the wheel", a 700 ms timed world action) opens the valve by 10
+points; at the identical thresholds 30 / 60 / 80 the collar ICES
+(difficulty onset, explained in the feedback line) and turns are
+ineffective until THAW (E → "Thaw the collar (heat gun)", 1500 ms) frees
+it — 1, then 2, then 3 passes (resistance rises after initial progress);
+INSPECT reads the state; STEP AWAY is the neutral stop. In-world dial,
+frost overlay and a status chip (`VALVE 40% · ❄ COLLAR ICED`) persist
+across scene creations. Form `standard_v1` recorded. Completion is
+attainable (10 effective turns + 6 thaw passes) and no state has zero
+utility. No rapid clicking: every act is a discrete timed action.
+
+Distinguished events: `turn` (`effective` true/false, `bind_engaged`,
+`ineffective_run`), `thaw` (`useful`, `freed`), `inspect`,
+`difficulty_onset`, `strategy_shift` (thaw after an ineffective turn),
+`departed`, `window_closed`, `technical_failure`. Raw components (ledger
+names): `difficulty_onset` {elapsed_ms, progress},
+`postdifficulty_reengagement` (+ latency), `useful_attempts`, `progress`,
+`completion`, `stop_choice` (`step_away` / `ended_shift_outside` /
+`closed_at_review` / null); contextual counts kept separately
+(ineffective attempts, thaw passes, inspections, strategy shifts, longest
+ineffective run, departures). Explicit stop = completed observation with
+`exit_state: 'stopped'` (the stop is the recorded behaviour, as M05's
+censor is); scene exit = `departed` + pause; shift end closes with
+`stop_choice: ended_shift_outside`.
+
+### 11.5 M20 — antenna restoration, START only
+
+`m20AntennaModel.ts`: E at Mast 04 → "Accept the restoration"
+(`accepted`, window `m20_antenna_start` opens = register ENTERED) → two
+outdoor stages in fixed order (`clear_base_clamp`, `seat_feed_line`;
+1.5 s timed actions, `stage_completed` events) → the mast reads
+`FEED SEATED · ALIGNMENT PENDING (station feed console)`; the mission log
+carries the obligation neutrally. The start window never completes: no
+`window_closed`, no `returned` / `resume_latency` /
+`useful_resume_actions` / `completion` (all `null` in the snapshot,
+`resume_window_implemented: false`); Noor's "finished outside" records
+`interruption_recorded` with `progress_pre_interruption` (0–2) and pauses
+the window, which stays OPEN on the register for the Return episode
+(`m20_antenna_resume`, ledger episode 5 — not this unit). No reminder is
+given at the return instruction. At the Utility Deck review a still-open
+start window is CENSORED (never an outcome). State persists across scene
+exits (tested: leaving after one stage, re-entry shows one stage;
+completing M23/M24/M26 never touches it; the obligation is visible in the
+Concourse mission log after the return).
+
+### 11.6 M23 — scanner-guided excavation
+
+The accepted foundation mechanics are reused unchanged (ScanController,
+DigController, DigSurfaceRegistry, FieldTargetRegistry, FieldCacheManager);
+`m23ExcavationModel.ts` only classifies their records while the window is
+open. E at the stake → brief (scanner/spade semantics, no direction, no
+coordinates) → "Begin the excavation" (window `m23_excavation_w1`,
+comprehension passed). Counterbalanced target cells form*a (18,9) /
+form_b (20,12), both deep in the 7×6 field, detection radius 160 px
+(strong ≤ 53 px, moderate ≤ 106, faint ≤ 160, none beyond); the readout
+is the foundation's strength / FAINT–MODERATE–STRONG / temporal trend
+with a visible cooldown. Only the exact cell holds the coupling; empty
+digs leave persistent disturbed ground (replayed on scene creation);
+belt-full recovery creates a field cache at the cell that persists across
+scene exits and is collected with SPACE/E (item conservation). Inside the
+staked field, C and D are refused neutrally before the window and after a
+stop ("read the stake panel" / "closed for this shift") so a fake
+no-signal readout never appears; outside the window C/D remain
+`secondary_field_action*\*` only.
+
+Raw components (ledger names): `informative_scan_moves` (comparable
+sweep ≥ 24 px from the previous), `signal_strength_changes`
+{stronger, weaker, unchanged, sequence}, `exact_dig_attempts` (+ cells),
+`useful_strategy_shifts` (re-localise after an empty dig; relocate ≥ 48 px
+after a weaker reading), `recovery_complete`; contextual: scans, on-signal
+scans, unique 16 px bins, best strength, first actionable signal
+(MODERATE/STRONG), actionable→recovery ms, off-plot digs, invalid actions,
+path length, delivery (inventory/cache), stop choice, departures. No
+composite search score anywhere.
+
+### 11.7 M24 — Metal Recovery Yard magnet rig
+
+Foundation deck and winch unchanged (finite deck of 6, forms A/B = one
+multiset in two orders; every committed cycle consumes one position
+in-band or not; post-depletion pulls are empty by construction; ESC
+cancels only lowering/timing; one lock per cycle). E at the rig → brief
+(finite catchment, "CATCHMENT DEPLETED means nothing further can be
+recovered", the sorting bench) → "Start the salvage tally" (window
+`m24_magnet_w1`; `deck_position_at_open` recorded and stamped as prior
+exposure when > 0). F runs only on the operating pad and only inside the
+open window. The rig chip shows `CYCLES n · RECOVERED r` (no remaining
+count before depletion); depletion shows the banner `■ CATCHMENT
+DEPLETED`, the statement, and the same statement on every later cycle
+and on the panel (`depletion_shown` counted); the panel offers
+"Acknowledge the depletion notice" (knowledge verified). Continue and stop
+are presented identically.
+
+Raw components (ledger names): `depletion_reached` (+ ms, at_cycle),
+`depletion_acknowledged` (+ ms), `postdepletion_casts` (split
+`postdepletion_casts_pre_ack` / `identical_postdepletion_cycles` = post-
+acknowledgement committed casts), `alternative_opened` (sorting bench
+after depletion; pre-depletion uses counted separately); contextual:
+committed/cancelled cycles, useful/empty outcomes, in/out-of-band locks
+(motor telemetry only), time post depletion, departures. Closure at
+Noor's shift end: completed iff shown AND acknowledged; never depleted →
+censored (missing); depleted but never shown / never acknowledged →
+`insufficient_opportunity` (invalid). Deck state persists across yard
+exits (tested at position 2).
+
+### 11.8 M26 — disconnected uplink channel
+
+`m26ChannelModel.ts`: two field uplink posts (A primary, B backup, three
+tiles east, equally accessible) and a line-status panel; the brief queues
+two recovery reports (coupling recovery, salvage tally — a neutral route
+substitute report is sent whether or not M23/M24 succeeded). After the
+FIRST successful transmission (ACK), a scripted, standardised event 1.4 s
+later tears the conduit to Post A open: the drawn conduit breaks with a
+hazard mark, Post A's chip reads `LINE A ✕ OPEN — NO CARRIER`, the panel
+notice names the severed junction and Line B, and every later Post A
+transmit returns NO CARRIER. The disconnect is real by construction (Post
+A can never deliver again; no hidden recovery) and, if the participant
+leaves before it fires, it fires on re-entry. Knowledge: evidence views
+(post status, panel, "Inspect the line") are logged; the participant
+acknowledges at Post A or at the panel. Attempts before the
+acknowledgement are `pre_knowledge` (never continuation); the first Post
+A attempt after it is the excluded `confirmation_probe`; later ones are
+`postknowledge_transmission`s; any Post B delivery after the disconnect is
+`alternative_used`.
+
+Raw components (ledger names): `disconnect_acknowledged`,
+`confirmation_probe_excluded`, `postknowledge_transmissions`,
+`alternative_used`; contextual: demonstrated ms, evidence views/sources,
+pre-knowledge attempts, first success channel, successes on A before the
+disconnect, reports delivered, every transmission with its classification.
+Closure at shift end: completed iff demonstrated AND acknowledged; never a
+successful transmission → censored; unacknowledged →
+`insufficient_opportunity` (invalid). M24 and M26 share no object, window,
+event family or raw attempt (asserted statically and on the live stream).
+
+### 11.9 Event-family isolation and missing/invalid handling
+
+Families (ledger-exact): `proto_m05_initiation_`, `proto_m19_valve_`,
+`proto_m20_antenna_`, `proto_m23_field_recovery_`,
+`proto_m24_magnet_utility_`, `proto_m26_channel_` — pairwise disjoint
+from each other, from `secondary_field_action_*` and from the foundation
+depleted-search family (pure test 10). Every item-owned event carries
+measure id, opportunity id, window id, entry-state version,
+form/counterbalance/occasion, presented timestamp, comprehension state,
+window status, validity status + reason, input mode; closures carry the
+raw components and active ms. Missing (censored / absent), invalid
+(`insufficient_opportunity`, technical failure via the scene's guard →
+`technicalFailure`) and stopped/completed observations are distinct
+register states; none becomes a low value (route tests 2 and isolation 1).
+Developer launch of the yard contaminates every route window (isolation 2).
+
+### 11.10 Tests (retries=0, workers=1, `PW_DEV_PORT=5321`)
+
+- Pure: `pilot_exterior_models.spec.ts` **12/12** (signal monotone + forms,
+  dig/reach + conservation, cache persistence, M19 schedule + terminals,
+  M20 start persistence with no end field, deterministic deck, one
+  position per committed cycle, zero reward after depletion, M26
+  knowledge gate, family disjointness, missing/invalid/technical
+  semantics, static no-score/no-canonical/no-wording contact).
+- Route (`pilot_yard.spec.ts`, 3 tests), isolation
+  (`pilot_exterior_isolation.spec.ts`, 2), capture
+  (`pilot_exterior_capture.spec.ts`): **6/6 green** before the correction
+  round (17.9 min batch); after the correction round the focused set ran 17/18
+  (the single failure was a register-detail string moved by the
+  single-marker change; `ItemWindow.stop` now carries the reason detail)
+  and the affected route test 2 + the 12 pure tests re-ran **13/13**;
+  route 1 after the corrections: item-owned active 240 s (M20 start 9 s),
+  wall 285 s. The e2e gate lane was tightened afterwards (helper only).
+- Regression scope (18 spec files, 139 tests, 40.2 min): **137 passed, 2
+  failed**, both reproduced in isolation (deterministic) and both outside
+  Unit 4's touched code paths: (a) `magnet_salvage_ip.spec.ts` "recycler
+  rig" (`cast never produced proto_m24_pull #5`) exercises the legacy
+  Coolant-Yard salvage modules (`src/gameplay/iceSalvage*`,
+  `src/measurement/m24SalvageExhaustion.ts` — untouched; the spec was
+  not part of Unit 3's green set); (b) `pilot_visual_capture.spec.ts`
+  "dock, concourse, workshop" (`door at 48,272 did not reach
+records_workshop`) — the same Concourse west door passes in
+  `pilot_route`, `pilot_episodes_1_2` and `concourse_interaction_lifecycle`
+  in the same batch. Both are recorded as pre-existing pending a
+  base-checkout confirmation (next session), not silenced. Green in the
+  batch: evidence_ledger 11, pilot_coverage 8, pilot_route_model 8,
+  signal_incident_models 10, field_actions_models, ip_engine 15,
+  ip_boundaries 3, pilot_lab 3, pilot_signal_incident 2, pilot_episodes_1_2
+  2, pilot_route 4, concourse_interaction_lifecycle 3, inventory_foundation,
+  inventory_measurement_isolation, field_actions_lab, field_actions_measurement,
+  the other magnet_salvage_ip tests and the other pilot_visual_capture tests.
+- `lint:tsc` ✓ · scoped ESLint ✓ · `git diff --check` ✓ · production build:
+  ✓ (`vite build`, 2.6 s).
+- Allowlist: run without `CLAUDE_UNIT_ALLOWLIST`; the commit stages the
+  Unit 4 files by explicit path (list in §11.1).
+
+### 11.11 Screenshots (participant view, 800×600, real input)
+
+`docs/verification/screenshots-evidence-led-pilot-v2/`: `09-exterior-arrival`,
+`10-m05-cable-flag`, `11-m19-coupling-iced`, `12-m20-antenna-started`,
+`13a/13b/13c-m23-scan-{no-signal,faint,actionable}`, `14-m23-recovery`,
+`15-metal-recovery-yard`, `16-m24-timing-window`, `17-m24-cycle-result`,
+`18-m24-depleted`, `19-m26-disconnect-evidence`,
+`20-m23-persistent-excavation`, `21-return-route`, `21a-return-mission-log`
+(the inventory-full field cache is exercised and asserted by route test 3;
+no standalone frame). Inspected at full resolution: 09, 11, 12, 13c, 16,
+18, 19, 20, 21 by the writer; all 16 by the visual reviewer. Frames 19–26
+of `screenshots-professional-pilot` were re-targeted to the new yard.
+
+### 11.12 Reviews (two waves of two, read-only) and the correction round
+
+- **Scientific (Opus)** — no leak, families disjoint, adaptive vs
+  inappropriate persistence separate, no gating; two majors **fixed**:
+  (1) review-closure of M19/M23 now CENSORS (`stop` with
+  `closed_at_review`) instead of completing; (2) guidance is terminal on
+  window ENTRY or an explicit step-away — never at an acknowledgement or
+  depletion (`exteriorSiteDone`, `guidance_dismissed`); M23 tightening
+  **fixed** (strategy shift needs an exact empty dig AND ≥ 24 px
+  relocation; informative moves need on-plot previous and current
+  sweeps); minors **fixed**: technical failure no longer writes a
+  `stop_choice`; the unacknowledged M24/M26 path carries ONE terminal
+  marker (`insufficient_opportunity` via `ItemWindow.stop`); M26 records
+  `postknowledge_transmissions_after_delivery` and
+  `confirmation_probe_rule_applied` / `confirmation_probe_made`; the M05
+  register semantics (`entered` = shown) are documented in the room doc.
+  Owner decisions recorded (§11.14): B-first M26 (acknowledgement stays
+  available at the line panel and Post A), M19 fully-informed difficulty
+  (ledger says pilot the adaptive band first), M05 fixed-distance gate
+  (distance recorded, not enforced — same as occasion 1), the foundation
+  developer-lab adapters sharing the ledger prefixes.
+- **Gameplay (Opus)** — majors **fixed**: guidance no longer pins on a
+  declined site (each site panel's "Step away" releases guidance);
+  the Sorting Bench moved ≥ 100 px from the rig, off the entry path, and
+  now opens a confirming card ("Sort the recovered stock") so the M24
+  alternative is a deliberate act; the M23 brief stays in the stake panel
+  above the counters; objective lines name the E step before C/D and F;
+  ESC named in the rig brief; label pile-ups (MAST 04 sign, heat gun,
+  coupling chip flush left, tray vs banner) repositioned; the cable-flag
+  flap honours reduced motion; room-doc drift corrected. Deferred (not in
+  the allowlist / owner call): the winch hint clamp and timing-UI depth
+  (foundation `magnetWinchController.ts`), `sfxUnavailable` on an
+  out-of-band lock and scene-wide pointer lock (foundation), "Noor: Go
+  on." wording, Records Workshop "Recovery Yard"/"Metal Recovery Yard"
+  naming, 10–11 px chip text size, snowfall/pulse under reduced motion
+  (shared), the `not_diggable` refusal text (foundation).
+- **Test quality (Sonnet)** — tsc ✓, 39/39 pure (4 specs) ✓, one ESLint
+  `preserve-caught-error` finding **fixed** (`cause` attached); pure proof
+  list 12/12 COVERED; route/isolation proofs COVERED or representative;
+  the completed/exited/never-opened × recovered/exited/missing ×
+  fresh/depleted/never-opened matrix is covered ACROSS specs (route 1 =
+  completed chain, route 2 = stopped/exited chain incl. departure and
+  re-entry, isolation 1 = never-opened chain); `waitForTimeout` calls are
+  UI-settle waits beside probe/event waits, never state substitutes; no
+  window mutation, no vacuous assertion found.
+- **Visual (Opus)** — reviewed the frames; items already covered by the
+  correction round: static `FROZEN` sign copy → `COOLANT LINE — COUPLING`;
+  valve chip under the sprite (moved down); mast chip pile-up near the
+  stake (chip relocated above the tower, sign removed); chip vs banner
+  duplication (chip keeps the tally). Deferred as foundation/shared:
+  timing-hint clamp and band visibility/depth, pickup toast depth, world
+  chips under a modal panel, HUD strip under the map modal, `CYCLES 0`
+  at the resolved-hold instant (repaint precedes the resolution callback
+  by the 700 ms hold — a capture instant, not a count defect). Asset gaps
+  (recorded, none promoted): plain excavated-cell decal, plain airlock
+  tile, hotbar icons 4–6, banner style, the corner mute-icon wedge.
+
+Correction rounds used for Unit 4: **1 of 1** (consolidated; re-verified
+by the final focused run above).
+
+### 11.13 Timing (automated; not a human estimate)
+
+Planning target 300 s. Route test 1 (full operation by real input, from
+the Dock): item-owned active **236 s** (M05 fix + M19 + M23 + M24 + M26
+window active time from `window_closed.active_ms`, plus the M20 start
+window's 6 s to the second stage) — inside the 300 s envelope (asserted
+≤ 300 s); wall **284–293 s** from the Dock including the whole Unit 1–3
+spine and every walk; exterior-only wall ≈ 210 s. Modal/idle time is not
+excluded from `active_ms` beyond the pause-on-departure rule; automation
+walks faster than a person and never pauses to read, so no human duration
+is claimed.
+
+### 11.14 Open research-owner decisions (Unit 4)
+
+1. Stop semantics: an explicit "Step away"/"Stop" closes M19/M23 as a
+   COMPLETED observation with `exit_state: 'stopped'` (stop is the
+   behaviour); a shift end closes with `stop_choice: ended_shift_outside`;
+   only the Utility-Deck review censors. Confirm or route stops to
+   censoring.
+2. M24/M26 unacknowledged closure = `insufficient_opportunity` (invalid);
+   never depleted / never disconnected = censored (missing). Confirm.
+3. M26 first success on Post B triggers the disconnect (recorded as
+   `first_success_channel: 'B'`, `successes_on_a_before_disconnect: 0`);
+   whether such records are analysable, or the brief should force A.
+4. M19 difficulty is fully explained (thaw passes shown); the ledger asks
+   for the adaptive band to be piloted before interpreting persistence.
+5. M05 occasion 2 records presentation distance rather than enforcing a
+   fixed band (identical to occasion 1); confound or gate.
+6. The foundation developer-lab adapters (`m23FieldRecovery.ts`,
+   `m24MagnetUtility.ts`) share the ledger prefixes/opportunity ids with
+   the route windows (first-write-wins on the register; reachable only in
+   contaminated developer sessions) — rename or retire.
+7. `yardJobs.ts` (old M22/M25 ambient orchestration) is no longer hosted
+   by the yard; its Utility-Deck finalisation remains a no-op. Retire in
+   Unit 5 when M22 moves to the Workshop Return.
+8. Two pre-existing deterministic failures (§11.10) need a base-checkout
+   run to confirm they predate this branch.
+
+### 11.15 Confirmations
+
+No disposition, canonical event, scoring formula, weight, trait label or
+score was created or changed; `ScoringManager`, `CanonicalEventContext`,
+`EventLogger`, `SessionState`, `QualtricsBridge`, `event-schema.md` and
+`scoring-plan.md` do not reference any Unit 4 family (asserted by pure
+test 12); no M20 end event exists; no Core/assessment completion was
+touched; no questionnaire wording appears in `src/`. Nothing was pushed,
+merged, tagged, deployed, PR'd, deleted or removed.
+
+### 11.16 Checkpoint for the next session
+
+Branch `fable-evidence-led-pilot-v2`, HEAD = the Unit 4 commit (see §2),
+working tree clean. Next: Unit 5 (Return, Revision & Handover — M03(2),
+M07-end, M09-end, M10-end, **M20-end/resume** via the Workshop Return feed
+console using `M20_RESUME_WINDOW_ID` and the open start window, M21, M22,
+M25 questionnaire probe), starting with a base-checkout run of the two
+pre-existing failures above.

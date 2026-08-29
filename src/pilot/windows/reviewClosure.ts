@@ -8,6 +8,7 @@
  * low values. The generic `PILOT_SCHEDULE` closure that follows this call
  * (`closePilotCoverageAtFinalCore`) never overwrites a terminal record.
  */
+import { closeExteriorWindowsAtReview } from './exteriorWindows';
 import { m01Window } from './m01PlanBoard';
 import { closeM02CPanel, m02cWindow } from './m02CaseWorkspace';
 import { closeM04AtReview } from './m04Debris';
@@ -67,4 +68,8 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
     nowMs,
     'incident desk never opened before the review',
   );
+  // Episode 4 (Unit 4): M19 / M23 / M24 / M26 close with their honest
+  // dispositions; the M20 START window censors (its resume window is
+  // episode 5 and not implemented) — never a manufactured outcome.
+  closeExteriorWindowsAtReview(nowMs);
 }

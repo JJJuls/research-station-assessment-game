@@ -707,6 +707,57 @@ export const researchInteractions = {
     event_type: 'pilot_station_opened',
     score_tags: [],
   },
+  // Exterior Recovery episode sites (pilot v2 Unit 4): route telemetry
+  // only — the item windows they host log their own proto_* families.
+  pilotCoupling: {
+    object_id: 'pilot_frozen_coupling',
+    label: 'Frozen Coolant Coupling',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
+  pilotMast: {
+    object_id: 'pilot_mast_04',
+    label: 'Mast 04',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
+  pilotPlotStake: {
+    object_id: 'pilot_excavation_stake',
+    label: 'Excavation Field Stake',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
+  pilotUplinkA: {
+    object_id: 'pilot_uplink_post_a',
+    label: 'Field Uplink Post A',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
+  pilotUplinkB: {
+    object_id: 'pilot_uplink_post_b',
+    label: 'Field Uplink Post B',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
+  pilotSortingBench: {
+    object_id: 'pilot_sorting_bench',
+    label: 'Sorting Bench',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
+  pilotLinePanel: {
+    object_id: 'pilot_line_status_panel',
+    label: 'Line Status Panel',
+    episode: 'pilot_route',
+    event_type: 'pilot_station_opened',
+    score_tags: [],
+  },
   pilotSealLog: {
     object_id: 'pilot_seal_log',
     label: 'Sample Seal Log',

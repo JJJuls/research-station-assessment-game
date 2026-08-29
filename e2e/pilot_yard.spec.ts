@@ -1,931 +1,909 @@
 /**
- * Pilot route — Exterior Recovery Yard (Unit 5).
+ * Pilot route — Exterior Recovery episode (evidence-led pilot v2, Unit 4).
  *
  * Real participant navigation from the Dock (no developer boots):
  *
- * 1. Counterbalanced job queue (`exterior_job_order`), M23 field
- *    recovery to completion, and both AMBIENT instances (M22 relay
- *    housing seal, M25 yard pump interlock) completed in the session's
- *    called order — with the exported control notes on every register.
- * 2. Corrected M24 deck standardisation on the route (EVERY committed
- *    cycle consumes a deck position, timing is telemetry only),
- *    acknowledgement-gated M24/M26 completion, verified-futility M26
- *    flow, and fail-forward job skipping (skipped jobs close honestly
- *    and never block the route).
- * 3. Ambient departure semantics: leaving the yard with an open M22/M25
- *    window records a departure (never a terminal code), and returning
- *    to finish the recovery still completes it.
+ * 1. The complete recovery operation: M05 occasion 2 presented
+ *    independently and initiated; M19 worked to completion through
+ *    icing/thaw cycles; M20 accepted and both outdoor stages started
+ *    (start window stays open); M23 with real scanner feedback
+ *    (none / faint / actionable), an empty dig and the exact-cell
+ *    recovery; M24 finite deck to explicit depletion, a pre-knowledge
+ *    cast, acknowledgement, an identical post-knowledge cast and the
+ *    alternative; M26 first ACK, the scripted disconnect, pre-knowledge
+ *    attempt, acknowledgement, excluded confirmation probe, post-knowledge
+ *    attempt and the backup post; Noor's shift end; item-owned timing.
+ * 2. Stops, departures and persistence: explicit stops are complete
+ *    observations; leaving the yard pauses open windows (departed, never
+ *    terminal) and re-entry restores the coupling, mast, deck and uplink
+ *    state; unacknowledged depletion / disconnect close INVALID (never
+ *    low); the M20 obligation survives the return inside.
+ * 3. Belt-full recovery is lossless (crate spares → cache → collect),
+ *    the inventory / map overlays freeze and resume the world, F outside
+ *    the pad and a held E never double-act.
  *
- * All checks read DEV probes (`__fieldActionsProbe`, `__yardJobsProbe`,
- * `__measurementValidity`, `__pilotProbe`, `__pilotCoverage`) and the
- * research event buffer; input is real keyboard traffic.
+ * All checks read DEV probes and the research event buffer; input is real
+ * keyboard traffic. Retries 0, workers 1.
  */
-import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 
-import { driveAxisTo, getEvents, selectPromptOption } from './helpers';
 import {
+  acceptMast,
+  acknowledgeDepletion,
+  acknowledgeLineAtPostA,
+  APPROACH,
+  beginExcavation,
   captureErrors,
-  completeDockTutorial,
+  completeCoupling,
+  couplingAct,
+  depleteDeck,
+  digFacing,
+  doMastStage,
+  enterYard,
+  eventsByPrefix,
+  eventsByType,
   expectNoRuntimeErrors,
-} from './journey';
+  exteriorProbe,
+  faceCell,
+  faProbe,
+  finishOutside,
+  fixCableFlag,
+  itemStatus,
+  lastFeedback,
+  leaveYard,
+  magnetCycle,
+  openSite,
+  OPPORTUNITY,
+  powerUpUplink,
+  reenterYard,
+  scanAt,
+  standOnPad,
+  startAntenna,
+  startSalvageTally,
+  stopExcavation,
+  transmitAt,
+  useSortingBench,
+  validityRecord,
+  waitDisconnect,
+  waitNoWorldAction,
+  YARD,
+} from './exteriorHelpers';
+import { getEvents, hold, press, selectPromptOption } from './helpers';
 import {
-  bootPilot,
-  concourseToWorkshop,
-  hold,
   interactAt,
   openPromptAt,
   PILOT,
-  pilotCoverage,
   pilotProbe,
-  press,
   useDoor,
-  valeHandover,
   walkTo,
-  workshopSignOff,
-  workshopToConcourse,
 } from './pilotHelpers';
 
-/** Yard geometry (src/scenes/ExteriorRecoveryYardScene.ts). */
-const YARD = {
-  noor: { x: 300.8, y: 428.8 },
-  plotStake: { x: 480, y: 272 },
-  housing: { x: 160, y: 470.4 },
-  supplyCrate: { x: 608, y: 440 },
-  pumpPrime: { x: 448, y: 108.8 },
-  pumpBreaker: { x: 496, y: 108.8 },
-  rig: { x: 656, y: 108.8 },
-  verificationPost: { x: 240, y: 300.8 },
-  m23Cells: {
-    form_a: { x: 592, y: 272 },
-    form_b: { x: 656, y: 336 },
-  },
-  m26ControlCell: { x: 112, y: 144 },
-  m26DepletedSpot: { x: 112, y: 352 },
-} as const;
-
-const FORBIDDEN_IDENTIFIERS = /proto_|\bM(0[1-9]|1[0-9]|2[0-6])\b|\bdev\b/i;
-
-const OPPORTUNITY: Record<string, string> = {
-  m22: 'proto_m22_housing_seal_setback',
-  m23: 'proto_m23_field_recovery',
-  m24: 'proto_m24_magnet_utility',
-  m25: 'proto_m25_yardpump_interlock',
-  m26: 'proto_m26_depleted_search',
-};
-
-const ITEM: Record<string, string> = {
-  m22: 'M22',
-  m23: 'M23',
-  m24: 'M24',
-  m25: 'M25',
-  m26: 'M26',
-};
-
-/* ------------------------------------------------------------------ *
- * Probes
- * ------------------------------------------------------------------ */
-
-interface FieldActionsProbeLike {
-  worldActionActive: boolean;
-  scan: { cooling: boolean; context: string; last: unknown };
-  dig: {
-    last: { col: number; row: number; outcome: string } | null;
-    target: { col: number; row: number } | null;
-  };
-  magnet: {
-    phase: string;
-    markerInBand: boolean;
-    deckForm: string | null;
-    deckPosition: number;
-    totalPulls: number;
-    depleted: boolean;
-  };
-  windows: { m23_open: boolean; m24_open: boolean; m26_phase: string };
-  caches: unknown[];
-}
-
-interface YardJobsProbeLike {
-  queue: string[];
-  current_job: string;
-  zone_entries: number;
-  m22: {
-    fix_attempted: boolean;
-    setback_shown: boolean;
-    spare_seal_fetched: boolean;
-    seal_seated: boolean;
-    yard_exits_during_window: number;
-  };
-  m25: {
-    useful_cycles: number;
-    lock_engaged: boolean;
-    post_lock_primes: number;
-    reset_done: boolean;
-    yard_exits_during_window: number;
-  };
-}
-
-interface ValidityRecordLike {
-  opportunity_id: string;
-  form: string | null;
-  entered: boolean;
-  completed: boolean;
-  invalid_reason: string | null;
-  prior_exposure: string[];
-  validity: string;
-}
-
-async function faProbe(page: Page): Promise<FieldActionsProbeLike> {
-  const probe = await page.evaluate(
-    () =>
-      (
-        window as unknown as {
-          __fieldActionsProbe?: FieldActionsProbeLike | null;
-        }
-      ).__fieldActionsProbe ?? null,
-  );
-
-  if (probe === null) {
-    throw new Error('field-actions probe unavailable');
-  }
-
-  return probe;
-}
-
-async function yardProbe(page: Page): Promise<YardJobsProbeLike> {
-  const probe = await page.evaluate(
-    () =>
-      (window as unknown as { __yardJobsProbe?: YardJobsProbeLike | null })
-        .__yardJobsProbe ?? null,
-  );
-
-  if (probe === null) {
-    throw new Error('yard-jobs probe unavailable');
-  }
-
-  return probe;
-}
-
-async function validityRecord(
-  page: Page,
-  opportunityId: string,
-): Promise<ValidityRecordLike> {
-  const rows = await page.evaluate(
-    () =>
-      (
-        window as unknown as {
-          __measurementValidity?: ValidityRecordLike[] | null;
-        }
-      ).__measurementValidity ?? [],
-  );
-  const row = rows.find(
-    (candidate) => candidate.opportunity_id === opportunityId,
-  );
-
-  if (row === undefined) {
-    throw new Error(`validity record ${opportunityId} missing`);
-  }
-
-  return row;
-}
-
-async function itemStatus(page: Page, item: string): Promise<string> {
-  const coverage = await pilotCoverage(page);
-  const row = coverage?.items.find((candidate) => candidate.item === item);
-
-  if (row === undefined) {
-    throw new Error(`coverage row ${item} missing`);
-  }
-
-  return row.status;
-}
-
-interface PilotEventLike {
-  event_type: string;
-  metadata?: Record<string, unknown>;
-}
-
-async function eventsByType(
-  page: Page,
-  type: string,
-): Promise<PilotEventLike[]> {
-  return ((await getEvents(page)) as PilotEventLike[]).filter(
-    (event) => event.event_type === type,
-  );
-}
-
-/* ------------------------------------------------------------------ *
- * Field-action drivers (proven field_actions_lab patterns)
- * ------------------------------------------------------------------ */
-
-/** One JSON snapshot of everything a field-action press can change. */
-async function observableSnapshot(page: Page): Promise<string> {
-  return page.evaluate(() => {
-    const w = window as unknown as {
-      __fieldActionsProbe?: {
-        worldActionActive: boolean;
-        scan: { last: unknown };
-        dig: { last: unknown };
-        magnet: { phase: string };
-        caches: unknown[];
-      } | null;
-      __lastRoomFeedbackText?: string | null;
-      __yardJobsProbe?: unknown;
-    };
-    const probe = w.__fieldActionsProbe;
-
-    return JSON.stringify({
-      feedback: w.__lastRoomFeedbackText ?? null,
-      action: probe?.worldActionActive ?? false,
-      scan: probe?.scan.last ?? null,
-      dig: probe?.dig.last ?? null,
-      phase: probe?.magnet.phase ?? null,
-      caches: probe?.caches.length ?? 0,
-      yard: w.__yardJobsProbe ?? null,
-    });
-  });
-}
-
-/** Press retried ONLY when nothing observable happened (input loss). */
-async function pressExpectingEffect(page: Page, key: string, attempts = 3) {
-  const before = await observableSnapshot(page);
-
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    await press(page, key);
-    await page.waitForTimeout(700);
-
-    if ((await observableSnapshot(page)) !== before) {
-      return;
-    }
-  }
-
-  throw new Error(`"${key}" press produced no observable effect`);
-}
-
-async function waitMagnetPhase(page: Page, phase: string, timeout = 15_000) {
-  await page.waitForFunction(
-    (expected) =>
-      (
-        window as unknown as {
-          __fieldActionsProbe?: { magnet: { phase: string } } | null;
-        }
-      ).__fieldActionsProbe?.magnet.phase === expected,
-    phase,
-    { timeout },
-  );
-}
-
-/** One full committed magnet cycle, locked in or out of the band. */
-async function magnetCycle(page: Page, inBand: boolean) {
-  await pressExpectingEffect(page, 'F');
-  await waitMagnetPhase(page, 'timing_window', 10_000);
-  await page.waitForFunction(
-    (wanted) =>
-      (
-        window as unknown as {
-          __fieldActionsProbe?: { magnet: { markerInBand: boolean } } | null;
-        }
-      ).__fieldActionsProbe?.magnet.markerInBand === wanted,
-    inBand,
-    { timeout: 10_000 },
-  );
-  await page.keyboard.press('Space');
-  await waitMagnetPhase(page, 'idle');
-}
-
-/**
- * Walks to a dig cell's north neighbour and faces down onto it, then
- * VERIFIES the facing-probe cell and re-drives on drift
- * (field_actions_lab faceCellFromNorth precedent).
- */
-async function faceCellFromNorth(page: Page, cx: number, cy: number) {
-  const targetCol = Math.floor(cx / 32);
-  const targetRow = Math.floor(cy / 32);
-
-  for (let attempt = 0; attempt < 4; attempt++) {
-    await driveAxisTo(page, 'y', cy - 76, 5);
-    await driveAxisTo(page, 'x', cx, 6);
-    await hold(page, 'ArrowDown', 115);
-
-    const probeNow = await faProbe(page);
-    const target = probeNow.dig.target;
-
-    if (
-      target !== null &&
-      target.col === targetCol &&
-      target.row === targetRow
-    ) {
-      return;
-    }
-  }
-
-  throw new Error(`could not face cell ${targetCol}:${targetRow}`);
-}
-
-async function waitDigOutcome(page: Page, outcome: string) {
-  await page.waitForFunction(
-    (expected) =>
-      (
-        window as unknown as {
-          __fieldActionsProbe?: {
-            dig: { last: { outcome: string } | null };
-          } | null;
-        }
-      ).__fieldActionsProbe?.dig.last?.outcome === expected,
-    outcome,
-    { timeout: 10_000 },
-  );
-}
-
-/* ------------------------------------------------------------------ *
- * Route navigation
- * ------------------------------------------------------------------ */
-
-/**
- * Dock → Concourse (Vale ×2) → Workshop (board ×2) → Laboratory (Kai ×2) → airlock → Yard →
- * Noor's briefing ("Ready." issues the field tools, stage
- * exterior_work). Pure fail-forward path — no measurement work done.
- */
-async function enterYard(page: Page, tag: string) {
-  await bootPilot(page, tag);
-  await completeDockTutorial(page, 1);
-  await walkTo(page, 96, 60, { yFirst: true });
-  await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
-    approachOffset: { x: 0, y: 20 },
-  });
-  await valeHandover(page);
-  await concourseToWorkshop(page);
-  await workshopSignOff(page);
-  await workshopToConcourse(page);
-  await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
-    approachOffset: { x: 0, y: 20 },
-    yFirst: false,
-  });
-  await openPromptAt(page, PILOT.lab.kai, {
-    approachOffset: { x: 40, y: 44 },
-  });
-  await selectPromptOption(page, 1);
-  await openPromptAt(page, PILOT.lab.kai, {
-    approachOffset: { x: 40, y: 44 },
-  });
-  await selectPromptOption(page, 1);
-  await walkTo(page, 240, 70, { yFirst: false });
-  await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {
-    approachOffset: { x: 0, y: 20 },
-  });
-  await openPromptAt(page, YARD.noor, { approachOffset: { x: 0, y: 40 } });
-  await selectPromptOption(page, 1);
-
-  const probe = await pilotProbe(page);
-
-  expect(probe?.stage).toBe('exterior_work');
-}
-
-/** Opens Noor's prompt and accepts the current job (option 1). */
-async function acceptNextJob(page: Page) {
-  await openPromptAt(page, YARD.noor, { approachOffset: { x: 0, y: 40 } });
-
-  const body = await page.evaluate(
-    () =>
-      (window as unknown as { __lastPromptBody?: string | null })
-        .__lastPromptBody ?? '',
-  );
-
-  expect(body).not.toMatch(FORBIDDEN_IDENTIFIERS);
-  await selectPromptOption(page, 1);
-}
-
-/** Retrying station interaction until a probe condition holds. */
-async function useStationUntil(
-  page: Page,
-  at: { x: number; y: number },
-  offset: { x: number; y: number },
-  condition: () => Promise<boolean>,
-) {
-  for (let attempt = 0; attempt < 4; attempt++) {
-    await interactAt(page, at, { approachOffset: offset });
-    await page.waitForTimeout(900);
-
-    if (await condition()) {
-      return;
-    }
-  }
-
-  // Diagnostic-rich failure (Unit 8): where the avatar is and what the
-  // yard-job probe holds when the condition never comes true.
-  const diag = await page.evaluate(() => {
-    const w = window as unknown as {
-      __playerProbe?: { x: number; y: number } | null;
-      __yardJobsProbe?: { m22: unknown; m25: unknown } | null;
-      __lastRoomFeedbackText?: string | null;
-    };
-
-    return JSON.stringify({
-      player: w.__playerProbe ?? null,
-      m22: w.__yardJobsProbe?.m22 ?? null,
-      m25: w.__yardJobsProbe?.m25 ?? null,
-      feedback: w.__lastRoomFeedbackText ?? null,
-    });
-  });
-
-  throw new Error(`station at ${at.x},${at.y} condition never held — ${diag}`);
-}
-
-/* ------------------------------------------------------------------ *
- * Job drivers
- * ------------------------------------------------------------------ */
-
-/**
- * M22: setback → crate fetch → seat (housing recovered). All east-west
- * traversals ride the y=376 lane — the y≈470-500 band is blocked by the
- * airlock door body at (384, 496) and Noor's body at (300, 428), and
- * driveAxisTo gives up silently on a wall clamp.
- */
-async function doM22(page: Page) {
-  await useStationUntil(
-    page,
-    YARD.housing,
-    { x: 44, y: 0 },
-    async () => (await yardProbe(page)).m22.setback_shown,
-  );
-  await walkTo(page, YARD.housing.x + 44, 376, { yFirst: true });
-  await walkTo(page, YARD.supplyCrate.x - 44, 376, { yFirst: false });
-  await useStationUntil(
-    page,
-    YARD.supplyCrate,
-    { x: -44, y: 0 },
-    async () => (await yardProbe(page)).m22.spare_seal_fetched,
-  );
-  await walkTo(page, YARD.supplyCrate.x - 44, 376, { yFirst: true });
-  await walkTo(page, YARD.housing.x + 44, 376, { yFirst: false });
-  await useStationUntil(
-    page,
-    YARD.housing,
-    { x: 44, y: 0 },
-    async () => (await yardProbe(page)).m22.seal_seated,
-  );
-}
-
-/** M25: three useful primes → lock → one post-lock prime → breaker. */
-async function doM25(page: Page) {
-  await walkTo(page, YARD.pumpPrime.x, 300, { yFirst: true });
-
-  for (let cycle = 1; cycle <= 3; cycle++) {
-    await useStationUntil(
-      page,
-      YARD.pumpPrime,
-      { x: 0, y: 44 },
-      async () => (await yardProbe(page)).m25.useful_cycles >= cycle,
-    );
-  }
-
-  expect((await yardProbe(page)).m25.lock_engaged).toBe(true);
-
-  // One unchanged post-lock prime (the identical lock statement).
-  await useStationUntil(
-    page,
-    YARD.pumpPrime,
-    { x: 0, y: 44 },
-    async () => (await yardProbe(page)).m25.post_lock_primes >= 1,
-  );
-
-  // The visible different strategy: the breaker beside the control.
-  await useStationUntil(
-    page,
-    YARD.pumpBreaker,
-    { x: 0, y: 44 },
-    async () => (await yardProbe(page)).m25.reset_done,
-  );
-}
-
-/** Ambient-window opener only (for the departure test). */
-async function openAmbientWindow(page: Page, job: string) {
-  if (job === 'm22') {
-    await useStationUntil(
-      page,
-      YARD.housing,
-      { x: 44, y: 0 },
-      async () => (await yardProbe(page)).m22.setback_shown,
-    );
-
-    return;
-  }
-
-  await walkTo(page, YARD.pumpPrime.x, 300, { yFirst: true });
-
-  for (let cycle = 1; cycle <= 3; cycle++) {
-    await useStationUntil(
-      page,
-      YARD.pumpPrime,
-      { x: 0, y: 44 },
-      async () => (await yardProbe(page)).m25.useful_cycles >= cycle,
-    );
-  }
-}
-
-/** Completes a previously opened ambient window after returning. */
-async function completeAmbientWindow(page: Page, job: string) {
-  if (job === 'm22') {
-    // y=376 lane (clear of the airlock door and Noor bodies).
-    await walkTo(page, YARD.supplyCrate.x - 44, 376, { yFirst: true });
-    await useStationUntil(
-      page,
-      YARD.supplyCrate,
-      { x: -44, y: 0 },
-      async () => (await yardProbe(page)).m22.spare_seal_fetched,
-    );
-    await walkTo(page, YARD.supplyCrate.x - 44, 376, { yFirst: true });
-    await walkTo(page, YARD.housing.x + 44, 376, { yFirst: false });
-    await useStationUntil(
-      page,
-      YARD.housing,
-      { x: 44, y: 0 },
-      async () => (await yardProbe(page)).m22.seal_seated,
-    );
-
-    return;
-  }
-
-  await walkTo(page, YARD.pumpBreaker.x, 300, { yFirst: true });
-  await useStationUntil(
-    page,
-    YARD.pumpBreaker,
-    { x: 0, y: 44 },
-    async () => (await yardProbe(page)).m25.reset_done,
-  );
-}
-
-/** M23: scan inside the plot, then dig the form's target cell. */
-async function doM23(page: Page) {
-  const record = await validityRecord(page, OPPORTUNITY.m23);
-  const cell =
-    record.form === 'form_b' ? YARD.m23Cells.form_b : YARD.m23Cells.form_a;
-
-  await walkTo(page, cell.x, 392, { yFirst: true });
-  await pressExpectingEffect(page, 'C');
-  await faceCellFromNorth(page, cell.x, cell.y);
-  await pressExpectingEffect(page, 'D');
-  await waitDigOutcome(page, 'recovered');
-}
-
-test.describe('pilot route — Exterior Recovery Yard (Unit 5)', () => {
-  test('counterbalanced job queue; M23 recovery and both ambient instances complete in the called order', async ({
+test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
+  test('1. the complete recovery operation: six item windows, one route, honest closures, item-owned timing', async ({
     page,
   }) => {
-    test.setTimeout(720_000);
+    test.setTimeout(1_200_000);
 
     const errors = captureErrors(page);
+    const startedAt = Date.now();
 
-    await enterYard(page, 'jobs');
+    await enterYard(page, 'ops');
 
-    // Counterbalanced job order: M23 first, {M22, M25} then {M24, M26}
-    // pairs each counterbalanced, neutral check-in before the last job.
-    const orderEvents = await eventsByType(page, 'pilot_exterior_job_order');
+    // ——— Guidance: one objective line, the beacon on the first site. ———
+    let probe = await pilotProbe(page);
 
-    expect(orderEvents.length).toBeGreaterThan(0);
+    expect(probe?.objective).toContain('coupling');
+    expect(probe?.beacon?.label).toBe('Frozen Coolant Coupling');
+    expect(probe?.objective).not.toMatch(/proto_|\bM\d{2}\b|persist/i);
 
-    const queue = orderEvents[0].metadata?.queue as string[];
+    // ——— M05 occasion 2: presented silently after "Ready.", independent
+    // of occasion 1 (which the spine left uninitiated and censored). ———
+    const o1 = await validityRecord(page, 'proto_m05_initiation_o1');
 
-    expect(queue).toHaveLength(6);
-    expect(queue[0]).toBe('m23');
-    expect(new Set([queue[1], queue[2]])).toEqual(new Set(['m22', 'm25']));
-    expect(queue[4]).toBe('checkin');
-    expect(new Set([queue[3], queue[5]])).toEqual(new Set(['m24', 'm26']));
+    expect(o1.completed).toBe(true); // censored observation (initiated=false)
 
-    // Every yard register carries its queue position as a control note.
-    const orderIndex = orderEvents[0].metadata?.order_index;
+    let ext = await exteriorProbe(page);
 
-    for (const job of ['m22', 'm23', 'm24', 'm25', 'm26']) {
-      const record = await validityRecord(page, OPPORTUNITY[job]);
-      const position = queue.indexOf(job) + 1;
+    expect(ext.m05.presented).toBe(true);
+    expect(ext.m05.initiated).toBe(false);
 
-      expect(record.prior_exposure).toContain(
-        `control:exterior_job_order=${String(orderIndex)};queue_position=${position}`,
+    const o2Opened = await eventsByType(
+      page,
+      'proto_m05_initiation_opportunity_opened',
+    );
+    const o2Open = o2Opened.find((e) => e.metadata?.occasion === 'o2');
+
+    expect(o2Open).toBeDefined();
+    expect(o2Open?.metadata?.window_id).toBe('m05_initiation_o2');
+    expect(o2Open?.metadata?.comprehension_state).toBe('passed');
+    expect(typeof o2Open?.metadata?.presented_at_ms).toBe('number');
+
+    await fixCableFlag(page);
+
+    const o2 = await validityRecord(page, OPPORTUNITY.m05o2);
+
+    expect(o2.completed).toBe(true);
+    expect(o2.validity).toBe('valid');
+
+    const o2Closed = (
+      await eventsByType(page, 'proto_m05_initiation_window_closed')
+    ).find((e) => e.metadata?.occasion === 'o2');
+    const o2Raw = o2Closed?.metadata?.raw_components as Record<string, unknown>;
+
+    expect(o2Raw.occasion_id).toBe('o2');
+    expect(o2Raw.initiated).toBe(true);
+    expect(o2Raw.eligible_opportunity).toBe(true);
+    expect(typeof o2Raw.initiation_latency_ms).toBe('number');
+    expect(o2Raw.censored_reason).toBeNull();
+    expect(JSON.stringify(o2Raw)).not.toMatch(/aggregate|score|o1/);
+
+    // ——— M19: the frozen coupling to completion. ———
+    await completeCoupling(page);
+    ext = await exteriorProbe(page);
+    expect(ext.m19.completion).toBe(true);
+    expect(ext.m19.window).toBe('closed');
+    expect(ext.m19.exit).toBe('completed');
+    expect(ext.m19.difficulty_onset?.progress).toBe(30);
+    expect(ext.m19.postdifficulty_reengagement).toBe(true);
+    expect(ext.m19.useful_attempts).toBe(16);
+    expect(ext.m19.strategy_shifts).toBe(0); // the driver thaws without ineffective turns
+    expect(await itemStatus(page, 'M19')).toBe('completed');
+    expect((await validityRecord(page, OPPORTUNITY.m19)).form).toBe(
+      'standard_v1',
+    );
+
+    const m19Events = await eventsByPrefix(page, 'proto_m19_valve_');
+    const m19Types = new Set(m19Events.map((e) => e.event_type));
+
+    for (const required of [
+      'proto_m19_valve_presented',
+      'proto_m19_valve_opportunity_opened',
+      'proto_m19_valve_turn',
+      'proto_m19_valve_difficulty_onset',
+      'proto_m19_valve_thaw',
+      'proto_m19_valve_window_closed',
+    ]) {
+      expect(m19Types, required).toContain(required);
+    }
+
+    for (const event of m19Events) {
+      expect(event.metadata?.measure_id).toBe('M19');
+      expect(event.metadata?.opportunity_id).toBe(OPPORTUNITY.m19);
+      expect(event.metadata?.window_id).toBe('m19_valve_w1');
+      expect(event.metadata?.form).toBe('standard_v1');
+      expect(['keyboard', 'pointer', 'system']).toContain(
+        event.metadata?.input_mode,
       );
     }
 
-    // Guidance: the beacon leads to the first job's station.
-    const probe = await pilotProbe(page);
+    const m19Closed = (
+      await eventsByType(page, 'proto_m19_valve_window_closed')
+    )[0];
+    const m19Raw = m19Closed.metadata?.raw_components as Record<
+      string,
+      unknown
+    >;
 
-    expect(probe?.beacon?.label).toBe('East Recovery Plot');
+    expect(Object.keys(m19Raw)).toEqual(
+      expect.arrayContaining([
+        'difficulty_onset',
+        'postdifficulty_reengagement',
+        'useful_attempts',
+        'progress',
+        'completion',
+        'stop_choice',
+      ]),
+    );
+    expect(m19Closed.metadata?.validity_status).toBe('valid');
+    expect(m19Closed.metadata?.exit_state).toBe('completed');
+    expect(
+      (await eventsByType(page, 'proto_m19_valve_turn')).filter(
+        (e) => e.metadata?.effective === true,
+      ),
+    ).toHaveLength(10);
+    probe = await pilotProbe(page);
+    expect(probe?.beacon?.label).toBe('Mast 04');
+    expect(probe?.objective).toContain('Mast 04');
 
-    // Job 1 — M23 field recovery to completion.
-    await acceptNextJob(page);
-    expect((await faProbe(page)).windows.m23_open).toBe(true);
-    await doM23(page);
+    // ——— M20: accept + both outdoor stages; the start window stays open. ———
+    await startAntenna(page);
+    ext = await exteriorProbe(page);
+    expect(ext.m20.accepted).toBe(true);
+    expect(ext.m20.stages_done).toEqual(['clear_base_clamp', 'seat_feed_line']);
+    expect(ext.m20.outdoor_complete).toBe(true);
+    expect(ext.m20.window).toBe('open');
+    expect(ext.m20.completion).toBeNull();
+    expect(ext.m20.returned).toBeNull();
+    expect(await itemStatus(page, 'M20')).toBe('open');
+    expect(
+      (await eventsByType(page, 'proto_m20_antenna_stage_completed')).length,
+    ).toBe(2);
+    expect(
+      await eventsByType(page, 'proto_m20_antenna_window_closed'),
+    ).toHaveLength(0);
+    // The task itself never ends here: no closure, no resume, no return.
+    for (const event of await eventsByPrefix(page, 'proto_m20_antenna_')) {
+      expect(event.event_type).not.toMatch(
+        /window_closed|resum|return|task_complet/,
+      );
+    }
+    probe = await pilotProbe(page);
+    expect(probe?.mission_log.map((entry) => entry.text).join(' ')).toContain(
+      'Mast 04',
+    );
+    expect(probe?.mission_log.map((entry) => entry.text).join(' ')).not.toMatch(
+      /proto_|\bM\d{2}\b/,
+    );
+    expect(probe?.beacon?.label).toBe('Excavation Field Stake');
 
-    const m23 = await validityRecord(page, OPPORTUNITY.m23);
+    // ——— M23: real scanner feedback, an empty dig, the exact cell. ———
+    ext = await exteriorProbe(page);
 
-    expect(m23.completed).toBe(true);
+    const form = ext.m23_form;
+    const spots = YARD.scanSpots[form];
+    const cell = YARD.targetCells[form];
+
+    await beginExcavation(page);
+    expect((await faProbe(page)).scan.context).toBe('m23_excavation');
+
+    const none = await scanAt(page, spots.none);
+
+    expect(none.category).toBe('none');
+    expect(none.target_id).toBeNull();
+
+    const faint = await scanAt(page, spots.faint);
+
+    expect(faint.category).toBe('faint');
+    expect(faint.strength).toBeGreaterThan(0);
+    expect(faint.strength).toBeLessThanOrEqual(33);
+
+    const actionable = await scanAt(page, spots.actionable);
+
+    expect(['moderate', 'strong']).toContain(actionable.category);
+    expect(actionable.trend).toBe('stronger');
+
+    // An empty dig on the neighbouring cell, then the exact cell.
+    await faceCell(page, cell.x + 32, cell.y);
+    await digFacing(page, 'empty');
+    ext = await exteriorProbe(page);
+    expect(ext.m23.exact_dig_attempts).toBe(1);
+    expect(ext.m23.recovery_complete).toBe(false);
+    await faceCell(page, cell.x, cell.y);
+    await digFacing(page, 'recovered');
+    ext = await exteriorProbe(page);
+    expect(ext.m23.recovery_complete).toBe(true);
+    expect(ext.m23.recovery_delivery).toBe('inventory');
+    expect(ext.m23.exact_dig_attempts).toBe(2);
+    expect(ext.m23.on_signal_scans).toBe(2);
+    expect(ext.m23.first_actionable_signal_ms).not.toBeNull();
+    expect(ext.m23.window).toBe('closed');
     expect(await itemStatus(page, 'M23')).toBe('completed');
-    expect((await faProbe(page)).windows.m23_open).toBe(false);
+    expect(await lastFeedback(page)).toContain('Metal Recovery Yard');
 
-    const eventTypes = ((await getEvents(page)) as PilotEventLike[]).map(
-      (event) => event.event_type,
+    const m23Closed = (
+      await eventsByType(page, 'proto_m23_field_recovery_window_closed')
+    )[0];
+    const m23Raw = m23Closed.metadata?.raw_components as Record<
+      string,
+      unknown
+    >;
+
+    expect(Object.keys(m23Raw)).toEqual(
+      expect.arrayContaining([
+        'informative_scan_moves',
+        'signal_strength_changes',
+        'exact_dig_attempts',
+        'useful_strategy_shifts',
+        'recovery_complete',
+      ]),
     );
+    expect(m23Closed.metadata?.form).toBe(form);
+    expect(JSON.stringify(m23Raw)).not.toMatch(/target_x|target_y|"x":|"y":/); // no coordinates
+    expect(
+      (await eventsByType(page, 'proto_m23_field_recovery_scan')).length,
+    ).toBe(3);
+    expect(
+      (await eventsByType(page, 'proto_m23_field_recovery_dig')).length,
+    ).toBe(2);
+    expect(
+      (await eventsByType(page, 'proto_m23_field_recovery_recovered')).length,
+    ).toBe(1);
+    expect(
+      (await eventsByType(page, 'secondary_field_action_scan')).length,
+    ).toBeGreaterThanOrEqual(3);
+    expect((await faProbe(page)).scan.context).toBe('free');
+    expect((await pilotProbe(page))?.beacon?.label).toBe('Magnet Recovery Rig');
 
-    expect(eventTypes).toContain('proto_m23_field_recovery_scan');
-    expect(eventTypes).toContain('proto_m23_field_recovery_completed');
-    expect(eventTypes).toContain('secondary_field_action_dig');
+    // ——— M24: the finite deck to explicit depletion and beyond. ———
+    await startSalvageTally(page);
+    await depleteDeck(page);
+    ext = await exteriorProbe(page);
+    expect(ext.m24.depletion_reached).toBe(true);
+    expect(ext.m24.knowledge).toBe('depleted_unacknowledged');
+    expect(ext.m24.depletion_shown_count).toBeGreaterThanOrEqual(1);
+    expect(await lastFeedback(page)).toContain('CATCHMENT DEPLETED');
 
-    // Jobs 2 + 3 — the ambient pair in the called order.
-    for (const job of [queue[1], queue[2]]) {
-      await walkTo(page, YARD.noor.x, YARD.noor.y + 40, { yFirst: false });
-      await acceptNextJob(page);
+    // One post-depletion cast BEFORE acknowledgement (pre-knowledge).
+    await standOnPad(page);
+    await magnetCycle(page, true);
+    ext = await exteriorProbe(page);
+    expect(ext.m24.postdepletion_casts_pre_ack).toBe(1);
+    expect(ext.m24.identical_postdepletion_cycles).toBe(0);
+    expect((await faProbe(page)).magnet.deckPosition).toBe(6);
 
-      if (job === 'm22') {
-        await doM22(page);
-      } else {
-        await doM25(page);
-      }
+    await acknowledgeDepletion(page);
+    await standOnPad(page);
+    await magnetCycle(page, false);
+    ext = await exteriorProbe(page);
+    expect(ext.m24.identical_postdepletion_cycles).toBe(1);
+    expect(ext.m24.postdepletion_casts).toBe(2);
+    expect((await faProbe(page)).magnet.deckPosition).toBe(6);
+    expect((await faProbe(page)).magnet.totalPulls).toBe(8);
 
-      const record = await validityRecord(page, OPPORTUNITY[job]);
+    await useSortingBench(page);
+    ext = await exteriorProbe(page);
+    expect(ext.m24.alternative_opened).toBe(true);
 
-      expect(record.completed).toBe(true);
-      expect(await itemStatus(page, ITEM[job])).toBe('completed');
-    }
-
-    const finalTypes = ((await getEvents(page)) as PilotEventLike[]).map(
-      (event) => event.event_type,
-    );
-
-    for (const required of [
-      'proto_m22_housing_opportunity_opened',
-      'proto_m22_housing_setback_shown',
-      'proto_m22_housing_spare_fetched',
-      'proto_m22_housing_seal_seated',
-      'proto_m22_housing_closed',
-      'proto_m25_yardpump_opportunity_opened',
-      'proto_m25_yardpump_post_lock_prime',
-      'proto_m25_yardpump_breaker_reset',
-      'proto_m25_yardpump_closed',
-    ]) {
-      expect(finalTypes).toContain(required);
-    }
-
-    expectNoRuntimeErrors(errors);
-  });
-
-  test('corrected M24 deck, acknowledgement-gated M24/M26 completion, verified futility and fail-forward job skipping', async ({
-    page,
-  }) => {
-    test.setTimeout(780_000);
-
-    const errors = captureErrors(page);
-
-    await enterYard(page, 'deck');
-
-    const queue = (await yardProbe(page)).queue;
-
-    // Fail-forward: skip M23 and the whole ambient pair by accepting
-    // through the queue — nothing blocks, nothing is scored.
-    await acceptNextJob(page); // m23 accepted (never worked)
-    await walkTo(page, YARD.noor.x, YARD.noor.y + 40, { yFirst: false });
-    await acceptNextJob(page); // pair1 job A (closes the M23 window)
-    await openPromptAt(page, YARD.noor, { approachOffset: { x: 0, y: 40 } });
-    await selectPromptOption(page, 1); // pair1 job B
-
-    const m23Closed = await eventsByType(
-      page,
-      'proto_m23_field_recovery_closed',
-    );
-
-    expect(m23Closed).toHaveLength(1);
-    expect(m23Closed[0].metadata?.exit_status).toBe('next_job');
-    expect(await itemStatus(page, 'M23')).toBe('open'); // censored at Final Core
-
-    // Pair 2 in the called order, with the neutral check-in between.
-    const pairTwo = [queue[3], 'checkin', queue[5]];
-
-    for (const job of pairTwo) {
-      await openPromptAt(page, YARD.noor, { approachOffset: { x: 0, y: 40 } });
-      await selectPromptOption(page, 1);
-
-      if (job === 'm24') {
-        await runM24Drill(page);
-      } else if (job === 'm26') {
-        await runM26Drill(page);
-      }
-      // checkin: nothing to do — the acceptance IS the neutral beat.
-    }
-
-    // Closing the last window happens at Noor's "done": both windows
-    // reached displayed+acknowledged, so both complete.
-    await openPromptAt(page, YARD.noor, { approachOffset: { x: 0, y: 40 } });
-    await selectPromptOption(page, 1); // done beat option 1 = "I am done outside."
-
-    expect((await pilotProbe(page))?.stage).toBe('report_kai');
-    expect(await itemStatus(page, 'M24')).toBe('completed');
-    expect(await itemStatus(page, 'M26')).toBe('completed');
-    // Never-attempted ambient jobs stay honestly pending (never low).
-    expect(await itemStatus(page, 'M22')).toBe('pending');
-    expect(await itemStatus(page, 'M25')).toBe('pending');
-
-    // Corrected standardisation: the six committed cycles consumed
-    // positions 1..6 in order, in-band or not; the 7th (post-signal)
-    // cycle consumed nothing and returned nothing.
     const cycles = (
       await eventsByType(page, 'proto_m24_magnet_utility_cycle')
-    ).filter((event) => event.metadata?.cancelled === false);
-    const positions = cycles
-      .map((event) => event.metadata?.pull_position)
-      .filter((position) => position !== null);
+    ).filter((e) => e.metadata?.cancelled === false);
 
-    expect(positions.slice(0, 6)).toEqual([1, 2, 3, 4, 5, 6]);
-    expect(
-      cycles.some((event) => event.metadata?.locked_in_band === false),
-    ).toBe(true);
-
-    for (const event of cycles) {
-      expect(typeof event.metadata?.cycle_duration_ms).toBe('number');
-    }
-
-    // The depleting 6th cycle itself logs post_signal=true (the
-    // statement is displayed during its resolution, before the note —
-    // accepted foundation ordering); the genuine post-depletion cast is
-    // the LAST post-signal cycle.
-    const postSignal = cycles.filter(
-      (event) => event.metadata?.post_signal === true,
-    );
-
-    expect(postSignal.length).toBeGreaterThanOrEqual(2);
-    expect(postSignal[postSignal.length - 1].metadata?.post_depletion).toBe(
+    expect(cycles.map((e) => e.metadata?.pull_position)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8,
+    ]);
+    expect(cycles.slice(6).every((e) => e.metadata?.item_id === null)).toBe(
       true,
     );
+    expect(cycles.some((e) => e.metadata?.locked_in_band === false)).toBe(true);
+    // The depleting sixth cycle logs the state AFTER its resolution.
+    expect(cycles.map((e) => e.metadata?.knowledge_state)).toEqual([
+      ...Array(5).fill('not_depleted'),
+      'depleted_unacknowledged',
+      'depleted_unacknowledged',
+      'depleted_acknowledged',
+    ]);
+    expect(
+      (await eventsByType(page, 'proto_m24_magnet_utility_depletion_reached'))
+        .length,
+    ).toBe(1);
+    expect(
+      (
+        await eventsByType(
+          page,
+          'proto_m24_magnet_utility_depletion_acknowledged',
+        )
+      ).length,
+    ).toBe(1);
+    expect(
+      (await eventsByType(page, 'proto_m24_magnet_utility_alternative_opened'))
+        .length,
+    ).toBe(1);
+    expect((await pilotProbe(page))?.beacon?.label).toBe('Field Uplink Post A');
 
+    // ——— M26: ACK → scripted disconnect → knowledge gate → backup post. ———
+    await powerUpUplink(page);
+    await transmitAt(page, 'uplinkA');
+    expect(await lastFeedback(page)).toContain('ACK');
+    await waitDisconnect(page);
+    expect(await lastFeedback(page)).toContain('LINE OPEN');
+    ext = await exteriorProbe(page);
+    expect(ext.m26.knowledge).toBe('disconnected_unacknowledged');
+
+    await transmitAt(page, 'uplinkA'); // pre-knowledge attempt
+    expect(await lastFeedback(page)).toContain('NO CARRIER');
+    ext = await exteriorProbe(page);
+    expect(ext.m26.pre_knowledge_attempts).toBe(1);
+    expect(ext.m26.postknowledge_transmissions).toBe(0);
+
+    await acknowledgeLineAtPostA(page);
+    await transmitAt(page, 'uplinkA'); // excluded confirmation probe
+    await transmitAt(page, 'uplinkA'); // post-knowledge continuation
+    ext = await exteriorProbe(page);
+    expect(ext.m26.confirmation_probe_excluded).toBe(true);
+    expect(ext.m26.postknowledge_transmissions).toBe(1);
+    expect(ext.m26.alternative_used).toBe(false);
+
+    await transmitAt(page, 'uplinkB');
+    ext = await exteriorProbe(page);
+    expect(ext.m26.alternative_used).toBe(true);
+    expect(ext.m26.all_reports_delivered).toBe(true);
+    expect(await lastFeedback(page)).toContain('Post B');
+
+    const transmissions = await eventsByType(
+      page,
+      'proto_m26_channel_transmission',
+    );
+
+    expect(transmissions.map((e) => e.metadata?.classification)).toEqual([
+      'delivered',
+      'pre_knowledge',
+      'confirmation_probe',
+      'postknowledge',
+      'delivered',
+    ]);
+    expect(
+      (await eventsByType(page, 'proto_m26_channel_disconnect_demonstrated'))
+        .length,
+    ).toBe(1);
+    expect(
+      (await eventsByType(page, 'proto_m26_channel_evidence_viewed')).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      (await eventsByType(page, 'proto_m26_channel_confirmation_probe')).length,
+    ).toBe(1);
+    expect(
+      (await eventsByType(page, 'proto_m26_channel_postknowledge_transmission'))
+        .length,
+    ).toBe(1);
+    expect(
+      (await eventsByType(page, 'proto_m26_channel_alternative_used')).length,
+    ).toBe(1);
+    // M24 and M26 never share an event: no cycle carries a channel, no
+    // transmission carries a pull position.
+    expect(
+      (await eventsByPrefix(page, 'proto_m24_')).some(
+        (e) => 'channel' in (e.metadata ?? {}),
+      ),
+    ).toBe(false);
+    expect(
+      (await eventsByPrefix(page, 'proto_m26_')).some(
+        (e) => 'pull_position' in (e.metadata ?? {}),
+      ),
+    ).toBe(false);
+    expect((await pilotProbe(page))?.objective).toContain('Noor');
+
+    // ——— Noor: the shift ends outside; honest closures. ———
+    await finishOutside(page);
+    ext = await exteriorProbe(page);
+    expect(ext.shift_ended).toBe(true);
+    expect(await itemStatus(page, 'M05')).toBe('completed');
+    expect(await itemStatus(page, 'M19')).toBe('completed');
+    expect(await itemStatus(page, 'M23')).toBe('completed');
+    expect(await itemStatus(page, 'M24')).toBe('completed');
+    expect(await itemStatus(page, 'M26')).toBe('completed');
+    expect(await itemStatus(page, 'M20')).toBe('open');
+    expect(ext.m20.interruption_recorded).toBe(true);
+    expect(ext.m20.progress_pre_interruption).toBe(2);
+    expect(
+      await eventsByType(page, 'proto_m20_antenna_window_closed'),
+    ).toHaveLength(0);
+    expect(
+      (await eventsByType(page, 'proto_m20_antenna_interruption_recorded'))
+        .length,
+    ).toBe(1);
+
+    // Every item-owned event carries the required fields; no item id or
+    // validity word reaches the participant (feedback / objective).
+    for (const family of [
+      'proto_m19_valve_',
+      'proto_m23_field_recovery_',
+      'proto_m24_magnet_utility_',
+      'proto_m26_channel_',
+    ]) {
+      for (const event of await eventsByPrefix(page, family)) {
+        const m = event.metadata ?? {};
+
+        expect(m.measure_id, event.event_type).toMatch(/^M(19|23|24|26)$/);
+        expect(typeof m.opportunity_id).toBe('string');
+        expect(typeof m.window_id).toBe('string');
+        expect(typeof m.entry_state_version).toBe('string');
+        expect(typeof m.comprehension_state).toBe('string');
+        expect(typeof m.window_status).toBe('string');
+        expect(typeof m.validity_status).toBe('string');
+        expect(typeof m.input_mode).toBe('string');
+      }
+    }
+
+    // ——— Timing: item-owned active time vs the 300 s planning envelope. ———
+    const closed = (await getEvents(page)).filter(
+      (e) =>
+        e.event_type.endsWith('_window_closed') &&
+        /^proto_m(05|19|23|24|26)_/.test(e.event_type) &&
+        (e.metadata as { occasion?: string } | undefined)?.occasion !== 'o1',
+    );
+    const activeMs = closed.reduce(
+      (sum, e) =>
+        sum + Number((e.metadata as { active_ms?: number }).active_ms ?? 0),
+      0,
+    );
+    const m20Events = await eventsByPrefix(page, 'proto_m20_antenna_');
+    const m20StageMs = Number(
+      m20Events.find(
+        (e) =>
+          e.event_type === 'proto_m20_antenna_stage_completed' &&
+          e.metadata?.stage === 'seat_feed_line',
+      )?.metadata?.elapsed_ms ?? 0,
+    );
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `exterior recovery: item-owned active ${Math.round((activeMs + m20StageMs) / 1000)} s (M20 start ${Math.round(m20StageMs / 1000)} s); wall ${Math.round((Date.now() - startedAt) / 1000)} s from the Dock`,
+    );
+    expect(activeMs + m20StageMs).toBeLessThanOrEqual(300_000);
+
+    // The return route: airlock → laboratory; the yard state persisted.
+    await leaveYard(page);
+    expect((await pilotProbe(page))?.zone).toBe('diagnostics_laboratory');
     expectNoRuntimeErrors(errors);
   });
 
-  test('ambient windows survive yard departure: departed is recorded, never terminal, and returning completes the recovery', async ({
+  test('2. stops are observations, departures never terminal, state persists across re-entry, unacknowledged signals close invalid, the antenna obligation survives the return', async ({
     page,
   }) => {
-    test.setTimeout(600_000);
+    test.setTimeout(1_200_000);
 
     const errors = captureErrors(page);
 
-    await enterYard(page, 'depart');
+    await enterYard(page, 'stops');
 
-    const queue = (await yardProbe(page)).queue;
-    const ambient = queue[1]; // first ambient job (m22 or m25)
+    // M19: two turns, an inspection, then the neutral stop.
+    await couplingAct(page, 1);
+    await couplingAct(page, 1);
+    await couplingAct(page, 3);
+    await couplingAct(page, 4);
 
-    await acceptNextJob(page); // m23 (never worked)
-    await walkTo(page, YARD.noor.x, YARD.noor.y + 40, { yFirst: false });
-    await acceptNextJob(page); // the ambient job
-    await openAmbientWindow(page, ambient);
+    let ext = await exteriorProbe(page);
 
-    // Leave the yard with the ambient window open.
-    await walkTo(page, 384, 400, { yFirst: false });
-    await useDoor(page, PILOT.yard.airlock, 'diagnostics_laboratory', {
+    expect(ext.m19.progress).toBe(20);
+    expect(ext.m19.inspections).toBe(1);
+    expect(ext.m19.stop_choice).toBe('step_away');
+    expect(ext.m19.window).toBe('closed');
+    expect(ext.m19.exit).toBe('stopped');
+    expect(await itemStatus(page, 'M19')).toBe('completed');
+
+    const m19Closed = (
+      await eventsByType(page, 'proto_m19_valve_window_closed')
+    )[0];
+
+    expect(m19Closed.metadata?.exit_state).toBe('stopped');
+    expect(
+      (m19Closed.metadata?.raw_components as { completion: boolean })
+        .completion,
+    ).toBe(false);
+    expect((await eventsByType(page, 'proto_m19_valve_inspect')).length).toBe(
+      1,
+    );
+
+    // The closed coupling only reads its state now.
+    await interactAt(page, YARD.coupling, {
+      approachOffset: APPROACH.coupling,
+    });
+    await page.waitForTimeout(400);
+    expect(await lastFeedback(page)).toContain('Valve 20%');
+
+    // M20: accept + ONE stage.
+    await acceptMast(page);
+    await doMastStage(page, 1);
+
+    // M23: begin, one sweep, explicit stop (a complete observation).
+    await beginExcavation(page);
+    await scanAt(
+      page,
+      YARD.scanSpots[(await exteriorProbe(page)).m23_form].faint,
+    );
+    await stopExcavation(page);
+    ext = await exteriorProbe(page);
+    expect(ext.m23.window).toBe('closed');
+    expect(ext.m23.exit).toBe('stopped');
+    expect(ext.m23.recovery_complete).toBe(false);
+    expect(ext.m23.stop_choice).toBe('stopped');
+    expect(await itemStatus(page, 'M23')).toBe('completed');
+
+    // Sweeping inside the closed field is refused, never faked.
+    await walkTo(
+      page,
+      YARD.scanSpots[ext.m23_form].actionable.x,
+      YARD.scanSpots[ext.m23_form].actionable.y,
+      { yFirst: true },
+    );
+
+    const scansBefore = (
+      await eventsByType(page, 'proto_m23_field_recovery_scan')
+    ).length;
+
+    await press(page, 'C');
+    await page.waitForTimeout(700);
+    expect(await lastFeedback(page)).toContain('closed for this shift');
+    expect(
+      (await eventsByType(page, 'proto_m23_field_recovery_scan')).length,
+    ).toBe(scansBefore);
+
+    // M24: start, two cycles, then leave the yard with the window open.
+    await startSalvageTally(page);
+    await standOnPad(page);
+    await magnetCycle(page, true);
+    await magnetCycle(page, true);
+    expect((await faProbe(page)).magnet.deckPosition).toBe(2);
+
+    await leaveYard(page);
+
+    const departedM24 = await eventsByType(
+      page,
+      'proto_m24_magnet_utility_departed',
+    );
+    const departedM20 = await eventsByType(page, 'proto_m20_antenna_departed');
+
+    expect(departedM24).toHaveLength(1);
+    expect(departedM20).toHaveLength(1);
+    expect(
+      await eventsByType(page, 'proto_m24_magnet_utility_window_closed'),
+    ).toHaveLength(0);
+    expect(await itemStatus(page, 'M24')).toBe('open');
+    expect(await itemStatus(page, 'M20')).toBe('open');
+    // M05 occasion 2 censored on departure (complete observation, initiated=false).
+    expect(
+      (await eventsByType(page, 'proto_m05_initiation_window_closed')).some(
+        (e) =>
+          e.metadata?.occasion === 'o2' &&
+          (e.metadata?.raw_components as { censored_reason: string })
+            .censored_reason === 'left_zone',
+      ),
+    ).toBe(true);
+
+    // Re-entry: everything persisted (scene recreated).
+    await reenterYard(page);
+    ext = await exteriorProbe(page);
+    expect(ext.zone_entries).toBe(2);
+    expect(ext.m19.progress).toBe(20);
+    expect(ext.m19.window).toBe('closed');
+    expect(ext.m20.accepted).toBe(true);
+    expect(ext.m20.stages_done).toEqual(['clear_base_clamp']);
+    expect(ext.m20.departures).toBe(1);
+    expect(ext.m24.open).toBe(true);
+    expect((await faProbe(page)).magnet.deckPosition).toBe(2);
+    expect((await faProbe(page)).windows.m24_open).toBe(true);
+    expect(await lastFeedback(page)).not.toContain('Mast'); // no antenna reminder on re-entry
+
+    // Finish the deck WITHOUT acknowledging; disconnect the uplink WITHOUT acknowledging.
+    await standOnPad(page);
+
+    for (let position = 3; position <= 6; position++) {
+      await magnetCycle(page, true);
+    }
+
+    expect((await faProbe(page)).magnet.depleted).toBe(true);
+    ext = await exteriorProbe(page);
+    expect(ext.m24.knowledge).toBe('depleted_unacknowledged');
+
+    await powerUpUplink(page);
+    await transmitAt(page, 'uplinkA');
+    await waitDisconnect(page);
+    await transmitAt(page, 'uplinkA');
+    ext = await exteriorProbe(page);
+    expect(ext.m26.pre_knowledge_attempts).toBe(1);
+    expect(ext.m26.knowledge).toBe('disconnected_unacknowledged');
+
+    await finishOutside(page);
+
+    const m24 = await validityRecord(page, OPPORTUNITY.m24);
+    const m26 = await validityRecord(page, OPPORTUNITY.m26);
+
+    expect(m24.validity).toBe('invalid');
+    expect(m24.invalid_reason).toBe('insufficient_opportunity');
+    expect(m24.invalid_detail).toBe('depletion_not_acknowledged');
+    expect(m26.validity).toBe('invalid');
+    expect(m26.invalid_detail).toBe('disconnect_not_acknowledged');
+    expect(await itemStatus(page, 'M24')).toBe('invalid');
+    expect(await itemStatus(page, 'M26')).toBe('invalid');
+    expect(m24.completed).toBe(false);
+    expect(m26.completed).toBe(false);
+
+    const m24Closed = (
+      await eventsByType(page, 'proto_m24_magnet_utility_window_closed')
+    )[0];
+
+    expect(m24Closed.metadata?.exit_state).toBe('departed');
+    expect(
+      (
+        m24Closed.metadata?.raw_components_partial as {
+          postdepletion_casts: number;
+        }
+      ).postdepletion_casts,
+    ).toBe(0);
+
+    // M20: interruption recorded with progress 1; no closure, no outcome.
+    ext = await exteriorProbe(page);
+    expect(ext.m20.progress_pre_interruption).toBe(1);
+    expect(ext.m20.window).toBe('open');
+    expect(
+      await eventsByType(page, 'proto_m20_antenna_window_closed'),
+    ).toHaveLength(0);
+
+    // Return inside: the obligation is still in the mission log.
+    await leaveYard(page);
+    await walkTo(page, 240, 456, { yFirst: true });
+    await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
       approachOffset: { x: 0, y: -40 },
     });
 
-    const departedType =
-      ambient === 'm22'
-        ? 'proto_m22_housing_departed'
-        : 'proto_m25_yardpump_departed';
-    const departed = await eventsByType(page, departedType);
+    const inside = await pilotProbe(page);
 
-    expect(departed).toHaveLength(1);
-    expect(departed[0].metadata?.yard_exits_during_window).toBe(1);
+    expect(inside?.stage).toBe('return_hub');
+    expect(inside?.mission_log.map((entry) => entry.text).join(' ')).toContain(
+      'Mast 04',
+    );
+    expect(await itemStatus(page, 'M20')).toBe('open');
+    expectNoRuntimeErrors(errors);
+  });
 
-    // No terminal close was written — the window is still open.
-    const closedType =
-      ambient === 'm22'
-        ? 'proto_m22_housing_closed'
-        : 'proto_m25_yardpump_closed';
+  test('3. belt-full recovery is lossless; overlays freeze and resume; F off the pad and a held E never double-act', async ({
+    page,
+  }) => {
+    test.setTimeout(900_000);
 
-    expect(await eventsByType(page, closedType)).toHaveLength(0);
-    expect(await itemStatus(page, ITEM[ambient])).toBe('open');
+    const errors = captureErrors(page);
 
-    // Return and complete the recovery — departure was never a latch.
-    await walkTo(page, 240, 70, { yFirst: false });
-    await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {
-      approachOffset: { x: 0, y: 20 },
+    await enterYard(page, 'belt');
+
+    // Fill the belt with crate spares (scanner + spade + 8 spares = 10).
+    for (let take = 0; take < 8; take++) {
+      await openSite(page, 'crate');
+      await selectPromptOption(page, 1);
+      await page.waitForTimeout(250);
+    }
+
+    await openSite(page, 'crate');
+    await selectPromptOption(page, 1);
+    await page.waitForTimeout(300);
+    expect(await lastFeedback(page)).toContain('Belt full');
+
+    // Recover the coupling with a full belt → a field cache at the cell.
+    const form = (await exteriorProbe(page)).m23_form;
+    const cell = YARD.targetCells[form];
+
+    await beginExcavation(page);
+    await faceCell(page, cell.x, cell.y);
+    await digFacing(page, 'cached');
+
+    let ext = await exteriorProbe(page);
+
+    expect(ext.m23.recovery_complete).toBe(true);
+    expect(ext.m23.recovery_delivery).toBe('cache');
+    expect(ext.caches).toHaveLength(1);
+    expect(ext.caches[0].item_id).toBe('relay_coupling');
+    expect((await faProbe(page)).caches).toHaveLength(1);
+    expect(await itemStatus(page, 'M23')).toBe('completed');
+
+    // The cache survives leaving and re-entering the yard.
+    await leaveYard(page);
+    await reenterYard(page);
+    expect((await exteriorProbe(page)).caches).toHaveLength(1);
+    expect((await faProbe(page)).caches).toHaveLength(1);
+    expect((await exteriorProbe(page)).dug_cells).toHaveLength(1);
+
+    // Belt still full → the cache stays; return the spares → collect it.
+    await walkTo(page, cell.x, 340, { yFirst: true }); // row 10 lane clears the stake body
+    await walkTo(page, cell.x, cell.y - 28, { yFirst: true });
+    await press(page, 'Space');
+    await page.waitForTimeout(400);
+    expect(await lastFeedback(page)).toContain('Belt still full');
+    expect((await exteriorProbe(page)).caches).toHaveLength(1);
+
+    await openSite(page, 'crate');
+    await selectPromptOption(page, 3);
+    await page.waitForTimeout(300);
+    expect(await lastFeedback(page)).toContain('returned');
+    await walkTo(page, cell.x, 340, { yFirst: true }); // row 10 lane clears the stake body
+    await walkTo(page, cell.x, cell.y - 28, { yFirst: true });
+    await press(page, 'Space');
+    await page.waitForFunction(
+      () =>
+        (
+          window as unknown as {
+            __exteriorProbe?: { caches: unknown[] } | null;
+          }
+        ).__exteriorProbe?.caches.length === 0,
+      undefined,
+      { timeout: 5000 },
+    );
+    expect((await faProbe(page)).caches).toHaveLength(0);
+    expect(
+      (await eventsByType(page, 'secondary_field_action_cache_created')).length,
+    ).toBe(1);
+    expect(
+      (await eventsByType(page, 'secondary_field_action_cache_recovered'))
+        .length,
+    ).toBe(1);
+    expect(
+      (await eventsByType(page, 'proto_m23_field_recovery_recovered')).length,
+    ).toBe(1);
+
+    // Overlays: I freezes the world and resumes it; M likewise.
+    await walkTo(page, 400, 420, { yFirst: true });
+
+    const before = await page.evaluate(
+      () =>
+        (window as unknown as { __playerProbe?: { x: number } }).__playerProbe
+          ?.x ?? 0,
+    );
+
+    await press(page, 'i');
+    await page.waitForFunction(
+      () => {
+        const probe = (
+          window as unknown as { __inventoryUiProbe?: unknown | null }
+        ).__inventoryUiProbe;
+
+        return probe !== null && probe !== undefined;
+      },
+      undefined,
+      { timeout: 8000 },
+    );
+    await hold(page, 'ArrowRight', 400);
+
+    const frozen = await page.evaluate(
+      () =>
+        (window as unknown as { __playerProbe?: { x: number } }).__playerProbe
+          ?.x ?? 0,
+    );
+
+    expect(Math.abs(frozen - before)).toBeLessThan(2);
+    await press(page, 'Escape');
+    await page.waitForTimeout(500);
+    await hold(page, 'ArrowRight', 400);
+
+    const moved = await page.evaluate(
+      () =>
+        (window as unknown as { __playerProbe?: { x: number } }).__playerProbe
+          ?.x ?? 0,
+    );
+
+    expect(moved).toBeGreaterThan(frozen + 20);
+
+    await press(page, 'm');
+    await page.waitForFunction(
+      () =>
+        (window as unknown as { __pilotMapProbe?: { open: boolean } | null })
+          .__pilotMapProbe?.open === true,
+      undefined,
+      { timeout: 5000 },
+    );
+    await press(page, 'Escape');
+    await page.waitForFunction(
+      () =>
+        (window as unknown as { __pilotMapProbe?: { open: boolean } | null })
+          .__pilotMapProbe?.open === false,
+      undefined,
+      { timeout: 5000 },
+    );
+
+    // F away from the rig: nothing happens (no phase, no event).
+    const cyclesBefore = (
+      await eventsByType(page, 'secondary_field_action_magnet_cycle')
+    ).length;
+
+    await press(page, 'f');
+    await page.waitForTimeout(600);
+    expect((await faProbe(page)).magnet.phase).toBe('idle');
+    expect(
+      (await eventsByType(page, 'secondary_field_action_magnet_cycle')).length,
+    ).toBe(cyclesBefore);
+
+    // A held E at the coupling opens ONE prompt; the act runs once.
+    await walkTo(page, YARD.coupling.x + APPROACH.coupling.x, YARD.coupling.y, {
+      yFirst: true,
     });
+    await hold(page, 'e', 700);
+    await page.waitForTimeout(400);
+    await selectPromptOption(page, 1);
+    await waitNoWorldAction(page);
+    await page.waitForTimeout(300);
+    ext = await exteriorProbe(page);
+    expect(ext.m19.acts).toBe(1);
+    expect(
+      (await eventsByType(page, 'proto_m19_valve_opportunity_opened')).length,
+    ).toBe(1);
+    expect((await eventsByType(page, 'proto_m19_valve_turn')).length).toBe(1);
 
-    const yard = await yardProbe(page);
-
-    expect(yard.zone_entries).toBe(2);
-    expect(yard.current_job).toBe(queue[2]);
-
-    await completeAmbientWindow(page, ambient);
-
-    const record = await validityRecord(page, OPPORTUNITY[ambient]);
-
-    expect(record.completed).toBe(true);
-    expect(await itemStatus(page, ITEM[ambient])).toBe('completed');
-
-    const closed = await eventsByType(page, closedType);
-
-    expect(closed).toHaveLength(1);
-    expect(closed[0].metadata?.departure_code).toBeNull();
-    expect(closed[0].metadata?.yard_exits_during_window).toBe(1);
-
+    // Held SPACE during the act cannot double-submit.
+    await openPromptAt(page, YARD.coupling, {
+      approachOffset: APPROACH.coupling,
+    });
+    await selectPromptOption(page, 1);
+    await hold(page, 'Space', 900);
+    await waitNoWorldAction(page);
+    await page.waitForTimeout(300);
+    expect((await exteriorProbe(page)).m19.acts).toBe(2);
     expectNoRuntimeErrors(errors);
   });
 });
-
-/* ------------------------------------------------------------------ *
- * Drill bodies (used by test 2)
- * ------------------------------------------------------------------ */
-
-/**
- * M24: six committed cycles (mixing in-band and out-of-band locks —
- * every one consumes a position), the depletion statement, one
- * post-signal cycle, then the explicit acknowledgement at the readout.
- */
-async function runM24Drill(page: Page) {
-  await walkTo(page, 680, 300, { yFirst: true });
-  await walkTo(page, 680, 152, { yFirst: true });
-
-  for (let position = 1; position <= 6; position++) {
-    // Cycle 2 deliberately locks OUT of the band: the deck advances
-    // regardless (timing is secondary motor telemetry only).
-    await magnetCycle(page, position !== 2);
-
-    const probe = await faProbe(page);
-
-    expect(probe.magnet.deckPosition).toBe(position);
-  }
-
-  const afterSix = await faProbe(page);
-
-  expect(afterSix.magnet.depleted).toBe(true);
-  expect(
-    (await eventsByType(page, 'proto_m24_magnet_utility_depletion_shown'))
-      .length,
-  ).toBeGreaterThan(0);
-
-  // One post-signal cycle (recorded separately, returns nothing).
-  await magnetCycle(page, true);
-
-  // Explicit acknowledgement at the rig readout (E-station prompt).
-  await openPromptAt(page, YARD.rig, { approachOffset: { x: 0, y: 44 } });
-  await selectPromptOption(page, 2);
-  expect(
-    (
-      await eventsByType(
-        page,
-        'proto_m24_magnet_utility_depletion_acknowledged',
-      )
-    ).length,
-  ).toBe(1);
-}
-
-/**
- * M26: recover the control sample, read the certificate at the
- * verification post (display), acknowledge it, then one post-ack scan
- * inside the fenced verified-empty plot.
- */
-async function runM26Drill(page: Page) {
-  expect((await faProbe(page)).windows.m26_phase).toBe('control');
-
-  await walkTo(page, YARD.m26ControlCell.x, 264, { yFirst: false });
-  await faceCellFromNorth(page, YARD.m26ControlCell.x, YARD.m26ControlCell.y);
-  await pressExpectingEffect(page, 'D');
-  await page.waitForFunction(
-    () =>
-      (
-        window as unknown as {
-          __fieldActionsProbe?: { windows: { m26_phase: string } } | null;
-        }
-      ).__fieldActionsProbe?.windows.m26_phase === 'futile',
-    undefined,
-    { timeout: 10_000 },
-  );
-
-  // The verification post prompt body IS the certificate.
-  await openPromptAt(page, YARD.verificationPost, {
-    approachOffset: { x: 0, y: 44 },
-  });
-  await selectPromptOption(page, 2); // Acknowledge the verification
-  expect(
-    (
-      await eventsByType(
-        page,
-        'proto_m26_depleted_search_futility_acknowledged',
-      )
-    ).length,
-  ).toBe(1);
-
-  // One post-acknowledgement scan INSIDE the fenced plot.
-  await walkTo(page, YARD.m26DepletedSpot.x, YARD.m26DepletedSpot.y, {
-    yFirst: false,
-  });
-  await pressExpectingEffect(page, 'C');
-  await page.waitForFunction(
-    () =>
-      ((
-        window as unknown as {
-          researchRuntime?: { getEvents: () => { event_type: string }[] };
-        }
-      ).researchRuntime
-        ?.getEvents()
-        .filter(
-          (event) =>
-            event.event_type === 'proto_m26_depleted_search_search_scan',
-        ).length ?? 0) >= 1,
-    undefined,
-    { timeout: 10_000 },
-  );
-}

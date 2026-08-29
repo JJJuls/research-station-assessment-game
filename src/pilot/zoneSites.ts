@@ -51,17 +51,39 @@ export const LAB_STATIONS = {
   diagnosticBoard: { x: 21 * TILE, y: 11 * TILE },
 } as const;
 
-/** Exterior yard work sites + Noor. */
+/**
+ * Exterior Recovery episode (Unit 4) — one connected exterior scene with
+ * legible subareas. Placement rule (D-V2-1): every interactable's 44 px
+ * approach point has no other interactable nearer than itself, even
+ * ±12 px; stations sit ≥ 100 px apart. Subareas: airlock apron (south,
+ * Noor + supply crate + the M05 cable flag), frozen coupling (west), Mast
+ * 04 (north-centre, over its rock footing), staked excavation field
+ * (east, cols 16-22 / rows 8-13), the Metal Recovery Yard (north-east
+ * compound behind a ridge) and the uplink posts (north-west).
+ */
 export const YARD_SITES = {
   noor: { x: 9.4 * TILE, y: 13.4 * TILE },
-  supplyCrate: { x: 19 * TILE, y: 13.75 * TILE },
-  relayHousing: { x: 5 * TILE, y: 14.7 * TILE },
-  pumpPrime: { x: 14 * TILE, y: 3.4 * TILE },
-  pumpBreaker: { x: 15.5 * TILE, y: 3.4 * TILE },
-  magnetRig: { x: 20.5 * TILE, y: 3.4 * TILE },
-  magnetTray: { x: 22 * TILE, y: 4.7 * TILE },
-  verificationPost: { x: 7.5 * TILE, y: 9.4 * TILE },
-  relayMast: { x: 12 * TILE, y: 2 * TILE },
+  supplyCrate: { x: 5.5 * TILE, y: 14 * TILE },
+  cableFlag: { x: 17.5 * TILE, y: 14 * TILE },
+  coupling: { x: 3.2 * TILE, y: 10.5 * TILE },
+  thawRack: { x: 3.2 * TILE, y: 8.6 * TILE },
+  mast: { x: 13 * TILE, y: 5.5 * TILE },
+  mastTower: { x: 12 * TILE, y: 3.1 * TILE },
+  plotStake: { x: 15 * TILE, y: 8.5 * TILE },
+  magnetRig: { x: 19.5 * TILE, y: 5 * TILE },
+  magnetTray: { x: 23.3 * TILE, y: 3.8 * TILE },
+  sortingBench: { x: 22.7 * TILE, y: 6.2 * TILE },
+  uplinkA: { x: 3 * TILE, y: 4 * TILE },
+  linePanel: { x: 7 * TILE, y: 3 * TILE },
+  uplinkB: { x: 9.5 * TILE, y: 5 * TILE },
+} as const;
+
+/** Magnet rig operating pad (F works only here). */
+export const YARD_RIG_PAD = {
+  minX: 18 * TILE,
+  maxX: 23.5 * TILE,
+  minY: 2.2 * TILE,
+  maxY: 6.5 * TILE,
 } as const;
 
 /** Utility & Core Deck sites. */

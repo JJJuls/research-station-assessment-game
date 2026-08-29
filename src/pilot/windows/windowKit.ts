@@ -207,21 +207,32 @@ export class ItemWindow {
 
   /**
    * Completes the window with its item-owned raw components. Raw
-   * components are state descriptions — never a score.
+   * components are state descriptions — never a score. Unit 4: a window
+   * whose observation is complete although the task itself was stopped
+   * (an explicit neutral stop is itself the recorded behaviour, e.g. M19
+   * `stop_choice`) passes `exitState: 'stopped'`; the register still
+   * records a completed observation.
    */
-  complete(nowMs: number, raw: Record<string, unknown>, inputMode: InputMode) {
+  complete(
+    nowMs: number,
+    raw: Record<string, unknown>,
+    inputMode: InputMode,
+    options?: { exitState?: 'completed' | 'stopped' },
+  ) {
     if (this.status !== 'open') {
       return false;
     }
 
+    const exitState = options?.exitState ?? 'completed';
+
     this.pause(nowMs);
     this.status = 'closed';
-    this.exitState = 'completed';
+    this.exitState = exitState;
     markOpportunityCompleted(this.spec.opportunityId);
     refreshValidityProbe();
     refreshPilotCoverageProbe();
     this.log('window_closed', {
-      exit_state: 'completed',
+      exit_state: exitState,
       raw_components: raw,
       active_ms: this.activeMs,
       input_mode: inputMode,
@@ -241,7 +252,10 @@ export class ItemWindow {
     exit: 'stopped' | 'departed' | 'closed_at_review',
     raw: Record<string, unknown>,
     inputMode: InputMode,
-    reason: 'participant_absent' | 'censored' = 'censored',
+    reason:
+      | 'participant_absent'
+      | 'censored'
+      | 'insufficient_opportunity' = 'censored',
   ) {
     if (this.status === 'closed') {
       return false;
@@ -250,7 +264,13 @@ export class ItemWindow {
     this.pause(nowMs);
     this.status = 'closed';
     this.exitState = exit;
-    markOpportunityInvalid(this.spec.opportunityId, reason, exit);
+    // The register detail carries the substantive reason when the caller
+    // supplies one (e.g. `depletion_not_acknowledged`), else the exit code.
+    markOpportunityInvalid(
+      this.spec.opportunityId,
+      reason,
+      typeof raw.invalid_detail === 'string' ? raw.invalid_detail : exit,
+    );
     refreshValidityProbe();
     refreshPilotCoverageProbe();
     this.log('window_closed', {

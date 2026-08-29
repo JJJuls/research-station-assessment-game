@@ -317,29 +317,31 @@ test('pilot route visual capture — yard, deck, completion', async ({
     approachOffset: { x: 0, y: 20 },
   });
 
-  // 19 — yard overview (plots, rig, pump, housing, snowfall).
+  // 19 — yard overview (apron, coupling, mast, field, Metal Yard, posts).
   await shot(page, '19-yard-overview');
 
-  // 20 — Noor's job-queue prompt.
+  // 20 — Noor's recovery brief.
   await openPromptAt(page, PILOT.yard.noor, {
     approachOffset: { x: 0, y: 40 },
   });
   await shot(page, '20-noor-briefing');
   await selectPromptOption(page, 1); // Ready → exterior_work
-  await openPromptAt(page, PILOT.yard.noor, {
-    approachOffset: { x: 0, y: 40 },
-  });
-  await selectPromptOption(page, 1); // accept the first job (M23)
 
-  // 21 — scan action in the east plot (pulse + action animation).
+  // 21 — scan action in the staked field (after the stake brief).
+  await openPromptAt(
+    page,
+    { x: 480, y: 272 },
+    { approachOffset: { x: 0, y: 44 } },
+  );
+  await selectPromptOption(page, 1); // Begin the excavation
   await walkTo(page, 592, 392, { yFirst: true });
   await press(page, 'c');
   await page.waitForTimeout(450);
   await shot(page, '21-scan-action');
   await page.waitForTimeout(900);
 
-  // 22 — dig action (spade animation + dust).
-  await driveAxisTo(page, 'y', 292, 5);
+  // 22 — dig action (spade animation + dust) on a field cell.
+  await driveAxisTo(page, 'y', 350, 5);
   await driveAxisTo(page, 'x', 592, 6);
   await hold(page, 'ArrowDown', 115);
   await press(page, 'd');
@@ -347,60 +349,33 @@ test('pilot route visual capture — yard, deck, completion', async ({
   await shot(page, '22-dig-action');
   await page.waitForTimeout(1400);
 
-  // 23 — relay housing setback statement (M22 ambient instance).
-  await openPromptAt(page, PILOT.yard.noor, {
-    approachOffset: { x: 0, y: 40 },
-  }).catch(() => undefined);
-  await selectPromptOption(page, 1).catch(() => undefined);
-  await walkTo(page, 204, 376, { yFirst: true });
-  await interactAt(
+  // 23 — the frozen coupling panel (Unit 4 site brief).
+  await openPromptAt(
     page,
-    { x: 160, y: 470.4 },
+    { x: 80, y: 336 },
     { approachOffset: { x: 44, y: 0 } },
   );
-  await page.waitForTimeout(500);
-  await shot(page, '23-housing-setback');
+  await shot(page, '23-coupling-brief');
+  await selectPromptOption(page, 4);
 
-  // 24 — yard pump interlock statement (M25 ambient instance).
-  await walkTo(page, 448, 300, { yFirst: true });
+  // 24 — Mast 04 panel (antenna restoration brief).
+  await openPromptAt(
+    page,
+    { x: 416, y: 176 },
+    { approachOffset: { x: 0, y: 44 } },
+  );
+  await shot(page, '24-mast-brief');
+  await selectPromptOption(page, 2);
 
-  for (let i = 0; i < 4; i++) {
-    await interactAt(
-      page,
-      { x: 448, y: 108.8 },
-      { approachOffset: { x: 0, y: 44 } },
-    );
-    await page.waitForTimeout(500);
-  }
-
-  await shot(page, '24-pump-interlock');
-
-  // 25 — magnet rig timing window (live sweep marker). Round-2 rig
-  // gate: cycles need the open M24 window, so accept jobs from Noor
-  // until the salvage job is the one just accepted.
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const current = await page.evaluate(
-      () =>
-        (window as unknown as { __yardJobsProbe?: { current_job: string } })
-          .__yardJobsProbe?.current_job ?? 'done',
-    );
-
-    if (current === 'done') {
-      break;
-    }
-
-    await openPromptAt(page, PILOT.yard.noor, {
-      approachOffset: { x: 0, y: 40 },
-    });
-    await selectPromptOption(page, 1);
-
-    if (current === 'm24') {
-      break; // the accept we just made OPENED the m24 window
-    }
-  }
-
+  // 25 — magnet rig timing window (live sweep marker) inside the tally.
+  await openPromptAt(
+    page,
+    { x: 672, y: 108.8 },
+    { approachOffset: { x: 0, y: 44 } },
+  );
+  await selectPromptOption(page, 1); // Start the salvage tally
   await walkTo(page, 680, 300, { yFirst: true });
-  await walkTo(page, 680, 152, { yFirst: true });
+  await walkTo(page, 680, 150, { yFirst: true });
   await press(page, 'f');
   await page.waitForFunction(
     () =>
@@ -425,15 +400,15 @@ test('pilot route visual capture — yard, deck, completion', async ({
     { timeout: 15_000 },
   );
 
-  // 26 — verification post (control-pending guidance).
-  await walkTo(page, 240, 376, { yFirst: true });
+  // 26 — uplink post A (M26 brief).
+  await walkTo(page, 96, 300, { yFirst: true });
   await openPromptAt(
     page,
-    { x: 240, y: 300.8 },
+    { x: 96, y: 128 },
     { approachOffset: { x: 0, y: 44 } },
   );
-  await shot(page, '26-verification-post');
-  await selectPromptOption(page, 1);
+  await shot(page, '26-uplink-post');
+  await selectPromptOption(page, 2);
 
   // Done outside → the ONE purposeful return (Concourse → Workshop) → deck.
   await yardReturnToConcourse(page);
