@@ -1,8 +1,7 @@
-# Professional Assessment Pilot V2 — Report (Units 0–5)
+# Professional Assessment Pilot V2 — Report (Units 0–7)
 
-**Status: IN PROGRESS — Unit 6 (non-scored Utility & Core closure) built
-and verified, see §13; Units 7–8 (presentation, final verification) not
-started.** Nothing was pushed, merged, tagged, deployed or removed; every
+**Status: IN PROGRESS — Unit 7 (professional presentation integration)
+built and verified, see §14; Unit 8 (final verification) not started.** Nothing was pushed, merged, tagged, deployed or removed; every
 commit is local.
 
 ## 1. Branch, base, HEAD
@@ -1584,3 +1583,335 @@ for its result); the `pilot_route` topology-walk intermittent; the legacy
 recycler-rig intermittent; the professional-pilot capture set (frames
 27–30 re-targeted to the review panel in `pilot_visual_capture.spec.ts`,
 not re-captured here).
+
+## 14. Unit 7 — Professional Presentation Integration (presentation only)
+
+### 14.1 Scope and freeze
+
+Workbook sheet 13 gate **G4** ("Adult visual integration": existing
+PixelLab pack after inventory, coherent 96×96 characters / 32×32 world,
+professional UI hierarchy, restrained palette, no placeholder panels, no
+unapproved asset silently promoted, no new generation until the inventory
+records a gap). Everything in this unit is presentation: **no item window,
+disposition, event name, payload, score, weight, trait label,
+missing/invalid semantic, approach point, interaction radius, gate or
+measured timing changed**; M25 stays questionnaire-primary / external
+pending; Utility/Core stays non-scored; no validity is claimed. The
+scientific reviewer's boundary check is in §14.10.
+
+Bounded-unit contract (the mission text is the contract): objective — a
+visually coherent adult outpost; scientific rationale — G4 / none
+(presentation); participant-facing behaviour — same route, same stations,
+same words except the copy fixes listed in §14.4; allowed files — §14.2;
+prohibited — the workbook, the ledger, `event-schema.md`,
+`scoring-plan.md`, every window module, the research runtime,
+`package*.json`; entry state — Unit 6 HEAD `897f5f4`; success — the
+acceptance list in §14.8; failure/recovery — every scene keeps a
+procedural fallback when a texture is absent; telemetry boundary — no new
+event; acceptance — §14.8 + tests §14.9; screenshots — the full route
+re-captured; stop conditions — any non-presentation diff; model — Fable
+(writer), Opus/Sonnet (read-only reviews); commit — one.
+
+### 14.2 Exact changed files
+
+| Area                      | Files                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shared presentation layer | `src/world/RoomScene.ts` (PAUSE-time `hideWorldPrompts`, objective word-wrap + second-line follow, `addDecor` y-depth + floor set, `setDoorTexture`, `stopNpcWorkLoop`, `feedbackMessageY`, door-leaf tint, DEV `__worldPromptProbe`), `src/pilot/PilotZoneScene.ts` (title card y 62 / 16 px, `zoneSignage`, door-leaf default), `src/constants/depth.ts` (`worldDepth`), `src/sprites/Player.ts` (foot-line depth), `src/gameplay/Npc.ts` (depth, chip depth, stoppable work loop), `src/inventory/ui/HotbarHud.ts` (caption hides on PAUSE), `src/pilot/ui/WorkSurfaceScene.ts` (11 px help), `src/index.ts` + `src/style.css` (charcoal ground), `src/world/proceduralTilesets.ts` (`core` theme void/walls) |
+| Assets                    | `src/constants/assets.ts` (`UNIT7_STILL_URLS`, `UNIT7_STRIP_URLS`), `src/scenes/Boot.ts` (loads), `public/assets/pixellab-runtime/{robots/bot-standby,robots/bot-working,sequences/core-sync,sequences/airlock-open,sequences/antenna-signal,effects/snowfall,props/core-coolant-column,props/core-pillar-a,props/core-pillar-b,props/core-console,props/utility-tower,props/utility-panel,props/utility-desk,props/arch-door,props/arch-window,props/arch-vent,props/arch-grille,props/arch-pipes}.png` (18 new, 112 KB), `src/world/proceduralTextures.ts` (`proc-door-core-open`)                                                                                                                             |
+| Rooms                     | `src/scenes/UtilityCoreDeckScene.ts`, `src/scenes/CoreChamberScene.ts`, `src/pilot/ui/FeedPanelScene.ts`, `src/scenes/ExteriorRecoveryYardScene.ts`, `src/scenes/DiagnosticsLaboratoryScene.ts`, `src/scenes/StationConcourseScene.ts`, `src/scenes/RecordsWorkshopScene.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Tests                     | `e2e/presentation_integration.spec.ts` (new, 11 tests), `e2e/proc_textures_determinism.spec.ts` (manifest pin +1), `e2e/pilot_visual_capture.spec.ts` (one test-lane fix, V30)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Docs / evidence           | `docs/verification/evidence-led-pilot-v2/UNIT-7-VISUAL-DEFECT-LEDGER.md` (new), `docs/game/PIXELLAB-RUNTIME-ASSET-PROVENANCE.md` (Unit 7 table), `docs/game/VISUAL-SYSTEM.md` (tokens), `docs/game/rooms/{11,12,13}-*.md`, this report, every frame in `docs/verification/screenshots-evidence-led-pilot-v2/` and `docs/verification/screenshots-professional-pilot/` (re-captured)                                                                                                                                                                                                                                                                                                                              |
+
+Untouched: the workbook, the M01–M26 ledger, `event-schema.md`,
+`scoring-plan.md`, `ScoringManager`, `EventLogger`, `SessionState`,
+`QualtricsBridge`, `DataQualityTracker`, `ResearchRuntime`, every
+`src/pilot/windows/*` module, every `src/pilot/{closure,exterior,return}`
+model, `package*.json`. The candidate pack worktree is unmodified.
+
+### 14.3 Baseline capture (Phase 7.1)
+
+Before any edit the five capture specs were re-run at HEAD `897f5f4`
+(`PW_DEV_PORT=5331`, `--retries=0 --workers=1`): `pilot_visual_capture`
+3/3 (the M02 filing-desk leg included), `pilot_signal_capture` 1/1,
+`pilot_exterior_capture` 1/1, `pilot_return_capture` 1/1,
+`pilot_closure_capture` 1/1 — 25.5 min. The committed frames at `897f5f4`
+are the baseline set (git holds them). Every frame was inspected at full
+resolution; the ledger (`UNIT-7-VISUAL-DEFECT-LEDGER.md`) records V1–V6
+(preserved from §13.14) plus V7–V27 from the baseline and V28–V30 from
+the first Unit 7 pass, each classed blocker / major / minor / asset gap /
+deferred polish / environment / test. No blocker was found.
+
+### 14.4 What changed for the participant (observable)
+
+- **Ground and depth.** One charcoal ground (`#0b1016`) behind the 4:3
+  canvas, as the game clear colour and as the `core` theme void — no black
+  band at 1280×720 (D-U7-1: the base canvas stays 800×600 `Scale.FIT`; the
+  160 px side bands are the same charcoal). Avatar, NPC sprites and decor
+  are y-sorted at the foot line (`worldDepth`); floor dressing stays under
+  everything; the `core` theme's perimeter walls are lifted so the chamber
+  diamond reads.
+- **Overlay hygiene (V1, V12).** Any overlay pauses the host with the
+  proximity prompt, the label chip, the NPC name chips and the hotbar
+  caption hidden; they return on resume.
+- **Guidance surfaces.** The objective line word-wraps inside the viewport
+  (V7); the zone title card is a 16 px band at y 62 (V8); area signage is one
+  shared dim 10 px style in every zone (V17); signs sit beside/under door
+  leaves (V28); the deck's feedback banner sits under the north-door prompt
+  (V13).
+- **Doors.** Interior pilot doors show the PROVISIONAL door leaf
+  (cool-tinted) instead of a cyan square; the two airlocks show the iris
+  airlock's closed frame; the blast door swaps to an open-leaf variant with
+  the gate (V4, V9).
+- **Utility Deck.** Breaker readout / lamp labels no longer overlap (V2);
+  ready feedback no longer repeats the help line (V6); utility bot still
+  (standby → working when all feeds are up), utility tower / panel / desk
+  machinery mass, `CORE CHAMBER` sign on the wall band (V13, V20).
+- **Core Chamber.** The Core is the PROVISIONAL core column strip (held
+  frame inactive-dimmed / prepared / stable; slow 6-frame loop while
+  synchronising; reduced motion holds a mid frame) between two coolant
+  columns; the `CORE · …` chip stands beside the pedestal (V3); Kai works
+  the feed console until the Core is stable, then holds the finished pose
+  (V14); inside the chamber the objective line reads "At the Core: inspect
+  it, open the synchronisation review, then confirm." / "Synchronising —
+  stand by; the Core stabilises in a moment." (V5); pillars frame the south
+  door.
+- **Exterior.** Restrained slate-tinted snowfall (reduced motion: one faint
+  frame), restored-antenna art with a slow two-frame pulse once Mast 04's
+  restoration is outdoor-complete (V19, V29); scanner signals, dig cells
+  and the rig readouts are untouched.
+- **Concourse / Workshop / Laboratory.** Wall modules (window, vent,
+  grille, pipes) as dressing, dim signage, door leaves.
+
+### 14.5 Assets and provenance
+
+Eighteen files promoted from the read-only `pixelab-v1` pack (commit
+`62ed985`), every one **PROVISIONAL MODEL-SELECTED — NOT HUMAN-APPROVED**,
+each recorded in `docs/game/PIXELLAB-RUNTIME-ASSET-PROVENANCE.md` (Unit 7
+table: candidate ID, source path, runtime path, role, transformation,
+technical compatibility, selection reason, known defects, approval status).
+Composition used a stdlib-only PNG codec from the session scratchpad
+(pixel-exact crops / strips; no resampling, no retouching); the pack is
+unmodified; nothing was generated (D-U7-2 — the recorded gaps V21–V24 are
+prop / tileset families, not ≤24 single-object fills). Explicitly not
+promoted: the isometric-leaning workshop / laboratory / archive prop
+sheets, every measurement board, the unpacked bot move / work frames,
+player action sheets beyond scan / dig / pickup (D-U7-3).
+`ASSET_SET_VERSION` was not bumped — the stimulus freeze is a
+research-owner gate (open item, §14.11).
+
+### 14.6 Asset gaps recorded (none promoted)
+
+V21 valve / breaker / bus silhouettes; V22 a straight-on interior prop set
+(workshop presses / benches / case cabinet, lab benches); V23 salvage
+piles / magnet rig / crane; V24 wall / floor tilesets; the completion card
+and the work-surface panel geometry (V15 / V25) stay shared 720×516
+panels.
+
+### 14.7 Defects found on the way (test lane; none product)
+
+V30: the `pilot_visual_capture` frame-07 lane (`walkTo(96,112)`, ±12 px)
+could stop with the avatar's foot inside workshop grid row 4, where the
+cols-13-16 machinery block stops the x-leg at x = 560; the following Space
+opened the handover-desk prompt (movement holds while a prompt is open)
+and the filing-desk approach never happened ("overlay at 96,272 did not
+open"). Reproduced 2/2 in isolation with a diagnostic spec (deleted before
+commit); the filing desk itself opened correctly from a direct boot
+(`__inventoryUiProbe.open` true, prompt hidden, chips 0, no error). The
+lane now targets y = 84 (body rows 2–3). Product collision is untouched.
+
+### 14.8 Acceptance (at 800×600 inside a 1280×720 viewport; every frame inspected at full resolution)
+
+| Criterion                    | Result                                                                                                                                                                                                            |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No black bands               | met — page ground, canvas clear colour and every theme void share `#0b1016`; the 4:3 letterbox is the same charcoal (D-U7-1); the visual reviewer confirmed no black band in any frame                            |
+| No clipped rooms             | met — every 25×19 zone fits the 800×600 view; north-wall modules that clipped at the top edge were removed (V31/M9)                                                                                               |
+| No unreachable interactions  | met — every station, door and window is untouched in code; the closure, yard and return route suites pass on the final code (§14.9)                                                                               |
+| No hidden overlays           | met — overlay scrim 0.9; prompt, label chips, NPC name chips and the belt caption hide on PAUSE and return on RESUME (V1, V34, V38; probe-proven)                                                                 |
+| No panel overflow            | met — help lines wrap inside the panel and anchor at its foot (V37); the breaker readout stays in its column (V2)                                                                                                 |
+| No label collision           | met for the enumerated cases (V13, V28, V36, V41); the prompt/name-chip pair now sits on the far side of the target (V35)                                                                                         |
+| No character clipping        | met — the avatar is never covered by its own prompt (V35); walk-through decor that y-sorted in front of the avatar was moved to the wall band (V42, desk); coolant columns / bot remain y-sorted and are recorded |
+| No unexplained dead space    | partly — machinery mass added on the deck and in the chamber; the shared 720×516 work-surface geometry (V15/V25) and the bare exterior seams (V24) stay recorded as deferred polish / asset gaps                  |
+| No inconsistent sprite scale | met — player, NPCs and the bot are 96×96 pack sprites; props are pack slices at 1× or foundry textures; no non-integer scaling anywhere                                                                           |
+| Clear professional hierarchy | met with recorded register notes — the promoted slices' olive/amber register (P1/P2) and the Core-vs-column hue (P3) are owner/asset calls                                                                        |
+| Clear route landmark         | met — door leaves carry the uniform cyan cue (threshold bar) and the beacon; the airlocks read as irises; the destination sign never sits behind a leaf (V28)                                                     |
+| Clear current objective      | met — one wrapped objective line (V7); chamber-specific line (V5)                                                                                                                                                 |
+
+### 14.9 Verification (`--retries=0 --workers=1`, `PW_DEV_PORT=5331`, sequential; no source edited while a server chunk ran)
+
+Gates on the final code: `lint:tsc` ✓ · `vite build` ✓ (2.1 s) · scoped
+ESLint ✓ (autofix for formatting/import order only) · `git diff --check`
+✓ · `verify-unit.mjs` **PASS** with the explicit allowlist of §14.2
+(122 modified + 19 untracked paths, every one inside the list).
+
+Runs, in order (each spec its own process):
+
+1. **Baseline (HEAD `897f5f4`, before any edit)** — five capture specs
+   green (§14.3).
+2. **First Unit 7 pass** — `proc_textures_determinism` 2/2;
+   `pilot_closure_capture` 1/1; `pilot_visual_capture` **2/3** (leg 1:
+   V30 test lane, reproduced 2/2 in isolation, lane fixed, then 1/1);
+   `pilot_exterior_capture`, `pilot_signal_capture`, `pilot_return_capture`
+   1/1 each.
+3. **Corrected code (V28–V30)** — `presentation_integration` 10/11 → the
+   provenance test read one record only (fixed to both records, 1/1 in
+   isolation); `proc_textures_determinism` 2/2; all five captures green.
+4. **Review round (V31–V45, V47)** — run #1: `presentation_integration`
+   11/11; `proc_textures_determinism` 2/2; `pilot_closure` **2/3** (test 1:
+   the Unit 6 spec's `plv1-kai` expectation vs the intended working pose —
+   V47, expectation updated); `pilot_yard` 3/3; `pilot_return` **fail** —
+   Phaser `glTexture`/`drawImage` of null from the V34 RESUME handler on a
+   destroyed caption after a zone re-entry (**V48, product defect
+   introduced by this unit, fixed**); the run was stopped there so no leg
+   would execute against changing code.
+5. **Final code (V48 fix + `arch-window` removal)** — run #2:
+   `presentation_integration` **11/11** (1.0 min); `proc_textures_determinism`
+   **2/2**; `pilot_closure` **3/3** (9.1 min); `pilot_yard` **2/3** (test 2:
+   the magnet-rig `F` press "produced no observable effect" — the known
+   swallowed-keypress family under sweep load); `pilot_return` **3/3**
+   (12.2 min, no unhandled error across the zone re-entries);
+   `pilot_closure_capture`, `pilot_visual_capture` (3/3),
+   `pilot_exterior_capture`, `pilot_signal_capture`, `pilot_return_capture`
+   all green.
+6. **Placement fix (title card → HUD strip, deck banner y 250)** — run #3:
+   `pilot_yard` test 2 **in isolation 1/1** (3.7 min) → the run-#2 failure
+   is classified **intermittent**, not deterministic; `presentation_integration`
+   **11/11**; the five capture specs **all green** — this is the committed
+   frame set (`screenshots-evidence-led-pilot-v2/01–47`,
+   `screenshots-professional-pilot/01–30`, every frame regenerated on the
+   final code and inspected).
+
+Deterministic failures found and fixed on the way: V30 (test lane), the
+provenance-record scope (test), V47 (test expectation), V48 (product,
+introduced by V34). Intermittent, not fixed, recorded for Unit 8: the
+magnet-rig `F` press under sweep load (`pilot_yard` test 2, run #2 only).
+Not run in this unit (queued for Unit 8's full manifest sweep): the other
+78 spec files, including the measurement-isolation suites of rooms whose
+only Unit 7 change is decor/signage/door art (Concourse, Workshop,
+Laboratory, Signal lab).
+
+What the tests prove and do not prove: asset existence, dimensions, RGBA
+and provenance naming (real bytes, independent tables); every v2 zone
+boots with the promoted art and requests every registry URL with no
+runtime error; the overlay hides the world prompt and label chips and
+restores them (probe-proven); the reduced-motion and muted boots execute
+their branches without error (not visual correctness); the closure, yard
+and return route suites still pass on the final code (windows, gates,
+approach points unchanged). Sprite anchor/scale, animation registration,
+depth order and label collisions are inspected manually in the frames, not
+asserted (test reviewer, recorded).
+
+Screenshot inventory: `docs/verification/screenshots-evidence-led-pilot-v2/`
+58 files (01–47 with a/b/c variants) and
+`docs/verification/screenshots-professional-pilot/` 30 files (three stale
+frames from an earlier route removed — V49). Every frame was regenerated
+by the run-#3 captures on the final code and inspected at full
+resolution by the writer; the visual reviewer's frame-by-frame findings
+(on the pre-correction set) are in §14.10.
+
+Timing note (automated, not a human estimate): the closure route test 1
+ran 3.9 min, the return route test 1 2.8 min, the yard test 2 3.7 min in
+isolation — unchanged in kind from Units 4–6; no participant duration is
+claimed by this unit (burden is Unit 8's gate).
+
+### 14.10 Reviews (two waves of two, read-only; one consolidated correction round)
+
+Wave 1: gameplay/usability (Opus) + visual/adult presentation (Opus).
+Wave 2: test quality (Sonnet) + scientific boundary (Opus). Each reviewer
+hit its turn limit before reporting and was asked to report from what it
+had read; each names the files/frames it did not reach (recorded below as
+review gaps, not as clearance).
+
+- **Gameplay (Opus)** — verdict: usable with noted friction, no blocker.
+  Fixed in the round: G1 door-leaf affordance (cyan tint + threshold bar,
+  V31), G2 mast art gating (V32), G3 snow over task graphics (V33), G4 V12
+  on the wrong HUD class (V34), G5 title card vs the deck re-entry prompt
+  (V36), G6 refusal banner over the door (V41), G7 desk on the walk lane
+  (V42), G10 signage contrast (V43), G12 airlock closed-iris grammar (V44).
+  Recorded: G8 markers above the avatar at doorways, G9 stations hidden
+  while a prompt panel is open (pre-existing), G11 work-surface readout
+  values at 10 px (window content across 26 windows — not touched). Item 8
+  ("anything not presentation-only"): none found; caveat that the reviewer
+  had no diff and read files, not screenshots.
+- **Visual (Opus)** — verdict: readable with noted defects. V1 partly fixed
+  in the first pass (status chips / beat box outside the panel) → scrim 0.9
+  (V38); V2–V6 fixed (V6 residual in M21's status/feedback repeat is window
+  content — recorded). Fixed in the round: B1/M1/M2/N4 prompt over the
+  avatar/target (V35), M3 title card vs status chips (V36), M4/M5 help-line
+  overflow (V37), M9 window modules read as doors (V31), N7 caption (V34),
+  N8 Dock signage (V39), A1 bot salience (V40), N2 banner (V41). Recorded:
+  M6 avatar over the lab phase display at the airlock spawn (wall panel
+  occlusion order is correct; the spawn sits under the panel), M7 player/NPC
+  overlap at Noor's talk point, M8 two unlabelled NPCs beside Vale, M10 M24
+  timing cue placement (measured — not touched), M11 exterior seams (V24),
+  N1/N10–N13, S1/S2 (5 px dot indicators; text carries the state), P1–P3
+  register clashes, stale duplicate frame numbers in the professional-pilot
+  set (23/24/26 pairs from an earlier route — deleted in the final
+  inventory, §14.9). No frame shows praise, a score, a trait or an item id.
+- **Test quality (Sonnet)** — tsc / build / scoped ESLint / `git diff
+--check` all exit 0 (re-run by the reviewer). Fixed: T-M1 chamber
+  reduced-motion branches now booted, T-M2 strip presence asserted, T-m3
+  independent `STRIP_DIMENSIONS` + RGBA check, the fixed 800 ms wait →
+  probe-gated (V45). Recorded: the provenance check is a substring match
+  over two records (real rows verified by the reviewer); the reduced-motion
+  and muted tests prove branch execution without error, not visual
+  correctness; anchor/scale, animation registration, depth order and sign
+  collisions are inspected manually (frames), not asserted.
+- **Scientific (Opus)** — verdict: two majors on the rendered stimulus, no
+  code-semantics breach found. Fixed: S-M1 snow above exterior stimuli
+  (M05 o2 flag, M19 collar, M23 plot) → ground drift at depth −0.1 under
+  every marker and graphic (V33); S-M2 Mast 04 restored cue inside M20's
+  resume phase → gated on full `m20Complete` (V32); S-M3 the freeze claim
+  narrowed to code semantics with the affected windows enumerated
+  (ledger); N13 title card vs the wrapped objective (V36); m9 room doc 11
+  follows the code; N12 V30 baseline status stated (did not reproduce at
+  `897f5f4`). `hideWorldPrompts` on PAUSE verified: no act lost, no latency
+  component reads prompt visibility. Copy audit of every new
+  participant-facing string: clean. Missing/invalid, MAJ-9, M25 and the
+  non-scored closure: no touchpoint. Owner decisions surfaced: OD-7
+  (door affordance class), OD-8 (`ASSET_SET_VERSION`), OD-9 (mast art),
+  OD-10 (scope of "presentation only"); the "Unit 7" naming collision with
+  the physical-mechanics session's comments is a note for the owner.
+
+The correction round was spent once (V31–V45 + V47/V48); after it the
+re-run in §14.9 is the evidence. This section is a record of findings and
+dispositions, not a clearance: the reviewers are read-only and approve
+nothing.
+
+### 14.11 Open research-owner decisions (Unit 7) — recorded, none resolved
+
+- **OD-7 Door affordance class** (as built: leaf art + cyan cue on doors,
+  cyan marker on stations; the bot still belongs to the same asset call).
+- **OD-8 `ASSET_SET_VERSION`** (`outpost-assets-v5` unchanged after 17 new
+  runtime files + one procedural texture; bump now / hold for the freeze
+  gate / rule presentation art out — interacts with INT-6).
+- **OD-9 Mast 04 art** (restored at full `m20Complete`, as built / no
+  state art / outdoor-complete with a contamination flag).
+- **OD-10 Scope of "presentation only"** (code semantics vs rendered
+  stimulus; determines whether V31–V33 were defects or accepted design).
+- **Asset approval.** Every promoted file stays PROVISIONAL MODEL-SELECTED —
+  NOT HUMAN-APPROVED; the reviewers' register notes (P1–P3, A1) are inputs
+  to that decision, not resolutions.
+
+### 14.12 Confirmations
+
+No disposition, canonical event, scoring formula, weight, trait label or
+score was created or changed; `ScoringManager`, `EventLogger`,
+`SessionState`, `QualtricsBridge`, `DataQualityTracker`, `ResearchRuntime`,
+`event-schema.md`, `scoring-plan.md`, the workbook, the M01–M26 ledger and
+every window module are unmodified; no questionnaire wording appears in
+`src/`; no PixelLab generation was run; the candidate pack worktree is
+unmodified; no validity is claimed. Nothing was pushed, merged, tagged,
+deployed, PR'd, deleted (other than the `arch-window` slice this unit
+had added and the Dock's garbled signage decor line) or removed.
+
+### 14.13 Checkpoint for the next session
+
+Branch `fable-evidence-led-pilot-v2`, HEAD = the Unit 7 commit (see §2),
+working tree clean, base `0e1a8aa`. Next: **Unit 8 — Final Verification**
+(M02 overlay positive proof on the `pilot_deck`/capture path, the
+`pilot_route` topology intermittent, the legacy recycler-rig intermittent,
+the Concourse→Dock door intermittent, stale/overwritten screenshots,
+obsolete scene-default helpers, closure invalid/technical-state gaps; full
+manifest sweep in sequential chunks at `--retries=0 --workers=1`; the
+complete participant route with timing against the burden budget; final
+scientific gates; five read-only reviews; the final report).

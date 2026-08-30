@@ -85,3 +85,57 @@ export const EFFECT_SHEET_URLS: Record<string, string> = {
   'plv1-fx-scan-pulse': 'assets/pixellab-runtime/effects/scan-pulse.png',
   'plv1-fx-sparks': 'assets/pixellab-runtime/effects/repair-sparks.png',
 };
+
+/**
+ * Unit 7 (professional presentation) — PROVISIONAL MODEL-SELECTED — NOT
+ * HUMAN-APPROVED PixelLab v1 promotions (docs/game/
+ * PIXELLAB-RUNTIME-ASSET-PROVENANCE.md, "Unit 7"). Stills load as images,
+ * strips as spritesheets at the frame size recorded here. Presentation
+ * only: no mechanic, event, window or score reads any of them.
+ */
+export const UNIT7_STILL_URLS: Record<string, string> = {
+  'plv1-bot-standby': 'assets/pixellab-runtime/robots/bot-standby.png',
+  'plv1-bot-working': 'assets/pixellab-runtime/robots/bot-working.png',
+  'plv1-core-coolant-column':
+    'assets/pixellab-runtime/props/core-coolant-column.png',
+  'plv1-core-pillar-a': 'assets/pixellab-runtime/props/core-pillar-a.png',
+  'plv1-core-pillar-b': 'assets/pixellab-runtime/props/core-pillar-b.png',
+  'plv1-core-console': 'assets/pixellab-runtime/props/core-console.png',
+  'plv1-utility-tower': 'assets/pixellab-runtime/props/utility-tower.png',
+  'plv1-utility-panel': 'assets/pixellab-runtime/props/utility-panel.png',
+  'plv1-utility-desk': 'assets/pixellab-runtime/props/utility-desk.png',
+  'plv1-arch-door': 'assets/pixellab-runtime/props/arch-door.png',
+  'plv1-arch-vent': 'assets/pixellab-runtime/props/arch-vent.png',
+  'plv1-arch-grille': 'assets/pixellab-runtime/props/arch-grille.png',
+  'plv1-arch-pipes': 'assets/pixellab-runtime/props/arch-pipes.png',
+};
+
+export const UNIT7_STRIP_URLS: Record<
+  string,
+  { url: string; frameWidth: number; frameHeight: number; frames: number }
+> = {
+  'plv1-core-sync': {
+    url: 'assets/pixellab-runtime/sequences/core-sync.png',
+    frameWidth: 64,
+    frameHeight: 96,
+    frames: 7,
+  },
+  'plv1-airlock-open': {
+    url: 'assets/pixellab-runtime/sequences/airlock-open.png',
+    frameWidth: 96,
+    frameHeight: 64,
+    frames: 7,
+  },
+  'plv1-antenna-signal': {
+    url: 'assets/pixellab-runtime/sequences/antenna-signal.png',
+    frameWidth: 64,
+    frameHeight: 96,
+    frames: 7,
+  },
+  'plv1-fx-snowfall': {
+    url: 'assets/pixellab-runtime/effects/snowfall.png',
+    frameWidth: 96,
+    frameHeight: 96,
+    frames: 9,
+  },
+};

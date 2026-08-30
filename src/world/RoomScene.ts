@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-import { Depth, key } from '../constants';
+import { Depth, key, worldDepth } from '../constants';
 import type { ResearchInteraction } from '../data/researchInteractions';
 import { researchInteractions } from '../data/researchInteractions';
 import type { ControlsReferenceOptions } from '../gameplay';
@@ -255,6 +255,8 @@ export interface RoomDoorConfig {
   label: string;
   /** Committed prop texture key (see RoomStationConfig.texture). */
   texture?: string;
+  /** Frame of a strip texture to show (Unit 7: airlock iris open frame). */
+  textureFrame?: number;
   target?: RoomTransitionTarget;
   /**
    * Sealed doors (unbuilt rooms) show this fiction-consistent message
@@ -330,6 +332,8 @@ declare global {
   interface Window {
     __lastRoomFeedbackText?: string | null;
     __playerProbe?: { scene: string; x: number; y: number } | null;
+    /** DEV-only (Unit 7): world prompt / label-chip visibility. */
+    __worldPromptProbe?: { prompt: boolean; chips: number } | null;
     __routeObjectiveText?: string | null;
     __lastPromptBody?: string | null;
     /**
@@ -402,6 +406,14 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
  * or participants). The prototype scene keeps its own copy untouched until
  * all rooms are ported.
  */
+/** Flat floor dressing: rendered under every figure (Unit 7 depth sort). */
+const FLOOR_DECOR = new Set([
+  'proc-light-pool',
+  'proc-ground-disturbed',
+  'proc-footprints',
+  'proc-dig-mound',
+]);
+
 export abstract class RoomScene extends Phaser.Scene {
   /** Canonical room_id (event-schema.md §2) or documented control area id. */
   protected abstract readonly roomId: string;
@@ -560,6 +572,9 @@ export abstract class RoomScene extends Phaser.Scene {
         color: '#ffffff',
         font: '13px monospace',
         padding: { x: 6, y: 3 },
+        // Unit 7 (V7): the line wraps inside the 800 px viewport instead
+        // of running off the right edge.
+        wordWrap: { width: 772 },
       })
       .setOrigin(0)
       .setDepth(Depth.AboveWorld)
@@ -618,6 +633,17 @@ export abstract class RoomScene extends Phaser.Scene {
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
       window.__inventoryProbe = serializeInventory();
     }
+
+    // Unit 7 (V1): every overlay pauses this scene with the proximity
+    // prompt, the nearest label chip and the NPC name chips still visible,
+    // so their fragments survived at the panel edges. Hide them on PAUSE;
+    // updateProximity restores whatever is still in range on RESUME.
+    const onPause = () => this.hideWorldPrompts();
+
+    this.events.on(Phaser.Scenes.Events.PAUSE, onPause);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(Phaser.Scenes.Events.PAUSE, onPause);
+    });
 
     // ESC first cancels a cancellable timed world action (never leaves
     // the avatar frozen mid-action); otherwise it pauses to the Menu,
@@ -756,6 +782,8 @@ export abstract class RoomScene extends Phaser.Scene {
     }
 
     this.routeObjective.setText(text);
+    // Unit 7 (V7): the second HUD line follows the wrapped height.
+    this.questObjective.setY(8 + this.routeObjective.height + 4);
   }
 
   /**
@@ -890,7 +918,43 @@ export abstract class RoomScene extends Phaser.Scene {
    */
   protected addDecor(x: number, y: number, texture: string) {
     if (this.textures.exists(texture)) {
-      this.add.image(x, y, texture);
+      const image = this.add.image(x, y, texture);
+
+      // Unit 7 (V11): y-sorted depth at the prop's foot line so the avatar
+      // walks behind tall props and in front of low ones; flat floor
+      // dressing stays under everything (presentation only).
+      image.setDepth(
+        FLOOR_DECOR.has(texture)
+          ? -0.2
+          : worldDepth(y + image.displayHeight / 2),
+      );
+    }
+  }
+
+  /**
+   * Unit 7 (V4): swaps the leaf art of the door leading to `sceneKey`
+   * (open/closed variants). Presentation only — geometry and gate untouched.
+   */
+  protected setDoorTexture(sceneKey: string, texture: string) {
+    if (!this.textures.exists(texture)) {
+      return;
+    }
+
+    for (const door of this.doors) {
+      if (door.target?.sceneKey === sceneKey) {
+        const marker = this.interactableMarkers.get(door);
+
+        (marker as Phaser.GameObjects.Image | undefined)?.setTexture?.(texture);
+      }
+    }
+  }
+
+  /** Unit 7: ends an NPC's two-frame work cycle before a fixed pose. */
+  protected stopNpcWorkLoop(interactionKey: InteractionKey) {
+    for (const [config, npc] of this.npcActors) {
+      if (config.interactionKey === interactionKey) {
+        npc.stopWorkLoop();
+      }
     }
   }
 
@@ -963,7 +1027,37 @@ export abstract class RoomScene extends Phaser.Scene {
     );
     const chip = this.buildLabelChip(config.x, config.y - 42, config.label);
 
-    this.stationLabels.add([marker, ...chip]);
+    // Unit 7: door art keeps the uniform interactable cue — a cyan-leaning
+    // tint on the PROVISIONAL leaf and a cyan threshold bar under every
+    // textured door (decor wall modules of the same family carry neither).
+    const parts: Phaser.GameObjects.GameObject[] = [marker];
+
+    if (config.texture !== undefined && this.textures.exists(config.texture)) {
+      const image = marker as Phaser.GameObjects.Image;
+
+      if (config.textureFrame !== undefined) {
+        image.setFrame(config.textureFrame);
+      }
+
+      if (config.texture === 'plv1-arch-door') {
+        image.setTint(0xa9d8d3);
+      }
+
+      parts.push(
+        this.add
+          .rectangle(
+            config.x,
+            config.y + image.displayHeight / 2 - 2,
+            Math.min(40, image.displayWidth - 8),
+            3,
+            0x5fd3c4,
+            0.95,
+          )
+          .setOrigin(0.5),
+      );
+    }
+
+    this.stationLabels.add([...parts, ...chip]);
     this.registerLabelChip(config, chip);
     this.interactableMarkers.set(config, marker);
     this.doors.push(config);
@@ -1039,7 +1133,7 @@ export abstract class RoomScene extends Phaser.Scene {
     const { centerX } = this.cameras.main;
 
     this.feedbackMessage = this.add
-      .text(centerX, 72, message, {
+      .text(centerX, this.feedbackMessageY(), message, {
         backgroundColor: '#101820',
         color: '#ffffff',
         font: '15px monospace',
@@ -2226,11 +2320,29 @@ export abstract class RoomScene extends Phaser.Scene {
           ? nearest.station!
           : nearest.door!;
 
+    // Unit 7 (visual review B1): the prompt and the name chip sit on the
+    // far side of the target from the avatar — above it when approached
+    // from below (the common case), below it when approached from above —
+    // so they never cover the figure or the object they describe.
+    const targetY =
+      nearest === null
+        ? null
+        : nearest.kind === 'station'
+          ? nearest.station!.y
+          : nearest.door!.y;
+    const fromAbove = targetY !== null && this.player.y < targetY - 8;
+
     for (const [config, chip] of this.labelChips) {
       const visible = config === nearestConfig;
 
       for (const part of chip) {
         (part as Phaser.GameObjects.Rectangle).setVisible(visible);
+
+        if (visible) {
+          (part as Phaser.GameObjects.Rectangle).setY(
+            fromAbove ? config.y + 40 : config.y - 42,
+          );
+        }
       }
     }
 
@@ -2258,7 +2370,7 @@ export abstract class RoomScene extends Phaser.Scene {
           promptHalf + 2,
           this.promptClampMaxX() - promptHalf,
         ),
-        this.activeTarget.y - 72,
+        fromAbove ? this.activeTarget.y + 70 : this.activeTarget.y - 72,
       )
       .setVisible(true);
 
@@ -2281,6 +2393,12 @@ export abstract class RoomScene extends Phaser.Scene {
 
   /** SPACE/E pressed with no station/door in range. Default: no-op. */
   protected onEmptyInteract(): void {}
+
+  /** Screen y of the transient feedback banner (rooms with a north-wall
+   * door prompt lower it so the two never collide — Unit 7 V13). */
+  protected feedbackMessageY(): number {
+    return 72;
+  }
 
   /**
    * Physical-layer eligibility (Unit 1, physical-mechanics session): a
@@ -2322,9 +2440,54 @@ export abstract class RoomScene extends Phaser.Scene {
         x: this.player.x,
         y: this.player.y,
       };
+      this.publishWorldPromptProbe();
     }
+  }
+
+  /** DEV-only (Unit 7 V1 evidence): is the world prompt / any label chip
+   * visible right now? Written every frame and on PAUSE. */
+  private publishWorldPromptProbe() {
+    if (typeof window === 'undefined' || !import.meta.env.DEV) {
+      return;
+    }
+
+    let chips = 0;
+
+    for (const chip of this.labelChips.values()) {
+      if ((chip[0] as Phaser.GameObjects.Rectangle | undefined)?.visible) {
+        chips += 1;
+      }
+    }
+
+    window.__worldPromptProbe = {
+      prompt: this.proximityPrompt.visible,
+      chips,
+    };
   }
 
   /** Per-frame hook for room-specific instrumentation (e.g. Dock baselines). */
   protected onRoomUpdate(): void {}
+
+  /**
+   * Unit 7 (V1): hides the proximity prompt, every contextual label chip
+   * and every NPC name chip. Called on scene PAUSE (overlays) — pure
+   * presentation; the active target is re-derived on the next update.
+   */
+  private hideWorldPrompts() {
+    this.activeTarget = null;
+    this.proximityPrompt.setVisible(false);
+    this.setPulseMarker(null);
+
+    for (const chip of this.labelChips.values()) {
+      for (const part of chip) {
+        (part as Phaser.GameObjects.Rectangle).setVisible(false);
+      }
+    }
+
+    for (const npc of this.npcActors.values()) {
+      npc.setNameVisible(false);
+    }
+
+    this.publishWorldPromptProbe();
+  }
 }

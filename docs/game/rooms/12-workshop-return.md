@@ -124,3 +124,11 @@ stays in the external questionnaire.
 Pure: `e2e/pilot_return_models.spec.ts`. Route: `e2e/pilot_return.spec.ts`
 (3 tests). Frames: `e2e/pilot_return_capture.spec.ts` →
 `docs/verification/screenshots-evidence-led-pilot-v2/22-*.png … 34-*.png`.
+
+## Unit 7 presentation (no mechanic change)
+
+- Interior doors show the PROVISIONAL door leaf instead of the bare cyan
+  marker; south-wall dressing uses the PROVISIONAL pipe/grille modules;
+  area signage uses the shared 10 px style; the world prompt, label chips
+  and the hotbar caption hide while any work surface is open. Stations,
+  approach lanes and windows are unchanged.

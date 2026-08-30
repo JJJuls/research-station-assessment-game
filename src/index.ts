@@ -36,7 +36,9 @@ new Phaser.Game({
     },
   },
   disableContextMenu: import.meta.env.PROD,
-  backgroundColor: '#000',
+  // Unit 7: charcoal clear colour = the page ground (src/style.css), so
+  // the FIT letterbox and any off-map area never read as a black band.
+  backgroundColor: '#0b1016',
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

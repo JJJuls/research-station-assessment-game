@@ -131,3 +131,28 @@ Pure: `e2e/pilot_closure_models.spec.ts` (19). Route:
 `e2e/pilot_closure.spec.ts` (3), `e2e/pilot_deck.spec.ts` (1, return_url
 → no navigation). Frames: `e2e/pilot_closure_capture.spec.ts` →
 `docs/verification/screenshots-evidence-led-pilot-v2/35-*.png … 47-*.png`.
+
+## Unit 7 presentation (no mechanic change)
+
+- Deck: PROVISIONAL utility-bay slices as machinery mass (tower north-west,
+  wall panel north-east, control desk on the north wall band); the utility
+  bot is the PROVISIONAL `plv1-bot-standby` still (cool-tinted, α 0.9) in the
+  south-east lane and
+  switches to `plv1-bot-working` once all three feeds are up; the blast door
+  shows `proc-door-core-open` while the gate is open (state never colour
+  alone: lamp + `DOOR · OPEN` chip + leaf); the `CORE CHAMBER` sign sits on
+  the wall band above the door chip; the feedback banner sits at y 250 so it
+  never covers the door, its chip, its prompt or the figure at the approach
+  point; feed-panel ready feedback no longer repeats
+  the "ENTER or ESC" help line; the breaker readout stays in the left column
+  and the lamp labels are left-anchored past their glyphs.
+- Chamber: the Core is the PROVISIONAL `plv1-core-sync` column (held frame
+  when inactive — dimmed — / prepared / stable; a slow six-frame loop while
+  synchronising; reduced motion holds a mid frame) flanked by the coolant
+  columns; the `CORE · …` chip stands beside the pedestal, off the approach
+  point; Kai works the feed console (two-frame loop) until the Core is stable,
+  then holds the finished pose; the objective line inside the chamber reads
+  "At the Core: inspect it, open the synchronisation review, then confirm."
+  and "Synchronising — stand by …" during the ramp.
+- Every site, approach point, radius, gate, event and window is unchanged
+  (the closure route spec and capture spec pass on the corrected code).

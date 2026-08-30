@@ -10,6 +10,8 @@
 
 import Phaser from 'phaser';
 
+import { Depth, worldDepth } from '../constants';
+
 export interface NpcActorConfig {
   scene: Phaser.Scene;
   x: number;
@@ -33,6 +35,7 @@ export class NpcActor {
   readonly sprite: Phaser.GameObjects.Image;
   private nameChipParts: Phaser.GameObjects.GameObject[];
   private nameVisible = false;
+  private workTimer: Phaser.Time.TimerEvent | null = null;
 
   constructor(config: NpcActorConfig) {
     const { scene, x, y, texture, name } = config;
@@ -40,7 +43,10 @@ export class NpcActor {
     // Drop shadow (Player.ts shadow language: ellipse under the feet).
     scene.add.ellipse(x, y + 24, 26, 9, 0x000000, 0.25).setDepth(-0.25);
 
-    this.sprite = scene.add.image(x, y, texture);
+    this.sprite = scene.add
+      .image(x, y, texture)
+      // Unit 7: y-sorted world depth at the foot line (presentation only).
+      .setDepth(worldDepth(y + 24));
 
     if (config.still !== true) {
       scene.tweens.add({
@@ -65,7 +71,7 @@ export class NpcActor {
     ) {
       let flip = false;
 
-      scene.time.addEvent({
+      this.workTimer = scene.time.addEvent({
         delay: 700,
         loop: true,
         callback: () => {
@@ -99,6 +105,9 @@ export class NpcActor {
       )
       .setStrokeStyle(1, 0x33475a);
 
+    // The chip reads above every world sprite (Unit 7 depth sort).
+    chip.setDepth(Depth.AbovePlayer);
+    label.setDepth(Depth.AbovePlayer);
     this.nameChipParts = [chip, label];
 
     // Force-hide the freshly created parts (the state-guarded setter
@@ -106,6 +115,12 @@ export class NpcActor {
     for (const part of this.nameChipParts) {
       (part as Phaser.GameObjects.Rectangle).setVisible(false);
     }
+  }
+
+  /** Unit 7: ends the two-frame work cycle (e.g. a finished pose). */
+  stopWorkLoop() {
+    this.workTimer?.remove(false);
+    this.workTimer = null;
   }
 
   setNameVisible(visible: boolean) {

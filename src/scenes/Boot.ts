@@ -14,6 +14,8 @@ import {
   researcherIdleFrameKey,
   researcherRotationKey,
   researcherWalkFrameKey,
+  UNIT7_STILL_URLS,
+  UNIT7_STRIP_URLS,
 } from '../constants';
 import {
   DOCK_PAD_TILESET_KEY,
@@ -108,6 +110,19 @@ export class Boot extends Scene {
 
     for (const [fxKey, url] of Object.entries(EFFECT_SHEET_URLS)) {
       this.load.spritesheet(fxKey, url, { frameWidth: 64, frameHeight: 64 });
+    }
+
+    // Unit 7: PROVISIONAL MODEL-SELECTED presentation assets (stills +
+    // strips; docs/game/PIXELLAB-RUNTIME-ASSET-PROVENANCE.md).
+    for (const [stillKey, url] of Object.entries(UNIT7_STILL_URLS)) {
+      this.load.image(stillKey, url);
+    }
+
+    for (const [stripKey, strip] of Object.entries(UNIT7_STRIP_URLS)) {
+      this.load.spritesheet(stripKey, strip.url, {
+        frameWidth: strip.frameWidth,
+        frameHeight: strip.frameHeight,
+      });
     }
   }
 

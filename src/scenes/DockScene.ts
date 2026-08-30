@@ -149,7 +149,8 @@ export class DockScene extends RoomScene {
 
     // Set dressing (decorative only; never obstructs interactables).
     this.addDecor(12 * 32 - 16, 12 * 32 + 8, 'prop-dock-airlock'); // arrival airlock
-    this.addDecor(6 * 32, 1 * 32 + 12, 'prop-dock-signage');
+    // Unit 7 (visual review N8): the legacy signage prop rendered an
+    // unreadable warm-red word at ~7 px — removed (decor only).
     // Crates sit on the collidable crate block only — decor on open floor
     // would let the player walk through it (visual-integrity rule).
     this.addDecor(8.5 * 32, 7 * 32, 'prop-dock-crates');

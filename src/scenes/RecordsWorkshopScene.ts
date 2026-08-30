@@ -537,8 +537,17 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     this.addDecor(3 * TILE, 3.4 * TILE, 'proc-light-pool');
     this.addDecor(14 * TILE, 8.2 * TILE, 'proc-light-pool');
     this.addDecor(20 * TILE, 8.2 * TILE, 'proc-light-pool');
-    this.addDecor(5 * TILE, 16 * TILE + 10, 'proc-wall-pipes');
-    this.addDecor(20 * TILE, 16 * TILE + 10, 'proc-wall-pipes');
+    // Unit 7: PROVISIONAL wall modules (pipes / grille), procedural fallback.
+    this.addDecor(
+      5 * TILE,
+      16 * TILE + 10,
+      this.wallArt('plv1-arch-pipes', 'proc-wall-pipes'),
+    );
+    this.addDecor(
+      20 * TILE,
+      16 * TILE + 10,
+      this.wallArt('plv1-arch-grille', 'proc-wall-pipes'),
+    );
     this.addDecor(14.5 * TILE, 4.6 * TILE, 'proc-console-wall');
     this.addDecor(14.5 * TILE, 12.6 * TILE, 'proc-rack-tools');
     this.signage(22.2 * TILE, 7.2 * TILE, 'CONCOURSE  ▶');
@@ -1184,11 +1193,13 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     });
   }
 
+  /** Unit 7 (V17): one shared area-signage style (PilotZoneScene). */
   private signage(x: number, y: number, text: string) {
-    this.add
-      .text(x, y, text, { color: '#7f95a8', font: '11px monospace' })
-      .setOrigin(0.5)
-      .setDepth(2);
+    this.zoneSignage(x, y, text);
+  }
+
+  private wallArt(preferred: string, fallback: string): string {
+    return this.textures.exists(preferred) ? preferred : fallback;
   }
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {

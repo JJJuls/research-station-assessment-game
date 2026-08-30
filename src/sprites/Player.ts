@@ -13,6 +13,7 @@ import {
   researcherIdleFrameKey,
   researcherRotationKey,
   researcherWalkFrameKey,
+  worldDepth,
 } from '../constants';
 import { sfxFootstep } from '../gameplay/audio';
 
@@ -373,6 +374,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Keep the drop shadow under the feet (position-only; no state).
     this.shadow.setPosition(this.x, this.y + 22);
+    // Unit 7: y-sorted world depth (foot line) — presentation only.
+    this.setDepth(worldDepth(this.y + 22));
 
     // Footstep taps while moving (~280ms cadence, alternating pitch).
     if (prevVelocity.x !== 0 || prevVelocity.y !== 0) {

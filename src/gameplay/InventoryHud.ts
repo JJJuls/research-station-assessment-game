@@ -65,6 +65,8 @@ export class InventoryHud {
   private nameChip: Phaser.GameObjects.Text;
   private unsubscribe: () => void;
   private tabHandler: (event: KeyboardEvent) => void;
+  private pauseHandler: () => void;
+  private resumeHandler: () => void;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -105,6 +107,22 @@ export class InventoryHud {
     scene.input.keyboard!.on('keydown-TAB', this.tabHandler);
 
     this.unsubscribe = onInventoryChange(() => this.refresh());
+    // Unit 7 (V12): the caption peeked out beside every modal panel; it
+    // hides while the host is paused and returns on resume. The handlers
+    // are removed on SHUTDOWN — scene event listeners survive a scene
+    // restart, and a stale handler would touch a destroyed caption.
+    this.pauseHandler = () => {
+      if (this.nameChip.active) {
+        this.nameChip.setVisible(false);
+      }
+    };
+    this.resumeHandler = () => {
+      if (this.nameChip.active) {
+        this.refresh();
+      }
+    };
+    scene.events.on(Phaser.Scenes.Events.PAUSE, this.pauseHandler);
+    scene.events.on(Phaser.Scenes.Events.RESUME, this.resumeHandler);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
 
     this.refresh();
@@ -158,6 +176,8 @@ export class InventoryHud {
   private destroy() {
     this.unsubscribe();
     this.scene.input.keyboard?.off('keydown-TAB', this.tabHandler);
+    this.scene.events.off(Phaser.Scenes.Events.PAUSE, this.pauseHandler);
+    this.scene.events.off(Phaser.Scenes.Events.RESUME, this.resumeHandler);
 
     for (const icon of this.slotIcons) {
       icon?.destroy();

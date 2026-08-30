@@ -184,7 +184,8 @@ export class FeedPanelScene extends Phaser.Scene {
     this.scene.bringToTop();
 
     this.add
-      .rectangle(400, 300, 800, 600, COLOR.dim, 0.62)
+      // Denser scrim (visual review V1 residual).
+      .rectangle(400, 300, 800, 600, COLOR.dim, 0.9)
       .setDepth(DEPTH.dim)
       .setInteractive();
     this.add
@@ -231,7 +232,11 @@ export class FeedPanelScene extends Phaser.Scene {
       .text(PANEL.x + 18, PANEL.y + 50, '', {
         color: COLOR.faint,
         font: '11px monospace',
-        wordWrap: { width: PANEL.w - 36 },
+        // Unit 7 (V2): the breaker readout stays in the left column, clear
+        // of the CALIBRATION LINE header.
+        wordWrap: {
+          width: this.data_.feed === 'calibration' ? 300 : PANEL.w - 36,
+        },
       })
       .setDepth(DEPTH.text);
     this.helpText = this.add
@@ -623,19 +628,15 @@ export class FeedPanelScene extends Phaser.Scene {
 
       if (feed === 'coolant') {
         sfxMachineOn();
-        this.showFeedback(
-          'Coolant feed OPEN — loop pressure nominal. ENTER or ESC steps back.',
-        );
+        this.showFeedback('Coolant feed OPEN — loop pressure nominal.');
       } else if (feed === 'calibration') {
         sfxInstall();
-        this.showFeedback(
-          'Calibration line engaged — indicators live. ENTER or ESC steps back.',
-        );
+        this.showFeedback('Calibration line engaged — indicators live.');
       } else {
         sfxInstall();
         sfxMachineOn();
         this.showFeedback(
-          'Distribution bus connected — power reaching the Core. ENTER or ESC steps back.',
+          'Distribution bus connected — power reaching the Core.',
         );
       }
     }
@@ -1030,13 +1031,16 @@ export class FeedPanelScene extends Phaser.Scene {
         g.strokeRect(lampX + 10, y + 10, 12, 12);
       }
 
+      // Unit 7 (V2): left-anchored past the glyph — never over it.
       this.label(
-        lampX + 70,
+        lampX + 30,
         y + 16,
         `${['MAIN', 'REFERENCE', 'FEED'][i]} · ${ready ? 'LIVE' : 'ISOLATED'}`,
         {
           color: ready ? COLOR.accentText : COLOR.faint,
           font: '10px monospace',
+          origin: [0, 0.5],
+          align: 'left',
         },
       );
     }

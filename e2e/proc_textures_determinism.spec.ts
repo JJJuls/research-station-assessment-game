@@ -171,6 +171,8 @@ const EXPECTED_MANIFEST: Record<string, { width: number; height: number }> = {
   'proc-manifold-panel': { width: 72, height: 44 },
   'proc-core-vessel': { width: 112, height: 136 },
   'proc-door-core': { width: 64, height: 56 },
+  // Evidence-led pilot v2 (Unit 7): open-leaf variant of the blast door.
+  'proc-door-core-open': { width: 64, height: 56 },
 };
 
 interface ProcTexturesProbe {

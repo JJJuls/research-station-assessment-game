@@ -25,7 +25,7 @@
  */
 import Phaser from 'phaser';
 
-import { Depth, key } from '../constants';
+import { Depth, key, worldDepth } from '../constants';
 import { sfxMachineOn, sfxUnavailable } from '../gameplay/audio';
 import { prefersReducedMotion } from '../inventory/ui/theme';
 import {
@@ -132,6 +132,7 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
   private conduits: Phaser.GameObjects.Graphics | null = null;
   private manifoldLamps: Phaser.GameObjects.Graphics | null = null;
   private doorLamp: Phaser.GameObjects.Rectangle | null = null;
+  private bot: Phaser.GameObjects.Image | null = null;
   private doorChip: Phaser.GameObjects.Text | null = null;
   private boardStatus: Phaser.GameObjects.Text | null = null;
   private feedChips = new Map<FeedId, Phaser.GameObjects.Text>();
@@ -354,7 +355,8 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
         1,
       )
       .setDepth(3);
-    this.signage(DECK_SITES.coreDoor.x, 2.2 * TILE, 'CORE CHAMBER');
+    // Unit 7 (V13): the sign sits on the wall band above the door chip.
+    this.signage(DECK_SITES.coreDoor.x, 1.35 * TILE, 'CORE CHAMBER');
     // Door state as text beside the lamp (never colour-only).
     this.doorChip = this.add
       .text(DECK_SITES.coreDoor.x + 62, DECK_SITES.coreDoor.y, '', {
@@ -375,14 +377,44 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
     this.addDecor(20.5 * TILE, 13.9 * TILE, 'proc-crate-components');
     this.addDecor(8.5 * TILE, 13.75 * TILE, 'proc-wall-pipes');
     this.addDecor(16.5 * TILE, 13.75 * TILE, 'proc-wall-pipes');
-    this.addDecor(2.5 * TILE, 4.6 * TILE, 'proc-wall-pipes');
-    this.addDecor(22 * TILE, 4.6 * TILE, 'proc-wall-pipes');
+    // Unit 7 (V20): machinery mass from the PROVISIONAL utility-bay slices
+    // (procedural pipes remain the fallback when a texture is absent).
+    this.addDecor(
+      2.4 * TILE,
+      4.9 * TILE,
+      this.textures.exists('plv1-utility-tower')
+        ? 'plv1-utility-tower'
+        : 'proc-wall-pipes',
+    );
+    this.addDecor(
+      22 * TILE,
+      4.6 * TILE,
+      this.textures.exists('plv1-utility-panel')
+        ? 'plv1-utility-panel'
+        : 'proc-wall-pipes',
+    );
+    // On the wall band (foot line above the row-5 lane) so no figure walks
+    // behind it (gameplay review G7).
+    this.addDecor(6.2 * TILE, 5.2 * TILE, 'plv1-utility-desk');
     this.addDecor(22 * TILE, 8 * TILE, 'proc-rack-tools');
     this.addDecor(2.5 * TILE, 11.5 * TILE, 'proc-bin-consumables');
     this.addDecor(12.5 * TILE, 4.2 * TILE, 'proc-light-pool');
     this.addDecor(8 * TILE, 9.5 * TILE, 'proc-light-pool');
     this.addDecor(17 * TILE, 9.5 * TILE, 'proc-light-pool');
-    this.addDecor(21.5 * TILE, 10.5 * TILE, 'proc-bot-utility');
+    // Unit 7 (V13/V20): the utility bot moves off the FEED 3 sign to the
+    // south-east lane and shows the PROVISIONAL bot stills (standby →
+    // working once every feed is up).
+    if (this.textures.exists('plv1-bot-standby')) {
+      // Cool tint + reduced alpha: the bot's lamp-eyes were the deck's
+      // brightest element (visual review A1); the feeds are the subject.
+      this.bot = this.add
+        .image(22 * TILE, 15.1 * TILE, 'plv1-bot-standby')
+        .setTint(0xb8c8d6)
+        .setAlpha(0.9)
+        .setDepth(worldDepth(15.1 * TILE + 46));
+    } else {
+      this.addDecor(22 * TILE, 15.1 * TILE, 'proc-bot-utility');
+    }
     this.signage(2.6 * TILE, 7.2 * TILE, '◀  CONCOURSE');
 
     if (devInspectionActive()) {
@@ -404,14 +436,19 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
     return closureFeeds();
   }
 
+  /** Unit 7 (V17): one shared area-signage style (PilotZoneScene). */
   private signage(x: number, y: number, text: string) {
-    this.add
-      .text(x, y, text, { color: '#7f95a8', font: '11px monospace' })
-      .setOrigin(0.5)
-      .setDepth(2);
+    this.zoneSignage(x, y, text);
   }
 
   // ————————————————————————————————— Core door gate ——
+
+  /** Unit 7 (V13): the banner sits under the north door's prompt. */
+  protected feedbackMessageY(): number {
+    // Below the north-door approach point (the avatar spans y 116-212
+    // there), above the feed row — covers neither the door nor the figure.
+    return 250;
+  }
 
   private coreDoorGate(): string | null {
     if (coreAccessReady()) {
@@ -729,6 +766,21 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
 
     this.manifoldText?.setText(manifoldLine);
     this.doorChip?.setText(doorOpen ? 'DOOR · OPEN' : 'DOOR · SEALED');
+    // Unit 7 (V4): the leaf art carries the state too, never colour alone.
+    this.setDoorTexture(
+      'core_chamber',
+      doorOpen ? 'proc-door-core-open' : 'proc-door-core',
+    );
+
+    if (this.bot !== null) {
+      const botTexture = allFeedsReady(feeds)
+        ? 'plv1-bot-working'
+        : 'plv1-bot-standby';
+
+      if (this.textures.exists(botTexture)) {
+        this.bot.setTexture(botTexture);
+      }
+    }
     this.doorLamp?.setFillStyle(
       doorOpen ? ACCENT : state === 'core_access_ready' ? AMBER : DORMANT,
       1,

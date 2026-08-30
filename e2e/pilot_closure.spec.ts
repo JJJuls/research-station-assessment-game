@@ -324,7 +324,8 @@ test.describe('Utility & Core closure — participant route (Unit 6)', () => {
 
     expect(chamber?.core_state).toBe('accessible');
     expect(chamber?.visual_state).toBe('prepared');
-    expect(chamber?.kai_texture).toBe('plv1-kai');
+    // Unit 7 (V14): Kai works the feed console until the Core is stable.
+    expect(chamber?.kai_texture).toBe('plv1-kai-work-a');
     expect(chamber?.dev_label_visible).toBe(false);
 
     await leaveCoreChamber(page);

@@ -65,3 +65,20 @@ Pure: `e2e/pilot_exterior_models.spec.ts`. Route: `e2e/pilot_yard.spec.ts`,
 `e2e/pilot_exterior_isolation.spec.ts`. Frames:
 `e2e/pilot_exterior_capture.spec.ts` →
 `docs/verification/screenshots-evidence-led-pilot-v2/09-*.png … 21-*.png`.
+
+## Unit 7 presentation (no mechanic change)
+
+- The airlock door shows the PROVISIONAL iris-airlock part-open frame; six
+  slate-tinted snowfall tiles (α 0.55; reduced motion: one static frame at
+  α 0.3) drift as ground snow at depth −0.1 — under every figure, marker
+  and task graphic, never over a measured stimulus (scientific review
+  S-M1) — at spots clear of the excavation plot, the coupling collar, the
+  uplink posts, the cable flag and the airlock. Mast 04 keeps the damaged
+  tower until the WHOLE antenna restoration (outdoor stages and the indoor
+  alignment, `m20Complete`) is done, then shows the PROVISIONAL antenna
+  with a slow two-frame signal pulse (reduced motion: held) — never while
+  the chip reads ALIGNMENT PENDING (scientific review S-M2, OD-9). Area
+  signage uses the shared 11 px style (dark text on snow, light text on the
+  Metal Yard inset). Scanner signals, dig cells, stations, approach points
+  and every window are untouched in code; the rendered stimulus change is
+  enumerated in the Unit 7 ledger.

@@ -189,7 +189,9 @@ export class WorkSurfaceScene extends Phaser.Scene {
     this.scene.bringToTop();
 
     this.add
-      .rectangle(400, 300, 800, 600, COLOR.dim, 0.62)
+      // Denser scrim (0.62 → 0.9): host status chips and banners outside
+      // the panel no longer read as fragments (visual review V1 residual).
+      .rectangle(400, 300, 800, 600, COLOR.dim, 0.9)
       .setDepth(DEPTH.dim)
       .setInteractive();
     this.add
@@ -235,12 +237,16 @@ export class WorkSurfaceScene extends Phaser.Scene {
       })
       .setDepth(DEPTH.element);
     this.helpText = this.add
-      .text(PANEL.x + PANEL.width / 2, PANEL.y + PANEL.height - 14, '', {
+      .text(PANEL.x + PANEL.width / 2, PANEL.y + PANEL.height - 6, '', {
         color: COLOR.dimText,
-        font: '10px monospace',
+        // Unit 7 (V16): 11 px minimum for help lines; wrapped inside the
+        // panel and anchored at its foot so long lines grow upward
+        // (visual review M4/M5).
+        font: '11px monospace',
         align: 'center',
+        wordWrap: { width: PANEL.width - 40 },
       })
-      .setOrigin(0.5)
+      .setOrigin(0.5, 1)
       .setDepth(DEPTH.element);
     this.feedbackText = this.add
       .text(PANEL.x + PANEL.width / 2, PANEL.y + PANEL.height - 34, '', {

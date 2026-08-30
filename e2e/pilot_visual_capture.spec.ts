@@ -180,8 +180,11 @@ test('pilot route visual capture — dock, concourse, workshop', async ({
   await expectStage(page, 'workshop');
   await concourseToWorkshop(page);
 
-  // 07 — a supply bundle in reach (world pickup surface).
-  await walkTo(page, 96, 112, { yFirst: true });
+  // 07 — a supply bundle in reach (world pickup surface). Unit 7: the
+  // y-first lane targets 84 (body 66-108, rows 2-3) — at 112 the ±12 px
+  // stop point could leave the body's foot inside row 4, where the
+  // cols-13-16 machinery block then stops the x-leg at x = 560.
+  await walkTo(page, 96, 84, { yFirst: true });
   await shot(page, '07-supply-bundle');
   await press(page, 'Space');
   await page.waitForTimeout(600);

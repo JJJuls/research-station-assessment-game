@@ -94,6 +94,8 @@ export interface PilotDoorSpec {
   /** Spawn hint the destination reads (its getSpawn data). */
   spawn: string;
   texture?: string;
+  /** Frame of a strip texture (Unit 7 airlock iris). */
+  textureFrame?: number;
   /**
    * Dynamic gate (Unit 6 Core door): a neutral sealed message keeps the
    * door shut this time; null opens it. Navigation only — never reads
@@ -221,6 +223,29 @@ export abstract class PilotZoneScene extends RoomScene {
     refreshPilotCoverageProbe();
   }
 
+  // ——— Presentation tokens (Unit 7) ——————————————————————————————————
+
+  /**
+   * One shared area-signage style for every zone: dim, small caps, no
+   * plate — a landmark for the eye, never a label floating over an object
+   * (status chips keep their plate). Presentation only.
+   */
+  protected zoneSignage(
+    x: number,
+    y: number,
+    text: string,
+    dark = true,
+  ): Phaser.GameObjects.Text {
+    return this.add
+      .text(x, y, text, {
+        // 11 px and ≥ 4.5:1 on the dark room floors (gameplay review G10).
+        color: dark ? '#8497aa' : '#3d4d5c',
+        font: '11px monospace',
+      })
+      .setOrigin(0.5)
+      .setDepth(2);
+  }
+
   // ——— Doors ———————————————————————————————————————————————————————————
 
   /**
@@ -242,7 +267,12 @@ export abstract class PilotZoneScene extends RoomScene {
       x: ref.x,
       y: ref.y,
       label: ref.label,
-      texture: spec.texture,
+      // Unit 7 (V9): interior doors show a door leaf instead of the bare
+      // cyan marker (PROVISIONAL pack art; the marker remains the fallback).
+      texture:
+        spec.texture ??
+        (this.textures.exists('plv1-arch-door') ? 'plv1-arch-door' : undefined),
+      textureFrame: spec.textureFrame,
       interactionKey: 'pilotDoor',
       eventType: 'pilot_door_used',
       eventMetadata: { from: this.zoneKey, to: spec.to },
@@ -300,19 +330,22 @@ export abstract class PilotZoneScene extends RoomScene {
       window.__pilotZoneTitle = name;
     }
 
+    // Unit 7 (V8, review round): the card sits in the HUD strip right of
+    // the belt (x 660, y 574) — no room content, prompt, chip or door leaf
+    // ever lives there — and under the prompt/chip depth (20).
     const title = this.add
-      .text(400, 180, name.toUpperCase(), {
+      .text(660, 574, name.toUpperCase(), {
         color: '#dfe9f1',
-        font: '20px monospace',
+        font: '16px monospace',
         backgroundColor: '#101820',
-        padding: { x: 14, y: 8 },
+        padding: { x: 12, y: 6 },
       })
       .setOrigin(0.5)
-      .setDepth(Depth.AboveWorld + 2)
+      .setDepth(Depth.AbovePlayer + 5)
       .setScrollFactor(0);
     const rule = this.add
-      .rectangle(400, 202, 180, 2, 0x5fd3c4, 0.9)
-      .setDepth(Depth.AboveWorld + 2)
+      .rectangle(660, 556, 140, 2, 0x5fd3c4, 0.9)
+      .setDepth(Depth.AbovePlayer + 5)
       .setScrollFactor(0);
 
     if (prefersReducedMotion()) {

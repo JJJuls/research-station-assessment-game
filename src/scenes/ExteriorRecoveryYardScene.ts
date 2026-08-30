@@ -27,7 +27,7 @@
  */
 import Phaser from 'phaser';
 
-import { Depth, key } from '../constants';
+import { Depth, key, worldDepth } from '../constants';
 import type {
   DigRecord,
   DigRefusal,
@@ -79,6 +79,7 @@ import {
 import {
   M20_STAGE_LABELS,
   M20_STAGE_MS,
+  m20Complete,
   m20MastStatus,
   m20NextStage,
   m20OutdoorComplete,
@@ -216,6 +217,10 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
   private frostOverlay?: Phaser.GameObjects.Rectangle;
   private mastChip?: Phaser.GameObjects.Text;
   private mastFeed?: Phaser.GameObjects.Graphics;
+  /** Unit 7 (V19): the mast tower image (damaged → restored antenna art). */
+  private mastTower?: Phaser.GameObjects.Image;
+  private mastPulseMs = 0;
+  private snow: Phaser.GameObjects.Sprite[] = [];
   private plotOverlay?: Phaser.GameObjects.Graphics;
   private rigChip?: Phaser.GameObjects.Text;
   private depletedBanner?: Phaser.GameObjects.Text;
@@ -339,6 +344,11 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     this.addPilotDoor({
       to: 'diagnostics_laboratory',
       spawn: 'exterior_recovery_yard',
+      // Unit 7 (V9): iris airlock art (PROVISIONAL strip, closed frame).
+      texture: this.textures.exists('plv1-airlock-open')
+        ? 'plv1-airlock-open'
+        : undefined,
+      textureFrame: 3,
     });
 
     // ——— Noor — the route anchor (order 0). ———
@@ -511,7 +521,9 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     ]);
 
     // ——— Dressing. ———
-    this.signage(12 * TILE, 16.55 * TILE, '▼  AIRLOCK — RETURN TO STATION');
+    // Unit 7: the sign sits under the iris leaf, never behind it.
+    this.signage(12 * TILE, 17.15 * TILE, '▼  AIRLOCK — RETURN TO STATION');
+    this.buildSnowfall();
     this.addDecor(11 * TILE, 15.4 * TILE, 'proc-footprints');
     this.addDecor(15 * TILE, 12.2 * TILE, 'proc-footprints');
     this.addDecor(8.5 * TILE, 8.4 * TILE, 'proc-ground-disturbed');
@@ -621,11 +633,13 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       },
       order: 2,
     });
-    this.addDecor(
-      YARD_SITES.mastTower.x,
-      YARD_SITES.mastTower.y,
-      'proc-antenna-damaged',
-    );
+    this.mastTower = this.add
+      .image(
+        YARD_SITES.mastTower.x,
+        YARD_SITES.mastTower.y,
+        'proc-antenna-damaged',
+      )
+      .setDepth(worldDepth(YARD_SITES.mastTower.y + 40));
     this.mastFeed = this.add.graphics().setDepth(2);
     this.mastChip = this.chip(YARD_SITES.mastTower.x, 2.2 * TILE, '');
   }
@@ -1854,7 +1868,98 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
   // ————————————————————————————————— M05 occasion 2 ——
 
   /** Presented at the first quiet moment after the briefing was acknowledged. */
+  /**
+   * Unit 7 (V19): a restrained storm layer — six translucent snowfall
+   * tiles (PROVISIONAL strip) drifting over the yard; reduced motion holds
+   * one faint frame. Presentation only; never over a prompt (world depth).
+   */
+  private buildSnowfall() {
+    if (!this.textures.exists('plv1-fx-snowfall')) {
+      return;
+    }
+
+    if (!this.anims.exists('plv1-fx-snowfall-loop')) {
+      this.anims.create({
+        key: 'plv1-fx-snowfall-loop',
+        frames: this.anims.generateFrameNumbers('plv1-fx-snowfall', {
+          start: 0,
+          end: 8,
+        }),
+        frameRate: 7,
+        repeat: -1,
+      });
+    }
+
+    const reduced = prefersReducedMotion();
+    // Spots clear of the excavation plot (cols 16-22 / rows 8-13), the
+    // coupling collar, the uplink posts, the cable flag and the airlock.
+    const spots: [number, number][] = [
+      [6, 7],
+      [13, 10],
+      [10, 13],
+      [15, 6],
+      [22, 16],
+      [2, 14],
+    ];
+
+    for (const [tx, ty] of spots) {
+      // Slate-blue tint so the drift reads against the pale snow floor.
+      const sprite = this.add
+        .sprite(tx * TILE, ty * TILE, 'plv1-fx-snowfall', 0)
+        .setTint(0x7f97b2)
+        .setAlpha(reduced ? 0.3 : 0.55)
+        // Ground drift: UNDER every figure, marker and task graphic (world
+        // depth ≥ 0; markers live in the AboveWorld container) so no
+        // measured stimulus is ever covered (scientific review S-M1).
+        .setDepth(-0.1);
+
+      if (!reduced) {
+        sprite.play('plv1-fx-snowfall-loop');
+      }
+
+      this.snow.push(sprite);
+    }
+  }
+
+  /** Unit 7 (V19): mast art follows the restoration state; a slow two-frame
+   * signal pulse once the antenna is restored (reduced motion: held). */
+  private refreshMastArt() {
+    const tower = this.mastTower;
+
+    if (tower === undefined || !this.textures.exists('plv1-antenna-signal')) {
+      return;
+    }
+
+    // Restored art only once the WHOLE restoration (outdoor stages AND the
+    // indoor alignment — every M20 raw component written) is complete;
+    // never while the chip reads ALIGNMENT PENDING (scientific review S-M2).
+    const state = exteriorEpisode().m20;
+    const restored = state.accepted && m20Complete(state);
+
+    if (!restored) {
+      if (tower.texture.key !== 'proc-antenna-damaged') {
+        tower.setTexture('proc-antenna-damaged');
+      }
+
+      return;
+    }
+
+    if (tower.texture.key !== 'plv1-antenna-signal') {
+      tower.setTexture('plv1-antenna-signal', 0);
+      this.mastPulseMs = 0;
+    }
+
+    if (prefersReducedMotion()) {
+      return;
+    }
+
+    this.mastPulseMs = (this.mastPulseMs + this.game.loop.delta) % 2800;
+    tower.setFrame(this.mastPulseMs < 2200 ? 0 : 3);
+  }
+
   protected onPilotUpdate(): void {
+    this.refreshMastArt();
+
     if (
       !m05Presented('o2') &&
       pilotStageAtOrAfter('exterior_work') &&
@@ -1943,14 +2048,9 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
 
   // ————————————————————————————————— presentation ——
 
+  /** Unit 7 (V17): shared signage style; `dark` = dark text on snow. */
   private signage(x: number, y: number, text: string, dark = true) {
-    this.add
-      .text(x, y, text, {
-        color: dark ? '#1d2937' : '#c7d3dd',
-        font: '11px monospace',
-      })
-      .setOrigin(0.5)
-      .setDepth(2);
+    this.zoneSignage(x, y, text, !dark);
   }
 
   private chip(x: number, y: number, text: string): Phaser.GameObjects.Text {

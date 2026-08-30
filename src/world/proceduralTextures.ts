@@ -1723,6 +1723,7 @@ const TEXTURE_BUILDERS: Record<string, TextureBuilder> = {
   'proc-manifold-panel': { width: 72, height: 44, draw: drawManifoldPanel },
   'proc-core-vessel': { width: 112, height: 136, draw: drawCoreVessel },
   'proc-door-core': { width: 64, height: 56, draw: drawCoreDoor },
+  'proc-door-core-open': { width: 64, height: 56, draw: drawCoreDoorOpen },
 };
 
 // ————————————————————————————————————————————————————————————————————
@@ -2201,6 +2202,24 @@ function drawCoreDoor(g: Graphics) {
     rect(g, 38 + i * 6, 40, 4, 4, MUTED);
   }
   // Lamp slot above the leaves.
+  rect(g, 24, 2, 16, 4, PANEL);
+}
+
+/** Unit 7 (V4): the blast door with both leaves retracted into the frame —
+ * a lit aperture reads as "open" without relying on the lamp colour. */
+function drawCoreDoorOpen(g: Graphics) {
+  box(g, 4, 4, 56, 48, STEEL_SHADE, STEEL_RIM);
+  // Aperture: dark passage with a cool light wash from the chamber.
+  rect(g, 12, 8, 40, 40, 0x0b1016);
+  rect(g, 16, 12, 32, 30, 0x12303a);
+  rect(g, 22, 18, 20, 18, 0x1c5a5c);
+  // Retracted leaves: narrow bands at both jambs.
+  rect(g, 8, 8, 4, 40, STEEL);
+  rect(g, 52, 8, 4, 40, STEEL);
+  rect(g, 8, 8, 4, 1, STEEL_RIM);
+  rect(g, 52, 8, 4, 1, STEEL_RIM);
+  // Threshold plate + lamp slot.
+  rect(g, 12, 46, 40, 2, STEEL_RIM);
   rect(g, 24, 2, 16, 4, PANEL);
 }
 

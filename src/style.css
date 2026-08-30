@@ -1,6 +1,8 @@
 html,
 body {
-  background: #000;
+  /* Unit 7: one charcoal ground behind the 4:3 canvas (Scale.FIT
+     letterbox) — the same token as the game clear colour, never black. */
+  background: #0b1016;
   margin: 0;
   padding: 0;
 }

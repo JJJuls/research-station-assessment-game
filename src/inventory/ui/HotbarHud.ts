@@ -46,6 +46,8 @@ export class HotbarHud {
   private slotIcons: (Phaser.GameObjects.Image | null)[] = [];
   private readonly nameChip: Phaser.GameObjects.Text;
   private readonly unsubscribe: () => void;
+  private readonly pauseHandler: () => void;
+  private readonly resumeHandler: () => void;
   private readonly keyHandlers: {
     event: string;
     handler: (event: KeyboardEvent) => void;
@@ -124,6 +126,21 @@ export class HotbarHud {
     });
 
     this.unsubscribe = onInventoryStoreChange(() => this.refresh());
+    // Unit 7 (V12): the selected-item caption peeked out beside every
+    // modal panel; it hides while the host is paused and returns on resume.
+    // Removed on SHUTDOWN (scene listeners survive a restart).
+    this.pauseHandler = () => {
+      if (this.nameChip.active) {
+        this.nameChip.setVisible(false);
+      }
+    };
+    this.resumeHandler = () => {
+      if (this.nameChip.active) {
+        this.refresh();
+      }
+    };
+    scene.events.on(Phaser.Scenes.Events.PAUSE, this.pauseHandler);
+    scene.events.on(Phaser.Scenes.Events.RESUME, this.resumeHandler);
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.destroy());
 
     this.refresh();
@@ -178,6 +195,8 @@ export class HotbarHud {
 
   private destroy() {
     this.unsubscribe();
+    this.scene.events.off(Phaser.Scenes.Events.PAUSE, this.pauseHandler);
+    this.scene.events.off(Phaser.Scenes.Events.RESUME, this.resumeHandler);
 
     for (const { event, handler } of this.keyHandlers) {
       this.scene.input.keyboard?.off(event, handler);

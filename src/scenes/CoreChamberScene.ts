@@ -19,7 +19,7 @@
  */
 import Phaser from 'phaser';
 
-import { Depth, key } from '../constants';
+import { Depth, key, worldDepth } from '../constants';
 import {
   beginManualWorldAction,
   endManualWorldAction,
@@ -46,6 +46,7 @@ import {
 import {
   pilotEpisode,
   pilotRouteSummary,
+  pilotStage,
   registerPilotStation,
   STAGE_EPISODE,
 } from '../pilot/pilotRoute';
@@ -98,6 +99,7 @@ export class CoreChamberScene extends PilotZoneScene {
   private ringGlow: Phaser.GameObjects.Ellipse | null = null;
   private statusConsoleText: Phaser.GameObjects.Text | null = null;
   private coreChip: Phaser.GameObjects.Text | null = null;
+  private coreSprite: Phaser.GameObjects.Sprite | null = null;
   private devLabel: Phaser.GameObjects.Text | null = null;
   private visualState: CoreVisualState = 'inactive';
   private rampProgress = 0;
@@ -198,9 +200,39 @@ export class CoreChamberScene extends PilotZoneScene {
       .setDepth(0.5);
     // Flanking coolant towers give the Core its machinery mass; the
     // vessel stands between them over the central block.
-    this.addDecor(visual.x - 70, visual.y + 12, 'proc-core-column');
-    this.addDecor(visual.x + 70, visual.y + 12, 'proc-core-column');
-    this.addDecor(visual.x, visual.y, 'proc-core-vessel');
+    const column = this.textures.exists('plv1-core-coolant-column')
+      ? 'plv1-core-coolant-column'
+      : 'proc-core-column';
+
+    this.addDecor(visual.x - 70, visual.y + 12, column);
+    this.addDecor(visual.x + 70, visual.y + 12, column);
+
+    // Unit 7 (V18): the vessel is the PROVISIONAL core column strip — one
+    // held frame when inactive/prepared/stable, a slow 6-frame loop while
+    // synchronising (reduced motion holds a mid frame). Fallback: the
+    // procedural vessel.
+    if (this.textures.exists('plv1-core-sync')) {
+      if (!this.anims.exists('plv1-core-sync-loop')) {
+        this.anims.create({
+          key: 'plv1-core-sync-loop',
+          frames: this.anims.generateFrameNumbers('plv1-core-sync', {
+            start: 0,
+            end: 5,
+          }),
+          frameRate: 6,
+          repeat: -1,
+        });
+      }
+
+      this.coreSprite = this.add
+        .sprite(visual.x, visual.y + 8, 'plv1-core-sync', 0)
+        .setDepth(worldDepth(visual.y + 56));
+    } else {
+      this.addDecor(visual.x, visual.y, 'proc-core-vessel');
+    }
+
+    this.addDecor(10.2 * TILE, 14.1 * TILE, 'plv1-core-pillar-a');
+    this.addDecor(14.8 * TILE, 14.1 * TILE, 'plv1-core-pillar-b');
     this.emissive = this.add.graphics().setDepth(1.5);
     this.signage(visual.x, visual.y - 84, 'STATION CORE');
 
@@ -213,14 +245,16 @@ export class CoreChamberScene extends PilotZoneScene {
       y: core.y,
       onPromptOpened: () => this.onCorePromptOpened(),
     });
+    // Unit 7 (V3): the state chip stands beside the pedestal, off the
+    // approach point, so it never covers the avatar.
     this.coreChip = this.add
-      .text(core.x, core.y + 34, '', {
+      .text(core.x + 40, core.y - 6, '', {
         backgroundColor: '#101820',
         color: '#9fb2c1',
         font: '10px monospace',
         padding: { x: 4, y: 2 },
       })
-      .setOrigin(0.5, 0)
+      .setOrigin(0, 0.5)
       .setDepth(2);
     registerPilotStation({
       id: 'core',
@@ -236,17 +270,27 @@ export class CoreChamberScene extends PilotZoneScene {
     // ——— Kai at the chamber console (reacts on stabilisation) ———
     const kai = CORE_SITES.kai;
 
-    this.kaiTexture =
-      closureCore().state === 'stable' ? 'plv1-kai-done' : 'plv1-kai';
+    // Unit 7 (V14): Kai works the feed console (two-frame loop) until the
+    // Core is stable, then holds the finished pose.
+    const stable = closureCore().state === 'stable';
+
+    this.kaiTexture = stable ? 'plv1-kai-done' : 'plv1-kai-work-a';
     this.addNpc({
       interactionKey: 'pilotKai',
       label: 'Kai',
       npcName: 'Kai — engineering',
       texture: this.kaiTexture,
+      workFrames: stable ? undefined : ['plv1-kai-work-a', 'plv1-kai-work-b'],
       x: kai.x,
       y: kai.y,
     });
-    this.addDecor(kai.x + 44, kai.y + 4, 'proc-console-wall');
+    this.addDecor(
+      kai.x + 44,
+      kai.y + 4,
+      this.textures.exists('plv1-core-console')
+        ? 'plv1-core-console'
+        : 'proc-console-wall',
+    );
     this.signage(kai.x + 22, kai.y - 48, 'FEED CONSOLE');
 
     // ——— Status console (west): the three feeds + Core state, labels only ———
@@ -275,7 +319,7 @@ export class CoreChamberScene extends PilotZoneScene {
     this.addDecor(9 * TILE, 6.5 * TILE, 'proc-light-pool');
     this.addDecor(16 * TILE, 6.5 * TILE, 'proc-light-pool');
     this.addDecor(12.5 * TILE, 12 * TILE, 'proc-light-pool');
-    this.signage(12.5 * TILE, 14.6 * TILE, '▼  UTILITY DECK');
+    this.signage(12.5 * TILE, 13.85 * TILE, '▼  UTILITY DECK');
 
     if (devInspectionActive()) {
       this.devLabel = this.add
@@ -291,11 +335,9 @@ export class CoreChamberScene extends PilotZoneScene {
     }
   }
 
+  /** Unit 7 (V17): one shared area-signage style (PilotZoneScene). */
   private signage(x: number, y: number, text: string) {
-    this.add
-      .text(x, y, text, { color: '#7f95a8', font: '11px monospace' })
-      .setOrigin(0.5)
-      .setDepth(2);
+    this.zoneSignage(x, y, text);
   }
 
   // ————————————————————————————————— prompts ——
@@ -744,6 +786,10 @@ export class CoreChamberScene extends PilotZoneScene {
       return;
     }
 
+    if (texture === 'plv1-kai-done') {
+      this.stopNpcWorkLoop('pilotKai');
+    }
+
     this.kaiTexture = texture;
     this.npcSpriteFor('pilotKai')?.setTexture(texture);
   }
@@ -869,6 +915,7 @@ export class CoreChamberScene extends PilotZoneScene {
             : 'CORE · INACTIVE';
 
     this.coreChip?.setText(stateLine);
+    this.refreshCoreSprite();
     this.statusConsoleText?.setText(
       [
         ...FEED_ORDER.map(
@@ -894,6 +941,36 @@ export class CoreChamberScene extends PilotZoneScene {
     refreshClosureProbe();
   }
 
+  /** Unit 7 (V18): frame/animation of the PROVISIONAL core column. */
+  private refreshCoreSprite() {
+    const sprite = this.coreSprite;
+
+    if (sprite === null) {
+      return;
+    }
+
+    if (this.visualState === 'synchronizing') {
+      if (prefersReducedMotion()) {
+        sprite.stop();
+        sprite.setFrame(3);
+      } else if (!sprite.anims.isPlaying) {
+        sprite.play('plv1-core-sync-loop');
+      }
+
+      sprite.clearTint();
+      return;
+    }
+
+    sprite.stop();
+    sprite.setFrame(this.visualState === 'stable' ? 5 : 0);
+
+    if (this.visualState === 'inactive') {
+      sprite.setTint(0x8a98a6);
+    } else {
+      sprite.clearTint();
+    }
+  }
+
   private drawEmissive() {
     const g = this.emissive;
 
@@ -902,7 +979,8 @@ export class CoreChamberScene extends PilotZoneScene {
     }
 
     const visual = CORE_SITES.coreVisual;
-    const columnX = visual.x - 4;
+    // Unit 7: the sight column stands beside the column art, not over it.
+    const columnX = this.coreSprite === null ? visual.x - 4 : visual.x + 42;
     const columnTop = visual.y - 46;
     const columnHeight = 84;
     const progress =
@@ -940,6 +1018,22 @@ export class CoreChamberScene extends PilotZoneScene {
 
     this.lightPool?.setFillStyle(glow, 0.14 + 0.3 * progress);
     this.ringGlow?.setFillStyle(glow, 0.06 + 0.16 * progress);
+  }
+
+  /**
+   * Unit 7 (V5): inside the chamber the ONE objective line describes the
+   * work at the Core rather than the door already passed (deck precedent).
+   */
+  protected buildRouteObjectiveText(): string {
+    const state = closureCore().state;
+
+    if (pilotStage() === 'core_sync' && state !== 'stable') {
+      return state === 'synchronizing'
+        ? 'Synchronising — stand by; the Core stabilises in a moment.'
+        : 'At the Core: inspect it, open the synchronisation review, then confirm.';
+    }
+
+    return super.buildRouteObjectiveText();
   }
 
   protected onPilotUpdate(): void {

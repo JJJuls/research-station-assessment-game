@@ -211,15 +211,17 @@ export const STATION_THEMES: Record<StationThemeId, StationTheme> = {
   core: {
     id: 'core',
     seed: 0x5eed0008,
-    voidColor: 0x06090d,
+    // Unit 7 (V10): the chamber's void is the shared charcoal ground and
+    // the perimeter walls are lifted so the diamond reads against it.
+    voidColor: 0x0b1016,
     floor: rgb(0x2b3540),
     floorAlt: rgb(0x27303a),
     seam: rgb(0x1e262e),
     glint: rgb(0x3d4a58),
-    wallTop: rgb(0x131a21),
-    wallEdge: rgb(0x27333d),
-    wallFace: rgb(0x1d262e),
-    wallFaceLine: rgb(0x161d23),
+    wallTop: rgb(0x1e2833),
+    wallEdge: rgb(0x384754),
+    wallFace: rgb(0x28333e),
+    wallFaceLine: rgb(0x1e2730),
     shadow: rgb(0x1c242c),
     trim: rgb(0x2e6b66),
     noise: 0.3,

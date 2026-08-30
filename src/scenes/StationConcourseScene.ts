@@ -400,14 +400,27 @@ export class StationConcourseScene extends PilotZoneScene {
     // ——— Dressing ———
     this.addDecor(12 * TILE, 3.2 * TILE, 'proc-light-pool');
     this.addDecor(15.5 * TILE, 8.2 * TILE, 'proc-light-pool');
+    // Unit 7: PROVISIONAL wall modules (window / vent / grille) with the
+    // procedural pieces as fallback — wall dressing only, no interaction.
+    // Review round (visual M9): foundry windows on the north wall: the
+    // promoted window module read as a door beside the real north door.
     this.addDecor(19 * TILE, 1.4 * TILE, 'proc-window-exterior');
     this.addDecor(22 * TILE, 1.4 * TILE, 'proc-window-exterior');
-    this.addDecor(5 * TILE, 16 * TILE + 10, 'proc-wall-pipes');
-    this.addDecor(20 * TILE, 16 * TILE + 10, 'proc-wall-pipes');
+    this.addDecor(
+      5 * TILE,
+      16 * TILE + 10,
+      this.wallArt('plv1-arch-vent', 'proc-wall-pipes'),
+    );
+    this.addDecor(
+      20 * TILE,
+      16 * TILE + 10,
+      this.wallArt('plv1-arch-grille', 'proc-wall-pipes'),
+    );
     this.addDecor(21.5 * TILE, 13.5 * TILE, 'proc-board-portfolio');
     this.addDecor(17.5 * TILE, 12 * TILE, 'proc-cart-utility');
     this.addDecor(13.5 * TILE, 4.6 * TILE, 'proc-console-wall');
-    this.signage(12 * TILE, 1.5 * TILE, 'DIAGNOSTICS LABORATORY  ▲');
+    // Unit 7: the sign sits beside the north door leaf, never behind it.
+    this.signage(16 * TILE, 1.5 * TILE, 'DIAGNOSTICS LABORATORY  ▲');
     this.signage(12 * TILE, 17.5 * TILE, '▼  DOCK');
     this.signage(22.2 * TILE, 7.2 * TILE, 'UTILITY DECK  ▶');
     this.signage(2.8 * TILE, 7.2 * TILE, '◀  RECORDS WORKSHOP');
@@ -506,11 +519,13 @@ export class StationConcourseScene extends PilotZoneScene {
     });
   }
 
+  /** Unit 7 (V17): one shared area-signage style (PilotZoneScene). */
   private signage(x: number, y: number, text: string) {
-    this.add
-      .text(x, y, text, { color: '#7f95a8', font: '11px monospace' })
-      .setOrigin(0.5)
-      .setDepth(2);
+    this.zoneSignage(x, y, text);
+  }
+
+  private wallArt(preferred: string, fallback: string): string {
+    return this.textures.exists(preferred) ? preferred : fallback;
   }
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {

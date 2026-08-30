@@ -272,6 +272,11 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     this.addPilotDoor({
       to: 'exterior_recovery_yard',
       spawn: 'diagnostics_laboratory',
+      // Unit 7 (V9): iris airlock art (PROVISIONAL strip, closed frame).
+      texture: this.textures.exists('plv1-airlock-open')
+        ? 'plv1-airlock-open'
+        : undefined,
+      textureFrame: 3,
     });
 
     // ——— Kai — briefing desk (route anchor of the laboratory stages) ———
@@ -408,6 +413,8 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     this.addDecor(6 * TILE, 9 * TILE, 'proc-light-pool');
     this.addDecor(19 * TILE, 9 * TILE, 'proc-light-pool');
     this.addDecor(12 * TILE, 2.6 * TILE, 'proc-light-pool');
+    // Review round (visual M9): the promoted window module read as a door
+    // beside the real north door — the foundry window stays.
     this.addDecor(6.5 * TILE, 1.4 * TILE, 'proc-window-exterior');
     this.addDecor(20 * TILE, 1.4 * TILE, 'proc-window-exterior');
     this.addDecor(22 * TILE, 8 * TILE, 'proc-gauge-card');
@@ -415,8 +422,9 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     this.addDecor(18 * TILE, 14.8 * TILE, 'proc-rack-tools');
     this.addDecor(3.5 * TILE, 15 * TILE, 'proc-cart-utility');
     this.addDecor(22 * TILE, 13.6 * TILE, 'proc-seat-bench');
-    this.signage(12 * TILE, 1.5 * TILE, 'EXTERIOR AIRLOCK  ▲');
-    this.signage(12 * TILE, 16.6 * TILE, '▼  CONCOURSE');
+    // Unit 7: signs sit beside / under the door leaves, never behind them.
+    this.signage(15.6 * TILE, 1.5 * TILE, 'EXTERIOR AIRLOCK  ▲');
+    this.signage(12 * TILE, 17.15 * TILE, '▼  CONCOURSE');
   }
 
   // ——— Signal display —————————————————————————————————————————————————
@@ -715,11 +723,9 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     });
   }
 
+  /** Unit 7 (V17): one shared area-signage style (PilotZoneScene). */
   private signage(x: number, y: number, text: string) {
-    this.add
-      .text(x, y, text, { color: '#7f95a8', font: '11px monospace' })
-      .setOrigin(0.5)
-      .setDepth(2);
+    this.zoneSignage(x, y, text);
   }
 
   // ——— Prompts ——————————————————————————————————————————————————————————
