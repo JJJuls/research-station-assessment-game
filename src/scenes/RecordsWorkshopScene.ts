@@ -221,7 +221,11 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   protected getSpawn(): { x: number; y: number } {
-    return { x: 21.5 * TILE, y: 8.5 * TILE };
+    // 80 px inside the east door (x 752): outside RoomScene's 72 px
+    // interaction radius, so a reflex SPACE on arrival never re-triggers
+    // the door just used (Pilot V3 Unit 4/5, V2 finding U8-8; DockScene
+    // precedent).
+    return { x: 21 * TILE, y: 8.5 * TILE };
   }
 
   create(data?: { spawn?: string }) {

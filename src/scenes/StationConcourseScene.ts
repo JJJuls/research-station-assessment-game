@@ -167,7 +167,9 @@ export class StationConcourseScene extends PilotZoneScene {
       case 'utility_core_deck':
         return { x: 20.5 * TILE, y: 8.5 * TILE };
       case 'records_workshop':
-        return { x: 3.5 * TILE, y: 8.5 * TILE };
+        // 80 px inside the west door (x 48): clear of the 72 px interaction
+        // radius (V2 finding U8-8).
+        return { x: 4 * TILE, y: 8.5 * TILE };
       case 'dock':
       default:
         return { x: 12 * TILE, y: 12.5 * TILE };

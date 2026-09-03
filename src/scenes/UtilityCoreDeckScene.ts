@@ -177,7 +177,9 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
   protected getSpawn(data?: { spawn?: string }): { x: number; y: number } {
     switch (data?.spawn) {
       case 'core_chamber':
-        return { x: 12.5 * TILE, y: 5.5 * TILE };
+        // 88 px below the Core door (y 120): clear of the 72 px interaction
+        // radius (V2 finding U8-8).
+        return { x: 12.5 * TILE, y: 6.5 * TILE };
       case 'station_concourse':
       default:
         return { x: 5 * TILE, y: 8.5 * TILE };

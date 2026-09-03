@@ -472,3 +472,50 @@ an honest gate and recorded open. Files: `src/pilot/PilotZoneScene.ts`,
 `npm.cmd run lint:tsc` pass; scoped ESLint pass; `npm.cmd run build` pass;
 `final_scientific_gates` **16/16** (`PW_DEV_PORT=5353`); `verify-unit`
 PASS. No `proto_*` event, disposition, validity gate or formula changed.
+
+---
+
+## 5. Unit 5 — Reliable participant-facing interactions
+
+Contract U5 with one path correction: the interact-key site lives in
+`src/world/RoomScene.ts` (the contract wrote `src/scenes/RoomScene.ts`,
+which does not exist). Files: `src/scenes/RecordsWorkshopScene.ts`,
+`src/scenes/StationConcourseScene.ts`, `src/scenes/UtilityCoreDeckScene.ts`,
+`src/world/RoomScene.ts`, `e2e/spawn_clearance.spec.ts` (new), this report.
+
+### 5.1 Closed
+
+- **U8-8 (spawn inside the door radius).** Three arrival spawns sat inside
+  the 72 px interaction radius of the door just used (Records Workshop
+  64 px, Concourse-from-Workshop 64 px, Deck-from-Chamber 56 px), so a
+  reflex SPACE on arrival re-triggered the door. Each now sits 80–88 px
+  inside on the same lane (the DockScene rule), and a pure spec computes
+  the clearance from the scene sources against the route's door
+  coordinates.
+- **U8-4 (SPACE + E in one frame).** `interactJustPressed` short-circuited
+  the second `JustDown`, leaving its flag to leak a second contextual
+  interaction into the next frame. Both flags are now consumed every
+  frame; pinned by the spec.
+
+### 5.2 Deferred (test-only, not participant-facing)
+
+The V2 §16.11 U9 items — the `connected_participant_journeys` P1 triage
+(`inventory_verification_skipped` where the spec expects
+`inventory_verified_complete`, inherited and identical on the Unit 6
+baseline) and the four fixed-deadline polls (`selectExpectingEvent`,
+`castAndHook`, `selectCardByLabel`, `waitForEventCount`) — are e2e
+harness reliability, not participant interactions. They are unchanged
+here and remain classified as inherited/intermittent by §16 of the V2
+report; Unit 7 re-runs them and reports them under that classification.
+P1 in particular may be a spec/mechanic mismatch that no event may be
+renamed to resolve.
+
+### 5.3 Verification (`--retries=0 --workers=1`)
+
+`npm.cmd run lint:tsc` pass; scoped ESLint pass; `npm.cmd run build` pass;
+`spawn_clearance` **4/4** (pure); runtime after the spawn changes
+(`PW_DEV_PORT=5352`): `pilot_closure` test 3 (developer launches,
+chamber → deck arrival) pass, `pilot_deck` pass, `pilot_records` 3/4 — the
+one failure is the "supply bundles" test the V2 report already classifies
+as pre-existing/inherited (asserts no `proto_m0*` events), unrelated to the
+spawn or interact-key changes. `verify-unit` PASS.

@@ -2385,10 +2385,13 @@ export abstract class RoomScene extends Phaser.Scene {
 
   /** SPACE and E converge on one contextual-interaction press (Unit 1). */
   private interactJustPressed(): boolean {
-    return (
-      Phaser.Input.Keyboard.JustDown(this.player.cursors.space) ||
-      Phaser.Input.Keyboard.JustDown(this.interactKeyE)
-    );
+    // Both flags are consumed every frame (no short-circuit): SPACE and E
+    // pressed in the same frame must produce ONE contextual interaction,
+    // never a second one leaking into the next frame (V2 finding U8-4).
+    const space = Phaser.Input.Keyboard.JustDown(this.player.cursors.space);
+    const keyE = Phaser.Input.Keyboard.JustDown(this.interactKeyE);
+
+    return space || keyE;
   }
 
   /** SPACE/E pressed with no station/door in range. Default: no-op. */
