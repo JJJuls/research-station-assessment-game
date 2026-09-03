@@ -2529,5 +2529,10 @@ paths — every change inside the allowlist, nothing else in the tree.
   research prototype that establishes no validity, reliability, norms or
   cut scores.
 - Nothing was pushed, merged, tagged, deployed, PR'd or removed. Neither
-  worktree was removed and no branch was deleted. The baseline worktree
-  was read-only throughout.
+  worktree was removed and no branch was deleted. Nothing was committed,
+  rebased or merged in the baseline worktree. It was **not** untouched,
+  however: the two baseline capture runs
+  (`field_actions_visual_capture`) transiently overwrote 11 PNGs there,
+  exactly as capture specs do in the main tree. Those were audited (all
+  PNG, no untracked file, no source file) and restored, leaving that
+  worktree clean at `897f5f4`.
