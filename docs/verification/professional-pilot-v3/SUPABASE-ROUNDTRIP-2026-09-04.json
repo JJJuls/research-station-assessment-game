@@ -1,0 +1,126 @@
+{
+  "started_at": "2026-09-03T17:55:55.700Z",
+  "ingest_url": "http://127.0.0.1:54321/functions/v1/ingest-research-session",
+  "rest_url": "http://127.0.0.1:54321/rest/v1",
+  "identity": "AUTO-RT-2026-09-04-1788458155598",
+  "steps": [
+    {
+      "step": "1 first completed export → 201 duplicate:false",
+      "ok": true,
+      "status": 201,
+      "body": {
+        "ok": true,
+        "acknowledged": true,
+        "duplicate": false,
+        "export_id": "a43a3b4f-9e43-4db6-bf61-923dfe8de7b5",
+        "server_received_at": "2026-09-03T17:55:53.88063+00:00"
+      }
+    },
+    {
+      "step": "2 identical retry → 200 duplicate:true",
+      "ok": true,
+      "status": 200,
+      "body": {
+        "ok": true,
+        "acknowledged": true,
+        "duplicate": true,
+        "export_id": "a43a3b4f-9e43-4db6-bf61-923dfe8de7b5",
+        "server_received_at": "2026-09-03T17:55:53.88063+00:00"
+      }
+    },
+    {
+      "step": "3 same export_id, different bytes → 409 export_id_conflict",
+      "ok": true,
+      "status": 409,
+      "body": {
+        "ok": false,
+        "error": {
+          "code": "export_id_conflict",
+          "message": "The export identifier already exists with different content."
+        }
+      }
+    },
+    {
+      "step": "4 test-mode export for the same identity → 201",
+      "ok": true,
+      "status": 201,
+      "body": {
+        "ok": true,
+        "acknowledged": true,
+        "duplicate": false,
+        "export_id": "50156d96-7574-4c55-84dc-28aaeca85f14",
+        "server_received_at": "2026-09-03T17:55:54.074911+00:00"
+      }
+    },
+    {
+      "step": "5 incomplete keep-alive envelope → 201",
+      "ok": true,
+      "status": 201,
+      "body": {
+        "ok": true,
+        "acknowledged": true,
+        "duplicate": false,
+        "export_id": "86d26985-00ce-4be4-a149-1053d8c23f3d",
+        "server_received_at": "2026-09-03T17:55:54.126718+00:00"
+      }
+    },
+    {
+      "step": "6 launch_mode development → 403",
+      "ok": true,
+      "status": 403,
+      "body": {
+        "ok": false,
+        "error": {
+          "code": "launch_mode_not_accepted",
+          "message": "This endpoint accepts only launch_mode \"test\" or \"production\"."
+        }
+      }
+    },
+    {
+      "step": "7a exactly one row for the completed export",
+      "ok": true,
+      "count": 1
+    },
+    {
+      "step": "7b projected columns",
+      "ok": true,
+      "row": {
+        "export_id": "a43a3b4f-9e43-4db6-bf61-923dfe8de7b5",
+        "participant_id": "AUTO-RT-2026-09-04-1788458155598",
+        "game_session_id": "AUTO-RT-2026-09-04-1788458155598-S1",
+        "launch_mode": "production",
+        "session_status": "completed",
+        "completion_reason": "terminal_room_reached",
+        "export_sequence": 1,
+        "page_load_index": 1,
+        "payload": "<omitted>",
+        "payload_hash": "6b25eee886349e70aeefdde2a7c72062417e73a88c077407a2f29f1c9c99313c",
+        "server_received_at": "2026-09-03T17:55:53.88063+00:00"
+      }
+    },
+    {
+      "step": "7c payload stored verbatim (structural)",
+      "ok": true
+    },
+    {
+      "step": "7d payload_hash == sha256(payload)",
+      "ok": true,
+      "stored": "6b25eee886349e70aeefdde2a7c72062417e73a88c077407a2f29f1c9c99313c",
+      "expected": "6b25eee886349e70aeefdde2a7c72062417e73a88c077407a2f29f1c9c99313c"
+    },
+    {
+      "step": "7e test row separate and labelled",
+      "ok": true,
+      "count": 1,
+      "launch_mode": "test"
+    },
+    {
+      "step": "7f incomplete row labelled",
+      "ok": true,
+      "count": 1,
+      "session_status": "incomplete"
+    }
+  ],
+  "ok": true,
+  "finished_at": "2026-09-03T17:55:56.223Z"
+}

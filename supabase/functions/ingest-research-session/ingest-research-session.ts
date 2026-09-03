@@ -97,11 +97,25 @@ function readOptionalShortText(value: unknown): string | null {
     : trimmed;
 }
 
+/**
+ * CORS (Pilot V3 Unit 3): the participant bundle is served from a static
+ * host and posts cross-origin, so the browser preflights with OPTIONS. The
+ * response is not credentialed and carries no secret; the apikey check
+ * still gates the POST itself.
+ */
+const CORS_HEADERS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'apikey, authorization, content-type',
+  'Access-Control-Max-Age': '600',
+};
+
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   return Response.json(body, {
     status,
     headers: {
       'Cache-Control': 'no-store',
+      ...CORS_HEADERS,
     },
   });
 }
@@ -242,6 +256,10 @@ async function lookupRow(
 }
 
 async function handle(request: Request): Promise<Response> {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
+
   if (request.method !== 'POST') {
     return errorResponse(
       405,

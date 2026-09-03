@@ -372,3 +372,47 @@ censoring rule changed; `ScoringManager.ts`, `docs/research/**`,
 `docs/scientific/**` untouched; transport state never enters the raw log;
 no questionnaire wording in any new string (forbidden-text regex asserted on
 every notice state in the browser tests). Nothing was pushed.
+
+---
+
+## 3. Unit 3 — Isolated Supabase round-trip
+
+Contract U3, with two recorded allowlist amendments (reasons below):
+`supabase/functions/ingest-research-session/ingest-research-session.ts`
+(CORS `OPTIONS` handling) and `e2e/supabase_roundtrip_live.spec.ts` (the
+env-gated real-client run). Evidence document:
+`docs/verification/professional-pilot-v3/SUPABASE-ROUNDTRIP.md`; JSON report
+`SUPABASE-ROUNDTRIP-2026-09-04.json` (no keys); script
+`scripts/pilot/supabase-roundtrip.mjs`.
+
+### 3.1 Results
+
+- Transport contract against the local CLI stack (committed migrations and
+  function): **13/13** — 201 / 200-duplicate / 409-conflict / separate test
+  row / incomplete row / 403 for `development` / one row / projected
+  columns / verbatim payload / hash match / labels.
+- Real client (DEV server pipeline, export config pointed at the live
+  local function, developer inspection launch): **1/1** — 201 once,
+  console retry family 201 then 200 duplicate, PostgREST read-back with the
+  stored hash equal to the SHA-256 of the client's frozen payload, CORS
+  preflight 204 with `apikey` allowed. Skips (1 skipped) when the local
+  keys are not set, so the ordinary suite never needs the stack.
+- Participant bundle audit: no external host, analytics stub, DEV probe
+  string or source map in `dist/`.
+
+### 3.2 Defects exposed and fixed
+
+1. The original function's registry fetch at cold start
+   (`npm:@supabase/server`) failed behind TLS interception → 503
+   `BOOT_ERROR` on every request; rewritten dependency-free (committed in
+   Unit 2, verified here).
+2. No CORS handling: a static-hosted bundle's cross-origin POST would have
+   failed at the preflight and nothing would ever have left the browser.
+   Added here. Neither defect was detectable by the mocked-network browser
+   tests or by a same-origin Node script.
+
+### 3.3 Limits
+
+Local default keys and project; no hosted project, region, retention or
+access-control claim (X4 / X5 / X10 / X11 external). The stack and Docker
+are stopped in Unit 7's process audit.
