@@ -83,9 +83,36 @@ find dist -name "*.map"                       # no matches (no source maps)
 - `npm.cmd run preview` (serves `dist/`) boots to the Dock with zero
   console/page errors.
 
+## Build-time configuration (Pilot V3)
+
+The participant bundle inlines three optional `VITE_*` values from the
+untracked `.env.local` on the bundling machine (see `.env.example`):
+
+| Variable                        | Effect in the bundle                                                             |
+| ------------------------------- | -------------------------------------------------------------------------------- |
+| `VITE_RESEARCH_INGEST_URL`      | ingestion endpoint; absent → nothing is exported, `export_status=not_applicable` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | publishable key sent as the `apikey` header with each export                     |
+| `VITE_RETURN_URL_ALLOWED_HOSTS` | allow-listed survey hosts for the completion handoff (default `qualtrics.com`)   |
+
+With the first two set, a served bundle **does** send data out of the
+browser: one session envelope (raw events, summary, mission state, data
+quality, integrity block, status axes) to the ingestion endpoint at shift
+completion, a keep-alive `incomplete` envelope if the page is closed early,
+and the summary variables plus status axes on the survey return URL. The
+full behaviour, the PROVISIONAL decision tags and the open rulings are in
+`docs/operations/QUALTRICS-HANDOFF.md`. Sessions launched with
+`launch_mode=test` are stored as test rows; every other bundle launch is a
+production row.
+
+Add to the verification checklist after bundling:
+
+```sh
+grep -rlE "allowProductionInDev|__handoffProbe|__researchExportConfig" dist/assets
+                                              # no matches (DEV-only hooks absent)
+```
+
 ## What this document does not cover
 
-Completion→Qualtrics return, raw-event export, persistence/reload recovery and
-the completion-status taxonomy are decision-gated (INT-1…INT-6, P0-3) and are
-**not** part of the deployment artifact contract; serving the bundle does not
-imply any data leaves the browser.
+The research-owner rulings INT-1…INT-6 and P0-3 remain open; the mechanisms
+above implement the decision pack's recommendations provisionally and can
+be reversed without a schema change to the raw event log.

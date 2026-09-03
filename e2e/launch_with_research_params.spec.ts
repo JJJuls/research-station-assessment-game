@@ -100,14 +100,18 @@ test.describe('launch with research params', () => {
     // submitSessionExport (test-only ingestion unit, additive dev-only
     // export surface; baseline-e8a8994's 6-method surface is a minimum,
     // extended deliberately for runtime verification) plus
-    // getEventIntegrity (Pilot V3 Unit 1: losslessness probe).
+    // getEventIntegrity (Pilot V3 Unit 1: losslessness probe) plus
+    // getHandoffState / getSessionStatus (Pilot V3 Unit 2: PROVISIONAL
+    // INT-5 status axes and the completion-handoff probe).
     expect(result.surface).toEqual([
       'completeDebugSession',
       'exportEventsJSON',
       'getEventIntegrity',
       'getEvents',
+      'getHandoffState',
       'getLastExportResult',
       'getMissionState',
+      'getSessionStatus',
       'getSummary',
       'printEvents',
       'printSummary',

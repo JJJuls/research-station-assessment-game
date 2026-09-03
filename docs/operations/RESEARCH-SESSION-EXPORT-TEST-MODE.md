@@ -1,17 +1,21 @@
-# Research-session export — test mode (development ingestion unit)
+# Research-session export — test mode and participant mode
 
-Research-owner / operations reference for the **test-only** client-to-Supabase
-export path. Audience: whoever runs synthetic verification sessions or reviews
-what this unit can and cannot do.
+Research-owner / operations reference for the client-to-Supabase export path.
+Audience: whoever runs synthetic verification sessions or reviews what the
+export can and cannot do. The participant completion pipeline that now sits on
+top of this path is described in `docs/operations/QUALTRICS-HANDOFF.md`.
 
-## What this unit is
+## What this path is
 
-- **Test-only submission.** The game submits a completed session to the
-  development Supabase Edge Function (`ingest-research-session`) **only** when
-  all three are true: it is a development build (`import.meta.env.DEV`), the
-  session was launched with `launch_mode=test` in the URL, and both
-  environment variables below are configured. Anything else refuses before a
-  single byte leaves the browser.
+- **Who may submit (PROVISIONAL INT-5 / PS-2, Pilot V3 Unit 2).** A session
+  exports only when its resolved launch mode allows it: `launch_mode=test`
+  always (DEV build or participant bundle, stored as a test row);
+  `production` (an explicit `launch_mode=production`, or any bundle launch
+  without the parameter) only from a participant bundle — a DEV build refuses
+  it unless a browser-test hook opts in; a DEV build without the parameter is
+  `development` and never exports. Both environment variables below must be
+  configured; otherwise the client refuses before a single byte leaves the
+  browser.
 - **Raw plus summary export.** One envelope carries the untouched raw event
   log (`EventLogger`), the derived summary (`ScoringManager`), data-quality
   metrics (`DataQualityTracker`), the technical-error count (count only — the
@@ -32,12 +36,16 @@ what this unit can and cannot do.
   That result is debugging information only: it is never written into the
   raw event log, the summary, or any research variable. The INT-5
   `export_status` vocabulary remains an open research-owner decision.
-- **No participant submission.** Participant sessions (any launch without
-  `launch_mode=test`) complete exactly as before and never call the
-  transport. Production builds refuse unconditionally. No real participant
-  data has been submitted through this path.
-- **No Qualtrics redirect.** Completion still only _previews_ the return
-  URL in the developer console. Nothing in this unit navigates.
+- **Participant submission (Pilot V3 Unit 2).** A participant bundle exports
+  at the shift's terminal state through `completeParticipantSession()` with
+  bounded retry, then hands off to the survey; see the handoff document. The
+  developer console path (`completeDebugSession()`) still previews the return
+  URL and exports once without retry. No real participant data has been
+  submitted through this path in this repository's history.
+- **Status axes in the envelope (PROVISIONAL INT-5).** Every envelope carries
+  `launch_mode`, `session_status`, `completion_reason`, `export_sequence` and
+  `page_load_index` beside the identity fields; the Edge Function projects
+  the first four into indexed columns.
 
 ## Lossless collection (Pilot V3 Unit 1)
 
@@ -132,7 +140,7 @@ request header and is never logged, stored, or echoed into results.
 | Any retry (same tab, incl. after reload)                              | HTTP 200, `acknowledged`, `duplicate: true`, same `export_id` |
 | Same `export_id` with different bytes (not producible by this client) | HTTP 409 → `failed` / `export_id_conflict`                    |
 | Wrong/missing key                                                     | HTTP 401 → `failed` / `unauthorized`                          |
-| `launch_mode` ≠ `test` reaching the server                            | HTTP 403 → `failed` / `forbidden` (client refuses first)      |
+| `launch_mode` outside {`test`, `production`} reaching the server      | HTTP 403 → `failed` / `forbidden` (client refuses first)      |
 | No response within 15 s                                               | `failed` / `timeout` (request aborted)                        |
 | Offline / DNS failure                                                 | `failed` / `network_error`                                    |
 | Non-JSON or unexpected server body                                    | `failed` / `malformed_response`                               |
@@ -152,10 +160,11 @@ bundle`), make sure `.env.local` is absent (or contains no ingest values)
   on the bundling machine, so the publishable key never ships in the
   participant bundle — the DEV gate already prevents its _use_, this keeps
   the string out entirely.
-- **INT-5**: the client reads `launch_mode` from the URL and acts only on
-  the literal value `test`. This does not resolve the open INT-5 vocabulary
-  decision; the research owner should explicitly ratify (or rename) `test`
-  when ruling on INT-5.
+- **INT-5**: the client reads `launch_mode` from the URL; `test` and
+  `production` are the two accepted values, anything else resolves by build
+  type and is kept verbatim in the status probe for audit. This does not
+  resolve the open INT-5 vocabulary decision; the research owner should
+  explicitly ratify (or rename) the values when ruling on INT-5.
 
 - `sessionStorage` unavailable (rare; e.g. fully blocked storage): the
   envelope is kept in memory instead, so idempotency holds within the page
@@ -163,11 +172,9 @@ bundle`), make sure `.env.local` is absent (or contains no ingest values)
   conflict).
 - Retries are manual (`submitSessionExport()`); there is no automatic
   background retry/backoff in this unit.
-- The export is not integrated with participant completion, by design. The
-  remaining next step for a pilot-ready pipeline is a research-owner-approved
-  participant-mode ingestion decision (endpoint, launch-mode vocabulary
-  INT-5, retry policy) plus the separate Qualtrics-return unit — neither is
-  implemented here.
+- The participant pipeline (Pilot V3 Unit 2) integrates this export with
+  completion and the survey handoff provisionally; the research-owner rulings
+  INT-1/INT-2/INT-5 remain open and are recorded in the V3 report.
 - A live synthetic round-trip against the development endpoint requires
   `.env.local` credentials on the verifying machine (see procedure above);
   automated tests never call the live endpoint.

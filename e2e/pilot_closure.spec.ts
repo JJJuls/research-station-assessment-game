@@ -424,6 +424,20 @@ test.describe('Utility & Core closure — participant route (Unit 6)', () => {
     expect(notice.elements.map((e) => e.label).join('\n')).toContain(
       'Questionnaire handoff: prepared',
     );
+    // Pilot V3 Unit 2: the notice's controls appear once the study-data
+    // handoff has settled (a beat after the notice opens).
+    await page.waitForFunction(
+      () =>
+        (
+          (
+            window as unknown as {
+              __workSurfaceProbe?: { elements: { id: string }[] } | null;
+            }
+          ).__workSurfaceProbe?.elements ?? []
+        ).some((element) => element.id === 'close_notice'),
+      undefined,
+      { timeout: 15_000 },
+    );
     await keyActivate(page, 'close_notice');
     await waitSurface(page, false);
     await waitCompletionNotice(page, false);
@@ -489,17 +503,26 @@ test.describe('Utility & Core closure — participant route (Unit 6)', () => {
     }
 
     expect(page.url()).not.toContain('pilot_return');
-    expect(
-      await page.evaluate(() =>
-        JSON.parse(
+
+    // Pilot V3 Unit 2: the size of a real participant-route raw log, for
+    // the keep-alive cap question (scientific review finding 4). Recorded
+    // as an annotation; never a pass/fail criterion.
+    const rawLogBytes = await page.evaluate(
+      () =>
+        new TextEncoder().encode(
           (
             window as unknown as {
               researchRuntime: { exportEventsJSON: () => string };
             }
           ).researchRuntime.exportEventsJSON(),
-        ),
-      ),
-    ).toBeTruthy();
+        ).byteLength,
+    );
+
+    expect(rawLogBytes).toBeGreaterThan(0);
+    test.info().annotations.push({
+      type: 'raw_events_json_bytes',
+      description: `${rawLogBytes}`,
+    });
 
     // ——— Timing (automated; never a human estimate) ———
     const feedEvents = await closureEvents(page);

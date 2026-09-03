@@ -57,6 +57,9 @@ interface EnvelopeLike {
   participant_id: string;
   game_session_id: string;
   launch_mode: string;
+  session_status: string;
+  completion_reason: string | null;
+  export_sequence: number;
   page_load_index: number;
   client_created_at: string;
   payload: {
@@ -69,6 +72,8 @@ interface EnvelopeLike {
     page_load_index: number;
     prior_page_load_events: unknown[];
     event_integrity: Record<string, unknown>;
+    mission_state: Record<string, unknown>;
+    environment: Record<string, unknown>;
   };
 }
 
@@ -268,24 +273,39 @@ test.describe('research export (test mode only)', () => {
 
     expect(Object.keys(envelope).sort()).toEqual([
       'client_created_at',
+      'completion_reason',
       'export_id',
+      'export_sequence',
       'game_session_id',
       'launch_mode',
       'page_load_index',
       'participant_id',
       'payload',
+      'session_status',
     ]);
+    // PROVISIONAL(INT-5) axes: the debug completion is a completed session.
+    expect(envelope.session_status).toBe('completed');
+    expect(envelope.completion_reason).toBe('terminal_room_reached');
+    expect(envelope.export_sequence).toBe(1);
     expect(Object.keys(envelope.payload).sort()).toEqual([
       'asset_set_version',
       'data_quality',
+      'environment',
       'event_integrity',
       'game_version',
+      'mission_state',
       'page_load_index',
       'prior_page_load_events',
       'raw_events',
       'summary',
       'technical_errors',
     ]);
+    expect(envelope.payload.environment).toEqual({
+      prefers_reduced_motion: false,
+    });
+    expect(envelope.payload.mission_state).toMatchObject({
+      current_room_id: expect.any(String),
+    });
 
     expect(envelope.export_id).toMatch(UUID_V4);
     expect(envelope.export_id).toBe(result?.export_id);
@@ -599,7 +619,7 @@ test.describe('research export (test mode only)', () => {
     expect(captured).toHaveLength(0);
   });
 
-  test('non-test launch modes refuse to send even with configuration present', async ({
+  test('non-test launch modes refuse to send from a DEV build even with configuration present', async ({
     page,
   }) => {
     const captured: CapturedRequest[] = [];
@@ -619,10 +639,12 @@ test.describe('research export (test mode only)', () => {
 
     expect((await getLastExportResult(page))?.status).toBe('refused');
     expect((await getLastExportResult(page))?.reason).toBe(
-      'launch_mode_not_test',
+      'launch_mode_not_allowed',
     );
 
-    // Explicit non-test mode is refused just the same.
+    // Explicit production mode is refused from a DEV build (a developer's
+    // .env.local can never produce a production row); the participant
+    // bundle path is exercised in participant_completion_handoff.spec.ts.
     await bootGame(page, {
       participant_id: 'E2E_EXPORT_P6',
       game_session_id: 'E2E_EXPORT_S6B',
@@ -634,7 +656,7 @@ test.describe('research export (test mode only)', () => {
     const explicit = await submitSessionExport(page);
 
     expect(explicit.status).toBe('refused');
-    expect(explicit.reason).toBe('launch_mode_not_test');
+    expect(explicit.reason).toBe('launch_mode_not_allowed');
     expect(captured).toHaveLength(0);
   });
 
@@ -730,7 +752,16 @@ test.describe('research export (test mode only)', () => {
     await completeDebugSession(page);
     await waitForExportResult(page);
 
-    const envelope = JSON.parse(captured[0].body) as EnvelopeLike;
+    // The reload's page hide sent a keep-alive `incomplete` envelope for
+    // page load 1 first (Pilot V3 Unit 2); the completion envelope is the
+    // one labelled completed.
+    const completedEnvelopes = captured
+      .map((request) => JSON.parse(request.body) as EnvelopeLike)
+      .filter((candidate) => candidate.session_status === 'completed');
+
+    expect(completedEnvelopes).toHaveLength(1);
+
+    const envelope = completedEnvelopes[0];
     const prior = envelope.payload.prior_page_load_events as {
       sequence: number;
       page_load_index: number;

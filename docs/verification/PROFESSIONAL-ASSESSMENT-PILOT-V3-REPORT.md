@@ -180,3 +180,195 @@ One consolidated round; 18 findings, 4 open decisions surfaced. Disposition:
 - **INT-3.** Launches without identity parameters receive random ids per
   page load, so the durable store cannot recover across a reload for them.
   Unchanged behaviour; noted as a limitation.
+
+---
+
+## 2. Unit 2 — Participant completion, export and survey handoff
+
+### 2.1 Scope and files
+
+Contract U2. Changed files (all inside the U2 allowlist):
+
+- `src/systems/SessionStatus.ts` (new): PROVISIONAL(INT-5) Model B axes
+  (`launch_mode`, `session_status`, `completion_reason`, `export_status`,
+  `return_status`), launch-mode resolution (PROVISIONAL(PS-2): `test` is the
+  only explicit test signal; absent → `production` in a bundle,
+  `development` in a DEV build; the raw value is kept for audit), export
+  permission (`test` always; `production` only from a bundle unless a DEV
+  test hook opts in; `development` never), a small one-way state machine.
+  No `abandoned` value (needs a study rule).
+- `src/systems/QualtricsBridge.ts`: PROVISIONAL(INT-4) return-URL policy —
+  `https:` to an allow-listed host or subdomain (default `qualtrics.com`,
+  `VITE_RETURN_URL_ALLOWED_HOSTS` override), DEV-only localhost, refusals
+  with reasons; `buildValidatedReturnUrl`. Node-importable (no env read).
+- `src/systems/ResearchExportClient.ts`: launch-mode/status-aware envelope
+  (`launch_mode`, `session_status`, `completion_reason`, `export_sequence`,
+  `page_load_index`), frozen per (identity, page load, status), bounded
+  retry with per-attempt progress, keep-alive compact submission (64 KiB
+  cap; `raw_events_omitted` explicit), refusal reasons generalised.
+- `src/systems/ResearchRuntime.ts`: `completeParticipantSession()` pipeline
+  (status → export with 3 attempts → buffer clear on ack → validated
+  return URL with summary + axes + `export_id` + `page_load_index` →
+  automatic navigation after a readable delay, or manual continue);
+  `continueToSurvey()`, `cancelAutoNavigate()`, `getHandoffState()`,
+  `getSessionStatus()`, `subscribeHandoff()`; `pagehide` keep-alive
+  `incomplete` export; payload gains `mission_state` and
+  `environment.prefers_reduced_motion` (V2 U8-3); DEV probes
+  `__handoffProbe`, `getHandoffState`, `getSessionStatus`.
+- `src/scenes/CoreChamberScene.ts`: the pipeline starts at `finishRamp`;
+  the SHIFT COMPLETE notice gains a "Study data:" line, a "Survey:" line
+  with countdown, a state-dependent "next" line, CONTINUE TO SURVEY
+  (focus-first) and a close control that only appears once the data has
+  settled; the notice refuses to close while sending and withdraws
+  automatic navigation when closed afterwards.
+- `supabase/functions/ingest-research-session/ingest-research-session.ts`
+  and `supabase/migrations/20260904120000_allow_production_launch_mode.sql`:
+  `launch_mode ∈ {test, production}`, optional validated status fields
+  projected into indexed columns; idempotency unchanged.
+- `src/types/vite-env.d.ts`, `.env.example`, `src/systems/index.ts`.
+- `e2e/participant_completion_handoff.spec.ts` (new: 6 pure + 7 browser),
+  `e2e/research_export_test_mode.spec.ts`, `e2e/launch_with_research_params.spec.ts`.
+- `docs/operations/QUALTRICS-HANDOFF.md` (new),
+  `docs/operations/PARTICIPANT-DEPLOYMENT.md`,
+  `docs/operations/RESEARCH-SESSION-EXPORT-TEST-MODE.md`.
+
+Deviation from the contract text: U2 said `objective_completed` would be
+"reused at completion". It is **not** logged by the participant pipeline —
+the V2 closure design (and `pilot_closure.spec.ts`) require that the legacy
+debug completion never runs on the participant route; the closure's own
+`pilot_closure_stable` remains the terminal marker and the status axes
+carry completion. `closureSession.ts` and `closureHelpers.ts` (allow-listed)
+did not need to change.
+
+### 2.2 What is now true for a participant
+
+- The shift's terminal state (confirmed Core synchronisation) starts one
+  pipeline: `session_status → completed`; export of the full envelope with
+  three attempts (network/timeout/5xx retried, 4xx not) and per-attempt
+  progress on the notice; the validated survey URL built from the summary
+  plus the status axes, `export_id`, `export_refusal` and
+  `page_load_index`; automatic navigation 20 s after settle with a visible
+  countdown, or immediately through CONTINUE TO SURVEY (keyboard focus
+  lands on it). A failed export is never auto-navigated past. The notice
+  cannot be dismissed while sending; closing it afterwards withdraws the
+  automatic navigation. Absent or refused survey links produce a neutral
+  fallback and no navigation.
+- Navigation only to `https:` on an allow-listed host or subdomain
+  (default `qualtrics.com`; single-label entries ignored), DEV localhost for
+  tests; credentials, `javascript:` and unparseable URLs refused with a
+  recorded reason.
+- Launch modes: `test` exports everywhere; `production` exports only from a
+  participant bundle (a DEV build refuses unless a test hook opts in);
+  `development` never exports. The raw launch value is kept for audit.
+- Early exit: a `pagehide` before the terminal state sends a keep-alive
+  envelope labelled `incomplete` / `participant_exit` without moving the
+  session's own status (a backgrounded or bfcache-restored tab can still
+  complete); over the 64 KiB keep-alive cap the most recent events that fit
+  are kept and the omission is counted explicitly.
+- The ingestion function is dependency-free (plain fetch to PostgREST with
+  the platform-injected service role; explicit publishable-key check) and
+  accepts `test` and `production`; status axes are projected into indexed,
+  check-constrained columns. Verified end to end against an isolated local
+  stack in Unit 3.
+
+### 2.3 Gameplay review (read-only) — disposition
+
+| #     | Finding                                             | Sev     | Disposition                                                                                                            |
+| ----- | --------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
+| 1     | notice unreadable: 2.5 s before navigation          | BLOCKER | **fixed** — 20 s delay from settle with countdown; CONTINUE always available                                           |
+| 2     | `blocked` phase dead end                            | MAJOR   | **fixed** — CONTINUE rendered in `blocked`; dedicated survey line                                                      |
+| 3     | failed export auto-navigated past its recovery line | MAJOR   | **fixed** — no automatic navigation after a failed export                                                              |
+| 4     | focus on CLOSE, not on the primary                  | MAJOR   | **fixed** — controls appear together after settle, CONTINUE first (focus index 0); help line names the focused control |
+| 5     | ESC/SPACE dismisses while sending                   | MAJOR   | **fixed** — close refused while sending (neutral feedback); closing after settle cancels auto-navigation               |
+| 6     | contradictory "what now" lines                      | MAJOR   | **fixed** — state-dependent next line                                                                                  |
+| 7     | five nouns for three things                         | MAJOR   | **partly** — "Session record" → "Study data"; the four closure facts stay (non-scored presentation; owner may reduce)  |
+| 8     | ~48 s frozen "sending…"                             | MAJOR   | **fixed** — attempt n of 3 shown; "can take up to a minute" line                                                       |
+| 9     | accent button contrast ≈2.7:1                       | MINOR   | **routed to U6** (`WorkSurfaceScene.ts` outside the U2 allowlist)                                                      |
+| 10    | CLOSE on the CONFIRM footprint                      | MINOR   | **fixed** — controls appear 1.2 s after settle; CLOSE panel-left                                                       |
+| 11    | no countdown                                        | MINOR   | **fixed**                                                                                                              |
+| 12    | "tell the researcher" unactionable                  | MINOR   | **fixed** — "kept on this device, not lost" + survey mention                                                           |
+| 13    | wrap risk / no screenshots of dynamic states        | MINOR   | lines shortened; screenshots **routed to U6**                                                                          |
+| 14–16 | informational                                       | INFO    | noted                                                                                                                  |
+
+### 2.4 Scientific review (read-only) — disposition
+
+| #   | Finding                                                                                                | Sev     | Disposition                                                                                                                                                                                                                                       |
+| --- | ------------------------------------------------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `pagehide` permanently marked a session `incomplete` and rewrote `completed`                           | BLOCKER | **fixed** — `persisted` pages ignored; the exit label rides on the keep-alive envelope only; the status machine is never moved by a page hide                                                                                                     |
+| 2   | `completed` derived from status, not from a raw event; contract line unimplemented                     | MAJOR   | **open decision** (2.6); contract deviation recorded in 2.1                                                                                                                                                                                       |
+| 3   | two derivations of `completed`                                                                         | MAJOR   | **fixed** — one status-derived flag for envelope and return URL                                                                                                                                                                                   |
+| 4   | keep-alive would carry no events; branch untested                                                      | MAJOR   | **fixed** — most-recent events kept up to the cap, omission counted; pure test forces the branch; real raw-log size recorded by `pilot_closure` test 1 (2.5)                                                                                      |
+| 5   | `clear()` on ack destroyed the high-water mark                                                         | MAJOR   | **fixed** — no clear on ack (retention/expiry instead); U1's F15(i) ack-clear intent superseded and recorded under OD-4                                                                                                                           |
+| 6   | debug completion and pipeline shared one frozen envelope                                               | MAJOR   | **fixed** — `debug` vs `full` envelope families; pure test                                                                                                                                                                                        |
+| 7   | `qualtrics_completion_performed: false` now false in raw metadata; guard test vacuous                  | MAJOR   | **stop-and-report** — `utilityCoreClosure.ts` / `pilot_closure_models.spec.ts` outside the allowlist; open decision (2.6)                                                                                                                         |
+| 8   | threat model / governance checklist state the flow does not exist                                      | MAJOR   | **recorded** (2.6); files outside the allowlist, routed to owners                                                                                                                                                                                 |
+| 9   | tests did not prove 200-duplicate on the pipeline, https navigation, bundle surface, full-route export | MAJOR   | **partly fixed** — https allow-listed navigation test; debug-family duplicate test; keepalive flag removed; forbidden-text guard on every notice; bundle-surface grep in U3/U7; full-route (non-inspection) export remains unproven and is stated |
+| 10  | `export_status = not_applicable` outside the pack's set                                                | MINOR   | **partly** — `export_refusal` now carried on the return URL; value recorded as a proposed INT-5 extension                                                                                                                                         |
+| 11  | migration projected an unsent field                                                                    | MINOR   | **fixed** — `page_load_index` projected; check constraints added                                                                                                                                                                                  |
+| 12  | `.env.example` / `vite-env.d.ts` said test-only                                                        | MINOR   | **fixed**                                                                                                                                                                                                                                         |
+| 13  | untagged constants; 2.5 s window                                                                       | MINOR   | **fixed** — PROVISIONAL tags; 20 s; no auto-nav after failure                                                                                                                                                                                     |
+| 14  | single-label allow entries                                                                             | MINOR   | **fixed** — ignored                                                                                                                                                                                                                               |
+| 15  | clean items                                                                                            | INFO    | confirmed                                                                                                                                                                                                                                         |
+
+### 2.5 Verification (`--retries=0 --workers=1`, `PW_DEV_PORT=5352`)
+
+| Command                                                                                   | Result                                                                                                                                                                                                                                                                                                            |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm.cmd run lint:tsc`                                                                    | pass (after every round)                                                                                                                                                                                                                                                                                          |
+| scoped ESLint on the changed TS files                                                     | pass                                                                                                                                                                                                                                                                                                              |
+| `npm.cmd run build`                                                                       | pass                                                                                                                                                                                                                                                                                                              |
+| `participant_completion_handoff` (6 pure axes/policy + 3 pure client + 8 browser)         | first run 10/13 (three test-authoring races: the launch URL itself contains the refused host string; the automatic navigation raced the notice read) → fixed; after the gameplay round the countdown ticker used the paused scene clock (controls never rendered) → fixed with a window interval; final **17/17** |
+| `research_export_test_mode` (12) + `launch_with_research_params` (3) + `event_store` (18) | 33/33 after round 1; after round 2 the reload test had to select the `completed` envelope because the page hide now sends an `incomplete` keep-alive first → 15/15 re-run green                                                                                                                                   |
+| `pilot_closure` (3, participant route, ~23 min)                                           | 3/3 after adding a wait for the delayed CLOSE NOTICE control (the notice's controls appear once the handoff settles); test 1 now records the participant-route raw-log size as an annotation                                                                                                                      |
+| isolated Supabase round-trip (Unit 3 script, local stack)                                 | 13/13 with the dependency-free function — the `npm:@supabase/server` version could not boot behind TLS interception                                                                                                                                                                                               |
+| `node scripts/claude/verify-unit.mjs --allow …`                                           | PASS                                                                                                                                                                                                                                                                                                              |
+
+Unproven (stated): a full participant-route export (all browser exports use
+the developer inspection launch); the participant bundle's absence of DEV
+hooks is checked by grep in Unit 3/7, not by a browser run.
+
+### 2.6 Open decisions recorded (none resolved)
+
+- **INT-5 early-exit rule.** The pack defines no `incomplete → *`
+  transition. Implemented provisionally: the exit label is an envelope
+  fact, never a session-state transition; a session may therefore produce an
+  `incomplete` row and a later `completed` row. Precedence rule for
+  analysis (highest `export_sequence` per page load? completed wins?) is
+  the owner's.
+- **Meaning of `completed` in the export.** Status-derived (the participant
+  pipeline logs no `objective_completed`); the contract's U2 telemetry line
+  assumed the event would be reused. Options: emit the canonical event at
+  the terminal state (event-schema decision), or ratify the status-derived
+  field as a non-reproducible envelope fact.
+- **`export_status = not_applicable`** — proposed extension to the pack's
+  `pending | acknowledged | failed`; `export_refusal` disambiguates.
+- **Event-less / trimmed `incomplete` exports** — accept, or require a
+  chunked/next-launch flush (INT-2); related to OD-3.
+- **`qualtrics_completion_performed: false`** in `ClosureContext`
+  (`src/pilot/closure/utilityCoreClosure.ts`) now rides on raw event
+  metadata for sessions where the handoff did occur, and
+  `e2e/pilot_closure_models.spec.ts`'s "no Qualtrics call in closure code"
+  guard does not see `completeParticipantSession`. Both files are outside
+  the U2 allowlist: needs its own unit; disposition (dynamic / remove /
+  redefine) is an event-payload question for the owner.
+- **Governance records** — `RESEARCH-DATA-PRIVACY-THREAT-MODEL.md` rows
+  58-59 / B3, `QUALTRICS-END-TO-END-CONTRACT.md` 238/350,
+  `PILOT-DATA-GOVERNANCE-CHECKLIST.md` 3.3 / 3.5 / 5.2 / 2.6 / 5.3 now
+  contradict the live tree (production navigation and export exist;
+  persistence exists). Outside every V3 allowlist; routed to their owners.
+- **PS-4** — `export_id` and `page_load_index` on the return URL are join
+  keys; the V1 summary set is unchanged.
+- **INT-1 launch shape** — standalone assumed; an iframe launch needs
+  Option B/C.
+- **Full-route export unproven** — every browser test uses the developer
+  inspection launch (near-empty log); the participant route's export is
+  exercised only indirectly (U7 sweep runs the closure spec, which measures
+  the raw-log size but does not export).
+
+### 2.7 Boundaries kept
+
+No `proto_*` / `pilot_closure_*` event, family, window, disposition or
+censoring rule changed; `ScoringManager.ts`, `docs/research/**`,
+`docs/scientific/**` untouched; transport state never enters the raw log;
+no questionnaire wording in any new string (forbidden-text regex asserted on
+every notice state in the browser tests). Nothing was pushed.

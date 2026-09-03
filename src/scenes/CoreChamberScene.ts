@@ -67,6 +67,8 @@ const TILE = 32;
 /** Synchronisation ramp (inactive → stable), full motion. */
 const SYNC_RAMP_MS = 2400;
 const SYNC_RAMP_REDUCED_MS = 300;
+/** Notice controls appear this long after the handoff settles. */
+const NOTICE_CONTROL_DELAY_MS = 1200;
 
 const ACCENT = 0x5fd3c4;
 const AMBER = 0xb08334;
@@ -108,6 +110,10 @@ export class CoreChamberScene extends PilotZoneScene {
   private completionOpen = false;
   private reviewOpen = false;
   private ambientPhase = 0;
+  /** Wall-clock at which the handoff settled (controls appear shortly after). */
+  private handoffSettledAtMs: number | null = null;
+  /** Window interval (the chamber's own clock is paused under the surface). */
+  private noticeTicker: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     super(key.scene.coreChamber);
@@ -779,6 +785,11 @@ export class CoreChamberScene extends PilotZoneScene {
     this.refreshChamberVisuals();
     this.refreshGuidance();
     this.openCompletionNotice();
+    // Pilot V3 (Unit 2) — PROVISIONAL(INT-1/INT-2/INT-5): the shift's
+    // terminal state starts the participant pipeline (status axes →
+    // export with bounded retry → validated survey handoff). Idempotent;
+    // never blocks the chamber; the notice re-renders as it settles.
+    void researchRuntime.completeParticipantSession();
   }
 
   private setKaiTexture(texture: string) {
@@ -813,16 +824,136 @@ export class CoreChamberScene extends PilotZoneScene {
         },
       },
     );
+    // Re-render the notice as the handoff settles (record sent / survey
+    // link ready) and every half second for the countdown; both stop when
+    // the notice closes.
+    const unsubscribe = researchRuntime.subscribeHandoff((state) => {
+      if (
+        this.handoffSettledAtMs === null &&
+        (state.phase === 'settled' || state.phase === 'blocked')
+      ) {
+        this.handoffSettledAtMs = Date.now();
+      }
+
+      if (this.completionOpen) {
+        activeWorkSurface(this)?.refresh();
+      }
+    });
+
+    if (this.noticeTicker !== null) {
+      clearInterval(this.noticeTicker);
+    }
+
+    this.noticeTicker = setInterval(() => {
+      if (this.completionOpen) {
+        activeWorkSurface(this)?.refresh();
+      }
+    }, 500);
+
     openWorkSurface(this, {
       surfaceId: 'core_completion_notice',
       model: () => this.completionModel(),
-      onClose: () => true,
+      onClose: () => {
+        const phase = researchRuntime.getHandoffState().phase;
+
+        if (phase === 'idle' || phase === 'exporting') {
+          // Never dismiss the terminal notice while the study data is
+          // still being sent (gameplay review finding 5).
+          activeWorkSurface(this)?.showFeedback(
+            'Study data is still being sent — one moment.',
+          );
+
+          return false;
+        }
+
+        // Closing after settle withdraws automatic navigation: the survey
+        // stays reachable from the notice (Core prompt → review notice).
+        researchRuntime.cancelAutoNavigate();
+
+        return true;
+      },
       onClosed: () => {
+        unsubscribe();
+
+        if (this.noticeTicker !== null) {
+          clearInterval(this.noticeTicker);
+          this.noticeTicker = null;
+        }
+
         this.completionOpen = false;
         this.refreshChamberVisuals();
       },
     });
     this.refreshChamberVisuals();
+  }
+
+  /**
+   * Neutral, participant-facing handoff lines (Pilot V3 Unit 2). No score,
+   * no item, no validity word: only whether the record reached the study
+   * server and what happens next.
+   */
+  private handoffLines(): { record: string; survey: string; next: string } {
+    const handoff = researchRuntime.getHandoffState();
+    const exportResult = handoff.last_export;
+    const sending = handoff.phase === 'idle' || handoff.phase === 'exporting';
+    let record: string;
+
+    if (sending) {
+      record =
+        handoff.export_attempts > 1
+          ? `Study data: sending to the study server… (attempt ${handoff.export_attempts} of 3)`
+          : 'Study data: sending to the study server…';
+    } else if (exportResult?.status === 'acknowledged') {
+      record = 'Study data: received by the study server.';
+    } else if (exportResult?.status === 'failed') {
+      record =
+        'Study data: could not be sent just now — it is kept on this device, not lost.';
+    } else {
+      record =
+        'Study data: kept on this device (no study server is configured for this session).';
+    }
+
+    let survey: string;
+    let next: string;
+
+    if (sending) {
+      survey = 'Survey: preparing the handoff…';
+      next =
+        'Please stay on this page while the data is sent — this can take up to a minute.';
+    } else if (handoff.phase === 'navigating') {
+      survey = 'Survey: opening now…';
+      next = 'Nothing else is needed inside the station.';
+    } else if (handoff.return_url !== null && handoff.phase === 'blocked') {
+      survey = 'Survey: automatic opening did not work here.';
+      next = 'Use CONTINUE TO SURVEY to open the survey.';
+    } else if (handoff.return_url !== null) {
+      const remaining =
+        handoff.auto_navigate_at_ms === null
+          ? null
+          : Math.max(
+              0,
+              Math.ceil((handoff.auto_navigate_at_ms - Date.now()) / 1000),
+            );
+
+      survey =
+        remaining === null
+          ? 'Survey: ready — use CONTINUE TO SURVEY when you are ready.'
+          : `Survey: opens automatically in ${remaining} s — or use CONTINUE TO SURVEY now.`;
+      next =
+        exportResult?.status === 'failed'
+          ? 'Please mention the unsent data to the researcher (you can also note it in the survey).'
+          : 'Nothing else is needed inside the station.';
+    } else if (handoff.return_refusal === 'absent') {
+      survey = 'Survey: no survey link was provided for this session.';
+      next =
+        'Nothing else is needed inside the station; the study continues as the researcher arranged.';
+    } else {
+      survey = 'Survey: the survey link could not be used here.';
+      next =
+        'Keep this window open and tell the researcher — your study data is kept on this device.';
+    }
+
+    return { record, survey, next };
   }
 
   private completionModel(): WorkSurfaceModel {
@@ -838,44 +969,84 @@ export class CoreChamberScene extends PilotZoneScene {
       align: 'left',
     });
 
+    const handoff = researchRuntime.getHandoffState();
+    const lines = this.handoffLines();
+    const sending = handoff.phase === 'idle' || handoff.phase === 'exporting';
+    // Controls appear a beat after the handoff settles so a stray click on
+    // the CONFIRM footprint can never land on them (review finding 10).
+    const controlsReady =
+      !sending &&
+      this.handoffSettledAtMs !== null &&
+      Date.now() - this.handoffSettledAtMs >= NOTICE_CONTROL_DELAY_MS;
+    const canContinue =
+      controlsReady &&
+      handoff.return_url !== null &&
+      (handoff.phase === 'settled' || handoff.phase === 'blocked');
+    const elements: SurfaceElement[] = [
+      line(
+        'route',
+        84,
+        `Gameplay route: ${context.gameplay_route_closed ? 'closed' : 'open'}.`,
+      ),
+      line(
+        'record',
+        124,
+        `Station record: ${context.research_record_closed ? 'closed' : 'open'} — data-quality status recorded; no result is computed here.`,
+      ),
+      line(
+        'questionnaire',
+        164,
+        'Questionnaire handoff: prepared — a short questionnaire follows outside the station.',
+      ),
+      line('export', 204, lines.record),
+      line('survey', 244, lines.survey),
+      line('next', 284, lines.next),
+    ];
+
+    // Continue first so keyboard focus lands on the primary control when
+    // the controls appear (review finding 4); close sits panel-left, clear
+    // of the CONFIRM SYNCHRONISATION footprint.
+    if (canContinue) {
+      elements.push({
+        id: 'continue_survey',
+        kind: 'button',
+        label: 'CONTINUE TO SURVEY',
+        state: 'accent',
+        x: 402,
+        y: 400,
+        w: 300,
+        h: 44,
+        onActivate: () => {
+          researchRuntime.continueToSurvey();
+        },
+      });
+    }
+
+    if (controlsReady) {
+      elements.push({
+        id: 'close_notice',
+        kind: 'button',
+        label: 'CLOSE NOTICE',
+        x: 18,
+        y: 400,
+        w: 220,
+        h: 44,
+        onActivate: () => activeWorkSurface(this)?.close(),
+      });
+    }
+
     return {
       title: 'SHIFT COMPLETE',
       subtitle: 'Core Chamber',
-      status: 'Core stable — the station record is closed.',
-      elements: [
-        line(
-          'route',
-          84,
-          `Gameplay route: ${context.gameplay_route_closed ? 'closed' : 'open'}.`,
-        ),
-        line(
-          'record',
-          124,
-          `Station record: ${context.research_record_closed ? 'closed' : 'open'} — data-quality status recorded; no result is computed here.`,
-        ),
-        line(
-          'questionnaire',
-          164,
-          'Questionnaire handoff: prepared — a short questionnaire follows outside the station.',
-        ),
-        line('export', 204, 'Session record: available for export.'),
-        line(
-          'next',
-          244,
-          'Nothing further is required. You may leave the chamber or close this notice; the Core stays stable.',
-        ),
-        {
-          id: 'close_notice',
-          kind: 'button',
-          label: 'CLOSE NOTICE',
-          x: 250,
-          y: 400,
-          w: 220,
-          h: 44,
-          onActivate: () => activeWorkSurface(this)?.close(),
-        },
-      ],
-      help: 'ENTER or SPACE closes · click also works · ESC closes',
+      status: sending
+        ? 'Core stable — sending the study data.'
+        : 'Core stable — the station record is closed.',
+      elements,
+      help: canContinue
+        ? 'ENTER opens the survey (focused control) · TAB moves focus · click also works · ESC closes this notice'
+        : controlsReady
+          ? 'ENTER or SPACE closes · click also works · ESC closes'
+          : 'Please wait — the study data is being sent',
     };
   }
 

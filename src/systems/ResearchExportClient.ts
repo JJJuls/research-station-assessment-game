@@ -2,30 +2,40 @@ import type { DataQualityMetrics } from './DataQualityTracker';
 import type { RawGameEvent } from './EventLogger';
 import type { EventIntegrity } from './EventStore';
 import type { GameSummaryVariables } from './ScoringManager';
+import type { MissionState } from './SessionState';
+import type {
+  CompletionReason,
+  LaunchMode,
+  SessionStatus,
+} from './SessionStatus';
 
 /**
- * Test-only research-session export client (development ingestion unit).
+ * Research-session export client (development ingestion unit; extended by
+ * Pilot V3 Unit 2 for participant completion — PROVISIONAL(INT-2)).
  *
- * Sends one completed synthetic session to the development Supabase Edge
- * Function (`ingest-research-session`) and nothing else. This module is a
- * TRANSPORT layer only:
+ * Sends one session envelope to the ingestion Edge Function
+ * (`ingest-research-session`) and nothing else. This module is a TRANSPORT
+ * layer only:
  *
  * - it never creates, mutates, or removes raw events, summary variables,
  *   or data-quality metrics — it serialises what existing instrumentation
  *   already assembled;
- * - its results are client-side transport status for local debugging, kept
- *   deliberately OUT of the raw event log and the scoring surface, so
- *   transport state can never be conflated with research data-quality
- *   state (the INT-5 `export_status` vocabulary remains an open
- *   research-owner decision — nothing here logs such an event);
- * - it refuses to send unless the launch mode is exactly `test`, so a
- *   participant session can never submit through this path.
+ * - its results are client-side transport status, kept deliberately OUT of
+ *   the raw event log and the scoring surface, so transport state can
+ *   never be conflated with research data-quality state. The status axes
+ *   it carries (PROVISIONAL(INT-5)) are envelope metadata, never events;
+ * - it refuses to send unless the resolved launch mode is allowed to export
+ *   (`test` always; `production` only from a participant bundle or an
+ *   explicit DEV test hook; `development` never), so a developer session
+ *   can never submit a production row by accident.
  *
- * Idempotency: the first successful envelope build for a session identity
- * is frozen (serialised) into `sessionStorage`; every retry for the same
- * (participant_id, game_session_id) resends the SAME bytes with the SAME
- * `export_id`, so the server acknowledges duplicates (200) instead of
- * storing a second row or raising a content conflict (409).
+ * Idempotency (PROVISIONAL(INT-2.5)): the first envelope built for a
+ * (participant_id, game_session_id, page_load_index, session_status)
+ * combination is frozen (serialised) into `sessionStorage`; every retry of
+ * that combination resends the SAME bytes with the SAME `export_id`, so
+ * the server acknowledges duplicates (200) instead of storing a second row
+ * or raising a content conflict (409). A changed session status or a new
+ * page load is a NEW export with a new `export_id`.
  */
 
 export interface ResearchExportPayload {
@@ -53,13 +63,30 @@ export interface ResearchExportPayload {
   page_load_index: number;
   prior_page_load_events: RawGameEvent[];
   event_integrity: EventIntegrity;
+  /**
+   * Pilot V3 (Unit 2) — PROVISIONAL(INT-2): mission state and environment
+   * controls ride with the raw events so every derived variable is
+   * reproducible from the export alone. `raw_events_omitted` is set only
+   * on the size-bounded keep-alive export sent at page hide (the events
+   * remain in the device buffer and in any later export).
+   */
+  mission_state: MissionState;
+  environment: { prefers_reduced_motion: boolean | null };
+  raw_events_omitted?: boolean;
+  /** How many of the current page load's events the compact export dropped. */
+  raw_events_omitted_count?: number;
 }
 
 export interface ResearchExportEnvelope {
   export_id: string;
   participant_id: string;
   game_session_id: string;
-  launch_mode: 'test';
+  launch_mode: LaunchMode;
+  /** PROVISIONAL(INT-5) status axes at the moment the envelope was frozen. */
+  session_status: SessionStatus;
+  completion_reason: CompletionReason | null;
+  /** 1-based count of exports this page load has frozen (audit trail). */
+  export_sequence: number;
   /**
    * Pilot V3 (Unit 1), PROVISIONAL(INT-2.5): the frozen envelope is scoped
    * to one page load, so a reload of the same identity submits a NEW
@@ -86,9 +113,16 @@ export interface ResearchExportSessionIdentity {
   page_load_index: number;
 }
 
+/** Everything the transport needs to decide and label one submission. */
+export interface ResearchExportContext {
+  launch_mode: LaunchMode;
+  export_allowed: boolean;
+  session_status: SessionStatus;
+  completion_reason: CompletionReason | null;
+}
+
 export type ResearchExportRefusalReason =
-  | 'not_development_build'
-  | 'launch_mode_not_test'
+  | 'launch_mode_not_allowed'
   | 'missing_configuration'
   | 'missing_session_identity';
 
@@ -112,6 +146,7 @@ export type ResearchExportResult =
       export_id: string;
       http_status: number;
       server_received_at: string | null;
+      attempts: number;
     }
   | {
       status: 'refused';
@@ -123,21 +158,50 @@ export type ResearchExportResult =
       http_status: number | null;
       error_code: string | null;
       export_id: string | null;
+      attempts: number;
     };
 
 export interface ResearchExportClientOptions {
-  getLaunchMode: () => string | null;
+  getContext: () => ResearchExportContext;
   getConfig: () => ResearchExportConfig;
   getSessionIdentity: () => ResearchExportSessionIdentity;
-  buildPayload: () => ResearchExportPayload;
+  /** `compact` = size-bounded keep-alive payload for page hide. */
+  buildPayload: (kind: 'full' | 'compact') => ResearchExportPayload;
+}
+
+export type ResearchExportKind = 'full' | 'compact' | 'debug';
+
+export interface ResearchExportSubmitOptions {
+  /**
+   * Envelope family: `full` for the participant pipeline, `debug` for the
+   * developer console completion — separate frozen envelopes, so a debug
+   * completion can never make a later participant completion resend stale
+   * bytes (scientific review finding 6).
+   */
+  kind?: 'full' | 'debug';
+  /** Total attempts for retryable failures (network, timeout, 5xx). */
+  attempts?: number;
+  /** Backoff between attempts (ms), multiplied by the attempt number. */
+  backoffMs?: number;
+  /** Progress hook, called before each attempt (1-based, of total). */
+  onAttempt?: (attempt: number, of: number) => void;
 }
 
 const DEFAULT_TIMEOUT_MS = 15_000;
+const DEFAULT_BACKOFF_MS = 1_000;
 const MAX_ID_LENGTH = 128;
-const STORAGE_KEY_PREFIX = 'research-export:v1';
+const STORAGE_KEY_PREFIX = 'research-export:v2';
+/** Browsers cap in-flight keep-alive bodies at 64 KiB; stay under it. */
+export const KEEPALIVE_BODY_LIMIT_BYTES = 60_000;
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const RETRYABLE_FAILURES: ReadonlySet<ResearchExportFailureReason> = new Set([
+  'timeout',
+  'network_error',
+  'unexpected_status',
+]);
 
 export class ResearchExportClient {
   /**
@@ -154,6 +218,7 @@ export class ResearchExportClient {
   private inFlight: Promise<ResearchExportResult> | null = null;
 
   private lastResult: ResearchExportResult | null = null;
+  private exportSequence = 0;
 
   constructor(private readonly options: ResearchExportClientOptions) {}
 
@@ -161,17 +226,24 @@ export class ResearchExportClient {
     return this.lastResult;
   }
 
+  /** Exports frozen by this page load so far. */
+  getExportSequence(): number {
+    return this.exportSequence;
+  }
+
   /**
-   * Submits the frozen export envelope for the current session identity,
-   * building and freezing it on first call. Never rejects — every outcome
-   * is a typed `ResearchExportResult`.
+   * Submits the frozen export envelope for the current session identity
+   * and status, building and freezing it on first call. Never rejects —
+   * every outcome is a typed `ResearchExportResult`.
    */
-  submit(): Promise<ResearchExportResult> {
+  submit(
+    submitOptions: ResearchExportSubmitOptions = {},
+  ): Promise<ResearchExportResult> {
     if (this.inFlight !== null) {
       return this.inFlight;
     }
 
-    const request = this.performSubmit()
+    const request = this.performSubmit(submitOptions)
       .catch(
         (): ResearchExportResult => ({
           status: 'failed',
@@ -179,6 +251,7 @@ export class ResearchExportClient {
           http_status: null,
           error_code: null,
           export_id: null,
+          attempts: 1,
         }),
       )
       .then((result) => {
@@ -194,11 +267,80 @@ export class ResearchExportClient {
     return request;
   }
 
-  private async performSubmit(): Promise<ResearchExportResult> {
+  /**
+   * Best-effort, size-bounded submission for page hide (`keepalive`): the
+   * browser finishes the request after the page is gone, so nothing can be
+   * awaited or retried. Returns whether a request was started. Never throws.
+   */
+  submitKeepalive(
+    statusOverride: Pick<
+      ResearchExportContext,
+      'session_status' | 'completion_reason'
+    > | null = null,
+  ): boolean {
+    try {
+      const baseContext = this.options.getContext();
+      // The early-exit signal is carried on the envelope only; the caller's
+      // status machine is never mutated by a page hide (scientific review
+      // finding 1: a backgrounded tab is not an abandoned session).
+      const context =
+        statusOverride === null
+          ? baseContext
+          : { ...baseContext, ...statusOverride };
+
+      if (!context.export_allowed) {
+        return false;
+      }
+
+      const config = this.options.getConfig();
+      const ingestUrl = normaliseConfigValue(config.ingestUrl);
+      const publishableKey = normaliseConfigValue(config.publishableKey);
+      const identity = this.options.getSessionIdentity();
+
+      if (
+        ingestUrl === null ||
+        publishableKey === null ||
+        !isValidIdentifier(identity.participant_id) ||
+        !isValidIdentifier(identity.game_session_id)
+      ) {
+        return false;
+      }
+
+      const envelopeJson = this.getOrFreezeEnvelope(
+        identity,
+        context,
+        'compact',
+      );
+
+      if (typeof fetch !== 'function') {
+        return false;
+      }
+
+      void fetch(ingestUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: publishableKey,
+        },
+        body: envelopeJson,
+        keepalive: true,
+      }).catch(() => undefined);
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async performSubmit(
+    submitOptions: ResearchExportSubmitOptions,
+  ): Promise<ResearchExportResult> {
     // Gate order matters: the mode check runs before anything else, so a
-    // non-test session never even builds an envelope.
-    if (this.options.getLaunchMode() !== 'test') {
-      return { status: 'refused', reason: 'launch_mode_not_test' };
+    // session that may not export never even builds an envelope.
+    const context = this.options.getContext();
+
+    if (!context.export_allowed) {
+      return { status: 'refused', reason: 'launch_mode_not_allowed' };
     }
 
     const config = this.options.getConfig();
@@ -218,43 +360,127 @@ export class ResearchExportClient {
       return { status: 'refused', reason: 'missing_session_identity' };
     }
 
-    const envelopeJson = this.getOrFreezeEnvelope(identity);
+    const envelopeJson = this.getOrFreezeEnvelope(
+      identity,
+      context,
+      submitOptions.kind ?? 'full',
+    );
     const exportId = readExportId(envelopeJson);
+    const attempts = Math.max(1, Math.floor(submitOptions.attempts ?? 1));
+    const backoffMs = Math.max(
+      0,
+      submitOptions.backoffMs ?? DEFAULT_BACKOFF_MS,
+    );
+    let result: ResearchExportResult | null = null;
 
-    return this.send(
-      ingestUrl,
-      publishableKey,
-      config.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-      envelopeJson,
-      exportId,
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      if (attempt > 1) {
+        await sleep(backoffMs * (attempt - 1));
+      }
+
+      try {
+        submitOptions.onAttempt?.(attempt, attempts);
+      } catch {
+        // A progress listener can never affect the transport.
+      }
+
+      result = await this.send(
+        ingestUrl,
+        publishableKey,
+        config.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+        envelopeJson,
+        exportId,
+        attempt,
+      );
+
+      if (
+        result.status === 'acknowledged' ||
+        (result.status === 'failed' && !RETRYABLE_FAILURES.has(result.reason))
+      ) {
+        return result;
+      }
+    }
+
+    return (
+      result ?? {
+        status: 'failed',
+        reason: 'unexpected_status',
+        http_status: null,
+        error_code: null,
+        export_id: exportId,
+        attempts,
+      }
     );
   }
 
   /**
-   * Returns the frozen envelope for this session identity, building and
+   * Returns the frozen envelope for this identity + status, building and
    * persisting it on first use. A stored envelope is reused ONLY when it
-   * still parses and matches the current identity; anything corrupt is
-   * replaced by a fresh envelope with a fresh `export_id`.
+   * still parses and matches; anything corrupt is replaced by a fresh
+   * envelope with a fresh `export_id`.
    */
-  private getOrFreezeEnvelope(identity: ResearchExportSessionIdentity): string {
-    const key = storageKeyFor(identity);
+  private getOrFreezeEnvelope(
+    identity: ResearchExportSessionIdentity,
+    context: ResearchExportContext,
+    kind: ResearchExportKind,
+  ): string {
+    const key = storageKeyFor(identity, context.session_status, kind);
     const stored = this.readStored(key);
 
-    if (stored !== null && isReusableEnvelope(stored, identity)) {
+    if (stored !== null && isReusableEnvelope(stored, identity, context)) {
       return stored;
     }
 
-    const envelope: ResearchExportEnvelope = {
+    this.exportSequence += 1;
+
+    let payload = this.options.buildPayload(
+      kind === 'compact' ? 'compact' : 'full',
+    );
+    let envelope: ResearchExportEnvelope = {
       export_id: generateUuidV4(),
       participant_id: identity.participant_id,
       game_session_id: identity.game_session_id,
-      launch_mode: 'test',
+      launch_mode: context.launch_mode,
+      session_status: context.session_status,
+      completion_reason: context.completion_reason,
+      export_sequence: this.exportSequence,
       page_load_index: identity.page_load_index,
       client_created_at: new Date().toISOString(),
-      payload: this.options.buildPayload(),
+      payload,
     };
+    let envelopeJson = JSON.stringify(envelope);
 
-    const envelopeJson = JSON.stringify(envelope);
+    if (
+      kind === 'compact' &&
+      byteLength(envelopeJson) > KEEPALIVE_BODY_LIMIT_BYTES
+    ) {
+      // Keep-alive bodies are capped by the browser. Keep as many of the
+      // MOST RECENT current-page-load events as fit (prior page loads are
+      // dropped first — they were exported by their own page load or stay
+      // in the device buffer), and say exactly how many were omitted; the
+      // full log stays on the device for any later export.
+      const total = payload.raw_events.length;
+      let kept = payload.raw_events;
+
+      payload = { ...payload, prior_page_load_events: [] };
+      envelope = { ...envelope, payload };
+      envelopeJson = JSON.stringify(envelope);
+
+      while (
+        byteLength(envelopeJson) > KEEPALIVE_BODY_LIMIT_BYTES &&
+        kept.length > 0
+      ) {
+        kept = kept.slice(Math.max(1, Math.ceil(kept.length * 0.25)));
+        payload = {
+          ...payload,
+          raw_events: kept,
+          raw_events_omitted: true,
+          raw_events_omitted_count: total - kept.length,
+        };
+        envelope = { ...envelope, payload };
+        envelopeJson = JSON.stringify(envelope);
+      }
+    }
 
     this.writeStored(key, envelopeJson);
 
@@ -267,6 +493,7 @@ export class ResearchExportClient {
     timeoutMs: number,
     envelopeJson: string,
     exportId: string | null,
+    attempt: number,
   ): Promise<ResearchExportResult> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -288,7 +515,7 @@ export class ResearchExportClient {
       // headers but stalls the body still hits the finite timeout.
       const bodyText = await response.text();
 
-      return mapResponse(response.status, bodyText, exportId);
+      return mapResponse(response.status, bodyText, exportId, attempt);
     } catch (error) {
       return {
         status: 'failed',
@@ -296,6 +523,7 @@ export class ResearchExportClient {
         http_status: null,
         error_code: null,
         export_id: exportId,
+        attempts: attempt,
       };
     } finally {
       clearTimeout(timer);
@@ -329,6 +557,16 @@ export class ResearchExportClient {
   }
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function byteLength(text: string): number {
+  return typeof TextEncoder === 'function'
+    ? new TextEncoder().encode(text).byteLength
+    : text.length;
+}
+
 function normaliseConfigValue(value: string | undefined): string | null {
   if (typeof value !== 'string' || value.trim() === '') {
     return null;
@@ -359,17 +597,24 @@ function isValidIdentifier(value: string): boolean {
   return true;
 }
 
-function storageKeyFor(identity: ResearchExportSessionIdentity): string {
-  // encodeURIComponent keeps the two identity components unambiguous even
-  // if an id itself contains the separator character.
+function storageKeyFor(
+  identity: ResearchExportSessionIdentity,
+  sessionStatus: SessionStatus,
+  kind: ResearchExportKind,
+): string {
+  // encodeURIComponent keeps the identity components unambiguous even if
+  // an id itself contains the separator character.
   return `${STORAGE_KEY_PREFIX}:${encodeURIComponent(
     identity.participant_id,
-  )}:${encodeURIComponent(identity.game_session_id)}:${identity.page_load_index}`;
+  )}:${encodeURIComponent(identity.game_session_id)}:${
+    identity.page_load_index
+  }:${sessionStatus}:${kind}`;
 }
 
 function isReusableEnvelope(
   storedJson: string,
   identity: ResearchExportSessionIdentity,
+  context: ResearchExportContext,
 ): boolean {
   let parsed: unknown;
 
@@ -389,7 +634,8 @@ function isReusableEnvelope(
     parsed.participant_id === identity.participant_id &&
     parsed.game_session_id === identity.game_session_id &&
     parsed.page_load_index === identity.page_load_index &&
-    parsed.launch_mode === 'test' &&
+    parsed.launch_mode === context.launch_mode &&
+    parsed.session_status === context.session_status &&
     isRecord(parsed.payload)
   );
 }
@@ -412,6 +658,7 @@ function mapResponse(
   httpStatus: number,
   bodyText: string,
   exportId: string | null,
+  attempts: number,
 ): ResearchExportResult {
   const body = parseJson(bodyText);
 
@@ -423,6 +670,7 @@ function mapResponse(
         http_status: httpStatus,
         error_code: null,
         export_id: exportId,
+        attempts,
       };
     }
 
@@ -435,6 +683,7 @@ function mapResponse(
         typeof body.server_received_at === 'string'
           ? body.server_received_at
           : null,
+      attempts,
     };
   }
 
@@ -447,6 +696,7 @@ function mapResponse(
       http_status: 409,
       error_code: errorCode,
       export_id: exportId,
+      attempts,
     };
   }
 
@@ -457,6 +707,7 @@ function mapResponse(
       http_status: 401,
       error_code: errorCode,
       export_id: exportId,
+      attempts,
     };
   }
 
@@ -467,6 +718,7 @@ function mapResponse(
       http_status: 403,
       error_code: errorCode,
       export_id: exportId,
+      attempts,
     };
   }
 
@@ -476,6 +728,7 @@ function mapResponse(
     http_status: httpStatus,
     error_code: errorCode,
     export_id: exportId,
+    attempts,
   };
 }
 
@@ -544,7 +797,7 @@ function generateUuidV4(): string {
   }
 
   // RFC 4122 version (4) and variant (10xx) bits, matching the pattern the
-  // development Edge Function enforces on export_id.
+  // Edge Function enforces on export_id.
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
 

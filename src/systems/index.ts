@@ -6,3 +6,4 @@ export * from './ResearchExportClient';
 export * from './ResearchRuntime';
 export * from './ScoringManager';
 export * from './SessionState';
+export * from './SessionStatus';
