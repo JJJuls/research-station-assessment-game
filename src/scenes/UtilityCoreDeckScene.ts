@@ -283,14 +283,19 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
 
     this.addDecor(board.x, board.y, 'proc-board-workorders');
     this.signage(board.x, board.y - 40, 'STATION SYSTEMS');
+    // Pilot V3 Unit 6 (V2 finding U8-9 / ledger V28): the readout sits on
+    // its own backed chip BELOW the board decor's footprint, so no decor
+    // can occlude it, and above every world sprite.
     this.boardStatus = this.add
-      .text(board.x, board.y + 36, '', {
-        color: '#9fb2c1',
+      .text(board.x, board.y + 54, '', {
+        backgroundColor: '#101820',
+        color: '#c7d5e0',
         font: '10px monospace',
         align: 'center',
+        padding: { x: 5, y: 3 },
       })
-      .setOrigin(0.5)
-      .setDepth(2);
+      .setOrigin(0.5, 0)
+      .setDepth(20);
 
     // ——— Three physical feeds (operational order west → east) ———
     for (const [index, feed] of FEED_ORDER.entries()) {
@@ -339,14 +344,18 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
     this.addDecor(manifold.x, manifold.y, 'proc-manifold-panel');
     this.signage(manifold.x, manifold.y - 34, 'CORE FEED MANIFOLD');
     this.manifoldLamps = this.add.graphics().setDepth(3);
+    // Pilot V3 Unit 6 (visual review F3): backed chip like its siblings, so
+    // the third feed glyph is legible over the light steel panel behind it.
     this.manifoldText = this.add
       .text(manifold.x, manifold.y + 30, '', {
-        color: '#9fb2c1',
+        backgroundColor: '#101820',
+        color: '#c7d5e0',
         font: '10px monospace',
         align: 'center',
+        padding: { x: 5, y: 3 },
       })
       .setOrigin(0.5, 0)
-      .setDepth(2);
+      .setDepth(20);
     this.doorLamp = this.add
       .rectangle(
         DECK_SITES.coreDoor.x,

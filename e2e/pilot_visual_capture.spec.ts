@@ -260,7 +260,7 @@ test('pilot route visual capture — diagnostics laboratory', async ({
 
   // 15 — the phase benches (world view, presented order).
   await walkTo(page, 400, 300, { yFirst: true });
-  await shot(page, '15-decoder-bank');
+  await shot(page, '15-laboratory-phase-benches');
 
   // 16 — phase 1 evidence table (work surface; left without stopping).
   await interactAt(page, PILOT.lab.evidenceTable, {
@@ -463,7 +463,7 @@ test('pilot route visual capture — yard, deck, completion', async ({
     { timeout: 10_000 },
   );
   await page.waitForTimeout(600);
-  await shot(page, '30-shift-complete');
+  await shot(page, '30-record-closed-feeds-pending');
 
   expect(true).toBe(true);
 });
