@@ -1979,6 +1979,13 @@ assertion; `pilot_yard` rig test intermittent; `pilot_route` topology
 
 ### 15.4 The three unresolved rows — what is and is not established
 
+> **Cross-reference added after Unit 8:** all three of these rows, and
+> both "Timed out — unclassified" rows in the §15.3 table, were
+> subsequently reproduced at 5× per revision and **reclassified** in
+> §16. None is a Unit 7 regression. The Unit 8 results below are left
+> exactly as recorded; §16 supersedes their classification, not their
+> evidence.
+
 Each failed twice on final code and passed once on baseline. **That is a
 weak result and it is not claimed as a proven regression.** One baseline
 pass gives no variance estimate, and this suite fails non-reproducibly:
@@ -2471,6 +2478,13 @@ and were not touched.
 
 ### 15.11 Bounded repair brief for the next unit (U8-1)
 
+> **Cross-reference added after Unit 8: this brief is superseded — see
+> §16.10.** Step 1 was executed in full and found no rate difference in
+> the regression direction, which closes the gate steps 2 and 3 were
+> conditional on; neither was run. U8-1 should be marked superseded
+> rather than executed. §16.11 recommends the replacement unit (U9,
+> test-only).
+
 Not started here, deliberately. Scope it as one unit, **investigation
 first, no fix without a reproduction**:
 
@@ -2536,3 +2550,370 @@ paths — every change inside the allowlist, nothing else in the tree.
   exactly as capture specs do in the main tree. Those were audited (all
   PNG, no untracked file, no source file) and restored, leaving that
   worktree clean at `897f5f4`.
+
+## 16. Post-Unit-8 reliability closure (verification-only, no product change)
+
+Appended after Unit 8. This section closes the three rows §15.3 marked
+**"Unresolved — possible Unit 7 regression"** and the two rows it marked
+**"Timed out — unclassified"**. It runs the reproduction protocol §15.11
+step 1 asked for, and it does not run step 2 or step 3, because step 1
+did not produce the rate difference those steps are conditional on. **No
+product, measurement or scientific file was touched.** The only change in
+the closure commit is this section.
+
+### 16.1 Checkpoint
+
+Branch `fable-evidence-led-pilot-v2` in worktree
+`.claude/worktrees/fable-evidence-led-pilot-v2`; base `0e1a8aa`; entry
+HEAD `9928312`; comparison worktree
+`.claude/worktrees/u8-baseline-897f5f4` at `897f5f4` (Unit 6). Both
+working trees verified clean before the first attempt and after the last.
+
+### 16.2 The three rows, resolved to exact targets
+
+§15.11 named "the three specs" without test ids. Read off §15.3 and §15.4
+and confirmed against the files, they are:
+
+| Row | Spec file                            | Exact test title                                                                              |
+| --- | ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| A   | `e2e/inventory_prep_logging.spec.ts` | `NEXT-08 coherence: bin silhouettes, carrying tray, take-back path, review pin, inert clicks` |
+| B   | `e2e/pipe_diagnosis_setback.spec.ts` | `manifold rebuild, diagnosis and seal setback run as separate windows`                        |
+| C   | `e2e/magnet_salvage_ip.spec.ts`      | `recycler rig: controlled deck, objective exhaustion, M24 window`                             |
+
+All three titles are **byte-identical in both worktrees**, so `-g`
+selected the same test on both revisions.
+
+### 16.3 Protocol actually executed
+
+- One Playwright process at a time, start to finish. No concurrent
+  final/baseline run, no persistent monitor, no background poll loop
+  driving the tests, no unrelated dev server.
+- Every attempt: a **new** Playwright process, `--retries=0 --workers=1`,
+  `--reporter=list`, one spec, `-g` pinned to the single test (whole-spec
+  for §16.7).
+- Hard deadline enforced per attempt by GNU `timeout` 8.32
+  (`--kill-after=30s`): **900 s** for rows A/B/C, **1200 s** for the two
+  timeout specs. No attempt was cut by its deadline; the longest was
+  941 s against a 1200 s cap.
+- Dedicated ports, never shared: final `PW_DEV_PORT=5341`, baseline
+  `PW_DEV_PORT=5343`. Chosen deliberately because `playwright.config.ts`
+  sets `reuseExistingServer: true`, so a stray server on the other tree's
+  port would silently test the wrong code.
+- **Port verified free before every attempt** (`netstat -ano`, LISTENING
+  filter) — a busy port aborts the attempt as `PREFLIGHT_FAIL` rather
+  than running against a foreign server. This never fired.
+- **Process exit confirmed after every attempt**: the runner re-checks
+  its port 3 s after the process returns and records the listener set.
+  Every one of the 34 attempts recorded `leftover=[]`. After the last
+  attempt: no listener on 5341/5343, no Playwright-owned `chrome.exe`
+  (checked via `Win32_Process` command lines against `ms-playwright`),
+  and the only `node.exe` on the box is the agent session itself. **No
+  global Node or process termination was used at any point** — nothing
+  needed killing.
+- Identical toolchain both sides, verified rather than assumed: Node
+  `v24.19.0`, `@playwright/test` `1.61.1`, `vite` `8.0.10`.
+- Setup and cleanup were equivalent on both revisions — same runner
+  script, same flags, same deadline, same preflight and postflight.
+- **Final and baseline attempts were alternated** (F1, B1, F2, B2, …)
+  within each row, never all-final-then-all-baseline.
+- Every attempt was appended to a scratchpad results table as it
+  finished, and its complete log preserved outside the repository.
+
+One discarded non-attempt is recorded for completeness: the first
+invocation of the runner failed in 0 s before Playwright started
+(`'C:\Program' is not recognized`) — the `npx.cmd` shim breaking on a
+space in `PATH`. It produced no test result. The runner was switched to
+`node node_modules/@playwright/test/cli.js` and all 34 attempts below
+used that path.
+
+### 16.4 Row A — `inventory_prep_logging` "NEXT-08 coherence"
+
+Run order and results (alternating, top to bottom):
+
+| #   | Attempt | Revision        | Result | Duration | Failure stage and signature                                                |
+| --- | ------- | --------------- | ------ | -------- | -------------------------------------------------------------------------- |
+| 1   | A-F1    | final `9928312` | PASS   | 91 s     | —                                                                          |
+| 2   | A-B1    | base `897f5f4`  | PASS   | 104 s    | —                                                                          |
+| 3   | A-F2    | final `9928312` | FAIL   | 66 s     | `spec.ts:854` `expect(trayRows).toHaveLength(7)` — received length 0, `[]` |
+| 4   | A-B2    | base `897f5f4`  | PASS   | 119 s    | —                                                                          |
+| 5   | A-F3    | final `9928312` | FAIL   | 66 s     | `spec.ts:854` — identical, received length 0, `[]`                         |
+| 6   | A-B3    | base `897f5f4`  | FAIL   | 57 s     | `spec.ts:854` — identical, received length 0, `[]`                         |
+| 7   | A-F4    | final `9928312` | FAIL   | 58 s     | `spec.ts:854` — identical                                                  |
+| 8   | A-B4    | base `897f5f4`  | FAIL   | 59 s     | `spec.ts:854` — identical                                                  |
+| 9   | A-F5    | final `9928312` | FAIL   | 57 s     | `spec.ts:854` — identical                                                  |
+| 10  | A-B5    | base `897f5f4`  | FAIL   | 61 s     | `spec.ts:854` — identical                                                  |
+
+**Pass proportions: final 1/5, baseline 2/5.** All eight failures are the
+same failure: the `carryingSurface` probe returns zero `tray` rows where
+seven are expected, at `inventory_prep_logging.spec.ts:854`.
+Byte-identical message and byte-identical received value on **both**
+revisions — only the worktree path in the stack differs.
+
+**Classification: intermittent, present on both revisions. Not a Unit 7
+regression.** This supersedes the §15.3 row. The Unit 8 2-vs-1 sample
+(final FAIL ×2, baseline PASS ×1) is fully explained by baseline's own
+3/5 failure rate.
+
+**Observation, not a conclusion:** on both revisions the passes fell in
+the first two attempts of the row and every later attempt failed. That
+ordering is a confound this design does not control (machine warm state,
+accumulating `test-results`, thermal/scheduler drift), and it is a
+further reason the row is not read as a revision effect. It is recorded,
+not investigated — investigating it was out of this session's scope.
+
+### 16.5 Row B — `pipe_diagnosis_setback` "manifold rebuild, diagnosis and seal setback"
+
+| #   | Attempt | Revision        | Result | Duration | Failure stage and signature                                                                                                                                                  |
+| --- | ------- | --------------- | ------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | B-F1    | final `9928312` | PASS   | 100 s    | —                                                                                                                                                                            |
+| 2   | B-B1    | base `897f5f4`  | FAIL   | 45 s     | `seatViaCards` → `selectCardByLabel` (`helpers.ts:1178`): card `"Elbow section"` not among `[Mount B1. / Mount C1. / Mount C2. / Mount A3. / Mount B3. / Mount C3. / Back.]` |
+| 3   | B-F2    | final `9928312` | FAIL   | 103 s    | `spec.ts:371` `waitForEventType(page, 'proto_m18_diagnosis_submitted', 1)` returned false                                                                                    |
+| 4   | B-B2    | base `897f5f4`  | PASS   | 114 s    | —                                                                                                                                                                            |
+| 5   | B-F3    | final `9928312` | PASS   | 111 s    | —                                                                                                                                                                            |
+| 6   | B-B3    | base `897f5f4`  | FAIL   | 60 s     | `selectCardByLabel`: card `"Isolation valve"` not among `[Mount B1. / Mount A3. / Mount B3. / Mount C3. / Back.]`                                                            |
+| 7   | B-F4    | final `9928312` | PASS   | 111 s    | —                                                                                                                                                                            |
+| 8   | B-B4    | base `897f5f4`  | FAIL   | 47 s     | `selectCardByLabel`: card `"Mount C1."` not among `[Open the test flow. / Seat a section… / Rotate a section… / Return a section to the bench… / Step back.]`                |
+| 9   | B-F5    | final `9928312` | FAIL   | 60 s     | `selectCardByLabel`: card `"Isolation valve"` not among `[Mount B1. / Mount A3. / Mount B3. / Mount C3. / Back.]` — identical to B-B3                                        |
+| 10  | B-B5    | base `897f5f4`  | PASS   | 123 s    | —                                                                                                                                                                            |
+
+**Pass proportions: final 3/5, baseline 2/5.** Failures are **not**
+identical to each other: four distinct signatures across five failures —
+three of them the same `selectCardByLabel` "card not among" shape at
+different points in the card sequence, one an event that never arrived.
+One signature (`"Isolation valve"` against the same four-mount list)
+appears on **both** revisions.
+
+**Classification: intermittent, present on both revisions. Not a Unit 7
+regression.** Baseline's pass rate is _lower_ than final's here, the
+opposite of the direction a regression would produce. This is consistent
+with §15.4's own note that this row was "weakest of the three" and that
+the Unit 7 diff for `DiagnosticsLaboratoryScene.ts` contains no line
+explaining a card-list failure.
+
+### 16.6 Row C — `magnet_salvage_ip` "recycler rig"
+
+| #   | Attempt | Revision        | Result | Duration | Failure stage and signature                                                                |
+| --- | ------- | --------------- | ------ | -------- | ------------------------------------------------------------------------------------------ |
+| 1   | C-F1    | final `9928312` | PASS   | 55 s     | —                                                                                          |
+| 2   | C-B1    | base `897f5f4`  | FAIL   | 64 s     | `castAndHook` (`spec.ts:202`, from `spec.ts:300`): `cast never produced proto_m24_pull #1` |
+| 3   | C-F2    | final `9928312` | PASS   | 51 s     | —                                                                                          |
+| 4   | C-B2    | base `897f5f4`  | PASS   | 52 s     | —                                                                                          |
+| 5   | C-F3    | final `9928312` | FAIL   | 67 s     | `castAndHook`: `cast never produced proto_m24_pull #3`                                     |
+| 6   | C-B3    | base `897f5f4`  | PASS   | 56 s     | —                                                                                          |
+| 7   | C-F4    | final `9928312` | PASS   | 52 s     | —                                                                                          |
+| 8   | C-B4    | base `897f5f4`  | PASS   | 50 s     | —                                                                                          |
+| 9   | C-F5    | final `9928312` | FAIL   | 70 s     | `castAndHook`: `cast never produced proto_m24_pull #4`                                     |
+| 10  | C-B5    | base `897f5f4`  | PASS   | 54 s     | —                                                                                          |
+
+**Pass proportions: final 3/5, baseline 4/5.** Same failure **mode** on
+both revisions — the M24 cast/hook wait expiring at
+`magnet_salvage_ip.spec.ts:202` — at a different pull index each time
+(#1 on baseline, #3 and #4 on final), so the failures are not identical.
+
+**Classification: intermittent, present on both revisions. Not a Unit 7
+regression.** A 3/5-vs-4/5 split is nowhere near the 5/5-vs-5/5 pattern
+the protocol requires for regression evidence.
+
+**Consequence for §15.11 step 2:** the conditional
+`prefers-reduced-motion` experiment on the Unit 7 `buildSnowfall()`
+hypothesis was **not run**, because step 2 is gated on step 1 confirming
+a rate difference and step 1 did not. The snowfall hypothesis is neither
+confirmed nor refuted here; it is simply no longer supported by a rate
+difference, and the M24 wait fails on a revision that contains no
+snowfall at all. Likewise §15.11 step 3 (bisecting the
+`WorkSurfaceScene.ts` layout changes for row A) was **not run**: row A's
+identical failure occurs on the baseline, which does not contain those
+layout changes.
+
+### 16.7 The two timeout specs, run individually on final code
+
+Whole-spec runs (no `-g`), final code first, hard 1200 s deadline.
+
+**`e2e/repair_tool_retrieval.spec.ts` — T1-F1: 7/7 PASS, 941 s (15.7 min).**
+
+| Test                                             | Result | Duration |
+| ------------------------------------------------ | ------ | -------- |
+| qualifying packed tool                           | PASS   | 1.8 m    |
+| actual stored location (re-stowed probe)         | PASS   | 1.9 m    |
+| no-opportunity: legacy checklist prep            | PASS   | 2.1 m    |
+| no-opportunity: per-item, no stored packed probe | PASS   | 1.6 m    |
+| no-opportunity: stowed in bin but never packed   | PASS   | 1.7 m    |
+| room re-entry: opportunity persists, event once  | PASS   | 2.6 m    |
+| keyboard and mouse parity                        | PASS   | 3.8 m    |
+
+**Classification: the Unit 8 timeout was a deadline artefact, and the
+underlying spec passes.** The spec needs ~941 s of wall clock; Unit 8
+capped it at 900 s, so it could never finish. Unit 8's incidental
+observation of "4 passed / 2 failed" before the cut **did not
+reproduce**: all seven tests passed, first attempt, `--retries=0`. Per
+the protocol, one passing attempt closes this spec — no second final
+attempt and no baseline attempt were run, and none were needed. Recorded
+as **intermittent / load-and-deadline-related, now passing**. U8-5 is
+closed for this spec.
+
+**`e2e/connected_participant_journeys.spec.ts` — 2 final attempts, then 1
+baseline attempt (the protocol maximum; not exceeded).**
+
+| #   | Attempt | Revision        | Result | Duration | P1   | P2   | P3   |
+| --- | ------- | --------------- | ------ | -------- | ---- | ---- | ---- |
+| 1   | T2-F1   | final `9928312` | FAIL   | 700 s    | FAIL | PASS | PASS |
+| 2   | T2-F2   | final `9928312` | FAIL   | 715 s    | FAIL | PASS | PASS |
+| 3   | T2-B1   | base `897f5f4`  | FAIL   | 471 s    | FAIL | PASS | FAIL |
+
+P1 failure signature, **byte-identical in all three attempts on both
+revisions** — `selectExpectingEvent` at
+`connected_participant_journeys.spec.ts:106`, reached from line 129:
+
+> `option 1 never produced inventory_verified_complete — recent events: [inventory_checklist_opened, inventory_required_tools_packed, correct_tool_selected, inventory_systematic_prep, inventory_sequence_followed, inventory_verification_skipped, workspace_tidy_confirmed, cleanup_completed]`
+
+P3's single failure (baseline only) is a different signature:
+`TimeoutError: page.waitForFunction: Timeout 15000ms exceeded` in
+`waitForEventCount` (`e2e/journey.ts:145`, via `hubToStationJourney`,
+`journey.ts:327`).
+
+Classifications:
+
+- **Spec-level timeout: resolved.** The spec completes in 471–715 s, well
+  inside 1200 s. Unit 8's 900 s cap was tight rather than the spec
+  hanging. U8-5 is closed for this spec too.
+- **P1 "adaptive completer": inherited.** Identical failure and identical
+  received event tail on final ×2 and baseline ×1 — 3/3 occurrences, zero
+  passes on either revision. It is a real open failure and it is **not**
+  introduced by Unit 7 or Unit 8. It is not claimed to pass.
+- **P3 "avoid/defer": intermittent.** 2/2 PASS on final, 1 FAIL on
+  baseline, and the baseline failure signature matches nothing seen on
+  final.
+- **P2 "shortcut/interrupted": passes on both revisions**, 3/3.
+
+### 16.8 Consolidated classifications
+
+| Target                                                    | Unit 8 classification            | Closure evidence                         | Closure classification                           |
+| --------------------------------------------------------- | -------------------------------- | ---------------------------------------- | ------------------------------------------------ |
+| `inventory_prep_logging` "NEXT-08 coherence"              | Unresolved — possible regression | final 1/5, base 2/5, failures identical  | **Intermittent, both revisions. No regression.** |
+| `pipe_diagnosis_setback` "manifold rebuild…"              | Unresolved — possible regression | final 3/5, base 2/5, failures differ     | **Intermittent, both revisions. No regression.** |
+| `magnet_salvage_ip` "recycler rig…"                       | Unresolved — possible regression | final 3/5, base 4/5, same mode both      | **Intermittent, both revisions. No regression.** |
+| `repair_tool_retrieval` (whole spec)                      | Timed out — unclassified         | 7/7 PASS, 941 s                          | **Deadline artefact. Spec passes.**              |
+| `connected_participant_journeys` (whole spec, wall clock) | Timed out — unclassified         | 471–715 s, inside 1200 s                 | **Deadline artefact. No longer times out.**      |
+| `connected_participant_journeys` P1                       | (inside the timeout)             | final 2/2 FAIL, base 1/1 FAIL, identical | **Inherited. Open failure, not a regression.**   |
+| `connected_participant_journeys` P3                       | (inside the timeout)             | final 2/2 PASS, base 1/1 FAIL            | **Intermittent.**                                |
+| `connected_participant_journeys` P2                       | (inside the timeout)             | 3/3 PASS both revisions                  | **Passing.**                                     |
+
+**Not one of the three §15.11 rows met the protocol's regression bar**
+(final 5/5 FAIL with one signature while baseline passes 5/5). Every one
+of them failed on the Unit 6 baseline as well.
+
+### 16.9 Limits of this evidence
+
+- **Five and five is an engineering sample, not a statistical one.** No
+  significance test was computed and none is claimed. "final 3/5 vs base
+  4/5" is a rate _observation_; at n=5 per side, a difference of one or
+  two attempts carries no inferential weight. Nothing in §16 should be
+  cited as a formal statistical result.
+- **What the design does support is the negative:** a spec that fails on
+  the Unit 6 baseline with a byte-identical message cannot have had that
+  failure introduced by Unit 7. That inference needs one baseline
+  failure, not a rate estimate, and rows A and C and P1 each supply
+  identical-signature baseline failures.
+- **The within-row ordering confound is uncontrolled** (§16.4).
+  Alternating attempts between revisions protects the _comparison_, but
+  does not remove drift in absolute rates over a ~90-minute run.
+- **One machine, one OS, one browser build, headless SwiftShader.** Rates
+  here do not predict rates on other hardware or on a participant's
+  machine.
+- These are **test-harness outcomes**, not statements about participant
+  experience. A flaky probe wait is not evidence that a participant would
+  fail the task, and a green spec is not evidence that they would succeed.
+- The five Unit 8 reviews were not repeated, the full suite was not
+  re-run, and already-classified inherited failures were not
+  re-investigated — all three were out of scope by instruction.
+
+### 16.10 Is a bounded Fable repair required?
+
+**Not the one §15.11 scoped.** U8-1 was framed as "investigation first,
+no fix without a reproduction," with product-code changes gated on a
+confirmed rate difference. Step 1 has now been run and **found no rate
+difference in the regression direction on any of the three rows**, so
+U8-1's gate is closed: there is no confirmed Unit 7 regression to repair,
+and steps 2 and 3 are moot. **U8-1 as written should be marked
+superseded, not executed.**
+
+**A different, narrower unit is warranted, and it is test-only.** The
+evidence points at the e2e harness's waiting strategy rather than at game
+code. Every failure recorded in §16 is a _wait that expired_, in one of
+four places:
+
+- `selectExpectingEvent` (`connected_participant_journeys.spec.ts:106`)
+- `castAndHook` (`magnet_salvage_ip.spec.ts:202`)
+- `selectCardByLabel` (`e2e/helpers.ts:1178`)
+- `waitForEventCount` (`e2e/journey.ts:145`, fixed `Timeout 15000ms`)
+
+None of these failures reported a wrong value; each reported an expected
+value that had not arrived yet. That is the signature of a bounded poll
+racing a slow frame, and it reproduces on a revision containing no Unit 7
+changes. **That characterisation is a hypothesis formed from failure
+messages, not a diagnosis** — the next unit should confirm it before
+changing anything. The `connected_participant_journeys` P1 failure in
+particular is 3/3 deterministic and may well be a genuine task-state or
+spec-expectation mismatch rather than a timing one, since
+`inventory_verification_skipped` arrives where
+`inventory_verified_complete` is expected.
+
+### 16.11 Recommended next unit
+
+**U9 — e2e determinism and P1 inventory-verification triage
+(test-only).** One bounded unit, investigation first, allowlist limited to
+`e2e/**` plus one report/doc file. Ordered scope:
+
+1. Triage `connected_participant_journeys` P1. It fails 3/3 with an
+   identical received event tail on both revisions; establish whether the
+   "systematic" option genuinely emits `inventory_verification_skipped`
+   where the spec expects `inventory_verified_complete` (a spec/mechanic
+   mismatch, which is a research-owner question) or whether the verify
+   step is merely late (a harness question). **Do not change a mechanic
+   or an event name to make the spec pass** — if it is a mismatch, it is
+   an event-schema / measurement question and stops there.
+2. Replace fixed-deadline polls with event-driven waits at the four call
+   sites above, one at a time, each change justified by a reproduction.
+3. Re-measure rows A, B and C at 5×5 after each change to show the rate
+   moved. Per §15.11 step 5's principle: a change that cannot be shown to
+   move the failure rate is not a fix.
+4. Leave `docs/research/event-schema.md`,
+   `docs/research/scoring-plan.md`, `src/systems` and all product code
+   untouched.
+
+The pilot-readiness blockers recorded in §15.10 (the P0 cluster, PS-0 /
+PS-2 / PS-3, the reload/abandonment exposure, X1–X11) are **unchanged by
+this section** and remain ahead of U9 in priority for anything
+participant-facing. §16 closes test-reliability findings only; it does
+not move the build closer to pilot-ready.
+
+### 16.12 Confirmations for this section
+
+- **No product code changed. No `src/` file, asset, event name, scoring
+  formula, weight, trait label, cut score, norm, Q-item mapping, spec
+  file or test expectation was modified in this session.** Not one file
+  was edited to make a test pass. The only change in the closure commit
+  is this §16.
+- Both working trees were clean at entry and are clean at exit — the final
+  worktree at `9928312` plus this section, the baseline worktree
+  untouched at `897f5f4` with nothing committed, rebased or merged in it.
+- **Repository hygiene.** The runs generated only untracked, gitignored
+  Playwright artefacts (`/test-results`, ignored at `.gitignore:21`): two
+  files in the final tree, three in the baseline tree, enumerated by
+  explicit path before removal and listed in the preserved manifest. All
+  three `error-context.md` files and all 34 attempt logs were copied
+  **outside the repository** first. Removal was by explicit path only.
+  **No tracked file was overwritten by any run in either tree** (these
+  five specs are not capture specs), so no restore was needed. `git
+clean`, `git reset --hard` and `git restore .` were **not** used, and no
+  broad deletion was performed. **Unit 7's committed evidence was not
+  touched.**
+- Nothing was pushed, merged, tagged, deployed, PR'd, branch-deleted or
+  worktree-removed. No scientific decision was resolved and no open
+  decision in `docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md` was
+  touched.
+- **Not claimed:** that any inherited failure was repaired; that the suite
+  is now reliable; that the three rows will pass on any given future run;
+  that 5×5 constitutes statistical evidence; or any readiness beyond
+  §15.10. This remains a professional research prototype that establishes
+  no validity, reliability, norms or cut scores.
