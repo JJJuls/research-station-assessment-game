@@ -212,14 +212,21 @@ test.describe('final scientific gates (evidence-led pilot v2)', () => {
         '--',
         'docs/research/event-schema.md',
         'docs/research/scoring-plan.md',
-        'src/systems',
+        // Pilot V3 changed the transport/runtime files deliberately
+        // (EventLogger, EventStore, ResearchRuntime, ResearchExportClient,
+        // QualtricsBridge, SessionStatus — every choice PROVISIONAL and
+        // recorded in the V3 report). The scoring surface and the
+        // measurement-side systems stay byte-identical to the base.
+        'src/systems/ScoringManager.ts',
+        'src/systems/DataQualityTracker.ts',
+        'src/systems/SessionState.ts',
       ],
       { encoding: 'utf8' },
     ).trim();
 
     expect(
       diff,
-      'research authority documents and the runtime are byte-identical to the base',
+      'research authority documents and the scoring/measurement systems are byte-identical to the base',
     ).toBe('');
   });
 
@@ -239,5 +246,126 @@ test.describe('final scientific gates (evidence-led pilot v2)', () => {
     expect(report).not.toMatch(
       /\bvalidated (measure|instrument|assessment)\b/i,
     );
+  });
+
+  // ——— Pilot V3 Unit 4: instrumentation defensibility (V2 report §15.10) ———
+
+  function sourcesUnder(dir: string): { file: string; text: string }[] {
+    return walk(path.resolve(dir)).map((file) => ({
+      file: path.relative(process.cwd(), file).replace(/\\/g, '/'),
+      text: readFileSync(file, 'utf8'),
+    }));
+  }
+
+  test('U8-13: proto_m15_layered_cipher is reachable from exactly one module on the participant route', () => {
+    const src = sourcesUnder('src');
+    const declaring = src.filter(({ text }) =>
+      /OPPORTUNITY_ID = 'proto_m15_layered_cipher'/.test(text),
+    );
+
+    // Two modules still declare the id (legacy cipher + causal model)…
+    expect(declaring.map((entry) => entry.file).sort()).toEqual([
+      'src/informationProcessing/m15CausalModel.ts',
+      'src/informationProcessing/m15LayeredCipher.ts',
+    ]);
+
+    // …but the legacy cipher module is imported ONLY by the legacy
+    // (developer-alias) information-processing lab, never by the pilot
+    // route, so a participant can only ever meet the causal model.
+    const importers = src.filter(
+      ({ file, text }) =>
+        file !== 'src/informationProcessing/m15LayeredCipher.ts' &&
+        /m15LayeredCipher'/.test(text),
+    );
+
+    expect(importers.map((entry) => entry.file)).toEqual([
+      'src/scenes/InformationProcessingLabScene.ts',
+    ]);
+    expect(
+      src.some(
+        ({ file, text }) =>
+          file.startsWith('src/pilot/') && /m15LayeredCipher/.test(text),
+      ),
+    ).toBe(false);
+  });
+
+  test('U8-2: the legacy yard M22/M25 families are unreachable on the v2 route and outside every primary family', () => {
+    const src = sourcesUnder('src');
+    const references = src.filter(
+      ({ file, text }) =>
+        file !== 'src/pilot/yardJobs.ts' &&
+        /yardJobs'|YARD_M2[25]_OPPORTUNITY_ID|yardM2[25]WindowOpen|finalizeYardAmbientWindows|proto_m22_housing|proto_m25_yardpump/.test(
+          text,
+        ),
+    );
+
+    // The only importer is the closure session (record closure parity);
+    // the two pure measurement models merely define the family names. No
+    // scene, window kit or route module hosts the legacy windows.
+    expect(references.map((entry) => entry.file).sort()).toEqual([
+      'src/measurement/m22Setback.ts',
+      'src/measurement/m25PumpLock.ts',
+      'src/pilot/closure/closureSession.ts',
+    ]);
+
+    const prefixes = primaryFamilyPrefixes();
+
+    expect(
+      prefixes.some((prefix) => prefix.startsWith('proto_m22_housing')),
+    ).toBe(false);
+    expect(
+      prefixes.some((prefix) => prefix.startsWith('proto_m25_yardpump')),
+    ).toBe(false);
+  });
+
+  test('U8-7: the M09/M10 reminder-exposure control is recorded where the mission log opens', () => {
+    const zone = readFileSync(
+      path.resolve('src/pilot/PilotZoneScene.ts'),
+      'utf8',
+    );
+    const watch = readFileSync(
+      path.resolve('src/pilot/windows/m09MonitorWatch.ts'),
+      'utf8',
+    );
+
+    expect(watch).toMatch(/export function noteM09ReminderLogViewed\(\)/);
+    expect(zone).toMatch(/noteM09ReminderLogViewed\(\);/);
+    // The control is not constant by construction: the call site is the
+    // participant's own map/mission-log opening, before the open event.
+    expect(zone.indexOf('noteM09ReminderLogViewed();')).toBeLessThan(
+      zone.indexOf("'pilot_map_opened'"),
+    );
+  });
+
+  test('U8-3: prefers-reduced-motion is recorded as an environment control in the export', () => {
+    const runtime = readFileSync(
+      path.resolve('src/systems/ResearchRuntime.ts'),
+      'utf8',
+    );
+    const client = readFileSync(
+      path.resolve('src/systems/ResearchExportClient.ts'),
+      'utf8',
+    );
+
+    expect(client).toMatch(
+      /environment: \{ prefers_reduced_motion: boolean \| null \}/,
+    );
+    expect(runtime).toMatch(/prefers-reduced-motion: reduce/);
+  });
+
+  test('U8-12 (recorded, not resolved): exterior comprehension is still asserted, never checked', () => {
+    // An honest gate: the ledger's "comprehension confirmed" validity gates
+    // for the exterior items are satisfied by unconditional
+    // setComprehension('passed') calls. Adding a real check changes the
+    // participant burden and is a research-owner decision (V3 report §4).
+    // This test pins the current count so a silent change is noticed.
+    const exterior = readFileSync(
+      path.resolve('src/pilot/windows/exteriorWindows.ts'),
+      'utf8',
+    );
+    const unconditional = exterior.match(/setComprehension\('passed'\)/g) ?? [];
+
+    expect(unconditional).toHaveLength(10);
+    expect(exterior).not.toMatch(/setComprehension\('(failed|pending)'\)/);
   });
 });

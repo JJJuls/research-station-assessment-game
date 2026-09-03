@@ -416,3 +416,59 @@ env-gated real-client run). Evidence document:
 Local default keys and project; no hosted project, region, retention or
 access-control claim (X4 / X5 / X10 / X11 external). The stack and Docker
 are stopped in Unit 7's process audit.
+
+---
+
+## 4. Unit 4 — Defensible item-local instrumentation
+
+Contract U4, executed narrowly: only the V2 §15.10 measurement findings that
+need **no** scientific decision were changed; everything else is pinned by
+an honest gate and recorded open. Files: `src/pilot/PilotZoneScene.ts`,
+`e2e/final_scientific_gates.spec.ts`, this report.
+
+### 4.1 Closed
+
+- **U8-7 (control variable constant by construction).**
+  `noteM09ReminderLogViewed()` — the ledger's declared M09/M10
+  reminder-exposure control — was defined and never called. It is now
+  called where the participant opens the map/mission-log overlay
+  (`PilotZoneScene.openStationMap`, before `pilot_map_opened`), so
+  `reminder_exposure` varies with actual exposure. No event name, window
+  or formula changed.
+- **U8-3 (reduced motion unrecorded).** Closed in Unit 2:
+  `payload.environment.prefers_reduced_motion` rides on every export;
+  pinned by a gate.
+- **U8-13 (duplicate `proto_m15_layered_cipher` declaration).** Runtime
+  route trace by static import graph: the legacy `m15LayeredCipher.ts` is
+  imported only by the legacy developer-alias
+  `InformationProcessingLabScene`; nothing under `src/pilot/` reaches it,
+  so a participant meets the causal model only. Pinned by a gate rather
+  than deleted (the legacy lab remains a routable developer station).
+- **U8-2 (legacy yard M22/M25 families).** Pinned by a gate: outside
+  `yardJobs.ts` the families are referenced only by the two pure
+  measurement models and by `closureSession.ts` (record-closure parity);
+  no scene hosts them, and neither prefix is in any primary family.
+- **U8-6 (weak gates).** The base-diff gate now asserts what is true and
+  meaningful — `event-schema.md`, `scoring-plan.md`, `ScoringManager.ts`,
+  `DataQualityTracker.ts`, `SessionState.ts` byte-identical to the base —
+  instead of a blanket `src/systems` check that V3's transport work
+  deliberately breaks; four new gates (above) turn prose claims into
+  assertions. 16/16 pure gates green.
+
+### 4.2 Recorded open (not resolved)
+
+- **U8-12 comprehension asserted, not checked.** `exteriorWindows.ts` still
+  calls `setComprehension('passed')` unconditionally at 10 sites while the
+  ledger's validity gates require a confirmed check. Adding a real check
+  changes the participant burden and the item's entry state, which is a
+  research-owner design decision. A gate pins the current count (10) so a
+  silent change cannot pass unnoticed.
+- The remaining V2 study-owner items (STATUS_RANK precedence, STRONG vs
+  CONDITIONAL collapse, disposition of the legacy yard windows, reduced
+  motion policy) are unchanged.
+
+### 4.3 Verification
+
+`npm.cmd run lint:tsc` pass; scoped ESLint pass; `npm.cmd run build` pass;
+`final_scientific_gates` **16/16** (`PW_DEV_PORT=5353`); `verify-unit`
+PASS. No `proto_*` event, disposition, validity gate or formula changed.

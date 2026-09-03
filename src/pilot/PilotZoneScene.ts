@@ -39,6 +39,7 @@ import {
   pilotRouteSummary,
   pilotStage,
 } from './pilotRoute';
+import { noteM09ReminderLogViewed } from './windows/m09MonitorWatch';
 import { WorldBundleLayer } from './worldBundles';
 
 /** Beacon hides inside this radius (mission §8: disappears on arrival). */
@@ -439,6 +440,10 @@ export abstract class PilotZoneScene extends RoomScene {
 
   private openStationMap() {
     this.mapOpen = true;
+    // Pilot V3 (Unit 4, V2 finding U8-7): the map/mission-log overlay is
+    // the M09/M10 reminder exposure the ledger declares as a control
+    // variable; it was declared but never recorded before this call.
+    noteM09ReminderLogViewed();
     this.logScenarioEvent('pilotRoute', 'pilot_map_opened', {
       metadata: { zone: this.zoneKey },
     });
