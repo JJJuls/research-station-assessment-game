@@ -1,8 +1,11 @@
-# Professional Assessment Pilot V2 — Report (Units 0–7)
+# Professional Assessment Pilot V2 — Report (Units 0–8)
 
-**Status: IN PROGRESS — Unit 7 (professional presentation integration)
-built and verified, see §14; Unit 8 (final verification) not started.** Nothing was pushed, merged, tagged, deployed or removed; every
-commit is local.
+**Status: Unit 8 (final verification) complete — see §15. Verification
+closed with three unresolved possible-regression rows, two specs that
+exceeded their deadline unclassified, and the inherited failures recorded
+rather than repaired; a hands-on human timing pilot is still outstanding.
+No product source was modified in Unit 8.** Nothing was pushed, merged,
+tagged, deployed or removed; every commit is local.
 
 ## 1. Branch, base, HEAD
 
@@ -1915,3 +1918,616 @@ obsolete scene-default helpers, closure invalid/technical-state gaps; full
 manifest sweep in sequential chunks at `--retries=0 --workers=1`; the
 complete participant route with timing against the burden budget; final
 scientific gates; five read-only reviews; the final report).
+
+## 15. Unit 8 — Final verification (evidence, classification, limits)
+
+### 15.1 Checkpoint
+
+Branch `fable-evidence-led-pilot-v2` in worktree
+`.claude/worktrees/fable-evidence-led-pilot-v2`; base `0e1a8aa`; entry HEAD
+`0651149` (Unit 7, "chore(assets): integrate professional outpost
+presentation"); Unit 6 = `897f5f4`. A detached read-only comparison
+worktree at `.claude/worktrees/u8-baseline-897f5f4` (`897f5f4`) was used for
+every two-sided comparison and was never rebased, merged, committed to or
+removed. All runs `--retries=0 --workers=1`, each spec in its own
+Playwright process, `PW_DEV_PORT=5331` (final) / `5333` (baseline), never
+concurrently.
+
+**This unit modified no product source file.** The only code touched is
+one new Unit 8 test spec (§15.6).
+
+### 15.2 What the full sweep did and did not establish
+
+The pre-existing full manifest sweep — **418 tests in 89 files, 401
+passed, 17 failed across 14 spec files, retries=0, workers=1** — is
+recorded as-is. Part of that run was contaminated by concurrent load, so a
+sweep failure is **not** evidence of a defect on its own. **It is not
+claimed that all 418 tests passed.** Unit 8 did not repeat the sweep; it
+re-ran the failing specs in isolation, and — where isolation still failed
+— against the Unit 6 baseline.
+
+Two attempts per spec on final code and one on baseline was the standing
+budget; it was not exceeded. Where that budget ran out before a
+classification was reached, the row below says so rather than guessing.
+
+### 15.3 Per-spec classification
+
+| Spec (test)                                                             | Final #1                                        | Final #2        | Baseline `897f5f4`              | Classification                              |
+| ----------------------------------------------------------------------- | ----------------------------------------------- | --------------- | ------------------------------- | ------------------------------------------- |
+| `inventory_prep_logging` "systematic path: checklist to verify to tidy" | FAIL                                            | —               | FAIL, byte-identical error      | **Inherited**                               |
+| `inventory_prep_logging` "NEXT-08 coherence"                            | FAIL (line 901)                                 | FAIL (line 854) | PASS                            | **Unresolved — possible Unit 7 regression** |
+| `participant_ui_cards` "inventory prep status panel (phase 3)"          | FAIL                                            | FAIL            | FAIL, identical received string | **Inherited**                               |
+| `participant_ui_cards` "repair and engineer status panels"              | PASS                                            | FAIL            | PASS                            | Intermittent                                |
+| `pipe_diagnosis_setback` "manifold rebuild, diagnosis and seal setback" | FAIL                                            | FAIL            | PASS (2/2)                      | **Unresolved — possible Unit 7 regression** |
+| `magnet_salvage_ip` "recycler rig / M24 window"                         | FAIL (#1)                                       | FAIL (#4)       | PASS                            | **Unresolved — possible Unit 7 regression** |
+| `magnet_salvage_ip` "pump interlock"                                    | FAIL                                            | FAIL            | FAIL                            | **Inherited**                               |
+| `artifact_survey` "full physical sweep"                                 | FAIL                                            | FAIL            | FAIL, identical error           | **Inherited**                               |
+| `field_actions_visual_capture`                                          | FAIL                                            | FAIL            | FAIL, identical error           | **Inherited**                               |
+| `measurement_boundaries`                                                | 5/5 PASS                                        | —               | —                               | Load/intermittent                           |
+| `archive_room_logging`                                                  | 3/3 PASS                                        | —               | —                               | Load/intermittent                           |
+| `adversarial_reload_partial_state`                                      | 1/1 PASS                                        | —               | —                               | Load/intermittent                           |
+| `field_actions_measurement`                                             | 4/4 PASS                                        | —               | —                               | Load/intermittent                           |
+| `visual_physical_capture`                                               | 6/6 PASS                                        | —               | —                               | Load/intermittent                           |
+| `repair_tool_retrieval`                                                 | 4 passed / 2 failed, **hit the 900 s deadline** | —               | —                               | **Timed out — unclassified**                |
+| `connected_participant_journeys`                                        | 1 passed / 1 failed, **hit the 900 s deadline** | —               | —                               | **Timed out — unclassified**                |
+
+Carried forward unchanged from the recovery checkpoint (files unchanged
+since; not re-run to pad counts): `engineer_hub_logging` inherited
+pre-Unit-7 failure; `pilot_records` supply-bundles inherited Unit 2
+assertion; `pilot_yard` rig test intermittent; `pilot_route` topology
+8/8 over two isolated runs.
+
+### 15.4 The three unresolved rows — what is and is not established
+
+Each failed twice on final code and passed once on baseline. **That is a
+weak result and it is not claimed as a proven regression.** One baseline
+pass gives no variance estimate, and this suite fails non-reproducibly:
+five specs above were classified _inherited_ on the same 2-vs-1 sample
+shape with the pass/fail sides swapped. Two of the three failed at
+**different assertion points** across the two runs — a timing signature,
+though on its own that does not discriminate between pre-existing flake
+and a newly-introduced load regression.
+
+Read-only review of `git diff 897f5f4 0651149 -- src/` found two candidate
+mechanisms and disposed of a third:
+
+- **`magnet_salvage_ip` / M24 timing window.** Unit 7 added
+  `buildSnowfall()` to `ExteriorRecoveryYardScene` — six sprites on a
+  nine-frame loop at 7 fps, running indefinitely in the very scene that
+  hosts the M24 timing-window mini-game. The sprites are created once at
+  `ExteriorRecoveryYardScene.ts:526`, **not** per frame; the only new
+  per-frame call, `refreshMastArt()`, is guarded and O(1). The load is
+  therefore modest — but it is new, sustained, and in the wrong scene, and
+  it is suppressed by `prefersReducedMotion()`, which makes a clean
+  controlled experiment available.
+- **`inventory_prep_logging` / "NEXT-08 coherence".** Unit 7 changed
+  `src/pilot/ui/WorkSurfaceScene.ts` — the exact panel the test probes via
+  `__minigameSurface` — altering help-text size, `wordWrap`, text origin
+  (`0.5` to `0.5,1`) and anchor y. Layout changes to the panel under test
+  are a plausible cause of a "read before layout settled" failure
+  (`trayRows` length 0; station label undefined).
+- **`pipe_diagnosis_setback`.** Weakest of the three. The Unit 7 diff for
+  `DiagnosticsLaboratoryScene.ts` is purely cosmetic (airlock texture, two
+  signage offsets, delegation to a shared `zoneSignage`), and the M13
+  puzzle module is not in the diff at all. No line in the Unit 7 diff
+  explains "Mount A1./Mount C1. not among the top-level card list."
+
+**A hypothesis raised during this unit and then refuted, recorded so it is
+not re-raised:** Unit 7 added a scene `PAUSE` handler
+(`RoomScene.ts:641`) whose `hideWorldPrompts()` sets
+`this.activeTarget = null` (`RoomScene.ts:2477`) — interaction state, in a
+unit declared presentation-only, where the baseline has no PAUSE handler
+at all. The concern was that an interact press after RESUME could reach
+the `activeTarget === null` branch (`RoomScene.ts:2349`) and be counted by
+`onEmptyInteract()`, which in `DockScene.ts:334` increments
+`controlErrorCount` and is reported as the `control_error_count` event
+(`DockScene.ts:398`). **This does not occur.** `updateProximity()`
+re-derives `this.activeTarget = nearest` at `RoomScene.ts:2296`, before
+the null branch at 2349, inside the same call; the PAUSE-time null cannot
+survive into it. `PilotZoneScene.ts:202` and `DockScene.ts:243` also call
+`resetKeys()` on RESUME. **No measured covariate is affected.** Assigning
+interaction state inside a method documented as "pure presentation"
+remains a readability note bearing on OD-10, not a defect.
+
+None of the three is fixed here. §15.11 is the bounded repair brief.
+
+### 15.5 M02 overlay proof and the final scientific gates
+
+`e2e/m02_overlay_proof.spec.ts` — **2/2 PASS** (1.1 min). The Unit 2 open
+finding ("filing-desk overlay did not open") is now positively closed for
+the direct-boot entry state: from a boot with no prior station visited,
+both the `E` and `SPACE` paths open the overlay in `m02case` mode, the
+rendered frame bytes change, the world prompt and label chips hide, held
+movement does not move the avatar (host genuinely paused), `ESC` closes,
+the prompt returns and movement resumes, with no runtime error. **Limit,
+per the scientific review:** the spec boots via the `scene=` developer
+alias, so it proves the direct-boot entry state; the participant entry
+state (after episode-1 play, participant launch mode) still rests on
+`pilot_visual_capture` leg 1, not on this spec.
+
+`e2e/final_scientific_gates.spec.ts` — **11/11 PASS** (12.9 s). Verified
+independently of the spec: the authority documents and the runtime
+(`docs/research/event-schema.md`, `docs/research/scoring-plan.md`,
+`src/systems`) are byte-identical to base `0e1a8aa`; the workbook and the
+M01-M26 ledger are untouched by Units 7-8; the ledger's
+`classification_counts` are `{strong: 16, conditional: 7,
+questionnaire_primary: 3}` over 26 items, and the six facet/scale models
+partition the 26 exactly.
+
+**Correction to the mission brief.** The brief asked the gate to prove
+"16 behavioural, 7 questionnaire-primary and 3 missing classifications".
+That is not what the ledger holds or what the gate asserts. The actual
+partition is **16 GAME-CANDIDATE — STRONG, 7 GAME-CANDIDATE —
+CONDITIONAL, 3 questionnaire-primary** (2 `QUESTIONNAIRE-PRIMARY` plus
+1 `QUESTIONNAIRE-PRIMARY / HYBRID REQUIRED`). The gate is correct; the
+brief's restatement was not, and nothing was changed to make it true.
+
+**Gates that are weaker than their names** (scientific review, verified
+where cited — recorded, not repaired):
+
+- The "event families are pairwise disjoint" gate
+  (`final_scientific_gates.spec.ts:102-112`) and the "M13/M18, M24/M26
+  independence" gate (114-137) compare `proto_mNN_...` **string
+  prefixes**. Two prefixes with different `NN` can never nest and
+  identical ones are skipped, so both can only fail if two schedule
+  entries share an item number — which `PILOT_SCHEDULE` already forbids by
+  construction. They are close to tautologies. The substantive
+  independence claims are about _state and derivation_, and no assertion
+  in the file touches state.
+- The "missing/invalid never become low values" gate (226-242) asserts a
+  **substring of the ledger's own prose**, not behaviour. The property
+  nonetheless **holds**: `opportunityCoverageStatus`
+  (`src/pilot/coverageSchedule.ts:260-284`) keeps `pending / open /
+completed / missing / invalid / censored / not_applicable` as seven
+  distinguishable terminal codes with no numeric collapse anywhere in the
+  reviewed scope. The gate is simply not what establishes it.
+- "Every closure event carries `non_scored`" (169-189) is one `toContain`
+  over concatenated sources — one occurrence anywhere satisfies "every".
+  Its companion `not.toMatch(/proto_m\d\d/)` is defeated by indirection:
+  `closureSession.ts:280-292` reaches two M-item records through imported
+  constants, so no `proto_mNN` literal appears while the closure code does
+  contact M-item records.
+- The "runtime unchanged" gate (205-224) uses `git diff`, which does not
+  report **untracked** files; a new `src/systems/*.ts` would pass
+  silently. `src/systems` was confirmed to hold only its eight expected
+  modules.
+
+### 15.6 The three Unit 8 specs — and three authoring defects found in one
+
+`m02_overlay_proof.spec.ts` and `final_scientific_gates.spec.ts` were
+unchanged from their previously tested state and passed as delivered.
+
+`pilot_full_route_timing.spec.ts` **had never run to completion.** It
+failed 2/2 at an identical point before any product code was suspected.
+Three test-only defects were found and corrected in this unit — the file
+is one of the paths this unit commits, and **no product source was
+touched**:
+
+1. `keyActivate(page, 'arm')` / `clickElement(page, 'confirm')` — the real
+   element ids in `src/scenes/CoreChamberScene.ts` are **`arm_sync`** and
+   **`confirm_sync`**. Symptom: `element arm is not focusable`, 2/2.
+2. `waitCompletionNotice(page)` — the helper signature in
+   `e2e/closureHelpers.ts:685` is `(page, open: boolean)`; with `open`
+   undefined the wait could never be satisfied. Symptom: 12 s timeout.
+3. No `waitCoreState(page, 'confirmation_armed')` between arm and confirm
+   — a latent race every other caller in the repo guards against
+   (`pilot_closure.spec.ts:382-383, 395-396, 404-406, 754-756`;
+   `pilot_closure_capture.spec.ts:143-144`). Added.
+
+After these corrections: `lint:tsc` clean, scoped ESLint clean, and the
+spec passes **twice, independently** (213.7 s and 209.4 s process time).
+
+This matters beyond the spec: the mission's premise that the driver was
+"now probe-gated" and previously tested did not hold, and the first two
+failures would have been easy to misread as a product regression at the
+Core.
+
+### 15.7 Full participant route — automation timing
+
+One complete run, alone on an otherwise quiet machine, real input,
+participant launch mode, `--retries=0 --workers=1`. Two successful runs
+were recorded; the second is quoted, the first in brackets.
+
+| Measure                                                | Value                                                                                                     |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| Automation wall time, Dock to completion notice closed | **199.5 s** [205.2 s]                                                                                     |
+| Deck arrival                                           | 146.4 s [154.1 s]                                                                                         |
+| Station record closed                                  | 152.7 s [160.7 s]                                                                                         |
+| All three feeds up                                     | 180.9 s [188.6 s]                                                                                         |
+| Core stable                                            | 198.5 s [204.1 s]                                                                                         |
+| Completion notice closed                               | 199.5 s [205.2 s]                                                                                         |
+| Events emitted                                         | 154                                                                                                       |
+| Zones traversed                                        | 10 door transitions across 6 distinct zones                                                               |
+| Scheduled windows                                      | **24 scheduled, 24 closed, 0 open**, no never-entered labels                                              |
+| Final Core                                             | `final_core_closed: true`                                                                                 |
+| Item outcomes on this route                            | 5 completed (M05, M07, M09, M10, M20), 2 not-applicable (M08, M11), **19 missing / `participant_absent`** |
+| Idle or technical interruptions                        | none; no runtime error                                                                                    |
+
+**Every scheduled window reached a valid terminal state** (24/24 closed,
+0 open) and the route completed.
+
+**This is automation time and nothing else.** It is not converted into a
+human estimate, and no human completion time is claimed. Against the
+nominal 30-minute study ceiling it is a _provisional engineering
+observation only_: 199.5 s of automation is far under it, but automation
+walks at full speed, never reads, never deliberates, and **engaged only 5
+of 26 items** on this route — the remaining 19 closed as
+`participant_absent`. The planned budget (item-owned 1,040 s + shared
+overhead 420 s + closure 75 s = 1,535 s) describes a route where items are
+actually worked. **A hands-on human timing pilot remains necessary and
+nothing here substitutes for it.**
+
+**Burden-budget discrepancies recorded, not resolved:**
+
+1. `item_owned_active_ms_from_surface_events` = **282.1 s [312.3 s]**,
+   which **exceeds the 199.5 s wall time of the same run.** The reduce
+   (`pilot_full_route_timing.spec.ts:177-181`) sums `metadata.active_ms`
+   across _every_ event carrying the field, with no item filter — it also
+   catches non-scored practice (`src/informationProcessing/tutorial.ts`)
+   and the legacy ambient yard windows (`src/pilot/yardJobs.ts`). It is
+   therefore **not** the ledger's `item_owned_active_seconds` line and must
+   not be read against the 1,040 s budget. The field name overstates what
+   it holds.
+2. The record reflects **one fixed choice set** (`watch: accept, promise:
+accept, readGauge1: true, calibration: true, mast: partial`). Burden
+   varies with M09/M10 acceptance and M20 progress; the artifact carries
+   only the AUTOMATION caveat, not this one.
+3. `coverage.summary.closed` is a **participant-facing display value**:
+   `coverageSchedule.ts:379-393` excludes every `reviewNaming: 'never'`
+   item (M22, M24, M25, M26) from `open`, so those four count as closed
+   regardless of actual status. Read as a coverage statistic it can
+   overstate closure by up to four items.
+4. `pilot_door_used`, on which the whole `zone_sequence` /
+   `door_transitions` record rests, does **not** appear in
+   `docs/research/event-schema.md`. It is unmapped route telemetry, not a
+   canonical event, and is labelled as such wherever quoted.
+
+### 15.8 Screenshot audit and restoration
+
+Capture specs silently overwrite committed evidence. Before any change, a
+path/hash manifest of all modified files was written to the session
+scratchpad and audited:
+
+- **133 modified files at entry, 136 after the Unit 8 capture specs ran.**
+- **100% were `.png` files inside existing `docs/verification/screenshots*`
+  directories.** No non-PNG file and no product file was modified at any
+  point.
+- All 136 were **dimension-identical** to `HEAD`.
+- **None was byte-only churn.** A stdlib PNG decode of all 136 pairs found
+  real pixel differences in every one: median 0.4%-29% of pixels by
+  directory, up to **60.3%** (`screenshots/09-final-core.png`), with max
+  channel deltas to 255.
+- Representative pairs were compared at full resolution. The legacy sets
+  (`screenshots-field-actions`, `-stardew`, `-physical`,
+  `-information-processing`, `-rebuild`, `-concourse-hotfix`) show genuine
+  **Unit 7 presentation applied to pre-Unit-7 evidence** — different
+  avatar sprite, snowfall, prop art, prompt placement. The current-unit
+  sets (`-evidence-led-pilot-v2`, `-professional-pilot`) show the same
+  scene re-rendered at a slightly different camera offset and animation
+  frame — materially equivalent, nondeterministic re-capture.
+
+**Disposition: all 136 restored explicitly to HEAD `0651149`, by explicit
+path list.** `git restore` was never run across the repository; the three
+Unit 8 specs were untouched; no non-PNG modification existed to discard.
+This is right on both counts: the legacy directories are the historical
+evidence _of their own units_, and overwriting them with Unit-7-era
+renders would silently falsify that record; and the two current sets were
+already deliberately regenerated on the final code and committed at
+`0651149` (Unit 7 run #3), so a nondeterministic re-capture adds nothing.
+**No new evidence image is committed by this unit.** The audit was
+repeated after the last capture spec; the tree is clean apart from the
+three specs.
+
+### 15.9 Reviews
+
+Five read-only reviews, at most two concurrent, none permitted to edit,
+run tests or delegate. Each names what it did not reach; none approves
+anything, and none resolved a scientific decision.
+
+- **Scientific measurement integrity (Opus)** — _Concerns found, no
+  blocker._ No scoring, formula, weight, trait label or cut score was
+  created; missing/invalid is never collapsed to a low value; the
+  `hideWorldPrompts` concern was traced and **refuted** (§15.4). MAJORs:
+  the disjointness and M13/M18, M24/M26 gates are near-tautologies; the
+  M25 gate reads one file while a **second, undeclared M25 behavioural
+  family exists in the tree**; "missing never becomes low" asserts prose,
+  not behaviour; "every closure event carries `non_scored`" is one
+  `toContain`; the "runtime unchanged" gate is blind to untracked files;
+  `pilot_full_route_timing` never asserts route completeness and its
+  headline active-time figure is not the construct its name implies.
+  MINORs: reduced motion varies rendered stimulus in three measured
+  windows with no control variable recorded; `pilot_door_used` is
+  load-bearing but unmapped. _Could not read the Unit 7 diff (no git
+  tool) — its scope claims are reconstructed from §14.2 and in-tree
+  markers; did not read the external battery or the workbook, so the
+  16/7/3 split and the six-model partition are confirmed only for internal
+  self-consistency._
+- **Test quality and failure-classification validity (Sonnet)** —
+  _Classifications directionally sound, statistically weak._ Confirmed
+  bluntly that one baseline pass is near-zero evidence and that none of
+  the three "regression" candidates clears a bar the "inherited" rows did
+  not. Supplied the two candidate mechanisms in §15.4 and found the third
+  latent defect in the timing spec. Confirmed `m02_overlay_proof` has no
+  assertion weaker than its name. _Ran no test; all regression/flake calls
+  are diff-based plausibility, not reproductions. Did not review
+  `presentation_integration.spec.ts` or six other files in the same
+  commit._
+- **Participant route and gameplay coherence (Opus)** — _Usable with noted
+  friction; no blocker._ The route is navigable end to end by a first-time
+  adult: one objective line, one next-hop beacon computed by BFS so beacon
+  and door always agree, directional signage in every zone, and a
+  stage-keyed redirect on every NPC so a lost participant can always be
+  re-pointed. Backtracking is **justified, not busywork** — two of the
+  three Concourse re-entries are forced pass-throughs (Workshop and Deck
+  each have exactly one door) and the single genuine return leg is
+  materially changed on arrival. **No dead ends and no unrecoverable
+  state**; every gate gives a message and a named location, carried debris
+  is dropped rather than lost, belt-full recoveries become caches. Copy
+  audit clean: no praise, no trait words, no exclamation marks in
+  participant copy. MAJORs recorded: the mission log is the _designated_
+  re-show surface for accepted obligations but its `M` key is taught
+  nowhere in any participant-facing string (the controls panel starts
+  hidden in pilot zones); an M05 reduced-motion asymmetry between the two
+  matched occasions (Concourse lamp flickers unconditionally, Yard cable
+  flag is held static); three spawn points land **inside** a door's 72 px
+  interaction radius (Workshop 64 px, Concourse-from-Workshop 64 px,
+  Deck-from-Chamber 56 px) so a reflex SPACE on arrival walks straight
+  back out — a rule `DockScene.ts:80-81` already applies deliberately
+  elsewhere; and the route has **no ending for the participant** (no
+  beacon, no return, no instruction at `complete`). MINORs: stale
+  objective on arrival at the Workshop; Kai promises a report-back the
+  route never asks for; two competing first instructions at the Dock; four
+  consecutive dialogue cards at first NPC contact; 10 px world chips
+  carrying operational state. _Static reading only — no runtime evidence;
+  opened one screenshot; did not read the 26 window modules' internal
+  surfaces, so interaction quality inside the work surfaces is
+  unassessed._
+- **Participant burden and assessment usability (Opus)** — _Usable with
+  noted friction for an uninterrupted single sitting._ **The 1,040 s
+  item-owned figure reconciles exactly** — the 26 per-item
+  `active_seconds` sum to 1040, the three zero-second items are precisely
+  the three questionnaire-primary ones, and the constant is mirrored at
+  `src/pilot/evidenceLedger.ts:147` (independently recomputed and
+  confirmed). Burden is concentrated by **episode, not by item**: no
+  single item exceeds M13's 90 s, but Episode 3 (Signal Analysis) is 235 s
+  of continuous seated reasoning in one room with no traversal relief, at
+  roughly the 10-15 minute mark and immediately before the physically
+  heaviest episode; Episode 4 is 260 s. **27-30 min is not demonstrated
+  and the slack is not real**: 1,535 s is 25.6 min, leaving 85 s (5.5%)
+  under the median target — inside the noise of one participant
+  re-reading two prompts. The ledger says so itself
+  (`burden_budget.status`: "Planning estimate only - requires human
+  pilot"). Most likely overruns, in order: the open-ended persistence
+  items M19/M23/M24/M26 (205 s budgeted, uncapped **by construction** —
+  the stopping decision _is_ the measurement, so no burden fix can bound
+  them without changing what is measured); M14 budgeted at 65 s for six
+  messages, three gauges, twelve discrete assignment acts and a submit
+  (≈5 s per act including first-time reading); and traversal at ~28 s per
+  stage across 15 stages. Found **no** unskippable text wall, forced
+  dialogue chain or mandatory animation wait; the opening is 7.5 s and
+  skippable, and `ItemWindow.pause/resume` correctly excludes
+  hidden-surface time from active-time accounting. _Static reading of nine
+  files; no runtime evidence; did not read M13's implementation — the
+  single longest item — so cannot say whether 90 s fits it._
+- **Visual professionalism and adult-assessment suitability (Opus)** —
+  _Readable with noted defects; no blocker; not yet credible as a finished
+  instrument._ The split is clean: the **panels** are professional
+  (monospace, desaturated, restrained cyan, defensive closure copy), the
+  **world** is not — the participant's first frame is flat placeholder
+  art, and the utility bot reads as a cartoon mascot with lamp-eyes.
+  **Hard constraint holds: no score, trait label, praise, performance
+  judgement, item id or questionnaire wording appears in any frame
+  inspected**; all visible identifiers are in-fiction (`S-14`, `WO-11`,
+  `MAST 04`). MAJORs, three of which I verified directly in
+  `23-station-status-changed.png`: the Concourse north-door leaf occludes
+  the middle of the station-status chip; two HUD chips overprint each
+  other; the Utility Deck systems board is occluded by its own decor in
+  every deck frame (ledger V28 records this as fixed — **it is not fixed
+  on disk**); modal overlays leave world chips and the belt caption
+  undimmed (V1/V12/V34 residual on the dialogue/notice path); prompt and
+  name chip land on top of the door they describe (V35 solved "prompt over
+  avatar" and reintroduced "prompt over target"); the avatar spawns over
+  the laboratory phase display; the M24 action cue is clipped at the right
+  canvas edge on a **timed** task; and the Records Workshop gives ~16
+  near-identical props and ~12 floating labels with exactly one approach
+  marker, so a first-time participant cannot tell what is usable. Also
+  confirmed: `INCIDENT DESK` is duplicated in one room, and the `▼ DOCK`
+  exit label is clipped by the hotbar. **No black band found** in any
+  frame. Environment note: the dev GitHub-corner wedge appears in _every_
+  frame in both sets and collides with objective text in three; V27 says
+  the participant bundle strips it, which this evidence set cannot
+  confirm. Evidence hygiene: `15-decoder-bank.png` and
+  `30-shift-complete.png` no longer show what their filenames claim.
+  _Inspected 21 of 58 v2 frames and 9 of 30 professional-pilot frames;
+  stills cannot settle any animated behaviour; every promoted asset
+  remains PROVISIONAL, MODEL-SELECTED, NOT HUMAN-APPROVED and nothing in
+  the review clears one._
+
+### 15.10 Unresolved findings carried out of Unit 8
+
+**Product-code, unresolved (no fix attempted here):**
+
+- **U8-1 (MAJOR, unresolved).** Three specs fail twice on final and pass
+  once on baseline — `inventory_prep_logging` "NEXT-08 coherence",
+  `pipe_diagnosis_setback` "manifold rebuild...", `magnet_salvage_ip`
+  "recycler rig / M24 window". Not proven to be regressions; not cleared
+  either. Repair brief in §15.11.
+- **U8-2 (MAJOR, unresolved, scientific).** `src/pilot/yardJobs.ts:37-69`
+  declares complete behavioural families `proto_m22_housing_*` (7 events)
+  and `proto_m25_yardpump_*` for **M22 (STRONG)** and **M25
+  (questionnaire-primary / external pending)**. Neither prefix is the
+  ledger-declared family (`proto_m22_report_`, `proto_m25_probe_`), so
+  `primaryFamilyPrefixes()` — and therefore the disjointness gate — never
+  sees them. `closureSession.ts:274-293` still writes censored records
+  against both ids at record closure. Verified: the only importer is
+  `closureSession.ts`, no scene opens these windows, so they are
+  unreachable on the v2 route — but that mitigation is a code comment and
+  an absent call site, **not an assertion**, and nothing would notice a
+  future re-hosting. An export could otherwise carry
+  `proto_m25_yardpump_*` records for an item whose ledger entry reads
+  `active_seconds: 0`.
+- **U8-3 (MINOR, unresolved).** `prefers-reduced-motion` changes the
+  rendered stimulus of measured exterior windows (snowfall alpha 0.3 vs
+  0.55, static vs animated) and is recorded nowhere in `src/systems`, so
+  it cannot be modelled or excluded post hoc.
+- **U8-4 (INFORMATIONAL, pre-existing).** `RoomScene.ts:2387-2392`
+  short-circuits `JustDown(space) || JustDown(interactKeyE)`; because
+  `JustDown` consumes the flag it reads, SPACE and E pressed in the same
+  frame can leak a second contextual interact on the next frame. Marked
+  "Unit 1", not introduced by Unit 7, not covered by the new M02 spec
+  (which tests the two keys in separate sessions).
+- **U8-7 (MAJOR, unresolved, measurement).** `noteM09ReminderLogViewed()`
+  (`src/pilot/windows/m09MonitorWatch.ts:184`) is the declared
+  reminder-exposure **control variable** for M09/M10. Verified: it is
+  **defined and never called anywhere in `src/` or `e2e/`.** It will
+  therefore read 0 for every participant, while actual mission-log
+  exposure genuinely varies — and varies with an undiscoverable `M` key
+  taught in no participant-facing string. A control variable that is
+  constant by construction cannot control for anything.
+- **U8-8 (MAJOR, unresolved, participant-facing).** Three spawn points sit
+  inside the 72 px interaction radius of the door just used (Records
+  Workshop 64 px, Concourse-from-Workshop 64 px, Deck-from-Chamber 56 px).
+  A reflex SPACE on arrival re-triggers the door. `DockScene.ts:80-81`
+  already documents and applies the opposite rule deliberately, so this is
+  an inconsistency, not an unknown.
+- **U8-9 (MAJOR, unresolved, visual).** The Utility Deck systems-board
+  readout is occluded by its own decor in every deck frame. The Unit 7
+  ledger records V28 as fixed in the consolidated correction round; the
+  committed frames show it is **not** fixed. The ledger entry and the
+  evidence disagree, and the evidence is what a reader will cite.
+- **U8-10 (MINOR, unresolved, evidence hygiene).** Two committed frames no
+  longer show what their filenames claim
+  (`screenshots-professional-pilot/15-decoder-bank.png` shows the signal
+  laboratory; `30-shift-complete.png` shows the deck at `feeds 0/3 up`).
+  Same class as the stale frames V49 deleted, surviving under live names.
+  Not corrected here: regenerating them would re-open the churn §15.8
+  deliberately closed.
+- **U8-11 (INFORMATIONAL, participant-facing, owner call).** The Core
+  operational review shows the participant a card grid reading `Station
+tasks recorded 5 · Recorded with limited evidence 0 · Not observed 18 ·
+Technical state recorded 0` (`CoreChamberScene.ts:583-614`), above the
+  disclaimer "Data-quality status only. Nothing here is a result." Each
+  word is neutral; the juxtaposition is legible to an adult as "5 of 23".
+  Compounding it, the pre-closure count is knowingly incomplete — the four
+  `reviewNaming: 'never'` items are excluded from `open`
+  (`coverageSchedule.ts:380-393`) — and the not-yet-visited list is capped
+  at three plus "and N more". This is OD-3 / OD-5 and is **not** resolved
+  here; the experience evidence argues only against shipping the current
+  middle position (numeric, incomplete, and not actionable).
+
+- **U8-12 (MAJOR, unresolved, measurement).** `exteriorWindows.ts` calls
+  `w.setComprehension('passed')` **unconditionally at 10 sites** (lines
+  283, 297, 457, 469, 512, 528, 663, 679, 794, 806 — verified), while the
+  ledger's validity gates for those items require "comprehension
+  confirmed" (`evidenceLedger.ts:1059`) and "Scanner tutorial passed"
+  (`:1022`). Comprehension is therefore **asserted, not checked**: those
+  gates are currently unverifiable, and adding real checks would grow the
+  burden budget by an unbudgeted amount.
+- **U8-13 (MAJOR, unresolved, measurement).** The opportunity id
+  `proto_m15_layered_cipher` is declared in **two** modules —
+  `src/informationProcessing/m15CausalModel.ts:52` (`M15C_OPPORTUNITY_ID`)
+  and `src/informationProcessing/m15LayeredCipher.ts:69`
+  (`M15_OPPORTUNITY_ID`) — verified. If both are reachable, M15's 65 s
+  becomes ~130 s and the participant works two near-identical cipher
+  consoles, which the ledger explicitly warns against ("Avoid repeated
+  near-identical consoles", `evidenceLedger.ts:761`); if only one is
+  reachable, the other is dead code carrying a live item id. Needs a
+  runtime route trace, not a guess.
+- **U8-14 (MAJOR, pre-existing, deployment risk).** A page reload destroys
+  the session: `pilotRoute.ts:8-9` states outright that "a reload is a new
+  session", and route stage, mission log, coverage register and every open
+  `ItemWindow` are module-level singletons with no persistence. At minute
+  22 an accidental refresh, tab crash or sleep-killed WebGL context
+  returns the participant to the Dock with everything lost. Window closure
+  as `participant_absent` fires only at the Utility Deck review, so an
+  abandonment before `deck_closure` leaves every window non-terminal with
+  no closure event. **Pre-existing and not introduced by Unit 7 or 8** —
+  and `adversarial_reload_partial_state` (1/1 green in this unit) tests
+  that partial state is handled _safely_, not that it is recoverable. In a
+  27-minute assessment this is the largest single drop-out risk in the
+  build and is a deployment/study-owner decision, not a bug to patch here.
+
+**Test-suite, unresolved:**
+
+- **U8-5.** `repair_tool_retrieval` and `connected_participant_journeys`
+  both exceed a 900 s deadline and could not be classified. Their observed
+  assertion failures remain open. Neither is claimed to pass.
+- **U8-6.** Five gates in `final_scientific_gates.spec.ts` are weaker than
+  their names (§15.5). The underlying properties were verified by hand
+  where cited; the gates were **not** strengthened in this unit, because
+  doing so is a measurement-design decision, not a verification task.
+
+**Study-owner decisions surfaced, none resolved:** item-level collapse
+precedence (`STATUS_RANK`, `coverageSchedule.ts:286-294`) has no cited
+authority and is the kind of rule `scoring-plan.md` governs; whether the
+runtime coverage record should carry STRONG vs CONDITIONAL rather than
+collapsing both to `PRIMARY-CANDIDATE` (`coverageSchedule.ts:186-190`);
+disposition of the legacy yard M22/M25 windows (remove / declare as
+legacy / keep with an unreachability assertion); whether reduced motion is
+recorded, forced off, or accepted as unmodelled variation; and whether the
+full-route artifact should split `active_ms` by item-owned / shared /
+closure or rename the single figure. Unit 7's OD-7 to OD-10 remain open
+and were not touched.
+
+### 15.11 Bounded repair brief for the next unit (U8-1)
+
+Not started here, deliberately. Scope it as one unit, **investigation
+first, no fix without a reproduction**:
+
+1. Reproduce under control. Run each of the three specs **5x on final and
+   5x on baseline `897f5f4`**, isolated, `--retries=0 --workers=1`, quiet
+   machine. Five-and-five is the minimum that makes a rate comparison mean
+   anything; the 2-vs-1 evidence in §15.3 does not.
+2. If `magnet_salvage_ip` M24 confirms a rate difference, test the stated
+   mechanism directly: run it with `prefers-reduced-motion` forced on,
+   which suppresses the snowfall animation
+   (`ExteriorRecoveryYardScene.ts:1916-1918`). A rate that recovers under
+   reduced motion localises the cause to the added animation load.
+3. If `inventory_prep_logging` "NEXT-08 coherence" confirms, bisect the
+   `WorkSurfaceScene.ts` layout changes (help font 10 to 11 px,
+   `wordWrap`, text origin `0.5` to `0.5,1`, anchor y `height-14` to
+   `height-6`) against the `__minigameSurface` probe read.
+4. `pipe_diagnosis_setback` has no candidate mechanism in the Unit 7 diff.
+   Treat it as suspected pre-existing flake unless step 1 shows a clear
+   rate difference.
+5. Allowed files: only those the reproduction implicates. **No product
+   change without a confirmed rate difference**; a fix that cannot be
+   shown to move the failure rate is not a fix.
+
+### 15.12 Gates
+
+`npm run lint:tsc` pass; `npm run build` pass (2.11 s); scoped ESLint on
+the three Unit 8 specs pass (no issues); `git diff --check` clean;
+`node scripts/claude/verify-unit.mjs` **PASS** against the exact intended
+paths — every change inside the allowlist, nothing else in the tree.
+
+### 15.13 Confirmations
+
+- **No product source file was modified.** The only code change is
+  `e2e/pilot_full_route_timing.spec.ts` (three test-only corrections,
+  §15.6). The 136 test-overwritten PNGs were restored to `0651149`.
+- No canonical event name, scoring formula, weight, trait label, cut
+  score, norm or Q-item mapping was created or changed. All identifiers
+  remain `proto_*` / provisional.
+- `event-schema.md`, `scoring-plan.md` and `src/systems` are
+  **byte-identical to base `0e1a8aa`** (verified directly, not only via
+  the gate). The workbook, the M01-M26 ledger, `ScoringManager`,
+  `EventLogger`, `SessionState`, `QualtricsBridge`, `DataQualityTracker`
+  and `ResearchRuntime` are untouched by Units 7-8.
+- **Missing / invalid was never interpreted as a low value**, and the 19
+  `participant_absent` items from the timing run are recorded as missing,
+  never as zero or as poor performance.
+- No questionnaire wording appears in any participant-facing string
+  reviewed; no item id is shown to the participant.
+- M25 remains questionnaire-primary with external administration pending;
+  M08 and M11 remain questionnaire-primary; the Utility/Core closure
+  remains non-scored.
+- **Not claimed:** that all 418 sweep tests passed; that any inherited
+  failure was repaired; any human completion time; criterion validity;
+  construct validity; equivalence to the source questionnaires; or
+  readiness beyond the evidence above. This remains a professional
+  research prototype that establishes no validity, reliability, norms or
+  cut scores.
+- Nothing was pushed, merged, tagged, deployed, PR'd or removed. Neither
+  worktree was removed and no branch was deleted. The baseline worktree
+  was read-only throughout.
