@@ -39,6 +39,64 @@ what this unit can and cannot do.
 - **No Qualtrics redirect.** Completion still only _previews_ the return
   URL in the developer console. Nothing in this unit navigates.
 
+## Lossless collection (Pilot V3 Unit 1)
+
+All of this is PROVISIONAL(INT-2 / P0-3 / P1-9): the payload additions and the
+persistence mechanism are recorded for the research owner's event-schema and
+P0-3 rulings and can be renamed or reversed without touching raw events.
+
+- **Every raw event is numbered.** `EventLogger` stamps each event with a
+  per-identity monotonic `sequence` and the page load that produced it
+  (`page_load_index`). Callers cannot set either field. These are integrity
+  metadata, never measurement variables — `page_load_index` is deliberately
+  not named like the canonical task-attempt field `attempt_number`.
+- **Durable mirror on the device.** Each event is also written synchronously
+  into a chunked `localStorage` store keyed by launch-mode class and identity
+  (`src/systems/EventStore.ts`, prefix `research-events:v1:<mode>:…`). A
+  reload, closed tab or renderer crash therefore loses nothing that was
+  logged **on the device**; whether it reaches the dataset still depends on a
+  later export (see "Known limitations"). Appends rewrite only the tail chunk
+  (100 events), so the cost per event is bounded.
+- **Test and participant buffers never mix.** A `launch_mode=test` dry run
+  and a participant launch of the same identity use different keys, so a
+  dry run's events can never surface in a participant export.
+- **Recovered records are identity-checked.** On open, stored records whose
+  own `participant_id` / `game_session_id` do not match the launch identity
+  are rejected and counted (`foreign_records_rejected`), so a reused link on
+  a shared device cannot attach one person's events to another's export.
+- **Prior page loads are carried separately.** When the same identity loads
+  again, the earlier page load's events are recovered and exported as
+  `payload.prior_page_load_events`; `payload.raw_events` remains the current
+  page load's log, which is what the summary is computed from — a restart is
+  visible to the analyst and never double-counted. Note that
+  `elapsed_seconds` restarts at 0 on every page load; only `timestamp_ms`
+  is comparable across page loads.
+- **One export per page load.** The frozen export envelope is scoped to a
+  page load: a retry resends identical bytes (200 duplicate); a reload of the
+  same identity submits a new export with a new `export_id` that carries the
+  earlier events as `prior_page_load_events`.
+- **Integrity block.** `payload.event_integrity` reports `page_load_index`,
+  `first_sequence` / `last_sequence`, `event_count`,
+  `prior_page_load_event_count`, `expected_event_count` (= `last_sequence`),
+  `sequence_gap_count` (leading gap included), `sequence_duplicate_count`, the
+  durable store's health (`durable`, `memory_only`, `degraded`),
+  `durable_event_count`, `recovered_from_chunks`, `foreign_records_rejected`
+  and `store_evictions`. A lossless export has zero gaps, zero duplicates,
+  zero rejections and current + prior counts equal to `expected_event_count`.
+- **Storage unavailable.** If `localStorage` is absent, blocked or throws, the
+  in-memory log runs unchanged and the export reports
+  `durable_store: "memory_only"`; a quota failure mid-session evicts other
+  retained identities once (counted in `store_evictions`), retries, and
+  otherwise reports `degraded`.
+- **Retention and cleanup.** The device keeps at most the eight most recent
+  identities and removes any identity untouched for 30 days at the next
+  launch. Acknowledged buffers are cleared by the completion pipeline
+  (Unit 2). Manual cleanup on a shared device: clear the site's storage in
+  the browser (Settings → Privacy → site data for the game's origin) between
+  participants; the governance checklist row 2.6 no longer holds
+  automatically.
+- Runtime probe (DEV only): `window.researchRuntime.getEventIntegrity()`.
+
 ## Required environment variables
 
 Copy `.env.example` into an untracked `.env.local` (gitignored) and fill in:

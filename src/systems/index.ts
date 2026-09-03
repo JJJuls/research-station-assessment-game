@@ -1,5 +1,6 @@
 export * from './DataQualityTracker';
 export * from './EventLogger';
+export * from './EventStore';
 export * from './QualtricsBridge';
 export * from './ResearchExportClient';
 export * from './ResearchRuntime';

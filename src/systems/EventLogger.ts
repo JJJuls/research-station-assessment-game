@@ -29,13 +29,73 @@ export interface RawGameEvent {
   new_state?: string;
   success?: boolean | null;
   metadata?: Record<string, unknown>;
+
+  // Pilot V3 (Unit 1) integrity metadata — additive, assigned by the logger
+  // itself, never by a caller. PROVISIONAL(P1-9): adding fields to the
+  // canonical payload is an event-schema decision that stays open; these
+  // two are integrity metadata only. `sequence` is monotonic per session
+  // identity across page loads (the durable store hands the logger its
+  // start value); `page_load_index` says which page load produced the
+  // event — deliberately NOT named like `attempt_number`, the canonical
+  // task-attempt measurement field, so the two can never be confused in
+  // a persistence analysis. Neither is a measurement: they exist so an
+  // exported log can be proven complete.
+  sequence?: number;
+  page_load_index?: number;
 }
+
+export type EventSink = (event: RawGameEvent) => void;
 
 export class EventLogger {
   private events: RawGameEvent[] = [];
+  private nextSequence = 1;
+  private pageLoadIndex = 1;
+  private sink: EventSink | null = null;
+
+  /**
+   * Continues numbering from an earlier page load of the same identity.
+   * Only ever lowers nothing: a start below the current counter is ignored
+   * so a sequence number can never be reused within a page lifetime.
+   */
+  configureSequencing(nextSequence: number, pageLoadIndex: number) {
+    if (Number.isFinite(nextSequence) && nextSequence > this.nextSequence) {
+      this.nextSequence = Math.floor(nextSequence);
+    }
+
+    if (Number.isFinite(pageLoadIndex) && pageLoadIndex >= 1) {
+      this.pageLoadIndex = Math.floor(pageLoadIndex);
+    }
+  }
+
+  /**
+   * Installs the durable mirror. The sink receives a defensive copy of each
+   * stored event AFTER it is in memory, and a throwing sink can never lose
+   * or block the in-memory append.
+   */
+  setSink(sink: EventSink | null) {
+    this.sink = sink;
+  }
+
+  getNextSequence() {
+    return this.nextSequence;
+  }
 
   log(event: RawGameEvent) {
-    this.events.push(copyEvent(event));
+    const stored = copyEvent(event);
+
+    stored.sequence = this.nextSequence;
+    stored.page_load_index = this.pageLoadIndex;
+    this.nextSequence += 1;
+    this.events.push(stored);
+
+    if (this.sink !== null) {
+      try {
+        this.sink(copyEvent(stored));
+      } catch {
+        // The durable mirror is a safety net; its failure is reported via
+        // the store's own health, never by breaking the append-only log.
+      }
+    }
   }
 
   getEvents() {

@@ -57,6 +57,7 @@ interface EnvelopeLike {
   participant_id: string;
   game_session_id: string;
   launch_mode: string;
+  page_load_index: number;
   client_created_at: string;
   payload: {
     game_version: string;
@@ -65,6 +66,9 @@ interface EnvelopeLike {
     raw_events: unknown[];
     data_quality: Record<string, unknown>;
     technical_errors: Record<string, unknown>;
+    page_load_index: number;
+    prior_page_load_events: unknown[];
+    event_integrity: Record<string, unknown>;
   };
 }
 
@@ -199,6 +203,18 @@ function getLastExportResult(page: Page): Promise<ExportResultLike | null> {
   );
 }
 
+function getEventIntegrity(page: Page): Promise<Record<string, unknown>> {
+  return page.evaluate(() =>
+    (
+      window as unknown as {
+        researchRuntime: {
+          getEventIntegrity: () => Record<string, unknown>;
+        };
+      }
+    ).researchRuntime.getEventIntegrity(),
+  );
+}
+
 function waitForExportResult(page: Page) {
   return page.waitForFunction(
     () =>
@@ -255,13 +271,17 @@ test.describe('research export (test mode only)', () => {
       'export_id',
       'game_session_id',
       'launch_mode',
+      'page_load_index',
       'participant_id',
       'payload',
     ]);
     expect(Object.keys(envelope.payload).sort()).toEqual([
       'asset_set_version',
       'data_quality',
+      'event_integrity',
       'game_version',
+      'page_load_index',
+      'prior_page_load_events',
       'raw_events',
       'summary',
       'technical_errors',
@@ -301,6 +321,37 @@ test.describe('research export (test mode only)', () => {
         .technical_error_count as number,
     });
 
+    // Pilot V3 Unit 1 - losslessness fields: a first page load is attempt
+    // 1 with no prior events, every raw event is numbered 1..n without a
+    // gap, and the durable mirror holds exactly the exported log.
+    const rawEvents = envelope.payload.raw_events as {
+      sequence: number;
+      page_load_index: number;
+    }[];
+
+    expect(envelope.page_load_index).toBe(1);
+    expect(envelope.payload.page_load_index).toBe(1);
+    expect(envelope.payload.prior_page_load_events).toEqual([]);
+    expect(rawEvents.map((event) => event.sequence)).toEqual(
+      rawEvents.map((_, index) => index + 1),
+    );
+    expect(rawEvents.every((event) => event.page_load_index === 1)).toBe(true);
+    expect(envelope.payload.event_integrity).toEqual({
+      page_load_index: 1,
+      first_sequence: 1,
+      last_sequence: rawEvents.length,
+      event_count: rawEvents.length,
+      prior_page_load_event_count: 0,
+      expected_event_count: rawEvents.length,
+      sequence_gap_count: 0,
+      sequence_duplicate_count: 0,
+      durable_store: 'durable',
+      durable_event_count: rawEvents.length,
+      recovered_from_chunks: false,
+      foreign_records_rejected: 0,
+      store_evictions: 0,
+    });
+
     // No Qualtrics redirect: the return URL stays a console preview and the
     // page never navigates away from the game.
     expect(completion.returnUrl).toContain('https://example.org/return');
@@ -308,7 +359,7 @@ test.describe('research export (test mode only)', () => {
     expect(page.url()).toContain('launch_mode=test');
   });
 
-  test('a retry and a reload both reuse the frozen export_id and are acknowledged as duplicates (200)', async ({
+  test('a retry reuses the frozen export_id (200 duplicate); a reload submits a new export carrying the earlier page load', async ({
     page,
   }) => {
     const captured: CapturedRequest[] = [];
@@ -341,19 +392,38 @@ test.describe('research export (test mode only)', () => {
     expect(retry.http_status).toBe(200);
     expect(retry.export_id).toBe(first?.export_id);
 
-    // Reload (same tab, same session identity): the envelope survives in
-    // sessionStorage, so the resend is byte-identical — never a 409.
+    // Reload (same tab, same session identity): PROVISIONAL(INT-2.5) — the
+    // frozen envelope is scoped to one page load, so the reload builds a
+    // NEW export (new export_id, 201) that carries the earlier page load's
+    // events separately instead of resending the stale pre-reload bytes
+    // (scientific review F5). Never a 409: an export_id is never reused
+    // for different bytes.
     await bootGame(page, launch);
 
     const afterReload = await submitSessionExport(page);
 
     expect(afterReload.status).toBe('acknowledged');
-    expect(afterReload.duplicate).toBe(true);
-    expect(afterReload.export_id).toBe(first?.export_id);
+    expect(afterReload.duplicate).toBe(false);
+    expect(afterReload.http_status).toBe(201);
+    expect(afterReload.export_id).not.toBe(first?.export_id);
 
     expect(captured).toHaveLength(3);
     expect(captured[1].body).toBe(captured[0].body);
-    expect(captured[2].body).toBe(captured[0].body);
+
+    const firstEnvelope = JSON.parse(captured[0].body) as EnvelopeLike;
+    const reloadEnvelope = JSON.parse(captured[2].body) as EnvelopeLike;
+
+    expect(reloadEnvelope.page_load_index).toBe(2);
+    expect(reloadEnvelope.payload.prior_page_load_events).toHaveLength(
+      firstEnvelope.payload.raw_events.length,
+    );
+
+    // A retry after the reload is again the frozen second envelope.
+    const retryAfterReload = await submitSessionExport(page);
+
+    expect(retryAfterReload.duplicate).toBe(true);
+    expect(retryAfterReload.export_id).toBe(afterReload.export_id);
+    expect(captured[3].body).toBe(captured[2].body);
   });
 
   test('distinct completed sessions receive distinct export identifiers', async ({
@@ -608,6 +678,167 @@ test.describe('research export (test mode only)', () => {
     expect(retry.export_id).toBe(first?.export_id);
     expect(captured).toHaveLength(2);
     expect(captured[1].body).toBe(captured[0].body);
+  });
+
+  test('a reload of the same identity loses nothing: prior events are carried separately and the sequence continues', async ({
+    page,
+  }) => {
+    const captured: CapturedRequest[] = [];
+
+    await installExportConfig(page);
+    await installIngestSimulator(page, captured);
+
+    const launch = {
+      participant_id: 'E2E_EXPORT_P9',
+      game_session_id: 'E2E_EXPORT_S9',
+      condition: 'pilot',
+      game_version: 'e2e',
+      launch_mode: 'test',
+    };
+
+    await bootGame(page, launch);
+
+    const firstLoad = await getEvents(page);
+    const firstIntegrity = await getEventIntegrity(page);
+
+    expect(firstIntegrity).toMatchObject({
+      page_load_index: 1,
+      prior_page_load_event_count: 0,
+      durable_store: 'durable',
+      durable_event_count: firstLoad.length,
+    });
+
+    // Reload WITHOUT completing: a crash/refresh mid-session. Nothing
+    // logged before the reload may be lost.
+    await bootGame(page, launch);
+
+    const secondLoad = await getEvents(page);
+    const secondIntegrity = await getEventIntegrity(page);
+
+    expect(secondIntegrity).toMatchObject({
+      page_load_index: 2,
+      prior_page_load_event_count: firstLoad.length,
+      sequence_gap_count: 0,
+      sequence_duplicate_count: 0,
+      foreign_records_rejected: 0,
+      durable_store: 'durable',
+    });
+    expect(
+      (secondLoad as { sequence: number; page_load_index: number }[])[0],
+    ).toMatchObject({ sequence: firstLoad.length + 1, page_load_index: 2 });
+
+    await completeDebugSession(page);
+    await waitForExportResult(page);
+
+    const envelope = JSON.parse(captured[0].body) as EnvelopeLike;
+    const prior = envelope.payload.prior_page_load_events as {
+      sequence: number;
+      page_load_index: number;
+      event_type: string;
+    }[];
+    const current = envelope.payload.raw_events as {
+      sequence: number;
+      page_load_index: number;
+    }[];
+
+    expect(envelope.payload.page_load_index).toBe(2);
+    expect(prior).toHaveLength(firstLoad.length);
+    expect(prior.map((event) => event.sequence)).toEqual(
+      firstLoad.map((_, index) => index + 1),
+    );
+    expect(prior.every((event) => event.page_load_index === 1)).toBe(true);
+    expect(prior[0].event_type).toBe('session_start');
+    expect(current[0].sequence).toBe(firstLoad.length + 1);
+    expect(current.every((event) => event.page_load_index === 2)).toBe(true);
+    expect(envelope.payload.event_integrity).toMatchObject({
+      page_load_index: 2,
+      first_sequence: 1,
+      last_sequence: firstLoad.length + current.length,
+      expected_event_count: firstLoad.length + current.length,
+      sequence_gap_count: 0,
+      sequence_duplicate_count: 0,
+      durable_event_count: firstLoad.length + current.length,
+    });
+    // The summary is still computed from the current attempt only: the
+    // exported raw_events array is exactly the current page load's log.
+    expect(current).toHaveLength(secondLoad.length + 1);
+  });
+
+  test('blocked localStorage keeps every in-memory event and reports memory_only', async ({
+    page,
+  }) => {
+    const captured: CapturedRequest[] = [];
+
+    await installExportConfig(page);
+    await installIngestSimulator(page, captured);
+    await page.addInitScript(() => {
+      Object.defineProperty(window, 'localStorage', {
+        get() {
+          throw new Error('localStorage disabled for this e2e test');
+        },
+      });
+    });
+
+    await bootGame(page, {
+      participant_id: 'E2E_EXPORT_P10',
+      game_session_id: 'E2E_EXPORT_S10',
+      condition: 'pilot',
+      game_version: 'e2e',
+      launch_mode: 'test',
+    });
+
+    const events = await getEvents(page);
+
+    expect(events.length).toBeGreaterThanOrEqual(4);
+
+    await completeDebugSession(page);
+    await waitForExportResult(page);
+
+    const envelope = JSON.parse(captured[0].body) as EnvelopeLike;
+    const raw = envelope.payload.raw_events as { sequence: number }[];
+
+    expect(raw.length).toBe(events.length + 1);
+    expect(raw.map((event) => event.sequence)).toEqual(
+      raw.map((_, index) => index + 1),
+    );
+    expect(envelope.payload.event_integrity).toMatchObject({
+      durable_store: 'memory_only',
+      durable_event_count: 0,
+      sequence_gap_count: 0,
+    });
+  });
+
+  test('a test-mode dry run and a non-test launch of the same identity never share a buffer', async ({
+    page,
+  }) => {
+    const launch = {
+      participant_id: 'E2E_EXPORT_P11',
+      game_session_id: 'E2E_EXPORT_S11',
+      condition: 'pilot',
+      game_version: 'e2e',
+    };
+
+    await bootGame(page, { ...launch, launch_mode: 'test' });
+
+    const testLoad = await getEvents(page);
+
+    // Same identity, no test signal: a fresh buffer — page load 1, nothing
+    // recovered from the dry run (PS-2 separation).
+    await bootGame(page, launch);
+
+    expect(await getEventIntegrity(page)).toMatchObject({
+      page_load_index: 1,
+      prior_page_load_event_count: 0,
+      foreign_records_rejected: 0,
+    });
+
+    // Back in test mode the dry run's buffer is still intact.
+    await bootGame(page, { ...launch, launch_mode: 'test' });
+
+    expect(await getEventIntegrity(page)).toMatchObject({
+      page_load_index: 2,
+      prior_page_load_event_count: testLoad.length,
+    });
   });
 
   test('participant-style completion through the Final Core never calls the transport', async ({

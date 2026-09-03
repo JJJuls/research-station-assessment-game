@@ -2,6 +2,8 @@ import { ASSET_SET_VERSION } from '../constants';
 import { DataQualityTracker } from './DataQualityTracker';
 import type { RawGameEvent } from './EventLogger';
 import { EventLogger } from './EventLogger';
+import type { EventIntegrity } from './EventStore';
+import { computeEventIntegrity, DurableEventStore } from './EventStore';
 import { QualtricsBridge } from './QualtricsBridge';
 import type {
   ResearchExportConfig,
@@ -24,6 +26,7 @@ declare global {
     researchRuntime?: {
       completeDebugSession: () => DebugCompletionResult;
       exportEventsJSON: () => string;
+      getEventIntegrity: () => EventIntegrity;
       getEvents: () => RawGameEvent[];
       getLastExportResult: () => ResearchExportResult | null;
       getMissionState: () => ReturnType<SessionState['getMissionState']>;
@@ -52,6 +55,13 @@ class ResearchRuntime {
   readonly sessionState = new SessionState();
 
   private exportClient: ResearchExportClient | null = null;
+  private eventStore: DurableEventStore | null = null;
+  private priorPageLoadEvents: RawGameEvent[] = [];
+  private pageLoadIndex = 1;
+  private storeOpenFacts = {
+    recovered_from_chunks: false,
+    foreign_records_rejected: 0,
+  };
   private hasStarted = false;
 
   start() {
@@ -63,6 +73,11 @@ class ResearchRuntime {
     this.dataQualityTracker.start();
 
     const metadata = this.sessionState.getMetadata();
+
+    // Pilot V3 (Unit 1): durable mirror of the raw log, opened BEFORE the
+    // first event so session_start itself is persisted and numbered after
+    // anything an earlier page load of the same identity already stored.
+    this.openEventStore(metadata);
 
     this.eventLogger.log({
       session_id: metadata.game_session_id,
@@ -247,6 +262,55 @@ class ResearchRuntime {
     return this.exportClient?.getLastResult() ?? null;
   }
 
+  /**
+   * Losslessness evidence for the current identity: sequence continuity
+   * across prior and current attempts plus the durable store's health.
+   * Transport/integrity metadata only — never a research variable.
+   */
+  getEventIntegrity(): EventIntegrity {
+    return computeEventIntegrity({
+      current: this.eventLogger.getEvents(),
+      prior: this.priorPageLoadEvents,
+      page_load_index: this.pageLoadIndex,
+      durable_store: this.eventStore?.getHealth() ?? 'memory_only',
+      durable_event_count: this.eventStore?.persistedCount() ?? 0,
+      recovered_from_chunks: this.storeOpenFacts.recovered_from_chunks,
+      foreign_records_rejected: this.storeOpenFacts.foreign_records_rejected,
+      store_evictions: this.eventStore?.evictionCount() ?? 0,
+    });
+  }
+
+  private openEventStore(metadata: SessionMetadata) {
+    try {
+      const store = new DurableEventStore({
+        participant_id: metadata.participant_id,
+        game_session_id: metadata.game_session_id,
+        // PROVISIONAL(PS-2): a `launch_mode=test` dry run and a participant
+        // launch of the same identity never share one buffer.
+        launch_mode: launchModeClass(readLaunchMode()),
+      });
+      const opened = store.open();
+
+      this.eventStore = store;
+      this.priorPageLoadEvents = opened.prior_page_load_events;
+      this.pageLoadIndex = opened.page_load_index;
+      this.storeOpenFacts = {
+        recovered_from_chunks: opened.recovered_from_chunks,
+        foreign_records_rejected: opened.foreign_records_rejected,
+      };
+      this.eventLogger.configureSequencing(
+        opened.next_sequence,
+        opened.page_load_index,
+      );
+      this.eventLogger.setSink((event) => store.append(event));
+    } catch {
+      // The store is a safety net; the in-memory log still runs unchanged.
+      this.eventStore = null;
+      this.priorPageLoadEvents = [];
+      this.pageLoadIndex = 1;
+    }
+  }
+
   private getExportClient(): ResearchExportClient {
     if (this.exportClient === null) {
       this.exportClient = new ResearchExportClient({
@@ -258,6 +322,7 @@ class ResearchRuntime {
           return {
             participant_id: metadata.participant_id,
             game_session_id: metadata.game_session_id,
+            page_load_index: this.pageLoadIndex,
           };
         },
         buildPayload: () => this.buildExportPayload(),
@@ -285,6 +350,15 @@ class ResearchRuntime {
       technical_errors: {
         technical_error_count: dataQuality.technical_error_count,
       },
+      // Pilot V3 (Unit 1) — additive losslessness fields, PROVISIONAL(INT-2
+      // / P0-3 / P1-9). Prior-page-load events are carried SEPARATELY from
+      // raw_events so the summary (which reads raw_events only) never
+      // double-counts a restarted page load.
+      page_load_index: this.pageLoadIndex,
+      prior_page_load_events: this.priorPageLoadEvents.map((event) => ({
+        ...event,
+      })),
+      event_integrity: this.getEventIntegrity(),
     };
   }
 
@@ -296,6 +370,9 @@ class ResearchRuntime {
     window.researchRuntime = {
       completeDebugSession: () => this.completeDebugSession(),
       exportEventsJSON: () => this.exportEventsJSON(),
+      // Additive (Pilot V3 Unit 1): losslessness probe — sequence
+      // continuity and durable-store health for runtime verification.
+      getEventIntegrity: () => this.getEventIntegrity(),
       getEvents: () => this.getEvents(),
       // Additive (test-only ingestion unit): transport-status probe for the
       // development export path. Debug info only — never research data.
@@ -327,6 +404,19 @@ function readLaunchMode(): string | null {
   }
 
   return new URLSearchParams(window.location.search).get('launch_mode');
+}
+
+/**
+ * Launch-mode class used to namespace the durable event buffer
+ * (PROVISIONAL(PS-2)): `test` only on the explicit signal, `development`
+ * in a DEV build otherwise, `production` in a participant bundle.
+ */
+function launchModeClass(rawLaunchMode: string | null): string {
+  if (rawLaunchMode?.trim() === 'test') {
+    return 'test';
+  }
+
+  return import.meta.env.DEV ? 'development' : 'production';
 }
 
 function resolveExportConfig(): ResearchExportConfig {

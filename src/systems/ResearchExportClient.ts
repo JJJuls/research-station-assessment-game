@@ -1,5 +1,6 @@
 import type { DataQualityMetrics } from './DataQualityTracker';
 import type { RawGameEvent } from './EventLogger';
+import type { EventIntegrity } from './EventStore';
 import type { GameSummaryVariables } from './ScoringManager';
 
 /**
@@ -39,6 +40,19 @@ export interface ResearchExportPayload {
    * export.
    */
   technical_errors: { technical_error_count: number };
+  /**
+   * Pilot V3 (Unit 1) — losslessness fields, additive. PROVISIONAL(INT-2 /
+   * P0-3 / P1-9): payload-contract additions pending the research owner's
+   * event-schema ruling. `raw_events` stays the current page load's log
+   * (what the summary is computed from); `prior_page_load_events` are
+   * events an earlier page load of the same identity persisted in the
+   * durable store, carried separately so nothing is lost and nothing is
+   * double-counted. `event_integrity` lets a reader verify sequence
+   * continuity without trusting the client.
+   */
+  page_load_index: number;
+  prior_page_load_events: RawGameEvent[];
+  event_integrity: EventIntegrity;
 }
 
 export interface ResearchExportEnvelope {
@@ -46,6 +60,14 @@ export interface ResearchExportEnvelope {
   participant_id: string;
   game_session_id: string;
   launch_mode: 'test';
+  /**
+   * Pilot V3 (Unit 1), PROVISIONAL(INT-2.5): the frozen envelope is scoped
+   * to one page load, so a reload of the same identity submits a NEW
+   * export (new export_id, carrying the earlier events as
+   * `prior_page_load_events`) instead of resending the stale pre-reload
+   * bytes. Duplicate detection stays per export_id.
+   */
+  page_load_index: number;
   client_created_at: string;
   payload: ResearchExportPayload;
 }
@@ -60,6 +82,8 @@ export interface ResearchExportConfig {
 export interface ResearchExportSessionIdentity {
   participant_id: string;
   game_session_id: string;
+  /** Page load the envelope belongs to (1 = first load). */
+  page_load_index: number;
 }
 
 export type ResearchExportRefusalReason =
@@ -225,6 +249,7 @@ export class ResearchExportClient {
       participant_id: identity.participant_id,
       game_session_id: identity.game_session_id,
       launch_mode: 'test',
+      page_load_index: identity.page_load_index,
       client_created_at: new Date().toISOString(),
       payload: this.options.buildPayload(),
     };
@@ -339,7 +364,7 @@ function storageKeyFor(identity: ResearchExportSessionIdentity): string {
   // if an id itself contains the separator character.
   return `${STORAGE_KEY_PREFIX}:${encodeURIComponent(
     identity.participant_id,
-  )}:${encodeURIComponent(identity.game_session_id)}`;
+  )}:${encodeURIComponent(identity.game_session_id)}:${identity.page_load_index}`;
 }
 
 function isReusableEnvelope(
@@ -363,6 +388,7 @@ function isReusableEnvelope(
     UUID_PATTERN.test(parsed.export_id) &&
     parsed.participant_id === identity.participant_id &&
     parsed.game_session_id === identity.game_session_id &&
+    parsed.page_load_index === identity.page_load_index &&
     parsed.launch_mode === 'test' &&
     isRecord(parsed.payload)
   );

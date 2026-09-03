@@ -35,6 +35,13 @@ test.describe('launch with research params', () => {
       expect(event.condition).toBe('pilot');
       expect(event.game_version).toBe('e2e');
     }
+
+    // Pilot V3 Unit 1: every event is numbered 1..n by the logger and
+    // stamped with the page load that produced it.
+    expect(events.map((e) => e.sequence)).toEqual(
+      events.map((_, index) => index + 1),
+    );
+    expect(events.every((e) => e.page_load_index === 1)).toBe(true);
   });
 
   test('debug API surface works and completeDebugSession preserves the return URL', async ({
@@ -92,10 +99,12 @@ test.describe('launch with research params', () => {
     // read-only mission-state probe) plus getLastExportResult /
     // submitSessionExport (test-only ingestion unit, additive dev-only
     // export surface; baseline-e8a8994's 6-method surface is a minimum,
-    // extended deliberately for runtime verification).
+    // extended deliberately for runtime verification) plus
+    // getEventIntegrity (Pilot V3 Unit 1: losslessness probe).
     expect(result.surface).toEqual([
       'completeDebugSession',
       'exportEventsJSON',
+      'getEventIntegrity',
       'getEvents',
       'getLastExportResult',
       'getMissionState',
