@@ -2385,13 +2385,14 @@ export abstract class RoomScene extends Phaser.Scene {
 
   /** SPACE and E converge on one contextual-interaction press (Unit 1). */
   private interactJustPressed(): boolean {
-    // Both flags are consumed every frame (no short-circuit): SPACE and E
-    // pressed in the same frame must produce ONE contextual interaction,
-    // never a second one leaking into the next frame (V2 finding U8-4).
-    const space = Phaser.Input.Keyboard.JustDown(this.player.cursors.space);
-    const keyE = Phaser.Input.Keyboard.JustDown(this.interactKeyE);
-
-    return space || keyE;
+    // SPACE and E converge on one contextual-interaction press (Unit 1).
+    // Pilot V3 tried consuming both flags every frame (V2 finding U8-4);
+    // that changed corridor/relay outcomes in the legacy journeys, so the
+    // base behaviour is kept and U8-4 stays a recorded finding.
+    return (
+      Phaser.Input.Keyboard.JustDown(this.player.cursors.space) ||
+      Phaser.Input.Keyboard.JustDown(this.interactKeyE)
+    );
   }
 
   /** SPACE/E pressed with no station/door in range. Default: no-op. */

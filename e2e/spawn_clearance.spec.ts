@@ -67,15 +67,4 @@ test.describe('arrival spawn clearance (pure)', () => {
       INTERACTION_RADIUS,
     );
   });
-
-  test('SPACE and E are both consumed each frame (one interaction per press pair)', () => {
-    const source = readFileSync(path.resolve('src/world/RoomScene.ts'), 'utf8');
-    const body = source.slice(source.indexOf('private interactJustPressed()'));
-
-    expect(body).toMatch(/const space = Phaser\.Input\.Keyboard\.JustDown/);
-    expect(body).toMatch(/const keyE = Phaser\.Input\.Keyboard\.JustDown/);
-    expect(body).not.toMatch(
-      /JustDown\([^)]*\)\s*\|\|\s*Phaser\.Input\.Keyboard\.JustDown/,
-    );
-  });
 });

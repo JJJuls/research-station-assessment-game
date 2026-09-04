@@ -580,3 +580,83 @@ again (3.3 min) after the manifold chip; `pilot_deck` and `pilot_closure`
 test 3 green after both deck changes; visual review (read-only) of frames
 08, 10, 11, 15, 16, 27–30 — U8-9 confirmed closed, no score/trait/validity/
 item-id leakage in any reviewed frame. `verify-unit` PASS.
+
+---
+
+## 7. Unit 7 — Final verification, evidence, clean-up
+
+### 7.1 Full sweep (`--retries=0 --workers=1`, `PW_DEV_PORT=5352`, one detached run, 4.3 h)
+
+Every spec except the three capture specs (they overwrite tracked PNGs and
+were run separately in Unit 6) and the env-gated live Supabase spec (run in
+Unit 3): **457 tests, 442 passed, 15 failed.** Classification against the
+V2 report §15.3 / §16 (inherited = failed on the V2 tree or its Unit 6
+baseline with the same signature):
+
+| Failure                                                                                                       | Classification                                                                                                                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pilot_closure_models` 19 "no … Qualtrics call in the closure code"                                           | **New, deterministic, caused by V3** — the guard matched the word `return_url`, which the Core Chamber now reads from the runtime's handoff state. Test-only correction (guard matches calls, not words); re-run green (7.3). No product regression. |
+| `artifact_survey` "full physical sweep"                                                                       | inherited (V2 §15.3: FAIL on V2 and baseline)                                                                                                                                                                                                        |
+| `inventory_prep_logging` "systematic path" and "NEXT-08 coherence"                                            | inherited (V2 §15.3 FAIL; §16.4 intermittent on both revisions)                                                                                                                                                                                      |
+| `participant_ui_cards` "keyboard-only" and "inventory prep status panel"                                      | inherited (V2 §15.3 FAIL on V2 and baseline)                                                                                                                                                                                                         |
+| `connected_participant_journeys` P1                                                                           | inherited, open (V2 §16.8: identical failure on both revisions)                                                                                                                                                                                      |
+| `connected_participant_journeys` P2                                                                           | V2 §16.8 passing 3/3 → re-run in 7.3                                                                                                                                                                                                                 |
+| `repair_tool_retrieval`                                                                                       | deadline artefact (V2 §16.7: passes only with >16 min; the sweep's default budget)                                                                                                                                                                   |
+| `pilot_records` "supply bundles"                                                                              | inherited (V2: pre-existing, asserts no `proto_m0*`)                                                                                                                                                                                                 |
+| `pilot_route` "six-zone hub"                                                                                  | inherited intermittent (V2 §12.16: "topology intermittent"; failed on the V2 tree too)                                                                                                                                                               |
+| `adversarial_status_board_display`, `route_g_telemetry` G-A / G-B, `scenario_calibration_logging` "step-away" | not in the V2 classification tables → re-run individually in 7.3                                                                                                                                                                                     |
+
+### 7.2 Gates
+
+`npm.cmd run lint:tsc` pass; scoped ESLint pass on every changed file;
+`npm.cmd run build` pass; `CI=true npm run bundle` audited (§3); every
+unit's `verify-unit` PASS; `git diff --check` clean at every commit.
+
+### 7.3 Post-fix re-runs and the two V3 regressions found and fixed
+
+The five failures the V2 tables did not classify were re-run alone on the
+V3 tree and on the base checkpoint `1e06860` (throwaway worktree
+`.claude/worktrees/v3base`, node_modules shared by junction, port 5354):
+
+| Spec                                                                            | V3 (sweep, re-run)              | Base | Cause                                                                                                                                                                                                                                  | Resolution                                                                                                                                                   |
+| ------------------------------------------------------------------------------- | ------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `adversarial_status_board_display`                                              | fail, fail, then **pass** alone | —    | timed-movement wait (V2 §16 class)                                                                                                                                                                                                     | intermittent                                                                                                                                                 |
+| `route_g_telemetry` G-A, G-B                                                    | fail ×3                         | pass | (1) the two additive integrity keys vs the pre-Phase-2 baseline — test projection now excludes them; (2) a **synchronous `localStorage` write per event** stalled frames on the event-dense legacy route and changed a timed placement | `EventStore` batches writes per tick in the runtime (`batchWrites`), flushes synchronously on page hide and before any read; pure test added; **pass after** |
+| `connected_participant_journeys` P2, `scenario_calibration_logging` "step-away" | fail ×3                         | pass | the U5 interact-key change (both `JustDown` flags consumed every frame) altered corridor/relay outcomes                                                                                                                                | **reverted to the base behaviour**; V2 U8-4 stays a recorded finding; **pass after**                                                                         |
+| `pilot_closure_models` 19                                                       | fail                            | —    | guard matched the word `return_url`                                                                                                                                                                                                    | test-only correction; pass                                                                                                                                   |
+
+After these fixes: `event_store` 20/20, `research_export_test_mode` 12/12,
+`route_g_telemetry` 2/2, `adversarial_status_board_display` 1/1,
+`scenario_calibration_logging` 1/1, `connected_participant_journeys` P2
+1/1, `spawn_clearance` 3/3, `pilot_closure_models` 19 1/1. The remaining
+sweep failures are all inherited per 7.1. **No new deterministic regression
+remains.** The losslessness claim is unchanged in substance: batched writes
+are flushed within one macrotask and synchronously on page hide; only a
+renderer crash inside that window could lose the events of that tick.
+
+### 7.4 Process audit and clean-up
+
+- Supabase local stack stopped after Unit 3 (`supabase stop`); Docker
+  Desktop, started by this mission, quit at close-out.
+- Playwright tears down each dev server it starts; no listener remained on
+  5352 / 5353 / 5354 at close-out (checked with `netstat`).
+- The sweep's non-capture specs overwrote 11 tracked PNGs under
+  `docs/verification/screenshots*/`; restored to HEAD before the commit.
+- Left for the human (Claude never removes or prunes worktrees): the
+  throwaway base worktree `.claude/worktrees/v3base` (detached at
+  `1e06860`, `node_modules` is a junction to this worktree's) and one
+  stale registration from a first attempt whose path was too long for
+  Windows (`git worktree prune`).
+- `git status --porcelain` empty after the Unit 7 commit.
+
+### 7.5 Handoff
+
+- **Branch** `fable-professional-pilot-v3-v1`, base `1e06860`; commits
+  U0 `5f301ee`, U1 `19349af`, U2 `a051656`, U3 `2b911bd`, U4 `1c11749`,
+  U5 `38e9fbf`, U6 and U7 below.
+- **Not claimed:** criterion or construct validity, norms, cut scores,
+  equivalence to the source questionnaires, a hosted Supabase project,
+  readiness beyond the evidence above. INT-1..INT-6, D2..D8, SA-family and
+  the decisions listed in §1.7, §2.6, §4.2 and §6.2 remain **open**.
+- Nothing was pushed, merged, tagged, deployed, PR'd; no branch deleted; no
+  worktree removed.

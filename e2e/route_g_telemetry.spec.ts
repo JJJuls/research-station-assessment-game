@@ -75,7 +75,13 @@ async function captureStream(page: Page): Promise<StreamEntry[]> {
 
     return {
       t: String(record.event_type),
-      k: Object.keys(record).sort(),
+      // Pilot V3 Unit 1 stamps every event with `sequence` and
+      // `page_load_index` (integrity metadata, PROVISIONAL(P1-9)); the
+      // pre-Phase-2 baseline predates them, so they are excluded from the
+      // key comparison — every measurement key is still compared exactly.
+      k: Object.keys(record)
+        .filter((key) => key !== 'sequence' && key !== 'page_load_index')
+        .sort(),
       m: metadata === undefined ? [] : Object.keys(metadata).sort(),
     };
   });

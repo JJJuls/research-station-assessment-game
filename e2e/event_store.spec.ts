@@ -630,3 +630,32 @@ test.describe('event integrity block', () => {
     });
   });
 });
+
+test.describe('batched writes (runtime mode)', () => {
+  test('appends coalesce into one write per tick and flush synchronously on demand', async () => {
+    const backend = new MemoryBackend();
+    const store = new DurableEventStore(IDENTITY, backend, () => T0, true);
+
+    store.open();
+
+    const before = backend.writes;
+
+    for (let index = 0; index < 5; index += 1) {
+      store.append(event('e', { sequence: index + 1 }));
+    }
+
+    // Nothing written yet (pending), but the count is already authoritative.
+    expect(backend.writes).toBe(before);
+    expect(store.persistedCount()).toBe(5);
+
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    // One chunk write + one meta write for five events.
+    expect(backend.writes).toBe(before + 2);
+    expect(store.readAll()).toHaveLength(5);
+
+    store.append(event('f', { sequence: 6 }));
+    store.flush();
+    expect(store.readAll().map((e) => e.sequence)).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+});

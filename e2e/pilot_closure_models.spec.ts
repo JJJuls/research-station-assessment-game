@@ -759,7 +759,11 @@ test.describe('Utility & Core closure model (pure)', () => {
         /ScoringManager|CANONICAL_EVENT_CONTEXT|CanonicalEventContext/,
       );
       expect(text, file).not.toMatch(
-        /QualtricsBridge|buildReturnUrl|completeDebugSession|location\.assign|return_url/,
+        // Calls, not words: since Pilot V3 Unit 2 the Core Chamber delegates
+        // completion to the runtime pipeline (completeParticipantSession /
+        // continueToSurvey) and only READS its handoff state (return_url);
+        // it must still never construct the bridge, build or navigate itself.
+        /QualtricsBridge|buildReturnUrl\(|completeDebugSession\(|location\.assign\(/,
       );
       expect(text, file).not.toMatch(/\bQ\d{2}\b/);
       expect(text, file).not.toMatch(

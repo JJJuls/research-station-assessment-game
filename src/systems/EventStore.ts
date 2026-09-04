@@ -141,11 +141,15 @@ export class DurableEventStore {
   private opened = false;
   private openResult: EventStoreOpenResult | null = null;
   private evictions = 0;
+  private readonly pendingChunks = new Map<number, RawGameEvent[]>();
+  private flushTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly identity: EventStoreIdentity,
     private readonly backend: EventStoreBackend | null = resolveLocalStorage(),
     private readonly now: () => number = Date.now,
+    /** Coalesce writes per tick (the runtime); false = write per append. */
+    private readonly batchWrites = false,
   ) {
     this.baseKey = identityKey(identity);
     this.health = backend === null ? 'memory_only' : 'durable';
@@ -291,17 +295,56 @@ export class DurableEventStore {
     );
     this.meta.updated_at = new Date(this.now()).toISOString();
 
-    const chunkKey = `${this.baseKey}:chunk:${this.meta.chunk_count - 1}`;
-    const chunkJson = JSON.stringify(this.tail);
+    this.pendingChunks.set(this.meta.chunk_count - 1, this.tail);
 
-    if (!this.trySet(chunkKey, chunkJson)) {
-      this.evictOtherIdentities();
+    if (this.batchWrites) {
+      // Pilot V3 Unit 7: one storage write per tick, not per event. The
+      // legacy routes log many events per second and a synchronous
+      // localStorage write for each stalled frames enough to change
+      // timed-input outcomes (four base-passing specs regressed). Pending
+      // chunks are flushed on the next macrotask and, synchronously, on
+      // page hide and before any read.
+      if (this.flushTimer === null) {
+        this.flushTimer = setTimeout(() => {
+          this.flushTimer = null;
+          this.flush();
+        }, 0);
+      }
+
+      return;
+    }
+
+    this.flush();
+  }
+
+  /** Writes every pending chunk and the meta record. Never throws. */
+  flush(): void {
+    if (this.flushTimer !== null) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+
+    if (this.backend === null || this.health === 'degraded' || !this.opened) {
+      this.pendingChunks.clear();
+      return;
+    }
+
+    for (const [index, events] of this.pendingChunks) {
+      const chunkKey = `${this.baseKey}:chunk:${index}`;
+      const chunkJson = JSON.stringify(events);
 
       if (!this.trySet(chunkKey, chunkJson)) {
-        this.health = 'degraded';
-        return;
+        this.evictOtherIdentities();
+
+        if (!this.trySet(chunkKey, chunkJson)) {
+          this.health = 'degraded';
+          this.pendingChunks.clear();
+          return;
+        }
       }
     }
+
+    this.pendingChunks.clear();
 
     if (!this.writeMeta()) {
       this.health = 'degraded';
@@ -313,6 +356,8 @@ export class DurableEventStore {
     if (this.backend === null) {
       return [];
     }
+
+    this.flush();
 
     const meta = this.readMeta();
     const chunkCount =
@@ -326,6 +371,13 @@ export class DurableEventStore {
    * once the server has acknowledged the export that carried this buffer.
    */
   clear(): void {
+    if (this.flushTimer !== null) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+
+    this.pendingChunks.clear();
+
     if (this.backend === null) {
       return;
     }

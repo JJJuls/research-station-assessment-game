@@ -303,3 +303,43 @@ throw-away worktree only if needed).
 - Reviewer output is recommendation only. Any finding that amounts to a
   scientific decision is written into the V3 report's open-decision section
   and left open.
+
+---
+
+## 4. Amendments recorded during execution (Unit 7)
+
+Recorded, not silently applied; each is explained in the V3 report section
+named.
+
+- **U1 field names.** `attempt_index` / `prior_attempt_events` became
+  `page_load_index` / `prior_page_load_events` after the scientific review
+  (the original name was confusable with the canonical `attempt_number`
+  measurement field). Report §1.5 F2.
+- **U2 telemetry line.** The participant pipeline does **not** log
+  `objective_completed`; the closure's own `pilot_closure_stable` is the
+  terminal marker and the PROVISIONAL(INT-5) axes carry completion. The
+  contract's "reused at completion" wording is superseded; the meaning of
+  `completed` in the export is an open decision. Report §2.1 / §2.6.
+- **U3 allowlist additions.** `supabase/functions/ingest-research-session/
+ingest-research-session.ts` (CORS `OPTIONS` handling, found only by the
+  real cross-origin client) and `e2e/supabase_roundtrip_live.spec.ts`
+  (env-gated real-client run). Report §3.
+- **U4 scope.** `exteriorWindows.ts`, `windowKit.ts`, `yardJobs.ts`,
+  `closureSession.ts`, the M15 modules, `SessionState.ts` and the room docs
+  were **not** edited: the findings that needed them either require a
+  research-owner decision (U8-12) or were closed by static gates without a
+  product change (U8-2, U8-13). Report §4.
+- **U5 path.** The interact-key site is `src/world/RoomScene.ts`, not
+  `src/scenes/RoomScene.ts`. The V2 §16.11 harness items are deferred as
+  test-only. Report §5.2.
+- **U6 files.** `src/pilot/ui/**` untouched; two screenshot files renamed
+  (`15-laboratory-phase-benches.png`, `30-record-closed-feeds-pending.png`);
+  the Unit 7 visual ledger row V28 left as is (the evidence now agrees with
+  it). Report §6.
+- **U7 test-only correction.** `e2e/pilot_closure_models.spec.ts` test 19's
+  guard pattern now matches Qualtrics _calls_ (`QualtricsBridge`,
+  `buildReturnUrl(`, `completeDebugSession(`, `location.assign(`) rather
+  than the word `return_url`, which the Core Chamber legitimately reads
+  from the runtime's handoff state since U2. Report §7.
+- **Ports.** Route specs ran on `PW_DEV_PORT=5352`, pure specs on `5353`
+  (the contract said 5351/5352/5353).

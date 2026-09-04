@@ -646,6 +646,9 @@ class ResearchRuntime {
     }
 
     window.addEventListener('pagehide', (event) => {
+      // Batched store writes are flushed synchronously before the page goes.
+      this.eventStore?.flush();
+
       if (event.persisted || this.status.isTerminal()) {
         return;
       }
@@ -659,13 +662,18 @@ class ResearchRuntime {
 
   private openEventStore(metadata: SessionMetadata) {
     try {
-      const store = new DurableEventStore({
-        participant_id: metadata.participant_id,
-        game_session_id: metadata.game_session_id,
-        // PROVISIONAL(PS-2): a `launch_mode=test` dry run and a participant
-        // launch of the same identity never share one buffer.
-        launch_mode: this.launchMode,
-      });
+      const store = new DurableEventStore(
+        {
+          participant_id: metadata.participant_id,
+          game_session_id: metadata.game_session_id,
+          // PROVISIONAL(PS-2): a `launch_mode=test` dry run and a participant
+          // launch of the same identity never share one buffer.
+          launch_mode: this.launchMode,
+        },
+        undefined,
+        Date.now,
+        true,
+      );
       const opened = store.open();
 
       this.eventStore = store;
