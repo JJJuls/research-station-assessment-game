@@ -10,7 +10,7 @@
 
 import { expect, type Page } from '@playwright/test';
 
-import { driveAxisTo } from './helpers';
+import { designToPage, driveAxisTo } from './helpers';
 
 export const IP_LAB_SCENE = 'information_processing_lab';
 
@@ -208,16 +208,8 @@ export async function ipValidity(page: Page, opportunityId: string) {
  * ------------------------------------------------------------------ */
 
 export async function gamePoint(page: Page, x: number, y: number) {
-  const box = await page.locator('canvas').boundingBox();
-
-  if (box === null) {
-    throw new Error('game canvas not found');
-  }
-
-  return {
-    x: box.x + (x * box.width) / 800,
-    y: box.y + (y * box.height) / 600,
-  };
+  // V4: design space → page (helpers.designToPage reads __designSpace).
+  return designToPage(page, x, y);
 }
 
 export async function rectCenter(page: Page, rect: Rect) {

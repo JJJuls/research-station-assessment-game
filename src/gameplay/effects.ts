@@ -150,13 +150,15 @@ function prefersReducedMotion(): boolean {
   );
 }
 
-/** Tiny camera kick for physical impacts (dig strike, machinery start). */
+/**
+ * Camera kick for physical impacts — RETIRED by the V4 visual-validity
+ * redesign (mission §9: no camera shake during the assessment). Kept as a
+ * no-op so call sites and their timing are byte-identical; the impact is
+ * still shown by the state-driven dust/spark bursts.
+ */
 export function cameraKick(scene: Phaser.Scene, intensity = 0.0035) {
-  if (prefersReducedMotion()) {
-    return;
-  }
-
-  scene.cameras.main.shake(110, intensity);
+  void scene;
+  void intensity;
 }
 
 /**

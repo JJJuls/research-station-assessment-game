@@ -37,6 +37,15 @@ import type { RoomTransitionTarget } from './SceneRouter';
 import { transitionToRoom } from './SceneRouter';
 import type { BuiltRoomMap, RoomLayout } from './StationMapBuilder';
 import { buildPlaceholderRoomMap } from './StationMapBuilder';
+import {
+  attachWorldAndHudCameras,
+  DESIGN_WIDTH,
+  fadeAllCameras,
+  publishCameraProbe,
+  WORLD_VIEW_HEIGHT,
+  WORLD_VIEW_WIDTH,
+  worldToDesign,
+} from './viewport';
 
 export type InteractionKey = keyof typeof researchInteractions;
 
@@ -512,9 +521,17 @@ export abstract class RoomScene extends Phaser.Scene {
 
     this.roomMap = buildPlaceholderRoomMap(this, layout);
 
-    // Themed rooms tint the camera clear colour so any area beyond the
-    // map bounds reads as that room's ambience, never a raw black band.
-    if (layout.theme !== undefined) {
+    // V4: the world camera is bounded to the room and the 640×360 world
+    // viewport never exceeds a room, so no area beyond the map is ever
+    // visible — the per-frame full-screen background quad a themed clear
+    // colour costs is dropped (the game clear colour is the page ground).
+    // The theme's void colour stays available for rooms smaller than the
+    // viewport (legacy proving grounds) through the fallback below.
+    if (
+      layout.theme !== undefined &&
+      (this.roomMap.widthInPixels < WORLD_VIEW_WIDTH ||
+        this.roomMap.heightInPixels < WORLD_VIEW_HEIGHT)
+    ) {
       this.cameras.main.setBackgroundColor(
         STATION_THEMES[layout.theme].voidColor,
       );
@@ -538,7 +555,11 @@ export abstract class RoomScene extends Phaser.Scene {
       this.roomMap.widthInPixels,
       this.roomMap.heightInPixels,
     );
-    this.cameras.main.fadeIn(200, 0, 0, 0);
+    // V4 (docs/game/VISUAL-SYSTEM-V4.md §1): the world renders at the
+    // integer zoom through the main camera; every `scrollFactor(0)`
+    // object renders through the HUD camera in the 800×600 design space.
+    attachWorldAndHudCameras(this);
+    fadeAllCameras(this, 'in', 200);
 
     // NEXT-07 Phase 7a vignette: REMOVED under the contract's own
     // admissibility clause. The full-screen alpha-blended quad collapsed
@@ -550,15 +571,19 @@ export abstract class RoomScene extends Phaser.Scene {
 
     this.stationLabels = this.add.container(0, 0);
     this.stationLabels.setDepth(Depth.AboveWorld);
+    // V4: the contextual prompt lives in the HUD design space and is
+    // projected from the target's world position every frame — readable at
+    // one size in every room, never scaled with the world.
     this.proximityPrompt = this.add
       .text(0, 0, 'SPACE / E — interact', {
         backgroundColor: '#101820',
         color: '#ffffff',
-        font: '14px monospace',
+        font: '15px monospace',
         padding: { x: 8, y: 4 },
       })
       .setOrigin(0.5)
       .setDepth(Depth.AboveWorld)
+      .setScrollFactor(0)
       .setVisible(false);
 
     // Route-objective HUD line (pilot route repair): the persistent duty
@@ -570,8 +595,10 @@ export abstract class RoomScene extends Phaser.Scene {
       .text(8, 8, '', {
         backgroundColor: '#101820',
         color: '#ffffff',
-        font: '13px monospace',
-        padding: { x: 6, y: 3 },
+        // V4 text ladder (VISUAL-SYSTEM-V4 §4): the persistent objective
+        // is the largest HUD string (17 px design ≈ 20 canvas px).
+        font: '17px monospace',
+        padding: { x: 8, y: 4 },
         // Unit 7 (V7): the line wraps inside the 800 px viewport instead
         // of running off the right edge.
         wordWrap: { width: 772 },
@@ -588,7 +615,7 @@ export abstract class RoomScene extends Phaser.Scene {
       .text(8, 32, '', {
         backgroundColor: '#101820',
         color: '#9fb2c1',
-        font: '13px monospace',
+        font: '14px monospace',
         padding: { x: 6, y: 3 },
       })
       .setOrigin(0)
@@ -639,10 +666,18 @@ export abstract class RoomScene extends Phaser.Scene {
     // so their fragments survived at the panel edges. Hide them on PAUSE;
     // updateProximity restores whatever is still in range on RESUME.
     const onPause = () => this.hideWorldPrompts();
+    // V4 (C7): any state that changed inside an overlay is reflected in the
+    // objective lines the moment the room resumes — in every room.
+    const onResume = () => {
+      this.refreshRouteObjective();
+      this.refreshQuestObjective();
+    };
 
     this.events.on(Phaser.Scenes.Events.PAUSE, onPause);
+    this.events.on(Phaser.Scenes.Events.RESUME, onResume);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.off(Phaser.Scenes.Events.PAUSE, onPause);
+      this.events.off(Phaser.Scenes.Events.RESUME, onResume);
     });
 
     // ESC first cancels a cancellable timed world action (never leaves
@@ -826,10 +861,26 @@ export abstract class RoomScene extends Phaser.Scene {
     );
     const chip = this.buildLabelChip(config.x, config.y - 42, config.label);
 
-    this.stationLabels.add([marker, ...chip]);
+    // V4 depth policy (layer 4): the marker is a world object sorted at its
+    // foot line, so the avatar walks in front of it when standing south of
+    // it and behind it when north — never hidden under a workstation. Only
+    // the label chip stays in the depth-20 container.
+    this.sortAtFootLine(marker, config.y);
+    this.stationLabels.add([...chip]);
     this.registerLabelChip(config, chip);
     this.interactableMarkers.set(config, marker);
     this.stations.push(config);
+  }
+
+  /** Layer-4 depth for a marker/prop image or placeholder rectangle. */
+  private sortAtFootLine(marker: Phaser.GameObjects.GameObject, y: number) {
+    const sized = marker as Phaser.GameObjects.GameObject & {
+      displayHeight?: number;
+      setDepth: (depth: number) => unknown;
+    };
+    const half = (sized.displayHeight ?? 40) / 2;
+
+    sized.setDepth(worldDepth(y + half));
   }
 
   /** Unit 4: contextual name chip — hidden until nearest-in-range. */
@@ -860,6 +911,8 @@ export abstract class RoomScene extends Phaser.Scene {
         color: '#fff',
         font: '12px monospace',
         padding: { x: 4, y: 2 },
+        // V4: world-space text renders at the world zoom — rasterise at 2×.
+        resolution: 2,
       })
       .setOrigin(0.5);
     const chip = this.add
@@ -1057,7 +1110,14 @@ export abstract class RoomScene extends Phaser.Scene {
       );
     }
 
-    this.stationLabels.add([...parts, ...chip]);
+    // V4 depth policy: door leaf and threshold sort at the leaf's foot line
+    // (a wall-mounted leaf on the north wall sits behind a figure walking
+    // through the doorway); the chip stays in the depth-20 container.
+    for (const part of parts) {
+      this.sortAtFootLine(part, config.y);
+    }
+
+    this.stationLabels.add([...chip]);
     this.registerLabelChip(config, chip);
     this.interactableMarkers.set(config, marker);
     this.doors.push(config);
@@ -1130,13 +1190,13 @@ export abstract class RoomScene extends Phaser.Scene {
 
     this.feedbackMessage?.destroy();
 
-    const { centerX } = this.cameras.main;
+    const centerX = DESIGN_WIDTH / 2;
 
     this.feedbackMessage = this.add
       .text(centerX, this.feedbackMessageY(), message, {
         backgroundColor: '#101820',
         color: '#ffffff',
-        font: '15px monospace',
+        font: '16px monospace',
         lineSpacing: 4,
         padding: { x: 10, y: 6 },
         wordWrap: { width: 520 },
@@ -1214,7 +1274,7 @@ export abstract class RoomScene extends Phaser.Scene {
     }
 
     const interaction = researchInteractions[interactionKey];
-    const { centerX } = this.cameras.main;
+    const centerX = DESIGN_WIDTH / 2;
     const promptBody = stage.body ? `\n\n${stage.body}` : '';
     const optionText = options
       .map((option, index) => `${index + 1}. ${option.label}`)
@@ -2358,19 +2418,28 @@ export abstract class RoomScene extends Phaser.Scene {
       return;
     }
 
-    // Viewport clamp (defect fix): the interact label used to clip at
-    // the left edge and run under the right status panel; keep it fully
-    // inside the room viewport (0..640) with a 2px margin.
+    // Design-space clamp: keep the prompt fully inside the HUD design
+    // space (legacy rooms keep the right status-panel margin) with a 2px
+    // margin.
     const promptHalf = this.proximityPrompt.width / 2;
+    // V4: project the target into the HUD design space (the prompt is a
+    // HUD object); the vertical offset is expressed in world pixels so the
+    // prompt keeps the same clearance from the object at any zoom.
+    // 70 px clears the name chip (drawn at ±42 px on the same side).
+    const anchor = worldToDesign(
+      this.cameras.main,
+      this.activeTarget.x,
+      fromAbove ? this.activeTarget.y + 70 : this.activeTarget.y - 70,
+    );
 
     this.proximityPrompt
       .setPosition(
         Phaser.Math.Clamp(
-          this.activeTarget.x,
+          Math.round(anchor.x),
           promptHalf + 2,
           this.promptClampMaxX() - promptHalf,
         ),
-        fromAbove ? this.activeTarget.y + 70 : this.activeTarget.y - 72,
+        Math.round(anchor.y),
       )
       .setVisible(true);
 
@@ -2383,16 +2452,25 @@ export abstract class RoomScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * V4 (mission §18): a room may ignore the interact keys for a short
+   * window after an overlay hands control back (the opening's skip press
+   * must never leak into the first interaction). Presentation/input
+   * hygiene only — nothing measured happens inside the window.
+   */
+  protected suppressInteractUntilMs = 0;
+
   /** SPACE and E converge on one contextual-interaction press (Unit 1). */
   private interactJustPressed(): boolean {
     // SPACE and E converge on one contextual-interaction press (Unit 1).
     // Pilot V3 tried consuming both flags every frame (V2 finding U8-4);
     // that changed corridor/relay outcomes in the legacy journeys, so the
     // base behaviour is kept and U8-4 stays a recorded finding.
-    return (
+    const pressed =
       Phaser.Input.Keyboard.JustDown(this.player.cursors.space) ||
-      Phaser.Input.Keyboard.JustDown(this.interactKeyE)
-    );
+      Phaser.Input.Keyboard.JustDown(this.interactKeyE);
+
+    return pressed && Date.now() >= this.suppressInteractUntilMs;
   }
 
   /** SPACE/E pressed with no station/door in range. Default: no-op. */
@@ -2445,6 +2523,7 @@ export abstract class RoomScene extends Phaser.Scene {
         y: this.player.y,
       };
       this.publishWorldPromptProbe();
+      publishCameraProbe(this);
     }
   }
 

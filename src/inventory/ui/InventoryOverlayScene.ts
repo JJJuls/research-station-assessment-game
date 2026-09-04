@@ -41,6 +41,7 @@ import {
   pickM02CRetrieval,
   setM02CTrayLabel,
 } from '../../pilot/windows/m02CaseWorkspace';
+import { fitOverlayScene } from '../../world/viewport';
 import { ensureInventoryIconTextures } from '../inventoryTextures';
 import { getItemDefinition, M02_DOCUMENTS } from '../itemDefs';
 import {
@@ -222,6 +223,10 @@ export class InventoryOverlayScene extends Phaser.Scene {
     // InventoryScene) paused itself and then drew straight over the overlay:
     // the participant saw a frozen room and no panel.
     this.scene.bringToTop();
+    // V4: 800×600 design space on the 1280×720 canvas (viewport.ts).
+    // Pointer hit-tests in this scene use pointer.worldX/Y — the pointer in
+    // THIS camera's (design) space; pointer.x/y are canvas pixels.
+    fitOverlayScene(this);
 
     // Per-instance resets (scene objects are reused across launches).
     this.grids = [];
@@ -1058,14 +1063,14 @@ export class InventoryOverlayScene extends Phaser.Scene {
         this.ignoreGesture = false;
         this.dragging = true;
         this.focus = address;
-        this.spawnGhost(pointer.x, pointer.y);
+        this.spawnGhost(pointer.worldX, pointer.worldY);
         this.refresh();
       },
     );
 
     this.input.on(Phaser.Input.Events.DRAG, (pointer: Phaser.Input.Pointer) => {
       if (this.dragging) {
-        this.ghost?.setPosition(pointer.x, pointer.y);
+        this.ghost?.setPosition(pointer.worldX, pointer.worldY);
       }
     });
 
@@ -1343,7 +1348,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
       this.focus = address;
       const pointer = this.input.activePointer;
 
-      this.spawnGhost(pointer.x, pointer.y);
+      this.spawnGhost(pointer.worldX, pointer.worldY);
       this.ghostFollowsPointer = true;
     } else if (change.reason !== 'empty_slot') {
       this.showFailure(change);
@@ -1362,7 +1367,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
     ) {
       const pointer = this.input.activePointer;
 
-      this.ghost.setPosition(pointer.x, pointer.y);
+      this.ghost.setPosition(pointer.worldX, pointer.worldY);
     }
   }
 
@@ -1987,7 +1992,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
     if (followed) {
       const pointer = this.input.activePointer;
 
-      this.spawnGhost(pointer.x, pointer.y);
+      this.spawnGhost(pointer.worldX, pointer.worldY);
       this.ghostFollowsPointer = true;
     } else {
       this.spawnGhostAtFocus();

@@ -39,6 +39,7 @@
 import Phaser from 'phaser';
 
 import { Depth } from '../constants';
+import { DESIGN_SCALE, worldToDesign } from '../world/viewport';
 import { sfxPickup, sfxUiSelect, sfxUnavailable } from './audio';
 
 export interface PhysicalObjectSpec {
@@ -332,8 +333,23 @@ export class PhysicalManipulationLayer {
     }
   }
 
+  /**
+   * V4: the pointer's world point through the WORLD camera. Phaser fills
+   * pointer.worldX/Y from whichever camera it hit-tested last (the HUD
+   * camera sits above the world camera), so the layer resolves it itself.
+   */
+  private pointerWorld(pointer: Phaser.Input.Pointer): {
+    x: number;
+    y: number;
+  } {
+    const point = this.scene.cameras.main.getWorldPoint(pointer.x, pointer.y);
+
+    return { x: point.x, y: point.y };
+  }
+
   private updateHoverCues() {
     const pointer = this.scene.input.activePointer;
+    const world = this.pointerWorld(pointer);
     const enabled = this.config.isEnabled();
     const player = this.config.getPlayerPosition();
     const manipulating =
@@ -343,7 +359,7 @@ export class PhysicalManipulationLayer {
       const hover =
         enabled &&
         !manipulating &&
-        this.hitsObject(rendered, pointer.worldX, pointer.worldY) &&
+        this.hitsObject(rendered, world.x, world.y) &&
         this.withinReach(player, rendered.entry.x, rendered.entry.y);
 
       rendered.outline.setVisible(hover);
@@ -429,6 +445,7 @@ export class PhysicalManipulationLayer {
   }
 
   private readonly onPointerDown = (pointer: Phaser.Input.Pointer) => {
+    const world = this.pointerWorld(pointer);
     if (!this.config.isEnabled()) {
       return;
     }
@@ -438,7 +455,7 @@ export class PhysicalManipulationLayer {
 
     // Carrying: a press on an in-reach compatible container places.
     if (carried !== null) {
-      const container = this.hitContainer(pointer.worldX, pointer.worldY);
+      const container = this.hitContainer(world.x, world.y);
 
       if (container !== null) {
         if (!this.withinReach(player, container.x, container.y)) {
@@ -455,7 +472,7 @@ export class PhysicalManipulationLayer {
       // surfaces instead of a silent no-op.
       for (const rendered of this.objects) {
         if (
-          this.hitsObject(rendered, pointer.worldX, pointer.worldY) &&
+          this.hitsObject(rendered, world.x, world.y) &&
           this.withinReach(player, rendered.entry.x, rendered.entry.y) &&
           rendered.entry.activate === undefined
         ) {
@@ -470,7 +487,7 @@ export class PhysicalManipulationLayer {
     // Hands free: a press on a loose object begins click-or-drag (or
     // invokes an activator object directly).
     for (const rendered of this.objects) {
-      if (this.hitsObject(rendered, pointer.worldX, pointer.worldY)) {
+      if (this.hitsObject(rendered, world.x, world.y)) {
         if (!this.withinReach(player, rendered.entry.x, rendered.entry.y)) {
           this.config.onFeedback(
             `Move closer to reach the ${rendered.entry.spec.label}.`,
@@ -494,6 +511,7 @@ export class PhysicalManipulationLayer {
   };
 
   private readonly onPointerMove = (pointer: Phaser.Input.Pointer) => {
+    const world = this.pointerWorld(pointer);
     if (this.pressCandidate !== null && this.dragGhost === null) {
       const moved = Phaser.Math.Distance.Between(
         pointer.x,
@@ -508,11 +526,12 @@ export class PhysicalManipulationLayer {
     }
 
     if (this.dragGhost !== null) {
-      this.dragGhost.setPosition(pointer.worldX, pointer.worldY);
+      this.dragGhost.setPosition(world.x, world.y);
     }
   };
 
   private beginDrag(objectId: string, pointer: Phaser.Input.Pointer) {
+    const world = this.pointerWorld(pointer);
     const spec = this.findObjectSpec(objectId);
 
     if (spec === null || !this.config.onPickup(objectId)) {
@@ -525,13 +544,14 @@ export class PhysicalManipulationLayer {
 
     if (this.scene.textures.exists(spec.icon)) {
       this.dragGhost = this.scene.add
-        .image(pointer.worldX, pointer.worldY, spec.icon)
+        .image(world.x, world.y, spec.icon)
         .setDepth(Depth.AboveWorld - 1)
         .setAlpha(0.9);
     }
   }
 
   private readonly onPointerUp = (pointer: Phaser.Input.Pointer) => {
+    const world = this.pointerWorld(pointer);
     const candidate = this.pressCandidate;
 
     this.pressCandidate = null;
@@ -549,7 +569,7 @@ export class PhysicalManipulationLayer {
     if (this.draggingObjectId !== null) {
       const objectId = this.draggingObjectId;
       const player = this.config.getPlayerPosition();
-      const container = this.hitContainer(pointer.worldX, pointer.worldY);
+      const container = this.hitContainer(world.x, world.y);
 
       this.draggingObjectId = null;
       this.dragGhost?.destroy();
@@ -607,10 +627,11 @@ export class PhysicalManipulationLayer {
     }
 
     const camera = this.scene.cameras.main;
-    const toScreen = (x: number, y: number) => ({
-      x: x - camera.worldView.x,
-      y: y - camera.worldView.y,
-    });
+    // V4: rectangles in the 800×600 DESIGN space (every probe the pointer
+    // specs click shares that space — window.__designSpace maps it to the
+    // page); sizes carry the world-zoom / design-scale ratio.
+    const toScreen = (x: number, y: number) => worldToDesign(camera, x, y);
+    const k = camera.zoom / DESIGN_SCALE;
 
     window.__physicalProbe = {
       scene: this.scene.scene.key,
@@ -620,18 +641,18 @@ export class PhysicalManipulationLayer {
         return {
           id: rendered.entry.spec.object_id,
           label: rendered.entry.spec.label,
-          x: screen.x - 14,
-          y: screen.y - 14,
-          width: 28,
-          height: 28,
+          x: screen.x - 14 * k,
+          y: screen.y - 14 * k,
+          width: 28 * k,
+          height: 28 * k,
           kind: 'object' as const,
         };
       }),
       containers: this.containers.map((rendered) => {
         const { entry } = rendered;
         const screen = toScreen(entry.x, entry.y);
-        const halfWidth = (entry.halfWidth ?? 26) + 6;
-        const halfHeight = (entry.halfHeight ?? 26) + 6;
+        const halfWidth = ((entry.halfWidth ?? 26) + 6) * k;
+        const halfHeight = ((entry.halfHeight ?? 26) + 6) * k;
 
         return {
           id: entry.container_id,

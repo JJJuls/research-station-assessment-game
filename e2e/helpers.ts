@@ -346,10 +346,11 @@ export async function driveAxisTo(
   tolerance: number,
 ) {
   let previous: number | null = null;
-  let stalledBursts = 0;
+  let stalledHoldMs = 0;
   let everMoved = false;
+  let lastBurstMs = 0;
 
-  for (let burst = 0; burst < 80; burst++) {
+  for (let burst = 0; burst < 120; burst++) {
     const probe = await playerProbe(page);
     if (probe === null) {
       return;
@@ -369,10 +370,16 @@ export async function driveAxisTo(
     // until the leg has seen the player actually move, stall reads are
     // treated as post-scene-entry jank and tolerated up to a longer
     // bound (8) instead of aborting the leg at the spawn.
+    // V4: the stall budget is HELD-KEY TIME, not a burst count — the
+    // software-GL verification renderer runs at ~13 fps under the 1280×720
+    // canvas, so a single 100 ms burst can land entirely between frames.
+    // A genuine wall clamp shows no motion across ≥ 400 ms of held key
+    // (≥ 5 frames at 13 fps, ≥ 24 at 60 fps); before any motion has been
+    // observed (post-scene-entry jank) the budget is 1600 ms, as before.
     if (previous !== null && Math.abs(current - previous) < 2) {
-      stalledBursts += 1;
+      stalledHoldMs += lastBurstMs;
 
-      if (stalledBursts >= (everMoved ? 2 : 8)) {
+      if (stalledHoldMs >= (everMoved ? 400 : 1600)) {
         return;
       }
     } else {
@@ -380,7 +387,7 @@ export async function driveAxisTo(
         everMoved = true;
       }
 
-      stalledBursts = 0;
+      stalledHoldMs = 0;
     }
     previous = current;
 
@@ -398,7 +405,8 @@ export async function driveAxisTo(
     // 175 px/s) so cross-room legs stay fast; the final approach drops to
     // short 100 ms bursts (~17 px) for precision. Stall detection above is
     // unaffected — any wall clamp still ends the leg.
-    await hold(page, key, Math.abs(current - target) > 120 ? 400 : 100);
+    lastBurstMs = Math.abs(current - target) > 120 ? 400 : 100;
+    await hold(page, key, lastBurstMs);
   }
 }
 
@@ -789,6 +797,61 @@ export async function getPromptCards(page: Page): Promise<
  * intermittent input loss of the SwiftShader/headless environment;
  * selectPromptOption keyboard precedent).
  */
+/**
+ * V4 (docs/game/VISUAL-SYSTEM-V4.md §1.3): every probe rectangle the pointer
+ * specs click is expressed in the 800×600 DESIGN space. The game publishes
+ * `window.__designSpace` (DEV) with the design→canvas mapping; this is the
+ * one place that turns a design point into a page click. Before V4 the
+ * canvas WAS the design space, which the fallback branch preserves.
+ */
+export interface DesignSpaceLike {
+  width: number;
+  height: number;
+  offsetX: number;
+  offsetY: number;
+  scale: number;
+  canvasWidth: number;
+  canvasHeight: number;
+}
+
+export async function designSpace(page: Page): Promise<DesignSpaceLike | null> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __designSpace?: DesignSpaceLike | null })
+        .__designSpace ?? null,
+  );
+}
+
+export async function designToPage(
+  page: Page,
+  x: number,
+  y: number,
+): Promise<{ x: number; y: number }> {
+  const box = await page.locator('canvas').boundingBox();
+
+  if (box === null) {
+    throw new Error('game canvas not found');
+  }
+
+  const space = await designSpace(page);
+
+  if (space === null) {
+    return {
+      x: box.x + (x * box.width) / 800,
+      y: box.y + (y * box.height) / 600,
+    };
+  }
+
+  return {
+    x:
+      box.x +
+      ((space.offsetX + x * space.scale) * box.width) / space.canvasWidth,
+    y:
+      box.y +
+      ((space.offsetY + y * space.scale) * box.height) / space.canvasHeight,
+  };
+}
+
 export async function clickGameRect(
   page: Page,
   rect: { x: number; y: number; width: number; height: number },
@@ -808,13 +871,13 @@ export async function clickGameRect(
       throw new Error('game canvas not found');
     }
 
-    const scaleX = box.width / 800;
-    const scaleY = box.height / 600;
-
-    await page.mouse.click(
-      box.x + (rect.x + rect.width / 2) * scaleX,
-      box.y + (rect.y + rect.height / 2) * scaleY,
+    const point = await designToPage(
+      page,
+      rect.x + rect.width / 2,
+      rect.y + rect.height / 2,
     );
+
+    await page.mouse.click(point.x, point.y);
   };
   const settle = async (prev: string, timeout: number) => {
     await clickOnce();
@@ -953,19 +1016,9 @@ export async function physicalProbe(
   );
 }
 
-/** Canvas-relative mouse position for a game-space point (FIT-scaled). */
+/** Page mouse position for a design-space point (V4: via __designSpace). */
 async function gamePointToMouse(page: Page, x: number, y: number) {
-  const canvas = page.locator('canvas');
-  const box = await canvas.boundingBox();
-
-  if (box === null) {
-    throw new Error('game canvas not found');
-  }
-
-  return {
-    x: box.x + (x * box.width) / 800,
-    y: box.y + (y * box.height) / 600,
-  };
+  return designToPage(page, x, y);
 }
 
 /**

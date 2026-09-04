@@ -50,7 +50,13 @@ import {
   waitCoreState,
   waitFeedPanel,
 } from './closureHelpers';
-import { getEvents, hold, press, selectPromptOption } from './helpers';
+import {
+  designToPage,
+  getEvents,
+  hold,
+  press,
+  selectPromptOption,
+} from './helpers';
 import {
   captureErrors,
   completeDockTutorial,
@@ -602,19 +608,16 @@ test.describe('Utility & Core closure — participant route (Unit 6)', () => {
     // Coolant by pointer, interrupted: ESC mid-turn leaves partial travel.
     const partial = await openFeedPanel(page, 'coolant');
     const wheel = partial.geometry.wheel!;
-    const box = (await page.locator('canvas').boundingBox())!;
-    const at = (x: number, y: number) => ({
-      x: box.x + (x * box.width) / 800,
-      y: box.y + (y * box.height) / 600,
-    });
-    const start = at(wheel.x + wheel.r - 4, wheel.y);
+    // V4: design space → page through the shared helper (__designSpace).
+    const at = (x: number, y: number) => designToPage(page, x, y);
+    const start = await at(wheel.x + wheel.r - 4, wheel.y);
 
     await page.mouse.move(start.x, start.y);
     await page.mouse.down();
 
     for (let step = 1; step <= 20; step += 1) {
       const angle = (step * Math.PI) / 48;
-      const point = at(
+      const point = await at(
         wheel.x + Math.cos(angle) * (wheel.r - 4),
         wheel.y + Math.sin(angle) * (wheel.r - 4),
       );
@@ -641,7 +644,7 @@ test.describe('Utility & Core closure — participant route (Unit 6)', () => {
     // Breaker by pointer: an off-index engage is refused neutrally first.
     const breaker = await openFeedPanel(page, 'calibration');
     const engage = breaker.geometry.engage!;
-    const button = at(engage.x + engage.w / 2, engage.y + engage.h / 2);
+    const button = await at(engage.x + engage.w / 2, engage.y + engage.h / 2);
 
     await page.mouse.click(button.x, button.y);
     await page.waitForTimeout(300);
@@ -661,9 +664,9 @@ test.describe('Utility & Core closure — participant route (Unit 6)', () => {
     // Bus by pointer: a drop outside the socket returns the coupler.
     const bus = await openFeedPanel(page, 'distribution');
     const coupler = bus.geometry.coupler!;
-    const from = at(coupler.x + coupler.w / 2, coupler.y + coupler.h / 2);
+    const from = await at(coupler.x + coupler.w / 2, coupler.y + coupler.h / 2);
     const rail = bus.geometry.rail!;
-    const midway = at((rail.x0 + rail.x1) / 2, rail.y);
+    const midway = await at((rail.x0 + rail.x1) / 2, rail.y);
 
     await page.mouse.move(from.x, from.y);
     await page.mouse.down();

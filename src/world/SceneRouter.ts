@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import { key } from '../constants';
 import { setPilotLaunchMode } from '../pilot/pilotCoverage';
 import { researchRuntime } from '../systems';
+import { fadeAllCameras } from './viewport';
 
 /**
  * Maps the `?scene=` launch query parameter to a Phaser scene key. The
@@ -147,6 +148,7 @@ export function transitionToRoom(
   });
   // Force-restart the shared fade effect: without `force`, a fade already in
   // progress (e.g. the room's entry fadeIn) makes fadeOut a no-op and
-  // FADE_OUT_COMPLETE never fires, soft-locking the transition.
-  camera.fadeEffect.start(true, 250, 0, 0, 0, true);
+  // FADE_OUT_COMPLETE never fires, soft-locking the transition. V4: the
+  // HUD camera fades with the world camera.
+  fadeAllCameras(from, 'out', 250);
 }

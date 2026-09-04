@@ -240,6 +240,10 @@ export function buildPlaceholderRoomMap(
     }
 
     baked.setDepth(-1);
+    // V4: the bake is a dynamic texture created after the texture-manager
+    // filter hook ran for its sources; pin it to NEAREST so the integer
+    // world zoom doubles pixels instead of blurring them.
+    baked.texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
   }
 
   return {

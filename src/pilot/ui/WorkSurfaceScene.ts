@@ -25,6 +25,7 @@ import Phaser from 'phaser';
 import { key } from '../../constants';
 import { guardKeyHandler } from '../../inventory/ui/keyGuard';
 import { prefersReducedMotion } from '../../inventory/ui/theme';
+import { fitOverlayScene } from '../../world/viewport';
 import type { InputMode } from '../windows/windowKit';
 
 export type SurfaceElementKind = 'tile' | 'button' | 'readout' | 'text';
@@ -187,6 +188,10 @@ export class WorkSurfaceScene extends Phaser.Scene {
 
   create() {
     this.scene.bringToTop();
+    // V4: 800×600 design space on the 1280×720 canvas (viewport.ts).
+    // Pointer hit-tests in this scene use pointer.worldX/Y — the pointer in
+    // THIS camera's (design) space; pointer.x/y are canvas pixels.
+    fitOverlayScene(this);
 
     this.add
       // Denser scrim (0.62 → 0.9): host status chips and banners outside
@@ -631,8 +636,8 @@ export class WorkSurfaceScene extends Phaser.Scene {
       }
 
       if (
-        Math.abs(pointer.x - item.box.x) <= item.element.w / 2 &&
-        Math.abs(pointer.y - item.box.y) <= item.element.h / 2
+        Math.abs(pointer.worldX - item.box.x) <= item.element.w / 2 &&
+        Math.abs(pointer.worldY - item.box.y) <= item.element.h / 2
       ) {
         const focusables = this.focusables();
 

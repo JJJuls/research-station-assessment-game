@@ -3,11 +3,12 @@ import { expect, test } from '@playwright/test';
 
 /**
  * Participant-experience viewport/display regression (OPUS participant-
- * experience & accessibility gate). The game uses Phaser Scale.FIT +
- * CENTER_BOTH on an 800x600 (4:3) base (src/index.ts), so at every desktop
- * viewport the canvas must:
+ * experience & accessibility gate). V4: the game uses Phaser Scale.FIT +
+ * CENTER_BOTH on a 1280x720 (16:9) base (src/index.ts,
+ * docs/game/VISUAL-SYSTEM-V4.md §1), so at every desktop viewport the
+ * canvas must:
  *   - fit fully inside the viewport (never exceed it),
- *   - preserve the 4:3 aspect ratio (1.333), and
+ *   - preserve the 16:9 aspect ratio (1.778) — letterbox, never stretch, and
  *   - never introduce a horizontal page scrollbar.
  * This locks that contract so a future Scale-mode change cannot silently
  * ship a clipped or overflowing participant layout. Purely presentational —
@@ -71,10 +72,11 @@ const DESKTOP_VIEWPORTS = [
   { w: 1366, h: 768 },
   { w: 1280, h: 720 },
   { w: 1024, h: 768 },
+  { w: 800, h: 600 },
 ];
 
 for (const vp of DESKTOP_VIEWPORTS) {
-  test(`canvas fits and preserves 4:3 at ${vp.w}x${vp.h}`, async ({
+  test(`canvas fits and preserves 16:9 at ${vp.w}x${vp.h}`, async ({
     browser,
   }) => {
     const { page, metrics, errors } = await bootAtViewport(browser, vp.w, vp.h);
@@ -85,9 +87,9 @@ for (const vp of DESKTOP_VIEWPORTS) {
     expect(metrics.canvasH, 'canvas height fits viewport').toBeLessThanOrEqual(
       vp.h + 2,
     );
-    // 4:3 aspect preserved (800/600 = 1.333) — no stretch/distortion.
-    expect(metrics.aspect).toBeGreaterThan(1.32);
-    expect(metrics.aspect).toBeLessThan(1.34);
+    // 16:9 aspect preserved (1280/720 = 1.778) — no stretch/distortion.
+    expect(metrics.aspect).toBeGreaterThan(1.76);
+    expect(metrics.aspect).toBeLessThan(1.79);
     // Body must never scroll horizontally.
     expect(metrics.scrollW, 'no horizontal page overflow').toBeLessThanOrEqual(
       vp.w + 2,
@@ -108,8 +110,8 @@ test('narrow viewport 375x667: content letterboxes, never overflows horizontally
 
   expect(metrics.canvasW).toBeLessThanOrEqual(375 + 2);
   expect(metrics.scrollW).toBeLessThanOrEqual(375 + 2);
-  expect(metrics.aspect).toBeGreaterThan(1.32);
-  expect(metrics.aspect).toBeLessThan(1.34);
+  expect(metrics.aspect).toBeGreaterThan(1.76);
+  expect(metrics.aspect).toBeLessThan(1.79);
 
   await page.context().close();
 });

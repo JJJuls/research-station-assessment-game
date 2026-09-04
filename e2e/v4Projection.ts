@@ -51,7 +51,30 @@ export interface ScientificProjection {
 }
 
 /** Record fields that vary run-to-run and carry no scientific identity. */
-const TIME_LIKE = /(_at|_ms|_seconds|timestamp|duration|elapsed)$/i;
+const TIME_LIKE = /(^at$|_at|_ms|_seconds|timestamp|duration|elapsed)$/i;
+
+/** Deep copy with every time-like key removed (objects and arrays). */
+function stripTimeLikeDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((entry) => stripTimeLikeDeep(entry)) as T;
+  }
+
+  if (isPlainObject(value)) {
+    const out: Record<string, unknown> = {};
+
+    for (const [key, entry] of Object.entries(value)) {
+      if (TIME_LIKE.test(key)) {
+        continue;
+      }
+
+      out[key] = stripTimeLikeDeep(entry);
+    }
+
+    return out as T;
+  }
+
+  return value;
+}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -196,8 +219,8 @@ export function buildScientificProjection(
         Object.entries(forms).map(([slot, set]) => [slot, sortedUnique(set)]),
       ),
     ),
-    coverage: input.coverage,
-    route_summary: input.routeSummary,
+    coverage: stripTimeLikeDeep(input.coverage),
+    route_summary: stripTimeLikeDeep(input.routeSummary),
   };
 }
 
@@ -264,9 +287,13 @@ export function compareProjections(
   current: ScientificProjection,
 ): ProjectionDifference[] {
   const out: ProjectionDifference[] = [];
+  // Both sides are normalised again so a baseline written before a
+  // time-like key was recognised still compares on scientific content.
+  const a = stripTimeLikeDeep(baseline);
+  const b = stripTimeLikeDeep(current);
 
-  for (const field of Object.keys(baseline) as (keyof ScientificProjection)[]) {
-    diffValue(String(field), baseline[field], current[field], out);
+  for (const field of Object.keys(a) as (keyof ScientificProjection)[]) {
+    diffValue(String(field), a[field], b[field], out);
   }
 
   return out;

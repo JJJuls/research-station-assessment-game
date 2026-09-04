@@ -127,3 +127,40 @@ No validated questionnaire wording appears in this room's dialogue (it has no
 Q-item mapping to leak). Keep it that way — this room's text should stay
 control-instruction-only (movement/interaction mechanics), never drifting into
 personality-adjacent framing that could bias later rooms.
+
+## V4 visual-validity redesign (2026-09-05) — presentation only
+
+Governing document: `docs/game/VISUAL-SYSTEM-V4.md`. Nothing in this pass
+changes an event, a payload, the tutorial options, the marker mechanic
+(distance < 40 px), the door target or any coordinate the route specs drive
+against: terminal (96, 96), north door (368, 48), arrival spawn (384, 352),
+return spawn (384, 128). The one moved element is the movement marker:
+(544, 160) → (544, 224), so the ring named by the first instruction is
+inside the 640×360 arrival view (at (544, 160) it sat above the top edge);
+control-room tutorial geometry, no measured construct.
+
+- **Camera.** The world renders at the fixed integer zoom through the
+  bounded following camera (640×360 world pixels visible); the bay extends
+  beyond the viewport and the avatar is ≈96 canvas px tall.
+- **Layout.** The bay is read left to right: the Arrival Terminal in a
+  shallow west-wall kiosk (column 1 rows 2–4 wall; column 2 stays clear
+  for the 32 px body centred on x = 96), the north airlock on a painted
+  two-tile circulation spine from the arrival airlock across the landing
+  pad, a grouped cargo stack on the north-east wall cells, a service rail
+  (locker, cart) on the east wall cells. Every prop that could block
+  movement stands on a wall cell; decor on open floor is flat.
+- **Door.** The north exit uses the station's one interior door family
+  (`plv1-arch-door` leaf + cyan threshold) with the legacy airlock prop as
+  fallback; the arrival airlock behind the spawn is the iris strip's closed
+  leaf.
+- **Marker.** The highlighted movement target is a cyan floor ring with a
+  restrained pulse (held under reduced motion) that settles and is removed
+  once reached; the "Move here" label is gone and the reach message rides
+  the transient feedback banner.
+- **Motion.** Pad edge lights are static; no ambient tweens remain.
+- **Opening.** The arrival sequence (`PilotOpeningScene`) is an in-engine
+  establishing shot (station modules, tower, damaged mast, pad, static
+  storm aftermath, slow push-in of the picture; static under reduced
+  motion) of ≈8.2 s with a visible skip line; the skip press is ignored by
+  the Dock's interact keys for 300 ms after control returns.
+- **Objective line.** Refreshed on overlay RESUME as in every room.

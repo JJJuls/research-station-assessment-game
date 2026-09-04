@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test';
 
-import { bootGame, getEvents, getEventTypes, hold, press } from './helpers';
+import {
+  bootGame,
+  driveAxisTo,
+  getEvents,
+  getEventTypes,
+  press,
+} from './helpers';
 
 /**
  * V3 §9 / smoke-plan spec 2: movement + first SPACE interaction in the
@@ -22,12 +28,17 @@ test('dock movement, first interaction, and tutorial completion log canonically'
   await press(page, 'Space');
   await press(page, 'Space');
 
-  // Move to the highlighted marker, then to the Arrival Terminal
-  // (verified route from the slice evidence runs).
-  await hold(page, 'ArrowRight', 950);
-  await hold(page, 'ArrowUp', 1150);
-  await hold(page, 'ArrowLeft', 2650);
-  await hold(page, 'ArrowUp', 420);
+  // Move to the highlighted marker (544, 224), then to the Arrival
+  // Terminal (96, 96). V4: position-synced legs (the same real held-arrow
+  // input, stopped on the observed position) — the software-GL
+  // verification renderer is frame-rate bound, so fixed-duration holds
+  // under-shoot; the events asserted below are unchanged.
+  await driveAxisTo(page, 'x', 544, 12);
+  await driveAxisTo(page, 'y', 224, 12);
+  // Back north to the clear upper lane before heading west (the crate
+  // block occupies rows 7-8 between the marker and the terminal).
+  await driveAxisTo(page, 'y', 140, 12);
+  await driveAxisTo(page, 'x', 96, 12);
 
   // First in-range interaction opens the tutorial prompt.
   await press(page, 'Space');

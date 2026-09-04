@@ -31,6 +31,7 @@ import { key } from '../../constants';
 import { sfxInstall, sfxMachineOn, sfxUnavailable } from '../../gameplay/audio';
 import { guardKeyHandler } from '../../inventory/ui/keyGuard';
 import { prefersReducedMotion } from '../../inventory/ui/theme';
+import { fitOverlayScene } from '../../world/viewport';
 import {
   closureFeeds,
   devInspectionActive,
@@ -182,6 +183,10 @@ export class FeedPanelScene extends Phaser.Scene {
 
   create() {
     this.scene.bringToTop();
+    // V4: 800×600 design space on the 1280×720 canvas (viewport.ts).
+    // Pointer hit-tests in this scene use pointer.worldX/Y — the pointer in
+    // THIS camera's (design) space; pointer.x/y are canvas pixels.
+    fitOverlayScene(this);
 
     this.add
       // Denser scrim (visual review V1 residual).
@@ -472,34 +477,37 @@ export class FeedPanelScene extends Phaser.Scene {
     switch (feed) {
       case 'coolant': {
         const distance = Phaser.Math.Distance.Between(
-          pointer.x,
-          pointer.y,
+          pointer.worldX,
+          pointer.worldY,
           WHEEL.x,
           WHEEL.y,
         );
 
         if (distance <= WHEEL.r + 12) {
           this.dragging = 'wheel';
-          this.lastAngle = Math.atan2(pointer.y - WHEEL.y, pointer.x - WHEEL.x);
+          this.lastAngle = Math.atan2(
+            pointer.worldY - WHEEL.y,
+            pointer.worldX - WHEEL.x,
+          );
         }
         return;
       }
       case 'calibration': {
         const lever = this.leverRect(feeds.calibration.index);
 
-        if (inRect(pointer, ENGAGE)) {
+        if (inRect({ x: pointer.worldX, y: pointer.worldY }, ENGAGE)) {
           this.apply(engageBreaker(feeds, this.recordClosed()), 'pointer');
         } else if (
-          inRect(pointer, lever) ||
-          (Math.abs(pointer.x - TRACK.x) <= 40 &&
-            pointer.y >= TRACK.y0 - 12 &&
-            pointer.y <= TRACK.y1 + 12)
+          inRect({ x: pointer.worldX, y: pointer.worldY }, lever) ||
+          (Math.abs(pointer.worldX - TRACK.x) <= 40 &&
+            pointer.worldY >= TRACK.y0 - 12 &&
+            pointer.worldY <= TRACK.y1 + 12)
         ) {
           this.dragging = 'lever';
           this.apply(
             setBreakerIndex(
               feeds,
-              this.indexAtY(pointer.y),
+              this.indexAtY(pointer.worldY),
               this.recordClosed(),
             ),
             'pointer',
@@ -510,7 +518,10 @@ export class FeedPanelScene extends Phaser.Scene {
       case 'distribution': {
         const bus = feeds.distribution;
 
-        if (bus.coupler === 'tray' && inRect(pointer, TRAY)) {
+        if (
+          bus.coupler === 'tray' &&
+          inRect({ x: pointer.worldX, y: pointer.worldY }, TRAY)
+        ) {
           const lifted = liftCoupler(feeds, this.recordClosed());
 
           this.apply(lifted, 'pointer');
@@ -520,7 +531,10 @@ export class FeedPanelScene extends Phaser.Scene {
           }
         } else if (
           bus.coupler === 'rail' &&
-          inRect(pointer, this.couplerRect(bus.travel))
+          inRect(
+            { x: pointer.worldX, y: pointer.worldY },
+            this.couplerRect(bus.travel),
+          )
         ) {
           this.dragging = 'coupler';
         }
@@ -538,7 +552,10 @@ export class FeedPanelScene extends Phaser.Scene {
 
     switch (this.dragging) {
       case 'wheel': {
-        const angle = Math.atan2(pointer.y - WHEEL.y, pointer.x - WHEEL.x);
+        const angle = Math.atan2(
+          pointer.worldY - WHEEL.y,
+          pointer.worldX - WHEEL.x,
+        );
         let delta = angle - this.lastAngle;
 
         if (delta > Math.PI) {
@@ -557,13 +574,21 @@ export class FeedPanelScene extends Phaser.Scene {
       }
       case 'lever':
         this.apply(
-          setBreakerIndex(feeds, this.indexAtY(pointer.y), this.recordClosed()),
+          setBreakerIndex(
+            feeds,
+            this.indexAtY(pointer.worldY),
+            this.recordClosed(),
+          ),
           'pointer',
         );
         return;
       case 'coupler':
         this.apply(
-          placeCoupler(feeds, this.travelAtX(pointer.x), this.recordClosed()),
+          placeCoupler(
+            feeds,
+            this.travelAtX(pointer.worldX),
+            this.recordClosed(),
+          ),
           'pointer',
         );
         return;
@@ -1226,12 +1251,12 @@ export class FeedPanelScene extends Phaser.Scene {
   }
 }
 
-function inRect(pointer: { x: number; y: number }, rect: Rect): boolean {
+function inRect(point: { x: number; y: number }, rect: Rect): boolean {
   return (
-    pointer.x >= rect.x &&
-    pointer.x <= rect.x + rect.w &&
-    pointer.y >= rect.y &&
-    pointer.y <= rect.y + rect.h
+    point.x >= rect.x &&
+    point.x <= rect.x + rect.w &&
+    point.y >= rect.y &&
+    point.y <= rect.y + rect.h
   );
 }
 

@@ -242,6 +242,7 @@ export abstract class PilotZoneScene extends RoomScene {
         // 11 px and ≥ 4.5:1 on the dark room floors (gameplay review G10).
         color: dark ? '#8497aa' : '#3d4d5c',
         font: '11px monospace',
+        resolution: 2,
       })
       .setOrigin(0.5)
       .setDepth(2);

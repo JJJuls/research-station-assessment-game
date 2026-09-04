@@ -14,6 +14,7 @@ import Phaser from 'phaser';
 
 import { key } from '../../constants';
 import { guardKeyHandler } from '../../inventory/ui/keyGuard';
+import { fitOverlayScene } from '../../world/viewport';
 import type { PilotZoneKey } from '../pilotRoute';
 import {
   PILOT_EPISODE_NAMES,
@@ -102,7 +103,7 @@ const LINKS: readonly [PilotZoneKey, PilotZoneKey][] = [
 ];
 
 const LOG_X = 528;
-const LOG_W = 244;
+const LOG_W = 226;
 
 declare global {
   interface Window {
@@ -132,6 +133,8 @@ export class StationMapScene extends Phaser.Scene {
 
   create() {
     this.scene.bringToTop();
+    // V4: 800×600 design space on the 1280×720 canvas (viewport.ts).
+    fitOverlayScene(this);
 
     const model = pilotMapModel();
     const byZone = new Map(model.map((node) => [node.zone, node]));
@@ -224,7 +227,7 @@ export class StationMapScene extends Phaser.Scene {
 
     // ——— Mission log (right column) ———
     this.add
-      .rectangle(LOG_X + LOG_W / 2, 300, LOG_W + 16, 440, 0x0c1219, 1)
+      .rectangle(LOG_X + LOG_W / 2, 296, LOG_W + 16, 420, 0x0c1219, 1)
       .setStrokeStyle(1, 0x33475a);
     this.add
       .text(LOG_X + LOG_W / 2, 100, 'MISSION LOG', {
@@ -278,7 +281,7 @@ export class StationMapScene extends Phaser.Scene {
     this.add
       .text(
         400,
-        528,
+        540,
         'cyan = you are here   ·   amber = destination   ·   grey = not yet visited\nM or ESC closes',
         {
           color: '#9fb2c1',

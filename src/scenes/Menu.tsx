@@ -4,6 +4,11 @@ import { render } from 'phaser-jsx';
 import { Button, Overlay } from '../components';
 import { key } from '../constants';
 import { isAudioMuted, toggleAudioMuted } from '../gameplay';
+import {
+  DESIGN_HEIGHT,
+  DESIGN_WIDTH,
+  fitOverlayScene,
+} from '../world/viewport';
 
 export class Menu extends Scene {
   /**
@@ -25,9 +30,12 @@ export class Menu extends Scene {
     // Same registration-order rule as the inventory overlay: the ESC pause
     // menu must draw above the paused host scene, not under it.
     this.scene.bringToTop();
+    // V4: 800×600 design space on the 1280×720 canvas (viewport.ts).
+    fitOverlayScene(this);
 
     this.input.keyboard!.on('keydown-ESC', this.onEscape, this);
-    const { centerX, centerY } = this.cameras.main;
+    const centerX = DESIGN_WIDTH / 2;
+    const centerY = DESIGN_HEIGHT / 2;
 
     render(
       <>

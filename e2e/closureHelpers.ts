@@ -11,7 +11,7 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
-import { hold, press, selectPromptOption } from './helpers';
+import { designToPage, hold, press, selectPromptOption } from './helpers';
 import {
   concourseToDeck,
   expectStage,
@@ -253,24 +253,9 @@ const FEED_SITE: Record<
   },
 };
 
-async function canvasBox(page: Page) {
-  const box = await page.locator('canvas').boundingBox();
-
-  if (box === null) {
-    throw new Error('canvas not found');
-  }
-
-  return box;
-}
-
-/** Game-space (800×600) → canvas pixel. */
+/** Game design space (800×600) → page pixel (V4: via __designSpace). */
 async function toCanvas(page: Page, x: number, y: number) {
-  const box = await canvasBox(page);
-
-  return {
-    x: box.x + (x * box.width) / 800,
-    y: box.y + (y * box.height) / 600,
-  };
+  return designToPage(page, x, y);
 }
 
 /* ------------------------------------------------------------------ *

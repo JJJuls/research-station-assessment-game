@@ -42,6 +42,7 @@ import type {
   M13SlotId,
 } from '../../measurement/m13PipePuzzle';
 import { M13_PIECES, M13_SLOT_IDS } from '../../measurement/m13PipePuzzle';
+import { fitOverlayScene } from '../../world/viewport';
 import type { LatticeView, PipeAction } from '../m13PipeNetwork';
 import {
   m13LatticeAct,
@@ -240,6 +241,10 @@ export class PipeBoardScene extends Phaser.Scene {
     // the barrel, and module namespaces enumerate exports sorted by name;
     // a scene that sorts before its host would otherwise render beneath it).
     this.scene.bringToTop();
+    // V4: 800×600 design space on the 1280×720 canvas (viewport.ts).
+    // Pointer hit-tests in this scene use pointer.worldX/Y — the pointer in
+    // THIS camera's (design) space; pointer.x/y are canvas pixels.
+    fitOverlayScene(this);
 
     this.input.mouse?.disableContextMenu();
     this.input.dragDistanceThreshold = 6;
@@ -1454,14 +1459,14 @@ export class PipeBoardScene extends Phaser.Scene {
 
         this.lastView = view;
         this.spawnGhost(view.held!.piece_id, view.held!.rotation, true);
-        this.ghost?.setPosition(pointer.x, pointer.y);
+        this.ghost?.setPosition(pointer.worldX, pointer.worldY);
         this.restyleTargets();
       },
     );
 
     this.input.on(Phaser.Input.Events.DRAG, (pointer: Phaser.Input.Pointer) => {
       if (this.dragging) {
-        this.ghost?.setPosition(pointer.x, pointer.y);
+        this.ghost?.setPosition(pointer.worldX, pointer.worldY);
       }
     });
 
@@ -1654,7 +1659,7 @@ export class PipeBoardScene extends Phaser.Scene {
         this.refresh();
 
         if (this.ghostFollowsPointer && this.ghost !== null) {
-          this.ghost.setPosition(pointer.x, pointer.y);
+          this.ghost.setPosition(pointer.worldX, pointer.worldY);
         }
       },
     );
@@ -1688,7 +1693,7 @@ export class PipeBoardScene extends Phaser.Scene {
       Phaser.Input.Events.POINTER_MOVE,
       (pointer: Phaser.Input.Pointer) => {
         if (this.ghost !== null && this.ghostFollowsPointer && !this.dragging) {
-          this.ghost.setPosition(pointer.x, pointer.y);
+          this.ghost.setPosition(pointer.worldX, pointer.worldY);
         }
       },
     );

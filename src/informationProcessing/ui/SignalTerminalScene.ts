@@ -36,6 +36,7 @@ import {
 } from '../../gameplay/audio';
 import { guardKeyHandler } from '../../inventory/ui/keyGuard';
 import { UiButton } from '../../inventory/ui/UiButton';
+import { fitOverlayScene } from '../../world/viewport';
 import { normalizeToken, tokenizeCommandText } from '../commands';
 import type { InputMode, TerminalTaskAdapter, TerminalView } from '../model';
 import { refreshIpProbe } from '../probe';
@@ -213,6 +214,10 @@ export class SignalTerminalScene extends Phaser.Scene {
     // the barrel, and module namespaces enumerate exports sorted by name;
     // a scene that sorts before its host would otherwise render beneath it).
     this.scene.bringToTop();
+    // V4: 800×600 design space on the 1280×720 canvas (viewport.ts).
+    // Pointer hit-tests in this scene use pointer.worldX/Y — the pointer in
+    // THIS camera's (design) space; pointer.x/y are canvas pixels.
+    fitOverlayScene(this);
 
     this.input.mouse?.disableContextMenu();
     this.input.dragDistanceThreshold = 6;
@@ -1502,7 +1507,7 @@ export class SignalTerminalScene extends Phaser.Scene {
 
         this.dragging = true;
         this.dragChipId = target.id;
-        this.spawnGhost(target.id, pointer.x, pointer.y);
+        this.spawnGhost(target.id, pointer.worldX, pointer.worldY);
         this.restyleTargets();
       },
     );
@@ -1510,7 +1515,7 @@ export class SignalTerminalScene extends Phaser.Scene {
     this.input.on(Phaser.Input.Events.DRAG, (pointer: Phaser.Input.Pointer) => {
       if (this.dragging) {
         // Offset so the ghost never hides the target's own label.
-        this.ghost?.setPosition(pointer.x + 26, pointer.y - 22);
+        this.ghost?.setPosition(pointer.worldX + 26, pointer.worldY - 22);
       }
     });
 

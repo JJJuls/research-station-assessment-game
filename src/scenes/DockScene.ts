@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 
-import { Depth, key } from '../constants';
+import { DepthLayer, key } from '../constants';
+import { prefersReducedMotion } from '../inventory/ui/theme';
 import { pilotLaunchMode } from '../pilot/pilotCoverage';
 import { notePilotZoneEntered, pilotObjective } from '../pilot/pilotRoute';
 import { PILOT_CONTROLS_LINES } from '../pilot/PilotZoneScene';
@@ -35,8 +36,8 @@ export class DockScene extends RoomScene {
 
   private controlErrorCount = 0;
   private controlErrorLogged = false;
-  private marker!: Phaser.GameObjects.Rectangle;
-  private markerHint: Phaser.GameObjects.Text | null = null;
+  private marker!: Phaser.GameObjects.Ellipse;
+  private markerPulse: Phaser.Tweens.Tween | null = null;
   private markerReached = false;
   private idleSinceMs: number | null = null;
 
@@ -45,30 +46,35 @@ export class DockScene extends RoomScene {
   }
 
   protected getLayout(): RoomLayout {
-    // 24×14 dock bay: airlock wall at the bottom (spawn), sealed hub door
-    // at the top ('-' doorway tiles), open floor with a crate block for
-    // structure. Legend: StationMapBuilder CHAR_TO_TILE.
+    // V4 arrival bay (docs/game/VISUAL-SYSTEM-V4.md §7): a compact bay
+    // read left to right — the Arrival Terminal kiosk on the west wall
+    // (floor plate + light pool; the west lane at x ≈ 48 that the legacy
+    // journeys clamp along stays fully open), the north airlock on the
+    // centre spine, a cargo stack
+    // on the north-east wall (cols 18-22 rows 3-4), a service rail along
+    // the east wall (cols 21-22 rows 5-11), the landing pad ('P') centred
+    // on the arrival airlock. Every V3 coordinate is preserved: terminal
+    // (96,96), north door (368,48), both
+    // spawns, and the e2e lanes (col 3 north, row 2 east to the door).
+    // The grid is 14 rows (448 px): one wall row below the arrival airlock
+    // instead of seven rows of dead wall mass under the bay. Legend:
+    // StationMapBuilder CHAR_TO_TILE.
     return {
       theme: 'dock',
       grid: [
         '#########################',
         '###########--############',
         '#......................##',
-        '#......................##',
-        '#......................##',
-        '#......................##',
-        '#......................##',
-        '#......####............##',
-        '#......####............##',
-        '#........PPPPPP........##',
-        '#........PPPPPP........##',
-        '#........PPPPPP........##',
+        '#.................#######',
+        '#.................#######',
+        '#....................####',
+        '#....................####',
+        '#......####..........####',
+        '#......####..........####',
+        '#........PPPPPP......####',
+        '#........PPPPPP......####',
+        '#........PPPPPP......####',
         '###########--############',
-        '#########################',
-        '#########################',
-        '#########################',
-        '#########################',
-        '#########################',
         '#########################',
       ],
     };
@@ -138,75 +144,128 @@ export class DockScene extends RoomScene {
     // target survives under ?route=legacy).
     const northTarget = this.northDoorTarget();
 
+    // V4: the one interior door family (arch leaf + cyan threshold) so the
+    // exit reads like every other station door; the legacy prop remains
+    // the fallback when the leaf is not loaded.
     this.addDoor({
       x: 12 * 32 - 16,
       y: 1 * 32 + 16,
       label: isLegacyRoute() ? 'Station Hub' : 'Station Concourse',
-      texture: 'prop-dock-airlock',
+      texture: this.textures.exists('plv1-arch-door')
+        ? 'plv1-arch-door'
+        : 'prop-dock-airlock',
       interactionKey: 'dockArrivalTutorial',
       target: northTarget,
     });
 
-    // Set dressing (decorative only; never obstructs interactables).
-    this.addDecor(12 * 32 - 16, 12 * 32 + 8, 'prop-dock-airlock'); // arrival airlock
-    // Unit 7 (visual review N8): the legacy signage prop rendered an
-    // unreadable warm-red word at ~7 px — removed (decor only).
-    // Crates sit on the collidable crate block only — decor on open floor
-    // would let the player walk through it (visual-integrity rule).
-    this.addDecor(8.5 * 32, 7 * 32, 'prop-dock-crates');
+    // V4 set dressing (presentation only; never obstructs interactables;
+    // every prop that could block movement stands on a wall cell).
+    this.buildArrivalBay();
+  }
 
-    // Stardew-quality pass (Unit B): arrival-bay ambience. Deterministic
-    // dressing only — fixed positions, no collision, no interaction.
-    this.addDecor(3 * 32, 3.4 * 32, 'proc-light-pool');
-    this.addDecor(12 * 32, 10 * 32, 'proc-light-pool');
-    this.addDecor(17 * 32, 46, 'proc-window-exterior');
-    this.addDecor(20.5 * 32, 46, 'proc-window-exterior');
-    this.addDecor(4.5 * 32, 12 * 32 + 10, 'proc-wall-pipes');
-    this.addDecor(19.5 * 32, 12 * 32 + 10, 'proc-wall-pipes');
-    this.addDecor(20.5 * 32, 3 * 32, 'proc-cart-utility');
+  /**
+   * V4 arrival-bay composition (docs/game/VISUAL-SYSTEM-V4.md §7 Dock):
+   * one dominant circulation spine (arrival airlock → landing pad → north
+   * airlock), the terminal kiosk as the western landmark, a grouped cargo
+   * stack and a service rail as quiet structure, static pad lights, no
+   * ambient motion. Nothing here logs, gates or moves an interactable.
+   */
+  private buildArrivalBay() {
+    const TILE = 32;
 
-    // Landing-pad edge beacons: four dull-amber marker lights breathing
-    // slowly. Ambience only (never cyan, far dimmer than interactables).
+    // Arrival airlock behind the spawn (the iris strip's closed leaf when
+    // loaded, else the committed airlock prop).
+    if (this.textures.exists('plv1-airlock-open')) {
+      // Centred on the wall row so the leaf never covers the figure.
+      this.add
+        .image(12 * TILE - 16, 12 * TILE + 18, 'plv1-airlock-open', 0)
+        .setDepth(DepthLayer.LowProp);
+    } else {
+      this.addDecor(12 * TILE - 16, 12 * TILE + 8, 'prop-dock-airlock');
+    }
+
+    // Circulation spine: a painted service lane from the arrival airlock
+    // to the north airlock (two tiles wide), with a dashed centre line.
+    const laneX = 12 * TILE - 16;
+
+    this.add
+      .rectangle(laneX, 7 * TILE, 2 * TILE, 10 * TILE, 0x55627a, 0.22)
+      .setDepth(DepthLayer.FloorDecal);
+    for (let row = 2; row < 12; row += 1) {
+      this.add
+        .rectangle(laneX, row * TILE + 16, 4, 14, 0x8fa4b8, 0.35)
+        .setDepth(DepthLayer.FloorMarking);
+    }
+    this.add
+      .rectangle(laneX, 2 * TILE + 4, 2 * TILE - 8, 3, 0x5fd3c4, 0.5)
+      .setDepth(DepthLayer.FloorMarking);
+
+    // Terminal kiosk: light pool + a floor plate that reads as its own
+    // station.
+    this.addDecor(3 * TILE, 3.4 * TILE, 'proc-light-pool');
+    this.add
+      .rectangle(3 * TILE, 3 * TILE + 20, 3 * TILE, 2 * TILE, 0x55627a, 0.16)
+      .setDepth(DepthLayer.FloorDecal);
+
+    // North wall: exterior windows either side of the airlock (rhythm) and
+    // the cargo stack on the north-east wall cells.
+    for (const x of [5.5, 8.5, 15.5, 18.5]) {
+      if (this.textures.exists('proc-window-exterior')) {
+        // Night outside: the window card is held to the wall register so
+        // decoration never outshines the figure or the exit.
+        this.add
+          .image(x * TILE, 46, 'proc-window-exterior')
+          .setTint(0x7f93a8)
+          .setDepth(DepthLayer.LowProp);
+      }
+    }
+    this.addDecor(19 * TILE, 3 * TILE + 12, 'prop-dock-crates');
+    this.addDecor(21 * TILE + 4, 3 * TILE + 12, 'prop-dock-crates');
+    this.addDecor(20 * TILE + 8, 4.6 * TILE, 'proc-crate-supply');
+
+    // The crate block in the bay (collidable cells) and the east service
+    // rail: a locker and a cart on wall cells only; pipes on the south
+    // wall.
+    this.addDecor(8.5 * TILE, 7 * TILE, 'prop-dock-crates');
+    this.addDecor(21.5 * TILE, 7.5 * TILE, 'proc-locker-field');
+    this.addDecor(21.5 * TILE, 10 * TILE, 'proc-cart-utility');
+    this.addDecor(4.5 * TILE, 12 * TILE + 10, 'proc-wall-pipes');
+    this.addDecor(19.5 * TILE, 12 * TILE + 10, 'proc-wall-pipes');
+
+    // Landing-pad edge lights: static, dull amber (never cyan, no motion).
     for (const [x, y] of [
-      [9.4 * 32, 9.4 * 32],
-      [14.6 * 32, 9.4 * 32],
-      [9.4 * 32, 11.6 * 32],
-      [14.6 * 32, 11.6 * 32],
+      [9.4 * TILE, 9.4 * TILE],
+      [14.6 * TILE, 9.4 * TILE],
+      [9.4 * TILE, 11.6 * TILE],
+      [14.6 * TILE, 11.6 * TILE],
     ] as const) {
-      const beacon = this.add.rectangle(x, y, 4, 4, 0x9a7a3a, 0.9);
+      this.add
+        .rectangle(x, y, 4, 4, 0x9a7a3a, 0.8)
+        .setDepth(DepthLayer.FloorMarking);
+    }
 
-      this.tweens.add({
-        targets: beacon,
-        alpha: { from: 0.9, to: 0.3 },
-        duration: 2100,
+    // Highlighted movement target (V3 Room 0 mini-game: "movement to
+    // highlighted target"). Reaching it is a mechanic, not an event — no
+    // canonical event exists for it and none is invented. V4: a floor ring
+    // with a restrained pulse (held under reduced motion) that is removed
+    // once reached — never a floating label.
+    // The ring sits at (544, 224): inside the 640×360 view from the arrival
+    // spawn (the V3 spot two rows higher was above the top edge at arrival).
+    this.marker = this.add
+      .ellipse(17 * TILE, 7 * TILE, 44, 18, 0x5fd3c4, 0.22)
+      .setStrokeStyle(2, 0x5fd3c4, 0.95)
+      .setDepth(DepthLayer.FloorMarking);
+
+    if (!prefersReducedMotion()) {
+      this.markerPulse = this.tweens.add({
+        targets: this.marker,
+        alpha: { from: 1, to: 0.5 },
+        duration: 900,
         repeat: -1,
         yoyo: true,
         ease: 'Sine.easeInOut',
       });
     }
-
-    // Highlighted movement target (V3 Room 0 mini-game: "movement to
-    // highlighted target"). Reaching it is a mechanic, not an event — no
-    // canonical event exists for it and none is invented.
-    this.marker = this.add
-      .rectangle(17 * 32, 5 * 32, 36, 36, 0x5fd3c4, 0.35)
-      .setStrokeStyle(2, 0x5fd3c4);
-    this.tweens.add({
-      targets: this.marker,
-      alpha: { from: 1, to: 0.4 },
-      duration: 700,
-      repeat: -1,
-      yoyo: true,
-    });
-    this.add
-      .text(17 * 32, 5 * 32 - 34, 'Move here', {
-        backgroundColor: '#000',
-        color: '#5fd3c4',
-        font: '12px monospace',
-        padding: { x: 4, y: 2 },
-      })
-      .setOrigin(0.5)
-      .setDepth(Depth.AboveWorld);
   }
 
   /** Participant pilot launch (not the legacy Hub ring, not a dev alias). */
@@ -284,6 +343,8 @@ export class DockScene extends RoomScene {
         this.scene.launch(key.scene.pilotOpening, {
           resumeKey: this.scene.key,
           onDone: (outcome: 'completed' | 'skipped') => {
+            // V4: the skip press never becomes the first interaction.
+            this.suppressInteractUntilMs = Date.now() + 300;
             this.logScenarioEvent(
               'pilotOpening',
               outcome === 'skipped'
@@ -448,25 +509,15 @@ export class DockScene extends RoomScene {
 
     if (distance < 40) {
       this.markerReached = true;
-      this.marker.setFillStyle(0x5fd3c4, 0.9);
-      this.markerHint = this.add
-        .text(
-          this.marker.x,
-          this.marker.y - 56,
-          'Marker reached — now check in at the Arrival Terminal (SPACE).',
-          {
-            backgroundColor: '#101820',
-            color: '#ffffff',
-            font: '13px monospace',
-            padding: { x: 6, y: 3 },
-          },
-        )
-        .setOrigin(0.5)
-        .setDepth(Depth.AboveWorld);
-      this.time.delayedCall(3000, () => {
-        this.markerHint?.destroy();
-        this.markerHint = null;
-      });
+      // V4: the reached marker settles and leaves — no lingering cue; the
+      // instruction rides the transient feedback banner.
+      this.markerPulse?.stop();
+      this.markerPulse = null;
+      this.marker.setAlpha(1).setFillStyle(0x5fd3c4, 0.5);
+      this.time.delayedCall(700, () => this.marker.destroy());
+      this.showFeedbackMessage(
+        'Marker reached — now check in at the Arrival Terminal (SPACE).',
+      );
     }
   }
 }

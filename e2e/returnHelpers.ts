@@ -24,6 +24,7 @@ import {
   startAntenna,
 } from './exteriorHelpers';
 import {
+  designToPage,
   driveAxisTo,
   getEvents,
   hold,
@@ -353,16 +354,6 @@ export async function promptCardLabels(page: Page): Promise<string[]> {
  * Surface input (pointer + keyboard converge on the same activation)
  * ------------------------------------------------------------------ */
 
-async function canvasBox(page: Page) {
-  const box = await page.locator('canvas').boundingBox();
-
-  if (box === null) {
-    throw new Error('canvas not found');
-  }
-
-  return box;
-}
-
 /** Pointer activation of a surface element (game 800×600 → canvas). */
 export async function clickElement(page: Page, id: string) {
   const probe = await surface(page);
@@ -374,12 +365,12 @@ export async function clickElement(page: Page, id: string) {
     );
   }
 
-  const box = await canvasBox(page);
+  // The probe's x/y is the element's CENTRE (WorkSurfaceScene hit-tests by
+  // absolute distance to half width/height); V4 maps it through the
+  // design space.
+  const point = await designToPage(page, element.x, element.y);
 
-  await page.mouse.click(
-    box.x + (element.x * box.width) / 800,
-    box.y + (element.y * box.height) / 600,
-  );
+  await page.mouse.click(point.x, point.y);
   await page.waitForTimeout(220);
 }
 
@@ -860,11 +851,7 @@ export async function pressBatchB(
     { timeout: 6000 },
   );
 
-  const box = await canvasBox(page);
-  const toCanvas = (x: number, y: number) => ({
-    x: box.x + (x * box.width) / 800,
-    y: box.y + (y * box.height) / 600,
-  });
+  const toCanvas = (x: number, y: number) => designToPage(page, x, y);
 
   for (let moved = 0; moved < options.store; moved += 1) {
     const slots = (await uiProbe(page))!.slots;
@@ -881,8 +868,8 @@ export async function pressBatchB(
       throw new Error('M03 residual or store slot not found');
     }
 
-    const from = toCanvas(source.x, source.y);
-    const to = toCanvas(target.x, target.y);
+    const from = await toCanvas(source.x, source.y);
+    const to = await toCanvas(target.x, target.y);
 
     await page.mouse.move(from.x, from.y);
     await page.mouse.down();

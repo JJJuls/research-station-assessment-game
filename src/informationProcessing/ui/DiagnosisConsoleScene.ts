@@ -32,6 +32,7 @@ import {
 } from '../../gameplay/audio';
 import { guardKeyHandler } from '../../inventory/ui/keyGuard';
 import { UiButton } from '../../inventory/ui/UiButton';
+import { fitOverlayScene } from '../../world/viewport';
 import type { DiagnosisAction, DiagnosisView } from '../m18FaultDiagnosis';
 import {
   m18FaultAct,
@@ -203,6 +204,10 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
     // the barrel, and module namespaces enumerate exports sorted by name;
     // a scene that sorts before its host would otherwise render beneath it).
     this.scene.bringToTop();
+    // V4: 800×600 design space on the 1280×720 canvas (viewport.ts).
+    // Pointer hit-tests in this scene use pointer.worldX/Y — the pointer in
+    // THIS camera's (design) space; pointer.x/y are canvas pixels.
+    fitOverlayScene(this);
 
     this.input.mouse?.disableContextMenu();
     this.input.keyboard?.addCapture([
@@ -1376,7 +1381,7 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
           .setOrigin(0.5);
 
         this.dragGhost = this.add
-          .container(pointer.x, pointer.y, [label])
+          .container(pointer.worldX, pointer.worldY, [label])
           .setDepth(IP_DEPTH.ghost)
           .setAlpha(0.9);
         this.writeProbe(this.lastView!);
@@ -1387,9 +1392,9 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
         return;
       }
 
-      this.dragGhost?.setPosition(pointer.x, pointer.y);
+      this.dragGhost?.setPosition(pointer.worldX, pointer.worldY);
 
-      const zone = this.zoneAt(pointer.x, pointer.y);
+      const zone = this.zoneAt(pointer.worldX, pointer.worldY);
 
       // Restyle the zones in place — a rebuild would destroy the dragged tag.
       if (zone !== this.dropZone) {
@@ -1418,7 +1423,7 @@ export class DiagnosisConsoleScene extends Phaser.Scene {
         }
 
         const target = (object.getData(KIND_KEY) as Target | undefined) ?? null;
-        const zone = this.zoneAt(pointer.x, pointer.y);
+        const zone = this.zoneAt(pointer.worldX, pointer.worldY);
 
         this.dragging = false;
         this.dropZone = null;
