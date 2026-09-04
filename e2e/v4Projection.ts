@@ -281,6 +281,44 @@ function diffValue(
   });
 }
 
+const SESSION_ASSIGNED = /^(form|counterbalance)$/;
+
+function stripSessionAssignedDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((entry) => stripSessionAssignedDeep(entry)) as T;
+  }
+
+  if (isPlainObject(value)) {
+    const out: Record<string, unknown> = {};
+
+    for (const [key, entry] of Object.entries(value)) {
+      if (SESSION_ASSIGNED.test(key)) {
+        continue;
+      }
+
+      out[key] = stripSessionAssignedDeep(entry);
+    }
+
+    return out as T;
+  }
+
+  return value;
+}
+
+function stripSessionAssigned(
+  projection: ScientificProjection,
+): ScientificProjection {
+  return {
+    ...stripSessionAssignedDeep(projection),
+    // Keep the assignment slots, not their per-session values.
+    form_assignments: Object.fromEntries(
+      Object.keys(projection.form_assignments)
+        .sort()
+        .map((slot) => [slot, ['<session-assigned>']]),
+    ),
+  };
+}
+
 /** Field-by-field differences between two projections (empty = identical). */
 export function compareProjections(
   baseline: ScientificProjection,
@@ -289,8 +327,13 @@ export function compareProjections(
   const out: ProjectionDifference[] = [];
   // Both sides are normalised again so a baseline written before a
   // time-like key was recognised still compares on scientific content.
-  const a = stripTimeLikeDeep(baseline);
-  const b = stripTimeLikeDeep(current);
+  // Parallel-form / counterbalance ASSIGNMENTS are a deterministic hash of
+  // the game session id (validity.ts assignCounterbalance) and therefore
+  // legitimately differ between two recorded sessions; the comparison
+  // checks that every assignment SLOT still exists (form_assignments keys)
+  // and drops the per-session values.
+  const a = stripSessionAssigned(stripTimeLikeDeep(baseline));
+  const b = stripSessionAssigned(stripTimeLikeDeep(current));
 
   for (const field of Object.keys(a) as (keyof ScientificProjection)[]) {
     diffValue(String(field), a[field], b[field], out);

@@ -108,16 +108,8 @@ async function validityRegister(page: Page): Promise<ValidityRecord[]> {
 }
 
 async function gamePoint(page: Page, x: number, y: number) {
-  const box = await page.locator('canvas').boundingBox();
-
-  if (box === null) {
-    throw new Error('game canvas not found');
-  }
-
-  return {
-    x: box.x + (x * box.width) / 800,
-    y: box.y + (y * box.height) / 600,
-  };
+  // V4: design space → page through the shared helper (__designSpace).
+  return designToPage(page, x, y);
 }
 
 async function clickButton(page: Page, id: string) {

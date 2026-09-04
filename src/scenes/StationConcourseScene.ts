@@ -10,7 +10,7 @@
  * desk. Every packet is its own object on the work surface; completing one
  * never gates another. Doors are always bidirectional.
  */
-import { key } from '../constants';
+import { DepthLayer, key } from '../constants';
 import {
   beginManualWorldAction,
   endManualWorldAction,
@@ -224,7 +224,6 @@ export class StationConcourseScene extends PilotZoneScene {
       y: S.vale.y,
     });
     this.addDecor(S.vale.x, S.vale.y + 30, 'proc-desk-reception');
-    this.signage(S.vale.x, S.vale.y - 64, 'INCIDENT DESK');
     registerPilotStation({
       id: 'npc_vale',
       zone: 'station_concourse',
@@ -250,7 +249,6 @@ export class StationConcourseScene extends PilotZoneScene {
     }
 
     // ——— Episode-1 work surface ———
-    this.signage(6 * TILE, 3 * TILE, 'STORM PACKET — WORK SURFACE');
     this.surfaceStation(
       'plan_board',
       'Plan Board',
@@ -314,17 +312,19 @@ export class StationConcourseScene extends PilotZoneScene {
         return false;
       },
     });
-    this.signage(S.monitorGauge.x, S.monitorGauge.y - 40, 'MONITOR');
     // Live reading beside the gauge (state, never a directive).
+    // V4: above the gauge (the approach lane is north of it, so the name
+    // chip and prompt sit below) — a state readout, never a directive.
     this.add
-      .text(S.monitorGauge.x, S.monitorGauge.y + 34, this.gaugeReading(), {
+      .text(S.monitorGauge.x, S.monitorGauge.y - 34, this.gaugeReading(), {
         backgroundColor: '#101820',
         color: '#dce7f0',
         font: '10px monospace',
         padding: { x: 4, y: 2 },
+        resolution: 2,
       })
       .setOrigin(0.5)
-      .setDepth(3);
+      .setDepth(DepthLayer.WorldReadout);
 
     // Station status strip on the wall console: a concise operational
     // update that changes on the return (no item, no directive).
@@ -340,10 +340,11 @@ export class StationConcourseScene extends PilotZoneScene {
           color: '#9fb2c1',
           font: '10px monospace',
           padding: { x: 4, y: 2 },
+          resolution: 2,
         },
       )
       .setOrigin(0.5)
-      .setDepth(3);
+      .setDepth(DepthLayer.WorldReadout);
 
     // ——— Desk lamp fault (M05 occasion 1) — never mentioned ———
     this.addStation({
@@ -399,6 +400,13 @@ export class StationConcourseScene extends PilotZoneScene {
       .setDepth(3)
       .setVisible(false);
 
+    // ——— V4 hub grammar (VISUAL-SYSTEM-V4 §7): one N–S circulation spine
+    // (Dock ↔ Laboratory), one E–W axis (Workshop ↔ Deck), a crossing plate
+    // where they meet, the incident-desk island as the landmark east of
+    // the crossing and a quiet quality bay south-west. Floor plates only —
+    // no collision, no interaction, no label.
+    this.buildHubGrammar();
+
     // ——— Dressing ———
     this.addDecor(12 * TILE, 3.2 * TILE, 'proc-light-pool');
     this.addDecor(15.5 * TILE, 8.2 * TILE, 'proc-light-pool');
@@ -422,10 +430,61 @@ export class StationConcourseScene extends PilotZoneScene {
     this.addDecor(17.5 * TILE, 12 * TILE, 'proc-cart-utility');
     this.addDecor(13.5 * TILE, 4.6 * TILE, 'proc-console-wall');
     // Unit 7: the sign sits beside the north door leaf, never behind it.
-    this.signage(16 * TILE, 1.5 * TILE, 'DIAGNOSTICS LABORATORY  ▲');
-    this.signage(12 * TILE, 17.5 * TILE, '▼  DOCK');
-    this.signage(22.2 * TILE, 7.2 * TILE, 'UTILITY DECK  ▶');
-    this.signage(2.8 * TILE, 7.2 * TILE, '◀  RECORDS WORKSHOP');
+  }
+
+  private buildHubGrammar() {
+    const plate = (
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      alpha: number,
+      depth: number = DepthLayer.FloorDecal,
+    ) =>
+      this.add
+        .rectangle(x, y, w, h, 0x55627a, alpha)
+        .setOrigin(0.5)
+        .setDepth(depth);
+
+    // Spine (cols 11-12) and axis (rows 8-9).
+    plate(12 * TILE - 16, 9 * TILE, 2 * TILE, 14 * TILE, 0.2);
+    plate(12 * TILE, 9 * TILE - 16, 22 * TILE, 2 * TILE, 0.2);
+    // Crossing plate.
+    plate(12 * TILE - 16, 9 * TILE - 16, 4 * TILE, 4 * TILE, 0.16);
+    // Dashed centre lines.
+    for (let row = 2; row < 16; row += 1) {
+      if (row < 7 || row > 10) {
+        this.add
+          .rectangle(12 * TILE - 16, row * TILE + 16, 4, 14, 0x8fa4b8, 0.3)
+          .setDepth(DepthLayer.FloorMarking);
+      }
+    }
+    for (let col = 1; col < 23; col += 1) {
+      if (col < 10 || col > 13) {
+        this.add
+          .rectangle(col * TILE + 16, 9 * TILE - 16, 14, 4, 0x8fa4b8, 0.3)
+          .setDepth(DepthLayer.FloorMarking);
+      }
+    }
+    // Desk island (Vale) and the quality bay.
+    plate(
+      15.5 * TILE,
+      9 * TILE,
+      5 * TILE,
+      4 * TILE,
+      0.14,
+      DepthLayer.FloorMarking,
+    );
+    plate(9.5 * TILE, 13 * TILE, 7 * TILE, 3 * TILE, 0.12);
+    // Door thresholds: one plate family at the four exits.
+    for (const [x, y, w, h] of [
+      [12 * TILE, 2.5 * TILE, 3 * TILE, TILE],
+      [12 * TILE, 15.5 * TILE, 3 * TILE, TILE],
+      [1.5 * TILE, 8.5 * TILE, TILE, 3 * TILE],
+      [23.5 * TILE, 8.5 * TILE, TILE, 3 * TILE],
+    ] as const) {
+      plate(x, y, w, h, 0.22, DepthLayer.FloorMarking);
+    }
   }
 
   private surfaceStation(
@@ -449,7 +508,6 @@ export class StationConcourseScene extends PilotZoneScene {
         return false;
       },
     });
-    this.signage(at.x, at.y - 40, label.toUpperCase());
     registerPilotStation({
       id,
       zone: 'station_concourse',
@@ -519,11 +577,6 @@ export class StationConcourseScene extends PilotZoneScene {
     this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
       metadata: { station_id: stationId, zone: this.zoneKey },
     });
-  }
-
-  /** Unit 7 (V17): one shared area-signage style (PilotZoneScene). */
-  private signage(x: number, y: number, text: string) {
-    this.zoneSignage(x, y, text);
   }
 
   private wallArt(preferred: string, fallback: string): string {

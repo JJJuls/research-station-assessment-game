@@ -13,6 +13,8 @@
  * Core confirmation. The result is written to the scratch directory and
  * printed for the report.
  */
+// V4: the 800×600 design space sits at canvas (160 + 1.2x, 1.2y) on the
+// 1280×720 canvas (src/world/viewport.ts; DEV probe window.__designSpace).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -115,8 +117,8 @@ test('complete participant route — Dock to stable Core, timing and coverage re
   const bus = await openFeedPanel(page, 'distribution');
   const box = (await page.locator('canvas').boundingBox())!;
   const at = (x: number, y: number) => ({
-    x: box.x + (x * box.width) / 800,
-    y: box.y + (y * box.height) / 600,
+    x: box.x + ((160 + x * 1.2) * box.width) / 1280,
+    y: box.y + (y * 1.2 * box.height) / 720,
   });
   const coupler = bus.geometry.coupler!;
   const socket = bus.geometry.socket!;

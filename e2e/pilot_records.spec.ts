@@ -20,6 +20,8 @@
  * registered opportunities (A on the restoration shift, B refused until the
  * return); ordinary inventory play emits secondary telemetry only.
  */
+// V4: the 800×600 design space sits at canvas (160 + 1.2x, 1.2y) on the
+// 1280×720 canvas (src/world/viewport.ts; DEV probe window.__designSpace).
 import { expect, type Page, test } from '@playwright/test';
 
 import { getEvents, selectPromptOption } from './helpers';
@@ -119,8 +121,8 @@ async function gamePoint(page: Page, x: number, y: number) {
   }
 
   return {
-    x: box.x + (x * box.width) / 800,
-    y: box.y + (y * box.height) / 600,
+    x: box.x + ((160 + x * 1.2) * box.width) / 1280,
+    y: box.y + (y * 1.2 * box.height) / 720,
   };
 }
 

@@ -20,7 +20,7 @@
  */
 import Phaser from 'phaser';
 
-import { key } from '../constants';
+import { DepthLayer, key } from '../constants';
 import {
   addInventoryItem,
   hasInventoryItem,
@@ -295,7 +295,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         return true;
       },
     });
-    this.signage(S.workOrderBoard.x, S.workOrderBoard.y - 44, 'WORK ORDERS');
     registerPilotStation({
       id: 'work_order_board',
       zone: 'records_workshop',
@@ -306,8 +305,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       isDone: () => false,
       order: 0,
     });
-
-    this.signage(6 * TILE, 2 * TILE - 8, 'RECORDS & RESTORATION');
 
     // Incoming supplies — recoverable world items (secondary telemetry only).
     this.bundles.spawn('Component bundle', S.supplyA.x, S.supplyA.y, [
@@ -322,7 +319,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       { definitionId: 'wire_spool', quantity: 2 },
       { definitionId: 'insulation_wrap', quantity: 2 },
     ]);
-    this.signage(5.5 * TILE, 4.2 * TILE, 'INCOMING SUPPLIES');
 
     // ——— M02 case workspace (open organisation + retrieval) ———
     this.station(
@@ -369,7 +365,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         openInventoryOverlay(this, { mode: 'workbench', allowWorldDrop: true });
       },
     );
-    this.signage(6 * TILE, 12.6 * TILE, 'STORAGE  ·  ASSEMBLY');
 
     // ——— M04 sample cutter + disposal chute (physical debris) ———
     this.addStation({
@@ -400,7 +395,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         return false;
       },
     });
-    this.signage(WS.sampleCutter.x, WS.sampleCutter.y - 40, 'SAMPLE CUTTER');
     this.guided(
       'sample_cutter',
       WS.sampleCutter,
@@ -410,7 +404,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       () => m04JobRun(),
     );
     this.addDecor(WS.disposalChute.x, WS.disposalChute.y, 'proc-disposal-unit');
-    this.signage(WS.disposalChute.x, WS.disposalChute.y - 36, 'DISPOSAL');
     this.buildPhysicalLayer();
 
     // ——— M06 dispatch console ———
@@ -428,7 +421,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         });
       },
     );
-    this.signage(WS.dispatchConsole.x, WS.dispatchConsole.y - 40, 'DISPATCH');
     this.guided(
       'dispatch_console',
       WS.dispatchConsole,
@@ -462,11 +454,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         });
       },
     );
-    this.signage(
-      WS.calibrationBench.x,
-      WS.calibrationBench.y - 40,
-      'CALIBRATION',
-    );
     this.guided(
       'calibration_bench',
       WS.calibrationBench,
@@ -491,7 +478,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         });
       },
     );
-    this.signage(WS.qcPacket.x, WS.qcPacket.y - 40, 'QUALITY');
     this.guided(
       'qc_packet_o2',
       WS.qcPacket,
@@ -511,7 +497,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         openIpOverlay(this, key.scene.ipPipeBoard, 'm13', {});
       },
     );
-    this.signage(WS.latticeBench.x, WS.latticeBench.y - 40, 'CONDUIT LATTICE');
     this.guided(
       'lattice_bench',
       WS.latticeBench,
@@ -533,9 +518,15 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         return true;
       },
     });
-    this.signage(WS.sealLog.x, WS.sealLog.y - 40, 'SEAL LOG');
 
     this.populateReturnShift();
+
+    // ——— V4 functional areas (VISUAL-SYSTEM-V4 §7): intake (north-west),
+    // records & press (west), storage & assembly (south-west), calibration
+    // (north-centre), the return/handover column (east) and the dispatch
+    // bay (south-east) are read from floor plates and their own light,
+    // not from labels. Floor plates only — no collision, no interaction.
+    this.buildFunctionalAreas();
 
     // ——— Dressing ———
     this.addDecor(3 * TILE, 3.4 * TILE, 'proc-light-pool');
@@ -554,7 +545,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     );
     this.addDecor(14.5 * TILE, 4.6 * TILE, 'proc-console-wall');
     this.addDecor(14.5 * TILE, 12.6 * TILE, 'proc-rack-tools');
-    this.signage(22.2 * TILE, 7.2 * TILE, 'CONCOURSE  ▶');
   }
 
   // ——— Return shift (Unit 5) ———————————————————————————————————————————
@@ -597,7 +587,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         return false;
       },
     });
-    this.signage(S.feedConsole.x, S.feedConsole.y - 40, 'FEED CONSOLE');
     this.consoleChip = this.chip(S.feedConsole.x, S.feedConsole.y - 62, '');
 
     // ——— M21 relay bench (drawer manual) ———
@@ -621,7 +610,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         return false;
       },
     });
-    this.signage(S.relayBench.x, S.relayBench.y - 40, 'RELAY BENCH');
     this.benchChip = this.chip(S.relayBench.x, S.relayBench.y - 58, '');
     this.guided(
       'relay_bench',
@@ -653,7 +641,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         return false;
       },
     });
-    this.signage(S.reportDesk.x, S.reportDesk.y - 40, 'REPORT DESK');
     this.deskChip = this.chip(S.reportDesk.x, S.reportDesk.y + 34, '');
     this.guided(
       'report_desk',
@@ -681,7 +668,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         return true;
       },
     });
-    this.signage(S.handoverDesk.x, S.handoverDesk.y - 54, 'OUTBOUND HANDOVER');
     this.trayChip = this.chip(S.handoverDesk.x, S.handoverDesk.y - 36, '');
     this.guided(
       'handover_desk',
@@ -827,9 +813,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         color: '#dce7f0',
         font: '10px monospace',
         padding: { x: 4, y: 2 },
+        resolution: 2,
       })
       .setOrigin(0.5)
-      .setDepth(3);
+      .setDepth(DepthLayer.WorldReadout);
   }
 
   /** Handover desk prompt body: tray state (operational; no outcomes). */
@@ -1197,9 +1184,24 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     });
   }
 
-  /** Unit 7 (V17): one shared area-signage style (PilotZoneScene). */
-  private signage(x: number, y: number, text: string) {
-    this.zoneSignage(x, y, text);
+  private buildFunctionalAreas() {
+    const plate = (x: number, y: number, w: number, h: number, alpha: number) =>
+      this.add
+        .rectangle(x, y, w, h, 0x6a705f, alpha)
+        .setOrigin(0.5)
+        .setDepth(DepthLayer.FloorDecal);
+
+    plate(5.5 * TILE, 3.5 * TILE, 9 * TILE, 3 * TILE, 0.16); // intake
+    plate(6 * TILE, 8.75 * TILE, 10 * TILE, 3.5 * TILE, 0.14); // records & press
+    plate(6 * TILE, 14 * TILE, 10 * TILE, 3 * TILE, 0.14); // storage & assembly
+    plate(11.5 * TILE, 3 * TILE, 5 * TILE, 2.5 * TILE, 0.12); // calibration
+    plate(20.5 * TILE, 4.5 * TILE, 6 * TILE, 5 * TILE, 0.14); // handover column
+    plate(19.5 * TILE, 14 * TILE, 7 * TILE, 3 * TILE, 0.12); // dispatch bay
+    // Service lane between the areas (the y = 272 walking lane).
+    this.add
+      .rectangle(12 * TILE, 8.5 * TILE, 22 * TILE, TILE, 0x8fa4b8, 0.06)
+      .setOrigin(0.5)
+      .setDepth(DepthLayer.FloorMarking);
   }
 
   private wallArt(preferred: string, fallback: string): string {

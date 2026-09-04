@@ -30,6 +30,8 @@
  * runs; a held key never double-submits; the world is frozen while any
  * surface is open and moves again after it closes.
  */
+// V4: the 800×600 design space sits at canvas (160 + 1.2x, 1.2y) on the
+// 1280×720 canvas (src/world/viewport.ts; DEV probe window.__designSpace).
 import { expect, type Page, test } from '@playwright/test';
 
 import { getEvents, selectPromptOption } from './helpers';
@@ -123,8 +125,8 @@ async function clickElement(page: Page, id: string) {
   const box = (await page.locator('canvas').boundingBox())!;
 
   await page.mouse.click(
-    box.x + (element.x * box.width) / 800,
-    box.y + (element.y * box.height) / 600,
+    box.x + ((160 + element.x * 1.2) * box.width) / 1280,
+    box.y + (element.y * 1.2 * box.height) / 720,
   );
   await page.waitForTimeout(220);
 }
