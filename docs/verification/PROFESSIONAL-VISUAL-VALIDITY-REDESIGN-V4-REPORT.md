@@ -10,16 +10,19 @@ pending empirical validation against its source instrument.
 - Branch `fable-visual-validity-redesign-v1` (git worktree
   `.claude/worktrees/fable-visual-validity-redesign`), base
   `aaa73fd9041e561fb250d13021537aaf66e46d46` (`fable-professional-pilot-v3-v1`).
-- HEAD at this checkpoint: `ce1ed35` (plus this docs-only checkpoint commit).
+- HEAD at this checkpoint: the Unit 3 commit (see §2).
 
 ## 2. Unit commits
 
-| Unit | Commit        | Subject                                                  | State              |
-| ---- | ------------- | -------------------------------------------------------- | ------------------ |
-| 0    | `406aa63`     | docs(game): define professional visual redesign baseline | done               |
-| 1    | `72ab012`     | feat(game): establish professional camera and arrival    | done               |
-| 2    | (this commit) | refactor(game): clarify concourse and records workshop   | done (review owed) |
-| 3–7  | —             | not started                                              | remaining          |
+| Unit | Commit        | Subject                                                  | State                |
+| ---- | ------------- | -------------------------------------------------------- | -------------------- |
+| 0    | `406aa63`     | docs(game): define professional visual redesign baseline | done                 |
+| 1    | `72ab012`     | feat(game): establish professional camera and arrival    | done                 |
+| 2    | `ce1ed35`     | refactor(game): clarify concourse and records workshop   | done                 |
+| 2a   | `f4a3a21`     | docs(verification): record V4 checkpoint after unit 2    | checkpoint           |
+| 2b   | (fix commit)  | fix(game): settle concourse and records readouts         | done (review closed) |
+| 3    | (this commit) | refactor(game): focus diagnostics assessment sequence    | done                 |
+| 4–7  | —             | not started                                              | remaining            |
 
 Per-unit evidence notes: `docs/verification/professional-visual-v4/UNIT-*.md`.
 
@@ -36,6 +39,13 @@ Unit 1: `src/index.ts`, `src/world/viewport.ts` (new), `src/world/RoomScene.ts`,
 `src/scenes/{Menu.tsx,DockScene.ts}`, e2e helpers/specs listed in the Unit 1 note,
 `docs/game/rooms/00-dock-arrival.md`.
 Unit 2: `src/scenes/{StationConcourseScene,RecordsWorkshopScene}.ts`, Unit 2 note, captures.
+Unit 2 fix: the same two scenes (plate edge lines/fills, readout register and
+depth), `e2e/concourse_interaction_lifecycle.spec.ts` (budget), Unit 2 note,
+`unit2/**` recaptured at both resolutions.
+Unit 3: `src/scenes/DiagnosticsLaboratoryScene.ts`,
+`docs/game/rooms/14-diagnostics-laboratory.md` (new), Unit 3 note,
+`e2e/v4_visual_capture.spec.ts` (lab waypoint), `e2e/pilot_signal_capture.spec.ts`
+(output directory parameter), `unit3/**`, `projection/unit3.json`.
 
 ## 4. Render and camera architecture (before → after)
 
@@ -54,8 +64,13 @@ station/door markers y-sorted at the foot line (`RoomScene.sortAtFootLine`).
 
 ## 6. Room-by-room
 
-Dock — Unit 1 note. Concourse, Records — Unit 2 note. Laboratory, Yard, Deck,
-Core Chamber — not yet redesigned (they render through the new camera only).
+Dock — Unit 1 note. Concourse, Records — Unit 2 note and its closure
+section. Diagnostics Laboratory — Unit 3 note and
+`docs/game/rooms/14-diagnostics-laboratory.md`: four numbered bay plates on
+one service aisle, state-driven salience (cyan frame + numeral on the next
+bay only), north-zone plates, restrained bezelled display, nine labels
+removed, Noor's relay subtitle in its own bottom band. Yard, Deck, Core
+Chamber — not yet redesigned (they render through the new camera only).
 
 ## 7. Route and wayfinding evidence
 
@@ -74,14 +89,17 @@ snowfall strip is rejected for the route (removal lands in Unit 4).
 C1 (whole-room view), C5 (Dock marker pulse/label, pad beacons), C7 (stale
 objective on resume), C8 (markers over the avatar), C10 (opening), C12
 (Dock door family), C13 (4:3 exposure at 16:9 browsers), C14 (objective
-size) — Unit 1; C2 in the Concourse and Records — Unit 2. Remaining: C3, C4,
-C6, C9, C11 (Laboratory/Yard/Deck), C15.
+size) — Unit 1; C2 in the Concourse and Records — Unit 2; C2/C3/C4 in the
+Laboratory (labels, equal salience, HUD collisions of the relay subtitle) —
+Unit 3. Remaining: C6, C9, C11 (Yard/Deck/Core), C15.
 
 ## 11. Screenshot inventory
 
 `docs/verification/professional-visual-v4/baseline-800x600/` (30),
 `baseline-1280x720/` (30), `unit1/` (11 route frames + Dock at both
-resolutions), `unit2/` (11 route frames at 1280×720).
+resolutions), `unit2/` (11 route frames at 1280×720, recaptured after the
+correction round) + `unit2/800x600/` (11), `unit3/12…18` (laboratory at
+1280×720) + `unit3/800x600/` (see the Unit 3 note for the run status).
 
 ## 12. Scientific event projection
 
@@ -89,7 +107,9 @@ resolutions), `unit2/` (11 route frames at 1280×720).
 **0 differences** (`v4_projection_compare`, pure) — 154 events, 80 event
 types, 28 opportunity records, zone sequence and final stage `complete`
 identical, payload-key sets identical, form/counterbalance assignments
-identical. Unit 2: see §22.
+identical. Unit 2 (`unit2.json`): 0 differences. Unit 3 (`unit3.json`,
+recorded on the tree carrying the Unit 2 correction and the laboratory
+redesign; `unit3.diff.json` = `[]`): **0 differences**.
 
 ## 13–14. Test manifest and failure classification
 
@@ -97,6 +117,14 @@ Unit-level tables in the Unit notes. Full manifest in documented chunks:
 Unit 7 (not run yet). Verification-environment finding: SwiftShader fps 20 →
 13–15 with the larger canvas (Unit 1 note); fixed-duration key holds are
 load-sensitive, position-synced legs are not.
+
+Unit 2 open items, classified from the evidence collected on 2026-09-05
+(Unit 2 note, "Closure session"):
+
+| Test                                           | Evidence                                                                                                                                          | Classification                                                                                                                                                                                                                                                         |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pilot_records` "M02 abandonment fail-forward" | passes alone at `--retries=0 --workers=1` (1.2 min)                                                                                               | **load/intermittent** (not reproduced on a quiet machine); repeat in the Unit 7 manifest                                                                                                                                                                               |
+| `concourse_interaction_lifecycle` "B"          | fails deterministically at the 120 s config default on V4 inside the last walking leg with every assertion passed; passes on the V3 base in 108 s | **deterministic test-driver/budget defect** caused by the documented software-GL frame-rate drop, not a product regression; budget set to 300 s (test-only, assertions unchanged); post-correction rerun deferred to Unit 7 after an orphaned-process harness incident |
 
 ## 15–16. Reviewer findings and dispositions
 

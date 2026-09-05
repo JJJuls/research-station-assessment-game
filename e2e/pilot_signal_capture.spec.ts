@@ -49,7 +49,11 @@ import {
   walkTo,
 } from './pilotHelpers';
 
-const OUT = 'docs/verification/screenshots-evidence-led-pilot-v2';
+// V4: an explicit output directory keeps the historical v2 evidence
+// untouched when the capture is re-run for a later visual pass.
+const OUT =
+  process.env.PILOT_SIGNAL_OUT ??
+  'docs/verification/screenshots-evidence-led-pilot-v2';
 const BELOW = { x: 0, y: 44 } as const;
 
 async function shot(page: Page, name: string) {

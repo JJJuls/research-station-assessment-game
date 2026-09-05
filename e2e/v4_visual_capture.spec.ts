@@ -270,8 +270,10 @@ test('v4 route visual capture — diagnostics laboratory', async ({ page }) => {
     await page.waitForTimeout(600);
   }
 
-  // 15 — the phase benches (world view, presented order).
-  await walkTo(page, 400, 300, { yFirst: true });
+  // 15 — the phase benches (world view, presented order). V4 Unit 3: the
+  // waypoint sits on the spine/briefing-lane crossing (x = 384) so the
+  // frame is centred on the bay row.
+  await walkTo(page, 384, 284, { yFirst: true });
   await shot(page, '15-laboratory-phase-benches');
 
   // 16 — phase 1 evidence table (work surface; left without stopping).
