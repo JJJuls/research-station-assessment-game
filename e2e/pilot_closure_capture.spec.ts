@@ -31,7 +31,11 @@ import { captureErrors, expectNoRuntimeErrors } from './journey';
 import { PILOT, walkTo } from './pilotHelpers';
 import { clickElement, keyActivate } from './returnHelpers';
 
-const OUT = 'docs/verification/screenshots-evidence-led-pilot-v2';
+// V4: an explicit output directory keeps the historical v2 evidence
+// untouched when the capture is re-run for a later visual pass.
+const OUT =
+  process.env.PILOT_CLOSURE_OUT ??
+  'docs/verification/screenshots-evidence-led-pilot-v2';
 
 async function shot(page: Page, name: string) {
   await page.waitForTimeout(450);

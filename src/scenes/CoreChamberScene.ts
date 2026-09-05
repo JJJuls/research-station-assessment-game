@@ -19,7 +19,7 @@
  */
 import Phaser from 'phaser';
 
-import { Depth, key, worldDepth } from '../constants';
+import { Depth, DepthLayer, key, worldDepth } from '../constants';
 import {
   beginManualWorldAction,
   endManualWorldAction,
@@ -198,12 +198,16 @@ export class CoreChamberScene extends PilotZoneScene {
     const core = CORE_SITES.core;
     const visual = CORE_SITES.coreVisual;
 
+    // V4: floor glow on the decal layer (never over a figure); the
+    // chamber floor carries a ring plate that frames the one apparatus and
+    // a control-position plate in front of the pedestal.
+    this.buildChamberGrammar();
     this.lightPool = this.add
       .ellipse(visual.x, visual.y + 78, 240, 70, DORMANT, 0.28)
-      .setDepth(0.4);
+      .setDepth(DepthLayer.FloorDecal + 0.02);
     this.ringGlow = this.add
       .ellipse(visual.x, visual.y + 6, 150, 170, DORMANT, 0.12)
-      .setDepth(0.5);
+      .setDepth(DepthLayer.FloorDecal + 0.03);
     // Flanking coolant towers give the Core its machinery mass; the
     // vessel stands between them over the central block.
     const column = this.textures.exists('plv1-core-coolant-column')
@@ -240,7 +244,6 @@ export class CoreChamberScene extends PilotZoneScene {
     this.addDecor(10.2 * TILE, 14.1 * TILE, 'plv1-core-pillar-a');
     this.addDecor(14.8 * TILE, 14.1 * TILE, 'plv1-core-pillar-b');
     this.emissive = this.add.graphics().setDepth(1.5);
-    this.signage(visual.x, visual.y - 84, 'STATION CORE');
 
     // The Core's control pedestal (the interactable) at the vessel's foot.
     this.addStation({
@@ -259,9 +262,11 @@ export class CoreChamberScene extends PilotZoneScene {
         color: '#9fb2c1',
         font: '10px monospace',
         padding: { x: 4, y: 2 },
+        resolution: 2,
       })
       .setOrigin(0, 0.5)
-      .setDepth(2);
+      .setAlpha(0.88)
+      .setDepth(worldDepth(core.y + 40));
     registerPilotStation({
       id: 'core',
       zone: 'core_chamber',
@@ -297,21 +302,23 @@ export class CoreChamberScene extends PilotZoneScene {
         ? 'plv1-core-console'
         : 'proc-console-wall',
     );
-    this.signage(kai.x + 22, kai.y - 48, 'FEED CONSOLE');
 
     // ——— Status console (west): the three feeds + Core state, labels only ———
     const status = CORE_SITES.statusConsole;
 
     this.addDecor(status.x, status.y, 'proc-console-scenario');
-    this.signage(status.x, status.y - 44, 'CORE STATUS');
     this.statusConsoleText = this.add
       .text(status.x, status.y + 36, '', {
+        backgroundColor: '#101820',
         color: '#9fb2c1',
         font: '10px monospace',
         align: 'center',
+        padding: { x: 4, y: 2 },
+        resolution: 2,
       })
       .setOrigin(0.5, 0)
-      .setDepth(2);
+      .setAlpha(0.88)
+      .setDepth(worldDepth(status.y + 36 + 60));
 
     // ——— Dressing: coolant collars, conduit trunks, light pools ———
     this.addDecor(8.5 * TILE, 4.6 * TILE, 'proc-wall-pipes');
@@ -325,7 +332,6 @@ export class CoreChamberScene extends PilotZoneScene {
     this.addDecor(9 * TILE, 6.5 * TILE, 'proc-light-pool');
     this.addDecor(16 * TILE, 6.5 * TILE, 'proc-light-pool');
     this.addDecor(12.5 * TILE, 12 * TILE, 'proc-light-pool');
-    this.signage(12.5 * TILE, 13.85 * TILE, '▼  UTILITY DECK');
 
     if (devInspectionActive()) {
       this.devLabel = this.add
@@ -341,9 +347,28 @@ export class CoreChamberScene extends PilotZoneScene {
     }
   }
 
-  /** Unit 7 (V17): one shared area-signage style (PilotZoneScene). */
-  private signage(x: number, y: number, text: string) {
-    this.zoneSignage(x, y, text);
+  /** V4 chamber grammar (presentation only): ring plate, control plate, threshold. */
+  private buildChamberGrammar() {
+    const visual = CORE_SITES.coreVisual;
+    const core = CORE_SITES.core;
+
+    // Review U5-8: the apparatus floor plate stays south of the Core block
+    // (rows 9-12), never under a wall footprint.
+    this.add
+      .rectangle(visual.x, 10.5 * TILE, 7 * TILE, 3 * TILE, 0x55627a, 0.18)
+      .setOrigin(0.5)
+      .setStrokeStyle(1, 0x8fa4b8, 0.35)
+      .setDepth(DepthLayer.FloorDecal);
+    this.add
+      .rectangle(core.x, core.y + 44, 3 * TILE, 2 * TILE, 0x55627a, 0.24)
+      .setOrigin(0.5)
+      .setStrokeStyle(1, 0x8fa4b8, 0.35)
+      .setDepth(DepthLayer.FloorDecal + 0.01);
+    this.add
+      .rectangle(12.5 * TILE, 15 * TILE, 3 * TILE, TILE, 0x55627a, 0.34)
+      .setOrigin(0.5)
+      .setStrokeStyle(1, 0x8fa4b8, 0.35)
+      .setDepth(DepthLayer.FloorMarking);
   }
 
   // ————————————————————————————————— prompts ——

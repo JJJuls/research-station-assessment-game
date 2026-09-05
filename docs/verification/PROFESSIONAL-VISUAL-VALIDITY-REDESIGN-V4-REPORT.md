@@ -22,8 +22,9 @@ pending empirical validation against its source instrument.
 | 2a   | `f4a3a21`     | docs(verification): record V4 checkpoint after unit 2    | checkpoint           |
 | 2b   | `5c8f68e`     | fix(game): settle concourse and records readouts         | done (review closed) |
 | 3    | (this commit) | refactor(game): focus diagnostics assessment sequence    | done                 |
-| 4    | (this commit) | refactor(game): structure exterior recovery yard         | done                 |
-| 5–7  | —             | not started                                              | remaining            |
+| 4    | `8f5dd42`     | refactor(game): structure exterior recovery yard         | done                 |
+| 5    | (this commit) | refactor(game): refine utility and core closure          | done                 |
+| 6–7  | —             | not started                                              | remaining            |
 
 Per-unit evidence notes: `docs/verification/professional-visual-v4/UNIT-*.md`.
 
@@ -51,6 +52,11 @@ Unit 4: `src/scenes/ExteriorRecoveryYardScene.ts`, `src/world/proceduralTilesets
 (exterior theme `noise` token only — recorded allowlist deviation),
 `docs/game/rooms/11-exterior-recovery-yard.md` (V4 section), Unit 4 note,
 `unit4/**` (both resolutions), `projection/unit4.json`.
+Unit 5: `src/scenes/UtilityCoreDeckScene.ts`, `src/scenes/CoreChamberScene.ts`,
+`docs/game/rooms/13-utility-core-closure.md` (V4 section), Unit 5 note,
+`e2e/pilot_closure_capture.spec.ts` (output directory parameter),
+`e2e/v4_core_dev_capture.spec.ts` (new, developer-launch chamber frames),
+`unit5/**` (both resolutions + `core-dev/`), `projection/unit5.json`.
 
 ## 4. Render and camera architecture (before → after)
 
@@ -79,8 +85,14 @@ Yard — Unit 4 note and the room doc's V4 section: both snowfall layers
 removed, calmer floor, one packed-snow service path linking the six work
 zones, apron/excavation/compound ground plates on the floor layer (the
 avatar was drawn under the compound plate before), ten labels removed,
-state readouts on the low-prop band. Deck, Core Chamber — not yet
-redesigned (they render through the new camera only).
+state readouts on the low-prop band. Utility Deck and Core Chamber —
+Unit 5 note and the room doc's V4 section: one trunk and header, three
+feed-bay plates aligned to the machinery blocks, review-station and Core
+alcove plates, conduits on the floor layer in the trim family, the
+oversized PROVISIONAL slices replaced by 32 px procedural props, eleven
+labels removed, readouts in the environment register; the chamber's
+control plate and apparatus floor plate, floor glows on the decal layer;
+the ARM → CONFIRM lifecycle, ramp timing and neutral completion untouched.
 
 ## 7. Route and wayfinding evidence
 
@@ -102,7 +114,9 @@ objective on resume), C8 (markers over the avatar), C10 (opening), C12
 size) — Unit 1; C2 in the Concourse and Records — Unit 2; C2/C3/C4 in the
 Laboratory (labels, equal salience, HUD collisions of the relay subtitle) —
 Unit 3; C6 (snowfall/noise), C9 (yard labels), C11 (yard depth errors) —
-Unit 4. Remaining: C11 in the Deck/Core, C15.
+Unit 4; C11 in the Deck/Core (conduits, glows and plates in the actor
+depth range; oversized machinery) — Unit 5. Remaining: C15 (HUD lifecycle,
+Unit 6).
 
 ## 11. Screenshot inventory
 
@@ -112,7 +126,9 @@ resolutions), `unit2/` (11 route frames at 1280×720, recaptured after the
 correction round) + `unit2/800x600/` (11), `unit3/12…18` (laboratory at
 1280×720) + `unit3/800x600/` (see the Unit 3 note for the run status),
 `unit4/19…26` (yard at 1280×720) + `unit4/800x600/19…30` (yard plus the
-pre-Unit-5 Deck/Core under the V4 camera).
+pre-Unit-5 Deck/Core under the V4 camera), `unit5/19…30` + `unit5/800x600/`
+(deck after Unit 5) and `unit5/core-dev/` (chamber states from the labelled
+developer inspection launch, both resolutions).
 
 ## 12. Scientific event projection
 
@@ -123,7 +139,8 @@ identical, payload-key sets identical, form/counterbalance assignments
 identical. Unit 2 (`unit2.json`): 0 differences. Unit 3 (`unit3.json`,
 recorded on the tree carrying the Unit 2 correction and the laboratory
 redesign; `unit3.diff.json` = `[]`): **0 differences**. Unit 4
-(`unit4.json`): see the Unit 4 note.
+(`unit4.json`): **0 differences**. Unit 5 (`unit5.json`, `unit5.diff.json`
+= `[]`): **0 differences**.
 
 ## 13–14. Test manifest and failure classification
 

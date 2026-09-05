@@ -156,3 +156,49 @@ Pure: `e2e/pilot_closure_models.spec.ts` (19). Route:
   and "Synchronising — stand by …" during the ramp.
 - Every site, approach point, radius, gate, event and window is unchanged
   (the closure route spec and capture spec pass on the corrected code).
+
+## V4 visual-validity redesign (2026-09-05) — presentation only
+
+Governing document: `docs/game/VISUAL-SYSTEM-V4.md`. No site, door, spawn,
+gate, feed order, panel, prompt, option, event, readiness rule or the
+two-step ARM → CONFIRM lifecycle changed; the closure model, the feed
+panels and the completion notice are the V3 implementation untouched.
+Both grids are unchanged, so every e2e lane is unchanged by construction.
+
+### Utility Deck
+
+- **One central systems trunk.** A trunk plate under the alcove mouth and
+  a header plate along the conduit lanes; the three conduit runs draw on
+  the floor-decal layer (they sat at depth 0.5, inside the actor range,
+  and drew over the avatar).
+- **Three separated feed bays.** One plate per feed (rows 10–12, centred
+  on the station) over the machinery blocks, in the operational order
+  west → east.
+- **Shift Review station** on its own plate by the entry; the **Core door
+  alcove** framed by an alcove plate and a threshold plate as the terminal
+  landmark; a threshold plate at the Concourse door.
+- **Machinery in register.** The oversized PROVISIONAL utility-bay slices
+  (tower, panel, desk, bot stills) leave the deck; the same positions carry
+  the 32 px procedural props (pipes, wall console, desk, utility bot).
+- **State readouts kept, restyled.** The station-record board line, the
+  manifold line, the door chip and the three feed chips keep their text
+  (the models drive it) and move to the environment register at 2×
+  rasterisation, sorted just below their own foot line; the manifold lamps
+  and door lamp sit on the world-readout layer.
+- **Labels removed (7).** `SHIFT REVIEW`, `STATION SYSTEMS`, the three
+  `FEED n · …` signs, `CORE FEED MANIFOLD`, `CORE CHAMBER`, `◀ CONCOURSE`.
+
+### Core Chamber
+
+- **One apparatus, one control position.** A ring plate frames the Core
+  block; a control plate marks the pedestal's approach; the floor glow and
+  ring glow move to the floor-decal layer (they sat at 0.4/0.5 inside the
+  actor range).
+- **Readable ARM then CONFIRM.** Unchanged: the review surface's two
+  separate controls (ARM SYNCHRONISATION, then CONFIRM SYNCHRONISATION
+  beside STAND DOWN), ENTER/SPACE/click on the focused control only, ESC
+  stands down; the 2.4 s ramp (300 ms under reduced motion) and the neutral
+  completion notice.
+- **Labels removed (4).** `STATION CORE`, `FEED CONSOLE`, `CORE STATUS`,
+  `▼ UTILITY DECK`; the Core state chip and the status-console readout keep
+  their text in the environment register.
