@@ -1,0 +1,845 @@
+{
+  "schema": "world-v1-object-inventory/1",
+  "tree": "867c4d5",
+  "note": "Machine-readable inventory of the CURRENT (pre-rebuild) pilot world: every door, NPC, station, container and labelled/state-bearing decoration a participant can meet, with its de-facto class under the World V1 grammar and the defect that the rebuild removes. Coordinates are world px on the 25x19 grids (src/pilot/zoneSites.ts, src/pilot/pilotRoute.ts PILOT_DOORS, scene sources). Presentation audit only; no measurement fact is recorded here.",
+  "zones": {
+    "dock": {
+      "grid": "25x14",
+      "objects": [
+        {
+          "id": "dock.north_door",
+          "kind": "door",
+          "x": 368,
+          "y": 48,
+          "label": "Station Concourse",
+          "class": "active",
+          "opens": "door:station_concourse",
+          "window": null,
+          "defect": "cyan-tinted leaf + threshold bar + chip + prompt at once"
+        },
+        {
+          "id": "dock.arrival_terminal",
+          "kind": "station",
+          "x": 96,
+          "y": 96,
+          "label": "Arrival Terminal",
+          "class": "active",
+          "opens": "prompt:dockArrivalTutorial",
+          "window": null,
+          "defect": "same treatment as every prop"
+        },
+        {
+          "id": "dock.movement_marker",
+          "kind": "guidance",
+          "x": 544,
+          "y": 224,
+          "label": null,
+          "class": "guidance",
+          "opens": null,
+          "window": null,
+          "defect": "floating ring on empty floor"
+        },
+        {
+          "id": "dock.crate_block",
+          "kind": "decor",
+          "x": 272,
+          "y": 224,
+          "label": null,
+          "class": "decorative",
+          "opens": null,
+          "window": null,
+          "defect": "isolated crate on open floor"
+        }
+      ]
+    },
+    "station_concourse": {
+      "grid": "25x19",
+      "objects": [
+        {
+          "id": "concourse.door_dock",
+          "kind": "door",
+          "x": 384,
+          "y": 496,
+          "label": "Dock",
+          "class": "optional",
+          "opens": "door:dock",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "concourse.door_records",
+          "kind": "door",
+          "x": 48,
+          "y": 272,
+          "label": "Records Workshop",
+          "class": "active|optional",
+          "opens": "door:records_workshop",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "concourse.door_lab",
+          "kind": "door",
+          "x": 384,
+          "y": 48,
+          "label": "Diagnostics Laboratory",
+          "class": "active|optional",
+          "opens": "door:diagnostics_laboratory",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "concourse.door_deck",
+          "kind": "door",
+          "x": 752,
+          "y": 272,
+          "label": "Utility Deck",
+          "class": "active|optional",
+          "opens": "door:utility_core_deck",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "concourse.vale",
+          "kind": "npc",
+          "x": 496,
+          "y": 272,
+          "label": "Vale — operations",
+          "class": "active",
+          "opens": "prompt:pilotVale",
+          "window": "m09/m10 offers",
+          "defect": "halo ring + arrow + chip + prompt"
+        },
+        {
+          "id": "concourse.kai_return",
+          "kind": "npc",
+          "x": 592,
+          "y": 272,
+          "label": "Kai — diagnostics",
+          "class": "optional",
+          "opens": "prompt:pilotKai",
+          "window": "m10_promise_handover",
+          "defect": ""
+        },
+        {
+          "id": "concourse.plan_board",
+          "kind": "station",
+          "x": 128,
+          "y": 160,
+          "label": "Plan Board",
+          "class": "active",
+          "opens": "work_surface:m01_plan_board",
+          "window": "m01_plan_board_w1",
+          "defect": "equal salience"
+        },
+        {
+          "id": "concourse.incident_desk",
+          "kind": "station",
+          "x": 256,
+          "y": 160,
+          "label": "Incident Desk",
+          "class": "active",
+          "opens": "work_surface:m14_incident_desk",
+          "window": "m14_desk_w1",
+          "defect": "equal salience; 4 tiles from the plan board"
+        },
+        {
+          "id": "concourse.qc_packet_o1",
+          "kind": "station",
+          "x": 256,
+          "y": 416,
+          "label": "Quality Packet",
+          "class": "active",
+          "opens": "work_surface:m12_qc_packet_o1",
+          "window": "m12_qc_o1",
+          "defect": ""
+        },
+        {
+          "id": "concourse.monitor_gauge",
+          "kind": "station",
+          "x": 352,
+          "y": 416,
+          "label": "Monitor Gauge",
+          "class": "optional",
+          "opens": "message:gauge_reading",
+          "window": "m09_check_1/2",
+          "defect": "permanent readout ribbon"
+        },
+        {
+          "id": "concourse.desk_lamp",
+          "kind": "station",
+          "x": 608,
+          "y": 432,
+          "label": "Desk Lamp",
+          "class": "fault",
+          "opens": "action:m05_fix",
+          "window": "m05_initiation_o1",
+          "defect": "interactable is a light-pool texture; no physical lamp"
+        },
+        {
+          "id": "concourse.status_strip",
+          "kind": "decor",
+          "x": 461,
+          "y": 83,
+          "label": "STATION STATUS · storm recovery in progress",
+          "class": "decorative",
+          "opens": null,
+          "window": null,
+          "defect": "permanent black ribbon"
+        },
+        {
+          "id": "concourse.hub_plates",
+          "kind": "decor",
+          "x": 368,
+          "y": 272,
+          "label": null,
+          "class": "decorative",
+          "opens": null,
+          "window": null,
+          "defect": "translucent rectangles"
+        }
+      ]
+    },
+    "records_workshop": {
+      "grid": "25x19",
+      "objects": [
+        {
+          "id": "records.door_concourse",
+          "kind": "door",
+          "x": 752,
+          "y": 272,
+          "label": "Station Concourse",
+          "class": "optional",
+          "opens": "door:station_concourse",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "records.work_order_board",
+          "kind": "station",
+          "x": 640,
+          "y": 160,
+          "label": "Work Order Board",
+          "class": "active",
+          "opens": "prompt:pilotWorkOrderBoard",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "records.bundle_component",
+          "kind": "container",
+          "x": 96,
+          "y": 96,
+          "label": "Component bundle",
+          "class": "optional",
+          "opens": "pickup",
+          "window": null,
+          "defect": "floor crate with permanent chip; no origin"
+        },
+        {
+          "id": "records.bundle_sample_kit",
+          "kind": "container",
+          "x": 176,
+          "y": 96,
+          "label": "Sample kit",
+          "class": "optional",
+          "opens": "pickup",
+          "window": null,
+          "defect": "as above"
+        },
+        {
+          "id": "records.bundle_wire_wrap",
+          "kind": "container",
+          "x": 256,
+          "y": 96,
+          "label": "Wire and wrap",
+          "class": "optional",
+          "opens": "pickup",
+          "window": null,
+          "defect": "as above"
+        },
+        {
+          "id": "records.case_workspace",
+          "kind": "station",
+          "x": 96,
+          "y": 272,
+          "label": "Case Workspace",
+          "class": "active",
+          "opens": "inventory:m02case",
+          "window": "m02_workspace_w1",
+          "defect": ""
+        },
+        {
+          "id": "records.press_a",
+          "kind": "station",
+          "x": 192,
+          "y": 272,
+          "label": "Label Press A",
+          "class": "active",
+          "opens": "inventory:m03",
+          "window": "m03_reset_o1",
+          "defect": "3 tiles from the workspace"
+        },
+        {
+          "id": "records.press_b",
+          "kind": "station",
+          "x": 288,
+          "y": 272,
+          "label": "Label Press B",
+          "class": "inactive|active",
+          "opens": "inventory:m03",
+          "window": "m03_reset_o2",
+          "defect": ""
+        },
+        {
+          "id": "records.storage_locker",
+          "kind": "station",
+          "x": 96,
+          "y": 448,
+          "label": "Component Locker",
+          "class": "optional",
+          "opens": "inventory:container",
+          "window": "secondary_m08 stow",
+          "defect": "looks required"
+        },
+        {
+          "id": "records.assembly_bench",
+          "kind": "station",
+          "x": 288,
+          "y": 448,
+          "label": "Assembly Bench",
+          "class": "optional",
+          "opens": "inventory:workbench",
+          "window": null,
+          "defect": "looks required"
+        },
+        {
+          "id": "records.sample_cutter",
+          "kind": "station",
+          "x": 352,
+          "y": 384,
+          "label": "Sample Cutter",
+          "class": "active",
+          "opens": "action:m04_job",
+          "window": "m04_debris_w1",
+          "defect": ""
+        },
+        {
+          "id": "records.disposal_chute",
+          "kind": "decor",
+          "x": 416,
+          "y": 344,
+          "label": null,
+          "class": "physical target",
+          "opens": "physical:dispose",
+          "window": "m04_debris_w1",
+          "defect": ""
+        },
+        {
+          "id": "records.dispatch_console",
+          "kind": "station",
+          "x": 640,
+          "y": 448,
+          "label": "Dispatch Console",
+          "class": "active",
+          "opens": "work_surface:m06_dispatch_console",
+          "window": "m06_dispatch_w1",
+          "defect": ""
+        },
+        {
+          "id": "records.calibration_bench",
+          "kind": "station",
+          "x": 352,
+          "y": 96,
+          "label": "Calibration Bench",
+          "class": "active|optional",
+          "opens": "work_surface:m07_calibration_bench",
+          "window": "m07_calibration_start/end",
+          "defect": ""
+        },
+        {
+          "id": "records.qc_packet_o2",
+          "kind": "station",
+          "x": 544,
+          "y": 448,
+          "label": "Quality Packet",
+          "class": "active",
+          "opens": "work_surface:m12_qc_packet_o2",
+          "window": "m12_qc_o2",
+          "defect": ""
+        },
+        {
+          "id": "records.lattice_bench",
+          "kind": "station",
+          "x": 704,
+          "y": 416,
+          "label": "Conduit Lattice Bench",
+          "class": "active",
+          "opens": "ip_overlay:m13",
+          "window": "m13_lattice_w1",
+          "defect": ""
+        },
+        {
+          "id": "records.seal_log",
+          "kind": "station",
+          "x": 704,
+          "y": 160,
+          "label": "Sample Seal Log",
+          "class": "optional",
+          "opens": "prompt:pilotSealLog",
+          "window": "secondary_m11",
+          "defect": "looks required"
+        },
+        {
+          "id": "records.feed_console",
+          "kind": "station",
+          "x": 480,
+          "y": 224,
+          "label": "Station Feed Console",
+          "class": "inactive|optional",
+          "opens": "work_surface:m20_feed_console",
+          "window": "m20_antenna_resume",
+          "defect": "permanent ribbon 'standby — exterior shift not logged'"
+        },
+        {
+          "id": "records.relay_bench",
+          "kind": "station",
+          "x": 192,
+          "y": 384,
+          "label": "Relay Bench",
+          "class": "inactive|active",
+          "opens": "work_surface:m21_relay_bench",
+          "window": "m21_manual_w1",
+          "defect": "ribbon 'no unit issued'"
+        },
+        {
+          "id": "records.report_desk",
+          "kind": "station",
+          "x": 608,
+          "y": 320,
+          "label": "Shift Report Desk",
+          "class": "inactive|active",
+          "opens": "work_surface:m22_report_desk",
+          "window": "m22_report_w1",
+          "defect": "ribbon 'no report due'"
+        },
+        {
+          "id": "records.handover_desk",
+          "kind": "station",
+          "x": 608,
+          "y": 96,
+          "label": "Outbound Handover Desk",
+          "class": "inactive|active",
+          "opens": "prompt:pilotHandoverDesk",
+          "window": "m25_probe_w1",
+          "defect": "ribbon 'tray empty'"
+        }
+      ]
+    },
+    "diagnostics_laboratory": {
+      "grid": "25x19",
+      "objects": [
+        {
+          "id": "lab.door_concourse",
+          "kind": "door",
+          "x": 384,
+          "y": 496,
+          "label": "Station Concourse",
+          "class": "optional",
+          "opens": "door:station_concourse",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "lab.airlock",
+          "kind": "door",
+          "x": 384,
+          "y": 48,
+          "label": "Exterior Airlock",
+          "class": "active|optional",
+          "opens": "door:exterior_recovery_yard",
+          "window": null,
+          "defect": "the row-4 wall block (x 288-447, y 128-159) sits between the south door and the airlock; the route detours via x=240"
+        },
+        {
+          "id": "lab.kai",
+          "kind": "npc",
+          "x": 592,
+          "y": 208,
+          "label": "Kai — diagnostics",
+          "class": "active",
+          "opens": "prompt:pilotKai",
+          "window": null,
+          "defect": "halo + chip + prompt"
+        },
+        {
+          "id": "lab.workstation",
+          "kind": "station",
+          "x": 368,
+          "y": 211,
+          "label": "Signal Analysis Workstation",
+          "class": "optional",
+          "opens": "prompt:pilotSignalWorkstation",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "lab.signal_display",
+          "kind": "decor",
+          "x": 368,
+          "y": 118,
+          "label": null,
+          "class": "decorative",
+          "opens": null,
+          "window": null,
+          "defect": "large physical display block on the travel band"
+        },
+        {
+          "id": "lab.orientation",
+          "kind": "station",
+          "x": 128,
+          "y": 208,
+          "label": "Console Orientation",
+          "class": "optional",
+          "opens": "ip_overlay:tutorial",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "lab.bay1_evidence_table",
+          "kind": "station",
+          "x": 128,
+          "y": 352,
+          "label": "Evidence Table",
+          "class": "active",
+          "opens": "work_surface:m15_evidence_table",
+          "window": "m15_causal_w1",
+          "defect": "floor numeral"
+        },
+        {
+          "id": "lab.bay2_protocol_console",
+          "kind": "station",
+          "x": 288,
+          "y": 352,
+          "label": "Protocol Console",
+          "class": "active",
+          "opens": "ip_overlay:m16",
+          "window": "m16_protocol_w1",
+          "defect": "floor numeral"
+        },
+        {
+          "id": "lab.bay3_training_rig",
+          "kind": "station",
+          "x": 512,
+          "y": 352,
+          "label": "Training Rig",
+          "class": "active",
+          "opens": "ip_overlay:m17",
+          "window": "m17_transfer_w1",
+          "defect": "floor numeral"
+        },
+        {
+          "id": "lab.bay4_diagnostic_board",
+          "kind": "station",
+          "x": 672,
+          "y": 352,
+          "label": "Diagnostic Board",
+          "class": "active",
+          "opens": "ip_overlay:m18",
+          "window": "m18_diagnosis_w1",
+          "defect": "floor numeral"
+        }
+      ]
+    },
+    "exterior_recovery_yard": {
+      "grid": "25x19",
+      "objects": [
+        {
+          "id": "yard.airlock",
+          "kind": "door",
+          "x": 384,
+          "y": 496,
+          "label": "Airlock — Laboratory",
+          "class": "optional|active",
+          "opens": "door:diagnostics_laboratory",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "yard.noor",
+          "kind": "npc",
+          "x": 301,
+          "y": 429,
+          "label": "Noor — field recovery",
+          "class": "active",
+          "opens": "prompt:pilotNoor",
+          "window": null,
+          "defect": "halo + chip + prompt"
+        },
+        {
+          "id": "yard.supply_crate",
+          "kind": "station",
+          "x": 176,
+          "y": 448,
+          "label": "Yard Supply Crate",
+          "class": "optional",
+          "opens": "prompt:supply_crate",
+          "window": null,
+          "defect": "looks like a site"
+        },
+        {
+          "id": "yard.cable_flag",
+          "kind": "station",
+          "x": 560,
+          "y": 448,
+          "label": "Cable Flag",
+          "class": "fault",
+          "opens": "action:m05_fix",
+          "window": "m05_initiation_o2",
+          "defect": "fault state is a 12x7 rectangle"
+        },
+        {
+          "id": "yard.coupling",
+          "kind": "station",
+          "x": 102,
+          "y": 336,
+          "label": "Frozen Coolant Coupling",
+          "class": "active",
+          "opens": "prompt:pilotCoupling",
+          "window": "m19_valve_w1",
+          "defect": "state ribbon"
+        },
+        {
+          "id": "yard.mast",
+          "kind": "station",
+          "x": 416,
+          "y": 176,
+          "label": "Mast 04",
+          "class": "active",
+          "opens": "prompt:pilotMast",
+          "window": "m20_antenna_start",
+          "defect": "state ribbon"
+        },
+        {
+          "id": "yard.plot_stake",
+          "kind": "station",
+          "x": 480,
+          "y": 272,
+          "label": "Excavation Field Stake",
+          "class": "active",
+          "opens": "prompt:pilotPlotStake",
+          "window": "m23_excavation_w1",
+          "defect": ""
+        },
+        {
+          "id": "yard.magnet_rig",
+          "kind": "station",
+          "x": 624,
+          "y": 160,
+          "label": "Magnet Recovery Rig",
+          "class": "active (= bench)",
+          "opens": "prompt:pilotRigReadout",
+          "window": "m24_magnet_w1",
+          "defect": "state ribbon; compound is a translucent rectangle"
+        },
+        {
+          "id": "yard.sorting_bench",
+          "kind": "station",
+          "x": 726,
+          "y": 198,
+          "label": "Sorting Bench",
+          "class": "active (= rig)",
+          "opens": "prompt:pilotSortingBench",
+          "window": "m24 alternative",
+          "defect": ""
+        },
+        {
+          "id": "yard.uplink_a",
+          "kind": "station",
+          "x": 96,
+          "y": 128,
+          "label": "Field Uplink Post A",
+          "class": "active (= B, panel)",
+          "opens": "prompt:pilotUplinkA",
+          "window": "m26_channel_w1",
+          "defect": "state ribbon"
+        },
+        {
+          "id": "yard.uplink_b",
+          "kind": "station",
+          "x": 304,
+          "y": 160,
+          "label": "Field Uplink Post B",
+          "class": "active",
+          "opens": "prompt:pilotUplinkB",
+          "window": "m26_channel_w1",
+          "defect": "state ribbon"
+        },
+        {
+          "id": "yard.line_panel",
+          "kind": "station",
+          "x": 224,
+          "y": 96,
+          "label": "Line Status Panel",
+          "class": "active",
+          "opens": "prompt:pilotLinePanel",
+          "window": "m26_channel_w1",
+          "defect": ""
+        },
+        {
+          "id": "yard.field_tools",
+          "kind": "hud",
+          "x": null,
+          "y": null,
+          "label": "Field Scanner / Excavation Spade",
+          "class": "hud",
+          "opens": null,
+          "window": null,
+          "defect": "silently issued at the briefing; belt stays visible in every later zone"
+        }
+      ]
+    },
+    "utility_core_deck": {
+      "grid": "25x19",
+      "objects": [
+        {
+          "id": "deck.door_concourse",
+          "kind": "door",
+          "x": 64,
+          "y": 272,
+          "label": "Station Concourse",
+          "class": "optional",
+          "opens": "door:station_concourse",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "deck.core_door",
+          "kind": "door",
+          "x": 400,
+          "y": 120,
+          "label": "Core Chamber",
+          "class": "inactive|active",
+          "opens": "door:core_chamber (gated)",
+          "window": null,
+          "defect": "ribbon 'DOOR · SEALED'"
+        },
+        {
+          "id": "deck.review_panel",
+          "kind": "station",
+          "x": 288,
+          "y": 144,
+          "label": "Shift Review Panel",
+          "class": "active",
+          "opens": "prompt:pilotReviewPanel",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "deck.systems_board",
+          "kind": "decor",
+          "x": 176,
+          "y": 144,
+          "label": "STATION RECORD: OPEN n/24 tasks closed",
+          "class": "decorative",
+          "opens": null,
+          "window": null,
+          "defect": "ribbon"
+        },
+        {
+          "id": "deck.coolant_valve",
+          "kind": "station",
+          "x": 160,
+          "y": 384,
+          "label": "Coolant Feed Valve",
+          "class": "inactive|active",
+          "opens": "feed_panel:coolant",
+          "window": null,
+          "defect": "ribbon"
+        },
+        {
+          "id": "deck.calibration_breaker",
+          "kind": "station",
+          "x": 400,
+          "y": 384,
+          "label": "Calibration Breaker",
+          "class": "inactive|active",
+          "opens": "feed_panel:calibration",
+          "window": null,
+          "defect": "ribbon"
+        },
+        {
+          "id": "deck.distribution_bus",
+          "kind": "station",
+          "x": 640,
+          "y": 384,
+          "label": "Distribution Bus",
+          "class": "inactive|active",
+          "opens": "feed_panel:distribution",
+          "window": null,
+          "defect": "ribbon"
+        },
+        {
+          "id": "deck.manifold",
+          "kind": "decor",
+          "x": 560,
+          "y": 144,
+          "label": "COOLANT o · CALIBRATION o · DISTRIBUTION o",
+          "class": "decorative",
+          "opens": null,
+          "window": null,
+          "defect": "ribbon"
+        }
+      ]
+    },
+    "core_chamber": {
+      "grid": "25x19",
+      "objects": [
+        {
+          "id": "core.door_deck",
+          "kind": "door",
+          "x": 400,
+          "y": 496,
+          "label": "Utility Deck",
+          "class": "optional (gated during sync)",
+          "opens": "door:utility_core_deck",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "core.core",
+          "kind": "station",
+          "x": 400,
+          "y": 298,
+          "label": "Core",
+          "class": "active",
+          "opens": "prompt:pilotCore",
+          "window": null,
+          "defect": "chip + state ribbon + prompt"
+        },
+        {
+          "id": "core.kai",
+          "kind": "npc",
+          "x": 592,
+          "y": 256,
+          "label": "Kai — engineering",
+          "class": "optional",
+          "opens": "prompt:pilotKai",
+          "window": null,
+          "defect": ""
+        },
+        {
+          "id": "core.status_console",
+          "kind": "decor",
+          "x": 208,
+          "y": 256,
+          "label": "COOLANT · CALIBRATION · DISTRIBUTION · PREPARED",
+          "class": "decorative",
+          "opens": null,
+          "window": null,
+          "defect": "ribbon"
+        }
+      ]
+    }
+  }
+}
