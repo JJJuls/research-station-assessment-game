@@ -885,6 +885,12 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
   }
 
   protected onPilotUpdate(): void {
+    this.clampWorldReadouts([
+      this.boardStatus,
+      this.manifoldText,
+      this.doorChip,
+      ...this.feedChips.values(),
+    ]);
     // Restrained ambient: the open door lamp breathes slowly (no flashing);
     // reduced motion keeps it steady.
     if (

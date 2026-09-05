@@ -319,7 +319,10 @@ export class StationConcourseScene extends PilotZoneScene {
     // closer to its device, sorted at its own foot line so it never
     // covers a figure standing on the approach lane.
     this.add
-      .text(S.monitorGauge.x, S.monitorGauge.y - 30, this.gaugeReading(), {
+      // V4 Unit 6: below the gauge — the name chip and prompt now sit
+      // above it (never on the Dock door leaf), so the readout moves to
+      // the gauge's foot side, clear of both.
+      .text(S.monitorGauge.x, S.monitorGauge.y + 30, this.gaugeReading(), {
         backgroundColor: '#101820',
         color: '#9fb2c1',
         font: '10px monospace',
@@ -328,7 +331,7 @@ export class StationConcourseScene extends PilotZoneScene {
       })
       .setOrigin(0.5)
       .setAlpha(0.85)
-      .setDepth(worldDepth(S.monitorGauge.y - 22));
+      .setDepth(worldDepth(S.monitorGauge.y + 38));
 
     // Station status strip on the wall console: a concise operational
     // update that changes on the return (no item, no directive).

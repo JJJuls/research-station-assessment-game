@@ -1954,6 +1954,13 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
 
   protected onPilotUpdate(): void {
     this.refreshMastArt();
+    this.clampWorldReadouts([
+      this.couplingChip ?? null,
+      this.mastChip ?? null,
+      this.rigChip ?? null,
+      this.lineAChip ?? null,
+      this.lineBChip ?? null,
+    ]);
 
     if (
       !m05Presented('o2') &&

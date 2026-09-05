@@ -91,7 +91,7 @@ export class InventoryHud {
       .text(BELT_X, BELT_Y - 18, '', {
         backgroundColor: '#101820',
         color: '#9fb2c1',
-        font: '12px monospace',
+        font: '14px monospace',
         padding: { x: 5, y: 2 },
       })
       .setOrigin(0)
@@ -100,6 +100,9 @@ export class InventoryHud {
       .setVisible(false);
 
     this.tabHandler = (event: KeyboardEvent) => {
+      // Review A-7: TAB never moves browser focus off the canvas.
+      event.preventDefault();
+
       if (!event.repeat) {
         selectNextInventoryItem();
       }
@@ -131,6 +134,18 @@ export class InventoryHud {
   private refresh() {
     const slots = getInventorySlots();
     const selectedIndex = getSelectedInventoryIndex();
+    // V4 Unit 6 (VISUAL-SYSTEM-V4 §4): the belt is hidden while empty —
+    // nothing to select, nothing to show. Selection and TAB still work
+    // the moment an item arrives.
+    const anyItem = slots.some((itemId) => itemId !== null);
+
+    for (const background of this.slotBackgrounds) {
+      background.setVisible(anyItem);
+
+      if (background.input) {
+        background.input.enabled = anyItem;
+      }
+    }
 
     for (let index = 0; index < slots.length; index++) {
       const itemId = slots[index];

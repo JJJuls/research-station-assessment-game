@@ -24,7 +24,8 @@ pending empirical validation against its source instrument.
 | 3    | (this commit) | refactor(game): focus diagnostics assessment sequence    | done                 |
 | 4    | `8f5dd42`     | refactor(game): structure exterior recovery yard         | done                 |
 | 5    | (this commit) | refactor(game): refine utility and core closure          | done                 |
-| 6–7  | —             | not started                                              | remaining            |
+| 6    | (this commit) | chore(game): unify assessment presentation               | done                 |
+| 7    | —             | final verification and report                            | remaining            |
 
 Per-unit evidence notes: `docs/verification/professional-visual-v4/UNIT-*.md`.
 
@@ -57,6 +58,12 @@ Unit 5: `src/scenes/UtilityCoreDeckScene.ts`, `src/scenes/CoreChamberScene.ts`,
 `e2e/pilot_closure_capture.spec.ts` (output directory parameter),
 `e2e/v4_core_dev_capture.spec.ts` (new, developer-launch chamber frames),
 `unit5/**` (both resolutions + `core-dev/`), `projection/unit5.json`.
+Unit 6: `src/world/RoomScene.ts` (chip/prompt placement, door threshold,
+opaque card, prompt y clamp, instruction size), `src/pilot/PilotZoneScene.ts`
+(zone-local objectives, beacon edge indicator, readout clamp helper, legend
+filter), `src/gameplay/InventoryHud.ts` (belt hidden while empty, TAB,
+caption size), one `onPilotUpdate` call each in the Records, Yard and Deck
+scenes (recorded deviation), Unit 6 note, `unit6/**`, `projection/unit6.json`.
 
 ## 4. Render and camera architecture (before → after)
 
@@ -93,6 +100,13 @@ oversized PROVISIONAL slices replaced by 32 px procedural props, eleven
 labels removed, readouts in the environment register; the chamber's
 control plate and apparatus floor plate, floor glows on the decal layer;
 the ARM → CONFIRM lifecycle, ramp timing and neutral completion untouched.
+Cross-world (Unit 6 note): zone-local objective lines once inside the
+destination zone, an on-screen edge indicator for an off-view beacon
+target, chips and prompts never placed over another interactable's art,
+door threshold bars at the leaf base, opaque dialogue cards, the belt
+hidden while empty, world readouts hidden when mostly out of view or under
+the objective band, the field-action keys listed only in the yard, TAB kept
+on the canvas, body-size affordance lines.
 
 ## 7. Route and wayfinding evidence
 
@@ -115,8 +129,10 @@ size) — Unit 1; C2 in the Concourse and Records — Unit 2; C2/C3/C4 in the
 Laboratory (labels, equal salience, HUD collisions of the relay subtitle) —
 Unit 3; C6 (snowfall/noise), C9 (yard labels), C11 (yard depth errors) —
 Unit 4; C11 in the Deck/Core (conduits, glows and plates in the actor
-depth range; oversized machinery) — Unit 5. Remaining: C15 (HUD lifecycle,
-Unit 6).
+depth range; oversized machinery) — Unit 5; C15 (HUD lifecycle: stale objective lines, empty belt, beacon
+off-screen, chip/prompt over other art) — Unit 6. Remaining: none of the
+audited sources; the Unit 7 final gate re-checks every one on the full
+route.
 
 ## 11. Screenshot inventory
 
@@ -127,8 +143,9 @@ correction round) + `unit2/800x600/` (11), `unit3/12…18` (laboratory at
 1280×720) + `unit3/800x600/` (see the Unit 3 note for the run status),
 `unit4/19…26` (yard at 1280×720) + `unit4/800x600/19…30` (yard plus the
 pre-Unit-5 Deck/Core under the V4 camera), `unit5/19…30` + `unit5/800x600/`
-(deck after Unit 5) and `unit5/core-dev/` (chamber states from the labelled
-developer inspection launch, both resolutions).
+(deck after Unit 5) and `unit5/core-dev/` (chamber arrival and prompt from
+the labelled developer inspection launch), `unit6/01…11` (Dock, Concourse,
+Records after the cross-world pass, 1280×720).
 
 ## 12. Scientific event projection
 
@@ -138,7 +155,7 @@ types, 28 opportunity records, zone sequence and final stage `complete`
 identical, payload-key sets identical, form/counterbalance assignments
 identical. Unit 2 (`unit2.json`): 0 differences. Unit 3 (`unit3.json`,
 recorded on the tree carrying the Unit 2 correction and the laboratory
-redesign; `unit3.diff.json` = `[]`): **0 differences**. Unit 4
+redesign; `unit3.diff.json` = `[]`): **0 differences**. Unit 6 (`unit6.json`): see the Unit 6 note. Unit 4
 (`unit4.json`): **0 differences**. Unit 5 (`unit5.json`, `unit5.diff.json`
 = `[]`): **0 differences**.
 

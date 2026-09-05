@@ -1118,6 +1118,12 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
   protected onPilotUpdate(): void {
     this.physical?.update();
+    this.clampWorldReadouts([
+      this.consoleChip,
+      this.benchChip,
+      this.deskChip,
+      this.trayChip,
+    ]);
 
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
       window.__returnProbe = returnProbeSnapshot();

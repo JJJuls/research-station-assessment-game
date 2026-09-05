@@ -25,7 +25,7 @@ import type {
 } from '../world/RoomScene';
 import { RoomScene } from '../world/RoomScene';
 import { pilotLaunchMode, refreshPilotCoverageProbe } from './pilotCoverage';
-import type { PilotBeaconTarget, PilotZoneKey } from './pilotRoute';
+import type { PilotBeaconTarget, PilotStage, PilotZoneKey } from './pilotRoute';
 import {
   installPilotRouteLogSink,
   notePilotZoneEntered,
@@ -38,12 +38,30 @@ import {
   pilotObjective,
   pilotRouteSummary,
   pilotStage,
+  pilotStageZone,
 } from './pilotRoute';
 import { noteM09ReminderLogViewed } from './windows/m09MonitorWatch';
 import { WorldBundleLayer } from './worldBundles';
 
 /** Beacon hides inside this radius (mission §8: disappears on arrival). */
 const BEACON_ARRIVAL_RANGE = 120;
+
+/**
+ * V4 Unit 6 (stale objective removal): once the participant stands in the
+ * stage's destination zone, the route line names the action in the room
+ * instead of the door already passed (the Core Chamber precedent). One
+ * line per travel stage; every other stage keeps its route text.
+ */
+const LOCAL_OBJECTIVES: Partial<Record<PilotStage, string>> = {
+  workshop: 'Take the shift orders at the Work Order Board.',
+  lab_briefing: 'Report to Kai at the briefing desk.',
+  exterior_briefing: 'Report to Noor on the airlock apron.',
+  return_hub: 'Check in with Vale at the incident desk.',
+  deck_closure: 'Close the station record at the Shift Review Panel.',
+};
+
+/** Edge inset (world px) for the off-screen beacon indicator. */
+const BEACON_EDGE_INSET = 14;
 
 /** Pilot controls legend (mission §8 key set; hidden until H). */
 export const PILOT_CONTROLS_LINES = [
@@ -128,6 +146,8 @@ export abstract class PilotZoneScene extends RoomScene {
   private beaconArrow: Phaser.GameObjects.Text | null = null;
   private beaconTarget: PilotBeaconTarget | null = null;
   private beaconTween: Phaser.Tweens.Tween | null = null;
+  /** V4 Unit 6: true while the arrow is parked at the view edge. */
+  private beaconEdgeMode = false;
   private unsubscribeRoute: (() => void) | null = null;
   private mapOpen = false;
 
@@ -146,7 +166,11 @@ export abstract class PilotZoneScene extends RoomScene {
   protected controlsReferenceOptions(): ControlsReferenceOptions {
     return {
       startVisible: false,
-      lines: PILOT_CONTROLS_LINES,
+      // Review A-3: the field-action keys are listed only where they act.
+      lines:
+        this.zoneKey === 'exterior_recovery_yard'
+          ? PILOT_CONTROLS_LINES
+          : PILOT_CONTROLS_LINES.filter((line) => !/^[CDF]\s/.test(line)),
       panelY: 404,
       onToggle: (shown) =>
         this.logScenarioEvent('pilotRoute', 'pilot_controls_toggled', {
@@ -157,6 +181,13 @@ export abstract class PilotZoneScene extends RoomScene {
 
   /** The ONE objective line: the pilot route objective. */
   protected buildRouteObjectiveText(): string {
+    const stage = pilotStage();
+    const local = LOCAL_OBJECTIVES[stage];
+
+    if (local !== undefined && pilotStageZone(stage) === this.zoneKey) {
+      return local;
+    }
+
     return pilotObjective();
   }
 
@@ -424,6 +455,100 @@ export abstract class PilotZoneScene extends RoomScene {
     }
   }
 
+  /**
+   * V4 Unit 6 (reviews C7 / D3-1): when the beacon target is outside the
+   * world camera view, the arrow glyph sits at the view edge on the line
+   * toward the target (pointing the way) instead of vanishing off-screen;
+   * the ring stays at the target. Presentation only.
+   */
+  private placeBeaconArrow(visible: boolean) {
+    const arrow = this.beaconArrow;
+    const target = this.beaconTarget;
+
+    if (arrow === null || target === null || !visible) {
+      return;
+    }
+
+    const view = this.cameras.main.worldView;
+    const inside =
+      target.x >= view.x + BEACON_EDGE_INSET &&
+      target.x <= view.right - BEACON_EDGE_INSET &&
+      target.y - 44 >= view.y + BEACON_EDGE_INSET &&
+      target.y - 44 <= view.bottom - BEACON_EDGE_INSET - 40;
+
+    if (inside) {
+      // Review V-3: restore unconditionally when leaving edge mode.
+      if (this.beaconEdgeMode) {
+        this.beaconEdgeMode = false;
+        arrow.setText('▾');
+        arrow.setPosition(target.x, target.y - 44);
+        arrow.setDepth(Depth.AbovePlayer);
+        this.beaconTween?.resume();
+      }
+
+      return;
+    }
+
+    if (!this.beaconEdgeMode) {
+      this.beaconEdgeMode = true;
+      this.beaconTween?.pause();
+      // Review V-5: above the HUD belt band while parked at the edge.
+      arrow.setDepth(Depth.AboveWorld + 1);
+    }
+
+    const x = Phaser.Math.Clamp(
+      target.x,
+      view.x + BEACON_EDGE_INSET,
+      view.right - BEACON_EDGE_INSET,
+    );
+    const y = Phaser.Math.Clamp(
+      target.y,
+      view.y + BEACON_EDGE_INSET + 40,
+      view.bottom - BEACON_EDGE_INSET - 40,
+    );
+    const dx = target.x - x;
+    const dy = target.y - y;
+    const glyph =
+      Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? '▸' : '◂') : dy > 0 ? '▾' : '▴';
+
+    if (arrow.text !== glyph) {
+      arrow.setText(glyph);
+    }
+
+    arrow.setPosition(x, y);
+  }
+
+  /**
+   * V4 Unit 6 (reviews R2 / Y7): a world readout chip is shown only while
+   * its full bounds lie inside the world camera view, so a half-clipped
+   * word never reads as a rendering fault. Zones pass their chips.
+   */
+  protected clampWorldReadouts(
+    chips: readonly (Phaser.GameObjects.Text | null)[],
+  ) {
+    const view = this.cameras.main.worldView;
+
+    for (const chip of chips) {
+      if (chip === null || !chip.active) {
+        continue;
+      }
+
+      const bounds = chip.getBounds();
+      // Review V-6: a chip stays while at least 60 % of it is in view;
+      // review V-7: the objective band (top 30 world px) counts as covered.
+      const visibleLeft = Math.max(bounds.left, view.x);
+      const visibleRight = Math.min(bounds.right, view.right);
+      const visibleTop = Math.max(bounds.top, view.y + 30);
+      const visibleBottom = Math.min(bounds.bottom, view.bottom);
+      const fraction =
+        (Math.max(0, visibleRight - visibleLeft) *
+          Math.max(0, visibleBottom - visibleTop)) /
+        Math.max(1, bounds.width * bounds.height);
+
+      chip.setVisible(chip.text.length > 0 && fraction >= 0.6);
+    }
+  }
+
   private beaconVisibleNow(): boolean {
     if (this.beaconTarget === null) {
       return false;
@@ -471,6 +596,7 @@ export abstract class PilotZoneScene extends RoomScene {
 
     this.beaconRing?.setVisible(visible);
     this.beaconArrow?.setVisible(visible);
+    this.placeBeaconArrow(visible);
     this.onPilotUpdate();
 
     if (typeof window !== 'undefined' && import.meta.env.DEV) {

@@ -872,6 +872,38 @@ export abstract class RoomScene extends Phaser.Scene {
     this.stations.push(config);
   }
 
+  /**
+   * V4 Unit 6: true when the point (x, y) lies inside the art bounds of
+   * another interactable marker (station or door), i.e. a chip/prompt
+   * placed there would caption the wrong object. Presentation only.
+   */
+  private belowPlacementCovered(x: number, y: number): boolean {
+    for (const [config, marker] of this.interactableMarkers) {
+      if (Math.abs(config.x - x) < 1 && Math.abs(config.y - (y - 40)) < 1) {
+        continue;
+      }
+
+      const bounds = (
+        marker as Phaser.GameObjects.GameObject & {
+          getBounds?: () => Phaser.Geom.Rectangle;
+        }
+      ).getBounds?.();
+
+      // Review V-2: the chip is ~90 world px wide — test its span, not
+      // only its centre.
+      if (
+        bounds !== undefined &&
+        (bounds.contains(x, y) ||
+          bounds.contains(x - 44, y) ||
+          bounds.contains(x + 44, y))
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   /** Layer-4 depth for a marker/prop image or placeholder rectangle. */
   private sortAtFootLine(marker: Phaser.GameObjects.GameObject, y: number) {
     const sized = marker as Phaser.GameObjects.GameObject & {
@@ -1096,13 +1128,15 @@ export abstract class RoomScene extends Phaser.Scene {
         image.setTint(0xa9d8d3);
       }
 
+      // V4 Unit 6 (Unit 2 review C5): the threshold bar sits at the leaf's
+      // base, the leaf's full width, so every door reads as an exit.
       parts.push(
         this.add
           .rectangle(
             config.x,
-            config.y + image.displayHeight / 2 - 2,
-            Math.min(40, image.displayWidth - 8),
-            3,
+            config.y + image.displayHeight / 2 + 2,
+            image.displayWidth,
+            4,
             0x5fd3c4,
             0.95,
           )
@@ -1439,14 +1473,16 @@ export abstract class RoomScene extends Phaser.Scene {
       PROMPT_INSTRUCTION,
       {
         color: '#9fb2c1',
-        font: '14px monospace',
+        // V4 Unit 6 (review A-1): the keyboard-affordance line keeps the
+        // body size at the 0.625 display scale.
+        font: '15px monospace',
         lineSpacing: 4,
         wordWrap: { width: CARD_WIDTH },
       },
     );
     const panelHeight = cursorY + 12 + Math.ceil(instruction.height) + PADDING;
     const backdrop = this.add
-      .rectangle(0, 0, PANEL_WIDTH, Math.max(230, panelHeight), 0x101820, 0.96)
+      .rectangle(0, 0, PANEL_WIDTH, Math.max(230, panelHeight), 0x101820, 1)
       .setOrigin(0);
     const panel = this.add.container(panelX, PANEL_Y, [
       backdrop,
@@ -2390,7 +2426,16 @@ export abstract class RoomScene extends Phaser.Scene {
         : nearest.kind === 'station'
           ? nearest.station!.y
           : nearest.door!.y;
-    const fromAbove = targetY !== null && this.player.y < targetY - 8;
+    // V4 Unit 6 (Unit 2 review C1): the below-target placement is used
+    // only when it does not land on another interactable's art (e.g. the
+    // Concourse gauge chip over the Dock door leaf); otherwise the chip
+    // and prompt stay above the target.
+    const fromAbove =
+      targetY !== null &&
+      this.player.y < targetY - 8 &&
+      nearestConfig !== null &&
+      !this.belowPlacementCovered(nearestConfig.x, targetY + 40) &&
+      !this.belowPlacementCovered(nearestConfig.x, targetY + 80);
 
     for (const [config, chip] of this.labelChips) {
       const visible = config === nearestConfig;
@@ -2439,7 +2484,8 @@ export abstract class RoomScene extends Phaser.Scene {
           promptHalf + 2,
           this.promptClampMaxX() - promptHalf,
         ),
-        Math.round(anchor.y),
+        // Review A-6: never inside the objective band (design y < 64).
+        Math.max(64, Math.round(anchor.y)),
       )
       .setVisible(true);
 
