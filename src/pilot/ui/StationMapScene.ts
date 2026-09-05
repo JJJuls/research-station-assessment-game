@@ -1,14 +1,18 @@
 /**
- * Station map + mission log overlay (M) — evidence-led pilot v2 (Unit 1).
+ * Station map + mission log overlay (M) — World V1 U2 redraw.
  *
- * A compact schematic of the seven participant zones (Dock, Concourse,
- * Records Workshop, Diagnostics Laboratory, Recovery Yard, Utility Deck,
- * Core Chamber) with the current position, the current destination and
- * discovered/undiscovered state, plus the concise mission log (open
- * obligations, projects and notes registered by the hosting windows).
- * Modal over a paused pilot zone (pause-and-launch, inventory-overlay
- * precedent); M or ESC closes. Presentation only: shows no measurement
- * logic, no validity state, no score.
+ * A clean schematic of the seven zones in their true topology (Dock south
+ * of the Concourse; Records west; Laboratory north with the airlock to
+ * the Recovery Yard beyond; Utility Deck east with the Core Chamber
+ * beyond it): the current zone, visited zones, the current destination,
+ * the fixed connections, the ONE purposeful return drawn as a highlighted
+ * path while it is live, and the sector marks the story state restores.
+ * Plus the concise mission log (open obligations registered by the
+ * hosting windows — the authorised reminder exposure). Modal over a
+ * paused pilot zone; M or ESC closes.
+ *
+ * Presentation only: no target response, hidden variable, puzzle
+ * solution, item identifier, validity state or score is shown.
  */
 import Phaser from 'phaser';
 
@@ -17,12 +21,18 @@ import { guardKeyHandler } from '../../inventory/ui/keyGuard';
 import { fitOverlayScene } from '../../world/viewport';
 import type { PilotZoneKey } from '../pilotRoute';
 import {
-  PILOT_EPISODE_NAMES,
-  pilotEpisode,
+  pilotCurrentZone,
   pilotMapModel,
   pilotMissionLog,
-  pilotObjective,
+  pilotStage,
 } from '../pilotRoute';
+import {
+  missionCardAction,
+  purposefulReturnPath,
+  storyAct,
+  storyActTitle,
+  zoneMark,
+} from '../storyState';
 
 interface StationMapLaunchData {
   resumeKey: string;
@@ -38,68 +48,67 @@ interface MapBox {
   h: number;
 }
 
-/** Map column (left 480 px); the mission log occupies the right column. */
+/** True topology on a plan grid (design px; map column = left 500 px). */
 const BOXES: readonly MapBox[] = [
   {
     zone: 'exterior_recovery_yard',
     label: 'Recovery Yard',
     x: 262,
-    y: 128,
-    w: 170,
-    h: 46,
+    y: 118,
+    w: 168,
+    h: 44,
   },
   {
     zone: 'diagnostics_laboratory',
     label: 'Diagnostics Laboratory',
     x: 262,
-    y: 216,
+    y: 206,
     w: 190,
-    h: 46,
+    h: 44,
   },
   {
     zone: 'records_workshop',
     label: 'Records Workshop',
-    x: 104,
-    y: 304,
+    x: 92,
+    y: 294,
     w: 150,
-    h: 46,
+    h: 44,
   },
   {
     zone: 'station_concourse',
     label: 'Station Concourse',
     x: 262,
-    y: 304,
-    w: 150,
-    h: 46,
+    y: 294,
+    w: 158,
+    h: 44,
   },
   {
     zone: 'utility_core_deck',
     label: 'Utility Deck',
-    x: 420,
-    y: 304,
-    w: 150,
-    h: 46,
+    x: 432,
+    y: 294,
+    w: 140,
+    h: 44,
   },
-  // Unit 6: the Core Chamber sits north of the Utility Deck (gated door).
   {
     zone: 'core_chamber',
     label: 'Core Chamber',
-    x: 440,
-    y: 216,
-    w: 124,
-    h: 46,
+    x: 432,
+    y: 206,
+    w: 140,
+    h: 44,
   },
-  { zone: 'dock', label: 'Dock', x: 262, y: 392, w: 120, h: 40 },
+  { zone: 'dock', label: 'Dock', x: 262, y: 382, w: 120, h: 40 },
 ];
 
-/** Corridor lines between box centres (drawn beneath the boxes). */
+/** Fixed connections (drawn beneath the boxes). */
 const LINKS: readonly [PilotZoneKey, PilotZoneKey][] = [
   ['dock', 'station_concourse'],
   ['station_concourse', 'diagnostics_laboratory'],
   ['diagnostics_laboratory', 'exterior_recovery_yard'],
+  ['records_workshop', 'station_concourse'],
   ['station_concourse', 'utility_core_deck'],
   ['utility_core_deck', 'core_chamber'],
-  ['records_workshop', 'station_concourse'],
 ];
 
 const LOG_X = 528;
@@ -113,6 +122,9 @@ declare global {
       current: string | null;
       destination: string | null;
       discovered: string[];
+      restored: string[];
+      return_path: string[] | null;
+      act: number;
       log_entries: string[];
     } | null;
   }
@@ -133,48 +145,80 @@ export class StationMapScene extends Phaser.Scene {
 
   create() {
     this.scene.bringToTop();
-    // V4: 800×600 design space on the 1280×720 canvas (viewport.ts).
     fitOverlayScene(this);
 
+    const stage = pilotStage();
     const model = pilotMapModel();
     const byZone = new Map(model.map((node) => [node.zone, node]));
-    const current = model.find((node) => node.current)?.zone ?? this.zone;
+    const current = pilotCurrentZone() ?? this.zone;
     const destination = model.find((node) => node.destination)?.zone ?? null;
+    const returnPath = purposefulReturnPath(stage);
     const log = pilotMissionLog();
-    const episode = pilotEpisode();
+    const restored = BOXES.map((box) => box.zone).filter(
+      (zone) => zoneMark(zone, stage) === 'restored',
+    );
 
-    this.add.rectangle(400, 300, 800, 600, 0x05080c, 0.62).setInteractive();
+    // The dim backdrop covers the whole canvas (1280/1.2 design px), not
+    // only the 800×600 design space, so no letterbox seam frames the map.
+    this.add.rectangle(400, 300, 1080, 620, 0x05080c, 0.62).setInteractive();
     this.add
       .rectangle(400, 300, 740, 520, 0x101820, 0.97)
       .setStrokeStyle(1, 0x33475a);
     this.add
-      .text(262, 62, 'STATION MAP', {
+      .text(262, 60, 'STATION 080 — PLAN', {
         color: '#dfe9f1',
         font: '16px monospace',
       })
       .setOrigin(0.5);
     this.add
-      .text(
-        262,
-        84,
-        `Shift segment ${episode} — ${PILOT_EPISODE_NAMES[episode]}`,
-        {
-          color: '#9fb2c1',
-          font: '11px monospace',
-          wordWrap: { width: 440 },
-          align: 'center',
-        },
-      )
+      .text(262, 82, `Act ${storyAct(stage)} — ${storyActTitle(stage)}`, {
+        color: '#9fb2c1',
+        font: '11px monospace',
+      })
       .setOrigin(0.5);
 
     const centre = (zone: PilotZoneKey) => BOXES.find((b) => b.zone === zone)!;
+    const onReturnPath = (a: PilotZoneKey, b: PilotZoneKey) =>
+      returnPath !== null &&
+      returnPath.some(
+        (zone, index) =>
+          index > 0 &&
+          ((returnPath[index - 1] === a && zone === b) ||
+            (returnPath[index - 1] === b && zone === a)),
+      );
 
     for (const [a, b] of LINKS) {
       const from = centre(a);
       const to = centre(b);
-      const line = this.add.line(0, 0, from.x, from.y, to.x, to.y, 0x33475a, 1);
+      const highlighted = onReturnPath(a, b);
+      const line = this.add.line(
+        0,
+        0,
+        from.x,
+        from.y,
+        to.x,
+        to.y,
+        highlighted ? 0xe6c68f : 0x33475a,
+        1,
+      );
 
-      line.setOrigin(0).setLineWidth(3);
+      line.setOrigin(0).setLineWidth(highlighted ? 5 : 3);
+    }
+
+    if (returnPath !== null) {
+      this.add
+        .text(
+          262,
+          452,
+          'RETURN — the highlighted path leads back to the Records Workshop',
+          {
+            color: '#e6c68f',
+            font: '10px monospace',
+            align: 'center',
+            wordWrap: { width: 440 },
+          },
+        )
+        .setOrigin(0.5);
     }
 
     for (const box of BOXES) {
@@ -182,6 +226,7 @@ export class StationMapScene extends Phaser.Scene {
       const discovered = node?.discovered ?? false;
       const isCurrent = box.zone === current;
       const isDestination = box.zone === destination;
+      const mark = zoneMark(box.zone, stage);
       const fill = isCurrent ? 0x1f7a8c : discovered ? 0x1b2633 : 0x121a22;
       const stroke = isDestination
         ? 0xe6c68f
@@ -203,26 +248,41 @@ export class StationMapScene extends Phaser.Scene {
         })
         .setOrigin(0.5);
 
+      // Restored sector: a filled mark in the box corner + the word (never
+      // colour alone).
+      if (mark === 'restored') {
+        this.add.rectangle(
+          box.x + box.w / 2 - 8,
+          box.y - box.h / 2 + 8,
+          8,
+          8,
+          0x7fc9a0,
+          1,
+        );
+      }
+
       const tag = isCurrent
         ? 'YOU ARE HERE'
         : isDestination
           ? 'DESTINATION'
-          : discovered
-            ? ''
-            : 'not yet visited';
+          : mark === 'restored'
+            ? 'work done'
+            : discovered
+              ? 'visited'
+              : 'not yet visited';
 
-      if (tag.length > 0) {
-        this.add
-          .text(box.x, box.y + 12, tag, {
-            color: isCurrent
-              ? '#5fd3c4'
-              : isDestination
-                ? '#e6c68f'
+      this.add
+        .text(box.x, box.y + 12, tag, {
+          color: isCurrent
+            ? '#5fd3c4'
+            : isDestination
+              ? '#e6c68f'
+              : mark === 'restored'
+                ? '#7fc9a0'
                 : '#56687a',
-            font: '9px monospace',
-          })
-          .setOrigin(0.5);
-      }
+          font: '10px monospace',
+        })
+        .setOrigin(0.5);
     }
 
     // ——— Mission log (right column) ———
@@ -236,12 +296,12 @@ export class StationMapScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(LOG_X, 124, 'CURRENT OBJECTIVE', {
+      .text(LOG_X, 124, 'NEXT ACTION', {
         color: '#7f95a8',
         font: '9px monospace',
       })
       .setOrigin(0, 0.5);
-    this.add.text(LOG_X, 136, pilotObjective(), {
+    this.add.text(LOG_X, 136, missionCardAction(stage, current), {
       color: '#dfe9f1',
       font: '11px monospace',
       wordWrap: { width: LOG_W },
@@ -282,7 +342,7 @@ export class StationMapScene extends Phaser.Scene {
       .text(
         400,
         540,
-        'cyan = you are here   ·   amber = destination   ·   grey = not yet visited\nM or ESC closes',
+        'cyan = you are here   ·   amber = destination / return path   ·   ■ = work done\nM or ESC closes',
         {
           color: '#9fb2c1',
           font: '11px monospace',
@@ -312,6 +372,9 @@ export class StationMapScene extends Phaser.Scene {
           current: null,
           destination: null,
           discovered: [],
+          restored: [],
+          return_path: null,
+          act: 0,
           log_entries: [],
         };
       }
@@ -323,6 +386,9 @@ export class StationMapScene extends Phaser.Scene {
         current,
         destination,
         discovered: model.filter((n) => n.discovered).map((n) => n.zone),
+        restored,
+        return_path: returnPath,
+        act: storyAct(stage),
         log_entries: log.map((entry) => entry.text),
       };
     }

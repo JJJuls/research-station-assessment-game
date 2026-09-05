@@ -1224,9 +1224,10 @@ export class CoreChamberScene extends PilotZoneScene {
     const state = closureCore().state;
 
     if (pilotStage() === 'core_sync' && state !== 'stable') {
+      // World V1 (U2): short mission-card lines (≤ 44 characters).
       return state === 'synchronizing'
-        ? 'Synchronising — stand by; the Core stabilises in a moment.'
-        : 'At the Core: inspect it, open the synchronisation review, then confirm.';
+        ? 'Synchronising — stand by.'
+        : 'Inspect the Core, then confirm the review.';
     }
 
     return super.buildRouteObjectiveText();

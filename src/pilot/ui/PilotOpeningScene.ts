@@ -1,58 +1,113 @@
 /**
- * Pilot opening (skippable) — professional pilot route, Unit 2; rebuilt
- * by the V4 visual-validity redesign (mission §18).
+ * Pilot opening (skippable) — World V1 U2 (PROFESSIONAL-WORLD-DESIGN-V1 §9).
  *
- * An in-engine establishing shot of the outpost in the storm's aftermath:
- * the station modules, the coolant tower, the damaged mast and the
- * landing pad composed from the route's own textures at the integer world
- * scale, a slow deterministic push-in of the camera, three short captions,
- * then control passes to the Dock. Any key or click skips. Under reduced
- * motion the shot is static and the captions hold for the same total time.
+ * An in-engine establishing sequence composed from the station's own kit
+ * at the world scale and in the world's own top-down perspective: the
+ * plateau at dawn, Station 080's modules with visible storm damage, the
+ * broken relay mast, the landing pad — and the relief shuttle settling
+ * onto the pad in front of the Dock's docking threshold, the exact point
+ * where the participant then stands. The picture is rendered through the
+ * same world plate and sampler as every room (32×18-tile view, 1.25×
+ * composite), so scale, lighting register and perspective carry straight
+ * into the playable Dock.
  *
- * Modal over the paused Dock; skipping or finishing changes NO measurement
- * entry state (the Dock's control tutorial starts identically either way).
- * Logs `pilot_opening_*` (unmapped route telemetry) through the Dock host.
+ * Timing is WALL-CLOCK: captions, the pan, the descent and the hand-over
+ * are functions of the raw elapsed time read in update(), never of the
+ * frame-delta accumulators (Phaser timers and tweens), which fall behind
+ * real time when a slow renderer caps the per-frame delta. The shot ends at
+ * 15.4 s (≤ 20 s) on any machine; any key or click skips. Skipping or
+ * finishing changes NO measurement entry state: the Dock resumes
+ * identically either way (the skip press never becomes the first
+ * interaction — RoomScene's 300 ms suppression). Under reduced motion the
+ * shot is static (shuttle landed) and the captions hold for the same total
+ * time. Logs `pilot_opening_*` (unmapped route telemetry) through the Dock.
  */
 import Phaser from 'phaser';
 
-import { key } from '../../constants';
+import { DepthLayer, key } from '../../constants';
 import { prefersReducedMotion } from '../../inventory/ui/theme';
-import { DOCK_PAD_TILESET_KEY } from '../../world/StationMapBuilder';
+import { ensureKitTextures } from '../../world/kit/kitTextures';
+import { STATION_THEMES } from '../../world/proceduralTilesets';
+import { buildPlaceholderRoomMap } from '../../world/StationMapBuilder';
 import {
+  attachWorldPlate,
   DESIGN_HEIGHT,
-  DESIGN_SCALE,
   DESIGN_WIDTH,
-  fitOverlayScene,
-  WORLD_ZOOM,
+  type WorldPlate,
 } from '../../world/viewport';
-
-/**
- * Art scale inside the design space that lands on the integer world zoom
- * on the canvas (design 1.2 × 1.667 = 2.0): pixel art stays pixel-exact.
- */
-const ART_SCALE = WORLD_ZOOM / DESIGN_SCALE;
+import { OPENING_CAPTIONS } from '../storyState';
 
 interface OpeningLaunchData {
   resumeKey: string;
   onDone?: (outcome: 'completed' | 'skipped') => void;
 }
 
-const CAPTIONS = [
-  'Relief flight 7 — outpost approach. Overnight electromagnetic storm.',
-  'Station on emergency power. Records disordered, coolant line damaged.',
-  'You are the relief operations specialist. Control passes to you at the dock.',
-] as const;
-
-/** 3 × 2600 ms + hand-over = 8.2 s (mission §18: 6–12 s). */
-const CAPTION_MS = 2600;
+/** Three captions at 0 / 5 / 10 s; the shot ends at 15 s (+ hand-over). */
+export const OPENING_CAPTION_MS = 5000;
 const HANDOVER_MS = 400;
+export const OPENING_TOTAL_MS = OPENING_CAPTION_MS * OPENING_CAPTIONS.length;
 
-/** Establishing shot is wider than the design space; the camera pans it. */
-// Wide enough to cover the whole canvas at both ends of the push-in
-// (design x −133…933 plus the ±150 px pan).
-const SHOT_WIDTH = 1480;
-const SHOT_LEFT = (DESIGN_WIDTH - SHOT_WIDTH) / 2;
-const HORIZON_Y = 372;
+/** The shuttle's descent window (wall-clock ms from the shot's start). */
+const DESCENT_START_MS = 3500;
+const DESCENT_MS = 6000;
+/** The camera pan window. */
+const PAN_MS = OPENING_TOTAL_MS - 2000;
+
+const TILE = 32;
+
+/** Dawn tint applied to every world image (no alpha overlay: one quad each). */
+const DAWN_TINT = 0x9fb0c8;
+const DAWN_TINT_FLOOR = 0x8898b0;
+
+/**
+ * The plateau (48×27 tiles, exterior theme): rock ridge along the north
+ * and the flanks, packed snow inside, the landing pad ('P') in front of
+ * the Dock module in the south-east.
+ */
+const PLATEAU: readonly string[] = [
+  '################################################',
+  '################################################',
+  '##............................................##',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................................#',
+  '#..............................PPPPPPPP........#',
+  '#..............................PPPPPPPP........#',
+  '#..............................PPPPPPPP........#',
+  '#..............................PPPPPPPP........#',
+  '#..............................................#',
+  '##............................................##',
+  '################################################',
+];
+
+/** World positions of the composition (px). */
+const SHOT = {
+  mast: { x: 300, y: 250 },
+  modules: [
+    { x: 560, y: 300, damaged: true },
+    { x: 780, y: 300, damaged: false },
+    { x: 1000, y: 300, damaged: true },
+  ],
+  dockModule: { x: 1120, y: 560 },
+  pad: { x: 35 * TILE, y: 21.5 * TILE + 16 },
+  shuttleStart: { x: 35 * TILE - 220, y: 21.5 * TILE + 16 - 420 },
+  cameraStart: { x: 520, y: 330 },
+  cameraEnd: { x: 1060, y: 560 },
+} as const;
 
 declare global {
   interface Window {
@@ -61,9 +116,15 @@ declare global {
       open: boolean;
       caption_index: number;
       outcome: 'completed' | 'skipped' | null;
+      /** Wall-clock ms since the shot started (at the last probe write). */
+      elapsed_ms: number;
+      shuttle_landed: boolean;
     } | null;
   }
 }
+
+const easeInOut = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);
+const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 
 export class PilotOpeningScene extends Phaser.Scene {
   private resumeKey: string = key.scene.dock;
@@ -71,7 +132,12 @@ export class PilotOpeningScene extends Phaser.Scene {
   private finished = false;
   private captionIndex = 0;
   private captionText!: Phaser.GameObjects.Text;
-  private timers: Phaser.Time.TimerEvent[] = [];
+  private plate!: WorldPlate;
+  private shuttle!: Phaser.GameObjects.Image;
+  private shuttleShadow!: Phaser.GameObjects.Ellipse;
+  private shuttleLanded = false;
+  private reduced = false;
+  private startedAt = 0;
 
   constructor() {
     super(key.scene.pilotOpening);
@@ -82,33 +148,348 @@ export class PilotOpeningScene extends Phaser.Scene {
     this.onDone = data?.onDone;
     this.finished = false;
     this.captionIndex = 0;
-    this.timers = [];
+    this.shuttleLanded = false;
   }
 
   create() {
     this.scene.bringToTop();
-    fitOverlayScene(this);
+    // The paused Dock underneath is not drawn while the shot runs (the
+    // shot fills the canvas; two world plates per frame would only cost).
+    this.scene.setVisible(false, this.resumeKey);
+    ensureKitTextures(this);
 
-    const reduced = prefersReducedMotion();
+    this.reduced = prefersReducedMotion();
 
-    // The shot lives in one container so the push-in moves the picture,
-    // not the camera (captions and the skip line stay fixed on screen).
-    const firstShotIndex = this.children.list.length;
+    const map = buildPlaceholderRoomMap(this, {
+      theme: 'exterior',
+      grid: [...PLATEAU],
+    });
 
-    this.buildShot();
+    // The same world plate as every room: 1024×576 world px at 1.25.
+    this.plate = attachWorldPlate(this);
+    this.plate.setBounds(map.widthInPixels, map.heightInPixels);
+    this.plate.setClearColor(STATION_THEMES.exterior.voidColor);
 
-    const shot = this.add.container(
-      0,
-      0,
-      this.children.list.slice(
-        firstShotIndex,
-      ) as Phaser.GameObjects.GameObject[],
+    // Dawn: the baked floor is tinted (one textured quad, no alpha overlay).
+    for (const child of this.children.list) {
+      if (
+        child instanceof Phaser.GameObjects.RenderTexture &&
+        child.depth === -1
+      ) {
+        child.setTint(DAWN_TINT_FLOOR);
+      }
+    }
+
+    this.buildStation();
+    this.buildShuttle();
+    this.buildCaptions();
+
+    const start = this.reduced ? SHOT.cameraEnd : SHOT.cameraStart;
+
+    this.plate.snapTo(start.x, start.y);
+
+    const skip = () => this.finish('skipped');
+
+    this.input.keyboard!.once('keydown', skip);
+    this.input.once('pointerdown', skip);
+    this.startedAt = performance.now();
+    this.refreshProbe(null);
+  }
+
+  /** Wall-clock ms since the shot started. */
+  private elapsed(): number {
+    return performance.now() - this.startedAt;
+  }
+
+  update() {
+    if (this.finished) {
+      return;
+    }
+
+    const elapsed = this.elapsed();
+
+    // Captions on the wall clock.
+    const index = Math.min(
+      OPENING_CAPTIONS.length - 1,
+      Math.floor(elapsed / OPENING_CAPTION_MS),
     );
 
-    // Captions and the skip affordance are fixed on screen (HUD-style):
-    // they do not pan with the shot.
+    if (index !== this.captionIndex) {
+      this.captionIndex = index;
+      this.captionText.setText(OPENING_CAPTIONS[index]);
+    }
+
+    if (!this.reduced) {
+      // Camera pan from the mast to the pad and the Dock threshold.
+      const pan = easeInOut(clamp01(elapsed / PAN_MS));
+      const cx =
+        SHOT.cameraStart.x + (SHOT.cameraEnd.x - SHOT.cameraStart.x) * pan;
+      const cy =
+        SHOT.cameraStart.y + (SHOT.cameraEnd.y - SHOT.cameraStart.y) * pan;
+
+      this.plate.snapTo(cx, cy);
+
+      // The shuttle's descent onto the pad.
+      const descent = easeInOut(
+        clamp01((elapsed - DESCENT_START_MS) / DESCENT_MS),
+      );
+
+      this.shuttle
+        .setPosition(
+          SHOT.shuttleStart.x + (SHOT.pad.x - SHOT.shuttleStart.x) * descent,
+          SHOT.shuttleStart.y + (SHOT.pad.y - SHOT.shuttleStart.y) * descent,
+        )
+        .setScale(0.8 + 0.2 * descent);
+      this.shuttleShadow
+        .setScale(0.5 + 0.5 * descent)
+        .setAlpha(0.6 + 0.4 * descent);
+
+      if (descent >= 1 && !this.shuttleLanded) {
+        this.shuttleLanded = true;
+        this.touchdownPuff();
+      }
+    }
+
+    if (elapsed >= OPENING_TOTAL_MS + HANDOVER_MS) {
+      this.finish('completed');
+      return;
+    }
+
+    this.refreshProbe(null);
+  }
+
+  /**
+   * Station 080 from the shuttle's approach line: three research modules
+   * on the plateau linked by service corridors, the Dock module in front
+   * of the pad, Mast 04 on its footing with the broken upper arm, storm
+   * evidence (drifts, debris, a scorched roof panel, a torn cable run),
+   * emergency amber in the module skylights, the lit arrival bay.
+   */
+  private buildStation() {
+    const modules = SHOT.modules;
+
+    // Corridors first (under the module roofs).
+    for (let i = 1; i < modules.length; i += 1) {
+      const from = modules[i - 1];
+      const to = modules[i];
+      const y = from.y - 20;
+
+      for (let x = from.x + 96; x < to.x - 96; x += 64) {
+        this.addImage(x + 32, y, 'kit-corridor-roof', DepthLayer.GroundInfra);
+      }
+    }
+
+    // Corridor from the east module down to the Dock module.
+    for (let y = modules[2].y + 64; y < SHOT.dockModule.y - 64; y += 64) {
+      this.addImage(
+        modules[2].x + 40,
+        y + 32,
+        'kit-corridor-roof',
+        DepthLayer.GroundInfra,
+      )?.setAngle(90);
+    }
+
+    for (const module of modules) {
+      this.addImage(module.x, module.y, 'kit-module-roof', DepthLayer.LowProp);
+      // Skylight: emergency amber (power out) on the damaged modules, dim
+      // steel on the intact one.
+      this.add
+        .rectangle(
+          module.x,
+          module.y - 30,
+          60,
+          6,
+          module.damaged ? 0xc9a24a : 0x3d4a5c,
+          1,
+        )
+        .setDepth(DepthLayer.LowProp + 0.01);
+
+      if (module.damaged) {
+        this.addImage(
+          module.x + 40,
+          module.y + 18,
+          'kit-scorch',
+          DepthLayer.LowProp + 0.02,
+        );
+        this.addImage(
+          module.x - 40,
+          module.y - 70,
+          'kit-snow-drift',
+          DepthLayer.FloorDecal,
+        );
+      }
+    }
+
+    // The Dock module (arrival bay lit) and its docking threshold facing
+    // the pad — the participant's entry point.
+    const dock = SHOT.dockModule;
+
+    this.addImage(dock.x, dock.y, 'kit-module-roof', DepthLayer.LowProp);
+    this.add
+      .rectangle(dock.x, dock.y - 30, 60, 6, 0xbfe0f0, 1)
+      .setDepth(DepthLayer.LowProp + 0.01);
+    this.addImage(
+      dock.x,
+      dock.y + 70,
+      'kit-airlock-frame',
+      DepthLayer.LowProp + 0.02,
+    );
+    this.addImage(
+      dock.x - 76,
+      dock.y + 66,
+      'kit-bay-window',
+      DepthLayer.LowProp + 0.02,
+    )?.setScale(0.5);
+    this.addImage(
+      dock.x + 76,
+      dock.y + 66,
+      'kit-bay-window',
+      DepthLayer.LowProp + 0.02,
+    )?.setScale(0.5);
+    // Threshold light pool on the pad side.
+    this.addImage(
+      dock.x,
+      dock.y + 110,
+      'kit-light-pool-warm',
+      DepthLayer.FloorDecal,
+      false,
+    );
+
+    // Mast 04: the tower on its footing, the upper arm down in the snow.
+    const mast = SHOT.mast;
+
+    this.addImage(
+      mast.x,
+      mast.y + 40,
+      'kit-contact-shadow',
+      DepthLayer.FloorDecal,
+      false,
+    );
+    this.addImage(
+      mast.x,
+      mast.y + 40,
+      'kit-mast-tower',
+      DepthLayer.LowProp + 0.05,
+    )?.setOrigin(0.5, 1);
+    this.addImage(
+      mast.x + 70,
+      mast.y + 30,
+      'kit-mast-arm',
+      DepthLayer.FloorDecal + 0.1,
+    )?.setAngle(24);
+    this.addImage(
+      mast.x - 30,
+      mast.y + 60,
+      'kit-snow-drift',
+      DepthLayer.FloorDecal,
+    );
+
+    // Storm evidence on the plateau.
+    for (const [x, y, angle] of [
+      [420, 420, 10],
+      [690, 190, -30],
+      [880, 430, 60],
+      [1250, 470, -15],
+      [980, 700, 35],
+    ] as const) {
+      this.addImage(x, y, 'kit-debris', DepthLayer.FloorDecal + 0.05)?.setAngle(
+        angle,
+      );
+    }
+
+    for (const [x, y] of [
+      [640, 470],
+      [1220, 300],
+      [430, 640],
+    ] as const) {
+      this.addImage(x, y, 'kit-snow-drift', DepthLayer.FloorDecal);
+    }
+
+    // A torn cable run between the modules and the mast.
+    for (let x = mast.x + 40; x < modules[0].x - 100; x += 32) {
+      this.addImage(
+        x,
+        mast.y + 90,
+        'kit-cable-tray',
+        DepthLayer.FloorDecal + 0.02,
+      );
+    }
+
+    // Pad lights (amber, static) at the four corners.
+    const pad = SHOT.pad;
+
+    for (const dx of [-120, 120]) {
+      for (const dy of [-56, 56]) {
+        this.addImage(
+          pad.x + dx,
+          pad.y + dy,
+          'kit-pad-light',
+          DepthLayer.GroundInfra,
+          false,
+        );
+        this.addImage(
+          pad.x + dx,
+          pad.y + dy + 6,
+          'kit-light-pool-warm',
+          DepthLayer.FloorDecal,
+          false,
+        )
+          ?.setScale(0.35)
+          .setAlpha(0.7);
+      }
+    }
+  }
+
+  /** The relief shuttle: descends onto the pad (or sits landed). */
+  private buildShuttle() {
+    const pad = SHOT.pad;
+
+    this.shuttleShadow = this.add
+      .ellipse(pad.x, pad.y + 30, 150, 46, 0x000000, 0.22)
+      .setDepth(DepthLayer.FloorDecal + 0.2);
+    this.shuttle = this.add
+      .image(pad.x, pad.y, 'kit-shuttle-top')
+      .setDepth(DepthLayer.LowProp + 0.5);
+
+    if (this.reduced) {
+      this.shuttleLanded = true;
+      return;
+    }
+
+    this.shuttle
+      .setPosition(SHOT.shuttleStart.x, SHOT.shuttleStart.y)
+      .setScale(0.8);
+    this.shuttleShadow.setScale(0.5).setAlpha(0.6);
+  }
+
+  /** Snow puff on touchdown: three fading ellipses (state-driven, once). */
+  private touchdownPuff() {
+    const pad = SHOT.pad;
+
+    for (const [dx, w] of [
+      [-90, 70],
+      [0, 90],
+      [90, 70],
+    ] as const) {
+      const puff = this.add
+        .ellipse(pad.x + dx, pad.y + 28, w, 22, 0xe8f2fa, 0.5)
+        .setDepth(DepthLayer.LowProp + 0.6);
+
+      this.tweens.add({
+        targets: puff,
+        alpha: 0,
+        scaleX: 1.6,
+        scaleY: 1.3,
+        duration: 1400,
+        onComplete: () => puff.destroy(),
+      });
+    }
+  }
+
+  private buildCaptions() {
+    // Fixed on screen (HUD): captions and the skip affordance.
     this.captionText = this.add
-      .text(DESIGN_WIDTH / 2, 470, CAPTIONS[0], {
+      .text(DESIGN_WIDTH / 2, DESIGN_HEIGHT - 122, OPENING_CAPTIONS[0], {
         color: '#dfe9f1',
         font: '16px monospace',
         backgroundColor: '#101820',
@@ -118,238 +499,44 @@ export class PilotOpeningScene extends Phaser.Scene {
         lineSpacing: 4,
       })
       .setOrigin(0.5)
-      .setDepth(50);
+      .setDepth(50)
+      .setScrollFactor(0);
     this.add
-      .text(DESIGN_WIDTH / 2, 556, 'Press any key or click to skip', {
-        color: '#9fb2c1',
-        font: '13px monospace',
-        backgroundColor: '#101820',
-        padding: { x: 10, y: 5 },
-      })
-      .setOrigin(0.5)
-      .setDepth(50);
-
-    // The push-in: a slow, bounded pan of the picture from the pad edge
-    // toward the station (deterministic; no shake, no zoom change).
-    // Reduced motion holds the framed composition instead.
-    if (!reduced) {
-      shot.setX(150);
-      this.tweens.add({
-        targets: shot,
-        x: -110,
-        duration: CAPTION_MS * CAPTIONS.length,
-        ease: 'Sine.easeInOut',
-      });
-    } else {
-      shot.setX(-20);
-    }
-
-    for (let i = 1; i < CAPTIONS.length; i += 1) {
-      this.timers.push(
-        this.time.delayedCall(CAPTION_MS * i, () => {
-          this.captionIndex = i;
-          this.captionText.setText(CAPTIONS[i]);
-          this.refreshProbe(null);
-        }),
-      );
-    }
-
-    this.timers.push(
-      this.time.delayedCall(CAPTION_MS * CAPTIONS.length + HANDOVER_MS, () =>
-        this.finish('completed'),
-      ),
-    );
-
-    const skip = () => this.finish('skipped');
-
-    this.input.keyboard!.once('keydown', skip);
-    this.input.once('pointerdown', skip);
-
-    this.refreshProbe(null);
-  }
-
-  /**
-   * The establishing shot: night sky, a ridge line, the outpost complex
-   * (station modules, coolant tower, damaged mast, windows on emergency
-   * amber), the landing pad in the foreground and static storm evidence
-   * (drifts, debris, frozen streaks). Every texture is drawn at the integer
-   * world scale; fallbacks are flat shapes when a texture is absent.
-   */
-  private buildShot() {
-    const left = SHOT_LEFT;
-    const right = SHOT_LEFT + SHOT_WIDTH;
-    const midX = DESIGN_WIDTH / 2 + 40;
-
-    // Sky: a fine-stepped night gradient (top → horizon).
-    const sky = [
-      0x05080d, 0x060a10, 0x070c13, 0x080e16, 0x0a1119, 0x0c131d, 0x0e1620,
-      0x101a26,
-    ];
-
-    sky.forEach((color, index) => {
-      const bandTop = (HORIZON_Y / sky.length) * index;
-
-      this.add
-        .rectangle(
-          left,
-          bandTop - 40,
-          SHOT_WIDTH,
-          HORIZON_Y / sky.length + 41,
-          color,
-          1,
-        )
-        .setOrigin(0);
-    });
-
-    // Distant ridge.
-    const ridge: number[] = [];
-    const ridgeSeed = [0, 34, 22, 58, 40, 76, 52, 90, 66, 48, 80, 38, 60, 26];
-
-    for (let i = 0; i < ridgeSeed.length; i += 1) {
-      const x = left + (SHOT_WIDTH * i) / (ridgeSeed.length - 1);
-
-      ridge.push(x, HORIZON_Y - 18 - ridgeSeed[i]);
-    }
-
-    ridge.push(right, HORIZON_Y + 4, left, HORIZON_Y + 4);
-    this.add.polygon(0, 0, ridge, 0x131c28, 1).setOrigin(0);
-
-    // Snow plain.
-    this.add
-      .rectangle(
-        left,
-        HORIZON_Y,
-        SHOT_WIDTH,
-        DESIGN_HEIGHT - HORIZON_Y + 60,
-        0x1b2532,
-        1,
+      .text(
+        DESIGN_WIDTH / 2,
+        DESIGN_HEIGHT - 44,
+        'Press any key or click to skip',
+        {
+          color: '#9fb2c1',
+          font: '13px monospace',
+          backgroundColor: '#101820',
+          padding: { x: 10, y: 5 },
+        },
       )
-      .setOrigin(0);
-    this.add
-      .rectangle(left, HORIZON_Y, SHOT_WIDTH, 3, 0x2b3847, 1)
-      .setOrigin(0);
-
-    // Outpost complex on the plain's far edge.
-    const baseY = HORIZON_Y + 6;
-    const moduleXs = [midX - 250, midX - 60, midX + 130];
-
-    for (const x of moduleXs) {
-      this.placeAt(x, baseY, 'proc-station-module', {
-        width: 192,
-        height: 120,
-        color: 0x1f2a38,
-      });
-    }
-
-    this.placeAt(
-      midX + 246,
-      baseY - 4,
-      'plv1-utility-tower',
-      { width: 106, height: 132, color: 0x24303f },
-      0x6f8296,
-    );
-
-    // Damaged mast (held antenna frame 0 = storm-damaged silhouette).
-    if (this.textures.exists('plv1-antenna-signal')) {
-      this.add
-        .image(midX - 340, baseY - 8, 'plv1-antenna-signal', 0)
-        .setOrigin(0.5, 1)
-        .setScale(ART_SCALE)
-        .setTint(0x8a96a5);
-    } else {
-      this.add
-        .rectangle(midX - 340, baseY - 8, 8, 150, 0x2b3a4a, 1)
-        .setOrigin(0.5, 1);
-    }
-
-    // Landing pad in the foreground: the dock pad tileset's full-pad
-    // tile (frame 12 = every corner "pad") at the world scale, six by two
-    // tiles, with static amber corner lights.
-    const padY = HORIZON_Y + 118;
-    const padTile = 32 * ART_SCALE;
-
-    if (this.textures.exists(DOCK_PAD_TILESET_KEY)) {
-      for (let column = 0; column < 7; column += 1) {
-        for (let row = 0; row < 2; row += 1) {
-          this.add
-            .image(
-              midX - 20 + (column - 3) * padTile,
-              padY + (row - 0.5) * padTile,
-              DOCK_PAD_TILESET_KEY,
-              12,
-            )
-            .setScale(ART_SCALE)
-            .setTint(0x7c8ea3);
-        }
-      }
-    } else {
-      this.add
-        .rectangle(midX - 20, padY, 7 * padTile, 2 * padTile, 0x222d3b, 1)
-        .setStrokeStyle(2, 0x334252);
-    }
-
-    for (const dx of [-3.4 * padTile, 3.4 * padTile]) {
-      for (const dy of [-0.9 * padTile, 0.9 * padTile]) {
-        this.add.rectangle(midX - 20 + dx, padY + dy, 6, 6, 0x9a7a3a, 0.9);
-      }
-    }
-
-    // Storm aftermath: drifts against the modules and the tower, debris
-    // pieces, frozen wind streaks on the plain — all static.
-    for (const [x, w] of [
-      [midX - 330, 120],
-      [midX - 140, 90],
-      [midX + 60, 140],
-      [midX + 300, 110],
-    ] as const) {
-      this.add.ellipse(x, baseY + 6, w, 22, 0x2c3a4a, 1).setOrigin(0.5, 1);
-    }
-
-    for (const [x, y, w] of [
-      [midX - 420, padY + 60, 26],
-      [midX + 250, padY + 30, 18],
-      [midX - 110, padY + 84, 22],
-    ] as const) {
-      this.add.rectangle(x, y, w, 6, 0x33414f, 1);
-    }
-
-    // Wind-scoured drift lines on the plain: four long, faint, horizontal
-    // ridges (terrain, never falling snow).
-    for (const [x, y, w] of [
-      [midX - 380, padY + 96, 220],
-      [midX + 320, padY + 70, 180],
-      [midX - 60, padY + 112, 260],
-      [midX + 120, HORIZON_Y + 62, 200],
-    ] as const) {
-      this.add.rectangle(x, y, w, 3, 0x26323f, 1);
-    }
+      .setOrigin(0.5)
+      .setDepth(50)
+      .setScrollFactor(0);
   }
 
-  /** Draws a texture at the world scale, or a flat block if it is absent. */
-  private placeAt(
+  /** A kit image with the dawn tint (light sources keep their colour). */
+  private addImage(
     x: number,
-    footY: number,
-    textureKey: string,
-    fallback: { width: number; height: number; color: number },
-    tint?: number,
-  ) {
-    if (this.textures.exists(textureKey)) {
-      const image = this.add
-        .image(x, footY, textureKey)
-        .setOrigin(0.5, 1)
-        .setScale(ART_SCALE);
-
-      if (tint !== undefined) {
-        image.setTint(tint);
-      }
-
-      return;
+    y: number,
+    texture: string,
+    depth: number,
+    tint = true,
+  ): Phaser.GameObjects.Image | null {
+    if (!this.textures.exists(texture)) {
+      return null;
     }
 
-    this.add
-      .rectangle(x, footY, fallback.width, fallback.height, fallback.color, 1)
-      .setOrigin(0.5, 1)
-      .setStrokeStyle(1, 0x2e3e4e);
+    const image = this.add.image(x, y, texture).setDepth(depth);
+
+    if (tint) {
+      image.setTint(DAWN_TINT);
+    }
+
+    return image;
   }
 
   private finish(outcome: 'completed' | 'skipped') {
@@ -358,24 +545,25 @@ export class PilotOpeningScene extends Phaser.Scene {
     }
 
     this.finished = true;
-
-    for (const timer of this.timers) {
-      timer.remove(false);
-    }
-
+    this.tweens.killAll();
     this.refreshProbe(outcome);
+    this.scene.setVisible(true, this.resumeKey);
     this.onDone?.(outcome);
     this.scene.resume(this.resumeKey);
     this.scene.stop();
   }
 
   private refreshProbe(outcome: 'completed' | 'skipped' | null) {
-    if (typeof window !== 'undefined' && import.meta.env.DEV) {
-      window.__pilotOpeningProbe = {
-        open: outcome === null,
-        caption_index: this.captionIndex,
-        outcome,
-      };
+    if (typeof window === 'undefined' || !import.meta.env.DEV) {
+      return;
     }
+
+    window.__pilotOpeningProbe = {
+      open: outcome === null,
+      caption_index: this.captionIndex,
+      outcome,
+      elapsed_ms: Math.round(this.elapsed()),
+      shuttle_landed: this.shuttleLanded,
+    };
   }
 }

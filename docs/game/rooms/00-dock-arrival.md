@@ -189,3 +189,40 @@ terminal (160, 272), the north door (576, 48) → Concourse. Spawns: arrival
 Guidance: the terminal is the class-1 target (lamp + light pool) until the
 check-in, then the north door's lintel lamp. Probe: `window.__dockProbe`
 (active layout, terminal, north door, marker).
+
+## World V1 (U2, 2026-09-06) — story, opening, mission card
+
+Presentation only; no event, payload, option, marker mechanic or door target
+changed. Design: `docs/game/world-v1/STORY-STATE-SPEC.md`,
+`PROFESSIONAL-WORLD-DESIGN-V1.md` §6/§9.
+
+- **Terminal moved to the marker's row.** The arrival kiosk stands on cells
+  (4–5, 12) → `DOCK_SITES.terminal` (160, 400); approach from the south
+  (160, 448). At the arrival view the old alcove (row 8) sat under the
+  mission card (U1 finding V1); on row 12 it is clear of the card from every
+  camera position, and the tutorial reads spawn → marker (north) → terminal
+  (straight west) → station entrance.
+- **Arrival spawn is the docking threshold.** `DOCK_SITES.spawnArrival`
+  (576, 640): 82 px inside the sealed airlock's trigger, outside its 72 px
+  radius. The airlock leaf is the iris strip's closed frame (3); after the
+  opening (completed or skipped alike) the cut lands with the iris open and
+  it seals over ~1 s (`sealDockingAirlock`, held closed under reduced
+  motion) — the participant stands where the shuttle's hatch opened.
+- **Mission card.** `src/pilot/ui/MissionCard.ts`: two lines in the canvas
+  top-left safe area — act title "Arrival" and one action from
+  `missionCardAction('arrival', 'dock', { dockCheckedIn })`:
+  "Check in at the arrival terminal." → "Take the north door into the
+  Concourse." the moment the check-in is logged (either path).
+- **Opening.** `PilotOpeningScene` rebuilt: a top-down exterior shot through
+  the same world plate as the rooms (32×18 tiles at 1.25) — the plateau at
+  dawn, Station 080's modules with storm damage, Mast 04 with its arm down,
+  the relief shuttle settling onto the pad in front of this Dock's south
+  threshold; three captions over 15 s, any key or click skips, the Dock
+  state is identical either way (`world_v1_story.spec.ts`).
+- **Emergency lighting.** Act 1 shows only the cold pools (threshold,
+  terminal alcove); the warm work light returns in the station from act 3.
+
+Tests: `world_v1_story.spec.ts`, `world_v1_interactions.spec.ts` (Dock),
+`world_v1_camera.spec.ts`, `dock_tutorial_paths`,
+`movement_and_first_interaction` (legacy bay unchanged). Frames:
+`docs/verification/professional-world-v1/unit2/`.

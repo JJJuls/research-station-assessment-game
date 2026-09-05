@@ -3,13 +3,9 @@ import Phaser from 'phaser';
 import { DepthLayer, key, worldDepth } from '../constants';
 import { prefersReducedMotion } from '../inventory/ui/theme';
 import { pilotLaunchMode } from '../pilot/pilotCoverage';
-import {
-  notePilotZoneEntered,
-  PILOT_EPISODE_NAMES,
-  pilotEpisode,
-  pilotObjective,
-} from '../pilot/pilotRoute';
+import { notePilotZoneEntered, pilotStage } from '../pilot/pilotRoute';
 import { PILOT_CONTROLS_LINES } from '../pilot/PilotZoneScene';
+import { missionCardAction, storyActTitle } from '../pilot/storyState';
 import { DOCK_SITES, LEGACY_DOCK_SITES } from '../pilot/zoneSites';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
@@ -157,6 +153,11 @@ export class DockScene extends RoomScene {
       y: sites.terminal.y,
       promptBody:
         'The dock system checks whether you understand the basic controls before station tasks begin. What do you do?',
+      // World V1 (U2, visual review V5): once the check-in is logged the
+      // terminal is a class-3 object — the prompt reads its state and E
+      // shows it, instead of a stale "Check in" verb.
+      availability: () =>
+        this.isPilotRoute() && this.isTutorialCompleted() ? 'checked in' : null,
       onPromptOpened: () => {
         runOncePerSession('dock_first_interaction', () => {
           this.logRoomEvent('dockArrivalTutorial', 'first_interaction');
@@ -229,6 +230,9 @@ export class DockScene extends RoomScene {
       texture: this.textures.exists('plv1-airlock-open')
         ? 'plv1-airlock-open'
         : 'prop-dock-airlock',
+      // Closed iris (strip frame 0 — the V4 Dock's "closed leaf"): the
+      // shuttle is secured. The arrival cut shows it open and seals it
+      // (sealDockingAirlock).
       textureFrame: 0,
       interactionKey: 'dockArrivalTutorial',
       availability: () => 'shuttle secured',
@@ -280,7 +284,15 @@ export class DockScene extends RoomScene {
       S.terminal.y - 10,
       'kit-notice-board',
     );
-    this.addGroundInfra(2 * TILE + 16, 6 * TILE + 8, 'kit-light-fixture');
+    this.addGroundInfra(2 * TILE + 16, 10 * TILE + 8, 'kit-light-fixture');
+    // Act 1 — emergency lighting only: a cold pool over the terminal alcove
+    // (STORY-STATE-SPEC §4; the warm work-area pools return from act 3).
+    this.addFloorDecal(
+      S.terminal.x + 16,
+      S.terminal.y + 40,
+      'kit-light-pool-cold',
+      0.75,
+    );
 
     // ——— East cargo staging: rail, crate stacks, pallet jack, hazard strips ———
     for (let row = 8; row <= 20; row += 1) {
@@ -437,19 +449,29 @@ export class DockScene extends RoomScene {
     });
   }
 
+  /**
+   * World V1 (U2): the story state's next action for the Dock — the
+   * check-in until it is logged (either path), then the station entrance.
+   */
   protected buildRouteObjectiveText(): string {
     return this.isPilotRoute()
-      ? pilotObjective()
+      ? missionCardAction(pilotStage(), 'dock', {
+          dockCheckedIn: this.isTutorialCompleted(),
+        })
       : super.buildRouteObjectiveText();
   }
 
   protected buildMissionCardTitle(): string {
-    return this.isPilotRoute() ? PILOT_EPISODE_NAMES[pilotEpisode()] : '';
+    return this.isPilotRoute() ? storyActTitle(pilotStage()) : '';
   }
 
-  /** The Dock's guidance target: the terminal until checked in, then the exit. */
+  /**
+   * The Dock's guidance target: nothing while the movement marker is the
+   * instruction (one cue at a time — gameplay review F1), then the terminal
+   * until checked in, then the exit.
+   */
   protected isGuidanceTarget(config: { x: number; y: number }): boolean {
-    if (!this.isPilotRoute()) {
+    if (!this.isPilotRoute() || !this.markerReached) {
       return false;
     }
 
@@ -509,6 +531,7 @@ export class DockScene extends RoomScene {
                 ? 'pilot_opening_skipped'
                 : 'pilot_opening_completed',
             );
+            this.sealDockingAirlock();
             this.showMovementInstruction();
           },
         });
@@ -517,6 +540,36 @@ export class DockScene extends RoomScene {
 
     if (!openingShown) {
       this.showMovementInstruction();
+    }
+  }
+
+  /**
+   * World V1 (U2): the cut from the opening lands on the docking threshold
+   * with the airlock iris still open behind the participant; it closes
+   * over ~1 s (strip frames 0 → 3) — a state-driven reaction, identical
+   * after a skip and after a completed opening, held on the closed frame
+   * under reduced motion. The door stays the sealed class-3 object.
+   */
+  private sealDockingAirlock() {
+    if (!this.textures.exists('plv1-airlock-open')) {
+      return;
+    }
+
+    // Strip frames run closed (0) → open (6).
+    const openFrame = 6;
+    const closedFrame = 0;
+
+    if (prefersReducedMotion()) {
+      this.setDoorFrameById('dock.docking_airlock', closedFrame);
+      return;
+    }
+
+    this.setDoorFrameById('dock.docking_airlock', openFrame);
+
+    for (let step = 1; step <= 3; step += 1) {
+      this.time.delayedCall(300 * step, () =>
+        this.setDoorFrameById('dock.docking_airlock', openFrame - step * 2),
+      );
     }
   }
 

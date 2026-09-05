@@ -878,7 +878,8 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
       allFeedsReady(this.feeds()) &&
       coreAccessReady()
     ) {
-      return 'Feeds up — enter the Core Chamber through the north door.';
+      // World V1 (U2): one short mission-card line (≤ 44 characters).
+      return 'Feeds up — Core Chamber, north door.';
     }
 
     return super.buildRouteObjectiveText();

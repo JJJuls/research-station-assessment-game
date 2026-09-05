@@ -117,7 +117,6 @@ import {
 } from '../pilot/pilotCoverage';
 import {
   advancePilotStage,
-  pilotObjective,
   pilotStage,
   pilotStageAtOrAfter,
   registerPilotStation,
@@ -331,9 +330,11 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
 
   /** ONE objective line: the current exterior site during the work stage. */
   protected buildRouteObjectiveText(): string {
+    // World V1 (U2): the story card line for every stage; the site line
+    // (existing exterior objective model) only while the yard work runs.
     return pilotStage() === 'exterior_work'
       ? exteriorObjectiveLine()
-      : pilotObjective();
+      : super.buildRouteObjectiveText();
   }
 
   protected populateRoom(): void {

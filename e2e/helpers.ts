@@ -388,6 +388,12 @@ export async function driveAxisTo(
   let stalledHoldMs = 0;
   let everMoved = false;
   let lastBurstMs = 0;
+  // World V1 (U2): a burst shorter than one frame yields NO travel when
+  // both key events land in the same frame gap (slow moments right after a
+  // scene load or a prompt close run at 3–5 fps). A no-motion burst is
+  // therefore first answered by doubling the next burst (up to 240 ms);
+  // only bursts of ≥ 150 ms count toward the wall-clamp budget.
+  let boost = 1;
 
   for (let burst = 0; burst < 120; burst++) {
     const probe = await playerProbe(page);
@@ -416,7 +422,11 @@ export async function driveAxisTo(
     // (≥ 5 frames at 13 fps, ≥ 24 at 60 fps); before any motion has been
     // observed (post-scene-entry jank) the budget is 1600 ms, as before.
     if (previous !== null && Math.abs(current - previous) < 2) {
-      stalledHoldMs += lastBurstMs;
+      if (lastBurstMs >= 150) {
+        stalledHoldMs += lastBurstMs;
+      }
+
+      boost = Math.min(4, boost * 2);
 
       if (stalledHoldMs >= (everMoved ? 400 : 1600)) {
         return;
@@ -427,6 +437,7 @@ export async function driveAxisTo(
       }
 
       stalledHoldMs = 0;
+      boost = 1;
     }
     previous = current;
 
@@ -450,8 +461,9 @@ export async function driveAxisTo(
     // next read. Stall detection above is unaffected — any wall clamp
     // still ends the leg.
     const remaining = Math.abs(current - target);
+    const base = remaining > 120 ? 400 : remaining > 40 ? 100 : 70;
 
-    lastBurstMs = remaining > 120 ? 400 : remaining > 40 ? 100 : 70;
+    lastBurstMs = remaining > 120 ? base : Math.min(240, base * boost);
     await hold(page, key, lastBurstMs);
   }
 }

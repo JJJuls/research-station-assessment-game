@@ -26,6 +26,7 @@ import {
 } from '../gameplay';
 import { wireInventoryOverlayKey } from '../inventory/ui/openOverlay';
 import { noteRoomEntered, refreshValidityProbe } from '../measurement';
+import { MissionCard } from '../pilot/ui/MissionCard';
 import { getRemainingPilotDecisions, PILOT_DECISION_TOTAL } from '../scenarios';
 import { Player } from '../sprites';
 import { state } from '../state';
@@ -468,9 +469,6 @@ const FLOOR_DECOR = new Set([
   'kit-lane-edge',
 ]);
 
-/** Mission card geometry (design space; PROFESSIONAL-WORLD-DESIGN-V1 §6). */
-const MISSION_CARD = { x: 8, y: 8, width: 300, padding: 8 } as const;
-
 export abstract class RoomScene extends Phaser.Scene {
   /** Canonical room_id (event-schema.md §2) or documented control area id. */
   protected abstract readonly roomId: string;
@@ -489,9 +487,7 @@ export abstract class RoomScene extends Phaser.Scene {
   private doors: RoomDoorConfig[] = [];
   private feedbackMessage: Phaser.GameObjects.Text | null = null;
   private proximityPrompt!: Phaser.GameObjects.Text;
-  private routeObjective!: Phaser.GameObjects.Text;
-  private missionCardTitle!: Phaser.GameObjects.Text;
-  private missionCardBackground!: Phaser.GameObjects.Rectangle;
+  private missionCard!: MissionCard;
   private questObjective!: Phaser.GameObjects.Text;
   private stations: RoomStationConfig[] = [];
   private transitioning = false;
@@ -617,48 +613,19 @@ export abstract class RoomScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setVisible(false);
 
-    // World V1 mission card (PROFESSIONAL-WORLD-DESIGN-V1 §6): a compact
-    // top-left card — one title line (act / area) and one next action —
-    // replacing the wide objective banner. Allowed progress UI only:
-    // the next reachable action, never scores, never personality
-    // feedback, identical presentation for every participant.
-    this.missionCardBackground = this.add
-      .rectangle(
-        MISSION_CARD.x,
-        MISSION_CARD.y,
-        MISSION_CARD.width,
-        56,
-        0x101820,
-        0.92,
-      )
-      .setOrigin(0)
-      .setStrokeStyle(1, 0x33475a)
-      .setDepth(Depth.AboveWorld)
-      .setScrollFactor(0);
-    this.missionCardTitle = this.add
-      .text(MISSION_CARD.x + MISSION_CARD.padding, MISSION_CARD.y + 6, '', {
-        color: '#9fb2c1',
-        font: '11px monospace',
-      })
-      .setOrigin(0)
-      .setDepth(Depth.AboveWorld)
-      .setScrollFactor(0);
-    this.routeObjective = this.add
-      .text(MISSION_CARD.x + MISSION_CARD.padding, MISSION_CARD.y + 22, '', {
-        color: '#ffffff',
-        font: '15px monospace',
-        lineSpacing: 3,
-        wordWrap: { width: MISSION_CARD.width - MISSION_CARD.padding * 2 },
-      })
-      .setOrigin(0)
-      .setDepth(Depth.AboveWorld)
-      .setScrollFactor(0);
+    // World V1 mission card (PROFESSIONAL-WORLD-DESIGN-V1 §6; U2
+    // src/pilot/ui/MissionCard.ts): a compact card in the canvas's
+    // top-left safe area — the act title and ONE next action — replacing
+    // the wide objective banner. Allowed progress UI only: the next
+    // reachable action, never scores, never personality feedback,
+    // identical presentation for every participant.
+    this.missionCard = new MissionCard(this);
 
     // Unit 1 gameplay-task objective line (second HUD line, under the
     // mission card): the FIRST accepted gameplay task's live objective.
     // Allowed progress UI only — in-fiction checklist text, never scores.
     this.questObjective = this.add
-      .text(MISSION_CARD.x, 72, '', {
+      .text(this.missionCard.left, this.missionCard.bottom + 4, '', {
         backgroundColor: '#101820',
         color: '#9fb2c1',
         font: '14px monospace',
@@ -902,22 +869,34 @@ export abstract class RoomScene extends Phaser.Scene {
       window.__routeObjectiveText = text;
     }
 
-    this.missionCardTitle
-      .setText(title.toUpperCase())
-      .setVisible(title.length > 0);
-    this.routeObjective
-      .setText(text)
-      .setY(MISSION_CARD.y + (title.length > 0 ? 22 : 8));
-    this.missionCardBackground
-      .setSize(
-        MISSION_CARD.width,
-        this.routeObjective.y - MISSION_CARD.y + this.routeObjective.height + 8,
-      )
-      .setVisible(text.length > 0);
+    this.missionCard.set(title, text);
     // The second HUD line follows the card's height.
-    this.questObjective.setY(
-      MISSION_CARD.y + this.missionCardBackground.height + 4,
-    );
+    this.questObjective.setY(this.missionCard.bottom + 4);
+  }
+
+  /** Design-space bottom edge of the mission card (zone title placement). */
+  protected missionCardBottom(): number {
+    return this.missionCard.bottom;
+  }
+
+  /** Design-space left edge of the mission card. */
+  protected missionCardLeft(): number {
+    return this.missionCard.left;
+  }
+
+  /**
+   * World V1 (U2): sets the frame of a strip-textured door leaf by its
+   * registry id (the docking airlock closing behind the arrival).
+   * Presentation only — position, radius and availability are untouched.
+   */
+  protected setDoorFrameById(registryId: string, frame: number) {
+    for (const door of this.doors) {
+      if (door.registryId === registryId) {
+        const marker = this.interactableMarkers.get(door);
+
+        (marker as Phaser.GameObjects.Image | undefined)?.setFrame?.(frame);
+      }
+    }
   }
 
   /**

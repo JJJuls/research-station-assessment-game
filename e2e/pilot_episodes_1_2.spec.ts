@@ -262,12 +262,40 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     // World V1: reach the east–west axis first (the side counter blocks an
     // x-first leg along the gauge row), then the reading nook.
     await walkTo(page, CONCOURSE.monitorGauge.x, 13 * 32, { yFirst: true });
-    await interactAt(page, CONCOURSE.deskLamp, {
-      approachOffset: { x: 0, y: 0 },
-    });
-    await page.waitForTimeout(2600);
+    // Swallowed-press retry (SwiftShader input loss): the initiation is the
+    // act itself, so a lost press is re-pressed, never inferred.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await interactAt(page, CONCOURSE.deskLamp, {
+        approachOffset: { x: 0, y: 0 },
+      });
+      await page.waitForTimeout(600);
+
+      if (
+        (await pilotEventTypes(page)).includes('proto_m05_initiation_initiated')
+      ) {
+        break;
+      }
+    }
+    await page.waitForTimeout(2200);
     types = await pilotEventTypes(page);
-    expect(types).toContain('proto_m05_initiation_initiated');
+
+    const lampState = await page.evaluate(() => {
+      const w = window as unknown as {
+        __playerProbe?: { x: number; y: number } | null;
+        __worldPromptProbe?: { prompt: boolean; text?: string | null } | null;
+        __lastRoomFeedbackText?: string | null;
+      };
+
+      return JSON.stringify({
+        at: w.__playerProbe ?? null,
+        prompt: w.__worldPromptProbe ?? null,
+        feedback: w.__lastRoomFeedbackText ?? null,
+      });
+    });
+
+    expect(types, `desk lamp initiation (observed ${lampState})`).toContain(
+      'proto_m05_initiation_initiated',
+    );
     expect(await itemStatus(page, 'M05')).toBe('pending'); // occasion 2 undeclared until the yard
 
     // Families are disjoint: every proto_* event carries exactly its own family

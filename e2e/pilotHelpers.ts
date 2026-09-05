@@ -270,14 +270,18 @@ export async function walkTo(
     const order = attempt === 0 ? legs : legs.slice().reverse();
 
     if (attempt === 1 && start !== null) {
-      const back = legs[1];
-
-      await driveAxisTo(
-        page,
-        back,
-        back === 'x' ? start.x : start.y,
-        tolerance,
-      );
+      // Back to the START POINT on both axes (second leg first), so the
+      // reversed L really starts from the other corner of the rectangle
+      // — restoring one axis alone re-entered the same wall from the
+      // other side (observed: Vale approached from the north spawn).
+      for (const back of [legs[1], legs[0]]) {
+        await driveAxisTo(
+          page,
+          back,
+          back === 'x' ? start.x : start.y,
+          tolerance,
+        );
+      }
     }
 
     for (const axis of order) {
@@ -389,6 +393,13 @@ export async function interactAt(
     const axis: 'x' | 'y' = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y';
     const step = axis === 'x' ? Math.sign(dx) * 16 : Math.sign(dy) * 16;
 
+    // Never silent (test review T4): a nudge is recorded in the run log so
+    // a geometry regression that passes only because of it stays visible.
+    // eslint-disable-next-line no-console
+    console.log(
+      `[driver] nudge ${nudge + 1} toward ${at.x},${at.y} from ${Math.round(here.x)},${Math.round(here.y)} (${axis} ${step > 0 ? '+' : ''}${step})`,
+    );
+
     await driveAxisTo(page, axis, (axis === 'x' ? here.x : here.y) + step, 6);
     await page.waitForTimeout(150);
   }
@@ -438,6 +449,11 @@ export async function openPromptAt(
       prompt: w.__worldPromptProbe ?? null,
     };
   });
+
+  const target = {
+    x: at.x + (options?.approachOffset?.x ?? 0),
+    y: at.y + (options?.approachOffset?.y ?? 0),
+  };
 
   throw new Error(
     `prompt did not open at ${at.x},${at.y} (target ${target.x},${target.y}; observed ${JSON.stringify(observed)})`,

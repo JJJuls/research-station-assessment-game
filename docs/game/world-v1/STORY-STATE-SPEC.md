@@ -6,6 +6,15 @@ narrative advancement independent of measured performance. Implemented in
 U2 as the pure module `src/pilot/storyState.ts` over the **unchanged** route
 stage machine in `src/pilot/pilotRoute.ts`.
 
+**U2 amendments (2026-09-06, recorded, not silent).** (a) The mission
+contract names **eight** acts — 7 "Utility restoration", 8 "Core closure and
+handover"; the implemented mapping (`STAGE_ACT`) is `deck_closure`,
+`core_stabilise` → act 7 and `core_sync`, `complete` → act 8; the seven-act
+draft tables below are kept for the record. (b) Kai is **not** removed from
+the Laboratory at `return_hub` (§2 note). (c) The mission-card lines are the
+exhaustive table in `missionCardAction()`, each ≤ 44 characters so the card
+is exactly two short lines (§3). (d) Persistence semantics (§4 note).
+
 ## 1. Setting and role (participant-facing facts)
 
 - **Station 080** — a small research station on a cold plateau. An
@@ -41,11 +50,18 @@ measurement window, block a path or alter an opportunity condition.
 | 6   | Concourse ops desk            | Concourse, beside the ops desk (M10 handover recipient; unchanged) | Recovery Yard apron, by the airlock (redirect only; off every site and lane) |
 | 7   | Concourse ops desk            | Core Chamber console (unchanged)                                   | Recovery Yard apron                                                          |
 
-Implementation notes: the Laboratory removes Kai's actor at `return_hub` and
-later (a note card on his desk reads "Kai — at the ops desk with the field
-results"); the Concourse adds Kai at `return_hub` and later (existing). Both
-are presentation; `npc_kai` route-station registrations keep their stage
-lists, so the beacon/guidance model is unchanged.
+Implementation notes (as drafted): the Laboratory removes Kai's actor at
+`return_hub` and later; the Concourse adds Kai at `return_hub` and later
+(existing). `npc_kai` route-station registrations keep their stage lists, so
+the beacon/guidance model is unchanged.
+
+**U2 decision — scientific preservation wins.** Kai is NOT removed from the
+Laboratory: the Laboratory Kai is an authorised M10 handover recipient on
+the return leg (`DiagnosticsLaboratoryScene`, `handOverM10`), and
+presentation may never remove a recipient. `npcPosts()` therefore gives Kai
+the Laboratory briefing bay at every stage, the post beside the operations
+desk from `return_hub` and the Core console from `core_sync`; the multiple
+presence is recorded as open decision OD-W1-4 in the mission report.
 
 ## 3. Acts, stages, mission-card lines
 
@@ -91,6 +107,13 @@ a value. Presentation only.
 | feed conduits and bay lighting       | Deck       | dark                            | each feed up (existing)                                       |
 | Core column                          | Core       | inactive                        | stable (existing)                                             |
 | map sector marks                     | map (M)    | unvisited / visited             | act completed in that zone (stage passed)                     |
+
+**Persistence (U2).** Restoration is derived from the route stage and the
+closure session's terminal dispositions, so it persists across every zone
+exit and re-entry within a session by construction (asserted at runtime by
+`world_v1_story.spec.ts`). A page reload is a new session by contract
+(`docs/architecture/STATE-AND-SESSION-CONTINUITY.md` §4: nothing is
+persisted across reloads); U7 verifies that semantics end to end.
 
 ## 5. Dialogue rules
 

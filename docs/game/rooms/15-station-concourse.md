@@ -60,3 +60,29 @@ walking budget), `e2e/world_v1_interactions.spec.ts` (prompts, surface
 pause/release, decor never prompts), `e2e/pilot_route.spec.ts`,
 `e2e/pilot_episodes_1_2.spec.ts` (episode 1), `e2e/concourse_interaction_lifecycle.spec.ts`,
 projection `world-v1-u1`. Frames: `docs/verification/professional-world-v1/unit1/`.
+
+## World V1 (U2, 2026-09-06) — restoration states and the story card
+
+Presentation only (`STORY-STATE-SPEC.md` §4); no window, event, form, offer
+text or gauge reading changed.
+
+- **Status wall.** The six sector lamps (REC · SIG · EXT · LOG · FEED · CORE)
+  follow `restorationState()`: dark = damaged, amber = under recovery,
+  green + a tick bar = restored (never colour alone). Records lights when
+  the workshop is signed off, Signal at the exterior briefing, Exterior at
+  the return, Record when the station record is closed, Feeds when the
+  three feeds are up, Core when the Core is stable — stage or terminal
+  disposition only, never a task value.
+- **Lighting.** Five work-area pools (ops desk, plan board, side counter,
+  reading nook, crossing) are cold emergency light in act 2 and warm from
+  act 3 (`lightPoolTexture()`).
+- **Storm evidence.** A scorched junction and a fallen fragment under the
+  north-wall cable run; repaired (patch plate) once the feeds are restored.
+- **Mission card.** Act title + one action from `missionCardAction()`
+  ("Report to Vale at the operations desk." → "Work the storm packet, then
+  see Vale." → "Records Workshop — west door." …); refreshed on every stage
+  change, zone entry and overlay resume.
+- DEV probe `__restorationProbe` (lighting + sectors) for the specs.
+
+Tests: `world_v1_story.spec.ts` (restoration persists across a zone exit
+and re-entry), `world_v1_interactions.spec.ts`, `pilot_route.spec.ts`.

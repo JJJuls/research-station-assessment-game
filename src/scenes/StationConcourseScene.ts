@@ -39,6 +39,10 @@ import {
 import type { PilotNpcBeat } from '../pilot/PilotZoneScene';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
 import {
+  type RestorationState,
+  STATUS_WALL_SECTORS,
+} from '../pilot/storyState';
+import {
   activeWorkSurface,
   openWorkSurface,
 } from '../pilot/ui/WorkSurfaceScene';
@@ -127,8 +131,25 @@ const GAUGE_READING = {
   after: 'loop 1.4 bar ▼ · bus 26.1 V ▼ · relay LOCK',
 } as const;
 
-/** Station-status wall sectors (left → right) — presentation only. */
-const STATUS_SECTORS = ['REC', 'SIG', 'EXT', 'LOG', 'FEED', 'CORE'] as const;
+declare global {
+  interface Window {
+    /**
+     * DEV-only, read-only restoration probe (U2): the lighting state and
+     * the six status-wall sectors as the story state derives them.
+     */
+    __restorationProbe?: {
+      lighting: RestorationState;
+      sectors: Record<string, RestorationState>;
+    } | null;
+  }
+}
+
+/** Status-wall lamp colour per restoration state (plus a glyph — never colour alone). */
+const RESTORATION_LAMP: Record<RestorationState, number> = {
+  damaged: KIT_INDICATOR.inactive,
+  recovering: KIT_INDICATOR.caution,
+  restored: KIT_INDICATOR.restored,
+};
 
 export class StationConcourseScene extends PilotZoneScene {
   protected readonly roomId = 'station_concourse';
@@ -137,6 +158,14 @@ export class StationConcourseScene extends PilotZoneScene {
 
   private lampFlicker: Phaser.GameObjects.Rectangle | null = null;
   private statusLamps: Phaser.GameObjects.Rectangle[] = [];
+  /** Restored-sector tick bars under the lamps (glyph cue). */
+  private statusTicks: Phaser.GameObjects.Rectangle[] = [];
+  /** Work-area light pools (cold emergency → warm from act 3). */
+  private workPools: Phaser.GameObjects.Image[] = [];
+  /** Storm damage dressing (hidden once the utility feeds are restored). */
+  private damageDressing: Phaser.GameObjects.GameObject[] = [];
+  /** The repaired panel shown in its place. */
+  private repairDressing: Phaser.GameObjects.GameObject[] = [];
 
   /** The return leg of the route (episode 5) is live. */
   private returned(): boolean {
@@ -202,6 +231,17 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   protected populateRoom(): void {
+    // Scene instances are re-created on every entry (create() re-runs on
+    // the same object): the presentation collections must start empty,
+    // or a later stage change would drive destroyed objects (observed:
+    // setTexture on a light pool from a previous visit threw on the route).
+    this.statusLamps = [];
+    this.statusTicks = [];
+    this.workPools = [];
+    this.damageDressing = [];
+    this.repairDressing = [];
+    this.lampFlicker = null;
+
     this.addPilotDoor({
       to: 'dock',
       spawn: 'station_concourse',
@@ -427,7 +467,7 @@ export class StationConcourseScene extends PilotZoneScene {
     // front (the desk cells collide; the NPC is walk-around).
     this.addKitProp(28.5 * TILE, 10 * TILE, 'kit-status-wall');
     this.addKitProp(28.5 * TILE, 11 * TILE, 'kit-ops-counter');
-    for (let i = 0; i < STATUS_SECTORS.length; i += 1) {
+    for (let i = 0; i < STATUS_WALL_SECTORS.length; i += 1) {
       const x = 28.5 * TILE - 96 + 21 + i * 30;
       const y = 8 * TILE + 5;
 
@@ -436,14 +476,62 @@ export class StationConcourseScene extends PilotZoneScene {
           .rectangle(x, y, 10, 5, KIT_INDICATOR.inactive, 1)
           .setDepth(DepthLayer.WorldReadout),
       );
+      // Restored glyph: a short bar under the lamp (state never by colour alone).
+      this.statusTicks.push(
+        this.add
+          .rectangle(x, y + 7, 8, 2, KIT_INDICATOR.restored, 1)
+          .setDepth(DepthLayer.WorldReadout)
+          .setVisible(false),
+      );
       this.add
-        .text(x, y + 14, STATUS_SECTORS[i], {
+        .text(x, y + 16, STATUS_WALL_SECTORS[i].label, {
           color: '#8497aa',
           font: '8px monospace',
           resolution: 2,
         })
         .setOrigin(0.5)
         .setDepth(DepthLayer.WorldReadout);
+    }
+
+    // Work-area light pools (STORY-STATE-SPEC §4): cold emergency light in
+    // act 2, warm work light from act 3 — the texture follows the lighting
+    // state in onStoryStateChanged().
+    for (const [x, y, alpha] of [
+      [28.5 * TILE, 12.6 * TILE, 0.7], // operations desk
+      [13 * TILE, 3.4 * TILE, 0.6], // plan board
+      [8.5 * TILE, 16.6 * TILE, 0.55], // quality side counter
+      // (no pool in the reading nook: the M05 lamp's surroundings keep
+      // their pre-U2 salience — scientific review F2)
+      [20 * TILE, 12.5 * TILE, 0.45], // the crossing
+    ] as const) {
+      const pool = this.addFloorDecal(x, y, 'kit-light-pool-cold', alpha);
+
+      if (pool !== null) {
+        this.workPools.push(pool);
+      }
+    }
+
+    // Storm evidence: a scorched junction on the north wall's cable run
+    // with a fallen fragment beneath it, repaired (patch plate) once the
+    // utility feeds are restored (act 7).
+    for (const decal of [
+      this.addFloorDecal(34 * TILE, 2.2 * TILE, 'kit-scorch', 0.85),
+      this.addFloorDecal(33.5 * TILE, 3.3 * TILE, 'kit-debris'),
+    ]) {
+      if (decal !== null) {
+        this.damageDressing.push(decal);
+      }
+    }
+
+    const patch = this.addGroundInfra(
+      34 * TILE,
+      1 * TILE + 12,
+      'kit-cable-junction',
+    );
+
+    if (patch !== null) {
+      patch.setVisible(false);
+      this.repairDressing.push(patch);
     }
 
     // East service counter (col 38, rows 5–9) carrying the incident console.
@@ -511,14 +599,51 @@ export class StationConcourseScene extends PilotZoneScene {
    * shift logged; U2 wires the full restoration model.
    */
   private refreshStatusWall() {
-    const lit = this.returned() ? new Set([2]) : new Set<number>();
+    this.onStoryStateChanged();
+  }
 
-    this.statusLamps.forEach((lamp, index) => {
-      lamp.setFillStyle(
-        lit.has(index) ? KIT_INDICATOR.restored : KIT_INDICATOR.inactive,
-        1,
-      );
+  /**
+   * Restoration presentation (STORY-STATE-SPEC §4, U2): every state is a
+   * function of the route stage or a terminal disposition — the status
+   * wall's six sectors (lamp colour + restored tick), the work-area light
+   * pools (cold → warm) and the storm damage on the north wall (repaired
+   * once the feeds are restored). Re-run on every stage change and resume.
+   */
+  protected onStoryStateChanged(): void {
+    const sectors: Record<string, RestorationState> = {};
+
+    STATUS_WALL_SECTORS.forEach((sector, index) => {
+      const state = this.restoration(sector.element);
+
+      sectors[sector.label] = state;
+      this.statusLamps[index]?.setFillStyle(RESTORATION_LAMP[state], 1);
+      this.statusTicks[index]?.setVisible(state === 'restored');
     });
+
+    const pool = this.lightPoolTexture();
+
+    for (const image of this.workPools) {
+      if (image.texture.key !== pool && this.textures.exists(pool)) {
+        image.setTexture(pool);
+      }
+    }
+
+    const repaired = this.restoration('sector_feeds') === 'restored';
+
+    for (const object of this.damageDressing) {
+      (object as Phaser.GameObjects.Image).setVisible(!repaired);
+    }
+
+    for (const object of this.repairDressing) {
+      (object as Phaser.GameObjects.Image).setVisible(repaired);
+    }
+
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__restorationProbe = {
+        lighting: this.restoration('lighting'),
+        sectors,
+      };
+    }
   }
 
   private surfaceStation(
@@ -668,7 +793,7 @@ export class StationConcourseScene extends PilotZoneScene {
       case 'handover_briefing':
         return {
           body:
-            'Vale: Good — you made it through the storm. This desk is the incident handover: the storm packet is on the work surface — plan board, quality packet, incident desk.\n' +
+            'Vale: You made it through the storm. This desk is the incident handover: the storm packet is on the work surface — plan board, quality packet, incident desk.\n' +
             'Work through it, then confirm the handover with me.',
           options: [
             {

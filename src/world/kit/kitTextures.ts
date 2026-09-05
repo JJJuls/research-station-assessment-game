@@ -469,6 +469,174 @@ function drawParcel(g: Graphics) {
   outline(g, 3, 0, 22, 5, 0x2a241c);
 }
 
+// ——— exterior / opening kit (U2) ————————————————————————————————————————
+
+function drawModuleRoof(g: Graphics) {
+  // 192×128: a research module seen from above — roof plates with seams,
+  // a vent block, a skylight strip (lit at runtime), edge trim.
+  rect(g, 0, 0, 192, 128, STEEL);
+  outline(g, 0, 0, 192, 128, STEEL_DARK);
+  rect(g, 2, 2, 188, 2, STEEL_EDGE, 0.7);
+  rect(g, 2, 124, 188, 2, CHARCOAL, 0.9);
+  for (let x = 32; x < 192; x += 32) {
+    rect(g, x, 3, 1, 122, STEEL_DARK, 0.7);
+  }
+  for (let y = 32; y < 128; y += 32) {
+    rect(g, 3, y, 186, 1, STEEL_DARK, 0.6);
+  }
+  // Skylight recess (the lit strip is a runtime rectangle).
+  rect(g, 62, 28, 68, 14, CHARCOAL);
+  outline(g, 61, 27, 70, 16, STEEL_EDGE, 0.8);
+  // Vent block and service hatch.
+  rect(g, 140, 72, 32, 24, STEEL_LIGHT);
+  outline(g, 140, 72, 32, 24, STEEL_DARK);
+  for (let y = 76; y < 94; y += 5) {
+    rect(g, 144, y, 24, 2, CHARCOAL, 0.7);
+  }
+  rect(g, 24, 80, 26, 26, STEEL_LIGHT);
+  outline(g, 24, 80, 26, 26, STEEL_DARK);
+  rect(g, 34, 90, 6, 6, CHARCOAL);
+  rivets(g, 0, 8, 192, 24);
+  rivets(g, 0, 116, 192, 24);
+}
+
+function drawCorridorRoof(g: Graphics) {
+  // 64×48: a service corridor segment from above (narrower plates).
+  rect(g, 0, 8, 64, 32, STEEL);
+  outline(g, 0, 8, 64, 32, STEEL_DARK);
+  rect(g, 1, 9, 62, 2, STEEL_EDGE, 0.6);
+  rect(g, 1, 37, 62, 2, CHARCOAL, 0.8);
+  rect(g, 31, 9, 1, 30, STEEL_DARK, 0.7);
+  rect(g, 0, 4, 64, 4, STEEL_LIGHT);
+  rect(g, 0, 40, 64, 4, STEEL_LIGHT);
+}
+
+function drawScorch(g: Graphics) {
+  // 64×48: a scorch mark decal (storm arc damage) — irregular dark bands.
+  for (const [x, y, w, h, a] of [
+    [8, 10, 48, 28, 0.55],
+    [16, 4, 30, 40, 0.35],
+    [2, 18, 60, 12, 0.3],
+    [22, 14, 20, 20, 0.6],
+  ] as const) {
+    g.fillStyle(0x0a0c10, a);
+    g.fillEllipse(x + w / 2, y + h / 2, w, h);
+  }
+  rect(g, 26, 20, 12, 3, AMBER, 0.35);
+  rect(g, 30, 26, 6, 2, AMBER, 0.3);
+}
+
+function drawSnowDrift(g: Graphics) {
+  // 96×32: a wind-packed drift (low, bright ridge, shaded lee side).
+  g.fillStyle(0xaebfd0, 0.9);
+  g.fillEllipse(48, 20, 96, 22);
+  g.fillStyle(0xe8f2fa, 0.95);
+  g.fillEllipse(44, 15, 80, 14);
+  g.fillStyle(0xc9d9e6, 1);
+  g.fillEllipse(40, 13, 60, 8);
+}
+
+function drawMastTower(g: Graphics) {
+  // 64×128: the relay mast on its footing — lattice sections, the upper
+  // arm missing (a bare stub), one guy anchor.
+  rect(g, 12, 116, 40, 12, STEEL);
+  outline(g, 12, 116, 40, 12, STEEL_DARK);
+  rect(g, 16, 112, 32, 4, STEEL_LIGHT);
+  // Lattice.
+  for (let y = 16; y < 112; y += 16) {
+    rect(g, 24, y, 3, 16, STEEL_HI, 0.9);
+    rect(g, 37, y, 3, 16, STEEL_HI, 0.9);
+    rect(g, 24, y, 16, 2, STEEL_EDGE, 0.8);
+    g.lineStyle(1, STEEL_EDGE, 0.6);
+    g.lineBetween(26, y + 2, 38, y + 14);
+  }
+  // Bare stub where the upper arm sheared (amber warning tape).
+  rect(g, 22, 8, 20, 8, STEEL_LIGHT);
+  outline(g, 22, 8, 20, 8, STEEL_DARK);
+  rect(g, 20, 12, 24, 2, AMBER, 0.8);
+  rect(g, 30, 0, 4, 8, STEEL_HI);
+  // Guy anchor.
+  rect(g, 2, 122, 8, 6, STEEL_LIGHT);
+  g.lineStyle(1, STEEL_HI, 0.5);
+  g.lineBetween(6, 122, 24, 40);
+}
+
+function drawMastArm(g: Graphics) {
+  // 64×24: the fallen upper arm (dish bracket + lattice) in the snow.
+  rect(g, 0, 10, 48, 4, STEEL_HI, 0.9);
+  rect(g, 0, 6, 48, 2, STEEL_EDGE, 0.7);
+  for (let x = 4; x < 48; x += 10) {
+    rect(g, x, 6, 2, 10, STEEL_EDGE, 0.8);
+  }
+  g.fillStyle(STEEL_LIGHT, 1);
+  g.fillEllipse(54, 12, 18, 20);
+  g.lineStyle(1, STEEL_DARK, 0.9);
+  g.strokeEllipse(54, 12, 18, 20);
+  rect(g, 44, 16, 8, 6, 0x0a0c10, 0.5);
+}
+
+function drawDebris(g: Graphics) {
+  // 32×16: a torn panel fragment with a scorched edge.
+  rect(g, 2, 4, 26, 9, STEEL_LIGHT);
+  outline(g, 2, 4, 26, 9, STEEL_DARK);
+  rect(g, 20, 2, 10, 4, STEEL);
+  rect(g, 0, 9, 8, 6, 0x0a0c10, 0.5);
+  rect(g, 6, 6, 14, 1, STEEL_EDGE, 0.7);
+}
+
+function drawPadLight(g: Graphics) {
+  // 10×10: an amber pad marker light in a steel housing.
+  rect(g, 0, 0, 10, 10, STEEL);
+  outline(g, 0, 0, 10, 10, STEEL_DARK);
+  rect(g, 3, 3, 4, 4, AMBER, 0.95);
+}
+
+function drawShuttleTop(g: Graphics) {
+  // 192×96: the relief shuttle from above — delta hull, cabin, two
+  // nacelles, landing skids, nav lights.
+  // Skids.
+  rect(g, 44, 78, 40, 6, STEEL_DARK);
+  rect(g, 108, 78, 40, 6, STEEL_DARK);
+  // Nacelles.
+  rect(g, 8, 30, 40, 36, STEEL);
+  outline(g, 8, 30, 40, 36, STEEL_DARK);
+  rect(g, 144, 30, 40, 36, STEEL);
+  outline(g, 144, 30, 40, 36, STEEL_DARK);
+  for (const x of [12, 148]) {
+    for (let y = 36; y < 62; y += 6) {
+      rect(g, x, y, 32, 2, CHARCOAL, 0.7);
+    }
+  }
+  // Hull (tapered toward the nose at the top).
+  g.fillStyle(STEEL_HI, 1);
+  g.fillTriangle(96, 4, 40, 92, 152, 92);
+  g.fillStyle(STEEL_HI, 1);
+  g.fillRect(52, 40, 88, 52);
+  // Light upper hull plates (the vehicle must read against the pad).
+  rect(g, 60, 44, 72, 40, 0xb9c8d8, 0.9);
+  rect(g, 70, 30, 52, 14, 0xb9c8d8, 0.9);
+  g.lineStyle(1, STEEL_DARK, 1);
+  g.strokeTriangle(96, 4, 40, 92, 152, 92);
+  rect(g, 52, 90, 88, 4, CHARCOAL);
+  // Dorsal spine and panel seams.
+  rect(g, 95, 14, 2, 76, STEEL_EDGE, 0.8);
+  for (let y = 30; y < 90; y += 14) {
+    rect(g, 66, y, 60, 1, STEEL_DARK, 0.6);
+  }
+  // Cabin (cockpit glass) and cabin strip.
+  rect(g, 84, 20, 24, 12, GLASS);
+  outline(g, 84, 20, 24, 12, STEEL_DARK);
+  rect(g, 86, 22, 20, 3, GLASS_HI, 0.9);
+  rect(g, 72, 48, 48, 4, 0xbfe0f0, 0.85);
+  // Nav lights: amber wing tips, cyan tail.
+  rect(g, 10, 32, 4, 4, AMBER, 0.95);
+  rect(g, 178, 32, 4, 4, AMBER, 0.95);
+  rect(g, 94, 86, 4, 4, CYAN, 0.9);
+  // Hatch on the left flank (the docking side).
+  rect(g, 54, 60, 6, 18, CHARCOAL);
+  outline(g, 54, 60, 6, 18, STEEL_EDGE, 0.8);
+}
+
 // ——— manifest ————————————————————————————————————————————————————————————
 
 export const KIT_TEXTURE_BUILDERS: Record<string, KitTextureBuilder> = {
@@ -523,6 +691,17 @@ export const KIT_TEXTURE_BUILDERS: Record<string, KitTextureBuilder> = {
   'kit-floor-lane': { width: 32, height: 32, draw: drawFloorLane },
   'kit-lane-edge': { width: 32, height: 4, draw: drawLaneEdge },
   'kit-parcel': { width: 28, height: 20, draw: drawParcel },
+  // U2 — exterior / opening kit (the plateau, Station 080 from above, the
+  // relief shuttle, Mast 04, storm evidence).
+  'kit-module-roof': { width: 192, height: 128, draw: drawModuleRoof },
+  'kit-corridor-roof': { width: 64, height: 48, draw: drawCorridorRoof },
+  'kit-scorch': { width: 64, height: 48, draw: drawScorch },
+  'kit-snow-drift': { width: 96, height: 32, draw: drawSnowDrift },
+  'kit-mast-tower': { width: 64, height: 128, draw: drawMastTower },
+  'kit-mast-arm': { width: 64, height: 24, draw: drawMastArm },
+  'kit-debris': { width: 32, height: 16, draw: drawDebris },
+  'kit-pad-light': { width: 10, height: 10, draw: drawPadLight },
+  'kit-shuttle-top': { width: 192, height: 96, draw: drawShuttleTop },
 };
 
 export const KIT_TEXTURE_MANIFEST: Readonly<

@@ -11,16 +11,18 @@ const TILE = 32;
 
 /**
  * Dock — participant layout (36×24; ROOM-BLOCKOUTS.md §1). The arrival
- * terminal kiosk stands on cells (4–5, 8) and is approached from the
+ * terminal kiosk stands on cells (4–5, 12) — the movement marker's row,
+ * clear of the top-left mission card (U2) — and is approached from the
  * south; the movement marker sits on the circulation spine; the docking
- * airlock is a sealed class-3 door on the south wall.
+ * airlock is a sealed class-3 door on the south wall; the arrival spawn
+ * is the docking threshold, 82 px inside the airlock's trigger.
  */
 export const DOCK_SITES = {
-  terminal: { x: 5 * TILE, y: 8.5 * TILE },
+  terminal: { x: 5 * TILE, y: 12.5 * TILE },
   marker: { x: 18 * TILE, y: 12.5 * TILE },
   northDoor: { x: 18 * TILE, y: 1.5 * TILE },
   dockingAirlock: { x: 18 * TILE, y: 22 * TILE + 18 },
-  spawnArrival: { x: 18 * TILE, y: 19 * TILE },
+  spawnArrival: { x: 18 * TILE, y: 20 * TILE },
   spawnFromConcourse: { x: 18 * TILE, y: 5 * TILE },
 } as const;
 

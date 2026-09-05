@@ -39,11 +39,11 @@ with pipes on the south-west. No isolated crate on empty floor.
 #..................................#   row 5
 #..................................#   row 6
 #..................................#   row 7
-#...##.............................#   row 8  terminal kiosk base (cols 4-5)
+#..................................#   row 8
 #..................................#   row 9
 #..................................#   row 10
 #..................................#   row 11
-#..........................##......#   row 12 crate stack A (cols 27-28)
+#...##.....................##......#   row 12 terminal kiosk base (cols 4-5, U2) ; crate stack A (cols 27-28)
 #..........................##......#   row 13
 #..................................#   row 14
 #.......##.........................#   row 15 service column (cols 8-9)
@@ -57,21 +57,24 @@ with pipes on the south-west. No isolated crate on empty floor.
 ####################################   row 23
 ```
 
-| Object                  | Class      | Tile (px)                              | Notes                                                                          |
-| ----------------------- | ---------- | -------------------------------------- | ------------------------------------------------------------------------------ |
-| north door → Concourse  | 1 (route)  | (18, 1.5) → (576, 48)                  | lintel lamp lit; sign "STATION 080 · CONCOURSE" on the wall at cols 20–22      |
-| arrival terminal        | 1 then 2   | (5, 8.5) → (160, 272)                  | kiosk on cells (4–5, 8); approach from the south; light pool                   |
-| docking airlock (south) | 3 (sealed) | (18, 21.5) → (576, 688)                | `E — Docking airlock: shuttle secured`; never transitions                      |
-| bay windows             | 4          | row 22, cols 9–11, 13–15, 21–23, 25–27 | painted exterior with the shuttle nose behind the central pair                 |
-| crate stacks A / B      | 4          | cells (27–28, 12–13), (30–31, 16)      | inside the cargo rail; pallet jack and hazard strip decor                      |
-| cargo rail              | 4 (low)    | col 24, rows 8–20                      | no collision; marks the staging area                                           |
-| service column          | 4          | cells (8–9, 15–16)                     | `plv1-utility-tower` + pipes                                                   |
-| movement marker         | guidance   | (18, 12.5) → (576, 400)                | floor ring on the spine, removed when reached (existing mechanic)              |
-| spawn (arrival)         | —          | (18, 20) → (576, 640)                  | 48 px north of the airlock trigger; the airlock is class 3, so no reflex issue |
-| spawn (from Concourse)  | —          | (18, 5) → (576, 160)                   | 112 px inside the north door                                                   |
+| Object                  | Class      | Tile (px)                              | Notes                                                                                                                                                    |
+| ----------------------- | ---------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| north door → Concourse  | 1 (route)  | (18, 1.5) → (576, 48)                  | lintel lamp lit; sign "STATION 080 · CONCOURSE" on the wall at cols 20–22                                                                                |
+| arrival terminal        | 1 then 2   | (5, 12.5) → (160, 400)                 | U2: kiosk on cells (4–5, 12), on the marker's row, so it never sits under the top-left mission card (U1 finding V1); approach from the south; light pool |
+| docking airlock (south) | 3 (sealed) | (18, 21.5) → (576, 688)                | `E — Docking airlock: shuttle secured`; never transitions                                                                                                |
+| bay windows             | 4          | row 22, cols 9–11, 13–15, 21–23, 25–27 | painted exterior with the shuttle nose behind the central pair                                                                                           |
+| crate stacks A / B      | 4          | cells (27–28, 12–13), (30–31, 16)      | inside the cargo rail; pallet jack and hazard strip decor                                                                                                |
+| cargo rail              | 4 (low)    | col 24, rows 8–20                      | no collision; marks the staging area                                                                                                                     |
+| service column          | 4          | cells (8–9, 15–16)                     | `plv1-utility-tower` + pipes                                                                                                                             |
+| movement marker         | guidance   | (18, 12.5) → (576, 400)                | floor ring on the spine, removed when reached (existing mechanic)                                                                                        |
+| spawn (arrival)         | —          | (18, 20) → (576, 640)                  | 48 px north of the airlock trigger; the airlock is class 3, so no reflex issue                                                                           |
+| spawn (from Concourse)  | —          | (18, 5) → (576, 160)                   | 112 px inside the north door                                                                                                                             |
 
-Walking: spawn → marker 240 px; marker → terminal ≈ 430 px; terminal → north
-door ≈ 470 px (≈ 6.5 s total straight-line).
+Walking (U2 placement): spawn → marker 240 px; marker → terminal 416 px
+(straight west along row 12); terminal → north door ≈ 770 px (≈ 8 s total
+straight-line). The arrival spawn is the docking threshold: (18, 20) →
+(576, 640), 82 px inside the sealed airlock's trigger (outside its 72 px
+radius) — the participant stands where the shuttle's hatch opened.
 
 ---
 

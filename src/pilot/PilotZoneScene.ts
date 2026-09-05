@@ -28,42 +28,39 @@ import type {
   RoomStationConfig,
 } from '../world/RoomScene';
 import { RoomScene } from '../world/RoomScene';
+import {
+  closureCore,
+  closureFeeds,
+  stationRecordClosed,
+} from './closure/closureSession';
+import { feedsReadyCount } from './closure/utilityCoreClosure';
 import { pilotLaunchMode, refreshPilotCoverageProbe } from './pilotCoverage';
-import type { PilotBeaconTarget, PilotStage, PilotZoneKey } from './pilotRoute';
+import type { PilotBeaconTarget, PilotZoneKey } from './pilotRoute';
 import {
   installPilotRouteLogSink,
   notePilotZoneEntered,
   onPilotRouteChange,
   PILOT_DOORS,
-  PILOT_EPISODE_NAMES,
   PILOT_ZONE_NAMES,
   pilotBeaconTarget,
   pilotEpisode,
   pilotMissionLog,
-  pilotObjective,
   pilotRouteSummary,
   pilotStage,
-  pilotStageZone,
 } from './pilotRoute';
+import {
+  missionCardAction,
+  type RestorationContext,
+  type RestorationElement,
+  type RestorationState,
+  restorationState,
+  storyActTitle,
+} from './storyState';
 import { noteM09ReminderLogViewed } from './windows/m09MonitorWatch';
 import { WorldBundleLayer } from './worldBundles';
 
 /** Guidance target counts as reached inside this radius (arrival). */
 const BEACON_ARRIVAL_RANGE = 120;
-
-/**
- * V4 Unit 6 (stale objective removal): once the participant stands in the
- * stage's destination zone, the route line names the action in the room
- * instead of the door already passed (the Core Chamber precedent). One
- * line per travel stage; every other stage keeps its route text.
- */
-const LOCAL_OBJECTIVES: Partial<Record<PilotStage, string>> = {
-  workshop: 'Take the shift orders at the Work Order Board.',
-  lab_briefing: 'Report to Kai at the briefing desk.',
-  exterior_briefing: 'Report to Noor on the airlock apron.',
-  return_hub: 'Check in with Vale at the operations desk.',
-  deck_closure: 'Close the station record at the Shift Review Panel.',
-};
 
 /** Pilot controls legend (mission §8 key set; hidden until H). */
 export const PILOT_CONTROLS_LINES = [
@@ -168,10 +165,44 @@ export abstract class PilotZoneScene extends RoomScene {
     return this.zoneKey === 'exterior_recovery_yard';
   }
 
-  /** World V1 mission-card title: the current act (episode) name. */
+  /** World V1 mission-card title: the current act (STORY-STATE-SPEC §3). */
   protected buildMissionCardTitle(): string {
-    return PILOT_EPISODE_NAMES[pilotEpisode()];
+    return storyActTitle(pilotStage());
   }
+
+  // ——— Story state (U2) ——————————————————————————————————————————————————
+
+  /**
+   * Terminal dispositions the restoration model may read (never a value):
+   * the station record is closed or not, how many feeds are up, whether
+   * the Core is stable. Read from the non-scored closure session.
+   */
+  protected restorationContext(): RestorationContext {
+    return {
+      recordClosed: stationRecordClosed(),
+      feedsReady: feedsReadyCount(closureFeeds()),
+      coreStable: closureCore().state === 'stable',
+    };
+  }
+
+  /** Restoration state of one visible system under the current stage. */
+  protected restoration(element: RestorationElement): RestorationState {
+    return restorationState(element, pilotStage(), this.restorationContext());
+  }
+
+  /** Work-area light pool for the current lighting state (cold → warm). */
+  protected lightPoolTexture(): string {
+    return this.restoration('lighting') === 'restored'
+      ? 'kit-light-pool-warm'
+      : 'kit-light-pool-cold';
+  }
+
+  /**
+   * Called after populateRoom() and on every route-stage change / overlay
+   * resume: zones re-read their restoration states here (lamps, pools,
+   * damage dressing). Presentation only.
+   */
+  protected onStoryStateChanged(): void {}
 
   protected controlsReferenceOptions(): ControlsReferenceOptions {
     return {
@@ -189,16 +220,13 @@ export abstract class PilotZoneScene extends RoomScene {
     };
   }
 
-  /** The ONE objective line: the pilot route objective. */
+  /**
+   * The ONE next-action line: the story state's line for (stage, zone) —
+   * the action in the destination zone, the door to take elsewhere, never
+   * a door already passed (STORY-STATE-SPEC §3; exhaustive pure spec).
+   */
   protected buildRouteObjectiveText(): string {
-    const stage = pilotStage();
-    const local = LOCAL_OBJECTIVES[stage];
-
-    if (local !== undefined && pilotStageZone(stage) === this.zoneKey) {
-      return local;
-    }
-
-    return pilotObjective();
+    return missionCardAction(pilotStage(), this.zoneKey);
   }
 
   create(data?: { spawn?: string }) {
@@ -227,10 +255,12 @@ export abstract class PilotZoneScene extends RoomScene {
     this.refreshRouteObjective();
     this.showZoneTitle();
     this.retargetBeacon();
+    this.onStoryStateChanged();
 
     this.unsubscribeRoute = onPilotRouteChange(() => {
       this.refreshRouteObjective();
       this.retargetBeacon();
+      this.onStoryStateChanged();
     });
 
     // M — station map (modal, pause-and-launch like the inventory overlay).
@@ -249,6 +279,7 @@ export abstract class PilotZoneScene extends RoomScene {
       this.bundles.materialiseDrops(this.player.x, this.player.y);
       this.refreshRouteObjective();
       this.retargetBeacon();
+      this.onStoryStateChanged();
       refreshPilotCoverageProbe();
     });
 
@@ -380,15 +411,20 @@ export abstract class PilotZoneScene extends RoomScene {
       window.__pilotZoneTitle = name;
     }
 
-    // World V1: a small card under the mission card (top-left), never
-    // over the play route; withdrawn after 2 s.
+    // World V1: a small card under the mission card (canvas top-left),
+    // never over the play route; withdrawn after 2 s.
     const title = this.add
-      .text(8, 76, name.toUpperCase(), {
-        color: '#dfe9f1',
-        font: '12px monospace',
-        backgroundColor: '#101820',
-        padding: { x: 8, y: 4 },
-      })
+      .text(
+        this.missionCardLeft(),
+        this.missionCardBottom() + 4,
+        name.toUpperCase(),
+        {
+          color: '#dfe9f1',
+          font: '12px monospace',
+          backgroundColor: '#101820',
+          padding: { x: 8, y: 4 },
+        },
+      )
       .setOrigin(0)
       .setDepth(Depth.AbovePlayer + 5)
       .setScrollFactor(0);
