@@ -1,6 +1,7 @@
 # Professional Visual Validity & World Redesign V4 — report
 
-Status: **IN PROGRESS — checkpoint report.** This file is kept current at
+Status: **IN PROGRESS — checkpoint report after Unit 6 (Units 0–6 committed;
+Unit 7 final verification partially run).** This file is kept current at
 every unit boundary (mission §27). It never claims psychometric validation:
 every behavioural measure in the pilot remains a provisional analogue
 pending empirical validation against its source instrument.
@@ -14,18 +15,18 @@ pending empirical validation against its source instrument.
 
 ## 2. Unit commits
 
-| Unit | Commit        | Subject                                                  | State                |
-| ---- | ------------- | -------------------------------------------------------- | -------------------- |
-| 0    | `406aa63`     | docs(game): define professional visual redesign baseline | done                 |
-| 1    | `72ab012`     | feat(game): establish professional camera and arrival    | done                 |
-| 2    | `ce1ed35`     | refactor(game): clarify concourse and records workshop   | done                 |
-| 2a   | `f4a3a21`     | docs(verification): record V4 checkpoint after unit 2    | checkpoint           |
-| 2b   | `5c8f68e`     | fix(game): settle concourse and records readouts         | done (review closed) |
-| 3    | (this commit) | refactor(game): focus diagnostics assessment sequence    | done                 |
-| 4    | `8f5dd42`     | refactor(game): structure exterior recovery yard         | done                 |
-| 5    | (this commit) | refactor(game): refine utility and core closure          | done                 |
-| 6    | (this commit) | chore(game): unify assessment presentation               | done                 |
-| 7    | —             | final verification and report                            | remaining            |
+| Unit | Commit        | Subject                                                  | State                     |
+| ---- | ------------- | -------------------------------------------------------- | ------------------------- |
+| 0    | `406aa63`     | docs(game): define professional visual redesign baseline | done                      |
+| 1    | `72ab012`     | feat(game): establish professional camera and arrival    | done                      |
+| 2    | `ce1ed35`     | refactor(game): clarify concourse and records workshop   | done                      |
+| 2a   | `f4a3a21`     | docs(verification): record V4 checkpoint after unit 2    | checkpoint                |
+| 2b   | `5c8f68e`     | fix(game): settle concourse and records readouts         | done (review closed)      |
+| 3    | (this commit) | refactor(game): focus diagnostics assessment sequence    | done                      |
+| 4    | `8f5dd42`     | refactor(game): structure exterior recovery yard         | done                      |
+| 5    | (this commit) | refactor(game): refine utility and core closure          | done                      |
+| 6    | `013f589`     | chore(game): unify assessment presentation               | done                      |
+| 7    | —             | docs(verification): verify professional visual redesign  | **in progress** (see §22) |
 
 Per-unit evidence notes: `docs/verification/professional-visual-v4/UNIT-*.md`.
 
@@ -145,7 +146,12 @@ correction round) + `unit2/800x600/` (11), `unit3/12…18` (laboratory at
 pre-Unit-5 Deck/Core under the V4 camera), `unit5/19…30` + `unit5/800x600/`
 (deck after Unit 5) and `unit5/core-dev/` (chamber arrival and prompt from
 the labelled developer inspection launch), `unit6/01…11` (Dock, Concourse,
-Records after the cross-world pass, 1280×720).
+Records after the cross-world pass, 1280×720) + `unit6/800x600/`,
+`final/closure/35…47` (participant-path Utility Deck arrival, sealed Core
+door, each feed before/after, all feeds ready, Core accessible, inactive,
+operational review, ARMED, synchronising, stable, neutral completion —
+800×600, the spec's own viewport; `pilot_closure_capture` 5.4 min on the
+Unit 6 tree).
 
 ## 12. Scientific event projection
 
@@ -176,9 +182,22 @@ Unit 2 open items, classified from the evidence collected on 2026-09-05
 
 ## 15–16. Reviewer findings and dispositions
 
-Unit 1 visual review (Opus, read-only): 2 blockers, 8 majors, 8 minors —
-dispositions in the Unit 1 note (blockers and 7 majors fixed in the one
-correction round; M8 deferred to Unit 2; minors recorded).
+One read-only Opus review per unit, each followed by at most one
+consolidated correction round; every finding and disposition is tabled in
+the unit note. Unit 1: 2 blockers, 8 majors, 8 minors (Unit 1 note).
+Unit 2 (closure session): 12 findings — C2/C3/C4/R1/R3 fixed, C1/C5/C7/C8/
+R2/R4/R5 deferred to Unit 6 and then addressed there (C1, C5, C7, R2) or
+recorded (R4 objective copy → zone-local lines; C8, R5, P1–P3). Unit 3:
+12 findings — D3-2/3/4/5/9/10/12 fixed, D3-1/6/7 addressed in Unit 6,
+D3-8 recaptured, D3-11 recorded (frozen overlay). Unit 4: 9 findings —
+Y1/Y2/Y4/Y6/Y8 fixed, Y3 fixed in part, Y5/Y7/Y9 addressed in Unit 6 or
+recorded. Unit 5: 10 findings, no scientific confound — U5-1/2/3/4/6/8
+fixed, U5-9 addressed in part, U5-5/7/10 addressed in Unit 6 or recorded.
+Unit 6: 15 findings — V-1…V-8, A-1 (in part), A-3, A-6, A-7 fixed; A-2 no
+change needed (tag present); A-4 (bundle labels, `worldBundles.ts`) and
+A-5 recorded. The Unit 7 final reviews (visual/spatial, blind wayfinding,
+gameplay usability, accessibility/burden, scientific confound, test
+quality) have **not** been run.
 
 ## 17. Accessibility and burden
 
@@ -187,14 +206,22 @@ unchanged. Text ladder raised (objective 17 px design ≈ 20 canvas px);
 at an 800×600 browser the letterboxed display is 800×450 (documented
 parity cost). Route travel unchanged.
 
-## 18–21. Remaining risks
+## 18–21. Remaining risks (after Unit 6)
 
-Visual: Laboratory/Yard/Deck/Core not yet composed (equal salience, snowfall,
-literal depths). Gameplay: none known new; overlay pointer hit-testing
-depends on `pointer.worldX/Y` (covered by the pointer closure test).
-Scientific: none introduced (projection 0 diffs); the Dock marker move is a
-control-room presentation change recorded here. Operational: the lower
-software-GL frame rate lengthens the full manifest.
+Visual: the Concourse/Records return states have no V4 participant-path
+frame yet (the Core Chamber states now do, at 800×600 only);
+the yard's plate grammar is vector primitives (an asset-register decision
+would replace them); permanent bundle-name labels remain (`worldBundles.ts`,
+outside every unit allowlist). Gameplay: the participant*ui_cards legacy
+timeout and the Unit 2 items are unreproduced on a quiet machine.
+Accessibility: the frozen overlay legends stay ≈7–8 CSS px at 800×600;
+every world cue shares one cyan (recorded). Scientific: none introduced —
+six projections (Units 1–6) at 0 differences; wayfinding cost differs
+between V3 and V4 sessions for the non-analysed `pilot_closure*\*` timings
+(OD-4 open, recorded). Operational: the loaded verification machine failed
+long participant-path specs at their first walking legs eight times today
+(Dock tutorial, yard prompts) while every isolated reproduction passed;
+the full manifest must run on a quiet machine.
 
 ## 22. Launch and verification commands
 
@@ -206,13 +233,45 @@ PW_DEV_PORT=5362 V4_LABEL=<label> V4_PROJECTION_BASELINE=docs/verification/profe
 V4_PROJECTION_CURRENT=docs/verification/professional-visual-v4/projection/<label>.json npx playwright test e2e/v4_projection_compare.spec.ts
 ```
 
-Checkpoint (mission §27), 2026-09-05: Units 0–2 committed; tree clean.
-Next action: a read-only Unit 2 review (gameplay + visual), then Unit 3
-(`src/scenes/DiagnosticsLaboratoryScene.ts`) per `UNIT-0-BASELINE-AUDIT.md`
-§5, starting with `PW_DEV_PORT=5362 npx playwright test e2e/pilot_lab.spec.ts
---retries=0 --workers=1` as the pre-change baseline. Open test items:
-`pilot_records` "M02 abandonment fail-forward" and
-`concourse_interaction_lifecycle` "B" (see the Unit 2 note).
+Checkpoint (mission §27), 2026-09-05 evening: Units 0–6 committed
+(`406aa63`, `72ab012`, `ce1ed35`, `f4a3a21`, `5c8f68e`, `c4d7a8e`, `8f5dd42`,
+`a1490fc`, `013f589`); tree clean at the time of this note. Unit 7 is the
+next unit and has NOT been completed — resume with:
+
+1. Final capture set on a quiet machine (both resolutions): the closure
+   set exists at 800×600 (`final/closure/35…47`, run after Unit 6 —
+   `PW_DEV_PORT=5362 PILOT_CLOSURE_OUT=docs/verification/professional-visual-v4/final/closure npx playwright test e2e/pilot_closure_capture.spec.ts --retries=0 --workers=1`);
+   repeat it at 1280×720 (add a viewport parameter to the spec first), then
+   `e2e/pilot_return_capture.spec.ts` (Concourse and Records return — its
+   output directory still points at the historical v2 folder; parameterise
+   it the way `pilot_signal_capture` / `pilot_closure_capture` were), then
+   `V4_OUT=…/final V4_VIEWPORT=1280x720|800x600 npx playwright test e2e/v4_visual_capture.spec.ts`
+   for the three route legs.
+2. Full manifest in documented sequential chunks at `--retries=0 --workers=1`
+   (one Playwright job at a time; each chunk under 10 min or detached),
+   classifying every failure; include the deferred reruns
+   (`concourse_interaction_lifecycle` B, `pilot_records` M02 abandonment,
+   `participant_ui_cards` numeric shortcuts, `pilot_lab` test 1 workstation).
+3. The keyboard-only and pointer-supported routes, inventory/modal
+   lifecycle, station map and help, final closure, export/handoff
+   regression (`pilot_closure` test 2).
+4. Final projection: `V4_LABEL=final … e2e/v4_event_projection.spec.ts` +
+   `e2e/v4_projection_compare.spec.ts` against `baseline-v3.json`.
+5. The five final read-only Opus reviews (max three at once) and up to two
+   correction rounds; then the Unit 7 commit
+   `docs(verification): verify professional visual redesign`.
+
+Final acceptance (mission list) at this checkpoint: no whole-room zoom-out
+(Unit 1), no stretched arrival video (Unit 1), no random snowfall (Unit 4),
+no permanent floating-label field (Units 2–5), no stale objective (Unit 6
+zone-local lines), no irrelevant empty hotbar (Unit 6), no player-under-
+prop error in any captured frame (Units 1–6), no major asset-scale mismatch
+(Unit 5), mandatory exits carry the one threshold family (Unit 6), Core
+cannot complete early (unchanged gate, Unit 5 review), scientific
+projection preserved (0 diffs ×6), TypeScript/build/scoped ESLint/diff-check
+pass at every commit — **not yet demonstrated**: the full manifest, the
+final capture set, the final reviews, alternate-form visual equivalence on
+the final route.
 
 ## 23. Confirmation
 
