@@ -151,7 +151,10 @@ Records after the cross-world pass, 1280×720) + `unit6/800x600/`,
 door, each feed before/after, all feeds ready, Core accessible, inactive,
 operational review, ARMED, synchronising, stable, neutral completion —
 800×600, the spec's own viewport; `pilot_closure_capture` 5.4 min on the
-Unit 6 tree).
+Unit 6 tree), `final/return/22…31` (participant-path return: airlock
+re-entry, Concourse status changed, gauge and hand-over opportunities,
+Records return overview and its return-shift surfaces — 800×600,
+`pilot_return_capture` 5.6 min on the Unit 6 tree).
 
 ## 12. Scientific event projection
 
@@ -161,7 +164,13 @@ types, 28 opportunity records, zone sequence and final stage `complete`
 identical, payload-key sets identical, form/counterbalance assignments
 identical. Unit 2 (`unit2.json`): 0 differences. Unit 3 (`unit3.json`,
 recorded on the tree carrying the Unit 2 correction and the laboratory
-redesign; `unit3.diff.json` = `[]`): **0 differences**. Unit 6 (`unit6.json`): see the Unit 6 note. Unit 4
+redesign; `unit3.diff.json` = `[]`): **0 differences**. Unit 6 (`unit6.json`, `unit6.diff.json` = `[]`):
+**0 differences**. Final (`final.json`, recorded on the committed Unit 6
+tree after the checkpoint; `final.diff.json` = `[]`): **0 differences** on
+route-stage sequence, scene sequence, opportunity ids, window ids,
+event-family sequence, event counts, payload-key sets, form slots,
+dispositions and completion state (time-like keys stripped on both sides —
+the documented exclusion). Unit 4
 (`unit4.json`): **0 differences**. Unit 5 (`unit5.json`, `unit5.diff.json`
 = `[]`): **0 differences**.
 
@@ -208,8 +217,14 @@ parity cost). Route travel unchanged.
 
 ## 18–21. Remaining risks (after Unit 6)
 
-Visual: the Concourse/Records return states have no V4 participant-path
-frame yet (the Core Chamber states now do, at 800×600 only);
+Visual: the Core Chamber and return states have participant-path frames
+at 800×600 only (1280×720 repeats are Unit 7 work); in
+`final/return/23-station-status-changed.png` the Concourse status strip
+(world y = 83) sits partly under the objective band on the return visit
+(the Unit 6 band rule covers the top 30 world px; the strip needs a lower
+anchor or a wider band — Unit 7 correction item), and in `23b` a Records
+chip more than 60 % in view still shows clipped at the left edge (the
+Unit 6 threshold rule; raise it or clamp the chip into view — Unit 7);
 the yard's plate grammar is vector primitives (an asset-register decision
 would replace them); permanent bundle-name labels remain (`worldBundles.ts`,
 outside every unit allowlist). Gameplay: the participant*ui_cards legacy
@@ -241,10 +256,10 @@ next unit and has NOT been completed — resume with:
 1. Final capture set on a quiet machine (both resolutions): the closure
    set exists at 800×600 (`final/closure/35…47`, run after Unit 6 —
    `PW_DEV_PORT=5362 PILOT_CLOSURE_OUT=docs/verification/professional-visual-v4/final/closure npx playwright test e2e/pilot_closure_capture.spec.ts --retries=0 --workers=1`);
-   repeat it at 1280×720 (add a viewport parameter to the spec first), then
-   `e2e/pilot_return_capture.spec.ts` (Concourse and Records return — its
-   output directory still points at the historical v2 folder; parameterise
-   it the way `pilot_signal_capture` / `pilot_closure_capture` were), then
+   repeat it at 1280×720 (add a viewport parameter to the spec first); the
+   return set exists at 800×600 (`final/return/22…31`,
+   `PILOT_RETURN_OUT=docs/verification/professional-visual-v4/final/return npx playwright test e2e/pilot_return_capture.spec.ts`)
+   — repeat it at 1280×720 likewise; then
    `V4_OUT=…/final V4_VIEWPORT=1280x720|800x600 npx playwright test e2e/v4_visual_capture.spec.ts`
    for the three route legs.
 2. Full manifest in documented sequential chunks at `--retries=0 --workers=1`
@@ -255,8 +270,8 @@ next unit and has NOT been completed — resume with:
 3. The keyboard-only and pointer-supported routes, inventory/modal
    lifecycle, station map and help, final closure, export/handoff
    regression (`pilot_closure` test 2).
-4. Final projection: `V4_LABEL=final … e2e/v4_event_projection.spec.ts` +
-   `e2e/v4_projection_compare.spec.ts` against `baseline-v3.json`.
+4. Final projection: done once on the committed Unit 6 tree (`final.json`,
+   0 differences); repeat after any further correction round.
 5. The five final read-only Opus reviews (max three at once) and up to two
    correction rounds; then the Unit 7 commit
    `docs(verification): verify professional visual redesign`.

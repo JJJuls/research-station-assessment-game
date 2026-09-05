@@ -51,7 +51,11 @@ import {
   workshopRestorationShift,
 } from './returnHelpers';
 
-const OUT = 'docs/verification/screenshots-evidence-led-pilot-v2';
+// V4: an explicit output directory keeps the historical v2 evidence
+// untouched when the capture is re-run for a later visual pass.
+const OUT =
+  process.env.PILOT_RETURN_OUT ??
+  'docs/verification/screenshots-evidence-led-pilot-v2';
 
 async function shot(page: Page, name: string) {
   await page.waitForTimeout(450);
