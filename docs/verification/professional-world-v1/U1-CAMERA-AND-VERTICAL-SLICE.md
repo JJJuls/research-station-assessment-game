@@ -127,6 +127,72 @@ from the trigger; the registry approach for that door moved 8 px closer
 (y 104) so a 29 px lateral error still lands inside the 72 px radius. Not
 re-run after that change (context budget) — recorded as **unverified**.
 
+### 5c. U1 closure (2026-09-06, session 2 — recorded before U2 began)
+
+**Frames inspected** (`unit1/dock-arrival-1280x720.png`, `dock-arrival-800x600.png`,
+`unit1/scale-compare/{dock,concourse}-1.25.png`, and the closure frames
+`unit1/closure/concourse-south-spawn-{800x600,1280x720}.png`) against the V4
+baseline (`before-1280x720/02-dock-arrival.png`, `05-concourse-overview.png`):
+the 32×18-tile view shows 1.6× the V4 width (V4: ≈ 20 tiles across) with the
+figure at 8 % of the viewport; texel edges are single-pixel at 1:1, no crawl
+between the two arrival frames. The 800×600 frame is the same world area at
+0.625 display scale, letterboxed. Confirmed: the camera decision stands.
+Also confirmed from the frames: the arrival terminal sits under the mission
+card at the arrival view (finding V1 — repaired in U2 by moving the kiosk to
+the marker's row and anchoring the card to the canvas corner), and the
+Concourse still reads sparse (density work continues in U2's restoration
+dressing).
+
+**The "29 px overshoot" — root cause isolated (test driver, not the door).**
+Traced live with a scratch spec (deleted): at the software-GL renderer's
+≈ 11 fps a DOM key-up is delivered and processed up to two frames after
+Playwright dispatches it, so the avatar keeps moving 15–45 px after the
+driver believes the key is released (46 px of travel observed in the 200 ms
+after a key-up). `hold()` waited a fixed 120 ms and read positions that were
+still changing; every leg therefore ended 15–35 px off, and legs whose 12 px
+tolerance brushed a collision row clamped on it. Four runs of diagnosis and
+repair, all on the driver layer (`e2e/helpers.ts`, `e2e/pilotHelpers.ts`),
+no production geometry touched:
+
+1. `hold()` now waits until the observed position holds still across two
+   reads (bounded 900 ms); `driveAxisTo` uses 70 ms bursts inside the last
+   40 px (≤ one frame of travel per burst at 11 fps).
+2. `walkTo` re-checks both axes after its legs, corrects each axis that is
+   off, and on a persisting miss walks back to the start row/column and
+   takes the L the other way round (a clamped leg is never repeated).
+3. `interactAt` closes a residual gap (no prompt showing → one or two 16 px
+   steps toward the object) before pressing — an approach offset near the
+   72 px radius plus the 12 px tolerance had left the avatar at 74 px.
+4. Errors from `openPromptAt`/`useDoor` now carry the observed position,
+   prompt probe and last feedback line, so a driver miss and a real
+   interactability defect read differently in the log.
+
+The stale literal in `pilot_route_model.spec.ts` (Concourse west door at
+y 272 from V4) now derives from `PILOT_DOORS`.
+
+**Closure runs** (port 5372, quiet machine, `--retries=0 --workers=1`;
+logs in the session scratchpad `u1-closure-run{1..6}.log`):
+
+| Run | Specs                                                                                                                  | Result                                                                                                                                                           |
+| --- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0   | `world_v1_registry` + `pilot_route_model` (pure)                                                                       | 15/16 → the one stale-literal failure fixed; 16/16 thereafter                                                                                                    |
+| 1   | `world_v1_interactions`, `world_v1_camera`, `pilot_route_model`                                                        | 11/14 — the three interaction tests failed 15–35 px short (diagnosed above)                                                                                      |
+| 2   | `world_v1_interactions`, `world_v1_camera`, `spawn_clearance`, `dock_tutorial_paths`, `movement_and_first_interaction` | 12/14 — legacy Dock 3/3, spawn 3/3, camera 3/3, interactions Dock 1/1; Concourse prompts (packet leg clamped on the ops island) and doors (bench block)          |
+| 3   | Concourse tests                                                                                                        | prompts **1/1** (every registry object; surface pauses/releases; one press = one `pilot_station_opened`; decor silent); doors 0/1 (same bench clamp, then fixed) |
+| 4–5 | doors                                                                                                                  | records/lab/deck legs both ways ✓; the Dock leg back stood 74 px from the door (offset 64 + 12) → fix 3                                                          |
+| 6   | doors                                                                                                                  | **1/1** — every Concourse door both ways, one press = one `pilot_door_used` and one arrival, no measurement event, no page error                                 |
+
+Proven for the Dock and Concourse: every registry object reachable from
+every spawn (pure) and prompting at its approach point (runtime); prompts
+only within 72 px (the pure `world_v1_camera` "away from every object" check
+and the decor check); decorative objects produce no prompt; every door
+traversable both ways; no station on a required route (registry corridor
+clearance); one physical press creates exactly one interaction (station and
+door counts); a modal surface pauses the world and closing it restores
+movement. Frame rate measured in the verification renderer: 10.5–13 fps in
+both rebuilt zones at both viewports (the V4 figure) — the plate did not
+slow the renderer.
+
 **Open at the U1 commit (honest state):**
 
 - `pilot_route` topology: after the correction round the driver passes

@@ -187,10 +187,15 @@ test.describe('pilot route model (pure)', () => {
       order: 1,
     });
 
-    // Away from the destination zone → the next-hop door (Concourse west).
+    // Away from the destination zone → the next-hop door (Concourse west;
+    // World V1: derived from PILOT_DOORS, never a repeated literal).
+    const west = PILOT_DOORS.station_concourse.find(
+      (door) => door.to === 'records_workshop',
+    )!;
+
     expect(pilotBeaconTarget('station_concourse')).toEqual({
-      x: 48,
-      y: 272,
+      x: west.x,
+      y: west.y,
       label: 'Records Workshop',
       kind: 'door',
     });

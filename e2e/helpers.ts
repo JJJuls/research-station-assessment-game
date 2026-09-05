@@ -22,7 +22,46 @@ export async function hold(page: Page, key: string, ms: number) {
   await page.keyboard.down(key);
   await page.waitForTimeout(ms);
   await page.keyboard.up(key);
-  await page.waitForTimeout(120);
+  await settleAfterKeyUp(page);
+}
+
+/**
+ * World V1 (U1 closure): under the software-GL verification renderer the
+ * page runs at ~11 fps and a DOM key-up is delivered and processed up to
+ * two frames (~200 ms) after Playwright dispatches it — the avatar keeps
+ * moving 15–45 px AFTER the driver believes the key is released (traced
+ * live: 46 px of travel in the 200 ms after key-up). A fixed 120 ms wait
+ * therefore read positions that were still changing, and every axis leg
+ * ended 15–35 px off its target. Wait for the observed position to hold
+ * still across two consecutive reads (bounded), so a leg's end position
+ * is read only once motion has actually stopped. Scenes without the
+ * position probe keep the historical 120 ms wait.
+ */
+async function settleAfterKeyUp(page: Page) {
+  const started = Date.now();
+  let last = await playerProbe(page);
+
+  if (last === null) {
+    await page.waitForTimeout(120);
+    return;
+  }
+
+  // Minimum one frame at the slow renderer before the first comparison.
+  await page.waitForTimeout(100);
+
+  while (Date.now() - started < 900) {
+    const now = await playerProbe(page);
+
+    if (
+      now === null ||
+      (Math.abs(now.x - last.x) < 0.5 && Math.abs(now.y - last.y) < 0.5)
+    ) {
+      return;
+    }
+
+    last = now;
+    await page.waitForTimeout(70);
+  }
 }
 
 export async function press(page: Page, key: string) {
@@ -403,9 +442,16 @@ export async function driveAxisTo(
 
     // Adaptive burst: long remaining distances use longer holds (~70 px at
     // 175 px/s) so cross-room legs stay fast; the final approach drops to
-    // short 100 ms bursts (~17 px) for precision. Stall detection above is
-    // unaffected — any wall clamp still ends the leg.
-    lastBurstMs = Math.abs(current - target) > 120 ? 400 : 100;
+    // short bursts for precision. World V1 (U1 closure): the last 40 px
+    // use a 70 ms burst — shorter than one frame at the ~11 fps
+    // verification renderer, so a burst yields at most one frame of
+    // travel (~15 px) and cannot overshoot a 12 px tolerance by two
+    // frames; hold() then waits for the position to settle before the
+    // next read. Stall detection above is unaffected — any wall clamp
+    // still ends the leg.
+    const remaining = Math.abs(current - target);
+
+    lastBurstMs = remaining > 120 ? 400 : remaining > 40 ? 100 : 70;
     await hold(page, key, lastBurstMs);
   }
 }

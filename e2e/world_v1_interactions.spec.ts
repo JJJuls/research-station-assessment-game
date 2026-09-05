@@ -12,16 +12,26 @@
  * carries the act title and one action; the belt is hidden in interior
  * zones.
  */
+import { mkdirSync } from 'node:fs';
+
 import { expect, type Page, test } from '@playwright/test';
 
 import { WORLD_V1_REGISTRY } from '../src/world/interactionRegistry';
 import { press } from './helpers';
-import { completeDockTutorial } from './journey';
+import {
+  captureErrors,
+  completeDockTutorial,
+  eventCount,
+  expectNoRuntimeErrors,
+} from './journey';
 import {
   bootPilot,
   dockToConcourse,
+  expectNoMeasurementEvents,
+  PILOT,
   pilotProbe,
   registryApproach,
+  useDoor,
   walkTo,
 } from './pilotHelpers';
 
@@ -62,7 +72,12 @@ async function expectPromptAt(page: Page, id: string, expected: string) {
   // the south row runs into the crate group). The pure spec proves every
   // approach point is reachable; this only picks the leg order.
   await walkTo(page, approach.x, approach.y, {
-    yFirst: id === 'concourse.door_dock' || id === 'concourse.door_records',
+    yFirst:
+      id === 'concourse.door_dock' ||
+      id === 'concourse.door_records' ||
+      // From the incident desk (row 7) an x-first leg west brushes the ops
+      // island (rows 8–10) whenever the y tolerance lands below row 7.
+      id === 'concourse.qc_packet_o1',
   });
   await page.waitForTimeout(350);
 
@@ -143,8 +158,14 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
     }
 
     // The plan board opens its work surface on E; the avatar holds still
-    // while it is open; closing it restores movement and the prompt.
+    // while it is open; closing it restores movement and the prompt. One
+    // physical press = exactly one station opening (re-entrancy guard).
     const board = registryApproach('concourse.plan_board');
+    const openedBefore = await eventCount(
+      page,
+      'pilot_station_opened',
+      'station_concourse',
+    );
 
     await walkTo(page, board.x, board.y, { yFirst: false });
     await press(page, 'e');
@@ -155,6 +176,9 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
       undefined,
       { timeout: 8000 },
     );
+    expect(
+      await eventCount(page, 'pilot_station_opened', 'station_concourse'),
+    ).toBe(openedBefore + 1);
 
     const held = await playerXY(page);
 
@@ -184,5 +208,137 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
     await walkTo(page, 26 * 32, 13 * 32, { yFirst: false });
     await page.waitForTimeout(350);
     expect((await promptProbe(page))?.prompt ?? false).toBe(false);
+  });
+
+  test('Concourse: every door is traversable both ways and one press logs one door use', async ({
+    page,
+  }) => {
+    test.setTimeout(420_000);
+
+    const errors = captureErrors(page);
+
+    await bootPilot(page, 'wv1doors');
+    await completeDockTutorial(page, 1);
+    await dockToConcourse(page);
+
+    if (process.env.WV1_OUT !== undefined) {
+      const viewport = page.viewportSize()!;
+
+      mkdirSync(process.env.WV1_OUT, { recursive: true });
+      await page.waitForTimeout(600);
+      await page.screenshot({
+        path: `${process.env.WV1_OUT}/concourse-south-spawn-${viewport.width}x${viewport.height}.png`,
+      });
+    }
+
+    // Each leg: the Concourse door out (one pilot_door_used from the
+    // Concourse), the destination's return door back (one pilot_door_used
+    // from the destination). The return doors of the unrebuilt zones keep
+    // their V4 coordinates (PILOT_DOORS); the driver approaches each from
+    // its arrival spawn along one clear axis.
+    const legs: {
+      id: string;
+      destination: string;
+      out: { yFirst: boolean; offset: { x: number; y: number } };
+      back: { x: number; y: number; offset: { x: number; y: number } };
+    }[] = [
+      {
+        id: 'concourse.door_records',
+        destination: 'records_workshop',
+        out: { yFirst: true, offset: { x: 40, y: 0 } },
+        back: { ...PILOT.workshop.eastDoor, offset: { x: -40, y: 0 } },
+      },
+      {
+        id: 'concourse.door_lab',
+        destination: 'diagnostics_laboratory',
+        out: { yFirst: false, offset: { x: 0, y: 20 } },
+        back: { ...PILOT.lab.southDoor, offset: { x: 0, y: -40 } },
+      },
+      {
+        id: 'concourse.door_deck',
+        destination: 'utility_core_deck',
+        out: { yFirst: true, offset: { x: -40, y: 0 } },
+        back: { ...PILOT.deck.westDoor, offset: { x: 40, y: 0 } },
+      },
+      {
+        id: 'concourse.door_dock',
+        destination: 'dock',
+        // From the Deck-side spawn (row 13) the clear path is west along
+        // the axis, then south down the spine (a south-first leg clamps
+        // on the bench block at row 21).
+        out: { yFirst: false, offset: { x: 0, y: -20 } },
+        // 20 px inside the doorway (dockToConcourse precedent): an offset
+        // of 64 plus the 12 px landing tolerance lands outside the 72 px
+        // radius.
+        back: { ...PILOT.dock.northDoor, offset: { x: 0, y: 20 } },
+      },
+    ];
+
+    for (const leg of legs) {
+      const door = WORLD_V1_REGISTRY.station_concourse!.find(
+        (entry) => entry.id === leg.id,
+      )!;
+      const approach = registryApproach(leg.id);
+
+      await walkTo(page, approach.x, approach.y, { yFirst: leg.out.yFirst });
+      await page.waitForTimeout(300);
+
+      const at = await playerXY(page);
+
+      expect(
+        (await promptProbe(page))?.text,
+        `${leg.id} at ${Math.round(at.x)},${Math.round(at.y)} (approach ${approach.x},${approach.y})`,
+      ).toBe(`E — Go to ${door.label}`);
+
+      const outBefore = await eventCount(
+        page,
+        'pilot_door_used',
+        'station_concourse',
+      );
+      const arrivalsBefore = await eventCount(
+        page,
+        'scene_start',
+        leg.destination,
+      );
+
+      await useDoor(page, { x: door.x, y: door.y }, leg.destination, {
+        approachOffset: leg.out.offset,
+        yFirst: leg.out.yFirst,
+      });
+      expect(
+        await eventCount(page, 'pilot_door_used', 'station_concourse'),
+        `${leg.id}: one press, one door use`,
+      ).toBe(outBefore + 1);
+      expect(
+        await eventCount(page, 'scene_start', leg.destination),
+        `${leg.id}: one press, one arrival`,
+      ).toBe(arrivalsBefore + 1);
+
+      // Back: the destination's return door (the Dock's north door logs
+      // its historical events, not pilot_door_used — arrivals are the
+      // uniform count).
+      const returnsBefore = await eventCount(
+        page,
+        'scene_start',
+        'station_concourse',
+      );
+
+      await useDoor(
+        page,
+        { x: leg.back.x, y: leg.back.y },
+        'station_concourse',
+        { approachOffset: leg.back.offset, yFirst: true },
+      );
+      expect(
+        await eventCount(page, 'scene_start', 'station_concourse'),
+        `${leg.destination} → Concourse: one press, one arrival`,
+      ).toBe(returnsBefore + 1);
+      // A runtime error surfaces at the leg that raised it.
+      expect(errors.pageErrors, `${leg.id}: page errors`).toEqual([]);
+    }
+
+    // The bare topology walk emits no participant act and no runtime error.
+    await expectNoMeasurementEvents(page);
+    expectNoRuntimeErrors(errors);
   });
 });

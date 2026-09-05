@@ -236,7 +236,17 @@ export async function bootPilotScene(page: Page, tag: string, scene: string) {
   await page.waitForTimeout(1200);
 }
 
-/** Axis-by-axis position-synced walk (x first unless yFirst). */
+/**
+ * Axis-by-axis position-synced walk (x first unless yFirst).
+ *
+ * World V1 (U1 closure): a leg can end OUTSIDE its tolerance under CPU
+ * load — a 100 ms final burst delivers ~17 px at 60 fps but 30–45 px when
+ * the software-GL renderer starves the key-up (observed: a 29 px overshoot
+ * on the Concourse north-door x-leg). After both legs the observed
+ * position is re-checked and each axis still off by more than the
+ * tolerance is corrected with up to two further short legs. Test-driver
+ * precision only — production geometry is never adjusted for the driver.
+ */
 export async function walkTo(
   page: Page,
   x: number,
@@ -244,14 +254,89 @@ export async function walkTo(
   options?: { yFirst?: boolean; tolerance?: number },
 ) {
   const tolerance = options?.tolerance ?? 12;
+  const legs: ('x' | 'y')[] = options?.yFirst ? ['y', 'x'] : ['x', 'y'];
+  const start = await page.evaluate(
+    () =>
+      (window as unknown as { __playerProbe?: { x: number; y: number } | null })
+        .__playerProbe ?? null,
+  );
 
-  if (options?.yFirst) {
-    await driveAxisTo(page, 'y', y, tolerance);
-    await driveAxisTo(page, 'x', x, tolerance);
-  } else {
-    await driveAxisTo(page, 'x', x, tolerance);
-    await driveAxisTo(page, 'y', y, tolerance);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    // A leg that clamps on a collision row (the second leg running along
+    // a wall block) leaves the avatar off target. The second attempt goes
+    // back to the start position's first-leg coordinate and walks the
+    // L the other way round — a different path, not the same wall again.
+    // Driver only; production geometry is never adjusted for it.
+    const order = attempt === 0 ? legs : legs.slice().reverse();
+
+    if (attempt === 1 && start !== null) {
+      const back = legs[1];
+
+      await driveAxisTo(
+        page,
+        back,
+        back === 'x' ? start.x : start.y,
+        tolerance,
+      );
+    }
+
+    for (const axis of order) {
+      await driveAxisTo(page, axis, axis === 'x' ? x : y, tolerance);
+    }
+
+    if (await settledWithin(page, x, y, tolerance, order)) {
+      return;
+    }
   }
+}
+
+async function settledWithin(
+  page: Page,
+  x: number,
+  y: number,
+  tolerance: number,
+  legs: readonly ('x' | 'y')[],
+): Promise<boolean> {
+  for (let pass = 0; pass < 2; pass += 1) {
+    const at = await page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            __playerProbe?: { x: number; y: number } | null;
+          }
+        ).__playerProbe ?? null,
+    );
+
+    if (at === null) {
+      return true;
+    }
+
+    const offX = Math.abs(at.x - x) > tolerance;
+    const offY = Math.abs(at.y - y) > tolerance;
+
+    if (!offX && !offY) {
+      return true;
+    }
+
+    // Correct the last leg's axis first (the overshoot lives there), then
+    // the other axis only if it also drifted.
+    for (const axis of legs.slice().reverse()) {
+      if (axis === 'x' ? offX : offY) {
+        await driveAxisTo(page, axis, axis === 'x' ? x : y, tolerance);
+      }
+    }
+  }
+
+  const at = await page.evaluate(
+    () =>
+      (window as unknown as { __playerProbe?: { x: number; y: number } | null })
+        .__playerProbe ?? null,
+  );
+
+  return (
+    at === null ||
+    (Math.abs(at.x - x) <= tolerance && Math.abs(at.y - y) <= tolerance)
+  );
 }
 
 /** Walks next to an interactable and presses SPACE (retrying swallowed presses). */
@@ -266,6 +351,48 @@ export async function interactAt(
   };
 
   await walkTo(page, target.x, target.y, { yFirst: options?.yFirst });
+
+  // Close the gap (U1 closure): an approach offset near the 72 px radius
+  // plus the 12 px landing tolerance can leave the avatar a few px out of
+  // range (observed: 74 px from the Dock's north door). If no prompt is
+  // showing, step toward the object along its dominant axis — at most
+  // twice, 16 px each — before pressing. Driver only.
+  for (let nudge = 0; nudge < 2; nudge += 1) {
+    const visible = await page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            __worldPromptProbe?: { prompt: boolean } | null;
+          }
+        ).__worldPromptProbe?.prompt ?? false,
+    );
+
+    if (visible) {
+      break;
+    }
+
+    const here = await page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            __playerProbe?: { x: number; y: number } | null;
+          }
+        ).__playerProbe ?? null,
+    );
+
+    if (here === null) {
+      break;
+    }
+
+    const dx = at.x - here.x;
+    const dy = at.y - here.y;
+    const axis: 'x' | 'y' = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y';
+    const step = axis === 'x' ? Math.sign(dx) * 16 : Math.sign(dy) * 16;
+
+    await driveAxisTo(page, axis, (axis === 'x' ? here.x : here.y) + step, 6);
+    await page.waitForTimeout(150);
+  }
+
   await press(page, 'Space');
 }
 
@@ -296,7 +423,25 @@ export async function openPromptAt(
     }
   }
 
-  throw new Error(`prompt did not open at ${at.x},${at.y}`);
+  // Diagnostic detail (U1 closure): the observed avatar position and the
+  // world-prompt probe at the moment of failure, so a driver miss (out of
+  // range) and a real interactability defect (in range, no prompt) are
+  // distinguishable from the error alone.
+  const observed = await page.evaluate(() => {
+    const w = window as unknown as {
+      __playerProbe?: { x: number; y: number } | null;
+      __worldPromptProbe?: { prompt: boolean; text?: string | null } | null;
+    };
+
+    return {
+      at: w.__playerProbe ?? null,
+      prompt: w.__worldPromptProbe ?? null,
+    };
+  });
+
+  throw new Error(
+    `prompt did not open at ${at.x},${at.y} (target ${target.x},${target.y}; observed ${JSON.stringify(observed)})`,
+  );
 }
 
 /** Uses a pilot door and waits for the destination scene. */
@@ -326,7 +471,26 @@ export async function useDoor(
     }
   }
 
-  throw new Error(`door at ${door.x},${door.y} did not reach ${destination}`);
+  // Diagnostic detail (U1 closure): scene, position, prompt and the last
+  // feedback line at the moment of failure — a driver miss, a sealed
+  // door's message and a stalled transition all read differently.
+  const observed = await page.evaluate(() => {
+    const w = window as unknown as {
+      __playerProbe?: { scene: string; x: number; y: number } | null;
+      __worldPromptProbe?: { prompt: boolean; text?: string | null } | null;
+      __lastRoomFeedbackText?: string | null;
+    };
+
+    return {
+      at: w.__playerProbe ?? null,
+      prompt: w.__worldPromptProbe ?? null,
+      feedback: w.__lastRoomFeedbackText ?? null,
+    };
+  });
+
+  throw new Error(
+    `door at ${door.x},${door.y} did not reach ${destination} (observed ${JSON.stringify(observed)})`,
+  );
 }
 
 export async function pilotEventTypes(page: Page): Promise<string[]> {
