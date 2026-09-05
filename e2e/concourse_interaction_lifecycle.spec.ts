@@ -371,6 +371,15 @@ test.describe('station concourse interaction lifecycle', () => {
   test('B — every other workshop E/SPACE surface opens, closes and releases the world', async ({
     page,
   }) => {
+    // V4 Unit 2 closure: this test walks Dock → Concourse → Workshop and
+    // then six position-synced station legs. On the V3 tree it completes
+    // in ~108 s, i.e. at the edge of the 120 s config default; under the
+    // V4 canvas the software-GL renderer runs ~13 fps instead of ~20 (Unit
+    // 1 note), so the same walking needs ~1.5× wall time. Every assertion
+    // passes and the failure point is the last travel leg — a budget, not a
+    // product regression. Budget aligned with the sibling pilot specs.
+    test.setTimeout(300_000);
+
     const errors = captureErrors(page);
 
     await enterWorkshop(page, 'CIL_B');

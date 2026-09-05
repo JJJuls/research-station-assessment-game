@@ -10,7 +10,7 @@
  * desk. Every packet is its own object on the work surface; completing one
  * never gates another. Doors are always bidirectional.
  */
-import { DepthLayer, key } from '../constants';
+import { DepthLayer, key, worldDepth } from '../constants';
 import {
   beginManualWorldAction,
   endManualWorldAction,
@@ -315,16 +315,20 @@ export class StationConcourseScene extends PilotZoneScene {
     // Live reading beside the gauge (state, never a directive).
     // V4: above the gauge (the approach lane is north of it, so the name
     // chip and prompt sit below) — a state readout, never a directive.
+    // Unit 2 review (C2/C3): environment register (muted, translucent),
+    // closer to its device, sorted at its own foot line so it never
+    // covers a figure standing on the approach lane.
     this.add
-      .text(S.monitorGauge.x, S.monitorGauge.y - 34, this.gaugeReading(), {
+      .text(S.monitorGauge.x, S.monitorGauge.y - 30, this.gaugeReading(), {
         backgroundColor: '#101820',
-        color: '#dce7f0',
+        color: '#9fb2c1',
         font: '10px monospace',
         padding: { x: 4, y: 2 },
         resolution: 2,
       })
       .setOrigin(0.5)
-      .setDepth(DepthLayer.WorldReadout);
+      .setAlpha(0.85)
+      .setDepth(worldDepth(S.monitorGauge.y - 22));
 
     // Station status strip on the wall console: a concise operational
     // update that changes on the return (no item, no directive).
@@ -344,7 +348,8 @@ export class StationConcourseScene extends PilotZoneScene {
         },
       )
       .setOrigin(0.5)
-      .setDepth(DepthLayer.WorldReadout);
+      .setAlpha(0.85)
+      .setDepth(worldDepth(2.6 * TILE + 8));
 
     // ——— Desk lamp fault (M05 occasion 1) — never mentioned ———
     this.addStation({
@@ -441,16 +446,19 @@ export class StationConcourseScene extends PilotZoneScene {
       alpha: number,
       depth: number = DepthLayer.FloorDecal,
     ) =>
+      // Unit 2 review (C4): plates carry a 1 px edge line and a higher
+      // fill so the hub grammar is perceptible at the world zoom.
       this.add
         .rectangle(x, y, w, h, 0x55627a, alpha)
         .setOrigin(0.5)
+        .setStrokeStyle(1, 0x8fa4b8, 0.35)
         .setDepth(depth);
 
     // Spine (cols 11-12) and axis (rows 8-9).
-    plate(12 * TILE - 16, 9 * TILE, 2 * TILE, 14 * TILE, 0.2);
-    plate(12 * TILE, 9 * TILE - 16, 22 * TILE, 2 * TILE, 0.2);
+    plate(12 * TILE - 16, 9 * TILE, 2 * TILE, 14 * TILE, 0.3);
+    plate(12 * TILE, 9 * TILE - 16, 22 * TILE, 2 * TILE, 0.3);
     // Crossing plate.
-    plate(12 * TILE - 16, 9 * TILE - 16, 4 * TILE, 4 * TILE, 0.16);
+    plate(12 * TILE - 16, 9 * TILE - 16, 4 * TILE, 4 * TILE, 0.24);
     // Dashed centre lines.
     for (let row = 2; row < 16; row += 1) {
       if (row < 7 || row > 10) {
@@ -472,10 +480,10 @@ export class StationConcourseScene extends PilotZoneScene {
       9 * TILE,
       5 * TILE,
       4 * TILE,
-      0.14,
+      0.22,
       DepthLayer.FloorMarking,
     );
-    plate(9.5 * TILE, 13 * TILE, 7 * TILE, 3 * TILE, 0.12);
+    plate(9.5 * TILE, 13 * TILE, 7 * TILE, 3 * TILE, 0.2);
     // Door thresholds: one plate family at the four exits.
     for (const [x, y, w, h] of [
       [12 * TILE, 2.5 * TILE, 3 * TILE, TILE],
@@ -483,7 +491,7 @@ export class StationConcourseScene extends PilotZoneScene {
       [1.5 * TILE, 8.5 * TILE, TILE, 3 * TILE],
       [23.5 * TILE, 8.5 * TILE, TILE, 3 * TILE],
     ] as const) {
-      plate(x, y, w, h, 0.22, DepthLayer.FloorMarking);
+      plate(x, y, w, h, 0.34, DepthLayer.FloorMarking);
     }
   }
 

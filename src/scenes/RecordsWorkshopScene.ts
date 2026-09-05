@@ -20,7 +20,7 @@
  */
 import Phaser from 'phaser';
 
-import { DepthLayer, key } from '../constants';
+import { DepthLayer, key, worldDepth } from '../constants';
 import {
   addInventoryItem,
   hasInventoryItem,
@@ -806,17 +806,28 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     }
   }
 
+  /**
+   * Unit 2 review (C3/R3): state chips render in the environment register
+   * (muted, translucent) and sort at their own foot line so a figure is
+   * never covered by a readout.
+   */
   private chip(x: number, y: number, text: string): Phaser.GameObjects.Text {
-    return this.add
-      .text(x, y, text, {
-        backgroundColor: '#101820',
-        color: '#dce7f0',
-        font: '10px monospace',
-        padding: { x: 4, y: 2 },
-        resolution: 2,
-      })
-      .setOrigin(0.5)
-      .setDepth(DepthLayer.WorldReadout);
+    return (
+      this.add
+        .text(x, y, text, {
+          backgroundColor: '#101820',
+          color: '#9fb2c1',
+          font: '10px monospace',
+          padding: { x: 4, y: 2 },
+          resolution: 2,
+        })
+        .setOrigin(0.5)
+        .setAlpha(0.85)
+        // Sorted just below the foot line of the prop it annotates (chips sit
+        // on or under their console) so the chip is read over the prop and
+        // under any figure standing south of it.
+        .setDepth(worldDepth(y + 40))
+    );
   }
 
   /** Handover desk prompt body: tray state (operational; no outcomes). */
@@ -1185,21 +1196,24 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   private buildFunctionalAreas() {
+    // Unit 2 review (R1): a 1 px edge line and a higher fill so the areas
+    // are perceptible at the world zoom (material change, no label).
     const plate = (x: number, y: number, w: number, h: number, alpha: number) =>
       this.add
         .rectangle(x, y, w, h, 0x6a705f, alpha)
         .setOrigin(0.5)
+        .setStrokeStyle(1, 0x9aa38f, 0.35)
         .setDepth(DepthLayer.FloorDecal);
 
-    plate(5.5 * TILE, 3.5 * TILE, 9 * TILE, 3 * TILE, 0.16); // intake
-    plate(6 * TILE, 8.75 * TILE, 10 * TILE, 3.5 * TILE, 0.14); // records & press
-    plate(6 * TILE, 14 * TILE, 10 * TILE, 3 * TILE, 0.14); // storage & assembly
-    plate(11.5 * TILE, 3 * TILE, 5 * TILE, 2.5 * TILE, 0.12); // calibration
-    plate(20.5 * TILE, 4.5 * TILE, 6 * TILE, 5 * TILE, 0.14); // handover column
-    plate(19.5 * TILE, 14 * TILE, 7 * TILE, 3 * TILE, 0.12); // dispatch bay
+    plate(5.5 * TILE, 3.5 * TILE, 9 * TILE, 3 * TILE, 0.26); // intake
+    plate(6 * TILE, 8.75 * TILE, 10 * TILE, 3.5 * TILE, 0.22); // records & press
+    plate(6 * TILE, 14 * TILE, 10 * TILE, 3 * TILE, 0.22); // storage & assembly
+    plate(11.5 * TILE, 3 * TILE, 5 * TILE, 2.5 * TILE, 0.2); // calibration
+    plate(20.5 * TILE, 4.5 * TILE, 6 * TILE, 5 * TILE, 0.22); // handover column
+    plate(19.5 * TILE, 14 * TILE, 7 * TILE, 3 * TILE, 0.2); // dispatch bay
     // Service lane between the areas (the y = 272 walking lane).
     this.add
-      .rectangle(12 * TILE, 8.5 * TILE, 22 * TILE, TILE, 0x8fa4b8, 0.06)
+      .rectangle(12 * TILE, 8.5 * TILE, 22 * TILE, TILE, 0x8fa4b8, 0.14)
       .setOrigin(0.5)
       .setDepth(DepthLayer.FloorMarking);
   }
