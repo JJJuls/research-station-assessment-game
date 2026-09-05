@@ -15,6 +15,10 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
+import type { PilotZoneKey } from '../src/pilot/pilotRoute';
+import { PILOT_DOORS } from '../src/pilot/pilotRoute';
+import { CONCOURSE_STATIONS, DOCK_SITES } from '../src/pilot/zoneSites';
+import { WORLD_V1_REGISTRY } from '../src/world/interactionRegistry';
 import {
   driveAxisTo,
   getEvents,
@@ -64,15 +68,38 @@ export interface PilotCoverageProbe {
   final_core_closed: boolean;
 }
 
-/** Well-known pilot positions (mirrors src/pilot/pilotRoute.ts PILOT_DOORS + zoneSites). */
+/**
+ * Well-known pilot positions. World V1: the Dock and Concourse books
+ * derive from the source of truth (src/pilot/zoneSites.ts, PILOT_DOORS)
+ * so a moved station never leaves a stale literal here; the zones not yet
+ * rebuilt keep their V4 literals until their units.
+ */
+const doorOf = (zone: PilotZoneKey, to: PilotZoneKey) => {
+  const ref = PILOT_DOORS[zone].find((door) => door.to === to);
+
+  if (ref === undefined) {
+    throw new Error(`pilotHelpers: no door ${zone} → ${to}`);
+  }
+
+  return { x: ref.x, y: ref.y };
+};
+
 export const PILOT = {
-  dock: { terminal: { x: 96, y: 96 }, northDoor: { x: 368, y: 48 } },
+  dock: {
+    terminal: { ...DOCK_SITES.terminal },
+    northDoor: doorOf('dock', 'station_concourse'),
+    /** Walkable point just south of the north door (inside the spine). */
+    northDoorApproach: {
+      x: doorOf('dock', 'station_concourse').x,
+      y: doorOf('dock', 'station_concourse').y + 64,
+    },
+  },
   concourse: {
-    vale: { x: 496, y: 272 },
-    northDoor: { x: 384, y: 48 },
-    southDoor: { x: 384, y: 496 },
-    eastDoor: { x: 752, y: 272 },
-    westDoor: { x: 48, y: 272 },
+    vale: { ...CONCOURSE_STATIONS.vale },
+    northDoor: doorOf('station_concourse', 'diagnostics_laboratory'),
+    southDoor: doorOf('station_concourse', 'dock'),
+    eastDoor: doorOf('station_concourse', 'utility_core_deck'),
+    westDoor: doorOf('station_concourse', 'records_workshop'),
   },
   workshop: {
     board: { x: 640, y: 160 },
@@ -117,6 +144,19 @@ export const PILOT = {
     southDoor: { x: 400, y: 496 },
   },
 } as const;
+
+/** World V1 registry approach point for an object id (rebuilt zones). */
+export function registryApproach(id: string): { x: number; y: number } {
+  for (const entries of Object.values(WORLD_V1_REGISTRY)) {
+    const entry = entries?.find((candidate) => candidate.id === id);
+
+    if (entry !== undefined) {
+      return { ...entry.approach };
+    }
+  }
+
+  throw new Error(`pilotHelpers: no registry entry ${id}`);
+}
 
 export async function pilotProbe(page: Page): Promise<PilotProbe | null> {
   return page.evaluate(
@@ -337,7 +377,12 @@ export async function expectStage(page: Page, stage: string) {
 
 /** Dock (after the tutorial) → Concourse north door → stage handover_briefing. */
 export async function dockToConcourse(page: Page) {
-  await walkTo(page, 96, 60, { yFirst: true });
+  await walkTo(
+    page,
+    PILOT.dock.northDoorApproach.x,
+    PILOT.dock.northDoorApproach.y,
+    { yFirst: true },
+  );
   await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
     approachOffset: { x: 0, y: 20 },
   });

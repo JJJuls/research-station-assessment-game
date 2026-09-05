@@ -16,7 +16,6 @@ import {
   worldDepth,
 } from '../constants';
 import { sfxFootstep } from '../gameplay/audio';
-import { WORLD_ZOOM } from '../world/viewport';
 
 enum Animation {
   Left = 'player_left',
@@ -118,10 +117,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Collide the sprite body with the world boundary
     this.setCollideWorldBounds(true);
 
-    // V4: the world camera follows the avatar at the fixed integer zoom
-    // (docs/game/VISUAL-SYSTEM-V4.md §1) with whole-pixel scroll.
-    scene.cameras.main.startFollow(this, true);
-    scene.cameras.main.setZoom(WORLD_ZOOM);
+    // World V1: the room's world plate follows the avatar (dead zone +
+    // bounded easing, src/world/camera.ts); the scene camera is static.
 
     // Drop shadow below the render depths of the player and the room's
     // dual-grid visual layers' contents (world layer sits at -1/-0.5).

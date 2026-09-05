@@ -251,8 +251,19 @@ export async function completeDockTutorial(page: Page, option: 1 | 2 | 3) {
   // Position-synced approach to the Arrival Terminal (96, 96): timed
   // clamp holds under-deliver under heavy CPU load; driveAxisTo ends on
   // the OBSERVED position or a wall stall regardless of frame rate.
-  await driveAxisTo(page, 'x', 96, 20);
-  await driveAxisTo(page, 'y', 96, 20);
+  // World V1: the active Dock layout publishes its terminal position
+  // (DEV probe __dockProbe); the legacy bay keeps (96, 96).
+  const terminal = await page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          __dockProbe?: { terminal: { x: number; y: number } } | null;
+        }
+      ).__dockProbe?.terminal ?? { x: 96, y: 96 },
+  );
+
+  await driveAxisTo(page, 'x', terminal.x, 20);
+  await driveAxisTo(page, 'y', terminal.y, 20);
 
   // Event-synced with a swallowed-press retry (SwiftShader input loss):
   // the canonical tutorial_completed fires on ALL THREE option paths, so

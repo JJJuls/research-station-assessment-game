@@ -9,7 +9,18 @@
  * Vale; standardised interruption), M12 quality packet 1, M14 incident
  * desk. Every packet is its own object on the work surface; completing one
  * never gates another. Doors are always bidirectional.
+ *
+ * World V1 (docs/game/world-v1/ROOM-BLOCKOUTS.md §2): a 40×26 circulation
+ * hub — one north–south spine crossing one east–west axis, every door
+ * framed and signed, the operations desk island (Vale) under the
+ * station-status wall as the landmark, and the work surfaces integrated
+ * into the architecture (plan board on the north wall, incident console on
+ * the east service counter, quality packet on the south-west side counter,
+ * monitor gauge on the east wall, the faulty reading lamp in the
+ * north-west nook). No window, event, form or option changed.
  */
+import Phaser from 'phaser';
+
 import { DepthLayer, key, worldDepth } from '../constants';
 import {
   beginManualWorldAction,
@@ -91,13 +102,15 @@ import {
   m12SurfaceModel,
   m14SurfaceModel,
 } from '../pilot/windows/surfaceModels';
-import { CONCOURSE_STATIONS } from '../pilot/zoneSites';
+import { CONCOURSE_SPAWNS, CONCOURSE_STATIONS } from '../pilot/zoneSites';
 import type {
   InteractionKey,
   PromptOption,
   PromptStage,
   RoomLayout,
 } from '../world';
+import { KIT_INDICATOR } from '../world/kit/kitTextures';
+import { CONCOURSE_LAYOUT } from '../world/layouts/concourse';
 
 const TILE = 32;
 const M05_FIX_MS = 2000;
@@ -106,12 +119,16 @@ const M05_FIX_MS = 2000;
  * Monitor gauge readings (Unit 5): the monitored loop drifts while the
  * participant is outside, so the return reading is a visibly CHANGED
  * operational state — the physical consequence the second check reads.
- * Values only; no directive, no reminder.
+ * Values only; no directive, no reminder. World V1: the reading is shown
+ * on the gauge read (E), never as a permanent ribbon.
  */
 const GAUGE_READING = {
   before: 'loop 1.6 bar · bus 26.8 V · relay LOCK',
   after: 'loop 1.4 bar ▼ · bus 26.1 V ▼ · relay LOCK',
 } as const;
+
+/** Station-status wall sectors (left → right) — presentation only. */
+const STATUS_SECTORS = ['REC', 'SIG', 'EXT', 'LOG', 'FEED', 'CORE'] as const;
 
 export class StationConcourseScene extends PilotZoneScene {
   protected readonly roomId = 'station_concourse';
@@ -119,6 +136,7 @@ export class StationConcourseScene extends PilotZoneScene {
   protected readonly zoneKey = 'station_concourse' as const;
 
   private lampFlicker: Phaser.GameObjects.Rectangle | null = null;
+  private statusLamps: Phaser.GameObjects.Rectangle[] = [];
 
   /** The return leg of the route (episode 5) is live. */
   private returned(): boolean {
@@ -134,45 +152,26 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   protected getLayout(): RoomLayout {
-    return {
-      theme: 'hub',
-      grid: [
-        '#########################',
-        '###########--############',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#..####...........####..#',
-        '#.......................#',
-        '#.......................#',
-        '-.......................-',
-        '-.......................-',
-        '#.......................#',
-        '#..####...........####..#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '###########--############',
-        '#########################',
-        '#########################',
-      ],
-    };
+    return { theme: 'hub', grid: [...CONCOURSE_LAYOUT] };
+  }
+
+  protected bundleDropBounds(): { width: number; height: number } {
+    return { width: 40 * TILE, height: 26 * TILE };
   }
 
   protected getSpawn(data?: { spawn?: string }): { x: number; y: number } {
     switch (data?.spawn) {
       case 'diagnostics_laboratory':
-        return { x: 12 * TILE, y: 4.2 * TILE };
+        return { x: 20 * TILE, y: 5 * TILE };
       case 'utility_core_deck':
-        return { x: 20.5 * TILE, y: 8.5 * TILE };
+        return { x: 35 * TILE, y: 13 * TILE };
       case 'records_workshop':
-        // 80 px inside the west door (x 48): clear of the 72 px interaction
+        // 112 px inside the west door (x 48): clear of the 72 px interaction
         // radius (V2 finding U8-8).
-        return { x: 4 * TILE, y: 8.5 * TILE };
+        return { x: 5 * TILE, y: 13 * TILE };
       case 'dock':
       default:
-        return { x: 12 * TILE, y: 12.5 * TILE };
+        return { x: 20 * TILE, y: 20 * TILE };
     }
   }
 
@@ -203,27 +202,44 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   protected populateRoom(): void {
-    this.addPilotDoor({ to: 'dock', spawn: 'station_concourse' });
-    this.addPilotDoor({ to: 'records_workshop', spawn: 'station_concourse' });
+    this.addPilotDoor({
+      to: 'dock',
+      spawn: 'station_concourse',
+      registryId: 'concourse.door_dock',
+    });
+    this.addPilotDoor({
+      to: 'records_workshop',
+      spawn: 'station_concourse',
+      registryId: 'concourse.door_records',
+    });
     this.addPilotDoor({
       to: 'diagnostics_laboratory',
       spawn: 'station_concourse',
+      registryId: 'concourse.door_lab',
     });
-    this.addPilotDoor({ to: 'utility_core_deck', spawn: 'station_concourse' });
+    this.addPilotDoor({
+      to: 'utility_core_deck',
+      spawn: 'station_concourse',
+      registryId: 'concourse.door_deck',
+    });
 
     const S = CONCOURSE_STATIONS;
 
-    // ——— Vale — incident desk (anchor NPC) ———
+    // ——— Architecture first (ROOM-BLOCKOUTS.md §2) ———
+    this.buildArchitecture();
+
+    // ——— Vale — operations desk (anchor NPC) ———
     this.addNpc({
       interactionKey: 'pilotVale',
       label: 'Vale',
+      verb: 'Talk to',
+      registryId: 'concourse.vale',
       npcName: 'Vale — operations',
       texture: 'plv1-vale',
       workFrames: ['plv1-vale', 'plv1-vale-b'],
       x: S.vale.x,
       y: S.vale.y,
     });
-    this.addDecor(S.vale.x, S.vale.y + 30, 'proc-desk-reception');
     registerPilotStation({
       id: 'npc_vale',
       zone: 'station_concourse',
@@ -240,6 +256,8 @@ export class StationConcourseScene extends PilotZoneScene {
       this.addNpc({
         interactionKey: 'pilotKai',
         label: 'Kai',
+        verb: 'Talk to',
+        registryId: 'concourse.kai_return',
         npcName: 'Kai — diagnostics',
         texture: 'plv1-kai',
         workFrames: ['plv1-kai-work-a', 'plv1-kai-work-b'],
@@ -248,10 +266,12 @@ export class StationConcourseScene extends PilotZoneScene {
       });
     }
 
-    // ——— Episode-1 work surface ———
+    // ——— Episode-1 work surfaces, integrated into the architecture ———
     this.surfaceStation(
       'plan_board',
-      'Plan Board',
+      'incident plan board',
+      'Open',
+      'concourse.plan_board',
       'proc-board-workorders',
       S.planBoard,
       1,
@@ -267,8 +287,10 @@ export class StationConcourseScene extends PilotZoneScene {
     );
     this.surfaceStation(
       'qc_packet_o1',
-      'Quality Packet',
-      'proc-desk-closure',
+      'quality packet',
+      'Check the',
+      'concourse.qc_packet_o1',
+      'kit-side-counter',
       S.qcPacket,
       2,
       () => m12Windows.o1.isClosed(),
@@ -283,8 +305,10 @@ export class StationConcourseScene extends PilotZoneScene {
     );
     this.surfaceStation(
       'incident_desk',
-      'Incident Desk',
-      'proc-console-scenario',
+      'incident desk',
+      'Work the',
+      'concourse.incident_desk',
+      'kit-wall-console-wide',
       S.incidentDesk,
       3,
       () => m14Window.isClosed(),
@@ -301,8 +325,10 @@ export class StationConcourseScene extends PilotZoneScene {
     // ——— Monitor gauge (M09 checks) — always readable ———
     this.addStation({
       interactionKey: 'pilotStation',
-      label: 'Monitor Gauge',
-      texture: 'proc-gauge-card',
+      label: 'monitor gauge',
+      verb: 'Read the',
+      registryId: 'concourse.monitor_gauge',
+      texture: 'kit-wall-gauge',
       x: S.monitorGauge.x,
       y: S.monitorGauge.y,
       onPromptOpened: () => {
@@ -312,53 +338,16 @@ export class StationConcourseScene extends PilotZoneScene {
         return false;
       },
     });
-    // Live reading beside the gauge (state, never a directive).
-    // V4: above the gauge (the approach lane is north of it, so the name
-    // chip and prompt sit below) — a state readout, never a directive.
-    // Unit 2 review (C2/C3): environment register (muted, translucent),
-    // closer to its device, sorted at its own foot line so it never
-    // covers a figure standing on the approach lane.
-    this.add
-      // V4 Unit 6: below the gauge — the name chip and prompt now sit
-      // above it (never on the Dock door leaf), so the readout moves to
-      // the gauge's foot side, clear of both.
-      .text(S.monitorGauge.x, S.monitorGauge.y + 30, this.gaugeReading(), {
-        backgroundColor: '#101820',
-        color: '#9fb2c1',
-        font: '10px monospace',
-        padding: { x: 4, y: 2 },
-        resolution: 2,
-      })
-      .setOrigin(0.5)
-      .setAlpha(0.85)
-      .setDepth(worldDepth(S.monitorGauge.y + 38));
 
-    // Station status strip on the wall console: a concise operational
-    // update that changes on the return (no item, no directive).
-    this.add
-      .text(
-        14.4 * TILE,
-        2.6 * TILE,
-        this.returned()
-          ? 'STATION STATUS · exterior shift logged · return shift open'
-          : 'STATION STATUS · storm recovery in progress',
-        {
-          backgroundColor: '#101820',
-          color: '#9fb2c1',
-          font: '10px monospace',
-          padding: { x: 4, y: 2 },
-          resolution: 2,
-        },
-      )
-      .setOrigin(0.5)
-      .setAlpha(0.85)
-      .setDepth(worldDepth(2.6 * TILE + 8));
-
-    // ——— Desk lamp fault (M05 occasion 1) — never mentioned ———
+    // ——— Reading-desk lamp fault (M05 occasion 1) — never mentioned ———
     this.addStation({
       interactionKey: 'pilotStation',
-      label: 'Desk Lamp',
-      texture: 'proc-light-pool',
+      label: 'desk lamp',
+      verb: 'Use',
+      // A silent fault carries no standing indicator lamp (scientific review).
+      indicator: 'none',
+      registryId: 'concourse.reading_desk_lamp',
+      texture: 'kit-reading-desk',
       x: S.concourseFault.x,
       y: S.concourseFault.y,
       onPromptOpened: () => {
@@ -396,111 +385,147 @@ export class StationConcourseScene extends PilotZoneScene {
         return false;
       },
     });
+    // The lamp head on the reading desk: the flicker IS the fault.
     this.lampFlicker = this.add
       .rectangle(
-        S.concourseFault.x,
-        S.concourseFault.y - 22,
-        14,
+        S.concourseFault.x + 17,
+        S.concourseFault.y - 20,
+        12,
         6,
         0xe6c68f,
         0.9,
       )
-      .setDepth(3)
+      .setDepth(DepthLayer.WorldReadout)
       .setVisible(false);
 
-    // ——— V4 hub grammar (VISUAL-SYSTEM-V4 §7): one N–S circulation spine
-    // (Dock ↔ Laboratory), one E–W axis (Workshop ↔ Deck), a crossing plate
-    // where they meet, the incident-desk island as the landmark east of
-    // the crossing and a quiet quality bay south-west. Floor plates only —
-    // no collision, no interaction, no label.
-    this.buildHubGrammar();
-
-    // ——— Dressing ———
-    this.addDecor(12 * TILE, 3.2 * TILE, 'proc-light-pool');
-    this.addDecor(15.5 * TILE, 8.2 * TILE, 'proc-light-pool');
-    // Unit 7: PROVISIONAL wall modules (window / vent / grille) with the
-    // procedural pieces as fallback — wall dressing only, no interaction.
-    // Review round (visual M9): foundry windows on the north wall: the
-    // promoted window module read as a door beside the real north door.
-    this.addDecor(19 * TILE, 1.4 * TILE, 'proc-window-exterior');
-    this.addDecor(22 * TILE, 1.4 * TILE, 'proc-window-exterior');
-    this.addDecor(
-      5 * TILE,
-      16 * TILE + 10,
-      this.wallArt('plv1-arch-vent', 'proc-wall-pipes'),
-    );
-    this.addDecor(
-      20 * TILE,
-      16 * TILE + 10,
-      this.wallArt('plv1-arch-grille', 'proc-wall-pipes'),
-    );
-    this.addDecor(21.5 * TILE, 13.5 * TILE, 'proc-board-portfolio');
-    this.addDecor(17.5 * TILE, 12 * TILE, 'proc-cart-utility');
-    this.addDecor(13.5 * TILE, 4.6 * TILE, 'proc-console-wall');
-    // Unit 7: the sign sits beside the north door leaf, never behind it.
+    this.refreshStatusWall();
   }
 
-  private buildHubGrammar() {
-    const plate = (
-      x: number,
-      y: number,
-      w: number,
-      h: number,
-      alpha: number,
-      depth: number = DepthLayer.FloorDecal,
-    ) =>
-      // Unit 2 review (C4): plates carry a 1 px edge line and a higher
-      // fill so the hub grammar is perceptible at the world zoom.
-      this.add
-        .rectangle(x, y, w, h, 0x55627a, alpha)
-        .setOrigin(0.5)
-        .setStrokeStyle(1, 0x8fa4b8, 0.35)
-        .setDepth(depth);
+  /**
+   * World V1 hub architecture (ROOM-BLOCKOUTS.md §2): door frames and
+   * signs at the four exits, the painted spine and axis, the operations
+   * desk island under the status wall, seating, storage, notice board,
+   * light fixtures and pools. Presentation only — no collision beyond the
+   * layout's wall cells, no interaction, no label over a prop.
+   */
+  private buildArchitecture() {
+    // Door frames + wall signs beside each door.
+    this.addDoorFrame(20 * TILE, 1 * TILE + 16, 'h');
+    this.addWallSign(20 * TILE + 128, 1 * TILE + 18, 'Diagnostics laboratory');
+    this.addDoorFrame(20 * TILE, 24 * TILE + 16, 'h');
+    this.addWallSign(20 * TILE + 128, 24 * TILE + 14, 'Dock');
+    this.addDoorFrame(0 * TILE + 16, 13 * TILE, 'v');
+    this.addWallSign(2.5 * TILE, 10.5 * TILE, 'Records workshop');
+    this.addDoorFrame(39 * TILE + 16, 13 * TILE, 'v');
+    this.addWallSign(37.5 * TILE, 10.5 * TILE, 'Utility deck');
 
-    // Spine (cols 11-12) and axis (rows 8-9).
-    plate(12 * TILE - 16, 9 * TILE, 2 * TILE, 14 * TILE, 0.3);
-    plate(12 * TILE, 9 * TILE - 16, 22 * TILE, 2 * TILE, 0.3);
-    // Crossing plate.
-    plate(12 * TILE - 16, 9 * TILE - 16, 4 * TILE, 4 * TILE, 0.24);
-    // Dashed centre lines.
-    for (let row = 2; row < 16; row += 1) {
-      if (row < 7 || row > 10) {
+    // Painted circulation: the spine and the axis.
+    this.addFloorLane(17, 2, 6, 22);
+    this.addFloorLane(1, 11, 38, 4);
+
+    // Operations desk island: status wall behind the counter, Vale in
+    // front (the desk cells collide; the NPC is walk-around).
+    this.addKitProp(28.5 * TILE, 10 * TILE, 'kit-status-wall');
+    this.addKitProp(28.5 * TILE, 11 * TILE, 'kit-ops-counter');
+    for (let i = 0; i < STATUS_SECTORS.length; i += 1) {
+      const x = 28.5 * TILE - 96 + 21 + i * 30;
+      const y = 8 * TILE + 5;
+
+      this.statusLamps.push(
         this.add
-          .rectangle(12 * TILE - 16, row * TILE + 16, 4, 14, 0x8fa4b8, 0.3)
-          .setDepth(DepthLayer.FloorMarking);
+          .rectangle(x, y, 10, 5, KIT_INDICATOR.inactive, 1)
+          .setDepth(DepthLayer.WorldReadout),
+      );
+      this.add
+        .text(x, y + 14, STATUS_SECTORS[i], {
+          color: '#8497aa',
+          font: '8px monospace',
+          resolution: 2,
+        })
+        .setOrigin(0.5)
+        .setDepth(DepthLayer.WorldReadout);
+    }
+
+    // East service counter (col 38, rows 5–9) carrying the incident console.
+    for (let row = 5; row <= 9; row += 1) {
+      if (row !== 7) {
+        this.addKitProp(
+          38 * TILE + 16,
+          (row + 1) * TILE,
+          'kit-cable-junction',
+          {
+            depth: DepthLayer.GroundInfra,
+          },
+        );
       }
     }
-    for (let col = 1; col < 23; col += 1) {
-      if (col < 10 || col > 13) {
-        this.add
-          .rectangle(col * TILE + 16, 9 * TILE - 16, 14, 4, 0x8fa4b8, 0.3)
-          .setDepth(DepthLayer.FloorMarking);
-      }
+
+    // Plan board light and the reading nook.
+    this.addGroundInfra(2 * TILE + 8, 6 * TILE + 16, 'kit-notice-board');
+
+    // Quality side counter light.
+
+    // Seating, lockers, crates.
+    this.addKitProp(32 * TILE, 22 * TILE - 4, 'kit-bench');
+    this.addKitProp(35.5 * TILE, 22 * TILE - 4, 'kit-bench');
+    // South-centre plaza furniture off the spine and axis (review W6).
+    this.addKitProp(14 * TILE, 18 * TILE, 'kit-bench');
+    this.addKitProp(26 * TILE, 18 * TILE, 'kit-bench');
+    this.addGroundInfra(14 * TILE, 16.5 * TILE, 'kit-notice-board');
+    this.addKitProp(3 * TILE, 23 * TILE, 'kit-crate-stack');
+    this.addKitProp(6.5 * TILE, 24 * TILE + 14, 'kit-locker-bank');
+    this.addKitProp(11.5 * TILE, 24 * TILE + 14, 'kit-locker-bank');
+
+    // Light fixtures and a cable tray on the north wall.
+    for (const col of [6, 11, 28, 34]) {
+      this.addGroundInfra(col * TILE + 16, 1 * TILE + 30, 'kit-light-fixture');
     }
-    // Desk island (Vale) and the quality bay.
-    plate(
-      15.5 * TILE,
-      9 * TILE,
-      5 * TILE,
-      4 * TILE,
-      0.22,
-      DepthLayer.FloorMarking,
+    for (let col = 24; col < 38; col += 1) {
+      this.addGroundInfra(col * TILE + 16, 1 * TILE + 12, 'kit-cable-tray');
+    }
+    this.addGroundInfra(38 * TILE + 8, 1 * TILE + 12, 'kit-cable-junction');
+
+    // Wall dressing on the south wall (PROVISIONAL modules, tinted to the
+    // steel register; procedural fallback).
+    this.addKitProp(
+      16 * TILE,
+      25 * TILE + 8,
+      this.textures.exists('plv1-arch-vent')
+        ? 'plv1-arch-vent'
+        : 'proc-wall-pipes',
+      { tint: 0x9fb0c0 },
     );
-    plate(9.5 * TILE, 13 * TILE, 7 * TILE, 3 * TILE, 0.2);
-    // Door thresholds: one plate family at the four exits.
-    for (const [x, y, w, h] of [
-      [12 * TILE, 2.5 * TILE, 3 * TILE, TILE],
-      [12 * TILE, 15.5 * TILE, 3 * TILE, TILE],
-      [1.5 * TILE, 8.5 * TILE, TILE, 3 * TILE],
-      [23.5 * TILE, 8.5 * TILE, TILE, 3 * TILE],
-    ] as const) {
-      plate(x, y, w, h, 0.34, DepthLayer.FloorMarking);
-    }
+    this.addKitProp(
+      24 * TILE,
+      25 * TILE + 8,
+      this.textures.exists('plv1-arch-grille')
+        ? 'plv1-arch-grille'
+        : 'proc-wall-pipes',
+      { tint: 0x9fb0c0 },
+    );
+  }
+
+  /**
+   * Station-status wall (presentation; STORY-STATE-SPEC.md §4). U1 mirrors
+   * the two states the V4 strip carried — storm recovery vs. the exterior
+   * shift logged; U2 wires the full restoration model.
+   */
+  private refreshStatusWall() {
+    const lit = this.returned() ? new Set([2]) : new Set<number>();
+
+    this.statusLamps.forEach((lamp, index) => {
+      lamp.setFillStyle(
+        lit.has(index) ? KIT_INDICATOR.restored : KIT_INDICATOR.inactive,
+        1,
+      );
+    });
   }
 
   private surfaceStation(
     id: string,
     label: string,
+    verb: string,
+    registryId: string,
     texture: string,
     at: { x: number; y: number },
     order: number,
@@ -510,6 +535,8 @@ export class StationConcourseScene extends PilotZoneScene {
     this.addStation({
       interactionKey: 'pilotStation',
       label,
+      verb,
+      registryId,
       texture,
       x: at.x,
       y: at.y,
@@ -588,10 +615,6 @@ export class StationConcourseScene extends PilotZoneScene {
     this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
       metadata: { station_id: stationId, zone: this.zoneKey },
     });
-  }
-
-  private wallArt(preferred: string, fallback: string): string {
-    return this.textures.exists(preferred) ? preferred : fallback;
   }
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {
@@ -842,4 +865,12 @@ export class StationConcourseScene extends PilotZoneScene {
       }),
     };
   }
+
+  /** Foot-line depth for chamber props (kept for parity with sibling zones). */
+  protected propDepth(footY: number): number {
+    return worldDepth(footY);
+  }
 }
+
+// Keep the spawn book referenced from one place (pure) for the specs.
+void CONCOURSE_SPAWNS;

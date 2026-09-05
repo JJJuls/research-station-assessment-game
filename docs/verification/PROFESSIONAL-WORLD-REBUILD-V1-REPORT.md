@@ -22,17 +22,17 @@ Design authority: `docs/game/PROFESSIONAL-WORLD-DESIGN-V1.md` and
 
 ## 2. Commits by unit
 
-| Unit | Commit        | Subject                                                              | State       |
-| ---- | ------------- | -------------------------------------------------------------------- | ----------- |
-| U0   | (this commit) | docs(game): define professional world rebuild baseline               | done        |
-| U1   | —             | feat(game): establish professional camera and station vertical slice | not started |
-| U2   | —             | feat(game): rebuild opening, story spine and mission card            | not started |
-| U3   | —             | feat(game): rebuild records workshop and inventory presentation      | not started |
-| U4   | —             | feat(game): rebuild diagnostics laboratory                           | not started |
-| U5   | —             | feat(game): rebuild exterior recovery yard                           | not started |
-| U6   | —             | feat(game): rebuild utility deck and core closure                    | not started |
-| U7   | —             | test(game): verify integration and data paths after rebuild          | not started |
-| U8   | —             | docs(verification): verify professional world rebuild                | not started |
+| Unit | Commit        | Subject                                                              | State                                                                                  |
+| ---- | ------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| U0   | `148d219`     | docs(game): define professional world rebuild baseline               | done                                                                                   |
+| U1   | (this commit) | feat(game): establish professional camera and station vertical slice | done with open items — see `professional-world-v1/U1-CAMERA-AND-VERTICAL-SLICE.md` §5b |
+| U2   | —             | feat(game): rebuild opening, story spine and mission card            | not started                                                                            |
+| U3   | —             | feat(game): rebuild records workshop and inventory presentation      | not started                                                                            |
+| U4   | —             | feat(game): rebuild diagnostics laboratory                           | not started                                                                            |
+| U5   | —             | feat(game): rebuild exterior recovery yard                           | not started                                                                            |
+| U6   | —             | feat(game): rebuild utility deck and core closure                    | not started                                                                            |
+| U7   | —             | test(game): verify integration and data paths after rebuild          | not started                                                                            |
+| U8   | —             | docs(verification): verify professional world rebuild                | not started                                                                            |
 
 ## 3. Changed files
 
@@ -47,6 +47,8 @@ U0: `docs/game/PROFESSIONAL-WORLD-DESIGN-V1.md`, `docs/game/world-v1/`
 `docs/verification/professional-visual-v4/projection/world-v1-before.json`
 (+ `.diff.json`). No source file changed in U0.
 
+U1: see the U1 note §1 and §6 (source: `src/world/{viewport,camera,plateSampler,interactionRegistry,RoomScene}.ts`, `src/world/kit/kitTextures.ts`, `src/world/layouts/{grid,dock,concourse}.ts`, `src/constants/depth.ts`, `src/sprites/Player.ts`, `src/gameplay/{Npc,InventoryHud,physical}.ts`, `src/pilot/{PilotZoneScene,pilotRoute,zoneSites,worldBundles}.ts`, `src/scenes/{DockScene,StationConcourseScene}.ts`; e2e: `helpers`-adjacent `pilotHelpers`, `journey`, `pilot_route`, `pilot_episodes_1_2`, `pilot_deck`, `v4_visual_capture`, new `world_v1_*` specs, `v4_camera` removed; docs: rooms 00 and 15, the camera spec §7, the U1 note).
+
 ## 4. Preserved versus rebuilt
 
 See the design authority §2. Restated per unit as work lands.
@@ -58,8 +60,7 @@ unchanged fifteen route stages; one purposeful return).
 
 ## 6. Camera and room-scale decisions
 
-See `docs/game/world-v1/CAMERA-AND-SCALE-SPEC.md`; the three-scale
-comparison and the selection record are filled in by U1.
+`docs/game/world-v1/CAMERA-AND-SCALE-SPEC.md` §7: scale B (1.25) selected on the six comparison frames; Dock 36×24 and Concourse 40×26 built to the blockouts.
 
 ## 7. Inventory disposition table
 
@@ -67,7 +68,7 @@ See `docs/game/world-v1/INVENTORY-ITEM-PURPOSE-AUDIT.md`.
 
 ## 8. Interaction-registry results
 
-Filled in from U1.
+U1: 13 registry objects (Dock 3, Concourse 10); pure spec 11/11 (reachability from every spawn, door clearance, class/prompt grammar, walking budget); runtime prompts asserted for every object — see the U1 note §3–§5.
 
 ## 9. M01–M26 scientific invariants
 
@@ -99,6 +100,20 @@ a design estimate or automated wall time; the route-walking budget is a
 pure computation over the blockouts (`world_v1_route_budget.spec.ts`, U1).
 
 ## 14. Open research-owner decisions
+
+From the U1 scientific review (none resolved here):
+
+- **OD-W1-1 (M05 occasion matching).** The Concourse rebuild moved M05
+  occasion 1 (reading-desk lamp) to the north-west nook of a 40×26 hub;
+  the ledger's "fixed distance/access" gate and the o1/o2 matching need
+  the owner to confirm the new distance or set a matched value for the
+  yard occasion in U5.
+- **OD-W1-2 (M09 gauge readout).** The permanent gauge ribbon is gone; a
+  reading now requires the logged read (E). Base rates may differ from
+  the V3/V4 baseline; the owner confirms comparability.
+- **OD-W1-3 (guidance strength vs reminder-exposure control).** The
+  guidance pool/lamp is stronger than the V4 arrow; map-open rates
+  (`reminder_exposure`) may shift. Monitor in the pilot.
 
 None new at U0. Existing open decisions (`docs/ai/SCIENTIFIC-AUTHORITY-AND-OPEN-DECISIONS.md`,
 V3 report §1.7/§2.6/§4.2, V4 report) remain open and are not touched.

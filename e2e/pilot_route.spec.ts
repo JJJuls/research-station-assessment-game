@@ -153,7 +153,12 @@ test.describe('pilot route v2 — topology and guidance (Unit 1)', () => {
       approachOffset: { x: 0, y: -40 },
     });
     expect(await playerScene(page)).toBe('dock');
-    await walkTo(page, 368, 60, { yFirst: true });
+    await walkTo(
+      page,
+      PILOT.dock.northDoorApproach.x,
+      PILOT.dock.northDoorApproach.y,
+      { yFirst: true },
+    );
     await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
       approachOffset: { x: 0, y: 20 },
     });
@@ -167,7 +172,12 @@ test.describe('pilot route v2 — topology and guidance (Unit 1)', () => {
     expect(probe?.beacon?.label).toBe('Records Workshop');
 
     // Beacon hides on arrival (< 120 px of the west door).
-    await walkTo(page, 100, 272, { yFirst: true });
+    await walkTo(
+      page,
+      PILOT.concourse.westDoor.x + 52,
+      PILOT.concourse.westDoor.y,
+      { yFirst: true },
+    );
     probe = await pilotProbe(page);
     expect(probe?.beacon?.visible).toBe(false);
 

@@ -1,12 +1,15 @@
 /**
- * Visual inventory belt (overnight playable prototype, Unit 1).
+ * Visual inventory belt (overnight playable prototype, Unit 1; World V1).
  *
- * A compact always-visible slot belt at the bottom of the viewport:
- * item icons, selected-slot highlight, selected-item name, pointer
+ * A compact slot belt at the bottom of the viewport: item icons,
+ * selected-slot highlight, a transient selected-item name, pointer
  * selection and TAB cycling. Presentation layer over
  * src/gameplay/inventory.ts — it never mutates items except through the
- * public selection API, and it renders identically in every room
- * (uniform-salience rule).
+ * public selection API, and it renders identically in every room where
+ * it is shown. World V1 (INVENTORY-ITEM-PURPOSE-AUDIT.md §3): the belt is
+ * shown only where the host room says it is relevant (field tools in the
+ * yard), never while empty, and the selected item's name appears for
+ * 1.5 s after a selection change instead of permanently.
  */
 
 import Phaser from 'phaser';
@@ -57,18 +60,25 @@ const SLOT_SIZE = 34;
 const SLOT_GAP = 4;
 const BELT_X = 8;
 const BELT_Y = 558;
+/** How long the selected-item name stays after a selection change. */
+const NAME_CHIP_MS = 1500;
 
 export class InventoryHud {
   private scene: Phaser.Scene;
   private slotBackgrounds: Phaser.GameObjects.Rectangle[] = [];
   private slotIcons: (Phaser.GameObjects.Image | null)[] = [];
   private nameChip: Phaser.GameObjects.Text;
+  private nameTimer: Phaser.Time.TimerEvent | null = null;
+  private lastSelected: string | null = null;
   private unsubscribe: () => void;
   private tabHandler: (event: KeyboardEvent) => void;
   private pauseHandler: () => void;
   private resumeHandler: () => void;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(
+    scene: Phaser.Scene,
+    private readonly relevant: () => boolean = () => true,
+  ) {
     this.scene = scene;
 
     for (let index = 0; index < INVENTORY_CAPACITY; index++) {
@@ -103,7 +113,7 @@ export class InventoryHud {
       // Review A-7: TAB never moves browser focus off the canvas.
       event.preventDefault();
 
-      if (!event.repeat) {
+      if (!event.repeat && this.relevant()) {
         selectNextInventoryItem();
       }
     };
@@ -134,16 +144,16 @@ export class InventoryHud {
   private refresh() {
     const slots = getInventorySlots();
     const selectedIndex = getSelectedInventoryIndex();
-    // V4 Unit 6 (VISUAL-SYSTEM-V4 §4): the belt is hidden while empty —
-    // nothing to select, nothing to show. Selection and TAB still work
-    // the moment an item arrives.
-    const anyItem = slots.some((itemId) => itemId !== null);
+    // The belt is hidden while empty and wherever the room says the
+    // hotbar is not relevant (World V1). Selection and TAB still work the
+    // moment it is shown.
+    const shown = slots.some((itemId) => itemId !== null) && this.relevant();
 
     for (const background of this.slotBackgrounds) {
-      background.setVisible(anyItem);
+      background.setVisible(shown);
 
       if (background.input) {
-        background.input.enabled = anyItem;
+        background.input.enabled = shown;
       }
     }
 
@@ -165,7 +175,7 @@ export class InventoryHud {
         this.slotIcons[index] = null;
       }
 
-      if (iconKey !== null && this.scene.textures.exists(iconKey)) {
+      if (shown && iconKey !== null && this.scene.textures.exists(iconKey)) {
         this.slotIcons[index] = this.scene.add
           .image(
             background.x + SLOT_SIZE / 2,
@@ -179,17 +189,30 @@ export class InventoryHud {
 
     const selectedItem = getSelectedInventoryItem();
 
-    if (selectedItem !== null) {
+    if (!shown || selectedItem === null) {
+      this.nameChip.setVisible(false);
+      this.lastSelected = selectedItem;
+      return;
+    }
+
+    // Transient caption: shown on a selection change, then withdrawn.
+    if (selectedItem !== this.lastSelected) {
+      this.lastSelected = selectedItem;
       this.nameChip
         .setText(beltPresentation(selectedItem).label)
         .setVisible(true);
-    } else {
-      this.nameChip.setVisible(false);
+      this.nameTimer?.remove(false);
+      this.nameTimer = this.scene.time.delayedCall(NAME_CHIP_MS, () => {
+        if (this.nameChip.active) {
+          this.nameChip.setVisible(false);
+        }
+      });
     }
   }
 
   private destroy() {
     this.unsubscribe();
+    this.nameTimer?.remove(false);
     this.scene.input.keyboard?.off('keydown-TAB', this.tabHandler);
     this.scene.events.off(Phaser.Scenes.Events.PAUSE, this.pauseHandler);
     this.scene.events.off(Phaser.Scenes.Events.RESUME, this.resumeHandler);

@@ -1,26 +1,27 @@
 /**
- * NPC actor presentation (overnight playable prototype, Unit 1).
+ * NPC actor presentation (overnight playable prototype, Unit 1; World V1).
  *
- * A visible station character: distinct sprite, drop shadow, gentle idle
- * bob, and a name chip that appears only in interaction proximity
- * (contextual labelling — no permanent banners). Interaction itself goes
- * through the room's existing station mechanics; this class is pure
- * presentation and never logs events.
+ * A visible station character: distinct sprite, drop shadow and an
+ * optional two-frame work cycle. Interaction itself goes through the
+ * room's existing station mechanics; this class is pure presentation and
+ * never logs events. World V1 (PROFESSIONAL-WORLD-DESIGN-V1 §10): no
+ * perpetual idle bob (animation only with a state reason) and no name
+ * chip — the contextual prompt carries the name (`E — Talk to Vale`).
  */
 
 import Phaser from 'phaser';
 
-import { Depth, worldDepth } from '../constants';
+import { worldDepth } from '../constants';
 
 export interface NpcActorConfig {
   scene: Phaser.Scene;
   x: number;
   y: number;
-  /** proc-npc-* / proc-bot-* texture key. */
+  /** proc-npc-* / plv1-* texture key. */
   texture: string;
-  /** In-fiction display name shown on proximity (e.g. "Engineer Kai"). */
+  /** In-fiction display name (kept for probes; no chip is drawn). */
   name: string;
-  /** Disable the idle bob (e.g. seated/console-mounted figures). */
+  /** Kept for call-site compatibility (no idle bob exists any more). */
   still?: boolean;
   /**
    * Two-frame work cycle (Unit 6): when both textures exist and the
@@ -33,31 +34,22 @@ export interface NpcActorConfig {
 
 export class NpcActor {
   readonly sprite: Phaser.GameObjects.Image;
-  private nameChipParts: Phaser.GameObjects.GameObject[];
+  readonly name: string;
   private nameVisible = false;
   private workTimer: Phaser.Time.TimerEvent | null = null;
 
   constructor(config: NpcActorConfig) {
     const { scene, x, y, texture, name } = config;
 
+    this.name = name;
+
     // Drop shadow (Player.ts shadow language: ellipse under the feet).
     scene.add.ellipse(x, y + 24, 26, 9, 0x000000, 0.25).setDepth(-0.25);
 
     this.sprite = scene.add
       .image(x, y, texture)
-      // Unit 7: y-sorted world depth at the foot line (presentation only).
+      // Y-sorted world depth at the foot line (presentation only).
       .setDepth(worldDepth(y + 24));
-
-    if (config.still !== true) {
-      scene.tweens.add({
-        targets: this.sprite,
-        y: y - 2,
-        duration: 1300,
-        repeat: -1,
-        yoyo: true,
-        ease: 'Sine.easeInOut',
-      });
-    }
 
     // Unit 6: two-frame work cycle (fixed 700 ms cadence, timer dies
     // with the scene; texture flip only — position/radius untouched).
@@ -82,39 +74,6 @@ export class NpcActor {
         },
       });
     }
-
-    // Name chip (buildLabelChip language), hidden until proximity.
-    const label = scene.add
-      .text(x, y - 44, name, {
-        // Guaranteed-contrast chip (defect fix: name read dark-on-dark
-        // over some interiors when the plate behind it was occluded).
-        backgroundColor: '#101820',
-        color: '#dce7f0',
-        font: '12px monospace',
-        padding: { x: 4, y: 2 },
-      })
-      .setOrigin(0.5);
-    const chip = scene.add
-      .rectangle(
-        x,
-        y - 44,
-        Math.ceil(label.width),
-        Math.ceil(label.height),
-        0x101820,
-        0.92,
-      )
-      .setStrokeStyle(1, 0x33475a);
-
-    // The chip reads above every world sprite (Unit 7 depth sort).
-    chip.setDepth(Depth.AbovePlayer);
-    label.setDepth(Depth.AbovePlayer);
-    this.nameChipParts = [chip, label];
-
-    // Force-hide the freshly created parts (the state-guarded setter
-    // below would no-op on the initial `false`, leaving them visible).
-    for (const part of this.nameChipParts) {
-      (part as Phaser.GameObjects.Rectangle).setVisible(false);
-    }
   }
 
   /** Unit 7: ends the two-frame work cycle (e.g. a finished pose). */
@@ -123,15 +82,12 @@ export class NpcActor {
     this.workTimer = null;
   }
 
+  /** Kept for call-site compatibility: the prompt carries the name now. */
   setNameVisible(visible: boolean) {
-    if (this.nameVisible === visible) {
-      return;
-    }
-
     this.nameVisible = visible;
+  }
 
-    for (const part of this.nameChipParts) {
-      (part as Phaser.GameObjects.Rectangle).setVisible(visible);
-    }
+  isNameVisible(): boolean {
+    return this.nameVisible;
   }
 }

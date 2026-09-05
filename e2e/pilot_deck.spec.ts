@@ -36,6 +36,7 @@ import {
   PILOT,
   pilotCoverage,
   pilotProbe,
+  registryApproach,
   returnShiftToDeckClosure,
   useDoor,
   valeHandover,
@@ -46,8 +47,8 @@ import {
 const FORBIDDEN_IDENTIFIERS =
   /proto_|\bM(0[1-9]|1[0-9]|2[0-6])\b|\bQ\d{2}\b|score|trait|valid/i;
 
-/** Concourse plan board (src/pilot/zoneSites.ts CONCOURSE_STATIONS). */
-const CONCOURSE_PLAN_BOARD = { x: 128, y: 160 } as const;
+/** Concourse plan board approach (World V1 registry). */
+const CONCOURSE_PLAN_BOARD = registryApproach('concourse.plan_board');
 
 async function lastPromptBody(page: Page): Promise<string> {
   return page.evaluate(
@@ -98,7 +99,7 @@ async function routeToDeck(
 
     for (let attempt = 0; attempt < 3 && !surfaceOpen; attempt++) {
       await interactAt(page, CONCOURSE_PLAN_BOARD, {
-        approachOffset: { x: 0, y: 44 },
+        approachOffset: { x: 0, y: 0 },
       });
       surfaceOpen = await page
         .waitForFunction(

@@ -164,7 +164,12 @@ test('v4 route visual capture — dock, concourse, workshop', async ({
   await shot(page, '04-controls-reference');
   await press(page, 'h');
 
-  await walkTo(page, 96, 60, { yFirst: true });
+  await walkTo(
+    page,
+    PILOT.dock.northDoorApproach.x,
+    PILOT.dock.northDoorApproach.y,
+    { yFirst: true },
+  );
   await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
     approachOffset: { x: 0, y: 20 },
   });
@@ -238,7 +243,12 @@ test('v4 route visual capture — diagnostics laboratory', async ({ page }) => {
 
   await bootPilot(page, 'cap2');
   await completeDockTutorial(page, 1);
-  await walkTo(page, 96, 60, { yFirst: true });
+  await walkTo(
+    page,
+    PILOT.dock.northDoorApproach.x,
+    PILOT.dock.northDoorApproach.y,
+    { yFirst: true },
+  );
   await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
     approachOffset: { x: 0, y: 20 },
   });
@@ -322,7 +332,12 @@ test('v4 route visual capture — yard, deck, completion', async ({ page }) => {
 
   await bootPilot(page, 'cap3');
   await completeDockTutorial(page, 1);
-  await walkTo(page, 96, 60, { yFirst: true });
+  await walkTo(
+    page,
+    PILOT.dock.northDoorApproach.x,
+    PILOT.dock.northDoorApproach.y,
+    { yFirst: true },
+  );
   await useDoor(page, PILOT.dock.northDoor, 'station_concourse', {
     approachOffset: { x: 0, y: 20 },
   });

@@ -164,3 +164,28 @@ control-room tutorial geometry, no measured construct.
   motion) of ≈8.2 s with a visible skip line; the skip press is ignored by
   the Dock's interact keys for 300 ms after control returns.
 - **Objective line.** Refreshed on overlay RESUME as in every room.
+
+## World V1 (U1, 2026-09-06) — participant layout
+
+Layout `src/world/layouts/dock.ts` `DOCK_LAYOUT` (36×24, theme `dock`);
+sites `DOCK_SITES` in `src/pilot/zoneSites.ts`; registry `DOCK_REGISTRY`.
+The legacy `?route=legacy` bay (`LEGACY_DOCK_LAYOUT`, `LEGACY_DOCK_SITES`)
+is byte-identical to V4 so the historical regression specs are unchanged.
+
+Composition (`docs/game/world-v1/ROOM-BLOCKOUTS.md` §1): docking threshold
+on the south wall — the sealed docking airlock (class 3: `E — Docking
+airlock: shuttle secured`, never transitions) under its header, bay
+windows either side with the shuttle nose behind the central pair (the
+landmark) — the docking apron in front of it, one painted circulation
+spine north to the station entrance (door frame, lintel lamp, wall sign
+"Station 080 · Concourse"), the arrival terminal kiosk in a lit west alcove
+(cells 4–5, row 8; approach from the south), cargo staging behind a low
+rail on the east (crate stacks, pallet jack, hazard strip), a service
+column with pipes and a locker bank south-west. Mechanics unchanged: the
+movement marker on the spine (576, 400), the three-option check-in at the
+terminal (160, 272), the north door (576, 48) → Concourse. Spawns: arrival
+(576, 608); from the Concourse (576, 160).
+
+Guidance: the terminal is the class-1 target (lamp + light pool) until the
+check-in, then the north door's lintel lamp. Probe: `window.__dockProbe`
+(active layout, terminal, north door, marker).

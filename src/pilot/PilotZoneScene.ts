@@ -1,16 +1,19 @@
 /**
- * PilotZoneScene — base scene of the professional pilot route (Unit 2).
+ * PilotZoneScene — base scene of the professional pilot route (Unit 2;
+ * World V1 presentation).
  *
  * Extends RoomScene (stations, doors, prompt cards, NPCs, C/D/F field
  * actions, inventory belt + I overlay, ESC pause) with the pilot guidance
- * layer: ONE objective line, ONE destination beacon that hides on arrival,
- * the M station map, the H controls overlay (hidden by default), a zone
+ * layer: the mission card (act title + one next action), ONE guidance
+ * target — the current route destination, shown by the target's lamp
+ * class and a single light pool, never by a ring or an arrow — the M
+ * station map, the H controls overlay (hidden by default), a small zone
  * title card, bidirectional doors with per-entry spawns, and short NPC
  * beats. Every `pilot_*` event is unmapped route telemetry.
  *
  * Scientific boundary: nothing here reads measurement outcomes except the
- * beacon's "is this guided station terminal?" predicate, which steers
- * presentation only and never gates a door or a stage.
+ * guidance target's "is this guided station terminal?" predicate, which
+ * steers presentation only and never gates a door or a stage.
  */
 import Phaser from 'phaser';
 
@@ -22,6 +25,7 @@ import type {
   PromptOption,
   PromptStage,
   RoomDoorConfig,
+  RoomStationConfig,
 } from '../world/RoomScene';
 import { RoomScene } from '../world/RoomScene';
 import { pilotLaunchMode, refreshPilotCoverageProbe } from './pilotCoverage';
@@ -31,6 +35,7 @@ import {
   notePilotZoneEntered,
   onPilotRouteChange,
   PILOT_DOORS,
+  PILOT_EPISODE_NAMES,
   PILOT_ZONE_NAMES,
   pilotBeaconTarget,
   pilotEpisode,
@@ -43,7 +48,7 @@ import {
 import { noteM09ReminderLogViewed } from './windows/m09MonitorWatch';
 import { WorldBundleLayer } from './worldBundles';
 
-/** Beacon hides inside this radius (mission §8: disappears on arrival). */
+/** Guidance target counts as reached inside this radius (arrival). */
 const BEACON_ARRIVAL_RANGE = 120;
 
 /**
@@ -56,18 +61,15 @@ const LOCAL_OBJECTIVES: Partial<Record<PilotStage, string>> = {
   workshop: 'Take the shift orders at the Work Order Board.',
   lab_briefing: 'Report to Kai at the briefing desk.',
   exterior_briefing: 'Report to Noor on the airlock apron.',
-  return_hub: 'Check in with Vale at the incident desk.',
+  return_hub: 'Check in with Vale at the operations desk.',
   deck_closure: 'Close the station record at the Shift Review Panel.',
 };
-
-/** Edge inset (world px) for the off-screen beacon indicator. */
-const BEACON_EDGE_INSET = 14;
 
 /** Pilot controls legend (mission §8 key set; hidden until H). */
 export const PILOT_CONTROLS_LINES = [
   'CONTROLS  (H hides)',
   'Arrows   move',
-  'SPACE/E  interact',
+  'E/SPACE  interact',
   'I        inventory',
   'C        scan',
   'D        dig',
@@ -80,7 +82,8 @@ declare global {
   interface Window {
     /**
      * DEV-only, read-only pilot guidance probe (RoomScene probe precedent):
-     * current zone, stage, objective text, beacon target and visibility.
+     * current zone, stage, objective text, guidance target and whether
+     * the guidance is active (target not yet reached).
      */
     __pilotProbe?: {
       zone: string;
@@ -121,6 +124,8 @@ export interface PilotDoorSpec {
    * task performance (RoomDoorConfig.gate).
    */
   gate?: () => string | null;
+  /** World V1: stable registry id. */
+  registryId?: string;
 }
 
 /** A short NPC beat: ≤3 lines of body and ≤4 options. */
@@ -142,12 +147,7 @@ export abstract class PilotZoneScene extends RoomScene {
   /** Recoverable world items (Unit 3); pickups go through the inventory store. */
   protected bundles!: WorldBundleLayer;
 
-  private beaconRing: Phaser.GameObjects.Ellipse | null = null;
-  private beaconArrow: Phaser.GameObjects.Text | null = null;
   private beaconTarget: PilotBeaconTarget | null = null;
-  private beaconTween: Phaser.Tweens.Tween | null = null;
-  /** V4 Unit 6: true while the arrow is parked at the view edge. */
-  private beaconEdgeMode = false;
   private unsubscribeRoute: (() => void) | null = null;
   private mapOpen = false;
 
@@ -161,6 +161,16 @@ export abstract class PilotZoneScene extends RoomScene {
 
   protected promptClampMaxX(): number {
     return 798;
+  }
+
+  /** World V1: the belt is relevant only where field tools are used. */
+  protected hotbarVisible(): boolean {
+    return this.zoneKey === 'exterior_recovery_yard';
+  }
+
+  /** World V1 mission-card title: the current act (episode) name. */
+  protected buildMissionCardTitle(): string {
+    return PILOT_EPISODE_NAMES[pilotEpisode()];
   }
 
   protected controlsReferenceOptions(): ControlsReferenceOptions {
@@ -203,9 +213,12 @@ export abstract class PilotZoneScene extends RoomScene {
     );
 
     // The bundle layer exists before populateRoom() (called by super.create)
-    // so zones can spawn incoming supplies while populating.
-    this.bundles = new WorldBundleLayer(this, (message) =>
-      this.showFeedbackMessage(message),
+    // so zones can spawn incoming supplies while populating. Drop bounds
+    // follow the room once the map exists (set in onRoomReady).
+    this.bundles = new WorldBundleLayer(
+      this,
+      (message) => this.showFeedbackMessage(message),
+      this.bundleDropBounds(),
     );
 
     super.create(data);
@@ -213,7 +226,6 @@ export abstract class PilotZoneScene extends RoomScene {
     notePilotZoneEntered(this.zoneKey, Date.now());
     this.refreshRouteObjective();
     this.showZoneTitle();
-    this.buildBeacon();
     this.retargetBeacon();
 
     this.unsubscribeRoute = onPilotRouteChange(() => {
@@ -243,8 +255,6 @@ export abstract class PilotZoneScene extends RoomScene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.unsubscribeRoute?.();
       this.unsubscribeRoute = null;
-      this.beaconTween?.stop();
-      this.beaconTween = null;
       installPilotRouteLogSink(null);
 
       if (typeof window !== 'undefined' && import.meta.env.DEV) {
@@ -255,12 +265,18 @@ export abstract class PilotZoneScene extends RoomScene {
     refreshPilotCoverageProbe();
   }
 
+  /** Room bounds for materialised drops (zones with rebuilt layouts override). */
+  protected bundleDropBounds(): { width: number; height: number } {
+    return { width: 800, height: 560 };
+  }
+
   // ——— Presentation tokens (Unit 7) ——————————————————————————————————
 
   /**
    * One shared area-signage style for every zone: dim, small caps, no
    * plate — a landmark for the eye, never a label floating over an object
-   * (status chips keep their plate). Presentation only.
+   * (status chips keep their plate). Presentation only. (Zones not yet
+   * rebuilt; the World V1 zones use addWallSign.)
    */
   protected zoneSignage(
     x: number,
@@ -270,7 +286,6 @@ export abstract class PilotZoneScene extends RoomScene {
   ): Phaser.GameObjects.Text {
     return this.add
       .text(x, y, text, {
-        // 11 px and ≥ 4.5:1 on the dark room floors (gameplay review G10).
         color: dark ? '#8497aa' : '#3d4d5c',
         font: '11px monospace',
         resolution: 2,
@@ -283,7 +298,7 @@ export abstract class PilotZoneScene extends RoomScene {
 
   /**
    * Adds a pilot zone door toward `spec.to`. Position and label come from
-   * the shared zone graph so the beacon and the door always agree; the
+   * the shared zone graph so the guidance and the door always agree; the
    * transition writes the destination's spawn hint. Every ordinary door is
    * declared in both zones (bidirectional by construction).
    */
@@ -300,6 +315,8 @@ export abstract class PilotZoneScene extends RoomScene {
       x: ref.x,
       y: ref.y,
       label: ref.label,
+      verb: 'Go to',
+      registryId: spec.registryId,
       // Unit 7 (V9): interior doors show a door leaf instead of the bare
       // cyan marker (PROVISIONAL pack art; the marker remains the fallback).
       texture:
@@ -363,159 +380,53 @@ export abstract class PilotZoneScene extends RoomScene {
       window.__pilotZoneTitle = name;
     }
 
-    // Unit 7 (V8, review round): the card sits in the HUD strip right of
-    // the belt (x 660, y 574) — no room content, prompt, chip or door leaf
-    // ever lives there — and under the prompt/chip depth (20).
+    // World V1: a small card under the mission card (top-left), never
+    // over the play route; withdrawn after 2 s.
     const title = this.add
-      .text(660, 574, name.toUpperCase(), {
+      .text(8, 76, name.toUpperCase(), {
         color: '#dfe9f1',
-        font: '16px monospace',
+        font: '12px monospace',
         backgroundColor: '#101820',
-        padding: { x: 12, y: 6 },
+        padding: { x: 8, y: 4 },
       })
-      .setOrigin(0.5)
-      .setDepth(Depth.AbovePlayer + 5)
-      .setScrollFactor(0);
-    const rule = this.add
-      .rectangle(660, 556, 140, 2, 0x5fd3c4, 0.9)
+      .setOrigin(0)
       .setDepth(Depth.AbovePlayer + 5)
       .setScrollFactor(0);
 
     if (prefersReducedMotion()) {
-      this.time.delayedCall(2600, () => {
-        title.destroy();
-        rule.destroy();
-      });
+      this.time.delayedCall(2600, () => title.destroy());
       return;
     }
 
     this.tweens.add({
-      targets: [title, rule],
+      targets: title,
       alpha: 0,
       delay: 2000,
       duration: 600,
-      onComplete: () => {
-        title.destroy();
-        rule.destroy();
-      },
+      onComplete: () => title.destroy(),
     });
   }
 
-  private buildBeacon() {
-    this.beaconRing = this.add
-      .ellipse(0, 0, 52, 20, 0x5fd3c4, 0.18)
-      .setStrokeStyle(2, 0x5fd3c4, 0.9)
-      .setDepth(Depth.AbovePlayer)
-      .setVisible(false);
-    this.beaconArrow = this.add
-      .text(0, 0, '▾', {
-        color: '#5fd3c4',
-        font: '18px monospace',
-      })
-      .setOrigin(0.5, 1)
-      .setDepth(Depth.AbovePlayer)
-      .setVisible(false);
-
-    if (!prefersReducedMotion()) {
-      this.beaconTween = this.tweens.add({
-        targets: this.beaconArrow,
-        y: '-=6',
-        duration: 700,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
-    }
-  }
-
   private retargetBeacon() {
-    const target = pilotBeaconTarget(this.zoneKey, Date.now());
-
-    this.beaconTarget = target;
-
-    if (target === null || this.beaconRing === null) {
-      this.beaconRing?.setVisible(false);
-      this.beaconArrow?.setVisible(false);
-      return;
-    }
-
-    this.beaconRing.setPosition(target.x, target.y + 24);
-    this.beaconTween?.stop();
-    this.beaconArrow!.setPosition(target.x, target.y - 44);
-
-    if (!prefersReducedMotion()) {
-      this.beaconTween = this.tweens.add({
-        targets: this.beaconArrow,
-        y: target.y - 50,
-        duration: 700,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
-    }
+    this.beaconTarget = pilotBeaconTarget(this.zoneKey, Date.now());
   }
 
   /**
-   * V4 Unit 6 (reviews C7 / D3-1): when the beacon target is outside the
-   * world camera view, the arrow glyph sits at the view edge on the line
-   * toward the target (pointing the way) instead of vanishing off-screen;
-   * the ring stays at the target. Presentation only.
+   * World V1: the current guidance target is the class-1 object of the
+   * zone (lamp + light pool). An object matches by position (the route
+   * model mirrors the scene coordinates).
    */
-  private placeBeaconArrow(visible: boolean) {
-    const arrow = this.beaconArrow;
+  protected isGuidanceTarget(
+    config: RoomStationConfig | RoomDoorConfig,
+  ): boolean {
     const target = this.beaconTarget;
 
-    if (arrow === null || target === null || !visible) {
-      return;
-    }
-
-    const view = this.cameras.main.worldView;
-    const inside =
-      target.x >= view.x + BEACON_EDGE_INSET &&
-      target.x <= view.right - BEACON_EDGE_INSET &&
-      target.y - 44 >= view.y + BEACON_EDGE_INSET &&
-      target.y - 44 <= view.bottom - BEACON_EDGE_INSET - 40;
-
-    if (inside) {
-      // Review V-3: restore unconditionally when leaving edge mode.
-      if (this.beaconEdgeMode) {
-        this.beaconEdgeMode = false;
-        arrow.setText('▾');
-        arrow.setPosition(target.x, target.y - 44);
-        arrow.setDepth(Depth.AbovePlayer);
-        this.beaconTween?.resume();
-      }
-
-      return;
-    }
-
-    if (!this.beaconEdgeMode) {
-      this.beaconEdgeMode = true;
-      this.beaconTween?.pause();
-      // Review V-5: above the HUD belt band while parked at the edge.
-      arrow.setDepth(Depth.AboveWorld + 1);
-    }
-
-    const x = Phaser.Math.Clamp(
-      target.x,
-      view.x + BEACON_EDGE_INSET,
-      view.right - BEACON_EDGE_INSET,
+    return (
+      target !== null &&
+      this.beaconVisibleNow() &&
+      Math.abs(config.x - target.x) < 1 &&
+      Math.abs(config.y - target.y) < 1
     );
-    const y = Phaser.Math.Clamp(
-      target.y,
-      view.y + BEACON_EDGE_INSET + 40,
-      view.bottom - BEACON_EDGE_INSET - 40,
-    );
-    const dx = target.x - x;
-    const dy = target.y - y;
-    const glyph =
-      Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? '▸' : '◂') : dy > 0 ? '▾' : '▴';
-
-    if (arrow.text !== glyph) {
-      arrow.setText(glyph);
-    }
-
-    arrow.setPosition(x, y);
   }
 
   /**
@@ -526,7 +437,7 @@ export abstract class PilotZoneScene extends RoomScene {
   protected clampWorldReadouts(
     chips: readonly (Phaser.GameObjects.Text | null)[],
   ) {
-    const view = this.cameras.main.worldView;
+    const view = this.plate.view;
 
     for (const chip of chips) {
       if (chip === null || !chip.active) {
@@ -583,7 +494,7 @@ export abstract class PilotZoneScene extends RoomScene {
   /**
    * Zone-driven guidance refresh (Unit 4): a zone whose guided stations
    * become terminal WITHOUT a route-stage change (the exterior sites)
-   * re-reads the objective line and retargets the beacon here.
+   * re-reads the objective line and retargets the guidance here.
    */
   protected refreshGuidance(): void {
     this.refreshRouteObjective();
@@ -594,9 +505,6 @@ export abstract class PilotZoneScene extends RoomScene {
   protected onRoomUpdate(): void {
     const visible = this.beaconVisibleNow();
 
-    this.beaconRing?.setVisible(visible);
-    this.beaconArrow?.setVisible(visible);
-    this.placeBeaconArrow(visible);
     this.onPilotUpdate();
 
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
@@ -631,6 +539,19 @@ export abstract class PilotZoneScene extends RoomScene {
       // Presentation only (pilot Unit 6): one-shot pickup animation.
       this.player.playActionAnim('pickup');
     }
+  }
+
+  /** World V1: the nearest bundle in reach announces itself in the prompt. */
+  protected auxPrompt(): { text: string; x: number; y: number } | null {
+    const bundle = this.bundles.nearest(this.player.x, this.player.y);
+
+    return bundle === null
+      ? null
+      : {
+          text: `E — Take ${bundle.label.toLowerCase()}`,
+          x: bundle.x,
+          y: bundle.y,
+        };
   }
 
   /** Pilot zones allow overlay world drops (materialised as bundles). */

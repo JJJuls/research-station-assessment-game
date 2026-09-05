@@ -32,18 +32,26 @@ import {
   pilotCoverage,
   pilotEventTypes,
   press,
+  registryApproach,
   routeToWorkshopWork,
   walkTo,
   workshopToConcourse,
 } from './pilotHelpers';
 
+const CONCOURSE_APPROACHES = new Set<string>();
+
+/** World V1: approach points from the interaction registry (zero offsets). */
 const CONCOURSE = {
-  planBoard: { x: 128, y: 160 },
-  incidentDesk: { x: 256, y: 160 },
-  qcPacket: { x: 256, y: 416 },
-  monitorGauge: { x: 352, y: 416 },
-  deskLamp: { x: 608, y: 432 },
+  planBoard: registryApproach('concourse.plan_board'),
+  incidentDesk: registryApproach('concourse.incident_desk'),
+  qcPacket: registryApproach('concourse.qc_packet_o1'),
+  monitorGauge: registryApproach('concourse.monitor_gauge'),
+  deskLamp: registryApproach('concourse.reading_desk_lamp'),
 } as const;
+
+for (const at of Object.values(CONCOURSE)) {
+  CONCOURSE_APPROACHES.add(`${at.x},${at.y}`);
+}
 
 const WORKSHOP = {
   caseWorkspace: { x: 96, y: 272 },
@@ -55,6 +63,11 @@ const WORKSHOP = {
   latticeBench: { x: 704, y: 416 },
   sealLog: { x: 704, y: 160 },
 } as const;
+
+/** +44 for the V4 workshop stations; 0 for World V1 registry approaches. */
+function WORKSHOP_OFFSET_Y(at: { x: number; y: number }): number {
+  return CONCOURSE_APPROACHES.has(`${at.x},${at.y}`) ? 0 : 44;
+}
 
 interface SurfaceProbe {
   open: boolean;
@@ -120,7 +133,9 @@ async function openSurfaceAt(
   id: string,
 ) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await interactAt(page, at, { approachOffset: { x: 0, y: 44 } });
+    await interactAt(page, at, {
+      approachOffset: { x: 0, y: WORKSHOP_OFFSET_Y(at) },
+    });
 
     const opened = await waitSurface(page, true, id).then(
       () => true,
@@ -237,15 +252,18 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     // Gauge check 1 completes the first watch window.
     // From ABOVE: the point below the gauge lies 48 px from the Dock door.
     await interactAt(page, CONCOURSE.monitorGauge, {
-      approachOffset: { x: 0, y: -44 },
+      approachOffset: { x: 0, y: 0 },
     });
     await page.waitForTimeout(400);
     types = await pilotEventTypes(page);
     expect(types).toContain('proto_m09_watch_check_completed');
 
     // The desk lamp fault: initiating it is the M05 act (2 s neutral fix).
+    // World V1: reach the east–west axis first (the side counter blocks an
+    // x-first leg along the gauge row), then the reading nook.
+    await walkTo(page, CONCOURSE.monitorGauge.x, 13 * 32, { yFirst: true });
     await interactAt(page, CONCOURSE.deskLamp, {
-      approachOffset: { x: 0, y: 44 },
+      approachOffset: { x: 0, y: 0 },
     });
     await page.waitForTimeout(2600);
     types = await pilotEventTypes(page);

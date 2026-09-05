@@ -39,7 +39,12 @@
 import Phaser from 'phaser';
 
 import { Depth } from '../constants';
-import { DESIGN_SCALE, worldToDesign } from '../world/viewport';
+import {
+  DESIGN_SCALE,
+  pointerToWorld,
+  worldScale,
+  worldToDesign,
+} from '../world/viewport';
 import { sfxPickup, sfxUiSelect, sfxUnavailable } from './audio';
 
 export interface PhysicalObjectSpec {
@@ -342,9 +347,7 @@ export class PhysicalManipulationLayer {
     x: number;
     y: number;
   } {
-    const point = this.scene.cameras.main.getWorldPoint(pointer.x, pointer.y);
-
-    return { x: point.x, y: point.y };
+    return pointerToWorld(this.scene, pointer);
   }
 
   private updateHoverCues() {
@@ -626,12 +629,11 @@ export class PhysicalManipulationLayer {
       return;
     }
 
-    const camera = this.scene.cameras.main;
-    // V4: rectangles in the 800×600 DESIGN space (every probe the pointer
+    // Rectangles in the 800×600 DESIGN space (every probe the pointer
     // specs click shares that space — window.__designSpace maps it to the
-    // page); sizes carry the world-zoom / design-scale ratio.
-    const toScreen = (x: number, y: number) => worldToDesign(camera, x, y);
-    const k = camera.zoom / DESIGN_SCALE;
+    // page); sizes carry the world-scale / design-scale ratio.
+    const toScreen = (x: number, y: number) => worldToDesign(this.scene, x, y);
+    const k = worldScale() / DESIGN_SCALE;
 
     window.__physicalProbe = {
       scene: this.scene.scene.key,

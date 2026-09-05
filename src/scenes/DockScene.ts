@@ -1,13 +1,20 @@
 import Phaser from 'phaser';
 
-import { DepthLayer, key } from '../constants';
+import { DepthLayer, key, worldDepth } from '../constants';
 import { prefersReducedMotion } from '../inventory/ui/theme';
 import { pilotLaunchMode } from '../pilot/pilotCoverage';
-import { notePilotZoneEntered, pilotObjective } from '../pilot/pilotRoute';
+import {
+  notePilotZoneEntered,
+  PILOT_EPISODE_NAMES,
+  pilotEpisode,
+  pilotObjective,
+} from '../pilot/pilotRoute';
 import { PILOT_CONTROLS_LINES } from '../pilot/PilotZoneScene';
+import { DOCK_SITES, LEGACY_DOCK_SITES } from '../pilot/zoneSites';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 import { RoomScene, runOncePerSession } from '../world';
+import { DOCK_LAYOUT, LEGACY_DOCK_LAYOUT } from '../world/layouts/dock';
 import { isLegacyRoute } from '../world/SceneRouter';
 
 /**
@@ -22,6 +29,29 @@ import { isLegacyRoute } from '../world/SceneRouter';
  */
 const DOCK_IDLE_HELP_THRESHOLD_MS: number | null = null;
 
+const TILE = 32;
+
+declare global {
+  interface Window {
+    /**
+     * DEV-only, read-only Dock geometry probe (World V1): the terminal,
+     * the north door and the movement marker of the ACTIVE layout, so the
+     * shared e2e tutorial helper drives the right coordinates on both
+     * routes.
+     */
+    __dockProbe?: {
+      layout: 'pilot' | 'legacy';
+      terminal: { x: number; y: number };
+      northDoor: { x: number; y: number };
+      marker: { x: number; y: number };
+    } | null;
+  }
+}
+
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  window.__dockProbe = null;
+}
+
 /**
  * Dock / Arrival Bay — V3 §4 Room 0, docs/game/rooms/00-dock-arrival.md.
  * Control/usability room only: every event carries study_item_ids: [] and
@@ -29,6 +59,13 @@ const DOCK_IDLE_HELP_THRESHOLD_MS: number | null = null;
  * highlighted movement marker → first terminal interaction → readiness
  * confirm (or explicit skip). Legacy dock_* events keep firing alongside
  * canonical ones per event-schema.md §4's Dock alias table.
+ *
+ * World V1 (docs/game/world-v1/ROOM-BLOCKOUTS.md §1): the participant
+ * route uses the 36×24 bay — docking airlock and apron on the south wall
+ * with the shuttle nose behind the bay windows, one circulation spine to
+ * the station entrance, the arrival terminal in a lit west alcove, cargo
+ * staging behind a rail on the east. `?route=legacy` keeps the V4 bay and
+ * its coordinates byte-for-byte for the historical regression specs.
  */
 export class DockScene extends RoomScene {
   protected readonly roomId = 'dock_arrival';
@@ -45,51 +82,42 @@ export class DockScene extends RoomScene {
     super(key.scene.dock);
   }
 
+  /** The V4 bay for the legacy ring; the World V1 bay for participants. */
+  private legacyLayout(): boolean {
+    return isLegacyRoute();
+  }
+
+  private sites() {
+    return this.legacyLayout() ? LEGACY_DOCK_SITES : DOCK_SITES;
+  }
+
   protected getLayout(): RoomLayout {
-    // V4 arrival bay (docs/game/VISUAL-SYSTEM-V4.md §7): a compact bay
-    // read left to right — the Arrival Terminal kiosk on the west wall
-    // (floor plate + light pool; the west lane at x ≈ 48 that the legacy
-    // journeys clamp along stays fully open), the north airlock on the
-    // centre spine, a cargo stack
-    // on the north-east wall (cols 18-22 rows 3-4), a service rail along
-    // the east wall (cols 21-22 rows 5-11), the landing pad ('P') centred
-    // on the arrival airlock. Every V3 coordinate is preserved: terminal
-    // (96,96), north door (368,48), both
-    // spawns, and the e2e lanes (col 3 north, row 2 east to the door).
-    // The grid is 14 rows (448 px): one wall row below the arrival airlock
-    // instead of seven rows of dead wall mass under the bay. Legend:
-    // StationMapBuilder CHAR_TO_TILE.
     return {
       theme: 'dock',
-      grid: [
-        '#########################',
-        '###########--############',
-        '#......................##',
-        '#.................#######',
-        '#.................#######',
-        '#....................####',
-        '#....................####',
-        '#......####..........####',
-        '#......####..........####',
-        '#........PPPPPP......####',
-        '#........PPPPPP......####',
-        '#........PPPPPP......####',
-        '###########--############',
-        '#########################',
-      ],
+      grid: [...(this.legacyLayout() ? LEGACY_DOCK_LAYOUT : DOCK_LAYOUT)],
     };
   }
 
   protected getSpawn(data?: { spawn?: string }): { x: number; y: number } {
-    // Returning from the Hub spawns just inside the top door; a fresh
-    // arrival spawns bottom-center, just inside the arrival airlock.
-    // Just outside the hub door's 72px interaction radius (no accidental
-    // immediate bounce-back on SPACE).
-    if (data?.spawn === 'station_hub' || data?.spawn === 'station_concourse') {
-      return { x: 12 * 32, y: 4 * 32 };
+    // Returning from the station spawns just inside the north door; a
+    // fresh arrival spawns on the docking apron, just inside the docking
+    // airlock — both outside every door's 72 px interaction radius.
+    if (this.legacyLayout()) {
+      if (
+        data?.spawn === 'station_hub' ||
+        data?.spawn === 'station_concourse'
+      ) {
+        return LEGACY_DOCK_SITES.spawnFromHub;
+      }
+
+      return LEGACY_DOCK_SITES.spawnArrival;
     }
 
-    return { x: 12 * 32, y: 11 * 32 };
+    if (data?.spawn === 'station_hub' || data?.spawn === 'station_concourse') {
+      return DOCK_SITES.spawnFromConcourse;
+    }
+
+    return DOCK_SITES.spawnArrival;
   }
 
   /**
@@ -114,13 +142,19 @@ export class DockScene extends RoomScene {
   }
 
   protected populateRoom(): void {
-    // Arrival terminal (Station AI) — top-left of the bay.
+    const sites = this.sites();
+
+    // Arrival terminal (Station AI).
     this.addStation({
       interactionKey: 'dockArrivalTutorial',
-      label: 'Arrival Terminal',
-      texture: 'prop-dock-terminal',
-      x: 3 * 32,
-      y: 3 * 32,
+      label: this.legacyLayout() ? 'Arrival Terminal' : 'arrival terminal',
+      verb: 'Check in at',
+      registryId: 'dock.arrival_terminal',
+      texture: this.legacyLayout()
+        ? 'prop-dock-terminal'
+        : 'kit-terminal-kiosk',
+      x: sites.terminal.x,
+      y: sites.terminal.y,
       promptBody:
         'The dock system checks whether you understand the basic controls before station tasks begin. What do you do?',
       onPromptOpened: () => {
@@ -144,13 +178,12 @@ export class DockScene extends RoomScene {
     // target survives under ?route=legacy).
     const northTarget = this.northDoorTarget();
 
-    // V4: the one interior door family (arch leaf + cyan threshold) so the
-    // exit reads like every other station door; the legacy prop remains
-    // the fallback when the leaf is not loaded.
     this.addDoor({
-      x: 12 * 32 - 16,
-      y: 1 * 32 + 16,
+      x: sites.northDoor.x,
+      y: sites.northDoor.y,
       label: isLegacyRoute() ? 'Station Hub' : 'Station Concourse',
+      verb: 'Go to',
+      registryId: 'dock.door_concourse',
       texture: this.textures.exists('plv1-arch-door')
         ? 'plv1-arch-door'
         : 'prop-dock-airlock',
@@ -158,25 +191,142 @@ export class DockScene extends RoomScene {
       target: northTarget,
     });
 
-    // V4 set dressing (presentation only; never obstructs interactables;
-    // every prop that could block movement stands on a wall cell).
-    this.buildArrivalBay();
+    if (this.legacyLayout()) {
+      this.buildLegacyBay();
+    } else {
+      this.buildArrivalBay();
+    }
+
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__dockProbe = {
+        layout: this.legacyLayout() ? 'legacy' : 'pilot',
+        terminal: { ...sites.terminal },
+        northDoor: { ...sites.northDoor },
+        marker: { ...sites.marker },
+      };
+    }
   }
 
   /**
-   * V4 arrival-bay composition (docs/game/VISUAL-SYSTEM-V4.md §7 Dock):
-   * one dominant circulation spine (arrival airlock → landing pad → north
-   * airlock), the terminal kiosk as the western landmark, a grouped cargo
-   * stack and a service rail as quiet structure, static pad lights, no
-   * ambient motion. Nothing here logs, gates or moves an interactable.
+   * World V1 arrival bay (ROOM-BLOCKOUTS.md §1): docking threshold on the
+   * south wall with the shuttle nose behind the central bay windows (the
+   * landmark), the docking apron in front of it, one painted circulation
+   * spine north to the station entrance, the arrival terminal in a lit
+   * west alcove, cargo staging behind a low rail on the east, a service
+   * column south-west. Nothing here logs, gates or moves an interactable.
    */
   private buildArrivalBay() {
-    const TILE = 32;
+    const S = DOCK_SITES;
 
-    // Arrival airlock behind the spawn (the iris strip's closed leaf when
-    // loaded, else the committed airlock prop).
+    // ——— South wall: docking airlock (sealed class-3 door), header, windows ———
+    this.addOverhead(S.dockingAirlock.x, 21 * TILE + 8, 'kit-airlock-frame');
+    this.addDoor({
+      x: S.dockingAirlock.x,
+      y: S.dockingAirlock.y,
+      label: 'docking airlock',
+      verb: 'Docking airlock',
+      registryId: 'dock.docking_airlock',
+      texture: this.textures.exists('plv1-airlock-open')
+        ? 'plv1-airlock-open'
+        : 'prop-dock-airlock',
+      textureFrame: 0,
+      interactionKey: 'dockArrivalTutorial',
+      availability: () => 'shuttle secured',
+      sealedMessage: 'Docking airlock sealed — the shuttle is secured.',
+    });
+
+    for (const [col, shuttle] of [
+      [10, false],
+      [14, true],
+      [22, true],
+      [26, false],
+    ] as const) {
+      this.addGroundInfra(
+        col * TILE + 16,
+        22 * TILE + 24,
+        shuttle ? 'kit-bay-window-shuttle' : 'kit-bay-window',
+      );
+    }
+
+    // ——— North wall: station entrance frame, sign, light fixtures ———
+    this.addDoorFrame(S.northDoor.x, 1 * TILE + 16, 'h');
+    this.addWallSign(
+      S.northDoor.x + 128,
+      1 * TILE + 18,
+      'Station 080 · Concourse',
+    );
+    for (const col of [6, 12, 24, 30]) {
+      this.addGroundInfra(col * TILE + 16, 1 * TILE + 30, 'kit-light-fixture');
+    }
+
+    // ——— Circulation spine: painted lane from the apron to the entrance ———
+    this.addFloorLane(16, 2, 4, 20);
+    this.addFloorDecal(
+      S.dockingAirlock.x,
+      20 * TILE,
+      'kit-light-pool-cold',
+      0.7,
+    );
+
+    // ——— West alcove: the arrival terminal on its kiosk cells ———
+    this.addFloorDecal(
+      S.terminal.x,
+      S.terminal.y + 36,
+      'kit-contact-shadow',
+      0.8,
+    );
+    this.addGroundInfra(
+      S.terminal.x + 40,
+      S.terminal.y - 10,
+      'kit-notice-board',
+    );
+    this.addGroundInfra(2 * TILE + 16, 6 * TILE + 8, 'kit-light-fixture');
+
+    // ——— East cargo staging: rail, crate stacks, pallet jack, hazard strips ———
+    for (let row = 8; row <= 20; row += 1) {
+      this.addGroundInfra(
+        24 * TILE + 16,
+        row * TILE + 24,
+        'kit-cargo-rail',
+      )?.setAngle(90);
+    }
+    this.addFloorDecal(28 * TILE, 14 * TILE - 6, 'kit-contact-shadow');
+    this.addKitProp(28 * TILE, 14 * TILE, 'kit-crate-stack');
+    this.addFloorDecal(31 * TILE, 17 * TILE - 6, 'kit-contact-shadow');
+    this.addKitProp(31 * TILE, 17 * TILE, 'kit-crate-stack');
+    this.addGroundInfra(26.5 * TILE, 18 * TILE + 16, 'kit-pallet-jack');
+    for (const col of [26, 28, 30, 32]) {
+      this.addFloorDecal(col * TILE + 16, 20 * TILE + 8, 'kit-hazard-strip');
+    }
+
+    // ——— South-west service column with pipes and a cable tray ———
+    this.addFloorDecal(9 * TILE, 17 * TILE - 6, 'kit-contact-shadow');
+    this.addKitProp(
+      9 * TILE,
+      17 * TILE,
+      this.textures.exists('plv1-utility-tower')
+        ? 'plv1-utility-tower'
+        : 'proc-console-wall',
+      { tint: 0x8fa0b0 },
+    );
+    for (let col = 2; col < 8; col += 1) {
+      this.addGroundInfra(col * TILE + 16, 22 * TILE + 8, 'kit-cable-tray');
+    }
+    this.addGroundInfra(8 * TILE + 8, 22 * TILE + 8, 'kit-cable-junction');
+    this.addKitProp(4 * TILE, 21 * TILE + 24, 'kit-locker-bank');
+
+    // ——— Highlighted movement target (V3 Room 0 mini-game) ———
+    // Reaching it is a mechanic, not an event — no canonical event exists
+    // for it and none is invented. A floor ring on the spine with a
+    // restrained pulse (held under reduced motion), removed once reached.
+    this.buildMovementMarker(S.marker.x, S.marker.y);
+  }
+
+  /** The V4 bay, byte-identical for the legacy regression specs. */
+  private buildLegacyBay() {
+    const S = LEGACY_DOCK_SITES;
+
     if (this.textures.exists('plv1-airlock-open')) {
-      // Centred on the wall row so the leaf never covers the figure.
       this.add
         .image(12 * TILE - 16, 12 * TILE + 18, 'plv1-airlock-open', 0)
         .setDepth(DepthLayer.LowProp);
@@ -184,8 +334,6 @@ export class DockScene extends RoomScene {
       this.addDecor(12 * TILE - 16, 12 * TILE + 8, 'prop-dock-airlock');
     }
 
-    // Circulation spine: a painted service lane from the arrival airlock
-    // to the north airlock (two tiles wide), with a dashed centre line.
     const laneX = 12 * TILE - 16;
 
     this.add
@@ -200,19 +348,13 @@ export class DockScene extends RoomScene {
       .rectangle(laneX, 2 * TILE + 4, 2 * TILE - 8, 3, 0x5fd3c4, 0.5)
       .setDepth(DepthLayer.FloorMarking);
 
-    // Terminal kiosk: light pool + a floor plate that reads as its own
-    // station.
     this.addDecor(3 * TILE, 3.4 * TILE, 'proc-light-pool');
     this.add
       .rectangle(3 * TILE, 3 * TILE + 20, 3 * TILE, 2 * TILE, 0x55627a, 0.16)
       .setDepth(DepthLayer.FloorDecal);
 
-    // North wall: exterior windows either side of the airlock (rhythm) and
-    // the cargo stack on the north-east wall cells.
     for (const x of [5.5, 8.5, 15.5, 18.5]) {
       if (this.textures.exists('proc-window-exterior')) {
-        // Night outside: the window card is held to the wall register so
-        // decoration never outshines the figure or the exit.
         this.add
           .image(x * TILE, 46, 'proc-window-exterior')
           .setTint(0x7f93a8)
@@ -222,17 +364,12 @@ export class DockScene extends RoomScene {
     this.addDecor(19 * TILE, 3 * TILE + 12, 'prop-dock-crates');
     this.addDecor(21 * TILE + 4, 3 * TILE + 12, 'prop-dock-crates');
     this.addDecor(20 * TILE + 8, 4.6 * TILE, 'proc-crate-supply');
-
-    // The crate block in the bay (collidable cells) and the east service
-    // rail: a locker and a cart on wall cells only; pipes on the south
-    // wall.
     this.addDecor(8.5 * TILE, 7 * TILE, 'prop-dock-crates');
     this.addDecor(21.5 * TILE, 7.5 * TILE, 'proc-locker-field');
     this.addDecor(21.5 * TILE, 10 * TILE, 'proc-cart-utility');
     this.addDecor(4.5 * TILE, 12 * TILE + 10, 'proc-wall-pipes');
     this.addDecor(19.5 * TILE, 12 * TILE + 10, 'proc-wall-pipes');
 
-    // Landing-pad edge lights: static, dull amber (never cyan, no motion).
     for (const [x, y] of [
       [9.4 * TILE, 9.4 * TILE],
       [14.6 * TILE, 9.4 * TILE],
@@ -244,15 +381,12 @@ export class DockScene extends RoomScene {
         .setDepth(DepthLayer.FloorMarking);
     }
 
-    // Highlighted movement target (V3 Room 0 mini-game: "movement to
-    // highlighted target"). Reaching it is a mechanic, not an event — no
-    // canonical event exists for it and none is invented. V4: a floor ring
-    // with a restrained pulse (held under reduced motion) that is removed
-    // once reached — never a floating label.
-    // The ring sits at (544, 224): inside the 640×360 view from the arrival
-    // spawn (the V3 spot two rows higher was above the top edge at arrival).
+    this.buildMovementMarker(S.marker.x, S.marker.y);
+  }
+
+  private buildMovementMarker(x: number, y: number) {
     this.marker = this.add
-      .ellipse(17 * TILE, 7 * TILE, 44, 18, 0x5fd3c4, 0.22)
+      .ellipse(x, y, 44, 18, 0x5fd3c4, 0.22)
       .setStrokeStyle(2, 0x5fd3c4, 0.95)
       .setDepth(DepthLayer.FloorMarking);
 
@@ -307,6 +441,30 @@ export class DockScene extends RoomScene {
     return this.isPilotRoute()
       ? pilotObjective()
       : super.buildRouteObjectiveText();
+  }
+
+  protected buildMissionCardTitle(): string {
+    return this.isPilotRoute() ? PILOT_EPISODE_NAMES[pilotEpisode()] : '';
+  }
+
+  /** The Dock's guidance target: the terminal until checked in, then the exit. */
+  protected isGuidanceTarget(config: { x: number; y: number }): boolean {
+    if (!this.isPilotRoute()) {
+      return false;
+    }
+
+    const sites = this.sites();
+    const target = this.isTutorialCompleted()
+      ? sites.northDoor
+      : sites.terminal;
+
+    return (
+      Math.abs(config.x - target.x) < 1 && Math.abs(config.y - target.y) < 1
+    );
+  }
+
+  protected hotbarVisible(): boolean {
+    return !this.isPilotRoute();
   }
 
   protected muteKeyEnabled(): boolean {
@@ -509,15 +667,20 @@ export class DockScene extends RoomScene {
 
     if (distance < 40) {
       this.markerReached = true;
-      // V4: the reached marker settles and leaves — no lingering cue; the
+      // The reached marker settles and leaves — no lingering cue; the
       // instruction rides the transient feedback banner.
       this.markerPulse?.stop();
       this.markerPulse = null;
       this.marker.setAlpha(1).setFillStyle(0x5fd3c4, 0.5);
       this.time.delayedCall(700, () => this.marker.destroy());
       this.showFeedbackMessage(
-        'Marker reached — now check in at the Arrival Terminal (SPACE).',
+        'Marker reached — now check in at the arrival terminal (E).',
       );
     }
+  }
+
+  /** Depth helper for the bay's tall props (unused on the legacy bay). */
+  protected propDepth(footY: number): number {
+    return worldDepth(footY);
   }
 }

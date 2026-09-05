@@ -114,9 +114,9 @@ export const PILOT_STAGES: readonly PilotStage[] = [
 export const PILOT_OBJECTIVES: Record<PilotStage, string> = {
   arrival:
     'Check in at the Arrival Terminal, then take the north door into the Concourse.',
-  handover_briefing: 'Report to Vale at the incident desk.',
+  handover_briefing: 'Report to Vale at the operations desk.',
   incident_handover:
-    'Work the incident desk, then confirm the handover with Vale.',
+    'Work the storm packet, then confirm the handover with Vale.',
   workshop: 'Take the west door to the Records Workshop.',
   workshop_work:
     'Work through the workshop orders, then sign the board when you are done.',
@@ -192,19 +192,21 @@ export interface PilotDoorRef {
 }
 
 export const PILOT_DOORS: Record<PilotZoneKey, readonly PilotDoorRef[]> = {
+  // World V1 (U1): Dock 36×24 and Concourse 40×26 layouts
+  // (docs/game/world-v1/ROOM-BLOCKOUTS.md §1–2).
   dock: [
-    { to: 'station_concourse', x: 368, y: 48, label: 'Station Concourse' },
+    { to: 'station_concourse', x: 576, y: 48, label: 'Station Concourse' },
   ],
   station_concourse: [
-    { to: 'dock', x: 384, y: 496, label: 'Dock' },
-    { to: 'records_workshop', x: 48, y: 272, label: 'Records Workshop' },
+    { to: 'dock', x: 640, y: 752, label: 'Dock' },
+    { to: 'records_workshop', x: 48, y: 416, label: 'Records Workshop' },
     {
       to: 'diagnostics_laboratory',
-      x: 384,
+      x: 640,
       y: 48,
       label: 'Diagnostics Laboratory',
     },
-    { to: 'utility_core_deck', x: 752, y: 272, label: 'Utility Deck' },
+    { to: 'utility_core_deck', x: 1232, y: 416, label: 'Utility Deck' },
   ],
   records_workshop: [
     { to: 'station_concourse', x: 752, y: 272, label: 'Station Concourse' },

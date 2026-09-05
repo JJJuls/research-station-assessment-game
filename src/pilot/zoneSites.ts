@@ -1,21 +1,64 @@
 /**
- * Pilot zone work-site positions (evidence-led pilot v2).
+ * Pilot zone work-site positions.
  *
- * Shared between the zone scenes and the units that activate the stations
- * so positions are declared exactly once. Pixel coordinates on 25×19 maps.
+ * Shared between the zone scenes, the interaction registry and the e2e
+ * coordinate books so positions are declared exactly once. Pixel
+ * coordinates; World V1 zones (Dock, Concourse — U1) use their rebuilt
+ * layouts (src/world/layouts/*), the others their V4 25×19 maps until
+ * their own units.
  */
 const TILE = 32;
 
-/** Station Concourse — episode 1 (incident desk) and episode 5 (return). */
+/**
+ * Dock — participant layout (36×24; ROOM-BLOCKOUTS.md §1). The arrival
+ * terminal kiosk stands on cells (4–5, 8) and is approached from the
+ * south; the movement marker sits on the circulation spine; the docking
+ * airlock is a sealed class-3 door on the south wall.
+ */
+export const DOCK_SITES = {
+  terminal: { x: 5 * TILE, y: 8.5 * TILE },
+  marker: { x: 18 * TILE, y: 12.5 * TILE },
+  northDoor: { x: 18 * TILE, y: 1.5 * TILE },
+  dockingAirlock: { x: 18 * TILE, y: 22 * TILE + 18 },
+  spawnArrival: { x: 18 * TILE, y: 19 * TILE },
+  spawnFromConcourse: { x: 18 * TILE, y: 5 * TILE },
+} as const;
+
+/** Dock — legacy V4 bay (`?route=legacy` regression specs; unchanged). */
+export const LEGACY_DOCK_SITES = {
+  terminal: { x: 3 * TILE, y: 3 * TILE },
+  marker: { x: 17 * TILE, y: 7 * TILE },
+  northDoor: { x: 12 * TILE - 16, y: 1 * TILE + 16 },
+  spawnArrival: { x: 12 * TILE, y: 11 * TILE },
+  spawnFromHub: { x: 12 * TILE, y: 4 * TILE },
+} as const;
+
+/**
+ * Station Concourse (40×26; ROOM-BLOCKOUTS.md §2) — episode 1 (incident
+ * desk) and episode 5 (return). Vale stands in front of the operations
+ * counter; the plan board is a wall board west of the north door; the
+ * incident desk is a console on the east service counter; the quality
+ * packet lies on the south-west side counter; the monitor gauge hangs on
+ * the east wall south of the Deck door; the faulty desk lamp stands on the
+ * reading desk in the north-west nook.
+ */
 export const CONCOURSE_STATIONS = {
-  vale: { x: 15.5 * TILE, y: 8.5 * TILE },
+  vale: { x: 28.5 * TILE, y: 11.5 * TILE },
   /** Kai's return-shift position (episode 5 handover) beside the desk. */
-  kaiReturn: { x: 18.5 * TILE, y: 8.5 * TILE },
-  planBoard: { x: 4 * TILE, y: 5 * TILE },
-  incidentDesk: { x: 8 * TILE, y: 5 * TILE },
-  qcPacket: { x: 8 * TILE, y: 13 * TILE },
-  monitorGauge: { x: 11 * TILE, y: 13 * TILE },
-  concourseFault: { x: 19 * TILE, y: 13.5 * TILE },
+  kaiReturn: { x: 31.5 * TILE, y: 11.5 * TILE },
+  planBoard: { x: 13 * TILE, y: 1.5 * TILE },
+  incidentDesk: { x: 38 * TILE, y: 7 * TILE },
+  qcPacket: { x: 8.5 * TILE, y: 18 * TILE },
+  monitorGauge: { x: 39 * TILE, y: 18 * TILE },
+  concourseFault: { x: 7 * TILE, y: 4.5 * TILE },
+} as const;
+
+/** Concourse arrival spawns (≥ 96 px inside every door). */
+export const CONCOURSE_SPAWNS = {
+  fromDock: { x: 20 * TILE, y: 20 * TILE },
+  fromLaboratory: { x: 20 * TILE, y: 5 * TILE },
+  fromRecords: { x: 5 * TILE, y: 13 * TILE },
+  fromDeck: { x: 35 * TILE, y: 13 * TILE },
 } as const;
 
 /**

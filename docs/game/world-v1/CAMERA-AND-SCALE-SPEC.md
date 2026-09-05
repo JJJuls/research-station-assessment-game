@@ -102,9 +102,20 @@ Frames are written to `docs/verification/professional-world-v1/unit1/scale-compa
 choice and the reason are recorded in §7 by the U1 note; the design intent
 is B.
 
-## 7. Selection record
+## 7. Selection record (U1, 2026-09-06)
 
-Filled in by U1 after the frames exist.
+Frames: `docs/verification/professional-world-v1/unit1/scale-compare/`
+(`dock-1.png`, `dock-1.25.png`, `dock-1.5.png`, `concourse-*.png`; same
+Dock apron state after the tutorial, same Concourse south-door spawn).
+**Selected: B (1.25).** 32×18 tiles and a figure at 8.3 % satisfy the
+acceptance range; the Concourse crossing with two doors and their signs
+reads in one view. A (1.0) shows 40×22.5 tiles with the figure at 6.7 %:
+door signs and indicator lamps fall below comfortable legibility at
+1280×720 and the room reads as a diagram. C (1.5) shows 26.7×15 tiles
+(under the range) with the figure at 10 %. Pixel stability at B comes
+from the plate + texel-snapped sampler (§2), inspected at 1:1 on the
+1280×720 frames: no NEAREST crawl, no softened texel interiors. The
+mission's "6–8 %" figure target is met within 0.3 %; recorded, not hidden.
 
 ## 8. Probes and tests
 

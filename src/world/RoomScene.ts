@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 
-import { Depth, key, worldDepth } from '../constants';
+import { Depth, DepthLayer, key, worldDepth } from '../constants';
 import type { ResearchInteraction } from '../data/researchInteractions';
 import { researchInteractions } from '../data/researchInteractions';
 import type { ControlsReferenceOptions } from '../gameplay';
@@ -32,18 +32,20 @@ import { state } from '../state';
 import { researchRuntime } from '../systems';
 import type { CanonicalEventContext } from './CanonicalEventContext';
 import { CANONICAL_EVENT_CONTEXT } from './CanonicalEventContext';
+import type { ObjectClass } from './interactionRegistry';
+import { promptText } from './interactionRegistry';
+import { ensureKitTextures, KIT_INDICATOR } from './kit/kitTextures';
 import { STATION_THEMES } from './proceduralTilesets';
 import type { RoomTransitionTarget } from './SceneRouter';
 import { transitionToRoom } from './SceneRouter';
 import type { BuiltRoomMap, RoomLayout } from './StationMapBuilder';
 import { buildPlaceholderRoomMap } from './StationMapBuilder';
 import {
-  attachWorldAndHudCameras,
+  attachWorldPlate,
   DESIGN_WIDTH,
   fadeAllCameras,
   publishCameraProbe,
-  WORLD_VIEW_HEIGHT,
-  WORLD_VIEW_WIDTH,
+  type WorldPlate,
   worldToDesign,
 } from './viewport';
 
@@ -241,6 +243,23 @@ export interface RoomStationConfig {
    * feedback paths, mirroring the prototype's showMpsPrompt gating).
    */
   onPromptOpened?: () => boolean;
+  /**
+   * World V1 interaction grammar (INTERACTION-GRAMMAR.md §4): the verb of
+   * the one-line contextual prompt `E — <verb> <label>`. Stations without
+   * a verb (zones not yet rebuilt) read `E — Use <label>`.
+   */
+  verb?: string;
+  /**
+   * World V1 availability rule: null = usable now; a short state string =
+   * class 3 (inactive / future) — the prompt reads the state and E shows
+   * it as a message instead of opening anything. Navigation/stage
+   * predicates only; never a measurement outcome.
+   */
+  availability?: () => string | null;
+  /** Stable registry id (interactionRegistry.ts), for probes and tests. */
+  registryId?: string;
+  /** Indicator lamp on the object's art (default: 'lamp'; NPCs: 'none'). */
+  indicator?: 'lamp' | 'none';
 }
 
 /**
@@ -288,6 +307,21 @@ export interface RoomDoorConfig {
    * reads task performance and never closes a measurement window.
    */
   gate?: () => string | null;
+  /** World V1: prompt verb (default "Go to"). */
+  verb?: string;
+  /** Stable registry id (interactionRegistry.ts). */
+  registryId?: string;
+  /**
+   * World V1 availability rule for a door that never transitions (a sealed
+   * class-3 door): the state string is the prompt and the E message.
+   */
+  availability?: () => string | null;
+}
+
+/** World V1 indicator lamp attached to an interactable's art. */
+interface Indicator {
+  lamp: Phaser.GameObjects.Rectangle;
+  glow: Phaser.GameObjects.Rectangle;
 }
 
 interface ProximityTarget {
@@ -341,8 +375,12 @@ declare global {
   interface Window {
     __lastRoomFeedbackText?: string | null;
     __playerProbe?: { scene: string; x: number; y: number } | null;
-    /** DEV-only (Unit 7): world prompt / label-chip visibility. */
-    __worldPromptProbe?: { prompt: boolean; chips: number } | null;
+    /** DEV-only (Unit 7): world prompt visibility (+ World V1 text). */
+    __worldPromptProbe?: {
+      prompt: boolean;
+      chips: number;
+      text?: string | null;
+    } | null;
     __routeObjectiveText?: string | null;
     __lastPromptBody?: string | null;
     /**
@@ -421,7 +459,17 @@ const FLOOR_DECOR = new Set([
   'proc-ground-disturbed',
   'proc-footprints',
   'proc-dig-mound',
+  'kit-light-pool-warm',
+  'kit-light-pool-cold',
+  'kit-light-pool-cyan',
+  'kit-contact-shadow',
+  'kit-hazard-strip',
+  'kit-floor-lane',
+  'kit-lane-edge',
 ]);
+
+/** Mission card geometry (design space; PROFESSIONAL-WORLD-DESIGN-V1 §6). */
+const MISSION_CARD = { x: 8, y: 8, width: 300, padding: 8 } as const;
 
 export abstract class RoomScene extends Phaser.Scene {
   /** Canonical room_id (event-schema.md §2) or documented control area id. */
@@ -431,6 +479,8 @@ export abstract class RoomScene extends Phaser.Scene {
 
   protected player!: Player;
   protected roomMap!: BuiltRoomMap;
+  /** World V1: the world plate (camera + composite) of this room. */
+  protected plate!: WorldPlate;
   /** E — keyboard alias of SPACE for contextual interaction (Unit 1). */
   private interactKeyE!: Phaser.Input.Keyboard.Key;
 
@@ -440,8 +490,9 @@ export abstract class RoomScene extends Phaser.Scene {
   private feedbackMessage: Phaser.GameObjects.Text | null = null;
   private proximityPrompt!: Phaser.GameObjects.Text;
   private routeObjective!: Phaser.GameObjects.Text;
+  private missionCardTitle!: Phaser.GameObjects.Text;
+  private missionCardBackground!: Phaser.GameObjects.Rectangle;
   private questObjective!: Phaser.GameObjects.Text;
-  private stationLabels!: Phaser.GameObjects.Container;
   private stations: RoomStationConfig[] = [];
   private transitioning = false;
 
@@ -449,31 +500,18 @@ export abstract class RoomScene extends Phaser.Scene {
   private npcActors = new Map<RoomStationConfig, NpcActor>();
 
   /**
-   * Unit 4 contextual labels: station/door name chips keyed by config —
-   * hidden by default, shown only while that interactable is the nearest
-   * eligible in-range target (no permanent name banners; NPC name chips
-   * already follow this rule via NpcActor).
-   */
-  private labelChips = new Map<
-    RoomStationConfig | RoomDoorConfig,
-    Phaser.GameObjects.GameObject[]
-  >();
-
-  /**
-   * NEXT-07 Phase 5 guidance pulse. Marker visuals keyed by their
-   * station/door config so the proximity scan's nearest target can be
-   * mapped back to its rendered marker; exactly one marker pulses at a
-   * time (the currently nearest eligible in-range interactable), with
-   * the Dock movement-target's committed tween values so guidance
-   * strength is uniform everywhere. Pure presentation: pulsing never
-   * logs, never gates input, never changes task state.
+   * World V1: marker visuals keyed by their station/door config (prompt
+   * placement, texture swaps) and the indicator lamp attached to each
+   * (INTERACTION-GRAMMAR.md §1). Exactly one object per room — the
+   * current guidance target — additionally carries the light pool.
    */
   private interactableMarkers = new Map<
     RoomStationConfig | RoomDoorConfig,
     Phaser.GameObjects.GameObject
   >();
-  private pulseTween: Phaser.Tweens.Tween | null = null;
-  private pulseMarker: Phaser.GameObjects.GameObject | null = null;
+  private indicators = new Map<RoomStationConfig | RoomDoorConfig, Indicator>();
+  private guidancePool: Phaser.GameObjects.Image | null = null;
+  private guidancePoolFor: RoomStationConfig | RoomDoorConfig | null = null;
 
   /** Room layout grid; see StationMapBuilder for the character legend. */
   protected abstract getLayout(): RoomLayout;
@@ -505,10 +543,10 @@ export abstract class RoomScene extends Phaser.Scene {
     this.transitioning = false;
     this.feedbackMessage = null;
     this.interactableMarkers = new Map();
-    this.pulseTween = null;
-    this.pulseMarker = null;
+    this.indicators = new Map();
+    this.guidancePool = null;
+    this.guidancePoolFor = null;
     this.npcActors = new Map();
-    this.labelChips = new Map();
 
     researchRuntime.logSceneStart(this.scene.key);
     researchRuntime.sessionState.setCurrentRoom(this.roomId);
@@ -517,25 +555,12 @@ export abstract class RoomScene extends Phaser.Scene {
     noteRoomEntered(this.roomId);
     refreshValidityProbe();
 
+    // World V1 kit textures (idempotent; presentation only).
+    ensureKitTextures(this);
+
     const layout = this.getLayout();
 
     this.roomMap = buildPlaceholderRoomMap(this, layout);
-
-    // V4: the world camera is bounded to the room and the 640×360 world
-    // viewport never exceeds a room, so no area beyond the map is ever
-    // visible — the per-frame full-screen background quad a themed clear
-    // colour costs is dropped (the game clear colour is the page ground).
-    // The theme's void colour stays available for rooms smaller than the
-    // viewport (legacy proving grounds) through the fallback below.
-    if (
-      layout.theme !== undefined &&
-      (this.roomMap.widthInPixels < WORLD_VIEW_WIDTH ||
-        this.roomMap.heightInPixels < WORLD_VIEW_HEIGHT)
-    ) {
-      this.cameras.main.setBackgroundColor(
-        STATION_THEMES[layout.theme].voidColor,
-      );
-    }
 
     this.physics.world.setBounds(
       0,
@@ -549,16 +574,23 @@ export abstract class RoomScene extends Phaser.Scene {
     this.player = new Player(this, spawn.x, spawn.y);
     this.physics.add.collider(this.player, this.roomMap.layer);
 
-    this.cameras.main.setBounds(
-      0,
-      0,
+    // World V1 (docs/game/world-v1/CAMERA-AND-SCALE-SPEC.md): every world
+    // object is drawn into the world plate, whose camera follows the
+    // avatar inside the room bounds; every `scrollFactor(0)` object
+    // renders through the HUD camera in the 800×600 design space. A room
+    // smaller than the plate (legacy proving grounds) is centred over the
+    // theme's void colour.
+    this.plate = attachWorldPlate(this);
+    this.plate.setBounds(
       this.roomMap.widthInPixels,
       this.roomMap.heightInPixels,
     );
-    // V4 (docs/game/VISUAL-SYSTEM-V4.md §1): the world renders at the
-    // integer zoom through the main camera; every `scrollFactor(0)`
-    // object renders through the HUD camera in the 800×600 design space.
-    attachWorldAndHudCameras(this);
+    this.plate.snapTo(spawn.x, spawn.y);
+
+    if (layout.theme !== undefined) {
+      this.plate.setClearColor(STATION_THEMES[layout.theme].voidColor);
+    }
+
     fadeAllCameras(this, 'in', 200);
 
     // NEXT-07 Phase 7a vignette: REMOVED under the contract's own
@@ -569,13 +601,12 @@ export abstract class RoomScene extends Phaser.Scene {
     // toggling the vignette alone. Uniformity is preserved by absence
     // (identical treatment in every room: none).
 
-    this.stationLabels = this.add.container(0, 0);
-    this.stationLabels.setDepth(Depth.AboveWorld);
-    // V4: the contextual prompt lives in the HUD design space and is
-    // projected from the target's world position every frame — readable at
-    // one size in every room, never scaled with the world.
+    // The contextual prompt lives in the HUD design space and is projected
+    // from the target's world position every frame — readable at one size
+    // in every room, never scaled with the world. World V1: one line,
+    // `E — <verb> <label>` (INTERACTION-GRAMMAR.md §4).
     this.proximityPrompt = this.add
-      .text(0, 0, 'SPACE / E — interact', {
+      .text(0, 0, '', {
         backgroundColor: '#101820',
         color: '#ffffff',
         font: '15px monospace',
@@ -586,33 +617,48 @@ export abstract class RoomScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setVisible(false);
 
-    // Route-objective HUD line (pilot route repair): the persistent duty
-    // roster directive that makes the mandatory four-decision route legible
-    // in-game. Allowed progress UI only — checklist/status labels (V3 §2):
-    // a completion count and the next station, never scores, never
-    // personality feedback, identical presentation for every participant.
+    // World V1 mission card (PROFESSIONAL-WORLD-DESIGN-V1 §6): a compact
+    // top-left card — one title line (act / area) and one next action —
+    // replacing the wide objective banner. Allowed progress UI only:
+    // the next reachable action, never scores, never personality
+    // feedback, identical presentation for every participant.
+    this.missionCardBackground = this.add
+      .rectangle(
+        MISSION_CARD.x,
+        MISSION_CARD.y,
+        MISSION_CARD.width,
+        56,
+        0x101820,
+        0.92,
+      )
+      .setOrigin(0)
+      .setStrokeStyle(1, 0x33475a)
+      .setDepth(Depth.AboveWorld)
+      .setScrollFactor(0);
+    this.missionCardTitle = this.add
+      .text(MISSION_CARD.x + MISSION_CARD.padding, MISSION_CARD.y + 6, '', {
+        color: '#9fb2c1',
+        font: '11px monospace',
+      })
+      .setOrigin(0)
+      .setDepth(Depth.AboveWorld)
+      .setScrollFactor(0);
     this.routeObjective = this.add
-      .text(8, 8, '', {
-        backgroundColor: '#101820',
+      .text(MISSION_CARD.x + MISSION_CARD.padding, MISSION_CARD.y + 22, '', {
         color: '#ffffff',
-        // V4 text ladder (VISUAL-SYSTEM-V4 §4): the persistent objective
-        // is the largest HUD string (17 px design ≈ 20 canvas px).
-        font: '17px monospace',
-        padding: { x: 8, y: 4 },
-        // Unit 7 (V7): the line wraps inside the 800 px viewport instead
-        // of running off the right edge.
-        wordWrap: { width: 772 },
+        font: '15px monospace',
+        lineSpacing: 3,
+        wordWrap: { width: MISSION_CARD.width - MISSION_CARD.padding * 2 },
       })
       .setOrigin(0)
       .setDepth(Depth.AboveWorld)
       .setScrollFactor(0);
 
-    // Unit 1 gameplay-task objective line (second HUD line, under the duty
-    // roster): the FIRST accepted gameplay task's live objective. Allowed
-    // progress UI only — in-fiction checklist text, never scores. The duty
-    // roster line above keeps its exact legacy text and probe.
+    // Unit 1 gameplay-task objective line (second HUD line, under the
+    // mission card): the FIRST accepted gameplay task's live objective.
+    // Allowed progress UI only — in-fiction checklist text, never scores.
     this.questObjective = this.add
-      .text(8, 32, '', {
+      .text(MISSION_CARD.x, 72, '', {
         backgroundColor: '#101820',
         color: '#9fb2c1',
         font: '14px monospace',
@@ -635,8 +681,9 @@ export abstract class RoomScene extends Phaser.Scene {
       unsubscribeInventory();
     });
 
-    // Unit 1 visible inventory belt — identical in every room.
-    new InventoryHud(this);
+    // Unit 1 visible inventory belt — identical in every room. World V1:
+    // shown only where the room says it is relevant (hotbarVisible).
+    new InventoryHud(this, () => this.hotbarVisible());
 
     // Action-assessment rebuild Unit 1: persistent compact controls
     // legend (H toggles). Pilot zones start it hidden with the pilot key
@@ -754,6 +801,44 @@ export abstract class RoomScene extends Phaser.Scene {
     return 638;
   }
 
+  /**
+   * World V1: whether the inventory belt may be shown in this room
+   * (INVENTORY-ITEM-PURPOSE-AUDIT.md §3). Legacy rooms: always (the belt
+   * still hides while empty); pilot zones decide per zone.
+   */
+  protected hotbarVisible(): boolean {
+    return true;
+  }
+
+  /** World V1 mission-card title (act / area). Legacy rooms: none. */
+  protected buildMissionCardTitle(): string {
+    return '';
+  }
+
+  /**
+   * World V1: whether the interactable is the route's current guidance
+   * target (class 1). Legacy rooms have no route guidance; pilot zones
+   * answer from the beacon model.
+   */
+  protected isGuidanceTarget(
+    config: RoomStationConfig | RoomDoorConfig,
+  ): boolean {
+    void config;
+
+    return false;
+  }
+
+  /** Derived object class (INTERACTION-GRAMMAR.md §2). */
+  protected classOf(config: RoomStationConfig | RoomDoorConfig): ObjectClass {
+    const state = config.availability?.() ?? null;
+
+    if (state !== null) {
+      return 'inactive';
+    }
+
+    return this.isGuidanceTarget(config) ? 'active' : 'optional';
+  }
+
   /** Launch data for the I inventory overlay (pilot zones allow world drops). */
   protected inventoryOverlayLaunchData(): {
     mode: 'backpack';
@@ -811,14 +896,28 @@ export abstract class RoomScene extends Phaser.Scene {
    */
   protected refreshRouteObjective() {
     const text = this.buildRouteObjectiveText();
+    const title = this.buildMissionCardTitle();
 
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
       window.__routeObjectiveText = text;
     }
 
-    this.routeObjective.setText(text);
-    // Unit 7 (V7): the second HUD line follows the wrapped height.
-    this.questObjective.setY(8 + this.routeObjective.height + 4);
+    this.missionCardTitle
+      .setText(title.toUpperCase())
+      .setVisible(title.length > 0);
+    this.routeObjective
+      .setText(text)
+      .setY(MISSION_CARD.y + (title.length > 0 ? 22 : 8));
+    this.missionCardBackground
+      .setSize(
+        MISSION_CARD.width,
+        this.routeObjective.y - MISSION_CARD.y + this.routeObjective.height + 8,
+      )
+      .setVisible(text.length > 0);
+    // The second HUD line follows the card's height.
+    this.questObjective.setY(
+      MISSION_CARD.y + this.missionCardBackground.height + 4,
+    );
   }
 
   /**
@@ -859,17 +958,101 @@ export abstract class RoomScene extends Phaser.Scene {
       0x1f7a8c,
       0x5fd3c4,
     );
-    const chip = this.buildLabelChip(config.x, config.y - 42, config.label);
 
-    // V4 depth policy (layer 4): the marker is a world object sorted at its
+    // Depth policy (layer 3): the marker is a world object sorted at its
     // foot line, so the avatar walks in front of it when standing south of
-    // it and behind it when north — never hidden under a workstation. Only
-    // the label chip stays in the depth-20 container.
+    // it and behind it when north — never hidden under a workstation.
     this.sortAtFootLine(marker, config.y);
-    this.stationLabels.add([...chip]);
-    this.registerLabelChip(config, chip);
     this.interactableMarkers.set(config, marker);
     this.stations.push(config);
+
+    if (config.indicator !== 'none') {
+      this.attachIndicator(config, marker);
+    }
+  }
+
+  /**
+   * World V1 indicator lamp (INTERACTION-GRAMMAR.md §1): a small lamp at
+   * the top-right of the object's art whose colour is the derived class —
+   * cyan (active), steel-white (optional), dark (inactive). Doors carry
+   * their lamp in the lintel socket above the leaf. Presentation only.
+   */
+  private attachIndicator(
+    config: RoomStationConfig | RoomDoorConfig,
+    marker: Phaser.GameObjects.GameObject,
+  ) {
+    const bounds = (
+      marker as Phaser.GameObjects.GameObject & {
+        getBounds?: () => Phaser.Geom.Rectangle;
+      }
+    ).getBounds?.();
+    const isDoor = this.doors.includes(config as RoomDoorConfig);
+    const x = isDoor
+      ? config.x
+      : bounds !== undefined
+        ? bounds.right - 6
+        : config.x + 14;
+    const y = isDoor
+      ? (bounds?.top ?? config.y - 37) - 10
+      : bounds !== undefined
+        ? bounds.top + 4
+        : config.y - 16;
+    const glow = this.add
+      .rectangle(x, y, 10, 6, KIT_INDICATOR.optional, 0.25)
+      .setDepth(DepthLayer.WorldReadout);
+    const lamp = this.add
+      .rectangle(x, y, 5, 3, KIT_INDICATOR.optional, 1)
+      .setDepth(DepthLayer.WorldReadout + 0.01);
+
+    this.indicators.set(config, { lamp, glow });
+  }
+
+  /**
+   * Per-frame indicator refresh: lamp colours follow the derived class; the
+   * single guidance light pool sits under the current guidance target.
+   */
+  private updateIndicators() {
+    let target: RoomStationConfig | RoomDoorConfig | null = null;
+
+    for (const [config, indicator] of this.indicators) {
+      const objectClass = this.classOf(config);
+      const color =
+        objectClass === 'active'
+          ? KIT_INDICATOR.active
+          : objectClass === 'inactive'
+            ? KIT_INDICATOR.inactive
+            : KIT_INDICATOR.optional;
+
+      indicator.lamp.setFillStyle(color, 1);
+      indicator.glow
+        .setFillStyle(color, objectClass === 'inactive' ? 0.08 : 0.28)
+        .setVisible(objectClass !== 'inactive');
+
+      if (objectClass === 'active') {
+        target = config;
+      }
+    }
+
+    for (const config of this.npcActors.keys()) {
+      if (this.classOf(config) === 'active') {
+        target = config;
+      }
+    }
+
+    if (target === this.guidancePoolFor) {
+      return;
+    }
+
+    this.guidancePoolFor = target;
+    this.guidancePool?.destroy();
+    this.guidancePool = null;
+
+    if (target !== null && this.textures.exists('kit-light-pool-cyan')) {
+      this.guidancePool = this.add
+        .image(target.x, target.y + 18, 'kit-light-pool-cyan')
+        .setAlpha(0.9)
+        .setDepth(DepthLayer.FloorDecal + 0.05);
+    }
   }
 
   /**
@@ -915,87 +1098,6 @@ export abstract class RoomScene extends Phaser.Scene {
     sized.setDepth(worldDepth(y + half));
   }
 
-  /** Unit 4: contextual name chip — hidden until nearest-in-range. */
-  private registerLabelChip(
-    config: RoomStationConfig | RoomDoorConfig,
-    chip: Phaser.GameObjects.GameObject[],
-  ) {
-    for (const part of chip) {
-      (part as Phaser.GameObjects.Rectangle).setVisible(false);
-    }
-
-    this.labelChips.set(config, chip);
-  }
-
-  /**
-   * NEXT-07 Phase 5: station/door label chip in the shared panel
-   * language (panel fill @ 0.92 + 1 px border) instead of the raw black
-   * text background. Label text content is byte-identical to the config
-   * string; the chip is pure presentation behind it.
-   */
-  private buildLabelChip(
-    x: number,
-    y: number,
-    text: string,
-  ): Phaser.GameObjects.GameObject[] {
-    const label = this.add
-      .text(x, y, text, {
-        color: '#fff',
-        font: '12px monospace',
-        padding: { x: 4, y: 2 },
-        // V4: world-space text renders at the world zoom — rasterise at 2×.
-        resolution: 2,
-      })
-      .setOrigin(0.5);
-    const chip = this.add
-      .rectangle(
-        x,
-        y,
-        Math.ceil(label.width),
-        Math.ceil(label.height),
-        0x101820,
-        0.92,
-      )
-      .setStrokeStyle(1, 0x33475a);
-
-    // Chip behind, text in front (container render order is add order).
-    return [chip, label];
-  }
-
-  /**
-   * NEXT-07 Phase 5: retargets the guidance pulse. Exactly one marker —
-   * the currently nearest eligible in-range interactable — pulses with
-   * the Dock movement-target's committed tween values (700 ms, alpha
-   * 1→0.4, yoyo); passing null stops the pulse and restores full
-   * alpha (the settled state is simply the absence of the pulse —
-   * D-N07-2: no completed-state copy exists).
-   */
-  private setPulseMarker(marker: Phaser.GameObjects.GameObject | null) {
-    if (marker === this.pulseMarker) {
-      return;
-    }
-
-    if (this.pulseTween !== null) {
-      this.pulseTween.stop();
-      this.pulseTween = null;
-    }
-
-    (this.pulseMarker as { setAlpha?: (a: number) => void } | null)?.setAlpha?.(
-      1,
-    );
-    this.pulseMarker = marker;
-
-    if (marker !== null) {
-      this.pulseTween = this.tweens.add({
-        targets: marker,
-        alpha: { from: 1, to: 0.4 },
-        duration: 700,
-        repeat: -1,
-        yoyo: true,
-      });
-    }
-  }
-
   /**
    * Purely decorative set dressing: renders only when its committed
    * texture is loaded; never collides, never interacts, never obstructs
@@ -1014,6 +1116,129 @@ export abstract class RoomScene extends Phaser.Scene {
           : worldDepth(y + image.displayHeight / 2),
       );
     }
+  }
+
+  // ——— World V1 kit placement helpers (presentation only) ———————————————
+
+  /**
+   * A kit prop anchored at its bottom-centre ground contact (foot line),
+   * y-sorted with the actors (depth layer 3). Returns the image or null.
+   */
+  protected addKitProp(
+    x: number,
+    footY: number,
+    texture: string,
+    options?: { depth?: number; alpha?: number; tint?: number },
+  ): Phaser.GameObjects.Image | null {
+    if (!this.textures.exists(texture)) {
+      return null;
+    }
+
+    const image = this.add
+      .image(x, footY, texture)
+      .setOrigin(0.5, 1)
+      .setDepth(options?.depth ?? worldDepth(footY));
+
+    if (options?.alpha !== undefined) {
+      image.setAlpha(options.alpha);
+    }
+
+    if (options?.tint !== undefined) {
+      image.setTint(options.tint);
+    }
+
+    return image;
+  }
+
+  /** Fixed ground infrastructure (layer 2): rails, trays, low crates. */
+  protected addGroundInfra(x: number, y: number, texture: string) {
+    return this.addKitProp(x, y, texture, { depth: DepthLayer.GroundInfra });
+  }
+
+  /** Overhead architecture (layer 4): lintels, hanging elements. */
+  protected addOverhead(x: number, y: number, texture: string) {
+    if (!this.textures.exists(texture)) {
+      return null;
+    }
+
+    return this.add.image(x, y, texture).setDepth(DepthLayer.Overhead);
+  }
+
+  /** Floor decal (layer 1): light pools, lanes, shadows. */
+  protected addFloorDecal(
+    x: number,
+    y: number,
+    texture: string,
+    alpha = 1,
+  ): Phaser.GameObjects.Image | null {
+    if (!this.textures.exists(texture)) {
+      return null;
+    }
+
+    return this.add
+      .image(x, y, texture)
+      .setAlpha(alpha)
+      .setDepth(DepthLayer.FloorDecal);
+  }
+
+  /**
+   * A painted floor lane (tile-aligned): subtle plate tiles with edge
+   * lines — architecture, never a translucent development rectangle.
+   */
+  protected addFloorLane(col: number, row: number, cols: number, rows: number) {
+    const TILE = 32;
+
+    for (let r = row; r < row + rows; r += 1) {
+      for (let c = col; c < col + cols; c += 1) {
+        this.addFloorDecal(c * TILE + 16, r * TILE + 16, 'kit-floor-lane');
+      }
+    }
+
+    for (let c = col; c < col + cols; c += 1) {
+      this.addFloorDecal(c * TILE + 16, row * TILE + 2, 'kit-lane-edge');
+      this.addFloorDecal(
+        c * TILE + 16,
+        (row + rows) * TILE - 2,
+        'kit-lane-edge',
+      );
+    }
+  }
+
+  /**
+   * A wall sign: dark plate + small caps text on the wall band — the
+   * architectural signage the guidance model prefers over floating labels.
+   */
+  protected addWallSign(x: number, y: number, text: string) {
+    if (this.textures.exists('kit-sign-plate')) {
+      this.add.image(x, y, 'kit-sign-plate').setDepth(DepthLayer.GroundInfra);
+    }
+
+    this.add
+      .text(x, y, text.toUpperCase(), {
+        color: '#b8c4cf',
+        font: '9px monospace',
+        resolution: 2,
+      })
+      .setOrigin(0.5)
+      .setDepth(DepthLayer.GroundInfra + 0.01);
+  }
+
+  /**
+   * A door frame with its lintel lamp socket around a door leaf — the one
+   * door family of the station. `orientation` 'h' for north/south walls,
+   * 'v' for west/east walls.
+   */
+  protected addDoorFrame(x: number, y: number, orientation: 'h' | 'v') {
+    const texture =
+      orientation === 'h' ? 'kit-door-frame-h' : 'kit-door-frame-v';
+
+    if (!this.textures.exists(texture)) {
+      return;
+    }
+
+    this.add
+      .image(x, orientation === 'h' ? y - 8 : y, texture)
+      .setDepth(DepthLayer.Overhead);
   }
 
   /**
@@ -1110,12 +1335,6 @@ export abstract class RoomScene extends Phaser.Scene {
       isSealed ? 0x46586b : 0x3f5a66,
       isSealed ? 0x2b3a4a : 0x5fd3c4,
     );
-    const chip = this.buildLabelChip(config.x, config.y - 42, config.label);
-
-    // Unit 7: door art keeps the uniform interactable cue — a cyan-leaning
-    // tint on the PROVISIONAL leaf and a cyan threshold bar under every
-    // textured door (decor wall modules of the same family carry neither).
-    const parts: Phaser.GameObjects.GameObject[] = [marker];
 
     if (config.texture !== undefined && this.textures.exists(config.texture)) {
       const image = marker as Phaser.GameObjects.Image;
@@ -1123,38 +1342,16 @@ export abstract class RoomScene extends Phaser.Scene {
       if (config.textureFrame !== undefined) {
         image.setFrame(config.textureFrame);
       }
-
-      if (config.texture === 'plv1-arch-door') {
-        image.setTint(0xa9d8d3);
-      }
-
-      // V4 Unit 6 (Unit 2 review C5): the threshold bar sits at the leaf's
-      // base, the leaf's full width, so every door reads as an exit.
-      parts.push(
-        this.add
-          .rectangle(
-            config.x,
-            config.y + image.displayHeight / 2 + 2,
-            image.displayWidth,
-            4,
-            0x5fd3c4,
-            0.95,
-          )
-          .setOrigin(0.5),
-      );
     }
 
-    // V4 depth policy: door leaf and threshold sort at the leaf's foot line
-    // (a wall-mounted leaf on the north wall sits behind a figure walking
-    // through the doorway); the chip stays in the depth-20 container.
-    for (const part of parts) {
-      this.sortAtFootLine(part, config.y);
-    }
-
-    this.stationLabels.add([...chip]);
-    this.registerLabelChip(config, chip);
+    // Depth policy: the door leaf sorts at its foot line (a wall-mounted
+    // leaf on the north wall sits behind a figure walking through the
+    // doorway). World V1: the class is carried by the lintel lamp, never
+    // by a tint or a threshold bar.
+    this.sortAtFootLine(marker, config.y);
     this.interactableMarkers.set(config, marker);
     this.doors.push(config);
+    this.attachIndicator(config, marker);
   }
 
   /**
@@ -1492,7 +1689,6 @@ export abstract class RoomScene extends Phaser.Scene {
 
     panel.setDepth(Depth.AboveWorld);
     panel.setScrollFactor(0);
-    this.stationLabels.setVisible(false);
     this.proximityPrompt.setVisible(false);
 
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
@@ -2198,7 +2394,6 @@ export abstract class RoomScene extends Phaser.Scene {
 
     this.activePrompt?.panel.destroy();
     this.activePrompt = null;
-    this.stationLabels.setVisible(true);
   }
 
   private activateDoor(door: RoomDoorConfig) {
@@ -2339,20 +2534,6 @@ export abstract class RoomScene extends Phaser.Scene {
     ) {
       this.activeTarget = null;
       this.proximityPrompt.setVisible(false);
-      // No interaction is eligible (prompt open / typewriter / transition
-      // / timed world action) — the guidance pulse ceases naturally and
-      // every contextual name chip hides with it (Unit 4).
-      this.setPulseMarker(null);
-
-      for (const npc of this.npcActors.values()) {
-        npc.setNameVisible(false);
-      }
-
-      for (const chip of this.labelChips.values()) {
-        for (const part of chip) {
-          (part as Phaser.GameObjects.Rectangle).setVisible(false);
-        }
-      }
 
       return;
     }
@@ -2391,24 +2572,6 @@ export abstract class RoomScene extends Phaser.Scene {
 
     this.activeTarget = nearest;
 
-    // Phase 5 guidance pulse: exactly the nearest eligible in-range
-    // marker pulses; out of range, the pulse ceases (null clears it).
-    this.setPulseMarker(
-      nearest === null
-        ? null
-        : (this.interactableMarkers.get(
-            nearest.kind === 'station' ? nearest.station! : nearest.door!,
-          ) ?? null),
-    );
-
-    // Unit 1 contextual NPC name chips: visible only while that NPC is the
-    // nearest eligible in-range target (presentation only, never logs).
-    for (const [config, npc] of this.npcActors) {
-      npc.setNameVisible(nearest !== null && nearest.station === config);
-    }
-
-    // Unit 4 contextual station/door labels: same nearest-only rule (no
-    // permanent name banners; pure presentation, never logs).
     const nearestConfig =
       nearest === null
         ? null
@@ -2437,22 +2600,29 @@ export abstract class RoomScene extends Phaser.Scene {
       !this.belowPlacementCovered(nearestConfig.x, targetY + 40) &&
       !this.belowPlacementCovered(nearestConfig.x, targetY + 80);
 
-    for (const [config, chip] of this.labelChips) {
-      const visible = config === nearestConfig;
-
-      for (const part of chip) {
-        (part as Phaser.GameObjects.Rectangle).setVisible(visible);
-
-        if (visible) {
-          (part as Phaser.GameObjects.Rectangle).setY(
-            fromAbove ? config.y + 40 : config.y - 42,
-          );
-        }
-      }
-    }
-
     if (this.activeTarget === null) {
-      this.proximityPrompt.setVisible(false);
+      // World V1: a room may offer an auxiliary prompt for a reachable
+      // non-station object (a recoverable bundle) — same one-line grammar.
+      const aux = this.auxPrompt();
+
+      if (aux === null) {
+        this.proximityPrompt.setVisible(false);
+      } else {
+        const anchor = worldToDesign(this, aux.x, aux.y - 40);
+        const half = this.proximityPrompt.width / 2;
+
+        this.proximityPrompt
+          .setText(aux.text)
+          .setPosition(
+            Phaser.Math.Clamp(
+              Math.round(anchor.x),
+              half + 2,
+              this.promptClampMaxX() - half,
+            ),
+            Math.max(80, Math.round(anchor.y)),
+          )
+          .setVisible(true);
+      }
 
       // Out-of-range interaction attempt: no target reachable. Rooms that
       // track control errors (Dock baseline covariates) hook this.
@@ -2463,18 +2633,28 @@ export abstract class RoomScene extends Phaser.Scene {
       return;
     }
 
+    // World V1: one line — `E — <verb> <label>`, or the object's state
+    // when its availability rule says it is inactive now.
+    const availabilityState = nearestConfig?.availability?.() ?? null;
+    const verb =
+      nearestConfig?.verb ??
+      (this.activeTarget.kind === 'door' ? 'Go to' : 'Use');
+
+    this.proximityPrompt.setText(
+      promptText(verb, nearestConfig?.label ?? '', availabilityState),
+    );
+
     // Design-space clamp: keep the prompt fully inside the HUD design
     // space (legacy rooms keep the right status-panel margin) with a 2px
     // margin.
     const promptHalf = this.proximityPrompt.width / 2;
-    // V4: project the target into the HUD design space (the prompt is a
-    // HUD object); the vertical offset is expressed in world pixels so the
-    // prompt keeps the same clearance from the object at any zoom.
-    // 70 px clears the name chip (drawn at ±42 px on the same side).
+    // Project the target into the HUD design space (the prompt is a HUD
+    // object); the vertical offset is expressed in world pixels so the
+    // prompt keeps the same clearance from the object at any scale.
     const anchor = worldToDesign(
-      this.cameras.main,
+      this,
       this.activeTarget.x,
-      fromAbove ? this.activeTarget.y + 70 : this.activeTarget.y - 70,
+      fromAbove ? this.activeTarget.y + 56 : this.activeTarget.y - 56,
     );
 
     this.proximityPrompt
@@ -2484,13 +2664,20 @@ export abstract class RoomScene extends Phaser.Scene {
           promptHalf + 2,
           this.promptClampMaxX() - promptHalf,
         ),
-        // Review A-6: never inside the objective band (design y < 64).
-        Math.max(64, Math.round(anchor.y)),
+        // Never inside the mission-card band (design y < 80).
+        Math.max(80, Math.round(anchor.y)),
       )
       .setVisible(true);
 
     if (this.interactJustPressed()) {
-      if (this.activeTarget.kind === 'station') {
+      if (availabilityState !== null) {
+        // Class 3 (inactive / future): E states the object's state; it
+        // never opens a surface (INTERACTION-GRAMMAR.md §1).
+        sfxUnavailable();
+        this.showFeedbackMessage(
+          `${capitaliseFirst(nearestConfig?.label ?? '')}: ${availabilityState}.`,
+        );
+      } else if (this.activeTarget.kind === 'station') {
         this.openStationPrompt(this.activeTarget.station!);
       } else {
         this.activateDoor(this.activeTarget.door!);
@@ -2522,10 +2709,19 @@ export abstract class RoomScene extends Phaser.Scene {
   /** SPACE/E pressed with no station/door in range. Default: no-op. */
   protected onEmptyInteract(): void {}
 
+  /**
+   * World V1: an auxiliary one-line prompt for a reachable non-station
+   * object when no station or door is in range (pilot zones: the nearest
+   * recoverable bundle). Default: none.
+   */
+  protected auxPrompt(): { text: string; x: number; y: number } | null {
+    return null;
+  }
+
   /** Screen y of the transient feedback banner (rooms with a north-wall
    * door prompt lower it so the two never collide — Unit 7 V13). */
   protected feedbackMessageY(): number {
-    return 72;
+    return 128;
   }
 
   /**
@@ -2555,8 +2751,13 @@ export abstract class RoomScene extends Phaser.Scene {
       (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0);
     }
 
+    // World V1: the plate camera follows the avatar (dead zone + bounded
+    // easing; CAMERA-AND-SCALE-SPEC.md §3).
+    this.plate.follow(this.player.x, this.player.y);
+
     this.onRoomUpdate();
     this.updateProximity();
+    this.updateIndicators();
 
     // Dev-only, read-only position telemetry for runtime verification (see
     // the __playerProbe note above). Never read back into gameplay; stripped
@@ -2580,17 +2781,12 @@ export abstract class RoomScene extends Phaser.Scene {
       return;
     }
 
-    let chips = 0;
-
-    for (const chip of this.labelChips.values()) {
-      if ((chip[0] as Phaser.GameObjects.Rectangle | undefined)?.visible) {
-        chips += 1;
-      }
-    }
-
+    // World V1: no contextual name chips exist any more (the prompt
+    // carries the name); the probe keeps its shape for the specs.
     window.__worldPromptProbe = {
       prompt: this.proximityPrompt.visible,
-      chips,
+      chips: 0,
+      text: this.proximityPrompt.visible ? this.proximityPrompt.text : null,
     };
   }
 
@@ -2598,25 +2794,17 @@ export abstract class RoomScene extends Phaser.Scene {
   protected onRoomUpdate(): void {}
 
   /**
-   * Unit 7 (V1): hides the proximity prompt, every contextual label chip
-   * and every NPC name chip. Called on scene PAUSE (overlays) — pure
-   * presentation; the active target is re-derived on the next update.
+   * Unit 7 (V1): hides the proximity prompt. Called on scene PAUSE
+   * (overlays) — pure presentation; the active target is re-derived on
+   * the next update.
    */
   private hideWorldPrompts() {
     this.activeTarget = null;
     this.proximityPrompt.setVisible(false);
-    this.setPulseMarker(null);
-
-    for (const chip of this.labelChips.values()) {
-      for (const part of chip) {
-        (part as Phaser.GameObjects.Rectangle).setVisible(false);
-      }
-    }
-
-    for (const npc of this.npcActors.values()) {
-      npc.setNameVisible(false);
-    }
-
     this.publishWorldPromptProbe();
   }
+}
+
+function capitaliseFirst(text: string): string {
+  return text.length === 0 ? text : text[0].toUpperCase() + text.slice(1);
 }
