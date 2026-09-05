@@ -10,7 +10,7 @@ pending empirical validation against its source instrument.
 - Branch `fable-visual-validity-redesign-v1` (git worktree
   `.claude/worktrees/fable-visual-validity-redesign`), base
   `aaa73fd9041e561fb250d13021537aaf66e46d46` (`fable-professional-pilot-v3-v1`).
-- HEAD: see §2 (the last listed commit).
+- HEAD at this checkpoint: `ce1ed35` (plus this docs-only checkpoint commit).
 
 ## 2. Unit commits
 
