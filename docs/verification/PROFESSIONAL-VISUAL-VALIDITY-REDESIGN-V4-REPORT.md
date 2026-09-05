@@ -10,7 +10,7 @@ pending empirical validation against its source instrument.
 - Branch `fable-visual-validity-redesign-v1` (git worktree
   `.claude/worktrees/fable-visual-validity-redesign`), base
   `aaa73fd9041e561fb250d13021537aaf66e46d46` (`fable-professional-pilot-v3-v1`).
-- HEAD at this checkpoint: the Unit 3 commit (see §2).
+- HEAD at this checkpoint: see the unit table (§2); every unit ends in one local commit.
 
 ## 2. Unit commits
 
@@ -20,9 +20,10 @@ pending empirical validation against its source instrument.
 | 1    | `72ab012`     | feat(game): establish professional camera and arrival    | done                 |
 | 2    | `ce1ed35`     | refactor(game): clarify concourse and records workshop   | done                 |
 | 2a   | `f4a3a21`     | docs(verification): record V4 checkpoint after unit 2    | checkpoint           |
-| 2b   | (fix commit)  | fix(game): settle concourse and records readouts         | done (review closed) |
+| 2b   | `5c8f68e`     | fix(game): settle concourse and records readouts         | done (review closed) |
 | 3    | (this commit) | refactor(game): focus diagnostics assessment sequence    | done                 |
-| 4–7  | —             | not started                                              | remaining            |
+| 4    | (this commit) | refactor(game): structure exterior recovery yard         | done                 |
+| 5–7  | —             | not started                                              | remaining            |
 
 Per-unit evidence notes: `docs/verification/professional-visual-v4/UNIT-*.md`.
 
@@ -46,6 +47,10 @@ Unit 3: `src/scenes/DiagnosticsLaboratoryScene.ts`,
 `docs/game/rooms/14-diagnostics-laboratory.md` (new), Unit 3 note,
 `e2e/v4_visual_capture.spec.ts` (lab waypoint), `e2e/pilot_signal_capture.spec.ts`
 (output directory parameter), `unit3/**`, `projection/unit3.json`.
+Unit 4: `src/scenes/ExteriorRecoveryYardScene.ts`, `src/world/proceduralTilesets.ts`
+(exterior theme `noise` token only — recorded allowlist deviation),
+`docs/game/rooms/11-exterior-recovery-yard.md` (V4 section), Unit 4 note,
+`unit4/**` (both resolutions), `projection/unit4.json`.
 
 ## 4. Render and camera architecture (before → after)
 
@@ -69,8 +74,13 @@ section. Diagnostics Laboratory — Unit 3 note and
 `docs/game/rooms/14-diagnostics-laboratory.md`: four numbered bay plates on
 one service aisle, state-driven salience (cyan frame + numeral on the next
 bay only), north-zone plates, restrained bezelled display, nine labels
-removed, Noor's relay subtitle in its own bottom band. Yard, Deck, Core
-Chamber — not yet redesigned (they render through the new camera only).
+removed, Noor's relay subtitle in its own bottom band. Exterior Recovery
+Yard — Unit 4 note and the room doc's V4 section: both snowfall layers
+removed, calmer floor, one packed-snow service path linking the six work
+zones, apron/excavation/compound ground plates on the floor layer (the
+avatar was drawn under the compound plate before), ten labels removed,
+state readouts on the low-prop band. Deck, Core Chamber — not yet
+redesigned (they render through the new camera only).
 
 ## 7. Route and wayfinding evidence
 
@@ -91,7 +101,8 @@ objective on resume), C8 (markers over the avatar), C10 (opening), C12
 (Dock door family), C13 (4:3 exposure at 16:9 browsers), C14 (objective
 size) — Unit 1; C2 in the Concourse and Records — Unit 2; C2/C3/C4 in the
 Laboratory (labels, equal salience, HUD collisions of the relay subtitle) —
-Unit 3. Remaining: C6, C9, C11 (Yard/Deck/Core), C15.
+Unit 3; C6 (snowfall/noise), C9 (yard labels), C11 (yard depth errors) —
+Unit 4. Remaining: C11 in the Deck/Core, C15.
 
 ## 11. Screenshot inventory
 
@@ -99,7 +110,9 @@ Unit 3. Remaining: C6, C9, C11 (Yard/Deck/Core), C15.
 `baseline-1280x720/` (30), `unit1/` (11 route frames + Dock at both
 resolutions), `unit2/` (11 route frames at 1280×720, recaptured after the
 correction round) + `unit2/800x600/` (11), `unit3/12…18` (laboratory at
-1280×720) + `unit3/800x600/` (see the Unit 3 note for the run status).
+1280×720) + `unit3/800x600/` (see the Unit 3 note for the run status),
+`unit4/19…26` (yard at 1280×720) + `unit4/800x600/19…30` (yard plus the
+pre-Unit-5 Deck/Core under the V4 camera).
 
 ## 12. Scientific event projection
 
@@ -109,7 +122,8 @@ types, 28 opportunity records, zone sequence and final stage `complete`
 identical, payload-key sets identical, form/counterbalance assignments
 identical. Unit 2 (`unit2.json`): 0 differences. Unit 3 (`unit3.json`,
 recorded on the tree carrying the Unit 2 correction and the laboratory
-redesign; `unit3.diff.json` = `[]`): **0 differences**.
+redesign; `unit3.diff.json` = `[]`): **0 differences**. Unit 4
+(`unit4.json`): see the Unit 4 note.
 
 ## 13–14. Test manifest and failure classification
 

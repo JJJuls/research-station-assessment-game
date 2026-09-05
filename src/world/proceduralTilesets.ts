@@ -150,7 +150,8 @@ export const STATION_THEMES: Record<StationThemeId, StationTheme> = {
     wallFaceLine: rgb(0x3d4956),
     shadow: rgb(0xa3b6c9),
     trim: rgb(0x7f95a8),
-    noise: 0.5,
+    // V4: calmer snow (the 0.5 speckle read as high-frequency noise).
+    noise: 0.2,
     floorStyle: 'snow',
     wallStyle: 'rock',
   },

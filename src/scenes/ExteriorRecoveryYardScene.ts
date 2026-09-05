@@ -27,7 +27,7 @@
  */
 import Phaser from 'phaser';
 
-import { Depth, key, worldDepth } from '../constants';
+import { Depth, DepthLayer, key, worldDepth } from '../constants';
 import type {
   DigRecord,
   DigRefusal,
@@ -48,7 +48,6 @@ import {
   ScanController,
   setFieldActionTelemetryScene,
 } from '../fieldActions';
-import { snowfall } from '../gameplay';
 import {
   beginManualWorldAction,
   endManualWorldAction,
@@ -220,7 +219,6 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
   /** Unit 7 (V19): the mast tower image (damaged → restored antenna art). */
   private mastTower?: Phaser.GameObjects.Image;
   private mastPulseMs = 0;
-  private snow: Phaser.GameObjects.Sprite[] = [];
   private plotOverlay?: Phaser.GameObjects.Graphics;
   private rigChip?: Phaser.GameObjects.Text;
   private depletedBanner?: Phaser.GameObjects.Text;
@@ -520,15 +518,80 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       },
     ]);
 
-    // ——— Dressing. ———
-    // Unit 7: the sign sits under the iris leaf, never behind it.
-    this.signage(12 * TILE, 17.15 * TILE, '▼  AIRLOCK — RETURN TO STATION');
-    this.buildSnowfall();
+    // ——— Dressing (V4): one static storm-recovery worksite. ———
+    // No ambient snowfall (mission §5); the storm reads through static
+    // drifts, debris and the cleared service path (buildWorksiteGrammar).
+    this.buildWorksiteGrammar();
     this.addDecor(11 * TILE, 15.4 * TILE, 'proc-footprints');
     this.addDecor(15 * TILE, 12.2 * TILE, 'proc-footprints');
     this.addDecor(8.5 * TILE, 8.4 * TILE, 'proc-ground-disturbed');
     this.addDecor(6 * TILE, 12.6 * TILE, 'proc-wall-pipes');
-    snowfall(this, { width: 800, height: 608, seed: 0x5eed4004, count: 26 });
+  }
+
+  // ————————————————————————————————— V4 worksite grammar ——
+
+  /**
+   * Presentation only: a cleared service path in packed snow that links
+   * the airlock apron, the coupling, Mast 04, the excavation field, the
+   * Metal Recovery Yard gate and the uplink posts; zone plates (compound
+   * gravel, excavation ground, apron); static drift ridges and debris
+   * groups along the ridges. Nothing here collides, moves or carries
+   * text; every coordinate the field actions and route specs use is
+   * unchanged.
+   */
+  private buildWorksiteGrammar() {
+    const path = (x: number, y: number, w: number, h: number) =>
+      // Review Y2: packed snow reads as a lane — darker token, 2 px edge.
+      this.add
+        .rectangle(x, y, w, h, 0x8fa3b6, 0.7)
+        .setOrigin(0.5)
+        .setStrokeStyle(2, 0x6f8497, 0.8)
+        .setDepth(DepthLayer.FloorDecal + 0.02);
+    const ground = (
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      color: number,
+      alpha: number,
+    ) =>
+      this.add
+        .rectangle(x, y, w, h, color, alpha)
+        .setOrigin(0.5)
+        .setStrokeStyle(1, 0x8195a9, 0.4)
+        .setDepth(DepthLayer.FloorDecal);
+
+    // Airlock apron (rows 12-15, cols 8-16) and the airlock threshold.
+    ground(12.5 * TILE, 13.5 * TILE, 9 * TILE, 3 * TILE, 0xb9c9d7, 0.5);
+    ground(12 * TILE, 15.5 * TILE, 3 * TILE, TILE, 0xa7bacb, 0.7);
+    // Service path: spine north from the apron to the mast footing …
+    path(12 * TILE, 9 * TILE, 2 * TILE, 8 * TILE);
+    // … west spur to the coupling (row 11) …
+    path(7 * TILE, 11 * TILE, 10 * TILE, TILE);
+    // … east spur to the excavation stake and the compound gate column …
+    path(13.5 * TILE, 10 * TILE, 5 * TILE, TILE);
+    path(15.5 * TILE, 8 * TILE, TILE, 5 * TILE);
+    // … the gate lane into the Metal Recovery Yard (row 6) …
+    path(18.5 * TILE, 6 * TILE, 7 * TILE, TILE);
+    // … and the north-west lane to the uplink posts (column 7, row 5).
+    path(7.5 * TILE, 7.5 * TILE, TILE, 5 * TILE);
+    path(5 * TILE, 5.5 * TILE, 6 * TILE, TILE);
+
+    // Excavation field: cleared, darker ground inside the stakes.
+    ground(
+      ((M23_PLOT.minCol + M23_PLOT.maxCol + 1) / 2) * TILE,
+      ((M23_PLOT.minRow + M23_PLOT.maxRow + 1) / 2) * TILE,
+      (M23_PLOT.maxCol - M23_PLOT.minCol + 1) * TILE,
+      (M23_PLOT.maxRow - M23_PLOT.minRow + 1) * TILE,
+      0x9fb0be,
+      0.6,
+    );
+
+    // Static storm aftermath (review Y3/Y8: no bright vector drifts —
+    // the calmer floor, the disturbed ground, footprints and debris carry
+    // it): debris at the wall bases.
+    this.addDecor(2 * TILE, 12.2 * TILE, 'proc-icon-scrap-plate');
+    this.addDecor(22.6 * TILE, 12.4 * TILE, 'proc-icon-scrap-plate');
   }
 
   // ————————————————————————————————— sites ——
@@ -583,13 +646,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     this.addDecor(site.x + 46, site.y + 6, 'proc-pipe-straight');
     this.addDecor(site.x + 78, site.y + 6, 'proc-pipe-straight');
     this.addDecor(site.x - 2, site.y + 44, 'proc-pipe-straight');
-    this.signage(site.x + 120, site.y - 14, 'COOLANT LINE — COUPLING');
-    this.signage(
-      YARD_SITES.thawRack.x + 52,
-      YARD_SITES.thawRack.y - 6,
-      'heat gun',
-    );
-    this.couplingDial = this.add.graphics().setDepth(3);
+    this.couplingDial = this.add.graphics().setDepth(DepthLayer.WorldReadout);
     this.frostOverlay = this.add
       .rectangle(site.x, site.y - 4, 44, 40, 0xcfe6ff, 0.42)
       .setStrokeStyle(1, 0xe8f4ff, 0.8)
@@ -640,8 +697,8 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
         'proc-antenna-damaged',
       )
       .setDepth(worldDepth(YARD_SITES.mastTower.y + 40));
-    this.mastFeed = this.add.graphics().setDepth(2);
-    this.mastChip = this.chip(YARD_SITES.mastTower.x, 2.2 * TILE, '');
+    this.mastFeed = this.add.graphics().setDepth(DepthLayer.FloorMarking);
+    this.mastChip = this.chip(YARD_SITES.mastTower.x, 1.85 * TILE, '');
   }
 
   private buildExcavationSite() {
@@ -701,7 +758,6 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       this.addDecor(x, y, 'proc-sector-post');
     }
 
-    this.signage(20.5 * TILE, 7.5 * TILE, 'EXCAVATION FIELD');
     this.addDecor(21 * TILE, 14.6 * TILE, 'proc-crate-fieldkit');
     this.addDecor(17 * TILE, 14.8 * TILE, 'proc-dig-mound');
   }
@@ -711,14 +767,17 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
 
     // Visibly different ground: a dark gravel/scrap floor under the
     // compound plus scattered scrap (pure presentation).
+    // V4: compound ground on the decal layer (a figure is never drawn
+    // under the yard floor) with an edge line; the rig pad under the rig.
     this.add
       .rectangle(17 * TILE, 2 * TILE, 7 * TILE, 5 * TILE, 0x1b1f24, 0.5)
       .setOrigin(0)
-      .setDepth(0.5);
+      .setStrokeStyle(1, 0x46586b, 0.8)
+      .setDepth(DepthLayer.FloorDecal);
     this.add
       .ellipse(rig.x, rig.y + 30, 96, 30, 0x2a2f36, 0.9)
       .setStrokeStyle(1, 0x46586b, 0.8)
-      .setDepth(0.6);
+      .setDepth(DepthLayer.FloorDecal + 0.01);
 
     for (const [x, y] of [
       [17.8 * TILE, 2.6 * TILE],
@@ -784,14 +843,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       YARD_SITES.magnetTray.y,
       'proc-bin-consumables',
     );
-    this.signage(
-      YARD_SITES.magnetTray.x,
-      YARD_SITES.magnetTray.y + 24,
-      'tray',
-      false,
-    );
-    this.signage(20.5 * TILE, 1.4 * TILE, 'METAL RECOVERY YARD', false);
-    this.rigChip = this.chip(rig.x - 52, rig.y - 68, '');
+    this.rigChip = this.chip(rig.x, rig.y - 68, '');
 
     // The equally visible useful alternative: the sorting bench.
     const bench = YARD_SITES.sortingBench;
@@ -905,10 +957,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       },
     });
 
-    this.signage(6 * TILE, 1.5 * TILE, 'FIELD UPLINK POSTS');
-    this.signage(postA.x, postA.y - 60, 'POST A · primary');
-    this.signage(postB.x, postB.y - 60, 'POST B · backup');
-    this.conduit = this.add.graphics().setDepth(1);
+    this.conduit = this.add.graphics().setDepth(DepthLayer.FloorMarking);
     this.lineAChip = this.chip(postA.x, postA.y + 34, '');
     this.lineBChip = this.chip(postB.x, postB.y + 34, '');
   }
@@ -931,7 +980,6 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
         return true;
       },
     });
-    this.signage(crate.x, crate.y + 30, 'SUPPLY CRATE');
 
     // ——— Cable flag (M05 occasion 2) — never mentioned. ———
     const flag = YARD_SITES.cableFlag;
@@ -1868,59 +1916,6 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
   // ————————————————————————————————— M05 occasion 2 ——
 
   /** Presented at the first quiet moment after the briefing was acknowledged. */
-  /**
-   * Unit 7 (V19): a restrained storm layer — six translucent snowfall
-   * tiles (PROVISIONAL strip) drifting over the yard; reduced motion holds
-   * one faint frame. Presentation only; never over a prompt (world depth).
-   */
-  private buildSnowfall() {
-    if (!this.textures.exists('plv1-fx-snowfall')) {
-      return;
-    }
-
-    if (!this.anims.exists('plv1-fx-snowfall-loop')) {
-      this.anims.create({
-        key: 'plv1-fx-snowfall-loop',
-        frames: this.anims.generateFrameNumbers('plv1-fx-snowfall', {
-          start: 0,
-          end: 8,
-        }),
-        frameRate: 7,
-        repeat: -1,
-      });
-    }
-
-    const reduced = prefersReducedMotion();
-    // Spots clear of the excavation plot (cols 16-22 / rows 8-13), the
-    // coupling collar, the uplink posts, the cable flag and the airlock.
-    const spots: [number, number][] = [
-      [6, 7],
-      [13, 10],
-      [10, 13],
-      [15, 6],
-      [22, 16],
-      [2, 14],
-    ];
-
-    for (const [tx, ty] of spots) {
-      // Slate-blue tint so the drift reads against the pale snow floor.
-      const sprite = this.add
-        .sprite(tx * TILE, ty * TILE, 'plv1-fx-snowfall', 0)
-        .setTint(0x7f97b2)
-        .setAlpha(reduced ? 0.3 : 0.55)
-        // Ground drift: UNDER every figure, marker and task graphic (world
-        // depth ≥ 0; markers live in the AboveWorld container) so no
-        // measured stimulus is ever covered (scientific review S-M1).
-        .setDepth(-0.1);
-
-      if (!reduced) {
-        sprite.play('plv1-fx-snowfall-loop');
-      }
-
-      this.snow.push(sprite);
-    }
-  }
-
   /** Unit 7 (V19): mast art follows the restoration state; a slow two-frame
    * signal pulse once the antenna is restored (reduced motion: held). */
   private refreshMastArt() {
@@ -2048,27 +2043,33 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
 
   // ————————————————————————————————— presentation ——
 
-  /** Unit 7 (V17): shared signage style; `dark` = dark text on snow. */
-  private signage(x: number, y: number, text: string, dark = true) {
-    this.zoneSignage(x, y, text, !dark);
-  }
-
+  /**
+   * State readout chip (task state, never a directive): environment
+   * register, rasterised at 2× for the world zoom, sorted just below the
+   * foot line of the prop it annotates so it never covers a figure.
+   */
   private chip(x: number, y: number, text: string): Phaser.GameObjects.Text {
-    return this.add
-      .text(x, y, text, {
-        backgroundColor: '#101820',
-        color: '#dce7f0',
-        font: '10px monospace',
-        padding: { x: 4, y: 2 },
-      })
-      .setOrigin(0.5)
-      .setDepth(3);
+    return (
+      this.add
+        .text(x, y, text, {
+          backgroundColor: '#101820',
+          color: '#c9d6e2',
+          font: '10px monospace',
+          padding: { x: 4, y: 2 },
+          resolution: 2,
+        })
+        .setOrigin(0.5)
+        .setAlpha(0.88)
+        // Review Y1: the low-prop band — under every figure by construction;
+        // chips are placed beside/under their props so nothing overlaps them.
+        .setDepth(DepthLayer.LowProp)
+    );
   }
 
   private renderDugCell(col: number, row: number): void {
     this.add
       .rectangle(col * TILE + 16, row * TILE + 16, 26, 26, 0x1a1410, 0.55)
-      .setDepth(1);
+      .setDepth(DepthLayer.FloorMarking);
   }
 
   private refreshAllVisuals() {
@@ -2148,7 +2149,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     this.plotOverlay?.destroy();
 
     const active = m23WindowOpen();
-    const graphics = this.add.graphics().setDepth(1);
+    const graphics = this.add.graphics().setDepth(DepthLayer.FloorMarking);
     const x0 = M23_PLOT.minCol * TILE;
     const y0 = M23_PLOT.minRow * TILE;
     const w = (M23_PLOT.maxCol - M23_PLOT.minCol + 1) * TILE;

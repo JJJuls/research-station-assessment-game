@@ -82,3 +82,47 @@ Pure: `e2e/pilot_exterior_models.spec.ts`. Route: `e2e/pilot_yard.spec.ts`,
   Metal Yard inset). Scanner signals, dig cells, stations, approach points
   and every window are untouched in code; the rendered stimulus change is
   enumerated in the Unit 7 ledger.
+
+## V4 visual-validity redesign (2026-09-05) — presentation only
+
+Governing document: `docs/game/VISUAL-SYSTEM-V4.md`. No site, door, spawn,
+prompt, option, window, event, form, target cell, scan spot, dig plot,
+cache, deck state or re-entry behaviour changed; the C scan, D dig and F
+winch mechanics and the M05/M19/M20/M23/M24/M26 opportunities are the
+V3 implementation untouched. The grid (rock ridges, compound, footing,
+airlock) is unchanged, so every e2e lane is unchanged by construction.
+
+- **Weather.** Both ambient snowfall layers are gone (the tween flakes and
+  the `plv1-fx-snowfall` loop). The storm reads through static composition:
+  five drift ridges along the ridges and walls, debris plates at the wall
+  bases, the disturbed ground and footprints that were already there. The
+  exterior floor's per-pixel speckle is calmed (theme noise 0.5 → 0.2 in
+  `src/world/proceduralTilesets.ts`, exterior theme only).
+- **One service path.** A cleared lane in packed snow (darker plate with an
+  edge line) links the airlock threshold and apron → the coupling spur
+  (west, row 11) → the spine north to the mast footing → the east spur to
+  the excavation stake and the compound gate column → the gate lane into
+  the Metal Recovery Yard (row 6) → the north-west lane (column 7 → row 5)
+  to the uplink posts. It follows the operational order of the objective
+  line and the beacon; the way back is the same spine to the apron and the
+  threshold plate in front of the airlock.
+- **Zones by terrain.** Apron plate (rows 12–15), cleared darker ground
+  inside the excavation stakes (the dashed cyan outline still marks the
+  window state), compound gravel with an edge line and the rig pad under
+  the rig, both on the floor-decal layer so a figure is never drawn under
+  the yard floor (they sat at depths 0.5/0.6 inside the actor range).
+- **Labels removed (10).** `FIELD UPLINK POSTS`, `POST A · primary`,
+  `POST B · backup`, `COOLANT LINE — COUPLING`, `heat gun`,
+  `EXCAVATION FIELD`, `METAL RECOVERY YARD`, `tray`, `SUPPLY CRATE`,
+  `▼ AIRLOCK — RETURN TO STATION`. "Primary/backup" stays in the uplink
+  brief and prompt bodies (unchanged text). The nearest-target name chips
+  and the projected prompt remain.
+- **State readouts kept, restyled.** The coupling, mast, rig and line A/B
+  chips (task state the models drive; their text is unchanged) render in
+  the environment register, rasterised at 2×, sorted just below the foot
+  line of the prop they annotate; the mast chip moved up 11 px onto the
+  rock edge so the tower never overlaps it. The depletion banner keeps its
+  above-player depth (state statement).
+- **Depth.** Dug cells, the plot outline, the conduit and the mast feed
+  lines move from the foreground depths (1–2, which drew over the avatar)
+  to the floor-marking layer; the coupling dial to the world-readout layer.
