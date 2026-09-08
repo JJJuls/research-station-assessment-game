@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Story beats / participant route / restoration"><title>Story beats / participant route / restoration</title><desc>One outpost, fixed handovers, independently owned task states.</desc><rect width="100%" height="100%" fill="#f2f0e9"/>
+<text x="40" y="45" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="600">ASTRA / STATION 080 / DESIGN AUTHORITY</text>
+<text x="40" y="86" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="700">Story beats / participant route / restoration</text>
+<text x="40" y="114" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="16" font-weight="400">One outpost, fixed handovers, independently owned task states.</text>
+<rect x="40" y="180" width="360" height="250" fill="#dde1db" stroke="#18232c" stroke-width="1" />
+<text x="60" y="215" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">01 Dock</text>
+<text x="60" y="247" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Arrival / no primary</text>
+<text x="60" y="292" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Storm outside; cleared interior</text>
+<text x="60" y="359" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="400">Shuttle / terminal</text>
+<line x1="400" y1="305" x2="422" y2="305" stroke="#386b73" stroke-width="4" />
+<rect x="430" y="180" width="360" height="250" fill="#dde1db" stroke="#18232c" stroke-width="1" />
+<text x="450" y="215" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">02 Concourse</text>
+<text x="450" y="247" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">E1 handover</text>
+<text x="450" y="292" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Operations crew at counter</text>
+<text x="450" y="359" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="400">M01 M05o1 M09 M10 M12o1 M14</text>
+<line x1="790" y1="305" x2="812" y2="305" stroke="#386b73" stroke-width="4" />
+<rect x="820" y="180" width="360" height="250" fill="#dde1db" stroke="#18232c" stroke-width="1" />
+<text x="840" y="215" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">03 Records</text>
+<text x="840" y="247" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">E2 work record</text>
+<text x="840" y="292" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Transit crates contained</text>
+<text x="840" y="359" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="400">M02 M03a M04 M06 M07 M12o2 M13</text>
+<line x1="1180" y1="305" x2="1202" y2="305" stroke="#386b73" stroke-width="4" />
+<rect x="1210" y="180" width="360" height="250" fill="#dde1db" stroke="#18232c" stroke-width="1" />
+<text x="1230" y="215" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">04 Laboratory</text>
+<text x="1230" y="247" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">E3 signal incident</text>
+<text x="1230" y="292" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Receiver case remains external</text>
+<text x="1230" y="359" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="400">M15 M16 M17 M18; M10 recipient</text>
+<rect x="40" y="480" width="360" height="250" fill="#dde1db" stroke="#18232c" stroke-width="1" />
+<text x="60" y="515" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">05 Yard</text>
+<text x="60" y="547" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">E4 recovery</text>
+<text x="60" y="592" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Safe cleared apron</text>
+<text x="60" y="659" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="400">M05o2 M19 M20 M23 M24 M26</text>
+<line x1="400" y1="605" x2="422" y2="605" stroke="#386b73" stroke-width="4" />
+<rect x="430" y="480" width="360" height="250" fill="#dde1db" stroke="#18232c" stroke-width="1" />
+<text x="450" y="515" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">06 Return hub</text>
+<text x="450" y="547" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">E5 check-in</text>
+<text x="450" y="592" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Recognisable counter / gauge</text>
+<text x="450" y="659" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="400">M09 check2 / M10</text>
+<line x1="790" y1="605" x2="812" y2="605" stroke="#386b73" stroke-width="4" />
+<rect x="820" y="480" width="360" height="250" fill="#dde1db" stroke="#18232c" stroke-width="1" />
+<text x="840" y="515" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">07 Records return</text>
+<text x="840" y="547" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">E5 reconcile</text>
+<text x="840" y="592" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Crew service report arrives</text>
+<text x="840" y="659" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="400">M03b M07 M20 M21 M22; M25 notice</text>
+<line x1="1180" y1="605" x2="1202" y2="605" stroke="#386b73" stroke-width="4" />
+<rect x="1210" y="480" width="360" height="250" fill="#dde1db" stroke="#18232c" stroke-width="1" />
+<text x="1230" y="515" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">08 Utility → Core</text>
+<text x="1230" y="547" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">E6 closure</text>
+<text x="1230" y="592" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Fixed feeds / quiet</text>
+<text x="1230" y="615" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">synchronisation</text>
+<text x="1230" y="659" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="400">No new primary opportunity</text>
+<text x="40" y="840" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">Route: Dock → Concourse → Records → Concourse → Lab → Yard → Lab → Concourse → Records → Concourse → Utility → Core. Stage progress is</text>
+<text x="40" y="864" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">not individual task success. M08/M11 remain secondary context; M25 questionnaire-primary notice.</text>
+<text x="40" y="978" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">Original analytical blockout • labels are reviewer annotations • no commercial-game imagery</text>
+</svg>

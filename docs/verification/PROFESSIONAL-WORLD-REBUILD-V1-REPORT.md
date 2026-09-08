@@ -159,3 +159,68 @@ V3 report §1.7/§2.6/§4.2, V4 report) remain open and are not touched.
 
 Nothing was pushed, merged, tagged, deployed, published, deleted or removed.
 No worktree was created or removed. No PixelLab call was made in U0.
+
+## 16. Astra design-authority checkpoint — 2026-09-08
+
+This section records a documentation and original-mockup authority pass at source
+HEAD `f6e051f2b74db2d62213d62ebc2848b638d72d4d` on
+`fable-professional-world-rebuild-v1`. U0, U1, U1 closure and U2 remain historical
+implementation evidence. The [Astra package](professional-world-v1/astra-authority/README.md)
+governs the next presentation rebuild; no product implementation was performed here.
+
+The owner accepted Codex-native Workspace permissions, AGENTS.md, the explicit
+mission prohibitions, a frozen 39-file documentation/mockup allowlist, bounded
+read-only Git checks, explicit-path staging and final verification. The
+Claude-specific guard was not modified. After the owner closed the older Codex
+instance, PID 20632 was absent and no independent worktree writer was identified.
+The process evidence and its point-in-time limits are in the
+[checkpoint amendment](professional-world-v1/astra-authority/CHECKPOINT-AND-ALLOWLIST.md).
+
+Selected direction: a fixed 1280×720 world plate, 40×22.5 visible tiles at both
+supported resolutions, with seven rooms larger than the viewport and functional
+districts around clear circulation. The existing inter-zone operations tree and
+purposeful Workshop return remain; local loops provide movement choice. The
+camera selection explicitly accepts and tests fractional 1.5 scaling at 1920×1080.
+U1/U2 presentation is substantially revised: Dock and opening are replaced
+visually, Concourse is reblocked, HUD and map are revised, while interaction
+registry and story-state infrastructure remain subject to the frozen scientific
+boundaries. The exact [verdict and migration instructions](professional-world-v1/astra-authority/AUDIT-AND-U1-U2-VERDICT.md)
+supersede assumptions of automatic U1/U2 retention.
+
+Evidence includes the current source/route and all rooms, historical U0/U1/U2
+reports and captures, actual current browser pixels at both resolutions,
+inventory/map/task surfaces, existing art inventories, the workbook and ledger,
+and official benchmark pages/screenshots. The already completed Emberville
+ingestion was used without repeating extraction. The normal-control route audit
+reached stable Core and its visible completion notice with no page errors;
+external requests were blocked and no remote data export occurred.
+
+The five-difference U2 projection is classified as a **test-driver miss** for
+the M09 Concourse read: stale RETURN coordinates and an identity-blind prompt
+helper missed the relocated gauge. Current-position normal activation emitted
+the M09 completion event. The historical failed projection remains unchanged;
+Fable must repair only the driver and establish a fresh comparison baseline.
+
+All 26 identities and retained scientific fields are cross-referenced without
+questionnaire wording. Workbook-to-ledger comparison found zero differences in
+364 retained fields. Sixteen strong design candidates, seven conditional
+candidates and three questionnaire-primary items remain provisional behavioural
+analogues. M16 selected-opportunity mismatch, M05 exposure, M09 semantics, M10
+recipient posts and other owner questions remain explicitly held. No scientific
+authority, event meaning, score, canonical status, transport or handoff semantics
+were changed.
+
+Concrete deliverables include 16 original SVG boards, an interactive gallery,
+numeric layouts, camera/topology alternatives and weighted selection, an exact
+M01–M26 crosswalk, an asset audit, six bounded PixelLab batches and a
+[copy-paste Fable mission](professional-world-v1/astra-authority/FABLE-PRODUCTION-MISSION.md)
+covering P00–P10 with literal unit scopes. Four specialist reviews inspected
+actual artifacts; one consolidated correction round was applied. The
+[verification record](professional-world-v1/astra-authority/REVIEW-AND-VERIFICATION.md)
+records final checks, human/hardware/scientific limitations and an incidental
+375-byte Chromium diagnostic log that was preserved in TEMP after appearing
+outside the allowlist. No tracked file was deleted.
+
+Production implementation and PixelLab calls remain for Fable after design
+approval. Nothing was pushed, merged, tagged, deployed or published; no branch,
+worktree or existing evidence was deleted or removed.

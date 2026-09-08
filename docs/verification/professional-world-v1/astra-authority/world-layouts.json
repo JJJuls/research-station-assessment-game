@@ -1,0 +1,1747 @@
+{
+  "version": "Astra authority 2026-09-08",
+  "units": "tile coordinates; multiply by32 for world pixels; rectangles x,y,w,h",
+  "camera": {
+    "selected": "A fixed wide",
+    "view_world": [1280, 720],
+    "view_tiles": [40, 22.5],
+    "display_scale_720": 1,
+    "display_scale_1080": 1.5,
+    "player_measured_visible_height": 45,
+    "player_target_visible_height": 48,
+    "body": [32, 42],
+    "movement_speed": 175,
+    "pixel_policy": "Native output at both sizes, identical world field, texel-aware compositing at1.5. Sharp interiors; fractional edge widths explicitly accepted only after motion/readability checks. No claim of uniform integer pixels at1080."
+  },
+  "topology": {
+    "selected": "Operational tree with local circulation loops; existing inter-zone edges unchanged",
+    "edges": [
+      ["dock", "concourse"],
+      ["concourse", "records"],
+      ["concourse", "laboratory"],
+      ["laboratory", "yard"],
+      ["concourse", "utility"],
+      ["utility", "core"]
+    ],
+    "route": [
+      "dock",
+      "concourse",
+      "records",
+      "concourse",
+      "laboratory",
+      "yard",
+      "laboratory",
+      "concourse",
+      "records",
+      "concourse",
+      "utility",
+      "core"
+    ],
+    "alternative": "Connected service ring adds Records↔Lab and Yard↔Utility; rejected pending exposure authority."
+  },
+  "zones": [
+    {
+      "id": "dock",
+      "name": "Arrival / Dock",
+      "tiles": [48, 30],
+      "world_px": [1536, 960],
+      "tile_px": 32,
+      "initial_camera": [4, 7.5, 40, 22.5],
+      "spine_width_tiles": 4,
+      "secondary_width_tiles": 3,
+      "doors": [
+        {
+          "side": "N",
+          "to": "concourse",
+          "at": [24, 1],
+          "spawn": [24, 5],
+          "clear_width_tiles": 3,
+          "approach": [24, 3]
+        }
+      ],
+      "spawn": [24, 25],
+      "paths": [
+        {
+          "name": "main east-west",
+          "rect": [2, 13, 44, 4]
+        },
+        {
+          "name": "main north-south",
+          "rect": [22, 2, 4, 26]
+        },
+        {
+          "name": "west local loop",
+          "rect": [3, 6, 3, 18]
+        },
+        {
+          "name": "north local loop",
+          "rect": [6, 6, 36, 3]
+        },
+        {
+          "name": "east local loop",
+          "rect": [39, 6, 3, 18]
+        },
+        {
+          "name": "south local loop",
+          "rect": [6, 21, 36, 3]
+        }
+      ],
+      "stations": [
+        {
+          "id": "checkin",
+          "label": "Check-in terminal",
+          "at": [30, 20],
+          "approach": [30, 22],
+          "footprint": [29, 18, 2, 2],
+          "items": [],
+          "kind": "context"
+        },
+        {
+          "id": "marker",
+          "label": "Movement practice",
+          "at": [24, 22],
+          "approach": [24, 24],
+          "footprint": null,
+          "items": [],
+          "kind": "tutorial"
+        },
+        {
+          "id": "airlock",
+          "label": "Docking sleeve",
+          "at": [24, 28],
+          "approach": [24, 26],
+          "footprint": null,
+          "items": [],
+          "kind": "unavailable"
+        }
+      ],
+      "landmark": {
+        "label": "South berth glazing / shuttle",
+        "rect": [6, 25, 11, 3]
+      },
+      "districts": [
+        {
+          "name": "sealed transport side",
+          "rect": [3, 24, 17, 4]
+        },
+        {
+          "name": "arrival / handover",
+          "rect": [27, 15, 13, 10]
+        },
+        {
+          "name": "cargo staging",
+          "rect": [5, 7, 13, 10]
+        }
+      ],
+      "quiet": {
+        "label": "weather window / bench",
+        "rect": [8, 22, 7, 3]
+      },
+      "decor": [
+        {
+          "label": "contained crates",
+          "rect": [36, 24, 5, 2]
+        },
+        {
+          "label": "wall utilities",
+          "rect": [3, 3, 4, 3]
+        }
+      ],
+      "occlusion": "North walls have removable foreground caps; alpha fades only when actor overlaps. Task faces/door aprons never behind caps. Explicit rear footprints; sort by authored foot Y.",
+      "restoration": [
+        "Loose cover beside sealed exterior berth",
+        "Crew secures the same exterior cover"
+      ],
+      "purpose": "Pressure-safe transfer from shuttle to station; identity check and controls practice before assessment.",
+      "identity": "Docking sleeve, reinforced glass, baggage rollers, ribbed metal floor.",
+      "traversal_seconds": [8, 12],
+      "beyond_initial": "Northern station vestibule extends above initial view. Shuttle remains one legible boundary landmark.",
+      "npcs": [
+        {
+          "name": "Vale on station line",
+          "at": [30, 20],
+          "physical": false
+        }
+      ],
+      "entry_state": "Watched and skipped opening both arrive at (24,25) with identical inputs, tutorial, inventory and event order except existing opening outcome.",
+      "tutorial_marker": [24, 22],
+      "restoration_change": {
+        "trigger_stage": "handover_briefing",
+        "shape_id": "dock-weather-cover",
+        "before": "Loose cover beside sealed exterior berth",
+        "after": "Crew secures the same exterior cover",
+        "kind": "shutter",
+        "protected_unchanged": "check-in/tutorial state and route collision",
+        "motion": "single short state transition; static equivalent; never a task attractor"
+      },
+      "closed_frontages": [
+        {
+          "side": "S",
+          "purpose": "equipment access frontage"
+        },
+        {
+          "side": "E",
+          "purpose": "district service wall"
+        },
+        {
+          "side": "W",
+          "purpose": "reference / weather frontage"
+        }
+      ],
+      "coordinate_contract": "Station at = operating contact anchor. Approach/spawn = player sprite origin; actual body extents x[-16,+16], y[-18,+24]worldpx. Art glyph foot displayed24px south of actor origin.",
+      "walkable_floor_rects": [
+        [2, 13, 44, 4],
+        [22, 2, 4, 26],
+        [3, 6, 3, 18],
+        [6, 6, 36, 3],
+        [39, 6, 3, 18],
+        [6, 21, 36, 3],
+        [3, 24, 17, 4],
+        [27, 15, 13, 10],
+        [5, 7, 13, 10],
+        [8, 22, 7, 3],
+        [28, 20, 4, 4],
+        [22.5, 20.5, 9.0, 3],
+        [22, 22, 4, 4],
+        [22.5, 22.5, 3.0, 3],
+        [22, 23, 4, 4],
+        [22.5, 23.5, 3.0, 3],
+        [22.5, -0.5, 3, 7]
+      ],
+      "floor_contract": "Explicit union of these rectangles, minus authored footprints and hull bounds. Paths are physical clear widths; collider inflation is checked separately."
+    },
+    {
+      "id": "concourse",
+      "name": "Station Concourse",
+      "tiles": [60, 38],
+      "world_px": [1920, 1216],
+      "tile_px": 32,
+      "initial_camera": [10, 15.5, 40, 22.5],
+      "spine_width_tiles": 4,
+      "secondary_width_tiles": 3,
+      "doors": [
+        {
+          "side": "S",
+          "to": "dock",
+          "at": [30, 37],
+          "spawn": [30, 33],
+          "clear_width_tiles": 3,
+          "approach": [30, 35]
+        },
+        {
+          "side": "W",
+          "to": "records",
+          "at": [1, 19],
+          "spawn": [5, 19],
+          "clear_width_tiles": 3,
+          "approach": [3, 19]
+        },
+        {
+          "side": "N",
+          "to": "laboratory",
+          "at": [30, 1],
+          "spawn": [30, 5],
+          "clear_width_tiles": 3,
+          "approach": [30, 3]
+        },
+        {
+          "side": "E",
+          "to": "utility",
+          "at": [59, 19],
+          "spawn": [55, 19],
+          "clear_width_tiles": 3,
+          "approach": [57, 19]
+        }
+      ],
+      "spawn": [30, 33],
+      "paths": [
+        {
+          "name": "main east-west",
+          "rect": [2, 17, 56, 4]
+        },
+        {
+          "name": "main north-south",
+          "rect": [28, 2, 4, 34]
+        },
+        {
+          "name": "west local loop",
+          "rect": [6, 6, 3, 26]
+        },
+        {
+          "name": "north local loop",
+          "rect": [6, 6, 48, 3]
+        },
+        {
+          "name": "east local loop",
+          "rect": [54, 6, 3, 26]
+        },
+        {
+          "name": "south local loop",
+          "rect": [6, 29, 48, 3]
+        }
+      ],
+      "stations": [
+        {
+          "id": "vale",
+          "label": "Vale / operations handover",
+          "at": [40, 27],
+          "approach": [40, 29],
+          "footprint": [39.5, 25.6875, 1, 1.3125],
+          "items": [],
+          "kind": "npc"
+        },
+        {
+          "id": "kai-return",
+          "label": "Kai / return recipient",
+          "at": [45, 27],
+          "approach": [45, 29],
+          "footprint": [44.5, 25.6875, 1, 1.3125],
+          "items": ["M10"],
+          "kind": "npc",
+          "availability": "preserve current return recipient rules"
+        },
+        {
+          "id": "plan",
+          "label": "Incident plan board",
+          "at": [14, 12],
+          "approach": [14, 14],
+          "footprint": [13, 10, 2, 2],
+          "items": ["M01"],
+          "kind": "task"
+        },
+        {
+          "id": "incident",
+          "label": "Incident evidence desk",
+          "at": [44, 12],
+          "approach": [44, 14],
+          "footprint": [43, 10, 2, 2],
+          "items": ["M14"],
+          "kind": "task"
+        },
+        {
+          "id": "qc1",
+          "label": "Completed routing packet",
+          "at": [22, 27],
+          "approach": [22, 29],
+          "footprint": [21, 25, 2, 2],
+          "items": ["M12"],
+          "kind": "task"
+        },
+        {
+          "id": "gauge",
+          "label": "Monitor gauge",
+          "at": [52, 23],
+          "approach": [52, 25],
+          "footprint": [51, 21, 2, 2],
+          "items": ["M09"],
+          "kind": "task"
+        },
+        {
+          "id": "fault1",
+          "label": "Desk lamp / quiet occasion",
+          "at": [13, 25],
+          "approach": [13, 27],
+          "footprint": [12, 23, 2, 2],
+          "items": ["M05"],
+          "kind": "quiet",
+          "trigger_pad": [13, 29],
+          "guidance": "No mission arrow or task prompt before matched eligible occasion; owner gate applies."
+        }
+      ],
+      "landmark": {
+        "label": "Operations island / status wall",
+        "rect": [38, 22, 10, 3]
+      },
+      "districts": [
+        {
+          "name": "briefing / incident evidence",
+          "rect": [36, 3, 17, 11]
+        },
+        {
+          "name": "records preparation",
+          "rect": [10, 3, 12, 11]
+        },
+        {
+          "name": "operations reception",
+          "rect": [36, 22, 16, 10]
+        },
+        {
+          "name": "quiet reading bay",
+          "rect": [10, 23, 14, 10]
+        }
+      ],
+      "quiet": {
+        "label": "reading / weather window",
+        "rect": [4, 25, 5, 7]
+      },
+      "decor": [
+        {
+          "label": "wall archive",
+          "rect": [2, 3, 3, 10]
+        },
+        {
+          "label": "equipment storage",
+          "rect": [57, 5, 2, 8]
+        },
+        {
+          "label": "contained supplies",
+          "rect": [35, 34, 6, 2]
+        }
+      ],
+      "occlusion": "North walls have removable foreground caps; alpha fades only when actor overlaps. Task faces/door aprons never behind caps. Explicit rear footprints; sort by authored foot Y.",
+      "restoration": [
+        "Counter back wall on fixed standby light",
+        "Crew service lamp becomes steady"
+      ],
+      "purpose": "Shared operational handover and records triage; central orientation and return contact.",
+      "identity": "High clerestory, orthogonal service spine and a recognisable staffed operations island.",
+      "traversal_seconds": [10, 16],
+      "beyond_initial": "North incident/plan bays and west/east thresholds require purposeful movement; central crossing and operations landmark remain recognisable.",
+      "npcs": [
+        {
+          "name": "Vale",
+          "at": [40, 27],
+          "physical": true
+        },
+        {
+          "name": "Kai (return)",
+          "at": [45, 27],
+          "physical": true
+        }
+      ],
+      "quiet_pair": "M05 proposal: identical 128px trigger distance and neutral lamp/flag salience. Not an approved eligibility/timing change.",
+      "restoration_change": {
+        "trigger_stage": "workshop",
+        "shape_id": "operations-service-lamp",
+        "before": "Counter back wall on fixed standby light",
+        "after": "Crew service lamp becomes steady",
+        "kind": "lamp",
+        "protected_unchanged": "M05 quiet lamp, M09 gauge/reminders, QC error and all packet sources",
+        "motion": "single short state transition; static equivalent; never a task attractor"
+      },
+      "closed_frontages": [],
+      "coordinate_contract": "Station at = operating contact anchor. Approach/spawn = player sprite origin; actual body extents x[-16,+16], y[-18,+24]worldpx. Art glyph foot displayed24px south of actor origin.",
+      "walkable_floor_rects": [
+        [2, 17, 56, 4],
+        [28, 2, 4, 34],
+        [6, 6, 3, 26],
+        [6, 6, 48, 3],
+        [54, 6, 3, 26],
+        [6, 29, 48, 3],
+        [36, 3, 17, 11],
+        [10, 3, 12, 11],
+        [36, 22, 16, 10],
+        [10, 23, 14, 10],
+        [4, 25, 5, 7],
+        [38, 27, 4, 4],
+        [38.5, 17.5, 3, 13.0],
+        [43, 27, 4, 4],
+        [43.5, 17.5, 3, 13.0],
+        [12, 12, 4, 4],
+        [12.5, 12.5, 3, 8.0],
+        [42, 12, 4, 4],
+        [42.5, 12.5, 3, 8.0],
+        [20, 27, 4, 4],
+        [20.5, 27.5, 11.0, 3],
+        [50, 23, 4, 4],
+        [50.5, 17.5, 3, 9.0],
+        [11, 25, 4, 4],
+        [11.5, 17.5, 3, 11.0],
+        [28.5, 31.5, 3, 7],
+        [-0.5, 17.5, 7, 3],
+        [28.5, -0.5, 3, 7],
+        [53.5, 17.5, 7, 3]
+      ],
+      "floor_contract": "Explicit union of these rectangles, minus authored footprints and hull bounds. Paths are physical clear widths; collider inflation is checked separately."
+    },
+    {
+      "id": "records",
+      "name": "Records Workshop",
+      "tiles": [64, 40],
+      "world_px": [2048, 1280],
+      "tile_px": 32,
+      "initial_camera": [24, 8.75, 40, 22.5],
+      "spine_width_tiles": 4,
+      "secondary_width_tiles": 3,
+      "doors": [
+        {
+          "side": "E",
+          "to": "concourse",
+          "at": [63, 20],
+          "spawn": [59, 20],
+          "clear_width_tiles": 3,
+          "approach": [61, 20]
+        }
+      ],
+      "spawn": [59, 20],
+      "paths": [
+        {
+          "name": "main east-west",
+          "rect": [2, 18, 60, 4]
+        },
+        {
+          "name": "main north-south",
+          "rect": [30, 2, 4, 36]
+        },
+        {
+          "name": "west local loop",
+          "rect": [6, 6, 3, 28]
+        },
+        {
+          "name": "north local loop",
+          "rect": [6, 6, 52, 3]
+        },
+        {
+          "name": "east local loop",
+          "rect": [55, 6, 3, 28]
+        },
+        {
+          "name": "south local loop",
+          "rect": [6, 31, 52, 3]
+        }
+      ],
+      "stations": [
+        {
+          "id": "orders",
+          "label": "Work orders / sign-off",
+          "at": [54, 18],
+          "approach": [54, 20],
+          "footprint": [53, 16, 2, 2],
+          "items": [],
+          "kind": "context"
+        },
+        {
+          "id": "case",
+          "label": "Case filing workspace",
+          "at": [12, 12],
+          "approach": [12, 14],
+          "footprint": [11, 10, 2, 2],
+          "items": ["M02"],
+          "kind": "task"
+        },
+        {
+          "id": "reset-a",
+          "label": "Press A / initial reset",
+          "at": [26, 12],
+          "approach": [28, 12],
+          "footprint": [25, 10, 2, 2],
+          "items": ["M03"],
+          "kind": "task"
+        },
+        {
+          "id": "reset-b",
+          "label": "Press B / return reset",
+          "at": [26, 28],
+          "approach": [26, 30],
+          "footprint": [25, 26, 2, 2],
+          "items": ["M03"],
+          "kind": "task"
+        },
+        {
+          "id": "sample",
+          "label": "Sample cutter / debris window",
+          "at": [12, 28],
+          "approach": [12, 30],
+          "footprint": [11, 26, 2, 2],
+          "items": ["M04"],
+          "kind": "task"
+        },
+        {
+          "id": "chute",
+          "label": "Sample disposal chute",
+          "at": [16, 28],
+          "approach": [16, 30],
+          "footprint": [15, 26, 2, 2],
+          "items": ["M04"],
+          "kind": "task"
+        },
+        {
+          "id": "dispatch",
+          "label": "Dispatch terminal",
+          "at": [43, 11],
+          "approach": [43, 13],
+          "footprint": [42, 9, 2, 2],
+          "items": ["M06"],
+          "kind": "task"
+        },
+        {
+          "id": "calibration",
+          "label": "Six-stage calibration",
+          "at": [44, 28],
+          "approach": [44, 30],
+          "footprint": [43, 26, 2, 2],
+          "items": ["M07"],
+          "kind": "task"
+        },
+        {
+          "id": "qc2",
+          "label": "Completed dispatch product",
+          "at": [54, 28],
+          "approach": [54, 30],
+          "footprint": [53, 26, 2, 2],
+          "items": ["M12"],
+          "kind": "task"
+        },
+        {
+          "id": "lattice",
+          "label": "Conduit test bed",
+          "at": [54, 11],
+          "approach": [54, 13],
+          "footprint": [53, 9, 2, 2],
+          "items": ["M13"],
+          "kind": "task"
+        },
+        {
+          "id": "feed",
+          "label": "Antenna return feed",
+          "at": [35, 12],
+          "approach": [35, 14],
+          "footprint": [34, 10, 2, 2],
+          "items": ["M20"],
+          "kind": "task"
+        },
+        {
+          "id": "manual",
+          "label": "Reference / relay bench",
+          "at": [10, 18],
+          "approach": [10, 20],
+          "footprint": [9, 16, 2, 2],
+          "items": ["M21"],
+          "kind": "task"
+        },
+        {
+          "id": "report",
+          "label": "Incident revision desk",
+          "at": [35, 29],
+          "approach": [35, 31],
+          "footprint": [34, 27, 2, 2],
+          "items": ["M22"],
+          "kind": "task"
+        },
+        {
+          "id": "notice",
+          "label": "Questionnaire handoff notice",
+          "at": [54, 6],
+          "approach": [54, 8],
+          "footprint": [53, 4, 2, 2],
+          "items": ["M25"],
+          "kind": "task"
+        },
+        {
+          "id": "supplies",
+          "label": "Mission supplies cabinet",
+          "at": [6, 5],
+          "approach": [6, 7],
+          "footprint": [5, 3, 2, 2],
+          "items": [],
+          "kind": "context"
+        },
+        {
+          "id": "optional",
+          "label": "Optional assembly workspace",
+          "at": [19, 30],
+          "approach": [19, 32],
+          "footprint": [18, 28, 2, 2],
+          "items": ["M08"],
+          "kind": "task"
+        },
+        {
+          "id": "seal",
+          "label": "Seal / transfer log",
+          "at": [45, 5],
+          "approach": [45, 7],
+          "footprint": [44, 3, 2, 2],
+          "items": ["M11"],
+          "kind": "task"
+        }
+      ],
+      "landmark": {
+        "label": "Records wall / receiving archive",
+        "rect": [11, 3, 15, 3]
+      },
+      "districts": [
+        {
+          "name": "intake / traceable records",
+          "rect": [9, 7, 20, 7]
+        },
+        {
+          "name": "fabrication / separate residuals",
+          "rect": [9, 25, 20, 10]
+        },
+        {
+          "name": "dispatch / quality / lattice",
+          "rect": [40, 7, 18, 27]
+        },
+        {
+          "name": "return reconciliation",
+          "rect": [33, 5, 7, 30]
+        }
+      ],
+      "quiet": {
+        "label": "reference recess",
+        "rect": [3, 21, 6, 5]
+      },
+      "decor": [
+        {
+          "label": "sealed storage",
+          "rect": [2, 10, 3, 5]
+        },
+        {
+          "label": "parts cages",
+          "rect": [59, 24, 3, 10]
+        },
+        {
+          "label": "archive stacks",
+          "rect": [17, 14, 9, 3]
+        }
+      ],
+      "occlusion": "North walls have removable foreground caps; alpha fades only when actor overlaps. Task faces/door aprons never behind caps. Explicit rear footprints; sort by authored foot Y.",
+      "restoration": [
+        "Unmeasured transport crates have open covers",
+        "Crew closes covers in the same storage footprint"
+      ],
+      "purpose": "Restore document traceability and prepare operational material; reconcile the same shift on return.",
+      "identity": "Long archive wall, receiving rail and fabrication partition, paper/metal material contrast.",
+      "traversal_seconds": [12, 20],
+      "beyond_initial": "Initial view from east includes sign-off/dispatch; intake and fabrication districts extend west. Return benches reuse known circulation.",
+      "npcs": [],
+      "measurement_constraints": "M03A/B use independent identical workspaces. M04 has six separate local debris, never M03 residuals. Source supply item definitions and M10 module-owned carry state unchanged.",
+      "restoration_change": {
+        "trigger_stage": "lab_briefing",
+        "shape_id": "transit-crate-covers",
+        "before": "Unmeasured transport crates have open covers",
+        "after": "Crew closes covers in the same storage footprint",
+        "kind": "covers",
+        "protected_unchanged": "M03 residuals, M04 debris, M07 progress, independent cases and return surfaces",
+        "motion": "single short state transition; static equivalent; never a task attractor"
+      },
+      "closed_frontages": [
+        {
+          "side": "N",
+          "purpose": "sealed service frontage / observation window"
+        },
+        {
+          "side": "S",
+          "purpose": "equipment access frontage"
+        },
+        {
+          "side": "W",
+          "purpose": "reference / weather frontage"
+        }
+      ],
+      "coordinate_contract": "Station at = operating contact anchor. Approach/spawn = player sprite origin; actual body extents x[-16,+16], y[-18,+24]worldpx. Art glyph foot displayed24px south of actor origin.",
+      "walkable_floor_rects": [
+        [2, 18, 60, 4],
+        [30, 2, 4, 36],
+        [6, 6, 3, 28],
+        [6, 6, 52, 3],
+        [55, 6, 3, 28],
+        [6, 31, 52, 3],
+        [9, 7, 20, 7],
+        [9, 25, 20, 10],
+        [40, 7, 18, 27],
+        [33, 5, 7, 30],
+        [3, 21, 6, 5],
+        [52, 18, 4, 4],
+        [52.5, 18.5, 3, 3.0],
+        [10, 12, 4, 4],
+        [10.5, 12.5, 3, 9.0],
+        [26, 10, 4, 4],
+        [26.5, 10.5, 7.0, 3],
+        [24, 28, 4, 4],
+        [24.5, 28.5, 9.0, 3],
+        [10, 28, 4, 4],
+        [10.5, 18.5, 3, 13.0],
+        [14, 28, 4, 4],
+        [14.5, 18.5, 3, 13.0],
+        [41, 11, 4, 4],
+        [41.5, 11.5, 3, 10.0],
+        [42, 28, 4, 4],
+        [42.5, 18.5, 3, 13.0],
+        [52, 28, 4, 4],
+        [52.5, 18.5, 3, 13.0],
+        [52, 11, 4, 4],
+        [52.5, 11.5, 3, 10.0],
+        [33, 12, 4, 4],
+        [30.5, 12.5, 6.0, 3],
+        [8, 18, 4, 4],
+        [8.5, 18.5, 3, 3.0],
+        [33, 29, 4, 4],
+        [30.5, 29.5, 6.0, 3],
+        [52, 6, 4, 4],
+        [52.5, 6.5, 3, 15.0],
+        [4, 5, 4, 4],
+        [4.5, 5.5, 3, 16.0],
+        [17, 30, 4, 4],
+        [17.5, 18.5, 3, 15.0],
+        [43, 5, 4, 4],
+        [43.5, 5.5, 3, 16.0],
+        [57.5, 18.5, 7, 3]
+      ],
+      "floor_contract": "Explicit union of these rectangles, minus authored footprints and hull bounds. Paths are physical clear widths; collider inflation is checked separately."
+    },
+    {
+      "id": "laboratory",
+      "name": "Diagnostics Laboratory",
+      "tiles": [68, 42],
+      "world_px": [2176, 1344],
+      "tile_px": 32,
+      "initial_camera": [14, 19.5, 40, 22.5],
+      "spine_width_tiles": 4,
+      "secondary_width_tiles": 3,
+      "doors": [
+        {
+          "side": "S",
+          "to": "concourse",
+          "at": [34, 41],
+          "spawn": [34, 37],
+          "clear_width_tiles": 3,
+          "approach": [34, 39]
+        },
+        {
+          "side": "N",
+          "to": "yard",
+          "at": [34, 1],
+          "spawn": [34, 5],
+          "clear_width_tiles": 3,
+          "approach": [34, 3]
+        }
+      ],
+      "spawn": [34, 37],
+      "paths": [
+        {
+          "name": "main east-west",
+          "rect": [2, 19, 64, 4]
+        },
+        {
+          "name": "main north-south",
+          "rect": [32, 2, 4, 38]
+        },
+        {
+          "name": "west local loop",
+          "rect": [6, 6, 3, 30]
+        },
+        {
+          "name": "north local loop",
+          "rect": [6, 6, 56, 3]
+        },
+        {
+          "name": "east local loop",
+          "rect": [59, 6, 3, 30]
+        },
+        {
+          "name": "south local loop",
+          "rect": [6, 33, 56, 3]
+        }
+      ],
+      "stations": [
+        {
+          "id": "kai",
+          "label": "Kai / incident briefing",
+          "at": [43, 30],
+          "approach": [43, 32],
+          "footprint": [42.5, 28.6875, 1, 1.3125],
+          "items": ["M10"],
+          "kind": "npc",
+          "availability": "retain current handover eligibility even before return"
+        },
+        {
+          "id": "orientation",
+          "label": "Shared controls orientation",
+          "at": [24, 30],
+          "approach": [24, 32],
+          "footprint": [23, 28, 2, 2],
+          "items": [],
+          "kind": "context"
+        },
+        {
+          "id": "causal",
+          "label": "Causal model table",
+          "at": [14, 12],
+          "approach": [14, 14],
+          "footprint": [13, 10, 2, 2],
+          "items": ["M15"],
+          "kind": "task"
+        },
+        {
+          "id": "protocol",
+          "label": "Protocol acquisition bench",
+          "at": [46, 11],
+          "approach": [46, 13],
+          "footprint": [45, 9, 2, 2],
+          "items": ["M16"],
+          "kind": "task"
+        },
+        {
+          "id": "transfer",
+          "label": "Learning / transfer rig",
+          "at": [52, 29],
+          "approach": [52, 31],
+          "footprint": [51, 27, 2, 2],
+          "items": ["M17"],
+          "kind": "task"
+        },
+        {
+          "id": "diagnosis",
+          "label": "Fault isolation cabinet",
+          "at": [15, 29],
+          "approach": [15, 31],
+          "footprint": [14, 27, 2, 2],
+          "items": ["M18"],
+          "kind": "task"
+        }
+      ],
+      "landmark": {
+        "label": "Signal archive wall / incident overview",
+        "rect": [37, 24, 11, 3]
+      },
+      "districts": [
+        {
+          "name": "causal reconstruction",
+          "rect": [10, 6, 15, 12]
+        },
+        {
+          "name": "protocol acquisition",
+          "rect": [42, 5, 17, 13]
+        },
+        {
+          "name": "guided transfer",
+          "rect": [47, 24, 13, 12]
+        },
+        {
+          "name": "diagnostic isolation",
+          "rect": [10, 24, 14, 12]
+        }
+      ],
+      "quiet": {
+        "label": "briefing recess",
+        "rect": [25, 32, 6, 4]
+      },
+      "decor": [
+        {
+          "label": "instrument rack",
+          "rect": [2, 8, 3, 9]
+        },
+        {
+          "label": "rear storage",
+          "rect": [63, 8, 3, 10]
+        }
+      ],
+      "occlusion": "North walls have removable foreground caps; alpha fades only when actor overlaps. Task faces/door aprons never behind caps. Explicit rear footprints; sort by authored foot Y.",
+      "restoration": [
+        "Receiver outer casing on maintenance stand",
+        "Crew parks outer casing in the same stand"
+      ],
+      "purpose": "Resolve one storm incident through four independent analytic cases, with a shared operational brief.",
+      "identity": "Observation glazing and wall-mounted signal overview; each instrument silhouette explains its function.",
+      "traversal_seconds": [14, 22],
+      "beyond_initial": "First view shows briefing/overview and entrances to bays; causal/protocol bays extend north. No four-panel row.",
+      "npcs": [
+        {
+          "name": "Kai",
+          "at": [43, 30],
+          "physical": true
+        }
+      ],
+      "measurement_constraints": "Cases share narrative cause only. No source, answer, raw event or outcome is reused across M15–M18. Current order/form/tutorial remains; M16 mechanic discrepancy is owner-gated.",
+      "restoration_change": {
+        "trigger_stage": "exterior_briefing",
+        "shape_id": "receiver-outer-housing",
+        "before": "Receiver outer casing on maintenance stand",
+        "after": "Crew parks outer casing in the same stand",
+        "kind": "housing",
+        "protected_unchanged": "M15-M18 sources, task state and M10 recipient access",
+        "motion": "single short state transition; static equivalent; never a task attractor"
+      },
+      "closed_frontages": [
+        {
+          "side": "E",
+          "purpose": "district service wall"
+        },
+        {
+          "side": "W",
+          "purpose": "reference / weather frontage"
+        }
+      ],
+      "coordinate_contract": "Station at = operating contact anchor. Approach/spawn = player sprite origin; actual body extents x[-16,+16], y[-18,+24]worldpx. Art glyph foot displayed24px south of actor origin.",
+      "walkable_floor_rects": [
+        [2, 19, 64, 4],
+        [32, 2, 4, 38],
+        [6, 6, 3, 30],
+        [6, 6, 56, 3],
+        [59, 6, 3, 30],
+        [6, 33, 56, 3],
+        [10, 6, 15, 12],
+        [42, 5, 17, 13],
+        [47, 24, 13, 12],
+        [10, 24, 14, 12],
+        [25, 32, 6, 4],
+        [41, 30, 4, 4],
+        [32.5, 30.5, 12.0, 3],
+        [22, 30, 4, 4],
+        [22.5, 30.5, 13.0, 3],
+        [12, 12, 4, 4],
+        [12.5, 12.5, 3, 10.0],
+        [44, 11, 4, 4],
+        [44.5, 11.5, 3, 11.0],
+        [50, 29, 4, 4],
+        [50.5, 19.5, 3, 13.0],
+        [13, 29, 4, 4],
+        [13.5, 19.5, 3, 13.0],
+        [32.5, 35.5, 3, 7],
+        [32.5, -0.5, 3, 7]
+      ],
+      "floor_contract": "Explicit union of these rectangles, minus authored footprints and hull bounds. Paths are physical clear widths; collider inflation is checked separately."
+    },
+    {
+      "id": "yard",
+      "name": "Exterior Recovery Yard",
+      "tiles": [80, 48],
+      "world_px": [2560, 1536],
+      "tile_px": 32,
+      "initial_camera": [20, 25.5, 40, 22.5],
+      "spine_width_tiles": 4,
+      "secondary_width_tiles": 3,
+      "doors": [
+        {
+          "side": "S",
+          "to": "laboratory",
+          "at": [40, 47],
+          "spawn": [40, 43],
+          "clear_width_tiles": 3,
+          "approach": [40, 45]
+        }
+      ],
+      "spawn": [40, 43],
+      "paths": [
+        {
+          "name": "main east-west",
+          "rect": [2, 22, 76, 4]
+        },
+        {
+          "name": "main north-south",
+          "rect": [38, 2, 4, 44]
+        },
+        {
+          "name": "west local loop",
+          "rect": [6, 3, 3, 39]
+        },
+        {
+          "name": "north local loop",
+          "rect": [6, 3, 68, 3]
+        },
+        {
+          "name": "east local loop",
+          "rect": [71, 3, 3, 39]
+        },
+        {
+          "name": "south local loop",
+          "rect": [6, 39, 68, 3]
+        }
+      ],
+      "stations": [
+        {
+          "id": "noor",
+          "label": "Noor / recovery dispatch",
+          "at": [36, 39],
+          "approach": [36, 41],
+          "footprint": [35.5, 37.6875, 1, 1.3125],
+          "items": [],
+          "kind": "npc"
+        },
+        {
+          "id": "fault2",
+          "label": "Cable marker / quiet occasion",
+          "at": [30, 37],
+          "approach": [30, 39],
+          "footprint": [29, 35, 2, 2],
+          "items": ["M05"],
+          "kind": "quiet",
+          "trigger_pad": [30, 41],
+          "guidance": "M05 matched salience/eligibility owner gate"
+        },
+        {
+          "id": "coupling",
+          "label": "Coupling service housing",
+          "at": [12, 34],
+          "approach": [12, 36],
+          "footprint": [11, 32, 2, 2],
+          "items": ["M19"],
+          "kind": "task"
+        },
+        {
+          "id": "mast",
+          "label": "Mast base / antenna work",
+          "at": [54, 31],
+          "approach": [54, 33],
+          "footprint": [53, 29, 2, 2],
+          "items": ["M20"],
+          "kind": "task"
+        },
+        {
+          "id": "excavation",
+          "label": "Scanner plot stake",
+          "at": [15, 8.5],
+          "approach": [15, 10.5],
+          "footprint": [14, 6.5, 2, 2],
+          "items": ["M23"],
+          "kind": "task",
+          "plot": [16, 8, 7, 6],
+          "locked_absolute_plot": true
+        },
+        {
+          "id": "magnet",
+          "label": "Magnet rig",
+          "at": [64, 13],
+          "approach": [64, 14],
+          "footprint": [63, 11, 2, 2],
+          "items": ["M24"],
+          "kind": "task",
+          "tray": [67.8, 11.8],
+          "alternative": [67.2, 14.2],
+          "operating_pad": [62.5, 10.2, 5.5, 4.3],
+          "operating_control": "F only inside preserved translated pad; alternative use does not close M24"
+        },
+        {
+          "id": "uplink-a",
+          "label": "Disconnected uplink A",
+          "at": [12, 20],
+          "approach": [12, 22],
+          "footprint": [11, 18, 2, 2],
+          "items": ["M26"],
+          "kind": "task"
+        },
+        {
+          "id": "uplink-b",
+          "label": "Working alternative B",
+          "at": [18.5, 21],
+          "approach": [18.5, 23],
+          "footprint": [17.5, 19, 2, 2],
+          "items": ["M26"],
+          "kind": "task"
+        },
+        {
+          "id": "channel-panel",
+          "label": "Uplink preparation",
+          "at": [16, 19],
+          "approach": [16, 21],
+          "footprint": [15, 17, 2, 2],
+          "items": ["M26"],
+          "kind": "task"
+        },
+        {
+          "id": "field-kit",
+          "label": "Field tools locker",
+          "at": [45, 39],
+          "approach": [45, 41],
+          "footprint": [44, 37, 2, 2],
+          "items": [],
+          "kind": "context"
+        }
+      ],
+      "landmark": {
+        "label": "Mast 04 / damaged upper arm",
+        "rect": [52, 26, 6, 3]
+      },
+      "districts": [
+        {
+          "name": "fixed scanner plot",
+          "rect": [14, 6, 11, 11]
+        },
+        {
+          "name": "coolant service",
+          "rect": [8, 27, 12, 13]
+        },
+        {
+          "name": "uplink pair",
+          "rect": [8, 17, 16, 8]
+        },
+        {
+          "name": "finite recovery compound",
+          "rect": [59, 7, 15, 13]
+        },
+        {
+          "name": "mast restoration",
+          "rect": [49, 24, 15, 12]
+        },
+        {
+          "name": "safe airlock apron",
+          "rect": [28, 36, 23, 8]
+        }
+      ],
+      "quiet": {
+        "label": "sheltered apron / static weather",
+        "rect": [44, 42, 8, 3]
+      },
+      "decor": [
+        {
+          "label": "static drifts",
+          "rect": [4, 1, 9, 1.5]
+        },
+        {
+          "label": "contained salvage",
+          "rect": [75, 28, 3, 7]
+        },
+        {
+          "label": "boundary supply cages",
+          "rect": [2, 43, 10, 3]
+        },
+        {
+          "label": "decorative thaw rack; both Turn and Thaw stay at coupling",
+          "rect": [11, 30.1, 2, 1.2]
+        }
+      ],
+      "occlusion": "North walls have removable foreground caps; alpha fades only when actor overlaps. Task faces/door aprons never behind caps. Explicit rear footprints; sort by authored foot Y.",
+      "restoration": [
+        "Static weather screen partly folded at apron edge",
+        "Crew secures screen without changing apron illumination"
+      ],
+      "purpose": "Recover storm-damaged station infrastructure after diagnosis, using bounded attainable work and explicit utility information.",
+      "identity": "Mast footing, shielded service trench, fenced compounds and a pressure-safe airlock apron.",
+      "traversal_seconds": [18, 28],
+      "beyond_initial": "Mast is the anchor near arrival; scanner plot and recovery compound extend north, requiring separate trips rather than a panel row.",
+      "npcs": [
+        {
+          "name": "Noor",
+          "at": [36, 39],
+          "physical": true
+        }
+      ],
+      "measurement_constraints": "M23 absolute cols16–22/rows8–13 retained, targets A18,9/B20,12; no coordinate remapping. M24 rig/tray offsets and M26 pair relative geometry preserved; engine parameters untouched. Long travel occurs before starting primary windows. Turn and Thaw remain commands at coupling; rack decorative. M24 pad is translated with rig; M26 panel/A offset(4,-1), B/A(6.5,1). M24/M26 alternatives and retries remain usable until Noor finished outside or Utility review; ordinary airlock departure pauses.",
+      "restoration_change": {
+        "trigger_stage": "return_hub",
+        "shape_id": "airlock-weather-screen",
+        "before": "Static weather screen partly folded at apron edge",
+        "after": "Crew secures screen without changing apron illumination",
+        "kind": "screen",
+        "protected_unchanged": "M05 salience, all compound geometry, M23 plot/targets and post-knowledge alternatives",
+        "motion": "single short state transition; static equivalent; never a task attractor"
+      },
+      "closed_frontages": [
+        {
+          "side": "N",
+          "purpose": "sealed service frontage / observation window"
+        },
+        {
+          "side": "E",
+          "purpose": "district service wall"
+        },
+        {
+          "side": "W",
+          "purpose": "reference / weather frontage"
+        }
+      ],
+      "coordinate_contract": "Station at = operating contact anchor. Approach/spawn = player sprite origin; actual body extents x[-16,+16], y[-18,+24]worldpx. Art glyph foot displayed24px south of actor origin.",
+      "walkable_floor_rects": [
+        [2, 22, 76, 4],
+        [38, 2, 4, 44],
+        [6, 3, 3, 39],
+        [6, 3, 68, 3],
+        [71, 3, 3, 39],
+        [6, 39, 68, 3],
+        [14, 6, 11, 11],
+        [8, 27, 12, 13],
+        [8, 17, 16, 8],
+        [59, 7, 15, 13],
+        [49, 24, 15, 12],
+        [28, 36, 23, 8],
+        [44, 42, 8, 3],
+        [34, 39, 4, 4],
+        [34.5, 39.5, 7.0, 3],
+        [28, 37, 4, 4],
+        [28.5, 37.5, 13.0, 3],
+        [10, 34, 4, 4],
+        [10.5, 22.5, 3, 15.0],
+        [52, 31, 4, 4],
+        [52.5, 22.5, 3, 12.0],
+        [13, 8.5, 4, 4],
+        [13.5, 9.0, 3, 16.5],
+        [62, 12, 4, 4],
+        [62.5, 12.5, 3, 13.0],
+        [10, 20, 4, 4],
+        [10.5, 20.5, 3, 5.0],
+        [16.5, 21, 4, 4],
+        [17.0, 21.5, 3, 4.0],
+        [14, 19, 4, 4],
+        [14.5, 19.5, 3, 6.0],
+        [43, 39, 4, 4],
+        [38.5, 39.5, 8.0, 3],
+        [38.5, 41.5, 3, 7]
+      ],
+      "floor_contract": "Explicit union of these rectangles, minus authored footprints and hull bounds. Paths are physical clear widths; collider inflation is checked separately."
+    },
+    {
+      "id": "utility",
+      "name": "Utility Deck",
+      "tiles": [58, 36],
+      "world_px": [1856, 1152],
+      "tile_px": 32,
+      "initial_camera": [0, 6.75, 40, 22.5],
+      "spine_width_tiles": 4,
+      "secondary_width_tiles": 3,
+      "doors": [
+        {
+          "side": "W",
+          "to": "concourse",
+          "at": [1, 18],
+          "spawn": [5, 18],
+          "clear_width_tiles": 3,
+          "approach": [3, 18]
+        },
+        {
+          "side": "N",
+          "to": "core",
+          "at": [29, 1],
+          "spawn": [29, 5],
+          "clear_width_tiles": 3,
+          "approach": [29, 3]
+        }
+      ],
+      "spawn": [5, 18],
+      "paths": [
+        {
+          "name": "main east-west",
+          "rect": [2, 16, 54, 4]
+        },
+        {
+          "name": "main north-south",
+          "rect": [27, 2, 4, 32]
+        },
+        {
+          "name": "west local loop",
+          "rect": [6, 6, 3, 24]
+        },
+        {
+          "name": "north local loop",
+          "rect": [6, 6, 46, 3]
+        },
+        {
+          "name": "east local loop",
+          "rect": [49, 6, 3, 24]
+        },
+        {
+          "name": "south local loop",
+          "rect": [6, 27, 46, 3]
+        }
+      ],
+      "stations": [
+        {
+          "id": "review",
+          "label": "Close station record",
+          "at": [12, 11],
+          "approach": [12, 13],
+          "footprint": [11, 9, 2, 2],
+          "items": [],
+          "kind": "context"
+        },
+        {
+          "id": "systems",
+          "label": "System manifold overview",
+          "at": [20, 11],
+          "approach": [20, 13],
+          "footprint": [19, 9, 2, 2],
+          "items": [],
+          "kind": "context"
+        },
+        {
+          "id": "coolant",
+          "label": "Coolant feed",
+          "at": [13, 27],
+          "approach": [13, 29],
+          "footprint": [12, 25, 2, 2],
+          "items": [],
+          "kind": "context"
+        },
+        {
+          "id": "breaker",
+          "label": "Calibration breaker",
+          "at": [34, 27],
+          "approach": [34, 29],
+          "footprint": [33, 25, 2, 2],
+          "items": [],
+          "kind": "context"
+        },
+        {
+          "id": "bus",
+          "label": "Distribution bus",
+          "at": [46, 27],
+          "approach": [46, 29],
+          "footprint": [45, 25, 2, 2],
+          "items": [],
+          "kind": "context"
+        }
+      ],
+      "landmark": {
+        "label": "Continuous systems trunk",
+        "rect": [35, 8, 12, 3],
+        "overhead": true
+      },
+      "districts": [
+        {
+          "name": "record closure",
+          "rect": [8, 5, 16, 10]
+        },
+        {
+          "name": "three service bays",
+          "rect": [8, 24, 43, 8]
+        }
+      ],
+      "quiet": {
+        "label": "crew rest recess",
+        "rect": [47, 5, 6, 5]
+      },
+      "decor": [
+        {
+          "label": "sealed machinery",
+          "rect": [35, 3, 8, 3]
+        },
+        {
+          "label": "rear service bank",
+          "rect": [2, 22, 3, 9]
+        }
+      ],
+      "occlusion": "North walls have removable foreground caps; alpha fades only when actor overlaps. Task faces/door aprons never behind caps. Explicit rear footprints; sort by authored foot Y.",
+      "restoration": [
+        "Trunk outer maintenance cover open",
+        "Cover closes when existing fixed feeds are ready"
+      ],
+      "purpose": "Close primary observation windows, then bring shared services up in a fixed non-scored sequence.",
+      "identity": "One visible pipe/cable trunk joining three service bays to the Core riser.",
+      "traversal_seconds": [10, 18],
+      "beyond_initial": "Upper Core vestibule and manifold extend beyond entry view; three feed bays remain distinct.",
+      "npcs": [],
+      "measurement_constraints": "No new primary measure. Record review closes unresolved opportunities with existing dispositions; coolant→calibration→distribution order is closure only.",
+      "restoration_change": {
+        "trigger_stage": "core_stabilise",
+        "shape_id": "trunk-service-cover",
+        "before": "Trunk outer maintenance cover open",
+        "after": "Cover closes when existing fixed feeds are ready",
+        "kind": "cover",
+        "protected_unchanged": "record/review closure, feed parameters and route access",
+        "motion": "single short state transition; static equivalent; never a task attractor"
+      },
+      "closed_frontages": [
+        {
+          "side": "S",
+          "purpose": "equipment access frontage"
+        },
+        {
+          "side": "E",
+          "purpose": "district service wall"
+        }
+      ],
+      "coordinate_contract": "Station at = operating contact anchor. Approach/spawn = player sprite origin; actual body extents x[-16,+16], y[-18,+24]worldpx. Art glyph foot displayed24px south of actor origin.",
+      "walkable_floor_rects": [
+        [2, 16, 54, 4],
+        [27, 2, 4, 32],
+        [6, 6, 3, 24],
+        [6, 6, 46, 3],
+        [49, 6, 3, 24],
+        [6, 27, 46, 3],
+        [8, 5, 16, 10],
+        [8, 24, 43, 8],
+        [47, 5, 6, 5],
+        [10, 11, 4, 4],
+        [10.5, 11.5, 3, 8.0],
+        [18, 11, 4, 4],
+        [18.5, 11.5, 3, 8.0],
+        [11, 27, 4, 4],
+        [11.5, 16.5, 3, 14.0],
+        [32, 27, 4, 4],
+        [27.5, 27.5, 8.0, 3],
+        [44, 27, 4, 4],
+        [44.5, 16.5, 3, 14.0],
+        [-0.5, 16.5, 7, 3],
+        [27.5, -0.5, 3, 7]
+      ],
+      "floor_contract": "Explicit union of these rectangles, minus authored footprints and hull bounds. Paths are physical clear widths; collider inflation is checked separately."
+    },
+    {
+      "id": "core",
+      "name": "Core Chamber",
+      "tiles": [44, 28],
+      "world_px": [1408, 896],
+      "tile_px": 32,
+      "initial_camera": [2, 5.5, 40, 22.5],
+      "spine_width_tiles": 4,
+      "secondary_width_tiles": 3,
+      "doors": [
+        {
+          "side": "S",
+          "to": "utility",
+          "at": [22, 27],
+          "spawn": [22, 23],
+          "clear_width_tiles": 3,
+          "approach": [22, 25]
+        }
+      ],
+      "spawn": [22, 23],
+      "paths": [
+        {
+          "name": "west local loop",
+          "rect": [6, 6, 3, 16]
+        },
+        {
+          "name": "north local loop",
+          "rect": [6, 3, 32, 3]
+        },
+        {
+          "name": "east local loop",
+          "rect": [35, 6, 3, 16]
+        },
+        {
+          "name": "south local loop",
+          "rect": [6, 19, 32, 3]
+        },
+        {
+          "name": "main south approach",
+          "rect": [20, 16, 4, 10]
+        },
+        {
+          "name": "main west bypass",
+          "rect": [13, 6, 4, 16]
+        },
+        {
+          "name": "main east bypass",
+          "rect": [27, 6, 4, 16]
+        },
+        {
+          "name": "main transverse approach",
+          "rect": [13, 18, 18, 4]
+        }
+      ],
+      "stations": [
+        {
+          "id": "core-control",
+          "label": "Core synchronisation",
+          "at": [22, 14],
+          "approach": [22, 16],
+          "footprint": [21, 12, 2, 2],
+          "items": [],
+          "kind": "context"
+        },
+        {
+          "id": "kai",
+          "label": "Kai / operational closure",
+          "at": [33, 18],
+          "approach": [33, 20],
+          "footprint": [32.5, 16.6875, 1, 1.3125],
+          "items": [],
+          "kind": "npc"
+        },
+        {
+          "id": "status",
+          "label": "Operational status",
+          "at": [10, 18],
+          "approach": [10, 20],
+          "footprint": [9, 16, 2, 2],
+          "items": [],
+          "kind": "context"
+        }
+      ],
+      "landmark": {
+        "label": "Core column and protective collar",
+        "rect": [18, 8, 8, 4]
+      },
+      "districts": [
+        {
+          "name": "controlled central approach",
+          "rect": [15, 13, 14, 8]
+        },
+        {
+          "name": "crew observation",
+          "rect": [29, 15, 9, 8]
+        }
+      ],
+      "quiet": {
+        "label": "observation rail",
+        "rect": [5, 5, 9, 4]
+      },
+      "decor": [
+        {
+          "label": "rear coolant housings",
+          "rect": [39, 4, 3, 7]
+        },
+        {
+          "label": "service pillar bank",
+          "rect": [2, 12, 3, 9]
+        }
+      ],
+      "occlusion": "North walls have removable foreground caps; alpha fades only when actor overlaps. Task faces/door aprons never behind caps. Explicit rear footprints; sort by authored foot Y.",
+      "restoration": [
+        "Core exterior status lamp on fixed standby",
+        "Lamp holds steady at existing sync completion"
+      ],
+      "purpose": "Confirm stable shared operation and return to Qualtrics with restrained closure.",
+      "identity": "Vertical Core cylinder inside an orthogonal protective collar, broad open approach and perimeter bypass.",
+      "traversal_seconds": [6, 10],
+      "beyond_initial": "The top service collar extends slightly beyond initial south entry; no empty margins.",
+      "npcs": [
+        {
+          "name": "Kai",
+          "at": [33, 18],
+          "physical": true
+        }
+      ],
+      "measurement_constraints": "No score, trait, comparative praise or new primary event. Return to Utility always available; final handoff uses existing semantics.",
+      "restoration_change": {
+        "trigger_stage": "complete",
+        "shape_id": "core-status-lamp",
+        "before": "Core exterior status lamp on fixed standby",
+        "after": "Lamp holds steady at existing sync completion",
+        "kind": "lamp",
+        "protected_unchanged": "control/return/handoff semantics; no assessment score",
+        "motion": "single short state transition; static equivalent; never a task attractor"
+      },
+      "closed_frontages": [
+        {
+          "side": "N",
+          "purpose": "sealed service frontage / observation window"
+        },
+        {
+          "side": "E",
+          "purpose": "district service wall"
+        },
+        {
+          "side": "W",
+          "purpose": "reference / weather frontage"
+        }
+      ],
+      "coordinate_contract": "Station at = operating contact anchor. Approach/spawn = player sprite origin; actual body extents x[-16,+16], y[-18,+24]worldpx. Art glyph foot displayed24px south of actor origin.",
+      "walkable_floor_rects": [
+        [6, 6, 3, 16],
+        [6, 3, 32, 3],
+        [35, 6, 3, 16],
+        [6, 19, 32, 3],
+        [20, 16, 4, 10],
+        [13, 6, 4, 16],
+        [27, 6, 4, 16],
+        [13, 18, 18, 4],
+        [15, 13, 14, 8],
+        [29, 15, 9, 8],
+        [5, 5, 9, 4],
+        [20, 14, 4, 4],
+        [20.5, 14.5, 3.0, 3],
+        [31, 18, 4, 4],
+        [31.5, 12.5, 3, 9.0],
+        [8, 18, 4, 4],
+        [8.5, 12.5, 3, 9.0],
+        [20.5, 21.5, 3, 7]
+      ],
+      "floor_contract": "Explicit union of these rectangles, minus authored footprints and hull bounds. Paths are physical clear widths; collider inflation is checked separately."
+    }
+  ],
+  "traversal_itinerary": [
+    {
+      "zone": "dock",
+      "entry": "spawn",
+      "visit": ["checkin"],
+      "exit": "concourse"
+    },
+    {
+      "zone": "concourse",
+      "entry": "dock",
+      "visit": ["vale", "plan", "incident", "qc1", "gauge", "fault1", "vale"],
+      "exit": "records"
+    },
+    {
+      "zone": "records",
+      "entry": "concourse",
+      "visit": [
+        "orders",
+        "case",
+        "reset-a",
+        "sample",
+        "chute",
+        "dispatch",
+        "calibration",
+        "qc2",
+        "lattice",
+        "orders"
+      ],
+      "exit": "concourse"
+    },
+    {
+      "zone": "concourse",
+      "entry": "records",
+      "visit": ["vale"],
+      "exit": "laboratory"
+    },
+    {
+      "zone": "laboratory",
+      "entry": "concourse",
+      "visit": [
+        "kai",
+        "orientation",
+        "causal",
+        "protocol",
+        "transfer",
+        "diagnosis",
+        "kai"
+      ],
+      "exit": "yard"
+    },
+    {
+      "zone": "yard",
+      "entry": "laboratory",
+      "visit": [
+        "noor",
+        "fault2",
+        "coupling",
+        "mast",
+        "excavation",
+        "magnet",
+        "uplink-a",
+        "channel-panel",
+        "uplink-b",
+        "noor"
+      ],
+      "exit": "laboratory"
+    },
+    {
+      "zone": "laboratory",
+      "entry": "yard",
+      "visit": [],
+      "exit": "concourse"
+    },
+    {
+      "zone": "concourse",
+      "entry": "laboratory",
+      "visit": ["gauge", "kai-return", "vale"],
+      "exit": "records"
+    },
+    {
+      "zone": "records",
+      "entry": "concourse",
+      "visit": [
+        "reset-b",
+        "calibration",
+        "feed",
+        "manual",
+        "report",
+        "notice",
+        "orders"
+      ],
+      "exit": "concourse"
+    },
+    {
+      "zone": "concourse",
+      "entry": "records",
+      "visit": [],
+      "exit": "utility"
+    },
+    {
+      "zone": "utility",
+      "entry": "concourse",
+      "visit": ["review", "systems", "coolant", "breaker", "bus"],
+      "exit": "core"
+    },
+    {
+      "zone": "core",
+      "entry": "utility",
+      "visit": ["core-control", "kai", "status"],
+      "exit": null
+    }
+  ],
+  "traversal_method": "Prescribed analytical full-primary visitation tour, including voluntary M05/M09/M10 and required return. No participant checklist or cue. Sum shortest collision-cleared orthogonal paths between these waypoints at175px/s. Excludes reading, tasks, interactions, deliberate stops, search errors and scene-load delay; not a human timing estimate or globally shortest tour. M08/M11 optional jobs and inventory detours excluded."
+}

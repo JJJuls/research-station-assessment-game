@@ -1,83 +1,30 @@
-# Asset and provenance register (World V1)
+# Asset audit and production direction
 
-Status of every `plv1-*` and `prop-*` art file: **PROVISIONAL MODEL-SELECTED
-— NOT HUMAN-APPROVED** (`docs/game/PIXELLAB-RUNTIME-ASSET-PROVENANCE.md`,
-`docs/game/PILOT-ASSET-SELECTION-AND-PROVENANCE.md`). Nothing in this
-register approves an asset; it records what the rebuild uses, what it
-rejects, and the bounded generation plan.
+Astra 2026-09-08. Existing assets were inspected before specifying new batches. Model-selected generated assets remain provisional, not human approved. No PixelLab call or production-asset generation occurred in this pass.
 
-## 1. Existing-asset audit (integration verdicts)
+Audit sources: public asset files, src/constants/assets.ts, src/world/proceduralTextures.ts, src/world/kit/kitTextures.ts, existing PixelLab provenance registers and captured runtime pixels. Counts refer to the inspected public PNG inventory:153 RGBA images; procedural textures are runtime code, not extra PNGs.
 
-| Family                                                                    | Size / projection                         | Verdict                                                                                                                                                                         |
-| ------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Player `plv1-player-a` rotations / walk 8 / idle 4                        | 96×96 frames, figure ≈ 32×48, straight-on | **use** (unchanged)                                                                                                                                                             |
-| Player action sheets scan / dig / pickup; effects dust / pulse / sparks   | 96×96, 64×64 one-shot                     | **use** (state-driven)                                                                                                                                                          |
-| NPC stills Vale / Kai / Noor (`plv1-*`, work pairs)                       | 96×96, same register as the player        | **use**                                                                                                                                                                         |
-| Robots bot-standby / bot-working                                          | 96×96                                     | **use** (Deck state art)                                                                                                                                                        |
-| `plv1-arch-door`, `-vent`, `-grille`, `-pipes`                            | 66×74 / 66×68 crops, olive register       | **use** door leaf on whole-tile anchors; vent/grille/pipes only where the olive register is neutralised by a tint; no cyan tint on the leaf (the lintel lamp carries the class) |
-| `plv1-core-coolant-column`, pillars, `-core-console`                      | 56×132, 32×80, 56×72                      | **use** as Core landmarks                                                                                                                                                       |
-| `plv1-utility-tower`, `-panel`, `-desk`                                   | 64×80, 64×92, 144×56                      | **use** in the Deck as machinery mass on wall cells (V4 removed them for size; V1 has the room for them)                                                                        |
-| sequences core-sync / airlock-open / antenna-signal                       | strips                                    | **use** (state-driven; held frame under reduced motion)                                                                                                                         |
-| `plv1-fx-snowfall`                                                        | 96×96 ×9                                  | **reject** (ambient motion)                                                                                                                                                     |
-| `prop-dock-*`, `prop-hub-*`, `prop-archive-*` (Phase F)                   | 32/48/64 on-grid                          | **use** (dock terminal, airlock, crates; hub status board, console; archive shelves/panels/racks as records-wall units)                                                         |
-| Wang tilesets interior-v3 / dock-v3 + procedural theme sets               | 32 px, 16-tile Wang                       | **use**; the kit adds wall-face variants and a lintel band                                                                                                                      |
-| `proc-*` foundry (128 textures)                                           | 24×24 icons … 112×136                     | **use** where in register; `proc-light-pool` never as an interactable; `proc-npc-*` fallbacks unused                                                                            |
-| diagonal player frames, `*-work-a` duplicates, `style-anchor-v1`, tuxemon | —                                         | **not used**                                                                                                                                                                    |
-| translucent plate rectangles (code, not assets)                           | —                                         | **removed**                                                                                                                                                                     |
+| Asset family / current source                             | Technical dimensions                                                                                              | Current use                           | Quality / perspective / palette / animation verdict                                                              | Collision implications                                                         | Decision / zone / priority                                                    |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Researcher rotations/walk/idle, existing PixelLab-runtime | 104 individual 96×96 frames; inspected visible south body 32×45, other walk/idle extents vary                     | Player all zones                      | Readable adult worker; retain through spatial rebuild; palette broadly compatible; padding must not define scale | Existing 32×42 body offset 32,30; authored foot anchor                         | KEEP; all zones; no character regeneration prerequisite                       |
+| Vale/Kai/Noor generated stills/work variants              | 11 images 96×96                                                                                                   | NPC posts                             | Same general register but posture/face detail inconsistent; static work variants not full locomotion cycles      | Do not use frame-size collision; retain recipient reach                        | KEEP provisionally; rework later only if evidence warrants                    |
+| Scan/dig/pickup action sheets                             | 3 sheets 576×384,6×4 cells 96×96                                                                                  | Player-caused actions                 | Usable one-shots; inspect frame pivots; do not retime task windows to fit art                                    | Collider remains invariant through poses                                       | KEEP semantics; all relevant zones; P1                                        |
+| Dust/pulse/spark effects                                  | 3 strips 448×64,7 frames 64×64                                                                                    | One-shot feedback                     | Accept only where action-caused; no continuous attractors                                                        | Noncolliding, cannot hide target                                               | REWORK intensity if needed; Yard/Utility; P2                                  |
+| Snow effect                                               | 864×96,9 frames 96×96                                                                                             | Ambient weather                       | Continuous distraction/noise; no navigation information                                                          | Can obscure scene despite no collision                                         | REMOVE from active ambient direction; Yard; P1                                |
+| Robot standby/working                                     | 2 images 96×96                                                                                                    | Utility dressing                      | Static state art; functional only as background crew context                                                     | Keep out of route; no fake usable face                                         | RETAIN BUT REPOSITION; Utility; P3                                            |
+| Door/vent/grille/pipes generated crops                    | 66×74 and 66×68                                                                                                   | Walls/threshold dressing              | Olive register and face projection conflict with newer blue-grey hull; whole-tile anchoring needed               | Visible frame/base must match door aperture/collision                          | REWORK/REPLACE coherent architecture batch; all; P0                           |
+| Utility tower/panel/desk                                  | 64×80,64×92,144×56                                                                                                | Large machinery                       | Tower uses diamond/two-face view inconsistent with straight wall doors; palette mixed                            | Large transparent/tall silhouette needs base footprint, not full-frame blocker | REPLACE participant set by aligned modules; Utility; P1                       |
+| Core column/pillars/console                               | 56×132,32×80,56×72                                                                                                | Core landmark                         | Potentially useful silhouette; inconsistent family shading; inspect at 1× before retaining                       | Authored base anchors; no collider on full tower image                         | REWORK into one assembly; Core; P1                                            |
+| Airlock, antenna, core state strips                       | Airlock 672×64,7 cells 96×64; antenna/core 448×96,7 cells 64×96                                                   | Short environmental state transitions | Some silhouette/registration jitter; no ambient looping; reduced-motion held end frame                           | First/last footprint must match exactly                                        | REWORK frame registration or replace; Dock/Yard/Core; P1                      |
+| PhaseF dock/hub/archive props                             | 12 PNGs,32×48 through 64×64                                                                                       | Terminals, cabinets, crates, racks    | Mixed detail and front/top ratios; useful as source inventory, not blanket approved kit                          | Decor has no collision by default; solid props need footprints                 | SELECTIVE REWORK; reusable controls/storage; P1                               |
+| Wang interior/dock tiles                                  | 2 sheets 128×128,16 tiles 32×32                                                                                   | Floors/walls                          | Functional tiling, but current floor decoration density around 38% makes noisy carpet                            | Tile collision separate; transitions must align                                | REPLACE/REWORK low-frequency tile kit; all; P0                                |
+| Procedural foundry                                        | 128 runtime textures, up to 120×136 (older 112 maximum inaccurate)                                                | Fallback props, UI-like markings      | Reliable generation, weak coherent art identity; many tiny text-like accents                                     | Some props use frame foot, some authored anchors; avoid mixed convention       | KEEP API seam; REPLACE participant-facing placeholder family gradually; P0/P1 |
+| U1/U2 procedural kit                                      | 40 textures, up to 224×128; counter 224×64, roof 192×128, shuttle 192×96, window 96×48, kiosk 48×64,status 192×64 | Dock/Concourse/opening                | Blockout-quality; triangle shuttle/repeated roofs do not establish believable arrival                            | Counter mass must leave 128 px route; roof caps separate                       | REPLACE art with bounded kits; retain validated placement plumbing; P0/P1     |
+| 9 px world signs / ribbons                                | Baked procedural or runtime text                                                                                  | Wayfinding/status                     | Illegible or crowded at wider scale; solving by zoom would repeat failure                                        | Labels can cover faces; no collision benefit                                   | REMOVE essential text from world art; use restrained native UI                |
+| Legacy assets/scenes                                      | Existing other collections                                                                                        | Proving grounds only                  | Outside active participant route                                                                                 | No deletion or migration required                                              | KEEP UNCHANGED outside active scope                                           |
 
-## 2. Kit gaps (candidates for generation — after the kit dimensions are frozen in U1)
+## Frozen style
 
-Ordered by product value. Each candidate: exact size, top-down/three-quarter
-straight-on projection, transparent background, light from top-left,
-32 px density, prompt and provenance recorded, in-engine inspection at 1:1
-before promotion. **Hard cap: 32 candidate calls for the whole mission.**
-Full room screenshots are never generated as backgrounds.
+Straight-on top-down/three-quarter working-station projection with a visible front face and shallow top surface; no isometric diamond footprints.32 px ground tile,48 px target visible adult worker (current 45 retained initially),96 px padded character frames. Light consistently upper-left, one contact shadow beneath each grounded object, dark shared outline 1source px with selective 2 px structural edge. Palette and exact bounded outputs are in the [PixelLab production brief](../../verification/professional-world-v1/astra-authority/PIXELLAB-PRODUCTION-BRIEF.md).
 
-| #     | Candidate                             | Size (px) | Zone / use                                  | Unit |
-| ----- | ------------------------------------- | --------- | ------------------------------------------- | ---- |
-| 1     | relief shuttle, exterior, landed      | 192×96    | opening shot; Dock bay-window silhouette    | U2   |
-| 2     | dock bay window module (3 tiles)      | 96×48     | Dock north/south wall                       | U1   |
-| 3     | docking threshold / airlock frame     | 96×80     | Dock south wall                             | U1   |
-| 4     | operations desk island (long counter) | 160×64    | Concourse landmark                          | U1   |
-| 5     | station status wall panel             | 192×64    | Concourse restoration board                 | U1   |
-| 6     | records shelving unit                 | 64×80     | Records wall (×N)                           | U3   |
-| 7     | document desk with reading lamp       | 64×48     | Records desks; Concourse reading nook (M05) | U3   |
-| 8     | label press                           | 64×64     | Records press area                          | U3   |
-| 9     | resupply pallet                       | 64×48     | Records receiving bay                       | U3   |
-| 10    | signal display wall panel (waveform)  | 192×64    | Laboratory landmark                         | U4   |
-| 11    | analysis bay console (desk)           | 64×48     | Laboratory bays ×4 variants                 | U4   |
-| 12    | Mast 04 damaged / restored            | 64×128    | Yard landmark (2 states)                    | U5   |
-| 13    | coolant coupling housing              | 64×64     | Yard service area                           | U5   |
-| 14    | magnet recovery rig                   | 96×96     | Yard compound                               | U5   |
-| 15    | uplink post                           | 32×80     | Yard ×2                                     | U5   |
-| 16    | fence segment + gate                  | 32×48     | Yard compound boundary                      | U5   |
-| 17    | snowbank / drift                      | 96×32     | Yard boundaries                             | U5   |
-| 18    | field-kit locker                      | 48×64     | Yard apron                                  | U5   |
-| 19    | systems trunk (tall)                  | 96×128    | Deck landmark                               | U6   |
-| 20    | coolant valve station                 | 64×64     | Deck bay 1                                  | U6   |
-| 21    | calibration breaker cabinet           | 64×80     | Deck bay 2                                  | U6   |
-| 22    | distribution bus                      | 96×64     | Deck bay 3                                  | U6   |
-| 23    | blast door (Core)                     | 96×96     | Deck alcove / Core                          | U6   |
-| 24    | overhead lintel band                  | 96×32     | all interiors (door frames)                 | U1   |
-| 25    | ceiling light fixture (on/off)        | 32×16     | all interiors                               | U1   |
-| 26    | cable tray straight / junction        | 32×32     | interiors                                   | U1   |
-| 27    | seating bench                         | 64×32     | Concourse                                   | U1   |
-| 28    | notice board                          | 48×48     | Concourse                                   | U1   |
-| 29–32 | reserve for rejected regenerations    | —         | —                                           | —    |
-
-Procedural fallbacks exist (or will be added to the kit in U1) for every
-candidate, so a rejected or absent asset never blocks a unit.
-
-## 3. Rejection rules
-
-Reject explicitly when: perspective is isometric or the front face is
-foreshortened; light direction differs; density differs from 32 px; the
-palette leaves the charcoal/slate/steel register (accents only cyan/amber);
-the silhouette does not read at 1:1 in-engine; the size deviates from the
-request. Rejected candidates are listed here with the reason.
-
-## 4. Generation log
-
-| #                                                 | Candidate | Prompt (verbatim) | Result file | Verdict | Reason |
-| ------------------------------------------------- | --------- | ----------------- | ----------- | ------- | ------ |
-| (none yet — filled in by the unit that generates) |
+Do not use commercial reference screenshots as generation input. Use original blockouts, textual material/perspective specifications and only project-owned approved style anchors. No entire generated room backgrounds; modular architecture and landmarks precede decorative variety. Prompts, model/version, seed where provided, source files, dimensions, alpha, pivots, footprint and rejection rationale must be recorded for each promoted atlas frame.

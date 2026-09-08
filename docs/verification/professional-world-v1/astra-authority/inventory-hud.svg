@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100" role="img" aria-label="Inventory / mission log / field tools"><title>Inventory / mission log / field tools</title><desc>Starting inventory empty. Research-owned workspaces never become backpack contents.</desc><rect width="100%" height="100%" fill="#f2f0e9"/>
+<text x="40" y="45" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="600">ASTRA / STATION 080 / DESIGN AUTHORITY</text>
+<text x="40" y="86" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="700">Inventory / mission log / field tools</text>
+<text x="40" y="114" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="16" font-weight="400">Starting inventory empty. Research-owned workspaces never become backpack contents.</text>
+<rect x="40" y="160" width="900" height="520" fill="#344851" stroke="none" stroke-width="1" />
+<rect x="65" y="183" width="850" height="465" fill="#14242b" stroke="#768b91" stroke-width="2" />
+<text x="90" y="218" fill="#eff0e6" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="700">RECORDS / MATERIAL TRANSFER</text>
+<text x="90" y="251" fill="#c7d5cb" font-family="Segoe UI,Arial,sans-serif" font-size="16" font-weight="600">Backpack · 20 slots</text>
+<rect x="90" y="269" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="137" y="269" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="184" y="269" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="231" y="269" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="278" y="269" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="90" y="312" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="137" y="312" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="184" y="312" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="231" y="312" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="278" y="312" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="90" y="355" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="137" y="355" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="184" y="355" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="231" y="355" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="278" y="355" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="90" y="398" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="137" y="398" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="184" y="398" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="231" y="398" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="278" y="398" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="90" y="269" width="40" height="36" fill="#456d75" stroke="#c9d5c9" stroke-width="3" />
+<rect x="103" y="279" width="14" height="15" fill="#ccb67e" stroke="none" stroke-width="1" />
+<text x="90" y="470" fill="#c7d5cb" font-family="Segoe UI,Arial,sans-serif" font-size="16" font-weight="600">Quick access · 10 slots</text>
+<rect x="90" y="487" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="137" y="487" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="184" y="487" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="231" y="487" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="278" y="487" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="90" y="530" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="137" y="530" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="184" y="530" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="231" y="530" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<rect x="278" y="530" width="40" height="36" fill="#233a44" stroke="#587780" stroke-width="1" />
+<text x="370" y="262" fill="#eff0e6" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">FUSE CONTACT</text>
+<text x="370" y="302" fill="#c7d5cb" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">Material · selected slot 1. Source: prepared</text>
+<text x="370" y="326" fill="#c7d5cb" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">Records resupply. Use: optional relay assembly.</text>
+<text x="370" y="350" fill="#c7d5cb" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">Destination: component locker.</text>
+<text x="370" y="424" fill="#c7d5cb" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Pointer: select and transfer. Keyboard: arrows +</text>
+<text x="370" y="447" fill="#c7d5cb" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Space pick/place; Tab changes grid. Existing</text>
+<text x="370" y="470" fill="#c7d5cb" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">quantities and transfer rules remain unchanged.</text>
+<text x="90" y="610" fill="#d3ddd2" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">I / Escape close · Mission card hidden while stores are open.</text>
+<text x="990" y="196" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="700">PROGRESSIVE DISCLOSURE</text>
+<text x="990" y="232" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">Arrival: no inventory instruction or tool strip.</text>
+<text x="990" y="256" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">Vale supplies purpose in a mission log, not</text>
+<text x="990" y="280" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">arbitrary carried parts.</text>
+<text x="990" y="362" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">Records: first material transfer opens a brief</text>
+<text x="990" y="386" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">control explanation. Categories are metadata, not</text>
+<text x="990" y="410" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">new containers or capacities. General stores</text>
+<text x="990" y="434" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">organisation is not a primary opportunity.</text>
+<text x="990" y="510" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">Yard: automatically issued tools retain current</text>
+<text x="990" y="534" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">eligibility. A visible locker explains the issue;</text>
+<text x="990" y="558" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">optional pickup cannot gate measurement.</text>
+<rect x="40" y="735" width="900" height="145" fill="#344851" stroke="none" stroke-width="1" />
+<rect x="375" y="797" width="230" height="54" fill="#15262e" stroke="#92aaa9" stroke-width="1" />
+<rect x="389" y="807" width="96" height="34" fill="#3e5d65" stroke="none" stroke-width="1" />
+<text x="399" y="829" fill="#eff0e8" font-family="Segoe UI,Arial,sans-serif" font-size="16" font-weight="400">C Scan</text>
+<rect x="496" y="807" width="96" height="34" fill="#3e5d65" stroke="none" stroke-width="1" />
+<text x="506" y="829" fill="#eff0e8" font-family="Segoe UI,Arial,sans-serif" font-size="16" font-weight="400">D Dig</text>
+<text x="65" y="765" fill="#e4e9df" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">LATER / YARD: scanner and spade issued by field dispatch</text>
+<text x="990" y="765" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">Closure: obsolete material moves through existing</text>
+<text x="990" y="789" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">transactions or is visually archived after its</text>
+<text x="990" y="813" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">window. No measured state is silently cleared.</text>
+<text x="40" y="952" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">M02 cases, M03 residuals, M04 debris and M10 promise carrying state retain dedicated namespaces. No auto-sort, inventory-capacity</text>
+<text x="40" y="976" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">prerequisite or organisation score is introduced.</text>
+<text x="40" y="1078" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">Original analytical blockout • labels are reviewer annotations • no commercial-game imagery</text>
+</svg>

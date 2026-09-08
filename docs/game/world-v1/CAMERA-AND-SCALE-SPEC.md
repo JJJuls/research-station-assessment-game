@@ -1,129 +1,55 @@
-# Camera and spatial-scale specification (World V1)
+# Camera and scale — Astra selection
 
-Supersedes `docs/game/VISUAL-SYSTEM-V4.md` §1 for the seven pilot zones.
-Presentation only: interaction radii (72 world px), body size (32×42),
-movement speed (175 px/s) and every task surface's 800×600 design-space
-geometry are unchanged.
+Supersedes U1's fixed 1.25 assumption for future presentation implementation; entry build remains unchanged.
 
-## 1. Acceptance targets (mission §8) at 1280×720
+## Measured baseline
 
-| Target                                | Required | This design                                  |
-| ------------------------------------- | -------- | -------------------------------------------- |
-| tiles visible horizontally            | ≈ 28–34  | **32**                                       |
-| tiles visible vertically              | ≈ 16–20  | **18**                                       |
-| participant sprite / viewport height  | ≈ 6–8 %  | **8.3 %** (48 world px → 60 canvas px)       |
-| architecture visible to identify room | yes      | ≥ 1.5 rooms-worth of context in any position |
-| cropped door/station at interaction   | none     | bounded follow + spawn rules                 |
+Tile 32 px. Researcher sheet 96×96, but the inspected south-facing visible body is 45 px high (walk/idle vary; isolated flecks excluded); transparent frame height is not player height. Physics body 32×42 with offset(32,30), speed 175px/s. Current world plate 1024×576 is scaled 1.25 into 1280×720. Current 1920 display CSS-fits the same canvas 1.5×. Five unrevised rooms 800×608 already show 112 px horizontal world margins at the current plate.
 
-## 2. Render architecture
+## Genuine alternatives
 
-```
-world scene objects ──(world camera, zoom 1, integer scroll)──▶ WORLD PLATE 1024×576 (RenderTexture)
-                                                                   │  sharp-bilinear sampler ×1.25
-HUD objects (scrollFactor 0, 800×600 design space) ──(HUD camera, zoom 1.2)──▶ CANVAS 1280×720 ──FIT──▶ browser
-overlay scenes (800×600 design space) ──(overlay camera, zoom 1.2)────────────▶
-```
+Measurements below use the 45 px visible body; replacement target 48 px is 6.67% in A.
 
-- **World plate**: every world object (everything not `scrollFactor(0)`) is
-  drawn once per frame into a 1024×576 RenderTexture by a plate camera at
-  zoom 1 with whole-pixel scroll. Pixel art is therefore rendered 1:1 —
-  exact texels, no sub-pixel placement.
-- **Composite**: the plate is drawn to the canvas as one image at scale
-  1.25 (1024×576 → 1280×720) through a **texel-snapped bilinear** fragment
-  shader (the standard "pixel-art anti-aliasing" sampler: UV snapped to the
-  texel centre, with a one-screen-pixel linear ramp at texel boundaries
-  derived from `fwidth`). Interiors of texels are exact; boundaries resolve
-  to one screen pixel with no thickness alternation; motion is smooth. This
-  is the pixel-stable implementation for a non-integer ratio; a plain
-  NEAREST composite would produce 4→5 pixel crawl and a plain LINEAR
-  composite would soften every texel.
-- **HUD and overlays**: unchanged design-space cameras at 1.2× — text stays
-  LINEAR and crisp at canvas resolution; every task surface's geometry is
-  byte-identical to V4.
-- **Depth**: the plate preserves the scene's depth order (objects sorted by
-  depth, then display-list order) — the y-sort model of §10 of the design
-  authority applies inside the plate.
-- **Pointer**: world objects take no pointer input on the pilot route
-  (pointer belongs to panels); nothing changes. DEV probes convert world →
-  design → canvas through the plate transform (`worldToDesign`,
-  `worldToCanvas`, `__cameraProbe`, `__designSpace`).
+| Option                         | World tiles at 720 /1080 | Player viewport height | Scaling                                                     | Landmarks/navigation                                                   | Room/task implications                                                                             | HUD / performance / cost / scientific risk                                                                                                                                                             |
+| ------------------------------ | ------------------------ | ---------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A Fixed wide — SELECT          | 40×22.5 /40×22.5         | 6.25% /6.25%           | 32 px tile at 1×/1.5×; native output, texel-aware composite | Crossing plus neighbouring district edges; stable field across devices | Larger maps and separated districts required; doors may leave view but architectural spine remains | UI redrawn separately. Plate 3.52 MiB RGBA vs current 2.25. Medium/high migration cost, all small maps expand. Fractional edges require testing; equal visible exposure protects device comparability. |
+| B U1 close follow              | 32×18 /32×18             | 7.81% /7.81%           | 1.25×/1.875×                                                | Larger body; threshold/landmark cropping in actual scale captures      | Small room view encourages adjacent task packing or frequent panning                               | Lowest camera cost but fails larger-area intent; more movement and reminder visibility changes. Current plate is not pixel-integer either.                                                             |
+| C Physical 1:1 expanding field | 40×22.5 /60×33.75        | 6.25% /4.17%           | 1× source pixels at both sizes                              | 1080 sees many more destinations;720 still scrolls                     | Large rooms essential to fill 1080; smaller player and wider task exposure on large display        | Sharpest raw pixels, simple render; substantially unequal scene exposure/travel planning across devices, higher floor area and scientific migration risk.                                              |
+| D Locked district camera       | 30×16.875 /30×16.875     | 8.33% /8.33%           | 960×540 at 1.333×/2×; camera locks to authored districts    | Stable while working; landmarks disappear at boundary cuts             | Room composed from linked screen-sized districts; transition corridors needed                      | Lower continuous camera motion, high boundary/state authoring cost; screen cuts and constrained framing increase disorientation and measure-dependent travel.                                          |
 
-## 3. Follow rules
+The camera comparison SVG shows a common Concourse geometry through each field. Runtime debug 1.0/1.25/1.5 captures test the current camera only; A/C/D are original proposed composition tests, not implemented camera claims.
 
-| Parameter   | Value                                                                                            |
-| ----------- | ------------------------------------------------------------------------------------------------ |
-| dead zone   | 96×64 world px (3×2 tiles), centred                                                              |
-| smoothing   | bounded lerp 0.12 per frame toward the dead-zone-corrected target; snap when the residual < 1 px |
-| bounds      | room rectangle; the view never shows beyond the room                                             |
-| snapping    | scroll rounded to whole world px before the plate render                                         |
-| idle        | no motion while the avatar stays inside the dead zone (idle animation never moves the camera)    |
-| transitions | fade in/out 200 ms on both cameras (existing)                                                    |
-| effects     | none: no shake, no zoom, no pan, no drift                                                        |
+## Weighted decision
 
-## 4. Room-size and spacing rules
+Scores 1 poor–5 strong, explicit design judgement. Weights: orientation 25, measurement exposure 25, player/pixel readability 20, motion/accessibility 15, implementation/migration 10, performance 5.
 
-| Rule                                      | Value                                                                                                                                          |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| ordinary interior                         | 1.5–2.5 views (864–1440 tiles)                                                                                                                 |
-| large yard                                | 2–3 views (1152–1728 tiles)                                                                                                                    |
-| Core                                      | compact (≈ 1.2 views), architecturally distinct                                                                                                |
-| main corridor width                       | ≥ 4 tiles                                                                                                                                      |
-| secondary lane width                      | ≥ 3 tiles                                                                                                                                      |
-| related primary stations                  | 12–20 tiles apart along the aisle                                                                                                              |
-| door trigger clearance                    | no station, NPC, board or decoration within 3 tiles of a door trigger or inside a required corridor                                            |
-| arrival spawn                             | ≥ 96 px inside the door, outside its 72 px radius                                                                                              |
-| total non-task walking (purposeful route) | ≤ 3.5 min at 175 px/s, computed by a pure test from the blockouts (BFS over the collision grids between consecutive guided stations and doors) |
+| Option | Orientation | Exposure | Readability | Motion | Cost | Performance | Weighted /5 |
+| ------ | ----------: | -------: | ----------: | -----: | ---: | ----------: | ----------: |
+| A      |           5 |        5 |           4 |      4 |    3 |           4 |        4.40 |
+| B      |           2 |        4 |           4 |      3 |    5 |           5 |        3.50 |
+| C      |           4 |        1 |           3 |      4 |    3 |           3 |        2.90 |
+| D      |           3 |        4 |           4 |      3 |    2 |           4 |        3.40 |
 
-## 5. Both target resolutions
+A earns the width needed for navigation without making display size an exposure manipulation. B's lower migration cost cannot outweigh the user diagnosis. C's genuinely native pixels do not compensate for unequal task visibility. D trades follow motion for cuts and a smaller field.
 
-| Browser  | Canvas display                      | World tile on screen | Figure on screen |
-| -------- | ----------------------------------- | -------------------- | ---------------- |
-| 1280×720 | 1280×720 (scale 1.0)                | 40 CSS px            | ≈ 60 CSS px      |
-| 800×600  | 800×450 (+75 px bands, scale 0.625) | 25 CSS px            | ≈ 37.5 CSS px    |
+## Frozen implementation contract
 
-The visible world area (32×18 tiles) is identical at both; only the display
-scale differs (documented parity cost, unchanged policy).
+1. World view 1280×720; native output 1280×720 or1920×1080, devicePixelRatio explicitly controlled. Same field, same logical world coordinates.
+2. Keep world coordinates and 32 px tiles; no collider/movement rescaling. Never resize measurement plot geometry to match art.
+3. Render world and UI separately. Preserve current 800×600 logical task-workspace geometry and action locations; fit to height at1.2/1.8 with native text. Centre workspace without cropping; side area is a deliberate modal backdrop, not a world margin.
+4. Camera clamp to room bounds; all maps exceed view. Start inside the authored initial camera rectangle. Follow only beyond 128×80world-px dead zone.
+5. Time-based damping candidate: alpha=1-exp(-dt/0.16s), approximate 95% settling 0.48s; freeze while modal. Snap final world sampling to source texels where compatible. Reduced-motion keeps no shake/zoom and may use firm bounded follow, subject to equal navigation exposure checks.
+6. Keep semantic UI sizes stable across resolutions (18 px body at 720 →27 px at 1080). Large-text presentation cannot hide sources or create new memory requirements.
+7. Do not scale a 1024 render texture to simulate a wider world; allocate the new plate and update camera/input transforms together.
 
-## 6. Three-scale comparison protocol (U1, before propagation)
+## Honest pixel constraint
 
-Same state, same frame: the Dock at the arrival spawn after the tutorial
-(participant launch, opening skipped) and the Concourse at the south-door
-spawn. Rendered at:
+Identical field and unchanged pixel art cannot have uniform integer source-pixel blocks at both 1280 and 1920: the ratio is 1.5. A accepts unequal 1/2physical-pixel edge widths at 1080 with nearest/texel-aware composition; it does **not** promise perfect integer pixels. Compare stationary and slow pan sequences at both sizes; reject blurred interiors, ghosted contours or distracting shimmer. If it fails, stop at the camera unit for a documented rendering decision. Do not quietly revert to 1.25, change field by device, enlarge characters, or introduce black margins.
 
-| Candidate | Method                                      | Tiles visible | Figure | Pixel stability                                          |
-| --------- | ------------------------------------------- | ------------- | ------ | -------------------------------------------------------- |
-| A 1.0     | direct, integer                             | 40 × 22.5     | 6.7 %  | exact                                                    |
-| B 1.25    | plate 1024×576 + sharp-bilinear composite   | 32 × 18       | 8.3 %  | exact interiors, single-pixel AA boundaries, no crawl    |
-| C 1.5     | direct, roundPixels, scroll snapped to 2 px | 26.7 × 15     | 10 %   | fixed 2→3 pattern; moving sprites alternate texel widths |
+A complete 16 px-density art re-author with integer 2×/3× could solve that mathematical constraint, but doubles migration scope and changes collision/art relationships. It is not selected or included in the PixelLab brief.
 
-Frames are written to `docs/verification/professional-world-v1/unit1/scale-compare/`
-(`dock-A-1.00.png`, `dock-B-1.25.png`, `dock-C-1.50.png`, `concourse-*`) plus
-4× magnified crops of a 1 px wall seam and the figure at each candidate. The
-choice and the reason are recorded in §7 by the U1 note; the design intent
-is B.
+## Performance and verification
 
-## 7. Selection record (U1, 2026-09-06)
+Larger floor textures need chunked cached rendering (candidate 512/1024px chunks) and disposal when leaving a room; do not preload all giant baked floors. Maximum Yard floor 2560×1536 is 15 MiB before duplicate buffers; measure GPU memory, load time and frame time. Keep physics broadphase limited to actual footprints. No extra per-item ambient emitters.
 
-Frames: `docs/verification/professional-world-v1/unit1/scale-compare/`
-(`dock-1.png`, `dock-1.25.png`, `dock-1.5.png`, `concourse-*.png`; same
-Dock apron state after the tutorial, same Concourse south-door spawn).
-**Selected: B (1.25).** 32×18 tiles and a figure at 8.3 % satisfy the
-acceptance range; the Concourse crossing with two doors and their signs
-reads in one view. A (1.0) shows 40×22.5 tiles with the figure at 6.7 %:
-door signs and indicator lamps fall below comfortable legibility at
-1280×720 and the room reads as a diagram. C (1.5) shows 26.7×15 tiles
-(under the range) with the figure at 10 %. Pixel stability at B comes
-from the plate + texel-snapped sampler (§2), inspected at 1:1 on the
-1280×720 frames: no NEAREST crawl, no softened texel interiors. The
-mission's "6–8 %" figure target is met within 0.3 %; recorded, not hidden.
-
-## 8. Probes and tests
-
-- `window.__cameraProbe` gains `plate: {width, height, scale}` and reports
-  the plate camera's `worldView`; `__designSpace` unchanged.
-- `e2e/world_v1_camera.spec.ts`: the visible world window is 1024×576 world
-  px at both browser sizes; the camera follows (scroll changes as the avatar
-  walks out of the dead zone and does not change inside it); the camera
-  never leaves the room; the prompt appears only in range; a HUD card click
-  lands (pointer path).
-- `e2e/world_v1_route_budget.spec.ts` (pure): the walking budget of §4.
+Test both native viewports: entry, crossroad, operating face, tall-object occlusion, corner clamp, modal open/close, pointer transform and keyboard path. Compare 20/30/60fps follow response; target no sustained world blanking, no camera movement during stationary interaction and no input drift. Frame-time targets are design gates pending target hardware, not evidence that this audit established real-device performance.

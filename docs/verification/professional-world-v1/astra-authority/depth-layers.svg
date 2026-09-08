@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1050" viewBox="0 0 1600 1050" role="img" aria-label="Depth / contact / collision"><title>Depth / contact / collision</title><desc>Same original machine viewed before and behind its contact line.</desc><rect width="100%" height="100%" fill="#f2f0e9"/>
+<text x="40" y="45" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="600">ASTRA / STATION 080 / DESIGN AUTHORITY</text>
+<text x="40" y="86" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="700">Depth / contact / collision</text>
+<text x="40" y="114" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="16" font-weight="400">Same original machine viewed before and behind its contact line.</text>
+<rect x="50" y="175" width="720" height="530" fill="#c1c8c4" stroke="none" stroke-width="1" />
+<rect x="390.2" y="292.0" width="39.6" height="45.0" fill="#d8af65" stroke="#18232c" stroke-width="1.8" />
+<rect x="395.6" y="274.0" width="28.8" height="23.400000000000002" fill="#d7d5cb" stroke="#18232c" stroke-width="1.8" />
+<rect x="393.8" y="337.0" width="12.6" height="18.0" fill="#18232c" stroke="none" stroke-width="1" />
+<rect x="413.6" y="337.0" width="12.6" height="18.0" fill="#18232c" stroke="none" stroke-width="1" />
+<rect x="260" y="290" width="300" height="125" fill="#708187" stroke="#18232c" stroke-width="3" />
+<rect x="260" y="415" width="300" height="120" fill="#465f6a" stroke="#18232c" stroke-width="3" />
+<rect x="295" y="525" width="230" height="47" fill="#3d515b" stroke="#18232c" stroke-width="2" />
+<rect x="295" y="530" width="230" height="42" fill="none" stroke="#914a42" stroke-width="3" stroke-dasharray="8 6"/>
+<line x1="195" y1="572" x2="625" y2="572" stroke="#18232c" stroke-width="3" />
+<text x="200" y="645" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="600">visible base = collision bottom = depth anchor</text>
+<text x="75" y="685" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="19" font-weight="700">Actor behind: machine occludes body</text>
+<rect x="820" y="175" width="720" height="530" fill="#c1c8c4" stroke="none" stroke-width="1" />
+<rect x="1030" y="290" width="300" height="125" fill="#708187" stroke="#18232c" stroke-width="3" />
+<rect x="1030" y="415" width="300" height="120" fill="#465f6a" stroke="#18232c" stroke-width="3" />
+<rect x="1065" y="525" width="230" height="47" fill="#3d515b" stroke="#18232c" stroke-width="2" />
+<rect x="1065" y="530" width="230" height="42" fill="none" stroke="#914a42" stroke-width="3" stroke-dasharray="8 6"/>
+<rect x="1160.2" y="542.0" width="39.6" height="45.0" fill="#d8af65" stroke="#18232c" stroke-width="1.8" />
+<rect x="1165.6" y="524.0" width="28.8" height="23.400000000000002" fill="#d7d5cb" stroke="#18232c" stroke-width="1.8" />
+<rect x="1163.8" y="587.0" width="12.6" height="18.0" fill="#18232c" stroke="none" stroke-width="1" />
+<rect x="1183.6" y="587.0" width="12.6" height="18.0" fill="#18232c" stroke="none" stroke-width="1" />
+<line x1="965" y1="572" x2="1395" y2="572" stroke="#18232c" stroke-width="3" />
+<text x="970" y="645" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="600">visible base = collision bottom = depth anchor</text>
+<text x="845" y="685" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="19" font-weight="700">Actor in front: actor occludes machine</text>
+<text x="40" y="742" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="700">Render order</text>
+<text x="40" y="780" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">Floor → decals → low infrastructure → foot-sorted props and actors → foreground wall</text>
+<text x="40" y="804" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">caps → UI. Current depth saturates near 1980 world px; selected zone heights stay</text>
+<text x="40" y="828" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">below that, but replace saturation with a stable depth mapping during camera/render</text>
+<text x="40" y="852" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">work.</text>
+<text x="900" y="780" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">Red dashed base is collision, not the entire transparent</text>
+<text x="900" y="804" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">image. North overhang may occlude behind; the south operating</text>
+<text x="900" y="828" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">face and required path stay visible. Never use addDecor for a</text>
+<text x="900" y="852" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">solid object in a required lane.</text>
+<text x="40" y="1028" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">Original analytical blockout • labels are reviewer annotations • no commercial-game imagery</text>
+</svg>

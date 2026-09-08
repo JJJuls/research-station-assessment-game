@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>Astra / world design authority</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #e9e7de;
+      color: #18232c;
+      font: 17px/1.5 system-ui;
+    }
+    header {
+      padding: 28px 32px;
+      background: #142730;
+      color: #f1f0e7;
+    }
+    h1 {
+      font-size: 30px;
+      margin: 0;
+    }
+    header p {
+      max-width: 90ch;
+      margin: 8px 0;
+    }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 18px 32px;
+    }
+    button,
+    a {
+      font: inherit;
+    }
+    button {
+      padding: 8px 12px;
+      border: 1px solid #73858b;
+      background: #f6f4ec;
+      color: #18232c;
+      cursor: pointer;
+    }
+    button[aria-pressed='true'] {
+      background: #315e66;
+      color: white;
+    }
+    button:focus-visible,
+    a:focus-visible {
+      outline: 3px solid #a55f25;
+      outline-offset: 3px;
+    }
+    main {
+      padding: 0 32px 32px;
+    }
+    figure {
+      margin: 0;
+      background: #f2f0e9;
+      border: 1px solid #aab4b2;
+    }
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    figcaption {
+      padding: 12px 18px;
+      border-top: 1px solid #aab4b2;
+    }
+    a {
+      color: #275761;
+    }
+    aside {
+      max-width: 100ch;
+      margin-top: 20px;
+    }
+    .native img {
+      width: auto;
+      max-width: none;
+    }
+    .native {
+      overflow: auto;
+      max-height: 80vh;
+    }
+    .controls {
+      padding: 0 32px 16px;
+    }
+  </style>
+  <header>
+    <h1>Station 080 / professional world direction</h1>
+    <p>
+      Original design blockouts, not finished art. Select a board, inspect at
+      native size, and use the linked authority documents for measurement holds
+      and production scope.
+    </p>
+  </header>
+  <nav aria-label="Design boards">
+    <button
+      data-src="world-topology.svg"
+      data-description="../../../game/PROFESSIONAL-WORLD-DESIGN-V1.md#why-this-topology-and-narrative"
+    >
+      Topology alternatives</button
+    ><button
+      data-src="route-and-restoration.svg"
+      data-description="../../../game/world-v1/STORY-STATE-SPEC.md"
+    >
+      Route and story</button
+    ><button
+      data-src="camera-comparison.svg"
+      data-description="../../../game/world-v1/CAMERA-AND-SCALE-SPEC.md"
+    >
+      Camera comparison</button
+    ><button
+      data-src="zone-dock.svg"
+      data-description="../../../game/world-v1/ROOM-BLOCKOUTS.md#zone-programme"
+    >
+      Arrival / Dock</button
+    ><button
+      data-src="zone-concourse.svg"
+      data-description="../../../game/world-v1/ROOM-BLOCKOUTS.md#zone-programme"
+    >
+      Station Concourse</button
+    ><button
+      data-src="zone-records.svg"
+      data-description="../../../game/world-v1/ROOM-BLOCKOUTS.md#zone-programme"
+    >
+      Records Workshop</button
+    ><button
+      data-src="zone-laboratory.svg"
+      data-description="../../../game/world-v1/ROOM-BLOCKOUTS.md#zone-programme"
+    >
+      Diagnostics Laboratory</button
+    ><button
+      data-src="zone-yard.svg"
+      data-description="../../../game/world-v1/ROOM-BLOCKOUTS.md#zone-programme"
+    >
+      Exterior Recovery Yard</button
+    ><button
+      data-src="zone-utility.svg"
+      data-description="../../../game/world-v1/ROOM-BLOCKOUTS.md#zone-programme"
+    >
+      Utility Deck</button
+    ><button
+      data-src="zone-core.svg"
+      data-description="../../../game/world-v1/ROOM-BLOCKOUTS.md#zone-programme"
+    >
+      Core Chamber</button
+    ><button
+      data-src="opening-storyboard.svg"
+      data-description="../../../game/world-v1/STORY-STATE-SPEC.md"
+    >
+      Opening storyboard</button
+    ><button
+      data-src="interaction-states.svg"
+      data-description="../../../game/world-v1/INTERACTION-GRAMMAR.md"
+    >
+      Interaction states</button
+    ><button
+      data-src="inventory-hud.svg"
+      data-description="../../../game/world-v1/INVENTORY-ITEM-PURPOSE-AUDIT.md"
+    >
+      Inventory and HUD</button
+    ><button
+      data-src="depth-layers.svg"
+      data-description="../../../game/world-v1/INTERACTION-GRAMMAR.md"
+    >
+      Depth and collision</button
+    ><button
+      data-src="composition-1280x720.svg"
+      data-description="../../../game/world-v1/CAMERA-AND-SCALE-SPEC.md"
+    >
+      1280×720 composition</button
+    ><button
+      data-src="composition-1920x1080.svg"
+      data-description="../../../game/world-v1/CAMERA-AND-SCALE-SPEC.md"
+    >
+      1920×1080 composition
+    </button>
+  </nav>
+  <div class="controls">
+    <label><input id="native" type="checkbox" /> Inspect at native size</label>
+    · <a href="README.md">Package index</a> ·
+    <a href="M01-M26-SPATIAL-CROSSWALK.md">Scientific crosswalk</a>
+  </div>
+  <main>
+    <figure id="figure">
+      <img id="board" src="world-topology.svg" alt="Topology alternatives" />
+      <figcaption id="caption">Topology alternatives</figcaption>
+    </figure>
+    <aside>
+      Plan labels identify reviewer geometry. They are not participant-facing
+      floating labels. Grayscale distinguishes circulation, hull mass,
+      functional faces and camera boundaries; the native composition examples
+      show the proposed quiet UI. Research-owner holds remain explicit.
+    </aside>
+  </main>
+  <script>
+    const buttons = [...document.querySelectorAll('button[data-src]')],
+      board = document.querySelector('#board'),
+      caption = document.querySelector('#caption');
+    function select(b) {
+      buttons.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      board.src = b.dataset.src;
+      board.alt =
+        b.textContent +
+        '. Structured description follows in the linked authority document.';
+      caption.replaceChildren(document.createTextNode(b.textContent + ' · '));
+      const a = document.createElement('a');
+      a.href = b.dataset.src;
+      a.textContent = 'Open standalone SVG';
+      caption.append(a);
+      const d = document.createElement('a');
+      d.href = b.dataset.description;
+      d.textContent = 'Read structured description';
+      caption.append(document.createTextNode(' · '), d);
+    }
+    buttons.forEach((b) => b.addEventListener('click', () => select(b)));
+    document
+      .querySelector('#native')
+      .addEventListener('change', (e) =>
+        document
+          .querySelector('#figure')
+          .classList.toggle('native', e.target.checked),
+      );
+    select(buttons[0]);
+  </script>
+</html>

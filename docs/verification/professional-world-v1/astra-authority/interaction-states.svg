@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980" role="img" aria-label="One interaction language / five states in context"><title>One interaction language / five states in context</title><desc>No permanent names; board labels explain the design and are not shown over world objects.</desc><rect width="100%" height="100%" fill="#f2f0e9"/>
+<text x="40" y="45" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="600">ASTRA / STATION 080 / DESIGN AUTHORITY</text>
+<text x="40" y="86" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="700">One interaction language / five states in context</text>
+<text x="40" y="114" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="16" font-weight="400">No permanent names; board labels explain the design and are not shown over world objects.</text>
+<text x="40" y="185" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">Required</text>
+<rect x="40" y="210" width="285" height="350" fill="#c2c8c4" stroke="none" stroke-width="1" />
+<rect x="56" y="230" width="253" height="52" fill="#59696e" stroke="none" stroke-width="1" />
+<rect x="122" y="322" width="112" height="70" fill="#64777d" stroke="#18232c" stroke-width="2" />
+<rect x="147" y="327" width="61" height="22" fill="#d2d9cc" stroke="#18232c" stroke-width="1" />
+<rect x="165.65" y="453.25" width="18.7" height="21.25" fill="#d8af65" stroke="#18232c" stroke-width="0.85" />
+<rect x="168.2" y="444.75" width="13.6" height="11.049999999999999" fill="#d7d5cb" stroke="#18232c" stroke-width="0.85" />
+<rect x="167.35" y="474.5" width="5.95" height="8.5" fill="#18232c" stroke="none" stroke-width="1" />
+<rect x="176.7" y="474.5" width="5.95" height="8.5" fill="#18232c" stroke="none" stroke-width="1" />
+<rect x="50" y="508" width="265" height="38" fill="#18232c" stroke="none" stroke-width="1" />
+<text x="58" y="524" fill="#f4f3ec" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">E / Space — Read terminal</text>
+<text x="40" y="603" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Operating face and clear</text>
+<text x="40" y="626" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">approach; no idle animation.</text>
+<text x="350" y="185" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">Optional context</text>
+<rect x="350" y="210" width="285" height="350" fill="#c2c8c4" stroke="none" stroke-width="1" />
+<rect x="366" y="230" width="253" height="52" fill="#59696e" stroke="none" stroke-width="1" />
+<rect x="432" y="322" width="112" height="70" fill="#64777d" stroke="#18232c" stroke-width="2" />
+<rect x="476" y="312" width="29" height="36" fill="#d8d2bc" stroke="#18232c" stroke-width="1" />
+<line x1="483" y1="322" x2="500" y2="322" stroke="#72827d" stroke-width="2" />
+<line x1="483" y1="330" x2="496" y2="330" stroke="#72827d" stroke-width="2" />
+<rect x="475.65" y="453.25" width="18.7" height="21.25" fill="#d8af65" stroke="#18232c" stroke-width="0.85" />
+<rect x="478.2" y="444.75" width="13.6" height="11.049999999999999" fill="#d7d5cb" stroke="#18232c" stroke-width="0.85" />
+<rect x="477.35" y="474.5" width="5.95" height="8.5" fill="#18232c" stroke="none" stroke-width="1" />
+<rect x="486.7" y="474.5" width="5.95" height="8.5" fill="#18232c" stroke="none" stroke-width="1" />
+<rect x="360" y="508" width="265" height="38" fill="#18232c" stroke="none" stroke-width="1" />
+<text x="368" y="524" fill="#f4f3ec" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">E / Space — Inspect log</text>
+<text x="350" y="603" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Small paper log on a</text>
+<text x="350" y="626" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">subordinate surface; no</text>
+<text x="350" y="649" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">mission demand.</text>
+<text x="660" y="185" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">Decorative</text>
+<rect x="660" y="210" width="285" height="350" fill="#c2c8c4" stroke="none" stroke-width="1" />
+<rect x="676" y="230" width="253" height="52" fill="#59696e" stroke="none" stroke-width="1" />
+<rect x="742" y="322" width="112" height="70" fill="#64777d" stroke="#18232c" stroke-width="2" />
+<rect x="750" y="300" width="34" height="24" fill="#919785" stroke="#18232c" stroke-width="1" />
+<rect x="789" y="297" width="55" height="26" fill="#9b9e8c" stroke="#18232c" stroke-width="1" />
+<rect x="785.65" y="453.25" width="18.7" height="21.25" fill="#d8af65" stroke="#18232c" stroke-width="0.85" />
+<rect x="788.2" y="444.75" width="13.6" height="11.049999999999999" fill="#d7d5cb" stroke="#18232c" stroke-width="0.85" />
+<rect x="787.35" y="474.5" width="5.95" height="8.5" fill="#18232c" stroke="none" stroke-width="1" />
+<rect x="796.7" y="474.5" width="5.95" height="8.5" fill="#18232c" stroke="none" stroke-width="1" />
+<text x="723" y="531" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="400">Silent storage cluster</text>
+<text x="660" y="603" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">No usable face, hover, sound</text>
+<text x="660" y="626" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">or focus stop.</text>
+<text x="970" y="185" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">Unavailable</text>
+<rect x="970" y="210" width="285" height="350" fill="#c2c8c4" stroke="none" stroke-width="1" />
+<rect x="986" y="230" width="253" height="52" fill="#59696e" stroke="none" stroke-width="1" />
+<rect x="1052" y="322" width="112" height="70" fill="#64777d" stroke="#18232c" stroke-width="2" />
+<rect x="1072" y="318" width="72" height="44" fill="#717b79" stroke="#18232c" stroke-width="2" />
+<rect x="1095.65" y="453.25" width="18.7" height="21.25" fill="#d8af65" stroke="#18232c" stroke-width="0.85" />
+<rect x="1098.2" y="444.75" width="13.6" height="11.049999999999999" fill="#d7d5cb" stroke="#18232c" stroke-width="0.85" />
+<rect x="1097.35" y="474.5" width="5.95" height="8.5" fill="#18232c" stroke="none" stroke-width="1" />
+<rect x="1106.7" y="474.5" width="5.95" height="8.5" fill="#18232c" stroke="none" stroke-width="1" />
+<rect x="980" y="508" width="265" height="38" fill="#18232c" stroke="none" stroke-width="1" />
+<text x="988" y="524" fill="#f4f3ec" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">E / Space — Inspect terminal</text>
+<text x="970" y="603" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">After activation: Awaiting</text>
+<text x="970" y="626" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">service phase. Proximity only</text>
+<text x="970" y="649" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">offers Inspect.</text>
+<text x="1280" y="185" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">Completed</text>
+<rect x="1280" y="210" width="285" height="350" fill="#c2c8c4" stroke="none" stroke-width="1" />
+<rect x="1296" y="230" width="253" height="52" fill="#59696e" stroke="none" stroke-width="1" />
+<rect x="1362" y="322" width="112" height="70" fill="#64777d" stroke="#18232c" stroke-width="2" />
+<rect x="1383" y="338" width="68" height="18" fill="#52656a" stroke="#18232c" stroke-width="1" />
+<rect x="1367" y="367" width="21" height="8" fill="#8b9b92" stroke="none" stroke-width="1" />
+<line x1="1390" y1="333" x2="1444" y2="333" stroke="#899b91" stroke-width="3" />
+<rect x="1405.65" y="453.25" width="18.7" height="21.25" fill="#d8af65" stroke="#18232c" stroke-width="0.85" />
+<rect x="1408.2" y="444.75" width="13.6" height="11.049999999999999" fill="#d7d5cb" stroke="#18232c" stroke-width="0.85" />
+<rect x="1407.35" y="474.5" width="5.95" height="8.5" fill="#18232c" stroke="none" stroke-width="1" />
+<rect x="1416.7" y="474.5" width="5.95" height="8.5" fill="#18232c" stroke="none" stroke-width="1" />
+<rect x="1290" y="508" width="265" height="38" fill="#18232c" stroke="none" stroke-width="1" />
+<text x="1298" y="524" fill="#f4f3ec" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">E / Space — Inspect terminal</text>
+<text x="1280" y="603" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">Face folded away, cover</text>
+<text x="1280" y="626" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">parked, no bright active</text>
+<text x="1280" y="649" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="400">screen or repeated demand.</text>
+<text x="40" y="755" fill="#18232c" font-family="Segoe UI,Arial,sans-serif" font-size="19" font-weight="700">MEASUREMENT EXCEPTION IS EXPLICIT</text>
+<text x="40" y="791" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">Optional cleanup and unsolicited initiation retain their approved quiet presentation. Accepted commitments keep their existing reminder</text>
+<text x="40" y="815" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">exposure until owner disposition. A required-route grammar must never turn M03/M04/M05/M09/M10 into a compelled “good participant”</text>
+<text x="40" y="839" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400">response.</text>
+<text x="40" y="958" fill="#52616a" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="400">Original analytical blockout • labels are reviewer annotations • no commercial-game imagery</text>
+</svg>
