@@ -192,21 +192,21 @@ export interface PilotDoorRef {
 }
 
 export const PILOT_DOORS: Record<PilotZoneKey, readonly PilotDoorRef[]> = {
-  // World V1 (U1): Dock 36×24 and Concourse 40×26 layouts
-  // (docs/game/world-v1/ROOM-BLOCKOUTS.md §1–2).
+  // World V1 production slice: Dock 48×30 and Concourse 60×38 blockouts
+  // (world-layouts.json `doors[].at` × 32; docs/game/world-v1/ROOM-BLOCKOUTS.md).
   dock: [
-    { to: 'station_concourse', x: 576, y: 48, label: 'Station Concourse' },
+    { to: 'station_concourse', x: 768, y: 32, label: 'Station Concourse' },
   ],
   station_concourse: [
-    { to: 'dock', x: 640, y: 752, label: 'Dock' },
-    { to: 'records_workshop', x: 48, y: 416, label: 'Records Workshop' },
+    { to: 'dock', x: 960, y: 1184, label: 'Dock' },
+    { to: 'records_workshop', x: 32, y: 608, label: 'Records Workshop' },
     {
       to: 'diagnostics_laboratory',
-      x: 640,
-      y: 48,
+      x: 960,
+      y: 32,
       label: 'Diagnostics Laboratory',
     },
-    { to: 'utility_core_deck', x: 1232, y: 416, label: 'Utility Deck' },
+    { to: 'utility_core_deck', x: 1888, y: 608, label: 'Utility Deck' },
   ],
   records_workshop: [
     { to: 'station_concourse', x: 752, y: 272, label: 'Station Concourse' },

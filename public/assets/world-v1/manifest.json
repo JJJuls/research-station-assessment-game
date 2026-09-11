@@ -1,0 +1,1152 @@
+{
+  "generated": "2026-09-11",
+  "status": "MODEL-SELECTED CANDIDATES — NOT HUMAN-APPROVED",
+  "frames": [
+    {
+      "key": "w1-terminal-available",
+      "file": "assets/world-v1/operations/terminal-available.png",
+      "family": "operations",
+      "width": 34,
+      "height": 61,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 15,
+        "y": 2
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "station",
+      "state": "available",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#0",
+      "item_description": "arrival check-in terminal kiosk, available state",
+      "sha256": "234b9366fb924588fdf6d4aeb4771c9149d9bf8fab802425a3736dc913698715",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-terminal-settled",
+      "file": "assets/world-v1/operations/terminal-settled.png",
+      "family": "operations",
+      "width": 34,
+      "height": 61,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 15,
+        "y": 2
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "station",
+      "state": "settled",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#1",
+      "item_description": "arrival check-in terminal kiosk, screen dimmed, settled checked-in state",
+      "sha256": "4186c83d1ac2358f14febf8bb6515b2fd186e639a4345e32c3806325682a51f1",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-plan-board",
+      "file": "assets/world-v1/operations/plan-board.png",
+      "family": "operations",
+      "width": 60,
+      "height": 58,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 2,
+        "y": 5
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "station",
+      "state": "idle",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#2",
+      "item_description": "incident plan board on a steel stand",
+      "sha256": "c86833040bc6eba64bb7bbe79a220884ea69f06025a054ebf5604b5e0755b76c",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-evidence-desk",
+      "file": "assets/world-v1/operations/evidence-desk.png",
+      "family": "operations",
+      "width": 60,
+      "height": 53,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 2,
+        "y": 9
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "station",
+      "state": "idle",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#3",
+      "item_description": "incident evidence desk with two small monitors",
+      "sha256": "9aa9e52ccee847c743b986521fa82ba3271a00eca8f7be3da13aaaa7c4ae087a",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-reading-desk",
+      "file": "assets/world-v1/operations/reading-desk.png",
+      "family": "operations",
+      "width": 56,
+      "height": 60,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 4,
+        "y": 2
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "station",
+      "state": "idle",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#4",
+      "item_description": "reading desk with an articulated desk lamp",
+      "sha256": "81a930c2fa9a16d72fc91593acadeb5ea493e0fd316eeb45b0f87c7bbf092365",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-qc-counter",
+      "file": "assets/world-v1/operations/qc-counter.png",
+      "family": "operations",
+      "width": 58,
+      "height": 44,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 3,
+        "y": 18
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "station",
+      "state": "idle",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#5",
+      "item_description": "quality-control side counter with a packed routing packet",
+      "sha256": "588ac88605527a5c06823ae70cea7360e11dee9ab5ec8c76e77f7acad1016bc7",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-gauge",
+      "file": "assets/world-v1/operations/gauge.png",
+      "family": "operations",
+      "width": 42,
+      "height": 51,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 11,
+        "y": 6
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "station",
+      "state": "idle",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#6",
+      "item_description": "round monitor gauge on a steel bracket panel",
+      "sha256": "c9d8830d77f7cb38effdf9c3b8d66e9f51f120a725d15ef9d2632b797f46a7bd",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-filing-cabinet",
+      "file": "assets/world-v1/operations/filing-cabinet.png",
+      "family": "operations",
+      "width": 28,
+      "height": 60,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 18,
+        "y": 2
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#7",
+      "item_description": "clerical filing cabinet with three drawers",
+      "sha256": "28281650cc87caa5e0c34f01647f0b5571bca3f4538a12e95a5f0d37da9d1968",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-notice-board",
+      "file": "assets/world-v1/operations/notice-board.png",
+      "family": "operations",
+      "width": 58,
+      "height": 56,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 3,
+        "y": 6
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#8",
+      "item_description": "notice board on a steel stand",
+      "sha256": "82233f1c54e8071a1df44fbf9a4280c76d21402dcf6611afad6b6b17ede8df00",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-crate-stack",
+      "file": "assets/world-v1/storage/crate-stack.png",
+      "family": "storage",
+      "width": 56,
+      "height": 60,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 4,
+        "y": 2
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#9",
+      "item_description": "stack of four strapped steel cargo crates",
+      "sha256": "3e33632168943594c96a74e03014cfe008b537abfccacb7469fc14ae9e97a51c",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-tool-cart",
+      "file": "assets/world-v1/storage/tool-cart.png",
+      "family": "storage",
+      "width": 45,
+      "height": 57,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 12,
+        "y": 5
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#10",
+      "item_description": "repair tool cart with drawers",
+      "sha256": "da0bfc64623db6f7b38cf8dca270fdcc113be621e60c1842d5fda7d21911f48f",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-pallet-jack",
+      "file": "assets/world-v1/storage/pallet-jack.png",
+      "family": "storage",
+      "width": 58,
+      "height": 60,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 3,
+        "y": 2
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#11",
+      "item_description": "pallet jack carrying one crate",
+      "sha256": "288aafbc7cd6c49fb90706ede9f236ecfb6f6073b798429e7d316ebb4c702d45",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-document-trolley",
+      "file": "assets/world-v1/operations/document-trolley.png",
+      "family": "operations",
+      "width": 53,
+      "height": 59,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 6,
+        "y": 4
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#12",
+      "item_description": "clerical document trolley",
+      "sha256": "b75b77da6b08c468394c21fc4cf9c8f1c2a43c9b97fe590450d1b33299458642",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-cable-drum",
+      "file": "assets/world-v1/storage/cable-drum.png",
+      "family": "storage",
+      "width": 43,
+      "height": 54,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 11,
+        "y": 5
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#13",
+      "item_description": "cable drum on a steel stand",
+      "sha256": "f81ff83b8d2feb9d8da450e40c709b817e49e307b883e9cf90061f973e1adb82",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-service-lamp-standby",
+      "file": "assets/world-v1/architecture/service-lamp-standby.png",
+      "family": "architecture",
+      "width": 26,
+      "height": 61,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 22,
+        "y": 2
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "standby",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#14",
+      "item_description": "free-standing service lamp, dim amber standby",
+      "sha256": "5ba926c1d9ef61bd6d694e3b6837a6ace390d32fc1d7ce307a3132f8195749a5",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-service-lamp-steady",
+      "file": "assets/world-v1/architecture/service-lamp-steady.png",
+      "family": "architecture",
+      "width": 25,
+      "height": 61,
+      "source_canvas": "64x64",
+      "trim": {
+        "x": 21,
+        "y": 2
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "steady",
+      "batch": "O1",
+      "pixellab_id": "7af23879-b626-4eaa-aaf2-154918744c1f#15",
+      "item_description": "free-standing service lamp, lit steady warm white",
+      "sha256": "c8516ee80081bdc39f2bcc392d4caaf80614952039a8020b9e30bd6fe16f3257",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-chair",
+      "file": "assets/world-v1/operations/chair.png",
+      "family": "operations",
+      "width": 19,
+      "height": 30,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 6,
+        "y": 2
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#0",
+      "item_description": "steel office chair",
+      "sha256": "857ab41bf049285bb0a3713aea4dc0fc27cec456905dd924ea21317f9bda6297",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-crate",
+      "file": "assets/world-v1/storage/crate.png",
+      "family": "storage",
+      "width": 24,
+      "height": 28,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 4,
+        "y": 4
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#1",
+      "item_description": "single strapped steel cargo crate",
+      "sha256": "3239f30fbe071a021f893cacc51270b5513bd321b66e0bad1a1f3135c4420dad",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-extinguisher",
+      "file": "assets/world-v1/storage/extinguisher.png",
+      "family": "storage",
+      "width": 17,
+      "height": 29,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 7,
+        "y": 3
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#2",
+      "item_description": "fire extinguisher in a steel wall bracket",
+      "sha256": "ed38e5a435000e60a7285a1c0f2af052c12d67c99c0de2a6b17787b6f0e3e011",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-strip-light-standby",
+      "file": "assets/world-v1/architecture/strip-light-standby.png",
+      "family": "architecture",
+      "width": 28,
+      "height": 9,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 2,
+        "y": 13
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "standby",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#3",
+      "item_description": "wall strip light fixture, dim amber standby",
+      "sha256": "98ece16336506dd3ca4f070198b5ba875479ed3bbbfc8cc32693a07438303649",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-strip-light-steady",
+      "file": "assets/world-v1/architecture/strip-light-steady.png",
+      "family": "architecture",
+      "width": 28,
+      "height": 8,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 2,
+        "y": 13
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "steady",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#4",
+      "item_description": "wall strip light fixture, lit steady warm white",
+      "sha256": "257188d1ec94eec5ff2279aff357b7e929aec7b55ff454393e6e5a8229eb9d1d",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-junction-box",
+      "file": "assets/world-v1/architecture/junction-box.png",
+      "family": "architecture",
+      "width": 17,
+      "height": 32,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 8,
+        "y": 0
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#5",
+      "item_description": "electrical junction box with amber indicator",
+      "sha256": "e6f69a75c2a3815485c53031fed2c37f87ebcc1eac5b47da40e96b7a8f83df47",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-cable-tray",
+      "file": "assets/world-v1/architecture/cable-tray.png",
+      "family": "architecture",
+      "width": 32,
+      "height": 32,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 0,
+        "y": 0
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#6",
+      "item_description": "floor cable tray segment",
+      "sha256": "4b6f90a90b590cfdec9f4d87310f9d8f39893ee70862146bc1bd4f4060648ea7",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-bollard",
+      "file": "assets/world-v1/storage/bollard.png",
+      "family": "storage",
+      "width": 13,
+      "height": 26,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 9,
+        "y": 4
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#7",
+      "item_description": "amber-and-black hazard bollard",
+      "sha256": "f3002cae510e8145088546bdd3ea354ea6b628490b8246a6969b207bd5eff7ab",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-debris-panel",
+      "file": "assets/world-v1/storage/debris-panel.png",
+      "family": "storage",
+      "width": 30,
+      "height": 21,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 1,
+        "y": 7
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#8",
+      "item_description": "torn scorched metal panel fragment, storm debris",
+      "sha256": "0d070bc6e96c9087bcc12e56cd2b58e7d5a06c3753324b70901ead545b4d91e0",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-cable-coil",
+      "file": "assets/world-v1/storage/cable-coil.png",
+      "family": "storage",
+      "width": 26,
+      "height": 20,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 3,
+        "y": 8
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#9",
+      "item_description": "loose cable coil on the floor",
+      "sha256": "652bc4f2e68737e4580afb841bfa2f2e87fd121c87eacb02d7c2b18a49ac2e80",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-vent-grille",
+      "file": "assets/world-v1/architecture/vent-grille.png",
+      "family": "architecture",
+      "width": 30,
+      "height": 18,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 1,
+        "y": 8
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#10",
+      "item_description": "square steel floor vent grille",
+      "sha256": "91609e5199eed7bddd9f32470fd5233cd7ae3cce5f788da7ca953d9357297887",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-pipe-run",
+      "file": "assets/world-v1/architecture/pipe-run.png",
+      "family": "architecture",
+      "width": 26,
+      "height": 28,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 3,
+        "y": 3
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#11",
+      "item_description": "short run of two grey pipes with a flange",
+      "sha256": "155ac8f4fbe5733b6c69f797707ec43e1db2b4fb7f73cfcf6ba702948739fb23",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-folders",
+      "file": "assets/world-v1/operations/folders.png",
+      "family": "operations",
+      "width": 27,
+      "height": 25,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 3,
+        "y": 6
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#12",
+      "item_description": "small stack of paper folders and a clipboard",
+      "sha256": "ed964e506d88e107abb09a12f091945b3e950786d8e232368624a27c862ca83e",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-drum",
+      "file": "assets/world-v1/storage/drum.png",
+      "family": "storage",
+      "width": 18,
+      "height": 27,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 7,
+        "y": 4
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#13",
+      "item_description": "grey steel drum with a lid",
+      "sha256": "3d0ab46b94d6349a95346344e9c898afaafe5bfca9bf841184e5efa8ae4a4bfc",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-stool",
+      "file": "assets/world-v1/operations/stool.png",
+      "family": "operations",
+      "width": 20,
+      "height": 23,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 6,
+        "y": 7
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#14",
+      "item_description": "low steel service stool",
+      "sha256": "f750408cc2631d12292eea7e774dcad95f84b4565ecf05297888041607a803f9",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-status-lamp",
+      "file": "assets/world-v1/architecture/status-lamp.png",
+      "family": "architecture",
+      "width": 12,
+      "height": 16,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 10,
+        "y": 10
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#15",
+      "item_description": "small wall-mounted cyan status lamp",
+      "sha256": "b30091b0a86167fc9ea6097b984486a23ccfc7ac2f120fab252843746afb2326",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-radio-cradle",
+      "file": "assets/world-v1/operations/radio-cradle.png",
+      "family": "operations",
+      "width": 15,
+      "height": 28,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 8,
+        "y": 2
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#16",
+      "item_description": "handheld radio on a charging cradle",
+      "sha256": "c3d90a583e0a4195259e0168339a07b8411c6f13cca22afd7b54245a546e6840",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-waste-bin",
+      "file": "assets/world-v1/storage/waste-bin.png",
+      "family": "storage",
+      "width": 18,
+      "height": 25,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 7,
+        "y": 5
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#17",
+      "item_description": "steel waste bin with a lid",
+      "sha256": "b9e9e4a197fd29f6f87fb16311f3cbc2c590682b7c3f662149be796a5f45b1cc",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-intercom",
+      "file": "assets/world-v1/architecture/intercom.png",
+      "family": "architecture",
+      "width": 14,
+      "height": 19,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 9,
+        "y": 7
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#18",
+      "item_description": "wall intercom panel",
+      "sha256": "4b34334a14b68ad13747b756f9fccf56d3f3eb4f15d2c84a6eb4d8b740ab47c7",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-hazard-sign",
+      "file": "assets/world-v1/storage/hazard-sign.png",
+      "family": "storage",
+      "width": 24,
+      "height": 29,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 4,
+        "y": 2
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#19",
+      "item_description": "floor-standing hazard sign board",
+      "sha256": "cb507634e84001336579eccbbec9c709a7f9fed9d134e063671fcbc7a4bfc04d",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-paper-stack",
+      "file": "assets/world-v1/operations/paper-stack.png",
+      "family": "operations",
+      "width": 23,
+      "height": 26,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 4,
+        "y": 5
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#20",
+      "item_description": "stack of bound paper records",
+      "sha256": "07d0898e846b9a39b10d098d44e87a4aa82ed2867f04c18b32a3044665909a20",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-crate-b",
+      "file": "assets/world-v1/storage/crate-b.png",
+      "family": "storage",
+      "width": 24,
+      "height": 28,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 4,
+        "y": 2
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#50",
+      "item_description": "strapped steel crate (in-style extra)",
+      "sha256": "b86d9ec4d65dc8cfd50a72f9c2b2fbe48ab1baaa8d8cbd922db3d9534dd2ac6c",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-cable-spool",
+      "file": "assets/world-v1/storage/cable-spool.png",
+      "family": "storage",
+      "width": 22,
+      "height": 25,
+      "source_canvas": "32x32",
+      "trim": {
+        "x": 5,
+        "y": 4
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O2",
+      "pixellab_id": "690ad977-8126-441c-9821-397b9e009409#53",
+      "item_description": "cable spool (in-style extra)",
+      "sha256": "e684706780ad6d52b6012a1ff438ddb2d68e735eae40f6c648e0a0d7af876d0b",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-door-north-closed",
+      "file": "assets/world-v1/architecture/door-north-closed.png",
+      "family": "architecture",
+      "width": 90,
+      "height": 92,
+      "source_canvas": "96x96",
+      "trim": {
+        "x": 2,
+        "y": 1
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "door",
+      "state": "closed",
+      "batch": "O3",
+      "pixellab_id": "6709115f-7bb2-482a-a40f-d66a08d4f1db",
+      "item_description": "closed sliding bulkhead door set in a north wall",
+      "sha256": "2ccf0e8525c387057da1ffd6d3599be1cf100fc1b7f2327e03b91b06e3632c6d",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-door-side-closed",
+      "file": "assets/world-v1/architecture/door-side-closed.png",
+      "family": "architecture",
+      "width": 59,
+      "height": 91,
+      "source_canvas": "96x96",
+      "trim": {
+        "x": 19,
+        "y": 2
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "door",
+      "state": "closed",
+      "batch": "O3",
+      "pixellab_id": "63e42dad-4e57-4fc3-b7cc-d6feb0a2f78b",
+      "item_description": "closed sliding bulkhead door set in a side wall",
+      "sha256": "be0980ee9e9ba7cfd4c0c62ec05ddc24b59cf4a11916285461101de3ba960079",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-airlock-closed",
+      "file": "assets/world-v1/architecture/airlock-closed.png",
+      "family": "architecture",
+      "width": 87,
+      "height": 90,
+      "source_canvas": "96x96",
+      "trim": {
+        "x": 4,
+        "y": 4
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "door",
+      "state": "closed",
+      "batch": "O3",
+      "pixellab_id": "c005fedc-e103-48b1-ad50-08b2d8fba0cb",
+      "item_description": "heavy circular docking airlock seal, closed iris",
+      "sha256": "002d940498dcfb269de89d4fbf2065252b9b4a50196e606838a09f0c99b8ddf3",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-airlock-open",
+      "file": "assets/world-v1/architecture/airlock-open.png",
+      "family": "architecture",
+      "width": 86,
+      "height": 91,
+      "source_canvas": "96x96",
+      "trim": {
+        "x": 5,
+        "y": 3
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "door",
+      "state": "open",
+      "batch": "O3",
+      "pixellab_id": "ea68c039-e383-4bea-a093-f47c68657274",
+      "item_description": "heavy circular docking airlock seal, iris open",
+      "sha256": "e24b73e1df16886649dde96e443cafc78f184585c9def1cd005481e1b00e71fe",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-ops-counter",
+      "file": "assets/world-v1/operations/ops-counter.png",
+      "family": "operations",
+      "width": 89,
+      "height": 55,
+      "source_canvas": "96x96",
+      "trim": {
+        "x": 2,
+        "y": 21
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "landmark",
+      "state": "idle",
+      "batch": "O4",
+      "pixellab_id": "83704dba-9c0b-4f7e-ac92-4fbd7b02e44f",
+      "item_description": "long staffed operations counter",
+      "sha256": "2fdea99aba97b6970ba3134d20062cdf600d1cd4c358be5720c8561de88c35ed",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-lockers",
+      "file": "assets/world-v1/storage/lockers.png",
+      "family": "storage",
+      "width": 79,
+      "height": 76,
+      "source_canvas": "96x96",
+      "trim": {
+        "x": 11,
+        "y": 9
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O4",
+      "pixellab_id": "5c3feb85-765e-4d8d-b9c3-26d632473682",
+      "item_description": "bank of three tall steel crew lockers",
+      "sha256": "316b81cef715ec7d20d1d04928671dddd9f26aaa6705e9056af1bf3c4b0ecc4b",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-dock-window",
+      "file": "assets/world-v1/architecture/dock-window.png",
+      "family": "architecture",
+      "width": 89,
+      "height": 90,
+      "source_canvas": "96x96",
+      "trim": {
+        "x": 1,
+        "y": 6
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "landmark",
+      "state": "idle",
+      "batch": "O4",
+      "pixellab_id": "d5904a88-6923-425b-92f3-1b615ee167e5",
+      "item_description": "wide reinforced dock window module, snowy pad outside",
+      "sha256": "7e059c07e27be8380a71e89ccd978ef75b0ac552e117370ee9782ddfbaf1ac93",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-status-panel-standby",
+      "file": "assets/world-v1/architecture/status-panel-standby.png",
+      "family": "architecture",
+      "width": 89,
+      "height": 55,
+      "source_canvas": "96x96",
+      "trim": {
+        "x": 6,
+        "y": 23
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "landmark",
+      "state": "standby",
+      "batch": "O4",
+      "pixellab_id": "51385d20-98f4-41db-993a-1ba7f117e949",
+      "item_description": "station status back-wall service panel, dim standby lamp bar",
+      "sha256": "da5e51773b653ecfbe0009e050541f7c4ec235e84d4ab1e81eb55e58fdc0acf1",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-cover-loose",
+      "file": "assets/world-v1/storage/cover-loose.png",
+      "family": "storage",
+      "width": 87,
+      "height": 67,
+      "source_canvas": "96x96",
+      "trim": {
+        "x": 3,
+        "y": 14
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "loose",
+      "batch": "O5",
+      "pixellab_id": "486fd82e-a522-4eda-8eaf-ac6b23d67f81",
+      "item_description": "loose weather tarpaulin cover on a low rack, storm-loosened",
+      "sha256": "6dfce33bddd6236236820d2bb6c12a2aff3d15b25e0b2d9ae9048303768926f2",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-cover-secured",
+      "file": "assets/world-v1/storage/cover-secured.png",
+      "family": "storage",
+      "width": 77,
+      "height": 66,
+      "source_canvas": "96x96",
+      "trim": {
+        "x": 12,
+        "y": 14
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "secured",
+      "batch": "O5",
+      "pixellab_id": "d1c64cea-0be4-4c43-893d-7608226710fd",
+      "item_description": "the same rack with its cover strapped down, secured",
+      "sha256": "16b9ea0dc3b31750242a54383345e369fe3e667574a8002c5c412a3dc294ffff",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-status-panel-steady",
+      "file": "assets/world-v1/architecture/status-panel-steady.png",
+      "family": "architecture",
+      "width": 89,
+      "height": 66,
+      "source_canvas": "96x96",
+      "trim": {
+        "x": 2,
+        "y": 14
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "landmark",
+      "state": "steady",
+      "batch": "O5",
+      "pixellab_id": "2e97b886-1467-433b-ab2c-01a488548a0e",
+      "item_description": "station status back-wall service panel, steady warm-lit lamp bar",
+      "sha256": "434de7f3e3a97b77d28ce15a364b6f3f4e5392c4d3f05daecf4237998a60a5c4",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-shelving",
+      "file": "assets/world-v1/storage/shelving.png",
+      "family": "storage",
+      "width": 76,
+      "height": 93,
+      "source_canvas": "96x96",
+      "trim": {
+        "x": 12,
+        "y": 3
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "O5",
+      "pixellab_id": "eaab5a5b-68b8-4f7a-9c8a-3d8ff76a3ab8",
+      "item_description": "tall steel shelving rack with crates and cables",
+      "sha256": "9bf83328d26631a2d9c27d545900bdfcaa8edb319defd4cbceeaf5cc8d11b01b",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-shuttle",
+      "file": "assets/world-v1/exterior/shuttle.png",
+      "family": "exterior",
+      "width": 192,
+      "height": 96,
+      "source_canvas": "192x96",
+      "trim": {
+        "x": 0,
+        "y": 0
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "landmark",
+      "state": "idle",
+      "batch": "P1",
+      "pixellab_id": "cefd7a8b-f8f6-43f9-a639-c0afdf8811c9",
+      "item_description": "relief shuttle from above (seed 80081); tinted at runtime toward the hull palette",
+      "sha256": "ee87e98306f55896242bdd14a71df4544d9a0647f5ab8d2da8191ef6a61e434f",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-module-roof-a",
+      "file": "assets/world-v1/exterior/module-roof-a.png",
+      "family": "exterior",
+      "width": 192,
+      "height": 128,
+      "source_canvas": "192x128",
+      "trim": {
+        "x": 0,
+        "y": 0
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "landmark",
+      "state": "idle",
+      "batch": "P2",
+      "pixellab_id": "85a61d57-49d1-4b4e-ba70-4b5824ae625e",
+      "item_description": "station module from above, intact (seed 80090)",
+      "sha256": "1da8a222f79f46bea40a66dcdc878cf9ef632e6e3470f42a3ee849ba324a386c",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-module-roof-b",
+      "file": "assets/world-v1/exterior/module-roof-b.png",
+      "family": "exterior",
+      "width": 192,
+      "height": 128,
+      "source_canvas": "192x128",
+      "trim": {
+        "x": 0,
+        "y": 0
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "landmark",
+      "state": "idle",
+      "batch": "P2",
+      "pixellab_id": "da9bb689-32dc-47f1-b5d3-bf9342818933",
+      "item_description": "station module from above, storm-damaged roof panel (seed 80091)",
+      "sha256": "625f7d19f4db9ae17177da0eff415d5209aacc6824ffc94cba32c4f78500653f",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-mast",
+      "file": "assets/world-v1/exterior/mast.png",
+      "family": "exterior",
+      "width": 64,
+      "height": 128,
+      "source_canvas": "64x128",
+      "trim": {
+        "x": 0,
+        "y": 0
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "landmark",
+      "state": "idle",
+      "batch": "P3",
+      "pixellab_id": "1ae79e1c-930d-4030-8124-93a4e4ae2da6",
+      "item_description": "relay mast, upper section bent (seed 80100)",
+      "sha256": "37b63e01d449f2e1913aec3f6bd3f598cda45dc9e887df48b0e531ee62c6ba10",
+      "approval": "model-selected, not human-approved"
+    },
+    {
+      "key": "w1-drift-rock",
+      "file": "assets/world-v1/exterior/drift-rock.png",
+      "family": "exterior",
+      "width": 128,
+      "height": 64,
+      "source_canvas": "128x64",
+      "trim": {
+        "x": 0,
+        "y": 0
+      },
+      "anchor": "bottom-centre = ground contact",
+      "kind": "decor",
+      "state": "idle",
+      "batch": "P3",
+      "pixellab_id": "2b6dcbd3-9352-44f2-99e9-3e600e8b9543",
+      "item_description": "snow drift with rock outcrop (seed 80102)",
+      "sha256": "ea5688cfe6830b8f921ef42ee587fb168edd1c80a57ef4fb8c133e1f0ef9b87e",
+      "approval": "model-selected, not human-approved"
+    }
+  ],
+  "tilesets": [
+    {
+      "key": "w1-tileset-exterior",
+      "file": "assets/world-v1/exterior/tileset-exterior.png",
+      "metadata": "assets/world-v1/exterior/tileset-exterior.metadata.json",
+      "batch": "T2",
+      "pixellab_id": "a6200da7-4750-4f9b-9073-56a815c8e222",
+      "item_description": "packed snow → rock ridge Wang set (16 tiles, 4×4, v3 layout)",
+      "sha256": "1b7ac9c4dab6113271d5785bb3096747ed4b800a30ccc5f78339ab22e715174e",
+      "approval": "model-selected, not human-approved"
+    }
+  ],
+  "strips": [
+    {
+      "key": "w1-airlock-open-strip",
+      "file": "assets/world-v1/architecture/airlock-open-strip.png",
+      "frameWidth": 96,
+      "frameHeight": 96,
+      "frames": 5,
+      "batch": "A1",
+      "pixellab_id": "c005fedc-e103-48b1-ad50-08b2d8fba0cb/animations/7e2b7c78-207d-4746-a956-545092a376d5",
+      "item_description": "airlock iris opening, v3 animation frames 0-3 (closed → three-quarter open) + the static open still (O3 #3) as the last frame; animation frames 4-6 REJECTED (off-palette purple sleeve interior)",
+      "sha256": "7a8b911732b80b314e548d4576af4ab7f76f2cfc3429556f026be7a078c28a67",
+      "approval": "model-selected, not human-approved"
+    }
+  ]
+}

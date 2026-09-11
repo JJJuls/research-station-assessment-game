@@ -28,6 +28,11 @@ import {
   WANG_TILESET_KEY,
   WANG_TILESET_URL,
 } from '../world';
+import {
+  WORLD_V1_IMAGE_URLS,
+  WORLD_V1_STRIP_URLS,
+  WORLD_V1_TILESET_URLS,
+} from '../world/kit/worldV1Assets';
 
 export class Boot extends Scene {
   constructor() {
@@ -122,6 +127,28 @@ export class Boot extends Scene {
       this.load.spritesheet(stripKey, strip.url, {
         frameWidth: strip.frameWidth,
         frameHeight: strip.frameHeight,
+      });
+    }
+
+    // Professional world rebuild (vertical slice): PROVISIONAL
+    // MODEL-SELECTED PixelLab world assets (public/assets/world-v1/
+    // manifest.json; docs/game/world-v1/ASSET-PROVENANCE-REGISTER.md).
+    // Presentation only — no mechanic reads any of them.
+    for (const [imageKey, url] of Object.entries(WORLD_V1_IMAGE_URLS)) {
+      this.load.image(imageKey, url);
+    }
+
+    for (const [stripKey, strip] of Object.entries(WORLD_V1_STRIP_URLS)) {
+      this.load.spritesheet(stripKey, strip.url, {
+        frameWidth: strip.frameWidth,
+        frameHeight: strip.frameHeight,
+      });
+    }
+
+    for (const [tilesetKey, url] of Object.entries(WORLD_V1_TILESET_URLS)) {
+      this.load.spritesheet(tilesetKey, url, {
+        frameWidth: 32,
+        frameHeight: 32,
       });
     }
   }

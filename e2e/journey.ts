@@ -262,8 +262,20 @@ export async function completeDockTutorial(page: Page, option: 1 | 2 | 3) {
       ).__dockProbe?.terminal ?? { x: 96, y: 96 },
   );
 
-  await driveAxisTo(page, 'x', terminal.x, 20);
-  await driveAxisTo(page, 'y', terminal.y, 20);
+  // World V1 production Dock: the terminal stands east of the spine on
+  // its footprint; reach its approach row first (y), then walk east along
+  // the approach lane, then settle on the operating face (56 px south).
+  // The legacy bay (terminal 96,96) keeps the historical x-then-y order.
+  const approachY = terminal.y > 200 ? terminal.y + 56 : terminal.y;
+
+  if (terminal.y > 200) {
+    await driveAxisTo(page, 'y', approachY, 8);
+    await driveAxisTo(page, 'x', terminal.x, 8);
+    await driveAxisTo(page, 'y', approachY, 6);
+  } else {
+    await driveAxisTo(page, 'x', terminal.x, 20);
+    await driveAxisTo(page, 'y', terminal.y, 20);
+  }
 
   // Event-synced with a swallowed-press retry (SwiftShader input loss):
   // the canonical tutorial_completed fires on ALL THREE option paths, so

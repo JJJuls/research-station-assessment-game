@@ -7,6 +7,7 @@ import {
   themeTilesetKey,
   themeVariantsKey,
 } from './proceduralTilesets';
+import type { WorldField } from './viewport';
 
 /**
  * Programmatic room-map construction for the connected station world.
@@ -23,6 +24,8 @@ import {
  *   '.'  floor
  *   '-'  doorway floor (visually accented, walkable; door logic is a
  *        separate interaction zone added by the scene)
+ *   'X'  prop footprint: collides like a wall, drawn as floor (the prop's
+ *        own art stands on it — World V1 blockouts)
  *   ' '  void (no tile)
  */
 export interface RoomLayout {
@@ -36,6 +39,19 @@ export interface RoomLayout {
    * loaded) → flat placeholder, exactly as before.
    */
   theme?: StationThemeId;
+  /**
+   * World V1 camera field: 'wide' (1280×720 world px, the production
+   * field) for rebuilt zones; omitted/'legacy' keeps the U1 field.
+   */
+  field?: WorldField;
+  /**
+   * A loaded 16-tile Wang tileset key (same 4×4 layout as the committed
+   * v3 sheet) that replaces the theme's procedural tiles for this room —
+   * production art from the World V1 asset batch. Collision is unchanged.
+   */
+  tilesetKey?: string;
+  /** Whether the theme's floor-variation decals are laid (default true). */
+  floorVariants?: boolean;
 }
 
 export interface BuiltRoomMap {
@@ -101,6 +117,9 @@ const CHAR_TO_TILE: Partial<Record<string, number>> = {
   // 'P' = landing-pad floor: walkable exactly like '.'; only the visual
   // layer differs (decorative zone, never a collision/interaction change).
   P: TILE_FLOOR,
+  // 'X' = prop footprint: collision only; the visual layers treat it as
+  // floor (isWall below excludes it) so the prop's art sits on deck plates.
+  X: TILE_WALL,
 };
 
 /**
@@ -187,7 +206,11 @@ export function buildPlaceholderRoomMap(
   // a dual-grid layer and hides (never removes) the collision layer's
   // visuals, so collision footprints are structurally unchangeable by art.
   const themedKey =
-    layout.theme !== undefined ? themeTilesetKey(layout.theme) : undefined;
+    layout.tilesetKey !== undefined && scene.textures.exists(layout.tilesetKey)
+      ? layout.tilesetKey
+      : layout.theme !== undefined
+        ? themeTilesetKey(layout.theme)
+        : undefined;
   const visualLayers: Phaser.Tilemaps.TilemapLayer[] = [];
   const hasPad =
     scene.textures.exists(DOCK_PAD_TILESET_KEY) &&
@@ -196,7 +219,10 @@ export function buildPlaceholderRoomMap(
   if (themedKey !== undefined && scene.textures.exists(themedKey)) {
     visualLayers.push(addWangVisualLayer(scene, layout, tileSize, themedKey));
 
-    const variantLayer = addVariantOverlayLayer(scene, layout, tileSize);
+    const variantLayer =
+      layout.floorVariants === false || layout.theme === undefined
+        ? null
+        : addVariantOverlayLayer(scene, layout, tileSize);
 
     if (variantLayer !== null) {
       visualLayers.push(variantLayer);
@@ -355,7 +381,7 @@ function addVariantOverlayLayer(
     for (let x = 0; x < cols; x++) {
       const ch = layout.grid[y][x];
 
-      if (ch !== '.' && ch !== 'P') {
+      if (ch !== '.' && ch !== 'P' && ch !== 'X') {
         continue;
       }
 

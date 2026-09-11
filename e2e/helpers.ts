@@ -386,7 +386,6 @@ export async function driveAxisTo(
 ) {
   let previous: number | null = null;
   let stalledHoldMs = 0;
-  let everMoved = false;
   let lastBurstMs = 0;
   // World V1 (U2): a burst shorter than one frame yields NO travel when
   // both key events land in the same frame gap (slow moments right after a
@@ -428,14 +427,14 @@ export async function driveAxisTo(
 
       boost = Math.min(4, boost * 2);
 
-      if (stalledHoldMs >= (everMoved ? 400 : 1600)) {
+      // World V1 production: the 1280×720 plate and the larger rooms run
+      // slower under the software-GL verification renderer, so a held key
+      // can show no motion across two 400 ms bursts without any wall;
+      // require 900 ms of stalled held-key time before calling it a clamp.
+      if (stalledHoldMs >= 1600) {
         return;
       }
     } else {
-      if (previous !== null) {
-        everMoved = true;
-      }
-
       stalledHoldMs = 0;
       boost = 1;
     }

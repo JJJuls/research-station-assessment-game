@@ -289,11 +289,11 @@ test.describe('World V1 story state (pure)', () => {
   });
 
   test('opening captions: three short lines, no measurement language', () => {
-    expect(OPENING_CAPTIONS).toHaveLength(3);
+    expect(OPENING_CAPTIONS).toHaveLength(4);
 
     for (const caption of OPENING_CAPTIONS) {
-      expect(caption).not.toMatch(FORBIDDEN_WORDS);
-      expect(caption.length).toBeLessThan(120);
+      expect(caption.text).not.toMatch(FORBIDDEN_WORDS);
+      expect(caption.text.length).toBeLessThan(120);
     }
   });
 

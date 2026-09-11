@@ -176,7 +176,7 @@ const overlaps = (
   a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
 test.describe('World V1 story spine (runtime)', () => {
-  test('the opening runs ≤ 20 s with three captions and the shuttle landing; completing and skipping leave the Dock identical', async ({
+  test('the opening runs ≤ 20 s with four captions, the shuttle berthing and the scripted arrival; completing and skipping leave the Dock identical', async ({
     browser,
   }) => {
     test.setTimeout(240_000);
@@ -198,7 +198,7 @@ test.describe('World V1 story spine (runtime)', () => {
           window as unknown as {
             __pilotOpeningProbe?: { caption_index: number } | null;
           }
-        ).__pilotOpeningProbe?.caption_index === 2,
+        ).__pilotOpeningProbe?.caption_index === 3,
       undefined,
       { timeout: 20_000 },
     );
@@ -226,7 +226,18 @@ test.describe('World V1 story spine (runtime)', () => {
       undefined,
       { timeout: 20_000 },
     );
-    await completed.waitForTimeout(2200);
+    // The scripted arrival (frames 5–8) ends at its fixed release.
+    await completed.waitForFunction(
+      () =>
+        (
+          window as unknown as {
+            __dockProbe?: { arrival_playing: boolean } | null;
+          }
+        ).__dockProbe?.arrival_playing === false,
+      undefined,
+      { timeout: 20_000 },
+    );
+    await completed.waitForTimeout(2600);
 
     const fullState = await dockFingerprint(completed);
 
@@ -244,7 +255,7 @@ test.describe('World V1 story spine (runtime)', () => {
     const skipped = await skippedContext.newPage();
 
     await bootPilot(skipped, 'wv1open_skip');
-    await skipped.waitForTimeout(700);
+    await skipped.waitForTimeout(2600);
 
     const skipState = await dockFingerprint(skipped);
 
@@ -293,9 +304,9 @@ test.describe('World V1 story spine (runtime)', () => {
     const terminal = await worldCanvasRect(
       page,
       DOCK_SITES.terminal.x,
-      DOCK_SITES.terminal.y,
-      24,
-      32,
+      DOCK_SITES.terminal.y - 30,
+      17,
+      30,
     );
 
     expect(overlaps(rect, terminal), 'card over the terminal (spawn)').toBe(
@@ -309,8 +320,8 @@ test.describe('World V1 story spine (runtime)', () => {
       'card over the avatar (spawn)',
     ).toBe(false);
 
-    await walkTo(page, DOCK_SITES.terminal.x, DOCK_SITES.terminal.y + 48, {
-      yFirst: false,
+    await walkTo(page, DOCK_SITES.terminal.x, DOCK_SITES.terminal.y + 56, {
+      yFirst: true,
     });
     rect = await cardCanvasRect(page);
     expect(
@@ -319,9 +330,9 @@ test.describe('World V1 story spine (runtime)', () => {
         await worldCanvasRect(
           page,
           DOCK_SITES.terminal.x,
-          DOCK_SITES.terminal.y,
-          24,
-          32,
+          DOCK_SITES.terminal.y - 30,
+          17,
+          30,
         ),
       ),
       'card over the terminal (approach)',
@@ -366,7 +377,7 @@ test.describe('World V1 story spine (runtime)', () => {
     // In another zone the line names the way back, never a passed door.
     await useDoor(page, PILOT.concourse.southDoor, 'dock', {
       approachOffset: { x: 0, y: -20 },
-      yFirst: false,
+      yFirst: true,
     });
     expect(await routeText(page)).toBe(
       missionCardAction('incident_handover', 'dock'),
@@ -448,7 +459,7 @@ test.describe('World V1 story spine (runtime)', () => {
 
     await useDoor(page, PILOT.concourse.southDoor, 'dock', {
       approachOffset: { x: 0, y: -20 },
-      yFirst: false,
+      yFirst: true,
     });
     await walkTo(
       page,

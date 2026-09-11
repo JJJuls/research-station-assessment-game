@@ -3,7 +3,8 @@
  * (docs/game/world-v1/CAMERA-AND-SCALE-SPEC.md). Replaces v4_camera.spec.
  *
  * Positive assertions over the DEV probes with real keyboard input:
- *   - the world plate is 1024×576 world px composited at 1.25 (32×18 tiles);
+ *   - the world plate is 1280×720 world px (40×22.5 tiles) at 1× on the
+ *     1280×720 canvas and 1.5× on the native 1920×1080 canvas;
  *   - the camera follows once the avatar leaves the dead zone, holds still
  *     while the avatar idles, and never leaves the room bounds;
  *   - the visible world area is the same at 800×600 and 1280×720;
@@ -63,10 +64,10 @@ test.describe('World V1 camera and viewport contract', () => {
 
     const before = (await cameraProbe(page))!;
 
-    expect(before.zoom).toBeCloseTo(1.25, 5);
-    expect(before.plate).toEqual({ width: 1024, height: 576, scale: 1.25 });
-    expect(before.viewWidth).toBe(1024);
-    expect(before.viewHeight).toBe(576);
+    expect(before.zoom).toBeCloseTo(1, 5);
+    expect(before.plate).toEqual({ width: 1280, height: 720, scale: 1 });
+    expect(before.viewWidth).toBe(1280);
+    expect(before.viewHeight).toBe(720);
     expect(before.hudZoom).toBeCloseTo(1.2, 5);
 
     // Idle: the camera holds still.
@@ -80,7 +81,7 @@ test.describe('World V1 camera and viewport contract', () => {
     // and keeps the avatar inside the central band.
     const start = await playerXY(page);
 
-    await driveAxisTo(page, 'y', start.y - 220, 10);
+    await driveAxisTo(page, 'y', start.y - 400, 10);
     await page.waitForTimeout(400);
 
     const after = (await cameraProbe(page))!;
@@ -91,8 +92,10 @@ test.describe('World V1 camera and viewport contract', () => {
     expect(moved.y).toBeGreaterThan(after.viewY + after.viewHeight * 0.2);
     expect(moved.y).toBeLessThan(after.viewY + after.viewHeight * 0.8);
 
-    // Push into the east wall: the view clamps to the bounds.
-    await driveAxisTo(page, 'x', 1120, 8);
+    // Push into the east wall along the east–west main: the view clamps
+    // to the bounds.
+    await driveAxisTo(page, 'y', 480, 10);
+    await driveAxisTo(page, 'x', 1400, 8);
     await page.waitForTimeout(400);
 
     const clamped = (await cameraProbe(page))!;
@@ -106,7 +109,7 @@ test.describe('World V1 camera and viewport contract', () => {
     );
   });
 
-  test('visible world area and design-space mapping are identical at 800×600 and 1280×720', async ({
+  test('the visible world field is identical at 800×600, 1280×720 and native 1920×1080; the design space scales with the canvas', async ({
     browser,
   }) => {
     const views: Record<string, CameraProbeLike> = {};
@@ -115,6 +118,7 @@ test.describe('World V1 camera and viewport contract', () => {
     for (const [label, viewport] of [
       ['800x600', { width: 800, height: 600 }],
       ['1280x720', { width: 1280, height: 720 }],
+      ['1920x1080', { width: 1920, height: 1080 }],
     ] as const) {
       const context = await browser.newContext({ viewport });
       const page = await context.newPage();
@@ -127,8 +131,25 @@ test.describe('World V1 camera and viewport contract', () => {
       await context.close();
     }
 
-    expect(views['800x600'].viewWidth).toBe(views['1280x720'].viewWidth);
-    expect(views['800x600'].viewHeight).toBe(views['1280x720'].viewHeight);
+    // Equal exposure: the same 1280×720 world field on every canvas.
+    for (const label of ['800x600', '1280x720', '1920x1080'] as const) {
+      expect(views[label].viewWidth, label).toBe(1280);
+      expect(views[label].viewHeight, label).toBe(720);
+      expect(views[label].viewX, label).toBe(views['1280x720'].viewX);
+      expect(views[label].viewY, label).toBe(views['1280x720'].viewY);
+    }
+
+    expect(views['1280x720'].plate).toEqual({
+      width: 1280,
+      height: 720,
+      scale: 1,
+    });
+    expect(views['1920x1080'].plate).toEqual({
+      width: 1280,
+      height: 720,
+      scale: 1.5,
+    });
+    expect(views['1920x1080'].hudZoom).toBeCloseTo(1.8, 5);
     expect(spaces['800x600']).toEqual(spaces['1280x720']);
     expect(spaces['1280x720']).toEqual({
       width: 800,
@@ -138,6 +159,15 @@ test.describe('World V1 camera and viewport contract', () => {
       scale: 1.2,
       canvasWidth: 1280,
       canvasHeight: 720,
+    });
+    expect(spaces['1920x1080']).toEqual({
+      width: 800,
+      height: 600,
+      offsetX: 240,
+      offsetY: 0,
+      scale: 1.8,
+      canvasWidth: 1920,
+      canvasHeight: 1080,
     });
   });
 
@@ -160,7 +190,7 @@ test.describe('World V1 camera and viewport contract', () => {
       near?.prompt,
       `prompt at ${Math.round(at.x)},${Math.round(at.y)} (approach ${approach.x},${approach.y})`,
     ).toBe(true);
-    expect(near?.text).toBe('E — Check in at arrival terminal');
+    expect(near?.text).toBe('E / Space — Check in at arrival terminal');
 
     await press(page, 'e');
     await page.waitForFunction(

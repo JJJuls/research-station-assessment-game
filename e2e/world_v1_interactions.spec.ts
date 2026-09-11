@@ -4,7 +4,7 @@
  *
  * Real keyboard input, DEV probes only. For every registry object of the
  * two rebuilt zones the participant walks to its approach point and the
- * one-line prompt reads exactly `E — <verb> <label>` (or the object's
+ * one-line prompt reads exactly `E / Space — <verb> <label>` (or the object's
  * state for a class-3 object); E on the sealed docking airlock shows its
  * state and opens nothing; a class-1/2 surface (the plan board) opens on E,
  * pauses world input, and closing it restores movement; standing beside a
@@ -71,14 +71,10 @@ async function expectPromptAt(page: Page, id: string, expected: string) {
   // doors (the spine and axis are the clear legs; an x-first leg along
   // the south row runs into the crate group). The pure spec proves every
   // approach point is reachable; this only picks the leg order.
-  await walkTo(page, approach.x, approach.y, {
-    yFirst:
-      id === 'concourse.door_dock' ||
-      id === 'concourse.door_records' ||
-      // From the incident desk (row 7) an x-first leg west brushes the ops
-      // island (rows 8–10) whenever the y tolerance lands below row 7.
-      id === 'concourse.qc_packet_o1',
-  });
+  // World V1 production: every approach is reached y-first from the spine
+  // side (the districts hang off the spine and the loops); the walker's
+  // second attempt reverses the leg order on a clamp.
+  await walkTo(page, approach.x, approach.y, { yFirst: true });
   await page.waitForTimeout(350);
 
   const probe = await promptProbe(page);
@@ -99,7 +95,7 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
     await expectPromptAt(
       page,
       'dock.docking_airlock',
-      'E — Docking airlock: shuttle secured',
+      'E / Space — Docking airlock: shuttle secured',
     );
     await press(page, 'e');
     expect(await feedback(page)).toContain('shuttle');
@@ -114,14 +110,14 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
     await expectPromptAt(
       page,
       'dock.arrival_terminal',
-      'E — Check in at arrival terminal',
+      'E / Space — Check in at arrival terminal',
     );
     await completeDockTutorial(page, 1);
 
     await expectPromptAt(
       page,
       'dock.door_concourse',
-      'E — Go to Station Concourse',
+      'E / Space — Go to Station Concourse',
     );
 
     // Belt hidden in an interior zone; mission card shows act + action.
@@ -154,7 +150,11 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
         continue; // present from the return leg only
       }
 
-      await expectPromptAt(page, entry.id, `E — ${entry.verb} ${entry.label}`);
+      await expectPromptAt(
+        page,
+        entry.id,
+        `E / Space — ${entry.verb} ${entry.label}`,
+      );
     }
 
     // The plan board opens its work surface on E; the avatar holds still
@@ -203,9 +203,9 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
     await page.keyboard.up('ArrowDown');
     expect((await playerXY(page)).y).toBeGreaterThan(held.y + 20);
 
-    // Decorative: beside the status wall / ops counter's west end (no
-    // registry object within 72 px) — no prompt.
-    await walkTo(page, 26 * 32, 13 * 32, { yFirst: false });
+    // Decorative: beside the operations island's west end (no registry
+    // object within 72 px) — no prompt.
+    await walkTo(page, 36.5 * 32, 26 * 32, { yFirst: true });
     await page.waitForTimeout(350);
     expect((await promptProbe(page))?.prompt ?? false).toBe(false);
   });
@@ -263,9 +263,8 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
       {
         id: 'concourse.door_dock',
         destination: 'dock',
-        // From the Deck-side spawn (row 13) the clear path is west along
-        // the axis, then south down the spine (a south-first leg clamps
-        // on the bench block at row 21).
+        // From the Deck-side spawn (row 19) the clear path is west along
+        // the axis, then south down the spine.
         out: { yFirst: false, offset: { x: 0, y: -20 } },
         // 20 px inside the doorway (dockToConcourse precedent): an offset
         // of 64 plus the 12 px landing tolerance lands outside the 72 px
@@ -288,7 +287,7 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
       expect(
         (await promptProbe(page))?.text,
         `${leg.id} at ${Math.round(at.x)},${Math.round(at.y)} (approach ${approach.x},${approach.y})`,
-      ).toBe(`E — Go to ${door.label}`);
+      ).toBe(`E / Space — Go to ${door.label}`);
 
       const outBefore = await eventCount(
         page,

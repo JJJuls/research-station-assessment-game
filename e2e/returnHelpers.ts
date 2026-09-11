@@ -15,6 +15,7 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
+import { CONCOURSE_STATIONS } from '../src/pilot/zoneSites';
 import {
   acceptMast,
   doMastStage,
@@ -75,10 +76,14 @@ export const RETURN = {
     calibrationBench: { x: 0, y: 44 },
     board: { x: 0, y: 44 },
   },
+  // World V1 production: derived from the shared site book (the stale
+  // V4 literals were the U2 projection's M09 driver miss).
   concourse: {
-    kai: { x: 592, y: 272 },
-    gauge: { x: 352, y: 416 },
-    vale: { x: 496, y: 272 },
+    kai: { ...CONCOURSE_STATIONS.kaiReturn },
+    gauge: { ...CONCOURSE_STATIONS.monitorGauge },
+    vale: { ...CONCOURSE_STATIONS.vale },
+    /** The south loop row: the clear approach to Vale, Kai and the gauge. */
+    loopY: 30 * 32,
   },
   laneY: 272,
 } as const;
@@ -513,15 +518,22 @@ export async function enterConcourseWithOffers(
   }
 
   if (options.readGauge1) {
-    // From ABOVE: the point 44 px below the gauge lies 48 px from the Dock
-    // door (384, 496), so SPACE there walks through the door instead.
+    // The gauge's operating face is its south side (registry approach
+    // 64 px south); the reception district floor leads there.
+    await walkTo(page, RETURN.concourse.gauge.x, RETURN.concourse.loopY, {
+      yFirst: false,
+    });
     await interactAt(page, RETURN.concourse.gauge, {
-      approachOffset: { x: 0, y: -44 },
+      approachOffset: { x: 0, y: 56 },
+      yFirst: true,
     });
     await page.waitForTimeout(400);
   }
 
-  await openPromptDiag(page, PILOT.concourse.vale, { x: 0, y: 40 });
+  await walkTo(page, PILOT.concourse.vale.x, RETURN.concourse.loopY, {
+    yFirst: true,
+  });
+  await openPromptDiag(page, PILOT.concourse.vale, { x: 0, y: 56 });
   await selectPromptOption(page, 1);
   await expectStage(page, 'workshop');
 }
@@ -683,8 +695,10 @@ export async function returnInside(page: Page) {
  * along the y = 272 lane first.
  */
 export async function kaiViaLane(page: Page) {
-  await driveAxisTo(page, 'y', RETURN.laneY, 12);
-  await walkTo(page, RETURN.concourse.kai.x, RETURN.laneY, { yFirst: false });
+  await driveAxisTo(page, 'y', RETURN.concourse.loopY, 12);
+  await walkTo(page, RETURN.concourse.kai.x, RETURN.concourse.loopY, {
+    yFirst: false,
+  });
 }
 
 /** Kai: hand the component over (the handover option is first while carrying). */

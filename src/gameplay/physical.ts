@@ -42,7 +42,7 @@ import { Depth } from '../constants';
 import {
   DESIGN_SCALE,
   pointerToWorld,
-  worldScale,
+  worldScaleOf,
   worldToDesign,
 } from '../world/viewport';
 import { sfxPickup, sfxUiSelect, sfxUnavailable } from './audio';
@@ -633,7 +633,7 @@ export class PhysicalManipulationLayer {
     // specs click shares that space — window.__designSpace maps it to the
     // page); sizes carry the world-scale / design-scale ratio.
     const toScreen = (x: number, y: number) => worldToDesign(this.scene, x, y);
-    const k = worldScale() / DESIGN_SCALE;
+    const k = worldScaleOf(this.scene) / DESIGN_SCALE;
 
     window.__physicalProbe = {
       scene: this.scene.scene.key,

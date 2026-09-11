@@ -1,12 +1,14 @@
 /**
- * World camera controller (World V1 — docs/game/world-v1/CAMERA-AND-SCALE-SPEC.md §3).
+ * World camera controller (World V1 — docs/game/world-v1/CAMERA-AND-SCALE-SPEC.md §5).
  *
  * Pure follow model, Node-importable: a dead zone around the view centre,
- * a bounded lerp toward the dead-zone-corrected target, room bounds
- * (rooms smaller than the view are centred), and whole-pixel scroll
- * snapping for the plate render. Presentation only: nothing here reads or
- * writes measurement state, and the camera never moves while the avatar
- * idles inside the dead zone.
+ * TIME-BASED damping toward the dead-zone-corrected target
+ * (alpha = 1 − exp(−dt / τ), τ = 160 ms, ≈ 95 % settled in 0.48 s — the
+ * same response at 20, 30 or 60 fps), room bounds (rooms smaller than the
+ * view are centred), and whole-pixel scroll snapping for the plate render.
+ * Presentation only: nothing here reads or writes measurement state, the
+ * camera never moves while the avatar idles inside the dead zone, and it
+ * is frozen while a modal owns the scene (the room's update loop stops).
  */
 
 export interface WorldCameraConfig {
@@ -15,8 +17,8 @@ export interface WorldCameraConfig {
   /** Dead zone size (world px), centred in the view. */
   deadZoneWidth?: number;
   deadZoneHeight?: number;
-  /** Per-frame lerp factor toward the corrected target (0 < lerp ≤ 1). */
-  lerp?: number;
+  /** Damping time constant (ms). */
+  timeConstantMs?: number;
 }
 
 export interface WorldView {
@@ -28,16 +30,20 @@ export interface WorldView {
   bottom: number;
 }
 
-export const DEFAULT_DEAD_ZONE_WIDTH = 96;
-export const DEFAULT_DEAD_ZONE_HEIGHT = 64;
-export const DEFAULT_FOLLOW_LERP = 0.12;
+/** Authority: 128×80 world px dead zone, 0.16 s time constant. */
+export const DEFAULT_DEAD_ZONE_WIDTH = 128;
+export const DEFAULT_DEAD_ZONE_HEIGHT = 80;
+export const DEFAULT_TIME_CONSTANT_MS = 160;
+
+/** Frame deltas above this (tab switch, load stall) are clamped. */
+const MAX_STEP_MS = 100;
 
 export class WorldCameraController {
   readonly viewWidth: number;
   readonly viewHeight: number;
   readonly deadZoneWidth: number;
   readonly deadZoneHeight: number;
-  readonly lerp: number;
+  readonly timeConstantMs: number;
 
   private boundsWidth = Number.POSITIVE_INFINITY;
   private boundsHeight = Number.POSITIVE_INFINITY;
@@ -50,7 +56,10 @@ export class WorldCameraController {
     this.viewHeight = config.viewHeight;
     this.deadZoneWidth = config.deadZoneWidth ?? DEFAULT_DEAD_ZONE_WIDTH;
     this.deadZoneHeight = config.deadZoneHeight ?? DEFAULT_DEAD_ZONE_HEIGHT;
-    this.lerp = Math.min(1, Math.max(0.01, config.lerp ?? DEFAULT_FOLLOW_LERP));
+    this.timeConstantMs = Math.max(
+      1,
+      config.timeConstantMs ?? DEFAULT_TIME_CONSTANT_MS,
+    );
   }
 
   setBounds(width: number, height: number) {
@@ -70,12 +79,14 @@ export class WorldCameraController {
     this.scrollY = this.clampY(y - this.viewHeight / 2);
   }
 
-  /**
-   * One frame of following. The target is only pushed toward the view
-   * centre once it leaves the dead zone; inside the dead zone the camera
-   * holds still (idle animation never moves it).
-   */
-  update(targetX: number, targetY: number) {
+  /** Places the view's top-left corner immediately (authored compositions). */
+  snapScroll(x: number, y: number) {
+    this.scrollX = this.clampX(x);
+    this.scrollY = this.clampY(y);
+  }
+
+  /** The dead-zone-corrected desired scroll for a target (no easing). */
+  desiredScroll(targetX: number, targetY: number): { x: number; y: number } {
     let centreX = this.scrollX + this.viewWidth / 2;
     let centreY = this.scrollY + this.viewHeight / 2;
     const halfW = this.deadZoneWidth / 2;
@@ -95,11 +106,34 @@ export class WorldCameraController {
       centreY += dy + halfH;
     }
 
-    const desiredX = this.clampX(centreX - this.viewWidth / 2);
-    const desiredY = this.clampY(centreY - this.viewHeight / 2);
+    return {
+      x: this.clampX(centreX - this.viewWidth / 2),
+      y: this.clampY(centreY - this.viewHeight / 2),
+    };
+  }
 
-    this.scrollX = this.ease(this.scrollX, desiredX);
-    this.scrollY = this.ease(this.scrollY, desiredY);
+  /**
+   * One frame of following over `deltaMs`. The target is only pushed
+   * toward the view centre once it leaves the dead zone; inside the dead
+   * zone the camera holds still (idle animation never moves it).
+   */
+  update(targetX: number, targetY: number, deltaMs: number) {
+    const desired = this.desiredScroll(targetX, targetY);
+    const dt = Math.min(MAX_STEP_MS, Math.max(0, deltaMs));
+    const alpha = 1 - Math.exp(-dt / this.timeConstantMs);
+
+    this.scrollX = this.ease(this.scrollX, desired.x, alpha);
+    this.scrollY = this.ease(this.scrollY, desired.y, alpha);
+  }
+
+  /** True when the smoothed scroll has reached its dead-zone target. */
+  isSettled(targetX: number, targetY: number): boolean {
+    const desired = this.desiredScroll(targetX, targetY);
+
+    return (
+      Math.abs(desired.x - this.scrollX) < 0.5 &&
+      Math.abs(desired.y - this.scrollY) < 0.5
+    );
   }
 
   /** Whole-pixel scroll for the plate render. */
@@ -126,8 +160,8 @@ export class WorldCameraController {
     };
   }
 
-  private ease(current: number, desired: number): number {
-    const next = current + (desired - current) * this.lerp;
+  private ease(current: number, desired: number, alpha: number): number {
+    const next = current + (desired - current) * alpha;
 
     return Math.abs(desired - next) < 0.5 ? desired : next;
   }

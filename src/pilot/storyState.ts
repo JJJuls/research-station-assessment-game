@@ -421,10 +421,26 @@ export function npcPosts(stage: PilotStage): NpcPost[] {
   return posts;
 }
 
-// ——— Opening captions (≤ 20 s) ———————————————————————————————————————————
+// ——— Opening captions (storyboard, wall-clock) ———————————————————————————
 
-export const OPENING_CAPTIONS: readonly string[] = [
-  'Station 080 — relief flight, the morning after the storm.',
-  'Records disordered. An unknown surface signal. Mast 04 down. Feeds unstable.',
-  'You are the relief operations specialist. Document, diagnose, stabilise — before the next comms handover.',
+/**
+ * The exterior shot's captions (STORY-STATE-SPEC.md §5, frames 1–4): the
+ * location, the transport, the cause, the arrival — each at its storyboard
+ * time (ms from the shot's start). No assessment instruction, no praise.
+ */
+export const OPENING_CAPTIONS: readonly { atMs: number; text: string }[] = [
+  {
+    atMs: 0,
+    text: 'Station 080 — the plateau outpost, the morning after the storm.',
+  },
+  { atMs: 2200, text: 'Relief flight on final approach.' },
+  {
+    atMs: 4600,
+    text: 'Mast 04 is down. The crew has cleared the approach lane.',
+  },
+  { atMs: 7000, text: 'Relief watch • Station 080' },
 ];
+
+/** Frame 7 — the station line heard inside the Dock (role, no instruction). */
+export const OPENING_STATION_LINE =
+  'Station line: Relief operator aboard. Operations handover is inside — Vale is at the counter.';

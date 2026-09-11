@@ -166,6 +166,10 @@ export class StationConcourseScene extends PilotZoneScene {
   private damageDressing: Phaser.GameObjects.GameObject[] = [];
   /** The repaired panel shown in its place. */
   private repairDressing: Phaser.GameObjects.GameObject[] = [];
+  /** Restoration shape `operations-service-lamp`: the counter's back wall. */
+  private statusPanel: Phaser.GameObjects.Image | null = null;
+  private serviceLamps: Phaser.GameObjects.Image[] = [];
+  private stripLights: Phaser.GameObjects.Image[] = [];
 
   /** The return leg of the route (episode 5) is live. */
   private returned(): boolean {
@@ -181,26 +185,26 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   protected getLayout(): RoomLayout {
-    return { theme: 'hub', grid: [...CONCOURSE_LAYOUT] };
+    return { theme: 'hub', grid: [...CONCOURSE_LAYOUT], field: 'wide' };
   }
 
   protected bundleDropBounds(): { width: number; height: number } {
-    return { width: 40 * TILE, height: 26 * TILE };
+    return { width: 60 * TILE, height: 38 * TILE };
   }
 
   protected getSpawn(data?: { spawn?: string }): { x: number; y: number } {
     switch (data?.spawn) {
       case 'diagnostics_laboratory':
-        return { x: 20 * TILE, y: 5 * TILE };
+        return { x: 30 * TILE, y: 5 * TILE };
       case 'utility_core_deck':
-        return { x: 35 * TILE, y: 13 * TILE };
+        return { x: 55 * TILE, y: 19 * TILE };
       case 'records_workshop':
-        // 112 px inside the west door (x 48): clear of the 72 px interaction
+        // 128 px inside the west door (x 32): clear of the 72 px interaction
         // radius (V2 finding U8-8).
-        return { x: 5 * TILE, y: 13 * TILE };
+        return { x: 5 * TILE, y: 19 * TILE };
       case 'dock':
       default:
-        return { x: 20 * TILE, y: 20 * TILE };
+        return { x: 30 * TILE, y: 33 * TILE };
     }
   }
 
@@ -240,6 +244,9 @@ export class StationConcourseScene extends PilotZoneScene {
     this.workPools = [];
     this.damageDressing = [];
     this.repairDressing = [];
+    this.statusPanel = null;
+    this.serviceLamps = [];
+    this.stripLights = [];
     this.lampFlicker = null;
 
     this.addPilotDoor({
@@ -312,7 +319,7 @@ export class StationConcourseScene extends PilotZoneScene {
       'incident plan board',
       'Open',
       'concourse.plan_board',
-      'proc-board-workorders',
+      'w1-plan-board',
       S.planBoard,
       1,
       () => m01Window.isClosed(),
@@ -330,7 +337,7 @@ export class StationConcourseScene extends PilotZoneScene {
       'quality packet',
       'Check the',
       'concourse.qc_packet_o1',
-      'kit-side-counter',
+      'w1-qc-counter',
       S.qcPacket,
       2,
       () => m12Windows.o1.isClosed(),
@@ -348,7 +355,7 @@ export class StationConcourseScene extends PilotZoneScene {
       'incident desk',
       'Work the',
       'concourse.incident_desk',
-      'kit-wall-console-wide',
+      'w1-evidence-desk',
       S.incidentDesk,
       3,
       () => m14Window.isClosed(),
@@ -368,7 +375,7 @@ export class StationConcourseScene extends PilotZoneScene {
       label: 'monitor gauge',
       verb: 'Read the',
       registryId: 'concourse.monitor_gauge',
-      texture: 'kit-wall-gauge',
+      texture: 'w1-gauge',
       x: S.monitorGauge.x,
       y: S.monitorGauge.y,
       onPromptOpened: () => {
@@ -387,7 +394,7 @@ export class StationConcourseScene extends PilotZoneScene {
       // A silent fault carries no standing indicator lamp (scientific review).
       indicator: 'none',
       registryId: 'concourse.reading_desk_lamp',
-      texture: 'kit-reading-desk',
+      texture: 'w1-reading-desk',
       x: S.concourseFault.x,
       y: S.concourseFault.y,
       onPromptOpened: () => {
@@ -428,10 +435,10 @@ export class StationConcourseScene extends PilotZoneScene {
     // The lamp head on the reading desk: the flicker IS the fault.
     this.lampFlicker = this.add
       .rectangle(
-        S.concourseFault.x + 17,
-        S.concourseFault.y - 20,
-        12,
-        6,
+        S.concourseFault.x - 12,
+        S.concourseFault.y - 50,
+        10,
+        5,
         0xe6c68f,
         0.9,
       )
@@ -442,155 +449,174 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   /**
-   * World V1 hub architecture (ROOM-BLOCKOUTS.md §2): door frames and
-   * signs at the four exits, the painted spine and axis, the operations
-   * desk island under the status wall, seating, storage, notice board,
-   * light fixtures and pools. Presentation only — no collision beyond the
-   * layout's wall cells, no interaction, no label over a prop.
+   * World V1 production hub (world-layouts.json `concourse`, 60×38): the
+   * four cardinal thresholds, the painted spine and axis, the operations
+   * island (status wall + staffed counter) as the landmark of the
+   * south-east reception district, the records-preparation district
+   * (NW), the briefing / incident-evidence district (NE), the quiet
+   * reading bay (SW) with its weather-window recess, the wall archive,
+   * equipment storage and contained-supplies recesses off the loops.
+   * Every prop with volume stands on an authored footprint of
+   * CONCOURSE_FOOTPRINTS; flat items are floor decals. Presentation only —
+   * no interaction, no label over a prop, no collision beyond the layout.
    */
   private buildArchitecture() {
-    // Door frames + wall signs beside each door.
-    this.addDoorFrame(20 * TILE, 1 * TILE + 16, 'h');
-    this.addWallSign(20 * TILE + 128, 1 * TILE + 18, 'Diagnostics laboratory');
-    this.addDoorFrame(20 * TILE, 24 * TILE + 16, 'h');
-    this.addWallSign(20 * TILE + 128, 24 * TILE + 14, 'Dock');
-    this.addDoorFrame(0 * TILE + 16, 13 * TILE, 'v');
-    this.addWallSign(2.5 * TILE, 10.5 * TILE, 'Records workshop');
-    this.addDoorFrame(39 * TILE + 16, 13 * TILE, 'v');
-    this.addWallSign(37.5 * TILE, 10.5 * TILE, 'Utility deck');
+    const px = (tile: number) => tile * TILE;
+    const prop = (x: number, footY: number, texture: string) =>
+      this.addKitProp(x, footY, texture);
+    const wall = (x: number, bottomY: number, texture: string) =>
+      this.addGroundInfra(x, bottomY, texture);
+    const lit = this.lightPoolTexture();
 
-    // Painted circulation: the spine and the axis.
-    this.addFloorLane(17, 2, 6, 22);
-    this.addFloorLane(1, 11, 38, 4);
+    // ——— Thresholds: wall-mounted leaves, always behind the actor ———
+    this.anchorDoor('concourse.door_lab', px(2) + 8);
+    this.anchorDoor('concourse.door_dock', px(38));
+    this.anchorDoor('concourse.door_records', px(19) + 46);
+    this.anchorDoor('concourse.door_deck', px(19) + 46);
+    wall(px(27) + 8, px(2) - 8, 'w1-status-lamp');
+    wall(px(32) + 24, px(2) - 8, 'w1-status-lamp');
 
-    // Operations desk island: status wall behind the counter, Vale in
-    // front (the desk cells collide; the NPC is walk-around).
-    this.addKitProp(28.5 * TILE, 10 * TILE, 'kit-status-wall');
-    this.addKitProp(28.5 * TILE, 11 * TILE, 'kit-ops-counter');
+    // ——— Circulation: the painted spine and axis ———
+    this.addFloorLane(28, 2, 4, 34);
+    this.addFloorLane(2, 17, 56, 4);
+    for (const col of [12, 20, 40, 48]) {
+      this.addFloorDecal(px(col), px(21) + 6, 'w1-cable-tray');
+      this.addFloorDecal(px(col), px(16) + 26, 'w1-cable-tray');
+    }
+
+    // ——— Operations island (landmark): status wall behind the counter ———
+    const island = { x: px(43), top: px(22), bottom: px(25) };
+
+    this.statusPanel = wall(
+      island.x,
+      island.top + 56,
+      'w1-status-panel-standby',
+    );
+    // Two staffed counter modules and the crew lockers at the east end
+    // (review round 1: no tiled console bank).
+    wall(px(40), island.bottom + 4, 'w1-ops-counter');
+    wall(px(43), island.bottom + 4, 'w1-ops-counter');
+    wall(px(46), island.bottom + 2, 'w1-lockers');
+    this.addFloorDecal(px(40), island.bottom + 6, 'kit-contact-shadow');
+    this.addFloorDecal(px(46), island.bottom + 6, 'kit-contact-shadow');
     for (let i = 0; i < STATUS_WALL_SECTORS.length; i += 1) {
-      const x = 28.5 * TILE - 96 + 21 + i * 30;
-      const y = 8 * TILE + 5;
+      const x = island.x - 33 + i * 13;
+      const y = island.top + 41;
 
       this.statusLamps.push(
         this.add
-          .rectangle(x, y, 10, 5, KIT_INDICATOR.inactive, 1)
+          .rectangle(x, y, 6, 4, KIT_INDICATOR.inactive, 1)
           .setDepth(DepthLayer.WorldReadout),
       );
       // Restored glyph: a short bar under the lamp (state never by colour alone).
       this.statusTicks.push(
         this.add
-          .rectangle(x, y + 7, 8, 2, KIT_INDICATOR.restored, 1)
+          .rectangle(x, y + 5, 6, 2, KIT_INDICATOR.restored, 1)
           .setDepth(DepthLayer.WorldReadout)
           .setVisible(false),
       );
-      this.add
-        .text(x, y + 16, STATUS_WALL_SECTORS[i].label, {
-          color: '#8497aa',
-          font: '8px monospace',
-          resolution: 2,
-        })
-        .setOrigin(0.5)
-        .setDepth(DepthLayer.WorldReadout);
     }
 
-    // Work-area light pools (STORY-STATE-SPEC §4): cold emergency light in
-    // act 2, warm work light from act 3 — the texture follows the lighting
-    // state in onStoryStateChanged().
-    for (const [x, y, alpha] of [
-      [28.5 * TILE, 12.6 * TILE, 0.7], // operations desk
-      [13 * TILE, 3.4 * TILE, 0.6], // plan board
-      [8.5 * TILE, 16.6 * TILE, 0.55], // quality side counter
-      // (no pool in the reading nook: the M05 lamp's surroundings keep
-      // their pre-U2 salience — scientific review F2)
-      [20 * TILE, 12.5 * TILE, 0.45], // the crossing
+    // ——— Reception district (SE): benches, the gauge's service end ———
+    // Waiting seats belong to something: a stool + bin by the west
+    // entrance, a chair pair against the east recess (review round 1).
+    prop(px(36.4), px(31), 'w1-stool');
+    prop(px(37.4), px(31), 'w1-waste-bin');
+    prop(px(49.4), px(31), 'w1-chair');
+    prop(px(50.4), px(31), 'w1-chair');
+    this.addFloorDecal(px(50), px(30) + 4, 'w1-folders');
+    this.addFloorDecal(px(47), px(29) + 8, 'w1-vent-grille');
+    this.addFloorDecal(px(38), px(26) + 4, 'w1-folders');
+
+    // ——— Records preparation (NW): the plan board's district ———
+    prop(px(17.5), px(6), 'w1-filing-cabinet');
+    prop(px(18.5), px(6), 'w1-filing-cabinet');
+    prop(px(20), px(6), 'w1-document-trolley');
+    prop(px(12), px(5), 'w1-notice-board');
+    prop(px(15.5), px(11), 'w1-chair');
+    this.addFloorDecal(px(14), px(8) + 8, 'w1-paper-stack');
+    this.addFloorDecal(px(11), px(9) + 8, 'w1-vent-grille');
+
+    // ——— Briefing / incident evidence (NE): the evidence desk's district ———
+    prop(px(49), px(6), 'w1-filing-cabinet');
+    prop(px(51), px(6), 'w1-crate-stack');
+    prop(px(38), px(5), 'w1-notice-board');
+    prop(px(45.5), px(11), 'w1-chair');
+    this.serviceLamps.push(prop(px(36.5), px(13), 'w1-service-lamp-standby')!);
+    this.addFloorDecal(px(41), px(7) + 8, 'w1-radio-cradle');
+    this.addFloorDecal(px(47), px(12) + 6, 'w1-cable-coil');
+
+    // ——— Quiet reading bay (SW): the reading desk and the routing packet ———
+    for (const [col, row] of [
+      [17.4, 24],
+      [18.4, 24],
+      [17.4, 31],
+      [18.4, 31],
     ] as const) {
-      const pool = this.addFloorDecal(x, y, 'kit-light-pool-cold', alpha);
+      prop(px(col), px(row), 'w1-chair');
+    }
+    prop(px(4.5), px(28), 'w1-filing-cabinet');
+    this.addFloorDecal(px(6.5), px(28) + 8, 'w1-paper-stack');
+    this.addFloorDecal(px(20), px(31) + 8, 'w1-vent-grille');
+    wall(px(2) + 20, px(27), 'w1-intercom');
+
+    // ——— Recesses off the loops: archive, equipment storage, supplies ———
+    prop(px(5), px(9), 'w1-shelving');
+    prop(px(5), px(13), 'w1-shelving');
+    prop(px(5), px(16), 'w1-lockers');
+    prop(px(58), px(8), 'w1-shelving');
+    prop(px(58), px(11), 'w1-lockers');
+    prop(px(58), px(13), 'w1-cable-drum');
+    prop(px(34), px(33), 'w1-crate-stack');
+    prop(px(36), px(33), 'w1-crate');
+    prop(px(37), px(33), 'w1-drum');
+    prop(px(38), px(33), 'w1-crate-b');
+    wall(px(9) + 24, px(35) - 6, 'w1-extinguisher');
+    wall(px(56), px(6) - 4, 'w1-extinguisher');
+
+    // ——— Work-area light pools (cold emergency → warm from act 3) ———
+    for (const [x, y, alpha] of [
+      [px(41), px(28.5), 0.7], // operations counter
+      [px(14), px(14.5), 0.55], // plan board
+      [px(44), px(14.5), 0.55], // evidence desk
+      [px(22), px(29.5), 0.5], // routing packet
+      [px(30), px(19), 0.45], // the crossing
+      // (no pool at the reading desk: the M05 lamp's surroundings keep
+      // their pre-U2 salience — scientific review F2)
+    ] as const) {
+      const pool = this.addFloorDecal(x, y, lit, alpha);
 
       if (pool !== null) {
         this.workPools.push(pool);
       }
     }
 
-    // Storm evidence: a scorched junction on the north wall's cable run
-    // with a fallen fragment beneath it, repaired (patch plate) once the
-    // utility feeds are restored (act 7).
+    // ——— Storm evidence: a scorched junction on the north hull with a
+    // fallen fragment beneath it, patched once the feeds are restored ———
     for (const decal of [
-      this.addFloorDecal(34 * TILE, 2.2 * TILE, 'kit-scorch', 0.85),
-      this.addFloorDecal(33.5 * TILE, 3.3 * TILE, 'kit-debris'),
+      this.addFloorDecal(px(24), px(2) + 14, 'kit-scorch'),
+      this.addFloorDecal(px(23.5), px(3) + 10, 'w1-debris-panel'),
     ]) {
       if (decal !== null) {
         this.damageDressing.push(decal);
       }
     }
 
-    const patch = this.addGroundInfra(
-      34 * TILE,
-      1 * TILE + 12,
-      'kit-cable-junction',
-    );
+    const patch = wall(px(24), px(2) - 4, 'w1-junction-box');
 
     if (patch !== null) {
       patch.setVisible(false);
       this.repairDressing.push(patch);
     }
+  }
 
-    // East service counter (col 38, rows 5–9) carrying the incident console.
-    for (let row = 5; row <= 9; row += 1) {
-      if (row !== 7) {
-        this.addKitProp(
-          38 * TILE + 16,
-          (row + 1) * TILE,
-          'kit-cable-junction',
-          {
-            depth: DepthLayer.GroundInfra,
-          },
-        );
-      }
+  /** Re-anchors a door leaf as wall-mounted art (bottom-centre, behind actors). */
+  private anchorDoor(registryId: string, bottomY: number) {
+    const image = this.doorImage(registryId);
+
+    if (image !== null) {
+      image.setOrigin(0.5, 1).setY(bottomY).setDepth(DepthLayer.GroundInfra);
     }
-
-    // Plan board light and the reading nook.
-    this.addGroundInfra(2 * TILE + 8, 6 * TILE + 16, 'kit-notice-board');
-
-    // Quality side counter light.
-
-    // Seating, lockers, crates.
-    this.addKitProp(32 * TILE, 22 * TILE - 4, 'kit-bench');
-    this.addKitProp(35.5 * TILE, 22 * TILE - 4, 'kit-bench');
-    // South-centre plaza furniture off the spine and axis (review W6).
-    this.addKitProp(14 * TILE, 18 * TILE, 'kit-bench');
-    this.addKitProp(26 * TILE, 18 * TILE, 'kit-bench');
-    this.addGroundInfra(14 * TILE, 16.5 * TILE, 'kit-notice-board');
-    this.addKitProp(3 * TILE, 23 * TILE, 'kit-crate-stack');
-    this.addKitProp(6.5 * TILE, 24 * TILE + 14, 'kit-locker-bank');
-    this.addKitProp(11.5 * TILE, 24 * TILE + 14, 'kit-locker-bank');
-
-    // Light fixtures and a cable tray on the north wall.
-    for (const col of [6, 11, 28, 34]) {
-      this.addGroundInfra(col * TILE + 16, 1 * TILE + 30, 'kit-light-fixture');
-    }
-    for (let col = 24; col < 38; col += 1) {
-      this.addGroundInfra(col * TILE + 16, 1 * TILE + 12, 'kit-cable-tray');
-    }
-    this.addGroundInfra(38 * TILE + 8, 1 * TILE + 12, 'kit-cable-junction');
-
-    // Wall dressing on the south wall (PROVISIONAL modules, tinted to the
-    // steel register; procedural fallback).
-    this.addKitProp(
-      16 * TILE,
-      25 * TILE + 8,
-      this.textures.exists('plv1-arch-vent')
-        ? 'plv1-arch-vent'
-        : 'proc-wall-pipes',
-      { tint: 0x9fb0c0 },
-    );
-    this.addKitProp(
-      24 * TILE,
-      25 * TILE + 8,
-      this.textures.exists('plv1-arch-grille')
-        ? 'plv1-arch-grille'
-        : 'proc-wall-pipes',
-      { tint: 0x9fb0c0 },
-    );
   }
 
   /**
@@ -621,11 +647,38 @@ export class StationConcourseScene extends PilotZoneScene {
     });
 
     const pool = this.lightPoolTexture();
+    const lit = this.restoration('lighting') === 'restored';
+    const swap = (image: Phaser.GameObjects.Image | null, texture: string) => {
+      if (
+        image !== null &&
+        image.active &&
+        image.texture.key !== texture &&
+        this.textures.exists(texture)
+      ) {
+        image.setTexture(texture);
+      }
+    };
 
     for (const image of this.workPools) {
-      if (image.texture.key !== pool && this.textures.exists(pool)) {
-        image.setTexture(pool);
-      }
+      swap(image, pool);
+    }
+
+    // Restoration shape `operations-service-lamp` (world-layouts.json):
+    // the counter's back wall on standby light until the crew service
+    // phase (stage `workshop`), then steady — with the district service
+    // lamps and strip lights. Stage-driven only; the M05 lamp, the M09
+    // gauge, the QC error and every packet source are untouched.
+    swap(
+      this.statusPanel,
+      lit ? 'w1-status-panel-steady' : 'w1-status-panel-standby',
+    );
+
+    for (const lamp of this.serviceLamps) {
+      swap(lamp, lit ? 'w1-service-lamp-steady' : 'w1-service-lamp-standby');
+    }
+
+    for (const light of this.stripLights) {
+      swap(light, lit ? 'w1-strip-light-steady' : 'w1-strip-light-standby');
     }
 
     const repaired = this.restoration('sector_feeds') === 'restored';

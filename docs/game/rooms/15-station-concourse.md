@@ -86,3 +86,29 @@ text or gauge reading changed.
 
 Tests: `world_v1_story.spec.ts` (restoration persists across a zone exit
 and re-entry), `world_v1_interactions.spec.ts`, `pilot_route.spec.ts`.
+
+## World V1 production slice (2026-09-11) — 60×38 cardinal hub
+
+Authority `world-layouts.json` `concourse`; layout
+`src/world/layouts/concourse.ts` (the operations island [38, 22, 10, 3] is
+solid; the authority's Vale/Kai approach lanes that crossed it are replaced
+by the reception district floor around both ends of the island). No window,
+event, form, option, offer text or gauge reading changed.
+
+| Object (registry id)       | Contact anchor (px) | Approach (px) | Window              |
+| -------------------------- | ------------------- | ------------- | ------------------- |
+| north door → Laboratory    | (960, 32)           | (960, 96)     | —                   |
+| south door → Dock          | (960, 1184)         | (960, 1120)   | —                   |
+| west door → Records        | (32, 608)           | (96, 608)     | —                   |
+| east door → Utility Deck   | (1888, 608)         | (1824, 608)   | —                   |
+| Vale                       | (1280, 864)         | (1280, 928)   | M09/M10 offers      |
+| Kai on the return          | (1440, 864)         | (1440, 928)   | M10 handover        |
+| incident plan board        | (448, 384)          | (448, 448)    | `m01_plan_board_w1` |
+| incident evidence desk     | (1408, 384)         | (1408, 448)   | `m14_desk_w1`       |
+| routing packet (QC)        | (704, 864)          | (704, 928)    | `m12_qc_o1`         |
+| monitor gauge              | (1664, 736)         | (1664, 800)   | `m09_check_1/2`     |
+| reading-desk lamp (M05 o1) | (416, 800)          | (416, 864)    | `m05_initiation_o1` |
+
+Spawns: from the Dock (960, 1056); from the Laboratory (960, 160); from
+Records (160, 608); from the Deck (1760, 608). Restoration: see the
+crosswalk record (`operations-service-lamp`).

@@ -91,7 +91,7 @@ export const PILOT = {
     /** Walkable point just south of the north door (inside the spine). */
     northDoorApproach: {
       x: doorOf('dock', 'station_concourse').x,
-      y: doorOf('dock', 'station_concourse').y + 64,
+      y: doorOf('dock', 'station_concourse').y + 56,
     },
   },
   concourse: {
@@ -555,6 +555,42 @@ export async function expectStage(page: Page, stage: string) {
 
 // ——— v2 spine navigation (explicit beats only; never a measurement window) ———
 
+/**
+ * World V1 production Concourse: the districts hang off the spine (cols
+ * 28–31) and the loops; a two-leg L from an arbitrary point clamps on a
+ * district wall. Route every Concourse leg through the spine: reach the
+ * south loop row (or the axis when already on it), the spine column, the
+ * target row, then the target column. Driver only — production geometry
+ * is never adjusted for it.
+ */
+export async function concourseVia(page: Page, x: number, y: number) {
+  const SPINE_X = 30 * 32;
+  const AXIS_Y = 19 * 32;
+  const LOOP_Y = 30 * 32;
+  const here = await page.evaluate(
+    () =>
+      (window as unknown as { __playerProbe?: { x: number; y: number } | null })
+        .__playerProbe ?? null,
+  );
+  const onAxis = here !== null && here.y >= 17 * 32 && here.y <= 21 * 32;
+  const onSpine = here !== null && Math.abs(here.x - SPINE_X) <= 40;
+
+  if (!onSpine) {
+    if (!onAxis) {
+      await driveAxisTo(page, 'y', LOOP_Y, 10);
+    }
+
+    await driveAxisTo(page, 'x', SPINE_X, 10);
+  }
+
+  // The target row: the axis for the west/east doors and any district
+  // reached from it; otherwise the target's own row along the spine.
+  const row = y >= 17 * 32 && y <= 21 * 32 ? AXIS_Y : y;
+
+  await driveAxisTo(page, 'y', row, 10);
+  await walkTo(page, x, y, { yFirst: false });
+}
+
 /** Dock (after the tutorial) → Concourse north door → stage handover_briefing. */
 export async function dockToConcourse(page: Page) {
   await walkTo(
@@ -575,8 +611,9 @@ export async function dockToConcourse(page: Page) {
  * then the handover confirmation (→ workshop).
  */
 export async function valeHandover(page: Page) {
+  await concourseVia(page, PILOT.concourse.vale.x, PILOT.concourse.vale.y + 56);
   await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
+    approachOffset: { x: 0, y: 56 },
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'incident_handover');
@@ -586,7 +623,7 @@ export async function valeHandover(page: Page) {
   await selectPromptOption(page, 3); // delivery offer: ask me later
   await page.waitForTimeout(300);
   await openPromptAt(page, PILOT.concourse.vale, {
-    approachOffset: { x: 0, y: 40 },
+    approachOffset: { x: 0, y: 56 },
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'workshop');
@@ -594,6 +631,11 @@ export async function valeHandover(page: Page) {
 
 /** Concourse west door → Records Workshop (any stage). */
 export async function concourseToWorkshop(page: Page) {
+  await concourseVia(
+    page,
+    PILOT.concourse.westDoor.x + 56,
+    PILOT.concourse.westDoor.y,
+  );
   await useDoor(page, PILOT.concourse.westDoor, 'records_workshop', {
     approachOffset: { x: 40, y: 0 },
     yFirst: true,
@@ -624,6 +666,11 @@ export async function workshopSignOff(page: Page) {
 
 /** Concourse north door → Laboratory, then Kai's briefing (→ lab_work). */
 export async function concourseToLabBriefed(page: Page) {
+  await concourseVia(
+    page,
+    PILOT.concourse.northDoor.x,
+    PILOT.concourse.northDoor.y + 56,
+  );
   await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
     approachOffset: { x: 0, y: 20 },
     yFirst: false,
@@ -690,6 +737,11 @@ export async function returnShiftToDeckClosure(page: Page) {
 
 /** Concourse east door → Utility Deck. */
 export async function concourseToDeck(page: Page) {
+  await concourseVia(
+    page,
+    PILOT.concourse.eastDoor.x - 56,
+    PILOT.concourse.eastDoor.y,
+  );
   await useDoor(page, PILOT.concourse.eastDoor, 'utility_core_deck', {
     approachOffset: { x: -40, y: 0 },
     yFirst: true,

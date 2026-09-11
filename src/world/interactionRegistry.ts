@@ -106,7 +106,7 @@ const C = CONCOURSE_STATIONS;
 export const DOCK_REGISTRY: readonly InteractionRegistryEntry[] = [
   door('dock', 'station_concourse', 'dock.door_concourse', {
     x: D.northDoor.x,
-    y: D.northDoor.y + 64,
+    y: D.northDoor.y + 56,
   }),
   {
     id: 'dock.arrival_terminal',
@@ -123,7 +123,7 @@ export const DOCK_REGISTRY: readonly InteractionRegistryEntry[] = [
     depthAnchor: 'foot',
     stage: 'any',
     window: null,
-    approach: { x: D.terminal.x, y: D.terminal.y + 48 },
+    approach: { x: D.terminal.x, y: D.terminal.y + 56 },
   },
   {
     id: 'dock.docking_airlock',
@@ -140,7 +140,7 @@ export const DOCK_REGISTRY: readonly InteractionRegistryEntry[] = [
     depthAnchor: 'foot',
     stage: 'any',
     window: null,
-    approach: { x: D.dockingAirlock.x, y: D.dockingAirlock.y - 40 },
+    approach: { x: D.dockingAirlock.x, y: D.dockingAirlock.y - 56 },
   },
 ];
 
@@ -151,16 +151,16 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     y: PILOT_DOORS.station_concourse[0].y - 56,
   }),
   door('station_concourse', 'records_workshop', 'concourse.door_records', {
-    x: 48 + 56,
-    y: 416,
+    x: PILOT_DOORS.station_concourse[1].x + 56,
+    y: PILOT_DOORS.station_concourse[1].y,
   }),
   door('station_concourse', 'diagnostics_laboratory', 'concourse.door_lab', {
-    x: 640,
-    y: 48 + 56,
+    x: PILOT_DOORS.station_concourse[2].x,
+    y: PILOT_DOORS.station_concourse[2].y + 56,
   }),
   door('station_concourse', 'utility_core_deck', 'concourse.door_deck', {
-    x: 1232 - 56,
-    y: 416,
+    x: PILOT_DOORS.station_concourse[3].x - 56,
+    y: PILOT_DOORS.station_concourse[3].y,
   }),
   {
     id: 'concourse.vale',
@@ -177,7 +177,7 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     depthAnchor: 'foot',
     stage: 'any',
     window: null,
-    approach: { x: C.vale.x, y: C.vale.y + 44 },
+    approach: { x: C.vale.x, y: C.vale.y + 56 },
   },
   {
     id: 'concourse.kai_return',
@@ -201,7 +201,7 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
       'complete',
     ],
     window: 'm10_promise_handover',
-    approach: { x: C.kaiReturn.x, y: C.kaiReturn.y + 44 },
+    approach: { x: C.kaiReturn.x, y: C.kaiReturn.y + 56 },
   },
   {
     id: 'concourse.plan_board',
@@ -214,8 +214,8 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     label: 'incident plan board',
     availability: 'always',
     opens: { kind: 'work_surface', id: 'm01_plan_board' },
-    footprint: null,
-    depthAnchor: 'overhead',
+    footprint: { w: 2, h: 2 },
+    depthAnchor: 'foot',
     stage: 'any',
     window: 'm01_plan_board_w1',
     approach: { x: C.planBoard.x, y: C.planBoard.y + 56 },
@@ -231,11 +231,11 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     label: 'incident desk',
     availability: 'always',
     opens: { kind: 'work_surface', id: 'm14_incident_desk' },
-    footprint: { w: 1, h: 5 },
+    footprint: { w: 2, h: 2 },
     depthAnchor: 'foot',
     stage: 'any',
     window: 'm14_desk_w1',
-    approach: { x: C.incidentDesk.x - 48, y: C.incidentDesk.y },
+    approach: { x: C.incidentDesk.x, y: C.incidentDesk.y + 56 },
   },
   {
     id: 'concourse.qc_packet_o1',
@@ -248,11 +248,11 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     label: 'quality packet',
     availability: 'always',
     opens: { kind: 'work_surface', id: 'm12_qc_packet_o1' },
-    footprint: { w: 3, h: 1 },
+    footprint: { w: 2, h: 2 },
     depthAnchor: 'foot',
     stage: 'any',
     window: 'm12_qc_o1',
-    approach: { x: C.qcPacket.x, y: C.qcPacket.y - 48 },
+    approach: { x: C.qcPacket.x, y: C.qcPacket.y + 56 },
   },
   {
     id: 'concourse.monitor_gauge',
@@ -265,11 +265,11 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     label: 'monitor gauge',
     availability: 'always',
     opens: { kind: 'message', id: 'gauge_reading' },
-    footprint: null,
-    depthAnchor: 'overhead',
+    footprint: { w: 2, h: 2 },
+    depthAnchor: 'foot',
     stage: 'any',
     window: 'm09_check_1 / m09_check_2 (non-canonical label)',
-    approach: { x: C.monitorGauge.x - 48, y: C.monitorGauge.y },
+    approach: { x: C.monitorGauge.x, y: C.monitorGauge.y + 56 },
   },
   {
     id: 'concourse.reading_desk_lamp',
@@ -282,11 +282,11 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     label: 'desk lamp',
     availability: 'always',
     opens: { kind: 'action', id: 'm05_fix' },
-    footprint: { w: 2, h: 1 },
+    footprint: { w: 2, h: 2 },
     depthAnchor: 'foot',
     stage: 'any',
     window: 'm05_initiation_o1',
-    approach: { x: C.concourseFault.x, y: C.concourseFault.y + 52 },
+    approach: { x: C.concourseFault.x, y: C.concourseFault.y + 56 },
   },
 ];
 
@@ -325,6 +325,9 @@ export function deriveObjectClass(
   return context.isGuidanceTarget ? 'active' : 'optional';
 }
 
+/** Key legend of the one-line contextual prompt (mission §11). */
+export const PROMPT_KEYS = 'E / Space';
+
 /** The one-line contextual prompt (INTERACTION-GRAMMAR.md §4). */
 export function promptText(
   verb: string,
@@ -332,8 +335,8 @@ export function promptText(
   availabilityState: string | null,
 ): string {
   return availabilityState === null
-    ? `E — ${verb} ${label}`
-    : `E — ${capitalise(label)}: ${availabilityState}`;
+    ? `${PROMPT_KEYS} — ${verb} ${label}`
+    : `${PROMPT_KEYS} — ${capitalise(label)}: ${availabilityState}`;
 }
 
 function capitalise(text: string): string {

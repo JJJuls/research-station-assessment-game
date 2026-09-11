@@ -138,10 +138,10 @@ test.describe('World V1 interaction registry (pure)', () => {
       }),
     ).toBe('decorative');
     expect(promptText('Review', 'incident log', null)).toBe(
-      'E — Review incident log',
+      'E / Space — Review incident log',
     );
     expect(promptText('Feed console', 'feed console', 'standby')).toBe(
-      'E — Feed console: standby',
+      'E / Space — Feed console: standby',
     );
   });
 
@@ -162,7 +162,7 @@ test.describe('World V1 interaction registry (pure)', () => {
         walkingDistance(
           dock,
           DOCK_SITES.marker,
-          { x: DOCK_SITES.terminal.x, y: DOCK_SITES.terminal.y + 48 },
+          { x: DOCK_SITES.terminal.x, y: DOCK_SITES.terminal.y + 64 },
           12,
         ),
       ],
@@ -170,7 +170,7 @@ test.describe('World V1 interaction registry (pure)', () => {
         'dock: terminal → north door',
         walkingDistance(
           dock,
-          { x: DOCK_SITES.terminal.x, y: DOCK_SITES.terminal.y + 48 },
+          { x: DOCK_SITES.terminal.x, y: DOCK_SITES.terminal.y + 64 },
           { x: DOCK_SITES.northDoor.x, y: DOCK_SITES.northDoor.y + 64 },
           12,
         ),
@@ -245,7 +245,11 @@ test.describe('World V1 interaction registry (pure)', () => {
       type: 'walking-budget',
       description: `acts 1–2: ${total} px ≈ ${seconds.toFixed(1)} s`,
     });
-    expect(seconds).toBeLessThan(45);
+    // World V1 production: the authority footprints (Dock 48×30, Concourse
+    // 60×38; traversal 8–12 s and 10–16 s per crossing) put the five-station
+    // acts 1–2 tour under 75 s; the whole-route itinerary is 328.69 s
+    // (PROFESSIONAL-WORLD-DESIGN-V1.md).
+    expect(seconds).toBeLessThan(75);
     void C;
   });
 });

@@ -2,7 +2,8 @@
  * Pure room-grid helpers (World V1). Node-importable: used by the zone
  * scenes (through StationMapBuilder) and by the pure registry / walking-
  * budget specs. Legend: '#' wall, '.' floor, '-' doorway floor, 'P'
- * floor variant (walkable), ' ' void (collides).
+ * floor variant (walkable), 'X' prop footprint (collides, floor art
+ * beneath), ' ' void (collides).
  */
 
 export const TILE = 32;
@@ -35,7 +36,7 @@ export function isWallCell(grid: RoomGrid, col: number, row: number): boolean {
 
   const ch = grid.rows[row][col];
 
-  return ch === undefined || ch === '#' || ch === ' ';
+  return ch === undefined || ch === '#' || ch === 'X' || ch === ' ';
 }
 
 /** Whether the avatar can stand with its position at (x, y). */

@@ -508,6 +508,10 @@ export abstract class RoomScene extends Phaser.Scene {
   private indicators = new Map<RoomStationConfig | RoomDoorConfig, Indicator>();
   private guidancePool: Phaser.GameObjects.Image | null = null;
   private guidancePoolFor: RoomStationConfig | RoomDoorConfig | null = null;
+  /** A scripted arrival owns the camera while true (presentation only). */
+  protected cameraHeld = false;
+  /** A scripted arrival owns the avatar while true (no participant input). */
+  protected inputLocked = false;
 
   /** Room layout grid; see StationMapBuilder for the character legend. */
   protected abstract getLayout(): RoomLayout;
@@ -543,6 +547,8 @@ export abstract class RoomScene extends Phaser.Scene {
     this.guidancePool = null;
     this.guidancePoolFor = null;
     this.npcActors = new Map();
+    this.cameraHeld = false;
+    this.inputLocked = false;
 
     researchRuntime.logSceneStart(this.scene.key);
     researchRuntime.sessionState.setCurrentRoom(this.roomId);
@@ -576,7 +582,7 @@ export abstract class RoomScene extends Phaser.Scene {
     // renders through the HUD camera in the 800×600 design space. A room
     // smaller than the plate (legacy proving grounds) is centred over the
     // theme's void colour.
-    this.plate = attachWorldPlate(this);
+    this.plate = attachWorldPlate(this, layout.field ?? 'legacy');
     this.plate.setBounds(
       this.roomMap.widthInPixels,
       this.roomMap.heightInPixels,
@@ -889,6 +895,18 @@ export abstract class RoomScene extends Phaser.Scene {
    * registry id (the docking airlock closing behind the arrival).
    * Presentation only — position, radius and availability are untouched.
    */
+  protected doorImage(registryId: string): Phaser.GameObjects.Image | null {
+    for (const door of this.doors) {
+      if (door.registryId === registryId) {
+        const marker = this.interactableMarkers.get(door);
+
+        return marker instanceof Phaser.GameObjects.Image ? marker : null;
+      }
+    }
+
+    return null;
+  }
+
   protected setDoorFrameById(registryId: string, frame: number) {
     for (const door of this.doors) {
       if (door.registryId === registryId) {
@@ -944,10 +962,9 @@ export abstract class RoomScene extends Phaser.Scene {
     this.sortAtFootLine(marker, config.y);
     this.interactableMarkers.set(config, marker);
     this.stations.push(config);
-
-    if (config.indicator !== 'none') {
-      this.attachIndicator(config, marker);
-    }
+    // World V1 production (mission §11): stations carry NO standing
+    // indicator lamp — the object's own art states its class; the one
+    // guidance cue is the floor pool under the current route target.
   }
 
   /**
@@ -995,6 +1012,7 @@ export abstract class RoomScene extends Phaser.Scene {
 
     for (const [config, indicator] of this.indicators) {
       const objectClass = this.classOf(config);
+
       const color =
         objectClass === 'active'
           ? KIT_INDICATOR.active
@@ -1012,8 +1030,8 @@ export abstract class RoomScene extends Phaser.Scene {
       }
     }
 
-    for (const config of this.npcActors.keys()) {
-      if (this.classOf(config) === 'active') {
+    for (const config of this.stations) {
+      if (!this.indicators.has(config) && this.classOf(config) === 'active') {
         target = config;
       }
     }
@@ -1026,10 +1044,13 @@ export abstract class RoomScene extends Phaser.Scene {
     this.guidancePool?.destroy();
     this.guidancePool = null;
 
+    // Restrained spatial guidance (mission §11): one soft service-light
+    // pool on the floor in front of the current route target — never a
+    // ring, an arrow, a pulse or a cue on any other object.
     if (target !== null && this.textures.exists('kit-light-pool-cyan')) {
       this.guidancePool = this.add
-        .image(target.x, target.y + 18, 'kit-light-pool-cyan')
-        .setAlpha(0.9)
+        .image(target.x, target.y + 22, 'kit-light-pool-cyan')
+        .setAlpha(0.5)
         .setDepth(DepthLayer.FloorDecal + 0.05);
     }
   }
@@ -2682,7 +2703,9 @@ export abstract class RoomScene extends Phaser.Scene {
       Phaser.Input.Keyboard.JustDown(this.player.cursors.space) ||
       Phaser.Input.Keyboard.JustDown(this.interactKeyE);
 
-    return pressed && Date.now() >= this.suppressInteractUntilMs;
+    return (
+      pressed && !this.inputLocked && Date.now() >= this.suppressInteractUntilMs
+    );
   }
 
   /** SPACE/E pressed with no station/door in range. Default: no-op. */
@@ -2718,21 +2741,28 @@ export abstract class RoomScene extends Phaser.Scene {
     );
   }
 
-  update() {
+  update(_time: number, delta: number) {
     // FABLE-NEXT-06: the avatar holds still while a prompt is open — the
     // arrow keys belong to card focus there (presentation-only; selection
     // remains the only way a prompt closes, so no task state is affected).
     // Unit 1: the avatar also holds still while a timed world action runs
     // (scan/dig/install progress bars are performed in place).
-    if (this.activePrompt === null && !isWorldActionActive()) {
+    if (
+      this.activePrompt === null &&
+      !isWorldActionActive() &&
+      !this.inputLocked
+    ) {
       this.player.update();
-    } else {
+    } else if (!this.inputLocked) {
       (this.player.body as Phaser.Physics.Arcade.Body).setVelocity(0);
     }
 
-    // World V1: the plate camera follows the avatar (dead zone + bounded
-    // easing; CAMERA-AND-SCALE-SPEC.md §3).
-    this.plate.follow(this.player.x, this.player.y);
+    // World V1: the plate camera follows the avatar (dead zone + time-based
+    // damping; CAMERA-AND-SCALE-SPEC.md §5). A scripted arrival may hold
+    // the follow while it owns the camera.
+    if (!this.cameraHeld) {
+      this.plate.follow(this.player.x, this.player.y, delta);
+    }
 
     this.onRoomUpdate();
     this.updateProximity();

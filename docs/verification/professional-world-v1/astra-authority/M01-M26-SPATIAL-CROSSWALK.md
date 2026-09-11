@@ -988,3 +988,19 @@ M16 is the material selection mismatch: final workbook09!G20 chooses a novel pro
 One activity may host several items only with independently identifiable windows, families, raw variables and validity rules. One item may span authorised occasions; a raw event is never the primary indicator for unrelated items. Prior outcomes cannot remove later access. Missing never means low ability or low trait. Guidance cannot reveal the desired response. No new questionnaire wording, scoring, threshold or canonical status is authorised.
 
 Workbook plan: 1,040 s active + 420 s shared overhead + 75 s closure = 1,535 s. Human median ≤ 27 min and p90 ≤ 30 min are planning gates. The proposed 328.69 s visitation walk would leave 91.31 s of the 420 s overhead if charged entirely there; some Utility/Core travel may overlap the 75 s closure allocation. Do not double-count or claim this is validated. Record that allocation and human timing before accepting production burden.
+
+## Implementation record — vertical slice restoration (2026-09-11, Fable)
+
+Recorded here as required by the production mission (§10); this is an
+implementation record, not a change to any item's identity, window, event,
+form, option or disposition.
+
+| Zone      | Shape id (world-layouts.json) | Trigger                                                                                                      | Before → after (presentation only)                                                                                                                                                                                                                | Protected unchanged                                                                                                    |
+| --------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Dock      | `dock-weather-cover`          | route stage `handover_briefing` reached (entering the Concourse)                                             | the loose weather cover on the rack beside the sealed berth (`w1-cover-loose`) → strapped down (`w1-cover-secured`); with the shared `lighting` element from stage `workshop`: service lamps and strip lights standby → steady, cold pools → warm | check-in / tutorial state, every `dock_*` / `tutorial_*` event, the route collision                                    |
+| Concourse | `operations-service-lamp`     | route stage `workshop` (Vale's handover confirmed) — the `lighting` element of `storyState.restorationState` | the counter's back-wall service panel standby (`w1-status-panel-standby`) → steady (`w1-status-panel-steady`); district service lamps and strip lights standby → steady; work-area pools cold → warm                                              | M05 quiet lamp (no pool, flicker unchanged), M09 gauge and reminders, M12 QC error, M01/M14 packet sources, M10 offers |
+
+Both changes are functions of the route stage only (`pilotStage()`), never
+of a task outcome, score, optional helping or response desirability, and
+are identical for every participant reaching the same stage. The status
+wall's six sector lamps keep their U2 stage/terminal-disposition model.

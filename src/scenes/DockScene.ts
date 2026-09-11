@@ -3,9 +3,19 @@ import Phaser from 'phaser';
 import { DepthLayer, key, worldDepth } from '../constants';
 import { prefersReducedMotion } from '../inventory/ui/theme';
 import { pilotLaunchMode } from '../pilot/pilotCoverage';
-import { notePilotZoneEntered, pilotStage } from '../pilot/pilotRoute';
+import {
+  notePilotZoneEntered,
+  onPilotRouteChange,
+  pilotStage,
+  pilotStageAtOrAfter,
+} from '../pilot/pilotRoute';
 import { PILOT_CONTROLS_LINES } from '../pilot/PilotZoneScene';
-import { missionCardAction, storyActTitle } from '../pilot/storyState';
+import {
+  missionCardAction,
+  OPENING_STATION_LINE,
+  restorationState,
+  storyActTitle,
+} from '../pilot/storyState';
 import { DOCK_SITES, LEGACY_DOCK_SITES } from '../pilot/zoneSites';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
@@ -27,6 +37,24 @@ const DOCK_IDLE_HELP_THRESHOLD_MS: number | null = null;
 
 const TILE = 32;
 
+/** Airlock strip: frame 0 closed … frame 4 open (worldV1Assets.ts). */
+const AIRLOCK_CLOSED_FRAME = 0;
+const AIRLOCK_OPEN_FRAME = 4;
+
+/**
+ * Scripted arrival (storyboard frames 5–8, wall-clock ms after the cut):
+ * the roof cover lifts, the participant steps from the seal to the exact
+ * spawn while the iris closes behind them, the station line plays, and
+ * control releases at a fixed end state shared with the skipped path.
+ */
+const ARRIVAL = {
+  revealMs: 1800,
+  stepStartMs: 1400,
+  stepMs: 700,
+  stationLineMs: 2300,
+  releaseMs: 4600,
+} as const;
+
 declare global {
   interface Window {
     /**
@@ -40,6 +68,11 @@ declare global {
       terminal: { x: number; y: number };
       northDoor: { x: number; y: number };
       marker: { x: number; y: number };
+      /** World V1 slice: the arrival script is still running. */
+      arrival_playing: boolean;
+      /** Dock restoration shape state (stage-driven). */
+      cover: 'loose' | 'secured';
+      lighting: string;
     } | null;
   }
 }
@@ -56,12 +89,14 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
  * confirm (or explicit skip). Legacy dock_* events keep firing alongside
  * canonical ones per event-schema.md §4's Dock alias table.
  *
- * World V1 (docs/game/world-v1/ROOM-BLOCKOUTS.md §1): the participant
- * route uses the 36×24 bay — docking airlock and apron on the south wall
- * with the shuttle nose behind the bay windows, one circulation spine to
- * the station entrance, the arrival terminal in a lit west alcove, cargo
- * staging behind a rail on the east. `?route=legacy` keeps the V4 bay and
- * its coordinates byte-for-byte for the historical regression specs.
+ * World V1 production slice (world-layouts.json `dock`, 48×30): a
+ * weather-sealed transfer hall. The south hull carries the docking seal
+ * (the berth the shuttle docked at) and, west of it, the berth glazing
+ * hall with the weather window; the inward service spine runs north to
+ * the Concourse threshold; the arrival / handover bay with the check-in
+ * terminal lies east of the spine; cargo staging sits behind the spine to
+ * the north-west. `?route=legacy` keeps the V4 bay and its coordinates
+ * byte-for-byte for the historical regression specs.
  */
 export class DockScene extends RoomScene {
   protected readonly roomId = 'dock_arrival';
@@ -73,6 +108,14 @@ export class DockScene extends RoomScene {
   private markerPulse: Phaser.Tweens.Tween | null = null;
   private markerReached = false;
   private idleSinceMs: number | null = null;
+  private arrivalPlaying = false;
+  private unsubscribeRoute: (() => void) | null = null;
+
+  /** Restoration presentation (stage-driven; presentation only). */
+  private coverImage: Phaser.GameObjects.Image | null = null;
+  private serviceLamps: Phaser.GameObjects.Image[] = [];
+  private stripLights: Phaser.GameObjects.Image[] = [];
+  private workPools: Phaser.GameObjects.Image[] = [];
 
   constructor() {
     super(key.scene.dock);
@@ -88,16 +131,15 @@ export class DockScene extends RoomScene {
   }
 
   protected getLayout(): RoomLayout {
-    return {
-      theme: 'dock',
-      grid: [...(this.legacyLayout() ? LEGACY_DOCK_LAYOUT : DOCK_LAYOUT)],
-    };
+    return this.legacyLayout()
+      ? { theme: 'dock', grid: [...LEGACY_DOCK_LAYOUT] }
+      : { theme: 'dock', grid: [...DOCK_LAYOUT], field: 'wide' };
   }
 
   protected getSpawn(data?: { spawn?: string }): { x: number; y: number } {
     // Returning from the station spawns just inside the north door; a
-    // fresh arrival spawns on the docking apron, just inside the docking
-    // airlock — both outside every door's 72 px interaction radius.
+    // fresh arrival spawns on the berth threshold, inside the sealed
+    // docking airlock — both outside every door's 72 px interaction radius.
     if (this.legacyLayout()) {
       if (
         data?.spawn === 'station_hub' ||
@@ -140,6 +182,12 @@ export class DockScene extends RoomScene {
   protected populateRoom(): void {
     const sites = this.sites();
 
+    this.coverImage = null;
+    this.serviceLamps = [];
+    this.stripLights = [];
+    this.workPools = [];
+    this.markerReached = false;
+
     // Arrival terminal (Station AI).
     this.addStation({
       interactionKey: 'dockArrivalTutorial',
@@ -148,14 +196,14 @@ export class DockScene extends RoomScene {
       registryId: 'dock.arrival_terminal',
       texture: this.legacyLayout()
         ? 'prop-dock-terminal'
-        : 'kit-terminal-kiosk',
+        : 'w1-terminal-available',
       x: sites.terminal.x,
       y: sites.terminal.y,
       promptBody:
         'The dock system checks whether you understand the basic controls before station tasks begin. What do you do?',
       // World V1 (U2, visual review V5): once the check-in is logged the
-      // terminal is a class-3 object — the prompt reads its state and E
-      // shows it, instead of a stale "Check in" verb.
+      // terminal is a class-5 (completed) object — the prompt reads its
+      // state and E shows it, instead of a stale "Check in" verb.
       availability: () =>
         this.isPilotRoute() && this.isTutorialCompleted() ? 'checked in' : null,
       onPromptOpened: () => {
@@ -185,9 +233,11 @@ export class DockScene extends RoomScene {
       label: isLegacyRoute() ? 'Station Hub' : 'Station Concourse',
       verb: 'Go to',
       registryId: 'dock.door_concourse',
-      texture: this.textures.exists('plv1-arch-door')
-        ? 'plv1-arch-door'
-        : 'prop-dock-airlock',
+      texture: this.legacyLayout()
+        ? this.textures.exists('plv1-arch-door')
+          ? 'plv1-arch-door'
+          : 'prop-dock-airlock'
+        : 'w1-door-north-closed',
       interactionKey: 'dockArrivalTutorial',
       target: northTarget,
     });
@@ -195,143 +245,172 @@ export class DockScene extends RoomScene {
     if (this.legacyLayout()) {
       this.buildLegacyBay();
     } else {
-      this.buildArrivalBay();
+      this.buildArrivalHall();
+      this.refreshDockState();
     }
 
-    if (typeof window !== 'undefined' && import.meta.env.DEV) {
-      window.__dockProbe = {
-        layout: this.legacyLayout() ? 'legacy' : 'pilot',
-        terminal: { ...sites.terminal },
-        northDoor: { ...sites.northDoor },
-        marker: { ...sites.marker },
-      };
+    this.publishDockProbe();
+  }
+
+  private publishDockProbe() {
+    if (typeof window === 'undefined' || !import.meta.env.DEV) {
+      return;
     }
+
+    const sites = this.sites();
+
+    window.__dockProbe = {
+      layout: this.legacyLayout() ? 'legacy' : 'pilot',
+      terminal: { ...sites.terminal },
+      northDoor: { ...sites.northDoor },
+      marker: { ...sites.marker },
+      arrival_playing: this.arrivalPlaying,
+      cover: this.coverSecured() ? 'secured' : 'loose',
+      lighting: this.isPilotRoute()
+        ? restorationState('lighting', pilotStage())
+        : 'n/a',
+    };
   }
 
   /**
-   * World V1 arrival bay (ROOM-BLOCKOUTS.md §1): docking threshold on the
-   * south wall with the shuttle nose behind the central bay windows (the
-   * landmark), the docking apron in front of it, one painted circulation
-   * spine north to the station entrance, the arrival terminal in a lit
-   * west alcove, cargo staging behind a low rail on the east, a service
-   * column south-west. Nothing here logs, gates or moves an interactable.
+   * The arrival hall (world-layouts.json `dock`): every prop stands on an
+   * authored footprint of DOCK_FOOTPRINTS (collision) or is flat floor /
+   * wall dressing. Nothing here logs, gates or moves an interactable.
    */
-  private buildArrivalBay() {
+  private buildArrivalHall() {
     const S = DOCK_SITES;
+    const px = (tile: number) => tile * TILE;
 
-    // ——— South wall: docking airlock (sealed class-3 door), header, windows ———
-    this.addOverhead(S.dockingAirlock.x, 21 * TILE + 8, 'kit-airlock-frame');
+    // ——— South hull: the docking seal (sealed class-4 door) ———
+    // The leaf is wall-mounted (always behind the actor); frame 0 closed.
     this.addDoor({
       x: S.dockingAirlock.x,
       y: S.dockingAirlock.y,
       label: 'docking airlock',
       verb: 'Docking airlock',
       registryId: 'dock.docking_airlock',
-      texture: this.textures.exists('plv1-airlock-open')
-        ? 'plv1-airlock-open'
-        : 'prop-dock-airlock',
-      // Closed iris (strip frame 0 — the V4 Dock's "closed leaf"): the
-      // shuttle is secured. The arrival cut shows it open and seals it
-      // (sealDockingAirlock).
-      textureFrame: 0,
+      texture: 'w1-airlock-open-strip',
+      textureFrame: AIRLOCK_CLOSED_FRAME,
       interactionKey: 'dockArrivalTutorial',
       availability: () => 'shuttle secured',
       sealedMessage: 'Docking airlock sealed — the shuttle is secured.',
     });
+    this.anchorWallMounted('dock.docking_airlock', px(30) + 6);
+    // Caution sill and a status lamp either side of the seal.
+    this.addFloorDecal(S.dockingAirlock.x, px(27) + 26, 'kit-hazard-strip');
+    this.wallProp(px(21) + 8, px(29) - 6, 'w1-status-lamp');
+    this.wallProp(px(26) + 24, px(29) - 6, 'w1-status-lamp');
 
-    for (const [col, shuttle] of [
-      [10, false],
-      [14, true],
-      [22, true],
-      [26, false],
-    ] as const) {
-      this.addGroundInfra(
-        col * TILE + 16,
-        22 * TILE + 24,
-        shuttle ? 'kit-bay-window-shuttle' : 'kit-bay-window',
-      );
+    // ——— Berth glazing hall (south-west): weather windows and the bench ———
+    for (const col of [4.5, 8, 11.5, 15]) {
+      this.wallProp(px(col) + 16, px(30) + 2, 'w1-dock-window');
     }
+    this.prop(px(8.5), px(25), 'w1-chair');
+    this.prop(px(9.5), px(25), 'w1-chair');
+    this.prop(px(10.5), px(25), 'w1-waste-bin');
+    this.prop(px(4.5), px(27), 'w1-filing-cabinet');
+    this.prop(px(18), px(27), 'w1-tool-cart');
+    this.prop(px(19), px(25) - 4, 'w1-cable-coil');
+    // The loose weather cover beside the sealed berth (restoration shape
+    // `dock-weather-cover`): crew secures it at handover_briefing.
+    this.coverImage = this.prop(px(13.5), px(28), 'w1-cover-loose');
+    this.addFloorDecal(px(13.5), px(28) - 2, 'kit-contact-shadow');
 
-    // ——— North wall: station entrance frame, sign, light fixtures ———
-    this.addDoorFrame(S.northDoor.x, 1 * TILE + 16, 'h');
-    this.addWallSign(
-      S.northDoor.x + 128,
-      1 * TILE + 18,
-      'Station 080 · Concourse',
-    );
-    for (const col of [6, 12, 24, 30]) {
-      this.addGroundInfra(col * TILE + 16, 1 * TILE + 30, 'kit-light-fixture');
-    }
+    // ——— North hull: the Concourse threshold ———
+    this.anchorWallMounted('dock.door_concourse', px(2) + 8);
+    this.wallProp(px(27) + 8, px(2) - 8, 'w1-intercom');
+    this.wallProp(px(20) + 20, px(2) - 8, 'w1-junction-box');
 
-    // ——— Circulation spine: painted lane from the apron to the entrance ———
-    this.addFloorLane(16, 2, 4, 20);
-    this.addFloorDecal(
-      S.dockingAirlock.x,
-      20 * TILE,
-      'kit-light-pool-cold',
-      0.7,
-    );
+    // ——— Spine: painted service lane from the berth to the threshold ———
+    this.addFloorLane(22, 2, 4, 26);
+    this.workPools.push(this.pool(S.dockingAirlock.x, px(26), 0.7)!);
+    this.workPools.push(this.pool(S.northDoor.x, px(4), 0.55)!);
 
-    // ——— West alcove: the arrival terminal on its kiosk cells ———
-    this.addFloorDecal(
-      S.terminal.x,
-      S.terminal.y + 36,
-      'kit-contact-shadow',
-      0.8,
+    // ——— Arrival / handover bay (east): the check-in terminal ———
+    this.addFloorDecal(S.terminal.x, S.terminal.y - 2, 'kit-contact-shadow');
+    // Check-in pad: a painted service pad and caution edge make the
+    // terminal the bay's landmark (review round 1).
+    this.addFloorLane(29, 20, 2, 2);
+    this.addFloorDecal(S.terminal.x - 16, px(22) - 4, 'kit-hazard-strip');
+    this.addFloorDecal(S.terminal.x + 16, px(22) - 4, 'kit-hazard-strip');
+    this.prop(px(36.5), px(17), 'w1-notice-board');
+    this.prop(px(34), px(23), 'w1-document-trolley');
+    this.prop(px(28), px(16) + 20, 'w1-chair');
+    this.prop(px(38.5), px(21), 'w1-radio-cradle');
+    this.serviceLamps.push(
+      this.prop(px(33), px(19), 'w1-service-lamp-standby')!,
     );
-    this.addGroundInfra(
-      S.terminal.x + 40,
-      S.terminal.y - 10,
-      'kit-notice-board',
-    );
-    this.addGroundInfra(2 * TILE + 16, 10 * TILE + 8, 'kit-light-fixture');
-    // Act 1 — emergency lighting only: a cold pool over the terminal alcove
-    // (STORY-STATE-SPEC §4; the warm work-area pools return from act 3).
-    this.addFloorDecal(
-      S.terminal.x + 16,
-      S.terminal.y + 40,
-      'kit-light-pool-cold',
-      0.75,
-    );
+    this.workPools.push(this.pool(S.terminal.x, px(21), 0.6)!);
+    // Contained crates in the bay's south recess (authority decor rect).
+    this.prop(px(37), px(26), 'w1-crate-stack');
+    this.prop(px(39.5), px(26), 'w1-crate-stack');
+    this.prop(px(36), px(25), 'w1-crate');
+    this.prop(px(40.5), px(24) + 28, 'w1-hazard-sign');
 
-    // ——— East cargo staging: rail, crate stacks, pallet jack, hazard strips ———
-    for (let row = 8; row <= 20; row += 1) {
-      this.addGroundInfra(
-        24 * TILE + 16,
-        row * TILE + 24,
-        'kit-cargo-rail',
-      )?.setAngle(90);
-    }
-    this.addFloorDecal(28 * TILE, 14 * TILE - 6, 'kit-contact-shadow');
-    this.addKitProp(28 * TILE, 14 * TILE, 'kit-crate-stack');
-    this.addFloorDecal(31 * TILE, 17 * TILE - 6, 'kit-contact-shadow');
-    this.addKitProp(31 * TILE, 17 * TILE, 'kit-crate-stack');
-    this.addGroundInfra(26.5 * TILE, 18 * TILE + 16, 'kit-pallet-jack');
-    for (const col of [26, 28, 30, 32]) {
-      this.addFloorDecal(col * TILE + 16, 20 * TILE + 8, 'kit-hazard-strip');
-    }
-
-    // ——— South-west service column with pipes and a cable tray ———
-    this.addFloorDecal(9 * TILE, 17 * TILE - 6, 'kit-contact-shadow');
-    this.addKitProp(
-      9 * TILE,
-      17 * TILE,
-      this.textures.exists('plv1-utility-tower')
-        ? 'plv1-utility-tower'
-        : 'proc-console-wall',
-      { tint: 0x8fa0b0 },
+    // ——— Cargo staging (north-west): behind the spine, off every path ———
+    this.prop(px(8), px(10), 'w1-crate-stack');
+    this.prop(px(11), px(10), 'w1-crate-stack');
+    this.prop(px(14), px(9), 'w1-pallet-jack');
+    this.prop(px(7.5), px(13), 'w1-cable-drum');
+    this.prop(px(9.5), px(13), 'w1-cable-spool');
+    this.prop(px(16), px(14), 'w1-lockers');
+    this.prop(px(5.5), px(13), 'w1-bollard');
+    this.prop(px(11.5), px(13), 'w1-bollard');
+    this.prop(px(6), px(9), 'w1-crate-b');
+    this.addFloorDecal(px(12), px(15) - 10, 'kit-hazard-strip');
+    this.addFloorDecal(px(14), px(15) - 10, 'kit-hazard-strip');
+    this.serviceLamps.push(
+      this.prop(px(17.5), px(9), 'w1-service-lamp-standby')!,
     );
-    for (let col = 2; col < 8; col += 1) {
-      this.addGroundInfra(col * TILE + 16, 22 * TILE + 8, 'kit-cable-tray');
-    }
-    this.addGroundInfra(8 * TILE + 8, 22 * TILE + 8, 'kit-cable-junction');
-    this.addKitProp(4 * TILE, 21 * TILE + 24, 'kit-locker-bank');
+    this.workPools.push(this.pool(px(11), px(12), 0.5)!);
+
+    // ——— Wall utilities recess (north-west): the service frontage ———
+    this.prop(px(4.5), px(6), 'w1-shelving');
+    this.prop(px(6.5), px(6), 'w1-drum');
+    this.wallProp(px(3) + 12, px(3) + 8, 'w1-junction-box');
+
+    // ——— Local loops: sparse service dressing along the hull ———
+    this.wallProp(px(43), px(6) + 2, 'w1-pipe-run');
+    this.wallProp(px(43), px(21) + 2, 'w1-pipe-run');
+    this.wallProp(px(3), px(20), 'w1-extinguisher');
+    this.wallProp(px(44), px(12) + 8, 'w1-extinguisher');
+    this.addFloorDecal(px(33), px(7) + 8, 'w1-vent-grille');
+    this.addFloorDecal(px(12), px(22) + 8, 'w1-vent-grille');
+    // Storm trace beside the berth: a torn panel fragment, swept aside.
+    this.addFloorDecal(px(19.5), px(23) + 8, 'w1-debris-panel');
 
     // ——— Highlighted movement target (V3 Room 0 mini-game) ———
     // Reaching it is a mechanic, not an event — no canonical event exists
     // for it and none is invented. A floor ring on the spine with a
     // restrained pulse (held under reduced motion), removed once reached.
     this.buildMovementMarker(S.marker.x, S.marker.y);
+  }
+
+  /** A footprint prop anchored at its bottom-centre ground contact. */
+  private prop(x: number, footY: number, texture: string) {
+    return this.addKitProp(x, footY, texture);
+  }
+
+  /** Wall-mounted dressing: always behind the actor. */
+  private wallProp(x: number, bottomY: number, texture: string) {
+    return this.addGroundInfra(x, bottomY, texture);
+  }
+
+  /** Cold emergency pool now; warm work light once the lighting is restored. */
+  private pool(x: number, y: number, alpha: number) {
+    return this.addFloorDecal(x, y, 'kit-light-pool-cold', alpha);
+  }
+
+  /**
+   * Re-anchors a door leaf as wall-mounted art: bottom-centre at the hull
+   * line, depth below every actor. Interaction position/radius unchanged.
+   */
+  private anchorWallMounted(registryId: string, bottomY: number) {
+    const image = this.doorImage(registryId);
+
+    if (image !== null) {
+      image.setOrigin(0.5, 1).setY(bottomY).setDepth(DepthLayer.GroundInfra);
+    }
   }
 
   /** The V4 bay, byte-identical for the legacy regression specs. */
@@ -419,6 +498,66 @@ export class DockScene extends RoomScene {
     return pilotLaunchMode() === 'participant' && !isLegacyRoute();
   }
 
+  // ——— Restoration (STORY-STATE-SPEC §4; world-layouts.json `dock.restoration_change`)
+
+  /** Crew secures the weather cover once the handover stage is reached. */
+  private coverSecured(): boolean {
+    return this.isPilotRoute() && pilotStageAtOrAfter('handover_briefing');
+  }
+
+  /**
+   * Presentation of the Dock's fixed crew state: the weather cover
+   * (`dock-weather-cover`, trigger handover_briefing) and the shared
+   * lighting element (cold emergency → steady service light from the
+   * `workshop` stage). Stage-driven only; check-in/tutorial state and the
+   * route collision are untouched.
+   */
+  private refreshDockState() {
+    const secured = this.coverSecured();
+    const lit =
+      this.isPilotRoute() &&
+      restorationState('lighting', pilotStage()) === 'restored';
+
+    this.swapTexture(
+      this.coverImage,
+      secured ? 'w1-cover-secured' : 'w1-cover-loose',
+    );
+
+    for (const lamp of this.serviceLamps) {
+      this.swapTexture(
+        lamp,
+        lit ? 'w1-service-lamp-steady' : 'w1-service-lamp-standby',
+      );
+    }
+
+    for (const light of this.stripLights) {
+      this.swapTexture(
+        light,
+        lit ? 'w1-strip-light-steady' : 'w1-strip-light-standby',
+      );
+    }
+
+    for (const pool of this.workPools) {
+      this.swapTexture(
+        pool,
+        lit ? 'kit-light-pool-warm' : 'kit-light-pool-cold',
+      );
+    }
+
+    this.publishDockProbe();
+  }
+
+  private swapTexture(image: Phaser.GameObjects.Image | null, texture: string) {
+    if (
+      image !== null &&
+      image.active &&
+      image.texture.key !== texture &&
+      this.textures.exists(texture)
+    ) {
+      image.setTexture(texture);
+    }
+  }
+
   create(data?: { spawn?: string }) {
     super.create(data);
 
@@ -431,7 +570,7 @@ export class DockScene extends RoomScene {
     notePilotZoneEntered('dock', Date.now());
     this.refreshRouteObjective();
     this.input.keyboard!.on('keydown-M', (event: KeyboardEvent) => {
-      if (event.repeat || !this.physicalInputEligible()) {
+      if (event.repeat || !this.physicalInputEligible() || this.inputLocked) {
         return;
       }
 
@@ -446,6 +585,16 @@ export class DockScene extends RoomScene {
     });
     this.events.on(Phaser.Scenes.Events.RESUME, () => {
       this.input.keyboard?.resetKeys();
+      this.refreshDockState();
+    });
+
+    this.unsubscribeRoute = onPilotRouteChange(() => {
+      this.refreshRouteObjective();
+      this.refreshDockState();
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.unsubscribeRoute?.();
+      this.unsubscribeRoute = null;
     });
   }
 
@@ -531,8 +680,7 @@ export class DockScene extends RoomScene {
                 ? 'pilot_opening_skipped'
                 : 'pilot_opening_completed',
             );
-            this.sealDockingAirlock();
-            this.showMovementInstruction();
+            this.beginArrival(outcome);
           },
         });
       });
@@ -544,33 +692,126 @@ export class DockScene extends RoomScene {
   }
 
   /**
-   * World V1 (U2): the cut from the opening lands on the docking threshold
-   * with the airlock iris still open behind the participant; it closes
-   * over ~1 s (strip frames 0 → 3) — a state-driven reaction, identical
-   * after a skip and after a completed opening, held on the closed frame
-   * under reduced motion. The door stays the sealed class-3 object.
+   * The cut from the opening (storyboard frames 5–8). A COMPLETED opening
+   * plays the continuous arrival — roof cover lifts off the berth hall,
+   * the participant steps from the open seal to the exact spawn while the
+   * iris closes behind them, the station line plays — with input locked
+   * and the camera held on the authored composition. A SKIPPED opening
+   * (or reduced motion) goes straight to the same end state:
+   * finishArrival() is the ONE finish function for both paths.
    */
-  private sealDockingAirlock() {
-    if (!this.textures.exists('plv1-airlock-open')) {
+  private beginArrival(outcome: 'completed' | 'skipped') {
+    const S = DOCK_SITES;
+
+    if (outcome !== 'completed' || prefersReducedMotion()) {
+      this.finishArrival();
       return;
     }
 
-    // Strip frames run closed (0) → open (6).
-    const openFrame = 6;
-    const closedFrame = 0;
+    this.arrivalPlaying = true;
+    this.inputLocked = true;
+    this.cameraHeld = true;
+    this.plate.snapTo(S.spawnArrival.x, S.spawnArrival.y);
+    this.publishDockProbe();
 
-    if (prefersReducedMotion()) {
-      this.setDoorFrameById('dock.docking_airlock', closedFrame);
-      return;
+    // Frame 5: the participant stands in the open seal; the roof cover
+    // over the berth hall lifts north and fades.
+    this.player.setPosition(S.spawnArrival.x, S.spawnArrival.y + 56);
+    this.player.anims.play('researcher_idle_north', true);
+    this.setDoorFrameById('dock.docking_airlock', AIRLOCK_OPEN_FRAME);
+
+    const cover = this.add
+      .rectangle(
+        this.roomMap.widthInPixels / 2,
+        this.roomMap.heightInPixels / 2,
+        this.roomMap.widthInPixels,
+        this.roomMap.heightInPixels,
+        0x1f2733,
+        1,
+      )
+      .setDepth(DepthLayer.WorldReadout + 1);
+
+    for (let x = 0; x < this.roomMap.widthInPixels; x += 192) {
+      this.add
+        .rectangle(
+          x,
+          this.roomMap.heightInPixels / 2,
+          2,
+          this.roomMap.heightInPixels,
+          0x141a22,
+          0.9,
+        )
+        .setDepth(DepthLayer.WorldReadout + 1.01)
+        .setData('cover', true);
     }
 
-    this.setDoorFrameById('dock.docking_airlock', openFrame);
+    const seams = this.children.list.filter(
+      (child) => child.getData('cover') === true,
+    ) as Phaser.GameObjects.Rectangle[];
 
-    for (let step = 1; step <= 3; step += 1) {
-      this.time.delayedCall(300 * step, () =>
-        this.setDoorFrameById('dock.docking_airlock', openFrame - step * 2),
-      );
-    }
+    this.tweens.add({
+      targets: [cover, ...seams],
+      alpha: 0,
+      y: `-=${TILE * 3}`,
+      duration: ARRIVAL.revealMs,
+      ease: 'Sine.easeInOut',
+      onComplete: () => {
+        cover.destroy();
+        seams.forEach((seam) => seam.destroy());
+      },
+    });
+
+    // Frame 6: the step from the seal to the exact playable spawn; the
+    // iris closes behind (frames 4 → 0).
+    this.time.delayedCall(ARRIVAL.stepStartMs, () => {
+      this.player.anims.play('researcher_walk_north', true);
+      this.tweens.add({
+        targets: this.player,
+        y: S.spawnArrival.y,
+        duration: ARRIVAL.stepMs,
+        ease: 'Linear',
+        onComplete: () => this.player.anims.play('researcher_idle_north', true),
+      });
+
+      for (let step = 1; step <= 4; step += 1) {
+        this.time.delayedCall(ARRIVAL.stepMs * 0.4 + step * 260, () =>
+          this.setDoorFrameById(
+            'dock.docking_airlock',
+            AIRLOCK_OPEN_FRAME - step,
+          ),
+        );
+      }
+    });
+
+    // Frame 7: the station line (role and situation, no instruction).
+    this.time.delayedCall(ARRIVAL.stationLineMs, () => {
+      this.showFeedbackMessage(OPENING_STATION_LINE);
+    });
+
+    // Frame 8: control releases at the fixed end state.
+    this.time.delayedCall(ARRIVAL.releaseMs, () => this.finishArrival());
+  }
+
+  /** The one common finish: spawn, camera, seal, input, instruction. */
+  private finishArrival() {
+    const S = DOCK_SITES;
+
+    this.tweens.killTweensOf(this.player);
+    this.player.setPosition(S.spawnArrival.x, S.spawnArrival.y);
+    this.player.body.reset(S.spawnArrival.x, S.spawnArrival.y);
+    this.player.anims.play('researcher_idle_north', true);
+    this.setDoorFrameById('dock.docking_airlock', AIRLOCK_CLOSED_FRAME);
+    this.plate.snapTo(S.spawnArrival.x, S.spawnArrival.y);
+    this.cameraHeld = false;
+    this.inputLocked = false;
+    this.arrivalPlaying = false;
+    this.suppressInteractUntilMs = Math.max(
+      this.suppressInteractUntilMs,
+      Date.now() + 300,
+    );
+    this.showMovementInstruction();
+    this.refreshRouteObjective();
+    this.publishDockProbe();
   }
 
   private showMovementInstruction() {
@@ -585,6 +826,10 @@ export class DockScene extends RoomScene {
   }
 
   protected onRoomUpdate(): void {
+    if (this.arrivalPlaying) {
+      return;
+    }
+
     const { velocity } = this.player.body;
     const moving = velocity.x !== 0 || velocity.y !== 0;
 
@@ -675,6 +920,11 @@ export class DockScene extends RoomScene {
     // One-shot guard prevents repeated tutorial interactions from
     // inflating baseline control variables (prototype behavior).
     researchRuntime.sessionState.markRoomCompleted('dock_arrival');
+
+    // World V1: the terminal settles (class 5) — its screen dims.
+    if (!this.legacyLayout()) {
+      this.setStationTexture('dockArrivalTutorial', 'w1-terminal-settled');
+    }
   }
 
   private updateIdleWatcher(moving: boolean) {

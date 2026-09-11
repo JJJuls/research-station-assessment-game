@@ -241,3 +241,14 @@ props marked "(decor)" above are decorative.
 | `tileset-outpost-interior-v1`         | `c86a6650-d727-418a-a157-8abbbd741b62` | Wall-base trim rendered as prominent warm amber/orange banding — §10 rule 2 reserves warning-amber for hazard assets (hazard-salience uniformity)                                                                                                      | Regenerated as v2 chained to v1's own base tiles with explicitly cool-toned transition                                                                                                                                 | 2026-07-11 |
 | `tileset-outpost-interior-v2`         | `105f7d4a-faf2-4c55-a356-dbe50ae673f7` | Passed sheet-level review but **rejected at the in-engine screenshot check**: deck rendered bright cyan-teal, deviating from the anchor's muted slate deck AND camouflaging the cyan interactable markers (measurement check 2, affordance uniformity) | Regenerated as v3 with dark desaturated deck prompt, wall base preserved via `upper_base_tile_id`                                                                                                                      | 2026-07-11 |
 | `tileset-outpost-dock-v1` (attempt 1) | `b2c46a24-3e1a-4ea8-a7e8-7e4119c27dcb` | Cream/tan seam (off-palette warm) and deck side far more saturated than the accepted interior deck                                                                                                                                                     | Regenerated with transition_size 0 and dark-cool constraints (attempt 2, `e2340dd5-…`); attempt 2 then superseded unassessed because the interior deck itself changed to v3 — the pad must chain to v3's new deck base | 2026-07-11 |
+
+## Professional world rebuild — vertical slice batch (2026-09-11)
+
+Per-asset records for this batch live in `public/assets/world-v1/manifest.json`
+(key, file, batch, PixelLab id, item prompt, source canvas, trim, SHA-256,
+approval) with the batch table, prompts and rejection log in
+`docs/game/world-v1/ASSET-PROVENANCE-REGISTER.md` ("Production record —
+vertical slice batch"). Status: PROVISIONAL MODEL-SELECTED, NOT
+HUMAN-APPROVED. The asset set version (`outpost-assets-v5`) is NOT bumped
+by this slice: two protected export specs pin it, and the bump belongs to
+the stimulus-freeze gate (human decision).

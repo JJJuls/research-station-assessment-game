@@ -226,3 +226,25 @@ Tests: `world_v1_story.spec.ts`, `world_v1_interactions.spec.ts` (Dock),
 `world_v1_camera.spec.ts`, `dock_tutorial_paths`,
 `movement_and_first_interaction` (legacy bay unchanged). Frames:
 `docs/verification/professional-world-v1/unit2/`.
+
+## World V1 production slice (2026-09-11) — 48×30 arrival hall
+
+Authority `world-layouts.json` `dock`; layout `src/world/layouts/dock.ts`
+(`DOCK_FLOOR`/`DOCK_FOOTPRINTS` → `blockoutRows`), sites `DOCK_SITES`,
+registry `DOCK_REGISTRY`, art `public/assets/world-v1/**` (provisional).
+Mechanics unchanged: the movement marker (768, 704), the three-option
+check-in at the terminal (contact anchor 960, 640; approach 960, 704), the
+north door (768, 32) → Concourse. Spawns: arrival (768, 800) — the berth
+threshold; from the Concourse (768, 160). The docking seal (768, 896) is
+the sealed class-4 door (`E / Space — Docking airlock: shuttle secured`).
+Camera: wide field, initial composition scroll (128, 240) = the authority's
+`initial_camera` [4, 7.5].
+
+Arrival: a completed opening continues inside the Dock (`beginArrival`):
+roof cover lifts (1.8 s), the participant steps from the open seal to the
+spawn while the iris closes (frames 4 → 0), the station line plays, control
+releases at 4.6 s; a skipped opening (or reduced motion) goes straight to
+the same `finishArrival()` end state (spawn, camera, sealed iris, released
+input, movement instruction). Restoration: see the crosswalk record
+(`dock-weather-cover`). Probe: `window.__dockProbe` adds `arrival_playing`,
+`cover`, `lighting`.
