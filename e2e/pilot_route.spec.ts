@@ -31,6 +31,7 @@ import {
   dockToConcourse,
   expectNoMeasurementEvents,
   expectStage,
+  labApproach,
   openPromptAt,
   PILOT,
   pilotCoverage,
@@ -231,22 +232,21 @@ test.describe('pilot route v2 — topology and guidance (Unit 1)', () => {
       yFirst: false,
     });
     await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
-      approachOffset: { x: 0, y: -40 },
+      approachOffset: await labApproach(page, PILOT.lab.southDoor),
     });
     await concourseToLabBriefed(page);
     expect((await pilotProbe(page))?.stage).toBe('lab_work');
 
     // ——— Episode 4: Lab ↔ Yard (bidirectional), Noor's beats ———
     await openPromptAt(page, PILOT.lab.kai, {
-      approachOffset: { x: 40, y: 44 },
+      approachOffset: await labApproach(page, PILOT.lab.kai),
     });
     await selectPromptOption(page, 1);
     await expectStage(page, 'exterior_briefing');
     probe = await pilotProbe(page);
     expect(probe?.beacon?.label).toBe('Exterior Airlock');
-    await walkTo(page, 240, 70, { yFirst: false });
     await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {
-      approachOffset: { x: 0, y: 20 },
+      approachOffset: await labApproach(page, PILOT.lab.airlock),
     });
     expect((await pilotProbe(page))?.zone).toBe('exterior_recovery_yard');
     await useDoor(page, PILOT.yard.airlock, 'diagnostics_laboratory', {
@@ -255,13 +255,12 @@ test.describe('pilot route v2 — topology and guidance (Unit 1)', () => {
     expect(await playerScene(page)).toBe('diagnostics_laboratory');
     // Kai at exterior_briefing only redirects (no stage change).
     await openPromptAt(page, PILOT.lab.kai, {
-      approachOffset: { x: 40, y: 44 },
+      approachOffset: await labApproach(page, PILOT.lab.kai),
     });
     await selectPromptOption(page, 1);
     expect((await pilotProbe(page))?.stage).toBe('exterior_briefing');
-    await walkTo(page, 240, 70, { yFirst: false });
     await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {
-      approachOffset: { x: 0, y: 20 },
+      approachOffset: await labApproach(page, PILOT.lab.airlock),
     });
     await openPromptAt(page, PILOT.yard.noor, {
       approachOffset: { x: 0, y: 40 },

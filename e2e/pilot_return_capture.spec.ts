@@ -16,6 +16,7 @@ import { leaveYard } from './exteriorHelpers';
 import { press, selectPromptOption } from './helpers';
 import {
   expectStage,
+  labApproach,
   openPromptAt,
   PILOT,
   pilotProbe,
@@ -82,9 +83,8 @@ test('return, revision & handover — participant-path frames 22–34', async ({
   await leaveYard(page);
   await page.waitForTimeout(600);
   await shot(page, '22-return-airlock-entry');
-  await walkTo(page, 240, 456, { yFirst: true });
   await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
-    approachOffset: { x: 0, y: -40 },
+    approachOffset: await labApproach(page, PILOT.lab.southDoor),
   });
   await expectStage(page, 'return_hub');
 

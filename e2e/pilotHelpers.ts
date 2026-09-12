@@ -19,12 +19,23 @@ import type { PilotZoneKey } from '../src/pilot/pilotRoute';
 import { PILOT_DOORS } from '../src/pilot/pilotRoute';
 import {
   CONCOURSE_STATIONS,
+  CORE_SITES,
+  CORE_SPAWN,
+  DECK_SITES,
+  DECK_SPAWNS,
   DOCK_SITES,
+  LAB_SPAWNS,
+  LAB_STATIONS,
   WORKSHOP_SITES,
   WORKSHOP_SPAWN,
   WORKSHOP_STATIONS,
 } from '../src/pilot/zoneSites';
-import { WORLD_V1_REGISTRY } from '../src/world/interactionRegistry';
+import {
+  CORE_REGISTRY,
+  DECK_REGISTRY,
+  LAB_REGISTRY,
+  WORLD_V1_REGISTRY,
+} from '../src/world/interactionRegistry';
 import {
   driveAxisTo,
   getEvents,
@@ -129,38 +140,47 @@ export const PILOT = {
     spawn: { ...WORKSHOP_SPAWN },
     eastDoor: doorOf('records_workshop', 'station_concourse'),
   },
+  // World V2 rebuild: the 22×12 painted laboratory — all coordinates
+  // derive from the machine-audited shared book (approach offsets via
+  // labApproach below, never a hand-typed literal).
   lab: {
-    kai: { x: 592, y: 208 },
-    workstation: { x: 368, y: 211.2 },
-    orientation: { x: 128, y: 208 },
-    evidenceTable: { x: 128, y: 352 },
-    protocolConsole: { x: 288, y: 352 },
-    trainingRig: { x: 512, y: 352 },
-    diagnosticBoard: { x: 672, y: 352 },
-    airlock: { x: 384, y: 48 },
-    southDoor: { x: 384, y: 496 },
+    kai: { ...LAB_STATIONS.kai },
+    workstation: { ...LAB_STATIONS.workstation },
+    orientation: { ...LAB_STATIONS.orientation },
+    evidenceTable: { ...LAB_STATIONS.evidenceTable },
+    protocolConsole: { ...LAB_STATIONS.protocolConsole },
+    trainingRig: { ...LAB_STATIONS.trainingRig },
+    diagnosticBoard: { ...LAB_STATIONS.diagnosticBoard },
+    airlock: doorOf('diagnostics_laboratory', 'exterior_recovery_yard'),
+    southDoor: doorOf('diagnostics_laboratory', 'station_concourse'),
+    spawnFromConcourse: { ...LAB_SPAWNS.fromConcourse },
+    spawnFromYard: { ...LAB_SPAWNS.fromYard },
   },
   yard: {
     noor: { x: 300.8, y: 428.8 },
     airlock: { x: 384, y: 496 },
   },
-  // Unit 6 (mirrors src/pilot/zoneSites.ts DECK_SITES / CORE_SITES +
-  // PILOT_DOORS): the review panel and systems board on the north wall,
-  // three feeds along the south machinery wall (west → east), the gated
-  // Core door in the north alcove; the chamber's Core over its block.
+  // World V2 rebuild: the 22×12 painted deck — all coordinates derive
+  // from the machine-audited shared book (approach offsets via
+  // deckApproach below, never a hand-typed literal).
   deck: {
-    reviewPanel: { x: 288, y: 144 },
-    systemsBoard: { x: 176, y: 144 },
-    coolantValve: { x: 160, y: 384 },
-    calibrationBreaker: { x: 400, y: 384 },
-    distributionBus: { x: 640, y: 384 },
-    coreDoor: { x: 400, y: 120 },
-    westDoor: { x: 64, y: 272 },
+    reviewPanel: { ...DECK_SITES.reviewPanel },
+    systemsBoard: { ...DECK_SITES.systemsBoard },
+    coolantValve: { ...DECK_SITES.coolantValve },
+    calibrationBreaker: { ...DECK_SITES.calibrationBreaker },
+    distributionBus: { ...DECK_SITES.distributionBus },
+    coreDoor: doorOf('utility_core_deck', 'core_chamber'),
+    westDoor: doorOf('utility_core_deck', 'station_concourse'),
+    spawnFromConcourse: { ...DECK_SPAWNS.fromConcourse },
+    spawnFromCore: { ...DECK_SPAWNS.fromCore },
   },
+  // World V2 rebuild: the 22×12 painted chamber — coordinates derive from
+  // the machine-audited shared book (approach offsets via coreApproach).
   core: {
-    core: { x: 400, y: 297.6 },
-    kai: { x: 592, y: 256 },
-    southDoor: { x: 400, y: 496 },
+    core: { ...CORE_SITES.core },
+    kai: { ...CORE_SITES.kai },
+    southDoor: doorOf('core_chamber', 'utility_core_deck'),
+    spawn: { ...CORE_SPAWN },
   },
 } as const;
 
@@ -667,6 +687,134 @@ export async function workshopVia(page: Page, x: number, y: number) {
   await walkTo(page, x, y, { yFirst: true });
 }
 
+/**
+ * Rebuilt Laboratory (22×12 painted plate): the workstation island (x
+ * 403–480, rows 6–7) splits the floor into a west hall and an east bay
+ * that connect ONLY over the north lane (y ≈ 156, rows 4–5). A leg that
+ * changes sides climbs to the lane, crosses, then descends. Driver only —
+ * production geometry is never adjusted for it.
+ */
+export async function labVia(page: Page, x: number, y: number) {
+  const side = (px: number) => (px < 440 ? 0 : 1);
+  const here = await page.evaluate(
+    () =>
+      (window as unknown as { __playerProbe?: { x: number; y: number } | null })
+        .__playerProbe ?? null,
+  );
+
+  if (here !== null && side(here.x) !== side(x)) {
+    // The lane (row 4) exists only between cols 5 and 16, so the climb
+    // happens at the lane's own end columns: x 352 (west) / x 512 (east —
+    // the middle of the 32 px window clear of the island), never at the
+    // current x.
+    const from = side(here.x) === 1 ? 512 : 352;
+    const to = side(x) === 1 ? 512 : 352;
+
+    await driveAxisTo(page, 'x', from, 8);
+    await driveAxisTo(page, 'y', 156, 8);
+    await driveAxisTo(page, 'x', to, 8);
+  }
+
+  await walkTo(page, x, y, { yFirst: true });
+}
+
+/**
+ * Walks (island-aware) to the registry approach point of a laboratory
+ * object and returns the approach offset for interactAt / openPromptAt /
+ * useDoor — so every spec stands on the machine-audited point instead of
+ * a hand-typed offset.
+ */
+export async function labApproach(
+  page: Page,
+  at: { x: number; y: number },
+): Promise<{ x: number; y: number }> {
+  const entry = LAB_REGISTRY.find(
+    (candidate) =>
+      Math.abs(candidate.x - at.x) < 1 && Math.abs(candidate.y - at.y) < 1,
+  );
+
+  if (entry === undefined) {
+    throw new Error(
+      `pilotHelpers: no laboratory registry object at ${at.x},${at.y}`,
+    );
+  }
+
+  await labVia(page, entry.approach.x, entry.approach.y);
+
+  return { x: entry.approach.x - at.x, y: entry.approach.y - at.y };
+}
+
+/**
+ * Rebuilt Utility Deck (22×12 painted plate): an open hall whose three
+ * south machines (rows 7–10) block east–west travel below row 7. Every
+ * leg travels on the rows 5–6 band (y ≈ 176) before descending. Driver
+ * only — production geometry is never adjusted for it.
+ */
+export async function deckVia(page: Page, x: number, y: number) {
+  await driveAxisTo(page, 'y', 176, 8);
+  await driveAxisTo(page, 'x', x, 8);
+  await walkTo(page, x, y, { yFirst: true });
+}
+
+/**
+ * Walks (lane-aware) to the registry approach point of a deck object and
+ * returns the approach offset for interactAt / openPromptAt / useDoor.
+ */
+export async function deckApproach(
+  page: Page,
+  at: { x: number; y: number },
+): Promise<{ x: number; y: number }> {
+  const entry = DECK_REGISTRY.find(
+    (candidate) =>
+      Math.abs(candidate.x - at.x) < 1 && Math.abs(candidate.y - at.y) < 1,
+  );
+
+  if (entry === undefined) {
+    throw new Error(`pilotHelpers: no deck registry object at ${at.x},${at.y}`);
+  }
+
+  await deckVia(page, entry.approach.x, entry.approach.y);
+
+  return { x: entry.approach.x - at.x, y: entry.approach.y - at.y };
+}
+
+/**
+ * Rebuilt Core Chamber (22×12 painted plate): the reactor platform splits
+ * the west and east floors, which connect only through the south corridor
+ * (rows 8–9, y ≈ 288). Every leg drops to the corridor first. Driver only
+ * — production geometry is never adjusted for it.
+ */
+export async function coreVia(page: Page, x: number, y: number) {
+  await driveAxisTo(page, 'y', 288, 8);
+  await driveAxisTo(page, 'x', x, 8);
+  await walkTo(page, x, y, { yFirst: true });
+}
+
+/**
+ * Walks (corridor-aware) to the registry approach point of a chamber
+ * object and returns the approach offset for interactAt / openPromptAt /
+ * useDoor.
+ */
+export async function coreApproach(
+  page: Page,
+  at: { x: number; y: number },
+): Promise<{ x: number; y: number }> {
+  const entry = CORE_REGISTRY.find(
+    (candidate) =>
+      Math.abs(candidate.x - at.x) < 1 && Math.abs(candidate.y - at.y) < 1,
+  );
+
+  if (entry === undefined) {
+    throw new Error(
+      `pilotHelpers: no chamber registry object at ${at.x},${at.y}`,
+    );
+  }
+
+  await coreVia(page, entry.approach.x, entry.approach.y);
+
+  return { x: entry.approach.x - at.x, y: entry.approach.y - at.y };
+}
+
 /** Dock (after the tutorial) → Concourse north door → stage handover_briefing. */
 export async function dockToConcourse(page: Page) {
   await walkTo(
@@ -753,19 +901,22 @@ export async function concourseToLabBriefed(page: Page) {
     approachOffset: { x: 0, y: 20 },
     yFirst: false,
   });
-  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 0, y: 44 } });
+  await openPromptAt(page, PILOT.lab.kai, {
+    approachOffset: await labApproach(page, PILOT.lab.kai),
+  });
   await selectPromptOption(page, 1);
   await expectStage(page, 'lab_work');
 }
 
 /** Kai "done" (→ exterior_briefing), airlock → Yard, Noor "Ready" (→ exterior_work). */
 export async function labToYardBriefed(page: Page) {
-  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 0, y: 44 } });
+  await openPromptAt(page, PILOT.lab.kai, {
+    approachOffset: await labApproach(page, PILOT.lab.kai),
+  });
   await selectPromptOption(page, 1);
   await expectStage(page, 'exterior_briefing');
-  await walkTo(page, 240, 70, { yFirst: false });
   await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {
-    approachOffset: { x: 0, y: 20 },
+    approachOffset: await labApproach(page, PILOT.lab.airlock),
   });
   await openPromptAt(page, PILOT.yard.noor, {
     approachOffset: { x: 0, y: 40 },
@@ -788,12 +939,8 @@ export async function yardReturnToConcourse(page: Page) {
   await useDoor(page, PILOT.yard.airlock, 'diagnostics_laboratory', {
     approachOffset: { x: 0, y: -40 },
   });
-  // The laboratory's row-4 briefing block spans x 288-447: descend along
-  // the clear x=240 column from the airlock spawn before heading east to
-  // the south door (a straight descent down x=384 clamps on the block).
-  await walkTo(page, 240, 456, { yFirst: true });
   await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
-    approachOffset: { x: 0, y: -40 },
+    approachOffset: await labApproach(page, PILOT.lab.southDoor),
   });
 }
 

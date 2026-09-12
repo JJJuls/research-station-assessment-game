@@ -125,23 +125,36 @@ export const WORKSHOP_SITES = {
 export const WORKSHOP_SPAWN = { x: 1256, y: 244 } as const;
 
 /**
- * Laboratory — the signal-analysis incident (Unit 3). Placement rule
- * (D-V2-1 lesson): every approach point (44 px off a station) must have
- * no other station nearer than the station itself, even ±12 px, and the
- * walking columns stay clear of the wall block (x 288-447, y 128-159).
- * Wall display + workstation on the top band, Kai at the briefing desk
- * top-right, the orientation console top-left, the four phase benches
- * on one row (y = 11 tiles) in presented order.
+ * Diagnostics Laboratory — the signal-analysis incident (Unit 3). World V2
+ * rebuild: a 22×12 painted plate (src/world/layouts/laboratory.ts; plate
+ * laboratory-plate.png). Anchors are mapped to the plate's baked art: the
+ * orientation console on the north-west wall, the sealed yard airlock
+ * hatch on the north wall, the large wall display (its dynamic trace is
+ * drawn in-engine inside the painted bezel), Kai in front of his briefing
+ * desk (north-east), the signal-analysis workstation island mid-east
+ * (approached from the west), and the four phase benches baked into the
+ * south hull band in presented order — evidence table, protocol console,
+ * [Concourse door], training rig, diagnostic board — each approached from
+ * the row-7 lane above it. Every anchor/approach pair, the spawns and the
+ * island lane were machine-audited (32×42 body, ±12 px landing box,
+ * nearest-wins radius 72, spawn/door clearance, BFS connectivity).
  */
 export const LAB_STATIONS = {
-  display: { x: 11.5 * TILE, y: 3.7 * TILE },
-  workstation: { x: 11.5 * TILE, y: 6.6 * TILE },
-  orientation: { x: 4 * TILE, y: 6.5 * TILE },
-  kai: { x: 18.5 * TILE, y: 6.5 * TILE },
-  evidenceTable: { x: 4 * TILE, y: 11 * TILE },
-  protocolConsole: { x: 9 * TILE, y: 11 * TILE },
-  trainingRig: { x: 16 * TILE, y: 11 * TILE },
-  diagnosticBoard: { x: 21 * TILE, y: 11 * TILE },
+  /** Painted display bezel centre (the trace box: x 372–502, y 68–126). */
+  display: { x: 437, y: 97 },
+  workstation: { x: 406, y: 196 },
+  orientation: { x: 142, y: 170 },
+  kai: { x: 560, y: 172 },
+  evidenceTable: { x: 142, y: 300 },
+  protocolConsole: { x: 235, y: 300 },
+  trainingRig: { x: 477, y: 292 },
+  diagnosticBoard: { x: 573, y: 295 },
+} as const;
+
+/** Laboratory arrival spawns (≥ 80 px from every door, outside every radius). */
+export const LAB_SPAWNS = {
+  fromConcourse: { x: 330, y: 216 },
+  fromYard: { x: 250, y: 224 },
 } as const;
 
 /**
@@ -180,33 +193,54 @@ export const YARD_RIG_PAD = {
 } as const;
 
 /**
- * Utility Deck (Unit 6 — non-scored closure). Placement rule (D-V2-1):
- * every 44 px approach point has no other interactable nearer than the
- * station itself (±12 px); the three feeds sit ≥ 100 px apart along the
- * south machinery wall in their operational order (west → east), the
- * review panel and systems board on the north-west wall by the entry, the
- * Core door in the north alcove (PILOT_DOORS: 400, 120).
+ * Utility Deck (Unit 6 — non-scored closure). World V2 rebuild: a 22×12
+ * painted plate (src/world/layouts/deck.ts; plate deck-plate.png). Anchors
+ * are mapped to the plate's baked art: the shift review screen and its
+ * clipboards on the north-west wall, the gauge systems board beside it,
+ * the sealed Core blast door in the north alcove, the manifold gauges on
+ * the north-east wall, and the three dormant feed machines along the
+ * south hull in operational order (coolant valve wheel → breaker bank →
+ * distribution bus cabinet). The machines are tall (rows 7–10), so each
+ * feed is approached from the rows 5–6 band above it; the coolant valve's
+ * anchor sits at its east flange (the wheel itself is boxed in by the
+ * review screen's radius). Every anchor/approach pair, both spawns and
+ * the door clearances were machine-audited (32×42 body, ±12 px landing
+ * box, nearest-wins radius 72, BFS connectivity).
  */
 export const DECK_SITES = {
-  reviewPanel: { x: 9 * TILE, y: 4.5 * TILE },
-  systemsBoard: { x: 5.5 * TILE, y: 4.5 * TILE },
-  coolantValve: { x: 5 * TILE, y: 12 * TILE },
-  calibrationBreaker: { x: 12.5 * TILE, y: 12 * TILE },
-  distributionBus: { x: 20 * TILE, y: 12 * TILE },
-  /** Three-feed manifold indicator on the north wall beside the alcove. */
-  manifold: { x: 17.5 * TILE, y: 4.5 * TILE },
-  /**
-   * Core Chamber door (mirrors PILOT_DOORS.utility_core_deck): inside the
-   * alcove at row 3.75 so the proximity prompt (drawn 72 px above) clears
-   * the objective HUD line.
-   */
-  coreDoor: { x: 12.5 * TILE, y: 3.75 * TILE },
+  reviewPanel: { x: 150, y: 124 },
+  systemsBoard: { x: 257, y: 132 },
+  coolantValve: { x: 230, y: 250 },
+  calibrationBreaker: { x: 336, y: 240 },
+  distributionBus: { x: 492, y: 240 },
+  /** Three-feed manifold gauges on the north-east wall. */
+  manifold: { x: 560, y: 132 },
+  /** Core Chamber blast door (mirrors PILOT_DOORS.utility_core_deck). */
+  coreDoor: { x: 400, y: 140 },
 } as const;
 
-/** Core Chamber (Unit 6): the Core over its central block, Kai's console east. */
-export const CORE_SITES = {
-  core: { x: 12.5 * TILE, y: 9.3 * TILE },
-  coreVisual: { x: 12.5 * TILE, y: 7.4 * TILE },
-  kai: { x: 18.5 * TILE, y: 8 * TILE },
-  statusConsole: { x: 6.5 * TILE, y: 8 * TILE },
+/** Deck arrival spawns (≥ 80 px from the door used, outside every radius). */
+export const DECK_SPAWNS = {
+  fromConcourse: { x: 186, y: 188 },
+  fromCore: { x: 414, y: 220 },
 } as const;
+
+/**
+ * Core Chamber (Unit 6). World V2 rebuild: a 22×12 painted plate
+ * (src/world/layouts/coreChamber.ts; plate core-plate.png). The dormant
+ * reactor stands on its central platform (the Core's control anchor is
+ * the platform's west face, approached from the west floor); the status
+ * console is baked on the west wall, Kai stands in front of his curved
+ * operator console on the east floor; the Utility Deck door is baked into
+ * the south hull. Machine-audited like the other rebuilt rooms.
+ */
+export const CORE_SITES = {
+  core: { x: 270, y: 205 },
+  /** The reactor vessel's painted centre (emissive overlays). */
+  coreVisual: { x: 344, y: 150 },
+  kai: { x: 520, y: 225 },
+  statusConsole: { x: 75, y: 225 },
+} as const;
+
+/** Core Chamber arrival spawn (inside the south door, clear of every radius). */
+export const CORE_SPAWN = { x: 230, y: 288 } as const;

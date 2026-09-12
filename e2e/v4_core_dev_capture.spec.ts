@@ -15,7 +15,7 @@ import { expect, type Page, test } from '@playwright/test';
 
 import { press, selectPromptOption } from './helpers';
 import { captureErrors, expectNoRuntimeErrors } from './journey';
-import { openPromptAt, PILOT } from './pilotHelpers';
+import { coreApproach, openPromptAt, PILOT } from './pilotHelpers';
 import { clickElement } from './returnHelpers';
 
 const OUT =
@@ -89,7 +89,7 @@ test('v4 core chamber state frames (developer inspection launch)', async ({
 
   // c2 — the Core prompt (inspect / open the review).
   await openPromptAt(page, PILOT.core.core, {
-    approachOffset: { x: 0, y: 44 },
+    approachOffset: await coreApproach(page, PILOT.core.core),
   });
   await shot(page, 'c2-core-prompt');
 

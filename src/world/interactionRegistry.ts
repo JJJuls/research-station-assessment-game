@@ -18,7 +18,10 @@ import type { PilotStage, PilotZoneKey } from '../pilot/pilotRoute';
 import { PILOT_DOORS } from '../pilot/pilotRoute';
 import {
   CONCOURSE_STATIONS,
+  CORE_SITES,
+  DECK_SITES,
   DOCK_SITES,
+  LAB_STATIONS,
   WORKSHOP_SITES,
   WORKSHOP_STATIONS,
 } from '../pilot/zoneSites';
@@ -500,12 +503,276 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
   ),
 ];
 
+const L = LAB_STATIONS;
+
+const labStation = (
+  id: string,
+  at: { x: number; y: number },
+  verb: string,
+  label: string,
+  opens: SurfaceRef,
+  window: string | null,
+  approach: { x: number; y: number },
+  footprint: { w: number; h: number } | null = { w: 2, h: 2 },
+): InteractionRegistryEntry => ({
+  id,
+  zone: 'diagnostics_laboratory',
+  kind: 'station',
+  x: at.x,
+  y: at.y,
+  radius: INTERACTION_RADIUS,
+  verb,
+  label,
+  availability: 'always',
+  opens,
+  footprint,
+  depthAnchor: 'foot',
+  stage: 'any',
+  window,
+  approach,
+});
+
+/**
+ * Diagnostics Laboratory (World V2 rebuild, 22×12 painted plate). Every
+ * approach point is the machine-audited safe standing point of its
+ * station (32×42 body, ±12 px landing box standable, the station strictly
+ * nearest at every landing, BFS-connected from both spawns — layout
+ * header). The workstation island is passed on the north lane; the four
+ * phase benches are baked into the south hull and approached from the
+ * row-7 lane above them.
+ */
+export const LAB_REGISTRY: readonly InteractionRegistryEntry[] = [
+  door('diagnostics_laboratory', 'station_concourse', 'lab.door_concourse', {
+    x: 334,
+    y: 252,
+  }),
+  door('diagnostics_laboratory', 'exterior_recovery_yard', 'lab.airlock_yard', {
+    x: 250,
+    y: 190,
+  }),
+  {
+    id: 'lab.kai',
+    zone: 'diagnostics_laboratory',
+    kind: 'npc',
+    x: L.kai.x,
+    y: L.kai.y,
+    radius: INTERACTION_RADIUS,
+    verb: 'Talk to',
+    label: 'Kai',
+    availability: 'always',
+    opens: { kind: 'prompt', id: 'pilotKai' },
+    footprint: { w: 2, h: 1 },
+    depthAnchor: 'foot',
+    stage: 'any',
+    window: 'm10_promise_handover (recipient)',
+    // Kai stands in front of his briefing desk; approached from the
+    // south-west so the ±12 px box stays clear of the east wall.
+    approach: { x: 548, y: 216 },
+  },
+  labStation(
+    'lab.signal_workstation',
+    L.workstation,
+    'Review the',
+    'Signal Analysis Workstation',
+    { kind: 'prompt', id: 'pilotSignalWorkstation' },
+    null,
+    // The island is approached from the west (its north lane is transit).
+    { x: 356, y: 196 },
+  ),
+  labStation(
+    'lab.orientation_terminal',
+    L.orientation,
+    'Run the',
+    'Console Orientation',
+    { kind: 'ip_overlay', id: 'tutorial' },
+    'ip_tutorial (control)',
+    { x: 142, y: 214 },
+    { w: 1, h: 2 },
+  ),
+  labStation(
+    'lab.phase_m15',
+    L.evidenceTable,
+    'Work the',
+    'Evidence Table',
+    { kind: 'work_surface', id: 'm15_evidence_table' },
+    'm15_layered_cipher',
+    { x: 142, y: 252 },
+  ),
+  labStation(
+    'lab.phase_m16',
+    L.protocolConsole,
+    'Use the',
+    'Protocol Console',
+    { kind: 'ip_overlay', id: 'm16' },
+    'm16_protocol_update',
+    { x: 235, y: 250 },
+  ),
+  labStation(
+    'lab.phase_m17',
+    L.trainingRig,
+    'Use the',
+    'Training Rig',
+    { kind: 'ip_overlay', id: 'm17' },
+    'm17_syntax_acquisition',
+    { x: 508, y: 248 },
+  ),
+  labStation(
+    'lab.phase_m18',
+    L.diagnosticBoard,
+    'Work the',
+    'Diagnostic Board',
+    { kind: 'ip_overlay', id: 'm18' },
+    'm18_lattice_fault_diagnosis',
+    { x: 588, y: 252 },
+  ),
+];
+
+const K = DECK_SITES;
+
+const deckStation = (
+  id: string,
+  at: { x: number; y: number },
+  verb: string,
+  label: string,
+  opens: SurfaceRef,
+  approach: { x: number; y: number },
+  availability: AvailabilityRule = 'always',
+  footprint: { w: number; h: number } | null = { w: 3, h: 4 },
+): InteractionRegistryEntry => ({
+  id,
+  zone: 'utility_core_deck',
+  kind: 'station',
+  x: at.x,
+  y: at.y,
+  radius: INTERACTION_RADIUS,
+  verb,
+  label,
+  availability,
+  opens,
+  footprint,
+  depthAnchor: 'foot',
+  stage: 'any',
+  window: null,
+  approach,
+});
+
+/**
+ * Utility Deck (World V2 rebuild, 22×12 painted plate; non-scored
+ * closure). Every approach point is the machine-audited safe standing
+ * point of its object (32×42 body, ±12 px landing box standable, the
+ * object strictly nearest at every landing, BFS-connected from both
+ * spawns — layout header). The three feeds are tall south-hull machines
+ * approached from the rows 5–6 band; the Core door's availability is the
+ * deck's own readiness gate (navigation only).
+ */
+export const DECK_REGISTRY: readonly InteractionRegistryEntry[] = [
+  door('utility_core_deck', 'station_concourse', 'deck.door_concourse', {
+    x: 100,
+    y: 188,
+  }),
+  door(
+    'utility_core_deck',
+    'core_chamber',
+    'deck.door_core',
+    { x: 412, y: 192 },
+    'custom:core_access',
+  ),
+  deckStation(
+    'deck.review_panel',
+    K.reviewPanel,
+    'Open the',
+    'Shift Review Panel',
+    { kind: 'prompt', id: 'pilotReviewPanel' },
+    { x: 156, y: 176 },
+    'always',
+    { w: 2, h: 1 },
+  ),
+  deckStation(
+    'deck.feed_coolant',
+    K.coolantValve,
+    'Work the',
+    'Coolant Feed Valve',
+    { kind: 'feed_panel', id: 'coolant' },
+    { x: 256, y: 224 },
+    'custom:feed_order',
+  ),
+  deckStation(
+    'deck.feed_calibration',
+    K.calibrationBreaker,
+    'Work the',
+    'Calibration Breaker',
+    { kind: 'feed_panel', id: 'calibration' },
+    { x: 330, y: 188 },
+    'custom:feed_order',
+  ),
+  deckStation(
+    'deck.feed_distribution',
+    K.distributionBus,
+    'Work the',
+    'Distribution Bus',
+    { kind: 'feed_panel', id: 'distribution' },
+    { x: 486, y: 184 },
+    'custom:feed_order',
+  ),
+];
+
+/**
+ * Core Chamber (World V2 rebuild, 22×12 painted plate; non-scored
+ * closure). The Core's control anchor is the platform's west face; Kai
+ * stands before his operator console on the east floor; both floors
+ * connect only through the south corridor. Machine-audited like the
+ * other rebuilt rooms.
+ */
+export const CORE_REGISTRY: readonly InteractionRegistryEntry[] = [
+  door('core_chamber', 'utility_core_deck', 'core.door_deck', {
+    x: 348,
+    y: 300,
+  }),
+  {
+    id: 'core.core',
+    zone: 'core_chamber',
+    kind: 'station',
+    x: CORE_SITES.core.x,
+    y: CORE_SITES.core.y,
+    radius: INTERACTION_RADIUS,
+    verb: 'Inspect the',
+    label: 'Core',
+    availability: 'always',
+    opens: { kind: 'prompt', id: 'pilotCore' },
+    footprint: { w: 5, h: 4 },
+    depthAnchor: 'foot',
+    stage: 'any',
+    window: null,
+    approach: { x: 220, y: 205 },
+  },
+  {
+    id: 'core.kai',
+    zone: 'core_chamber',
+    kind: 'npc',
+    x: CORE_SITES.kai.x,
+    y: CORE_SITES.kai.y,
+    radius: INTERACTION_RADIUS,
+    verb: 'Talk to',
+    label: 'Kai',
+    availability: 'always',
+    opens: { kind: 'prompt', id: 'pilotKai' },
+    footprint: { w: 2, h: 1 },
+    depthAnchor: 'foot',
+    stage: 'any',
+    window: null,
+    approach: { x: 476, y: 225 },
+  },
+];
+
 export const WORLD_V1_REGISTRY: Partial<
   Record<PilotZoneKey, readonly InteractionRegistryEntry[]>
 > = {
   dock: DOCK_REGISTRY,
   station_concourse: CONCOURSE_REGISTRY,
   records_workshop: WORKSHOP_REGISTRY,
+  diagnostics_laboratory: LAB_REGISTRY,
+  utility_core_deck: DECK_REGISTRY,
+  core_chamber: CORE_REGISTRY,
 };
 
 /** Zones already declared in the registry (grows unit by unit). */

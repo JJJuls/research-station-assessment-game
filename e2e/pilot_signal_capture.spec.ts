@@ -41,12 +41,13 @@ import {
 import {
   bootPilot,
   interactAt,
+  labApproach,
+  labVia,
   openPromptAt,
   PILOT,
   pilotProbe,
   press,
   routeToLabWork,
-  walkTo,
 } from './pilotHelpers';
 
 // V4: an explicit output directory keeps the historical v2 evidence
@@ -54,7 +55,6 @@ import {
 const OUT =
   process.env.PILOT_SIGNAL_OUT ??
   'docs/verification/screenshots-evidence-led-pilot-v2';
-const BELOW = { x: 0, y: 44 } as const;
 
 async function shot(page: Page, name: string) {
   await page.waitForTimeout(450);
@@ -93,7 +93,9 @@ async function openBench(
   probeKey: '__ipTerminalProbe' | '__ipDiagnosisProbe' | '__workSurfaceProbe',
 ) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await interactAt(page, at, { approachOffset: BELOW });
+    await interactAt(page, at, {
+      approachOffset: await labApproach(page, at),
+    });
 
     const opened = await page
       .waitForFunction(
@@ -147,7 +149,9 @@ test('signal incident visual capture — arrival, four phases, completed laborat
   await shot(page, '01-signal-arrival');
 
   // 02 — the workstation's case brief.
-  await openPromptAt(page, PILOT.lab.workstation, { approachOffset: BELOW });
+  await openPromptAt(page, PILOT.lab.workstation, {
+    approachOffset: await labApproach(page, PILOT.lab.workstation),
+  });
   await shot(page, '02-signal-case-brief');
   await selectPromptOption(page, 1);
   await page.waitForTimeout(300);
@@ -313,12 +317,14 @@ test('signal incident visual capture — arrival, four phases, completed laborat
   ).toBe(false);
 
   // Kai closes the episode: the route objective advances.
-  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 0, y: 44 } });
+  await openPromptAt(page, PILOT.lab.kai, {
+    approachOffset: await labApproach(page, PILOT.lab.kai),
+  });
   await selectPromptOption(page, 1);
   expect((await pilotProbe(page))?.stage).toBe('exterior_briefing');
 
   // 08 — the completed incident: recorded display, advanced objective.
-  await walkTo(page, 384, 300, { yFirst: true });
+  await labVia(page, 330, 216);
   await shot(page, '08-signal-incident-complete');
   expectNoRuntimeErrors(errors);
 });

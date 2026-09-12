@@ -83,10 +83,18 @@ import {
   noteM10KaiEncounter,
 } from '../pilot/windows/m10ComponentPromise';
 import { m15CausalSurfaceModel } from '../pilot/windows/signalSurfaceModels';
-import { LAB_STATIONS } from '../pilot/zoneSites';
+import { LAB_SPAWNS, LAB_STATIONS } from '../pilot/zoneSites';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
+import { LAB_LAYOUT } from '../world/layouts/laboratory';
 
 const TILE = 32;
+
+/**
+ * World V2 rebuild: the painted wall display's screen box (plate px). The
+ * dynamic trace, the phase indicator and the recorded-structure marks are
+ * drawn INSIDE this bezel; nothing else of the old panel is drawn.
+ */
+const DISPLAY_BOX = { left: 372, top: 68, right: 502, bottom: 126 } as const;
 
 type PhaseId = 'm15' | 'm16' | 'm17' | 'm18';
 
@@ -193,8 +201,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
   private displayIndicator: Phaser.GameObjects.Text | null = null;
   private displayIntercom: Phaser.GameObjects.Text | null = null;
   private benchLamps = new Map<PhaseId, Phaser.GameObjects.Rectangle>();
-  /** V4: per-bay floor plate frame + numeral (state-driven salience). */
-  private bayFrames = new Map<PhaseId, Phaser.GameObjects.Rectangle>();
+  /** Per-bench numeral over the painted bench (state-driven salience). */
   private bayNumerals = new Map<PhaseId, Phaser.GameObjects.Text>();
 
   constructor() {
@@ -202,42 +209,30 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
   }
 
   protected getLayout(): RoomLayout {
+    // World V2 rebuild: the 22×12 painted plate is the architecture and
+    // the furniture; collision is the audited logical grid.
     return {
       theme: 'ops',
-      grid: [
-        '#########################',
-        '###########--############',
-        '#.......................#',
-        '#.......................#',
-        '#........#####..........#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        // V4: the south corners are wall cells that carry the loose
-        // dressing (no prop that could hide the avatar stands on open
-        // floor); the lobby in front of the door stays open.
-        '#####...............#####',
-        '#####...............#####',
-        '###########--############',
-        '#########################',
-        '#########################',
-      ],
+      grid: [...LAB_LAYOUT],
+      field: 'wide',
+      plateTexture: 'w2-laboratory-plate',
     };
   }
 
+  protected bundleDropBounds(): { width: number; height: number } {
+    return { width: 22 * TILE, height: 12 * TILE };
+  }
+
   protected getSpawn(data?: { spawn?: string }): { x: number; y: number } {
+    // Machine-audited: ≥ 80 px from the door used and outside every
+    // interactable's 72 px radius, so a reflex SPACE on arrival never
+    // re-triggers the door (V2 finding U8-8 precedent).
     switch (data?.spawn) {
       case 'exterior_recovery_yard':
-        return { x: 7.5 * TILE, y: 3 * TILE };
+        return LAB_SPAWNS.fromYard;
       case 'station_concourse':
       default:
-        return { x: 12 * TILE, y: 12.8 * TILE };
+        return LAB_SPAWNS.fromConcourse;
     }
   }
 
@@ -279,16 +274,20 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     this.addPilotDoor({
       to: 'station_concourse',
       spawn: 'diagnostics_laboratory',
+      registryId: 'lab.door_concourse',
     });
     this.addPilotDoor({
       to: 'exterior_recovery_yard',
       spawn: 'diagnostics_laboratory',
-      // Unit 7 (V9): iris airlock art (PROVISIONAL strip, closed frame).
-      texture: this.textures.exists('plv1-airlock-open')
-        ? 'plv1-airlock-open'
-        : undefined,
-      textureFrame: 3,
+      registryId: 'lab.airlock_yard',
     });
+    // World V2: the south sliding door and the north airlock hatch are
+    // baked into the plate — the generic leaf sprites would double them.
+    this.doorImage('lab.door_concourse')?.setVisible(false);
+    this.doorImage('lab.airlock_yard')?.setVisible(false);
+    // Their class lamps sit on the painted lintel lamp / the hatch's crown.
+    this.placeDoorIndicator('lab.door_concourse', 340, 259);
+    this.placeDoorIndicator('lab.airlock_yard', 250, 86);
 
     // ——— Kai — briefing desk (route anchor of the laboratory stages) ———
     const kai = LAB_STATIONS.kai;
@@ -301,8 +300,9 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       workFrames: ['plv1-kai-work-a', 'plv1-kai-work-b'],
       x: kai.x,
       y: kai.y,
+      verb: 'Talk to',
+      registryId: 'lab.kai',
     });
-    this.addDecor(kai.x + 40, kai.y + 6, 'proc-notebook-stand');
     registerPilotStation({
       id: 'npc_kai',
       zone: 'diagnostics_laboratory',
@@ -317,7 +317,6 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     // ——— Central signal-analysis workstation + wall display ———
     const ws = LAB_STATIONS.workstation;
 
-    this.buildLabGrammar();
     this.buildSignalDisplay();
     this.addStation({
       interactionKey: 'pilotSignalWorkstation',
@@ -402,150 +401,75 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
         });
       }
 
-      // Phase lamp: lit = recorded, pulsing = next, dim = later (state
-      // is glyph + position, never colour alone: the display names it).
+      // Bench tag: a small numbered plate on the bench's own surface with
+      // its state lamp — lit = recorded, pulsing = next, dim = later
+      // (state is glyph + position, never colour alone: the display names
+      // it). The bench art is baked into the plate's south hull; the tag
+      // sits on its top face, never on the walking lane.
+      const tagX = phase.at.x - 34;
+      const tagY = phase.at.y + 2;
+
+      this.add
+        .rectangle(tagX, tagY, 26, 14, 0x101820, 0.85)
+        .setStrokeStyle(1, 0x364157, 1)
+        .setDepth(DepthLayer.WorldReadout - 0.01);
+
+      const numeral = this.add
+        .text(tagX - 4, tagY, String(phase.index), {
+          color: '#8497aa',
+          font: 'bold 10px monospace',
+          resolution: 2,
+        })
+        .setOrigin(0.5)
+        .setDepth(DepthLayer.WorldReadout);
       const lamp = this.add
-        .rectangle(phase.at.x + 30, phase.at.y - 26, 8, 8, 0x33475a, 1)
+        .rectangle(tagX + 7, tagY, 5, 5, 0x33475a, 1)
         .setStrokeStyle(1, 0x8fa4b8, 0.35)
         .setDepth(DepthLayer.WorldReadout);
 
       this.benchLamps.set(phase.id, lamp);
-    }
-
-    // Dressing (V4): light pools on the aisle and the spine crossing; wall
-    // dressing on the wall rows; loose props on the south-corner wall cells.
-    this.addDecor(6.5 * TILE, 12.5 * TILE, 'proc-light-pool');
-    this.addDecor(18.5 * TILE, 12.5 * TILE, 'proc-light-pool');
-    this.addDecor(12 * TILE, 8.5 * TILE, 'proc-light-pool');
-    // Review round (visual M9): the promoted window module read as a door
-    // beside the real north door — the foundry window stays.
-    this.addDecor(6.5 * TILE, 1.4 * TILE, 'proc-window-exterior');
-    this.addDecor(20 * TILE, 1.4 * TILE, 'proc-window-exterior');
-    // Wall dressing on the wall row (review D3-10): never on a floor cell.
-    this.addDecor(16 * TILE, 1.4 * TILE, 'proc-gauge-card');
-    this.addDecor(9 * TILE, 1.4 * TILE, 'proc-wall-pipes');
-    this.addDecor(21.5 * TILE, 14.6 * TILE, 'proc-rack-tools');
-    this.addDecor(2.5 * TILE, 14.9 * TILE, 'proc-cart-utility');
-    this.addDecor(23 * TILE, 14.9 * TILE, 'proc-seat-bench');
-  }
-
-  // ——— V4 spatial grammar (presentation only) ————————————————————————
-
-  /**
-   * Floor plates and lanes that make the sequence legible without labels:
-   * one north–south spine from the south door to the case desk, one
-   * east–west service aisle in front of the four bays, the west service
-   * lane to the airlock, three north-zone plates (orientation, case desk,
-   * briefing desk) and four identical numbered bay plates whose frame and
-   * numeral follow the phase state (refreshSignalDisplay). No collision,
-   * no coordinate, no text a participant must read.
-   */
-  private buildLabGrammar() {
-    const plate = (
-      x: number,
-      y: number,
-      w: number,
-      h: number,
-      alpha: number,
-      depth: number = DepthLayer.FloorDecal,
-    ) =>
-      this.add
-        .rectangle(x, y, w, h, 0x55627a, alpha)
-        .setOrigin(0.5)
-        .setStrokeStyle(1, 0x8fa4b8, 0.35)
-        .setDepth(depth);
-    const dash = (x: number, y: number, w: number, h: number) =>
-      this.add
-        .rectangle(x, y, w, h, 0x8fa4b8, 0.3)
-        .setDepth(DepthLayer.FloorMarking);
-
-    // Spine (columns 11-13, rows 7-15) and the aisle (row 13, below the
-    // bay plates — review D3-9).
-    plate(12.5 * TILE, 11.5 * TILE, 3 * TILE, 9 * TILE, 0.26);
-    plate(12.5 * TILE, 13.5 * TILE, 23 * TILE, TILE, 0.22);
-    // Service lane to the airlock: west along row 8, north on column 7,
-    // east along row 2 to the airlock threshold.
-    plate(7.5 * TILE, 8.5 * TILE, 9 * TILE, TILE, 0.18);
-    plate(7.5 * TILE, 5.5 * TILE, TILE, 7 * TILE, 0.18);
-    plate(10 * TILE, 2.5 * TILE, 6 * TILE, TILE, 0.18);
-    // Door thresholds (one family with the other zones).
-    plate(12 * TILE, 2.5 * TILE, 3 * TILE, TILE, 0.34, DepthLayer.FloorMarking);
-    plate(
-      12 * TILE,
-      15.5 * TILE,
-      3 * TILE,
-      TILE,
-      0.34,
-      DepthLayer.FloorMarking,
-    );
-    // Dashed centre lines: spine (rows 8-14) and aisle (columns 2-22).
-    for (let row = 8; row < 15; row += 1) {
-      dash(12.5 * TILE - 16, row * TILE + 16, 4, 14);
-    }
-    for (let col = 2; col < 23; col += 1) {
-      if (col < 11 || col > 13) {
-        dash(col * TILE + 16, 13 * TILE + 16, 14, 4);
-      }
-    }
-    // North zone: orientation plate (west), case desk plate (centre),
-    // briefing desk plate (east).
-    plate(4 * TILE, 6.5 * TILE, 4 * TILE, 3 * TILE, 0.22);
-    plate(11.5 * TILE, 6.5 * TILE, 5 * TILE, 3 * TILE, 0.22);
-    plate(18.5 * TILE, 6.5 * TILE, 4 * TILE, 3 * TILE, 0.22);
-
-    // Four identical 4×3-tile bay plates (rows 10-12) around the benches,
-    // each with a numeral at its north-west corner.
-    for (const phase of PHASES) {
-      const cx = phase.at.x;
-      const cy = 11.5 * TILE;
-
-      plate(cx, cy, 4 * TILE, 3 * TILE, 0.2);
-
-      const frame = this.add
-        .rectangle(cx, cy, 4 * TILE - 6, 3 * TILE - 6)
-        .setOrigin(0.5)
-        .setFillStyle(0x000000, 0)
-        .setStrokeStyle(2, 0x5fd3c4, 0)
-        .setDepth(DepthLayer.FloorMarking);
-      const numeral = this.add
-        .text(cx - 2 * TILE + 18, cy - 1.5 * TILE + 18, String(phase.index), {
-          color: '#8497aa',
-          font: 'bold 20px monospace',
-          resolution: 2,
-        })
-        .setOrigin(0.5)
-        .setDepth(DepthLayer.FloorMarking);
-
-      this.bayFrames.set(phase.id, frame);
       this.bayNumerals.set(phase.id, numeral);
+    }
+
+    // ——— World V2: the painted plate IS the architecture and all the
+    // furniture — hide every station marker sprite (interactions,
+    // prompts and events untouched; the Workshop precedent). The old
+    // V4 floor grammar (spine, aisle, bay plates), the light pools and
+    // the wall dressing are gone: the plate's baked lamps, wayfinding
+    // lines and benches carry that reading.
+    for (const child of this.children.list) {
+      if (
+        child instanceof Phaser.GameObjects.Image &&
+        [
+          'proc-console-wall',
+          'proc-console-scenario',
+          'proc-desk-closure',
+          'proc-shelf-electronics',
+          'proc-diag-board',
+        ].includes(child.texture.key)
+      ) {
+        child.setVisible(false);
+      }
     }
   }
 
   // ——— Signal display —————————————————————————————————————————————————
 
   private buildSignalDisplay() {
-    const d = LAB_STATIONS.display;
-
-    // Wall panel drawn beneath every sprite (a participant crossing the top
-    // band is never occluded); only the indicator text sits above.
-    // V4: a framed wall panel (outer bezel + inner screen) on the decal
-    // layers; the indicator rasterises at 2× for the world zoom.
-    this.add
-      .rectangle(d.x, d.y + 6, 272, 86, 0x1e2534, 1)
-      .setStrokeStyle(1, 0x364157)
-      .setDepth(DepthLayer.FloorDecal);
-    this.add
-      .rectangle(d.x, d.y + 6, 264, 78, 0x0b1117, 1)
-      .setStrokeStyle(1, 0x33475a)
-      .setDepth(DepthLayer.FloorDecal + 0.01);
+    // World V2: the bezel and the dark screen are painted on the plate;
+    // only the dynamic content is drawn, inside DISPLAY_BOX. The screen
+    // sits on the wall band above the north lane, so a figure crossing
+    // that lane is never occluded (the box ends above the lane).
     this.displayGraphics = this.add
       .graphics()
       .setDepth(DepthLayer.FloorDecal + 0.02);
     this.displayIndicator = this.add
-      .text(d.x - 126, d.y - 32, '', {
+      .text(DISPLAY_BOX.left + 5, DISPLAY_BOX.top + 3, '', {
         color: '#5fd3c4',
-        font: 'bold 11px monospace',
-        resolution: 2,
+        font: 'bold 8px monospace',
+        resolution: 3,
+        wordWrap: { width: DISPLAY_BOX.right - DISPLAY_BOX.left - 10 },
+        lineSpacing: -1,
       })
       .setOrigin(0, 0)
       .setDepth(DepthLayer.FloorDecal + 0.03);
@@ -589,36 +513,42 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       return;
     }
 
-    const d = LAB_STATIONS.display;
     const recorded = this.recordedPhases();
     const next = this.nextPhase();
-    const left = d.x - 124;
-    const top = d.y - 14;
-    const width = 248;
-    const height = 48;
+    // Trace area under the two-line indicator, inside the painted screen.
+    const left = DISPLAY_BOX.left + 4;
+    const width = DISPLAY_BOX.right - DISPLAY_BOX.left - 8;
+    const top = DISPLAY_BOX.top + 24;
+    const height = DISPLAY_BOX.bottom - top - 4;
     const mid = top + height / 2;
+    const lane = width / 3;
 
     graphics.clear();
 
     // Raw trace: jagged until the causal model is recorded, then the
     // structure bands appear beneath a calmer trace.
-    const jitter = recorded.includes('m15') ? 4 : 12;
+    const jitter = recorded.includes('m15') ? 3 : 9;
 
     if (recorded.includes('m15')) {
       for (let band = 0; band < 3; band += 1) {
         graphics.fillStyle(0x16342f, 1);
-        graphics.fillRect(left + 8 + band * 80, top + 6, 70, height - 12);
+        graphics.fillRect(
+          left + 3 + band * lane,
+          top + 3,
+          lane - 6,
+          height - 6,
+        );
       }
     }
 
     // Review D3-12: the raw trace stays in the panel-border tone until the
     // case is recorded, so it never competes with the objective line.
-    graphics.lineStyle(1.5, recorded.includes('m18') ? 0x5fd3c4 : 0x6f8293, 1);
+    graphics.lineStyle(1, recorded.includes('m18') ? 0x5fd3c4 : 0x6f8293, 1);
     graphics.beginPath();
 
     for (let i = 0; i <= 60; i += 1) {
-      const x = left + 4 + (i * (width - 8)) / 60;
-      const wave = Math.sin(i / 3.2) * 9;
+      const x = left + 2 + (i * (width - 4)) / 60;
+      const wave = Math.sin(i / 3.2) * 6;
       const y = mid + wave + (noise(i) - 0.5) * jitter;
 
       if (i === 0) {
@@ -634,10 +564,10 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     if (recorded.includes('m16')) {
       graphics.lineStyle(1, 0x5fd3c4, 0.9);
 
-      for (let lane = 0; lane < 3; lane += 1) {
-        const x = left + 44 + lane * 80;
+      for (let tick = 0; tick < 3; tick += 1) {
+        const x = left + lane / 2 + tick * lane;
 
-        graphics.lineBetween(x, top + height - 6, x, top + height - 2);
+        graphics.lineBetween(x, top + height - 5, x, top + height - 1);
       }
     }
 
@@ -646,23 +576,23 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       graphics.fillStyle(0xe6c68f, 1);
 
       for (let slot = 0; slot < 3; slot += 1) {
-        graphics.fillRect(left + 40 + slot * 80, top + 4, 5, 5);
+        graphics.fillRect(left + lane / 2 - 2 + slot * lane, top + 1, 4, 4);
       }
     }
 
     // Fault resolved (M18): the anomaly marker becomes a closed bracket.
     if (recorded.includes('m18')) {
       graphics.fillStyle(0x16342f, 1);
-      graphics.fillRect(left + width - 40, top + 8, 28, height - 16);
-      graphics.lineStyle(2, 0x5fd3c4, 1);
-      graphics.strokeRect(left + width - 40, top + 8, 28, height - 16);
+      graphics.fillRect(left + width - 18, top + 4, 14, height - 8);
+      graphics.lineStyle(1, 0x5fd3c4, 1);
+      graphics.strokeRect(left + width - 18, top + 4, 14, height - 8);
     } else {
       graphics.lineStyle(1, 0xe08c8c, 0.9);
       graphics.lineBetween(
-        left + width - 26,
-        top + 8,
-        left + width - 26,
-        top + height - 8,
+        left + width - 11,
+        top + 4,
+        left + width - 11,
+        top + height - 4,
       );
     }
 
@@ -693,19 +623,15 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       lamp.setStrokeStyle(1, isNext ? 0x5fd3c4 : 0x8fa4b8, isNext ? 0.9 : 0.35);
       lamp.setScale(isNext && !prefersReducedMotion() ? 1.25 : 1);
 
-      // V4 bay plate: the next bay carries the cyan frame and numeral;
-      // recorded bays settle to a quiet frame; later bays stay plain.
-      const frame = this.bayFrames.get(phase.id);
+      // The next bench carries the cyan numeral; recorded benches settle
+      // to a quiet numeral; later benches stay dim.
       const numeral = this.bayNumerals.get(phase.id);
 
       if (isNext) {
-        frame?.setStrokeStyle(2, 0x5fd3c4, 0.6);
         numeral?.setColor('#5fd3c4').setAlpha(1);
       } else if (done) {
-        frame?.setStrokeStyle(2, 0x8fa4b8, 0.28);
         numeral?.setColor('#8497aa').setAlpha(0.7);
       } else {
-        frame?.setStrokeStyle(2, 0x8fa4b8, 0);
         numeral?.setColor('#8497aa').setAlpha(0.45);
       }
     }

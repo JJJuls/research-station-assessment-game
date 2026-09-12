@@ -51,6 +51,7 @@ import {
   expectStage,
   hold,
   interactAt,
+  labApproach,
   openPromptAt,
   PILOT,
   pilotCoverage,
@@ -60,13 +61,9 @@ import {
   routeToLabWork,
   routeToWorkshopWork,
   useDoor,
-  walkTo,
   workshopToConcourse,
   workshopVia,
 } from './pilotHelpers';
-
-/** Benches are approached from below (their approach points are uncontested). */
-const BELOW = { x: 0, y: 44 } as const;
 
 const PHASE_OPPORTUNITY: Record<string, string> = {
   m15: 'proto_m15_layered_cipher',
@@ -91,7 +88,9 @@ async function openBench(
   probeKey: ProbeKey,
 ) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await interactAt(page, at, { approachOffset: BELOW });
+    await interactAt(page, at, {
+      approachOffset: await labApproach(page, at),
+    });
 
     const opened = await page
       .waitForFunction(
@@ -221,7 +220,9 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
     expect(display?.intercom).toMatch(/^NOOR/);
 
     // The workstation's case brief is reviewable and lists the four phases.
-    await openPromptAt(page, PILOT.lab.workstation, { approachOffset: BELOW });
+    await openPromptAt(page, PILOT.lab.workstation, {
+      approachOffset: await labApproach(page, PILOT.lab.workstation),
+    });
 
     const brief = await page.evaluate(
       () =>
@@ -481,13 +482,12 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
 
     // Fail-forward: stopped phases never block the route.
     await openPromptAt(page, PILOT.lab.kai, {
-      approachOffset: { x: 0, y: 44 },
+      approachOffset: await labApproach(page, PILOT.lab.kai),
     });
     await selectPromptOption(page, 1);
     expect((await pilotProbe(page))?.stage).toBe('exterior_briefing');
-    await walkTo(page, 240, 70, { yFirst: false });
     await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {
-      approachOffset: { x: 0, y: 20 },
+      approachOffset: await labApproach(page, PILOT.lab.airlock),
     });
     await useDoor(page, PILOT.yard.airlock, 'diagnostics_laboratory', {
       approachOffset: { x: 0, y: -40 },
@@ -572,7 +572,7 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
         yFirst: false,
       });
       await openPromptAt(page, PILOT.lab.kai, {
-        approachOffset: { x: 0, y: 44 },
+        approachOffset: await labApproach(page, PILOT.lab.kai),
       });
       await selectPromptOption(page, 1);
       await openBench(page, PILOT.lab.diagnosticBoard, '__ipDiagnosisProbe');

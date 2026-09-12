@@ -16,7 +16,10 @@ import { PILOT_DOORS } from '../src/pilot/pilotRoute';
 import {
   CONCOURSE_SPAWNS,
   CONCOURSE_STATIONS,
+  CORE_SPAWN,
+  DECK_SPAWNS,
   DOCK_SITES,
+  LAB_SPAWNS,
   WORKSHOP_SPAWN,
 } from '../src/pilot/zoneSites';
 import {
@@ -27,20 +30,29 @@ import {
   WORLD_V1_REGISTRY,
 } from '../src/world/interactionRegistry';
 import { CONCOURSE_LAYOUT } from '../src/world/layouts/concourse';
+import { CORE_LAYOUT } from '../src/world/layouts/coreChamber';
+import { DECK_LAYOUT } from '../src/world/layouts/deck';
 import { DOCK_LAYOUT } from '../src/world/layouts/dock';
 import { gridOf, walkingDistance } from '../src/world/layouts/grid';
+import { LAB_LAYOUT } from '../src/world/layouts/laboratory';
 import { WORKSHOP_LAYOUT } from '../src/world/layouts/workshop';
 
 const LAYOUTS = {
   dock: gridOf(DOCK_LAYOUT),
   station_concourse: gridOf(CONCOURSE_LAYOUT),
   records_workshop: gridOf(WORKSHOP_LAYOUT),
+  diagnostics_laboratory: gridOf(LAB_LAYOUT),
+  utility_core_deck: gridOf(DECK_LAYOUT),
+  core_chamber: gridOf(CORE_LAYOUT),
 } as const;
 
 const SPAWNS = {
   dock: [DOCK_SITES.spawnArrival, DOCK_SITES.spawnFromConcourse],
   station_concourse: Object.values(CONCOURSE_SPAWNS),
   records_workshop: [WORKSHOP_SPAWN],
+  diagnostics_laboratory: Object.values(LAB_SPAWNS),
+  utility_core_deck: Object.values(DECK_SPAWNS),
+  core_chamber: [CORE_SPAWN],
 } as const;
 
 const DOOR_CLEARANCE = 96;

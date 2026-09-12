@@ -67,6 +67,7 @@ import {
   bootPilot,
   hold,
   interactAt,
+  labApproach,
   openPromptAt,
   PILOT,
   pilotCoverage,
@@ -74,8 +75,6 @@ import {
   press,
   routeToLabWork,
 } from './pilotHelpers';
-
-const BELOW = { x: 0, y: 44 } as const;
 
 interface SurfaceProbe {
   open: boolean;
@@ -137,7 +136,9 @@ async function openBench(
   probeKey: '__ipTerminalProbe' | '__ipDiagnosisProbe' | '__workSurfaceProbe',
 ) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await interactAt(page, at, { approachOffset: BELOW });
+    await interactAt(page, at, {
+      approachOffset: await labApproach(page, at),
+    });
 
     const opened = await page
       .waitForFunction(
@@ -650,7 +651,7 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
 
     // Kai closes the episode.
     await openPromptAt(page, PILOT.lab.kai, {
-      approachOffset: { x: 0, y: 44 },
+      approachOffset: await labApproach(page, PILOT.lab.kai),
     });
     await selectPromptOption(page, 1);
     expect((await pilotProbe(page))?.stage).toBe('exterior_briefing');

@@ -44,6 +44,7 @@ import {
   dockToConcourse,
   expectStage,
   interactAt,
+  labApproach,
   openPromptAt,
   PILOT,
   pilotCoverage,
@@ -639,9 +640,8 @@ export async function exteriorShift(
   await expectStage(page, 'lab_work');
   await kaiSelectNonHandover(page);
   await expectStage(page, 'exterior_briefing');
-  await walkTo(page, 240, 70, { yFirst: false });
   await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {
-    approachOffset: { x: 0, y: 20 },
+    approachOffset: await labApproach(page, PILOT.lab.airlock),
   });
   await openPromptAt(page, PILOT.yard.noor, {
     approachOffset: { x: 0, y: 40 },
@@ -670,7 +670,9 @@ export async function exteriorShift(
 
 /** Opens Kai's prompt and selects the first card that is NOT the handover. */
 export async function kaiSelectNonHandover(page: Page) {
-  await openPromptAt(page, PILOT.lab.kai, { approachOffset: { x: 0, y: 44 } });
+  await openPromptAt(page, PILOT.lab.kai, {
+    approachOffset: await labApproach(page, PILOT.lab.kai),
+  });
 
   const labels = await promptCardLabels(page);
   const index = labels.findIndex((label) => !/^Hand over/.test(label));
@@ -682,11 +684,8 @@ export async function kaiSelectNonHandover(page: Page) {
 /** Yard airlock → Laboratory → Concourse (the ONE purposeful return). */
 export async function returnInside(page: Page) {
   await leaveYard(page);
-  // The laboratory's row-4 briefing block spans x 288-447: descend along
-  // the clear x=240 column from the airlock spawn before the south door.
-  await walkTo(page, 240, 456, { yFirst: true });
   await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
-    approachOffset: { x: 0, y: -40 },
+    approachOffset: await labApproach(page, PILOT.lab.southDoor),
   });
   await expectStage(page, 'return_hub');
 }

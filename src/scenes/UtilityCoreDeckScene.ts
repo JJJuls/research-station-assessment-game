@@ -62,10 +62,48 @@ import {
 } from '../pilot/pilotRoute';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
 import { openFeedPanel } from '../pilot/ui/FeedPanelScene';
-import { DECK_SITES } from '../pilot/zoneSites';
+import { DECK_SITES, DECK_SPAWNS } from '../pilot/zoneSites';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
+import { WARM_POOL_TINT } from '../world/kit/worldV2Assets';
+import { DECK_LAYOUT } from '../world/layouts/deck';
 
 const TILE = 32;
+
+/**
+ * World V2 rebuild: where each feed's painted machine carries its state
+ * lamps (plate px) — the valve wheel's hub, the breaker bank's lamp row,
+ * the bus cabinet's socket column — and the warm work light that comes up
+ * over a live machine (the Dock's power step-up precedent).
+ */
+const FEED_LAMPS: Record<
+  FeedId,
+  { lamps: { x: number; y: number }[]; glow: { x: number; y: number } }
+> = {
+  coolant: {
+    lamps: [
+      { x: 150, y: 296 },
+      { x: 182, y: 296 },
+    ],
+    glow: { x: 166, y: 300 },
+  },
+  calibration: {
+    lamps: [
+      { x: 318, y: 274 },
+      { x: 334, y: 274 },
+      { x: 350, y: 274 },
+      { x: 366, y: 274 },
+    ],
+    glow: { x: 342, y: 300 },
+  },
+  distribution: {
+    lamps: [
+      { x: 504, y: 282 },
+      { x: 504, y: 296 },
+      { x: 504, y: 310 },
+    ],
+    glow: { x: 520, y: 302 },
+  },
+};
 
 const FEED_KEY: Record<FeedId, InteractionKey> = {
   coolant: 'pilotCoolantValve',
@@ -123,9 +161,12 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
   protected readonly roomInteractionKey: InteractionKey = 'pilotRoute';
   protected readonly zoneKey = 'utility_core_deck' as const;
 
-  private conduits: Phaser.GameObjects.Graphics | null = null;
+  private feedLamps: Phaser.GameObjects.Graphics | null = null;
+  private feedGlows = new Map<FeedId, Phaser.GameObjects.Ellipse>();
   private manifoldLamps: Phaser.GameObjects.Graphics | null = null;
   private doorLamp: Phaser.GameObjects.Rectangle | null = null;
+  private doorSeam: Phaser.GameObjects.Rectangle | null = null;
+  private doorGlow: Phaser.GameObjects.Ellipse | null = null;
   private doorChip: Phaser.GameObjects.Text | null = null;
   private boardStatus: Phaser.GameObjects.Text | null = null;
   private feedChips = new Map<FeedId, Phaser.GameObjects.Text>();
@@ -137,45 +178,29 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
   }
 
   protected getLayout(): RoomLayout {
-    // 25×19 deck: the Core Chamber alcove (rows 2-4, cols 10-14) with the
-    // north doorway at row 2, funnel shoulders on row 5, the Concourse
-    // doorway on the WEST wall (rows 8-9), and three machinery blocks
-    // under the feed stations along the south wall (rows 13-14).
+    // World V2 rebuild: the 22×12 painted plate is the architecture and
+    // the machinery; collision is the audited logical grid.
     return {
       theme: 'utility',
-      grid: [
-        '#########################',
-        '#########################',
-        '###########---###########',
-        '##########.....##########',
-        '##########.....##########',
-        '#####...............#####',
-        '#.......................#',
-        '#.......................#',
-        '-.......................#',
-        '-.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#..####....####....####.#',
-        '#..####....####....####.#',
-        '#.......................#',
-        '#########################',
-        '#########################',
-        '#########################',
-      ],
+      grid: [...DECK_LAYOUT],
+      field: 'wide',
+      plateTexture: 'w2-deck-plate',
     };
   }
 
+  protected bundleDropBounds(): { width: number; height: number } {
+    return { width: 22 * TILE, height: 12 * TILE };
+  }
+
   protected getSpawn(data?: { spawn?: string }): { x: number; y: number } {
+    // Machine-audited: ≥ 80 px from the door used and outside every
+    // interactable's 72 px radius (V2 finding U8-8).
     switch (data?.spawn) {
       case 'core_chamber':
-        // 88 px below the Core door (y 120): clear of the 72 px interaction
-        // radius (V2 finding U8-8).
-        return { x: 12.5 * TILE, y: 6.5 * TILE };
+        return DECK_SPAWNS.fromCore;
       case 'station_concourse':
       default:
-        return { x: 5 * TILE, y: 8.5 * TILE };
+        return DECK_SPAWNS.fromConcourse;
     }
   }
 
@@ -210,13 +235,26 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
   }
 
   protected populateRoom(): void {
-    this.addPilotDoor({ to: 'station_concourse', spawn: 'utility_core_deck' });
+    this.addPilotDoor({
+      to: 'station_concourse',
+      spawn: 'utility_core_deck',
+      registryId: 'deck.door_concourse',
+    });
     this.addPilotDoor({
       to: 'core_chamber',
       spawn: 'utility_core_deck',
-      texture: 'proc-door-core',
       gate: () => this.coreDoorGate(),
+      registryId: 'deck.door_core',
     });
+    // World V2: the open west doorway and the Core blast door are baked
+    // into the plate — the generic leaf sprites would double them. Door
+    // state is carried by the lintel lamp, the seam light and the chip.
+    this.doorImage('deck.door_concourse')?.setVisible(false);
+    this.doorImage('deck.door_core')?.setVisible(false);
+    // Their class lamps sit on the open leaf's edge / the blast door's
+    // painted lintel lamp.
+    this.placeDoorIndicator('deck.door_concourse', 58, 134);
+    this.placeDoorIndicator('deck.door_core', 400, 68);
     registerPilotStation({
       id: 'core_door',
       zone: 'utility_core_deck',
@@ -273,13 +311,11 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
     // ——— Station systems board (labels only; reflects the record state) ———
     const board = DECK_SITES.systemsBoard;
 
-    this.addDecor(board.x, board.y, 'proc-board-workorders');
-    // Pilot V3 Unit 6 (V2 finding U8-9 / ledger V28): the readout sits on
-    // its own backed chip BELOW the board decor's footprint, so no decor
-    // can occlude it. V4: environment register, 2× rasterised, sorted just
-    // below its own foot line (never over a figure standing south of it).
+    // World V2: the gauge board is painted; its readout chip hangs on the
+    // wall base under the gauges (environment register, 2× rasterised),
+    // sorted at its own foot line so a figure south of it reads over it.
     this.boardStatus = this.add
-      .text(board.x, board.y + 54, '', {
+      .text(board.x, board.y + 4, '', {
         backgroundColor: '#101820',
         color: '#9fb2c1',
         font: '10px monospace',
@@ -289,7 +325,7 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
       })
       .setOrigin(0.5, 0)
       .setAlpha(0.88)
-      .setDepth(worldDepth(board.y + 54 + 40));
+      .setDepth(worldDepth(board.y + 30));
 
     // ——— Three physical feeds (operational order west → east) ———
     for (const [index, feed] of FEED_ORDER.entries()) {
@@ -307,10 +343,13 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
           return false;
         },
       });
+      // World V2: the chip sits on the machine's top edge (below the
+      // approach band, above its lamps) and the live glow is a warm pool
+      // over the machine.
       this.feedChips.set(
         feed,
         this.add
-          .text(site.x, site.y + 42, '', {
+          .text(FEED_LAMPS[feed].glow.x, site.y - 20, '', {
             backgroundColor: '#101820',
             color: '#9fb2c1',
             font: '10px monospace',
@@ -319,7 +358,22 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
           })
           .setOrigin(0.5, 0)
           .setAlpha(0.88)
-          .setDepth(worldDepth(site.y + 42 + 40)),
+          .setDepth(worldDepth(site.y + 20)),
+      );
+      this.feedGlows.set(
+        feed,
+        this.add
+          .ellipse(
+            FEED_LAMPS[feed].glow.x,
+            FEED_LAMPS[feed].glow.y,
+            150,
+            92,
+            WARM_POOL_TINT,
+            0.22,
+          )
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setDepth(DepthLayer.WorldReadout - 0.02)
+          .setVisible(false),
       );
       registerPilotStation({
         id: `feed_${feed}`,
@@ -336,35 +390,41 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
     // ——— Manifold (three-feed indicator) + door lamp ———
     const manifold = DECK_SITES.manifold;
 
-    this.addDecor(manifold.x, manifold.y, 'proc-manifold-panel');
+    // World V2: the manifold gauges are painted; the three feed lamps sit
+    // on the pipe run under them, the chip on the wall base.
     this.manifoldLamps = this.add.graphics().setDepth(DepthLayer.WorldReadout);
-    // Pilot V3 Unit 6 (visual review F3): backed chip like its siblings, so
-    // the third feed glyph is legible over the light steel panel behind it.
     this.manifoldText = this.add
-      .text(manifold.x, manifold.y + 30, '', {
+      .text(manifold.x, manifold.y + 14, '', {
         backgroundColor: '#101820',
         color: '#9fb2c1',
         font: '10px monospace',
         align: 'center',
         padding: { x: 5, y: 3 },
         resolution: 2,
+        // Wrapped to the wall panel's width: the one-line token string
+        // (the probe's value) would run past the room's east wall.
+        wordWrap: { width: 150 },
       })
       .setOrigin(0.5, 0)
       .setAlpha(0.88)
-      .setDepth(worldDepth(manifold.y + 30 + 40));
+      .setDepth(worldDepth(manifold.y + 40));
+    // The door's own state lamp sits beside the painted lintel lamp (the
+    // class indicator owns the lintel), the seam light opens down the
+    // door's centre, and its glow.
     this.doorLamp = this.add
-      .rectangle(
-        DECK_SITES.coreDoor.x,
-        DECK_SITES.coreDoor.y - 26,
-        16,
-        4,
-        DORMANT,
-        1,
-      )
+      .rectangle(DECK_SITES.coreDoor.x + 22, 68, 8, 4, DORMANT, 1)
       .setDepth(DepthLayer.WorldReadout);
+    this.doorSeam = this.add
+      .rectangle(DECK_SITES.coreDoor.x, 112, 4, 56, ACCENT, 0)
+      .setDepth(DepthLayer.WorldReadout - 0.01);
+    this.doorGlow = this.add
+      .ellipse(DECK_SITES.coreDoor.x, 118, 110, 96, ACCENT, 0.18)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(DepthLayer.WorldReadout - 0.02)
+      .setVisible(false);
     // Door state as text beside the lamp (never colour-only).
     this.doorChip = this.add
-      .text(DECK_SITES.coreDoor.x + 62, DECK_SITES.coreDoor.y, '', {
+      .text(DECK_SITES.coreDoor.x + 66, DECK_SITES.coreDoor.y - 4, '', {
         backgroundColor: '#101820',
         color: '#9fb2c1',
         font: '10px monospace',
@@ -375,30 +435,29 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
       .setAlpha(0.88)
       .setDepth(worldDepth(DECK_SITES.coreDoor.y + 40));
 
-    // ——— Conduits (floor runs from each feed to the alcove) ———
-    // V4: on the floor-decal layer — a cable run never draws over a figure.
-    this.buildDeckGrammar();
-    this.conduits = this.add.graphics().setDepth(DepthLayer.FloorDecal + 0.03);
+    // Feed lamps on the painted machines (glyph + fill, never colour alone).
+    this.feedLamps = this.add.graphics().setDepth(DepthLayer.WorldReadout);
 
-    // ——— Dressing: machinery mass, pipes, light pools, a utility bot ———
-    this.addDecor(4.5 * TILE, 13.9 * TILE, 'proc-rig-intake');
-    this.addDecor(12.5 * TILE, 13.9 * TILE, 'proc-cabinet-calibration');
-    this.addDecor(20.5 * TILE, 13.9 * TILE, 'proc-crate-components');
-    this.addDecor(8.5 * TILE, 13.75 * TILE, 'proc-wall-pipes');
-    this.addDecor(16.5 * TILE, 13.75 * TILE, 'proc-wall-pipes');
-    // V4: the oversized PROVISIONAL utility-bay slices (tower, panel,
-    // desk, bot) leave the deck; wall dressing stays in the 32 px register.
-    this.addDecor(2.4 * TILE, 4.9 * TILE, 'proc-wall-pipes');
-    this.addDecor(22 * TILE, 4.6 * TILE, 'proc-console-wall');
-    // On the wall band (foot line above the row-5 lane) so no figure walks
-    // behind it (gameplay review G7).
-    this.addDecor(6.2 * TILE, 5.2 * TILE, 'proc-desk-closure');
-    this.addDecor(22 * TILE, 8 * TILE, 'proc-rack-tools');
-    this.addDecor(2.5 * TILE, 11.5 * TILE, 'proc-bin-consumables');
-    this.addDecor(12.5 * TILE, 4.2 * TILE, 'proc-light-pool');
-    this.addDecor(8 * TILE, 9.5 * TILE, 'proc-light-pool');
-    this.addDecor(17 * TILE, 9.5 * TILE, 'proc-light-pool');
-    this.addDecor(22 * TILE, 15.1 * TILE, 'proc-bot-utility');
+    // ——— World V2: the painted plate IS the architecture and all the
+    // machinery — hide every station marker sprite (interactions,
+    // prompts and events untouched; the Workshop precedent). The V4
+    // floor grammar (trunk, bays, thresholds), the conduit runs, the
+    // light pools and the wall dressing are gone: the plate's baked
+    // lamps, wayfinding lines and machines carry that reading.
+    for (const child of this.children.list) {
+      if (
+        child instanceof Phaser.GameObjects.Image &&
+        [
+          'proc-review-panel',
+          ...FEED_ORDER.flatMap((feed) => [
+            FEED_TEXTURE[feed].before,
+            FEED_TEXTURE[feed].after,
+          ]),
+        ].includes(child.texture.key)
+      ) {
+        child.setVisible(false);
+      }
+    }
 
     if (devInspectionActive()) {
       this.devLabel = this.add
@@ -417,68 +476,6 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
   /** The session-scope feed state (persists across scene transitions). */
   private feeds() {
     return closureFeeds();
-  }
-
-  /**
-   * V4 deck grammar (presentation only): one central systems trunk from
-   * the feed header to the Core door alcove, three separated feed bays on
-   * their own plates, the Shift Review station plate by the entry, the
-   * Core door alcove as the terminal landmark, thresholds at both doors.
-   */
-  private buildDeckGrammar() {
-    const plate = (
-      x: number,
-      y: number,
-      w: number,
-      h: number,
-      alpha: number,
-      depth: number = DepthLayer.FloorDecal,
-    ) =>
-      this.add
-        .rectangle(x, y, w, h, 0x55627a, alpha)
-        .setOrigin(0.5)
-        .setStrokeStyle(1, 0x8fa4b8, 0.35)
-        .setDepth(depth);
-
-    // Trunk: vertical bundle under the alcove mouth and the feed header
-    // (review U5-3: the landmark reads — stronger fill and a 2 px edge).
-    plate(
-      DECK_SITES.coreDoor.x,
-      6.6 * TILE,
-      2 * TILE,
-      3 * TILE,
-      0.36,
-    ).setStrokeStyle(2, 0x8fa4b8, 0.55);
-    plate(12.5 * TILE, 7.7 * TILE, 17 * TILE, 1.6 * TILE, 0.3).setStrokeStyle(
-      2,
-      0x8fa4b8,
-      0.55,
-    );
-    // Three feed bays (rows 10-12) aligned to the machinery blocks under
-    // them (review U5-4: cols 3-6, 11-14, 19-22).
-    for (const centre of [5 * TILE, 13 * TILE, 21 * TILE]) {
-      plate(centre, 11 * TILE, 4 * TILE, 3 * TILE, 0.2);
-    }
-    // Shift Review station plate (row 5-6) and the Core door alcove.
-    plate(DECK_SITES.reviewPanel.x, 5.9 * TILE, 4 * TILE, 1.8 * TILE, 0.22);
-    plate(DECK_SITES.coreDoor.x, 4 * TILE, 5 * TILE, 2 * TILE, 0.18);
-    plate(
-      DECK_SITES.coreDoor.x,
-      5.5 * TILE,
-      3 * TILE,
-      TILE,
-      0.34,
-      DepthLayer.FloorMarking,
-    );
-    // Concourse door threshold (west wall, rows 8-9).
-    plate(
-      2 * TILE,
-      9 * TILE,
-      2 * TILE,
-      2 * TILE,
-      0.34,
-      DepthLayer.FloorMarking,
-    );
   }
 
   // ————————————————————————————————— Core door gate ——
@@ -736,59 +733,64 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
     const state = currentUtilityState();
     const doorOpen = coreAccessReady();
 
+    // Feed state on the painted machines: the marker textures are hidden
+    // (the plate paints the dormant machine); a live feed shows its lamps
+    // lit and a warm work light over the machine.
+    const lamps = this.feedLamps;
+
+    lamps?.clear();
+
     for (const feed of FEED_ORDER) {
       const ready = feedReady(feeds, feed);
+      const available =
+        feedAvailability(
+          feeds,
+          feed,
+          stationRecordClosed() || devInspectionActive(),
+        ) === 'ok';
 
       this.setStationTexture(
         FEED_KEY[feed],
         ready ? FEED_TEXTURE[feed].after : FEED_TEXTURE[feed].before,
       );
       this.feedChips.get(feed)?.setText(this.feedChipText(feed));
-    }
+      this.feedGlows.get(feed)?.setVisible(ready);
 
-    // Conduits: each feed's floor run lights when its feed is ready.
-    const g = this.conduits;
-
-    if (g !== null) {
-      g.clear();
-
-      const mouth = { x: DECK_SITES.coreDoor.x, y: 5.6 * TILE };
-
-      for (const feed of FEED_ORDER) {
-        const site = FEED_SITE[feed];
-        const ready = feedReady(feeds, feed);
-        const lane = 7.4 * TILE + FEED_ORDER.indexOf(feed) * 10;
-
-        // Review U5-2: a cable run in the trim family, not a kerb.
-        g.lineStyle(4, 0x22303e, 0.9);
-        g.lineBetween(site.x, site.y - 26, site.x, lane);
-        g.lineBetween(site.x, lane, mouth.x, lane);
-        g.lineBetween(mouth.x, lane, mouth.x, mouth.y);
-        g.lineStyle(2, ready ? ACCENT : 0x3f5a6b, 1);
-        g.lineBetween(site.x, site.y - 26, site.x, lane);
-        g.lineBetween(site.x, lane, mouth.x, lane);
-        g.lineBetween(mouth.x, lane, mouth.x, mouth.y);
+      if (lamps !== null) {
+        for (const lamp of FEED_LAMPS[feed].lamps) {
+          if (ready) {
+            lamps.fillStyle(ACCENT, 1);
+            lamps.fillRect(lamp.x - 3, lamp.y - 3, 6, 6);
+          } else if (available) {
+            lamps.fillStyle(AMBER, 0.9);
+            lamps.fillRect(lamp.x - 3, lamp.y - 3, 6, 6);
+          } else {
+            lamps.lineStyle(1, DORMANT, 1);
+            lamps.strokeRect(lamp.x - 3, lamp.y - 3, 6, 6);
+          }
+        }
       }
     }
 
-    // Manifold lamps (glyph + fill; never colour alone).
-    const lamps = this.manifoldLamps;
+    // Manifold lamps (glyph + fill; never colour alone) on the pipe run
+    // under the painted gauges.
+    const manifoldLamps = this.manifoldLamps;
     const manifold = DECK_SITES.manifold;
 
-    if (lamps !== null) {
-      lamps.clear();
+    if (manifoldLamps !== null) {
+      manifoldLamps.clear();
 
       for (const [index, feed] of FEED_ORDER.entries()) {
-        const x = manifold.x - 26 + index * 20;
-        const y = manifold.y - 6;
+        const x = manifold.x - 20 + index * 20;
+        const y = manifold.y - 10;
         const ready = feedReady(feeds, feed);
 
         if (ready) {
-          lamps.fillStyle(ACCENT, 1);
-          lamps.fillRect(x - 5, y - 5, 10, 10);
+          manifoldLamps.fillStyle(ACCENT, 1);
+          manifoldLamps.fillRect(x - 4, y - 4, 8, 8);
         } else {
-          lamps.lineStyle(2, DORMANT, 1);
-          lamps.strokeRect(x - 5, y - 5, 10, 10);
+          manifoldLamps.lineStyle(1, DORMANT, 1);
+          manifoldLamps.strokeRect(x - 4, y - 4, 8, 8);
         }
       }
     }
@@ -800,16 +802,15 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
 
     this.manifoldText?.setText(manifoldLine);
     this.doorChip?.setText(doorOpen ? 'DOOR · OPEN' : 'DOOR · SEALED');
-    // Unit 7 (V4): the leaf art carries the state too, never colour alone.
-    this.setDoorTexture(
-      'core_chamber',
-      doorOpen ? 'proc-door-core-open' : 'proc-door-core',
-    );
-
+    // World V2: the painted blast door carries the state through its
+    // lintel lamp, the lit centre seam and the glow (never colour alone —
+    // the chip names it).
     this.doorLamp?.setFillStyle(
       doorOpen ? ACCENT : state === 'core_access_ready' ? AMBER : DORMANT,
       1,
     );
+    this.doorSeam?.setFillStyle(ACCENT, doorOpen ? 0.9 : 0);
+    this.doorGlow?.setVisible(doorOpen);
 
     const boardLine = devInspectionActive()
       ? 'DEV INSPECTION\nrecord untouched'

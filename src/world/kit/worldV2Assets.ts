@@ -22,6 +22,12 @@ export const WORLD_V2_IMAGE_URLS: Record<string, string> = {
   // Records Workshop: one stitched two-bay plate (1376×384) — machine bay
   // west, records office east, joined by the painted doorway vestibule.
   'w2-workshop-plate': 'assets/world-v2/plates/workshop-plate.png',
+  // Diagnostics Laboratory: one 22×12 plate (signal-analysis case room).
+  'w2-laboratory-plate': 'assets/world-v2/plates/laboratory-plate.png',
+  // Utility Deck: one 22×12 plate (feed hall with the sealed Core alcove).
+  'w2-deck-plate': 'assets/world-v2/plates/deck-plate.png',
+  // Core Chamber: one 22×12 plate (dormant reactor on its platform).
+  'w2-core-plate': 'assets/world-v2/plates/core-plate.png',
   // Opening key art (PilotOpeningScene pans over these).
   'w2-opening-station': 'assets/world-v2/opening/station-establishing.png',
   'w2-opening-berth': 'assets/world-v2/opening/shuttle-berth.png',

@@ -216,11 +216,14 @@ export const PILOT_DOORS: Record<PilotZoneKey, readonly PilotDoorRef[]> = {
     { to: 'station_concourse', x: 1332, y: 290, label: 'Station Concourse' },
   ],
   diagnostics_laboratory: [
-    { to: 'station_concourse', x: 384, y: 496, label: 'Station Concourse' },
+    // World V2 rebuild: 22×12 painted plate — the Concourse door is baked
+    // into the south hull between the protocol console and the training
+    // rig; the yard airlock hatch is baked into the north wall.
+    { to: 'station_concourse', x: 334, y: 300, label: 'Station Concourse' },
     {
       to: 'exterior_recovery_yard',
-      x: 384,
-      y: 48,
+      x: 250,
+      y: 140,
       label: 'Exterior Airlock',
     },
   ],
@@ -233,13 +236,18 @@ export const PILOT_DOORS: Record<PilotZoneKey, readonly PilotDoorRef[]> = {
     },
   ],
   utility_core_deck: [
-    { to: 'station_concourse', x: 64, y: 272, label: 'Station Concourse' },
+    // World V2 rebuild: 22×12 painted plate — the Concourse doorway is
+    // baked into the west wall (open leaf), the Core blast door into the
+    // north alcove.
+    { to: 'station_concourse', x: 60, y: 200, label: 'Station Concourse' },
     // Unit 6: the Core Chamber door (north alcove). Gated by the deck on
     // route readiness + the three feeds; bidirectional once open.
-    { to: 'core_chamber', x: 400, y: 120, label: 'Core Chamber' },
+    { to: 'core_chamber', x: 400, y: 140, label: 'Core Chamber' },
   ],
   core_chamber: [
-    { to: 'utility_core_deck', x: 400, y: 496, label: 'Utility Deck' },
+    // World V2 rebuild: 22×12 painted plate — the Utility Deck door is
+    // baked into the south hull.
+    { to: 'utility_core_deck', x: 348, y: 330, label: 'Utility Deck' },
   ],
 };
 

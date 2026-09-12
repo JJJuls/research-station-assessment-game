@@ -14,10 +14,13 @@ import { expect } from '@playwright/test';
 import { designToPage, hold, press, selectPromptOption } from './helpers';
 import {
   concourseToDeck,
+  coreVia,
+  deckVia,
   expectStage,
   interactAt,
   openPromptAt,
   PILOT,
+  registryApproach,
   useDoor,
   walkTo,
   workshopToConcourse,
@@ -220,20 +223,36 @@ export async function lastFeedback(page: Page): Promise<string | null> {
  * Geometry
  * ------------------------------------------------------------------ */
 
-/** Approach offsets (44 px; D-V2-1 rule — no other interactable nearer). */
+/**
+ * Approach offsets — World V2 rebuild: derived from the machine-audited
+ * registry approach points (never a hand-typed literal). Legs to the
+ * deck's objects travel the rows 5–6 band first (deckVia).
+ */
+const deckOffset = (id: string, at: { x: number; y: number }) => {
+  const approach = registryApproach(id);
+
+  return { x: approach.x - at.x, y: approach.y - at.y };
+};
+
 export const DECK_APPROACH = {
-  reviewPanel: { x: 0, y: 44 },
-  coolantValve: { x: 0, y: -44 },
-  calibrationBreaker: { x: 0, y: -44 },
-  distributionBus: { x: 0, y: -44 },
-  coreDoor: { x: 0, y: 44 },
-  westDoor: { x: 40, y: 0 },
+  reviewPanel: deckOffset('deck.review_panel', PILOT.deck.reviewPanel),
+  coolantValve: deckOffset('deck.feed_coolant', PILOT.deck.coolantValve),
+  calibrationBreaker: deckOffset(
+    'deck.feed_calibration',
+    PILOT.deck.calibrationBreaker,
+  ),
+  distributionBus: deckOffset(
+    'deck.feed_distribution',
+    PILOT.deck.distributionBus,
+  ),
+  coreDoor: deckOffset('deck.door_core', PILOT.deck.coreDoor),
+  westDoor: deckOffset('deck.door_concourse', PILOT.deck.westDoor),
 } as const;
 
 export const CORE_APPROACH = {
-  core: { x: 0, y: 44 },
-  kai: { x: 0, y: 44 },
-  southDoor: { x: 0, y: -40 },
+  core: deckOffset('core.core', PILOT.core.core),
+  kai: deckOffset('core.kai', PILOT.core.kai),
+  southDoor: deckOffset('core.door_deck', PILOT.core.southDoor),
 } as const;
 
 export type FeedName = 'coolant' | 'calibration' | 'distribution';
@@ -302,6 +321,11 @@ export async function routeToUtilityDeck(
  * ------------------------------------------------------------------ */
 
 export async function openReviewPanel(page: Page) {
+  await deckVia(
+    page,
+    PILOT.deck.reviewPanel.x + DECK_APPROACH.reviewPanel.x,
+    PILOT.deck.reviewPanel.y + DECK_APPROACH.reviewPanel.y,
+  );
   await openPromptAt(page, PILOT.deck.reviewPanel, {
     approachOffset: DECK_APPROACH.reviewPanel,
   });
@@ -348,8 +372,8 @@ export async function closeStationRecord(page: Page) {
 export async function approachFeed(page: Page, feed: FeedName) {
   const { at, off } = FEED_SITE[feed];
 
-  // The clear y = 340 lane above the south machinery blocks, then down.
-  await walkTo(page, at.x + off.x, at.y + off.y, { yFirst: false });
+  // The clear rows 5–6 band above the south machines, then down.
+  await deckVia(page, at.x + off.x, at.y + off.y);
 }
 
 /** E at the feed station; resolves with the panel open (retried). */
@@ -381,6 +405,7 @@ export async function attemptFeedRefused(page: Page, feed: FeedName) {
   // press is retried like every other driver (SwiftShader input-loss
   // precedent) so a swallowed key never reads a stale line as a refusal.
   for (let attempt = 0; attempt < 3; attempt += 1) {
+    await deckVia(page, at.x + off.x, at.y + off.y);
     await interactAt(page, at, { approachOffset: off });
 
     const refused = await page
@@ -573,6 +598,11 @@ export async function raiseAllFeeds(page: Page, mode: 'keyboard' | 'pointer') {
 
 /** E at the Core door expecting it SEALED; returns the feedback line. */
 export async function attemptCoreDoorSealed(page: Page) {
+  await deckVia(
+    page,
+    PILOT.deck.coreDoor.x + DECK_APPROACH.coreDoor.x,
+    PILOT.deck.coreDoor.y + DECK_APPROACH.coreDoor.y,
+  );
   await interactAt(page, PILOT.deck.coreDoor, {
     approachOffset: DECK_APPROACH.coreDoor,
   });
@@ -604,18 +634,33 @@ export async function attemptCoreDoorSealed(page: Page) {
 }
 
 export async function enterCoreChamber(page: Page) {
+  await deckVia(
+    page,
+    PILOT.deck.coreDoor.x + DECK_APPROACH.coreDoor.x,
+    PILOT.deck.coreDoor.y + DECK_APPROACH.coreDoor.y,
+  );
   await useDoor(page, PILOT.deck.coreDoor, 'core_chamber', {
     approachOffset: DECK_APPROACH.coreDoor,
   });
 }
 
 export async function leaveCoreChamber(page: Page) {
+  await coreVia(
+    page,
+    PILOT.core.southDoor.x + CORE_APPROACH.southDoor.x,
+    PILOT.core.southDoor.y + CORE_APPROACH.southDoor.y,
+  );
   await useDoor(page, PILOT.core.southDoor, 'utility_core_deck', {
     approachOffset: CORE_APPROACH.southDoor,
   });
 }
 
 export async function openCorePrompt(page: Page) {
+  await coreVia(
+    page,
+    PILOT.core.core.x + CORE_APPROACH.core.x,
+    PILOT.core.core.y + CORE_APPROACH.core.y,
+  );
   await openPromptAt(page, PILOT.core.core, {
     approachOffset: CORE_APPROACH.core,
   });

@@ -935,6 +935,23 @@ export abstract class RoomScene extends Phaser.Scene {
     return plate instanceof Phaser.GameObjects.Image ? plate : null;
   }
 
+  /**
+   * World V2 (rebuild): a door whose leaf is baked into the painted plate
+   * hides its marker sprite, so its class-indicator lamp — placed from the
+   * marker's bounds — would float on the floor. Zones move the lamp onto
+   * the painted lintel. Presentation only.
+   */
+  protected placeDoorIndicator(registryId: string, x: number, y: number) {
+    for (const door of this.doors) {
+      if (door.registryId === registryId) {
+        const indicator = this.indicators.get(door);
+
+        indicator?.lamp.setPosition(x, y);
+        indicator?.glow.setPosition(x, y);
+      }
+    }
+  }
+
   protected setDoorFrameById(registryId: string, frame: number) {
     for (const door of this.doors) {
       if (door.registryId === registryId) {

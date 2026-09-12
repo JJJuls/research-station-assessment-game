@@ -8,9 +8,12 @@
  * chamber's dynamic presentation (emissive ramp, ring glow, light pool,
  * Kai's reaction) layers over the dormant painted core.
  *
- * Machine-audited geometry: the platform occupies the room centre
- * (cols 8–13, rows 4–7); the west and east floors connect through the
- * south corridor (rows 8–9).
+ * Machine-audited geometry (32×42 body, ±12 px landing box, nearest-wins
+ * radius 72, spawn/door clearance, BFS connectivity, slot-width audit):
+ * the platform occupies the room centre (cols 8–13, rows 4–7); the west
+ * and east floors connect only through the south corridor (rows 8–9);
+ * the door pocket (cols 9–11, row 10) lets a figure stand in the painted
+ * doorway.
  */
 import type { BlockoutRect } from './blockout';
 import { blockoutRows } from './blockout';
@@ -22,12 +25,13 @@ export const CORE_FLOOR: readonly BlockoutRect[] = [
   [2, 4, 6, 4], // west floor (cols 2-7, rows 4-7)
   [14, 4, 6, 4], // east floor (cols 14-19, rows 4-7)
   [2, 8, 18, 2], // south corridor (rows 8-9)
+  [9, 10, 3, 1], // door pocket (cols 9-11, row 10)
 ];
 
 export const CORE_FOOTPRINTS: readonly BlockoutRect[] = [
   [8.4, 4.3, 5.1, 3.6], // reactor platform (cols 8-13, rows 4-7)
   [1.7, 5.3, 1.3, 2.3], // status console (west wall)
-  [16.6, 5.3, 3.4, 2.6], // operator console (east)
+  [16.6, 5.3, 3.4, 3.1], // operator console + chair (east, rows 5-8)
 ];
 
 export const CORE_DOORS: readonly BlockoutRect[] = [];

@@ -27,8 +27,8 @@ export const DECK_FLOOR: readonly BlockoutRect[] = [
 ];
 
 export const DECK_FOOTPRINTS: readonly BlockoutRect[] = [
-  [3.3, 7, 3.9, 4], // coolant feed valve station
-  [9.1, 7, 3.1, 4], // calibration breaker bank
+  [3.3, 7, 3.6, 4], // coolant feed valve station (wheel + pipe flanges)
+  [9.1, 7, 2.9, 4], // calibration breaker bank
   [14.7, 7, 2.9, 4], // distribution bus cabinet
 ];
 

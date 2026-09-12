@@ -32,6 +32,7 @@ import {
   concourseToWorkshop,
   dockToConcourse,
   hold,
+  labApproach,
   openPromptAt,
   PILOT,
   press,
@@ -513,7 +514,7 @@ test.describe('station concourse interaction lifecycle', () => {
       approachOffset: { x: 0, y: 20 },
     });
     await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
-      approachOffset: { x: 0, y: -20 },
+      approachOffset: await labApproach(page, PILOT.lab.southDoor),
     });
     await useDoor(page, PILOT.concourse.eastDoor, 'utility_core_deck', {
       approachOffset: { x: -20, y: 0 },

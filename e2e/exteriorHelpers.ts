@@ -20,6 +20,7 @@ import {
 import {
   bootPilot,
   interactAt,
+  labApproach,
   openPromptAt,
   PILOT,
   pilotCoverage,
@@ -449,9 +450,8 @@ export async function leaveYard(page: Page) {
 
 /** Laboratory airlock → yard (re-entry). */
 export async function reenterYard(page: Page) {
-  await walkTo(page, 240, 70, { yFirst: false });
   await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {
-    approachOffset: { x: 0, y: 20 },
+    approachOffset: await labApproach(page, PILOT.lab.airlock),
   });
 }
 

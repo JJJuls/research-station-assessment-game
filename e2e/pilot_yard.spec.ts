@@ -71,6 +71,7 @@ import {
 import { getEvents, hold, press, selectPromptOption } from './helpers';
 import {
   interactAt,
+  labApproach,
   openPromptAt,
   PILOT,
   pilotProbe,
@@ -711,9 +712,8 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
 
     // Return inside: the obligation is still in the mission log.
     await leaveYard(page);
-    await walkTo(page, 240, 456, { yFirst: true });
     await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
-      approachOffset: { x: 0, y: -40 },
+      approachOffset: await labApproach(page, PILOT.lab.southDoor),
     });
 
     const inside = await pilotProbe(page);

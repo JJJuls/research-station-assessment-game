@@ -25,7 +25,11 @@ export const LAB_COLS = 22;
 export const LAB_ROWS = 12;
 
 export const LAB_FLOOR: readonly BlockoutRect[] = [
-  [5, 4, 11, 1], // north lane over the workstation island
+  // North lane over the workstation island. It runs one column PAST the
+  // island's east face (cols 5–16): the east bay climbs into the lane
+  // through a 32 px window (x 496–528) instead of the 1 px slot the
+  // first audit's 8 px BFS had accepted (in-engine finding, world V3).
+  [5, 4, 12, 1],
   [3.5, 5, 15, 1],
   [2.5, 6, 17, 1],
   [2.2, 7, 17.3, 2],
@@ -33,7 +37,7 @@ export const LAB_FLOOR: readonly BlockoutRect[] = [
 
 export const LAB_FOOTPRINTS: readonly BlockoutRect[] = [
   [4, 3, 1, 2], // orientation console (NW wall)
-  [16.2, 3, 2.2, 2], // Kai's briefing desk (NE)
+  [17, 3, 1.4, 2], // Kai's briefing desk (NE; its painted legs, cols 17-18)
   [12.6, 6, 2.4, 1.8], // signal-analysis workstation island
 ];
 

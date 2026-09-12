@@ -58,11 +58,30 @@ import {
   type WorkSurfaceModel,
 } from '../pilot/ui/WorkSurfaceScene';
 import type { InputMode } from '../pilot/windows/windowKit';
-import { CORE_SITES } from '../pilot/zoneSites';
+import { CORE_SITES, CORE_SPAWN } from '../pilot/zoneSites';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
+import { CORE_LAYOUT } from '../world/layouts/coreChamber';
 
 const TILE = 32;
+
+/**
+ * World V2 rebuild: where the painted reactor carries its dynamic state
+ * (plate px) — the sight column is the vessel's glass window, the collar
+ * lamps sit on the platform's front face, the floor ring is the painted
+ * amber ring around the platform.
+ */
+const CORE_ART = {
+  sightColumn: { x: 333, y: 152, w: 24, h: 56 },
+  collarLamps: [
+    { x: 300, y: 236 },
+    { x: 326, y: 244 },
+    { x: 362, y: 244 },
+    { x: 388, y: 236 },
+  ],
+  floorRing: { x: 344, y: 232, w: 230, h: 84 },
+  vesselGlow: { x: 344, y: 168, w: 120, h: 150 },
+} as const;
 
 /** Synchronisation ramp (inactive → stable), full motion. */
 const SYNC_RAMP_MS = 2400;
@@ -120,37 +139,24 @@ export class CoreChamberScene extends PilotZoneScene {
   }
 
   protected getLayout(): RoomLayout {
-    // 25×19 octagonal chamber: the Core block (rows 6-8, cols 11-13) at
-    // the centre, Kai's console east, the status console west, the
-    // Utility Deck doorway on the SOUTH wall (row 16).
+    // World V2 rebuild: the 22×12 painted plate is the architecture and
+    // the machinery; collision is the audited logical grid.
     return {
       theme: 'core',
-      grid: [
-        '#########################',
-        '#########################',
-        '#########################',
-        '########.........########',
-        '######.............######',
-        '#####...............#####',
-        '####.......###.......####',
-        '####.......###.......####',
-        '####.......###.......####',
-        '#####...............#####',
-        '#####...............#####',
-        '######.............######',
-        '#######...........#######',
-        '########.........########',
-        '#########.......#########',
-        '##########.....##########',
-        '###########---###########',
-        '#########################',
-        '#########################',
-      ],
+      grid: [...CORE_LAYOUT],
+      field: 'wide',
+      plateTexture: 'w2-core-plate',
     };
   }
 
+  protected bundleDropBounds(): { width: number; height: number } {
+    return { width: 22 * TILE, height: 12 * TILE };
+  }
+
   protected getSpawn(): { x: number; y: number } {
-    return { x: 12.5 * TILE, y: 13 * TILE };
+    // Machine-audited: inside the south door, ≥ 80 px from it and outside
+    // every interactable's 72 px radius (V2 finding U8-8).
+    return CORE_SPAWN;
   }
 
   create(data?: { spawn?: string }) {
@@ -192,72 +198,60 @@ export class CoreChamberScene extends PilotZoneScene {
         coreExitAllowed(closureCore())
           ? null
           : 'Synchronising — stand by a moment.',
+      registryId: 'core.door_deck',
     });
+    // World V2: the south door is baked into the plate — the generic leaf
+    // would double it; its class lamp sits on the painted lintel lamp.
+    this.doorImage('core.door_deck')?.setVisible(false);
+    this.placeDoorIndicator('core.door_deck', 344, 304);
 
-    // ——— The Core (physically substantial: vessel over the central block) ———
+    // ——— The Core (the painted reactor on its platform) ———
     const core = CORE_SITES.core;
-    const visual = CORE_SITES.coreVisual;
 
-    // V4: floor glow on the decal layer (never over a figure); the
-    // chamber floor carries a ring plate that frames the one apparatus and
-    // a control-position plate in front of the pedestal.
-    this.buildChamberGrammar();
+    // World V2: the dormant vessel, its platform, the flanking pipe runs
+    // and the floor ring are painted; the dynamic state layers over them
+    // as ADD-blended glows (floor ring, vessel) and the emissive graphics
+    // (sight column, collar lamps). Presentation only.
     this.lightPool = this.add
-      .ellipse(visual.x, visual.y + 78, 240, 70, DORMANT, 0.28)
+      .ellipse(
+        CORE_ART.floorRing.x,
+        CORE_ART.floorRing.y,
+        CORE_ART.floorRing.w,
+        CORE_ART.floorRing.h,
+        DORMANT,
+        0.28,
+      )
+      .setBlendMode(Phaser.BlendModes.ADD)
       .setDepth(DepthLayer.FloorDecal + 0.02);
     this.ringGlow = this.add
-      .ellipse(visual.x, visual.y + 6, 150, 170, DORMANT, 0.12)
+      .ellipse(
+        CORE_ART.vesselGlow.x,
+        CORE_ART.vesselGlow.y,
+        CORE_ART.vesselGlow.w,
+        CORE_ART.vesselGlow.h,
+        DORMANT,
+        0.12,
+      )
+      .setBlendMode(Phaser.BlendModes.ADD)
       .setDepth(DepthLayer.FloorDecal + 0.03);
-    // Flanking coolant towers give the Core its machinery mass; the
-    // vessel stands between them over the central block.
-    const column = this.textures.exists('plv1-core-coolant-column')
-      ? 'plv1-core-coolant-column'
-      : 'proc-core-column';
+    this.emissive = this.add.graphics().setDepth(DepthLayer.WorldReadout);
 
-    this.addDecor(visual.x - 70, visual.y + 12, column);
-    this.addDecor(visual.x + 70, visual.y + 12, column);
-
-    // Unit 7 (V18): the vessel is the PROVISIONAL core column strip — one
-    // held frame when inactive/prepared/stable, a slow 6-frame loop while
-    // synchronising (reduced motion holds a mid frame). Fallback: the
-    // procedural vessel.
-    if (this.textures.exists('plv1-core-sync')) {
-      if (!this.anims.exists('plv1-core-sync-loop')) {
-        this.anims.create({
-          key: 'plv1-core-sync-loop',
-          frames: this.anims.generateFrameNumbers('plv1-core-sync', {
-            start: 0,
-            end: 5,
-          }),
-          frameRate: 6,
-          repeat: -1,
-        });
-      }
-
-      this.coreSprite = this.add
-        .sprite(visual.x, visual.y + 8, 'plv1-core-sync', 0)
-        .setDepth(worldDepth(visual.y + 56));
-    } else {
-      this.addDecor(visual.x, visual.y, 'proc-core-vessel');
-    }
-
-    this.addDecor(10.2 * TILE, 14.1 * TILE, 'plv1-core-pillar-a');
-    this.addDecor(14.8 * TILE, 14.1 * TILE, 'plv1-core-pillar-b');
-    this.emissive = this.add.graphics().setDepth(1.5);
-
-    // The Core's control pedestal (the interactable) at the vessel's foot.
+    // The Core's control point (the interactable) at the platform's west
+    // face, approached from the west floor.
     this.addStation({
       interactionKey: 'pilotCore',
       label: 'Core',
       texture: 'proc-core-interface',
       x: core.x,
       y: core.y,
+      verb: 'Inspect the',
+      registryId: 'core.core',
       onPromptOpened: () => this.onCorePromptOpened(),
     });
-    // Unit 7 (V3): the state chip stands beside the pedestal, off the
-    // approach point, so it never covers the avatar.
+    // Unit 7 (V3): the state chip stands on the platform's west face,
+    // off the approach point, so it never covers the avatar.
     this.coreChip = this.add
-      .text(core.x + 40, core.y - 6, '', {
+      .text(core.x + 8, core.y + 30, '', {
         backgroundColor: '#101820',
         color: '#9fb2c1',
         font: '10px monospace',
@@ -266,7 +260,7 @@ export class CoreChamberScene extends PilotZoneScene {
       })
       .setOrigin(0, 0.5)
       .setAlpha(0.88)
-      .setDepth(worldDepth(core.y + 40));
+      .setDepth(worldDepth(core.y + 70));
     registerPilotStation({
       id: 'core',
       zone: 'core_chamber',
@@ -294,21 +288,17 @@ export class CoreChamberScene extends PilotZoneScene {
       workFrames: stable ? undefined : ['plv1-kai-work-a', 'plv1-kai-work-b'],
       x: kai.x,
       y: kai.y,
+      verb: 'Talk to',
+      registryId: 'core.kai',
     });
-    this.addDecor(
-      kai.x + 44,
-      kai.y + 4,
-      this.textures.exists('plv1-core-console')
-        ? 'plv1-core-console'
-        : 'proc-console-wall',
-    );
 
-    // ——— Status console (west): the three feeds + Core state, labels only ———
+    // ——— Status console (west, painted): the three feeds + Core state ———
     const status = CORE_SITES.statusConsole;
 
-    this.addDecor(status.x, status.y, 'proc-console-scenario');
+    // The readout chip hangs on the wall band beside the painted console
+    // (never at the room's edge, where the camera would clip it).
     this.statusConsoleText = this.add
-      .text(status.x, status.y + 36, '', {
+      .text(status.x + 56, status.y - 88, '', {
         backgroundColor: '#101820',
         color: '#9fb2c1',
         font: '10px monospace',
@@ -318,20 +308,20 @@ export class CoreChamberScene extends PilotZoneScene {
       })
       .setOrigin(0.5, 0)
       .setAlpha(0.88)
-      .setDepth(worldDepth(status.y + 36 + 60));
+      .setDepth(worldDepth(status.y - 60));
 
-    // ——— Dressing: coolant collars, conduit trunks, light pools ———
-    this.addDecor(8.5 * TILE, 4.6 * TILE, 'proc-wall-pipes');
-    this.addDecor(16.5 * TILE, 4.6 * TILE, 'proc-wall-pipes');
-    this.addDecor(5.5 * TILE, 11.6 * TILE, 'proc-rig-intake');
-    this.addDecor(19.5 * TILE, 11.6 * TILE, 'proc-cabinet-calibration');
-    this.addDecor(7.5 * TILE, 13.2 * TILE, 'proc-crate-components');
-    this.addDecor(17.5 * TILE, 13.2 * TILE, 'proc-bin-consumables');
-    this.addDecor(6.5 * TILE, 5.3 * TILE, 'proc-shelf-electronics');
-    this.addDecor(18.5 * TILE, 5.3 * TILE, 'proc-rack-tools');
-    this.addDecor(9 * TILE, 6.5 * TILE, 'proc-light-pool');
-    this.addDecor(16 * TILE, 6.5 * TILE, 'proc-light-pool');
-    this.addDecor(12.5 * TILE, 12 * TILE, 'proc-light-pool');
+    // ——— World V2: the painted plate IS the architecture and all the
+    // machinery — hide the control point's marker sprite (interaction,
+    // prompt and events untouched). The V4 grammar plates, coolant
+    // columns, pillars and dressing are gone: the plate carries them.
+    for (const child of this.children.list) {
+      if (
+        child instanceof Phaser.GameObjects.Image &&
+        child.texture.key === 'proc-core-interface'
+      ) {
+        child.setVisible(false);
+      }
+    }
 
     if (devInspectionActive()) {
       this.devLabel = this.add
@@ -345,30 +335,6 @@ export class CoreChamberScene extends PilotZoneScene {
         .setDepth(Depth.AboveWorld + 3)
         .setScrollFactor(0);
     }
-  }
-
-  /** V4 chamber grammar (presentation only): ring plate, control plate, threshold. */
-  private buildChamberGrammar() {
-    const visual = CORE_SITES.coreVisual;
-    const core = CORE_SITES.core;
-
-    // Review U5-8: the apparatus floor plate stays south of the Core block
-    // (rows 9-12), never under a wall footprint.
-    this.add
-      .rectangle(visual.x, 10.5 * TILE, 7 * TILE, 3 * TILE, 0x55627a, 0.18)
-      .setOrigin(0.5)
-      .setStrokeStyle(1, 0x8fa4b8, 0.35)
-      .setDepth(DepthLayer.FloorDecal);
-    this.add
-      .rectangle(core.x, core.y + 44, 3 * TILE, 2 * TILE, 0x55627a, 0.24)
-      .setOrigin(0.5)
-      .setStrokeStyle(1, 0x8fa4b8, 0.35)
-      .setDepth(DepthLayer.FloorDecal + 0.01);
-    this.add
-      .rectangle(12.5 * TILE, 15 * TILE, 3 * TILE, TILE, 0x55627a, 0.34)
-      .setOrigin(0.5)
-      .setStrokeStyle(1, 0x8fa4b8, 0.35)
-      .setDepth(DepthLayer.FloorMarking);
   }
 
   // ————————————————————————————————— prompts ——
@@ -1174,11 +1140,9 @@ export class CoreChamberScene extends PilotZoneScene {
       return;
     }
 
-    const visual = CORE_SITES.coreVisual;
-    // Unit 7: the sight column stands beside the column art, not over it.
-    const columnX = this.coreSprite === null ? visual.x - 4 : visual.x + 42;
-    const columnTop = visual.y - 46;
-    const columnHeight = 84;
+    // World V2: the sight column is the painted vessel's glass window;
+    // the collar lamps sit on the platform's front face.
+    const column = CORE_ART.sightColumn;
     const progress =
       this.visualState === 'stable'
         ? 1
@@ -1190,24 +1154,22 @@ export class CoreChamberScene extends PilotZoneScene {
     g.clear();
 
     // Sight column: dormant teal → cyan fills upward with the ramp.
-    g.fillStyle(prepared ? AMBER : DORMANT, prepared ? 0.6 : 0.9);
-    g.fillRect(columnX, columnTop, 8, columnHeight);
+    g.fillStyle(prepared ? AMBER : DORMANT, prepared ? 0.45 : 0.55);
+    g.fillRect(column.x, column.y, column.w, column.h);
 
     if (progress > 0) {
-      const lit = Math.round(columnHeight * progress);
+      const lit = Math.round(column.h * progress);
 
-      g.fillStyle(ACCENT, 1);
-      g.fillRect(columnX, columnTop + columnHeight - lit, 8, lit);
+      g.fillStyle(ACCENT, 0.85);
+      g.fillRect(column.x, column.y + column.h - lit, column.w, lit);
     }
 
     // Collar lamps (four): lit when stable / progressively during the ramp.
-    for (let i = 0; i < 4; i++) {
-      const y = visual.y - 36 + i * 22;
+    for (const [i, lamp] of CORE_ART.collarLamps.entries()) {
       const lit = progress >= (i + 1) / 4;
 
       g.fillStyle(lit ? ACCENT : prepared ? AMBER : DORMANT, lit ? 1 : 0.7);
-      g.fillRect(visual.x - 38, y, 6, 4);
-      g.fillRect(visual.x + 32, y, 6, 4);
+      g.fillRect(lamp.x - 4, lamp.y - 2, 8, 4);
     }
 
     const glow = progress > 0 ? ACCENT : prepared ? AMBER : DORMANT;
