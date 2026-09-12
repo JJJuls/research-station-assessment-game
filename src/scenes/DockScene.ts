@@ -4,6 +4,7 @@ import { DepthLayer, key, worldDepth } from '../constants';
 import { prefersReducedMotion } from '../inventory/ui/theme';
 import { pilotLaunchMode } from '../pilot/pilotCoverage';
 import {
+  installPilotRouteLogSink,
   notePilotZoneEntered,
   onPilotRouteChange,
   pilotStage,
@@ -573,6 +574,14 @@ export class DockScene extends RoomScene {
 
     // Pilot guidance in the Dock: the route objective line, the station
     // map on M and the zone-entry bookkeeping (discovery + re-entry count).
+    // Audit 2026-09 B6: the route-telemetry sink is installed HERE too —
+    // DockScene is a RoomScene, not a PilotZoneScene, so before this fix
+    // the sink was null during `notePilotZoneEntered('dock')` and the
+    // Dock's `pilot_zone_entered` emit was silently swallowed (11 events
+    // vs 12 recorded entries in every projection).
+    installPilotRouteLogSink((eventType, metadata) =>
+      this.logScenarioEvent('pilotRoute', eventType, { metadata }),
+    );
     notePilotZoneEntered('dock', Date.now());
     this.refreshRouteObjective();
     this.input.keyboard!.on('keydown-M', (event: KeyboardEvent) => {
@@ -601,6 +610,7 @@ export class DockScene extends RoomScene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.unsubscribeRoute?.();
       this.unsubscribeRoute = null;
+      installPilotRouteLogSink(null);
     });
   }
 

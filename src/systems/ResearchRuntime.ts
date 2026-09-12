@@ -102,6 +102,26 @@ const AUTO_NAVIGATE_DELAY_MS = 20_000;
 /** PROVISIONAL(INT-2.6): bounded retry before the handoff proceeds. */
 const PARTICIPANT_EXPORT_ATTEMPTS = 3;
 
+/**
+ * Audit 2026-09 B2: the measurement layer (validity register, coverage)
+ * documented that its dispositions reach "the raw export", but nothing
+ * carried them — and the DEV window probes die with the tab in
+ * production. The augmenter inverts the dependency (systems never
+ * imports pilot code): the pilot layer installs a provider whose
+ * read-only snapshot rides every export payload. Additive PROVISIONAL
+ * fields under the INT-2 precedent; no event, name or formula changes.
+ */
+export type ExportAugmenter = () => {
+  measurement_validity: unknown;
+  pilot_coverage: unknown;
+};
+
+let exportAugmenter: ExportAugmenter | null = null;
+
+export function installExportAugmenter(augmenter: ExportAugmenter | null) {
+  exportAugmenter = augmenter;
+}
+
 class ResearchRuntime {
   readonly dataQualityTracker = new DataQualityTracker();
   readonly eventLogger = new EventLogger();
@@ -761,7 +781,24 @@ class ResearchRuntime {
       // Pilot V3 (Unit 2) — PROVISIONAL(INT-2): reproducibility context.
       mission_state: this.sessionState.getMissionState(),
       environment: { prefers_reduced_motion: readReducedMotion() },
+      // Audit 2026-09 B2 — PROVISIONAL: opportunity/validity dispositions
+      // and pilot coverage, exported in production too (previously DEV
+      // window probes only, dying with the tab). Explicit fields — never
+      // a spread — so an augmenter can never override a payload key; and
+      // an augmenter failure must never break an export (missing
+      // dispositions are recoverable from raw events, a lost export is
+      // not).
+      measurement_validity: this.augmented()?.measurement_validity,
+      pilot_coverage: this.augmented()?.pilot_coverage,
     };
+  }
+
+  private augmented(): ReturnType<ExportAugmenter> | undefined {
+    try {
+      return exportAugmenter?.() ?? undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   private installDeveloperHelper() {

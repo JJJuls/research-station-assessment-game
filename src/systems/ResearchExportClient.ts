@@ -73,6 +73,14 @@ export interface ResearchExportPayload {
   mission_state: MissionState;
   environment: { prefers_reduced_motion: boolean | null };
   raw_events_omitted?: boolean;
+  /**
+   * Audit 2026-09 B2 — PROVISIONAL: the measurement validity register
+   * (per-opportunity dispositions) and pilot coverage snapshot, installed
+   * by the pilot layer via the export augmenter. Absent on routes that
+   * install no augmenter.
+   */
+  measurement_validity?: unknown;
+  pilot_coverage?: unknown;
   /** How many of the current page load's events the compact export dropped. */
   raw_events_omitted_count?: number;
 }

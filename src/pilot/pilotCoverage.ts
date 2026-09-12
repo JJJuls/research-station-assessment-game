@@ -26,6 +26,7 @@ import {
   refreshValidityProbe,
   serializeOpportunities,
 } from '../measurement/validity';
+import { installExportAugmenter } from '../systems';
 import type { PilotItemCoverage } from './coverageSchedule';
 import {
   deriveCoverage,
@@ -251,6 +252,26 @@ export function refreshPilotCoverageProbe() {
     final_core_closure: lastClosure,
   };
 }
+
+// Audit 2026-09 B2: the register and coverage ride EVERY export payload
+// (production included) — previously they existed only in DEV window
+// probes and died with the tab. Read-only snapshots at build time;
+// module-load installation so no scene has to remember to wire it.
+installExportAugmenter(() => {
+  const items = pilotCoverage();
+
+  return {
+    measurement_validity: serializeOpportunities(),
+    pilot_coverage: {
+      launch_mode: launchMode,
+      developer_scenes_visited: [...developerScenesVisited],
+      items,
+      summary: operationalCompletionSummary(items),
+      final_core_closed: finalCoreClosed,
+      final_core_closure: lastClosure,
+    },
+  };
+});
 
 /** Test-only escape hatch (page-session state otherwise). */
 export function resetPilotCoverageState() {

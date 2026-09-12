@@ -740,6 +740,17 @@ export class StationConcourseScene extends PilotZoneScene {
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {
     if (interactionKey === 'pilotVale') {
+      // Audit 2026-09 A7: the reminder mention is recorded HERE, exactly
+      // once per prompt open — valeBeat() is pure. It used to live inside
+      // valeBeat(), which the prompt pipeline calls twice per open (body +
+      // options), double-counting every exposure against the ledger's
+      // equal-reminder gate.
+      if (pilotStage() === 'incident_handover') {
+        noteM09NpcMention('check1');
+      } else if (pilotStage() === 'return_hub') {
+        noteM09NpcMention('check2');
+      }
+
       return this.valeBeat().body;
     }
 
@@ -805,9 +816,8 @@ export class StationConcourseScene extends PilotZoneScene {
         };
       case 'incident_handover':
         // Equal reminder exposure (Unit 5): the same neutral "still yours"
-        // line as the return beat; recorded for check 1 while it is due.
-        noteM09NpcMention('check1');
-
+        // line as the return beat; recorded for check 1 while it is due
+        // (in getPromptBody — once per open; audit A7).
         return {
           body: 'Vale: How is the handover going? Anything you leave open stays open for the shift.',
           options: [
@@ -859,9 +869,8 @@ export class StationConcourseScene extends PilotZoneScene {
         };
       case 'return_hub':
         // Neutral, equal to the check-1 mention: no gauge named, no
-        // directive — the registered form's one NPC mention per check.
-        noteM09NpcMention('check2');
-
+        // directive — the registered form's one NPC mention per check
+        // (recorded in getPromptBody — once per open; audit A7).
         return {
           body: 'Vale: Back inside — good. The exterior shift is logged. Anything you accepted earlier is still yours to close. The return shift finishes in the Records Workshop, west door.',
           options: [

@@ -1013,10 +1013,13 @@ function closeM24(nowMs: number, choice: ShiftChoice) {
   if (disposition.kind === 'completed') {
     w.complete(nowMs, raw, 'system');
   } else if (disposition.kind === 'missing') {
+    // Audit 2026-09 A15: the substantive detail (`deck_never_depleted`)
+    // is passed on this branch too — stop() reads `raw.invalid_detail`
+    // for the register detail and previously only saw the exit code here.
     w.stop(
       nowMs,
       choice === 'closed_at_review' ? 'closed_at_review' : 'departed',
-      raw,
+      { ...raw, invalid_detail: disposition.detail },
       'system',
       'censored',
     );
@@ -1048,10 +1051,11 @@ function closeM26(nowMs: number, choice: ShiftChoice) {
   if (disposition.kind === 'completed') {
     w.complete(nowMs, raw, 'system');
   } else if (disposition.kind === 'missing') {
+    // Audit 2026-09 A15: pass `channel_never_disconnected` (see closeM24).
     w.stop(
       nowMs,
       choice === 'closed_at_review' ? 'closed_at_review' : 'departed',
-      raw,
+      { ...raw, invalid_detail: disposition.detail },
       'system',
       'censored',
     );

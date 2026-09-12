@@ -22,7 +22,10 @@
  * participant-facing surface carries a visible DEV label. The flag is read
  * from the launch URL once and can never be set from a participant launch.
  */
-import { markOpportunityInvalid } from '../../measurement/validity';
+import {
+  markOpportunityInvalid,
+  serializeOpportunities,
+} from '../../measurement/validity';
 import {
   closePilotCoverageAtFinalCore,
   type FinalCoreClosure,
@@ -276,7 +279,15 @@ export function closeStationRecord(nowMs: number): FinalCoreClosure | null {
 
   finalizeYardAmbientWindows(nowMs);
 
-  if (m22Open) {
+  // Audit 2026-09 A16: guard on declaration — `markOpportunityInvalid`
+  // throws on an undeclared id, and these legacy ambient ids are only
+  // declared on routes that host them (never the v2 participant route).
+  // No behaviour change on the live route (both flags are false there).
+  const declared = new Set(
+    serializeOpportunities().map((record) => record.opportunity_id),
+  );
+
+  if (m22Open && declared.has(YARD_M22_OPPORTUNITY_ID)) {
     markOpportunityInvalid(
       YARD_M22_OPPORTUNITY_ID,
       'censored',
@@ -284,7 +295,7 @@ export function closeStationRecord(nowMs: number): FinalCoreClosure | null {
     );
   }
 
-  if (m25Open) {
+  if (m25Open && declared.has(YARD_M25_OPPORTUNITY_ID)) {
     markOpportunityInvalid(
       YARD_M25_OPPORTUNITY_ID,
       'censored',

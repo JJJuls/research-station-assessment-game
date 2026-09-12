@@ -67,9 +67,14 @@ export const M03_WINDOW_IDS = {
 
 /**
  * Minimum time the residual surface must be visible before a departure
- * counts as a valid "left as it stands" observation (implementation
- * choice recorded as an owner decision; below it the occasion is
- * `insufficient_opportunity` — invalid, never low).
+ * counts as a full-exposure observation. Exposure below the floor is
+ * RECORDED (`exposure_sufficient: false`, `close_state:
+ * 'panel_closed_early'`) and is NEVER a validity marker — every panel
+ * close is a completed observation (m03Reset.ts closure path;
+ * docs/game/rooms/12-workshop-return.md). The earlier draft rule
+ * (`insufficient_opportunity` below the floor) was not adopted; the
+ * threshold itself remains flagged for research-owner confirmation
+ * (M01-M26 spatial crosswalk).
  */
 export const M03_MIN_EXPOSURE_MS = 2000;
 

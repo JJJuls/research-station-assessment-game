@@ -57,6 +57,7 @@ import {
   storyActTitle,
 } from './storyState';
 import { noteM09ReminderLogViewed } from './windows/m09MonitorWatch';
+import { noteM10ReminderLogViewed } from './windows/m10ComponentPromise';
 import { WorldBundleLayer } from './worldBundles';
 
 /** Guidance target counts as reached inside this radius (arrival). */
@@ -382,14 +383,26 @@ export abstract class PilotZoneScene extends RoomScene {
       throw new Error('PilotZoneScene: an NPC beat has 1–4 options');
     }
 
-    return beat.options.map((option) => ({
+    return beat.options.map((option, index) => ({
       label: option.label,
       feedback: option.feedback ?? '',
       getEventTypes: () => [],
       onSelected: () => {
         this.logScenarioEvent(npcKey, 'pilot_npc_beat', {
           choice_value: option.tag,
-          metadata: { zone: this.zoneKey, stage: pilotStage() },
+          metadata: {
+            zone: this.zoneKey,
+            stage: pilotStage(),
+            // Audit 2026-09 A3 (spec Q12 ruling §7): the options' fixed
+            // presentation order and the pre-focused default are
+            // documented IN THE DATA — position of the chosen option,
+            // how many options were shown, and which position carried
+            // the keyboard focus when the prompt opened (always the
+            // first card; RoomScene.focusPromptCard(0)).
+            option_position: index + 1,
+            option_count: beat.options.length,
+            focus_default_position: 1,
+          },
         });
         option.onSelected?.();
       },
@@ -516,7 +529,10 @@ export abstract class PilotZoneScene extends RoomScene {
     // Pilot V3 (Unit 4, V2 finding U8-7): the map/mission-log overlay is
     // the M09/M10 reminder exposure the ledger declares as a control
     // variable; it was declared but never recorded before this call.
+    // Audit 2026-09 A8: the M10 hook existed but had no call site, so
+    // `reminder_log_views` was a constant 0 in every export.
     noteM09ReminderLogViewed();
+    noteM10ReminderLogViewed();
     this.logScenarioEvent('pilotRoute', 'pilot_map_opened', {
       metadata: { zone: this.zoneKey },
     });
