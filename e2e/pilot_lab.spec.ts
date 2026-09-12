@@ -539,11 +539,11 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
       await bootPilot(page, 'h2', { extra: '&ip_form=A' });
       await completeDockTutorial(page, 1);
       await routeToWorkshopWork(page);
-      await interactAt(
-        page,
-        { x: 704, y: 416 },
-        { approachOffset: { x: 0, y: -44 } },
-      );
+      // The lattice bench in the rebuilt two-bay hall (audited approach).
+      await workshopVia(page, 1193, 250);
+      await interactAt(page, PILOT.workshop.latticeBench, {
+        approachOffset: { x: 0, y: -50 },
+      });
       await waitPipeOpen(page, true);
       await clickPipeButton(page, 'stop');
       await clickPipeButton(page, 'confirm_stop');

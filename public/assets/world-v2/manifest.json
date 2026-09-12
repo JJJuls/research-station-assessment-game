@@ -3,7 +3,7 @@
   "status": "PROVISIONAL MODEL-SELECTED, NOT HUMAN-APPROVED",
   "generator": "PixelLab MCP",
   "date": "2026-09-12",
-  "notes": "Painted-plate production: each room plate is one authored key-art painting; collision comes from the invisible layout grid (src/world/layouts/*). No commercial reference imagery was used as input; all prompts original. Rejected candidates: direction B (2ef9864f, oblique projection) and direction C (32c1cc32, isometric) kept as direction studies under docs/verification/professional-world-rescue-v2/directions/; door candidates idx1-3 of e7cf8f73 rejected (style mismatch).",
+  "notes": "Painted-plate production: each room plate is one authored key-art painting; collision comes from the invisible layout grid (src/world/layouts/*). No commercial reference imagery was used as input; all prompts original. Rejected candidates: direction B (2ef9864f, oblique projection) and direction C (32c1cc32, isometric) kept as direction studies under docs/verification/professional-world-rescue-v2/directions/; door candidates idx1-3 of e7cf8f73 rejected (style mismatch). V3 (2026-09-13): every remaining zone (laboratory, deck, core, yard) renders its plate; no new generations this session (PixelLab balance untouched).",
   "files": {
     "plates/dock-plate.png": {
       "job": "2aeff8c4-c76b-4225-9b01-44777bf9bcc7",
@@ -64,7 +64,7 @@
     "plates/yard-plate.png": {
       "job": "e5fa5c46-0492-4d74-8815-bd0be73ffdc1 (west half) + 0c92c2d4-b32b-4fae-97d3-499c811bf3a0 (east half; style ref = west half)",
       "tool": "create_image_pro x2, stitched side-by-side with Pillow at x=688; the two halves' facing snow-drift banks form the crossing notch (no seam blending)",
-      "role": "Exterior Recovery Yard two-plate strip (1376x384): airlock apron + coupling + uplink posts + Mast 04 (west), drift-bank pass, excavation stake field + metal recovery compound with gantry magnet, sorting bench and parts tray (east). ART LANDED AHEAD OF THE ROOM'S REBUILD UNIT — not yet referenced by any scene.",
+      "role": "Exterior Recovery Yard two-plate strip (1376x384): airlock apron + coupling + uplink posts + Mast 04 (west), drift-bank pass, excavation stake field + metal recovery compound with gantry magnet, sorting bench and parts tray (east). Referenced by ExteriorRecoveryYardScene since the V3 yard unit (layout src/world/layouts/yard.ts).",
       "edits": "stitch only; all pixels byte-identical to the two generations",
       "sha256": "a32c5add94311150946781d9ee5aac276d1bc81d39c9036f1ba46099143b1f08"
     },
