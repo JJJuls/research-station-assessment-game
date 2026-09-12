@@ -3,8 +3,8 @@
  * (docs/game/world-v1/CAMERA-AND-SCALE-SPEC.md). Replaces v4_camera.spec.
  *
  * Positive assertions over the DEV probes with real keyboard input:
- *   - the world plate is 1280×720 world px (40×22.5 tiles) at 1× on the
- *     1280×720 canvas and 1.5× on the native 1920×1080 canvas;
+ *   - the world plate is 640×360 world px (20×11.25 tiles) at 2× on the
+ *     1280×720 canvas and 3× on the native 1920×1080 canvas (rescue field);
  *   - the camera follows once the avatar leaves the dead zone, holds still
  *     while the avatar idles, and never leaves the room bounds;
  *   - the visible world area is the same at 800×600 and 1280×720;
@@ -64,10 +64,10 @@ test.describe('World V1 camera and viewport contract', () => {
 
     const before = (await cameraProbe(page))!;
 
-    expect(before.zoom).toBeCloseTo(1, 5);
-    expect(before.plate).toEqual({ width: 1280, height: 720, scale: 1 });
-    expect(before.viewWidth).toBe(1280);
-    expect(before.viewHeight).toBe(720);
+    expect(before.zoom).toBeCloseTo(2, 5);
+    expect(before.plate).toEqual({ width: 640, height: 360, scale: 2 });
+    expect(before.viewWidth).toBe(640);
+    expect(before.viewHeight).toBe(360);
     expect(before.hudZoom).toBeCloseTo(1.2, 5);
 
     // Idle: the camera holds still.
@@ -77,25 +77,26 @@ test.describe('World V1 camera and viewport contract', () => {
     expect(idle.viewX).toBe(before.viewX);
     expect(idle.viewY).toBe(before.viewY);
 
-    // Walk north up the spine well past the dead zone: the camera tracks
-    // and keeps the avatar inside the central band.
+    // Walk north to the door band, past the dead zone: the camera tracks
+    // (the 22×12 room leaves a 24 px vertical scroll range) and keeps the
+    // avatar inside the central band.
     const start = await playerXY(page);
 
-    await driveAxisTo(page, 'y', start.y - 400, 10);
+    await driveAxisTo(page, 'y', 124, 10);
     await page.waitForTimeout(400);
 
     const after = (await cameraProbe(page))!;
     const moved = await playerXY(page);
 
-    expect(moved.y).toBeLessThan(start.y - 150);
+    expect(moved.y).toBeLessThan(start.y - 56);
     expect(after.viewY).toBeLessThan(before.viewY);
     expect(moved.y).toBeGreaterThan(after.viewY + after.viewHeight * 0.2);
     expect(moved.y).toBeLessThan(after.viewY + after.viewHeight * 0.8);
 
-    // Push into the east wall along the east–west main: the view clamps
-    // to the bounds.
-    await driveAxisTo(page, 'y', 480, 10);
-    await driveAxisTo(page, 'x', 1400, 8);
+    // Push into the east wall along the open deck: the view clamps to the
+    // bounds.
+    await driveAxisTo(page, 'y', 232, 10);
+    await driveAxisTo(page, 'x', 700, 8);
     await page.waitForTimeout(400);
 
     const clamped = (await cameraProbe(page))!;
@@ -131,23 +132,23 @@ test.describe('World V1 camera and viewport contract', () => {
       await context.close();
     }
 
-    // Equal exposure: the same 1280×720 world field on every canvas.
+    // Equal exposure: the same 640×360 world field on every canvas.
     for (const label of ['800x600', '1280x720', '1920x1080'] as const) {
-      expect(views[label].viewWidth, label).toBe(1280);
-      expect(views[label].viewHeight, label).toBe(720);
+      expect(views[label].viewWidth, label).toBe(640);
+      expect(views[label].viewHeight, label).toBe(360);
       expect(views[label].viewX, label).toBe(views['1280x720'].viewX);
       expect(views[label].viewY, label).toBe(views['1280x720'].viewY);
     }
 
     expect(views['1280x720'].plate).toEqual({
-      width: 1280,
-      height: 720,
-      scale: 1,
+      width: 640,
+      height: 360,
+      scale: 2,
     });
     expect(views['1920x1080'].plate).toEqual({
-      width: 1280,
-      height: 720,
-      scale: 1.5,
+      width: 640,
+      height: 360,
+      scale: 3,
     });
     expect(views['1920x1080'].hudZoom).toBeCloseTo(1.8, 5);
     expect(spaces['800x600']).toEqual(spaces['1280x720']);
@@ -211,16 +212,10 @@ test.describe('World V1 camera and viewport contract', () => {
       { timeout: 5000 },
     );
 
-    // Away from every object: no prompt.
-    await walkTo(
-      page,
-      PILOT.dock.northDoorApproach.x,
-      PILOT.dock.northDoorApproach.y + 160,
-      {
-        yFirst: false,
-      },
-    );
+    // Away from every object (open deck south-west): no prompt.
+    await walkTo(page, 168, 232, { yFirst: false });
     await page.waitForTimeout(300);
     expect((await promptProbe(page))?.prompt ?? false).toBe(false);
+    void PILOT;
   });
 });

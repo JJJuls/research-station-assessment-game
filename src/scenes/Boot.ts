@@ -33,6 +33,7 @@ import {
   WORLD_V1_STRIP_URLS,
   WORLD_V1_TILESET_URLS,
 } from '../world/kit/worldV1Assets';
+import { WORLD_V2_IMAGE_URLS } from '../world/kit/worldV2Assets';
 
 export class Boot extends Scene {
   constructor() {
@@ -150,6 +151,13 @@ export class Boot extends Scene {
         frameWidth: 32,
         frameHeight: 32,
       });
+    }
+
+    // Professional world rescue (V2): PROVISIONAL MODEL-SELECTED painted
+    // room plates, opening key art and architecture sprites
+    // (public/assets/world-v2/manifest.json). Presentation only.
+    for (const [imageKey, url] of Object.entries(WORLD_V2_IMAGE_URLS)) {
+      this.load.image(imageKey, url);
     }
   }
 

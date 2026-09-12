@@ -82,8 +82,8 @@ export const RETURN = {
     kai: { ...CONCOURSE_STATIONS.kaiReturn },
     gauge: { ...CONCOURSE_STATIONS.monitorGauge },
     vale: { ...CONCOURSE_STATIONS.vale },
-    /** The south loop row: the clear approach to Vale, Kai and the gauge. */
-    loopY: 30 * 32,
+    /** The rescue hall's south lane: the clear approach row. */
+    loopY: 252,
   },
   laneY: 272,
 } as const;
@@ -524,7 +524,8 @@ export async function enterConcourseWithOffers(
       yFirst: false,
     });
     await interactAt(page, RETURN.concourse.gauge, {
-      approachOffset: { x: 0, y: 56 },
+      // The gauge hangs on the south hull; its operating face is north.
+      approachOffset: { x: 0, y: -56 },
       yFirst: true,
     });
     await page.waitForTimeout(400);

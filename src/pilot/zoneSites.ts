@@ -15,20 +15,21 @@
 const TILE = 32;
 
 /**
- * Dock — participant layout (48×30; world-layouts.json `dock`). The
- * check-in terminal stands on cells (29–30, 18–19) in the arrival /
- * handover bay east of the spine and is approached from the south; the
- * movement marker sits on the spine two tiles north of the arrival spawn;
- * the docking airlock is a sealed class-3 door in the south hull; the
- * arrival spawn is the berth threshold, 96 px inside the airlock's anchor.
+ * Dock — participant layout (World V2 rescue, 22×12 painted plate). All
+ * anchors are mapped to the plate's baked art: the check-in kiosk stands
+ * against the north wall at x 248 (approached from the south), the
+ * Concourse door sprite is centred at x 352 in the north wall band, the
+ * sealed docking vault is baked at the south hull centre x 328, the
+ * arrival spawn is 96 px north of the vault anchor (outside its 72 px
+ * radius), and the movement marker sits on open deck east of the spawn.
  */
 export const DOCK_SITES = {
-  terminal: { x: 30 * TILE, y: 20 * TILE },
-  marker: { x: 24 * TILE, y: 22 * TILE },
-  northDoor: { x: 24 * TILE, y: 1 * TILE },
-  dockingAirlock: { x: 24 * TILE, y: 28 * TILE },
-  spawnArrival: { x: 24 * TILE, y: 25 * TILE },
-  spawnFromConcourse: { x: 24 * TILE, y: 5 * TILE },
+  terminal: { x: 248, y: 132 },
+  marker: { x: 456, y: 192 },
+  northDoor: { x: 352, y: 64 },
+  dockingAirlock: { x: 328, y: 300 },
+  spawnArrival: { x: 328, y: 204 },
+  spawnFromConcourse: { x: 352, y: 152 },
 } as const;
 
 /** Dock — legacy V4 bay (`?route=legacy` regression specs; unchanged). */
@@ -41,32 +42,37 @@ export const LEGACY_DOCK_SITES = {
 } as const;
 
 /**
- * Station Concourse (60×38; world-layouts.json `concourse`) — episode 1
- * (incident handover) and episode 5 (return). Vale stands in front of the
- * operations island (counter + status wall) in the south-east reception
- * district; Kai's return post is beside her; the plan board is in the
- * north-west records-preparation district; the incident evidence desk in
- * the north-east briefing district; the completed routing packet in the
- * south-west reading bay; the monitor gauge at the reception's service
- * end; the quiet reading-desk lamp in the reading bay.
+ * Station Concourse (World V2 rescue, 22×12 painted plate) — episode 1
+ * (incident handover) and episode 5 (return). Anchors are mapped to the
+ * plate's baked art: Vale stands on the open deck in front of her
+ * operations desk (east-centre); Kai's return post is on the west side
+ * of the hall (the return handover happens on the floor, not behind the
+ * desk); the incident plan board is baked on the north-west wall; the
+ * incident desk is a layered sprite mid-north; the quality packet lies
+ * on the baked north-east work table (approached from the west); the
+ * monitor gauge hangs on the south hull east of the Dock hatch; the
+ * faulty reading-desk lamp is the baked green lamp on the south-west
+ * reading table. Every anchor/approach pair was audited against the
+ * 72 px interaction radius so each approach point's nearest interactable
+ * is its own station (±12 px driver landing error included).
  */
 export const CONCOURSE_STATIONS = {
-  vale: { x: 40 * TILE, y: 27 * TILE },
-  /** Kai's return-shift position (episode 5 handover) beside the desk. */
-  kaiReturn: { x: 45 * TILE, y: 27 * TILE },
-  planBoard: { x: 14 * TILE, y: 12 * TILE },
-  incidentDesk: { x: 44 * TILE, y: 12 * TILE },
-  qcPacket: { x: 22 * TILE, y: 27 * TILE },
-  monitorGauge: { x: 52 * TILE, y: 23 * TILE },
-  concourseFault: { x: 13 * TILE, y: 25 * TILE },
+  vale: { x: 440, y: 208 },
+  /** Kai's return-shift position (episode 5 handover), west floor. */
+  kaiReturn: { x: 232, y: 148 },
+  planBoard: { x: 152, y: 148 },
+  incidentDesk: { x: 616, y: 268 },
+  qcPacket: { x: 480, y: 140 },
+  monitorGauge: { x: 520, y: 300 },
+  concourseFault: { x: 124, y: 240 },
 } as const;
 
-/** Concourse arrival spawns (≥ 96 px inside every door). */
+/** Concourse arrival spawns (≥ 96 px from every door anchor). */
 export const CONCOURSE_SPAWNS = {
-  fromDock: { x: 30 * TILE, y: 33 * TILE },
-  fromLaboratory: { x: 30 * TILE, y: 5 * TILE },
-  fromRecords: { x: 5 * TILE, y: 19 * TILE },
-  fromDeck: { x: 55 * TILE, y: 19 * TILE },
+  fromDock: { x: 352, y: 224 },
+  fromLaboratory: { x: 368, y: 172 },
+  fromRecords: { x: 196, y: 220 },
+  fromDeck: { x: 592, y: 180 },
 } as const;
 
 /**

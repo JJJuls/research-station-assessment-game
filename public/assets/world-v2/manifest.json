@@ -1,0 +1,44 @@
+{
+  "set": "world-v2 rescue",
+  "status": "PROVISIONAL MODEL-SELECTED, NOT HUMAN-APPROVED",
+  "generator": "PixelLab MCP",
+  "date": "2026-09-12",
+  "notes": "Painted-plate production: each room plate is one authored key-art painting; collision comes from the invisible layout grid (src/world/layouts/*). No commercial reference imagery was used as input; all prompts original. Rejected candidates: direction B (2ef9864f, oblique projection) and direction C (32c1cc32, isometric) kept as direction studies under docs/verification/professional-world-rescue-v2/directions/; door candidates idx1-3 of e7cf8f73 rejected (style mismatch).",
+  "files": {
+    "plates/dock-plate.png": {
+      "job": "2aeff8c4-c76b-4225-9b01-44777bf9bcc7",
+      "tool": "create_image_pro",
+      "role": "Dock room plate (688x384); also the selected direction-A golden frame",
+      "edits": "none",
+      "sha256": "cbe65d18a9e8311900e05049c187043e68c22e4daa042b65286c4f3713d9f6a3"
+    },
+    "plates/concourse-plate.png": {
+      "job": "f2c2ea85-a47b-4f42-877a-fa923cbc1007",
+      "tool": "create_image_pro (style ref = dock plate)",
+      "role": "Concourse room plate (688x384)",
+      "edits": "inpaint W door (40ea700b-abe8-441a-8a7d-403f7a59bd36), inpaint E door (271e3af0-a200-4adb-be5b-a13e4cab9244), inpaint lamp-table erase (c4b6e7ee-a187-4b00-baa1-4d7caeeeeaf4); mask regions composited with Pillow, rest byte-identical",
+      "sha256": "498d7dd545630e714b106b8cda20a3dad73fd1f2f010cd8aa6b310c4d5403f2b"
+    },
+    "opening/station-establishing.png": {
+      "job": "1376f7c5-651e-422e-b045-3eb6054acf9b",
+      "tool": "create_image_pro (style ref = dock plate)",
+      "role": "Opening shot 1 key art",
+      "edits": "none",
+      "sha256": "68d1d3730c860155a47ec95f71ab83729b7a4027ebd4d4bb4f5b9e2f0d2450f1"
+    },
+    "opening/shuttle-berth.png": {
+      "job": "17cc1fec-0833-4735-a605-7bd0e67d3aca",
+      "tool": "create_image_pro (style ref = dock plate)",
+      "role": "Opening shot 2 key art",
+      "edits": "none",
+      "sha256": "e45975545d44cfea11c6ddd6461c8386792a61b3181f7e0ead0dd66662a936d8"
+    },
+    "architecture/door-north.png": {
+      "job": "e7cf8f73-fc11-4c1d-939b-910a928f96b9",
+      "tool": "create_image_pro (candidate index 0 of 4; style ref = dock plate)",
+      "role": "Concourse door leaf sprite (Dock north wall), 80x96",
+      "edits": "none",
+      "sha256": "855415b08ff323917fa331a0f36d99e0696c0e163d623423c15b306178f864db"
+    }
+  }
+}

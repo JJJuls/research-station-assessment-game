@@ -1,35 +1,31 @@
 /**
- * Pilot opening (skippable) — World V1 production slice
- * (STORY-STATE-SPEC.md §5, storyboard frames 1–4; frames 5–8 continue
- * inside DockScene.beginArrival on the same wall clock).
+ * Pilot opening (skippable) — World V2 rescue.
  *
- * One continuous exterior arrival rendered through the same wide world
- * plate as every room (1280×720 world px at 1×/1.5×) from a plateau
- * built with the World V1 exterior tileset: Station 080 laid out in its
- * TRUE topology (Dock south of the Concourse, Records west, Laboratory
- * and the Yard's bent mast north, Utility and the Core east), the storm's
- * evidence (Mast 04 bent, a torn roof panel, drifts), and the relief
- * shuttle entering along the cleared approach lane from the south-west,
- * decelerating, and berthing at the Dock's south docking seal — the exact
- * point the participant then steps out of.
+ * Two authored key-art shots rendered through the same wide world plate
+ * as every room (640×360 world px at 2×/3×):
  *
- * Timing is WALL-CLOCK: captions, the camera move and the shuttle are
- * functions of the raw elapsed time read in update(), never of the
- * frame-delta accumulators, so the shot ends at the same wall time on any
- * machine. Any key or click skips. Skipping or finishing changes NO
- * measurement entry state: the Dock's one finish function lands both in
- * the identical state. Under reduced motion the shot is static (shuttle
- * berthed) and the captions hold for the same total time. Logs
- * `pilot_opening_*` (unmapped route telemetry) through the Dock.
+ *   Shot 1 (establishing): Station 080 on its snowbound plateau at cold
+ *   dawn — connected modules, warm windows, Mast 04 bent, the flagged
+ *   approach lane. The camera drifts across the painting toward the
+ *   dock.
+ *   Shot 2 (the berth): the relief shuttle on final approach at the
+ *   station's docking seal, landing lights through blowing snow.
+ *
+ * Both shots are PixelLab key art (public/assets/world-v2/opening/,
+ * provenance in the world-v2 manifest), shown at 2× with a slow drift;
+ * light snowfall is layered as simple world-space flakes. Timing is
+ * WALL-CLOCK: captions, the camera and the cut are functions of the raw
+ * elapsed time read in update(), so the shot ends at the same wall time
+ * on any machine. Any key or click skips. Skipping or finishing changes
+ * NO measurement entry state: the Dock's one finish function lands both
+ * in the identical state. Under reduced motion the shots are static and
+ * the captions hold for the same total time. Logs `pilot_opening_*`
+ * (unmapped route telemetry) through the Dock.
  */
 import Phaser from 'phaser';
 
-import { DepthLayer, key } from '../../constants';
+import { key } from '../../constants';
 import { prefersReducedMotion } from '../../inventory/ui/theme';
-import { ensureKitTextures } from '../../world/kit/kitTextures';
-import { SHUTTLE_HULL_TINT } from '../../world/kit/worldV1Assets';
-import { STATION_THEMES } from '../../world/proceduralTilesets';
-import { buildPlaceholderRoomMap } from '../../world/StationMapBuilder';
 import {
   attachWorldPlate,
   DESIGN_HEIGHT,
@@ -43,63 +39,24 @@ interface OpeningLaunchData {
   onDone?: (outcome: 'completed' | 'skipped') => void;
 }
 
-/** The exterior shot: frames 1–4 of the storyboard (ms). */
+/** Total opening length (wall-clock ms). */
 export const OPENING_SHOT_MS = 8600;
 const HANDOVER_MS = 200;
 export const OPENING_TOTAL_MS = OPENING_SHOT_MS + HANDOVER_MS;
 
-/** Shuttle approach window (frame 2 → 4). */
-const APPROACH_START_MS = 1800;
-const APPROACH_MS = 4600;
-/** Camera move window (frame 3 → 4). */
-const MOVE_START_MS = 3200;
-const MOVE_MS = 4200;
+/** The cut from the establishing shot to the berth shot. */
+const CUT_MS = 5200;
+/** Cross-fade length at the cut. */
+const FADE_MS = 260;
 
-/**
- * The plateau (60×34 tiles, exterior tileset): a rock ridge around the
- * edges, packed snow inside, the cleared approach lane from the
- * south-west corner to the Dock's berth.
- */
-const PLATEAU: readonly string[] = (() => {
-  const rows: string[] = [];
+/** Key art is shown at 2× (art pixels match the rooms' 2× composite). */
+const ART_SCALE = 2;
+/** Source key-art size (px). */
+const ART_W = 688;
+const ART_H = 384;
 
-  for (let r = 0; r < 34; r += 1) {
-    let row = '';
-
-    for (let c = 0; c < 60; c += 1) {
-      const edge = r < 2 || r > 31 || c < 2 || c > 57;
-      const ridgeNE = r < 6 && c > 48;
-      const ridgeNW = r < 5 && c < 10;
-      const ridgeSE = r > 28 && c > 50;
-
-      row += edge || ridgeNE || ridgeNW || ridgeSE ? '#' : '.';
-    }
-
-    rows.push(row);
-  }
-
-  return rows;
-})();
-
-/**
- * World positions of the composition (px). Modules follow the route
- * topology: the Concourse at the centre, the Dock south, Records west,
- * the Laboratory north (the Yard's mast beyond), Utility east (the Core
- * beyond). Roof images are 192×128 (centre anchored).
- */
-const SHOT = {
-  concourse: { x: 960, y: 520 },
-  dock: { x: 960, y: 760 },
-  records: { x: 640, y: 520 },
-  laboratory: { x: 960, y: 300 },
-  utility: { x: 1280, y: 520 },
-  core: { x: 1540, y: 470 },
-  mast: { x: 1010, y: 130 },
-  berth: { x: 960, y: 872 },
-  shuttleStart: { x: 240, y: 1010 },
-  cameraStart: { x: 1000, y: 470 },
-  cameraEnd: { x: 960, y: 700 },
-} as const;
+/** Snowfall: simple world-space flakes (no emitter; deterministic). */
+const SNOW_COUNT = 44;
 
 declare global {
   interface Window {
@@ -125,9 +82,9 @@ export class PilotOpeningScene extends Phaser.Scene {
   private captionIndex = -1;
   private captionText!: Phaser.GameObjects.Text;
   private plate!: WorldPlate;
-  private shuttle!: Phaser.GameObjects.Image;
-  private shuttleShadow!: Phaser.GameObjects.Ellipse;
-  private berthLight!: Phaser.GameObjects.Rectangle;
+  private shotA!: Phaser.GameObjects.Image;
+  private shotB!: Phaser.GameObjects.Image;
+  private snow: { rect: Phaser.GameObjects.Rectangle; speed: number }[] = [];
   private shuttleLanded = false;
   private reduced = false;
   private startedAt = 0;
@@ -142,47 +99,65 @@ export class PilotOpeningScene extends Phaser.Scene {
     this.finished = false;
     this.captionIndex = -1;
     this.shuttleLanded = false;
+    this.snow = [];
   }
 
   create() {
     this.scene.bringToTop();
-    // The paused Dock underneath is not drawn while the shot runs (the
-    // shot fills the canvas; two world plates per frame would only cost).
+    // The paused Dock underneath is not drawn while the shot runs.
     this.scene.setVisible(false, this.resumeKey);
-    ensureKitTextures(this);
 
     this.reduced = prefersReducedMotion();
 
-    const map = buildPlaceholderRoomMap(this, {
-      theme: 'exterior',
-      grid: [...PLATEAU],
-      tilesetKey: 'w1-tileset-exterior',
-      floorVariants: false,
-    });
+    // The world is the two paintings at 2×, stacked at the same origin;
+    // the cut is a visibility swap (with a short fade on the plate).
+    this.shotA = this.add
+      .image(0, 0, 'w2-opening-station')
+      .setOrigin(0)
+      .setScale(ART_SCALE)
+      .setDepth(0);
+    this.shotB = this.add
+      .image(0, 0, 'w2-opening-berth')
+      .setOrigin(0)
+      .setScale(ART_SCALE)
+      .setDepth(0)
+      .setVisible(false);
+    this.shotA.texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    this.shotB.texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
 
-    // The same wide world plate as every rebuilt room.
     this.plate = attachWorldPlate(this, 'wide');
-    this.plate.setBounds(map.widthInPixels, map.heightInPixels);
-    this.plate.setClearColor(STATION_THEMES.exterior.voidColor);
+    this.plate.setBounds(ART_W * ART_SCALE, ART_H * ART_SCALE);
+    this.plate.setClearColor(0x101820);
 
-    // Storm ambience: the plateau bake takes a cool tint (one textured
-    // quad, no alpha overlay); props keep their own colours.
-    for (const child of this.children.list) {
-      if (
-        child instanceof Phaser.GameObjects.RenderTexture &&
-        child.depth === -1
-      ) {
-        child.setTint(0xa9b8c8);
-      }
+    // Light snowfall drifting across the frame (world space, above art).
+    for (let i = 0; i < SNOW_COUNT; i += 1) {
+      const size = 2 + (i % 3);
+      const rect = this.add
+        .rectangle(
+          (i * 173) % (ART_W * ART_SCALE),
+          (i * 97) % (ART_H * ART_SCALE),
+          size,
+          size,
+          0xf0f6fb,
+          0.5 + (i % 4) * 0.1,
+        )
+        .setDepth(5);
+
+      this.snow.push({ rect, speed: 40 + (i % 5) * 22 });
     }
 
-    this.buildStation();
-    this.buildShuttle();
     this.buildCaptions();
 
-    const start = this.reduced ? SHOT.cameraEnd : SHOT.cameraStart;
+    this.plate.snapScroll(0, 0);
 
-    this.plate.snapTo(start.x, start.y);
+    if (this.reduced) {
+      // Static: hold the berth shot (the state the cut lands in).
+      this.showShot('b');
+      this.plate.snapScroll(
+        (ART_W * ART_SCALE - this.plate.width) / 2,
+        (ART_H * ART_SCALE - this.plate.height) / 2,
+      );
+    }
 
     const skip = () => this.finish('skipped');
 
@@ -197,7 +172,16 @@ export class PilotOpeningScene extends Phaser.Scene {
     return performance.now() - this.startedAt;
   }
 
-  update() {
+  private showShot(which: 'a' | 'b') {
+    this.shotA.setVisible(which === 'a');
+    this.shotB.setVisible(which === 'b');
+
+    if (which === 'b' && !this.shuttleLanded) {
+      this.shuttleLanded = true;
+    }
+  }
+
+  update(_time?: number, deltaMs = 16) {
     if (this.finished) {
       return;
     }
@@ -219,49 +203,56 @@ export class PilotOpeningScene extends Phaser.Scene {
     }
 
     if (!this.reduced) {
-      // Frame 3: the slow linear move toward the Dock; the connected
-      // station silhouette stays in frame throughout.
-      const move = easeInOut(clamp01((elapsed - MOVE_START_MS) / MOVE_MS));
-      const cx =
-        SHOT.cameraStart.x + (SHOT.cameraEnd.x - SHOT.cameraStart.x) * move;
-      const cy =
-        SHOT.cameraStart.y + (SHOT.cameraEnd.y - SHOT.cameraStart.y) * move;
+      const maxX = ART_W * ART_SCALE - this.plate.width;
+      const maxY = ART_H * ART_SCALE - this.plate.height;
 
-      this.plate.snapTo(cx, cy);
+      if (elapsed < CUT_MS) {
+        // Shot 1: drift from the bent mast (upper left) toward the dock
+        // vault (lower centre-right).
+        const t = easeInOut(clamp01(elapsed / CUT_MS));
 
-      // Frame 2 → 4: the shuttle enters along the cleared lane from the
-      // south-west, decelerates and stops at the berth.
-      const t = clamp01((elapsed - APPROACH_START_MS) / APPROACH_MS);
-      const approach = 1 - (1 - t) * (1 - t) * (1 - t);
-      const x =
-        SHOT.shuttleStart.x + (SHOT.berth.x - SHOT.shuttleStart.x) * approach;
-      const y =
-        SHOT.shuttleStart.y + (SHOT.berth.y - SHOT.shuttleStart.y) * approach;
-      const heading = Math.atan2(
-        SHOT.berth.y - SHOT.shuttleStart.y,
-        SHOT.berth.x - SHOT.shuttleStart.x,
-      );
+        this.showShot('a');
+        this.plate.snapScroll(
+          maxX * (0.08 + 0.62 * t),
+          maxY * (0.05 + 0.85 * t),
+        );
+      } else {
+        // Shot 2: slow push along the dock wall toward the seal.
+        const t = easeInOut(
+          clamp01((elapsed - CUT_MS) / (OPENING_SHOT_MS - CUT_MS)),
+        );
 
-      this.shuttle
-        .setPosition(x, y)
-        .setScale(0.88 + 0.12 * approach)
-        // Nose toward the berth while flying; docked nose-north (frame 4).
-        .setRotation(t < 1 ? (heading + Math.PI / 2) * (1 - approach) : 0);
-      this.shuttleShadow
-        .setPosition(x + 6, y + 30 - 14 * (1 - approach))
-        .setScale(0.6 + 0.4 * approach)
-        .setAlpha(0.35 + 0.35 * approach);
-
-      if (t >= 1 && !this.shuttleLanded) {
-        this.shuttleLanded = true;
-        this.berthLight.setAlpha(1);
+        this.showShot('b');
+        this.plate.snapScroll(maxX * (0.55 - 0.35 * t), maxY * (0.5 + 0.3 * t));
       }
 
-      // Berth light: a single settle after touchdown (no loop).
-      if (this.shuttleLanded) {
-        const since = elapsed - (APPROACH_START_MS + APPROACH_MS);
+      // A short dip to black at the cut (both cameras fade together).
+      if (elapsed >= CUT_MS - FADE_MS && elapsed < CUT_MS) {
+        const dim = (elapsed - (CUT_MS - FADE_MS)) / FADE_MS;
 
-        this.berthLight.setAlpha(since < 900 ? 1 : 0.55);
+        this.cameras.main.setAlpha(1 - dim * 0.9);
+      } else if (elapsed >= CUT_MS && elapsed < CUT_MS + FADE_MS) {
+        const rise = (elapsed - CUT_MS) / FADE_MS;
+
+        this.cameras.main.setAlpha(0.1 + rise * 0.9);
+      } else {
+        this.cameras.main.setAlpha(1);
+      }
+
+      // Snow: constant drift, wrapped inside the art bounds.
+      const step = Math.min(50, deltaMs) / 1000;
+
+      for (const flake of this.snow) {
+        flake.rect.y += flake.speed * step;
+        flake.rect.x -= flake.speed * 0.35 * step;
+
+        if (flake.rect.y > ART_H * ART_SCALE) {
+          flake.rect.y = -4;
+        }
+
+        if (flake.rect.x < -4) {
+          flake.rect.x = ART_W * ART_SCALE;
+        }
       }
     }
 
@@ -271,150 +262,6 @@ export class PilotOpeningScene extends Phaser.Scene {
     }
 
     this.refreshProbe(null);
-  }
-
-  /**
-   * Station 080 from above in its true topology, with the storm's
-   * evidence: the Concourse module at the crossing, the Dock module south
-   * of it with the berth on its south face, Records west, the Laboratory
-   * north with Mast 04 bent beyond it, Utility east and the Core beyond.
-   * Service corridors join the modules along the same edges the doors
-   * use inside.
-   */
-  private buildStation() {
-    const link = (a: { x: number; y: number }, b: { x: number; y: number }) => {
-      const horizontal = Math.abs(b.x - a.x) > Math.abs(b.y - a.y);
-      const length = Math.abs(horizontal ? b.x - a.x : b.y - a.y) - 150;
-
-      this.add
-        .rectangle(
-          (a.x + b.x) / 2,
-          (a.y + b.y) / 2 + (horizontal ? 8 : 0),
-          horizontal ? length : 40,
-          horizontal ? 40 : length,
-          0x2c3745,
-          1,
-        )
-        .setStrokeStyle(1, 0x1e2630)
-        .setDepth(DepthLayer.GroundInfra);
-      this.add
-        .rectangle(
-          (a.x + b.x) / 2,
-          (a.y + b.y) / 2 + (horizontal ? 8 : 0),
-          horizontal ? length : 12,
-          horizontal ? 12 : length,
-          0x3d4a5c,
-          1,
-        )
-        .setDepth(DepthLayer.GroundInfra + 0.01);
-    };
-
-    link(SHOT.records, SHOT.concourse);
-    link(SHOT.concourse, SHOT.utility);
-    link(SHOT.concourse, SHOT.laboratory);
-    link(SHOT.dock, SHOT.concourse);
-    link(SHOT.utility, SHOT.core);
-
-    // Module roofs (intact / storm-damaged variants), y-sorted.
-    const roof = (at: { x: number; y: number }, damaged: boolean) =>
-      this.add
-        .image(at.x, at.y, damaged ? 'w1-module-roof-b' : 'w1-module-roof-a')
-        .setDepth(DepthLayer.LowProp + at.y / 10000);
-
-    roof(SHOT.laboratory, true);
-    roof(SHOT.records, false);
-    roof(SHOT.concourse, false);
-    roof(SHOT.utility, true);
-    this.add
-      .image(SHOT.core.x, SHOT.core.y, 'w1-module-roof-a')
-      .setScale(0.72)
-      .setDepth(DepthLayer.LowProp + SHOT.core.y / 10000);
-    roof(SHOT.dock, false);
-
-    // The Dock's south face: the berth's docking seal and a cold pool.
-    this.add
-      .image(SHOT.dock.x, SHOT.dock.y + 66, 'w1-airlock-closed')
-      .setScale(0.5)
-      .setDepth(DepthLayer.LowProp + SHOT.dock.y / 10000 + 0.001);
-    this.berthLight = this.add
-      .rectangle(SHOT.dock.x, SHOT.dock.y + 92, 30, 4, 0x70a8ac, 1)
-      .setAlpha(0)
-      .setDepth(DepthLayer.LowProp + SHOT.dock.y / 10000 + 0.002);
-    this.addDecal(SHOT.berth.x, SHOT.berth.y + 20, 'kit-light-pool-cold', 0.6);
-
-    // The cleared approach lane (packed snow, faint edges) from the
-    // south-west to the berth.
-    const lane = new Phaser.Geom.Line(
-      SHOT.shuttleStart.x,
-      SHOT.shuttleStart.y,
-      SHOT.berth.x,
-      SHOT.berth.y + 30,
-    );
-
-    for (let i = 0; i < 12; i += 1) {
-      const p = lane.getPoint(i / 11);
-
-      this.add
-        .ellipse(p.x, p.y, 120, 44, 0xb9c8d6, 0.5)
-        .setDepth(DepthLayer.FloorDecal);
-    }
-
-    // Mast 04 on its footing north of the Laboratory, bent by the storm.
-    this.add
-      .image(SHOT.mast.x, SHOT.mast.y + 64, 'w1-mast')
-      .setOrigin(0.5, 1)
-      .setDepth(DepthLayer.LowProp + 0.05);
-    this.addDecal(SHOT.mast.x - 40, SHOT.mast.y + 70, 'kit-contact-shadow');
-
-    // Storm evidence: drifts on the lee sides, debris near the mast.
-    for (const [x, y, flip] of [
-      [420, 300, false],
-      [1300, 250, true],
-      [560, 780, false],
-      [1500, 760, true],
-      [760, 980, false],
-      [1180, 980, true],
-    ] as const) {
-      this.add
-        .image(x, y, 'w1-drift-rock')
-        .setFlipX(flip)
-        .setDepth(DepthLayer.FloorDecal + 0.05);
-    }
-
-    for (const [x, y, angle] of [
-      [1090, 190, 20],
-      [900, 210, -35],
-      [1360, 420, 60],
-    ] as const) {
-      this.add
-        .image(x, y, 'w1-debris-panel')
-        .setAngle(angle)
-        .setDepth(DepthLayer.FloorDecal + 0.06);
-    }
-  }
-
-  /** The relief shuttle: approaches along the lane (or sits berthed). */
-  private buildShuttle() {
-    const berth = SHOT.berth;
-
-    this.shuttleShadow = this.add
-      .ellipse(berth.x + 6, berth.y + 30, 150, 46, 0x000000, 0.22)
-      .setDepth(DepthLayer.FloorDecal + 0.2);
-    this.shuttle = this.add
-      .image(berth.x, berth.y, 'w1-shuttle')
-      .setTint(SHUTTLE_HULL_TINT)
-      .setDepth(DepthLayer.LowProp + 0.5);
-
-    if (this.reduced) {
-      this.shuttleLanded = true;
-      this.berthLight.setAlpha(0.55);
-      return;
-    }
-
-    this.shuttle
-      .setPosition(SHOT.shuttleStart.x, SHOT.shuttleStart.y)
-      .setScale(0.88);
-    this.shuttleShadow.setScale(0.6).setAlpha(0.35);
   }
 
   private buildCaptions() {
@@ -449,17 +296,6 @@ export class PilotOpeningScene extends Phaser.Scene {
       .setScrollFactor(0);
   }
 
-  private addDecal(x: number, y: number, texture: string, alpha = 1) {
-    if (!this.textures.exists(texture)) {
-      return null;
-    }
-
-    return this.add
-      .image(x, y, texture)
-      .setAlpha(alpha)
-      .setDepth(DepthLayer.FloorDecal);
-  }
-
   private finish(outcome: 'completed' | 'skipped') {
     if (this.finished) {
       return;
@@ -467,6 +303,7 @@ export class PilotOpeningScene extends Phaser.Scene {
 
     this.finished = true;
     this.tweens.killAll();
+    this.cameras.main.setAlpha(1);
     this.refreshProbe(outcome);
     this.scene.setVisible(true, this.resumeKey);
     this.onDone?.(outcome);

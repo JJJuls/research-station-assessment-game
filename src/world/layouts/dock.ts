@@ -1,68 +1,44 @@
 /**
- * Dock layouts (World V1 production — Arrival / Dock 48×30).
+ * Dock layouts (World V2 rescue — Arrival / Dock 22×12).
  *
- * Pure. The participant layout is derived from the numeric design
- * authority (world-layouts.json, zone `dock`): the explicit walkable-floor
- * union (spines, local loops, the sealed transport side, the arrival /
- * handover bay, cargo staging, the weather-window bench nook and the door
- * aperture) minus the authored footprints, inside a 48×30 hull. The legacy
- * 25×14 bay that the historical `?route=legacy` regression specs drive is
- * unchanged. Interaction coordinates live in src/pilot/zoneSites.ts.
+ * Pure. The rescue slice replaces the rejected 48×30 blockout with a
+ * small, dense, AUTHORED room: the collision grid is mapped cell-by-cell
+ * to the painted dock plate (`public/assets/world-v2/plates/dock-plate.png`,
+ * 688×384 px — provenance in the world-v2 manifest). Rows 0–2 are the
+ * north wall band (the Concourse door sprite sits at x 352), rows 9–11
+ * the south hull with the sealed docking vault (centre x 328), and the
+ * 'X' footprints cover the plate's baked cargo groups so the avatar
+ * collides with what the art shows. The legacy 25×14 bay that the
+ * historical `?route=legacy` regression specs drive is unchanged.
+ * Interaction coordinates live in src/pilot/zoneSites.ts.
  */
 import type { BlockoutRect } from './blockout';
 import { blockoutRows } from './blockout';
 
-export const DOCK_COLS = 48;
-export const DOCK_ROWS = 30;
+export const DOCK_COLS = 22;
+export const DOCK_ROWS = 12;
 
-/** Walkable floor union (authority: world-layouts.json `dock.walkable_floor_rects`). */
-export const DOCK_FLOOR: readonly BlockoutRect[] = [
-  [2, 13, 44, 4], // main east-west
-  [22, 2, 4, 26], // main north-south (spine)
-  [3, 6, 3, 18], // west local loop
-  [6, 6, 36, 3], // north local loop
-  [39, 6, 3, 18], // east local loop
-  [6, 21, 36, 3], // south local loop
-  [3, 24, 17, 4], // sealed transport side (berth hall)
-  [27, 15, 13, 10], // arrival / handover bay
-  [5, 7, 13, 10], // cargo staging
-  [8, 22, 7, 3], // weather window / bench
-  [28, 20, 4, 4], // check-in approach pad
-  [22.5, 20.5, 9, 3], // check-in approach lane
-  [22, 22, 4, 4], // marker pad
-  [22.5, 22.5, 3, 3],
-  [22, 23, 4, 4], // airlock approach pad
-  [22.5, 23.5, 3, 3],
-  [22.5, -0.5, 3, 7], // north door aperture
-];
+/** Walkable floor: the plate's visible open deck (cols 1–19, rows 3–8). */
+export const DOCK_FLOOR: readonly BlockoutRect[] = [[1, 3, 19, 6]];
 
 /**
- * Prop footprints (collide; floor beneath). The check-in terminal's
- * footprint is authored (world-layouts.json); the others are the room's
- * own storage / service dressing, all outside the declared paths.
+ * Prop footprints (collide; the plate's baked art beneath): the cargo
+ * groups, drums and the check-in kiosk exactly where the plate paints
+ * them.
  */
 export const DOCK_FOOTPRINTS: readonly BlockoutRect[] = [
-  [29, 18, 2, 2], // check-in terminal
-  [36, 24, 5, 2], // contained crates (authority decor rect)
-  [3, 3, 4, 3], // wall utilities recess (authority decor rect)
-  [7, 8, 2, 2], // cargo staging: crate stack
-  [10, 8, 2, 2], // cargo staging: crate stack
-  [13, 8, 2, 1], // cargo staging: pallet jack
-  [7, 12, 3, 1], // cargo staging: cable drums
-  [15, 12, 2, 2], // cargo staging: locker bank
-  [8, 24, 3, 1], // weather-window bench
-  [12, 26, 3, 2], // hall: weather cover on its rack (restoration shape)
-  [5, 12, 1, 1], // cargo staging: bollard
-  [11, 12, 1, 1], // cargo staging: bollard
-  [4, 25, 1, 2], // hall: filing cabinet
-  [17, 25, 2, 2], // hall: tool cart
-  [36, 16, 1, 1], // handover bay: notice board
-  [33, 22, 2, 1], // handover bay: document trolley
+  [1, 3, 5, 2], // north-west crate / drum wall cluster
+  [1, 5, 2, 1], // west drums
+  [1, 6, 2, 3], // west red barrels
+  [6, 5, 1, 2], // single crate mid-west
+  [7, 3, 2, 1], // check-in kiosk (baked into the plate)
+  [12, 3, 2, 2], // mid crate cluster
+  [14, 3, 4, 2], // north-east crate group
+  [16, 5, 3, 1], // east drums
+  [18, 6, 3, 3], // east crate stacks
 ];
 
-export const DOCK_DOORS: readonly BlockoutRect[] = [
-  [22, 0, 4, 2], // north door → Station Concourse
-];
+export const DOCK_DOORS: readonly BlockoutRect[] = [];
 
 export const DOCK_LAYOUT: readonly string[] = blockoutRows({
   cols: DOCK_COLS,

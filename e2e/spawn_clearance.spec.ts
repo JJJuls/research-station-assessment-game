@@ -10,6 +10,7 @@ import path from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
+import { CONCOURSE_SPAWNS } from '../src/pilot/zoneSites';
 import { PILOT } from './pilotHelpers';
 
 const INTERACTION_RADIUS = 72;
@@ -47,14 +48,11 @@ test.describe('arrival spawn clearance (pure)', () => {
   });
 
   test('Concourse arrival from the workshop is clear of the west door', () => {
-    const spawn = spawnFrom(
-      'src/scenes/StationConcourseScene.ts',
-      "case 'records_workshop':",
-    );
-
-    expect(distance(spawn, PILOT.concourse.westDoor)).toBeGreaterThan(
-      INTERACTION_RADIUS,
-    );
+    // World V2 rescue: the Concourse spawns live in the shared site book
+    // (src/pilot/zoneSites.ts) instead of inline tile expressions.
+    expect(
+      distance(CONCOURSE_SPAWNS.fromRecords, PILOT.concourse.westDoor),
+    ).toBeGreaterThan(INTERACTION_RADIUS);
   });
 
   test('Utility Deck arrival from the chamber is clear of the Core door', () => {

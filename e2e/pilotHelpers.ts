@@ -215,7 +215,9 @@ export async function bootPilot(
         }
       ).__pilotOpeningProbe?.open === true,
     undefined,
-    { timeout: 60_000 },
+    // 120 s: a video-recording context on software GL can double the
+    // first-load time (observed on the rescue capture run).
+    { timeout: 120_000 },
   );
 
   if (options?.skipOpening !== false) {
@@ -564,30 +566,38 @@ export async function expectStage(page: Page, stage: string) {
  * is never adjusted for it.
  */
 export async function concourseVia(page: Page, x: number, y: number) {
-  const SPINE_X = 30 * 32;
-  const AXIS_Y = 19 * 32;
-  const LOOP_Y = 30 * 32;
+  // Rescue Concourse (22×12): three regions — the west hall (open floor
+  // up to x ≈ 470), the south lane (safe east–west travel at y ≈ 252,
+  // where the body's top edge clears the operations-desk row) and the
+  // two-column east strip (safe north–south travel at x ≈ 604, where the
+  // body's left edge clears the desk/table column). Route legs through
+  // them; driver only — production geometry is never adjusted for it.
   const here = await page.evaluate(
     () =>
       (window as unknown as { __playerProbe?: { x: number; y: number } | null })
         .__playerProbe ?? null,
   );
-  const onAxis = here !== null && here.y >= 17 * 32 && here.y <= 21 * 32;
-  const onSpine = here !== null && Math.abs(here.x - SPINE_X) <= 40;
+  const eastTarget = x >= 576;
+  const eastHere = here !== null && here.x >= 576;
 
-  if (!onSpine) {
-    if (!onAxis) {
-      await driveAxisTo(page, 'y', LOOP_Y, 10);
+  if (eastTarget !== eastHere) {
+    // Cross between the hall and the strip through the south lane.
+    if (here === null || here.y < 242) {
+      await driveAxisTo(page, 'y', 252, 8);
     }
 
-    await driveAxisTo(page, 'x', SPINE_X, 10);
+    await driveAxisTo(page, 'x', eastTarget ? 604 : 368, 8);
   }
 
-  // The target row: the axis for the west/east doors and any district
-  // reached from it; otherwise the target's own row along the spine.
-  const row = y >= 17 * 32 && y <= 21 * 32 ? AXIS_Y : y;
+  if (eastTarget) {
+    await driveAxisTo(page, 'y', y, 10);
+    await walkTo(page, x, y, { yFirst: true });
+    return;
+  }
 
-  await driveAxisTo(page, 'y', row, 10);
+  // West-hall target: pick the row first (the hall is open); the
+  // west-door pocket is entered along the rows-5/6 band only.
+  await driveAxisTo(page, 'y', x < 140 ? 190 : y, 8);
   await walkTo(page, x, y, { yFirst: false });
 }
 

@@ -32,9 +32,15 @@ import Phaser from 'phaser';
 import { WorldCameraController, type WorldView } from './camera';
 import { ensureWorldPlatePipeline } from './plateSampler';
 
-/** The fixed world field (40 × 22.5 tiles of 32 px). */
-export const WORLD_VIEW_WIDTH = 1280;
-export const WORLD_VIEW_HEIGHT = 720;
+/**
+ * The fixed world field (20 × 11.25 tiles of 32 px). The rescue slice
+ * halves the previous 1280×720 field: the world composites at INTEGER
+ * scales (2× at 720p, 3× at 1080p), the avatar reads at Stardew-like
+ * presence (~90 screen px tall at 720p) and rooms are authored small and
+ * dense instead of wide and empty.
+ */
+export const WORLD_VIEW_WIDTH = 640;
+export const WORLD_VIEW_HEIGHT = 360;
 
 /** The U1 field kept by the zones not yet rebuilt (32 × 18 tiles). */
 export const LEGACY_VIEW_WIDTH = 1024;
@@ -81,7 +87,7 @@ const NATIVE = nativeCanvasSize();
 export const CANVAS_WIDTH = NATIVE.width;
 export const CANVAS_HEIGHT = NATIVE.height;
 
-/** Composite scale of the wide world plate (1 at 720p, 1.5 at 1080p). */
+/** Composite scale of the wide world plate (2 at 720p, 3 at 1080p). */
 export const DISPLAY_SCALE = CANVAS_HEIGHT / WORLD_VIEW_HEIGHT;
 
 /**
@@ -297,8 +303,8 @@ export class WorldPlate {
       .setDepth(-2000)
       .setName(PLATE_NAME);
 
-    if (this.scale === 1) {
-      // 1:1 composite: exact texels, no sampler needed.
+    if (Number.isInteger(this.scale)) {
+      // Integer composite (1×/2×/3×): exact texels, no sampler needed.
       this.rt.texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     } else {
       // Non-integer composite (1.5 / 1.875): the texel-snapped sampler

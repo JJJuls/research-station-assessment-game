@@ -1,0 +1,22 @@
+[
+  {
+    "field": "event_type_sequence",
+    "detail": "length 152 → 154"
+  },
+  {
+    "field": "event_type_sequence[31]",
+    "detail": "\"pilot_npc_beat\" → \"pilot_station_opened\""
+  },
+  {
+    "field": "event_counts.pilot_station_opened",
+    "detail": "6 → 7"
+  },
+  {
+    "field": "event_counts.proto_m09_watch_check_completed",
+    "detail": "undefined → 1"
+  },
+  {
+    "field": "payload_keys.proto_m09_watch_check_completed",
+    "detail": "undefined → [\"condition\",\"elapsed_seconds\",\"episode\",\"event_type\",\"game_session_id\",\"game_version\",\"metadata\",\"metadata.check\",\"metadata.comprehension_state\",\"metadata.counterbalance\",\"metadata.due_delta_ms\",\"metadata.end_window_id\",\"metadata.entry_state_version\",\"metadata.form\",\"metadata.input_mode\",\"metadata.measure_id\",\"metadata.occasion\",\"metadata.opportunity_id\",\"metadata.phase\",\"metadata.presented_at_ms\",\"metadata.start_window_id\",\"metadata.validity_reason\",\"metadata.validity_status\",\"metadata.window_id\",\"metadata.window_status\",\"object_id\",\"page_load_index\",\"participant_id\",\"scene\",\"sequence\",\"session_id\",\"timestamp_ms\"]"
+  }
+]

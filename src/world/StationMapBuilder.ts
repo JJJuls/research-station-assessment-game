@@ -52,6 +52,14 @@ export interface RoomLayout {
   tilesetKey?: string;
   /** Whether the theme's floor-variation decals are laid (default true). */
   floorVariants?: boolean;
+  /**
+   * World V2 rescue: a loaded PAINTED PLATE texture that IS the room's
+   * entire background art (authored key-art, drawn once at (0,0) under
+   * everything). When present, the tile-based visual layers are skipped —
+   * collision still comes exclusively from the invisible logical layer,
+   * so the plate can never change footprints or interaction regions.
+   */
+  plateTexture?: string;
 }
 
 export interface BuiltRoomMap {
@@ -200,6 +208,31 @@ export function buildPlaceholderRoomMap(
   }
 
   layer.setCollision(TILE_WALL);
+
+  // World V2 painted plate: the authored background replaces every
+  // tile-based visual layer. The logical layer keeps ALL collision and
+  // simply becomes invisible (same structural guarantee as the art
+  // swaps below: art can never change collision or interactions).
+  if (
+    layout.plateTexture !== undefined &&
+    scene.textures.exists(layout.plateTexture)
+  ) {
+    const plateImage = scene.add
+      .image(0, 0, layout.plateTexture)
+      .setOrigin(0)
+      .setDepth(-1)
+      .setName('__roomPlateArt');
+
+    plateImage.texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    layer.setVisible(false);
+
+    return {
+      tilemap,
+      layer,
+      widthInPixels: cols * tileSize,
+      heightInPixels: rows * tileSize,
+    };
+  }
 
   // Visual layer preference: per-room THEME tileset (procedural foundry)
   // → committed v3 Wang art → flat placeholder. Either art path renders on

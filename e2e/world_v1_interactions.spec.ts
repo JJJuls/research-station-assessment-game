@@ -63,8 +63,56 @@ const surfaceOpen = (page: Page) =>
         .__workSurfaceProbe?.open ?? false,
   );
 
+/**
+ * Waypoint routes for the two-leg axis driver in the rescue Concourse:
+ * the operations desk and the north-east table split the hall into a
+ * west hall, a south lane and an east strip — these vias walk the lane
+ * the pure BFS proves walkable before the final approach legs.
+ */
+const PROMPT_VIA: Record<
+  string,
+  { x: number; y: number; yFirst?: boolean; tolerance?: number }[]
+> = {
+  'concourse.door_records': [
+    // The west pocket is entered along the rows-5/6 band only (the
+    // reading table blocks row 7): a tight-tolerance waypoint keeps the
+    // y-leg inside the band before the westward leg.
+    { x: 96, y: 188, yFirst: true, tolerance: 8 },
+  ],
+  // The south lane is safe for east–west travel only at y ≥ 242 (the
+  // body's top edge clears the desk row); every lane waypoint targets
+  // y 252 with an 8 px tolerance.
+  'concourse.door_deck': [
+    { x: 368, y: 252, yFirst: true, tolerance: 8 },
+    { x: 604, y: 252, tolerance: 8 },
+  ],
+  'concourse.vale': [
+    { x: 604, y: 252, yFirst: true, tolerance: 8 },
+    { x: 384, y: 252, tolerance: 8 },
+  ],
+  'concourse.incident_desk': [
+    { x: 368, y: 252, yFirst: true, tolerance: 8 },
+    { x: 604, y: 252, tolerance: 8 },
+    { x: 604, y: 224, yFirst: true, tolerance: 8 },
+  ],
+  'concourse.qc_packet_o1': [
+    { x: 604, y: 252, tolerance: 8 },
+    { x: 368, y: 252, tolerance: 8 },
+    { x: 368, y: 160, yFirst: true, tolerance: 8 },
+  ],
+  'concourse.monitor_gauge': [{ x: 424, y: 252, yFirst: true, tolerance: 8 }],
+  'concourse.reading_desk_lamp': [{ x: 188, y: 252, tolerance: 8 }],
+};
+
 async function expectPromptAt(page: Page, id: string, expected: string) {
   const approach = registryApproach(id);
+
+  for (const waypoint of PROMPT_VIA[id] ?? []) {
+    await walkTo(page, waypoint.x, waypoint.y, {
+      yFirst: waypoint.yFirst ?? false,
+      tolerance: waypoint.tolerance ?? 16,
+    });
+  }
 
   // Two-leg driver: x first for stations and the Dock (the kiosk cells
   // block a y-first leg up the west alcove); y first for the Concourse
@@ -205,7 +253,8 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
 
     // Decorative: beside the operations island's west end (no registry
     // object within 72 px) — no prompt.
-    await walkTo(page, 36.5 * 32, 26 * 32, { yFirst: true });
+    // Open hall floor clear of every interactable's 72 px radius.
+    await walkTo(page, 368, 160, { yFirst: true });
     await page.waitForTimeout(350);
     expect((await promptProbe(page))?.prompt ?? false).toBe(false);
   });
@@ -241,10 +290,13 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
       destination: string;
       out: { yFirst: boolean; offset: { x: number; y: number } };
       back: { x: number; y: number; offset: { x: number; y: number } };
+      /** Waypoints the axis driver walks first (routes around furniture). */
+      via?: { x: number; y: number; yFirst?: boolean; tolerance?: number }[];
     }[] = [
       {
         id: 'concourse.door_records',
         destination: 'records_workshop',
+        via: [{ x: 96, y: 188, yFirst: true, tolerance: 8 }],
         out: { yFirst: true, offset: { x: 40, y: 0 } },
         back: { ...PILOT.workshop.eastDoor, offset: { x: -40, y: 0 } },
       },
@@ -257,14 +309,21 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
       {
         id: 'concourse.door_deck',
         destination: 'utility_core_deck',
+        // Around the operations desk: south lane first, east, then north
+        // up the east strip to the door.
+        via: [
+          { x: 368, y: 252, yFirst: true, tolerance: 8 },
+          { x: 604, y: 252, tolerance: 8 },
+        ],
         out: { yFirst: true, offset: { x: -40, y: 0 } },
         back: { ...PILOT.deck.westDoor, offset: { x: 40, y: 0 } },
       },
       {
         id: 'concourse.door_dock',
         destination: 'dock',
-        // From the Deck-side spawn (row 19) the clear path is west along
-        // the axis, then south down the spine.
+        // From the Deck-side spawn: down the east strip, west along the
+        // south lane, then to the hatch.
+        via: [{ x: 604, y: 252, yFirst: true, tolerance: 8 }],
         out: { yFirst: false, offset: { x: 0, y: -20 } },
         // 20 px inside the doorway (dockToConcourse precedent): an offset
         // of 64 plus the 12 px landing tolerance lands outside the 72 px
@@ -278,6 +337,13 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
         (entry) => entry.id === leg.id,
       )!;
       const approach = registryApproach(leg.id);
+
+      for (const waypoint of leg.via ?? []) {
+        await walkTo(page, waypoint.x, waypoint.y, {
+          yFirst: waypoint.yFirst ?? false,
+          tolerance: waypoint.tolerance ?? 16,
+        });
+      }
 
       await walkTo(page, approach.x, approach.y, { yFirst: leg.out.yFirst });
       await page.waitForTimeout(300);

@@ -150,9 +150,12 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     x: PILOT_DOORS.station_concourse[0].x,
     y: PILOT_DOORS.station_concourse[0].y - 56,
   }),
+  // The Records door shares its pocket with the plan board and reading
+  // lamp: the audited safe standing point is (84, 190) — every ±12 px
+  // landing keeps the door strictly nearest.
   door('station_concourse', 'records_workshop', 'concourse.door_records', {
-    x: PILOT_DOORS.station_concourse[1].x + 56,
-    y: PILOT_DOORS.station_concourse[1].y,
+    x: PILOT_DOORS.station_concourse[1].x + 44,
+    y: PILOT_DOORS.station_concourse[1].y - 2,
   }),
   door('station_concourse', 'diagnostics_laboratory', 'concourse.door_lab', {
     x: PILOT_DOORS.station_concourse[2].x,
@@ -177,7 +180,9 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     depthAnchor: 'foot',
     stage: 'any',
     window: null,
-    approach: { x: C.vale.x, y: C.vale.y + 56 },
+    // Approached from the west (the south strip belongs to the Dock
+    // hatch's radius on the small plate).
+    approach: { x: C.vale.x - 56, y: C.vale.y },
   },
   {
     id: 'concourse.kai_return',
@@ -218,7 +223,10 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     depthAnchor: 'foot',
     stage: 'any',
     window: 'm01_plan_board_w1',
-    approach: { x: C.planBoard.x, y: C.planBoard.y + 56 },
+    // South-east of the board's face: the audited pocket where every
+    // ±12 px landing keeps the board nearest (the reading lamp and Kai
+    // own the areas south and east of it).
+    approach: { x: C.planBoard.x + 24, y: C.planBoard.y + 44 },
   },
   {
     id: 'concourse.incident_desk',
@@ -235,7 +243,9 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     depthAnchor: 'foot',
     stage: 'any',
     window: 'm14_desk_w1',
-    approach: { x: C.incidentDesk.x, y: C.incidentDesk.y + 56 },
+    // The desk stands in the east strip against the hull; approached
+    // from the north.
+    approach: { x: C.incidentDesk.x, y: C.incidentDesk.y - 56 },
   },
   {
     id: 'concourse.qc_packet_o1',
@@ -252,7 +262,9 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     depthAnchor: 'foot',
     stage: 'any',
     window: 'm12_qc_o1',
-    approach: { x: C.qcPacket.x, y: C.qcPacket.y + 56 },
+    // The packet lies on the baked north-east work table; the open floor
+    // is west of it.
+    approach: { x: C.qcPacket.x - 56, y: C.qcPacket.y },
   },
   {
     id: 'concourse.monitor_gauge',
@@ -269,7 +281,8 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     depthAnchor: 'foot',
     stage: 'any',
     window: 'm09_check_1 / m09_check_2 (non-canonical label)',
-    approach: { x: C.monitorGauge.x, y: C.monitorGauge.y + 56 },
+    // The gauge hangs on the south hull face; approached from the north.
+    approach: { x: C.monitorGauge.x, y: C.monitorGauge.y - 56 },
   },
   {
     id: 'concourse.reading_desk_lamp',
@@ -286,7 +299,10 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     depthAnchor: 'foot',
     stage: 'any',
     window: 'm05_initiation_o1',
-    approach: { x: C.concourseFault.x, y: C.concourseFault.y + 56 },
+    // The lamp sits on the reading table against the south-west hull;
+    // approached from the east, clear of the table's footprint and of
+    // the plan board's radius (audited ±12 px pocket).
+    approach: { x: C.concourseFault.x + 56, y: C.concourseFault.y },
   },
 ];
 

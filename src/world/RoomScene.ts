@@ -907,6 +907,34 @@ export abstract class RoomScene extends Phaser.Scene {
     return null;
   }
 
+  /**
+   * World V2 (rescue): read access to a station's marker image so a scene
+   * whose room art is a painted plate can hide the sprite marker (the
+   * plate already paints the object) and carry state with light overlays
+   * instead. Presentation only — position, radius, prompts and events are
+   * untouched.
+   */
+  protected stationImage(
+    interactionKey: InteractionKey,
+  ): Phaser.GameObjects.Image | null {
+    for (const station of this.stations) {
+      if (station.interactionKey === interactionKey) {
+        const marker = this.interactableMarkers.get(station);
+
+        return marker instanceof Phaser.GameObjects.Image ? marker : null;
+      }
+    }
+
+    return null;
+  }
+
+  /** World V2: the painted plate image of the room (null without one). */
+  protected roomPlateArt(): Phaser.GameObjects.Image | null {
+    const plate = this.children.getByName('__roomPlateArt');
+
+    return plate instanceof Phaser.GameObjects.Image ? plate : null;
+  }
+
   protected setDoorFrameById(registryId: string, frame: number) {
     for (const door of this.doors) {
       if (door.registryId === registryId) {

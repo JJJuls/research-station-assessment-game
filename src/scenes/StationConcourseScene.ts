@@ -10,14 +10,13 @@
  * desk. Every packet is its own object on the work surface; completing one
  * never gates another. Doors are always bidirectional.
  *
- * World V1 (docs/game/world-v1/ROOM-BLOCKOUTS.md §2): a 40×26 circulation
- * hub — one north–south spine crossing one east–west axis, every door
- * framed and signed, the operations desk island (Vale) under the
- * station-status wall as the landmark, and the work surfaces integrated
- * into the architecture (plan board on the north wall, incident console on
- * the east service counter, quality packet on the south-west side counter,
- * monitor gauge on the east wall, the faulty reading lamp in the
- * north-west nook). No window, event, form or option changed.
+ * World V2 rescue: a 22×12 painted-plate hall — the plate
+ * (`w2-concourse-plate`) bakes the architecture, all four doorways, the
+ * plan board, Vale's operations desk, the north-east work table (the
+ * quality packet) and the reading table with its green lamp (the M05
+ * fault). The incident desk and monitor gauge are layered sprites; the
+ * status-wall sector lamps are a mounted panel. No window, event, form
+ * or option changed.
  */
 import Phaser from 'phaser';
 
@@ -185,26 +184,29 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   protected getLayout(): RoomLayout {
-    return { theme: 'hub', grid: [...CONCOURSE_LAYOUT], field: 'wide' };
+    return {
+      theme: 'hub',
+      grid: [...CONCOURSE_LAYOUT],
+      field: 'wide',
+      plateTexture: 'w2-concourse-plate',
+    };
   }
 
   protected bundleDropBounds(): { width: number; height: number } {
-    return { width: 60 * TILE, height: 38 * TILE };
+    return { width: 22 * TILE, height: 12 * TILE };
   }
 
   protected getSpawn(data?: { spawn?: string }): { x: number; y: number } {
     switch (data?.spawn) {
       case 'diagnostics_laboratory':
-        return { x: 30 * TILE, y: 5 * TILE };
+        return CONCOURSE_SPAWNS.fromLaboratory;
       case 'utility_core_deck':
-        return { x: 55 * TILE, y: 19 * TILE };
+        return CONCOURSE_SPAWNS.fromDeck;
       case 'records_workshop':
-        // 128 px inside the west door (x 32): clear of the 72 px interaction
-        // radius (V2 finding U8-8).
-        return { x: 5 * TILE, y: 19 * TILE };
+        return CONCOURSE_SPAWNS.fromRecords;
       case 'dock':
       default:
-        return { x: 30 * TILE, y: 33 * TILE };
+        return CONCOURSE_SPAWNS.fromDock;
     }
   }
 
@@ -432,11 +434,13 @@ export class StationConcourseScene extends PilotZoneScene {
         return false;
       },
     });
-    // The lamp head on the reading desk: the flicker IS the fault.
+    // The lamp head on the reading desk: the flicker IS the fault. The
+    // green lamp is baked into the plate at (96, 238); the flicker
+    // rectangle sits on its shade.
     this.lampFlicker = this.add
       .rectangle(
-        S.concourseFault.x - 12,
-        S.concourseFault.y - 50,
+        S.concourseFault.x - 28,
+        S.concourseFault.y - 2,
         10,
         5,
         0xe6c68f,
@@ -445,63 +449,69 @@ export class StationConcourseScene extends PilotZoneScene {
       .setDepth(DepthLayer.WorldReadout)
       .setVisible(false);
 
+    // World V2: the plan board, the quality-packet table and the reading
+    // desk are baked into the painted plate — hide their sprite markers
+    // (interactions, prompts and events untouched). The incident desk and
+    // the monitor gauge remain layered sprites.
+    for (const child of this.children.list) {
+      if (
+        child instanceof Phaser.GameObjects.Image &&
+        ['w1-plan-board', 'w1-qc-counter', 'w1-reading-desk'].includes(
+          child.texture.key,
+        )
+      ) {
+        child.setVisible(false);
+      }
+    }
+
     this.refreshStatusWall();
   }
 
   /**
-   * World V1 production hub (world-layouts.json `concourse`, 60×38): the
-   * four cardinal thresholds, the painted spine and axis, the operations
-   * island (status wall + staffed counter) as the landmark of the
-   * south-east reception district, the records-preparation district
-   * (NW), the briefing / incident-evidence district (NE), the quiet
-   * reading bay (SW) with its weather-window recess, the wall archive,
-   * equipment storage and contained-supplies recesses off the loops.
-   * Every prop with volume stands on an authored footprint of
-   * CONCOURSE_FOOTPRINTS; flat items are floor decals. Presentation only —
-   * no interaction, no label over a prop, no collision beyond the layout.
+   * World V2 rescue hub: the painted plate IS the architecture — the
+   * riveted walls, all four doorways (Lab recess and Dock hatch baked;
+   * Records and Deck doors inpainted into the side walls), the plan
+   * board, lockers, the north-east work table, the operations desk, the
+   * reading table with its green lamp, hanging cone lamps and the worn
+   * deck with its painted walkway lines. This method layers only the
+   * DYNAMIC pieces: hidden marker art over baked interactables, the
+   * status-wall lamps, the work-area light pools and the storm-damage
+   * dressing. Presentation only — no interaction geometry beyond the
+   * registry, no collision beyond the layout.
    */
   private buildArchitecture() {
-    const px = (tile: number) => tile * TILE;
-    const prop = (x: number, footY: number, texture: string) =>
-      this.addKitProp(x, footY, texture);
-    const wall = (x: number, bottomY: number, texture: string) =>
-      this.addGroundInfra(x, bottomY, texture);
     const lit = this.lightPoolTexture();
 
-    // ——— Thresholds: wall-mounted leaves, always behind the actor ———
-    this.anchorDoor('concourse.door_lab', px(2) + 8);
-    this.anchorDoor('concourse.door_dock', px(38));
-    this.anchorDoor('concourse.door_records', px(19) + 46);
-    this.anchorDoor('concourse.door_deck', px(19) + 46);
-    wall(px(27) + 8, px(2) - 8, 'w1-status-lamp');
-    wall(px(32) + 24, px(2) - 8, 'w1-status-lamp');
-
-    // ——— Circulation: the painted spine and axis ———
-    this.addFloorLane(28, 2, 4, 34);
-    this.addFloorLane(2, 17, 56, 4);
-    for (const col of [12, 20, 40, 48]) {
-      this.addFloorDecal(px(col), px(21) + 6, 'w1-cable-tray');
-      this.addFloorDecal(px(col), px(16) + 26, 'w1-cable-tray');
+    // ——— Thresholds: every leaf is baked/inpainted into the plate ———
+    for (const registryId of [
+      'concourse.door_dock',
+      'concourse.door_records',
+      'concourse.door_lab',
+      'concourse.door_deck',
+    ]) {
+      this.doorImage(registryId)?.setVisible(false);
     }
 
-    // ——— Operations island (landmark): status wall behind the counter ———
-    const island = { x: px(43), top: px(22), bottom: px(25) };
+    // ——— Status wall (story landmark): a mounted sector panel on the
+    // north wall face right of the Laboratory door — its own dark
+    // backdrop so it reads over the baked pipework ———
+    const statusWall = { x: 412, y: 78 };
 
-    this.statusPanel = wall(
-      island.x,
-      island.top + 56,
-      'w1-status-panel-standby',
-    );
-    // Two staffed counter modules and the crew lockers at the east end
-    // (review round 1: no tiled console bank).
-    wall(px(40), island.bottom + 4, 'w1-ops-counter');
-    wall(px(43), island.bottom + 4, 'w1-ops-counter');
-    wall(px(46), island.bottom + 2, 'w1-lockers');
-    this.addFloorDecal(px(40), island.bottom + 6, 'kit-contact-shadow');
-    this.addFloorDecal(px(46), island.bottom + 6, 'kit-contact-shadow');
+    this.statusPanel = null;
+    this.add
+      .rectangle(statusWall.x, statusWall.y, 100, 34, 0x161e27, 1)
+      .setStrokeStyle(1, 0x39465a)
+      .setDepth(DepthLayer.WorldReadout - 0.02);
+    this.add
+      .text(statusWall.x - 42, statusWall.y - 13, 'STATION SECTORS', {
+        color: '#8fa0af',
+        font: '7px monospace',
+        resolution: 3,
+      })
+      .setDepth(DepthLayer.WorldReadout - 0.01);
     for (let i = 0; i < STATUS_WALL_SECTORS.length; i += 1) {
-      const x = island.x - 33 + i * 13;
-      const y = island.top + 41;
+      const x = statusWall.x - 33 + i * 13;
+      const y = statusWall.y + 4;
 
       this.statusLamps.push(
         this.add
@@ -517,70 +527,12 @@ export class StationConcourseScene extends PilotZoneScene {
       );
     }
 
-    // ——— Reception district (SE): benches, the gauge's service end ———
-    // Waiting seats belong to something: a stool + bin by the west
-    // entrance, a chair pair against the east recess (review round 1).
-    prop(px(36.4), px(31), 'w1-stool');
-    prop(px(37.4), px(31), 'w1-waste-bin');
-    prop(px(49.4), px(31), 'w1-chair');
-    prop(px(50.4), px(31), 'w1-chair');
-    this.addFloorDecal(px(50), px(30) + 4, 'w1-folders');
-    this.addFloorDecal(px(47), px(29) + 8, 'w1-vent-grille');
-    this.addFloorDecal(px(38), px(26) + 4, 'w1-folders');
-
-    // ——— Records preparation (NW): the plan board's district ———
-    prop(px(17.5), px(6), 'w1-filing-cabinet');
-    prop(px(18.5), px(6), 'w1-filing-cabinet');
-    prop(px(20), px(6), 'w1-document-trolley');
-    prop(px(12), px(5), 'w1-notice-board');
-    prop(px(15.5), px(11), 'w1-chair');
-    this.addFloorDecal(px(14), px(8) + 8, 'w1-paper-stack');
-    this.addFloorDecal(px(11), px(9) + 8, 'w1-vent-grille');
-
-    // ——— Briefing / incident evidence (NE): the evidence desk's district ———
-    prop(px(49), px(6), 'w1-filing-cabinet');
-    prop(px(51), px(6), 'w1-crate-stack');
-    prop(px(38), px(5), 'w1-notice-board');
-    prop(px(45.5), px(11), 'w1-chair');
-    this.serviceLamps.push(prop(px(36.5), px(13), 'w1-service-lamp-standby')!);
-    this.addFloorDecal(px(41), px(7) + 8, 'w1-radio-cradle');
-    this.addFloorDecal(px(47), px(12) + 6, 'w1-cable-coil');
-
-    // ——— Quiet reading bay (SW): the reading desk and the routing packet ———
-    for (const [col, row] of [
-      [17.4, 24],
-      [18.4, 24],
-      [17.4, 31],
-      [18.4, 31],
-    ] as const) {
-      prop(px(col), px(row), 'w1-chair');
-    }
-    prop(px(4.5), px(28), 'w1-filing-cabinet');
-    this.addFloorDecal(px(6.5), px(28) + 8, 'w1-paper-stack');
-    this.addFloorDecal(px(20), px(31) + 8, 'w1-vent-grille');
-    wall(px(2) + 20, px(27), 'w1-intercom');
-
-    // ——— Recesses off the loops: archive, equipment storage, supplies ———
-    prop(px(5), px(9), 'w1-shelving');
-    prop(px(5), px(13), 'w1-shelving');
-    prop(px(5), px(16), 'w1-lockers');
-    prop(px(58), px(8), 'w1-shelving');
-    prop(px(58), px(11), 'w1-lockers');
-    prop(px(58), px(13), 'w1-cable-drum');
-    prop(px(34), px(33), 'w1-crate-stack');
-    prop(px(36), px(33), 'w1-crate');
-    prop(px(37), px(33), 'w1-drum');
-    prop(px(38), px(33), 'w1-crate-b');
-    wall(px(9) + 24, px(35) - 6, 'w1-extinguisher');
-    wall(px(56), px(6) - 4, 'w1-extinguisher');
-
-    // ——— Work-area light pools (cold emergency → warm from act 3) ———
+    // ——— Work-area light pools (cold emergency → warm from act 3),
+    // under the plate's three baked cone lamps ———
     for (const [x, y, alpha] of [
-      [px(41), px(28.5), 0.7], // operations counter
-      [px(14), px(14.5), 0.55], // plan board
-      [px(44), px(14.5), 0.55], // evidence desk
-      [px(22), px(29.5), 0.5], // routing packet
-      [px(30), px(19), 0.45], // the crossing
+      [168, 150, 0.55], // plan-board district lamp
+      [340, 160, 0.5], // the crossing
+      [512, 170, 0.7], // operations desk lamp
       // (no pool at the reading desk: the M05 lamp's surroundings keep
       // their pre-U2 salience — scientific review F2)
     ] as const) {
@@ -591,31 +543,22 @@ export class StationConcourseScene extends PilotZoneScene {
       }
     }
 
-    // ——— Storm evidence: a scorched junction on the north hull with a
-    // fallen fragment beneath it, patched once the feeds are restored ———
+    // ——— Storm evidence: a scorch and a fallen panel fragment by the
+    // north wall, patched once the feeds are restored ———
     for (const decal of [
-      this.addFloorDecal(px(24), px(2) + 14, 'kit-scorch'),
-      this.addFloorDecal(px(23.5), px(3) + 10, 'w1-debris-panel'),
+      this.addFloorDecal(248, 110, 'kit-scorch'),
+      this.addFloorDecal(240, 122, 'w1-debris-panel'),
     ]) {
       if (decal !== null) {
         this.damageDressing.push(decal);
       }
     }
 
-    const patch = wall(px(24), px(2) - 4, 'w1-junction-box');
+    const patch = this.addGroundInfra(248, 96, 'w1-junction-box');
 
     if (patch !== null) {
       patch.setVisible(false);
       this.repairDressing.push(patch);
-    }
-  }
-
-  /** Re-anchors a door leaf as wall-mounted art (bottom-centre, behind actors). */
-  private anchorDoor(registryId: string, bottomY: number) {
-    const image = this.doorImage(registryId);
-
-    if (image !== null) {
-      image.setOrigin(0.5, 1).setY(bottomY).setDepth(DepthLayer.GroundInfra);
     }
   }
 

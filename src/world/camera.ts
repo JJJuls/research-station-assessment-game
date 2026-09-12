@@ -30,9 +30,13 @@ export interface WorldView {
   bottom: number;
 }
 
-/** Authority: 128×80 world px dead zone, 0.16 s time constant. */
-export const DEFAULT_DEAD_ZONE_WIDTH = 128;
-export const DEFAULT_DEAD_ZONE_HEIGHT = 80;
+/**
+ * Dead zone sized for the 640×360 field (~15% of the view each axis;
+ * the previous 128×80 zone was authored for the 1280×720 field).
+ * 0.16 s time constant unchanged.
+ */
+export const DEFAULT_DEAD_ZONE_WIDTH = 96;
+export const DEFAULT_DEAD_ZONE_HEIGHT = 56;
 export const DEFAULT_TIME_CONSTANT_MS = 160;
 
 /** Frame deltas above this (tab switch, load stall) are clamped. */

@@ -192,21 +192,22 @@ export interface PilotDoorRef {
 }
 
 export const PILOT_DOORS: Record<PilotZoneKey, readonly PilotDoorRef[]> = {
-  // World V1 production slice: Dock 48×30 and Concourse 60×38 blockouts
-  // (world-layouts.json `doors[].at` × 32; docs/game/world-v1/ROOM-BLOCKOUTS.md).
+  // World V2 rescue: Dock 22×12 and Concourse 22×12 painted plates —
+  // door anchors sit on the plates' baked/inpainted doorways
+  // (src/world/layouts/dock.ts, concourse.ts).
   dock: [
-    { to: 'station_concourse', x: 768, y: 32, label: 'Station Concourse' },
+    { to: 'station_concourse', x: 352, y: 64, label: 'Station Concourse' },
   ],
   station_concourse: [
-    { to: 'dock', x: 960, y: 1184, label: 'Dock' },
-    { to: 'records_workshop', x: 32, y: 608, label: 'Records Workshop' },
+    { to: 'dock', x: 339, y: 300, label: 'Dock' },
+    { to: 'records_workshop', x: 40, y: 192, label: 'Records Workshop' },
     {
       to: 'diagnostics_laboratory',
-      x: 960,
-      y: 32,
+      x: 320,
+      y: 72,
       label: 'Diagnostics Laboratory',
     },
-    { to: 'utility_core_deck', x: 1888, y: 608, label: 'Utility Deck' },
+    { to: 'utility_core_deck', x: 648, y: 130, label: 'Utility Deck' },
   ],
   records_workshop: [
     { to: 'station_concourse', x: 752, y: 272, label: 'Station Concourse' },
