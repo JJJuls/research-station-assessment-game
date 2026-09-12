@@ -46,6 +46,7 @@ import {
   walkTo,
   workshopSignOff,
   workshopToConcourse,
+  yardApproach,
   yardReturnToConcourse,
 } from './pilotHelpers';
 
@@ -263,7 +264,7 @@ test.describe('pilot route v2 — topology and guidance (Unit 1)', () => {
       approachOffset: await labApproach(page, PILOT.lab.airlock),
     });
     await openPromptAt(page, PILOT.yard.noor, {
-      approachOffset: { x: 0, y: 40 },
+      approachOffset: await yardApproach(page, PILOT.yard.noor),
     });
     await selectPromptOption(page, 1);
     await expectStage(page, 'exterior_work');

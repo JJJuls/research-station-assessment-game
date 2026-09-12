@@ -228,10 +228,12 @@ export const PILOT_DOORS: Record<PilotZoneKey, readonly PilotDoorRef[]> = {
     },
   ],
   exterior_recovery_yard: [
+    // World V2 rebuild: 43×12 two-plate strip — the airlock is baked into
+    // the west half's south hull.
     {
       to: 'diagnostics_laboratory',
-      x: 384,
-      y: 496,
+      x: 342,
+      y: 322,
       label: 'Airlock — Laboratory',
     },
   ],

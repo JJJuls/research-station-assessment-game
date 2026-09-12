@@ -168,29 +168,45 @@ export const LAB_SPAWNS = {
  * compound behind a ridge) and the uplink posts (north-west).
  */
 export const YARD_SITES = {
-  noor: { x: 9.4 * TILE, y: 13.4 * TILE },
-  supplyCrate: { x: 5.5 * TILE, y: 14 * TILE },
-  cableFlag: { x: 17.5 * TILE, y: 14 * TILE },
-  coupling: { x: 3.2 * TILE, y: 10.5 * TILE },
-  thawRack: { x: 3.2 * TILE, y: 8.6 * TILE },
-  mast: { x: 13 * TILE, y: 5.5 * TILE },
-  mastTower: { x: 12 * TILE, y: 3.1 * TILE },
-  plotStake: { x: 15 * TILE, y: 8.5 * TILE },
-  magnetRig: { x: 19.5 * TILE, y: 5 * TILE },
-  magnetTray: { x: 23.3 * TILE, y: 3.8 * TILE },
-  sortingBench: { x: 22.7 * TILE, y: 6.2 * TILE },
-  uplinkA: { x: 3 * TILE, y: 4 * TILE },
-  linePanel: { x: 7 * TILE, y: 3 * TILE },
-  uplinkB: { x: 9.5 * TILE, y: 5 * TILE },
+  /**
+   * World V2 rebuild: a 43×12 two-plate painted strip
+   * (src/world/layouts/yard.ts; plate yard-plate.png). Anchors are mapped
+   * to the plates' baked art — west: Noor on the apron by the airlock,
+   * the supply crate and the guy-line flag against the hull, the frozen
+   * coupling (its east flange; the wheel is boxed in by the pipe run),
+   * the heater rack, the two uplink posts with the line panel between
+   * them, Mast 04 on its rock footing; east, through the drift pass: the
+   * staked excavation field, the gantry magnet rig over the scrap
+   * catchment, the parts cart (magnet tray) and the control bench
+   * (sorting bench). Machine-audited like the other rebuilt rooms.
+   */
+  noor: { x: 250, y: 236 },
+  supplyCrate: { x: 450, y: 296 },
+  cableFlag: { x: 512, y: 300 },
+  coupling: { x: 150, y: 205 },
+  thawRack: { x: 160, y: 200 },
+  mast: { x: 452, y: 178 },
+  /** The painted lattice tower's crown (beacon / restored-signal cue). */
+  mastTower: { x: 434, y: 24 },
+  plotStake: { x: 860, y: 190 },
+  magnetRig: { x: 1200, y: 176 },
+  magnetTray: { x: 1280, y: 285 },
+  sortingBench: { x: 1296, y: 232 },
+  uplinkA: { x: 200, y: 76 },
+  linePanel: { x: 292, y: 110 },
+  uplinkB: { x: 390, y: 86 },
 } as const;
 
-/** Magnet rig operating pad (F works only here). */
+/** Magnet rig operating pad (F works only here): under the gantry beam. */
 export const YARD_RIG_PAD = {
-  minX: 18 * TILE,
-  maxX: 23.5 * TILE,
-  minY: 2.2 * TILE,
-  maxY: 6.5 * TILE,
+  minX: 1130,
+  maxX: 1250,
+  minY: 176,
+  maxY: 252,
 } as const;
+
+/** Yard arrival spawn (inside the airlock, clear of every radius). */
+export const YARD_SPAWN = { x: 342, y: 240 } as const;
 
 /**
  * Utility Deck (Unit 6 — non-scored closure). World V2 rebuild: a 22×12

@@ -11,6 +11,8 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
+import { M23_TARGET_CELLS } from '../src/pilot/exterior/m23ExcavationModel';
+import { YARD_SITES } from '../src/pilot/zoneSites';
 import { driveAxisTo, getEvents, hold, selectPromptOption } from './helpers';
 import {
   captureErrors,
@@ -26,60 +28,81 @@ import {
   pilotCoverage,
   pilotProbe,
   press,
+  registryApproach,
   routeToYardWork,
   useDoor,
   walkTo,
+  yardApproach,
+  yardVia,
 } from './pilotHelpers';
 
 export { captureErrors, expectNoRuntimeErrors };
 
-/** Yard geometry (src/pilot/zoneSites.ts YARD_SITES + M23_TARGET_CELLS). */
+/**
+ * Yard geometry — World V2 rebuild: every site from the machine-audited
+ * shared book (src/pilot/zoneSites.ts YARD_SITES + the registry), the
+ * M23 target cells from the model, and sweep spots chosen by distance
+ * band from each form's target (none ≥ 160 px; faint 107–159 px;
+ * actionable ≤ 106 px), all standable on the painted strip.
+ */
+const cellCentre = (cell: { col: number; row: number }) => ({
+  x: cell.col * 32 + 16,
+  y: cell.row * 32 + 16,
+});
+
 export const YARD = {
-  noor: { x: 300.8, y: 428.8 },
-  airlock: { x: 384, y: 496 },
-  coupling: { x: 102.4, y: 336 },
-  mast: { x: 416, y: 176 },
-  stake: { x: 480, y: 272 },
-  rig: { x: 624, y: 160 },
-  bench: { x: 726.4, y: 198.4 },
-  uplinkA: { x: 96, y: 128 },
-  uplinkB: { x: 304, y: 160 },
-  panel: { x: 224, y: 96 },
-  crate: { x: 176, y: 448 },
-  flag: { x: 560, y: 448 },
-  pad: { x: 680, y: 150 },
+  noor: { ...YARD_SITES.noor },
+  airlock: { ...PILOT.yard.airlock },
+  coupling: { ...YARD_SITES.coupling },
+  mast: { ...YARD_SITES.mast },
+  stake: { ...YARD_SITES.plotStake },
+  rig: { ...YARD_SITES.magnetRig },
+  bench: { ...YARD_SITES.sortingBench },
+  uplinkA: { ...YARD_SITES.uplinkA },
+  uplinkB: { ...YARD_SITES.uplinkB },
+  panel: { ...YARD_SITES.linePanel },
+  crate: { ...YARD_SITES.supplyCrate },
+  flag: { ...YARD_SITES.cableFlag },
+  /** Inside the rig's operating pad (F works only here). */
+  pad: { x: 1190, y: 216 },
   targetCells: {
-    form_a: { x: 592, y: 304 },
-    form_b: { x: 656, y: 400 },
+    form_a: cellCentre(M23_TARGET_CELLS.form_a),
+    form_b: cellCentre(M23_TARGET_CELLS.form_b),
   },
   /** Sweep positions per form: outside the signal, faint, actionable. */
   scanSpots: {
     form_a: {
-      none: { x: 700, y: 440 },
-      faint: { x: 528, y: 420 },
-      actionable: { x: 592, y: 360 },
+      none: { x: 1100, y: 250 },
+      faint: { x: 1000, y: 240 },
+      actionable: { x: 912, y: 200 },
     },
     form_b: {
-      none: { x: 528, y: 272 },
-      faint: { x: 560, y: 300 },
-      actionable: { x: 656, y: 340 },
+      none: { x: 1180, y: 120 },
+      faint: { x: 860, y: 160 },
+      actionable: { x: 976, y: 180 },
     },
   },
 } as const;
 
-/** Approach offsets (44 px, no other interactable nearer — D-V2-1 rule). */
+/** Approach offsets — derived from the registry's audited approach points. */
+const yardOffset = (id: string, at: { x: number; y: number }) => {
+  const approach = registryApproach(id);
+
+  return { x: approach.x - at.x, y: approach.y - at.y };
+};
+
 export const APPROACH = {
-  noor: { x: 0, y: 40 },
-  coupling: { x: 44, y: 0 },
-  mast: { x: 0, y: 44 },
-  stake: { x: 0, y: 44 },
-  rig: { x: 0, y: 44 },
-  bench: { x: -44, y: 0 },
-  uplinkA: { x: 0, y: 44 },
-  uplinkB: { x: 0, y: 44 },
-  panel: { x: 0, y: 44 },
-  crate: { x: 0, y: -44 },
-  flag: { x: 0, y: -44 },
+  noor: yardOffset('yard.noor', YARD.noor),
+  coupling: yardOffset('yard.coupling', YARD.coupling),
+  mast: yardOffset('yard.mast', YARD.mast),
+  stake: yardOffset('yard.plot_stake', YARD.stake),
+  rig: yardOffset('yard.magnet_rig', YARD.rig),
+  bench: yardOffset('yard.sorting_bench', YARD.bench),
+  uplinkA: yardOffset('yard.uplink_a', YARD.uplinkA),
+  uplinkB: yardOffset('yard.uplink_b', YARD.uplinkB),
+  panel: yardOffset('yard.line_panel', YARD.panel),
+  crate: yardOffset('yard.supply_crate', YARD.crate),
+  flag: yardOffset('yard.cable_flag', YARD.flag),
 } as const;
 
 export const FORBIDDEN_TEXT =
@@ -362,9 +385,11 @@ export async function enterYard(page: Page, tag: string) {
   expect(probe?.zone).toBe('exterior_recovery_yard');
 }
 
-/** Compound gate lane: col 15 (x 496) up to y 196, then east at y 196. */
-const GATE = { x: 496, y: 188 } as const; // body 42 px: y must stay within 178-200 at the gate
-
+/**
+ * The rig's operating area (the gantry on the east half). "Inside the
+ * compound" = under the gantry; every other site is reached through the
+ * open field, so leaving simply steps back onto the field.
+ */
 async function insideCompound(page: Page): Promise<boolean> {
   const probe = await page.evaluate(
     () =>
@@ -372,32 +397,27 @@ async function insideCompound(page: Page): Promise<boolean> {
         .__playerProbe ?? null,
   );
 
-  return probe !== null && probe.x >= 528 && probe.y < 224;
+  return probe !== null && probe.x >= 1100;
 }
 
-/** Walks into the Metal Recovery Yard through its western gate. */
+/** Walks onto the rig's operating pad (through the drift pass if needed). */
 export async function enterCompound(page: Page) {
   if (await insideCompound(page)) {
     return;
   }
 
-  await walkTo(page, GATE.x, 300, { yFirst: false });
-  await walkTo(page, GATE.x, GATE.y, { yFirst: true });
-  await walkTo(page, YARD.pad.x, GATE.y, { yFirst: true });
+  await yardVia(page, YARD.pad.x, YARD.pad.y);
 }
 
-/** Leaves the compound through the same gate (no-op when outside). */
+/** Steps off the rig area back onto the field (no-op when outside). */
 export async function ensureOutsideCompound(page: Page) {
   if (!(await insideCompound(page))) {
     return;
   }
 
-  await walkTo(page, YARD.pad.x, GATE.y, { yFirst: true });
-  await walkTo(page, GATE.x, GATE.y, { yFirst: false });
-  await walkTo(page, GATE.x, 300, { yFirst: true });
+  await yardVia(page, 1000, 216);
 }
 
-/** Opens a site prompt (E) from its approach point and asserts no leak. */
 export async function openSite(page: Page, site: keyof typeof APPROACH) {
   if (site === 'rig' || site === 'bench') {
     await enterCompound(page);
@@ -405,12 +425,12 @@ export async function openSite(page: Page, site: keyof typeof APPROACH) {
     await ensureOutsideCompound(page);
   }
 
-  if (site === 'uplinkA') {
-    // The short ridge (row 7, cols 1-4) blocks a northward leg at x 96:
-    // approach Post A along column 7, then west at row 5.
-    await walkTo(page, 240, 300, { yFirst: false });
-    await walkTo(page, 240, 172, { yFirst: true });
-  }
+  // Pass-aware travel to the audited approach point, then the prompt.
+  await yardVia(
+    page,
+    YARD[site].x + APPROACH[site].x,
+    YARD[site].y + APPROACH[site].y,
+  );
 
   try {
     await openPromptAt(page, YARD[site], { approachOffset: APPROACH[site] });
@@ -442,9 +462,8 @@ export async function openSite(page: Page, site: keyof typeof APPROACH) {
 /** Yard airlock → laboratory (the return route). */
 export async function leaveYard(page: Page) {
   await ensureOutsideCompound(page);
-  await walkTo(page, 384, 400, { yFirst: false });
   await useDoor(page, PILOT.yard.airlock, 'diagnostics_laboratory', {
-    approachOffset: { x: 0, y: -40 },
+    approachOffset: await yardApproach(page, PILOT.yard.airlock),
   });
 }
 
@@ -646,7 +665,7 @@ export async function scanHere(page: Page) {
 /** Walks to a spot and sweeps there. */
 export async function scanAt(page: Page, at: { x: number; y: number }) {
   await ensureOutsideCompound(page);
-  await walkTo(page, at.x, at.y, { yFirst: true });
+  await yardVia(page, at.x, at.y);
   await page.waitForTimeout(250);
 
   return scanHere(page);
@@ -661,6 +680,7 @@ export async function scanAt(page: Page, at: { x: number; y: number }) {
  */
 export async function faceCell(page: Page, cx: number, cy: number) {
   await ensureOutsideCompound(page);
+  await yardVia(page, cx, cy - 60);
   const col = Math.floor(cx / 32);
   const row = Math.floor(cy / 32);
   const approaches: { stand: { x: number; y: number }; key: string }[] = [

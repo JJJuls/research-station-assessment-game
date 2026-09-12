@@ -54,18 +54,27 @@ export const M23_EVENT_SUFFIXES = [
 
 export type M23Form = 'form_a' | 'form_b';
 
-/** Staked excavation field (tile bounds, inclusive) — 7 × 6 cells. */
+/**
+ * Staked excavation field (tile bounds, inclusive) — 7 × 6 cells.
+ *
+ * World V2 rebuild (presentation-only translation): the plot moved from
+ * cols 16–22 / rows 8–13 of the former 25×19 yard to cols 26–32 /
+ * rows 3–8 of the 43×12 painted strip (the painted stake field). Its
+ * SIZE (7 × 6) and the target cells' positions RELATIVE to the plot
+ * (form A at +2/+1, form B at +4/+4) are the measurement fixture and are
+ * unchanged; only the absolute origin moved with the room.
+ */
 export const M23_PLOT = {
-  minCol: 16,
-  maxCol: 22,
-  minRow: 8,
-  maxRow: 13,
+  minCol: 26,
+  maxCol: 32,
+  minRow: 3,
+  maxRow: 8,
 } as const;
 
 /** Counterbalanced target cells — both deep inside the plot. */
 export const M23_TARGET_CELLS: Record<M23Form, { col: number; row: number }> = {
-  form_a: { col: 18, row: 9 },
-  form_b: { col: 20, row: 12 },
+  form_a: { col: 28, row: 4 },
+  form_b: { col: 30, row: 7 },
 };
 
 export const M23_DETECTION_RADIUS = 160;

@@ -809,7 +809,7 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     ).toBe(1);
 
     // Overlays: I freezes the world and resumes it; M likewise.
-    await walkTo(page, 400, 420, { yFirst: true });
+    await walkTo(page, 400, 252, { yFirst: true });
 
     const before = await page.evaluate(
       () =>

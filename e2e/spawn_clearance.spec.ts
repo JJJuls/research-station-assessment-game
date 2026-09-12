@@ -12,6 +12,7 @@ import {
   CORE_SPAWN,
   DECK_SPAWNS,
   WORKSHOP_SPAWN,
+  YARD_SPAWN,
 } from '../src/pilot/zoneSites';
 import { PILOT } from './pilotHelpers';
 
@@ -40,6 +41,12 @@ test.describe('arrival spawn clearance (pure)', () => {
   test('Utility Deck arrival from the chamber is clear of the Core door', () => {
     // World V2 rebuild: the deck spawns live in the shared audited book.
     expect(distance(DECK_SPAWNS.fromCore, PILOT.deck.coreDoor)).toBeGreaterThan(
+      INTERACTION_RADIUS,
+    );
+  });
+
+  test('Recovery Yard arrival is clear of the airlock', () => {
+    expect(distance(YARD_SPAWN, PILOT.yard.airlock)).toBeGreaterThan(
       INTERACTION_RADIUS,
     );
   });

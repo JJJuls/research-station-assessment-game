@@ -24,6 +24,7 @@ import {
   LAB_STATIONS,
   WORKSHOP_SITES,
   WORKSHOP_STATIONS,
+  YARD_SITES,
 } from '../pilot/zoneSites';
 
 export type ObjectClass = 'active' | 'optional' | 'inactive' | 'decorative';
@@ -764,6 +765,164 @@ export const CORE_REGISTRY: readonly InteractionRegistryEntry[] = [
   },
 ];
 
+const Y = YARD_SITES;
+
+const yardStation = (
+  id: string,
+  at: { x: number; y: number },
+  verb: string,
+  label: string,
+  opens: SurfaceRef,
+  window: string | null,
+  approach: { x: number; y: number },
+  footprint: { w: number; h: number } | null = { w: 2, h: 2 },
+): InteractionRegistryEntry => ({
+  id,
+  zone: 'exterior_recovery_yard',
+  kind: 'station',
+  x: at.x,
+  y: at.y,
+  radius: INTERACTION_RADIUS,
+  verb,
+  label,
+  availability: 'always',
+  opens,
+  footprint,
+  depthAnchor: 'foot',
+  stage: 'any',
+  window,
+  approach,
+});
+
+/**
+ * Exterior Recovery Yard (World V2 rebuild, 43×12 two-plate strip). Every
+ * approach point is the machine-audited safe standing point of its site
+ * (32×42 body, ±12 px landing box standable, the site strictly nearest at
+ * every landing, BFS-connected from the airlock spawn through the drift
+ * pass — layout header). The excavation field and the rig live on the
+ * east half; the apron, coupling, uplink and mast sites on the west.
+ */
+export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
+  door('exterior_recovery_yard', 'diagnostics_laboratory', 'yard.airlock_lab', {
+    x: 342,
+    y: 282,
+  }),
+  {
+    id: 'yard.noor',
+    zone: 'exterior_recovery_yard',
+    kind: 'npc',
+    x: Y.noor.x,
+    y: Y.noor.y,
+    radius: INTERACTION_RADIUS,
+    verb: 'Talk to',
+    label: 'Noor',
+    availability: 'always',
+    opens: { kind: 'prompt', id: 'pilotNoor' },
+    footprint: { w: 2, h: 1 },
+    depthAnchor: 'foot',
+    stage: 'any',
+    window: null,
+    approach: { x: 294, y: 240 },
+  },
+  yardStation(
+    'yard.supply_crate',
+    Y.supplyCrate,
+    'Open the',
+    'Yard Supply Crate',
+    { kind: 'prompt', id: 'pilotStation' },
+    null,
+    { x: 430, y: 250 },
+  ),
+  yardStation(
+    'yard.cable_flag',
+    Y.cableFlag,
+    'Check the',
+    'Cable Flag',
+    { kind: 'action', id: 'm05_fix_o2' },
+    'm05_initiation_o2',
+    { x: 530, y: 252 },
+    { w: 1, h: 2 },
+  ),
+  yardStation(
+    'yard.coupling',
+    Y.coupling,
+    'Work the',
+    'Frozen Coolant Coupling',
+    { kind: 'prompt', id: 'pilotCoupling' },
+    'm19_progressive_valve',
+    { x: 156, y: 160 },
+    { w: 4, h: 3 },
+  ),
+  yardStation(
+    'yard.uplink_a',
+    Y.uplinkA,
+    'Use',
+    'Field Uplink Post A',
+    { kind: 'prompt', id: 'pilotUplinkA' },
+    'm26_channel_disconnect',
+    { x: 200, y: 130 },
+    { w: 1, h: 1 },
+  ),
+  yardStation(
+    'yard.line_panel',
+    Y.linePanel,
+    'Read the',
+    'Line Status Panel',
+    { kind: 'prompt', id: 'pilotLinePanel' },
+    'm26_channel_disconnect (evidence)',
+    { x: 292, y: 158 },
+  ),
+  yardStation(
+    'yard.uplink_b',
+    Y.uplinkB,
+    'Use',
+    'Field Uplink Post B',
+    { kind: 'prompt', id: 'pilotUplinkB' },
+    'm26_channel_disconnect (alternative)',
+    { x: 372, y: 136 },
+    { w: 1, h: 1 },
+  ),
+  yardStation(
+    'yard.mast',
+    Y.mast,
+    'Work',
+    'Mast 04',
+    { kind: 'prompt', id: 'pilotMast' },
+    'm20_antenna_restoration',
+    { x: 452, y: 222 },
+    { w: 3, h: 2 },
+  ),
+  yardStation(
+    'yard.plot_stake',
+    Y.plotStake,
+    'Read the',
+    'Excavation Field Stake',
+    { kind: 'prompt', id: 'pilotPlotStake' },
+    'm23_field_recovery',
+    { x: 828, y: 224 },
+    { w: 1, h: 1 },
+  ),
+  yardStation(
+    'yard.magnet_rig',
+    Y.magnetRig,
+    'Read the',
+    'Magnet Recovery Rig',
+    { kind: 'prompt', id: 'pilotRigReadout' },
+    'm24_magnet_utility',
+    { x: 1170, y: 216 },
+    { w: 3, h: 2 },
+  ),
+  yardStation(
+    'yard.sorting_bench',
+    Y.sortingBench,
+    'Use the',
+    'Sorting Bench',
+    { kind: 'prompt', id: 'pilotSortingBench' },
+    'm24_magnet_utility (alternative)',
+    { x: 1248, y: 240 },
+  ),
+];
+
 export const WORLD_V1_REGISTRY: Partial<
   Record<PilotZoneKey, readonly InteractionRegistryEntry[]>
 > = {
@@ -773,6 +932,7 @@ export const WORLD_V1_REGISTRY: Partial<
   diagnostics_laboratory: LAB_REGISTRY,
   utility_core_deck: DECK_REGISTRY,
   core_chamber: CORE_REGISTRY,
+  exterior_recovery_yard: YARD_REGISTRY,
 };
 
 /** Zones already declared in the registry (grows unit by unit). */

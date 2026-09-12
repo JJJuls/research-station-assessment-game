@@ -29,12 +29,15 @@ import {
   WORKSHOP_SITES,
   WORKSHOP_SPAWN,
   WORKSHOP_STATIONS,
+  YARD_SITES,
+  YARD_SPAWN,
 } from '../src/pilot/zoneSites';
 import {
   CORE_REGISTRY,
   DECK_REGISTRY,
   LAB_REGISTRY,
   WORLD_V1_REGISTRY,
+  YARD_REGISTRY,
 } from '../src/world/interactionRegistry';
 import {
   driveAxisTo,
@@ -156,9 +159,12 @@ export const PILOT = {
     spawnFromConcourse: { ...LAB_SPAWNS.fromConcourse },
     spawnFromYard: { ...LAB_SPAWNS.fromYard },
   },
+  // World V2 rebuild: the 43×12 two-plate yard — coordinates derive from
+  // the machine-audited shared book (approach offsets via yardApproach).
   yard: {
-    noor: { x: 300.8, y: 428.8 },
-    airlock: { x: 384, y: 496 },
+    noor: { ...YARD_SITES.noor },
+    airlock: doorOf('exterior_recovery_yard', 'diagnostics_laboratory'),
+    spawn: { ...YARD_SPAWN },
   },
   // World V2 rebuild: the 22×12 painted deck — all coordinates derive
   // from the machine-audited shared book (approach offsets via
@@ -815,6 +821,50 @@ export async function coreApproach(
   return { x: entry.approach.x - at.x, y: entry.approach.y - at.y };
 }
 
+/**
+ * Rebuilt Recovery Yard (43×12 two-plate strip): the west half and the
+ * east half connect only through the drift pass (rows 6–7, y ≈ 220). A
+ * leg that changes halves travels the pass row first. Driver only —
+ * production geometry is never adjusted for it.
+ */
+export async function yardVia(page: Page, x: number, y: number) {
+  const half = (px: number) => (px < 600 ? 0 : px > 800 ? 2 : 1);
+  const here = await page.evaluate(
+    () =>
+      (window as unknown as { __playerProbe?: { x: number; y: number } | null })
+        .__playerProbe ?? null,
+  );
+
+  if (here !== null && half(here.x) !== half(x)) {
+    await driveAxisTo(page, 'y', 220, 8);
+    await driveAxisTo(page, 'x', x, 8);
+  }
+
+  await walkTo(page, x, y, { yFirst: true });
+}
+
+/**
+ * Walks (pass-aware) to the registry approach point of a yard site and
+ * returns the approach offset for interactAt / openPromptAt / useDoor.
+ */
+export async function yardApproach(
+  page: Page,
+  at: { x: number; y: number },
+): Promise<{ x: number; y: number }> {
+  const entry = YARD_REGISTRY.find(
+    (candidate) =>
+      Math.abs(candidate.x - at.x) < 1 && Math.abs(candidate.y - at.y) < 1,
+  );
+
+  if (entry === undefined) {
+    throw new Error(`pilotHelpers: no yard registry object at ${at.x},${at.y}`);
+  }
+
+  await yardVia(page, entry.approach.x, entry.approach.y);
+
+  return { x: entry.approach.x - at.x, y: entry.approach.y - at.y };
+}
+
 /** Dock (after the tutorial) → Concourse north door → stage handover_briefing. */
 export async function dockToConcourse(page: Page) {
   await walkTo(
@@ -919,7 +969,7 @@ export async function labToYardBriefed(page: Page) {
     approachOffset: await labApproach(page, PILOT.lab.airlock),
   });
   await openPromptAt(page, PILOT.yard.noor, {
-    approachOffset: { x: 0, y: 40 },
+    approachOffset: await yardApproach(page, PILOT.yard.noor),
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'exterior_work');
@@ -931,13 +981,12 @@ export async function labToYardBriefed(page: Page) {
  */
 export async function yardReturnToConcourse(page: Page) {
   await openPromptAt(page, PILOT.yard.noor, {
-    approachOffset: { x: 0, y: 40 },
+    approachOffset: await yardApproach(page, PILOT.yard.noor),
   });
   await selectPromptOption(page, 2);
   await expectStage(page, 'return_hub');
-  await walkTo(page, 384, 400, { yFirst: false });
   await useDoor(page, PILOT.yard.airlock, 'diagnostics_laboratory', {
-    approachOffset: { x: 0, y: -40 },
+    approachOffset: await yardApproach(page, PILOT.yard.airlock),
   });
   await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
     approachOffset: await labApproach(page, PILOT.lab.southDoor),

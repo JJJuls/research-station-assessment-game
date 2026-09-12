@@ -61,7 +61,7 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
     const form = (await exteriorProbe(page)).m23_form;
     const spots = YARD.scanSpots[form];
     // ——— General C/D outside any window: secondary only. ———
-    await walkTo(page, 400, 380, { yFirst: true });
+    await walkTo(page, 400, 250, { yFirst: true });
     await scanAt(page, { x: 400, y: 380 });
     expect((await faProbe(page)).scan.last?.category).toBe('none');
     await press(page, 'd');

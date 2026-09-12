@@ -59,7 +59,7 @@ test('exterior recovery — thirteen participant-view frames', async ({
   await enterYard(page, 'cap4');
 
   // 09 — arrival: apron, airlock sign, objective line, beacon on the coupling.
-  await walkTo(page, 420, 380, { yFirst: true });
+  await walkTo(page, 420, 250, { yFirst: true });
   await shot(page, '09-exterior-arrival');
 
   // 10 — M05 occasion 2: the loose cable flag (presented, never mentioned).
@@ -172,7 +172,7 @@ test('exterior recovery — thirteen participant-view frames', async ({
 
   // 21 — the return route with the persistent antenna state.
   await finishOutside(page);
-  await walkTo(page, 384, 300, { yFirst: true });
+  await walkTo(page, 342, 240, { yFirst: true });
   await press(page, 'm');
   await page.waitForFunction(
     () =>
@@ -184,7 +184,7 @@ test('exterior recovery — thirteen participant-view frames', async ({
   await shot(page, '21a-return-mission-log');
   await press(page, 'Escape');
   await page.waitForTimeout(400);
-  await walkTo(page, 384, 420, { yFirst: true });
+  await walkTo(page, 342, 262, { yFirst: true });
   expect((await pilotProbe(page))?.objective).toContain('Concourse');
   await shot(page, '21-return-route');
 

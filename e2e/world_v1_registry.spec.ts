@@ -21,6 +21,7 @@ import {
   DOCK_SITES,
   LAB_SPAWNS,
   WORKSHOP_SPAWN,
+  YARD_SPAWN,
 } from '../src/pilot/zoneSites';
 import {
   deriveObjectClass,
@@ -36,6 +37,7 @@ import { DOCK_LAYOUT } from '../src/world/layouts/dock';
 import { gridOf, walkingDistance } from '../src/world/layouts/grid';
 import { LAB_LAYOUT } from '../src/world/layouts/laboratory';
 import { WORKSHOP_LAYOUT } from '../src/world/layouts/workshop';
+import { YARD_LAYOUT } from '../src/world/layouts/yard';
 
 const LAYOUTS = {
   dock: gridOf(DOCK_LAYOUT),
@@ -44,6 +46,7 @@ const LAYOUTS = {
   diagnostics_laboratory: gridOf(LAB_LAYOUT),
   utility_core_deck: gridOf(DECK_LAYOUT),
   core_chamber: gridOf(CORE_LAYOUT),
+  exterior_recovery_yard: gridOf(YARD_LAYOUT),
 } as const;
 
 const SPAWNS = {
@@ -53,6 +56,7 @@ const SPAWNS = {
   diagnostics_laboratory: Object.values(LAB_SPAWNS),
   utility_core_deck: Object.values(DECK_SPAWNS),
   core_chamber: [CORE_SPAWN],
+  exterior_recovery_yard: [YARD_SPAWN],
 } as const;
 
 const DOOR_CLEARANCE = 96;

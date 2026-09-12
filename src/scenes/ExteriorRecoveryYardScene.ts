@@ -27,7 +27,7 @@
  */
 import Phaser from 'phaser';
 
-import { Depth, DepthLayer, key, worldDepth } from '../constants';
+import { Depth, DepthLayer, key } from '../constants';
 import type {
   DigRecord,
   DigRefusal,
@@ -178,9 +178,10 @@ import {
   m05State,
   presentM05,
 } from '../pilot/windows/m05Initiation';
-import { YARD_RIG_PAD, YARD_SITES } from '../pilot/zoneSites';
+import { YARD_RIG_PAD, YARD_SITES, YARD_SPAWN } from '../pilot/zoneSites';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption } from '../world';
+import { YARD_LAYOUT } from '../world/layouts/yard';
 
 const TILE = 32;
 const M05_FIX_MS = 2000;
@@ -215,8 +216,8 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
   private frostOverlay?: Phaser.GameObjects.Rectangle;
   private mastChip?: Phaser.GameObjects.Text;
   private mastFeed?: Phaser.GameObjects.Graphics;
-  /** Unit 7 (V19): the mast tower image (damaged → restored antenna art). */
-  private mastTower?: Phaser.GameObjects.Image;
+  /** World V2: the crown beacon on the painted tower (restored → lit, pulsing). */
+  private mastBeacon?: Phaser.GameObjects.Rectangle;
   private mastPulseMs = 0;
   private plotOverlay?: Phaser.GameObjects.Graphics;
   private rigChip?: Phaser.GameObjects.Text;
@@ -232,41 +233,24 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
   }
 
   protected getLayout() {
-    // 25×19 exterior. Rock ridges shape the subareas without a maze:
-    // the Mast 04 footing (cols 11-13, rows 3-4), the Metal Recovery Yard
-    // compound (west wall col 16 rows 2-5, south ridge row 7 cols 17-23;
-    // entered from the west at rows 6-7), and the short ridge separating
-    // the uplink posts from the coupling (row 7, cols 1-4). Airlock
-    // doorway south (cols 11-12). Every area is reachable both ways.
+    // World V2 rebuild: the 43×12 two-plate painted strip is the terrain
+    // and every prop; collision is the audited logical grid.
     return {
       theme: 'exterior' as const,
-      grid: [
-        '#########################',
-        '#########################',
-        '#...............#.......#',
-        '#..........###..#.......#',
-        '#..........###..#.......#',
-        '#.......................#',
-        '#.......................#',
-        '#####............########',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................#',
-        '###########--############',
-        '#########################',
-        '#########################',
-      ],
+      grid: [...YARD_LAYOUT],
+      field: 'wide' as const,
+      plateTexture: 'w2-yard-plate',
     };
   }
 
+  protected bundleDropBounds(): { width: number; height: number } {
+    return { width: 43 * TILE, height: 12 * TILE };
+  }
+
   protected getSpawn(): { x: number; y: number } {
-    // Airlock apron, 95 px from the airlock and 140 px from Noor.
-    return { x: 13.75 * TILE, y: 13.1 * TILE };
+    // Inside the airlock, machine-audited: ≥ 80 px from the airlock and
+    // outside every site's 72 px radius (V2 finding U8-8).
+    return YARD_SPAWN;
   }
 
   create(data?: { spawn?: string }) {
@@ -343,12 +327,13 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     this.addPilotDoor({
       to: 'diagnostics_laboratory',
       spawn: 'exterior_recovery_yard',
-      // Unit 7 (V9): iris airlock art (PROVISIONAL strip, closed frame).
-      texture: this.textures.exists('plv1-airlock-open')
-        ? 'plv1-airlock-open'
-        : undefined,
-      textureFrame: 3,
+      registryId: 'yard.airlock_lab',
     });
+    // World V2: the airlock is baked into the west half's south hull — the
+    // leaf sprite would double it; its class lamp sits on the painted
+    // lintel lamp.
+    this.doorImage('yard.airlock_lab')?.setVisible(false);
+    this.placeDoorIndicator('yard.airlock_lab', 342, 297);
 
     // ——— Noor — the route anchor (order 0). ———
     const noor = YARD_SITES.noor;
@@ -361,6 +346,8 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       workFrames: ['plv1-noor', 'plv1-noor-b'],
       x: noor.x,
       y: noor.y,
+      verb: 'Talk to',
+      registryId: 'yard.noor',
     });
     registerPilotStation({
       id: 'npc_noor',
@@ -519,80 +506,30 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       },
     ]);
 
-    // ——— Dressing (V4): one static storm-recovery worksite. ———
-    // No ambient snowfall (mission §5); the storm reads through static
-    // drifts, debris and the cleared service path (buildWorksiteGrammar).
-    this.buildWorksiteGrammar();
-    this.addDecor(11 * TILE, 15.4 * TILE, 'proc-footprints');
-    this.addDecor(15 * TILE, 12.2 * TILE, 'proc-footprints');
-    this.addDecor(8.5 * TILE, 8.4 * TILE, 'proc-ground-disturbed');
-    this.addDecor(6 * TILE, 12.6 * TILE, 'proc-wall-pipes');
-  }
-
-  // ————————————————————————————————— V4 worksite grammar ——
-
-  /**
-   * Presentation only: a cleared service path in packed snow that links
-   * the airlock apron, the coupling, Mast 04, the excavation field, the
-   * Metal Recovery Yard gate and the uplink posts; zone plates (compound
-   * gravel, excavation ground, apron); static drift ridges and debris
-   * groups along the ridges. Nothing here collides, moves or carries
-   * text; every coordinate the field actions and route specs use is
-   * unchanged.
-   */
-  private buildWorksiteGrammar() {
-    const path = (x: number, y: number, w: number, h: number) =>
-      // Review Y2: packed snow reads as a lane — darker token, 2 px edge.
-      this.add
-        .rectangle(x, y, w, h, 0x8fa3b6, 0.7)
-        .setOrigin(0.5)
-        .setStrokeStyle(2, 0x6f8497, 0.8)
-        .setDepth(DepthLayer.FloorDecal + 0.02);
-    const ground = (
-      x: number,
-      y: number,
-      w: number,
-      h: number,
-      color: number,
-      alpha: number,
-    ) =>
-      this.add
-        .rectangle(x, y, w, h, color, alpha)
-        .setOrigin(0.5)
-        .setStrokeStyle(1, 0x8195a9, 0.4)
-        .setDepth(DepthLayer.FloorDecal);
-
-    // Airlock apron (rows 12-15, cols 8-16) and the airlock threshold.
-    ground(12.5 * TILE, 13.5 * TILE, 9 * TILE, 3 * TILE, 0xb9c9d7, 0.5);
-    ground(12 * TILE, 15.5 * TILE, 3 * TILE, TILE, 0xa7bacb, 0.7);
-    // Service path: spine north from the apron to the mast footing …
-    path(12 * TILE, 9 * TILE, 2 * TILE, 8 * TILE);
-    // … west spur to the coupling (row 11) …
-    path(7 * TILE, 11 * TILE, 10 * TILE, TILE);
-    // … east spur to the excavation stake and the compound gate column …
-    path(13.5 * TILE, 10 * TILE, 5 * TILE, TILE);
-    path(15.5 * TILE, 8 * TILE, TILE, 5 * TILE);
-    // … the gate lane into the Metal Recovery Yard (row 6) …
-    path(18.5 * TILE, 6 * TILE, 7 * TILE, TILE);
-    // … and the north-west lane to the uplink posts (column 7, row 5).
-    path(7.5 * TILE, 7.5 * TILE, TILE, 5 * TILE);
-    path(5 * TILE, 5.5 * TILE, 6 * TILE, TILE);
-
-    // Excavation field: cleared, darker ground inside the stakes.
-    ground(
-      ((M23_PLOT.minCol + M23_PLOT.maxCol + 1) / 2) * TILE,
-      ((M23_PLOT.minRow + M23_PLOT.maxRow + 1) / 2) * TILE,
-      (M23_PLOT.maxCol - M23_PLOT.minCol + 1) * TILE,
-      (M23_PLOT.maxRow - M23_PLOT.minRow + 1) * TILE,
-      0x9fb0be,
-      0.6,
-    );
-
-    // Static storm aftermath (review Y3/Y8: no bright vector drifts —
-    // the calmer floor, the disturbed ground, footprints and debris carry
-    // it): debris at the wall bases.
-    this.addDecor(2 * TILE, 12.2 * TILE, 'proc-icon-scrap-plate');
-    this.addDecor(22.6 * TILE, 12.4 * TILE, 'proc-icon-scrap-plate');
+    // ——— World V2: the painted strip IS the terrain and every prop —
+    // hide every site marker sprite (interactions, prompts and events
+    // untouched; the interior rooms' precedent). The V4 worksite grammar
+    // (service path, zone plates, drifts, debris, footprints) is gone:
+    // the plates' baked snow, footprints, lamp pools and wreckage carry
+    // that reading. No ambient snowfall (mission §5).
+    for (const child of this.children.list) {
+      if (
+        child instanceof Phaser.GameObjects.Image &&
+        [
+          'proc-valve-relief',
+          'proc-beacon-comms',
+          'proc-survey-stake',
+          'proc-rig-recycler',
+          'proc-bench-prep',
+          'proc-scan-node',
+          'proc-panel-warning',
+          'proc-crate-supply',
+          'proc-survey-stake-flagged',
+        ].includes(child.texture.key)
+      ) {
+        child.setVisible(false);
+      }
+    }
   }
 
   // ————————————————————————————————— sites ——
@@ -639,21 +576,16 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       },
       order: 1,
     });
-    this.addDecor(
-      YARD_SITES.thawRack.x,
-      YARD_SITES.thawRack.y,
-      'proc-rack-fieldtools',
-    );
-    this.addDecor(site.x + 46, site.y + 6, 'proc-pipe-straight');
-    this.addDecor(site.x + 78, site.y + 6, 'proc-pipe-straight');
-    this.addDecor(site.x - 2, site.y + 44, 'proc-pipe-straight');
+    // World V2: the pipe assembly, the heater rack and the valve wheel
+    // are painted; the progress dial sits over the painted wheel, the
+    // frost sheet over the collar, the chip on the pipe run's foot.
     this.couplingDial = this.add.graphics().setDepth(DepthLayer.WorldReadout);
     this.frostOverlay = this.add
-      .rectangle(site.x, site.y - 4, 44, 40, 0xcfe6ff, 0.42)
+      .rectangle(102, 200, 60, 44, 0xcfe6ff, 0.42)
       .setStrokeStyle(1, 0xe8f4ff, 0.8)
       .setDepth(3)
       .setVisible(false);
-    this.couplingChip = this.chip(site.x, site.y + 46, '');
+    this.couplingChip = this.chip(site.x - 40, site.y + 52, '');
   }
 
   private buildMastSite() {
@@ -691,15 +623,24 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       },
       order: 2,
     });
-    this.mastTower = this.add
-      .image(
+    // World V2: the lattice tower is painted; the restoration state is
+    // carried by the crown beacon (dark until the whole restoration is
+    // complete, then lit and slowly pulsing), the stage marks drawn on
+    // the footing and up the tower, and the chip on the tower body.
+    this.mastBeacon = this.add
+      .rectangle(
         YARD_SITES.mastTower.x,
         YARD_SITES.mastTower.y,
-        'proc-antenna-damaged',
+        8,
+        8,
+        0x33475a,
+        1,
       )
-      .setDepth(worldDepth(YARD_SITES.mastTower.y + 40));
-    this.mastFeed = this.add.graphics().setDepth(DepthLayer.FloorMarking);
-    this.mastChip = this.chip(YARD_SITES.mastTower.x, 1.85 * TILE, '');
+      .setStrokeStyle(1, 0x8fa4b8, 0.35)
+      .setDepth(DepthLayer.WorldReadout);
+    this.mastFeed = this.add.graphics().setDepth(DepthLayer.WorldReadout);
+    // The chip sits at the footing's foot, clear of the uplink chips.
+    this.mastChip = this.chip(site.x, site.y + 72, '');
   }
 
   private buildExcavationSite() {
@@ -749,46 +690,15 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       order: 3,
     });
 
-    // Restrained boundary: corner stakes + a dashed outline.
-    for (const [x, y] of [
-      [M23_PLOT.minCol * TILE - 6, M23_PLOT.minRow * TILE - 6],
-      [(M23_PLOT.maxCol + 1) * TILE + 6, M23_PLOT.minRow * TILE - 6],
-      [M23_PLOT.minCol * TILE - 6, (M23_PLOT.maxRow + 1) * TILE + 6],
-      [(M23_PLOT.maxCol + 1) * TILE + 6, (M23_PLOT.maxRow + 1) * TILE + 6],
-    ] as const) {
-      this.addDecor(x, y, 'proc-sector-post');
-    }
-
-    this.addDecor(21 * TILE, 14.6 * TILE, 'proc-crate-fieldkit');
-    this.addDecor(17 * TILE, 14.8 * TILE, 'proc-dig-mound');
+    // World V2: the painted stakes and rope mark the field; the dashed
+    // boundary (redrawPlotOverlay) follows M23_PLOT over them.
   }
 
   private buildMetalYard() {
     const rig = YARD_SITES.magnetRig;
 
-    // Visibly different ground: a dark gravel/scrap floor under the
-    // compound plus scattered scrap (pure presentation).
-    // V4: compound ground on the decal layer (a figure is never drawn
-    // under the yard floor) with an edge line; the rig pad under the rig.
-    this.add
-      .rectangle(17 * TILE, 2 * TILE, 7 * TILE, 5 * TILE, 0x1b1f24, 0.5)
-      .setOrigin(0)
-      .setStrokeStyle(1, 0x46586b, 0.8)
-      .setDepth(DepthLayer.FloorDecal);
-    this.add
-      .ellipse(rig.x, rig.y + 30, 96, 30, 0x2a2f36, 0.9)
-      .setStrokeStyle(1, 0x46586b, 0.8)
-      .setDepth(DepthLayer.FloorDecal + 0.01);
-
-    for (const [x, y] of [
-      [17.8 * TILE, 2.6 * TILE],
-      [22.6 * TILE, 2.4 * TILE],
-      [23.2 * TILE, 5.9 * TILE],
-      [17.5 * TILE, 6.4 * TILE],
-    ] as const) {
-      this.addDecor(x, y, 'proc-icon-scrap-plate');
-    }
-
+    // World V2: the gantry, the hanging magnet, the scrap catchment, the
+    // control bench and the parts cart are painted.
     this.addStation({
       interactionKey: 'pilotRigReadout',
       label: 'Magnet Recovery Rig',
@@ -839,11 +749,6 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       },
       order: 4,
     });
-    this.addDecor(
-      YARD_SITES.magnetTray.x,
-      YARD_SITES.magnetTray.y,
-      'proc-bin-consumables',
-    );
     this.rigChip = this.chip(rig.x, rig.y - 68, '');
 
     // The equally visible useful alternative: the sorting bench.
@@ -1920,37 +1825,36 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
   /** Unit 7 (V19): mast art follows the restoration state; a slow two-frame
    * signal pulse once the antenna is restored (reduced motion: held). */
   private refreshMastArt() {
-    const tower = this.mastTower;
+    const beacon = this.mastBeacon;
 
-    if (tower === undefined || !this.textures.exists('plv1-antenna-signal')) {
+    if (beacon === undefined) {
       return;
     }
 
-    // Restored art only once the WHOLE restoration (outdoor stages AND the
-    // indoor alignment — every M20 raw component written) is complete;
-    // never while the chip reads ALIGNMENT PENDING (scientific review S-M2).
+    // The crown beacon lights only once the WHOLE restoration (outdoor
+    // stages AND the indoor alignment — every M20 raw component written)
+    // is complete; never while the chip reads ALIGNMENT PENDING
+    // (scientific review S-M2).
     const state = exteriorEpisode().m20;
     const restored = state.accepted && m20Complete(state);
 
     if (!restored) {
-      if (tower.texture.key !== 'proc-antenna-damaged') {
-        tower.setTexture('proc-antenna-damaged');
-      }
+      beacon.setFillStyle(0x33475a, 1).setScale(1);
 
       return;
-    }
-
-    if (tower.texture.key !== 'plv1-antenna-signal') {
-      tower.setTexture('plv1-antenna-signal', 0);
-      this.mastPulseMs = 0;
     }
 
     if (prefersReducedMotion()) {
+      beacon.setFillStyle(0x5fd3c4, 1).setScale(1.25);
+
       return;
     }
 
+    // A slow signal pulse (period 2.8 s; never a flash).
     this.mastPulseMs = (this.mastPulseMs + this.game.loop.delta) % 2800;
-    tower.setFrame(this.mastPulseMs < 2200 ? 0 : 3);
+    beacon
+      .setFillStyle(0x5fd3c4, 1)
+      .setScale(this.mastPulseMs < 2200 ? 1.25 : 1.6);
   }
 
   protected onPilotUpdate(): void {
@@ -2094,8 +1998,9 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
 
     if (this.couplingDial !== undefined) {
       const dial = this.couplingDial;
-      const cx = site.x;
-      const cy = site.y - 34;
+      // World V2: the dial sits over the painted valve wheel's crown.
+      const cx = site.x - 52;
+      const cy = site.y - 66;
       const fraction = state.progress / 100;
       const angle = -Math.PI * 0.75 + fraction * Math.PI * 1.5;
 
@@ -2137,18 +2042,20 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
 
     this.mastFeed.clear();
 
+    // World V2: the stage marks sit on the painted footing (base clamp)
+    // and run up the painted tower to its crown (feed line).
     if (state.stages_done.includes('clear_base_clamp')) {
       this.mastFeed.lineStyle(2, 0x5fd3c4, 0.9);
-      this.mastFeed.strokeCircle(tower.x, tower.y + 26, 9);
+      this.mastFeed.strokeCircle(site.x - 18, site.y - 26, 9);
     }
 
     if (state.stages_done.includes('seat_feed_line')) {
       this.mastFeed.lineStyle(2, 0xe6c68f, 1);
       this.mastFeed.lineBetween(
-        site.x - 8,
-        site.y - 6,
-        tower.x + 6,
-        tower.y + 14,
+        site.x - 18,
+        site.y - 26,
+        tower.x + 2,
+        tower.y + 10,
       );
     }
   }

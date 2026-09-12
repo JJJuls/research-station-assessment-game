@@ -217,6 +217,9 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     // Scan classification: a comparable sweep from a new spot is an
     // informative move; an empty dig followed by a sweep is a strategy
     // shift; the first MODERATE/STRONG reading is the actionable signal.
+    // World V2 rebuild: every sweep position below is the original spot
+    // translated with the plot (+320, −160 px) — the plot's size and the
+    // cells' relative geometry are unchanged, so every classification is.
     const scanState = createM23State('form_a');
 
     m23Enter(scanState, 0);
@@ -224,8 +227,8 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     const far = m23NoteScan(
       scanState,
       {
-        player_x: 700,
-        player_y: 440,
+        player_x: 1020,
+        player_y: 280,
         target_id: null,
         strength: 0,
         category: 'none',
@@ -243,8 +246,8 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     const faint = m23NoteScan(
       scanState,
       {
-        player_x: 528,
-        player_y: 420,
+        player_x: 848,
+        player_y: 260,
         target_id: M23_TARGET_ID,
         strength: 17,
         category: 'faint',
@@ -258,8 +261,8 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     const closer = m23NoteScan(
       scanState,
       {
-        player_x: 592,
-        player_y: 360,
+        player_x: 912,
+        player_y: 200,
         target_id: M23_TARGET_ID,
         strength: 65,
         category: 'moderate',
@@ -284,8 +287,8 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
       m23NoteScan(
         scanState,
         {
-          player_x: 592,
-          player_y: 330,
+          player_x: 912,
+          player_y: 170,
           target_id: M23_TARGET_ID,
           strength: 84,
           category: 'strong',

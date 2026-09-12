@@ -28,6 +28,9 @@ export const WORLD_V2_IMAGE_URLS: Record<string, string> = {
   'w2-deck-plate': 'assets/world-v2/plates/deck-plate.png',
   // Core Chamber: one 22×12 plate (dormant reactor on its platform).
   'w2-core-plate': 'assets/world-v2/plates/core-plate.png',
+  // Exterior Recovery Yard: one stitched two-plate strip (1376×384) —
+  // apron + worksite west, recovery field east, joined by the drift pass.
+  'w2-yard-plate': 'assets/world-v2/plates/yard-plate.png',
   // Opening key art (PilotOpeningScene pans over these).
   'w2-opening-station': 'assets/world-v2/opening/station-establishing.png',
   'w2-opening-berth': 'assets/world-v2/opening/shuttle-berth.png',

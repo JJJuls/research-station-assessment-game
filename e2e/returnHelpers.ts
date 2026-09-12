@@ -53,6 +53,7 @@ import {
   walkTo,
   workshopToConcourse,
   workshopVia,
+  yardApproach,
 } from './pilotHelpers';
 
 export { captureErrors, expectNoRuntimeErrors, press };
@@ -644,7 +645,7 @@ export async function exteriorShift(
     approachOffset: await labApproach(page, PILOT.lab.airlock),
   });
   await openPromptAt(page, PILOT.yard.noor, {
-    approachOffset: { x: 0, y: 40 },
+    approachOffset: await yardApproach(page, PILOT.yard.noor),
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'exterior_work');
