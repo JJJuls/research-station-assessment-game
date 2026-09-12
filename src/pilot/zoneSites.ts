@@ -77,32 +77,52 @@ export const CONCOURSE_SPAWNS = {
 
 /**
  * Records Workshop — episode 2 (restoration) and episode 5 (return).
- * Return-shift stations (Unit 5) follow the D-V2-1 placement rule: each
- * 44 px approach point has no other interactable nearer than the station
- * itself even ±12 px, and its walking column clears the two machinery
- * blocks (x 416–543 at rows 4–5 and 12–13; the 32 px body needs the
- * column centre ≤ 384 or ≥ 576 to pass them).
- *   feed console (480, 224) — approach from the y = 272 lane (480, 268);
- *   relay bench (192, 384) — approach from below (192, 428);
- *   report desk (608, 320) — approach from the lane (608, 276);
- *   handover desk (608, 96) — approach from the west (576, 96) up the
- *   x = 576 column (clear of the block even with a ±12 px landing error).
+ * World V2 rescue continuation: a 43×12 two-bay painted hall
+ * (src/world/layouts/workshop.ts; plate workshop-plate.png). Anchors are
+ * mapped to the plates' baked art — machine bay west (case desk, both
+ * presses, relay bench, cutter island + bin, locker, assembly bench,
+ * supply pallet zone), records office east (dispatch desk, feed console,
+ * seal board, handover desk, four south-hull benches, work-order board
+ * by the Concourse door). Every anchor/approach pair, the spawn, the
+ * bundle positions and the debris scatter were machine-audited (32×42
+ * body, ±12 px landing box, nearest-wins radius 72, spawn/door
+ * clearance, BFS connectivity) — see the layout module header.
  */
 export const WORKSHOP_STATIONS = {
-  workOrderBoard: { x: 20 * TILE, y: 5 * TILE },
-  filingDesk: { x: 3 * TILE, y: 8.5 * TILE },
-  pressA: { x: 6 * TILE, y: 8.5 * TILE },
-  pressB: { x: 9 * TILE, y: 8.5 * TILE },
-  storageLocker: { x: 3 * TILE, y: 14 * TILE },
-  assemblyBench: { x: 9 * TILE, y: 14 * TILE },
-  supplyA: { x: 3 * TILE, y: 3 * TILE },
-  supplyB: { x: 5.5 * TILE, y: 3 * TILE },
-  supplyC: { x: 8 * TILE, y: 3 * TILE },
-  feedConsole: { x: 15 * TILE, y: 7 * TILE },
-  relayBench: { x: 6 * TILE, y: 12 * TILE },
-  reportDesk: { x: 19 * TILE, y: 10 * TILE },
-  handoverDesk: { x: 19 * TILE, y: 3 * TILE },
+  workOrderBoard: { x: 1344, y: 140 },
+  filingDesk: { x: 184, y: 170 },
+  pressA: { x: 236, y: 160 },
+  pressB: { x: 302, y: 160 },
+  storageLocker: { x: 331, y: 300 },
+  assemblyBench: { x: 534, y: 305 },
+  supplyA: { x: 196, y: 244 },
+  supplyB: { x: 244, y: 248 },
+  supplyC: { x: 220, y: 282 },
+  feedConsole: { x: 1034, y: 132 },
+  relayBench: { x: 104, y: 232 },
+  reportDesk: { x: 996, y: 300 },
+  handoverDesk: { x: 1148, y: 164 },
 } as const;
+
+/** Workshop episode-2 stations (same audited book; scene + registry). */
+export const WORKSHOP_SITES = {
+  sampleCutter: { x: 392, y: 230 },
+  /**
+   * Debris scatter origin: pieces land at origin + the fixed M04 offsets
+   * (dx −64…52, dy 0…64), at the cutter's operator side. Presentation
+   * placement only — the offsets themselves are the window's fixture.
+   */
+  cutterScatter: { x: 344, y: 224 },
+  disposalChute: { x: 492, y: 235 },
+  dispatchConsole: { x: 915, y: 170 },
+  calibrationBench: { x: 833, y: 300 },
+  qcPacket: { x: 1100, y: 300 },
+  sealLog: { x: 1211, y: 142 },
+  latticeBench: { x: 1193, y: 300 },
+} as const;
+
+/** Workshop arrival spawn (inside the east door, clear of every radius). */
+export const WORKSHOP_SPAWN = { x: 1256, y: 244 } as const;
 
 /**
  * Laboratory — the signal-analysis incident (Unit 3). Placement rule

@@ -62,6 +62,7 @@ import {
   useDoor,
   walkTo,
   workshopToConcourse,
+  workshopVia,
 } from './pilotHelpers';
 
 /** Benches are approached from below (their approach points are uncontested). */
@@ -559,8 +560,9 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
 
       // The restoration shift is already signed in; one more sign-off
       // releases the workshop toward the laboratory.
+      await workshopVia(page, 1312, 178);
       await openPromptAt(page, PILOT.workshop.board, {
-        approachOffset: { x: 0, y: 44 },
+        approachOffset: { x: -32, y: 38 },
       });
       await selectPromptOption(page, 1);
       await expectStage(page, 'lab_briefing');

@@ -41,8 +41,8 @@ import {
   press,
   routeToWorkshopWork,
   useDoor,
-  walkTo,
   workshopToConcourse,
+  workshopVia,
 } from './pilotHelpers';
 
 interface ProbeSlot {
@@ -240,8 +240,9 @@ async function enterWorkshop(page: Page, tag: string) {
 }
 
 async function openCaseWorkspace(page: Page) {
+  await workshopVia(page, 188, 214);
   await interactAt(page, PILOT.workshop.filingDesk, {
-    approachOffset: { x: 0, y: 44 },
+    approachOffset: { x: 4, y: 44 },
   });
   await waitOverlay(page, true);
 
@@ -545,8 +546,9 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
     // The board lets the participant sign off regardless (no performance
     // gate); the window stays open and the review never names it as
     // never-entered.
+    await workshopVia(page, 1312, 178);
     await openPromptAt(page, PILOT.workshop.board, {
-      approachOffset: { x: 0, y: 44 },
+      approachOffset: { x: -32, y: 38 },
     });
     await selectPromptOption(page, 1);
     await expectStage(page, 'lab_briefing');
@@ -580,6 +582,7 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
 
     // Press A — keyboard path: C runs the press cycle; the third cycle
     // opens the window; closing the panel is the departure observation.
+    await workshopVia(page, 236, 204);
     await interactAt(page, PILOT.workshop.pressA, {
       approachOffset: { x: 0, y: 44 },
     });
@@ -620,6 +623,7 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
     }
 
     // Press B is scheduled for the return shift: no window, no B event.
+    await workshopVia(page, 302, 204);
     await interactAt(page, PILOT.workshop.pressB, {
       approachOffset: { x: 0, y: 44 },
     });
@@ -658,8 +662,9 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
     await enterWorkshop(page, 'inv');
 
     // Collect the component bundle (SPACE with no station in range):
-    // west along the y=272 lane, then north up the clear x=96 column.
-    await walkTo(page, 96, 112, { yFirst: false });
+    // it lies on the machine bay's supply pallet zone, outside every
+    // station radius (machine-audited).
+    await workshopVia(page, 196, 244);
 
     const bundleProbe = await page.evaluate(
       () =>
@@ -689,8 +694,9 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
     await waitOverlay(page, false);
 
     // Assembly bench: move both stacks into the workbench input, assemble.
+    await workshopVia(page, 546, 252);
     await openPromptAt(page, PILOT.workshop.assemblyBench, {
-      approachOffset: { x: 0, y: 44 },
+      approachOffset: { x: 12, y: -53 },
     }).catch(() => undefined);
     await waitOverlay(page, true);
     probe = (await uiProbe(page))!;
@@ -736,8 +742,9 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
     await waitOverlay(page, false);
 
     // Locker transfer: put the cartridge into the Component Locker.
+    await workshopVia(page, 310, 250);
     await openPromptAt(page, PILOT.workshop.storageLocker, {
-      approachOffset: { x: 0, y: 44 },
+      approachOffset: { x: -21, y: -50 },
     }).catch(() => undefined);
     await waitOverlay(page, true);
     probe = (await uiProbe(page))!;
@@ -768,8 +775,7 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
 
     // Pick up the sample kit, then cross into the laboratory and back: the
     // hotbar survives the transition (store is session scope).
-    await walkTo(page, 60, 112);
-    await walkTo(page, 176, 112);
+    await workshopVia(page, 244, 248);
     await press(page, 'Space');
     await page.waitForTimeout(400);
     await workshopToConcourse(page);
@@ -783,9 +789,17 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
     await page.keyboard.press('Escape');
     await waitOverlay(page, false);
 
-    // Ordinary inventory never touches a measurement family.
+    // Ordinary inventory never touches a measurement family. The route
+    // itself emits system-driven exposure records on the Concourse (M09
+    // offer presented on the briefing ack; M05 silently presented and
+    // censored on departure) — the sanctioned tolerance rule
+    // (expectNoMeasurementEvents / SYSTEM_DRIVEN) applies. The previous
+    // bare `proto_m0* == []` form predated those presentations
+    // (assertion from c8c935a, presentations since 7824ab0) and failed
+    // byte-identically at the pilot-v3 baseline — a test defect, twice
+    // classified pre-existing (V2 report §d, V3 report), fixed here.
+    await expectNoMeasurementEvents(page);
     types = await pilotEventTypes(page);
-    expect(types.filter((t) => t.startsWith('proto_m0'))).toEqual([]);
     expect(types).toContain('secondary_inventory_commit_recipe');
     expectNoRuntimeErrors(errors);
   });

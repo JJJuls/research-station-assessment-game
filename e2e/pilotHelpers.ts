@@ -17,7 +17,13 @@ import { expect } from '@playwright/test';
 
 import type { PilotZoneKey } from '../src/pilot/pilotRoute';
 import { PILOT_DOORS } from '../src/pilot/pilotRoute';
-import { CONCOURSE_STATIONS, DOCK_SITES } from '../src/pilot/zoneSites';
+import {
+  CONCOURSE_STATIONS,
+  DOCK_SITES,
+  WORKSHOP_SITES,
+  WORKSHOP_SPAWN,
+  WORKSHOP_STATIONS,
+} from '../src/pilot/zoneSites';
 import { WORLD_V1_REGISTRY } from '../src/world/interactionRegistry';
 import {
   driveAxisTo,
@@ -101,14 +107,27 @@ export const PILOT = {
     eastDoor: doorOf('station_concourse', 'utility_core_deck'),
     westDoor: doorOf('station_concourse', 'records_workshop'),
   },
+  // World V2 rescue continuation: the 43×12 two-bay hall — all
+  // coordinates derive from the machine-audited shared book.
   workshop: {
-    board: { x: 640, y: 160 },
-    filingDesk: { x: 96, y: 272 },
-    pressA: { x: 192, y: 272 },
-    pressB: { x: 288, y: 272 },
-    storageLocker: { x: 96, y: 448 },
-    assemblyBench: { x: 288, y: 448 },
-    eastDoor: { x: 752, y: 272 },
+    board: { ...WORKSHOP_STATIONS.workOrderBoard },
+    filingDesk: { ...WORKSHOP_STATIONS.filingDesk },
+    pressA: { ...WORKSHOP_STATIONS.pressA },
+    pressB: { ...WORKSHOP_STATIONS.pressB },
+    storageLocker: { ...WORKSHOP_STATIONS.storageLocker },
+    assemblyBench: { ...WORKSHOP_STATIONS.assemblyBench },
+    relayBench: { ...WORKSHOP_STATIONS.relayBench },
+    feedConsole: { ...WORKSHOP_STATIONS.feedConsole },
+    reportDesk: { ...WORKSHOP_STATIONS.reportDesk },
+    handoverDesk: { ...WORKSHOP_STATIONS.handoverDesk },
+    sampleCutter: { ...WORKSHOP_SITES.sampleCutter },
+    dispatchConsole: { ...WORKSHOP_SITES.dispatchConsole },
+    calibrationBench: { ...WORKSHOP_SITES.calibrationBench },
+    qcPacket: { ...WORKSHOP_SITES.qcPacket },
+    sealLog: { ...WORKSHOP_SITES.sealLog },
+    latticeBench: { ...WORKSHOP_SITES.latticeBench },
+    spawn: { ...WORKSHOP_SPAWN },
+    eastDoor: doorOf('records_workshop', 'station_concourse'),
   },
   lab: {
     kai: { x: 592, y: 208 },
@@ -601,6 +620,53 @@ export async function concourseVia(page: Page, x: number, y: number) {
   await walkTo(page, x, y, { yFirst: false });
 }
 
+/**
+ * Rescue Workshop (43×12 two-bay hall): three walk segments — the machine
+ * bay west of the cutter island (x < 500), the mid zone between the
+ * island and the vestibule (500–700), and the records office (x > 700).
+ * Lane discipline (machine-audited): the island (cols 12–15) is passed on
+ * the NORTH lane (y ≈ 156, rows 4–5, x 320–608), the vestibule is crossed
+ * at y ≈ 240 (rows 6–8), and the office travels on the y ≈ 252 south
+ * lane. Driver only — production geometry is never adjusted for it.
+ */
+export async function workshopVia(page: Page, x: number, y: number) {
+  const seg = (px: number) => (px < 500 ? 0 : px < 700 ? 1 : 2);
+  const here = await page.evaluate(
+    () =>
+      (window as unknown as { __playerProbe?: { x: number; y: number } | null })
+        .__playerProbe ?? null,
+  );
+  let at = here ?? { x, y };
+
+  for (let guard = 0; guard < 4 && seg(at.x) !== seg(x); guard += 1) {
+    if (seg(at.x) === 0) {
+      // West → mid over the island's north lane.
+      await driveAxisTo(page, 'x', 352, 8);
+      await driveAxisTo(page, 'y', 156, 8);
+      await driveAxisTo(page, 'x', 544, 8);
+      at = { x: 544, y: 156 };
+    } else if (seg(at.x) === 1 && seg(x) === 2) {
+      // Mid → office through the vestibule.
+      await driveAxisTo(page, 'y', 240, 8);
+      await driveAxisTo(page, 'x', 780, 8);
+      at = { x: 780, y: 240 };
+    } else if (seg(at.x) === 1 && seg(x) === 0) {
+      // Mid → west back over the north lane.
+      await driveAxisTo(page, 'x', 544, 8);
+      await driveAxisTo(page, 'y', 156, 8);
+      await driveAxisTo(page, 'x', 352, 8);
+      at = { x: 352, y: 156 };
+    } else {
+      // Office → mid through the vestibule.
+      await driveAxisTo(page, 'y', 240, 8);
+      await driveAxisTo(page, 'x', 644, 8);
+      at = { x: 644, y: 240 };
+    }
+  }
+
+  await walkTo(page, x, y, { yFirst: true });
+}
+
 /** Dock (after the tutorial) → Concourse north door → stage handover_briefing. */
 export async function dockToConcourse(page: Page) {
   await walkTo(
@@ -654,21 +720,23 @@ export async function concourseToWorkshop(page: Page) {
 
 /** Records Workshop east door → Concourse. */
 export async function workshopToConcourse(page: Page) {
+  await workshopVia(page, 1288, 268);
   await useDoor(page, PILOT.workshop.eastDoor, 'station_concourse', {
-    approachOffset: { x: -40, y: 0 },
+    approachOffset: { x: -44, y: -22 },
     yFirst: true,
   });
 }
 
 /** Work Order Board: take the orders (→ workshop_work), then sign off (→ lab_briefing). */
 export async function workshopSignOff(page: Page) {
+  await workshopVia(page, 1312, 178);
   await openPromptAt(page, PILOT.workshop.board, {
-    approachOffset: { x: 0, y: 44 },
+    approachOffset: { x: -32, y: 38 },
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'workshop_work');
   await openPromptAt(page, PILOT.workshop.board, {
-    approachOffset: { x: 0, y: 44 },
+    approachOffset: { x: -32, y: 38 },
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'lab_briefing');
@@ -737,8 +805,9 @@ export async function returnShiftToDeckClosure(page: Page) {
   await selectPromptOption(page, 1);
   await expectStage(page, 'workshop_return');
   await concourseToWorkshop(page);
+  await workshopVia(page, 1312, 178);
   await openPromptAt(page, PILOT.workshop.board, {
-    approachOffset: { x: 0, y: 44 },
+    approachOffset: { x: -32, y: 38 },
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'deck_closure');
@@ -763,16 +832,15 @@ export async function routeToWorkshopWork(page: Page) {
   await dockToConcourse(page);
   await valeHandover(page);
   await concourseToWorkshop(page);
+  await workshopVia(page, 1312, 178);
   await openPromptAt(page, PILOT.workshop.board, {
-    approachOffset: { x: 0, y: 44 },
+    approachOffset: { x: -32, y: 38 },
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'workshop_work');
-  // Step down onto the clear y=272 lane before any spec walks west: from
-  // the board approach point (y ≈ 192-216) an x-first leg west clamps on
-  // the upper machinery block (x 416-543, y 128-191) because the 42 px
-  // body's top edge overlaps it (D-V2-2 root cause).
-  await walkTo(page, PILOT.workshop.board.x, 272, { yFirst: true });
+  // Step down onto the office's clear y=252 lane before any spec walks
+  // west (the board approach sits against the east wall).
+  await walkTo(page, 1256, 252, { yFirst: true });
 }
 
 /** Full spine from the Dock (after the tutorial) to the Laboratory at stage lab_work. */

@@ -243,8 +243,7 @@ test('return, revision & handover — participant-path frames 22–34', async ({
 
   // 34 — the final Unit 5 objective: the route points at the Utility Deck.
   await signOffReturnShift(page);
-  await walkTo(page, PILOT.workshop.board.x, RETURN.laneY, { yFirst: true });
-  await walkTo(page, 620, RETURN.laneY, { yFirst: true });
+  await walkTo(page, 1256, RETURN.laneY, { yFirst: true });
   expect((await pilotProbe(page))?.objective).toContain('Utility Deck');
   await shot(page, '34-final-objective-utility-deck');
   expectNoRuntimeErrors(errors);

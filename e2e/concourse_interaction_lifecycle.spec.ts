@@ -21,7 +21,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 
-import { driveAxisTo, getEvents, selectPromptOption } from './helpers';
+import { getEvents, selectPromptOption } from './helpers';
 import {
   captureErrors,
   completeDockTutorial,
@@ -37,6 +37,7 @@ import {
   press,
   useDoor,
   valeHandover,
+  workshopVia,
 } from './pilotHelpers';
 
 const OUT = 'docs/verification/screenshots-concourse-hotfix';
@@ -169,37 +170,18 @@ function changedFraction(before: Frame, after: Frame): number {
  * avatar actually arrives, because driveAxisTo ends a leg on two stalled
  * reads and a dead frame window under load looks exactly like a wall.
  */
-const CLEAR_COLUMN_X = 384;
-const LANES = { top: 110, middle: 300, bottom: 460 } as const;
-
-function laneFor(y: number): number {
-  if (y < 152) {
-    return LANES.top;
-  }
-
-  return y < 344 ? LANES.middle : LANES.bottom;
-}
-
 async function travelTo(page: Page, x: number, y: number): Promise<void> {
-  for (let attempt = 0; attempt < 4; attempt += 1) {
+  // World V2 rescue continuation: the two-bay hall's lane routing lives
+  // in workshopVia (north lane over the cutter island, vestibule at
+  // y ≈ 240, office south lane) — re-driven until arrival.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
     const from = await playerAt(page);
 
     if (Math.abs(from.x - x) <= 14 && Math.abs(from.y - y) <= 14) {
       return;
     }
 
-    const fromLane = laneFor(from.y);
-    const toLane = laneFor(y);
-
-    await driveAxisTo(page, 'y', fromLane, 12);
-
-    if (fromLane !== toLane) {
-      await driveAxisTo(page, 'x', CLEAR_COLUMN_X, 14);
-      await driveAxisTo(page, 'y', toLane, 12);
-    }
-
-    await driveAxisTo(page, 'x', x, 12);
-    await driveAxisTo(page, 'y', y, 12);
+    await workshopVia(page, x, y);
   }
 }
 
@@ -227,13 +209,14 @@ async function openStation(
   interactKey: 'KeyE' | 'Space',
   expectedMode: string,
   shot?: string,
+  offset: { x: number; y: number } = APPROACH,
 ): Promise<void> {
   let before: Frame = [];
   let distance = Number.POSITIVE_INFINITY;
   let opened = false;
 
   for (let attempt = 0; attempt < 3 && !opened; attempt += 1) {
-    await travelTo(page, at.x + APPROACH.x, at.y + APPROACH.y);
+    await travelTo(page, at.x + offset.x, at.y + offset.y);
     distance = await distanceTo(page, at);
 
     if (distance > INTERACTION_RANGE - 1) {
@@ -325,6 +308,10 @@ test.describe('station concourse interaction lifecycle', () => {
   test('A/D — the case workspace opens on E and on SPACE; I never recovers', async ({
     page,
   }) => {
+    // World V2 two-bay hall: the Dock → Concourse → Workshop approach plus
+    // the west-bay legs need the sibling tests' budget on software GL.
+    test.setTimeout(300_000);
+
     const errors = captureErrors(page);
 
     await enterWorkshop(page, 'CIL_A');
@@ -386,7 +373,7 @@ test.describe('station concourse interaction lifecycle', () => {
 
     // Work Order Board — an in-scene prompt card (no overlay, no pause).
     await openPromptAt(page, PILOT.workshop.board, {
-      approachOffset: { x: 0, y: 44 },
+      approachOffset: { x: -32, y: 38 },
     });
     await selectPromptOption(page, 1);
     await page.waitForTimeout(500);
@@ -407,24 +394,32 @@ test.describe('station concourse interaction lifecycle', () => {
     expect((await overlayProbe(page))?.open ?? false).toBe(false);
     await expectCanMove(page);
 
-    // Component Locker — container transfer.
+    // Component Locker — container transfer (audited north-west approach).
     await openStation(
       page,
       PILOT.workshop.storageLocker,
       'KeyE',
       'container',
       'component-locker-open',
+      { x: -21, y: -50 },
     );
     await closeAndMove(page);
 
-    // Assembly Bench — recipes.
-    await openStation(page, PILOT.workshop.assemblyBench, 'Space', 'workbench');
+    // Assembly Bench — recipes (audited north-east approach).
+    await openStation(
+      page,
+      PILOT.workshop.assemblyBench,
+      'Space',
+      'workbench',
+      undefined,
+      { x: 12, y: -53 },
+    );
     await closeAndMove(page);
 
     // Supply bundle — an E/SPACE surface with no overlay at all: it must
     // collect and leave the world running (inside the 64px bundle reach and
     // outside every 72px station radius).
-    await travelTo(page, 96, 140);
+    await travelTo(page, 196, 244);
     await press(page, 'Space');
     await page.waitForTimeout(400);
     expect((await overlayProbe(page))?.open ?? false).toBe(false);
@@ -436,6 +431,9 @@ test.describe('station concourse interaction lifecycle', () => {
   test('C/E — no re-entrant dispatch; doors still work and never trap', async ({
     page,
   }) => {
+    // World V2 two-bay hall: same travel budget as tests A/B.
+    test.setTimeout(300_000);
+
     const errors = captureErrors(page);
 
     await enterWorkshop(page, 'CIL_C');
@@ -497,16 +495,18 @@ test.describe('station concourse interaction lifecycle', () => {
     await closeAndMove(page);
 
     // ——— E: route safety — every door still operates, both ways ———
+    await workshopVia(page, 1288, 268);
     await useDoor(page, PILOT.workshop.eastDoor, 'station_concourse', {
-      approachOffset: { x: -20, y: 0 },
+      approachOffset: { x: -44, y: -22 },
       yFirst: true,
     });
     await useDoor(page, PILOT.concourse.westDoor, 'records_workshop', {
       approachOffset: { x: 20, y: 0 },
       yFirst: true,
     });
+    await workshopVia(page, 1288, 268);
     await useDoor(page, PILOT.workshop.eastDoor, 'station_concourse', {
-      approachOffset: { x: -20, y: 0 },
+      approachOffset: { x: -44, y: -22 },
       yFirst: true,
     });
     await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {

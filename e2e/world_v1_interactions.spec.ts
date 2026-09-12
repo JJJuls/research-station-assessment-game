@@ -298,7 +298,7 @@ test.describe('World V1 interaction grammar — Dock and Concourse', () => {
         destination: 'records_workshop',
         via: [{ x: 96, y: 188, yFirst: true, tolerance: 8 }],
         out: { yFirst: true, offset: { x: 40, y: 0 } },
-        back: { ...PILOT.workshop.eastDoor, offset: { x: -40, y: 0 } },
+        back: { ...PILOT.workshop.eastDoor, offset: { x: -44, y: -22 } },
       },
       {
         id: 'concourse.door_lab',

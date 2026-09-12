@@ -16,7 +16,12 @@
  */
 import type { PilotStage, PilotZoneKey } from '../pilot/pilotRoute';
 import { PILOT_DOORS } from '../pilot/pilotRoute';
-import { CONCOURSE_STATIONS, DOCK_SITES } from '../pilot/zoneSites';
+import {
+  CONCOURSE_STATIONS,
+  DOCK_SITES,
+  WORKSHOP_SITES,
+  WORKSHOP_STATIONS,
+} from '../pilot/zoneSites';
 
 export type ObjectClass = 'active' | 'optional' | 'inactive' | 'decorative';
 
@@ -306,11 +311,201 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
   },
 ];
 
+const W = WORKSHOP_STATIONS;
+const WS = WORKSHOP_SITES;
+
+const workshopStation = (
+  id: string,
+  at: { x: number; y: number },
+  verb: string,
+  label: string,
+  opens: SurfaceRef,
+  window: string | null,
+  approach: { x: number; y: number },
+  footprint: { w: number; h: number } | null = { w: 2, h: 2 },
+): InteractionRegistryEntry => ({
+  id,
+  zone: 'records_workshop',
+  kind: 'station',
+  x: at.x,
+  y: at.y,
+  radius: INTERACTION_RADIUS,
+  verb,
+  label,
+  availability: 'always',
+  opens,
+  footprint,
+  depthAnchor: 'foot',
+  stage: 'any',
+  window,
+  approach,
+});
+
+/**
+ * Records Workshop (World V2 rescue continuation, 43×12 two-bay hall).
+ * Every approach point below is the machine-audited safe standing point
+ * of its station: the ±12 px landing box is standable (32×42 body), the
+ * station itself is strictly nearest at every landing, and the whole
+ * book is BFS-connected from the spawn (workshop layout header).
+ */
+export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
+  door('records_workshop', 'station_concourse', 'workshop.door_concourse', {
+    x: 1288,
+    y: 268,
+  }),
+  workshopStation(
+    'workshop.work_order_board',
+    W.workOrderBoard,
+    'Open the',
+    'Work Order Board',
+    { kind: 'prompt', id: 'pilotWorkOrderBoard' },
+    null,
+    { x: 1312, y: 178 },
+    null,
+  ),
+  workshopStation(
+    'workshop.case_workspace',
+    W.filingDesk,
+    'Open the',
+    'Case Workspace',
+    { kind: 'inventory', id: 'm02case' },
+    'm02_case_workspace',
+    { x: 188, y: 214 },
+  ),
+  workshopStation(
+    'workshop.press_a',
+    W.pressA,
+    'Use',
+    'Label Press A',
+    { kind: 'inventory', id: 'm03_a' },
+    'm03_reset_o1',
+    { x: 236, y: 204 },
+  ),
+  workshopStation(
+    'workshop.press_b',
+    W.pressB,
+    'Use',
+    'Label Press B',
+    { kind: 'inventory', id: 'm03_b' },
+    'm03_reset_o2',
+    { x: 302, y: 204 },
+  ),
+  workshopStation(
+    'workshop.relay_bench',
+    W.relayBench,
+    'Work the',
+    'Relay Bench',
+    { kind: 'work_surface', id: 'm21_relay_bench' },
+    'm21_manual_repair',
+    { x: 152, y: 240 },
+  ),
+  workshopStation(
+    'workshop.sample_cutter',
+    WS.sampleCutter,
+    'Use the',
+    'Sample Cutter',
+    { kind: 'action', id: 'm04_sample_job' },
+    'm04_debris_cleanup',
+    { x: 348, y: 230 },
+  ),
+  workshopStation(
+    'workshop.storage_locker',
+    W.storageLocker,
+    'Open the',
+    'Component Locker',
+    { kind: 'inventory', id: 'container' },
+    null,
+    { x: 310, y: 250 },
+  ),
+  workshopStation(
+    'workshop.assembly_bench',
+    W.assemblyBench,
+    'Use the',
+    'Assembly Bench',
+    { kind: 'inventory', id: 'workbench' },
+    null,
+    { x: 546, y: 252 },
+  ),
+  workshopStation(
+    'workshop.dispatch_console',
+    WS.dispatchConsole,
+    'Work the',
+    'Dispatch Console',
+    { kind: 'work_surface', id: 'm06_dispatch_console' },
+    'm06_routine_dispatch',
+    { x: 915, y: 214 },
+  ),
+  workshopStation(
+    'workshop.feed_console',
+    W.feedConsole,
+    'Check the',
+    'Station Feed Console',
+    { kind: 'work_surface', id: 'm20_feed_console' },
+    'm20_antenna_restoration',
+    { x: 1034, y: 180 },
+  ),
+  workshopStation(
+    'workshop.seal_log',
+    WS.sealLog,
+    'Read the',
+    'Sample Seal Log',
+    { kind: 'prompt', id: 'pilotSealLog' },
+    'm11_seal_obligation (secondary)',
+    { x: 1224, y: 196 },
+  ),
+  workshopStation(
+    'workshop.handover_desk',
+    W.handoverDesk,
+    'Use the',
+    'Outbound Handover Desk',
+    { kind: 'prompt', id: 'pilotHandoverDesk' },
+    'm25_belief_probe',
+    { x: 1148, y: 208 },
+  ),
+  workshopStation(
+    'workshop.calibration_bench',
+    WS.calibrationBench,
+    'Work the',
+    'Calibration Bench',
+    { kind: 'work_surface', id: 'm07_calibration_bench' },
+    'm07_calibration_project',
+    { x: 833, y: 250 },
+  ),
+  workshopStation(
+    'workshop.report_desk',
+    W.reportDesk,
+    'Work the',
+    'Shift Report Desk',
+    { kind: 'work_surface', id: 'm22_report_desk' },
+    'm22_report_revision',
+    { x: 996, y: 250 },
+  ),
+  workshopStation(
+    'workshop.qc_packet_o2',
+    WS.qcPacket,
+    'Check the',
+    'Quality Packet',
+    { kind: 'work_surface', id: 'm12_qc_packet_o2' },
+    'm12_qc_o2',
+    { x: 1100, y: 250 },
+  ),
+  workshopStation(
+    'workshop.lattice_bench',
+    WS.latticeBench,
+    'Work the',
+    'Conduit Lattice Bench',
+    { kind: 'ip_overlay', id: 'm13' },
+    'm13_lattice_construction',
+    { x: 1193, y: 250 },
+  ),
+];
+
 export const WORLD_V1_REGISTRY: Partial<
   Record<PilotZoneKey, readonly InteractionRegistryEntry[]>
 > = {
   dock: DOCK_REGISTRY,
   station_concourse: CONCOURSE_REGISTRY,
+  records_workshop: WORKSHOP_REGISTRY,
 };
 
 /** Zones already declared in the registry (grows unit by unit). */

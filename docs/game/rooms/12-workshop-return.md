@@ -132,3 +132,37 @@ Pure: `e2e/pilot_return_models.spec.ts`. Route: `e2e/pilot_return.spec.ts`
   area signage uses the shared 10 px style; the world prompt, label chips
   and the hotbar caption hide while any work surface is open. Stations,
   approach lanes and windows are unchanged.
+
+## World V2 rebuild (professional-world-rebuild-v3, 2026-09-13)
+
+The Records Workshop is the first zone rebuilt past the rescue slice:
+a **43×12 two-bay painted hall** (machine bay west, records office east,
+joined by the vestibule the two plates' facing painted doorways form) —
+`public/assets/world-v2/plates/workshop-plate.png` (1376×384, two
+`create_image_pro` generations stitched; provenance in the world-v2
+manifest). Presentation only:
+
+- **No window, event, form, option label, prompt body, feedback string
+  or offer text changed.** Every M-window opens through the same
+  registry ids and surfaces; the M04 debris offsets, prompts and chip
+  texts are verbatim.
+- **All coordinates moved** into the shared machine-audited book
+  (`src/pilot/zoneSites.ts` WORKSHOP_STATIONS/WORKSHOP_SITES/
+  WORKSHOP_SPAWN; layout `src/world/layouts/workshop.ts`; registry
+  `WORKSHOP_REGISTRY`). Audit rules: 32×42 body standability over the
+  cell grid for every approach ±12 px landing, nearest-wins radius 72
+  strictly own-station at every landing, spawn ≥ 80 px from the door and
+  outside every radius, bundles outside every station radius (keyboard
+  reachability), debris pieces within reach of standable floor, chute
+  container radius reachable, full BFS connectivity, door clearance
+  > 96 px.
+- **Lanes** (e2e driver discipline, `workshopVia`): the cutter island is
+  passed on the north lane (y ≈ 156, x 320–608), the vestibule crossed
+  at y ≈ 240, the office travels the y ≈ 252 south lane.
+- The M04 disposal bin is baked beside the cutter (container radius at
+  the painted bin); the dispose loop cost is comparable to the previous
+  geometry (~in-place from the cutter approach).
+- Verification: pure registry/geometry specs (11), plus
+  `e2e/world_v2_workshop_look.spec.ts` — every audited approach shows
+  its own prompt in-engine, vestibule crossed both ways, east door
+  round-trip with reflex-SPACE clearance.

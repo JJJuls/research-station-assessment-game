@@ -36,7 +36,6 @@ import { getEvents, hold, press, selectPromptOption } from './helpers';
 import {
   concourseToWorkshop,
   expectStage,
-  PILOT,
   pilotProbe,
   walkTo,
   workshopToConcourse,
@@ -804,7 +803,7 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     await page.waitForTimeout(300);
 
     // Repeated workshop entry: every state persists across scene recreation.
-    await walkTo(page, PILOT.workshop.board.x, RETURN.laneY, { yFirst: true });
+    await walkTo(page, 1256, RETURN.laneY, { yFirst: true });
     await workshopToConcourse(page);
     await concourseToWorkshop(page);
     rp = await returnProbe(page);

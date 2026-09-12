@@ -39,6 +39,41 @@
       "role": "Concourse door leaf sprite (Dock north wall), 80x96",
       "edits": "none",
       "sha256": "855415b08ff323917fa331a0f36d99e0696c0e163d623423c15b306178f864db"
+    },
+    "plates/laboratory-plate.png": {
+      "job": "2e6ee856-9b99-424d-ba1a-f51e79a2b955 (regeneration; first candidate 110ef84a had an unrequested east doorway, kept as study)",
+      "tool": "create_image_pro (style ref = workshop west bay d4c70eb3)",
+      "role": "Diagnostics Laboratory room plate (688x384): orientation console, yard airlock hatch, large wall display (dynamic trace drawn in-engine inside the painted bezel), briefing desk, central workstation island, four phase benches flanking the south Concourse door",
+      "edits": "none",
+      "sha256": "b4b6bc0f58d5326a175b59df0f9c9cccf662242deeb4a3acbcc0d439941df0d9"
+    },
+    "plates/deck-plate.png": {
+      "job": "301d5467-69a7-4510-9b73-4fcf8bce2c9c",
+      "tool": "create_image_pro (style ref = workshop west bay d4c70eb3)",
+      "role": "Utility Deck room plate (688x384): review panel, systems board, sealed Core blast-door alcove, wall manifold gauges, three dormant feed machines along the south hull, west Concourse doorway",
+      "edits": "none",
+      "sha256": "cfb9e2e807e40fb2522b5b853b33656a35632f597ba3e8decccb727106a01cb1"
+    },
+    "plates/core-plate.png": {
+      "job": "33bbc6b5-206a-4d4a-abbb-ab31e565a76a",
+      "tool": "create_image_pro (style ref = workshop west bay d4c70eb3)",
+      "role": "Core Chamber room plate (688x384): dormant central reactor on its platform, west status console, east operator console, south door to the Utility Deck",
+      "edits": "none",
+      "sha256": "54c2a01c11053c2d39db308ad0aa0e4ff3cd7b7f26d8e6151ca1469e6968f1b6"
+    },
+    "plates/yard-plate.png": {
+      "job": "e5fa5c46-0492-4d74-8815-bd0be73ffdc1 (west half) + 0c92c2d4-b32b-4fae-97d3-499c811bf3a0 (east half; style ref = west half)",
+      "tool": "create_image_pro x2, stitched side-by-side with Pillow at x=688; the two halves' facing snow-drift banks form the crossing notch (no seam blending)",
+      "role": "Exterior Recovery Yard two-plate strip (1376x384): airlock apron + coupling + uplink posts + Mast 04 (west), drift-bank pass, excavation stake field + metal recovery compound with gantry magnet, sorting bench and parts tray (east). ART LANDED AHEAD OF THE ROOM'S REBUILD UNIT — not yet referenced by any scene.",
+      "edits": "stitch only; all pixels byte-identical to the two generations",
+      "sha256": "a32c5add94311150946781d9ee5aac276d1bc81d39c9036f1ba46099143b1f08"
+    },
+    "plates/workshop-plate.png": {
+      "job": "d4c70eb3-496a-4970-991e-ade1551ccc13 (west bay) + 94c19c7e-9910-4290-87f8-e2ff9b1b054a (east bay; style ref = west bay)",
+      "tool": "create_image_pro x2, stitched side-by-side with Pillow at x=688 (no seam blending needed: each bay keeps its own painted box and the facing doorways form the connecting vestibule)",
+      "role": "Records Workshop room plate (1376x384, two-bay hall: machine bay west, records office east)",
+      "edits": "stitch only; all pixels byte-identical to the two generations",
+      "sha256": "9a32ded5bc13272887d7a316821ad35aefff82bae39f4e81625c74d7726869a1"
     }
   }
 }

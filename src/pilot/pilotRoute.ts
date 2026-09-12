@@ -210,7 +210,10 @@ export const PILOT_DOORS: Record<PilotZoneKey, readonly PilotDoorRef[]> = {
     { to: 'utility_core_deck', x: 648, y: 130, label: 'Utility Deck' },
   ],
   records_workshop: [
-    { to: 'station_concourse', x: 752, y: 272, label: 'Station Concourse' },
+    // World V2 rescue continuation: 43×12 two-bay painted hall — the
+    // Concourse door is baked into the office's east wall (lower half;
+    // the work-order board hangs above it).
+    { to: 'station_concourse', x: 1332, y: 290, label: 'Station Concourse' },
   ],
   diagnostics_laboratory: [
     { to: 'station_concourse', x: 384, y: 496, label: 'Station Concourse' },

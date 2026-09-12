@@ -19,6 +19,9 @@ export const WORLD_V2_IMAGE_URLS: Record<string, string> = {
   // Room plates (painted backgrounds; collision is the layout grid).
   'w2-dock-plate': 'assets/world-v2/plates/dock-plate.png',
   'w2-concourse-plate': 'assets/world-v2/plates/concourse-plate.png',
+  // Records Workshop: one stitched two-bay plate (1376×384) — machine bay
+  // west, records office east, joined by the painted doorway vestibule.
+  'w2-workshop-plate': 'assets/world-v2/plates/workshop-plate.png',
   // Opening key art (PilotOpeningScene pans over these).
   'w2-opening-station': 'assets/world-v2/opening/station-establishing.png',
   'w2-opening-berth': 'assets/world-v2/opening/shuttle-berth.png',

@@ -41,6 +41,7 @@ import {
   useDoor,
   valeHandover,
   workshopToConcourse,
+  workshopVia,
   yardReturnToConcourse,
 } from './pilotHelpers';
 
@@ -137,12 +138,13 @@ async function routeToDeck(
   }
 
   await concourseToWorkshop(page);
+  await workshopVia(page, 1312, 178);
   await openPromptAt(page, PILOT.workshop.board, {
-    approachOffset: { x: 0, y: 44 },
+    approachOffset: { x: -32, y: 38 },
   });
   await selectPromptOption(page, 1); // take the orders -> workshop_work
   await openPromptAt(page, PILOT.workshop.board, {
-    approachOffset: { x: 0, y: 44 },
+    approachOffset: { x: -32, y: 38 },
   });
   await selectPromptOption(page, 1); // sign off -> lab_briefing
   await workshopToConcourse(page);

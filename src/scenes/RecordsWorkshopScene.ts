@@ -20,7 +20,7 @@
  */
 import Phaser from 'phaser';
 
-import { DepthLayer, key, worldDepth } from '../constants';
+import { key, worldDepth } from '../constants';
 import {
   addInventoryItem,
   hasInventoryItem,
@@ -134,13 +134,18 @@ import {
   m07SurfaceModel,
   m12SurfaceModel,
 } from '../pilot/windows/surfaceModels';
-import { WORKSHOP_STATIONS } from '../pilot/zoneSites';
+import {
+  WORKSHOP_SITES,
+  WORKSHOP_SPAWN,
+  WORKSHOP_STATIONS,
+} from '../pilot/zoneSites';
 import type {
   InteractionKey,
   PromptOption,
   PromptStage,
   RoomLayout,
 } from '../world';
+import { WORKSHOP_LAYOUT } from '../world/layouts/workshop';
 
 declare global {
   interface Window {
@@ -152,26 +157,11 @@ declare global {
 const TILE = 32;
 
 /**
- * Episode-2 stations off the y=272 lane (the lane stays clear for walking).
- *
- * Placement rule (D-V2-1 root cause): a station's natural approach point
- * (44 px off its centre) must have NO other station nearer than the
- * station itself, even with a ±12 px landing error — otherwise SPACE/E
- * silently targets the neighbour. The cutter used to sit 86 px from
- * Press B and the lattice bench 71 px from the Work Order Board; both
- * approach points were contested. Stations also sit in columns clear of
- * the two machinery blocks (x 416-543; the 32 px body needs the column
- * centre ≥ 576 or ≤ 384) so x-then-y walks never stall.
+ * World V2 rescue continuation: all workshop coordinates live in the
+ * shared, machine-audited zone book (src/pilot/zoneSites.ts) — anchors
+ * mapped to the painted two-bay plate, every approach ±12 px safe.
  */
-const WS = {
-  sampleCutter: { x: 11 * TILE, y: 12 * TILE },
-  disposalChute: { x: 13 * TILE, y: 10.75 * TILE },
-  dispatchConsole: { x: 20 * TILE, y: 14 * TILE },
-  calibrationBench: { x: 11 * TILE, y: 3 * TILE },
-  qcPacket: { x: 17 * TILE, y: 14 * TILE },
-  sealLog: { x: 22 * TILE, y: 5 * TILE },
-  latticeBench: { x: 22 * TILE, y: 13 * TILE },
-} as const;
+const WS = WORKSHOP_SITES;
 
 export class RecordsWorkshopScene extends PilotZoneScene {
   protected readonly roomId = 'records_workshop';
@@ -196,36 +186,21 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   protected getLayout(): RoomLayout {
     return {
       theme: 'workshop',
-      grid: [
-        '#########################',
-        '#########################',
-        '#.......................#',
-        '#.......................#',
-        '#............####.......#',
-        '#............####.......#',
-        '#.......................#',
-        '#.......................#',
-        '#.......................-',
-        '#.......................-',
-        '#.......................#',
-        '#.......................#',
-        '#............####.......#',
-        '#............####.......#',
-        '#.......................#',
-        '#.......................#',
-        '#########################',
-        '#########################',
-        '#########################',
-      ],
+      grid: [...WORKSHOP_LAYOUT],
+      field: 'wide',
+      plateTexture: 'w2-workshop-plate',
     };
   }
 
+  protected bundleDropBounds(): { width: number; height: number } {
+    return { width: 43 * TILE, height: 12 * TILE };
+  }
+
   protected getSpawn(): { x: number; y: number } {
-    // 80 px inside the east door (x 752): outside RoomScene's 72 px
-    // interaction radius, so a reflex SPACE on arrival never re-triggers
-    // the door just used (Pilot V3 Unit 4/5, V2 finding U8-8; DockScene
-    // precedent).
-    return { x: 21 * TILE, y: 8.5 * TILE };
+    // Inside the east door, machine-audited: ≥80 px from the door anchor
+    // and outside every interactable's 72 px radius, so a reflex SPACE on
+    // arrival never re-triggers anything (V2 finding U8-8 precedent).
+    return WORKSHOP_SPAWN;
   }
 
   create(data?: { spawn?: string }) {
@@ -278,7 +253,14 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   protected populateRoom(): void {
-    this.addPilotDoor({ to: 'station_concourse', spawn: 'records_workshop' });
+    this.addPilotDoor({
+      to: 'station_concourse',
+      spawn: 'records_workshop',
+      registryId: 'workshop.door_concourse',
+    });
+    // The sliding door and its lintel lamp are baked into the plate's
+    // east wall; the generic leaf sprite would double it.
+    this.doorImage('workshop.door_concourse')?.setVisible(false);
 
     const S = WORKSHOP_STATIONS;
 
@@ -403,7 +385,9 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       3,
       () => m04JobRun(),
     );
-    this.addDecor(WS.disposalChute.x, WS.disposalChute.y, 'proc-disposal-unit');
+    // World V2: the disposal bin is baked into the plate at the cutter's
+    // east side — no chute sprite; the physical container keeps its
+    // radius at the painted bin.
     this.buildPhysicalLayer();
 
     // ——— M06 dispatch console ———
@@ -521,30 +505,32 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
     this.populateReturnShift();
 
-    // ——— V4 functional areas (VISUAL-SYSTEM-V4 §7): intake (north-west),
-    // records & press (west), storage & assembly (south-west), calibration
-    // (north-centre), the return/handover column (east) and the dispatch
-    // bay (south-east) are read from floor plates and their own light,
-    // not from labels. Floor plates only — no collision, no interaction.
-    this.buildFunctionalAreas();
-
-    // ——— Dressing ———
-    this.addDecor(3 * TILE, 3.4 * TILE, 'proc-light-pool');
-    this.addDecor(14 * TILE, 8.2 * TILE, 'proc-light-pool');
-    this.addDecor(20 * TILE, 8.2 * TILE, 'proc-light-pool');
-    // Unit 7: PROVISIONAL wall modules (pipes / grille), procedural fallback.
-    this.addDecor(
-      5 * TILE,
-      16 * TILE + 10,
-      this.wallArt('plv1-arch-pipes', 'proc-wall-pipes'),
-    );
-    this.addDecor(
-      20 * TILE,
-      16 * TILE + 10,
-      this.wallArt('plv1-arch-grille', 'proc-wall-pipes'),
-    );
-    this.addDecor(14.5 * TILE, 4.6 * TILE, 'proc-console-wall');
-    this.addDecor(14.5 * TILE, 12.6 * TILE, 'proc-rack-tools');
+    // ——— World V2: the painted plate IS the architecture and all the
+    // furniture — hide every station marker sprite (interactions,
+    // prompts and events untouched; the Concourse precedent). The old
+    // functional-area floor plates, light pools and wall modules are
+    // gone: the plate's baked lamps, wayfinding lines and machinery
+    // carry that reading.
+    for (const child of this.children.list) {
+      if (
+        child instanceof Phaser.GameObjects.Image &&
+        [
+          'proc-board-workorders',
+          'proc-desk-closure',
+          'proc-rig-intake',
+          'proc-crate-components',
+          'proc-bench-prep',
+          'proc-console-scenario',
+          'proc-cabinet-calibration',
+          'proc-desk-reception',
+          'proc-pipe-valve',
+          'proc-board-portfolio',
+          'proc-console-wall',
+        ].includes(child.texture.key)
+      ) {
+        child.setVisible(false);
+      }
+    }
   }
 
   // ——— Return shift (Unit 5) ———————————————————————————————————————————
@@ -1052,6 +1038,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   private debrisEntries() {
+    // Pieces scatter from the audited origin at the cutter's operator
+    // side (zoneSites) with the window's FIXED offsets — same relative
+    // scatter for every participant; every piece machine-verified
+    // reachable.
     return m04RemainingDebris().map((d) => ({
       spec: {
         object_id: d.object_id,
@@ -1059,8 +1049,8 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         icon: d.icon,
         category: 'debris',
       },
-      x: WS.sampleCutter.x + d.dx,
-      y: WS.sampleCutter.y + d.dy,
+      x: WS.cutterScatter.x + d.dx,
+      y: WS.cutterScatter.y + d.dy,
     }));
   }
 
@@ -1199,33 +1189,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
       metadata: { station_id: stationId, zone: this.zoneKey },
     });
-  }
-
-  private buildFunctionalAreas() {
-    // Unit 2 review (R1): a 1 px edge line and a higher fill so the areas
-    // are perceptible at the world zoom (material change, no label).
-    const plate = (x: number, y: number, w: number, h: number, alpha: number) =>
-      this.add
-        .rectangle(x, y, w, h, 0x6a705f, alpha)
-        .setOrigin(0.5)
-        .setStrokeStyle(1, 0x9aa38f, 0.35)
-        .setDepth(DepthLayer.FloorDecal);
-
-    plate(5.5 * TILE, 3.5 * TILE, 9 * TILE, 3 * TILE, 0.26); // intake
-    plate(6 * TILE, 8.75 * TILE, 10 * TILE, 3.5 * TILE, 0.22); // records & press
-    plate(6 * TILE, 14 * TILE, 10 * TILE, 3 * TILE, 0.22); // storage & assembly
-    plate(11.5 * TILE, 3 * TILE, 5 * TILE, 2.5 * TILE, 0.2); // calibration
-    plate(20.5 * TILE, 4.5 * TILE, 6 * TILE, 5 * TILE, 0.22); // handover column
-    plate(19.5 * TILE, 14 * TILE, 7 * TILE, 3 * TILE, 0.2); // dispatch bay
-    // Service lane between the areas (the y = 272 walking lane).
-    this.add
-      .rectangle(12 * TILE, 8.5 * TILE, 22 * TILE, TILE, 0x8fa4b8, 0.14)
-      .setOrigin(0.5)
-      .setDepth(DepthLayer.FloorMarking);
-  }
-
-  private wallArt(preferred: string, fallback: string): string {
-    return this.textures.exists(preferred) ? preferred : fallback;
   }
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {

@@ -22,7 +22,7 @@ import { expect, type Page, test } from '@playwright/test';
 
 import { hold, press } from './helpers';
 import { captureErrors, expectNoRuntimeErrors } from './journey';
-import { bootPilotScene, PILOT, walkTo } from './pilotHelpers';
+import { bootPilotScene, PILOT, workshopVia } from './pilotHelpers';
 
 interface Probes {
   player: { x: number; y: number } | null;
@@ -51,13 +51,11 @@ async function proveOverlay(page: Page, key: 'e' | 'Space') {
 
   await bootPilotScene(page, `m02proof_${key}`, 'records_workshop');
 
-  // Same lane as the participant capture: the x = 60 corridor, then the
-  // filing desk from below (approach offset +44 px).
-  await walkTo(page, 60, 112, { yFirst: false });
-  await walkTo(page, 60, 312, { yFirst: true });
-  await walkTo(
+  // World V2 two-bay hall: route through the audited lanes to the case
+  // desk's approach point (machine bay north-west).
+  await workshopVia(
     page,
-    PILOT.workshop.filingDesk.x,
+    PILOT.workshop.filingDesk.x + 4,
     PILOT.workshop.filingDesk.y + 44,
   );
   await page.waitForFunction(
@@ -79,9 +77,13 @@ async function proveOverlay(page: Page, key: 'e' | 'Space') {
     'inside the 72 px interaction radius',
   ).toBeLessThan(72);
   expect(before.prompt?.prompt, 'prompt visible').toBe(true);
-  expect(before.prompt?.chips, 'exactly one target chip (no competitor)').toBe(
-    1,
-  );
+  // World V1 presentation: contextual name chips no longer exist — the
+  // prompt itself carries the one target's name (RoomScene
+  // publishWorldPromptProbe hardcodes chips: 0). The single-target
+  // guarantee is asserted by the in-range distance + the prompt text
+  // above; the old `chips === 1` form predates World V1 and could not
+  // pass on this tree (pre-existing test defect, fixed 2026-09-13).
+  expect(before.prompt?.chips, 'no legacy name chips on the V1 tree').toBe(0);
   expect(before.cards, 'no prompt card open').toBeNull();
   expect(before.overlay?.open ?? false, 'overlay closed before the press').toBe(
     false,

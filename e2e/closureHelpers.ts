@@ -291,7 +291,7 @@ export async function routeToUtilityDeck(
   await returnInside(page);
   await valeReturnCheckIn(page);
   await signOffReturnShift(page);
-  await walkTo(page, PILOT.workshop.board.x, RETURN.laneY, { yFirst: true });
+  await walkTo(page, 1256, RETURN.laneY, { yFirst: true });
   await workshopToConcourse(page);
   await concourseToDeck(page);
   await expectStage(page, 'deck_closure');

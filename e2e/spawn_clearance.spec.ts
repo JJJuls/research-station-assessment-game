@@ -10,7 +10,7 @@ import path from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
-import { CONCOURSE_SPAWNS } from '../src/pilot/zoneSites';
+import { CONCOURSE_SPAWNS, WORKSHOP_SPAWN } from '../src/pilot/zoneSites';
 import { PILOT } from './pilotHelpers';
 
 const INTERACTION_RADIUS = 72;
@@ -37,12 +37,9 @@ function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
 
 test.describe('arrival spawn clearance (pure)', () => {
   test('Records Workshop arrival is clear of the east door', () => {
-    const spawn = spawnFrom(
-      'src/scenes/RecordsWorkshopScene.ts',
-      'protected getSpawn()',
-    );
-
-    expect(distance(spawn, PILOT.workshop.eastDoor)).toBeGreaterThan(
+    // World V2 rescue continuation: the workshop spawn lives in the
+    // shared audited site book (src/pilot/zoneSites.ts).
+    expect(distance(WORKSHOP_SPAWN, PILOT.workshop.eastDoor)).toBeGreaterThan(
       INTERACTION_RADIUS,
     );
   });

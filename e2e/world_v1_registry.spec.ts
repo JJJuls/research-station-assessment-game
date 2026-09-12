@@ -17,6 +17,7 @@ import {
   CONCOURSE_SPAWNS,
   CONCOURSE_STATIONS,
   DOCK_SITES,
+  WORKSHOP_SPAWN,
 } from '../src/pilot/zoneSites';
 import {
   deriveObjectClass,
@@ -28,15 +29,18 @@ import {
 import { CONCOURSE_LAYOUT } from '../src/world/layouts/concourse';
 import { DOCK_LAYOUT } from '../src/world/layouts/dock';
 import { gridOf, walkingDistance } from '../src/world/layouts/grid';
+import { WORKSHOP_LAYOUT } from '../src/world/layouts/workshop';
 
 const LAYOUTS = {
   dock: gridOf(DOCK_LAYOUT),
   station_concourse: gridOf(CONCOURSE_LAYOUT),
+  records_workshop: gridOf(WORKSHOP_LAYOUT),
 } as const;
 
 const SPAWNS = {
   dock: [DOCK_SITES.spawnArrival, DOCK_SITES.spawnFromConcourse],
   station_concourse: Object.values(CONCOURSE_SPAWNS),
+  records_workshop: [WORKSHOP_SPAWN],
 } as const;
 
 const DOOR_CLEARANCE = 96;

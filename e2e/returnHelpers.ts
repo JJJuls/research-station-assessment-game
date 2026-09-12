@@ -51,30 +51,34 @@ import {
   useDoor,
   walkTo,
   workshopToConcourse,
+  workshopVia,
 } from './pilotHelpers';
 
 export { captureErrors, expectNoRuntimeErrors, press };
 
 /** Return-shift geometry (src/pilot/zoneSites.ts + the Unit 2 stations). */
 export const RETURN = {
+  // World V2 rescue continuation (43×12 two-bay hall): anchors from the
+  // machine-audited shared book; offsets land on the audited approach
+  // points (registry) exactly.
   workshop: {
-    feedConsole: { x: 480, y: 224 },
-    relayBench: { x: 192, y: 384 },
-    reportDesk: { x: 608, y: 320 },
-    handoverDesk: { x: 608, y: 96 },
-    pressB: { x: 288, y: 272 },
-    calibrationBench: { x: 352, y: 96 },
-    board: { x: 640, y: 160 },
+    feedConsole: { x: 1034, y: 132 },
+    relayBench: { x: 104, y: 232 },
+    reportDesk: { x: 996, y: 300 },
+    handoverDesk: { x: 1148, y: 164 },
+    pressB: { x: 302, y: 160 },
+    calibrationBench: { x: 833, y: 300 },
+    board: { x: 1344, y: 140 },
   },
-  /** Approach offsets (44 px; D-V2-1 rule — no other interactable nearer). */
+  /** Offsets to the machine-audited approach points (±12 px safe). */
   approach: {
-    feedConsole: { x: 0, y: 44 },
-    relayBench: { x: 0, y: 44 },
-    reportDesk: { x: 0, y: -44 },
-    handoverDesk: { x: -32, y: 0 },
+    feedConsole: { x: 0, y: 48 },
+    relayBench: { x: 48, y: 8 },
+    reportDesk: { x: 0, y: -50 },
+    handoverDesk: { x: 0, y: 44 },
     pressB: { x: 0, y: 44 },
-    calibrationBench: { x: 0, y: 44 },
-    board: { x: 0, y: 44 },
+    calibrationBench: { x: 0, y: -50 },
+    board: { x: -32, y: 38 },
   },
   // World V1 production: derived from the shared site book (the stale
   // V4 literals were the U2 projection's M09 driver miss).
@@ -85,7 +89,8 @@ export const RETURN = {
     /** The rescue hall's south lane: the clear approach row. */
     loopY: 252,
   },
-  laneY: 272,
+  /** The office bays' clear south lane (rows 7-8). */
+  laneY: 252,
 } as const;
 
 export type WorkshopStation = keyof typeof RETURN.workshop;
@@ -419,14 +424,12 @@ export async function surfaceElement(page: Page, id: string) {
  * Workshop navigation (lane rule)
  * ------------------------------------------------------------------ */
 
-/** Walks to a station's approach point via the y = 272 lane. */
+/** Walks to a station's audited approach point via the two-bay lanes. */
 export async function workshopApproach(page: Page, station: WorkshopStation) {
   const at = RETURN.workshop[station];
   const off = RETURN.approach[station];
 
-  await driveAxisTo(page, 'y', RETURN.laneY, 12);
-  await walkTo(page, at.x + off.x, RETURN.laneY, { yFirst: false });
-  await walkTo(page, at.x + off.x, at.y + off.y, { yFirst: true });
+  await workshopVia(page, at.x + off.x, at.y + off.y);
 }
 
 /** Opens a return-shift SURFACE at a workshop station (E, retried). */
@@ -458,13 +461,10 @@ export async function openWorkshopSurface(
 
 /** Opens a PROMPT at a workshop station (E, retried). */
 export async function openWorkshopPrompt(page: Page, station: WorkshopStation) {
-  await driveAxisTo(page, 'y', RETURN.laneY, 12);
-
   const at = RETURN.workshop[station];
   const off = RETURN.approach[station];
 
-  await walkTo(page, at.x + off.x, RETURN.laneY, { yFirst: false });
-  await walkTo(page, at.x + off.x, at.y + off.y, { yFirst: true });
+  await workshopVia(page, at.x + off.x, at.y + off.y);
   await openPromptDiag(page, at, off);
   expect(await lastPromptBody(page)).not.toMatch(FORBIDDEN_TEXT);
 }
@@ -580,12 +580,13 @@ export async function workshopRestorationShift(
   options: { startCalibration: boolean; calibrationStages?: number },
 ) {
   await concourseToWorkshop(page);
+  await workshopApproach(page, 'board');
   await openPromptAt(page, PILOT.workshop.board, {
-    approachOffset: { x: 0, y: 44 },
+    approachOffset: { x: -32, y: 38 },
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'workshop_work');
-  await walkTo(page, PILOT.workshop.board.x, RETURN.laneY, { yFirst: true });
+  await walkTo(page, 1256, RETURN.laneY, { yFirst: true });
 
   if (options.startCalibration) {
     await openWorkshopSurface(
@@ -606,11 +607,11 @@ export async function workshopRestorationShift(
 
   await workshopApproach(page, 'board');
   await openPromptAt(page, PILOT.workshop.board, {
-    approachOffset: { x: 0, y: 44 },
+    approachOffset: { x: -32, y: 38 },
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'lab_briefing');
-  await walkTo(page, PILOT.workshop.board.x, RETURN.laneY, { yFirst: true });
+  await walkTo(page, 1256, RETURN.laneY, { yFirst: true });
   await workshopToConcourse(page);
 }
 
@@ -753,7 +754,6 @@ export async function valeReturnCheckIn(page: Page) {
 
 /** Workshop → Concourse → Utility Deck: the review panel offers only a return before the sign-off; back to the workshop. */
 export async function assertCoreLockedThenReturn(page: Page) {
-  await walkTo(page, PILOT.workshop.board.x, RETURN.laneY, { yFirst: true });
   await workshopToConcourse(page);
   await concourseToDeck(page);
   await openPromptAt(page, PILOT.deck.reviewPanel, {
@@ -776,7 +776,7 @@ export async function assertCoreLockedThenReturn(page: Page) {
 export async function signOffReturnShift(page: Page) {
   await workshopApproach(page, 'board');
   await openPromptAt(page, PILOT.workshop.board, {
-    approachOffset: { x: 0, y: 44 },
+    approachOffset: { x: -32, y: 38 },
   });
   expect(await lastPromptBody(page)).not.toMatch(FORBIDDEN_TEXT);
   await selectPromptOption(page, 1);
