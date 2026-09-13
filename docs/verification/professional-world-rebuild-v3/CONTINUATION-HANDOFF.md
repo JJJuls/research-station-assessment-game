@@ -9,10 +9,11 @@ superseded by this file.
 
 - **Branch / worktree:** `fable-professional-world-rescue-v2` in
   `.claude/worktrees/fable-professional-world-rebuild` (unpushed).
-- **HEAD:** the docs/evidence commit on top of `fc3e5da` (e2e drivers +
-  V3 route capture and recorder) on top of `e402cd8` (world-prompt canvas
+- **HEAD:** the export-key alignment commit (`e24d680`) on top of the
+  docs/evidence commit `1af2323` on top of `fc3e5da` (e2e drivers + V3
+  route capture and recorder) on top of `e402cd8` (world-prompt canvas
   clamp, yard chip placement, DEV audio tap) on top of `fe768ef`. Working
-  tree CLEAN at the docs commit. Nothing pushed, merged, tagged, deleted;
+  tree CLEAN at the top commit (this line was added in a final docs commit). Nothing pushed, merged, tagged, deleted;
   no open scientific decision resolved; no PixelLab generation spent.
 - **Runner worktrees** (`fable-v3-runner` at `1e76cf3`, `fable-v3-runner2`
   at `731c947`) are untouched and remain for HUMAN removal. At the start
