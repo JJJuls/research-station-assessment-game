@@ -2709,8 +2709,17 @@ export abstract class RoomScene extends Phaser.Scene {
           promptHalf + 2,
           this.promptClampMaxX() - promptHalf,
         ),
-        // Never inside the mission-card band (design y < 80).
-        Math.max(80, Math.round(anchor.y)),
+        // Never inside the mission-card band (design y < 80) and never
+        // below the canvas: an object on a room's bottom hull (the Core
+        // Chamber's deck door at world y 330, prompted from above at +56)
+        // projected past the design-space bottom and its line was cut off
+        // (V3 native-size review). Clamp to the design height with the
+        // same 2 px margin the horizontal clamp uses.
+        Phaser.Math.Clamp(
+          Math.round(anchor.y),
+          80,
+          600 - this.proximityPrompt.height / 2 - 2,
+        ),
       )
       .setVisible(true);
 

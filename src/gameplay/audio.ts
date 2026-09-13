@@ -55,6 +55,32 @@ function ensureContext(): AudioContext | null {
   return context;
 }
 
+/**
+ * DEV-only evidence tap (verification recordings, e2e/recording.ts): a
+ * MediaStream carrying everything the master gain plays — the ambience
+ * beds and every cue, after the mute setting — so a captured playthrough
+ * carries the game's own audio. Read-only for gameplay: the tap is an
+ * extra output of the master node and never alters what the participant
+ * hears; production builds never define it.
+ */
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  (
+    window as unknown as { __audioCaptureStream?: () => MediaStream | null }
+  ).__audioCaptureStream = () => {
+    const ctx = ensureContext();
+
+    if (ctx === null || master === null) {
+      return null;
+    }
+
+    const destination = ctx.createMediaStreamDestination();
+
+    master.connect(destination);
+
+    return destination.stream;
+  };
+}
+
 /** Resume the context on a user gesture (browser autoplay policy). */
 export function unlockAudio() {
   const ctx = ensureContext();

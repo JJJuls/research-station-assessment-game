@@ -639,8 +639,12 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       .setStrokeStyle(1, 0x8fa4b8, 0.35)
       .setDepth(DepthLayer.WorldReadout);
     this.mastFeed = this.add.graphics().setDepth(DepthLayer.WorldReadout);
-    // The chip sits at the footing's foot, clear of the uplink chips.
-    this.mastChip = this.chip(site.x, site.y + 72, '');
+    // V3 native-size review: at the footing's foot (+72) the chip lay in
+    // the apron lane at the arrival spawn, under the participant's own
+    // figure (chips sit below every figure by construction). It now hangs
+    // beside the footing under the mast lamp — clear of the spawn, of the
+    // audited approach point and of the uplink chips.
+    this.mastChip = this.chip(site.x + 148, site.y + 30, '');
   }
 
   private buildExcavationSite() {
@@ -749,7 +753,9 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       },
       order: 4,
     });
-    this.rigChip = this.chip(rig.x, rig.y - 68, '');
+    // V3 native-size review: −68 stacked the readout directly on the
+    // one-line prompt shown at the audited approach; −84 clears it.
+    this.rigChip = this.chip(rig.x, rig.y - 84, '');
 
     // The equally visible useful alternative: the sorting bench.
     const bench = YARD_SITES.sortingBench;
