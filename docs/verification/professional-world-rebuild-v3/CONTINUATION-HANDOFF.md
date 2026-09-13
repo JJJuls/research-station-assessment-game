@@ -48,12 +48,15 @@ superseded by this file.
   drag (`objects_restored` 0; unresolved, baseline run at `aaa73fd`
   pending); `v4_core_dev_capture` (ARM refused under the developer
   inspection launch; developer-only, participant-path frames exist).
+- Persistence and export re-verified alone: `state_session_continuity`
+  4/4, `adversarial_reload_partial_state` 1/1, `persistence_physical` 3/3
+  (one flaky), `research_export_test_mode` 11/11 after aligning the frozen
+  envelope's key list with audit fix B2 (`measurement_validity`,
+  `pilot_coverage`; one flaky).
 - Not run this session (browser budget): `pilot_return` tests 2–3,
-  `pilot_records`, `pilot_signal_incident` (green in sessions 1–2),
-  persistence (`state_session_continuity`, `adversarial_reload_partial_state`,
-  `persistence_physical`) and export (`research_export_test_mode`,
-  `participant_completion_handoff`) suites — all legacy-route or
-  geometry-independent; list them first next session.
+  `pilot_records`, `pilot_signal_incident` (green in sessions 1–2) and
+  `participant_completion_handoff` — legacy-route or geometry-independent;
+  list them first next session.
 
 ## Exact next actions (in order)
 

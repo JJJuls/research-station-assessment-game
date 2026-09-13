@@ -293,8 +293,13 @@ test.describe('research export (test mode only)', () => {
       'environment',
       'event_integrity',
       'game_version',
+      // Audit 2026-09 B2 (3a4ff96): the full measurement-validity register
+      // and the pilot coverage snapshot ride every export payload
+      // (docs/verification/scientific-audit-2026-09/QUALTRICS-LOGGING-REVIEW-B2-A3.md).
+      'measurement_validity',
       'mission_state',
       'page_load_index',
+      'pilot_coverage',
       'prior_page_load_events',
       'raw_events',
       'summary',
