@@ -1,118 +1,101 @@
 # Continuation handoff — professional world rebuild V3
 
-Written by Fable at the context checkpoint of the second long-run session,
-2026-09-13. A fresh session continues from here without reconstruction.
-The previous checkpoint (`5027b08`) is superseded by this file.
+Written by Fable at the close of the third session (2026-09-14, unattended
+verification, correction and evidence run). A fresh session continues from
+here without reconstruction. The previous checkpoint (`fe768ef`) is
+superseded by this file.
 
 ## Exact state
 
 - **Branch / worktree:** `fable-professional-world-rescue-v2` in
   `.claude/worktrees/fable-professional-world-rebuild` (unpushed).
-- **HEAD:** see the top of `git log` — the docs/handoff commit on top of
-  `731c947` (yard) on top of `1e76cf3` (laboratory + deck + chamber) on
-  top of `5027b08`. Working tree CLEAN at the docs commit. Nothing
-  pushed, merged, tagged, deleted; no open scientific decision resolved.
-- **Two extra worktrees exist for HUMAN removal** (Claude never removes a
-  worktree): `.claude/worktrees/fable-v3-runner` (detached at `1e76cf3`)
-  and `.claude/worktrees/fable-v3-runner2` (detached at `731c947`). Each
-  carries a `node_modules` junction to the main tree's `node_modules`.
-  They were created so long functional suites could run on a frozen
-  checkout while this worktree was edited (Vite's HMR reloads the page
-  under a live Playwright run — an in-engine finding this session; see
-  `REBUILD-REPORT.md`). Ports: 5341 here, 5342 runner, 5343 runner2.
+- **HEAD:** the docs/evidence commit on top of `fc3e5da` (e2e drivers +
+  V3 route capture and recorder) on top of `e402cd8` (world-prompt canvas
+  clamp, yard chip placement, DEV audio tap) on top of `fe768ef`. Working
+  tree CLEAN at the docs commit. Nothing pushed, merged, tagged, deleted;
+  no open scientific decision resolved; no PixelLab generation spent.
+- **Runner worktrees** (`fable-v3-runner` at `1e76cf3`, `fable-v3-runner2`
+  at `731c947`) are untouched and remain for HUMAN removal. At the start
+  of session 3 an orphan chain still referenced `fable-v3-runner2` (a hung
+  `playwright test e2e/pilot_exterior_isolation.spec.ts` from 08:57 and
+  its Vite server on port 5343 — PIDs 19036 / 17300 and their `npx`
+  wrappers, no browser attached); they were left running as instructed.
+- Dev server for this worktree: port 5341 (an orphan Vite from the
+  previous session, PID 20016, was reused all session).
 
-## What this session landed
+## What session 3 established (details: `REBUILD-REPORT.md` §"Session 3")
 
-1. **Every remaining zone renders its painted plate** — Diagnostics
-   Laboratory, Utility Deck, Core Chamber (`1e76cf3`) and the Exterior
-   Recovery Yard (`731c947`), each with an audited coordinate book,
-   registry entries, `PILOT_DOORS` on the baked doorways, a scene rewrite
-   that hides every marker sprite and layers state over the painting, a
-   pass-aware e2e router (`labVia` / `deckVia` / `coreVia` / `yardVia` +
-   `*Approach` helpers deriving every offset from the registry) and a
-   look spec (`e2e/world_v2_<room>_look.spec.ts`, rooms lab / deck /
-   core / yard) that walks every audited approach on real input and
-   captures 1280×720 frames under
-   `docs/verification/professional-world-rebuild-v3/<room>-look/`.
-2. **Geometry findings fixed in-engine** (the pre-derived books were not
-   unquestionable): the laboratory's east bay joined its north lane
-   through a 1 px slot (widened to a 32 px window; slot-width audit
-   added to the checker set); the deck's Concourse-side spawn moved beside
-   its door with re-audited review/door anchors; the chamber got a door
-   pocket; the yard's apron/mast/rig anchors were re-derived until the
-   nearest-wins audit passed.
-3. **M23 plot translated with the yard** (presentation only): origin
-   cols 26–32 / rows 3–8; size 7 × 6 and both target cells' relative
-   positions unchanged; the pure models spec's sweep literals shifted by
-   the same (+320, −160).
-4. **Driver debt repaired en route:** the M18-history test's stale
-   pre-rescue workshop literal (704,416) now uses the audited lattice
-   bench approach.
-
-## Verification at the yard commit (`731c947`)
-
-- `tsc --noEmit`, `vite build`: pass. Pure suites 55/55 (`world_v1_registry`
-  incl. all six zones, `spawn_clearance`, `pilot_route_model`,
-  `world_v1_story_state`, `pilot_exterior_models`).
-- Look specs: lab 1.8 min, deck 1.3 min, core 1.3 min, yard 6.9 min — all
-  green on real input.
-- Functional suites (frozen runners): results recorded in
-  `REBUILD-REPORT.md` §"Session 2 functional runs" — read that section
-  for what was green, what failed and what was still running when the
-  session ended.
+- Every browser run strictly sequential (one server, one browser, one
+  spec, one worker). Proven alone at the final source: pilot_route 4/4,
+  pilot_yard test 3, pilot_exterior_isolation 2/2, world_v1_interactions
+  3/3, concourse_interaction_lifecycle 3/3, presentation_integration 11/11,
+  m02_overlay_proof 2/2, pilot_lab 3/3, pilot_deck 1/1 (through the
+  rebuilt yard), world_v1_camera 3/3, world_v1_story 3/3, pilot_closure_capture
+  1/1, the V3 route capture at 1280×720 with the audio recording, and the
+  pure suites 56/56; tsc / build / lint pass.
+- pilot_yard test 1: every behavioural assertion passed; only the final
+  automation envelope (item-owned active 338 s > 300 s) fails — a
+  research-owner decision, not weakened.
+- Scientific projection `world-v3` = `world-v1-before` + exactly the
+  `3a4ff96` scientific-fix deltas (B6 +1 `pilot_zone_entered`, A3 +3
+  `pilot_npc_beat` payload keys); nothing rebuild-related.
+- 1920×1080: the route capture reached 12 frames (workshop board) before
+  an 8 s surface wait timed out; look specs lab 14/14, the other four
+  partial (driver landing precision at the 3× software-GL canvas — the same
+  approaches are green at 1280×720 on the same commit). The full 1080 set
+  is still to be produced (faster renderer or a 1080-tuned driver).
+- Still red, documented: `pilot_return` test 1 at the M03 Press B pointer
+  drag (`objects_restored` 0; unresolved, baseline run at `aaa73fd`
+  pending); `v4_core_dev_capture` (ARM refused under the developer
+  inspection launch; developer-only, participant-path frames exist).
+- Not run this session (browser budget): `pilot_return` tests 2–3,
+  `pilot_records`, `pilot_signal_incident` (green in sessions 1–2),
+  persistence (`state_session_continuity`, `adversarial_reload_partial_state`,
+  `persistence_physical`) and export (`research_export_test_mode`,
+  `participant_completion_handoff`) suites — all legacy-route or
+  geometry-independent; list them first next session.
 
 ## Exact next actions (in order)
 
-1. **Read the functional results** in `REBUILD-REPORT.md`; re-run any
-   suite listed as unfinished from a frozen runner (`cd
-.claude/worktrees/fable-v3-runner2 && PW_DEV_PORT=5343 npx playwright
-test e2e/<spec>.spec.ts`). The runners are at older commits than HEAD
-   only by the docs commit — `git -C <runner> checkout --detach <HEAD>` is
-   fine before re-running.
-2. **Full-route projection + captures at the final commit** (not done
-   this session): `v4_event_projection` (label world-v3) compared against
-   `world-v1-before` expecting the rescue's 0-diff; `pilot_closure_capture`
-   for the deck feeds-up / Core stable before-after frames;
-   `world_v2_slice_capture` pattern extended through the four new rooms for
-   the 1920×1080 set and the real-input playthrough video (the procedural
-   audio bed is already present in recordings).
-3. **Open driver item carried forward:** `concourse_interaction_lifecycle`
-   still drives pre-rescue Concourse legs (see the V3 report run-2 notes).
-4. **Presentation polish backlog** (all optional, none blocking): the
-   world state chips (`chip()` in the zone scenes) still read like labels —
-   a shared environment-register style pass; the deck's manifold readout
-   wraps to two lines; the yard's rig chip stacks over the rig prompt.
+1. Run the suites listed as "not run" above, one at a time
+   (`PW_DEV_PORT=5341 npx playwright test e2e/<spec>.spec.ts`).
+2. `pilot_return` test 1: reproduce the Press B drag miss alone, then run
+   the same test at the pilot-v3 baseline worktree
+   (`.claude/worktrees/fable-evidence-led-pilot-v2`, `aaa73fd`, own port) to
+   classify pre-existing vs regression; the drag helper is
+   `returnHelpers.pressBatchB` (designToPage mapping).
+3. If the research owner re-baselines the automation envelope or the
+   projection reference, update `pilot_yard.spec.ts:524` / promote
+   `projection/world-v3.json` — never autonomously.
+4. Optional polish (unchanged): shared environment-register style for the
+   state chips; the deck manifold readout wraps.
 
 ## Scientific standing (unchanged constraints)
 
 - All world-v2 art PROVISIONAL, model-selected, not human-approved; asset
-  set version not bumped (human decision). No PixelLab generation was
-  spent this session (≈1220 remain).
-- P1–P20 in `docs/ai/PROPOSALS-SCIENTIFIC-REDESIGN-2026-09.md` (incl. the
-  zero-filled legacy summary B1/P2 and construct coverage P1) await the
-  research owner. Nothing implemented from it.
-- Presentation-only discipline held in every room unit: no event name,
-  payload key, window, form, prompt/option/feedback text or scoring path
-  changed; positions changed (rescue precedent). The one model-file edit
-  (`m23ExcavationModel.M23_PLOT` origin + target cells) is a translation
-  that preserves the fixture's size and relative geometry, documented in
-  the file and the commit.
+  set version not bumped. P1–P20 in
+  `docs/ai/PROPOSALS-SCIENTIFIC-REDESIGN-2026-09.md` await the research
+  owner; nothing implemented from it.
+- Presentation-only discipline held: no event name, payload key, window,
+  form, prompt/option/feedback text or scoring path changed this session;
+  the M23 plot translation (7 × 6, relative target cells) is unchanged and
+  re-verified in-engine.
 
 ## Pitfalls carried forward
 
-- **Never edit `src/` while a Playwright run is live in the same
-  worktree**: Vite HMR reloads the page mid-test (two runs were lost to
-  this before the frozen-runner pattern was adopted). e2e/docs edits are
-  safe (not in the served graph).
-- The nearest-wins rule needs anchors ≥ ~50 px apart for their ±12 px
-  landing boxes; run `geom-check.mjs` AND `slot-check.mjs` (scratchpad
-  pattern) — an 8 px BFS alone accepted a 1 px slot.
-- **This machine cannot sustain more than one SwiftShader browser run**:
-  two frozen runners plus the working tree's server produced dev-server
-  start-up timeouts, 420 s walking stalls and timing-sensitive driver
-  failures. Run ONE suite at a time; treat concurrent-run failures as
-  UNKNOWN, never as regressions.
-- Repo-wide CRLF: prettier/eslint run per file; lint-staged is the gate.
-- Memory writes go through a scratchpad python script (PreToolUse guard).
-- Capture specs overwrite historical evidence PNGs — check before a
-  camera/story run touches `professional-world-v1/unit1/*`.
+- One SwiftShader browser at a time; never edit `src/` while a run is live
+  (Vite HMR reloads the page); e2e/docs edits are safe.
+- Stopping a Monitor does not kill the Playwright tree on Windows — kill the
+  root `bash` PID with `taskkill //PID <pid> //T //F` before the next run.
+- Playwright clears `test-results/` at each run start (read error contexts
+  before the next run); `--trace on` writes ~240 MB per long test.
+- Capture specs overwrite historical PNGs (`world_v1_camera` →
+  `professional-world-v1/unit1/dock-arrival-*.png` — restore from the
+  index after a run); a retry overwrites projection JSONs — preserve the
+  first attempt before the retry finishes.
+- Body geometry for drivers: top edge = probe y − 18, bottom = probe y + 24;
+  drift pass y 211–232; gantry column y ≥ 211; line-status panel is a hard
+  prop on the post row; lab east climb window x 496–528; Concourse west
+  pocket y 178–200; the eastward gauge leg needs y ≥ 244.
+- Memory writes go through a scratchpad copy (`node` copy into the memory
+  directory — the PreToolUse guard blocks direct writes outside the repo).

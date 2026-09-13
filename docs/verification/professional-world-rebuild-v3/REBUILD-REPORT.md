@@ -189,3 +189,225 @@ never started; treat its result as UNKNOWN, not green.
 - Not done this session: the full-route projection/compare at the final
   commit, the 1920×1080 capture set and the real-input playthrough video —
   listed as the next actions in the handoff.
+
+## Session 3 (2026-09-13, unattended verification, correction and evidence run)
+
+Continuation from `fe768ef`. Every browser-dependent run in this session was
+**strictly sequential**: one dev server (this worktree, port 5341), one
+browser, one spec at a time, one Playwright worker, no concurrent capture
+job; each browser closed before the next run started. No failure was
+classified "load-suspect" without a standalone rerun. Nothing pushed,
+merged, tagged, deployed, deleted or removed; no open scientific decision
+resolved; no PixelLab generation spent. The two frozen runner worktrees
+(`fable-v3-runner`, `fable-v3-runner2`) were not touched — see §"Runner
+process report".
+
+### Code gates (final tree)
+
+`tsc --noEmit`: pass. `vite build`: pass. ESLint/Prettier: pass on every
+touched file (the three specs that were CRLF in the working tree were
+normalised to LF, the index form). Pure suites 56/56 (`world_v1_registry`,
+`spawn_clearance`, `pilot_route_model`, `world_v1_story_state`,
+`pilot_exterior_models` 12/12 incl. the translated M23 plot, plus the
+projection compare's pure test).
+
+### Failures worked through (each reproduced alone first)
+
+| Item (handoff)                                                      | Standalone reproduction                                                                                                                                                                                                                                  | Classification                                                                                                                                                                                                                                                                                                                                                                                                       | Action                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. `pilot_route` beacon assertion (`:150`)                          | deterministic, both attempts, 2.8 min alone                                                                                                                                                                                                              | **stale expectation**: the rescue's audited Dock-side Concourse spawn (352,224) stands 89 px from Vale (440,208), inside `BEACON_ARRIVAL_RANGE` (120 px, `PilotZoneScene`) — the pre-rescue assertion encoded the 60×38 distances; product rule intact (pilot_route_model green)                                                                                                                                     | test now asserts the rule itself: hidden at the spawn, **shown** once ≥ 120 px away (walk to (232,224), 208 px), hidden again on the return; `pilot_route` **4/4** (8.0 min)                                                                                                                             |
+| 2. `world_v1_interactions` 420 s timeouts                           | **3/3 in 8.2 min alone**                                                                                                                                                                                                                                 | infrastructure (three SwiftShader browsers in session 2), no product or driver finding                                                                                                                                                                                                                                                                                                                               | none                                                                                                                                                                                                                                                                                                     |
+| 3a. `pilot_yard` test 3 (`:779`)                                    | deterministic                                                                                                                                                                                                                                            | **stale driver literals**: the "row 10 lane" (y 340) was the 25×19 yard's; on the strip rows 9–11 are the hull band, and the west-half re-entry spawn reaches the east half only through the drift pass                                                                                                                                                                                                              | the cache approaches use the pass-aware `yardVia`; test 3 **green** (4.6 min)                                                                                                                                                                                                                            |
+| 3b. `pilot_yard` test 1 — rig approach stall at (1072,204)          | reproduced in principle by the crossing diagnostic (below)                                                                                                                                                                                               | **driver geometry**: a y-first landing inside its ±12 px box can settle at y ≤ 208, where the body's top edge (probe − 18) overlaps the gantry west leg (rows 1–5)                                                                                                                                                                                                                                                   | `yardVia` takes the y ≈ 220 lane before any leg that crosses the leg column (x 1094) and re-drives a stalled pass crossing at y 224 ±4                                                                                                                                                                   |
+| 3c. `pilot_yard` test 1 — post A → post B                           | deterministic with diagnostics: prompt opened on the **Line Status Panel** at (240,134)                                                                                                                                                                  | **driver geometry**: the panel's footprint rasterises to cols 8–9 / rows 2–3 (x 256–320, y < 128); the row-≈134 leg between the posts clamps on it and nearest-wins then offers the panel                                                                                                                                                                                                                            | `yardVia` travels the row-5 lane (y 160) for any west-half leg that crosses the panel columns with an endpoint above y 150                                                                                                                                                                               |
+| 3d. `pilot_yard` test 1 — lab east-bay climb stall at (496,178)     | intermittent (1 of 5 runs)                                                                                                                                                                                                                               | **driver precision**: the east climb window is exactly one body wide (x 496–528); a ±8 landing plus key-up drift can settle on its edge                                                                                                                                                                                                                                                                              | `labVia` lands at 512 ±4, verifies the lane was reached and re-centres (≤ 3 tries)                                                                                                                                                                                                                       |
+| 3e. `pilot_yard` test 1 — M26 ACK line (`:387`, session 2)          | passed in every run that reached it this session                                                                                                                                                                                                         | timing-sensitive only under load (1.4 s window before the scripted disconnect); `transmitAt` now dumps prompt/world/M26 state on a missed transmission                                                                                                                                                                                                                                                               | none beyond the diagnostic                                                                                                                                                                                                                                                                               |
+| 3f. `pilot_yard` test 1 — final envelope assertion (`:524`)         | **deterministic once every behavioural assertion passed**: item-owned active **338 s** > 300 s (M20 start 8 s), wall 554 s from the Dock                                                                                                                 | **not weakened** — see "Decisions for the research owner" (the V2 baseline measured 236–240 s at wall 285 s on the 25×19 yard and the 800×600 canvas; the automation is now ≈ 1.9× slower end-to-end, and the windows stay open while the driver walks)                                                                                                                                                              | test left red on this one assertion; the M05 o2 / M19 / M20 / M23 (scan bands, empty dig, exact cell) / M24 (six cycles, depletion, pre-/post-ack, alternative) / M26 (ACK, disconnect, pre-knowledge, ack, probe, post-knowledge, Post B) / Noor closure assertions all **passed** in the run of record |
+| 4. `presentation_integration`                                       | **11/11** (1.4 min) after one stale deck walk (160,340 → the audited valve approach (256,224) via `deckVia`)                                                                                                                                             | stale driver literal                                                                                                                                                                                                                                                                                                                                                                                                 | fixed                                                                                                                                                                                                                                                                                                    |
+| 5. Core capture (`v4_core_dev_capture`)                             | deterministic at `:99` then `:122`                                                                                                                                                                                                                       | **stale developer path**: since the closure refactor `a1490fc` the inspection launch no longer pre-prepares the Core (deck derives `ready_for_feeds` under inspection; the chamber's review command refuses while sealed); after booting the deck under inspection and raising the feeds the review opens (frames c1–c3 captured) but **ARM does not arm** under inspection — pointer and keyboard alike, three runs | developer-only capture; the Core frames of record come from the participant path (`pilot_closure_capture` 41–47 and the V3 route capture); the inspection-launch ARM refusal is listed under "Remaining"                                                                                                 |
+| 6. M02 (`m02_overlay_proof`)                                        | **2/2** (1.6 min)                                                                                                                                                                                                                                        | —                                                                                                                                                                                                                                                                                                                                                                                                                    | —                                                                                                                                                                                                                                                                                                        |
+| 7. `pilot_exterior_isolation`                                       | **2/2** (4.7 min) after two stale 25×19 spots ((400,380) → (400,250); the field spot via `yardVia`)                                                                                                                                                      | stale driver literals                                                                                                                                                                                                                                                                                                                                                                                                | fixed                                                                                                                                                                                                                                                                                                    |
+| 8. Return route (`pilot_return`)                                    | test 1 reached the M03 Press B panel three times; run of record: the outbound M09 check-1 read registered (`check_completed`, "Gauge read: …") and the M09 closure assertions passed, then **`objects_restored` 0** at the Press B pointer drag (`:238`) | **unresolved** — the drag inside the inventory overlay stored nothing; not a room-geometry path; two earlier runs failed earlier at the M09 check-1 read (intermittent input miss, not reproducible with the diagnostic attached)                                                                                                                                                                                    | left red; classification needs a baseline run at the pilot-v3 checkout (`aaa73fd`) — not done (browser budget went to the route evidence)                                                                                                                                                                |
+| 9. Event projection                                                 | see "Scientific projection"                                                                                                                                                                                                                              |                                                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                                                                                                                                                                                          |
+| 10. Closure capture                                                 | see "Evidence"                                                                                                                                                                                                                                           |                                                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                                                                                                                                                                                          |
+| 11. Full-route lifecycle driver (`concourse_interaction_lifecycle`) | **3/3** (9.9 min) after porting its C/E Concourse legs to `concourseToWorkshop` / `concourseVia` / `concourseToDeck`                                                                                                                                     | pre-rescue raw L-walks (driver)                                                                                                                                                                                                                                                                                                                                                                                      | fixed                                                                                                                                                                                                                                                                                                    |
+| 12./13. captures and recording                                      | see "Evidence"                                                                                                                                                                                                                                           |                                                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                                                                                                                                                                                          |
+
+Also re-verified alone: `pilot_lab` 3/3 (15.6 min; test 1 flaky once at the
+Concourse west-door pocket — `concourseToWorkshop` now re-centres on the
+rows-5/6 band at 190 ±4 before the door leg), `pilot_deck` 1/1 (5.2 min,
+the full spine through the **rebuilt yard**), `world_v1_camera` 3/3 (its
+`dock-arrival-*.png` under `professional-world-v1/unit1` were restored from
+the index afterwards — the historical evidence is untouched),
+`world_v1_story` 3/3.
+
+### Recovery Yard — geometry facts established in-engine
+
+A throw-away diagnostic (real input, developer boot, deleted afterwards)
+measured the strip against the 32×42 body (top edge = probe y − 18):
+
+- drift pass (rows 6–7): crossed at probe y 211–232, blocked at 205 and 238;
+- gantry west-leg column (x 1094): crossed eastward at y ≥ 211.5, blocked at
+  ≤ 208.6;
+- the line-status panel footprint (book cols 8.3–9.9 / rows 2.2–3.4)
+  rasterises to cols 8–9 / rows 2–3 — a hard prop on the post A → post B row.
+
+The M23 plot stayed at cols 26–32 / rows 3–8 (7 × 6; form A at +2/+1,
+form B at +4/+4): `pilot_exterior_models` 12/12 and the run of record's
+M23 assertions (three scan bands, the empty neighbouring dig, the exact
+cell, `recovery_delivery` inventory / cache) passed through ordinary input.
+The rig pad, bench, stake, both posts, panel, mast, coupling, crate, flag
+and Noor were all reached through their audited approach points on real
+input; the camera followed across both plates (route capture manifest).
+
+### Presentation corrections (native-size review of every rebuilt room)
+
+Every look frame (Dock/Concourse from the rescue set; workshop, lab, deck,
+core and yard from the V3 look sets) was inspected at 1280×720. Two
+readability defects were corrected, nothing else redesigned:
+
+- **Yard mast chip** sat at the footing's foot (site.y + 72) — in the apron
+  lane at the arrival spawn, under the participant's own figure (chips draw
+  below figures by construction) → now beside the footing under the mast
+  lamp (site.x + 148, site.y + 30): clear of the spawn, of the audited
+  approach and of the uplink chips.
+- **Yard rig chip** (rig.y − 68) stacked directly on the one-line prompt at
+  the audited approach → rig.y − 84.
+
+Known cosmetic, left as recorded in the handoff: state chips still read
+like labels; the deck's feed readout wraps to two lines.
+
+### Runner process report
+
+At session start two orphan chains still referenced `fable-v3-runner2` (a
+hung `playwright test e2e/pilot_exterior_isolation.spec.ts` from 08:57 and
+its Vite server on port 5343, PIDs 19036 / 17300 and their `npx` wrappers);
+no browser was attached to them. They were left running, as instructed;
+neither runner worktree nor its `node_modules` junction was touched. An
+orphan Vite server on 5341 (PID 20016, this worktree, from the previous
+session) was reused as the session's single dev server.
+
+### Scientific projection (authority → trigger → display → response → event → persistence → export)
+
+`v4_event_projection` (label `world-v3`, real input, Dock → stable Core,
+offers accepted, gauge read, calibration started, partial antenna start,
+record closure, three feeds, Core confirmation) at the final tree:
+
+- `projection/world-v3.json` — run of record (first attempt): final stage
+  `complete`, 155 events, 28 opportunities, 25 window ids, zone sequence
+  Concourse → Workshop → Concourse → Laboratory → Yard → Laboratory →
+  Concourse → Workshop → Concourse → Deck → Core, M09 check 1 completed.
+- **Compared with `world-v1-before.json`: exactly five differences**
+  (`projection/world-v3.diff.json`), all of them the session-1 scientific
+  defect fixes of `3a4ff96` that post-date every existing baseline:
+  `pilot_zone_entered` 11 → 12 (B6: the Dock's zone entry is no longer
+  swallowed — one more event, sequence 154 → 155, first divergence at
+  index 4), and `pilot_npc_beat` payload keys 19 → 22
+  (`metadata.focus_default_position`, `metadata.option_count`,
+  `metadata.option_position` — A3: fixed option order and default focus
+  exported with every NPC-beat choice). **No event identity, payload key,
+  window id, opportunity, validity value, form slot or coverage disposition
+  differs for any other reason** — the rebuilt rooms changed nothing
+  scientific. (The compare assertion therefore fails against the pre-fix
+  baseline by design; no baseline was rewritten — promoting `world-v3.json`
+  to the post-fix reference is the research owner's call.)
+- The retry Playwright ran after that assertion produced a second recording
+  that missed the M09 check-1 read (the operations-desk clip described under
+  the M09 finding) and overwrote the files; the run of record was restored
+  from the preserved copy. `research_export_test_mode` and the persistence
+  suites: see "Results".
+
+### Evidence at the final code commit (`fc3e5da`)
+
+- **`route/1280x720/`** — `world_v3_route_capture` at `fc3e5da`, ONE
+  continuous real-input route from the watched opening to the stable Core
+  (13.6 min automation wall, 155 events, final stage `complete`, zone
+  sequence identical to the projection run): 46 native 1280×720 frames —
+  opening (establishing, berth), Dock (emergency power, marker, powered
+  after check-in), Concourse (entry, Vale briefing, watch offer, gauge read,
+  handover), Workshop (east-door entry, board, calibration bench before /
+  after stage 1, mid-hall, signed off), Laboratory (entry, Kai briefing,
+  exterior briefing, airlock guidance), Yard (airlock arrival, Noor, Mast 04
+  before / after stage 1, drift pass, recovery field, shift end), the return
+  (Concourse hub, Vale check-in, workshop sign-off), Deck (arrival, record
+  closed, coolant / calibration / distribution before + after, all feeds,
+  Core door open) and Core (inactive, review, armed, synchronising,
+  completion notice, stable) — with `manifest.json` (commit, viewport,
+  canvas, per-frame scene / stage / player / camera state, 19 camera-motion
+  pairs, timings) and **`route-1280x720.webm`** (24.6 MB, VP8 + Opus,
+  10 fps, 450 kbit/s, `audio: true`): recorded from the game canvas by
+  `e2e/recording.ts` through the DEV audio tap, started only after the
+  opening had drawn (no black lead-in by construction), one continuous
+  session (no stale scenes, no navigation stall — the route never
+  re-entered a helper's retry path). No ffmpeg on the machine: the track
+  layout is asserted from the recorder's mime and the manifest, not by
+  decoding the file.
+- **`route/1920x1080/`** — the same driver at the native full-HD canvas
+  (3× plate): 12 frames (opening → the Workshop work-order board), then the
+  calibration-bench surface wait (8 s) timed out. **`1920x1080/*-look/`**:
+  lab 14/14 frames green; workshop 2, deck 6, core 5 and yard 8 frames
+  before each tour missed an audited approach ("own label in the prompt" /
+  no prompt / a 4 s wait). Every one of those approaches is green at
+  1280×720 on the same commit and the world field is identical at both
+  canvases (`world_v1_camera` 3/3), so the 1080 misses are the
+  software-GL driver's landing precision at the slower 3× canvas
+  (infrastructure), not room defects — the frames that were produced are
+  native-size evidence of those rooms; the full 1080 set remains to be
+  produced on a faster renderer or with a 1080-tuned driver.
+- **`closure-capture/`** — `pilot_closure_capture` frames 35–47 (deck
+  arrival, sealed early access, the three feeds before / after, all feeds
+  ready, Core door, Core inactive, review, armed, synchronising, stable,
+  completion) on the participant path at the 800×600 default viewport
+  (letterboxed canvas), run on the identical source before the prompt-clamp
+  commit `e402cd8`.
+- **`core-dev-capture/`** — c1–c3 of the developer inspection launch (see
+  the table; developer-only).
+- `projection/world-v3.json` + `.diff.json` — see "Scientific projection"
+  (run on the identical source before `e402cd8`; the clamp changes only a
+  HUD prompt position and no event).
+
+### Results (final tree, sequential, one browser)
+
+| Suite                                                                                          | Result                                                                     | Time           |
+| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------- |
+| tsc, vite build, lint (touched files)                                                          | pass                                                                       | —              |
+| pure: registry, spawn_clearance, route_model, story_state, exterior_models, projection compare | 56 pass, 1 skipped (no baseline env)                                       | 7 s            |
+| pilot_route                                                                                    | 4/4                                                                        | 8.0 min        |
+| pilot_yard test 3                                                                              | 1/1                                                                        | 4.6 min        |
+| pilot_yard test 1                                                                              | every behavioural assertion passed; 1 failed on the 300 s envelope (338 s) | 14–20 min      |
+| pilot_exterior_isolation                                                                       | 2/2                                                                        | 4.7 min        |
+| world_v1_interactions                                                                          | 3/3                                                                        | 8.2 min        |
+| concourse_interaction_lifecycle                                                                | 3/3                                                                        | 9.9 min        |
+| presentation_integration                                                                       | 11/11                                                                      | 1.4 min        |
+| m02_overlay_proof                                                                              | 2/2                                                                        | 1.6 min        |
+| pilot_lab                                                                                      | 3/3 (test 1 flaky once)                                                    | 15.6 min       |
+| pilot_deck                                                                                     | 1/1                                                                        | 5.2 min        |
+| world_v1_camera / world_v1_story                                                               | 3/3 · 3/3                                                                  | 1.5 · 4.2 min  |
+| v4_event_projection (world-v3 vs world-v1-before)                                              | route complete; compare fails on the five `3a4ff96` deltas only            | 2 × ~14 min    |
+| pilot_closure_capture                                                                          | 1/1                                                                        | 11.9 min       |
+| world_v3_route_capture 1280×720 (+ recording)                                                  | 1/1                                                                        | 13.6 min       |
+| world_v3_route_capture 1920×1080 · look specs 1080                                             | 0/1 · 1/5 (lab) — driver precision at 3×                                   | —              |
+| v4_core_dev_capture                                                                            | 0/1 (ARM refused under inspection)                                         | 4 min          |
+| pilot_return test 1                                                                            | 0/1 (Press B drag, `:238`)                                                 | 3 × ~25 min    |
+| not run: pilot_return 2–3, pilot_records, pilot_signal_incident, persistence and export suites | —                                                                          | browser budget |
+
+### Decisions for the research owner
+
+1. **Automation burden envelope** (`pilot_yard.spec.ts:524`, 300 s): the
+   two-plate yard under the V4 canvas measures 338 s item-owned active in
+   automation (V2: 236–240 s, when the automation's wall time was 285 s
+   against 554 s now). Re-baseline the automation proxy, or accept the
+   spatial burden — neither was done here.
+2. **Projection reference**: promote `world-v3.json` (= `world-v1-before`
+   - the `3a4ff96` fixes) to the post-fix reference, or keep comparing
+     against the pre-fix baseline with the five documented deltas.
+3. Unchanged: asset-set version / stimulus freeze; P1–P20.
+
+### Remaining (product / tooling, not scientific)
+
+- `pilot_return` test 1: the M03 Press B pointer drag stored nothing
+  (`objects_restored` 0) — unresolved; needs a baseline run at `aaa73fd`.
+- Developer inspection launch: the Core review opens but ARM is refused
+  (keyboard and pointer) — developer-only path.
+- Full native 1920×1080 capture set and the pointer-ARM path at 1280×720:
+  unverified (see above).

@@ -1,0 +1,22 @@
+[
+  {
+    "field": "event_type_sequence",
+    "detail": "length 154 → 155"
+  },
+  {
+    "field": "event_type_sequence[4]",
+    "detail": "\"pilot_opening_skipped\" → \"pilot_zone_entered\""
+  },
+  {
+    "field": "event_counts.pilot_zone_entered",
+    "detail": "11 → 12"
+  },
+  {
+    "field": "payload_keys.pilot_npc_beat",
+    "detail": "length 19 → 22"
+  },
+  {
+    "field": "payload_keys.pilot_npc_beat[8]",
+    "detail": "\"metadata.stage\" → \"metadata.focus_default_position\""
+  }
+]
