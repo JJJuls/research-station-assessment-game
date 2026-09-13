@@ -13,10 +13,11 @@ import { mkdirSync } from 'node:fs';
 
 import { expect, type Page, test } from '@playwright/test';
 
+import { enterCoreChamber, raiseAllFeeds } from './closureHelpers';
 import { press, selectPromptOption } from './helpers';
 import { captureErrors, expectNoRuntimeErrors } from './journey';
-import { coreApproach, openPromptAt, PILOT } from './pilotHelpers';
-import { clickElement } from './returnHelpers';
+import { coreApproach, openPromptAt, PILOT, waitScene } from './pilotHelpers';
+import { clickElement, keyActivate } from './returnHelpers';
 
 const OUT =
   process.env.V4_OUT ?? 'docs/verification/professional-visual-v4/current';
@@ -70,9 +71,20 @@ test('v4 core chamber state frames (developer inspection launch)', async ({
 
   const errors = captureErrors(page);
 
+  // Closure refactor (`a1490fc`): the developer inspection no longer
+  // pre-prepares the Core — under `dev_closure=inspect` the deck derives
+  // `ready_for_feeds` until the three feeds are raised (closureSession
+  // currentUtilityState), and the chamber's review command refuses while
+  // access is sealed. Boot the DECK under inspection, raise the feeds on
+  // real input, then enter the chamber (the V4 spec booted the chamber
+  // directly and expected the review to open).
   await page.goto(
-    `/?participant_id=PT_PILOT_v4core&game_session_id=GS_PILOT_v4core_${Date.now()}&scene=core_chamber&dev_closure=inspect`,
+    `/?participant_id=PT_PILOT_v4core&game_session_id=GS_PILOT_v4core_${Date.now()}&scene=utility_core_deck&dev_closure=inspect`,
   );
+  await waitScene(page, 'utility_core_deck', 60_000);
+  await page.waitForTimeout(1200);
+  await raiseAllFeeds(page, 'keyboard');
+  await enterCoreChamber(page);
   await page.waitForFunction(
     () =>
       (window as unknown as { __coreChamberProbe?: unknown })
@@ -106,7 +118,12 @@ test('v4 core chamber state frames (developer inspection launch)', async ({
   await shot(page, 'c3-review-arm-available');
 
   // c4 — ARM (a separate control) then the armed review with CONFIRM.
-  await clickElement(page, 'arm_sync');
+  // V3: the pointer click on ARM under the inspection launch at the
+  // 1280×720 viewport did not arm within 10 s in three runs (the pointer
+  // path for ARM is covered on the participant route by pilot_closure);
+  // this developer capture arms by keyboard focus + ENTER, as the
+  // participant-path captures do, and keeps the pointer for CONFIRM.
+  await keyActivate(page, 'arm_sync');
   await page.waitForFunction(
     () =>
       (

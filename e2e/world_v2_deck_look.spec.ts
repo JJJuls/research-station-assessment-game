@@ -16,7 +16,17 @@ import { DECK_REGISTRY } from '../src/world/interactionRegistry';
 import { press } from './helpers';
 import { bootPilotScene, deckVia, PILOT, useDoor } from './pilotHelpers';
 
-const OUT = 'docs/verification/professional-world-rebuild-v3/deck-look';
+// V3 final evidence: WV3_VIEWPORT (WxH) / WV3_OUT re-run the same real-input
+// tour at the native 1920×1080 canvas into its own directory.
+const VIEWPORT = (() => {
+  const raw = process.env.WV3_VIEWPORT ?? '1280x720';
+  const [w, h] = raw.split('x').map((value) => Number(value));
+
+  return { width: w || 1280, height: h || 720 };
+})();
+const OUT =
+  process.env.WV3_OUT ??
+  'docs/verification/professional-world-rebuild-v3/deck-look';
 
 async function shot(page: Page, name: string) {
   await page.waitForTimeout(350);
@@ -47,7 +57,7 @@ test('deck first look — every audited approach shows its own prompt; the west 
 }) => {
   test.setTimeout(600_000);
   mkdirSync(OUT, { recursive: true });
-  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.setViewportSize(VIEWPORT);
 
   await bootPilotScene(page, 'wv2deck', 'utility_core_deck');
   await shot(page, '01-spawn-concourse-side');

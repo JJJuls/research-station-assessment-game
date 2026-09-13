@@ -29,7 +29,9 @@ import {
 } from './journey';
 import {
   bootPilot,
+  concourseToDeck,
   concourseToWorkshop,
+  concourseVia,
   dockToConcourse,
   hold,
   labApproach,
@@ -501,29 +503,40 @@ test.describe('station concourse interaction lifecycle', () => {
       approachOffset: { x: -44, y: -22 },
       yFirst: true,
     });
-    await useDoor(page, PILOT.concourse.westDoor, 'records_workshop', {
-      approachOffset: { x: 20, y: 0 },
-      yFirst: true,
-    });
+    // World V2 rescue Concourse (22×12): every Concourse leg travels through
+    // the spine-aware driver (south lane / east strip) exactly as the green
+    // sibling helpers do — the raw L-walks below were written for the
+    // pre-rescue 60×38 hall and clamp on the operations desk.
+    await concourseToWorkshop(page);
     await workshopVia(page, 1288, 268);
     await useDoor(page, PILOT.workshop.eastDoor, 'station_concourse', {
       approachOffset: { x: -44, y: -22 },
       yFirst: true,
     });
+    await concourseVia(
+      page,
+      PILOT.concourse.northDoor.x,
+      PILOT.concourse.northDoor.y + 56,
+    );
     await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
       approachOffset: { x: 0, y: 20 },
+      yFirst: false,
     });
     await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
       approachOffset: await labApproach(page, PILOT.lab.southDoor),
     });
-    await useDoor(page, PILOT.concourse.eastDoor, 'utility_core_deck', {
-      approachOffset: { x: -20, y: 0 },
-    });
+    await concourseToDeck(page);
     await useDoor(page, PILOT.deck.westDoor, 'station_concourse', {
-      approachOffset: { x: 20, y: 0 },
+      approachOffset: { x: 40, y: 0 },
+      yFirst: true,
     });
+    await concourseVia(
+      page,
+      PILOT.concourse.southDoor.x,
+      PILOT.concourse.southDoor.y - 40,
+    );
     await useDoor(page, PILOT.concourse.southDoor, 'dock', {
-      approachOffset: { x: 0, y: -20 },
+      approachOffset: { x: 0, y: -40 },
     });
 
     expect((await playerAt(page)).scene).toBe('dock');

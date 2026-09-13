@@ -716,8 +716,35 @@ export async function labVia(page: Page, x: number, y: number) {
     const from = side(here.x) === 1 ? 512 : 352;
     const to = side(x) === 1 ? 512 : 352;
 
-    await driveAxisTo(page, 'x', from, 8);
-    await driveAxisTo(page, 'y', 156, 8);
+    // The east window is exactly one body wide (x 496–528 for the body's
+    // centre: island east face 480 below, lane end column 544 above), so
+    // a ±8 landing can settle on its very edge after the key-up drift and
+    // the climb clamps on the island / desk legs (observed in-engine:
+    // (496,178) after Kai's beat). Land at ±4, VERIFY the lane was
+    // reached, and re-centre + climb again if not — up to three tries.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await driveAxisTo(page, 'x', from, 4);
+      await driveAxisTo(page, 'y', 156, 8);
+
+      const now = await page.evaluate(
+        () =>
+          (
+            window as unknown as {
+              __playerProbe?: { x: number; y: number } | null;
+            }
+          ).__playerProbe ?? null,
+      );
+
+      if (now === null || now.y <= 168) {
+        break;
+      }
+
+      // eslint-disable-next-line no-console
+      console.log(
+        `[driver] labVia climb stalled at ${Math.round(now.x)},${Math.round(now.y)} toward the lane (attempt ${attempt + 1})`,
+      );
+    }
+
     await driveAxisTo(page, 'x', to, 8);
   }
 
@@ -829,15 +856,77 @@ export async function coreApproach(
  */
 export async function yardVia(page: Page, x: number, y: number) {
   const half = (px: number) => (px < 600 ? 0 : px > 800 ? 2 : 1);
+  // The gantry's west leg (yard book: col 34.2, rows 1–5 → x 1094–1120,
+  // y < 192) stands on the east half's floor. A leg that crosses its column
+  // must travel with the body's top edge below row 5 (probe y ≥ 210): a
+  // plain y-first walk lands inside its ±12 px box and can settle at y 204,
+  // where the eastward leg clamps on the leg (observed in-engine at
+  // (1072,204)). Take the y ≈ 220 lane (±8 → body top ≥ 194) first, as
+  // the half change already does through the drift pass.
+  const GANTRY_WEST_LEG_X = 1094;
   const here = await page.evaluate(
     () =>
       (window as unknown as { __playerProbe?: { x: number; y: number } | null })
         .__playerProbe ?? null,
   );
+  const crossesGantryLeg =
+    here !== null && here.x < GANTRY_WEST_LEG_X !== x < GANTRY_WEST_LEG_X;
+  const region = (px: number) => `${half(px)}:${px < GANTRY_WEST_LEG_X}`;
+  // The line-status panel between the uplink posts (yard book: cols
+  // 8.3–9.9, rows 2.2–3.4 → rasterised to cols 8–9, rows 2–3, i.e. x
+  // 256–320 down to y 128). A leg between the posts along their approach
+  // row (y ≈ 130–136, body top ≈ 112–118) clamps on it (observed
+  // in-engine: (240,134) on the way to Post B, where the nearest-wins
+  // rule then offered the panel instead of the post). Travel the row-5
+  // lane (y 160: body 142–184, clear of the panel and the mast footing)
+  // before the eastward/westward leg.
+  const crossesLinePanel =
+    here !== null &&
+    half(here.x) === 0 &&
+    half(x) === 0 &&
+    (here.y < 150 || y < 150) &&
+    Math.min(here.x, x) < 320 &&
+    Math.max(here.x, x) > 256;
 
-  if (here !== null && half(here.x) !== half(x)) {
-    await driveAxisTo(page, 'y', 220, 8);
+  if (crossesLinePanel) {
+    await driveAxisTo(page, 'y', 160, 6);
     await driveAxisTo(page, 'x', x, 8);
+  }
+
+  if (here !== null && (half(here.x) !== half(x) || crossesGantryLeg)) {
+    // The pass band is rows 6–7 (y 192–256) for a 42 px body whose top
+    // edge sits 18 px above the probe: probe y ∈ [210, 232]. The first
+    // attempt takes the lane at ±8; if the crossing leg still stalls short
+    // of the target region (observed once in-engine: clamped at the east
+    // half's west edge, x 816), re-centre on the band at ±4 and drive the
+    // leg again. Driver only — production geometry is never adjusted.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await driveAxisTo(
+        page,
+        'y',
+        attempt === 0 ? 220 : 224,
+        attempt === 0 ? 8 : 4,
+      );
+      await driveAxisTo(page, 'x', x, 8);
+
+      const now = await page.evaluate(
+        () =>
+          (
+            window as unknown as {
+              __playerProbe?: { x: number; y: number } | null;
+            }
+          ).__playerProbe ?? null,
+      );
+
+      if (now === null || region(now.x) === region(x)) {
+        break;
+      }
+
+      // eslint-disable-next-line no-console
+      console.log(
+        `[driver] yardVia crossing stalled at ${Math.round(now.x)},${Math.round(now.y)} toward ${x},${y} (attempt ${attempt + 1})`,
+      );
+    }
   }
 
   await walkTo(page, x, y, { yFirst: true });
@@ -910,6 +999,11 @@ export async function concourseToWorkshop(page: Page) {
     PILOT.concourse.westDoor.x + 56,
     PILOT.concourse.westDoor.y,
   );
+  // The west-door pocket admits the body along rows 5–6 only (probe y
+  // 178–200). The lane leg lands at 190 ±8 and the key-up drift can carry
+  // it past 200 (observed in-engine: clamped at (176,203) outside the
+  // pocket); re-centre on the band at ±4 before the door leg.
+  await driveAxisTo(page, 'y', 190, 4);
   await useDoor(page, PILOT.concourse.westDoor, 'records_workshop', {
     approachOffset: { x: 40, y: 0 },
     yFirst: true,

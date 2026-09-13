@@ -147,8 +147,22 @@ test.describe('pilot route v2 — topology and guidance (Unit 1)', () => {
       ),
     ).toBeNull();
     expect(probe?.beacon?.kind).toBe('npc');
-    expect(probe?.beacon?.visible).toBe(true);
+    // World V2 rescue geometry (`5d05115`): the Dock-side Concourse spawn
+    // (352,224) stands 89 px from Vale (440,208) — inside the beacon's
+    // 120 px arrival range (PilotZoneScene BEACON_ARRIVAL_RANGE), so the
+    // beacon is already hidden on arrival. The pre-rescue assertion
+    // (visible at the spawn) encoded the old 60×38 distances. Assert the
+    // rule itself: hidden inside the range, shown once the participant is
+    // beyond it (west across the hall, ≈ 208 px from Vale), hidden again on
+    // the return.
+    expect(probe?.beacon?.visible).toBe(false);
     expect(probe?.mission_log).toEqual([]);
+    await walkTo(page, 232, 224, { yFirst: false });
+    probe = await pilotProbe(page);
+    expect(probe?.beacon?.kind).toBe('npc');
+    expect(probe?.beacon?.visible).toBe(true);
+    await walkTo(page, 352, 224, { yFirst: false }); // back to the spawn
+    expect((await pilotProbe(page))?.beacon?.visible).toBe(false);
 
     // Concourse ↔ Dock (bidirectional).
     await useDoor(page, PILOT.concourse.southDoor, 'dock', {

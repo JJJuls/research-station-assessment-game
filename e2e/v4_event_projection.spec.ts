@@ -37,7 +37,7 @@ import {
 } from './closureHelpers';
 import { hold, press } from './helpers';
 import { captureErrors, expectNoRuntimeErrors } from './journey';
-import { PILOT, pilotProbe, walkTo } from './pilotHelpers';
+import { pilotProbe } from './pilotHelpers';
 import { clickElement, keyActivate } from './returnHelpers';
 import {
   buildScientificProjection,
@@ -168,11 +168,10 @@ test('v4 scientific projection — complete participant route', async ({
   await press(page, 'Enter');
   await waitFeedPanel(page, false);
 
-  await walkTo(page, PILOT.deck.coreDoor.x, PILOT.deck.coreDoor.y + 60, {
-    yFirst: false,
-  });
+  // World V2 deck / chamber: the door and Core approaches are driven by
+  // the audited helpers themselves (deckVia / coreVia); the former raw
+  // walks stood on the old 25×19 rooms.
   await enterCoreChamber(page);
-  await walkTo(page, 400, 380, { yFirst: true });
   await openSyncReview(page);
   await keyActivate(page, 'arm_sync');
   await waitCoreState(page, 'confirmation_armed');

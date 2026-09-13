@@ -904,21 +904,57 @@ export async function transmitAt(page: Page, post: 'uplinkA' | 'uplinkB') {
   const before = await transmissionsCount(page);
 
   await openSite(page, post);
+
+  const labels = await lastPromptBody(page);
+
   await selectPromptOption(page, 1);
-  await page.waitForFunction(
-    (expected) =>
-      ((
-        window as unknown as {
-          researchRuntime?: { getEvents: () => { event_type: string }[] };
-        }
-      ).researchRuntime
-        ?.getEvents()
-        .filter(
-          (event) => event.event_type === 'proto_m26_channel_transmission',
-        ).length ?? 0) > expected,
-    before,
-    { timeout: 10_000 },
-  );
+
+  try {
+    await page.waitForFunction(
+      (expected) =>
+        ((
+          window as unknown as {
+            researchRuntime?: { getEvents: () => { event_type: string }[] };
+          }
+        ).researchRuntime
+          ?.getEvents()
+          .filter(
+            (event) => event.event_type === 'proto_m26_channel_transmission',
+          ).length ?? 0) > expected,
+      before,
+      { timeout: 10_000 },
+    );
+  } catch (error) {
+    // Diagnostic detail (V3): what the post offered, what the world was
+    // doing and what the channel model holds at the moment the
+    // transmission failed to log — a swallowed option press, a busy world
+    // action and a closed window all read differently.
+    const diag = await page.evaluate(() => {
+      const w = window as unknown as {
+        __playerProbe?: { x: number; y: number } | null;
+        __lastRoomFeedbackText?: string | null;
+        __lastPromptBody?: string | null;
+        __fieldActionsProbe?: { worldActionActive: boolean } | null;
+        __exteriorProbe?: { m26: unknown } | null;
+        __worldPromptProbe?: { prompt: boolean; text?: string | null } | null;
+      };
+
+      return JSON.stringify({
+        player: w.__playerProbe ?? null,
+        feedback: w.__lastRoomFeedbackText ?? null,
+        promptBodyNow: w.__lastPromptBody ?? null,
+        worldPrompt: w.__worldPromptProbe ?? null,
+        action: w.__fieldActionsProbe?.worldActionActive ?? null,
+        m26: w.__exteriorProbe?.m26 ?? null,
+      });
+    });
+
+    throw new Error(
+      `${(error as Error).message} — transmitAt ${post} (prompt body at open: ${JSON.stringify(labels)}) ${diag}`,
+      { cause: error },
+    );
+  }
+
   await waitNoWorldAction(page);
 }
 

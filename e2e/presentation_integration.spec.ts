@@ -16,7 +16,7 @@ import { expect, type Page, test } from '@playwright/test';
 import { UNIT7_STILL_URLS, UNIT7_STRIP_URLS } from '../src/constants/assets';
 import { press } from './helpers';
 import { captureErrors, expectNoRuntimeErrors } from './journey';
-import { bootPilotScene, walkTo } from './pilotHelpers';
+import { bootPilotScene, deckVia } from './pilotHelpers';
 
 const STILL_DIMENSIONS: Record<string, [number, number]> = {
   'plv1-bot-standby': [96, 96],
@@ -246,8 +246,10 @@ test.describe('Unit 7 overlay lifecycle and display settings', () => {
 
     await bootPilotScene(page, 'u7_prompt', 'utility_core_deck');
 
-    // Coolant Feed Valve approach (room doc 13): the prompt appears in range.
-    await walkTo(page, 160, 340);
+    // Coolant Feed Valve approach: the prompt appears in range. World V2
+    // deck (22×12 plate): the audited approach point is (256,224), reached
+    // along the rows 5–6 band (the former (160,340) lies below the plate).
+    await deckVia(page, 256, 224);
     await page.waitForFunction(
       () =>
         (window as unknown as { __worldPromptProbe?: { prompt: boolean } })

@@ -17,6 +17,7 @@ import { expect, type Page, test } from '@playwright/test';
 import {
   attemptCoreDoorSealed,
   closeStationRecord,
+  DECK_APPROACH,
   enterCoreChamber,
   feedPanel,
   openFeedPanel,
@@ -28,7 +29,7 @@ import {
 } from './closureHelpers';
 import { hold, press } from './helpers';
 import { captureErrors, expectNoRuntimeErrors } from './journey';
-import { PILOT, walkTo } from './pilotHelpers';
+import { coreVia, deckVia, PILOT } from './pilotHelpers';
 import { clickElement, keyActivate } from './returnHelpers';
 
 // V4: an explicit output directory keeps the historical v2 evidence
@@ -66,8 +67,9 @@ test('utility & core closure — participant-path frames 35–47', async ({
     mast: 'partial',
   });
 
-  // 35 — Utility Deck arrival.
-  await walkTo(page, 300, 272, { yFirst: false });
+  // 35 — Utility Deck arrival. (World V2 deck: the rows 5–6 band is the
+  // open hall; the former literals stood on the old 25×19 deck.)
+  await deckVia(page, 300, 176);
   await shot(page, '35-utility-arrival');
 
   // 36 — early Core attempt: sealed, concise operational reason.
@@ -127,18 +129,22 @@ test('utility & core closure — participant-path frames 35–47', async ({
   await waitFeedPanel(page, false);
 
   // 40 — all three feeds ready: manifold and door lamp live.
-  await walkTo(page, 500, 220, { yFirst: false });
+  await deckVia(page, 500, 220);
   await shot(page, '40-all-feeds-ready');
 
-  // 41 — Core Chamber accessible (the open door, lamp lit).
-  await walkTo(page, PILOT.deck.coreDoor.x, PILOT.deck.coreDoor.y + 60, {
-    yFirst: false,
-  });
+  // 41 — Core Chamber accessible (the open door, lamp lit): the audited
+  // blast-door approach point.
+  await deckVia(
+    page,
+    PILOT.deck.coreDoor.x + DECK_APPROACH.coreDoor.x,
+    PILOT.deck.coreDoor.y + DECK_APPROACH.coreDoor.y,
+  );
   await shot(page, '41-core-chamber-accessible');
 
-  // 42 — the Core, inactive/prepared, on arrival.
+  // 42 — the Core, inactive/prepared, on arrival (south corridor centre,
+  // the reactor in full view; the chamber is a 22×12 plate).
   await enterCoreChamber(page);
-  await walkTo(page, 400, 380, { yFirst: true });
+  await coreVia(page, 344, 288);
   await shot(page, '42-core-inactive');
 
   // 43 — the compact operational review.
@@ -162,7 +168,7 @@ test('utility & core closure — participant-path frames 35–47', async ({
   await shot(page, '47-neutral-completion');
   await keyActivate(page, 'close_notice');
   await waitCompletionNotice(page, false);
-  await walkTo(page, 400, 380, { yFirst: true });
+  await coreVia(page, 344, 288);
   await shot(page, '46-stable-core');
   expectNoRuntimeErrors(errors);
 });

@@ -77,6 +77,7 @@ import {
   pilotProbe,
   useDoor,
   walkTo,
+  yardVia,
 } from './pilotHelpers';
 
 test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
@@ -772,8 +773,12 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect((await exteriorProbe(page)).dug_cells).toHaveLength(1);
 
     // Belt still full → the cache stays; return the spares → collect it.
-    await walkTo(page, cell.x, 340, { yFirst: true }); // row 10 lane clears the stake body
-    await walkTo(page, cell.x, cell.y - 28, { yFirst: true });
+    // World V2 yard: the re-entry spawn is on the west half; the cache cell
+    // lies on the east half's staked field (rows 3–8). The pass-aware
+    // driver crosses the drift pass and stands one cell north of the cache
+    // (inside the 56 px collection reach). The former "row 10 lane" was
+    // the 25×19 yard's — rows 9–11 of the strip are the hull band.
+    await yardVia(page, cell.x, cell.y - 28);
     await press(page, 'Space');
     await page.waitForTimeout(400);
     expect(await lastFeedback(page)).toContain('Belt still full');
@@ -783,8 +788,7 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     await selectPromptOption(page, 3);
     await page.waitForTimeout(300);
     expect(await lastFeedback(page)).toContain('returned');
-    await walkTo(page, cell.x, 340, { yFirst: true }); // row 10 lane clears the stake body
-    await walkTo(page, cell.x, cell.y - 28, { yFirst: true });
+    await yardVia(page, cell.x, cell.y - 28);
     await press(page, 'Space');
     await page.waitForFunction(
       () =>
@@ -808,8 +812,9 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
       (await eventsByType(page, 'proto_m23_field_recovery_recovered')).length,
     ).toBe(1);
 
-    // Overlays: I freezes the world and resumes it; M likewise.
-    await walkTo(page, 400, 252, { yFirst: true });
+    // Overlays: I freezes the world and resumes it; M likewise. (Back to
+    // the west half through the drift pass — pass-aware driver.)
+    await yardVia(page, 400, 252);
 
     const before = await page.evaluate(
       () =>

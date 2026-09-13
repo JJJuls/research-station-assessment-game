@@ -520,17 +520,45 @@ export async function enterConcourseWithOffers(
   }
 
   if (options.readGauge1) {
-    // The gauge's operating face is its south side (registry approach
-    // 64 px south); the reception district floor leads there.
-    await walkTo(page, RETURN.concourse.gauge.x, RETURN.concourse.loopY, {
-      yFirst: false,
-    });
+    // South-lane discipline FIRST (rescue Concourse): Vale's approach lands
+    // anywhere in 236–260; an eastward leg started at y ≤ 241 clips the
+    // operations-desk row (row 6, y < 224) with the body's top edge and
+    // clamps at x 464 — the gauge is never reached and the M09 check-1
+    // read is silently missed (observed in 3 of 5 runs). Reach the lane
+    // (y 252) at ±4 before travelling east — a y-first walk's ±12 box
+    // accepts 241.5 and never moves (observed once more with yFirst alone).
+    await driveAxisTo(page, 'y', RETURN.concourse.loopY, 4);
+    await driveAxisTo(page, 'x', RETURN.concourse.gauge.x, 8);
     await interactAt(page, RETURN.concourse.gauge, {
       // The gauge hangs on the south hull; its operating face is north.
       approachOffset: { x: 0, y: -56 },
       yFirst: true,
     });
     await page.waitForTimeout(400);
+
+    // Diagnostic (V3): the check-1 read is the one M09 act on the outbound
+    // leg — record what the interaction actually produced so a missed
+    // press, a wrong nearest object or a model refusal read differently.
+    const gaugeDiag = await page.evaluate(() => {
+      const w = window as unknown as {
+        __playerProbe?: { x: number; y: number } | null;
+        __lastRoomFeedbackText?: string | null;
+        __worldPromptProbe?: { prompt: boolean; text?: string | null } | null;
+        researchRuntime?: { getEvents: () => { event_type: string }[] };
+      };
+
+      return JSON.stringify({
+        player: w.__playerProbe ?? null,
+        feedback: w.__lastRoomFeedbackText ?? null,
+        prompt: w.__worldPromptProbe ?? null,
+        m09: (w.researchRuntime?.getEvents() ?? [])
+          .map((event) => event.event_type)
+          .filter((type) => type.startsWith('proto_m09_')),
+      });
+    });
+
+    // eslint-disable-next-line no-console
+    console.log(`[driver] gauge check 1: ${gaugeDiag}`);
   }
 
   await walkTo(page, PILOT.concourse.vale.x, RETURN.concourse.loopY, {

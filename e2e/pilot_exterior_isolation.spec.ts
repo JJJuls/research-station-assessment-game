@@ -45,7 +45,7 @@ import {
   bootPilotScene,
   pilotCoverage,
   pilotProbe,
-  walkTo,
+  yardVia,
 } from './pilotHelpers';
 
 test.describe('exterior recovery — isolation (Unit 4)', () => {
@@ -61,8 +61,10 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
     const form = (await exteriorProbe(page)).m23_form;
     const spots = YARD.scanSpots[form];
     // ——— General C/D outside any window: secondary only. ———
-    await walkTo(page, 400, 250, { yFirst: true });
-    await scanAt(page, { x: 400, y: 380 });
+    // World V2 strip: open apron floor on the west half, > 500 px from
+    // either target cell (the former (400,380) lies in the strip's hull
+    // band — a 25×19-yard coordinate).
+    await scanAt(page, { x: 400, y: 250 });
     expect((await faProbe(page)).scan.last?.category).toBe('none');
     await press(page, 'd');
     await page.waitForTimeout(500);
@@ -83,9 +85,8 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
     ).toBe(1);
 
     // Inside the staked field before the window: refused, never a fake reading.
-    await walkTo(page, spots.actionable.x, spots.actionable.y, {
-      yFirst: true,
-    });
+    // (East half — through the drift pass with the pass-aware driver.)
+    await yardVia(page, spots.actionable.x, spots.actionable.y);
     await press(page, 'c');
     await page.waitForTimeout(600);
     expect(await lastFeedback(page)).toContain('stake panel');
