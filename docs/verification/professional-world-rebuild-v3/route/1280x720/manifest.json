@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-13T14:48:03.564Z",
-  "commit": "fc3e5da477c2ca449e6af46f788e30e2fc8d7b97",
+  "generated_at": "2026-09-14T16:28:03.600Z",
+  "commit": "dba9a3794cd498ca0d3b33895fd5d298c8d294e0",
   "viewport": {
     "width": 1280,
     "height": 720
@@ -11,14 +11,14 @@
   },
   "recording": {
     "file": "route-1280x720.webm",
-    "bytes": 24641958,
+    "bytes": 20164511,
     "audio": true,
     "mime": "video/webm;codecs=vp8,opus",
     "width": 1280,
     "height": 720,
     "fps": 10
   },
-  "wall_ms": 811088,
+  "wall_ms": 669980,
   "final_stage": "complete",
   "event_count": 155,
   "zone_sequence": [
@@ -38,8 +38,8 @@
       "index": 1,
       "name": "opening-establishing",
       "file": "01-opening-establishing.png",
-      "bytes": 61198,
-      "t_ms": 4862,
+      "bytes": 61826,
+      "t_ms": 5129,
       "scene": null,
       "stage": null,
       "player": null,
@@ -49,8 +49,8 @@
       "index": 2,
       "name": "opening-berth",
       "file": "02-opening-berth.png",
-      "bytes": 46066,
-      "t_ms": 9790,
+      "bytes": 46062,
+      "t_ms": 10556,
       "scene": null,
       "stage": null,
       "player": null,
@@ -60,8 +60,8 @@
       "index": 3,
       "name": "dock-arrival-emergency-power",
       "file": "03-dock-arrival-emergency-power.png",
-      "bytes": 133897,
-      "t_ms": 18224,
+      "bytes": 124974,
+      "t_ms": 21328,
       "scene": "dock",
       "stage": null,
       "player": {
@@ -82,12 +82,12 @@
       "index": 4,
       "name": "dock-marker-reached",
       "file": "04-dock-marker-reached.png",
-      "bytes": 135517,
-      "t_ms": 21791,
+      "bytes": 135528,
+      "t_ms": 28032,
       "scene": "dock",
       "stage": null,
       "player": {
-        "x": 439,
+        "x": 459,
         "y": 204
       },
       "camera": {
@@ -104,12 +104,12 @@
       "index": 5,
       "name": "dock-after-check-in-powered",
       "file": "05-dock-after-check-in-powered.png",
-      "bytes": 151975,
-      "t_ms": 31315,
+      "bytes": 151905,
+      "t_ms": 38049,
       "scene": "dock",
       "stage": null,
       "player": {
-        "x": 267,
+        "x": 249,
         "y": 146
       },
       "camera": {
@@ -126,8 +126,8 @@
       "index": 6,
       "name": "concourse-entry",
       "file": "06-concourse-entry.png",
-      "bytes": 160266,
-      "t_ms": 64950,
+      "bytes": 159942,
+      "t_ms": 77444,
       "scene": "station_concourse",
       "stage": "handover_briefing",
       "player": {
@@ -148,13 +148,13 @@
       "index": 7,
       "name": "concourse-vale-briefing",
       "file": "07-concourse-vale-briefing.png",
-      "bytes": 163382,
-      "t_ms": 71639,
+      "bytes": 163359,
+      "t_ms": 83787,
       "scene": "station_concourse",
       "stage": "handover_briefing",
       "player": {
-        "x": 432,
-        "y": 247
+        "x": 445,
+        "y": 262
       },
       "camera": {
         "viewX": 64,
@@ -170,13 +170,13 @@
       "index": 8,
       "name": "concourse-watch-offer",
       "file": "08-concourse-watch-offer.png",
-      "bytes": 164900,
-      "t_ms": 74546,
+      "bytes": 165853,
+      "t_ms": 86317,
       "scene": "station_concourse",
       "stage": "incident_handover",
       "player": {
-        "x": 432,
-        "y": 247
+        "x": 445,
+        "y": 262
       },
       "camera": {
         "viewX": 64,
@@ -192,13 +192,13 @@
       "index": 9,
       "name": "concourse-gauge-read",
       "file": "09-concourse-gauge-read.png",
-      "bytes": 167308,
-      "t_ms": 136878,
+      "bytes": 167075,
+      "t_ms": 96663,
       "scene": "station_concourse",
       "stage": "incident_handover",
       "player": {
-        "x": 522,
-        "y": 242
+        "x": 518,
+        "y": 250
       },
       "camera": {
         "viewX": 64,
@@ -214,12 +214,12 @@
       "index": 10,
       "name": "concourse-handover-complete",
       "file": "10-concourse-handover-complete.png",
-      "bytes": 167686,
-      "t_ms": 145495,
+      "bytes": 167403,
+      "t_ms": 101892,
       "scene": "station_concourse",
       "stage": "workshop",
       "player": {
-        "x": 444,
+        "x": 451,
         "y": 264
       },
       "camera": {
@@ -237,7 +237,7 @@
       "name": "workshop-entry-east-door",
       "file": "11-workshop-entry-east-door.png",
       "bytes": 99116,
-      "t_ms": 221408,
+      "t_ms": 130328,
       "scene": "records_workshop",
       "stage": "workshop",
       "player": {
@@ -258,17 +258,17 @@
       "index": 12,
       "name": "workshop-work-order-board",
       "file": "12-workshop-work-order-board.png",
-      "bytes": 122343,
-      "t_ms": 228281,
+      "bytes": 122292,
+      "t_ms": 138186,
       "scene": "records_workshop",
       "stage": "workshop",
       "player": {
-        "x": 1317,
-        "y": 180
+        "x": 1320,
+        "y": 174
       },
       "camera": {
         "viewX": 736,
-        "viewY": 24,
+        "viewY": 5,
         "scale": 2,
         "bounds": {
           "width": 1376,
@@ -281,15 +281,15 @@
       "name": "workshop-calibration-bench-before",
       "file": "13-workshop-calibration-bench-before.png",
       "bytes": 57630,
-      "t_ms": 242460,
+      "t_ms": 153469,
       "scene": "records_workshop",
       "stage": "workshop_work",
       "player": {
-        "x": 839,
-        "y": 256
+        "x": 821,
+        "y": 253
       },
       "camera": {
-        "viewX": 573,
+        "viewX": 553,
         "viewY": 24,
         "scale": 2,
         "bounds": {
@@ -303,15 +303,15 @@
       "name": "workshop-calibration-bench-after-stage-1",
       "file": "14-workshop-calibration-bench-after-stage-1.png",
       "bytes": 60208,
-      "t_ms": 245349,
+      "t_ms": 156574,
       "scene": "records_workshop",
       "stage": "workshop_work",
       "player": {
-        "x": 839,
-        "y": 256
+        "x": 821,
+        "y": 253
       },
       "camera": {
-        "viewX": 573,
+        "viewX": 553,
         "viewY": 24,
         "scale": 2,
         "bounds": {
@@ -324,16 +324,16 @@
       "index": 15,
       "name": "workshop-mid-hall-camera-moved",
       "file": "15-workshop-mid-hall-camera-moved.png",
-      "bytes": 99625,
-      "t_ms": 247697,
+      "bytes": 98984,
+      "t_ms": 158921,
       "scene": "records_workshop",
       "stage": "workshop_work",
       "player": {
-        "x": 839,
-        "y": 256
+        "x": 821,
+        "y": 253
       },
       "camera": {
-        "viewX": 567,
+        "viewX": 549,
         "viewY": 24,
         "scale": 2,
         "bounds": {
@@ -346,17 +346,17 @@
       "index": 16,
       "name": "workshop-signed-off",
       "file": "16-workshop-signed-off.png",
-      "bytes": 101858,
-      "t_ms": 272383,
+      "bytes": 104902,
+      "t_ms": 174878,
       "scene": "records_workshop",
       "stage": "lab_briefing",
       "player": {
-        "x": 1323,
-        "y": 177
+        "x": 1305,
+        "y": 183
       },
       "camera": {
         "viewX": 736,
-        "viewY": 1,
+        "viewY": 24,
         "scale": 2,
         "bounds": {
           "width": 1376,
@@ -369,7 +369,7 @@
       "name": "laboratory-entry",
       "file": "17-laboratory-entry.png",
       "bytes": 130994,
-      "t_ms": 334428,
+      "t_ms": 233286,
       "scene": "diagnostics_laboratory",
       "stage": "lab_briefing",
       "player": {
@@ -390,17 +390,17 @@
       "index": 18,
       "name": "laboratory-kai-briefing",
       "file": "18-laboratory-kai-briefing.png",
-      "bytes": 141662,
-      "t_ms": 359744,
+      "bytes": 141463,
+      "t_ms": 263843,
       "scene": "diagnostics_laboratory",
       "stage": "lab_briefing",
       "player": {
         "x": 537,
-        "y": 207
+        "y": 219
       },
       "camera": {
         "viewX": 64,
-        "viewY": 24,
+        "viewY": 23,
         "scale": 2,
         "bounds": {
           "width": 704,
@@ -412,17 +412,17 @@
       "index": 19,
       "name": "laboratory-kai-exterior-briefing",
       "file": "19-laboratory-kai-exterior-briefing.png",
-      "bytes": 120413,
-      "t_ms": 363376,
+      "bytes": 120454,
+      "t_ms": 267113,
       "scene": "diagnostics_laboratory",
       "stage": "lab_work",
       "player": {
         "x": 537,
-        "y": 207
+        "y": 219
       },
       "camera": {
         "viewX": 64,
-        "viewY": 24,
+        "viewY": 23,
         "scale": 2,
         "bounds": {
           "width": 704,
@@ -434,17 +434,17 @@
       "index": 20,
       "name": "laboratory-airlock-guidance",
       "file": "20-laboratory-airlock-guidance.png",
-      "bytes": 120568,
-      "t_ms": 365856,
+      "bytes": 120328,
+      "t_ms": 269587,
       "scene": "diagnostics_laboratory",
       "stage": "exterior_briefing",
       "player": {
         "x": 537,
-        "y": 207
+        "y": 219
       },
       "camera": {
         "viewX": 64,
-        "viewY": 24,
+        "viewY": 23,
         "scale": 2,
         "bounds": {
           "width": 704,
@@ -456,8 +456,8 @@
       "index": 21,
       "name": "yard-airlock-arrival",
       "file": "21-yard-airlock-arrival.png",
-      "bytes": 138963,
-      "t_ms": 405967,
+      "bytes": 138967,
+      "t_ms": 316182,
       "scene": "exterior_recovery_yard",
       "stage": "exterior_briefing",
       "player": {
@@ -478,16 +478,16 @@
       "index": 22,
       "name": "yard-noor-briefing",
       "file": "22-yard-noor-briefing.png",
-      "bytes": 175703,
-      "t_ms": 410052,
+      "bytes": 175904,
+      "t_ms": 322768,
       "scene": "exterior_recovery_yard",
       "stage": "exterior_briefing",
       "player": {
-        "x": 292,
+        "x": 298,
         "y": 240
       },
       "camera": {
-        "viewX": 20,
+        "viewX": 1,
         "viewY": 24,
         "scale": 2,
         "bounds": {
@@ -500,16 +500,16 @@
       "index": 23,
       "name": "yard-mast-before",
       "file": "23-yard-mast-before.png",
-      "bytes": 139561,
-      "t_ms": 419409,
+      "bytes": 144339,
+      "t_ms": 329525,
       "scene": "exterior_recovery_yard",
       "stage": "exterior_work",
       "player": {
-        "x": 462,
-        "y": 225
+        "x": 447,
+        "y": 214
       },
       "camera": {
-        "viewX": 108,
+        "viewX": 79,
         "viewY": 24,
         "scale": 2,
         "bounds": {
@@ -522,16 +522,16 @@
       "index": 24,
       "name": "yard-mast-after-stage-1",
       "file": "24-yard-mast-after-stage-1.png",
-      "bytes": 145617,
-      "t_ms": 426131,
+      "bytes": 151173,
+      "t_ms": 336287,
       "scene": "exterior_recovery_yard",
       "stage": "exterior_work",
       "player": {
-        "x": 462,
-        "y": 225
+        "x": 447,
+        "y": 214
       },
       "camera": {
-        "viewX": 108,
+        "viewX": 79,
         "viewY": 24,
         "scale": 2,
         "bounds": {
@@ -544,16 +544,16 @@
       "index": 25,
       "name": "yard-drift-pass",
       "file": "25-yard-drift-pass.png",
-      "bytes": 128000,
-      "t_ms": 436197,
+      "bytes": 132000,
+      "t_ms": 344223,
       "scene": "exterior_recovery_yard",
       "stage": "exterior_work",
       "player": {
-        "x": 704,
-        "y": 225
+        "x": 698,
+        "y": 214
       },
       "camera": {
-        "viewX": 384,
+        "viewX": 341,
         "viewY": 24,
         "scale": 2,
         "bounds": {
@@ -566,16 +566,16 @@
       "index": 26,
       "name": "yard-recovery-field-camera-moved",
       "file": "26-yard-recovery-field-camera-moved.png",
-      "bytes": 121431,
-      "t_ms": 442369,
+      "bytes": 120922,
+      "t_ms": 351578,
       "scene": "exterior_recovery_yard",
       "stage": "exterior_work",
       "player": {
-        "x": 1007,
-        "y": 225
+        "x": 998,
+        "y": 214
       },
       "camera": {
-        "viewX": 639,
+        "viewX": 630,
         "viewY": 24,
         "scale": 2,
         "bounds": {
@@ -588,16 +588,16 @@
       "index": 27,
       "name": "yard-noor-shift-end",
       "file": "27-yard-noor-shift-end.png",
-      "bytes": 146948,
-      "t_ms": 456811,
+      "bytes": 148065,
+      "t_ms": 368694,
       "scene": "exterior_recovery_yard",
       "stage": "return_hub",
       "player": {
-        "x": 301,
-        "y": 244
+        "x": 298,
+        "y": 231
       },
       "camera": {
-        "viewX": 29,
+        "viewX": 26,
         "viewY": 24,
         "scale": 2,
         "bounds": {
@@ -610,8 +610,8 @@
       "index": 28,
       "name": "concourse-return-hub",
       "file": "28-concourse-return-hub.png",
-      "bytes": 155409,
-      "t_ms": 472263,
+      "bytes": 155776,
+      "t_ms": 390130,
       "scene": "station_concourse",
       "stage": "return_hub",
       "player": {
@@ -632,13 +632,13 @@
       "index": 29,
       "name": "concourse-vale-return-check-in",
       "file": "29-concourse-vale-return-check-in.png",
-      "bytes": 158722,
-      "t_ms": 482181,
+      "bytes": 159780,
+      "t_ms": 395854,
       "scene": "station_concourse",
       "stage": "return_hub",
       "player": {
-        "x": 446,
-        "y": 244
+        "x": 438,
+        "y": 248
       },
       "camera": {
         "viewX": 64,
@@ -654,17 +654,17 @@
       "index": 30,
       "name": "workshop-return-signed-off",
       "file": "30-workshop-return-signed-off.png",
-      "bytes": 106441,
-      "t_ms": 516908,
+      "bytes": 109135,
+      "t_ms": 420959,
       "scene": "records_workshop",
       "stage": "deck_closure",
       "player": {
-        "x": 1311,
-        "y": 169
+        "x": 1302,
+        "y": 168
       },
       "camera": {
         "viewX": 736,
-        "viewY": 0,
+        "viewY": 16,
         "scale": 2,
         "bounds": {
           "width": 1376,
@@ -676,8 +676,8 @@
       "index": 31,
       "name": "deck-arrival",
       "file": "31-deck-arrival.png",
-      "bytes": 103778,
-      "t_ms": 620004,
+      "bytes": 103748,
+      "t_ms": 480825,
       "scene": "utility_core_deck",
       "stage": "deck_closure",
       "player": {
@@ -698,17 +698,17 @@
       "index": 32,
       "name": "deck-record-closed",
       "file": "32-deck-record-closed.png",
-      "bytes": 107221,
-      "t_ms": 632286,
+      "bytes": 115363,
+      "t_ms": 490909,
       "scene": "utility_core_deck",
       "stage": "core_stabilise",
       "player": {
-        "x": 157,
-        "y": 172
+        "x": 151,
+        "y": 183
       },
       "camera": {
         "viewX": 0,
-        "viewY": 0,
+        "viewY": 8,
         "scale": 2,
         "bounds": {
           "width": 704,
@@ -721,16 +721,16 @@
       "name": "deck-coolant-valve-before",
       "file": "33-deck-coolant-valve-before.png",
       "bytes": 42596,
-      "t_ms": 655312,
+      "t_ms": 503875,
       "scene": "utility_core_deck",
       "stage": "core_stabilise",
       "player": {
-        "x": 262,
-        "y": 219
+        "x": 250,
+        "y": 220
       },
       "camera": {
         "viewX": 0,
-        "viewY": 22,
+        "viewY": 12,
         "scale": 2,
         "bounds": {
           "width": 704,
@@ -742,17 +742,17 @@
       "index": 34,
       "name": "deck-coolant-valve-after",
       "file": "34-deck-coolant-valve-after.png",
-      "bytes": 44751,
-      "t_ms": 661587,
+      "bytes": 44733,
+      "t_ms": 509818,
       "scene": "utility_core_deck",
       "stage": "core_stabilise",
       "player": {
-        "x": 262,
-        "y": 219
+        "x": 250,
+        "y": 220
       },
       "camera": {
         "viewX": 0,
-        "viewY": 22,
+        "viewY": 12,
         "scale": 2,
         "bounds": {
           "width": 704,
@@ -765,16 +765,16 @@
       "name": "deck-calibration-breaker-before",
       "file": "35-deck-calibration-breaker-before.png",
       "bytes": 45926,
-      "t_ms": 670764,
+      "t_ms": 517056,
       "scene": "utility_core_deck",
       "stage": "core_stabilise",
       "player": {
-        "x": 329,
-        "y": 193
+        "x": 326,
+        "y": 200
       },
       "camera": {
-        "viewX": 21,
-        "viewY": 0,
+        "viewX": 0,
+        "viewY": 10,
         "scale": 2,
         "bounds": {
           "width": 704,
@@ -787,16 +787,16 @@
       "name": "deck-calibration-breaker-after",
       "file": "36-deck-calibration-breaker-after.png",
       "bytes": 46187,
-      "t_ms": 678926,
+      "t_ms": 525029,
       "scene": "utility_core_deck",
       "stage": "core_stabilise",
       "player": {
-        "x": 329,
-        "y": 193
+        "x": 326,
+        "y": 200
       },
       "camera": {
-        "viewX": 21,
-        "viewY": 0,
+        "viewX": 0,
+        "viewY": 10,
         "scale": 2,
         "bounds": {
           "width": 704,
@@ -809,12 +809,12 @@
       "name": "deck-distribution-bus-before",
       "file": "37-deck-distribution-bus-before.png",
       "bytes": 36264,
-      "t_ms": 688887,
+      "t_ms": 549342,
       "scene": "utility_core_deck",
       "stage": "core_stabilise",
       "player": {
-        "x": 492,
-        "y": 172
+        "x": 484,
+        "y": 180
       },
       "camera": {
         "viewX": 64,
@@ -830,13 +830,13 @@
       "index": 38,
       "name": "deck-distribution-bus-after",
       "file": "38-deck-distribution-bus-after.png",
-      "bytes": 41487,
-      "t_ms": 696176,
+      "bytes": 41434,
+      "t_ms": 557479,
       "scene": "utility_core_deck",
       "stage": "core_stabilise",
       "player": {
-        "x": 492,
-        "y": 172
+        "x": 484,
+        "y": 180
       },
       "camera": {
         "viewX": 64,
@@ -852,12 +852,12 @@
       "index": 39,
       "name": "deck-all-feeds-ready",
       "file": "39-deck-all-feeds-ready.png",
-      "bytes": 107132,
-      "t_ms": 729435,
+      "bytes": 112296,
+      "t_ms": 596489,
       "scene": "utility_core_deck",
       "stage": "core_stabilise",
       "player": {
-        "x": 492,
+        "x": 507,
         "y": 200
       },
       "camera": {
@@ -874,13 +874,13 @@
       "index": 40,
       "name": "deck-core-door-open",
       "file": "40-deck-core-door-open.png",
-      "bytes": 107284,
-      "t_ms": 734313,
+      "bytes": 107247,
+      "t_ms": 605393,
       "scene": "utility_core_deck",
       "stage": "core_stabilise",
       "player": {
         "x": 408,
-        "y": 201
+        "y": 203
       },
       "camera": {
         "viewX": 64,
@@ -896,8 +896,8 @@
       "index": 41,
       "name": "core-inactive",
       "file": "41-core-inactive.png",
-      "bytes": 128289,
-      "t_ms": 767385,
+      "bytes": 129212,
+      "t_ms": 621663,
       "scene": "core_chamber",
       "stage": "core_sync",
       "player": {
@@ -905,7 +905,7 @@
         "y": 288
       },
       "camera": {
-        "viewX": 37,
+        "viewX": 15,
         "viewY": 24,
         "scale": 2,
         "bounds": {
@@ -919,12 +919,12 @@
       "name": "core-sync-review",
       "file": "42-core-sync-review.png",
       "bytes": 99578,
-      "t_ms": 777853,
+      "t_ms": 647945,
       "scene": "core_chamber",
       "stage": "core_sync",
       "player": {
-        "x": 224,
-        "y": 195
+        "x": 227,
+        "y": 198
       },
       "camera": {
         "viewX": 0,
@@ -941,12 +941,12 @@
       "name": "core-confirmation-armed",
       "file": "43-core-confirmation-armed.png",
       "bytes": 113028,
-      "t_ms": 781765,
+      "t_ms": 651130,
       "scene": "core_chamber",
       "stage": "core_sync",
       "player": {
-        "x": 224,
-        "y": 195
+        "x": 227,
+        "y": 198
       },
       "camera": {
         "viewX": 0,
@@ -962,13 +962,13 @@
       "index": 44,
       "name": "core-synchronising",
       "file": "44-core-synchronising.png",
-      "bytes": 121125,
-      "t_ms": 784478,
+      "bytes": 121175,
+      "t_ms": 653706,
       "scene": "core_chamber",
       "stage": "core_sync",
       "player": {
-        "x": 224,
-        "y": 195
+        "x": 227,
+        "y": 198
       },
       "camera": {
         "viewX": 0,
@@ -985,12 +985,12 @@
       "name": "core-completion-notice",
       "file": "45-core-completion-notice.png",
       "bytes": 70618,
-      "t_ms": 787394,
+      "t_ms": 656462,
       "scene": "core_chamber",
       "stage": "complete",
       "player": {
-        "x": 224,
-        "y": 195
+        "x": 227,
+        "y": 198
       },
       "camera": {
         "viewX": 0,
@@ -1006,12 +1006,12 @@
       "index": 46,
       "name": "core-stable",
       "file": "46-core-stable.png",
-      "bytes": 127452,
-      "t_ms": 809231,
+      "bytes": 127359,
+      "t_ms": 668000,
       "scene": "core_chamber",
       "stage": "complete",
       "player": {
-        "x": 320,
+        "x": 338,
         "y": 296
       },
       "camera": {
@@ -1110,7 +1110,7 @@
     {
       "scene": "records_workshop",
       "from": {
-        "file": "12-workshop-work-order-board.png",
+        "file": "11-workshop-entry-east-door.png",
         "camera": {
           "viewX": 736,
           "viewY": 24,
@@ -1122,9 +1122,36 @@
         }
       },
       "to": {
+        "file": "12-workshop-work-order-board.png",
+        "camera": {
+          "viewX": 736,
+          "viewY": 5,
+          "scale": 2,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "records_workshop",
+      "from": {
+        "file": "12-workshop-work-order-board.png",
+        "camera": {
+          "viewX": 736,
+          "viewY": 5,
+          "scale": 2,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      },
+      "to": {
         "file": "13-workshop-calibration-bench-before.png",
         "camera": {
-          "viewX": 573,
+          "viewX": 553,
           "viewY": 24,
           "scale": 2,
           "bounds": {
@@ -1139,7 +1166,7 @@
       "from": {
         "file": "14-workshop-calibration-bench-after-stage-1.png",
         "camera": {
-          "viewX": 573,
+          "viewX": 553,
           "viewY": 24,
           "scale": 2,
           "bounds": {
@@ -1151,7 +1178,7 @@
       "to": {
         "file": "15-workshop-mid-hall-camera-moved.png",
         "camera": {
-          "viewX": 567,
+          "viewX": 549,
           "viewY": 24,
           "scale": 2,
           "bounds": {
@@ -1166,7 +1193,7 @@
       "from": {
         "file": "15-workshop-mid-hall-camera-moved.png",
         "camera": {
-          "viewX": 567,
+          "viewX": 549,
           "viewY": 24,
           "scale": 2,
           "bounds": {
@@ -1179,7 +1206,7 @@
         "file": "16-workshop-signed-off.png",
         "camera": {
           "viewX": 736,
-          "viewY": 1,
+          "viewY": 24,
           "scale": 2,
           "bounds": {
             "width": 1376,
@@ -1206,7 +1233,7 @@
         "file": "18-laboratory-kai-briefing.png",
         "camera": {
           "viewX": 64,
-          "viewY": 24,
+          "viewY": 23,
           "scale": 2,
           "bounds": {
             "width": 704,
@@ -1232,7 +1259,7 @@
       "to": {
         "file": "22-yard-noor-briefing.png",
         "camera": {
-          "viewX": 20,
+          "viewX": 1,
           "viewY": 24,
           "scale": 2,
           "bounds": {
@@ -1247,7 +1274,7 @@
       "from": {
         "file": "22-yard-noor-briefing.png",
         "camera": {
-          "viewX": 20,
+          "viewX": 1,
           "viewY": 24,
           "scale": 2,
           "bounds": {
@@ -1259,7 +1286,7 @@
       "to": {
         "file": "23-yard-mast-before.png",
         "camera": {
-          "viewX": 108,
+          "viewX": 79,
           "viewY": 24,
           "scale": 2,
           "bounds": {
@@ -1274,7 +1301,7 @@
       "from": {
         "file": "24-yard-mast-after-stage-1.png",
         "camera": {
-          "viewX": 108,
+          "viewX": 79,
           "viewY": 24,
           "scale": 2,
           "bounds": {
@@ -1286,7 +1313,7 @@
       "to": {
         "file": "25-yard-drift-pass.png",
         "camera": {
-          "viewX": 384,
+          "viewX": 341,
           "viewY": 24,
           "scale": 2,
           "bounds": {
@@ -1301,7 +1328,7 @@
       "from": {
         "file": "25-yard-drift-pass.png",
         "camera": {
-          "viewX": 384,
+          "viewX": 341,
           "viewY": 24,
           "scale": 2,
           "bounds": {
@@ -1313,7 +1340,7 @@
       "to": {
         "file": "26-yard-recovery-field-camera-moved.png",
         "camera": {
-          "viewX": 639,
+          "viewX": 630,
           "viewY": 24,
           "scale": 2,
           "bounds": {
@@ -1328,7 +1355,7 @@
       "from": {
         "file": "26-yard-recovery-field-camera-moved.png",
         "camera": {
-          "viewX": 639,
+          "viewX": 630,
           "viewY": 24,
           "scale": 2,
           "bounds": {
@@ -1340,7 +1367,7 @@
       "to": {
         "file": "27-yard-noor-shift-end.png",
         "camera": {
-          "viewX": 29,
+          "viewX": 26,
           "viewY": 24,
           "scale": 2,
           "bounds": {
@@ -1380,7 +1407,7 @@
     {
       "scene": "utility_core_deck",
       "from": {
-        "file": "31-deck-arrival.png",
+        "file": "32-deck-record-closed.png",
         "camera": {
           "viewX": 0,
           "viewY": 8,
@@ -1392,37 +1419,10 @@
         }
       },
       "to": {
-        "file": "32-deck-record-closed.png",
-        "camera": {
-          "viewX": 0,
-          "viewY": 0,
-          "scale": 2,
-          "bounds": {
-            "width": 704,
-            "height": 384
-          }
-        }
-      }
-    },
-    {
-      "scene": "utility_core_deck",
-      "from": {
-        "file": "32-deck-record-closed.png",
-        "camera": {
-          "viewX": 0,
-          "viewY": 0,
-          "scale": 2,
-          "bounds": {
-            "width": 704,
-            "height": 384
-          }
-        }
-      },
-      "to": {
         "file": "33-deck-coolant-valve-before.png",
         "camera": {
           "viewX": 0,
-          "viewY": 22,
+          "viewY": 12,
           "scale": 2,
           "bounds": {
             "width": 704,
@@ -1437,7 +1437,7 @@
         "file": "34-deck-coolant-valve-after.png",
         "camera": {
           "viewX": 0,
-          "viewY": 22,
+          "viewY": 12,
           "scale": 2,
           "bounds": {
             "width": 704,
@@ -1448,8 +1448,8 @@
       "to": {
         "file": "35-deck-calibration-breaker-before.png",
         "camera": {
-          "viewX": 21,
-          "viewY": 0,
+          "viewX": 0,
+          "viewY": 10,
           "scale": 2,
           "bounds": {
             "width": 704,
@@ -1463,8 +1463,8 @@
       "from": {
         "file": "36-deck-calibration-breaker-after.png",
         "camera": {
-          "viewX": 21,
-          "viewY": 0,
+          "viewX": 0,
+          "viewY": 10,
           "scale": 2,
           "bounds": {
             "width": 704,
@@ -1490,7 +1490,7 @@
       "from": {
         "file": "41-core-inactive.png",
         "camera": {
-          "viewX": 37,
+          "viewX": 15,
           "viewY": 24,
           "scale": 2,
           "bounds": {

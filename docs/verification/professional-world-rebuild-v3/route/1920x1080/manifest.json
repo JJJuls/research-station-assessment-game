@@ -1,0 +1,1601 @@
+{
+  "generated_at": "2026-09-14T16:53:19.040Z",
+  "commit": "dba9a3794cd498ca0d3b33895fd5d298c8d294e0",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "canvas": {
+    "width": 1920,
+    "height": 1080
+  },
+  "recording": null,
+  "wall_ms": 1501535,
+  "final_stage": "complete",
+  "event_count": 153,
+  "zone_sequence": [
+    "records_workshop",
+    "station_concourse",
+    "diagnostics_laboratory",
+    "exterior_recovery_yard",
+    "diagnostics_laboratory",
+    "station_concourse",
+    "records_workshop",
+    "station_concourse",
+    "utility_core_deck",
+    "core_chamber"
+  ],
+  "frames": [
+    {
+      "index": 1,
+      "name": "opening-establishing",
+      "file": "01-opening-establishing.png",
+      "bytes": 84296,
+      "t_ms": 8701,
+      "scene": null,
+      "stage": null,
+      "player": null,
+      "camera": null
+    },
+    {
+      "index": 2,
+      "name": "opening-berth",
+      "file": "02-opening-berth.png",
+      "bytes": 61195,
+      "t_ms": 16129,
+      "scene": "dock",
+      "stage": null,
+      "player": {
+        "x": 328,
+        "y": 204
+      },
+      "camera": {
+        "viewX": 8,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 3,
+      "name": "dock-arrival-emergency-power",
+      "file": "03-dock-arrival-emergency-power.png",
+      "bytes": 169682,
+      "t_ms": 27304,
+      "scene": "dock",
+      "stage": null,
+      "player": {
+        "x": 328,
+        "y": 204
+      },
+      "camera": {
+        "viewX": 8,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 4,
+      "name": "dock-marker-reached",
+      "file": "04-dock-marker-reached.png",
+      "bytes": 170887,
+      "t_ms": 37636,
+      "scene": "dock",
+      "stage": null,
+      "player": {
+        "x": 474,
+        "y": 204
+      },
+      "camera": {
+        "viewX": 64,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 5,
+      "name": "dock-after-check-in-powered",
+      "file": "05-dock-after-check-in-powered.png",
+      "bytes": 186679,
+      "t_ms": 57361,
+      "scene": "dock",
+      "stage": null,
+      "player": {
+        "x": 240,
+        "y": 146
+      },
+      "camera": {
+        "viewX": 0,
+        "viewY": 0,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 6,
+      "name": "concourse-entry",
+      "file": "06-concourse-entry.png",
+      "bytes": 192311,
+      "t_ms": 112926,
+      "scene": "station_concourse",
+      "stage": "handover_briefing",
+      "player": {
+        "x": 352,
+        "y": 224
+      },
+      "camera": {
+        "viewX": 32,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 7,
+      "name": "concourse-vale-briefing",
+      "file": "07-concourse-vale-briefing.png",
+      "bytes": 230416,
+      "t_ms": 125882,
+      "scene": "station_concourse",
+      "stage": "handover_briefing",
+      "player": {
+        "x": 432,
+        "y": 264
+      },
+      "camera": {
+        "viewX": 64,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 8,
+      "name": "concourse-watch-offer",
+      "file": "08-concourse-watch-offer.png",
+      "bytes": 236415,
+      "t_ms": 134990,
+      "scene": "station_concourse",
+      "stage": "incident_handover",
+      "player": {
+        "x": 432,
+        "y": 264
+      },
+      "camera": {
+        "viewX": 64,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 9,
+      "name": "concourse-gauge-read",
+      "file": "09-concourse-gauge-read.png",
+      "bytes": 194029,
+      "t_ms": 165797,
+      "scene": "station_concourse",
+      "stage": "incident_handover",
+      "player": {
+        "x": 496,
+        "y": 255
+      },
+      "camera": {
+        "viewX": 64,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 10,
+      "name": "concourse-handover-complete",
+      "file": "10-concourse-handover-complete.png",
+      "bytes": 212636,
+      "t_ms": 176691,
+      "scene": "station_concourse",
+      "stage": "workshop",
+      "player": {
+        "x": 449,
+        "y": 255
+      },
+      "camera": {
+        "viewX": 64,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 11,
+      "name": "workshop-entry-east-door",
+      "file": "11-workshop-entry-east-door.png",
+      "bytes": 126631,
+      "t_ms": 275858,
+      "scene": "records_workshop",
+      "stage": "workshop",
+      "player": {
+        "x": 1256,
+        "y": 244
+      },
+      "camera": {
+        "viewX": 736,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 12,
+      "name": "workshop-work-order-board",
+      "file": "12-workshop-work-order-board.png",
+      "bytes": 186407,
+      "t_ms": 290095,
+      "scene": "records_workshop",
+      "stage": "workshop",
+      "player": {
+        "x": 1305,
+        "y": 180
+      },
+      "camera": {
+        "viewX": 736,
+        "viewY": 0,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 13,
+      "name": "workshop-calibration-bench-before",
+      "file": "13-workshop-calibration-bench-before.png",
+      "bytes": 102731,
+      "t_ms": 361832,
+      "scene": "records_workshop",
+      "stage": "workshop_work",
+      "player": {
+        "x": 829,
+        "y": 258
+      },
+      "camera": {
+        "viewX": 557,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 14,
+      "name": "workshop-calibration-bench-after-stage-1",
+      "file": "14-workshop-calibration-bench-after-stage-1.png",
+      "bytes": 108466,
+      "t_ms": 374243,
+      "scene": "records_workshop",
+      "stage": "workshop_work",
+      "player": {
+        "x": 829,
+        "y": 258
+      },
+      "camera": {
+        "viewX": 557,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 15,
+      "name": "workshop-mid-hall-camera-moved",
+      "file": "15-workshop-mid-hall-camera-moved.png",
+      "bytes": 130672,
+      "t_ms": 383984,
+      "scene": "records_workshop",
+      "stage": "workshop_work",
+      "player": {
+        "x": 829,
+        "y": 258
+      },
+      "camera": {
+        "viewX": 557,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 16,
+      "name": "workshop-signed-off",
+      "file": "16-workshop-signed-off.png",
+      "bytes": 144488,
+      "t_ms": 443115,
+      "scene": "records_workshop",
+      "stage": "lab_briefing",
+      "player": {
+        "x": 1328,
+        "y": 179
+      },
+      "camera": {
+        "viewX": 736,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 17,
+      "name": "laboratory-entry",
+      "file": "17-laboratory-entry.png",
+      "bytes": 175431,
+      "t_ms": 530685,
+      "scene": "diagnostics_laboratory",
+      "stage": "lab_briefing",
+      "player": {
+        "x": 330,
+        "y": 216
+      },
+      "camera": {
+        "viewX": 10,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 18,
+      "name": "laboratory-kai-briefing",
+      "file": "18-laboratory-kai-briefing.png",
+      "bytes": 221257,
+      "t_ms": 552771,
+      "scene": "diagnostics_laboratory",
+      "stage": "lab_briefing",
+      "player": {
+        "x": 543,
+        "y": 210
+      },
+      "camera": {
+        "viewX": 64,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 19,
+      "name": "laboratory-kai-exterior-briefing",
+      "file": "19-laboratory-kai-exterior-briefing.png",
+      "bytes": 174258,
+      "t_ms": 561630,
+      "scene": "diagnostics_laboratory",
+      "stage": "lab_work",
+      "player": {
+        "x": 543,
+        "y": 210
+      },
+      "camera": {
+        "viewX": 64,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 20,
+      "name": "laboratory-airlock-guidance",
+      "file": "20-laboratory-airlock-guidance.png",
+      "bytes": 159776,
+      "t_ms": 568860,
+      "scene": "diagnostics_laboratory",
+      "stage": "exterior_briefing",
+      "player": {
+        "x": 543,
+        "y": 210
+      },
+      "camera": {
+        "viewX": 64,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 21,
+      "name": "yard-airlock-arrival",
+      "file": "21-yard-airlock-arrival.png",
+      "bytes": 177923,
+      "t_ms": 676439,
+      "scene": "exterior_recovery_yard",
+      "stage": "exterior_briefing",
+      "player": {
+        "x": 342,
+        "y": 240
+      },
+      "camera": {
+        "viewX": 22,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 22,
+      "name": "yard-noor-briefing",
+      "file": "22-yard-noor-briefing.png",
+      "bytes": 273596,
+      "t_ms": 686277,
+      "scene": "exterior_recovery_yard",
+      "stage": "exterior_briefing",
+      "player": {
+        "x": 287,
+        "y": 240
+      },
+      "camera": {
+        "viewX": 15,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 23,
+      "name": "yard-mast-before",
+      "file": "23-yard-mast-before.png",
+      "bytes": 183625,
+      "t_ms": 699684,
+      "scene": "exterior_recovery_yard",
+      "stage": "exterior_work",
+      "player": {
+        "x": 467,
+        "y": 217
+      },
+      "camera": {
+        "viewX": 99,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 24,
+      "name": "yard-mast-after-stage-1",
+      "file": "24-yard-mast-after-stage-1.png",
+      "bytes": 192478,
+      "t_ms": 736204,
+      "scene": "exterior_recovery_yard",
+      "stage": "exterior_work",
+      "player": {
+        "x": 444,
+        "y": 217
+      },
+      "camera": {
+        "viewX": 135,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 25,
+      "name": "yard-drift-pass",
+      "file": "25-yard-drift-pass.png",
+      "bytes": 169069,
+      "t_ms": 748090,
+      "scene": "exterior_recovery_yard",
+      "stage": "exterior_work",
+      "player": {
+        "x": 704,
+        "y": 217
+      },
+      "camera": {
+        "viewX": 336,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 26,
+      "name": "yard-recovery-field-camera-moved",
+      "file": "26-yard-recovery-field-camera-moved.png",
+      "bytes": 158265,
+      "t_ms": 791909,
+      "scene": "exterior_recovery_yard",
+      "stage": "exterior_work",
+      "player": {
+        "x": 1001,
+        "y": 217
+      },
+      "camera": {
+        "viewX": 680,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 27,
+      "name": "yard-noor-shift-end",
+      "file": "27-yard-noor-shift-end.png",
+      "bytes": 197044,
+      "t_ms": 823220,
+      "scene": "exterior_recovery_yard",
+      "stage": "return_hub",
+      "player": {
+        "x": 289,
+        "y": 235
+      },
+      "camera": {
+        "viewX": 0,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 28,
+      "name": "concourse-return-hub",
+      "file": "28-concourse-return-hub.png",
+      "bytes": 186816,
+      "t_ms": 857032,
+      "scene": "station_concourse",
+      "stage": "return_hub",
+      "player": {
+        "x": 368,
+        "y": 172
+      },
+      "camera": {
+        "viewX": 48,
+        "viewY": 0,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 29,
+      "name": "concourse-vale-return-check-in",
+      "file": "29-concourse-vale-return-check-in.png",
+      "bytes": 223714,
+      "t_ms": 869192,
+      "scene": "station_concourse",
+      "stage": "return_hub",
+      "player": {
+        "x": 429,
+        "y": 259
+      },
+      "camera": {
+        "viewX": 61,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 30,
+      "name": "workshop-return-signed-off",
+      "file": "30-workshop-return-signed-off.png",
+      "bytes": 143857,
+      "t_ms": 1016547,
+      "scene": "records_workshop",
+      "stage": "deck_closure",
+      "player": {
+        "x": 1305,
+        "y": 186
+      },
+      "camera": {
+        "viewX": 736,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 1376,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 31,
+      "name": "deck-arrival",
+      "file": "31-deck-arrival.png",
+      "bytes": 131099,
+      "t_ms": 1131655,
+      "scene": "utility_core_deck",
+      "stage": "deck_closure",
+      "player": {
+        "x": 186,
+        "y": 188
+      },
+      "camera": {
+        "viewX": 0,
+        "viewY": 8,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 32,
+      "name": "deck-record-closed",
+      "file": "32-deck-record-closed.png",
+      "bytes": 151211,
+      "t_ms": 1153627,
+      "scene": "utility_core_deck",
+      "stage": "core_stabilise",
+      "player": {
+        "x": 151,
+        "y": 178
+      },
+      "camera": {
+        "viewX": 0,
+        "viewY": 1,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 33,
+      "name": "deck-coolant-valve-before",
+      "file": "33-deck-coolant-valve-before.png",
+      "bytes": 75707,
+      "t_ms": 1189107,
+      "scene": "utility_core_deck",
+      "stage": "core_stabilise",
+      "player": {
+        "x": 250,
+        "y": 229
+      },
+      "camera": {
+        "viewX": 0,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 34,
+      "name": "deck-coolant-valve-after",
+      "file": "34-deck-coolant-valve-after.png",
+      "bytes": 79695,
+      "t_ms": 1205035,
+      "scene": "utility_core_deck",
+      "stage": "core_stabilise",
+      "player": {
+        "x": 250,
+        "y": 229
+      },
+      "camera": {
+        "viewX": 0,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 35,
+      "name": "deck-calibration-breaker-before",
+      "file": "35-deck-calibration-breaker-before.png",
+      "bytes": 83169,
+      "t_ms": 1223945,
+      "scene": "utility_core_deck",
+      "stage": "core_stabilise",
+      "player": {
+        "x": 332,
+        "y": 194
+      },
+      "camera": {
+        "viewX": 0,
+        "viewY": 1,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 36,
+      "name": "deck-calibration-breaker-after",
+      "file": "36-deck-calibration-breaker-after.png",
+      "bytes": 84079,
+      "t_ms": 1240447,
+      "scene": "utility_core_deck",
+      "stage": "core_stabilise",
+      "player": {
+        "x": 332,
+        "y": 194
+      },
+      "camera": {
+        "viewX": 0,
+        "viewY": 1,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 37,
+      "name": "deck-distribution-bus-before",
+      "file": "37-deck-distribution-bus-before.png",
+      "bytes": 64997,
+      "t_ms": 1278233,
+      "scene": "utility_core_deck",
+      "stage": "core_stabilise",
+      "player": {
+        "x": 484,
+        "y": 177
+      },
+      "camera": {
+        "viewX": 64,
+        "viewY": 1,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 38,
+      "name": "deck-distribution-bus-after",
+      "file": "38-deck-distribution-bus-after.png",
+      "bytes": 74948,
+      "t_ms": 1295446,
+      "scene": "utility_core_deck",
+      "stage": "core_stabilise",
+      "player": {
+        "x": 484,
+        "y": 177
+      },
+      "camera": {
+        "viewX": 64,
+        "viewY": 1,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 39,
+      "name": "deck-all-feeds-ready",
+      "file": "39-deck-all-feeds-ready.png",
+      "bytes": 143670,
+      "t_ms": 1342501,
+      "scene": "utility_core_deck",
+      "stage": "core_stabilise",
+      "player": {
+        "x": 507,
+        "y": 200
+      },
+      "camera": {
+        "viewX": 64,
+        "viewY": 1,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 40,
+      "name": "deck-core-door-open",
+      "file": "40-deck-core-door-open.png",
+      "bytes": 135050,
+      "t_ms": 1363349,
+      "scene": "utility_core_deck",
+      "stage": "core_stabilise",
+      "player": {
+        "x": 414,
+        "y": 200
+      },
+      "camera": {
+        "viewX": 64,
+        "viewY": 0,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 41,
+      "name": "core-inactive",
+      "file": "41-core-inactive.png",
+      "bytes": 166115,
+      "t_ms": 1385540,
+      "scene": "core_chamber",
+      "stage": "core_sync",
+      "player": {
+        "x": 341,
+        "y": 288
+      },
+      "camera": {
+        "viewX": 0,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 42,
+      "name": "core-sync-review",
+      "file": "42-core-sync-review.png",
+      "bytes": 179621,
+      "t_ms": 1420640,
+      "scene": "core_chamber",
+      "stage": "core_sync",
+      "player": {
+        "x": 227,
+        "y": 195
+      },
+      "camera": {
+        "viewX": 0,
+        "viewY": 22,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 43,
+      "name": "core-confirmation-armed",
+      "file": "43-core-confirmation-armed.png",
+      "bytes": 204021,
+      "t_ms": 1433901,
+      "scene": "core_chamber",
+      "stage": "core_sync",
+      "player": {
+        "x": 227,
+        "y": 195
+      },
+      "camera": {
+        "viewX": 0,
+        "viewY": 22,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 44,
+      "name": "core-synchronising",
+      "file": "44-core-synchronising.png",
+      "bytes": 151821,
+      "t_ms": 1445453,
+      "scene": "core_chamber",
+      "stage": "complete",
+      "player": {
+        "x": 227,
+        "y": 195
+      },
+      "camera": {
+        "viewX": 0,
+        "viewY": 22,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 45,
+      "name": "core-completion-notice",
+      "file": "45-core-completion-notice.png",
+      "bytes": 133292,
+      "t_ms": 1457250,
+      "scene": "core_chamber",
+      "stage": "complete",
+      "player": {
+        "x": 227,
+        "y": 195
+      },
+      "camera": {
+        "viewX": 0,
+        "viewY": 22,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    },
+    {
+      "index": 46,
+      "name": "core-stable",
+      "file": "46-core-stable.png",
+      "bytes": 161976,
+      "t_ms": 1501175,
+      "scene": "core_chamber",
+      "stage": "complete",
+      "player": {
+        "x": 344,
+        "y": 296
+      },
+      "camera": {
+        "viewX": 54,
+        "viewY": 24,
+        "scale": 3,
+        "bounds": {
+          "width": 704,
+          "height": 384
+        }
+      }
+    }
+  ],
+  "camera_motion": [
+    {
+      "scene": "dock",
+      "from": {
+        "file": "03-dock-arrival-emergency-power.png",
+        "camera": {
+          "viewX": 8,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "04-dock-marker-reached.png",
+        "camera": {
+          "viewX": 64,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "dock",
+      "from": {
+        "file": "04-dock-marker-reached.png",
+        "camera": {
+          "viewX": 64,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "05-dock-after-check-in-powered.png",
+        "camera": {
+          "viewX": 0,
+          "viewY": 0,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "station_concourse",
+      "from": {
+        "file": "06-concourse-entry.png",
+        "camera": {
+          "viewX": 32,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "07-concourse-vale-briefing.png",
+        "camera": {
+          "viewX": 64,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "records_workshop",
+      "from": {
+        "file": "11-workshop-entry-east-door.png",
+        "camera": {
+          "viewX": 736,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "12-workshop-work-order-board.png",
+        "camera": {
+          "viewX": 736,
+          "viewY": 0,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "records_workshop",
+      "from": {
+        "file": "12-workshop-work-order-board.png",
+        "camera": {
+          "viewX": 736,
+          "viewY": 0,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "13-workshop-calibration-bench-before.png",
+        "camera": {
+          "viewX": 557,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "records_workshop",
+      "from": {
+        "file": "15-workshop-mid-hall-camera-moved.png",
+        "camera": {
+          "viewX": 557,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "16-workshop-signed-off.png",
+        "camera": {
+          "viewX": 736,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "diagnostics_laboratory",
+      "from": {
+        "file": "17-laboratory-entry.png",
+        "camera": {
+          "viewX": 10,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "18-laboratory-kai-briefing.png",
+        "camera": {
+          "viewX": 64,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "exterior_recovery_yard",
+      "from": {
+        "file": "21-yard-airlock-arrival.png",
+        "camera": {
+          "viewX": 22,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "22-yard-noor-briefing.png",
+        "camera": {
+          "viewX": 15,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "exterior_recovery_yard",
+      "from": {
+        "file": "22-yard-noor-briefing.png",
+        "camera": {
+          "viewX": 15,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "23-yard-mast-before.png",
+        "camera": {
+          "viewX": 99,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "exterior_recovery_yard",
+      "from": {
+        "file": "23-yard-mast-before.png",
+        "camera": {
+          "viewX": 99,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "24-yard-mast-after-stage-1.png",
+        "camera": {
+          "viewX": 135,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "exterior_recovery_yard",
+      "from": {
+        "file": "24-yard-mast-after-stage-1.png",
+        "camera": {
+          "viewX": 135,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "25-yard-drift-pass.png",
+        "camera": {
+          "viewX": 336,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "exterior_recovery_yard",
+      "from": {
+        "file": "25-yard-drift-pass.png",
+        "camera": {
+          "viewX": 336,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "26-yard-recovery-field-camera-moved.png",
+        "camera": {
+          "viewX": 680,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "exterior_recovery_yard",
+      "from": {
+        "file": "26-yard-recovery-field-camera-moved.png",
+        "camera": {
+          "viewX": 680,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "27-yard-noor-shift-end.png",
+        "camera": {
+          "viewX": 0,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 1376,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "station_concourse",
+      "from": {
+        "file": "28-concourse-return-hub.png",
+        "camera": {
+          "viewX": 48,
+          "viewY": 0,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "29-concourse-vale-return-check-in.png",
+        "camera": {
+          "viewX": 61,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "utility_core_deck",
+      "from": {
+        "file": "31-deck-arrival.png",
+        "camera": {
+          "viewX": 0,
+          "viewY": 8,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "32-deck-record-closed.png",
+        "camera": {
+          "viewX": 0,
+          "viewY": 1,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "utility_core_deck",
+      "from": {
+        "file": "32-deck-record-closed.png",
+        "camera": {
+          "viewX": 0,
+          "viewY": 1,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "33-deck-coolant-valve-before.png",
+        "camera": {
+          "viewX": 0,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "utility_core_deck",
+      "from": {
+        "file": "34-deck-coolant-valve-after.png",
+        "camera": {
+          "viewX": 0,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "35-deck-calibration-breaker-before.png",
+        "camera": {
+          "viewX": 0,
+          "viewY": 1,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "utility_core_deck",
+      "from": {
+        "file": "36-deck-calibration-breaker-after.png",
+        "camera": {
+          "viewX": 0,
+          "viewY": 1,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "37-deck-distribution-bus-before.png",
+        "camera": {
+          "viewX": 64,
+          "viewY": 1,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "utility_core_deck",
+      "from": {
+        "file": "39-deck-all-feeds-ready.png",
+        "camera": {
+          "viewX": 64,
+          "viewY": 1,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "40-deck-core-door-open.png",
+        "camera": {
+          "viewX": 64,
+          "viewY": 0,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "core_chamber",
+      "from": {
+        "file": "41-core-inactive.png",
+        "camera": {
+          "viewX": 0,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "42-core-sync-review.png",
+        "camera": {
+          "viewX": 0,
+          "viewY": 22,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      }
+    },
+    {
+      "scene": "core_chamber",
+      "from": {
+        "file": "45-core-completion-notice.png",
+        "camera": {
+          "viewX": 0,
+          "viewY": 22,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      },
+      "to": {
+        "file": "46-core-stable.png",
+        "camera": {
+          "viewX": 54,
+          "viewY": 24,
+          "scale": 3,
+          "bounds": {
+            "width": 704,
+            "height": 384
+          }
+        }
+      }
+    }
+  ],
+  "note": "AUTOMATION run on real input (no state injection); frame timings are automation wall times, never a human duration claim."
+}
