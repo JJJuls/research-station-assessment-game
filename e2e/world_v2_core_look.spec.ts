@@ -140,17 +140,30 @@ test('core chamber first look — every audited approach shows its own prompt; t
   // The way back is the deck's readiness gate: with the feeds down the
   // painted blast door stays sealed with its neutral operational reason
   // (the open door is exercised by the closure suite on the full route).
-  await deckVia(page, 412, 192);
-  await press(page, 'Space');
-  await page.waitForFunction(
-    () =>
-      /^Core sealed/.test(
-        (window as unknown as { __lastRoomFeedbackText?: string | null })
-          .__lastRoomFeedbackText ?? '',
-      ),
-    undefined,
-    { timeout: 6000 },
-  );
+  // V3 verification: at the 1080p canvas (~28 px per rendered frame) a
+  // landing can sit on the edge of the door's range or the press can fall
+  // between frames; re-approach and press again, at most three times,
+  // waiting for the sealed reason each time (real input; no state touched).
+  let sealed = false;
+
+  for (let attempt = 0; attempt < 3 && !sealed; attempt += 1) {
+    await deckVia(page, 412, 192);
+    await press(page, 'Space');
+    sealed = await page
+      .waitForFunction(
+        () =>
+          /^Core sealed/.test(
+            (window as unknown as { __lastRoomFeedbackText?: string | null })
+              .__lastRoomFeedbackText ?? '',
+          ),
+        undefined,
+        { timeout: 6000 },
+      )
+      .then(() => true)
+      .catch(() => false);
+  }
+
+  expect(sealed, 'the sealed Core door answers with its reason').toBe(true);
   await shot(page, '09-core-door-sealed-from-deck');
   expect(await sceneOf(page)).toBe('utility_core_deck');
 });

@@ -43,6 +43,7 @@ import {
   driveAxisTo,
   getEvents,
   hold,
+  playerProbe,
   press,
   selectPromptOption,
 } from './helpers';
