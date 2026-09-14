@@ -32,6 +32,7 @@ import {
 } from './journey';
 import {
   bootPilot,
+  expectNoMeasurementEvents,
   expectStage,
   interactAt,
   openPromptAt,

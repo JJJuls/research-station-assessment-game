@@ -1159,3 +1159,91 @@ export async function routeToDeckClosure(page: Page) {
 }
 
 export { hold, press };
+
+/**
+ * V3 verification (1920×1080 driver evidence): logs where a leg actually
+ * landed relative to its audited approach point together with the DEV
+ * frame-time probe, so landing precision can be read against the
+ * renderer's frame quantum. Read-only; nothing behavioural.
+ */
+export async function logLanding(
+  page: Page,
+  id: string,
+  approach: { x: number; y: number },
+) {
+  const at = await page.evaluate(() => {
+    const w = window as unknown as {
+      __playerProbe?: { x: number; y: number } | null;
+      __frameProbe?: { fps: number; avgMs: number; maxMs: number } | null;
+    };
+
+    return { player: w.__playerProbe ?? null, frames: w.__frameProbe ?? null };
+  });
+  const dx = at.player === null ? null : at.player.x - approach.x;
+  const dy = at.player === null ? null : at.player.y - approach.y;
+
+  // eslint-disable-next-line no-console
+  console.log(
+    `[landing] ${id}: off by (${dx === null ? '?' : dx.toFixed(1)}, ${dy === null ? '?' : dy.toFixed(1)}) px · ${at.frames === null ? 'frames n/a' : `${at.frames.fps.toFixed(1)} fps (avg ${at.frames.avgMs.toFixed(0)} ms, max ${at.frames.maxMs.toFixed(0)} ms)`}`,
+  );
+}
+
+/**
+ * V3 verification (1920×1080 tours): walks to an audited approach point
+ * with the room's own via-helper and reads the world prompt; when the
+ * landing sits inside the ±12 px box but the prompt names something else
+ * (measured at 1080p: ~28 px of travel per rendered frame lands on the
+ * box's corners, where an approach's nearest-wins margin can be thinner
+ * than the box — e.g. a supply bundle beside the workshop locker), backs
+ * off 40 px along the worse axis and re-approaches, at most `tries`
+ * times, logging every landing. Real input only; the caller keeps its
+ * own assertion on the returned text. Returns the last prompt text.
+ */
+export async function approachAudited(
+  page: Page,
+  via: (page: Page, x: number, y: number) => Promise<void>,
+  entry: { id: string; label: string; approach: { x: number; y: number } },
+  promptText: () => Promise<string | null>,
+  tries = 3,
+): Promise<string | null> {
+  let text: string | null = null;
+
+  for (let attempt = 1; attempt <= tries; attempt += 1) {
+    await via(page, entry.approach.x, entry.approach.y);
+    await logLanding(page, entry.id, entry.approach);
+    await page.waitForTimeout(250);
+    text = await promptText();
+
+    if (
+      text !== null &&
+      text.toLowerCase().includes(entry.label.toLowerCase())
+    ) {
+      return text;
+    }
+
+    const at = await playerProbe(page);
+    const dx = at === null ? 0 : at.x - entry.approach.x;
+    const dy = at === null ? 0 : at.y - entry.approach.y;
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `[approach] ${entry.id}: try ${attempt}/${tries} landed off by (${dx.toFixed(1)}, ${dy.toFixed(1)}) px, prompt ${JSON.stringify(text)} — re-approaching`,
+    );
+
+    if (attempt < tries) {
+      // Back off along the worse axis, away from the side we landed on, so
+      // the final leg re-rolls its frame phase from the other side.
+      const axisX = Math.abs(dx) >= Math.abs(dy);
+      const sign = axisX ? dx : dy;
+      const back = sign > 0 ? -40 : 40;
+
+      await via(
+        page,
+        entry.approach.x + (axisX ? back : 0),
+        entry.approach.y + (axisX ? 0 : back),
+      );
+    }
+  }
+
+  return text;
+}

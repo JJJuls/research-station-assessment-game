@@ -46,6 +46,7 @@ import {
   DESIGN_WIDTH,
   fadeAllCameras,
   publishCameraProbe,
+  publishFrameProbe,
   type WorldPlate,
   worldToDesign,
 } from './viewport';
@@ -2834,6 +2835,7 @@ export abstract class RoomScene extends Phaser.Scene {
       };
       this.publishWorldPromptProbe();
       publishCameraProbe(this);
+      publishFrameProbe(delta);
     }
   }
 

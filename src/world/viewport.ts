@@ -161,13 +161,73 @@ export interface CameraProbe {
   settled: boolean;
 }
 
+/**
+ * DEV-only frame-time ledger (V3 verification): how fast the page actually
+ * runs under the verification renderer — cumulative frames, mean / max
+ * frame delta, long-frame count (> 100 ms) and the rolling fps over the
+ * last 60 frames. Read by the e2e timing analysis only; presentation and
+ * measurement never read it.
+ */
+export interface FrameProbe {
+  frames: number;
+  avgMs: number;
+  maxMs: number;
+  longFrames: number;
+  fps: number;
+  lastMs: number;
+}
+
 declare global {
   interface Window {
     /** DEV-only, read-only: design-space → canvas mapping for e2e clicks. */
     __designSpace?: DesignSpaceProbe | null;
     /** DEV-only, read-only: the active room's world camera state. */
     __cameraProbe?: CameraProbe | null;
+    /** DEV-only, read-only: frame-time ledger of the room update loop. */
+    __frameProbe?: FrameProbe | null;
   }
+}
+
+const FRAME_WINDOW = 60;
+const LONG_FRAME_MS = 100;
+const frameLedger = {
+  frames: 0,
+  totalMs: 0,
+  maxMs: 0,
+  longFrames: 0,
+  recent: [] as number[],
+};
+
+/** DEV-only: records one room-update frame delta and publishes the ledger. */
+export function publishFrameProbe(deltaMs: number) {
+  if (typeof window === 'undefined' || !import.meta.env.DEV) {
+    return;
+  }
+
+  frameLedger.frames += 1;
+  frameLedger.totalMs += deltaMs;
+  frameLedger.maxMs = Math.max(frameLedger.maxMs, deltaMs);
+
+  if (deltaMs > LONG_FRAME_MS) {
+    frameLedger.longFrames += 1;
+  }
+
+  frameLedger.recent.push(deltaMs);
+
+  if (frameLedger.recent.length > FRAME_WINDOW) {
+    frameLedger.recent.shift();
+  }
+
+  const recentMs = frameLedger.recent.reduce((sum, ms) => sum + ms, 0);
+
+  window.__frameProbe = {
+    frames: frameLedger.frames,
+    avgMs: frameLedger.totalMs / frameLedger.frames,
+    maxMs: frameLedger.maxMs,
+    longFrames: frameLedger.longFrames,
+    fps: recentMs > 0 ? (frameLedger.recent.length * 1000) / recentMs : 0,
+    lastMs: deltaMs,
+  };
 }
 
 export const DESIGN_SPACE_PROBE: DesignSpaceProbe = {

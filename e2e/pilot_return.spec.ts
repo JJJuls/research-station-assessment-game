@@ -564,7 +564,12 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     // ——— Sign-off → the route points at the Utility Deck; nothing closed. ———
     await signOffReturnShift(page);
     probe = await pilotProbe(page);
-    expect(probe?.objective).toContain('Utility Deck');
+    // V4 story spine (f6e051f, storyState.ts): the displayed line narrows
+    // the deck_closure objective to the zone's own wayfinding step — inside
+    // the workshop it names the Concourse east door; "Utility Deck — east
+    // door." appears once the participant stands in the Concourse. The
+    // route stage carries the destination.
+    expect(probe?.objective).toMatch(/Concourse — east door/);
     expect(probe?.objective).not.toMatch(FORBIDDEN_TEXT);
     expect((await pilotProbe(page))?.route.stage).toBe('deck_closure');
     expect(
@@ -1046,7 +1051,11 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     expect(await itemStatus(page, 'M09')).toBe('open');
     expect((await surface(page))?.open ?? false).toBe(false);
     expect(await lastFeedback(page)).not.toMatch(FORBIDDEN_TEXT);
-    expect((await pilotProbe(page))?.objective).toContain('Utility Deck');
+    // V4 story spine: zone-narrowed wayfinding line (see test 1).
+    expect((await pilotProbe(page))?.objective).toMatch(
+      /Concourse — east door/,
+    );
+    expect((await pilotProbe(page))?.route.stage).toBe('deck_closure');
     expect(await uiProbe(page)).toMatchObject({ open: false });
     expectNoRuntimeErrors(errors);
   });

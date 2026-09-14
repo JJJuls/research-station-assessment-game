@@ -375,9 +375,23 @@ export async function waitNoWorldAction(page: Page, timeout = 10_000) {
 
 /** Dock → … → Yard at stage exterior_work (the pure fail-forward spine). */
 export async function enterYard(page: Page, tag: string) {
+  // Timing marks (V3 verification): where the wall time before the yard goes.
+  const t0 = Date.now();
+
   await bootPilot(page, tag);
+
+  const tBoot = Date.now();
+
   await completeDockTutorial(page, 1);
+
+  const tTutorial = Date.now();
+
   await routeToYardWork(page);
+
+  // eslint-disable-next-line no-console
+  console.log(
+    `[enterYard] boot ${((tBoot - t0) / 1000).toFixed(1)} s · dock tutorial ${((tTutorial - tBoot) / 1000).toFixed(1)} s · route to the yard ${((Date.now() - tTutorial) / 1000).toFixed(1)} s`,
+  );
 
   const probe = await pilotProbe(page);
 

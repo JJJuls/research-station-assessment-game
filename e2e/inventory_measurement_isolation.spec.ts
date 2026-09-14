@@ -18,7 +18,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
 import { CANONICAL_EVENT_CONTEXT } from '../src/world/CanonicalEventContext';
-import { driveAxisTo, getEvents } from './helpers';
+import { designToPage, driveAxisTo, getEvents } from './helpers';
 
 interface ProbeSlot {
   container_id: string;

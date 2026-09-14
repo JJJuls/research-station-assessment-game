@@ -68,7 +68,15 @@ import {
   waitNoWorldAction,
   YARD,
 } from './exteriorHelpers';
-import { getEvents, hold, press, selectPromptOption } from './helpers';
+import {
+  frameProbe,
+  getDriverStats,
+  getEvents,
+  hold,
+  press,
+  resetDriverStats,
+  selectPromptOption,
+} from './helpers';
 import {
   interactAt,
   labApproach,
@@ -88,8 +96,26 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
 
     const errors = captureErrors(page);
     const startedAt = Date.now();
+    // Timing marks (V3 verification): wall time per phase, driver ledger
+    // deltas and the DEV frame probe — read-only, nothing behavioural.
+    let lastMark = startedAt;
+    let lastStats = getDriverStats();
+    const mark = async (label: string) => {
+      const now = Date.now();
+      const stats = getDriverStats();
+      const frames = await frameProbe(page);
 
+      // eslint-disable-next-line no-console
+      console.log(
+        `[yard-timing] ${label}: +${((now - lastMark) / 1000).toFixed(1)} s (wall ${((now - startedAt) / 1000).toFixed(1)} s) · driver hold ${((stats.holdMs - lastStats.holdMs) / 1000).toFixed(1)} s settle ${((stats.settleMs - lastStats.settleMs) / 1000).toFixed(1)} s legs ${stats.legs - lastStats.legs} bursts ${stats.bursts - lastStats.bursts} no-motion ${stats.noMotionBursts - lastStats.noMotionBursts} stalls ${stats.stallAborts - lastStats.stallAborts} · frames ${frames === null ? 'n/a' : `${frames.fps.toFixed(1)} fps avg ${frames.avgMs.toFixed(0)} ms max ${frames.maxMs.toFixed(0)} ms long ${frames.longFrames}/${frames.frames}`}`,
+      );
+      lastMark = now;
+      lastStats = stats;
+    };
+
+    resetDriverStats();
     await enterYard(page, 'ops');
+    await mark('route to the yard');
 
     // ——— Guidance: one objective line, the beacon on the first site. ———
     let probe = await pilotProbe(page);
@@ -138,9 +164,11 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect(typeof o2Raw.initiation_latency_ms).toBe('number');
     expect(o2Raw.censored_reason).toBeNull();
     expect(JSON.stringify(o2Raw)).not.toMatch(/aggregate|score|o1/);
+    await mark('M05 cable flag');
 
     // ——— M19: the frozen coupling to completion. ———
     await completeCoupling(page);
+    await mark('M19 coupling');
     ext = await exteriorProbe(page);
     expect(ext.m19.completion).toBe(true);
     expect(ext.m19.window).toBe('closed');
@@ -209,6 +237,7 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
 
     // ——— M20: accept + both outdoor stages; the start window stays open. ———
     await startAntenna(page);
+    await mark('M20 mast stages');
     ext = await exteriorProbe(page);
     expect(ext.m20.accepted).toBe(true);
     expect(ext.m20.stages_done).toEqual(['clear_base_clamp', 'seat_feed_line']);
@@ -281,6 +310,7 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect(ext.m23.window).toBe('closed');
     expect(await itemStatus(page, 'M23')).toBe('completed');
     expect(await lastFeedback(page)).toContain('Metal Recovery Yard');
+    await mark('M23 excavation');
 
     const m23Closed = (
       await eventsByType(page, 'proto_m23_field_recovery_window_closed')
@@ -343,6 +373,7 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect((await faProbe(page)).magnet.totalPulls).toBe(8);
 
     await useSortingBench(page);
+    await mark('M24 magnet deck');
     ext = await exteriorProbe(page);
     expect(ext.m24.alternative_opened).toBe(true);
 
@@ -406,6 +437,7 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect(ext.m26.alternative_used).toBe(false);
 
     await transmitAt(page, 'uplinkB');
+    await mark('M26 uplink');
     ext = await exteriorProbe(page);
     expect(ext.m26.alternative_used).toBe(true);
     expect(ext.m26.all_reports_delivered).toBe(true);
@@ -456,6 +488,7 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
 
     // ——— Noor: the shift ends outside; honest closures. ———
     await finishOutside(page);
+    await mark('Noor shift end');
     ext = await exteriorProbe(page);
     expect(ext.shift_ended).toBe(true);
     expect(await itemStatus(page, 'M05')).toBe('completed');
@@ -517,9 +550,15 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
       )?.metadata?.elapsed_ms ?? 0,
     );
 
+    const totals = getDriverStats();
+    const perWindow = closed.map(
+      (e) =>
+        `${e.event_type.replace('proto_', '').replace('_window_closed', '')} ${Math.round(Number((e.metadata as { active_ms?: number }).active_ms ?? 0) / 1000)} s`,
+    );
+
     // eslint-disable-next-line no-console
     console.log(
-      `exterior recovery: item-owned active ${Math.round((activeMs + m20StageMs) / 1000)} s (M20 start ${Math.round(m20StageMs / 1000)} s); wall ${Math.round((Date.now() - startedAt) / 1000)} s from the Dock`,
+      `exterior recovery: item-owned active ${Math.round((activeMs + m20StageMs) / 1000)} s (M20 start ${Math.round(m20StageMs / 1000)} s); wall ${Math.round((Date.now() - startedAt) / 1000)} s from the Dock · per window: ${perWindow.join(', ')} · driver totals: hold ${Math.round(totals.holdMs / 1000)} s settle ${Math.round(totals.settleMs / 1000)} s legs ${totals.legs} bursts ${totals.bursts} no-motion ${totals.noMotionBursts} stalls ${totals.stallAborts}`,
     );
     expect(activeMs + m20StageMs).toBeLessThanOrEqual(300_000);
 

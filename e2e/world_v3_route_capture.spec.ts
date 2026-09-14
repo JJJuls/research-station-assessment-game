@@ -250,7 +250,9 @@ async function waitSurfaceElement(
       return mode === 'done' ? state === 'done' : state !== 'disabled';
     },
     [id, predicate] as const,
-    { timeout: 8000 },
+    // Surface-clock re-render (see returnHelpers.waitStageDone): a wait
+    // budget sized for the software renderer under load, not an assertion.
+    { timeout: 20_000 },
   );
 }
 

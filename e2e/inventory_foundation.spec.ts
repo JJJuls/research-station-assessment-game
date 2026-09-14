@@ -32,7 +32,7 @@ import {
 } from '../src/inventory/engine';
 import type { InventoryState } from '../src/inventory/model';
 import { CONTAINER_IDS } from '../src/inventory/model';
-import { driveAxisTo, getEvents } from './helpers';
+import { designToPage, driveAxisTo, getEvents } from './helpers';
 
 /* ------------------------------------------------------------------ *
  * Part 1 — domain invariants (pure, no browser)

@@ -18,11 +18,76 @@ export interface RawEventLike {
   [key: string]: unknown;
 }
 
+/**
+ * Driver timing ledger (V3 verification): where the automation's wall time
+ * goes — held-key travel, post-key-up settle waits, burst counts, legs and
+ * stall-aborts. Read-only telemetry for the timing analysis; resets per
+ * test via resetDriverStats(). Nothing here changes what the driver does.
+ */
+export interface DriverStats {
+  holdMs: number;
+  settleMs: number;
+  bursts: number;
+  noMotionBursts: number;
+  legs: number;
+  stallAborts: number;
+  legMs: number;
+}
+
+const driverStats: DriverStats = {
+  holdMs: 0,
+  settleMs: 0,
+  bursts: 0,
+  noMotionBursts: 0,
+  legs: 0,
+  stallAborts: 0,
+  legMs: 0,
+};
+
+export function resetDriverStats() {
+  for (const key of Object.keys(driverStats) as (keyof DriverStats)[]) {
+    driverStats[key] = 0;
+  }
+}
+
+export function getDriverStats(): DriverStats {
+  return { ...driverStats };
+}
+
+/** DEV frame-time probe published by RoomScene (null where absent). */
+export async function frameProbe(page: Page): Promise<{
+  frames: number;
+  avgMs: number;
+  maxMs: number;
+  longFrames: number;
+  fps: number;
+} | null> {
+  return page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          __frameProbe?: {
+            frames: number;
+            avgMs: number;
+            maxMs: number;
+            longFrames: number;
+            fps: number;
+          } | null;
+        }
+      ).__frameProbe ?? null,
+  );
+}
+
 export async function hold(page: Page, key: string, ms: number) {
   await page.keyboard.down(key);
   await page.waitForTimeout(ms);
   await page.keyboard.up(key);
+  driverStats.holdMs += ms;
+
+  const settleStarted = Date.now();
+
   await settleAfterKeyUp(page);
+  driverStats.settleMs += Date.now() - settleStarted;
 }
 
 /**
@@ -37,9 +102,35 @@ export async function hold(page: Page, key: string, ms: number) {
  * is read only once motion has actually stopped. Scenes without the
  * position probe keep the historical 120 ms wait.
  */
+/**
+ * One read of the position probe together with the frame counter (DEV
+ * `__frameProbe`, RoomScene), so "held still" can be judged across a
+ * RENDERED frame rather than across wall time. V3 verification: at the
+ * native 1920×1080 canvas the software renderer draws a frame every
+ * ~150–250 ms, so two reads 70 ms apart routinely fell inside ONE frame,
+ * looked "still" while the key-up was not yet processed, and the leg's end
+ * position was read mid-motion (the 3× landing misses). Where the frame
+ * counter is absent the historical wall-time rule applies unchanged.
+ */
+async function motionSample(
+  page: Page,
+): Promise<{ x: number; y: number; frame: number | null } | null> {
+  return page.evaluate(() => {
+    const w = window as unknown as {
+      __playerProbe?: { x: number; y: number } | null;
+      __frameProbe?: { frames: number } | null;
+    };
+    const p = w.__playerProbe ?? null;
+
+    return p === null
+      ? null
+      : { x: p.x, y: p.y, frame: w.__frameProbe?.frames ?? null };
+  });
+}
+
 async function settleAfterKeyUp(page: Page) {
   const started = Date.now();
-  let last = await playerProbe(page);
+  let last = await motionSample(page);
 
   if (last === null) {
     await page.waitForTimeout(120);
@@ -49,17 +140,31 @@ async function settleAfterKeyUp(page: Page) {
   // Minimum one frame at the slow renderer before the first comparison.
   await page.waitForTimeout(100);
 
-  while (Date.now() - started < 900) {
-    const now = await playerProbe(page);
+  // Bounded: two rendered frames at the slowest observed renderer (~250 ms
+  // per frame at 1080p) fit inside the budget with margin.
+  while (Date.now() - started < 1200) {
+    const now = await motionSample(page);
 
-    if (
-      now === null ||
-      (Math.abs(now.x - last.x) < 0.5 && Math.abs(now.y - last.y) < 0.5)
-    ) {
+    if (now === null) {
       return;
     }
 
-    last = now;
+    const still =
+      Math.abs(now.x - last.x) < 0.5 && Math.abs(now.y - last.y) < 0.5;
+    const framesAdvanced =
+      now.frame === null || last.frame === null ? 1 : now.frame - last.frame;
+
+    // Still across a rendered frame — or still for 450 ms while no frame
+    // advanced (a paused room scene under an overlay, where the old
+    // wall-time rule is the right one).
+    if (still && (framesAdvanced >= 1 || Date.now() - started >= 450)) {
+      return;
+    }
+
+    if (!still || framesAdvanced >= 1) {
+      last = now;
+    }
+
     await page.waitForTimeout(70);
   }
 }
@@ -384,86 +489,106 @@ export async function driveAxisTo(
   target: number,
   tolerance: number,
 ) {
-  let previous: number | null = null;
-  let stalledHoldMs = 0;
-  let lastBurstMs = 0;
-  // World V1 (U2): a burst shorter than one frame yields NO travel when
-  // both key events land in the same frame gap (slow moments right after a
-  // scene load or a prompt close run at 3–5 fps). A no-motion burst is
-  // therefore first answered by doubling the next burst (up to 240 ms);
-  // only bursts of ≥ 150 ms count toward the wall-clamp budget.
-  let boost = 1;
+  const legStarted = Date.now();
 
-  for (let burst = 0; burst < 120; burst++) {
-    const probe = await playerProbe(page);
-    if (probe === null) {
-      return;
-    }
+  driverStats.legs += 1;
 
-    const current = probe[axis];
-    if (Math.abs(current - target) <= tolerance) {
-      return;
-    }
-    // Advanced < 2px since the last burst => clamped against a wall on
-    // this axis — but ONE stalled read can also be a dead frame window
-    // under load (observed live: the first 150ms burst right after a
-    // scene entry lands entirely between throttled frames and the leg
-    // aborts at the spawn). Require TWO consecutive stalled reads before
-    // treating it as a genuine wall clamp — and (physical-mechanics
-    // report §15 recommended fix) require OBSERVED FORWARD MOTION first:
-    // until the leg has seen the player actually move, stall reads are
-    // treated as post-scene-entry jank and tolerated up to a longer
-    // bound (8) instead of aborting the leg at the spawn.
-    // V4: the stall budget is HELD-KEY TIME, not a burst count — the
-    // software-GL verification renderer runs at ~13 fps under the 1280×720
-    // canvas, so a single 100 ms burst can land entirely between frames.
-    // A genuine wall clamp shows no motion across ≥ 400 ms of held key
-    // (≥ 5 frames at 13 fps, ≥ 24 at 60 fps); before any motion has been
-    // observed (post-scene-entry jank) the budget is 1600 ms, as before.
-    if (previous !== null && Math.abs(current - previous) < 2) {
-      if (lastBurstMs >= 150) {
-        stalledHoldMs += lastBurstMs;
+  const outcome = await driveAxisBursts();
+
+  driverStats.legMs += Date.now() - legStarted;
+
+  if (outcome === 'stalled') {
+    driverStats.stallAborts += 1;
+  }
+
+  async function driveAxisBursts(): Promise<
+    'arrived' | 'stalled' | 'no_probe' | 'exhausted'
+  > {
+    let previous: number | null = null;
+    let stalledHoldMs = 0;
+    let lastBurstMs = 0;
+    // World V1 (U2): a burst shorter than one frame yields NO travel when
+    // both key events land in the same frame gap (slow moments right after a
+    // scene load or a prompt close run at 3–5 fps). A no-motion burst is
+    // therefore first answered by doubling the next burst (up to 240 ms);
+    // only bursts of ≥ 150 ms count toward the wall-clamp budget.
+    let boost = 1;
+
+    for (let burst = 0; burst < 120; burst++) {
+      const probe = await playerProbe(page);
+      if (probe === null) {
+        return 'no_probe';
       }
 
-      boost = Math.min(4, boost * 2);
-
-      // World V1 production: the 1280×720 plate and the larger rooms run
-      // slower under the software-GL verification renderer, so a held key
-      // can show no motion across two 400 ms bursts without any wall;
-      // require 900 ms of stalled held-key time before calling it a clamp.
-      if (stalledHoldMs >= 1600) {
-        return;
+      const current = probe[axis];
+      if (Math.abs(current - target) <= tolerance) {
+        return 'arrived';
       }
-    } else {
-      stalledHoldMs = 0;
-      boost = 1;
+      // Advanced < 2px since the last burst => clamped against a wall on
+      // this axis — but ONE stalled read can also be a dead frame window
+      // under load (observed live: the first 150ms burst right after a
+      // scene entry lands entirely between throttled frames and the leg
+      // aborts at the spawn). Require TWO consecutive stalled reads before
+      // treating it as a genuine wall clamp — and (physical-mechanics
+      // report §15 recommended fix) require OBSERVED FORWARD MOTION first:
+      // until the leg has seen the player actually move, stall reads are
+      // treated as post-scene-entry jank and tolerated up to a longer
+      // bound (8) instead of aborting the leg at the spawn.
+      // V4: the stall budget is HELD-KEY TIME, not a burst count — the
+      // software-GL verification renderer runs at ~13 fps under the 1280×720
+      // canvas, so a single 100 ms burst can land entirely between frames.
+      // A genuine wall clamp shows no motion across ≥ 400 ms of held key
+      // (≥ 5 frames at 13 fps, ≥ 24 at 60 fps); before any motion has been
+      // observed (post-scene-entry jank) the budget is 1600 ms, as before.
+      if (previous !== null && Math.abs(current - previous) < 2) {
+        driverStats.noMotionBursts += 1;
+        if (lastBurstMs >= 150) {
+          stalledHoldMs += lastBurstMs;
+        }
+
+        boost = Math.min(4, boost * 2);
+
+        // World V1 production: the 1280×720 plate and the larger rooms run
+        // slower under the software-GL verification renderer, so a held key
+        // can show no motion across two 400 ms bursts without any wall;
+        // require 900 ms of stalled held-key time before calling it a clamp.
+        if (stalledHoldMs >= 1600) {
+          return 'stalled';
+        }
+      } else {
+        stalledHoldMs = 0;
+        boost = 1;
+      }
+      previous = current;
+
+      const forward = current < target;
+      const key =
+        axis === 'x'
+          ? forward
+            ? 'ArrowRight'
+            : 'ArrowLeft'
+          : forward
+            ? 'ArrowDown'
+            : 'ArrowUp';
+
+      // Adaptive burst: long remaining distances use longer holds (~70 px at
+      // 175 px/s) so cross-room legs stay fast; the final approach drops to
+      // short bursts for precision. World V1 (U1 closure): the last 40 px
+      // use a 70 ms burst — shorter than one frame at the ~11 fps
+      // verification renderer, so a burst yields at most one frame of
+      // travel (~15 px) and cannot overshoot a 12 px tolerance by two
+      // frames; hold() then waits for the position to settle before the
+      // next read. Stall detection above is unaffected — any wall clamp
+      // still ends the leg.
+      const remaining = Math.abs(current - target);
+      const base = remaining > 120 ? 400 : remaining > 40 ? 100 : 70;
+
+      lastBurstMs = remaining > 120 ? base : Math.min(240, base * boost);
+      driverStats.bursts += 1;
+      await hold(page, key, lastBurstMs);
     }
-    previous = current;
 
-    const forward = current < target;
-    const key =
-      axis === 'x'
-        ? forward
-          ? 'ArrowRight'
-          : 'ArrowLeft'
-        : forward
-          ? 'ArrowDown'
-          : 'ArrowUp';
-
-    // Adaptive burst: long remaining distances use longer holds (~70 px at
-    // 175 px/s) so cross-room legs stay fast; the final approach drops to
-    // short bursts for precision. World V1 (U1 closure): the last 40 px
-    // use a 70 ms burst — shorter than one frame at the ~11 fps
-    // verification renderer, so a burst yields at most one frame of
-    // travel (~15 px) and cannot overshoot a 12 px tolerance by two
-    // frames; hold() then waits for the position to settle before the
-    // next read. Stall detection above is unaffected — any wall clamp
-    // still ends the leg.
-    const remaining = Math.abs(current - target);
-    const base = remaining > 120 ? 400 : remaining > 40 ? 100 : 70;
-
-    lastBurstMs = remaining > 120 ? base : Math.min(240, base * boost);
-    await hold(page, key, lastBurstMs);
+    return 'exhausted';
   }
 }
 

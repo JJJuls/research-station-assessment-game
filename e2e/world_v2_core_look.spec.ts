@@ -15,7 +15,14 @@ import { expect, type Page, test } from '@playwright/test';
 
 import { CORE_REGISTRY } from '../src/world/interactionRegistry';
 import { press, selectPromptOption } from './helpers';
-import { coreVia, deckVia, PILOT, useDoor, waitScene } from './pilotHelpers';
+import {
+  approachAudited,
+  coreVia,
+  deckVia,
+  PILOT,
+  useDoor,
+  waitScene,
+} from './pilotHelpers';
 
 // V3 final evidence: WV3_VIEWPORT (WxH) / WV3_OUT re-run the same real-input
 // tour at the native 1920×1080 canvas into its own directory.
@@ -83,10 +90,9 @@ test('core chamber first look — every audited approach shows its own prompt; t
   for (const [index, id] of tour.entries()) {
     const entry = CORE_REGISTRY.find((e) => e.id === id)!;
 
-    await coreVia(page, entry.approach.x, entry.approach.y);
-    await page.waitForTimeout(250);
-
-    const text = await promptText(page);
+    const text = await approachAudited(page, coreVia, entry, () =>
+      promptText(page),
+    );
 
     expect(text, `${id}: prompt at audited approach`).not.toBeNull();
     expect(text!.toLowerCase(), `${id}: own label in the prompt`).toContain(

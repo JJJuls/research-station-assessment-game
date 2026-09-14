@@ -11,7 +11,7 @@ import { mkdirSync } from 'node:fs';
 
 import { expect, type Page, test } from '@playwright/test';
 
-import { driveAxisTo } from './helpers';
+import { designToPage, driveAxisTo } from './helpers';
 
 const OUT = 'docs/verification/screenshots-inventory-foundation';
 

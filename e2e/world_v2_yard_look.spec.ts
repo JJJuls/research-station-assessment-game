@@ -13,6 +13,7 @@ import { expect, type Page, test } from '@playwright/test';
 import { YARD_REGISTRY } from '../src/world/interactionRegistry';
 import { press } from './helpers';
 import {
+  approachAudited,
   bootPilotScene,
   labApproach,
   PILOT,
@@ -86,10 +87,9 @@ test('yard first look — every audited approach shows its own prompt; the airlo
   for (const [index, id] of tour.entries()) {
     const entry = YARD_REGISTRY.find((e) => e.id === id)!;
 
-    await yardVia(page, entry.approach.x, entry.approach.y);
-    await page.waitForTimeout(250);
-
-    const text = await promptText(page);
+    const text = await approachAudited(page, yardVia, entry, () =>
+      promptText(page),
+    );
 
     expect(text, `${id}: prompt at audited approach`).not.toBeNull();
     expect(text!.toLowerCase(), `${id}: own label in the prompt`).toContain(

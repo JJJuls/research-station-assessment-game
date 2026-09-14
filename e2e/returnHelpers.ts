@@ -821,8 +821,11 @@ interface UiProbe {
   slots: {
     container_id: string;
     slot_index: number;
+    /** Slot top-left in the 800×600 design space (SlotGridView, origin 0,0). */
     x: number;
     y: number;
+    w: number;
+    h: number;
     definition_id: string | null;
   }[];
 }
@@ -911,8 +914,19 @@ export async function pressBatchB(
       throw new Error('M03 residual or store slot not found');
     }
 
-    const from = await toCanvas(source.x, source.y);
-    const to = await toCanvas(target.x, target.y);
+    // V3 verification: the probe publishes each slot's TOP-LEFT corner
+    // (SlotGridView rectangles are origin 0,0). Dragging corner-to-corner
+    // was inside the slot only while the canvas was the design space (1:1,
+    // integer page pixels); under the V4 design camera (×1.2, letterboxed
+    // to 0.625) the corner maps to a fractional page pixel that Chromium
+    // rounds OUTSIDE the 42 px slot, so the overlay picked nothing up
+    // (reproduced at HEAD: held null, dragging false, surface unchanged).
+    // Drag slot centres, as every other inventory drag driver does.
+    const from = await toCanvas(
+      source.x + source.w / 2,
+      source.y + source.h / 2,
+    );
+    const to = await toCanvas(target.x + target.w / 2, target.y + target.h / 2);
 
     await page.mouse.move(from.x, from.y);
     await page.mouse.down();
@@ -922,6 +936,27 @@ export async function pressBatchB(
     await page.mouse.move(to.x, to.y, { steps: 8 });
     await page.mouse.up();
     await page.waitForTimeout(300);
+
+    // Diagnostic (read-only): where the residual ended up after the drag.
+    const after = await uiProbe(page);
+    const m03Slots = (after?.slots ?? []).filter((slot) =>
+      slot.container_id.startsWith('m03_'),
+    );
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `[pressBatchB] drag ${moved + 1}/${options.store} from design (${source.x},${source.y}) ` +
+        `page (${from.x.toFixed(2)},${from.y.toFixed(2)}) to design (${target.x},${target.y}) ` +
+        `page (${to.x.toFixed(2)},${to.y.toFixed(2)}) → ${JSON.stringify({
+          held: (after as { held?: unknown } | null)?.held ?? null,
+          dragging: (after as { dragging?: unknown } | null)?.dragging ?? null,
+          feedback: (after as { feedback?: unknown } | null)?.feedback ?? null,
+          slots: m03Slots.map(
+            (slot) =>
+              `${slot.container_id}[${slot.slot_index}]=${slot.definition_id ?? '-'}`,
+          ),
+        })}`,
+    );
   }
 
   await page.waitForTimeout(options.exposureMs);
@@ -945,7 +980,11 @@ async function waitStageDone(page: Page, stage: number) {
         }
       ).__workSurfaceProbe?.elements.find((e) => e.id === id)?.state === 'done',
     `stage_${stage}`,
-    { timeout: 8000 },
+    // V3 verification: the post-settle re-render rides the surface scene's
+    // Phaser timer, which runs slower than wall time whenever the software
+    // renderer's frame exceeds the 200 ms delta cap (observed: > 8 s under
+    // a second SwiftShader browser). A wait budget, not an assertion.
+    { timeout: 20_000 },
   );
 }
 
@@ -962,7 +1001,7 @@ async function waitAdvanceEnabled(page: Page) {
       ).__workSurfaceProbe?.elements.find((e) => e.id === 'advance')?.state !==
       'disabled',
     undefined,
-    { timeout: 8000 },
+    { timeout: 20_000 },
   );
 }
 
