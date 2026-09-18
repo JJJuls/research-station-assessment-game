@@ -36,6 +36,13 @@ export const WORLD_V2_IMAGE_URLS: Record<string, string> = {
   'w2-opening-berth': 'assets/world-v2/opening/shuttle-berth.png',
   // Architecture sprites composited over the plates.
   'w2-door-north': 'assets/world-v2/architecture/door-north.png',
+  // Floor-supply sprites (scripts/world-v2/paint_props.py): what a world
+  // bundle looks like — recognisable containers, not flat parcels.
+  'w2-supply-component-crate':
+    'assets/world-v2/props/supply-component-crate.png',
+  'w2-supply-sample-case': 'assets/world-v2/props/supply-sample-case.png',
+  'w2-supply-wire-and-wrap': 'assets/world-v2/props/supply-wire-and-wrap.png',
+  'w2-supply-relay-unit': 'assets/world-v2/props/supply-relay-unit.png',
 };
 
 /** Soft warm light pool drawn with ADD blending over a plate. */

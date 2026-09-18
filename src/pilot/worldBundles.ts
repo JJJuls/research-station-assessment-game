@@ -40,7 +40,21 @@ export interface WorldBundle {
   visuals: Phaser.GameObjects.GameObject[];
 }
 
-export const BUNDLE_REACH_PX = 64;
+/**
+ * Pickup reach. 44 px (was 64): a floor item is taken from beside it, and
+ * a bundle can no longer win nearest-wins inside a neighbouring station's
+ * ±12 px approach box (the Component Locker vs the Sample kit, collision
+ * audit 2026-09). Presentation geometry — no event or payload changes.
+ */
+export const BUNDLE_REACH_PX = 44;
+
+/** World sprite per bundle label (presentation; unknown → the parcel). */
+const BUNDLE_TEXTURES: Record<string, string> = {
+  'Component bundle': 'w2-supply-component-crate',
+  'Sample kit': 'w2-supply-sample-case',
+  'Wire and wrap': 'w2-supply-wire-and-wrap',
+  'Relay unit': 'w2-supply-relay-unit',
+};
 
 export class WorldBundleLayer {
   private bundles: WorldBundle[] = [];
@@ -61,10 +75,18 @@ export class WorldBundleLayer {
 
     const visuals: Phaser.GameObjects.GameObject[] = [];
 
-    if (this.scene.textures.exists('kit-parcel')) {
+    const sprite = BUNDLE_TEXTURES[label];
+    const texture =
+      sprite !== undefined && this.scene.textures.exists(sprite)
+        ? sprite
+        : 'kit-parcel';
+
+    if (this.scene.textures.exists(texture)) {
       visuals.push(
-        this.scene.add.ellipse(x, y + 9, 26, 8, 0x000000, 0.18).setDepth(-0.25),
-        this.scene.add.image(x, y, 'kit-parcel').setDepth(worldDepth(y + 10)),
+        this.scene.add
+          .ellipse(x, y + 11, 30, 9, 0x000000, 0.28)
+          .setDepth(-0.25),
+        this.scene.add.image(x, y, texture).setDepth(worldDepth(y + 12)),
       );
     } else {
       visuals.push(

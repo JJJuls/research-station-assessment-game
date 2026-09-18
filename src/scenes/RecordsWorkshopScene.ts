@@ -20,7 +20,7 @@
  */
 import Phaser from 'phaser';
 
-import { key, worldDepth } from '../constants';
+import { Depth, key, worldDepth } from '../constants';
 import {
   addInventoryItem,
   hasInventoryItem,
@@ -145,7 +145,13 @@ import type {
   PromptStage,
   RoomLayout,
 } from '../world';
-import { WORKSHOP_LAYOUT } from '../world/layouts/workshop';
+import {
+  VESTIBULE_FOREGROUND,
+  VESTIBULE_OPENINGS,
+  vestibuleSpan,
+  WORKSHOP_LAYOUT,
+  WORKSHOP_SOLIDS,
+} from '../world/layouts/workshop';
 
 declare global {
   interface Window {
@@ -187,6 +193,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     return {
       theme: 'workshop',
       grid: [...WORKSHOP_LAYOUT],
+      solids: WORKSHOP_SOLIDS,
       field: 'wide',
       plateTexture: 'w2-workshop-plate',
     };
@@ -219,6 +226,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     stampContaminationNotes();
 
     super.create(data);
+    this.buildVestibuleForeground();
 
     noteM08JobOffered('stow_supplies');
 
@@ -1106,7 +1114,88 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     void M04_DEBRIS;
   }
 
+  /** The wall mass between the bays, shown while the avatar is inside it. */
+  private vestibuleForeground: Phaser.GameObjects.Image | null = null;
+
+  /**
+   * Doorway layering: the two bays join through painted SIDE-WALL doors.
+   * Once the avatar's feet cross a door sill it stands behind that wall's
+   * inner face — so the wall mass between the two sills (a crop of the
+   * plate with everything outside the wall planes and both door openings
+   * cut away) is drawn OVER the avatar exactly while it is between the
+   * sills. The avatar shows through the door openings and is hidden by
+   * the wall, instead of walking across the painting. Presentation only.
+   */
+  private buildVestibuleForeground() {
+    const key = 'w2-workshop-vestibule-foreground';
+    const { x0, x1 } = VESTIBULE_FOREGROUND;
+    const height = 384;
+
+    if (!this.textures.exists(key)) {
+      const canvas = this.textures.createCanvas(key, x1 - x0, height);
+
+      if (canvas === null) {
+        return;
+      }
+
+      const ctx = canvas.getContext();
+      const plate = this.textures
+        .get('w2-workshop-plate')
+        .getSourceImage() as HTMLImageElement;
+
+      // Keep only what lies between the two sill lines…
+      ctx.beginPath();
+
+      for (let y = 0; y <= height; y += 4) {
+        ctx.lineTo(vestibuleSpan(y).west - 10 - x0, y);
+      }
+
+      for (let y = height; y >= 0; y -= 4) {
+        ctx.lineTo(vestibuleSpan(y).east + 10 - x0, y);
+      }
+
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(plate, x0, 0, x1 - x0, height, 0, 0, x1 - x0, height);
+      // …minus the door openings, through which the avatar is seen.
+      ctx.globalCompositeOperation = 'destination-out';
+
+      for (const opening of VESTIBULE_OPENINGS) {
+        ctx.beginPath();
+        opening.forEach(([px, py], index) =>
+          index === 0 ? ctx.moveTo(px - x0, py) : ctx.lineTo(px - x0, py),
+        );
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      canvas.refresh();
+    }
+
+    this.vestibuleForeground = this.add
+      .image(x0, 0, key)
+      .setOrigin(0)
+      .setDepth(Depth.AbovePlayer)
+      .setVisible(false);
+    this.vestibuleForeground.texture.setFilter(
+      Phaser.Textures.FilterMode.NEAREST,
+    );
+  }
+
   protected onPilotUpdate(): void {
+    const span = vestibuleSpan(this.player.y + 24);
+
+    const between = this.player.x > span.west && this.player.x < span.east;
+
+    this.vestibuleForeground?.setVisible(between);
+
+    if (import.meta.env.DEV && typeof window !== 'undefined') {
+      (
+        window as unknown as { __vestibuleProbe?: { foreground: boolean } }
+      ).__vestibuleProbe = {
+        foreground: this.vestibuleForeground?.visible ?? false,
+      };
+    }
     this.physical?.update();
     this.clampWorldReadouts([
       this.consoleChip,

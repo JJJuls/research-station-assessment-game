@@ -24,6 +24,7 @@
  */
 import type { BlockoutRect } from './blockout';
 import { blockoutRows } from './blockout';
+import type { SolidRect } from './grid';
 
 export const WORKSHOP_COLS = 43;
 export const WORKSHOP_ROWS = 12;
@@ -37,7 +38,7 @@ export const WORKSHOP_FLOOR: readonly BlockoutRect[] = [
   [1, 7, 18, 2],
   [2, 9, 17, 1],
   // Vestibule passage between the bays (painted facing doorways)
-  [19, 6, 5, 3],
+  [19, 6, 5, 4],
   // Records office (plate B)
   [24, 4, 3, 1],
   [31, 4, 3, 1],
@@ -65,6 +66,50 @@ export const WORKSHOP_FOOTPRINTS: readonly BlockoutRect[] = [
   [33.2, 9, 2.4, 2], // quality-packet table (office south hull)
   [35.6, 9, 3.3, 2], // conduit lattice bench (office south hull)
 ];
+
+/**
+ * Pixel solids (collision audit 2026-09). The vestibule between the bays
+ * is a passage THROUGH two painted side-wall doorways: the wall faces
+ * north of the door sills collide (the avatar used to walk over them, as
+ * if climbing the wall), so the crossing is confined to the sills' floor
+ * span — avatar origin y 226 … 296.
+ */
+export const WORKSHOP_SOLIDS: readonly SolidRect[] = [
+  [608, 192, 160, 44], // wall faces above both door sills
+];
+
+/**
+ * The vestibule's painted floor lines (the door sills, plate px): the
+ * avatar is BETWEEN the two wall planes while its foot centre lies east
+ * of the west sill line and west of the east one. The scene shows the
+ * wall mass as a foreground layer exactly then (RecordsWorkshopScene).
+ */
+export function vestibuleSpan(footY: number): { west: number; east: number } {
+  const west = 612 + (footY - 238) * (43 / 92) + 10;
+
+  return { west, east: 1376 - west };
+}
+
+/** The two door openings cut out of the foreground wall mass (polygons). */
+export const VESTIBULE_OPENINGS: readonly (readonly [number, number][])[] = [
+  [
+    [616, 214],
+    [621, 134],
+    [646, 170],
+    [648, 292],
+    [643, 291],
+  ],
+  [
+    [760, 214],
+    [755, 134],
+    [730, 170],
+    [728, 292],
+    [733, 291],
+  ],
+];
+
+/** Foreground crop of the plate (x0, x1): the wall mass between the bays. */
+export const VESTIBULE_FOREGROUND = { x0: 596, x1: 780 } as const;
 
 export const WORKSHOP_DOORS: readonly BlockoutRect[] = [];
 

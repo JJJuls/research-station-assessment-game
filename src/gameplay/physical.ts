@@ -38,7 +38,7 @@
 
 import Phaser from 'phaser';
 
-import { Depth } from '../constants';
+import { Depth, worldDepth } from '../constants';
 import {
   DESIGN_SCALE,
   pointerToWorld,
@@ -255,10 +255,13 @@ export class PhysicalManipulationLayer {
 
       const shadow = this.scene.add
         .ellipse(entry.x, entry.y + 8, 18, 7, 0x000000, 0.25)
-        .setDepth(Depth.AbovePlayer - 1);
+        .setDepth(-0.25);
+      // Feet-line depth: a loose object lies ON the floor — the avatar
+      // walks in front of it or behind it (it used to float above the
+      // avatar at a fixed overlay depth).
       const image = this.scene.add
         .image(entry.x, entry.y, entry.spec.icon)
-        .setDepth(Depth.AbovePlayer);
+        .setDepth(worldDepth(entry.y + 8));
       const outline = this.scene.add
         .rectangle(entry.x, entry.y, 26, 26, 0x000000, 0)
         .setStrokeStyle(1, 0x5fd3c4, 0.9)
