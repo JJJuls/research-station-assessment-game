@@ -360,6 +360,58 @@ test.describe('export client (pure)', () => {
     return { calls, restore: () => (globalThis.fetch = original) };
   }
 
+  test('keep-alive freshness (P12): a later page hide with new events sends a fresh envelope; a retry without new events re-sends the same bytes', () => {
+    const { calls, restore } = captureFetch();
+    let lastSequence = 10;
+
+    try {
+      const client = new ResearchExportClient({
+        getContext: () => ({
+          launch_mode: 'test',
+          export_allowed: true,
+          session_status: 'in_progress',
+          completion_reason: null,
+        }),
+        getConfig: () => ({
+          ingestUrl: 'http://ingest.local/x',
+          publishableKey: 'k',
+        }),
+        getSessionIdentity: () => ({
+          participant_id: 'P_FRESH',
+          game_session_id: 'S_FRESH',
+          page_load_index: 1,
+          last_sequence: lastSequence,
+        }),
+        buildPayload: () =>
+          ({ ...bigPayload(1), marker: lastSequence }) as never,
+      });
+      const hide = () =>
+        client.submitKeepalive({
+          session_status: 'incomplete',
+          completion_reason: 'participant_exit',
+        });
+
+      expect(hide()).toBe(true);
+      expect(hide()).toBe(true); // same sequence: identical retry
+      lastSequence = 25; // the participant kept playing
+      expect(hide()).toBe(true);
+
+      const bodies = calls.map((call) => call.body);
+      const ids = bodies.map(
+        (body) => (JSON.parse(body) as { export_id: string }).export_id,
+      );
+
+      expect(bodies[1]).toBe(bodies[0]);
+      expect(ids[2]).not.toBe(ids[0]);
+      expect(
+        (JSON.parse(bodies[2]) as { payload: { marker: number } }).payload
+          .marker,
+      ).toBe(25);
+    } finally {
+      restore();
+    }
+  });
+
   test('a keep-alive export over the browser cap keeps the most recent events and says how many it dropped', () => {
     const { calls, restore } = captureFetch();
 

@@ -26,7 +26,7 @@ import {
   refreshValidityProbe,
   serializeOpportunities,
 } from '../measurement/validity';
-import { installExportAugmenter } from '../systems';
+import { installExportAugmenter, researchRuntime } from '../systems';
 import type { PilotItemCoverage } from './coverageSchedule';
 import {
   deriveCoverage,
@@ -269,7 +269,20 @@ installExportAugmenter(() => {
       summary: operationalCompletionSummary(items),
       final_core_closed: finalCoreClosed,
       final_core_closure: lastClosure,
+      // Reload record (P11, record-only): the register and coverage are
+      // page-session state, so after a reload they describe THIS load
+      // only; earlier loads' work is in `prior_page_load_events`.
+      page_load_index: researchRuntime.getPageLoadIndex(),
+      reloaded: researchRuntime.getPageLoadIndex() > 1,
     },
+    // The participant pilot route can offer only the Dock check-in of the
+    // legacy summary families; every other family is not_applicable there
+    // (never a zero). Developer launches — `?route=legacy` included, which
+    // is recorded as one — keep the full summary.
+    summary_scope:
+      launchMode === 'participant'
+        ? { id: 'pilot_route_v1', applicable: ['session', 'dock_control'] }
+        : null,
   };
 });
 

@@ -1,13 +1,13 @@
 import type { DataQualityMetrics } from './DataQualityTracker';
 import type { RawGameEvent } from './EventLogger';
 import type { EventIntegrity } from './EventStore';
-import type { GameSummaryVariables } from './ScoringManager';
 import type { MissionState } from './SessionState';
 import type {
   CompletionReason,
   LaunchMode,
   SessionStatus,
 } from './SessionStatus';
+import type { ScopedSummaryValue, SummaryDisposition } from './SummaryScope';
 
 /**
  * Research-session export client (development ingestion unit; extended by
@@ -39,9 +39,19 @@ import type {
  */
 
 export interface ResearchExportPayload {
+  /** Explicit payload contract version (SummaryScope.EXPORT_SCHEMA_VERSION). */
+  export_schema_version: string;
   game_version: string;
   asset_set_version: string;
-  summary: GameSummaryVariables;
+  /**
+   * The scoring-plan summary, SCOPED: a field that was not observed is
+   * `null` and its reason is in `summary_dispositions` — never a zero.
+   */
+  summary: Record<string, ScopedSummaryValue>;
+  summary_dispositions: Record<string, SummaryDisposition>;
+  /** Scope label ('legacy_full' when the route offers every family). */
+  summary_scope: string;
+  summary_scope_version: string;
   raw_events: RawGameEvent[];
   data_quality: DataQualityMetrics;
   /**
@@ -119,6 +129,13 @@ export interface ResearchExportSessionIdentity {
   game_session_id: string;
   /** Page load the envelope belongs to (1 = first load). */
   page_load_index: number;
+  /**
+   * Sequence of the last recorded event (keep-alive freshness, P12): a
+   * compact keep-alive envelope is frozen per sequence, so a later
+   * pagehide that has NEW events builds a fresh envelope, while a retry
+   * with no new event still re-sends the identical bytes (server dedupe).
+   */
+  last_sequence?: number;
 }
 
 /** Everything the transport needs to decide and label one submission. */
@@ -490,6 +507,16 @@ export class ResearchExportClient {
       }
     }
 
+    // A fresher keep-alive envelope supersedes the previous one: only the
+    // latest compact envelope is kept (bounded storage).
+    if (kind === 'compact') {
+      if (this.lastCompactKey !== null && this.lastCompactKey !== key) {
+        this.removeStored(this.lastCompactKey);
+      }
+
+      this.lastCompactKey = key;
+    }
+
     this.writeStored(key, envelopeJson);
 
     return envelopeJson;
@@ -550,6 +577,18 @@ export class ResearchExportClient {
     }
 
     return this.memoryFallback.get(key) ?? null;
+  }
+
+  private lastCompactKey: string | null = null;
+
+  private removeStored(key: string): void {
+    this.memoryFallback.delete(key);
+
+    try {
+      sessionStorage.removeItem(key);
+    } catch {
+      // Unavailable storage: nothing to remove.
+    }
   }
 
   private writeStored(key: string, value: string): void {
@@ -616,7 +655,11 @@ function storageKeyFor(
     identity.participant_id,
   )}:${encodeURIComponent(identity.game_session_id)}:${
     identity.page_load_index
-  }:${sessionStatus}:${kind}`;
+  }:${sessionStatus}:${kind}${
+    kind === 'compact' && identity.last_sequence !== undefined
+      ? `:seq${identity.last_sequence}`
+      : ''
+  }`;
 }
 
 function isReusableEnvelope(

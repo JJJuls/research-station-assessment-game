@@ -292,6 +292,10 @@ test.describe('research export (test mode only)', () => {
       'data_quality',
       'environment',
       'event_integrity',
+      // Station 080 correction (2026-09): explicit payload contract
+      // version; the summary rides SCOPED (null + disposition, never a
+      // zero, for anything not observed) with its scope and scope version.
+      'export_schema_version',
       'game_version',
       // Audit 2026-09 B2 (3a4ff96): the full measurement-validity register
       // and the pilot coverage snapshot ride every export payload
@@ -303,6 +307,9 @@ test.describe('research export (test mode only)', () => {
       'prior_page_load_events',
       'raw_events',
       'summary',
+      'summary_dispositions',
+      'summary_scope',
+      'summary_scope_version',
       'technical_errors',
     ]);
     expect(envelope.payload.environment).toEqual({

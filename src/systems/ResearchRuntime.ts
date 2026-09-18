@@ -28,6 +28,12 @@ import {
   resolveLaunchMode,
   SessionStatusMachine,
 } from './SessionStatus';
+import type { SummaryScope } from './SummaryScope';
+import {
+  applySummaryScope,
+  EXPORT_SCHEMA_VERSION,
+  scopedSummaryForUrl,
+} from './SummaryScope';
 
 interface DebugCompletionResult {
   summary: GameSummaryVariables;
@@ -114,6 +120,12 @@ const PARTICIPANT_EXPORT_ATTEMPTS = 3;
 export type ExportAugmenter = () => {
   measurement_validity: unknown;
   pilot_coverage: unknown;
+  /**
+   * The summary scope of the active route (SummaryScope.ts): which legacy
+   * room families the route can offer at all. Null / omitted → the
+   * summary is exported in full, exactly as before (legacy / developer).
+   */
+  summary_scope?: SummaryScope | null;
 };
 
 let exportAugmenter: ExportAugmenter | null = null;
@@ -455,6 +467,11 @@ class ResearchRuntime {
    * across prior and current page loads plus the durable store's health.
    * Transport/integrity metadata only — never a research variable.
    */
+  /** 1-based page-load counter of this identity (durable store). */
+  getPageLoadIndex(): number {
+    return this.pageLoadIndex;
+  }
+
   getEventIntegrity(): EventIntegrity {
     return computeEventIntegrity({
       current: this.eventLogger.getEvents(),
@@ -492,7 +509,11 @@ class ResearchRuntime {
     // return-URL summary use the same status-derived `completed` flag, so
     // the survey record and the ingestion row can never disagree.
     const built = this.qualtricsBridge.buildValidatedReturnUrl(
-      this.getSummary(this.status.snapshot().session_status === 'completed'),
+      scopedSummaryForUrl(
+        this.scopedSummary(
+          this.status.snapshot().session_status === 'completed',
+        ),
+      ),
       this.returnUrlAxes(result),
     );
 
@@ -741,6 +762,7 @@ class ResearchRuntime {
             participant_id: metadata.participant_id,
             game_session_id: metadata.game_session_id,
             page_load_index: this.pageLoadIndex,
+            last_sequence: this.eventLogger.getNextSequence() - 1,
           };
         },
         buildPayload: () => this.buildExportPayload(),
@@ -760,10 +782,18 @@ class ResearchRuntime {
     const dataQuality = this.dataQualityTracker.getMetrics();
     const completed = this.status.snapshot().session_status === 'completed';
 
+    const scoped = this.scopedSummary(completed);
+
     return {
+      export_schema_version: EXPORT_SCHEMA_VERSION,
       game_version: metadata.game_version,
       asset_set_version: ASSET_SET_VERSION,
-      summary: this.getSummary(completed),
+      // Absent is never zero: a field the active route cannot offer, or
+      // that was not observed, is null with an explicit disposition.
+      summary: scoped.summary,
+      summary_dispositions: scoped.summary_dispositions,
+      summary_scope: scoped.summary_scope,
+      summary_scope_version: scoped.summary_scope_version,
       raw_events: this.eventLogger.getEvents(),
       data_quality: dataQuality,
       technical_errors: {
@@ -791,6 +821,22 @@ class ResearchRuntime {
       measurement_validity: this.augmented()?.measurement_validity,
       pilot_coverage: this.augmented()?.pilot_coverage,
     };
+  }
+
+  /**
+   * The scoring-plan summary masked at the export boundary
+   * (SummaryScope.ts). `getSummary()` itself stays numeric.
+   */
+  private scopedSummary(completed: boolean) {
+    const status = this.status.snapshot().session_status;
+
+    return applySummaryScope({
+      summary: this.getSummary(completed),
+      scope: this.augmented()?.summary_scope ?? null,
+      eventTypes: this.eventLogger.getEvents().map((event) => event.event_type),
+      terminal: status === 'completed' || status === 'error',
+      reloaded: this.pageLoadIndex > 1,
+    });
   }
 
   private augmented(): ReturnType<ExportAugmenter> | undefined {

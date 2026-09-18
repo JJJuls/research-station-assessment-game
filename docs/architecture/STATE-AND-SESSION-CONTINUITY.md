@@ -74,8 +74,16 @@ duty accept/skip mutually exclusive (each removes from the other list);
 - **Reload**: constructs a fresh runtime. Same query string ⇒ identical
   `participant_id`/`game_session_id`/`condition`/`game_version`/`return_url`;
   event history, mission state, once-flags, task states, data-quality
-  metrics, and `started_at_ms` (⇒ `elapsed_seconds`) all reset. No
-  client-side persistence exists, by design. A reloaded session therefore
+  metrics, and `started_at_ms` (⇒ `elapsed_seconds`) all reset.
+  **Correction (2026-09):** the former statement that no client-side
+  persistence exists is stale — since Pilot V3 the durable event store
+  persists the event `sequence`, a 1-based `page_load_index` and earlier
+  loads' events (`prior_page_load_events`); the pilot route, window
+  objects, validity register and coverage remain page-session state.
+  Every export says so explicitly (`pilot_coverage.page_load_index` /
+  `.reloaded`, summary disposition `interrupted`) — see
+  `docs/verification/station-080-correction/EXPORT-AND-PERSISTENCE.md`.
+  A reloaded session therefore
   re-logs `session_start` — analytically distinguishable by timestamps, and
   by duplicate one-shot events if exports are concatenated per
   `game_session_id` (documented analysis caveat, not a game defect).

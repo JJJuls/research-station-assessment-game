@@ -118,6 +118,15 @@ export function defaultReturnUrlPolicy(): ReturnUrlPolicy {
   };
 }
 
+/**
+ * What the return URL serialises: the numeric summary, or its scoped form
+ * in which a non-observed field carries its disposition word instead of a
+ * value (SummaryScope.scopedSummaryForUrl — absent is never zero).
+ */
+export type ReturnUrlSummary =
+  | GameSummaryVariables
+  | Record<string, string | number | boolean>;
+
 export class QualtricsBridge {
   private launchParams: QualtricsLaunchParams;
 
@@ -145,7 +154,7 @@ export class QualtricsBridge {
    * here validates the destination — see `buildValidatedReturnUrl`.
    */
   buildReturnUrl(
-    summaryVariables: GameSummaryVariables,
+    summaryVariables: ReturnUrlSummary,
     extra: Record<string, string | number | boolean> = {},
   ) {
     const { return_url: returnUrl } = this.launchParams;
@@ -185,7 +194,7 @@ export class QualtricsBridge {
    * built return URL, and only when the launch destination passes policy.
    */
   buildValidatedReturnUrl(
-    summaryVariables: GameSummaryVariables,
+    summaryVariables: ReturnUrlSummary,
     extra: Record<string, string | number | boolean> = {},
   ): { url: string | null; validation: ReturnUrlValidation } {
     const validation = this.validateReturnUrl();
