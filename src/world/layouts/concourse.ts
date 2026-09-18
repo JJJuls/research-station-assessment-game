@@ -17,6 +17,7 @@
  */
 import type { BlockoutRect } from './blockout';
 import { blockoutRows } from './blockout';
+import type { SolidRect } from './grid';
 
 export const CONCOURSE_COLS = 22;
 export const CONCOURSE_ROWS = 12;
@@ -31,24 +32,30 @@ export const CONCOURSE_FLOOR: readonly BlockoutRect[] = [
   [2, 5, 18, 4],
 ];
 
-/** Prop footprints (collide; baked art / layered sprites beneath). */
-export const CONCOURSE_FOOTPRINTS: readonly BlockoutRect[] = [
-  [3, 3, 3, 2], // plan board stand (north-west wall)
-  [6, 3, 2, 2], // crew lockers beside the board
-  // (The incident-desk sprite in the south-east corner is deliberately
-  // NOT footprinted: the two-column east strip is the only north–south
-  // lane to the Deck door, and the desk is a y-sorted sprite, so a
-  // passing avatar occludes correctly instead of colliding.)
-  // North-east work table (the quality packet). Two columns, not three:
-  // the col-17 lane past the table's east edge is the one walkable link
-  // between the north lane and the east strip (gauge, Deck door).
-  [15, 3, 2, 3],
-  // Operations desk (Vale's counter): one row — the lane south of the
-  // desk (rows 7–8) is the walkable link between the hall and the east
-  // strip (gauge, Deck door). The avatar passes close in front of the
-  // desk and the floor radio, Stardew-tight; both stay baked art.
-  [15, 6, 3, 1],
-  [2.4, 7.3, 2.6, 1.7], // reading table (south-west bay)
+/**
+ * Cell footprints: none. Since the collision audit (2026-09) every prop
+ * collides through a pixel solid authored to its painted silhouette
+ * (CONCOURSE_SOLIDS) — the former whole-cell footprints left invisible
+ * walls beside the furniture and let the avatar stand on the rest of it.
+ */
+export const CONCOURSE_FOOTPRINTS: readonly BlockoutRect[] = [];
+
+/**
+ * Pixel solids [x, y, w, h], measured on the plate. A solid's south edge
+ * stops 6 px short of the painted base so the feet box can stand right at
+ * a prop's front; north-wall items share the wall-base line.
+ */
+export const CONCOURSE_SOLIDS: readonly SolidRect[] = [
+  [96, 96, 512, 40], // north wall base (painted wall meets the deck at y 142)
+  [122, 136, 82, 16], // plan board stand (legs to y 158)
+  [209, 136, 64, 13], // crew lockers (base y 155)
+  [98, 150, 44, 16], // cable coil by the west wall
+  [489, 136, 77, 25], // north-east work table (legs to y 167)
+  [474, 180, 76, 36], // operations desk (Vale's counter, base y 222)
+  [80, 252, 92, 37], // reading table (south-west bay, legs to y 295)
+  [38, 256, 40, 24], // cable coil by the Records door
+  [502, 270, 36, 20], // monitor gauge pedestal (layered sprite base)
+  [588, 262, 56, 27], // incident desk (layered sprite base)
 ];
 
 export const CONCOURSE_DOORS: readonly BlockoutRect[] = [];

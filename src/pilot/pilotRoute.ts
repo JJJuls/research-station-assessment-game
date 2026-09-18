@@ -196,7 +196,7 @@ export const PILOT_DOORS: Record<PilotZoneKey, readonly PilotDoorRef[]> = {
   // door anchors sit on the plates' baked/inpainted doorways
   // (src/world/layouts/dock.ts, concourse.ts).
   dock: [
-    { to: 'station_concourse', x: 352, y: 64, label: 'Station Concourse' },
+    { to: 'station_concourse', x: 352, y: 100, label: 'Station Concourse' },
   ],
   station_concourse: [
     { to: 'dock', x: 339, y: 300, label: 'Dock' },

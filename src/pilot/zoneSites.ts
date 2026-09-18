@@ -18,7 +18,8 @@ const TILE = 32;
  * Dock — participant layout (World V2 rescue, 22×12 painted plate). All
  * anchors are mapped to the plate's baked art: the check-in kiosk stands
  * against the north wall at x 248 (approached from the south), the
- * Concourse door sprite is centred at x 352 in the north wall band, the
+ * Concourse door is painted INTO the north wall at x 352, standing on the
+ * wall base (anchor = the leaf's centre, y 100), the
  * sealed docking vault is baked at the south hull centre x 328, the
  * arrival spawn is 96 px north of the vault anchor (outside its 72 px
  * radius), and the movement marker sits on open deck east of the spawn.
@@ -26,7 +27,7 @@ const TILE = 32;
 export const DOCK_SITES = {
   terminal: { x: 248, y: 132 },
   marker: { x: 456, y: 192 },
-  northDoor: { x: 352, y: 64 },
+  northDoor: { x: 352, y: 100 },
   dockingAirlock: { x: 328, y: 300 },
   spawnArrival: { x: 328, y: 204 },
   spawnFromConcourse: { x: 352, y: 152 },
@@ -50,7 +51,9 @@ export const LEGACY_DOCK_SITES = {
  * desk); the incident plan board is baked on the north-west wall; the
  * incident desk is a layered sprite mid-north; the quality packet lies
  * on the baked north-east work table (approached from the west); the
- * monitor gauge hangs on the south hull east of the Dock hatch; the
+ * monitor gauge is a pedestal instrument standing on the deck south of
+ * the operations desk (its 42×51 sprite is centred on the anchor, so its
+ * base meets the floor at y 290 — it used to float over the south hull); the
  * faulty reading-desk lamp is the baked green lamp on the south-west
  * reading table. Every anchor/approach pair was audited against the
  * 72 px interaction radius so each approach point's nearest interactable
@@ -63,7 +66,7 @@ export const CONCOURSE_STATIONS = {
   planBoard: { x: 152, y: 148 },
   incidentDesk: { x: 616, y: 268 },
   qcPacket: { x: 480, y: 140 },
-  monitorGauge: { x: 520, y: 300 },
+  monitorGauge: { x: 520, y: 264 },
   concourseFault: { x: 124, y: 240 },
 } as const;
 

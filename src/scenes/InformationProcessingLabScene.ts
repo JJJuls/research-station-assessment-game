@@ -160,6 +160,7 @@ export class InformationProcessingLabScene extends Phaser.Scene {
     );
     this.player = new Player(this, 400, 300);
     this.physics.add.collider(this.player, roomMap.layer);
+    this.physics.add.collider(this.player, roomMap.solids);
     this.cameras.main.setBounds(
       0,
       0,

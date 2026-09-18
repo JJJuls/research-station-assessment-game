@@ -113,7 +113,7 @@ import type {
   RoomLayout,
 } from '../world';
 import { KIT_INDICATOR } from '../world/kit/kitTextures';
-import { CONCOURSE_LAYOUT } from '../world/layouts/concourse';
+import { CONCOURSE_LAYOUT, CONCOURSE_SOLIDS } from '../world/layouts/concourse';
 
 const TILE = 32;
 const M05_FIX_MS = 2000;
@@ -187,6 +187,7 @@ export class StationConcourseScene extends PilotZoneScene {
     return {
       theme: 'hub',
       grid: [...CONCOURSE_LAYOUT],
+      solids: CONCOURSE_SOLIDS,
       field: 'wide',
       plateTexture: 'w2-concourse-plate',
     };
@@ -543,18 +544,20 @@ export class StationConcourseScene extends PilotZoneScene {
       }
     }
 
-    // ——— Storm evidence: a scorch and a fallen panel fragment by the
-    // north wall, patched once the feeds are restored ———
+    // ——— Storm evidence: a scorch and a fallen panel fragment on the
+    // deck at the foot of the north wall (east of the lockers — they used
+    // to sit ON the painted locker fronts), patched once the feeds are
+    // restored ———
     for (const decal of [
-      this.addFloorDecal(248, 110, 'kit-scorch'),
-      this.addFloorDecal(240, 122, 'w1-debris-panel'),
+      this.addFloorDecal(292, 150, 'kit-scorch'),
+      this.addFloorDecal(286, 158, 'w1-debris-panel'),
     ]) {
       if (decal !== null) {
         this.damageDressing.push(decal);
       }
     }
 
-    const patch = this.addGroundInfra(248, 96, 'w1-junction-box');
+    const patch = this.addGroundInfra(282, 112, 'w1-junction-box');
 
     if (patch !== null) {
       patch.setVisible(false);

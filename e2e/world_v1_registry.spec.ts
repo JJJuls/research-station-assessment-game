@@ -30,18 +30,21 @@ import {
   REGISTERED_ZONES,
   WORLD_V1_REGISTRY,
 } from '../src/world/interactionRegistry';
-import { CONCOURSE_LAYOUT } from '../src/world/layouts/concourse';
+import {
+  CONCOURSE_LAYOUT,
+  CONCOURSE_SOLIDS,
+} from '../src/world/layouts/concourse';
 import { CORE_LAYOUT } from '../src/world/layouts/coreChamber';
 import { DECK_LAYOUT } from '../src/world/layouts/deck';
-import { DOCK_LAYOUT } from '../src/world/layouts/dock';
+import { DOCK_LAYOUT, DOCK_SOLIDS } from '../src/world/layouts/dock';
 import { gridOf, walkingDistance } from '../src/world/layouts/grid';
 import { LAB_LAYOUT } from '../src/world/layouts/laboratory';
 import { WORKSHOP_LAYOUT } from '../src/world/layouts/workshop';
 import { YARD_LAYOUT } from '../src/world/layouts/yard';
 
 const LAYOUTS = {
-  dock: gridOf(DOCK_LAYOUT),
-  station_concourse: gridOf(CONCOURSE_LAYOUT),
+  dock: gridOf(DOCK_LAYOUT, DOCK_SOLIDS),
+  station_concourse: gridOf(CONCOURSE_LAYOUT, CONCOURSE_SOLIDS),
   records_workshop: gridOf(WORKSHOP_LAYOUT),
   diagnostics_laboratory: gridOf(LAB_LAYOUT),
   utility_core_deck: gridOf(DECK_LAYOUT),

@@ -115,7 +115,7 @@ const C = CONCOURSE_STATIONS;
 export const DOCK_REGISTRY: readonly InteractionRegistryEntry[] = [
   door('dock', 'station_concourse', 'dock.door_concourse', {
     x: D.northDoor.x,
-    y: D.northDoor.y + 56,
+    y: D.northDoor.y + 28,
   }),
   {
     id: 'dock.arrival_terminal',
@@ -290,8 +290,9 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     depthAnchor: 'foot',
     stage: 'any',
     window: 'm09_check_1 / m09_check_2 (non-canonical label)',
-    // The gauge hangs on the south hull face; approached from the north.
-    approach: { x: C.monitorGauge.x, y: C.monitorGauge.y - 56 },
+    // The pedestal gauge stands on the deck; read from its north side
+    // (the same standing point as before the gauge was grounded).
+    approach: { x: C.monitorGauge.x, y: C.monitorGauge.y - 20 },
   },
   {
     id: 'concourse.reading_desk_lamp',

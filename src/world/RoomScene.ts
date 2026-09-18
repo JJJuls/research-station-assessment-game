@@ -36,6 +36,7 @@ import { CANONICAL_EVENT_CONTEXT } from './CanonicalEventContext';
 import type { ObjectClass } from './interactionRegistry';
 import { promptText } from './interactionRegistry';
 import { ensureKitTextures, KIT_INDICATOR } from './kit/kitTextures';
+import { npcSolid } from './layouts/grid';
 import { STATION_THEMES } from './proceduralTilesets';
 import type { RoomTransitionTarget } from './SceneRouter';
 import { transitionToRoom } from './SceneRouter';
@@ -576,6 +577,8 @@ export abstract class RoomScene extends Phaser.Scene {
 
     this.player = new Player(this, spawn.x, spawn.y);
     this.physics.add.collider(this.player, this.roomMap.layer);
+    this.physics.add.collider(this.player, this.roomMap.solids);
+    this.drawCollisionOverlay(layout);
 
     // World V1 (docs/game/world-v1/CAMERA-AND-SCALE-SPEC.md): every world
     // object is drawn into the world plate, whose camera follows the
@@ -929,6 +932,70 @@ export abstract class RoomScene extends Phaser.Scene {
     return null;
   }
 
+  /**
+   * DEV-only collision overlay (`?collision=1`): draws exactly what the
+   * avatar collides with — wall cells, their skirts, the pixel solids —
+   * plus the avatar's live feet box, over the room art. Verification
+   * evidence for the collision audit; never present in a participant
+   * build (the branch is compiled out with `import.meta.env.DEV`).
+   */
+  private drawCollisionOverlay(layout: RoomLayout) {
+    if (
+      !import.meta.env.DEV ||
+      typeof window === 'undefined' ||
+      new URLSearchParams(window.location.search).get('collision') !== '1'
+    ) {
+      return;
+    }
+
+    const tile = layout.tileSize ?? 32;
+    const g = this.add.graphics().setDepth(Depth.AboveWorld);
+
+    layout.grid.forEach((row, r) => {
+      for (let c = 0; c < row.length; c += 1) {
+        const ch = row[c];
+
+        if (ch === '#' || ch === ' ' || ch === 'X') {
+          g.fillStyle(ch === 'X' ? 0xff00ff : 0xff0000, 0.28);
+          g.fillRect(c * tile, r * tile, tile, tile);
+        }
+      }
+    });
+
+    // Solids are drawn on the first frame: subclasses add NPC foot solids
+    // after the base create().
+    this.events.once(Phaser.Scenes.Events.POST_UPDATE, () => {
+      for (const body of this.roomMap.solids.getChildren()) {
+        const zone = body as Phaser.GameObjects.Zone;
+
+        g.fillStyle(0xff8c00, 0.4);
+        g.lineStyle(1, 0xff8c00, 1);
+        g.fillRect(
+          zone.x - zone.width / 2,
+          zone.y - zone.height / 2,
+          zone.width,
+          zone.height,
+        );
+        g.strokeRect(
+          zone.x - zone.width / 2,
+          zone.y - zone.height / 2,
+          zone.width,
+          zone.height,
+        );
+      }
+    });
+
+    const feet = this.add.graphics().setDepth(Depth.AboveWorld + 0.01);
+
+    this.events.on(Phaser.Scenes.Events.POST_UPDATE, () => {
+      const body = this.player.body;
+
+      feet.clear();
+      feet.lineStyle(1, 0x00ffff, 1);
+      feet.strokeRect(body.x, body.y, body.width, body.height);
+    });
+  }
+
   /** World V2: the painted plate image of the room (null without one). */
   protected roomPlateArt(): Phaser.GameObjects.Image | null {
     const plate = this.children.getByName('__roomPlateArt');
@@ -986,6 +1053,13 @@ export abstract class RoomScene extends Phaser.Scene {
       still: config.still,
       workFrames: config.workFrames,
     });
+
+    // The figure's ground contact collides (collision audit 2026-09).
+    const [sx, sy, sw, sh] = npcSolid(config.x, config.y);
+    const feet = this.add.zone(sx + sw / 2, sy + sh / 2, sw, sh);
+
+    this.physics.add.existing(feet, true);
+    this.roomMap.solids.add(feet);
 
     this.interactableMarkers.set(config, npc.sprite);
     this.npcActors.set(config, npc);

@@ -21,7 +21,11 @@ import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 import { RoomScene, runOncePerSession } from '../world';
 import { EMERGENCY_PLATE_TINT } from '../world/kit/worldV2Assets';
-import { DOCK_LAYOUT, LEGACY_DOCK_LAYOUT } from '../world/layouts/dock';
+import {
+  DOCK_LAYOUT,
+  DOCK_SOLIDS,
+  LEGACY_DOCK_LAYOUT,
+} from '../world/layouts/dock';
 import { isLegacyRoute } from '../world/SceneRouter';
 
 /**
@@ -148,6 +152,7 @@ export class DockScene extends RoomScene {
       : {
           theme: 'dock',
           grid: [...DOCK_LAYOUT],
+          solids: DOCK_SOLIDS,
           field: 'wide',
           plateTexture: 'w2-dock-plate',
         };
@@ -317,13 +322,11 @@ export class DockScene extends RoomScene {
     // keep the interaction (prompt + lamp) exactly where the art shows it.
     this.hideMarkerArt(this.doorImage('dock.docking_airlock'));
 
-    // ——— North wall: the Concourse door leaf (sprite over the plate) ———
-    // The interaction anchor is (352, 64) so the approach clears the wall
-    // band; the 80×96 leaf itself is drawn at y 48, filling the wall band
-    // exactly, behind the actors.
-    this.doorImage('dock.door_concourse')
-      ?.setY(48)
-      .setDepth(DepthLayer.GroundInfra);
+    // ——— North wall: the Concourse door is painted into the plate,
+    // standing on the wall base (it used to be a sprite floating in the
+    // pipe band). The marker is hidden; prompt, lamp and portal stay on
+    // the anchor at the leaf's centre.
+    this.hideMarkerArt(this.doorImage('dock.door_concourse'));
 
     // ——— Check-in terminal: baked kiosk + a live screen glow ———
     this.hideMarkerArt(this.stationImage('dockArrivalTutorial'));
@@ -734,42 +737,49 @@ export class DockScene extends RoomScene {
     this.player.setPosition(S.spawnArrival.x, S.spawnArrival.y + 56);
     this.player.anims.play('researcher_idle_north', true);
 
-    // Cold light spill from the opening seal, swallowed as it recloses.
+    // Cold light spill from the opening seal, swallowed as it recloses —
+    // a soft radial glow (true alpha falloff). It used to be a flat ADD
+    // rectangle, which read as a pale box around the steam.
+    const soft = this.softPuffTexture();
     const spill = this.add
-      .rectangle(S.dockingAirlock.x, S.dockingAirlock.y - 24, 88, 56, 0xcfe8ff)
+      .image(S.dockingAirlock.x, S.dockingAirlock.y - 20, soft)
+      .setDisplaySize(128, 72)
+      .setTint(0xcfe8ff)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0)
       .setDepth(DepthLayer.WorldReadout);
 
     this.tweens.add({
       targets: spill,
-      alpha: { from: 0, to: 0.5 },
+      alpha: { from: 0, to: 0.45 },
       duration: ARRIVAL.ventMs * 0.4,
       yoyo: true,
       hold: ARRIVAL.ventMs * 0.5,
       onComplete: () => spill.destroy(),
     });
 
-    // Steam burst at the seal: three soft puffs drifting up and fading.
-    for (let i = 0; i < 3; i += 1) {
+    // Steam burst at the seal: soft-edged puffs drifting up and fading
+    // (normal blend, alpha falloff to zero at the rim — no sprite box on
+    // any floor tone or lighting state).
+    for (let i = 0; i < 5; i += 1) {
       const puff = this.add
-        .ellipse(
-          S.dockingAirlock.x - 24 + i * 24,
-          S.dockingAirlock.y - 8,
-          26,
-          16,
-          0xdfe9f1,
-          0.5,
+        .image(
+          S.dockingAirlock.x - 30 + i * 15,
+          S.dockingAirlock.y - 6 - (i % 2) * 5,
+          soft,
         )
+        .setDisplaySize(30, 22)
+        .setTint(0xdfe9f1)
+        .setAlpha(0.55)
         .setDepth(DepthLayer.WorldReadout - 0.01);
 
       this.tweens.add({
         targets: puff,
-        y: puff.y - 34 - i * 8,
-        scaleX: 1.9,
-        scaleY: 1.6,
+        y: puff.y - 30 - i * 5,
+        scaleX: puff.scaleX * 1.9,
+        scaleY: puff.scaleY * 1.7,
         alpha: 0,
-        delay: 120 * i,
+        delay: 90 * i,
         duration: 1300,
         ease: 'Sine.easeOut',
         onComplete: () => puff.destroy(),
@@ -795,6 +805,32 @@ export class DockScene extends RoomScene {
 
     // Control releases at the fixed end state.
     this.time.delayedCall(ARRIVAL.releaseMs, () => this.finishArrival());
+  }
+
+  /**
+   * A 64×64 white radial puff whose alpha falls smoothly to zero at the
+   * rim (generated once). Tinted per use; presentation only.
+   */
+  private softPuffTexture(): string {
+    const key = 'dock-soft-puff';
+
+    if (!this.textures.exists(key)) {
+      const canvas = this.textures.createCanvas(key, 64, 64);
+
+      if (canvas !== null) {
+        const ctx = canvas.getContext();
+        const gradient = ctx.createRadialGradient(32, 32, 2, 32, 32, 32);
+
+        gradient.addColorStop(0, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.55, 'rgba(255,255,255,0.45)');
+        gradient.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 64, 64);
+        canvas.refresh();
+      }
+    }
+
+    return key;
   }
 
   /** The one common finish: spawn, camera, seal, input, instruction. */

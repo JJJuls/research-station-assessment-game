@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 
+import type { SolidRect } from './layouts/grid';
+import { skirtRects } from './layouts/grid';
 import type { StationThemeId } from './proceduralTilesets';
 import {
   STATION_THEMES,
@@ -60,11 +62,22 @@ export interface RoomLayout {
    * so the plate can never change footprints or interaction regions.
    */
   plateTexture?: string;
+  /**
+   * Pixel-precise collision rectangles [x, y, w, h] authored to the
+   * painted silhouettes (collision audit 2026-09). They collide exactly
+   * as given — no wall skirt (see layouts/grid.ts).
+   */
+  solids?: readonly SolidRect[];
 }
 
 export interface BuiltRoomMap {
   tilemap: Phaser.Tilemaps.Tilemap;
   layer: Phaser.Tilemaps.TilemapLayer;
+  /**
+   * Static bodies beside the tile layer: the cell walls' skirts and the
+   * layout's pixel solids (the scene collides the avatar with both).
+   */
+  solids: Phaser.Physics.Arcade.StaticGroup;
   widthInPixels: number;
   heightInPixels: number;
 }
@@ -209,6 +222,8 @@ export function buildPlaceholderRoomMap(
 
   layer.setCollision(TILE_WALL);
 
+  const solids = buildSolidBodies(scene, layout);
+
   // World V2 painted plate: the authored background replaces every
   // tile-based visual layer. The logical layer keeps ALL collision and
   // simply becomes invisible (same structural guarantee as the art
@@ -229,6 +244,7 @@ export function buildPlaceholderRoomMap(
     return {
       tilemap,
       layer,
+      solids,
       widthInPixels: cols * tileSize,
       heightInPixels: rows * tileSize,
     };
@@ -308,9 +324,37 @@ export function buildPlaceholderRoomMap(
   return {
     tilemap,
     layer,
+    solids,
     widthInPixels: cols * tileSize,
     heightInPixels: rows * tileSize,
   };
+}
+
+/**
+ * The room's static collision bodies beside the tile layer: one skirt per
+ * wall cell with a walkable south neighbour (layouts/grid.ts WALL_SKIRT)
+ * and the layout's pixel solids. Invisible; the DEV collision overlay
+ * (RoomScene) draws them on request.
+ */
+function buildSolidBodies(
+  scene: Phaser.Scene,
+  layout: RoomLayout,
+): Phaser.Physics.Arcade.StaticGroup {
+  const group = scene.physics.add.staticGroup();
+  const tileSize = layout.tileSize ?? 32;
+  const rects: SolidRect[] =
+    tileSize === 32 ? [...skirtRects(layout.grid)] : [];
+
+  rects.push(...(layout.solids ?? []));
+
+  for (const [x, y, w, h] of rects) {
+    const zone = scene.add.zone(x + w / 2, y + h / 2, w, h);
+
+    scene.physics.add.existing(zone, true);
+    group.add(zone);
+  }
+
+  return group;
 }
 
 function addWangVisualLayer(

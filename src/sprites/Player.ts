@@ -103,15 +103,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Enable physics for the sprite
     scene.physics.world.enable(this);
 
-    // Identical 32×42 collision body in both skins (art swaps must never
-    // change collision footprints). Offsets center the body within each
-    // skin's frame: Misa frames are 32×64 (offset 0,22); researcher
-    // frames are 96×96 with a ~48px character centered (offset 32,30
-    // aligns the body to the visible torso/feet).
+    // Identical 22×14 FEET body in both skins (art swaps must never
+    // change collision footprints): x ± 11, y + 10 … y + 24 around the
+    // sprite origin — the figure's ground contact, not its silhouette, so
+    // the head and torso overlap what stands behind the figure instead of
+    // colliding with it (collision audit 2026-09; grid.ts BODY mirrors
+    // this box, and cell walls keep a 28 px skirt so cell-authored rooms
+    // are unchanged north-south). Researcher frames are 96×96 (origin
+    // 48,48); the fallback Misa frames are 32×64 and keep their former
+    // bottom edge.
     if (this.skin === 'researcher') {
-      this.setSize(32, 42).setOffset(32, 30);
+      this.setSize(22, 14).setOffset(37, 58);
     } else {
-      this.setSize(32, 42).setOffset(0, 22);
+      this.setSize(22, 14).setOffset(5, 50);
     }
 
     // Collide the sprite body with the world boundary
@@ -331,7 +335,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private facing?: ResearcherDirection;
 
   private moveSelector(animation: Animation) {
-    const { body, selector } = this;
+    const { selector } = this;
+    // The selector offsets were authored against the former 32×42 body's
+    // top-left corner (origin − 16, − 18); kept relative to the origin.
+    const body = { x: this.x - 16, y: this.y - 18 };
 
     this.facing = ANIMATION_TO_DIRECTION[animation];
 

@@ -8,17 +8,49 @@
 
 export const TILE = 32;
 
-/** The avatar's physics body (Player.ts: 32×42, offset so the foot line is +24). */
-export const BODY = { halfWidth: 16, top: 18, bottom: 24 } as const;
+/**
+ * The avatar's physics body (Player.ts): a FEET box, 22×14, spanning
+ * x ± 11 and y + 10 … y + 24 around the sprite origin (the foot line is
+ * +24). `top` is the distance from the origin UP to the body's top edge,
+ * so a feet box that starts below the origin has a negative `top`.
+ */
+export const BODY = { halfWidth: 11, top: -10, bottom: 24 } as const;
+
+/**
+ * Wall skirt (px). Until the collision audit of 2026-09 the body was the
+ * whole 32×42 figure (top = origin − 18); every cell grid was authored
+ * against it, so a wall cell's SOUTH face stood 28 px north of where the
+ * painted wall base is. Cell walls ('#', 'X', void) therefore keep a
+ * 28 px skirt below their south face: the feet box stops exactly where
+ * the old body's head stopped, and cell-authored rooms keep their audited
+ * north-south geometry. Pixel solids (`RoomGrid.solids`) are authored to
+ * the painted silhouette and carry NO skirt.
+ */
+export const WALL_SKIRT = 28;
+
+/**
+ * A standing figure's ground contact (NPCs share the avatar's foot line,
+ * origin + 24): the avatar walks AROUND a colleague, never through them.
+ */
+export function npcSolid(x: number, y: number): SolidRect {
+  return [x - 11, y + 12, 22, 12];
+}
+
+/** Pixel-precise collision rectangle [x, y, w, h] (world px, no skirt). */
+export type SolidRect = readonly [number, number, number, number];
 
 export interface RoomGrid {
   rows: string[];
   cols: number;
   widthPx: number;
   heightPx: number;
+  solids: readonly SolidRect[];
 }
 
-export function gridOf(rows: readonly string[]): RoomGrid {
+export function gridOf(
+  rows: readonly string[],
+  solids: readonly SolidRect[] = [],
+): RoomGrid {
   const cols = Math.max(...rows.map((row) => row.length));
 
   return {
@@ -26,7 +58,28 @@ export function gridOf(rows: readonly string[]): RoomGrid {
     cols,
     widthPx: cols * TILE,
     heightPx: rows.length * TILE,
+    solids,
   };
+}
+
+/**
+ * The skirt rectangles of a grid: one per wall cell whose south
+ * neighbour is walkable (the scene builds the same rectangles as static
+ * bodies — StationMapBuilder.buildSolidBodies).
+ */
+export function skirtRects(rows: readonly string[]): SolidRect[] {
+  const grid = gridOf(rows);
+  const rects: SolidRect[] = [];
+
+  for (let row = 0; row < rows.length - 1; row += 1) {
+    for (let col = 0; col < grid.cols; col += 1) {
+      if (isWallCell(grid, col, row) && !isWallCell(grid, col, row + 1)) {
+        rects.push([col * TILE, (row + 1) * TILE, TILE, WALL_SKIRT]);
+      }
+    }
+  }
+
+  return rects;
 }
 
 export function isWallCell(grid: RoomGrid, col: number, row: number): boolean {
@@ -59,6 +112,29 @@ export function bodyFits(grid: RoomGrid, x: number, y: number): boolean {
       if (isWallCell(grid, col, row)) {
         return false;
       }
+    }
+  }
+
+  // Wall skirts: a wall cell within WALL_SKIRT px above the body's top.
+  for (
+    let row = Math.floor((top - WALL_SKIRT) / TILE);
+    row < Math.floor(top / TILE);
+    row += 1
+  ) {
+    for (
+      let col = Math.floor(left / TILE);
+      col <= Math.floor(right / TILE);
+      col += 1
+    ) {
+      if (isWallCell(grid, col, row) && (row + 1) * TILE + WALL_SKIRT > top) {
+        return false;
+      }
+    }
+  }
+
+  for (const [sx, sy, sw, sh] of grid.solids) {
+    if (left < sx + sw && right >= sx && top < sy + sh && bottom >= sy) {
+      return false;
     }
   }
 
