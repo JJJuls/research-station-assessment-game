@@ -479,34 +479,53 @@ export abstract class PilotZoneScene extends RoomScene {
   }
 
   /**
-   * V4 Unit 6 (reviews R2 / Y7): a world readout chip is shown only while
-   * its full bounds lie inside the world camera view, so a half-clipped
-   * word never reads as a rendering fault. Zones pass their chips.
+   * World readout chips are CONTEXTUAL (Station 080 correction): a chip is
+   * a status line for the object the participant is standing at, not a
+   * permanent strip over the room. At most ONE chip shows at a time — the
+   * nearest one within `READOUT_RANGE` of the avatar — and only while its
+   * whole text lies inside the world view (a clipped "MAST 04 — storm
+   * dama…" never shows; the top 30 world px belong to the objective
+   * band). The text itself is unchanged and still read by the probes.
    */
   protected clampWorldReadouts(
     chips: readonly (Phaser.GameObjects.Text | null)[],
   ) {
+    const READOUT_RANGE = 120;
     const view = this.plate.view;
+    let nearest: Phaser.GameObjects.Text | null = null;
+    let nearestDistance = READOUT_RANGE;
 
     for (const chip of chips) {
       if (chip === null || !chip.active) {
         continue;
       }
 
-      const bounds = chip.getBounds();
-      // Review V-6: a chip stays while at least 60 % of it is in view;
-      // review V-7: the objective band (top 30 world px) counts as covered.
-      const visibleLeft = Math.max(bounds.left, view.x);
-      const visibleRight = Math.min(bounds.right, view.right);
-      const visibleTop = Math.max(bounds.top, view.y + 30);
-      const visibleBottom = Math.min(bounds.bottom, view.bottom);
-      const fraction =
-        (Math.max(0, visibleRight - visibleLeft) *
-          Math.max(0, visibleBottom - visibleTop)) /
-        Math.max(1, bounds.width * bounds.height);
+      chip.setVisible(false);
 
-      chip.setVisible(chip.text.length > 0 && fraction >= 0.6);
+      if (chip.text.length === 0) {
+        continue;
+      }
+
+      const bounds = chip.getBounds();
+      const inside =
+        bounds.left >= view.x + 2 &&
+        bounds.right <= view.right - 2 &&
+        bounds.top >= view.y + 30 &&
+        bounds.bottom <= view.bottom - 2;
+      const distance = Phaser.Math.Distance.Between(
+        this.player.x,
+        this.player.y,
+        bounds.centerX,
+        bounds.centerY,
+      );
+
+      if (inside && distance < nearestDistance) {
+        nearest = chip;
+        nearestDistance = distance;
+      }
     }
+
+    nearest?.setVisible(true);
   }
 
   private beaconVisibleNow(): boolean {

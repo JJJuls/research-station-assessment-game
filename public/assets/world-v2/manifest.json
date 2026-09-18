@@ -3,21 +3,21 @@
   "status": "PROVISIONAL MODEL-SELECTED, NOT HUMAN-APPROVED",
   "generator": "PixelLab MCP",
   "date": "2026-09-12",
-  "notes": "Painted-plate production: each room plate is one authored key-art painting; collision comes from the invisible layout grid (src/world/layouts/*). No commercial reference imagery was used as input; all prompts original. Rejected candidates: direction B (2ef9864f, oblique projection) and direction C (32c1cc32, isometric) kept as direction studies under docs/verification/professional-world-rescue-v2/directions/; door candidates idx1-3 of e7cf8f73 rejected (style mismatch). V3 (2026-09-13): every remaining zone (laboratory, deck, core, yard) renders its plate; no new generations this session (PixelLab balance untouched).",
+  "notes": "Painted-plate production: each room plate is one authored key-art painting; collision comes from the invisible layout grid (src/world/layouts/*). No commercial reference imagery was used as input; all prompts original. Rejected candidates: direction B (2ef9864f, oblique projection) and direction C (32c1cc32, isometric) kept as direction studies under docs/verification/professional-world-rescue-v2/directions/; door candidates idx1-3 of e7cf8f73 rejected (style mismatch). V3 (2026-09-13): every remaining zone (laboratory, deck, core, yard) renders its plate; no new generations this session (PixelLab balance untouched). Station 080 correction (2026-09-18): three plates edited by reproducible Pillow surgery and four hand-authored supply sprites added; no PixelLab generation spent; set still PROVISIONAL, asset-set version not bumped.",
   "files": {
     "plates/dock-plate.png": {
       "job": "2aeff8c4-c76b-4225-9b01-44777bf9bcc7",
       "tool": "create_image_pro",
       "role": "Dock room plate (688x384); also the selected direction-A golden frame",
-      "edits": "none",
-      "sha256": "cbe65d18a9e8311900e05049c187043e68c22e4daa042b65286c4f3713d9f6a3"
+      "edits": "none | 2026-09-18 Pillow surgery (scripts/world-v2/plate_edits.py dock): centre wall lamp and cone painted out with same-row wall pixels; the door-north leaf composited INTO the wall on the wall base (y 140, x 352). Untouched generation kept at docs/game/world-v2/plate-sources/dock-plate.v2.png",
+      "sha256": "d047aa841ddae7f19fb5b46b8dc54ddd60850a1f2a3b5a416294364f0506a541"
     },
     "plates/concourse-plate.png": {
       "job": "f2c2ea85-a47b-4f42-877a-fa923cbc1007",
       "tool": "create_image_pro (style ref = dock plate)",
       "role": "Concourse room plate (688x384)",
-      "edits": "inpaint W door (40ea700b-abe8-441a-8a7d-403f7a59bd36), inpaint E door (271e3af0-a200-4adb-be5b-a13e4cab9244), inpaint lamp-table erase (c4b6e7ee-a187-4b00-baa1-4d7caeeeeaf4); mask regions composited with Pillow, rest byte-identical",
-      "sha256": "498d7dd545630e714b106b8cda20a3dad73fd1f2f010cd8aa6b310c4d5403f2b"
+      "edits": "inpaint W door (40ea700b-abe8-441a-8a7d-403f7a59bd36), inpaint E door (271e3af0-a200-4adb-be5b-a13e4cab9244), inpaint lamp-table erase (c4b6e7ee-a187-4b00-baa1-4d7caeeeeaf4); mask regions composited with Pillow, rest byte-identical | 2026-09-18 Pillow surgery (plate_edits.py concourse): skewed radio side-table painted out with the deck plating of the same rows (x 504-546). Previous state kept at docs/game/world-v2/plate-sources/concourse-plate.v2.png",
+      "sha256": "7130d2df072e25e0887e06bee6c13dd3501755c30b3cca06a4ed8afd69910478"
     },
     "opening/station-establishing.png": {
       "job": "1376f7c5-651e-422e-b045-3eb6054acf9b",
@@ -72,8 +72,36 @@
       "job": "d4c70eb3-496a-4970-991e-ade1551ccc13 (west bay) + 94c19c7e-9910-4290-87f8-e2ff9b1b054a (east bay; style ref = west bay)",
       "tool": "create_image_pro x2, stitched side-by-side with Pillow at x=688 (no seam blending needed: each bay keeps its own painted box and the facing doorways form the connecting vestibule)",
       "role": "Records Workshop room plate (1376x384, two-bay hall: machine bay west, records office east)",
-      "edits": "stitch only; all pixels byte-identical to the two generations",
-      "sha256": "9a32ded5bc13272887d7a316821ad35aefff82bae39f4e81625c74d7726869a1"
+      "edits": "stitch only; all pixels byte-identical to the two generations | 2026-09-18 Pillow surgery (plate_edits.py workshop): the records office false doorway painted as a sealed service shutter inside the untouched frame. Untouched stitch kept at docs/game/world-v2/plate-sources/workshop-plate.v2.png",
+      "sha256": "0678f59953d525d4b6b2770f3e2782c72fae6af728a01d5c462c747ff594e3fc"
+    },
+    "props/supply-component-crate.png": {
+      "job": "none (no generator)",
+      "tool": "hand-authored pixel art drawn with Pillow (scripts/world-v2/paint_props.py)",
+      "role": "world sprite of a floor supply bundle (replaces the flat kit-parcel rectangle)",
+      "edits": "none",
+      "sha256": "d447a11cf1f07ba7f21544e1d2c4f5c6e8bc65826304caf3fd847d435f000869"
+    },
+    "props/supply-sample-case.png": {
+      "job": "none (no generator)",
+      "tool": "hand-authored pixel art drawn with Pillow (scripts/world-v2/paint_props.py)",
+      "role": "world sprite of a floor supply bundle (replaces the flat kit-parcel rectangle)",
+      "edits": "none",
+      "sha256": "450ec01d2869b996476e2a1e09c4d8fb7dbb79cf339dc267b4bb581a76e617e2"
+    },
+    "props/supply-wire-and-wrap.png": {
+      "job": "none (no generator)",
+      "tool": "hand-authored pixel art drawn with Pillow (scripts/world-v2/paint_props.py)",
+      "role": "world sprite of a floor supply bundle (replaces the flat kit-parcel rectangle)",
+      "edits": "none",
+      "sha256": "468850700d7ffaa6986f994e665ce8f7ef4340f6c21e0ca335b81576126986a3"
+    },
+    "props/supply-relay-unit.png": {
+      "job": "none (no generator)",
+      "tool": "hand-authored pixel art drawn with Pillow (scripts/world-v2/paint_props.py)",
+      "role": "world sprite of a floor supply bundle (replaces the flat kit-parcel rectangle)",
+      "edits": "none",
+      "sha256": "ca74dca916b50cc95444b93fd6e06a7350ec0dcb3ffb552f3053aa46e7d5705d"
     }
   }
 }

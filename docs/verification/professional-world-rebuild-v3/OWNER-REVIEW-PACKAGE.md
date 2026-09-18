@@ -82,6 +82,27 @@ Landing precision and frame rate per station are in the run logs
 
 ## 6. Full-route video
 
+> **Archival correction (2026-09-18, Station 080 correction sprint).** The
+> statements below were checked against the file by the research owner and
+> are corrected here; the original wording is kept underneath for the
+> record.
+>
+> - The WebM **begins at the Dock, not at the watched opening** (the
+>   recorder starts after the opening has drawn, and the first recorded
+>   frames are the Dock).
+> - Its **decoded average is approximately 6 fps, not 10 fps** — "10 fps"
+>   was the recorder's requested capture rate, never a decoded measurement
+>   (there is no ffmpeg on the build machine).
+> - Its **audio track is very quiet**.
+> - It proves **automated progression** through the route on real input
+>   under a software renderer; it is **not evidence of participant-side
+>   performance**. The owner's own accelerated Windows / Chrome 1920×1080
+>   playtest was smooth.
+> - This build is an **internal / supervised evaluation build**, not a
+>   release candidate, until the scientific blockers in
+>   `docs/verification/station-080-correction/OWNER-DECISION-REGISTER.md`
+>   are closed. Read "release candidate" in this file's title accordingly.
+
 - `route/1280x720/route-1280x720.webm` — 20,164,511 bytes, `video/webm;codecs=vp8,opus`,
   1280×720, 10 fps, **audio: true** (the DEV tap on the audio kit's master
   gain), one continuous real-input session from the watched opening to the

@@ -1,5 +1,9 @@
 # Continuation handoff — professional world rebuild V3
 
+> **Superseded (2026-09-18)** by
+> `docs/verification/station-080-correction/CONTINUATION-HANDOFF.md`; the
+> "Pitfalls carried forward" list below still holds.
+
 Written by Fable at the close of the fourth session (2026-09-15, unattended
 verification and release-candidate run). A fresh session continues from
 here without reconstruction. The previous checkpoint (`68e7f07`) is

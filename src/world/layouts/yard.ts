@@ -21,6 +21,7 @@
  */
 import type { BlockoutRect } from './blockout';
 import { blockoutRows } from './blockout';
+import type { SolidRect } from './grid';
 
 export const YARD_COLS = 43;
 export const YARD_ROWS = 12;
@@ -45,6 +46,17 @@ export const YARD_FOOTPRINTS: readonly BlockoutRect[] = [
   [40.2, 6.3, 1.6, 1.5], // rig control bench (E wall)
   [39, 9, 2.5, 1], // parts cart (hull band)
   [1.2, 8.3, 2.6, 1.2], // rock cluster (SW)
+];
+
+/**
+ * Pixel solids (collision audit 2026-09). The painted uplink rack (two
+ * antenna posts with the panel between them, plate x 100–200, base y 114)
+ * had no collider west of post A's cell — the avatar could stand inside
+ * it. The remaining yard props keep their cell footprints until the
+ * yard's own rebuild unit (see the Station 080 correction handoff).
+ */
+export const YARD_SOLIDS: readonly SolidRect[] = [
+  [100, 64, 100, 44], // uplink rack: posts + panel
 ];
 
 export const YARD_DOORS: readonly BlockoutRect[] = [];

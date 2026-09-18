@@ -43,7 +43,7 @@ import {
   WORKSHOP_LAYOUT,
   WORKSHOP_SOLIDS,
 } from '../src/world/layouts/workshop';
-import { YARD_LAYOUT } from '../src/world/layouts/yard';
+import { YARD_LAYOUT, YARD_SOLIDS } from '../src/world/layouts/yard';
 
 const LAYOUTS = {
   dock: gridOf(DOCK_LAYOUT, DOCK_SOLIDS),
@@ -52,7 +52,7 @@ const LAYOUTS = {
   diagnostics_laboratory: gridOf(LAB_LAYOUT),
   utility_core_deck: gridOf(DECK_LAYOUT),
   core_chamber: gridOf(CORE_LAYOUT),
-  exterior_recovery_yard: gridOf(YARD_LAYOUT),
+  exterior_recovery_yard: gridOf(YARD_LAYOUT, YARD_SOLIDS),
 } as const;
 
 const SPAWNS = {

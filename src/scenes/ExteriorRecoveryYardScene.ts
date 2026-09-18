@@ -181,7 +181,7 @@ import {
 import { YARD_RIG_PAD, YARD_SITES, YARD_SPAWN } from '../pilot/zoneSites';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption } from '../world';
-import { YARD_LAYOUT } from '../world/layouts/yard';
+import { YARD_LAYOUT, YARD_SOLIDS } from '../world/layouts/yard';
 
 const TILE = 32;
 const M05_FIX_MS = 2000;
@@ -238,6 +238,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     return {
       theme: 'exterior' as const,
       grid: [...YARD_LAYOUT],
+      solids: YARD_SOLIDS,
       field: 'wide' as const,
       plateTexture: 'w2-yard-plate',
     };

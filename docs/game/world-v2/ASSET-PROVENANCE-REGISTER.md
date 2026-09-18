@@ -51,3 +51,17 @@ Player/NPC sprites (`assets/characters/`, `assets/pixellab-runtime/npcs/`),
 the w1 prop set still used as layered sprites (`w1-evidence-desk`,
 `w1-gauge`, `w1-airlock-closed` [hidden interaction marker]) — see
 `docs/game/world-v1/ASSET-PROVENANCE-REGISTER.md`.
+
+## Station 080 correction (2026-09-18) — no generation spent
+
+- `plates/dock-plate.png`, `plates/concourse-plate.png`,
+  `plates/workshop-plate.png`: reproducible Pillow surgery on the kept V2
+  paintings (`scripts/world-v2/plate_edits.py`; untouched sources under
+  `docs/game/world-v2/plate-sources/`) — Dock door painted into the wall
+  on the wall base, Concourse radio side-table painted out, Workshop false
+  doorway painted as a sealed shutter. Hashes and edit notes in the
+  world-v2 manifest.
+- `props/supply-*.png` (4): hand-authored pixel art drawn with Pillow
+  (`scripts/world-v2/paint_props.py`), no generator.
+- Status unchanged: PROVISIONAL, not human-approved, asset-set version not
+  bumped, nothing frozen.
