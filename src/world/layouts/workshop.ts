@@ -23,7 +23,7 @@
  * 10–18) — deliberately, the way a real machine floor walks.
  */
 import type { BlockoutRect } from './blockout';
-import { blockoutRows } from './blockout';
+import { blockoutRows, footprintSolids } from './blockout';
 import type { SolidRect } from './grid';
 
 export const WORKSHOP_COLS = 43;
@@ -48,8 +48,8 @@ export const WORKSHOP_FLOOR: readonly BlockoutRect[] = [
   [22, 9, 20, 1],
 ];
 
-/** Prop footprints (collide; the plate's baked art beneath). */
-export const WORKSHOP_FOOTPRINTS: readonly BlockoutRect[] = [
+/** The painted benches and machines, in tile units (audited figures). */
+const WORKSHOP_MASSES: readonly BlockoutRect[] = [
   [2, 2, 4, 3], // records/case desk + pigeonholes (NW)
   [6.5, 2, 1.7, 3], // label press A
   [8.6, 2, 1.4, 3], // label press B
@@ -67,6 +67,9 @@ export const WORKSHOP_FOOTPRINTS: readonly BlockoutRect[] = [
   [35.6, 9, 3.3, 2], // conduit lattice bench (office south hull)
 ];
 
+/** Cell footprints: none — the props collide through WORKSHOP_SOLIDS. */
+export const WORKSHOP_FOOTPRINTS: readonly BlockoutRect[] = [];
+
 /**
  * Pixel solids (collision audit 2026-09). The vestibule between the bays
  * is a passage THROUGH two painted side-wall doorways: the wall faces
@@ -76,6 +79,9 @@ export const WORKSHOP_FOOTPRINTS: readonly BlockoutRect[] = [
  */
 export const WORKSHOP_SOLIDS: readonly SolidRect[] = [
   [608, 192, 160, 44], // wall faces above both door sills
+  // Every bench and machine exactly where the book measured it (they
+  // used to collide on the whole 32 px cells they touch).
+  ...footprintSolids(WORKSHOP_MASSES),
 ];
 
 /**

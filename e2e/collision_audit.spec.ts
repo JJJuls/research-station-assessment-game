@@ -226,7 +226,8 @@ for (const [zone, spec] of Object.entries(ROOMS)) {
         process.env.COLLISION_ROOM !== zone,
       'other room selected',
     );
-    test.setTimeout(1_500_000);
+    // ~12 s per pushed face under software GL, plus the sweeps and boots.
+    test.setTimeout(600_000 + spec.solids.length * 4 * 15_000);
     mkdirSync(OUT, { recursive: true });
     await page.setViewportSize(VIEWPORT);
 
