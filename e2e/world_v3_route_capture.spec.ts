@@ -432,9 +432,9 @@ test('world V3 — full participant route capture with recording', async ({
   await acceptMast(page);
   await doMastStage(page, 1);
   await snap(page, 'yard-mast-after-stage-1');
-  await yardVia(page, 700, 220);
-  await snap(page, 'yard-drift-pass');
-  await yardVia(page, 1000, 216);
+  await yardVia(page, 900, 400);
+  await snap(page, 'yard-open-field');
+  await yardVia(page, 1224, 376);
   await snap(page, 'yard-recovery-field-camera-moved');
   // Back through the drift pass to Noor's audited approach before the
   // shift-end beat (finishOutside walks the last leg itself).

@@ -103,11 +103,11 @@ test('yard first look — every audited approach shows its own prompt; the airlo
   }
 
   // The drift pass, westward, on real input.
-  await yardVia(page, 700, 220);
-  await shot(page, '14-drift-pass');
+  await yardVia(page, 900, 400);
+  await shot(page, '14-open-field');
 
   // Airlock → laboratory → back (reflex SPACE safe on both arrivals).
-  await yardVia(page, 342, 282);
+  await yardVia(page, 896, 636);
   await useDoor(page, PILOT.yard.airlock, 'diagnostics_laboratory', {
     approachOffset: { x: 0, y: -40 },
   });

@@ -24,15 +24,30 @@ import { expect, type Page, test } from '@playwright/test';
 import {
   CONCOURSE_SPAWNS,
   CONCOURSE_STATIONS,
+  CORE_SPAWN,
+  DECK_SPAWNS,
   DOCK_SITES,
+  LAB_SPAWNS,
+  LAB_STATIONS,
+  WORKSHOP_SPAWN,
+  YARD_SITES,
+  YARD_SPAWN,
 } from '../src/pilot/zoneSites';
 import {
   CONCOURSE_LAYOUT,
   CONCOURSE_SOLIDS,
 } from '../src/world/layouts/concourse';
+import { CORE_LAYOUT, CORE_SOLIDS } from '../src/world/layouts/coreChamber';
+import { DECK_LAYOUT, DECK_SOLIDS } from '../src/world/layouts/deck';
 import { DOCK_LAYOUT, DOCK_SOLIDS } from '../src/world/layouts/dock';
 import type { RoomGrid, SolidRect } from '../src/world/layouts/grid';
 import { BODY, bodyFits, gridOf, npcSolid } from '../src/world/layouts/grid';
+import { LAB_LAYOUT, LAB_SOLIDS } from '../src/world/layouts/laboratory';
+import {
+  WORKSHOP_LAYOUT,
+  WORKSHOP_SOLIDS,
+} from '../src/world/layouts/workshop';
+import { YARD_LAYOUT, YARD_SOLIDS } from '../src/world/layouts/yard';
 import { driveAxisTo, playerProbe } from './helpers';
 import { navigateTo, planPath, type Point } from './navGrid';
 import { waitScene } from './pilotHelpers';
@@ -75,6 +90,46 @@ const ROOMS: Record<string, AuditRoom> = {
     [],
     DOCK_SITES.spawnArrival,
     [170, 215, 250],
+  ),
+  records_workshop: room(
+    'records_workshop',
+    WORKSHOP_LAYOUT,
+    WORKSHOP_SOLIDS,
+    [],
+    WORKSHOP_SPAWN,
+    [236, 262],
+  ),
+  diagnostics_laboratory: room(
+    'diagnostics_laboratory',
+    LAB_LAYOUT,
+    LAB_SOLIDS,
+    [LAB_STATIONS.kai],
+    LAB_SPAWNS.fromConcourse,
+    [170, 216, 250],
+  ),
+  utility_core_deck: room(
+    'utility_core_deck',
+    DECK_LAYOUT,
+    DECK_SOLIDS,
+    [],
+    DECK_SPAWNS.fromConcourse,
+    [150, 190],
+  ),
+  core_chamber: room(
+    'core_chamber',
+    CORE_LAYOUT,
+    CORE_SOLIDS,
+    [],
+    CORE_SPAWN,
+    [280],
+  ),
+  exterior_recovery_yard: room(
+    'exterior_recovery_yard',
+    YARD_LAYOUT,
+    YARD_SOLIDS,
+    [YARD_SITES.noor],
+    YARD_SPAWN,
+    [240, 420, 500],
   ),
 };
 

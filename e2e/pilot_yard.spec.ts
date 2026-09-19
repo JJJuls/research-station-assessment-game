@@ -853,7 +853,7 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
 
     // Overlays: I freezes the world and resumes it; M likewise. (Back to
     // the west half through the drift pass — pass-aware driver.)
-    await yardVia(page, 400, 252);
+    await yardVia(page, 600, 400);
 
     const before = await page.evaluate(
       () =>

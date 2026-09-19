@@ -1,0 +1,77 @@
+{
+  "source_painting": "docs/game/world-v2/plate-sources/yard-plate.v2.png",
+  "reference_note": "ref-*.png are the exact crops re-saved as lossless 64-colour paletted PNGs (pixel-identical) to keep the MCP payload small; passed both as style_image_base64 and reference_images[0] with usage 'the object to redraw: same design, same proportions, same colours, same camera angle'; no_background=true",
+  "total_generations": 80,
+  "sprites": [
+    {
+      "file": "uplink-rack.png",
+      "job_id": "e57626a5-7042-46d3-9f98-836e22cded1b",
+      "tool": "mcp__pixellab__create_image_pro",
+      "description": "Pixel art sprite, top-down 3/4 view: a field radio uplink rack — two tall thin steel antenna posts joined by two horizontal steel rails, a grey control panel box with a small orange display and a keypad mounted between the posts, short legs. Cold grey-blue steel, near-black violet outline. Free-standing object on a transparent background, no snow, no ground, no sky.",
+      "reference_crop_box": [92, 8, 212, 124],
+      "reference_file": "ref-uplink-rack.png",
+      "candidates": [
+        "uplink-rack.cand0.png",
+        "uplink-rack.cand1.png",
+        "uplink-rack.cand2.png",
+        "uplink-rack.cand3.png"
+      ],
+      "chosen": "uplink-rack.cand0.png",
+      "accepted": true,
+      "generations": 20,
+      "notes": "cand0 closest to painting (small orange display). All 4 candidates had a flat grey ground-shadow patch under the feet; final file = cand0 with 343 shadow pixels of colours (146,147,165)/(139,138,159) in rows y>=96 set transparent with Pillow (deterministic post-process, no repaint). cand0 is the untouched generator output.",
+      "width": 128,
+      "height": 120,
+      "opaque_bbox": [13, 14, 116, 109],
+      "transparent_fraction": 0.825,
+      "semi_transparent_pixels": 0,
+      "sha256": "064fcace9018deaf196b5c89b1ef8e8027084f259aaf9b047b0482edd89ef65e"
+    },
+    {
+      "file": "mast-04.png",
+      "job_id": "bfa9fcc4-8e38-4009-a8bb-2875f79fdc7f",
+      "tool": "mcp__pixellab__create_image_pro",
+      "description": "Pixel art sprite, top-down 3/4 view: a storm-damaged steel lattice communications mast, tall and narrow, its top section bent over and broken, standing on a pile of dark snow-dusted rocks, with four thin dark guy wires running from the upper tower down to small ground anchors left and right. Cold grey-blue steel, near-black violet outline. Free-standing object on a transparent background, no snow field, no sky, no lamp. The WHOLE mast must fit inside the canvas with at least 6 pixels of empty transparent margin on every side: the bent broken top arch is complete and does not touch the top edge, all four guy-wire ground anchors are complete and do not touch the left or right edges, the rock pile sits just above the bottom edge. Draw the object slightly smaller rather than cropping it.",
+      "reference_crop_box": [356, 0, 514, 200],
+      "reference_file": "ref-mast-04.padded.png (crop edge-replicated by L8/T14/R8/B2 px to 174x216 so the model leaves margin); first attempt used ref-mast-04.png",
+      "candidates": ["mast-04.cand1.png"],
+      "chosen": "mast-04.cand1.png",
+      "accepted": true,
+      "generations": 40,
+      "rejected": [
+        {
+          "file": "mast-04.rejected1.png",
+          "job_id": "65c224c2-1800-4684-baaf-df106e7a2452",
+          "description": "Pixel art sprite, top-down 3/4 view: a storm-damaged steel lattice communications mast, tall and narrow, its top section bent over and broken, standing on a pile of dark snow-dusted rocks, with four thin dark guy wires running from the upper tower down to small ground anchors left and right. Cold grey-blue steel, near-black violet outline. Free-standing object on a transparent background, no snow field, no sky, no lamp.",
+          "reason": "bent top arch clipped by top canvas edge (row 0 opaque x78-111) and right guy anchor touching right edge; bbox (4,0,160,196)"
+        }
+      ],
+      "notes": "Regenerated once with sharpened description + padded reference. Untouched generator output. Object drawn ~0.89x the painting scale; margins 11-12 px.",
+      "width": 160,
+      "height": 200,
+      "opaque_bbox": [11, 12, 149, 189],
+      "transparent_fraction": 0.825,
+      "semi_transparent_pixels": 0,
+      "sha256": "a7b876d2c588beb500b878864f4f7c745882c10cbd01608745b161cc71656b9f"
+    },
+    {
+      "file": "gantry-rig.png",
+      "job_id": "7afe0526-9a5f-43b6-a124-0acd2cd32a2a",
+      "tool": "mcp__pixellab__create_image_pro",
+      "description": "Pixel art sprite, top-down 3/4 view: an industrial steel gantry crane — two tall lattice legs left and right joined by a lattice crossbeam along the top, a trolley on the beam with a chain hanging down holding a round dark electromagnet disc in the middle. Nothing under the magnet. Cold grey-blue steel, near-black violet outline. Free-standing object on a transparent background, no scrap pile, no rocks, no lamp, no snow, no sky.",
+      "reference_crop_box": [1106, 32, 1354, 208],
+      "reference_file": "ref-gantry-rig.png",
+      "candidates": ["gantry-rig.cand0.png"],
+      "chosen": "gantry-rig.cand0.png",
+      "accepted": true,
+      "generations": 20,
+      "notes": "Single candidate (canvas >170 px). Untouched generator output. No scrap/lamp/rocks.",
+      "width": 256,
+      "height": 176,
+      "opaque_bbox": [14, 9, 240, 166],
+      "transparent_fraction": 0.761,
+      "semi_transparent_pixels": 0,
+      "sha256": "dc1b903a8b600ab963ea72c3fa1ed52067bfafa1ccdb26c526f49feaf393a7d5"
+    }
+  ]
+}

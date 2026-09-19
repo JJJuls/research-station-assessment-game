@@ -39,6 +39,8 @@ import {
   WORLD_V1_REGISTRY,
   YARD_REGISTRY,
 } from '../src/world/interactionRegistry';
+import { gridOf, npcSolid } from '../src/world/layouts/grid';
+import { YARD_LAYOUT, YARD_SOLIDS } from '../src/world/layouts/yard';
 import {
   driveAxisTo,
   getEvents,
@@ -47,6 +49,7 @@ import {
   press,
   selectPromptOption,
 } from './helpers';
+import { navigateTo } from './navGrid';
 
 export interface PilotProbe {
   zone: string;
@@ -850,87 +853,24 @@ export async function coreApproach(
 }
 
 /**
- * Rebuilt Recovery Yard (43×12 two-plate strip): the west half and the
- * east half connect only through the drift pass (rows 6–7, y ≈ 220). A
- * leg that changes halves travels the pass row first. Driver only —
- * production geometry is never adjusted for it.
+ * World V3 open Recovery Yard (56×24 field, free-standing props): every
+ * leg is planned over the yard's PURE collision model (cells + skirts +
+ * prop solids + Noor's foot solid) and driven with ordinary held keys
+ * (e2e/navGrid.ts) — the two-plate strip's hand-written pass / gantry /
+ * panel lanes are gone with the strip. Driver only.
  */
+const YARD_NAV_GRID = gridOf(YARD_LAYOUT, [
+  ...YARD_SOLIDS,
+  npcSolid(YARD_SITES.noor.x, YARD_SITES.noor.y),
+]);
+
 export async function yardVia(page: Page, x: number, y: number) {
-  const half = (px: number) => (px < 600 ? 0 : px > 800 ? 2 : 1);
-  // The gantry's west leg (yard book: col 34.2, rows 1–5 → x 1094–1120,
-  // y < 192) stands on the east half's floor. A leg that crosses its column
-  // must travel with the body's top edge below row 5 (probe y ≥ 210): a
-  // plain y-first walk lands inside its ±12 px box and can settle at y 204,
-  // where the eastward leg clamps on the leg (observed in-engine at
-  // (1072,204)). Take the y ≈ 220 lane (±8 → body top ≥ 194) first, as
-  // the half change already does through the drift pass.
-  const GANTRY_WEST_LEG_X = 1094;
-  const here = await page.evaluate(
-    () =>
-      (window as unknown as { __playerProbe?: { x: number; y: number } | null })
-        .__playerProbe ?? null,
+  await navigateTo(
+    page,
+    YARD_NAV_GRID,
+    { x, y },
+    { reach: 6, tolerance: 8, margin: 9 },
   );
-  const crossesGantryLeg =
-    here !== null && here.x < GANTRY_WEST_LEG_X !== x < GANTRY_WEST_LEG_X;
-  const region = (px: number) => `${half(px)}:${px < GANTRY_WEST_LEG_X}`;
-  // The line-status panel between the uplink posts (yard book: cols
-  // 8.3–9.9, rows 2.2–3.4 → rasterised to cols 8–9, rows 2–3, i.e. x
-  // 256–320 down to y 128). A leg between the posts along their approach
-  // row (y ≈ 130–136, body top ≈ 112–118) clamps on it (observed
-  // in-engine: (240,134) on the way to Post B, where the nearest-wins
-  // rule then offered the panel instead of the post). Travel the row-5
-  // lane (y 160: body 142–184, clear of the panel and the mast footing)
-  // before the eastward/westward leg.
-  const crossesLinePanel =
-    here !== null &&
-    half(here.x) === 0 &&
-    half(x) === 0 &&
-    (here.y < 150 || y < 150) &&
-    Math.min(here.x, x) < 320 &&
-    Math.max(here.x, x) > 256;
-
-  if (crossesLinePanel) {
-    await driveAxisTo(page, 'y', 160, 6);
-    await driveAxisTo(page, 'x', x, 8);
-  }
-
-  if (here !== null && (half(here.x) !== half(x) || crossesGantryLeg)) {
-    // The pass band is rows 6–7 (y 192–256) for a 42 px body whose top
-    // edge sits 18 px above the probe: probe y ∈ [210, 232]. The first
-    // attempt takes the lane at ±8; if the crossing leg still stalls short
-    // of the target region (observed once in-engine: clamped at the east
-    // half's west edge, x 816), re-centre on the band at ±4 and drive the
-    // leg again. Driver only — production geometry is never adjusted.
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      await driveAxisTo(
-        page,
-        'y',
-        attempt === 0 ? 220 : 224,
-        attempt === 0 ? 8 : 4,
-      );
-      await driveAxisTo(page, 'x', x, 8);
-
-      const now = await page.evaluate(
-        () =>
-          (
-            window as unknown as {
-              __playerProbe?: { x: number; y: number } | null;
-            }
-          ).__playerProbe ?? null,
-      );
-
-      if (now === null || region(now.x) === region(x)) {
-        break;
-      }
-
-      // eslint-disable-next-line no-console
-      console.log(
-        `[driver] yardVia crossing stalled at ${Math.round(now.x)},${Math.round(now.y)} toward ${x},${y} (attempt ${attempt + 1})`,
-      );
-    }
-  }
-
-  await walkTo(page, x, y, { yFirst: true });
 }
 
 /**

@@ -27,7 +27,7 @@
  */
 import Phaser from 'phaser';
 
-import { Depth, DepthLayer, key } from '../constants';
+import { Depth, DepthLayer, key, worldDepth } from '../constants';
 import type {
   DigRecord,
   DigRefusal,
@@ -178,10 +178,21 @@ import {
   m05State,
   presentM05,
 } from '../pilot/windows/m05Initiation';
-import { YARD_RIG_PAD, YARD_SITES, YARD_SPAWN } from '../pilot/zoneSites';
+import {
+  YARD_AIRLOCK,
+  YARD_RIG_PAD,
+  YARD_SITES,
+  YARD_SPAWN,
+} from '../pilot/zoneSites';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption } from '../world';
-import { YARD_LAYOUT, YARD_SOLIDS } from '../world/layouts/yard';
+import {
+  YARD_COLS,
+  YARD_LAYOUT,
+  YARD_PROPS,
+  YARD_ROWS,
+  YARD_SOLIDS,
+} from '../world/layouts/yard';
 
 const TILE = 32;
 const M05_FIX_MS = 2000;
@@ -240,12 +251,12 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       grid: [...YARD_LAYOUT],
       solids: YARD_SOLIDS,
       field: 'wide' as const,
-      plateTexture: 'w2-yard-plate',
+      plateTexture: 'w3-yard-field',
     };
   }
 
   protected bundleDropBounds(): { width: number; height: number } {
-    return { width: 43 * TILE, height: 12 * TILE };
+    return { width: YARD_COLS * TILE, height: YARD_ROWS * TILE };
   }
 
   protected getSpawn(): { x: number; y: number } {
@@ -334,7 +345,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     // leaf sprite would double it; its class lamp sits on the painted
     // lintel lamp.
     this.doorImage('yard.airlock_lab')?.setVisible(false);
-    this.placeDoorIndicator('yard.airlock_lab', 342, 297);
+    this.placeDoorIndicator('yard.airlock_lab', YARD_AIRLOCK.x, 634);
 
     // ——— Noor — the route anchor (order 0). ———
     const noor = YARD_SITES.noor;
@@ -513,6 +524,8 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     // (service path, zone plates, drifts, debris, footprints) is gone:
     // the plates' baked snow, footprints, lamp pools and wreckage carry
     // that reading. No ambient snowfall (mission §5).
+    this.buildYardProps();
+
     for (const child of this.children.list) {
       if (
         child instanceof Phaser.GameObjects.Image &&
@@ -529,6 +542,57 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
         ].includes(child.texture.key)
       ) {
         child.setVisible(false);
+      }
+    }
+  }
+
+  /**
+   * World V3 open field: every prop is a free-standing sprite sorted at
+   * its foot line (the avatar walks in front of and behind the mast, the
+   * gantry and the rack); colliders come from YARD_SOLIDS. Work lamps get
+   * a soft warm pool on the snow. Presentation only.
+   */
+  private buildYardProps() {
+    const pool = 'yard-soft-pool';
+
+    if (!this.textures.exists(pool)) {
+      const canvas = this.textures.createCanvas(pool, 96, 48);
+
+      if (canvas !== null) {
+        const ctx = canvas.getContext();
+        const gradient = ctx.createRadialGradient(48, 24, 2, 48, 24, 48);
+
+        gradient.addColorStop(0, 'rgba(246,178,96,0.42)');
+        gradient.addColorStop(0.6, 'rgba(246,178,96,0.2)');
+        gradient.addColorStop(1, 'rgba(246,178,96,0)');
+        ctx.setTransform(1, 0, 0, 0.5, 0, 12);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, -24, 96, 96);
+        canvas.refresh();
+      }
+    }
+
+    for (const prop of YARD_PROPS) {
+      if (!this.textures.exists(prop.texture)) {
+        continue;
+      }
+
+      const bases = prop.solids ?? [];
+      const foot =
+        bases.length > 0
+          ? Math.max(...bases.map(([, y, , h]) => prop.y + y + h))
+          : prop.y + prop.h * 0.5;
+      const image = this.add
+        .image(prop.x, prop.y, prop.texture)
+        .setOrigin(0)
+        .setDepth(bases.length > 0 ? worldDepth(foot) : DepthLayer.FloorDecal);
+
+      image.texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+
+      if (prop.texture.startsWith('w3-yard-lamp')) {
+        this.add
+          .image(prop.x + 8, prop.y + prop.h - 2, pool)
+          .setDepth(DepthLayer.FloorDecal + 0.02);
       }
     }
   }
@@ -582,7 +646,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     // frost sheet over the collar, the chip on the pipe run's foot.
     this.couplingDial = this.add.graphics().setDepth(DepthLayer.WorldReadout);
     this.frostOverlay = this.add
-      .rectangle(102, 200, 60, 44, 0xcfe6ff, 0.42)
+      .rectangle(site.x - 48, site.y - 5, 60, 44, 0xcfe6ff, 0.42)
       .setStrokeStyle(1, 0xe8f4ff, 0.8)
       .setDepth(3)
       .setVisible(false);

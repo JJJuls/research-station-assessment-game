@@ -220,6 +220,7 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     // World V2 rebuild: every sweep position below is the original spot
     // translated with the plot (+320, −160 px) — the plot's size and the
     // cells' relative geometry are unchanged, so every classification is.
+    // World V3 open field: translated again with the plot (+224, +160 px).
     const scanState = createM23State('form_a');
 
     m23Enter(scanState, 0);
@@ -227,8 +228,8 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     const far = m23NoteScan(
       scanState,
       {
-        player_x: 1020,
-        player_y: 280,
+        player_x: 1244,
+        player_y: 440,
         target_id: null,
         strength: 0,
         category: 'none',
@@ -246,8 +247,8 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     const faint = m23NoteScan(
       scanState,
       {
-        player_x: 848,
-        player_y: 260,
+        player_x: 1072,
+        player_y: 420,
         target_id: M23_TARGET_ID,
         strength: 17,
         category: 'faint',
@@ -261,8 +262,8 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     const closer = m23NoteScan(
       scanState,
       {
-        player_x: 912,
-        player_y: 200,
+        player_x: 1136,
+        player_y: 360,
         target_id: M23_TARGET_ID,
         strength: 65,
         category: 'moderate',
@@ -287,8 +288,8 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
       m23NoteScan(
         scanState,
         {
-          player_x: 912,
-          player_y: 170,
+          player_x: 1136,
+          player_y: 330,
           target_id: M23_TARGET_ID,
           strength: 84,
           category: 'strong',

@@ -1,0 +1,97 @@
+{
+  "rocks-nw": {
+    "w": 60,
+    "h": 67,
+    "source_xy": [26, 82]
+  },
+  "coupling": {
+    "w": 168,
+    "h": 112,
+    "source_xy": [24, 146]
+  },
+  "debris-a": {
+    "w": 80,
+    "h": 71,
+    "source_xy": [258, 127]
+  },
+  "debris-sw": {
+    "w": 129,
+    "h": 78,
+    "source_xy": [109, 246]
+  },
+  "rocks-sw": {
+    "w": 84,
+    "h": 64,
+    "source_xy": [50, 266]
+  },
+  "supply-crate": {
+    "w": 39,
+    "h": 43,
+    "source_xy": [453, 285]
+  },
+  "cable-flag": {
+    "w": 43,
+    "h": 63,
+    "source_xy": [478, 274]
+  },
+  "rocks-e": {
+    "w": 47,
+    "h": 39,
+    "source_xy": [856, 87]
+  },
+  "debris-b": {
+    "w": 45,
+    "h": 43,
+    "source_xy": [1042, 96]
+  },
+  "debris-c": {
+    "w": 118,
+    "h": 76,
+    "source_xy": [946, 122]
+  },
+  "boulder": {
+    "w": 41,
+    "h": 33,
+    "source_xy": [843, 302]
+  },
+  "scrap-pile": {
+    "w": 96,
+    "h": 80,
+    "source_xy": [1210, 140]
+  },
+  "rig-bench": {
+    "w": 74,
+    "h": 55,
+    "source_xy": [1270, 196]
+  },
+  "parts-cart": {
+    "w": 81,
+    "h": 34,
+    "source_xy": [1241, 265]
+  },
+  "debris-lean": {
+    "w": 94,
+    "h": 88,
+    "source_xy": [1060, 236]
+  },
+  "stake-field": {
+    "w": 135,
+    "h": 142,
+    "source_xy": [850, 170]
+  },
+  "airlock-alcove": {
+    "w": 126,
+    "h": 100,
+    "source_xy": [292, 284]
+  },
+  "lamp-a": {
+    "w": 38,
+    "h": 83,
+    "source_xy": [214, 109]
+  },
+  "lamp-e": {
+    "w": 31,
+    "h": 83,
+    "source_xy": [1176, 112]
+  }
+}

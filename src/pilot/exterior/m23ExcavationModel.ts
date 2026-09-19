@@ -63,18 +63,22 @@ export type M23Form = 'form_a' | 'form_b';
  * SIZE (7 × 6) and the target cells' positions RELATIVE to the plot
  * (form A at +2/+1, form B at +4/+4) are the measurement fixture and are
  * unchanged; only the absolute origin moved with the room.
+ *
+ * World V3 open field (Station 080 correction): the same presentation-only
+ * translation again — origin to cols 33–39 / rows 8–13 (+7 / +5); size
+ * and both relative target positions unchanged.
  */
 export const M23_PLOT = {
-  minCol: 26,
-  maxCol: 32,
-  minRow: 3,
-  maxRow: 8,
+  minCol: 33,
+  maxCol: 39,
+  minRow: 8,
+  maxRow: 13,
 } as const;
 
 /** Counterbalanced target cells — both deep inside the plot. */
 export const M23_TARGET_CELLS: Record<M23Form, { col: number; row: number }> = {
-  form_a: { col: 28, row: 4 },
-  form_b: { col: 30, row: 7 },
+  form_a: { col: 35, row: 9 },
+  form_b: { col: 37, row: 12 },
 };
 
 export const M23_DETECTION_RADIUS = 160;

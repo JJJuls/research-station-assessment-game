@@ -252,3 +252,19 @@ vertical slice batch"). Status: PROVISIONAL MODEL-SELECTED, NOT
 HUMAN-APPROVED. The asset set version (`outpost-assets-v5`) is NOT bumped
 by this slice: two protected export specs pin it, and the bump belongs to
 the stimulus-freeze gate (human decision).
+
+## World V3 — open Recovery Yard (2026-09-19)
+
+Owner approval: explicit, this session ("PixelLab is explicitly authorised
+for the Recovery Yard rebuild, enlarged room artwork, and replacement world
+sprites"). Precondition: the yard's mechanics and event logging were
+working and verified on the V2 strip before any art was generated. Ten
+`create_image_pro` calls (four ground pieces, two side-bank attempts, the
+uplink rack, two Mast 04 attempts, the gantry rig); 320–350 generations.
+Per-asset records (job id, exact prompt, style reference, candidates,
+rejections, SHA-256) live in
+`docs/game/world-v3/yard-sources/ground-provenance.json` and
+`sprites-provenance.json`; the summary table, the rejection log and the
+known weaknesses are in `docs/game/world-v3/YARD-ART-PROVENANCE.md`.
+Status: PROVISIONAL MODEL-SELECTED, NOT HUMAN-APPROVED; asset-set version
+not bumped; nothing frozen.

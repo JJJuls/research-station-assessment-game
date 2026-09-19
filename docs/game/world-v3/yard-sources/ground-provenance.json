@@ -1,0 +1,114 @@
+{
+  "style_ref": {
+    "file": "style-ref.png",
+    "source": "docs/game/world-v2/plate-sources/yard-plate.v2.png",
+    "crop_box": [150, 110, 406, 254],
+    "width": 256,
+    "height": 144,
+    "passed_as": "style_image_base64",
+    "sha256": "ad7fbc0258e772c6d184c6b84fecb9fc98be4fd5b1611886dce6ecbcb742d64c"
+  },
+  "generations_cost_each": 40,
+  "total_generations": {
+    "calls": 6,
+    "quoted_cost_per_call": 40,
+    "quoted_total": 240,
+    "balance_before": 1220,
+    "balance_after": 950,
+    "balance_delta": 270,
+    "note": "Balance fell by 270 vs 240 quoted; the 30 difference is unexplained from this session (possible concurrent use of the account or billing above the quote)."
+  },
+  "pieces": [
+    {
+      "file": "ground-a.png",
+      "job_id": "f808cab5-d7b8-4748-9fd3-8a2f1712a95b",
+      "tool": "mcp__pixellab__create_image_pro",
+      "width": 688,
+      "height": 384,
+      "description": "Top-down pixel art ground texture filling the entire canvas edge to edge: flat wind-packed antarctic snow in pale lavender-blue tones, soft low drift ridges, subtle dithered shading, a few faint wind streaks. Absolutely no objects, no rocks, no footprints, no lamps, no light pools, no buildings, no horizon, no sky, no border, no frame, no vignette. Even flat lighting, uniform brightness across the whole image so it can be tiled.",
+      "style_ref": "style-ref.png",
+      "no_background": false,
+      "accepted": true,
+      "notes": "Plain pale lavender snow with soft dithered drift ridges; no objects, no frame, even brightness. Mean RGB (189,189,213).",
+      "sha256": "385973b43c491bb219f5ad8942259ae16dfc4f32ceed25afe38cd4cba0afa3bc"
+    },
+    {
+      "file": "ground-b.png",
+      "job_id": "590354c5-88f7-4d5d-8bd1-fa710af58f1e",
+      "tool": "mcp__pixellab__create_image_pro",
+      "width": 688,
+      "height": 384,
+      "description": "Top-down pixel art ground texture filling the entire canvas edge to edge: flat wind-packed antarctic snow in pale lavender-blue tones, soft low drift ridges, subtle dithered shading, a few faint wind streaks. Absolutely no objects, no rocks, no footprints, no lamps, no light pools, no buildings, no horizon, no sky, no border, no frame, no vignette. Even flat lighting, uniform brightness across the whole image so it can be tiled. A handful of small dark rocks half buried in snow and one faint trail of old footprints crossing diagonally; everything else plain snow.",
+      "style_ref": "style-ref.png",
+      "no_background": false,
+      "accepted": true,
+      "notes": "Snow with 6 small dark rocks and a double footprint trail running bottom-left to top-right; diagonal drift bands. Mean RGB (181,182,205) - slightly darker/greyer than ground-a, may need a small brightness match if tiled adjacent.",
+      "sha256": "031b7d375403ad89add26bcd43467922b846c23fd46a0ffe92210dfe15544954"
+    },
+    {
+      "file": "north-ridge.png",
+      "job_id": "946885db-ea7b-4606-80a0-2dbf723f4627",
+      "tool": "mcp__pixellab__create_image_pro",
+      "width": 688,
+      "height": 192,
+      "description": "Top-down 3/4 view pixel art, the northern boundary of an antarctic research yard: a continuous low ice cliff and snow-covered dark rock ridge running the full width from the left edge to the right edge across the middle of the image, dark violet storm sky with blowing snow above it in the top third, flat pale snow ground in the bottom third continuing off the bottom edge. No buildings, no machines, no people, no frame, no border, no vignette. The left and right edges look alike so the strip can be mirrored and repeated.",
+      "style_ref": "style-ref.png",
+      "no_background": false,
+      "accepted": true,
+      "notes": "Dark violet storm sky with diagonal blowing-snow streaks (top ~45%), continuous low ice cliff with snow-capped dark rock outcrops full width, plain snow at the bottom. No frame. Wind streaks are diagonal so a mirrored repeat will flip streak direction at the seam.",
+      "sha256": "6c7163ff61be2b0f16ae06e1cd0b71142af1db7ee514eb02c72f8a2f9c862eda"
+    },
+    {
+      "file": "station-roof.png",
+      "job_id": "4a050e2a-4b79-4c11-bd41-d47677318c3c",
+      "tool": "mcp__pixellab__create_image_pro",
+      "width": 688,
+      "height": 160,
+      "description": "Top-down pixel art of the flat roof of a polar research station seen from directly above, running the full width of the image: dark riveted steel roof panels, pipes, a vent and cable trays, a drift of snow along the whole upper edge where the roof meets the snowy yard (top 25 percent of the image is pale lavender snow ground). No door, no people, no frame, no border, no vignette. Left and right edges look alike so it can be mirrored and repeated.",
+      "style_ref": "style-ref.png",
+      "no_background": false,
+      "accepted": true,
+      "notes": "Dark riveted steel panels full width, snow drift over the top ~20%, cable tray/grille band, one central fan/vent unit and pipes along the bottom. No door, no frame. Central vent unit is a unique feature, so repeats will show it once per tile.",
+      "sha256": "e0b152726113d5bc00d6ec79947c790e2dd83d4980fdd136a36dc8de64d0ebbd"
+    },
+    {
+      "file": "side-bank.rejected1.png",
+      "job_id": "bbe2eabf-46d7-44fc-84b2-facb1b166ca8",
+      "tool": "mcp__pixellab__create_image_pro",
+      "width": 192,
+      "height": 384,
+      "description": "Top-down 3/4 view pixel art, the western boundary of an antarctic research yard running from the top edge to the bottom edge: on the left two thirds a tall snow bank with dark rocks and a weathered wire fence with steel posts along its foot; the right third is flat pale snow ground. No buildings, no people, no frame, no border. Top and bottom edges look alike so it can be mirrored and repeated.",
+      "style_ref": "style-ref.png",
+      "no_background": false,
+      "accepted": false,
+      "notes": "REJECTED first attempt: good rocky bank, but fence turns a diagonal corner in the lower half and stray posts line the bottom edge; ground is blotchy. Not vertically repeatable.",
+      "sha256": "f882eb6c28d79b65df274efe974ea8eb5c37fb453bc52795c50b74c06855c275"
+    },
+    {
+      "file": "side-bank.png",
+      "job_id": "91ff03b2-4b4f-497b-bdcb-af147d538eba",
+      "tool": "mcp__pixellab__create_image_pro",
+      "width": 192,
+      "height": 384,
+      "description": "Top-down 3/4 view pixel art, the western boundary of an antarctic research yard. A perfectly straight vertical wire fence with evenly spaced steel posts runs in one unbroken straight line from the very top edge to the very bottom edge of the image at about two thirds of the width; the fence never bends, never turns a corner and never ends. Everything left of the fence is a tall snow bank with a few dark half-buried rocks, the same all the way down. Everything right of the fence is smooth flat plain pale lavender snow ground with no objects, no posts and no texture blotches. The layout is identical at the top and at the bottom so the strip can be mirrored and repeated vertically. No buildings, no people, no gate, no corner, no frame, no border, no vignette.",
+      "style_ref": "style-ref.png",
+      "no_background": false,
+      "accepted": false,
+      "notes": "Regeneration (the one allowed). Fence is now a straight vertical line at x~95-100 from the top edge down, palette OK, right side plain snow. STILL FAILS as delivered: a horizontal fence corner occupies rows ~370-383 at the bottom right (x>=100), and the 'bank' reads as a narrow low drift ridge with only 2 tiny rocks rather than a tall rocky bank. Salvage: side-bank.crop368.png removes the corner.",
+      "sha256": "8f96f1f32b59caede79af0143750ac54b376047627a444a48c19b66578656381"
+    },
+    {
+      "file": "side-bank.crop368.png",
+      "job_id": "91ff03b2-4b4f-497b-bdcb-af147d538eba",
+      "tool": "mcp__pixellab__create_image_pro + Pillow crop",
+      "width": 192,
+      "height": 368,
+      "description": "Top-down 3/4 view pixel art, the western boundary of an antarctic research yard. A perfectly straight vertical wire fence with evenly spaced steel posts runs in one unbroken straight line from the very top edge to the very bottom edge of the image at about two thirds of the width; the fence never bends, never turns a corner and never ends. Everything left of the fence is a tall snow bank with a few dark half-buried rocks, the same all the way down. Everything right of the fence is smooth flat plain pale lavender snow ground with no objects, no posts and no texture blotches. The layout is identical at the top and at the bottom so the strip can be mirrored and repeated vertically. No buildings, no people, no gate, no corner, no frame, no border, no vignette.",
+      "style_ref": "style-ref.png",
+      "no_background": false,
+      "accepted": true,
+      "notes": "DERIVED (Pillow crop of side-bank.png rows 0..367, 192x368, no generation). Straight fence top to bottom, no corner; vertically mirror-repeatable. Bank is still a low ridge, not a tall rocky bank. Note size is 192x368, not 192x384.",
+      "sha256": "b3fef3ac0406f2405941c509dd72715449f3e9a4f54a4b8d4f73afb940d31e45"
+    }
+  ]
+}

@@ -43,6 +43,31 @@ export const WORLD_V2_IMAGE_URLS: Record<string, string> = {
   'w2-supply-sample-case': 'assets/world-v2/props/supply-sample-case.png',
   'w2-supply-wire-and-wrap': 'assets/world-v2/props/supply-wire-and-wrap.png',
   'w2-supply-relay-unit': 'assets/world-v2/props/supply-relay-unit.png',
+  // World V3 open Recovery Yard: the field plate and its free-standing
+  // prop sprites (scripts/world-v2/install_yard_assets.py).
+  'w3-yard-field': 'assets/world-v3/yard/yard-field.png',
+  'w3-yard-coupling': 'assets/world-v3/yard/coupling.png',
+  'w3-yard-uplink-post': 'assets/world-v3/yard/uplink-post.png',
+  'w3-yard-uplink-rack': 'assets/world-v3/yard/uplink-rack.png',
+  'w3-yard-mast': 'assets/world-v3/yard/mast.png',
+  'w3-yard-supply-crate': 'assets/world-v3/yard/supply-crate.png',
+  'w3-yard-cable-flag': 'assets/world-v3/yard/cable-flag.png',
+  'w3-yard-gantry': 'assets/world-v3/yard/gantry.png',
+  'w3-yard-scrap-pile': 'assets/world-v3/yard/scrap-pile.png',
+  'w3-yard-rig-bench': 'assets/world-v3/yard/rig-bench.png',
+  'w3-yard-parts-cart': 'assets/world-v3/yard/parts-cart.png',
+  'w3-yard-lamp-a': 'assets/world-v3/yard/lamp-a.png',
+  'w3-yard-lamp-e': 'assets/world-v3/yard/lamp-e.png',
+  'w3-yard-rocks-nw': 'assets/world-v3/yard/rocks-nw.png',
+  'w3-yard-rocks-sw': 'assets/world-v3/yard/rocks-sw.png',
+  'w3-yard-rocks-e': 'assets/world-v3/yard/rocks-e.png',
+  'w3-yard-boulder': 'assets/world-v3/yard/boulder.png',
+  'w3-yard-debris-a': 'assets/world-v3/yard/debris-a.png',
+  'w3-yard-debris-sw': 'assets/world-v3/yard/debris-sw.png',
+  'w3-yard-debris-b': 'assets/world-v3/yard/debris-b.png',
+  'w3-yard-debris-c': 'assets/world-v3/yard/debris-c.png',
+  'w3-yard-debris-lean': 'assets/world-v3/yard/debris-lean.png',
+  'w3-yard-stake-field': 'assets/world-v3/yard/stake-field.png',
 };
 
 /** Soft warm light pool drawn with ADD blending over a plate. */

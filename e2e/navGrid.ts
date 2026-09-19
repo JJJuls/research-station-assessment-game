@@ -108,7 +108,79 @@ export function planPath(
     }
   }
 
-  return legs;
+  return shortcut(grid, start, legs, margin);
+}
+
+/** True when the straight axis-aligned segment a→b is clear. */
+function segmentClear(grid: RoomGrid, a: Point, b: Point, margin: number) {
+  const steps = Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y)) / STEP;
+
+  for (let i = 0; i <= steps; i += 1) {
+    const t = steps === 0 ? 0 : i / steps;
+
+    if (
+      !fitsWithMargin(
+        grid,
+        a.x + (b.x - a.x) * t,
+        a.y + (b.y - a.y) * t,
+        margin,
+      )
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Replaces staircase runs by single L turns: from each point, jump to the
+ * farthest later waypoint an L (x-then-y or y-then-x) reaches in the clear.
+ * Fewer, longer legs — a held key travels, it does not tap.
+ */
+function shortcut(
+  grid: RoomGrid,
+  start: Point,
+  legs: Point[],
+  margin: number,
+): Point[] {
+  const out: Point[] = [];
+  let at = start;
+  let index = 0;
+
+  while (index < legs.length) {
+    let jump = index;
+    let corner: Point | null = null;
+
+    for (let j = legs.length - 1; j > index; j -= 1) {
+      const to = legs[j];
+      const corners = [
+        { x: to.x, y: at.y },
+        { x: at.x, y: to.y },
+      ];
+      const clear = corners.find(
+        (c) =>
+          segmentClear(grid, at, c, margin) &&
+          segmentClear(grid, c, to, margin),
+      );
+
+      if (clear !== undefined) {
+        jump = j;
+        corner = clear;
+        break;
+      }
+    }
+
+    if (corner !== null && (corner.x !== at.x || corner.y !== at.y)) {
+      out.push(corner);
+    }
+
+    out.push(legs[jump]);
+    at = legs[jump];
+    index = jump + 1;
+  }
+
+  return out;
 }
 
 /** Walks to `to` along a planned path; returns the final observed position. */
@@ -128,8 +200,8 @@ export async function navigateTo(
     }
 
     if (
-      Math.hypot(probe.x - to.x, probe.y - to.y) <=
-      (options?.reach ?? 6) + tolerance
+      Math.abs(probe.x - to.x) <= tolerance &&
+      Math.abs(probe.y - to.y) <= tolerance
     ) {
       return { x: probe.x, y: probe.y };
     }
@@ -160,6 +232,10 @@ export async function navigateTo(
 
       cursor = { x: after.x, y: after.y };
     }
+
+    // The plan ends on the 8 px lattice; close the last few px exactly.
+    await driveAxisTo(page, 'x', to.x, tolerance);
+    await driveAxisTo(page, 'y', to.y, tolerance);
   }
 
   const final = await playerProbe(page);

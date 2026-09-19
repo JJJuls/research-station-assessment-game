@@ -34,11 +34,11 @@ import {
   CONCOURSE_LAYOUT,
   CONCOURSE_SOLIDS,
 } from '../src/world/layouts/concourse';
-import { CORE_LAYOUT } from '../src/world/layouts/coreChamber';
-import { DECK_LAYOUT } from '../src/world/layouts/deck';
+import { CORE_LAYOUT, CORE_SOLIDS } from '../src/world/layouts/coreChamber';
+import { DECK_LAYOUT, DECK_SOLIDS } from '../src/world/layouts/deck';
 import { DOCK_LAYOUT, DOCK_SOLIDS } from '../src/world/layouts/dock';
 import { gridOf, walkingDistance } from '../src/world/layouts/grid';
-import { LAB_LAYOUT } from '../src/world/layouts/laboratory';
+import { LAB_LAYOUT, LAB_SOLIDS } from '../src/world/layouts/laboratory';
 import {
   WORKSHOP_LAYOUT,
   WORKSHOP_SOLIDS,
@@ -49,9 +49,9 @@ const LAYOUTS = {
   dock: gridOf(DOCK_LAYOUT, DOCK_SOLIDS),
   station_concourse: gridOf(CONCOURSE_LAYOUT, CONCOURSE_SOLIDS),
   records_workshop: gridOf(WORKSHOP_LAYOUT, WORKSHOP_SOLIDS),
-  diagnostics_laboratory: gridOf(LAB_LAYOUT),
-  utility_core_deck: gridOf(DECK_LAYOUT),
-  core_chamber: gridOf(CORE_LAYOUT),
+  diagnostics_laboratory: gridOf(LAB_LAYOUT, LAB_SOLIDS),
+  utility_core_deck: gridOf(DECK_LAYOUT, DECK_SOLIDS),
+  core_chamber: gridOf(CORE_LAYOUT, CORE_SOLIDS),
   exterior_recovery_yard: gridOf(YARD_LAYOUT, YARD_SOLIDS),
 } as const;
 

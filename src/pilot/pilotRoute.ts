@@ -232,8 +232,8 @@ export const PILOT_DOORS: Record<PilotZoneKey, readonly PilotDoorRef[]> = {
     // the west half's south hull.
     {
       to: 'diagnostics_laboratory',
-      x: 342,
-      y: 322,
+      x: 896,
+      y: 684,
       label: 'Airlock — Laboratory',
     },
   ],

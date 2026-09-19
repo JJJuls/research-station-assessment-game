@@ -805,8 +805,8 @@ const yardStation = (
  */
 export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
   door('exterior_recovery_yard', 'diagnostics_laboratory', 'yard.airlock_lab', {
-    x: 342,
-    y: 282,
+    x: 896,
+    y: 636,
   }),
   {
     id: 'yard.noor',
@@ -823,7 +823,7 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     depthAnchor: 'foot',
     stage: 'any',
     window: null,
-    approach: { x: 294, y: 240 },
+    approach: { x: 834, y: 564 },
   },
   yardStation(
     'yard.supply_crate',
@@ -832,7 +832,7 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Yard Supply Crate',
     { kind: 'prompt', id: 'pilotStation' },
     null,
-    { x: 430, y: 250 },
+    { x: 977, y: 525 },
   ),
   yardStation(
     'yard.cable_flag',
@@ -841,7 +841,7 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Cable Flag',
     { kind: 'action', id: 'm05_fix_o2' },
     'm05_initiation_o2',
-    { x: 530, y: 252 },
+    { x: 1142, y: 530 },
     { w: 1, h: 2 },
   ),
   yardStation(
@@ -851,7 +851,7 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Frozen Coolant Coupling',
     { kind: 'prompt', id: 'pilotCoupling' },
     'm19_progressive_valve',
-    { x: 156, y: 160 },
+    { x: 244, y: 336 },
     { w: 4, h: 3 },
   ),
   yardStation(
@@ -861,7 +861,7 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Field Uplink Post A',
     { kind: 'prompt', id: 'pilotUplinkA' },
     'm26_channel_disconnect',
-    { x: 200, y: 130 },
+    { x: 420, y: 248 },
     { w: 1, h: 1 },
   ),
   yardStation(
@@ -871,7 +871,7 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Line Status Panel',
     { kind: 'prompt', id: 'pilotLinePanel' },
     'm26_channel_disconnect (evidence)',
-    { x: 292, y: 158 },
+    { x: 515, y: 252 },
   ),
   yardStation(
     'yard.uplink_b',
@@ -880,7 +880,7 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Field Uplink Post B',
     { kind: 'prompt', id: 'pilotUplinkB' },
     'm26_channel_disconnect (alternative)',
-    { x: 372, y: 136 },
+    { x: 610, y: 248 },
     { w: 1, h: 1 },
   ),
   yardStation(
@@ -890,7 +890,7 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Mast 04',
     { kind: 'prompt', id: 'pilotMast' },
     'm20_antenna_restoration',
-    { x: 452, y: 222 },
+    { x: 777, y: 378 },
     { w: 3, h: 2 },
   ),
   yardStation(
@@ -900,7 +900,7 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Excavation Field Stake',
     { kind: 'prompt', id: 'pilotPlotStake' },
     'm23_field_recovery',
-    { x: 828, y: 224 },
+    { x: 1052, y: 384 },
     { w: 1, h: 1 },
   ),
   yardStation(
@@ -910,7 +910,7 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Magnet Recovery Rig',
     { kind: 'prompt', id: 'pilotRigReadout' },
     'm24_magnet_utility',
-    { x: 1170, y: 216 },
+    { x: 1404, y: 334 },
     { w: 3, h: 2 },
   ),
   yardStation(
@@ -920,7 +920,7 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Sorting Bench',
     { kind: 'prompt', id: 'pilotSortingBench' },
     'm24_magnet_utility (alternative)',
-    { x: 1248, y: 240 },
+    { x: 1482, y: 358 },
   ),
 ];
 

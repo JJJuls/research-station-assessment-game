@@ -64,7 +64,7 @@ export const YARD = {
   crate: { ...YARD_SITES.supplyCrate },
   flag: { ...YARD_SITES.cableFlag },
   /** Inside the rig's operating pad (F works only here). */
-  pad: { x: 1190, y: 216 },
+  pad: { x: 1424, y: 334 },
   targetCells: {
     form_a: cellCentre(M23_TARGET_CELLS.form_a),
     form_b: cellCentre(M23_TARGET_CELLS.form_b),
@@ -72,14 +72,14 @@ export const YARD = {
   /** Sweep positions per form: outside the signal, faint, actionable. */
   scanSpots: {
     form_a: {
-      none: { x: 1100, y: 250 },
-      faint: { x: 1000, y: 240 },
-      actionable: { x: 912, y: 200 },
+      none: { x: 1324, y: 410 },
+      faint: { x: 1224, y: 400 },
+      actionable: { x: 1136, y: 360 },
     },
     form_b: {
-      none: { x: 1180, y: 120 },
-      faint: { x: 860, y: 160 },
-      actionable: { x: 976, y: 180 },
+      none: { x: 1404, y: 280 },
+      faint: { x: 1084, y: 320 },
+      actionable: { x: 1200, y: 340 },
     },
   },
 } as const;
@@ -411,7 +411,8 @@ async function insideCompound(page: Page): Promise<boolean> {
         .__playerProbe ?? null,
   );
 
-  return probe !== null && probe.x >= 1100;
+  // World V3 open field: the rig compound stands east of the plot.
+  return probe !== null && probe.x >= 1320;
 }
 
 /** Walks onto the rig's operating pad (through the drift pass if needed). */
@@ -429,7 +430,7 @@ export async function ensureOutsideCompound(page: Page) {
     return;
   }
 
-  await yardVia(page, 1000, 216);
+  await yardVia(page, 1224, 376);
 }
 
 export async function openSite(page: Page, site: keyof typeof APPROACH) {
