@@ -100,18 +100,62 @@ def relay_unit():
     return im
 
 
+def coupon_offcut():
+    """M04 debris: two cut sample coupons lying on the floor."""
+    im = Image.new('RGBA', (22, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.polygon([(1, 6), (12, 3), (14, 9), (3, 12)], fill=LINE)
+    d.polygon([(2, 6), (11, 4), (13, 9), (4, 11)], fill=(150, 160, 172, 255))
+    d.line([(3, 6), (11, 4)], fill=(196, 204, 212, 255))
+    d.polygon([(11, 9), (20, 8), (21, 13), (13, 15)], fill=LINE)
+    d.polygon([(12, 10), (19, 9), (20, 13), (14, 14)], fill=(118, 128, 144, 255))
+    d.line([(12, 10), (19, 9)], fill=(170, 180, 192, 255))
+    return im
+
+
+def swarf_tray():
+    """M04 debris: a shallow steel tray of curled metal swarf."""
+    im = Image.new('RGBA', (24, 18), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    box(d, 1, 3, 22, 8, 7, (70, 76, 92, 255), (104, 112, 128, 255),
+        (92, 100, 116, 255), (58, 64, 80, 255))
+    for x, y, c in ((4, 5, (212, 186, 120, 255)), (8, 7, (190, 198, 208, 255)),
+                    (12, 5, (212, 186, 120, 255)), (16, 7, (190, 198, 208, 255)),
+                    (18, 5, (150, 160, 172, 255)), (6, 8, (150, 160, 172, 255))):
+        d.line([(x, y), (x + 2, y - 1)], fill=c)
+        d.point((x + 1, y + 1), fill=c)
+    return im
+
+
+def blade_wrap():
+    """M04 debris: a rolled blade-guard wrap, half unrolled."""
+    im = Image.new('RGBA', (24, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.polygon([(8, 8), (22, 6), (23, 12), (9, 14)], fill=LINE)
+    d.polygon([(9, 9), (21, 7), (22, 11), (10, 13)], fill=(196, 170, 96, 255))
+    d.line([(9, 9), (21, 7)], fill=(226, 204, 134, 255))
+    d.ellipse([1, 4, 12, 15], fill=LINE)
+    d.ellipse([2, 5, 11, 14], fill=(176, 148, 80, 255))
+    d.ellipse([4, 7, 9, 12], fill=(120, 98, 58, 255))
+    d.ellipse([5, 8, 8, 11], fill=LINE)
+    return im
+
+
 SPRITES = {
     'supply-component-crate': component_crate,
     'supply-sample-case': sample_case,
     'supply-wire-and-wrap': wire_and_wrap,
     'supply-relay-unit': relay_unit,
+    'debris-coupon-offcut': coupon_offcut,
+    'debris-swarf-tray': swarf_tray,
+    'debris-blade-wrap': blade_wrap,
 }
 
 if __name__ == '__main__':
     for name, paint in SPRITES.items():
         paint().save(OUT.format(name))
         print('wrote', OUT.format(name))
-    sheet = Image.new('RGBA', (4 * 34 * 6, 30 * 6), (150, 130, 140, 255))
+    sheet = Image.new('RGBA', (len(SPRITES) * 34 * 6, 30 * 6), (150, 130, 140, 255))
     for i, (name, paint) in enumerate(SPRITES.items()):
         im = paint()
         sheet.alpha_composite(

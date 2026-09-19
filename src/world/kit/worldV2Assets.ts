@@ -43,6 +43,11 @@ export const WORLD_V2_IMAGE_URLS: Record<string, string> = {
   'w2-supply-sample-case': 'assets/world-v2/props/supply-sample-case.png',
   'w2-supply-wire-and-wrap': 'assets/world-v2/props/supply-wire-and-wrap.png',
   'w2-supply-relay-unit': 'assets/world-v2/props/supply-relay-unit.png',
+  // M04 sample-cutter debris as it lies on the floor (world-native
+  // sprites; the pieces used to borrow unrelated inventory icons).
+  'w2-debris-coupon-offcut': 'assets/world-v2/props/debris-coupon-offcut.png',
+  'w2-debris-swarf-tray': 'assets/world-v2/props/debris-swarf-tray.png',
+  'w2-debris-blade-wrap': 'assets/world-v2/props/debris-blade-wrap.png',
   // World V3 open Recovery Yard: the field plate and its free-standing
   // prop sprites (scripts/world-v2/install_yard_assets.py).
   'w3-yard-field': 'assets/world-v3/yard/yard-field.png',

@@ -670,9 +670,24 @@ export async function workshopVia(page: Page, x: number, y: number) {
 
   for (let guard = 0; guard < 4 && seg(at.x) !== seg(x); guard += 1) {
     if (seg(at.x) === 0) {
-      // West → mid over the island's north lane.
+      // West → mid over the island's north lane. The climb is VERIFIED:
+      // a leg can end early on the driver's own stall rule during a slow
+      // frame episode (Station 080 stall investigation: the one recorded
+      // failure stopped at y 173.58 — a free stop, no collider edge is
+      // fractional — and the eastward leg then met the island). Re-drive
+      // the climb until the lane is reached (≤ 3 tries) before going east.
       await driveAxisTo(page, 'x', 352, 8);
-      await driveAxisTo(page, 'y', 156, 8);
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        await driveAxisTo(page, 'y', 156, 8);
+
+        const lane = await playerProbe(page);
+
+        if (lane !== null && lane.y <= 166) {
+          break;
+        }
+      }
+
       await driveAxisTo(page, 'x', 544, 8);
       at = { x: 544, y: 156 };
     } else if (seg(at.x) === 1 && seg(x) === 2) {
@@ -681,9 +696,19 @@ export async function workshopVia(page: Page, x: number, y: number) {
       await driveAxisTo(page, 'x', 780, 8);
       at = { x: 780, y: 240 };
     } else if (seg(at.x) === 1 && seg(x) === 0) {
-      // Mid → west back over the north lane.
+      // Mid → west back over the north lane (climb verified, as above).
       await driveAxisTo(page, 'x', 544, 8);
-      await driveAxisTo(page, 'y', 156, 8);
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        await driveAxisTo(page, 'y', 156, 8);
+
+        const lane = await playerProbe(page);
+
+        if (lane !== null && lane.y <= 166) {
+          break;
+        }
+      }
+
       await driveAxisTo(page, 'x', 352, 8);
       at = { x: 352, y: 156 };
     } else {
