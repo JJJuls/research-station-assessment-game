@@ -20,6 +20,7 @@
  */
 import type { BlockoutRect } from './blockout';
 import { blockoutRows } from './blockout';
+import type { SolidRect } from './grid';
 
 export const LAB_COLS = 22;
 export const LAB_ROWS = 12;
@@ -35,10 +36,19 @@ export const LAB_FLOOR: readonly BlockoutRect[] = [
   [2.2, 7, 17.3, 2],
 ];
 
-export const LAB_FOOTPRINTS: readonly BlockoutRect[] = [
-  [4, 3, 1, 2], // orientation console (NW wall)
-  [17, 3, 1.4, 2], // Kai's briefing desk (NE; its painted legs, cols 17-18)
-  [12.6, 6, 2.4, 1.8], // signal-analysis workstation island
+/** Cell footprints: none — the props collide through LAB_SOLIDS. */
+export const LAB_FOOTPRINTS: readonly BlockoutRect[] = [];
+
+/**
+ * Pixel solids measured on the plate (collision audit 2026-09). Kai's
+ * desk starts at x 528, not at its painted west edge (x 520): the east
+ * bay climbs into the north lane through the x 496–528 window, which
+ * must stay a full 32 px wide.
+ */
+export const LAB_SOLIDS: readonly SolidRect[] = [
+  [130, 110, 30, 54], // orientation console (NW wall, base y 170)
+  [528, 142, 68, 42], // Kai's briefing desk (NE, base y 190)
+  [402, 196, 82, 56], // signal-analysis workstation island (base y 258)
 ];
 
 export const LAB_DOORS: readonly BlockoutRect[] = [];

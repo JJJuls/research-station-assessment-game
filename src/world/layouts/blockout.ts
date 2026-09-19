@@ -95,3 +95,22 @@ export function blockoutRows(spec: BlockoutSpec): string[] {
 
   return grid.map((row) => row.join(''));
 }
+
+/**
+ * Pixel solids for authored footprints (collision audit 2026-09): the
+ * tile-unit rectangle itself, in world px, instead of the whole cells it
+ * touches — so a prop collides where it is painted, not on the 32 px
+ * lattice. The south edge stops `trimSouth` px short of the base so the
+ * avatar's feet box stands right at a prop's front.
+ */
+export function footprintSolids(
+  rects: readonly BlockoutRect[],
+  trimSouth = 6,
+): [number, number, number, number][] {
+  return rects.map(([x, y, w, h]) => [
+    Math.round(x * 32),
+    Math.round(y * 32),
+    Math.round(w * 32),
+    Math.round(h * 32) - trimSouth,
+  ]);
+}

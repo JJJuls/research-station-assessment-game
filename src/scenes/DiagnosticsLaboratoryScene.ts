@@ -85,7 +85,7 @@ import {
 import { m15CausalSurfaceModel } from '../pilot/windows/signalSurfaceModels';
 import { LAB_SPAWNS, LAB_STATIONS } from '../pilot/zoneSites';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
-import { LAB_LAYOUT } from '../world/layouts/laboratory';
+import { LAB_LAYOUT, LAB_SOLIDS } from '../world/layouts/laboratory';
 
 const TILE = 32;
 
@@ -214,6 +214,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     return {
       theme: 'ops',
       grid: [...LAB_LAYOUT],
+      solids: LAB_SOLIDS,
       field: 'wide',
       plateTexture: 'w2-laboratory-plate',
     };

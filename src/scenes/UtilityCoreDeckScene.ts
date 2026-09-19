@@ -65,7 +65,7 @@ import { openFeedPanel } from '../pilot/ui/FeedPanelScene';
 import { DECK_SITES, DECK_SPAWNS } from '../pilot/zoneSites';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 import { WARM_POOL_TINT } from '../world/kit/worldV2Assets';
-import { DECK_LAYOUT } from '../world/layouts/deck';
+import { DECK_LAYOUT, DECK_SOLIDS } from '../world/layouts/deck';
 
 const TILE = 32;
 
@@ -183,6 +183,7 @@ export class UtilityCoreDeckScene extends PilotZoneScene {
     return {
       theme: 'utility',
       grid: [...DECK_LAYOUT],
+      solids: DECK_SOLIDS,
       field: 'wide',
       plateTexture: 'w2-deck-plate',
     };

@@ -16,7 +16,8 @@
  * are tall (rows 7–11): their approaches stand on the rows 5–6 band.
  */
 import type { BlockoutRect } from './blockout';
-import { blockoutRows } from './blockout';
+import { blockoutRows, footprintSolids } from './blockout';
+import type { SolidRect } from './grid';
 
 export const DECK_COLS = 22;
 export const DECK_ROWS = 12;
@@ -26,11 +27,18 @@ export const DECK_FLOOR: readonly BlockoutRect[] = [
   [1, 7, 19.8, 2], // rows 7-8 (the south machines carve their cells out)
 ];
 
-export const DECK_FOOTPRINTS: readonly BlockoutRect[] = [
+/** The painted machines, in tile units (the book's audited figures). */
+const DECK_MACHINES: readonly BlockoutRect[] = [
   [3.3, 7, 3.6, 4], // coolant feed valve station (wheel + pipe flanges)
   [9.1, 7, 2.9, 4], // calibration breaker bank
   [14.7, 7, 2.9, 4], // distribution bus cabinet
 ];
+
+/** Cell footprints: none — the machines collide through DECK_SOLIDS. */
+export const DECK_FOOTPRINTS: readonly BlockoutRect[] = [];
+
+/** Pixel solids: the machines exactly where the book measured them. */
+export const DECK_SOLIDS: readonly SolidRect[] = footprintSolids(DECK_MACHINES);
 
 export const DECK_DOORS: readonly BlockoutRect[] = [];
 

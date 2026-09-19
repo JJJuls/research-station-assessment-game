@@ -61,7 +61,7 @@ import type { InputMode } from '../pilot/windows/windowKit';
 import { CORE_SITES, CORE_SPAWN } from '../pilot/zoneSites';
 import { researchRuntime } from '../systems';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
-import { CORE_LAYOUT } from '../world/layouts/coreChamber';
+import { CORE_LAYOUT, CORE_SOLIDS } from '../world/layouts/coreChamber';
 
 const TILE = 32;
 
@@ -144,6 +144,7 @@ export class CoreChamberScene extends PilotZoneScene {
     return {
       theme: 'core',
       grid: [...CORE_LAYOUT],
+      solids: CORE_SOLIDS,
       field: 'wide',
       plateTexture: 'w2-core-plate',
     };
