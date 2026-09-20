@@ -1,0 +1,401 @@
+{
+  "zone": "records_workshop",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "findings": [
+    {
+      "label": "solid#0 [608,192,160,44] north face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#0 [608,192,160,44] south face",
+      "landed": {
+        "x": 687.2499999999989,
+        "y": 244
+      },
+      "expected": 226,
+      "observed": 226,
+      "error": 0
+    },
+    {
+      "label": "solid#0 [608,192,160,44] west face",
+      "landed": {
+        "x": 573.5000000000003,
+        "y": 196.83333333333346
+      },
+      "expected": 597.5000000000003,
+      "observed": 597,
+      "error": -0.5
+    },
+    {
+      "label": "solid#0 [608,192,160,44] east face",
+      "landed": {
+        "x": 796.4999999999998,
+        "y": 196.83333333333346
+      },
+      "expected": 779.4999999999998,
+      "observed": 779,
+      "error": -0.5
+    },
+    {
+      "label": "solid#1 [64,64,128,90] north face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#1 [64,64,128,90] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#1 [64,64,128,90] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#1 [64,64,128,90] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#2 [208,64,54,90] north face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#2 [208,64,54,90] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#2 [208,64,54,90] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#2 [208,64,54,90] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#3 [275,64,45,90] north face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#3 [275,64,45,90] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#3 [275,64,45,90] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#3 [275,64,45,90] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#4 [32,192,64,58] north face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#4 [32,192,64,58] south face",
+      "landed": {
+        "x": 60.499999999999986,
+        "y": 264
+      },
+      "expected": 242,
+      "observed": 242,
+      "error": 0
+    },
+    {
+      "label": "solid#4 [32,192,64,58] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#4 [32,192,64,58] east face",
+      "landed": {
+        "x": 130.5,
+        "y": 204.08333333333346
+      },
+      "expected": 107.5,
+      "observed": 107,
+      "error": -0.5
+    },
+    {
+      "label": "solid#5 [387,192,93,90] north face",
+      "landed": {
+        "x": 430.75000000000074,
+        "y": 146
+      },
+      "expected": 168,
+      "observed": 168,
+      "error": 0
+    },
+    {
+      "label": "solid#5 [387,192,93,90] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#5 [387,192,93,90] west face",
+      "landed": {
+        "x": 357.8333333333336,
+        "y": 217.5833333333332
+      },
+      "expected": 376.8333333333336,
+      "observed": 376,
+      "error": -0.83
+    },
+    {
+      "label": "solid#5 [387,192,93,90] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#6 [474,198,38,45] north face",
+      "landed": {
+        "x": 489.7500000000007,
+        "y": 151.83333333333331
+      },
+      "expected": 168.83333333333331,
+      "observed": 168,
+      "error": -0.83
+    },
+    {
+      "label": "solid#6 [474,198,38,45] south face",
+      "landed": {
+        "x": 495.5833333333338,
+        "y": 249.41666666666657
+      },
+      "expected": 233.41666666666657,
+      "observed": 233,
+      "error": -0.42
+    },
+    {
+      "label": "solid#6 [474,198,38,45] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#6 [474,198,38,45] east face",
+      "landed": {
+        "x": 545.1666666666671,
+        "y": 200.9166666666668
+      },
+      "expected": 523.1666666666671,
+      "observed": 523,
+      "error": -0.17
+    },
+    {
+      "label": "solid#7 [301,288,61,58] north face",
+      "landed": {
+        "x": 327.58333333333206,
+        "y": 243.58333333333323
+      },
+      "expected": 264.58333333333326,
+      "observed": 264,
+      "error": -0.58
+    },
+    {
+      "label": "solid#7 [301,288,61,58] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#7 [301,288,61,58] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#7 [301,288,61,58] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#8 [378,288,74,58] north face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#8 [378,288,74,58] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#8 [378,288,74,58] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#8 [378,288,74,58] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#9 [454,288,106,58] north face",
+      "landed": {
+        "x": 505.5833333333334,
+        "y": 246.4999999999999
+      },
+      "expected": 264.4999999999999,
+      "observed": 264,
+      "error": -0.5
+    },
+    {
+      "label": "solid#9 [454,288,106,58] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#9 [454,288,106,58] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#9 [454,288,106,58] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#10 [867,64,96,90] north face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#10 [867,64,96,90] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#10 [867,64,96,90] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#10 [867,64,96,90] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#11 [1101,96,93,58] north face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#11 [1101,96,93,58] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#11 [1101,96,93,58] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#11 [1101,96,93,58] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#12 [771,288,122,58] north face",
+      "landed": {
+        "x": 832.2499999999961,
+        "y": 246.4999999999999
+      },
+      "expected": 264.4999999999999,
+      "observed": 264,
+      "error": -0.5
+    },
+    {
+      "label": "solid#12 [771,288,122,58] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#12 [771,288,122,58] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#12 [771,288,122,58] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#13 [944,288,106,58] north face",
+      "landed": {
+        "x": 995.5833333333273,
+        "y": 246.4999999999999
+      },
+      "expected": 264.4999999999999,
+      "observed": 264,
+      "error": -0.5
+    },
+    {
+      "label": "solid#13 [944,288,106,58] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#13 [944,288,106,58] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#13 [944,288,106,58] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#14 [1062,288,77,58] north face",
+      "landed": {
+        "x": 1100.5833333333287,
+        "y": 246.4999999999999
+      },
+      "expected": 264.4999999999999,
+      "observed": 264,
+      "error": -0.5
+    },
+    {
+      "label": "solid#14 [1062,288,77,58] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#14 [1062,288,77,58] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#14 [1062,288,77,58] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#15 [1139,288,106,58] north face",
+      "landed": {
+        "x": 1193.9166666666645,
+        "y": 246.4999999999999
+      },
+      "expected": 264.4999999999999,
+      "observed": 264,
+      "error": -0.5
+    },
+    {
+      "label": "solid#15 [1139,288,106,58] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#15 [1139,288,106,58] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#15 [1139,288,106,58] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "sweep row y=236 eastward",
+      "landed": {
+        "x": 1252.2499999999993,
+        "y": 237.74999999999991
+      },
+      "expected": 1333.2499999999993,
+      "observed": 1333,
+      "error": -0.25
+    },
+    {
+      "label": "sweep row y=236 westward",
+      "landed": {
+        "x": 1254.249999999998,
+        "y": 237.74999999999991
+      },
+      "expected": 491.24999999999795,
+      "observed": 491,
+      "error": -0.25
+    },
+    {
+      "label": "sweep row y=262 eastward",
+      "landed": {
+        "x": 1255.1666666666658,
+        "y": 264
+      },
+      "expected": 1333.1666666666658,
+      "observed": 1333,
+      "error": -0.17
+    },
+    {
+      "label": "sweep row y=262 westward",
+      "landed": {
+        "x": 1257.1666666666647,
+        "y": 258.16666666666663
+      },
+      "expected": 491.1666666666647,
+      "observed": 491,
+      "error": -0.17
+    }
+  ]
+}

@@ -205,14 +205,48 @@ P10 (M13 beacon), P14–P20. See the proposals document; nothing implemented.
   for mobile/tab-discard (no `pagehide` fires there, so no server record
   exists at all).
 
-### R13 — Art pipeline (presentation, not science)
+### R13 — Art pipeline — RESOLVED BY THE OWNER (2026-09-19)
 
-- The painted plates are PixelLab generations. CLAUDE.md requires explicit,
-  standalone approval for any PixelLab call; the sprint brief did not name
-  PixelLab, so **no generation was spent**. Every art change this sprint is
-  reproducible Pillow surgery on the existing paintings
-  (`scripts/world-v2/plate_edits.py`) or engine-side layering.
-- **Decision:** approve PixelLab regeneration for (a) a true open-exterior
-  Recovery Yard plate and (b) larger interior plates, or accept the
-  recomposed plates. Until then the asset set stays PROVISIONAL and
-  unfrozen.
+- **Owner ruling (verbatim):** "PixelLab is explicitly authorised for the
+  Recovery Yard rebuild, enlarged room artwork, and replacement world
+  sprites."
+- **Used so far:** the open Recovery Yard (ground, ridge, roof, banks and
+  three tall-prop redraws — 320–350 generations;
+  `docs/game/world-v3/YARD-ART-PROVENANCE.md`). All art remains PROVISIONAL,
+  not human-approved; the asset-set version is not bumped; nothing frozen.
+- **Still pending under this ruling:** enlarged interior plates (R15) and
+  world-native loose-item sprites.
+
+### R14 — Automation burden envelope on the open yard (`pilot_yard.spec.ts`, 300 s)
+
+- **Current:** on the 3.3× larger open field every behavioural assertion
+  of the full recovery test passes; the item-owned active time measured by
+  the AUTOMATION is 363 s / 490 s under load and **304 s alone** with the
+  leaner navigator (strip: 224–235 s). Per window alone: M05 13 · M19 33 ·
+  M23 50 · M24 145 · M26 56 (+ M20 start 7). The distances INSIDE the
+  windows are unchanged (rig compound and coupling are rigid translations,
+  uplink spacing kept at 95 px, plot size kept); the increase is driver
+  stalls and settle waits of the grid navigator around the now-precise prop
+  colliders (15 stalls, 134 s settle vs 78 s held key).
+- **Choices:** (1) keep 300 s and tune the driver further; (2) re-baseline
+  the automation proxy for the open yard; (3) replace the proxy by a
+  held-key-time budget (independent of software-GL settle waits).
+- **Recommendation:** (3), else (1). The limit was **not** changed and the
+  test is left red on this single assertion.
+- **Consequence:** the proxy guards participant burden; as built it measures
+  automation overhead at 9–11 fps more than walking distance.
+
+### R15 — Interior room enlargement (presentation)
+
+- **Current:** Dock, Concourse, Workshop, Laboratory, Deck and Core keep
+  their 688×384 (Workshop 1376×384) plates. The cramped feel was addressed
+  structurally (feet-sized body, pixel-precise colliders, removed Concourse
+  side-table); the rooms' floor areas are unchanged.
+- **Why not done with R13's approval in this session:** an enlarged room is
+  a new painted plate plus a re-derivation of every anchor, approach,
+  spawn, door, driver lane and the room's audits — one bounded unit per
+  room (the yard took one). The yard proves the method: a composed ground
+  plate + free-standing prop sprites + pixel solids + the grid navigator.
+- **Decision wanted:** the order of rooms and the target sizes (proposal:
+  Concourse 30×16, Workshop bays 26×14 each, Laboratory 28×16; Dock, Deck
+  and Core stay one-screen rooms by design).

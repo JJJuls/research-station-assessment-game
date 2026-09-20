@@ -50,22 +50,53 @@ on it unchanged (49/49).
   along the open rows (invisible / legacy colliders away from props);
   finally the spawn must be reachable again (no trap).
 
-## Results
+## Results (session 2, 1280×720, real input, frozen runner, final tree `c8dfd52d`)
 
-| Room            | Status                                                                                       | Evidence (`collision-audit/`)                                                           |
-| --------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Dock            | re-authored, audit **passed**                                                                | `dock-clean.png`, `dock-overlay.png`, `dock-findings.json` (9.7 min, every face ≤ 3 px) |
-| Concourse       | re-authored, audit **passed\***                                                              | `station_concourse-*.png`, `station_concourse-findings.json`                            |
-| Workshop        | vestibule re-authored                                                                        | `../workshop-vestibule/` + `e2e/world_v2_vestibule_look.spec.ts` (passed)               |
-| Yard            | see the handoff                                                                              | —                                                                                       |
-| Lab, Deck, Core | **not re-authored** — still cell footprints + skirt (behaviour as before, feet box narrower) | next unit                                                                               |
+A "face" is one side of one collider. A face is pushed when the pure model
+lets the avatar stand 20 px off its middle (else 12 / 6 / 2 px) and a path
+exists; a face with no such stand **abuts a wall or another collider at its
+middle** — the avatar cannot reach it either — and is recorded, not pushed.
+An offline classification of every face against the pure model
+(sessions' scratch tool) gives the same split as the runs below, i.e. the
+audit pushes **every reachable face**.
 
-\* Concourse: 44/44 solid faces within 3 px. One lane sweep (row y 250,
-eastward) read 86 px short of the model: the landing (y ≈ 246.5–250) grazed
-the gauge pedestal's top edge (solid y 270 = feet bottom at y 246) and the
-model rounded the landing to an integer row. Classified **intended
-environmental collision + audit rounding**, not a defect; the model now
-uses the unrounded landing and the sweep row moved to y 236.
+| Room          | Colliders | Pushed (faces + lane sweeps) | Not pushed (abuts wall / neighbour)                          | Largest engine-vs-model error | Result            |
+| ------------- | --------- | ---------------------------- | ------------------------------------------------------------ | ----------------------------- | ----------------- |
+| Dock          | 10        | 18                           | 28                                                           | 0.92 px                       | **pass**          |
+| Concourse     | 10 + Vale | 24                           | 26                                                           | 1.00 px                       | **pass**          |
+| Workshop      | 16        | 20                           | 48 (benches line the walls)                                  | 0.83 px                       | **pass**          |
+| Laboratory    | 3 + Kai   | 11                           | 11                                                           | 0.83 px                       | **pass**          |
+| Utility Deck  | 3         | 7                            | 9                                                            | 1.00 px                       | **pass**          |
+| Core Chamber  | 3         | 8                            | 6                                                            | 0.83 px                       | **pass**          |
+| Recovery Yard | 23 + Noor | 90                           | 12 (west bank, alcove cheeks, props inside the rig compound) | 1.00 px                       | **pass** (48 min) |
+
+Every pushed face stopped within 1 px of the model, and every room's spawn
+was reachable again afterwards (no trap). Evidence per room in
+`collision-audit/`: `<zone>-clean.png`, `<zone>-overlay.png` (DEV overlay)
+and `<zone>-findings.json` (every push: landing, model stop, observed stop;
+written after every face, so a cut-short run still shows what was pushed).
+
+### Audit-tool defects found and fixed in session 2 (candid)
+
+1. **False pass by under-testing.** The first all-rooms run reported the
+   Yard "passed" in 2 minutes: it had pushed **1 of 102** checks. The path
+   planner refused to start from a position hugging a collider (where every
+   push ends), so every later face was recorded "not reachable" and never
+   pushed — and a run with nothing pushed has nothing to fail. Fixed in
+   `e2e/navGrid.ts` (within 24 px of the start a cell only has to fit; the
+   clearance margin applies beyond), with a pure regression
+   (`e2e/nav_grid_hug.spec.ts`), and re-verified: the Yard now pushes 90.
+   The interior rooms were NOT affected in their totals (their pushed
+   counts equal the offline count of reachable faces before and after), but
+   the Workshop run had aborted on the same defect ("no path" beside the
+   cutter island) and passes now.
+2. **Fixed timeouts.** 25 min did not fit the Yard's colliders; the budget
+   now scales with the collider count (30 s per face).
+3. **Session-1 wording.** "44/44 solid faces" for the Concourse was wrong:
+   the audit pushes reachable faces only (24 of 50 checks here).
+
+Limits: a face is classified at its MIDDLE only (a long face partly blocked
+by a neighbour counts by its middle); the audit was not run at 1920×1080.
 
 ## Classified obstructions (owner-reported and found)
 
@@ -89,10 +120,9 @@ uses the unrounded landing and the sweep row moved to y 236.
 
 ## Not done (candid)
 
-Laboratory, Utility Deck, Core and the Yard's east half keep their cell
-footprints (with the skirt). They behave as before except that the feet
-box is narrower; their props still have cell-sized colliders. The 1920×1080
-runs of the audit spec were not executed this session (`WV3_VIEWPORT`
-supports it). The vestibule's door sills are slanted in the painting while
+Session 2 re-authored Laboratory, Utility Deck, Core and the whole Yard;
+the Workshop's benches and machines still collide as cells + skirt (only
+its vestibule is pixel-authored). The 1920×1080 runs of the AUDIT spec were
+not executed (`WV3_VIEWPORT` supports it); the 1080 look tours were. The vestibule's door sills are slanted in the painting while
 its colliders are rectangular — the crossing band is the sills' common
 floor span.

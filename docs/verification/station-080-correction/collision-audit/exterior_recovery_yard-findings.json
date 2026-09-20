@@ -1,0 +1,957 @@
+{
+  "zone": "exterior_recovery_yard",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "findings": [
+    {
+      "label": "solid#0 [112,364,168,62] north face",
+      "landed": {
+        "x": 193.0833333333367,
+        "y": 322.4999999999999
+      },
+      "expected": 340.4999999999999,
+      "observed": 340,
+      "error": -0.5
+    },
+    {
+      "label": "solid#0 [112,364,168,62] south face",
+      "landed": {
+        "x": 196.00000000000335,
+        "y": 433.5000000000001
+      },
+      "expected": 416.5000000000001,
+      "observed": 416,
+      "error": -0.5
+    },
+    {
+      "label": "solid#0 [112,364,168,62] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#0 [112,364,168,62] east face",
+      "landed": {
+        "x": 309.75000000000335,
+        "y": 375.1666666666664
+      },
+      "expected": 291.75000000000335,
+      "observed": 291,
+      "error": -0.75
+    },
+    {
+      "label": "solid#1 [415,200,10,10] north face",
+      "landed": {
+        "x": 419.33333333333417,
+        "y": 158.50000000000006
+      },
+      "expected": 176.50000000000006,
+      "observed": 176,
+      "error": -0.5
+    },
+    {
+      "label": "solid#1 [415,200,10,10] south face",
+      "landed": {
+        "x": 419.33333333333417,
+        "y": 219.74999999999986
+      },
+      "expected": 200.74999999999986,
+      "observed": 200,
+      "error": -0.75
+    },
+    {
+      "label": "solid#1 [415,200,10,10] west face",
+      "landed": {
+        "x": 387.2500000000006,
+        "y": 185.4166666666667
+      },
+      "expected": 404.2500000000006,
+      "observed": 404,
+      "error": -0.25
+    },
+    {
+      "label": "solid#1 [415,200,10,10] east face",
+      "landed": {
+        "x": 450.0833333333333,
+        "y": 186.8333333333332
+      },
+      "expected": 436.0833333333333,
+      "observed": 436,
+      "error": -0.08
+    },
+    {
+      "label": "solid#2 [464,194,97,14] north face",
+      "landed": {
+        "x": 511.8333333333338,
+        "y": 148.91666666666666
+      },
+      "expected": 170.91666666666666,
+      "observed": 170,
+      "error": -0.92
+    },
+    {
+      "label": "solid#2 [464,194,97,14] south face",
+      "landed": {
+        "x": 508.91666666666714,
+        "y": 215.49999999999994
+      },
+      "expected": 198.49999999999994,
+      "observed": 198,
+      "error": -0.5
+    },
+    {
+      "label": "solid#2 [464,194,97,14] west face",
+      "landed": {
+        "x": 438.9166666666667,
+        "y": 183.91666666666654
+      },
+      "expected": 453.9166666666667,
+      "observed": 453,
+      "error": -0.92
+    },
+    {
+      "label": "solid#2 [464,194,97,14] east face",
+      "landed": {
+        "x": 590.583333333333,
+        "y": 180.9999999999999
+      },
+      "expected": 572.583333333333,
+      "observed": 572,
+      "error": -0.58
+    },
+    {
+      "label": "solid#3 [605,200,10,10] north face",
+      "landed": {
+        "x": 611.4999999999998,
+        "y": 158.50000000000006
+      },
+      "expected": 176.50000000000006,
+      "observed": 176,
+      "error": -0.5
+    },
+    {
+      "label": "solid#3 [605,200,10,10] south face",
+      "landed": {
+        "x": 608.5833333333331,
+        "y": 217.49999999999994
+      },
+      "expected": 200.49999999999994,
+      "observed": 200,
+      "error": -0.5
+    },
+    {
+      "label": "solid#3 [605,200,10,10] west face",
+      "landed": {
+        "x": 573.5833333333336,
+        "y": 189.74999999999986
+      },
+      "expected": 594.5833333333336,
+      "observed": 594,
+      "error": -0.58
+    },
+    {
+      "label": "solid#3 [605,200,10,10] east face",
+      "landed": {
+        "x": 649.333333333333,
+        "y": 189.7499999999999
+      },
+      "expected": 626.333333333333,
+      "observed": 626,
+      "error": -0.33
+    },
+    {
+      "label": "solid#4 [728,290,98,36] north face",
+      "landed": {
+        "x": 777.6666666666647,
+        "y": 245.58333333333323
+      },
+      "expected": 266.58333333333326,
+      "observed": 266,
+      "error": -0.58
+    },
+    {
+      "label": "solid#4 [728,290,98,36] south face",
+      "landed": {
+        "x": 777.6666666666647,
+        "y": 333.5000000000001
+      },
+      "expected": 316.5000000000001,
+      "observed": 316,
+      "error": -0.5
+    },
+    {
+      "label": "solid#4 [728,290,98,36] west face",
+      "landed": {
+        "x": 698.9166666666657,
+        "y": 292.6666666666665
+      },
+      "expected": 717.9166666666657,
+      "observed": 717,
+      "error": -0.92
+    },
+    {
+      "label": "solid#4 [728,290,98,36] east face",
+      "landed": {
+        "x": 857.9166666666644,
+        "y": 292.6666666666665
+      },
+      "expected": 837.9166666666644,
+      "observed": 837,
+      "error": -0.92
+    },
+    {
+      "label": "solid#5 [1001,576,37,22] north face",
+      "landed": {
+        "x": 1017.833333333331,
+        "y": 531.5833333333336
+      },
+      "expected": 552.5833333333336,
+      "observed": 552,
+      "error": -0.58
+    },
+    {
+      "label": "solid#5 [1001,576,37,22] south face",
+      "landed": {
+        "x": 1017.833333333331,
+        "y": 605.4999999999998
+      },
+      "expected": 588.4999999999998,
+      "observed": 588,
+      "error": -0.5
+    },
+    {
+      "label": "solid#5 [1001,576,37,22] west face",
+      "landed": {
+        "x": 969.5833333333336,
+        "y": 568.666666666667
+      },
+      "expected": 990.5833333333336,
+      "observed": 990,
+      "error": -0.58
+    },
+    {
+      "label": "solid#5 [1001,576,37,22] east face",
+      "landed": {
+        "x": 1069.4166666666672,
+        "y": 569.3333333333339
+      },
+      "expected": 1049.4166666666672,
+      "observed": 1049,
+      "error": -0.42
+    },
+    {
+      "label": "solid#6 [1120,604,8,8] north face",
+      "landed": {
+        "x": 1121.9166666666686,
+        "y": 559.5833333333336
+      },
+      "expected": 580.5833333333336,
+      "observed": 580,
+      "error": -0.58
+    },
+    {
+      "label": "solid#6 [1120,604,8,8] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#6 [1120,604,8,8] west face",
+      "landed": {
+        "x": 1086.9166666666677,
+        "y": 592.666666666667
+      },
+      "expected": 1109.9166666666677,
+      "observed": 1109,
+      "error": -0.92
+    },
+    {
+      "label": "solid#6 [1120,604,8,8] east face",
+      "landed": {
+        "x": 1161.5000000000014,
+        "y": 589.7500000000003
+      },
+      "expected": 1139.5000000000014,
+      "observed": 1139,
+      "error": -0.5
+    },
+    {
+      "label": "solid#7 [1354,292,16,20] north face",
+      "landed": {
+        "x": 1363.5833333333392,
+        "y": 245.58333333333317
+      },
+      "expected": 268.58333333333314,
+      "observed": 268,
+      "error": -0.58
+    },
+    {
+      "label": "solid#7 [1354,292,16,20] south face",
+      "landed": {
+        "x": 1360.6666666666724,
+        "y": 319.5000000000001
+      },
+      "expected": 302.5000000000001,
+      "observed": 302,
+      "error": -0.5
+    },
+    {
+      "label": "solid#7 [1354,292,16,20] west face",
+      "landed": {
+        "x": 1322.5833333333328,
+        "y": 284.4999999999999
+      },
+      "expected": 1343.5833333333328,
+      "observed": 1343,
+      "error": -0.58
+    },
+    {
+      "label": "solid#7 [1354,292,16,20] east face",
+      "landed": {
+        "x": 1401.999999999999,
+        "y": 281.5833333333332
+      },
+      "expected": 1381.999999999999,
+      "observed": 1381,
+      "error": -1
+    },
+    {
+      "label": "solid#8 [1560,292,20,20] north face",
+      "landed": {
+        "x": 1570.5833333333383,
+        "y": 249.49999999999966
+      },
+      "expected": 268.49999999999966,
+      "observed": 268,
+      "error": -0.5
+    },
+    {
+      "label": "solid#8 [1560,292,20,20] south face",
+      "landed": {
+        "x": 1570.5833333333383,
+        "y": 305.9166666666669
+      },
+      "expected": 302.9166666666669,
+      "observed": 302,
+      "error": -0.92
+    },
+    {
+      "label": "solid#8 [1560,292,20,20] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#8 [1560,292,20,20] east face",
+      "landed": {
+        "x": 1611.4166666666727,
+        "y": 284.6666666666665
+      },
+      "expected": 1591.4166666666727,
+      "observed": 1591,
+      "error": -0.42
+    },
+    {
+      "label": "solid#9 [1448,288,88,42] north face",
+      "landed": {
+        "x": 1494.7499999999975,
+        "y": 246.7499999999996
+      },
+      "expected": 264.7499999999996,
+      "observed": 264,
+      "error": -0.75
+    },
+    {
+      "label": "solid#9 [1448,288,88,42] south face",
+      "landed": {
+        "x": 1489.1666666666665,
+        "y": 337.5000000000001
+      },
+      "expected": 320.5000000000001,
+      "observed": 320,
+      "error": -0.5
+    },
+    {
+      "label": "solid#9 [1448,288,88,42] west face",
+      "landed": {
+        "x": 1416.249999999998,
+        "y": 293.74999999999983
+      },
+      "expected": 1437.249999999998,
+      "observed": 1437,
+      "error": -0.25
+    },
+    {
+      "label": "solid#9 [1448,288,88,42] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#10 [1506,332,70,30] north face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#10 [1506,332,70,30] south face",
+      "landed": {
+        "x": 1539.083333333336,
+        "y": 360.8333333333336
+      },
+      "expected": 352.8333333333336,
+      "observed": 352,
+      "error": -0.83
+    },
+    {
+      "label": "solid#10 [1506,332,70,30] west face",
+      "landed": {
+        "x": 1477.8333333333344,
+        "y": 329.0833333333331
+      },
+      "expected": 1495.8333333333344,
+      "observed": 1495,
+      "error": -0.83
+    },
+    {
+      "label": "solid#10 [1506,332,70,30] east face",
+      "landed": {
+        "x": 1608.750000000003,
+        "y": 326.1666666666664
+      },
+      "expected": 1587.750000000003,
+      "observed": 1587,
+      "error": -0.75
+    },
+    {
+      "label": "solid#11 [1477,391,77,20] north face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#11 [1477,391,77,20] south face",
+      "landed": {
+        "x": 1516.9999999999982,
+        "y": 422.416666666667
+      },
+      "expected": 401.416666666667,
+      "observed": 401,
+      "error": -0.42
+    },
+    {
+      "label": "solid#11 [1477,391,77,20] west face",
+      "landed": {
+        "x": 1444.0833333333296,
+        "y": 387.08333333333377
+      },
+      "expected": 1466.0833333333296,
+      "observed": 1466,
+      "error": -0.08
+    },
+    {
+      "label": "solid#11 [1477,391,77,20] east face",
+      "landed": {
+        "x": 1585.916666666665,
+        "y": 384.1666666666671
+      },
+      "expected": 1565.916666666665,
+      "observed": 1565,
+      "error": -0.92
+    },
+    {
+      "label": "solid#12 [324,323,8,6] north face",
+      "landed": {
+        "x": 326.66666666666424,
+        "y": 279.08333333333286
+      },
+      "expected": 299.08333333333286,
+      "observed": 299,
+      "error": -0.08
+    },
+    {
+      "label": "solid#12 [324,323,8,6] south face",
+      "landed": {
+        "x": 326.66666666666424,
+        "y": 336.5000000000001
+      },
+      "expected": 319.5000000000001,
+      "observed": 319,
+      "error": -0.5
+    },
+    {
+      "label": "solid#12 [324,323,8,6] west face",
+      "landed": {
+        "x": 294.5833333333307,
+        "y": 307.33333333333326
+      },
+      "expected": 313.5833333333307,
+      "observed": 313,
+      "error": -0.58
+    },
+    {
+      "label": "solid#12 [324,323,8,6] east face",
+      "landed": {
+        "x": 362.58333333333366,
+        "y": 307.33333333333326
+      },
+      "expected": 343.58333333333366,
+      "observed": 343,
+      "error": -0.58
+    },
+    {
+      "label": "solid#13 [972,513,8,6] north face",
+      "landed": {
+        "x": 972.9999999999953,
+        "y": 470.66666666666765
+      },
+      "expected": 489.66666666666765,
+      "observed": 489,
+      "error": -0.67
+    },
+    {
+      "label": "solid#13 [972,513,8,6] south face",
+      "landed": {
+        "x": 975.916666666662,
+        "y": 526.9166666666664
+      },
+      "expected": 509.9166666666664,
+      "observed": 509,
+      "error": -0.92
+    },
+    {
+      "label": "solid#13 [972,513,8,6] west face",
+      "landed": {
+        "x": 943.833333333329,
+        "y": 500.25000000000006
+      },
+      "expected": 961.833333333329,
+      "observed": 961,
+      "error": -0.83
+    },
+    {
+      "label": "solid#13 [972,513,8,6] east face",
+      "landed": {
+        "x": 1010.5833333333326,
+        "y": 500.25000000000006
+      },
+      "expected": 991.5833333333326,
+      "observed": 991,
+      "error": -0.58
+    },
+    {
+      "label": "solid#14 [1311,373,8,6] north face",
+      "landed": {
+        "x": 1314.7500000000066,
+        "y": 328.1666666666656
+      },
+      "expected": 349.1666666666656,
+      "observed": 349,
+      "error": -0.17
+    },
+    {
+      "label": "solid#14 [1311,373,8,6] south face",
+      "landed": {
+        "x": 1311.8333333333399,
+        "y": 386.5000000000001
+      },
+      "expected": 369.5000000000001,
+      "observed": 369,
+      "error": -0.5
+    },
+    {
+      "label": "solid#14 [1311,373,8,6] west face",
+      "landed": {
+        "x": 1276.833333333339,
+        "y": 357.33333333333326
+      },
+      "expected": 1300.833333333339,
+      "observed": 1300,
+      "error": -0.83
+    },
+    {
+      "label": "solid#14 [1311,373,8,6] east face",
+      "landed": {
+        "x": 1352.5000000000014,
+        "y": 357.33333333333326
+      },
+      "expected": 1330.5000000000014,
+      "observed": 1330,
+      "error": -0.5
+    },
+    {
+      "label": "solid#15 [661,309,8,6] north face",
+      "landed": {
+        "x": 667.9166666666638,
+        "y": 266.916666666666
+      },
+      "expected": 285.916666666666,
+      "observed": 285,
+      "error": -0.92
+    },
+    {
+      "label": "solid#15 [661,309,8,6] south face",
+      "landed": {
+        "x": 667.4166666666673,
+        "y": 325.4166666666668
+      },
+      "expected": 305.4166666666668,
+      "observed": 305,
+      "error": -0.42
+    },
+    {
+      "label": "solid#15 [661,309,8,6] west face",
+      "landed": {
+        "x": 632.4166666666678,
+        "y": 293.33333333333326
+      },
+      "expected": 650.4166666666678,
+      "observed": 650,
+      "error": -0.42
+    },
+    {
+      "label": "solid#15 [661,309,8,6] east face",
+      "landed": {
+        "x": 696.5833333333336,
+        "y": 293.33333333333326
+      },
+      "expected": 680.5833333333336,
+      "observed": 680,
+      "error": -0.58
+    },
+    {
+      "label": "solid#16 [174,204,52,32] north face",
+      "landed": {
+        "x": 203.6666666666677,
+        "y": 157.66666666666663
+      },
+      "expected": 180.66666666666663,
+      "observed": 180,
+      "error": -0.67
+    },
+    {
+      "label": "solid#16 [174,204,52,32] south face",
+      "landed": {
+        "x": 203.6666666666677,
+        "y": 243.49999999999994
+      },
+      "expected": 226.49999999999994,
+      "observed": 226,
+      "error": -0.5
+    },
+    {
+      "label": "solid#16 [174,204,52,32] west face",
+      "landed": {
+        "x": 144.83333333333331,
+        "y": 205.58333333333343
+      },
+      "expected": 163.83333333333331,
+      "observed": 163,
+      "error": -0.83
+    },
+    {
+      "label": "solid#16 [174,204,52,32] east face",
+      "landed": {
+        "x": 256.3333333333331,
+        "y": 205.58333333333343
+      },
+      "expected": 237.3333333333331,
+      "observed": 237,
+      "error": -0.33
+    },
+    {
+      "label": "solid#17 [180,568,76,28] north face",
+      "landed": {
+        "x": 219.50000000000009,
+        "y": 523.5833333333336
+      },
+      "expected": 544.5833333333336,
+      "observed": 544,
+      "error": -0.58
+    },
+    {
+      "label": "solid#17 [180,568,76,28] south face",
+      "landed": {
+        "x": 216.58333333333343,
+        "y": 606.4166666666664
+      },
+      "expected": 586.4166666666664,
+      "observed": 586,
+      "error": -0.42
+    },
+    {
+      "label": "solid#17 [180,568,76,28] west face",
+      "landed": {
+        "x": 150.66666666666663,
+        "y": 565.5833333333336
+      },
+      "expected": 169.66666666666663,
+      "observed": 169,
+      "error": -0.67
+    },
+    {
+      "label": "solid#17 [180,568,76,28] east face",
+      "landed": {
+        "x": 284.5000000000001,
+        "y": 563.5000000000007
+      },
+      "expected": 267.5000000000001,
+      "observed": 267,
+      "error": -0.5
+    },
+    {
+      "label": "solid#18 [1202,182,43,19] north face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#18 [1202,182,43,19] south face",
+      "landed": {
+        "x": 1220.7499999999998,
+        "y": 208.49999999999994
+      },
+      "expected": 191.49999999999994,
+      "observed": 191,
+      "error": -0.5
+    },
+    {
+      "label": "solid#18 [1202,182,43,19] west face",
+      "landed": {
+        "x": 1170.5833333333328,
+        "y": 178.08333333333323
+      },
+      "expected": 1191.5833333333328,
+      "observed": 1191,
+      "error": -0.58
+    },
+    {
+      "label": "solid#18 [1202,182,43,19] east face",
+      "landed": {
+        "x": 1275.5833333333355,
+        "y": 172.24999999999991
+      },
+      "expected": 1256.5833333333355,
+      "observed": 1256,
+      "error": -0.58
+    },
+    {
+      "label": "solid#19 [1238,550,37,17] north face",
+      "landed": {
+        "x": 1256,
+        "y": 505.5833333333336
+      },
+      "expected": 526.5833333333336,
+      "observed": 526,
+      "error": -0.58
+    },
+    {
+      "label": "solid#19 [1238,550,37,17] south face",
+      "landed": {
+        "x": 1256,
+        "y": 577.4166666666664
+      },
+      "expected": 557.4166666666664,
+      "observed": 557,
+      "error": -0.42
+    },
+    {
+      "label": "solid#19 [1238,550,37,17] west face",
+      "landed": {
+        "x": 1209.3333333333321,
+        "y": 542.4166666666669
+      },
+      "expected": 1227.3333333333321,
+      "observed": 1227,
+      "error": -0.33
+    },
+    {
+      "label": "solid#19 [1238,550,37,17] east face",
+      "landed": {
+        "x": 1302.8333333333353,
+        "y": 539.5000000000002
+      },
+      "expected": 1286.8333333333353,
+      "observed": 1286,
+      "error": -0.83
+    },
+    {
+      "label": "solid#20 [1590,560,50,22] north face",
+      "landed": {
+        "x": 1612.1666666666656,
+        "y": 519.0833333333338
+      },
+      "expected": 536.0833333333338,
+      "observed": 536,
+      "error": -0.08
+    },
+    {
+      "label": "solid#20 [1590,560,50,22] south face",
+      "landed": {
+        "x": 1617.999999999999,
+        "y": 592.666666666667
+      },
+      "expected": 572.666666666667,
+      "observed": 572,
+      "error": -0.67
+    },
+    {
+      "label": "solid#20 [1590,560,50,22] west face",
+      "landed": {
+        "x": 1556.7499999999975,
+        "y": 554.5000000000002
+      },
+      "expected": 1579.7499999999975,
+      "observed": 1579,
+      "error": -0.75
+    },
+    {
+      "label": "solid#20 [1590,560,50,22] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#21 [833,616,31,56] north face",
+      "landed": {
+        "x": 844.8333333333355,
+        "y": 574.5000000000002
+      },
+      "expected": 592.5000000000002,
+      "observed": 592,
+      "error": -0.5
+    },
+    {
+      "label": "solid#21 [833,616,31,56] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#21 [833,616,31,56] west face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#21 [833,616,31,56] east face",
+      "landed": {
+        "x": 897.3333333333348,
+        "y": 627.5833333333336
+      },
+      "expected": 875.3333333333348,
+      "observed": 875,
+      "error": -0.33
+    },
+    {
+      "label": "solid#22 [928,616,31,56] north face",
+      "landed": {
+        "x": 942.0833333333325,
+        "y": 572.1666666666677
+      },
+      "expected": 592.1666666666677,
+      "observed": 592,
+      "error": -0.17
+    },
+    {
+      "label": "solid#22 [928,616,31,56] south face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#22 [928,616,31,56] west face",
+      "landed": {
+        "x": 898.333333333333,
+        "y": 626.9999999999995
+      },
+      "expected": 917.333333333333,
+      "observed": 917,
+      "error": -0.33
+    },
+    {
+      "label": "solid#22 [928,616,31,56] east face",
+      "result": "side not reachable (model)"
+    },
+    {
+      "label": "solid#23 [779,572,22,12] north face",
+      "landed": {
+        "x": 791.583333333335,
+        "y": 524.9166666666675
+      },
+      "expected": 548.9166666666675,
+      "observed": 548,
+      "error": -0.92
+    },
+    {
+      "label": "solid#23 [779,572,22,12] south face",
+      "landed": {
+        "x": 791.583333333335,
+        "y": 591.4999999999998
+      },
+      "expected": 574.4999999999998,
+      "observed": 574,
+      "error": -0.5
+    },
+    {
+      "label": "solid#23 [779,572,22,12] west face",
+      "landed": {
+        "x": 750.5000000000002,
+        "y": 562.3333333333335
+      },
+      "expected": 768.5000000000002,
+      "observed": 768,
+      "error": -0.5
+    },
+    {
+      "label": "solid#23 [779,572,22,12] east face",
+      "landed": {
+        "x": 832.1666666666658,
+        "y": 562.3333333333335
+      },
+      "expected": 812.1666666666658,
+      "observed": 812,
+      "error": -0.17
+    },
+    {
+      "label": "sweep row y=240 eastward",
+      "landed": {
+        "x": 899.4999999999989,
+        "y": 241.49999999999926
+      },
+      "expected": 1653.4999999999989,
+      "observed": 1653,
+      "error": -0.5
+    },
+    {
+      "label": "sweep row y=240 westward",
+      "landed": {
+        "x": 897.5833333333192,
+        "y": 241.49999999999926
+      },
+      "expected": 139.58333333331916,
+      "observed": 139,
+      "error": -0.58
+    },
+    {
+      "label": "sweep row y=420 eastward",
+      "landed": {
+        "x": 894.4166666666631,
+        "y": 416.50000000000034
+      },
+      "expected": 1653.416666666663,
+      "observed": 1653,
+      "error": -0.42
+    },
+    {
+      "label": "sweep row y=420 westward",
+      "landed": {
+        "x": 894.6666666666525,
+        "y": 416.50000000000034
+      },
+      "expected": 139.66666666665253,
+      "observed": 139,
+      "error": -0.67
+    },
+    {
+      "label": "sweep row y=500 eastward",
+      "landed": {
+        "x": 894.4166666666631,
+        "y": 497.6666666666672
+      },
+      "expected": 961.4166666666631,
+      "observed": 961,
+      "error": -0.42
+    },
+    {
+      "label": "sweep row y=500 westward",
+      "landed": {
+        "x": 893.9166666666675,
+        "y": 497.6666666666672
+      },
+      "expected": 139.91666666666754,
+      "observed": 139,
+      "error": -0.92
+    }
+  ]
+}

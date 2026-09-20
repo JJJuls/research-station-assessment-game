@@ -121,3 +121,93 @@ route capture / video, and every 1920×1080 run.
   whole summary object" — the file is write-protected for the agent; the
   one-paragraph correction is in `EXPORT-AND-PERSISTENCE.md` §1 for the
   owner to paste.
+
+## Session 2 (2026-09-19) — PixelLab authorised; Yard rebuilt; remaining rooms; verification
+
+Continuation from `bde6928` (state verified first: branch, HEAD, clean
+tree, no lock, no foreign node / browser). Owner ruling at the start of the
+session: PixelLab explicitly authorised for the Recovery Yard rebuild,
+enlarged room artwork and replacement world sprites (register R13). Nothing
+pushed, merged, tagged, deployed, frozen or promoted; no open scientific
+decision resolved; asset-set version not bumped.
+
+### Commits
+
+| Commit     | Content                                                                                             |
+| ---------- | --------------------------------------------------------------------------------------------------- |
+| `7231845`  | Laboratory, Utility Deck, Core: props collide on pixel solids                                       |
+| `478199e`  | Recovery Yard rebuilt as one open 1792×768 exterior field; prop sprites; anchors on painted objects |
+| `0b35ab91` | world-native M04 debris sprites; workshop lane-climb verification in the driver                     |
+| (final)    | evidence, projections, report, register, handoff                                                    |
+
+### What changed
+
+- **Recovery Yard (A8, A9) — done.** One open field (56×24 tiles, ~3.3×
+  the old floor) instead of two framed room plates and a pass: storm ridge
+  north, fenced banks east / west, station roof with the airlock alcove
+  south; continuous camera travel. Every prop is a free-standing sprite
+  sorted at its foot line with a pixel solid at its base (the avatar walks
+  in front of and behind the mast, gantry and rack, never inside them).
+  **Anchor / art / collider mismatches resolved:** the uplink line's Post A,
+  Line Status Panel and Post B now stand ON painted objects (post — panel
+  rack — post, 95 px spacing kept); the phantom "line panel" cells are
+  gone; the coupling and the whole rig compound are rigid translations of
+  the V2 painting (their window-internal walking distances are unchanged);
+  the M23 plot moved with the room (size 7×6 and both relative target cells
+  unchanged; model literals translated; 12/12). Art provenance:
+  `docs/game/world-v3/YARD-ART-PROVENANCE.md`.
+- **Remaining rooms (C) — done for colliders.** Laboratory, Deck and Core
+  props collide on pixel solids; with Dock, Concourse, Workshop vestibule
+  and the Yard every participant room now uses the feet-box model with
+  painted-footprint colliders. All seven rooms are in the real-input
+  collision audit.
+- **Loose objects (A7) — done for the participant route.** The M04 debris
+  are world-native sprites (they borrowed unrelated inventory icons).
+- **Room enlargement (B) — NOT done for interiors** (register R15): each
+  enlarged interior is a new plate plus a full re-derivation of the room's
+  book and drivers — one bounded unit per room; the yard proves the method.
+- **Stall investigation.** The one unexplained stall of session 1
+  (`pilot_records` test 2, (373, 173.58)) is classified **driver stall-rule
+  misfire in a slow-frame episode**, not a collider: the stop coordinate is
+  fractional, and every collider edge in the model is an integer, so the
+  avatar stopped because the key was released; the eastward leg then met
+  the cutter island (feet bottom 197.6 > island top 192). `workshopVia`
+  now verifies the lane climb. The suite passed 5/5 on first attempt in
+  this session. The session-1 keep-alive flaky-pass
+  (`participant_completion_handoff:1042`) was NOT re-run this session and
+  stays listed as unexplained-but-passing-on-retry.
+- **Science / export:** no new change; R1–R12 stay pending. The full-route
+  projection proves the rebuilt world changed no event identity (below).
+
+### Verification (frozen runner copy, one server, one browser, one worker)
+
+Every browser run used a frozen copy of the tree (`%TEMP%/s080-runner`, a
+plain copy with a `node_modules` junction — not a git worktree), one Vite,
+one SwiftShader browser, one worker, strictly sequential. Wall times are
+automation figures. The tree verified is the committed tree (the runner was
+re-synced after each code commit; the last product change is `c8dfd52d`).
+
+| Group                                                                            | Suite                                                                                                                                                                                                                                                                                                                       | Result                                                                                                                                                                                                                                                                                                                                                                             |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Gates                                                                            | `tsc --noEmit` · `vite build` · ESLint + Prettier on touched files                                                                                                                                                                                                                                                          | pass                                                                                                                                                                                                                                                                                                                                                                               |
+| Pure                                                                             | registry, spawn clearance, route model, exterior models (12/12 after the plot translation), `summary_scope`, `nav_grid`, `nav_grid_hug`                                                                                                                                                                                     | pass                                                                                                                                                                                                                                                                                                                                                                               |
+| Queue A (before the Yard / Lab / Deck / Core / Workshop collider commits; 1.3 h) | corrected Concourse audit, `pilot_lab` 3, `pilot_deck`, `pilot_return` 3, `pilot_signal_incident` 2, `concourse_interaction_lifecycle` 3, `presentation_integration`, `m02_overlay_proof` 2, `world_v1_camera` 3, `world_v1_story` 3, lab / deck / core tours, `persistence_physical` 3, `adversarial_reload_partial_state` | **37 passed, 1 flaky-pass** (`pilot_return` test 1: a 20 s bench wait on attempt 1), **1 environment failure** (`presentation_integration` provenance test: the docs file it reads was not in the runner copy — not a product result)                                                                                                                                              |
+| Yard measurement paths                                                           | `pilot_exterior_isolation` 2/2 · `pilot_yard` tests 2 and 3 pass · `pilot_yard` test 1: **every behavioural assertion passes; red on the 300 s automation envelope only** — 363 s / 490 s in the queue, **304 s alone** with the leaner navigator (register R14; limit unchanged)                                           |
+| Yard tour                                                                        | `world_v2_yard_look` 12 sites + airlock round-trip, 1280×720                                                                                                                                                                                                                                                                | pass (4.9 min)                                                                                                                                                                                                                                                                                                                                                                     |
+| **Event projection 800×600**                                                     | `v4_event_projection` label `world-v4-open-yard` vs the reference `world-v3.json`                                                                                                                                                                                                                                           | **0 differences** — 155 events, 28 opportunities, 25 window ids, final stage `complete`                                                                                                                                                                                                                                                                                            |
+| **Event projection 1920×1080**                                                   | label `world-v4-open-yard-1080` vs `world-v4-open-yard`                                                                                                                                                                                                                                                                     | **0 differences**                                                                                                                                                                                                                                                                                                                                                                  |
+| Route                                                                            | `pilot_route` 4 · `pilot_deck` (through the new yard) · `pilot_records` 5 · workshop tour                                                                                                                                                                                                                                   | **10/10 first attempt**                                                                                                                                                                                                                                                                                                                                                            |
+| 1920×1080 tours                                                                  | yard, lab, deck, core, vestibule regression                                                                                                                                                                                                                                                                                 | **5/5**; the yard runs at ~20 fps at 1080 (open field + sprites)                                                                                                                                                                                                                                                                                                                   |
+| 1920×1080 workshop tour                                                          | first run hit its fixed 600 s budget after completing all 15 stations (slow, not stuck) → budget made resolution-aware (a wait budget, not an assertion)                                                                                                                                                                    | **1/1 (7.0 min)** on the rerun                                                                                                                                                                                                                                                                                                                                                     |
+| After the Workshop collider commit                                               | workshop tour, `m02_overlay_proof` 2, `pilot_lab` 3, `pilot_signal_incident` 2, `pilot_deck`, `pilot_records`                                                                                                                                                                                                               | **12 passed, 1 failed**: `pilot_records` test 3 (Press A overlay did not open within 8 s, both attempts, inside the 1.1 h queue). Reproduced alone immediately afterwards: **passes (1.3 min)**. The whole file was then re-run without retries: **4/4 (9.7 min)**. Classified as the documented input-miss class inside a long queue, not a collider regression; listed as a risk |
+| Collision audit                                                                  | all seven rooms — see `COLLISION-AUDIT.md`                                                                                                                                                                                                                                                                                  | **7/7 rooms pass**; every reachable face pushed (Yard 90, Concourse 24, Workshop 20, Dock 18, Lab 11, Core 8, Deck 7), every stop within 1 px of the model. An under-testing defect in the audit's own planner was found and fixed first (the Yard had 'passed' with 1 face pushed)                                                                                                |
+
+**Still not run (UNKNOWN, not green):** the legacy-route suites (the body
+change is global; legacy rooms keep cells + skirt), the export browser
+suites after session 1 (`participant_completion_handoff:1042` keep-alive
+flaky-pass still unexplained), the collision audit at 1920×1080, the route
+capture / recording, matched before/after frame pairs.
+
+**Correction to session 1:** the session-1 text claimed "44/44 solid faces"
+for the Concourse audit. The audit pushes only faces the avatar can reach;
+the real coverage figures are in `COLLISION-AUDIT.md`.
