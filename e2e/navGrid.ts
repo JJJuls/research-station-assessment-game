@@ -67,8 +67,18 @@ export function planPath(
       const ny = current.y + dy;
       const k = key(nx, ny);
 
-      // The start cell may sit closer to a wall than the margin allows.
-      if (parents.has(k) || !fitsWithMargin(grid, nx, ny, margin)) {
+      // The start may hug a collider (a push test just ended there, or a
+      // stand that touches its prop): within 24 px of the start a cell
+      // only has to FIT; beyond that the clearance margin applies.
+      const nearStart = Math.hypot(nx - start.x, ny - start.y) <= 24;
+
+      if (
+        parents.has(k) ||
+        !(
+          fitsWithMargin(grid, nx, ny, margin) ||
+          (nearStart && bodyFits(grid, nx, ny))
+        )
+      ) {
         continue;
       }
 

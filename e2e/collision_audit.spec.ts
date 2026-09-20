@@ -148,33 +148,36 @@ type Side = 'north' | 'south' | 'west' | 'east';
 
 const SIDES: Record<
   Side,
-  { axis: 'x' | 'y'; dir: 1 | -1; start: (s: SolidRect) => Point }
+  { axis: 'x' | 'y'; dir: 1 | -1; start: (s: SolidRect, off: number) => Point }
 > = {
   // Pushing SOUTH into the solid's north face, etc. `start` is the avatar
   // origin whose feet box stands 20 px off the face's middle.
   north: {
     axis: 'y',
     dir: 1,
-    start: ([x, y, w]) => ({ x: x + w / 2, y: y - 20 - BODY.bottom }),
+    start: ([x, y, w], off) => ({ x: x + w / 2, y: y - off - BODY.bottom }),
   },
   south: {
     axis: 'y',
     dir: -1,
-    start: ([x, y, w, h]) => ({ x: x + w / 2, y: y + h + 20 + BODY.top }),
+    start: ([x, y, w, h], off) => ({
+      x: x + w / 2,
+      y: y + h + off + BODY.top,
+    }),
   },
   west: {
     axis: 'x',
     dir: 1,
-    start: ([x, y, , h]) => ({
-      x: x - 20 - BODY.halfWidth,
+    start: ([x, y, , h], off) => ({
+      x: x - off - BODY.halfWidth,
       y: y + h / 2 - (BODY.bottom - BODY.top) / 2,
     }),
   },
   east: {
     axis: 'x',
     dir: -1,
-    start: ([x, y, w, h]) => ({
-      x: x + w + 20 + BODY.halfWidth,
+    start: ([x, y, w, h], off) => ({
+      x: x + w + off + BODY.halfWidth,
       y: y + h / 2 - (BODY.bottom - BODY.top) / 2,
     }),
   },
@@ -227,7 +230,7 @@ for (const [zone, spec] of Object.entries(ROOMS)) {
       'other room selected',
     );
     // ~12 s per pushed face under software GL, plus the sweeps and boots.
-    test.setTimeout(600_000 + spec.solids.length * 4 * 15_000);
+    test.setTimeout(600_000 + spec.solids.length * 4 * 30_000);
     mkdirSync(OUT, { recursive: true });
     await page.setViewportSize(VIEWPORT);
 
@@ -248,6 +251,14 @@ for (const [zone, spec] of Object.entries(ROOMS)) {
     await page.screenshot({ path: `${OUT}/${zone}-overlay.png` });
 
     const findings: Record<string, unknown>[] = [];
+    // Written after every face, so a run that is cut short still shows
+    // exactly what was pushed.
+    const writeFindings = () =>
+      writeFileSync(
+        `${OUT}/${zone}-findings.json`,
+        `${JSON.stringify({ zone, viewport: VIEWPORT, findings }, null, 1)}
+`,
+      );
     const check = async (
       label: string,
       start: Point,
@@ -259,7 +270,8 @@ for (const [zone, spec] of Object.entries(ROOMS)) {
       if (
         probe === null ||
         !bodyFits(spec.grid, Math.round(start.x), Math.round(start.y)) ||
-        planPath(spec.grid, probe, start) === null
+        (planPath(spec.grid, probe, start) ??
+          planPath(spec.grid, probe, start, { margin: 2 })) === null
       ) {
         findings.push({ label, result: 'side not reachable (model)' });
 
@@ -293,12 +305,22 @@ for (const [zone, spec] of Object.entries(ROOMS)) {
       for (const side of Object.keys(SIDES) as Side[]) {
         const { axis, dir, start } = SIDES[side];
 
+        // The closest stand-off that fits: 20 px, else 12 / 6 / 2 px. A face
+        // with none abuts a wall or another collider at its middle — it
+        // cannot be reached by the avatar either (recorded, not pushed).
+        const off = [20, 12, 6, 2].find((candidate) => {
+          const stand = start(solid, candidate);
+
+          return bodyFits(spec.grid, Math.round(stand.x), Math.round(stand.y));
+        });
+
         await check(
           `solid#${index} [${solid.join(',')}] ${side} face`,
-          start(solid),
+          start(solid, off ?? 20),
           axis,
           dir,
         );
+        writeFindings();
       }
     }
 
@@ -314,9 +336,6 @@ for (const [zone, spec] of Object.entries(ROOMS)) {
       Math.hypot(home.x - spec.spawn.x, home.y - spec.spawn.y),
     ).toBeLessThan(24);
 
-    writeFileSync(
-      `${OUT}/${zone}-findings.json`,
-      `${JSON.stringify({ zone, viewport: VIEWPORT, findings }, null, 1)}\n`,
-    );
+    writeFindings();
   });
 }

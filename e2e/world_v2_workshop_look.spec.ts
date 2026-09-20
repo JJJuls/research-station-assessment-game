@@ -50,7 +50,9 @@ async function promptText(page: Page): Promise<string | null> {
 test('workshop first look — every audited approach shows its own prompt', async ({
   page,
 }) => {
-  test.setTimeout(600_000);
+  // The 15-station tour plus both vestibule crossings needs ~10 min at the
+  // 1920×1080 canvas under software GL (a wait budget, not an assertion).
+  test.setTimeout(VIEWPORT.width > 1280 ? 1_500_000 : 600_000);
   mkdirSync(OUT, { recursive: true });
   await page.setViewportSize(VIEWPORT);
 
