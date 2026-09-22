@@ -74,6 +74,8 @@ interface EnvelopeLike {
     event_integrity: Record<string, unknown>;
     mission_state: Record<string, unknown>;
     environment: Record<string, unknown>;
+    measurement_protocol: Record<string, unknown>;
+    measurement_features: unknown[];
   };
 }
 
@@ -297,6 +299,12 @@ test.describe('research export (test mode only)', () => {
       // zero, for anything not observed) with its scope and scope version.
       'export_schema_version',
       'game_version',
+      // Station 080 M01–M26 (Unit 1): the protocol versions and the
+      // read-only feature extraction ride every payload — all 26 items,
+      // every feature key, null with a disposition when not observed
+      // (docs/verification/station-080-m26/SCORING-AND-EVENT-ADDENDUM-v1.md).
+      'measurement_features',
+      'measurement_protocol',
       // Audit 2026-09 B2 (3a4ff96): the full measurement-validity register
       // and the pilot coverage snapshot ride every export payload
       // (docs/verification/scientific-audit-2026-09/QUALTRICS-LOGGING-REVIEW-B2-A3.md).
@@ -315,6 +323,22 @@ test.describe('research export (test mode only)', () => {
     expect(envelope.payload.environment).toEqual({
       prefers_reduced_motion: false,
     });
+    // Station 080 M01–M26 (Unit 1): the feature block is complete on a
+    // legacy debug session too — 26 items, every row null with a
+    // disposition (nothing observed here is ever a zero).
+    expect(envelope.payload.measurement_protocol).toMatchObject({
+      protocol_version: 'station080-m26-pilot-v1',
+      register_version: 'v3.0',
+    });
+    const features = envelope.payload.measurement_features as {
+      item_id: string;
+      value: unknown;
+      disposition: string;
+    }[];
+
+    expect(new Set(features.map((row) => row.item_id)).size).toBe(26);
+    expect(features.every((row) => row.value === null)).toBe(true);
+    expect(features.every((row) => row.disposition.length > 0)).toBe(true);
     expect(envelope.payload.mission_state).toMatchObject({
       current_room_id: expect.any(String),
     });

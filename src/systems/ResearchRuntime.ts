@@ -126,6 +126,13 @@ export type ExportAugmenter = () => {
    * summary is exported in full, exactly as before (legacy / developer).
    */
   summary_scope?: SummaryScope | null;
+  /**
+   * Station 080 M01–M26 (Unit 1) — PROVISIONAL, additive: the protocol
+   * versions and the read-only feature extraction of the raw log. Absent
+   * on routes that install no augmenter. Never consulted by the summary.
+   */
+  measurement_protocol?: unknown;
+  measurement_features?: unknown;
 };
 
 let exportAugmenter: ExportAugmenter | null = null;
@@ -779,10 +786,16 @@ class ResearchRuntime {
    */
   private buildExportPayload(): ResearchExportPayload {
     const metadata = this.sessionState.getMetadata();
+    // Station 080 M01–M26 (Unit 1, review 15): the augmenter runs ONCE per
+    // payload build (it extracts every register feature from the whole
+    // log) and a failure is counted as a technical error BEFORE the
+    // data-quality metrics are read, so a lost augmentation is recorded
+    // in the very payload that lacks it.
+    const augmented = this.augmented();
     const dataQuality = this.dataQualityTracker.getMetrics();
     const completed = this.status.snapshot().session_status === 'completed';
 
-    const scoped = this.scopedSummary(completed);
+    const scoped = this.scopedSummary(completed, augmented);
 
     return {
       export_schema_version: EXPORT_SCHEMA_VERSION,
@@ -818,8 +831,11 @@ class ResearchRuntime {
       // an augmenter failure must never break an export (missing
       // dispositions are recoverable from raw events, a lost export is
       // not).
-      measurement_validity: this.augmented()?.measurement_validity,
-      pilot_coverage: this.augmented()?.pilot_coverage,
+      measurement_validity: augmented?.measurement_validity,
+      pilot_coverage: augmented?.pilot_coverage,
+      // Station 080 M01–M26 (Unit 1) — PROVISIONAL, additive, read-only.
+      measurement_protocol: augmented?.measurement_protocol,
+      measurement_features: augmented?.measurement_features,
     };
   }
 
@@ -827,12 +843,15 @@ class ResearchRuntime {
    * The scoring-plan summary masked at the export boundary
    * (SummaryScope.ts). `getSummary()` itself stays numeric.
    */
-  private scopedSummary(completed: boolean) {
+  private scopedSummary(
+    completed: boolean,
+    augmented: ReturnType<ExportAugmenter> | undefined = this.augmented(),
+  ) {
     const status = this.status.snapshot().session_status;
 
     return applySummaryScope({
       summary: this.getSummary(completed),
-      scope: this.augmented()?.summary_scope ?? null,
+      scope: augmented?.summary_scope ?? null,
       eventTypes: this.eventLogger.getEvents().map((event) => event.event_type),
       terminal: status === 'completed' || status === 'error',
       reloaded: this.pageLoadIndex > 1,
@@ -843,6 +862,10 @@ class ResearchRuntime {
     try {
       return exportAugmenter?.() ?? undefined;
     } catch {
+      // Never break an export; the loss is recorded as a technical error
+      // (count only, never content) so it is visible in the payload.
+      this.dataQualityTracker.recordTechnicalError();
+
       return undefined;
     }
   }

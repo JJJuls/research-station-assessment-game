@@ -19,6 +19,13 @@
  * windows are never primary-analysable. Participant sessions cannot reach a
  * developer scene (no participant navigation leads there).
  */
+import { extractMeasurementFeatures } from '../measurement/features';
+import {
+  FEATURE_EXTRACTOR_VERSION,
+  MEASUREMENT_PROTOCOL_VERSION,
+  MEASUREMENT_REGISTER_VERSION,
+  MEASUREMENT_SCHEMA_VERSION,
+} from '../measurement/protocol';
 import {
   declareOpportunity,
   markOpportunityInvalid,
@@ -283,6 +290,26 @@ installExportAugmenter(() => {
       launchMode === 'participant'
         ? { id: 'pilot_route_v1', applicable: ['session', 'dock_control'] }
         : null,
+    // Station 080 M01–M26 (Unit 1): the read-only feature extraction of the
+    // CURRENT page load's raw events, with its protocol versions. Every
+    // register feature is present on every export; a feature that was not
+    // observed is `null` with a disposition — never a zero. Full and
+    // compact payloads carry the same rows (the extractor reads the log,
+    // not the payload).
+    measurement_protocol: {
+      protocol_version: MEASUREMENT_PROTOCOL_VERSION,
+      schema_version: MEASUREMENT_SCHEMA_VERSION,
+      register_version: MEASUREMENT_REGISTER_VERSION,
+      feature_extractor_version: FEATURE_EXTRACTOR_VERSION,
+    },
+    measurement_features: extractMeasurementFeatures(
+      researchRuntime.eventLogger.getEvents(),
+      {
+        finalCoreClosed,
+        pageLoadIndex: researchRuntime.getPageLoadIndex(),
+        reloaded: researchRuntime.getPageLoadIndex() > 1,
+      },
+    ),
   };
 });
 

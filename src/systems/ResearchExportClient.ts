@@ -91,6 +91,14 @@ export interface ResearchExportPayload {
    */
   measurement_validity?: unknown;
   pilot_coverage?: unknown;
+  /**
+   * Station 080 M01–M26 (Unit 1) — PROVISIONAL, additive: protocol
+   * versions and the read-only feature extraction of the raw log (every
+   * register feature present; unobserved features are `null` with a
+   * disposition, never a zero). Identical in full and compact payloads.
+   */
+  measurement_protocol?: unknown;
+  measurement_features?: unknown;
   /** How many of the current page load's events the compact export dropped. */
   raw_events_omitted_count?: number;
 }

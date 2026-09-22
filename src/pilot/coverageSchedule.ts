@@ -73,8 +73,14 @@ export const PILOT_ITEM_IDS: readonly PilotItemId[] = [
   'M26',
 ];
 
-/** Crosswalk participant-route status (mission §4). */
-import { EVIDENCE_LEDGER } from './evidenceLedger';
+/**
+ * Station 080 (M01–M26 run, Unit 1): the schedule is derived from the
+ * versioned implementation register v3 (`src/measurement/registerV3.ts`),
+ * whose as-built route is the frozen v2 ledger route until an item unit
+ * lands its v3 design — so the runtime registry can never drift from the
+ * register, and the legacy v2 record keeps its old version untouched.
+ */
+import { REGISTER_V3 } from '../measurement/registerV3';
 
 export type PilotRouteDisposition =
   | 'PRIMARY-CANDIDATE'
@@ -130,76 +136,29 @@ export interface PilotScheduleEntry {
   reviewNaming: PilotReviewNaming;
 }
 
-const EPISODE_ZONE: Record<number, PilotZoneId> = {
-  1: 'station_concourse',
-  2: 'records_workshop',
-  3: 'diagnostics_laboratory',
-  4: 'exterior_recovery_yard',
-  5: 'records_workshop',
-  6: 'utility_core_deck',
-};
-
-/** Stopping-rule windows the review never names (MAJ-9). */
-const NEVER_NAMED: readonly PilotItemId[] = ['M22', 'M24', 'M25', 'M26'];
-
-/** Operational labels (route location; no item id, no evaluative word). */
-const OPERATIONAL_LABELS: Partial<Record<PilotItemId, string>> = {
-  M01: 'Plan board (Concourse)',
-  M02: 'Case workspace (Workshop)',
-  M03: 'Press stations (Workshop)',
-  M04: 'Sample cutter (Workshop)',
-  M05: 'Fault report (Concourse / Yard)',
-  M06: 'Dispatch console (Workshop)',
-  M07: 'Calibration bench (Workshop)',
-  M09: 'Monitor watch (Concourse)',
-  M10: 'Component delivery (Concourse)',
-  M12: 'Quality packets (Concourse / Workshop)',
-  M13: 'Conduit lattice bench (Workshop)',
-  M14: 'Incident desk (Concourse)',
-  M15: 'Signal case — causal model (Laboratory)',
-  M16: 'Signal case — protocol (Laboratory)',
-  M17: 'Signal case — transfer (Laboratory)',
-  M18: 'Signal case — diagnosis (Laboratory)',
-  M19: 'Valve coupling (Yard)',
-  M20: 'Antenna restoration (Yard / Workshop)',
-  M21: 'Manual repair (Workshop)',
-  M22: 'Shift report (Workshop)',
-  M23: 'Excavation plot (Yard)',
-  M24: 'Magnet rig (Metal Yard)',
-  M25: 'Shift question (Workshop)',
-  M26: 'Channel post (Yard)',
-};
-
 /**
- * The schedule is DERIVED from the frozen evidence ledger (Unit 0) so the
- * runtime registry can never drift from the workbook: strong/conditional
- * game candidates are route-primary candidates with the ledger's
- * provisional opportunity ids and family prefixes; questionnaire-primary
- * items keep no behavioural window (M25's transparent probe is scheduled as
- * a presentation window, never as behavioural evidence).
+ * The schedule is DERIVED from the versioned register v3: each item's
+ * as-built route (opportunity ids, windows, family prefixes) and its
+ * disposition, operational label and review-naming rule come from the
+ * register entry. Items still on their v2-ledger route keep exactly the
+ * v2 schedule shape; the register test proves the two agree.
  */
-export const PILOT_SCHEDULE: readonly PilotScheduleEntry[] =
-  EVIDENCE_LEDGER.map((entry): PilotScheduleEntry => {
+export const PILOT_SCHEDULE: readonly PilotScheduleEntry[] = REGISTER_V3.map(
+  (entry): PilotScheduleEntry => {
     const scheduled = entry.route.opportunity_ids.length > 0;
 
     return {
       item: entry.id,
-      disposition:
-        entry.disposition_class === 'questionnaire_primary'
-          ? 'QUESTIONNAIRE-PRIMARY'
-          : 'PRIMARY-CANDIDATE',
+      disposition: entry.disposition,
       itemIdentity: 'mission_brief',
       opportunityIds: [...entry.route.opportunity_ids],
       familyPrefixes: [...entry.route.family_prefixes],
-      zone: scheduled ? (EPISODE_ZONE[entry.route.episodes[0]] ?? null) : null,
-      operationalLabel: scheduled
-        ? (OPERATIONAL_LABELS[entry.id] ?? null)
-        : null,
-      reviewNaming: NEVER_NAMED.includes(entry.id)
-        ? 'never'
-        : 'never_entered_only',
+      zone: scheduled ? (entry.route.windows[0]?.zone ?? null) : null,
+      operationalLabel: scheduled ? entry.operational_label : null,
+      reviewNaming: entry.review_naming,
     };
-  });
+  },
+);
 
 /** Coverage status of one scheduled item (mission §13). */
 export type PilotCoverageStatus =
