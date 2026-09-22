@@ -100,3 +100,62 @@ foundation — register v3, focused clock, feature export`.
   generator, package files, tool configs, settings.
 - **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
   deleted.
+
+## U2 — M08 effort allocation (station support console)
+
+- **Objective:** add the owner-approved M08 controlled task: practised
+  demanding work (sort readings by a visible rule) versus standing by in
+  six 15-focused-second slots with displayed benefits of 1 or 3 station
+  output units (three each, counterbalanced), payment and route fixed.
+- **Scientific rationale:** specification M08 row ("Add controlled task";
+  R09 effort allocation; exploratory counterpart). Measure
+  `m08_work_choice_fraction` = Work / explicit valid choices (6 planned);
+  per-level fractions, practice performance and work demand as companions;
+  a slot without an explicit choice is missing, never Rest.
+- **Participant-facing behaviour:** a "Station Support Console" in the
+  Recovery Yard (open field south-west of the mast) opens a work surface:
+  practice of four readings, then six slots — "Sort readings (+N units)"
+  or "Stand by (+0)", both 15 s, same neutral ending; a fictional output
+  tally; no praise, no race framing, no reward effect.
+- **Allowed files:** `src/pilot/exterior/m08EffortModel.ts` (pure model),
+  `src/pilot/windows/m08EffortChoice.ts` (window adapter),
+  `src/pilot/windows/m08SurfaceModel.ts`, `src/pilot/windows/reviewClosure.ts`,
+  `src/pilot/zoneSites.ts`, `src/world/interactionRegistry.ts`,
+  `src/scenes/ExteriorRecoveryYardScene.ts`, `src/measurement/registerV3.ts`,
+  `src/measurement/features/**` (m08 extractor), `e2e/m08_effort_choice.spec.ts`,
+  `e2e/m08_effort_route.spec.ts`, `e2e/exteriorHelpers.ts`,
+  `e2e/pilot_coverage.spec.ts`, `e2e/pilot_closure_models.spec.ts`,
+  `e2e/m26_protocol_foundation.spec.ts`, the docs directory.
+- **Entry state:** HEAD `9566f1e1`, clean tree.
+- **Success behaviour:** six explicit choices complete the window (valid);
+  the extracted primary is observed 0–6 with per-level fractions; the
+  focused clock excludes hidden / unfocused / closed-surface time.
+- **Failure/recovery:** closing the surface pauses a running slot and
+  reopening resumes it; Noor's shift end completes an open console as a
+  stopped observation with missing slots kept missing; the review marks a
+  never-opened console absent and censors an open one; a console left
+  before any choice is a voluntary stop with a null value.
+- **Telemetry boundary:** family `proto_m08_effort_*` (candidate); the v2
+  `secondary_m08_optional_job_*` telemetry is retained as descriptive
+  context; no canonical name or formula invented.
+- **Scientific acceptance:** missing choice ≠ Rest; both slot kinds equal
+  duration; benefit levels balanced; payment/route untouched; exploratory
+  label kept.
+- **Gameplay acceptance:** console reachable on the ordinary route with
+  the audited approach point (registry spec green); no study identifier
+  visible; ESC always leaves.
+- **Required tests:** `lint:tsc`, `build`, ESLint/Prettier on touched files,
+  pure `m08_effort_choice` + foundation + coverage + registry + exterior
+  models + closure models + evidence ledger (93/93), browser
+  `m08_effort_route` (1/1, 4.3 min, real navigation and pointer input).
+- **Required screenshots:** none.
+- **Commit expectation:** `feat(m08): station support console — six
+15-second work-or-stand-by slots with displayed benefits`.
+- **Handoff / deviations:** the schedule-count assertions in
+  `pilot_coverage` and `pilot_closure_models` now derive from the register
+  (M08 joined the scheduled set); the placement is the Recovery Yard
+  (register §5.8). **Independent read-only review of this unit is still
+  pending** (the session's context budget was exhausted after
+  verification) — the next session must run the scientific and gameplay
+  reviews on this commit and apply any bounded fixes as a follow-up
+  commit before U3.

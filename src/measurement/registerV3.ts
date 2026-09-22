@@ -659,6 +659,29 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'exploratory',
     direction: 'add_task',
     occasions: 1,
+    // Unit 2: the approved controlled task landed (station support
+    // console, Recovery Yard); the v2 secondary optional-job telemetry is
+    // retained as descriptive context, never primary evidence.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m08_effort_choice'],
+      windows: [
+        {
+          id: 'm08_effort_w1',
+          occasion: null,
+          zone: 'exterior_recovery_yard',
+          episode: 4,
+        },
+      ],
+      family_prefixes: ['proto_m08_effort_'],
+      secondary_ids: ['secondary_m08_optional_job'],
+    },
+    implementation_status: 'implemented',
+    disposition_override: {
+      disposition: 'PRIMARY-CANDIDATE',
+      approved_by:
+        'FABLE-M01-M26-IMPLEMENTATION-INSTRUCTIONS.md, M08 row (Direction: Add controlled task)',
+    },
     summary:
       'Practised demanding work versus a matched low-demand activity in six 15-second choices; work shows 1 or 3 station-output units (three each, counterbalanced), leisure none; payment and route access fixed.',
     features: [

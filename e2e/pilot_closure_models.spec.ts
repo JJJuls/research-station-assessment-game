@@ -141,17 +141,24 @@ test.describe('Utility & Core closure model (pure)', () => {
     expect(readiness.items.map((item) => item.item)).toEqual(
       PILOT_SCHEDULE.map((entry) => entry.item),
     );
-    // 24 scheduled (23 game candidates + the M25 presentation window);
-    // M08/M11 are questionnaire-primary with no window (not scheduled).
-    expect(readiness.counts.scheduled).toBe(24);
+    // Scheduled = every register item with a route window (Station 080:
+    // M08 joined in Unit 2; M11 / M25 follow their units).
+    expect(readiness.counts.scheduled).toBe(
+      PILOT_SCHEDULE.filter((entry) => entry.opportunityIds.length > 0).length,
+    );
     expect(
       readiness.items
         .filter((item) => item.class === 'not_scheduled')
         .map((i) => i.item),
-    ).toEqual(['M08', 'M11']);
-    // Nothing declared → every game window pending → not ready.
+    ).toEqual(
+      PILOT_SCHEDULE.filter((entry) => entry.opportunityIds.length === 0).map(
+        (entry) => entry.item,
+      ),
+    );
+    // Nothing declared → every game window pending → not ready (the M25
+    // presentation window is external_pending, not pending).
     expect(readiness.ready).toBe(false);
-    expect(readiness.counts.pending).toBe(23);
+    expect(readiness.counts.pending).toBe(readiness.counts.scheduled - 1);
     expect(readiness.blockers.every((b) => b.kind === 'window_pending')).toBe(
       true,
     );

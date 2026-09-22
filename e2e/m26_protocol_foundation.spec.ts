@@ -413,7 +413,8 @@ test.describe('feature extractor framework (pure)', () => {
 
     for (const row of rows) {
       expect(row.value).toBeNull();
-      expect(row.disposition).toBe('not_implemented');
+      // Items with a landed extractor report the empty log as not presented.
+      expect(['not_implemented', 'not_presented']).toContain(row.disposition);
       expect(row.protocol_version).toBe(MEASUREMENT_PROTOCOL_VERSION);
       expect(row.missing_reason).not.toBeNull();
       expect(row.closure_reason).toBeNull();

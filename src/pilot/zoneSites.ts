@@ -202,6 +202,13 @@ export const YARD_SITES = {
   uplinkA: { x: 420, y: 212 },
   linePanel: { x: 515, y: 214 },
   uplinkB: { x: 610, y: 212 },
+  /**
+   * Station 080 M08 (Unit 2): the station support console stands on the
+   * open field south-west of the mast, between the coupling run and the
+   * apron — approached from the north, 174 px from Noor, 313 px from the
+   * airlock, clear of every other site's radius.
+   */
+  supportConsole: { x: 620, y: 520 },
 } as const;
 
 /** Magnet rig operating pad (F works only here): under the gantry beam. */

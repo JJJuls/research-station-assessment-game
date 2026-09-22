@@ -15,6 +15,7 @@ import { closeM04AtReview } from './m04Debris';
 import { closeM05AtReview } from './m05Initiation';
 import { m06Window } from './m06RoutineDispatch';
 import { closeM07AtReview } from './m07Calibration';
+import { closeM08AtReview } from './m08EffortChoice';
 import { closeM09AtReview } from './m09MonitorWatch';
 import { closeM10AtReview } from './m10ComponentPromise';
 import { m12Windows } from './m12QualityControl';
@@ -57,6 +58,9 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
     'dispatch console never opened before the review',
   );
   closeM07AtReview(nowMs);
+  // Station 080 M08 (Unit 2): the support console (never opened → absent;
+  // open → censored; slots without an explicit choice stay missing).
+  closeM08AtReview(nowMs);
   closeM09AtReview(nowMs);
   closeM10AtReview(nowMs);
   closeSurfaceWindow(

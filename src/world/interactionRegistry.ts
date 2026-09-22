@@ -922,6 +922,17 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'm24_magnet_utility (alternative)',
     { x: 1482, y: 358 },
   ),
+  // Station 080 M08 (Unit 2): the support console on the open field.
+  yardStation(
+    'yard.support_console',
+    Y.supportConsole,
+    'Use the',
+    'Station Support Console',
+    { kind: 'work_surface', id: 'm08_support_console' },
+    'm08_effort_choice',
+    { x: 620, y: 476 },
+    { w: 1, h: 1 },
+  ),
 ];
 
 export const WORLD_V1_REGISTRY: Partial<

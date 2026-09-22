@@ -124,6 +124,10 @@ import {
 import type { PilotNpcBeat } from '../pilot/PilotZoneScene';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
 import {
+  activeWorkSurface,
+  openWorkSurface,
+} from '../pilot/ui/WorkSurfaceScene';
+import {
   declareExteriorWindows,
   dismissExteriorSite,
   endExteriorShift,
@@ -178,6 +182,14 @@ import {
   m05State,
   presentM05,
 } from '../pilot/windows/m05Initiation';
+import {
+  closeM08AtShiftEnd,
+  closeM08Surface,
+  declareM08,
+  m08Window,
+  openM08,
+} from '../pilot/windows/m08EffortChoice';
+import { m08SurfaceModel } from '../pilot/windows/m08SurfaceModel';
 import {
   YARD_AIRLOCK,
   YARD_RIG_PAD,
@@ -277,6 +289,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     // declared at zone entry whether or not it is entered.
     declareM05('o2');
     declareExteriorWindows();
+    declareM08();
     stampContaminationNotes();
 
     super.create(data);
@@ -462,6 +475,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
 
     // ——— Sites (E stations) in operational order. ———
     this.buildCouplingSite();
+    this.buildSupportConsoleSite();
     this.buildMastSite();
     this.buildExcavationSite();
     this.buildMetalYard();
@@ -598,6 +612,79 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
   }
 
   // ————————————————————————————————— sites ——
+
+  /**
+   * Station 080 M08 (Unit 2): the station support console — six 15-second
+   * work-or-stand-by slots on a work surface. Never guided by the beacon
+   * as a directive after first use; never gates anything.
+   */
+  private buildSupportConsoleSite() {
+    const site = YARD_SITES.supportConsole;
+
+    this.addStation({
+      interactionKey: 'pilotStation',
+      label: 'Station Support Console',
+      texture: 'proc-console-scenario',
+      x: site.x,
+      y: site.y,
+      verb: 'Use the',
+      registryId: 'yard.support_console',
+      onPromptOpened: () => {
+        this.logStationOpened('support_console', {
+          window_status: m08Window.windowStatus(),
+        });
+
+        if (activeWorkSurface(this) !== null) {
+          return false;
+        }
+
+        openM08(Date.now());
+        openWorkSurface(this, {
+          surfaceId: 'm08_support_console',
+          model: () => m08SurfaceModel(this.m08SurfaceHost()),
+          onClose: () => {
+            closeM08Surface(Date.now());
+          },
+          onClosed: () => {
+            this.refreshGuidance();
+          },
+        });
+
+        return false;
+      },
+    });
+    registerPilotStation({
+      id: 'support_console',
+      zone: 'exterior_recovery_yard',
+      x: site.x,
+      y: site.y,
+      label: 'Station Support Console',
+      stages: ['exterior_work'],
+      isDone: () => m08Window.windowStatus() !== 'unopened',
+      order: 6,
+    });
+  }
+
+  private m08SurfaceHost() {
+    return {
+      now: () => Date.now(),
+      close: () => activeWorkSurface(this)?.close(),
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+      later: (ms: number, fn: () => void) => {
+        const surface = activeWorkSurface(this);
+
+        if (surface === null) {
+          return;
+        }
+
+        surface.time.delayedCall(ms, () => {
+          fn();
+          activeWorkSurface(this)?.refresh();
+        });
+      },
+    };
+  }
 
   private buildCouplingSite() {
     const site = YARD_SITES.coupling;
@@ -1656,6 +1743,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     }
 
     endExteriorShift(now);
+    closeM08AtShiftEnd(now);
     this.closeExcavationMechanics();
     advancePilotStage('return_hub', now);
     this.refreshAllVisuals();

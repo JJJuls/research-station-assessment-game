@@ -12,6 +12,7 @@ import { join } from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
+import { registerEntry } from '../src/measurement/registerV3';
 import type { CoverageRecordLike } from '../src/pilot/coverageSchedule';
 import {
   deriveCoverage,
@@ -75,10 +76,13 @@ test.describe('pilot coverage schedule (pure)', () => {
     );
 
     // Route-primary candidates = every strong/conditional ledger item plus
-    // the M25 transparent probe window (questionnaire-primary, hybrid).
+    // the items the Station 080 register promotes with an explicit, cited
+    // override (M08 / M11 / M25 as their approved tasks land).
     expect(primaries.map((entry) => entry.item)).toEqual(
       EVIDENCE_LEDGER.filter(
-        (entry) => entry.disposition_class !== 'questionnaire_primary',
+        (entry) =>
+          entry.disposition_class !== 'questionnaire_primary' ||
+          registerEntry(entry.id).disposition_override !== null,
       ).map((entry) => entry.id),
     );
 
@@ -118,7 +122,9 @@ test.describe('pilot coverage schedule (pure)', () => {
   test('route-primary event-family prefixes are pairwise disjoint and never swallow a legacy proto_* event', () => {
     const prefixes = primaryFamilyPrefixes();
 
-    expect(prefixes.length).toBe(24);
+    expect(prefixes.length).toBe(
+      PILOT_SCHEDULE.filter((entry) => entry.familyPrefixes.length > 0).length,
+    );
 
     for (const a of prefixes) {
       for (const b of prefixes) {
@@ -139,6 +145,9 @@ test.describe('pilot coverage schedule (pure)', () => {
       'src/informationProcessing',
       'src/fieldActions',
       'src/pilot',
+      // Station 080: the register and the read-only feature extractors
+      // name the families they describe / consume (never emit).
+      'src/measurement',
     ].map((dir) => dir.replace(/\//g, '\\'));
     const files = listTsFiles(join(__dirname, '..', 'src'));
     const offenders: string[] = [];
@@ -315,18 +324,25 @@ test.describe('pilot coverage schedule (pure)', () => {
       coverage
         .filter((item) => item.status === 'not_applicable')
         .map((item) => item.item),
-    ).toEqual(['M08', 'M11']);
+    ).toEqual(
+      PILOT_SCHEDULE.filter((entry) => entry.opportunityIds.length === 0).map(
+        (entry) => entry.item,
+      ),
+    );
 
     const summary = operationalCompletionSummary(coverage);
 
-    // 24 scheduled = 23 game candidates + the M25 transparent probe window.
-    expect(summary.scheduled).toBe(24);
+    const scheduledCount = PILOT_SCHEDULE.filter(
+      (entry) => entry.opportunityIds.length > 0,
+    ).length;
+
+    expect(summary.scheduled).toBe(scheduledCount);
     // Round-2 S2 rule: the four reviewNaming-never stopping-rule items
     // are excluded from the participant-facing OPEN count.
     expect(summary.closed).toBe(4);
-    expect(summary.open).toBe(20);
-    // 20 reviewable — M22/M24/M25/M26 are never named.
-    expect(summary.neverEnteredLabels.length).toBe(20);
+    expect(summary.open).toBe(scheduledCount - 4);
+    // Every reviewable window — M22/M24/M25/M26 are never named.
+    expect(summary.neverEnteredLabels.length).toBe(scheduledCount - 4);
     expect(summary.neverEnteredLabels.join(' ')).not.toMatch(
       /Magnet|Sector|seal|pump/i,
     );
@@ -339,9 +355,9 @@ test.describe('pilot coverage schedule (pure)', () => {
     const enteredSummary = operationalCompletionSummary(entered);
 
     // Round-2 S2 rule: the four reviewNaming-never items are excluded
-    // from the participant-facing OPEN count (24 scheduled - 4 = 20).
-    expect(enteredSummary.open).toBe(20);
-    expect(enteredSummary.neverEnteredLabels.length).toBe(19);
+    // from the participant-facing OPEN count (scheduled - 4).
+    expect(enteredSummary.open).toBe(scheduledCount - 4);
+    expect(enteredSummary.neverEnteredLabels.length).toBe(scheduledCount - 5);
     expect(enteredSummary.neverEnteredLabels.join(' ')).not.toMatch(
       /Case workspace/,
     );
