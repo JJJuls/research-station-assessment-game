@@ -85,7 +85,7 @@ status at this register version — updated by each unit).
 | M03  | Retain and verify       | 2    | `m03_tools_restored`: restored / 6; 0–3 per occasion; more tidying                                                                                                                                                   | object states                                                                                                                                | retained core           | v2-ledger route (five residuals per occasion) — planned                                                                           |
 | M04  | Extend occasions        | 2    | `m04_undisposed_pieces`: undisposed incl. carried / 6; more own mess                                                                                                                                                 | per-job values                                                                                                                               | behavioural counterpart | v2-ledger route (one job) — planned                                                                                               |
 | M05  | Redesign                | 2    | `m05_start_latency`: per accepted occasion the focused ms from eligibility to the first work action + status started / deferred / exited / cap / interrupted; never a starter-only mean                              | `m05_acceptance_exposure` (offer, answer, eligibility wait, exposure by cause, control views, work, late start)                              | behavioural counterpart | v3 route: `proto_m05_start_o1` (Concourse, ep 1) + `proto_m05_start_o2` (Recovery Yard, ep 4) — implemented (U6)                  |
-| M06  | Redesign                | 1    | `m06_unique_correct_orders`: unique correct orders in 60 s; 0–12; more useful output                                                                                                                                 | first-pass accuracy, rework, actual stop time                                                                                                | behavioural counterpart | v2-ledger route (four orders, no budget) — planned                                                                                |
+| M06  | Redesign                | 1    | `m06_unique_correct_orders`: distinct orders whose matching dispatch fell inside the one 60 s focused budget; 0–12; more useful output in equal allocated time                                                       | `m06_work_period_detail` (first-pass accuracy, rework, skips, invalid dispatches, actual stop time, stop kind, per-order records)            | behavioural counterpart | v3 route: `proto_m06_work_period` (Records Workshop, ep 2) — implemented (U7)                                                     |
 | M07  | Retain with controls    | 1    | `m07_stages_completed`: stages / 6 at the closing milestone; more routine completion                                                                                                                                 | returns                                                                                                                                      | retained core           | v2-ledger route (P7 valid-zero defect) — planned                                                                                  |
 | M08  | Add controlled task     | 1    | `m08_work_choice_fraction`: Work / valid choices; 0–6; more work chosen (exploratory)                                                                                                                                | fractions by benefit level, practice performance                                                                                             | exploratory             | v3 route: `proto_m08_effort_choice`, Recovery Yard, ep 4 — implemented and reviewed (U2 + U2-R)                                   |
 | M09  | Extend checkpoints      | 3    | `m09_due_checks_fulfilled`: fulfilled / eligible due checks; 0–3; more follow-through                                                                                                                                | acceptance, reminders, access                                                                                                                | behavioural counterpart | v2-ledger route (two checks) — planned                                                                                            |
@@ -514,6 +514,84 @@ departure and the shift end into one status with `detail` beside it;
 deferral is terminal for the primary (a later start is a companion). Owner
 questions §5.43–5.49.\_
 
+_Unit 7 (M06): as-built — the dispatch console's timed work period.
+Window `m06_orders_w1`, opportunity `proto_m06_work_period`, Records
+Workshop, episode 2, at the existing Dispatch Console
+(`workshop.dispatch_console`, 915,170; surface id `m06_dispatch_console`
+unchanged); PRESENTED when the Work Order Board's "Take the orders." is
+read (the orders list "dispatch lines"). Family `proto_m06_orders_`(events:`presented`, `opportunity*opened`, `token_pressed`,
+`token_refused`, `line_typed`, `buffer_cleared`, `reference_consulted`,
+`practice_dispatched`with`matches_reference`, `practice_passed`,
+`ready_shown`, `press_refused`(a Begin press inside the ready screen's
+400 ms settle window),`period_begun`, `order_presented`with`order_index`and`focused_ms`, `order_dispatched`with`order_index`,
+`line`, `correct`, `attempt`, `focused_ms`, `within_budget`,
+`unique_correct_orders`, `order_skipped`, `stopped`, `period_ended`with`stop_kind`, `surface_closed`, `surface_reopened`, `window_closed`,
+`technical_failure` only as the reload marker). Procedure: the two v2
+practice lines unchanged (tokens; each sent correctly once — the
+criterion, never scored) → the READY screen ("Practice complete. The
+work period is 60 seconds of console time. Orders arrive one at a time —
+send each as it reads. Leaving the console pauses the period."; "Begin
+the work period (B)") → the work period: one FOCUSED 60 s budget
+(`M06_BUDGET_MS`, `FocusedClock` registered with the focus monitor;
+paused by a closed surface and by focus loss / hidden), twelve orders one
+at a time in the assigned form order (`form_a`= twelve distinct lines,
+every token three times;`form_b` = a fixed permutation of the same
+twelve — matched content; assignment by session hash), the current order
+shown with its index ("ORDER 3 of 12 · SET PUMP-2 HIGH"), a tally ("SENT
+CORRECTLY: n") and "TIME LEFT: n s"; Dispatch (D) compares the buffer
+with the current order — a match counts the order once and presents the
+next, a mismatch reads "Does not match order n. Correct it or skip it."
+and leaves the order for correction (a further dispatch is rework); "Skip
+order (K)" moves on without credit (never revisited); Clear (X); "Stop
+work (F)" ends the period early; no send animation (a dispatch is
+instant). Closure: the budget end (`stop_kind: budget`, closure
+`completed` — the budget is checked before any dispatch or skip, so
+nothing lands past it), the explicit stop (`explicit`, `voluntary_stop`,
+denominator unchanged), all twelve handled (`all_orders`, `completed`); a
+buffer left unsent at the end is discarded (`buffer_discarded_at_end`);
+ESC / Leave pauses the budget and the reopen resumes it (the return shift
+included); the review censors an open period with the count as it stands
+(`review`, `closed_at_review`) and marks a never-opened console absent; a
+console opened in an earlier page load is never re-run (prior exposure,
+`technical_failure`, features `interrupted`). Formula
+`m06_unique_correct_orders`= distinct orders with a correct dispatch
+whose`focused_ms ≤ 60 000`(recounted from the`order_dispatched`events;
+a record that disagrees ⇒`technical_failure`, `recount_agrees`exported);`null`with`no_eligible_event`when the work period never began
+(practice not passed or the ready screen left;`censor_reason: work
+period never begun`), `declined`when listed by the board but never
+opened,`not_presented`before,`interrupted`after a reload,`pending`while open; a review-closed open period keeps its value under`observed`with`censored: true`; the row's `numerator`is the count,`denominator`null (the 60 s budget is the fixed denominator, stated in`components.budget_ms`). Companion `m06_work_period_detail`: first-pass
+correct / attempted (`first_pass_accuracy`, null when nothing attempted),
+rework dispatches, invalid dispatches, skipped, orders attempted /
+handled, actual stop focused ms, stop kind, practice attempts, refused
+presses, token presses, clears, reference consults, typed lines, the
+discarded buffer, per-order records. Extractor
+`src/measurement/features/m06.ts`; tests `e2e/m06_orders.spec.ts`(6
+pure) and`e2e/m06_orders_route.spec.ts` (browser, 2: practice by
+pointer, Begin by keyboard, a correct order, a wrong-then-corrected order,
+a skipped order, ESC holding the budget, the explicit stop, sign-off
+unaffected, offline reproduction; budget end by inaction ⇒ observed 0).
+The v2 four-line task (`proto_m06_dispatch*\*`, no budget, 1 s send
+animation excluded) is retired from the route; its family keeps its v2
+meaning in the ledger. Limitations: the orders are three-token lines on
+one console, so "useful output" is sampled by one routine; a visible
+time-left readout and a skip control are pilot defaults with rival
+readings (speed pressure; strategic skipping); the practice criterion has
+no comprehension claim beyond two correct lines; typed entry remains
+optional in the model only (no surface control; `typed_lines`is 0 on
+the route). Review fixes (U7): digit hotkeys 1–4 on the active token row
+and`dispatch_input_modes`/`practice_wall_ms` recorded; Stop work is two
+presses on Q with a 3 s confirm window (`stop_armed`/`stop_disarmed`);
+a Skip inside the order's 400 ms settle window is refused; Back (Z)
+removes one token (`token_removed`); the last dispatch stays readable;
+`all_skipped`is its own stop kind (voluntary closure); a review-closed
+open period is`incomplete`with its exposure; the companion is null
+with a technical-failure primary; the ready screen shown and Begin never
+pressed is`declined`; the recount re-checks every dispatch line against
+the form; the budget end clamps the tick overrun
+(`budget_overrun_ms`); resumptions carry the route stage and the entry
+snapshot the other Workshop items' window states. Owner questions
+§5.56–5.73.\_
+
 _Unit 1 (foundation): no item mechanic changed; every item remains on its
 v2-ledger route with `implementation_status: planned`; the as-built event
 families are exactly the frozen v2 families. The register, protocol
@@ -837,3 +915,97 @@ record or its separation from a declined occasion.
     the cap's closure), and the panel then shows the post-closure state
     (no "Not now"; the start control remains). Alternative: let a decision
     already in progress on the surface finish and flag it.
+
+The U7 (M06) implementation took the following defaults; each is
+reversible, none changes the formula (distinct correct orders inside the
+60 s budget) or the fixed denominator.
+
+56. **When the budget starts.** Default: at an explicit "Begin the work
+    period" press on a READY screen shown after the practice criterion
+    (400 ms settle window), so reading the instruction never eats the
+    budget. Alternative: the budget starts the moment the second practice
+    line is passed.
+57. **Order presentation.** Default: one order at a time in the assigned
+    form order, each presented when the previous is sent correctly or
+    skipped. Alternative: all twelve listed at once (free order; the
+    participant chooses which to send).
+58. **The time-left readout.** Default: "TIME LEFT: n s" is shown
+    throughout the period (the participant was told the period is
+    bounded). Alternatives: no readout (a hidden budget, M25 / M05 style);
+    a coarse indicator only.
+59. **Correction and skipping.** Default: a mismatching dispatch leaves the
+    order in place (any further dispatch is rework; the order counts once
+    when it matches); "Skip order" passes the order over without credit
+    and it is never revisited. Alternatives: no skip control (an order can
+    only be corrected); skipped orders return at the end.
+60. **No send animation.** Default: a dispatch is instant (the v2 1 s send
+    animation, which was excluded from active time, is gone). Alternative:
+    keep a short lock excluded from the budget under `animation_lock`.
+61. **Forms.** Default: form B is a fixed permutation of form A's twelve
+    lines (matched content, different sequence; every token three times).
+    Alternative: two different line sets of equal token counts.
+62. **All twelve handled before the budget.** Default: the period ends
+    (`stop_kind: all_orders`, `completed`) with the count and the actual
+    time; the denominator stays 60 s. Alternative: keep the period open
+    until the budget so the participant may correct skipped orders.
+63. **Review-closed open period.** Default (revised by review S-F4): the
+    count as it stands is exported under `incomplete` with
+    `censored: true` and the focused exposure beside it
+    (`components.exposure_focused_ms`) — never a complete 60 s
+    observation. Alternatives: `observed` + censored (as first built);
+    null (`interrupted`); a threshold on focused exposure.
+
+The U7 independent review (scientific + gameplay, read-only) surfaced the
+following; defaults applied, reversible, none changes the formula.
+
+64. **Input equivalence (review S-F1 / G-F7).** Default: the ACTIVE token
+    row (the next token the buffer needs) carries the digit hotkeys 1–4,
+    so a keyboard order costs three digits and D — the pointer's four
+    clicks; every dispatch records its `input_mode` and the raw
+    components carry `dispatch_input_modes` and the practice duration
+    (`practice_wall_ms`, a fluency baseline); no typed entry exists on
+    the surface (the model's typed line remains for the pure tests only
+    and requires exactly three tokens). Alternatives: connect typed entry;
+    pointer only with modality recorded; treat modality as a covariate.
+65. **Protecting the explicit stop (review S-F2 / G-F2).** Default: Stop
+    work is two presses — the first arms ("Confirm stop", 3 s window,
+    `stop_armed`), the second confirms; any other action disarms
+    (`stop_disarmed`); the hotkey is Q (a letter no token contains); a
+    Skip press inside the 400 ms settle window after an order appears is
+    refused (`press_refused`, control skip). Alternatives: a single press
+    on a distant key; a longer confirm window; no skip settle.
+66. **Companion when the primary is a technical failure (review S-F3).**
+    Default: the companion is null with the primary (the register's
+    "null with the primary"). Alternative: keep the companion observed and
+    amend the register text.
+67. **Resuming across episodes (review S-F5).** Default: a paused period
+    resumes whenever the console is reopened, and every resumption is
+    recorded with the route stage (`resumptions[]` with `stage` and
+    focused ms) so a period split across episodes is visible.
+    Alternatives: close the period at the Workshop sign-off or on leaving
+    the zone; allow resumption within episode 2 only.
+68. **Workshop entry-state covariates (review S-F6).** Default: the entry
+    snapshot records the route stage and the window states of the case
+    workspace, the sample cutter, the calibration bench and quality
+    packet 2 at every open. Alternative: accept the free order without
+    recording it.
+69. **Twelve skips without a dispatch (review S-F7).** Default: a distinct
+    stop kind `all_skipped` with closure `voluntary_stop` (never
+    `completed`). Alternative: `completed` with `orders_skipped` beside.
+70. **Never-begun dispositions (review S-F10).** Default: the ready screen
+    shown and Begin never pressed ⇒ `declined`; practice abandoned before
+    the criterion ⇒ `no_eligible_event`; `practice_passed`, `ready_shown`
+    and `refused_presses` are exported in the components. Alternative:
+    one code for every never-begun case.
+71. **Feedback shown to the participant (review S-F9 / G flags; extends
+    58).** Default: the live tally "SENT CORRECTLY: n", the time-left
+    readout and the end summary "n of 12 ORDERS SENT CORRECTLY" are all
+    shown. Alternatives: hide the tally; drop the numeric end summary.
+72. **Ceiling (review S-F10).** Default: twelve orders in 60 s (a pilot
+    default, not a threshold); a competent pointer user may finish all
+    twelve early (`all_orders`). Alternatives: more orders; a shorter
+    budget — to be decided from pilot distributions.
+73. **Mismatch recovery (review G-F5).** Default: the buffer empties on
+    dispatch, the last dispatch stays readable under the buffer ("last
+    sent: … — no match"), and Back (Z) removes one token. Alternative:
+    keep a mismatching buffer in place for editing.

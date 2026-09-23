@@ -654,6 +654,24 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'behavioural_counterpart',
     direction: 'redesign',
     occasions: 1,
+    // Unit 7: the approved redesign landed (twelve orders in one 60 s
+    // focused budget at the Records Workshop dispatch console). The v2
+    // four-line family `proto_m06_dispatch_*` keeps its v2 meaning.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m06_work_period'],
+      windows: [
+        {
+          id: 'm06_orders_w1',
+          occasion: null,
+          zone: 'records_workshop',
+          episode: 2,
+        },
+      ],
+      family_prefixes: ['proto_m06_orders_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'After practice, 12 simple orders in one standard 60-second work budget; each correct order counted once; correction consumes the same budget; explicit early stop closes the period without shortening the denominator.',
     features: [

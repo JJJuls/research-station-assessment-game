@@ -1,23 +1,51 @@
 /**
- * M06 — Routine dispatch console (evidence-led pilot v2, Unit 2).
+ * M06 — window adapter of the dispatch console's timed work period
+ * (Station 080 M01–M26 run, Unit 7). Owns the register window and the
+ * session-scope model state; every command delegates to the pure model
+ * (`m06OrdersModel.ts`) and logs through the window's `proto_m06_orders_*`
+ * family with the protocol stamp.
  *
- * Ledger (sheet 09): after non-scored practice, compose and dispatch four
- * routine pseudo-commands using visible tokens/reference; typing optional;
- * practice criterion; matched commands; quality floor; animation
- * excluded; keyboard/pointer semantic equivalence. Speed alone is
- * prohibited.
- *
- * Mechanic (work surface): a reference strip lists the four dispatch
- * lines to send (VERB · TARGET · VALUE). Token buttons compose one line in
- * a visible buffer; DISPATCH sends it (1.0 s send animation excluded from
- * active time); CLEAR empties the buffer. Two practice lines come first
- * (non-scored, must be sent correctly once each — the criterion); then the
- * four scored lines. The buffer also accepts typed tokens (optional).
- *
- * Raw components: correct_dispatches, invalid_commands (dispatched lines
- * not matching the reference), excess_actions (token presses beyond the
- * minimum for the lines sent), active_time_excl_animation, practice_passed.
+ * Closure rules: the budget end, the explicit stop and "all twelve
+ * handled" complete the window with distinct stop kinds (the denominator
+ * is always the 60 s budget); ESC / Leave pauses the budget and the reopen
+ * resumes it; the review censors an open period with the count as it
+ * stands and marks a never-opened console absent; a console opened in an
+ * earlier page load is never re-run (reload guard). The v2 four-line task
+ * (`proto_m06_dispatch_*`) keeps its v2 meaning in the frozen ledger and
+ * is no longer on the route.
  */
+import { protocolStamp } from '../../measurement/protocol';
+import { researchRuntime } from '../../systems';
+import {
+  createM06State,
+  M06_ENTRY_STATE_VERSION,
+  M06_FAMILY,
+  M06_OPPORTUNITY_ID,
+  M06_WINDOW_ID,
+  m06Begin,
+  type M06BeginResult,
+  m06ClearBuffer,
+  m06ConsultReference,
+  m06Dispatch,
+  type M06DispatchResult,
+  m06EntrySnapshot,
+  type M06Form,
+  m06Freeze,
+  type M06LogSink,
+  m06PressToken,
+  m06PriorAdministration,
+  m06RawComponents,
+  m06RemoveLastToken,
+  m06Skip,
+  type M06SkipResult,
+  type M06State,
+  m06Stop,
+  type M06StopResult,
+  m06SurfaceClosed,
+  m06SurfaceReopened,
+  m06Tick,
+  m06TypeLine,
+} from './m06OrdersModel';
 import {
   assignCounterbalance,
   currentSessionId,
@@ -25,83 +53,41 @@ import {
   ItemWindow,
 } from './windowKit';
 
-export const M06_OPPORTUNITY_ID = 'proto_m06_routine_dispatch';
-export const M06_WINDOW_ID = 'm06_dispatch_w1';
-export const M06_ENTRY_STATE_VERSION = 'm06-dispatch-v1';
-export const M06_FAMILY = 'proto_m06_dispatch_';
-export const M06_SEND_ANIMATION_MS = 1000;
+export {
+  M06_BUDGET_MS,
+  M06_FAMILY,
+  M06_OPPORTUNITY_ID,
+  M06_ORDER_COUNT,
+  M06_PRACTICE_LINES,
+  M06_SETTLE_MS,
+  M06_STOP_CONFIRM_MS,
+  M06_TARGETS,
+  M06_VALUES,
+  M06_VERBS,
+  M06_WINDOW_ID,
+  m06ActiveRow,
+  m06CurrentLine,
+  m06CurrentOrder,
+  m06FocusedMs,
+  m06OrdersFor,
+  m06Paused,
+  m06RemainingMs,
+  m06StopArmed,
+  m06UniqueCorrect,
+} from './m06OrdersModel';
 
-export type M06Form = 'form_a' | 'form_b';
-
-export const M06_VERBS = ['SET', 'OPEN', 'HOLD', 'ROUTE'] as const;
-export const M06_TARGETS = ['PUMP-2', 'VALVE-C', 'BUS-1', 'RELAY-N'] as const;
-export const M06_VALUES = ['LOW', 'HIGH', 'AUTO', 'OFF'] as const;
-
-export type M06Line = [string, string, string];
-
-export const M06_PRACTICE_LINES: readonly M06Line[] = [
-  ['OPEN', 'VALVE-C', 'AUTO'],
-  ['HOLD', 'BUS-1', 'LOW'],
-];
-
-const M06_LINES_BY_FORM: Record<M06Form, readonly M06Line[]> = {
-  form_a: [
-    ['SET', 'PUMP-2', 'HIGH'],
-    ['ROUTE', 'RELAY-N', 'AUTO'],
-    ['HOLD', 'VALVE-C', 'OFF'],
-    ['SET', 'BUS-1', 'LOW'],
-  ],
-  form_b: [
-    ['ROUTE', 'BUS-1', 'AUTO'],
-    ['SET', 'VALVE-C', 'HIGH'],
-    ['HOLD', 'RELAY-N', 'OFF'],
-    ['OPEN', 'PUMP-2', 'LOW'],
-  ],
-};
-
-export type M06Phase = 'practice' | 'scored' | 'done';
-
-interface M06State {
-  form: M06Form;
-  phase: M06Phase;
-  buffer: string[];
-  practiceSent: number;
-  practiceCorrect: boolean[];
-  practicePassed: boolean;
-  scoredSent: M06Line[];
-  scoredCorrect: number;
-  invalidCommands: number;
-  tokenPresses: number;
-  clears: number;
-  referenceConsults: number;
-  sendingUntilMs: number | null;
-  animationMs: number;
-}
+export const M06_PRIOR_ADMINISTRATION = 'prior_administration';
 
 let state: M06State | null = null;
 
 function ensureState(): M06State {
   if (state === null) {
-    state = {
-      form: assignCounterbalance<M06Form>(
-        currentSessionId(),
-        'm06_dispatch_form',
-        ['form_a', 'form_b'],
-      ),
-      phase: 'practice',
-      buffer: [],
-      practiceSent: 0,
-      practiceCorrect: [],
-      practicePassed: false,
-      scoredSent: [],
-      scoredCorrect: 0,
-      invalidCommands: 0,
-      tokenPresses: 0,
-      clears: 0,
-      referenceConsults: 0,
-      sendingUntilMs: null,
-      animationMs: 0,
-    };
+    state = createM06State(
+      assignCounterbalance<M06Form>(currentSessionId(), 'm06_orders_form', [
+        'form_a',
+        'form_b',
+      ]),
+    );
   }
 
   return state;
@@ -117,6 +103,10 @@ export const m06Window = new ItemWindow({
   objectId: 'm06_dispatch_console',
 });
 
+const sink: M06LogSink = (suffix, metadata) => {
+  m06Window.log(suffix, { ...protocolStamp(), ...metadata });
+};
+
 export function declareM06() {
   const s = ensureState();
 
@@ -129,240 +119,228 @@ export function m06State(): Readonly<M06State> {
   return ensureState();
 }
 
-export function m06ScoredLines(): readonly M06Line[] {
-  return M06_LINES_BY_FORM[ensureState().form];
+/** True when the console was administered in an earlier page load. */
+export function m06AdministeredBefore(): boolean {
+  return ensureState().closureReason === M06_PRIOR_ADMINISTRATION;
 }
 
-/** The line the reference strip currently asks for (null when done). */
-export function m06CurrentLine(): M06Line | null {
-  const s = ensureState();
-
-  if (s.phase === 'practice') {
-    return M06_PRACTICE_LINES[s.practiceSent] ?? null;
-  }
-
-  if (s.phase === 'scored') {
-    return m06ScoredLines()[s.scoredSent.length] ?? null;
-  }
-
-  return null;
-}
-
-export function openM06(nowMs: number) {
+/**
+ * The console was PRESENTED: the Work Order Board's briefing lists the
+ * dispatch lines. Logged once; a presented-but-never-opened console is
+ * `declined` at extraction.
+ */
+export function presentM06(nowMs: number) {
   declareM06();
-  m06Window.setComprehension('pending');
-  m06Window.open(nowMs, {
-    practice_lines: M06_PRACTICE_LINES.length,
-    scored_lines: 4,
-    tokens: {
-      verbs: M06_VERBS.length,
-      targets: M06_TARGETS.length,
-      values: M06_VALUES.length,
-    },
-  });
+  m06Window.present(nowMs, m06EntrySnapshot(ensureState().form));
 }
 
-export function m06Sending(nowMs: number): boolean {
-  const s = ensureState();
-
-  return s.sendingUntilMs !== null && nowMs < s.sendingUntilMs;
-}
-
-export function pressM06Token(
-  token: string,
+/**
+ * Opens (or reopens) the console. `entry` carries what the host scene knows
+ * at the open — the route stage and the other Workshop items' window
+ * states (review U7 S-F5 / S-F6): recorded in the entry snapshot on the
+ * first open, and the stage with every resumption.
+ */
+export function openM06(
   nowMs: number,
-  inputMode: InputMode,
-): boolean {
+  entry: { stage?: string | null } & Record<string, unknown> = {},
+) {
+  declareM06();
+
   const s = ensureState();
 
-  if (!m06Window.isOpen() || s.phase === 'done' || m06Sending(nowMs)) {
-    return false;
+  if (m06Window.windowStatus() === 'unopened') {
+    // Reload guard: the raw log of an earlier page load already holds an
+    // opened console. Never re-run it (no fresh work period, no double
+    // credit).
+    if (m06PriorAdministration(researchRuntime.getPriorPageLoadEvents())) {
+      m06Freeze(s, nowMs, M06_PRIOR_ADMINISTRATION, 'reload');
+      m06Window.recordPriorExposure(
+        'dispatch console opened in an earlier page load of this identity',
+      );
+      m06Window.technicalFailure(
+        'reload after administration: console not re-run',
+      );
+
+      return;
+    }
   }
 
-  if (s.buffer.length >= 3) {
-    m06Window.log('token_refused', {
-      token,
-      reason: 'buffer_full',
-      input_mode: inputMode,
-    });
-
-    return false;
-  }
-
-  s.buffer.push(token);
-  s.tokenPresses += 1;
-  m06Window.log('token_pressed', {
-    token,
-    buffer: [...s.buffer],
-    phase: s.phase,
-    input_mode: inputMode,
-  });
-
-  return true;
-}
-
-/** Optional typed entry: the whole line at once (semantic equivalence). */
-export function typeM06Line(
-  text: string,
-  nowMs: number,
-  inputMode: InputMode,
-): boolean {
-  const tokens = text.trim().toUpperCase().split(/\s+/).filter(Boolean);
-  const s = ensureState();
-
-  if (
-    !m06Window.isOpen() ||
-    s.phase === 'done' ||
-    m06Sending(nowMs) ||
-    tokens.length === 0
-  ) {
-    return false;
-  }
-
-  s.buffer = tokens.slice(0, 3);
-  s.tokenPresses += tokens.length;
-  m06Window.log('line_typed', { buffer: [...s.buffer], input_mode: inputMode });
-
-  return true;
-}
-
-export function clearM06Buffer(inputMode: InputMode) {
-  const s = ensureState();
-
-  if (s.buffer.length === 0) {
+  if (m06Window.isClosed()) {
     return;
   }
 
-  s.buffer = [];
-  s.clears += 1;
-  m06Window.log('buffer_cleared', { input_mode: inputMode });
+  const first = !m06Window.isOpen();
+
+  m06Window.setComprehension(s.practicePassed ? 'passed' : 'pending');
+  m06Window.open(nowMs, { ...m06EntrySnapshot(s.form), ...entry });
+
+  if (!first) {
+    m06SurfaceReopened(s, nowMs, sink, entry.stage ?? null);
+  }
+}
+
+/** Completes the window once the model ended the period. */
+function completeIfEnded(nowMs: number, inputMode: InputMode) {
+  const s = ensureState();
+
+  if (s.phase !== 'done' || !m06Window.isOpen()) {
+    return;
+  }
+
+  m06Window.complete(
+    nowMs,
+    m06RawComponents(s, s.closureReason ?? 'completed', nowMs),
+    inputMode,
+    { exitState: s.stopKind === 'explicit' ? 'stopped' : 'completed' },
+  );
+}
+
+export function pressM06Token(token: string, inputMode: InputMode): boolean {
+  return m06Window.isOpen()
+    ? m06PressToken(ensureState(), token, inputMode, sink)
+    : false;
+}
+
+export function typeM06Line(text: string, inputMode: InputMode): boolean {
+  return m06Window.isOpen()
+    ? m06TypeLine(ensureState(), text, inputMode, sink)
+    : false;
+}
+
+export function clearM06Buffer(inputMode: InputMode): boolean {
+  return m06Window.isOpen()
+    ? m06ClearBuffer(ensureState(), inputMode, sink)
+    : false;
+}
+
+/** "Back": removes the last token of the buffer. */
+export function removeM06Token(inputMode: InputMode): boolean {
+  return m06Window.isOpen()
+    ? m06RemoveLastToken(ensureState(), inputMode, sink)
+    : false;
 }
 
 export function consultM06Reference(inputMode: InputMode) {
-  const s = ensureState();
-
-  s.referenceConsults += 1;
-  m06Window.log('reference_consulted', {
-    consults: s.referenceConsults,
-    input_mode: inputMode,
-  });
+  if (m06Window.isOpen()) {
+    m06ConsultReference(ensureState(), inputMode, sink);
+  }
 }
 
-function sameLine(a: readonly string[], b: readonly string[]): boolean {
-  return a.length === 3 && b.length === 3 && a.every((t, i) => t === b[i]);
-}
-
-/** Dispatch the buffer. Practice must be sent correctly before scoring starts. */
+/** Practice dispatch, or an order dispatch inside the work period. */
 export function dispatchM06(
   nowMs: number,
   inputMode: InputMode,
-): 'sent' | 'refused' {
-  const s = ensureState();
-
-  if (
-    !m06Window.isOpen() ||
-    s.phase === 'done' ||
-    m06Sending(nowMs) ||
-    s.buffer.length === 0
-  ) {
+): M06DispatchResult {
+  if (!m06Window.isOpen()) {
     return 'refused';
   }
 
-  const line = [...s.buffer] as M06Line;
-  const expected = m06CurrentLine();
-  const correct = expected !== null && sameLine(line, expected);
+  const s = ensureState();
+  const result = m06Dispatch(s, nowMs, inputMode, sink);
 
-  s.buffer = [];
-  s.sendingUntilMs = nowMs + M06_SEND_ANIMATION_MS;
-  s.animationMs += M06_SEND_ANIMATION_MS;
-
-  if (s.phase === 'practice') {
-    s.practiceCorrect.push(correct);
-    m06Window.log('practice_dispatched', {
-      line,
-      matches_reference: correct,
-      practice_index: s.practiceSent,
-      input_mode: inputMode,
-    });
-
-    // Practice criterion: each practice line sent correctly once (retry
-    // the same line until it matches — non-scored).
-    if (correct) {
-      s.practiceSent += 1;
-    }
-
-    if (s.practiceSent >= M06_PRACTICE_LINES.length) {
-      s.practicePassed = true;
-      s.phase = 'scored';
-      m06Window.setComprehension('passed');
-      m06Window.log('practice_passed', {
-        practice_attempts: s.practiceCorrect.length,
-        input_mode: 'system',
-      });
-    }
-
-    return 'sent';
+  if (s.practicePassed) {
+    m06Window.setComprehension('passed');
   }
 
-  s.scoredSent.push(line);
+  completeIfEnded(nowMs, inputMode);
 
-  if (correct) {
-    s.scoredCorrect += 1;
-  } else {
-    s.invalidCommands += 1;
-  }
-
-  m06Window.log('line_dispatched', {
-    line,
-    matches_reference: correct,
-    line_index: s.scoredSent.length - 1,
-    input_mode: inputMode,
-  });
-
-  if (s.scoredSent.length >= 4) {
-    s.phase = 'done';
-    m06Window.complete(
-      nowMs,
-      {
-        correct_dispatches: s.scoredCorrect,
-        invalid_commands: s.invalidCommands,
-        excess_actions: Math.max(
-          0,
-          s.tokenPresses - 3 * (s.scoredSent.length + s.practiceCorrect.length),
-        ),
-        token_presses: s.tokenPresses,
-        clears: s.clears,
-        reference_consults: s.referenceConsults,
-        active_time_excl_animation_ms: Math.max(
-          0,
-          m06Window.activeTimeMs(nowMs) - s.animationMs,
-        ),
-        practice_passed: s.practicePassed,
-        practice_attempts: s.practiceCorrect.length,
-        lines_sent: s.scoredSent,
-      },
-      inputMode,
-    );
-  }
-
-  return 'sent';
+  return result;
 }
 
+/** The ready screen's "Begin the work period". */
+export function beginM06Period(
+  nowMs: number,
+  inputMode: InputMode,
+): M06BeginResult {
+  return m06Window.isOpen()
+    ? m06Begin(ensureState(), nowMs, inputMode, sink)
+    : 'invalid';
+}
+
+export function skipM06Order(
+  nowMs: number,
+  inputMode: InputMode,
+): M06SkipResult {
+  if (!m06Window.isOpen()) {
+    return 'refused';
+  }
+
+  const result = m06Skip(ensureState(), nowMs, inputMode, sink);
+
+  completeIfEnded(nowMs, inputMode);
+
+  return result;
+}
+
+/** "Stop work": the explicit early stop (two presses — arm, then confirm). */
+export function stopM06(nowMs: number, inputMode: InputMode): M06StopResult {
+  if (!m06Window.isOpen()) {
+    return 'refused';
+  }
+
+  const result = m06Stop(ensureState(), nowMs, inputMode, sink);
+
+  completeIfEnded(nowMs, inputMode);
+
+  return result;
+}
+
+/** Surface tick; the budget end completes the window. */
+export function tickM06(nowMs: number): 'none' | 'budget' {
+  if (!m06Window.isOpen()) {
+    return 'none';
+  }
+
+  const result = m06Tick(ensureState(), nowMs, sink);
+
+  completeIfEnded(nowMs, 'system');
+
+  return result;
+}
+
+/** ESC or the Leave button: one path; the budget pauses. */
 export function closeM06Surface(nowMs: number) {
+  if (!m06Window.isOpen()) {
+    return;
+  }
+
+  m06SurfaceClosed(ensureState(), nowMs, sink);
   m06Window.pause(nowMs);
-  m06Window.log('surface_closed', {
-    phase: ensureState().phase,
-    lines_sent: ensureState().scoredSent.length,
-    input_mode: 'system',
-  });
 }
 
+/** The host resumed: the window's active time resumes (the budget resumes on reopen). */
 export function resumeM06Surface(nowMs: number) {
   m06Window.resume(nowMs);
 }
 
+/** Never opened → absent; open at the review → censored (count as it stands). */
+export function closeM06AtReview(nowMs: number) {
+  const s = ensureState();
+
+  if (m06Window.windowStatus() === 'unopened') {
+    m06Window.markAbsent('dispatch console never opened before the review');
+
+    return;
+  }
+
+  if (m06Window.isOpen()) {
+    m06Freeze(s, nowMs, 'closed_at_review', 'review');
+    m06Window.stop(
+      nowMs,
+      'closed_at_review',
+      m06RawComponents(s, 'closed_at_review', nowMs),
+      'system',
+      'censored',
+    );
+  }
+}
+
 /** Test-only escape hatch. */
 export function resetM06State() {
+  if (state !== null) {
+    m06Freeze(state, 0, 'reset', null);
+  }
+
   state = null;
   m06Window.reset();
   m06Window.spec.form = null;

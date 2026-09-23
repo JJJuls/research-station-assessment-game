@@ -88,12 +88,15 @@ import {
   declareM06,
   m06Window,
   openM06,
+  presentM06,
   resumeM06Surface,
 } from '../pilot/windows/m06RoutineDispatch';
+import { m06SurfaceModel } from '../pilot/windows/m06SurfaceModel';
 import {
   closeM07Surface,
   declareM07,
   m07State,
+  m07Window,
   openM07,
   presentM07End,
 } from '../pilot/windows/m07Calibration';
@@ -139,7 +142,6 @@ import {
   secondaryState,
 } from '../pilot/windows/secondaryTelemetry';
 import {
-  m06SurfaceModel,
   m07SurfaceModel,
   m12SurfaceModel,
 } from '../pilot/windows/surfaceModels';
@@ -408,18 +410,37 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     // radius at the painted bin.
     this.buildPhysicalLayer();
 
-    // ——— M06 dispatch console ———
+    // ——— M06 dispatch console (Station 080 U7: practice, then twelve
+    // orders in one 60 s focused work budget) ———
     this.station(
       'dispatch_console',
       'Dispatch Console',
       'proc-console-scenario',
       WS.dispatchConsole,
       () => {
-        openM06(Date.now());
+        if (activeWorkSurface(this) !== null) {
+          return;
+        }
+
+        // Entry state (review U7 S-F5 / S-F6): the route stage at every
+        // open and the other Workshop items' window states at the first.
+        openM06(Date.now(), {
+          stage: pilotStage(),
+          m02_case_workspace: m02cWindow.windowStatus(),
+          m04_debris: m04Window.windowStatus(),
+          m07_calibration: m07Window.windowStatus(),
+          m12_packet_o2: m12Windows.o2.windowStatus(),
+        });
         openWorkSurface(this, {
           surfaceId: 'm06_dispatch_console',
-          model: () => m06SurfaceModel(this.surfaceHost()),
-          onClose: () => closeM06Surface(Date.now()),
+          model: () => m06SurfaceModel(this.m06SurfaceHost()),
+          onClose: () => {
+            closeM06Surface(Date.now());
+          },
+          onClosed: () => {
+            this.m06TickSerial += 1;
+            this.m06TickPending = false;
+          },
         });
       },
     );
@@ -1006,6 +1027,47 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     };
   }
 
+  private m06TickPending = false;
+  private m06TickSerial = 0;
+
+  /** M06 (Unit 7): the dispatch console's host — wall-clock tick (M25 precedent). */
+  private m06SurfaceHost() {
+    return {
+      now: () => Date.now(),
+      // The Leave button and ESC take the SAME path: pause first, then close.
+      close: () => {
+        closeM06Surface(Date.now());
+        activeWorkSurface(this)?.close();
+      },
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+      later: (ms: number, fn: () => void) => {
+        if (this.m06TickPending) {
+          return;
+        }
+
+        this.m06TickPending = true;
+
+        const serial = this.m06TickSerial;
+
+        window.setTimeout(() => {
+          if (serial !== this.m06TickSerial) {
+            return;
+          }
+
+          this.m06TickPending = false;
+
+          if (activeWorkSurface(this) === null) {
+            return;
+          }
+
+          fn();
+          activeWorkSurface(this)?.refresh();
+        }, ms);
+      },
+    };
+  }
+
   private addPressStation(
     occasion: M03OccasionId,
     label: string,
@@ -1399,7 +1461,14 @@ export class RecordsWorkshopScene extends PilotZoneScene {
             {
               label: 'Take the orders.',
               tag: 'workshop_orders_taken',
-              onSelected: () => advancePilotStage('workshop_work', Date.now()),
+              onSelected: () => {
+                const now = Date.now();
+
+                advancePilotStage('workshop_work', now);
+                // M06 (Unit 7): the work orders list the dispatch lines —
+                // the console is presented here.
+                presentM06(now);
+              },
             },
           ],
         };

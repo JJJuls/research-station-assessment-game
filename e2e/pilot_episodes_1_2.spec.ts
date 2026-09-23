@@ -498,7 +498,8 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     await clickElement(page, 'dispatch');
     await page.waitForTimeout(400);
     types = await pilotEventTypes(page);
-    expect(types).toContain('proto_m06_dispatch_practice_dispatched');
+    // Station 080 Unit 7: the timed work-period family (practice unchanged).
+    expect(types).toContain('proto_m06_orders_practice_dispatched');
     await closeSurface(page);
 
     // Calibration bench: advance one stage, leave (state persists — reopen shows 1/6).

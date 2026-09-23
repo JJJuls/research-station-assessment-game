@@ -174,7 +174,8 @@ test.describe('Utility & Core closure model (pure)', () => {
         completed('proto_m01_batch_o2'),
         absent('proto_m02_case_workspace'),
         invalid('proto_m04_debris_cleanup'),
-        censored('proto_m06_routine_dispatch'),
+        // Station 080 Unit 7: M06 is the timed work period.
+        censored('proto_m06_work_period'),
         technical('proto_m07_calibration_project'),
       ]),
       CLOSED_CONTEXT,

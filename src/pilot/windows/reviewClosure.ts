@@ -13,7 +13,7 @@ import { closeM01AtReview } from './m01PlanBoard';
 import { closeM02CPanel, m02cWindow } from './m02CaseWorkspace';
 import { closeM04AtReview } from './m04Debris';
 import { closeM05AtReview } from './m05Initiation';
-import { m06Window } from './m06RoutineDispatch';
+import { closeM06AtReview } from './m06RoutineDispatch';
 import { closeM07AtReview } from './m07Calibration';
 import { closeM08AtReview } from './m08EffortChoice';
 import { closeM09AtReview } from './m09MonitorWatch';
@@ -53,11 +53,9 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
   closeM04AtReview(nowMs);
   closeM05AtReview('o1', nowMs);
   closeM05AtReview('o2', nowMs);
-  closeSurfaceWindow(
-    m06Window,
-    nowMs,
-    'dispatch console never opened before the review',
-  );
+  // Station 080 M06 (Unit 7): an open work period censors with the count
+  // as it stands; never opened → absent.
+  closeM06AtReview(nowMs);
   closeM07AtReview(nowMs);
   // Station 080 M08 (Unit 2): the support console (never opened → absent;
   // open → censored; slots without an explicit choice stay missing).

@@ -5,6 +5,7 @@
  */
 import './m01';
 import './m05';
+import './m06';
 import './m08';
 import './m11';
 import './m25';

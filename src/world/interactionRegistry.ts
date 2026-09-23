@@ -439,7 +439,8 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Work the',
     'Dispatch Console',
     { kind: 'work_surface', id: 'm06_dispatch_console' },
-    'm06_routine_dispatch',
+    // Station 080 M06 (Unit 7): the timed work-period window.
+    'm06_orders_w1',
     { x: 915, y: 214 },
   ),
   workshopStation(

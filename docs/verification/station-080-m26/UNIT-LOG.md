@@ -1175,6 +1175,228 @@ with a visible start control and a 60-second focused cap`.
   mechanic; every existing route helper keeps its option indices (the
   new offer stage is answered by its own selection after the existing
   ones).
+- **Commit:** one local commit (`04a976e`); nothing pushed, merged,
+  tagged, deployed or deleted. Next unit: U7 M06 (redesign: twelve orders
+  in one 60-second focused budget).
+
+## U7 — M06 efficiency (twelve orders in one 60-second focused work budget)
+
+- **Authorities used:** as U6 (the owner's 24 September instruction; the
+  register §2 M06 row, §3 shared rules — `PILOT_SETTINGS.m06_work_budget_ms`
+  60 000 / `m06_orders` 12 — and `registerV3.ts`; the matrix M06 row; the
+  addendum). The execution specification file remains missing (reported
+  under U6); nothing is reconstructed from memory.
+- **Objective:** replace the four-line dispatch task with the approved
+  redesign: after the non-scored practice, one standard 60-second FOCUSED
+  work budget in which twelve simple orders arrive one at a time; each
+  order counts once when sent correctly; a correction consumes the same
+  budget; an explicit early stop closes the period without shortening the
+  denominator.
+- **Scientific rationale:** register M06 row ("Redesign"; BFI-2 item 38,
+  `m06_unique_correct_orders`: distinct orders completed correctly inside
+  the 60-second budget, 0–12, more useful output in equal allocated
+  time; companion `m06_work_period_detail`: first-pass accuracy, rework
+  count, actual stop time); shared rules on focused time (the budget
+  pauses under a closed surface and documented focus loss), the
+  denominator of zero rule ("work period never opened or technically
+  interrupted → null"), the reload rule and §2b (single episode). The v2
+  validity gate is kept: practice criterion, matched commands (form B is
+  a permutation of form A's twelve orders), a quality floor (only a
+  matching order counts), keyboard / pointer equivalence; speed alone is
+  never a measure.
+- **Participant-facing behaviour:** the Dispatch Console in the Records
+  Workshop (listed by the Work Order Board's briefing as "dispatch
+  lines") opens as before with the two practice lines (tokens or typed;
+  each sent correctly once). Then a READY screen: "Practice complete. The
+  work period is 60 seconds of console time. Orders arrive one at a time
+  — send each as it reads. Leaving the console pauses the period." with
+  "Begin the work period (B)" (a press inside a 400 ms settle window is
+  refused). In the work period the reference shows the current order
+  ("ORDER 3 of 12 · SET PUMP-2 HIGH"), a tally ("SENT CORRECTLY: 2") and
+  the time left ("TIME LEFT: 42 s"); the token rows, Clear (X) and
+  Dispatch (D) as before; "Skip order (K)" moves on without credit;
+  "Stop work (F)" ends the period. A dispatch that does not match reads
+  "Does not match order 3." and the order stays for correction; a match
+  advances. The period ends at 60 focused seconds, at the explicit stop
+  or when all twelve orders are handled ("The work period has ended — n
+  orders sent correctly."); no praise, no race framing; a closed surface
+  pauses the period and reopening resumes it.
+- **Allowed files:** `src/pilot/windows/m06OrdersModel.ts` (new pure
+  model), `src/pilot/windows/m06RoutineDispatch.ts` (rewritten as the
+  window adapter), `src/pilot/windows/m06SurfaceModel.ts` (new),
+  `src/pilot/windows/surfaceModels.ts` (the old M06 surface removed),
+  `src/pilot/windows/reviewClosure.ts`, `src/measurement/features/m06.ts`
+  (new), `src/measurement/features/index.ts`,
+  `src/measurement/registerV3.ts`, `src/world/interactionRegistry.ts`
+  (the console's `window` id), `src/scenes/RecordsWorkshopScene.ts`;
+  `e2e/m06_orders.spec.ts` (new pure), `e2e/m06_orders_route.spec.ts`
+  (new browser), `e2e/pilot_episodes_1_2.spec.ts` (the episode-2 dispatch
+  step's event family), `e2e/pilot_closure_models.spec.ts` (the M06
+  opportunity id), `e2e/pilot_records.spec.ts` (only if the family prefix
+  check changes), and only if a derived count or label changes:
+  `e2e/pilot_coverage.spec.ts`, `e2e/pilot_route_model.spec.ts`,
+  `e2e/m26_protocol_foundation.spec.ts`;
+  `docs/verification/station-080-m26/**`.
+- **Prohibited areas:** common, plus `src/pilot/zoneSites.ts` (the console
+  keeps its audited position), every other Workshop item's code (M02, M03,
+  M04, M07, M12, M13, the return windows), the M05 code.
+- **Entry state:** HEAD `04a976e` (U6), clean tree, branch
+  `fable-professional-world-rescue-v2`.
+- **Success behaviour:** practice → ready → begin starts the focused
+  budget; correct dispatches advance and count once; an incorrect
+  dispatch leaves the order for correction; skip advances without credit;
+  the budget end, the explicit stop and "all twelve handled" close the
+  period with distinct stop kinds and the denominator fixed at 60 s; the
+  extractor recounts the unique correct orders from the dispatch events
+  inside the budget and reproduces the companion.
+- **Failure/recovery:** ESC / Leave pauses the budget (no unattended
+  time); reopening resumes it (the workshop return shift included); the
+  review closes an open period censored with the count as it stands and
+  marks a never-opened console absent; a console opened in an earlier
+  page load is never re-run (prior exposure, `interrupted`); practice
+  never passed or the period never begun ⇒ null (`no_eligible_event`);
+  a snapshot that disagrees with the dispatch events ⇒
+  `technical_failure`; a buffer left unsent at the budget end is
+  discarded, never a dispatch.
+- **Telemetry boundary:** family `proto_m06_orders_*` (candidate; suffixes
+  `presented`, `opportunity_opened`, `token_pressed`, `token_refused`,
+  `line_typed`, `buffer_cleared`, `reference_consulted`,
+  `practice_dispatched`, `practice_passed`, `ready_shown`,
+  `press_refused`, `period_begun`, `order_presented`, `order_dispatched`
+  with `order_index`, `correct`, `attempt`, `focused_ms`, `within_budget`,
+  `order_skipped`, `period_ended` with `stop_kind`, `surface_closed`,
+  `surface_reopened`, `window_closed`, `technical_failure` only as the
+  reload marker); the v2 `proto_m06_dispatch_*` family keeps its v2
+  meaning in the frozen ledger and is retired from the route; no
+  canonical name or approved formula invented.
+- **Scientific acceptance:** the denominator is always the 60 s budget
+  (an early stop never shortens it); an order counts once whatever the
+  number of dispatches; incorrect dispatches never count; unattended time
+  never runs the budget; speed is never a feature; practice is never
+  scored; a never-begun period is null, never zero.
+- **Gameplay acceptance:** the console keeps its position, verb and
+  surface id; keyboard / pointer parity for every control with hotkeys
+  shown; ESC always leaves; the Workshop sign-off never depends on the
+  period; every existing route helper keeps its option indices.
+- **Required tests:** `npm.cmd run lint:tsc`, `npm.cmd run build`,
+  ESLint + Prettier (`endOfLine: auto`) on touched files, pure
+  `m06_orders` + `m26_protocol_foundation` + `pilot_coverage` +
+  `pilot_closure_models` + `pilot_route_model` + `world_v1_registry` +
+  `m05_start` + `m01_batches`, browser `m06_orders_route`, plus the
+  affected browser test of `pilot_episodes_1_2` (episode 2, the dispatch
+  step) as far as the environment's driver allows.
+- **Required screenshots:** the work-period surface at 800×600
+  (evidence, not committed).
+- **Stop conditions:** common.
+- **Model:** Fable; reviewer stand-ins as declared in U6 if the project
+  agent types remain unavailable.
+- **Commit expectation:** `feat(m06): twelve orders in one 60-second
+focused work budget with correction, skip and an explicit stop`.
+- **Reviewer availability:** as U6 — the `scientific-reviewer` and
+  `gameplay-reviewer` definitions run verbatim through read-only Opus
+  stand-ins; the `test-reviewer` scope covered by the implementer's
+  recorded runs below.
+- **Review round 1 (read-only, on the working tree after the first
+  browser run):** scientific: concerns found — 2 high / 6 medium / 3 low +
+  11 owner questions; gameplay: usable with friction — 2 high / 5 medium /
+  5 low + 6 measurement flags. Material findings and their resolution:
+  - Input mode a hidden confound on a time-limited count (S-F1 high,
+    G-F7): tokens had no hotkeys, so a keyboard order cost ~14 presses
+    against four clicks — fixed: the active token row carries the digit
+    hotkeys 1–4 (three digits + D = the pointer's four clicks);
+    `dispatch_input_modes` and `practice_wall_ms` recorded; the browser
+    spec composes one order by keyboard alone (§5.64).
+  - A one-key Stop (F, beside D) and a double-tap Skip ended or skipped
+    for good and were logged as voluntary (S-F2 high, G-F2 high, G-F8) —
+    fixed: Stop is two presses on Q (arm / confirm, 3 s, disarmed by any
+    other action); a Skip inside the order's settle window is refused
+    (§5.65).
+  - "Typing the line is optional" with no typed entry wired, and letters
+    of typed tokens firing D / F (G-F1 high, S-F8) — fixed: the copy
+    removed, no typing on the surface, the typed model command requires
+    exactly three tokens (kept for the pure tests).
+  - Companion observed beside a technical-failure primary (S-F3) —
+    fixed: null with the primary (§5.66).
+  - Review-closed open period exported as a complete observation (S-F4)
+    — fixed: `incomplete` with the focused exposure beside it (§5.63
+    revised).
+  - A period may span episodes without record (S-F5) — fixed: every
+    resumption recorded with the route stage (§5.67); the sign-off
+    closure alternative recorded.
+  - Entry state without the Workshop items' order (S-F6) — fixed: stage
+    and the other windows' states in the entry snapshot (§5.68).
+  - Twelve skips labelled `completed` (S-F7) — fixed: `all_skipped`, a
+    voluntary closure (§5.69).
+  - Never-begun cases in free text only (S-F10) — fixed: ready shown ⇒
+    `declined`, practice abandoned ⇒ `no_eligible_event`;
+    `practice_passed` / `ready_shown` / `refused_presses` in components
+    (§5.70).
+  - The recount trusted the model's `correct` flag; the tick's overrun
+    inflated `actual_stop_focused_ms`; a typed line was truncated (S-F11)
+    — fixed: lines re-checked against the form; the budget end clamped
+    with `budget_overrun_ms`; three tokens exactly.
+  - A wrong practice dispatch read as accepted (G-F4); mismatch feedback
+    without the sent line and no single-token undo (G-F5); Skip / Stop
+    first met with the clock running (G-F6) — fixed: `practice_incorrect`
+    reported with the sent line; "last sent: … — matched / no match"
+    under the buffer; Back (Z); the ready screen names the twelve
+    orders, the match rule, skip (never returns) and stop (§5.73).
+  - Low-contrast accent readout (G-F3), plurals, colour-only marker,
+    "send it as it reads", "(not recorded)" (G-F11), help / feedback
+    overlap (G-F10) — fixed: default readout fill with a ▶ glyph, `orders(n)`
+    plural, "send it exactly as written", "(not scored)", shorter help.
+  - Visible countdown, live tally and end summary (S-F9, G flags),
+    the ceiling (S-F10), resume without a gate (G-F9) — recorded as owner
+    questions §5.71 / §5.72 / §5.67; no change.
+  - Documentation drift (S-F8, G-F12) — the contract's telemetry list
+    omitted `stopped` (the §4 record lists it, and now `stop_armed`,
+    `stop_disarmed`, `token_removed`); the mismatch copy in the contract
+    ("Does not match order 3.") is superseded by the as-built copy; the
+    §4 record's "tokens or typed" corrected.
+- **Review round 2:** not run as a separate reviewer pass — the fixes are
+  bounded to the cited findings and covered by the rewritten pure spec
+  and the rerun browser spec; a fresh review of the review fixes is
+  folded into U24 (precedent U2-R … U6).
+- **Verification results (final tree):** `npm.cmd run lint:tsc` 0 ·
+  `npm.cmd run build` 0 · ESLint + Prettier (`endOfLine: auto`) on every
+  touched file and doc 0 · pure `m06_orders` (6) + `m05_start` +
+  `m01_batches` + `m26_protocol_foundation` + `pilot_coverage` +
+  `pilot_closure_models` + `pilot_route_model` + `world_v1_registry` +
+  `pilot_exterior_models` + `evidence_ledger` + `summary_scope` all green
+  (retries off; count recorded in the handoff) · browser
+  `m06_orders_route`: run 1 (before the review fixes) both tests failed on
+  test tolerances only (the pause check charged the reopen walk; the
+  budget end landed at 60 023 ms on the 250 ms tick — now clamped with
+  `budget_overrun_ms`); run 2 failed to compile (a duplicate identifier
+  in the spec, mine); run 3 test 2 (budget end by inaction ⇒ observed 0)
+  1/1 (2.8 min for both) and test 1 failed only on my expectation of the
+  dispatch input modes (the D key is a keyboard dispatch); run 4 test 1
+  1/1 (1.1 min) — `test-results/m06-work-800x600.png` inspected (order
+  readout, tally and time-left legible; the token rows with the digit
+  hotkeys on the active row; Back / Clear / Dispatch / Skip / Stop / Leave
+  on one row), not committed · browser `pilot_episodes_1_2` "episode 2":
+  fails at its FIRST interaction (Press B, an M03 station, unexpectedly
+  opening the inventory overlay — before any M06 step) and fails
+  identically on the pre-U7 tree (`99c52dd`, the scratchpad export on port
+  5174), so it is the same environmental driver limitation recorded under
+  U6, not a U7 regression; its dispatch step's event family was updated
+  for when the driver passes · `verify-unit` PASS · `git diff --check`
+  clean.
+- **Deviations:** the contract copy for the mismatch line, the ready note
+  and the Stop / Skip controls was superseded by the review fixes (the §4
+  record is the as-built copy); the telemetry boundary gained
+  `stop_armed`, `stop_disarmed`, `token_removed` and `stopped`;
+  `e2e/pilot_records.spec.ts`, `e2e/pilot_coverage.spec.ts`,
+  `e2e/pilot_route_model.spec.ts` and `e2e/m26_protocol_foundation.spec.ts`
+  needed no change (their suites pass unchanged); `CLAUDE_UNIT_ALLOWLIST`
+  enforced by discipline + `verify-unit`; reviewer stand-ins as declared;
+  the execution specification file remains missing.
+- **Not changed:** `ScoringManager`, `SummaryScope`, `docs/research/**`,
+  `docs/scientific/**`, the v2 ledger, `zoneSites.ts`, every other
+  Workshop item's code and the M05 code, package files, tool configs,
+  settings; every existing route helper keeps its option indices (no new
+  prompt stage).
 - **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
-  deleted. Next unit: U7 M06 (redesign: twelve orders in one 60-second
-  focused budget).
+  deleted. Next unit: U8 M12 (redesign interaction: three fields per
+  product, explicit matches / differs judgements, participant-entered
+  corrections, references hidden until inspected).
