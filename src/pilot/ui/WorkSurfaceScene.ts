@@ -52,7 +52,7 @@ export interface SurfaceElement {
   detail?: string;
   /** Glyph shown before the label (never colour-only state). */
   glyph?: string;
-  /** Hidden numeric shortcut (1-9) for buttons. */
+  /** Hidden shortcut (0-9, a-z) for buttons. */
   hotkey?: string;
   /** Activation callback (tiles/buttons). Absent = not focusable. */
   onActivate?: (inputMode: InputMode) => void;
@@ -607,8 +607,9 @@ export class WorkSurfaceScene extends Phaser.Scene {
         break;
     }
 
-    // Hidden numeric shortcuts on buttons/tiles that declare a hotkey.
-    if (/^[1-9a-z]$/i.test(event.key)) {
+    // Hidden shortcuts on buttons/tiles that declare a hotkey (0 included:
+    // the M12 keypad, Unit 8).
+    if (/^[0-9a-z]$/i.test(event.key)) {
       const target = this.rendered.find(
         (item) =>
           item.element.hotkey?.toLowerCase() === event.key.toLowerCase() &&

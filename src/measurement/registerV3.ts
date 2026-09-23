@@ -894,16 +894,40 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'behavioural_counterpart',
     direction: 'redesign',
     occasions: 2,
+    // Unit 8: the approved redesign landed (the storm delivery manifest in
+    // the Concourse, the calibration tag sheet in the Records Workshop).
+    // The v2 six-line family `proto_m12_qc_*` keeps its v2 meaning.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m12_check_o1', 'proto_m12_check_o2'],
+      windows: [
+        {
+          id: 'm12_check_o1',
+          occasion: 'o1',
+          zone: 'station_concourse',
+          episode: 1,
+        },
+        {
+          id: 'm12_check_o2',
+          occasion: 'o2',
+          zone: 'records_workshop',
+          episode: 2,
+        },
+      ],
+      family_prefixes: ['proto_m12_check_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Two products with three checkable fields and one fault each; unchecked release permitted; optional review requires an explicit matches/differs judgement per inspected field and a participant-entered correction.',
     features: [
       fraction(
         'm12_fields_verified',
         'fields explicitly judged (matches or differs) before release',
-        'six fields (three per product) of presented products',
+        'six fields (three per product) of released products; a packet opened but never released is missing, never 0',
         '0–6',
         'more checking coverage (expected opposite to raw M12)',
-        'no product presented → null',
+        'no product released → null',
       ),
       count(
         'm12_detection_and_correction',

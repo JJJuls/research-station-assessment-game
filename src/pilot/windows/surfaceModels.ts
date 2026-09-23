@@ -17,15 +17,6 @@ import {
   m07State,
 } from './m07Calibration';
 import {
-  correctM12Line,
-  inspectM12Line,
-  M12_PRODUCTS,
-  type M12Occasion,
-  m12State,
-  m12Windows,
-  submitM12,
-} from './m12QualityControl';
-import {
   assignM14Subsystem,
   consultM14Source,
   flagM14Conflict,
@@ -296,123 +287,6 @@ export function m14MaybeCompleteConflict(
 
 export function resetM14SurfaceState() {
   pendingConflictFirst = null;
-}
-
-// ——— M12 QC packet ———————————————————————————————————————————————————————
-
-export function m12SurfaceModel(
-  occasion: M12Occasion,
-  host: SurfaceHost,
-): WorkSurfaceModel {
-  const s = m12State(occasion);
-  const product = M12_PRODUCTS[occasion];
-  const done = m12Windows[occasion].isClosed();
-  const elements: SurfaceElement[] = [];
-
-  elements.push({
-    id: 'product_title',
-    kind: 'text',
-    label: product.title.toUpperCase(),
-    x: 16,
-    y: 66,
-    w: 340,
-    h: 18,
-    small: true,
-  });
-  elements.push({
-    id: 'reference_title',
-    kind: 'text',
-    label: product.referenceTitle.toUpperCase(),
-    x: 376,
-    y: 66,
-    w: 330,
-    h: 18,
-    small: true,
-  });
-
-  product.lines.forEach((line, index) => {
-    const inspected = s.inspected.includes(line.id);
-
-    elements.push({
-      id: `line_${line.id}`,
-      kind: 'tile',
-      label: `${line.label}: ${s.values[index]}`,
-      detail: inspected
-        ? 'inspected · activate again to correct to the reference'
-        : 'activate to inspect',
-      x: 16,
-      y: 90 + index * 50,
-      w: 340,
-      h: 44,
-      small: true,
-      state: done ? 'disabled' : inspected ? 'done' : 'idle',
-      onActivate: done
-        ? undefined
-        : (mode) => {
-            if (!inspected) {
-              inspectM12Line(occasion, line.id, mode);
-            } else if (s.values[index] !== line.reference) {
-              correctM12Line(occasion, line.id, mode);
-              host.feedback('Line corrected to the reference.');
-            } else {
-              host.feedback('Line already matches the reference.');
-            }
-          },
-    });
-    elements.push({
-      id: `ref_${line.id}`,
-      kind: 'readout',
-      label: `${line.label}: ${line.reference}`,
-      x: 376,
-      y: 90 + index * 50,
-      w: 330,
-      h: 44,
-      small: true,
-    });
-  });
-
-  elements.push({
-    id: 'submit',
-    kind: 'button',
-    label: done ? 'Submitted' : 'Submit as checked',
-    x: 376,
-    y: 428,
-    w: 190,
-    h: 34,
-    hotkey: 's',
-    state: done ? 'disabled' : 'accent',
-    onActivate: done
-      ? undefined
-      : (mode) => {
-          submitM12(occasion, host.now(), mode);
-          host.feedback('Packet submitted.');
-        },
-  });
-  elements.push({
-    id: 'leave',
-    kind: 'button',
-    label: done ? 'Close' : 'Leave packet',
-    x: 576,
-    y: 428,
-    w: 130,
-    h: 34,
-    onActivate: () => host.close(),
-  });
-
-  return {
-    title:
-      occasion === 'o1'
-        ? 'QUALITY CHECK — SUPPLY MANIFEST'
-        : 'QUALITY CHECK — CALIBRATION TAGS',
-    subtitle: done
-      ? 'submitted'
-      : `${s.inspected.length}/${product.lines.length} inspected`,
-    status: done
-      ? 'Checked packet recorded.'
-      : 'Compare each line with the reference beside it; correct anything you want to before submitting.',
-    elements,
-    help: 'Arrows/TAB focus · ENTER/SPACE inspect or correct · click also works · S submit · ESC leave',
-  };
 }
 
 // ——— M07 calibration bench ————————————————————————————————————————————

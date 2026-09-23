@@ -19,7 +19,7 @@ import { closeM08AtReview } from './m08EffortChoice';
 import { closeM09AtReview } from './m09MonitorWatch';
 import { closeM10AtReview } from './m10ComponentPromise';
 import { closeM11AtReview } from './m11Custody';
-import { m12Windows } from './m12QualityControl';
+import { closeM12AtReview } from './m12QualityControl';
 import { m14Window } from './m14IncidentDesk';
 import { closeM25BeliefAtReview, closeM25LoopsAtReview } from './m25Repetition';
 import {
@@ -65,16 +65,10 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
   // Station 080 M11 (Unit 3): never offered → absent; accepted and never
   // departed → unresolved at review; declined / resolved already closed.
   closeM11AtReview(nowMs);
-  closeSurfaceWindow(
-    m12Windows.o1,
-    nowMs,
-    'quality packet 1 never opened before the review',
-  );
-  closeSurfaceWindow(
-    m12Windows.o2,
-    nowMs,
-    'quality packet 2 never opened before the review',
-  );
+  // Station 080 M12 (Unit 8): a released packet is already closed; an
+  // open packet is censored (no release, no observation); never opened →
+  // absent.
+  closeM12AtReview(nowMs);
   closeSurfaceWindow(
     m14Window,
     nowMs,

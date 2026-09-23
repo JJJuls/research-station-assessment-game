@@ -307,11 +307,17 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     await closeSurface(page);
     expect(await itemStatus(page, 'M14')).toBe('completed');
 
-    // Quality packet 1: inspect one line and submit (no correctness gate).
+    // Quality packet 1 (Unit 8): check one field (its reference is
+    // revealed), judge it past the settle window, release the packet.
     await openSurfaceAt(page, CONCOURSE.qcPacket, 'm12_qc_packet_o1');
-    await clickElement(page, 'line_fuse');
-    await clickElement(page, 'submit');
+    await clickElement(page, 'check_fuse');
+    await page.waitForTimeout(450);
+    await clickElement(page, 'judge_matches'); // "fuse" is never the faulty field
+    await clickElement(page, 'release');
     await closeSurface(page);
+    types = await pilotEventTypes(page);
+    expect(types).toContain('proto_m12_check_field_judged');
+    expect(types).toContain('proto_m12_check_released');
     expect(await itemStatus(page, 'M12')).toBe('pending'); // occasion 2 undeclared until the workshop
 
     // Gauge check 1 completes the first watch window.
@@ -523,13 +529,15 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     types = await pilotEventTypes(page);
     expect(types).toContain('proto_m07_calibration_returned');
 
-    // Quality packet 2 is independent of packet 1 (never opened in this session).
+    // Quality packet 2 (Unit 8): released unchecked — a valid observed 0/3.
     await openSurfaceAt(page, WORKSHOP.qcPacket, 'm12_qc_packet_o2');
-    await clickElement(page, 'submit');
+    await clickElement(page, 'release');
     await closeSurface(page);
+    types = await pilotEventTypes(page);
     expect(
-      types.filter((t) => t.startsWith('proto_m12_qc_') && t.includes('o1')),
-    ).toEqual([]);
+      types.filter((t) => t === 'proto_m12_check_window_closed'),
+    ).toHaveLength(2);
+    expect(await itemStatus(page, 'M12')).toBe('completed');
 
     // Lattice bench opens the physical pipe board above the host.
     await interactAt(page, WORKSHOP.latticeBench, {

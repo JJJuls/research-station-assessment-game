@@ -1,22 +1,49 @@
 /**
- * M12 — Two matched quality-control occasions (evidence-led pilot v2,
- * Unit 2).
+ * M12 — window adapter of the two quality packets (Station 080 M01–M26
+ * run, Unit 8). Owns the two register windows (the storm delivery manifest
+ * in the Concourse, episode 1; the calibration tag sheet in the Records
+ * Workshop, episode 2) and the session-scope model state; every command
+ * delegates to the pure model (`m12CheckModel.ts`) and logs through the
+ * windows' `proto_m12_check_*` family with the protocol stamp.
  *
- * Ledger (sheet 09): inspect two independent completed work products,
- * each with one visible-but-not-salient matched error, and optionally
- * correct before submit; record form and order; no speed score.
- *
- * Occasion 1 (Concourse, episode 1): a completed supply manifest — six
- * line items, one quantity does not match the packing list beside it.
- * Occasion 2 (Records Workshop, episode 2): a completed calibration tag
- * sheet — six tags, one serial does not match the bench register.
- * Each occasion is independently reachable and independently valid; the
- * form (which line carries the error) is counterbalanced per occasion.
- *
- * Raw components per occasion: error_detected_oN (the erroneous field
- * was opened for inspection/correction), error_corrected_oN,
- * inspection_actions; plus the realised order of the two occasions.
+ * Closure rules: release completes the occasion with the fields as they
+ * stand (an unchecked release is a valid observed 0); ESC / Leave keeps
+ * the packet open (fail-forward, no timers); the review censors an open
+ * packet (no release ⇒ no observation) and marks a never-opened one
+ * absent; a packet opened in an earlier page load is never re-run. The
+ * v2 six-line family (`proto_m12_qc_*`) keeps its v2 meaning in the
+ * frozen ledger and is retired from the route.
  */
+import { protocolStamp } from '../../measurement/protocol';
+import { researchRuntime } from '../../systems';
+import {
+  createM12State,
+  M12_ENTRY_STATE_VERSION,
+  M12_FAMILY,
+  M12_OPPORTUNITY_IDS,
+  M12_WINDOW_IDS,
+  m12AbandonCorrection,
+  m12Check,
+  m12ConfirmCorrection,
+  type M12ConfirmResult,
+  m12EntrySnapshot,
+  type M12Form,
+  m12Freeze,
+  m12Judge,
+  type M12Judgement,
+  type M12JudgeResult,
+  m12KeypadBack,
+  m12KeypadClear,
+  m12KeypadDigit,
+  type M12LogSink,
+  type M12Occasion,
+  m12PriorAdministration,
+  m12RawComponents,
+  m12Release,
+  m12ReopenKeypad,
+  m12Reread,
+  type M12State,
+} from './m12CheckModel';
 import {
   assignCounterbalance,
   currentSessionId,
@@ -24,137 +51,41 @@ import {
   ItemWindow,
 } from './windowKit';
 
-export type M12Occasion = 'o1' | 'o2';
-export type M12Form = 'form_a' | 'form_b';
+export {
+  M12_FAMILY,
+  M12_FIELDS_PER_PRODUCT,
+  M12_OPPORTUNITY_IDS,
+  M12_PRODUCTS,
+  M12_SETTLE_MS,
+  M12_WINDOW_IDS,
+  m12FaultDetected,
+  m12Field,
+  m12FieldsChecked,
+  m12FieldsJudged,
+  m12KeypadField,
+  type M12Occasion,
+  m12Open,
+} from './m12CheckModel';
 
-export const M12_OPPORTUNITY_IDS: Record<M12Occasion, string> = {
-  o1: 'proto_m12_qc_o1',
-  o2: 'proto_m12_qc_o2',
-};
-export const M12_WINDOW_IDS: Record<M12Occasion, string> = {
-  o1: 'm12_qc_o1',
-  o2: 'm12_qc_o2',
-};
-export const M12_ENTRY_STATE_VERSION = 'm12-qc-v1';
-export const M12_FAMILY = 'proto_m12_qc_';
+export const M12_PRIOR_ADMINISTRATION = 'prior_administration';
 
-export interface M12Line {
-  id: string;
-  label: string;
-  /** Value printed on the completed product. */
-  value: string;
-  /** Value on the reference beside it. */
-  reference: string;
-}
+const OCCASIONS: readonly M12Occasion[] = ['o1', 'o2'];
 
-interface M12Product {
-  title: string;
-  referenceTitle: string;
-  lines: readonly M12Line[];
-  /** Which line index carries the error per form. */
-  errorLine: Record<M12Form, number>;
-  /** The erroneous printed value per form (reference stays true). */
-  erroneousValue: Record<M12Form, string>;
-}
-
-export const M12_PRODUCTS: Record<M12Occasion, M12Product> = {
-  o1: {
-    title: 'Supply manifest — storm delivery',
-    referenceTitle: 'Packing list',
-    lines: [
-      { id: 'fuse', label: 'Fuse contacts', value: '12', reference: '12' },
-      { id: 'seal', label: 'Seal caps', value: '6', reference: '6' },
-      { id: 'wire', label: 'Wire spools', value: '4', reference: '4' },
-      { id: 'wrap', label: 'Insulation wrap', value: '8', reference: '8' },
-      { id: 'vial', label: 'Sample vials', value: '10', reference: '10' },
-      { id: 'cell', label: 'Beacon cells', value: '3', reference: '3' },
-    ],
-    errorLine: { form_a: 2, form_b: 4 },
-    erroneousValue: { form_a: '5', form_b: '12' },
-  },
-  o2: {
-    title: 'Calibration tag sheet — bench run',
-    referenceTitle: 'Bench register',
-    lines: [
-      {
-        id: 't1',
-        label: 'Tag 1 serial',
-        value: 'CB-2041',
-        reference: 'CB-2041',
-      },
-      {
-        id: 't2',
-        label: 'Tag 2 serial',
-        value: 'CB-2042',
-        reference: 'CB-2042',
-      },
-      {
-        id: 't3',
-        label: 'Tag 3 serial',
-        value: 'CB-2043',
-        reference: 'CB-2043',
-      },
-      {
-        id: 't4',
-        label: 'Tag 4 serial',
-        value: 'CB-2044',
-        reference: 'CB-2044',
-      },
-      {
-        id: 't5',
-        label: 'Tag 5 serial',
-        value: 'CB-2045',
-        reference: 'CB-2045',
-      },
-      {
-        id: 't6',
-        label: 'Tag 6 serial',
-        value: 'CB-2046',
-        reference: 'CB-2046',
-      },
-    ],
-    errorLine: { form_a: 1, form_b: 3 },
-    erroneousValue: { form_a: 'CB-2024', form_b: 'CB-2404' },
-  },
-};
-
-interface M12OccasionState {
-  form: M12Form;
-  values: string[];
-  inspected: string[];
-  inspectionActions: number;
-  errorDetected: boolean;
-  errorCorrected: boolean;
-  submitted: boolean;
-}
-
-const states: Partial<Record<M12Occasion, M12OccasionState>> = {};
+const states: Partial<Record<M12Occasion, M12State>> = {};
 const realisedOrder: M12Occasion[] = [];
 
-function ensureState(occasion: M12Occasion): M12OccasionState {
+function ensureState(occasion: M12Occasion): M12State {
   let s = states[occasion];
 
   if (s === undefined) {
-    const form = assignCounterbalance<M12Form>(
-      currentSessionId(),
-      `m12_qc_${occasion}_form`,
-      ['form_a', 'form_b'],
-    );
-    const product = M12_PRODUCTS[occasion];
-
-    s = {
-      form,
-      values: product.lines.map((line, index) =>
-        index === product.errorLine[form]
-          ? product.erroneousValue[form]
-          : line.value,
+    s = createM12State(
+      occasion,
+      assignCounterbalance<M12Form>(
+        currentSessionId(),
+        `m12_check_${occasion}_form`,
+        ['form_a', 'form_b'],
       ),
-      inspected: [],
-      inspectionActions: 0,
-      errorDetected: false,
-      errorCorrected: false,
-      submitted: false,
-    };
+    );
     states[occasion] = s;
   }
 
@@ -184,6 +115,12 @@ export const m12Windows: Record<M12Occasion, ItemWindow> = {
   }),
 };
 
+const sinkFor =
+  (occasion: M12Occasion): M12LogSink =>
+  (suffix, metadata) => {
+    m12Windows[occasion].log(suffix, { ...protocolStamp(), ...metadata });
+  };
+
 export function declareM12(occasion: M12Occasion) {
   const s = ensureState(occasion);
   const window = m12Windows[occasion];
@@ -193,7 +130,7 @@ export function declareM12(occasion: M12Occasion) {
   window.declare();
 }
 
-export function m12State(occasion: M12Occasion): Readonly<M12OccasionState> {
+export function m12State(occasion: M12Occasion): Readonly<M12State> {
   return ensureState(occasion);
 }
 
@@ -201,105 +138,188 @@ export function m12RealisedOrder(): readonly M12Occasion[] {
   return realisedOrder;
 }
 
-export function openM12(occasion: M12Occasion, nowMs: number) {
+/** True when the occasion was administered in an earlier page load. */
+export function m12AdministeredBefore(occasion: M12Occasion): boolean {
+  return ensureState(occasion).closureReason === M12_PRIOR_ADMINISTRATION;
+}
+
+/**
+ * The packet was PRESENTED: Vale's briefing names the storm packet's
+ * quality packet (o1); the Work Order Board lists the quality packet (o2).
+ */
+export function presentM12(occasion: M12Occasion, nowMs: number) {
+  declareM12(occasion);
+  m12Windows[occasion].present(
+    nowMs,
+    m12EntrySnapshot(occasion, ensureState(occasion).form),
+  );
+}
+
+/**
+ * Opens (or reopens) the packet. `entry` carries what the host scene knows
+ * at the open (the route stage and neighbouring windows' states).
+ */
+export function openM12(
+  occasion: M12Occasion,
+  nowMs: number,
+  entry: Record<string, unknown> = {},
+) {
   declareM12(occasion);
 
+  const s = ensureState(occasion);
   const window = m12Windows[occasion];
   const other: M12Occasion = occasion === 'o1' ? 'o2' : 'o1';
 
-  if (
-    !realisedOrder.includes(occasion) &&
-    window.windowStatus() === 'unopened'
-  ) {
-    realisedOrder.push(occasion);
-
-    if (m12Windows[other].windowStatus() !== 'unopened') {
+  if (window.windowStatus() === 'unopened') {
+    // Reload guard: the raw log of an earlier page load already holds an
+    // opened packet. Never re-run it (no second observation).
+    if (
+      m12PriorAdministration(researchRuntime.getPriorPageLoadEvents(), occasion)
+    ) {
+      m12Freeze(s, M12_PRIOR_ADMINISTRATION);
       window.recordPriorExposure(
-        `exposure:${M12_OPPORTUNITY_IDS[other]}_before`,
+        'quality packet opened in an earlier page load of this identity',
       );
+      window.technicalFailure('reload after administration: packet not re-run');
+
+      return;
+    }
+
+    if (!realisedOrder.includes(occasion)) {
+      realisedOrder.push(occasion);
+
+      if (m12Windows[other].windowStatus() !== 'unopened') {
+        window.recordPriorExposure(
+          `exposure:${M12_OPPORTUNITY_IDS[other]}_before`,
+        );
+      }
     }
   }
 
-  window.open(nowMs, {
-    lines: M12_PRODUCTS[occasion].lines.length,
-    realised_order: [...realisedOrder],
-  });
-}
-
-/** Open one line for inspection (the reference value becomes comparable). */
-export function inspectM12Line(
-  occasion: M12Occasion,
-  lineId: string,
-  inputMode: InputMode,
-) {
-  const s = ensureState(occasion);
-  const window = m12Windows[occasion];
-
-  if (!window.isOpen() || s.submitted) {
+  if (window.isClosed()) {
     return;
   }
 
-  s.inspectionActions += 1;
+  const first = !window.isOpen();
 
-  if (!s.inspected.includes(lineId)) {
-    s.inspected.push(lineId);
-  }
-
-  const product = M12_PRODUCTS[occasion];
-  const errorLineId = product.lines[product.errorLine[s.form]].id;
-
-  if (lineId === errorLineId) {
-    s.errorDetected = true;
-  }
-
-  window.log('line_inspected', {
-    line_id: lineId,
-    inspection_actions: s.inspectionActions,
-    input_mode: inputMode,
+  window.setComprehension('not_required');
+  window.open(nowMs, {
+    ...m12EntrySnapshot(occasion, s.form),
+    ...entry,
+    realised_order: [...realisedOrder],
   });
+
+  if (!first) {
+    sinkFor(occasion)('surface_reopened', {
+      fields_judged: s.fields.filter((field) => field.judgement !== null)
+        .length,
+      input_mode: 'system',
+    });
+  }
 }
 
-/** Correct a line to its reference value (allowed on any line). */
-export function correctM12Line(
+export function checkM12Field(
   occasion: M12Occasion,
-  lineId: string,
+  fieldId: string,
+  nowMs: number,
+  inputMode: InputMode,
+) {
+  return m12Windows[occasion].isOpen()
+    ? m12Check(
+        ensureState(occasion),
+        fieldId,
+        nowMs,
+        inputMode,
+        sinkFor(occasion),
+      )
+    : 'invalid';
+}
+
+export function judgeM12Field(
+  occasion: M12Occasion,
+  fieldId: string,
+  judgement: M12Judgement,
+  nowMs: number,
+  inputMode: InputMode,
+): M12JudgeResult {
+  return m12Windows[occasion].isOpen()
+    ? m12Judge(
+        ensureState(occasion),
+        fieldId,
+        judgement,
+        nowMs,
+        inputMode,
+        sinkFor(occasion),
+      )
+    : 'invalid';
+}
+
+export function m12KeypadPress(
+  occasion: M12Occasion,
+  key: 'back' | 'clear' | 'cancel' | string,
   inputMode: InputMode,
 ): boolean {
+  if (!m12Windows[occasion].isOpen()) {
+    return false;
+  }
+
   const s = ensureState(occasion);
-  const window = m12Windows[occasion];
+  const sink = sinkFor(occasion);
 
-  if (!window.isOpen() || s.submitted) {
-    return false;
+  switch (key) {
+    case 'back':
+      return m12KeypadBack(s, inputMode, sink);
+    case 'clear':
+      return m12KeypadClear(s, inputMode, sink);
+    case 'cancel':
+      return m12AbandonCorrection(s, inputMode, sink);
+    default:
+      return m12KeypadDigit(s, key, inputMode, sink);
   }
-
-  const product = M12_PRODUCTS[occasion];
-  const index = product.lines.findIndex((line) => line.id === lineId);
-
-  if (index < 0) {
-    return false;
-  }
-
-  const before = s.values[index];
-
-  s.values[index] = product.lines[index].reference;
-  s.inspectionActions += 1;
-
-  if (index === product.errorLine[s.form]) {
-    s.errorDetected = true;
-    s.errorCorrected = true;
-  }
-
-  window.log('line_corrected', {
-    line_id: lineId,
-    before,
-    after: s.values[index],
-    input_mode: inputMode,
-  });
-
-  return true;
 }
 
-export function submitM12(
+export function reopenM12Keypad(
+  occasion: M12Occasion,
+  fieldId: string,
+  inputMode: InputMode,
+): boolean {
+  return m12Windows[occasion].isOpen()
+    ? m12ReopenKeypad(
+        ensureState(occasion),
+        fieldId,
+        inputMode,
+        sinkFor(occasion),
+      )
+    : false;
+}
+
+export function rereadM12Reference(
+  occasion: M12Occasion,
+  fieldId: string,
+  inputMode: InputMode,
+): boolean {
+  return m12Windows[occasion].isOpen()
+    ? m12Reread(ensureState(occasion), fieldId, inputMode, sinkFor(occasion))
+    : false;
+}
+
+export function confirmM12Correction(
+  occasion: M12Occasion,
+  nowMs: number,
+  inputMode: InputMode,
+): M12ConfirmResult {
+  return m12Windows[occasion].isOpen()
+    ? m12ConfirmCorrection(
+        ensureState(occasion),
+        nowMs,
+        inputMode,
+        sinkFor(occasion),
+      )
+    : 'invalid';
+}
+
+/** "Release packet": completes the occasion with the fields as they stand. */
+export function releaseM12(
   occasion: M12Occasion,
   nowMs: number,
   inputMode: InputMode,
@@ -307,28 +327,17 @@ export function submitM12(
   const s = ensureState(occasion);
   const window = m12Windows[occasion];
 
-  if (!window.isOpen() || s.submitted) {
+  if (!window.isOpen()) {
     return false;
   }
 
-  s.submitted = true;
-
-  const product = M12_PRODUCTS[occasion];
+  if (!m12Release(s, nowMs, inputMode, sinkFor(occasion))) {
+    return false;
+  }
 
   window.complete(
     nowMs,
-    {
-      [`error_detected_${occasion}`]: s.errorDetected,
-      [`error_corrected_${occasion}`]: s.errorCorrected,
-      inspection_actions: s.inspectionActions,
-      inspected_lines: [...s.inspected],
-      final_values: product.lines.map((line, index) => ({
-        line_id: line.id,
-        value: s.values[index],
-      })),
-      error_line_id: product.lines[product.errorLine[s.form]].id,
-      realised_order: [...realisedOrder],
-    },
+    { ...m12RawComponents(s, 'completed'), realised_order: [...realisedOrder] },
     inputMode,
   );
 
@@ -336,9 +345,15 @@ export function submitM12(
 }
 
 export function closeM12Surface(occasion: M12Occasion, nowMs: number) {
-  m12Windows[occasion].pause(nowMs);
-  m12Windows[occasion].log('surface_closed', {
-    submitted: ensureState(occasion).submitted,
+  const window = m12Windows[occasion];
+
+  if (!window.isOpen()) {
+    return;
+  }
+
+  window.pause(nowMs);
+  sinkFor(occasion)('surface_closed', {
+    released: ensureState(occasion).released,
     input_mode: 'system',
   });
 }
@@ -347,13 +362,42 @@ export function resumeM12Surface(occasion: M12Occasion, nowMs: number) {
   m12Windows[occasion].resume(nowMs);
 }
 
+/** Never opened → absent; open at the review → censored (no release, no observation). */
+export function closeM12AtReview(nowMs: number) {
+  for (const occasion of OCCASIONS) {
+    const window = m12Windows[occasion];
+    const s = ensureState(occasion);
+
+    if (window.windowStatus() === 'unopened') {
+      window.markAbsent(
+        `quality packet ${occasion} never opened before the review`,
+      );
+      continue;
+    }
+
+    if (window.isOpen()) {
+      m12Freeze(s, 'closed_at_review');
+      window.stop(
+        nowMs,
+        'closed_at_review',
+        {
+          ...m12RawComponents(s, 'closed_at_review'),
+          realised_order: [...realisedOrder],
+        },
+        'system',
+        'censored',
+      );
+    }
+  }
+}
+
 /** Test-only escape hatch. */
 export function resetM12State() {
   delete states.o1;
   delete states.o2;
   realisedOrder.length = 0;
 
-  for (const occasion of ['o1', 'o2'] as const) {
+  for (const occasion of OCCASIONS) {
     m12Windows[occasion].reset();
     m12Windows[occasion].spec.form = null;
     m12Windows[occasion].spec.counterbalance = null;

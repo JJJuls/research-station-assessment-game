@@ -1396,7 +1396,252 @@ focused work budget with correction, skip and an explicit stop`.
   Workshop item's code and the M05 code, package files, tool configs,
   settings; every existing route helper keeps its option indices (no new
   prompt stage).
+- **Commit:** one local commit (`e8d90fe`); nothing pushed, merged,
+  tagged, deployed or deleted. Next unit: U8 M12 (redesign interaction:
+  three fields per product, explicit matches / differs judgements,
+  participant-entered corrections, references hidden until inspected).
+
+## U8 — M12 carefulness (two quality packets: three checked fields, explicit judgements, entered corrections)
+
+- **Authorities used:** as U6 / U7 (the owner's 24 September instruction;
+  the register §2 M12 row — "Two products with three checkable fields and
+  one fault each; unchecked release permitted; optional review requires an
+  explicit matches/differs judgement per inspected field and a
+  participant-entered correction" — §3 and `registerV3.ts`; the matrix
+  M12 row — "references hidden until inspected"; the addendum). The
+  execution specification file remains missing (reported under U6).
+- **Objective:** replace the two six-line packets (reference always shown,
+  opening a line = detection, correction auto-copied) with the approved
+  redesign: two independent products of three checkable fields with one
+  fault each; the reference of a field is hidden until that field is
+  checked; every checked field asks for an explicit judgement (matches /
+  differs); a field judged "differs" may be corrected by a value the
+  participant enters on a keypad; the packet may be released unchecked at
+  any time.
+- **Scientific rationale:** register M12 row ("Redesign interaction";
+  BFI-2 item 28, reverse-keyed — telemetry direction stated in the
+  register: more checking coverage, never reversed); measure
+  `m12_fields_verified` = fields explicitly judged (matches or differs)
+  before release, summed over the two products / 6 (planned-observations
+  denominator: a product counts once released; one released product ⇒
+  `incomplete` on 3); companion `m12_detection_and_correction` (per
+  product: judgement accuracy, faulty field detected, correction
+  attempted, correction successful = the entered value equals the
+  reference). The v2 validity gate is kept: the fault is present and
+  reachable, matched salience across forms, no time pressure,
+  keyboard / pointer equivalence; viewing a field is never detection
+  ("view ≠ detected"); a wrong judgement is still a check.
+- **Participant-facing behaviour:** occasion 1 — the Concourse quality
+  packet (storm delivery manifest, presented by Vale's briefing as the
+  storm packet's quality packet): three fields (quantities) with their
+  printed values; a "Check" control per field reveals that field's
+  packing-list reference beside it and asks "Matches" / "Differs"; on
+  "Differs" a keypad (0–9, Back, Confirm — hotkeys 0–9, Z, ENTER on the
+  Confirm control) takes the corrected value; "Release packet" is
+  available throughout (a release with unchecked fields simply states how
+  many fields were checked — no warning, no gate). Occasion 2 — the
+  Records Workshop quality packet (calibration tag sheet, presented by
+  the Work Order Board's "Take the orders."): three tag serials, the
+  checkable part the four digits after "CB-". No speed framing, no
+  praise; ESC / Leave keeps the packet open (fail-forward).
+- **Allowed files:** `src/pilot/windows/m12CheckModel.ts` (new pure model),
+  `src/pilot/windows/m12QualityControl.ts` (rewritten as the window
+  adapter), `src/pilot/windows/m12SurfaceModel.ts` (new),
+  `src/pilot/windows/surfaceModels.ts` (the old M12 surface removed),
+  `src/pilot/windows/reviewClosure.ts`, `src/measurement/features/m12.ts`
+  (new), `src/measurement/features/index.ts`,
+  `src/measurement/registerV3.ts`, `src/world/interactionRegistry.ts`
+  (the two packets' `window` ids), `src/scenes/StationConcourseScene.ts`,
+  `src/scenes/RecordsWorkshopScene.ts`; `e2e/m12_check.spec.ts` (new
+  pure), `e2e/m12_check_route.spec.ts` (new browser),
+  `e2e/pilot_episodes_1_2.spec.ts` (the two packet steps),
+  `e2e/pilot_records.spec.ts` (only if the family prefix check changes),
+  and only if a derived count, label or assertion changes:
+  `e2e/pilot_deck.spec.ts`, `e2e/pilot_coverage.spec.ts`,
+  `e2e/pilot_closure_models.spec.ts`, `e2e/pilot_route_model.spec.ts`,
+  `e2e/m26_protocol_foundation.spec.ts`;
+  `docs/verification/station-080-m26/**`.
+- **Prohibited areas:** common, plus `src/pilot/zoneSites.ts`, every other
+  item's code (the M05 / M06 code included), the M01 batch board.
+- **Entry state:** HEAD `e8d90fe` (U7), clean tree, branch
+  `fable-professional-world-rescue-v2`.
+- **Success behaviour:** both packets reachable on the ordinary route;
+  a field's reference appears only after its Check; a judgement is
+  required per checked field and counted whatever its accuracy; a
+  "differs" judgement opens the keypad and the entered value is compared
+  with the reference (never copied); release closes the occasion with the
+  fields as they stand; the extractor reproduces judged / 6 with the
+  per-product detection and correction detail kept separately.
+- **Failure/recovery:** ESC / Leave keeps the packet open (reopening
+  resumes; no timers); the review closes an open packet censored (no
+  release ⇒ no observation) and marks a never-opened one absent; a
+  packet opened in an earlier page load is never re-run (prior exposure,
+  `interrupted`); presented but never opened ⇒ `declined`; a keypad entry
+  may be cleared or abandoned (the field stays "differs", correction not
+  attempted).
+- **Telemetry boundary:** family `proto_m12_check_*` (candidate; suffixes
+  `presented`, `opportunity_opened`, `field_checked` (the reference
+  revealed), `field_judged` with `judgement`, `judgement_correct`,
+  `keypad_opened`, `keypad_digit`, `keypad_back`, `keypad_cleared`,
+  `correction_entered` with `entered`, `reference`, `correct`,
+  `correction_abandoned`, `released` with `fields_judged`,
+  `surface_closed`, `surface_reopened`, `window_closed`,
+  `technical_failure` only as the reload marker); the v2
+  `proto_m12_qc_*` family keeps its v2 meaning in the frozen ledger and is
+  retired from the route; no canonical name or approved formula invented.
+- **Scientific acceptance:** a viewed field is never a detected fault;
+  a judgement is counted as a check whether right or wrong; the correction
+  is the participant's entered value, never a copy; unchecked release is
+  a valid observed 0 for that product; a product never released is no
+  observation (never a zero); the two products are separate records;
+  matched salience (one fault of comparable size per product, position
+  counterbalanced by form).
+- **Gameplay acceptance:** both packets keep their stations, surface ids
+  and positions; keyboard / pointer parity (hotkeys shown); ESC always
+  leaves; every existing route helper keeps its option indices (no new
+  prompt stage); legible at 800×600.
+- **Required tests:** `npm.cmd run lint:tsc`, `npm.cmd run build`,
+  ESLint + Prettier (`endOfLine: auto`) on touched files, pure
+  `m12_check` + `m26_protocol_foundation` + `pilot_coverage` +
+  `pilot_closure_models` + `pilot_route_model` + `world_v1_registry` +
+  `m05_start` + `m06_orders` + `m01_batches`, browser `m12_check_route`;
+  the affected steps of `pilot_episodes_1_2` updated (its two tests
+  currently fail earlier on the environment's driver, recorded under
+  U6 / U7).
+- **Required screenshots:** the packet surface with a revealed reference
+  and the keypad at 800×600 (evidence, not committed).
+- **Stop conditions:** common.
+- **Model:** Fable; reviewer stand-ins as declared in U6 if the project
+  agent types remain unavailable.
+- **Commit expectation:** `feat(m12): two three-field quality packets
+with hidden references, explicit judgements and keypad corrections`.
+- **Contract amendment (recorded before the change, review S-2 / G-H1):**
+  the shared work-surface scene's hotkey filter accepted only `1-9a-z`, so
+  the keypad's `0` could never be typed — keyboard and pointer were not
+  equivalent for every o2 correction and for o1 form B. The allowlist gains
+  `src/pilot/ui/WorkSurfaceScene.ts` for exactly one change: the filter
+  becomes `0-9a-z` (plus the two comments naming it). No other behaviour
+  of the shared scene changed; every other surface's hotkeys are letters
+  or 1–9 and are unaffected. This is an explicit, recorded expansion under
+  the owner's 24 September authorization (which delegates the recording of
+  each unit's contract and exact allowlist), not a silent one.
+- **Reviewer availability:** as U6 / U7 — the `scientific-reviewer` and
+  `gameplay-reviewer` definitions run verbatim through read-only Opus
+  stand-ins; the `test-reviewer` scope covered by the implementer's
+  recorded runs below.
+- **Review round 1 (read-only, on the working tree after the first green
+  browser run):** scientific: concerns found — 2 high / 6 medium / 7 low +
+  7 owner questions; gameplay: usable with noted friction — 1 high /
+  3 medium / 6 low + 5 measurement flags. Material findings and their
+  resolution:
+  - Repeated ENTER reached 3/3 without reading (S-1 high, G-MF3): the
+    surface falls back to the FIRST focusable element, which after a Check
+    was "Matches" — fixed: a revealed reference is focusable with a
+    neutral, logged activation (`reference_reread`) and precedes every
+    control, so focus never lands on a judgement; ENTER after a Check
+    re-reads and judges nothing (browser-verified). The counting rule is
+    unchanged and routed to the owner (§5.75).
+  - The keypad's `0` hotkey was dead (S-2 high, G-H1, G-MF4): the shared
+    filter excluded 0 — fixed by the recorded allowlist amendment above;
+    the route spec now types `0`, removes it with Back, types the
+    reference and confirms with ENTER.
+  - Leave by pointer skipped `closeM12Surface` (G-M1): the generic host
+    only closed the surface — fixed: an M12 host in both scenes takes the
+    same path as ESC (pause, then close; M05 / M06 precedent); the route
+    spec leaves packet 2 by pointer and sees `surface_closed`.
+  - ENTER did not confirm (G-M2): fixed — Confirm leads the keypad group,
+    is enabled only when the entry is full, the digits and the entry line
+    leave the focus order exactly then, so focus falls to Confirm and
+    ENTER confirms (browser-verified: focus `key_confirm`).
+  - The status line overlapped the column headers (G-M3): headers moved
+    to y 64, rows to 84 / 142 / 200, judgement row 258, keypad 302 / 356.
+  - The companion ignored "null with the primary" (S-3): fixed — the
+    companion is empty with the primary's disposition whenever the
+    primary is null (pending included).
+  - The register feature text still said "presented products" (S-4):
+    fixed in `registerV3.ts` ("released products; a packet opened but
+    never released is missing, never 0"; "no product released → null")
+    and the addendum §3 row; the choice is an owner question (§5.74).
+  - A running "N of 3 fields judged" counter while open (S-5): removed
+    (subtitle "open"); owner question §5.77.
+  - o2 serials ran in sequence, so the printed column alone singled out
+    the faulty tag (G-MF1 strong): fixed — references 2041 / 3178 / 2609
+    with −5 on the last digit; o1 fault sizes matched (24→27, 10→13, +3)
+    (S-9).
+  - `correction_successful` read `false` when nothing was attempted
+    (S-10): now `null`. The review freeze did not count an open keypad as
+    abandoned (S-13): now it does, as at release.
+  - Copy: "answered earlier" → "opened earlier" (S-15); glyph spacing
+    ("= " / "≠ ", G-L1); disabled Check controls drop their "(n)" (G-L3);
+    held-back subtitle "held" (G-L4); shorter keypad help (G-L5); a
+    refused judgement inside the settle window now shows "Judge once the
+    reference value is showing." (G-L2).
+  - Owner questions, no change: count feedback after the first release
+    (S-6, §5.76); a completed occasion discarded after a reload (S-7,
+    §5.78); the fault never in field 1 and forms drawn per occasion (S-8,
+    G-MF2, §5.79); presented-but-never-opened as `declined` (Q6, §5.80);
+    final judgements (S-12, §5.81); the world prompt verb "Check the"
+    (S-15, §5.86); checking costs more presses than releasing (G-MF5,
+    inherent, §5.82).
+  - Accurately described, no change: the one-field-at-a-time refusals
+    (`judgement_pending` / `keypad_open`) are reachable in the model only
+    — the surface rests the blocked controls (S-11, §4); the host resume
+    listener re-arms active time after the surface closes (G-L6,
+    pre-existing pattern shared with M01 / M14; active time is not an
+    M12 measure) — left for a later joint unit.
+- **Review round 2:** not run as a separate reviewer pass — the fixes are
+  bounded to the cited findings and covered by the rewritten pure spec
+  and the rerun browser spec; a fresh review of the review fixes is
+  folded into U24 (precedent U2-R … U7).
+- **Verification results (final tree):** `npm.cmd run lint:tsc` 0 ·
+  `npm.cmd run build` 0 · ESLint + Prettier (`endOfLine: auto`) on
+  `src` and `e2e` 0 and on every touched doc · pure `m12_check` (5) +
+  `m26_protocol_foundation` + `pilot_coverage` + `pilot_closure_models` +
+  `pilot_route_model` + `evidence_ledger` + `m06_orders` + `m05_start` +
+  `m01_batches` + `world_v1_registry` + `pilot_deck` 105/105 (retries
+  off) and, before the review fixes, `summary_scope` +
+  `pilot_exterior_models` green with `pilot_records` 2 browser tests
+  failing on the environment's driver (M02 workspace / supply bundles —
+  no M12 step; the same Workshop driver limitation recorded under U6 /
+  U7) · browser `m12_check_route`: runs 1–2 failed to open packet 1 —
+  the approach point (424,140) lies inside Vale's 72 px radius and a
+  landing at (413,150) made Vale the nearest interactable (driver-only
+  fix: route west of the desk, land, read the proximity prompt); run 3
+  failed on my coverage expectation (`pending` with occasion 2
+  undeclared, the M01 route's own reading); run 4 1/1 (49.7 s); run 5 1/1
+  with the keypad screenshot (54.2 s); after the review fixes run 6
+  failed on the ENTER-confirm focus (the entry line kept focus while
+  full — fixed) and run 7 1/1 (52.3 s) — `test-results/m12-packet1-800x600.png`
+  (three rows, hidden references, Check 1–3, Release / Leave) and
+  `test-results/m12-keypad-800x600.png` (two fields judged "matches", the
+  faulty field "differs — no correction entered", the entry line "10",
+  Confirm focused, digits 0–9, Back / Clear / Cancel, feedback and help
+  legible at 800×600) inspected, not committed · browser
+  `pilot_episodes_1_2`: episode 1 fails at the incident desk (Vale's
+  beat opens at x≈418 — before any M12 step) and episode 2 at Press B,
+  exactly as under U6 / U7 (environmental driver limitation, left for
+  U24); its two packet steps were updated for when the driver passes ·
+  `verify-unit` PASS · `git diff --check` clean.
+- **Deviations:** the allowlist amendment above (`WorkSurfaceScene.ts`,
+  one filter); the contract copy for the judgement / keypad controls was
+  superseded by the review fixes (Confirm V or ENTER when full; Cancel C;
+  Clear X; no running counter; the §4 record is the as-built copy); the
+  telemetry boundary gained `press_refused`, `keypad_refused`,
+  `reference_reread` and `field_checked_again`; the o2 serials and the
+  o1 form B fault changed from the first build during the review; the
+  commit subject shortened to fit the 100-character header rule
+  (`feat(m12): three-field quality packets with hidden references,
+judgements and keypad corrections`); `e2e/pilot_records.spec.ts`,
+  `pilot_deck`, `pilot_coverage`, `pilot_closure_models`,
+  `pilot_route_model` and `m26_protocol_foundation` needed no change;
+  `CLAUDE_UNIT_ALLOWLIST` enforced by discipline + `verify-unit`;
+  reviewer stand-ins as declared; the execution specification file
+  remains missing.
+- **Not changed:** `ScoringManager`, `SummaryScope`, `docs/research/**`,
+  `docs/scientific/**`, the v2 ledger (`evidenceLedger.ts` keeps the
+  `m12_qc_*` / `proto_m12_qc_` identities with their v2 meaning),
+  `zoneSites.ts`, every other item's code (M01 / M05 / M06 / M07 / M14
+  included), package files, tool configs, settings; every existing route
+  helper keeps its option indices (no new prompt stage).
 - **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
-  deleted. Next unit: U8 M12 (redesign interaction: three fields per
-  product, explicit matches / differs judgements, participant-entered
-  corrections, references hidden until inspected).
+  deleted. Next unit: U9 M17 (learning to criterion).

@@ -103,8 +103,10 @@ import {
   declareM12,
   m12Windows,
   openM12,
+  presentM12,
   resumeM12Surface,
 } from '../pilot/windows/m12QualityControl';
+import { m12SurfaceModel } from '../pilot/windows/m12SurfaceModel';
 import {
   closeM14Surface,
   declareM14,
@@ -117,10 +119,7 @@ import {
   askM25Belief,
   m25BeliefDueNow,
 } from '../pilot/windows/m25Repetition';
-import {
-  m12SurfaceModel,
-  m14SurfaceModel,
-} from '../pilot/windows/surfaceModels';
+import { m14SurfaceModel } from '../pilot/windows/surfaceModels';
 import { CONCOURSE_SPAWNS, CONCOURSE_STATIONS } from '../pilot/zoneSites';
 import type {
   InteractionKey,
@@ -370,10 +369,16 @@ export class StationConcourseScene extends PilotZoneScene {
       2,
       () => m12Windows.o1.isClosed(),
       () => {
-        openM12('o1', Date.now());
+        // Entry state (Unit 8): the route stage and the neighbouring
+        // episode-1 windows at the open.
+        openM12('o1', Date.now(), {
+          stage: pilotStage(),
+          m01_batch_o1: m01Window('o1').windowStatus(),
+          m14_incident_desk: m14Window.windowStatus(),
+        });
         openWorkSurface(this, {
           surfaceId: 'm12_qc_packet_o1',
-          model: () => m12SurfaceModel('o1', this.surfaceHost()),
+          model: () => m12SurfaceModel('o1', this.m12SurfaceHost()),
           onClose: () => closeM12Surface('o1', Date.now()),
         });
       },
@@ -711,6 +716,19 @@ export class StationConcourseScene extends PilotZoneScene {
     };
   }
 
+  /** M12 (Unit 8): the Leave button and ESC take the SAME path — pause, then close. */
+  private m12SurfaceHost() {
+    return {
+      now: () => Date.now(),
+      close: () => {
+        closeM12Surface('o1', Date.now());
+        activeWorkSurface(this)?.close();
+      },
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+    };
+  }
+
   private m05TickPending = false;
   private m05TickSerial = 0;
 
@@ -890,6 +908,9 @@ export class StationConcourseScene extends PilotZoneScene {
                 // M01 (Unit 5): the briefing names the plan board on the
                 // storm packet — the first batch is presented here.
                 presentM01('o1', Date.now());
+                // M12 (Unit 8): the briefing names the storm packet's
+                // quality packet — occasion 1 is presented here.
+                presentM12('o1', Date.now());
               },
               nextStage: () => this.watchOfferStage(),
             },

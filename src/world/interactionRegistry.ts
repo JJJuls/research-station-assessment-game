@@ -270,7 +270,7 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     footprint: { w: 2, h: 2 },
     depthAnchor: 'foot',
     stage: 'any',
-    window: 'm12_qc_o1',
+    window: 'm12_check_o1',
     // The packet lies on the baked north-east work table; the open floor
     // is west of it.
     approach: { x: C.qcPacket.x - 56, y: C.qcPacket.y },
@@ -494,7 +494,7 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Check the',
     'Quality Packet',
     { kind: 'work_surface', id: 'm12_qc_packet_o2' },
-    'm12_qc_o2',
+    'm12_check_o2',
     { x: 1100, y: 250 },
   ),
   workshopStation(

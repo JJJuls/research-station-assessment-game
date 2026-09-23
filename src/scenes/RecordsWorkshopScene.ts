@@ -105,8 +105,10 @@ import {
   declareM12,
   m12Windows,
   openM12,
+  presentM12,
   resumeM12Surface,
 } from '../pilot/windows/m12QualityControl';
+import { m12SurfaceModel } from '../pilot/windows/m12SurfaceModel';
 import {
   m20FeedConsoleSurfaceModel,
   m21RelayBenchSurfaceModel,
@@ -141,10 +143,7 @@ import {
   noteM08JobOffered,
   secondaryState,
 } from '../pilot/windows/secondaryTelemetry';
-import {
-  m07SurfaceModel,
-  m12SurfaceModel,
-} from '../pilot/windows/surfaceModels';
+import { m07SurfaceModel } from '../pilot/windows/surfaceModels';
 import {
   WORKSHOP_SITES,
   WORKSHOP_SPAWN,
@@ -493,10 +492,18 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       'proc-desk-reception',
       WS.qcPacket,
       () => {
-        openM12('o2', Date.now());
+        // Entry state (Unit 8): the route stage and the other Workshop
+        // items' window states at the open.
+        openM12('o2', Date.now(), {
+          stage: pilotStage(),
+          m02_case_workspace: m02cWindow.windowStatus(),
+          m04_debris: m04Window.windowStatus(),
+          m06_orders: m06Window.windowStatus(),
+          m07_calibration: m07Window.windowStatus(),
+        });
         openWorkSurface(this, {
           surfaceId: 'm12_qc_packet_o2',
-          model: () => m12SurfaceModel('o2', this.surfaceHost()),
+          model: () => m12SurfaceModel('o2', this.m12SurfaceHost()),
           onClose: () => closeM12Surface('o2', Date.now()),
         });
       },
@@ -1027,6 +1034,19 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     };
   }
 
+  /** M12 (Unit 8): the Leave button and ESC take the SAME path — pause, then close. */
+  private m12SurfaceHost() {
+    return {
+      now: () => Date.now(),
+      close: () => {
+        closeM12Surface('o2', Date.now());
+        activeWorkSurface(this)?.close();
+      },
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+    };
+  }
+
   private m06TickPending = false;
   private m06TickSerial = 0;
 
@@ -1468,6 +1488,9 @@ export class RecordsWorkshopScene extends PilotZoneScene {
                 // M06 (Unit 7): the work orders list the dispatch lines —
                 // the console is presented here.
                 presentM06(now);
+                // M12 (Unit 8): the work orders list the quality packet —
+                // occasion 2 is presented here.
+                presentM12('o2', now);
               },
             },
           ],
