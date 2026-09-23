@@ -282,6 +282,10 @@ test.describe('pilot route v2 — topology and guidance (Unit 1)', () => {
     });
     await selectPromptOption(page, 1);
     await expectStage(page, 'exterior_work');
+    // M05 (Unit 6): Noor's extra flag job follows "Ready"; declined here.
+    await page.waitForTimeout(450);
+    await selectPromptOption(page, 2);
+    await page.waitForTimeout(300);
     expect((await pilotProbe(page))?.episode).toBe(4);
 
     // ——— Episode 5: the ONE purposeful return ———

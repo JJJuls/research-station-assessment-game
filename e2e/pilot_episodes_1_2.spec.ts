@@ -132,7 +132,22 @@ async function openSurfaceAt(
   at: { x: number; y: number },
   id: string,
 ) {
+  const where = () =>
+    page.evaluate(() => {
+      const w = window as unknown as {
+        __playerProbe?: { x: number; y: number } | null;
+        __promptCards?: { label: string }[] | null;
+      };
+
+      return JSON.stringify({
+        at: w.__playerProbe ?? null,
+        cards: w.__promptCards?.map((card) => card.label) ?? null,
+      });
+    });
+
   for (let attempt = 0; attempt < 3; attempt += 1) {
+    const before = await where();
+
     await interactAt(page, at, {
       approachOffset: { x: 0, y: WORKSHOP_OFFSET_Y(at) },
     });
@@ -145,9 +160,33 @@ async function openSurfaceAt(
     if (opened) {
       return;
     }
+
+    // Driver evidence for a failed attempt (V3 verification precedent).
+    // eslint-disable-next-line no-console
+    console.log(
+      `[openSurfaceAt] ${id} attempt ${attempt + 1}: before ${before} after ${await where()}`,
+    );
   }
 
-  throw new Error(`surface ${id} did not open`);
+  const observed = await page.evaluate(() => {
+    const w = window as unknown as {
+      __playerProbe?: { x: number; y: number } | null;
+      __worldPromptProbe?: { prompt: boolean; text?: string | null } | null;
+      __lastRoomFeedbackText?: string | null;
+      __workSurfaceProbe?: { open: boolean; surface_id: string | null } | null;
+      __promptCards?: { label: string }[] | null;
+    };
+
+    return JSON.stringify({
+      at: w.__playerProbe ?? null,
+      prompt: w.__worldPromptProbe ?? null,
+      feedback: w.__lastRoomFeedbackText ?? null,
+      surface: w.__workSurfaceProbe ?? null,
+      cards: w.__promptCards?.map((card) => card.label) ?? null,
+    });
+  });
+
+  throw new Error(`surface ${id} did not open (observed ${observed})`);
 }
 
 async function closeSurface(page: Page) {
@@ -193,6 +232,10 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     await selectPromptOption(page, 1); // carry the component
     await page.waitForTimeout(400);
     await selectPromptOption(page, 1); // interruption acknowledged
+    // M05 (Unit 6): the extra lamp job closes the chain — accepted here
+    // (a deliberate press past the stage's 400 ms settle window).
+    await page.waitForTimeout(450);
+    await selectPromptOption(page, 1); // take the lamp job
     await page.waitForTimeout(400);
 
     let types = await pilotEventTypes(page);
@@ -202,7 +245,8 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     expect(types).toContain('proto_m10_promise_interruption_shown');
     expect(types).toContain('proto_m10_promise_interruption_acknowledged');
 
-    // The silent fault is presented at the first quiet moment (never mentioned).
+    // M05 (Unit 6): the accepted lamp job opened at the answer; the start
+    // clock became eligible once the briefing chain closed (no prompt).
     await page.waitForFunction(
       () =>
         (
@@ -211,11 +255,13 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
           }
         ).researchRuntime
           ?.getEvents()
-          .some(
-            (e) => e.event_type === 'proto_m05_initiation_opportunity_opened',
-          ) ?? false,
+          .some((e) => e.event_type === 'proto_m05_start_eligible') ?? false,
       undefined,
       { timeout: 8000 },
+    );
+    expect(types).toContain('proto_m05_start_offer_answered');
+    expect(await pilotEventTypes(page)).toContain(
+      'proto_m05_start_opportunity_opened',
     );
 
     // Plan board: open the surface (above the host), lift and place a card by pointer, close.
@@ -241,6 +287,13 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     expect(await itemStatus(page, 'M01')).toBe('pending');
 
     // Incident desk: select a message, assign a subsystem and priority, submit twice (warned, then accepted).
+    // Known driver limitation in the U6 verification environment (Chromium
+    // 1228 / SwiftShader, 24 Sep 2026): the eastward leg from the plan
+    // board stalls on Vale's operations desk at x≈418 whatever row it
+    // starts on, and the E press opens Vale's beat — reproduced identically
+    // on the pre-U6 tree (U5-T) against the pre-U6 spec, so it is not an
+    // M05 effect. Left for the U24 end-to-end driver pass; the failure
+    // report below carries the driver state.
     await openSurfaceAt(page, CONCOURSE.incidentDesk, 'm14_incident_desk');
     await clickElement(page, 'msg_1');
     await clickElement(page, 'node_coolant');
@@ -270,44 +323,32 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     types = await pilotEventTypes(page);
     expect(types).toContain('proto_m09_watch_check_completed');
 
-    // The desk lamp fault: initiating it is the M05 act (2 s neutral fix).
+    // The reading-desk lamp (M05, Unit 6): the accepted extra job's start
+    // control is the surface's "Start the job" — the first work action —
+    // and the standard 2 s work cycle completes the window.
     // World V1: reach the east–west axis first (the side counter blocks an
     // x-first leg along the gauge row), then the reading nook.
     await walkTo(page, CONCOURSE.monitorGauge.x, 13 * 32, { yFirst: true });
-    // Swallowed-press retry (SwiftShader input loss): the initiation is the
-    // act itself, so a lost press is re-pressed, never inferred.
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      await interactAt(page, CONCOURSE.deskLamp, {
-        approachOffset: { x: 0, y: 0 },
-      });
-      await page.waitForTimeout(600);
-
-      if (
-        (await pilotEventTypes(page)).includes('proto_m05_initiation_initiated')
-      ) {
-        break;
-      }
-    }
-    await page.waitForTimeout(2200);
-    types = await pilotEventTypes(page);
-
-    const lampState = await page.evaluate(() => {
-      const w = window as unknown as {
-        __playerProbe?: { x: number; y: number } | null;
-        __worldPromptProbe?: { prompt: boolean; text?: string | null } | null;
-        __lastRoomFeedbackText?: string | null;
-      };
-
-      return JSON.stringify({
-        at: w.__playerProbe ?? null,
-        prompt: w.__worldPromptProbe ?? null,
-        feedback: w.__lastRoomFeedbackText ?? null,
-      });
-    });
-
-    expect(types, `desk lamp initiation (observed ${lampState})`).toContain(
-      'proto_m05_initiation_initiated',
+    await openSurfaceAt(page, CONCOURSE.deskLamp, 'm05_lamp_job');
+    await page.waitForTimeout(450); // past the surface's settle window
+    await clickElement(page, 'start');
+    await page.waitForFunction(
+      () =>
+        (
+          window as unknown as {
+            researchRuntime?: { getEvents: () => { event_type: string }[] };
+          }
+        ).researchRuntime
+          ?.getEvents()
+          .some((e) => e.event_type === 'proto_m05_start_work_completed') ??
+        false,
+      undefined,
+      { timeout: 8000 },
     );
+    await closeSurface(page);
+    types = await pilotEventTypes(page);
+    expect(types).toContain('proto_m05_start_started');
+    expect(types).toContain('proto_m05_start_work_completed');
     expect(await itemStatus(page, 'M05')).toBe('pending'); // occasion 2 undeclared until the yard
 
     // Families are disjoint: every proto_* event carries exactly its own family

@@ -519,6 +519,11 @@ export async function enterConcourseWithOffers(
     await page.waitForTimeout(400);
   }
 
+  // M05 (Unit 6): the extra lamp job closes the chain; declined here.
+  await page.waitForTimeout(450);
+  await selectPromptOption(page, 2); // extra lamp job: decline
+  await page.waitForTimeout(400);
+
   if (options.readGauge1) {
     // South-lane discipline FIRST (rescue Concourse): Vale's approach lands
     // anywhere in 236–260; an eastward leg started at y ≤ 241 clips the
@@ -677,6 +682,10 @@ export async function exteriorShift(
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'exterior_work');
+  // M05 (Unit 6): Noor's extra flag job follows "Ready"; declined here.
+  await page.waitForTimeout(450);
+  await selectPromptOption(page, 2); // extra flag job: decline
+  await page.waitForTimeout(300);
 
   if (mast === 'full') {
     await startAntenna(page);

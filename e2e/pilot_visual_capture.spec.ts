@@ -172,6 +172,8 @@ test('pilot route visual capture — dock, concourse, workshop', async ({
   await selectPromptOption(page, 3); // watch offer: ask me later
   await page.waitForTimeout(400);
   await selectPromptOption(page, 3); // delivery offer: ask me later
+  await page.waitForTimeout(450);
+  await selectPromptOption(page, 2); // M05 (Unit 6): extra lamp job — decline
   await page.waitForTimeout(300);
   await openPromptAt(page, PILOT.concourse.vale, {
     approachOffset: { x: 0, y: 40 },
@@ -340,6 +342,9 @@ test('pilot route visual capture — yard, deck, completion', async ({
   });
   await shot(page, '20-noor-briefing');
   await selectPromptOption(page, 1); // Ready → exterior_work
+  await page.waitForTimeout(450);
+  await selectPromptOption(page, 2); // M05 (Unit 6): extra flag job — decline
+  await page.waitForTimeout(300);
 
   // 21 — scan action in the staked field (after the stake brief).
   await openPromptAt(

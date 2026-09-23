@@ -198,6 +198,10 @@ test.describe('M11 borrowed instruments on the route', () => {
     ]);
     await selectPromptOption(page, 2);
     await expectStage(page, 'exterior_work');
+    // M05 (Unit 6): Noor's extra flag job follows "Ready"; declined here.
+    await page.waitForTimeout(450);
+    await selectPromptOption(page, 2);
+    await page.waitForTimeout(300);
     expect(
       (await eventsByType(page, 'proto_m11_custody_custody_started')).length,
     ).toBe(2);

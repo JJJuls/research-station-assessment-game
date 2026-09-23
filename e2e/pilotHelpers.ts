@@ -950,6 +950,10 @@ export async function valeHandover(page: Page) {
   await selectPromptOption(page, 3); // watch offer: ask me later
   await page.waitForTimeout(400);
   await selectPromptOption(page, 3); // delivery offer: ask me later
+  // M05 (Unit 6): the extra lamp job closes the chain; the spine declines
+  // it (a deliberate press past the stage's 400 ms settle window).
+  await page.waitForTimeout(450);
+  await selectPromptOption(page, 2); // extra lamp job: decline
   await page.waitForTimeout(300);
   await openPromptAt(page, PILOT.concourse.vale, {
     approachOffset: { x: 0, y: 56 },
@@ -1033,6 +1037,11 @@ export async function labToYardBriefed(page: Page) {
   });
   await selectPromptOption(page, 1);
   await expectStage(page, 'exterior_work');
+  // M05 (Unit 6): Noor's extra flag job follows "Ready"; the spine
+  // declines it (a deliberate press past the stage's 400 ms settle window).
+  await page.waitForTimeout(450);
+  await selectPromptOption(page, 2); // extra flag job: decline
+  await page.waitForTimeout(300);
 }
 
 /**

@@ -48,12 +48,7 @@ import {
   ScanController,
   setFieldActionTelemetryScene,
 } from '../fieldActions';
-import {
-  beginManualWorldAction,
-  endManualWorldAction,
-  isWorldActionActive,
-  performWorldAction,
-} from '../gameplay/actions';
+import { isWorldActionActive, performWorldAction } from '../gameplay/actions';
 import { sfxMachineOn, sfxUnavailable } from '../gameplay/audio';
 import { FieldActionController } from '../gameplay/fieldActionKeys';
 import {
@@ -173,15 +168,22 @@ import {
   m26WindowOpen,
 } from '../pilot/windows/exteriorWindows';
 import {
-  censorM05,
-  completeM05Fix,
+  answerM05Offer,
+  closeM05Surface,
   declareM05,
-  initiateM05,
-  m05Open,
-  m05Presented,
+  exitM05,
+  guardM05Reload,
+  M05_JOBS,
+  m05HostPaused,
+  m05HostResumed,
+  m05OfferAvailable,
+  m05Probe,
   m05State,
-  presentM05,
+  openM05Control,
+  pollM05,
+  presentM05Offer,
 } from '../pilot/windows/m05Initiation';
+import { m05SurfaceModel } from '../pilot/windows/m05SurfaceModel';
 import {
   closeM08AtShiftEnd,
   closeM08Surface,
@@ -219,7 +221,7 @@ import {
   YARD_SPAWN,
 } from '../pilot/zoneSites';
 import { researchRuntime } from '../systems';
-import type { InteractionKey, PromptOption } from '../world';
+import type { InteractionKey, PromptOption, PromptStage } from '../world';
 import {
   YARD_COLS,
   YARD_LAYOUT,
@@ -229,14 +231,13 @@ import {
 } from '../world/layouts/yard';
 
 const TILE = 32;
-const M05_FIX_MS = 2000;
 
 declare global {
   interface Window {
     /** DEV-only, read-only exterior-episode probe (never read back). */
     __exteriorProbe?:
       | (ReturnType<typeof exteriorProbeSnapshot> & {
-          m05: { presented: boolean; open: boolean; initiated: boolean };
+          m05: ReturnType<typeof m05Probe>;
           stage: string;
         })
       | null;
@@ -310,6 +311,9 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     // Declarations (declared + offered; idempotent) — every window is
     // declared at zone entry whether or not it is entered.
     declareM05('o2');
+    // M05 (Unit 6): a flag job answered in an earlier page load is never
+    // re-offered (prior exposure recorded, technically incomplete).
+    guardM05Reload('o2', Date.now());
     declareExteriorWindows();
     declareM08();
     declareM11('yard');
@@ -330,7 +334,14 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       this.demonstrateDisconnect();
     }
 
+    // M05 (Unit 6): another surface or an overlay pausing this scene makes
+    // the start control unusable — the focused clock pauses (the flag
+    // job's own surface is exempt inside the model).
+    this.events.on(Phaser.Scenes.Events.PAUSE, () => {
+      m05HostPaused('o2', Date.now());
+    });
     this.events.on(Phaser.Scenes.Events.RESUME, () => {
+      m05HostResumed('o2', Date.now());
       this.refreshAllVisuals();
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -865,6 +876,47 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     };
   }
 
+  private m05TickPending = false;
+  private m05TickSerial = 0;
+
+  /** M05 (Unit 6): the flag job's surface host — wall-clock tick (M25 precedent). */
+  private m05SurfaceHost() {
+    return {
+      now: () => Date.now(),
+      // The Leave button and ESC take the SAME path: pause first, then close.
+      close: () => {
+        closeM05Surface('o2', Date.now());
+        activeWorkSurface(this)?.close();
+      },
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+      later: (ms: number, fn: () => void) => {
+        if (this.m05TickPending) {
+          return;
+        }
+
+        this.m05TickPending = true;
+
+        const serial = this.m05TickSerial;
+
+        window.setTimeout(() => {
+          if (serial !== this.m05TickSerial) {
+            return;
+          }
+
+          this.m05TickPending = false;
+
+          if (activeWorkSurface(this) === null) {
+            return;
+          }
+
+          fn();
+          activeWorkSurface(this)?.refresh();
+        }, ms);
+      },
+    };
+  }
+
   private buildCouplingSite() {
     const site = YARD_SITES.coupling;
 
@@ -1227,42 +1279,43 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       },
     });
 
-    // ——— Cable flag (M05 occasion 2) — never mentioned. ———
+    // ——— Cable flag (M05 occasion 2, Unit 6): the accepted extra job's
+    // start control. Before acceptance the flag reads tied off. ———
     const flag = YARD_SITES.cableFlag;
 
     this.addStation({
       interactionKey: 'pilotStation',
-      label: 'Cable Flag',
+      // One name everywhere (Noor's offer, the surface title, the prompt):
+      // "E — Check the guy-line flag" (review U6 G-F4).
+      label: 'guy-line flag',
+      verb: 'Check the',
       texture: 'proc-survey-stake-flagged',
       x: flag.x,
       y: flag.y,
       onPromptOpened: () => {
         this.logStationOpened('cable_flag', {});
 
-        if (!m05Open('o2')) {
-          this.showFeedbackMessage('Guy-line flag tied off.');
+        if (activeWorkSurface(this) !== null) {
+          return false;
+        }
+
+        if (openM05Control('o2', Date.now()) === 'not_accepted') {
+          this.showFeedbackMessage(M05_JOBS.o2.idle);
 
           return false;
         }
 
-        if (initiateM05('o2', Date.now(), 'keyboard')) {
-          // Manual world-action bracket for the 2 s neutral fix; ended on
-          // the timer and on shutdown (D-V2-4 lesson).
-          beginManualWorldAction();
-
-          const endBracket = () => {
-            endManualWorldAction();
-            this.events.off('shutdown', endBracket);
-          };
-
-          this.events.once('shutdown', endBracket);
-          this.time.delayedCall(M05_FIX_MS, () => {
-            completeM05Fix('o2', Date.now(), 'keyboard');
-            endBracket();
-            this.cableFlag?.setVisible(false);
-            this.showFeedbackMessage('Guy-line flag re-tied.');
-          });
-        }
+        openWorkSurface(this, {
+          surfaceId: 'm05_flag_job',
+          model: () => m05SurfaceModel(this.m05SurfaceHost(), 'o2'),
+          onClose: () => {
+            closeM05Surface('o2', Date.now());
+          },
+          onClosed: () => {
+            this.m05TickSerial += 1;
+            this.m05TickPending = false;
+          },
+        });
 
         return false;
       },
@@ -1949,6 +2002,11 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
           this.refreshGuidance();
         };
 
+        // M05 (Unit 6): every "Ready" is followed by the explicit offer of
+        // the extra flag job (its own stage; the "Ready" options keep
+        // their positions and meanings).
+        const flagJob = () => this.flagJobOfferStage();
+
         if (!m11OfferAvailable('yard')) {
           return {
             body,
@@ -1957,6 +2015,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
                 label: 'Ready.',
                 tag: 'yard_brief_ack',
                 onSelected: ready(null),
+                nextStage: flagJob,
               },
             ],
           };
@@ -1969,16 +2028,23 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
             body +
             '\nMy torque driver is in the supply crate on the apron — borrow it while you work out here if you like. It is mine: hand it back to me, or put it back in the supply crate, before you leave the yard.',
           options: [
-            { label: 'Ready.', tag: 'yard_brief_ack', onSelected: ready(null) },
+            {
+              label: 'Ready.',
+              tag: 'yard_brief_ack',
+              onSelected: ready(null),
+              nextStage: flagJob,
+            },
             {
               label: 'Ready — and I will take the driver.',
               tag: 'yard_brief_ack_loan_accept',
               onSelected: ready(true),
+              nextStage: flagJob,
             },
             {
               label: 'Ready — no need for the driver.',
               tag: 'yard_brief_ack_loan_decline',
               onSelected: ready(false),
+              nextStage: flagJob,
             },
           ],
         };
@@ -2019,14 +2085,72 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     }
   }
 
+  /**
+   * M05 occasion 2 (Unit 6): the explicit offer of the extra flag job
+   * right after Noor's "Ready" (the briefing chain's end), so acceptance
+   * is followed by a usable start opportunity. Accepting and declining
+   * are both deliberate; a press inside the settle window after the stage
+   * appears is refused by the model and the stage re-presented in place.
+   */
+  private m05LastAnswer:
+    | 'accepted'
+    | 'declined'
+    | 'refused'
+    | 'invalid'
+    | null = null;
+
+  private flagJobOfferStage(): PromptStage | null {
+    if (!m05OfferAvailable('o2') || !presentM05Offer('o2', Date.now())) {
+      return null;
+    }
+
+    const answer = (accepted: boolean, position: number) => () => {
+      this.m05LastAnswer = answerM05Offer(
+        'o2',
+        accepted,
+        position,
+        Date.now(),
+        'keyboard',
+        // Entry-state covariates (review U6 S-F3): the loan carried into
+        // the window; the supply crate (its return point) stands beside
+        // the flag.
+        { m11_driver_carried: m11CarryingItem('yard') },
+      );
+    };
+    const again = () =>
+      this.m05LastAnswer === 'refused' ? this.flagJobOfferStage() : null;
+
+    return {
+      body: 'Noor: One small extra, if you want it — the guy-line flag on the airlock apron has come loose (east of the supply crate). It takes a moment at the flag. Will you take it?',
+      options: this.npcBeatOptions('pilotNoor', {
+        body: '',
+        options: [
+          {
+            label: 'Yes — I will take the flag job.',
+            tag: 'flag_job_accept',
+            feedback: 'Noor: Thanks. The flag is east of the crate.',
+            onSelected: answer(true, 1),
+            nextStage: again,
+          },
+          {
+            label: 'No — leave the flag job.',
+            tag: 'flag_job_decline',
+            feedback: 'Noor: Understood.',
+            onSelected: answer(false, 2),
+            nextStage: again,
+          },
+        ],
+      }),
+    };
+  }
+
   /** The ONE interruption point: the required return duty begins. */
   private finishOutside() {
     const now = Date.now();
 
-    if (m05Open('o2')) {
-      censorM05('o2', now, 'stage_advanced');
-      this.cableFlag?.setVisible(false);
-    }
+    // M05 (Unit 6): the shift end exits an unstarted accepted flag job (a
+    // started one keeps its latency; the work cycle as it stands).
+    exitM05('o2', now, 'shift_ended');
 
     endExteriorShift(now);
     closeM08AtShiftEnd(now);
@@ -2267,9 +2391,6 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     }
   }
 
-  // ————————————————————————————————— M05 occasion 2 ——
-
-  /** Presented at the first quiet moment after the briefing was acknowledged. */
   /** Unit 7 (V19): mast art follows the restoration state; a slow two-frame
    * signal pulse once the antenna is restored (reduced motion: held). */
   private refreshMastArt() {
@@ -2315,21 +2436,28 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       this.lineBChip ?? null,
     ]);
 
-    if (
-      !m05Presented('o2') &&
-      pilotStageAtOrAfter('exterior_work') &&
-      pilotStage() === 'exterior_work' &&
-      this.physicalInputEligible()
-    ) {
-      const flag = YARD_SITES.cableFlag;
+    // M05 occasion 2 (Unit 6): the focused clock starts at the first
+    // moment after acceptance with no prompt, transition or world action
+    // holding the yard (a paused host is handled by the pause/resume
+    // hooks), pauses while any returns, and the cap closes a non-start.
+    const flag = YARD_SITES.cableFlag;
+    const worldAction = isWorldActionActive();
 
-      presentM05('o2', Date.now(), {
-        eligible: true,
-        distance: Math.hypot(this.player.x - flag.x, this.player.y - flag.y),
-        comprehension: 'passed',
-      });
-      this.cableFlag?.setVisible(true);
-    }
+    pollM05(
+      'o2',
+      Date.now(),
+      {
+        prompt: !this.physicalInputEligible() && !worldAction,
+        worldAction,
+      },
+      Math.hypot(this.player.x - flag.x, this.player.y - flag.y),
+    );
+
+    const job = m05State('o2');
+
+    this.cableFlag?.setVisible(
+      job.accepted === true && job.work_completed_at_ms === null,
+    );
 
     if (this.cableFlag?.visible && !prefersReducedMotion()) {
       // A loose flag flapping (glyph + motion, never colour-only).
@@ -2349,10 +2477,8 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
   protected onRoomExit(): void {
     const now = Date.now();
 
-    if (m05Open('o2')) {
-      censorM05('o2', now, 'left_zone');
-      this.cableFlag?.setVisible(false);
-    }
+    // M05 (Unit 6): leaving the yard exits an unstarted accepted flag job.
+    exitM05('o2', now, 'room_left');
 
     // M11 (Unit 3): the first departure from the yard freezes the custody.
     departM11('yard', now);
@@ -2606,7 +2732,6 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
 
   private refreshProbes() {
     const episode = exteriorEpisode();
-    const m05 = m05State('o2');
 
     window.__fieldActionsProbe = {
       scene: this.scene.key,
@@ -2662,11 +2787,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     window.__exteriorProbe = {
       ...exteriorProbeSnapshot(),
       stage: pilotStage(),
-      m05: {
-        presented: m05Presented('o2'),
-        open: m05Open('o2'),
-        initiated: m05.initiatedAtMs !== null,
-      },
+      m05: m05Probe('o2'),
     };
   }
 }

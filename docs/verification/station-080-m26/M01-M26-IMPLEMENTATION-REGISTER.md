@@ -84,7 +84,7 @@ status at this register version — updated by each unit).
 | M02  | Revise and extend       | 1    | `m02_correct_first_retrievals`: correct first retrievals / 6; 0–6; better traceability                                                                                                                               | filing choices, retrieval latency                                                                                                            | behavioural counterpart | v2-ledger route (two gated probes) — planned                                                                                      |
 | M03  | Retain and verify       | 2    | `m03_tools_restored`: restored / 6; 0–3 per occasion; more tidying                                                                                                                                                   | object states                                                                                                                                | retained core           | v2-ledger route (five residuals per occasion) — planned                                                                           |
 | M04  | Extend occasions        | 2    | `m04_undisposed_pieces`: undisposed incl. carried / 6; more own mess                                                                                                                                                 | per-job values                                                                                                                               | behavioural counterpart | v2-ledger route (one job) — planned                                                                                               |
-| M05  | Redesign                | 2    | `m05_start_latency`: focused seconds to first work action + start/deferral/exit/cap per accepted occasion                                                                                                            | acceptance, exposure                                                                                                                         | behavioural counterpart | v2-ledger route (silent faults) — planned                                                                                         |
+| M05  | Redesign                | 2    | `m05_start_latency`: per accepted occasion the focused ms from eligibility to the first work action + status started / deferred / exited / cap / interrupted; never a starter-only mean                              | `m05_acceptance_exposure` (offer, answer, eligibility wait, exposure by cause, control views, work, late start)                              | behavioural counterpart | v3 route: `proto_m05_start_o1` (Concourse, ep 1) + `proto_m05_start_o2` (Recovery Yard, ep 4) — implemented (U6)                  |
 | M06  | Redesign                | 1    | `m06_unique_correct_orders`: unique correct orders in 60 s; 0–12; more useful output                                                                                                                                 | first-pass accuracy, rework, actual stop time                                                                                                | behavioural counterpart | v2-ledger route (four orders, no budget) — planned                                                                                |
 | M07  | Retain with controls    | 1    | `m07_stages_completed`: stages / 6 at the closing milestone; more routine completion                                                                                                                                 | returns                                                                                                                                      | retained core           | v2-ledger route (P7 valid-zero defect) — planned                                                                                  |
 | M08  | Add controlled task     | 1    | `m08_work_choice_fraction`: Work / valid choices; 0–6; more work chosen (exploratory)                                                                                                                                | fractions by benefit level, practice performance                                                                                             | exploratory             | v3 route: `proto_m08_effort_choice`, Recovery Yard, ep 4 — implemented and reviewed (U2 + U2-R)                                   |
@@ -419,6 +419,101 @@ the board's optionality is stated once in the status line; the first
 press of a blocked job is the first work action by design (owner question
 §5.37).\_
 
+_Unit 6 (M05): as-built — two explicitly accepted extra jobs. Occasion
+`o1` (window `m05_start_o1`, opportunity `proto_m05_start_o1`, Concourse,
+episode 1): Vale's reading-desk lamp connector at the existing reading-desk
+lamp station (`concourse.reading_desk_lamp`, 124,240; approached from the
+east), offered by a dedicated stage at the END of the handover chain
+(after the watch offer, the delivery offer and — when accepted — the
+standardised interruption): "Vale: One small extra job, if you want it —
+the reading-desk lamp connector has worked loose (the reading table,
+south-west corner). It takes a moment at the lamp. Will you take it?" with
+"Yes — I will take the lamp job." (option 1) / "No — leave the lamp job."
+(option 2). Occasion `o2` (window `m05_start_o2`, opportunity
+`proto_m05_start_o2`, Recovery Yard, episode 4): Noor's loose guy-line flag
+at the existing cable-flag station (`yard.cable_flag`, 1124,578), offered
+by a matching stage right after any of the three "Ready" options
+("…the guy-line flag on the airlock apron has come loose (east of the
+supply crate)…"; "Yes — I will take the flag job." / "No — leave the flag
+job."). Both stages refuse a press inside a 400 ms settle window
+(`M05_SETTLE_MS`; `offer_press_refused`, the stage re-presented in place,
+`offer_represented`). Family `proto_m05_start_`(events:`presented`once
+at the first presentation,`offer*represented`, `offer_press_refused`,
+`offer_answered`with`accepted`, `option_position`, `offer_latency_ms`,
+`opportunity_opened`at the answer (accepted OR declined — a decline opens
+and completes the window outside the set, M11 precedent),`eligible`with`wait_before_eligible_ms`and`distance_px`, `control_presented`(the job
+surface opened before the decision;`view`, `focused_ms`),
+`press_refused`(a press inside the surface's settle window),`started`with`latency_focused_ms`, `latency_wall_ms`, `excluded_ms`by cause,`control_views`, `deferred`, `cap_reached`, `exited`with`detail`room_left / shift_ended,`late_start`with`after`and`since_closure_ms`, `work_completed`with`late`, `surface_closed`,
+`surface_reopened`, `window_closed`, `technical_failure` only as the
+reload marker). Eligibility and the clock: after acceptance the scene
+polls every frame (`pollM05`); the focused clock (`FocusedClock`,
+registered with the focus monitor for `focus_loss`/`hidden`) STARTS at
+the first poll with no block — no prompt panel, typewriter or transition
+(`physicalInputEligible`), no timed world action, and the host scene not
+paused under another surface or overlay (scene PAUSE / RESUME hooks) —
+so the M09 / M10 offers and the interruption that follow Vale's briefing
+hold it unstarted; once running it PAUSES under `unusable_controls`(prompt / paused host) and`animation_lock`(world action) and resumes
+when the block lifts; the job's own surface is never a block. Start
+control: the station opens "READING-DESK LAMP" / "GUY-LINE FLAG" ("Job:
+reseat the lamp connector. Start when you are ready, or not now.") with
+"Start the job (S)" and "Not now (N)" on one row and "Leave (ESC)" apart;
+Start is the first work action (latency = focused ms since eligibility;
+the clock stops; a standard 2 FOCUSED-second work cycle`M05_WORK_MS`runs on the surface — "Reseating the connector…" → "Connector reseated."
+— paused by a closed surface,`work_completed`completes the window);
+"Not now" closes the occasion as`deferred` (`voluntary_stop`, exposure
+recorded, latency null; the surface closes with "Noted."); leaving the
+room through any door, or Noor's shift end, closes an unstarted accepted
+occasion as `exited` (`route_departure`) and a started one keeps its
+latency with the work cycle as it stands; 60 focused seconds without a
+start close it as `cap` (`cap`, censored, latency null — silent: no
+countdown, no message); a start after any closure is a LATE START
+(companion `late_start`, the work runs, the primary never rewritten; "Not
+now" is not offered again); before acceptance (or after a decline) the
+stations read "Lamp steady." / "Guy-line flag tied off." and open no
+surface; the lamp flicker / flag flap mark an accepted, unfinished job.
+Reload guard: an occasion opened (accepted or declined) in an earlier
+page load is never re-offered (`guardM05Reload`at zone entry: prior
+exposure recorded,`technical_failure`, features `interrupted`). Review:
+a never-offered occasion is absent; an accepted, still-open one closes
+censored (`interrupted`, kind review). Formula `m05_start_latency`= per
+ACCEPTED occasion`{status, latency_focused_ms (started only),
+latency_wall_ms, exposure_focused_ms, censored, closure_reason}`— an
+object keyed by occasion, never a sum or a mean (the row's`numerator`,
+`denominator`and`planned_denominator`are null); cross-checked against
+the`started`events (a record claiming a start without its event, or a
+start event under another status, is`technical_failure`); row
+disposition `observed`when at least one accepted occasion carries a
+status,`pending`while an accepted occasion is open (an observed value
+beside it kept under`pending`), `declined`when every offered job was
+declined,`not_presented`when no offer was made,`interrupted`after a
+reload (also when one occasion was held back — the other's value kept);
+row`censored`when any occasion is`cap`/`interrupted`/ open;
+components: accepted / observed / declined / pending / interrupted
+occasions,`status_by_occasion`, `starters`, `non_starters`,
+`started_event_agrees`. Companion `m05_acceptance_exposure`(per occasion:
+offer presentations and refused presses, answer position and latency,
+eligibility and`wait_before_eligible_ms`, `distance_px_at_eligibility`,
+exposure focused / wall ms, `excluded_ms`by cause, control views, first
+control view, refused surface presses, start input mode, work completion,
+late start, closure reason;`{declined}`/`{pending}`/`{interrupted}`markers; null when never offered). Extractor`src/measurement/features/m05.ts`; tests `e2e/m05_start.spec.ts`(7
+pure) and`e2e/m05_start_route.spec.ts`(browser, 2: accept with a
+carried press refused, the plan board's time excluded, pointer start and
+work, flag job accepted → keyboard "Not now" → late start, shift end,
+offline reproduction; decline → lamp steady, flag job accepted → 61 s of
+inaction →`cap`without a`started` event, late start still offered,
+offline reproduction). The v2 silent-fault route (`proto_m05_initiation*\*`,
+presented at a quiet moment, censored on departure) is retired from the
+route; its family keeps its v2 meaning in the ledger. Limitations: the
+work is nominal (one press plus a 2 s cycle), so the only cost of starting
+is the walk and the press; the job sites are fixed, so the walking
+distance from the briefing is a shared, recorded (`distance_px`)
+confound; acceptance is answered on a pre-focused first card (accept
+first, fixed order) behind a settle window; the cap is silent (a
+participant never learns that a window closed); "exited" folds the room
+departure and the shift end into one status with `detail` beside it;
+deferral is terminal for the primary (a later start is a companion). Owner
+questions §5.43–5.49.\_
+
 _Unit 1 (foundation): no item mechanic changed; every item remains on its
 v2-ledger route with `implementation_status: planned`; the as-built event
 families are exactly the frozen v2 families. The register, protocol
@@ -644,3 +739,101 @@ reversible, none changes the formula (planned jobs / 6).
     the "incident plan board" named by Vale; o2 through "Open the return
     batch (three jobs)." on the Work Order Board. Alternatives: a neutral
     packet name for o1; matching names and route mentions for both.
+
+The U6 (M05) implementation took the following defaults; each is
+reversible, none changes the per-occasion record's meaning (focused
+latency to the first work action plus its status) or its separation from
+a declined occasion.
+
+43. **When the clock starts.** Default: at the first moment after
+    acceptance with no competing block — the start control (the job
+    site's station and its surface) is then visible in the room and
+    usable — so the latency includes walking to the site and any
+    deciding in between, while time under a competing prompt, surface,
+    overlay or world action is excluded by cause. Alternative: start the
+    clock only when the job surface itself is open (the on-surface
+    deciding time alone); `first_control_view_focused_ms` is exported so
+    that alternative latency can be derived offline.
+44. **Where the offer sits.** Default: a dedicated stage at the end of
+    each briefing chain (after the M09 / M10 offers and the interruption
+    in the Concourse; right after "Ready" in the yard), accept first,
+    fixed order, pre-focused first card, 400 ms settle window (M25
+    precedent). Alternatives: fold the offer into the acknowledgement's
+    options with a lapse category (M11 pattern, §5.17); counterbalance
+    accept / decline order.
+45. **Deferral is terminal.** Default: "Not now" closes the occasion as
+    `deferred` (voluntary stop); a later "Start" is a late start recorded
+    beside it. Alternative: keep the occasion open after a deferral and
+    count deferrals as a companion, letting a later start within the cap
+    be the observed latency.
+46. **A silent cap.** Default: the 60 s focused cap closes the occasion
+    without any participant-facing message or countdown; the job stays
+    startable (late start). Alternatives: tell the participant the job
+    window closed (M25's cap message precedent); remove the control after
+    the cap.
+47. **Exit vocabulary.** Default: one status `exited` for both the room
+    departure and Noor's shift end, with `detail` (room_left /
+    shift_ended) beside it. Alternative: distinct statuses.
+48. **Competing surfaces as pauses.** Default: any other work surface
+    (the M01 board, the packet, the desk, an overlay) and any prompt pause
+    the clock under `unusable_controls`, a timed world action under
+    `animation_lock`. Alternative: treat chosen work on another surface as
+    observation time (only prompts and locks pause), which would read
+    "doing the other things first" as latency. **Review U6 S-F2 (high)
+    on the same rule:** walking between the leg's REQUIRED tasks does
+    count (Vale: "Work through it, then confirm the handover"; Noor:
+    "seven jobs — work them in this order", the first of them ~900 px
+    from the flag), so a participant who follows the NPC's order may reach
+    `cap` or `exited` through compliance rather than difficulty starting.
+    The owner's instruction phrased the rule as a task that _prevents a
+    usable start opportunity_, which is what is built; the owner must
+    confirm or choose: (b) clock only while the job surface is open; (c)
+    clock only after the leg's required tasks are done or at a declared
+    quiet point (which may mean moving the offer); (d) clock only while
+    the start control is on screen or within a set proximity.
+49. **The work after the start.** Default: a nominal 2 s focused cycle on
+    the surface (identical for both jobs), so starting costs only the walk
+    and the press. Alternative: a short manual sub-action so the start
+    has a visible cost.
+
+The U6 independent review (scientific + gameplay, read-only) surfaced the
+following; defaults applied, reversible, none changes the per-occasion
+record or its separation from a declined occasion.
+
+50. **Entry-state covariates (review S-F3).** Default: the window's entry
+    snapshot at the answer records the other offers answered before it
+    (o1: `m09_watch_accepted`, `m10_promise_accepted`,
+    `m10_interruption_shown`; o2: `m11_driver_carried`) and the job sites
+    stay where they are (the lamp ~96 px from the M01 board and on the
+    west-door route; the flag ~127 px from the M11 return crate).
+    Alternatives: move the lamp offer out of the M09 / M10 chain;
+    relocate a site (no audited free spot; both positions are audited
+    fixtures).
+51. **Recalling the job's location (review G-F5).** Default: the
+    location is said once in the offer and in the acceptance feedback
+    ("The lamp is on the reading table." / "The flag is east of the
+    crate."); no "About the lamp job…" re-ask option exists at Vale or
+    Noor, and the only lasting cue is the flicker / flap at the site.
+    Alternative: a re-ask option or a stronger marker (changes the job's
+    salience, so a scientific decision).
+52. **The station's line after a decline (review G-F6).** Default: "Lamp
+    steady." / "Guy-line flag tied off." (the object reads as in order,
+    as before the offer), although the NPC has just called it loose.
+    Alternative: a neutral line naming the loose part without fixing or
+    denying it (adds a cue after the decline).
+53. **Analytic treatment of `deferred` and `exited` (review, open
+    decision 4).** Default: both exported as the participant's own
+    closures (`censored: false`, latency null) beside `cap` and
+    `interrupted` (`censored: true`). Alternatives: treat exit (or both) as
+    right-censoring at the closure time.
+54. **Default focus on the surface (review S-F5, G flag 2).** Default:
+    "Start the job" is the first focusable control and therefore
+    pre-focused; `control_order` and `focus_default` are exported on
+    `control_presented`, `started` and `deferred`. Alternatives: no
+    pre-focused control; counterbalance the Start / Not now order.
+55. **Cap while the job surface is open (review S-F1).** Default: the cap
+    applies on the surface too (the surface ticks the poll; a Start press
+    at or past the cap is a late start, a "Not now" press at the cap is
+    the cap's closure), and the panel then shows the post-closure state
+    (no "Not now"; the start control remains). Alternative: let a decision
+    already in progress on the surface finish and flag it.

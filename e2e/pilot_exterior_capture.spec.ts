@@ -62,8 +62,9 @@ test('exterior recovery — thirteen participant-view frames', async ({
   await walkTo(page, 420, 250, { yFirst: true });
   await shot(page, '09-exterior-arrival');
 
-  // 10 — M05 occasion 2: the loose cable flag (presented, never mentioned).
-  expect((await exteriorProbe(page)).m05.presented).toBe(true);
+  // 10 — M05 occasion 2 (Unit 6): the guy-line flag — offered by Noor after
+  // "Ready" (declined by the spine), the job site itself on the apron.
+  expect((await exteriorProbe(page)).m05.offered).toBe(true);
   await walkTo(page, YARD.flag.x - 60, YARD.flag.y - 44, { yFirst: true });
   await shot(page, '10-m05-cable-flag');
 

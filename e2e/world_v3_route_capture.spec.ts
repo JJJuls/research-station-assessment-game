@@ -351,6 +351,8 @@ test('world V3 — full participant route capture with recording', async ({
   await selectPromptOption(page, 1); // delivery promise: accept
   await page.waitForTimeout(400);
   await selectPromptOption(page, 1); // the standardised interruption
+  await page.waitForTimeout(450);
+  await selectPromptOption(page, 2); // M05 (Unit 6): extra lamp job — decline
   await page.waitForTimeout(400);
   // South-lane discipline first (returnHelpers precedent): reach y 252 at
   // ±4 before the eastward leg, clear of the operations-desk row.
@@ -423,6 +425,9 @@ test('world V3 — full participant route capture with recording', async ({
   await snap(page, 'yard-noor-briefing');
   await selectPromptOption(page, 1);
   await expectStage(page, 'exterior_work');
+  await page.waitForTimeout(450);
+  await selectPromptOption(page, 2); // M05 (Unit 6): extra flag job — decline
+  await page.waitForTimeout(300);
   await yardVia(
     page,
     YARD.mast.x + YARD_APPROACH.mast.x,

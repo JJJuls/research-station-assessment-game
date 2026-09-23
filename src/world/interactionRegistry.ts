@@ -304,11 +304,13 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     verb: 'Use',
     label: 'desk lamp',
     availability: 'always',
-    opens: { kind: 'action', id: 'm05_fix' },
+    // Station 080 M05 (Unit 6): the accepted lamp job's work surface (the
+    // visible start control); before acceptance the lamp reads steady.
+    opens: { kind: 'work_surface', id: 'm05_lamp_job' },
     footprint: { w: 2, h: 2 },
     depthAnchor: 'foot',
     stage: 'any',
-    window: 'm05_initiation_o1',
+    window: 'm05_start_o1',
     // The lamp sits on the reading table against the south-west hull;
     // approached from the east, clear of the table's footprint and of
     // the plan board's radius (audited ±12 px pocket).
@@ -840,9 +842,10 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'yard.cable_flag',
     Y.cableFlag,
     'Check the',
-    'Cable Flag',
-    { kind: 'action', id: 'm05_fix_o2' },
-    'm05_initiation_o2',
+    'guy-line flag',
+    // Station 080 M05 (Unit 6): the accepted flag job's work surface.
+    { kind: 'work_surface', id: 'm05_flag_job' },
+    'm05_start_o2',
     { x: 1142, y: 530 },
     { w: 1, h: 2 },
   ),

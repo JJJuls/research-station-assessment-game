@@ -279,7 +279,7 @@ const OPERATIONAL_LABELS: Partial<Record<M26ItemId, string>> = {
   M02: 'Case workspace (Workshop)',
   M03: 'Press stations (Workshop)',
   M04: 'Sample cutter (Workshop)',
-  M05: 'Fault report (Concourse / Yard)',
+  M05: 'Extra jobs (Concourse / Yard)',
   M06: 'Dispatch console (Workshop)',
   M07: 'Calibration bench (Workshop)',
   M08: 'Support console (Recovery Yard)',
@@ -591,6 +591,30 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'behavioural_counterpart',
     direction: 'redesign',
     occasions: 2,
+    // Unit 6: the approved redesign landed (Vale's reading-desk lamp job in
+    // the Concourse, Noor's guy-line flag job in the Recovery Yard). The v2
+    // silent-fault family `proto_m05_initiation_*` keeps its v2 meaning.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m05_start_o1', 'proto_m05_start_o2'],
+      windows: [
+        {
+          id: 'm05_start_o1',
+          occasion: 'o1',
+          zone: 'station_concourse',
+          episode: 1,
+        },
+        {
+          id: 'm05_start_o2',
+          occasion: 'o2',
+          zone: 'exterior_recovery_yard',
+          episode: 4,
+        },
+      ],
+      family_prefixes: ['proto_m05_start_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Two explicitly accepted jobs; the clock starts at a visible, usable start control with no competing required task; start, explicit deferral or exit; up to 60 focused seconds per occasion.',
     features: [
@@ -601,7 +625,7 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
         planned_denominator: null,
         denominator_kind: 'conditional_eligibility',
         numerator:
-          'per accepted occasion: focused seconds from eligibility to the first work action, plus status started | deferred | exited | cap',
+          'per accepted occasion: focused milliseconds from eligibility (accepted, start control visible and usable, no competing required task) to the first work action, plus status started | deferred | exited | cap | interrupted',
         denominator: null,
         range:
           '0–60 s per occasion with status; cap = censored, never an observed start',
@@ -610,6 +634,14 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
           'declined occasion → not in the set; a non-start keeps its exposure and reason; never a starter-only mean',
         role: 'primary',
       },
+      count(
+        'm05_acceptance_exposure',
+        'per occasion: offer, answer, eligibility wait, exposure by cause, control views, work completion, late start (state description)',
+        'object per occasion',
+        'not a score; retained separately',
+        'per occasion null when not offered',
+        'companion',
+      ),
     ],
   }),
   entry({

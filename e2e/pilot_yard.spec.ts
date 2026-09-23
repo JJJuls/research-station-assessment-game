@@ -47,7 +47,6 @@ import {
   faceCell,
   faProbe,
   finishOutside,
-  fixCableFlag,
   itemStatus,
   lastFeedback,
   leaveYard,
@@ -124,29 +123,30 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect(probe?.beacon?.label).toBe('Frozen Coolant Coupling');
     expect(probe?.objective).not.toMatch(/proto_|\bM\d{2}\b|persist/i);
 
-    // ——— M05 occasion 2: presented silently after "Ready.", independent
-    // of occasion 1 (which the spine left uninitiated and censored). ———
-    const o1 = await validityRecord(page, 'proto_m05_initiation_o1');
+    // ——— M05 occasion 2 (Unit 6): Noor's extra flag job was offered right
+    // after "Ready" and declined by the spine (labToYardBriefed) — a
+    // completed observation outside the set, independent of occasion 1
+    // (declined at Vale's handover by the same spine). The accept / start
+    // / defer / cap paths are exercised by e2e/m05_start_route.spec.ts. ———
+    const o1 = await validityRecord(page, 'proto_m05_start_o1');
 
-    expect(o1.completed).toBe(true); // censored observation (initiated=false)
+    expect(o1.completed).toBe(true); // declined: complete, outside the set
 
     let ext = await exteriorProbe(page);
 
-    expect(ext.m05.presented).toBe(true);
-    expect(ext.m05.initiated).toBe(false);
+    expect(ext.m05.offered).toBe(true);
+    expect(ext.m05.accepted).toBe(false);
+    expect(ext.m05.started).toBe(false);
 
-    const o2Opened = await eventsByType(
-      page,
-      'proto_m05_initiation_opportunity_opened',
-    );
-    const o2Open = o2Opened.find((e) => e.metadata?.occasion === 'o2');
+    const o2Answered = (
+      await eventsByType(page, 'proto_m05_start_offer_answered')
+    ).find((e) => e.metadata?.occasion === 'o2');
 
-    expect(o2Open).toBeDefined();
-    expect(o2Open?.metadata?.window_id).toBe('m05_initiation_o2');
-    expect(o2Open?.metadata?.comprehension_state).toBe('passed');
-    expect(typeof o2Open?.metadata?.presented_at_ms).toBe('number');
-
-    await fixCableFlag(page);
+    expect(o2Answered?.metadata).toMatchObject({
+      accepted: false,
+      option_position: 2,
+      window_id: 'm05_start_o2',
+    });
 
     const o2 = await validityRecord(page, OPPORTUNITY.m05o2);
 
@@ -154,17 +154,17 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect(o2.validity).toBe('valid');
 
     const o2Closed = (
-      await eventsByType(page, 'proto_m05_initiation_window_closed')
+      await eventsByType(page, 'proto_m05_start_window_closed')
     ).find((e) => e.metadata?.occasion === 'o2');
     const o2Raw = o2Closed?.metadata?.raw_components as Record<string, unknown>;
 
-    expect(o2Raw.occasion_id).toBe('o2');
-    expect(o2Raw.initiated).toBe(true);
-    expect(o2Raw.eligible_opportunity).toBe(true);
-    expect(typeof o2Raw.initiation_latency_ms).toBe('number');
-    expect(o2Raw.censored_reason).toBeNull();
+    expect(o2Raw.occasion).toBe('o2');
+    expect(o2Raw.accepted).toBe(false);
+    expect(o2Raw.status).toBeNull();
+    expect(o2Raw.latency_focused_ms).toBeNull();
+    expect(o2Raw.closure_reason).toBe('declined');
     expect(JSON.stringify(o2Raw)).not.toMatch(/aggregate|score|o1/);
-    await mark('M05 cable flag');
+    await mark('M05 flag job declined');
 
     // ——— M19: the frozen coupling to completion. ———
     await completeCoupling(page);
@@ -671,15 +671,13 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     ).toHaveLength(0);
     expect(await itemStatus(page, 'M24')).toBe('open');
     expect(await itemStatus(page, 'M20')).toBe('open');
-    // M05 occasion 2 censored on departure (complete observation, initiated=false).
+    // M05 occasion 2 (Unit 6) was declined at the briefing: exactly one
+    // closure (the decline) exists for it, and the departure adds none.
     expect(
-      (await eventsByType(page, 'proto_m05_initiation_window_closed')).some(
-        (e) =>
-          e.metadata?.occasion === 'o2' &&
-          (e.metadata?.raw_components as { censored_reason: string })
-            .censored_reason === 'left_zone',
+      (await eventsByType(page, 'proto_m05_start_window_closed')).filter(
+        (e) => e.metadata?.occasion === 'o2',
       ),
-    ).toBe(true);
+    ).toHaveLength(1);
 
     // Re-entry: everything persisted (scene recreated).
     await reenterYard(page);

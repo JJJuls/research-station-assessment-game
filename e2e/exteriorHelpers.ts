@@ -21,7 +21,6 @@ import {
 } from './journey';
 import {
   bootPilot,
-  interactAt,
   labApproach,
   openPromptAt,
   PILOT,
@@ -113,7 +112,7 @@ export const FORBIDDEN_TEXT =
   /proto_|\bM(0[1-9]|1[0-9]|2[0-6])\b|\bQ\d{2}\b|score|trait|persist|valid/i;
 
 export const OPPORTUNITY = {
-  m05o2: 'proto_m05_initiation_o2',
+  m05o2: 'proto_m05_start_o2',
   m19: 'proto_m19_progressive_valve',
   m20: 'proto_m20_antenna_restoration',
   m23: 'proto_m23_field_recovery',
@@ -131,7 +130,17 @@ export interface ExteriorProbe {
   zone_entries: number;
   caches: { id: string; item_id: string; x: number; y: number }[];
   dug_cells: { col: number; row: number }[];
-  m05: { presented: boolean; open: boolean; initiated: boolean };
+  /** Station 080 M05 (Unit 6): the accepted flag job's state (`m05Probe`). */
+  m05: {
+    offered: boolean;
+    accepted: boolean | null;
+    eligible: boolean;
+    status: 'started' | 'deferred' | 'exited' | 'cap' | 'interrupted' | null;
+    started: boolean;
+    work_done: boolean;
+    late_start: boolean;
+    window: 'unopened' | 'open' | 'closed';
+  };
   m19: {
     window: string;
     exit: string | null;
@@ -505,23 +514,6 @@ export async function finishOutside(page: Page) {
     undefined,
     { timeout: 8000 },
   );
-}
-
-/* ------------------------------------------------------------------ *
- * M05 occasion 2
- * ------------------------------------------------------------------ */
-
-export async function fixCableFlag(page: Page) {
-  await ensureOutsideCompound(page);
-  await interactAt(page, YARD.flag, { approachOffset: APPROACH.flag });
-  await page.waitForFunction(
-    () =>
-      (window as unknown as { __exteriorProbe?: ExteriorProbe | null })
-        .__exteriorProbe?.m05.initiated === true,
-    undefined,
-    { timeout: 6000 },
-  );
-  await page.waitForTimeout(2400);
 }
 
 /* ------------------------------------------------------------------ *

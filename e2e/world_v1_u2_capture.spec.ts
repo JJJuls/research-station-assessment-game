@@ -95,6 +95,8 @@ test('U2 capture — opening, Dock, Concourse, map', async ({ page }) => {
   await selectPromptOption(page, 3);
   await page.waitForTimeout(400);
   await selectPromptOption(page, 3);
+  await page.waitForTimeout(450);
+  await selectPromptOption(page, 2); // M05 (Unit 6): extra lamp job — decline
   await page.waitForTimeout(600);
   await shot(page, '09-concourse-triage');
   await press(page, 'm');

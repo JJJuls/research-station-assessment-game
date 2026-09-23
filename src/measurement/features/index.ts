@@ -4,6 +4,7 @@
  * offline reproduction see the same rule set.
  */
 import './m01';
+import './m05';
 import './m08';
 import './m11';
 import './m25';

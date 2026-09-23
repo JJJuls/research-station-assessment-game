@@ -161,6 +161,8 @@ test('slice capture — opening, Dock, Concourse, restoration, map', async ({
   await selectPromptOption(page, 3);
   await page.waitForTimeout(400);
   await selectPromptOption(page, 3);
+  await page.waitForTimeout(450);
+  await selectPromptOption(page, 2); // M05 (Unit 6): extra lamp job — decline
   await page.waitForTimeout(400);
   await openPromptAt(page, PILOT.concourse.vale, {
     approachOffset: { x: 0, y: 56 },

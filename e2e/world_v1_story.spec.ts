@@ -372,6 +372,8 @@ test.describe('World V1 story spine (runtime)', () => {
     await selectPromptOption(page, 3);
     await page.waitForTimeout(400);
     await selectPromptOption(page, 3);
+    await page.waitForTimeout(450);
+    await selectPromptOption(page, 2); // M05 (Unit 6): extra lamp job — decline
     await page.waitForTimeout(300);
 
     // In another zone the line names the way back, never a passed door.

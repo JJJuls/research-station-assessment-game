@@ -4,7 +4,8 @@
  * happen here (Unit 2).
  *
  * Episode-1 windows (ledger): M01 plan board, M05 initiation occasion 1
- * (the flickering desk lamp — nobody mentions it), M09 monitor watch
+ * (Station 080 U6: Vale's accepted reading-desk lamp job — offered at the
+ * end of the handover chain; the lamp is its start control), M09 monitor watch
  * (offered by Vale; two gauge checks), M10 component promise (offered by
  * Vale; standardised interruption), M12 quality packet 1, M14 incident
  * desk. Every packet is its own object on the work surface; completing one
@@ -21,10 +22,8 @@
 import Phaser from 'phaser';
 
 import { DepthLayer, key, worldDepth } from '../constants';
-import {
-  beginManualWorldAction,
-  endManualWorldAction,
-} from '../gameplay/actions';
+import { isWorldActionActive } from '../gameplay/actions';
+import { prefersReducedMotion } from '../inventory/ui/theme';
 import {
   M25_NORMALITY_OPTIONS,
   M25_NORMALITY_PROMPT,
@@ -59,14 +58,21 @@ import {
 } from '../pilot/windows/m01PlanBoard';
 import { m01SurfaceModel } from '../pilot/windows/m01SurfaceModel';
 import {
-  censorM05,
-  completeM05Fix,
+  answerM05Offer,
+  closeM05Surface,
   declareM05,
-  initiateM05,
-  m05Open,
-  m05Presented,
-  presentM05,
+  exitM05,
+  guardM05Reload,
+  M05_JOBS,
+  m05HostPaused,
+  m05HostResumed,
+  m05OfferAvailable,
+  m05State,
+  openM05Control,
+  pollM05,
+  presentM05Offer,
 } from '../pilot/windows/m05Initiation';
+import { m05SurfaceModel } from '../pilot/windows/m05SurfaceModel';
 import {
   answerM09Offer,
   closeM09Check,
@@ -126,7 +132,6 @@ import { KIT_INDICATOR } from '../world/kit/kitTextures';
 import { CONCOURSE_LAYOUT, CONCOURSE_SOLIDS } from '../world/layouts/concourse';
 
 const TILE = 32;
-const M05_FIX_MS = 2000;
 
 /**
  * Monitor gauge readings (Unit 5): the monitored loop drifts while the
@@ -224,6 +229,9 @@ export class StationConcourseScene extends PilotZoneScene {
   create(data?: { spawn?: string }) {
     declareM01('o1');
     declareM05('o1');
+    // M05 (Unit 6): a lamp job answered in an earlier page load is never
+    // re-offered (prior exposure recorded, technically incomplete).
+    guardM05Reload('o1', Date.now());
     declareM09();
     declareM10();
     declareM12('o1');
@@ -237,9 +245,16 @@ export class StationConcourseScene extends PilotZoneScene {
       openM09Check2(Date.now());
     }
 
+    // M05 (Unit 6): while another surface or an overlay pauses this scene
+    // the start control is unusable — the focused clock pauses (the lamp
+    // job's own surface is exempt inside the model).
+    this.events.on('pause', () => {
+      m05HostPaused('o1', Date.now());
+    });
     this.events.on('resume', () => {
       const now = Date.now();
 
+      m05HostResumed('o1', now);
       resumeM01Surface('o1', now);
       resumeM12Surface('o1', now);
       resumeM14Surface(now);
@@ -399,12 +414,14 @@ export class StationConcourseScene extends PilotZoneScene {
       },
     });
 
-    // ——— Reading-desk lamp fault (M05 occasion 1) — never mentioned ———
+    // ——— Reading-desk lamp (M05 occasion 1, Unit 6): the accepted extra
+    // job's start control. Before acceptance the lamp reads steady. ———
     this.addStation({
       interactionKey: 'pilotStation',
       label: 'desk lamp',
       verb: 'Use',
-      // A silent fault carries no standing indicator lamp (scientific review).
+      // The job is named by Vale and marked by the flicker while accepted;
+      // no standing indicator lamp (the plate bakes the reading desk).
       indicator: 'none',
       registryId: 'concourse.reading_desk_lamp',
       texture: 'w1-reading-desk',
@@ -413,41 +430,34 @@ export class StationConcourseScene extends PilotZoneScene {
       onPromptOpened: () => {
         this.logStationOpened('desk_lamp');
 
-        if (!m05Open('o1')) {
-          this.showFeedbackMessage(
-            m05Presented('o1') ? 'Lamp steady.' : 'Lamp steady.',
-          );
+        if (activeWorkSurface(this) !== null) {
           return false;
         }
 
-        if (initiateM05('o1', Date.now(), 'keyboard')) {
-          // Manual world-action bracket: the avatar holds still and no
-          // prompt opens for the neutral 2 s fix. The bracket MUST be
-          // ended (D-V2-4 fix: it never was, so every later interaction
-          // and all movement on the Concourse stayed frozen) — on the
-          // timer, and on scene shutdown if the participant leaves first.
-          beginManualWorldAction();
+        if (openM05Control('o1', Date.now()) === 'not_accepted') {
+          this.showFeedbackMessage(M05_JOBS.o1.idle);
 
-          const endBracket = () => {
-            endManualWorldAction();
-            this.events.off('shutdown', endBracket);
-          };
-
-          this.events.once('shutdown', endBracket);
-          this.time.delayedCall(M05_FIX_MS, () => {
-            completeM05Fix('o1', Date.now(), 'keyboard');
-            endBracket();
-            this.lampFlicker?.setVisible(false);
-            this.showFeedbackMessage('Lamp connector reseated.');
-          });
+          return false;
         }
+
+        openWorkSurface(this, {
+          surfaceId: 'm05_lamp_job',
+          model: () => m05SurfaceModel(this.m05SurfaceHost(), 'o1'),
+          onClose: () => {
+            closeM05Surface('o1', Date.now());
+          },
+          onClosed: () => {
+            this.m05TickSerial += 1;
+            this.m05TickPending = false;
+          },
+        });
 
         return false;
       },
     });
-    // The lamp head on the reading desk: the flicker IS the fault. The
-    // green lamp is baked into the plate at (96, 238); the flicker
-    // rectangle sits on its shade.
+    // The lamp head on the reading desk: the flicker marks the accepted,
+    // unfinished job. The green lamp is baked into the plate at (96, 238);
+    // the flicker rectangle sits on its shade.
     this.lampFlicker = this.add
       .rectangle(
         S.concourseFault.x - 28,
@@ -701,26 +711,82 @@ export class StationConcourseScene extends PilotZoneScene {
     };
   }
 
-  /** M05 occasion 1: presented at the first quiet moment after comprehension. */
-  protected onPilotUpdate(): void {
-    if (
-      !m05Presented('o1') &&
-      pilotStageAtOrAfter('incident_handover') &&
-      this.physicalInputEligible()
-    ) {
-      const S = CONCOURSE_STATIONS.concourseFault;
+  private m05TickPending = false;
+  private m05TickSerial = 0;
 
-      presentM05('o1', Date.now(), {
-        eligible: true,
-        distance: Math.hypot(this.player.x - S.x, this.player.y - S.y),
-        comprehension: 'passed',
-      });
-      this.lampFlicker?.setVisible(true);
-    }
+  /** M05 (Unit 6): the lamp job's surface host — wall-clock tick (M25 precedent). */
+  private m05SurfaceHost() {
+    return {
+      now: () => Date.now(),
+      // The Leave button and ESC take the SAME path: pause first, then close.
+      close: () => {
+        closeM05Surface('o1', Date.now());
+        activeWorkSurface(this)?.close();
+      },
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+      later: (ms: number, fn: () => void) => {
+        if (this.m05TickPending) {
+          return;
+        }
+
+        this.m05TickPending = true;
+
+        const serial = this.m05TickSerial;
+
+        window.setTimeout(() => {
+          if (serial !== this.m05TickSerial) {
+            return;
+          }
+
+          this.m05TickPending = false;
+
+          if (activeWorkSurface(this) === null) {
+            return;
+          }
+
+          fn();
+          activeWorkSurface(this)?.refresh();
+        }, ms);
+      },
+    };
+  }
+
+  /**
+   * M05 occasion 1 (Unit 6): the focused clock starts at the first moment
+   * after acceptance with no prompt, transition or world action holding
+   * the room (a paused host is handled by the pause/resume hooks), pauses
+   * while any of those returns, and the cap closes a non-start.
+   */
+  protected onPilotUpdate(): void {
+    const S = CONCOURSE_STATIONS.concourseFault;
+    const worldAction = isWorldActionActive();
+
+    pollM05(
+      'o1',
+      Date.now(),
+      {
+        prompt: !this.physicalInputEligible() && !worldAction,
+        worldAction,
+      },
+      Math.hypot(this.player.x - S.x, this.player.y - S.y),
+    );
+
+    const job = m05State('o1');
+
+    this.lampFlicker?.setVisible(
+      job.accepted === true && job.work_completed_at_ms === null,
+    );
 
     if (this.lampFlicker?.visible) {
+      // Reduced motion: a held, dimmed glyph instead of the flicker (the
+      // yard's flag flap follows the same rule — review U6 G-F3).
       this.lampFlicker.setAlpha(
-        Math.floor(this.time.now / 260) % 3 === 0 ? 0.25 : 0.9,
+        prefersReducedMotion()
+          ? 0.6
+          : Math.floor(this.time.now / 260) % 3 === 0
+            ? 0.25
+            : 0.9,
       );
     }
   }
@@ -728,10 +794,9 @@ export class StationConcourseScene extends PilotZoneScene {
   protected onRoomExit(): void {
     const now = Date.now();
 
-    if (m05Open('o1')) {
-      censorM05('o1', now, 'left_zone');
-      this.lampFlicker?.setVisible(false);
-    }
+    // M05 (Unit 6): leaving through any door exits an unstarted accepted
+    // job (a started one keeps its latency; the work cycle as it stands).
+    exitM05('o1', now, 'room_left');
 
     // Leaving the Concourse passes the first gauge-check milestone (the
     // check-1 window only; check 2 stays due until the deck review so the
@@ -1038,8 +1103,13 @@ export class StationConcourseScene extends PilotZoneScene {
             label: 'Better ask someone else.',
             tag: 'promise_decline',
             onSelected: () => answerM10Offer(false, Date.now(), 'keyboard'),
+            nextStage: () => this.lampJobOfferStage(),
           },
-          { label: 'Ask me again later.', tag: 'promise_defer' },
+          {
+            label: 'Ask me again later.',
+            tag: 'promise_defer',
+            nextStage: () => this.lampJobOfferStage(),
+          },
         ],
       }),
     };
@@ -1059,6 +1129,71 @@ export class StationConcourseScene extends PilotZoneScene {
             tag: 'interruption_ack',
             onSelected: () =>
               noteM10InterruptionAcknowledged(Date.now(), 'keyboard'),
+            nextStage: () => this.lampJobOfferStage(),
+          },
+        ],
+      }),
+    };
+  }
+
+  /**
+   * M05 occasion 1 (Unit 6): the explicit offer of the extra lamp job at
+   * the END of the handover chain (after the watch offer, the delivery
+   * offer and — when accepted — the interruption), so that acceptance is
+   * followed by a usable start opportunity and never by a required
+   * prompt. Accepting and declining are both deliberate; a press inside
+   * the settle window after the stage appears is refused by the model
+   * and the stage is re-presented in place (M25 precedent).
+   */
+  private m05LastAnswer:
+    | 'accepted'
+    | 'declined'
+    | 'refused'
+    | 'invalid'
+    | null = null;
+
+  private lampJobOfferStage(): PromptStage | null {
+    if (!m05OfferAvailable('o1') || !presentM05Offer('o1', Date.now())) {
+      return null;
+    }
+
+    const answer = (accepted: boolean, position: number) => () => {
+      this.m05LastAnswer = answerM05Offer(
+        'o1',
+        accepted,
+        position,
+        Date.now(),
+        'keyboard',
+        // Entry-state covariates (review U6 S-F3): the offers answered
+        // before this one and the interruption shown.
+        {
+          m09_watch_accepted: m09State().accepted,
+          m10_promise_accepted: m10State().accepted,
+          m10_interruption_shown: m10State().interruptionShownAtMs !== null,
+        },
+      );
+    };
+    const again = () =>
+      this.m05LastAnswer === 'refused' ? this.lampJobOfferStage() : null;
+
+    return {
+      body: 'Vale: One small extra job, if you want it — the reading-desk lamp connector has worked loose (the reading table, south-west corner). It takes a moment at the lamp. Will you take it?',
+      options: this.npcBeatOptions('pilotVale', {
+        body: '',
+        options: [
+          {
+            label: 'Yes — I will take the lamp job.',
+            tag: 'lamp_job_accept',
+            feedback: 'Vale: Thank you. The lamp is on the reading table.',
+            onSelected: answer(true, 1),
+            nextStage: again,
+          },
+          {
+            label: 'No — leave the lamp job.',
+            tag: 'lamp_job_decline',
+            feedback: 'Vale: Understood.',
+            onSelected: answer(false, 2),
+            nextStage: again,
           },
         ],
       }),

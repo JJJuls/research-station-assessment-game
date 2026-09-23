@@ -865,5 +865,316 @@ sequencing snapshotted at the first work action`.
 direct-work batches export a complete observed 0/6`.
 - **Not changed:** every source file; `ScoringManager`, `SummaryScope`,
   `docs/research/**`, `docs/scientific/**`.
+- **Commit:** one local commit (`99c52dd`); nothing pushed, merged, tagged,
+  deployed or deleted.
+
+## U6 — M05 initiation (two explicitly accepted extra jobs, visible start control, 60 s focused cap)
+
+- **Authorities used:** the owner's 24 September instruction (U6–U24
+  authorised as a sequence; the M05 requirements restated there), the
+  register (`M01-M26-IMPLEMENTATION-REGISTER.md` §2 M05 row, §3 shared
+  rules, §5) and `registerV3.ts` (the specification's machine-readable
+  twin), the implementation matrix M05 row, and the scoring/event
+  addendum. **Missing authority, reported:** the execution specification
+  file named by the instruction
+  (`C:\Users\Juls\Downloads\FABLE-M01-M26-IMPLEMENTATION-INSTRUCTIONS.md`)
+  is not present on this machine (Downloads, Desktop, Documents and the
+  repository were searched; only the register's reproduction of its item
+  rows exists). This unit therefore implements exactly what the register,
+  the matrix and the owner's instruction state, and stops on any detail
+  that only the specification could settle; nothing was reconstructed
+  from memory.
+- **Objective:** replace the silent-fault M05 route with the approved
+  redesign: two explicitly accepted extra jobs (Vale's reading-desk lamp
+  connector in the Concourse, episode 1; Noor's loose guy-line flag in the
+  Recovery Yard, episode 4), each with a visible, usable start control on
+  a work surface at the job site, a focused clock that begins only once
+  the job is accepted and no competing required task blocks a usable
+  start, an explicit deferral, an exit, and a 60-second focused cap.
+- **Scientific rationale:** register M05 row ("Redesign"; two accepted
+  jobs; clock from a visible usable start control with no competing
+  required task; start / explicit deferral / exit / cap; 60 focused s per
+  occasion; BFI-2 item 23, reverse-keyed — telemetry direction stated in
+  the register, never reversed); shared rules on focused observation time
+  ("Pause … during documented loss of focus, explicit pauses, or unusable
+  controls. Reading, deciding, or waiting while the task is usable remains
+  observation time."), a cap as a censoring signal, distinguishable
+  closures, the reload rule, and §2b (M05 = independent occasions).
+  Measure `m05_start_latency`: PER ACCEPTED OCCASION the focused seconds
+  from eligibility to the first work action plus its status
+  (started | deferred | exited | cap | interrupted); a declined occasion is
+  outside the set; a non-start keeps its exposure, reason and censoring
+  and is never averaged away (no starter-only mean is formed anywhere).
+  Companion `m05_acceptance_exposure` (acceptance and exposure per
+  occasion) is added to the register as the row's "acceptance, exposure".
+- **M01 / M05 timing interaction (resolved within the approved rules):**
+  the clock cannot begin before acceptance, and it begins only at the
+  first moment after acceptance with no prompt open, no work surface
+  open, no world action running and no scene transition (the M09 / M10
+  offers and the standardised interruption that follow Vale's briefing
+  are prompts, so they hold the clock unstarted). Once eligible, ordinary
+  walking, reading and deciding in the room count as observation time;
+  the clock PAUSES (cause `unusable_controls`) while any competing prompt
+  or work surface — the M01 batch board, the quality packet, the incident
+  desk, an inventory overlay — is open, and (cause `animation_lock`) while
+  a timed world action runs; the browser focus monitor supplies
+  `focus_loss` / `hidden`. The M05 job's own surface never pauses the
+  clock (the start control is usable there). Excluded time is exported by
+  cause beside the focused latency.
+- **Participant-facing behaviour:** at the END of Vale's handover chain
+  (after the watch offer, the delivery offer and — when accepted — the
+  interruption) a further stage: "Vale: One small extra job, if you want
+  it — the reading-desk lamp connector has worked loose (the reading
+  table, south-west corner). It takes a moment at the lamp. Will you take
+  it?" with "Yes — I will take the lamp job." / "No — leave the lamp
+  job."; a press inside a 400 ms settle window after the stage appears is
+  refused and the stage re-presented (M25 precedent). After any of Noor's
+  three "Ready" options a matching stage offers the guy-line flag ("east
+  of the supply crate on the airlock apron"). The existing lamp and flag
+  stations open a work surface ("READING-DESK LAMP" / "GUY-LINE FLAG":
+  "Job: reseat the lamp connector. It takes a moment once started." with
+  "Start the job (S)", "Not now (N)", "Leave (ESC)"). Start runs a
+  standard 2-second focused fix on the surface ("Reseating the
+  connector…" → "Connector reseated."); "Not now" closes the surface with
+  "Noted." and no further comment; the cap is silent (no countdown, no
+  "too late" message); a job started after a deferral, an exit or the cap
+  still runs (recorded as a late start, never rewriting the primary);
+  before acceptance the stations read "Lamp steady." / "Guy-line flag
+  tied off." as today. No study identifier anywhere; nothing gates,
+  pays or changes the route.
+- **Allowed files:** `src/pilot/windows/m05StartModel.ts` (new pure
+  model), `src/pilot/windows/m05Initiation.ts` (rewritten as the window
+  adapter), `src/pilot/windows/m05SurfaceModel.ts` (new),
+  `src/pilot/windows/reviewClosure.ts`, `src/measurement/features/m05.ts`
+  (new), `src/measurement/features/index.ts`,
+  `src/measurement/registerV3.ts`, `src/world/interactionRegistry.ts`
+  (the two stations' `opens` / `window`), `src/scenes/StationConcourseScene.ts`,
+  `src/scenes/ExteriorRecoveryYardScene.ts`; new specs
+  `e2e/m05_start.spec.ts` (pure) and `e2e/m05_start_route.spec.ts`
+  (browser); existing route drivers that walk either briefing chain and
+  must answer the new stage or read the new M05 state —
+  `e2e/pilotHelpers.ts`, `e2e/exteriorHelpers.ts`, `e2e/returnHelpers.ts`,
+  `e2e/pilot_episodes_1_2.spec.ts`, `e2e/pilot_yard.spec.ts`,
+  `e2e/pilot_exterior_capture.spec.ts`, `e2e/pilot_route.spec.ts`,
+  `e2e/world_v3_route_capture.spec.ts`, `e2e/m11_custody_route.spec.ts`,
+  `e2e/pilot_visual_capture.spec.ts`, `e2e/v4_visual_capture.spec.ts`,
+  `e2e/world_v1_slice_capture.spec.ts`, `e2e/world_v1_story.spec.ts`,
+  `e2e/world_v1_u2_capture.spec.ts`, `e2e/pilot_deck.spec.ts`; and only
+  if a derived count, label or family assertion changes:
+  `e2e/pilot_exterior_models.spec.ts`, `e2e/pilot_coverage.spec.ts`,
+  `e2e/pilot_closure_models.spec.ts`, `e2e/pilot_route_model.spec.ts`,
+  `e2e/m26_protocol_foundation.spec.ts`; `docs/verification/station-080-m26/**`.
+- **Prohibited areas:** common, plus `src/pilot/exterior/exteriorEpisodeModel.ts`
+  (Noor's ordered job list and the objective line are unchanged: the flag
+  job is an offered extra, not a listed yard job), `src/pilot/zoneSites.ts`
+  (both job sites keep their audited positions), the M01 code, and every
+  other item's mechanic.
+- **Entry state:** HEAD `99c52dd` (U5-T), clean tree, branch
+  `fable-professional-world-rescue-v2`.
+- **Success behaviour:** both offers reached on the ordinary route; accept
+  / decline explicit; the clock starts at the first eligible moment after
+  acceptance and pauses for the specified causes; Start on the surface
+  records the latency (focused and wall, excluded by cause) and runs the
+  fix; "Not now" closes the occasion as `deferred`; leaving the room (or
+  Noor's shift end) closes it as `exited`; 60 focused seconds without a
+  start close it as `cap` (censored, latency null); the extractor
+  reproduces the per-occasion record with declined / not presented /
+  pending / interrupted kept distinct and the row never forming a mean.
+- **Failure/recovery:** a job accepted in an earlier page load is never
+  re-offered (prior exposure recorded, `interrupted`); an accepted
+  occasion still open at the review closes censored; a never-offered
+  occasion is absent; closing the surface mid-fix pauses the fix and the
+  reopen resumes it; leaving mid-fix keeps the start (status `started`,
+  `work_completed: false`, closure `route_departure`); a decline is a
+  completed observation outside the denominator (M11 precedent).
+- **Telemetry boundary:** family `proto_m05_start_*` (candidate; suffixes
+  `presented`, `offer_press_refused`, `offer_answered`,
+  `opportunity_opened`, `eligible`, `control_presented`, `started`,
+  `deferred`, `work_completed`, `cap_reached`, `late_start`,
+  `surface_closed`, `surface_reopened`, `window_closed`,
+  `technical_failure` only as the reload marker); the v2
+  `proto_m05_initiation_*` family keeps its v2 meaning in the frozen
+  ledger and is retired from the route; no canonical name or approved
+  formula invented; the scoring plan summary untouched.
+- **Scientific acceptance:** no clock before acceptance; no focused time
+  while a competing prompt / surface / world action blocks the start
+  control; a cap is never a start and never a 60 s latency; deferral,
+  exit, cap and interruption stay distinct from one another and from a
+  start; a declined job is excluded, never low; no starter-only average
+  anywhere in the export; no evaluative or hurrying copy; the two
+  occasions are separate records.
+- **Gameplay acceptance:** every existing route helper keeps its option
+  indices (the new stage follows the existing chains and is answered
+  by its own selection); both surfaces legible at 800×600; keyboard and
+  pointer parity; ESC always leaves; nothing else on either route moves.
+- **Required tests:** `npm.cmd run lint:tsc`, `npm.cmd run build`,
+  ESLint + Prettier (`endOfLine: auto`) on touched files, pure
+  `m05_start` + `m26_protocol_foundation` + `pilot_coverage` +
+  `pilot_closure_models` + `pilot_route_model` + `world_v1_registry` +
+  `pilot_exterior_models` + `m01_batches`, browser `m05_start_route`,
+  plus the affected browser tests of `pilot_episodes_1_2` (episode 1) and
+  `pilot_yard` (test 1).
+- **Required screenshots:** both start surfaces at 800×600 (evidence, not
+  committed).
+- **Stop conditions:** common.
+- **Model:** Fable (implementation); reviewer definitions run read-only
+  through general-purpose stand-ins if the project agent types remain
+  unavailable (declared in the review record).
+- **Commit expectation:** `feat(m05): two explicitly accepted extra jobs
+with a visible start control and a 60-second focused cap`.
+- **Reviewer availability:** the project reviewer definitions under
+  `.claude/agents/` are again not offered as agent types in this session.
+  As a declared (not silent) fallback the `scientific-reviewer` and
+  `gameplay-reviewer` definitions were read by general-purpose Opus agents
+  and followed verbatim, read-only (Read / Grep / Glob only). The
+  `test-reviewer` scope was covered by the implementer's own recorded
+  runs below (every required command listed with its result).
+- **Review round 1 (read-only, on the working tree after verification):**
+  scientific: concerns found — 2 high / 3 medium / 4 low + 6 owner
+  questions; gameplay: usable with friction — 3 medium / 6 low + 6
+  measurement flags. Material findings and their resolution:
+  - The 60 s cap was not enforced while the job's own surface was open
+    (S-F1, high — the host is paused under the surface, so the per-frame
+    poll did not run; a start after 60 focused seconds on the surface
+    would have been recorded as `started`) — fixed: the surface ticks the
+    poll itself while the occasion is open and eligible; `m05Start` /
+    `m05Defer` close at the cap first (a press at or past the cap is a
+    late start; "Not now" at the cap is the cap's closure); the extractor
+    treats a `started` latency above the cap as `technical_failure`; pure
+    regressions added (§5.55).
+  - "No competing required task" read as "no open prompt / surface /
+    world action", so walking between the leg's required tasks counts
+    (S-F2, high) — NOT changed: the owner's instruction phrased the rule
+    as a task that prevents a usable start opportunity, which is what is
+    built; the reviewer's consequence (Noor's ordered list; compliance
+    read as difficulty starting) is recorded under §5.48 with the
+    alternatives, and is the first item of this handoff for the owner.
+  - Entry state of o1 depends on the M09 / M10 answers; both job sites
+    sit near other items' fixtures (S-F3) — fixed as far as the unit
+    allows: the window's entry snapshot records `m09_watch_accepted`,
+    `m10_promise_accepted`, `m10_interruption_shown` (o1) and
+    `m11_driver_carried` (o2); sites unchanged (§5.50).
+  - Deferral wording versus terminal deferral (S-F4) — copy revised
+    ("Start the job when you are ready, or choose Not now."; after a
+    deferral "Noted. The job stays open; you can start it from here
+    later."); the default stays terminal (§5.45, §5.53).
+  - Default focus on the surface not exported (S-F5, G flag 2) — fixed:
+    `control_order` and `focus_default` on `control_presented`,
+    `started`, `deferred` and in the raw components (§5.54).
+  - Interrupted and never-eligible occasions counted as non-starts
+    (S-F6) — fixed: only started / deferred / exited-after-eligibility /
+    cap form the observed set; `interrupted` and never-eligible exits are
+    censored missing data (`occasions_interrupted`,
+    `occasions_never_eligible`); a row with only such occasions is
+    `interrupted` / `no_eligible_event`, never `observed`.
+  - Row `closure_reason` always `completed` (S-F7) — fixed: the review
+    when any occasion closed there, else the one closure every observed
+    occasion shares, else `completed`.
+  - The "silent" cap is visible on a reopened surface (S-F8) — recorded
+    (§5.46, §5.55); no change.
+  - Documentation drift (S-F9, G-F10) — fixed in the addendum row, the
+    Concourse header and the yard's orphan comment; the contract copy
+    above ("It takes a moment once started") is superseded by the code
+    and register copy (deviation recorded below); the room doc
+    `docs/game/rooms/11-exterior-recovery-yard.md` still names the retired
+    v2 family and is outside this unit's allowlist (left for U24).
+  - "Not now" closed the surface silently and read exactly like "Leave"
+    (G-F1, medium) — fixed: the panel stays open and acknowledges the
+    deferral ("Noted. …"); "Not now" is gone, the start control remains;
+    the browser spec asserts the acknowledgement.
+  - Keyboard focus fell onto Leave as soon as the job started (G-F2,
+    medium; a double-tap would have closed the surface and paused the
+    work) — fixed: the start control stays on the surface while the work
+    runs ("Job running… (S)", press refused by the model) — the M25
+    sweep-button rule.
+  - The Concourse lamp flicker ignored reduced motion (G-F3, medium) —
+    fixed: a held, dimmed glyph under `prefersReducedMotion()`, like the
+    yard's flag flap.
+  - Three names for the flag (G-F4) — fixed: "guy-line flag" everywhere
+    (Noor, the surface title, the world prompt "E — Check the guy-line
+    flag", the registry).
+  - Location said once, no re-ask (G-F5); the station's line after a
+    decline contradicts the NPC (G-F6); silent refusals in the settle
+    windows (G-F7); the M11 loan banner may render under the flag-offer
+    panel (G-F9, unverified) — recorded as owner questions §5.51 / §5.52
+    or as limitations; no change (each would alter the job's salience or
+    the participant's cues).
+  - Copy and layout (G-F8) — fixed: one job statement (readout), the
+    status line a full sentence, "a moment once started" instead of a
+    decimal duration.
+- **Review round 2:** not run as a separate reviewer pass — the fixes are
+  bounded to the cited findings and are covered by the added pure
+  regressions and the rerun browser spec; a fresh review of the review
+  fixes is folded into U24 (U2-R / U3 / U4 / U5 precedent).
+- **Verification results (final tree):** `npm.cmd run lint:tsc` 0 ·
+  `npm.cmd run build` 0 (pre-existing chunk-size / dynamic-import
+  warnings only) · ESLint + Prettier (`endOfLine: auto`) on every touched
+  file and doc 0 · pure `m05_start` (8) + `m26_protocol_foundation` +
+  `pilot_coverage` + `pilot_closure_models` + `pilot_route_model` +
+  `world_v1_registry` + `pilot_exterior_models` + `m01_batches` +
+  `evidence_ledger` + `summary_scope` 115/115 (retries off) · browser
+  `m05_start_route` 2/2 retries off on the final tree (4.8 min; earlier
+  runs: run 1 failed only on a missing browser binary — see environment;
+  run 2 both tests failed on two spec defects of mine, the driver
+  helper for the flag surface and the omitted "Handover confirmed"
+  step; run 3 test 2 passed and test 1 failed only on the companion's
+  late-start `work_completed`, fixed in the extractor; run 4 test 1
+  passed) — `test-results/m05-lamp-800x600.png` and
+  `test-results/m05-flag-800x600.png` inspected (both surfaces legible at
+  800×600: title, one job readout, the Start / Not now row, Leave apart,
+  Start pre-focused), not committed · browser `pilot_yard` test 2
+  ("stops are observations, departures never terminal …") 1/1 (7.0 min,
+  the rewritten M05 decline assertions green) · browser `pilot_yard` test
+  1: the M05 section green ("M05 flag job declined" mark reached) and
+  M19 / M20 / M23 / M24 green; the test then fails at its INHERITED
+  beacon assertion (`expect(beacon.label).toBe('Field Uplink Post A')`
+  after the rig — the support console has been the fifth listed job since
+  U2-R and the assertion predates this unit, last touched in
+  `7ec425d`); not an M05 effect, left for U24 · browser
+  `pilot_episodes_1_2` "episode 1": the M05 steps green (lamp job
+  accepted after the interruption, `eligible` once the chain closed, the
+  plan board opened and closed with the clock paused), then a
+  DETERMINISTIC failure (3/3 attempts × 3 runs) at the incident desk —
+  the eastward leg from the plan board stalls on Vale's operations desk
+  at x≈418 from any starting row and the E press opens Vale's beat;
+  REPRODUCED IDENTICALLY on the pre-U6 tree (`99c52dd`, exported with
+  `git archive` into the session scratchpad and run on port 5174 with the
+  pre-U6 spec), so it is an environmental driver limitation of this
+  machine's fresh Chromium 1228 / SwiftShader, not a U6 regression; the
+  spec now carries driver diagnostics in its failure report · `verify-unit`
+  PASS · `git diff --check` clean.
+- **Environment:** no Playwright browser existed on this machine
+  (`ms-playwright` cache absent), so `npx playwright install chromium`
+  was run once (browser binaries into the user cache; nothing in the
+  repository or `package*.json` changed). Git has no configured identity
+  here and `git config` is denied, so the commit carries the branch's
+  existing author identity through `GIT_AUTHOR_*` / `GIT_COMMITTER_*`
+  environment variables (no config written).
+- **Deviations:** the contract's surface copy ("It takes a moment once
+  started." / "Start when you are ready, or not now.") was superseded
+  during the review by "Start the job when you are ready, or choose Not
+  now." with the deferral acknowledgement — the register §4 record is the
+  as-built copy; the flag station's label / verb changed to "guy-line
+  flag" / "Check the" (world prompt and registry) for one name
+  everywhere; `src/pilot/windows/reviewClosure.ts` was on the allowlist
+  and ended unchanged (`closeM05AtReview` kept its signature);
+  `e2e/pilot_deck.spec.ts`, `e2e/pilot_exterior_models.spec.ts`,
+  `e2e/pilot_coverage.spec.ts`, `e2e/pilot_closure_models.spec.ts`,
+  `e2e/pilot_route_model.spec.ts` and `e2e/m26_protocol_foundation.spec.ts`
+  needed no change (their suites pass unchanged); `CLAUDE_UNIT_ALLOWLIST`
+  enforced by discipline + `verify-unit`; reviewer stand-ins as declared;
+  the commit subject dropped "explicitly" to satisfy commitlint's 100
+  character header rule (the hook was honoured, never bypassed); the
+  execution specification file is missing (reported above); the
+  `docs/game/rooms/11-exterior-recovery-yard.md` room doc still names the
+  retired v2 M05 family (outside the allowlist; U24).
+- **Not changed:** `ScoringManager`, `SummaryScope`, `docs/research/**`,
+  `docs/scientific/**`, the v2 ledger, `exteriorEpisodeModel.ts` (Noor's
+  ordered list and the objective line), `zoneSites.ts` (both job sites),
+  the M01 code, package files, tool configs, settings, every other item's
+  mechanic; every existing route helper keeps its option indices (the
+  new offer stage is answered by its own selection after the existing
+  ones).
 - **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
-  deleted.
+  deleted. Next unit: U7 M06 (redesign: twelve orders in one 60-second
+  focused budget).
