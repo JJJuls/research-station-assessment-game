@@ -338,6 +338,45 @@ test.describe('M01 three-job batches (pure)', () => {
       disposition: 'observed',
     });
 
+    // Targeted check (U5-T): "incomplete below six" describes missing
+    // OBSERVATION coverage, never fewer planned jobs. Two valid observed
+    // batches worked directly, with no planning at all, are a COMPLETE
+    // observed 0 / 6; the partial plan above (2 of 3 placed) left the row
+    // `observed` too — planning depth never touches the disposition.
+    const none = harness();
+    const n1 = createM01State('o1', 'form_a');
+    const n2 = createM01State('o2', 'form_a');
+
+    none.presented('o1');
+    none.opened('o1');
+    doAll(n1, 0, none.sink('o1'), [
+      'isolate_loop',
+      'log_storm',
+      'replace_seal',
+    ]);
+    none.close(n1, 'completed');
+    none.presented('o2');
+    none.opened('o2');
+    doAll(n2, 50_000, none.sink('o2'));
+    none.close(n2, 'completed');
+
+    const noneRows = extractItemFeatures('M01', none.events, CONTEXT);
+
+    expect(noneRows[0]).toMatchObject({
+      feature_id: 'm01_planned_jobs',
+      value: 0,
+      numerator: 0,
+      denominator: 6,
+      planned_denominator: 6,
+      disposition: 'observed',
+      censored: false,
+      included_ids: ['m01_batch_o1', 'm01_batch_o2'],
+    });
+    expect(noneRows[0].components).toMatchObject({
+      occasions_observed: ['o1', 'o2'],
+      planned_by_occasion: { o1: 0, o2: 0 },
+    });
+
     const structure = rows[1].value as {
       o1: { planned_jobs: number; plan_adherence: number; all_done: boolean };
       o2: {

@@ -823,3 +823,47 @@ sequencing snapshotted at the first work action`.
   deleted. Next unit: U6 M05 (redesign initiation measurement: two
   accepted occasions, visible start control, 60 s focused cap).
 - **`pilot_deck` third run (final tree):** 1/1, retries off, 3.8 min.
+
+## U5-T — M01 targeted check (test-only bounded correction)
+
+- **Objective:** confirm, on the owner's instruction opening the U6–U24
+  run (24 September 2026), that M01's "incomplete below six" describes
+  missing OBSERVATION coverage and never fewer planned jobs; add a focused
+  regression only if the existing coverage lacked the boundary case.
+- **Scientific rationale:** specification M01 row (partial plans and any
+  workable order are valid; a valid choice not to plan is an observed 0)
+  and the shared completeness rule (a fraction on fewer valid observations
+  than planned is `incomplete`). Scientifically neutral: no mechanic, no
+  formula and no code path changes.
+- **Participant-facing behaviour:** none.
+- **Allowed files:** `e2e/m01_batches.spec.ts`,
+  `docs/verification/station-080-m26/UNIT-LOG.md`.
+- **Entry state:** HEAD `403dd051` (verified: branch
+  `fable-professional-world-rescue-v2`, origin
+  `https://github.com/JJJuls/research-station-assessment-game.git`, clean
+  tree). The worktree path named in the instruction
+  (`.claude/worktrees/fable-professional-world-rebuild`) no longer exists;
+  `git worktree list` shows only the main checkout, itself on this branch
+  at this HEAD, so the run continues there.
+- **Check result — no mismatch:** `src/measurement/features/m01.ts` forms
+  `denominator = observed.length × 3` over the occasions whose first work
+  action closed the observation, and `fractionFeature`
+  (`src/measurement/features/extract.ts`) labels `incomplete` only when
+  that denominator is below the planned 6. The planned count enters the
+  NUMERATOR alone, so two observed direct-work batches are a complete
+  observed 0 / 6 and a partial plan leaves the row `observed`. Existing
+  coverage already proved 0 + 2 planned → 2 / 6 `observed` (partial
+  planning, one zero occasion) and one observed occasion → `incomplete`;
+  the explicit both-zero boundary (0 / 6 `observed`, `censored: false`)
+  was not asserted anywhere, so one focused regression was added to the
+  extractor test of `e2e/m01_batches.spec.ts`. No code changed.
+- **Required tests:** pure `m01_batches` (5/5, retries off, 8.3 s);
+  ESLint + Prettier on the spec (0, with `endOfLine: auto` — the working
+  tree is a CRLF checkout of an LF index; git normalises at commit);
+  `verify-unit`.
+- **Commit expectation:** `test(m01): targeted check — two observed
+direct-work batches export a complete observed 0/6`.
+- **Not changed:** every source file; `ScoringManager`, `SummaryScope`,
+  `docs/research/**`, `docs/scientific/**`.
+- **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
+  deleted.
