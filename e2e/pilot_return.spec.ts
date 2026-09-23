@@ -9,8 +9,9 @@
  *    M09 gauge check 2 as separate acts, Vale's neutral check-in, the
  *    workshop return shift — M03 occasion 2 (Press B, one residual
  *    stored), M07 end to completion, the persisted M20 feed console
- *    resumed and completed, M21 with a wrong-first repair revised through
- *    the manual, M22 with the standardised setback and a mismatched-tag
+ *    resumed and completed, M21 with a wrong-first application revised
+ *    after a relevant restudy (unit 1) and a first-time success (unit 2),
+ *    M22 with the standardised setback and a mismatched-tag
  *    revision, the M25 questionnaire handoff, the outbound handover, the
  *    board sign-off; item-owned timing against the 265 s envelope.
  * 2. Omissions and independence: watch accepted / promise declined,
@@ -93,7 +94,7 @@ const RETURN_FAMILIES = [
   'proto_m09_watch_',
   'proto_m10_promise_',
   'proto_m20_antenna_',
-  'proto_m21_manual_',
+  'proto_m21_case_',
   'proto_m22_report_',
   'proto_m25_probe_',
 ];
@@ -343,58 +344,78 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     expect(m20Raw.progress_pre_interruption).toBe(2);
     expect(m20Raw.start_history).toBe('valid');
 
-    // ——— M21: wrong jumper first, informative fault, manual re-read, revise, fit. ———
+    // ——— M21 (Unit 10): unit 1 — wrong jumper first, truthful fault, relevant
+    // restudy, revised application accepted; unit 2 — first-time success. ———
     await repairRelay(page, { wrongFirst: true, fit: true });
     rp = await returnProbe(page);
-    expect(rp.m21).toMatchObject({
+    expect(rp.m21.all_closed).toBe(true);
+    expect(rp.m21.o1).toMatchObject({
       window: 'closed',
       exit: 'completed',
-      completion: true,
+      accepted: true,
+      applications: 2,
+      first_application_correct: false,
+      first_application_faults: ['posts'],
+      relevant_restudy: true,
+      revised_application: true,
+      restudy_revision: true,
+      strategy: 'restudy_and_revise',
       correct_rule_application: true,
       reference_sections_used: 4,
       cross_reference_depth: 2,
       diagram_mode_used: true,
       plate_inspected: true,
-      first_test_pass: false,
       output_delivery: 'inventory',
     });
-    expect(rp.m21.reengagement).toBeGreaterThanOrEqual(1);
-    expect(rp.m21.revisions).toBeGreaterThanOrEqual(1);
-    expect(rp.m21.bench_tests).toBe(2);
+    expect(rp.m21.o2).toMatchObject({
+      window: 'closed',
+      exit: 'completed',
+      accepted: true,
+      applications: 1,
+      first_application_correct: true,
+      restudy_revision: null,
+      strategy: 'first_correct',
+      output_delivery: 'released',
+    });
     expect(await itemStatus(page, 'M21')).toBe('completed');
 
-    const m21Events = await eventsByPrefix(page, 'proto_m21_manual_');
+    const m21Events = await eventsByPrefix(page, 'proto_m21_case_');
     const m21Types = new Set(m21Events.map((e) => e.event_type));
 
     for (const required of [
-      'proto_m21_manual_presented',
-      'proto_m21_manual_opportunity_opened',
-      'proto_m21_manual_plate_inspected',
-      'proto_m21_manual_section_consulted',
-      'proto_m21_manual_mode_switched',
-      'proto_m21_manual_jumper_set',
-      'proto_m21_manual_selector_set',
-      'proto_m21_manual_bench_test',
-      'proto_m21_manual_revision',
-      'proto_m21_manual_reengagement',
-      'proto_m21_manual_fitted',
-      'proto_m21_manual_window_closed',
+      'proto_m21_case_presented',
+      'proto_m21_case_opportunity_opened',
+      'proto_m21_case_case_placed',
+      'proto_m21_case_plate_inspected',
+      'proto_m21_case_section_consulted',
+      'proto_m21_case_mode_switched',
+      'proto_m21_case_post_set',
+      'proto_m21_case_selector_set',
+      'proto_m21_case_applied',
+      'proto_m21_case_feedback_presented',
+      'proto_m21_case_restudy',
+      'proto_m21_case_revised_application',
+      'proto_m21_case_accepted',
+      'proto_m21_case_window_closed',
     ]) {
       expect(m21Types, required).toContain(required);
     }
 
-    const consults = await eventsByType(
-      page,
-      'proto_m21_manual_section_consulted',
-    );
+    const applied = await eventsByType(page, 'proto_m21_case_applied');
 
-    expect(consults.filter((e) => meta(e).via === 'reference').length).toBe(2);
     expect(
-      m21Events
-        .filter((e) => e.event_type === 'proto_m21_manual_bench_test')
-        .map((e) => meta(e).pass),
-    ).toEqual([false, true]);
+      applied.map((e) => [meta(e).case, meta(e).index, meta(e).correct]),
+    ).toEqual([
+      ['o1', 1, false],
+      ['o1', 2, true],
+      ['o2', 1, true],
+    ]);
+    expect(meta(applied[1]).relevant_restudy).toBe(true);
+    expect(meta(applied[1]).revised).toBe(true);
     // Both input modes reached the same engine.
+    expect(new Set(m21Events.map((e) => meta(e).input_mode))).toEqual(
+      new Set(['system', 'keyboard', 'pointer']),
+    ); // Both input modes reached the same engine.
     expect(new Set(m21Events.map((e) => meta(e).input_mode))).toEqual(
       new Set(['system', 'keyboard', 'pointer']),
     );
@@ -490,7 +511,7 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
       m21Events.some((e) => JSON.stringify(meta(e)).includes('report')),
     ).toBe(false);
     expect(
-      m22Events.some((e) => JSON.stringify(meta(e)).includes('jumper')),
+      m22Events.some((e) => JSON.stringify(meta(e)).includes('post_set')),
     ).toBe(false);
     expect(new Set(m21Events.map((e) => e.object_id))).toEqual(
       new Set(['m21_relay_bench']),
@@ -740,14 +761,15 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
       'pending',
     );
 
-    // M21 exited early after one manual consult: the window stays open.
+    // M21 exited early after one manual consult: unit 1's window stays open.
     await openWorkshopSurface(page, 'relayBench', 'm21_relay_bench');
     await clickElement(page, 'section_s1_identify');
     await closeSurface(page);
     rp = await returnProbe(page);
-    expect(rp.m21.window).toBe('open');
-    expect(rp.m21.departures).toBe(1);
-    expect(rp.m21.completion).toBe(false);
+    expect(rp.m21.o1.window).toBe('open');
+    expect(rp.m21.o1.departures).toBe(1);
+    expect(rp.m21.o1.accepted).toBe(false);
+    expect(rp.m21.o2.window).toBe('unopened');
     expect(await itemStatus(page, 'M21')).toBe('open');
 
     // M22 completes regardless of M21 (independence).
@@ -773,7 +795,7 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     await waitSurface(page, false);
     rp = await returnProbe(page);
     expect(rp.m22.recovery_complete).toBe(true);
-    expect(rp.m21.completion).toBe(false);
+    expect(rp.m21.o1.accepted).toBe(false);
     expect(await itemStatus(page, 'M22')).toBe('completed');
     expect(await itemStatus(page, 'M21')).toBe('open');
 
@@ -835,16 +857,16 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     // M21 reopened after the departure is a reengagement; set aside = explicit stop.
     await openWorkshopSurface(page, 'relayBench', 'm21_relay_bench');
     rp = await returnProbe(page);
-    expect(rp.m21.reengagement).toBe(1);
+    expect(rp.m21.o1.reengagement).toBe(1);
     await clickElement(page, 'set_aside');
     await waitSurface(page, false);
     rp = await returnProbe(page);
-    expect(rp.m21.window).toBe('closed');
-    expect(rp.m21.exit).toBe('stopped');
-    expect(rp.m21.stop_choice).toBe('set_aside');
-    expect(rp.m21.completion).toBe(false);
+    expect(rp.m21.o1.window).toBe('closed');
+    expect(rp.m21.o1.exit).toBe('stopped');
+    expect(rp.m21.o1.stop_choice).toBe('set_aside');
+    expect(rp.m21.o1.accepted).toBe(false);
     expect(await itemStatus(page, 'M21')).toBe('completed');
-    expect((await validityRecord(page, OPPORTUNITY.m21)).validity).toBe(
+    expect((await validityRecord(page, OPPORTUNITY.m21o1)).validity).toBe(
       'valid',
     );
 
@@ -941,10 +963,10 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     // bench bundle instead — lossless, recorded as `output_delivery`.
     await repairRelay(page, { wrongFirst: false, fit: true });
     rp = await returnProbe(page);
-    expect(rp.m21.completion).toBe(true);
-    expect(rp.m21.output_delivery).toBe('bench_bundle');
+    expect(rp.m21.o1.accepted).toBe(true);
+    expect(rp.m21.o1.output_delivery).toBe('bench_bundle');
 
-    const fitted = (await eventsByType(page, 'proto_m21_manual_fitted'))[0];
+    const fitted = (await eventsByType(page, 'proto_m21_case_accepted'))[0];
 
     expect(meta(fitted).output_delivery).toBe('bench_bundle');
 

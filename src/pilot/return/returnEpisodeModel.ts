@@ -30,8 +30,9 @@ import {
 import {
   M21_EVENT_SUFFIXES,
   M21_FAMILY,
-  M21_OPPORTUNITY_ID,
-  M21_WINDOW_ID,
+  M21_OBJECT_ID,
+  M21_OPPORTUNITY_IDS,
+  M21_WINDOW_IDS,
 } from './m21ManualModel';
 import {
   M22_EVENT_SUFFIXES,
@@ -128,12 +129,20 @@ export const RETURN_LINKED_WINDOWS: readonly ReturnItemWindows[] = [
 
 /** Single-window items hosted by the return shift. */
 export const RETURN_SINGLE_WINDOWS = [
+  // Unit 10: M21 owns two case windows on the one bench object.
   {
     item: 'M21',
-    opportunityId: M21_OPPORTUNITY_ID,
-    windowId: M21_WINDOW_ID,
+    opportunityId: M21_OPPORTUNITY_IDS.o1,
+    windowId: M21_WINDOW_IDS.o1,
     family: M21_FAMILY,
-    object: 'm21_relay_bench',
+    object: M21_OBJECT_ID,
+  },
+  {
+    item: 'M21',
+    opportunityId: M21_OPPORTUNITY_IDS.o2,
+    windowId: M21_WINDOW_IDS.o2,
+    family: M21_FAMILY,
+    object: M21_OBJECT_ID,
   },
   {
     item: 'M22',
@@ -216,4 +225,4 @@ export const RETURN_GUIDED_ORDER = [
 /** Board copy for the return shift (operational; no item id, no directive on M07/M20). */
 export const RETURN_BOARD_BODY =
   'WORK ORDERS — RETURN SHIFT\n' +
-  'Press batch B, relay unit (relay bench — manual in the bench drawer), shift report (report desk), outbound handover. Anything you left open earlier is still yours to close. Sign the board when you are done here.';
+  'Press batch B, two bench units (relay bench — manual in the bench drawer), shift report (report desk), outbound handover. Anything you left open earlier is still yours to close. Sign the board when you are done here.';

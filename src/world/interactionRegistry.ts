@@ -403,7 +403,7 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Work the',
     'Relay Bench',
     { kind: 'work_surface', id: 'm21_relay_bench' },
-    'm21_manual_repair',
+    'm21_case_o1',
     { x: 152, y: 240 },
   ),
   workshopStation(

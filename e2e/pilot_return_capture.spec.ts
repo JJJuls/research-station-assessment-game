@@ -169,34 +169,44 @@ test('return, revision & handover — participant-path frames 22–34', async ({
   );
   await closeSurface(page);
 
-  // 29 — M21 manual inspection: §2 open in DIAGRAM mode.
+  // 29 — M21 manual inspection: §2 open in DIAGRAM mode (unit 1).
   await openWorkshopSurface(page, 'relayBench', 'm21_relay_bench');
 
-  const form = (await returnProbe(page)).m21.form;
-  const spec = M21_SPEC[form];
+  const form = (await returnProbe(page)).m21.o1.form;
+  const spec = M21_SPEC.o1[form];
 
   await press(page, 'i');
   await page.waitForTimeout(250);
   await clickElement(page, 'section_s1_identify');
-  await clickElement(page, 'ref_s2_jumper_rule');
+  await clickElement(page, 'ref_s2_post_rule');
   await clickElement(page, 'mode_diagram');
   await shot(page, '29-m21-manual-inspection');
-  await clickElement(page, 'ref_s4_variant_table');
+  await clickElement(page, 'ref_s4_code_table');
   await clickElement(page, 'mode_text');
   await clickElement(page, 'section_s3_selector_rule');
 
-  // 30 — M21 repair manipulation: jumpers + selector set, bench test PASS.
-  for (const post of spec.jumpers) {
+  // 30 — M21 application: a wrong jumper first (truthful fault), then the
+  // revised configuration accepted; unit 2 placed.
+  const wrong = M21_SPEC.o1.all.find(
+    (post) => !(spec.posts as readonly string[]).includes(post),
+  )!;
+
+  await clickElement(page, `post_${wrong}`);
+  await clickElement(page, `line_${spec.selector}`);
+  await press(page, 'f');
+  await page.waitForTimeout(300);
+  expect((await surfaceElement(page, 'fit_readout'))?.label).toContain('fails');
+  await shot(page, '30-m21-failing-application');
+  await clickElement(page, 'section_s4_code_table');
+  await clickElement(page, `post_${wrong}`);
+
+  for (const post of spec.posts) {
     await clickElement(page, `post_${post}`);
   }
 
-  await clickElement(page, `line_${spec.selector}`);
-  await press(page, 't');
-  await page.waitForTimeout(300);
-  expect((await surfaceElement(page, 'test_readout'))?.label).toContain('PASS');
-  await shot(page, '30-m21-repair-manipulation');
   await press(page, 'f');
   await page.waitForTimeout(500);
+  await shot(page, '30b-m21-second-unit-placed');
   await clickElement(page, 'leave');
   await waitSurface(page, false);
 

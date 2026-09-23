@@ -1881,5 +1881,237 @@ learning series with a three-in-a-row criterion and uncoached probes`);
   ledger (`proto_m17_syntax_*` keeps its meaning), `zoneSites.ts`,
   `ScoringManager`, `docs/research/**`, `docs/scientific/**`, package
   files, tool configs, settings.
+- **Commit:** one local commit (`cc800ce`); nothing pushed, merged,
+  tagged, deployed or deleted. Next unit: U10 M21 (restudy after an
+  incorrect application).
+
+## U10 — M21 restudy after an incorrect application (two independent manual cases)
+
+- **Authorities used:** as U6–U9 (the owner's 24 September instruction;
+  the register §2 M21 row — "Replace revisit score … `m21_restudy_revisions`:
+  restudy AND revised application / initially incorrect cases" — §3, §5.2
+  (conditional-eligibility denominators are complete at any size above
+  zero) and `registerV3.ts` ("240–320 words split into two independent
+  manual cases; after an incorrect first application, truthful feedback and
+  relevant restudy plus a revised application, another strategy, or exit";
+  "two first-time successes → null"); the matrix M21 row — "Two
+  independent cases, 240–320 words total; after an incorrect first
+  application: truthful feedback, relevant restudy + revised application /
+  other strategy / exit"; the addendum §3 row). The execution specification
+  file remains missing (reported under U6).
+- **Objective:** replace the single relay-unit case (one ~130-word manual,
+  a free pre-fit bench test, an irreversible FIT and no restudy concept)
+  with two independent manual cases on the relay bench: FIT is the
+  APPLICATION; a correct configuration is accepted, an incorrect one fails
+  truthfully on the bench and the unit stays; the participant may restudy
+  the manual (relevant = a section bearing on a failed subsystem), apply a
+  revised configuration, try another strategy, or set the unit aside.
+- **Scientific rationale:** register M21 row (MPS Appendix A 3,
+  Persistence Despite Difficulty; partial coverage; direction "more reading
+  re-engagement under difficulty"); measure `m21_restudy_revisions` = cases
+  with relevant restudy AND a revised application / cases whose first
+  application was incorrect (the participant's own eligible events —
+  complete at any denominator above zero, §5.2); two first-time successes ⇒
+  null; an exit after an incorrect application ⇒ an observed 0 for that
+  case; a review-closed unresolved incorrect case ⇒ censored and excluded.
+  The v2 validity gate stays: an unfamiliar cross-referenced manual in TEXT
+  and an equivalent DIAGRAM mode, the plate inspected to start, reading
+  duration never primary; opening the manual alone is never the construct.
+  The free bench test is removed because it let every first application be
+  correct (the denominator would be empty for anyone who tested first).
+- **Participant-facing behaviour:** the relay bench (Records Workshop,
+  return shift; station, verb and position unchanged) holds unit 1 of 2 —
+  the storm-damaged distribution relay unit (jumpers J1–J4, line selector
+  L1–L3; manual §1 identify → §2 jumper rule → §4 variant table, §1 → §3
+  line selector rule) — then unit 2 of 2, the pump controller (breakers
+  B1–B2, range dial R1–R4; its own §1–§4 with different rules). Inspect
+  plate (I), read the drawer manual (TEXT / DIAGRAM, tabs and in-text
+  references), set the posts and the selector, "Fit the unit" (F): accepted
+  ⇒ "… accepted on the bench." and the next unit is placed; failing ⇒ "The
+  unit fails on the bench: jumper mismatch · line class mismatch. It stays
+  on the bench." — revise and fit again, restudy, or "Set the unit aside".
+  Leave (ESC) keeps the case open. No praise, no count, no item wording.
+- **Allowed files:** `src/pilot/return/m21ManualModel.ts` (the pure model,
+  rewritten for two cases), `src/pilot/windows/returnWindows.ts` (the M21
+  block, state, windows, probe), `src/pilot/windows/returnSurfaceModels.ts`
+  (the M21 surface), `src/pilot/return/returnEpisodeModel.ts` (window rows,
+  families, objective text), `src/scenes/RecordsWorkshopScene.ts` (the
+  bench chip / closure predicate), `src/world/interactionRegistry.ts` (the
+  bench's `window` id), `src/measurement/registerV3.ts` (M21 v3 route),
+  `src/measurement/features/m21.ts` (new), `src/measurement/features/index.ts`;
+  `e2e/m21_cases.spec.ts` (new pure), `e2e/m21_cases_route.spec.ts` (new
+  browser, the participant route to the return shift), `e2e/returnHelpers.ts`,
+  `e2e/pilot_return.spec.ts`, `e2e/pilot_return_models.spec.ts`,
+  `e2e/pilot_return_capture.spec.ts`; `docs/verification/station-080-m26/**`.
+- **Prohibited areas:** common, plus M20 / M22 / M25 code, `zoneSites.ts`,
+  `WorkSurfaceScene.ts`, the inventory system, the v2 ledger.
+- **Entry state:** HEAD `cc800ce` (U9), clean tree, branch
+  `fable-professional-world-rescue-v2`.
+- **Success behaviour:** both cases reachable in sequence on the bench;
+  every action a transaction (refused actions never mutate); the first FIT
+  recorded as the first application with its truthful faults; restudy
+  sections and their relevance recorded per application; the extractor
+  reproduces restudy-and-revision / incorrect-first cases from the raw
+  family with the per-case strategy exported beside it.
+- **Failure/recovery:** ESC / Leave keeps the case open (departure counted,
+  reopening a reengagement); Set aside completes the case as `stopped`
+  (an observed exit); the review censors an open case and marks a
+  never-opened one absent; a technical failure closes `technical_failure`;
+  the unit-2 window opens when unit 2 is placed on the bench in front of
+  the participant (case 1 closed).
+- **Telemetry boundary:** family `proto_m21_case_*` (candidate; suffixes
+  `presented`, `opportunity_opened`, `case_placed`, `plate_inspected`,
+  `manual_opened`, `section_consulted` (with `after_application`),
+  `mode_switched`, `post_set`, `selector_set`, `invalid_action`,
+  `applied` (index, correct, faults, revised, restudy*sections,
+  relevant_restudy), `feedback_presented`, `restudy`,
+  `revised_application`, `accepted`, `set_aside`, `reengagement`,
+  `departed`, `window_closed`, `technical_failure`); opportunity ids
+  `proto_m21_case_o1` / `o2`, windows `m21_case_o1` / `o2`; the v2
+  `proto_m21_manual*\*` family keeps its v2 meaning in the frozen ledger
+  and is retired from the route; no canonical name or approved formula
+  invented.
+- **Scientific acceptance:** the first application is the participant's
+  first FIT (no pre-application test); feedback is truthful and names the
+  failed subsystem, never the post; a restudy counts only when it follows
+  the incorrect application, and is relevant only when it bears on a
+  failed subsystem; a revised application is a FIT with a changed
+  configuration; the two cases have different rules so case 2 is not
+  solved by case 1; the manual's total text is 240–320 words; matched load
+  per form.
+- **Gameplay acceptance:** the bench keeps its station and surface id;
+  keyboard / pointer parity (I plate, F fit, ESC leave; tabs and
+  references activatable); every existing return-shift helper keeps its
+  option indices; legible at 800×600.
+- **Required tests:** `npm.cmd run lint:tsc`, `npm.cmd run build`,
+  ESLint + Prettier (`endOfLine: auto`) on touched files, pure
+  `m21_cases` + `pilot_return_models` + `m26_protocol_foundation` +
+  `pilot_coverage` + `pilot_closure_models` + `pilot_route_model` +
+  `evidence_ledger`; browser `m21_cases_route` (the participant route to
+  the return shift — run where the environment's driver allows; the
+  return-shift specs ride through the Concourse / Workshop stalls recorded
+  under U6–U9).
+- **Required screenshots:** the bench after a failing first application
+  (truthful feedback) and the second unit placed, at 800×600 (evidence, not
+  committed).
+- **Stop conditions:** common.
+- **Model:** Fable; reviewer stand-ins as declared in U6.
+- **Commit expectation:** `feat(m21): two independent manual cases with
+truthful feedback, relevant restudy and revised applications`.
+- **Reviewer availability:** as U6–U9 — the `scientific-reviewer` and
+  `gameplay-reviewer` definitions run verbatim through read-only Opus
+  stand-ins; the `test-reviewer` scope covered by the implementer's
+  recorded runs below.
+- **Review round 1 (read-only, on the working tree after the first
+  browser run):** scientific: concerns found — 3 high / 7 medium / 8 low +
+  12 owner questions; gameplay: usable with noted friction — 1 high /
+  4 medium / 7 low + 7 measurement flags. Material findings and their
+  resolution:
+  - A first FIT with no information counted as the eligibility event
+    (S-F1 high, G-F1): FIT was enabled and accented before the plate was
+    read and the initial configuration is never correct — fixed to the
+    contract's own gate ("the plate inspected to start"): FIT is disabled
+    until the plate has been inspected, and the adapter refuses a blind
+    press without a record (`press_refused`, `plate_not_inspected`);
+    the alternative (any FIT + an informedness covariate) is the owner's
+    (§5.100).
+  - Review-closed cases were censored even when the numerator fact was
+    already observed (S-F2 high) — fixed: a review-closed incorrect case
+    keeps its 1 when a relevant restudy and a revised application were
+    observed; only cases without that fact are censored (pure-tested).
+  - Walking away after a failure is censored at the review while an
+    explicit set-aside is an observed 0 (S-F3 high) — the M25 precedent
+    (§5.24) closed departures as observations; routed to the owner
+    (§5.101), no change.
+  - A double activation across the unit switch acted on unit 2 (G-H1):
+    fixed — a FIT or SET ASIDE press inside 1.5 s of the next unit's
+    placement is refused (`placement_settling`), and FIT on the new unit
+    is in any case disabled until its plate is read.
+  - The cumulative restudy rule could credit a section read before its
+    fault existed (S-F4) — fixed: a section read after application k is
+    relevant only to faults known from applications 1..k, one rule in the
+    model, the `restudy` event and the exported components.
+  - Re-reading the section left open after a FIT was invisible (S-F5) —
+    fixed: the open section collapses with every application, so a
+    restudy is always an explicit consult.
+  - The failure line told the participant to "read the manual" (S-F6,
+    G-F3) and the readout showed an attempt count (S-F15) — fixed: the
+    status is the truthful fault line only ("… It stays on the bench.");
+    the readout drops the index; the neutral pre-fit status now says
+    "Read the plate, configure …".
+  - The 240–320-word budget was met only by counting symbols (S-F7) —
+    fixed: the count is lexical (tokens with a letter or digit) and the
+    manuals gained short procedural sentences (case 1 §1 / §3, case 2 §1 /
+    §2 / §3) — 251 lexical words; case 2 §1 no longer cites §4 (S-F10,
+    G-L4).
+  - The extractor did not recount the numerator (S-F9) — fixed: it is
+    recounted per case from the `section_consulted` (`after_application`)
+    and `applied` (`faults`, `revised`) events with the same rule; a
+    disagreeing case record ⇒ `technical_failure`. The window kit stamps
+    closures with `occasion` (the adapter's own events carry `case`):
+    the extractor reads either — the first browser run had exposed the
+    gap (denominator 0).
+  - Feedback and placement copy (G-M1, G-M2): the acceptance line names
+    the unit, where it went ("released to the belt" / "belt full, so it is
+    set beside the bench" / "released from the bench") and the unit placed
+    next; the set-aside line names the unit and the next unit; the bench
+    chip strings shortened so they fit at the world's left edge (G-M3);
+    the selector detail dropped (the selected glyph suffices, G-L1); the
+    last unit auto-closes the surface whether accepted or set aside
+    (G-L3); fitted posts use the neutral 'selected' state instead of the ✓
+    'done' mark (G-F6); the stale surface header updated (G-L5).
+  - Strategy labels (S-F11): `revise_without_restudy` renamed
+    `revise_without_relevant_restudy`; `restudy_then_exit` covers any
+    restudy (documented).
+  - Stale v2 assertions in `pilot_return.spec.ts` (S-F16) — fixed (the
+    per-case probe, the `proto_m21_case_accepted` event, `OPPORTUNITY.m21o1`).
+  - Owner questions, no change: departure vs exit (§5.101); the
+    denominator narrowed to participant-resolved cases (§5.102); §1 and
+    plate re-inspection as restudy (§5.103); difficulty and fixed order of
+    the two cases — case 2's search space is smaller and the method
+    transfers (S-F8, §5.104); DIAGRAM mode as a glyph template of the
+    target (S-F10, §5.105); "another strategy" classification (§5.106);
+    the auto-placed second unit's departures / reengagement (G-F5,
+    §5.107); the technical-failure path voiding both cases (S-F14) and
+    the registry mapping the bench to case 1 only (S-F17, G-L6) —
+    documented; keyboard focus falling back to Inspect after a reference /
+    mode / selector activation (G-M4) is a shared-surface behaviour outside
+    the allowlist, left for a later unit; the ledger's `active_seconds`
+    is frozen v2 material (S-F18).
+- **Review round 2:** not run as a separate reviewer pass — the fixes are
+  bounded to the cited findings and covered by the extended pure specs
+  and the rerun browser spec; a fresh review of the review fixes is folded
+  into U24 (precedent U2-R … U9).
+- **Verification results (final tree):** `npm.cmd run lint:tsc` 0 ·
+  `npm.cmd run build` 0 · ESLint + Prettier (`endOfLine: auto`) on
+  `src` and `e2e` 0 and on every touched doc · pure `m21_cases` (2) +
+  `pilot_return_models` (its M21 tests rewritten) + `m26_protocol_foundation`
+  - `pilot_coverage` + `pilot_closure_models` + `pilot_route_model` +
+    `evidence_ledger` 78/78 (retries off) · browser `m21_cases_route` (the
+    full participant route: Dock → Concourse offers → Workshop restoration
+    shift → exterior shift → the purposeful return → Kai handover → gauge →
+    Vale's check-in → the bench): run 1 reached the bench and failed only on
+    my coverage expectation (`pending` while unit 2 is declared and
+    untouched — the M01 / M12 reading); run 2 (before the review fixes)
+    failed at the offline reproduction — the extractor read `case` only,
+    the window kit stamps closures with `occasion` (fixed above); run 3 (after the fixes) 1/1 (3.6 min) — `test-results/m21-failing-800x600.png` (the truthful fault line, the fit readout flagged, FIT "again", no post named) and `test-results/m21-unit2-800x600.png` (unit 2 placed: the pump controller title, two breakers, four dial positions, its own manual) inspected and copied to the scratchpad, not committed
+    · `pilot_return` / `pilot_return_capture` updated but not run in this
+    unit (they ride the same route; the capture suite writes into the docs
+    screenshot folders) · `verify-unit` PASS · `git diff --check` clean.
+- **Deviations:** the contract's telemetry boundary gained
+  `press_refused` (`plate_not_inspected`, `placement_settling`); the
+  registry maps the bench station to `m21_case_o1` only (one station, two
+  windows); the strategy label `revise_without_restudy` became
+  `revise_without_relevant_restudy`; the commit subject shortened to fit
+  the 100-character header rule (`feat(m21): two manual cases with
+truthful feedback, relevant restudy and revised applications`);
+  `CLAUDE_UNIT_ALLOWLIST` enforced by discipline + `verify-unit`; reviewer
+  stand-ins as declared; the execution specification file remains missing.
+- **Not changed:** M20 / M22 / M25 code, `zoneSites.ts`,
+  `WorkSurfaceScene.ts`, the inventory system, the v2 ledger
+  (`proto_m21_manual_*` keeps its meaning), `ScoringManager`,
+  `docs/research/**`, `docs/scientific/**`, package files, tool configs,
+  settings; every existing return-shift helper keeps its option indices.
 - **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
-  deleted. Next unit: U10 M21 (restudy after an incorrect application).
+  deleted. Next unit: U11 M22 (two setback reports with the discouragement
+  rating).

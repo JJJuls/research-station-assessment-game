@@ -4,8 +4,10 @@
  * convention): M03 occasion separation and matched entry forms; M07 / M09
  * / M10 start-end linking against the frozen ledger and the source
  * modules; M09/M10 family disjointness; M20 start→resume linking through
- * `M20_RESUME_WINDOW_ID` and every start history; the M21 repair-engine
- * transactions and rollback; the M22 standardised setback; M21/M22
+ * `M20_RESUME_WINDOW_ID` and every start history; the M21 two-case
+ * repair engine (Unit 10: FIT is the application, truthful faults,
+ * restudy relevance, revised applications) and its rollback; the M22
+ * standardised setback; M21/M22
  * independence; M25 questionnaire-primary semantics; missing / invalid /
  * technical-failure separation; the static no-score / no-canonical /
  * no-wording guarantee.
@@ -43,28 +45,27 @@ import {
   m20Snapshot,
 } from '../src/pilot/exterior/m20AntennaModel';
 import {
-  createM21State,
+  createM21CaseState,
+  M21_CASE_DEFS,
   M21_EVENT_SUFFIXES,
   M21_FAMILY,
-  M21_FORMS,
-  M21_MANUAL_DIAGRAM,
-  M21_MANUAL_TEXT,
-  M21_OPPORTUNITY_ID,
+  M21_OPPORTUNITY_IDS,
   M21_SECTION_REFERENCES,
   M21_SECTIONS,
-  M21_WINDOW_ID,
-  m21BenchTest,
+  M21_WINDOW_IDS,
+  m21Apply,
   m21Close,
   m21ConfigCorrect,
   m21Consult,
   m21Depart,
   m21Enter,
-  m21Fit,
   m21InspectPlate,
+  m21ManualWordCount,
   m21RawComponents,
   m21Reopen,
-  m21SetJumper,
+  m21SetPost,
   m21SetSelector,
+  m21Strategy,
   m21SwitchMode,
 } from '../src/pilot/return/m21ManualModel';
 import {
@@ -456,132 +457,233 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
     }
   });
 
-  test('9. M21 repair engine: every refused action leaves the state untouched; consults, references, revisions, tests and the fit are transactions', () => {
-    for (const form of ['form_a', 'form_b'] as const) {
-      const s = createM21State(form);
-      const spec = M21_FORMS[form];
+  test('9. M21 two-case repair engine (Unit 10): refused actions never mutate; FIT is the application with truthful faults; restudy after a failing application is relevant only when it bears on a failed subsystem; a revised application is a changed configuration; both cases matched and the manual within its word budget', () => {
+    for (const caseId of ['o1', 'o2'] as const) {
+      for (const form of ['form_a', 'form_b'] as const) {
+        const s = createM21CaseState(caseId, form);
+        const def = M21_CASE_DEFS[caseId];
+        const spec = def.forms[form];
 
-      // Nothing before entry.
-      expect(m21InspectPlate(s, 0)).toBe(false);
-      expect(m21SetJumper(s, 'J1', true, 0)).toBe(false);
-      expect(s.actions).toHaveLength(0);
-      expect(s.invalid_actions).toBe(0);
+        // Nothing before entry.
+        expect(m21InspectPlate(s, 0)).toBe(false);
+        expect(m21SetPost(s, def.posts[0], true, 0)).toBe(false);
+        expect(m21Apply(s, 0)).toBeNull();
+        expect(s.actions).toHaveLength(0);
+        expect(s.invalid_actions).toBe(0);
 
-      expect(m21Enter(s, 100)).toBe(true);
-      expect(m21Enter(s, 101)).toBe(false);
+        expect(m21Enter(s, 100)).toBe(true);
+        expect(m21Enter(s, 101)).toBe(false);
+        // FIT needs the plate read first (the v2 gate).
+        expect(m21Apply(s, 102)).toBeNull();
+        expect(m21InspectPlate(s, 105)).toBe(true);
 
-      // Reference chain: §1 → §2 → §4 (depth 2); a reference the section
-      // does not offer is refused without mutating.
-      expect(m21Consult(s, 's4_variant_table', 'reference', 200)).toBe(false); // no current section
-      expect(m21Consult(s, 's1_identify', 'tab', 200)).toBe(true);
-      expect(m21Consult(s, 's4_variant_table', 'reference', 210)).toBe(false); // §1 does not reference §4
-      expect(s.section_visits).toHaveLength(1);
-      expect(m21Consult(s, 's2_jumper_rule', 'reference', 220)).toBe(true);
-      expect(m21Consult(s, 's4_variant_table', 'reference', 230)).toBe(true);
-      expect(s.cross_reference_depth).toBe(2);
-      expect(m21Consult(s, 's3_selector_rule', 'tab', 240)).toBe(true);
-      expect(s.cross_reference_depth).toBe(2); // a tab never lowers it
-      expect(s.sections_consulted).toHaveLength(4);
-      expect(m21SwitchMode(s, 'diagram', 250)).toBe(true);
-      expect(m21SwitchMode(s, 'diagram', 251)).toBe(false);
-      expect(s.mode_switches).toBe(1);
+        // Reference chain: §1 → §2 → §4 (depth 2); a reference the section
+        // does not offer is refused without mutating.
+        expect(m21Consult(s, 's4_code_table', 'reference', 200)).toBe(false);
+        expect(m21Consult(s, 's1_identify', 'tab', 200)).toBe(true);
+        expect(m21Consult(s, 's4_code_table', 'reference', 210)).toBe(false);
+        expect(s.section_visits).toHaveLength(1);
+        expect(m21Consult(s, 's2_post_rule', 'reference', 220)).toBe(true);
+        expect(m21Consult(s, 's4_code_table', 'reference', 230)).toBe(true);
+        expect(s.cross_reference_depth).toBe(2);
+        expect(m21Consult(s, 's3_selector_rule', 'tab', 240)).toBe(true);
+        expect(s.sections_consulted).toHaveLength(4);
+        expect(m21SwitchMode(s, 'diagram', 250)).toBe(true);
+        expect(m21SwitchMode(s, 'diagram', 251)).toBe(false);
 
-      // Same-state jumper / selector = invalid, refused, counted.
-      const snapshot = JSON.stringify(s.jumpers);
+        // Same-state post / selector / unknown target = invalid, refused, counted.
+        const snapshot = JSON.stringify(s.posts);
 
-      expect(m21SetJumper(s, 'J1', false, 300)).toBe(false);
-      expect(JSON.stringify(s.jumpers)).toBe(snapshot);
-      expect(m21SetSelector(s, 'L2', 300)).toBe(false);
-      expect(s.invalid_actions).toBe(2);
-      expect(s.actions).toHaveLength(0);
+        expect(m21SetPost(s, def.posts[0], false, 300)).toBe(false);
+        expect(m21SetPost(s, 'Z9', true, 300)).toBe(false);
+        expect(JSON.stringify(s.posts)).toBe(snapshot);
+        expect(m21SetSelector(s, def.initial_selector, 300)).toBe(false);
+        expect(s.invalid_actions).toBe(4);
+        expect(s.actions).toHaveLength(0);
 
-      // A wrong jumper, a failed test (informative, never the post), a
-      // reengagement with the table, a revision, a passing test.
-      const wrong = (['J1', 'J2', 'J3', 'J4'] as const).find(
-        (post) => !spec.correct_jumpers.includes(post),
-      )!;
+        // A wrong post with the right selector, then FIT: the first
+        // application fails truthfully on the posts only (never which post).
+        const wrong = def.posts.find(
+          (post) => !spec.correct_posts.includes(post),
+        )!;
 
-      expect(m21SetJumper(s, wrong, true, 400)).toBe(true);
-      expect(s.revisions).toBe(0);
+        expect(m21SetPost(s, wrong, true, 400)).toBe(true);
+        expect(m21SetSelector(s, spec.correct_selector, 410)).toBe(true);
 
-      const fail = m21BenchTest(s, 500)!;
+        const first = m21Apply(s, 500)!;
 
-      expect(fail.pass).toBe(false);
-      expect(fail.faults).toEqual(['jumper_mismatch', 'line_class_mismatch']);
-      expect(m21Consult(s, 's4_variant_table', 'tab', 600)).toBe(true);
-      expect(s.reengagements).toBe(1);
-      expect(m21Consult(s, 's2_jumper_rule', 'tab', 610)).toBe(true);
-      expect(s.reengagements).toBe(1); // once per failed test
-      expect(m21SetJumper(s, wrong, false, 700)).toBe(true);
-      expect(s.revisions).toBe(1);
+        expect(first).toMatchObject({
+          index: 1,
+          correct: false,
+          faults: ['posts'],
+          revised: false,
+          relevant_restudy: false,
+        });
+        expect(s.accepted).toBe(false);
+        expect(m21Strategy(s)).toBe('unresolved');
+        // The open section collapsed with the application (S-F5).
+        expect(s.current_section).toBeNull();
 
-      for (const post of spec.correct_jumpers) {
-        expect(m21SetJumper(s, post, true, 800)).toBe(true);
+        // Restudy: §3 (selector) is not relevant to a posts fault; §4 is.
+        expect(m21Consult(s, 's3_selector_rule', 'tab', 600)).toBe(true);
+        expect(m21Consult(s, 's4_code_table', 'tab', 610)).toBe(true);
+        // A second FIT without any change is NOT a revised application.
+        const same = m21Apply(s, 650)!;
+
+        expect(same).toMatchObject({
+          index: 2,
+          correct: false,
+          revised: false,
+          restudy_sections: ['s3_selector_rule', 's4_code_table'],
+          relevant_restudy: true,
+        });
+
+        // Revise (remove the wrong post, fit the right ones) and FIT: accepted.
+        expect(m21SetPost(s, wrong, false, 700)).toBe(true);
+
+        for (const post of spec.correct_posts) {
+          expect(m21SetPost(s, post, true, 800)).toBe(true);
+        }
+
+        expect(m21ConfigCorrect(s)).toBe(true);
+
+        // Departure keeps the case open; reopening is a reengagement.
+        expect(m21Depart(s, 900)).toBe(true);
+        expect(m21Reopen(s, 1000)).toBe(true);
+        expect(s.reengagements).toBe(1);
+
+        const third = m21Apply(s, 1100)!;
+
+        expect(third).toMatchObject({
+          index: 3,
+          correct: true,
+          revised: true,
+          restudy_sections: [],
+          relevant_restudy: false,
+        });
+        expect(s.accepted).toBe(true);
+        expect(m21Apply(s, 1101)).toBeNull();
+        expect(m21SetPost(s, wrong, true, 1102)).toBe(false); // accepted: refused
+        expect(m21Depart(s, 1103)).toBe(false);
+        expect(m21Close(s, 'accepted', 1104)).toBe(true);
+
+        const raw = m21RawComponents(s);
+
+        expect(raw).toMatchObject({
+          case: caseId,
+          form,
+          applications: 3,
+          first_application_correct: false,
+          first_application_faults: ['posts'],
+          relevant_restudy: true,
+          revised_application: true,
+          accepted: true,
+          correct_rule_application: true,
+          strategy: 'restudy_and_revise',
+          reference_sections_used: 4,
+          cross_reference_depth: 2,
+          diagram_mode_used: true,
+          reengagement: 1,
+        });
+        // The numerator fact needs the relevant restudy to precede a
+        // REVISED application: here the restudy preceded application 2
+        // (unchanged) and the revision came in application 3 — the case's
+        // fact is judged over the whole sequence after the first failure.
+        expect(raw.restudy_revision).toBe(true);
+        // Active time only: the 100 ms away from the bench is excluded.
+        expect(raw.time_by_phase_ms.manual + raw.time_by_phase_ms.unit).toBe(
+          1104 - 100 - 100,
+        );
+
+        for (const key of Object.keys(raw)) {
+          expect(key).not.toMatch(/score|persist|grit|trait|reading_speed/i);
+        }
+      }
+    }
+
+    // A first-time success has no failure-conditioned facts; an exit after
+    // a failure is an exit (restudy or not).
+    {
+      const s = createM21CaseState('o2', 'form_a');
+      const spec = M21_CASE_DEFS.o2.forms.form_a;
+
+      m21Enter(s, 0);
+      m21InspectPlate(s, 5);
+
+      for (const post of spec.correct_posts) {
+        m21SetPost(s, post, true, 10);
       }
 
-      expect(m21SetSelector(s, spec.correct_selector, 900)).toBe(true);
-      expect(m21ConfigCorrect(s)).toBe(true);
+      m21SetSelector(s, spec.correct_selector, 20);
+      expect(m21Apply(s, 30)!.correct).toBe(true);
+      expect(m21Strategy(s)).toBe('first_correct');
+      expect(m21RawComponents(s).restudy_revision).toBeNull();
 
-      const pass = m21BenchTest(s, 1000)!;
+      const exit = createM21CaseState('o1', 'form_b');
 
-      expect(pass.pass).toBe(true);
-      expect(pass.faults).toEqual([]);
+      m21Enter(exit, 0);
+      m21InspectPlate(exit, 5);
+      expect(m21Apply(exit, 10)!.correct).toBe(false);
+      m21Close(exit, 'set_aside', 20);
+      expect(m21Strategy(exit)).toBe('exit');
+      expect(m21RawComponents(exit).restudy_revision).toBe(false);
 
-      // Departure keeps the window; reopening is a reengagement.
-      expect(m21Depart(s, 1100)).toBe(true);
-      expect(m21Reopen(s, 1200)).toBe(true);
-      expect(s.reengagements).toBe(2);
+      const restudyExit = createM21CaseState('o1', 'form_b');
 
-      expect(m21Fit(s, 1300)).toBe(true);
-      expect(m21Fit(s, 1301)).toBe(false);
-      expect(m21SetJumper(s, 'J2', !s.jumpers.J2, 1302)).toBe(false); // fitted: refused
-      expect(m21Depart(s, 1303)).toBe(false);
-      expect(m21Close(s, 'fitted', 1304)).toBe(true);
+      m21Enter(restudyExit, 0);
+      m21InspectPlate(restudyExit, 5);
+      m21Apply(restudyExit, 10);
+      m21Consult(restudyExit, 's2_post_rule', 'tab', 20);
+      m21Close(restudyExit, 'set_aside', 30);
+      expect(m21Strategy(restudyExit)).toBe('restudy_then_exit');
 
-      const raw = m21RawComponents(s);
+      const blind = createM21CaseState('o1', 'form_b');
+      const blindSpec = M21_CASE_DEFS.o1.forms.form_b;
 
-      expect(raw).toMatchObject({
-        reference_sections_used: 4,
-        cross_reference_depth: 2,
-        reengagement: 2,
-        correct_rule_application: true,
-        completion: true,
-        revisions: 1 + spec.correct_jumpers.length + 1,
-        bench_tests: 2,
-        first_test_pass: false,
-        last_test_pass: true,
-        diagram_mode_used: true,
-        form,
-      });
-      // Active time only: the 100 ms away from the bench (1100 → 1200)
-      // is excluded by construction.
-      expect(raw.time_by_phase_ms.manual + raw.time_by_phase_ms.unit).toBe(
-        1304 - 100 - 100,
+      m21Enter(blind, 0);
+      m21InspectPlate(blind, 5);
+      m21Apply(blind, 10);
+
+      for (const post of blindSpec.correct_posts) {
+        m21SetPost(blind, post, true, 20);
+      }
+
+      m21SetSelector(blind, blindSpec.correct_selector, 30);
+      expect(m21Apply(blind, 40)!.correct).toBe(true);
+      expect(m21Strategy(blind)).toBe('revise_without_relevant_restudy');
+      expect(m21RawComponents(blind).restudy_revision).toBe(false);
+    }
+
+    // Matched load per form and case; the manual never states an answer
+    // for a plate code; the two cases' text totals 240–320 words.
+    let words = 0;
+
+    for (const caseId of ['o1', 'o2'] as const) {
+      const def = M21_CASE_DEFS[caseId];
+
+      expect(def.forms.form_a.correct_posts).toHaveLength(
+        def.forms.form_b.correct_posts.length,
       );
+      expect(def.forms.form_a.correct_selector).not.toBe(def.initial_selector);
+      expect(def.forms.form_b.correct_selector).not.toBe(def.initial_selector);
 
-      for (const key of Object.keys(raw)) {
-        expect(key).not.toMatch(/score|persist|grit|trait|reading_speed/i);
+      for (const section of M21_SECTIONS) {
+        expect(def.manual_text[section]).not.toMatch(/7K|7R|3Y|3X/);
+        expect(def.manual_diagram[section]).not.toMatch(/7K|7R|3Y|3X/);
       }
+
+      // The §1 text and the offered references agree (S-F10).
+      expect(def.manual_text.s1_identify).not.toMatch(/§4/);
+      words += m21ManualWordCount(def);
     }
 
-    // Matched load: two jumpers + one selector change in both forms; the
-    // manual is identical and never states an answer for a plate code.
-    for (const form of ['form_a', 'form_b'] as const) {
-      expect(M21_FORMS[form].correct_jumpers).toHaveLength(2);
-      expect(M21_FORMS[form].correct_selector).not.toBe('L2');
-    }
-
-    for (const section of M21_SECTIONS) {
-      expect(M21_MANUAL_TEXT[section]).not.toMatch(/7K|7R/);
-      expect(M21_MANUAL_DIAGRAM[section]).not.toMatch(/7K|7R/);
-      expect(M21_MANUAL_TEXT[section].length).toBeLessThan(320);
-    }
-
+    expect(words).toBeGreaterThanOrEqual(240);
+    expect(words).toBeLessThanOrEqual(320);
     expect(M21_SECTION_REFERENCES.s1_identify).toEqual([
-      's2_jumper_rule',
+      's2_post_rule',
       's3_selector_rule',
     ]);
-    expect(M21_SECTION_REFERENCES.s2_jumper_rule).toEqual(['s4_variant_table']);
+    expect(M21_SECTION_REFERENCES.s2_post_rule).toEqual(['s4_code_table']);
   });
 
   test('10. M22 standardised setback: a valid first submission is returned with one fixed criterion; editing needs the acknowledgement; unchanged, useful and recovering resubmissions are distinct; no random success', () => {
@@ -698,8 +800,10 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
   });
 
   test('11. M21 and M22 are independent: different ids, families, objects and state; M22 presentable whatever M21 did; no shared counter', () => {
-    expect(M21_OPPORTUNITY_ID).not.toBe(M22_OPPORTUNITY_ID);
-    expect(M21_WINDOW_ID).not.toBe(M22_WINDOW_ID);
+    expect(M21_OPPORTUNITY_IDS.o1).not.toBe(M22_OPPORTUNITY_ID);
+    expect(M21_OPPORTUNITY_IDS.o2).not.toBe(M22_OPPORTUNITY_ID);
+    expect(M21_WINDOW_IDS.o1).not.toBe(M22_WINDOW_ID);
+    expect(M21_WINDOW_IDS.o2).not.toBe(M22_WINDOW_ID);
     expect(M21_FAMILY.startsWith(M22_FAMILY)).toBe(false);
     expect(M22_FAMILY.startsWith(M21_FAMILY)).toBe(false);
 
@@ -718,7 +822,7 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
 
     // M22 runs to recovery with M21 never entered, exited, or set aside.
     for (const history of ['never', 'exited', 'set_aside'] as const) {
-      const bench = createM21State('form_a');
+      const bench = createM21CaseState('o1', 'form_a');
 
       if (history !== 'never') {
         m21Enter(bench, 0);
@@ -741,7 +845,7 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
       m22AttachTag(desk, 'l_loop', 'WO-12', 17);
       m22AttachTag(desk, 'l_metal', 'WO-14', 18);
       expect(m22Submit(desk, 19)).toBe('accepted');
-      expect(m21RawComponents(bench).completion).toBe(false);
+      expect(m21RawComponents(bench).accepted).toBe(false);
       expect(m22RawComponents(desk).recovery_complete).toBe(true);
     }
 
@@ -852,19 +956,19 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
     });
     expect(m22RawComponents(acknowledged).recovery_complete).toBe(false);
 
-    // M21: set aside vs review vs fitted are different stop states.
-    const aside = createM21State('form_b');
+    // M21: set aside vs review vs accepted are different stop states.
+    const aside = createM21CaseState('o1', 'form_b');
 
     m21Enter(aside, 0);
     m21Close(aside, 'set_aside', 1);
     expect(m21RawComponents(aside).stop_choice).toBe('set_aside');
 
-    const review = createM21State('form_b');
+    const review = createM21CaseState('o1', 'form_b');
 
     m21Enter(review, 0);
     m21Close(review, 'closed_at_review', 1);
     expect(m21RawComponents(review).stop_choice).toBe('closed_at_review');
-    expect(m21RawComponents(review).completion).toBe(false);
+    expect(m21RawComponents(review).accepted).toBe(false);
     expect(m21RawComponents(review).correct_rule_application).toBeNull();
 
     // The adapter routes each disposition to the register with the right

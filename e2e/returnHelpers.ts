@@ -107,7 +107,8 @@ export const OPPORTUNITY = {
   m09: 'proto_m09_monitor_watch',
   m10: 'proto_m10_component_promise',
   m20: 'proto_m20_antenna_restoration',
-  m21: 'proto_m21_manual_repair',
+  m21o1: 'proto_m21_case_o1',
+  m21o2: 'proto_m21_case_o2',
   m22: 'proto_m22_report_revision',
   m25: 'proto_m25_belief_probe',
 } as const;
@@ -115,6 +116,40 @@ export const OPPORTUNITY = {
 /* ------------------------------------------------------------------ *
  * Probes
  * ------------------------------------------------------------------ */
+
+export interface ReturnProbeM21Case {
+  window: string;
+  exit: string | null;
+  entered: boolean;
+  closed: boolean;
+  manual_mode: string;
+  current_section: string | null;
+  case: 'o1' | 'o2';
+  form: 'form_a' | 'form_b';
+  applications: number;
+  first_application_correct: boolean | null;
+  first_application_faults: string[] | null;
+  restudy_sections_after_first: string[];
+  relevant_restudy: boolean | null;
+  revised_application: boolean | null;
+  restudy_revision: boolean | null;
+  accepted: boolean;
+  correct_rule_application: boolean | null;
+  strategy: string;
+  reference_sections_used: number;
+  cross_reference_depth: number;
+  sections_consulted: string[];
+  reference_follows: number;
+  diagram_mode_used: boolean;
+  plate_inspected: boolean;
+  repair_actions: number;
+  invalid_actions: number;
+  output_delivery: string | null;
+  departures: number;
+  reengagement: number;
+  stop_choice: string | null;
+  time_by_phase_ms: { manual: number; unit: number };
+}
 
 export interface ReturnProbe {
   m20: {
@@ -138,31 +173,10 @@ export interface ReturnProbe {
     resume_closed_reason: string | null;
   };
   m21: {
-    window: string;
-    exit: string | null;
-    entered: boolean;
-    closed: boolean;
-    manual_mode: string;
-    current_section: string | null;
-    reference_sections_used: number;
-    cross_reference_depth: number;
-    reengagement: number;
-    correct_rule_application: boolean | null;
-    completion: boolean;
-    form: 'form_a' | 'form_b';
-    sections_consulted: string[];
-    reference_follows: number;
-    diagram_mode_used: boolean;
-    plate_inspected: boolean;
-    repair_actions: number;
-    invalid_actions: number;
-    revisions: number;
-    bench_tests: number;
-    first_test_pass: boolean | null;
-    output_delivery: string | null;
-    departures: number;
-    stop_choice: string | null;
-    time_by_phase_ms: { manual: number; unit: number };
+    active: 'o1' | 'o2';
+    all_closed: boolean;
+    o1: ReturnProbeM21Case;
+    o2: ReturnProbeM21Case;
   };
   m22: {
     window: string;
@@ -1092,15 +1106,26 @@ export async function resumeAntenna(page: Page, stages: number) {
  * ------------------------------------------------------------------ */
 
 export const M21_SPEC = {
-  form_a: { jumpers: ['J1', 'J3'], selector: 'L3', plate: 'RELAY 7K/B' },
-  form_b: { jumpers: ['J2', 'J4'], selector: 'L1', plate: 'RELAY 7R/C' },
+  o1: {
+    form_a: { posts: ['J1', 'J3'], selector: 'L3', plate: 'RELAY 7K/B' },
+    form_b: { posts: ['J2', 'J4'], selector: 'L1', plate: 'RELAY 7R/C' },
+    all: ['J1', 'J2', 'J3', 'J4'],
+  },
+  o2: {
+    form_a: { posts: ['B2'], selector: 'R1', plate: 'PUMP 3Y/M' },
+    form_b: { posts: ['B1'], selector: 'R4', plate: 'PUMP 3X/S' },
+    all: ['B1', 'B2'],
+  },
 } as const;
 
 /**
- * The full manual-based repair by real input: inspect the plate (keyboard
- * hotkey), read §1 → §2 → §4 by following the references, §3 from the tab
- * bar, switch to the diagram once, fit ONE wrong jumper first when asked,
- * test (fault), revise, test (pass), fit. Keyboard and pointer both used.
+ * Unit 10: the two-case manual repair by real input. Case 1 (relay unit):
+ * inspect the plate (keyboard hotkey), read §1 → §2 → §4 by following the
+ * references, §3 from the tab bar, switch to the diagram once; when asked,
+ * fit ONE wrong jumper first and FIT — the truthful fault names the
+ * subsystem; restudy §4 (relevant), revise, FIT again (accepted). Case 2
+ * (pump controller, placed at once): read §1 / §3 / §4, configure and FIT
+ * correctly first time. Keyboard and pointer both used.
  */
 export async function repairRelay(
   page: Page,
@@ -1108,57 +1133,87 @@ export async function repairRelay(
 ) {
   await openWorkshopSurface(page, 'relayBench', 'm21_relay_bench');
 
-  const form = (await returnProbe(page)).m21.form;
-  const spec = M21_SPEC[form];
+  const form1 = (await returnProbe(page)).m21.o1.form;
+  const spec1 = M21_SPEC.o1[form1];
 
   await press(page, 'i'); // inspect plate (hidden hotkey)
   await page.waitForTimeout(250);
-  expect((await surfaceElement(page, 'plate'))?.label).toContain(spec.plate);
+  expect((await surfaceElement(page, 'plate'))?.label).toContain(spec1.plate);
 
   await clickElement(page, 'section_s1_identify');
-  await clickElement(page, 'ref_s2_jumper_rule');
-  await clickElement(page, 'ref_s4_variant_table');
+  await clickElement(page, 'ref_s2_post_rule');
+  await clickElement(page, 'ref_s4_code_table');
   await keyActivate(page, 'section_s3_selector_rule');
   await clickElement(page, 'mode_diagram');
   await clickElement(page, 'mode_text');
 
   if (options.wrongFirst) {
-    const wrong = (['J1', 'J2', 'J3', 'J4'] as const).find(
-      (post) => !(spec.jumpers as readonly string[]).includes(post),
+    const wrong = M21_SPEC.o1.all.find(
+      (post) => !(spec1.posts as readonly string[]).includes(post),
     )!;
 
     await clickElement(page, `post_${wrong}`);
-    await press(page, 't');
+    await keyActivate(page, `line_${spec1.selector}`);
+    await press(page, 'f');
     await page.waitForTimeout(300);
-    expect((await surfaceElement(page, 'test_readout'))?.label).toContain(
-      'FAULT',
+    expect((await surfaceElement(page, 'fit_readout'))?.label).toContain(
+      'fails',
     );
-    // Re-read the table after the failed test (reengagement), then revise.
-    await clickElement(page, 'section_s4_variant_table');
+    // Restudy the table after the failing application (relevant), revise.
+    await clickElement(page, 'section_s4_code_table');
     await clickElement(page, `post_${wrong}`);
   }
 
-  for (const post of spec.jumpers) {
+  for (const post of spec1.posts) {
     await clickElement(page, `post_${post}`);
   }
 
-  await keyActivate(page, `line_${spec.selector}`);
-  await press(page, 't');
-  await page.waitForTimeout(300);
-  expect((await surfaceElement(page, 'test_readout'))?.label).toContain('PASS');
-
-  if (options.fit) {
-    await press(page, 'f');
-    await page.waitForFunction(
-      () =>
-        (window as unknown as { __returnProbe?: ReturnProbe | null })
-          .__returnProbe?.m21.completion === true,
-      undefined,
-      { timeout: 5000 },
-    );
-    await clickElement(page, 'leave');
-    await waitSurface(page, false);
+  if (!options.wrongFirst) {
+    await keyActivate(page, `line_${spec1.selector}`);
   }
+
+  if (!options.fit) {
+    return;
+  }
+
+  await press(page, 'f');
+  await page.waitForFunction(
+    () =>
+      (window as unknown as { __returnProbe?: ReturnProbe | null })
+        .__returnProbe?.m21.o1.accepted === true,
+    undefined,
+    { timeout: 5000 },
+  );
+
+  // Case 2 is placed on the bench at once: a correct first application.
+  const form2 = (await returnProbe(page)).m21.o2.form;
+  const spec2 = M21_SPEC.o2[form2];
+
+  // Past the placement settle window (Unit 10 review G-H1).
+  await page.waitForTimeout(1_600);
+  await press(page, 'i');
+  await page.waitForTimeout(250);
+  expect((await surfaceElement(page, 'plate'))?.label).toContain(spec2.plate);
+  await clickElement(page, 'section_s1_identify');
+  await clickElement(page, 'ref_s3_selector_rule');
+  await clickElement(page, 'section_s2_post_rule');
+  await clickElement(page, 'ref_s4_code_table');
+
+  for (const post of spec2.posts) {
+    await clickElement(page, `post_${post}`);
+  }
+
+  await clickElement(page, `line_${spec2.selector}`);
+  await press(page, 'f');
+  await page.waitForFunction(
+    () =>
+      (window as unknown as { __returnProbe?: ReturnProbe | null })
+        .__returnProbe?.m21.all_closed === true,
+    undefined,
+    { timeout: 5000 },
+  );
+  await clickElement(page, 'leave');
+  await waitSurface(page, false);
 }
 
 /* ------------------------------------------------------------------ *

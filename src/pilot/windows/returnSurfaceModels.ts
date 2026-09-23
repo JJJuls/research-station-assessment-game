@@ -8,9 +8,9 @@
  * surface renderer converges both paths on `onActivate`).
  *
  * Presentation rules: restrained, compact, operational copy only; state
- * is glyph + colour (never colour alone); no correctness preview beyond
- * the bench's own informative test; no reward effects; every surface can
- * be closed at any time (fail-forward).
+ * is glyph + colour (never colour alone); no correctness preview (the M21
+ * bench has no pre-application test — FIT is the application); no reward
+ * effects; every surface can be closed at any time (fail-forward).
  */
 import type { M20IndoorStage } from '../exterior/m20AntennaModel';
 import {
@@ -25,15 +25,11 @@ import {
 } from '../exterior/m20AntennaModel';
 import type { M21Section } from '../return/m21ManualModel';
 import {
-  M21_LINES,
-  M21_MANUAL_DIAGRAM,
-  M21_MANUAL_TEXT,
-  M21_POSTS,
   M21_SECTION_REFERENCES,
-  M21_SECTION_TITLES,
   M21_SECTIONS,
+  m21ApplicationReadout,
+  m21Def,
   m21Spec,
-  m21TestReadout,
   m21UnitReadout,
 } from '../return/m21ManualModel';
 import {
@@ -57,15 +53,16 @@ import {
   m20ConsoleResume,
   m20ConsoleSettling,
   m20ConsoleStatusLine,
-  m21ActBenchTest,
+  m21ActApply,
   m21ActConsult,
-  m21ActFit,
   m21ActInspectPlate,
-  m21ActJumper,
+  m21ActiveCase,
   m21ActOpenManual,
+  m21ActPost,
   m21ActSelector,
   m21ActSetAside,
   m21ActSwitchMode,
+  m21AllClosed,
   m21State,
   m22ActAcknowledge,
   m22ActAttachTag,
@@ -243,23 +240,27 @@ export function m20FeedConsoleSurfaceModel(
   };
 }
 
-// ——— M21 — relay bench + drawer manual ————————————————————————————————
+// ——— M21 — relay bench + drawer manual (two cases) ————————————————————
 
 const SECTION_SHORT: Record<M21Section, string> = {
   s1_identify: 'IDENTIFY',
-  s2_jumper_rule: 'JUMPERS',
+  s2_post_rule: 'RULE',
   s3_selector_rule: 'SELECTOR',
-  s4_variant_table: 'TABLE',
+  s4_code_table: 'TABLE',
 };
 
 export function m21RelayBenchSurfaceModel(
   host: ReturnSurfaceHost,
 ): WorkSurfaceModel {
   const s = m21State();
+  const def = m21Def(s);
   const spec = m21Spec(s);
-  const closed = s.closed;
-  const lastTest = s.bench_tests[s.bench_tests.length - 1] ?? null;
+  const unitIndex = m21ActiveCase() === 'o1' ? 1 : 2;
+  const closed = s.closed || m21AllClosed();
+  const lastApplication = s.applications[s.applications.length - 1] ?? null;
   const elements: SurfaceElement[] = [];
+  const capital = (text: string) =>
+    text.charAt(0).toUpperCase() + text.slice(1);
 
   // ——— unit (left) ———
   elements.push({
@@ -302,104 +303,99 @@ export function m21RelayBenchSurfaceModel(
     small: true,
   });
 
-  M21_POSTS.forEach((post, index) => {
-    const fitted = s.jumpers[post];
+  def.posts.forEach((post, index) => {
+    const on = s.posts[post];
 
     elements.push({
       id: `post_${post}`,
       kind: 'tile',
-      label: `Post ${post}`,
-      detail: fitted ? '■ jumper fitted' : '□ open',
+      label: `${capital(def.post_name)} ${post}`,
+      detail: on ? `■ ${def.post_on}` : `□ ${def.post_off}`,
       x: 16 + (index % 2) * 164,
       y: 152 + Math.floor(index / 2) * 48,
       w: 156,
       h: 42,
-      state: closed ? 'disabled' : fitted ? 'done' : 'idle',
+      // 'selected', never 'done': a fitted post is a setting, not a
+      // correctness mark (review G-F6).
+      state: closed ? 'disabled' : on ? 'selected' : 'idle',
       onActivate: closed
         ? undefined
         : (mode) => {
-            if (m21ActJumper(post, !fitted, host.now(), mode)) {
+            if (m21ActPost(post, !on, host.now(), mode)) {
               host.feedback(
-                fitted ? `${post} jumper removed.` : `${post} jumper fitted.`,
+                on ? `${post}: ${def.post_off}.` : `${post}: ${def.post_on}.`,
               );
             }
           },
     });
   });
 
-  M21_LINES.forEach((line, index) => {
-    const selected = s.selector === line;
+  const selectorWidth = Math.floor(320 / def.selector_positions.length) - 4;
+
+  def.selector_positions.forEach((position, index) => {
+    const selected = s.selector === position;
 
     elements.push({
-      id: `line_${line}`,
+      id: `line_${position}`,
       kind: 'tile',
-      label: `Line ${line}`,
-      detail: selected ? '▸ selector here' : '',
-      x: 16 + index * 108,
+      label: position,
+      detail: '',
+      x: 16 + index * (selectorWidth + 4),
       y: 252,
-      w: 104,
+      w: selectorWidth,
       h: 38,
+      small: true,
       state: closed ? 'disabled' : selected ? 'selected' : 'idle',
       onActivate:
         closed || selected
           ? undefined
           : (mode) => {
-              if (m21ActSelector(line, host.now(), mode)) {
-                host.feedback(`Selector set to ${line}.`);
+              if (m21ActSelector(position, host.now(), mode)) {
+                host.feedback(
+                  `${capital(def.selector_name)} set to ${position}.`,
+                );
               }
             },
     });
   });
 
   elements.push({
-    id: 'test_readout',
+    id: 'fit_readout',
     kind: 'readout',
-    label: m21TestReadout(lastTest),
+    label: m21ApplicationReadout(s),
     x: 16,
     y: 298,
     w: 320,
     h: 32,
-    state: lastTest !== null && !lastTest.pass ? 'flag' : 'idle',
-  });
-  elements.push({
-    id: 'bench_test',
-    kind: 'button',
-    label: 'Run bench test',
-    x: 16,
-    y: 338,
-    w: 150,
-    h: 32,
-    hotkey: 't',
-    state: closed ? 'disabled' : 'idle',
-    onActivate: closed
-      ? undefined
-      : (mode) => {
-          const test = m21ActBenchTest(host.now(), mode);
-
-          if (test !== null) {
-            host.feedback(m21TestReadout(test));
-          }
-        },
+    state:
+      lastApplication !== null && !lastApplication.correct ? 'flag' : 'idle',
   });
   elements.push({
     id: 'fit',
     kind: 'button',
-    label: s.fitted ? 'Unit fitted' : 'Fit the unit',
-    x: 176,
+    label: s.accepted
+      ? 'Unit accepted'
+      : lastApplication === null
+        ? 'Fit the unit'
+        : 'Fit the unit again',
+    x: 16,
     y: 338,
     w: 160,
     h: 32,
     hotkey: 'f',
-    state: closed ? 'disabled' : 'accent',
+    // Available once the plate has been read (the v2 gate; review S-F1).
+    state: closed ? 'disabled' : s.plate_inspected ? 'accent' : 'disabled',
     onActivate: closed
       ? undefined
       : (mode) => {
-          if (m21ActFit(host.now(), mode, host.deliverRelayUnit)) {
-            host.feedback(
-              m21State().output_delivery === 'bench_bundle'
-                ? 'Unit fitted — belt full, so it is set beside the bench.'
-                : 'Unit fitted and released from the bench.',
-            );
+          const line = m21ActApply(host.now(), mode, host.deliverRelayUnit);
+
+          if (line !== null) {
+            host.feedback(line);
+          }
+
+          if (m21AllClosed()) {
+            host.later(1600, () => host.close());
           }
         },
   });
@@ -407,17 +403,22 @@ export function m21RelayBenchSurfaceModel(
     id: 'set_aside',
     kind: 'button',
     label: 'Set the unit aside',
-    x: 16,
-    y: 380,
+    x: 186,
+    y: 338,
     w: 150,
-    h: 30,
+    h: 32,
     state: closed ? 'disabled' : 'idle',
     onActivate: closed
       ? undefined
       : (mode) => {
-          if (m21ActSetAside(host.now(), mode)) {
-            host.feedback('Unit set aside as it stands.');
-            host.later(1600, () => host.close());
+          const line = m21ActSetAside(host.now(), mode);
+
+          if (line !== null) {
+            host.feedback(line);
+
+            if (m21AllClosed()) {
+              host.later(1600, () => host.close());
+            }
           }
         },
   });
@@ -425,9 +426,9 @@ export function m21RelayBenchSurfaceModel(
     id: 'leave',
     kind: 'button',
     label: closed ? 'Close' : 'Leave bench',
-    x: 176,
+    x: 16,
     y: 380,
-    w: 160,
+    w: 150,
     h: 30,
     onActivate: () => host.close(),
   });
@@ -439,7 +440,7 @@ export function m21RelayBenchSurfaceModel(
   elements.push({
     id: 'manual_title',
     kind: 'readout',
-    label: 'BENCH DRAWER MANUAL — RELAY UNITS',
+    label: def.manual_title,
     x: 352,
     y: 76,
     w: 352,
@@ -509,10 +510,10 @@ export function m21RelayBenchSurfaceModel(
     label:
       current === null
         ? 'Choose a section. Every section has a TEXT and a DIAGRAM version with the same content.'
-        : `${M21_SECTION_TITLES[current]}\n\n${
+        : `${def.section_titles[current]}\n\n${
             mode === 'text'
-              ? M21_MANUAL_TEXT[current]
-              : M21_MANUAL_DIAGRAM[current]
+              ? def.manual_text[current]
+              : def.manual_diagram[current]
           }`,
     x: 352,
     y: 192,
@@ -526,7 +527,7 @@ export function m21RelayBenchSurfaceModel(
       elements.push({
         id: `ref_${reference}`,
         kind: 'button',
-        label: `Open ${M21_SECTION_TITLES[reference]} (referenced)`,
+        label: `Open ${def.section_titles[reference]} (referenced)`,
         x: 352,
         y: 388 + index * 34,
         w: 352,
@@ -539,16 +540,27 @@ export function m21RelayBenchSurfaceModel(
     });
   }
 
+  const allClosed = m21AllClosed();
+
   return {
-    title: 'RELAY BENCH — DISTRIBUTION RELAY UNIT',
-    subtitle: closed ? (s.fitted ? 'fitted' : 'set aside') : `manual ${mode}`,
-    status: closed
-      ? s.fitted
-        ? 'The unit has been fitted and released from the bench.'
-        : 'The unit was set aside as it stands.'
-      : 'Storm-damaged relay unit on the bench. Configure the jumpers and the line selector, test if you wish, then fit the unit. The drawer manual is on the right.',
+    title: `RELAY BENCH — ${def.unit_name.toUpperCase()} (UNIT ${unitIndex} OF 2)`,
+    subtitle: allClosed
+      ? 'both units off the bench'
+      : closed
+        ? s.accepted
+          ? 'accepted'
+          : 'set aside'
+        : `manual ${mode}`,
+    status: allClosed
+      ? 'Both units are off the bench.'
+      : lastApplication !== null && !lastApplication.correct
+        ? // Truthful, and no strategy is named (review S-F6 / G-F3).
+          `The unit fails on the bench: ${lastApplication.faults
+            .map((fault) => def.fault_labels[fault])
+            .join(' · ')}. It stays on the bench.`
+        : `${capital(def.unit_name)} on the bench (unit ${unitIndex} of 2). Read the plate, configure the ${def.post_name}s and the ${def.selector_name}, then fit the unit. The drawer manual is on the right.`,
     elements,
-    help: 'Arrows/TAB focus · ENTER/SPACE activate · click also works · I plate · T test · F fit · ESC leave',
+    help: 'Arrows/TAB focus · ENTER/SPACE activate · click also works · I plate · F fit · ESC leave',
   };
 }
 

@@ -1177,6 +1177,30 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'partial',
     direction: 'replace_structure',
     occasions: 2,
+    // Unit 10: the approved two-case structure landed at the relay bench
+    // (return shift). The v2 single-case family `proto_m21_manual_*` keeps
+    // its v2 meaning.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m21_case_o1', 'proto_m21_case_o2'],
+      windows: [
+        {
+          id: 'm21_case_o1',
+          occasion: 'o1',
+          zone: 'records_workshop',
+          episode: 5,
+        },
+        {
+          id: 'm21_case_o2',
+          occasion: 'o2',
+          zone: 'records_workshop',
+          episode: 5,
+        },
+      ],
+      family_prefixes: ['proto_m21_case_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       '240–320 words split into two independent manual cases; after an incorrect first application, truthful feedback and relevant restudy plus a revised application, another strategy, or exit.',
     features: [

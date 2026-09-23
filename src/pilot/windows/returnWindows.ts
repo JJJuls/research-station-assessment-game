@@ -44,34 +44,40 @@ import {
   m20Returned,
 } from '../exterior/m20AntennaModel';
 import type {
+  M21Case,
+  M21CaseState,
   M21Form,
-  M21Line,
   M21ManualMode,
-  M21Post,
   M21Section,
-  M21State,
 } from '../return/m21ManualModel';
 import {
-  createM21State,
+  createM21CaseState,
+  M21_CASE_DEFS,
+  M21_CASES,
   M21_ENTRY_STATE_VERSION,
   M21_FAMILY,
-  M21_INITIAL_SELECTOR,
-  M21_OPPORTUNITY_ID,
-  M21_WINDOW_ID,
-  m21BenchTest,
+  M21_OPPORTUNITY_IDS,
+  M21_PLACE_SETTLE_MS,
+  M21_RELEVANT_SECTIONS,
+  M21_WINDOW_IDS,
+  m21Apply,
+  m21CanApply,
   m21Close,
   m21Consult,
   m21Depart,
   m21Enter,
-  m21Fit,
+  m21FaultsKnownAfter,
+  m21FeedbackLine,
   m21InspectPlate,
+  m21ManualWordCount,
   m21NoteOutput,
   m21Open,
   m21OpenManual,
   m21RawComponents,
   m21Reopen,
-  m21SetJumper,
+  m21SetPost,
   m21SetSelector,
+  m21Strategy,
   m21SwitchMode,
 } from '../return/m21ManualModel';
 import type {
@@ -131,7 +137,7 @@ export interface M22UiState {
 }
 
 export interface ReturnEpisodeState {
-  m21: M21State;
+  m21: Record<M21Case, M21CaseState>;
   m22: M22State;
   m22_ui: M22UiState;
   m25: M25State;
@@ -145,7 +151,7 @@ export interface ReturnEpisodeState {
 }
 
 interface ReturnWindows {
-  m21: ItemWindow;
+  m21: Record<M21Case, ItemWindow>;
   m22: ItemWindow;
   m25: ItemWindow;
 }
@@ -155,17 +161,32 @@ let windows: ReturnWindows | null = null;
 
 function buildWindows(s: ReturnEpisodeState): ReturnWindows {
   return {
-    m21: new ItemWindow({
-      item: 'M21',
-      opportunityId: M21_OPPORTUNITY_ID,
-      windowId: M21_WINDOW_ID,
-      entryStateVersion: M21_ENTRY_STATE_VERSION,
-      family: M21_FAMILY,
-      scene: SCENE,
-      objectId: 'm21_relay_bench',
-      form: s.m21.form,
-      counterbalance: s.m21.form,
-    }),
+    m21: {
+      o1: new ItemWindow({
+        item: 'M21',
+        opportunityId: M21_OPPORTUNITY_IDS.o1,
+        windowId: M21_WINDOW_IDS.o1,
+        entryStateVersion: M21_ENTRY_STATE_VERSION,
+        family: M21_FAMILY,
+        scene: SCENE,
+        objectId: 'm21_relay_bench',
+        occasion: 'o1',
+        form: s.m21.o1.form,
+        counterbalance: s.m21.o1.form,
+      }),
+      o2: new ItemWindow({
+        item: 'M21',
+        opportunityId: M21_OPPORTUNITY_IDS.o2,
+        windowId: M21_WINDOW_IDS.o2,
+        entryStateVersion: M21_ENTRY_STATE_VERSION,
+        family: M21_FAMILY,
+        scene: SCENE,
+        objectId: 'm21_relay_bench',
+        occasion: 'o2',
+        form: s.m21.o2.form,
+        counterbalance: s.m21.o2.form,
+      }),
+    },
     m22: new ItemWindow({
       item: 'M22',
       opportunityId: M22_OPPORTUNITY_ID,
@@ -195,12 +216,22 @@ export function returnEpisode(): ReturnEpisodeState {
     const sessionId = currentSessionId();
 
     state = {
-      m21: createM21State(
-        assignCounterbalance<M21Form>(sessionId, 'm21_manual_form', [
-          'form_a',
-          'form_b',
-        ]),
-      ),
+      m21: {
+        o1: createM21CaseState(
+          'o1',
+          assignCounterbalance<M21Form>(sessionId, 'm21_case_o1_form', [
+            'form_a',
+            'form_b',
+          ]),
+        ),
+        o2: createM21CaseState(
+          'o2',
+          assignCounterbalance<M21Form>(sessionId, 'm21_case_o2_form', [
+            'form_a',
+            'form_b',
+          ]),
+        ),
+      },
       m22: createM22State(
         assignCounterbalance<M22Form>(sessionId, 'm22_report_form', [
           'form_a',
@@ -230,7 +261,8 @@ export function returnWindows(): ReturnWindows {
 export function declareReturnWindows() {
   const w = returnWindows();
 
-  w.m21.declare();
+  w.m21.o1.declare();
+  w.m21.o2.declare();
   w.m22.declare();
   w.m25.declare();
 }
@@ -467,48 +499,98 @@ export function closeM20ResumeAtReview(nowMs: number): boolean {
   return true;
 }
 
-// ——— M21 — manual-based repair ——————————————————————————————————————————
+// ——— M21 — manual-based repair (two independent cases) ——————————————————
 
-export function m21Present(nowMs: number) {
+function m21CaseState(caseId: M21Case): M21CaseState {
+  return returnEpisode().m21[caseId];
+}
+
+function m21CaseWindow(caseId: M21Case): ItemWindow {
+  return returnWindows().m21[caseId];
+}
+
+/** The case on the bench: unit 1 until it closes, then unit 2. */
+export function m21ActiveCase(): M21Case {
+  return returnEpisode().m21.o1.closed ? 'o2' : 'o1';
+}
+
+export function m21AllClosed(): boolean {
   const r = returnEpisode();
-  const w = returnWindows().m21;
 
-  w.setComprehension('not_required');
-  w.present(nowMs, {
-    form: r.m21.form,
-    posts: 4,
-    selector_initial: M21_INITIAL_SELECTOR,
+  return r.m21.o1.closed && r.m21.o2.closed;
+}
+
+function m21Snapshot(caseId: M21Case): Record<string, unknown> {
+  const def = M21_CASE_DEFS[caseId];
+
+  return {
+    case: caseId,
+    form: m21CaseState(caseId).form,
+    unit: def.unit_name,
+    posts: def.posts.length,
+    selector_positions: def.selector_positions.length,
+    selector_initial: def.initial_selector,
     manual_sections: 4,
     manual_modes: ['text', 'diagram'],
-  });
+    manual_words: m21ManualWordCount(def),
+    plate_hidden_until_inspected: true,
+    application_is_fit: true,
+    pre_application_test: false,
+  };
 }
 
-export function m21State(): Readonly<M21State> {
-  return returnEpisode().m21;
-}
+/** Both cases are PRESENTED with the return shift's work orders. */
+export function m21Present(nowMs: number) {
+  for (const caseId of M21_CASES) {
+    const w = m21CaseWindow(caseId);
 
-/** Bench surface opened: entry (once) or a reopening. */
-export function m21BenchOpen(nowMs: number, inputMode: InputMode) {
-  const s = returnEpisode().m21;
-  const w = returnWindows().m21;
-
-  if (m21Enter(s, nowMs)) {
     w.setComprehension('not_required');
-    w.open(nowMs, {
-      form: s.form,
-      plate_hidden_until_inspected: true,
-      posts: 4,
-      selector_initial: M21_INITIAL_SELECTOR,
-      manual_sections: 4,
-      manual_modes: ['text', 'diagram'],
-      open_input_mode: inputMode,
-    });
+    w.present(nowMs, m21Snapshot(caseId));
+  }
+}
 
+export function m21State(
+  caseId: M21Case = m21ActiveCase(),
+): Readonly<M21CaseState> {
+  return m21CaseState(caseId);
+}
+
+function m21EnterCase(caseId: M21Case, nowMs: number, inputMode: InputMode) {
+  const s = m21CaseState(caseId);
+  const w = m21CaseWindow(caseId);
+
+  if (!m21Enter(s, nowMs)) {
+    return false;
+  }
+
+  w.setComprehension('not_required');
+  w.open(nowMs, {
+    ...m21Snapshot(caseId),
+    open_input_mode: inputMode,
+    previous_case_strategy:
+      caseId === 'o2' ? m21Strategy(m21CaseState('o1')) : null,
+  });
+
+  return true;
+}
+
+/** Bench surface opened: entry (once per case) or a reopening. */
+export function m21BenchOpen(nowMs: number, inputMode: InputMode) {
+  if (m21AllClosed()) {
+    return;
+  }
+
+  const caseId = m21ActiveCase();
+  const s = m21CaseState(caseId);
+  const w = m21CaseWindow(caseId);
+
+  if (m21EnterCase(caseId, nowMs, inputMode)) {
     return;
   }
 
   if (m21Reopen(s, nowMs)) {
     w.log('reengagement', {
+      case: caseId,
       kind: 'bench_reopened',
       reengagements: s.reengagements,
       elapsed_ms: elapsedSince(s.opened_at_ms, nowMs),
@@ -519,20 +601,39 @@ export function m21BenchOpen(nowMs: number, inputMode: InputMode) {
   w.resume(nowMs);
 }
 
+/** After a case closes with the surface open, the next unit is placed at once. */
+function m21PlaceNext(nowMs: number) {
+  if (m21AllClosed()) {
+    return;
+  }
+
+  const caseId = m21ActiveCase();
+
+  if (m21EnterCase(caseId, nowMs, 'system')) {
+    m21CaseWindow(caseId).log('case_placed', {
+      case: caseId,
+      unit: M21_CASE_DEFS[caseId].unit_name,
+      input_mode: 'system',
+    });
+  }
+}
+
 function m21LogOrInvalid(
+  caseId: M21Case,
   ok: boolean,
   suffix: string,
   metadata: Record<string, unknown>,
   nowMs: number,
 ): boolean {
-  const s = returnEpisode().m21;
-  const w = returnWindows().m21;
+  const s = m21CaseState(caseId);
+  const w = m21CaseWindow(caseId);
   const elapsed = elapsedSince(s.opened_at_ms, nowMs);
 
   if (ok) {
-    w.log(suffix, { elapsed_ms: elapsed, ...metadata });
+    w.log(suffix, { case: caseId, elapsed_ms: elapsed, ...metadata });
   } else if (m21Open(s)) {
     w.log('invalid_action', {
+      case: caseId,
       elapsed_ms: elapsed,
       attempted: suffix,
       ...metadata,
@@ -544,9 +645,11 @@ function m21LogOrInvalid(
 }
 
 export function m21ActInspectPlate(nowMs: number, inputMode: InputMode) {
-  const s = returnEpisode().m21;
+  const caseId = m21ActiveCase();
+  const s = m21CaseState(caseId);
 
   return m21LogOrInvalid(
+    caseId,
     m21InspectPlate(s, nowMs),
     'plate_inspected',
     { inspections: s.inspections, input_mode: inputMode },
@@ -555,9 +658,11 @@ export function m21ActInspectPlate(nowMs: number, inputMode: InputMode) {
 }
 
 export function m21ActOpenManual(nowMs: number, inputMode: InputMode) {
-  const s = returnEpisode().m21;
+  const caseId = m21ActiveCase();
+  const s = m21CaseState(caseId);
 
   return m21LogOrInvalid(
+    caseId,
     m21OpenManual(s, nowMs),
     'manual_opened',
     {
@@ -575,20 +680,32 @@ export function m21ActConsult(
   nowMs: number,
   inputMode: InputMode,
 ) {
-  const s = returnEpisode().m21;
-  const before = s.reengagements;
+  const caseId = m21ActiveCase();
+  const s = m21CaseState(caseId);
   const ok = m21Consult(s, section, via, nowMs);
+  const last = s.applications[s.applications.length - 1] ?? null;
 
-  if (ok && s.reengagements > before) {
-    returnWindows().m21.log('reengagement', {
-      kind: 'manual_after_failed_test',
-      reengagements: s.reengagements,
+  // Restudy: a consult after an application (relevant when the section
+  // bears on a subsystem the last application got wrong).
+  if (ok && last !== null) {
+    const relevantTo = m21FaultsKnownAfter(s, s.applications.length).filter(
+      (fault) => M21_RELEVANT_SECTIONS[fault].includes(section),
+    );
+
+    m21CaseWindow(caseId).log('restudy', {
+      case: caseId,
+      section,
+      via,
+      after_application: last.index,
+      relevant: relevantTo.length > 0,
+      relevant_to: relevantTo,
       elapsed_ms: elapsedSince(s.opened_at_ms, nowMs),
       input_mode: inputMode,
     });
   }
 
   return m21LogOrInvalid(
+    caseId,
     ok,
     'section_consulted',
     {
@@ -598,6 +715,7 @@ export function m21ActConsult(
       chain_depth: s.current_chain,
       cross_reference_depth: s.cross_reference_depth,
       sections_consulted: s.sections_consulted.length,
+      after_application: s.applications.length,
       input_mode: inputMode,
     },
     nowMs,
@@ -609,9 +727,11 @@ export function m21ActSwitchMode(
   nowMs: number,
   inputMode: InputMode,
 ) {
-  const s = returnEpisode().m21;
+  const caseId = m21ActiveCase();
+  const s = m21CaseState(caseId);
 
   return m21LogOrInvalid(
+    caseId,
     m21SwitchMode(s, mode, nowMs),
     'mode_switched',
     { mode, mode_switches: s.mode_switches, input_mode: inputMode },
@@ -619,149 +739,257 @@ export function m21ActSwitchMode(
   );
 }
 
-export function m21ActJumper(
-  post: M21Post,
-  fitted: boolean,
+export function m21ActPost(
+  post: string,
+  on: boolean,
   nowMs: number,
   inputMode: InputMode,
 ) {
-  const s = returnEpisode().m21;
-  const testsBefore = s.bench_tests.length;
-  const ok = m21SetJumper(s, post, fitted, nowMs);
-  const result = m21LogOrInvalid(
-    ok,
-    'jumper_set',
+  const caseId = m21ActiveCase();
+  const s = m21CaseState(caseId);
+
+  return m21LogOrInvalid(
+    caseId,
+    m21SetPost(s, post, on, nowMs),
+    'post_set',
     {
       post,
-      fitted,
-      after_test: testsBefore > 0,
+      on,
+      after_application: s.applications.length,
       repair_actions: s.actions.length,
       input_mode: inputMode,
     },
     nowMs,
   );
-
-  if (ok && testsBefore > 0) {
-    returnWindows().m21.log('revision', {
-      kind: 'jumper',
-      revisions: s.revisions,
-      elapsed_ms: elapsedSince(s.opened_at_ms, nowMs),
-      input_mode: inputMode,
-    });
-  }
-
-  return result;
 }
 
 export function m21ActSelector(
-  line: M21Line,
+  position: string,
   nowMs: number,
   inputMode: InputMode,
 ) {
-  const s = returnEpisode().m21;
-  const testsBefore = s.bench_tests.length;
-  const ok = m21SetSelector(s, line, nowMs);
-  const result = m21LogOrInvalid(
-    ok,
+  const caseId = m21ActiveCase();
+  const s = m21CaseState(caseId);
+
+  return m21LogOrInvalid(
+    caseId,
+    m21SetSelector(s, position, nowMs),
     'selector_set',
     {
-      line,
-      after_test: testsBefore > 0,
+      position,
+      after_application: s.applications.length,
       repair_actions: s.actions.length,
       input_mode: inputMode,
     },
     nowMs,
   );
+}
 
-  if (ok && testsBefore > 0) {
-    returnWindows().m21.log('revision', {
-      kind: 'selector',
-      revisions: s.revisions,
-      elapsed_ms: elapsedSince(s.opened_at_ms, nowMs),
-      input_mode: inputMode,
-    });
+/**
+ * Why a FIT / SET ASIDE press is refused right now: the plate unread (the
+ * v2 gate — a first application is never blind), or the press landing
+ * inside the settle window after the next unit was placed (review G-H1: a
+ * carried double activation never becomes the new case's application or
+ * exit). Null = no refusal.
+ */
+function m21Refusal(
+  caseId: M21Case,
+  nowMs: number,
+  control: 'fit' | 'set_aside' = 'fit',
+): 'plate_not_inspected' | 'placement_settling' | null {
+  const s = m21CaseState(caseId);
+
+  if (
+    caseId === 'o2' &&
+    s.opened_at_ms !== null &&
+    nowMs - s.opened_at_ms < M21_PLACE_SETTLE_MS
+  ) {
+    return 'placement_settling';
   }
 
-  return result;
+  if (control === 'fit' && m21CanApply(s) === 'plate_not_inspected') {
+    return 'plate_not_inspected';
+  }
+
+  return null;
 }
 
-export function m21ActBenchTest(nowMs: number, inputMode: InputMode) {
-  const s = returnEpisode().m21;
-  const test = m21BenchTest(s, nowMs);
-
-  m21LogOrInvalid(
-    test !== null,
-    'bench_test',
-    {
-      pass: test?.pass ?? null,
-      faults: test?.faults ?? [],
-      bench_tests: s.bench_tests.length,
-      input_mode: inputMode,
-    },
-    nowMs,
-  );
-
-  return test;
+/** What the acceptance feedback says about where the unit went. */
+function m21DeliveryClause(
+  delivery: 'inventory' | 'bench_bundle' | 'released' | null,
+): string {
+  switch (delivery) {
+    case 'inventory':
+      return 'released to the belt';
+    case 'bench_bundle':
+      return 'belt full, so it is set beside the bench';
+    default:
+      return 'released from the bench';
+  }
 }
 
-/** FIT the unit: the task finishes; the host delivers the physical output. */
-export function m21ActFit(
+/** The line that names the next unit when one is placed. */
+function m21NextUnitClause(): string {
+  if (m21AllClosed()) {
+    return 'Both units are now off the bench.';
+  }
+
+  const def = M21_CASE_DEFS[m21ActiveCase()];
+
+  return `${def.unit_name.charAt(0).toUpperCase()}${def.unit_name.slice(1)} placed on the bench (unit 2 of 2).`;
+}
+
+/**
+ * FIT = the APPLICATION. Correct ⇒ accepted, the case completes and the
+ * next unit is placed; incorrect ⇒ truthful feedback, the unit stays.
+ */
+export function m21ActApply(
   nowMs: number,
   inputMode: InputMode,
   deliver: () => 'inventory' | 'bench_bundle',
-): boolean {
-  const s = returnEpisode().m21;
-  const w = returnWindows().m21;
+): string | null {
+  const caseId = m21ActiveCase();
+  const s = m21CaseState(caseId);
+  const w = m21CaseWindow(caseId);
+  const refusal = m21Refusal(caseId, nowMs);
 
-  if (!m21Fit(s, nowMs)) {
+  if (refusal !== null) {
+    w.log('press_refused', {
+      case: caseId,
+      control: 'fit',
+      reason: refusal,
+      elapsed_ms: elapsedSince(s.opened_at_ms, nowMs),
+      input_mode: inputMode,
+    });
+
+    return refusal === 'plate_not_inspected'
+      ? 'Read the plate first (Inspect plate).'
+      : null;
+  }
+
+  const application = m21Apply(s, nowMs);
+
+  if (application === null) {
     if (m21Open(s)) {
       w.log('invalid_action', {
+        case: caseId,
         elapsed_ms: elapsedSince(s.opened_at_ms, nowMs),
-        attempted: 'fitted',
+        attempted: 'applied',
         invalid_actions: s.invalid_actions,
         input_mode: inputMode,
       });
     }
 
-    return false;
+    return null;
   }
 
-  m21NoteOutput(s, deliver());
-  w.log('fitted', {
+  const def = M21_CASE_DEFS[caseId];
+  const line = m21FeedbackLine(def, application);
+
+  w.log('applied', {
+    case: caseId,
+    ...application,
     elapsed_ms: elapsedSince(s.opened_at_ms, nowMs),
-    correct_rule_application: s.final_config_correct,
-    output_delivery: s.output_delivery,
     input_mode: inputMode,
   });
-  m21Close(s, 'fitted', nowMs);
-  w.complete(nowMs, m21RawComponents(s), inputMode);
 
-  return true;
-}
-
-/** The neutral explicit stop: a completed observation (completion false). */
-export function m21ActSetAside(nowMs: number, inputMode: InputMode): boolean {
-  const s = returnEpisode().m21;
-
-  if (!m21Open(s) || s.fitted) {
-    return false;
+  if (application.revised) {
+    w.log('revised_application', {
+      case: caseId,
+      index: application.index,
+      correct: application.correct,
+      relevant_restudy: application.relevant_restudy,
+      restudy_sections: application.restudy_sections,
+      input_mode: inputMode,
+    });
   }
 
-  m21Close(s, 'set_aside', nowMs);
-  returnWindows().m21.complete(nowMs, m21RawComponents(s), inputMode, {
-    exitState: 'stopped',
+  w.log('feedback_presented', {
+    case: caseId,
+    index: application.index,
+    correct: application.correct,
+    faults: application.faults,
+    text: line,
+    input_mode: 'system',
   });
 
-  return true;
+  if (!application.correct) {
+    return line;
+  }
+
+  m21NoteOutput(s, caseId === 'o1' ? deliver() : 'released');
+  w.log('accepted', {
+    case: caseId,
+    applications: s.applications.length,
+    strategy: m21Strategy(s),
+    output_delivery: s.output_delivery,
+    elapsed_ms: elapsedSince(s.opened_at_ms, nowMs),
+    input_mode: inputMode,
+  });
+  m21Close(s, 'accepted', nowMs);
+  w.complete(nowMs, m21RawComponents(s), inputMode);
+  m21PlaceNext(nowMs);
+
+  // Review G-M1 / G-M2: the delivery and the next unit are named.
+  return `${def.unit_name.charAt(0).toUpperCase()}${def.unit_name.slice(1)} accepted — ${m21DeliveryClause(s.output_delivery)}. ${m21NextUnitClause()}`;
 }
 
-/** Surface closed with the unit unfinished (window stays open). */
+/** The neutral explicit stop: a completed observation (an exit). */
+export function m21ActSetAside(
+  nowMs: number,
+  inputMode: InputMode,
+): string | null {
+  const caseId = m21ActiveCase();
+  const s = m21CaseState(caseId);
+  const w = m21CaseWindow(caseId);
+
+  if (!m21Open(s) || s.accepted) {
+    return null;
+  }
+
+  if (m21Refusal(caseId, nowMs, 'set_aside') !== null) {
+    w.log('press_refused', {
+      case: caseId,
+      control: 'set_aside',
+      reason: 'placement_settling',
+      elapsed_ms: elapsedSince(s.opened_at_ms, nowMs),
+      input_mode: inputMode,
+    });
+
+    return null;
+  }
+
+  const unit = M21_CASE_DEFS[caseId].unit_name;
+
+  m21Close(s, 'set_aside', nowMs);
+  w.log('set_aside', {
+    case: caseId,
+    applications: s.applications.length,
+    strategy: m21Strategy(s),
+    elapsed_ms: elapsedSince(s.opened_at_ms, nowMs),
+    input_mode: inputMode,
+  });
+  w.complete(nowMs, m21RawComponents(s), inputMode, {
+    exitState: 'stopped',
+  });
+  m21PlaceNext(nowMs);
+
+  return `${unit.charAt(0).toUpperCase()}${unit.slice(1)} set aside as it stands. ${m21NextUnitClause()}`;
+}
+
+/** Surface closed with the case unfinished (window stays open). */
 export function m21BenchLeave(nowMs: number) {
-  const s = returnEpisode().m21;
-  const w = returnWindows().m21;
+  if (m21AllClosed()) {
+    return;
+  }
+
+  const caseId = m21ActiveCase();
+  const s = m21CaseState(caseId);
+  const w = m21CaseWindow(caseId);
 
   if (m21Depart(s, nowMs)) {
     w.log('departed', {
+      case: caseId,
       departures: s.departures,
       elapsed_ms: elapsedSince(s.opened_at_ms, nowMs),
       input_mode: 'system',
@@ -771,34 +999,58 @@ export function m21BenchLeave(nowMs: number) {
   w.pause(nowMs);
 }
 
+/** Never opened → absent; open at the review → censored (no resolution, no observation). */
 export function closeM21AtReview(nowMs: number) {
-  const s = returnEpisode().m21;
-  const w = returnWindows().m21;
+  for (const caseId of M21_CASES) {
+    const s = m21CaseState(caseId);
+    const w = m21CaseWindow(caseId);
 
-  if (w.windowStatus() === 'unopened') {
-    w.markAbsent('relay bench never opened before the review');
+    if (w.windowStatus() === 'unopened') {
+      w.markAbsent(`bench unit ${caseId} never opened before the review`);
+      continue;
+    }
 
-    return;
-  }
-
-  if (w.isOpen()) {
-    m21Close(s, 'closed_at_review', nowMs);
-    w.stop(
-      nowMs,
-      'closed_at_review',
-      m21RawComponents(s),
-      'system',
-      'censored',
-    );
+    if (w.isOpen()) {
+      m21Close(s, 'closed_at_review', nowMs);
+      w.stop(
+        nowMs,
+        'closed_at_review',
+        m21RawComponents(s),
+        'system',
+        'censored',
+      );
+    }
   }
 }
 
 export function m21TechnicalFailure(detail: string) {
-  const s = returnEpisode().m21;
+  const caseId = m21ActiveCase();
+  const s = m21CaseState(caseId);
 
   s.technical_failure = detail;
   s.closed = true;
-  returnWindows().m21.technicalFailure(detail);
+  m21CaseWindow(caseId).technicalFailure(detail);
+}
+
+/** The bench chip's operational text (no count, no item wording). */
+export function m21BenchChipText(live: boolean): string {
+  if (!live) {
+    return 'no unit issued';
+  }
+
+  if (m21AllClosed()) {
+    return 'both bench units off the bench';
+  }
+
+  const caseId = m21ActiveCase();
+  const s = m21CaseState(caseId);
+  const unit = caseId === 'o1' ? 'relay unit' : 'pump controller';
+
+  return s.entered
+    ? `${unit} on bench · in work`
+    : caseId === 'o1'
+      ? `${unit} on bench`
+      : `${unit} on bench · unit 2 of 2`;
 }
 
 // ——— M22 — shift report setback / revision ———————————————————————————————
@@ -1254,13 +1506,26 @@ export function returnProbeSnapshot() {
       ...m20ResumeRawComponents(m20),
     },
     m21: {
-      window: w.m21.windowStatus(),
-      exit: w.m21.exit(),
-      entered: r.m21.entered,
-      closed: r.m21.closed,
-      manual_mode: r.m21.manual_mode,
-      current_section: r.m21.current_section,
-      ...m21RawComponents(r.m21),
+      active: m21ActiveCase(),
+      all_closed: m21AllClosed(),
+      o1: {
+        window: w.m21.o1.windowStatus(),
+        exit: w.m21.o1.exit(),
+        entered: r.m21.o1.entered,
+        closed: r.m21.o1.closed,
+        manual_mode: r.m21.o1.manual_mode,
+        current_section: r.m21.o1.current_section,
+        ...m21RawComponents(r.m21.o1),
+      },
+      o2: {
+        window: w.m21.o2.windowStatus(),
+        exit: w.m21.o2.exit(),
+        entered: r.m21.o2.entered,
+        closed: r.m21.o2.closed,
+        manual_mode: r.m21.o2.manual_mode,
+        current_section: r.m21.o2.current_section,
+        ...m21RawComponents(r.m21.o2),
+      },
     },
     m22: {
       window: w.m22.windowStatus(),

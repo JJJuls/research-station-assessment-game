@@ -122,10 +122,11 @@ import {
   m20ConsoleOpen,
   m20ConsolePresent,
   m20ConsoleStatusLine,
+  m21AllClosed,
+  m21BenchChipText,
   m21BenchLeave,
   m21BenchOpen,
   m21Present,
-  m21State,
   m22DeskLeave,
   m22DeskOpen,
   m22Present,
@@ -649,7 +650,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       'Relay Bench',
       ['workshop_return'],
       3,
-      () => m21State().closed,
+      () => m21AllClosed(),
     );
 
     // ——— M22 shift report desk ———
@@ -806,19 +807,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         : 'standby — exterior shift not logged',
     );
 
-    const m21 = m21State();
-
-    this.benchChip?.setText(
-      !live
-        ? 'no unit issued'
-        : m21.closed
-          ? m21.fitted
-            ? 'relay unit fitted · released'
-            : 'relay unit set aside'
-          : m21.entered
-            ? 'relay unit on bench · in work'
-            : 'storm-damaged relay unit on bench',
-    );
+    this.benchChip?.setText(m21BenchChipText(live));
 
     const m22 = m22State();
 
