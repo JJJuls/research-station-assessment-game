@@ -192,6 +192,18 @@ import {
 } from '../pilot/windows/m08EffortChoice';
 import { m08SurfaceModel } from '../pilot/windows/m08SurfaceModel';
 import {
+  answerM11Offer,
+  declareM11,
+  departM11,
+  lapseM11Offer,
+  m11CarryingItem,
+  m11OfferAvailable,
+  noteM11OwnerAvailable,
+  noteM11ReturnPointAvailable,
+  presentM11Offer,
+  resolveM11,
+} from '../pilot/windows/m11Custody';
+import {
   YARD_AIRLOCK,
   YARD_RIG_PAD,
   YARD_SITES,
@@ -291,6 +303,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     declareM05('o2');
     declareExteriorWindows();
     declareM08();
+    declareM11('yard');
     stampContaminationNotes();
 
     super.create(data);
@@ -1076,6 +1089,8 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       y: crate.y,
       onPromptOpened: () => {
         this.logStationOpened('supply_crate', {});
+        // M11 (Unit 3): the crate is the yard loan's return point.
+        noteM11ReturnPointAvailable('yard');
 
         return true;
       },
@@ -1199,8 +1214,40 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
     switch (interactionKey) {
-      case 'pilotNoor':
-        return this.npcBeatOptions('pilotNoor', this.noorBeat());
+      case 'pilotNoor': {
+        // M11 (Unit 3): Noor is available for the hand-back while carrying.
+        noteM11OwnerAvailable('yard');
+
+        const beat = this.noorBeat();
+
+        if (m11CarryingItem('yard')) {
+          beat.options = [
+            ...beat.options,
+            {
+              label: 'Hand the torque driver back to Noor.',
+              tag: pilotStageAtOrAfter('return_hub')
+                ? 'm11_yard_return_owner_late'
+                : 'm11_yard_return_owner',
+              feedback: '',
+              onSelected: () => {
+                this.showFeedbackMessage(
+                  resolveM11(
+                    'yard',
+                    'owner_handover',
+                    'noor',
+                    Date.now(),
+                    'keyboard',
+                  )
+                    ? 'Noor: Thanks — got it.'
+                    : 'The torque driver is not with you.',
+                );
+              },
+            },
+          ].slice(0, 4);
+        }
+
+        return this.npcBeatOptions('pilotNoor', beat);
+      }
       case 'pilotCoupling':
         return this.couplingOptions();
       case 'pilotMast':
@@ -1677,6 +1724,26 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
   // ——— Supply crate ———
 
   private crateOptions(): PromptOption[] {
+    // M11 (Unit 3): the torque driver's return point — after the three
+    // spare options (their indices never move) and before Close.
+    const custody: PromptOption[] = m11CarryingItem('yard')
+      ? [
+          this.option('Put the torque driver in the crate', () => {
+            this.showFeedbackMessage(
+              resolveM11(
+                'yard',
+                'return_point',
+                'crate',
+                Date.now(),
+                'keyboard',
+              )
+                ? 'The torque driver is back in the crate.'
+                : 'The torque driver is not with you.',
+            );
+          }),
+        ]
+      : [];
+
     return [
       this.option('Take a spare valve seal', () => {
         this.showFeedbackMessage(
@@ -1708,6 +1775,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
             : `${returned} spare${returned === 1 ? '' : 's'} returned.`,
         );
       }),
+      ...custody,
       this.option('Close'),
     ];
   }
@@ -1716,27 +1784,72 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
 
   private noorBeat(): PilotNpcBeat {
     switch (pilotStage()) {
-      case 'exterior_briefing':
+      case 'exterior_briefing': {
+        const body =
+          'Noor: Storm damage, six jobs — work them in this order: the frozen coolant coupling (west), Mast 04 (north), the staked excavation field (east), the magnet rig in the Metal Recovery Yard (north-east), the station support console on the open field (south of the mast), then the uplink posts (north-west) for the two recovery reports.\n' +
+          'Each site has its own panel (E). Scanner is C, spade is D, the rig is F. Come back to me when you are finished outside.';
+        const ready = (loan: boolean | null) => () => {
+          const now = Date.now();
+
+          advancePilotStage('exterior_work', now);
+          // M08 (U2-R): the console is presented by this briefing.
+          presentM08(now);
+          this.ensureFieldTools();
+
+          // M11 (Unit 3): the plain "Ready." lets the loan lapse; taking or
+          // refusing it are deliberate options (never the pre-focused one);
+          // a full belt is told, never silent.
+          if (loan === null) {
+            lapseM11Offer('yard', now);
+          } else {
+            const result = answerM11Offer('yard', loan, now, 'keyboard');
+
+            if (loan) {
+              this.showFeedbackMessage(
+                result === 'belt_full'
+                  ? 'Belt full — the torque driver stays in the crate.'
+                  : 'Torque driver taken — it is in your belt.',
+              );
+            }
+          }
+
+          this.refreshGuidance();
+        };
+
+        if (!m11OfferAvailable('yard')) {
+          return {
+            body,
+            options: [
+              {
+                label: 'Ready.',
+                tag: 'yard_brief_ack',
+                onSelected: ready(null),
+              },
+            ],
+          };
+        }
+
+        presentM11Offer('yard', Date.now());
+
         return {
           body:
-            'Noor: Storm damage, six jobs — work them in this order: the frozen coolant coupling (west), Mast 04 (north), the staked excavation field (east), the magnet rig in the Metal Recovery Yard (north-east), the station support console on the open field (south of the mast), then the uplink posts (north-west) for the two recovery reports.\n' +
-            'Each site has its own panel (E). Scanner is C, spade is D, the rig is F. Come back to me when you are finished outside.',
+            body +
+            '\nMy torque driver is in the supply crate on the apron — borrow it while you work out here if you like. It is mine: hand it back to me, or put it back in the supply crate, before you leave the yard.',
           options: [
+            { label: 'Ready.', tag: 'yard_brief_ack', onSelected: ready(null) },
             {
-              label: 'Ready.',
-              tag: 'yard_brief_ack',
-              onSelected: () => {
-                const now = Date.now();
-
-                advancePilotStage('exterior_work', now);
-                // M08 (U2-R): the console is presented by this briefing.
-                presentM08(now);
-                this.ensureFieldTools();
-                this.refreshGuidance();
-              },
+              label: 'Ready — and I will take the driver.',
+              tag: 'yard_brief_ack_loan_accept',
+              onSelected: ready(true),
+            },
+            {
+              label: 'Ready — no need for the driver.',
+              tag: 'yard_brief_ack_loan_decline',
+              onSelected: ready(false),
             },
           ],
         };
+      }
       case 'exterior_work':
         return {
           body: 'Noor: How is it going out here? Anything you leave stays as you left it.',
@@ -2098,10 +2211,15 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
   }
 
   protected onRoomExit(): void {
+    const now = Date.now();
+
     if (m05Open('o2')) {
-      censorM05('o2', Date.now(), 'left_zone');
+      censorM05('o2', now, 'left_zone');
       this.cableFlag?.setVisible(false);
     }
+
+    // M11 (Unit 3): the first departure from the yard freezes the custody.
+    departM11('yard', now);
   }
 
   // ————————————————————————————————— interaction plumbing ——

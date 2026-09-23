@@ -18,6 +18,7 @@ import { closeM07AtReview } from './m07Calibration';
 import { closeM08AtReview } from './m08EffortChoice';
 import { closeM09AtReview } from './m09MonitorWatch';
 import { closeM10AtReview } from './m10ComponentPromise';
+import { closeM11AtReview } from './m11Custody';
 import { m12Windows } from './m12QualityControl';
 import { m14Window } from './m14IncidentDesk';
 import {
@@ -63,6 +64,9 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
   closeM08AtReview(nowMs);
   closeM09AtReview(nowMs);
   closeM10AtReview(nowMs);
+  // Station 080 M11 (Unit 3): never offered → absent; accepted and never
+  // departed → unresolved at review; declined / resolved already closed.
+  closeM11AtReview(nowMs);
   closeSurfaceWindow(
     m12Windows.o1,
     nowMs,

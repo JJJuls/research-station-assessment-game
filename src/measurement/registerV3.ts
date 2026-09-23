@@ -285,7 +285,7 @@ const OPERATIONAL_LABELS: Partial<Record<M26ItemId, string>> = {
   M08: 'Support console (Recovery Yard)',
   M09: 'Monitor watch (Concourse)',
   M10: 'Component delivery (Concourse)',
-  M11: 'Borrowed instruments (Workshop / Laboratory)',
+  M11: 'Borrowed instruments (Laboratory / Recovery Yard)',
   M12: 'Quality packets (Concourse / Workshop)',
   M13: 'Conduit lattice bench (Workshop)',
   M14: 'Incident desk (Concourse)',
@@ -760,6 +760,35 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'exploratory',
     direction: 'add_task',
     occasions: 2,
+    // Unit 3: the approved task landed — Kai's field probe (Laboratory,
+    // episode 3) and Noor's torque driver (Recovery Yard, episode 4); the
+    // v2 seal-obligation telemetry stays descriptive, never primary.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m11_custody_lab', 'proto_m11_custody_yard'],
+      windows: [
+        {
+          id: 'm11_custody_lab',
+          occasion: 'lab',
+          zone: 'diagnostics_laboratory',
+          episode: 3,
+        },
+        {
+          id: 'm11_custody_yard',
+          occasion: 'yard',
+          zone: 'exterior_recovery_yard',
+          episode: 4,
+        },
+      ],
+      family_prefixes: ['proto_m11_custody_'],
+      secondary_ids: ['secondary_m11_seal_obligation'],
+    },
+    implementation_status: 'implemented',
+    disposition_override: {
+      disposition: 'PRIMARY-CANDIDATE',
+      approved_by:
+        'FABLE-M01-M26-IMPLEMENTATION-INSTRUCTIONS.md, M11 row (Direction: Add task)',
+    },
     summary:
       'Two borrowed-instrument occasions in different rooms; ownership and return options clear; return, named handover or departure with unresolved custody; objects disjoint from M03 and M04.',
     features: [
@@ -770,6 +799,14 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
         '0–2',
         'more unresolved stewardship (aligns with raw M11; lower Responsibility)',
         'no accepted accessible custody → null',
+      ),
+      count(
+        'm11_custody_records',
+        'per occasion: offer, answer, accessibility, resolution before departure (method, recipient), owner and return-point encounters while carrying, late handover after departure',
+        'object per occasion',
+        'diagnostic only (understanding and handover records)',
+        'null with the primary',
+        'companion',
       ),
     ],
   }),

@@ -308,3 +308,147 @@ pause, interval screen, served work, reload guard, honest dispositions`.
 - **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
   deleted. U2 is accepted for the purposes of this run (owner questions
   §5.9–5.16 remain open and reversible).
+
+## U3 — M11 responsible custody (two borrowed instruments)
+
+- **Objective:** add the owner-approved M11 task: two brief
+  borrowed-instrument occasions in different rooms (Kai's field probe in
+  the Diagnostics Laboratory, Noor's torque driver in the Recovery Yard),
+  each with clear ownership and return options — hand back to the owner,
+  place at the named return point, or depart with custody unresolved.
+- **Scientific rationale:** specification M11 row ("Add task"; R04
+  responsibility-related content, R13 obligation mechanism; narrow
+  exploratory counterpart). Measure `m11_unresolved_custodies` = accepted,
+  accessible custodies still unresolved at the first departure from the
+  loan room / accepted accessible custodies (0–2; conditional-eligibility
+  denominator); refusing the loan is not irresponsible (declined ⇒ outside
+  the denominator); understanding (the terms shown), owner and return-point
+  encounters while carrying, and late handovers after departure are
+  companions (`m11_custody_records`). Objects disjoint from M03 and M04.
+- **Participant-facing behaviour:** each briefing acknowledgement carries
+  the loan decision explicitly ("Understood — I will take the probe" /
+  "Understood — no need for the probe"; "Ready — I will take the driver" /
+  "Ready — no need for the driver"), both advancing the stage as before;
+  the borrowed item sits in the belt; the owner offers "Hand … back" while
+  it is carried; the Signal Analysis Workstation prompt (Laboratory) and
+  the existing Yard Supply Crate accept the item; leaving the room through
+  any door with the item closes the observation as unresolved; on the
+  return traversal Kai accepts the probe back and Noor's driver "for Noor"
+  (late resolutions, recorded, never the primary). (A dedicated return
+  rack could not be placed on the audited Laboratory plate — see the
+  register's as-built record.)
+- **Allowed files:** `src/pilot/windows/m11CustodyModel.ts`,
+  `src/pilot/windows/m11Custody.ts`, `src/pilot/windows/reviewClosure.ts`,
+  `src/measurement/features/m11.ts`, `src/measurement/features/index.ts`,
+  `src/measurement/registerV3.ts`, `src/gameplay/items.ts` (two item
+  definitions), `src/world/interactionRegistry.ts` (the workstation's
+  hosted-window note), `src/scenes/DiagnosticsLaboratoryScene.ts`,
+  `src/scenes/ExteriorRecoveryYardScene.ts`, `e2e/m11_custody.spec.ts`,
+  `e2e/m11_custody_route.spec.ts`, `e2e/pilot_coverage.spec.ts`,
+  `e2e/pilot_closure_models.spec.ts`, `e2e/m26_protocol_foundation.spec.ts`
+  (only if a derived count changes), `docs/verification/station-080-m26/**`.
+- **Entry state:** HEAD `49d453b1`, clean tree.
+- **Success behaviour:** both loans offered on the ordinary route; accept /
+  decline explicit; return by owner or return point resolves; the first
+  departure freezes the outcome; the extractor reproduces unresolved /
+  accepted-accessible with `declined` (all refused), `no_eligible_event`
+  (accepted but not carriable), `pending`, `interrupted` and `not_presented`
+  kept distinct; late handovers recorded as companions only.
+- **Failure/recovery:** a full belt at acceptance makes the custody
+  inaccessible (excluded, never unresolved); a reload after an offer was
+  presented never re-offers (prior exposure, technically incomplete); the
+  review closes an accepted, never-departed custody as unresolved at review
+  and marks a never-offered one absent.
+- **Telemetry boundary:** family `proto_m11_custody_*` (candidate; suffixes
+  `offer_presented`, `offer_answered`, `custody_started`, `owner_available`,
+  `return_point_available`, `resolved`, `departed`, `late_resolved`,
+  `window_closed`); the v2 `secondary_m11_seal_obligation` telemetry stays
+  descriptive; no canonical name or formula invented.
+- **Scientific acceptance:** decline ≠ unresolved; inaccessible ≠
+  unresolved; one observation per occasion, frozen at first departure; late
+  resolution never rewrites it; nothing unlocks or pays.
+- **Gameplay acceptance:** every existing route helper keeps its option
+  indices (the accept option is option 1 of each briefing); the rack sits
+  on the audited north lane clear of both doors; ESC / Step away always
+  available.
+- **Required tests:** `lint:tsc`, `build`, ESLint/Prettier on touched files,
+  pure `m11_custody` + `world_v1_registry` + `pilot_coverage` +
+  `pilot_closure_models` + `m26_protocol_foundation`, browser
+  `m11_custody_route`.
+- **Required screenshots:** none.
+- **Stop conditions:** common.
+- **Model:** Fable.
+- **Commit expectation:** `feat(m11): two borrowed-instrument custody
+occasions in the laboratory and the yard`.
+- **Review round 1 (read-only, on the working tree):** project reviewer
+  agents again not discoverable; the `scientific-reviewer` and
+  `gameplay-reviewer` definitions were run verbatim through general-purpose
+  Opus agents. Gameplay: 1 high / 5 medium / 3 low; scientific: 2 major /
+  7 minor, 4 owner questions. Material findings and their resolution:
+  - Item tidied into the backpack lost every return path (G-F1) — fixed:
+    custody is a state; the hand-back takes the item from belt or backpack.
+  - Silent full belt at acceptance (G-F2) — fixed: told in both rooms.
+  - Offer implied a use the game never provides (G-F3) — fixed: "borrow it
+    while you work here if you like".
+  - Stated deadline did not match the closure (G-F4) — fixed: "before you
+    leave the laboratory / the yard" (any door).
+  - Terms shown once in a dense briefing (G-F5) — mitigated: one neutral
+    mission-log line while carried (M10 precedent), closed at departure;
+    owner question §5.19 (understanding check).
+  - Crate return option after "Close" (G-F6) — fixed: before Close; Noor's
+    "kit" renamed to the crate everywhere.
+  - Pre-focused first option accepted the loan; acceptance fused with the
+    mandatory acknowledgement (S-F1, major) — fixed: the plain
+    acknowledgement is option 1 and lets the loan LAPSE (untaken, outside
+    the denominator, distinct from a refusal); taking / refusing are
+    deliberate options 2 / 3; owner question §5.17. Route helpers' option
+    1 semantics restored exactly (every other spec unaffected).
+  - Mixed reload hid one interrupted occasion (S-F2, major) — fixed: a
+    held-back occasion makes the item `interrupted` (value of the other
+    occasion kept beside it, `interrupted_occasions` listed); the review
+    closure's partial raw is now read too (S-F6).
+  - Reminder line stale after the departure; belt-slot and order effects
+    between the occasions (S-F3) — reminder closes at departure; the rest
+    recorded as owner question §5.18.
+  - Custody could be marked resolved without the item (S-F5) — fixed: a
+    hand-back is recorded only when the belt or backpack held it; the
+    prompt says "not with you" otherwise. (Making the items non-droppable
+    was tried and reverted: the legacy removal path refuses non-droppable
+    stacks; `src/inventory/itemDefs.ts` is back to HEAD.)
+  - Accessibility exported (S-F7): `owner_accessible` /
+    `return_point_accessible` (design constants) and `custody_ms` in raw.
+  - Custody length / instruments do nothing (S-F8) — owner question §5.20.
+  - `input_mode` hard-coded `keyboard` on prompt-card answers (G/S-F4) —
+    existing M09/M10 convention (the cards do not report the device); left
+    as is and recorded as a limitation.
+  - Docs drift (rack) — fixed in the contract text and the spec headers; a
+    dedicated return rack could not be placed on the audited Laboratory
+    plate (airlock trigger 96 px clearance; the workstation island's
+    nearest-wins zone), so the Signal Analysis Workstation prompt is the
+    named return point (register as-built).
+  - Extractor counted late handovers from the closed window's snapshot
+    (found by the browser spec, not a review finding) — fixed: counted
+    from their own `late_resolved` events.
+- **Verification results:** `npm.cmd run lint:tsc` 0 · `npm.cmd run build`
+  0 · ESLint + Prettier on every touched file 0 · pure `m11_custody` (5) +
+  `world_v1_registry` + `pilot_coverage` + `pilot_closure_models` +
+  `m26_protocol_foundation` 71/71 · browser `m11_custody_route`: test 1
+  (taken → workstation return; taken → carried out unresolved → late
+  handover to Kai; offline reproduction 1 / 2) 1/1 with retries off after
+  the last fix (3.1 min), test 2 (refused → Concourse-door exit →
+  `declined`) 1/1 with retries off (the two-test run before the
+  non-droppable revert: test 2 passed, test 1 failed exactly on that
+  revert's cause) · `verify-unit` and `git diff --check` recorded in the
+  handoff.
+- **Deviations:** `src/inventory/itemDefs.ts` was edited during the review
+  fixes and restored to HEAD (no net change); `src/pilot/zoneSites.ts` and
+  `e2e/pilotHelpers.ts` ended unchanged (the rack was dropped);
+  `CLAUDE_UNIT_ALLOWLIST` again enforced by discipline + `verify-unit`; no
+  third review round (fixes bounded to cited findings; a fresh review of
+  the review fixes is folded into U24).
+- **Not changed:** `ScoringManager`, `SummaryScope`, `docs/research/**`,
+  `docs/scientific/**`, the v2 ledger, package files, tool configs,
+  settings, every other item's mechanic; every existing route helper keeps
+  its option indices.
+- **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
+  deleted.

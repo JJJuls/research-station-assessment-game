@@ -82,6 +82,18 @@ import {
   m10Carrying,
   noteM10KaiEncounter,
 } from '../pilot/windows/m10ComponentPromise';
+import {
+  answerM11Offer,
+  declareM11,
+  departM11,
+  lapseM11Offer,
+  m11CarryingItem,
+  m11OfferAvailable,
+  noteM11OwnerAvailable,
+  noteM11ReturnPointAvailable,
+  presentM11Offer,
+  resolveM11,
+} from '../pilot/windows/m11Custody';
 import { m15CausalSurfaceModel } from '../pilot/windows/signalSurfaceModels';
 import { LAB_SPAWNS, LAB_STATIONS } from '../pilot/zoneSites';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
@@ -245,6 +257,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     declareM16();
     declareM17();
     declareM18Fault();
+    declareM11('lab');
     stampContaminationNotes();
 
     super.create(data);
@@ -327,6 +340,9 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       y: ws.y,
       onPromptOpened: () => {
         this.logStationOpened('signal_workstation');
+        // Station 080 M11 (Unit 3): the workstation is the named return
+        // point of Kai's field probe (a prompt option while carried).
+        noteM11ReturnPointAvailable('lab');
         return true;
       },
     });
@@ -822,6 +838,8 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
             );
           },
         },
+        // M11 (Unit 3): the return point, appended LAST while carried.
+        ...this.probeReturnOptions(),
       ];
     }
 
@@ -830,6 +848,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     }
 
     noteM10KaiEncounter();
+    noteM11OwnerAvailable('lab');
 
     const beat = this.kaiBeat();
 
@@ -844,10 +863,92 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
           onSelected: () => handOverM10(Date.now(), 'kai', 'keyboard'),
         },
         ...beat.options,
-      ].slice(0, 4);
+      ];
     }
 
+    // M11 (Unit 3): the hand-back is available whenever Kai's probe is
+    // carried — before the first departure it resolves the custody, on
+    // the return traversal it is a late handover. Noor's driver can be
+    // handed to Kai on the way back (a late, named handover for Noor).
+    // Appended LAST so the route helpers' option indices never move.
+    if (m11CarryingItem('lab')) {
+      beat.options = [
+        ...beat.options,
+        {
+          label: 'Hand the field probe back to Kai.',
+          tag: 'm11_lab_return_owner',
+          feedback: '',
+          onSelected: () => {
+            this.showFeedbackMessage(
+              resolveM11('lab', 'owner_handover', 'kai', Date.now(), 'keyboard')
+                ? 'Kai: Thanks — back on the desk it goes.'
+                : 'The field probe is not with you.',
+            );
+          },
+        },
+      ];
+    }
+
+    if (m11CarryingItem('yard') && pilotStageAtOrAfter('return_hub')) {
+      beat.options = [
+        ...beat.options,
+        {
+          label: "Hand Noor's torque driver to Kai.",
+          tag: 'm11_yard_handover_kai',
+          feedback: '',
+          onSelected: () => {
+            this.showFeedbackMessage(
+              resolveM11(
+                'yard',
+                'named_handover',
+                'kai',
+                Date.now(),
+                'keyboard',
+              )
+                ? 'Kai: I will get it back to Noor.'
+                : 'The torque driver is not with you.',
+            );
+          },
+        },
+      ];
+    }
+
+    beat.options = beat.options.slice(0, 4);
+
     return this.npcBeatOptions('pilotKai', beat);
+  }
+
+  /** The workstation accepts the probe back while it is carried. */
+  private probeReturnOptions(): PromptOption[] {
+    if (!m11CarryingItem('lab')) {
+      return [];
+    }
+
+    return [
+      {
+        label: 'Leave the field probe on the workstation.',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => {
+          this.showFeedbackMessage(
+            resolveM11(
+              'lab',
+              'return_point',
+              'workstation',
+              Date.now(),
+              'keyboard',
+            )
+              ? 'The field probe is back on the workstation.'
+              : 'The field probe is not with you.',
+          );
+        },
+      },
+    ];
+  }
+
+  protected onRoomExit(): void {
+    // M11: the first departure from the loan room freezes the custody.
+    departM11('lab', Date.now());
   }
 
   private kaiBeat() {
@@ -861,21 +962,77 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
           body: 'Kai: Vale briefs first — incident desk in the Concourse; the workshop orders come before the laboratory.',
           options: [{ label: 'Understood.', tag: 'redirect_vale' }],
         };
-      case 'lab_briefing':
+      case 'lab_briefing': {
+        const body =
+          'Kai: Noor pulled a transmission off the storm relay before it went down. The signal analysis workstation holds the case: four benches, in order — evidence table, protocol console, training rig, diagnostic board.\n' +
+          'Run the console orientation first. Come back when the case is recorded.';
+
+        // M11 (Unit 3): the loan is offered inside the briefing. The plain
+        // acknowledgement stays option 1 (pre-focused, so it can never take
+        // the loan by default — review U3 S-F1); taking or refusing the loan
+        // are deliberate further options; an untaken loan lapses.
+        if (!m11OfferAvailable('lab')) {
+          return {
+            body,
+            options: [
+              {
+                label: 'Understood.',
+                tag: 'lab_brief_ack',
+                onSelected: () => {
+                  advancePilotStage('lab_work', Date.now());
+                },
+              },
+            ],
+          };
+        }
+
+        presentM11Offer('lab', Date.now());
+
         return {
           body:
-            'Kai: Noor pulled a transmission off the storm relay before it went down. The signal analysis workstation holds the case: four benches, in order — evidence table, protocol console, training rig, diagnostic board.\n' +
-            'Run the console orientation first. Come back when the case is recorded.',
+            body +
+            '\nMy field probe is on the desk — borrow it while you work here if you like. It is mine: hand it back to me, or leave it on the signal analysis workstation, before you leave the laboratory.',
           options: [
             {
               label: 'Understood.',
               tag: 'lab_brief_ack',
               onSelected: () => {
-                advancePilotStage('lab_work', Date.now());
+                const now = Date.now();
+
+                advancePilotStage('lab_work', now);
+                lapseM11Offer('lab', now);
+              },
+            },
+            {
+              label: 'Understood — and I will take the probe.',
+              tag: 'lab_brief_ack_loan_accept',
+              onSelected: () => {
+                const now = Date.now();
+
+                advancePilotStage('lab_work', now);
+
+                const result = answerM11Offer('lab', true, now, 'keyboard');
+
+                this.showFeedbackMessage(
+                  result === 'belt_full'
+                    ? 'Belt full — the field probe stays on the desk.'
+                    : 'Field probe taken — it is in your belt.',
+                );
+              },
+            },
+            {
+              label: 'Understood — no need for the probe.',
+              tag: 'lab_brief_ack_loan_decline',
+              onSelected: () => {
+                const now = Date.now();
+
+                advancePilotStage('lab_work', now);
+                answerM11Offer('lab', false, now, 'keyboard');
               },
             },
           ],
         };
+      }
       case 'lab_work':
         return {
           body: 'Kai: How is the case? Anything you leave stays as you left it.',

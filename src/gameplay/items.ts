@@ -47,6 +47,25 @@ export const GAME_ITEM_REGISTRY: readonly GameItemDefinition[] = [
       'Compact powered spade for frozen regolith. Required for sample extraction.',
     tags: ['tool'],
   },
+  // Station 080 M11 (Unit 3): the two borrowed instruments. Personal
+  // property of an NPC, carried on loan; neither is required by any task
+  // and neither unlocks anything (custody is the observation).
+  {
+    item_id: 'kai_field_probe',
+    label: "Field Probe (Kai's)",
+    icon: 'proc-icon-diagnostic-probe',
+    description:
+      "Kai's hand-held field probe, on loan. Hand it back to Kai or leave it on the signal analysis workstation before leaving the laboratory.",
+    tags: ['tool'],
+  },
+  {
+    item_id: 'noor_torque_driver',
+    label: "Torque Driver (Noor's)",
+    icon: 'proc-icon-torque-driver',
+    description:
+      "Noor's torque driver, on loan. Hand it back to Noor or put it back in the yard supply crate before leaving the yard.",
+    tags: ['tool'],
+  },
   {
     item_id: 'sample_case',
     label: 'Sample Case',

@@ -577,7 +577,9 @@ export const LAB_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Review the',
     'Signal Analysis Workstation',
     { kind: 'prompt', id: 'pilotSignalWorkstation' },
-    null,
+    // Station 080 M11 (Unit 3): also the named return point of Kai's
+    // field probe (a prompt option while the probe is carried).
+    'm11_custody_lab (return point)',
     // The island is approached from the west (its north lane is transit).
     { x: 356, y: 196 },
   ),

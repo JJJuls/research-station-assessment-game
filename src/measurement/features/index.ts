@@ -4,6 +4,7 @@
  * offline reproduction see the same rule set.
  */
 import './m08';
+import './m11';
 
 export * from './extract';
 export * from './types';
