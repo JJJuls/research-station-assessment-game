@@ -10,10 +10,10 @@
  * 2. M16 protocol console — base familiarisation, READY → new rule →
  *    ACKNOWLEDGE, six fresh reports routed by drag, click-composition and
  *    typed aliases (one shared semantic validator), one reference consult.
- * 3. M17 training rig — demonstration → one practice case (corrective
- *    feedback) → one changed transfer case (no reference shown; a wrong
- *    first attempt, a demonstration review, a correct second attempt);
- *    practice data never become transfer data.
+ * 3. M17 training rig — demonstration → two uncoached baseline probes →
+ *    twelve feedback learning trials (the run of three at trial 4) → two
+ *    transfer probes (no preview, no feedback; one demonstration review);
+ *    sixteen first responses recorded (Station 080 Unit 9).
  * 4. M18 diagnostic board — evidence read, a test run twice (redundant),
  *    tags ruled out citing the readout (consistent and inconsistent
  *    citations both recorded), the working diagnosis placed by keyboard
@@ -34,6 +34,7 @@
 // 1280×720 canvas (src/world/viewport.ts; DEV probe window.__designSpace).
 import { expect, type Page, test } from '@playwright/test';
 
+import { M17_FORMS } from '../src/informationProcessing/syntaxForms';
 import { getEvents, selectPromptOption } from './helpers';
 import type { IpEventLike } from './ipHelpers';
 import {
@@ -401,45 +402,88 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     expect(display?.phases_recorded).toEqual(['m15', 'm16']);
     expect(display?.intercom).toMatch(/register syntax/);
 
-    // ——— Phase 3 — M17 training rig ———
+    // ——— Phase 3 — M17 training rig (Station 080 Unit 9) ———
     await openBench(page, PILOT.lab.trainingRig, '__ipTerminalProbe');
     terminal = await terminalProbe(page);
     expect(terminal.stage).toBe('DEMONSTRATION');
     expect(terminal.output.join(' ')).toContain('VEK B RED');
     await clickTerminalButton(page, 'READY');
     terminal = await terminalProbe(page);
-    expect(terminal.stage).toBe('PRACTICE');
+    expect(terminal.stage).toBe('BASELINE');
+    expect(terminal.output.some((line) => line.startsWith('NOW'))).toBe(false);
 
-    // Practice, first attempt correct → corrective feedback names the match.
-    await typeCommand(page, 'ZOR A B');
-    await composeByClick(page, ['VEK', 'C', 'GRN']);
+    const m17Trials = M17_FORMS.A.trials;
+    const typeReference = async (index: number) => {
+      for (const line of m17Trials[index].reference) {
+        await typeCommand(page, line);
+      }
+
+      await waitBufferLength(page, 2);
+    };
+    const typeWrong = async () => {
+      await typeCommand(page, 'KAI A');
+      await typeCommand(page, 'KAI B');
+      await waitBufferLength(page, 2);
+    };
+
+    // Baseline 1 correct (typed), baseline 2 wrong (pointer): no feedback.
+    await typeReference(0);
+    await clickTerminalButton(page, 'submit');
+    terminal = await terminalProbe(page);
+    expect(terminal.console.join(' ')).not.toMatch(
+      /matches GOAL|Reference sequence/,
+    );
+    await composeByClick(page, ['KAI', 'A']);
+    await composeByClick(page, ['KAI', 'B']);
     await waitBufferLength(page, 2);
     await clickTerminalButton(page, 'submit');
     terminal = await terminalProbe(page);
-    expect(terminal.console.join(' ')).toMatch(/matches GOAL/);
-    expect(terminal.stage).toBe('PRACTICE RECORDED');
-    await clickTerminalButton(page, 'NEXT');
+    expect(terminal.stage).toBe('LEARNING');
+
+    // Learning: 1 wrong (the reference is shown), 2–4 correct (the run of
+    // three ends at 4), the rest mixed — all twelve run.
+    const learningPlan = [
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+    ];
+
+    for (const [i, correct] of learningPlan.entries()) {
+      if (correct) {
+        await typeReference(2 + i);
+      } else {
+        await typeWrong();
+      }
+
+      await clickTerminalButton(page, 'submit');
+      terminal = await terminalProbe(page);
+      expect(terminal.stage).toBe('FEEDBACK');
+      expect(terminal.console.join(' ')).toMatch(
+        correct ? /matches GOAL/ : /does not match GOAL.*Reference sequence/,
+      );
+      await clickTerminalButton(page, 'NEXT');
+    }
+
+    // Transfer: no preview, no feedback; the demonstration reviewed once.
     terminal = await terminalProbe(page);
     expect(terminal.stage).toBe('TRANSFER');
-
-    // Transfer, attempt 1 wrong (no reference sequence is ever shown);
-    // the demonstration is reviewed once; attempt 2 correct.
-    await typeCommand(page, 'ZOR A B');
-    await typeCommand(page, 'KAI C');
-    await waitBufferLength(page, 2);
-    await clickTerminalButton(page, 'submit');
-    terminal = await terminalProbe(page);
-    expect(terminal.closed).toBe(false);
-    expect(terminal.console.join(' ')).toMatch(/attempt 1 recorded/i);
-    expect(terminal.console.join(' ')).not.toMatch(/Reference sequence/);
+    expect(terminal.output.some((line) => line.startsWith('NOW'))).toBe(false);
     await clickTerminalButton(page, 'reference');
     await page.waitForTimeout(250);
     await page.keyboard.press('Escape');
     await page.waitForTimeout(250);
-    await typeCommand(page, 'CLEAR');
-    await typeCommand(page, 'ZOR A C');
-    await typeCommand(page, 'KAI B');
-    await waitBufferLength(page, 2);
+    await typeReference(14);
+    await clickTerminalButton(page, 'submit');
+    await typeWrong();
     await clickTerminalButton(page, 'submit');
     await page.waitForTimeout(300);
     terminal = await terminalProbe(page);
@@ -448,26 +492,20 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     await waitTerminalOpen(page, false);
 
     const m17 = await ipModule(page, 'm17');
-    const attempts = m17.attempts as Record<string, unknown>[];
+    const m17Records = m17.trials as Record<string, unknown>[];
 
     expect(m17.window_status).toBe('completed');
-    expect(
-      attempts.map((a) => [a.trial_type, a.attempt, a.goal_reached]),
-    ).toEqual([
-      ['feedback', 1, true],
-      ['transfer', 1, false],
-      ['transfer', 2, true],
-    ]);
-    expect(m17.practice_attempts).toBe(1);
-    expect(m17.practice_criterion_met).toBe(true);
-    expect(m17.transfer_attempts).toBe(2);
-    expect(m17.transfer_first_attempt_goal_reached).toBe(false);
-    expect(m17.transfer_goal_reached).toBe(true);
-    expect(m17.hints_used).toBe(1);
+    expect(m17.trials_completed).toBe(16);
+    expect(m17.criterion_run_trial).toBe(4);
+    expect(m17.sequence).toEqual({
+      baseline: [true, false],
+      learning: learningPlan,
+      transfer: [true, false],
+    });
+    expect(m17Records.filter((r) => r.feedback_presented)).toHaveLength(12);
+    expect(m17Records[1].input_mode).toBe('pointer');
+    expect(m17Records[14].demonstration_reviews).toBe(1);
     expect(m17.demonstration_exposures).toBe(2);
-    expect(attempts[0].feedback_presented).toBe(true);
-    expect(attempts[1].feedback_presented).toBe(false);
-    expect(attempts[1].input_mode).toBe('typed');
     expect(Object.keys(m17).join(' ')).not.toMatch(
       /slope|criterion_score|score/i,
     );
@@ -559,13 +597,13 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     const families = {
       m15: eventsOfFamily(events, 'proto_m15_cipher'),
       m16: eventsOfFamily(events, 'proto_m16_protocol'),
-      m17: eventsOfFamily(events, 'proto_m17_syntax'),
+      m17: eventsOfFamily(events, 'proto_m17_trials'),
       m18: eventsOfFamily(events, 'proto_m18_fault'),
     };
     const ids = {
       m15: ['proto_m15_layered_cipher', 'm15_causal_w1'],
       m16: ['proto_m16_protocol_update', 'm16_protocol_w1'],
-      m17: ['proto_m17_syntax_acquisition', 'm17_transfer_w1'],
+      m17: ['proto_m17_criterion', 'm17_trials_w1'],
       m18: ['proto_m18_lattice_fault_diagnosis', 'm18_diagnosis_w1'],
     } as const;
 

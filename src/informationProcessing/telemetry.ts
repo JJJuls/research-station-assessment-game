@@ -23,7 +23,9 @@ export type IpFamily =
   | 'proto_m14_packet'
   | 'proto_m15_cipher'
   | 'proto_m16_protocol'
-  | 'proto_m17_syntax';
+  | 'proto_m17_syntax'
+  /** Station 080 Unit 9: the sixteen-trial learning series (v3 route). */
+  | 'proto_m17_trials';
 
 export const IP_SCENE = 'information_processing_lab';
 

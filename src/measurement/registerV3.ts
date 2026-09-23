@@ -1041,6 +1041,24 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'performance_counterpart',
     direction: 'replace_structure',
     occasions: 1,
+    // Unit 9: the approved trial structure landed at the Training Rig
+    // (Diagnostics Laboratory, phase 3). The v2 demo / practice / transfer
+    // family `proto_m17_syntax_*` keeps its v2 meaning.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m17_criterion'],
+      windows: [
+        {
+          id: 'm17_trials_w1',
+          occasion: null,
+          zone: 'diagnostics_laboratory',
+          episode: 3,
+        },
+      ],
+      family_prefixes: ['proto_m17_trials_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Two uncoached baseline probes, twelve feedback learning trials and two transfer probes; first attainment = three consecutive correct learning responses; all twelve trials always run; material distinct from M16.',
     features: [

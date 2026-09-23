@@ -10,7 +10,7 @@
  *
  *   1  Evidence Table   — M15  causal model of the receiver chain
  *   2  Protocol Console — M16  the transmission's handling protocol
- *   3  Training Rig     — M17  register syntax: demo → practice → transfer
+ *   3  Training Rig     — M17  register syntax: demo → baseline → learning → transfer
  *   4  Diagnostic Board — M18  the receiver fault behind the anomaly
  *
  * Each phase is its own opportunity, window, event family, form, entry
@@ -155,7 +155,7 @@ const PHASES: readonly PhaseSpec[] = [
     texture: 'proc-shelf-electronics',
     at: LAB_STATIONS.trainingRig,
     status: m17WindowStatus,
-    opportunityId: 'proto_m17_syntax_acquisition',
+    opportunityId: 'proto_m17_criterion',
   },
   {
     id: 'm18',

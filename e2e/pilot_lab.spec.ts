@@ -68,7 +68,7 @@ import {
 const PHASE_OPPORTUNITY: Record<string, string> = {
   m15: 'proto_m15_layered_cipher',
   m16: 'proto_m16_protocol_update',
-  m17: 'proto_m17_syntax_acquisition',
+  m17: 'proto_m17_criterion',
   m18: 'proto_m18_lattice_fault_diagnosis',
 };
 

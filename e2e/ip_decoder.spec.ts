@@ -37,6 +37,7 @@ import {
 } from '../src/informationProcessing/protocolForms';
 import {
   evaluateTrial,
+  linesOf,
   M17_FORMS,
   M17_GRAMMAR,
 } from '../src/informationProcessing/syntaxForms';
@@ -626,7 +627,7 @@ test.describe('M16 / M17 forms (pure)', () => {
     }
   });
 
-  test('M17 has its own grammar, matched cases, one practice + one changed transfer, two operators each', () => {
+  test('M17 has its own grammar and sixteen matched trials — two baseline, twelve learning, two transfer — two operators each (Station 080 Unit 9)', () => {
     const decoderVerbs = new Set([
       ...M14_GRAMMAR.verbs.map((v) => v.verb),
       ...M15_GRAMMAR.verbs.map((v) => v.verb),
@@ -640,33 +641,23 @@ test.describe('M16 / M17 forms (pure)', () => {
     for (const formId of ['A', 'B'] as const) {
       const trials = M17_FORMS[formId].trials;
 
-      expect(trials).toHaveLength(2);
-      expect(trials.map((t) => t.type)).toEqual(['feedback', 'transfer']);
+      expect(trials).toHaveLength(16);
+      expect(trials.filter((t) => t.phase === 'baseline')).toHaveLength(2);
+      expect(trials.filter((t) => t.phase === 'learning')).toHaveLength(12);
+      expect(trials.filter((t) => t.phase === 'transfer')).toHaveLength(2);
 
       for (const t of trials) {
         expect(t.reference).toHaveLength(2);
-
-        const lines = t.reference.map((text, seq) => {
-          const [verb, ...args] = text.split(' ');
-
-          return {
-            line_id: `ln_${seq}`,
-            seq,
-            input_mode: 'typed' as const,
-            command: { verb, args },
-          };
-        });
-
         expect(
-          evaluateTrial(t, lines).goal_reached,
+          evaluateTrial(t, linesOf(t.reference)).goal_reached,
           `${formId} trial ${t.index}`,
         ).toBe(true);
         expect(evaluateTrial(t, []).goal_reached).toBe(false);
       }
     }
 
-    // Operator mix matched case by case across forms.
-    for (let i = 0; i < 2; i++) {
+    // Operator mix matched trial by trial across forms.
+    for (let i = 0; i < 16; i++) {
       const mixA = M17_FORMS.A.trials[i].reference
         .map((r) => r.split(' ')[0])
         .sort();
@@ -791,12 +782,13 @@ test.describe('M16 protocol update (browser)', () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expectProvisionalOnly(eventsOfFamily(events, 'proto_m16_protocol'));
     expect(eventsOfFamily(events, 'proto_m15_cipher')).toHaveLength(0);
-    expect(eventsOfFamily(events, 'proto_m17_syntax')).toHaveLength(0);
+    expect(eventsOfFamily(events, 'proto_m17_trials')).toHaveLength(0);
     expectNoRuntimeErrors(errors);
   });
 });
 
-test.describe('M17 syntax acquisition (browser)', () => {
+// The M17 browser flow lives in e2e/m17_trials_route.spec.ts (Unit 9).
+test.describe.skip('M17 syntax acquisition (browser, v2 — superseded)', () => {
   test('demonstration → READY → one practice case with feedback → one changed transfer case; attempt-level records preserved, no learning score', async ({
     page,
   }) => {

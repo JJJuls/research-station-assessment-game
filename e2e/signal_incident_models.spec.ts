@@ -7,8 +7,8 @@
  * forms are matched and every required relation is documented by the
  * evidence; the causal validator reports raw facts (edges present /
  * invalid / contradicting, both prediction readings) and never a score;
- * the M17 structure is one demonstration + one practice + one changed but
- * structurally comparable transfer with bounded attempts; the M18 fault
+ * the M17 structure is one demonstration + two baseline probes + twelve
+ * feedback learning trials + two transfer probes (Unit 9); the M18 fault
  * forms stay matched and independent of every M13 module; the incident's
  * four phases sum to the ledger's 235 s planning envelope; nothing in the
  * laboratory scene imports M13 state into M18; and no canonical schema,
@@ -32,10 +32,12 @@ import {
 } from '../src/informationProcessing/faultForms';
 import {
   evaluateTrial,
-  M17_FEEDBACK_TRIALS,
+  linesOf,
+  M17_BASELINE_TRIALS,
   M17_FORMS,
   M17_GRAMMAR,
-  M17_MAX_ATTEMPTS,
+  M17_LEARNING_TRIALS,
+  M17_TRANSFER_TRIALS,
   M17_TRIALS_TOTAL,
 } from '../src/informationProcessing/syntaxForms';
 import { EVIDENCE_LEDGER } from '../src/pilot/evidenceLedger';
@@ -43,7 +45,7 @@ import { EVIDENCE_LEDGER } from '../src/pilot/evidenceLedger';
 const PHASE_FILES: [string, string][] = [
   ['src/informationProcessing/m15CausalModel.ts', 'proto_m15_cipher'],
   ['src/informationProcessing/m16ProtocolUpdate.ts', 'proto_m16_protocol'],
-  ['src/informationProcessing/m17SyntaxAcquisition.ts', 'proto_m17_syntax'],
+  ['src/informationProcessing/m17SyntaxAcquisition.ts', 'proto_m17_trials'],
   ['src/informationProcessing/m18FaultDiagnosis.ts', 'proto_m18_fault'],
 ];
 
@@ -319,54 +321,37 @@ test.describe('M15 causal model (pure)', () => {
   });
 });
 
-test.describe('M17 demonstration / practice / transfer (pure)', () => {
-  test('one practice + one changed, structurally comparable transfer; bounded attempts; own grammar', () => {
-    expect(M17_FEEDBACK_TRIALS).toBe(1);
-    expect(M17_TRIALS_TOTAL).toBe(2);
-    expect(M17_MAX_ATTEMPTS).toBe(3);
+test.describe('M17 learning series (pure)', () => {
+  test('sixteen trials — two uncoached baseline, twelve feedback learning, two transfer — two operators each; own grammar; forms matched trial by trial', () => {
+    expect(M17_BASELINE_TRIALS).toBe(2);
+    expect(M17_LEARNING_TRIALS).toBe(12);
+    expect(M17_TRANSFER_TRIALS).toBe(2);
+    expect(M17_TRIALS_TOTAL).toBe(16);
     expect(M17_GRAMMAR.id).toBe('m17-alien-v1');
 
     for (const formId of ['A', 'B'] as const) {
       const form = M17_FORMS[formId];
-      const [practice, transfer] = form.trials;
 
       expect(form.demo).toHaveLength(3);
-      expect(practice.type).toBe('feedback');
-      expect(transfer.type).toBe('transfer');
-      // Structurally comparable: same register size, same command count.
-      expect(practice.reference).toHaveLength(2);
-      expect(transfer.reference).toHaveLength(2);
-      expect(practice.start).toHaveLength(3);
-      expect(transfer.goal).toHaveLength(3);
-      // Meaningfully changed: a different operator mix and register goal.
-      const ops = (trial: typeof practice) =>
-        trial.reference
-          .map((line) => line.split(' ')[0])
-          .sort()
-          .join('+');
+      expect(form.trials.map((trial) => trial.phase)).toEqual([
+        'baseline',
+        'baseline',
+        ...Array<string>(12).fill('learning'),
+        'transfer',
+        'transfer',
+      ]);
 
-      expect(ops(practice)).not.toBe(ops(transfer));
-      expect(transfer.goal).not.toEqual(practice.goal);
-      // The transfer introduces an operator the practice never used, but
-      // one the demonstration showed.
-      const practiceOps = new Set(
-        practice.reference.map((l) => l.split(' ')[0]),
-      );
-      const demoOps = new Set(form.demo.map((d) => d.command.split(' ')[0]));
-      const novel = transfer.reference
-        .map((l) => l.split(' ')[0])
-        .filter((op) => !practiceOps.has(op));
-
-      expect(novel.length).toBeGreaterThan(0);
-      expect(novel.every((op) => demoOps.has(op))).toBe(true);
-      // The practice's corrective feedback can never hand out a transfer
-      // step: no reference command is shared between the two cases.
-      for (const line of practice.reference) {
-        expect(transfer.reference, formId).not.toContain(line);
+      for (const trial of form.trials) {
+        expect(trial.reference).toHaveLength(2);
+        expect(trial.start).toHaveLength(3);
+        expect(trial.goal).not.toEqual(trial.start);
+        expect(
+          evaluateTrial(trial, linesOf(trial.reference)).goal_reached,
+        ).toBe(true);
       }
     }
 
-    // Forms matched case by case in operator mix.
+    // Forms matched trial by trial in operator mix.
     for (let i = 0; i < M17_TRIALS_TOTAL; i += 1) {
       const mix = (formId: 'A' | 'B') =>
         M17_FORMS[formId].trials[i].reference
@@ -378,23 +363,12 @@ test.describe('M17 demonstration / practice / transfer (pure)', () => {
     }
   });
 
-  test('a practice buffer never counts toward the transfer: evaluation is per trial, from that trial start', () => {
-    const form = M17_FORMS.A;
-    const [practice, transfer] = form.trials;
-    const practiceLines = practice.reference.map((text, index) => {
-      const [verb, ...args] = text.split(' ');
+  test('evaluation is per trial, from that trial start: a correct buffer for one trial does not reach the next goal', () => {
+    const [first, second] = M17_FORMS.A.trials;
+    const lines = linesOf(first.reference);
 
-      return {
-        line_id: `p${index}`,
-        command: { verb, args },
-        input_mode: 'typed' as const,
-        seq: index,
-      };
-    });
-
-    expect(evaluateTrial(practice, practiceLines).goal_reached).toBe(true);
-    // The same (correct-for-practice) buffer does not reach the transfer goal.
-    expect(evaluateTrial(transfer, practiceLines).goal_reached).toBe(false);
+    expect(evaluateTrial(first, lines).goal_reached).toBe(true);
+    expect(evaluateTrial(second, lines).goal_reached).toBe(false);
   });
 });
 

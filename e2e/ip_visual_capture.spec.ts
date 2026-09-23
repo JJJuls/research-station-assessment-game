@@ -11,6 +11,7 @@ import { mkdirSync } from 'node:fs';
 
 import { expect, type Page, test } from '@playwright/test';
 
+import { M17_FORMS } from '../src/informationProcessing/syntaxForms';
 import {
   bootIpLab,
   clickDiagnosisButton,
@@ -309,21 +310,32 @@ test('information processing lab visual capture — protocol update and syntax t
   await page.keyboard.press('Escape');
   await waitTerminalOpen(page, false);
 
-  // 22 — M17 practice case (after submission, feedback shown); 23 — the
-  // changed transfer case (no corrective feedback).
+  // 23 — M17 baseline probe (no preview); 22 — the first learning trial
+  // after submission, feedback shown (Station 080 Unit 9).
   await walkAndUseStation(page, 'm17');
   await waitTerminalOpen(page, true);
   await clickTerminalButton(page, 'READY');
-  await typeCommand(page, 'ZOR A B');
-  await composeByClick(page, ['VEK', 'C', 'GRN']);
+
+  const m17Trials = M17_FORMS.A.trials;
+
+  await typeCommand(page, m17Trials[0].reference[0]);
+  await waitBufferLength(page, 1);
+  await shot(page, '23-m17-baseline-trial');
+  await typeCommand(page, m17Trials[0].reference[1]);
+  await waitBufferLength(page, 2);
+  await clickTerminalButton(page, 'submit');
+
+  for (const line of m17Trials[1].reference) {
+    await typeCommand(page, line);
+  }
+
+  await waitBufferLength(page, 2);
+  await clickTerminalButton(page, 'submit');
+  await typeCommand(page, m17Trials[2].reference[0]);
+  await composeByClick(page, m17Trials[2].reference[1].split(' '));
   await waitBufferLength(page, 2);
   await clickTerminalButton(page, 'submit');
   await shot(page, '22-m17-early-feedback-trial');
-
-  await clickTerminalButton(page, 'NEXT');
-  await typeCommand(page, 'ZOR A C');
-  await waitBufferLength(page, 1);
-  await shot(page, '23-m17-transfer-trial');
   await page.keyboard.press('Escape');
   await waitTerminalOpen(page, false);
 

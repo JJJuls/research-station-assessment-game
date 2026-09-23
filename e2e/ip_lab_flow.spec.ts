@@ -11,6 +11,7 @@
 
 import { expect, test } from '@playwright/test';
 
+import { M17_FORMS } from '../src/informationProcessing/syntaxForms';
 import { playerProbe } from './helpers';
 import {
   bootIpLab,
@@ -424,21 +425,18 @@ test('complete laboratory playthrough: every opportunity valid in one session (t
   await waitTerminalOpen(page, true);
   await typeCommand(page, 'READY');
 
-  // One practice case, then the changed transfer case (v2 Unit 3).
-  const trials = [
-    ['ZOR A B', 'VEK C GRN'],
-    ['ZOR A C', 'KAI B'],
-  ];
-
-  for (let index = 0; index < trials.length; index++) {
-    if (index > 0) {
-      await typeCommand(page, 'NEXT');
-    }
-
-    await typeCommand(page, trials[index][0]);
-    await typeCommand(page, trials[index][1]);
+  // Sixteen trials (Station 080 Unit 9): two baseline probes, twelve
+  // feedback learning trials (NEXT after each), two transfer probes —
+  // every reference solution typed.
+  for (const trial of M17_FORMS.A.trials) {
+    await typeCommand(page, trial.reference[0]);
+    await typeCommand(page, trial.reference[1]);
     await waitBufferLength(page, 2);
     await typeCommand(page, 'SUBMIT');
+
+    if (trial.phase === 'learning') {
+      await typeCommand(page, 'NEXT');
+    }
   }
 
   await page.keyboard.press('Escape');
@@ -500,7 +498,7 @@ test('complete laboratory playthrough: every opportunity valid in one session (t
     'proto_m14_packet_saturation',
     'proto_m15_layered_cipher',
     'proto_m16_protocol_update',
-    'proto_m17_syntax_acquisition',
+    'proto_m17_criterion',
     'proto_m13_lattice_construction',
     'proto_m18_lattice_fault_diagnosis',
   ]) {
@@ -513,7 +511,7 @@ test('complete laboratory playthrough: every opportunity valid in one session (t
   expect(probe.modules.m14.units_correctly_routed).toBe(12);
   expect(probe.modules.m15.final_reconstruction_valid).toBe(true);
   expect(probe.modules.m16.final_applications_correct).toBe(3);
-  expect(probe.modules.m17.trials_completed).toBe(2);
+  expect(probe.modules.m17.trials_completed).toBe(16);
   expect(probe.modules.m13.final_network_valid).toBe(true);
   expect(probe.modules.m18.final_solution_valid).toBe(true);
 

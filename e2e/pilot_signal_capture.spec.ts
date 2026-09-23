@@ -8,7 +8,7 @@
  * pointer input on the participant route — no developer scene boots, no
  * state injection. Captures: arrival + briefing, the M15 causal-model
  * work, the M16 protocol reference + command surface, the M17
- * demonstration / practice, the M17 transfer case, the M18 hypothesis
+ * demonstration / baseline / learning feedback (Unit 9), the M18 hypothesis
  * diagnosis, and the completed incident with the changed laboratory.
  */
 // V4: the 800×600 design space sits at canvas (160 + 1.2x, 1.2y) on the
@@ -17,6 +17,7 @@ import { mkdirSync } from 'node:fs';
 
 import { expect, type Page, test } from '@playwright/test';
 
+import { M17_FORMS } from '../src/informationProcessing/syntaxForms';
 import { selectPromptOption } from './helpers';
 import {
   clickDiagnosisButton,
@@ -241,24 +242,59 @@ test('signal incident visual capture — arrival, four phases, completed laborat
   await page.keyboard.press('Escape');
   await waitTerminalOpen(page, false);
 
-  // 05 — M17 demonstration, then the practice case.
+  // 05 — M17 demonstration, then baseline probe 1 (no preview, no feedback).
   await openBench(page, PILOT.lab.trainingRig, '__ipTerminalProbe');
   await shot(page, '05-m17-demonstration');
   await clickTerminalButton(page, 'READY');
-  await typeCommand(page, 'ZOR A B');
-  await composeByClick(page, ['VEK', 'C', 'GRN']);
-  await waitBufferLength(page, 2);
-  await clickTerminalButton(page, 'submit');
-  await shot(page, '05b-m17-practice-feedback');
 
-  // 06 — M17 transfer case.
-  await clickTerminalButton(page, 'NEXT');
-  await typeCommand(page, 'ZOR A C');
-  await waitBufferLength(page, 1);
-  await shot(page, '06-m17-transfer');
-  await typeCommand(page, 'KAI B');
+  const m17Trials = M17_FORMS.A.trials;
+
+  await typeCommand(page, m17Trials[0].reference[0]);
+  await composeByClick(page, m17Trials[0].reference[1].split(' '));
+  await waitBufferLength(page, 2);
+  await shot(page, '05a-m17-baseline');
+  await clickTerminalButton(page, 'submit');
+
+  // Baseline 2, then learning trial 1 with its feedback.
+  for (const line of m17Trials[1].reference) {
+    await typeCommand(page, line);
+  }
+
   await waitBufferLength(page, 2);
   await clickTerminalButton(page, 'submit');
+
+  for (const line of m17Trials[2].reference) {
+    await typeCommand(page, line);
+  }
+
+  await waitBufferLength(page, 2);
+  await clickTerminalButton(page, 'submit');
+  await shot(page, '05b-m17-learning-feedback');
+
+  // 06 — M17 learning trial 2 (NOW preview).
+  await clickTerminalButton(page, 'NEXT');
+  await typeCommand(page, m17Trials[3].reference[0]);
+  await waitBufferLength(page, 1);
+  await shot(page, '06-m17-learning-preview');
+  await typeCommand(page, m17Trials[3].reference[1]);
+  await waitBufferLength(page, 2);
+  await clickTerminalButton(page, 'submit');
+
+  // The rest of the series (the rig must close for the case to record).
+  await clickTerminalButton(page, 'NEXT');
+
+  for (const trial of m17Trials.slice(4)) {
+    for (const line of trial.reference) {
+      await typeCommand(page, line);
+    }
+
+    await waitBufferLength(page, 2);
+    await clickTerminalButton(page, 'submit');
+
+    if (trial.phase === 'learning') {
+      await clickTerminalButton(page, 'NEXT');
+    }
+  }
   await page.waitForTimeout(300);
   await page.keyboard.press('Escape');
   await waitTerminalOpen(page, false);

@@ -33,6 +33,7 @@ const FAMILIES = [
   'proto_m15_cipher',
   'proto_m16_protocol',
   'proto_m17_syntax',
+  'proto_m17_trials',
 ];
 
 test.describe('scientific boundaries (source)', () => {
@@ -64,7 +65,7 @@ test.describe('scientific boundaries (source)', () => {
       ['src/informationProcessing/m14PacketSaturation.ts', 'proto_m14_packet'],
       ['src/informationProcessing/m15LayeredCipher.ts', 'proto_m15_cipher'],
       ['src/informationProcessing/m16ProtocolUpdate.ts', 'proto_m16_protocol'],
-      ['src/informationProcessing/m17SyntaxAcquisition.ts', 'proto_m17_syntax'],
+      ['src/informationProcessing/m17SyntaxAcquisition.ts', 'proto_m17_trials'],
     ];
 
     for (const [file, family] of modules) {
@@ -140,7 +141,7 @@ test.describe('scientific boundaries (runtime)', () => {
     // Never-opened opportunities stay pending/offered — no value invented.
     for (const id of [
       'proto_m16_protocol_update',
-      'proto_m17_syntax_acquisition',
+      'proto_m17_criterion',
       'proto_m13_lattice_construction',
       'proto_m18_lattice_fault_diagnosis',
     ]) {

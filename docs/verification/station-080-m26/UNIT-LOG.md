@@ -1643,5 +1643,243 @@ judgements and keypad corrections`); `e2e/pilot_records.spec.ts`,
   `zoneSites.ts`, every other item's code (M01 / M05 / M06 / M07 / M14
   included), package files, tool configs, settings; every existing route
   helper keeps its option indices (no new prompt stage).
+- **Commit:** one local commit (`ec2f117`); nothing pushed, merged,
+  tagged, deployed or deleted. Next unit: U9 M17 (learning to criterion).
+
+## U9 — M17 learning to criterion (2 baseline + 12 feedback learning + 2 transfer trials)
+
+- **Authorities used:** as U6–U8 (the owner's 24 September instruction;
+  the register §2 M17 row — "Replace trial structure … `m17_criterion_trial`:
+  {criterion_trial 3–12, attained}; reported whenever reached within the
+  administered trials; (12, false, censored) after twelve without
+  attainment; early exit without attainment = incomplete" — §3 ("M17 2 +
+  12 + 2 with a three-in-a-row criterion"), §5.1 and `registerV3.ts` /
+  `protocol.ts` (`m17_baseline_trials` 2, `m17_learning_trials` 12,
+  `m17_transfer_trials` 2, `m17_criterion_run` 3); the matrix M17 row —
+  "2 uncoached baseline + 12 feedback learning + 2 transfer trials; no
+  preview on baseline/transfer; criterion = 3 consecutive correct learning
+  trials; all 12 always run; early exit = incomplete"; the addendum §3
+  row). The execution specification file remains missing (reported under
+  U6).
+- **Objective:** replace the v2 training rig (one demonstration, one
+  practice case with up to three attempts and a live NOW-vs-GOAL preview,
+  one transfer case) with the approved trial structure: after the
+  demonstration, two uncoached baseline probes (no preview, no feedback),
+  twelve feedback learning trials (corrective feedback after each
+  submission; all twelve always run, attainment or not), two transfer
+  probes (no preview, no feedback); one first response per trial; the
+  criterion event = the first learning trial that ends a run of three
+  consecutive correct first responses.
+- **Scientific rationale:** register M17 row ("Replace trial structure";
+  BESSI item 150, performance counterpart, direction "earlier attainment
+  provisionally means faster acquisition; the pair is never flattened");
+  measure `m17_criterion_trial` = {criterion_trial, attained} —
+  attained within the administered learning trials ⇒ reported (even after
+  an early exit, `complete_sequence: false`, §5.1); twelve administered
+  without attainment ⇒ (12, false, censored); fewer than twelve learning
+  responses without attainment ⇒ `incomplete` (null value, partial
+  sequence exported); companion `m17_sequence_baseline_transfer` = the
+  full first-response correctness sequence per phase with feedback
+  exposure and help, never combined with the criterion pair. The v2
+  validity gate is kept: novel mapping (M17's own grammar VEK / ZOR / KAI,
+  never reused by M14–M16), two matched forms, motor time not scored,
+  instruction comprehension gated by the console orientation.
+- **Participant-facing behaviour:** the Training Rig (Diagnostics
+  Laboratory, phase 3 of the signal case; station, verb and position
+  unchanged). DEMONSTRATION (three worked examples, one per operator) →
+  READY → BASELINE 1–2 ("no feedback on these two"; START and GOAL shown,
+  no NOW preview) → LEARNING 1–12 (START / NOW / GOAL preview; SUBMIT
+  records the first response and shows "Register matches GOAL." or
+  "Register does not match GOAL. Your result … Reference sequence: …";
+  NEXT continues — the reading time is recorded) → TRANSFER 1–2 (no
+  preview, no feedback) → "All sixteen trials recorded." One submission
+  per trial (an empty buffer is refused without a record); the
+  demonstration can be reviewed at any time (counted); HELP as before;
+  STOP TASK (confirmed) closes the rig early; ESC leaves the panel with
+  the trial open (work stays). No speed framing, no running tally of
+  correct trials, no mention of the criterion.
+- **Allowed files:** `src/informationProcessing/syntaxForms.ts` (forms:
+  16 matched trials per form, derived form B, the pure criterion
+  function), `src/informationProcessing/m17SyntaxAcquisition.ts` (the
+  adapter, rewritten), `src/informationProcessing/telemetry.ts` (the
+  `IpFamily` union gains `proto_m17_trials`),
+  `src/measurement/features/m17.ts` (new), `src/measurement/features/index.ts`,
+  `src/measurement/registerV3.ts` (M17 v3 route),
+  `src/scenes/DiagnosticsLaboratoryScene.ts` (the phase's opportunity id),
+  `src/world/interactionRegistry.ts` (the rig's `window` id);
+  `e2e/m17_trials.spec.ts` (new pure), `e2e/m17_trials_route.spec.ts`
+  (new browser, DEV laboratory launch), and the existing specs whose M17
+  steps or constants change: `e2e/ip_decoder.spec.ts`,
+  `e2e/signal_incident_models.spec.ts`, `e2e/ip_boundaries.spec.ts`,
+  `e2e/ip_lab_flow.spec.ts`, `e2e/pilot_signal_incident.spec.ts`,
+  `e2e/pilot_signal_capture.spec.ts`, `e2e/ip_visual_capture.spec.ts`,
+  `e2e/pilot_lab.spec.ts`; `docs/verification/station-080-m26/**`.
+- **Prohibited areas:** common, plus `SignalTerminalScene.ts`,
+  `windowState.ts`, `programEngine.ts`, `model.ts`, every other IP
+  module (M13–M16, M18), the tutorial, `zoneSites.ts`, the v2 ledger.
+- **Entry state:** HEAD `ec2f117` (U8), clean tree, branch
+  `fable-professional-world-rescue-v2`.
+- **Success behaviour:** sixteen trials in the fixed order with the
+  phase rules above; every first response recorded raw (phase, index,
+  goal reached, commands correct, semantic / syntax errors, corrections,
+  help, demonstration reviews, active ms, input mode, buffer); the
+  extractor reproduces {criterion_trial, attained} from the
+  `trial_submitted` events alone (cross-checked against the module's
+  recorded run), the sequence companion kept apart.
+- **Failure/recovery:** ESC leaves the panel (the window and the current
+  trial stay open, active time paused); STOP closes the window
+  `exited` (IP framework) with the partial sequence — the feature is
+  `incomplete` unless attainment was already reached; a technical
+  failure closes `technical_failure`; the orientation gate flags an
+  invalid entry state as before; a rig opened in an earlier page load
+  is not re-run (`interrupted`).
+- **Telemetry boundary:** family `proto_m17_trials_*` (candidate;
+  suffixes `window_opened`, `window_reopened`, `panel_left`,
+  `ready_acknowledged`, `demonstration_viewed`, `phase_started`,
+  `trial_started`, `command_added`, `command_refused`, `line_removed`,
+  `buffer_cleared`, `submit_refused`, `trial_submitted`,
+  `feedback_presented`, `feedback_acknowledged`, `criterion_run_reached`
+  (a raw fact: the trial index ending the first run of three, recounted
+  by the extractor), `completed`, `help_consulted`, `stopped`,
+  `technical_failure`, `entry_state_flagged`); the v2
+  `proto_m17_syntax_*` family keeps its v2 meaning in the frozen ledger
+  and is retired from the route; no canonical name or approved formula
+  invented.
+- **Scientific acceptance:** the criterion is computed from FIRST
+  responses only (one submission per trial); all twelve learning trials
+  run whatever the attainment; baseline and transfer carry no preview and
+  no feedback; the attained / not-attained pair is never flattened into
+  one number; early exit before attainment is `incomplete`, never
+  non-attainment; forms matched trial by trial in operator mix (form B
+  derived from form A by a slot and token relabelling, so every
+  structural property is shared); no case is solvable with one operator.
+- **Gameplay acceptance:** the rig keeps its station, overlay and phase
+  slot; typed and pointer composition unchanged; the existing terminal
+  controls (SUBMIT / CLEAR / REMOVE / HELP / STOP / DEMO / READY / NEXT)
+  keep their ids; legible at 800×600.
+- **Required tests:** `npm.cmd run lint:tsc`, `npm.cmd run build`,
+  ESLint + Prettier (`endOfLine: auto`) on touched files, pure
+  `m17_trials` + `signal_incident_models` + `ip_decoder` (pure part) +
+  `ip_boundaries` (source part) + `m26_protocol_foundation` +
+  `pilot_coverage` + `pilot_closure_models` + `pilot_route_model` +
+  `evidence_ledger`; browser `m17_trials_route`; the M17 steps of the
+  other laboratory specs updated (run where the environment's driver
+  allows).
+- **Required screenshots:** a baseline trial (no preview), a learning
+  trial after feedback, at 800×600 (evidence, not committed).
+- **Stop conditions:** common.
+- **Model:** Fable; reviewer stand-ins as declared in U6.
+- **Commit expectation:** `feat(m17): sixteen-trial learning series with a
+three-in-a-row criterion, uncoached baseline and transfer probes`.
+- **Reviewer availability:** as U6–U8 — the `scientific-reviewer` and
+  `gameplay-reviewer` definitions run verbatim through read-only Opus
+  stand-ins; the `test-reviewer` scope covered by the implementer's
+  recorded runs below.
+- **Review round 1 (read-only, on the working tree after the first green
+  browser run):** scientific: **"blocked pending a research-owner
+  decision"** — 2 high / 5 medium / 11 low + 9 owner questions; gameplay:
+  usable with noted friction — 3 high / 6 medium / 8 low + 6 measurement
+  flags. The two scientific highs are OWNER decisions, recorded as
+  §5.87–5.88 and flagged in the register's M17 status: the criterion
+  values must not be read until they are decided. Material findings and
+  their resolution:
+  - "Exactly two operators" instructed but never enforced; slot-by-slot
+    VEK/KAI copying of GOAL (three lines) solved every trial (S-H1 high,
+    G-M3, G-MF2/3) — fixed to the STATED rule: SUBMIT requires exactly two
+    lines (`submit_refused`, `line_count`; one or three-plus lines are
+    refused without a record); the scoring question (goal reached vs goal
+    reached with two commands) stays the owner's (§5.88); within two
+    operators, two-slot learning items remain copyable (§5.89).
+  - The live NOW preview and per-slot match marker on learning trials make
+    a first response a checked response (S-H2 high, G-MF1) — kept as the
+    literal matrix reading ("no preview on baseline/transfer"); routed to
+    the owner with the three options (§5.87); `corrections_before_submission`
+    and the buffer edits are recorded so trial-and-error is visible.
+  - Typed `DEMO` (the footer word) was not a recognised reference word and
+    counted as a syntax error (G-H1) — fixed: the reference control is
+    `REFERENCE` (the terminal's typed alias); stage words typed out of
+    stage (READY / NEXT / DEMO / FINISH) are refused without a syntax
+    error (`command_refused`, `stage_word_out_of_stage`, G-L6).
+  - Stale whole-case invariants in `pilot_signal_incident` (G-H2) and the
+    signal capture leaving the rig open (G-H3) — fixed (ids
+    `proto_m17_trials` / `proto_m17_criterion` / `m17_trials_w1`; the
+    capture finishes the series).
+  - Transfer probes not new material: transfer 2's pair equalled learning
+    5's and transfer 1's goal equalled learning 1's; baseline 2 was
+    slot-copyable (S-M1, S-M2, G-M6) — fixed: baseline 2 and both transfer
+    probes now change all three slots (an exchange is needed) and no
+    transfer pair or goal recurs from the learning series (pure-tested);
+    the "changed register" copy replaced by "two further cases with the
+    same operators"; what transfer should mean and the difficulty
+    profile are owner questions (§5.90–5.91).
+  - Feedback lost on ESC / reopen (G-M1) and the reading time counting
+    time away (G-M2, S-L7) — fixed: the feedback lines are kept while the
+    stage is FEEDBACK; the timer pauses on leave and resumes on reopen.
+  - Layout: NEXT label overflowed its button (G-M4) → "NEXT"; the trial
+    line overflowed its column (G-M5) → the title alone; chip text
+    shortened (G-L3); the closed view after a mid-trial STOP no longer
+    shows the preview (G-L5); the dead "NEXT — FINISH" branch removed
+    (G-L4).
+  - Extractor: a record without phase or outcome fails the item instead
+    of counting as a wrong learning response (S-L3); the incomplete row
+    is not `censored` (that flag is the (12, false) bound — S-M4,
+    §5.94); an opened-then-stopped rig with no trial gives both rows
+    `incomplete` (S-L5); the companion carries `complete_sequence` and
+    `reference_sequences_shown` (S-L6, S-M5); a series left open at the
+    record closure is `incomplete`, not `pending` (S-L9, §5.98); the
+    SUBMIT press's mode is `submit_input_mode` (S-L1); per-trial help /
+    demonstration counters end with the record and `hints_used` is
+    window-level (S-L2, G-L2).
+  - Owner questions, no change: validity register `participant_absent`
+    after STOP vs the feature's `observed` / `incomplete` (S-M3, §5.93);
+    feedback content on a miss (S-M5, §5.92); phase labels shown and
+    REFERENCE / HELP during the probes (S-L8, G-L1, G-MF4, §5.95); the
+    demonstration preceding the baseline (§5.96); fatigue over sixteen
+    trials with twelve acknowledgements (G-MF6, §5.97); entry-state flags
+    not reflected in feature rows (S-L11, §5.99).
+  - Stale header comments (G-L7) — fixed in the laboratory scene and the
+    three specs; the shared STOP confirm's "closes without a submission"
+    (G-L8) is outside the allowlist and pre-existing — noted.
+- **Review round 2:** not run as a separate reviewer pass — the fixes are
+  bounded to the cited findings and covered by the extended pure spec and
+  the rerun browser spec; a fresh review of the review fixes is folded
+  into U24 (precedent U2-R … U8).
+- **Verification results (final tree):** `npm.cmd run lint:tsc` 0 ·
+  `npm.cmd run build` 0 · ESLint + Prettier (`endOfLine: auto`) on
+  `src` and `e2e` 0 and on every touched doc · pure `m17_trials` (4) +
+  `signal_incident_models` + `ip_decoder` (pure) + `ip_boundaries`
+  (source) + `m26_protocol_foundation` + `pilot_coverage` +
+  `pilot_closure_models` + `pilot_route_model` + `evidence_ledger` 89/89
+  (retries off) · browser `m17_trials_route`: run 1 2/2 (1.4 min) before
+  the review; after the fixes run 3 failed only on the two specs'
+  `censored: true` expectations for the incomplete row (the fix itself),
+  run 4 2/2 (1.4 min) — `test-results/m17-baseline-800x600.png` (START /
+  GOAL only, no NOW line, BASELINE 1 of 2) and
+  `test-results/m17-learning-feedback-800x600.png` (RESULT with GOAL /
+  YOURS, "does not match GOAL. Reference sequence: …", NEXT) inspected
+  and copied to the scratchpad (Playwright clears `test-results` per run),
+  not committed · browser `ip_lab_flow` "complete laboratory playthrough"
+  (sixteen typed trials, typed READY / NEXT) 1/1 (2.1 min) before the
+  fixes and rerun after them (result in the handoff) · `pilot_signal_incident`
+  / `pilot_signal_capture` / `ip_visual_capture` updated but not run (the
+  first two ride the pilot route through the Concourse / Workshop driver
+  stalls recorded under U6–U8; the capture suites write into the docs
+  screenshot folders) · `verify-unit` PASS · `git diff --check` clean.
+- **Deviations:** the contract's telemetry boundary gained
+  `submit_input_mode` on `trial_submitted` and the refusal reasons
+  `line_count` / `stage_word_out_of_stage`; the reference control is
+  `REFERENCE` (the contract said DEMO); the trial table changed during the
+  review (baseline 2, both transfer probes); the v2 M17 browser block in
+  `ip_decoder.spec.ts` is `describe.skip` (superseded by
+  `m17_trials_route`); `CLAUDE_UNIT_ALLOWLIST` enforced by discipline +
+  `verify-unit`; reviewer stand-ins as declared; the commit subject
+  shortened to fit the 100-character header rule (`feat(m17): sixteen-trial
+learning series with a three-in-a-row criterion and uncoached probes`);
+  the execution specification file remains missing.
+- **Not changed:** `SignalTerminalScene.ts`, `windowState.ts`,
+  `programEngine.ts`, `model.ts`, the tutorial, M13–M16 / M18, the v2
+  ledger (`proto_m17_syntax_*` keeps its meaning), `zoneSites.ts`,
+  `ScoringManager`, `docs/research/**`, `docs/scientific/**`, package
+  files, tool configs, settings.
 - **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
-  deleted. Next unit: U9 M17 (learning to criterion).
+  deleted. Next unit: U10 M21 (restudy after an incorrect application).

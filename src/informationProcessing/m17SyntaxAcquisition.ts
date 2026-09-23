@@ -1,24 +1,23 @@
 /**
- * M17 — Register syntax: demonstration, practice, transfer (Information
- * Processing foundation; evidence-led pilot v2 Unit 3 structure).
+ * M17 — Register syntax: learning to criterion (Information Processing
+ * foundation; Station 080 Unit 9 trial structure).
  *
- * BESSI Information Processing item M17 ("Learn things quickly.") — sheet
- * 09 final opportunity: observe ONE demonstration, complete ONE guided
- * practice case with neutral corrective feedback, then solve ONE changed,
- * unassisted transfer case. The bounded command grammar is M17's own
- * (VEK / ZOR / KAI over a three-slot register) and is never reused by
- * M14–M16. Explicit READY after the demonstration; explicit submission
- * per attempt; up to three attempts on each case; the demonstration can
- * be reviewed at any time (a counted exposure). Trial-level state and
- * events are preserved raw; NO learning slope, trials-to-criterion or
- * other derived score is computed here.
+ * BESSI Information Processing item M17 ("Learn things quickly."). After
+ * the demonstration (three worked examples, one per operator) and an
+ * explicit READY: TWO uncoached baseline probes (START and GOAL shown, no
+ * NOW preview, no feedback), TWELVE feedback learning trials (NOW preview;
+ * corrective feedback after the submission, acknowledged with NEXT; all
+ * twelve always run) and TWO transfer probes (no preview, no feedback).
+ * One FIRST response per trial: SUBMIT records the buffer as it stands and
+ * the trial ends. The bounded command grammar is M17's own (VEK / ZOR /
+ * KAI over a three-slot register) and is never reused by M14–M16; the
+ * demonstration can be reviewed at any time (a counted exposure).
  *
- * Raw observables per attempt: case type, attempt number, commands
- * required / correct, semantic errors, syntax errors, corrections before
- * submission, feedback presented, help consults, demonstration reviews,
- * active time after READY, goal reached, input mode. Plus the case
- * summary: practice attempts / criterion met, transfer attempts / first
- * attempt / completion / correct steps.
+ * Trial-level state and events are preserved raw; the module records the
+ * raw fact "the first run of three consecutive correct learning responses
+ * ended at trial k" (`criterion_run_reached`) for the extractor to
+ * RECOUNT from the `trial_submitted` events — no learning slope or other
+ * derived score is computed here.
  */
 
 import { commandToText, paletteFor } from './commands';
@@ -39,17 +38,20 @@ import {
   createProgramState,
   removeLine,
 } from './programEngine';
-import type { Register, SyntaxTrial } from './syntaxForms';
+import type { M17Phase, Register, SyntaxTrial } from './syntaxForms';
 import {
   evaluateTrial,
+  M17_BASELINE_TRIALS,
   M17_COMMANDS_REQUIRED,
-  M17_FEEDBACK_TRIALS,
+  M17_CRITERION_RUN,
   M17_FORMS,
   M17_GRAMMAR,
-  M17_MAX_ATTEMPTS,
+  M17_LEARNING_TRIALS,
   M17_SLOTS,
   M17_TOKENS,
+  M17_TRANSFER_TRIALS,
   M17_TRIALS_TOTAL,
+  m17Criterion,
   runRegister,
 } from './syntaxForms';
 import { declareIpEvents, logIpEvent } from './telemetry';
@@ -71,25 +73,31 @@ import {
   resolveForm,
 } from './windowState';
 
-export const M17_OPPORTUNITY_ID = 'proto_m17_syntax_acquisition';
-export const M17_ENTRY_STATE_VERSION = 'm17-syntax-v2';
-export const M17_WINDOW_ID = 'm17_transfer_w1';
+export const M17_OPPORTUNITY_ID = 'proto_m17_criterion';
+export const M17_ENTRY_STATE_VERSION = 'm17-trials-v3';
+export const M17_WINDOW_ID = 'm17_trials_w1';
+export const M17_FAMILY = 'proto_m17_trials';
 const OBJECT_ID = 'signal_training_rig';
+/** Stage / control words a participant may type in the wrong stage (never a syntax error). */
+const STAGE_WORDS = new Set(['READY', 'NEXT', 'DEMO', 'FINISH']);
 
-export const M17_EVENT_TYPES = declareIpEvents('proto_m17_syntax', [
+export const M17_EVENT_TYPES = declareIpEvents('proto_m17_trials', [
   'window_opened',
   'window_reopened',
   'panel_left',
   'ready_acknowledged',
   'demonstration_viewed',
+  'phase_started',
   'trial_started',
   'command_added',
   'command_refused',
   'line_removed',
   'buffer_cleared',
+  'submit_refused',
   'trial_submitted',
   'feedback_presented',
-  'trial_finished',
+  'feedback_acknowledged',
+  'criterion_run_reached',
   'completed',
   'help_consulted',
   'stopped',
@@ -99,44 +107,54 @@ export const M17_EVENT_TYPES = declareIpEvents('proto_m17_syntax', [
 
 export {
   evaluateTrial,
+  M17_BASELINE_TRIALS,
+  M17_CRITERION_RUN,
   M17_FORMS,
   M17_GRAMMAR,
-  M17_MAX_ATTEMPTS,
+  M17_LEARNING_TRIALS,
+  M17_TRANSFER_TRIALS,
   M17_TRIALS_TOTAL,
+  m17Criterion,
   runRegister,
 } from './syntaxForms';
 
-interface AttemptRecord {
+export interface M17TrialRecord {
   trial_index: number;
-  trial_type: 'feedback' | 'transfer';
-  attempt: number;
+  phase: M17Phase;
+  phase_index: number;
+  goal_reached: boolean;
   commands_required: number;
   commands_correct: number;
   semantic_errors: number;
   syntax_errors: number;
   corrections_before_submission: number;
   feedback_presented: boolean;
+  /** Reading time between the feedback and NEXT (learning trials). */
+  feedback_read_ms: number | null;
   help_consults: number;
   demonstration_reviews: number;
-  active_ms_after_ready: number;
-  trial_complete: boolean;
-  goal_reached: boolean;
+  active_ms: number;
   command_count: number;
   pointer_commands: number;
   typed_commands: number;
   input_mode: string | null;
+  buffer: string[];
   final_register: Register;
 }
+
+type Stage = 'demo' | 'trial' | 'feedback' | 'done';
 
 interface M17State {
   window: IpWindow;
   form: FormId;
-  stage: 'demo' | 'trial' | 'between' | 'done';
+  stage: Stage;
   trial_index: number;
-  attempt: number;
   program: ProgramState;
   trial_started_at_ms: number | null;
   trial_active_ms: number;
+  feedback_shown_at_ms: number | null;
+  feedback_read_ms_acc: number;
+  feedback_lines: string[];
   syntax_errors: number;
   corrections: number;
   help_in_trial: number;
@@ -144,7 +162,9 @@ interface M17State {
   demo_views: number;
   pointer_commands: number;
   typed_commands: number;
-  attempts: AttemptRecord[];
+  submit_refusals: number;
+  trials: M17TrialRecord[];
+  criterion_run_trial: number | null;
   last_console: string[];
   entry_flagged: boolean;
 }
@@ -160,10 +180,12 @@ function createInitialState(form: FormId): M17State {
     form,
     stage: 'demo',
     trial_index: 0,
-    attempt: 0,
     program: createProgramState(),
     trial_started_at_ms: null,
     trial_active_ms: 0,
+    feedback_shown_at_ms: null,
+    feedback_read_ms_acc: 0,
+    feedback_lines: [],
     syntax_errors: 0,
     corrections: 0,
     help_in_trial: 0,
@@ -171,7 +193,9 @@ function createInitialState(form: FormId): M17State {
     demo_views: 0,
     pointer_commands: 0,
     typed_commands: 0,
-    attempts: [],
+    submit_refusals: 0,
+    trials: [],
+    criterion_run_trial: null,
     last_console: [],
     entry_flagged: false,
   };
@@ -201,13 +225,15 @@ function context(): CommandContext {
 
 function log(suffix: string, metadata: Record<string, unknown> = {}) {
   const s = ensure();
+  const trial = currentTrial();
 
-  logIpEvent('proto_m17_syntax', OBJECT_ID, suffix, {
+  logIpEvent('proto_m17_trials', OBJECT_ID, suffix, {
     ...ipWindowFields(s.window),
     window_id: M17_WINDOW_ID,
     stage: s.stage,
     trial_index: s.trial_index,
-    attempt: s.attempt,
+    phase: trial?.phase ?? null,
+    phase_index: trial?.phase_index ?? null,
     ...metadata,
   });
   refreshIpProbe();
@@ -224,50 +250,55 @@ function trialActiveMs(nowMs?: number): number {
   );
 }
 
-/** Per-case summary (raw facts; no slope, no criterion score). */
-function caseSummary() {
+/** Per-phase first-response sequences (raw facts; no score). */
+function sequences() {
   const s = ensure();
-  const practice = s.attempts.filter((a) => a.trial_type === 'feedback');
-  const transfer = s.attempts.filter((a) => a.trial_type === 'transfer');
-  const last = (list: AttemptRecord[]) =>
-    list.length > 0 ? list[list.length - 1] : null;
+  const phase = (name: M17Phase) =>
+    s.trials.filter((t) => t.phase === name).map((t) => t.goal_reached);
 
   return {
-    practice_attempts: practice.length,
-    practice_criterion_met: practice.some((a) => a.goal_reached),
-    practice_first_attempt_goal_reached: practice[0]?.goal_reached ?? null,
-    practice_feedback_presented: practice.filter((a) => a.feedback_presented)
-      .length,
-    transfer_attempts: transfer.length,
-    transfer_first_attempt_goal_reached: transfer[0]?.goal_reached ?? null,
-    transfer_goal_reached: transfer.some((a) => a.goal_reached),
-    transfer_completion: transfer.some((a) => a.goal_reached),
-    transfer_correct_steps_first: transfer[0]?.commands_correct ?? null,
-    transfer_correct_steps_final: last(transfer)?.commands_correct ?? null,
-    hints_used:
-      s.attempts.reduce((sum, a) => sum + a.help_consults, 0) + s.demo_views,
-    demonstration_exposures: 1 + s.demo_views,
-    time_by_phase_ms: {
-      practice: practice.reduce((sum, a) => sum + a.active_ms_after_ready, 0),
-      transfer: transfer.reduce((sum, a) => sum + a.active_ms_after_ready, 0),
-    },
+    baseline: phase('baseline'),
+    learning: phase('learning'),
+    transfer: phase('transfer'),
   };
 }
 
 function rawSummary() {
   const s = ensure();
+  const seq = sequences();
 
   return {
     ...ipWindowFields(s.window),
     window_id: M17_WINDOW_ID,
+    form: s.form,
     trials_total: M17_TRIALS_TOTAL,
-    feedback_trials: M17_FEEDBACK_TRIALS,
-    max_attempts_per_trial: M17_MAX_ATTEMPTS,
-    trials_completed: new Set(
-      s.attempts.filter((a) => a.trial_complete).map((a) => a.trial_index),
-    ).size,
-    attempts: s.attempts.map((attempt) => ({ ...attempt })),
-    ...caseSummary(),
+    baseline_trials: M17_BASELINE_TRIALS,
+    learning_trials: M17_LEARNING_TRIALS,
+    transfer_trials: M17_TRANSFER_TRIALS,
+    criterion_run: M17_CRITERION_RUN,
+    trials_completed: s.trials.length,
+    sequence: seq,
+    /** Raw fact for the extractor's recount — never a score. */
+    criterion_run_trial: s.criterion_run_trial,
+    learning_responses: seq.learning.length,
+    complete_sequence: s.trials.length >= M17_TRIALS_TOTAL,
+    trials: s.trials.map((trial) => ({ ...trial })),
+    // Window-level help (every stage) + demonstration reviews (review G-L2).
+    hints_used: s.window.help_consults + s.demo_views,
+    help_consults_total: s.window.help_consults,
+    demonstration_exposures: 1 + s.demo_views,
+    submit_refusals: s.submit_refusals,
+    time_by_phase_ms: {
+      baseline: s.trials
+        .filter((t) => t.phase === 'baseline')
+        .reduce((sum, t) => sum + t.active_ms, 0),
+      learning: s.trials
+        .filter((t) => t.phase === 'learning')
+        .reduce((sum, t) => sum + t.active_ms, 0),
+      transfer: s.trials
+        .filter((t) => t.phase === 'transfer')
+        .reduce((sum, t) => sum + t.active_ms, 0),
+    },
     grammar_id: M17_GRAMMAR.id,
     tutorial_status: tutorialStatus(),
   };
@@ -332,12 +363,24 @@ function demoLines(): string[] {
   ]);
 }
 
-function trialTitle(trial: SyntaxTrial | null): string {
-  if (trial === null) {
-    return '';
-  }
+const PHASE_TITLE: Record<M17Phase, string> = {
+  baseline: 'BASELINE',
+  learning: 'LEARNING',
+  transfer: 'TRANSFER',
+};
+const PHASE_TOTAL: Record<M17Phase, number> = {
+  baseline: M17_BASELINE_TRIALS,
+  learning: M17_LEARNING_TRIALS,
+  transfer: M17_TRANSFER_TRIALS,
+};
 
-  return trial.type === 'transfer' ? 'TRANSFER CASE' : 'PRACTICE CASE';
+function trialTitle(trial: SyntaxTrial): string {
+  return `${PHASE_TITLE[trial.phase]} ${trial.phase_index} of ${PHASE_TOTAL[trial.phase]}`;
+}
+
+/** The NOW preview is shown on learning trials only (matrix: none on baseline / transfer). */
+function previewAllowed(trial: SyntaxTrial | null): boolean {
+  return trial !== null && trial.phase === 'learning';
 }
 
 function view(): TerminalView {
@@ -345,14 +388,14 @@ function view(): TerminalView {
   const closed = ipWindowIsClosed(s.window);
   const form = M17_FORMS[s.form];
   const trial = currentTrial();
-  const inTrial = s.stage === 'trial' && trial !== null;
+  const inTrial = !closed && s.stage === 'trial' && trial !== null;
+  const preview = inTrial && previewAllowed(trial);
   const now = inTrial ? runRegister(trial.start, s.program.lines) : null;
-  const attemptsLeft = M17_MAX_ATTEMPTS - s.attempt;
   const shown: Register | null = inTrial
-    ? now
+    ? trial.start
     : s.stage === 'demo'
       ? form.demo[0].before
-      : (s.attempts[s.attempts.length - 1]?.final_register ?? null);
+      : (s.trials[s.trials.length - 1]?.final_register ?? null);
   const chips =
     shown === null
       ? []
@@ -360,42 +403,48 @@ function view(): TerminalView {
           id: slot,
           label: `slot ${slot}`,
           sub: inTrial
-            ? `now ${shown[index]} · goal ${trial.goal[index]}`
+            ? preview
+              ? `N:${now![index]}  G:${trial.goal[index]}`
+              : `S:${trial.start[index]}  G:${trial.goal[index]}`
             : s.stage === 'demo'
-              ? `example start ${shown[index]}`
+              ? `example ${shown[index]}`
               : `recorded ${shown[index]}`,
           tone: 'neutral' as const,
           state:
-            inTrial && shown[index] === trial.goal[index]
+            preview && now![index] === trial.goal[index]
               ? ('handled' as const)
               : ('pending' as const),
         }));
   const output = inTrial
     ? [
         registerLine('START', trial.start),
-        registerLine('NOW', now!),
+        ...(preview ? [registerLine('NOW', now!)] : []),
         registerLine('GOAL', trial.goal),
         '',
-        `${trialTitle(trial)} — attempt ${s.attempt} of ${M17_MAX_ATTEMPTS}${
-          trial.type === 'transfer' ? ' (no corrective feedback)' : ''
-        }`,
+        trialTitle(trial),
       ]
     : s.stage === 'demo'
       ? demoLines()
-      : s.stage === 'between'
+      : s.stage === 'feedback' && trial !== null
         ? [
-            `${trialTitle(M17_FORMS[s.form].trials[s.trial_index - 1])} recorded.`,
+            registerLine('GOAL', trial.goal),
+            registerLine(
+              'YOURS',
+              s.trials[s.trials.length - 1]?.final_register ?? trial.start,
+            ),
+            '',
+            `${trialTitle(trial)} recorded.`,
           ]
-        : ['Both cases recorded.'];
+        : ['All sixteen trials recorded.'];
   const stageLabel = closed
     ? 'CLOSED'
     : s.stage === 'demo'
       ? 'DEMONSTRATION'
-      : s.stage === 'between'
-        ? 'PRACTICE RECORDED'
-        : trial?.type === 'transfer'
-          ? 'TRANSFER'
-          : 'PRACTICE';
+      : s.stage === 'feedback'
+        ? 'FEEDBACK'
+        : trial !== null
+          ? PHASE_TITLE[trial.phase]
+          : 'RECORDED';
   const consoleLines =
     s.last_console.length > 0
       ? s.last_console
@@ -403,26 +452,27 @@ function view(): TerminalView {
         ? ['Training rig closed. Record kept.']
         : s.stage === 'demo'
           ? ['Study the three worked examples, then press READY.']
-          : s.stage === 'between'
-            ? [
-                'NEXT starts the transfer case: a changed register, no corrective feedback.',
-              ]
-            : trial?.type === 'transfer'
+          : s.stage === 'feedback'
+            ? // The feedback lines survive a leave / reopen (review G-M1).
+              [...s.feedback_lines, 'NEXT continues.']
+            : trial?.phase === 'baseline'
               ? [
-                  'Turn START into GOAL with two operators, then SUBMIT. The preview shows your result; no reference is given.',
+                  'Turn START into GOAL with two operators, then SUBMIT. No result is shown on these two trials.',
                 ]
-              : [
-                  'Turn START into GOAL with two operators, then SUBMIT for feedback.',
-                ];
+              : trial?.phase === 'transfer'
+                ? [
+                    'Turn START into GOAL with two operators, then SUBMIT. No result is shown on these two trials.',
+                  ]
+                : [
+                    'Turn START into GOAL with two operators, then SUBMIT for feedback.',
+                  ];
   const primaryAction = closed
     ? null
     : s.stage === 'demo'
       ? { id: 'READY', label: 'READY', kind: 'accent' as const }
-      : s.stage === 'between'
-        ? { id: 'NEXT', label: 'NEXT — TRANSFER', kind: 'accent' as const }
-        : inTrial && s.attempts.some((a) => a.trial_index === trial.index)
-          ? { id: 'FINISH', label: 'FINISH CASE', kind: 'plain' as const }
-          : null;
+      : s.stage === 'feedback'
+        ? { id: 'NEXT', label: 'NEXT', kind: 'accent' as const }
+        : null;
 
   return {
     title: 'SIGNAL CASE — PHASE 3 · REGISTER SYNTAX',
@@ -433,19 +483,25 @@ function view(): TerminalView {
             'The recovered protocol drives a three-slot register (A B C) with',
             'three operators: VEK <slot> <token> sets a slot; ZOR <slot> <slot>',
             'exchanges two slots; KAI <slot> clears a slot. Study the worked',
-            'examples, then press READY for one practice case.',
+            `examples, then press READY: ${M17_TRIALS_TOTAL} short cases follow, two operators each.`,
           ]
-        : trial?.type === 'transfer'
+        : trial?.phase === 'baseline'
           ? [
-              'Transfer: a changed register. Turn START into GOAL with exactly two',
-              'operators (click operator then arguments, or type e.g. ZOR A C).',
-              `Up to ${M17_MAX_ATTEMPTS} attempts; the DEMO can be reviewed at any time.`,
+              `Baseline (${M17_BASELINE_TRIALS} cases): turn START into GOAL with exactly two`,
+              'operators (click the operator then its arguments, or type e.g. ZOR A C).',
+              'SUBMIT records your answer and moves on; nothing is shown about it.',
             ]
-          : [
-              'Practice: turn START into GOAL with exactly two operators (click the',
-              'operator then its arguments, or type e.g. ZOR A C). SUBMIT shows',
-              `neutral feedback; up to ${M17_MAX_ATTEMPTS} attempts before the transfer case.`,
-            ],
+          : trial?.phase === 'transfer'
+            ? [
+                `Transfer (${M17_TRANSFER_TRIALS} cases): two further cases with the same operators.`,
+                'Turn START into GOAL with exactly two operators. SUBMIT records your',
+                'answer and moves on; nothing is shown about it.',
+              ]
+            : [
+                `Learning (${M17_LEARNING_TRIALS} cases): turn START into GOAL with exactly two`,
+                'operators. NOW shows the register after your buffer. SUBMIT records',
+                'your answer and shows whether it matched; NEXT continues.',
+              ],
     incomingTitle: inTrial
       ? 'REGISTER — SLOTS'
       : s.stage === 'demo'
@@ -469,7 +525,11 @@ function view(): TerminalView {
     outputTitle:
       s.stage === 'demo'
         ? 'DEMONSTRATION — WORKED EXAMPLES'
-        : 'REGISTER PREVIEW',
+        : s.stage === 'feedback'
+          ? 'RESULT'
+          : preview
+            ? 'REGISTER PREVIEW'
+            : 'REGISTER — START AND GOAL',
     output,
     buffer: s.program.lines.map((line) => ({
       text: commandToText(line.command),
@@ -477,16 +537,17 @@ function view(): TerminalView {
     })),
     consoleLines,
     primaryAction,
-    submitEnabled: !closed && inTrial && attemptsLeft > 0,
+    submitEnabled: !closed && inTrial,
     chipDropVerb: null,
     chipPairVerb: null,
-    editing: !closed && inTrial && attemptsLeft > 0,
+    editing: !closed && inTrial,
     closed,
+    // The terminal's typed alias for this control is REFERENCE (review G-H1).
     reference:
       !closed && s.stage !== 'demo'
         ? {
-            label: 'DEMO',
-            title: 'DEMONSTRATION — worked examples (review)',
+            label: 'REFERENCE',
+            title: 'WORKED EXAMPLES — the demonstration (review)',
             lines: demoLines(),
           }
         : null,
@@ -495,13 +556,16 @@ function view(): TerminalView {
 
 function startTrial(index: number, nowMs: number) {
   const s = ensure();
+  const previous = currentTrial();
 
   s.trial_index = index;
   s.stage = 'trial';
-  s.attempt = 1;
   s.program = createProgramState();
   s.trial_started_at_ms = nowMs;
   s.trial_active_ms = 0;
+  s.feedback_shown_at_ms = null;
+  s.feedback_read_ms_acc = 0;
+  s.feedback_lines = [];
   s.syntax_errors = 0;
   s.corrections = 0;
   s.help_in_trial = 0;
@@ -511,12 +575,21 @@ function startTrial(index: number, nowMs: number) {
 
   const trial = currentTrial()!;
 
+  if (previous === null || previous.phase !== trial.phase) {
+    log('phase_started', {
+      phase: trial.phase,
+      trials_in_phase: PHASE_TOTAL[trial.phase],
+      preview: previewAllowed(trial),
+      feedback: trial.phase === 'learning',
+    });
+  }
+
   log('trial_started', {
-    trial_type: trial.type,
     start: trial.start,
     goal: trial.goal,
     commands_required: M17_COMMANDS_REQUIRED,
-    max_attempts: M17_MAX_ATTEMPTS,
+    preview: previewAllowed(trial),
+    feedback: trial.phase === 'learning',
   });
 }
 
@@ -532,8 +605,10 @@ function open(nowMs: number) {
     log('window_opened', {
       grammar_id: M17_GRAMMAR.id,
       trials_total: M17_TRIALS_TOTAL,
-      feedback_trials: M17_FEEDBACK_TRIALS,
-      max_attempts_per_trial: M17_MAX_ATTEMPTS,
+      baseline_trials: M17_BASELINE_TRIALS,
+      learning_trials: M17_LEARNING_TRIALS,
+      transfer_trials: M17_TRANSFER_TRIALS,
+      criterion_run: M17_CRITERION_RUN,
       demonstration_presented: true,
     });
   } else if (entry === 'reopened') {
@@ -544,7 +619,14 @@ function open(nowMs: number) {
     s.trial_started_at_ms = nowMs;
   }
 
-  setConsole([]);
+  if (s.stage === 'feedback' && s.window.status === 'open') {
+    s.feedback_shown_at_ms = nowMs;
+  }
+
+  if (s.stage !== 'feedback') {
+    setConsole([]);
+  }
+
   refreshIpProbe();
 }
 
@@ -556,6 +638,11 @@ function leave(nowMs: number) {
     s.trial_started_at_ms = null;
   }
 
+  if (s.feedback_shown_at_ms !== null) {
+    s.feedback_read_ms_acc += Math.max(0, nowMs - s.feedback_shown_at_ms);
+    s.feedback_shown_at_ms = null;
+  }
+
   if (s.window.panel_open) {
     leaveIpPanel(s.window, nowMs);
     log('panel_left');
@@ -565,11 +652,7 @@ function leave(nowMs: number) {
 function canEdit(): boolean {
   const s = ensure();
 
-  return (
-    s.window.status === 'open' &&
-    s.stage === 'trial' &&
-    s.attempt <= M17_MAX_ATTEMPTS
-  );
+  return s.window.status === 'open' && s.stage === 'trial';
 }
 
 function append(
@@ -583,6 +666,20 @@ function append(
 
   if (!canEdit()) {
     return { ok: false, message: 'No case is open.' };
+  }
+
+  if (STAGE_WORDS.has(command.verb.toUpperCase())) {
+    log('command_refused', {
+      text: command.verb.toUpperCase(),
+      reason: 'stage_word_out_of_stage',
+      input_mode: mode,
+    });
+    setConsole([`${command.verb.toUpperCase()} is not available now.`]);
+
+    return {
+      ok: false,
+      message: `${command.verb.toUpperCase()} is not available now.`,
+    };
   }
 
   const outcome = appendLine(s.program, M17_GRAMMAR, context(), command, mode);
@@ -676,33 +773,23 @@ function clear(mode: InputMode, nowMs: number): TerminalActionResult {
   return { ok: true, message: 'Buffer cleared.' };
 }
 
-/** Ends the current case (attempts exhausted, goal reached or FINISH). */
-function finishTrial(nowMs: number, reason: string) {
+function completeSeries(nowMs: number) {
   const s = ensure();
-  const trial = currentTrial();
 
-  if (trial === null) {
-    return;
-  }
+  s.stage = 'done';
+  closeIpWindow(s.window, 'completed', nowMs);
+  log('completed', rawSummary());
+  setConsole(['All sixteen trials recorded. The training rig is closed.']);
+}
 
-  if (s.trial_started_at_ms !== null) {
-    s.trial_active_ms += Math.max(0, nowMs - s.trial_started_at_ms);
-    s.trial_started_at_ms = null;
-  }
+/** Advances after a recorded trial: the next trial, or the series end. */
+function advance(nowMs: number) {
+  const s = ensure();
 
-  log('trial_finished', {
-    trial_type: trial.type,
-    attempts: s.attempts.filter((a) => a.trial_index === trial.index).length,
-    reason,
-  });
-
-  if (trial.index >= M17_TRIALS_TOTAL) {
-    s.stage = 'done';
-    closeIpWindow(s.window, 'completed', nowMs);
-    log('completed', rawSummary());
-    setConsole(['Both cases recorded. The training rig is closed.']);
+  if (s.trial_index >= M17_TRIALS_TOTAL) {
+    completeSeries(nowMs);
   } else {
-    s.stage = 'between';
+    startTrial(s.trial_index + 1, nowMs);
   }
 }
 
@@ -714,30 +801,47 @@ function submit(mode: InputMode, nowMs: number): TerminalActionResult {
     return { ok: false, message: 'No case is open.' };
   }
 
+  if (s.program.lines.length !== M17_COMMANDS_REQUIRED) {
+    const message =
+      s.program.lines.length === 0
+        ? 'Add two operators before SUBMIT.'
+        : `Exactly two operators are needed — the buffer has ${s.program.lines.length}.`;
+
+    s.submit_refusals += 1;
+    log('submit_refused', {
+      reason: s.program.lines.length === 0 ? 'empty_buffer' : 'line_count',
+      line_count: s.program.lines.length,
+      input_mode: mode,
+    });
+    setConsole([message]);
+
+    return { ok: false, message };
+  }
+
   const evaluation = evaluateTrial(trial, s.program.lines);
 
   if (s.trial_started_at_ms !== null) {
     s.trial_active_ms += Math.max(0, nowMs - s.trial_started_at_ms);
-    s.trial_started_at_ms = nowMs;
+    s.trial_started_at_ms = null;
   }
 
   bumpIpSubmission(s.window);
 
-  const record: AttemptRecord = {
+  const record: M17TrialRecord = {
     trial_index: trial.index,
-    trial_type: trial.type,
-    attempt: s.attempt,
+    phase: trial.phase,
+    phase_index: trial.phase_index,
+    goal_reached: evaluation.goal_reached,
     commands_required: evaluation.commands_required,
     commands_correct: evaluation.commands_correct,
     semantic_errors: evaluation.semantic_errors,
     syntax_errors: s.syntax_errors,
     corrections_before_submission: s.corrections,
-    feedback_presented: trial.type === 'feedback',
+    feedback_presented: trial.phase === 'learning',
+    feedback_read_ms: null,
     help_consults: s.help_in_trial,
     demonstration_reviews: s.demo_in_trial,
-    active_ms_after_ready: s.trial_active_ms,
-    trial_complete: true,
-    goal_reached: evaluation.goal_reached,
+    active_ms: s.trial_active_ms,
     command_count: evaluation.command_count,
     pointer_commands: s.pointer_commands,
     typed_commands: s.typed_commands,
@@ -749,58 +853,51 @@ function submit(mode: InputMode, nowMs: number): TerminalActionResult {
           : s.pointer_commands > 0
             ? 'pointer'
             : null,
+    buffer: s.program.lines.map((l) => commandToText(l.command)),
     final_register: evaluation.result,
   };
 
-  s.attempts.push(record);
-  log('trial_submitted', {
-    ...record,
-    input_mode: mode,
-    buffer: s.program.lines.map((l) => commandToText(l.command)),
-  });
+  s.trials.push(record);
+  log('trial_submitted', { ...record, submit_input_mode: mode });
+  // Per-trial counters end with the record (review S-L2).
+  s.help_in_trial = 0;
+  s.demo_in_trial = 0;
 
-  const attemptsLeft = M17_MAX_ATTEMPTS - s.attempt;
+  if (trial.phase === 'learning') {
+    // The raw fact of the first run of three (recounted by the extractor).
+    if (s.criterion_run_trial === null) {
+      const criterion = m17Criterion(sequences().learning);
 
-  if (trial.type === 'feedback') {
+      if (criterion.attained) {
+        s.criterion_run_trial = criterion.criterion_trial;
+        log('criterion_run_reached', {
+          learning_trial: criterion.criterion_trial,
+          run: M17_CRITERION_RUN,
+        });
+      }
+    }
+
     const lines = evaluation.goal_reached
       ? ['Register matches GOAL.']
       : [
           `Register does not match GOAL. Reference sequence: ${trial.reference.join(' ; ')}.`,
         ];
 
-    log('feedback_presented', { goal_reached: evaluation.goal_reached });
-
-    if (evaluation.goal_reached || attemptsLeft === 0) {
-      setConsole([...lines, 'NEXT continues with the transfer case.']);
-      finishTrial(
-        nowMs,
-        evaluation.goal_reached ? 'goal_reached' : 'attempts_used',
-      );
-    } else {
-      s.attempt += 1;
-      s.syntax_errors = 0;
-      s.corrections = 0;
-      setConsole([
-        ...lines,
-        `Revise and SUBMIT again (attempt ${s.attempt} of ${M17_MAX_ATTEMPTS}), or FINISH CASE.`,
-      ]);
-    }
-  } else if (evaluation.goal_reached || attemptsLeft === 0) {
-    setConsole(['Transfer attempt recorded.']);
-    finishTrial(
-      nowMs,
-      evaluation.goal_reached ? 'goal_reached' : 'attempts_used',
-    );
+    s.stage = 'feedback';
+    s.feedback_shown_at_ms = nowMs;
+    s.feedback_read_ms_acc = 0;
+    s.feedback_lines = lines;
+    log('feedback_presented', {
+      goal_reached: evaluation.goal_reached,
+      reference_shown: !evaluation.goal_reached,
+    });
+    setConsole([...lines, 'NEXT continues.']);
   } else {
-    s.attempt += 1;
-    s.syntax_errors = 0;
-    s.corrections = 0;
-    setConsole([
-      `Transfer attempt ${s.attempt - 1} recorded. Revise and SUBMIT again (attempt ${s.attempt} of ${M17_MAX_ATTEMPTS}), or FINISH CASE.`,
-    ]);
+    setConsole([`${trialTitle(trial)} recorded.`]);
+    advance(nowMs);
   }
 
-  return { ok: true, message: 'Attempt recorded.' };
+  return { ok: true, message: 'Answer recorded.' };
 }
 
 function primary(
@@ -819,25 +916,26 @@ function primary(
     startTrial(1, nowMs);
     setConsole([]);
 
-    return { ok: true, message: 'Practice case.' };
+    return { ok: true, message: 'Baseline case 1.' };
   }
 
-  if (actionId === 'NEXT' && s.stage === 'between') {
-    startTrial(s.trial_index + 1, nowMs);
+  if (actionId === 'NEXT' && s.stage === 'feedback') {
+    const last = s.trials[s.trials.length - 1];
+    const readMs =
+      s.feedback_read_ms_acc +
+      (s.feedback_shown_at_ms === null
+        ? 0
+        : Math.max(0, nowMs - s.feedback_shown_at_ms));
+
+    if (last !== undefined) {
+      last.feedback_read_ms = readMs;
+    }
+
+    log('feedback_acknowledged', { read_ms: readMs, input_mode: mode });
     setConsole([]);
+    advance(nowMs);
 
-    return { ok: true, message: 'Transfer case.' };
-  }
-
-  if (
-    actionId === 'FINISH' &&
-    s.stage === 'trial' &&
-    s.attempts.some((a) => a.trial_index === s.trial_index)
-  ) {
-    log('trial_finished', { requested: true, input_mode: mode });
-    finishTrial(nowMs, 'finished_by_participant');
-
-    return { ok: true, message: 'Case finished.' };
+    return { ok: true, message: 'Next case.' };
   }
 
   return { ok: false, message: 'No stage action available.' };
@@ -856,13 +954,13 @@ function help(mode: InputMode, nowMs: number): readonly string[] {
     'VEK <slot> <token> sets a slot (e.g. VEK B RED).',
     'ZOR <slot> <slot> exchanges two slots (e.g. ZOR A C).',
     'KAI <slot> clears a slot to NUL (e.g. KAI B).',
-    'Each case needs exactly two operators; the preview shows the',
-    'register after your buffer. ✕ / REMOVE n deletes a line. SUBMIT',
-    'records an attempt; DEMO reopens the worked examples.',
+    'Each case needs exactly two operators. ✕ / REMOVE n deletes a line.',
+    'SUBMIT records your answer once per case (exactly two operators);',
+    'REFERENCE reopens the worked examples.',
   ];
 }
 
-/** DEMO button / typed REFERENCE: a counted demonstration review. */
+/** REFERENCE button / typed REFERENCE: a counted demonstration review. */
 function consultReference(mode: InputMode, nowMs: number): readonly string[] {
   void nowMs;
 
@@ -886,6 +984,11 @@ function stop(nowMs: number) {
     return;
   }
 
+  if (s.trial_started_at_ms !== null) {
+    s.trial_active_ms += Math.max(0, nowMs - s.trial_started_at_ms);
+    s.trial_started_at_ms = null;
+  }
+
   closeIpWindow(s.window, 'exited', nowMs);
   log('stopped', rawSummary());
   setConsole(['Training rig closed at your request. Record kept.']);
@@ -907,10 +1010,9 @@ export function m17Probe(): Record<string, unknown> {
 
   return {
     ...rawSummary(),
-    form: s.form,
     stage: s.stage,
     trial_index: s.trial_index,
-    attempt: s.attempt,
+    phase: currentTrial()?.phase ?? null,
     active_ms_current_trial: trialActiveMs(Date.now()),
     buffer: s.program.lines.map((line) => ({
       text: commandToText(line.command),

@@ -620,7 +620,7 @@ export const LAB_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Use the',
     'Training Rig',
     { kind: 'ip_overlay', id: 'm17' },
-    'm17_syntax_acquisition',
+    'm17_trials_w1',
     { x: 508, y: 248 },
   ),
   labStation(
