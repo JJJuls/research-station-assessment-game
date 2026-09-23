@@ -53,6 +53,7 @@ export type ExteriorSite =
   | 'mast'
   | 'excavation'
   | 'rig'
+  | 'console'
   | 'uplink';
 
 export const EXTERIOR_SITE_ORDER: readonly ExteriorSite[] = [
@@ -60,6 +61,10 @@ export const EXTERIOR_SITE_ORDER: readonly ExteriorSite[] = [
   'mast',
   'excavation',
   'rig',
+  // Station 080 M08 (U2-R): the support console is a listed yard job so
+  // every participant is told where it is; it sits between the rig and
+  // the uplink posts, separating the two post-knowledge assays.
+  'console',
   'uplink',
 ];
 
@@ -69,6 +74,7 @@ export const EXTERIOR_SITE_LABELS: Record<ExteriorSite, string> = {
   mast: 'Mast 04',
   excavation: 'Excavation Field Stake',
   rig: 'Magnet Recovery Rig',
+  console: 'Station Support Console',
   uplink: 'Field Uplink Post A',
 };
 
@@ -79,6 +85,8 @@ export const EXTERIOR_OBJECTIVES: Record<ExteriorSite | 'report', string> = {
   excavation:
     'Recover the buried relay coupling — staked excavation field, east (E at the stake, then C scan · D dig).',
   rig: 'Run the salvage tally at the magnet rig — Metal Recovery Yard, north-east (E at the rig panel, then F on the pad).',
+  console:
+    'Run the six slots at the station support console — open field south of the mast (E at the console).',
   uplink:
     'When the yard work is done, send the recovery reports from the uplink posts — north-west (E at a post).',
   report: 'Report to Noor, then return inside through the airlock.',
@@ -175,6 +183,10 @@ export function exteriorSiteDone(
       return state.m23.entered || state.m23.closed;
     case 'rig':
       return state.m24.entered || state.m24.closed;
+    case 'console':
+      // The console's own window lives outside this pure model; the scene
+      // releases guidance for it when the console opens (guidance only).
+      return false;
     case 'uplink':
       return state.m26.entered || state.m26.closed;
   }

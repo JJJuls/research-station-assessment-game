@@ -188,6 +188,7 @@ import {
   declareM08,
   m08Window,
   openM08,
+  presentM08,
 } from '../pilot/windows/m08EffortChoice';
 import { m08SurfaceModel } from '../pilot/windows/m08SurfaceModel';
 import {
@@ -639,6 +640,8 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
         }
 
         openM08(Date.now());
+        // Guidance only: the listed job is reached once the console opens.
+        dismissExteriorSite('console');
         openWorkSurface(this, {
           surfaceId: 'm08_support_console',
           model: () => m08SurfaceModel(this.m08SurfaceHost()),
@@ -646,6 +649,9 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
             closeM08Surface(Date.now());
           },
           onClosed: () => {
+            // Invalidate any pending tick: the reopen render schedules afresh.
+            this.m08TickSerial += 1;
+            this.m08TickPending = false;
             this.refreshGuidance();
           },
         });
@@ -661,27 +667,57 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       label: 'Station Support Console',
       stages: ['exterior_work'],
       isDone: () => m08Window.windowStatus() !== 'unopened',
-      order: 6,
+      // Sixth listed job: after the rig, before the uplink reports (the
+      // beacon and Noor's list agree — review U2-R).
+      order: 5,
     });
   }
+
+  /** One pending surface tick at a time (review U2-R: no redraw pile-up). */
+  private m08TickPending = false;
+  /** Bumped on every close so a stale tick from the old surface is ignored. */
+  private m08TickSerial = 0;
 
   private m08SurfaceHost() {
     return {
       now: () => Date.now(),
-      close: () => activeWorkSurface(this)?.close(),
+      // The Leave button and ESC take the SAME path: pause first (a running
+      // slot or an open choice never counts unattended time), then close.
+      close: () => {
+        closeM08Surface(Date.now());
+        activeWorkSurface(this)?.close();
+      },
       feedback: (message: string) =>
         activeWorkSurface(this)?.showFeedback(message),
+      // A wall-clock timer, deliberately NOT the surface scene's clock: the
+      // reopen render runs inside the surface's create step, when the scene
+      // is not yet "active" and its clock would not be reachable — a slot
+      // resumed on reopen must still tick (a stand-by slot has no press to
+      // re-render it). The callback bails when the surface is gone (the
+      // model paused the clock at close) or the serial moved on.
       later: (ms: number, fn: () => void) => {
-        const surface = activeWorkSurface(this);
-
-        if (surface === null) {
+        if (this.m08TickPending) {
           return;
         }
 
-        surface.time.delayedCall(ms, () => {
+        this.m08TickPending = true;
+
+        const serial = this.m08TickSerial;
+
+        window.setTimeout(() => {
+          if (serial !== this.m08TickSerial) {
+            return;
+          }
+
+          this.m08TickPending = false;
+
+          if (activeWorkSurface(this) === null) {
+            return;
+          }
+
           fn();
           activeWorkSurface(this)?.refresh();
-        });
+        }, ms);
       },
     };
   }
@@ -972,7 +1008,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
 
         return state.closed || state.acknowledged_ms !== null;
       },
-      order: 5,
+      order: 6,
     });
 
     this.addStation({
@@ -1683,14 +1719,18 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       case 'exterior_briefing':
         return {
           body:
-            'Noor: Storm damage, five sites — work them in this order: the frozen coolant coupling (west), Mast 04 (north), the staked excavation field (east), the magnet rig in the Metal Recovery Yard (north-east), then the uplink posts (north-west) for the two recovery reports.\n' +
+            'Noor: Storm damage, six jobs — work them in this order: the frozen coolant coupling (west), Mast 04 (north), the staked excavation field (east), the magnet rig in the Metal Recovery Yard (north-east), the station support console on the open field (south of the mast), then the uplink posts (north-west) for the two recovery reports.\n' +
             'Each site has its own panel (E). Scanner is C, spade is D, the rig is F. Come back to me when you are finished outside.',
           options: [
             {
               label: 'Ready.',
               tag: 'yard_brief_ack',
               onSelected: () => {
-                advancePilotStage('exterior_work', Date.now());
+                const now = Date.now();
+
+                advancePilotStage('exterior_work', now);
+                // M08 (U2-R): the console is presented by this briefing.
+                presentM08(now);
                 this.ensureFieldTools();
                 this.refreshGuidance();
               },

@@ -282,7 +282,7 @@ const OPERATIONAL_LABELS: Partial<Record<M26ItemId, string>> = {
   M05: 'Fault report (Concourse / Yard)',
   M06: 'Dispatch console (Workshop)',
   M07: 'Calibration bench (Workshop)',
-  M08: 'Support console (Laboratory)',
+  M08: 'Support console (Recovery Yard)',
   M09: 'Monitor watch (Concourse)',
   M10: 'Component delivery (Concourse)',
   M11: 'Borrowed instruments (Workshop / Laboratory)',

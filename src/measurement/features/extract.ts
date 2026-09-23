@@ -47,12 +47,16 @@ export function hasFeatureExtractor(item: M26ItemId): boolean {
 }
 
 function baseRecord(item: M26ItemId, spec: FeatureSpec): FeatureRecord {
+  const entry = registerEntry(item);
+
   return {
     item_id: item,
     feature_id: spec.feature_id,
     feature_version: spec.feature_version,
     protocol_version: MEASUREMENT_PROTOCOL_VERSION,
     role: spec.role,
+    coverage_label: entry.coverage_label,
+    independence: entry.independence.kind,
     value: null,
     disposition: 'not_implemented',
     numerator: null,

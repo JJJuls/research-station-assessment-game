@@ -15,8 +15,12 @@
  * CHOICE screen showing the slot's displayed benefit; the participant
  * chooses SORT (work) or STAND BY; either way the slot lasts 15 FOCUSED
  * seconds (hidden / unfocused time and a closed surface never count) and
- * ends with the same neutral line. The output tally is fictional station
- * output — nothing else changes with it.
+ * ends on the same neutral INTERVAL screen, whose single Continue control
+ * presents the next choice (review U2-R: an in-flight click or a carried
+ * key press can never become a choice). Units are PRODUCED by sorting: a
+ * Work slot in which no reading was sorted produces none (the choice is
+ * still the recorded choice; `served` says whether the work was done). The
+ * output tally is fictional station output — nothing else changes with it.
  *
  * Measure (register `m08_work_choice_fraction`): Work choices / explicit
  * valid choices (six planned); per-benefit fractions kept separately;
@@ -45,7 +49,14 @@ export const M08_THRESHOLD = 50;
 export type M08Benefit = 1 | 3;
 export type M08Order = 'order_a' | 'order_b';
 export type M08Choice = 'work' | 'rest';
-export type M08Phase = 'practice' | 'choice' | 'work' | 'rest' | 'done';
+export type M08Phase =
+  | 'practice'
+  | 'interval'
+  | 'choice'
+  | 'work'
+  | 'rest'
+  | 'done';
+export type M08IntervalReason = 'practice' | 'epoch';
 export type M08Bin = 'A' | 'B';
 export type M08InputMode = 'pointer' | 'keyboard' | 'system';
 export type M08LogSink = (
@@ -72,10 +83,15 @@ export interface M08Epoch {
   choice: M08Choice | null;
   /** True only for an explicit Sort / Stand-by choice. */
   valid: boolean;
+  /** Wall ms from the choice presentation to the press (descriptive). */
   choice_latency_ms: number | null;
+  /** Focused ms of the same interval (closed / hidden / unfocused excluded). */
+  choice_focused_ms: number | null;
   focused_ms: number;
   items_sorted: number;
   items_correct: number;
+  /** Work: at least one reading sorted; Stand by: always true (nothing to serve). */
+  served: boolean | null;
   output_units: number;
   completed: boolean;
 }
@@ -83,12 +99,16 @@ export interface M08Epoch {
 export interface M08State {
   order: M08Order;
   phase: M08Phase;
-  practice: { sorted: number; correct: number; passed: boolean };
+  /** Why the interval screen is showing (practice done / a slot ended). */
+  intervalReason: M08IntervalReason | null;
+  practice: { sorted: number; correct: number; completed: boolean };
   epochs: M08Epoch[];
   /** Index of the current slot (0–5) once practice is done. */
   current: number;
   readingCursor: number;
   choicePresentedAtMs: number | null;
+  /** Focused clock of the open choice screen (pauses with the surface). */
+  choiceClock: FocusedClock | null;
   clock: FocusedClock | null;
   outputUnitsTotal: number;
   closureReason: string | null;
@@ -98,22 +118,26 @@ export function createM08State(order: M08Order): M08State {
   return {
     order,
     phase: 'practice',
-    practice: { sorted: 0, correct: 0, passed: false },
+    intervalReason: null,
+    practice: { sorted: 0, correct: 0, completed: false },
     epochs: M08_BENEFIT_ORDERS[order].map((benefit, index) => ({
       epoch: index + 1,
       benefit_units: benefit,
       choice: null,
       valid: false,
       choice_latency_ms: null,
+      choice_focused_ms: null,
       focused_ms: 0,
       items_sorted: 0,
       items_correct: 0,
+      served: null,
       output_units: 0,
       completed: false,
     })),
     current: 0,
     readingCursor: 0,
     choicePresentedAtMs: null,
+    choiceClock: null,
     clock: null,
     outputUnitsTotal: 0,
     closureReason: null,
@@ -124,6 +148,24 @@ export function m08CurrentEpoch(s: M08State): M08Epoch | null {
   return s.phase === 'practice' || s.phase === 'done'
     ? null
     : (s.epochs[s.current] ?? null);
+}
+
+/** Slots that ended (completed) so far. */
+export function m08CompletedEpochs(s: M08State): number {
+  return s.epochs.filter((epoch) => epoch.completed).length;
+}
+
+/**
+ * Reload guard (review U2-R): true when an earlier page load of this
+ * identity already opened the console. The console is then never re-run —
+ * a reload never creates fresh independent trials.
+ */
+export function m08PriorAdministration(
+  priorLoadEvents: readonly { event_type: string }[],
+): boolean {
+  return priorLoadEvents.some(
+    (event) => event.event_type === `${M08_FAMILY}opportunity_opened`,
+  );
 }
 
 /** The reading currently shown for sorting (practice or work). */
@@ -147,7 +189,14 @@ export function m08PresentChoice(s: M08State, nowMs: number, log: M08LogSink) {
   const epoch = s.epochs[s.current];
 
   s.phase = 'choice';
+  s.intervalReason = null;
   s.choicePresentedAtMs = nowMs;
+
+  const choiceClock = new FocusedClock();
+
+  choiceClock.start(nowMs);
+  registerFocusedClock(choiceClock);
+  s.choiceClock = choiceClock;
   log('choice_presented', {
     epoch: epoch.epoch,
     benefit_units: epoch.benefit_units,
@@ -157,20 +206,66 @@ export function m08PresentChoice(s: M08State, nowMs: number, log: M08LogSink) {
   });
 }
 
-/** Practice: sort one reading (never scored; records demand familiarity). */
+/** Interval screen: shown after the practice and after every slot. */
+function m08EnterInterval(s: M08State, reason: M08IntervalReason) {
+  s.phase = 'interval';
+  s.intervalReason = reason;
+}
+
+/**
+ * The single Continue control of the interval screen presents the next
+ * choice. Nothing else ever presents a choice, so no press meant for a bin
+ * can land on a choice button.
+ */
+export function m08Continue(
+  s: M08State,
+  nowMs: number,
+  inputMode: M08InputMode,
+  log: M08LogSink,
+): boolean {
+  if (s.phase !== 'interval') {
+    return false;
+  }
+
+  log('interval_continued', {
+    reason: s.intervalReason,
+    next_epoch: s.current + 1,
+    input_mode: inputMode,
+  });
+  m08PresentChoice(s, nowMs, log);
+
+  return true;
+}
+
+export interface M08SortResult {
+  reading: number;
+  bin: M08Bin;
+  correctBin: M08Bin;
+  correct: boolean;
+}
+
+/**
+ * Practice: sort one reading (never scored; records demand familiarity).
+ * Returns the factual result so the surface can show neutral feedback; the
+ * practice completes after the fixed number of sorts with no pass
+ * criterion (the protocol states none — register §5).
+ */
 export function m08SortPractice(
   s: M08State,
   bin: M08Bin,
   nowMs: number,
   inputMode: M08InputMode,
   log: M08LogSink,
-): boolean {
+): M08SortResult | null {
   if (s.phase !== 'practice') {
-    return false;
+    return null;
   }
 
+  void nowMs;
+
   const reading = m08CurrentReading(s);
-  const correct = (reading >= M08_THRESHOLD ? 'A' : 'B') === bin;
+  const correctBin: M08Bin = reading >= M08_THRESHOLD ? 'A' : 'B';
+  const correct = correctBin === bin;
 
   s.readingCursor += 1;
   s.practice.sorted += 1;
@@ -189,17 +284,17 @@ export function m08SortPractice(
   });
 
   if (s.practice.sorted >= M08_PRACTICE_ITEMS) {
-    s.practice.passed = true;
+    s.practice.completed = true;
     log('practice_complete', {
       correct: s.practice.correct,
       total: s.practice.sorted,
       phase: 'practice',
       input_mode: 'system',
     });
-    m08PresentChoice(s, nowMs, log);
+    m08EnterInterval(s, 'practice');
   }
 
-  return true;
+  return { reading, bin, correctBin, correct };
 }
 
 /** The explicit slot choice. Both options last the same 15 focused seconds. */
@@ -222,6 +317,14 @@ export function m08Choose(
     s.choicePresentedAtMs === null
       ? null
       : Math.max(0, nowMs - s.choicePresentedAtMs);
+
+  if (s.choiceClock !== null) {
+    s.choiceClock.stop(nowMs);
+    releaseFocusedClock(s.choiceClock);
+    epoch.choice_focused_ms = s.choiceClock.focusedMs(nowMs);
+    s.choiceClock = null;
+  }
+
   s.phase = choice === 'work' ? 'work' : 'rest';
 
   const clock = new FocusedClock();
@@ -235,6 +338,7 @@ export function m08Choose(
     choice,
     benefit_units: epoch.benefit_units,
     choice_latency_ms: epoch.choice_latency_ms,
+    choice_focused_ms: epoch.choice_focused_ms,
     phase: 'measurement',
     input_mode: inputMode,
   });
@@ -325,7 +429,11 @@ export function m08Tick(
   releaseFocusedClock(s.clock);
   epoch.focused_ms = s.clock.focusedMs(nowMs);
   epoch.completed = true;
-  epoch.output_units = epoch.choice === 'work' ? epoch.benefit_units : 0;
+  // Units are produced by sorting: a Work slot with no reading sorted
+  // produced nothing (review U2-R); standing by has nothing to serve.
+  epoch.served = epoch.choice === 'work' ? epoch.items_sorted > 0 : true;
+  epoch.output_units =
+    epoch.choice === 'work' && epoch.served ? epoch.benefit_units : 0;
   s.outputUnitsTotal += epoch.output_units;
   log('epoch_completed', {
     epoch: epoch.epoch,
@@ -335,6 +443,7 @@ export function m08Tick(
     excluded_ms: s.clock.excludedMs(nowMs),
     items_sorted: epoch.items_sorted,
     items_correct: epoch.items_correct,
+    served: epoch.served,
     output_units: epoch.output_units,
     output_units_total: s.outputUnitsTotal,
     input_mode: 'system',
@@ -349,14 +458,15 @@ export function m08Tick(
   }
 
   s.current += 1;
-  m08PresentChoice(s, nowMs, log);
+  m08EnterInterval(s, 'epoch');
 
   return 'epoch';
 }
 
-/** The surface was closed (ESC / leave): a running slot pauses. */
+/** The surface was closed (ESC / leave): a running slot or choice pauses. */
 export function m08SurfaceClosed(s: M08State, nowMs: number, log: M08LogSink) {
   s.clock?.pause('surface_closed', nowMs);
+  s.choiceClock?.pause('surface_closed', nowMs);
   log('surface_closed', {
     phase: s.phase,
     epoch: s.current + 1,
@@ -371,6 +481,7 @@ export function m08SurfaceReopened(
   log: M08LogSink,
 ) {
   s.clock?.resume('surface_closed', nowMs);
+  s.choiceClock?.resume('surface_closed', nowMs);
   log('surface_reopened', {
     phase: s.phase,
     epoch: s.current + 1,
@@ -384,6 +495,12 @@ export function m08Freeze(s: M08State, nowMs: number, closureReason: string) {
     s.clock.stop(nowMs);
     releaseFocusedClock(s.clock);
     s.clock = null;
+  }
+
+  if (s.choiceClock !== null) {
+    s.choiceClock.stop(nowMs);
+    releaseFocusedClock(s.choiceClock);
+    s.choiceClock = null;
   }
 
   s.closureReason = closureReason;
@@ -414,6 +531,13 @@ export function m08RawComponents(s: M08State, closureReason: string) {
       items_sorted: s.epochs.reduce((sum, e) => sum + e.items_sorted, 0),
       items_correct: s.epochs.reduce((sum, e) => sum + e.items_correct, 0),
     },
+    served_work_slots: s.epochs.filter(
+      (epoch) => epoch.completed && epoch.choice === 'work' && epoch.served,
+    ).length,
+    unserved_work_slots: s.epochs.filter(
+      (epoch) =>
+        epoch.completed && epoch.choice === 'work' && epoch.served === false,
+    ).length,
     output_units_total: s.outputUnitsTotal,
     epochs_completed: s.epochs.filter((epoch) => epoch.completed).length,
     closure_reason: closureReason,

@@ -479,6 +479,16 @@ class ResearchRuntime {
     return this.pageLoadIndex;
   }
 
+  /**
+   * Read-only view of the events recovered from earlier page loads of this
+   * identity (Station 080 M01–M26, U2-R reload guard: an item window may
+   * refuse to re-administer an opportunity the prior log already holds).
+   * Never mutated through this accessor; the export keeps its own copy.
+   */
+  getPriorPageLoadEvents(): readonly RawGameEvent[] {
+    return this.priorPageLoadEvents;
+  }
+
   getEventIntegrity(): EventIntegrity {
     return computeEventIntegrity({
       current: this.eventLogger.getEvents(),

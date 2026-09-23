@@ -15,7 +15,7 @@
  */
 import type { RawGameEvent } from '../../systems/EventLogger';
 import type { ClosureReason } from '../protocol';
-import type { M26ItemId } from '../registerV3';
+import type { CoverageLabel, Independence, M26ItemId } from '../registerV3';
 
 export type FeatureDisposition =
   /** A value was observed on the planned observations (a zero is an observed zero). */
@@ -64,6 +64,14 @@ export interface FeatureRecord {
   feature_version: string;
   protocol_version: string;
   role: 'primary' | 'companion' | 'sensitivity';
+  /**
+   * The register's evidential label of the item (exploratory / partial /
+   * hybrid / …) carried on every row so an analyst reading the features
+   * alone sees the claim level (review U2-R).
+   */
+  coverage_label: CoverageLabel;
+  /** How the item's observations cluster (register §2b), on every row. */
+  independence: Independence;
   value: FeatureValue;
   disposition: FeatureDisposition;
   numerator: number | null;
