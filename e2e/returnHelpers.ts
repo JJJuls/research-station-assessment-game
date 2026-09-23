@@ -109,7 +109,8 @@ export const OPPORTUNITY = {
   m20: 'proto_m20_antenna_restoration',
   m21o1: 'proto_m21_case_o1',
   m21o2: 'proto_m21_case_o2',
-  m22: 'proto_m22_report_revision',
+  m22o1: 'proto_m22_returned_o1',
+  m22o2: 'proto_m22_returned_o2',
   m25: 'proto_m25_belief_probe',
 } as const;
 
@@ -151,6 +152,43 @@ export interface ReturnProbeM21Case {
   time_by_phase_ms: { manual: number; unit: number };
 }
 
+export interface ReturnProbeM22Rating {
+  value: number | null;
+  declined: boolean;
+  recall_delay_ms: number | null;
+  since_presented_ms: number | null;
+  position: number;
+}
+
+export interface ReturnProbeM22Report {
+  window: string;
+  exit: string | null;
+  entered: boolean;
+  phase: string;
+  uncoded_lines: number;
+  report: 'o1' | 'o2';
+  requirement_presented: boolean;
+  setback_presented: boolean;
+  revision_begun: boolean;
+  revision_started: boolean;
+  feedback_consistent_edits: number;
+  resubmitted: boolean;
+  recovery_complete: boolean;
+  exited: boolean;
+  form: 'form_a' | 'form_b';
+  setback_comprehension: boolean;
+  inspections: number;
+  repeated_unchanged_action: number;
+  other_edits: number;
+  mismatched_code_edits: number;
+  progress: { coded: number; placed: number };
+  submissions: number;
+  departures: number;
+  stop_choice: string | null;
+  lines_at_close: (string | null)[];
+  rating: ReturnProbeM22Rating | null;
+}
+
 export interface ReturnProbe {
   m20: {
     availability: { available: boolean; history: string; reason: string };
@@ -179,27 +217,13 @@ export interface ReturnProbe {
     o2: ReturnProbeM21Case;
   };
   m22: {
-    window: string;
-    exit: string | null;
-    entered: boolean;
-    phase: string;
-    untagged_lines: number;
-    setback_presented: boolean;
-    revision_started: boolean;
-    feedback_consistent_edits: number;
-    resubmitted: boolean;
-    recovery_complete: boolean;
-    form: 'form_a' | 'form_b';
-    setback_comprehension: boolean;
-    inspections: number;
-    repeated_unchanged_action: number;
-    other_edits: number;
-    mismatched_tag_edits: number;
-    progress: { tagged: number; placed: number };
-    submissions: number;
-    departures: number;
-    stop_choice: string | null;
-    lines_at_close: (string | null)[];
+    active: 'o1' | 'o2';
+    all_decided: boolean;
+    rating_due: 'o1' | 'o2' | null;
+    desk_done: boolean;
+    ratings: Record<'o1' | 'o2', ReturnProbeM22Rating | null>;
+    o1: ReturnProbeM22Report;
+    o2: ReturnProbeM22Report;
   };
   m25: {
     window: string;
@@ -1220,6 +1244,7 @@ export async function repairRelay(
  * M22 — report desk
  * ------------------------------------------------------------------ */
 
+/** Report 1 (handover report): line → work-order tag. */
 export const M22_TAG: Record<string, string> = {
   l_coupling: 'WO-11',
   l_loop: 'WO-12',
@@ -1229,10 +1254,24 @@ export const M22_TAG: Record<string, string> = {
   l_records: 'WO-16',
 };
 
+/** Report 2 (consignment note): line → destination bay. */
+export const M22_BAY: Record<string, string> = {
+  c_relay: 'BAY-A',
+  c_coupling: 'BAY-B',
+  c_vials: 'BAY-C',
+  c_tally: 'BAY-D',
+  c_binder: 'BAY-E',
+};
+
 /** Places the first three tray lines into slots 1-3 (select line, then slot). */
 export async function assembleReport(page: Page) {
   await openWorkshopSurface(page, 'reportDesk', 'm22_report_desk');
 
+  return placeThreeLines(page);
+}
+
+/** On the open desk: the first three tray lines into slots 1-3. */
+export async function placeThreeLines(page: Page) {
   const tray = (await surface(page))!.elements
     .filter((e) => e.id.startsWith('line_') && e.focusable)
     .slice(0, 3);
@@ -1253,10 +1292,21 @@ export async function submitReport(page: Page) {
   return (await surface(page))?.feedback ?? null;
 }
 
-/** Attaches the register tag for `lineId` to the slot holding it (pointer). */
-export async function attachTag(page: Page, slot: number, tag: string) {
-  await clickElement(page, `tag_${tag}`);
+/** Attaches a register / chart code to the slot holding a line (pointer). */
+export async function attachCode(page: Page, slot: number, code: string) {
+  await clickElement(page, `code_${code}`);
   await clickElement(page, `slot_${slot}`);
+}
+
+/** The code that matches a line of either report. */
+export function codeFor(lineId: string): string {
+  const code = M22_TAG[lineId] ?? M22_BAY[lineId];
+
+  if (code === undefined) {
+    throw new Error(`no code for line ${lineId}`);
+  }
+
+  return code;
 }
 
 /* ------------------------------------------------------------------ *

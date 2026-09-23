@@ -45,11 +45,12 @@ import {
   acknowledgeQuestionnaireNotice,
   assembleReport,
   assertCoreLockedThenReturn,
-  attachTag,
+  attachCode,
   calibrationReturn,
   captureErrors,
   clickElement,
   closeSurface,
+  codeFor,
   enterConcourseWithOffers,
   eventsByPrefix,
   eventsByType,
@@ -69,6 +70,7 @@ import {
   openWorkshopSurface,
   OPPORTUNITY,
   placeOutbound,
+  placeThreeLines,
   pressBatchB,
   promptCardLabels,
   readGauge,
@@ -95,7 +97,7 @@ const RETURN_FAMILIES = [
   'proto_m10_promise_',
   'proto_m20_antenna_',
   'proto_m21_case_',
-  'proto_m22_report_',
+  'proto_m22_returned_',
   'proto_m25_probe_',
 ];
 
@@ -420,8 +422,10 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
       new Set(['system', 'keyboard', 'pointer']),
     );
 
-    // ——— M22: assemble, submit, setback, acknowledge, register, mismatched
-    // tag, returned again, matching tags, accepted. ———
+    // ——— M22 (Unit 11): report 1 — assemble, submit, requirement, acknowledge,
+    // register, a mismatched tag, returned again, matching tags, accepted;
+    // report 2 placed — submit, requirement, acknowledge, withdraw (exit);
+    // then one rating per returned report. ———
     const placed = await assembleReport(page);
 
     expect(placed).toHaveLength(3);
@@ -430,18 +434,19 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
 
     expect(feedback).toMatch(/returned by the receiving desk/i);
     rp = await returnProbe(page);
-    expect(rp.m22.phase).toBe('returned');
-    expect(rp.m22.setback_presented).toBe(true);
+    expect(rp.m22.active).toBe('o1');
+    expect(rp.m22.o1.phase).toBe('returned');
+    expect(rp.m22.o1.requirement_presented).toBe(true);
     expect((await surfaceElement(page, 'returned_note'))?.label).toContain(
       'work-order tag',
     );
-    expect(await surfaceElement(page, 'tag_WO-11')).not.toBeNull();
+    expect(await surfaceElement(page, 'code_WO-11')).not.toBeNull();
     // Editing before the acknowledgement is refused (comprehension first).
     expect((await surfaceElement(page, 'submit'))?.state).toBe('disabled');
     await press(page, 'k');
     await page.waitForTimeout(300);
     rp = await returnProbe(page);
-    expect(rp.m22.setback_comprehension).toBe(true);
+    expect(rp.m22.o1.setback_comprehension).toBe(true);
     await clickElement(page, 'register_toggle');
     expect((await surfaceElement(page, 'register'))?.label).toContain(
       'WORK-ORDER REGISTER',
@@ -452,59 +457,121 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
       (tag) => tag !== M22_TAG[placed[0]],
     )!;
 
-    await attachTag(page, 0, wrongTag);
+    await attachCode(page, 0, wrongTag);
     feedback = await submitReport(page);
-    expect(feedback).toContain('lines still without a matching tag: 3');
+    expect(feedback).toContain(
+      'lines still without a matching work-order tag: 3',
+    );
     rp = await returnProbe(page);
-    expect(rp.m22.mismatched_tag_edits).toBe(1);
-    expect(rp.m22.resubmitted).toBe(true);
-    expect(rp.m22.recovery_complete).toBe(false);
+    expect(rp.m22.o1.mismatched_code_edits).toBe(1);
+    expect(rp.m22.o1.resubmitted).toBe(true);
+    expect(rp.m22.o1.recovery_complete).toBe(false);
 
     for (const [slot, lineId] of placed.entries()) {
-      await attachTag(page, slot, M22_TAG[lineId]);
+      await attachCode(page, slot, M22_TAG[lineId]);
     }
 
     rp = await returnProbe(page);
-    expect(rp.m22.progress).toEqual({ tagged: 3, placed: 3 });
+    expect(rp.m22.o1.progress).toEqual({ coded: 3, placed: 3 });
     feedback = await submitReport(page);
     expect(feedback).toContain('accepted');
     rp = await returnProbe(page);
-    expect(rp.m22).toMatchObject({
+    expect(rp.m22.o1).toMatchObject({
       phase: 'accepted',
       window: 'closed',
       exit: 'completed',
-      revision_started: true,
+      revision_begun: true,
       resubmitted: true,
       recovery_complete: true,
       feedback_consistent_edits: 4,
       inspections: 1,
       repeated_unchanged_action: 0,
     });
+    // Report 2 is placed at once (its window open); the item stays open.
+    expect(rp.m22.active).toBe('o2');
+    expect(rp.m22.o2.window).toBe('open');
+    expect(await itemStatus(page, 'M22')).toBe('open');
+
+    // Report 2: past the placement settle window, assemble, submit → its own
+    // requirement, acknowledge, then WITHDRAW (an exit after the requirement).
+    await page.waitForTimeout(1_600);
+    const placed2 = await placeThreeLines(page);
+
+    expect(placed2.every((id) => id.startsWith('c_'))).toBe(true);
+    feedback = await submitReport(page);
+    expect(feedback).toMatch(/returned by the outbound desk/i);
+    expect((await surfaceElement(page, 'returned_note'))?.label).toContain(
+      'destination bay',
+    );
+    expect(await surfaceElement(page, 'code_BAY-A')).not.toBeNull();
+    await press(page, 'k');
+    await page.waitForTimeout(300);
+    await clickElement(page, 'withdraw_o2');
+    await page.waitForTimeout(400);
+    rp = await returnProbe(page);
+    expect(rp.m22.o2).toMatchObject({
+      phase: 'closed',
+      window: 'closed',
+      exit: 'stopped',
+      stop_choice: 'withdrawn',
+      requirement_presented: true,
+      setback_comprehension: true,
+      revision_begun: false,
+      exited: true,
+    });
+    expect(rp.m22.all_decided).toBe(true);
+
+    // The ratings: one per returned report, after both decisions.
+    expect(rp.m22.rating_due).toBe('o1');
+    expect((await surface(page))?.title).toContain('ONE QUESTION (1 OF 2)');
+    await page.waitForTimeout(1_100); // the rating screen's settle window
+    await press(page, '2');
+    await page.waitForTimeout(300);
+    rp = await returnProbe(page);
+    expect(rp.m22.ratings.o1).toMatchObject({ value: 2, declined: false });
+    expect(rp.m22.ratings.o1?.recall_delay_ms).toBeGreaterThan(0);
+    expect(rp.m22.rating_due).toBe('o2');
+    await page.waitForTimeout(1_100);
+    await clickElement(page, 'rating_decline');
+    await page.waitForTimeout(300);
+    rp = await returnProbe(page);
+    expect(rp.m22.ratings.o2).toMatchObject({ value: null, declined: true });
+    expect(rp.m22.desk_done).toBe(true);
     await clickElement(page, 'leave');
     await waitSurface(page, false);
     expect(await itemStatus(page, 'M22')).toBe('completed');
 
-    const m22Events = await eventsByPrefix(page, 'proto_m22_report_');
+    const m22Events = await eventsByPrefix(page, 'proto_m22_returned_');
     const m22Types = m22Events.map((e) => e.event_type);
 
     expect(m22Types).toEqual(
       expect.arrayContaining([
-        'proto_m22_report_line_placed',
-        'proto_m22_report_submitted',
-        'proto_m22_report_setback_presented',
-        'proto_m22_report_setback_acknowledged',
-        'proto_m22_report_register_inspected',
-        'proto_m22_report_tag_attached',
-        'proto_m22_report_resubmitted',
-        'proto_m22_report_accepted',
-        'proto_m22_report_window_closed',
+        'proto_m22_returned_line_placed',
+        'proto_m22_returned_submitted',
+        'proto_m22_returned_setback_presented',
+        'proto_m22_returned_setback_acknowledged',
+        'proto_m22_returned_register_inspected',
+        'proto_m22_returned_code_attached',
+        'proto_m22_returned_resubmitted',
+        'proto_m22_returned_accepted',
+        'proto_m22_returned_report_placed',
+        'proto_m22_returned_withdrawn',
+        'proto_m22_returned_rating_presented',
+        'proto_m22_returned_rating_answered',
+        'proto_m22_returned_rating_declined',
+        'proto_m22_returned_window_closed',
       ]),
     );
     expect(
       m22Events
-        .filter((e) => e.event_type === 'proto_m22_report_submitted')
-        .map((e) => meta(e).outcome),
-    ).toEqual(['setback', 'returned_again', 'accepted']);
+        .filter((e) => e.event_type === 'proto_m22_returned_submitted')
+        .map((e) => [meta(e).report, meta(e).outcome]),
+    ).toEqual([
+      ['o1', 'setback'],
+      ['o1', 'returned_again'],
+      ['o1', 'accepted'],
+      ['o2', 'setback'],
+    ]);
 
     // M21 and M22 share no event, object or counter.
     expect(
@@ -783,10 +850,10 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
 
     expect(feedback).toContain('unchanged');
     rp = await returnProbe(page);
-    expect(rp.m22.repeated_unchanged_action).toBe(1);
+    expect(rp.m22.o1.repeated_unchanged_action).toBe(1);
 
     for (const [slot, lineId] of placed.entries()) {
-      await attachTag(page, slot, M22_TAG[lineId]);
+      await attachCode(page, slot, codeFor(lineId));
     }
 
     feedback = await submitReport(page);
@@ -794,9 +861,10 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     await clickElement(page, 'leave');
     await waitSurface(page, false);
     rp = await returnProbe(page);
-    expect(rp.m22.recovery_complete).toBe(true);
+    expect(rp.m22.o1.recovery_complete).toBe(true);
+    expect(rp.m22.o2.window).toBe('open'); // report 2 placed, then left
     expect(rp.m21.o1.accepted).toBe(false);
-    expect(await itemStatus(page, 'M22')).toBe('completed');
+    expect(await itemStatus(page, 'M22')).toBe('open');
     expect(await itemStatus(page, 'M21')).toBe('open');
 
     // Press B left untouched with sufficient exposure: a valid observation.
@@ -836,7 +904,7 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     rp = await returnProbe(page);
     expect(rp.m21.window).toBe('open');
     expect(rp.m21.sections_consulted).toEqual(['s1_identify']);
-    expect(rp.m22.phase).toBe('accepted');
+    expect(rp.m22.o1.phase).toBe('accepted');
     expect(rp.m20.availability.history).toBe('missing');
     expect(
       (await eventsByType(page, 'proto_m20_antenna_resume_unavailable')).length,
@@ -993,42 +1061,48 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
 
     await submitReport(page);
     await keyActivate(page, 'acknowledge');
-    await attachTag(page, 0, M22_TAG[placed[0]]);
+    await attachCode(page, 0, codeFor(placed[0]));
 
     // Held ENTER on the focused submit activates ONCE (no double submission).
-    const before = (await returnProbe(page)).m22.submissions;
+    const before = (await returnProbe(page)).m22.o1.submissions;
 
     await keyActivate(page, 'submit');
     await page.waitForTimeout(200);
 
-    const afterOne = (await returnProbe(page)).m22.submissions;
+    const afterOne = (await returnProbe(page)).m22.o1.submissions;
 
     expect(afterOne).toBe(before + 1);
     await hold(page, 'Enter', 900);
     await page.waitForTimeout(300);
-    expect((await returnProbe(page)).m22.submissions).toBeLessThanOrEqual(
+    expect((await returnProbe(page)).m22.o1.submissions).toBeLessThanOrEqual(
       afterOne + 1,
     );
     expect(
-      (await returnProbe(page)).m22.repeated_unchanged_action,
+      (await returnProbe(page)).m22.o1.repeated_unchanged_action,
     ).toBeLessThanOrEqual(1);
 
-    await clickElement(page, 'withdraw');
-    await waitSurface(page, false);
+    // WITHDRAW report 1: a completed observation with recovery false; report
+    // 2 is placed at once (the desk stays open on it).
+    await clickElement(page, 'withdraw_o1');
+    await page.waitForTimeout(400);
     rp = await returnProbe(page);
-    expect(rp.m22).toMatchObject({
+    expect(rp.m22.o1).toMatchObject({
       window: 'closed',
       exit: 'stopped',
       stop_choice: 'withdrawn',
       setback_presented: true,
       setback_comprehension: true,
-      revision_started: true,
+      revision_begun: true,
       recovery_complete: false,
+      exited: true,
     });
-    expect((await validityRecord(page, OPPORTUNITY.m22)).validity).toBe(
+    expect(rp.m22.active).toBe('o2');
+    expect((await validityRecord(page, OPPORTUNITY.m22o1)).validity).toBe(
       'valid',
     );
-    expect(await itemStatus(page, 'M22')).toBe('completed');
+    await clickElement(page, 'leave');
+    await waitSurface(page, false);
+    expect(await itemStatus(page, 'M22')).toBe('open');
 
     // The M25 notice survives a surface open/close and reads the same.
     const noticeBody = await acknowledgeQuestionnaireNotice(page);

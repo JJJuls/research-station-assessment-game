@@ -127,10 +127,11 @@ import {
   m21BenchLeave,
   m21BenchOpen,
   m21Present,
+  m22DeskChipText,
+  m22DeskDone,
   m22DeskLeave,
   m22DeskOpen,
   m22Present,
-  m22State,
   m25AcknowledgeNotice,
   m25PresentNotice,
   m25State,
@@ -681,7 +682,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       'Shift Report Desk',
       ['workshop_return'],
       4,
-      () => m22State().phase === 'accepted' || m22State().phase === 'closed',
+      () => m22DeskDone(),
     );
 
     // ——— Outbound handover desk (tray + the M25 questionnaire notice) ———
@@ -809,19 +810,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
     this.benchChip?.setText(m21BenchChipText(live));
 
-    const m22 = m22State();
-
-    this.deskChip?.setText(
-      !live
-        ? 'no report due'
-        : m22.phase === 'accepted'
-          ? 'shift report accepted'
-          : m22.phase === 'returned'
-            ? 'shift report RETURNED — revision open'
-            : m22.phase === 'closed'
-              ? 'shift report closed'
-              : 'shift report due',
-    );
+    this.deskChip?.setText(m22DeskChipText(live));
 
     const tray = handoverTray();
     const placed = [

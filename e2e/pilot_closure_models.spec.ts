@@ -245,9 +245,7 @@ test.describe('Utility & Core closure model (pure)', () => {
 
     // MAJ-9: an open stopping-rule window (M22) blocks but carries no hint.
     const stopping = mixedTerminalRegistry().map((r) =>
-      r.opportunity_id === 'proto_m22_report_revision'
-        ? open(r.opportunity_id)
-        : r,
+      r.opportunity_id === 'proto_m22_returned_o1' ? open(r.opportunity_id) : r,
     );
     const stoppingReadiness = deriveRouteReadiness(
       deriveCoverage(stopping),

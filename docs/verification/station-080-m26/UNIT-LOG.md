@@ -2112,6 +2112,210 @@ truthful feedback, relevant restudy and revised applications`);
   (`proto_m21_manual_*` keeps its meaning), `ScoringManager`,
   `docs/research/**`, `docs/scientific/**`, package files, tool configs,
   settings; every existing return-shift helper keeps its option indices.
-- **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
-  deleted. Next unit: U11 M22 (two setback reports with the discouragement
-  rating).
+- **Commit:** one local commit (`9364867`); nothing pushed, merged,
+  tagged, deployed or deleted. Next unit: U11 M22 (two setback reports with
+  the discouragement rating).
+
+## U11 — M22 two setback reports with the discouragement rating
+
+- **Authorities used:** as U6–U10 (the owner's 24 September instruction;
+  the register §2 M22 row — "Hybrid … `m22_revisions_begun`: / presented
+  requirements (2 planned); `m22_discouragement_ratings`: two 1–5 ratings
+  with recall delay" — §3, §5.2 and §5.5 (planned denominator: presented
+  requirements, two planned) and `registerV3.ts` ("Two short reports with
+  genuine new requirements after the other PDD tasks; revision or exit;
+  after both choices, one five-option discouragement rating per report
+  with recall delay"; the ordinal companion "missing or declined rating →
+  null (never a midpoint)"); `protocol.ts` (the pinned
+  `M22_DISCOURAGEMENT_PROMPT` and the five `M22_DISCOURAGEMENT_OPTIONS`);
+  the matrix M22 row; the addendum §3 row). The execution specification
+  file remains missing (reported under U6).
+- **Objective:** replace the single handover report (one standardised
+  criterion, no rating) with two short reports at the shift report desk,
+  each with its own genuine newly revealed requirement after a valid first
+  submission; on each report the participant revises (a feedback-consistent
+  edit after acknowledging the returned note) or exits (withdraw); after
+  both reports are decided, one five-option discouragement rating per
+  report, recall delay recorded; a missing or declined rating is null.
+- **Scientific rationale:** register M22 row (MPS Appendix A 4,
+  Persistence Despite Difficulty; hybrid coverage — behaviour + an
+  in-game self-report); primary `m22_revisions_begun` = reports on which a
+  revision was begun after the requirement / reports whose requirement was
+  presented (planned 2 — one presented ⇒ `incomplete`); an exit after the
+  requirement without a revision = observed 0 for that report; a report
+  never submitted (requirement never presented) is outside the
+  denominator; the v2 disposition rule stays (the requirement presented but
+  never acknowledged ⇒ invalid; acknowledged and left to the review ⇒
+  censored). Companion `m22_discouragement_ratings` = per report the
+  1–5 rating and the recall delay (rating time − requirement time); a
+  declined or missing rating ⇒ null, never a midpoint; never behavioural
+  validation. The v2 validity gate stays: a valid initial response, the
+  returned note acknowledged before editing, recovery attainable,
+  actionable counts (never the value), no blame framing, the same
+  criteria for every form.
+- **Participant-facing behaviour:** the Shift Report Desk (Records
+  Workshop, return shift; station, verb and position unchanged) holds
+  report 1 of 2 — the handover report (six shift lines, four slots, at
+  least three; returned once with the work-order-tag requirement and the
+  register that opens beside it) — then report 2 of 2, the outbound
+  consignment note (five outbound items, four slots, at least three;
+  returned once with the destination-bay requirement and the bay chart
+  that opens beside it). Acknowledge (K), attach codes, Resubmit (S),
+  "Withdraw the report" (the explicit exit), Leave (ESC). When report 1 is
+  accepted or withdrawn, report 2 is placed at once (a press inside the
+  1.5 s settle window is refused). When both reports are decided the desk
+  shows the rating for each returned report: the pinned question, five
+  labelled options and "Prefer not to say"; Leave keeps the ratings due
+  (they are shown again on reopen). No praise, no count of anything, no
+  item wording.
+- **Allowed files:** `src/pilot/return/m22ReportModel.ts` (the pure model,
+  rewritten for two reports + the ratings), `src/pilot/windows/returnWindows.ts`
+  (the M22 block, state, windows, probe), `src/pilot/windows/returnSurfaceModels.ts`
+  (the M22 surface), `src/pilot/return/returnEpisodeModel.ts` (window
+  rows), `src/scenes/RecordsWorkshopScene.ts` (the desk chip / closure
+  predicate), `src/world/interactionRegistry.ts` (the desk's `window` id),
+  `src/measurement/registerV3.ts` (M22 v3 route),
+  `src/measurement/features/m22.ts` (new), `src/measurement/features/index.ts`;
+  `e2e/m22_setbacks.spec.ts` (new pure), `e2e/m22_setbacks_route.spec.ts`
+  (new browser, the participant route), `e2e/returnHelpers.ts`,
+  `e2e/pilot_return.spec.ts`, `e2e/pilot_return_models.spec.ts`,
+  `e2e/pilot_return_capture.spec.ts`; `docs/verification/station-080-m26/**`.
+- **Prohibited areas:** common, plus M20 / M21 / M25 code, `protocol.ts`
+  (the pinned stems are read, never edited), `zoneSites.ts`,
+  `WorkSurfaceScene.ts`, the v2 ledger.
+- **Entry state:** HEAD `9364867` (U10), clean tree, branch
+  `fable-professional-world-rescue-v2`.
+- **Success behaviour:** both reports reachable in sequence; each report's
+  first valid submission is returned with its own requirement; revision
+  begun / exit recorded per report; the ratings shown only after both
+  reports are decided, one per returned report, with the recall delay; the
+  extractor reproduces revisions / presented requirements and the two
+  ratings from the raw family.
+- **Failure/recovery:** ESC / Leave keeps a report (or the ratings) open;
+  Withdraw is the explicit exit; the review closes an open report by the
+  v2 disposition rule and marks a never-opened one absent; a report left
+  unrated at the review ⇒ null rating; a technical failure closes
+  `technical_failure`.
+- **Telemetry boundary:** family `proto_m22_returned_*` (candidate;
+  suffixes `presented`, `opportunity_opened`, `report_placed`,
+  `line_placed`, `line_removed`, `submitted`, `setback_presented`,
+  `setback_acknowledged`, `register_inspected`, `code_attached`,
+  `code_detached`, `unchanged_resubmit`, `resubmitted`, `accepted`,
+  `withdrawn`, `press_refused`, `rating_presented`, `rating_answered`,
+  `rating_declined`, `departed`, `window_closed`, `technical_failure`);
+  opportunity ids `proto_m22_returned_o1` / `o2`, windows
+  `m22_returned_o1` / `o2`; the v2 `proto_m22_report_*` family keeps its
+  v2 meaning in the frozen ledger and is retired from the route; no
+  canonical name or approved formula invented.
+- **Scientific acceptance:** the requirement is presented only after a
+  valid first submission; editing needs the acknowledgement; "revision
+  begun" = a feedback-consistent edit (a code attached) after the
+  acknowledgement; the two reports differ in content and requirement but
+  share the structure; the ratings come after BOTH decisions, use the
+  pinned stem and options verbatim, and a decline is null; no combination
+  of the behaviour and the rating.
+- **Gameplay acceptance:** the desk keeps its station and surface id;
+  keyboard / pointer parity (S submit, K acknowledge, tiles and options
+  activatable); every existing return-shift helper keeps its option
+  indices; legible at 800×600.
+- **Required tests:** `npm.cmd run lint:tsc`, `npm.cmd run build`,
+  ESLint + Prettier (`endOfLine: auto`) on touched files, pure
+  `m22_setbacks` + `pilot_return_models` + `m26_protocol_foundation` +
+  `pilot_coverage` + `pilot_closure_models` + `pilot_route_model` +
+  `evidence_ledger`; browser `m22_setbacks_route` (the participant route
+  to the return shift, as U10).
+- **Required screenshots:** report 2's returned note with its chart, and
+  the rating stage, at 800×600 (evidence, not committed).
+- **Stop conditions:** common.
+- **Model:** Fable; reviewer stand-ins as declared in U6.
+- **Commit expectation:** `feat(m22): two setback reports with revision
+or exit and a discouragement rating per report`.
+
+- **Reviewer availability:** as U6–U10 — the `scientific-reviewer` and
+  `gameplay-reviewer` definitions run verbatim through read-only Opus
+  stand-ins; the `test-reviewer` scope covered by the implementer's
+  recorded runs below.
+- **Contract amendment (recorded, not silent):** the allowlist gained
+  `e2e/pilot_closure_models.spec.ts` — its MAJ-9 fixture named the retired
+  v2 route id `proto_m22_report_revision`; the fixture now uses
+  `proto_m22_returned_o1` (one string, no logic). The family name in the
+  contract's telemetry boundary was also changed during the unit from the
+  planned `proto_m22_setback_*` to `proto_m22_returned_*`: the frozen v2
+  ledger keeps a legacy event `proto_m22_setback_shown`, which the planned
+  prefix would have swallowed (the coverage schedule's disjointness test
+  caught it). Both changes are in the contract text above and in this
+  record.
+- **Review round 1 (read-only, on the working tree after the first
+  browser run):** scientific: concerns found — 1 high / 7 medium / 8 low +
+  10 owner questions; gameplay: usable with noted friction — 1 high /
+  5 medium / 7 low. Material findings and their resolution:
+  - Withdraw on a returned, unacknowledged note was classed invalid and
+    excluded (S-H1 high): the contract's own flow is "acknowledge … then
+    revise or exit" — fixed: Withdraw is offered while assembling (no
+    requirement yet, outside the denominator) and, after a return, only
+    once the note is acknowledged; a press is refused with a record
+    (`press_refused`, `unacknowledged`); the alternative (an observed 0
+    with a flag) is the owner's (§5.108).
+  - The rating screens shared element ids, had no settle window and
+    focused option 1 first (G-H1 high, S-M1, G-M1): fixed — each screen
+    is presented on its own (`rating_presented` per report with
+    `position` / `total`), a press inside 1 s of the presentation is
+    refused and logged (`press_refused`, `rating_settling`), the pinned
+    prompt is the first focusable element and does nothing when
+    activated, the answer records `since_presented_ms` and `position`,
+    and every answer / decline is confirmed ("Recorded.").
+  - A review-closed report whose revision had already begun was censored
+    (S-M2): fixed as M21 §5.102 — it keeps its observed 1; only a 0 is
+    ever censored (pure-tested).
+  - Keyboard focus stayed on Withdraw across the report switch (G-M2):
+    fixed — per-report ids `withdraw_o1` / `withdraw_o2`, so report 2's
+    first focus falls to its tray; the placement settle window already
+    refused a carried-over press.
+  - "After the other PDD tasks" is not enforced (S-M5): the desk stays
+    open through the return shift; the entry snapshot now records
+    `bench_cases_closed` (M21) beside `previous_report_decision`; the
+    gating alternative is the owner's (§5.113).
+  - Recall delay confounded with rating order (S-M6): `position` is
+    exported per rating; the order question is the owner's (§5.114).
+  - A zero denominator made only of unacknowledged returned reports was
+    "interrupted" (S-L4): fixed — `understanding_failed`; "interrupted"
+    is kept for a censored report.
+  - Rating-stage departures were unlogged (S-L3, G-L6): fixed —
+    `rating_departed` with the position and time since presentation.
+  - The chip "RETURNED — revision open" framed the revision (G-M4): fixed
+    — "returned · open"; the decision feedback now says when the question
+    follows (G-L2); the question is numbered by the ratings actually due
+    (G-L1); the help line separates "Leave (come back later)" from
+    "Withdraw ends the report" (G-L3); `acknowledged` is exported beside
+    the ratings (S-L8).
+  - Owner questions, no change: a fixed, foreseeable report 2 (S-M3,
+    §5.111); the requirement's difficulty, the live `done` slot state and
+    a mismatched code counting as a revision begun (S-M4, G-L4, §5.112);
+    departure vs exit (§5.110); the sixth "Prefer not to say" option and
+    the numbered labels (S-L1, S-L2, §5.115); no rating for a report the
+    review closed (§5.116); a technical failure voiding both reports
+    (S-L5) and the absence of a reload guard (S-L6) — documented as
+    U10; acknowledgement as the comprehension marker (S-L7) — documented.
+- **Review round 2:** not run as a separate reviewer pass — the fixes are
+  bounded to the cited findings and covered by the extended pure specs
+  and the rerun browser spec; a fresh review of the review fixes is folded
+  into U24 (precedent U2-R … U10).
+- **Verification results (final tree):** `npm.cmd run lint:tsc` 0 · `npm.cmd run build` 0 · ESLint + Prettier (`endOfLine: auto`) on `src` and `e2e` 0 and on every touched doc · pure `m22_setbacks` (2, extended for the review fixes) + `pilot_return_models` (test 10 rewritten for two reports and the ratings) + `m21_cases` + `m26_protocol_foundation` + `pilot_coverage` + `pilot_closure_models` + `pilot_route_model` + `evidence_ledger` 80/80 · browser `m22_setbacks_route` (the full participant route: Dock → Concourse offers → Workshop restoration shift → exterior shift → the purposeful return → Kai handover → gauge → Vale's check-in → the desk): run 1 (before the review fixes) 1/1 (4.5 min); run 2 (after the fixes) failed only on my own test timing — the "early" rating press landed 1.7 s after the screen's presentation, past the 1 s window, and was correctly recorded; run 3 (the press moved to 150 ms after the decision) 1/1 (3.2 min) — `test-results/m22-report2-returned-800x600.png` (the consignment note returned with the bay chart) and `test-results/m22-rating-800x600.png` (the rating stage: focus on the prompt, "1 OF 2", the decision feedback naming the question) inspected and copied to the scratchpad, not committed · `pilot_return` / `pilot_return_capture` updated but not run in this unit (they ride the same route) · `verify-unit` PASS (allowlist + the recorded amendment) · `git diff --check` clean.
+- **Deviations:** the contract's telemetry boundary gained
+  `rating_departed` and the `press_refused` reasons `unacknowledged`,
+  `placement_settling` and `rating_settling`; the family renamed and the
+  allowlist expanded as recorded above; Withdraw's element id is per
+  report; the rating screens carry their own 1 s settle window
+  (`M22_RATING_SETTLE_MS`); `CLAUDE_UNIT_ALLOWLIST` enforced by
+  discipline + `verify-unit`; reviewer stand-ins as declared; the
+  execution specification file remains missing.
+- **Not changed:** M20 / M21 / M25 code, `protocol.ts` (the pinned stem
+  and options are read verbatim), `zoneSites.ts`, `WorkSurfaceScene.ts`,
+  the v2 ledger (`proto_m22_report_*` and `proto_m22_setback_shown` keep
+  their meaning), `ScoringManager`, `docs/research/**`,
+  `docs/scientific/**`, package files, tool configs, settings; every
+  existing return-shift helper keeps its option indices.
+- **Commit:** one local commit (hash recorded at the start of U12);
+  nothing pushed, merged, tagged, deployed or deleted. Next unit: U12
+  M24/M26 (with the deferred M25 reload check and the M24/M26 integration
+  checks).

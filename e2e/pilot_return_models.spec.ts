@@ -69,15 +69,17 @@ import {
   m21SwitchMode,
 } from '../src/pilot/return/m21ManualModel';
 import {
-  createM22State,
-  M22_CRITERION_TEXT,
+  createM22RatingsState,
+  createM22ReportState,
   M22_EVENT_SUFFIXES,
   M22_FAMILY,
-  M22_LINES,
-  M22_OPPORTUNITY_ID,
-  M22_WINDOW_ID,
+  M22_OPPORTUNITY_IDS,
+  M22_REPORT_DEFS,
+  M22_REPORTS,
+  M22_WINDOW_IDS,
   m22Acknowledge,
-  m22AttachTag,
+  m22AttachCode,
+  m22Close,
   m22ClosureDisposition,
   m22Depart,
   m22Enter,
@@ -85,6 +87,9 @@ import {
   m22OutcomeText,
   m22PlaceLine,
   m22Progress,
+  m22Rate,
+  m22RatingsComplete,
+  m22RatingsDue,
   m22RawComponents,
   m22RemoveLine,
   m22Submit,
@@ -686,107 +691,127 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
     expect(M21_SECTION_REFERENCES.s2_post_rule).toEqual(['s4_code_table']);
   });
 
-  test('10. M22 standardised setback: a valid first submission is returned with one fixed criterion; editing needs the acknowledgement; unchanged, useful and recovering resubmissions are distinct; no random success', () => {
-    for (const form of ['form_a', 'form_b'] as const) {
-      const s = createM22State(form);
+  test("10. M22 two reports (Unit 11): a valid first submission is returned with the report's own fixed requirement; editing needs the acknowledgement; unchanged, useful and recovering resubmissions are distinct; the ratings come only after both decisions and a decline is null", () => {
+    for (const report of M22_REPORTS) {
+      const def = M22_REPORT_DEFS[report];
 
-      expect(m22Submit(s, 0)).toBe('rejected_incomplete'); // not entered
-      expect(m22Enter(s, 100)).toBe(true);
+      for (const form of ['form_a', 'form_b'] as const) {
+        const s = createM22ReportState(report, form);
 
-      const tray = m22TrayOrder(form).map((line) => line.id);
+        expect(m22Submit(s, 0)).toBe('rejected_incomplete'); // not entered
+        expect(m22Enter(s, 100)).toBe(true);
 
-      expect(new Set(tray)).toEqual(new Set(M22_LINES.map((l) => l.id)));
+        const tray = m22TrayOrder(def, form).map((line) => line.id);
 
-      // Fewer than three lines is a validity precondition, never the setback.
-      expect(m22PlaceLine(s, 0, tray[0], 200)).toBe(true);
-      expect(m22PlaceLine(s, 0, tray[1], 201)).toBe(false); // occupied
-      expect(m22PlaceLine(s, 1, tray[0], 202)).toBe(false); // duplicate
-      expect(m22PlaceLine(s, 1, tray[1], 203)).toBe(true);
-      expect(m22Submit(s, 300)).toBe('rejected_incomplete');
-      expect(s.setback_presented_at_ms).toBeNull();
-      expect(m22PlaceLine(s, 2, tray[2], 310)).toBe(true);
+        expect(new Set(tray)).toEqual(new Set(def.lines.map((l) => l.id)));
 
-      // The setback is standardised: same outcome and text for every form.
-      expect(m22Submit(s, 400)).toBe('setback');
-      expect(s.phase).toBe('returned');
-      expect(s.setback_presented_at_ms).toBe(400);
-      expect(s.initial_action_at_ms).toBe(400);
-      expect(m22OutcomeText('setback', s)).toBe(M22_CRITERION_TEXT);
+        // Fewer than the minimum lines is a validity precondition, never the setback.
+        expect(m22PlaceLine(s, 0, tray[0], 200)).toBe(true);
+        expect(m22PlaceLine(s, 0, tray[1], 201)).toBe(false); // occupied
+        expect(m22PlaceLine(s, 1, tray[0], 202)).toBe(false); // duplicate
+        expect(m22PlaceLine(s, 1, tray[1], 203)).toBe(true);
+        expect(m22Submit(s, 300)).toBe('rejected_incomplete');
+        expect(s.setback_presented_at_ms).toBeNull();
+        expect(m22PlaceLine(s, 2, tray[2], 310)).toBe(true);
 
-      // Editing before the acknowledgement is refused (comprehension gate);
-      // a submit before it is counted, never classified as behaviour.
-      expect(m22AttachTag(s, tray[0], 'WO-11', 500)).toBe(false);
-      expect(m22Submit(s, 510)).toBe('refused_unacknowledged');
-      expect(s.submit_before_ack).toBe(1);
-      expect(m22Acknowledge(s, 600)).toBe(true);
-      expect(m22Acknowledge(s, 601)).toBe(false);
+        // The requirement is standardised per report: same outcome and text for every form.
+        expect(m22Submit(s, 400)).toBe('setback');
+        expect(s.phase).toBe('returned');
+        expect(s.setback_presented_at_ms).toBe(400);
+        expect(s.initial_action_at_ms).toBe(400);
+        expect(m22OutcomeText('setback', s)).toBe(def.criterion_text);
 
-      // Unchanged resubmission: same note, counted, no new information.
-      expect(m22Submit(s, 700)).toBe('unchanged');
-      expect(s.unchanged_resubmits).toBe(1);
-      expect(s.resubmitted_at_ms).toBeNull();
+        // Editing before the acknowledgement is refused (comprehension gate);
+        // a submit before it is counted, never classified as behaviour.
+        expect(m22AttachCode(s, tray[0], def.lines[0].code, 500)).toBe(false);
+        expect(m22Submit(s, 510)).toBe('refused_unacknowledged');
+        expect(s.submit_before_ack).toBe(1);
+        expect(m22Acknowledge(s, 600)).toBe(true);
+        expect(m22Acknowledge(s, 601)).toBe(false);
 
-      // Inspection, a mismatched tag (consistent edit, wrong value), a
-      // non-consistent edit, then the matching tags → recovery.
-      expect(m22InspectRegister(s)).toBe(true);
-      const line0 = M22_LINES.find((l) => l.id === tray[0])!;
-      const otherTag = M22_LINES.find((l) => l.id !== tray[0])!.tag;
+        // Unchanged resubmission: same note, counted, no new information.
+        expect(m22Submit(s, 700)).toBe('unchanged');
+        expect(s.unchanged_resubmits).toBe(1);
+        expect(s.resubmitted_at_ms).toBeNull();
 
-      expect(m22AttachTag(s, tray[0], otherTag, 800)).toBe(true);
-      expect(s.feedback_consistent_edits).toBe(1);
-      expect(s.mismatched_tag_edits).toBe(1);
-      expect(s.strategy_change_at_ms).toBe(800);
-      expect(m22Submit(s, 810)).toBe('returned_again');
-      expect(s.resubmitted_at_ms).toBe(810);
-      expect(m22OutcomeText('returned_again', s)).toContain('3');
-      expect(m22RemoveLine(s, 2, 820)).toBe(true); // other edit
-      expect(s.other_edits).toBe(1);
-      expect(m22PlaceLine(s, 2, tray[2], 830)).toBe(true);
-      expect(m22AttachTag(s, tray[0], line0.tag, 900)).toBe(true);
+        // Inspection, a mismatched code (consistent edit = revision begun,
+        // wrong value), a non-consistent edit, then the matching codes → recovery.
+        expect(m22InspectRegister(s)).toBe(true);
+        const line0 = def.lines.find((l) => l.id === tray[0])!;
+        const otherCode = def.lines.find((l) => l.id !== tray[0])!.code;
 
-      for (const lineId of [tray[1], tray[2]]) {
-        expect(
-          m22AttachTag(
-            s,
-            lineId,
-            M22_LINES.find((l) => l.id === lineId)!.tag,
-            910,
-          ),
-        ).toBe(true);
-      }
+        expect(m22AttachCode(s, tray[0], otherCode, 800)).toBe(true);
+        expect(s.feedback_consistent_edits).toBe(1);
+        expect(s.mismatched_code_edits).toBe(1);
+        expect(s.strategy_change_at_ms).toBe(800);
+        expect(m22RawComponents(s).revision_begun).toBe(true);
+        expect(m22Submit(s, 810)).toBe('returned_again');
+        expect(s.resubmitted_at_ms).toBe(810);
+        expect(m22OutcomeText('returned_again', s)).toContain('3');
+        expect(m22RemoveLine(s, 2, 820)).toBe(true); // other edit
+        expect(s.other_edits).toBe(1);
+        expect(m22PlaceLine(s, 2, tray[2], 830)).toBe(true);
+        expect(m22AttachCode(s, tray[0], line0.code, 900)).toBe(true);
 
-      expect(m22Progress(s)).toEqual({ tagged: 3, placed: 3 });
-      expect(m22Submit(s, 1000)).toBe('accepted');
-      expect(s.phase).toBe('accepted');
-      expect(m22Submit(s, 1001)).toBe('rejected_incomplete'); // closed to edits
-      expect(m22Depart(s)).toBe(false);
+        for (const lineId of [tray[1], tray[2]]) {
+          expect(
+            m22AttachCode(
+              s,
+              lineId,
+              def.lines.find((l) => l.id === lineId)!.code,
+              910,
+            ),
+          ).toBe(true);
+        }
 
-      const raw = m22RawComponents(s);
+        expect(m22Progress(s)).toEqual({ coded: 3, placed: 3 });
+        expect(m22Submit(s, 1000)).toBe('accepted');
+        expect(s.phase).toBe('accepted');
+        expect(m22Submit(s, 1001)).toBe('rejected_incomplete'); // closed to edits
+        expect(m22Depart(s)).toBe(false);
 
-      expect(raw).toMatchObject({
-        setback_presented: true,
-        revision_started: true,
-        feedback_consistent_edits: 4,
-        resubmitted: true,
-        recovery_complete: true,
-        setback_comprehension: true,
-        inspections: 1,
-        repeated_unchanged_action: 1,
-        other_edits: 2,
-        mismatched_tag_edits: 1,
-        submissions: 4,
-        form,
-      });
-      expect(raw.initial_action_ms).toBe(300);
+        const raw = m22RawComponents(s);
 
-      for (const key of Object.keys(raw)) {
-        expect(key).not.toMatch(/score|resilien|grit|persist|trait/i);
+        expect(raw).toMatchObject({
+          report,
+          requirement_presented: true,
+          revision_begun: true,
+          feedback_consistent_edits: 4,
+          resubmitted: true,
+          recovery_complete: true,
+          setback_comprehension: true,
+          inspections: 1,
+          repeated_unchanged_action: 1,
+          other_edits: 2,
+          mismatched_code_edits: 1,
+          submissions: 4,
+          exited: false,
+          rating: null,
+          form,
+        });
+        expect(raw.initial_action_ms).toBe(300);
+
+        for (const key of Object.keys(raw)) {
+          expect(key).not.toMatch(/score|resilien|grit|persist|trait/i);
+        }
       }
     }
 
+    // The two reports differ in content and requirement but share the structure.
+    expect(M22_REPORT_DEFS.o1.criterion_text).not.toBe(
+      M22_REPORT_DEFS.o2.criterion_text,
+    );
+    expect(
+      M22_REPORT_DEFS.o1.lines.some((line) =>
+        M22_REPORT_DEFS.o2.lines.some((other) => other.id === line.id),
+      ),
+    ).toBe(false);
+    expect(M22_REPORT_DEFS.o1.slots).toBe(M22_REPORT_DEFS.o2.slots);
+    expect(M22_REPORT_DEFS.o1.min_lines).toBe(M22_REPORT_DEFS.o2.min_lines);
+
     // Deterministic: identical inputs → identical outcome sequence.
-    const a = createM22State('form_a');
-    const b = createM22State('form_a');
+    const a = createM22ReportState('o1', 'form_a');
+    const b = createM22ReportState('o1', 'form_a');
 
     for (const s of [a, b]) {
       m22Enter(s, 0);
@@ -797,13 +822,57 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
 
     expect(m22Submit(a, 4)).toBe(m22Submit(b, 4));
     expect(m22RawComponents(a)).toEqual(m22RawComponents(b));
+
+    // Ratings: due only when BOTH reports are decided and only for returned
+    // reports; an answer records the recall delay; a decline is null (never
+    // a midpoint); nothing can be rated twice.
+    const reports = {
+      o1: createM22ReportState('o1', 'form_a'),
+      o2: createM22ReportState('o2', 'form_a'),
+    };
+    const ratings = createM22RatingsState();
+
+    m22Enter(reports.o1, 0);
+    m22PlaceLine(reports.o1, 0, 'l_coupling', 1);
+    m22PlaceLine(reports.o1, 1, 'l_loop', 2);
+    m22PlaceLine(reports.o1, 2, 'l_metal', 3);
+    expect(m22Submit(reports.o1, 1_000)).toBe('setback');
+    m22Acknowledge(reports.o1, 1_100);
+    m22Close(reports.o1, 'withdrawn');
+    expect(m22RatingsDue(reports, ratings)).toEqual([]); // report 2 undecided
+    expect(m22Rate(reports, ratings, 'o1', 3, 1_200)).toBe(false);
+
+    // Report 2 never submitted (no requirement) and left to the review: decided, never rated.
+    m22Enter(reports.o2, 2_000);
+    m22Close(reports.o2, 'closed_at_review');
+    expect(m22RatingsDue(reports, ratings)).toEqual(['o1']);
+    expect(m22RatingsComplete(reports, ratings)).toBe(false);
+    expect(m22Rate(reports, ratings, 'o2', 3, 5_000)).toBe(false);
+    expect(m22Rate(reports, ratings, 'o1', 4, 5_000)).toBe(true);
+    expect(ratings.ratings.o1).toMatchObject({
+      value: 4,
+      declined: false,
+      recall_delay_ms: 4_000,
+    });
+    expect(m22Rate(reports, ratings, 'o1', 1, 5_100)).toBe(false); // once
+    expect(m22RatingsComplete(reports, ratings)).toBe(true);
+    expect(m22RawComponents(reports.o1, ratings.ratings.o1).rating).toEqual({
+      value: 4,
+      declined: false,
+      recall_delay_ms: 4_000,
+    });
+
+    const declined = createM22RatingsState();
+
+    expect(m22Rate(reports, declined, 'o1', null, 6_000)).toBe(true);
+    expect(declined.ratings.o1).toMatchObject({ value: null, declined: true });
   });
 
   test('11. M21 and M22 are independent: different ids, families, objects and state; M22 presentable whatever M21 did; no shared counter', () => {
-    expect(M21_OPPORTUNITY_IDS.o1).not.toBe(M22_OPPORTUNITY_ID);
-    expect(M21_OPPORTUNITY_IDS.o2).not.toBe(M22_OPPORTUNITY_ID);
-    expect(M21_WINDOW_IDS.o1).not.toBe(M22_WINDOW_ID);
-    expect(M21_WINDOW_IDS.o2).not.toBe(M22_WINDOW_ID);
+    expect(M21_OPPORTUNITY_IDS.o1).not.toBe(M22_OPPORTUNITY_IDS.o1);
+    expect(M21_OPPORTUNITY_IDS.o2).not.toBe(M22_OPPORTUNITY_IDS.o2);
+    expect(M21_WINDOW_IDS.o1).not.toBe(M22_WINDOW_IDS.o1);
+    expect(M21_WINDOW_IDS.o2).not.toBe(M22_WINDOW_IDS.o2);
     expect(M21_FAMILY.startsWith(M22_FAMILY)).toBe(false);
     expect(M22_FAMILY.startsWith(M21_FAMILY)).toBe(false);
 
@@ -833,7 +902,7 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
         }
       }
 
-      const desk = createM22State('form_b');
+      const desk = createM22ReportState('o1', 'form_b');
 
       m22Enter(desk, 10);
       m22PlaceLine(desk, 0, 'l_coupling', 11);
@@ -841,9 +910,9 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
       m22PlaceLine(desk, 2, 'l_metal', 13);
       expect(m22Submit(desk, 14)).toBe('setback');
       m22Acknowledge(desk, 15);
-      m22AttachTag(desk, 'l_coupling', 'WO-11', 16);
-      m22AttachTag(desk, 'l_loop', 'WO-12', 17);
-      m22AttachTag(desk, 'l_metal', 'WO-14', 18);
+      m22AttachCode(desk, 'l_coupling', 'WO-11', 16);
+      m22AttachCode(desk, 'l_loop', 'WO-12', 17);
+      m22AttachCode(desk, 'l_metal', 'WO-14', 18);
       expect(m22Submit(desk, 19)).toBe('accepted');
       expect(m21RawComponents(bench).accepted).toBe(false);
       expect(m22RawComponents(desk).recovery_complete).toBe(true);
@@ -917,14 +986,14 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
 
   test('13. missing, invalid and technical failure stay distinct for every return window and never become a low value', () => {
     // M22 closure dispositions.
-    const never = createM22State('form_a');
+    const never = createM22ReportState('o1', 'form_a');
 
     m22Enter(never, 0);
     expect(m22ClosureDisposition(never, 'closed_at_review')).toEqual({
       kind: 'missing',
     });
 
-    const unacknowledged = createM22State('form_a');
+    const unacknowledged = createM22ReportState('o1', 'form_a');
 
     m22Enter(unacknowledged, 0);
     m22PlaceLine(unacknowledged, 0, 'l_coupling', 1);
@@ -940,7 +1009,7 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
       detail: 'setback_not_acknowledged',
     });
 
-    const acknowledged = createM22State('form_a');
+    const acknowledged = createM22ReportState('o1', 'form_a');
 
     m22Enter(acknowledged, 0);
     m22PlaceLine(acknowledged, 0, 'l_coupling', 1);

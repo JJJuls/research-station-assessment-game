@@ -25,17 +25,17 @@ import {
 } from './pilotHelpers';
 import {
   assembleReport,
-  attachTag,
+  attachCode,
   captureErrors,
   clickElement,
   closeSurface,
+  codeFor,
   enterConcourseWithOffers,
   expectNoRuntimeErrors,
   exteriorShift,
   kaiViaLane,
   keyActivate,
   M21_SPEC,
-  M22_TAG,
   openFeedConsole,
   openHandoverDesk,
   openWorkshopSurface,
@@ -220,10 +220,10 @@ test('return, revision & handover — participant-path frames 22–34', async ({
   await clickElement(page, 'register_toggle');
 
   for (const [slot, lineId] of placed.entries()) {
-    await attachTag(page, slot, M22_TAG[lineId]);
+    await attachCode(page, slot, codeFor(lineId));
   }
 
-  // 32 — M22 revised and recovered (accepted).
+  // 32 — M22 report 1 revised and recovered (accepted); report 2 placed.
   await submitReport(page);
   await shot(page, '32-m22-revised-recovered');
   await clickElement(page, 'leave');

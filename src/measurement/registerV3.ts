@@ -1224,6 +1224,30 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'hybrid',
     direction: 'hybrid',
     occasions: 2,
+    // Unit 11: the approved two-report structure with the ratings landed at
+    // the shift report desk (return shift). The v2 single-report family
+    // `proto_m22_report_*` keeps its v2 meaning.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m22_returned_o1', 'proto_m22_returned_o2'],
+      windows: [
+        {
+          id: 'm22_returned_o1',
+          occasion: 'o1',
+          zone: 'records_workshop',
+          episode: 5,
+        },
+        {
+          id: 'm22_returned_o2',
+          occasion: 'o2',
+          zone: 'records_workshop',
+          episode: 5,
+        },
+      ],
+      family_prefixes: ['proto_m22_returned_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Two short reports with genuine new requirements after the other PDD tasks; revision or exit; after both choices, one five-option discouragement rating per report with recall delay.',
     features: [

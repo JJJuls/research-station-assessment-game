@@ -11,6 +11,7 @@ import './m11';
 import './m12';
 import './m17';
 import './m21';
+import './m22';
 import './m25';
 
 export * from './extract';

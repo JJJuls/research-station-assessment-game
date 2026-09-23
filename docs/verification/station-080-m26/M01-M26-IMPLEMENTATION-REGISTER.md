@@ -101,7 +101,7 @@ status at this register version — updated by each unit).
 | M19  | Add second challenge    | 2    | `m19_continuations`: further attempt / eligible difficulty encounters; 0–2                                                                                                                                                                                                                                                     | failed attempts, success, time                                                                                                                                                                                                                | behavioural counterpart | v2-ledger route (one coupling) — planned                                                                                                            |
 | M20  | Extend returns          | 2    | `m20_cued_resumptions`: resumed / eligible unfinished components; 0–2                                                                                                                                                                                                                                                          | spontaneous returns, progress, cue exposure                                                                                                                                                                                                   | behavioural counterpart | v2-ledger route (one uncued resume) — planned                                                                                                       |
 | M21  | Replace revisit score   | 2    | `m21_restudy_revisions`: cases with a relevant restudy (a section bearing on a fault known at the time) AND a revised application / cases whose first application was incorrect and were resolved by the participant (accepted or set aside — a review-closed case keeps its observed 1); 0–2; two first-time successes → null | per-case strategy (first_correct / restudy_and_revise / revise_without_relevant_restudy / restudy_then_exit / exit / unresolved), applications, faults, restudy sections, comprehension context (sections used, reference depth, mode, plate) | partial                 | v3 route: `proto_m21_case_o1` / `o2` (Records Workshop, ep 5) — implemented (U10)                                                                   |
-| M22  | Hybrid                  | 2    | `m22_revisions_begun`: / presented requirements (2 planned)                                                                                                                                                                                                                                                                    | `m22_discouragement_ratings`: two 1–5 ratings with recall delay                                                                                                                                                                               | hybrid                  | v2-ledger route (one report, no rating) — planned                                                                                                   |
+| M22  | Hybrid                  | 2    | `m22_revisions_begun`: reports on which a revision was begun (a code attached after the acknowledgement of the returned note) / reports whose requirement was presented (2 planned; a review-closed report keeps its observed 1 once the revision had begun; a returned note never acknowledged ⇒ excluded)                    | `m22_discouragement_ratings`: two 1–5 ratings, each with its recall delay, its position among the questions and the time since its screen was presented; declined or missing = null, never a midpoint; `acknowledged_reports` beside          | hybrid                  | v3 route: `proto_m22_returned_o1` / `o2` (Records Workshop, ep 5) — implemented (U11)                                                               |
 | M23  | Add second plot         | 2    | `m23_continuations_after_failure`: further search / plots with a failed dig; 0–2                                                                                                                                                                                                                                               | attempts, strategy, success                                                                                                                                                                                                                   | behavioural counterpart | v2-ledger route (one plot) — planned                                                                                                                |
 | M24  | Repair boundary         | 1    | `m24_postknowledge_casts` (first included)                                                                                                                                                                                                                                                                                     | `m24_postknowledge_casts_minus_first` (sensitivity); `m24_unqualified_casts` (pre-knowledge / failed-check behaviour, switch, exit, cap)                                                                                                      | behavioural counterpart | v2-ledger route (acknowledgement, no test) — planned                                                                                                |
 | M25  | Hybrid                  | 1    | `m25_optional_repeats`                                                                                                                                                                                                                                                                                                         | `m25_normality_belief` 1–5                                                                                                                                                                                                                    | hybrid                  | v3 route: `proto_m25_calibration_loops` (Recovery Yard, ep 4) + `proto_m25_normality_belief` (Concourse, ep 5) — implemented (U4)                   |
@@ -740,6 +740,81 @@ names are shown; two-digit register lines and sixteen trials with twelve
 acknowledgements may fatigue; difficulty differs across phases and the
 fixed order shapes where a run of three can end. Owner questions
 §5.87–5.99.\_
+
+_Unit 11 (M22): as-built — two setback reports at the shift report desk
+(return shift; windows `m22_returned_o1` / `m22_returned_o2`, one desk
+object `m22_report_desk`, registry station mapped to report 1). Report 1 =
+the handover report (six work-order lines WO-11…16, four slots, at least
+three; returned once by the receiving desk with the work-order-tag
+requirement and the tag register that opens beside it); report 2 = the
+outbound consignment note (five items, four slots, at least three;
+returned once by the outbound desk with the destination-bay requirement
+and the bay chart beside it); tray order counterbalanced per report from
+the session id, content fixed. Both reports are presented with the
+return shift's work orders; report 1 opens at the desk; when report 1 is
+accepted or withdrawn with the desk open, report 2 is placed at once
+(`report_placed`, its window opened with `input_mode: system`, the
+previous decision and `bench_cases_closed` in the entry snapshot; a
+Submit / Withdraw press inside 1.5 s of the placement is refused,
+`placement_settling`). The requirement appears only after a VALID first
+submission (`submitted` outcome `setback`, `setback_presented`); editing
+needs the acknowledgement (`setback_acknowledged`; a Resubmit before it is
+counted `submit_before_acknowledgement`); "revision begun" = the first code
+attached after the acknowledgement (`code_attached`, whether or not it
+matches — mismatches are counted `mismatched_code_edits`); an unchanged
+resubmission is `unchanged_resubmit`; a resubmission with every placed
+line coded is `accepted` (window `completed`). "Withdraw the report" is
+the explicit exit (`withdrawn`, window `stopped`), offered while
+assembling and, after a return, only once the note is acknowledged (a
+press before that is refused, `press_refused` `unacknowledged`). Leave
+keeps a report open (`departed`); the review closes an open report by the
+v2 disposition rule (accepted ⇒ completed; no requirement ⇒ missing;
+returned and unacknowledged ⇒ invalid `setback_not_acknowledged`;
+acknowledged ⇒ censored) and marks a never-reached one absent. After BOTH
+decisions the desk asks one question per returned report, in report
+order, each on its own screen: the pinned stem and five labelled options
+plus "Prefer not to say"; the screen is logged when presented
+(`rating_presented` with `position` / `total`), a press inside 1 s is
+refused (`rating_settling`), the prompt holds the first focus and does
+nothing, the answer (`rating_answered` / `rating_declined`) carries
+`recall_delay_ms` (from the requirement), `since_presented_ms` and
+`position`; leaving the stage is `rating_departed` and the questions are
+shown again on reopen. Formula `m22_revisions_begun` = reports with a
+revision begun / reports whose requirement was presented and that were
+decided by the participant (accepted or withdrawn) or review-closed after
+the revision had begun; recounted per report from the
+`setback_acknowledged` and `code_attached` sequences (a disagreeing record
+⇒ `technical_failure`); two planned — one ⇒ `incomplete` on 1; no
+requirement ⇒ null `no_eligible_event`; presented and never opened ⇒
+`declined`; never presented ⇒ `not_presented` (`interrupted` after a
+reload); a report open at export ⇒ `pending`; an acknowledged report left
+to the review without a revision ⇒ censored and excluded (null
+`interrupted` when nothing else is eligible); every returned report
+closed unacknowledged ⇒ null `understanding_failed`. Companion
+`m22_discouragement_ratings` = per report `{value, declined,
+recall_delay_ms, position}` or null, with `acknowledged_reports` and the
+count of screens presented beside; all declined ⇒ `declined`; never
+answered ⇒ `pending` before / `interrupted` after the record closure;
+never combined with the behaviour. Extractor
+`src/measurement/features/m22.ts`; tests `e2e/m22_setbacks.spec.ts` (2
+pure: the register row, definitions and pinned stem; the extractor's
+dispositions incl. the review-closed 1, `understanding_failed`, the rating
+settle and the Withdraw gate), `e2e/pilot_return_models.spec.ts` test 10
+(the engine's transactions) and `e2e/m22_setbacks_route.spec.ts`
+(browser, the full participant route to the return shift: report 1
+returned → acknowledged → register → codes → accepted; report 2 placed →
+returned → acknowledged → withdrawn; a refused early press, one rating by
+keyboard, one decline by pointer; offline reproduction 1 of 2 with the
+ratings apart). The v2 single report (`proto_m22_report_\*`, one criterion,
+no rating) is retired from the route; its family — and the legacy
+`proto*m22_setback_shown`— keep their v2 meaning in the ledger.
+Limitations: report 2 follows report 1's return, so its requirement is
+foreseeable and the order is fixed; both requirements are solved by a
+register lookup and the slot's`done` state shows a correct attachment
+live; the recall delay is confounded with the question order (position
+exported); a departure after the acknowledgement closed by the review is
+censored while an explicit Withdraw is an observed 0; a technical failure
+voids both reports' row. Owner questions §5.108–5.117.*
 
 _Unit 10 (M21): as-built — two independent manual cases on the relay
 bench (return shift; windows `m21_case_o1` / `m21_case_o2`, one bench
@@ -1417,3 +1492,64 @@ application / initially incorrect cases).
      or SET ASIDE press inside 1.5 s of the placement is refused.
      Alternatives: open unit 2's window on its first action; a
      participant-acknowledged placement.
+
+The U11 (M22) implementation took the following defaults; each is
+reversible, none changes the register formula (revisions begun / presented
+requirements, two planned) or the pinned rating stem and options.
+
+108. **Withdraw before the acknowledgement (review S-H1).** Default: not
+     offered — after a return, Withdraw appears only once the note is
+     acknowledged, and a press before that is refused with a record
+     (`press_refused`, `unacknowledged`); an exit is only ever recorded
+     against an acknowledged requirement. Alternatives: allow it as an
+     observed 0 with an `unacknowledged_exit` flag; allow it and keep the
+     report invalid (excluded).
+109. **A review-closed report whose revision had begun (review S-M2).**
+     Default: keeps its observed 1 (as M21 §5.102) — only a 0 can be
+     censored. Alternative: censor every review-closed report.
+110. **Departure vs exit.** Default: a report left open after the
+     acknowledgement and closed by the review is censored and excluded;
+     only Withdraw is the observed exit (as §5.101). Alternative: departure
+     - review closure as an exit (the M25 §5.24 reading); a distinct
+       `departure_exit` code beside the feature.
+111. **Predictability and order of report 2 (review S-M3).** Default: a
+     fixed order (handover report, then the consignment note), so the
+     second requirement is foreseeable once the first has been seen; the
+     tray order is counterbalanced per report and `previous_report_decision`
+     is recorded. Alternatives: counterbalance the report order; a second
+     report that is not always returned (this would change the planned
+     denominator).
+112. **Difficulty of the requirement (review S-M4, gameplay L4).** Default:
+     each requirement is met by a register / chart lookup; a placed line's
+     slot shows the `done` state as soon as a code is attached (the shared
+     surface's live preview); any code attached after the acknowledgement
+     counts as a revision begun and a mismatched code is counted beside
+     (`mismatched_code_edits`), never as a failure. Alternatives: count
+     only a matching code; hide the live slot state; a requirement that
+     needs more than a lookup.
+113. **"After the other PDD tasks" (review S-M5).** Default: not enforced —
+     the desk is open through the return shift; the entry snapshot records
+     `bench_cases_closed` (M21) and `previous_report_decision`.
+     Alternative: gate the desk behind the bench and the console.
+114. **Rating order and the recall delay (review S-M6).** Default: the
+     questions follow the report order (report 1 first), so the recall
+     delay is longer for report 1 by construction; `position` is exported
+     with every rating. Alternatives: counterbalance the question order;
+     ask about report 2 first.
+115. **The decline option and the labels (review S-L1, S-L2).** Default:
+     "Prefer not to say" is a sixth control beside the five pinned options
+     (a decline is null, never a midpoint) and the options are shown as
+     "n — label" with the digit as the hotkey. Alternatives: no decline
+     control (leaving is the only non-answer); unnumbered labels.
+116. **A rating for a report the review closed.** Default: none — the
+     questions are asked only at the desk after both decisions, so a
+     participant who never decides both reports before the review is
+     never asked (companion `interrupted`); an unacknowledged returned
+     report, if it were ever rated, would be excluded from the behaviour
+     row but keep its rating beside. Alternative: ask the due questions at
+     the review.
+117. **The rating screen's settle window (gameplay H1, review S-M1).**
+     Default: each screen is presented on its own; a press within 1 s of
+     the presentation is refused and logged; the prompt is the first
+     focusable element and does nothing when activated. Alternatives: a
+     longer window; a confirm step before the answer is recorded.

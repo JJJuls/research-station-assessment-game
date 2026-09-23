@@ -82,30 +82,44 @@ import {
 } from '../return/m21ManualModel';
 import type {
   M22Form,
-  M22State,
+  M22RatingsState,
+  M22Report,
+  M22ReportState,
   M22SubmitOutcome,
 } from '../return/m22ReportModel';
 import {
-  createM22State,
+  createM22RatingsState,
+  createM22ReportState,
   M22_ENTRY_STATE_VERSION,
   M22_FAMILY,
-  M22_OPPORTUNITY_ID,
-  M22_WINDOW_ID,
+  M22_OPPORTUNITY_IDS,
+  M22_PLACE_SETTLE_MS,
+  M22_RATING_SETTLE_MS,
+  M22_REPORT_DEFS,
+  M22_REPORTS,
+  M22_WINDOW_IDS,
   m22Acknowledge,
-  m22AttachTag,
+  m22AttachCode,
+  m22CanWithdraw,
   m22Close,
   m22ClosureDisposition,
+  m22Decided,
   m22Depart,
-  m22DetachTag,
+  m22DetachCode,
   m22Enter,
   m22InspectRegister,
   m22Open,
   m22PlaceLine,
+  m22PresentRating,
   m22Progress,
+  m22Rate,
+  m22RatingsComplete,
+  m22RatingsDue,
+  m22RatingSettling,
   m22RawComponents,
   m22RemoveLine,
   m22Submit,
-  m22UntaggedLines,
+  m22UncodedLines,
 } from '../return/m22ReportModel';
 import type { M25State } from '../return/m25HandoffModel';
 import {
@@ -138,7 +152,8 @@ export interface M22UiState {
 
 export interface ReturnEpisodeState {
   m21: Record<M21Case, M21CaseState>;
-  m22: M22State;
+  m22: Record<M22Report, M22ReportState>;
+  m22_ratings: M22RatingsState;
   m22_ui: M22UiState;
   m25: M25State;
   /** Feed-console indoor stage settling (timed action) — presentation. */
@@ -152,7 +167,7 @@ export interface ReturnEpisodeState {
 
 interface ReturnWindows {
   m21: Record<M21Case, ItemWindow>;
-  m22: ItemWindow;
+  m22: Record<M22Report, ItemWindow>;
   m25: ItemWindow;
 }
 
@@ -187,17 +202,32 @@ function buildWindows(s: ReturnEpisodeState): ReturnWindows {
         counterbalance: s.m21.o2.form,
       }),
     },
-    m22: new ItemWindow({
-      item: 'M22',
-      opportunityId: M22_OPPORTUNITY_ID,
-      windowId: M22_WINDOW_ID,
-      entryStateVersion: M22_ENTRY_STATE_VERSION,
-      family: M22_FAMILY,
-      scene: SCENE,
-      objectId: 'm22_report_desk',
-      form: s.m22.form,
-      counterbalance: s.m22.form,
-    }),
+    m22: {
+      o1: new ItemWindow({
+        item: 'M22',
+        opportunityId: M22_OPPORTUNITY_IDS.o1,
+        windowId: M22_WINDOW_IDS.o1,
+        entryStateVersion: M22_ENTRY_STATE_VERSION,
+        family: M22_FAMILY,
+        scene: SCENE,
+        objectId: 'm22_report_desk',
+        occasion: 'o1',
+        form: s.m22.o1.form,
+        counterbalance: s.m22.o1.form,
+      }),
+      o2: new ItemWindow({
+        item: 'M22',
+        opportunityId: M22_OPPORTUNITY_IDS.o2,
+        windowId: M22_WINDOW_IDS.o2,
+        entryStateVersion: M22_ENTRY_STATE_VERSION,
+        family: M22_FAMILY,
+        scene: SCENE,
+        objectId: 'm22_report_desk',
+        occasion: 'o2',
+        form: s.m22.o2.form,
+        counterbalance: s.m22.o2.form,
+      }),
+    },
     m25: new ItemWindow({
       item: 'M25',
       opportunityId: M25_OPPORTUNITY_ID,
@@ -232,12 +262,23 @@ export function returnEpisode(): ReturnEpisodeState {
           ]),
         ),
       },
-      m22: createM22State(
-        assignCounterbalance<M22Form>(sessionId, 'm22_report_form', [
-          'form_a',
-          'form_b',
-        ]),
-      ),
+      m22: {
+        o1: createM22ReportState(
+          'o1',
+          assignCounterbalance<M22Form>(sessionId, 'm22_report_o1_form', [
+            'form_a',
+            'form_b',
+          ]),
+        ),
+        o2: createM22ReportState(
+          'o2',
+          assignCounterbalance<M22Form>(sessionId, 'm22_report_o2_form', [
+            'form_a',
+            'form_b',
+          ]),
+        ),
+      },
+      m22_ratings: createM22RatingsState(),
       m22_ui: { selected: null, registerOpen: false },
       m25: createM25State(),
       m20_settling_until_ms: null,
@@ -263,7 +304,8 @@ export function declareReturnWindows() {
 
   w.m21.o1.declare();
   w.m21.o2.declare();
-  w.m22.declare();
+  w.m22.o1.declare();
+  w.m22.o2.declare();
   w.m25.declare();
 }
 
@@ -1053,59 +1095,223 @@ export function m21BenchChipText(live: boolean): string {
       : `${unit} on bench · unit 2 of 2`;
 }
 
-// ——— M22 — shift report setback / revision ———————————————————————————————
+// ——— M22 — two setback reports + the discouragement ratings ———————————————
 
-export function m22Present(nowMs: number) {
-  const r = returnEpisode();
-  const w = returnWindows().m22;
-
-  w.setComprehension('not_required');
-  w.present(nowMs, { form: r.m22.form, slots: 4, lines: 6 });
+function m22ReportState(report: M22Report): M22ReportState {
+  return returnEpisode().m22[report];
 }
 
-export function m22State(): Readonly<M22State> {
-  return returnEpisode().m22;
+function m22ReportWindow(report: M22Report): ItemWindow {
+  return returnWindows().m22[report];
+}
+
+/** The report on the desk: report 1 until it is decided, then report 2. */
+export function m22ActiveReport(): M22Report {
+  return m22Decided(returnEpisode().m22.o1) ? 'o2' : 'o1';
+}
+
+export function m22AllDecided(): boolean {
+  const r = returnEpisode();
+
+  return M22_REPORTS.every((report) => m22Decided(r.m22[report]));
+}
+
+export function m22Ratings(): Readonly<M22RatingsState> {
+  return returnEpisode().m22_ratings;
+}
+
+/** The report whose rating is due now (both decided, requirement seen, unrated). */
+export function m22RatingDue(): M22Report | null {
+  const r = returnEpisode();
+
+  return m22RatingsDue(r.m22, r.m22_ratings)[0] ?? null;
+}
+
+/** Both reports decided and every due rating answered or declined. */
+export function m22DeskDone(): boolean {
+  const r = returnEpisode();
+
+  return m22RatingsComplete(r.m22, r.m22_ratings);
+}
+
+function m22Snapshot(report: M22Report): Record<string, unknown> {
+  const def = M22_REPORT_DEFS[report];
+
+  return {
+    report,
+    form: m22ReportState(report).form,
+    name: def.name,
+    slots: def.slots,
+    lines: def.lines.length,
+    min_lines: def.min_lines,
+    criterion_hidden_until_first_submission: true,
+    rating_after_both_decisions: true,
+  };
+}
+
+/** Both reports are PRESENTED with the return shift's work orders. */
+export function m22Present(nowMs: number) {
+  for (const report of M22_REPORTS) {
+    const w = m22ReportWindow(report);
+
+    w.setComprehension('not_required');
+    w.present(nowMs, m22Snapshot(report));
+  }
+}
+
+export function m22State(
+  report: M22Report = m22ActiveReport(),
+): Readonly<M22ReportState> {
+  return m22ReportState(report);
 }
 
 export function m22Ui(): M22UiState {
   return returnEpisode().m22_ui;
 }
 
-export function m22DeskOpen(nowMs: number, inputMode: InputMode) {
-  const s = returnEpisode().m22;
-  const w = returnWindows().m22;
-
-  returnEpisode().m22_ui.selected = null;
-
-  if (m22Enter(s, nowMs)) {
-    w.setComprehension('not_required');
-    w.open(nowMs, {
-      form: s.form,
-      slots: 4,
-      lines: 6,
-      min_lines: 3,
-      criterion_hidden_until_first_submission: true,
-      open_input_mode: inputMode,
-    });
-
-    return;
-  }
-
-  w.resume(nowMs);
-}
-
 function m22Log(
+  report: M22Report,
   suffix: string,
   metadata: Record<string, unknown>,
   nowMs: number,
 ) {
-  const s = returnEpisode().m22;
+  const s = m22ReportState(report);
 
-  returnWindows().m22.log(suffix, {
+  m22ReportWindow(report).log(suffix, {
+    report,
     elapsed_ms: elapsedSince(s.opened_at_ms, nowMs),
     phase: s.phase,
     ...metadata,
   });
+}
+
+function m22EnterReport(
+  report: M22Report,
+  nowMs: number,
+  inputMode: InputMode,
+): boolean {
+  const s = m22ReportState(report);
+  const w = m22ReportWindow(report);
+
+  if (!m22Enter(s, nowMs)) {
+    return false;
+  }
+
+  w.setComprehension('not_required');
+  w.open(nowMs, {
+    ...m22Snapshot(report),
+    open_input_mode: inputMode,
+    // Entry covariates: what else of the return shift is already done.
+    bench_cases_closed: m21AllClosed(),
+    previous_report_decision:
+      report === 'o2'
+        ? m22ReportState('o1').phase === 'accepted'
+          ? 'accepted'
+          : m22ReportState('o1').stop_choice
+        : null,
+  });
+
+  return true;
+}
+
+/** The ratings are PRESENTED once, when both reports are decided. */
+/** Present the rating screen that is due now (one screen per returned report, each logged once). */
+function m22PresentRatings(nowMs: number) {
+  const r = returnEpisode();
+  const due = m22RatingsDue(r.m22, r.m22_ratings);
+  const report = due[0];
+
+  if (
+    report === undefined ||
+    !m22PresentRating(r.m22, r.m22_ratings, report, nowMs)
+  ) {
+    return;
+  }
+
+  const progress = m22RatingProgress();
+
+  m22Log(
+    report,
+    'rating_presented',
+    {
+      reports_due: due,
+      position: progress.position,
+      total: progress.total,
+      settle_ms: M22_RATING_SETTLE_MS,
+      since_requirement_ms:
+        nowMs - (m22ReportState(report).setback_presented_at_ms ?? nowMs),
+      input_mode: 'system',
+    },
+    nowMs,
+  );
+}
+
+/** The due rating's 1-based position among the ratings that will be asked, and their total. */
+export function m22RatingProgress(): { position: number; total: number } {
+  const r = returnEpisode();
+  const answered = M22_REPORTS.filter(
+    (report) => r.m22_ratings.ratings[report] !== null,
+  ).length;
+  const total = M22_REPORTS.filter(
+    (report) =>
+      m22Decided(r.m22[report]) &&
+      r.m22[report].setback_presented_at_ms !== null,
+  ).length;
+
+  return { position: Math.min(answered + 1, Math.max(total, 1)), total };
+}
+
+/** Desk surface opened: entry (once per report) or a reopening. */
+export function m22DeskOpen(nowMs: number, inputMode: InputMode) {
+  returnEpisode().m22_ui.selected = null;
+
+  if (m22AllDecided()) {
+    m22PresentRatings(nowMs);
+
+    return;
+  }
+
+  const report = m22ActiveReport();
+
+  if (m22EnterReport(report, nowMs, inputMode)) {
+    return;
+  }
+
+  m22ReportWindow(report).resume(nowMs);
+}
+
+/** After a report is decided with the desk open: the next report, or the ratings. */
+function m22PlaceNext(nowMs: number) {
+  returnEpisode().m22_ui.selected = null;
+  returnEpisode().m22_ui.registerOpen = false;
+
+  if (m22AllDecided()) {
+    m22PresentRatings(nowMs);
+
+    return;
+  }
+
+  const report = m22ActiveReport();
+
+  if (m22EnterReport(report, nowMs, 'system')) {
+    m22Log(
+      report,
+      'report_placed',
+      { name: M22_REPORT_DEFS[report].name, input_mode: 'system' },
+      nowMs,
+    );
+  }
+}
+
+/** A press carried over from the previous report is refused inside the settle window. */
+function m22PlacementSettling(report: M22Report, nowMs: number): boolean {
+  const s = m22ReportState(report);
+
+  return (
+    report === 'o2' &&
+    s.opened_at_ms !== null &&
+    nowMs - s.opened_at_ms < M22_PLACE_SETTLE_MS
+  );
 }
 
 export function m22ActPlace(
@@ -1114,7 +1320,8 @@ export function m22ActPlace(
   nowMs: number,
   inputMode: InputMode,
 ): boolean {
-  const s = returnEpisode().m22;
+  const report = m22ActiveReport();
+  const s = m22ReportState(report);
   const afterSetback = s.phase === 'returned';
 
   if (!m22PlaceLine(s, slot, lineId, nowMs)) {
@@ -1122,6 +1329,7 @@ export function m22ActPlace(
   }
 
   m22Log(
+    report,
     'line_placed',
     {
       slot,
@@ -1141,7 +1349,8 @@ export function m22ActRemove(
   nowMs: number,
   inputMode: InputMode,
 ): boolean {
-  const s = returnEpisode().m22;
+  const report = m22ActiveReport();
+  const s = m22ReportState(report);
   const lineId = s.slots[slot] ?? null;
   const afterSetback = s.phase === 'returned';
 
@@ -1150,6 +1359,7 @@ export function m22ActRemove(
   }
 
   m22Log(
+    report,
     'line_removed',
     {
       slot,
@@ -1164,26 +1374,30 @@ export function m22ActRemove(
   return true;
 }
 
-export function m22ActAttachTag(
+export function m22ActAttachCode(
   lineId: string,
-  tag: string,
+  code: string,
   nowMs: number,
   inputMode: InputMode,
 ): boolean {
-  const s = returnEpisode().m22;
-  const mismatchedBefore = s.mismatched_tag_edits;
+  const report = m22ActiveReport();
+  const s = m22ReportState(report);
+  const mismatchedBefore = s.mismatched_code_edits;
+  const first = s.strategy_change_at_ms === null;
 
-  if (!m22AttachTag(s, lineId, tag, nowMs)) {
+  if (!m22AttachCode(s, lineId, code, nowMs)) {
     return false;
   }
 
   m22Log(
-    'tag_attached',
+    report,
+    'code_attached',
     {
       line_id: lineId,
-      tag,
-      matches_register: s.mismatched_tag_edits === mismatchedBefore,
+      code,
+      matches_register: s.mismatched_code_edits === mismatchedBefore,
       feedback_consistent: true,
+      revision_begun: first,
       feedback_consistent_edits: s.feedback_consistent_edits,
       progress: m22Progress(s),
       input_mode: inputMode,
@@ -1194,19 +1408,21 @@ export function m22ActAttachTag(
   return true;
 }
 
-export function m22ActDetachTag(
+export function m22ActDetachCode(
   lineId: string,
   nowMs: number,
   inputMode: InputMode,
 ): boolean {
-  const s = returnEpisode().m22;
+  const report = m22ActiveReport();
+  const s = m22ReportState(report);
 
-  if (!m22DetachTag(s, lineId, nowMs)) {
+  if (!m22DetachCode(s, lineId, nowMs)) {
     return false;
   }
 
   m22Log(
-    'tag_detached',
+    report,
+    'code_detached',
     { line_id: lineId, feedback_consistent: false, input_mode: inputMode },
     nowMs,
   );
@@ -1215,13 +1431,15 @@ export function m22ActDetachTag(
 }
 
 export function m22ActInspectRegister(nowMs: number, inputMode: InputMode) {
-  const s = returnEpisode().m22;
+  const report = m22ActiveReport();
+  const s = m22ReportState(report);
 
   if (!m22InspectRegister(s)) {
     return false;
   }
 
   m22Log(
+    report,
     'register_inspected',
     { inspections: s.inspections, input_mode: inputMode },
     nowMs,
@@ -1231,13 +1449,15 @@ export function m22ActInspectRegister(nowMs: number, inputMode: InputMode) {
 }
 
 export function m22ActAcknowledge(nowMs: number, inputMode: InputMode) {
-  const s = returnEpisode().m22;
+  const report = m22ActiveReport();
+  const s = m22ReportState(report);
 
   if (!m22Acknowledge(s, nowMs)) {
     return false;
   }
 
   m22Log(
+    report,
     'setback_acknowledged',
     {
       setback_to_acknowledgement_ms:
@@ -1250,22 +1470,40 @@ export function m22ActAcknowledge(nowMs: number, inputMode: InputMode) {
   return true;
 }
 
-/** SUBMIT: classifies the submission and closes the window on acceptance. */
+/** SUBMIT: classifies the submission; acceptance completes the report and places the next. */
 export function m22ActSubmit(
   nowMs: number,
   inputMode: InputMode,
 ): M22SubmitOutcome {
-  const s = returnEpisode().m22;
-  const w = returnWindows().m22;
+  const report = m22ActiveReport();
+  const s = m22ReportState(report);
+  const w = m22ReportWindow(report);
+
+  if (m22PlacementSettling(report, nowMs)) {
+    m22Log(
+      report,
+      'press_refused',
+      {
+        control: 'submit',
+        reason: 'placement_settling',
+        input_mode: inputMode,
+      },
+      nowMs,
+    );
+
+    return 'rejected_incomplete';
+  }
+
   const outcome = m22Submit(s, nowMs);
 
   m22Log(
+    report,
     'submitted',
     {
       outcome,
       submission_number: s.submissions.length,
       lines_placed: s.slots.filter((slot) => slot !== null).length,
-      untagged_lines: m22UntaggedLines(s),
+      uncoded_lines: m22UncodedLines(s),
       input_mode: inputMode,
     },
     nowMs,
@@ -1274,13 +1512,21 @@ export function m22ActSubmit(
   switch (outcome) {
     case 'setback':
       m22Log(
+        report,
         'setback_presented',
-        { criterion: 'work_order_tags_required', input_mode: 'system' },
+        {
+          criterion:
+            report === 'o1'
+              ? 'work_order_tags_required'
+              : 'destination_bays_required',
+          input_mode: 'system',
+        },
         nowMs,
       );
       break;
     case 'unchanged':
       m22Log(
+        report,
         'unchanged_resubmit',
         {
           repeated_unchanged_action: s.unchanged_resubmits,
@@ -1291,20 +1537,27 @@ export function m22ActSubmit(
       break;
     case 'returned_again':
       m22Log(
+        report,
         'resubmitted',
         {
           accepted: false,
-          untagged_lines: m22UntaggedLines(s),
+          uncoded_lines: m22UncodedLines(s),
           input_mode: inputMode,
         },
         nowMs,
       );
       break;
     case 'accepted':
-      m22Log('resubmitted', { accepted: true, input_mode: inputMode }, nowMs);
-      m22Log('accepted', { input_mode: inputMode }, nowMs);
+      m22Log(
+        report,
+        'resubmitted',
+        { accepted: true, input_mode: inputMode },
+        nowMs,
+      );
+      m22Log(report, 'accepted', { input_mode: inputMode }, nowMs);
       m22Close(s, 'accepted');
       w.complete(nowMs, m22RawComponents(s), inputMode);
+      m22PlaceNext(nowMs);
       break;
     default:
       break;
@@ -1313,12 +1566,39 @@ export function m22ActSubmit(
   return outcome;
 }
 
-/** WITHDRAW: the neutral explicit stop (disposition by the pure rule). */
+/** WITHDRAW: the neutral explicit exit (disposition by the pure rule). */
 export function m22ActWithdraw(nowMs: number, inputMode: InputMode): boolean {
-  const s = returnEpisode().m22;
-  const w = returnWindows().m22;
+  const report = m22ActiveReport();
+  const s = m22ReportState(report);
+  const w = m22ReportWindow(report);
 
   if (!m22Open(s) || s.phase === 'accepted') {
+    return false;
+  }
+
+  if (!m22CanWithdraw(s)) {
+    m22Log(
+      report,
+      'press_refused',
+      { control: 'withdraw', reason: 'unacknowledged', input_mode: inputMode },
+      nowMs,
+    );
+
+    return false;
+  }
+
+  if (m22PlacementSettling(report, nowMs)) {
+    m22Log(
+      report,
+      'press_refused',
+      {
+        control: 'withdraw',
+        reason: 'placement_settling',
+        input_mode: inputMode,
+      },
+      nowMs,
+    );
+
     return false;
   }
 
@@ -1326,8 +1606,13 @@ export function m22ActWithdraw(nowMs: number, inputMode: InputMode): boolean {
   const raw = m22RawComponents(s);
 
   m22Log(
+    report,
     'withdrawn',
-    { disposition: disposition.kind, input_mode: inputMode },
+    {
+      disposition: disposition.kind,
+      revision_begun: s.strategy_change_at_ms !== null,
+      input_mode: inputMode,
+    },
     nowMs,
   );
   m22Close(s, 'withdrawn');
@@ -1346,17 +1631,96 @@ export function m22ActWithdraw(nowMs: number, inputMode: InputMode): boolean {
     );
   }
 
+  m22PlaceNext(nowMs);
+
+  return true;
+}
+
+/** Answer (1–5) or decline (null) the rating due now; logged through that report's window. */
+export function m22ActRate(
+  value: 1 | 2 | 3 | 4 | 5 | null,
+  nowMs: number,
+  inputMode: InputMode,
+): boolean {
+  const r = returnEpisode();
+  const report = m22RatingDue();
+
+  if (report === null) {
+    return false;
+  }
+
+  if (m22RatingSettling(r.m22_ratings, report, nowMs)) {
+    m22Log(
+      report,
+      'press_refused',
+      {
+        control: value === null ? 'rating_decline' : `rating_${value}`,
+        reason: 'rating_settling',
+        input_mode: inputMode,
+      },
+      nowMs,
+    );
+
+    return false;
+  }
+
+  if (!m22Rate(r.m22, r.m22_ratings, report, value, nowMs)) {
+    return false;
+  }
+
+  const rating = r.m22_ratings.ratings[report]!;
+
+  m22Log(
+    report,
+    value === null ? 'rating_declined' : 'rating_answered',
+    {
+      value,
+      position: rating.position,
+      recall_delay_ms: rating.recall_delay_ms,
+      since_presented_ms: rating.since_presented_ms,
+      input_mode: inputMode,
+    },
+    nowMs,
+  );
+  // The next screen (if any) is presented now — its own settle window starts.
+  m22PresentRatings(nowMs);
+
   return true;
 }
 
 export function m22DeskLeave(nowMs: number) {
-  const s = returnEpisode().m22;
-  const w = returnWindows().m22;
+  const r = returnEpisode();
 
-  returnEpisode().m22_ui.selected = null;
+  r.m22_ui.selected = null;
+
+  if (m22AllDecided()) {
+    const due = m22RatingDue();
+
+    if (due !== null) {
+      const presentedAt = r.m22_ratings.presented_at_ms[due];
+
+      m22Log(
+        due,
+        'rating_departed',
+        {
+          position: m22RatingProgress().position,
+          since_presented_ms: presentedAt === null ? null : nowMs - presentedAt,
+          input_mode: 'system',
+        },
+        nowMs,
+      );
+    }
+
+    return;
+  }
+
+  const report = m22ActiveReport();
+  const s = m22ReportState(report);
+  const w = m22ReportWindow(report);
 
   if (m22Depart(s)) {
     m22Log(
+      report,
       'departed',
       { departures: s.departures, input_mode: 'system' },
       nowMs,
@@ -1367,43 +1731,70 @@ export function m22DeskLeave(nowMs: number) {
 }
 
 export function closeM22AtReview(nowMs: number) {
-  const s = returnEpisode().m22;
-  const w = returnWindows().m22;
+  for (const report of M22_REPORTS) {
+    const s = m22ReportState(report);
+    const w = m22ReportWindow(report);
 
-  if (w.windowStatus() === 'unopened') {
-    w.markAbsent('report desk never opened before the review');
+    if (w.windowStatus() === 'unopened') {
+      w.markAbsent(`report desk: ${report} never opened before the review`);
+      continue;
+    }
 
-    return;
-  }
+    if (!w.isOpen()) {
+      continue;
+    }
 
-  if (!w.isOpen()) {
-    return;
-  }
+    const disposition = m22ClosureDisposition(s, 'closed_at_review');
+    const raw = m22RawComponents(s);
 
-  const disposition = m22ClosureDisposition(s, 'closed_at_review');
-  const raw = m22RawComponents(s);
+    m22Close(s, 'closed_at_review');
 
-  m22Close(s, 'closed_at_review');
-
-  if (disposition.kind === 'invalid') {
-    w.stop(
-      nowMs,
-      'closed_at_review',
-      { ...raw, invalid_detail: disposition.detail },
-      'system',
-      'insufficient_opportunity',
-    );
-  } else {
-    w.stop(nowMs, 'closed_at_review', raw, 'system', 'censored');
+    if (disposition.kind === 'invalid') {
+      w.stop(
+        nowMs,
+        'closed_at_review',
+        { ...raw, invalid_detail: disposition.detail },
+        'system',
+        'insufficient_opportunity',
+      );
+    } else {
+      w.stop(nowMs, 'closed_at_review', raw, 'system', 'censored');
+    }
   }
 }
 
 export function m22TechnicalFailure(detail: string) {
-  const s = returnEpisode().m22;
+  const report = m22ActiveReport();
+  const s = m22ReportState(report);
 
   s.technical_failure = detail;
   s.phase = 'closed';
-  returnWindows().m22.technicalFailure(detail);
+  m22ReportWindow(report).technicalFailure(detail);
+}
+
+/** The desk chip's operational text (no count, no item wording). */
+export function m22DeskChipText(live: boolean): string {
+  if (!live) {
+    return 'no report due';
+  }
+
+  if (m22DeskDone()) {
+    return 'shift reports closed';
+  }
+
+  if (m22AllDecided()) {
+    return 'shift reports decided · a question waits';
+  }
+
+  const report = m22ActiveReport();
+  const s = m22ReportState(report);
+  const name = report === 'o1' ? 'handover report' : 'consignment note';
+
+  return s.phase === 'returned'
+    ? `${name} returned · open`
+    : report === 'o2'
+      ? `${name} due · report 2 of 2`
+      : `${name} due`;
 }
 
 // ——— M25 — questionnaire-primary handoff shell ————————————————————————
@@ -1528,14 +1919,32 @@ export function returnProbeSnapshot() {
       },
     },
     m22: {
-      window: w.m22.windowStatus(),
-      exit: w.m22.exit(),
-      entered: r.m22.entered,
-      phase: r.m22.phase,
+      active: m22ActiveReport(),
+      all_decided: m22AllDecided(),
+      rating_due: m22RatingDue(),
+      desk_done: m22DeskDone(),
       selected: r.m22_ui.selected,
       register_open: r.m22_ui.registerOpen,
-      untagged_lines: m22UntaggedLines(r.m22),
-      ...m22RawComponents(r.m22),
+      ratings: {
+        o1: r.m22_ratings.ratings.o1,
+        o2: r.m22_ratings.ratings.o2,
+      },
+      o1: {
+        window: w.m22.o1.windowStatus(),
+        exit: w.m22.o1.exit(),
+        entered: r.m22.o1.entered,
+        phase: r.m22.o1.phase,
+        uncoded_lines: m22UncodedLines(r.m22.o1),
+        ...m22RawComponents(r.m22.o1, r.m22_ratings.ratings.o1),
+      },
+      o2: {
+        window: w.m22.o2.windowStatus(),
+        exit: w.m22.o2.exit(),
+        entered: r.m22.o2.entered,
+        phase: r.m22.o2.phase,
+        uncoded_lines: m22UncodedLines(r.m22.o2),
+        ...m22RawComponents(r.m22.o2, r.m22_ratings.ratings.o2),
+      },
     },
     m25: {
       window: w.m25.windowStatus(),

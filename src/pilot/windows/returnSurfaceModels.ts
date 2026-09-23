@@ -12,6 +12,10 @@
  * bench has no pre-application test — FIT is the application); no reward
  * effects; every surface can be closed at any time (fail-forward).
  */
+import {
+  M22_DISCOURAGEMENT_OPTIONS,
+  M22_DISCOURAGEMENT_PROMPT,
+} from '../../measurement/protocol';
 import type { M20IndoorStage } from '../exterior/m20AntennaModel';
 import {
   M20_INDOOR_STAGE_LABELS,
@@ -33,12 +37,11 @@ import {
   m21UnitReadout,
 } from '../return/m21ManualModel';
 import {
-  M22_CRITERION_TEXT,
-  M22_LINES,
-  M22_MIN_LINES,
-  M22_SLOTS,
-  M22_TAGS,
+  M22_REPORT_DEFS,
   m22Acknowledged,
+  m22CanWithdraw,
+  m22Codes,
+  m22Def,
   m22Line,
   m22OutcomeText,
   m22Progress,
@@ -65,12 +68,18 @@ import {
   m21AllClosed,
   m21State,
   m22ActAcknowledge,
-  m22ActAttachTag,
+  m22ActAttachCode,
   m22ActInspectRegister,
+  m22ActiveReport,
   m22ActPlace,
+  m22ActRate,
   m22ActRemove,
   m22ActSubmit,
   m22ActWithdraw,
+  m22AllDecided,
+  m22DeskDone,
+  m22RatingDue,
+  m22RatingProgress,
   m22State,
   m22Ui,
 } from './returnWindows';
@@ -564,24 +573,57 @@ export function m21RelayBenchSurfaceModel(
   };
 }
 
-// ——— M22 — shift report desk ———————————————————————————————————————————
+// ——— M22 — shift report desk (two reports + the ratings) —————————————————
 
 export function m22ReportDeskSurfaceModel(
   host: ReturnSurfaceHost,
 ): WorkSurfaceModel {
-  const s = m22State();
+  const ratingReport = m22RatingDue();
+
+  if (ratingReport !== null) {
+    return m22RatingSurfaceModel(ratingReport, host);
+  }
+
+  if (m22DeskDone()) {
+    return {
+      title: 'SHIFT REPORT DESK',
+      subtitle: 'closed',
+      status: 'Both reports are decided and the desk is closed for this shift.',
+      elements: [
+        {
+          id: 'leave',
+          kind: 'button',
+          label: 'Close',
+          x: 176,
+          y: 440,
+          w: 160,
+          h: 28,
+          small: true,
+          onActivate: () => host.close(),
+        },
+      ],
+      help: 'ENTER/SPACE activate · ESC leave',
+    };
+  }
+
+  const report = m22ActiveReport();
+  const def = m22Def(report);
+  const s = m22State(report);
   const ui = m22Ui();
   const phase = s.phase;
   const editable =
     phase === 'assemble' || (phase === 'returned' && m22Acknowledged(s));
   const elements: SurfaceElement[] = [];
   const placedIds = s.slots.filter((slot): slot is string => slot !== null);
+  const codes = m22Codes(def);
+  const capital = (text: string) =>
+    text.charAt(0).toUpperCase() + text.slice(1);
 
   // ——— tray (left) ———
   elements.push({
     id: 'tray_title',
     kind: 'readout',
-    label: 'REPORT LINES — shift systems',
+    label: def.lines_title,
     x: 16,
     y: 76,
     w: 320,
@@ -589,7 +631,7 @@ export function m22ReportDeskSurfaceModel(
     small: true,
   });
 
-  m22TrayOrder(s.form).forEach((line, index) => {
+  m22TrayOrder(def, s.form).forEach((line, index) => {
     const placed = placedIds.includes(line.id);
     const selected = ui.selected?.kind === 'line' && ui.selected.id === line.id;
 
@@ -612,15 +654,15 @@ export function m22ReportDeskSurfaceModel(
     });
   });
 
-  // ——— tags (left, after the setback) ———
+  // ——— codes (left, after the setback) ———
   if (phase !== 'assemble') {
-    M22_TAGS.forEach((tag, index) => {
-      const selected = ui.selected?.kind === 'tag' && ui.selected.id === tag;
+    codes.forEach((code, index) => {
+      const selected = ui.selected?.kind === 'tag' && ui.selected.id === code;
 
       elements.push({
-        id: `tag_${tag}`,
+        id: `code_${code}`,
         kind: 'tile',
-        label: tag,
+        label: code,
         x: 16 + (index % 3) * 108,
         y: 324 + Math.floor(index / 3) * 34,
         w: 104,
@@ -630,17 +672,17 @@ export function m22ReportDeskSurfaceModel(
         onActivate: !editable
           ? undefined
           : () => {
-              ui.selected = selected ? null : { kind: 'tag', id: tag };
+              ui.selected = selected ? null : { kind: 'tag', id: code };
             },
       });
     });
   }
 
   // ——— report slots (right) ———
-  for (let slot = 0; slot < M22_SLOTS; slot += 1) {
+  for (let slot = 0; slot < def.slots; slot += 1) {
     const lineId = s.slots[slot];
-    const line = lineId === null ? undefined : m22Line(lineId);
-    const tag = lineId === null ? null : s.tags[lineId];
+    const line = lineId === null ? undefined : m22Line(def, lineId);
+    const code = lineId === null ? null : s.codes[lineId];
 
     elements.push({
       id: `slot_${slot}`,
@@ -651,9 +693,9 @@ export function m22ReportDeskSurfaceModel(
           ? ''
           : phase === 'assemble'
             ? ''
-            : tag === null
-              ? 'no tag'
-              : `tag ${tag}`,
+            : code === null
+              ? `no ${def.code_name}`
+              : `${def.code_name} ${code}`,
       x: 352,
       y: 76 + slot * 46,
       w: 352,
@@ -661,7 +703,7 @@ export function m22ReportDeskSurfaceModel(
       small: true,
       state: !editable
         ? 'disabled'
-        : lineId !== null && phase !== 'assemble' && tag === line?.tag
+        : lineId !== null && phase !== 'assemble' && code === line?.code
           ? 'done'
           : 'idle',
       onActivate: !editable
@@ -678,10 +720,10 @@ export function m22ReportDeskSurfaceModel(
             }
 
             if (selected?.kind === 'tag' && lineId !== null) {
-              if (m22ActAttachTag(lineId, selected.id, host.now(), mode)) {
+              if (m22ActAttachCode(lineId, selected.id, host.now(), mode)) {
                 ui.selected = null;
                 host.feedback(
-                  `Tag ${selected.id} attached to line ${slot + 1}.`,
+                  `${capital(def.code_name)} ${selected.id} attached to line ${slot + 1}.`,
                 );
               }
 
@@ -698,10 +740,10 @@ export function m22ReportDeskSurfaceModel(
 
             host.feedback(
               selected === null
-                ? 'Select a line (or a tag) first, then a slot.'
+                ? `Select a line (or a ${def.code_name}) first, then a slot.`
                 : selected.kind === 'line'
                   ? 'That slot is taken — choose an empty slot.'
-                  : 'Tags attach to a placed line — choose a filled slot.',
+                  : `A ${def.code_name} attaches to a placed line — choose a filled slot.`,
             );
           },
     });
@@ -712,10 +754,12 @@ export function m22ReportDeskSurfaceModel(
     elements.push({
       id: 'register_toggle',
       kind: 'button',
-      label: ui.registerOpen ? 'Show the returned note' : 'Open the register',
+      label: ui.registerOpen
+        ? 'Show the returned note'
+        : `Open the ${def.register_title.toLowerCase()}`,
       x: 352,
       y: 268,
-      w: 200,
+      w: 240,
       h: 28,
       small: true,
       onActivate: (mode) => {
@@ -730,10 +774,10 @@ export function m22ReportDeskSurfaceModel(
       id: ui.registerOpen ? 'register' : 'returned_note',
       kind: 'text',
       label: ui.registerOpen
-        ? `WORK-ORDER REGISTER\n${M22_LINES.map((line) => `${line.tag} · ${line.label}`).join('\n')}`
+        ? `${def.register_title}\n${def.lines.map((line) => `${line.code} · ${line.label}`).join('\n')}`
         : phase === 'accepted'
-          ? 'Report accepted by the receiving desk.'
-          : M22_CRITERION_TEXT,
+          ? `${capital(def.name)} accepted by ${def.returned_by}.`
+          : def.criterion_text,
       x: 352,
       y: 300,
       w: 352,
@@ -744,7 +788,7 @@ export function m22ReportDeskSurfaceModel(
     elements.push({
       id: 'assemble_note',
       kind: 'text',
-      label: `Assemble the handover report: place at least ${M22_MIN_LINES} of the shift's lines into the numbered slots (select a line, then a slot), then submit.`,
+      label: `Assemble the ${def.name}: place at least ${def.min_lines} of the lines into the numbered slots (select a line, then a slot), then submit.`,
       x: 352,
       y: 268,
       w: 352,
@@ -761,7 +805,7 @@ export function m22ReportDeskSurfaceModel(
     elements.push({
       id: 'submit',
       kind: 'button',
-      label: phase === 'assemble' ? 'Submit report' : 'Resubmit report',
+      label: phase === 'assemble' ? 'Submit' : 'Resubmit',
       x: 16,
       y: 400,
       w: 150,
@@ -772,10 +816,18 @@ export function m22ReportDeskSurfaceModel(
         ? (mode) => {
             const outcome = m22ActSubmit(host.now(), mode);
 
+            if (outcome === 'accepted' && m22AllDecided()) {
+              host.feedback(
+                `${m22OutcomeText(outcome, s)}${m22RatingDue() === null ? '' : ' Both reports decided — one question follows.'}`,
+              );
+
+              return;
+            }
+
             host.feedback(
               outcome === 'setback'
-                ? 'Report returned by the receiving desk — read the note.'
-                : m22OutcomeText(outcome, m22State()),
+                ? `${capital(def.name)} returned by ${def.returned_by} — read the note.`
+                : m22OutcomeText(outcome, m22State(report)),
             );
           }
         : undefined,
@@ -795,17 +847,19 @@ export function m22ReportDeskSurfaceModel(
       state: 'accent',
       onActivate: (mode) => {
         if (m22ActAcknowledge(host.now(), mode)) {
-          host.feedback('Note acknowledged — the report can be edited.');
+          host.feedback(`Note acknowledged — the ${def.name} can be edited.`);
         }
       },
     });
   }
 
-  if (phase !== 'accepted' && phase !== 'closed') {
+  // Withdraw (ends the report) — never before an unread returned note.
+  // Per-report id: focus never carries from one report's Withdraw to the next.
+  if (m22CanWithdraw(s)) {
     elements.push({
-      id: 'withdraw',
+      id: `withdraw_${report}`,
       kind: 'button',
-      label: 'Withdraw the report',
+      label: `Withdraw the ${def.name}`,
       x: 16,
       y: 440,
       w: 150,
@@ -813,8 +867,9 @@ export function m22ReportDeskSurfaceModel(
       small: true,
       onActivate: (mode) => {
         if (m22ActWithdraw(host.now(), mode)) {
-          host.feedback('Report withdrawn as it stands.');
-          host.later(1600, () => host.close());
+          host.feedback(
+            `${capital(def.name)} withdrawn as it stands.${m22AllDecided() && m22RatingDue() !== null ? ' Both reports decided — one question follows.' : ''}`,
+          );
         }
       },
     });
@@ -835,26 +890,112 @@ export function m22ReportDeskSurfaceModel(
   const progress = m22Progress(s);
 
   return {
-    title: 'SHIFT REPORT DESK — HANDOVER REPORT',
+    title: def.title,
     subtitle:
       phase === 'assemble'
-        ? `${placedIds.length}/${M22_SLOTS} lines`
+        ? `${placedIds.length}/${def.slots} lines`
         : phase === 'returned'
-          ? `returned · ${progress.tagged}/${progress.placed} lines tagged`
+          ? `returned · ${progress.coded}/${progress.placed} lines coded`
           : phase === 'accepted'
             ? 'accepted'
             : 'closed',
     status:
       phase === 'assemble'
-        ? 'Return-shift handover report. Select a line, then a numbered slot to place it; select a placed line to return it.'
+        ? `${capital(def.name)} (report ${report === 'o1' ? 1 : 2} of 2). Select a line, then a numbered slot to place it; select a placed line to return it.`
         : phase === 'returned'
           ? m22Acknowledged(s)
-            ? 'Returned by the receiving desk — see the note. Select a tag, then a line, to attach it.'
-            : 'Returned by the receiving desk — read the note and acknowledge it to continue.'
+            ? `Returned by ${def.returned_by} — see the note. Select a ${def.code_name}, then a line, to attach it.`
+            : `Returned by ${def.returned_by} — read the note and acknowledge it to continue.`
           : phase === 'accepted'
-            ? 'Report accepted and logged for the shift.'
-            : 'Report closed.',
+            ? `${capital(def.name)} accepted and logged for the shift.`
+            : `${capital(def.name)} closed.`,
     elements,
-    help: 'Arrows/TAB focus · ENTER/SPACE activate · click also works · S submit · K acknowledge · ESC leave',
+    help: 'Arrows/TAB focus · ENTER/SPACE activate · click also works · S submit · K acknowledge · ESC leave (come back later) · Withdraw ends the report',
+  };
+}
+
+/** The discouragement rating of one returned report (after both decisions). */
+function m22RatingSurfaceModel(
+  report: import('../return/m22ReportModel').M22Report,
+  host: ReturnSurfaceHost,
+): WorkSurfaceModel {
+  const def = M22_REPORT_DEFS[report];
+  const elements: SurfaceElement[] = [];
+  const progress = m22RatingProgress();
+
+  elements.push({
+    id: 'rating_context',
+    kind: 'text',
+    label: `About the ${def.name} (report ${report === 'o1' ? 1 : 2} of 2), at the moment it came back with the new requirement:`,
+    x: 16,
+    y: 84,
+    w: 688,
+    h: 40,
+    align: 'left',
+  });
+  // The prompt is the first focusable element and does nothing when
+  // activated: a carried-over ENTER/SPACE never records an answer.
+  elements.push({
+    id: 'rating_prompt',
+    kind: 'readout',
+    label: M22_DISCOURAGEMENT_PROMPT,
+    x: 16,
+    y: 132,
+    w: 688,
+    h: 40,
+    onActivate: () => undefined,
+  });
+
+  M22_DISCOURAGEMENT_OPTIONS.forEach((option, index) => {
+    elements.push({
+      id: `rating_${option.value}`,
+      kind: 'button',
+      label: `${option.value} — ${option.label}`,
+      x: 16,
+      y: 192 + index * 40,
+      w: 340,
+      h: 34,
+      hotkey: `${option.value}`,
+      onActivate: (mode) => {
+        if (m22ActRate(option.value, host.now(), mode)) {
+          host.feedback('Recorded.');
+        }
+      },
+    });
+  });
+
+  elements.push({
+    id: 'rating_decline',
+    kind: 'button',
+    label: 'Prefer not to say  (P)',
+    x: 376,
+    y: 192,
+    w: 328,
+    h: 34,
+    hotkey: 'p',
+    onActivate: (mode) => {
+      if (m22ActRate(null, host.now(), mode)) {
+        host.feedback('Recorded.');
+      }
+    },
+  });
+  elements.push({
+    id: 'leave',
+    kind: 'button',
+    label: 'Leave desk  (ESC)',
+    x: 376,
+    y: 440,
+    w: 328,
+    h: 28,
+    small: true,
+    onActivate: () => host.close(),
+  });
+
+  return {
+    title: `SHIFT REPORT DESK — ONE QUESTION (${progress.position} OF ${progress.total})`,
+    subtitle: 'question',
+    status: `Both reports are decided. One question about each report that came back (${progress.total} in all); choose an option or prefer not to say.`,
+    elements,
+    help: 'Arrows/TAB focus · ENTER/SPACE choose · click also works · 1–5 options · P prefer not to say · ESC leave',
   };
 }

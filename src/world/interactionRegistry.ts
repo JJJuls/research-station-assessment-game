@@ -485,7 +485,7 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Work the',
     'Shift Report Desk',
     { kind: 'work_surface', id: 'm22_report_desk' },
-    'm22_report_revision',
+    'm22_returned_o1',
     { x: 996, y: 250 },
   ),
   workshopStation(
