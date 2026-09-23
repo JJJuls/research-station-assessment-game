@@ -54,8 +54,10 @@ import {
   declareM01,
   m01Window,
   openM01,
+  presentM01,
   resumeM01Surface,
 } from '../pilot/windows/m01PlanBoard';
+import { m01SurfaceModel } from '../pilot/windows/m01SurfaceModel';
 import {
   censorM05,
   completeM05Fix,
@@ -110,7 +112,6 @@ import {
   m25BeliefDueNow,
 } from '../pilot/windows/m25Repetition';
 import {
-  m01SurfaceModel,
   m12SurfaceModel,
   m14SurfaceModel,
 } from '../pilot/windows/surfaceModels';
@@ -221,7 +222,7 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   create(data?: { spawn?: string }) {
-    declareM01();
+    declareM01('o1');
     declareM05('o1');
     declareM09();
     declareM10();
@@ -239,7 +240,7 @@ export class StationConcourseScene extends PilotZoneScene {
     this.events.on('resume', () => {
       const now = Date.now();
 
-      resumeM01Surface(now);
+      resumeM01Surface('o1', now);
       resumeM12Surface('o1', now);
       resumeM14Surface(now);
     });
@@ -334,13 +335,13 @@ export class StationConcourseScene extends PilotZoneScene {
       'w1-plan-board',
       S.planBoard,
       1,
-      () => m01Window.isClosed(),
+      () => m01Window('o1').isClosed(),
       () => {
-        openM01(Date.now());
+        openM01('o1', Date.now());
         openWorkSurface(this, {
           surfaceId: 'm01_plan_board',
-          model: () => m01SurfaceModel(this.surfaceHost()),
-          onClose: () => closeM01Surface(Date.now()),
+          model: () => m01SurfaceModel(this.surfaceHost(), 'o1'),
+          onClose: () => closeM01Surface('o1', Date.now()),
         });
       },
     );
@@ -821,6 +822,9 @@ export class StationConcourseScene extends PilotZoneScene {
               onSelected: () => {
                 advancePilotStage('incident_handover', Date.now());
                 presentM09Offer(Date.now());
+                // M01 (Unit 5): the briefing names the plan board on the
+                // storm packet — the first batch is presented here.
+                presentM01('o1', Date.now());
               },
               nextStage: () => this.watchOfferStage(),
             },

@@ -296,10 +296,15 @@ test.describe('pilot route model (pure)', () => {
       },
     ]);
 
-    expect(
-      partial.find((item) => item.opportunities[0]?.opportunity_id === first)
-        ?.status,
-    ).toBe('open');
+    // Station 080 Unit 5: the first scheduled item (M01) owns two windows,
+    // so the entered window reads `open` at opportunity level while the
+    // item summary stays non-terminal (its other window is pending).
+    const firstItem = partial.find(
+      (item) => item.opportunities[0]?.opportunity_id === first,
+    );
+
+    expect(firstItem?.opportunities[0]?.status).toBe('open');
+    expect(isTerminal(firstItem!.status)).toBe(false);
     expect(partial.some((item) => !isTerminal(item.status))).toBe(true);
   });
 });

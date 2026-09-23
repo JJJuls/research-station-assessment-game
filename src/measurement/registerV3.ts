@@ -275,7 +275,7 @@ function count(
 const NEVER_NAMED: readonly M26ItemId[] = ['M22', 'M24', 'M25', 'M26'];
 
 const OPERATIONAL_LABELS: Partial<Record<M26ItemId, string>> = {
-  M01: 'Plan board (Concourse)',
+  M01: 'Job batches (Concourse / Workshop)',
   M02: 'Case workspace (Workshop)',
   M03: 'Press stations (Workshop)',
   M04: 'Sample cutter (Workshop)',
@@ -459,13 +459,37 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'behavioural_counterpart',
     direction: 'redesign',
     occasions: 2,
+    // Unit 5: the approved redesign landed (storm packet batch in the
+    // Concourse, return orders batch in the Records Workshop). The v2
+    // six-card board family `proto_m01_board_*` keeps its v2 meaning.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m01_batch_o1', 'proto_m01_batch_o2'],
+      windows: [
+        {
+          id: 'm01_batch_o1',
+          occasion: 'o1',
+          zone: 'station_concourse',
+          episode: 1,
+        },
+        {
+          id: 'm01_batch_o2',
+          occasion: 'o2',
+          zone: 'records_workshop',
+          episode: 5,
+        },
+      ],
+      family_prefixes: ['proto_m01_batch_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Two unrelated three-job batches; direct work or optional sequencing; deliberate placements snapshotted before the first work action; partial plans and any workable order valid.',
     features: [
       fraction(
         'm01_planned_jobs',
         'jobs placed on the board before the first work action, summed over the two occasions',
-        'six jobs (three per occasion) — occasions whose board was inaccessible are excluded',
+        'six jobs (three per occasion) — occasions with no first work action (never opened, or opened and left before any job press) are excluded',
         '0–6',
         'more observable advance organisation',
         'no accessible occasion → null',

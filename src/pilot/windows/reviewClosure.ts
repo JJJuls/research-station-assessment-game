@@ -9,7 +9,7 @@
  * (`closePilotCoverageAtFinalCore`) never overwrites a terminal record.
  */
 import { closeExteriorWindowsAtReview } from './exteriorWindows';
-import { m01Window } from './m01PlanBoard';
+import { closeM01AtReview } from './m01PlanBoard';
 import { closeM02CPanel, m02cWindow } from './m02CaseWorkspace';
 import { closeM04AtReview } from './m04Debris';
 import { closeM05AtReview } from './m05Initiation';
@@ -40,11 +40,10 @@ function closeSurfaceWindow(window: ItemWindow, nowMs: number, detail: string) {
 
 /** Closes every episode 1-5 window at the review (idempotent). */
 export function closeEpisodeWindowsAtReview(nowMs: number) {
-  closeSurfaceWindow(
-    m01Window,
-    nowMs,
-    'plan board never opened before the review',
-  );
+  // Station 080 M01 (Unit 5): a batch whose first job press snapshotted
+  // the board is a complete observation; one left before any job press
+  // censors; never opened → absent.
+  closeM01AtReview(nowMs);
   closeM02CPanel(nowMs);
   closeSurfaceWindow(
     m02cWindow,

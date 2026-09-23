@@ -643,3 +643,183 @@ COMPLETE`, every behavioural step before it green); run 3 (final tree)
   indices (the return acknowledgement stays option 1).
 - **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
   deleted. Next unit: U5 M01 (redesign optional planning, two occasions).
+
+## U5 — M01 systematic organisation (two three-job batches, optional sequencing)
+
+- **Objective:** replace the compulsory six-card plan board with the
+  owner-approved M01 design: two unrelated batches of three jobs (the
+  storm packet in the Concourse, episode 1; the return orders in the
+  Records Workshop, episode 5), each on a work surface where the
+  participant may sequence the jobs on an optional three-slot board or
+  start any job directly; the board's deliberate placements are
+  snapshotted at the first work action; partial plans and any workable
+  order are valid; planning never gates route access.
+- **Scientific rationale:** specification M01 row ("Redesign"; R04
+  behavioural content, R05 environmental analogue; discretionary
+  organisation because compulsory planning removes the choice of
+  interest; mental planning and interface preference remain rivals).
+  Measure `m01_planned_jobs` = jobs placed on the board before the first
+  work action, summed over the two occasions / 6 (planned-observations
+  denominator: an occasion counts only when a first work action closed its
+  observation; fewer than six ⇒ `incomplete`); companion
+  `m01_plan_structure` (per occasion: placements, plan order, plan
+  dependency violations, adherence of the executed order to the plan,
+  dependency errors during work, jobs done). Six cards are not six
+  independent situations (register §2b).
+- **Participant-facing behaviour:** Vale's briefing already names the plan
+  board on the storm packet; the board opens "STORM PACKET — THREE JOBS":
+  three job cards (requirements printed), an optional SEQUENCE board of
+  three slots (place / swap / take back), and three "Do: <job>" controls;
+  the status says the sequence is optional and any job may be started
+  directly; the first job press records the sequence as it stands and
+  locks the board; a job whose printed requirement is not yet done is
+  refused with a factual line; all three done closes the batch. The
+  Records Workshop's Work Order Board offers "Open the return batch (three jobs)." in
+  the return shift, opening "RETURN BATCH — THREE JOBS" with unrelated
+  jobs; the sign-off never depends on either batch.
+- **Allowed files:** `src/pilot/windows/m01BatchModel.ts` (pure model),
+  `src/pilot/windows/m01PlanBoard.ts` (window adapter, rewritten),
+  `src/pilot/windows/m01SurfaceModel.ts` (surface),
+  `src/pilot/windows/surfaceModels.ts` (the old M01 surface removed),
+  `src/pilot/windows/reviewClosure.ts`, `src/scenes/StationConcourseScene.ts`,
+  `src/scenes/RecordsWorkshopScene.ts`, `src/measurement/registerV3.ts`,
+  `src/measurement/features/m01.ts`, `src/measurement/features/index.ts`,
+  `e2e/m01_batches.spec.ts`, `e2e/m01_batches_route.spec.ts`,
+  `e2e/pilot_episodes_1_2.spec.ts` and `e2e/pilot_deck.spec.ts` (the M01
+  steps of the existing route specs: event family and per-opportunity
+  closure), `e2e/pilot_coverage.spec.ts` / `e2e/pilot_closure_models.spec.ts`
+  / `e2e/m26_protocol_foundation.spec.ts` (only if a derived count
+  changes), `docs/verification/station-080-m26/**`.
+- **Prohibited areas:** common; M25's deferred checks (U12 / U24, the
+  browser reload) stay open and are not touched.
+- **Entry state:** HEAD `93c1f80d` (verified present on
+  `origin/fable-professional-world-rescue-v2`), clean tree.
+- **Success behaviour:** both batches reachable on the ordinary route;
+  direct work without touching the board is a valid observed 0 for that
+  occasion; a partial plan (1–2 cards) is valid; the snapshot is immutable
+  once taken; the extractor reproduces planned / 6 with the occasion
+  detail kept separately.
+- **Failure/recovery:** a batch opened and left before any job press has
+  no observation (censored at the review — distinct from a valid choice
+  not to plan); presented but never opened ⇒ `declined`; never presented
+  ⇒ `not_presented`; reload after an opened batch ⇒ prior-load guard
+  (`interrupted`); a batch with a snapshot but unfinished jobs closes at
+  the review as a complete observation with the jobs recorded as they
+  stand; closing the surface pauses, reopening resumes (no timers).
+- **Telemetry boundary:** family `proto_m01_batch_*` (candidate; suffixes
+  `presented`, `opportunity_opened`, `card_lifted`, `card_placed`,
+  `card_returned`, `plan_snapshot`, `job_done`, `dependency_error`,
+  `work_press_refused`, `surface_closed`, `surface_reopened`,
+  `window_closed`, `technical_failure` only as the reload marker); the v2
+  `proto_m01_board_*` family keeps its v2 meaning; no canonical name or
+  formula invented.
+- **Scientific acceptance:** planning never required, never rewarded,
+  never gating; the snapshot precedes the first work action; partial
+  plans valid; unplanned ≠ unobserved ≠ interrupted; no evaluative copy.
+- **Gameplay acceptance:** both surfaces legible at 800×600; keyboard and
+  pointer parity; ESC always leaves; the Workshop sign-off unchanged.
+- **Required tests:** `lint:tsc`, `build`, ESLint/Prettier on touched
+  files, pure `m01_batches` + `pilot_coverage` + `pilot_closure_models` +
+  `m26_protocol_foundation` + `world_v1_registry`, browser
+  `m01_batches_route`, plus the affected tests of `pilot_episodes_1_2` and
+  `pilot_deck`.
+- **Required screenshots:** both batch surfaces at 800×600 (evidence, not
+  committed).
+- **Stop conditions:** common.
+- **Model:** Fable.
+- **Commit expectation:** `feat(m01): two three-job batches with optional
+sequencing snapshotted at the first work action`.
+- **Reviewer availability:** the four project reviewer definitions under
+  `.claude/agents/` are not offered as agent types in this session (three
+  sessions running); a fresh Claude Code session may load them, but no
+  session of this run has. As a declared (not silent) fallback the
+  `scientific-reviewer` and `gameplay-reviewer` definitions were read by
+  general-purpose Opus agents and followed verbatim, read-only. The
+  `test-reviewer` scope was covered by the implementer's own recorded
+  runs for this unit (the U4 test review's commands were re-run here).
+- **Review round 1 (read-only, on the working tree):** gameplay: usable
+  with friction — 1 high / 4 medium / 3 low + 4 measurement flags;
+  scientific: concerns, no blocker — 9 findings + 8 owner questions.
+  Material findings and their resolution:
+  - Batch-2 jobs reused the press and shift-ledger wording of the M03 /
+    M22 stations in the same room (G high, S-F9) — fixed: "Sort the
+    returned spares" / "Seal the spares crate" (after sort) / "Count the
+    hand tools"; title "RETURN BATCH — THREE JOBS"; option "Open the
+    return batch (three jobs)." listed right after the sign-off (S-F1
+    prominence; the board body itself is outside the allowlist — §5.39).
+  - Finished jobs and lifted cards dropped out of the focus order, so an
+    ENTER walked keyboard users onto the next job in row order (G medium)
+    — fixed: finished and refused presses keep the control focusable with
+    feedback ("already done"; "One press per job — try again in a
+    moment."); a lifted card stays in the packet as a selected tile
+    (activate again to put it back); an empty slot with nothing lifted
+    says so.
+  - The job-control row always offered the canonical workable order (G
+    flag 1, S-F8) — fixed: the row follows the packet's counterbalanced
+    order (form_b reverses it), so 1-2-3 is not always workable; the
+    batch structure itself (A, B-after-A, C) stays as approved (§5.41).
+  - Closed / held records looked live (G low-medium) — fixed: every
+    control disabled once the window is closed.
+  - Reload with prior-load evidence and no reopen read as "declined" /
+    `incomplete` (S-F5 medium) — fixed: after a reload an occasion with no
+    current-load evidence is held back (`interrupted`, value of the other
+    occasion kept); pure test added.
+  - Opened-and-left labelled `voluntary_stop`; `censored` set by any
+    review closure (S-F6) — fixed: `no_eligible_event` (a first work
+    action never occurred); `censored` only for a held-back or unpressed
+    batch; a snapshotted batch closed at the review is complete and
+    uncensored.
+  - A requirement left off a partial plan counted as a plan violation
+    (S-F4) — fixed: `m01PlanViolations` counts only requirements placed
+    later; `m01DependencyViolations` still judges workable orders.
+  - Register denominator text vs code (S-F7) — fixed in `registerV3.ts`.
+  - Live "N on the board" subtitle as a planning cue (S-F2) — removed.
+  - The snapshot did not say where a returned held card came from (S-F3)
+    — fixed: `held_from_slot` in the snapshot.
+  - Packet title wrapped into the first card at 800×600 (capture) — fixed.
+  - Recorded as owner questions, defaults kept: "plan board" framing of o1
+    vs "return batch" of o2 (§5.42, S-F1 / G); one press per job and no
+    cost for a refused press (§5.36, S-Q3); matching batch structures
+    (§5.41); the o2 option's position and the board body not naming it
+    (§5.39); review closure of a snapshotted batch (§5.40, S-Q7); the
+    first work action being any press (§5.37). Not changed: Vale's
+    "work through it" briefing line (owner copy, outside this unit); M05's
+    latency clock during time on the M01 surface (not verified here —
+    deferred to U6 M05, which redesigns that clock).
+- **Verification results (final tree):** `npm.cmd run lint:tsc` 0 ·
+  `npm.cmd run build` 0 · ESLint + Prettier on every touched file and doc
+  0 · pure `m01_batches` (5) + `pilot_coverage` + `pilot_closure_models`
+  - `m26_protocol_foundation` + `world_v1_registry` + `m25_repetition` +
+    `pilot_route_model` + `evidence_ledger` + `summary_scope` 103/103
+    (retries off) · browser `m01_batches_route` 1/1 retries off on the
+    final tree (3.1 min; an earlier run before the review fixes also 1/1,
+    3.8 min) — `test-results/m01-batch1-800x600.png` and
+    `m01-batch2-800x600.png` inspected (both surfaces legible, the job row in
+    the counterbalanced packet order), not committed · browser
+    `pilot_episodes_1_2` "episode 1" 1/1 after its M01 step was updated to
+    the batch family and the per-opportunity status · browser `pilot_deck`
+    "terminal closure": first run failed on the review count (24 → 26: M25
+    in U4 and M01 in U5 each own two windows) and the M01 item summary
+    (o1 censored + o2 missing ⇒ missing); second run failed only on an
+    inherited U3 assertion (M11's refused or untaken loan is a complete
+    observation at the review — `promoted: M05,M07,M11`); both are
+    required test updates, applied; third run recorded below ·
+    `verify-unit` PASS · `git diff --check` clean.
+- **Deviations:** allowlist extended during verification by
+  `e2e/pilot_route_model.spec.ts` (the first scheduled item now owns two
+  windows) — a required test update; `pilot_episodes_1_2` and
+  `pilot_deck` were on the list; `CLAUDE_UNIT_ALLOWLIST` enforced by
+  discipline + `verify-unit`; reviewer stand-ins as declared above; no
+  third review round (fixes bounded to cited findings; a fresh review of
+  the review fixes is folded into U24). M25's deferred checks (U12 / U24
+  integration; the browser reload) remain open and unchanged.
+- **Not changed:** `ScoringManager`, `SummaryScope`, `docs/research/**`,
+  `docs/scientific/**`, the v2 ledger, `returnEpisodeModel.ts` (the board
+  body), package files, tool configs, settings, every other item's
+  mechanic; every existing route helper keeps its option indices (the
+  sign-off stays option 1; "Still working" moved to option 3 only in the
+  return beat, where no helper selects it).
+- **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
+  deleted. Next unit: U6 M05 (redesign initiation measurement: two
+  accepted occasions, visible start control, 60 s focused cap).
+- **`pilot_deck` third run (final tree):** 1/1, retries off, 3.8 min.

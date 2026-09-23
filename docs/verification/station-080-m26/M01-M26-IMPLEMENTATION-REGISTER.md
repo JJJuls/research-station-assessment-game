@@ -80,7 +80,7 @@ status at this register version — updated by each unit).
 
 | Item | Direction               | Occ. | Primary feature                                                                                                                                                                                                      | Companions                                                                                                                                   | Label                   | As-built                                                                                                                          |
 | ---- | ----------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| M01  | Redesign                | 2    | `m01_planned_jobs`: jobs placed before the first work action / 6; 0–6; more advance organisation                                                                                                                     | plan structure, job correctness per occasion                                                                                                 | behavioural counterpart | v2-ledger route (one full-board occasion) — planned                                                                               |
+| M01  | Redesign                | 2    | `m01_planned_jobs`: jobs placed before the first work action / 6; 0–6; more advance organisation                                                                                                                     | plan structure, job correctness per occasion                                                                                                 | behavioural counterpart | v3 route: `proto_m01_batch_o1` (Concourse, ep 1) + `proto_m01_batch_o2` (Records Workshop, ep 5) — implemented (U5)               |
 | M02  | Revise and extend       | 1    | `m02_correct_first_retrievals`: correct first retrievals / 6; 0–6; better traceability                                                                                                                               | filing choices, retrieval latency                                                                                                            | behavioural counterpart | v2-ledger route (two gated probes) — planned                                                                                      |
 | M03  | Retain and verify       | 2    | `m03_tools_restored`: restored / 6; 0–3 per occasion; more tidying                                                                                                                                                   | object states                                                                                                                                | retained core           | v2-ledger route (five residuals per occasion) — planned                                                                           |
 | M04  | Extend occasions        | 2    | `m04_undisposed_pieces`: undisposed incl. carried / 6; more own mess                                                                                                                                                 | per-job values                                                                                                                               | behavioural counterpart | v2-ledger route (one job) — planned                                                                                               |
@@ -359,6 +359,66 @@ separated from M24 by the support console and precedes M26; the prompt
 cards report no input device (`input_mode: keyboard` by the existing
 convention); the meaning of "normal" still needs cognitive interviewing.*
 
+_Unit 5 (M01): as-built — two three-job batches. Occasion `o1` (window
+`m01_batch_o1`, opportunity `proto_m01_batch_o1`, Concourse, episode 1):
+the storm packet's plan board station (`concourse.plan_board`, surface
+`m01_plan_board`, unchanged position) now opens "STORM PACKET — THREE
+JOBS": jobs `isolate_loop` (no requirement), `replace_seal` (after
+isolate), `log_storm` (no requirement); presented by Vale's briefing
+acknowledgement (the briefing already names the plan board). Occasion
+`o2` (window `m01_batch_o2`, opportunity `proto_m01_batch_o2`, Records
+Workshop, episode 5): the Work Order Board's return-shift beat offers
+"Open the return batch (three jobs)." (presented when that beat is read; the option
+disappears once the batch is closed; the sign-off never depends on it),
+opening "RETURN BATCH — THREE JOBS": `sort_spares`,
+`seal_spares_crate` (after clear), `count_hand_tools`. Each surface: the
+three job cards (requirement printed) on the left, an optional SEQUENCE
+board of three slots on the right (lift / place / swap / take back; the
+packet order is counterbalanced per occasion, `form_a` / `form_b`), and
+three "Do: <job>" controls (hotkeys 1–3) on their own row; status "Three
+jobs. Sequence them on the board first if you want to, or start any job
+directly." The FIRST job press — runnable or not — records the board as
+it stands (`plan_snapshot`: slots, `planned_jobs`, `plan_order`,
+`plan_dependency_violations`, `held_returned`) and locks it (a lifted
+card returns to the packet unplaced); a job whose printed requirement is
+not done is refused with "<job> needs <requirement> first."
+(`dependency_error` — job correctness, never a planning count); a press
+inside the 400 ms settle window after a job is refused
+(`work_press_refused`); all three jobs done completes the window. Family
+`proto_m01_batch_`(events:`presented`, `opportunity*opened`,
+`card_lifted`, `card_placed`with the board state,`card_returned`,
+`plan_snapshot`, `job_done`with`step`, `planned_position`,
+`followed_plan`, `dependency_error`, `work_press_refused`,
+`surface_closed`, `surface_reopened`, `window_closed`,
+`technical_failure`only as the reload marker). Closure: ESC / Leave
+pauses (fail-forward, reopening resumes; no timers); the review completes
+an open batch whose snapshot exists (a complete observation with the jobs
+recorded as they stand) and censors one left before any job press (no
+observation — distinct from a valid choice not to plan); never opened ⇒
+absent; a batch opened in an earlier page load is never re-run. Formula`m01_planned_jobs`= Σ`planned_jobs`over occasions with a snapshot / 3 ×
+those occasions (planned denominator 6;`incomplete`with one observed
+occasion; the closure's count cross-checked against the`plan_snapshot`event — disagreement ⇒`technical_failure`); `null`with`voluntary_stop`when every opened batch was left before any job press,`declined`when
+named on the route but never opened,`not_presented`before,`interrupted`after a reload (also when one occasion was held back, the other's value
+kept),`pending`while a batch is open; components: occasions observed /
+opened-unobserved / declined / interrupted, planned by occasion,`snapshot_agrees`. Companion `m01_plan_structure`(per occasion: form,
+planned jobs, plan order, plan dependency violations, adherence of the
+executed order to the plan, execution order, jobs done, dependency errors,
+placements;`{declined}`/`{pending}`/`{interrupted}`markers, null
+when never presented). Extractor`src/measurement/features/m01.ts`; tests
+`e2e/m01_batches.spec.ts`(5 pure) and`e2e/m01_batches_route.spec.ts`
+(browser, 1: batch 1 with one pointer placement then keyboard work, a
+blocked first press, the lock, completion; the full route to the return
+shift; batch 2 opened from the board's beat and worked directly by
+keyboard; the sign-off unaffected; offline reproduction 1 / 6). The v2
+six-card board (`proto_m01_board*\*`, one occasion, commit gated on a full
+board) is retired from the route; its family keeps its v2 meaning in the
+ledger. Limitations: a job is a single press (work is nominal), so the
+cost of sequencing first is only the placements themselves; the two
+batches share one interface, so interface preference is a shared rival;
+the board's optionality is stated once in the status line; the first
+press of a blocked job is the first work action by design (owner question
+§5.37).\_
+
 _Unit 1 (foundation): no item mechanic changed; every item remains on its
 v2-ledger route with `implementation_status: planned`; the as-built event
 families are exactly the frozen v2 families. The register, protocol
@@ -554,3 +614,33 @@ two outputs' formulas or their separation.
     every prompt-card answer (the existing M09 / M10 / M11 convention —
     the cards report no device). Alternative: extend the prompt pipeline
     to report the device (outside this unit's allowlist).
+
+The U5 (M01) implementation took the following defaults; each is
+reversible, none changes the formula (planned jobs / 6).
+
+36. **What a job is.** Default: one press per job (the batch is a work
+    surface; a job has no content beyond its printed requirement).
+    Alternative: a short timed cycle per job, so that sequencing first has
+    a visible time cost.
+37. **The first work action.** Default: the first press of ANY job control
+    — including a press refused for an unmet requirement — is the first
+    work action and takes the snapshot. Alternative: only the first
+    completed job takes it.
+38. **Board lock after the first work action.** Default: the board is
+    read-only afterwards (later placements never count and are not
+    offered). Alternative: keep the board editable and export later
+    placements separately.
+39. **Where the second batch lives.** Default: the Work Order Board's
+    return-shift beat ("Open the return batch (three jobs)."). Alternative: a
+    dedicated station (no audited free spot on the Workshop plate).
+40. **Review closure of a snapshotted but unfinished batch.** Default: a
+    complete observation (planned jobs known; jobs recorded as they stand,
+    `closed_at_review`). Alternative: censor it.
+41. **Batch structure (review S-F8).** Default: both batches share the
+    structure A, B-after-A, C; the job-control row follows the
+    counterbalanced packet order. Alternatives: vary the dependency
+    structure between batches; un-number the controls.
+42. **Occasion framing (review S-F1).** Default: o1 is reached through
+    the "incident plan board" named by Vale; o2 through "Open the return
+    batch (three jobs)." on the Work Order Board. Alternatives: a neutral
+    packet name for o1; matching names and route mentions for both.

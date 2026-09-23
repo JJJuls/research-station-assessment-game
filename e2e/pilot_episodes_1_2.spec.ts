@@ -160,6 +160,10 @@ async function itemStatus(page: Page, item: string) {
     .status;
 }
 
+async function itemCoverage(page: Page, item: string) {
+  return (await pilotCoverage(page))!.items.find((i) => i.item === item)!;
+}
+
 function familyOf(type: string): string | null {
   const match = /^(proto_m\d\d_[a-z]+_)/.exec(type);
 
@@ -222,11 +226,19 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     await clickElement(page, 'card_isolate_loop');
     await clickElement(page, 'slot_0');
     types = await pilotEventTypes(page);
-    expect(types).toContain('proto_m01_board_card_placed');
+    // Station 080 Unit 5: the plan board is the first three-job batch.
+    expect(types).toContain('proto_m01_batch_card_placed');
     // Keyboard parity: focus moves and ENTER activates the same commands.
     await press(page, 'ArrowRight');
     await closeSurface(page);
-    expect(await itemStatus(page, 'M01')).toBe('open');
+    // Station 080 Unit 5: M01 owns two batch windows; the storm packet
+    // batch is open, the return batch still pending.
+    expect(
+      (await itemCoverage(page, 'M01')).opportunities.find(
+        (o) => o.opportunity_id === 'proto_m01_batch_o1',
+      )?.status,
+    ).toBe('open');
+    expect(await itemStatus(page, 'M01')).toBe('pending');
 
     // Incident desk: select a message, assign a subsystem and priority, submit twice (warned, then accepted).
     await openSurfaceAt(page, CONCOURSE.incidentDesk, 'm14_incident_desk');

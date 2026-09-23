@@ -169,7 +169,9 @@ test.describe('Utility & Core closure model (pure)', () => {
   test('2. completed, missing, invalid, censored and technical states are all terminal and classified with the approved words', () => {
     const readiness = deriveRouteReadiness(
       deriveCoverage([
-        completed('proto_m01_plan_board'),
+        // Station 080 Unit 5: M01 owns two batch windows (both recorded).
+        completed('proto_m01_batch_o1'),
+        completed('proto_m01_batch_o2'),
         absent('proto_m02_case_workspace'),
         invalid('proto_m04_debris_cleanup'),
         censored('proto_m06_routine_dispatch'),

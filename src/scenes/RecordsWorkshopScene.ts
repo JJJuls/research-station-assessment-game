@@ -61,6 +61,15 @@ import {
   activeWorkSurface,
   openWorkSurface,
 } from '../pilot/ui/WorkSurfaceScene';
+import {
+  closeM01Surface,
+  declareM01,
+  m01Window,
+  openM01,
+  presentM01,
+  resumeM01Surface,
+} from '../pilot/windows/m01PlanBoard';
+import { m01SurfaceModel } from '../pilot/windows/m01SurfaceModel';
 import { declareM02C, m02cWindow } from '../pilot/windows/m02CaseWorkspace';
 import {
   declareM04,
@@ -247,6 +256,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
       resumeM06Surface(now);
       resumeM12Surface('o2', now);
+      resumeM01Surface('o2', now);
       this.physical?.syncObjects(this.debrisEntries());
       this.refreshReturnChips();
     });
@@ -671,6 +681,21 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       5,
       () => m25State().handoff === 'acknowledged',
     );
+  }
+
+  /** M01 (Unit 5): the return orders batch, opened from the board's beat. */
+  private openReturnOrders() {
+    if (activeWorkSurface(this) !== null) {
+      return;
+    }
+
+    declareM01('o2');
+    openM01('o2', Date.now());
+    openWorkSurface(this, {
+      surfaceId: 'm01_return_orders',
+      model: () => m01SurfaceModel(this.returnSurfaceHost(), 'o2'),
+      onClose: () => closeM01Surface('o2', Date.now()),
+    });
   }
 
   private openReturnSurface(
@@ -1282,6 +1307,12 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {
     if (interactionKey === 'pilotWorkOrderBoard') {
+      // M01 (Unit 5): the return beat offers the return orders — the
+      // second batch is presented when that beat is read (once).
+      if (this.returnShift()) {
+        presentM01('o2', Date.now());
+      }
+
       return this.boardBeat().body;
     }
 
@@ -1399,6 +1430,19 @@ export class RecordsWorkshopScene extends PilotZoneScene {
                 'Signed. The Utility Deck is through the Concourse, east door.',
               onSelected: () => advancePilotStage('deck_closure', Date.now()),
             },
+            // M01 (Unit 5): the second three-job batch, listed right after
+            // the sign-off (never behind "Still working"). Never required
+            // for the sign-off; opened from this beat like any other order.
+            ...(m01Window('o2').isClosed()
+              ? []
+              : [
+                  {
+                    label: 'Open the return batch (three jobs).',
+                    tag: 'workshop_return_orders',
+                    feedback: '',
+                    onSelected: () => this.openReturnOrders(),
+                  },
+                ]),
             {
               label: 'Still working.',
               tag: 'workshop_return_continue',

@@ -183,7 +183,8 @@ test.describe('pilot route — Utility Deck record closure (Unit 6)', () => {
 
     const review = await lastPromptBody(page);
 
-    expect(review).toContain('Scheduled station tasks: 24');
+    // Station 080: M25 (U4) and M01 (U5) each own two windows now.
+    expect(review).toContain('Scheduled station tasks: 26');
     expect(review).toContain('Still open:');
     expect(review).not.toMatch(FORBIDDEN_IDENTIFIERS);
 
@@ -274,13 +275,23 @@ test.describe('pilot route — Utility Deck record closure (Unit 6)', () => {
     // not reported), M07 end, M09 check, M10 unfulfilled, M20 not resumed.
     expect(
       promoted.every((item) =>
-        ['M05', 'M07', 'M09', 'M10', 'M20'].includes(item.item),
+        // Station 080 U3: an M11 loan refused or left untaken is a
+        // complete observation at the review (declined, never low).
+        ['M05', 'M07', 'M09', 'M10', 'M11', 'M20'].includes(item.item),
       ),
       `promoted: ${promoted.map((item) => item.item).join(',')}`,
     ).toBe(true);
-    expect(coverage?.items.find((item) => item.item === 'M01')?.status).toBe(
-      'censored',
-    );
+    // Station 080 Unit 5: M01 owns two batch windows. The storm packet
+    // batch was entered and left before any job press (censored — no
+    // observation); the return orders batch was named by the board and
+    // never opened (missing), so the item summary reads missing.
+    const m01 = coverage?.items.find((item) => item.item === 'M01');
+
+    expect(
+      m01?.opportunities.find((o) => o.opportunity_id === 'proto_m01_batch_o1')
+        ?.status,
+    ).toBe('censored');
+    expect(m01?.status).toBe('missing');
 
     // Stage advances to the feeds (the route is NOT complete yet).
     expect((await pilotProbe(page))?.stage).toBe('core_stabilise');
