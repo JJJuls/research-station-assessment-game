@@ -452,3 +452,194 @@ occasions in the laboratory and the yard`.
   its option indices.
 - **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
   deleted.
+
+## U4 — M25 repetition and normality belief (calibration loops + Vale's question)
+
+- **Objective:** add the owner-approved M25 hybrid task: three required
+  calibration loops at a new Field Sensor Post in the Recovery Yard,
+  completion marked explicitly, then optional identical repeats for up to
+  30 focused seconds with voluntary stopping and no futility-understanding
+  gate; after all M24–M26 behavioural opportunities have closed, Vale's
+  return check-in asks every exposed participant (stoppers and repeaters
+  alike) the pinned normality question with exactly the five approved
+  anchors. Two outputs kept separate — never multiplied, gated or summed.
+- **Scientific rationale:** specification M25 row ("Implement hybrid task";
+  R03 repetition + belief without known worthlessness; R23 caution against
+  a habit claim; R26/R29 scrutiny of the adapted response format) and the
+  "M25 loops and later belief" decision: required loops are never scored
+  as persistence; the question is asked to all exposed participants after
+  the M24–M26 opportunities closed — timing keyed to RECORDED CLOSURE, not
+  to any numerical M24/M26 score; a missing rating is null, never a
+  midpoint. Measures `m25_optional_repeats` (count of COMPLETED optional
+  loops under the cap, censor status kept) and `m25_normality_belief`
+  (1–5 ordinal, companion).
+- **Participant-facing behaviour:** Noor's briefing lists the post as the
+  seventh yard job (between the support console and the uplink posts); the
+  post opens a work surface: "Run calibration loop" three times (each loop
+  a standard 3 focused seconds), a completion screen ("Calibration
+  complete — 3 loops recorded") with "Run more loops" (C) or "Finished"
+  (F); in the optional phase "Run loop again" (R) and "Finished — close
+  the post" (F); ESC / "Leave post" pauses (no unattended time counts);
+  no countdown, no praise, no reward. At Vale's return check-in the
+  acknowledgement "Heading to the workshop." is followed by one question
+  stage: "Vale: One question before you go on, no right answer.\nDo you
+  think redoing the same task over and over is normal?" with the five
+  labelled options in fixed order.
+- **Allowed files:** `src/pilot/exterior/m25RepetitionModel.ts` (pure
+  model), `src/pilot/windows/m25Repetition.ts` (window adapter),
+  `src/pilot/windows/m25SurfaceModel.ts`, `src/pilot/windows/reviewClosure.ts`,
+  `src/pilot/exterior/exteriorEpisodeModel.ts` (site order / labels /
+  objective line), `src/pilot/zoneSites.ts`, `src/world/interactionRegistry.ts`,
+  `src/scenes/ExteriorRecoveryYardScene.ts`, `src/scenes/StationConcourseScene.ts`,
+  `src/measurement/registerV3.ts`, `src/measurement/features/m25.ts`,
+  `src/measurement/features/index.ts`, `e2e/m25_repetition.spec.ts`,
+  `e2e/m25_repetition_route.spec.ts`, `e2e/exteriorHelpers.ts`,
+  `e2e/pilot_closure_models.spec.ts` (M25 is no longer the
+  questionnaire-primary presentation window), `e2e/pilot_coverage.spec.ts`
+  and `e2e/m26_protocol_foundation.spec.ts` (only if a derived count
+  changes), `docs/verification/station-080-m26/**`.
+- **Prohibited areas:** common, plus the legacy v2 M25 notice code
+  (`m25HandoffModel.ts`, `returnWindows.ts`, `RecordsWorkshopScene.ts`,
+  the closure session) — retained untouched as the v2 record.
+- **Entry state:** HEAD `e6191811`, clean tree (both `49d453b1` and
+  `e6191811` verified present on `origin/fable-professional-world-rescue-v2`).
+- **Success behaviour:** the post is reachable on the ordinary route; three
+  loops complete the required phase and the completion is marked; optional
+  loops are counted only when completed; the explicit stop, the 30 s
+  focused cap and the shift-end departure close the observation with
+  distinct closure reasons; the question is asked once at Vale's return
+  check-in to every exposed participant after the exterior shift closed
+  M24/M26; the extractor reproduces both features from the raw families.
+- **Failure/recovery:** loops never completed → primary null
+  (`voluntary_stop` / `closed_at_review`), belief null (`no_eligible_event`);
+  never opened → `declined` after the briefing presented it,
+  `not_presented` before; reload after an opened post → prior-load guard
+  (never re-run, `interrupted`); a loop in progress at the cap is not a
+  completed repeat (recorded as `loop_in_progress_at_cap`); the review
+  closes an open post as censored and marks a never-asked question absent.
+- **Telemetry boundary:** families `proto_m25_loops_*` and
+  `proto_m25_belief_*` (candidates); the v2 `proto_m25_probe_*` notice
+  family keeps its v2 meaning (presentation record, no response) and is no
+  longer an M25 route opportunity; no canonical name or formula invented.
+- **Scientific acceptance:** required loops never counted; the belief
+  question independent of the repeat count (asked to 0-repeat stoppers);
+  the two features never combined; no futility gate; no evaluative copy;
+  route and payment untouched by any loop.
+- **Gameplay acceptance:** the post on the audited open field (registry
+  spec green); Noor's list and the beacon agree; hotkeys shown; ESC always
+  leaves; the question labels unclipped at 800×600.
+- **Required tests:** `lint:tsc`, `build`, ESLint/Prettier on touched
+  files, pure `m25_repetition` + `world_v1_registry` + `pilot_coverage` +
+  `pilot_closure_models` + `m26_protocol_foundation` + `pilot_exterior_models`,
+  browser `m25_repetition_route`.
+- **Required screenshots:** the question stage at 800×600 (evidence only,
+  not committed).
+- **Stop conditions:** common.
+- **Model:** Fable.
+- **Commit expectation:** `feat(m25): calibration loops at the field sensor
+post and Vale's normality question`.
+- **Review round 1 (read-only, on the working tree):** the project
+  reviewer agents were again not discoverable, so the `scientific-reviewer`,
+  `gameplay-reviewer` and `test-reviewer` definitions were run through
+  general-purpose agents (Opus / Opus / Sonnet) with the same read-only
+  scope. Gameplay: 2 blockers / 2 moderate / 4 minor + 6 measurement
+  flags; scientific: no blocker, 14 findings (4 medium) + 10 owner
+  questions; test: commands green (tsc 0; 109/109 across nine pure suites;
+  ESLint / Prettier 0), 1 medium + 2 low + 1 informational. Material
+  findings and their resolution:
+  - Post invisible on the field (G-F1, blocker) — fixed: `proc-scan-node`
+    is on the yard's marker-hide list and is uplink post B's sprite
+    (S-F8c); the post now uses `proc-console-wall`; the route spec captures
+    the field at the post before opening it (`test-results/m25-post-800x600.png`).
+  - Keyboard focus fell through onto Leave / Finished while a loop ran
+    (G-F2, blocker; an ENTER meant to repeat became an explicit stop) —
+    fixed: the sweep button stays focusable while a sweep runs ("Sweep
+    running…"), the model refuses and logs the press; focus never moves.
+  - A carried / double-tapped press could enter the optional phase, stop,
+    or record the pre-focused first anchor (G flag, S-F6) — fixed: a 400 ms
+    settle window (`M25_SETTLE_MS`) on the completion screen
+    (`press_refused`) and on the question (`question_press_refused`; the
+    question is re-presented in place; latency measured from the LAST
+    presentation — also S-F13 comment/code mismatch); `focus_default_position`
+    and `refused_presses` exported; owner question §5.31.
+  - "Calibration" collided with the Workshop's M07 calibration bench
+    (G-F4) — fixed: participant-facing "sensor sweep" / "sensor check"
+    everywhere in the yard copy and the objective line; internal ids and
+    the register keep the specification's "calibration loop".
+  - Copy stated the extra loops change nothing (S-F3, construct drift
+    toward M26's known-futility) — fixed under the stated default (§5.29):
+    "You can run further sweeps at this post if you want to. Pay and
+    route are not affected."; "Further sweeps run the same way as the
+    three recorded."; "Finish whenever you like" removed.
+  - Cap tolerance of one tick (S-F4) — fixed: a sweep counts only when its
+    whole cycle fits inside the window on focused time
+    (`repeat_focused_at_start_ms + 3000 ≤ 30000`), independent of the tick.
+  - Unexposed departure coded `voluntary_stop` (S-F7) — fixed:
+    `no_eligible_event` (the repeat opportunity was never presented; the
+    required phase has no Finished control), closure `route_departure`,
+    censored; the reload-guard absence text at the review corrected.
+  - Unopened post usable after the shift end (S-F5) — fixed: the post is
+    inert after Noor's shift end ("The yard shift is logged — the post is
+    closed."); the review then records it absent (`declined` at extraction
+    when the briefing presented it).
+  - Primary not recounted from events (S-F1) — fixed: the extractor
+    recounts optional `loop_completed` events; a disagreeing snapshot is
+    `technical_failure` (never a value); `optional_completed_recount` and
+    `recount_agrees` exported.
+  - Help line listed absent controls; developer wording in the reload
+    message; wrapping "Finished — close the post" (G-F5, G-F7) — fixed
+    (per-phase help; "earlier in this session"; "Finished — close").
+  - Browser closure spec broadened past the deterministic value (T-F1) —
+    fixed: `expect(m25.class).toBe('not_observed')`.
+  - Recorded as owner questions, defaults kept: departure after exposure
+    not censored (§5.24, S-F2); Vale's preamble (§5.30, S-F9); running
+    tally (§5.32, S-F10); placement / contamination among M08–M24–M26
+    (§5.33, S-F8); the legacy v2 notice payload (§5.34, S-F11); prompt-card
+    input mode (§5.35, S-F13); no sixth decline option (§5.26).
+  - Not changed, documented: Noor's briefing panel height at 800×600 is an
+    arithmetic risk inherited from U3's loan paragraph (G-F3) — the new
+    clause was shortened to "(west field, south of the uplinks)"; not
+    rendered in this unit. The item-level coverage class is a
+    route-completeness summary, never an analysis input (S-F12). A
+    browser `page.reload()` scenario (T-F2) and an abandoned-question
+    scenario (T-F3, unreachable: the prompt is modal) stay with U24; the
+    pure spec covers the reload guard and the asked-unanswered closure.
+    The route spec skips the six earlier yard jobs (the M24 / M26 windows
+    are never opened before `finishOutside`), so the belief gate is
+    proven against "never begun" closures; end-to-end timing against the
+    repaired M24 / M26 windows is deferred to U12 / U24 (register as-built).
+- **Verification results (final tree):** `npm.cmd run lint:tsc` 0 ·
+  `npm.cmd run build` 0 · ESLint + Prettier on every touched file and doc
+  0 · pure `m25_repetition` (8) + `world_v1_registry` + `pilot_coverage`
+  - `pilot_closure_models` + `m26_protocol_foundation` +
+    `pilot_exterior_models` + `pilot_route_model` + `evidence_ledger` +
+    `summary_scope` 110/110 (retries off) · browser `m25_repetition_route`:
+    run 1 (before the review fixes) 2/2 retries off, 8.3 min; run 2 (after
+    the fixes) test 2 (cap path, keyboard answer) 1/1, test 1 failed only on
+    a stale label assertion (`CALIBRATION COMPLETE` → `SENSOR CHECK
+COMPLETE`, every behavioural step before it green); run 3 (final tree)
+    test 1 1/1 retries off, 3.5 min — `test-results/m25-post-800x600.png`
+    (the post visible on the field with its interaction prompt) and
+    `test-results/m25-question-800x600.png` (five anchors unclipped at
+    800×600) inspected, not committed · `verify-unit` PASS · `git diff
+--check` clean.
+- **Deviations:** allowlist extended during verification by
+  `e2e/pilot_closure.spec.ts` (the browser closure spec asserted M25's
+  v2 `external_pending` class; now `not_observed` — a required test update
+  to the approved protocol, not a loosened assertion) and
+  `e2e/pilot_exterior_models.spec.ts` (site order gained 'sensor');
+  `CLAUDE_UNIT_ALLOWLIST` again enforced by discipline + `verify-unit`;
+  reviewer stand-ins as above; the extractor's type annotation
+  (`primaryExtra: Partial<FeatureRecord>`, no runtime effect) was applied
+  after browser run 2 and before run 3, so run 3 and every static check
+  ran on the final tree while run 2's test 2 (the cap path) ran one
+  annotation earlier; no third review round (fixes bounded to cited
+  findings; a fresh review of the review fixes is folded into U24).
+- **Not changed:** `ScoringManager`, `SummaryScope`, `docs/research/**`,
+  `docs/scientific/**`, the v2 ledger and the v2 M25 notice code
+  (`m25HandoffModel.ts`, `returnWindows.ts`, `RecordsWorkshopScene.ts`,
+  the closure session), package files, tool configs, settings, every
+  other item's mechanic; every existing route helper keeps its option
+  indices (the return acknowledgement stays option 1).
+- **Commit:** one local commit; nothing pushed, merged, tagged, deployed or
+  deleted. Next unit: U5 M01 (redesign optional planning, two occasions).

@@ -299,7 +299,7 @@ const OPERATIONAL_LABELS: Partial<Record<M26ItemId, string>> = {
   M22: 'Shift report (Workshop)',
   M23: 'Excavation plot (Yard)',
   M24: 'Magnet rig (Metal Yard)',
-  M25: 'Shift question (Workshop)',
+  M25: 'Field sensor post (Recovery Yard) / return check-in (Concourse)',
   M26: 'Channel post (Yard)',
 };
 
@@ -1181,6 +1181,40 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'hybrid',
     direction: 'hybrid',
     occasions: 1,
+    // Unit 4: the approved hybrid task landed (field sensor post, Recovery
+    // Yard; the question at Vale's return check-in, Concourse). The v2
+    // questionnaire notice (`proto_m25_probe_*`, Records Workshop) keeps
+    // its v2 meaning as a presentation record and is no longer an M25
+    // route opportunity.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: [
+        'proto_m25_calibration_loops',
+        'proto_m25_normality_belief',
+      ],
+      windows: [
+        {
+          id: 'm25_loops_w1',
+          occasion: null,
+          zone: 'exterior_recovery_yard',
+          episode: 4,
+        },
+        {
+          id: 'm25_belief_w1',
+          occasion: null,
+          zone: 'station_concourse',
+          episode: 5,
+        },
+      ],
+      family_prefixes: ['proto_m25_loops_', 'proto_m25_belief_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
+    disposition_override: {
+      disposition: 'PRIMARY-CANDIDATE',
+      approved_by:
+        'FABLE-M01-M26-IMPLEMENTATION-INSTRUCTIONS.md, M25 row (Direction: Implement hybrid task) and "M25 loops and later belief"',
+    },
     summary:
       'Three required calibration loops, completion marked, optional identical repeats for up to 30 focused seconds (no futility gate); after all M24–M26 behaviour, the same five-option normality question for every exposed participant.',
     features: [

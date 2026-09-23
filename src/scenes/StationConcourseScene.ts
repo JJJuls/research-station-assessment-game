@@ -26,6 +26,10 @@ import {
   endManualWorldAction,
 } from '../gameplay/actions';
 import {
+  M25_NORMALITY_OPTIONS,
+  M25_NORMALITY_PROMPT,
+} from '../measurement/protocol';
+import {
   refreshPilotCoverageProbe,
   stampContaminationNotes,
 } from '../pilot/pilotCoverage';
@@ -100,6 +104,11 @@ import {
   openM14,
   resumeM14Surface,
 } from '../pilot/windows/m14IncidentDesk';
+import {
+  answerM25Belief,
+  askM25Belief,
+  m25BeliefDueNow,
+} from '../pilot/windows/m25Repetition';
 import {
   m01SurfaceModel,
   m12SurfaceModel,
@@ -882,13 +891,25 @@ export class StationConcourseScene extends PilotZoneScene {
               tag: 'return_ack',
               onSelected: () =>
                 advancePilotStage('workshop_return', Date.now()),
+              // M25 (Unit 4): the normality question follows the
+              // acknowledgement whenever it is due (exposed; loops, M24
+              // and M26 recorded closed). Route access never waits on it.
+              nextStage: () => this.normalityQuestionStage(),
             },
           ],
         };
       case 'workshop_return':
         return {
           body: 'Vale: The return shift closes in the Records Workshop — west door. Sign the board there when you are done.',
-          options: [{ label: 'Understood.', tag: 'redirect_workshop_return' }],
+          options: [
+            {
+              label: 'Understood.',
+              tag: 'redirect_workshop_return',
+              // Still due here only if it could not be asked at the
+              // check-in itself (it is asked once, ever).
+              nextStage: () => this.normalityQuestionStage(),
+            },
+          ],
         };
       case 'deck_closure':
         return {
@@ -912,6 +933,47 @@ export class StationConcourseScene extends PilotZoneScene {
           options: [{ label: 'Understood.', tag: 'complete_ack' }],
         };
     }
+  }
+
+  /**
+   * M25 (Unit 4): Vale's normality question — the approved in-game
+   * self-report component (a narrow exception to the no-questionnaire
+   * rule; the stem and the five anchors are pinned in protocol.ts). Asked
+   * once to every exposed participant after the loops, M24 and M26
+   * windows are recorded closed; the fixed order and the pre-focused
+   * first card are documented in the data (option_position). The first
+   * press is the immutable response.
+   */
+  private m25LastAnswer: 'answered' | 'refused' | 'invalid' | null = null;
+
+  private normalityQuestionStage(): PromptStage | null {
+    if (!m25BeliefDueNow() || !askM25Belief(Date.now())) {
+      return null;
+    }
+
+    return {
+      body: `Vale: One question before you go on — there is no right answer.\n${M25_NORMALITY_PROMPT}`,
+      // A press inside the settle window after this stage appears (a
+      // carried or double-tapped press from the acknowledgement) is
+      // refused by the model and the question is re-presented in place;
+      // only a read response closes the stage.
+      options: M25_NORMALITY_OPTIONS.map((option) => ({
+        label: option.label,
+        feedback: 'Vale: Noted. The Records Workshop is through the west door.',
+        getEventTypes: () => [],
+        onSelected: () => {
+          this.m25LastAnswer = answerM25Belief(
+            option.value,
+            Date.now(),
+            'keyboard',
+          );
+        },
+        nextStage: () =>
+          this.m25LastAnswer === 'refused'
+            ? this.normalityQuestionStage()
+            : null,
+      })),
+    };
   }
 
   /** M09: explicit, voluntary watch offer (accept or decline — both valid). */

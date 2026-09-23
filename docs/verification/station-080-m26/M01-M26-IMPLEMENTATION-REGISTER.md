@@ -78,34 +78,34 @@ feature** (id; numerator / denominator; range; higher means), **Companions**,
 **Label** (coverage label), **As-built** (route version and implementation
 status at this register version — updated by each unit).
 
-| Item | Direction               | Occ. | Primary feature                                                                                                                                                                                                      | Companions                                                                                                                                   | Label                   | As-built                                                                                                                 |
-| ---- | ----------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| M01  | Redesign                | 2    | `m01_planned_jobs`: jobs placed before the first work action / 6; 0–6; more advance organisation                                                                                                                     | plan structure, job correctness per occasion                                                                                                 | behavioural counterpart | v2-ledger route (one full-board occasion) — planned                                                                      |
-| M02  | Revise and extend       | 1    | `m02_correct_first_retrievals`: correct first retrievals / 6; 0–6; better traceability                                                                                                                               | filing choices, retrieval latency                                                                                                            | behavioural counterpart | v2-ledger route (two gated probes) — planned                                                                             |
-| M03  | Retain and verify       | 2    | `m03_tools_restored`: restored / 6; 0–3 per occasion; more tidying                                                                                                                                                   | object states                                                                                                                                | retained core           | v2-ledger route (five residuals per occasion) — planned                                                                  |
-| M04  | Extend occasions        | 2    | `m04_undisposed_pieces`: undisposed incl. carried / 6; more own mess                                                                                                                                                 | per-job values                                                                                                                               | behavioural counterpart | v2-ledger route (one job) — planned                                                                                      |
-| M05  | Redesign                | 2    | `m05_start_latency`: focused seconds to first work action + start/deferral/exit/cap per accepted occasion                                                                                                            | acceptance, exposure                                                                                                                         | behavioural counterpart | v2-ledger route (silent faults) — planned                                                                                |
-| M06  | Redesign                | 1    | `m06_unique_correct_orders`: unique correct orders in 60 s; 0–12; more useful output                                                                                                                                 | first-pass accuracy, rework, actual stop time                                                                                                | behavioural counterpart | v2-ledger route (four orders, no budget) — planned                                                                       |
-| M07  | Retain with controls    | 1    | `m07_stages_completed`: stages / 6 at the closing milestone; more routine completion                                                                                                                                 | returns                                                                                                                                      | retained core           | v2-ledger route (P7 valid-zero defect) — planned                                                                         |
-| M08  | Add controlled task     | 1    | `m08_work_choice_fraction`: Work / valid choices; 0–6; more work chosen (exploratory)                                                                                                                                | fractions by benefit level, practice performance                                                                                             | exploratory             | v3 route: `proto_m08_effort_choice`, Recovery Yard, ep 4 — implemented and reviewed (U2 + U2-R)                          |
-| M09  | Extend checkpoints      | 3    | `m09_due_checks_fulfilled`: fulfilled / eligible due checks; 0–3; more follow-through                                                                                                                                | acceptance, reminders, access                                                                                                                | behavioural counterpart | v2-ledger route (two checks) — planned                                                                                   |
-| M10  | Add second obligation   | 2    | `m10_obligations_fulfilled`: fulfilled or delegated / accepted accessible; 0–2; more reliability                                                                                                                     | per-obligation outcomes                                                                                                                      | behavioural counterpart | v2-ledger route (one delivery) — planned                                                                                 |
-| M11  | Add task                | 2    | `m11_unresolved_custodies`: unresolved / accepted accessible; 0–2; more unresolved stewardship                                                                                                                       | understanding, handover records                                                                                                              | exploratory             | v3 route: `proto_m11_custody_lab` (Laboratory, ep 3) + `proto_m11_custody_yard` (Recovery Yard, ep 4) — implemented (U3) |
-| M12  | Redesign interaction    | 2    | `m12_fields_verified`: judged fields before release / 6; 0–6; more checking coverage                                                                                                                                 | detection accuracy, successful corrections                                                                                                   | behavioural counterpart | v2-ledger route (reference shown, auto-copy) — planned                                                                   |
-| M13  | Extend cases            | 3    | `m13_first_solutions`: networks solved on first submission / 3                                                                                                                                                       | constraints, help                                                                                                                            | performance counterpart | v2-ledger route (one network) — planned                                                                                  |
-| M14  | Extend packets          | 2    | `m14_correct_first_integrations`: correct first decisions / 6                                                                                                                                                        | by packet, omissions, source use                                                                                                             | performance counterpart | v2-ledger route (one unkeyed packet) — planned                                                                           |
-| M15  | Extend systems          | 2    | `m15_correct_first_predictions`: correct first predictions / 4                                                                                                                                                       | model correctness, exploration                                                                                                               | performance counterpart | v2-ledger route (one system, one intervention) — planned                                                                 |
-| M16  | Standardise             | 1    | `m16_correct_first_applications`: correct first applications / 6                                                                                                                                                     | form, example versions                                                                                                                       | performance counterpart | v2-ledger route (familiarisation with feedback) — planned                                                                |
-| M17  | Replace trial structure | 1    | `m17_criterion_trial`: {criterion_trial 3–12, attained}; reported whenever reached within the administered trials; (12, false, censored) after twelve without attainment; early exit without attainment = incomplete | `m17_sequence_baseline_transfer` (full sequence, baseline, transfer)                                                                         | performance counterpart | v2-ledger route (2 trials, live preview) — planned                                                                       |
-| M18  | Extend diagnosis        | 3    | `m18_correct_first_diagnoses`: / 3                                                                                                                                                                                   | `m18_correct_consequence_predictions`: / 3                                                                                                   | performance counterpart | v2-ledger route (one case, no prediction) — planned                                                                      |
-| M19  | Add second challenge    | 2    | `m19_continuations`: further attempt / eligible difficulty encounters; 0–2                                                                                                                                           | failed attempts, success, time                                                                                                               | behavioural counterpart | v2-ledger route (one coupling) — planned                                                                                 |
-| M20  | Extend returns          | 2    | `m20_cued_resumptions`: resumed / eligible unfinished components; 0–2                                                                                                                                                | spontaneous returns, progress, cue exposure                                                                                                  | behavioural counterpart | v2-ledger route (one uncued resume) — planned                                                                            |
-| M21  | Replace revisit score   | 2    | `m21_restudy_revisions`: restudy AND revised application / initially incorrect cases                                                                                                                                 | comprehension, other strategies                                                                                                              | partial                 | v2-ledger route (one case) — planned                                                                                     |
-| M22  | Hybrid                  | 2    | `m22_revisions_begun`: / presented requirements (2 planned)                                                                                                                                                          | `m22_discouragement_ratings`: two 1–5 ratings with recall delay                                                                              | hybrid                  | v2-ledger route (one report, no rating) — planned                                                                        |
-| M23  | Add second plot         | 2    | `m23_continuations_after_failure`: further search / plots with a failed dig; 0–2                                                                                                                                     | attempts, strategy, success                                                                                                                  | behavioural counterpart | v2-ledger route (one plot) — planned                                                                                     |
-| M24  | Repair boundary         | 1    | `m24_postknowledge_casts` (first included)                                                                                                                                                                           | `m24_postknowledge_casts_minus_first` (sensitivity); `m24_unqualified_casts` (pre-knowledge / failed-check behaviour, switch, exit, cap)     | behavioural counterpart | v2-ledger route (acknowledgement, no test) — planned                                                                     |
-| M25  | Hybrid                  | 1    | `m25_optional_repeats`                                                                                                                                                                                               | `m25_normality_belief` 1–5                                                                                                                   | hybrid                  | v2-ledger route (notice only) — planned                                                                                  |
-| M26  | Repair boundary         | 1    | `m26_postknowledge_retries` (first included)                                                                                                                                                                         | `m26_postknowledge_retries_minus_first` (sensitivity); `m26_unqualified_retries` (pre-knowledge / failed-check behaviour, switch, exit, cap) | behavioural counterpart | v2-ledger route (acknowledgement, no test) — planned                                                                     |
+| Item | Direction               | Occ. | Primary feature                                                                                                                                                                                                      | Companions                                                                                                                                   | Label                   | As-built                                                                                                                          |
+| ---- | ----------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| M01  | Redesign                | 2    | `m01_planned_jobs`: jobs placed before the first work action / 6; 0–6; more advance organisation                                                                                                                     | plan structure, job correctness per occasion                                                                                                 | behavioural counterpart | v2-ledger route (one full-board occasion) — planned                                                                               |
+| M02  | Revise and extend       | 1    | `m02_correct_first_retrievals`: correct first retrievals / 6; 0–6; better traceability                                                                                                                               | filing choices, retrieval latency                                                                                                            | behavioural counterpart | v2-ledger route (two gated probes) — planned                                                                                      |
+| M03  | Retain and verify       | 2    | `m03_tools_restored`: restored / 6; 0–3 per occasion; more tidying                                                                                                                                                   | object states                                                                                                                                | retained core           | v2-ledger route (five residuals per occasion) — planned                                                                           |
+| M04  | Extend occasions        | 2    | `m04_undisposed_pieces`: undisposed incl. carried / 6; more own mess                                                                                                                                                 | per-job values                                                                                                                               | behavioural counterpart | v2-ledger route (one job) — planned                                                                                               |
+| M05  | Redesign                | 2    | `m05_start_latency`: focused seconds to first work action + start/deferral/exit/cap per accepted occasion                                                                                                            | acceptance, exposure                                                                                                                         | behavioural counterpart | v2-ledger route (silent faults) — planned                                                                                         |
+| M06  | Redesign                | 1    | `m06_unique_correct_orders`: unique correct orders in 60 s; 0–12; more useful output                                                                                                                                 | first-pass accuracy, rework, actual stop time                                                                                                | behavioural counterpart | v2-ledger route (four orders, no budget) — planned                                                                                |
+| M07  | Retain with controls    | 1    | `m07_stages_completed`: stages / 6 at the closing milestone; more routine completion                                                                                                                                 | returns                                                                                                                                      | retained core           | v2-ledger route (P7 valid-zero defect) — planned                                                                                  |
+| M08  | Add controlled task     | 1    | `m08_work_choice_fraction`: Work / valid choices; 0–6; more work chosen (exploratory)                                                                                                                                | fractions by benefit level, practice performance                                                                                             | exploratory             | v3 route: `proto_m08_effort_choice`, Recovery Yard, ep 4 — implemented and reviewed (U2 + U2-R)                                   |
+| M09  | Extend checkpoints      | 3    | `m09_due_checks_fulfilled`: fulfilled / eligible due checks; 0–3; more follow-through                                                                                                                                | acceptance, reminders, access                                                                                                                | behavioural counterpart | v2-ledger route (two checks) — planned                                                                                            |
+| M10  | Add second obligation   | 2    | `m10_obligations_fulfilled`: fulfilled or delegated / accepted accessible; 0–2; more reliability                                                                                                                     | per-obligation outcomes                                                                                                                      | behavioural counterpart | v2-ledger route (one delivery) — planned                                                                                          |
+| M11  | Add task                | 2    | `m11_unresolved_custodies`: unresolved / accepted accessible; 0–2; more unresolved stewardship                                                                                                                       | understanding, handover records                                                                                                              | exploratory             | v3 route: `proto_m11_custody_lab` (Laboratory, ep 3) + `proto_m11_custody_yard` (Recovery Yard, ep 4) — implemented (U3)          |
+| M12  | Redesign interaction    | 2    | `m12_fields_verified`: judged fields before release / 6; 0–6; more checking coverage                                                                                                                                 | detection accuracy, successful corrections                                                                                                   | behavioural counterpart | v2-ledger route (reference shown, auto-copy) — planned                                                                            |
+| M13  | Extend cases            | 3    | `m13_first_solutions`: networks solved on first submission / 3                                                                                                                                                       | constraints, help                                                                                                                            | performance counterpart | v2-ledger route (one network) — planned                                                                                           |
+| M14  | Extend packets          | 2    | `m14_correct_first_integrations`: correct first decisions / 6                                                                                                                                                        | by packet, omissions, source use                                                                                                             | performance counterpart | v2-ledger route (one unkeyed packet) — planned                                                                                    |
+| M15  | Extend systems          | 2    | `m15_correct_first_predictions`: correct first predictions / 4                                                                                                                                                       | model correctness, exploration                                                                                                               | performance counterpart | v2-ledger route (one system, one intervention) — planned                                                                          |
+| M16  | Standardise             | 1    | `m16_correct_first_applications`: correct first applications / 6                                                                                                                                                     | form, example versions                                                                                                                       | performance counterpart | v2-ledger route (familiarisation with feedback) — planned                                                                         |
+| M17  | Replace trial structure | 1    | `m17_criterion_trial`: {criterion_trial 3–12, attained}; reported whenever reached within the administered trials; (12, false, censored) after twelve without attainment; early exit without attainment = incomplete | `m17_sequence_baseline_transfer` (full sequence, baseline, transfer)                                                                         | performance counterpart | v2-ledger route (2 trials, live preview) — planned                                                                                |
+| M18  | Extend diagnosis        | 3    | `m18_correct_first_diagnoses`: / 3                                                                                                                                                                                   | `m18_correct_consequence_predictions`: / 3                                                                                                   | performance counterpart | v2-ledger route (one case, no prediction) — planned                                                                               |
+| M19  | Add second challenge    | 2    | `m19_continuations`: further attempt / eligible difficulty encounters; 0–2                                                                                                                                           | failed attempts, success, time                                                                                                               | behavioural counterpart | v2-ledger route (one coupling) — planned                                                                                          |
+| M20  | Extend returns          | 2    | `m20_cued_resumptions`: resumed / eligible unfinished components; 0–2                                                                                                                                                | spontaneous returns, progress, cue exposure                                                                                                  | behavioural counterpart | v2-ledger route (one uncued resume) — planned                                                                                     |
+| M21  | Replace revisit score   | 2    | `m21_restudy_revisions`: restudy AND revised application / initially incorrect cases                                                                                                                                 | comprehension, other strategies                                                                                                              | partial                 | v2-ledger route (one case) — planned                                                                                              |
+| M22  | Hybrid                  | 2    | `m22_revisions_begun`: / presented requirements (2 planned)                                                                                                                                                          | `m22_discouragement_ratings`: two 1–5 ratings with recall delay                                                                              | hybrid                  | v2-ledger route (one report, no rating) — planned                                                                                 |
+| M23  | Add second plot         | 2    | `m23_continuations_after_failure`: further search / plots with a failed dig; 0–2                                                                                                                                     | attempts, strategy, success                                                                                                                  | behavioural counterpart | v2-ledger route (one plot) — planned                                                                                              |
+| M24  | Repair boundary         | 1    | `m24_postknowledge_casts` (first included)                                                                                                                                                                           | `m24_postknowledge_casts_minus_first` (sensitivity); `m24_unqualified_casts` (pre-knowledge / failed-check behaviour, switch, exit, cap)     | behavioural counterpart | v2-ledger route (acknowledgement, no test) — planned                                                                              |
+| M25  | Hybrid                  | 1    | `m25_optional_repeats`                                                                                                                                                                                               | `m25_normality_belief` 1–5                                                                                                                   | hybrid                  | v3 route: `proto_m25_calibration_loops` (Recovery Yard, ep 4) + `proto_m25_normality_belief` (Concourse, ep 5) — implemented (U4) |
+| M26  | Repair boundary         | 1    | `m26_postknowledge_retries` (first included)                                                                                                                                                                         | `m26_postknowledge_retries_minus_first` (sensitivity); `m26_unqualified_retries` (pre-knowledge / failed-check behaviour, switch, exit, cap) | behavioural counterpart | v2-ledger route (acknowledgement, no test) — planned                                                                              |
 
 ### 2b. Occasion count, placement and clustering
 
@@ -255,6 +255,110 @@ device); a dedicated return rack could not be placed on the audited
 Laboratory plate (airlock trigger clearance and the workstation island), so
 the workstation is the named return point.*
 
+_Unit 4 (M25): as-built — Field Sensor Post, Recovery Yard
+(`YARD_SITES.sensorPost` 440,330, approached from the south at 440,374;
+registry `yard.sensor_post`; texture `proc-console-wall` — never `proc-scan-node`, which the yard hides and which is uplink post B's sprite); listed by Noor's
+briefing as the seventh yard job, between the support console and the
+uplink posts (`EXTERIOR_SITE_ORDER` 'sensor'; objective line "Run the
+three sensor sweeps at the field sensor post — west field, south of the
+uplinks"); participant-facing name of a calibration loop: a "sensor
+sweep" ("calibration" stays the Workshop bench's word — M07); opportunity `proto_m25_calibration_loops`, window
+`m25_loops_w1`, family `proto_m25_loops_`(events:`presented`at the
+briefing,`opportunity*opened`, `loop_started`, `loop_press_refused`,
+`loop_completed`, `required_complete`, `press_refused`(a press inside
+the 400 ms settle window of the completion screen),`optional_entered`,
+`cap_reached`, `stopped`, `surface_closed`, `surface_reopened`, `window_closed`,
+`technical_failure` only as the reload-guard marker). Procedure: "Run
+sensor sweep" (R) three times — one press starts one sweep, a sweep is
+a standard 3 FOCUSED seconds (`M25_LOOP_MS`; hidden / unfocused / closed
+surface excluded); while a sweep runs the button stays focusable and
+reads "Sweep running…" and the model refuses and logs the press
+(held-key auto-repeat and a carried click never add a sweep; keyboard
+focus never falls through onto Leave or Finished); after the third required sweep the COMPLETION
+screen ("Sensor check complete — 3 sweeps recorded."; "You can run
+further sweeps at this post if you want to. Pay and route are not
+affected." — no statement that further sweeps change nothing) offers
+"Run more sweeps" (C) or "Finished" (F) — keys distinct from the sweep
+key, and both refused inside the screen's 400 ms settle window
+(`M25_SETTLE_MS`, logged `press_refused`), so no carried press enters the
+optional phase or stops;
+"Run more sweeps" starts the 30 s FOCUSED window (`M25_REPEAT_CAP_MS`), in
+which "Run sweep again" (R) and "Finished — close" (F) are offered
+(status "Further sweeps run the same way as the three recorded."); no
+countdown is displayed; ESC / "Leave post" pauses every
+running clock (no unattended time counts) and the reopen resumes them. No
+futility-understanding gate exists. Closure: the explicit "Finished" is a
+voluntary stop (`stop_kind: explicit`; on the completion screen it is an
+exposed stopper with 0 repeats), the cap closes the window (`cap`,
+censored — a sweep counts only when its whole cycle fits inside the
+window on FOCUSED time, `repeat_focused_at_start_ms + 3000 ≤ 30000`,
+independent of the 250 ms tick; one still running at the cap is NOT a
+completed repeat and is exported as `loop_in_progress_at_cap`), Noor's shift end closes an open
+exposed post by departure (`route_departure`, `stop_kind: departure`,
+count as it stands) and an open unexposed post by departure, censored
+(required sweeps never completed ⇒ primary null — never a stop the
+participant could make: the required phase has no Finished control);
+after the shift end a never-opened post is inert ("The yard shift is
+logged — the post is closed.") so no post-shift sweep can be started; the review censors an
+open post and marks a never-opened one absent; a post opened in an
+earlier page load is never re-run (prior exposure recorded, technically
+incomplete, features `interrupted`). Formula `m25_optional_repeats`=
+completed optional loops (required loops excluded; recounted from the`loop_completed`events — a snapshot that disagrees with its own event
+stream is`technical_failure`, `recount_agrees`exported;`null`with`no_eligible_event`when the required loops were never completed — the
+repeat opportunity was never presented,`declined`when listed by Noor but never opened,`not_presented`before the briefing,`interrupted`after a reload,`pending`while open);`closure_reason`∈
+{voluntary_stop, cap, route_departure, closed_at_review} and`censored`(cap / review) beside it; components: required loops completed, completion
+marked, optional entered, optional loops started, loop in progress at cap,
+repeat focused / wall ms, stop kind, per-loop focused ms. Belief:
+opportunity`proto_m25_normality_belief`, window `m25_belief_w1`(Concourse, episode 5), family`proto_m25_belief*`(events:`presented`, `opportunity*opened`, `question_presented`with the stem and
+the five labels,`question_press_refused`(a press inside the 400 ms settle window after
+a presentation: position and latency logged, no response recorded, the
+question re-presented in place),`question_answered`with`value`,
+`label`, `option_position`= value,`option_count`5,`focus_default_position`1,`response_latency_ms`(from the LAST
+presentation),`asked_count`, `refused_presses`; `window_closed`). Vale's return check-in
+(`StationConcourseScene.normalityQuestionStage`): after the return
+acknowledgement "Heading to the workshop." (the stage advance never waits
+on the rating) a follow-up prompt stage shows "Vale: One question before
+you go on — there is no right answer." followed by the pinned stem
+`M25_NORMALITY_PROMPT` and exactly the five pinned anchors as option
+cards 1–5 in fixed order (the first card pre-focused, as every prompt);
+the stage is also offered by the workshop_return beat if still due. DUE
+gate (`m25BehaviourClosed`): exposed (three required loops completed and
+the completion screen shown) AND the loops window not open AND the
+exterior shift ended (`shift_ended_at_ms`, which closes the M24 and M26
+windows with their honest dispositions) AND neither the M24 nor the M26
+window open — a RECORDED closure, never a numerical M24 / M26 score; a
+never-begun rig or uplink after the shift end counts as closed (it closes
+absent at the review). Stoppers and repeaters are asked alike; the first
+read response is immutable; a press inside the settle window is refused
+and the question shown again (a carried or double-tapped press from the
+acknowledgement can never record the pre-focused first anchor); a later
+press is refused; the prompt is
+modal, so no sixth "prefer not to say" option exists (the owner specified
+exactly five responses) and a missing rating arises only from never
+reaching the check-in exposed, a reload before answering, or the review
+(`not_presented`/`interrupted`, never a midpoint). Formula
+`m25_normality_belief`= the recorded value 1–5 (ordinal; companion;`no_eligible_event`when not exposed,`pending`until asked,`interrupted`when asked and unanswered at the review); the two features are derived
+from different families and never combined. Extractor`src/measurement/features/m25.ts`; tests `e2e/m25_repetition.spec.ts`(7
+pure) and`e2e/m25_repetition_route.spec.ts`(browser, 2: repeater with
+pointer + keyboard loops, refused double start, ESC pause mid-loop,
+completion, two optional loops, explicit stop, shift end, the question
+after the return with exactly the five anchors captured at 800×600,
+immutable answer, no re-ask, offline reproduction; stopper by inaction
+under the cap with the wall-clock tick, then the question answered by
+keyboard). Integration dependency:`m25BehaviourClosed`reads the M24 /
+M26`ItemWindow`s of `exteriorWindows()` and the exterior shift end — the
+later U12 (M24 / M26 knowledge-boundary repair) must keep those windows as
+the closure signal or update this reader; end-to-end verification of the
+question timing against the REPAIRED M24 / M26 windows is deferred to U12
+/ U24. Limitations: the loop is a pure timed cycle with no content (a
+"calibration" that requires nothing), so repetition cost is time only; the
+30 s cap and the 3 s cycle are pilot defaults; "exposed" is defined by the
+completion screen (a participant who left before the third loop is not
+asked); the yard hosts M24, M25 and M26 (all IP) in one visit — M25 is
+separated from M24 by the support console and precedes M26; the prompt
+cards report no input device (`input_mode: keyboard` by the existing
+convention); the meaning of "normal" still needs cognitive interviewing.*
+
 _Unit 1 (foundation): no item mechanic changed; every item remains on its
 v2-ledger route with `implementation_status: planned`; the as-built event
 families are exactly the frozen v2 families. The register, protocol
@@ -368,3 +472,85 @@ reversible, none changes the primary formula.
 20. **Custody length (S-F8).** Default: the loan spans the loan room's
     stage (laboratory work; the yard shift) and `custody_ms` is exported.
     Alternative: bound each loan to one sub-task.
+
+The U4 (M25) implementation took the following defaults; each is
+reversible, none changes the two outputs' formulas or their separation.
+
+21. **What a "calibration loop" is.** Default: one press starts a standard
+    3-second focused cycle that requires nothing else (the repetition
+    costs time only). Alternatives: a short manual sub-action per loop
+    (e.g. seat / release), or a longer cycle.
+22. **When the 30 s window starts and whether it is shown.** Default: the
+    window starts when "Run more loops" is pressed on the completion
+    screen (the screen itself is untimed), and no countdown is displayed;
+    the cap message is "The post has closed its loop input. Calibration
+    stands complete." Alternatives: start the window at the completion
+    mark; show a countdown.
+23. **A loop still running at the cap.** Default: not a completed repeat
+    (exported as `loop_in_progress_at_cap`), the window closes at the cap.
+    Alternative: let a started loop finish and count it.
+24. **Departure with the post exposed but not explicitly closed.**
+    Default: closed by Noor's shift end as a completed observation
+    (`route_departure`, `stop_kind: departure`, not censored). Alternative:
+    censor it, or treat it as an explicit stop.
+25. **Exposure.** Default: exposed = three required loops completed and the
+    completion screen shown; "Finished" on the completion screen is an
+    exposed stopper with 0 repeats. Alternative: require entering the
+    optional phase.
+26. **No decline option on the question.** Default: exactly the five
+    approved responses; the prompt is modal, so a rating is missing only
+    when the check-in is never reached exposed, a reload intervenes or the
+    review closes first. Alternative: a sixth "prefer not to say" card
+    (recorded as declined, never a midpoint).
+27. **The retained v2 questionnaire notice.** Default: the Records
+    Workshop notice (`proto_m25_probe_*`, "a short questionnaire follows
+    after this session") stays as a v2 presentation record and route
+    dressing; it is no longer an M25 opportunity and records no response.
+    Alternative: remove it from the return shift.
+28. **Placement among the yard's IP assays.** Default: the post is the
+    seventh job, between the support console (M08) and the uplink posts
+    (M26), after the rig (M24). Alternative: place it before the rig, or
+    in a different room (no other audited standing room exists).
+
+The U4 independent review (scientific + gameplay + test, read-only)
+surfaced the following; defaults applied, reversible, none changes the
+two outputs' formulas or their separation.
+
+29. **Completion-screen copy (review S-F3).** Default: "You can run further
+    sweeps at this post if you want to. Pay and route are not affected."
+    — the fixed-consequence statement kept (a rival instrumental reading
+    removed), any "nothing changes" / "identical" wording dropped so the
+    task does not state futility (M25 does not require known
+    worthlessness). Alternatives: (a) drop the pay/route sentence too;
+    (b) restore an explicit no-effect statement.
+30. **Vale's preamble (S-F9).** Default: "One question before you go on —
+    there is no right answer." precedes the pinned stem. Alternative: the
+    pinned stem alone.
+31. **Question presentation and the pre-focused first card (S-F6, G).**
+    Default: fixed order 1–5, first card pre-focused (every prompt), a
+    400 ms settle window that refuses and re-presents, `option_position`
+    = value, `focus_default_position`, `response_latency_ms` and
+    `refused_presses` exported. Alternatives: (a) counterbalanced
+    ascending / descending order with position separate from value; (b)
+    no pre-focused card; (c) a declared latency-based validity flag.
+32. **Running tally on the surface (S-F10).** Default: "SWEEPS RECORDED:
+    3 + n further" stays visible (factual, like the M08 output tally).
+    Alternative: show only "sensor check complete" without a count.
+33. **Placement among the yard's IP assays (S-F8, extends 28).** Default:
+    seventh job, after the console (M08, ~90 s of work-or-stand-by) and
+    before the uplink posts (M26, the same "repeat or leave under a hidden
+    30 s cap" structure); the post's sprite differs from uplink post B.
+    Rival readings recorded: M08 fatigue or rest-seeking into M25; M25's
+    cap message teaching M26 that such windows close by themselves; M24
+    order effect (common to all). Alternatives: move the post before the
+    rig; a buffer task between M25 and M26.
+34. **Legacy v2 notice payload (S-F11, extends 27).** Default: the
+    Records Workshop notice keeps `item: 'M25'` and its v2 payload
+    (`in_game_response: null`) as a frozen v2 presentation record; the
+    v3 `measurement_features` block is the only place the in-game belief
+    is read. Alternative: relabel the notice as a v2 record with no
+    `in_game_response` field, or remove it (27).
+35. **Prompt-card input mode (S-F13).** Default: `input_mode: keyboard` on
+    every prompt-card answer (the existing M09 / M10 / M11 convention —
+    the cards report no device). Alternative: extend the prompt pipeline
+    to report the device (outside this unit's allowlist).

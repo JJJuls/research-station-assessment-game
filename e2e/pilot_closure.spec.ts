@@ -247,7 +247,10 @@ test.describe('Utility & Core closure — participant route (Unit 6)', () => {
 
     const m25 = probe.readiness.items.find((item) => item.item === 'M25')!;
 
-    expect(m25.class).toBe('external_pending');
+    // Station 080 Unit 4: M25 owns two in-game windows (the field sensor
+    // post, Vale's question) classified like every other item; on this
+    // route neither is entered, so the closure records both as missing.
+    expect(m25.class).toBe('not_observed');
     expect(m25.routeTerminal).toBe(true);
     expect(probe.readiness.externalQuestionnairePending).toBe(true);
     expect(probe.readiness.counts.open + probe.readiness.counts.pending).toBe(

@@ -204,6 +204,15 @@ import {
   resolveM11,
 } from '../pilot/windows/m11Custody';
 import {
+  closeM25LoopsAtShiftEnd,
+  closeM25Surface,
+  declareM25Loops,
+  m25LoopsWindow,
+  openM25Loops,
+  presentM25Loops,
+} from '../pilot/windows/m25Repetition';
+import { m25SurfaceModel } from '../pilot/windows/m25SurfaceModel';
+import {
   YARD_AIRLOCK,
   YARD_RIG_PAD,
   YARD_SITES,
@@ -304,6 +313,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     declareExteriorWindows();
     declareM08();
     declareM11('yard');
+    declareM25Loops();
     stampContaminationNotes();
 
     super.create(data);
@@ -490,6 +500,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     // ——— Sites (E stations) in operational order. ———
     this.buildCouplingSite();
     this.buildSupportConsoleSite();
+    this.buildSensorPostSite();
     this.buildMastSite();
     this.buildExcavationSite();
     this.buildMetalYard();
@@ -723,6 +734,125 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
           }
 
           this.m08TickPending = false;
+
+          if (activeWorkSurface(this) === null) {
+            return;
+          }
+
+          fn();
+          activeWorkSurface(this)?.refresh();
+        }, ms);
+      },
+    };
+  }
+
+  /**
+   * Station 080 M25 (Unit 4): the field sensor post — three required
+   * calibration loops, then optional identical loops on a work surface.
+   * Never guided by the beacon as a directive after first use; never
+   * gates anything.
+   */
+  private buildSensorPostSite() {
+    const site = YARD_SITES.sensorPost;
+
+    this.addStation({
+      interactionKey: 'pilotStation',
+      label: 'Field Sensor Post',
+      // Not `proc-scan-node`: that key is hidden by the World V2 marker
+      // sweep below AND is uplink post B's sprite (review U4 — the post
+      // must be visible and never look like M26's alternative).
+      texture: 'proc-console-wall',
+      x: site.x,
+      y: site.y,
+      verb: 'Use the',
+      registryId: 'yard.sensor_post',
+      onPromptOpened: () => {
+        this.logStationOpened('sensor_post', {
+          window_status: m25LoopsWindow.windowStatus(),
+        });
+
+        if (activeWorkSurface(this) !== null) {
+          return false;
+        }
+
+        // After Noor's shift end a never-opened post is inert: the M24 /
+        // M26 opportunities are closed and the belief question keyed to
+        // that closure — no post-shift sweep can be started (review U4).
+        if (
+          exteriorEpisode().shift_ended_at_ms !== null &&
+          m25LoopsWindow.windowStatus() === 'unopened'
+        ) {
+          this.showFeedbackMessage(
+            'The yard shift is logged — the post is closed.',
+          );
+
+          return false;
+        }
+
+        openM25Loops(Date.now());
+        // Guidance only: the listed job is reached once the post opens.
+        dismissExteriorSite('sensor');
+        openWorkSurface(this, {
+          surfaceId: 'm25_field_sensor_post',
+          model: () => m25SurfaceModel(this.m25SurfaceHost()),
+          onClose: () => {
+            closeM25Surface(Date.now());
+          },
+          onClosed: () => {
+            this.m25TickSerial += 1;
+            this.m25TickPending = false;
+            this.refreshGuidance();
+          },
+        });
+
+        return false;
+      },
+    });
+    registerPilotStation({
+      id: 'sensor_post',
+      zone: 'exterior_recovery_yard',
+      x: site.x,
+      y: site.y,
+      label: 'Field Sensor Post',
+      stages: ['exterior_work'],
+      isDone: () => m25LoopsWindow.windowStatus() !== 'unopened',
+      // Seventh listed job: after the console, before the uplink reports
+      // (the beacon and Noor's list agree).
+      order: 6,
+    });
+  }
+
+  private m25TickPending = false;
+  private m25TickSerial = 0;
+
+  private m25SurfaceHost() {
+    return {
+      now: () => Date.now(),
+      // The Leave button and ESC take the SAME path: pause first, then close.
+      close: () => {
+        closeM25Surface(Date.now());
+        activeWorkSurface(this)?.close();
+      },
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+      // Wall-clock timer (see m08SurfaceHost): a reopened surface is not
+      // yet "active" during its create step, and a running loop or the
+      // optional window must keep ticking after a reopen.
+      later: (ms: number, fn: () => void) => {
+        if (this.m25TickPending) {
+          return;
+        }
+
+        this.m25TickPending = true;
+
+        const serial = this.m25TickSerial;
+
+        window.setTimeout(() => {
+          if (serial !== this.m25TickSerial) {
+            return;
+          }
+
+          this.m25TickPending = false;
 
           if (activeWorkSurface(this) === null) {
             return;
@@ -1021,7 +1151,8 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
 
         return state.closed || state.acknowledged_ms !== null;
       },
-      order: 6,
+      // Eighth listed job (the sensor post is seventh — Unit 4).
+      order: 7,
     });
 
     this.addStation({
@@ -1786,7 +1917,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     switch (pilotStage()) {
       case 'exterior_briefing': {
         const body =
-          'Noor: Storm damage, six jobs — work them in this order: the frozen coolant coupling (west), Mast 04 (north), the staked excavation field (east), the magnet rig in the Metal Recovery Yard (north-east), the station support console on the open field (south of the mast), then the uplink posts (north-west) for the two recovery reports.\n' +
+          'Noor: Storm damage, seven jobs — work them in this order: the frozen coolant coupling (west), Mast 04 (north), the staked excavation field (east), the magnet rig in the Metal Recovery Yard (north-east), the station support console on the open field (south of the mast), the field sensor post (west field, south of the uplinks), then the uplink posts (north-west) for the two recovery reports.\n' +
           'Each site has its own panel (E). Scanner is C, spade is D, the rig is F. Come back to me when you are finished outside.';
         const ready = (loan: boolean | null) => () => {
           const now = Date.now();
@@ -1794,6 +1925,8 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
           advancePilotStage('exterior_work', now);
           // M08 (U2-R): the console is presented by this briefing.
           presentM08(now);
+          // M25 (Unit 4): so is the field sensor post.
+          presentM25Loops(now);
           this.ensureFieldTools();
 
           // M11 (Unit 3): the plain "Ready." lets the loan lapse; taking or
@@ -1897,6 +2030,9 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
 
     endExteriorShift(now);
     closeM08AtShiftEnd(now);
+    // M25 (Unit 4): the loops close with the shift — the belief question
+    // becomes due once this recorded closure exists (never on a score).
+    closeM25LoopsAtShiftEnd(now);
     this.closeExcavationMechanics();
     advancePilotStage('return_hub', now);
     this.refreshAllVisuals();

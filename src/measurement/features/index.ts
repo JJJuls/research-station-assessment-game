@@ -5,6 +5,7 @@
  */
 import './m08';
 import './m11';
+import './m25';
 
 export * from './extract';
 export * from './types';

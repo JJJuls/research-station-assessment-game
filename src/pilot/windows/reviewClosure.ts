@@ -21,6 +21,7 @@ import { closeM10AtReview } from './m10ComponentPromise';
 import { closeM11AtReview } from './m11Custody';
 import { m12Windows } from './m12QualityControl';
 import { m14Window } from './m14IncidentDesk';
+import { closeM25BeliefAtReview, closeM25LoopsAtReview } from './m25Repetition';
 import {
   closeM20ResumeAtReview,
   closeM21AtReview,
@@ -89,7 +90,13 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
   // Episode 4 (Unit 4): M19 / M23 / M24 / M26 close with their honest
   // dispositions; a still-open M20 start window censors.
   closeExteriorWindowsAtReview(nowMs);
+  // Station 080 M25 (Unit 4): an open post censors, a never-opened one is
+  // absent; a never-asked question is absent (not exposed, or never
+  // reached Vale's check-in), an asked-unanswered one censors.
+  closeM25LoopsAtReview(nowMs);
+  closeM25BeliefAtReview(nowMs);
   closeM21AtReview(nowMs);
   closeM22AtReview(nowMs);
+  // The v2 questionnaire notice keeps its own presentation record.
   closeM25AtReview(nowMs);
 }

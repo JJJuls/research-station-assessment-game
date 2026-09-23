@@ -209,6 +209,14 @@ export const YARD_SITES = {
    * airlock, clear of every other site's radius.
    */
   supportConsole: { x: 620, y: 520 },
+  /**
+   * Station 080 M25 (Unit 4): the field sensor post stands on the west
+   * field between the coupling run and the uplink line — approached from
+   * the SOUTH (an approach from the north would land inside uplink post
+   * A's 72 px radius); 202 px from the coupling, 232 px from the console,
+   * 163 px from uplink post A, clear of every other site's radius.
+   */
+  sensorPost: { x: 440, y: 330 },
 } as const;
 
 /** Magnet rig operating pad (F works only here): under the gantry beam. */

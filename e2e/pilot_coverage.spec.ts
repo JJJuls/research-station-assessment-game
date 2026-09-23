@@ -122,9 +122,17 @@ test.describe('pilot coverage schedule (pure)', () => {
   test('route-primary event-family prefixes are pairwise disjoint and never swallow a legacy proto_* event', () => {
     const prefixes = primaryFamilyPrefixes();
 
+    // One prefix per family: an item may own several families (Station
+    // 080 Unit 4: M25's loops and belief windows live in different rooms
+    // and carry distinct families so neither swallows the legacy
+    // `proto_m25_probe_*` / `proto_m25_yardpump_*` events).
     expect(prefixes.length).toBe(
-      PILOT_SCHEDULE.filter((entry) => entry.familyPrefixes.length > 0).length,
+      PILOT_SCHEDULE.reduce(
+        (sum, entry) => sum + entry.familyPrefixes.length,
+        0,
+      ),
     );
+    expect(new Set(prefixes).size).toBe(prefixes.length);
 
     for (const a of prefixes) {
       for (const b of prefixes) {

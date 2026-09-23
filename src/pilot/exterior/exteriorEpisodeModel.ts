@@ -54,6 +54,7 @@ export type ExteriorSite =
   | 'excavation'
   | 'rig'
   | 'console'
+  | 'sensor'
   | 'uplink';
 
 export const EXTERIOR_SITE_ORDER: readonly ExteriorSite[] = [
@@ -65,6 +66,10 @@ export const EXTERIOR_SITE_ORDER: readonly ExteriorSite[] = [
   // every participant is told where it is; it sits between the rig and
   // the uplink posts, separating the two post-knowledge assays.
   'console',
+  // Station 080 M25 (Unit 4): the field sensor post is the seventh listed
+  // job — north of the console on the west field, just south of the
+  // uplink line, so the tour runs south → north on the west side.
+  'sensor',
   'uplink',
 ];
 
@@ -75,6 +80,7 @@ export const EXTERIOR_SITE_LABELS: Record<ExteriorSite, string> = {
   excavation: 'Excavation Field Stake',
   rig: 'Magnet Recovery Rig',
   console: 'Station Support Console',
+  sensor: 'Field Sensor Post',
   uplink: 'Field Uplink Post A',
 };
 
@@ -87,6 +93,8 @@ export const EXTERIOR_OBJECTIVES: Record<ExteriorSite | 'report', string> = {
   rig: 'Run the salvage tally at the magnet rig — Metal Recovery Yard, north-east (E at the rig panel, then F on the pad).',
   console:
     'Run the six slots at the station support console — open field south of the mast (E at the console).',
+  sensor:
+    'Run the three sensor sweeps at the field sensor post — west field, south of the uplinks (E at the post).',
   uplink:
     'When the yard work is done, send the recovery reports from the uplink posts — north-west (E at a post).',
   report: 'Report to Noor, then return inside through the airlock.',
@@ -184,8 +192,10 @@ export function exteriorSiteDone(
     case 'rig':
       return state.m24.entered || state.m24.closed;
     case 'console':
-      // The console's own window lives outside this pure model; the scene
-      // releases guidance for it when the console opens (guidance only).
+    case 'sensor':
+      // The console's and the post's own windows live outside this pure
+      // model; the scene releases guidance for them when they open
+      // (guidance only).
       return false;
     case 'uplink':
       return state.m26.entered || state.m26.closed;

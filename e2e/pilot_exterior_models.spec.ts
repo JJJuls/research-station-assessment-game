@@ -902,14 +902,17 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     m19Close(episode.m19, 'step_away');
     expect(exteriorCurrentSite(episode)).toBe('mast');
     // Station 080 M08 (U2-R): the support console is the sixth listed job,
-    // between the rig and the uplink posts; guidance for it is released by
-    // the scene when the console opens (the pure model never says done).
+    // between the rig and the uplink posts; M25 (Unit 4): the field sensor
+    // post is the seventh, between the console and the uplink posts.
+    // Guidance for both is released by the scene when they open (the pure
+    // model never says done).
     expect(EXTERIOR_SITE_ORDER).toEqual([
       'coupling',
       'mast',
       'excavation',
       'rig',
       'console',
+      'sensor',
       'uplink',
     ]);
 

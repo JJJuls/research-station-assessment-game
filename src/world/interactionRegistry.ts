@@ -935,6 +935,18 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     { x: 620, y: 476 },
     { w: 1, h: 1 },
   ),
+  // Station 080 M25 (Unit 4): the field sensor post on the west field,
+  // approached from the south (see zoneSites).
+  yardStation(
+    'yard.sensor_post',
+    Y.sensorPost,
+    'Use the',
+    'Field Sensor Post',
+    { kind: 'work_surface', id: 'm25_field_sensor_post' },
+    'm25_calibration_loops',
+    { x: 440, y: 374 },
+    { w: 1, h: 1 },
+  ),
 ];
 
 export const WORLD_V1_REGISTRY: Partial<

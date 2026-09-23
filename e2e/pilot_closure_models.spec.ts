@@ -155,10 +155,12 @@ test.describe('Utility & Core closure model (pure)', () => {
         (entry) => entry.item,
       ),
     );
-    // Nothing declared → every game window pending → not ready (the M25
-    // presentation window is external_pending, not pending).
+    // Nothing declared → every game window pending → not ready. (Station
+    // 080 Unit 4: M25 now owns two in-game windows classified like every
+    // other item; the v2 presentation window is no longer scheduled, so no
+    // `external_pending` item remains on the schedule.)
     expect(readiness.ready).toBe(false);
-    expect(readiness.counts.pending).toBe(readiness.counts.scheduled - 1);
+    expect(readiness.counts.pending).toBe(readiness.counts.scheduled);
     expect(readiness.blockers.every((b) => b.kind === 'window_pending')).toBe(
       true,
     );
@@ -277,46 +279,92 @@ test.describe('Utility & Core closure model (pure)', () => {
     expect(JSON.stringify(b)).not.toMatch(/success|correct|score|trait/i);
   });
 
-  test('5. M25 is route-terminal after the review yet research-pending regardless of its presentation record', () => {
-    const withoutM25 = mixedTerminalRegistry().filter(
-      (r) => r.opportunity_id !== 'proto_m25_belief_probe',
-    );
-    const before = deriveRouteReadiness(deriveCoverage(withoutM25), {
+  test('5. M25 (Station 080 Unit 4) owns two in-game windows classified like every other item; the external questionnaire stays pending regardless; the v2 notice record is unscheduled', () => {
+    const registry = mixedTerminalRegistry();
+    const before = deriveRouteReadiness(deriveCoverage(registry), {
       ...CLOSED_CONTEXT,
       recordReviewed: false,
     });
-    const m25Before = before.items.find((i) => i.item === 'M25')!;
 
-    expect(m25Before).toMatchObject({
-      class: 'external_pending',
-      routeTerminal: false,
-    });
     expect(before.blockers[0]).toEqual({
       kind: 'record_not_reviewed',
       hint: 'Shift Review Panel (Utility Deck)',
     });
 
-    const after = deriveRouteReadiness(
-      deriveCoverage(withoutM25),
+    // Both M25 windows completed → recorded; one censored → recorded_limited;
+    // the loops window open → not route-terminal (a window_pending blocker).
+    const both = registry.filter(
+      (r) => !r.opportunity_id.startsWith('proto_m25_'),
+    );
+    const recorded = deriveRouteReadiness(
+      deriveCoverage([
+        ...both,
+        completed('proto_m25_calibration_loops'),
+        completed('proto_m25_normality_belief'),
+      ]),
       CLOSED_CONTEXT,
     );
 
-    expect(after.items.find((i) => i.item === 'M25')).toMatchObject({
-      class: 'external_pending',
+    expect(recorded.items.find((i) => i.item === 'M25')).toMatchObject({
+      class: 'recorded',
       routeTerminal: true,
     });
-    expect(after.ready).toBe(true);
-    expect(after.externalQuestionnairePending).toBe(true);
-    expect(after.counts.external_pending).toBe(1);
+    expect(recorded.ready).toBe(true);
+    expect(recorded.externalQuestionnairePending).toBe(true);
+    expect(recorded.counts.external_pending).toBe(0);
 
-    // A completed presentation record changes nothing about the research state.
+    const limited = deriveRouteReadiness(
+      deriveCoverage([
+        ...both,
+        censored('proto_m25_calibration_loops'),
+        completed('proto_m25_normality_belief'),
+      ]),
+      CLOSED_CONTEXT,
+    );
+
+    expect(limited.items.find((i) => i.item === 'M25')?.class).toBe(
+      'recorded_limited',
+    );
+
+    // A never-asked question (absent) is the most conservative terminal code.
+    const unasked = deriveRouteReadiness(
+      deriveCoverage([
+        ...both,
+        completed('proto_m25_calibration_loops'),
+        absent('proto_m25_normality_belief'),
+      ]),
+      CLOSED_CONTEXT,
+    );
+
+    expect(unasked.items.find((i) => i.item === 'M25')).toMatchObject({
+      class: 'not_observed',
+      routeTerminal: true,
+    });
+
+    const stillOpen = deriveRouteReadiness(
+      deriveCoverage([...both, open('proto_m25_calibration_loops')]),
+      CLOSED_CONTEXT,
+    );
+
+    expect(stillOpen.items.find((i) => i.item === 'M25')?.routeTerminal).toBe(
+      false,
+    );
+    expect(stillOpen.ready).toBe(false);
+
+    // The v2 presentation window is no longer on the schedule: its record
+    // changes nothing (legacy record, kept under its old version).
     const presented = deriveRouteReadiness(
-      deriveCoverage([...withoutM25, completed('proto_m25_belief_probe')]),
+      deriveCoverage([
+        ...both,
+        completed('proto_m25_calibration_loops'),
+        completed('proto_m25_normality_belief'),
+        completed('proto_m25_belief_probe'),
+      ]),
       CLOSED_CONTEXT,
     );
 
     expect(presented.items.find((i) => i.item === 'M25')?.class).toBe(
-      'external_pending',
+      'recorded',
     );
     expect(presented.externalQuestionnairePending).toBe(true);
   });

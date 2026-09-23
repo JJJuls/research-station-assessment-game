@@ -64,6 +64,7 @@ export const YARD = {
   crate: { ...YARD_SITES.supplyCrate },
   flag: { ...YARD_SITES.cableFlag },
   console: { ...YARD_SITES.supportConsole },
+  sensorPost: { ...YARD_SITES.sensorPost },
   /** Inside the rig's operating pad (F works only here). */
   pad: { x: 1424, y: 334 },
   targetCells: {
@@ -105,6 +106,7 @@ export const APPROACH = {
   crate: yardOffset('yard.supply_crate', YARD.crate),
   flag: yardOffset('yard.cable_flag', YARD.flag),
   console: yardOffset('yard.support_console', YARD.console),
+  sensorPost: yardOffset('yard.sensor_post', YARD.sensorPost),
 } as const;
 
 export const FORBIDDEN_TEXT =
