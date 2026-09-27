@@ -2602,6 +2602,455 @@ completed` (S-M1): fixed — `route_departure`; pure-tested.
   `docs/scientific/**`, package files, tool configs, settings; every
   existing yard helper keeps its option indices except the two
   acknowledgement drivers, replaced by the check drivers.
-- **Commit:** one local commit (hash recorded at the start of U13);
+- **Commit:** one local commit (`1645112`, recorded at the start of U13);
+  nothing pushed, merged, tagged, deployed or deleted; the run stopped
+  there on the owner's instruction.
+
+## U13 — M02 functional traceability (six requests in balanced order, first answer or Cannot locate, deferred feedback)
+
+- **Authorities used:** the owner's 27 September instruction (continue
+  from `1645112`, Unit 13 only, recover the contract from the live
+  repository); the register §2 M02 row and `registerV3.ts` ("Participant-
+  created layout kept; all six cases requested once in balanced order;
+  advance after each first answer or explicit Cannot locate; corrective
+  feedback deferred to the end"); the matrix M02 row and unit plan
+  ("U13 M02"); the addendum §2 / §3; register §5.14 (reload rule). The
+  execution specification file remains missing (reported under U6); the
+  project instructions file names an earlier branch — the unit log and
+  the owner's instruction establish this one.
+- **Unit id:** U13 (development order: after U12 M24 / M26; before U14
+  M03 / M04).
+- **Objective:** replace the two gated retrieval probes of the case
+  workspace with the approved series — six requests, one per case, in a
+  balanced order; every request advances on its FIRST answer (a selected
+  case, right or wrong) or on an explicit "Cannot locate"; nothing about
+  correctness is shown until all six are answered; the focused time from
+  each request to its first answer is kept beside.
+- **Scientific rationale:** register M02 row ("Revise and extend"; BFI-2
+  item 3, reverse-keyed on the questionnaire — the telemetry direction is
+  the register's: more correct first retrievals = better functional
+  traceability, never reversed); measure `m02_correct_first_retrievals` =
+  requests whose first committed answer is the requested case / 6
+  (planned-observations denominator; Cannot locate = incorrect; an
+  unanswered request is missing and reduces completeness); companions
+  `m02_retrieval_latency` (focused ms per request, diagnostic) and
+  `m02_filing_layout` (the participant's own layout at the handover —
+  the register's "filing choices", a state description, never compared
+  with a designer's arrangement). Closes audit finding P3 (completion
+  gated on a correct retrieval; correctness disclosed).
+- **Participant-facing behaviour:** the Case Workspace keeps its station,
+  its intake tray, four trays, optional labels and HAND OVER. After the
+  handover the banner reads "REQUEST n OF 6 — <case>: select the slot
+  holding it"; selecting a slot that holds a case answers the request
+  (pointer click, or SPACE / ENTER on the focused slot); "CANNOT LOCATE
+  (N)" answers it without a selection; each answer shows the same neutral
+  line ("Recorded.") and the next request; after the sixth the workspace
+  is read-only and lists, per request, what was selected and where the
+  requested case was. No praise, no speed framing, no running count; ESC
+  / close keeps the workspace open (fail-forward).
+- **Allowed files:** `src/pilot/windows/m02RetrievalModel.ts` (new pure
+  model), `src/pilot/windows/m02CaseWorkspace.ts` (rewritten as the window
+  adapter), `src/inventory/ui/InventoryOverlayScene.ts` (the `m02case`
+  mode only), `src/pilot/windows/reviewClosure.ts`,
+  `src/measurement/features/m02.ts` (new),
+  `src/measurement/features/index.ts`, `src/measurement/registerV3.ts`,
+  `src/world/interactionRegistry.ts` (the workspace's `window` label),
+  `src/scenes/RecordsWorkshopScene.ts` (presentation at the Work Order
+  Board; entry state); `e2e/m02_retrieval.spec.ts` (new pure),
+  `e2e/m02_retrieval_route.spec.ts` (new browser),
+  `e2e/pilot_records.spec.ts` (its two M02 tests),
+  `e2e/pilot_episodes_1_2.spec.ts` (the workspace step), and only if a
+  derived id, count, label or assertion changes:
+  `e2e/pilot_coverage.spec.ts`, `e2e/pilot_closure_models.spec.ts`,
+  `e2e/pilot_route_model.spec.ts`, `e2e/m26_protocol_foundation.spec.ts`,
+  `e2e/world_v1_registry.spec.ts`, `e2e/m02_overlay_proof.spec.ts`,
+  `e2e/pilotHelpers.ts`; `docs/verification/station-080-m26/**`.
+- **Prohibited areas:** common, plus every other item's code (M03 / M04 /
+  M06 / M07 / M12 / M13 included), the inventory engine, store, model and
+  item definitions (`src/inventory/*.ts` — the six cases, the trays and
+  the `m02c` namespace are read, never changed), the legacy Inventory Lab
+  workstation (`m02Filing.ts`, its `proto_m02_*` events and the `m02`
+  overlay mode), `zoneSites.ts`, `protocol.ts`, `WorkSurfaceScene.ts`,
+  the v2 ledger.
+- **Entry state:** HEAD `1645112` (U12), clean tree, branch
+  `fable-professional-world-rescue-v2`; the backup stash
+  `backup-U12-M24-M26-before-review-2026-09-24` exists and is not touched.
+- **Success behaviour:** the workspace is reachable on the ordinary route;
+  after the handover six requests are presented one at a time in the
+  assigned order; a wrong selection advances exactly as a right one does;
+  Cannot locate advances and is recorded incorrect; no correctness is
+  shown before the sixth answer; the sixth answer completes the window
+  and shows the request record; the extractor reproduces correct / 6 from
+  the raw `request_answered` events with the latencies and the layout
+  kept separately.
+- **Failure/recovery:** closing the workspace pauses the open request's
+  focused clock (`surface_closed`) and reopening resumes it at the same
+  request (never a new request, never a re-seed); a press inside 400 ms
+  of a request's presentation is refused and logged (a carried press is
+  never an answer); selecting an empty slot is recorded and answers
+  nothing; the review closes an open workspace with the answers as they
+  stand (`incomplete` below six; never handed over ⇒ no request, null)
+  and marks a never-opened one absent; a workspace opened in an earlier
+  page load is never re-run (prior exposure, `interrupted`); a seed
+  failure is a technical failure; a requested case the frozen layout no
+  longer holds is excluded (technically inaccessible) and the series
+  continues — never an incorrect answer.
+- **Telemetry boundary:** family `proto_m02_workspace_*` (candidate;
+  opportunity `proto_m02_retrieval_series`, windows `m02_filing_w1` and
+  `m02_requests_w1`); suffixes `presented`, `opportunity_opened`,
+  `case_moved`, `tray_labelled`, `handed_over`, `request_presented`,
+  `request_inaccessible`, `empty_slot_selected`, `press_refused`,
+  `request_answered`, `feedback_shown`, `feedback_reviewed`,
+  `surface_closed`, `surface_reopened`, `window_closed`,
+  `technical_failure`; the v2 `proto_m02_case_*` family keeps its v2
+  meaning in the frozen ledger and is retired from the route; the legacy
+  Inventory Lab family is untouched; no canonical name or approved
+  formula invented.
+- **Scientific acceptance:** the first committed answer per request is
+  immutable and the only one; correctness never gates progress and is
+  never disclosed before the series ends; Cannot locate is an incorrect
+  first answer inside the denominator; an unanswered request is missing,
+  never incorrect; a technically inaccessible request is excluded, never
+  incorrect; the layout is frozen at the handover; latency is focused
+  time and is never part of the primary; no layout is compared with a
+  designer's arrangement; no composite.
+- **Gameplay acceptance:** the station, the overlay mode, the trays, the
+  labels and HAND OVER keep their ids and positions; keyboard / pointer
+  parity for every control (the input mode recorded); the request and the
+  help line are legible at 800×600; ESC always leaves.
+- **Required tests:** `npm.cmd run lint:tsc`, `npm.cmd run build`,
+  ESLint + Prettier (`endOfLine: auto`) on touched files, pure
+  `m02_retrieval` + `m26_protocol_foundation` + `pilot_coverage` +
+  `pilot_closure_models` + `pilot_route_model` + `evidence_ledger` +
+  `world_v1_registry`; browser `m02_retrieval_route` (ordinary route from
+  the Dock: organise, hand over, six requests by pointer and keyboard
+  with a wrong selection and a Cannot locate, the deferred record, the
+  close / reopen pause), `pilot_records` (its M02 tests) and
+  `m02_overlay_proof`; `verify-unit`; `git diff --check`.
+- **Required screenshots:** a request stage and the deferred record at
+  800×600 (evidence, not committed).
+- **Stop conditions:** common.
+- **Model:** Fable; reviewers as declared under U6 (the project
+  definitions when discoverable, otherwise read-only stand-ins running
+  them verbatim).
+- **Commit expectation:** `feat(m02): six balanced retrieval requests with first answers, cannot locate and deferred feedback`.
+
+- **Contract recovery:** no per-unit contract file exists in the
+  repository; following U1–U12 the contract above was recovered from the
+  register, the matrix, the addendum and this log and recorded here
+  before the first source edit. The sources agreed on the unit (M02), its
+  location, mechanic and primary.
+- **Baseline before the change (HEAD `1645112`, untouched):** browser
+  `m02_overlay_proof` 2/2; `pilot_records` M02 abandonment 1/1; the
+  `pilot_records` M02 workspace test FAILED on an inherited stale
+  assertion (`proto_m06_orders_presented` counted as cross-family
+  behaviour — the board's presentation dates from U7). The ordinary route
+  to the Workshop is drivable in this environment.
+- **Reviewer availability:** as U6–U12 — the `scientific-reviewer` and
+  `gameplay-reviewer` definitions are not offered as agent types in this
+  session; both were run verbatim through read-only Opus stand-ins (each
+  reads its definition file first); the `test-reviewer` scope is covered
+  by the implementer's recorded runs below. Two rounds, the permitted
+  maximum; no third round.
+- **Review round 1 (read-only, on the tree after the first green browser
+  run):** scientific: concerns found — 1 high / 5 medium / 9 low, 9
+  documentation mismatches, 8 missing owner questions; gameplay: usable
+  with noted friction — 0 high / 6 medium / 7 low + 8 measurement flags.
+  Material findings and their resolution:
+  - Every tray's content and code badge stays visible during the requests,
+    so a request can be answered by scanning and the primary may sit at
+    its ceiling (S-H1): the mechanic is the register's approved one
+    ("participant-created layout kept") and was NOT changed; the row is
+    marked "values not to be read until §5.137 is decided" in the
+    register, the matrix, the addendum and `registerV3.ts`; the decision
+    is the owner's (§5.137, §5.149).
+  - The approved register text had gained an unapproved clause (S-M1):
+    fixed — the approved primary wording and denominator text are
+    restored; the inaccessible rule and the layout row are marked
+    provisional (§5.144, §5.146).
+  - The recount compared totals only (S-M2): fixed — per request the
+    requested case is checked against the request's own
+    `request_presented` event (which must precede the answer) and the
+    assigned order, the answer against the window's per-request record,
+    the inaccessible count against its events; any disagreement is a
+    technical failure (pure-tested with totals that cancel).
+  - A right-click answered on pointer-down (S-M4, G-M3): fixed — only a
+    left click or SPACE / ENTER answers.
+  - A refused press showed a caution line over "Recorded." and left a
+    focused slot (G-M2): fixed — it is logged and changes nothing on
+    screen; a selection never sets the focus.
+  - The organise-phase description stayed visible and a drag failed
+    silently during the requests (G-M1): fixed — the detail area names
+    the case only; a drag shows "The layout is fixed after the handover.".
+    Stating that the first selection is final and a handover
+    confirmation change the procedure: owner (§5.153).
+  - A record line could wrap in a wider monospace font (G-M5): fixed —
+    lines name the tray's number only (at most 45 characters;
+    browser-asserted).
+  - The banner's case was never asserted (G-M6): fixed — the exact banner
+    is asserted at requests 1, 2, 4 (after the reopen) and 6.
+  - Presented again after a reload without reopening read `declined`
+    (S-L4): fixed — an earlier load's `opportunity_opened` ⇒
+    `interrupted`. The time spent on a request left unanswered was
+    discarded (S-L5): fixed — kept as censored time. The latency row's
+    censor reason differed from the primary's (S-L3): fixed.
+  - The `pilot_records` tolerance excluded every `*_presented` event
+    (G-L7): narrowed to the two board presentations. The final banner
+    said "HANDOVER COMPLETE" (G-L2): now "REQUESTS COMPLETE — request
+    record below". A stale feedback string could survive a relaunch in
+    the DEV probe (G-L5): reset at create.
+  - Owner questions, no change: zero-answer dispositions and their
+    definitions (S-M3, §5.142); the record before the later Organisation
+    items and the free station order (S-M5, §5.150); the keyboard path
+    (G-M4, §5.151); the settle window and a slow double click (S-L1,
+    §5.152); the handover without confirmation (G-L1, §5.153); one
+    request per case (S-L6, §5.154); the label vocabulary and the v2
+    counts (S-L7, §5.155).
+- **Review round 2 (read-only, on the tree after the round-1 fixes):**
+  scientific: every round-1 fix confirmed (S-L3 partly); no new high, no
+  false technical failure found on a legitimate path; verdict "blocked
+  pending a research-owner decision" — on whether the primary's VALUES
+  may be read while contents are visible (S-H1, the owner's §5.137 /
+  §5.149), not on the implementation; 1 medium for the owner + 7 low.
+  Gameplay: usable with noted friction; every round-1 fix confirmed; no
+  high, no soft lock, no behaviour change in another overlay mode; 1
+  medium (the residual of G-M1, already §5.153) + 7 low. Resolution:
+  - The layout row contradicted its documentation on a recount
+    disagreement (S2-L1): fixed — the layout is read from the
+    `handed_over` event itself and the record says so.
+  - The addendum had lost "(Cannot locate = incorrect)" (S2-L2):
+    restored. The null latency row was not censored with the primary
+    (S2-L3): fixed. A drag during the requests left no record (S2-L4):
+    fixed — `layout_change_refused`. Unanswered and inaccessible
+    requests were both null in the latency object (S2-L5): fixed — a
+    `status` per request. An offline re-extraction of an earlier load
+    could read a later opening (S2-L6): fixed (`<`). "Without a
+    verdict" overstated the record (S2-L7): reworded.
+  - SHIFT + SPACE did not answer while SHIFT + click did (G2-L1): fixed.
+    R showed a caution line during the requests and a focus ring sat
+    over the read-only record (G2-L5): fixed. The drag line and the
+    record's line length were unasserted (G2-L6): asserted; the register
+    now names the four requests whose banner is asserted.
+  - Owner questions, no change: a caveat the export cannot carry (S2-M1,
+    §5.157); the click's meaning at the handover (G2-M1, §5.153); a click
+    that moves six pixels starts a drag and answers nothing (G2-L2), the
+    detail area follows the pointer while SPACE answers the focused slot
+    (G2-L3) and the detail area is empty after a pointer answer until
+    the pointer re-enters a slot (G2-L4) — recorded here, inside §5.139 /
+    §5.153's scope.
+  - The round-2 fixes are bounded to the cited findings and covered by
+    the extended pure spec and the rerun browser specs; a fresh review of
+    them is folded into U24 (precedent U2-R … U12).
+- **Verification results (final tree):** `npm.cmd run lint:tsc` 0 ·
+  `npm.cmd run build` 0 · ESLint (with Prettier, `endOfLine: auto`) on
+  every touched source and spec 0 · Prettier on the four docs 0 · pure
+  `m02_retrieval` (7) + `m26_protocol_foundation` + `pilot_coverage` +
+  `pilot_closure_models` + `pilot_route_model` + `evidence_ledger` +
+  `world_v1_registry` 92/92 (retries off) · browser (final tree, retries
+  off) `m02_retrieval_route` 1/1 (1.2 min: the ordinary route from the
+  Dock, organise by pointer drag and keyboard, labels, handover by C, a
+  right-click, a drag and unfocused SPACE / ENTER answering nothing, a
+  wrong selection by pointer, the requested case by arrows and ENTER, an
+  empty slot, Cannot locate by N and by the button, close and reopen
+  inside request 4, the record after the sixth answer, reproduction
+  3/6) · browser `m02_overlay_proof` 2/2 · browser `pilot_records` M02
+  tests 2/2 (the inherited stale assertion corrected) · earlier runs:
+  route run 1 failed on the implementer's own assertion (the window
+  kit's lifecycle events carry no protocol stamp), run 2 1/1 · screenshots
+  `test-results/m02-request-800x600.png` (first run: the banner covered
+  the INTAKE TRAY label — moved to the row under the title; the used
+  HAND OVER control now leaves with the organise phase) and
+  `test-results/m02-record-800x600.png` (two columns of three lines
+  inside the detail area) inspected, not committed · `verify-unit` PASS ·
+  `git diff --check` clean.
+- **Browser tests that do NOT pass, and why they are not this unit's:**
+  `pilot_records` "supply bundles" fails at its first assertion (no
+  `secondary_inventory_world_pickup`) and `pilot_episodes_1_2` fails in
+  both tests before its workspace step (episode 1 at the incident desk,
+  episode 2 at Press B). All three fail IDENTICALLY on an untouched export
+  of `1645112` run in this session (the same assertion at the same
+  step), as recorded under U6–U8. They are left for U24; the workspace
+  step of `pilot_episodes_1_2` was updated to the new family but is
+  therefore NOT exercised by that spec.
+- **Not verified in a browser (pure tests only):** the settle-window
+  refusal, a review closure with a partly answered series, the reload
+  guard, an inaccessible request and a recount disagreement. A browser
+  reload check was not attempted (the driver cannot replay the dock
+  tutorial after a reload, recorded under U12).
+- **Deviations:** the telemetry boundary gained `layout_change_refused`;
+  `request_inaccessible` excludes one request and only a layout holding
+  none of the requested cases is a technical failure (the contract's
+  first wording was corrected); `m02_filing_layout` is a third feature
+  row of the machine-readable register (provisional, §5.146); the DEV
+  probe `__inventoryUiProbe` gained an `m02c` field (what the
+  workspace shows; never read back); two edits of
+  `InventoryOverlayScene.ts` sit in shared code and are inert outside
+  the workspace — the first-arrow landing when no slot is focused (no
+  other mode ever has an unfocused grid) and the reset of the probe's
+  last feedback string at create; `pilot_coverage` and
+  `pilot_closure_models` changed by the derived opportunity id only;
+  `pilot_route_model`, `m26_protocol_foundation`, `world_v1_registry`,
+  `m02_overlay_proof` and `pilotHelpers` needed no change;
+  `CLAUDE_UNIT_ALLOWLIST` enforced by discipline + `verify-unit`;
+  reviewer stand-ins as declared; the execution specification file
+  remains missing.
+- **Observed and left alone (outside the unit):** the matrix rows of M22,
+  M24 and M26 carry their "as specified" status as an extra leading cell
+  (seven cells in a six-column table) since U11 / U12; no room document
+  under `docs/game/rooms/` describes the Records Workshop's restoration
+  shift, so none was updated.
+- **Not changed:** the inventory engine, store, model and item
+  definitions; the legacy Inventory Lab workstation (`m02Filing.ts`, the
+  `m02` overlay mode); every other item's code; `windowKit.ts`,
+  `protocol.ts`, `zoneSites.ts`, `WorkSurfaceScene.ts`; the v2 ledger
+  (`proto_m02_case_*` keeps its v2 meaning); `ScoringManager`,
+  `SummaryScope`, `docs/research/**`, `docs/scientific/**`,
+  `docs/ai/**`, package files, tool configs, settings; the backup stash.
+- **Commit:** one local commit (hash recorded at the start of U14);
   nothing pushed, merged, tagged, deployed or deleted; the run stops here
-  on the owner's instruction — U13 (M02) is not started.
+  on the owner's instruction — U14 (M03 / M04) is not started.
+
+### U13 continuation — owner ruling on retrieval visibility (28 September)
+
+- **Owner ruling (§5.137 / §5.149, resolved by the research owner on 28
+  September, confirmed in session before any change):** during the six
+  requests the participant-created organisational state is preserved —
+  the frozen spatial layout exactly, the trays and grouping, the
+  participant's own tray labels — and the system-supplied
+  answer-revealing information is not visible at the same time: the case
+  code badges and the directly readable case contents. Nothing is
+  reorganised, relabelled or improved for the participant; no model
+  filing system and no designer-defined categorisation is introduced;
+  the participant's own cues are never removed. The approved primary,
+  its first-response semantics and its denominator are unchanged; no new
+  primary variable. Scientific intent as ruled: the observation must
+  depend on whether the participant created and can use a traceable
+  personal organisation, without becoming a pure arbitrary-memory test —
+  memory demand is retained as an explicit rival explanation.
+- **Contract amendment (recorded before the change):** the allowlist
+  gains `src/inventory/ui/SlotGridView.ts` for two things only — an
+  OPTIONAL `concealed` flag of the grid's UI state under which an
+  occupied slot renders one neutral closed-case glyph instead of the
+  item's icon and code badge, and three read-only fields of the DEV probe
+  entry (`shown_icon`, `shown_glyph`, `shown_code`: what the cell
+  draws, read from its display objects; never read back into gameplay,
+  stripped from production builds). The flag is false in every other
+  overlay mode and in the organise phase of the workspace, so no other
+  surface changes. This is an explicit, recorded expansion made to
+  implement the owner's ruling, not a silent one.
+- **Minimal change set:** the concealed rendering during the requests
+  (every tray and the intake); the detail area never names or pictures a
+  hovered or focused case during the requests; the participant's tray
+  labels drawn at full strength from the handover on; the declarations
+  `contents_during_requests` / `participant_labels_during_requests` in
+  the entry snapshot and `contents_concealed` on every
+  `request_presented`; icons and badges return with the request record
+  (the authorised feedback point); the banner still names the requested
+  case. The primary, its first-answer semantics, its denominator, the
+  dispositions and the extractor are unchanged.
+- **Superseded by the ruling (the entries above are kept as written):**
+  the contract's participant-facing behaviour now includes the closed
+  cases; the round-1 resolution of G-M1 ("the detail area names the case
+  only") is replaced — the detail area names nothing during a request;
+  the round-1 resolution of S-H1 ("values not to be read until §5.137 is
+  decided") is withdrawn with §5.137 / §5.149; the label controls are no
+  longer disabled during the requests and the record.
+- **Review after the ruling (read-only, on the tree with the ruling
+  implemented; the two earlier rounds were spent before it, and this
+  round was run on the owner's instruction of 28 September):**
+  scientific: concerns found, no high — "the ruling is implemented
+  faithfully and minimally"; no system-supplied identity of a filed case
+  found visible during a request on any surface (slot icon, badge,
+  quantity, fallback glyph, detail text and icon under hover and focus,
+  drag ghost, feedback, sounds, banner, help line, reopen, the handover
+  and the sixth-answer transitions); organisation preserved; primary
+  contract confirmed unchanged; 4 medium / 7 low + 9 documentation
+  mismatches. Gameplay: usable with noted friction, no high, no leak, no
+  soft lock, no change in another overlay mode; 4 medium / 6 low.
+  Resolution:
+  - The participant's own labels were drawn in the disabled style (text
+    at 45 %) exactly when they became the main cue (G3-M1, S3-L1):
+    fixed — the label controls stay at full strength and inert.
+  - The closed-case glyph was larger than a case, sat lower and shared
+    a kind's colours; the explaining line sat only in the detail area and
+    said "stay" (G3-M2): fixed — a glyph of a case body's size at the
+    icon's place in a tone no kind uses; "The cases are closed during the
+    requests.", shown once at the handover as well.
+  - Hover and keyboard focus were not probed in the browser and the
+    detail icon was not in the probe (G3-M4, S3-M3): fixed — both are
+    exercised on an occupied slot and `detail_icon` is asserted null.
+    The closed glyph was inferred from the object's class (G3-L1,
+    S3-L6): fixed — it carries its own name and its size, fill, opacity
+    and place are asserted equal over the six.
+  - A case icon was built and destroyed in the same call during a request
+    (G3-L4): no longer built.
+  - A workspace handed over and closed without its record reopened with
+    the cases open (S3-L3): fixed — they return only with the record.
+  - The documentation mismatches and the incomplete continuation record
+    (S3-M4): corrected here and in the register.
+  - Owner questions, no change: the label words and the banner's kind
+    word (S3-M2, §5.158); a closed case invites a click to open it
+    (G3-M3, §5.159); the record's wording (G3-L3, §5.160); the
+    dependence among the six answers and the chance level (S3-M1,
+    §5.161, stated in §4); whether the withdrawal of the reading caveat
+    follows from the ruling (S3-L5, §5.149).
+  - These last fixes are bounded to the cited findings and covered by the
+    extended browser spec; they were not reviewed again (folded into
+    U24, precedent U2-R … U12).
+- **Evidence of concealment and its limit:** the proof is each slot's
+  render state read from its display objects (texture key or the closed
+  glyph's own name, the glyph's geometry and fill, the badge text
+  actually visible), the probe of the detail area under hover and focus,
+  and the two screenshots inspected by the implementer
+  (`m02-request-800x600.png`: six identical closed cases, the labels
+  legible, the line shown; `m02-record-800x600.png`: icons and badges
+  back, six record lines). A byte comparison of slot pixels was tried
+  and dropped: the browser resamples the 1280×720 canvas to the window,
+  so equal glyphs at different places differ by antialiasing and no two
+  occupied slots share a resampling phase. What this evidence cannot
+  show: overdraw by an object outside the grid, and legibility beyond
+  the inspected frames. Playwright clears `test-results/` on every run;
+  the two frames were copied to the session scratchpad, not committed.
+- **Verification results (final tree, after the ruling):**
+  `npm.cmd run lint:tsc` 0 · `npm.cmd run build` 0 · ESLint (with
+  Prettier, `endOfLine: auto`) on every touched source and spec 0 ·
+  Prettier on the four docs 0 · pure `m02_retrieval` (7) +
+  `m26_protocol_foundation` + `pilot_coverage` +
+  `pilot_closure_models` + `pilot_route_model` + `evidence_ledger` +
+  `world_v1_registry` 92/92 (retries off) · browser (final code tree,
+  retries off, one run of six specs, 13.2 min): 37 passed, 3 failed —
+  `m02_retrieval_route` 1/1, `m02_overlay_proof` 2/2, `pilot_records`
+  3/4 (both M02 tests and the M03 test pass), `inventory_foundation`
+  26/26 and `inventory_measurement_isolation` 5/5 (run because the
+  shared slot renderer changed: the other overlay modes and the legacy
+  filing workstation are unaffected), `pilot_episodes_1_2` 0/2 ·
+  earlier runs after the ruling: route run 1 and 2 failed on the
+  implementer's own pixel comparison (dropped, above), runs 3–5 1/1 ·
+  `verify-unit` PASS with `src/inventory/ui/SlotGridView.ts` on the
+  allowlist · `git diff --check` clean.
+- **The three failing browser tests are baseline failures, not
+  regressions:** `pilot_records` "supply bundles" and both
+  `pilot_episodes_1_2` tests fail on an untouched export of `1645112`
+  run three times in this session. "Supply bundles" fails at the same
+  assertion every time (no `secondary_inventory_world_pickup`). The
+  step at which `pilot_episodes_1_2` stops VARIES from run to run on
+  BOTH trees: episode 1 at the incident desk (baseline three times, this
+  tree twice) or later at the extra-job start (this tree once); episode 2
+  at Press B (baseline once, this tree once) or at the workspace step
+  (baseline once, this tree twice). Cause, read from the spec: it drives
+  to coordinates that predate the rebuilt Workshop (`caseWorkspace`
+  96, 272 against the station's 184, 170 in `zoneSites.ts`, neither
+  changed by this unit), so whatever happens to be nearest answers. Its
+  workspace step was renamed to the new family and is NOT evidence for
+  this unit; the workspace is proven on the ordinary route by
+  `m02_retrieval_route` and `pilot_records`. Left for U24.
+- **Not verified in a browser (pure tests only), as before:** the
+  settle-window refusal, a review closure with a partly answered series
+  (and the closed cases it now keeps), the reload guard, an inaccessible
+  request and a recount disagreement.
+- **Commit:** one local commit for the whole of U13 including the
+  ruling (hash recorded at the start of U14), made with the author
+  identity of `1645112` passed to that one command on the owner's
+  authorisation of 28 September — no git configuration written; nothing
+  pushed, merged, tagged, deployed or deleted; the run stops here — U14
+  (M03 / M04) is not started.

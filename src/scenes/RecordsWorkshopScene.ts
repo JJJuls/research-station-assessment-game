@@ -70,7 +70,12 @@ import {
   resumeM01Surface,
 } from '../pilot/windows/m01PlanBoard';
 import { m01SurfaceModel } from '../pilot/windows/m01SurfaceModel';
-import { declareM02C, m02cWindow } from '../pilot/windows/m02CaseWorkspace';
+import {
+  declareM02C,
+  m02cWindow,
+  noteM02CEntry,
+  presentM02C,
+} from '../pilot/windows/m02CaseWorkspace';
 import {
   declareM04,
   disposeM04,
@@ -330,6 +335,15 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       'proc-desk-closure',
       S.filingDesk,
       () => {
+        // Entry state (Unit 13): the route stage and the other Workshop
+        // items' window states at the open.
+        noteM02CEntry({
+          stage: pilotStage(),
+          m04_debris: m04Window.windowStatus(),
+          m06_orders: m06Window.windowStatus(),
+          m07_calibration: m07Window.windowStatus(),
+          m12_packet_o2: m12Windows.o2.windowStatus(),
+        });
         openInventoryOverlay(this, { mode: 'm02case', allowWorldDrop: false });
       },
     );
@@ -1463,6 +1477,9 @@ export class RecordsWorkshopScene extends PilotZoneScene {
                 const now = Date.now();
 
                 advancePilotStage('workshop_work', now);
+                // M02 (Unit 13): the work orders list the case workspace —
+                // it is presented here.
+                presentM02C(now);
                 // M06 (Unit 7): the work orders list the dispatch lines —
                 // the console is presented here.
                 presentM06(now);

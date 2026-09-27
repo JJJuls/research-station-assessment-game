@@ -358,7 +358,7 @@ test.describe('pilot coverage schedule (pure)', () => {
 
     // An entered-but-unfinished reviewable window is counted open but NOT named.
     const entered = deriveCoverage([
-      record({ opportunity_id: 'proto_m02_case_workspace', entered: true }),
+      record({ opportunity_id: 'proto_m02_retrieval_series', entered: true }),
     ]);
     const enteredSummary = operationalCompletionSummary(entered);
 

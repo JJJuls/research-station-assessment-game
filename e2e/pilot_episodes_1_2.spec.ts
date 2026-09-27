@@ -426,7 +426,7 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
       ),
     ).toBe(false);
 
-    // Case workspace: overlay in m02case mode, hand over, retrieval prompt shown.
+    // Case workspace: overlay in m02case mode, hand over, first request shown.
     await interactAt(page, WORKSHOP.caseWorkspace, {
       approachOffset: { x: 0, y: 44 },
     });
@@ -456,9 +456,9 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
 
     let types = await pilotEventTypes(page);
 
-    expect(types).toContain('proto_m02_case_opportunity_opened');
-    expect(types).toContain('proto_m02_case_workspace_committed');
-    expect(types).toContain('proto_m02_case_retrieval_requested');
+    expect(types).toContain('proto_m02_workspace_opportunity_opened');
+    expect(types).toContain('proto_m02_workspace_handed_over');
+    expect(types).toContain('proto_m02_workspace_request_presented');
     await page.keyboard.press('Escape');
     await page.waitForFunction(
       () =>

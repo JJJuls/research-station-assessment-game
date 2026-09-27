@@ -23,6 +23,11 @@ export interface SlotAddress {
 
 export const SLOT_ADDRESS_KEY = 'inventorySlotAddress';
 
+/** The neutral glyph of a concealed slot: one look for every item. */
+const CLOSED_GLYPH = 'closed';
+const CLOSED_FILL = 0x46505c;
+const CLOSED_STROKE = 0xa9b4bf;
+
 export interface SlotGridConfig {
   scene: Phaser.Scene;
   containerId: string;
@@ -51,6 +56,12 @@ export interface SlotGridUiState {
   dropValid: boolean;
   /** Legacy hotbar selection ring. */
   selectionIndex: number | null;
+  /**
+   * Occupied slots render one neutral closed-case glyph instead of the
+   * item's icon and code badge (the case workspace during its requests).
+   * Occupancy and position stay visible; identity does not.
+   */
+  concealed?: boolean;
 }
 
 export interface SlotProbeEntry {
@@ -63,6 +74,17 @@ export interface SlotProbeEntry {
   definition_id: string | null;
   quantity: number;
   code: string | null;
+  /**
+   * What the cell DRAWS, read from its display objects: the icon's
+   * texture key ('closed' for the neutral closed-case glyph — the name
+   * the glyph itself carries — 'fallback' for the chip without a
+   * texture, null when empty), the glyph's own geometry and fill when it
+   * is not a texture, and the code badge actually shown (null when none
+   * is visible).
+   */
+  shown_icon: string | null;
+  shown_glyph: string | null;
+  shown_code: string | null;
 }
 
 interface SlotCell {
@@ -240,7 +262,22 @@ export class SlotGridView {
       cell.iconLabel?.destroy();
       cell.iconLabel = null;
 
-      if (stack !== null) {
+      if (stack !== null && ui.concealed === true) {
+        const center = this.cellCenter(index);
+
+        // The same glyph for every occupied slot: nothing here depends on
+        // which item the slot holds.
+        // Drawn where the item's icon sits and at a case body's size, in
+        // a tone no item kind uses.
+        cell.icon = this.scene.add
+          .rectangle(center.x, center.y - 2, 16, 18, CLOSED_FILL, 1)
+          .setStrokeStyle(1, CLOSED_STROKE)
+          .setName(CLOSED_GLYPH)
+          .setDepth(this.depth + 1)
+          .setScrollFactor(0);
+        cell.quantity.setText('');
+        cell.code.setText('').setVisible(false);
+      } else if (stack !== null) {
         const definition = getItemDefinition(stack.definitionId);
         const center = this.cellCenter(index);
 
@@ -299,6 +336,28 @@ export class SlotGridView {
           stack === null
             ? null
             : (this.config.codeBadges?.[stack.definitionId] ?? null),
+        shown_icon:
+          cell.icon === null
+            ? null
+            : cell.icon instanceof Phaser.GameObjects.Image
+              ? cell.icon.texture.key
+              : cell.icon.name === CLOSED_GLYPH
+                ? CLOSED_GLYPH
+                : 'fallback',
+        shown_glyph:
+          cell.icon instanceof Phaser.GameObjects.Rectangle
+            ? [
+                cell.icon.width,
+                cell.icon.height,
+                cell.icon.fillColor.toString(16),
+                cell.icon.alpha,
+                cell.icon.visible,
+                cell.icon.x - cell.background.x,
+                cell.icon.y - cell.background.y,
+              ].join('/')
+            : null,
+        shown_code:
+          cell.code.visible && cell.code.text !== '' ? cell.code.text : null,
       };
     });
   }

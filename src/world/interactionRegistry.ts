@@ -376,7 +376,7 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Open the',
     'Case Workspace',
     { kind: 'inventory', id: 'm02case' },
-    'm02_case_workspace',
+    'm02_filing_w1 / m02_requests_w1',
     { x: 188, y: 214 },
   ),
   workshopStation(

@@ -10,7 +10,7 @@
  */
 import { closeExteriorWindowsAtReview } from './exteriorWindows';
 import { closeM01AtReview } from './m01PlanBoard';
-import { closeM02CPanel, m02cWindow } from './m02CaseWorkspace';
+import { closeM02CAtReview } from './m02CaseWorkspace';
 import { closeM04AtReview } from './m04Debris';
 import { closeM05AtReview } from './m05Initiation';
 import { closeM06AtReview } from './m06RoutineDispatch';
@@ -44,12 +44,10 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
   // the board is a complete observation; one left before any job press
   // censors; never opened → absent.
   closeM01AtReview(nowMs);
-  closeM02CPanel(nowMs);
-  closeSurfaceWindow(
-    m02cWindow,
-    nowMs,
-    'case workspace never opened before the review',
-  );
+  // Station 080 M02 (Unit 13): an open workspace closes with the answers
+  // as they stand (unanswered requests stay missing; never handed over →
+  // no request); never opened → absent.
+  closeM02CAtReview(nowMs);
   closeM04AtReview(nowMs);
   closeM05AtReview('o1', nowMs);
   closeM05AtReview('o2', nowMs);

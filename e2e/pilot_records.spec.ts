@@ -1,12 +1,14 @@
 /**
  * Pilot route — Records Workshop evidence windows (evidence-led pilot v2,
- * Unit 2 closure). REWRITTEN around the M02 open case workspace.
+ * Unit 2 closure). REWRITTEN around the M02 open case workspace; its M02
+ * tests follow the Station 080 Unit 13 series (six requests in a balanced
+ * order, first answers, feedback deferred to the end).
  *
  * The v1 "file sheets into the correct folder" workstation (an answer-key
  * task) is gone from the participant route. M02 is now an OPEN workspace:
  * the participant organises six heterogeneous cases across four trays with
- * optional self-chosen labels, hands the workspace over, then retrieves two
- * counterbalanced cases from wherever they put them. Nothing here compares
+ * optional self-chosen labels, hands the workspace over, then answers six
+ * requests — one per case — from wherever they put them. Nothing here compares
  * the layout to a designer-preferred arrangement — every raw component is
  * defined against the participant's OWN labels (misfile = a case in a tray
  * whose chosen label names a different kind; untraceable = a case in an
@@ -85,7 +87,12 @@ interface RegisterRecord {
 
 const TRAY = (n: number) => `m02c_tray_${n}`;
 const DESK = 'm02c_desk';
-const M02_FAMILY = 'proto_m02_case_';
+const M02_FAMILY = 'proto_m02_workspace_';
+/** System-driven exposure records of "Take the orders." (Units 7 / 8). */
+const BOARD_PRESENTATIONS = [
+  'proto_m06_orders_presented',
+  'proto_m12_check_presented',
+];
 const OTHER_WORKSHOP_FAMILIES = [
   'proto_m03_',
   'proto_m04_',
@@ -255,7 +262,7 @@ async function openCaseWorkspace(page: Page) {
 }
 
 test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', () => {
-  test("M02 open workspace: free organisation, functional retrieval, raw components against the participant's own labels, independent of every other workshop family", async ({
+  test("M02 open workspace: free organisation, six requests answered once each, raw components against the participant's own labels, independent of every other workshop family", async ({
     page,
   }) => {
     test.setTimeout(480_000);
@@ -293,7 +300,7 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
 
     let types = await pilotEventTypes(page);
 
-    expect(types).toContain('proto_m02_case_opportunity_opened');
+    expect(types).toContain('proto_m02_workspace_opportunity_opened');
 
     // Organise by pointer: an own schema that is deliberately imperfect.
     //   tray 1  S-14 + I-22   (label SAMPLES → I-22 misfiled by OWN label)
@@ -355,15 +362,15 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
 
     let events = await m02Events(page);
     const committed = events.find(
-      (e) => e.event_type === 'proto_m02_case_workspace_committed',
+      (e) => e.event_type === 'proto_m02_workspace_handed_over',
     );
 
     expect(committed).toBeDefined();
 
     const commitMeta = metadataOf(committed!);
 
-    expect(commitMeta.window_id).toBe('m02_workspace_w1');
-    expect(commitMeta.opportunity_id).toBe('proto_m02_case_workspace');
+    expect(commitMeta.window_id).toBe('m02_filing_w1');
+    expect(commitMeta.opportunity_id).toBe('proto_m02_retrieval_series');
     expect(commitMeta.tray_labels).toEqual({
       [TRAY(1)]: 'SAMPLES',
       [TRAY(2)]: 'REPAIRS',
@@ -388,42 +395,45 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
       );
     }
 
-    // Retrieval: the requested case is read from the probe event (fixed by
-    // form, never by the layout); one wrong pick, then the correct slot;
-    // the second probe is answered directly. Retrieval events carry the
-    // retrieval window id.
-    for (let probeIndex = 0; probeIndex < 2; probeIndex += 1) {
+    // Requests (Station 080 Unit 13): all six cases are requested once, in
+    // the order assigned to the session (never by the layout). The first
+    // answer advances whether it is the requested case or not; nothing
+    // about correctness is shown before the sixth. Requests events carry
+    // the requests window id. The detailed series is proven by
+    // `m02_retrieval_route`; here one wrong selection, then the requested
+    // case every time.
+    for (let requestIndex = 0; requestIndex < 6; requestIndex += 1) {
+      await page.waitForTimeout(500);
       events = await m02Events(page);
 
       const requested = events
-        .filter((e) => e.event_type === 'proto_m02_case_retrieval_requested')
+        .filter((e) => e.event_type === 'proto_m02_workspace_request_presented')
         .map((e) => metadataOf(e))
-        .find((m) => m.probe_index === probeIndex);
+        .find((m) => m.request_index === requestIndex);
 
-      expect(requested).toBeDefined();
-      expect(requested!.window_id).toBe('m02_retrieval_w1');
+      expect(requested, `request ${requestIndex + 1}`).toBeDefined();
+      expect(requested!.window_id).toBe('m02_requests_w1');
 
       const requestedCase = requested!.requested_case as string;
 
       probe = (await uiProbe(page))!;
 
-      if (probeIndex === 0) {
-        const wrong = probe.slots.find(
-          (s) => s.definition_id !== null && s.definition_id !== requestedCase,
-        )!;
-
-        await clickSlot(page, wrong);
-        probe = (await uiProbe(page))!;
-      }
-
-      await clickSlot(page, slotOfCase(probe, requestedCase));
+      await clickSlot(
+        page,
+        requestIndex === 0
+          ? probe.slots.find(
+              (s) =>
+                s.definition_id !== null && s.definition_id !== requestedCase,
+            )!
+          : slotOfCase(probe, requestedCase),
+      );
     }
 
     await page.waitForTimeout(300);
     events = await m02Events(page);
 
     const closed = events.find(
-      (e) => e.event_type === 'proto_m02_case_window_closed',
+      (e) => e.event_type === 'proto_m02_workspace_window_closed',
     );
 
     expect(closed).toBeDefined();
@@ -431,36 +441,43 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
     const raw = metadataOf(closed!).raw_components as Record<string, unknown>;
 
     expect(metadataOf(closed!).exit_state).toBe('completed');
-    expect(raw.retrieval_actions).toBe(3);
-    expect(raw.retrieval_errors).toBe(1);
-    expect(raw.retrieval_success).toBe(2);
-    expect(raw.retrievals).toHaveLength(3);
-    expect((raw.retrieval_route as string[]).length).toBeGreaterThan(0);
-    expect(raw.misfile_count).toBe(1);
-    expect(raw.untraceable_case_count).toBe(1);
+    expect(raw.requests_answered).toBe(6);
+    expect(raw.correct_first_retrievals).toBe(5);
+    expect(raw.wrong_selection_count).toBe(1);
+    expect(raw.cannot_locate_count).toBe(0);
+    expect(raw.requests).toHaveLength(6);
+    expect(raw.layout_at_handover).toMatchObject({
+      misfile_count: 1,
+      untraceable_case_count: 1,
+    });
 
-    const picks = events.filter(
-      (e) => e.event_type === 'proto_m02_case_retrieval_pick',
+    const answers = events.filter(
+      (e) => e.event_type === 'proto_m02_workspace_request_answered',
     );
 
-    expect(picks.map((e) => metadataOf(e).correct)).toEqual([
+    expect(answers.map((e) => metadataOf(e).correct)).toEqual([
       false,
+      true,
+      true,
+      true,
       true,
       true,
     ]);
 
-    // Every M02 event: one opportunity, a recorded form = counterbalance,
-    // no canonical study item / construct / success.
+    // Every M02 event: one opportunity, a recorded form and request
+    // order, no canonical study item / construct / success.
     const forms = new Set<string>();
 
     for (const event of events) {
       const m = metadataOf(event);
 
       expect(m.measure_id).toBe('M02');
-      expect(m.opportunity_id).toBe('proto_m02_case_workspace');
+      expect(m.opportunity_id).toBe('proto_m02_retrieval_series');
       expect(['form_a', 'form_b']).toContain(m.form);
-      expect(m.counterbalance).toBe(m.form);
-      forms.add(m.form as string);
+      expect(m.counterbalance).toMatch(
+        new RegExp(`^${m.form as string}/order_[1-6]$`),
+      );
+      forms.add(m.counterbalance as string);
       expect(event.study_item_ids ?? undefined).toBeUndefined();
       expect(event.construct_id ?? undefined).toBeUndefined();
       expect(event.success ?? undefined).toBeUndefined();
@@ -469,15 +486,24 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
     expect(forms.size).toBe(1);
 
     // Independence: nothing the workspace did touched another workshop
-    // family, and no other family fired during the whole M02 flow.
+    // family. The Work Order Board's own system-driven presentations
+    // (the dispatch console and the quality packet are PRESENTED when the
+    // orders are taken, Units 7 / 8) are exposure records, not behaviour:
+    // the previous bare `== []` form predated them and failed on the
+    // baseline tree (`proto_m06_orders_presented`) — corrected here.
     types = await pilotEventTypes(page);
 
     for (const family of OTHER_WORKSHOP_FAMILIES) {
       expect(
-        types.filter((t) => t.startsWith(family)),
+        types.filter(
+          (t) => t.startsWith(family) && !BOARD_PRESENTATIONS.includes(t),
+        ),
         `${family} events during the M02 flow`,
       ).toEqual([]);
     }
+
+    // The retired v2 family never fires on the route.
+    expect(types.filter((t) => t.startsWith('proto_m02_case_'))).toEqual([]);
 
     await page.keyboard.press('Escape');
     await waitOverlay(page, false);
@@ -486,7 +512,7 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
     ).toBe('completed');
     expect(
       (await register(page)).find(
-        (r) => r.opportunity_id === 'proto_m02_case_workspace',
+        (r) => r.opportunity_id === 'proto_m02_retrieval_series',
       ),
     ).toMatchObject({ owner: 'M02', entered: true, completed: true });
     expectNoRuntimeErrors(errors);
@@ -512,17 +538,17 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
 
     let events = await m02Events(page);
     const abandoned = events.find(
-      (e) => e.event_type === 'proto_m02_case_panel_closed_without_handover',
+      (e) => e.event_type === 'proto_m02_workspace_surface_closed',
     );
 
     expect(abandoned).toBeDefined();
-    expect(metadataOf(abandoned!).phase).toBe('organise');
+    expect(metadataOf(abandoned!).workspace_phase).toBe('organise');
     expect(metadataOf(abandoned!).cases_left_on_intake).toBe(5);
     expect(
-      events.some((e) => e.event_type === 'proto_m02_case_workspace_committed'),
+      events.some((e) => e.event_type === 'proto_m02_workspace_handed_over'),
     ).toBe(false);
     expect(
-      events.some((e) => e.event_type === 'proto_m02_case_window_closed'),
+      events.some((e) => e.event_type === 'proto_m02_workspace_window_closed'),
     ).toBe(false);
     expect(
       (await pilotCoverage(page))!.items.find((i) => i.item === 'M02')?.status,
@@ -535,11 +561,13 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
     events = await m02Events(page);
     expect(
       events.filter(
-        (e) => e.event_type === 'proto_m02_case_opportunity_opened',
+        (e) => e.event_type === 'proto_m02_workspace_opportunity_opened',
       ),
     ).toHaveLength(1);
     expect(
-      events.some((e) => e.event_type === 'proto_m02_case_panel_reopened'),
+      events.some(
+        (e) => e.event_type === 'proto_m02_workspace_surface_reopened',
+      ),
     ).toBe(true);
     await page.keyboard.press('Escape');
     await waitOverlay(page, false);

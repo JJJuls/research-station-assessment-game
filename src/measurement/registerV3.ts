@@ -514,6 +514,34 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'behavioural_counterpart',
     direction: 'revise_extend',
     occasions: 1,
+    // Unit 13: the approved series landed at the Records Workshop case
+    // workspace (six requests in a balanced order, first answer or Cannot
+    // locate, feedback deferred to the end). The v2 two-probe family
+    // `proto_m02_case_*` keeps its v2 meaning. During the requests the
+    // participant's layout and own labels stay visible and the
+    // system-supplied case codes and contents do not (owner ruling of
+    // 28 September, register §5.137).
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m02_retrieval_series'],
+      windows: [
+        {
+          id: 'm02_filing_w1',
+          occasion: null,
+          zone: 'records_workshop',
+          episode: 2,
+        },
+        {
+          id: 'm02_requests_w1',
+          occasion: null,
+          zone: 'records_workshop',
+          episode: 2,
+        },
+      ],
+      family_prefixes: ['proto_m02_workspace_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Participant-created layout kept; all six cases requested once in balanced order; advance after each first answer or explicit Cannot locate; corrective feedback deferred to the end.',
     features: [
@@ -531,6 +559,16 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
         'ms per request',
         'diagnostic only',
         NO_SCORE_ZERO,
+        'companion',
+      ),
+      // Provisional (register §5.146): the register row's "filing
+      // choices" as a feature row of its own, pending the owner.
+      count(
+        'm02_filing_layout',
+        "the participant's own layout at the handover: case locations, tray labels, container changes and label steps (state description against the participant's own labels)",
+        'object',
+        'not a score; retained separately',
+        'workspace never handed over → null',
         'companion',
       ),
     ],

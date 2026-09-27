@@ -27,16 +27,22 @@ import {
   sfxUnavailable,
 } from '../../gameplay/audio';
 import {
+  cannotLocateM02C,
   closeM02CPanel,
   commitM02CWorkspace,
+  M02_REQUEST_COUNT,
   M02C_CASES,
   M02C_TRAY_IDS,
-  m02cCase,
+  m02cContentsConcealed,
+  m02cFeedbackLines,
   m02cPhase,
   m02cRequestedCase,
+  m02cRequestNumber,
   m02cState,
   nextM02CTrayLabel,
-  noteM02CRetrievalProbe,
+  noteM02CEmptySelection,
+  noteM02CLayoutChangeRefused,
+  noteM02CMoveInput,
   openM02CWorkspace,
   pickM02CRetrieval,
   setM02CTrayLabel,
@@ -116,6 +122,16 @@ declare global {
       confirm_open: boolean;
       detail_text: string | null;
       feedback: string | null;
+      /** Case workspace only: what the participant is shown (never state). */
+      m02c?: {
+        phase: string;
+        banner: string | null;
+        help: string | null;
+        request_number: number | null;
+        contents_concealed: boolean;
+        detail_icon: string | null;
+        record: string[];
+      } | null;
       slots: SlotProbeEntry[];
       buttons: {
         id: string;
@@ -136,6 +152,9 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
 
 const PANEL = { x: 40, y: 42, width: 720, height: 516 } as const;
 const DEPTH = { dim: 18, panel: 20, grid: 22, ghost: 60, confirm: 70 } as const;
+
+/** The one line that explains the closed cases (never why, never how). */
+const M02C_CLOSED_LINE = 'The cases are closed during the requests.';
 
 const FAILURE_TEXT: Record<string, string> = {
   occupied: 'Slot occupied.',
@@ -194,6 +213,9 @@ export class InventoryOverlayScene extends Phaser.Scene {
   private m02cLabelButtons: UiButton[] = [];
   private m02cBanner: Phaser.GameObjects.Text | null = null;
   private m02cHandOverButton: UiButton | null = null;
+  private m02cCannotLocateButton: UiButton | null = null;
+  private m02cRecordTexts: Phaser.GameObjects.Text[] = [];
+  private helpText: Phaser.GameObjects.Text | null = null;
   private referencePanel: Phaser.GameObjects.Container | null = null;
   private referenceBackground: Phaser.GameObjects.Rectangle | null = null;
 
@@ -247,6 +269,10 @@ export class InventoryOverlayScene extends Phaser.Scene {
     this.m02cLabelButtons = [];
     this.m02cBanner = null;
     this.m02cHandOverButton = null;
+    this.m02cCannotLocateButton = null;
+    this.m02cRecordTexts = [];
+    this.helpText = null;
+    this.lastFeedback = null;
     this.referencePanel = null;
     this.referenceBackground = null;
     this.confirmOpen = false;
@@ -343,7 +369,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
       .setOrigin(0)
       .setDepth(DEPTH.panel + 1);
 
-    this.add
+    this.helpText = this.add
       .text(400, PANEL.y + PANEL.height - 16, this.helpLineFor(), {
         color: INV_TEXT.dim,
         font: INV_FONT.small,
@@ -358,6 +384,15 @@ export class InventoryOverlayScene extends Phaser.Scene {
     // Default focus: first grid, first slot.
     if (this.grids.length > 0) {
       this.focus = { containerId: this.grids[0].containerId, slotIndex: 0 };
+    }
+
+    if (
+      this.mode === 'm02case' &&
+      (m02cPhase() === 'retrieve' || m02cPhase() === 'closed')
+    ) {
+      // A reopened request never starts with a slot already focused, and
+      // the read-only record shows no focus ring.
+      this.focus = null;
     }
 
     if (
@@ -432,9 +467,14 @@ export class InventoryOverlayScene extends Phaser.Scene {
     }
 
     if (this.mode === 'm02case') {
-      return m02cPhase() === 'retrieve'
-        ? 'Select the slot holding the requested case • SPACE/ENTER or click picks • I / ESC close'
-        : 'Drag or SPACE to move cases • Arrows focus • L label focused tray • C hand over • I / ESC close';
+      switch (m02cPhase()) {
+        case 'retrieve':
+          return 'Arrows focus • SPACE/ENTER or click selects the slot • N cannot locate • I / ESC close';
+        case 'closed':
+          return 'Request record — read-only • I / ESC close';
+        default:
+          return 'Drag or SPACE to move cases • Arrows focus • L label focused tray • C hand over • I / ESC close';
+      }
     }
 
     if (this.mode === 'm03') {
@@ -724,13 +764,31 @@ export class InventoryOverlayScene extends Phaser.Scene {
           width: 144,
           label: 'HAND OVER',
           kind: 'accent',
-          onActivate: () => this.handleM02CHandOver(),
+          onActivate: () => this.handleM02CHandOver('pointer'),
           depth: DEPTH.grid,
         });
         this.buttons.push(this.m02cHandOverButton);
 
+        // Shown during the requests only: an explicit answer without a
+        // selection (hotkey N). Never pre-focused.
+        this.m02cCannotLocateButton = new UiButton({
+          scene: this,
+          id: 'm02c_cannot_locate',
+          x: 96,
+          y: PANEL.y + 350,
+          width: 170,
+          label: 'CANNOT LOCATE (N)',
+          onActivate: () => this.handleM02CCannotLocate('pointer'),
+          depth: DEPTH.grid,
+        });
+        this.m02cCannotLocateButton.setVisible(false);
+        this.m02cCannotLocateButton.setEnabled(false);
+        this.buttons.push(this.m02cCannotLocateButton);
+
+        // Between the title row and the intake tray's label, so a long
+        // request never covers the label.
         this.m02cBanner = this.add
-          .text(400, PANEL.y + 66, '', {
+          .text(400, PANEL.y + 38, '', {
             backgroundColor: '#1c3b3a',
             color: INV_TEXT.accent,
             font: INV_FONT.section,
@@ -836,7 +894,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
     }
   }
 
-  private handleM02CHandOver() {
+  private handleM02CHandOver(inputMode: 'pointer' | 'keyboard' = 'pointer') {
     if (this.confirmOpen || m02cPhase() !== 'organise') {
       return;
     }
@@ -846,11 +904,38 @@ export class InventoryOverlayScene extends Phaser.Scene {
       return;
     }
 
-    if (commitM02CWorkspace(Date.now(), 'pointer')) {
+    if (commitM02CWorkspace(Date.now(), inputMode)) {
       sfxUiSelect();
-      this.refreshM02CPhase();
+      // No slot is pre-focused for a request: a keyboard answer needs a
+      // deliberate focus move first.
+      this.focus = null;
+      this.hover = null;
+      this.showFeedback(M02C_CLOSED_LINE, INV_TEXT.dim);
       this.refresh();
     }
+  }
+
+  /** What the overlay shows after an answer: the same line whatever it was. */
+  private afterM02CAnswer(outcome: string) {
+    if (outcome === 'recorded' || outcome === 'series_complete') {
+      sfxUiSelect();
+      this.focus = null;
+      this.hover = null;
+      this.showFeedback('Recorded.', INV_TEXT.dim);
+    }
+
+    // A refused press (inside the settle window) is logged and changes
+    // nothing on screen: the line of the answer just recorded stays.
+    this.refresh();
+  }
+
+  /** "Cannot locate": an explicit answer without a selection. */
+  private handleM02CCannotLocate(inputMode: 'pointer' | 'keyboard') {
+    if (this.confirmOpen || !this.m02cRetrieving()) {
+      return;
+    }
+
+    this.afterM02CAnswer(cannotLocateM02C(inputMode, Date.now()));
   }
 
   /** Retrieval-phase pick: the case in the addressed slot is the answer. */
@@ -863,34 +948,26 @@ export class InventoryOverlayScene extends Phaser.Scene {
         address.slotIndex
       ] ?? null;
 
-    noteM02CRetrievalProbe(address.containerId, inputMode);
-    this.focus = address;
-
     if (stack === null) {
+      this.focus = address;
+      noteM02CEmptySelection(address.containerId, address.slotIndex, inputMode);
       this.showFeedback('Empty slot.');
       this.refresh();
       return;
     }
 
-    const outcome = pickM02CRetrieval(
-      stack.definitionId,
-      inputMode,
-      Date.now(),
+    // The first answer advances the request whether or not it is the
+    // requested case; nothing about correctness is shown here. The focus
+    // is never moved by a selection (a refused press leaves none behind).
+    this.afterM02CAnswer(
+      pickM02CRetrieval(
+        stack.definitionId,
+        address.containerId,
+        address.slotIndex,
+        inputMode,
+        Date.now(),
+      ),
     );
-
-    if (outcome === 'correct') {
-      sfxUiSelect();
-      this.showFeedback(
-        m02cPhase() === 'closed'
-          ? 'Handed over. Workspace closed.'
-          : `${m02cCase(stack.definitionId)?.label ?? 'Case'} handed over.`,
-      );
-    } else if (outcome === 'wrong') {
-      this.showFeedback('Not the requested case.');
-    }
-
-    this.refreshM02CPhase();
-    this.refresh();
   }
 
   /** Reflects the workspace phase on the banner and controls. */
@@ -901,32 +978,85 @@ export class InventoryOverlayScene extends Phaser.Scene {
       return;
     }
 
+    this.helpText?.setText(this.helpLineFor());
+    this.m02cCannotLocateButton?.setVisible(phase === 'retrieve');
+    this.m02cCannotLocateButton?.setEnabled(phase === 'retrieve');
+    // The handover is done once: its control leaves with the organise phase.
+    this.m02cHandOverButton?.setVisible(phase === 'organise');
+
     if (phase === 'retrieve') {
       const requested = m02cRequestedCase();
+      const number = m02cRequestNumber();
 
       this.m02cBanner
         .setText(
-          requested === null
-            ? 'RETRIEVAL'
-            : `RETRIEVE: ${requested.label} — select the slot holding it`,
+          requested === null || number === null
+            ? 'REQUESTS'
+            : `REQUEST ${number} OF ${M02_REQUEST_COUNT} — ${requested.label}: select the slot holding it`,
         )
         .setVisible(true);
       this.m02cHandOverButton?.setEnabled(false);
 
-      for (const button of this.m02cLabelButtons) {
-        button.setEnabled(false);
-      }
+      // The participant's own tray labels stay at full strength: they are
+      // inert from the handover on (the handler refuses), never dimmed.
     } else if (phase === 'closed') {
-      this.m02cBanner.setText('HANDOVER COMPLETE — read-only').setVisible(true);
+      const record = m02cFeedbackLines();
+
+      this.m02cBanner
+        .setText(
+          record.length > 0
+            ? 'REQUESTS COMPLETE — request record below'
+            : 'WORKSPACE CLOSED — read-only',
+        )
+        .setVisible(true);
       this.inputLocked = true;
       this.m02cHandOverButton?.setEnabled(false);
 
-      for (const button of this.m02cLabelButtons) {
-        button.setEnabled(false);
-      }
+      // The participant's own tray labels stay at full strength: they are
+      // inert from the handover on (the handler refuses), never dimmed.
+
+      this.showM02CRecord(record);
     } else {
       this.m02cBanner.setVisible(false);
     }
+  }
+
+  /**
+   * The deferred request record (shown only once the series has ended),
+   * in two columns over the detail area.
+   */
+  private showM02CRecord(record: string[]) {
+    if (record.length === 0 || this.m02cRecordTexts.length > 0) {
+      return;
+    }
+
+    const half = Math.ceil(record.length / 2);
+
+    [record.slice(0, half), record.slice(half)].forEach((lines, column) => {
+      this.m02cRecordTexts.push(
+        this.add
+          .text(PANEL.x + 28 + column * 344, PANEL.y + 400, lines.join('\n'), {
+            color: INV_TEXT.text,
+            font: INV_FONT.small,
+            lineSpacing: 9,
+            wordWrap: { width: 330 },
+          })
+          .setOrigin(0)
+          .setDepth(DEPTH.panel + 2),
+      );
+    });
+  }
+
+  /** States the input mode of the placement about to be issued (M02 only). */
+  private noteM02CInput(inputMode: 'pointer' | 'keyboard') {
+    if (this.mode === 'm02case') {
+      noteM02CMoveInput(inputMode);
+    }
+  }
+
+  /** No case shows its code, kind or name (owner ruling, U13). */
+  private m02cConcealed(): boolean {
+    return this.mode === 'm02case' && m02cContentsConcealed();
   }
 
   private m02cRetrieving(): boolean {
@@ -1041,6 +1171,19 @@ export class InventoryOverlayScene extends Phaser.Scene {
         this.justDragged = true;
 
         if (
+          address !== null &&
+          this.m02cRetrieving() &&
+          !pointer.rightButtonDown()
+        ) {
+          noteM02CLayoutChangeRefused(
+            address.containerId,
+            address.slotIndex,
+            'pointer',
+          );
+          this.showFeedback('The layout is fixed after the handover.');
+        }
+
+        if (
           address === null ||
           this.inputLocked ||
           this.confirmOpen ||
@@ -1136,6 +1279,8 @@ export class InventoryOverlayScene extends Phaser.Scene {
         if (address === null) {
           return;
         }
+
+        this.noteM02CInput('pointer');
 
         const change = invPlace(address.containerId, address.slotIndex);
 
@@ -1275,6 +1420,8 @@ export class InventoryOverlayScene extends Phaser.Scene {
 
     if (state.held !== null) {
       // Keyboard-picked stack + mouse click: same place command.
+      this.noteM02CInput('pointer');
+
       const change = invPlace(address.containerId, address.slotIndex);
 
       if (change.ok) {
@@ -1326,7 +1473,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
 
   private handleRightClick(address: SlotAddress, shiftKey: boolean) {
     if (this.m02cRetrieving()) {
-      this.m02cRetrievalPick(address, 'pointer');
+      // Only a left click (or SPACE / ENTER) answers a request.
       return;
     }
 
@@ -1565,6 +1712,15 @@ export class InventoryOverlayScene extends Phaser.Scene {
         return;
       }
 
+      if (this.focus === null) {
+        // No slot focused (the case workspace clears the focus with every
+        // request): the first arrow press lands on the first slot.
+        this.focus = { containerId: this.grids[0].containerId, slotIndex: 0 };
+        sfxUiMove();
+        this.refresh();
+        return;
+      }
+
       const gridIndex = Math.max(
         0,
         this.grids.findIndex(
@@ -1642,19 +1798,21 @@ export class InventoryOverlayScene extends Phaser.Scene {
         return;
       }
 
-      if (event.shiftKey) {
-        this.handleQuickTransfer(this.focus);
+      if (this.m02cRetrieving()) {
+        this.m02cRetrievalPick(this.focus, 'keyboard');
         return;
       }
 
-      if (this.m02cRetrieving()) {
-        this.m02cRetrievalPick(this.focus, 'keyboard');
+      if (event.shiftKey) {
+        this.handleQuickTransfer(this.focus);
         return;
       }
 
       const state = getInventoryState();
 
       if (state.held !== null) {
+        this.noteM02CInput('keyboard');
+
         const change = invPlace(this.focus.containerId, this.focus.slotIndex);
 
         if (change.ok) {
@@ -1694,6 +1852,11 @@ export class InventoryOverlayScene extends Phaser.Scene {
         return;
       }
 
+      if (this.m02cRetrieving()) {
+        // The layout is frozen at the handover.
+        return;
+      }
+
       if (getInventoryState().held !== null) {
         this.showFeedback(FAILURE_TEXT.holding);
         return;
@@ -1720,7 +1883,8 @@ export class InventoryOverlayScene extends Phaser.Scene {
         event.repeat ||
         this.focus === null ||
         this.inputLocked ||
-        this.confirmOpen
+        this.confirmOpen ||
+        this.m02cRetrieving()
       ) {
         return;
       }
@@ -1735,6 +1899,10 @@ export class InventoryOverlayScene extends Phaser.Scene {
         this.inputLocked ||
         this.confirmOpen
       ) {
+        return;
+      }
+
+      if (this.m02cRetrieving()) {
         return;
       }
 
@@ -1768,12 +1936,20 @@ export class InventoryOverlayScene extends Phaser.Scene {
       if (this.mode === 'workbench') {
         this.handleAssemble();
       } else if (this.mode === 'm02case') {
-        this.handleM02CHandOver();
+        this.handleM02CHandOver('keyboard');
       } else if (this.mode === 'm02') {
         this.handleM02Commit();
       } else if (this.mode === 'm03') {
         this.handleM03Press();
       }
+    });
+
+    on('keydown-N', (event: KeyboardEvent) => {
+      if (event.repeat || this.mode !== 'm02case') {
+        return;
+      }
+
+      this.handleM02CCannotLocate('keyboard');
     });
 
     on('keydown-V', (event: KeyboardEvent) => {
@@ -2119,6 +2295,12 @@ export class InventoryOverlayScene extends Phaser.Scene {
     }
 
     const definition = getItemDefinition(stack.definitionId);
+
+    if (this.m02cConcealed()) {
+      // A filed case never shows its name, code or kind here.
+      return M02C_CLOSED_LINE;
+    }
+
     const lines = [
       `${definition.displayName}   ·   ${definition.category.toUpperCase()}   ·   ×${stack.quantity}`,
       definition.description,
@@ -2174,7 +2356,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
           : (state.containers[address.containerId]?.slots[address.slotIndex] ??
             null);
 
-      if (stack !== null) {
+      if (stack !== null && !this.m02cConcealed()) {
         const definition = getItemDefinition(stack.definitionId);
 
         if (this.textures.exists(definition.icon)) {
@@ -2183,6 +2365,23 @@ export class InventoryOverlayScene extends Phaser.Scene {
             .setDepth(DEPTH.panel + 1);
         }
       }
+    }
+
+    if (this.m02cRecordTexts.length > 0) {
+      // The request record occupies the detail area once the series ended.
+      this.detailIcon?.destroy();
+      this.detailIcon = null;
+      this.detailText.setText('');
+      return;
+    }
+
+    if (this.m02cConcealed()) {
+      // Owner ruling (U13): no case shows its icon, name or code while a
+      // request is open — the same line wherever the pointer or focus is.
+      this.detailIcon?.destroy();
+      this.detailIcon = null;
+      this.detailText.setText(M02C_CLOSED_LINE);
+      return;
     }
 
     this.detailText.setText(text ?? 'Hover or focus a slot for details.');
@@ -2211,6 +2410,9 @@ export class InventoryOverlayScene extends Phaser.Scene {
           grid.containerId === CONTAINER_IDS.playerHotbar
             ? state.hotbarSelection
             : null,
+        // Owner ruling (U13): during the requests the participant's layout
+        // stays as handed over and no case shows its code or contents.
+        concealed: this.m02cConcealed(),
       });
     }
 
@@ -2258,6 +2460,24 @@ export class InventoryOverlayScene extends Phaser.Scene {
       confirm_open: this.confirmOpen,
       detail_text: this.detailText?.text ?? null,
       feedback: this.lastFeedback,
+      m02c:
+        this.mode === 'm02case'
+          ? {
+              phase: m02cPhase(),
+              banner:
+                this.m02cBanner !== null && this.m02cBanner.visible
+                  ? this.m02cBanner.text
+                  : null,
+              help: this.helpText?.text ?? null,
+              request_number: m02cRequestNumber(),
+              contents_concealed: this.m02cConcealed(),
+              detail_icon:
+                this.detailIcon === null ? null : this.detailIcon.texture.key,
+              record: this.m02cRecordTexts.flatMap((text) =>
+                text.text.split('\n'),
+              ),
+            }
+          : null,
       slots: this.grids.flatMap((grid) => grid.probeEntries(state)),
       buttons: this.buttons.map((button) => {
         const bounds = button.bounds();

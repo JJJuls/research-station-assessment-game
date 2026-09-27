@@ -172,7 +172,7 @@ test.describe('Utility & Core closure model (pure)', () => {
         // Station 080 Unit 5: M01 owns two batch windows (both recorded).
         completed('proto_m01_batch_o1'),
         completed('proto_m01_batch_o2'),
-        absent('proto_m02_case_workspace'),
+        absent('proto_m02_retrieval_series'),
         invalid('proto_m04_debris_cleanup'),
         // Station 080 Unit 7: M06 is the timed work period.
         censored('proto_m06_work_period'),
@@ -223,7 +223,7 @@ test.describe('Utility & Core closure model (pure)', () => {
 
   test('3. a genuinely open window blocks readiness with a neutral location hint; stopping-rule windows are never named', () => {
     const registry = mixedTerminalRegistry().map((r) =>
-      r.opportunity_id === 'proto_m02_case_workspace'
+      r.opportunity_id === 'proto_m02_retrieval_series'
         ? open(r.opportunity_id)
         : r,
     );
