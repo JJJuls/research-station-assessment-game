@@ -1,14 +1,8 @@
 /**
- * M26 — disconnected uplink channel window (evidence-led pilot v2, Unit 4).
- * PURE model (no Phaser, no runtime imports; Node-testable).
- *
- * Ledger (sheet 09): after one successful transmission, physically
- * disconnect the channel, demonstrate and acknowledge the state, while a
- * working alternative channel remains available. Raw components
- * `disconnect_acknowledged`, `confirmation_probe_excluded`,
- * `postknowledge_transmissions`, `alternative_used`. Validity gate:
- * worthlessness beyond doubt; first confirmation probe excluded;
- * alternative equally accessible; no hidden recovery.
+ * M26 — disconnected uplink channel window (Station 080 M01–M26 run, Unit
+ * 12; the evidence-led pilot v2 mechanics of Unit 4 kept). PURE model (no
+ * Phaser; Node-testable — the focused clock and its monitor registration
+ * are the only runtime touch, as in the M25 model).
  *
  * Mechanic: two field uplink posts. The recovery brief requires two
  * reports (coupling recovery, salvage tally). Post A is the primary
@@ -20,19 +14,51 @@
  * The disconnect is real by construction: Post A can never deliver again
  * in this session — there is no hidden recovery.
  *
- * Knowledge: attempts on Post A after the disconnect but BEFORE the
- * participant's explicit acknowledgement are `pre_knowledge` (never
- * post-knowledge continuation). After the acknowledgement the FIRST Post
- * A attempt is the excluded confirmation probe; later ones are
- * `postknowledge_transmissions`. Any Post B delivery after the
- * disconnect is `alternative_used`. Neither continuing nor switching is
- * interpreted anywhere. Nothing here is a score.
+ * KNOWLEDGE is established only by the expected-outcome test
+ * (`outcomeUnderstanding.ts`): one question about what a report sent
+ * from Post A will do now, one neutral explanation on a wrong first
+ * answer, one equivalent recheck; `pass_first` and
+ * `pass_after_explanation` are stored apart; an acknowledgement click
+ * never passes. A pass opens the CONTINUATION: a focused window of
+ * `PILOT_SETTINGS.m26_cap_ms` in which another Post A transmission (a
+ * post-knowledge retry — the FIRST INCLUDED; the v2 first-probe exclusion
+ * is retired), Post B (the switch) and "Finish at the uplink" (the
+ * explicit exit) are all available and nothing tells the participant
+ * which to choose; the cap closes it as a censoring event. Post A
+ * attempts after the disconnect and before a pass are `pre_knowledge`;
+ * after a failed check `after_fail` — preserved, never post-knowledge.
+ * Neither continuing nor switching is interpreted anywhere. Nothing here
+ * is a score.
  */
+import { FocusedClock, type PauseCause } from '../../measurement/focusedClock';
+import {
+  registerFocusedClock,
+  releaseFocusedClock,
+} from '../../measurement/focusMonitor';
+import {
+  type KnowledgeStatus,
+  PILOT_SETTINGS,
+} from '../../measurement/protocol';
+import {
+  createUnderstandingState,
+  type UnderstandingAnswer,
+  understandingAnswer,
+  understandingDue,
+  understandingExplained,
+  understandingPassed,
+  understandingPresent,
+  type UnderstandingQuestion,
+  understandingRaw,
+  type UnderstandingStage,
+  type UnderstandingState,
+} from './outcomeUnderstanding';
 
-export const M26_OPPORTUNITY_ID = 'proto_m26_channel_disconnect';
-export const M26_WINDOW_ID = 'm26_channel_w1';
-export const M26_ENTRY_STATE_VERSION = 'm26-channel-v1';
-export const M26_FAMILY = 'proto_m26_channel_';
+export const M26_OPPORTUNITY_ID = 'proto_m26_uplink_continuation';
+export const M26_WINDOW_ID = 'm26_uplink_w1';
+export const M26_ENTRY_STATE_VERSION = 'm26-uplink-continuation-v3';
+export const M26_FAMILY = 'proto_m26_uplink_';
+/** The post-knowledge continuation cap (focused time; pilot default). */
+export const M26_CAP_MS = PILOT_SETTINGS.m26_cap_ms;
 
 export const M26_EVENT_SUFFIXES = [
   'presented',
@@ -40,13 +66,22 @@ export const M26_EVENT_SUFFIXES = [
   'transmission',
   'disconnect_demonstrated',
   'evidence_viewed',
-  'disconnect_acknowledged',
-  'confirmation_probe',
-  'postknowledge_transmission',
+  'understanding_presented',
+  'understanding_answered',
+  'understanding_refused',
+  'press_refused',
+  'explanation_shown',
+  'explanation_dismissed',
+  'continuation_opened',
+  'continuation_paused',
+  'continuation_resumed',
+  'stepped_away',
+  'postknowledge_retry',
   'alternative_used',
+  'exit',
+  'cap_reached',
   'departed',
   'window_closed',
-  'invalidated',
   'technical_failure',
 ] as const;
 
@@ -81,15 +116,48 @@ export const M26_TRANSMIT_MS = 1200;
 /** Delay (ms) between the first ACK and the scripted conduit failure. */
 export const M26_DISCONNECT_DELAY_MS = 1400;
 
+/**
+ * The expected-outcome test (Unit 12). The key is never the first card in
+ * either form; the wording names no item and states no preference.
+ */
+export const M26_UNDERSTANDING_QUESTION: UnderstandingQuestion = {
+  question_id: 'm26_post_a_transmission_outcome',
+  stem: 'Check before you go on: if you transmit a report from Post A now, what happens to it?',
+  options: [
+    {
+      id: 'reaches_delayed',
+      label: 'It reaches the station after a short delay.',
+    },
+    {
+      id: 'not_received',
+      label:
+        'It does not reach the station — Line A is open, so Post A has no carrier.',
+    },
+    {
+      id: 'reaches_after_gust',
+      label: 'It reaches the station once the gust has passed.',
+    },
+  ],
+  key: 'not_received',
+  explanation:
+    'The conduit to Post A is severed at junction 2 and cannot be repaired this shift. Nothing sent from Post A reaches the station — now or later.',
+};
+
+/** Neutral line after the check is decided — identical for a pass and a fail. */
+export const M26_CHECK_RECORDED =
+  'Check recorded. Post A, Post B and the line panel remain available.';
+
 export type M26Knowledge =
   | 'connected'
-  | 'disconnected_unacknowledged'
-  | 'disconnected_acknowledged';
+  | 'disconnected_untested'
+  | 'disconnected_testing'
+  | 'disconnected_passed'
+  | 'disconnected_failed';
 
 export type M26Classification =
   | 'delivered'
   | 'pre_knowledge'
-  | 'confirmation_probe'
+  | 'after_fail'
   | 'postknowledge';
 
 export interface M26Transmission {
@@ -98,7 +166,15 @@ export interface M26Transmission {
   delivered: boolean;
   classification: M26Classification;
   elapsed_ms: number;
+  /** Focused ms into the continuation (inside it only). */
+  continuation_focused_ms: number | null;
 }
+
+export type M26ContinuationClosure =
+  | 'voluntary_stop'
+  | 'cap'
+  | 'route_departure'
+  | 'closed_at_review';
 
 export type M26StopChoice = 'ended_shift_outside' | 'closed_at_review' | null;
 
@@ -115,13 +191,36 @@ export interface M26State {
   evidence_views: number;
   first_evidence_ms: number | null;
   evidence_sources: string[];
-  acknowledged_ms: number | null;
+  understanding: UnderstandingState;
+  /** Post A attempts after the disconnect, before the check was decided. */
   pre_knowledge_attempts: number;
-  confirmation_probe_ms: number | null;
-  postknowledge_transmissions: number;
-  postknowledge_transmissions_after_delivery: number;
-  alternative_used_ms: number | null;
+  /** Post A attempts after a failed check. */
+  attempts_after_fail: number;
+  /** Post A attempts inside the continuation (the first included). */
+  postknowledge_retries: number;
+  postknowledge_retry_focused_ms: number[];
+  postknowledge_retries_after_delivery: number;
+  continuation_opened_at_ms: number | null;
+  continuation_closed_at_ms: number | null;
+  continuation_closure: M26ContinuationClosure | null;
+  continuation_focused_ms: number | null;
+  continuation_wall_ms: number | null;
+  continuationClock: FocusedClock | null;
+  cap_reached: boolean;
+  retry_in_progress_at_cap: boolean;
+  /** A Post B transmission still running at the cap (recorded, never counted). */
+  switch_in_progress_at_cap: boolean;
+  /** "Step away" chosen at Post A inside the continuation (telemetry). */
+  steps_away_in_continuation: number;
+  /** The reports already delivered when the continuation opened (entry state). */
+  reports_delivered_at_open: number | null;
+  /** Post B deliveries after the disconnect (any knowledge state). */
   b_transmissions_after_disconnect: number;
+  alternative_used_ms: number | null;
+  /** Post B inside the continuation (the switch). */
+  alternative_used_postknowledge: number;
+  alternative_used_postknowledge_ms: number | null;
+  exit_ms: number | null;
   departures: number;
   stop_choice: M26StopChoice;
 }
@@ -140,13 +239,28 @@ export function createM26State(): M26State {
     evidence_views: 0,
     first_evidence_ms: null,
     evidence_sources: [],
-    acknowledged_ms: null,
+    understanding: createUnderstandingState(),
     pre_knowledge_attempts: 0,
-    confirmation_probe_ms: null,
-    postknowledge_transmissions: 0,
-    postknowledge_transmissions_after_delivery: 0,
-    alternative_used_ms: null,
+    attempts_after_fail: 0,
+    postknowledge_retries: 0,
+    postknowledge_retry_focused_ms: [],
+    postknowledge_retries_after_delivery: 0,
+    continuation_opened_at_ms: null,
+    continuation_closed_at_ms: null,
+    continuation_closure: null,
+    continuation_focused_ms: null,
+    continuation_wall_ms: null,
+    continuationClock: null,
+    cap_reached: false,
+    retry_in_progress_at_cap: false,
+    switch_in_progress_at_cap: false,
+    steps_away_in_continuation: 0,
+    reports_delivered_at_open: null,
     b_transmissions_after_disconnect: 0,
+    alternative_used_ms: null,
+    alternative_used_postknowledge: 0,
+    alternative_used_postknowledge_ms: null,
+    exit_ms: null,
     departures: 0,
     stop_choice: null,
   };
@@ -175,14 +289,35 @@ export function m26Disconnected(state: M26State): boolean {
   return state.disconnected_ms !== null;
 }
 
+export function m26KnowledgeStatus(state: M26State): KnowledgeStatus {
+  return state.understanding.status;
+}
+
 export function m26Knowledge(state: M26State): M26Knowledge {
   if (!m26Disconnected(state)) {
     return 'connected';
   }
 
-  return state.acknowledged_ms === null
-    ? 'disconnected_unacknowledged'
-    : 'disconnected_acknowledged';
+  switch (state.understanding.status) {
+    case 'pass_first':
+    case 'pass_after_explanation':
+      return 'disconnected_passed';
+    case 'fail':
+      return 'disconnected_failed';
+    default:
+      return state.understanding.attempts.length === 0
+        ? 'disconnected_untested'
+        : 'disconnected_testing';
+  }
+}
+
+/** The continuation is open: passed, opened, not yet closed. */
+export function m26ContinuationOpen(state: M26State): boolean {
+  return (
+    m26Open(state) &&
+    state.continuation_opened_at_ms !== null &&
+    state.continuation_closed_at_ms === null
+  );
 }
 
 /** The next report still to deliver, or null when both are delivered. */
@@ -222,6 +357,10 @@ export function m26Transmit(
   const report = m26NextReport(state);
   const connected = channel === 'B' || !m26Disconnected(state);
   const at = elapsed(state, nowMs);
+  const inContinuation = m26ContinuationOpen(state);
+  const focused = inContinuation
+    ? (state.continuationClock?.focusedMs(nowMs) ?? null)
+    : null;
 
   if (connected) {
     if (report !== null) {
@@ -238,6 +377,11 @@ export function m26Transmit(
     } else if (m26Disconnected(state)) {
       state.b_transmissions_after_disconnect += 1;
       state.alternative_used_ms ??= at;
+
+      if (inContinuation) {
+        state.alternative_used_postknowledge += 1;
+        state.alternative_used_postknowledge_ms ??= focused;
+      }
     }
 
     const transmission: M26Transmission = {
@@ -246,6 +390,7 @@ export function m26Transmit(
       delivered: report !== null,
       classification: 'delivered',
       elapsed_ms: at,
+      continuation_focused_ms: focused,
     };
 
     state.transmissions.push(transmission);
@@ -256,19 +401,20 @@ export function m26Transmit(
   // Post A after the disconnect: NO CARRIER, classified by knowledge.
   let classification: M26Classification;
 
-  if (state.acknowledged_ms === null) {
-    classification = 'pre_knowledge';
-    state.pre_knowledge_attempts += 1;
-  } else if (state.confirmation_probe_ms === null) {
-    classification = 'confirmation_probe';
-    state.confirmation_probe_ms = at;
-  } else {
+  if (inContinuation) {
     classification = 'postknowledge';
-    state.postknowledge_transmissions += 1;
+    state.postknowledge_retries += 1;
+    state.postknowledge_retry_focused_ms.push(focused ?? 0);
 
     if (report === null) {
-      state.postknowledge_transmissions_after_delivery += 1;
+      state.postknowledge_retries_after_delivery += 1;
     }
+  } else if (state.understanding.status === 'fail') {
+    classification = 'after_fail';
+    state.attempts_after_fail += 1;
+  } else {
+    classification = 'pre_knowledge';
+    state.pre_knowledge_attempts += 1;
   }
 
   const transmission: M26Transmission = {
@@ -277,6 +423,7 @@ export function m26Transmit(
     delivered: false,
     classification,
     elapsed_ms: at,
+    continuation_focused_ms: focused,
   };
 
   state.transmissions.push(transmission);
@@ -315,19 +462,181 @@ export function m26ViewEvidence(
   return true;
 }
 
-/** Explicit acknowledgement (knowledge verified). Requires the disconnect. */
-export function m26Acknowledge(state: M26State, nowMs: number): boolean {
-  if (
-    !m26Open(state) ||
-    !m26Disconnected(state) ||
-    state.acknowledged_ms !== null
-  ) {
+// ——— the expected-outcome test ————————————————————————————————————————
+
+/** The check stage due now (after the demonstrated disconnect), or null. */
+export function m26TestDue(state: M26State): UnderstandingStage | null {
+  if (!m26Open(state) || !m26Disconnected(state)) {
+    return null;
+  }
+
+  return understandingDue(state.understanding);
+}
+
+export function m26PresentTest(
+  state: M26State,
+  stage: UnderstandingStage,
+  nowMs: number,
+): boolean {
+  if (m26TestDue(state) !== stage) {
     return false;
   }
 
-  state.acknowledged_ms = elapsed(state, nowMs);
+  return understandingPresent(state.understanding, stage, nowMs);
+}
+
+/** The explanation stage was dismissed; the recheck becomes due. */
+export function m26Explained(state: M26State, nowMs: number): boolean {
+  return m26Open(state) && understandingExplained(state.understanding, nowMs);
+}
+
+/**
+ * An answer on the open check stage. A pass opens the continuation at
+ * once (its focused clock starts and is registered with the monitor).
+ */
+export function m26AnswerTest(
+  state: M26State,
+  optionId: string,
+  nowMs: number,
+): UnderstandingAnswer {
+  if (!m26Open(state)) {
+    return { kind: 'refused', reason: 'not_due' };
+  }
+
+  const result = understandingAnswer(
+    state.understanding,
+    M26_UNDERSTANDING_QUESTION,
+    optionId,
+    nowMs,
+  );
+
+  if (
+    result.kind === 'answered' &&
+    understandingPassed(state.understanding) &&
+    state.continuation_opened_at_ms === null
+  ) {
+    const clock = new FocusedClock();
+
+    clock.start(nowMs);
+    registerFocusedClock(clock);
+    state.continuationClock = clock;
+    state.continuation_opened_at_ms = nowMs;
+    state.reports_delivered_at_open = Object.keys(state.delivered).length;
+  }
+
+  return result;
+}
+
+function closeContinuation(
+  state: M26State,
+  nowMs: number,
+  closure: M26ContinuationClosure,
+) {
+  if (!m26ContinuationOpen(state)) {
+    return false;
+  }
+
+  const clock = state.continuationClock;
+
+  if (clock !== null) {
+    clock.stop(nowMs);
+    releaseFocusedClock(clock);
+    state.continuation_focused_ms = clock.focusedMs(nowMs);
+    state.continuation_wall_ms = clock.wallMs(nowMs);
+  }
+
+  state.continuation_closed_at_ms = nowMs;
+  state.continuation_closure = closure;
 
   return true;
+}
+
+/** Focused ms remaining under the cap (null when the continuation is not open). */
+export function m26ContinuationRemainingMs(
+  state: M26State,
+  nowMs: number,
+): number | null {
+  if (!m26ContinuationOpen(state) || state.continuationClock === null) {
+    return null;
+  }
+
+  return state.continuationClock.remainingMs(nowMs, M26_CAP_MS);
+}
+
+/**
+ * Host tick: the focused cap closes the continuation (a censoring event,
+ * never an action). `retryInProgress` records a transmission still running
+ * at the cap — it is never counted.
+ */
+export function m26Tick(
+  state: M26State,
+  nowMs: number,
+  retryInProgress: boolean,
+  switchInProgress = false,
+): 'none' | 'cap' {
+  if (
+    !m26ContinuationOpen(state) ||
+    state.continuationClock === null ||
+    !state.continuationClock.capReached(nowMs, M26_CAP_MS)
+  ) {
+    return 'none';
+  }
+
+  state.cap_reached = true;
+  state.retry_in_progress_at_cap = retryInProgress;
+  state.switch_in_progress_at_cap = switchInProgress;
+  closeContinuation(state, nowMs, 'cap');
+
+  return 'cap';
+}
+
+/** "Step away" at Post A inside the continuation (telemetry only; nothing closes). */
+export function m26NoteStepAway(state: M26State): boolean {
+  if (!m26ContinuationOpen(state)) {
+    return false;
+  }
+
+  state.steps_away_in_continuation += 1;
+
+  return true;
+}
+
+/**
+ * A technical failure ends the window: the continuation's clock is stopped
+ * and released (never left registered with the focus monitor).
+ */
+export function m26Abort(state: M26State, nowMs: number) {
+  const clock = state.continuationClock;
+
+  if (clock !== null && state.continuation_closed_at_ms === null) {
+    clock.stop(nowMs);
+    releaseFocusedClock(clock);
+    state.continuation_focused_ms = clock.focusedMs(nowMs);
+    state.continuation_wall_ms = clock.wallMs(nowMs);
+    state.continuation_closed_at_ms = nowMs;
+  }
+
+  state.closed = true;
+}
+
+/** "Finish at the uplink": the explicit exit inside the continuation. */
+export function m26Exit(state: M26State, nowMs: number): boolean {
+  if (!m26ContinuationOpen(state)) {
+    return false;
+  }
+
+  state.exit_ms = elapsed(state, nowMs);
+
+  return closeContinuation(state, nowMs, 'voluntary_stop');
+}
+
+/** The posts became unusable (yard left; focus loss is the monitor's): the clock pauses. */
+export function m26Pause(state: M26State, cause: PauseCause, nowMs: number) {
+  state.continuationClock?.pause(cause, nowMs);
+}
+
+export function m26Resume(state: M26State, cause: PauseCause, nowMs: number) {
+  state.continuationClock?.resume(cause, nowMs);
 }
 
 export function m26Depart(state: M26State): boolean {
@@ -340,14 +649,21 @@ export function m26Depart(state: M26State): boolean {
   return true;
 }
 
+/** The route closes the window (Noor's shift end or the review). */
 export function m26Close(
   state: M26State,
   choice: Exclude<M26StopChoice, null>,
+  nowMs: number,
 ): boolean {
   if (!m26Open(state)) {
     return false;
   }
 
+  closeContinuation(
+    state,
+    nowMs,
+    choice === 'closed_at_review' ? 'closed_at_review' : 'route_departure',
+  );
   state.closed = true;
   state.stop_choice = choice;
 
@@ -355,10 +671,12 @@ export function m26Close(
 }
 
 /**
- * Register semantics (host applies): complete once the disconnect was
- * demonstrated AND acknowledged; never disconnected (no successful
- * transmission) → missing; disconnected but never acknowledged → invalid
- * (knowledge unverified — attempts stay pre-knowledge). Never a low value.
+ * Register semantics (host applies): complete once the check was PASSED
+ * (the continuation exists, however it closed); never disconnected (no
+ * successful transmission) → missing; disconnected but the check never
+ * decided → invalid (knowledge unverified — attempts stay pre-knowledge);
+ * check failed → invalid (`understanding_failed`, the behaviour kept as
+ * unqualified). Never a low value.
  */
 export type M26Closure =
   | { kind: 'completed' }
@@ -370,11 +688,14 @@ export function m26ClosureDisposition(state: M26State): M26Closure {
     return { kind: 'missing', detail: 'channel_never_disconnected' };
   }
 
-  if (state.acknowledged_ms === null) {
-    return { kind: 'invalid', detail: 'disconnect_not_acknowledged' };
+  switch (state.understanding.status) {
+    case 'unknown':
+      return { kind: 'invalid', detail: 'understanding_not_tested' };
+    case 'fail':
+      return { kind: 'invalid', detail: 'understanding_failed' };
+    default:
+      return { kind: 'completed' };
   }
-
-  return { kind: 'completed' };
 }
 
 /** Participant-facing post status line (glyph + text, never colour-only). */
@@ -393,19 +714,39 @@ export function m26RawComponents(state: M26State) {
   return {
     disconnect_demonstrated: m26Disconnected(state),
     disconnect_demonstrated_ms: state.disconnected_ms,
-    disconnect_acknowledged: state.acknowledged_ms !== null,
-    disconnect_acknowledged_ms: state.acknowledged_ms,
-    confirmation_probe_rule_applied: true,
-    confirmation_probe_made: state.confirmation_probe_ms !== null,
-    confirmation_probe_excluded: state.confirmation_probe_ms !== null,
-    confirmation_probe_ms: state.confirmation_probe_ms,
-    postknowledge_transmissions: state.postknowledge_transmissions,
-    postknowledge_transmissions_after_delivery:
-      state.postknowledge_transmissions_after_delivery,
-    alternative_used: state.alternative_used_ms !== null,
-    alternative_used_ms: state.alternative_used_ms,
-    // Contextual.
+    ...understandingRaw(state.understanding),
+    knowledge_state: m26Knowledge(state),
+    /** The feature's fact: Post A attempts inside the continuation (the first included). */
+    postknowledge_retries: state.postknowledge_retries,
+    postknowledge_retries_minus_first: Math.max(
+      0,
+      state.postknowledge_retries - 1,
+    ),
+    postknowledge_retry_focused_ms: [...state.postknowledge_retry_focused_ms],
+    postknowledge_retries_after_delivery:
+      state.postknowledge_retries_after_delivery,
     pre_knowledge_attempts: state.pre_knowledge_attempts,
+    attempts_after_fail: state.attempts_after_fail,
+    continuation_opened: state.continuation_opened_at_ms !== null,
+    continuation_closure: state.continuation_closure,
+    continuation_focused_ms: state.continuation_focused_ms,
+    continuation_wall_ms: state.continuation_wall_ms,
+    continuation_cap_ms: M26_CAP_MS,
+    cap_reached: state.cap_reached,
+    retry_in_progress_at_cap: state.retry_in_progress_at_cap,
+    switch_in_progress_at_cap: state.switch_in_progress_at_cap,
+    steps_away_in_continuation: state.steps_away_in_continuation,
+    reports_delivered_at_open: state.reports_delivered_at_open,
+    /** A report the brief listed was still undelivered when the window closed. */
+    report_pending_at_close: state.closed && !m26AllDelivered(state),
+    exited: state.exit_ms !== null,
+    exit_ms: state.exit_ms,
+    alternative_used: state.alternative_used_postknowledge > 0,
+    alternative_used_postknowledge: state.alternative_used_postknowledge,
+    alternative_used_postknowledge_ms: state.alternative_used_postknowledge_ms,
+    alternative_used_any_ms: state.alternative_used_ms,
+    b_transmissions_after_disconnect: state.b_transmissions_after_disconnect,
+    // Contextual.
     evidence_views: state.evidence_views,
     evidence_sources: [...state.evidence_sources],
     first_evidence_ms: state.first_evidence_ms,
@@ -415,7 +756,6 @@ export function m26RawComponents(state: M26State) {
     reports_delivered: { ...state.delivered },
     all_reports_delivered: m26AllDelivered(state),
     transmissions: state.transmissions.map((entry) => ({ ...entry })),
-    b_transmissions_after_disconnect: state.b_transmissions_after_disconnect,
     departures: state.departures,
     stop_choice: state.stop_choice,
   };

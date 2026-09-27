@@ -1307,6 +1307,25 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'behavioural_counterpart',
     direction: 'repair_boundary',
     occasions: 1,
+    // Unit 12: the knowledge boundary repaired — the expected-outcome
+    // check replaces the acknowledgement click; a 30 s focused
+    // continuation follows a pass. The v2 `proto_m24_magnet_utility_*`
+    // family keeps its v2 meaning in the frozen ledger.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m24_rig_continuation'],
+      windows: [
+        {
+          id: 'm24_rig_w1',
+          occasion: null,
+          zone: 'exterior_recovery_yard',
+          episode: 4,
+        },
+      ],
+      family_prefixes: ['proto_m24_rig_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Finite deck, actual depletion shown, expected-outcome test of another unchanged cast (one neutral explanation, one equivalent recheck); after demonstrated understanding, a cast, a useful alternative or exit for up to 30 focused seconds.',
     features: [
@@ -1416,6 +1435,24 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'behavioural_counterpart',
     direction: 'repair_boundary',
     occasions: 1,
+    // Unit 12: the knowledge boundary repaired (see M24); the first
+    // post-knowledge retry is INCLUDED (the v2 first-probe exclusion is
+    // retired). The v2 `proto_m26_channel_*` family keeps its v2 meaning.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m26_uplink_continuation'],
+      windows: [
+        {
+          id: 'm26_uplink_w1',
+          occasion: null,
+          zone: 'exterior_recovery_yard',
+          episode: 4,
+        },
+      ],
+      family_prefixes: ['proto_m26_uplink_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'After one successful transmission uplink A is permanently disconnected and B works; expected-outcome test of unchanged retries on A (one explanation, one recheck); then A retries, switching or exit for up to 30 focused seconds.',
     features: [

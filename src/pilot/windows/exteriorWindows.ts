@@ -22,6 +22,10 @@ import {
   ensureMagnetDeckForm,
   magnetDeckState,
 } from '../../fieldActions/magnetDeck';
+import {
+  type KnowledgeStatus,
+  PILOT_SETTINGS,
+} from '../../measurement/protocol';
 import type {
   ExteriorEpisodeState,
   ExteriorSite,
@@ -90,40 +94,71 @@ import {
   M24_ENTRY_STATE_VERSION,
   M24_FAMILY,
   M24_OPPORTUNITY_ID,
+  M24_UNDERSTANDING_QUESTION,
   M24_WINDOW_ID,
-  m24Acknowledge,
+  m24Abort,
+  m24AnswerTest,
   m24Close,
   m24ClosureDisposition,
+  m24ContinuationOpen,
   m24Depart,
   m24Enter,
+  m24Exit,
+  m24Explained,
   m24KnowledgeState,
+  m24KnowledgeStatus,
   m24NoteAlternative,
   m24NoteCycle,
   m24NoteDepletionShown,
+  m24NoteStepAway,
   m24Open,
+  m24Pause,
+  m24PresentTest,
   m24RawComponents,
+  m24Resume,
+  m24TestDue,
+  m24Tick,
 } from '../exterior/m24MagnetRigModel';
 import type { M26Channel, M26Transmission } from '../exterior/m26ChannelModel';
 import {
   M26_ENTRY_STATE_VERSION,
   M26_FAMILY,
   M26_OPPORTUNITY_ID,
+  M26_UNDERSTANDING_QUESTION,
   M26_WINDOW_ID,
-  m26Acknowledge,
+  m26Abort,
   m26AllDelivered,
+  m26AnswerTest,
   m26Close,
   m26ClosureDisposition,
+  m26ContinuationOpen,
   m26Demonstrate,
   m26Depart,
   m26DisconnectDue,
   m26Enter,
+  m26Exit,
+  m26Explained,
   m26Knowledge,
+  m26KnowledgeStatus,
   m26NextReport,
+  m26NoteStepAway,
   m26Open,
+  m26Pause,
+  m26PresentTest,
   m26RawComponents,
+  m26Resume,
+  m26TestDue,
+  m26Tick,
   m26Transmit,
   m26ViewEvidence,
 } from '../exterior/m26ChannelModel';
+import {
+  type UnderstandingAnswer,
+  understandingExplanationSettling,
+  understandingForm,
+  understandingOptions,
+  type UnderstandingStage,
+} from '../exterior/outcomeUnderstanding';
 import { registerMissionLogEntry } from '../pilotRoute';
 import {
   assignCounterbalance,
@@ -656,11 +691,22 @@ export function m23TargetCell() {
 
 // ——— M24 — magnet rig ——————————————————————————————————————————————————
 
+/** The window's comprehension state IS the check's status (a reopen never resets it). */
+function comprehensionOf(
+  status: KnowledgeStatus,
+): 'pending' | 'passed' | 'failed' {
+  if (status === 'pass_first' || status === 'pass_after_explanation') {
+    return 'passed';
+  }
+
+  return status === 'fail' ? 'failed' : 'pending';
+}
+
 export function m24Present(nowMs: number) {
   const state = exteriorEpisode();
   const w = exteriorWindows().m24;
 
-  w.setComprehension('passed');
+  w.setComprehension(comprehensionOf(m24KnowledgeStatus(state.m24)));
   w.present(nowMs, {
     deck_form: state.deck_form,
     deck_position: magnetDeckState.position,
@@ -676,12 +722,14 @@ export function m24Begin(nowMs: number, inputMode: InputMode): boolean {
     return false;
   }
 
-  w.setComprehension('passed');
+  // Knowledge is pending until the expected-outcome check is passed.
+  w.setComprehension('pending');
   w.open(nowMs, {
     deck_form: state.deck_form,
     deck_position_at_open: magnetDeckState.position,
     brief_shown: true,
-    depletion_statement_pre_explained: true,
+    knowledge_test: M24_UNDERSTANDING_QUESTION.question_id,
+    continuation_cap_ms: PILOT_SETTINGS.m24_cap_ms,
     begin_input_mode: inputMode,
   });
 
@@ -694,6 +742,22 @@ export function m24Begin(nowMs: number, inputMode: InputMode): boolean {
 
 export function m24WindowOpen(): boolean {
   return m24Open(exteriorEpisode().m24);
+}
+
+/** Knowledge fields stamped on every M24 act (addendum §2). */
+function m24KnowledgeStamp() {
+  const state = exteriorEpisode().m24;
+
+  return {
+    knowledge_status: m24KnowledgeStatus(state),
+    knowledge_state: m24KnowledgeState(state),
+    question_id: M24_UNDERSTANDING_QUESTION.question_id,
+    key: M24_UNDERSTANDING_QUESTION.key,
+    last_response: state.understanding.attempts.at(-1)?.response ?? null,
+    attempts: state.understanding.attempts.length,
+    explanation_shown: state.understanding.explanation_presented_at_ms !== null,
+    continuation_open: m24ContinuationOpen(state),
+  };
 }
 
 export function m24Cycle(record: M24CycleLike, nowMs: number) {
@@ -719,9 +783,9 @@ export function m24Cycle(record: M24CycleLike, nowMs: number) {
     pull_position: record.pull_position,
     cycle_duration_ms: record.cycle_duration_ms,
     post_depletion: note.post_depletion,
-    post_acknowledgement: note.post_ack,
-    knowledge_state: m24KnowledgeState(state),
+    classification: note.classification,
     cycle_number: state.cycles_committed,
+    ...m24KnowledgeStamp(),
     input_mode: 'keyboard',
   });
 
@@ -730,6 +794,16 @@ export function m24Cycle(record: M24CycleLike, nowMs: number) {
       elapsed_ms: elapsed,
       at_cycle: state.depletion_reached_at_cycle,
       input_mode: 'system',
+    });
+  }
+
+  if (note.classification === 'postknowledge') {
+    w.log('postknowledge_cast', {
+      elapsed_ms: elapsed,
+      count: note.postknowledge_count,
+      continuation_focused_ms: note.continuation_focused_ms,
+      ...m24KnowledgeStamp(),
+      input_mode: 'keyboard',
     });
   }
 
@@ -752,17 +826,79 @@ export function m24DepletionShown(nowMs: number): boolean {
   return true;
 }
 
-export function m24AcknowledgeDepletion(
+/** The check stage due at the rig panel now (null once decided / before depletion). */
+export function m24CheckDue(): UnderstandingStage | null {
+  return m24TestDue(exteriorEpisode().m24);
+}
+
+/** The options of a check attempt in display order (form a / b). */
+export function m24CheckOptions(stage: 'attempt_1' | 'attempt_2') {
+  return understandingOptions(
+    M24_UNDERSTANDING_QUESTION,
+    understandingForm(stage === 'attempt_1' ? 1 : 2),
+  );
+}
+
+export function m24PresentCheck(
+  stage: UnderstandingStage,
+  nowMs: number,
+  source: string,
+): boolean {
+  const state = exteriorEpisode().m24;
+
+  if (!m24PresentTest(state, stage, nowMs)) {
+    return false;
+  }
+
+  const w = exteriorWindows().m24;
+
+  if (stage === 'explanation') {
+    w.log('explanation_shown', {
+      elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
+      question_id: M24_UNDERSTANDING_QUESTION.question_id,
+      source,
+      presentation_number: state.understanding.presentations,
+      input_mode: 'system',
+    });
+  } else {
+    w.log('understanding_presented', {
+      elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
+      question_id: M24_UNDERSTANDING_QUESTION.question_id,
+      attempt: stage === 'attempt_1' ? 1 : 2,
+      form: understandingForm(stage === 'attempt_1' ? 1 : 2),
+      option_order: m24CheckOptions(stage).map((option) => option.id),
+      key: M24_UNDERSTANDING_QUESTION.key,
+      source,
+      presentation_number: state.understanding.presentations,
+      input_mode: 'system',
+    });
+  }
+
+  return true;
+}
+
+/** The explanation stage was dismissed ("Continue"). */
+export function m24DismissExplanation(
   nowMs: number,
   inputMode: InputMode,
 ): boolean {
   const state = exteriorEpisode().m24;
+  const settling = understandingExplanationSettling(state.understanding, nowMs);
 
-  if (!m24Acknowledge(state, nowMs)) {
+  if (!m24Explained(state, nowMs)) {
+    if (settling) {
+      exteriorWindows().m24.log('understanding_refused', {
+        elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
+        reason: 'settling',
+        control: 'continue',
+        input_mode: inputMode,
+      });
+    }
+
     return false;
   }
 
-  exteriorWindows().m24.log('depletion_acknowledged', {
+  exteriorWindows().m24.log('explanation_dismissed', {
     elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
     input_mode: inputMode,
   });
@@ -770,16 +906,130 @@ export function m24AcknowledgeDepletion(
   return true;
 }
 
-export function m24Alternative(nowMs: number, inputMode: InputMode): boolean {
+/** An answer on the open check stage; a pass opens the continuation. */
+export function m24AnswerCheck(
+  optionId: string,
+  nowMs: number,
+  inputMode: InputMode,
+): UnderstandingAnswer {
+  const state = exteriorEpisode().m24;
+  const w = exteriorWindows().m24;
+  const result = m24AnswerTest(state, optionId, nowMs);
+  const elapsed = elapsedSince(state.opened_at_ms, nowMs);
+
+  if (result.kind === 'refused') {
+    w.log('understanding_refused', {
+      elapsed_ms: elapsed,
+      reason: result.reason,
+      response: optionId,
+      input_mode: inputMode,
+    });
+
+    return result;
+  }
+
+  w.log('understanding_answered', {
+    elapsed_ms: elapsed,
+    ...result.attempt,
+    knowledge_status: result.status,
+    input_mode: inputMode,
+  });
+
+  if (
+    result.status === 'pass_first' ||
+    result.status === 'pass_after_explanation'
+  ) {
+    w.setComprehension('passed');
+    w.log('continuation_opened', {
+      elapsed_ms: elapsed,
+      cap_ms: PILOT_SETTINGS.m24_cap_ms,
+      knowledge_status: result.status,
+      deck_position: magnetDeckState.position,
+      input_mode: 'system',
+    });
+  } else if (result.status === 'fail') {
+    w.setComprehension('failed');
+  }
+
+  return result;
+}
+
+export function m24ContinuationLive(): boolean {
+  return m24ContinuationOpen(exteriorEpisode().m24);
+}
+
+/** Host tick: the focused cap closes the continuation and the window. */
+export function m24TickContinuation(
+  nowMs: number,
+  castInProgress: boolean,
+  alternativeInProgress: boolean,
+): boolean {
   const state = exteriorEpisode().m24;
 
-  if (!m24NoteAlternative(state, nowMs)) {
+  if (m24Tick(state, nowMs, castInProgress, alternativeInProgress) !== 'cap') {
     return false;
   }
 
-  exteriorWindows().m24.log('alternative_opened', {
+  exteriorWindows().m24.log('cap_reached', {
     elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
-    knowledge_state: m24KnowledgeState(state),
+    cap_ms: PILOT_SETTINGS.m24_cap_ms,
+    postknowledge_casts: state.postknowledge_casts,
+    cast_in_progress_at_cap: castInProgress,
+    alternative_in_progress_at_cap: alternativeInProgress,
+    focused_ms: state.continuation_focused_ms,
+    wall_ms: state.continuation_wall_ms,
+    input_mode: 'system',
+  });
+  finishM24(nowMs, 'system');
+
+  return true;
+}
+
+/** "Finish at the rig": the explicit exit inside the continuation. */
+export function m24Finish(nowMs: number, inputMode: InputMode): boolean {
+  const state = exteriorEpisode().m24;
+
+  if (!m24Exit(state, nowMs)) {
+    return false;
+  }
+
+  exteriorWindows().m24.log('exit', {
+    elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
+    postknowledge_casts: state.postknowledge_casts,
+    focused_ms: state.continuation_focused_ms,
+    input_mode: inputMode,
+  });
+  finishM24(nowMs, inputMode);
+
+  return true;
+}
+
+/** The continuation closed by the participant or the cap: the window completes as it stands. */
+function finishM24(nowMs: number, inputMode: InputMode) {
+  const state = exteriorEpisode().m24;
+
+  if (!m24Open(state)) {
+    return;
+  }
+
+  state.closed = true;
+  exteriorWindows().m24.complete(nowMs, m24RawComponents(state), inputMode, {
+    exitState: state.continuation_closure === 'cap' ? 'completed' : 'stopped',
+  });
+}
+
+export function m24Alternative(nowMs: number, inputMode: InputMode): boolean {
+  const state = exteriorEpisode().m24;
+  const phase = m24NoteAlternative(state, nowMs);
+
+  if (phase === null) {
+    return false;
+  }
+
+  exteriorWindows().m24.log('alternative_used', {
+    elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
+    phase,
+    ...m24KnowledgeStamp(),
     input_mode: inputMode,
   });
 
@@ -791,7 +1041,9 @@ export function m24Alternative(nowMs: number, inputMode: InputMode): boolean {
 export function m26Present(nowMs: number) {
   const w = exteriorWindows().m26;
 
-  w.setComprehension('passed');
+  w.setComprehension(
+    comprehensionOf(m26KnowledgeStatus(exteriorEpisode().m26)),
+  );
   w.present(nowMs, { brief_shown: true, reports_due: 2 });
 }
 
@@ -803,12 +1055,14 @@ export function m26Begin(nowMs: number, inputMode: InputMode): boolean {
     return false;
   }
 
-  w.setComprehension('passed');
+  w.setComprehension('pending');
   w.open(nowMs, {
     brief_shown: true,
     reports_due: 2,
     posts: { A: 'primary', B: 'backup' },
     line_a_connected: true,
+    knowledge_test: M26_UNDERSTANDING_QUESTION.question_id,
+    continuation_cap_ms: PILOT_SETTINGS.m26_cap_ms,
     begin_input_mode: inputMode,
   });
 
@@ -817,6 +1071,22 @@ export function m26Begin(nowMs: number, inputMode: InputMode): boolean {
 
 export function m26WindowOpen(): boolean {
   return m26Open(exteriorEpisode().m26);
+}
+
+/** Knowledge fields stamped on every M26 act (addendum §2). */
+function m26KnowledgeStamp() {
+  const state = exteriorEpisode().m26;
+
+  return {
+    knowledge_status: m26KnowledgeStatus(state),
+    knowledge_state: m26Knowledge(state),
+    question_id: M26_UNDERSTANDING_QUESTION.question_id,
+    key: M26_UNDERSTANDING_QUESTION.key,
+    last_response: state.understanding.attempts.at(-1)?.response ?? null,
+    attempts: state.understanding.attempts.length,
+    explanation_shown: state.understanding.explanation_presented_at_ms !== null,
+    continuation_open: m26ContinuationOpen(state),
+  };
 }
 
 export function m26Send(
@@ -830,7 +1100,7 @@ export function m26Send(
     return null;
   }
 
-  const alternativeBefore = state.alternative_used_ms;
+  const alternativeBefore = state.alternative_used_postknowledge;
   const transmission = m26Transmit(state, channel, nowMs);
   const w = exteriorWindows().m26;
   const elapsed = elapsedSince(state.opened_at_ms, nowMs);
@@ -841,23 +1111,30 @@ export function m26Send(
     report: transmission.report,
     delivered: transmission.delivered,
     classification: transmission.classification,
-    knowledge_state: m26Knowledge(state),
     transmission_number: state.transmissions.length,
+    continuation_focused_ms: transmission.continuation_focused_ms,
+    ...m26KnowledgeStamp(),
     input_mode: inputMode,
   });
 
-  if (transmission.classification === 'confirmation_probe') {
-    w.log('confirmation_probe', { elapsed_ms: elapsed, input_mode: inputMode });
-  } else if (transmission.classification === 'postknowledge') {
-    w.log('postknowledge_transmission', {
+  if (transmission.classification === 'postknowledge') {
+    w.log('postknowledge_retry', {
       elapsed_ms: elapsed,
-      count: state.postknowledge_transmissions,
+      count: state.postknowledge_retries,
+      after_delivery: transmission.report === null,
+      continuation_focused_ms: transmission.continuation_focused_ms,
+      ...m26KnowledgeStamp(),
       input_mode: inputMode,
     });
   }
 
-  if (alternativeBefore === null && state.alternative_used_ms !== null) {
-    w.log('alternative_used', { elapsed_ms: elapsed, input_mode: inputMode });
+  if (alternativeBefore === 0 && state.alternative_used_postknowledge > 0) {
+    w.log('alternative_used', {
+      elapsed_ms: elapsed,
+      continuation_focused_ms: transmission.continuation_focused_ms,
+      ...m26KnowledgeStamp(),
+      input_mode: inputMode,
+    });
   }
 
   return transmission;
@@ -903,29 +1180,221 @@ export function m26Evidence(
     elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
     source,
     view_number: state.evidence_views,
+    ...m26KnowledgeStamp(),
     input_mode: inputMode,
   });
 
   return true;
 }
 
-export function m26AcknowledgeDisconnect(
+/** The check stage due at Post A / the panel now (null once decided / before the disconnect). */
+export function m26CheckDue(): UnderstandingStage | null {
+  return m26TestDue(exteriorEpisode().m26);
+}
+
+export function m26CheckOptions(stage: 'attempt_1' | 'attempt_2') {
+  return understandingOptions(
+    M26_UNDERSTANDING_QUESTION,
+    understandingForm(stage === 'attempt_1' ? 1 : 2),
+  );
+}
+
+export function m26PresentCheck(
+  stage: UnderstandingStage,
+  nowMs: number,
+  source: string,
+): boolean {
+  const state = exteriorEpisode().m26;
+
+  if (!m26PresentTest(state, stage, nowMs)) {
+    return false;
+  }
+
+  const w = exteriorWindows().m26;
+
+  if (stage === 'explanation') {
+    w.log('explanation_shown', {
+      elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
+      question_id: M26_UNDERSTANDING_QUESTION.question_id,
+      source,
+      presentation_number: state.understanding.presentations,
+      input_mode: 'system',
+    });
+  } else {
+    w.log('understanding_presented', {
+      elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
+      question_id: M26_UNDERSTANDING_QUESTION.question_id,
+      attempt: stage === 'attempt_1' ? 1 : 2,
+      form: understandingForm(stage === 'attempt_1' ? 1 : 2),
+      option_order: m26CheckOptions(stage).map((option) => option.id),
+      key: M26_UNDERSTANDING_QUESTION.key,
+      source,
+      presentation_number: state.understanding.presentations,
+      input_mode: 'system',
+    });
+  }
+
+  return true;
+}
+
+export function m26DismissExplanation(
   nowMs: number,
   inputMode: InputMode,
 ): boolean {
   const state = exteriorEpisode().m26;
+  const settling = understandingExplanationSettling(state.understanding, nowMs);
 
-  if (!m26Acknowledge(state, nowMs)) {
+  if (!m26Explained(state, nowMs)) {
+    if (settling) {
+      exteriorWindows().m26.log('understanding_refused', {
+        elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
+        reason: 'settling',
+        control: 'continue',
+        input_mode: inputMode,
+      });
+    }
+
     return false;
   }
 
-  exteriorWindows().m26.log('disconnect_acknowledged', {
+  exteriorWindows().m26.log('explanation_dismissed', {
     elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
-    evidence_views_before: state.evidence_views,
     input_mode: inputMode,
   });
 
   return true;
+}
+
+export function m26AnswerCheck(
+  optionId: string,
+  nowMs: number,
+  inputMode: InputMode,
+): UnderstandingAnswer {
+  const state = exteriorEpisode().m26;
+  const w = exteriorWindows().m26;
+  const result = m26AnswerTest(state, optionId, nowMs);
+  const elapsed = elapsedSince(state.opened_at_ms, nowMs);
+
+  if (result.kind === 'refused') {
+    w.log('understanding_refused', {
+      elapsed_ms: elapsed,
+      reason: result.reason,
+      response: optionId,
+      input_mode: inputMode,
+    });
+
+    return result;
+  }
+
+  w.log('understanding_answered', {
+    elapsed_ms: elapsed,
+    ...result.attempt,
+    knowledge_status: result.status,
+    input_mode: inputMode,
+  });
+
+  if (
+    result.status === 'pass_first' ||
+    result.status === 'pass_after_explanation'
+  ) {
+    w.setComprehension('passed');
+    w.log('continuation_opened', {
+      elapsed_ms: elapsed,
+      cap_ms: PILOT_SETTINGS.m26_cap_ms,
+      knowledge_status: result.status,
+      reports_delivered: { ...state.delivered },
+      reports_delivered_at_open: state.reports_delivered_at_open,
+      input_mode: 'system',
+    });
+  } else if (result.status === 'fail') {
+    w.setComprehension('failed');
+  }
+
+  return result;
+}
+
+export function m26ContinuationLive(): boolean {
+  return m26ContinuationOpen(exteriorEpisode().m26);
+}
+
+export function m26TickContinuation(
+  nowMs: number,
+  retryInProgress: boolean,
+  switchInProgress: boolean,
+): boolean {
+  const state = exteriorEpisode().m26;
+
+  if (m26Tick(state, nowMs, retryInProgress, switchInProgress) !== 'cap') {
+    return false;
+  }
+
+  exteriorWindows().m26.log('cap_reached', {
+    elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
+    cap_ms: PILOT_SETTINGS.m26_cap_ms,
+    postknowledge_retries: state.postknowledge_retries,
+    retry_in_progress_at_cap: retryInProgress,
+    switch_in_progress_at_cap: switchInProgress,
+    report_pending: !m26AllDelivered(state),
+    focused_ms: state.continuation_focused_ms,
+    wall_ms: state.continuation_wall_ms,
+    input_mode: 'system',
+  });
+  finishM26(nowMs, 'system');
+
+  return true;
+}
+
+/** "Finish at the uplink": the explicit exit inside the continuation. */
+export function m26Finish(nowMs: number, inputMode: InputMode): boolean {
+  const state = exteriorEpisode().m26;
+
+  if (!m26Exit(state, nowMs)) {
+    return false;
+  }
+
+  exteriorWindows().m26.log('exit', {
+    elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
+    postknowledge_retries: state.postknowledge_retries,
+    focused_ms: state.continuation_focused_ms,
+    input_mode: inputMode,
+  });
+  finishM26(nowMs, inputMode);
+
+  return true;
+}
+
+function finishM26(nowMs: number, inputMode: InputMode) {
+  const state = exteriorEpisode().m26;
+
+  if (!m26Open(state)) {
+    return;
+  }
+
+  state.closed = true;
+  exteriorWindows().m26.complete(nowMs, m26RawComponents(state), inputMode, {
+    exitState: state.continuation_closure === 'cap' ? 'completed' : 'stopped',
+  });
+}
+
+/** A Post A press inside the prompt's settle window during the continuation: refused, logged, never an act. */
+export function m26RefuseTransmit(
+  nowMs: number,
+  reason: string,
+  inputMode: InputMode,
+) {
+  const state = exteriorEpisode().m26;
+
+  if (!m26Open(state)) {
+    return;
+  }
+
+  exteriorWindows().m26.log('press_refused', {
+    elapsed_ms: elapsedSince(state.opened_at_ms, nowMs),
+    control: 'transmit_post_a',
+    reason,
+    ...m26KnowledgeStamp(),
+    input_mode: inputMode,
+  });
 }
 
 export function m26NextReportId() {
@@ -970,17 +1439,23 @@ export function exteriorDeparture(nowMs: number) {
   if (m24Depart(state.m24)) {
     w.m24.log('departed', {
       departures: state.m24.departures,
+      continuation_open: m24ContinuationOpen(state.m24),
       input_mode: 'system',
     });
     w.m24.pause(nowMs);
+    // The rig is unusable while the yard is left: the continuation's
+    // focused clock pauses (focus loss and a hidden tab are the monitor's).
+    m24Pause(state.m24, 'unusable_controls', nowMs);
   }
 
   if (m26Depart(state.m26)) {
     w.m26.log('departed', {
       departures: state.m26.departures,
+      continuation_open: m26ContinuationOpen(state.m26),
       input_mode: 'system',
     });
     w.m26.pause(nowMs);
+    m26Pause(state.m26, 'unusable_controls', nowMs);
   }
 }
 
@@ -993,6 +1468,84 @@ export function exteriorResume(nowMs: number) {
   w.m23.resume(nowMs);
   w.m24.resume(nowMs);
   w.m26.resume(nowMs);
+  m24Resume(exteriorEpisode().m24, 'unusable_controls', nowMs);
+  m26Resume(exteriorEpisode().m26, 'unusable_controls', nowMs);
+}
+
+/** The yard scene paused under an overlay / another surface: the continuations' clocks pause. */
+export function exteriorHostPaused(nowMs: number) {
+  const state = exteriorEpisode();
+  const w = exteriorWindows();
+
+  // Another surface or an overlay holds the yard: an open continuation
+  // pauses, and the interval is on the record (it may hold other work).
+  if (m24ContinuationOpen(state.m24)) {
+    w.m24.log('continuation_paused', {
+      elapsed_ms: elapsedSince(state.m24.opened_at_ms, nowMs),
+      cause: 'explicit_pause',
+      input_mode: 'system',
+    });
+  }
+
+  if (m26ContinuationOpen(state.m26)) {
+    w.m26.log('continuation_paused', {
+      elapsed_ms: elapsedSince(state.m26.opened_at_ms, nowMs),
+      cause: 'explicit_pause',
+      input_mode: 'system',
+    });
+  }
+
+  m24Pause(state.m24, 'explicit_pause', nowMs);
+  m26Pause(state.m26, 'explicit_pause', nowMs);
+}
+
+export function exteriorHostResumed(nowMs: number) {
+  const state = exteriorEpisode();
+  const w = exteriorWindows();
+
+  m24Resume(state.m24, 'explicit_pause', nowMs);
+  m26Resume(state.m26, 'explicit_pause', nowMs);
+
+  if (m24ContinuationOpen(state.m24)) {
+    w.m24.log('continuation_resumed', {
+      elapsed_ms: elapsedSince(state.m24.opened_at_ms, nowMs),
+      cause: 'explicit_pause',
+      input_mode: 'system',
+    });
+  }
+
+  if (m26ContinuationOpen(state.m26)) {
+    w.m26.log('continuation_resumed', {
+      elapsed_ms: elapsedSince(state.m26.opened_at_ms, nowMs),
+      cause: 'explicit_pause',
+      input_mode: 'system',
+    });
+  }
+}
+
+/** "Step away" at the rig panel / Post A inside a continuation (telemetry; nothing closes). */
+export function exteriorSteppedAway(
+  site: 'rig' | 'uplink',
+  nowMs: number,
+  inputMode: InputMode,
+) {
+  const state = exteriorEpisode();
+
+  if (site === 'rig' && m24NoteStepAway(state.m24)) {
+    exteriorWindows().m24.log('stepped_away', {
+      elapsed_ms: elapsedSince(state.m24.opened_at_ms, nowMs),
+      count: state.m24.steps_away_in_continuation,
+      input_mode: inputMode,
+    });
+  }
+
+  if (site === 'uplink' && m26NoteStepAway(state.m26)) {
+    exteriorWindows().m26.log('stepped_away', {
+      elapsed_ms: elapsedSince(state.m26.opened_at_ms, nowMs),
+      count: state.m26.steps_away_in_continuation,
+      input_mode: inputMode,
+    });
+  }
 }
 
 type ShiftChoice = 'ended_shift_outside' | 'closed_at_review';
@@ -1005,17 +1558,24 @@ function closeM24(nowMs: number, choice: ShiftChoice) {
     return;
   }
 
-  m24Close(state, choice);
+  const continuationWasOpen = m24ContinuationOpen(state);
+
+  m24Close(state, choice, nowMs);
 
   const disposition = m24ClosureDisposition(state);
   const raw = m24RawComponents(state);
 
   if (disposition.kind === 'completed') {
-    w.complete(nowMs, raw, 'system');
+    if (choice === 'closed_at_review' && continuationWasOpen) {
+      // The review reached an open continuation: the count as it stands
+      // is a censored observation (the extractor keeps its value).
+      w.stop(nowMs, 'closed_at_review', raw, 'system', 'censored');
+    } else {
+      // Noor's shift end (or a continuation already closed by the cap /
+      // exit): complete as it stands, closed by departure.
+      w.complete(nowMs, raw, 'system', { exitState: 'stopped' });
+    }
   } else if (disposition.kind === 'missing') {
-    // Audit 2026-09 A15: the substantive detail (`deck_never_depleted`)
-    // is passed on this branch too — stop() reads `raw.invalid_detail`
-    // for the register detail and previously only saw the exit code here.
     w.stop(
       nowMs,
       choice === 'closed_at_review' ? 'closed_at_review' : 'departed',
@@ -1024,7 +1584,7 @@ function closeM24(nowMs: number, choice: ShiftChoice) {
       'censored',
     );
   } else {
-    // One terminal marker: invalid (knowledge unverified), never censored.
+    // One terminal marker: invalid (knowledge unverified or failed), never censored.
     w.stop(
       nowMs,
       choice === 'closed_at_review' ? 'closed_at_review' : 'departed',
@@ -1043,15 +1603,20 @@ function closeM26(nowMs: number, choice: ShiftChoice) {
     return;
   }
 
-  m26Close(state, choice);
+  const continuationWasOpen = m26ContinuationOpen(state);
+
+  m26Close(state, choice, nowMs);
 
   const disposition = m26ClosureDisposition(state);
   const raw = m26RawComponents(state);
 
   if (disposition.kind === 'completed') {
-    w.complete(nowMs, raw, 'system');
+    if (choice === 'closed_at_review' && continuationWasOpen) {
+      w.stop(nowMs, 'closed_at_review', raw, 'system', 'censored');
+    } else {
+      w.complete(nowMs, raw, 'system', { exitState: 'stopped' });
+    }
   } else if (disposition.kind === 'missing') {
-    // Audit 2026-09 A15: pass `channel_never_disconnected` (see closeM24).
     w.stop(
       nowMs,
       choice === 'closed_at_review' ? 'closed_at_review' : 'departed',
@@ -1060,7 +1625,6 @@ function closeM26(nowMs: number, choice: ShiftChoice) {
       'censored',
     );
   } else {
-    // One terminal marker: invalid (knowledge unverified), never censored.
     w.stop(
       nowMs,
       choice === 'closed_at_review' ? 'closed_at_review' : 'departed',
@@ -1219,11 +1783,11 @@ export function exteriorTechnicalFailure(
       w.m23.technicalFailure(detail);
       break;
     case 'M24':
-      state.m24.closed = true;
+      m24Abort(state.m24, Date.now());
       w.m24.technicalFailure(detail);
       break;
     case 'M26':
-      state.m26.closed = true;
+      m26Abort(state.m26, Date.now());
       w.m26.technicalFailure(detail);
       break;
   }
@@ -1264,6 +1828,8 @@ export function exteriorProbeSnapshot() {
       exit: w.m24.exit(),
       open: m24Open(state.m24),
       knowledge: m24KnowledgeState(state.m24),
+      check_due: m24TestDue(state.m24),
+      continuation_open: m24ContinuationOpen(state.m24),
       ...m24RawComponents(state.m24),
     },
     m26: {
@@ -1271,6 +1837,8 @@ export function exteriorProbeSnapshot() {
       exit: w.m26.exit(),
       open: m26Open(state.m26),
       knowledge: m26Knowledge(state.m26),
+      check_due: m26TestDue(state.m26),
+      continuation_open: m26ContinuationOpen(state.m26),
       next_report: m26NextReport(state.m26),
       ...m26RawComponents(state.m26),
     },

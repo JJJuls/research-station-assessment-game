@@ -90,22 +90,31 @@ import {
   m23PositionInsidePlot,
 } from '../pilot/exterior/m23ExcavationModel';
 import {
+  M24_CHECK_RECORDED,
   M24_DEPLETION_STATEMENT,
   M24_RIG_BRIEF,
+  M24_UNDERSTANDING_QUESTION,
   m24KnowledgeState,
   m24PanelLine,
 } from '../pilot/exterior/m24MagnetRigModel';
 import {
   M26_CARRIER_OK_NOTICE,
+  M26_CHECK_RECORDED,
   M26_DISCONNECT_DELAY_MS,
   M26_DISCONNECT_NOTICE,
   M26_REPORT_LABELS,
   M26_TRANSMIT_MS,
+  M26_UNDERSTANDING_QUESTION,
   M26_UPLINK_BRIEF,
   m26Disconnected,
   m26Knowledge,
   m26PostStatus,
 } from '../pilot/exterior/m26ChannelModel';
+import {
+  UNDERSTANDING_SETTLE_MS,
+  type UnderstandingAnswer,
+  type UnderstandingQuestion,
+} from '../pilot/exterior/outcomeUnderstanding';
 import {
   refreshPilotCoverageProbe,
   stampContaminationNotes,
@@ -128,9 +137,12 @@ import {
   endExteriorShift,
   exteriorDeparture,
   exteriorEpisode,
+  exteriorHostPaused,
+  exteriorHostResumed,
   exteriorObjectiveLine,
   exteriorProbeSnapshot,
   exteriorResume,
+  exteriorSteppedAway,
   exteriorTechnicalFailure,
   m19Act,
   m19Present,
@@ -150,21 +162,36 @@ import {
   m23TargetActive,
   m23TargetCell,
   m23WindowOpen,
-  m24AcknowledgeDepletion,
   m24Alternative,
+  m24AnswerCheck,
   m24Begin,
+  m24CheckDue,
+  m24CheckOptions,
+  m24ContinuationLive,
   m24Cycle,
   m24DepletionShown,
+  m24DismissExplanation,
+  m24Finish,
   m24Present,
+  m24PresentCheck,
+  m24TickContinuation,
   m24WindowOpen,
-  m26AcknowledgeDisconnect,
+  m26AnswerCheck,
   m26Begin,
+  m26CheckDue,
+  m26CheckOptions,
+  m26ContinuationLive,
   m26DemonstrateDisconnect,
   m26DisconnectPending,
+  m26DismissExplanation,
   m26Evidence,
+  m26Finish,
   m26NextReportId,
   m26Present,
+  m26PresentCheck,
+  m26RefuseTransmit,
   m26Send,
+  m26TickContinuation,
   m26WindowOpen,
 } from '../pilot/windows/exteriorWindows';
 import {
@@ -273,6 +300,21 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
   private lineBChip?: Phaser.GameObjects.Text;
   private cableFlag?: Phaser.GameObjects.Rectangle;
   private disconnectTimer: Phaser.Time.TimerEvent | null = null;
+  /** A Post A / B transmission is running in the world (cap bookkeeping). */
+  private transmitInFlight: 'A' | 'B' | null = null;
+  /** When Post A's prompt last opened (the continuation's settle guard). */
+  private postAPromptOpenedAt = 0;
+  /** A Post A Transmit press was refused (settling): the post's options are shown again. */
+  private postATransmitRefused = false;
+  /** A bench sort is running in the world (cap bookkeeping). */
+  private benchInFlight = false;
+  /**
+   * The expected-outcome check stage built when a rig / uplink / panel
+   * prompt opened with the check due (Unit 12): its body joins the
+   * station's own text and its options replace the station's options.
+   */
+  private checkPrompt: { item: 'M24' | 'M26'; stage: PromptStage } | null =
+    null;
 
   constructor() {
     super(key.scene.exteriorRecoveryYard);
@@ -338,10 +380,18 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     // the start control unusable — the focused clock pauses (the flag
     // job's own surface is exempt inside the model).
     this.events.on(Phaser.Scenes.Events.PAUSE, () => {
-      m05HostPaused('o2', Date.now());
+      const now = Date.now();
+
+      m05HostPaused('o2', now);
+      // M24 / M26 (Unit 12): a paused yard makes the rig and the posts
+      // unusable — the continuations' focused clocks pause.
+      exteriorHostPaused(now);
     });
     this.events.on(Phaser.Scenes.Events.RESUME, () => {
-      m05HostResumed('o2', Date.now());
+      const now = Date.now();
+
+      m05HostResumed('o2', now);
+      exteriorHostResumed(now);
       this.refreshAllVisuals();
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -1119,6 +1169,14 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
           m24DepletionShown(Date.now());
         }
 
+        // Unit 12: with the statement displayed the expected-outcome check
+        // is due — the prompt IS the check (its options answer it).
+        // Never while a cycle is still running: a cycle started before
+        // the check must resolve (pre-knowledge) before the check is shown.
+        this.checkPrompt = ['idle', 'cooldown'].includes(this.magnet.getPhase())
+          ? this.buildCheckStage('M24', 'rig_panel')
+          : null;
+
         return true;
       },
     });
@@ -1132,7 +1190,11 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       isDone: () => {
         const state = exteriorEpisode().m24;
 
-        return state.closed || state.depletion_acknowledged_ms !== null;
+        // Guidance only: the site is done once the window closed or the
+        // check failed — never at the depletion and never while the
+        // continuation is open (a behaviour is being observed; the beacon
+        // must not move on at the pass).
+        return state.closed || state.understanding.status === 'fail';
       },
       order: 4,
     });
@@ -1188,6 +1250,9 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
           m26Evidence(Date.now(), 'post_a_status', 'keyboard');
         }
 
+        this.checkPrompt = this.buildCheckStage('M26', 'post_a');
+        this.postAPromptOpenedAt = Date.now();
+
         return true;
       },
     });
@@ -1201,7 +1266,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       isDone: () => {
         const state = exteriorEpisode().m26;
 
-        return state.closed || state.acknowledged_ms !== null;
+        return state.closed || state.understanding.status === 'fail';
       },
       // Eighth listed job (the sensor post is seventh — Unit 4).
       order: 7,
@@ -1248,6 +1313,10 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
         if (m26Disconnected(state)) {
           m26Evidence(Date.now(), 'line_status_panel', 'keyboard');
         }
+
+        this.checkPrompt = m26WindowOpen()
+          ? this.buildCheckStage('M26', 'line_panel')
+          : null;
 
         return true;
       },
@@ -1357,7 +1426,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
         const state = episode.m24;
 
         if (magnetDeckDepleted()) {
-          return M24_DEPLETION_STATEMENT;
+          return this.withCheckBody('M24', M24_DEPLETION_STATEMENT);
         }
 
         return state.entered ? m24PanelLine(state, false) : M24_RIG_BRIEF;
@@ -1371,11 +1440,14 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
           return M26_UPLINK_BRIEF;
         }
 
-        return `${status}\n${
-          next === null
-            ? 'Both recovery reports delivered.'
-            : `Next report: ${M26_REPORT_LABELS[next]}.`
-        }`;
+        return this.withCheckBody(
+          'M26',
+          `${status}\n${
+            next === null
+              ? 'Both recovery reports delivered.'
+              : `Next report: ${M26_REPORT_LABELS[next]}.`
+          }`,
+        );
       }
       case 'pilotUplinkB': {
         const state = episode.m26;
@@ -1389,7 +1461,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       }
       case 'pilotLinePanel':
         return m26Disconnected(episode.m26)
-          ? M26_DISCONNECT_NOTICE
+          ? this.withCheckBody('M26', M26_DISCONNECT_NOTICE)
           : M26_CARRIER_OK_NOTICE;
       default:
         return undefined;
@@ -1465,6 +1537,10 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     site: 'mast' | 'excavation' | 'rig' | 'uplink',
   ): PromptOption {
     return this.option('Step away', () => {
+      if (site === 'rig' || site === 'uplink') {
+        exteriorSteppedAway(site, Date.now(), 'keyboard');
+      }
+
       dismissExteriorSite(site);
       this.refreshGuidance();
     });
@@ -1657,6 +1733,133 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     this.redrawPlotOverlay();
   }
 
+  // ——— M24 / M26 — the expected-outcome check (Unit 12) ———
+
+  /** The station's own text at the place the check is shown (the evidence above the stem). */
+  private checkEvidence(source: 'rig_panel' | 'post_a' | 'line_panel'): string {
+    switch (source) {
+      case 'rig_panel':
+        return M24_DEPLETION_STATEMENT;
+      case 'post_a':
+        return m26PostStatus(exteriorEpisode().m26, 'A');
+      case 'line_panel':
+        return M26_DISCONNECT_NOTICE;
+    }
+  }
+
+  /** The station's body with the check's stem / explanation appended while it is the prompt. */
+  private withCheckBody(item: 'M24' | 'M26', body: string): string {
+    const check = this.checkPrompt;
+
+    return check !== null &&
+      check.item === item &&
+      check.stage.body !== undefined
+      ? `${body}\n\n${check.stage.body}`
+      : body;
+  }
+
+  /**
+   * Builds (and PRESENTS — the settle window starts) the check stage due
+   * for an item: the question (attempt 1), the one explanation, or the
+   * recheck (attempt 2, option order changed). Null when nothing is due.
+   * Every option answers through the adapter; a press inside the settle
+   * window is refused and the same stage re-presented in place; a wrong
+   * first answer chains the explanation, whose "Continue" chains the
+   * recheck; a decided check ends the prompt with one neutral line.
+   */
+  private buildCheckStage(
+    item: 'M24' | 'M26',
+    source: 'rig_panel' | 'post_a' | 'line_panel',
+    chained = false,
+  ): { item: 'M24' | 'M26'; stage: PromptStage } | null {
+    const due = item === 'M24' ? m24CheckDue() : m26CheckDue();
+
+    if (due === null) {
+      return null;
+    }
+
+    const now = Date.now();
+    const presented =
+      item === 'M24'
+        ? m24PresentCheck(due, now, source)
+        : m26PresentCheck(due, now, source);
+
+    if (!presented) {
+      return null;
+    }
+
+    // A chained stage replaces the whole panel body, so an attempt stage
+    // carries the station's own text itself (the first stage gets it from
+    // the station's prompt body): every attempt shows the same evidence.
+    const withEvidence = (text: string) =>
+      chained ? `${this.checkEvidence(source)}\n\n${text}` : text;
+
+    const question: UnderstandingQuestion =
+      item === 'M24' ? M24_UNDERSTANDING_QUESTION : M26_UNDERSTANDING_QUESTION;
+    const recorded = item === 'M24' ? M24_CHECK_RECORDED : M26_CHECK_RECORDED;
+    const afterDecision = () => {
+      this.refreshGuidance();
+      this.refreshAllVisuals();
+      refreshPilotCoverageProbe();
+    };
+
+    if (due === 'explanation') {
+      return {
+        item,
+        stage: {
+          body: question.explanation,
+          options: [
+            {
+              label: 'Continue',
+              feedback: '',
+              getEventTypes: () => [],
+              onSelected: () => {
+                if (item === 'M24') {
+                  m24DismissExplanation(Date.now(), 'keyboard');
+                } else {
+                  m26DismissExplanation(Date.now(), 'keyboard');
+                }
+              },
+              nextStage: () =>
+                this.buildCheckStage(item, source, true)?.stage ?? null,
+            },
+          ],
+        },
+      };
+    }
+
+    const options =
+      item === 'M24' ? m24CheckOptions(due) : m26CheckOptions(due);
+    let last: UnderstandingAnswer | null = null;
+
+    return {
+      item,
+      stage: {
+        body: withEvidence(question.stem),
+        options: options.map((option) => ({
+          label: option.label,
+          feedback: '',
+          getEventTypes: () => [],
+          onSelected: () => {
+            last =
+              item === 'M24'
+                ? m24AnswerCheck(option.id, Date.now(), 'keyboard')
+                : m26AnswerCheck(option.id, Date.now(), 'keyboard');
+
+            if (last.kind === 'answered' && !last.explanation_due) {
+              this.showFeedbackMessage(recorded);
+              afterDecision();
+            }
+          },
+          // Refused (settling) → the same stage again; a wrong first answer
+          // → the explanation; a decided check → the prompt ends.
+          nextStage: () =>
+            this.buildCheckStage(item, source, true)?.stage ?? null,
+        })),
+      },
+    };
+  }
+
   // ——— M24 ———
 
   private rigOptions(): PromptOption[] {
@@ -1686,28 +1889,35 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       ];
     }
 
+    // The check is the prompt while it is due (built at the open).
+    if (this.checkPrompt?.item === 'M24') {
+      return this.checkPrompt.stage.options;
+    }
+
     const options: PromptOption[] = [];
 
-    if (m24KnowledgeState(state) === 'depleted_unacknowledged') {
+    options.push(
+      this.option('Check the panel', () => {
+        this.showFeedbackMessage(
+          magnetDeckDepleted()
+            ? M24_DEPLETION_STATEMENT
+            : `${m24PanelLine(state, false)} — cycles run from the operating pad (F).`,
+        );
+      }),
+    );
+
+    if (m24ContinuationLive()) {
+      // The explicit exit of the continuation (never suggested).
       options.push(
-        this.option('Acknowledge the depletion notice', () => {
-          if (m24AcknowledgeDepletion(Date.now(), 'keyboard')) {
-            this.showFeedbackMessage(
-              'Depletion notice acknowledged. The rig and the sorting bench both remain available.',
-            );
-            this.refreshGuidance();
-            refreshPilotCoverageProbe();
-          }
-        }),
-      );
-    } else {
-      options.push(
-        this.option('Check the panel', () => {
+        this.option('Finish at the rig', () => {
           this.showFeedbackMessage(
-            magnetDeckDepleted()
-              ? M24_DEPLETION_STATEMENT
-              : `${m24PanelLine(state, false)} — cycles run from the operating pad (F).`,
+            m24Finish(Date.now(), 'keyboard')
+              ? 'Salvage tally closed for this shift.'
+              : 'The salvage tally is closed for this shift.',
           );
+          this.refreshRigVisuals();
+          this.refreshGuidance();
+          refreshPilotCoverageProbe();
         }),
       );
     }
@@ -1726,17 +1936,24 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       label: 'Sorting salvage…',
       durationMs: 1200,
       cancellable: true,
-      onComplete: () =>
+      onCancel: () => {
+        this.benchInFlight = false;
+      },
+      onComplete: () => {
+        this.benchInFlight = false;
         this.guard('M24', () => {
           m24Alternative(Date.now(), 'keyboard');
           this.showFeedbackMessage(
             'Recovered stock sorted — the bench log is up to date.',
           );
           refreshPilotCoverageProbe();
-        }),
+        });
+      },
     });
 
-    if (!started) {
+    if (started) {
+      this.benchInFlight = true;
+    } else {
       this.showFeedbackMessage('The bench is busy — one moment.');
     }
   }
@@ -1766,26 +1983,20 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       return options;
     }
 
+    // Post A: the check is the prompt while it is due (built at the open).
+    if (channel === 'A' && this.checkPrompt?.item === 'M26') {
+      return this.checkPrompt.stage.options;
+    }
+
     const next = m26NextReportId();
 
     if (next !== null) {
       options.push(
-        this.option(`Transmit: ${M26_REPORT_LABELS[next]}`, () => {
-          const started = performWorldAction({
-            scene: this,
-            x: site.x,
-            y: site.y - 30,
-            label: 'Transmitting…',
-            durationMs: M26_TRANSMIT_MS,
-            cancellable: false,
-            onComplete: () =>
-              this.guard('M26', () => this.resolveTransmission(channel)),
-          });
-
-          if (started) {
-            this.player.playActionAnim('scan');
-          }
-        }),
+        this.transmitOption(
+          `Transmit: ${M26_REPORT_LABELS[next]}`,
+          channel,
+          site,
+        ),
       );
     } else {
       options.push(
@@ -1797,14 +2008,29 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       );
     }
 
-    if (
-      channel === 'A' &&
-      m26Knowledge(state) === 'disconnected_unacknowledged'
-    ) {
-      options.push(this.acknowledgeLineOption());
-    }
+    if (channel === 'A' && m26ContinuationLive()) {
+      // Another Post A transmission is offered at the post itself even
+      // when both reports are delivered (a carrier check) — the choice to
+      // retry, switch or finish is the participant's.
+      if (next === null) {
+        options.push(
+          this.transmitOption('Transmit: carrier check', channel, site),
+        );
+      }
 
-    if (channel === 'A' && m26Disconnected(state)) {
+      options.push(
+        this.option('Finish at the uplink', () => {
+          this.showFeedbackMessage(
+            m26Finish(Date.now(), 'keyboard')
+              ? 'Uplink log closed for this shift.'
+              : 'The uplink log is closed for this shift.',
+          );
+          this.refreshUplinkVisuals();
+          this.refreshGuidance();
+          refreshPilotCoverageProbe();
+        }),
+      );
+    } else if (channel === 'A' && m26Disconnected(state)) {
       options.push(
         this.option('Inspect the line', () => {
           m26Evidence(Date.now(), 'post_a_inspection', 'keyboard');
@@ -1818,38 +2044,101 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     return options.slice(0, 4);
   }
 
-  private acknowledgeLineOption(): PromptOption {
-    return this.option('Acknowledge: Line A is open', () => {
-      if (m26AcknowledgeDisconnect(Date.now(), 'keyboard')) {
-        this.showFeedbackMessage(
-          'Line A open — acknowledged. Post B (backup) remains available.',
-        );
-        this.refreshGuidance();
-        refreshPilotCoverageProbe();
-      }
+  /**
+   * A Transmit card. At Post A inside the continuation a press within the
+   * settle window is refused; the post's options are then shown again in
+   * place (never a silently closing prompt).
+   */
+  private transmitOption(
+    label: string,
+    channel: 'A' | 'B',
+    site: { x: number; y: number },
+  ): PromptOption {
+    return {
+      label,
+      feedback: '',
+      getEventTypes: () => [],
+      onSelected: () => {
+        this.postATransmitRefused = false;
+        this.startTransmission(channel, site);
+      },
+      nextStage: () => {
+        if (!this.postATransmitRefused) {
+          return null;
+        }
+
+        this.postATransmitRefused = false;
+        this.postAPromptOpenedAt = Date.now();
+
+        return {
+          body: this.getPromptBody('pilotUplinkA'),
+          options: this.uplinkOptions('A'),
+        };
+      },
+    };
+  }
+
+  /** The timed transmit act at a post (unchanged mechanics). */
+  private startTransmission(
+    channel: 'A' | 'B',
+    site: { x: number; y: number },
+  ) {
+    if (!m26WindowOpen()) {
+      // A stale card after the cap / the exit: nothing is sent.
+      this.showFeedbackMessage('The uplink log is closed for this shift.');
+
+      return;
+    }
+
+    if (
+      channel === 'A' &&
+      m26ContinuationLive() &&
+      Date.now() - this.postAPromptOpenedAt < UNDERSTANDING_SETTLE_MS
+    ) {
+      // Transmit is the first (pre-focused) card: a carried or
+      // double-tapped press inside the settle window is never an act.
+      m26RefuseTransmit(Date.now(), 'prompt_settling', 'keyboard');
+      this.postATransmitRefused = true;
+
+      return;
+    }
+
+    const started = performWorldAction({
+      scene: this,
+      x: site.x,
+      y: site.y - 30,
+      label: 'Transmitting…',
+      durationMs: M26_TRANSMIT_MS,
+      cancellable: false,
+      onComplete: () => {
+        this.transmitInFlight = null;
+        this.guard('M26', () => this.resolveTransmission(channel));
+      },
     });
+
+    if (started) {
+      this.transmitInFlight = channel;
+      this.player.playActionAnim('scan');
+    }
   }
 
   private linePanelOptions(): PromptOption[] {
-    const state = exteriorEpisode().m26;
-    const options: PromptOption[] = [];
-
-    if (
-      m26WindowOpen() &&
-      m26Knowledge(state) === 'disconnected_unacknowledged'
-    ) {
-      options.push(this.acknowledgeLineOption());
+    if (this.checkPrompt?.item === 'M26') {
+      return this.checkPrompt.stage.options;
     }
 
-    options.push(this.option('Close'));
-
-    return options;
+    return [this.option('Close')];
   }
 
   private resolveTransmission(channel: 'A' | 'B') {
     const transmission = m26Send(channel, Date.now(), 'keyboard');
 
     if (transmission === null) {
+      // The window closed while the transmission ran (the cap): nothing
+      // was recorded and nothing was sent — said plainly, never silent.
+      this.showFeedbackMessage('The uplink log is closed for this shift.');
+      this.refreshUplinkVisuals();
+
       return;
     }
 
@@ -1879,6 +2168,15 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
         M26_DISCONNECT_DELAY_MS,
         () => {
           this.disconnectTimer = null;
+
+          // A Post A transmission started while the line was still up
+          // resolves on the connected line: the disconnect waits for it
+          // (it is rescheduled when that transmission resolves), so an
+          // act begun before the boundary is never classified after it.
+          if (this.transmitInFlight === 'A') {
+            return;
+          }
+
           this.demonstrateDisconnect();
         },
       );
@@ -2427,6 +2725,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
   }
 
   protected onPilotUpdate(): void {
+    this.tickContinuations();
     this.refreshMastArt();
     this.clampWorldReadouts([
       this.couplingChip ?? null,
@@ -2517,6 +2816,67 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       item_id: result.entry.item_id,
     });
     refreshPilotCoverageProbe();
+  }
+
+  /**
+   * M24 / M26 (Unit 12): the post-knowledge continuations run on focused
+   * time; the cap is a censoring event the host notices here (a cycle or
+   * a transmission still running at the cap is recorded, never counted).
+   */
+  private tickContinuations(): void {
+    const now = Date.now();
+
+    if (
+      m24ContinuationLive() &&
+      this.safeTick('M24', () =>
+        m24TickContinuation(
+          now,
+          !['idle', 'cooldown'].includes(this.magnet.getPhase()),
+          this.benchInFlight,
+        ),
+      )
+    ) {
+      this.showFeedbackMessage('The salvage tally is closed for this shift.');
+      this.refreshRigVisuals();
+      this.refreshGuidance();
+      refreshPilotCoverageProbe();
+    }
+
+    if (
+      m26ContinuationLive() &&
+      this.safeTick('M26', () =>
+        m26TickContinuation(
+          now,
+          this.transmitInFlight === 'A',
+          this.transmitInFlight === 'B',
+        ),
+      )
+    ) {
+      this.showFeedbackMessage('The uplink log is closed for this shift.');
+      this.refreshUplinkVisuals();
+      this.refreshGuidance();
+      refreshPilotCoverageProbe();
+    }
+  }
+
+  /**
+   * A per-frame tick must never throw: an uncaught error inside the frame
+   * callback would stop the game loop. The window is closed as a technical
+   * failure (which also ends its ticks) and the error is reported.
+   */
+  private safeTick(item: 'M24' | 'M26', fn: () => boolean): boolean {
+    try {
+      return fn();
+    } catch (error) {
+      exteriorTechnicalFailure(
+        item,
+        error instanceof Error ? error.message : String(error),
+      );
+      // eslint-disable-next-line no-console
+      console.error(`[${item}] continuation tick failed`, error);
+
+      return false;
+    }
   }
 
   /** Runtime errors inside a window become technical failures (invalid). */

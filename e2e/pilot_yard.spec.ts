@@ -29,12 +29,14 @@ import { expect, test } from '@playwright/test';
 
 import {
   acceptMast,
-  acknowledgeDepletion,
-  acknowledgeLineAtPostA,
+  answerOpenCheck,
+  answerRigCheck,
+  answerUplinkCheck,
   APPROACH,
   beginExcavation,
   captureErrors,
   completeCoupling,
+  continueUplinkExplanation,
   couplingAct,
   depleteDeck,
   digFacing,
@@ -46,6 +48,7 @@ import {
   exteriorProbe,
   faceCell,
   faProbe,
+  finishAtRig,
   finishOutside,
   itemStatus,
   lastFeedback,
@@ -63,6 +66,7 @@ import {
   transmitAt,
   useSortingBench,
   validityRecord,
+  waitContinuationClosed,
   waitDisconnect,
   waitNoWorldAction,
   YARD,
@@ -346,40 +350,57 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect((await faProbe(page)).scan.context).toBe('free');
     expect((await pilotProbe(page))?.beacon?.label).toBe('Magnet Recovery Rig');
 
-    // ——— M24: the finite deck to explicit depletion and beyond. ———
+    // ——— M24 (Unit 12): the finite deck to explicit depletion, the
+    // expected-outcome check (a right first answer), the continuation. ———
     await startSalvageTally(page);
     await depleteDeck(page);
     ext = await exteriorProbe(page);
     expect(ext.m24.depletion_reached).toBe(true);
-    expect(ext.m24.knowledge).toBe('depleted_unacknowledged');
+    expect(ext.m24.knowledge).toBe('depleted_untested');
     expect(ext.m24.depletion_shown_count).toBeGreaterThanOrEqual(1);
     expect(await lastFeedback(page)).toContain('CATCHMENT DEPLETED');
 
-    // One post-depletion cast BEFORE acknowledgement (pre-knowledge).
+    // One post-depletion cast BEFORE the check (pre-knowledge, unqualified).
     await standOnPad(page);
     await magnetCycle(page, true);
     ext = await exteriorProbe(page);
-    expect(ext.m24.postdepletion_casts_pre_ack).toBe(1);
-    expect(ext.m24.identical_postdepletion_cycles).toBe(0);
+    expect(ext.m24.casts_pre_knowledge).toBe(1);
+    expect(ext.m24.postknowledge_casts).toBe(0);
     expect((await faProbe(page)).magnet.deckPosition).toBe(6);
 
-    await acknowledgeDepletion(page);
+    // The check at the rig panel: a right first answer passes and opens the
+    // 30 s focused continuation; nothing tells the participant what to do.
+    await answerRigCheck(page, 'correct');
+    ext = await exteriorProbe(page);
+    expect(ext.m24.knowledge).toBe('depleted_passed');
+    expect(ext.m24.knowledge_status).toBe('pass_first');
+    expect(ext.m24.continuation_open).toBe(true);
+    expect(await lastFeedback(page)).not.toMatch(/correct|wrong|well done/i);
     await standOnPad(page);
     await magnetCycle(page, false);
     ext = await exteriorProbe(page);
-    expect(ext.m24.identical_postdepletion_cycles).toBe(1);
+    expect(ext.m24.postknowledge_casts).toBe(1); // the first included
     expect(ext.m24.postdepletion_casts).toBe(2);
     expect((await faProbe(page)).magnet.deckPosition).toBe(6);
     expect((await faProbe(page)).magnet.totalPulls).toBe(8);
 
     await useSortingBench(page);
+    ext = await exteriorProbe(page);
+    expect(ext.m24.alternative_used).toBe(true);
+    await finishAtRig(page);
     await mark('M24 magnet deck');
     ext = await exteriorProbe(page);
-    expect(ext.m24.alternative_opened).toBe(true);
+    expect(ext.m24).toMatchObject({
+      window: 'closed',
+      exit: 'stopped',
+      exited: true,
+      continuation_closure: 'voluntary_stop',
+      cap_reached: false,
+    });
 
-    const cycles = (
-      await eventsByType(page, 'proto_m24_magnet_utility_cycle')
-    ).filter((e) => e.metadata?.cancelled === false);
+    const cycles = (await eventsByType(page, 'proto_m24_rig_cycle')).filter(
+      (e) => e.metadata?.cancelled === false,
+    );
 
     expect(cycles.map((e) => e.metadata?.pull_position)).toEqual([
       1, 2, 3, 4, 5, 6, 7, 8,
@@ -391,86 +412,125 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     // The depleting sixth cycle logs the state AFTER its resolution.
     expect(cycles.map((e) => e.metadata?.knowledge_state)).toEqual([
       ...Array(5).fill('not_depleted'),
-      'depleted_unacknowledged',
-      'depleted_unacknowledged',
-      'depleted_acknowledged',
+      'depleted_untested',
+      'depleted_untested',
+      'depleted_passed',
+    ]);
+    expect(cycles.slice(6).map((e) => e.metadata?.classification)).toEqual([
+      'pre_knowledge',
+      'postknowledge',
     ]);
     expect(
-      (await eventsByType(page, 'proto_m24_magnet_utility_depletion_reached'))
-        .length,
+      (await eventsByType(page, 'proto_m24_rig_depletion_reached')).length,
     ).toBe(1);
     expect(
-      (
-        await eventsByType(
-          page,
-          'proto_m24_magnet_utility_depletion_acknowledged',
-        )
-      ).length,
+      (await eventsByType(page, 'proto_m24_rig_understanding_answered')).map(
+        (e) => [e.metadata?.attempt, e.metadata?.correct, e.metadata?.form],
+      ),
+    ).toEqual([[1, true, 'a']]);
+    expect(
+      (await eventsByType(page, 'proto_m24_rig_continuation_opened')).length,
     ).toBe(1);
     expect(
-      (await eventsByType(page, 'proto_m24_magnet_utility_alternative_opened'))
-        .length,
+      (await eventsByType(page, 'proto_m24_rig_postknowledge_cast')).length,
     ).toBe(1);
-    expect((await pilotProbe(page))?.beacon?.label).toBe('Field Uplink Post A');
+    expect(
+      (await eventsByType(page, 'proto_m24_rig_alternative_used')).length,
+    ).toBe(1);
+    expect((await eventsByType(page, 'proto_m24_rig_exit')).length).toBe(1);
+    // With the rig's window closed the beacon moves to the next listed job:
+    // the support console (the fifth job since the console was added; the
+    // earlier expectation of Post A predated it).
+    expect((await pilotProbe(page))?.beacon?.label).toBe(
+      'Station Support Console',
+    );
 
-    // ——— M26: ACK → scripted disconnect → knowledge gate → backup post. ———
+    // ——— M26 (Unit 12): ACK → scripted disconnect → the check (a wrong
+    // answer, the explanation, the rotated recheck) → the continuation. ———
     await powerUpUplink(page);
     await transmitAt(page, 'uplinkA');
     expect(await lastFeedback(page)).toContain('ACK');
     await waitDisconnect(page);
     expect(await lastFeedback(page)).toContain('LINE OPEN');
     ext = await exteriorProbe(page);
-    expect(ext.m26.knowledge).toBe('disconnected_unacknowledged');
+    expect(ext.m26.knowledge).toBe('disconnected_untested');
 
-    await transmitAt(page, 'uplinkA'); // pre-knowledge attempt
+    // Post A IS the check while it is due: a wrong first answer chains the
+    // one explanation, whose Continue chains the recheck.
+    await answerUplinkCheck(page, 'wrong');
+    ext = await exteriorProbe(page);
+    expect(ext.m26.knowledge).toBe('disconnected_testing');
+    await continueUplinkExplanation(page);
+    await answerOpenCheck(page, 'M26', 'correct');
+    ext = await exteriorProbe(page);
+    expect(ext.m26.knowledge_status).toBe('pass_after_explanation');
+    expect(ext.m26.explanation_shown).toBe(true);
+    expect(ext.m26.continuation_open).toBe(true);
+    expect(ext.m26.pre_knowledge_attempts).toBe(0);
+
+    await transmitAt(page, 'uplinkA'); // post-knowledge retry 1 (included)
     expect(await lastFeedback(page)).toContain('NO CARRIER');
+    await transmitAt(page, 'uplinkA'); // post-knowledge retry 2
     ext = await exteriorProbe(page);
-    expect(ext.m26.pre_knowledge_attempts).toBe(1);
-    expect(ext.m26.postknowledge_transmissions).toBe(0);
-
-    await acknowledgeLineAtPostA(page);
-    await transmitAt(page, 'uplinkA'); // excluded confirmation probe
-    await transmitAt(page, 'uplinkA'); // post-knowledge continuation
-    ext = await exteriorProbe(page);
-    expect(ext.m26.confirmation_probe_excluded).toBe(true);
-    expect(ext.m26.postknowledge_transmissions).toBe(1);
+    expect(ext.m26.postknowledge_retries).toBe(2);
+    expect(ext.m26.postknowledge_retries_minus_first).toBe(1);
     expect(ext.m26.alternative_used).toBe(false);
 
     await transmitAt(page, 'uplinkB');
-    await mark('M26 uplink');
     ext = await exteriorProbe(page);
     expect(ext.m26.alternative_used).toBe(true);
     expect(ext.m26.all_reports_delivered).toBe(true);
     expect(await lastFeedback(page)).toContain('Post B');
 
+    // The hidden 30 s focused cap closes the continuation and the window.
+    await waitContinuationClosed(page, 'm26', 45_000);
+    await mark('M26 uplink');
+    ext = await exteriorProbe(page);
+    expect(ext.m26).toMatchObject({
+      window: 'closed',
+      exit: 'completed',
+      continuation_closure: 'cap',
+      cap_reached: true,
+      postknowledge_retries: 2,
+    });
+
     const transmissions = await eventsByType(
       page,
-      'proto_m26_channel_transmission',
+      'proto_m26_uplink_transmission',
     );
 
     expect(transmissions.map((e) => e.metadata?.classification)).toEqual([
       'delivered',
-      'pre_knowledge',
-      'confirmation_probe',
+      'postknowledge',
       'postknowledge',
       'delivered',
     ]);
     expect(
-      (await eventsByType(page, 'proto_m26_channel_disconnect_demonstrated'))
+      (await eventsByType(page, 'proto_m26_uplink_disconnect_demonstrated'))
         .length,
     ).toBe(1);
     expect(
-      (await eventsByType(page, 'proto_m26_channel_evidence_viewed')).length,
+      (await eventsByType(page, 'proto_m26_uplink_evidence_viewed')).length,
     ).toBeGreaterThanOrEqual(1);
     expect(
-      (await eventsByType(page, 'proto_m26_channel_confirmation_probe')).length,
+      (await eventsByType(page, 'proto_m26_uplink_understanding_answered')).map(
+        (e) => [e.metadata?.attempt, e.metadata?.correct, e.metadata?.form],
+      ),
+    ).toEqual([
+      [1, false, 'a'],
+      [2, true, 'b'],
+    ]);
+    expect(
+      (await eventsByType(page, 'proto_m26_uplink_explanation_shown')).length,
     ).toBe(1);
     expect(
-      (await eventsByType(page, 'proto_m26_channel_postknowledge_transmission'))
-        .length,
+      (await eventsByType(page, 'proto_m26_uplink_postknowledge_retry')).length,
+    ).toBe(2);
+    expect(
+      (await eventsByType(page, 'proto_m26_uplink_alternative_used')).length,
     ).toBe(1);
     expect(
-      (await eventsByType(page, 'proto_m26_channel_alternative_used')).length,
+      (await eventsByType(page, 'proto_m26_uplink_cap_reached')).length,
     ).toBe(1);
     // M24 and M26 never share an event: no cycle carries a channel, no
     // transmission carries a pull position.
@@ -484,7 +544,10 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
         (e) => 'pull_position' in (e.metadata ?? {}),
       ),
     ).toBe(false);
-    expect((await pilotProbe(page))?.objective).toContain('Noor');
+    // This route never opens the support console or the sensor post, so
+    // the objective line names the console next (the earlier expectation
+    // of Noor predated both stations).
+    expect((await pilotProbe(page))?.objective).toContain('support console');
 
     // ——— Noor: the shift ends outside; honest closures. ———
     await finishOutside(page);
@@ -512,8 +575,8 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     for (const family of [
       'proto_m19_valve_',
       'proto_m23_field_recovery_',
-      'proto_m24_magnet_utility_',
-      'proto_m26_channel_',
+      'proto_m24_rig_',
+      'proto_m26_uplink_',
     ]) {
       for (const event of await eventsByPrefix(page, family)) {
         const m = event.metadata ?? {};
@@ -658,16 +721,13 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
 
     await leaveYard(page);
 
-    const departedM24 = await eventsByType(
-      page,
-      'proto_m24_magnet_utility_departed',
-    );
+    const departedM24 = await eventsByType(page, 'proto_m24_rig_departed');
     const departedM20 = await eventsByType(page, 'proto_m20_antenna_departed');
 
     expect(departedM24).toHaveLength(1);
     expect(departedM20).toHaveLength(1);
     expect(
-      await eventsByType(page, 'proto_m24_magnet_utility_window_closed'),
+      await eventsByType(page, 'proto_m24_rig_window_closed'),
     ).toHaveLength(0);
     expect(await itemStatus(page, 'M24')).toBe('open');
     expect(await itemStatus(page, 'M20')).toBe('open');
@@ -693,7 +753,8 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect((await faProbe(page)).windows.m24_open).toBe(true);
     expect(await lastFeedback(page)).not.toContain('Mast'); // no antenna reminder on re-entry
 
-    // Finish the deck WITHOUT acknowledging; disconnect the uplink WITHOUT acknowledging.
+    // Finish the deck WITHOUT taking the check; disconnect the uplink
+    // WITHOUT taking the check (Unit 12: knowledge unverified ⇒ invalid).
     await standOnPad(page);
 
     for (let position = 3; position <= 6; position++) {
@@ -702,15 +763,14 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
 
     expect((await faProbe(page)).magnet.depleted).toBe(true);
     ext = await exteriorProbe(page);
-    expect(ext.m24.knowledge).toBe('depleted_unacknowledged');
+    expect(ext.m24.knowledge).toBe('depleted_untested');
 
     await powerUpUplink(page);
     await transmitAt(page, 'uplinkA');
     await waitDisconnect(page);
-    await transmitAt(page, 'uplinkA');
     ext = await exteriorProbe(page);
-    expect(ext.m26.pre_knowledge_attempts).toBe(1);
-    expect(ext.m26.knowledge).toBe('disconnected_unacknowledged');
+    expect(ext.m26.knowledge).toBe('disconnected_untested');
+    expect(ext.m26.check_due).toBe('attempt_1');
 
     await finishOutside(page);
 
@@ -719,16 +779,16 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
 
     expect(m24.validity).toBe('invalid');
     expect(m24.invalid_reason).toBe('insufficient_opportunity');
-    expect(m24.invalid_detail).toBe('depletion_not_acknowledged');
+    expect(m24.invalid_detail).toBe('understanding_not_tested');
     expect(m26.validity).toBe('invalid');
-    expect(m26.invalid_detail).toBe('disconnect_not_acknowledged');
+    expect(m26.invalid_detail).toBe('understanding_not_tested');
     expect(await itemStatus(page, 'M24')).toBe('invalid');
     expect(await itemStatus(page, 'M26')).toBe('invalid');
     expect(m24.completed).toBe(false);
     expect(m26.completed).toBe(false);
 
     const m24Closed = (
-      await eventsByType(page, 'proto_m24_magnet_utility_window_closed')
+      await eventsByType(page, 'proto_m24_rig_window_closed')
     )[0];
 
     expect(m24Closed.metadata?.exit_state).toBe('departed');

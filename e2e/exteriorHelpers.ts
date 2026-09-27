@@ -12,8 +12,17 @@ import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 import { M23_TARGET_CELLS } from '../src/pilot/exterior/m23ExcavationModel';
+import { M24_UNDERSTANDING_QUESTION } from '../src/pilot/exterior/m24MagnetRigModel';
+import { M26_UNDERSTANDING_QUESTION } from '../src/pilot/exterior/m26ChannelModel';
+import { UNDERSTANDING_SETTLE_MS } from '../src/pilot/exterior/outcomeUnderstanding';
 import { YARD_SITES } from '../src/pilot/zoneSites';
-import { driveAxisTo, getEvents, hold, selectPromptOption } from './helpers';
+import {
+  driveAxisTo,
+  getEvents,
+  hold,
+  selectCardByLabel,
+  selectPromptOption,
+} from './helpers';
 import {
   captureErrors,
   completeDockTutorial,
@@ -116,8 +125,8 @@ export const OPPORTUNITY = {
   m19: 'proto_m19_progressive_valve',
   m20: 'proto_m20_antenna_restoration',
   m23: 'proto_m23_field_recovery',
-  m24: 'proto_m24_magnet_utility',
-  m26: 'proto_m26_channel_disconnect',
+  m24: 'proto_m24_rig_continuation',
+  m26: 'proto_m26_uplink_continuation',
 } as const;
 
 export interface ExteriorProbe {
@@ -197,13 +206,26 @@ export interface ExteriorProbe {
     exit: string | null;
     open: boolean;
     knowledge: string;
+    check_due: string | null;
+    continuation_open: boolean;
+    knowledge_status: string;
     depletion_reached: boolean;
-    depletion_acknowledged: boolean;
     depletion_shown_count: number;
+    attempts: { attempt: number; correct: boolean; form: string }[];
+    explanation_shown: boolean;
+    refused_presses: number;
+    postknowledge_casts: number;
+    postknowledge_casts_minus_first: number;
+    casts_pre_knowledge: number;
+    casts_after_fail: number;
     postdepletion_casts: number;
-    postdepletion_casts_pre_ack: number;
-    identical_postdepletion_cycles: number;
-    alternative_opened: boolean;
+    continuation_opened: boolean;
+    continuation_closure: string | null;
+    continuation_focused_ms: number | null;
+    cap_reached: boolean;
+    exited: boolean;
+    alternative_used: boolean;
+    alternative_used_pre_knowledge: number;
     cycles_committed: number;
     useful_outcomes: number;
   };
@@ -212,13 +234,25 @@ export interface ExteriorProbe {
     exit: string | null;
     open: boolean;
     knowledge: string;
+    check_due: string | null;
+    continuation_open: boolean;
+    knowledge_status: string;
     next_report: string | null;
     disconnect_demonstrated: boolean;
-    disconnect_acknowledged: boolean;
-    confirmation_probe_excluded: boolean;
-    postknowledge_transmissions: number;
-    alternative_used: boolean;
+    attempts: { attempt: number; correct: boolean; form: string }[];
+    explanation_shown: boolean;
+    refused_presses: number;
+    postknowledge_retries: number;
+    postknowledge_retries_minus_first: number;
     pre_knowledge_attempts: number;
+    attempts_after_fail: number;
+    continuation_opened: boolean;
+    continuation_closure: string | null;
+    continuation_focused_ms: number | null;
+    cap_reached: boolean;
+    exited: boolean;
+    alternative_used: boolean;
+    b_transmissions_after_disconnect: number;
     evidence_views: number;
     all_reports_delivered: boolean;
   };
@@ -871,13 +905,101 @@ export async function depleteDeck(page: Page) {
   expect((await faProbe(page)).magnet.depleted).toBe(true);
 }
 
-export async function acknowledgeDepletion(page: Page) {
+/** The rig panel's check stage is open (its body carries the stem). */
+async function waitCheckStage(page: Page, stem: string) {
+  await page.waitForFunction(
+    (wanted) =>
+      (
+        (window as unknown as { __lastPromptBody?: string | null })
+          .__lastPromptBody ?? ''
+      ).includes(wanted),
+    stem,
+    { timeout: 6000 },
+  );
+}
+
+/**
+ * Opens the rig panel with the check due and answers it: 'correct' picks
+ * the key, 'wrong' the first distractor. Waits past the settle window
+ * first (a press inside it is refused and re-presented). Resolves when the
+ * attempt is recorded.
+ */
+export async function answerRigCheck(page: Page, choice: 'correct' | 'wrong') {
+  const before = (await exteriorProbe(page)).m24.attempts.length;
+
   await openSite(page, 'rig');
-  await selectPromptOption(page, 1);
+  await waitCheckStage(page, M24_UNDERSTANDING_QUESTION.stem);
+  await page.waitForTimeout(UNDERSTANDING_SETTLE_MS + 200);
+
+  const option =
+    choice === 'correct'
+      ? M24_UNDERSTANDING_QUESTION.options.find(
+          (candidate) => candidate.id === M24_UNDERSTANDING_QUESTION.key,
+        )!
+      : M24_UNDERSTANDING_QUESTION.options.find(
+          (candidate) => candidate.id !== M24_UNDERSTANDING_QUESTION.key,
+        )!;
+
+  await selectCardByLabel(page, option.label);
+  await page.waitForFunction(
+    (wanted) =>
+      ((window as unknown as { __exteriorProbe?: ExteriorProbe | null })
+        .__exteriorProbe?.m24.attempts.length ?? 0) > wanted,
+    before,
+    { timeout: 6000 },
+  );
+}
+
+/**
+ * Answers the check stage that is ALREADY open (the recheck chained after
+ * "Continue", or a stage opened by the caller for a screenshot).
+ */
+export async function answerOpenCheck(
+  page: Page,
+  item: 'M24' | 'M26',
+  choice: 'correct' | 'wrong',
+) {
+  const question =
+    item === 'M24' ? M24_UNDERSTANDING_QUESTION : M26_UNDERSTANDING_QUESTION;
+  const before =
+    item === 'M24'
+      ? (await exteriorProbe(page)).m24.attempts.length
+      : (await exteriorProbe(page)).m26.attempts.length;
+
+  await waitCheckStage(page, question.stem);
+  await page.waitForTimeout(UNDERSTANDING_SETTLE_MS + 200);
+
+  const option =
+    choice === 'correct'
+      ? question.options.find((candidate) => candidate.id === question.key)!
+      : question.options.find((candidate) => candidate.id !== question.key)!;
+
+  await selectCardByLabel(page, option.label);
+  await page.waitForFunction(
+    ({ wanted, key }) =>
+      ((window as unknown as { __exteriorProbe?: ExteriorProbe | null })
+        .__exteriorProbe?.[key as 'm24' | 'm26'].attempts.length ?? 0) > wanted,
+    { wanted: before, key: item === 'M24' ? 'm24' : 'm26' },
+    { timeout: 6000 },
+  );
+}
+
+/** The explanation stage is open after a wrong first answer: "Continue" → the recheck. */
+export async function continueRigExplanation(page: Page) {
+  await waitCheckStage(page, M24_UNDERSTANDING_QUESTION.explanation);
+  await page.waitForTimeout(UNDERSTANDING_SETTLE_MS + 200);
+  await selectCardByLabel(page, 'Continue');
+  await waitCheckStage(page, M24_UNDERSTANDING_QUESTION.stem);
+}
+
+/** "Finish at the rig" inside the continuation (the explicit exit). */
+export async function finishAtRig(page: Page) {
+  await openSite(page, 'rig');
+  await selectCardByLabel(page, 'Finish at the rig');
   await page.waitForFunction(
     () =>
       (window as unknown as { __exteriorProbe?: ExteriorProbe | null })
-        .__exteriorProbe?.m24.depletion_acknowledged === true,
+        .__exteriorProbe?.m24.window === 'closed',
     undefined,
     { timeout: 6000 },
   );
@@ -907,7 +1029,7 @@ export async function powerUpUplink(page: Page) {
 }
 
 async function transmissionsCount(page: Page): Promise<number> {
-  return (await eventsByType(page, 'proto_m26_channel_transmission')).length;
+  return (await eventsByType(page, 'proto_m26_uplink_transmission')).length;
 }
 
 /** Transmit (option 1) at a post; resolves once the transmission logged. */
@@ -917,8 +1039,23 @@ export async function transmitAt(page: Page, post: 'uplinkA' | 'uplinkB') {
   await openSite(page, post);
 
   const labels = await lastPromptBody(page);
+  // Select the Transmit card BY LABEL: while the check is due the post's
+  // first card is an answer, and after both reports the first card is
+  // the log. The wait outlasts the post's settle window (Unit 12).
+  const cards = await page.evaluate(
+    () =>
+      (
+        window as unknown as { __promptCards?: { label: string }[] | null }
+      ).__promptCards?.map((card) => card.label) ?? [],
+  );
+  const transmit = cards.findIndex((label) => label.startsWith('Transmit:'));
 
-  await selectPromptOption(page, 1);
+  expect(
+    transmit,
+    `no Transmit card at ${post} (cards: ${JSON.stringify(cards)})`,
+  ).toBeGreaterThanOrEqual(0);
+  await page.waitForTimeout(UNDERSTANDING_SETTLE_MS + 200);
+  await selectPromptOption(page, transmit + 1);
 
   try {
     await page.waitForFunction(
@@ -930,7 +1067,7 @@ export async function transmitAt(page: Page, post: 'uplinkA' | 'uplinkB') {
         ).researchRuntime
           ?.getEvents()
           .filter(
-            (event) => event.event_type === 'proto_m26_channel_transmission',
+            (event) => event.event_type === 'proto_m26_uplink_transmission',
           ).length ?? 0) > expected,
       before,
       { timeout: 10_000 },
@@ -980,15 +1117,73 @@ export async function waitDisconnect(page: Page) {
   await page.waitForTimeout(300);
 }
 
-/** Acknowledge the open line at Post A (option 2 after the transmit option). */
-export async function acknowledgeLineAtPostA(page: Page) {
+/**
+ * Opens Post A (or the line panel) with the check due and answers it:
+ * 'correct' picks the key, 'wrong' the first distractor. Resolves when
+ * the attempt is recorded.
+ */
+export async function answerUplinkCheck(
+  page: Page,
+  choice: 'correct' | 'wrong',
+  site: 'uplinkA' | 'panel' = 'uplinkA',
+) {
+  const before = (await exteriorProbe(page)).m26.attempts.length;
+
+  await openSite(page, site);
+  await waitCheckStage(page, M26_UNDERSTANDING_QUESTION.stem);
+  await page.waitForTimeout(UNDERSTANDING_SETTLE_MS + 200);
+
+  const option =
+    choice === 'correct'
+      ? M26_UNDERSTANDING_QUESTION.options.find(
+          (candidate) => candidate.id === M26_UNDERSTANDING_QUESTION.key,
+        )!
+      : M26_UNDERSTANDING_QUESTION.options.find(
+          (candidate) => candidate.id !== M26_UNDERSTANDING_QUESTION.key,
+        )!;
+
+  await selectCardByLabel(page, option.label);
+  await page.waitForFunction(
+    (wanted) =>
+      ((window as unknown as { __exteriorProbe?: ExteriorProbe | null })
+        .__exteriorProbe?.m26.attempts.length ?? 0) > wanted,
+    before,
+    { timeout: 6000 },
+  );
+}
+
+/** The explanation stage is open after a wrong first answer: "Continue" → the recheck. */
+export async function continueUplinkExplanation(page: Page) {
+  await waitCheckStage(page, M26_UNDERSTANDING_QUESTION.explanation);
+  await page.waitForTimeout(UNDERSTANDING_SETTLE_MS + 200);
+  await selectCardByLabel(page, 'Continue');
+  await waitCheckStage(page, M26_UNDERSTANDING_QUESTION.stem);
+}
+
+/** "Finish at the uplink" at Post A inside the continuation (the explicit exit). */
+export async function finishAtUplink(page: Page) {
   await openSite(page, 'uplinkA');
-  await selectPromptOption(page, 2);
+  await selectCardByLabel(page, 'Finish at the uplink');
   await page.waitForFunction(
     () =>
       (window as unknown as { __exteriorProbe?: ExteriorProbe | null })
-        .__exteriorProbe?.m26.disconnect_acknowledged === true,
+        .__exteriorProbe?.m26.window === 'closed',
     undefined,
     { timeout: 6000 },
+  );
+}
+
+/** Waits for a continuation's focused cap to close its window. */
+export async function waitContinuationClosed(
+  page: Page,
+  item: 'm24' | 'm26',
+  timeout = 40_000,
+) {
+  await page.waitForFunction(
+    (wanted) =>
+      (window as unknown as { __exteriorProbe?: ExteriorProbe | null })
+        .__exteriorProbe?.[wanted as 'm24' | 'm26'].window === 'closed',
+    item,
+    { timeout },
   );
 }

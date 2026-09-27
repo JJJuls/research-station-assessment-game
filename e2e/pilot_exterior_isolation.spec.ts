@@ -112,7 +112,7 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
     expect(await lastFeedback(page)).toContain('rig panel');
     expect((await faProbe(page)).windows.m24_open).toBe(false);
     expect(
-      (await eventsByPrefix(page, 'proto_m24_magnet_utility_')).filter(
+      (await eventsByPrefix(page, 'proto_m24_rig_')).filter(
         (e) => !e.event_type.endsWith('_presented'),
       ),
     ).toHaveLength(0);
@@ -132,7 +132,7 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
     await transmitAt(page, 'uplinkA');
     await waitDisconnect(page);
     expect((await exteriorProbe(page)).m26.knowledge).toBe(
-      'disconnected_unacknowledged',
+      'disconnected_untested',
     );
     expect((await exteriorProbe(page)).m24.knowledge).toBe('not_depleted');
     // M26's disconnect knowledge is its own: nothing on the M24 register.
@@ -140,7 +140,7 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
       (await validityRecord(page, OPPORTUNITY.m26)).prior_exposure,
     ).toEqual([]);
     expect(
-      (await eventsByPrefix(page, 'proto_m26_channel_')).every(
+      (await eventsByPrefix(page, 'proto_m26_uplink_')).every(
         (e) => e.metadata?.measure_id === 'M26',
       ),
     ).toBe(true);
@@ -183,7 +183,7 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
     expect(await itemStatus(page, 'M20')).toBe('pending');
     expect(await itemStatus(page, 'M23')).toBe('completed'); // stopped observation
     expect(await itemStatus(page, 'M24')).toBe('censored'); // never depleted (validity: missing)
-    expect(await itemStatus(page, 'M26')).toBe('invalid'); // not acknowledged
+    expect(await itemStatus(page, 'M26')).toBe('invalid'); // check never taken (knowledge unverified)
     expect((await validityRecord(page, OPPORTUNITY.m24)).invalid_reason).toBe(
       'censored',
     );

@@ -12,7 +12,9 @@ import './m12';
 import './m17';
 import './m21';
 import './m22';
+import './m24';
 import './m25';
+import './m26';
 
 export * from './extract';
 export * from './types';

@@ -2315,7 +2315,293 @@ or exit and a discouragement rating per report`.
   their meaning), `ScoringManager`, `docs/research/**`,
   `docs/scientific/**`, package files, tool configs, settings; every
   existing return-shift helper keeps its option indices.
-- **Commit:** one local commit (hash recorded at the start of U12);
+- **Commit:** one local commit (`7e05e61`);
   nothing pushed, merged, tagged, deployed or deleted. Next unit: U12
   M24/M26 (with the deferred M25 reload check and the M24/M26 integration
   checks).
+
+## U12 — M24 / M26 knowledge boundary (expected-outcome test, 30 s focused continuation, explicit exits) + the deferred M25 checks
+
+- **Unit id:** U12 (development order: after U11 M22; before U13 M02).
+- **Scope:** replace the acknowledgement click as the knowledge marker of
+  BOTH inappropriate-persistence assays in the Recovery Yard with the
+  register's expected-outcome test — one question about what another
+  unchanged act will produce, one neutral explanation on a first wrong
+  answer, one equivalent recheck (option order changed), the first-pass
+  and post-explanation passes stored apart (`pass_first` /
+  `pass_after_explanation` / `fail` / `unknown`; an acknowledgement
+  never passes) — and open, after a pass, a 30 s FOCUSED continuation
+  window in which every act is classified: M24 another rig cycle
+  (post-knowledge cast, the first included), the sorting bench (the
+  useful alternative), "Finish at the rig" (the explicit exit), the cap;
+  M26 another Post A transmission (post-knowledge retry, the first
+  included — the v2 first-probe exclusion is retired), Post B (the
+  switch), "Finish at the uplink" (the exit), the cap. Pre-knowledge acts
+  (after the depletion / disconnect and before a pass, or after a fail)
+  are preserved as the declared `*_unqualified_*` companions, never a
+  post-knowledge score. The standardised M24 cycle (the finite,
+  counterbalanced deck; timing as motor telemetry only) and the scripted
+  M26 disconnect are kept as they are. Deferred from U4: the M25 belief
+  gate is verified end-to-end against the REPAIRED M24 / M26 windows
+  (the windows remain the closure signal — the reader in
+  `m25Repetition.ts` is not touched) and the browser reload check of the
+  field sensor post is attempted (recorded as a block if the environment
+  cannot restore the yard after a reload).
+- **Allowed files:** `src/pilot/exterior/outcomeUnderstanding.ts` (new
+  pure shared test model), `src/pilot/exterior/m24MagnetRigModel.ts`
+  (rewritten), `src/pilot/exterior/m26ChannelModel.ts` (rewritten),
+  `src/pilot/exterior/exteriorEpisodeModel.ts` (families),
+  `src/pilot/windows/exteriorWindows.ts` (the M24 / M26 blocks, closures,
+  probe), `src/scenes/ExteriorRecoveryYardScene.ts` (rig / uplink prompts,
+  test stages, ticks, exits, chips), `src/world/interactionRegistry.ts`
+  (window ids), `src/measurement/registerV3.ts` (M24 / M26 v3 routes),
+  `src/measurement/features/m24.ts` (new), `src/measurement/features/m26.ts`
+  (new), `src/measurement/features/index.ts`; `e2e/m24_m26_boundary.spec.ts`
+  (new pure), `e2e/m24_m26_boundary_route.spec.ts` (new browser),
+  `e2e/exteriorHelpers.ts`, `e2e/pilot_yard.spec.ts`,
+  `e2e/pilot_exterior_models.spec.ts`, `e2e/pilot_exterior_isolation.spec.ts`,
+  `e2e/pilot_exterior_capture.spec.ts`, `e2e/m25_repetition_route.spec.ts`,
+  `e2e/pilot_coverage.spec.ts` and `e2e/m26_protocol_foundation.spec.ts`
+  (only if a derived list or count changes);
+  `docs/verification/station-080-m26/**`,
+  `docs/game/rooms/11-exterior-recovery-yard.md` (the M24 / M26 rows only —
+  the stale M05 row stays with U24).
+- **Prohibited areas:** common, plus M05 / M08 / M19 / M20 / M23 / M25 code
+  (`m25Repetition.ts` and `m25RepetitionModel.ts` untouched), `protocol.ts`
+  (the caps are read), `magnetDeck.ts` / `magnetWinchController.ts` (the
+  standardised cycle), `fieldActions/opportunities/*` (legacy),
+  `zoneSites.ts`, `WorkSurfaceScene.ts`, the v2 ledger.
+- **Entry state:** HEAD `7e05e61` (U11), clean tree, branch
+  `fable-professional-world-rescue-v2`.
+- **Success behaviour:** after the depletion (M24) / the demonstrated
+  disconnect (M26) the site offers the check; a right first answer passes
+  (`pass_first`); a wrong one shows the one explanation and the recheck;
+  a right recheck passes (`pass_after_explanation`); a wrong recheck
+  fails (`fail`); a pass opens the 30 s focused continuation (paused on
+  leaving the yard and on focus loss / hidden tab); the acts inside it are
+  counted and classified; the window closes at the explicit exit, the cap,
+  Noor's shift end or the review; the extractors reproduce the count, the
+  sensitivity count and the companion from the raw families; the M25
+  question is asked at Vale's check-in once the shift ended and both
+  windows are closed.
+- **Failure/recovery:** a press inside 400 ms of a question stage's
+  presentation is refused and the stage re-presented (no pre-focused card
+  is ever recorded by a carried press); leaving the yard pauses the window
+  (a departure); the shift end closes a passed window as it stands
+  (`route_departure`) and closes an untested or failed one with its
+  honest disposition; the review censors an open one and marks a
+  never-opened one absent; a technical failure closes
+  `technical_failure`.
+- **Telemetry boundary:** M24 family `proto_m24_rig_*` (candidate;
+  opportunity `proto_m24_rig_continuation`, window `m24_rig_w1`), M26
+  family `proto_m26_uplink_*` (candidate; opportunity
+  `proto_m26_uplink_continuation`, window `m26_uplink_w1`); suffixes
+  `presented`, `opportunity_opened`, `cycle` / `transmission`,
+  `depletion_reached` / `disconnect_demonstrated`, `depletion_shown` /
+  `evidence_viewed`, `understanding_presented`, `understanding_answered`,
+  `understanding_refused`, `explanation_shown`, `continuation_opened`,
+  `postknowledge_cast` / `postknowledge_retry`, `alternative_used`,
+  `exit`, `cap_reached`, `departed`, `window_closed`,
+  `technical_failure`; `knowledge_status` on every act with the question
+  id, response, key, explanation exposure and attempt index (addendum §2);
+  the v2 `proto_m24_magnet_utility_*` and `proto_m26_channel_*` families
+  keep their v2 meaning in the frozen ledger and are retired from the
+  route; no canonical name or approved formula invented.
+- **Scientific acceptance:** knowledge is established only by a passed
+  expected-outcome test; first-pass and post-explanation passes stored
+  apart; the count includes the first post-knowledge act and the
+  predeclared sensitivity count is max(n − 1, 0); a fail or an untested
+  boundary ⇒ primary null with the behaviour retained as unqualified; the
+  window is focused time under the pinned 30 s cap; switch, exit and cap
+  are kept distinct; nothing tells the participant what to do after the
+  pass; no combination with M25.
+- **Gameplay acceptance:** the rig, bench, posts and panel keep their
+  stations and interaction keys; the test runs in the existing prompt
+  stages (keyboard / pointer parity, fixed option order per form); the
+  rig cycle and the transmit action are unchanged; every existing yard
+  helper keeps its option indices except where this unit records the
+  change; legible at 800×600.
+- **Required tests:** `npm.cmd run lint:tsc`, `npm.cmd run build`,
+  ESLint + Prettier (`endOfLine: auto`) on touched files, pure
+  `m24_m26_boundary` + `pilot_exterior_models` + `m25_repetition` +
+  `m26_protocol_foundation` + `pilot_coverage` + `pilot_closure_models` +
+  `pilot_route_model` + `evidence_ledger`; browser
+  `m24_m26_boundary_route` (the yard: M24 pass-first → casts / bench /
+  exit; M26 fail-then-pass → retries / switch / cap; the shift end; the
+  M25 question at the check-in) and `pilot_yard` test 1 / 2 updated;
+  the M25 reload check attempted in the browser.
+- **Required screenshots:** the rig's check stage and the uplink's
+  explanation stage at 800×600 (evidence, not committed).
+- **Stop conditions:** common.
+- **Model:** Fable; reviewer stand-ins as declared in U6.
+- **Commit expectation:** `feat(m24,m26): expected-outcome knowledge test, 30 s focused continuation and explicit exits`.
+
+- **Interruption and resumption:** the unit was interrupted by a usage
+  limit after the implementation, the documentation draft and the first
+  browser runs; the owner kept a backup stash
+  (`backup-U12-M24-M26-before-review-2026-09-24`, never applied, popped
+  or modified in this unit) and asked for a continuation from the working
+  tree. On resumption the tree was identical to that backup (tracked diff
+  empty; the five untracked files byte-identical) and nothing was
+  recreated. The earlier `pilot_yard` run had left only an exit line and
+  no pass counts, so it was treated as unverified and rerun.
+- **Reviewer availability:** as U6–U11 — the `scientific-reviewer` and
+  `gameplay-reviewer` definitions run verbatim through read-only Opus
+  stand-ins; the `test-reviewer` scope covered by the implementer's
+  recorded runs below. The first launch of both reviewers ended on the
+  usage limit with no findings; both were relaunched and returned full
+  reports (round 1); after the round-1 fixes BOTH were run again against
+  the then-current tree (the rerun), and their findings were addressed as
+  below.
+- **Review round 1 (read-only):** scientific: concerns found — 2 high /
+  6 medium / 8 low + 10 owner questions; gameplay: usable with noted
+  friction — 2 high / 6 medium / 7 low. Material findings and their
+  resolution:
+  - A throw inside the per-frame tick would stop the game loop (G-1
+    high): fixed — `safeTick` records the technical failure and never
+    rethrows.
+  - A transmission resolving after the window closed, or a stale
+    Transmit card after the cap, failed silently (G-2 high): fixed — the
+    neutral line "The uplink log is closed for this shift.".
+  - The beacon moved on the moment a continuation opened (S-H1): fixed —
+    the rig's and the uplink's "done" is the closed window or the failed
+    check; what the beacon should do during a continuation is the
+    owner's (§5.128).
+  - Post A's Transmit is the pre-focused first card and had no settle
+    guard (S-H2): fixed — a press within 400 ms of the prompt's opening
+    inside the continuation is refused and logged (`press_refused`,
+    `prompt_settling`).
+  - The explanation could be skipped by a carried press and its logged
+    time was the dismissal (S-M4, G-4): fixed — Continue is settle-guarded
+    (`understanding_refused`, `control: continue`);
+    `explanation_presented_at_ms`, `explanation_dismissed_at_ms` and
+    `explanation_reading_ms` are stored.
+  - The explanations named the alternative, seen only by the
+    post-explanation group (S-M3): fixed — both sentences removed.
+  - A reopen reset the window's comprehension to pending (G-6): fixed —
+    it follows the check's status.
+  - The cap flag mislabelled a Post B transmission as a retry (G-7):
+    fixed — the transmission in flight is tracked per post.
+  - The capture spec pressed Escape into the pause menu (G-8): fixed — it
+    answers the open panel check; `transmitAt` selects the Transmit card
+    by label and waits past the settle window (G-10).
+  - A cycle started before the check could resolve after the pass (S-L6):
+    fixed — the rig check is not built while a cycle runs.
+  - The knowledge stamp lacked the key and the response (S-L4): fixed;
+    `record_agrees` was never acted on (S-L5): fixed — a disagreeing
+    check record is a technical failure on all three rows; an untested
+    boundary shares `interrupted` with the reload case (S-M6): the null
+    rows now carry the structured `boundary` / `window_detail`
+    components, the disposition itself is the owner's (§5.134).
+- **Review rerun (read-only, on the tree after the round-1 fixes):**
+  scientific: concerns found — every round-1 fix confirmed present; 1
+  high + 5 medium + 10 low fixable inside the unit, 1 high + 1 medium + 2
+  low for the owner, 14 documentation mismatches, 10 owner questions;
+  gameplay: usable with noted friction — every round-1 fix confirmed
+  (one "too strict", one "silent"); 1 high / 3 medium / 7 low + 7
+  measurement flags. Material findings and their resolution:
+  - The rig check was skipped when the panel was opened in the 1.2 s
+    cooldown after a cycle (G-D2): fixed — the check is built once the
+    cycle has resolved (idle or cooldown).
+  - A re-presented or chained stage dropped the station's own text, so
+    the recheck lacked the evidence of the first attempt (G-D3, S-L4):
+    fixed — every attempt stage carries the statement / status / notice
+    above the stem.
+  - A refused Post A Transmit closed the prompt silently (G-D4, S-L1):
+    fixed — the post's options are shown again in place.
+  - Null rows closed at the shift end exported `closure_reason:
+completed` (S-M1): fixed — `route_departure`; pure-tested.
+  - A switch in flight at the cap vanished (S-M2, G-D6): fixed —
+    `switch_in_progress_at_cap` (Post B) and
+    `alternative_in_progress_at_cap` (the bench) are recorded.
+  - The explanations still said the futile act "can still run" and used
+    deck vocabulary (S-M3, G-D11): fixed — both clauses removed; the
+    wording stays new and unpinned (§5.120).
+  - The continuation's entry state varied invisibly (S-M4): fixed —
+    `reports_delivered_at_open` and `report_pending_at_close` are in the
+    raw components and the primary's components.
+  - An M26 attempt begun before the disconnect could be classified after
+    it (S-M5, G-D5): fixed — the scripted disconnect waits for a Post A
+    transmission in flight, so §5.119's "cannot arise" now holds.
+  - Walking away inside a continuation left no record (S-H2): fixed as
+    telemetry — `stepped_away`, `continuation_paused` /
+    `continuation_resumed`; what leaving MEANS is the owner's (§5.129).
+  - The suffix lists omitted emitted events (S-L2, G-D7): fixed; the
+    check events carry `source` and `presentation_number` (S-L3, G-D8);
+    a technical failure stops and releases the continuation's clock
+    (S-L8); a part-way check is `check_incomplete`, the sensitivity null
+    row carries the components, the `declined` reason names the opened
+    panel (S-L7); the stale acknowledgement comment corrected (S-L9); the
+    capture spec finishes the rig before moving on (G-D10).
+  - The exit and the cap close BOTH posts, so a report the brief listed
+    can stay undelivered (G-D1 high, S-M2): NOT changed — what the exit
+    ends is a procedure decision; the fact is now on the record
+    (`report_pending_at_close`) and the question is the owner's
+    (§5.130).
+  - Owner questions, no change: the beacon during a continuation
+    (§5.128); leaving and pauses (§5.129); the uplink after closure
+    (§5.130); the M26 entry state (§5.131); self-selection into the
+    primary and the undeclinable check (§5.132); the strength and wording
+    of the check — the key echoes the statement above it, fixed key
+    positions, "before you go on", the "Check recorded" line (§5.133);
+    the disposition of an untested boundary (§5.134); settle guards on
+    Post B and the bench (§5.135); the cap's feedback lines (§5.136);
+    "Transmit: carrier check" counted as a retry (§5.126 extended).
+    Documented, no change: pointer answers are logged as keyboard (the
+    prompt API passes no input mode, §5.35); `latency_ms` runs from the
+    last presentation.
+- **Review round 3:** not run — the rerun's fixes are bounded to the
+  cited findings and covered by the extended pure specs and the rerun
+  browser specs; a fresh review of them is folded into U24 (precedent
+  U2-R … U11).
+- **Verification results (final tree):** `npm.cmd run lint:tsc` 0 ·
+  `npm.cmd run build` 0 · ESLint + Prettier (`endOfLine: auto`) on
+  `src` and `e2e` 0 and on every touched doc · pure `m24_m26_boundary`
+  (5) + `pilot_exterior_models` (12, tests 7–12 rewritten) +
+  `m25_repetition` + `m26_protocol_foundation` + `pilot_coverage` +
+  `pilot_closure_models` + `pilot_route_model` + `evidence_ledger` +
+  `world_v1_registry` + `field_actions_models` 131/131 · browser (final tree) `m24_m26_boundary_route` 1/1 (4.3 min: the rig to a right first answer, two casts, the bench, Finish; the line-panel check to a wrong answer, the explanation, the rotated recheck, two retries, Post B, the cap; the M25 loops, the shift end, Vale's question) · browser `pilot_exterior_isolation` 2/2 (3.1 min) · browser `pilot_yard` 3/3 — tests 2 and 3 green in the full run (16.6 min), test 1 green in its own rerun (5.4 min) after two stale inherited assertions were corrected (the beacon and the objective line after the rig / the uplink name the support console); earlier runs: the first route run failed only on the implementer's own early-press timing and on the reload test, the first full yard run stopped test 1 at the inherited beacon assertion, and one launch failed before starting on the `npx` launcher (a path with a space; rerun through the local binary) · screenshots `m24-check-800x600.png` (the statement, the stem, three cards, the key second), `m26-explanation-800x600.png` (the explanation, one Continue card) and `m26-panel-check-800x600.png` inspected and copied to the scratchpad, not committed ·
+  `pilot_exterior_capture` updated but not run in this unit (it writes
+  into the docs screenshot folders) · `verify-unit` PASS ·
+  `git diff --check` clean.
+- **Deferred M25 checks (U4):** the integration check is DONE — the route
+  spec runs the rig and the uplink through the repaired windows, the
+  sensor post's three loops, Noor's shift end and Vale's check-in, and
+  the question is presented only once both windows are recorded closed
+  (`m25Repetition.ts` untouched). The browser reload check was attempted
+  and is a recorded BLOCK: after `page.reload()` the journey driver
+  cannot replay the dock tutorial ("dock tutorial did not complete after
+  3 attempts" — its `scene_start` counts include the earlier page load),
+  so the yard cannot be reached again in one browser session; the test
+  was removed from the spec rather than left failing; the prior-load
+  guard stays covered by the pure `m25_repetition` spec; carried to U24.
+- **Deviations:** the check is the station's prompt itself while it is
+  due (the rig panel; Post A and the line panel) and cannot be declined
+  once the station is opened (a prompt closes only on a selection; ESC
+  opens the pause menu); the telemetry boundary gained
+  `explanation_dismissed`, `press_refused`, `stepped_away`,
+  `continuation_paused` and `continuation_resumed`; the closure event's
+  `exit_state` is `stopped` for an explicit Finish or Noor's shift end
+  and `completed` for the cap; the registry's window labels for the rig /
+  bench / posts / panel were updated to the v3 window ids; the inherited
+  beacon assertion in `pilot_yard` test 1 (Post A expected after the rig
+  although the support console has been the fifth listed job since
+  U2-R), recorded under U6 and planned for U24, was corrected HERE
+  because it stopped test 1 before its M26 half; the M25 reload test was
+  removed (above); `CLAUDE_UNIT_ALLOWLIST` enforced by discipline +
+  `verify-unit`; reviewer stand-ins as declared; the execution
+  specification file remains missing.
+- **Not changed:** M05 / M08 / M19 / M20 / M23 / M25 code
+  (`m25Repetition.ts` reads the M24 / M26 windows exactly as before —
+  the windows remain the closure signal), `protocol.ts` (the caps and the
+  knowledge vocabulary are read), `magnetDeck.ts` /
+  `magnetWinchController.ts` (the standardised cycle), the legacy
+  field-action adapters, `zoneSites.ts`, `WorkSurfaceScene.ts`, the v2
+  ledger (`proto_m24_magnet_utility_*` / `proto_m26_channel_*` keep
+  their v2 meaning), `ScoringManager`, `docs/research/**`,
+  `docs/scientific/**`, package files, tool configs, settings; every
+  existing yard helper keeps its option indices except the two
+  acknowledgement drivers, replaced by the check drivers.
+- **Commit:** one local commit (hash recorded at the start of U13);
+  nothing pushed, merged, tagged, deployed or deleted; the run stops here
+  on the owner's instruction — U13 (M02) is not started.

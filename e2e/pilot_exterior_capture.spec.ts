@@ -14,8 +14,8 @@ import { expect, type Page, test } from '@playwright/test';
 
 import {
   acceptMast,
-  acknowledgeDepletion,
-  acknowledgeLineAtPostA,
+  answerOpenCheck,
+  answerRigCheck,
   beginExcavation,
   captureErrors,
   couplingAct,
@@ -26,6 +26,7 @@ import {
   exteriorProbe,
   faceCell,
   faProbe,
+  finishAtRig,
   finishOutside,
   openSite,
   powerUpUplink,
@@ -148,7 +149,10 @@ test('exterior recovery — thirteen participant-view frames', async ({
 
   expect((await faProbe(page)).magnet.depleted).toBe(true);
   await shot(page, '18-m24-depleted', 200);
-  await acknowledgeDepletion(page);
+  await answerRigCheck(page, 'correct');
+  // Close the rig's continuation here, so its cap line never lands in a
+  // later frame.
+  await finishAtRig(page);
 
   // 19 — M26 evidence: severed conduit, LINE A ✕ OPEN chips, panel notice.
   await powerUpUplink(page);
@@ -156,12 +160,8 @@ test('exterior recovery — thirteen participant-view frames', async ({
   await waitDisconnect(page);
   await openSite(page, 'panel');
   await shot(page, '19-m26-disconnect-evidence');
-  await selectPromptOption(page, 1); // acknowledge at the panel
-  await page.waitForTimeout(300);
-
-  if (!(await exteriorProbe(page)).m26.disconnect_acknowledged) {
-    await acknowledgeLineAtPostA(page);
-  }
+  // Unit 12: the open panel IS the expected-outcome check (a right answer).
+  await answerOpenCheck(page, 'M26', 'correct');
 
   await transmitAt(page, 'uplinkB');
 

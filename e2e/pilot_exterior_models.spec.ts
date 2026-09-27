@@ -33,6 +33,7 @@ import {
   categorizeSignal,
   computeSignalStrength,
 } from '../src/fieldActions/signalModel';
+import { registerEntry } from '../src/measurement/registerV3';
 import { EVIDENCE_LEDGER, ledgerEntry } from '../src/pilot/evidenceLedger';
 import {
   createExteriorEpisode,
@@ -97,7 +98,7 @@ import {
   M24_FAMILY,
   M24_OPPORTUNITY_ID,
   M24_WINDOW_ID,
-  m24Acknowledge,
+  m24AnswerTest,
   m24Close,
   m24ClosureDisposition,
   m24Enter,
@@ -105,20 +106,23 @@ import {
   m24NoteAlternative,
   m24NoteCycle,
   m24NoteDepletionShown,
+  m24PresentTest,
   m24RawComponents,
 } from '../src/pilot/exterior/m24MagnetRigModel';
 import {
   createM26State,
   M26_FAMILY,
   M26_OPPORTUNITY_ID,
+  M26_UNDERSTANDING_QUESTION,
   M26_WINDOW_ID,
-  m26Acknowledge,
+  m26AnswerTest,
   m26Close,
   m26ClosureDisposition,
   m26Demonstrate,
   m26DisconnectDue,
   m26Enter,
   m26Knowledge,
+  m26PresentTest,
   m26RawComponents,
   m26Transmit,
   m26ViewEvidence,
@@ -666,7 +670,7 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     expect(state.empty_outcomes_pre_depletion).toBe(2);
   });
 
-  test('8. no reward after depletion: every later pull is empty by construction and is classified pre-/post-acknowledgement', () => {
+  test('8. no reward after depletion: every later pull is empty by construction and is classified pre-knowledge until the check is PASSED (Unit 12) — an acknowledgement no longer exists', () => {
     ensureMagnetDeckForm('A');
 
     const state = createM24State('deck_form_A');
@@ -678,55 +682,64 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     }
 
     expect(magnetDeckDepleted()).toBe(true);
-    expect(m24KnowledgeState(state)).toBe('depleted_unacknowledged');
+    expect(m24KnowledgeState(state)).toBe('depleted_untested');
 
-    // Post-depletion pulls: always empty, always identical.
+    // Post-depletion pulls: always empty, always identical; pre-knowledge
+    // until the expected-outcome check is passed.
     for (let i = 0; i < 4; i++) {
       const record = pull({});
 
       expect(record.item_id).toBeNull();
       expect(record.post_depletion).toBe(true);
-      expect(m24NoteCycle(state, record, 10_000 + i * 1000).post_ack).toBe(
-        false,
-      );
+      expect(
+        m24NoteCycle(state, record, 10_000 + i * 1000).classification,
+      ).toBe('pre_knowledge');
     }
 
-    expect(state.postdepletion_casts_pre_ack).toBe(4);
-    expect(m24Acknowledge(state, 20_000)).toBe(false); // never shown yet
+    expect(state.casts_pre_knowledge).toBe(4);
+    // The check is due only once the statement has been displayed.
+    expect(m24PresentTest(state, 'attempt_1', 20_000)).toBe(false);
     expect(m24NoteDepletionShown(state, 20_100)).toBe(true);
-    expect(m24Acknowledge(state, 20_200)).toBe(true);
-    expect(m24KnowledgeState(state)).toBe('depleted_acknowledged');
+    expect(m24PresentTest(state, 'attempt_1', 20_200)).toBe(true);
+    expect(m24AnswerTest(state, 'nothing', 20_300).kind).toBe('refused'); // settling
+    expect(m24AnswerTest(state, 'nothing', 20_700)).toMatchObject({
+      kind: 'answered',
+      status: 'pass_first',
+    });
+    expect(m24KnowledgeState(state)).toBe('depleted_passed');
 
     for (let i = 0; i < 3; i++) {
-      expect(m24NoteCycle(state, pull({}), 21_000 + i * 1000).post_ack).toBe(
-        true,
-      );
+      expect(
+        m24NoteCycle(state, pull({}), 21_000 + i * 1000).classification,
+      ).toBe('postknowledge');
     }
 
-    expect(m24NoteAlternative(state, 25_000)).toBe(true);
+    expect(m24NoteAlternative(state, 25_000)).toBe('postknowledge');
 
     const raw = m24RawComponents(state);
 
     expect(raw.depletion_reached).toBe(true);
-    expect(raw.depletion_acknowledged).toBe(true);
+    expect(raw.knowledge_status).toBe('pass_first');
     expect(raw.postdepletion_casts).toBe(7);
-    expect(raw.postdepletion_casts_pre_ack).toBe(4);
-    expect(raw.identical_postdepletion_cycles).toBe(3);
-    expect(raw.alternative_opened).toBe(true);
-    expect(Object.keys(raw)).toEqual(
-      expect.arrayContaining(ledgerEntry('M24').candidate_raw_variables),
+    expect(raw.casts_pre_knowledge).toBe(4);
+    expect(raw.postknowledge_casts).toBe(3);
+    expect(raw.postknowledge_casts_minus_first).toBe(2);
+    expect(raw.alternative_used).toBe(true);
+    expect(m24Close(state, 'ended_shift_outside', 26_000)).toBe(true);
+    expect(raw.continuation_opened).toBe(true);
+    expect(m24RawComponents(state).continuation_closure).toBe(
+      'route_departure',
     );
-    expect(m24Close(state, 'ended_shift_outside')).toBe(true);
     expect(m24ClosureDisposition(state)).toEqual({ kind: 'completed' });
   });
 
-  test('9. M26 knowledge/exposure gate: pre-knowledge attempts are never post-knowledge, the first post-ack probe is excluded, Post B is the recorded alternative', () => {
+  test('9. M26 knowledge/exposure gate (Unit 12): attempts before the passed check are pre-knowledge, the FIRST post-knowledge retry is included, Post B inside the continuation is the recorded switch', () => {
     const state = createM26State();
 
     expect(() => m26Transmit(state, 'A', 0)).toThrow();
     m26Enter(state, 0);
     expect(m26Demonstrate(state, 10)).toBe(false); // no success yet
-    expect(m26Acknowledge(state, 10)).toBe(false);
+    expect(m26PresentTest(state, 'attempt_1', 10)).toBe(false); // no disconnect yet
 
     const first = m26Transmit(state, 'A', 1000);
 
@@ -739,20 +752,54 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     expect(m26DisconnectDue(state)).toBe(true);
     expect(m26Demonstrate(state, 2400)).toBe(true);
     expect(m26Demonstrate(state, 2500)).toBe(false);
-    expect(m26Knowledge(state)).toBe('disconnected_unacknowledged');
+    expect(m26Knowledge(state)).toBe('disconnected_untested');
 
-    // Attempts before the acknowledgement are pre-knowledge, never continuation.
+    // Attempts before the check are pre-knowledge, never continuation.
     expect(m26Transmit(state, 'A', 3000).classification).toBe('pre_knowledge');
     expect(m26Transmit(state, 'A', 3500).classification).toBe('pre_knowledge');
-    expect(state.postknowledge_transmissions).toBe(0);
+    expect(state.postknowledge_retries).toBe(0);
 
     expect(m26ViewEvidence(state, 4000, 'line_status_panel')).toBe(true);
-    expect(m26Acknowledge(state, 4100)).toBe(true);
-    expect(m26Transmit(state, 'A', 5000).classification).toBe(
-      'confirmation_probe',
-    );
-    expect(m26Transmit(state, 'A', 5500).classification).toBe('postknowledge');
+    // A wrong first answer → the explanation → the recheck (option order
+    // changed) → a right answer passes after the explanation.
+    expect(m26PresentTest(state, 'attempt_1', 4100)).toBe(true);
+    expect(m26AnswerTest(state, 'reaches_delayed', 4600)).toMatchObject({
+      kind: 'answered',
+      status: 'unknown',
+      explanation_due: true,
+    });
+    expect(m26Knowledge(state)).toBe('disconnected_testing');
+    expect(m26PresentTest(state, 'attempt_2', 4700)).toBe(false); // the explanation first
+    expect(m26PresentTest(state, 'explanation', 4700)).toBe(true);
+    expect(state.understanding.explanation_dismissed_at_ms).toBeNull();
+    expect(m26PresentTest(state, 'attempt_2', 4800)).toBe(false); // not dismissed yet
+    state.understanding.stage = 'explanation';
+    expect(
+      m26AnswerTest(state, M26_UNDERSTANDING_QUESTION.key, 5_200).kind,
+    ).toBe('refused'); // no attempt stage open
+    expect(m26PresentTest(state, 'attempt_2', 5_300)).toBe(false);
+
+    const explained = (() => {
+      // The host dismisses the explanation ("Continue").
+      state.understanding.explanation_dismissed_at_ms = 5_300;
+      state.understanding.stage = null;
+      state.understanding.stage_presented_at_ms = null;
+
+      return true;
+    })();
+
+    expect(explained).toBe(true);
+    expect(m26PresentTest(state, 'attempt_2', 5_400)).toBe(true);
+    expect(m26AnswerTest(state, 'not_received', 5_900)).toMatchObject({
+      kind: 'answered',
+      status: 'pass_after_explanation',
+    });
+    expect(m26Knowledge(state)).toBe('disconnected_passed');
+
+    // Inside the continuation: the first retry is INCLUDED.
     expect(m26Transmit(state, 'A', 6000).classification).toBe('postknowledge');
+    expect(m26Transmit(state, 'A', 6500).classification).toBe('postknowledge');
+    expect(state.postknowledge_retries).toBe(2);
 
     const alternative = m26Transmit(state, 'B', 7000);
 
@@ -762,21 +809,21 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
       delivered: true,
     });
     expect(state.alternative_used_ms).toBe(7000);
+    expect(state.alternative_used_postknowledge).toBe(1);
 
     const raw = m26RawComponents(state);
 
     expect(raw).toMatchObject({
-      disconnect_acknowledged: true,
-      confirmation_probe_excluded: true,
-      postknowledge_transmissions: 2,
+      disconnect_demonstrated: true,
+      knowledge_status: 'pass_after_explanation',
+      explanation_shown: true,
+      postknowledge_retries: 2,
+      postknowledge_retries_minus_first: 1,
       alternative_used: true,
       pre_knowledge_attempts: 2,
       all_reports_delivered: true,
     });
-    expect(Object.keys(raw)).toEqual(
-      expect.arrayContaining(ledgerEntry('M26').candidate_raw_variables),
-    );
-    expect(m26Close(state, 'ended_shift_outside')).toBe(true);
+    expect(m26Close(state, 'ended_shift_outside', 8000)).toBe(true);
     expect(m26ClosureDisposition(state)).toEqual({ kind: 'completed' });
   });
 
@@ -793,16 +840,25 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
         ],
       ],
       ['secondary', [...SECONDARY_FIELD_ACTION_EVENT_TYPES]],
+      ['foundation_m24', [...M24MU_EVENT_TYPES]],
       ['foundation_m26', [...M26DS_EVENT_TYPES]],
     ];
 
-    // The developer-lab foundation adapters for M23/M24 share the LEDGER
-    // prefixes by design (the ledger families were derived from them);
-    // they are reachable only from a developer scene (contaminated
-    // session) and never on the participant route. Recorded as an open
-    // naming decision; asserted here so the overlap is explicit.
+    // The developer-lab foundation adapter for M23 shares the LEDGER
+    // prefix by design (the ledger family was derived from it); it is
+    // reachable only from a developer scene (contaminated session) and
+    // never on the participant route. Recorded as an open naming
+    // decision; asserted here so the overlap is explicit. The M24
+    // foundation adapter shares the RETIRED v2 ledger prefix
+    // (`proto_m24_magnet_utility_`), which the v3 route (Unit 12,
+    // `proto_m24_rig_`) no longer uses — the two are disjoint.
     expect(M23FR_EVENT_TYPES.every((t) => t.startsWith(M23_FAMILY))).toBe(true);
-    expect(M24MU_EVENT_TYPES.every((t) => t.startsWith(M24_FAMILY))).toBe(true);
+    expect(
+      M24MU_EVENT_TYPES.every((t) =>
+        t.startsWith(ledgerEntry('M24').route.family_prefixes[0]!),
+      ),
+    ).toBe(true);
+    expect(M24MU_EVENT_TYPES.some((t) => t.startsWith(M24_FAMILY))).toBe(false);
 
     for (const [nameA, typesA] of all) {
       for (const [nameB, typesB] of all) {
@@ -824,21 +880,37 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     expect(families.M24.some((t) => t.includes('transmission'))).toBe(false);
     expect(families.M26.some((t) => t.includes('cycle'))).toBe(false);
 
-    // Every prefix equals the frozen ledger's family prefix.
+    // M19 / M20 / M23 keep the frozen ledger's family prefix; M24 / M26
+    // (Unit 12) carry the v3 register's prefix, distinct from their
+    // retired v2 ledger families (which keep their v2 meaning).
     for (const [item, family] of Object.entries(EXTERIOR_FAMILIES)) {
-      expect(ledgerEntry(item as 'M19').route.family_prefixes).toEqual([
-        family,
-      ]);
+      if (item === 'M24' || item === 'M26') {
+        expect(registerEntry(item).route.family_prefixes).toEqual([family]);
+        expect(ledgerEntry(item).route.family_prefixes[0]).not.toBe(family);
+        expect(
+          family.startsWith(ledgerEntry(item).route.family_prefixes[0]!),
+        ).toBe(false);
+      } else {
+        expect(ledgerEntry(item as 'M19').route.family_prefixes).toEqual([
+          family,
+        ]);
+      }
     }
 
-    // The foundation M26 family (depleted search) is NOT the ledger family.
-    expect(ledgerEntry('M26').route.family_prefixes[0]).toBe(M26_FAMILY);
+    // The foundation M26 family (depleted search) is neither the v2 ledger
+    // family nor the v3 route family.
     expect(M26DS_EVENT_TYPES.some((t) => t.startsWith(M26_FAMILY))).toBe(false);
+    expect(
+      M26DS_EVENT_TYPES.some((t) =>
+        t.startsWith(ledgerEntry('M26').route.family_prefixes[0]!),
+      ),
+    ).toBe(false);
   });
 
   test('11. missing, invalid and technical failure stay distinct and never become a low value', () => {
     // M24: never depleted → missing; depleted but never shown → invalid;
-    // shown but not acknowledged → invalid; shown + acknowledged → complete.
+    // shown but the check never decided → invalid; check passed → complete
+    // (Unit 12: an acknowledgement no longer exists).
     ensureMagnetDeckForm('A');
 
     const never = createM24State('deck_form_A');
@@ -861,12 +933,14 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     m24NoteDepletionShown(never, 10);
     expect(m24ClosureDisposition(never)).toEqual({
       kind: 'invalid',
-      detail: 'depletion_not_acknowledged',
+      detail: 'understanding_not_tested',
     });
-    m24Acknowledge(never, 11);
+    m24PresentTest(never, 'attempt_1', 11);
+    m24AnswerTest(never, 'nothing', 1000);
     expect(m24ClosureDisposition(never)).toEqual({ kind: 'completed' });
 
-    // M26: no successful transmission → missing; disconnect without ack → invalid.
+    // M26: no successful transmission → missing; disconnect with the check
+    // never decided → invalid.
     const channel = createM26State();
 
     m26Enter(channel, 0);
@@ -878,7 +952,7 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
     m26Demonstrate(channel, 2);
     expect(m26ClosureDisposition(channel)).toEqual({
       kind: 'invalid',
-      detail: 'disconnect_not_acknowledged',
+      detail: 'understanding_not_tested',
     });
     expect(channel.first_success_channel).toBe('B');
 
@@ -968,37 +1042,40 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
       }
     }
 
-    // Identifiers equal the frozen ledger exactly.
+    // Identifiers equal the frozen ledger exactly for M19 / M20 / M23 and
+    // the v3 register exactly for M24 / M26 (Unit 12).
     expect([
       M19_OPPORTUNITY_ID,
       M20_OPPORTUNITY_ID,
       M23_OPPORTUNITY_ID,
-      M24_OPPORTUNITY_ID,
-      M26_OPPORTUNITY_ID,
     ]).toEqual(
-      ['M19', 'M20', 'M23', 'M24', 'M26'].map(
+      ['M19', 'M20', 'M23'].map(
         (item) => ledgerEntry(item as 'M19').route.opportunity_ids[0],
       ),
     );
-    expect([
-      M19_WINDOW_ID,
-      M23_WINDOW_ID,
-      M24_WINDOW_ID,
-      M26_WINDOW_ID,
-    ]).toEqual(
-      ['M19', 'M23', 'M24', 'M26'].map(
+    expect([M24_OPPORTUNITY_ID, M26_OPPORTUNITY_ID]).toEqual(
+      ['M24', 'M26'].map(
+        (item) => registerEntry(item as 'M24').route.opportunity_ids[0],
+      ),
+    );
+    expect([M19_WINDOW_ID, M23_WINDOW_ID]).toEqual(
+      ['M19', 'M23'].map(
         (item) => ledgerEntry(item as 'M19').route.windows[0].id,
       ),
     );
-    expect([
-      M19_FAMILY,
-      M20_FAMILY,
-      M23_FAMILY,
-      M24_FAMILY,
-      M26_FAMILY,
-    ]).toEqual(
-      ['M19', 'M20', 'M23', 'M24', 'M26'].map(
+    expect([M24_WINDOW_ID, M26_WINDOW_ID]).toEqual(
+      ['M24', 'M26'].map(
+        (item) => registerEntry(item as 'M24').route.windows[0]!.id,
+      ),
+    );
+    expect([M19_FAMILY, M20_FAMILY, M23_FAMILY]).toEqual(
+      ['M19', 'M20', 'M23'].map(
         (item) => ledgerEntry(item as 'M19').route.family_prefixes[0],
+      ),
+    );
+    expect([M24_FAMILY, M26_FAMILY]).toEqual(
+      ['M24', 'M26'].map(
+        (item) => registerEntry(item as 'M24').route.family_prefixes[0],
       ),
     );
     expect(

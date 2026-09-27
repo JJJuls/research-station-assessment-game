@@ -161,9 +161,10 @@ export function createExteriorEpisode(
  * A site is terminal for GUIDANCE only (objective line + beacon; never a
  * gate, never a register write): once the participant has ENTERED the
  * site's window, explicitly stepped away from its panel, or the window
- * closed. Guidance therefore never changes at an acknowledgement or a
- * depletion — the moment a post-knowledge behaviour is being observed
- * (scientific review, Unit 4).
+ * closed. Guidance therefore never changes at a depletion, a disconnect or
+ * a passed check — the moment a post-knowledge behaviour is being observed
+ * (scientific review, Unit 4; Unit 12: the acknowledgement no longer
+ * exists).
  */
 export function exteriorDismissSite(
   state: ExteriorEpisodeState,
