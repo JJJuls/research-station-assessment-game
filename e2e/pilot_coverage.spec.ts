@@ -295,7 +295,7 @@ test.describe('pilot coverage schedule (pure)', () => {
     expect(
       deriveItemCoverage(m03, [
         record({
-          opportunity_id: 'proto_m03_reset_a',
+          opportunity_id: 'proto_m03_tools_a',
           entered: true,
           completed: true,
           validity: 'valid',
@@ -305,13 +305,13 @@ test.describe('pilot coverage schedule (pure)', () => {
 
     const mixed = deriveItemCoverage(m03, [
       record({
-        opportunity_id: 'proto_m03_reset_a',
+        opportunity_id: 'proto_m03_tools_a',
         entered: true,
         completed: true,
         validity: 'valid',
       }),
       record({
-        opportunity_id: 'proto_m03_reset_b',
+        opportunity_id: 'proto_m03_tools_b',
         entered: true,
         censored: true,
         invalid_reason: 'censored',

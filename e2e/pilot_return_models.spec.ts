@@ -17,6 +17,7 @@ import { join } from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
+import { registerEntry } from '../src/measurement/registerV3';
 import { ledgerEntry } from '../src/pilot/evidenceLedger';
 import { EXTERIOR_FAMILIES } from '../src/pilot/exterior/exteriorEpisodeModel';
 import {
@@ -148,6 +149,8 @@ const RETURN_SOURCES = [
   'src/pilot/windows/m09MonitorWatch.ts',
   'src/pilot/windows/m10ComponentPromise.ts',
   'src/inventory/m03Reset.ts',
+  'src/pilot/windows/m03RestoreModel.ts',
+  'src/pilot/windows/m03ToolRestore.ts',
   'src/scenes/RecordsWorkshopScene.ts',
   'src/scenes/StationConcourseScene.ts',
 ];
@@ -157,7 +160,20 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
     const entry = ledgerEntry('M03');
     const row = RETURN_LINKED_WINDOWS.find((r) => r.item === 'M03')!;
 
-    expect(entry.route.opportunity_ids).toEqual(row.opportunityIds);
+    // Station 080 Unit 14: the route's two occasions carry the v3 register
+    // ids; the frozen v2 ledger ids stay with the legacy workstation.
+    expect(registerEntry('M03').route.opportunity_ids).toEqual(
+      row.opportunityIds,
+    );
+    expect(registerEntry('M03').route.windows.map((w) => w.id)).toEqual([
+      row.windows.start,
+      row.windows.end,
+    ]);
+    expect(registerEntry('M03').route.windows.map((w) => w.episode)).toEqual([
+      ...row.episodes,
+    ]);
+    expect(registerEntry('M03').route.family_prefixes).toEqual([row.family]);
+    expect(row.opportunityIds).not.toEqual(entry.route.opportunity_ids);
     expect(entry.route.windows.map((w) => w.id)).toEqual([
       M03_WINDOW_IDS.a,
       M03_WINDOW_IDS.b,

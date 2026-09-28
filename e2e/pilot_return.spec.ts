@@ -7,8 +7,8 @@
  *    antenna start: the ONE purposeful return (yard → laboratory →
  *    Concourse), the changed station status, M10 handover to Kai and the
  *    M09 gauge check 2 as separate acts, Vale's neutral check-in, the
- *    workshop return shift — M03 occasion 2 (Press B, one residual
- *    stored), M07 end to completion, the persisted M20 feed console
+ *    workshop return shift — M03 occasion 2 (Press B, one tool
+ *    restored), M07 end to completion, the persisted M20 feed console
  *    resumed and completed, M21 with a wrong-first application revised
  *    after a relevant restudy (unit 1) and a first-time success (unit 2),
  *    M22 with the standardised setback and a mismatched-tag
@@ -91,7 +91,7 @@ import {
 } from './returnHelpers';
 
 const RETURN_FAMILIES = [
-  'proto_m03_',
+  'proto_m03tools_',
   'proto_m07_calibration_',
   'proto_m09_watch_',
   'proto_m10_promise_',
@@ -222,7 +222,7 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
         .start_state,
     ).toBe('present');
 
-    // ——— M03 occasion 2: Press B, one residual stored, panel closed. ———
+    // ——— M03 occasion 2: Press B, one tool restored, panel closed. ———
     await pressBatchB(page, { store: 1, exposureMs: 2600 });
 
     const m03b = await validityRecord(page, OPPORTUNITY.m03b);
@@ -233,21 +233,25 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     expect(m03a.entered).toBe(false); // occasion A untouched by occasion B
 
     const m03Departure = (
-      await eventsByType(page, 'proto_m03_surface_state_at_departure')
+      await eventsByType(page, 'proto_m03tools_first_departure')
     ).find((e) => meta(e).occasion === 'o2')!;
 
-    expect(meta(m03Departure).window_id).toBe('m03_reset_o2');
+    expect(meta(m03Departure).window_id).toBe('m03_tools_o2');
     expect(meta(m03Departure).opportunity_id).toBe(OPPORTUNITY.m03b);
-    expect(meta(m03Departure).objects_restored).toBe(1);
-    expect(meta(m03Departure).homes_correct).toBe(1);
-    expect(meta(m03Departure).residual_total).toBe(5);
+    expect(meta(m03Departure).tools_restored).toBe(1);
+    expect(meta(m03Departure).tools_left).toBe(2);
+    expect(meta(m03Departure).tool_total).toBe(3);
     expect(meta(m03Departure).close_state).toBe('panel_closed');
     expect(meta(m03Departure).exposure_sufficient).toBe(true);
+    // Occasion A was listed with the restoration orders and never run:
+    // its only record is that presentation.
     expect(
-      (await eventsByPrefix(page, 'proto_m03_')).every(
-        (e) => meta(e).occasion === 'o2',
-      ),
-    ).toBe(true);
+      (await eventsByPrefix(page, 'proto_m03tools_'))
+        .filter((e) => meta(e).occasion !== 'o2')
+        .map((e) => e.event_type),
+    ).toEqual(['proto_m03tools_presented']);
+    // The retired v2 family never fires on the route.
+    expect(await eventsByPrefix(page, 'proto_m03_')).toEqual([]);
 
     // ——— M07 end: the bench resumes at stage 1 and runs to completion. ———
     const benchProbe = await calibrationReturn(page, 5);
@@ -633,15 +637,14 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
         expect(typeof m.opportunity_id, event.event_type).toBe('string');
         expect(typeof m.window_id, event.event_type).toBe('string');
 
-        // M03 rides the inventory module's own event shape (occasion +
-        // starting condition); the kit contract applies to the others.
-        if (family === 'proto_m03_') {
+        // Station 080 Unit 14: M03 rides the window kit like every other
+        // return family (its occasion is stamped beside).
+        if (family === 'proto_m03tools_') {
           expect(typeof m.occasion, event.event_type).toBe('string');
-          expect(typeof m.starting_condition, event.event_type).toBe('string');
-        } else {
-          expect(typeof m.validity_status, event.event_type).toBe('string');
-          expect(typeof m.input_mode, event.event_type).toBe('string');
         }
+
+        expect(typeof m.validity_status, event.event_type).toBe('string');
+        expect(typeof m.input_mode, event.event_type).toBe('string');
 
         expect(event.study_item_ids ?? undefined).toBeUndefined();
         expect(event.construct_id ?? undefined).toBeUndefined();
@@ -681,7 +684,7 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
         sum + Number((e.metadata as { active_ms?: number }).active_ms ?? 0),
       0,
     );
-    const m03Ms = Number(meta(m03Departure).exposure_ms ?? 0);
+    const m03Ms = Number(meta(m03Departure).focused_ms ?? 0);
     const m09Ms = Number(m09Raw.due_delta_2 ?? 0);
     const total = activeMs + m03Ms + m09Ms;
 
@@ -872,13 +875,13 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
 
     const m03b = await validityRecord(page, OPPORTUNITY.m03b);
     const departure = (
-      await eventsByType(page, 'proto_m03_surface_state_at_departure')
+      await eventsByType(page, 'proto_m03tools_first_departure')
     ).find((e) => meta(e).occasion === 'o2')!;
 
     expect(m03b.completed).toBe(true);
     expect(m03b.validity).toBe('valid');
-    expect(meta(departure).objects_restored).toBe(0);
-    expect(meta(departure).left_count).toBe(5);
+    expect(meta(departure).tools_restored).toBe(0);
+    expect(meta(departure).tools_left).toBe(3);
     expect(meta(departure).move_count).toBe(0);
     expect(meta(departure).exposure_sufficient).toBe(true);
     // Occasion A was never run in this session: the item summary is the least
@@ -1017,7 +1020,7 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     expect(m03b.validity).toBe('valid');
     expect(
       meta(
-        (await eventsByType(page, 'proto_m03_surface_state_at_departure')).find(
+        (await eventsByType(page, 'proto_m03tools_first_departure')).find(
           (e) => meta(e).occasion === 'o2',
         )!,
       ).exposure_sufficient,

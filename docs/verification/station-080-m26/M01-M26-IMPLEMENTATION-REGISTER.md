@@ -82,8 +82,8 @@ status at this register version — updated by each unit).
 | ---- | ----------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | M01  | Redesign                | 2    | `m01_planned_jobs`: jobs placed before the first work action / 6; 0–6; more advance organisation                                                                                                                                                                                                                               | plan structure, job correctness per occasion                                                                                                                                                                                                   | behavioural counterpart | v3 route: `proto_m01_batch_o1` (Concourse, ep 1) + `proto_m01_batch_o2` (Records Workshop, ep 5) — implemented (U5)                                                                                                                                              |
 | M02  | Revise and extend       | 1    | `m02_correct_first_retrievals`: correct first retrievals / 6; 0–6; better traceability                                                                                                                                                                                                                                         | filing choices (`m02_filing_layout`, provisional feature row — §5.146), retrieval latency (`m02_retrieval_latency`)                                                                                                                            | behavioural counterpart | v3 route: `proto_m02_retrieval_series` (Records Workshop, ep 2) — implemented (U13); during the requests the participant's layout and own tray labels stay visible and the system-supplied case codes and contents do not (owner ruling of 28 September, §5.137) |
-| M03  | Retain and verify       | 2    | `m03_tools_restored`: restored / 6; 0–3 per occasion; more tidying                                                                                                                                                                                                                                                             | object states                                                                                                                                                                                                                                  | retained core           | v2-ledger route (five residuals per occasion) — planned                                                                                                                                                                                                          |
-| M04  | Extend occasions        | 2    | `m04_undisposed_pieces`: undisposed incl. carried / 6; more own mess                                                                                                                                                                                                                                                           | per-job values                                                                                                                                                                                                                                 | behavioural counterpart | v2-ledger route (one job) — planned                                                                                                                                                                                                                              |
+| M03  | Retain and verify       | 2    | `m03_tools_restored`: restored / 6; 0–3 per occasion; more tidying                                                                                                                                                                                                                                                             | object states (`m03_object_states`, provisional feature row — §5.175)                                                                                                                                                                          | retained core           | v3 route: `proto_m03_tools_a` (Records Workshop, ep 2) + `proto_m03_tools_b` (Records Workshop, ep 5) — implemented (U14)                                                                                                                                        |
+| M04  | Extend occasions        | 2    | `m04_undisposed_pieces`: undisposed incl. carried / 6; more own mess                                                                                                                                                                                                                                                           | per-job values (`m04_job_values`, provisional feature row — §5.175)                                                                                                                                                                            | behavioural counterpart | v3 route: `proto_m04_cutting_o1` / `o2` (Records Workshop, ep 2) — implemented (U14)                                                                                                                                                                             |
 | M05  | Redesign                | 2    | `m05_start_latency`: per accepted occasion the focused ms from eligibility to the first work action + status started / deferred / exited / cap / interrupted; never a starter-only mean                                                                                                                                        | `m05_acceptance_exposure` (offer, answer, eligibility wait, exposure by cause, control views, work, late start)                                                                                                                                | behavioural counterpart | v3 route: `proto_m05_start_o1` (Concourse, ep 1) + `proto_m05_start_o2` (Recovery Yard, ep 4) — implemented (U6)                                                                                                                                                 |
 | M06  | Redesign                | 1    | `m06_unique_correct_orders`: distinct orders whose matching dispatch fell inside the one 60 s focused budget; 0–12; more useful output in equal allocated time                                                                                                                                                                 | `m06_work_period_detail` (first-pass accuracy, rework, skips, invalid dispatches, actual stop time, stop kind, per-order records)                                                                                                              | behavioural counterpart | v3 route: `proto_m06_work_period` (Records Workshop, ep 2) — implemented (U7)                                                                                                                                                                                    |
 | M07  | Retain with controls    | 1    | `m07_stages_completed`: stages / 6 at the closing milestone; more routine completion                                                                                                                                                                                                                                           | returns                                                                                                                                                                                                                                        | retained core           | v2-ledger route (P7 valid-zero defect) — planned                                                                                                                                                                                                                 |
@@ -740,6 +740,286 @@ names are shown; two-digit register lines and sixteen trials with twelve
 acknowledgements may fatigue; difficulty differs across phases and the
 fixed order shapes where a run of three can end. Owner questions
 §5.87–5.99.\_
+
+**Unit 14 (M03): as-built** — two press occasions of three tools each.
+Opportunities `proto_m03_tools_a` (window `m03_tools_o1`, Label Press A,
+restoration shift, episode 2) and `proto_m03_tools_b` (window
+`m03_tools_o2`, Label Press B, return shift, episode 5), Records
+Workshop; the two stations, their registry ids (`workshop.press_a` /
+`workshop.press_b`), positions, labels, guidance order and schedule
+(Press A before the return, Press B from the return shift on; "No batch
+scheduled on this press right now." otherwise) are unchanged. Presented
+by the Work Order Board's "Take the orders." (occasion A, beside the
+M02 / M06 / M12 presentations; the board lists "press batch A") and on
+entering the Workshop once the press can run — from Vale's check-in on
+(occasion B, beside the M07 / M20 / M21 / M22 presentations). Family `proto_m03tools_` (events
+`presented`, `surface_opened`, `practice_presented`, `practice_move`,
+`practice_completed`, `run_refused`, `press_cycle`,
+`opportunity_opened`, `tool_moved`, `move_refused`, `first_departure`,
+`state_at_system_close`, `surface_closed`, `window_closed`,
+`technical_failure`); every event carries the occasion tag (`o1` /
+`o2`), its own opportunity and window id, the object
+(`m03_press_bench_a` / `_b`) and the fixed starting condition as its
+form. Objects (inventory namespace `m03t`, bound to it — never in the
+player's inventory, not droppable, not discardable, not sortable): three
+tools — Platen Brush, Alignment Key, Feed Gauge (the same kinds on both
+presses, own instances per occasion) — and one Label Roll; per occasion
+a WORK SURFACE (4 × 2), a TOOL RACK (3 × 1), a ROLL SUPPLY slot and a
+PRESS FEED slot; tools fit the surface and the rack only, the roll the
+supply and the feed only. The panel (overlay mode `m03tools`, "LABEL
+PRESS A / B — WORK SURFACE"): the LABEL PRESS box carries one line for
+the activity as it stands. THE TAUGHT MOVEMENT (on every occasion): "Load
+the press: move the label roll from ROLL SUPPLY to PRESS FEED. /
+Keyboard: SPACE lifts it, RIGHT ARROW moves to the feed, SPACE sets it
+down. / Pointer: drag it." — the roll holds the first focus; the move
+uses the commands every other object of the panel uses
+(`practice_move` with origin, target and input mode;
+`practice_completed` once, with the moves it took and its input mode).
+RUN PRESS CYCLE (the button, or C) is refused and says "Load the label
+roll first." while the roll is not in the feed (`run_refused`, in both
+input modes); three cycles finish the batch (`press_cycle`); the roll
+is threaded from the first cycle on and no longer moves ("The roll is
+threaded into the press.", `move_refused`). With the third cycle the
+line reads "Press run complete. Batch logged and sent to stores." and
+the three tools lie at fixed slots of the work surface (brush 1, key 4,
+gauge 6); the rack is visible and empty from the first open and nothing
+names it. REACHABILITY is checked per tool when the tools appear — the
+tool lies at its slot, the rack accepts it and has room for all three —
+and recorded in the entry snapshot (`reachability`); a tool that fails
+makes the occasion a technical failure (excluded, never tools left
+out). The window opens (`opportunity_opened`, entry snapshot with the
+route stage and the neighbouring windows' states) when the tools lie
+out. Tools move by drag / drop or by the keyboard (`tool_moved` with
+origin and target container and slot, `to_home`, the input mode of the
+placement and the focused time); TAB / SHIFT+TAB jump the focus to the
+next / previous tray — with an object lifted, to the next tray that has
+a slot for it, landing on that slot. FIRST DEPARTURE: the participant's first close of the panel (ESC,
+I or X) with the tools out — `first_departure` records every tool's
+container and slot, `tools_restored` (tools in the rack), the moves, the
+focused / wall / excluded exposure and `exposure_sufficient` (focused
+exposure ≥ 2000 ms — recorded, never invalidating), and the window
+completes; the occasion is terminal ("Label press idle. The batch is
+done."), so no later state exists. A panel closed BEFORE the run is
+complete keeps the roll and the cycles (`surface_closed`) and records
+no observation. A panel closed by the SYSTEM with the tools out is not
+a departure: its state is recorded apart (`state_at_system_close` with
+`close_reason`) and never becomes a value — a stop of the panel is a
+technical failure (`technical_failure`, the occasion excluded), a
+closure by the review censors the window (`closed_at_review`). Neither
+arises on the ordinary route. Closure at the review: a never-completed
+occasion is absent. Reload: an occasion whose tools lay out in an earlier page load
+is never re-run (prior exposure, `technical_failure` marker, features
+`interrupted`); a panel merely opened in an earlier load is recorded as
+prior exposure and run. Formula `m03_tools_restored` = Σ tools in the
+rack at the first departure over the observed occasions / 6 planned;
+the exported denominator is 3 × the observed occasions. RECOUNTED per
+occasion from the `tool_moved` events that lie between
+`opportunity_opened` and `first_departure` and compared with the
+snapshot tool by tool; a departure without the tools' appearance before
+it, a wrong tool in the record or a wrong count ⇒ `technical_failure`
+for the whole row (one disagreeing occasion voids the row). Both
+observed ⇒ `observed` (every tool left where it lay is an observed
+0); one ⇒ `incomplete` with the value on 3; none ⇒ null —
+`interrupted` (a held-back occasion, or every tools-out panel closed by
+the review), `technical_failure` (unreachable tools, a stopped panel),
+`no_eligible_event` (a panel opened, its run never completed),
+`declined` (listed, never opened), `not_presented` (`interrupted` after
+a reload); tools out and the panel still open at export ⇒ `pending`; a
+held-back occasion beside an observed one ⇒ `interrupted` with the
+value kept and `censored`; an occasion closed by the review beside an
+observed one ⇒ `incomplete` with the value and `censored`. After a
+reload an occasion without evidence in the current load — one not yet
+reached included — reads as held back (the M01 rule: its evidence may
+lie in an earlier load).
+Companion `m03_object_states` (per occasion: status, the tools'
+records, moves, exposure, the departure's input mode, reachability, the
+route stage at the open, the taught movement and its input mode, press
+cycles, panel opens; a system-closed occasion keeps
+`tools_in_home_at_system_close` apart). Pure model
+`src/pilot/windows/m03RestoreModel.ts`, adapter
+`src/pilot/windows/m03ToolRestore.ts`, extractor
+`src/measurement/features/m03.ts`; tests `e2e/m03_restore.spec.ts` (8
+pure) and `e2e/m03_m04_route.spec.ts` (browser: Press A partly restored
+by pointer in test 1; Press A untouched and Press B fully restored by
+keyboard with TAB in test 2). The v2 five-residual route (`proto_m03_*`,
+`proto_m03_reset_a` / `_b`, `m03_reset_o1` / `o2`) is retired from the
+route; it keeps its v2 meaning in the ledger and stays, untouched, with
+the Inventory Lab workstation (`src/inventory/m03Reset.ts`, overlay mode
+`m03`, namespace `m03`). Limitations: three tools in one rack are a
+small, highly visible set — the count will sit near 0 or 3 for many
+participants and the two occasions repeat the same panel (episode 2 and
+episode 5), so the second is not naive; the rack's name and its three
+empty slots are the home's only marking (cue salience is a rival
+explanation); restoring by keyboard costs 12 key presses with TAB and SHIFT+TAB (16 with TAB alone)
+and restoring by pointer three drags — the input mode is exported and
+the effort is not matched; the panel is modal, so the departure is a
+deliberate close and an ESC pressed right after the tools appear is a
+departure with `exposure_sufficient: false`; the taught movement is a
+required step, so a participant who cannot make it never reaches the
+observation (`no_eligible_event`); reachability is checked on the model,
+not on rendered pixels; the panel's text is small at 800 × 600 (body
+about 9 px); the window kit's own lifecycle events carry no protocol
+stamp, as in every earlier unit; the reload marker is recognised by the
+wording of its `detail`, as in M02. Owner questions §5.162–5.167,
+§5.175–5.180, §5.187–5.190.
+
+**Unit 14 (M04): as-built** — two cutting jobs of three pieces each.
+Opportunities `proto_m04_cutting_o1` / `proto_m04_cutting_o2` (windows
+`m04_cutting_o1` / `m04_cutting_o2`), Sample Cutter, Records Workshop,
+episode 2; the station, its registry id (`workshop.sample_cutter`), its
+position, the scatter origin, the disposal bin and the six piece places
+are unchanged. The Work Order Board lists "two sample coupons"
+(`listed`, an exposure record at "Take the orders."); a job is
+presented and opened by its CUT — the pieces are created by the cut, so
+a job never run is not presented. Family `proto_m04_cutting_` (events
+`listed`, `presented`, `opportunity_opened`, `job_run`,
+`press_refused`, `job_unavailable`, `piece_picked_up`,
+`piece_put_back`, `piece_disposed`, `late_disposal`,
+`first_departure`, `state_at_review`, `window_closed`,
+`technical_failure`); every event carries the job (`o1` / `o2`), its own
+opportunity and window id and the object `m04_sample_cutter`. Pieces:
+one coupon offcut, one swarf tray and one blade wrap per job at fixed
+places (offsets from the scatter origin 344, 224 — job 1: offcut −28,
+44 · swarf −8, 64 · wrap 52, 0; job 2: offcut 28, 44 · swarf 52, 60 ·
+wrap −64, 8; recorded in the entry snapshot as `piece_offsets`); the
+six places are those of the v2 scatter, shared between the jobs so that
+the summed straight-line distance to the bin is matched (440.5 px and
+444.3 px; piece by piece 179 / 165 / 97 px against 124 / 108 / 212 px).
+Procedure: SPACE / E at the cutter cuts the waiting coupon — "Sample
+coupon 1 of 2 cut. The cutter re-arms while you work another order." /
+"Sample coupon 2 of 2 cut." (the same line for everyone at the cut;
+never a word about the pieces) — `opportunity_opened` (entry snapshot
+with the route stage and the neighbouring windows' states) and
+`job_run` (the job's pieces, the earlier pieces still lying, a piece
+carried at the cut). A press at the cutter inside 1.5 s of a cut is
+refused and recorded (`press_refused`, `cut_settling`) — a repeated or
+carried press never acts on the pieces. Pieces are carried one at a
+time: a pointer click on a piece within 96 px of the avatar, or SPACE /
+E, lifts the nearest piece within 64 px; a click on the bin, or SPACE /
+E with the bin within 96 px, drops the carried piece into it
+("Disposed." in both input modes). WHERE a press acts on a piece: at the
+cutter when no coupon is waiting; on open floor, unless a supply bundle
+in reach lies nearer (the press then collects the bundle the prompt
+names); and at ANOTHER station while a job is open, when a piece of
+that job — or, with a piece carried, the bin — lies nearer the avatar
+than the station (the station is then not opened; leftover pieces of an
+earlier job never intercept a station; the rule covers the stations of
+the first shift — the Work Order Board and the return-shift stations
+open directly, no job being open beside them). `piece_picked_up`,
+`piece_disposed` and `late_disposal` carry the input mode, the focused
+time and the `origin` of the act: `pointer`, `cutter_press`,
+`open_floor_press`, `station_press:<id>`. A lifted piece
+cannot be set down: it is carried until it is disposed of or the room
+is left (`piece_put_back`, system). FIRST DEPARTURE of a job: the first
+time the participant turns to other work after its cut — any other
+station is opened (`other_station` with the station's id; a station
+that answers with a refusal and the Work Order Board included), or the
+room is left (`room_exit`) — `first_departure` records the disposed
+pieces, the carried piece of that job (counted undisposed), the pieces
+lying, `undisposed_at_departure`, the focused time to the first
+disposal and the focused / wall / excluded exposure, and the window
+completes. THE SECOND COUPON becomes available only after the first
+job's departure; until then the cutter answers with the re-arm line
+(`job_unavailable`, `job_open`) when no piece is in reach; the beacon
+leaves the cutter at the cut and returns once the second coupon is
+available. A piece disposed after its job's departure is a
+`late_disposal` and changes nothing. Once the second coupon is
+available a press at the cutter cuts it — also with a piece carried or
+a leftover piece in reach (`carrying_at_cut`, `earlier_pieces_lying`).
+The cutter cuts while the route stage precedes the return
+(`return_hub`): before the orders are taken and after the sign-off
+included, the stage exported with each cut; from the return on it
+answers "No cutting scheduled on the cutter right now."
+(`job_unavailable`, `not_scheduled`). A job whose
+pieces cannot be drawn is a technical failure (excluded). A job still
+open at the review was not departed from: `state_at_review`, the window
+censored; a job never run is absent. Reload: once an earlier page load
+holds a cut, neither job is run in the new load (prior exposure,
+`technical_failure` marker, features `interrupted`). Formula
+`m04_undisposed_pieces` = Σ (3 − pieces disposed before the first
+departure) over the observed jobs / 6 planned, a carried piece included;
+the exported denominator is 3 × the observed jobs. RECOUNTED per job from
+the `piece_disposed` events of that job's own pieces that lie between
+its `job_run` and its `first_departure`, and compared with the snapshot
+piece by piece (the disposed ids, the count, the carried piece, the
+pieces lying); a departure without its cut or any disagreement ⇒
+`technical_failure` for the whole row. Both observed ⇒ `observed`
+(every piece disposed is an observed 0); one ⇒ `incomplete` with the
+value on 3; no job run ⇒ null `not_presented` (`cutter_listed` in the
+components; `interrupted` after a reload); a cut without its departure
+at export ⇒ `pending`; every job run closed by the system or held back
+⇒ null `interrupted` (censored); unreachable pieces ⇒ null
+`technical_failure`; a job closed by the review beside an observed one
+⇒ `incomplete` with the value and `censored`; after a reload a job
+without evidence in the current load reads as held back, and beside an
+observed job the row is `interrupted` with the value kept (the M01
+rule). A pick-up issued by a press at another station, and a disposal
+before the departure that such a press issued or that followed such a
+pick-up, are COUNTED like any other and flagged beside the value
+(`pickups_by_station_press`, `disposed_by_or_after_station_press`).
+Companion `m04_job_values` (per job:
+status, undisposed at the departure and its recount, the state at the
+review kept apart, disposed ids, the carried piece, pieces lying, the
+closing trigger and its station, the route stage at the cut, the focused
+time to the first disposal, exposure, pick-ups with their origins,
+put-backs, refused presses, later disposals, the cut's input mode; null
+with the primary's disposition when no job has a record). Pure model
+`src/pilot/windows/m04CuttingModel.ts`, adapter
+`src/pilot/windows/m04Debris.ts`, extractor
+`src/measurement/features/m04.ts`; tests `e2e/m04_cutting.spec.ts` (7
+pure) and `e2e/m03_m04_route.spec.ts` (browser, test 1: coupon 1, a
+repeated press refused, a disposal by pointer, a press beside the
+Component Locker lifting the nearer piece while the locker stays shut,
+that piece carried at the departure by another station, two later
+disposals, coupon 2, a piece lifted at the cutter and disposed by
+keyboard, the room left, offline reproduction 4 / 6; test 2: no cutting
+on the return shift). The `m04_debris` key in the entry snapshots of
+M02, M06 and M12 (and now M03) keeps its name and holds the cutter's
+SITE status — `open` while a job awaits its departure, `closed` once
+every job that was run has had it, `unopened` before the first cut
+(§5.181). The v2 single job (`proto_m04_debris_*`, six pieces, closure
+at the first room exit) is retired from the route; its family keeps its
+v2 meaning in the ledger. Limitations: the departure rule is an
+operational definition — a participant who cuts, reads the Work Order
+Board and returns to the pieces is recorded as having left them (the
+station is exported with the trigger); the line at the first cut names
+"another order" and the beacon leaves the cutter at the cut, so the
+departure is cued for everyone alike; the bin stands at the far end of
+the cutter island and a piece is carried round it, so disposal costs a
+walk of roughly 200–300 px per piece; the jobs are matched on the
+distance to the bin, not on the keyboard reach from the approach point
+(job 1: about 50 / 59 / 48 px, job 2: 45 / 72 / 68 px against a reach of
+64 px), nor piece by piece, nor on the nearness of another station
+(two places of job 1 lie beside the Component Locker, one of job 2), and
+job 2 follows job 1 in a fixed order; three places lie on painted art
+(the wrap of job 1 at the cutter's west end, the swarf tray of job 1 on
+the Component Locker's top edge, the swarf tray of job 2 at the
+island's edge) and the wrap of job 2 lies among the collectible supply
+bundles and resembles a small brass part — whether every piece is
+perceived is not established; the line at the first cut is the only
+statement that the second coupon comes later — it shows for the shared
+2.2 s of every feedback line (74 characters), so its exposure depends on
+reading speed, and the second cut has no such line (the two jobs differ
+in the cue); a press meant for another station can lift a nearer piece
+while a job is open, without a line, and a lifted piece cannot be set
+down — carried to the departure it changes nothing (a carried piece is
+undisposed), dropped into the bin before the departure it is a counted
+disposal (flagged, its origin exported); a keyboard press with a piece
+carried and the bin out of reach shows no line where the pointer shows
+"Hands full."; keyboard pick-up beside another station works only while
+a job is open and only for that job's pieces, so later cleanup by
+keyboard is possible at the cutter and on open floor only; leftover
+pieces stay visible through the return shift (one place lies 36 px from
+Press B's approach point) and the entry snapshot of M03's second
+occasion holds the cutter's site status, not the pieces lying; after a
+jammed first cut the next cut is announced as coupon 2 of 2; the bin is
+highlighted while a piece is carried within its reach (the pointer
+layer, unchanged); the job's focused clock keeps running while the
+backpack or the map is open; the two jobs are repeated within one
+episode and one room (§2b) — never two independent situations; the
+window kit's own lifecycle events carry no protocol stamp; the reload
+marker is recognised by the wording of its `detail`. Owner questions
+§5.168–5.191.
 
 **Unit 13 (M02): as-built** — the case workspace's six retrieval
 requests. Opportunity `proto_m02_retrieval_series`, windows
@@ -2107,8 +2387,18 @@ the following; defaults applied, reversible, none changes the formula.
      read as any other prototype output of this run (no validity claim),
      with memory for one's own layout recorded as a rival explanation.
      The ruling settles what is visible; that the marking falls with it
-     is the implementer's reading (review S3-L5) and is listed for the
-     owner's confirmation.
+     was the implementer's reading (review S3-L5) and was listed for the
+     owner's confirmation. CONFIRMED by the research owner, 28 September
+     (recorded at the start of U14 as a carry-forward from U13; the U13
+     implementation and its commit `d8b4d94` are unchanged): "the
+     withdrawal follows from the ruling. The ruling governs the
+     information available during the retrieval decision —
+     system-supplied case codes, kind icons and case-name/detail content
+     are concealed; the participant's own organisational structure and
+     labels remain legitimate cues that participants may read and use."
+     This confirmation settles only the confirmation sentence of this
+     entry; §5.139, §5.142, §5.150–§5.153 and §5.158–§5.161 remain
+     separate owner questions.
 150. **The record and the later Organisation items (review S-M5).**
      Default: the record is shown straight after the sixth answer, in
      episode 2 — before the second M01 batch, press B and any later
@@ -2189,3 +2479,225 @@ changes the formula or the ruling.
      cases filed together) — stated in the §4 limitations. Alternative:
      treat the requests as dependent in analysis; report the count with
      the layout companion.
+
+The U14 (M03 / M04) implementation took the following defaults; each is
+reversible, none changes a register formula (tools in their marked home
+at the first departure / 6; pieces not disposed at the first departure,
+carried pieces included / 6).
+
+162. **M03: the movement is taught on every occasion.** Default: moving
+     the label roll from ROLL SUPPLY to PRESS FEED is a required step of
+     the press run on Press A and on Press B, so both occasions start
+     alike and a participant who meets Press B without Press A is taught
+     too. The matrix names "movement practice before occasion A".
+     Alternatives: practice before occasion A only; a separate practice
+     outside the press.
+163. **M03: the marked home.** Default: one labelled container (TOOL
+     RACK, three slots); a tool in any rack slot is restored; no slot
+     belongs to one tool. Alternatives: a marked slot per tool (with
+     "homes correct" kept beside "tools restored"); more slots than
+     tools.
+164. **M03: the first departure.** Default: the participant's first close
+     of the panel with the tools out; the occasion is terminal afterwards
+     (no later state exists); the 2000 ms exposure floor of the v2 route
+     is recorded (`exposure_sufficient`, on focused time) and never
+     invalidates. Alternatives: an exposure floor that excludes; the
+     panel stays reopenable and the first room exit is the departure.
+165. **M03: when the tools appear.** Default: on the completion of the
+     run, at three fixed slots; the rack is visible and empty from the
+     first open; the same three tool kinds on both presses. Alternatives:
+     the tools start in the rack and are taken out by the run; different
+     tools per press.
+166. **M03: the threaded roll.** Default: from the first cycle on the roll
+     stays in the feed and cannot be lifted ("The roll is threaded into
+     the press.", recorded). A participant who tries to put the roll back
+     is refused just before the tools appear (review S-L10).
+     Alternatives: the roll is consumed by the run; a silent refusal.
+167. **M03 / M04: what "reachable" means.** Default: M03 — checked on the
+     model (the tool at its slot, the rack accepts it and has room); M04
+     — every piece of the job has a drawable icon. Neither checks
+     rendered pixels or a walking path; the places themselves are the
+     audited ones. Alternative: a rendered-frame check.
+168. **M04: what counts as a departure (review S-M7, G-H1).** Default:
+     any other station opened — a station that only answers with a
+     refusal, and the Work Order Board, included — or the room left;
+     walking away, collecting a supply bundle, the backpack and the map
+     are not. The station is exported with the trigger. Alternatives:
+     only stations that open a surface; a distance or a time criterion;
+     the room exit only.
+169. **M04: the second coupon (review S-M1, G-M5).** Default: available
+     only after the first job's departure, so each job has a departure of
+     its own; the cut states "The cutter re-arms while you work another
+     order." to everyone, and the beacon leaves the cutter at the cut and
+     returns when the second coupon is available. The line and the
+     beacon cue the departure that closes job 1; the second cut carries
+     no such line, so the jobs differ in the cue (review S2-L8), and the
+     line shows for the 2.2 s of every feedback line, so its exposure
+     depends on reading speed (review G2-M4 — the display time lives in
+     shared room code outside this unit).
+     Alternatives: the second coupon available at once, the first job
+     closing when the second is cut; no line; a second cutter.
+170. **M04: the press at the cutter (review S-H1, G-H2).** Default: with
+     no coupon waiting, SPACE / E at the cutter lifts the nearest piece
+     within 64 px or drops the carried piece when the bin is within 96 px
+     (the v2 rule); a press inside 1.5 s of a cut is refused. A lifted
+     piece cannot be set down. Every pick-up keeps its origin.
+     Alternatives: a set-down command; no pick-up through the cutter's
+     prompt; a longer settle window.
+171. **M04: a press at another station (review G-H1).** Default: while a
+     job is open, a press at another station lifts a piece that lies
+     nearer the avatar than that station (or drops the carried piece into
+     a bin that lies nearer than the station) instead of opening the
+     station — otherwise a keyboard pick-up beside the Component Locker
+     or a press would open that station and close the job. Only pieces of
+     the open job are lifted this way (review S2-M3); outside a job's
+     window the stations answer first. The rule turns the error round for
+     a participant who wanted the station: the press lifts a piece
+     without a line, and the next press opens the station with the piece
+     in hand (review S2-M1, G2-M1). Alternatives: move the pieces clear of every station;
+     stations always first (pick-up by pointer only there).
+172. **M04: a job never run.** Default: `not_presented`, as the register
+     row states ("a job never run is not presented"), also when the work
+     orders listed the coupons (`cutter_listed` exported). This differs
+     from the run's general default (§5.13, §5.148: listed and never
+     opened ⇒ `declined`) and from M03 beside it. Alternative: `declined`
+     once listed.
+173. **M04: the six places (review S-M4, G-M3, G-M4).** Default: the
+     places of the v2 scatter, shared so that the two jobs are matched on
+     the summed straight-line distance to the bin (440.5 / 444.3 px); not
+     matched piece by piece, on the keyboard reach or on the nearness of
+     the Component Locker; three places on painted art (review G2-M3: the
+     swarf tray of job 1 lies on the locker's top edge); one among the
+     supply bundles. Alternatives: new places clear of stations
+     and art (needs a new audit of the Workshop); matching on reach.
+174. **M04: the cutter's shift (review S-M5, G-L7).** Default: the cutter
+     cuts while the route stage precedes the return, so neither job
+     lies in the return shift; a cut before the orders are taken or after
+     the sign-off is possible and carries its stage (review S2-L6,
+     G2-L5). Alternatives: the restoration shift only (`workshop_work`);
+     no gate, the stage exported only.
+175. **The companions as feature rows.** Default: `m03_object_states` and
+     `m04_job_values` were added to the machine-readable register as
+     provisional companion rows (object-valued; the register's "object
+     states" and "per-job values"). Alternative: keep them in the
+     primaries' components only (precedent §5.146).
+176. **The families.** Default: new candidate families `proto_m03tools_`
+     and `proto_m04_cutting_`; the v2 families are retired from the
+     route and keep their v2 meaning; the Inventory Lab press workstation
+     is untouched. Alternative names are the owner's.
+177. **Zero denominators and disagreement.** Default: precedence
+     `interrupted` > `technical_failure` > `no_eligible_event` >
+     `declined` (M03) and `interrupted` > `technical_failure` (M04); a
+     held-back occasion or job beside an observed one ⇒ `interrupted`
+     with the value kept; one occasion or job whose record disagrees with
+     the raw events voids the whole row (review S-L7). Alternative: keep
+     the reproducible occasion or job and exclude the other.
+178. **A closure by the system (review S-M2, S-M6).** Default: a press
+     panel stopped by the system with the tools out, and a cutting job
+     still open at the review, had no departure — their state is recorded
+     apart (`state_at_system_close`, `state_at_review`), censored and
+     excluded from the primary. Neither arises on the ordinary route (the
+     panel is modal; the review is reached through a room exit).
+     Alternative: read the state at the review as a value (the v2 rule).
+179. **After a reload (review S-L1, S-L3).** Default: M03 — an occasion
+     whose tools lay out earlier is never re-run; one whose panel was only
+     opened earlier is run, with the exposure on record. M04 — once an
+     earlier load holds a cut, neither job is run. Alternative: block
+     every occasion that was touched earlier.
+180. **Effort by input mode in the press panel (review G-M2).** Default:
+     TAB / SHIFT+TAB jump between the trays (the press panel only);
+     restoring three tools costs 12 key presses (16 with TAB alone) against three
+     drags; the input mode of every move is exported. Alternatives: a
+     quick-transfer key; analysis by input mode.
+181. **The `m04_debris` key of other items' entry snapshots (review
+     S-L5).** Default: the key is kept and now holds the cutter's site
+     status. Alternative: one key per job.
+182. **Names and highlights on the measured objects (review S-L9).**
+     Default: the rack and the bin carry plain names ("TOOL RACK",
+     "disposal bin"), a disposal is answered "Disposed." and the bin is
+     highlighted while a piece is carried within its reach (the pointer
+     layer of the v2 route). No line asks for tidying or disposal.
+     Alternatives: no names; no highlight.
+183. **What the M04 times contain (review S-L8).** Default: focused time
+     from the cut; the clock pauses on a lost focus or a hidden tab and
+     keeps running while the backpack or the map is open. Alternative:
+     pause under every overlay.
+
+The second review round (scientific + gameplay, read-only) surfaced the
+following; defaults applied, reversible, none changes a formula.
+
+184. **A piece lifted by a press meant for a station and then disposed
+     (review S2-M1).** Default: counted as a disposal like any other and
+     flagged beside the value (`pickups_by_station_press`,
+     `disposed_by_or_after_station_press`; every act keeps its
+     `origin`). Alternatives: exclude such disposals; exclude the job.
+185. **A press at a station with a piece carried (review S2-M2, G2-M2).**
+     Default: the piece is dropped into the bin only when the bin lies
+     nearer the avatar than the station; otherwise the station opens and
+     the piece is carried at the departure. Alternative: a station always
+     answers first while a piece is carried.
+186. **The cut before everything else (review S2-L7).** Default: once the
+     second coupon is available a press at the cutter cuts it, also with
+     a piece carried or a leftover piece in reach, so job 2 can begin
+     with hands full (recorded). Alternative: the press acts on a piece
+     first.
+187. **A system closure beside an observed occasion or job (review
+     S2-L4, S2-L2).** Default: `incomplete` with the value and
+     `censored` for a closure by the review; a press panel stopped any
+     other way is a technical failure (no closure reason exists for a
+     stop). Alternative: `interrupted`, as for a held-back one.
+188. **After a reload, what was not reached yet (review S2-L3).**
+     Default: an occasion or a job without evidence in the current load
+     reads as held back — also Press B before the return shift and a
+     second coupon never cut — so the row is `interrupted` with the value
+     kept (the M01 rule, applied to both items). Alternative: only what
+     the guard actually held back.
+189. **The companion beside a null primary (review S2-L1).** Default:
+     the state description is `observed` whenever an occasion or a job
+     left a record (a run never completed, unreachable tools, a closure
+     by the review), as the M02 layout and the M11 records are.
+     Alternative: the primary's disposition on both rows.
+190. **Leftover pieces and the press of the return shift (review
+     G2 flag 5).** Default: pieces left at the cutter stay where they
+     lie through the return shift and are visible from Press B; M03's
+     entry snapshot holds the cutter's site status only. Alternatives:
+     the pieces lying in the snapshot; the floor cleared between the
+     shifts.
+191. **Lines on a keyboard act (review G2-L2, G2-L3, G2-L7).** Default:
+     a keyboard pick-up shows no line (as the pointer's does not); a
+     keyboard press with a piece carried and the bin out of reach shows
+     none where the pointer shows "Hands full."; on open floor a supply
+     bundle in reach that lies nearer than a piece is collected first;
+     after a jammed first cut the next cut is announced as coupon 2 of 2. Alternatives: the same line in both input modes; a line naming
+     the lifted piece (it would make the pieces salient).
+192. **A prompt naming a bundle while a nearer piece is lifted (review
+     G3-L1).** Default: on open floor the press acts on whichever lies
+     nearer — a supply bundle in reach or a piece in reach; where a piece
+     is the nearer one the prompt still names the bundle (about the east
+     half of the sample kit's reach while the second job's blade wrap
+     lies on the floor), and the pick-up is exported with the origin
+     `open_floor_press`, so it cannot be told apart from a pick-up made
+     where no prompt was shown. Alternatives: no bundle prompt while a
+     nearer piece lies in reach; the prompted bundle always first (this
+     shortens the keyboard reach of that piece).
+193. **Occasions and jobs without evidence inside the row (review S3-L1,
+     S3-L2, S3-L5).** Default: an M03 occasion that was never presented
+     (a participant who does not come back to the Workshop after Vale's
+     check-in) is read from the companion (`o2: null`) and from the
+     disposition `incomplete`; the components of the primary carry no
+     list of absent occasions, where M04 exports `jobs_not_run`. After a
+     reload a family without any event yields `interrupted` with the
+     default censoring fields, a family with a listing or presentation
+     only yields `interrupted` with `censored: true` and a reason. The
+     two M04 flags are summed over every job with a record, observed or
+     not; the lists per job are in the companion. Alternatives: a list
+     of absent occasions in the M03 components; the same censoring
+     fields on both reload paths; flags summed over observed jobs only.
+194. **Lines after a stop or a jam (review S3-L4, G3-L2).** Default: a
+     press whose panel was stopped by the system answers "Label press
+     idle. The batch is done." afterwards, and after a jammed cut a press
+     at the cutter with nothing in reach answers "Both coupons cut. The
+     cutter is idle." — both only after a technical failure (not
+     reachable on the ordinary route), neither changes a record.
+     Alternatives: "out of service" after a stop; "The cutter is idle."
+     unless both jobs produced their pieces.

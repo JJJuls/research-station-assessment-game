@@ -11,6 +11,7 @@
 import { closeExteriorWindowsAtReview } from './exteriorWindows';
 import { closeM01AtReview } from './m01PlanBoard';
 import { closeM02CAtReview } from './m02CaseWorkspace';
+import { closeM03TAtReview } from './m03ToolRestore';
 import { closeM04AtReview } from './m04Debris';
 import { closeM05AtReview } from './m05Initiation';
 import { closeM06AtReview } from './m06RoutineDispatch';
@@ -48,6 +49,12 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
   // as they stand (unanswered requests stay missing; never handed over →
   // no request); never opened → absent.
   closeM02CAtReview(nowMs);
+  // Station 080 M03 (Unit 14): a press occasion is observed at its first
+  // departure (the panel's close); one whose run was never completed has
+  // no tools and no observation → absent.
+  closeM03TAtReview(nowMs);
+  // Station 080 M04 (Unit 14): a job still awaiting its first departure
+  // had none — censored, its state kept apart; a job never run → absent.
   closeM04AtReview(nowMs);
   closeM05AtReview('o1', nowMs);
   closeM05AtReview('o2', nowMs);

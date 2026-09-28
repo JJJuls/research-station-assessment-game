@@ -202,6 +202,43 @@ const ICON_PAINTERS: Record<string, IconPainter> = {
     g.fillStyle(0x9aa8b4);
     g.fillRect(4, 10, 20, 2);
   },
+  // Station 080 M03 (Unit 14) — three press tools and the label roll
+  // (distinguished by shape; never a validity cue).
+  'inv-icon-m03t-platen-brush': (g) => {
+    outlinedBox(g, 5, 8, 18, 6, 0x8a6a48, 0x5f4832);
+    g.lineStyle(1, 0xd9cba8);
+
+    for (let x = 7; x <= 21; x += 2) {
+      g.lineBetween(x, 14, x, 21);
+    }
+  },
+  'inv-icon-m03t-alignment-key': (g) => {
+    g.lineStyle(3, 0xb8c4cc);
+    g.lineBetween(8, 6, 8, 21);
+    g.lineBetween(8, 21, 21, 21);
+    g.lineStyle(1, 0x62788a);
+    g.strokeRect(6.5, 4.5, 3, 3);
+  },
+  'inv-icon-m03t-feed-gauge': (g) => {
+    outlinedBox(g, 4, 10, 20, 8, 0xc9cfd4, 0x62788a);
+    g.lineStyle(1, 0x3d4956);
+
+    for (let x = 7; x <= 21; x += 3) {
+      g.lineBetween(x, 10, x, x % 2 === 1 ? 15 : 13);
+    }
+  },
+  'inv-icon-m03t-label-roll': (g) => {
+    g.fillStyle(0xd7dde2);
+    g.fillCircle(12, 14, 8);
+    g.lineStyle(1, 0x8a97a2);
+    g.strokeCircle(12, 14, 8);
+    g.fillStyle(0x3d4956);
+    g.fillCircle(12, 14, 3);
+    g.fillStyle(0xd7dde2);
+    g.fillRect(12, 19, 12, 3);
+    g.lineStyle(1, 0x8a97a2);
+    g.strokeRect(12.5, 19.5, 11, 2);
+  },
 };
 
 /**

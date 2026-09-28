@@ -583,6 +583,31 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'retained_core',
     direction: 'retain_verify',
     occasions: 2,
+    // Unit 14: the approved three-tool occasions landed at the two label
+    // presses of the Records Workshop (restoration shift and return
+    // shift). The v2 five-residual family `proto_m03_*` keeps its v2
+    // meaning and stays with the Inventory Lab workstation.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m03_tools_a', 'proto_m03_tools_b'],
+      windows: [
+        {
+          id: 'm03_tools_o1',
+          occasion: 'o1',
+          zone: 'records_workshop',
+          episode: 2,
+        },
+        {
+          id: 'm03_tools_o2',
+          occasion: 'o2',
+          zone: 'records_workshop',
+          episode: 5,
+        },
+      ],
+      family_prefixes: ['proto_m03tools_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Two occasions with three tools each; movement taught beforehand; storage visible, exit open; no cleanup instruction or reward; first-departure state saved permanently.',
     features: [
@@ -593,6 +618,16 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
         '0–6 (0–3 per occasion)',
         'more voluntary tidying',
         'no valid occasion → null',
+      ),
+      // Provisional (register §5): the register row's "object states" as
+      // a feature row of its own, pending the owner.
+      count(
+        'm03_object_states',
+        'per occasion and tool: location at the first departure, moves, focused exposure, the taught movement and the reachability check (state description)',
+        'object per occasion',
+        'not a score; retained separately',
+        'no press panel opened → null',
+        'companion',
       ),
     ],
   }),
@@ -606,6 +641,30 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'behavioural_counterpart',
     direction: 'extend_occasions',
     occasions: 2,
+    // Unit 14: the approved two cutting jobs landed at the Records
+    // Workshop sample cutter. The v2 single-job family
+    // `proto_m04_debris_*` keeps its v2 meaning.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m04_cutting_o1', 'proto_m04_cutting_o2'],
+      windows: [
+        {
+          id: 'm04_cutting_o1',
+          occasion: 'o1',
+          zone: 'records_workshop',
+          episode: 2,
+        },
+        {
+          id: 'm04_cutting_o2',
+          occasion: 'o2',
+          zone: 'records_workshop',
+          episode: 2,
+        },
+      ],
+      family_prefixes: ['proto_m04_cutting_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Six debris pieces across two short cutting jobs (three each); disposal optional and accessible; debris recorded at the first departure from each job; later cleanup never rewrites it.',
     features: [
@@ -616,6 +675,16 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
         '0–6 (0–3 per job)',
         'more own mess left behind (lower expected Organization)',
         'no job run → null',
+      ),
+      // Provisional (register §5): the register row's "per-job values"
+      // as a feature row of its own, pending the owner.
+      count(
+        'm04_job_values',
+        'per job: undisposed, disposed and carried pieces at the first departure, the closing trigger, focused exposure and latency, later disposals (state description)',
+        'object per job',
+        'not a score; retained separately',
+        'no job run → null',
+        'companion',
       ),
     ],
   }),

@@ -27,6 +27,7 @@ import {
   M20_START_EVENT_SUFFIXES,
   M20_START_WINDOW_ID,
 } from '../exterior/m20AntennaModel';
+import { M03_FAMILY, M03_SPEC } from '../windows/m03RestoreModel';
 import {
   M21_EVENT_SUFFIXES,
   M21_FAMILY,
@@ -61,7 +62,12 @@ export interface ReturnItemWindows {
   episodes: readonly [number, number];
 }
 
-/** M03 window ids (ledger): one per matched occasion. */
+/**
+ * M03 window ids of the v2 ledger: one per matched occasion. Since
+ * Station 080 Unit 14 they belong to the legacy Inventory Lab press
+ * workstation only (`src/inventory/m03Reset.ts`); the route's occasions
+ * carry the v3 ids of `m03RestoreModel.ts` (see `RETURN_LINKED_WINDOWS`).
+ */
 export const M03_WINDOW_IDS = {
   a: 'm03_reset_o1',
   b: 'm03_reset_o2',
@@ -86,13 +92,14 @@ export function m03ExposureSufficient(exposureMs: number): boolean {
 
 /** Two-phase items of the return episode, keyed by item id. */
 export const RETURN_LINKED_WINDOWS: readonly ReturnItemWindows[] = [
+  // Unit 14: the two press occasions of the v3 route (three tools each).
   {
     item: 'M03',
-    opportunityIds: ['proto_m03_reset_a', 'proto_m03_reset_b'],
-    windows: { start: M03_WINDOW_IDS.a, end: M03_WINDOW_IDS.b },
-    family: 'proto_m03_',
-    objects: { start: 'm03_press_bench_a', end: 'm03_press_bench_b' },
-    episodes: [2, 5],
+    opportunityIds: [M03_SPEC.a.opportunity_id, M03_SPEC.b.opportunity_id],
+    windows: { start: M03_SPEC.a.window_id, end: M03_SPEC.b.window_id },
+    family: M03_FAMILY,
+    objects: { start: M03_SPEC.a.object_id, end: M03_SPEC.b.object_id },
+    episodes: [M03_SPEC.a.episode, M03_SPEC.b.episode],
   },
   {
     item: 'M07',
@@ -171,7 +178,7 @@ export const RETURN_SINGLE_WINDOWS = [
 
 /** Every primary family prefix the return shift writes to. */
 export const RETURN_FAMILIES = {
-  M03: 'proto_m03_',
+  M03: M03_FAMILY,
   M07: 'proto_m07_calibration_',
   M09: 'proto_m09_watch_',
   M10: 'proto_m10_promise_',

@@ -384,8 +384,8 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
     W.pressA,
     'Use',
     'Label Press A',
-    { kind: 'inventory', id: 'm03_a' },
-    'm03_reset_o1',
+    { kind: 'inventory', id: 'm03tools_a' },
+    'm03_tools_o1',
     { x: 236, y: 204 },
   ),
   workshopStation(
@@ -393,8 +393,8 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
     W.pressB,
     'Use',
     'Label Press B',
-    { kind: 'inventory', id: 'm03_b' },
-    'm03_reset_o2',
+    { kind: 'inventory', id: 'm03tools_b' },
+    'm03_tools_o2',
     { x: 302, y: 204 },
   ),
   workshopStation(
@@ -411,8 +411,8 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
     WS.sampleCutter,
     'Use the',
     'Sample Cutter',
-    { kind: 'action', id: 'm04_sample_job' },
-    'm04_debris_cleanup',
+    { kind: 'action', id: 'm04_cutting_job' },
+    'm04_cutting_o1 / m04_cutting_o2',
     { x: 348, y: 230 },
   ),
   workshopStation(

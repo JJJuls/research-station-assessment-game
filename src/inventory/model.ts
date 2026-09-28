@@ -71,14 +71,20 @@ export type ContainerType =
   | 'm03_surface'
   | 'm03_store'
   | 'm02c_intake'
-  | 'm02c_tray';
+  | 'm02c_tray'
+  | 'm03t_bench'
+  | 'm03t_rack'
+  | 'm03t_supply'
+  | 'm03t_feed';
 
 /**
  * `m02c` = the evidence-led pilot v2 open case workspace (M02 correction
  * C7): its cases and trays are namespace-bound exactly like the legacy
- * `m02` filing objects, and disjoint from them.
+ * `m02` filing objects, and disjoint from them. `m03t` = the Station 080
+ * press occasions (Unit 14): three tools, a rack, a label roll and the
+ * press feed per occasion, disjoint from the legacy `m03` residuals.
  */
-export type ContainerNamespace = 'general' | 'm02' | 'm03' | 'm02c';
+export type ContainerNamespace = 'general' | 'm02' | 'm03' | 'm02c' | 'm03t';
 
 export interface Container {
   containerId: string;
@@ -180,6 +186,14 @@ export const CONTAINER_IDS = {
   m02cTray2: 'm02c_tray_2',
   m02cTray3: 'm02c_tray_3',
   m02cTray4: 'm02c_tray_4',
+  m03tBenchA: 'm03t_bench_a',
+  m03tRackA: 'm03t_rack_a',
+  m03tSupplyA: 'm03t_supply_a',
+  m03tFeedA: 'm03t_feed_a',
+  m03tBenchB: 'm03t_bench_b',
+  m03tRackB: 'm03t_rack_b',
+  m03tSupplyB: 'm03t_supply_b',
+  m03tFeedB: 'm03t_feed_b',
 } as const;
 
 export const PLAYER_CONTAINER_IDS: readonly string[] = [

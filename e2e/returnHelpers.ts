@@ -101,8 +101,8 @@ export const FORBIDDEN_TEXT =
   /proto_|\bM(0[1-9]|1[0-9]|2[0-6])\b|\bQ\d{2}\b|score|trait|persist|resilien|grit|valid/i;
 
 export const OPPORTUNITY = {
-  m03a: 'proto_m03_reset_a',
-  m03b: 'proto_m03_reset_b',
+  m03a: 'proto_m03_tools_a',
+  m03b: 'proto_m03_tools_b',
   m07: 'proto_m07_calibration_project',
   m09: 'proto_m09_monitor_watch',
   m10: 'proto_m10_component_promise',
@@ -897,9 +897,10 @@ async function waitOverlay(page: Page, open: boolean) {
 }
 
 /**
- * Press B: run the three press cycles (C), then either leave the residuals
- * untouched for the minimum exposure or drag `store` of them into the
- * component store by pointer, then close the panel (the observation).
+ * Press B (Station 080 Unit 14): load the label roll by keyboard, run the
+ * three press cycles (C), then either leave the three tools untouched for
+ * the minimum exposure or drag `store` of them into the tool rack by
+ * pointer, then close the panel (the first departure).
  */
 export async function pressBatchB(
   page: Page,
@@ -924,7 +925,15 @@ export async function pressBatchB(
 
   const probe = await uiProbe(page);
 
-  expect(probe?.mode).toBe('m03');
+  expect(probe?.mode).toBe('m03tools');
+  // The taught movement: SPACE lifts the roll (the supply slot holds the
+  // first focus), the arrow moves to the feed, SPACE sets it down.
+  await press(page, 'Space');
+  await page.waitForTimeout(250);
+  await press(page, 'ArrowRight');
+  await page.waitForTimeout(250);
+  await press(page, 'Space');
+  await page.waitForTimeout(300);
 
   for (let cycle = 0; cycle < 3; cycle += 1) {
     await press(page, 'c');
@@ -938,7 +947,7 @@ export async function pressBatchB(
           .__inventoryUiProbe?.slots ?? []
       ).some(
         (slot) =>
-          slot.container_id === 'm03_surface_b' && slot.definition_id !== null,
+          slot.container_id === 'm03t_bench_b' && slot.definition_id !== null,
       ),
     undefined,
     { timeout: 6000 },
@@ -950,15 +959,15 @@ export async function pressBatchB(
     const slots = (await uiProbe(page))!.slots;
     const source = slots.find(
       (slot) =>
-        slot.container_id === 'm03_surface_b' && slot.definition_id !== null,
+        slot.container_id === 'm03t_bench_b' && slot.definition_id !== null,
     );
     const target = slots.find(
       (slot) =>
-        slot.container_id === 'm03_store_b' && slot.definition_id === null,
+        slot.container_id === 'm03t_rack_b' && slot.definition_id === null,
     );
 
     if (source === undefined || target === undefined) {
-      throw new Error('M03 residual or store slot not found');
+      throw new Error('M03 tool or rack slot not found');
     }
 
     // V3 verification: the probe publishes each slot's TOP-LEFT corner
@@ -984,10 +993,10 @@ export async function pressBatchB(
     await page.mouse.up();
     await page.waitForTimeout(300);
 
-    // Diagnostic (read-only): where the residual ended up after the drag.
+    // Diagnostic (read-only): where the tool ended up after the drag.
     const after = await uiProbe(page);
     const m03Slots = (after?.slots ?? []).filter((slot) =>
-      slot.container_id.startsWith('m03_'),
+      slot.container_id.startsWith('m03t_'),
     );
 
     // eslint-disable-next-line no-console

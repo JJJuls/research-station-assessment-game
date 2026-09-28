@@ -2,8 +2,8 @@
  * Records Workshop — episodes 2 (Records & Workshop Restoration) and 5
  * (Return, Revision & Handover) of the evidence-led pilot v2 (Units 2, 5).
  *
- * Episode-2 windows (ledger): M02 open case workspace, M03 press occasion 1,
- * M04 sample-cutter debris, M06 dispatch console, M07 calibration bench
+ * Episode-2 windows (ledger): M02 open case workspace, M03 press occasion 1
+ * (three tools), M04 two cutting jobs, M06 dispatch console, M07 calibration bench
  * (start), M11 seal log (secondary), M12 quality packet 2, M13 conduit
  * lattice bench. Episode 5 (Unit 5, the return shift): M03 occasion 2
  * (Press B), M07 end (the same bench), M20 resume/end (station feed
@@ -31,18 +31,11 @@ import { PhysicalManipulationLayer } from '../gameplay/physical';
 import { declareM13Lattice } from '../informationProcessing/m13PipeNetwork';
 import { openIpOverlay } from '../informationProcessing/ui/openIpOverlay';
 import { ensureInventoryIconTextures } from '../inventory/inventoryTextures';
-import type { M03OccasionId } from '../inventory/m03Reset';
-import {
-  declareM03Opportunities,
-  M03_OPPORTUNITY_IDS,
-  m03OccasionStatus,
-} from '../inventory/m03Reset';
 import {
   installInventoryTelemetry,
   setInventoryTelemetryScene,
 } from '../inventory/telemetry';
 import { openInventoryOverlay } from '../inventory/ui/openOverlay';
-import { recordPriorExposure } from '../measurement/validity';
 import {
   refreshPilotCoverageProbe,
   stampContaminationNotes,
@@ -76,16 +69,34 @@ import {
   noteM02CEntry,
   presentM02C,
 } from '../pilot/windows/m02CaseWorkspace';
+import type { M03Occasion } from '../pilot/windows/m03ToolRestore';
+import {
+  declareM03T,
+  m03tPhase,
+  m03tTerminal,
+  m03tWindow,
+  noteM03TEntry,
+  presentM03T,
+} from '../pilot/windows/m03ToolRestore';
 import {
   declareM04,
+  departM04,
   disposeM04,
   dropM04Carried,
-  M04_DEBRIS,
+  listM04,
+  m04AnyProduced,
   m04Carried,
-  m04JobRun,
+  type M04Job,
+  m04JobOpen,
+  m04JobPieces,
+  m04NextJob,
+  type M04PickupOrigin,
   m04RemainingDebris,
-  m04Window,
+  m04SiteStatus,
+  noteM04Entry,
+  noteM04Unavailable,
   pickUpM04,
+  refuseM04SettlingPress,
   runM04SampleJob,
 } from '../pilot/windows/m04Debris';
 import {
@@ -179,6 +190,9 @@ declare global {
 
 const TILE = 32;
 
+/** What the cutter states while the second coupon is not available yet. */
+const CUTTER_REARMS = 'The cutter re-arms while you work another order.';
+
 /**
  * World V2 rescue continuation: all workshop coordinates live in the
  * shared, machine-audited zone book (src/pilot/zoneSites.ts) — anchors
@@ -233,7 +247,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     setInventoryTelemetryScene(key.scene.recordsWorkshop);
     // Declarations (register: declared + offered; idempotent).
     declareM02C();
-    declareM03Opportunities();
+    declareM03T();
     declareM04();
     declareM06();
     declareM07();
@@ -252,6 +266,12 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     // persisted start), M21 / M22 surfaces. Never a reminder, never a gate.
     if (this.returnShift()) {
       const now = Date.now();
+
+      // M03 (Unit 14): press batch B is presented once it can run (from
+      // Vale's check-in on), never while the press would still refuse.
+      if (pilotStageAtOrAfter('workshop_return')) {
+        presentM03T('b', now);
+      }
 
       presentM07End(now);
       m20ConsolePresent(now);
@@ -339,7 +359,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         // items' window states at the open.
         noteM02CEntry({
           stage: pilotStage(),
-          m04_debris: m04Window.windowStatus(),
+          m04_debris: m04SiteStatus(),
           m06_orders: m06Window.windowStatus(),
           m07_calibration: m07Window.windowStatus(),
           m12_packet_o2: m12Windows.o2.windowStatus(),
@@ -356,7 +376,8 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       () => m02cWindow.isClosed(),
     );
 
-    // ——— M03 press occasions: A in episode 2, B on the return shift ———
+    // ——— M03 press occasions (Station 080 U14: three tools each): A in
+    // episode 2, B on the return shift ———
     this.addPressStation('a', 'Label Press A', S.pressA, 2, ['workshop_work']);
     this.addPressStation('b', 'Label Press B', S.pressB, 2, [
       'workshop_return',
@@ -383,7 +404,8 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       },
     );
 
-    // ——— M04 sample cutter + disposal chute (physical debris) ———
+    // ——— M04 sample cutter + disposal chute (Station 080 U14: two
+    // cutting jobs of three pieces, each closed at its first departure) ———
     this.addStation({
       interactionKey: 'pilotStation',
       label: 'Sample Cutter',
@@ -392,23 +414,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       y: WS.sampleCutter.y,
       onPromptOpened: () => {
         this.logStationOpened('sample_cutter');
-
-        if (m04JobRun()) {
-          // Keyboard parity: the debris lies inside the cutter's own
-          // interaction radius, so SPACE/E here must act on the debris
-          // (dispose at the chute / pick up the nearest piece) exactly as
-          // it does with no station in range — never re-open the idle bench.
-          if (!this.tryDebrisInteract('keyboard')) {
-            this.showFeedbackMessage('Coupon cut. The cutter is idle.');
-          }
-
-          return false;
-        }
-
-        runM04SampleJob(Date.now(), 'keyboard');
-        this.player.playActionAnim('dig');
-        this.showFeedbackMessage('Test coupon cut.');
-        this.physical?.syncObjects(this.debrisEntries());
+        this.useSampleCutter();
         return false;
       },
     });
@@ -418,7 +424,9 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       'Sample Cutter',
       ['workshop_work'],
       3,
-      () => m04JobRun(),
+      // Done while no coupon is waiting to be cut (the second coupon
+      // becomes available after the first job's departure).
+      () => m04NextJob() === null,
     );
     // World V2: the disposal bin is baked into the plate at the cutter's
     // east side — no chute sprite; the physical container keeps its
@@ -442,7 +450,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         openM06(Date.now(), {
           stage: pilotStage(),
           m02_case_workspace: m02cWindow.windowStatus(),
-          m04_debris: m04Window.windowStatus(),
+          m04_debris: m04SiteStatus(),
           m07_calibration: m07Window.windowStatus(),
           m12_packet_o2: m12Windows.o2.windowStatus(),
         });
@@ -513,7 +521,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         openM12('o2', Date.now(), {
           stage: pilotStage(),
           m02_case_workspace: m02cWindow.windowStatus(),
-          m04_debris: m04Window.windowStatus(),
+          m04_debris: m04SiteStatus(),
           m06_orders: m06Window.windowStatus(),
           m07_calibration: m07Window.windowStatus(),
         });
@@ -990,6 +998,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       x: at.x,
       y: at.y,
       onPromptOpened: () => {
+        if (this.debrisPreempts(id, at)) {
+          return false;
+        }
+
         this.logStationOpened(id);
         open();
         return false;
@@ -1081,7 +1093,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   private addPressStation(
-    occasion: M03OccasionId,
+    occasion: M03Occasion,
     label: string,
     at: { x: number; y: number },
     order: number,
@@ -1099,10 +1111,19 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       x: at.x,
       y: at.y,
       onPromptOpened: () => {
+        if (this.debrisPreempts(`press_${occasion}`, at)) {
+          return false;
+        }
+
         this.logStationOpened(`press_${occasion}`);
 
-        if (m03OccasionStatus(occasion) === 'closed') {
-          this.showFeedbackMessage('Press station idle. The batch is done.');
+        if (m03tPhase(occasion) === 'departed') {
+          this.showFeedbackMessage('Label press idle. The batch is done.');
+          return false;
+        }
+
+        if (m03tTerminal(occasion)) {
+          this.showFeedbackMessage('Label press out of service.');
           return false;
         }
 
@@ -1113,21 +1134,30 @@ export class RecordsWorkshopScene extends PilotZoneScene {
           return false;
         }
 
-        if (m03OccasionStatus(occasion) === 'idle') {
-          const other: M03OccasionId = occasion === 'a' ? 'b' : 'a';
+        if (m03tPhase(occasion) === 'unopened') {
+          const other: M03Occasion = occasion === 'a' ? 'b' : 'a';
 
-          if (m03OccasionStatus(other) === 'closed') {
-            recordPriorExposure(
-              M03_OPPORTUNITY_IDS[occasion],
-              `exposure:${M03_OPPORTUNITY_IDS[other]}_closed_before`,
+          if (m03tPhase(other) === 'departed') {
+            m03tWindow(occasion).recordPriorExposure(
+              `exposure:${m03tWindow(other).spec.opportunityId}_closed_before`,
             );
           }
         }
 
+        // Entry state (Unit 14): the route stage and the other Workshop
+        // items' window states at the open.
+        noteM03TEntry(occasion, {
+          stage: pilotStage(),
+          m02_case_workspace: m02cWindow.windowStatus(),
+          m04_debris: m04SiteStatus(),
+          m06_orders: m06Window.windowStatus(),
+          m07_calibration: m07Window.windowStatus(),
+          m12_packet_o2: m12Windows.o2.windowStatus(),
+        });
         openInventoryOverlay(this, {
-          mode: 'm03',
+          mode: 'm03tools',
           m03Occasion: occasion,
-          allowWorldDrop: true,
+          allowWorldDrop: false,
         });
         return false;
       },
@@ -1139,8 +1169,125 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       y: at.y,
       label,
       stages,
-      isDone: () => m03OccasionStatus(occasion) === 'closed',
+      isDone: () => m03tTerminal(occasion),
       order,
+    });
+  }
+
+  /** The cutter cuts in the restoration shift only (register: one episode). */
+  private cuttingScheduled(): boolean {
+    return !pilotStageAtOrAfter('return_hub');
+  }
+
+  /**
+   * One use of the Sample Cutter (SPACE / E at the bench). A waiting
+   * coupon is cut. With none waiting, a press inside the settle window of
+   * the cut is refused (a repeated press is never an act on the pieces);
+   * after it the press acts on the pieces — which lie inside the cutter's
+   * own interaction radius — exactly as it does with no station in range
+   * (keyboard parity with the pointer); otherwise the bench states that
+   * it has nothing to cut.
+   */
+  private useSampleCutter() {
+    if (m04NextJob() !== null && this.cuttingScheduled()) {
+      // Entry state (Unit 14): the route stage and the other Workshop
+      // items' window states at the cut.
+      noteM04Entry({
+        stage: pilotStage(),
+        m02_case_workspace: m02cWindow.windowStatus(),
+        m06_orders: m06Window.windowStatus(),
+        m07_calibration: m07Window.windowStatus(),
+        m12_packet_o2: m12Windows.o2.windowStatus(),
+      });
+
+      const result = runM04SampleJob(Date.now(), 'keyboard', (job) =>
+        m04JobPieces(job).every((piece) => this.textures.exists(piece.icon)),
+      );
+
+      if (result.outcome === 'run') {
+        this.player.playActionAnim('dig');
+        // The same line for everyone at the cut: the second coupon is not
+        // available yet (never a word about the pieces).
+        this.showFeedbackMessage(
+          result.number === 1
+            ? `Sample coupon 1 of 2 cut. ${CUTTER_REARMS}`
+            : 'Sample coupon 2 of 2 cut.',
+        );
+        this.physical?.syncObjects(this.debrisEntries());
+        this.refreshGuidance();
+
+        return;
+      }
+
+      if (result.outcome === 'technical_failure') {
+        this.showFeedbackMessage('The cutter jammed. No coupon was cut.');
+        this.refreshGuidance();
+
+        return;
+      }
+    }
+
+    if (refuseM04SettlingPress(Date.now(), 'keyboard')) {
+      return;
+    }
+
+    if (this.tryDebrisInteract('keyboard', 'cutter_press')) {
+      return;
+    }
+
+    if (m04NextJob() !== null) {
+      noteM04Unavailable('not_scheduled', 'keyboard');
+      this.showFeedbackMessage('No cutting scheduled on the cutter right now.');
+
+      return;
+    }
+
+    if (m04JobOpen() === 'o1') {
+      noteM04Unavailable('job_open', 'keyboard');
+      this.showFeedbackMessage(CUTTER_REARMS);
+
+      return;
+    }
+
+    if (!m04AnyProduced()) {
+      noteM04Unavailable('out_of_service', 'keyboard');
+      this.showFeedbackMessage('The cutter is out of service.');
+
+      return;
+    }
+
+    noteM04Unavailable(
+      m04JobOpen() === null ? 'all_jobs_run' : 'job_open',
+      'keyboard',
+    );
+    this.showFeedbackMessage('Both coupons cut. The cutter is idle.');
+  }
+
+  /**
+   * A press at ANOTHER station while a cutting job awaits its departure:
+   * when a piece OF THAT JOB lies nearer the avatar than the station, or
+   * the bin lies nearer than the station while a piece is carried, the
+   * press acts on the piece — as it does at the cutter and on open floor
+   * — and the station is not opened. Without this a keyboard pick-up
+   * beside the locker or a press would open that station and close the
+   * job. Only inside a job's own window and only for that job's pieces:
+   * leftover pieces of an earlier job lying on the floor never intercept
+   * a station (one already carried is still dropped into a nearer bin,
+   * as a late disposal).
+   */
+  private debrisPreempts(
+    stationId: string,
+    anchor: { x: number; y: number },
+  ): boolean {
+    const job = m04JobOpen();
+
+    if (job === null) {
+      return false;
+    }
+
+    return this.tryDebrisInteract('keyboard', `station_press:${stationId}`, {
+      distance: Math.hypot(this.player.x - anchor.x, this.player.y - anchor.y),
+      job,
     });
   }
 
@@ -1167,7 +1314,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       getPlayerPosition: () => ({ x: this.player.x, y: this.player.y }),
       isEnabled: () => this.physicalInputEligible(),
       onPickup: (objectId) => {
-        if (!pickUpM04(objectId, 'pointer')) {
+        if (!pickUpM04(objectId, 'pointer', 'pointer')) {
           this.showFeedbackMessage('Hands full.');
           return false;
         }
@@ -1178,8 +1325,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       onPlace: (objectId, containerId) => {
         if (
           containerId === 'm04_disposal' &&
-          disposeM04(objectId, Date.now(), 'pointer')
+          disposeM04(objectId, Date.now(), 'pointer', 'pointer') !== 'invalid'
         ) {
+          // The same line as the keyboard path shows.
+          this.showFeedbackMessage('Disposed.');
           this.physical?.syncObjects(this.debrisEntries());
           return { outcome: 'accepted' };
         }
@@ -1203,14 +1352,13 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     this.physical.syncContainers([
       {
         container_id: 'm04_disposal',
-        label: 'Disposal chute',
+        label: 'disposal bin',
         x: WS.disposalChute.x,
         y: WS.disposalChute.y,
         accepts: ['debris'],
       },
     ]);
     this.physical.syncObjects(this.debrisEntries());
-    void M04_DEBRIS;
   }
 
   /** The wall mass between the bays, shown while the avatar is inside it. */
@@ -1308,9 +1456,26 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     }
   }
 
-  /** SPACE/E with nothing in range: carried debris drops at the chute if in reach, else pickup, else bundle pickup. */
+  /**
+   * SPACE/E with no station in range: the carried piece drops at the bin
+   * if in reach, else the nearest piece is lifted — unless a supply
+   * bundle in reach lies nearer (the prompt then names the bundle, and
+   * the press collects it).
+   */
   protected onEmptyInteract(): void {
-    if (this.tryDebrisInteract('keyboard')) {
+    const bundle = this.bundles.nearest(this.player.x, this.player.y);
+    const rival =
+      bundle === null
+        ? null
+        : {
+            distance: Math.hypot(
+              this.player.x - bundle.x,
+              this.player.y - bundle.y,
+            ),
+            job: null,
+          };
+
+    if (this.tryDebrisInteract('keyboard', 'open_floor_press', rival)) {
       return;
     }
 
@@ -1318,21 +1483,34 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   /**
-   * One keyboard debris action (shared by the empty-interact path and the
-   * idle cutter prompt): dispose the carried piece when the chute is in
-   * reach, otherwise pick up the nearest loose piece within reach.
+   * One keyboard debris action (shared by the empty-interact path, the
+   * idle cutter prompt and a press at a neighbouring station): dispose
+   * the carried piece when the bin is in reach, otherwise pick up the
+   * nearest loose piece within reach. With a `rival` (the station or the
+   * bundle the press would otherwise go to) the piece or the bin must lie
+   * nearer the avatar than the rival, and with `rival.job` only a piece
+   * of that job is lifted.
    */
-  private tryDebrisInteract(inputMode: 'keyboard'): boolean {
+  private tryDebrisInteract(
+    inputMode: 'keyboard',
+    origin: M04PickupOrigin,
+    rival: { distance: number; job: M04Job | null } | null = null,
+  ): boolean {
     const carried = m04Carried();
+    const nearerThan = rival?.distance ?? Number.POSITIVE_INFINITY;
 
     if (carried !== null) {
-      const near =
-        Math.hypot(
-          this.player.x - WS.disposalChute.x,
-          this.player.y - WS.disposalChute.y,
-        ) <= 96;
+      const toBin = Math.hypot(
+        this.player.x - WS.disposalChute.x,
+        this.player.y - WS.disposalChute.y,
+      );
+      const near = toBin <= 96 && toBin < nearerThan;
 
-      if (near && disposeM04(carried.object_id, Date.now(), inputMode)) {
+      if (
+        near &&
+        disposeM04(carried.object_id, Date.now(), inputMode, origin) !==
+          'invalid'
+      ) {
         this.showFeedbackMessage('Disposed.');
         this.physical?.syncObjects(this.debrisEntries());
         return true;
@@ -1342,17 +1520,24 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     }
 
     // Keyboard debris pickup: nearest loose debris within reach.
-    const nearest = this.debrisEntries()
-      .map((entry) => ({
-        entry,
-        d: Math.hypot(this.player.x - entry.x, this.player.y - entry.y),
+    const nearest = m04RemainingDebris()
+      .filter(
+        (piece) =>
+          rival === null || rival.job === null || piece.job === rival.job,
+      )
+      .map((piece) => ({
+        piece,
+        d: Math.hypot(
+          this.player.x - (WS.cutterScatter.x + piece.dx),
+          this.player.y - (WS.cutterScatter.y + piece.dy),
+        ),
       }))
-      .filter((c) => c.d <= 64)
+      .filter((c) => c.d <= 64 && c.d < nearerThan)
       .sort((a, b) => a.d - b.d)[0];
 
     if (
       nearest !== undefined &&
-      pickUpM04(nearest.entry.spec.object_id, inputMode)
+      pickUpM04(nearest.piece.object_id, inputMode, origin)
     ) {
       this.player.playActionAnim('pickup');
       this.physical?.syncObjects(this.debrisEntries());
@@ -1363,13 +1548,9 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   protected onRoomExit(): void {
-    const now = Date.now();
-
-    // M04: the first exit after the debris appeared closes the window.
-    if (m04Window.isOpen()) {
-      void closeM04OnExitLazy(now);
-    }
-
+    // M04 (Unit 14): leaving the room is the first departure of a job
+    // still open (a carried piece is counted, then put back).
+    departM04('room_exit', null, Date.now());
     dropM04Carried();
   }
 
@@ -1377,6 +1558,15 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
       metadata: { station_id: stationId, zone: this.zoneKey },
     });
+
+    // M04 (Unit 14): turning to another station is the first departure
+    // of a cutting job still open; it also releases the second coupon.
+    if (
+      stationId !== 'sample_cutter' &&
+      departM04('other_station', stationId, Date.now()).length > 0
+    ) {
+      this.refreshGuidance();
+    }
   }
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {
@@ -1468,7 +1658,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         return {
           body:
             'WORK ORDERS — RESTORATION SHIFT\n' +
-            'Case workspace, press batch A, sample coupon, dispatch lines, calibration bench, quality packet, conduit lattice. Sign the board when you are done here.',
+            'Case workspace, press batch A, two sample coupons, dispatch lines, calibration bench, quality packet, conduit lattice. Sign the board when you are done here.',
           options: [
             {
               label: 'Take the orders.',
@@ -1480,6 +1670,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
                 // M02 (Unit 13): the work orders list the case workspace —
                 // it is presented here.
                 presentM02C(now);
+                // M03 / M04 (Unit 14): the work orders list press batch A
+                // and the two sample coupons.
+                presentM03T('a', now);
+                listM04(now);
                 // M06 (Unit 7): the work orders list the dispatch lines —
                 // the console is presented here.
                 presentM06(now);
@@ -1551,11 +1745,4 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         };
     }
   }
-}
-
-/** Deferred import guard (module order): the M04 exit closure. */
-async function closeM04OnExitLazy(nowMs: number) {
-  const { closeM04OnExit } = await import('../pilot/windows/m04Debris');
-
-  closeM04OnExit(nowMs);
 }

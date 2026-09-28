@@ -576,6 +576,10 @@ const SYSTEM_DRIVEN = new Set([
   // 'system') when the workshop is entered on the return without an
   // antenna start — a system-driven availability record, not an act.
   'proto_m20_antenna_resume_unavailable',
+  // Station 080 Unit 14: "Take the orders." lists the two sample coupons
+  // (input_mode 'system') — an exposure record; a cutting job is
+  // presented only by its cut.
+  'proto_m04_cutting_listed',
 ]);
 
 export async function expectNoMeasurementEvents(page: Page) {

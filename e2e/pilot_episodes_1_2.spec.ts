@@ -6,8 +6,8 @@
  * reachable without any prior success; each window logs only its own
  * item-owned family; the M09/M10 offers are explicit; the M05 fault is
  * presented silently and censors on departure; the M02 open workspace
- * runs organise → hand over → retrieval; the M04 debris window closes at
- * the first exit; M03 occasion 2 refuses before the return; every overlay
+ * runs organise → hand over → retrieval; the first M04 cutting job closes
+ * at its first departure (Station 080 Unit 14); M03 occasion 2 refuses before the return; every overlay
  * renders above the host and resumes it; no canonical event and no score
  * exists anywhere in the log.
  */
@@ -469,10 +469,10 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     );
     expect(await itemStatus(page, 'M02')).toBe('open');
 
-    // Sample cutter: NO debris exists before the job (the objects are created
-    // by the job, so rendered debris is evidence only together with the
-    // job_run event); the neutral job then scatters six objects (physical
-    // layer) and opens the M04 window once.
+    // Sample cutter: NO debris exists before a job (the objects are created
+    // by the cut, so rendered debris is evidence only together with the
+    // job_run event); the first coupon then scatters three objects
+    // (physical layer) and opens the first job's window once.
     const debrisCount = () =>
       page.evaluate(
         () =>
@@ -489,12 +489,14 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     });
     await page.waitForTimeout(600);
     types = await pilotEventTypes(page);
-    expect(types).toContain('proto_m04_debris_job_run');
+    expect(types).toContain('proto_m04_cutting_job_run');
     expect(
-      types.filter((t) => t === 'proto_m04_debris_opportunity_opened'),
+      types.filter((t) => t === 'proto_m04_cutting_opportunity_opened'),
     ).toHaveLength(1);
-    expect(await debrisCount()).toBe(6);
-    expect(await itemStatus(page, 'M04')).toBe('open');
+    expect(await debrisCount()).toBe(3);
+    // Job 1 is open and job 2 not yet run: the item row reads the least
+    // terminal of its two windows.
+    expect(await itemStatus(page, 'M04')).toBe('pending');
 
     // Dispatch console: practice line via token buttons (pointer), dispatched.
     await openSurfaceAt(page, WORKSHOP.dispatchConsole, 'm06_dispatch_console');
@@ -568,12 +570,16 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
       (await pilotCoverage(page))!.items.find((i) => i.item === 'M11')!.status,
     ).toBe('not_applicable');
 
-    // Leaving the workshop closes the debris window (first exit) as a completed observation.
+    // The first job closed at its first departure (the dispatch console
+    // was opened next); the second coupon was never cut.
     await walkTo(page, 640, 272);
     await workshopToConcourse(page);
     types = await pilotEventTypes(page);
-    expect(types).toContain('proto_m04_debris_window_closed');
-    expect(await itemStatus(page, 'M04')).toBe('completed');
+    expect(
+      types.filter((t) => t === 'proto_m04_cutting_first_departure'),
+    ).toHaveLength(1);
+    expect(types).toContain('proto_m04_cutting_window_closed');
+    expect(await itemStatus(page, 'M04')).toBe('pending');
 
     // Disjoint families and no canonical context (same invariant as episode 1).
     for (const event of (await getEvents(page)).filter((e) =>

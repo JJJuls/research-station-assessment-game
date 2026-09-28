@@ -173,7 +173,9 @@ test.describe('Utility & Core closure model (pure)', () => {
         completed('proto_m01_batch_o1'),
         completed('proto_m01_batch_o2'),
         absent('proto_m02_retrieval_series'),
-        invalid('proto_m04_debris_cleanup'),
+        // Station 080 Unit 14: M04 owns two cutting-job windows.
+        invalid('proto_m04_cutting_o1'),
+        invalid('proto_m04_cutting_o2'),
         // Station 080 Unit 7: M06 is the timed work period.
         censored('proto_m06_work_period'),
         technical('proto_m07_calibration_project'),

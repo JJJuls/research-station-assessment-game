@@ -385,7 +385,7 @@ test.describe('station concourse interaction lifecycle', () => {
     // Label Press A — M03 occasion 1 (E). Press B is scheduled for the
     // return shift only (v2 Unit 2): SPACE there shows the refusal line and
     // opens nothing — the world stays live.
-    await openStation(page, PILOT.workshop.pressA, 'KeyE', 'm03');
+    await openStation(page, PILOT.workshop.pressA, 'KeyE', 'm03tools');
     await closeAndMove(page);
     await travelTo(
       page,

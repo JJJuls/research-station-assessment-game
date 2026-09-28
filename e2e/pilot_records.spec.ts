@@ -88,13 +88,17 @@ interface RegisterRecord {
 const TRAY = (n: number) => `m02c_tray_${n}`;
 const DESK = 'm02c_desk';
 const M02_FAMILY = 'proto_m02_workspace_';
-/** System-driven exposure records of "Take the orders." (Units 7 / 8). */
+/** System-driven exposure records of "Take the orders." (Units 7 / 8 / 14). */
 const BOARD_PRESENTATIONS = [
   'proto_m06_orders_presented',
   'proto_m12_check_presented',
+  'proto_m03tools_presented',
+  'proto_m04_cutting_listed',
 ];
+const M03_FAMILY = 'proto_m03tools_';
 const OTHER_WORKSHOP_FAMILIES = [
   'proto_m03_',
+  M03_FAMILY,
   'proto_m04_',
   'proto_m06_',
   'proto_m07_',
@@ -599,24 +603,34 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
 
     await enterWorkshop(page, 'm03');
 
-    // Both occasions are declared + offered on entry, neither entered.
+    // Both occasions are declared + offered on entry, neither entered
+    // (Station 080 Unit 14: the v3 three-tool occasions).
     let records = await register(page);
 
     expect(
       records
-        .filter((r) => r.opportunity_id.startsWith('proto_m03_reset_'))
+        .filter((r) => r.opportunity_id.startsWith('proto_m03_tools_'))
         .map((r) => r.opportunity_id)
         .sort(),
-    ).toEqual(['proto_m03_reset_a', 'proto_m03_reset_b']);
+    ).toEqual(['proto_m03_tools_a', 'proto_m03_tools_b']);
 
-    // Press A — keyboard path: C runs the press cycle; the third cycle
-    // opens the window; closing the panel is the departure observation.
+    // Press A — keyboard path: the label roll is moved from the supply
+    // slot to the feed (SPACE lifts, the arrow moves the focus, SPACE sets
+    // down), C runs the press cycle; the third cycle puts the tools on
+    // the surface and opens the window; closing the panel is the first
+    // departure.
     await workshopVia(page, 236, 204);
     await interactAt(page, PILOT.workshop.pressA, {
       approachOffset: { x: 0, y: 44 },
     });
     await waitOverlay(page, true);
-    expect((await uiProbe(page))!.mode).toBe('m03');
+    expect((await uiProbe(page))!.mode).toBe('m03tools');
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(250);
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(250);
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(300);
 
     for (let cycle = 0; cycle < 3; cycle += 1) {
       await page.keyboard.press('c');
@@ -627,29 +641,35 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
     await waitOverlay(page, false);
 
     const m03 = (await getEvents(page)).filter((e) =>
-      e.event_type.startsWith('proto_m03_'),
+      e.event_type.startsWith(M03_FAMILY),
     );
 
     expect(m03.map((e) => e.event_type)).toEqual(
       expect.arrayContaining([
-        'proto_m03_press_cycle',
-        'proto_m03_opportunity_opened',
-        'proto_m03_surface_state_at_departure',
-        'proto_m03_window_closed',
+        `${M03_FAMILY}presented`,
+        `${M03_FAMILY}practice_completed`,
+        `${M03_FAMILY}press_cycle`,
+        `${M03_FAMILY}opportunity_opened`,
+        `${M03_FAMILY}first_departure`,
+        `${M03_FAMILY}window_closed`,
       ]),
     );
 
     for (const event of m03) {
       const m = metadataOf(event);
 
-      expect(m.opportunity_id).toBe('proto_m03_reset_a');
-      // Ledger window id (Unit 5 aligned the module to sheet 09).
-      expect(m.window_id).toBe('m03_reset_o1');
+      expect(m.opportunity_id).toBe('proto_m03_tools_a');
+      expect(m.window_id).toBe('m03_tools_o1');
       expect(m.occasion).toBe('o1');
       expect(event.object_id).toBe('m03_press_bench_a');
       expect(event.study_item_ids ?? undefined).toBeUndefined();
       expect(event.success ?? undefined).toBeUndefined();
     }
+
+    // The retired v2 family never fires on the route.
+    expect(
+      (await pilotEventTypes(page)).filter((t) => t.startsWith('proto_m03_')),
+    ).toEqual([]);
 
     // Press B is scheduled for the return shift: no window, no B event.
     await workshopVia(page, 302, 204);
@@ -666,15 +686,15 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
       ),
     ).toMatch(/No batch scheduled/);
     expect(
-      (await pilotEventTypes(page)).filter((t) => t.startsWith('proto_m03_')),
+      (await pilotEventTypes(page)).filter((t) => t.startsWith(M03_FAMILY)),
     ).toHaveLength(m03.length);
 
     // Register: A completed, B still offered-only (distinct records, one
     // owner, identical fixed starting condition recorded as the form).
     records = await register(page);
 
-    const a = records.find((r) => r.opportunity_id === 'proto_m03_reset_a')!;
-    const b = records.find((r) => r.opportunity_id === 'proto_m03_reset_b')!;
+    const a = records.find((r) => r.opportunity_id === 'proto_m03_tools_a')!;
+    const b = records.find((r) => r.opportunity_id === 'proto_m03_tools_b')!;
 
     expect(a).toMatchObject({ owner: 'M03', entered: true, completed: true });
     expect(b).toMatchObject({ owner: 'M03', entered: false, completed: false });

@@ -209,6 +209,53 @@ const CONTAINER_SPECS: readonly ContainerSpec[] = [
     namespace: 'm02c',
     acceptTags: ['m02c_case'],
   },
+  // Station 080 M03 (Unit 14) — per press occasion: work surface, tool
+  // rack, roll supply slot and press feed slot.
+  ...(
+    [
+      [
+        CONTAINER_IDS.m03tBenchA,
+        CONTAINER_IDS.m03tRackA,
+        CONTAINER_IDS.m03tSupplyA,
+        CONTAINER_IDS.m03tFeedA,
+      ],
+      [
+        CONTAINER_IDS.m03tBenchB,
+        CONTAINER_IDS.m03tRackB,
+        CONTAINER_IDS.m03tSupplyB,
+        CONTAINER_IDS.m03tFeedB,
+      ],
+    ] as const
+  ).flatMap(([bench, rack, supply, feed]): ContainerSpec[] => [
+    {
+      containerId: bench,
+      containerType: 'm03t_bench',
+      capacity: 8,
+      namespace: 'm03t',
+      acceptTags: ['m03t_tool'],
+    },
+    {
+      containerId: rack,
+      containerType: 'm03t_rack',
+      capacity: 3,
+      namespace: 'm03t',
+      acceptTags: ['m03t_tool'],
+    },
+    {
+      containerId: supply,
+      containerType: 'm03t_supply',
+      capacity: 1,
+      namespace: 'm03t',
+      acceptTags: ['m03t_roll'],
+    },
+    {
+      containerId: feed,
+      containerType: 'm03t_feed',
+      capacity: 1,
+      namespace: 'm03t',
+      acceptTags: ['m03t_roll'],
+    },
+  ]),
 ];
 
 export function createInitialInventoryState(): InventoryState {

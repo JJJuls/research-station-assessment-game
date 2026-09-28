@@ -3054,3 +3054,520 @@ completed` (S-M1): fixed — `route_departure`; pure-tested.
   authorisation of 28 September — no git configuration written; nothing
   pushed, merged, tagged, deployed or deleted; the run stops here — U14
   (M03 / M04) is not started.
+
+## U14 — M03 tool restoration (three tools per press occasion) + M04 own debris (two three-piece cutting jobs)
+
+- **U13 commit (recorded at the start of U14, as announced under U13):**
+  `d8b4d94` — `feat(m02): six balanced retrieval requests with first
+answers, cannot locate and deferred feedback`; not amended; the tree was
+  clean at the start of U14; the backup stash
+  `backup-U12-M24-M26-before-review-2026-09-24` exists and is not touched.
+- **U13 carry-forward (documentation only — U13 is not reopened, no M02
+  code changes):** confirmed by the research owner, 28 September: "the
+  withdrawal follows from the ruling. The ruling governs the information
+  available during the retrieval decision — system-supplied case codes,
+  kind icons and case-name/detail content are concealed; the
+  participant's own organisational structure and labels remain legitimate
+  cues that participants may read and use." This settles only the
+  confirmation sentence of register §5.149 (recorded there); §5.139,
+  §5.142, §5.150–§5.153 and §5.158–§5.161 remain separate owner
+  questions.
+- **Authorities used:** the owner's 28 September instruction (continue
+  from `d8b4d94`, Unit 14 only, recover the contract from the live
+  repository); the register §2 M03 and M04 rows and `registerV3.ts`
+  (M03: "Two occasions with three tools each; movement taught
+  beforehand; storage visible, exit open; no cleanup instruction or
+  reward; first-departure state saved permanently"; M04: "Six debris
+  pieces across two short cutting jobs (three each); disposal optional
+  and accessible; debris recorded at the first departure from each job;
+  later cleanup never rewrites it"); the matrix M03 / M04 rows and unit
+  plan ("U14 M03/M04"); the addendum §2 / §3; register §2b (M03
+  independent occasions, M04 repeated within one episode), §5.2
+  (planned-observation denominators), §5.13 / §5.14 (presented and never
+  opened; reload rule). The execution specification file remains missing
+  (reported under U6); the project instructions file names an earlier
+  branch — the unit log and the owner's instruction establish this one.
+- **Reconciliation of the sources:** the register, the matrix, the
+  addendum, `registerV3.ts` and this log agree on the unit (M03 and M04),
+  the location (Records Workshop; M03 in episodes 2 and 5, M04 in episode
+  2), the mechanics and both primaries. One difference of wording, no
+  conflict: the matrix says "movement practice before occasion A", the
+  register "movement taught beforehand" — the register row governs and
+  the matrix names the minimum; taken as: the movement is taught before
+  the tools appear on every occasion (default, §5 owner question). The
+  register's "object states" (M03) and "per-job values" (M04) companions
+  have no row in `registerV3.ts`; they are added as provisional feature
+  rows (precedent §5.146).
+- **Unit id:** U14 (development order: after U13 M02; before U15 M09 /
+  M10).
+- **Objective:** bring the two remaining Organisation items to their
+  approved designs — M03: two press occasions that each leave three
+  tools on the work surface after a taught movement, a reachability
+  check per tool, and the state at the first departure saved
+  permanently; M04: two short cutting jobs of three pieces each, each
+  job's debris recorded at the first departure from that job, carried
+  pieces counted, later cleanup recorded apart.
+- **Scientific rationale:** register M03 row ("Retain and verify"; BFI-2
+  item 33, keyed positively; retained core; measure `m03_tools_restored`
+  = tools in their marked home at the first departure, summed over both
+  occasions / 6 — planned-observations denominator, an occasion with an
+  inaccessible object technically invalid and excluded; higher = more
+  voluntary tidying) and M04 row ("Extend occasions"; BFI-2 item 48,
+  reverse-keyed on the questionnaire — the telemetry direction is the
+  register's and is never reversed: `m04_undisposed_pieces` = pieces not
+  disposed at the first departure, carried pieces included, summed over
+  both jobs / 6; higher = more own mess left behind; a job never run is
+  not presented). Companions kept beside and never merged:
+  `m03_object_states` (per occasion and tool: location at the first
+  departure, moves, exposure, practice) and `m04_job_values` (per job:
+  undisposed, disposed, carried, latency, exposure, closing trigger,
+  later disposals). No composite across the two items or across the
+  Organisation group.
+- **Participant-facing behaviour:**
+  - _Press stations (M03)._ Label Press A (restoration shift) and Label
+    Press B (return shift) keep their stations, labels and schedule. The
+    panel shows the press, a ROLL SUPPLY slot, a PRESS FEED slot, the
+    WORK SURFACE and a TOOL RACK. The press states how to load it ("Load
+    the press: move the label roll from ROLL SUPPLY to PRESS FEED — drag
+    it, or focus it and press SPACE, then SPACE on the feed."); RUN
+    PRESS CYCLE (C) works once the roll is in the feed; after the third
+    cycle the batch is reported done and the three tools used for the
+    run lie on the work surface. Nothing mentions the rack, tidying or a
+    reward; closing the panel (ESC / I / X) is always available and is
+    the departure; afterwards the press is idle.
+  - _Sample cutter (M04)._ The work orders list two sample coupons. The
+    first use of the cutter cuts coupon 1 and leaves three pieces at the
+    bench; the pieces can be carried one at a time (pointer, or SPACE /
+    E at the cutter) to the disposal bin beside it; nobody mentions
+    them. Coupon 2 becomes available once the participant has turned to
+    other work (another station opened, or the room left) and cuts three
+    further pieces under the same conditions. The route never waits for
+    a disposal.
+- **Allowed files:** `src/pilot/windows/m03RestoreModel.ts` (new pure
+  model), `src/pilot/windows/m03ToolRestore.ts` (new window adapter),
+  `src/pilot/windows/m04CuttingModel.ts` (new pure model),
+  `src/pilot/windows/m04Debris.ts` (rewritten as the window adapter),
+  `src/pilot/windows/reviewClosure.ts`,
+  `src/inventory/model.ts`, `src/inventory/engine.ts`,
+  `src/inventory/itemDefs.ts`, `src/inventory/inventoryTextures.ts` (the
+  `m03t` namespace only: eight containers, three tools, the label roll
+  and their icons — additive), `src/inventory/ui/InventoryOverlayScene.ts`
+  (the new `m03tools` mode only), `src/measurement/features/m03.ts` and
+  `src/measurement/features/m04.ts` (new),
+  `src/measurement/features/index.ts`, `src/measurement/registerV3.ts`,
+  `src/scenes/RecordsWorkshopScene.ts`,
+  `src/pilot/return/returnEpisodeModel.ts` (the M03 row of the linked
+  windows and the families table), `src/world/interactionRegistry.ts`
+  (the `opens` / `window` labels of the two presses and the cutter);
+  `e2e/m03_restore.spec.ts` and `e2e/m04_cutting.spec.ts` (new pure),
+  `e2e/m03_m04_route.spec.ts` (new browser),
+  `e2e/pilot_records.spec.ts` (its M03 test and family list),
+  `e2e/pilot_return.spec.ts` and `e2e/returnHelpers.ts` (Press B),
+  `e2e/pilot_return_models.spec.ts` (tests 1–2),
+  `e2e/pilot_episodes_1_2.spec.ts` (the cutter and press steps),
+  `e2e/concourse_interaction_lifecycle.spec.ts` (the Press A mode),
+  `e2e/pilot_coverage.spec.ts`, `e2e/pilot_closure_models.spec.ts`, and
+  only if a derived id, count, label or assertion changes:
+  `e2e/pilot_route_model.spec.ts`, `e2e/m26_protocol_foundation.spec.ts`,
+  `e2e/world_v1_registry.spec.ts`, `e2e/inventory_foundation.spec.ts`,
+  `e2e/pilotHelpers.ts`; `docs/verification/station-080-m26/**`;
+  `docs/game/rooms/12-workshop-return.md` (the Press B rows only).
+- **Prohibited areas:** common, plus every other item's code, the legacy
+  Inventory Lab press workstation (`src/inventory/m03Reset.ts`, its
+  `proto_m03_*` events, the `m03` overlay mode, the `m03` namespace, its
+  five residual definitions and `InventoryLabScene.ts`), the inventory
+  store (`store.ts`), `SlotGridView.ts`, `windowKit.ts`, `protocol.ts`,
+  `zoneSites.ts` (the audited cutter, bin and scatter positions and the
+  six piece offsets are kept), `physical.ts`, `PilotZoneScene.ts`,
+  `RoomScene.ts`, the v2 ledger.
+- **Entry state:** HEAD `d8b4d94` (U13), clean tree, branch
+  `fable-professional-world-rescue-v2`; the backup stash exists and is
+  not touched.
+- **Success behaviour:** both presses are reachable on the ordinary route
+  in their shifts; on each the taught movement precedes the run, three
+  tools appear at fixed slots, the state at the panel's first close is
+  recorded once and never rewritten, and the extractor reproduces
+  restored / 6 from the raw `tool_moved` and `first_departure` events;
+  the cutter runs two jobs of three pieces, each job closes at its own
+  first departure with carried pieces counted, a later disposal never
+  changes a recorded job, and the extractor reproduces undisposed / 6
+  from the raw `piece_disposed` and `first_departure` events.
+- **Failure/recovery:** M03 — a panel closed before the run is complete
+  keeps the occasion unobserved and the press usable (the roll and the
+  cycles are kept); a failed seed or a tool that cannot be reached
+  (not on the surface, or no free accepting rack slot) is a technical
+  failure and the occasion is excluded, never a low value; a panel
+  closed inside the exposure floor is recorded (`exposure_sufficient:
+false`), not invalidated (v2 rule kept); an occasion opened in an
+  earlier page load is never re-run (prior exposure, `interrupted`); the
+  review marks a never-completed occasion absent. M04 — a piece whose
+  icon cannot be drawn makes the job technically invalid; a carried
+  piece at a room exit is put back after the snapshot; a job open at the
+  review closes with the state as it stands; a job never run is not
+  presented; a job run in an earlier page load is never re-run.
+- **Telemetry boundary:** M03 family `proto_m03tools_*` (candidate;
+  opportunities `proto_m03_tools_a` / `proto_m03_tools_b`, windows
+  `m03_tools_o1` / `m03_tools_o2`); suffixes `presented`,
+  `surface_opened`, `practice_presented`, `practice_move`,
+  `practice_completed`, `run_refused`, `press_cycle`,
+  `opportunity_opened`, `tool_moved`, `move_refused`, `first_departure`,
+  `surface_closed`, `window_closed`, `technical_failure`. M04 family
+  `proto_m04_cutting_*` (candidate; opportunities `proto_m04_cutting_o1`
+  / `proto_m04_cutting_o2`, windows `m04_cutting_o1` /
+  `m04_cutting_o2`); suffixes `listed`, `presented`,
+  `opportunity_opened`, `job_run`, `job_unavailable`, `piece_picked_up`,
+  `piece_put_back`, `piece_disposed`, `late_disposal`,
+  `first_departure`, `window_closed`, `technical_failure`. The v2
+  families (`proto_m03_*`, `proto_m04_debris_*`) keep their v2 meaning in
+  the frozen ledger and are retired from the route; the legacy Inventory
+  Lab press family is untouched; no canonical name or approved formula
+  invented.
+- **Scientific acceptance:** no instruction, prompt, label, beacon or
+  reward names tidying or disposal; storage and the bin are visible and
+  usable throughout and the exit is always open; the snapshot at the
+  first departure is immutable and later actions are recorded apart;
+  a carried piece is undisposed; an unreachable object, a failed seed
+  and a reload never become a low value; a job never run and an occasion
+  never completed never become a zero; occasions and jobs keep their own
+  ids and are summed only inside their own item; timing is focused time
+  and is never part of a primary; M03 objects are disjoint from M04's
+  and from M11's; no composite.
+- **Gameplay acceptance:** the presses, the cutter and the bin keep
+  their stations, positions, labels and guidance order; keyboard /
+  pointer parity for the roll, the tools and the pieces (input mode
+  recorded); the press panel is legible at 800×600; ESC always leaves;
+  the route never waits for either item.
+- **Required tests:** `npm.cmd run lint:tsc`, `npm.cmd run build`,
+  ESLint + Prettier (`endOfLine: auto`) on touched files, pure
+  `m03_restore` + `m04_cutting` + `m26_protocol_foundation` +
+  `pilot_coverage` + `pilot_closure_models` + `pilot_route_model` +
+  `pilot_return_models` + `evidence_ledger` + `world_v1_registry`;
+  browser `m03_m04_route` (ordinary route from the Dock: Press A with
+  the taught movement by keyboard and tools left untouched or partly
+  restored; the cutter's two jobs with a disposal by pointer and by
+  keyboard, a carried piece at a departure and a later disposal that
+  changes nothing; Press B on the return shift with all three tools
+  restored), `pilot_records` (its M03 test), `pilot_return`,
+  `concourse_interaction_lifecycle`, `inventory_foundation` and
+  `inventory_measurement_isolation` (the shared overlay and engine
+  changed); `verify-unit`; `git diff --check`.
+- **Required screenshots:** the press panel with the tools on the surface
+  and the cutter with its pieces at 800×600 (evidence, not committed).
+- **Stop conditions:** common.
+- **Model:** Fable (main writer, integration, adjudication of findings);
+  reviewers read-only on Opus for the bounded contract checks, as
+  declared under U6 (the project definitions when discoverable,
+  otherwise read-only stand-ins running them verbatim).
+- **Commit expectation:** `feat(m03,m04): three-tool press occasions and two cutting jobs closed at their first departure`.
+
+- **Contract recovery:** no per-unit contract file exists in the
+  repository; following U1–U13 the contract above was recovered from the
+  register, the matrix, the addendum, `registerV3.ts` and this log and
+  recorded here before the first source edit. The sources agreed on the
+  unit (M03 and M04), its location, mechanics and primaries.
+- **Baseline before the change (HEAD `d8b4d94`, untouched, this
+  session):** browser `pilot_records` + `pilot_return` +
+  `concourse_interaction_lifecycle` in one run, retries off, 21.7 min: 7
+  passed, 3 failed — `pilot_records` "supply bundles" (no
+  `secondary_inventory_world_pickup`, its first assertion),
+  `pilot_return` test 1 (the M25 item status, after its Press B step) and
+  test 2 (the M21 item status, before its Press B step). Later, on an
+  untouched export of `d8b4d94` on its own port (`git archive` into the
+  session scratchpad, `PW_DEV_PORT=5183`, each test twice):
+  `inventory_foundation` "both demonstration recipes" FAILED 2 of 2 (the
+  Sample Kit is never collected: `TypeError … reading 'container_id'` at
+  its line 1663) and `concourse_interaction_lifecycle` test B passed once
+  and FAILED once (an overlay open after the supply-bundle press, its
+  line 428).
+- **Model routing actually used:** Fable — the main writer (contract
+  recovery, every source, test and document edit, integration,
+  adjudication of every finding) and the scientific review of both rounds
+  (implementer defaults with a bearing on validity were to be judged);
+  Opus — the gameplay / usability review of both rounds (a bounded check
+  of route, parity, copy and legibility against the recorded contract).
+  No other model wrote or reviewed.
+- **Reviewer availability:** as U6–U13 — the `scientific-reviewer` and
+  `gameplay-reviewer` definitions are not offered as agent types in this
+  session; both were run verbatim through read-only stand-ins (each reads
+  its definition file first, holds the instruction to edit nothing and to
+  run nothing); the `test-reviewer` scope is covered by the implementer's
+  recorded runs below. Each reviewer was a fresh agent without the
+  implementer's context. Two rounds, the permitted maximum.
+- **Review round 1 (read-only, on the tree after the first green run of
+  the new browser spec):** scientific: concerns found — 1 high / 7 medium
+  / 10 low, 10 documentation mismatches, 19 owner questions; "immutability,
+  null-vs-zero handling and authority boundaries are sound". Gameplay:
+  usable with noted friction — 2 high / 6 medium / 7 low + 10 measurement
+  flags; no soft lock, nothing requires tidying or disposal to progress,
+  no regression in another overlay mode. Material findings and their
+  resolution:
+  - A second press at the cutter lifted a piece, and the cut's own words
+    invited that press (S-H1, G-H2): fixed in part — a press at the
+    cutter inside 1.5 s of a cut is refused and recorded
+    (`press_refused`, `cut_settling`); the cut states to everyone that
+    the second coupon comes later, so the line is no longer seen only by
+    those who press again; every pick-up records its `origin`. NOT
+    changed: a lifted piece still cannot be set down (a new command is
+    the owner's, §5.170).
+  - A press meant for a piece beside the Component Locker, a press or
+    the Assembly Bench opened that station and so closed the job with
+    the pieces recorded as left — an error that ran one way (G-H1):
+    fixed — while a job is open a press at another station acts on a
+    piece that lies nearer the avatar than the station, or drops the
+    carried piece into a bin in reach, and the station is not opened;
+    outside a job's window the stations answer first (§5.171). Whether a
+    station that only refuses counts as a departure: owner (§5.168).
+  - "The cutter re-arms…" was shown while job 2 was open (S-M1, G-M1):
+    fixed — the line belongs to job 1 only; with job 2 open or both done
+    the cutter reads "Both coupons cut. The cutter is idle."; a cutter
+    whose cuts all failed reads "The cutter is out of service." (G-L5).
+  - A closure by the system was recorded as a departure (S-M2, S-M6):
+    fixed — a press panel stopped by the system with the tools out is
+    `state_at_system_close`, a cutting job open at the review
+    `state_at_review`; both are censored and excluded; their state is
+    kept apart in the companions (§5.178).
+  - The M04 recount compared the count only and neither extractor asked
+    for the opening event (S-M3): fixed — M04 compares the disposed ids,
+    the count, the carried piece and the pieces lying, and counts only
+    disposals of the job's own pieces between its `job_run` and its
+    departure; both extractors require the opening event before the
+    departure (pure-tested with errors that cancel).
+  - The two jobs differed in the distance to the bin, 556 px against 329
+    px (S-M4): fixed in part — the six places are kept and shared so that
+    the jobs are matched on that distance (441 / 444 px: the two wraps
+    changed jobs); the keyboard reach is not matched and two places lie
+    on bench art (G-M3, G-M4) — owner (§5.173).
+  - The cutter cut in any shift (S-M5, G-L7): fixed — it cuts before the
+    return shift only; the route stage at each cut is exported
+    (§5.174).
+  - After a reload the guard cut the second coupon in the press that
+    held back the first (S-L3): fixed — once an earlier load holds a cut,
+    neither job is run. A press panel merely opened in an earlier load
+    was re-run without a record (S-L1): fixed — recorded as prior
+    exposure (§5.179).
+  - The M04 companion read `observed` beside a null primary (S-L4):
+    fixed.
+  - Restoring three tools took about 28 key presses against three drags
+    (G-M2): fixed in part — TAB / SHIFT+TAB jump between the trays of the
+    press panel (about 15 presses); the effort stays unequal (§5.180).
+  - The taught movement's line used "focus" and left the arrow out
+    (G-M6): fixed — "Keyboard: SPACE lifts it, RIGHT ARROW moves to the
+    feed, SPACE sets it down. Pointer: drag it.".
+  - The disabled run control was silent for the pointer (G-L1): fixed —
+    the control answers in both input modes ("Load the label roll
+    first.", `run_refused`). Words differed (G-L2): "Label press idle…",
+    "Label press out of service.", "Sample coupon n of 2 cut.",
+    "Disposal bin". A pointer disposal showed no line (G-L3): fixed —
+    "Disposed." in both input modes.
+  - Owner questions, no change: the taught movement on both occasions
+    (§5.162); one rack, any slot (§5.163); the first departure and the
+    exposure floor (§5.164); when the tools appear (§5.165); the threaded
+    roll (S-L10, §5.166); what reachable means (§5.167); the departure
+    rule (S-M7, §5.168); the second coupon, its line and the beacon
+    (G-M5, §5.169); `not_presented` for a job never run (§5.172); the
+    companions as rows (§5.175); the families (§5.176); precedence and a
+    disagreeing occasion voiding the row (S-L7, §5.177); the meaning of
+    `m04_debris` in other items' snapshots (S-L5, §5.181); names and the
+    bin's highlight (S-L9, §5.182); what the times contain (S-L8,
+    §5.183). Recorded, no change: the reload marker is recognised by the
+    wording of its `detail` (S-L2, the M02 precedent); the panel's open
+    is logged as keyboard because stations open by keyboard only (S-L6);
+    a carried piece returns to the bench at a room exit without a line
+    (G-L4); the panel's type is small at 800 × 600 (G-L6).
+- **Contract amendments after round 1 (the contract above is kept as
+  written):** the telemetry boundary gains `state_at_system_close`
+  (M03), `press_refused` and `state_at_review` (M04); "no instruction,
+  prompt, label, beacon or reward names tidying or disposal" is read as
+  "no instruction, prompt or reward asks for tidying or disposal" — the
+  rack and the bin carry plain names and a disposal is answered
+  "Disposed." (§5.182); "an occasion opened in an earlier page load is
+  never re-run" applies to an occasion whose tools lay out (§5.179); "a
+  job open at the review closes with the state as it stands" became
+  censored (§5.178); "a job run in an earlier page load is never re-run"
+  became "neither job is run after a reload that follows a cut"; the
+  participant-facing behaviour gained the cut's second sentence, the
+  settle window, the rule for a press at another station and the
+  cutter's shift; the allowlist was not extended.
+- **Review round 2 (read-only, on the tree after the round-1 fixes):**
+  scientific: concerns found, NO finding of high severity remains —
+  every round-1 fix confirmed (S-L4 partly); "the first-departure
+  snapshots are written once and never rewritten; late disposals are
+  kept apart; never-run, never-completed, unreachable, held-back and
+  system-closed states never become a zero"; no false technical failure
+  found on a legitimate path; 3 medium (all from the rule for a press at
+  another station) / 8 low, 10 documentation mismatches, 10 further owner
+  questions. Gameplay: usable with noted friction, NO finding of high
+  severity remains — no soft lock, no regression in another overlay
+  mode; G-H2, G-M2 and G-L7 fixed in part; 4 medium / 9 low + 7
+  measurement flags. Resolution:
+  - Leftover pieces of job 1 intercepted a station while job 2 was open
+    (S2-M3, G2-L1): fixed — a press at a station lifts pieces of the OPEN
+    job only.
+  - A press at a station dropped a carried piece into the bin without
+    asking which was nearer, and disposals carried no origin (S2-M2,
+    G2-M2): fixed — the bin must lie nearer the avatar than the station;
+    `piece_disposed` and `late_disposal` carry the `origin` of the act.
+  - A piece lifted by a press meant for a station and then disposed is a
+    counted disposal (S2-M1, G2-M1): NOT changed — counted, and flagged
+    beside the value (`pickups_by_station_press`,
+    `disposed_by_or_after_station_press`); the rule itself and a
+    set-down command are the owner's (§5.171, §5.170, §5.184). The
+    as-built record no longer says that the count cannot change.
+  - A stopped press panel was exported under the review's closure reason
+    (S2-L2): fixed — a stop by the system is a technical failure; the
+    review's closure censors (§5.187).
+  - After a reload M03 read an occasion not yet reached as held back and
+    M04 did not (S2-L3): aligned — both follow the M01 rule (§5.188).
+  - On open floor a press lifted a piece although the prompt named a
+    supply bundle (G2-L2): fixed — a bundle in reach that lies nearer is
+    collected first.
+  - TAB with an object lifted landed on trays that cannot take it, and
+    SHIFT+TAB was not named (G2-L4): fixed — such trays are passed over;
+    the help line names both keys.
+  - Press B was presented before it could run (G2-L6): fixed — presented
+    from Vale's check-in on.
+  - Labels were capitalised inside the pointer layer's sentences
+    (G2-L8): fixed — "disposal bin", "coupon offcut", "swarf tray",
+    "blade wrap".
+  - The documentation mismatches (S2 1–10): corrected in the register
+    (the count after a routed pick-up, the leftover pieces, the cutter's
+    shift, the review's closure, the distances 440.5 / 444.3 px, the
+    origins, a third place on painted art) and in the source comments.
+  - Owner questions, no change: a routed pick-up followed by a disposal
+    (§5.184); the bin against the station with a piece carried
+    (§5.185); the cut before a cleanup press (S2-L7, §5.186); a system
+    closure beside an observed occasion or job (S2-L4, §5.187); the
+    companion beside a null primary (S2-L1, §5.189); leftover pieces on
+    the return shift (§5.190); lines on keyboard acts and the numbering
+    after a jam (G2-L3, G2-L7, §5.191); the cue's exposure and the
+    difference between the jobs (G2-M4, S2-L8, §5.169 — the display time
+    of a feedback line lives in `RoomScene.ts`, outside this unit); a
+    third place on painted art (G2-M3, §5.173); a cut before the orders
+    or after the sign-off (S2-L6, G2-L5, §5.174). Recorded, no change:
+    "I" closes the panel at once with an object lifted where ESC returns
+    it first (G2-L9, the same in every overlay mode); "stack" in two
+    shared overlay lines (G2-L8).
+- **Verification of the round-2 fixes (read-only, on the tree after
+  them; run on the owner's instruction that the final verdict must apply
+  to the final tree):** scientific (Fable 5.1): "fixes confirmed with
+  remarks" — all nine fixes confirmed, nothing of high or medium severity
+  new; 5 low, 3 documentation mismatches. Gameplay (Opus 5.5): "fixes
+  confirmed with remarks" — nothing of high or medium severity new; no
+  dead spot with a piece carried; no regression in another overlay mode
+  or at a station while no job is open; 2 low + documentation. Both were
+  static reviews (nothing run by the reviewers). Resolution — NO change
+  of behaviour was made after these reviews:
+  - Documentation mismatches: corrected — the register's piece and bin
+    names in lower case, the stations the rule covers (those of the first
+    shift; the Work Order Board and the return-shift stations open
+    directly), 12 key presses for a keyboard restore with TAB and
+    SHIFT+TAB (16 with TAB alone); three comments (one in
+    `m04_cutting.spec.ts`, one in `InventoryOverlayScene.ts`, one in
+    `RecordsWorkshopScene.ts`). Comment text only.
+  - G2-L2 was recorded above as "fixed": it is fixed in ONE direction
+    only. A nearer bundle is collected first; where the piece is the
+    nearer one, the prompt still names the bundle and the press lifts
+    the piece (G3-L1). Not changed — owner question §5.192.
+  - A leftover piece of job 1 that is CARRIED while job 2 is open is
+    still dropped into a nearer bin by a press at a station, as a
+    `late_disposal` with the origin `station_press:<id>` (S3-L3): the
+    record is correct, the value unaffected; under §5.185.
+  - Not changed, owner questions: no list of absent occasions in the M03
+    components, the two shapes of an `interrupted` row after a reload,
+    the flag sums over jobs that are not observed (S3-L1, S3-L2, S3-L5,
+    §5.193); the lines after a stopped panel or a jam (S3-L4, G3-L2,
+    §5.194).
+  - Unproven by any test (reviewer's list, accepted as stated): the
+    adapter's two system-closure branches and the overlay's shutdown
+    path; the reload guard of `runM04SampleJob`; a disposal issued by a
+    press at a station; the station opening when the bin is farther;
+    leftover pieces not intercepting a station; the bundle-first rule;
+    SHIFT+TAB in the browser; a listing alone after a reload.
+- **Verification (final tree):** `npm.cmd run lint:tsc` PASS ·
+  `npm.cmd run build` PASS · ESLint on the 29 touched source and spec
+  files PASS (run with `endOfLine: auto`) · Prettier on the five changed
+  documents PASS · pure: `m03_restore` 8 / 8 and `m04_cutting` 7 / 7
+  (15 / 15); with the shared pure suites (`m26_protocol_foundation`,
+  `pilot_coverage`, `pilot_closure_models`, `pilot_route_model`,
+  `pilot_return_models`, `evidence_ledger`, `world_v1_registry`)
+  114 / 114 · browser, one run of `m03_m04_route`, `pilot_records`,
+  `pilot_return`, `concourse_interaction_lifecycle`,
+  `inventory_foundation`, `inventory_measurement_isolation`,
+  `m02_retrieval_route` and `m02_overlay_proof`: 42 passed, 4 failed
+  of 46 (35.4 min) — `m03_m04_route` 2 / 2, `concourse` 3 / 3,
+  `inventory_measurement_isolation` 5 / 5, `m02_retrieval_route` 1 / 1,
+  `m02_overlay_proof` 2 / 2, `inventory_foundation` 28 / 29,
+  `pilot_records` 3 / 4, `pilot_return` 1 / 3. That run preceded the
+  three comment corrections; after them `lint:tsc`, build, ESLint and
+  the pure suites were repeated, and `m03_m04_route`, `inventory_measurement_isolation` and `concourse_interaction_lifecycle` were run again: 10 / 10 (12.6 min); the other browser suites were not repeated after the comment corrections. Screenshots at 800 × 600 (the press panel with
+  the tools out, the pieces of each job) inspected, not committed ·
+  `verify-unit` PASS · `git diff --check` clean.
+- **Browser tests that do NOT pass, and why they are not this unit's:**
+  - `pilot_return` test 1 (M25 status `pending`, expected
+    `completed`) and test 2 (M21 status `pending`, expected `open`):
+    the same assertion at the same step on an untouched export of
+    `d8b4d94` run in this session.
+  - `inventory_foundation` "both demonstration recipes" (TypeError at
+    its line 1663): failed 2 of 2 on the untouched export; on this tree
+    it failed in two runs and passed in one. Not this unit's file.
+  - `pilot_records` "supply bundles": on the untouched export it fails
+    at its FIRST assertion (no `secondary_inventory_world_pickup` — the
+    press lifted a piece of the legacy debris scattered beside the
+    bundle). On this tree no piece lies on the floor before a cut, so
+    the bundle is collected and the test runs on to its LAST assertion,
+    where it fails on three Concourse events
+    (`proto_m05_start_opportunity_opened`, `_offer_answered`,
+    `_window_closed`). The failing assertion therefore CHANGED. That
+    the later failure is not this unit's was shown separately: a scratch
+    spec on the untouched export that walks the same tail without the
+    bundle steps (workshop, Concourse, laboratory door, then
+    `expectNoMeasurementEvents`) fails with exactly these three events.
+    The Concourse and M05 are outside this unit; left for U24.
+  - `concourse_interaction_lifecycle` test B failed once in an earlier
+    run of this unit and once of two on the untouched export (its line
+    428): unstable on both trees; 3 / 3 in the final runs.
+  - `pilot_episodes_1_2` fails on the baseline before its workshop
+    steps (recorded under U6–U8, U13); its cutter and press steps were
+    updated and are NOT exercised by that spec.
+- **Not verified in a browser (pure tests only, or not at all as listed
+  above):** a panel stopped by the system and the review's closure; the
+  reload guards of both items; a recount disagreement; an unreachable
+  tool or piece; a panel closed before the run or inside the exposure
+  floor; a jam; a press at the Assembly Bench with a piece carried; the
+  bundle-first rule with a piece beside it. A browser reload check was
+  not attempted (the driver cannot replay the dock tutorial after a
+  reload, recorded under U12).
+- **Deviations:** the telemetry boundary and the participant-facing
+  behaviour were amended after round 1 (recorded above); the register
+  rows gained the companions `m03_object_states` and `m04_job_values`
+  (provisional); `pilotHelpers.ts` changed by one entry of the
+  tolerance list (`proto_m04_cutting_listed`, a system-driven exposure
+  record); the whole table of `docs/game/rooms/12-workshop-return.md`
+  was realigned by Prettier although only the M03 rows changed in
+  content; the DEV probe `__inventoryUiProbe` gained an `m03t` field
+  (never read back); the `m04_debris` key of other items' entry
+  snapshots now carries the site status of the new adapter (§5.181);
+  `concourse_interaction_lifecycle` rewrites two tracked screenshots
+  under `docs/verification/screenshots-concourse-hotfix/` on every run —
+  restored from HEAD after each run, not part of the commit;
+  `pilot_route_model`, `m26_protocol_foundation`, `world_v1_registry`
+  and `inventory_foundation` needed no change; three review passes were
+  run instead of two, the third on the owner's instruction;
+  `CLAUDE_UNIT_ALLOWLIST` enforced by discipline + `verify-unit`;
+  reviewer stand-ins as declared; the execution specification file
+  remains missing.
+- **Model routing actually used:** Fable 5.1 — contract recovery, all
+  writing, the three scientific reviews (independent read-only
+  sub-sessions without the writer's context) and every adjudication;
+  Opus 5.5 — the three gameplay reviews (read-only, bounded).
+- **Not changed:** the legacy Inventory Lab press workstation
+  (`m03Reset.ts`, the `m03` overlay mode and namespace); the inventory
+  store and `SlotGridView.ts`; `windowKit.ts`, `protocol.ts`,
+  `zoneSites.ts`, `physical.ts`, `PilotZoneScene.ts`, `RoomScene.ts`;
+  every other item's code, M02 included; the v2 ledger;
+  `ScoringManager`, `docs/research/**`, `docs/scientific/**`,
+  `docs/ai/**`, package files, tool configs, settings; the backup
+  stash.
+- **Commit:** one local commit (hash recorded at the start of U15);
+  nothing pushed, merged, tagged, deployed or deleted; the run stops
+  here on the owner's instruction — U15 is not started.

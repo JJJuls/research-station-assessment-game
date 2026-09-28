@@ -11,6 +11,8 @@
  *   workbench  — personal stores beside the two-input assembly bench
  *   m02        — Incident Filing Workstation (M02 measurement prototype)
  *   m03        — press-bench work surface (M03 measurement prototype)
+ *   m03tools   — label press of the route (Station 080 M03: the taught
+ *                movement, three tools, a tool rack)
  *
  * Mouse drag/drop and the keyboard command set call EXACTLY the same
  * store commands, so both input paths produce identical final state.
@@ -47,6 +49,18 @@ import {
   pickM02CRetrieval,
   setM02CTrayLabel,
 } from '../../pilot/windows/m02CaseWorkspace';
+import {
+  closeM03TPanel,
+  M03_PRESS_CYCLES,
+  M03_SPEC,
+  m03tPhase,
+  m03tPickupRefusal,
+  m03tState,
+  noteM03TMoveInput,
+  noteM03TMoveRefused,
+  openM03TPanel,
+  runM03TPress,
+} from '../../pilot/windows/m03ToolRestore';
 import { fitOverlayScene } from '../../world/viewport';
 import { ensureInventoryIconTextures } from '../inventoryTextures';
 import { getItemDefinition, M02_DOCUMENTS } from '../itemDefs';
@@ -97,7 +111,8 @@ export type InventoryOverlayMode =
   | 'workbench'
   | 'm02'
   | 'm02case'
-  | 'm03';
+  | 'm03'
+  | 'm03tools';
 
 export interface InventoryOverlayLaunchData {
   resumeKey: string;
@@ -131,6 +146,15 @@ declare global {
         contents_concealed: boolean;
         detail_icon: string | null;
         record: string[];
+      } | null;
+      /** Label press of the route only: what the participant is shown. */
+      m03t?: {
+        occasion: string;
+        phase: string;
+        cycles: number;
+        instruction: string;
+        title: string;
+        help: string | null;
       } | null;
       slots: SlotProbeEntry[];
       buttons: {
@@ -210,6 +234,8 @@ export class InventoryOverlayScene extends Phaser.Scene {
   private statusBanner: Phaser.GameObjects.Text | null = null;
   private m03CycleText: Phaser.GameObjects.Text | null = null;
   private m03PressButton: UiButton | null = null;
+  private m03tText: Phaser.GameObjects.Text | null = null;
+  private m03tPressButton: UiButton | null = null;
   private m02cLabelButtons: UiButton[] = [];
   private m02cBanner: Phaser.GameObjects.Text | null = null;
   private m02cHandOverButton: UiButton | null = null;
@@ -266,6 +292,8 @@ export class InventoryOverlayScene extends Phaser.Scene {
     this.statusBanner = null;
     this.m03CycleText = null;
     this.m03PressButton = null;
+    this.m03tText = null;
+    this.m03tPressButton = null;
     this.m02cLabelButtons = [];
     this.m02cBanner = null;
     this.m02cHandOverButton = null;
@@ -331,7 +359,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
         y: PANEL.y + 4,
         width: 32,
         label: 'X',
-        onActivate: () => this.close(),
+        onActivate: () => this.close('pointer'),
         depth: DEPTH.panel + 1,
       }),
     );
@@ -421,6 +449,9 @@ export class InventoryOverlayScene extends Phaser.Scene {
         closeM02CPanel(Date.now());
       } else if (this.mode === 'm03') {
         closeM03Window(this.m03Occasion, Date.now());
+      } else if (this.mode === 'm03tools' && !this.m03tClosed) {
+        this.m03tClosed = true;
+        closeM03TPanel(this.m03Occasion, Date.now(), 'system');
       }
 
       if (typeof window !== 'undefined' && import.meta.env.DEV) {
@@ -458,6 +489,8 @@ export class InventoryOverlayScene extends Phaser.Scene {
         return 'CASE WORKSPACE — HANDOVER';
       case 'm03':
         return `PRESS STATION ${this.m03Occasion.toUpperCase()} — WORK SURFACE`;
+      case 'm03tools':
+        return `LABEL PRESS ${this.m03Occasion.toUpperCase()} — WORK SURFACE`;
     }
   }
 
@@ -479,6 +512,10 @@ export class InventoryOverlayScene extends Phaser.Scene {
 
     if (this.mode === 'm03') {
       return 'Drag or SPACE to move parts • Arrows focus • C run press • I / ESC close';
+    }
+
+    if (this.mode === 'm03tools') {
+      return 'Drag or SPACE to move parts • Arrows, TAB / SHIFT+TAB focus • C run press • I / ESC close';
     }
 
     if (this.mode === 'workbench') {
@@ -865,7 +902,256 @@ export class InventoryOverlayScene extends Phaser.Scene {
         this.updateM03ActivityPanel();
         break;
       }
+
+      case 'm03tools': {
+        const occasion = this.m03Occasion;
+        const { bench, rack, supply, feed } = M03_SPEC[occasion].containers;
+
+        this.m03tClosed = false;
+        openM03TPanel(occasion, Date.now(), 'keyboard');
+
+        this.add
+          .rectangle(56, 104, 236, 270, INV_COLORS.section, 1)
+          .setOrigin(0)
+          .setStrokeStyle(1, INV_COLORS.panelStroke)
+          .setDepth(DEPTH.panel);
+        this.add
+          .text(70, 114, 'LABEL PRESS', {
+            color: INV_TEXT.dim,
+            font: INV_FONT.section,
+          })
+          .setOrigin(0)
+          .setDepth(DEPTH.panel + 1);
+
+        this.m03tText = this.add
+          .text(70, 136, '', {
+            color: INV_TEXT.text,
+            font: INV_FONT.body,
+            lineSpacing: 3,
+            wordWrap: { width: 208 },
+          })
+          .setOrigin(0)
+          .setDepth(DEPTH.panel + 1);
+
+        // Grid order = keyboard order: the roll, the feed, the surface,
+        // the rack.
+        this.addGrid({
+          containerId: supply,
+          label: 'ROLL SUPPLY',
+          x: 78,
+          y: 284,
+          cols: 1,
+          rows: 1,
+          containerChrome: true,
+        });
+        this.addGrid({
+          containerId: feed,
+          label: 'PRESS FEED',
+          x: 190,
+          y: 284,
+          cols: 1,
+          rows: 1,
+          containerChrome: true,
+        });
+        this.addGrid({
+          containerId: bench,
+          label: 'WORK SURFACE',
+          x: 320,
+          y: 150,
+          cols: 4,
+          rows: 2,
+          containerChrome: true,
+        });
+        this.addGrid({
+          containerId: rack,
+          label: 'TOOL RACK',
+          x: 550,
+          y: 150,
+          cols: 3,
+          rows: 1,
+          containerChrome: true,
+        });
+
+        this.m03tPressButton = new UiButton({
+          scene: this,
+          id: 'm03t_press',
+          x: 78,
+          y: 340,
+          width: 170,
+          label: 'RUN PRESS CYCLE (C)',
+          kind: 'accent',
+          onActivate: () => this.handleM03TPress('pointer'),
+          depth: DEPTH.grid,
+        });
+        this.buttons.push(this.m03tPressButton);
+        this.updateM03TPanel();
+        break;
+      }
     }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Label press of the route (Station 080 M03, Unit 14)
+   * ---------------------------------------------------------------- */
+
+  /** Set once the panel reported its close (the close paths share it). */
+  private m03tClosed = false;
+
+  /** The press's own line: the activity as it stands (never the rack). */
+  private m03tInstruction(): string {
+    const s = m03tState(this.m03Occasion);
+
+    switch (s.phase) {
+      case 'unopened':
+      case 'practice':
+        return s.rollInFeed
+          ? `Roll loaded. Run the press to finish this label batch.\n\nCycle ${s.cycles}/${M03_PRESS_CYCLES}`
+          : 'Load the press: move the label roll from ROLL SUPPLY to PRESS FEED.\nKeyboard: SPACE lifts it, RIGHT ARROW moves to the feed, SPACE sets it down.\nPointer: drag it.';
+      case 'running':
+        return `Run the press to finish this label batch.\n\nCycle ${s.cycles}/${M03_PRESS_CYCLES}`;
+      case 'failed':
+        return 'Label press out of service.';
+      default:
+        return 'Press run complete. Batch logged and sent to stores.';
+    }
+  }
+
+  private updateM03TPanel() {
+    const phase = m03tPhase(this.m03Occasion);
+    const runPending =
+      phase === 'unopened' || phase === 'practice' || phase === 'running';
+
+    // The control answers in both input modes while the run is pending:
+    // pressed before the roll is loaded it states why (never a silent
+    // button for the pointer).
+    this.m03tText?.setText(this.m03tInstruction());
+    this.m03tPressButton?.setVisible(runPending);
+    this.m03tPressButton?.setEnabled(runPending);
+  }
+
+  /**
+   * TAB / SHIFT+TAB: the focus jumps to the next / previous tray of the
+   * label press. With an object lifted it goes to the next tray that has
+   * a slot for it and lands on that slot (trays that cannot take the
+   * object are passed over, the search ends at the current one); otherwise it
+   * lands on the first occupied slot of the next tray (else its first
+   * slot). The same command for every object; names no tray.
+   */
+  private m03tJumpFocus(delta: 1 | -1) {
+    if (this.grids.length === 0 || this.confirmOpen) {
+      return;
+    }
+
+    const current = Math.max(
+      0,
+      this.grids.findIndex(
+        (grid) => grid.containerId === this.focus?.containerId,
+      ),
+    );
+    const state = getInventoryState();
+    const holding = state.held !== null;
+    let grid = this.grids[current];
+    let landing = -1;
+
+    for (let step = 1; step <= this.grids.length; step += 1) {
+      const candidate =
+        this.grids[
+          (((current + delta * step) % this.grids.length) + this.grids.length) %
+            this.grids.length
+        ];
+      const slots = state.containers[candidate.containerId]?.slots ?? [];
+      const slotIndex = slots.findIndex((slot, index) =>
+        holding
+          ? slot === null &&
+            this.canPlaceHeldOn({
+              containerId: candidate.containerId,
+              slotIndex: index,
+            })
+          : slot !== null,
+      );
+
+      if (!holding || slotIndex >= 0) {
+        grid = candidate;
+        landing = slotIndex;
+        break;
+      }
+    }
+
+    if (holding && landing < 0) {
+      return;
+    }
+
+    this.focus = {
+      containerId: grid.containerId,
+      slotIndex: Math.max(0, landing),
+    };
+
+    if (this.ghost !== null && !this.dragging && !this.ghostFollowsPointer) {
+      const center = grid.cellCenter(this.focus.slotIndex);
+
+      this.ghost.setPosition(center.x, center.y - 28);
+    }
+
+    sfxUiMove();
+    this.refresh();
+  }
+
+  private handleM03TPress(inputMode: 'pointer' | 'keyboard') {
+    if (this.inputLocked || this.confirmOpen) {
+      return;
+    }
+
+    if (getInventoryState().held !== null) {
+      this.showFeedback(FAILURE_TEXT.holding);
+      return;
+    }
+
+    const result = runM03TPress(this.m03Occasion, Date.now(), inputMode);
+
+    if (result === 'cycle' || result === 'run_complete') {
+      sfxUiSelect();
+    } else if (result === 'refused') {
+      sfxUnavailable();
+      this.showFeedback('Load the label roll first.');
+    }
+
+    this.updateM03TPanel();
+    this.refresh();
+  }
+
+  /**
+   * True when the panel refuses to lift the object in this slot (the
+   * threaded roll): recorded, stated in one neutral line, nothing moves.
+   */
+  private m03tRefusesPickup(
+    address: SlotAddress,
+    inputMode: 'pointer' | 'keyboard',
+  ): boolean {
+    if (this.mode !== 'm03tools') {
+      return false;
+    }
+
+    const reason = m03tPickupRefusal(
+      this.m03Occasion,
+      address.containerId,
+      address.slotIndex,
+    );
+
+    if (reason === null) {
+      return false;
+    }
+
+    noteM03TMoveRefused(
+      this.m03Occasion,
+      address.containerId,
+      address.slotIndex,
+      reason,
+      inputMode,
+    );
+    sfxUnavailable();
+    this.showFeedback('The roll is threaded into the press.');
+
+    return true;
   }
 
   /* ---------------------------------------------------------------- *
@@ -1047,10 +1333,15 @@ export class InventoryOverlayScene extends Phaser.Scene {
     });
   }
 
-  /** States the input mode of the placement about to be issued (M02 only). */
+  /**
+   * States the input mode of the placement about to be issued (the case
+   * workspace and the label press of the route only).
+   */
   private noteM02CInput(inputMode: 'pointer' | 'keyboard') {
     if (this.mode === 'm02case') {
       noteM02CMoveInput(inputMode);
+    } else if (this.mode === 'm03tools') {
+      noteM03TMoveInput(inputMode);
     }
   }
 
@@ -1189,7 +1480,8 @@ export class InventoryOverlayScene extends Phaser.Scene {
           this.confirmOpen ||
           this.m02cRetrieving() ||
           pointer.rightButtonDown() ||
-          getInventoryState().held !== null
+          getInventoryState().held !== null ||
+          this.m03tRefusesPickup(address, 'pointer')
         ) {
           this.ignoreGesture = true;
           return;
@@ -1481,6 +1773,10 @@ export class InventoryOverlayScene extends Phaser.Scene {
 
     if (state.held !== null) {
       this.showFeedback(FAILURE_TEXT.holding);
+      return;
+    }
+
+    if (this.m03tRefusesPickup(address, 'pointer')) {
       return;
     }
 
@@ -1778,6 +2074,13 @@ export class InventoryOverlayScene extends Phaser.Scene {
       this.refresh();
     };
 
+    on('keydown-TAB', (event: KeyboardEvent) => {
+      if (event.repeat || this.mode !== 'm03tools') {
+        return;
+      }
+
+      this.m03tJumpFocus(event.shiftKey ? -1 : 1);
+    });
     on('keydown-LEFT', () => moveFocus(-1, false));
     on('keydown-RIGHT', () => moveFocus(1, false));
     on('keydown-UP', () => moveFocus(-1, true));
@@ -1821,7 +2124,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
         } else {
           this.showFailure(change);
         }
-      } else {
+      } else if (!this.m03tRefusesPickup(this.focus, 'keyboard')) {
         const change = invPickUp(
           this.focus.containerId,
           this.focus.slotIndex,
@@ -1859,6 +2162,10 @@ export class InventoryOverlayScene extends Phaser.Scene {
 
       if (getInventoryState().held !== null) {
         this.showFeedback(FAILURE_TEXT.holding);
+        return;
+      }
+
+      if (this.m03tRefusesPickup(this.focus, 'keyboard')) {
         return;
       }
 
@@ -1941,6 +2248,8 @@ export class InventoryOverlayScene extends Phaser.Scene {
         this.handleM02Commit();
       } else if (this.mode === 'm03') {
         this.handleM03Press();
+      } else if (this.mode === 'm03tools') {
+        this.handleM03TPress('keyboard');
       }
     });
 
@@ -2420,6 +2729,10 @@ export class InventoryOverlayScene extends Phaser.Scene {
       this.updateM03ActivityPanel();
     }
 
+    if (this.mode === 'm03tools') {
+      this.updateM03TPanel();
+    }
+
     if (this.mode === 'm02case') {
       M02C_TRAY_IDS.forEach((trayId, index) => {
         this.m02cLabelButtons[index]?.setLabel(this.m02cLabelText(trayId));
@@ -2478,6 +2791,17 @@ export class InventoryOverlayScene extends Phaser.Scene {
               ),
             }
           : null,
+      m03t:
+        this.mode === 'm03tools'
+          ? {
+              occasion: this.m03Occasion,
+              phase: m03tPhase(this.m03Occasion),
+              cycles: m03tState(this.m03Occasion).cycles,
+              instruction: this.m03tText?.text ?? '',
+              title: this.titleText?.text ?? '',
+              help: this.helpText?.text ?? null,
+            }
+          : null,
       slots: this.grids.flatMap((grid) => grid.probeEntries(state)),
       buttons: this.buttons.map((button) => {
         const bounds = button.bounds();
@@ -2499,7 +2823,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
    * Close
    * ---------------------------------------------------------------- */
 
-  private close() {
+  private close(inputMode: 'pointer' | 'keyboard' = 'keyboard') {
     // A held stack always goes safely home before the overlay leaves.
     if (getInventoryState().held !== null) {
       invCancelHeld();
@@ -2513,6 +2837,11 @@ export class InventoryOverlayScene extends Phaser.Scene {
       closeM02CPanel(Date.now());
     } else if (this.mode === 'm03') {
       closeM03Window(this.m03Occasion, Date.now());
+    } else if (this.mode === 'm03tools') {
+      if (!this.m03tClosed) {
+        this.m03tClosed = true;
+        closeM03TPanel(this.m03Occasion, Date.now(), inputMode);
+      }
     } else {
       logSecondaryInventoryEvent('closed', { mode: this.mode });
     }

@@ -370,6 +370,61 @@ const M03_DEFINITIONS: ItemDefinition[] = M03_RESIDUAL_IDS.map((id) => ({
 }));
 
 /* ------------------------------------------------------------------ *
+ * M03 (Station 080, Unit 14) — press tools and the label roll
+ * ------------------------------------------------------------------ */
+
+const M03T_TOOLS: readonly [string, string, string][] = [
+  [
+    'm03t_platen_brush',
+    'Platen Brush',
+    'Stiff brush for the press platen. Used during the press run.',
+  ],
+  [
+    'm03t_alignment_key',
+    'Alignment Key',
+    'Hex key for the label guides. Used during the press run.',
+  ],
+  [
+    'm03t_feed_gauge',
+    'Feed Gauge',
+    'Gap gauge for the roll feed. Used during the press run.',
+  ],
+];
+
+const M03T_DEFINITIONS: ItemDefinition[] = [
+  ...M03T_TOOLS.map(
+    ([definitionId, displayName, description]): ItemDefinition => ({
+      definitionId,
+      displayName,
+      description,
+      category: 'tool',
+      icon: `inv-icon-${definitionId.replace(/_/g, '-')}`,
+      maxStack: 1,
+      tags: ['m03t_tool'],
+      usable: false,
+      droppable: false,
+      discardable: false,
+      recipeRoles: [],
+      boundNamespace: 'm03t',
+    }),
+  ),
+  {
+    definitionId: 'm03t_label_roll',
+    displayName: 'Label Roll',
+    description: 'Blank label roll for the press feed.',
+    category: 'consumable',
+    icon: 'inv-icon-m03t-label-roll',
+    maxStack: 1,
+    tags: ['m03t_roll'],
+    usable: false,
+    droppable: false,
+    discardable: false,
+    recipeRoles: [],
+    boundNamespace: 'm03t',
+  },
+];
+
+/* ------------------------------------------------------------------ *
  * Catalogue access
  * ------------------------------------------------------------------ */
 
@@ -379,6 +434,7 @@ export const ITEM_DEFINITIONS: readonly ItemDefinition[] = [
   ...M02_DEFINITIONS,
   ...M02C_DEFINITIONS,
   ...M03_DEFINITIONS,
+  ...M03T_DEFINITIONS,
 ];
 
 const DEFINITION_INDEX = new Map(
