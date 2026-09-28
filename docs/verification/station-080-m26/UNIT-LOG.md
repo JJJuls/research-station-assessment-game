@@ -3844,3 +3844,155 @@ at their first departure`; not amended.
 - **Commit:** one local commit on `codex/u14-correction`; nothing
   pushed, merged, tagged, deployed or deleted; the run stops here — U15
   is not started.
+
+## U14-C2 — the U14-C browser evidence made deterministic (test only)
+
+- **U14-C commit (recorded at the start of U14-C2):** `da75a30` —
+  `fix(m03,m04): correct U14 observation validation and interaction
+targeting`; not amended, not rewritten.
+- **Entry state (verified before the first edit):** the same worktree,
+  branch `codex/u14-correction`, HEAD
+  `da75a3037d01e190fa40b50bca2ddd90b8f38098`, clean tree.
+- **Why this unit exists — two independent failures of the accepted
+  evidence.** An independent verification (Codex) ran
+  `e2e/u14_correction.spec.ts` twice on fresh ports with retries off;
+  both runs FAILED at the "hands full on open floor" check of U14-C (the
+  spec's `standWhere` hunt, its lines 583 / 317). What the runs
+  reported (avatar position → line shown):
+  - Run 1: 285,242 → "E — Take sample kit" · 299,236 → "E / Space — Use
+    Component Locker" · 285,236 → "E — Take sample kit" · 299,236 →
+    "E / Space — Use Component Locker".
+  - Run 2: 291,242 → "E / Space — Use Component Locker" · 291,230 →
+    "E / Space — Use Label Press B" · 291,245 → "E / Space — Use
+    Component Locker" · 291,245 → "E / Space — Use Component Locker".
+    The U14-C record above states "`u14_correction` 1 / 1" three times
+    (the test runner's run and two of the writer's). Those runs passed;
+    the check was nevertheless position-fragile and the claim of
+    reproducible evidence was not justified for that step.
+- **Diagnosis: a test-driver defect, not a product defect.** Every line
+  in the two runs is what the unchanged rules prescribe where the
+  avatar stood: at 285,242 and 285,236 the sample kit (244, 248) lies
+  41.4 px and 42.7 px away, inside the bundles' 44 px reach, and with
+  the hands full a bundle in reach keeps the press; at 299,236 the
+  Component Locker (331, 300) lies 71.6 px away and at 291,242 /
+  291,245 it lies 70.5 px / 68.0 px away, inside the stations' 72 px
+  radius; at 291,230 Label Press B (302, 160) lies 70.9 px away. The
+  spots of U14-C (x 288–296, y 234–242) aimed at a strip between those
+  three radii that is a few pixels wide — narrower than the driver's
+  landing tolerance and the room's collision rows allow.
+- **Unit id:** U14-C2 (a verification correction of U14-C; before U15,
+  which is not started).
+- **Objective:** deterministic browser evidence for the hands-full
+  press on open floor, with the production behaviour of U14-C and every
+  scientific and design rule unchanged.
+- **Scientific rationale:** scientifically neutral (test only).
+- **Participant-facing behaviour:** unchanged.
+- **Allowed files:** `e2e/u14_correction.spec.ts`,
+  `docs/verification/station-080-m26/UNIT-LOG.md`.
+- **Prohibited areas:** everything else — all production code, object
+  positions, reaches, targeting and cue rules, the canonical research
+  files, every other spec and helper.
+- **Success behaviour:** the spec proves, by real input, that with a
+  piece carried on open floor a loose piece in reach is named, that
+  SPACE and E answer "Hands full.", that no piece is lifted, no
+  measurement event is written and no station is opened; two
+  consecutive passes with retries off on two distinct ports verified
+  free beforehand.
+- **Failure / recovery:** if production code appeared necessary the
+  unit would stop and report. It did not.
+- **Telemetry boundary:** none touched.
+- **Scientific / gameplay acceptance:** as U14-C; nothing weakened.
+- **Required tests:** Prettier, ESLint and `lint:tsc` on the spec; the
+  spec twice; `verify-unit` with the two-file allowlist;
+  `git diff --check`. The spec is the last Playwright run, so that its
+  screenshots are retained.
+- **Stop conditions:** a needed production change; a file outside the
+  allowlist.
+- **Model:** Fable 5.1 sole writer; Sonnet 5 for one read-only test
+  review; no Opus.
+- **Commit expectation:** `test(m03,m04): make U14 correction browser evidence deterministic`.
+- **What was changed (the spec only):** the check moved from the first
+  job's pieces to the second job's blade wrap (280, 232), whose
+  surroundings are clear once the sample kit has been collected. The
+  route, all by real input: coupon 2 is cut; the second job's coupon
+  offcut is lifted by POINTER from the cutter's approach (a named
+  object, so the carried piece is the same in every run); the sample
+  kit is collected by keyboard with the piece still in the hands (the
+  line names the kit, the kit is taken, the piece stays); the avatar
+  walks to a spot south-west of the wrap (266, 244; alternates 264, 246
+  and 268, 242), where over the whole ±6 px landing box no station lies
+  within 72 px (the locker ≥ 74, Press A ≥ 79, Press B ≥ 81), no
+  bundle within 44 px (≥ 48) and the wrap within 30 px. There the spec
+  MEASURES the state before it presses — the avatar's distance to every
+  station, to the bin, to the wrap, and the bundle probe — and then
+  asserts, for SPACE and for E: the line "E / Space — Take blade wrap",
+  the answer "Hands full.", the same carried piece, the same pieces
+  lying, the same number of `proto_m04_cutting_*` events, the same
+  list of opened stations, no overlay, the same bundle count. The piece
+  is then taken to the bin by keyboard and the wrap lifted by keyboard
+  with free hands, as before.
+- **Consequences inside the spec (no assertion weakened):** the
+  bundle's line is asserted by its exact text ("E — Take sample kit",
+  before: any bundle); job 2 departs with one piece disposed, the wrap
+  carried and one lying (before: none disposed, two lying), so the
+  reproduced primary reads 4 / 6 (before 5 / 6) — a different route
+  through the same rules, reproduced offline as before. The check at
+  the cutter with the hands full, the "Carrying the …" line and every
+  other step are unchanged. Removed: the four coordinates of the old
+  hunt and its two assertions (`not.toContain('storage_locker')` is
+  replaced by the equality of the whole list of opened stations).
+- **Model routing actually used (self-reported):** Fable 5.1
+  (`claude-fable-5-1`) — sole writer; test review: `claude-sonnet-5`.
+  No Opus: no production or scientific question arose. The project
+  definition `test-reviewer` is not offered as an agent type in this
+  session; the role was run through a fresh general-purpose agent with
+  the model override `sonnet`, reading its definition file first and
+  editing nothing.
+- **Verification (test reviewer, on the final spec; each command once;
+  retries off):** `git diff --name-only` — the two allowed files, none
+  under `src/` · `npm.cmd run lint:tsc` PASS · ESLint on the spec
+  PASS · Prettier on both files PASS · `verify-unit` with the two-file
+  allowlist PASS · `git diff --check` clean · port 5211 verified free
+  (`curl` exit 7) → `PW_DEV_PORT=5211 npx playwright test
+e2e/u14_correction.spec.ts --retries=0`: **1 passed** (2.6 min), the
+  hands-full check made at 267,248 · ports 5212 and 5211 verified free →
+  `PW_DEV_PORT=5212 npx playwright test e2e/u14_correction.spec.ts
+--retries=0`: **1 passed** (2.7 min), the check made at 270,242. Two
+  consecutive passes on two distinct ports; nothing was repeated. The
+  avatar stood at two different places and the measured precondition
+  held at both.
+- **Earlier run by the writer (development, not part of the two
+  required passes):** one pass on port 5201 (verified free), 2.7 min,
+  before the measured precondition was added to the spec.
+- **Screenshots retained:** the second pass was the last Playwright run;
+  `test-results/` holds 14 `u14c-*.png` files — the 13 of the U14-C
+  review and `u14c-feedback-carrying-800x600.png`, added in the U14-C
+  fix round. The hands-full image now shows job 2 beside the blade
+  wrap. Evidence, not committed.
+- **Test review (read-only, Sonnet 5):** every required fact is asserted
+  by real input (piece named, SPACE and E answered "Hands full.",
+  nothing lifted, no `proto_m04_cutting_*` event, no station opened);
+  the probes are read-only and the input is keyboard and pointer only;
+  open floor is measured, not assumed; no assertion weakened — the
+  bundle's line became exact, SPACE and E are both pressed, the changed
+  numbers each follow from the one additional disposal; no file under
+  `src/` changed.
+- **Residual fragility, stated as found (not fixed here):** the spec
+  still reaches three states by a short list of fixed spots
+  (`standWhere`): the spot without any line for "Carrying the …", the
+  sample kit, and the blade wrap with free hands; the new check uses
+  the same means to arrive and then measures where it stands. The file
+  keeps fixed waits of 200–2 200 ms. Both passed in every run recorded
+  in this log and in neither of the two independent failures was one of
+  them the failing step; they are not proven stable beyond that.
+- **Final static checks by the writer (after this record was
+  appended):** Prettier on both files, `verify-unit` with the two-file
+  allowlist and `git diff --check` — results in the handoff; no
+  Playwright run was made after the second pass.
+- **Not changed:** every file under `src/`; object positions, reaches,
+  targeting and cue rules; the register, the matrix and the addendum;
+  the canonical research files; every other spec and helper; commit
+  `da75a30`.
+- **Commit:** one new local commit on `codex/u14-correction`; nothing
+  pushed, merged, tagged, deployed, archived or deleted; the run stops
+  here — U15 is not started.

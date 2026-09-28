@@ -31,9 +31,11 @@ import { expect, type Page, test } from '@playwright/test';
 import { extractItemFeatures } from '../src/measurement/features';
 import { M03_SPEC, M03_TOOLS } from '../src/pilot/windows/m03RestoreModel';
 import { M04_PIECES } from '../src/pilot/windows/m04CuttingModel';
+import { WORKSHOP_SITES, WORKSHOP_STATIONS } from '../src/pilot/zoneSites';
 import type { RawGameEvent } from '../src/systems/EventLogger';
 import {
   clickPhysicalContainer,
+  clickPhysicalObject,
   designToPage,
   driveAxisTo,
   getEvents,
@@ -170,6 +172,18 @@ async function bundleCount(page: Page): Promise<number> {
     () =>
       (window as unknown as { __pilotBundles?: { count: number } | null })
         .__pilotBundles?.count ?? -1,
+  );
+}
+
+/** The bundle in reach of the avatar (null = none), from the DEV probe. */
+async function nearestBundle(page: Page): Promise<string | null> {
+  return page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          __pilotBundles?: { nearest: string | null } | null;
+        }
+      ).__pilotBundles?.nearest ?? null,
   );
 }
 
@@ -578,28 +592,10 @@ test.describe('U14-C: M03 / M04 observation order and interaction targeting', ()
     ).toEqual([['job_open', 'keyboard']]);
     expect(of(m04, M04_FAMILY, 'piece_picked_up')).toHaveLength(1);
 
-    // Hands full ON OPEN FLOOR, another piece in reach: the line names
-    // it, the press says why nothing is lifted, nothing is recorded.
-    const blockedLine = await standWhere(
-      page,
-      [
-        { x: 290, y: 238 },
-        { x: 294, y: 234 },
-        { x: 288, y: 242 },
-        { x: 296, y: 240 },
-      ],
-      (line) => line !== null && PIECE_LINE.test(line),
-      'a piece line on open floor',
-    );
-
-    expect(blockedLine).not.toBe(firstLine);
-    await press(page, 'Space');
-    await page.waitForTimeout(300);
-    expect(await lastFeedback(page)).toBe('Hands full.');
-    expect(await carriedPiece(page)).toBe(first);
-    await page.screenshot({ path: `${SHOTS}-feedback-hands-full-800x600.png` });
-    expect((await family(page, M04_FAMILY)).length).toBe(m04.length);
-    expect(await stationsOpened(page)).not.toContain('storage_locker');
+    // (Hands full on OPEN FLOOR is checked during job 2, beside its blade
+    // wrap: the first job's pieces lie between the radii of the Component
+    // Locker, Label Press B and the sample kit, where the clear floor is
+    // a few pixels wide — U14-C2.)
 
     // Nothing in reach, a piece in the hands: the press states what is
     // held.
@@ -755,6 +751,18 @@ test.describe('U14-C: M03 / M04 observation order and interaction targeting', ()
     await page.screenshot({ path: `${SHOTS}-m04-job2-pieces-800x600.png` });
     await page.waitForTimeout(1_600);
 
+    // One piece of job 2 is lifted by POINTER from the bench (a named
+    // object, so the state that follows is the same in every run).
+    await clickPhysicalObject(page, 'm04_offcut_b');
+    expect(await carriedPiece(page)).toBe('m04_offcut_b');
+    m04 = await family(page, M04_FAMILY);
+    expect(meta(of(m04, M04_FAMILY, 'piece_picked_up')[2])).toMatchObject({
+      object_id: 'm04_offcut_b',
+      occasion: 'o2',
+      input_mode: 'pointer',
+      origin: 'pointer',
+    });
+
     // ——— A supply bundle and a piece in reach of each other ———
     const bundles = await bundleCount(page);
 
@@ -767,20 +775,129 @@ test.describe('U14-C: M03 / M04 observation order and interaction targeting', ()
         { x: 244, y: 252 },
         { x: 240, y: 244 },
       ],
-      (line) => line !== null && /^E — Take /.test(line),
-      'a bundle line',
+      (line) => line === 'E — Take sample kit',
+      'the sample kit line',
     );
 
     await page.screenshot({ path: `${SHOTS}-prompt-bundle-800x600.png` });
     await press(page, 'Space');
     await page.waitForTimeout(500);
-    // The press took the bundle the line named, and no piece.
-    expect(bundleLine).toMatch(/^E — Take /);
+    // The press took the bundle the line named, and no piece; the piece
+    // in the hands stayed there.
+    expect(bundleLine).toBe('E — Take sample kit');
     expect(await bundleCount(page)).toBe(bundles - 1);
-    expect(await carriedPiece(page)).toBeNull();
+    expect(await carriedPiece(page)).toBe('m04_offcut_b');
     expect(
       of(await family(page, M04_FAMILY), M04_FAMILY, 'piece_picked_up'),
-    ).toHaveLength(2);
+    ).toHaveLength(3);
+
+    // ——— Hands full on open floor, the blade wrap of job 2 in reach ———
+    // With the sample kit gone, the floor south-west of the blade wrap
+    // (280, 232) is clear over the whole ±6 px landing box of every spot
+    // below (x 258–274, y 236–252): no station within its 72 px radius
+    // (the locker ≥ 74, Press A ≥ 79, Press B ≥ 81), no bundle within its
+    // 44 px reach (≥ 48), the bin far out of reach — and the blade wrap
+    // within 30 px, nearer than any other piece.
+    m04 = await family(page, M04_FAMILY);
+
+    const openedBefore = await stationsOpened(page);
+    const lyingBefore = await lyingPieces(page);
+    const blockedLine = await standWhere(
+      page,
+      [
+        { x: 266, y: 244 },
+        { x: 264, y: 246 },
+        { x: 268, y: 242 },
+      ],
+      (line) => line === 'E / Space — Take blade wrap',
+      'the blade wrap line with the hands full',
+    );
+
+    expect(blockedLine).toBe('E / Space — Take blade wrap');
+    expect(lyingBefore).toContain('m04_wrap_b');
+
+    // The state is open floor by measurement, not by assumption: where
+    // the avatar stands, every station lies outside its radius, the bin
+    // outside its reach, no bundle is in reach and the wrap is.
+    const stood = await avatar(page);
+    const away = (at: { x: number; y: number }) =>
+      Math.hypot(stood.x - at.x, stood.y - at.y);
+
+    for (const [name, at] of Object.entries({
+      ...WORKSHOP_STATIONS,
+      ...WORKSHOP_SITES,
+    })) {
+      if (
+        name.startsWith('supply') ||
+        name === 'cutterScatter' ||
+        name === 'disposalChute'
+      ) {
+        continue;
+      }
+
+      expect(away(at), `${name} from ${stood.x},${stood.y}`).toBeGreaterThan(
+        72,
+      );
+    }
+
+    expect(away(WORKSHOP_SITES.disposalChute)).toBeGreaterThan(96);
+    expect(await nearestBundle(page)).toBeNull();
+    const wrap = M04_PIECES.find((piece) => piece.object_id === 'm04_wrap_b')!;
+
+    expect(
+      away({
+        x: WORKSHOP_SITES.cutterScatter.x + wrap.dx,
+        y: WORKSHOP_SITES.cutterScatter.y + wrap.dy,
+      }),
+    ).toBeLessThanOrEqual(64);
+    test.info().annotations.push({
+      type: 'hands-full position',
+      description: `${Math.round(stood.x)},${Math.round(stood.y)}`,
+    });
+    // eslint-disable-next-line no-console
+    console.log(
+      `[u14c] hands-full check at ${Math.round(stood.x)},${Math.round(stood.y)}`,
+    );
+
+    // SPACE and E take the same path; neither lifts, records or opens.
+    for (const interactKey of ['Space', 'e']) {
+      await press(page, interactKey);
+      await page.waitForTimeout(300);
+      expect(await lastFeedback(page)).toBe('Hands full.');
+      expect(await promptLine(page)).toBe('E / Space — Take blade wrap');
+      expect(await carriedPiece(page)).toBe('m04_offcut_b');
+      expect(await lyingPieces(page)).toEqual(lyingBefore);
+      expect((await family(page, M04_FAMILY)).length).toBe(m04.length);
+      expect(await stationsOpened(page)).toEqual(openedBefore);
+      expect((await uiProbe(page))?.open ?? false).toBe(false);
+      expect(await bundleCount(page)).toBe(bundles - 1);
+    }
+
+    await page.screenshot({ path: `${SHOTS}-feedback-hands-full-800x600.png` });
+
+    // The carried piece goes to the bin by keyboard: a disposal inside
+    // job 2's window.
+    await toBin(page);
+    await page.waitForTimeout(250);
+    expect(await promptLine(page)).toBe(BIN_LINE);
+    await press(page, 'Space');
+    await page.waitForTimeout(400);
+    expect(await carriedPiece(page)).toBeNull();
+    expect(await lastFeedback(page)).toBe('Disposed.');
+    m04 = await family(page, M04_FAMILY);
+    expect(
+      of(m04, M04_FAMILY, 'piece_disposed').map((e) => [
+        meta(e).object_id,
+        meta(e).occasion,
+        meta(e).input_mode,
+      ]),
+    ).toEqual([
+      [first, 'o1', 'keyboard'],
+      ['m04_offcut_b', 'o2', 'keyboard'],
+    ]);
+
+    // ——— The blade wrap, by keyboard, with the hands free ———
+    await fromLane(page, 348, 230);
 
     const wrapLine = await standWhere(
       page,
@@ -800,7 +917,7 @@ test.describe('U14-C: M03 / M04 observation order and interaction targeting', ()
     expect(await carriedPiece(page)).toBe('m04_wrap_b');
     expect(await bundleCount(page)).toBe(bundles - 1);
     m04 = await family(page, M04_FAMILY);
-    expect(meta(of(m04, M04_FAMILY, 'piece_picked_up')[2])).toMatchObject({
+    expect(meta(of(m04, M04_FAMILY, 'piece_picked_up')[3])).toMatchObject({
       object_id: 'm04_wrap_b',
       occasion: 'o2',
       input_mode: 'keyboard',
@@ -831,11 +948,11 @@ test.describe('U14-C: M03 / M04 observation order and interaction targeting', ()
     expect(meta(departures[1])).toMatchObject({
       trigger: 'other_station',
       detail: 'work_order_board',
-      pieces_disposed: 0,
-      disposed_ids: [],
+      pieces_disposed: 1,
+      disposed_ids: ['m04_offcut_b'],
       carried_piece: 'm04_wrap_b',
-      pieces_lying: 2,
-      undisposed_at_departure: 3,
+      pieces_lying: 1,
+      undisposed_at_departure: 2,
     });
 
     const listed = of(m04, M04_FAMILY, 'listed');
@@ -874,8 +991,8 @@ test.describe('U14-C: M03 / M04 observation order and interaction targeting', ()
     });
     expect(m04Rows[0]).toMatchObject({
       feature_id: 'm04_undisposed_pieces',
-      value: 5,
-      numerator: 5,
+      value: 4,
+      numerator: 4,
       denominator: 6,
       disposition: 'observed',
       censored: false,
@@ -884,7 +1001,7 @@ test.describe('U14-C: M03 / M04 observation order and interaction targeting', ()
     expect(m04Rows[0].components).toMatchObject({
       cutter_listed: true,
       jobs_observed: ['o1', 'o2'],
-      undisposed_by_job: { o1: 2, o2: 3 },
+      undisposed_by_job: { o1: 2, o2: 2 },
       late_disposals: 1,
       disposed_by_or_after_station_press: 0,
     });
@@ -895,7 +1012,7 @@ test.describe('U14-C: M03 / M04 observation order and interaction targeting', ()
         all.filter((event) => event.event_type !== `${M04_FAMILY}listed`),
         CONTEXT,
       )[0],
-    ).toMatchObject({ value: 5, denominator: 6, disposition: 'observed' });
+    ).toMatchObject({ value: 4, denominator: 6, disposition: 'observed' });
     expectNoRuntimeErrors(errors);
   });
 });
