@@ -327,6 +327,24 @@ interface Indicator {
   glow: Phaser.GameObjects.Rectangle;
 }
 
+/** The station or door in range of the contextual press (U14-C). */
+export interface InteractionNear {
+  kind: 'station' | 'door';
+  label: string;
+  x: number;
+  y: number;
+  /** Distance from the avatar to the station's or door's anchor (px). */
+  distance: number;
+}
+
+/** What the press acts on instead, and the line that says so (U14-C). */
+export interface InteractionRedirect {
+  text: string;
+  x: number;
+  y: number;
+  act: () => void;
+}
+
 interface ProximityTarget {
   x: number;
   y: number;
@@ -2690,6 +2708,35 @@ export abstract class RoomScene extends Phaser.Scene {
       }
     }
 
+    // U14-C: a room may name another object as what the press acts on
+    // now. ONE decision per frame feeds both the line shown and the press,
+    // so a press never acts on something the prompt did not name.
+    const redirect = this.interactionRedirect(
+      nearest === null
+        ? null
+        : {
+            kind: nearest.kind,
+            label:
+              (nearest.kind === 'station'
+                ? nearest.station!.label
+                : nearest.door!.label) ?? '',
+            x: nearest.x,
+            y: nearest.y,
+            distance: nearestDistance,
+          },
+    );
+
+    if (redirect !== null) {
+      this.activeTarget = null;
+      this.showAuxiliaryPrompt(redirect);
+
+      if (this.interactJustPressed()) {
+        redirect.act();
+      }
+
+      return;
+    }
+
     this.activeTarget = nearest;
 
     const nearestConfig =
@@ -2847,6 +2894,46 @@ export abstract class RoomScene extends Phaser.Scene {
    */
   protected auxPrompt(): { text: string; x: number; y: number } | null {
     return null;
+  }
+
+  /**
+   * U14-C interaction-target hook: a room may name a non-station object
+   * (a loose piece, a container) as what the contextual press acts on
+   * now, given the station or door in range (`near`, null when none is).
+   * The returned line is shown INSTEAD of the station's, and the press
+   * calls `act` INSTEAD of opening the station — the station is not
+   * touched. Default: none (every room behaves as before).
+   */
+  protected interactionRedirect(
+    near: InteractionNear | null,
+  ): InteractionRedirect | null {
+    void near;
+
+    return null;
+  }
+
+  /** The redirect's one-line prompt, placed like the auxiliary prompt. */
+  private showAuxiliaryPrompt(aux: { text: string; x: number; y: number }) {
+    // The text first: the clamp below reads the width of THIS line.
+    this.proximityPrompt.setText(aux.text);
+
+    const anchor = worldToDesign(this, aux.x, aux.y - 40);
+    const half = this.proximityPrompt.width / 2;
+
+    this.proximityPrompt
+      .setPosition(
+        Phaser.Math.Clamp(
+          Math.round(anchor.x),
+          half + 2,
+          this.promptClampMaxX() - half,
+        ),
+        Phaser.Math.Clamp(
+          Math.round(anchor.y),
+          80,
+          600 - this.proximityPrompt.height / 2 - 2,
+        ),
+      )
+      .setVisible(true);
   }
 
   /** Screen y of the transient feedback banner (rooms with a north-wall

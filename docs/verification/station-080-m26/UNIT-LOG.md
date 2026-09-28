@@ -3571,3 +3571,276 @@ false`), not invalidated (v2 rule kept); an occasion opened in an
 - **Commit:** one local commit (hash recorded at the start of U15);
   nothing pushed, merged, tagged, deployed or deleted; the run stops
   here on the owner's instruction — U15 is not started.
+
+## U14-C — correction of U14 (M03 / M04): observation validation, truthful exposure, interaction targeting
+
+- **U14 commit (recorded at the start of U14-C):** `3e43372` —
+  `feat(m03,m04): three-tool press occasions and two cutting jobs closed
+at their first departure`; not amended.
+- **Entry state (verified before the first edit):** worktree
+  `C:\Users\Juls\.codex\worktrees\u14-correction\research-station-assessment-game`,
+  branch `codex/u14-correction`, HEAD
+  `3e43372c9eb1b569e8ad125127feb4f47e373514` (the expected base), clean
+  tree. The primary checkout (branch
+  `fable-professional-world-rescue-v2`, its untracked `.agents/` and
+  `.codex/`, the stash) is not touched.
+- **Authorities used:** the owner's instruction for this unit (the newer
+  Station 080 M01–M26 design governs; the older Q01–Q33 behavioural
+  prescriptions do not govern this correction); the register §2 M03 and
+  M04 rows and `registerV3.ts`; the matrix M03 / M04 rows; the addendum;
+  the U14 record above. The scientific reassessment was completed by the
+  owner before this unit and is carried forward, not repeated.
+- **Unit id:** U14-C (a correction of U14; before U15, which is not
+  started).
+- **Objective:** repair U14's event validation, truthful exposure
+  recording, prompt / action agreement and local presentation defects
+  without changing either item's design.
+- **Scientific rationale:** unchanged from U14. Preserved as built: M03
+  two press occasions of three tools; M04 two cutting jobs of three
+  pieces; immutable first-departure snapshots; a carried piece counted
+  as undisposed; later disposal recorded apart; feature directions,
+  denominators and missingness rules; optional cleanup; progression
+  independent of cleanup; provisional status of every event and feature.
+- **Participant-facing behaviour (changes only):** the contextual prompt
+  names what SPACE / E will act on — a station, a supply bundle, a piece
+  ("Take <piece>") or the bin while a piece is carried ("Use disposal
+  bin") — and the press acts on exactly that; a press labelled with a
+  station never lifts or drops a piece; a press while a carried piece
+  blocks the act answers in one neutral line; the lines after a jammed
+  cut or a press panel stopped by the system no longer state a success;
+  the press panel is legible at 800 × 600. No line asks for tidying or
+  disposal.
+- **Allowed files:** `src/measurement/features/m03.ts`,
+  `src/measurement/features/m04.ts`,
+  `src/pilot/windows/m03RestoreModel.ts`,
+  `src/pilot/windows/m03ToolRestore.ts`,
+  `src/pilot/windows/m04CuttingModel.ts`,
+  `src/pilot/windows/m04Debris.ts`, `src/scenes/RecordsWorkshopScene.ts`,
+  `src/inventory/ui/InventoryOverlayScene.ts` (the `m03tools` mode
+  only), `src/world/RoomScene.ts` and `src/pilot/PilotZoneScene.ts` (the
+  interaction-target support only), `e2e/m03_restore.spec.ts`,
+  `e2e/m04_cutting.spec.ts`, `e2e/m03_m04_route.spec.ts`,
+  `e2e/u14_correction.spec.ts` (new), and the four documents of
+  `docs/verification/station-080-m26/` (this log, the register, the
+  matrix, the addendum).
+- **Prohibited areas:** common, plus every other item, the legacy
+  Inventory Lab implementation, the canonical research files, global
+  scoring and protocol, package files, settings, hooks, assets, the
+  shared physical-object mechanics (`physical.ts`), `windowKit.ts`,
+  `zoneSites.ts`, `registerV3.ts`. Not changed without an owner
+  decision: exposure thresholds, closure rules, set-down mechanics,
+  object positions, cue / re-arm rules, missingness formulas,
+  independence classifications.
+- **Success behaviour:** the extractors reproduce both primaries from
+  the raw events and reject a malformed completed observation through
+  the existing `technical_failure` path; the exposure order in the raw
+  log is truthful; prompt and press agree; focused runtime evidence
+  exists.
+- **Failure / recovery:** unchanged from U14; legitimate pending,
+  absent, interrupted and system-closed cases keep their dispositions.
+- **Telemetry boundary:** the candidate families `proto_m03tools_*` and
+  `proto_m04_cutting_*` only; no new event suffix; added metadata fields
+  are provisional; no canonical name or approved formula invented.
+- **Scientific acceptance:** as U14; in addition a raw log is never
+  mutated, a missing `listed` alone never invalidates an M04 job, and no
+  work-order exposure is fabricated or backdated.
+- **Gameplay acceptance:** keyboard and pointer access to the pieces and
+  the bin remain; approaching a station never closes a job; another
+  station actually opened still does; unrelated rooms are unchanged.
+- **Required tests:** `npm.cmd run lint:tsc`; `npm.cmd run build`;
+  ESLint + Prettier on the changed files; `m03_restore`, `m04_cutting`,
+  `m26_protocol_foundation`, `pilot_coverage`, `pilot_closure_models`,
+  `pilot_return_models`, `m03_m04_route`, `u14_correction`; because the
+  shared interaction handling and the overlay change,
+  `concourse_interaction_lifecycle` and
+  `inventory_measurement_isolation`; `verify-unit` with the exact
+  allowlist; `git diff --check`. A dedicated `PW_DEV_PORT`.
+- **Required screenshots:** the changed press panel and the interaction
+  prompts at 800 × 600 (evidence, not committed).
+- **Stop conditions:** common; plus a required file outside the
+  allowlist, a scientific redesign, a guard rejection.
+- **Model:** Fable (sole writer and integrator); `test-reviewer` on
+  Sonnet; `scientific-reviewer` and `gameplay-reviewer` on Opus 5.5;
+  `visual-reviewer` on Opus 5.5 if the presentation changes;
+  `cheap-explorer` for narrow discovery only. The models actually used
+  are recorded below.
+- **Commit expectation:** `fix(m03,m04): correct U14 observation validation and interaction targeting`.
+
+- **Status of the result:** technical correction verified by the runs
+  below. NOT scientifically validated: no response-process, reliability
+  or convergent / discriminant evidence exists for M03 or M04 (register
+  §5.203).
+- **Dependencies of the worktree:** the prepared worktree had no
+  `node_modules`; on the owner's choice (asked, 28 September) a
+  directory junction `node_modules` → the primary checkout's
+  `node_modules` was created (git-ignored; nothing installed; no
+  package file changed). Vite's dependency cache is written under the
+  primary's `node_modules/.vite`. The junction is not part of the
+  commit.
+- **Model routing actually used (self-reported by each agent from its
+  own system prompt):** Fable 5.1 (`claude-fable-5-1`) — sole writer and
+  integrator, adjudication of every finding. Test runner:
+  `claude-sonnet-5`. Scientific, gameplay and visual reviews:
+  `claude-opus-5-5` each. `cheap-explorer` was not used (the discovery
+  needed was done by the writer's own searches).
+- **Reviewer availability:** the project definitions `test-reviewer`,
+  `scientific-reviewer`, `gameplay-reviewer` and `visual-reviewer` are
+  NOT offered as agent types in this session (as recorded under
+  U6–U14). Each role was run through a fresh general-purpose agent with
+  an explicit model override (`sonnet` / `opus`), instructed to read
+  its definition file first and follow it verbatim, to edit nothing, and
+  to state its model. No role fell back to Fable. The aliases resolved
+  to the versions named above; this was read from the agents' reports,
+  not assumed.
+- **What was changed:** register §4 "Unit 14-C". In short — the two
+  extractors (order and count of the opening, the cut and the
+  departure; the item's own object identities; a replay of the acts on
+  the pieces; recorded containers, move counts and disposed ids against
+  the raw events); `presented` written by the press itself, before its
+  panel, when no order named it; one target decision for the prompt and
+  the press through the new `RoomScene.interactionRedirect` hook
+  (default: none, every other room unchanged; the pre-existing
+  auxiliary-prompt block has no changed line); the lines after a jam, a
+  stopped panel and with the hands full; a held tool no longer covering
+  its tray's name; a piece's line no longer across the figure.
+  `src/pilot/PilotZoneScene.ts` and `e2e/m03_m04_route.spec.ts` were
+  on the allowlist and needed no change.
+- **Administration versions:** `m03-tools-v1` → `m03-tools-v2`,
+  `m04-cutting-v1` → `m04-cutting-v2` (`entry_state_version` on every
+  event of the two families). The protocol, schema, register and
+  extractor versions of `protocol.ts` are unchanged (not on the
+  allowlist); pooling is the owner's (§5.202, §5.204).
+- **Initial verification (test runner, one run, retries off,
+  `PW_DEV_PORT=5195`, the port verified free before the run):**
+  `npm.cmd run lint:tsc` PASS · `npm.cmd run build` PASS · ESLint on
+  the 12 changed source and spec files PASS · Prettier on the 16 changed
+  files PASS · pure `m03_restore`, `m04_cutting`,
+  `m26_protocol_foundation`, `pilot_coverage`, `pilot_closure_models`,
+  `pilot_return_models`: 76 / 76 · browser `u14_correction` 1 / 1
+  (2 min 27 s; its assertions on `m03-tools-v2` / `m04-cutting-v2`,
+  read from the running game, show that the server on the port served
+  this worktree) · `m03_m04_route` 2 / 2 (6 min 24 s) ·
+  `inventory_measurement_isolation` 5 / 5 ·
+  `concourse_interaction_lifecycle` 2 / 3 (test B failed, and failed
+  again at the same assertion in the one permitted repeat) ·
+  `git diff --check` clean · `verify-unit` FAIL on two tracked
+  screenshots that `concourse_interaction_lifecycle` rewrites on every
+  run (`docs/verification/screenshots-concourse-hotfix/component-locker-open.png`,
+  `filing-station-open.png`) — restored from HEAD afterwards, not part
+  of the commit (as under U14).
+- **The one browser test that does not pass, and the evidence that it
+  is not this unit's:** `concourse_interaction_lifecycle` test B, its
+  line 428 (after SPACE beside the supply bundle at 196, 244 an overlay
+  is open; expected none). On an untouched export of `3e43372`
+  (`git archive` into the session scratchpad, its own port 5196,
+  retries off) the same test FAILED 2 of 2 at the same assertion with
+  the same values. Deterministic on the base, therefore not caused by
+  this unit; the gameplay review reached the same conclusion from the
+  code (the test never cuts, so the target decision returns nothing on
+  every frame; the spot lies 75 px from the Case Workspace's 72 px
+  radius). U14 recorded the test as unstable (1 of 2 on the base, 3 / 3
+  on its final tree). The spec is outside this unit's allowlist and is
+  left as it is.
+- **Review round 1 (read-only, on the tree after the initial
+  verification; the only round):**
+  - _Scientific (Opus 5.5):_ "concerns found", nothing of high
+    severity; claims 1, 2, 3 and 5 confirmed; no legitimate path found
+    on which the stricter checks produce a false technical failure.
+    S-M1 (medium): with a piece carried at the cutter, the bin out of
+    reach and a piece in reach, the press answered "Hands full." and
+    wrote nothing where Unit 14 showed the re-arm line and wrote
+    `job_unavailable` — a change of how often the first job's cue is
+    shown. FIXED: at the cutter the press stays the cutter's, as in
+    Unit 14; "Hands full." is given on open floor only (browser-tested
+    both ways). S-L1 (low): a keyboard pick-up where the cutter is in
+    range no longer writes `pilot_station_opened` for the cutter —
+    NOT changed (the cutter is not used by that press), recorded
+    (§4, §5.204). S-L2 (low): a record naming one disposed piece twice,
+    and move counts that the raw moves do not give, were accepted —
+    FIXED (both pure-tested). S-L3 (low, unverified by the reviewer):
+    `presented_by` after a reload — FIXED: `earlier_page_load` when an
+    earlier load holds the presentation (pure-tested; §5.209). S-D1,
+    S-D2 (documentation): corrected in the register.
+  - _Gameplay (Opus 5.5):_ "usable with noted friction", nothing of
+    high severity; requirements 1–8 hold; the decision and the act lie
+    in one `updateProximity` call. G-L4 (the new line had no bottom
+    clamp): FIXED. G-L1 / V-L1 (a piece named while the hands are
+    full), G-L2 (two prompt grammars), G-L3 (a held tool over an
+    occupied focused cell): NOT changed, recorded (§5.208). G-M1
+    (medium, unchanged from Unit 14: the first job's pieces lie on the
+    Component Locker's approach), G-L5, G-L6: NOT changed — places, the
+    yielding rule and a set-down command are the owner's (§5.205,
+    §5.206, §5.199).
+  - _Visual (Opus 5.5, on thirteen screenshots at 800 × 600):_
+    "readable with noted defects"; nothing clipped, no text over text,
+    no line over the figure or over the object it names; the tray's
+    name is clear of the held tool. V-M1 (the bin alone is outlined —
+    the pointer layer's drop-zone hint, unchanged file), V-M2 (a raised
+    line stands away from its piece), V-L2 – V-L4: NOT changed,
+    recorded (§5.207, §5.208). V-L5 – V-L7: pre-existing, outside the
+    unit. Not captured for that review: "Carrying the …" (captured
+    afterwards), a held tool over an occupied cell, a pointer drag.
+  - No second round was run: no material finding stayed unresolved and
+    the fixes are covered by the repeated checks below.
+- **Verification of the final tree (after the fix round; by the writer;
+  only the checks the fixes affect were repeated):** `lint:tsc` PASS ·
+  `build` PASS · ESLint and Prettier on the changed files PASS · pure
+  `m03_restore` + `m04_cutting` 19 / 19 · browser `u14_correction`
+  1 / 1 (2.4 min, from the Dock) · `m03_m04_route` 2 / 2 (6.3 min) ·
+  `verify-unit` PASS · `git diff --check` clean. NOT repeated after the
+  fix round: the four shared pure suites, `inventory_measurement_isolation`
+  (the overlay did not change in the fix round) and
+  `concourse_interaction_lifecycle` (fails on the base).
+- **Browser evidence (`u14_correction`, real input):** direct access
+  without the work orders (Press A and the cutter); Press A loaded and
+  run by pointer; TAB / SHIFT+TAB with and without a tool lifted; a
+  tool restored by keyboard; the line against the act at the cutter, a
+  piece, the bin, the Component Locker and a supply bundle; the
+  cutter's line with the hands full; "Hands full." and "Carrying the
+  …"; a station approached without a departure; the carried piece
+  counted when the locker is opened; a later disposal by pointer with
+  the departure record byte-identical; coupon 2 cut while a leftover
+  piece lies in reach; the work orders taken last; both primaries
+  reproduced offline. Press B, the ordinary order and the room-exit
+  departure: `m03_m04_route`.
+- **Screenshots at 800 × 600 (evidence, not committed;
+  `test-results/u14c-*.png`):** the press panel in five states, the
+  prompts for the cutter, a piece, a piece beside the locker, the bin,
+  a station and a bundle, the two feedback lines, the second job's
+  pieces.
+- **Not verified in a browser (pure tests only):** every adverse case
+  of the two extractors; the lines after a jam and after a stopped
+  panel; `earlier_page_load` (no browser reload check, as under U12 and
+  U14). Not verified at all: a press at a yielding station with the bin
+  nearer than the station; the clamp of the new line at the canvas's
+  lower edge (no piece lies there).
+- **Deviations:** `CLAUDE_UNIT_ALLOWLIST` could not be exported into
+  the guard's environment from inside the session — the allowlist was
+  enforced by discipline and `verify-unit`; the guard itself was active
+  (it refused one command that named `git config`); the writer ran the
+  new specs during their development and the repeats after the fix
+  round, the test runner ran the initial list; reviewer stand-ins as
+  declared; the two concourse screenshots were restored from HEAD by
+  explicit path after the runs.
+- **Pending owner decisions and empirical needs:** register
+  §5.195–§5.209 — what the prompt names (§5.195), immediate closes and
+  the 2 s marker (§5.196), what M04 measures and its two cues (§5.197),
+  keyboard against pointer (§5.198), no set-down (§5.199), repeated
+  occasions (§5.200), leftovers and participation-dependent missingness
+  (§5.201), pooling the versions (§5.202, §5.204), empirical validation
+  (§5.203), the locker's approach (§5.205), leftover pieces while
+  coupon 2 waits (§5.206), what is highlighted (§5.207), the lines'
+  form (§5.208), the presentation after a reload (§5.209). None was
+  resolved here.
+- **Not changed:** exposure thresholds, closure and departure rules,
+  set-down mechanics, object positions, reaches, the cue and re-arm
+  rules, missingness formulas, independence classifications,
+  denominators and directions; `registerV3.ts`, `protocol.ts`,
+  `windowKit.ts`, `zoneSites.ts`, `physical.ts`, `worldBundles.ts`,
+  `PilotZoneScene.ts`; the legacy Inventory Lab press workstation;
+  every other item; `docs/research/**`, `docs/scientific/**`,
+  `docs/ai/**`; package files, settings, hooks, assets; the primary
+  checkout and the stash.
+- **Commit:** one local commit on `codex/u14-correction`; nothing
+  pushed, merged, tagged, deployed or deleted; the run stops here — U15
+  is not started.

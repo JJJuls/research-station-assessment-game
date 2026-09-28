@@ -7,15 +7,24 @@
  * carried, the closing trigger, the route stage at the cut, focused
  * exposure and latency, later disposals). Read-only over the raw
  * `proto_m04_cutting_*` events; the state is RECOUNTED per job from the
- * `piece_disposed` events that lie between the job's `job_run` and its
- * `first_departure` and compared with the recorded snapshot piece by
- * piece. A later disposal never changes a job's value. A job never run is
+ * `piece_picked_up`, `piece_put_back` and `piece_disposed` events that
+ * lie between the job's `job_run` and its `first_departure` and compared
+ * with the recorded snapshot piece by piece. A completed job is read only
+ * when its own `opportunity_opened`, `job_run` and `first_departure`
+ * occur once each and in that order, when the cut names the three pieces
+ * the job is defined with, and when every disposal of one of them follows
+ * its pick-up and occurs once (U14-C); the work orders' `listed` is an
+ * exposure record and is never required. Anything else is a record that
+ * cannot be reproduced — a technical failure, never a value. An event
+ * that names a piece of the OTHER job is not part of this job's recount.
+ * A later disposal never changes a job's value. A job never run is
  * not presented; a job closed by the system (the review) had no
  * departure and is censored; a job whose pieces could not be reached or
  * that was held back by a reload is never a value. A pick-up or a
  * disposal issued by a press at another station is counted like any
  * other and FLAGGED beside the value (its origin is part of the record).
  */
+import { m04PiecesOf } from '../../pilot/windows/m04CuttingModel';
 import type { RawGameEvent } from '../../systems/EventLogger';
 import { registerEntry } from '../registerV3';
 import {
@@ -58,7 +67,11 @@ function jobOf(event: RawGameEvent): string | undefined {
 }
 
 function sameSet(a: readonly string[], b: ReadonlySet<string>): boolean {
-  return a.length === b.size && a.every((id) => b.has(id));
+  return (
+    a.length === b.size &&
+    new Set(a).size === a.length &&
+    a.every((id) => b.has(id))
+  );
 }
 
 registerFeatureExtractor('M04', (events, context) => {
@@ -74,9 +87,12 @@ registerFeatureExtractor('M04', (events, context) => {
     );
 
   const perJob = JOBS.map((job) => {
-    const run = of('job_run', job)[0] ?? null;
-    const opened = of('opportunity_opened', job)[0] ?? null;
-    const departure = of('first_departure', job)[0] ?? null;
+    const runs = of('job_run', job);
+    const openings = of('opportunity_opened', job);
+    const departures = of('first_departure', job);
+    const run = runs[0] ?? null;
+    const opened = openings[0] ?? null;
+    const departure = departures[0] ?? null;
     const atReview = of('state_at_review', job)[0] ?? null;
     const failures = of('technical_failure', job);
     const heldBack = failures.some((event) =>
@@ -86,21 +102,64 @@ registerFeatureExtractor('M04', (events, context) => {
       (event) => !(meta<string>(event, 'detail') ?? '').startsWith('reload'),
     );
     const record = departure ?? atReview;
+    const openedSequence = opened?.sequence ?? Number.POSITIVE_INFINITY;
     const runSequence = run?.sequence ?? Number.POSITIVE_INFINITY;
     const recordSequence = record?.sequence ?? Number.POSITIVE_INFINITY;
-    const pieces = new Set(run ? (meta<string[]>(run, 'pieces') ?? []) : []);
-    // Recount: distinct pieces of THIS job disposed after its cut and
-    // BEFORE its first departure.
-    const disposedBefore = new Set(
-      of('piece_disposed', job)
-        .filter(
-          (event) =>
-            (event.sequence ?? 0) > runSequence &&
-            (event.sequence ?? 0) < recordSequence,
-        )
-        .map((event) => meta<string>(event, 'object_id'))
-        .filter((id): id is string => id !== undefined && pieces.has(id)),
+    // The pieces the job is DEFINED with; the cut must name exactly these.
+    const expected = m04PiecesOf(job).map((piece) => piece.object_id);
+    const pieces = new Set(expected);
+    const named = run ? (meta<string[]>(run, 'pieces') ?? []) : [];
+    const identitiesAgree =
+      named.length === expected.length &&
+      new Set(named).size === named.length &&
+      named.every((id) => pieces.has(id));
+    // Recount: the acts on THIS job's pieces after its cut and BEFORE its
+    // first departure, replayed in order. A piece is lifted from where it
+    // lies, put back or disposed from the hand, and disposed once; an act
+    // that cannot follow from the acts before it is a record that cannot
+    // be reproduced (a second disposal of one piece is never hidden).
+    const place = new Map<string, 'lying' | 'carried' | 'disposed'>(
+      expected.map((id) => [id, 'lying']),
     );
+    let replayAgrees = true;
+
+    const inOrder = [...family].sort(
+      (a, b) => (a.sequence ?? 0) - (b.sequence ?? 0),
+    );
+
+    for (const event of inOrder) {
+      const sequence = event.sequence ?? 0;
+      const id = meta<string>(event, 'object_id');
+
+      if (
+        jobOf(event) !== job ||
+        sequence <= runSequence ||
+        sequence >= recordSequence ||
+        id === undefined ||
+        !pieces.has(id)
+      ) {
+        continue;
+      }
+
+      const from = place.get(id);
+      const act = event.event_type.slice(FAMILY.length);
+
+      if (act === 'piece_picked_up') {
+        replayAgrees &&= from === 'lying';
+        place.set(id, 'carried');
+      } else if (act === 'piece_put_back') {
+        replayAgrees &&= from === 'carried';
+        place.set(id, 'lying');
+      } else if (act === 'piece_disposed') {
+        replayAgrees &&= from === 'carried';
+        place.set(id, 'disposed');
+      }
+    }
+
+    const disposedBefore = new Set(
+      expected.filter((id) => place.get(id) === 'disposed'),
+    );
+    const carriedBefore = expected.filter((id) => place.get(id) === 'carried');
     const recount = PIECES_PER_JOB - disposedBefore.size;
     const recorded = record
       ? (meta<number>(record, 'undisposed_at_departure') ?? null)
@@ -117,13 +176,19 @@ registerFeatureExtractor('M04', (events, context) => {
     const agrees =
       record !== null &&
       run !== null &&
+      opened !== null &&
+      openings.length === 1 &&
+      runs.length === 1 &&
+      departures.length === 1 &&
+      openedSequence < runSequence &&
       runSequence < recordSequence &&
-      pieces.size === PIECES_PER_JOB &&
+      identitiesAgree &&
+      replayAgrees &&
+      carriedBefore.length <= 1 &&
       recorded === recount &&
       meta<number>(record, 'pieces_disposed') === disposedBefore.size &&
       sameSet(recordedIds, disposedBefore) &&
-      (carried === null ||
-        (pieces.has(carried) && !disposedBefore.has(carried))) &&
+      carried === (carriedBefore[0] ?? null) &&
       lying === recount - (carried === null ? 0 : 1);
     const late = of('late_disposal', job)
       .map((event) => meta<string>(event, 'object_id'))

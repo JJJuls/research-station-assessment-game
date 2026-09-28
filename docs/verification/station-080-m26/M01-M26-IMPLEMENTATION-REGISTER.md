@@ -163,6 +163,112 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
 
 ## 4. As-built records (appended per unit)
 
+_Unit 14-C (M03 / M04, a correction of Unit 14 — the Unit 14 record
+below is kept as written and is superseded only where this record says
+so): as-built. **Status: technical correction verified by the tests
+named here; NOT scientifically validated** — no response-process,
+reliability or convergent / discriminant evidence exists for either item
+(§5.203). Administration versions: `entry_state_version`
+`m03-tools-v2` and `m04-cutting-v2` (Unit 14: `m03-tools-v1`,
+`m04-cutting-v1`); sessions of the two versions are told apart by that
+field on every event and are not pooled without an owner decision
+(§5.202). Families, suffixes, opportunity and window ids, formulas,
+directions, denominators and missingness rules are unchanged; no event
+suffix was added; everything stays provisional.
+(1) Extractors. `m04_undisposed_pieces`: a completed job is read only
+when its own `opportunity_opened`, `job_run` and `first_departure`
+occur once each and in that order, when `job_run` names exactly the
+three pieces the job is defined with, and when the acts on those pieces
+between the cut and the departure replay without a contradiction (a
+piece is lifted from where it lies, put back or disposed from the hand,
+and disposed once — a repeated `piece_disposed` is no longer folded
+into one by a set); the recorded carried piece must be the piece the
+replay leaves in the hand, and the recorded `disposed_ids` name no
+piece twice. `m03_tools_restored`: a completed occasion
+is read only when `opportunity_opened` and `first_departure` occur
+once each and in that order, when the tools of the entry snapshot and of
+the record are exactly the three the occasion is defined with, when
+every move inside the window names one of them and one of the
+occasion's two trays, and when every recorded container is the one the
+moves lead to (the work surface for a tool never moved), and when the
+recorded `move_count` and every tool's `moves` equal the raw moves
+inside the window. Anything else
+is `technical_failure` through the existing path (`jobs_disagreeing`
+/ `occasions_disagreeing`). Unchanged: pending, absent, declined,
+interrupted and system-closed records are not subject to these checks;
+an event naming a piece of the OTHER job is left out of a job's
+recount; a disposal after the departure is a `late_disposal` and never
+enters; the work orders' `listed` is an exposure record and its
+absence never invalidates a job. The extractors read and never write.
+(2) Exposure. A press opened before the work orders named its batch
+(Press A is open to a press from the arrival in the Workshop on) is
+presented at that open: `presented` is written once, before
+`surface_opened`, with `presented_by: station_direct` in the entry
+snapshot and on `surface_opened`; on the ordinary route the value is
+`work_orders`; after a reload, a press whose presentation lies in an
+earlier page load reads `earlier_page_load` (this load never claims a
+direct presentation it cannot know). A later listing writes nothing for
+the press. No
+prerequisite was added: both the press and the cutter can still be used
+before the orders are taken. The companion `m03_object_states` gained
+`presented_by` and `presented_before_panel_opened`.
+(3) Prompt and press. One decision per frame
+(`RecordsWorkshopScene.debrisTarget`, read through the new
+`RoomScene.interactionRedirect` hook) feeds the line shown and the
+press. It names a piece ("E / Space — Take coupon offcut") or, with a
+piece carried, the bin ("E / Space — Use disposal bin") where Unit 14
+let a press act on one: at the cutter once no coupon is waiting
+and the 1.5 s settle window is over; at a station that yields (the Case
+Workspace, the presses, the Component Locker, the Assembly Bench and the
+first shift's benches) while a job awaits its departure, for a piece of
+THAT job or the bin lying nearer than the station; on open floor unless
+a supply bundle in reach lies nearer. Otherwise the station, the door
+or the bundle is named and the press acts on it. A press that names a
+station never lifts or drops a piece; a press that names a bundle never
+lifts a piece. Reaches (64 px piece, 96 px bin, 72 px station, 44 px
+bundle), the pieces' places, the settle window, the re-arm line and the
+departure rule are unchanged: a job still closes when another station is
+actually opened or the room is left, and never on approach. Origins are
+recorded as before (`cutter_press`, `open_floor_press`,
+`station_press:<id>`, `pointer`). The pointer layer is unchanged.
+Differences in the raw log against Unit 14, none read by an extractor: a
+keyboard pick-up or disposal made where the cutter is in range no longer
+writes `pilot_station_opened {station_id: sample_cutter}` (the cutter
+is not used by that press); a press at a yielding station that lifts a
+piece wrote none in Unit 14 either. With a piece carried at the cutter
+and the bin out of reach the press is the cutter's, states the cutter's
+line and writes `job_unavailable` exactly as in Unit 14 (review S-M1:
+the first version of this correction answered "Hands full." there and
+changed how often the re-arm line is shown; withdrawn). The line naming
+a piece is also shown for pieces left after a job's departure, at the
+cutter once both coupons are cut and on open floor, during later
+opportunities (§5.201).
+(4) Lines. With the hands full a press on a piece named on open floor
+answers "Hands full." (the pointer's line; Unit 14: a silent press);
+with a piece
+carried and nothing in reach a press answers "Carrying the <piece>.". A
+press whose panel was stopped by the system, or that is otherwise out of
+use, answers "Label press out of service."; only a panel the participant
+closed answers "Label press idle. The batch is done.". The cutter answers
+"Both coupons cut. The cutter is idle." only when both were cut, "The
+cutter is idle." after a jam or a held-back job beside a cut, "The
+cutter is out of service." when nothing was cut.
+(5) Presentation at 800 × 600. On the label press a tool lifted by
+keyboard was drawn over the name of its tray; it is drawn over the
+focused cell, slightly raised (the `m03tools` mode only). A line naming
+a piece within arm's reach is raised above the figure when it would fall
+across it.
+The new line is clamped to the canvas like a station's.
+Tests: `e2e/m03_restore.spec.ts` (10 pure, 2 new), `e2e/m04_cutting.spec.ts`
+(9 pure, 2 new), `e2e/u14_correction.spec.ts` (browser, new: direct
+access from the Dock without the work orders, Press A by pointer, TAB /
+SHIFT+TAB with and without a tool lifted, the named target against the
+act at the cutter, a piece, the bin, a station and a bundle, the carried
+piece counted at the departure, a later disposal leaving the record
+byte-identical, the listing taken last), `e2e/m03_m04_route.spec.ts`
+(unchanged). Results: unit log, U14-C. Limitations carried forward and
+decisions pending: §5.195–§5.209._
+
 _Unit 2 + U2-R (M08): as-built — Station Support Console, Recovery Yard
 (`YARD_SITES.supportConsole` 620,520; registry `yard.support_console`);
 listed by Noor's briefing as the sixth yard job (between the magnet rig
@@ -2701,3 +2807,108 @@ following; defaults applied, reversible, none changes a formula.
      reachable on the ordinary route), neither changes a record.
      Alternatives: "out of service" after a stop; "The cutter is idle."
      unless both jobs produced their pieces.
+195. **What a press names and acts on (U14-C; supersedes the defaults
+     of §5.191 and §5.192 on the owner's instruction, their text kept
+     above).** Default: the line above the avatar names the piece or the
+     bin wherever a press acts on one, in the station grammar ("Take
+     <piece>", "Use disposal bin"). Consequence to be judged by the
+     owner: a keyboard user now SEES a line naming a piece in reach and
+     the bin in reach — a cue Unit 14 did not show (it lifted the piece
+     under the cutter's or the bundle's name, or with no line). The line
+     asks for nothing and appears for the bundles and stations in the
+     same form; whether it makes the pieces more salient than the
+     pointer's hover cue is not known. Alternatives: no line for a piece
+     (the press would then act without a named target); one line for
+     every loose object.
+196. **Immediate closes of the press panel (carried forward).** An M03
+     panel closed at once may reflect that the tools were not perceived,
+     not a choice. The 2 000 ms marker (`exposure_sufficient`) is a
+     recorded fact taken over from the v2 route; it is not a validated
+     threshold and excludes nothing. Not changed.
+197. **What M04 measures, and the two cues (carried forward).** M04
+     measures disposal BEFORE the first departure from the task or
+     station. The first job's line ("The cutter re-arms while you work
+     another order.") encourages that departure and differs from the
+     second job's line; the jobs are therefore not administered under
+     the same cue. Not changed (cue and re-arm rules are the owner's).
+198. **Keyboard and pointer (carried forward).** Both input modes reach
+     every object; this does not establish equal effort or equal
+     opportunity (about 12 key presses against three drags for three
+     tools; a carried piece is walked to the bin in both). The input
+     mode is recorded on every act.
+199. **No reversible set-down (carried forward; §5.170).** A lifted
+     piece can be disposed of or carried, not set down again by the
+     participant; a lift made by mistake can only end in a disposal or
+     in a carried piece at the departure. Unresolved; not changed.
+200. **Repeated occasions are not independent situations (carried
+     forward).** The second press occasion and the second cutting job
+     follow the first and can contain learning and carry-over; six
+     objects are not six independent observations. The register's
+     independence classifications are unchanged.
+201. **Leftover pieces and participation (carried forward).** Pieces
+     left by job 1 lie in the room during job 2 and during later
+     opportunities (§5.190) and may influence them. Missingness may
+     depend on task participation (a job never run, a press never
+     opened, a participant who does not return to the Workshop), so a
+     null is not missing at random by construction.
+202. **Pooling the two administrations.** Default: sessions under
+     `m03-tools-v1` / `m04-cutting-v1` and under `-v2` are told apart
+     by `entry_state_version` and are not pooled by any code; a v1 log
+     that lacks its opening, repeats a disposal or names other objects
+     now reads `technical_failure` where Unit 14 read a value.
+     Alternative: the owner declares the versions equivalent for a
+     stated analysis.
+203. **Empirical validation pending.** Response-process evidence,
+     reliability and convergent / discriminant evidence for M03 and M04
+     do not exist. "Technical correction verified" (U14-C) states that
+     the records are reproducible and the interface acts on what it
+     names; it states nothing about what the values mean.
+204. **Event rates of the two administrations (review S-M1, S-L1; adds
+     to §5.202).** Under `-v2` a keyboard act on a piece where the
+     cutter is in range writes no `pilot_station_opened` for the cutter,
+     and a press on open floor with the hands full shows "Hands full."
+     where `-v1` showed nothing. Neither is read by an extractor; both
+     differ between the versions.
+205. **The Component Locker's approach during job 1 (review G-M1;
+     unchanged from Unit 14, §5.171, §5.173, §5.184).** The locker's
+     audited approach (310, 250) lies 19 px from the first job's coupon
+     offcut, and the swarf tray lies 13 px from the locker's anchor: with
+     empty hands a press there names and lifts a piece, and the locker is
+     opened by keyboard only from where it is the nearer one. A lifted
+     piece leaves the hands only through the bin or stays carried.
+     Pick-ups with the origin `station_press:storage_locker` and the
+     disposals that follow may therefore be caused by the route, not
+     chosen; they are counted and flagged
+     (`pickups_by_station_press`, `disposed_by_or_after_station_press`).
+     Places, the yielding rule and a set-down command are the owner's.
+     The reviewer's statement that the locker opens from its west rim
+     only is inferred from the floor layout and was not measured.
+206. **Keyboard reach of leftover pieces while coupon 2 waits (review
+     G-L5; unchanged from Unit 14).** The first job's blade wrap lies
+     7 px from the cutter's anchor: while the second coupon is waiting a
+     press within its reach is the cutter's and cuts. The pointer
+     reaches it; the keyboard reaches it again once coupon 2 is cut.
+207. **What is highlighted (review V-M1, V-M2; the pointer layer is
+     unchanged).** With a piece carried and the bin in reach the pointer
+     layer outlines the bin (its drop-zone hint, as in Unit 14); no
+     piece, station or bundle is outlined. A line naming a piece is
+     raised above the figure when it would fall across it and then
+     stands away from the piece; two pieces of one kind (one per job)
+     carry the same name. Whether the bin's outline or the distance of
+     the line changes what is noticed is not known.
+208. **Lines and their form (review G-L1, G-L2, G-L3, V-L1, V-L4).**
+     Default: on open floor a piece in reach is named while the hands
+     are full and the press answers "Hands full." (both lines can be on
+     screen together); a bundle reads "E — Take …" (every pilot zone,
+     unchanged) beside "E / Space — Take …" for a piece; piece and bin
+     names are lower-case (Unit 14, §5.182) beside the stations' title
+     case; on the label press a tool held by keyboard is drawn over the
+     focused cell and covers a tool lying in it when the arrow keys
+     focus an occupied cell (TAB never lands on one). Alternatives: no
+     line for a piece the hands cannot take; one grammar for every
+     prompt; the held tool beside the cell.
+209. **The presentation after a reload (review S-L3).** Default:
+     `presented_by: earlier_page_load` when an earlier page load of the
+     identity holds the occasion's `presented`; what presented it then
+     is read from that load's events. Alternative: carry the earlier
+     value over.

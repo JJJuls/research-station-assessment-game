@@ -36,7 +36,16 @@ import {
 } from '../../measurement/focusMonitor';
 
 export const M04_FAMILY = 'proto_m04_cutting_';
-export const M04_ENTRY_STATE_VERSION = 'm04-cutting-v1';
+/**
+ * `m04-cutting-v2` (U14-C): the contextual prompt names what a press
+ * acts on (a piece, the bin, a station) and the press acts on exactly
+ * that; a press labelled with the cutter no longer lifts or drops a
+ * piece. `m04-cutting-v1` is the administration of Unit 14.
+ */
+export const M04_ENTRY_STATE_VERSION = 'm04-cutting-v2';
+/** What the cutter states while the second coupon is not available yet. */
+export const M04_REARM_LINE =
+  'The cutter re-arms while you work another order.';
 export const M04_PIECES_PER_JOB = 3;
 export const M04_PRIOR_ADMINISTRATION = 'prior_administration';
 /**
@@ -353,6 +362,29 @@ export function m04AnyJobProduced(s: M04State): boolean {
   return M04_JOBS.some(
     (job) => s.jobs[job].ranAtMs !== null && s.jobs[job].status !== 'failed',
   );
+}
+
+/** A job that could not be run (its pieces could not be drawn, or a reload held it back). */
+export function m04AnyJobFailed(s: M04State): boolean {
+  return M04_JOBS.some((job) => s.jobs[job].status === 'failed');
+}
+
+/**
+ * What the cutter states when it has nothing to cut. "Both coupons cut"
+ * is stated only when both were: never after a jam or a held-back job.
+ */
+export function m04IdleLine(s: M04State): string {
+  if (m04OpenJob(s) === 'o1') {
+    return M04_REARM_LINE;
+  }
+
+  if (!m04AnyJobProduced(s)) {
+    return 'The cutter is out of service.';
+  }
+
+  return m04AnyJobFailed(s)
+    ? 'The cutter is idle.'
+    : 'Both coupons cut. The cutter is idle.';
 }
 
 /** Milliseconds since the open job's cut, while inside its settle window (else null). */

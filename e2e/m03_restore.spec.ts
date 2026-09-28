@@ -10,6 +10,10 @@
  * and the extractor reproduces restored / 6 from the raw events with
  * untouched ≠ never completed ≠ declined ≠ pending ≠ interrupted ≠ not
  * presented ≠ technically invalid, plus the object-states companion.
+ * U14-C: the adverse cases of the recount (tools that are not the
+ * occasion's own, a container the moves do not lead to, a repeated or
+ * late record), the exposure order of a press opened before the work
+ * orders, the line after a stopped panel, and the raw log left untouched.
  */
 import { expect, test } from '@playwright/test';
 
@@ -36,6 +40,7 @@ import {
   m03BenchSeed,
   m03Depart,
   m03EntrySnapshot,
+  m03IdleLine,
   type M03LogSink,
   m03MoveRefused,
   type M03Occasion,
@@ -43,6 +48,7 @@ import {
   m03PressRunnable,
   m03PriorAdministration,
   m03PriorPanelExposure,
+  m03PriorPresentation,
   m03RawComponents,
   type M03Reachability,
   m03Reachability,
@@ -1002,5 +1008,320 @@ test.describe('M03 tool restoration (pure)', () => {
       denominator: 3,
       disposition: 'incomplete',
     });
+  });
+
+  test('U14-C: a completed occasion is read only with its own three tools, containers the raw moves lead to, and its opening and departure once each and in that order; the raw log is never changed', () => {
+    const h = harness();
+
+    runOccasion(h, 'a', [BRUSH]);
+
+    const type = (suffix: string) => `${M03_FAMILY}${suffix}`;
+    const { rack, bench: surface } = M03_SPEC.a.containers;
+    const before = JSON.stringify(h.events);
+    const frozen = h.events.map((event) =>
+      Object.freeze({
+        ...event,
+        metadata: Object.freeze({ ...event.metadata }),
+      }),
+    ) as unknown as RawGameEvent[];
+    const failed = (events: RawGameEvent[]) => {
+      const rows = extractItemFeatures('M03', events, CONTEXT);
+
+      expect(rows[0]).toMatchObject({
+        value: null,
+        disposition: 'technical_failure',
+        closure_reason: 'technical_failure',
+      });
+      expect(rows[0].components).toMatchObject({
+        occasions_disagreeing: ['o1'],
+      });
+    };
+    const departure = (change: (tools: Record<string, unknown>[]) => unknown) =>
+      h.events.map((event) =>
+        event.event_type === type('first_departure')
+          ? {
+              ...event,
+              metadata: {
+                ...event.metadata,
+                tools: change(
+                  (event.metadata!.tools as Record<string, unknown>[]).map(
+                    (tool) => ({ ...tool }),
+                  ),
+                ),
+              },
+            }
+          : event,
+      ) as RawGameEvent[];
+
+    expect(extractItemFeatures('M03', frozen, CONTEXT)[0]).toMatchObject({
+      value: 1,
+      denominator: 3,
+      disposition: 'incomplete',
+    });
+
+    // A recorded tool that is not one of the occasion's three.
+    failed(
+      departure((tools) =>
+        tools.map((tool) =>
+          tool.object_id === GAUGE
+            ? { ...tool, object_id: 'm03t_label_roll' }
+            : tool,
+        ),
+      ),
+    );
+    // The same tool recorded twice (three records, two tools).
+    failed(
+      departure((tools) =>
+        tools.map((tool) =>
+          tool.object_id === GAUGE ? { ...tool, object_id: KEY } : tool,
+        ),
+      ),
+    );
+    // Two records only.
+    failed(departure((tools) => tools.slice(0, 2)));
+    // A container the raw moves do not lead to, with `in_home` untouched.
+    failed(
+      departure((tools) =>
+        tools.map((tool) =>
+          tool.object_id === KEY
+            ? { ...tool, container: M03_SPEC.b.containers.bench }
+            : tool,
+        ),
+      ),
+    );
+    failed(
+      departure((tools) =>
+        tools.map((tool) =>
+          tool.object_id === BRUSH ? { ...tool, container: surface } : tool,
+        ),
+      ),
+    );
+
+    // Move counts that the raw moves do not give: the same move written
+    // twice, or a count changed in the record.
+    const written = h.events.find((e) => e.event_type === type('tool_moved'))!;
+
+    failed(
+      h.events.flatMap((event) =>
+        event === written
+          ? [event, { ...event, sequence: event.sequence! + 0.5 }]
+          : [event],
+      ) as RawGameEvent[],
+    );
+    failed(
+      h.events.map((event) =>
+        event.event_type === type('first_departure')
+          ? { ...event, metadata: { ...event.metadata, move_count: 0 } }
+          : event,
+      ),
+    );
+    failed(
+      departure((tools) =>
+        tools.map((tool) =>
+          tool.object_id === GAUGE ? { ...tool, moves: 2 } : tool,
+        ),
+      ),
+    );
+
+    // The tools that appeared are not the occasion's three.
+    failed(
+      h.events.map((event) =>
+        event.event_type === type('opportunity_opened')
+          ? {
+              ...event,
+              metadata: {
+                ...event.metadata,
+                entry_state_snapshot: {
+                  ...(event.metadata!.entry_state_snapshot as object),
+                  tools: [BRUSH, KEY, 'm03_residual_1'],
+                },
+              },
+            }
+          : event,
+      ) as RawGameEvent[],
+    );
+
+    // A move inside the window that names another object or another tray.
+    const moved = h.events.find((e) => e.event_type === type('tool_moved'))!;
+    const withMove = (metadata: Record<string, unknown>) =>
+      h.events.flatMap((event) =>
+        event === moved
+          ? [
+              event,
+              {
+                ...event,
+                sequence: event.sequence! + 0.5,
+                metadata: { ...event.metadata, ...metadata },
+              },
+            ]
+          : [event],
+      ) as RawGameEvent[];
+
+    failed(withMove({ object_id: 'm04_offcut_a', to_container: rack }));
+    failed(
+      withMove({
+        object_id: GAUGE,
+        to_container: M03_SPEC.b.containers.rack,
+      }),
+    );
+
+    // The record and the opening occur once each, the opening first.
+    for (const suffix of ['opportunity_opened', 'first_departure']) {
+      const original = h.events.find((e) => e.event_type === type(suffix))!;
+
+      failed([
+        ...h.events,
+        { ...original, sequence: h.events.length + 1 },
+      ] as RawGameEvent[]);
+    }
+
+    failed(
+      h.events.map((event) =>
+        event.event_type === type('opportunity_opened')
+          ? { ...event, sequence: h.events.length + 1 }
+          : event,
+      ),
+    );
+    // An opening that belongs to the OTHER occasion does not open this one.
+    failed(
+      h.events.map((event) =>
+        event.event_type === type('opportunity_opened')
+          ? { ...event, metadata: { ...event.metadata, occasion: 'o2' } }
+          : event,
+      ),
+    );
+
+    // Nothing above changed the log that was read.
+    expect(JSON.stringify(h.events)).toBe(before);
+    expect(JSON.stringify(frozen)).toBe(before);
+
+    // A legitimate pending occasion is never turned into a failure by a
+    // missing presentation: the presentation is an exposure record.
+    const open = harness();
+
+    runOccasion(open, 'a', [], { depart: false });
+    expect(
+      extractItemFeatures(
+        'M03',
+        open.events.filter((e) => e.event_type !== type('presented')),
+        CONTEXT,
+      )[0],
+    ).toMatchObject({ value: null, disposition: 'pending' });
+  });
+
+  test('U14-C: a press opened before the work orders is presented by the press itself, before its panel; the line after a stopped panel states no finished batch', () => {
+    // Direct access: the presentation is written first and names its
+    // source; the panel's open repeats it.
+    const direct = harness();
+    const s = createM03State('a');
+    const log = direct.sink('a');
+    const spec = M03_SPEC.a;
+
+    direct.push('a', 'presented', { input_mode: 'system' });
+    m03SurfaceOpened(s, 1_000, 'keyboard', log, 'station_direct');
+    expect(direct.events.map((e) => e.event_type)).toEqual([
+      `${M03_FAMILY}presented`,
+      `${M03_FAMILY}surface_opened`,
+      `${M03_FAMILY}practice_presented`,
+    ]);
+    expect(direct.events[1].metadata).toMatchObject({
+      presented_by: 'station_direct',
+      open_number: 1,
+    });
+    m03RollMoved(
+      s,
+      spec.containers.supply,
+      spec.containers.feed,
+      2_000,
+      'pointer',
+      log,
+    );
+
+    for (let cycle = 0; cycle < M03_PRESS_CYCLES; cycle += 1) {
+      m03RunCycle(s, 'pointer', log);
+    }
+
+    const placements = bench('a');
+    const reachability = m03Reachability('a', placements, RACK_OK);
+
+    expect(m03ToolsOut(s, reachability, 3_000)).toBe(true);
+    direct.push('a', 'opportunity_opened', {
+      entry_state_snapshot: {
+        ...m03EntrySnapshot('a'),
+        presented_by: 'station_direct',
+        reachability,
+      },
+      input_mode: 'system',
+    });
+    m03Depart(s, placements, 9_000, 'pointer', log);
+
+    const rows = extractItemFeatures('M03', direct.events, CONTEXT);
+
+    expect(rows[0]).toMatchObject({
+      value: 0,
+      denominator: 3,
+      disposition: 'incomplete',
+    });
+    expect(
+      (rows[1].value as Record<string, Record<string, unknown>>).o1,
+    ).toMatchObject({
+      status: 'observed',
+      presented_by: 'station_direct',
+      presented_before_panel_opened: true,
+      practice_input_mode: 'pointer',
+    });
+
+    // The ordinary route names the work orders.
+    const listed = harness();
+
+    runOccasion(listed, 'b', []);
+    expect(
+      (
+        extractItemFeatures('M03', listed.events, CONTEXT)[1].value as Record<
+          string,
+          Record<string, unknown>
+        >
+      ).o2,
+    ).toMatchObject({
+      presented_by: null,
+      presented_before_panel_opened: true,
+    });
+    expect(listed.events[1].metadata).toMatchObject({ presented_by: null });
+
+    // A presentation of an earlier page load is recognised per occasion.
+    expect(m03PriorPresentation(direct.events, 'a')).toBe(true);
+    expect(m03PriorPresentation(direct.events, 'b')).toBe(false);
+    expect(m03PriorPresentation([], 'a')).toBe(false);
+
+    // The line of the press once the occasion is over.
+    expect(m03IdleLine(s)).toBe('Label press idle. The batch is done.');
+
+    const stopped = harness();
+    const open = runOccasion(stopped, 'a', [BRUSH], { depart: false });
+
+    m03Depart(open.s, open.placements, 9_000, 'system', stopped.sink('a'));
+    expect(open.s.phase).toBe('departed');
+    expect(m03IdleLine(open.s)).toBe('Label press out of service.');
+
+    const review = harness();
+    const atReview = runOccasion(review, 'b', [], { depart: false });
+
+    m03Depart(
+      atReview.s,
+      atReview.placements,
+      9_000,
+      'system',
+      review.sink('b'),
+      'closed_at_review',
+    );
+    expect(m03IdleLine(atReview.s)).toBe('Label press out of service.');
+
+    const unreachable = harness();
+    const failedRun = runOccasion(unreachable, 'a', [], {
+      reachability: m03Reachability('a', {}, RACK_OK),
+    });
+
+    expect(failedRun.s.phase).toBe('failed');
+    expect(m03IdleLine(failedRun.s)).toBe('Label press out of service.');
   });
 });

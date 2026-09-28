@@ -7,12 +7,19 @@
  * movement). Read-only over the raw `proto_m03tools_*` events; the state
  * is RECOUNTED per occasion from the `tool_moved` events that lie between
  * the occasion's `opportunity_opened` and its `first_departure` and
- * compared with the recorded snapshot tool by tool. Every tool left where
+ * compared with the recorded snapshot tool by tool. A completed occasion
+ * is read only when its own `opportunity_opened` and `first_departure`
+ * occur once each and in that order, when the tools that appeared and the
+ * tools recorded are the three the occasion is defined with, and when
+ * every recorded container is the one the raw moves lead to (U14-C);
+ * anything else is a record that cannot be reproduced — a technical
+ * failure, never a value. Every tool left where
  * it lay is an observed zero; an occasion whose tools could not be
  * reached, whose run was never completed, whose panel was closed by the
  * system, that was never opened or that was held back by a reload is
  * never a zero.
  */
+import { M03_TOOLS } from '../../pilot/windows/m03RestoreModel';
 import type { RawGameEvent } from '../../systems/EventLogger';
 import { registerEntry } from '../registerV3';
 import {
@@ -42,6 +49,23 @@ const HOME: Record<Occasion, string> = {
   o1: 'm03t_rack_a',
   o2: 'm03t_rack_b',
 };
+/** Where the run leaves the tools: a tool that never moved lies here. */
+const SURFACE: Record<Occasion, string> = {
+  o1: 'm03t_bench_a',
+  o2: 'm03t_bench_b',
+};
+/** The tools every occasion is DEFINED with. */
+const EXPECTED_TOOLS: readonly string[] = M03_TOOLS.map(
+  (tool) => tool.definitionId,
+);
+
+function sameIds(ids: readonly string[]): boolean {
+  return (
+    ids.length === EXPECTED_TOOLS.length &&
+    new Set(ids).size === ids.length &&
+    ids.every((id) => EXPECTED_TOOLS.includes(id))
+  );
+}
 
 interface ToolRecord {
   object_id: string;
@@ -81,10 +105,14 @@ registerFeatureExtractor('M03', (events, context) => {
     );
 
   const perOccasion = OCCASIONS.map((occasion) => {
-    const presented = of('presented', occasion).length > 0;
-    const surfaced = of('surface_opened', occasion).length > 0;
-    const opened = of('opportunity_opened', occasion)[0] ?? null;
-    const departure = of('first_departure', occasion)[0] ?? null;
+    const presentations = of('presented', occasion);
+    const surfaces = of('surface_opened', occasion);
+    const openings = of('opportunity_opened', occasion);
+    const departures = of('first_departure', occasion);
+    const presented = presentations.length > 0;
+    const surfaced = surfaces.length > 0;
+    const opened = openings[0] ?? null;
+    const departure = departures[0] ?? null;
     const systemClose = of('state_at_system_close', occasion)[0] ?? null;
     const failures = of('technical_failure', occasion);
     const heldBack = failures.some((event) =>
@@ -103,20 +131,49 @@ registerFeatureExtractor('M03', (events, context) => {
     const openedSequence = opened?.sequence ?? Number.POSITIVE_INFINITY;
     const recordSequence = record?.sequence ?? Number.POSITIVE_INFINITY;
     const lastContainer = new Map<string, string>();
+    const moveCounts = new Map<string, number>();
+    let movesAgree = true;
 
-    for (const move of of('tool_moved', occasion)) {
+    const moves = [...of('tool_moved', occasion)].sort(
+      (a, b) => (a.sequence ?? 0) - (b.sequence ?? 0),
+    );
+
+    for (const move of moves) {
       const objectId = meta<string>(move, 'object_id');
       const to = meta<string>(move, 'to_container');
 
       if (
-        objectId !== undefined &&
-        to !== undefined &&
-        (move.sequence ?? 0) > openedSequence &&
-        (move.sequence ?? 0) < recordSequence
+        (move.sequence ?? 0) <= openedSequence ||
+        (move.sequence ?? 0) >= recordSequence
       ) {
-        lastContainer.set(objectId, to);
+        continue;
       }
+
+      // A move inside the window names one of the occasion's own tools
+      // and one of its two trays.
+      if (
+        objectId === undefined ||
+        to === undefined ||
+        !EXPECTED_TOOLS.includes(objectId) ||
+        (to !== HOME[occasion] && to !== SURFACE[occasion])
+      ) {
+        movesAgree = false;
+        continue;
+      }
+
+      lastContainer.set(objectId, to);
+      moveCounts.set(objectId, (moveCounts.get(objectId) ?? 0) + 1);
     }
+
+    const movesInWindow = [...moveCounts.values()].reduce(
+      (sum, count) => sum + count,
+      0,
+    );
+
+    const appeared = opened
+      ? ((meta<Record<string, unknown>>(opened, 'entry_state_snapshot') ?? {})
+          .tools ?? null)
+      : null;
 
     const recount = recorded.filter(
       (tool) => lastContainer.get(tool.object_id) === HOME[occasion],
@@ -127,16 +184,28 @@ registerFeatureExtractor('M03', (events, context) => {
     const agrees =
       record !== null &&
       opened !== null &&
+      openings.length === 1 &&
+      departures.length === 1 &&
       openedSequence < recordSequence &&
+      movesAgree &&
+      Array.isArray(appeared) &&
+      sameIds(appeared as string[]) &&
       recorded.length === TOOLS_PER_OCCASION &&
-      new Set(recorded.map((tool) => tool.object_id)).size ===
-        TOOLS_PER_OCCASION &&
+      sameIds(recorded.map((tool) => tool.object_id)) &&
       recordedRestored === recount &&
+      meta<number>(record, 'move_count') === movesInWindow &&
       recorded.every(
         (tool) =>
+          tool.moves === (moveCounts.get(tool.object_id) ?? 0) &&
+          tool.container ===
+            (lastContainer.get(tool.object_id) ?? SURFACE[occasion]) &&
           tool.in_home ===
-          (lastContainer.get(tool.object_id) === HOME[occasion]),
+            (lastContainer.get(tool.object_id) === HOME[occasion]),
       );
+    // Exposure order as the raw log holds it (U14-C): the presentation
+    // and the first open of the panel, never inferred.
+    const presentedSequence = presentations[0]?.sequence ?? null;
+    const surfacedSequence = surfaces[0]?.sequence ?? null;
 
     const status: Status = heldBack
       ? 'interrupted'
@@ -213,6 +282,18 @@ registerFeatureExtractor('M03', (events, context) => {
                     ) ?? {}
                   ).stage ?? null)
                 : null,
+              presented_by: opened
+                ? ((
+                    meta<Record<string, unknown>>(
+                      opened,
+                      'entry_state_snapshot',
+                    ) ?? {}
+                  ).presented_by ?? null)
+                : null,
+              presented_before_panel_opened:
+                presentedSequence === null || surfacedSequence === null
+                  ? null
+                  : presentedSequence < surfacedSequence,
               movement_taught: practice !== null,
               practice_moves: practice
                 ? (meta<number>(practice, 'moves_needed') ?? null)

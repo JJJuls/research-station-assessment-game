@@ -8,7 +8,8 @@
  * Mechanic: the Sample Cutter bench in the Records Workshop. Each cut
  * leaves three pieces at fixed places beside the bench; a disposal bin
  * stands next to it. Pieces are carried one at a time (pointer, or SPACE
- * / E at the cutter) and dropped into the bin. Nobody mentions them.
+ * / E where the prompt names the piece) and dropped into the bin. Nobody
+ * asks for it.
  *
  * Window lifecycle: the work orders LIST the coupons (exposure record);
  * a job is presented and opened (entered) by its cut — the pieces are
@@ -43,6 +44,7 @@ import {
   type M04DisposeResult,
   m04EntrySnapshot,
   m04Freeze,
+  m04IdleLine,
   type M04Job,
   m04Listed,
   type M04LogSink,
@@ -65,7 +67,13 @@ import {
 import { type InputMode, ItemWindow, type WindowStatus } from './windowKit';
 
 export type { M04Job, M04PickupOrigin, M04Piece } from './m04CuttingModel';
-export { M04_FAMILY, M04_JOBS, M04_PIECES, M04_SPEC } from './m04CuttingModel';
+export {
+  M04_FAMILY,
+  M04_JOBS,
+  M04_PIECES,
+  M04_REARM_LINE,
+  M04_SPEC,
+} from './m04CuttingModel';
 
 function createWindow(job: M04Job): ItemWindow {
   return new ItemWindow({
@@ -132,6 +140,16 @@ export function m04JobsAllRun(): boolean {
 /** True when at least one cut left pieces at the bench. */
 export function m04AnyProduced(): boolean {
   return m04AnyJobProduced(state);
+}
+
+/** What the cutter states when it has nothing to cut. */
+export function m04CutterIdleLine(): string {
+  return m04IdleLine(state);
+}
+
+/** True inside the settle window of the open job's cut (a reader: records nothing). */
+export function m04Settling(nowMs: number): boolean {
+  return m04CutSettling(state, nowMs) !== null;
 }
 
 /**

@@ -994,6 +994,16 @@ export class InventoryOverlayScene extends Phaser.Scene {
    * Label press of the route (Station 080 M03, Unit 14)
    * ---------------------------------------------------------------- */
 
+  /**
+   * Where a keyboard-held object is drawn relative to the focused cell.
+   * Every mode draws it above the cell; on the label press (U14-C) that
+   * covered the tray's name over the top row, so there it is drawn over
+   * the cell itself, slightly raised.
+   */
+  private heldOffset(): { x: number; y: number } {
+    return this.mode === 'm03tools' ? { x: 8, y: -4 } : { x: 0, y: -28 };
+  }
+
   /** Set once the panel reported its close (the close paths share it). */
   private m03tClosed = false;
 
@@ -1089,7 +1099,10 @@ export class InventoryOverlayScene extends Phaser.Scene {
     if (this.ghost !== null && !this.dragging && !this.ghostFollowsPointer) {
       const center = grid.cellCenter(this.focus.slotIndex);
 
-      this.ghost.setPosition(center.x, center.y - 28);
+      this.ghost.setPosition(
+        center.x + this.heldOffset().x,
+        center.y + this.heldOffset().y,
+      );
     }
 
     sfxUiMove();
@@ -2066,7 +2079,10 @@ export class InventoryOverlayScene extends Phaser.Scene {
         if (grid !== undefined) {
           const center = grid.cellCenter(this.focus.slotIndex);
 
-          this.ghost.setPosition(center.x, center.y - 28);
+          this.ghost.setPosition(
+            center.x + this.heldOffset().x,
+            center.y + this.heldOffset().y,
+          );
         }
       }
 
@@ -2410,7 +2426,10 @@ export class InventoryOverlayScene extends Phaser.Scene {
     if (grid !== undefined) {
       const center = grid.cellCenter(this.focus.slotIndex);
 
-      this.spawnGhost(center.x, center.y - 28);
+      this.spawnGhost(
+        center.x + this.heldOffset().x,
+        center.y + this.heldOffset().y,
+      );
     }
   }
 

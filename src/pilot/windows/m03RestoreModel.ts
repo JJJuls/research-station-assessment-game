@@ -35,7 +35,13 @@ import {
 } from '../../measurement/focusMonitor';
 
 export const M03_FAMILY = 'proto_m03tools_';
-export const M03_ENTRY_STATE_VERSION = 'm03-tools-v1';
+/**
+ * `m03-tools-v2` (U14-C): a press opened before the work orders were
+ * taken is presented at that open (`presented_by: 'station_direct'`),
+ * the panel's layout at 800 × 600 and the line after a stopped panel
+ * changed. `m03-tools-v1` is the administration of Unit 14.
+ */
+export const M03_ENTRY_STATE_VERSION = 'm03-tools-v2';
 export const M03_PRESS_CYCLES = 3;
 /**
  * Exposure floor of the v2 route, kept as a RECORDED fact
@@ -61,6 +67,16 @@ export type M03CloseReason =
   | 'panel_closed'
   | 'system_close'
   | 'closed_at_review';
+/**
+ * What presented the occasion: the work orders that list the press
+ * batch, or the press itself, opened before any order named it. After a
+ * reload the presentation of an earlier page load is named as such —
+ * this load cannot know what it was and never claims a direct one.
+ */
+export type M03PresentedBy =
+  | 'work_orders'
+  | 'station_direct'
+  | 'earlier_page_load';
 export type M03LogSink = (
   suffix: string,
   metadata: Record<string, unknown>,
@@ -318,6 +334,21 @@ export function m03EntrySnapshot(occasion: M03Occasion) {
   };
 }
 
+/** True when an earlier page load of this identity presented this occasion. */
+export function m03PriorPresentation(
+  priorLoadEvents: readonly {
+    event_type: string;
+    metadata?: Record<string, unknown>;
+  }[],
+  occasion: M03Occasion,
+): boolean {
+  return priorLoadEvents.some(
+    (event) =>
+      event.event_type === `${M03_FAMILY}presented` &&
+      event.metadata?.opportunity_id === M03_SPEC[occasion].opportunity_id,
+  );
+}
+
 /**
  * True when an earlier page load of this identity opened this occasion's
  * panel (whatever happened in it): recorded as prior exposure; the
@@ -391,6 +422,7 @@ export function m03SurfaceOpened(
   nowMs: number,
   inputMode: M03InputMode,
   log: M03LogSink,
+  presentedBy: M03PresentedBy | null = null,
 ): M03Phase {
   if (m03Terminal(s)) {
     return s.phase;
@@ -399,6 +431,7 @@ export function m03SurfaceOpened(
   s.surfaceOpens += 1;
   log('surface_opened', {
     ...base(s),
+    presented_by: presentedBy,
     open_number: s.surfaceOpens,
     panel_phase: s.phase === 'unopened' ? 'practice' : s.phase,
     press_cycles_done: s.cycles,
@@ -720,6 +753,17 @@ export function m03SurfaceClosed(
   });
 
   return true;
+}
+
+/**
+ * What the press states once the occasion is over. Only a panel the
+ * PARTICIPANT closed finished its batch; a panel stopped by the system, a
+ * failed seed, an unreachable tool and a held-back occasion did not.
+ */
+export function m03IdleLine(s: M03State): string {
+  return s.phase === 'departed' && s.departure?.departed === true
+    ? 'Label press idle. The batch is done.'
+    : 'Label press out of service.';
 }
 
 /** Freezes the occasion (technical failure, reload guard, reset). */

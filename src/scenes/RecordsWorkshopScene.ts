@@ -72,7 +72,9 @@ import {
 import type { M03Occasion } from '../pilot/windows/m03ToolRestore';
 import {
   declareM03T,
+  m03tIdleLine,
   m03tPhase,
+  m03tPresentedBy,
   m03tTerminal,
   m03tWindow,
   noteM03TEntry,
@@ -84,14 +86,17 @@ import {
   disposeM04,
   dropM04Carried,
   listM04,
+  M04_REARM_LINE,
   m04AnyProduced,
   m04Carried,
-  type M04Job,
+  m04CutterIdleLine,
   m04JobOpen,
   m04JobPieces,
   m04NextJob,
   type M04PickupOrigin,
+  type M04Piece,
   m04RemainingDebris,
+  m04Settling,
   m04SiteStatus,
   noteM04Entry,
   noteM04Unavailable,
@@ -173,6 +178,7 @@ import type {
   PromptStage,
   RoomLayout,
 } from '../world';
+import { promptText } from '../world/interactionRegistry';
 import {
   VESTIBULE_FOREGROUND,
   VESTIBULE_OPENINGS,
@@ -180,6 +186,7 @@ import {
   WORKSHOP_LAYOUT,
   WORKSHOP_SOLIDS,
 } from '../world/layouts/workshop';
+import type { InteractionNear, InteractionRedirect } from '../world/RoomScene';
 
 declare global {
   interface Window {
@@ -191,7 +198,21 @@ declare global {
 const TILE = 32;
 
 /** What the cutter states while the second coupon is not available yet. */
-const CUTTER_REARMS = 'The cutter re-arms while you work another order.';
+const CUTTER_REARMS = M04_REARM_LINE;
+const CUTTER_LABEL = 'Sample Cutter';
+/** Keyboard reach of a loose piece and of the bin (px; unchanged from U14). */
+const PIECE_REACH = 64;
+const BIN_REACH = 96;
+
+/**
+ * What a press acts on instead of the station, bundle or floor in range
+ * (U14-C): a piece to lift, a piece on open floor the full hands cannot
+ * lift, or the bin for the carried piece.
+ */
+type DebrisTarget =
+  | { kind: 'piece'; piece: M04Piece; origin: M04PickupOrigin }
+  | { kind: 'hands_full'; piece: M04Piece }
+  | { kind: 'bin'; carried: M04Piece; origin: M04PickupOrigin };
 
 /**
  * World V2 rescue continuation: all workshop coordinates live in the
@@ -998,16 +1019,22 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       x: at.x,
       y: at.y,
       onPromptOpened: () => {
-        if (this.debrisPreempts(id, at)) {
-          return false;
-        }
-
         this.logStationOpened(id);
         open();
         return false;
       },
     });
+    this.yieldingStations.set(label, id);
   }
+
+  /**
+   * Stations that yield the press to a nearer piece of the open job or to
+   * a nearer bin (label → station id): the Case Workspace, the presses,
+   * the Component Locker, the Assembly Bench and the benches of the first
+   * shift (register §5.171, unchanged). The Work Order Board, the seal
+   * log, the return-shift stations and the door never yield.
+   */
+  private readonly yieldingStations = new Map<string, string>();
 
   private guided(
     id: string,
@@ -1111,19 +1138,12 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       x: at.x,
       y: at.y,
       onPromptOpened: () => {
-        if (this.debrisPreempts(`press_${occasion}`, at)) {
-          return false;
-        }
-
         this.logStationOpened(`press_${occasion}`);
 
-        if (m03tPhase(occasion) === 'departed') {
-          this.showFeedbackMessage('Label press idle. The batch is done.');
-          return false;
-        }
-
         if (m03tTerminal(occasion)) {
-          this.showFeedbackMessage('Label press out of service.');
+          // Only a panel the participant closed finished its batch; a
+          // panel stopped by the system did not (U14-C).
+          this.showFeedbackMessage(m03tIdleLine(occasion));
           return false;
         }
 
@@ -1144,6 +1164,13 @@ export class RecordsWorkshopScene extends PilotZoneScene {
           }
         }
 
+        // U14-C: a press opened before any work order named its batch is
+        // presented HERE, by the press itself and before the panel —
+        // recorded once, never backdated to a listing that did not occur.
+        if (m03tPresentedBy(occasion) === null) {
+          presentM03T(occasion, Date.now(), 'station_direct');
+        }
+
         // Entry state (Unit 14): the route stage and the other Workshop
         // items' window states at the open.
         noteM03TEntry(occasion, {
@@ -1162,6 +1189,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         return false;
       },
     });
+    this.yieldingStations.set(label, `press_${occasion}`);
     registerPilotStation({
       id: `press_${occasion}`,
       zone: 'records_workshop',
@@ -1180,13 +1208,14 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   /**
-   * One use of the Sample Cutter (SPACE / E at the bench). A waiting
-   * coupon is cut. With none waiting, a press inside the settle window of
-   * the cut is refused (a repeated press is never an act on the pieces);
-   * after it the press acts on the pieces — which lie inside the cutter's
-   * own interaction radius — exactly as it does with no station in range
-   * (keyboard parity with the pointer); otherwise the bench states that
-   * it has nothing to cut.
+   * One use of the Sample Cutter (a press while the prompt names the
+   * cutter). A waiting coupon is cut. With none waiting, a press inside
+   * the settle window of the cut is refused (a repeated press is never an
+   * act on the pieces); otherwise the bench states that it has nothing to
+   * cut. A press that names the cutter NEVER lifts or drops a piece
+   * (U14-C): where a piece or the bin is what the press would act on, the
+   * prompt names it and the press never reaches this method
+   * (`interactionRedirect`).
    */
   private useSampleCutter() {
     if (m04NextJob() !== null && this.cuttingScheduled()) {
@@ -1231,10 +1260,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       return;
     }
 
-    if (this.tryDebrisInteract('keyboard', 'cutter_press')) {
-      return;
-    }
-
     if (m04NextJob() !== null) {
       noteM04Unavailable('not_scheduled', 'keyboard');
       this.showFeedbackMessage('No cutting scheduled on the cutter right now.');
@@ -1242,53 +1267,190 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       return;
     }
 
-    if (m04JobOpen() === 'o1') {
-      noteM04Unavailable('job_open', 'keyboard');
-      this.showFeedbackMessage(CUTTER_REARMS);
-
-      return;
-    }
-
-    if (!m04AnyProduced()) {
-      noteM04Unavailable('out_of_service', 'keyboard');
-      this.showFeedbackMessage('The cutter is out of service.');
-
-      return;
-    }
-
     noteM04Unavailable(
-      m04JobOpen() === null ? 'all_jobs_run' : 'job_open',
+      m04JobOpen() !== null
+        ? 'job_open'
+        : m04AnyProduced()
+          ? 'all_jobs_run'
+          : 'out_of_service',
       'keyboard',
     );
-    this.showFeedbackMessage('Both coupons cut. The cutter is idle.');
+    // "Both coupons cut" only when both were: never after a jam (U14-C).
+    this.showFeedbackMessage(m04CutterIdleLine());
   }
 
   /**
-   * A press at ANOTHER station while a cutting job awaits its departure:
-   * when a piece OF THAT JOB lies nearer the avatar than the station, or
-   * the bin lies nearer than the station while a piece is carried, the
-   * press acts on the piece — as it does at the cutter and on open floor
-   * — and the station is not opened. Without this a keyboard pick-up
-   * beside the locker or a press would open that station and close the
-   * job. Only inside a job's own window and only for that job's pieces:
-   * leftover pieces of an earlier job lying on the floor never intercept
-   * a station (one already carried is still dropped into a nearer bin,
-   * as a late disposal).
+   * THE target decision of a press (U14-C) — read once per frame by the
+   * prompt and by the press (`interactionRedirect`), so both always
+   * agree. It names a piece or the bin exactly where Unit 14 let a press
+   * act on one (the rules and reaches are unchanged; register §5.171):
+   *
+   * - at the cutter, once no coupon is waiting and the settle window of
+   *   the cut is over: the bin in reach while a piece is carried,
+   *   otherwise the nearest piece in reach;
+   * - at a station that yields, while a cutting job awaits its departure:
+   *   the bin when it lies nearer than the station while a piece is
+   *   carried, otherwise a piece OF THAT JOB that lies nearer than the
+   *   station (leftover pieces of an earlier job never intercept a
+   *   station);
+   * - on open floor: the bin or the nearest piece, unless a supply bundle
+   *   in reach lies nearer.
+   *
+   * Null = the station, the door or the bundle keeps the press. With the
+   * hands full a piece in reach on OPEN FLOOR is still named, and the
+   * press states why nothing is lifted (Unit 14: a silent press); at the
+   * cutter and at every station the press stays theirs, as in Unit 14.
    */
-  private debrisPreempts(
-    stationId: string,
-    anchor: { x: number; y: number },
-  ): boolean {
-    const job = m04JobOpen();
+  private debrisTarget(
+    near: { kind: 'station' | 'door'; label: string; distance: number } | null,
+  ): DebrisTarget | null {
+    let nearerThan = Number.POSITIVE_INFINITY;
+    let ofJob: M04Piece['job'] | null = null;
+    let origin: M04PickupOrigin = 'open_floor_press';
+    let namesBlockedPiece = true;
 
-    if (job === null) {
-      return false;
+    if (near !== null) {
+      if (near.kind === 'door') {
+        return null;
+      }
+
+      const stationId = this.yieldingStations.get(near.label);
+
+      if (near.label === CUTTER_LABEL) {
+        if (
+          (m04NextJob() !== null && this.cuttingScheduled()) ||
+          m04Settling(Date.now())
+        ) {
+          return null;
+        }
+
+        origin = 'cutter_press';
+        // With the hands full the cutter keeps the press and states its
+        // own line, as in Unit 14 (the re-arm cue is not changed here).
+        namesBlockedPiece = false;
+      } else if (stationId !== undefined) {
+        ofJob = m04JobOpen();
+
+        if (ofJob === null) {
+          return null;
+        }
+
+        nearerThan = near.distance;
+        origin = `station_press:${stationId}`;
+        namesBlockedPiece = false;
+      } else {
+        return null;
+      }
+    } else {
+      const bundle = this.bundles.nearest(this.player.x, this.player.y);
+
+      if (bundle !== null) {
+        nearerThan = Math.hypot(
+          this.player.x - bundle.x,
+          this.player.y - bundle.y,
+        );
+        namesBlockedPiece = false;
+      }
     }
 
-    return this.tryDebrisInteract('keyboard', `station_press:${stationId}`, {
-      distance: Math.hypot(this.player.x - anchor.x, this.player.y - anchor.y),
-      job,
-    });
+    const carried = m04Carried();
+    const piece = m04RemainingDebris()
+      .filter(
+        (candidate) =>
+          carried !== null || ofJob === null || candidate.job === ofJob,
+      )
+      .map((candidate) => ({
+        candidate,
+        d: Math.hypot(
+          this.player.x - (WS.cutterScatter.x + candidate.dx),
+          this.player.y - (WS.cutterScatter.y + candidate.dy),
+        ),
+      }))
+      .filter((c) => c.d <= PIECE_REACH && c.d < nearerThan)
+      .sort((a, b) => a.d - b.d)[0]?.candidate;
+
+    if (carried !== null) {
+      const toBin = Math.hypot(
+        this.player.x - WS.disposalChute.x,
+        this.player.y - WS.disposalChute.y,
+      );
+
+      if (toBin <= BIN_REACH && toBin < nearerThan) {
+        return { kind: 'bin', carried, origin };
+      }
+
+      return namesBlockedPiece && piece !== undefined
+        ? { kind: 'hands_full', piece }
+        : null;
+    }
+
+    return piece === undefined ? null : { kind: 'piece', piece, origin };
+  }
+
+  /**
+   * The line is drawn 40 px above its anchor. A piece lies within arm's
+   * reach, so that line can fall across the figure: it is then raised
+   * above the figure's head. Presentation only.
+   */
+  private promptAnchorY(y: number): number {
+    const line = y - 40;
+
+    return line > this.player.y - 44 && line < this.player.y + 36
+      ? this.player.y - 4
+      : y;
+  }
+
+  protected interactionRedirect(
+    near: InteractionNear | null,
+  ): InteractionRedirect | null {
+    const target = this.debrisTarget(near);
+
+    if (target === null) {
+      return null;
+    }
+
+    if (target.kind === 'bin') {
+      return {
+        text: promptText('Use', 'disposal bin', null),
+        x: WS.disposalChute.x,
+        y: this.promptAnchorY(WS.disposalChute.y),
+        act: () => {
+          if (
+            disposeM04(
+              target.carried.object_id,
+              Date.now(),
+              'keyboard',
+              target.origin,
+            ) !== 'invalid'
+          ) {
+            this.showFeedbackMessage('Disposed.');
+            this.physical?.syncObjects(this.debrisEntries());
+          }
+        },
+      };
+    }
+
+    const { piece } = target;
+
+    return {
+      text: promptText('Take', piece.label, null),
+      x: WS.cutterScatter.x + piece.dx,
+      y: this.promptAnchorY(WS.cutterScatter.y + piece.dy),
+      act: () => {
+        if (
+          target.kind === 'piece' &&
+          pickUpM04(piece.object_id, 'keyboard', target.origin)
+        ) {
+          this.player.playActionAnim('pickup');
+          this.physical?.syncObjects(this.debrisEntries());
+
+          return;
+        }
+
+        // The same line the pointer shows.
+        this.showFeedbackMessage('Hands full.');
+      },
+    };
   }
 
   private debrisEntries() {
@@ -1457,94 +1619,25 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   /**
-   * SPACE/E with no station in range: the carried piece drops at the bin
-   * if in reach, else the nearest piece is lifted — unless a supply
-   * bundle in reach lies nearer (the prompt then names the bundle, and
-   * the press collects it).
+   * SPACE/E with nothing named by the prompt but, at most, a supply
+   * bundle: the bundle in reach is collected. A piece or the bin never
+   * takes this press (`interactionRedirect` names them first). With a
+   * piece carried and nothing in reach the press states what is held —
+   * it is never silent (U14-C).
    */
   protected onEmptyInteract(): void {
-    const bundle = this.bundles.nearest(this.player.x, this.player.y);
-    const rival =
-      bundle === null
-        ? null
-        : {
-            distance: Math.hypot(
-              this.player.x - bundle.x,
-              this.player.y - bundle.y,
-            ),
-            job: null,
-          };
+    const carried = m04Carried();
 
-    if (this.tryDebrisInteract('keyboard', 'open_floor_press', rival)) {
+    if (
+      carried !== null &&
+      this.bundles.nearest(this.player.x, this.player.y) === null
+    ) {
+      this.showFeedbackMessage(`Carrying the ${carried.label}.`);
+
       return;
     }
 
     super.onEmptyInteract();
-  }
-
-  /**
-   * One keyboard debris action (shared by the empty-interact path, the
-   * idle cutter prompt and a press at a neighbouring station): dispose
-   * the carried piece when the bin is in reach, otherwise pick up the
-   * nearest loose piece within reach. With a `rival` (the station or the
-   * bundle the press would otherwise go to) the piece or the bin must lie
-   * nearer the avatar than the rival, and with `rival.job` only a piece
-   * of that job is lifted.
-   */
-  private tryDebrisInteract(
-    inputMode: 'keyboard',
-    origin: M04PickupOrigin,
-    rival: { distance: number; job: M04Job | null } | null = null,
-  ): boolean {
-    const carried = m04Carried();
-    const nearerThan = rival?.distance ?? Number.POSITIVE_INFINITY;
-
-    if (carried !== null) {
-      const toBin = Math.hypot(
-        this.player.x - WS.disposalChute.x,
-        this.player.y - WS.disposalChute.y,
-      );
-      const near = toBin <= 96 && toBin < nearerThan;
-
-      if (
-        near &&
-        disposeM04(carried.object_id, Date.now(), inputMode, origin) !==
-          'invalid'
-      ) {
-        this.showFeedbackMessage('Disposed.');
-        this.physical?.syncObjects(this.debrisEntries());
-        return true;
-      }
-
-      return false;
-    }
-
-    // Keyboard debris pickup: nearest loose debris within reach.
-    const nearest = m04RemainingDebris()
-      .filter(
-        (piece) =>
-          rival === null || rival.job === null || piece.job === rival.job,
-      )
-      .map((piece) => ({
-        piece,
-        d: Math.hypot(
-          this.player.x - (WS.cutterScatter.x + piece.dx),
-          this.player.y - (WS.cutterScatter.y + piece.dy),
-        ),
-      }))
-      .filter((c) => c.d <= 64 && c.d < nearerThan)
-      .sort((a, b) => a.d - b.d)[0];
-
-    if (
-      nearest !== undefined &&
-      pickUpM04(nearest.piece.object_id, inputMode, origin)
-    ) {
-      this.player.playActionAnim('pickup');
-      this.physical?.syncObjects(this.debrisEntries());
-      return true;
-    }
-
-    return false;
   }
 
   protected onRoomExit(): void {

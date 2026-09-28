@@ -11,7 +11,10 @@
  * refused; a job closed by the system is censored; and the extractor
  * reproduces undisposed / 6 from the raw events with a job never run ≠
  * pending ≠ interrupted ≠ censored ≠ technically invalid, plus the per-job
- * values companion.
+ * values companion. U14-C: the adverse cases of the recount (a missing or
+ * late opening, a repeated disposal, a disposal without its pick-up,
+ * pieces that are not the job's own, a repeated departure), the lines the
+ * cutter states, and the raw log left untouched.
  */
 import { expect, test } from '@playwright/test';
 
@@ -28,6 +31,7 @@ import {
   M04_PIECES_PER_JOB,
   M04_SPEC,
   m04AllJobsRun,
+  m04AnyJobFailed,
   m04AnyJobProduced,
   m04AvailableJob,
   m04CarriedPiece,
@@ -35,6 +39,7 @@ import {
   m04Depart,
   m04Dispose,
   m04EntrySnapshot,
+  m04IdleLine,
   type M04Job,
   m04Listed,
   type M04LogSink,
@@ -924,5 +929,257 @@ test.describe('M04 own debris (pure)', () => {
       value: 2,
       denominator: 3,
     });
+  });
+
+  test('U14-C: a completed job is read only with its opening, its cut and its departure once each and in that order, its own three pieces, and every disposal once and after its pick-up; the raw log is never changed', () => {
+    const h = harness();
+    const s = createM04State();
+
+    // Cut before the work orders were read: no `listed` exists.
+    cut(h, s, 100);
+    carryToBin(h, s, 'm04_offcut_a', 200);
+    expect(m04PickUp(s, 'm04_swarf_a', 400, 'keyboard', h.sink)).toBe(true);
+    depart(h, s, 900);
+    // Later cleanup: recorded apart, never part of the recount.
+    expect(m04Dispose(s, 'm04_swarf_a', 1_200, 'pointer', h.sink)).toBe('late');
+    expect(carryToBin(h, s, 'm04_wrap_a', 1_500)).toBe('late');
+
+    const type = (suffix: string) => `${M04_FAMILY}${suffix}`;
+    const before = JSON.stringify(h.events);
+    const frozen = h.events.map((event) =>
+      Object.freeze({
+        ...event,
+        metadata: Object.freeze({ ...event.metadata }),
+      }),
+    ) as unknown as RawGameEvent[];
+    const failed = (events: RawGameEvent[]) => {
+      const rows = extractItemFeatures('M04', events, CONTEXT);
+
+      expect(rows[0]).toMatchObject({
+        value: null,
+        disposition: 'technical_failure',
+        closure_reason: 'technical_failure',
+      });
+      expect(rows[0].components).toMatchObject({ jobs_disagreeing: ['o1'] });
+    };
+
+    // The record as it was written: observed, without any listing.
+    expect(h.events.map((e) => e.event_type)).not.toContain(type('listed'));
+
+    const rows = extractItemFeatures('M04', frozen, CONTEXT);
+
+    expect(rows[0]).toMatchObject({
+      value: 2,
+      numerator: 2,
+      denominator: 3,
+      disposition: 'incomplete',
+    });
+    expect(rows[0].components).toMatchObject({
+      cutter_listed: false,
+      jobs_observed: ['o1'],
+      late_disposals: 2,
+    });
+    expect(
+      (rows[1].value as Record<string, Record<string, unknown>>).o1,
+    ).toMatchObject({
+      carried_piece: 'm04_swarf_a',
+      undisposed_at_departure: 2,
+      late_disposals: ['m04_swarf_a', 'm04_wrap_a'],
+    });
+
+    // The opening is missing.
+    failed(h.events.filter((e) => e.event_type !== type('opportunity_opened')));
+
+    // The opening comes after the cut, or after the departure.
+    const openingAt = (sequence: number) =>
+      h.events.map((event) =>
+        event.event_type === type('opportunity_opened')
+          ? { ...event, sequence }
+          : event,
+      );
+    const runAt = h.events.find(
+      (e) => e.event_type === type('job_run'),
+    )!.sequence!;
+    const departedAt = h.events.find(
+      (e) => e.event_type === type('first_departure'),
+    )!.sequence!;
+
+    failed(openingAt(runAt + 0.5));
+    failed(openingAt(departedAt + 0.5));
+
+    // An opening that belongs to the OTHER job does not open this one.
+    failed(
+      h.events.map((event) =>
+        event.event_type === type('opportunity_opened')
+          ? {
+              ...event,
+              metadata: {
+                ...event.metadata,
+                occasion: 'o2',
+                opportunity_id: M04_SPEC.o2.opportunity_id,
+              },
+            }
+          : event,
+      ),
+    );
+
+    // The same disposal written twice is never folded into one.
+    const disposal = h.events.find(
+      (e) => e.event_type === type('piece_disposed'),
+    )!;
+
+    failed(
+      h.events.flatMap((event) =>
+        event === disposal
+          ? [event, { ...event, sequence: event.sequence! + 0.5 }]
+          : [event],
+      ),
+    );
+
+    // A disposal without its pick-up.
+    failed(
+      h.events.filter(
+        (event) =>
+          !(
+            event.event_type === type('piece_picked_up') &&
+            event.metadata?.object_id === 'm04_offcut_a'
+          ),
+      ),
+    );
+
+    // A piece carried in the raw events and absent from the record.
+    failed(
+      h.events.map((event) =>
+        event.event_type === type('first_departure')
+          ? {
+              ...event,
+              metadata: {
+                ...event.metadata,
+                carried_piece: null,
+                pieces_lying: 2,
+              },
+            }
+          : event,
+      ),
+    );
+
+    // The record names one disposed piece twice.
+    failed(
+      h.events.map((event) =>
+        event.event_type === type('first_departure')
+          ? {
+              ...event,
+              metadata: {
+                ...event.metadata,
+                disposed_ids: ['m04_offcut_a', 'm04_offcut_a'],
+              },
+            }
+          : event,
+      ),
+    );
+
+    // The cut names pieces that are not the job's own three.
+    const cutNames = (pieces: string[]) =>
+      h.events.map((event) =>
+        event.event_type === type('job_run')
+          ? { ...event, metadata: { ...event.metadata, pieces } }
+          : event,
+      );
+
+    failed(cutNames(m04PiecesOf('o2').map((piece) => piece.object_id)));
+    failed(cutNames(['m04_offcut_a', 'm04_swarf_a']));
+    failed(cutNames(['m04_offcut_a', 'm04_swarf_a', 'm04_swarf_a']));
+    failed(cutNames(['m04_offcut_a', 'm04_swarf_a', 'm04_wrap_a', 'x']));
+
+    // A second cut or a second departure of the same job.
+    for (const suffix of ['job_run', 'first_departure']) {
+      const original = h.events.find((e) => e.event_type === type(suffix))!;
+
+      failed([
+        ...h.events,
+        { ...original, sequence: h.events.length + 1 },
+      ] as RawGameEvent[]);
+    }
+
+    // Nothing above changed the log that was read.
+    expect(JSON.stringify(h.events)).toBe(before);
+    expect(JSON.stringify(frozen)).toBe(before);
+
+    // A malformed job beside a legitimate pending one stays a technical
+    // failure; a legitimate pending, censored or never-run job is never
+    // turned into one by the stricter recount.
+    const pending = harness();
+    const p = createM04State();
+
+    cut(pending, p, 100);
+    expect(
+      extractItemFeatures(
+        'M04',
+        pending.events.filter(
+          (e) => e.event_type !== type('opportunity_opened'),
+        ),
+        CONTEXT,
+      )[0],
+    ).toMatchObject({ value: null, disposition: 'pending' });
+    depart(pending, p, 900, 'closed_at_review', null);
+    expect(
+      extractItemFeatures('M04', pending.events, CONTEXT)[0],
+    ).toMatchObject({
+      value: null,
+      disposition: 'interrupted',
+      censored: true,
+    });
+  });
+
+  test('U14-C: the cutter states that both coupons were cut only when both were', () => {
+    const s = createM04State();
+    const h = harness();
+
+    expect(m04IdleLine(s)).toBe('The cutter is out of service.');
+    cut(h, s, 100);
+    expect(m04IdleLine(s)).toBe(
+      'The cutter re-arms while you work another order.',
+    );
+    depart(h, s, 500);
+    cut(h, s, 1_000);
+    expect(m04AnyJobFailed(s)).toBe(false);
+    expect(m04IdleLine(s)).toBe('Both coupons cut. The cutter is idle.');
+    depart(h, s, 1_500, 'room_exit', null);
+    expect(m04IdleLine(s)).toBe('Both coupons cut. The cutter is idle.');
+
+    // The first cut jammed: the second coupon is cut, never "both".
+    const jam = harness();
+    const j = createM04State();
+
+    expect(cut(jam, j, 100, false)).toBeNull();
+    expect(m04AnyJobFailed(j)).toBe(true);
+    expect(m04IdleLine(j)).toBe('The cutter is out of service.');
+    cut(jam, j, 200);
+    expect(m04IdleLine(j)).toBe('The cutter is idle.');
+    depart(jam, j, 900);
+    expect(m04IdleLine(j)).toBe('The cutter is idle.');
+
+    // The second cut jammed.
+    const late = harness();
+    const l = createM04State();
+
+    cut(late, l, 100);
+    depart(late, l, 500);
+    expect(cut(late, l, 600, false)).toBeNull();
+    expect(m04IdleLine(l)).toBe('The cutter is idle.');
+
+    // Both jammed: nothing was cut.
+    const none = harness();
+    const n = createM04State();
+
+    cut(none, n, 100, false);
+    cut(none, n, 200, false);
+    expect(m04IdleLine(n)).toBe('The cutter is out of service.');
+
+    for (const state of [s, j, l, n]) {
+      expect(m04IdleLine(state)).not.toMatch(
+        /tidy|clean|dispose|mess|put away/i,
+      );
+    }
   });
 });

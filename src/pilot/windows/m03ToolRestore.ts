@@ -11,8 +11,10 @@
  * press cycles finish the batch and leave three tools on the work
  * surface; a tool rack stands beside it. Nothing names the rack.
  *
- * Window lifecycle: presented when the work orders list the press batch;
- * opened (entered) when the tools lie out and every tool is reachable;
+ * Window lifecycle: presented when the work orders list the press batch
+ * — or, when the press is opened before any order named it, at that open
+ * and before the panel (U14-C: the presentation is recorded once, by
+ * whichever came first, and never backdated); opened (entered) when the tools lie out and every tool is reachable;
  * completed at the FIRST DEPARTURE — the participant's close of the
  * panel — with the location of every tool; terminal afterwards. A panel
  * closed by the system with the tools out is not a departure: censored.
@@ -49,15 +51,18 @@ import {
   m03Depart,
   m03EntrySnapshot,
   m03Freeze,
+  m03IdleLine,
   type M03LogSink,
   m03MoveRefused,
   type M03Occasion,
   type M03Phase,
   type M03Placement,
   type M03Placements,
+  type M03PresentedBy,
   m03PressRunnable,
   m03PriorAdministration,
   m03PriorPanelExposure,
+  m03PriorPresentation,
   m03RawComponents,
   m03Reachability,
   m03RollLocked,
@@ -122,6 +127,10 @@ const entryContext: Record<M03Occasion, Record<string, unknown>> = {
   b: {},
 };
 let moveInputMode: InputMode = 'system';
+let presentedBy: Record<M03Occasion, M03PresentedBy | null> = {
+  a: null,
+  b: null,
+};
 
 function sink(occasion: M03Occasion): M03LogSink {
   return (suffix, metadata) =>
@@ -157,12 +166,42 @@ export function declareM03T() {
 }
 
 /**
- * The occasion was PRESENTED: the work orders list the press batch.
- * Logged once; a presented-but-never-opened press is `declined` at
- * extraction.
+ * The occasion was PRESENTED: the work orders list the press batch, or
+ * the press was opened before any order named it (`station_direct`).
+ * Logged once, by whichever came first; a later listing never rewrites
+ * it. A presented-but-never-opened press is `declined` at extraction.
  */
-export function presentM03T(occasion: M03Occasion, nowMs: number) {
-  windows[occasion].present(nowMs, m03EntrySnapshot(occasion));
+export function presentM03T(
+  occasion: M03Occasion,
+  nowMs: number,
+  source: M03PresentedBy = 'work_orders',
+) {
+  if (presentedBy[occasion] !== null) {
+    return;
+  }
+
+  const by: M03PresentedBy = m03PriorPresentation(
+    researchRuntime.getPriorPageLoadEvents(),
+    occasion,
+  )
+    ? 'earlier_page_load'
+    : source;
+
+  presentedBy[occasion] = by;
+  windows[occasion].present(nowMs, {
+    ...m03EntrySnapshot(occasion),
+    presented_by: by,
+  });
+}
+
+/** What presented the occasion (null = not presented yet). */
+export function m03tPresentedBy(occasion: M03Occasion): M03PresentedBy | null {
+  return presentedBy[occasion];
+}
+
+/** What the press states once the occasion is over. */
+export function m03tIdleLine(occasion: M03Occasion): string {
+  return m03IdleLine(states[occasion]);
 }
 
 /**
@@ -359,7 +398,13 @@ export function openM03TPanel(
     observeMoves(occasion);
   }
 
-  return m03SurfaceOpened(s, nowMs, inputMode, sink(occasion));
+  return m03SurfaceOpened(
+    s,
+    nowMs,
+    inputMode,
+    sink(occasion),
+    presentedBy[occasion],
+  );
 }
 
 /** One press cycle; the third seeds the tools and opens the window. */
@@ -596,4 +641,5 @@ export function resetM03TState() {
 
   states = { a: createM03State('a'), b: createM03State('b') };
   moveInputMode = 'system';
+  presentedBy = { a: null, b: null };
 }
