@@ -82,6 +82,7 @@ interface ProbeSlot {
 interface UiProbe {
   open: boolean;
   mode: string;
+  confirm_open: boolean;
   focus: { container_id: string; slot_index: number } | null;
   feedback: string | null;
   detail_text: string | null;
@@ -412,7 +413,7 @@ async function expectBanner(
 
   expect(label, requestedCaseId).toBeDefined();
   expect((await uiProbe(page))?.m02c?.banner).toBe(
-    `REQUEST ${requestIndex + 1} OF 6 — ${label}: select the slot holding it`,
+    `REQUEST ${requestIndex + 1} OF 6 — ${label}: select, then confirm`,
   );
 }
 
@@ -456,6 +457,7 @@ test.describe('M02 retrieval requests on the route', () => {
     expect(snapshot).toMatchObject({
       requests_planned: 6,
       advance_on_first_answer: true,
+      answer_commit: 'explicit_confirmation',
       cannot_locate_available: true,
       feedback: 'deferred_to_end',
       layout_frozen_at_handover: true,
@@ -484,7 +486,10 @@ test.describe('M02 retrieval requests on the route', () => {
     expect(
       probe.slots.filter((s) => s.container_id === INTAKE && s.definition_id),
     ).toHaveLength(6);
-    expect(probe.m02c).toMatchObject({ phase: 'organise', banner: null });
+    expect(probe.m02c).toMatchObject({
+      phase: 'organise',
+      banner: 'HAND OVER LOCKS YOUR LAYOUT — SIX REQUESTS FOLLOW',
+    });
     expect(
       probe.buttons.find((b) => b.id === 'm02c_cannot_locate')?.enabled,
     ).toBe(false);
@@ -544,6 +549,8 @@ test.describe('M02 retrieval requests on the route', () => {
     }
 
     const handedOverState = organisation(probe);
+
+    await page.screenshot({ path: 'test-results/m02-before-handover-800x600.png' });
 
     expect(handedOverState.labels).toEqual([
       ['m02c_label_1', 'LABEL: SAMPLES'],
@@ -642,6 +649,28 @@ test.describe('M02 retrieval requests on the route', () => {
         (s) => s.definition_id !== null && s.definition_id !== first,
       )!,
     );
+    expect((await uiProbe(page))!.confirm_open).toBe(true);
+    expect(await countType(page, 'request_answered')).toBe(0);
+    await page.screenshot({ path: 'test-results/m02-pending-answer-800x600.png' });
+    // A second click at the original case position cannot submit the
+    // answer or advance the next request.
+    await clickSlot(
+      page,
+      probe.slots.find(
+        (s) => s.definition_id !== null && s.definition_id !== first,
+      )!,
+    );
+    expect(await countType(page, 'request_answered')).toBe(0);
+    await clickButton(page, 'confirm_no');
+    expect((await uiProbe(page))!.m02c?.request_number).toBe(1);
+    expect(await countType(page, 'request_answered')).toBe(0);
+    await clickSlot(
+      page,
+      probe.slots.find(
+        (s) => s.definition_id !== null && s.definition_id !== first,
+      )!,
+    );
+    await clickButton(page, 'confirm_yes');
     await waitType(page, 'request_answered', 1);
     await waitType(page, 'request_presented', 2);
     probe = (await uiProbe(page))!;
@@ -685,6 +714,13 @@ test.describe('M02 retrieval requests on the route', () => {
     }
 
     await page.keyboard.press('Enter');
+    expect((await uiProbe(page))!.confirm_open).toBe(true);
+    expect(await countType(page, 'request_answered')).toBe(1);
+    await page.keyboard.press('Escape');
+    expect((await uiProbe(page))!.m02c?.request_number).toBe(2);
+    expect(await countType(page, 'request_answered')).toBe(1);
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
     await waitType(page, 'request_answered', 2);
     probe = (await uiProbe(page))!;
     expect(probe.feedback).toBe('Recorded.');
@@ -699,15 +735,13 @@ test.describe('M02 retrieval requests on the route', () => {
       input_mode: 'keyboard',
     });
 
-    // ——— Request 3: an empty slot answers nothing; Cannot locate by keyboard.
+    // ——— Request 3: Cannot locate submits by keyboard without slot focus.
+    expect(probe.focus).toBeNull();
     await page.waitForTimeout(500);
-    await clickSlot(page, slotAt(probe, TRAY(4), 3));
-    await waitType(page, 'empty_slot_selected', 1);
-    probe = (await uiProbe(page))!;
-    expect(probe.feedback).toBe('Empty slot.');
-    expect(probe.m02c).toMatchObject({ request_number: 3 });
-    expect(await countType(page, 'request_answered')).toBe(2);
     await page.keyboard.press('n');
+    expect((await uiProbe(page))!.confirm_open).toBe(true);
+    expect(await countType(page, 'request_answered')).toBe(2);
+    await page.keyboard.press('Enter');
     await waitType(page, 'request_answered', 3);
     probe = (await uiProbe(page))!;
     expect(probe.feedback).toBe('Recorded.');
@@ -719,7 +753,7 @@ test.describe('M02 retrieval requests on the route', () => {
       answer_kind: 'cannot_locate',
       picked_case: null,
       correct: false,
-      empty_selections: 1,
+      empty_selections: 0,
       input_mode: 'keyboard',
     });
 
@@ -758,6 +792,7 @@ test.describe('M02 retrieval requests on the route', () => {
 
     await page.waitForTimeout(500);
     await clickSlot(page, slotOfCase(probe, fourth));
+    await clickButton(page, 'confirm_yes');
     await waitType(page, 'request_answered', 4);
 
     const fourthAnswer = (
@@ -777,9 +812,19 @@ test.describe('M02 retrieval requests on the route', () => {
       fourthAnswer.wall_ms as number,
     );
 
-    // ——— Request 5: Cannot locate by pointer.
+    // ——— Request 5: an empty slot answers nothing; Cannot locate by pointer.
     await page.waitForTimeout(500);
+    await clickSlot(page, slotAt(probe, TRAY(4), 3));
+    await waitType(page, 'empty_slot_selected', 1);
+    probe = (await uiProbe(page))!;
+    expect(probe.feedback).toBe('Empty slot.');
+    expect(probe.m02c).toMatchObject({ request_number: 5 });
+    expect(await countType(page, 'request_answered')).toBe(4);
     await clickButton(page, 'm02c_cannot_locate');
+    expect((await uiProbe(page))!.confirm_open).toBe(true);
+    await clickButton(page, 'm02c_cannot_locate');
+    expect(await countType(page, 'request_answered')).toBe(4);
+    await clickButton(page, 'confirm_yes');
     await waitType(page, 'request_answered', 5);
     probe = (await uiProbe(page))!;
     expect(probe.m02c).toMatchObject({ request_number: 6 });
@@ -791,6 +836,7 @@ test.describe('M02 retrieval requests on the route', () => {
     ).toMatchObject({
       request_index: 4,
       answer_kind: 'cannot_locate',
+      empty_selections: 1,
       input_mode: 'pointer',
     });
 
@@ -799,6 +845,7 @@ test.describe('M02 retrieval requests on the route', () => {
 
     await page.waitForTimeout(500);
     await clickSlot(page, slotOfCase(probe, sixth));
+    await clickButton(page, 'confirm_yes');
     await waitType(page, 'request_answered', 6);
     await waitType(page, 'feedback_shown', 1);
     await waitType(page, 'window_closed', 1);

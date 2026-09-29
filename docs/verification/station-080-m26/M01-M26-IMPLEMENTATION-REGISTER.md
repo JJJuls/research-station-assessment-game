@@ -1288,8 +1288,9 @@ six occupied slots stay visible as occupied, each case is requested
 once, a blind first selection is right one time in six, slots already
 selected can be excluded (after five right answers the sixth is
 determined), and two cases filed together by kind tend to be right or
-wrong together (§5.161); one press is the answer, so a slip is an incorrect first answer
-(§5.139); the request order is assigned by a hash, not an enforced equal
+wrong together (§5.161); one press is the answer, so a slip is an incorrect
+first answer (§5.139; historical v1 only — U13-C v2 uses confirmation,
+§5.210); the request order is assigned by a hash, not an enforced equal
 split, and the intake form is drawn independently of it; keyboard answers
 cost arrow presses that pointer answers do not, so latencies are not
 comparable across input modes (the mode is exported); the window kit's
@@ -2912,3 +2913,21 @@ following; defaults applied, reversible, none changes a formula.
      identity holds the occasion's `presented`; what presented it then
      is read from that load's events. Alternative: carry the earlier
      value over.
+210. **M02 response clarity (U13-C; supersedes the one-press defaults
+     in §5.139, §5.152, §5.153 and §5.159 for new sessions only).**
+     Administration `m02-retrieval-series-v2` states before HAND OVER that
+     the layout will lock and six requests will follow. During a request,
+     selecting a closed case or CANNOT LOCATE opens a neutral confirmation;
+     only SUBMIT commits the first answer. CANCEL or ESC leaves the same
+     request open without an answer. A press within the existing 400 ms
+     settling interval is still refused at selection time, so waiting in
+     the confirmation cannot turn a carried press into an answer. Pointer
+     and keyboard both have submit and cancel paths. The requests, order,
+     participant-created layout and labels, concealed system case
+     information, deferred feedback, first-committed-answer rule and
+     correct-first-retrievals / 6 primary are unchanged. The focused
+     answer time now includes the confirmation step. Version `-v1` and
+     `-v2` are not assumed interchangeable in analysis; no raw log or
+     earlier result is rewritten. The fixed label vocabulary (§5.155,
+     §5.158), six dependent answers (§5.161) and input-mode cost (§5.151)
+     remain pilot limitations, not resolved by this interface correction.

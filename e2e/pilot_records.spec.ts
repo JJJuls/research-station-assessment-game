@@ -431,6 +431,7 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
             )!
           : slotOfCase(probe, requestedCase),
       );
+      await clickButton(page, 'confirm_yes');
     }
 
     await page.waitForTimeout(300);

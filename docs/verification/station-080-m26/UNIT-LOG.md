@@ -3996,3 +3996,89 @@ e2e/u14_correction.spec.ts --retries=0`: **1 passed** (2.6 min), the
 - **Commit:** one new local commit on `codex/u14-correction`; nothing
   pushed, merged, tagged, deployed, archived or deleted; the run stops
   here — U15 is not started.
+
+## U13-C — M02 first-answer clarity before U15
+
+- **Owner approval:** 29 September, "I ll approve it", in response to
+  the complete U13-C contract including one local commit. This is one
+  M02 correction; U15 remains untouched.
+- **Objective / scientific rationale:** make a retrieval answer a
+  deliberate first *committed* response, reducing interface error as a
+  rival explanation of functional traceability. This is a response-
+  process correction, not empirical validation. The approved M02 primary
+  remains correct first retrievals / six; the six requests, balanced
+  order and deferred feedback remain.
+- **Participant-facing behaviour:** before HAND OVER the overlay states
+  that the layout locks and six requests follow. A request selection or
+  CANNOT LOCATE opens a neutral SUBMIT / CANCEL dialog. Only SUBMIT
+  commits; ESC cancels the dialog. Neither the dialog nor the feedback
+  reveals a selected case's identity or correctness during the series.
+- **Exact allowlist:** `src/inventory/ui/InventoryOverlayScene.ts`,
+  `src/pilot/windows/m02RetrievalModel.ts`,
+  `e2e/m02_retrieval.spec.ts`, `e2e/m02_retrieval_route.spec.ts`,
+  `e2e/pilot_records.spec.ts`, this log and
+  `M01-M26-IMPLEMENTATION-REGISTER.md` in this directory.
+- **Prohibited areas:** M03/M04 code and tests, canonical event schema,
+  scoring plan, Qualtrics systems, packages and other rooms.
+- **Entry state:** new isolated `codex/u13-c-m02-clarity` worktree from
+  `3759b80a066df89cec6454b7f95e7de6870ec2f1`, clean at entry;
+  primary and U15 worktrees left untouched. Existing dependencies were
+  linked by a Git-ignored directory junction; no install occurred.
+- **Success:** six requests can be answered once each; a canceled
+  selection answers nothing; a second click on a case or CANNOT LOCATE
+  while the dialog is open cannot answer the next request; final
+  feedback remains after the sixth answer only. The administration is
+  stamped `m02-retrieval-series-v2`, separate from v1.
+- **Failure / recovery:** a canceled dialog leaves the same request and
+  focused clock open; workspace close/reopen, lost-focus pause, technical
+  inaccessibility and reload handling retain the U13 behaviour.
+- **Telemetry boundary:** existing prototype family
+  `proto_m02_workspace_*`; `request_answered` is emitted only on SUBMIT.
+  No new canonical event or derived variable, and no raw log mutation.
+- **Scientific acceptance:** preserve the participant's own layout and
+  labels; conceal system case badges, icons and contents during
+  retrieval; keep first committed answer / six, Cannot locate incorrect,
+  missing answers missing, and no intermediate corrective feedback.
+  The focused answer time now includes confirmation. No v1/v2 pooling
+  decision or validated personality interpretation is claimed.
+- **Gameplay acceptance:** pointer and keyboard each submit and cancel;
+  a press inside the 400 ms settle interval is refused at selection
+  time, before a dialog can delay it into a valid answer.
+- **Required checks:** `npm.cmd run lint:tsc`, `npm.cmd run build`,
+  `e2e/m02_retrieval.spec.ts`, `e2e/m02_retrieval_route.spec.ts`, the M02
+  cases in `e2e/pilot_records.spec.ts`, `verify-unit` with the exact
+  allowlist and `git diff --check`. Browser retries are disabled.
+- **Screenshots:** before handover, with an answer pending confirmation,
+  and the final request record, retained under ignored `test-results/`.
+- **Stop conditions:** any new event/scoring decision, need for a file
+  outside the allowlist, broken six-request invariant or failed runtime
+  evidence. Two review/fix rounds maximum.
+- **Model / reviewers:** Codex main writer; independent read-only
+  scientific, gameplay and test review. No Fabel call or Fabel credits.
+- **Review round 1:** scientific, gameplay and test reviewers independently
+  found that Enter could not submit CANNOT LOCATE on a fresh request because
+  the keyboard handler checked slot focus before an open dialog. Gameplay
+  review also found that the revised organise help omitted drag, SPACE and
+  arrow instructions. The handler now processes an open dialog before the
+  slot-focus guard; the help again names those controls. The route test
+  explicitly exercises N then Enter with null focus and retains an empty-slot
+  check on a later request. The reviewer-noted limitations of dependent
+  answers, fixed label vocabulary and input-mode cost remain pilot limits.
+- **Verification after review fixes:** `npm.cmd run lint:tsc` PASS;
+  `npm.cmd run build` PASS (316 modules; Vite chunk-size warning);
+  `e2e/m02_retrieval_route.spec.ts --retries=0` 1/1 PASS (the full
+  six-request route, 3/6 first retrievals). Before those two small fixes,
+  `e2e/m02_retrieval.spec.ts --retries=0` 7/7 PASS and the M02 cases in
+  `e2e/pilot_records.spec.ts --retries=0` 2/2 PASS. Those unchanged model
+  and pointer routes were not rerun after the keyboard/help-text fix.
+- **Review round 2 (read-only):** test and gameplay reviewers verified
+  the Enter/focus defect is resolved, the fresh-request keyboard path is
+  asserted, the empty-slot check remains, and the movement guidance is
+  restored. No new concrete finding. Scientific review did not need a
+  second pass because the fix changes input routing, not M02 measurement
+  or the prior scientific findings.
+- **Final static boundary:** `verify-unit` PASS with exactly seven
+  allowlisted changed paths and no untracked files; `git diff --check`
+  clean. No canonical schema, scoring or other unit file changed.
+- **Commit expectation:** one local commit,
+  `fix(m02): confirm first retrieval answers`; stop before U14-D and U15.

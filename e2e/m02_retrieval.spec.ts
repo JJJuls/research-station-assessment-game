@@ -241,6 +241,7 @@ test.describe('M02 retrieval requests (pure)', () => {
       request_order: 'order_3',
       requests_planned: 6,
       advance_on_first_answer: true,
+      answer_commit: 'explicit_confirmation',
       cannot_locate_available: true,
       feedback: 'deferred_to_end',
       layout_frozen_at_handover: true,

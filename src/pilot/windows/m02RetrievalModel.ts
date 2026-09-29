@@ -13,9 +13,9 @@
  * Mechanic: the participant arranges six case bundles over an intake tray
  * and four trays with optional self-chosen labels, then hands the
  * workspace over. The handover FREEZES the layout. Six requests follow,
- * one at a time: selecting a slot that holds a case is the answer (right
- * or wrong — the request advances either way), "Cannot locate" is an
- * answer without a selection, an empty slot answers nothing. A press
+ * one at a time: the overlay confirms a selected case or "Cannot locate"
+ * before calling this model's answer method (right or wrong — the
+ * request advances either way). An empty slot answers nothing. A press
  * inside the settle window after a request appeared is refused — a
  * carried press is never an answer. Nothing about correctness is shown
  * before the sixth answer. While a request is open the participant's
@@ -42,7 +42,9 @@ export const M02_WINDOW_IDS = {
   filing: 'm02_filing_w1',
   requests: 'm02_requests_w1',
 } as const;
-export const M02_ENTRY_STATE_VERSION = 'm02-retrieval-series-v1';
+// U13-C: the overlay now requires an explicit confirmation before an
+// answer is committed. Earlier sessions remain a distinct administration.
+export const M02_ENTRY_STATE_VERSION = 'm02-retrieval-series-v2';
 export const M02_FAMILY = 'proto_m02_workspace_';
 export const M02_REQUEST_COUNT = 6;
 /**
@@ -409,6 +411,7 @@ export function m02EntrySnapshot(form: M02Form, order: M02OrderId) {
     labels_available: [...M02_LABELS],
     requests_planned: M02_REQUEST_COUNT,
     advance_on_first_answer: true,
+    answer_commit: 'explicit_confirmation',
     cannot_locate_available: true,
     feedback: 'deferred_to_end',
     layout_frozen_at_handover: true,

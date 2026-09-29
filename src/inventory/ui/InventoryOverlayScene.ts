@@ -33,6 +33,7 @@ import {
   closeM02CPanel,
   commitM02CWorkspace,
   M02_REQUEST_COUNT,
+  M02_SETTLE_MS,
   M02C_CASES,
   M02C_TRAY_IDS,
   m02cContentsConcealed,
@@ -502,11 +503,11 @@ export class InventoryOverlayScene extends Phaser.Scene {
     if (this.mode === 'm02case') {
       switch (m02cPhase()) {
         case 'retrieve':
-          return 'Arrows focus • SPACE/ENTER or click selects the slot • N cannot locate • I / ESC close';
+          return 'Arrows focus • SPACE/ENTER or click selects • Confirm submits • N cannot locate • I / ESC close';
         case 'closed':
           return 'Request record — read-only • I / ESC close';
         default:
-          return 'Drag or SPACE to move cases • Arrows focus • L label focused tray • C hand over • I / ESC close';
+          return 'Drag or SPACE to move cases • Arrows focus • L label tray • C hand over • I / ESC close';
       }
     }
 
@@ -807,7 +808,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
         this.buttons.push(this.m02cHandOverButton);
 
         // Shown during the requests only: an explicit answer without a
-        // selection (hotkey N). Never pre-focused.
+        // selection (hotkey N). It still requires confirmation.
         this.m02cCannotLocateButton = new UiButton({
           scene: this,
           id: 'm02c_cannot_locate',
@@ -823,7 +824,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
         this.buttons.push(this.m02cCannotLocateButton);
 
         // Between the title row and the intake tray's label, so a long
-        // request never covers the label.
+        // request or the pre-handover warning never covers the label.
         this.m02cBanner = this.add
           .text(400, PANEL.y + 38, '', {
             backgroundColor: '#1c3b3a',
@@ -835,9 +836,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
           .setDepth(DEPTH.grid + 2)
           .setVisible(false);
 
-        if (phase === 'retrieve' || phase === 'closed') {
-          this.refreshM02CPhase();
-        }
+        this.refreshM02CPhase();
         break;
       }
 
@@ -1228,13 +1227,38 @@ export class InventoryOverlayScene extends Phaser.Scene {
     this.refresh();
   }
 
+  /** A carried press is refused at selection time, not after a dialog delay. */
+  private m02cSelectionIsSettling(nowMs: number): boolean {
+    const state = m02cState();
+    const presentedAt = state.requests[state.current]?.last_presented_at_ms;
+
+    return (
+      presentedAt !== null &&
+      presentedAt !== undefined &&
+      nowMs - presentedAt < M02_SETTLE_MS
+    );
+  }
+
   /** "Cannot locate": an explicit answer without a selection. */
   private handleM02CCannotLocate(inputMode: 'pointer' | 'keyboard') {
     if (this.confirmOpen || !this.m02cRetrieving()) {
       return;
     }
 
-    this.afterM02CAnswer(cannotLocateM02C(inputMode, Date.now()));
+    const nowMs = Date.now();
+
+    if (this.m02cSelectionIsSettling(nowMs)) {
+      this.afterM02CAnswer(cannotLocateM02C(inputMode, nowMs));
+      return;
+    }
+
+    this.openConfirmDialog(
+      `Submit "Cannot locate" for request ${m02cRequestNumber()}?\nThis first answer is final.`,
+      'SUBMIT',
+      'accent',
+      () => this.afterM02CAnswer(cannotLocateM02C(inputMode, Date.now())),
+      470,
+    );
   }
 
   /** Retrieval-phase pick: the case in the addressed slot is the answer. */
@@ -1255,17 +1279,31 @@ export class InventoryOverlayScene extends Phaser.Scene {
       return;
     }
 
-    // The first answer advances the request whether or not it is the
-    // requested case; nothing about correctness is shown here. The focus
-    // is never moved by a selection (a refused press leaves none behind).
-    this.afterM02CAnswer(
-      pickM02CRetrieval(
-        stack.definitionId,
-        address.containerId,
-        address.slotIndex,
-        inputMode,
-        Date.now(),
-      ),
+    const nowMs = Date.now();
+    const submit = (atMs: number) =>
+      this.afterM02CAnswer(
+        pickM02CRetrieval(
+          stack.definitionId,
+          address.containerId,
+          address.slotIndex,
+          inputMode,
+          atMs,
+        ),
+      );
+
+    if (this.m02cSelectionIsSettling(nowMs)) {
+      submit(nowMs);
+      return;
+    }
+
+    // Case identity remains concealed in the dialog. Selection is not an
+    // answer; only the deliberate submit calls the model and advances it.
+    this.openConfirmDialog(
+      `Submit this closed case for request ${m02cRequestNumber()}?\nThis first answer is final.`,
+      'SUBMIT',
+      'accent',
+      () => submit(Date.now()),
+      470,
     );
   }
 
@@ -1291,7 +1329,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
         .setText(
           requested === null || number === null
             ? 'REQUESTS'
-            : `REQUEST ${number} OF ${M02_REQUEST_COUNT} — ${requested.label}: select the slot holding it`,
+            : `REQUEST ${number} OF ${M02_REQUEST_COUNT} — ${requested.label}: select, then confirm`,
         )
         .setVisible(true);
       this.m02cHandOverButton?.setEnabled(false);
@@ -1316,7 +1354,9 @@ export class InventoryOverlayScene extends Phaser.Scene {
 
       this.showM02CRecord(record);
     } else {
-      this.m02cBanner.setVisible(false);
+      this.m02cBanner
+        .setText('HAND OVER LOCKS YOUR LAYOUT — SIX REQUESTS FOLLOW')
+        .setVisible(true);
     }
   }
 
@@ -2103,7 +2143,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
     on('keydown-DOWN', () => moveFocus(1, true));
 
     const pickOrPlace = (event: KeyboardEvent) => {
-      if (event.repeat || this.focus === null || this.inputLocked) {
+      if (event.repeat || this.inputLocked) {
         return;
       }
 
@@ -2114,6 +2154,10 @@ export class InventoryOverlayScene extends Phaser.Scene {
           this.closeConfirm(true);
         }
 
+        return;
+      }
+
+      if (this.focus === null) {
         return;
       }
 
@@ -2317,21 +2361,36 @@ export class InventoryOverlayScene extends Phaser.Scene {
       ? `Set down ${definition.displayName} ×${stack.quantity}?\nIt becomes a bundle on the deck and can be picked up again.`
       : `Discard ${definition.displayName} ×${stack.quantity}?\nJettisoned items cannot be recovered.`;
 
-    this.confirmOpen = true;
-    this.confirmAction = () => {
-      const change = worldDrop
-        ? invDropToWorld(address.containerId, address.slotIndex)
-        : invDiscard(address.containerId, address.slotIndex);
+    this.openConfirmDialog(
+      message,
+      worldDrop ? 'SET DOWN' : 'DISCARD',
+      worldDrop ? 'accent' : 'caution',
+      () => {
+        const change = worldDrop
+          ? invDropToWorld(address.containerId, address.slotIndex)
+          : invDiscard(address.containerId, address.slotIndex);
 
-      if (change.ok) {
-        sfxUiSelect();
-        this.showFeedback(
-          worldDrop ? 'Bundle set down on the deck.' : 'Item jettisoned.',
-        );
-      } else {
-        this.showFailure(change);
-      }
-    };
+        if (change.ok) {
+          sfxUiSelect();
+          this.showFeedback(
+            worldDrop ? 'Bundle set down on the deck.' : 'Item jettisoned.',
+          );
+        } else {
+          this.showFailure(change);
+        }
+      },
+    );
+  }
+
+  private openConfirmDialog(
+    message: string,
+    confirmLabel: string,
+    kind: 'accent' | 'caution',
+    action: () => void,
+    centerY = 280,
+  ) {
+    this.confirmOpen = true;
+    this.confirmAction = action;
 
     const dim = this.add
       .rectangle(0, 0, 800, 600, 0x000000, 0.55)
@@ -2339,14 +2398,14 @@ export class InventoryOverlayScene extends Phaser.Scene {
       .setDepth(DEPTH.confirm)
       .setInteractive();
     const panel = this.add
-      .rectangle(400, 280, 420, 130, INV_COLORS.panel, 1)
+      .rectangle(400, centerY, 420, 130, INV_COLORS.panel, 1)
       .setStrokeStyle(
         1,
-        worldDrop ? INV_COLORS.panelStroke : INV_COLORS.caution,
+        kind === 'accent' ? INV_COLORS.panelStroke : INV_COLORS.caution,
       )
       .setDepth(DEPTH.confirm + 1);
     const text = this.add
-      .text(400, 252, message, {
+      .text(400, centerY - 28, message, {
         align: 'center',
         color: INV_TEXT.text,
         font: INV_FONT.body,
@@ -2358,10 +2417,10 @@ export class InventoryOverlayScene extends Phaser.Scene {
       scene: this,
       id: 'confirm_yes',
       x: 250,
-      y: 300,
+      y: centerY + 20,
       width: 130,
-      label: worldDrop ? 'SET DOWN' : 'DISCARD',
-      kind: worldDrop ? 'accent' : 'caution',
+      label: confirmLabel,
+      kind,
       onActivate: () => this.closeConfirm(true),
       depth: DEPTH.confirm + 2,
     });
@@ -2369,7 +2428,7 @@ export class InventoryOverlayScene extends Phaser.Scene {
       scene: this,
       id: 'confirm_no',
       x: 420,
-      y: 300,
+      y: centerY + 20,
       width: 130,
       label: 'CANCEL',
       onActivate: () => this.closeConfirm(false),
