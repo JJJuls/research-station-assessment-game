@@ -5,16 +5,19 @@
  * the pure model (`m04CuttingModel.ts`) and logs through the job's window
  * with the protocol stamp.
  *
- * Mechanic: the Sample Cutter bench in the Records Workshop. Each cut
- * leaves three pieces at fixed places beside the bench; a disposal bin
- * stands next to it. Pieces are carried one at a time (pointer, or SPACE
- * / E where the prompt names the piece) and dropped into the bin. Nobody
- * asks for it.
+ * Mechanic: the Sample Cutter in the cutting annex of the Records
+ * Workshop. Each cut leaves three pieces at fixed places on the annex
+ * floor: job 1 west of the cutter, job 2 at the mirrored places east of
+ * it (U14-D2). Pieces are carried one at a time (pointer, or SPACE / E
+ * where the prompt names the piece) and dropped into the bin, or set
+ * down again where they lay (U14-D). Nobody asks for it.
  *
  * Window lifecycle: the work orders LIST the coupons (exposure record);
  * a job is presented and opened (entered) by its cut — the pieces are
  * created by the cut, so a job never run is not presented; it completes
- * at its FIRST DEPARTURE (another station opened, or the room left) with
+ * at its FIRST DEPARTURE (the first accepted action at another station
+ * that changed that task's recorded state, or the room left — the host
+ * scene reads the success from the other task, U14-D) with
  * the state of its three pieces, a carried piece counted as undisposed.
  * A disposal after the departure is a late disposal on the closed window.
  * The second coupon becomes available after the first job's departure.
@@ -61,18 +64,30 @@ import {
   m04PutBack,
   m04RawComponents,
   m04RunJob,
+  m04SetDown,
+  type M04SetDownResult,
   type M04State,
   type M04UnavailableReason,
 } from './m04CuttingModel';
 import { type InputMode, ItemWindow, type WindowStatus } from './windowKit';
 
-export type { M04Job, M04PickupOrigin, M04Piece } from './m04CuttingModel';
+export type {
+  M04BinGate,
+  M04Job,
+  M04PickupOrigin,
+  M04Piece,
+} from './m04CuttingModel';
 export {
+  createM04BinGate,
   M04_FAMILY,
   M04_JOBS,
+  M04_NO_ORDER_LINE,
   M04_PIECES,
-  M04_REARM_LINE,
+  M04_SET_DOWN_LINE,
+  M04_SET_DOWN_REFUSED_LINE,
   M04_SPEC,
+  m04BinGateStep,
+  m04BinPointerAllowed,
 } from './m04CuttingModel';
 
 function createWindow(job: M04Job): ItemWindow {
@@ -309,6 +324,18 @@ export function dropM04Carried() {
   m04PutBack(state, 'system', sink);
 }
 
+/**
+ * The participant sets the carried piece down where it lay (U14-D).
+ * `placeable` is the host's statement that the piece can be shown there;
+ * a refused set-down keeps the piece in the hands and records nothing.
+ */
+export function setDownM04(
+  inputMode: Exclude<InputMode, 'system'>,
+  placeable: boolean,
+): M04SetDownResult {
+  return m04SetDown(state, placeable, inputMode, sink);
+}
+
 export function disposeM04(
   objectId: string,
   nowMs: number,
@@ -319,8 +346,11 @@ export function disposeM04(
 }
 
 /**
- * The participant turned to other work: the first departure of every job
- * still open. Later departures are gameplay only.
+ * The participant turned to other work (an accepted action at another
+ * station that changed that task's recorded state, or the room left):
+ * the first departure of every job still open. The caller calls this
+ * AFTER the other task's transition succeeded. Later departures are
+ * gameplay only.
  */
 export function departM04(
   trigger: M04DepartureTrigger,

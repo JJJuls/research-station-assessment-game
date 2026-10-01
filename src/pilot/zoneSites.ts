@@ -80,16 +80,18 @@ export const CONCOURSE_SPAWNS = {
 
 /**
  * Records Workshop — episode 2 (restoration) and episode 5 (return).
- * World V2 rescue continuation: a 43×12 two-bay painted hall
+ * World V2 rescue continuation: a 43×19 painted room — the two-bay hall
+ * and, south of the machine bay, the cutting annex (Station 080 U14-D2)
  * (src/world/layouts/workshop.ts; plate workshop-plate.png). Anchors are
  * mapped to the plates' baked art — machine bay west (case desk, both
- * presses, relay bench, cutter island + bin, locker, assembly bench,
- * supply pallet zone), records office east (dispatch desk, feed console,
- * seal board, handover desk, four south-hull benches, work-order board
- * by the Concourse door). Every anchor/approach pair, the spawn, the
- * bundle positions and the debris scatter were machine-audited (32×42
- * body, ±12 px landing box, nearest-wins radius 72, spawn/door
- * clearance, BFS connectivity) — see the layout module header.
+ * presses, relay bench, locker, assembly bench, supply pallet zone),
+ * records office east (dispatch desk, feed console, seal board, handover
+ * desk, four south-hull benches, work-order board by the Concourse
+ * door), cutting annex (sample cutter, disposal bin). Every
+ * anchor/approach pair, the spawn and the bundle positions were
+ * machine-audited (32×42 body, ±12 px landing box, nearest-wins radius
+ * 72, spawn/door clearance, BFS connectivity) — see the layout module
+ * header; the annex is measured by the pure M04 test.
  */
 export const WORKSHOP_STATIONS = {
   workOrderBoard: { x: 1344, y: 140 },
@@ -109,14 +111,22 @@ export const WORKSHOP_STATIONS = {
 
 /** Workshop episode-2 stations (same audited book; scene + registry). */
 export const WORKSHOP_SITES = {
-  sampleCutter: { x: 392, y: 230 },
+  /**
+   * The sample cutter stands at the northern centre of the cutting annex
+   * (U14-D2), on the annex's mirror axis x 400. Unlike the other
+   * stations it is operated from the NORTH, so this anchor is the
+   * machine's north face and the approach point lies just north of it.
+   */
+  sampleCutter: { x: 400, y: 456 },
   /**
    * Debris scatter origin: pieces land at origin + the fixed M04 offsets
-   * (dx −64…52, dy 0…64), at the cutter's operator side. Presentation
-   * placement only — the offsets themselves are the window's fixture.
+   * (dx ∓172…188, dy 20…100) — Job 1's three west of the cutter, Job 2's
+   * three at the mirrored places east of it. Presentation placement only
+   * — the offsets themselves are the window's fixture.
    */
-  cutterScatter: { x: 344, y: 224 },
-  disposalChute: { x: 492, y: 235 },
+  cutterScatter: { x: 400, y: 456 },
+  /** The disposal bin: south of the cutter, on the same mirror axis. */
+  disposalChute: { x: 400, y: 556 },
   dispatchConsole: { x: 915, y: 170 },
   calibrationBench: { x: 833, y: 300 },
   qcPacket: { x: 1100, y: 300 },

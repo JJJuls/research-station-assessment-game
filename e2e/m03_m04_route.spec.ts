@@ -7,14 +7,15 @@
  * is loaded, the taught movement by keyboard, three cycles, three tools on
  * the surface, the threaded roll no longer moves, one tool restored by
  * pointer drag, the panel closed (the first departure; the press is idle
- * afterwards); the Sample Cutter — coupon 1 with the same line for
- * everyone, a repeated press inside the settle window refused, one piece
- * disposed by pointer, a press beside the Component Locker acting on the
- * piece that lies nearer (the locker stays shut, the job stays open), that
- * piece carried when another station is opened (the first departure of
+ * afterwards); the Sample Cutter in its annex (U14-D2,
+ * `m04-cutting-v4`) — coupon 1 with the line both cuts share, a repeated
+ * press inside the settle window refused, one piece of the west cluster
+ * disposed by pointer, one piece lifted by keyboard on open floor and
+ * carried when another station's work is begun (the first departure of
  * job 1), two later disposals recorded apart, coupon 2 available only
- * now, one piece lifted at the cutter and disposed by keyboard, the room
- * left (the first departure of job 2).
+ * now, one piece of the east cluster lifted and disposed by keyboard, one
+ * piece carried out of the annex and out of the room (the first
+ * departure of job 2, recorded before the piece is put back).
  *
  * Test 2 (the whole route to the return shift): Press A left untouched in
  * the restoration shift, Press B with all three tools restored by
@@ -28,6 +29,8 @@ import { expect, type Page, test } from '@playwright/test';
 
 import { extractItemFeatures } from '../src/measurement/features';
 import { M03_SPEC, M03_TOOLS } from '../src/pilot/windows/m03RestoreModel';
+import { M04_PIECES } from '../src/pilot/windows/m04CuttingModel';
+import { WORKSHOP_SITES } from '../src/pilot/zoneSites';
 import type { RawGameEvent } from '../src/systems/EventLogger';
 import {
   clickPhysicalContainer,
@@ -45,6 +48,8 @@ import {
   expectNoRuntimeErrors,
 } from './journey';
 import {
+  ANNEX_DRIVER,
+  annexPieceStand,
   bootPilot,
   concourseToWorkshop,
   expectStage,
@@ -53,12 +58,14 @@ import {
   PILOT,
   pilotCoverage,
   pilotProbe,
+  registryApproach,
   routeToWorkshopWork,
   walkTo,
   workshopToConcourse,
   workshopVia,
 } from './pilotHelpers';
 import {
+  clickElement,
   closeSurface,
   enterConcourseWithOffers,
   exteriorShift,
@@ -359,31 +366,76 @@ async function avatar(page: Page): Promise<{ x: number; y: number } | null> {
   );
 }
 
+/** Where a piece lies in the cutting annex (room px). */
+function placeOf(objectId: string): { x: number; y: number } {
+  const piece = M04_PIECES.find((entry) => entry.object_id === objectId)!;
+
+  return {
+    x: WORKSHOP_SITES.cutterScatter.x + piece.dx,
+    y: WORKSHOP_SITES.cutterScatter.y + piece.dy,
+  };
+}
+
 /**
- * Walks to the north lane above the disposal bin (the bin is attached to
- * the east end of the cutter island; the lane is within its reach). The
- * climb to the lane is verified before the eastward leg: a leg that ends
- * early on the driver's own stall rule would meet the island.
+ * Walks beside a piece of the annex (U14-D2): 20 px from it on the
+ * cutter's side, where it is in keyboard and pointer reach and nearer
+ * than every other piece. Driver geometry only.
+ */
+async function besidePiece(page: Page, objectId: string) {
+  const stand = annexPieceStand(placeOf(objectId));
+
+  await workshopVia(page, stand.x, stand.y);
+  await page.waitForTimeout(250);
+}
+
+/** Whether the bin is the acquired target of the carried piece (U14-D). */
+async function binAcquired(page: Page): Promise<boolean> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __m04BinProbe?: { acquired: boolean } | null })
+        .__m04BinProbe?.acquired ?? false,
+  );
+}
+
+/**
+ * Walks to the bin the way a participant acquires it (U14-D2): down the
+ * clear column on the avatar's side of the cutter to a place outside the
+ * bin's 64 px range, then into it — the pocket beside the bin.
  */
 async function toBin(page: Page) {
-  await workshopVia(page, 352, 156);
+  const from = await avatar(page);
+  const west = from === null || from.x < ANNEX_DRIVER.doorX;
+  const pocket = west ? ANNEX_DRIVER.binWest : ANNEX_DRIVER.binEast;
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const at = await avatar(page);
-
-    if (at !== null && at.y <= 166) {
-      break;
-    }
-
-    await driveAxisTo(page, 'y', 156, 8);
-  }
-
-  await driveAxisTo(page, 'x', 492, 8);
+  await workshopVia(
+    page,
+    west ? ANNEX_DRIVER.westX : ANNEX_DRIVER.eastX,
+    pocket.y,
+  );
+  await driveAxisTo(page, 'x', pocket.x, 6);
+  await page.waitForTimeout(250);
 
   const at = await avatar(page);
 
   expect(at).not.toBeNull();
-  expect(Math.hypot(at!.x - 492, at!.y - 235)).toBeLessThanOrEqual(96);
+  expect(
+    Math.hypot(
+      at!.x - WORKSHOP_SITES.disposalChute.x,
+      at!.y - WORKSHOP_SITES.disposalChute.y,
+    ),
+  ).toBeLessThanOrEqual(64);
+}
+
+/** The line shown above the avatar's target (null = none shown). */
+async function promptLine(page: Page): Promise<string | null> {
+  return page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          __worldPromptProbe?: { prompt: boolean; text?: string | null } | null;
+        }
+      ).__worldPromptProbe?.text ?? null,
+  );
 }
 
 /**
@@ -413,20 +465,6 @@ async function disposeByPointer(page: Page) {
   );
 }
 
-/**
- * Walks from the north lane down the clear column west of the cutter
- * island (x 348) to a point of the machine bay: the lane first, then the
- * column, then the row (the island and the bin block a direct leg).
- */
-async function fromLane(page: Page, x: number, y: number) {
-  await workshopVia(page, 348, 160);
-  await walkTo(page, 348, y, { yFirst: true });
-
-  if (x !== 348) {
-    await walkTo(page, x, y, { yFirst: false });
-  }
-}
-
 async function lyingPieces(page: Page): Promise<string[]> {
   return ((await physicalProbe(page))?.objects ?? []).map((o) => o.id).sort();
 }
@@ -447,7 +485,14 @@ async function stage2Workshop(page: Page, tag: string) {
   await routeToWorkshopWork(page);
 }
 
-const CUTTER_APPROACH = { approachOffset: { x: -44, y: 0 } };
+/** The cutter is operated from the north (U14-D2): 33 px above its anchor. */
+const CUTTER_STAND = registryApproach('workshop.sample_cutter');
+const CUTTER_APPROACH = {
+  approachOffset: {
+    x: CUTTER_STAND.x - WORKSHOP_SITES.sampleCutter.x,
+    y: CUTTER_STAND.y - WORKSHOP_SITES.sampleCutter.y,
+  },
+};
 
 test.describe('M03 press occasions and M04 cutting jobs on the route', () => {
   test('restoration shift: Press A partly restored; two cutting jobs, each closed at its own first departure, a carried piece counted and later disposals recorded apart', async ({
@@ -568,15 +613,14 @@ test.describe('M03 press occasions and M04 cutting jobs on the route', () => {
     expect((await family(page, M03_FAMILY)).length).toBe(m03.length);
 
     // ——— Sample Cutter: coupon 1 ———
-    await workshopVia(page, 348, 230);
+    await workshopVia(page, CUTTER_STAND.x, CUTTER_STAND.y);
     await interactAt(page, PILOT.workshop.sampleCutter, CUTTER_APPROACH);
     // A repeated press right after the cut is refused: nothing is lifted.
     await press(page, 'Space');
     await page.waitForTimeout(300);
     expect(await carriedPiece(page)).toBeNull();
-    expect(await lastFeedback(page)).toBe(
-      'Sample coupon 1 of 2 cut. The cutter re-arms while you work another order.',
-    );
+    // The line both cuts share: the cut, and nothing about what follows.
+    expect(await lastFeedback(page)).toBe('Sample coupon 1 of 2 cut.');
     expect(await lastFeedback(page)).not.toMatch(NO_CLEANUP_CUE);
     expect(await lyingPieces(page)).toEqual([
       'm04_offcut_a',
@@ -593,22 +637,28 @@ test.describe('M03 press occasions and M04 cutting jobs on the route', () => {
     expect(
       m04.filter((e) => e.event_type === `${M04_FAMILY}job_run`),
     ).toHaveLength(1);
+    expect(meta(m04.at(-1)!).entry_state_version).toBe('m04-cutting-v4');
     await page.waitForTimeout(1_600);
 
-    // One piece to the bin by pointer. The bin stands at the far side of
-    // the cutter island: the piece is carried round it.
+    // One piece to the bin by pointer: the avatar walks to the piece in
+    // the west cluster, then to the bin.
+    await besidePiece(page, 'm04_offcut_a');
     await clickPhysicalObject(page, 'm04_offcut_a');
     expect(await carriedPiece(page)).toBe('m04_offcut_a');
+    // Lifting the piece names no bin (U14-D): the bin is walked up to.
+    expect(await binAcquired(page)).toBe(false);
+    expect(await promptLine(page)).not.toBe('E / Space — Use disposal bin');
     await toBin(page);
+    expect(await binAcquired(page)).toBe(true);
     await disposeByPointer(page);
     expect(await lastFeedback(page)).toBe('Disposed.');
 
-    // A press beside the Component Locker, with a piece lying nearer than
-    // the locker: the press lifts the piece; the locker stays shut and the
-    // job stays open.
+    // A press on open floor beside the swarf tray lifts it: the line
+    // names the piece, no station is opened and the job stays open.
     const opened = await stationsOpened(page);
 
-    await fromLane(page, 310, 250);
+    await besidePiece(page, 'm04_swarf_a');
+    expect(await promptLine(page)).toBe('E / Space — Take swarf tray');
     await press(page, 'Space');
     await page.waitForTimeout(500);
 
@@ -626,13 +676,22 @@ test.describe('M03 press occasions and M04 cutting jobs on the route', () => {
       ),
     ).toHaveLength(0);
 
-    // Still carried when another station is opened: the first departure of
-    // job 1.
+    // Still carried when another station's work is begun. The bench
+    // shown is no work (U14-D): its first stage carried out is — the
+    // first departure of job 1.
     await openWorkshopSurface(
       page,
       'calibrationBench',
       'm07_calibration_bench',
     );
+    await page.waitForTimeout(400);
+    expect(
+      (await family(page, M04_FAMILY)).filter(
+        (e) => e.event_type === `${M04_FAMILY}first_departure`,
+      ),
+    ).toHaveLength(0);
+    await clickElement(page, 'advance');
+    await page.waitForTimeout(400);
     await closeSurface(page);
 
     m04 = await family(page, M04_FAMILY);
@@ -667,7 +726,7 @@ test.describe('M03 press occasions and M04 cutting jobs on the route', () => {
         .map((e) => [meta(e).object_id, meta(e).input_mode, meta(e).origin]),
     ).toEqual([
       ['m04_offcut_a', 'pointer', 'pointer'],
-      ['m04_swarf_a', 'keyboard', 'station_press:storage_locker'],
+      ['m04_swarf_a', 'keyboard', 'open_floor_press'],
     ]);
     expect(await validityRecord(page, 'proto_m04_cutting_o1')).toMatchObject({
       entered: true,
@@ -679,7 +738,7 @@ test.describe('M03 press occasions and M04 cutting jobs on the route', () => {
     // bin — recorded apart, the recorded state of job 1 unchanged.
     await toBin(page);
     await disposeByPointer(page);
-    await fromLane(page, 348, 230);
+    await besidePiece(page, 'm04_wrap_a');
     expect(await lyingPieces(page)).toEqual(['m04_wrap_a']);
     await clickPhysicalObject(page, 'm04_wrap_a');
     expect(await carriedPiece(page)).toBe('m04_wrap_a');
@@ -697,7 +756,7 @@ test.describe('M03 press occasions and M04 cutting jobs on the route', () => {
     expect(await lyingPieces(page)).toEqual([]);
 
     // ——— Sample Cutter: coupon 2 (available after the departure) ———
-    await fromLane(page, 348, 230);
+    await workshopVia(page, CUTTER_STAND.x, CUTTER_STAND.y);
     await interactAt(page, PILOT.workshop.sampleCutter, CUTTER_APPROACH);
     await page.waitForTimeout(300);
     expect(await lastFeedback(page)).toBe('Sample coupon 2 of 2 cut.');
@@ -709,23 +768,50 @@ test.describe('M03 press occasions and M04 cutting jobs on the route', () => {
     await page.screenshot({ path: 'test-results/m04-pieces-job2-800x600.png' });
     await page.waitForTimeout(1_600);
 
-    // Keyboard path: SPACE at the cutter lifts the nearest piece, SPACE
-    // beside the bin drops it.
+    // At the cutter the press is the cutter's: no piece is lifted there.
     await press(page, 'Space');
     await page.waitForTimeout(400);
+    expect(await carriedPiece(page)).toBeNull();
+    expect(await lastFeedback(page)).toBe(
+      'Both coupons cut. The cutter is idle.',
+    );
 
-    const keyboardPiece = await carriedPiece(page);
+    // Keyboard path: SPACE on open floor beside a piece lifts it, SPACE
+    // beside the bin drops it.
+    const keyboardPiece = 'm04_offcut_b';
 
-    expect(keyboardPiece).toMatch(/^m04_.*_b$/);
+    await besidePiece(page, keyboardPiece);
+    expect(await promptLine(page)).toBe('E / Space — Take coupon offcut');
+    await press(page, 'Space');
+    await page.waitForTimeout(400);
+    expect(await carriedPiece(page)).toBe(keyboardPiece);
+    // Lifted outside the bin's range: the bin is not named for it.
+    expect(await binAcquired(page)).toBe(false);
+    expect(await promptLine(page)).not.toBe('E / Space — Use disposal bin');
     await toBin(page);
+    expect(await promptLine(page)).toBe('E / Space — Use disposal bin');
     await press(page, 'Space');
     await page.waitForTimeout(400);
     expect(await carriedPiece(page)).toBeNull();
     expect(await lastFeedback(page)).toBe('Disposed.');
     expect(await lyingPieces(page)).toHaveLength(2);
 
-    // Leaving the room is the first departure of job 2.
+    // A second piece is lifted and CARRIED out of the room.
+    await besidePiece(page, 'm04_wrap_b');
+    expect(await promptLine(page)).toBe('E / Space — Take blade wrap');
+    await press(page, 'Space');
+    await page.waitForTimeout(400);
+    expect(await carriedPiece(page)).toBe('m04_wrap_b');
+
+    // Walking out of the annex and through the room closes nothing.
     await workshopVia(page, 1256, RETURN.laneY);
+    expect(
+      (await family(page, M04_FAMILY)).filter(
+        (e) => e.event_type === `${M04_FAMILY}first_departure`,
+      ),
+    ).toHaveLength(1);
+
+    // Leaving the room is the first departure of job 2.
     await workshopToConcourse(page);
 
     m04 = await family(page, M04_FAMILY);
@@ -738,14 +824,33 @@ test.describe('M03 press occasions and M04 cutting jobs on the route', () => {
 
     const job2 = meta(departures[1]);
 
+    // The piece in the hands is counted undisposed: the state was
+    // recorded BEFORE the system put the piece back.
     expect(job2).toMatchObject({
       trigger: 'room_exit',
+      detail: null,
       pieces_disposed: 1,
       disposed_ids: [keyboardPiece],
-      carried_piece: null,
-      pieces_lying: 2,
+      carried_piece: 'm04_wrap_b',
+      pieces_lying: 1,
       undisposed_at_departure: 2,
+      entry_state_version: 'm04-cutting-v4',
     });
+
+    const putBack = m04.filter(
+      (e) => e.event_type === `${M04_FAMILY}piece_put_back`,
+    );
+
+    // `input_mode` alone tells the system's put-back from a set-down.
+    expect(
+      putBack.map((e) => [
+        meta(e).object_id,
+        meta(e).input_mode,
+        'by' in meta(e),
+        meta(e).after_departure,
+      ]),
+    ).toEqual([['m04_wrap_b', 'system', false, true]]);
+    expect(putBack[0].sequence!).toBeGreaterThan(departures[1].sequence!);
     expect(
       m04
         .filter(
@@ -761,8 +866,9 @@ test.describe('M03 press occasions and M04 cutting jobs on the route', () => {
           meta(e).origin ?? null,
         ]),
     ).toEqual([
-      ['piece_picked_up', keyboardPiece, 'keyboard', 'cutter_press'],
+      ['piece_picked_up', keyboardPiece, 'keyboard', 'open_floor_press'],
       ['piece_disposed', keyboardPiece, 'keyboard', 'open_floor_press'],
+      ['piece_picked_up', 'm04_wrap_b', 'keyboard', 'open_floor_press'],
     ]);
     // Both cuts in the restoration shift.
     expect(
@@ -808,9 +914,8 @@ test.describe('M03 press occasions and M04 cutting jobs on the route', () => {
     expect(m04Rows[0].components).toMatchObject({
       late_disposals: 2,
       undisposed_by_job: { o1: 2, o2: 2 },
-      // The piece lifted by the press beside the locker was still carried
-      // at the departure: flagged as a pick-up, never as a disposal.
-      pickups_by_station_press: 1,
+      // No pick-up is issued by a press at a station any more (U14-D).
+      pickups_by_station_press: 0,
       disposed_by_or_after_station_press: 0,
     });
 
@@ -974,7 +1079,7 @@ test.describe('M03 press occasions and M04 cutting jobs on the route', () => {
     });
 
     // The cutter cuts in the restoration shift only.
-    await workshopVia(page, 348, 230);
+    await workshopVia(page, CUTTER_STAND.x, CUTTER_STAND.y);
     await interactAt(page, PILOT.workshop.sampleCutter, CUTTER_APPROACH);
     await page.waitForTimeout(400);
     expect(await lastFeedback(page)).toBe(

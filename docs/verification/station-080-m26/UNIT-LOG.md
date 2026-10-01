@@ -4003,7 +4003,7 @@ e2e/u14_correction.spec.ts --retries=0`: **1 passed** (2.6 min), the
   the complete U13-C contract including one local commit. This is one
   M02 correction; U15 remains untouched.
 - **Objective / scientific rationale:** make a retrieval answer a
-  deliberate first *committed* response, reducing interface error as a
+  deliberate first _committed_ response, reducing interface error as a
   rival explanation of functional traceability. This is a response-
   process correction, not empirical validation. The approved M02 primary
   remains correct first retrievals / six; the six requests, balanced
@@ -4082,3 +4082,960 @@ e2e/u14_correction.spec.ts --retries=0`: **1 passed** (2.6 min), the
   clean. No canonical schema, scoring or other unit file changed.
 - **Commit expectation:** one local commit,
   `fix(m02): confirm first retrieval answers`; stop before U14-D and U15.
+
+## U14-D — M04 cleanup-choice correction
+
+_First pass (29 September). It was not committed. The first independent
+review and the owner's rulings of 30 September 2026 followed; what they
+changed is recorded in "U14-D — review / fix round 1" below, which
+governs wherever the two differ. Statements of this first-pass record
+that exceeded the evidence are corrected in place and marked._
+
+- **Owner instruction:** 29 September, the complete U14-D contract with
+  the explicit instruction to implement it; the owner's instruction to
+  use `fable-professional-world-rescue-v2` at `846c1f5` supersedes, for
+  this unit, the historical branch named in `CLAUDE.md` (not edited).
+- **Entry state (verified before the first edit):** worktree
+  `C:\Users\Juls\.codex\worktrees\u14-d-m04-cleanup-choice\research-station-assessment-game`,
+  branch `codex/u14-d-m04-cleanup-choice`, HEAD
+  `846c1f51e8b631e49b8ec893af08ee1144f93cf9` (the expected base, its own
+  ancestor), clean tree; `CLAUDE_UNIT_ALLOWLIST` set with the eleven
+  paths; `node_modules` is the existing git-ignored junction to the
+  primary checkout (nothing installed). Worktrees present and left
+  untouched: the primary (`fable-professional-world-rescue-v2`,
+  `846c1f5`), `u13-c-m02-clarity`, `u14-correction`,
+  `u15-responsibility`.
+- **Objective:** disposal of the participant's own debris is a clear,
+  accessible, optional choice, and the state is recorded at each job's
+  first genuine departure.
+- **Scientific rationale:** M04 stays a provisional behavioural analogue
+  of cleanup / restoration within Organisation. The correction removes
+  construct-irrelevant influences: a pick-up made while another station
+  was meant, pieces inside competing interaction zones, a pick-up that
+  could not be reversed, unequal lines after the two cuts, a job closed
+  by a board or a refusal that was only read, and input-mode
+  differences in whether the optional act is practically available. It
+  establishes no validity, reliability, equivalence, norm or cut score.
+- **Authority:** the owner's M01–M26 decisions and the U14-D contract;
+  the older Q01–Q33 material is context only. Read: the M04 sections of
+  `FABLE-M01-M26-IMPLEMENTATION-INSTRUCTIONS.md` and
+  `-HANDOFF.md`, the register, the matrix, the addendum and this log.
+  `Station_080_M01-M26_Final_Measurement_Decisions.docx` could NOT be
+  read in this session (no tool to open a `.docx` was available and
+  nothing may be written outside the allowlist to extract it); the two
+  Markdown documents state the same M04 decision and agree with the
+  contract's §2.
+- **Participant-facing behaviour, failure / recovery, telemetry
+  boundary:** register §4 "Unit 14-D".
+- **Allowed files:** the eleven of the contract. Changed: the model,
+  the adapter, the scene, the three specs and the four documents of
+  this directory. `src/gameplay/physical.ts` was allowed and NOT
+  changed (the control's pointer press is kept from the pointer layer
+  by the scene's own `isEnabled`), so `physical_organisation` was not
+  required and not run.
+- **Prohibited areas:** untouched — M02, M03, the legacy Q04 task, every
+  other item, `zoneSites.ts`, the room layout, `RoomScene.ts`,
+  `PilotZoneScene.ts`, `docs/research/**`, `docs/scientific/**`,
+  `docs/ai/**`, `src/measurement/features/m04.ts`, package files,
+  settings, hooks, the other worktrees, the primary checkout, U15.
+- **What qualifies as work begun at another station, identified before
+  the change (station · the existing transition that proves it · how
+  the scene reads it) — FIRST PASS, WITHDRAWN by owner ruling 1: most
+  entries below are a panel's OPENING read through a copied
+  availability check, not an accepted action; the rule in force and
+  its table are in register §4 "Unit 14-D" (6):**
+  - Case Workspace · `openInventoryOverlay` in mode `m02case` with the
+    M02 window not closed and not held back by the reload guard ·
+    `station(..., takesWork)`.
+  - Label Press A / B · the press passes its own checks (not terminal,
+    scheduled) and is not held back · called after those checks, before
+    the panel.
+  - Component Locker · `noteM08JobEngaged('stow_supplies')` and the
+    container panel · always when it opens.
+  - Assembly Bench · the workbench panel · always when it opens.
+  - Dispatch Console · `openM06` with no surface open and the M06
+    window not closed and not held back.
+  - Calibration Bench · `openM07` while the project is unfinished.
+  - Quality Packet · `openM12('o2')` with the window not closed and not
+    held back.
+  - Conduit Lattice Bench · the M13 panel while its window is unopened
+    or open.
+  - Work Order Board · `noteM08JobEngaged('filter_swap')`, the optional
+    filter swap chosen.
+  - Seal log · `acknowledgeM11Obligation`, the rule acknowledged.
+  - Return shift (no job can be open there on the ordinary route) · the
+    feed console's surface, `m21BenchOpen`, `m22DeskOpen`,
+    `noteHandoverPlaced`.
+- **What does not qualify:** the Work Order Board read, its orders
+  taken, its sign-off, "Still working."; the seal log read or closed; a
+  press answering idle, not scheduled or out of service; a station
+  whose window is closed (it opens as a record); a second surface
+  refused; the return-shift stations on standby; a supply bundle; the
+  map; the backpack; a piece lifted, set down or disposed of; the bin;
+  walking. `pilot_station_opened` is still written for every station
+  reached and closes nothing.
+- **How the second job becomes available:** unchanged —
+  `m04AvailableJob` offers job 2 once job 1 is closed, that is after a
+  qualifying departure or a room exit; the guidance returns to the
+  cutter then.
+- **Defaults taken inside the contract by the first pass (since decided
+  by the owner's rulings of 30 September — approved U14-D
+  administration decisions, register §5.211–§5.218; the defaults below
+  are withdrawn where a ruling differs):** a panel opened and closed at once is a
+  departure (§5.211); the places lie within about 115 px of the bin, so
+  disposal is cheaper than under v1 / v2 and the bin's line and outline
+  appear as soon as a piece is lifted at five of six places (§5.212);
+  set-down returns the piece to its place from anywhere, key X, control
+  in the lower left (§5.213); the cutter's status no longer names what
+  re-arms it (§5.214); the board's beats and the seal log (§5.217).
+  None was resolved as a scientific decision.
+- **Verification of the final tree (by the writer; every command once,
+  retries off, port 5233 verified free before the run — `curl` answered
+  000 — so the server was started by this run from this worktree; the
+  specs' assertions on `m04-cutting-v3`, read from the running game,
+  show the same):**
+  - `npm.cmd run lint:tsc` — exit 0.
+  - `npm.cmd run build` — exit 0 (Vite's chunk-size warning only).
+  - `npx.cmd --no-install playwright test e2e/m04_cutting.spec.ts
+e2e/m03_m04_route.spec.ts e2e/u14_correction.spec.ts --workers=1
+--retries=0` with `PW_DEV_PORT=5233` — exit 0, **13 passed** (9.6
+    min): `m04_cutting` 10 / 10, `m03_m04_route` 2 / 2, `u14_correction`
+    1 / 1.
+  - `verify-unit` against `846c1f5` with the eleven entries and
+    `git diff --check`: results in the handoff (run after this record).
+  - ESLint on the six changed source and spec files reports only the
+    working tree's CRLF line endings (the same on unchanged files of
+    this checkout); Prettier with `--end-of-line auto` reports no
+    difference on them.
+- **Runs during development (not the evidence):** `m04_cutting` failed
+  once deterministically — the first job's offcut at 456, 170 left the
+  cutter in range 12 px beside the piece; the place was moved to 462,
+  166 and the row to y 166, the test kept. `u14_correction` failed once
+  deterministically in the test's own comparison of a piece's place
+  (design-space rectangles move with the camera); the comparison now
+  reads the place in room pixels against the model. No flake was seen.
+- **Browser evidence of the first pass (real input, state and event
+  assertions; statement CORRECTED in round 1 — it had claimed every
+  piece of both jobs by both input modes):**
+  `u14_correction` — the matched lines of both cuts; v3 on every event
+  and in the entry snapshot; the cutter keeping the press after the
+  settle window; the locker's approach with the pieces lying; the
+  three pieces of JOB 2 each named on open floor with no station or
+  bundle in range (measured where the avatar stands), lifted by
+  keyboard and by pointer, set down by X and by a click, drawn at its
+  own place after each set-down; of JOB 1 the coupon offcut and the
+  swarf tray lifted by keyboard only and the blade wrap by pointer and
+  by keyboard (two of the six job-1 combinations of piece and input
+  mode were not exercised); a set-down from another place; no disposal written by
+  a set-down; hands full; the carried line; disposal by keyboard and by
+  pointer; the map, the backpack, a bundle collected, Press A idle and
+  Press B unscheduled without a departure; the locker used without a
+  pick-up and exactly one departure of job 1; a later set-down and a
+  later disposal with the record byte-identical; the board read and its
+  orders taken with a piece carried, without a departure; the
+  Calibration Bench used and exactly one departure of job 2 with the
+  carried piece counted; both primaries reproduced offline; M03's
+  events byte-identical from the end of Press A on. `m03_m04_route` —
+  the ordinary route; walking through the room without a departure;
+  the room left with a piece carried: `first_departure` (`room_exit`,
+  the piece counted) written before the system's `piece_put_back`;
+  Press B and no cutting on the return shift.
+- **Screenshots of the first pass at 800 × 600 (git-ignored, not
+  committed; REPLACED — the files of these names now on disk are those
+  of round 1, below):**
+  `test-results/u14d-1-job1-pieces-800x600.png` (the three pieces of
+  job 1 on the lane and east of the bin, the line of the first cut),
+  `test-results/u14d-2-job2-pieces-800x600.png` (the three pieces of
+  job 2 beside a leftover piece of job 1, the line of the second cut),
+  `test-results/u14d-3-locker-approach-800x600.png` (the avatar at the
+  locker's approach, the line naming the locker, no piece near it),
+  `test-results/u14d-4-set-down-control-800x600.png` (the control in
+  the lower left with a piece carried; the bin's line and outline
+  beside it, §5.212). Playwright empties `test-results/` at the start
+  of every run: the files are those of the run above.
+- **Not verified in a browser:** a refused set-down (pure test only;
+  no ordinary route makes a piece's icon unavailable); the reload
+  checks of §5.218; the filter swap, the seal log and the other first-
+  shift benches as departures (the locker and the Calibration Bench
+  stand for the rule); a station opened with its window already closed.
+- **Independent review: NOT performed.** The project reviewers
+  `scientific-reviewer`, `gameplay-reviewer`, `test-reviewer` and
+  `visual-reviewer` are not offered as agent types in this session (the
+  Agent tool answered "Agent type 'scientific-reviewer' not found" and
+  the same for `gameplay-reviewer`; its list of available types names
+  neither `test-reviewer` nor `visual-reviewer`). On the owner's
+  instruction no other agent or model was substituted. Stage 4 of the
+  operating mode is therefore open, no review / fix round was run, and
+  under the contract's §22 **no commit was created**: the changes stand
+  uncommitted in the worktree.
+- **Model actually used:** Fable 5.1 (`claude-fable-5-1`), sole writer;
+  no reviewer, no other model.
+- **Carried forward, unresolved:** the extractor
+  `src/measurement/features/m04.ts` skips piece-action events with a
+  missing or unrecognised `object_id` (§5.216) — outside this unit, a
+  separate approved correction is needed; the two jobs can contain
+  learning and carry-over and six pieces are not six observations;
+  response-process, reliability, convergent and discriminant evidence
+  is pending; technical verification says nothing about what the
+  feature means; the M03 input-effort and exposure-threshold concerns
+  are untouched.
+- **Conclusion of the first pass (superseded):** the first pass's
+  tests passed in the writer's own runs; they tested the first pass's
+  rule — a panel's opening as a departure, the bin named as soon as a
+  piece is lifted — which the owner has since withdrawn. No commit was
+  created. Nothing was pushed, merged, tagged, deployed, deleted or
+  removed; U15 is not started.
+
+## U14-D — review / fix round 1 (30 September 2026)
+
+- **Owner instruction:** 30 September 2026 — the correction package
+  after the first independent (Opus) review of the uncommitted first
+  pass, with the owner's explicit approval of every scientific and
+  administration ruling in it (rulings 1–7: genuine first departure;
+  disposal needs a deliberate transition; geometry and matched jobs;
+  cutter status; set-down recovery; telemetry; evidence and
+  documentation). The rulings are approved U14-D administration
+  decisions (register §5.211–§5.218). Round 1 of at most two.
+- **Entry state (verified before the first edit):** worktree
+  `C:\Users\Juls\.codex\worktrees\u14-d-m04-cleanup-choice\research-station-assessment-game`,
+  branch `codex/u14-d-m04-cleanup-choice`, HEAD and base
+  `846c1f51e8b631e49b8ec893af08ee1144f93cf9`, the first pass's ten
+  changed files uncommitted and preserved, `CLAUDE_UNIT_ALLOWLIST` with
+  the unchanged eleven paths. No worktree was created, nothing was
+  reset, the primary checkout was not touched.
+- **Model:** Fable 5.1 (`claude-fable-5-1`), sole writer. One read-only
+  exploration agent mapped the stations' state readers; it wrote
+  nothing.
+- **Changed files (all eleven allowlisted paths):** the model, the
+  adapter, the scene, `src/gameplay/physical.ts` (one optional hook,
+  `isContainerCued`, default unchanged), the three specs, the four
+  documents of this directory.
+- **Implemented:**
+  - Ruling 1 — first departure at the first accepted action that
+    changed the other task's recorded state, or the room left; written
+    after the transition succeeded; the departure is removed from the
+    generic path before a panel opens and the copied availability
+    predicates are removed. Every station's success is read inside the
+    allowlist (the tasks' exported state readers, the scene's own
+    prompt callbacks): NO station is stopped for a missing hook. The
+    auditable table is register §4 "Unit 14-D" (6).
+  - Ruling 2 — the bin is neither named nor outlined when a piece is
+    lifted; it becomes the target after every interaction key and the
+    pointer were released and the avatar walked into its range; a
+    pointer press on the bin is a gesture of its own; the release of
+    the drag that lifted the piece may end in the bin. States and
+    input-release boundaries only; no delay is measured.
+  - Ruling 4 — "No cutting order is available."; both cuts "Sample
+    coupon N of 2 cut.".
+  - Ruling 5 — "X — Set down" beside the carried-item line, beside the
+    avatar; targeted feedback; the X handler in `guardKeyHandler`; the
+    pointer latch cleared at `pointerup` and `pointerupoutside`.
+  - Ruling 6 — `by` removed from `piece_put_back`; no suffix, event,
+    formula, companion or scoring change; `src/measurement/features/m04.ts`
+    untouched.
+  - Ruling 7 — the documentation claims that exceeded the evidence are
+    corrected (the first pass's record above; register §4 / §5; the
+    matrix; the addendum; the specs' titles and headers).
+- **NOT implemented — BLOCKED: ruling 3 (geometry and matched jobs).**
+  Six accessible, non-interleaved places whose pick-up positions lie
+  outside the bin's automatic reach do not fit in the machine bay with
+  the anchors, the layout and the reaches as they stand; meeting the
+  ruling needs another bin anchor / scatter origin or room layout
+  (`src/pilot/zoneSites.ts`, `src/world/layouts/workshop.ts` — outside
+  the allowlist) or other reaches (not ruled). Measured geometry and the
+  owner's alternatives: register §5.219; reproduced by the pure test
+  "measured from every reachable avatar position". The places were NOT
+  moved and the ruling was NOT weakened. Consequently NOT met and NOT
+  tested: "job clusters are non-interleaved", "every pick-up position
+  outside the bin's reach", "comparable walkable cleanup routes" as the
+  ruling defines them. Met with the unchanged places: zero of three
+  immediate post-pick-up bin cues in each job, the same fresh-target
+  rule, the same input sequence and the same lines for both jobs, the
+  1 % summed-distance continuity check.
+- **Verification of the final tree (by the writer; every command once,
+  retries off):**
+  - `npm.cmd run lint:tsc` — exit 0.
+  - `npm.cmd run build` — exit 0 (Vite's chunk-size warning only).
+  - `npx.cmd --no-install playwright test e2e/m04_cutting.spec.ts
+e2e/m03_m04_route.spec.ts e2e/u14_correction.spec.ts --workers=1
+--retries=0` with `PW_DEV_PORT=5263` — exit 0, **16 passed**
+    (12.6 min): `m04_cutting` 12 / 12 (pure), `m03_m04_route` 2 / 2,
+    `u14_correction` 2 / 2.
+  - `npx.cmd --no-install playwright test
+e2e/physical_organisation.spec.ts --workers=1 --retries=0` with
+    `PW_DEV_PORT=5263` (required because `physical.ts` changed) —
+    exit 0, **3 passed** (5.8 min).
+  - The server: port 5263 answered `000` to `curl` before each run (no
+    listener), so Playwright started `vite` itself from this worktree;
+    during the run `http://localhost:5263/src/pilot/windows/m04CuttingModel.ts`
+    served the line "No cutting order is available." and `M04BinGate`,
+    which exist in this worktree only (the primary checkout and the
+    three other worktrees hold neither).
+  - `node scripts/claude/verify-unit.mjs --base 846c1f5` with the
+    eleven entries — **exit 1 (FAIL)**: the eleven changed paths are
+    exactly the eleven allowlisted ones and nothing is staged, but the
+    verifier also counts ten UNTRACKED files under `.agents/` and
+    `.codex/` (tool configuration dated 30 September 00:01, present
+    before this round began and listed by `git status` at its entry;
+    not created, read into or changed by the writer). They are left as
+    they are: whether they are ignored, removed or allowed is the
+    owner's.
+  - `git diff --check` — exit 0, clean.
+  - ESLint on the seven changed source and spec files reports only the
+    working tree's CRLF line endings; Prettier with `--end-of-line
+auto` reports no difference on them or on the four documents.
+- **Deterministic failures during development (not the evidence; no
+  flake was seen):**
+  1. `m04_cutting`, the new measured-geometry test: the writer expected
+     fewer than six fitting lattice points and found 22 — all in two
+     patches narrower than the distance two pieces keep. The test now
+     states the patches.
+  2. The same test: the writer's estimate of the two patches' distance
+     to the cutter (84 / 286 px) was wrong; the measured values are
+     81 / 292 px.
+  3. `u14_correction` under `U14C_ALIAS=1`: `proto_m04_cutting_listed`
+     missing — the developer alias has no work orders. Not a defect of
+     the game; the evidence is the run from the Dock. The spec's header
+     says so.
+  4. `u14_correction` from the Dock: with the control drawn to the
+     avatar's right, the control stood 264 design px from the figure
+     behind the carried-item line. The control now leads on that side.
+- **Browser evidence (real input, state and event assertions; what was
+  exercised, no more):**
+  - `u14_correction`, session 1 (no work orders taken first): Label
+    Press A as under U14-C (unchanged assertions; the M03 events are
+    byte-identical from the end of Press A on); both cuts' lines; the
+    cutter's status "No cutting order is available."; ALL SIX pieces
+    (three per job) by one sequence — named on open floor with no
+    station or bundle in range (measured where the avatar stood),
+    lifted by keyboard, set down by X, lifted by a pointer click, set
+    down by a click on the control, drawn at its own place after each
+    set-down — and after each of the twelve pick-ups no line and no
+    outline for the bin; a key held, repeated (four repeated
+    key-downs) and the other key pressed while it was held; every key
+    released within the range: no target; a fresh press there; a
+    wavering pointer press; the control's targeted state; a press on
+    the control released outside the canvas and the pointer working
+    afterwards; a key held from the pick-up to the bin, a second key
+    there, the release there and a press after it — nothing disposed;
+    hands full; the carried line; the bin walked up to after the
+    release: named, outlined, one disposal by keyboard; the map, the
+    backpack, the Assembly Bench opened and closed, a bundle collected,
+    Press A idle, Press B unscheduled, the Calibration Bench opened and
+    closed, the seal log read and closed — no departure and no M04
+    event; the seal rule acknowledged — exactly one departure of job 1
+    (`seal_log`); the acknowledged log read again — none; a later
+    set-down and a later pointer disposal with the record
+    byte-identical; a drag released away from the bin (carried, set
+    down) and a drag released on the bin (outlined while held over it,
+    one disposal); the board read and its orders taken with a piece
+    carried — none; the Calibration Bench opened and closed — none; its
+    first stage carried out — exactly one departure of job 2
+    (`calibration_bench`, written while the surface was open, the
+    carried piece counted); a second stage — none; a set-down after the
+    departure; `piece_put_back` with `input_mode` and without `by`; no
+    event suffix beyond the family's; `m04-cutting-v3` on every event;
+    both primaries reproduced offline.
+  - `u14_correction`, session 2 (orders taken): a Quality Packet
+    released before the cut and shown as a record with a job open —
+    none; the board read with the filter swap only shown and "Still
+    working." — none; the filter swap accepted — exactly one departure
+    of job 1 (`work_order_board`), the board no longer offering it;
+    standing at the Component Locker — none; its first use — the
+    stowing job's `engaged` event written BEFORE exactly one departure
+    of job 2 (`storage_locker`), read while the panel was open; the
+    locker opened again — none.
+  - `m03_m04_route`: the ordinary route; a pick-up within the bin's
+    range naming no bin; the Calibration Bench shown (none) and its
+    first stage (job 1's departure, a piece carried); walking through
+    the room (none); the room left with a piece carried —
+    `first_departure` (`room_exit`, the piece counted) written before
+    the system's `piece_put_back` (`input_mode: system`, no `by`);
+    Press B and no cutting on the return shift.
+- **Screenshots at 800 × 600 (evidence of the final run, git-ignored,
+  not committed; the later `physical_organisation` run emptied
+  `test-results/`, so the files were copied aside before it and copied
+  back unchanged):**
+  1. `test-results/u14d-1-job1-pieces-800x600.png` — job 1's three
+     pieces at the first pass's places. It does NOT show a
+     non-interleaved layout (ruling 3 blocked).
+  2. `test-results/u14d-2-job2-pieces-800x600.png` — job 2's three
+     pieces and the piece left of job 1, which lies AMONG them (the
+     places interleave). It does NOT show separate clusters.
+  3. `test-results/u14d-3-locker-approach-800x600.png` — the avatar at
+     the Component Locker's approach, three pieces lying, the line
+     naming the locker.
+  4. `test-results/u14d-4-set-down-control-800x600.png` — the coupon
+     offcut in the hands, lifted WITHIN the bin's range; the line
+     "Carrying: coupon offcut" and the control "X — Set down" beside
+     the avatar (above its head here: below it lie the cutter island
+     and the bin); no line and no outline for the bin.
+  - Also: `test-results/u14d-set-down-targeted-800x600.png` (the
+    control targeted by the pointer) and
+    `test-results/u14c-prompt-bin-800x600.png` (the bin named and
+    outlined after it was walked up to).
+- **Not verified in a browser:** the qualifying actions of the Case
+  Workspace, Label Press A / B, the Dispatch Console, the Conduit
+  Lattice Bench, the Assembly Bench, the Quality Packet, the Component
+  Locker after its first use and every return-shift station (their
+  success is read through the same mechanism as the Calibration Bench's;
+  each reader was checked against its model by reading the code only);
+  a station held back after a reload (no cutting job can be open then,
+  register §5.218); a refused set-down (pure test only). The release
+  outside the canvas WAS exercised: in the 800 × 600 page the canvas
+  is 800 × 450 at y 75 (measured), and the pointer was released in the
+  page's band above it.
+- **Disposition of the first review's findings F1–F12:** the text of
+  the findings was not given to the writer in this session — only the
+  owner's rulings that answer them. No mapping from finding numbers to
+  changes is asserted here. By ruling: 1 implemented; 2 implemented;
+  3 BLOCKED (§5.219); 4 implemented; 5 implemented (limit: §5.221);
+  6 implemented; 7 implemented. The handoff repeats this and asks for
+  the list, so that the second review can check each finding by number.
+- **For the owner:** §5.219 (the places — blocked), §5.220 (cases the
+  rulings do not name: readings inside a multi-action surface, an
+  object only lifted, the questionnaire notice), §5.221 (where the
+  control is drawn in a dense room).
+- **Independent review and commit:** the second review (one Opus
+  scientific / gameplay / visual review, one Sonnet test / evidence
+  review) is NOT performed by the writer and was not substituted. **No
+  commit was created**; the changes stand uncommitted in the worktree.
+  The commit `fix(m04): make cleanup choice unambiguous` is for after
+  those reviews.
+- **Carried forward, unresolved:** the places (ruling 3); the extractor
+  `src/measurement/features/m04.ts` and piece events without a
+  recognised `object_id` (§5.216, a separate later unit); the two jobs
+  can contain learning and carry-over and six pieces are not six
+  observations; response-process, reliability, convergent and
+  discriminant evidence is pending; technical verification says nothing
+  about what the feature means; the M03 input-effort and
+  exposure-threshold concerns are untouched.
+- **Conclusion:** rulings 1, 2, 4, 5, 6 and 7 are implemented and
+  pass the writer's own runs; ruling 3 is blocked and reported. The
+  unit is NOT ready for its commit: the owner's decision on §5.219 and
+  the second review are outstanding. Nothing was pushed, merged,
+  tagged, deployed, deleted or removed; U15 is not started.
+
+## U14-D2 — final M04 cleanup annex correction (30 September – 1 October 2026)
+
+- **Owner instruction:** 30 September 2026 — the complete U14-D2
+  contract ("Execute this contract now as written"), which approves the
+  annex geometry coordinate by coordinate, the branch, the 24-path
+  allowlist, one workshop-only art pass, the named Playwright
+  verification, read-only reviewers, bounded fixes and one local commit
+  after every gate passes; and, the same day, five confirmations
+  (symmetric bin collision x 374–426; no `workshop-plate.v3.png` if the
+  plate is reproduced from the v2 source; the local composition
+  acceptable only if the visual review confirms it; porting the stale
+  episode-2 coordinates; outputs redirected to ignored `test-results/`).
+  This is the final U14-D review / fix round.
+- **Entry state (verified before the first edit):** worktree
+  `C:\Users\Juls\.codex\worktrees\u14-d-m04-cleanup-choice\research-station-assessment-game`,
+  branch `codex/u14-d-m04-cleanup-choice`, HEAD and base
+  `846c1f51e8b631e49b8ec893af08ee1144f93cf9`; the eleven uncommitted
+  files of U14-D round 1 present and preserved; untracked `.agents/`
+  and `.codex/` (ten files, SHA-256 recorded at entry); nothing staged.
+  The entry state of the eleven files was copied outside the repository
+  before the first edit.
+- **Model:** Fable 5.1 (`claude-fable-5-1`), sole writer.
+- **Session note:** the first session still carried the eleven-path
+  `CLAUDE_UNIT_ALLOWLIST` of round 1; the guard refused the thirteen
+  newly approved files and was not worked around. The writer did what
+  the old list allowed (model, scene, three specs), reported, and
+  continued after the owner relaunched the session with the 24 paths.
+- **Changed files (23 of the 24 allowlisted paths; the 24th,
+  `docs/game/world-v2/plate-sources/workshop-plate.v3.png`, was not
+  created — register §5.226):** `src/pilot/windows/m04CuttingModel.ts`,
+  `src/pilot/windows/m04Debris.ts`, `src/scenes/RecordsWorkshopScene.ts`,
+  `src/gameplay/physical.ts` (as round 1 left it),
+  `src/world/layouts/workshop.ts`, `src/pilot/zoneSites.ts`,
+  `src/world/interactionRegistry.ts`, `src/world/kit/worldV2Assets.ts`,
+  `public/assets/world-v2/plates/workshop-plate.png`,
+  `public/assets/world-v2/manifest.json`,
+  `docs/game/world-v2/ASSET-PROVENANCE-REGISTER.md`,
+  `scripts/world-v2/plate_edits.py`,
+  `docs/game/rooms/12-workshop-return.md`, `e2e/m04_cutting.spec.ts`,
+  `e2e/m03_m04_route.spec.ts`, `e2e/u14_correction.spec.ts`,
+  `e2e/pilotHelpers.ts`, `e2e/pilot_episodes_1_2.spec.ts`,
+  `e2e/world_v2_workshop_look.spec.ts` and the four documents of this
+  directory.
+- **Implemented (register §4 "Unit 14-D2"):**
+  - The room: 43 × 19 tiles (1376 × 608 px); the cutting annex, floor
+    tiles `[6, 12, 13, 6]`; the 64 px doorway (x 368–432, y 320–384)
+    between the jamb solids `[352, 320, 16, 64]` and
+    `[432, 320, 16, 64]`, where the decorative tool bench stood; the old
+    cutter island, its bin and the tool bench removed from the layout.
+  - The Sample Cutter at (400, 456), operated from the north (approach
+    400, 423), solid tile units `[11, 14.1, 3, 2.9]`; the disposal bin
+    at (400, 556), pixel solid `[374, 538, 52, 32]` (register §5.223);
+    scatter origin (400, 456).
+  - The six places: job 1 west — 228, 476 · 212, 516 · 212, 556; job 2
+    the mirror images east — 572, 476 · 588, 516 · 588, 556.
+  - One 64 px reach for the keyboard pick-up, the pointer pick-up and
+    the bin.
+  - `M04_ENTRY_STATE_VERSION` `m04-cutting-v4`; `piece_offsets` hold
+    the v4 offsets. No event, suffix, field, formula, derived variable
+    or scoring rule was added or changed; `src/measurement/features/m04.ts`
+    is untouched.
+  - Everything round 1 implemented is kept: the deliberate transition
+    to the bin, the neutral set-down, the three lines, the first
+    departure by work actually begun or the room left. No departure
+    code changed; walking out of the annex inside the workshop closes
+    nothing (browser-tested).
+  - The plate (1376 × 608), composed locally by
+    `python scripts/world-v2/plate_edits.py workshop` from
+    `workshop-plate.v2.png`. First composition: SHA-256
+    `a50d772a…`, the top 384 rows pixel-identical to the previous
+    plate outside the vacated cutter bay and the doorway (x 362–518,
+    y 176–383; measured). It was revised in the fix pass below (final
+    SHA-256 `a38a64cc…`). PixelLab was not available; no generator was
+    used. The machine has no Python: a portable Python 3.12.7 with
+    Pillow 10.4.0 was placed OUTSIDE the repository to run the script;
+    nothing was installed into the project and `package.json` is
+    untouched.
+- **Writer's slip, corrected at once:** the script was first run
+  without a room name, which rewrote the Dock and Concourse plates as
+  well (files of other rooms, outside the allowlist — re-encoded by the
+  newer Pillow). Both were restored from HEAD immediately
+  (`git restore -- <the two paths>`) and are unchanged (`git status`);
+  the provenance register now says to always name the room.
+- **Verification by the writer BEFORE the review (retries off; `npx` was used where the
+  contract writes `npx.cmd`, which does not start from Git Bash on this
+  machine; port 5391 had no listener before the runs, so Playwright
+  started `vite` from this worktree itself):**
+  1. `npm.cmd run lint:tsc` — exit 0.
+  2. `npm.cmd run build` — exit 0 (Vite's chunk-size warning only).
+  3. `npx --no-install playwright test e2e/m04_cutting.spec.ts
+e2e/m03_m04_route.spec.ts e2e/u14_correction.spec.ts --workers=1
+--retries=0` — exit 0, **16 passed** (15.4 min): `m04_cutting`
+     12 / 12 (pure), `m03_m04_route` 2 / 2, `u14_correction` 2 / 2.
+  4. `npx --no-install playwright test
+e2e/physical_organisation.spec.ts --workers=1 --retries=0` — exit 0,
+     **3 passed** (5.9 min).
+  5. `npx --no-install playwright test e2e/collision_audit.spec.ts
+e2e/spawn_clearance.spec.ts e2e/world_v1_registry.spec.ts --workers=1
+--retries=0` with `COLLISION_OUT=test-results/u14d-annex-collision`
+     (the default directory is tracked) — **exit 1: 35 passed, 1
+     FAILED** (36.7 min). Failed: `collision_audit`, `records_workshop`,
+     its two westward sweeps — "sweep row y=236 westward: observed
+     256.75 vs model 107.17" and "sweep row y=262 westward: observed
+     253.83 vs model 54.25". Deterministic, not a flake, and not a
+     collider that disagrees with the model: see "Blocked" below. Passed
+     in the same run: every pushed face of every workshop solid (both
+     jambs, the cutter, the bin; largest error 0.92 px), both eastward
+     sweeps, the other six rooms, `spawn_clearance` 6 / 6,
+     `world_v1_registry` 23 / 23.
+  6. `npx --no-install playwright test e2e/pilot_episodes_1_2.spec.ts
+--grep "episode 2" --workers=1 --retries=0` — exit 0, **1 passed**
+     (1.7 min) in the final state. Before it: at the entry state the
+     test timed out at the Case Workspace (2.8 min; the former room's
+     coordinates); after the coordinates were ported it failed twice
+     more, each time at an expectation about another item that the test
+     had never reached (M12, then M11) — register §5.227.
+  7. `npx --no-install playwright test
+e2e/world_v2_workshop_look.spec.ts --workers=1 --retries=0` with
+     `WV3_VIEWPORT=1280x720` and
+     `WV3_OUT=test-results/u14d-annex-workshop-look` — exit 0, **1
+     passed** (2.5 min): every audited approach names its own station
+     (the cutter from the north); the old island is walked across; the
+     office's south hull stops the avatar; both bay rows swept westward
+     agree with the model (observed 107.00 vs 107.83; 43.00 vs 43.33).
+  - Focused ESLint on the fourteen changed source and spec files with
+    the line-ending rule set to `auto` (the working copies are CRLF) —
+    exit 0. Prettier `--check --end-of-line auto` on those files, the
+    manifest and the seven changed documents — no difference.
+  - `git diff --check` — exit 0.
+  - `node scripts/claude/verify-unit.mjs --base 846c1f5` with the 24
+    paths — **exit 1**, solely for the ten untracked files under
+    `.agents/` and `.codex/` (present at entry; their SHA-256 list at
+    the end of the work is identical to the one recorded at entry; not
+    read into, changed, ignored, allowlisted or deleted). The 23
+    changed tracked paths are all on the allowlist, nothing is staged,
+    and the verifier's own whitespace check is clean.
+- **BLOCKED — the collision audit needs a file outside the allowlist
+  (register §5.230).** `e2e/collision_audit.spec.ts` pushes 1000 px
+  from the spawn and cuts its prediction off at 1200 px. With the
+  cutter island gone (the approved geometry) the workshop's south lane
+  is longer than that, so the avatar reaches the push's own target on
+  open floor and the test reads it as a wrong stop. The spec was not
+  changed. Needed: that one file on the allowlist, two limits raised,
+  the command run again.
+- **Open for the owner — the episode-2 test (register §5.227).** Beyond
+  the authorised coordinates, two stale expectations about M12 and M11
+  were changed to what the game reports. They concern other items'
+  coverage status, not M04.
+- **Independent review (read-only; 1 October 2026).** The project's
+  four reviewer definitions (`scientific-reviewer`, `gameplay-reviewer`,
+  `visual-reviewer`, `test-reviewer`) could not be loaded as agent types
+  in this session. Each was run as a general agent on the model its
+  definition names (Opus, Opus, Opus, Sonnet), told to read its
+  definition file and to write nothing; the working tree's state was
+  recorded before and compared after — no reviewer changed a file. The
+  writer reviewed nothing itself.
+  - **Scientific (Opus): no blocker, no major.** Verified from code and
+    tests: `m04-cutting-v4` on every record; no new event, suffix,
+    field, derived variable or formula; `src/measurement/features/m04.ts`
+    untouched; first-departure record immutable; `by` absent; the
+    geometry exactly as approved; one 64 px reach; the pure test's
+    standing, station, keyboard and pointer rules match the scene's and
+    every symmetry and cost assertion is an exact equality; no pick-up
+    position within the bin's reach; set-down never a disposal; no
+    other station changed; no validity claim. Minor: "mirror-symmetric"
+    was said of the cutter, whose painted image is not a mirror image —
+    FIXED (the wording now says collision footprints: layout header,
+    model comment, room document, register §4). Notes: keyboard and
+    pointer disposal differ in one inherited corner case (a key held
+    all the way to the bin: the pointer press is accepted, the key
+    press not until the avatar steps out and back — register §4
+    "Unit 14-D" (3)); a bundle dropped by the participant can take a
+    key press meant for a piece; the matrix omitted §5.230 — FIXED; the
+    pure test's title "v3 route" read like the unreleased version —
+    FIXED ("route version v3"). Owner decisions it raised: register
+    §5.231 (a)–(d).
+  - **Gameplay (Opus): no blocker, no major — "usable with noted
+    friction".** Verified: geometry exact; stops mirrored (cutter
+    341 / 459, bin 363 / 437, jambs 379 / 421); room connected; no
+    trap; no reach overlap between the cutter and the pieces; copy
+    exact and neutral; the taller room breaks no HUD, prompt, control,
+    drop bound or the vestibule layer. Exercised in the annex: the
+    unavailable second job, hands full, the pointer released outside
+    the canvas, the room left while carrying, late cleanup. Preserved
+    by unchanged code and pure tests only: the cutter's technical
+    failure, the reload hold, the refused set-down. Minor points, all
+    design questions outside the contract and therefore NOT changed:
+    register §5.231 (e)–(i).
+  - **Visual (Opus): the owner's acceptance condition was NOT met by
+    the first plate** — coherent: not met; aligned with the collision
+    geometry: met; stylistically consistent: not met; free of false
+    affordances: met; free of visible seams: not met. Major: the
+    annex's side walls began at the foot of the hull face instead of
+    joining the hull's wall top; a flat strip with a hard line ran
+    under the records office (y 384–412) and on past the chamfered
+    corner. Minor: the annex floor flatter than the hall's; the doorway
+    a stepped notch; the cutter's platform cut off on the east; the
+    vacated bay an untextured patch with a dark stub; prompts drawn
+    over the cutter. All nine screenshots show what their names claim.
+  - **Test (Sonnet): every command it ran passed except the collision
+    audit.** `lint:tsc` 0; `build` 0; `m04_cutting` 12 passed;
+    `m03_m04_route` 2 passed (7 min 08 s); `u14_correction` 2 passed
+    (7 min 24 s); `pilot_episodes_1_2` "episode 2" 1 passed;
+    `world_v2_workshop_look` 1 passed; `spawn_clearance` +
+    `world_v1_registry` 29 passed; the workshop's collision audit
+    failed twice on the two westward sweeps (deterministic), and once
+    of twice on a knife-edge at the Component Locker's east face
+    (register §5.230). It confirmed the writer's reading of the sweeps,
+    that the pure geometry test is faithful to the scene and stricter
+    than before, that the event counts of `u14_correction` follow from
+    its flow and cover the required cases, that nothing about M04 was
+    weakened in the episode-2 port, and that episode 1's helper calls
+    behave as before (read, not run). Minor: the annex driver's
+    hand-tuned thresholds would break silently if the annex changed.
+- **The one bounded fix pass (writer, inside the allowlist).**
+  - Plate (`scripts/world-v2/plate_edits.py`, regenerated): the annex's
+    side-wall tops now run from the hull's wall top (T-joint at y 350)
+    down to the south wall; the hull face is continued to y 412 by
+    reflecting the painting's own rows 356–383 (panel seams, rivets
+    and weathering run on), ends in a base line only under the bays'
+    straight south walls and breaks up into the exterior elsewhere;
+    the annex floor has plate rivets and wear like the hall's, the
+    same on both halves; the vacated bay is worn like the floor around
+    it and the stub is gone; the doorway's inner shadow is on both
+    sides; the cutter's platform is completed on the east (95 px, the
+    machine in its middle, inside the 96 px solid). NOT changed: the
+    stepped doorway — the recess below y 384 is floor in the approved
+    collision (the jambs end at y 384), so painting it as wall would
+    put the avatar's feet on a wall. New SHA-256
+    `a38a64cce4f38e89faf26b9930eb2aa51327057c8aec7fbeca2b01a7cb1d2c39`;
+    manifest and provenance register updated.
+  - **Deviation to confirm:** joining the side walls to the hull edits
+    the top 384 rows in two more places — two 16 px strips across the
+    hull band (x 176–191 and x 608–623, y 350–383) — beyond the
+    contract's two edit areas (the vacated bay and the doorway).
+  - Wording and title fixes named above; register §5.230 extended,
+    §5.231 added; room document: the camera and way-finding notes.
+  - No behaviour, geometry, event, test assertion or coordinate
+    changed in the fix pass.
+- **Visual re-assessment of the revised plate (the same reviewer,
+  read-only; no further fix followed).** Earlier findings: side-wall
+  joints resolved; office strip resolved; cutter platform resolved;
+  vacated bay resolved; annex floor partly resolved (its wear is
+  sparser and straighter than the hall's and mirrored — minor); the
+  stepped doorway not resolved (forced by the approved collision —
+  minor). New, from the fix pass: a weathering patch reflected into an
+  hourglass at the reflection line under the records office (about
+  x 1093–1116, y 362–403; a smaller one at x 1255–1260) and a
+  straight-edged dark rectangle in the exterior at the south-east
+  corner (about x 1310–1376, y 392–412) — both minor, low-contrast,
+  seen in enlarged crops and not made out by the reviewer in the
+  in-game frame. **Verdict on the owner's condition: coherent — met;
+  aligned with the collision geometry — met; stylistically consistent —
+  met; free of false affordances — met; free of visible seams — NOT
+  met** (the two artefacts). The owner's condition is therefore not
+  fully met (register §5.226).
+- **Verification of the final tree (writer, after the fix pass;
+  retries off; port 5391, no listener before the runs; during the run
+  `http://localhost:5391/src/pilot/windows/m04CuttingModel.ts` served
+  `m04-cutting-v4` and the served plate hashed to `a38a64cc…`, both
+  true of this worktree only):**
+  1. `npm.cmd run lint:tsc` — exit 0.
+  2. `npm.cmd run build` — exit 0 (chunk-size warning only).
+  3. `m04_cutting` + `m03_m04_route` + `u14_correction` — exit 0,
+     **16 passed** (14.8 min).
+  4. `physical_organisation` — NOT re-run after the fix pass (it
+     passed before it, 3 passed; the fix pass touched the workshop
+     plate, comments, one test title and documents, none of which that
+     spec reads).
+  5. `spawn_clearance` + `world_v1_registry` — exit 0, **29 passed**.
+     `collision_audit` for `records_workshop` only
+     (`COLLISION_ROOM=records_workshop`) — **exit 1**: the two westward
+     sweeps again, and this time also the knife-edge at the Component
+     Locker's east face (observed 379 vs model 373.9; register
+     §5.230). The other six rooms were not re-run after the fix pass
+     (they passed before it and none of their files changed). The
+     required command as the contract writes it therefore still
+     FAILS.
+  6. `pilot_episodes_1_2 --grep "episode 2"` — exit 0, **1 passed**
+     (1.8 min).
+  7. `world_v2_workshop_look` at 1280 × 720 — exit 0, **1 passed**
+     (2.6 min); sweeps 107.00 vs 107.83 and 43.00 vs 43.00.
+  - Focused ESLint (line-ending rule `auto`) exit 0; Prettier
+    `--check --end-of-line auto` clean; `git diff --check` exit 0;
+    `verify-unit.mjs` exit 1 solely for the ten untracked files under
+    `.agents/` and `.codex/`, whose SHA-256 list is identical to the
+    one recorded at entry.
+- **Screenshots (git-ignored evidence, not committed; taken in the
+  runs after the fix pass; every Playwright run empties
+  `test-results/`, so they were copied aside and copied back):**
+  `test-results/u14d-annex-workshop-look/u14d-1-annex-entrance-from-machine-bay.png`,
+  `…/u14d-2-empty-annex-cutter-and-bin.png`,
+  `test-results/u14d-3-job1-west-cluster-800x600.png`,
+  `test-results/u14d-4-job2-east-cluster-800x600.png` (job 1's
+  remaining piece in view),
+  `test-results/u14d-5-carried-set-down-no-bin-cue-800x600.png`,
+  `test-results/u14d-6-bin-acquired-after-release-800x600.png`,
+  `…/u14d-annex-workshop-look/u14d-7-old-cutter-bay-is-floor.png`,
+  `…/u14d-8-records-office-lowest-camera.png`,
+  `…/u14d-9-annex-1280x720.png` (1, 2, 7, 8, 9 at 1280 × 720; 3–6 at
+  800 × 600).
+- **Not verified in a browser:** the cutter's technical failure, the
+  reload hold and a refused set-down in the annex (pure tests and
+  unchanged code only); episode 1 of `pilot_episodes_1_2` (not run;
+  its helper calls were read and behave as before); whether a
+  participant without guidance finds the annex.
+- **Carried forward, unresolved:** register §5.216 (the extractor, a
+  separate later unit); §5.224 (side and order); §5.227 (the two
+  other-item expectations of the episode-2 test, for the owner);
+  §5.230 (the collision audit); §5.231 (the reviews' open points);
+  §5.226 (the plate's two seams, the third edit area, the stepped
+  doorway); response-process, reliability, convergent and discriminant
+  evidence is pending; technical verification says nothing about what
+  the feature means.
+- **Conclusion: NOT committed.** The approved annex is implemented and
+  its measurement rules pass the writer's runs and the independent
+  scientific, gameplay and test reviews without a blocker. Two gates
+  of the contract are not passed, so the single commit
+  `fix(m04): add matched cleanup annex` was NOT created: (1) the
+  required collision-audit command fails for the workshop and can
+  only be repaired in `e2e/collision_audit.spec.ts`, outside the
+  allowlist; (2) the visual review does not confirm "free of visible
+  seams" after the one permitted fix pass. The changes stand
+  uncommitted in the worktree. Nothing was pushed, merged, tagged,
+  deployed, deleted or removed; U15 is not started.
+
+## U14-D2 — exceptional closeout pass (1 October 2026)
+
+- **Owner instruction:** 1 October 2026 — explicit research-owner
+  authorisation for one exceptional closeout pass beyond the two-round
+  limit, addressing only the failed collision-audit gate and the two
+  residual plate artefacts; the 25-path allowlist (the 24 of U14-D2
+  plus `e2e/collision_audit.spec.ts`); the existing branch and
+  worktree; the named commands; one Sonnet test review and one Opus
+  visual review; and, after every gate, exactly one local commit. The
+  owner ratified the two 16 px side-wall strips (x 176–191 and
+  x 608–623, y 350–383), the episode-2 corrections (register §5.227:
+  M12 o2 only, M11 pending, the seal-log acknowledgement secondary)
+  and local deterministic composition without PixelLab — administration,
+  test and visual rulings that alter no construct interpretation or
+  scoring. The approved M04 design (43 × 19 room, 13 × 6 annex and
+  doorway, cutter 400/456 approached from 400/423, bin 400/556 with
+  collision x 374–426, scatter origin, the six places, the 64 px
+  reaches, two jobs of three pieces, the first-departure snapshot,
+  carried and lying pieces undisposed, later cleanup never rewriting,
+  `m04-cutting-v4`, the event family, payload boundary, provisional /6
+  primary and the documentation limitations) was to remain unchanged,
+  and did; `src/measurement/features/m04.ts` untouched.
+- **Entry state (verified before the first edit):** the same worktree
+  and branch, HEAD and base `846c1f51e8b631e49b8ec893af08ee1144f93cf9`;
+  the 23 uncommitted U14-D/U14-D2 files present and preserved (no
+  reset, restore, discard or overwrite); untracked `.agents/` and
+  `.codex/` (ten files; SHA-256 list taken at entry and identical at
+  the end); nothing staged. `CLAUDE_UNIT_ALLOWLIST` carried the 25
+  paths; the guard enforced it throughout. The deterministic
+  composition was first re-run to a scratch directory and reproduced
+  the previous plate's hash `a38a64cc…` byte for byte before anything
+  was changed.
+- **Model:** Fable 5.1 (`claude-fable-5-1`), sole writer. Reviews:
+  Sonnet (test), Opus (visual), both read-only, run as general agents
+  on their definition files (the project agent types still cannot be
+  loaded as agent types in this session); neither changed a file.
+- **Changed by this pass (all on the allowlist):**
+  `e2e/collision_audit.spec.ts` (the audit driver),
+  `scripts/world-v2/plate_edits.py` (the hull-face continuation),
+  `public/assets/world-v2/plates/workshop-plate.png` (regenerated),
+  `public/assets/world-v2/manifest.json` (hash and edit note),
+  `e2e/world_v2_workshop_look.spec.ts` (one stale comment about the
+  audit's push length; no behaviour), and the documents:
+  `docs/game/world-v2/ASSET-PROVENANCE-REGISTER.md`,
+  `docs/game/rooms/12-workshop-return.md`,
+  `docs/verification/station-080-m26/M01-M26-IMPLEMENTATION-REGISTER.md`
+  (§5.226, §5.227, §5.230), `IMPLEMENTATION-MATRIX.md` and this log.
+  `workshop-plate.v3.png` was not created (the plate still derives
+  deterministically from the v2 source). No M04 mechanic, coordinate,
+  reach, event, payload, scoring rule or scientific claim changed; no
+  source file under `src/` changed in this pass.
+- **A. The collision audit (register §5.230, resolved).** The fixed
+  1000 px push is gone: the held key's target lies 400 px outside the
+  room on the pushed side, so the leg can only end in the driver's
+  wall clamp, which the audit asserts (a leg ending any other way is an
+  error); the avatar is thereby always driven past the predicted stop
+  and a missing collider fails the comparison outright. The fixed
+  1200-step prediction is replaced by a bound equal to the audited
+  room's own extent on that axis, with a thrown error if it is ever
+  reached (the grid's outside counts as wall, so it cannot be). The
+  3 px tolerance is unchanged; no room, row or face is excluded; no
+  workshop result is special-cased. The Component Locker's 5.08 px
+  result is explained and removed by a principled change rather than a
+  tighter landing: the walk had landed a twelfth of a pixel inside the
+  new jamb's depth, where the engine's continuous feet box overlaps the
+  jamb's corner but the model's whole-pixel body does not; the model
+  now evaluates the body at every floor / ceiling combination of the
+  landed coordinates, which is exactly the engine's continuous box, so
+  the two evaluate the same approach coordinate wherever the walk
+  lands. The landing's offset across the push is recorded with every
+  face. A first run of the gate (same tree except for this one point)
+  had, in addition, asserted that offset ≤ 4 px; it failed the Core
+  Chamber on one face the navigator lands 39.5 px off its aimed row
+  while the collision comparison from there held to 0.33 px — a
+  navigator limit outside this unit, so the assertion was withdrawn
+  and the offset is a record, and the complete chain was run again
+  from the start on the final tree.
+- **B. The plate (register §5.226).** Rows 384–413 only (measured:
+  every other pixel byte-identical to the previous plate). The hull
+  face's continuation no longer reflects the painting's weathering
+  patches — a patch the crop line cuts closes a few rows below it, the
+  rest becomes plain face, and the continued rows carry seeded
+  weathering of their own in the face's tone at the painting's patch
+  sizes and sparsity (seeds 53 and 61; the exterior, the ragged edge
+  and the floor wear keep their seeds and are unchanged) — and the
+  break-up into the exterior begins gradually over 28 px past each
+  walled run instead of on a vertical line at x 1310. The hourglass
+  (x 1093–1116), the smaller patch (x 1255–1260) and the straight
+  edges of the dark corner (x 1310–1376, y 392–412) are gone in the
+  enlarged crops; the dark exterior at that corner remains, with
+  organic edges, as the painting's own exterior has elsewhere. Final
+  SHA-256
+  `473f1b4fa33905183c446114a72b7e4b9f38bf41c9013676d7f344fa84fd5dcd`.
+  Composition: the same portable Python 3.12.7 / Pillow 10.4.0 outside
+  the repository (nothing installed into the project).
+- **Verification of the final tree (writer; one run per group after
+  the last change, retries off, `--workers=1`, port 5391 verified
+  free before the chain — Playwright started `vite` from this
+  worktree; `npx` used where the contract writes `npx.cmd`; evidence
+  only under ignored `test-results/`, copied aside between runs
+  because each run empties it):**
+  1. `npm.cmd run lint:tsc` — exit 0.
+  2. `npm.cmd run build` — exit 0 (Vite's chunk-size warning only).
+  3. `m04_cutting` + `m03_m04_route` + `u14_correction` — exit 0, **16 passed** (14.7 min): `m04_cutting` 12 / 12 (pure),
+     `m03_m04_route` 2 / 2, `u14_correction` 2 / 2.
+  4. `physical_organisation` — exit 0, **3 passed** (5.9 min).
+  5. `collision_audit` + `spawn_clearance` + `world_v1_registry` —
+     exit 0, **36 passed** (35.3 min), `COLLISION_OUT=test-results/u14d2-collision`:
+     `collision_audit` 7 / 7 rooms (the workshop in 4.7 min) — in the
+     workshop every reachable face of every solid and both sweep rows in
+     both directions agree with the model, largest |error| 0.83 px:
+     Component Locker east face observed 379 vs model 379.83 (landed
+     1.00 px across the push), west jamb east face 379 vs 379.75, east
+     jamb north 296 vs 295.67 and west 421 vs 420.17, cutter north 427
+     vs 426.83, west 341 vs 340.75, east 459 vs 459.08, bin west 363 vs
+     362.17, east 437 vs 437.42; sweeps y 236 eastward 1333 vs 1332.33
+     and westward 107 vs 107.17, y 262 eastward 1333 vs 1332.17 and
+     westward 43 vs 43.25; return to the spawn within 24 px (no trap).
+     The other six rooms' largest |error| is 1.00 px (Core Chamber
+     0.75). `spawn_clearance` 6 / 6, `world_v1_registry` 23 / 23.
+  6. `pilot_episodes_1_2 --grep "episode 2"` — exit 0, **1 passed** (1.8 min).
+  7. `world_v2_workshop_look` at 1280 × 720 — exit 0, **1 passed** (2.5 min),
+     `WV3_OUT=test-results/u14d2-workshop-look`; the room's own two
+     bay-row pushes from x ≈ 557: observed 43.00 vs model 43.92 and
+     43.00 vs 43.33.
+  8. Focused ESLint (line-ending rule `auto`; the working copies are
+     CRLF) on `e2e/collision_audit.spec.ts` and
+     `e2e/world_v2_workshop_look.spec.ts` — exit 0; Prettier
+     `--check --end-of-line auto` on both specs and the manifest —
+     clean (Prettier has no Python parser; `plate_edits.py` is checked
+     by running it).
+  9. `git diff --check` — exit 0.
+  10. `node scripts/claude/verify-unit.mjs --base 846c1f5` with the 25
+      paths — exit 1 solely for the ten untracked files under
+      `.agents/` and `.codex/` (present at entry; SHA-256 list identical
+      at the end; not read into, changed, ignored, allowlisted or
+      deleted); every changed tracked path on the allowlist; whitespace
+      clean.
+- **Screenshots (git-ignored evidence, not committed):** the full
+  final plate `public/assets/world-v2/plates/workshop-plate.png`
+  (1376 × 608, committed as the asset itself); enlarged crops of the
+  repaired regions (x 1060–1140 and x 1230–1290 at 8×, x 1290–1376 at
+  8×, the office band at 3×, the vestibule band and the west end at 4×,
+  the annex at 2×) in the session scratch directory and shown to the
+  visual reviewer; in-game frames at 1280 × 720 from
+  `world_v2_workshop_look` (`u14d-1`, `-2`, `-7`, `-8`, `-9`,
+  `01-spawn-office`, `17-machine-bay-west`, `18-vestibule`) and the
+  collision audit's clean and overlay frames of every room.
+- **Independent review (read-only; 1 October 2026).**
+  - **Visual (Opus):** all five criteria MET; both artefacts gone (the
+    hourglass's mirror image replaced by plain face and a differently
+    shaped seeded patch; the small patch no longer reflected; the
+    corner's vertical edge at x 1310 gone, the exterior rising gradually
+    from about (1312, 411) to (1331, 395), a rounded shadow in the
+    frame); collision / art alignment re-checked against the layout
+    (annex floor, jambs, doorway notch, cutter, bin); no new seam at
+    y 413 where the changed rows meet the unchanged ones; the ramp
+    treatment at the west end and in the vestibule band reads as the
+    hull breaking up along curved edges. Three minor residuals, none
+    blocking (register §5.226). Not checked by it: the hash, the
+    byte-identity claim and the tone values (no pixel tools). It
+    approves nothing.
+  - **Test (Sonnet):** no blocker, no major. Each owner requirement checked
+    against the code and marked satisfied — the push target outside the
+    room, the room-derived prediction bound with its thrown error, the
+    asserted wall clamp, the unchanged 3 px comparison, nothing excluded
+    or special-cased (the only workshop-specific figure is in a
+    comment), the floor / ceiling derivation re-derived against `BODY`
+    and the Arcade box and found exact. Per-room maximum |error|
+    0.75–1.00 px. Withdrawing the landing assertion judged acceptable
+    and at least as strict as before (the pre-pass audit had no landing
+    check and also compared from the landed point); its caveat — on the
+    Core Chamber face the navigator pushes a different lane than the
+    aimed middle — is recorded in §5.230. The episode-2 expectations
+    were found to encode exactly the ratified readings. Timeout and
+    burst budget confirmed sufficient for a 1376 px room. It read
+    groups 6 and 7 before their logs were complete; both passed
+    afterwards (above).
+- **Not verified in a browser:** unchanged from the U14-D2 section
+  above (the cutter's technical failure, the reload hold, a refused
+  set-down in the annex; episode 1; whether a participant without
+  guidance finds the annex).
+- **Carried forward, unresolved:** register §5.216 (the extractor,
+  deferred to a later bounded unit, not begun); §5.224; §5.231; the
+  stepped doorway (§5.226, forced by the approved collision); the art
+  PROVISIONAL and not human-approved; response-process, reliability,
+  convergent and discriminant evidence pending; technical verification
+  says nothing about what the feature means.
+- **Conclusion:** every required gate passed on the final tree; the two
+  reviews report no blocker and no major; the plate's two artefacts are
+  gone and the five-part visual condition is met; the collision audit
+  passes for every room with its tolerance unchanged. The unit's single
+  local commit `fix(m04): add matched cleanup annex` was created on
+  `codex/u14-d-m04-cleanup-choice` (SHA in the handoff report), staged
+  path by path. Nothing was pushed, merged, tagged, deployed, deleted or
+  removed; U15 is not started; the deferred M04 extractor correction
+  (§5.216) is not begun.

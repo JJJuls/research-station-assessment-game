@@ -10,19 +10,21 @@
  * and accessible; debris recorded at the first departure from each job;
  * later cleanup never rewrites it.
  *
- * Mechanic: the Sample Cutter cuts one test coupon per job; each cut
- * leaves three pieces at fixed places beside the bench, and a disposal
- * bin stands next to it. Pieces are carried one at a time and dropped
- * into the bin; nobody mentions them. A job's FIRST DEPARTURE is the
- * first time the participant turns to other work after the cut — another
- * station opened, or the room left: the state of that job's three pieces
- * is recorded once. The second coupon becomes available after the first
- * job's departure, so each job has a departure of its own. A piece
- * disposed after its job's departure is recorded apart and changes
- * nothing. A press at the cutter inside the settle window after a cut is
- * refused and recorded — a repeated or carried press is never an act on
- * the pieces. A job closed by the system (the review) is not a departure:
- * its state is kept and censored.
+ * Mechanic: the Sample Cutter, in its annex, cuts one test coupon per
+ * job; each cut leaves three pieces at fixed places on the annex floor —
+ * job 1 west of the cutter, job 2 at the mirrored places east of it
+ * (U14-D2). Pieces are carried one at a time and dropped into the bin, or
+ * set down again where they lay; nobody mentions them. A job's FIRST
+ * DEPARTURE is the first time the participant turns to other work after
+ * the cut — the first accepted action at another station that changed
+ * that task's recorded state (U14-D: a panel only shown or closed, a
+ * station only inspected, a refusal close nothing), or the room left: the state of that
+ * job's three pieces is recorded once. The second coupon becomes
+ * available after the first job's departure, so each job has a departure
+ * of its own. A piece disposed after its job's departure is recorded
+ * apart and changes nothing. A press at the cutter inside the settle
+ * window after a cut is refused and recorded. A job closed by the system
+ * (the review) is not a departure: its state is kept and censored.
  *
  * Measure (register `m04_undisposed_pieces`): pieces not disposed at the
  * first departure, carried pieces included, summed over both jobs / 6
@@ -37,15 +39,37 @@ import {
 
 export const M04_FAMILY = 'proto_m04_cutting_';
 /**
- * `m04-cutting-v2` (U14-C): the contextual prompt names what a press
- * acts on (a piece, the bin, a station) and the press acts on exactly
- * that; a press labelled with the cutter no longer lifts or drops a
- * piece. `m04-cutting-v1` is the administration of Unit 14.
+ * `m04-cutting-v4` (U14-D2, the approved annex administration): the
+ * cutter and the bin stand in a 13 × 6-tile annex of the Records
+ * Workshop; job 1 leaves its three pieces west of the cutter, job 2 at
+ * the mirrored places east of it; a piece is lifted by keyboard or by
+ * pointer within 64 px and the bin answers within 64 px, and every
+ * position a piece can be lifted from lies more than 76 px from the bin.
+ * As in the pass before it: a station in range always keeps the press,
+ * lifting a piece never names the bin (`M04BinGate`), a carried piece can
+ * be set down again where it lay, both cuts are answered by the same
+ * line, and a job's first departure is the first accepted action at
+ * another station that changed that task's record, or the room left.
+ *
+ * Earlier values: `m04-cutting-v1` is the administration of Unit 14,
+ * `m04-cutting-v2` that of U14-C. `m04-cutting-v3` named the geometry of
+ * the first U14-D pass, which was blocked (register §5.219) and never
+ * committed, approved or released: no administration carries it. The
+ * administrations differ in places, cues and the departure rule and are
+ * not pooled by any code.
  */
-export const M04_ENTRY_STATE_VERSION = 'm04-cutting-v2';
-/** What the cutter states while the second coupon is not available yet. */
-export const M04_REARM_LINE =
-  'The cutter re-arms while you work another order.';
+export const M04_ENTRY_STATE_VERSION = 'm04-cutting-v4';
+/**
+ * What the cutter states, when it is used, while the second coupon is
+ * not available yet: a status of the station, never an instruction. It
+ * is shown only when the participant checks the cutter; it names no
+ * leaving, no tidying and no other work.
+ */
+export const M04_NO_ORDER_LINE = 'No cutting order is available.';
+/** What is shown when a carried piece was set down where it lay. */
+export const M04_SET_DOWN_LINE = 'Set down.';
+/** What is shown when a carried piece could not be set down. */
+export const M04_SET_DOWN_REFUSED_LINE = 'Cannot set that down right now.';
 export const M04_PIECES_PER_JOB = 3;
 export const M04_PRIOR_ADMINISTRATION = 'prior_administration';
 /**
@@ -103,17 +127,21 @@ export interface M04Piece {
 }
 
 /**
- * Six standardised pieces at fixed offsets (identical for everyone): one
- * offcut, one swarf tray and one blade wrap per job. The six places are
- * the scatter of the v2 route, unchanged; every piece is inside the
- * pointer reach (96 px) of the cutter's approach point. The places are
- * shared between the jobs so that the summed straight-line distance to
- * the disposal bin is matched (440.5 px and 444.3 px); the places are NOT
- * matched piece by piece, on the keyboard reach from the approach point
- * or on the nearness of another station, and three of them lie on
- * painted art (the wrap of job 1 at the cutter's west end, the swarf
- * tray of job 1 on the Component Locker's top edge, the swarf tray of
- * job 2 at the island's edge) — recorded limitations.
+ * Six standardised pieces at fixed offsets from the scatter origin (the
+ * cutter, 400, 456; identical for everyone): one offcut, one swarf tray
+ * and one blade wrap per job. The approved v4 places (room px): job 1,
+ * west of the cutter — offcut 228, 476 · swarf tray 212, 516 · blade
+ * wrap 212, 556; job 2, east of it — offcut 572, 476 · swarf tray
+ * 588, 516 · blade wrap 588, 556. Each piece of job 2 is the mirror
+ * image of the same kind of piece of job 1 about the cutter (x 400), in
+ * an annex whose floor and whose collision footprints of the cutter and
+ * the bin are mirrored about the same line (the painted machine itself
+ * is not a mirror image): the two jobs are laid out alike. The two
+ * clusters are 344 px apart and
+ * do not interleave; every piece lies more than 160 px from the cutter,
+ * the doorway and the line between them, nearer to the cutter than to
+ * any other station, and no position it can be lifted from is within
+ * 76 px of the bin (64 px reach plus the approved 12 px margin).
  */
 export const M04_PIECES: readonly M04Piece[] = [
   {
@@ -121,39 +149,39 @@ export const M04_PIECES: readonly M04Piece[] = [
     job: 'o1',
     label: 'coupon offcut',
     icon: 'w2-debris-coupon-offcut',
-    dx: -28,
-    dy: 44,
+    dx: -172,
+    dy: 20,
   },
   {
     object_id: 'm04_swarf_a',
     job: 'o1',
     label: 'swarf tray',
     icon: 'w2-debris-swarf-tray',
-    dx: -8,
-    dy: 64,
+    dx: -188,
+    dy: 60,
   },
   {
     object_id: 'm04_wrap_a',
     job: 'o1',
     label: 'blade wrap',
     icon: 'w2-debris-blade-wrap',
-    dx: 52,
-    dy: 0,
+    dx: -188,
+    dy: 100,
   },
   {
     object_id: 'm04_offcut_b',
     job: 'o2',
     label: 'coupon offcut',
     icon: 'w2-debris-coupon-offcut',
-    dx: 28,
-    dy: 44,
+    dx: 172,
+    dy: 20,
   },
   {
     object_id: 'm04_swarf_b',
     job: 'o2',
     label: 'swarf tray',
     icon: 'w2-debris-swarf-tray',
-    dx: 52,
+    dx: 188,
     dy: 60,
   },
   {
@@ -161,8 +189,8 @@ export const M04_PIECES: readonly M04Piece[] = [
     job: 'o2',
     label: 'blade wrap',
     icon: 'w2-debris-blade-wrap',
-    dx: -64,
-    dy: 8,
+    dx: 188,
+    dy: 100,
   },
 ];
 
@@ -262,7 +290,10 @@ export function m04EntrySnapshot(job: M04Job) {
     cleanup_instructed: false,
     cleanup_rewarded: false,
     exit_always_available: true,
-    departure: 'other_station_opened_or_room_exit',
+    departure: 'other_station_work_begun_or_room_exit',
+    set_down_available: true,
+    set_down_counts_as: 'undisposed',
+    cut_feedback: 'same_line_for_both_jobs',
     snapshot_at_first_departure: true,
     carried_piece_counts_as: 'undisposed',
     later_disposal: 'recorded_apart',
@@ -370,12 +401,14 @@ export function m04AnyJobFailed(s: M04State): boolean {
 }
 
 /**
- * What the cutter states when it has nothing to cut. "Both coupons cut"
+ * What the cutter states when it is used with nothing to cut (never
+ * shown unasked; the line at a cut is the same for both jobs). "Both
+ * coupons cut"
  * is stated only when both were: never after a jam or a held-back job.
  */
 export function m04IdleLine(s: M04State): string {
   if (m04OpenJob(s) === 'o1') {
-    return M04_REARM_LINE;
+    return M04_NO_ORDER_LINE;
   }
 
   if (!m04AnyJobProduced(s)) {
@@ -528,9 +561,11 @@ export function m04NoteUnavailable(
 /**
  * Where a pick-up or a disposal was issued: a pointer click on the piece
  * or the bin, a press at the cutter, a press at another station that
- * stands farther from the avatar than the piece or the bin, or a press on
- * open floor. Kept so an interface-routed act can be told from a pointed
- * one.
+ * stands farther from the avatar than the bin, or a press on open floor.
+ * Kept so an interface-routed act can be told from a pointed one. Under
+ * `m04-cutting-v4` a PICK-UP is issued by pointer or on open floor only
+ * (a station in range keeps the press); the other two origins remain for
+ * a disposal and for the records of v1 / v2.
  */
 export type M04PickupOrigin =
   | 'pointer'
@@ -576,7 +611,13 @@ export function m04PickUp(
   return true;
 }
 
-/** The carried piece goes back where it lay (a room exit puts it back). */
+/**
+ * The carried piece goes back where it lay: set down by the participant
+ * (keyboard or pointer), or put back by the system when the room is
+ * left. The piece stays undisposed; a record already made is untouched.
+ * `input_mode` alone tells who did it (`keyboard` / `pointer` = the
+ * participant, `system` = the room exit).
+ */
 export function m04PutBack(
   s: M04State,
   inputMode: M04InputMode,
@@ -601,6 +642,119 @@ export function m04PutBack(
   });
 
   return true;
+}
+
+export type M04SetDownResult = 'set_down' | 'refused' | 'nothing_carried';
+
+/**
+ * The participant sets the carried piece down. `placeable` is the host's
+ * statement that the piece can be shown where it lay; when it cannot,
+ * the piece STAYS in the hands and nothing is recorded — a set-down that
+ * fails is never a disposal and never changes a record.
+ */
+export function m04SetDown(
+  s: M04State,
+  placeable: boolean,
+  inputMode: Exclude<M04InputMode, 'system'>,
+  log: M04LogSink,
+): M04SetDownResult {
+  if (m04CarriedPiece(s) === null) {
+    return 'nothing_carried';
+  }
+
+  if (!placeable) {
+    return 'refused';
+  }
+
+  return m04PutBack(s, inputMode, log) ? 'set_down' : 'refused';
+}
+
+// ——— the bin as a target (U14-D, owner ruling 2) ———————————————————————
+
+/**
+ * Whether the bin may be named, outlined or used for the carried piece.
+ * Lifting a piece never nominates the bin: the bin becomes the target
+ * only after (1) the activation that lifted the piece is over — every
+ * interaction key and the pointer were seen released — and (2) the
+ * participant acquired the bin anew, by walking INTO its range from
+ * outside it. A pointer press on the bin is a target of its own (a
+ * separate gesture, see `m04BinPointerAllowed`). State and input-release
+ * boundaries only: no delay is measured anywhere.
+ */
+export interface M04BinGate {
+  /** The pick-up's activation is over (keys and pointer seen released). */
+  released: boolean;
+  /** The avatar stood outside the bin's range after that release. */
+  beenOutside: boolean;
+  /** The bin is the acquired target now (in range, entered from outside). */
+  acquired: boolean;
+  /** The piece was lifted by a drag whose pointer is still held. */
+  dragHeld: boolean;
+}
+
+export interface M04BinGateInput {
+  carrying: boolean;
+  /** An interaction key (E / SPACE) is held. */
+  keysDown: boolean;
+  pointerDown: boolean;
+  /** The avatar stands within the bin's range. */
+  inRange: boolean;
+}
+
+export function createM04BinGate(dragHeld = false): M04BinGate {
+  return { released: false, beenOutside: false, acquired: false, dragHeld };
+}
+
+/** One step of the gate (the host calls it every frame); returns the gate. */
+export function m04BinGateStep(
+  gate: M04BinGate,
+  input: M04BinGateInput,
+): M04BinGate {
+  if (!input.carrying) {
+    gate.released = false;
+    gate.beenOutside = false;
+    gate.acquired = false;
+    gate.dragHeld = false;
+
+    return gate;
+  }
+
+  if (!input.pointerDown) {
+    gate.dragHeld = false;
+  }
+
+  if (!gate.released) {
+    gate.released = !input.keysDown && !input.pointerDown;
+  }
+
+  if (!gate.released) {
+    gate.acquired = false;
+
+    return gate;
+  }
+
+  if (!input.inRange) {
+    gate.beenOutside = true;
+    gate.acquired = false;
+  } else {
+    gate.acquired = gate.beenOutside;
+  }
+
+  return gate;
+}
+
+/**
+ * A pointer act on the bin: a PRESS on it is a gesture of its own and
+ * needs the pick-up's activation to be over; the RELEASE of a drag that
+ * lifted the piece and was carried to the bin is the one continuous
+ * gesture that may end in the bin (released anywhere else, the piece
+ * stays in the hands and can be set down).
+ */
+export function m04BinPointerAllowed(
+  gate: M04BinGate,
+  gesture: 'press' | 'drag_release',
+): boolean {
+  return gesture === 'press' ? gate.released : gate.dragHeld;
 }
 
 export type M04DisposeResult = 'disposed' | 'late' | 'invalid';
@@ -673,6 +827,9 @@ export function m04Dispose(
 /**
  * The first departure from every open job: the state of its pieces is
  * recorded once. Returns the jobs it closed (none when no job was open).
+ * The CALLER decides what a departure is (U14-D: an accepted action at
+ * another station that changed that task's recorded state, or the room
+ * left); this function only records it.
  * A closure by the system (`closed_at_review`) is NOT a departure: the
  * state is recorded under `state_at_review`, never `first_departure`.
  */

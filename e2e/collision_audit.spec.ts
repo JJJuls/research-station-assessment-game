@@ -4,14 +4,25 @@
  *
  * For every audited room the spec boots the zone, then for every pixel
  * solid and every reachable side of it walks the avatar to a point 20 px
- * off the side's middle (grid navigator, e2e/navGrid.ts) and pushes into
- * the solid until the avatar stops. The stop position must equal the
+ * off the side's middle (grid navigator, e2e/navGrid.ts) and holds the
+ * key into the solid until the engine stops the avatar — there is no
+ * fixed push length: the held key's target lies outside the room, so the
+ * leg can only end in a wall clamp, however long the lane (U14-D2: the
+ * workshop's south lane is 1 213 px). The stop position must equal the
  * pure model's prediction (src/world/layouts/grid.ts `bodyFits`, the same
- * geometry the DEV collision overlay draws over the art): the avatar can
- * neither enter what is painted nor be stopped by anything that is not.
- * A set of open-floor sweeps does the same along every lane row, which
- * catches invisible / legacy colliders away from the props. Afterwards
- * the avatar must be able to walk back to the room's spawn (no trap).
+ * geometry the DEV collision overlay draws over the art), to 3 px: the
+ * avatar can neither enter what is painted nor be stopped by anything
+ * that is not. Because the avatar is always driven PAST the predicted
+ * stop, a missing collider carries it on to the next one and fails the
+ * comparison outright. A set of open-floor sweeps does the same along
+ * every lane row, which catches invisible / legacy colliders away from
+ * the props. Afterwards the avatar must be able to walk back to the
+ * room's spawn (no trap).
+ *
+ * The model is evaluated at the coordinate the walk actually landed on
+ * (recorded per face, with its offset from the aimed approach), and at
+ * that coordinate's fraction of a pixel exactly as the engine sees it —
+ * see `predictStop`.
  *
  * COLLISION_ROOM=<zone key> limits the run to one room; COLLISION_OUT
  * sets the evidence directory (a clean frame and the `?collision=1`
@@ -48,7 +59,7 @@ import {
   WORKSHOP_SOLIDS,
 } from '../src/world/layouts/workshop';
 import { YARD_LAYOUT, YARD_SOLIDS } from '../src/world/layouts/yard';
-import { driveAxisTo, playerProbe } from './helpers';
+import { driveAxisTo, getDriverStats, playerProbe } from './helpers';
 import { navigateTo, planPath, type Point } from './navGrid';
 import { waitScene } from './pilotHelpers';
 
@@ -183,38 +194,81 @@ const SIDES: Record<
   },
 };
 
-/** The model's stop coordinate when sliding from `from` along one axis. */
+/**
+ * Whether the engine's feet box fits at a (fractional) position. The
+ * engine separates continuous rectangles (Arcade AABB), `bodyFits` reads
+ * whole pixels: a body at a fractional y covers the pixel rows
+ * floor(y + 10) … ceil(y + 24) − 1, which is exactly the union of the
+ * whole-pixel bodies at floor(y) and ceil(y) — likewise along x. The two
+ * geometries therefore agree when the body is required to fit at every
+ * floor / ceiling combination of its coordinates. (U14-D2: the walk had
+ * landed a twelfth of a pixel inside the annex doorway's depth; the
+ * engine, correctly, stopped at the jamb's corner while the rounded
+ * model slid past it to the Component Locker — 5.08 px apart.)
+ */
+function engineBodyFits(grid: RoomGrid, x: number, y: number): boolean {
+  return [Math.floor(x), Math.ceil(x)].every((bx) =>
+    [Math.floor(y), Math.ceil(y)].every((by) => bodyFits(grid, bx, by)),
+  );
+}
+
+/**
+ * The model's stop coordinate when sliding from `from` along one axis,
+ * one pixel at a time until the body no longer fits. The slide is
+ * bounded by the room's own extent on that axis; the outside of the grid
+ * counts as wall, so a stop always exists and running out of room is a
+ * defect of the model, not a result.
+ */
 function predictStop(
   grid: RoomGrid,
   from: Point,
   axis: 'x' | 'y',
   dir: 1 | -1,
 ): number {
+  const extent = axis === 'x' ? grid.widthPx : grid.heightPx;
   const at = { ...from };
 
-  for (let i = 0; i < 1200; i += 1) {
+  for (let i = 0; i <= extent; i += 1) {
     const next = { ...at, [axis]: at[axis] + dir };
 
-    if (!bodyFits(grid, next.x, next.y)) {
-      break;
+    if (!engineBodyFits(grid, next.x, next.y)) {
+      return at[axis];
     }
 
     at[axis] = next[axis];
   }
 
-  return at[axis];
+  throw new Error(
+    `predictStop: no stop within ${extent} px from (${from.x}, ${from.y}) along ${axis}${dir > 0 ? '+' : '-'}`,
+  );
 }
 
-async function push(page: Page, axis: 'x' | 'y', dir: 1 | -1) {
-  const before = await playerProbe(page);
+/**
+ * Holds the key along `axis` until the engine stops the avatar. The leg's
+ * target lies 400 px outside the room on that side, so it can never be
+ * reached: the leg ends only when the avatar has stopped advancing (the
+ * driver's wall clamp), whatever the lane's length, and the avatar is
+ * always carried past the model's predicted stop. A leg that ends any
+ * other way — the driver's burst budget exhausted, the probe lost — is an
+ * error of the audit, not a stop.
+ */
+async function push(page: Page, grid: RoomGrid, axis: 'x' | 'y', dir: 1 | -1) {
+  const extent = axis === 'x' ? grid.widthPx : grid.heightPx;
+  const far = dir > 0 ? extent + 400 : -400;
+  const stallsBefore = getDriverStats().stallAborts;
 
-  // A far target: the leg ends when the avatar stops advancing.
-  await driveAxisTo(page, axis, (before?.[axis] ?? 0) + dir * 1000, 1);
+  await driveAxisTo(page, axis, far, 1);
 
   const after = await playerProbe(page);
 
   if (after === null) {
     throw new Error('push: no player probe');
+  }
+
+  if (getDriverStats().stallAborts !== stallsBefore + 1) {
+    throw new Error(
+      `push: the held ${axis}${dir > 0 ? '+' : '-'} key did not end in a wall clamp (avatar at ${after.x}, ${after.y})`,
+    );
   }
 
   return { x: after.x, y: after.y };
@@ -279,13 +333,22 @@ for (const [zone, spec] of Object.entries(ROOMS)) {
       }
 
       const landed = await navigateTo(page, spec.grid, start);
+      // The comparison is made from the point the walk actually landed
+      // on, fraction and all (`predictStop`), so a landing off its aim
+      // changes which approach is compared, never whether the comparison
+      // holds; the offset across the push is recorded with every face so
+      // the reader can see which approach was pushed.
+      const across = axis === 'x' ? 'y' : 'x';
+      const landingError = landed[across] - start[across];
       const expected = predictStop(spec.grid, landed, axis, dir);
-      const stopped = await push(page, axis, dir);
+      const stopped = await push(page, spec.grid, axis, dir);
       const error = stopped[axis] - expected;
 
       findings.push({
         label,
+        start,
         landed,
+        landingError: Number(landingError.toFixed(2)),
         expected,
         observed: stopped[axis],
         error: Number(error.toFixed(2)),

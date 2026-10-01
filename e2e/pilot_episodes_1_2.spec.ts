@@ -10,11 +10,18 @@
  * at its first departure (Station 080 Unit 14); M03 occasion 2 refuses before the return; every overlay
  * renders above the host and resumes it; no canonical event and no score
  * exists anywhere in the log.
+ *
+ * Station 080 U14-D2: episode 2 stands on the interaction registry's own
+ * approach points of the 43×19 Records Workshop and walks its lanes
+ * (`workshopVia`). It used hand-typed coordinates of the former 25×19
+ * room, which no longer met a station; the sample cutter is reached
+ * through the annex doorway and operated from the north.
  */
 // V4: the 800×600 design space sits at canvas (160 + 1.2x, 1.2y) on the
 // 1280×720 canvas (src/world/viewport.ts; DEV probe window.__designSpace).
 import { expect, type Page, test } from '@playwright/test';
 
+import { WORKSHOP_REGISTRY } from '../src/world/interactionRegistry';
 import { getEvents, selectPromptOption } from './helpers';
 import {
   captureErrors,
@@ -36,9 +43,8 @@ import {
   routeToWorkshopWork,
   walkTo,
   workshopToConcourse,
+  workshopVia,
 } from './pilotHelpers';
-
-const CONCOURSE_APPROACHES = new Set<string>();
 
 /** World V1: approach points from the interaction registry (zero offsets). */
 const CONCOURSE = {
@@ -49,24 +55,50 @@ const CONCOURSE = {
   deskLamp: registryApproach('concourse.reading_desk_lamp'),
 } as const;
 
-for (const at of Object.values(CONCOURSE)) {
-  CONCOURSE_APPROACHES.add(`${at.x},${at.y}`);
-}
-
+/** Records Workshop stations by their interaction-registry id (U14-D2). */
 const WORKSHOP = {
-  caseWorkspace: { x: 96, y: 272 },
-  pressB: { x: 288, y: 272 },
-  sampleCutter: { x: 352, y: 384 },
-  dispatchConsole: { x: 640, y: 448 },
-  calibrationBench: { x: 352, y: 96 },
-  qcPacket: { x: 544, y: 448 },
-  latticeBench: { x: 704, y: 416 },
-  sealLog: { x: 704, y: 160 },
+  caseWorkspace: 'workshop.case_workspace',
+  pressB: 'workshop.press_b',
+  sampleCutter: 'workshop.sample_cutter',
+  dispatchConsole: 'workshop.dispatch_console',
+  calibrationBench: 'workshop.calibration_bench',
+  qcPacket: 'workshop.qc_packet_o2',
+  latticeBench: 'workshop.lattice_bench',
+  sealLog: 'workshop.seal_log',
 } as const;
 
-/** +44 for the V4 workshop stations; 0 for World V1 registry approaches. */
-function WORKSHOP_OFFSET_Y(at: { x: number; y: number }): number {
-  return CONCOURSE_APPROACHES.has(`${at.x},${at.y}`) ? 0 : 44;
+/**
+ * Walks the workshop's lanes to a station's registry approach point and
+ * returns its anchor with the approach offset for interactAt /
+ * openPromptAt — the machine-audited standing point, never a hand-typed
+ * coordinate.
+ */
+async function workshopStation(page: Page, id: string) {
+  const entry = WORKSHOP_REGISTRY.find((candidate) => candidate.id === id);
+
+  if (entry === undefined) {
+    throw new Error(`episode 2: no workshop registry entry ${id}`);
+  }
+
+  await workshopVia(page, entry.approach.x, entry.approach.y);
+
+  return {
+    at: { x: entry.x, y: entry.y },
+    options: {
+      approachOffset: {
+        x: entry.approach.x - entry.x,
+        y: entry.approach.y - entry.y,
+      },
+      yFirst: true,
+    },
+  };
+}
+
+/** Walks to a workshop station and presses SPACE at it. */
+async function useWorkshopStation(page: Page, id: string) {
+  const station = await workshopStation(page, id);
+
+  await interactAt(page, station.at, station.options);
 }
 
 interface SurfaceProbe {
@@ -127,9 +159,13 @@ async function clickElement(page: Page, id: string) {
   await page.waitForTimeout(200);
 }
 
+/**
+ * Opens a work surface: at a Concourse registry approach point (zero
+ * offset) or, given a workshop registry id, at that station.
+ */
 async function openSurfaceAt(
   page: Page,
-  at: { x: number; y: number },
+  at: { x: number; y: number } | string,
   id: string,
 ) {
   const where = () =>
@@ -148,9 +184,11 @@ async function openSurfaceAt(
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const before = await where();
 
-    await interactAt(page, at, {
-      approachOffset: { x: 0, y: WORKSHOP_OFFSET_Y(at) },
-    });
+    if (typeof at === 'string') {
+      await useWorkshopStation(page, at);
+    } else {
+      await interactAt(page, at, { approachOffset: { x: 0, y: 0 } });
+    }
 
     const opened = await waitSurface(page, true, id).then(
       () => true,
@@ -411,9 +449,7 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     await routeToWorkshopWork(page);
 
     // Press B is scheduled for the return shift only (no window opens now).
-    await interactAt(page, WORKSHOP.pressB, {
-      approachOffset: { x: 0, y: 44 },
-    });
+    await useWorkshopStation(page, WORKSHOP.pressB);
     await page.waitForTimeout(400);
     expect(
       await page.evaluate(
@@ -427,9 +463,7 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     ).toBe(false);
 
     // Case workspace: overlay in m02case mode, hand over, first request shown.
-    await interactAt(page, WORKSHOP.caseWorkspace, {
-      approachOffset: { x: 0, y: 44 },
-    });
+    await useWorkshopStation(page, WORKSHOP.caseWorkspace);
     await page.waitForFunction(
       () =>
         (
@@ -484,9 +518,8 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
       );
 
     expect(await debrisCount()).toBe(0);
-    await interactAt(page, WORKSHOP.sampleCutter, {
-      approachOffset: { x: 0, y: -44 },
-    });
+    // Through the annex doorway; the cutter is operated from the north.
+    await useWorkshopStation(page, WORKSHOP.sampleCutter);
     await page.waitForTimeout(600);
     types = await pilotEventTypes(page);
     expect(types).toContain('proto_m04_cutting_job_run');
@@ -536,15 +569,28 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     await clickElement(page, 'release');
     await closeSurface(page);
     types = await pilotEventTypes(page);
+    // Only packet 2 is released in this session — packet 1 lies in the
+    // Concourse and was never opened here — so one window closed and the
+    // item still waits for its other occasion. (U14-D2: this step was
+    // never reached while the test stood at the former room's
+    // coordinates; it expected two closed windows and a completed item,
+    // which holds only in a session that also released packet 1.)
     expect(
       types.filter((t) => t === 'proto_m12_check_window_closed'),
-    ).toHaveLength(2);
-    expect(await itemStatus(page, 'M12')).toBe('completed');
+    ).toHaveLength(1);
+    expect(
+      (await itemCoverage(page, 'M12')).opportunities.map((o) => [
+        o.opportunity_id,
+        o.status,
+      ]),
+    ).toEqual([
+      ['proto_m12_check_o1', 'pending'],
+      ['proto_m12_check_o2', 'completed'],
+    ]);
+    expect(await itemStatus(page, 'M12')).toBe('pending');
 
     // Lattice bench opens the physical pipe board above the host.
-    await interactAt(page, WORKSHOP.latticeBench, {
-      approachOffset: { x: 0, y: -44 },
-    });
+    await useWorkshopStation(page, WORKSHOP.latticeBench);
     await page
       .waitForFunction(
         () =>
@@ -560,19 +606,25 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     await page.waitForTimeout(600);
 
     // Seal log: secondary telemetry only (no window, no register entry).
-    await openPromptAt(page, WORKSHOP.sealLog, {
-      approachOffset: { x: 0, y: 44 },
-    });
+    const sealLog = await workshopStation(page, WORKSHOP.sealLog);
+
+    await openPromptAt(page, sealLog.at, sealLog.options);
     await selectPromptOption(page, 1);
     types = await pilotEventTypes(page);
     expect(types).toContain('secondary_m11_seal_obligation_acknowledged');
+    // The seal log itself opens no window and enters nothing in the
+    // register. (U14-D2: never reached at the former coordinates; it
+    // expected M11 to be `not_applicable`, which predates M11's own two
+    // custody occasions in the laboratory and the yard — not yet reached
+    // in episode 2, so the item is pending.)
+    expect(types.filter((t) => t.startsWith('proto_m11_'))).toEqual([]);
     expect(
       (await pilotCoverage(page))!.items.find((i) => i.item === 'M11')!.status,
-    ).toBe('not_applicable');
+    ).toBe('pending');
 
-    // The first job closed at its first departure (the dispatch console
-    // was opened next); the second coupon was never cut.
-    await walkTo(page, 640, 272);
+    // The first job closed at its first departure (the first work
+    // recorded at another station after the cut), exactly once; the
+    // second coupon was never cut.
     await workshopToConcourse(page);
     types = await pilotEventTypes(page);
     expect(

@@ -41,7 +41,7 @@ Global findings that apply to every row:
 | M01  | **as specified (U5)** — was contradicting at the audit base (one six-card board, commit refused unless full, work refused unless committed, 1 occasion; the v2 `proto_m01_board_*` family is retired)                                                                                                                                                                                                 | Two unrelated three-job batches (Concourse ep1, Workshop return ep5); direct work or optional sequencing; snapshot placements before the first work action; partial plans valid                     | `m01_planned_jobs`: planned jobs / 6 across two occasions (0–6, higher = more advance organisation); per occasion plan structure, job correctness                | pure: two occasions, direct path = 0/0 valid; browser: both boards reachable, direct work without board                       |
 | M02  | **as specified (U13)** — was contradicting at the audit base (2 probes; a wrong pick did not advance; immediate corrective feedback; no Cannot-locate; no retrieval timing; the v2 `proto_m02_case_*` family is retired); during the requests the participant's layout and own tray labels stay visible and the system-supplied case codes and contents do not (owner ruling of 28 September, §5.137) | Six requests in balanced order; advance after each first answer or explicit Cannot locate; feedback deferred to the end; retrieval latency per request                                              | `m02_correct_first_retrievals`: correct first retrievals / 6 (higher = better traceability); `m02_retrieval_latency` and `m02_filing_layout` kept separately     | pure: wrong first answer advances, Cannot locate = incorrect, interrupted = missing; browser: six requests, deferred feedback |
 | M03  | **as specified (U14; corrected U14-C — technical correction verified, not scientifically validated)** — was partial at the audit base (two occasions with five residuals each, no movement teaching, only a seed failure invalidated; the v2 `proto_m03_*` family is retired from the route and stays with the Inventory Lab workstation)                                                             | Three tools per occasion; movement practice before occasion A; reachability check per object → technical-invalid; first-departure snapshot per occasion                                             | `m03_tools_restored`: restored / 6 (0–3 per occasion, higher = more tidying); object states                                                                      | pure: 3 objects/occasion, unreachable object → invalid; browser: both presses, untouched/partial/full                         |
-| M04  | **as specified (U14; corrected U14-C — technical correction verified, not scientifically validated)** — was partial at the audit base (one cutting job of six pieces, closure at the first room exit; the v2 `proto_m04_debris_*` family is retired)                                                                                                                                                  | Two short cutting jobs (three pieces each); first departure from each job closes that occasion; later cleanup never rewrites                                                                        | `m04_undisposed_pieces`: undisposed / 6 incl. carried (higher = more own mess); two occasion values                                                              | pure: partial disposal + carried piece; browser: two jobs, return-later unchanged                                             |
+| M04  | **as specified (U14; corrected U14-C, U14-D and U14-D2, administration `m04-cutting-v4` — interaction correction with the owner-approved cutting annex: two mirrored three-piece clusters, register §4 "Unit 14-D2"; not scientifically validated)** — was partial at the audit base (one cutting job of six pieces, closure at the first room exit; the v2 `proto_m04_debris_*` family is retired)   | Two short cutting jobs (three pieces each); first departure from each job closes that occasion; later cleanup never rewrites                                                                        | `m04_undisposed_pieces`: undisposed / 6 incl. carried (higher = more own mess); two occasion values                                                              | pure: partial disposal + carried piece; browser: two jobs, return-later unchanged                                             |
 | M05  | **as specified (U6)** — was contradicting at the audit base (silent unaccepted faults, clock from presentation, no deferral / exit control, no cap, no focus pausing; the v2 `proto_m05_initiation_*` family is retired)                                                                                                                                                                              | Two explicitly accepted jobs; clock from a visible usable start control with no competing required task; start / defer / exit / cap; 60 focused s; pause on focus loss                              | `m05_start_latency`: per occasion focused seconds to first work action + status (started/deferred/exited/cap); non-starts keep exposure                          | pure: cap never becomes a start, focus-loss excluded; browser: accept → start, accept → leave                                 |
 | M06  | **as specified (U7)** — was partial at the audit base (2 practice + 4 scored lines, no budget, no stop, no rework, no technical-failure path; the v2 `proto_m06_dispatch_*` family is retired)                                                                                                                                                                                                        | 12 orders in one 60-second budget after practice; correction consumes the same budget; explicit early stop; denominator fixed at 60 s                                                               | `m06_unique_correct_orders`: unique correct orders within 60 s (0–12); first-pass accuracy, rework, actual stop time                                             | pure: correction counted once, early stop keeps 60 s; browser: budget end, stop                                               |
 | M07  | **partial** — six stages, persistence and return exist; **P7 defect**: review opens and completes a never-visited bench as valid 0/6 (`m07Calibration.ts:265-284`)                                                                                                                                                                                                                                    | Non-engagement = absent/missing; close scoring at the common milestone (station-record closure); export returns and errors (no error concept → declared none)                                       | `m07_stages_completed`: stages / 6 at the closing milestone (higher = more routine completion); returns                                                          | pure: never-started → missing not 0; browser: resume after leaving                                                            |
@@ -103,3 +103,58 @@ one target decision for the prompt and the press, and local presentation
 defects (register §4 "Unit 14-C", §5.195–§5.203). Additional tests: pure
 adverse cases in `m03_restore` and `m04_cutting`; browser
 `u14_correction`.
+
+**U14-D** (after U13-C, before U15; review / fix round 1 under the
+owner's rulings of 30 September 2026) corrects the ADMINISTRATION of M04
+without changing its design, its feature or its formula: a station in
+range always keeps the press; lifting a piece never names or outlines
+the bin — the bin becomes the target once every interaction key and the
+pointer were released and the avatar walked into its range, or by a
+pointer press of its own, or at the release of a drag carried to it; a
+carried piece can be set down again where it lay ("X — Set down",
+shown beside the avatar while a piece is carried) and stays undisposed;
+both cuts are answered by the same line and the cutter's status reads
+"No cutting order is available."; a job's first departure is the first
+accepted action at another station that changed that task's recorded
+state, or the room left — never a panel shown or closed, a board or a
+log that was read, or a refusal. **Not implemented: the owner's ruling
+on the places** (pick-up positions outside the bin's reach, two
+non-interleaved clusters) — blocked by the room's geometry, register
+§5.219; the six places are those of the first pass and interleave. The
+administration is `m04-cutting-v3`, told apart from `-v1` (U14) and
+`-v2` (U14-C) and pooled with neither (register §4 "Unit 14-D",
+§5.211–§5.221). M03 is unchanged. Tests: pure `m04_cutting`; browser
+`u14_correction` and `m03_m04_route`. Outside the unit and unresolved:
+the M04 extractor's handling of piece events without a recognised
+object (register §5.216).
+
+**U14-D2** (the final correction of U14-D, under the owner's contract of
+30 September 2026) implements the ruling on the places that U14-D left
+blocked, with the geometry the owner approved: the Records Workshop is
+43 × 19 tiles; the Sample Cutter and the disposal bin stand in a
+13 × 6-tile cutting annex south of the machine bay, entered through a
+64 px doorway where the decorative tool bench stood; job 1's three
+pieces lie west of the cutter and job 2's three at the mirrored places
+east of it; one 64 px reach holds for the keyboard pick-up, the pointer
+pick-up and the bin; every position a piece is lifted from lies more
+than 76 px from the bin. Everything U14-D implemented is kept (the
+deliberate transition to the bin, the neutral set-down, the lines, the
+first departure by work actually begun or the room left). The design,
+the feature, the formula, the event family and every field are
+unchanged. The administration is `m04-cutting-v4`; `-v3` (the blocked
+U14-D pass) was never committed or released. The four versions are told
+apart by `entry_state_version` and pooled by no code (register §4
+"Unit 14-D2", §5.222–§5.231). M03 is unchanged. Tests: pure
+`m04_cutting` (the measured geometry); browser `u14_correction`,
+`m03_m04_route`, `pilot_episodes_1_2` (episode 2),
+`world_v2_workshop_look` and the full collision gate
+(`collision_audit`, `spawn_clearance`, `world_v1_registry`). The
+owner-authorised closeout pass of 1 October 2026 repaired the collision
+audit driver for rooms wider than its old fixed push (register §5.230,
+resolved), removed the two residual plate artefacts (§5.226), ratified
+the episode-2 expectations (§5.227) and the two side-wall strips, and
+ended in the unit's single commit `fix(m04): add matched cleanup
+annex`. Still outside the unit and unresolved: the
+M04 extractor (register §5.216). Not established by any of it: that the
+two jobs are equivalent as measurements — they are repeated occasions
+in a fixed order and on fixed sides (register §5.224).

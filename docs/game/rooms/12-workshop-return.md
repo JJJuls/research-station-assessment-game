@@ -166,3 +166,86 @@ manifest). Presentation only:
   `e2e/world_v2_workshop_look.spec.ts` — every audited approach shows
   its own prompt in-engine, vestibule crossed both ways, east door
   round-trip with reflex-SPACE clearance.
+
+## Station 080 U14-D2 — the cutting annex (2026-09-30)
+
+This section supersedes, for the sample cutter and the disposal bin only,
+the two bullets above about the cutter island lane and the bin baked
+beside the cutter. Every other station, approach, window and text of the
+room is unchanged.
+
+The Records Workshop is now **43×19 tiles (1376×608 px)**. The two-bay
+hall keeps its place (rows 0–11); a **13×6-tile cutting annex** lies
+south of the machine bay and holds the M04 cutter and bin. The lower band
+east of the annex (south of the records office) and west of it is hull
+and exterior — not floor.
+
+| Element             | Geometry (room px unless noted)                                     |
+| ------------------- | ------------------------------------------------------------------- |
+| Annex floor         | tiles `[6, 12, 13, 6]` — x 192–608, y 384–576                       |
+| Doorway region      | tiles `[11, 10, 3, 2]`; open between the jambs x 368–432, y 320–384 |
+| Jamb solids         | `[352, 320, 16, 64]`, `[432, 320, 16, 64]`                          |
+| South wall row      | y 576–608                                                           |
+| Sample cutter       | anchor (400, 456); approach (400, 423) — operated from the north    |
+| Cutter solid        | tile units `[11, 14.1, 3, 2.9]`                                     |
+| Disposal bin        | anchor (400, 556); tile units `[11.7, 16.8, 1.6, 1.2]`              |
+| Scatter origin      | (400, 456)                                                          |
+| Job 1 pieces (west) | offcut (228, 476), swarf tray (212, 516), blade wrap (212, 556)     |
+| Job 2 pieces (east) | offcut (572, 476), swarf tray (588, 516), blade wrap (588, 556)     |
+| Reach               | 64 px for keyboard pickup, pointer pickup and the bin               |
+
+- **Where the doorway is.** The decorative south tool bench between the
+  component locker and the assembly bench is gone; the 64 px doorway is
+  in its place. The old cutter island, its platform and the attached bin
+  are painted out — that bay is plain floor with its painted marking, and
+  the south lane now runs the whole hall.
+- **Mirror layout.** The annex floor and the collision footprints of the
+  cutter, the bin and both jambs are symmetric about x 400 (the painted
+  cutter is a machine, not a mirror image). Job 1's three pieces lie west
+  of the cutter, Job 2's three at the mirrored places east of it, so the
+  two jobs are laid out alike: the same distances to the cutter, to the
+  bin and to the doorway, and the same set of positions to pick a piece
+  up from. Not mirrored: the camera. The room's west edge stops the view
+  at the west cluster, so job 1's places can lie outside the view while
+  the participant stands at job 2's far pieces, and not the other way
+  round (register §5.231).
+- **Finding the cutter.** The cutter is not visible from the hall: the
+  participant sees the lit doorway between the Component Locker and the
+  Assembly Bench and the cutter only after walking through it. There is
+  no sign. Whether the doorway needs a way-finding cue is open for the
+  owner (register §5.231).
+- **One-pixel collision treatment of the bin.** The approved bin figure
+  is x 374.4–425.6. Rounding position and width separately would give
+  x 374–425 and leave the east side one pixel wider than the west. The
+  bin is therefore authored as the pixel solid `[374, 538, 52, 32]`
+  (x 374–426) — exact symmetry about x 400 was given precedence by the
+  research owner. The visual anchor stays (400, 556).
+- **Cutter approach.** (400, 423) stands 4 px north of the machine, so
+  the southern part of the usual ±12 px landing box is the cutter itself.
+  Every place in the box the avatar can stand on names the cutter.
+- **No piece is reachable from another station's place**, from the
+  doorway or from the hall: every place a piece can be picked up from is
+  inside the annex, more than 76 px from the bin anchor and outside the
+  cutter's 72 px range. Leaving the annex for the hall does not close a
+  cutting job by itself (the departure rule is unchanged — register §4).
+- **Entry-state version.** `m04-cutting-v4` (v1 Unit 14, v2 U14-C, v3
+  never committed or released, v4 this annex). Event names, fields and
+  scoring are unchanged.
+- **Driver discipline** (`workshopVia`, e2e only): the annex is entered
+  and left on the door column x 400 (hall side y 256, annex side y 416);
+  inside it the driver walks the clear row y 416 and the columns beside
+  the cutter.
+- **Plate.** `public/assets/world-v2/plates/workshop-plate.png`
+  (1376×608), composed locally from the kept v2 source by
+  `scripts/world-v2/plate_edits.py workshop`; provenance in
+  `docs/game/world-v2/ASSET-PROVENANCE-REGISTER.md` and the world-v2
+  manifest. Final SHA-256 `473f1b4f…` (U14-D2 closeout, 1 October
+  2026). Status PROVISIONAL.
+- **Verification.** Pure geometry: `e2e/m04_cutting.spec.ts`
+  ("U14-D2: measured from every reachable avatar position …"). Browser:
+  `e2e/u14_correction.spec.ts`, `e2e/m03_m04_route.spec.ts`,
+  `e2e/world_v2_workshop_look.spec.ts`; collision of the whole room
+  against the pure model (every face of every solid, both lane rows in
+  both directions, no trap): `e2e/collision_audit.spec.ts`; results in
+  `docs/verification/station-080-m26/UNIT-LOG.md` (U14-D2 and its
+  closeout).

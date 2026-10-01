@@ -65,3 +65,79 @@ the w1 prop set still used as layered sprites (`w1-evidence-desk`,
   (`scripts/world-v2/paint_props.py`), no generator.
 - Status unchanged: PROVISIONAL, not human-approved, asset-set version not
   bumped, nothing frozen.
+
+## Station 080 U14-D2 (2026-09-30) — workshop cutting annex, no generation spent
+
+- `plates/workshop-plate.png` is now **1376×608** (it was 1376×384): the
+  two-bay hall plus the M04 cutting annex south of the machine bay.
+- **Source:** `docs/game/world-v2/plate-sources/workshop-plate.v2.png`
+  (the untouched stitch of generations `d4c70eb3` + `94c19c7e`), and
+  nothing else. No `workshop-plate.v3.png` exists: the complete final
+  plate is reproduced deterministically from the v2 source by the script,
+  so a second source image would only duplicate the output.
+- **Method:** local Pillow composition,
+  `python scripts/world-v2/plate_edits.py workshop` (Pillow 10.4.0, run
+  from the repository root; always name the room — without an argument the
+  script rewrites every edited plate). PixelLab was not available for this
+  unit; no generator was used. Every pixel is either copied from the same
+  painting (the cutter, the bin, the hull band and face, the locker door
+  leaf) or painted in colours taken from the painting's own palette; the
+  exterior band, the ragged edge of the hull face and the floor wear are
+  seeded (`random.Random(14)`, `(27)`, `(41)`, `(80)`, `(53)`, `(61)`),
+  so the output is
+  byte-reproducible.
+- **Edits:**
+  - the sealed-shutter edit of 2026-09-18 is kept (first step of the
+    script);
+  - the old sample-cutter island, its platform and the attached bin are
+    painted out as floor, worn like the floor around it — the painted
+    bay marking stays as an empty marked bay (top region, x 362–518,
+    y 176–270);
+  - the decorative south tool bench is replaced by a 64 px doorway
+    (x 368–432) through the south hull, with the orange frame trims of
+    the painting's other doorways (top region, x 362–448, y 270–383);
+  - a 13×6-tile annex is painted below (floor x 192–608, y 384–576,
+    mirrored about x 400): the cutter, re-used from the painting with its
+    operating face turned north, at the northern centre (anchor 400, 456),
+    its wooden platform completed on the side the old bin used to cover;
+    the bin south of it (anchor 400, 556); a south wall, two wall lamps,
+    floor seams, plate rivets and wear;
+  - the hull face, which the painting crops at y 384, is continued to its
+    base (y 412) by reflecting the painting's own rows 356–383, so panel
+    seams and rivet columns run on; the weathering is not reflected (a
+    patch the crop line cuts closes a few rows below it, every other
+    reflected patch becomes plain face, and the continued rows carry
+    seeded weathering of their own in the face's tone 44, 42, 65 at the
+    painting's patch sizes and sparsity); under the two bays' straight
+    south walls it ends in a base line, elsewhere it breaks up into the
+    exterior along a ragged edge that begins gradually over the 28 px
+    past each walled run (closeout of 2026-10-01: the earlier version
+    reflected every patch — an hourglass at the crop line under the
+    records office — and switched to the exterior on a vertical line at
+    the south-east corner; rows 384–413 only changed, everything else
+    byte-identical);
+  - the annex's two side-wall tops run from the hull's wall top down to
+    the annex's south wall (the annex is built onto the hull), which
+    crosses the hull band in two 16 px strips (top region, x 176–191 and
+    x 608–623, y 350–383) — a third edit area, added in the unit's fix
+    pass because the independent visual review found the first version's
+    walls detached from the hull, and ratified by the research owner on
+    2026-10-01;
+  - the rest of the lower band (south of the records office and beside
+    the annex) is dark exterior — not floor, no doors, no stations.
+  - Outside those areas the top 384 rows are pixel-identical to the
+    previous plate (measured).
+- **Final file:** 1376×608, SHA-256
+  `473f1b4fa33905183c446114a72b7e4b9f38bf41c9013676d7f344fa84fd5dcd`
+  (also in the world-v2 manifest; the pre-closeout plate was
+  `a38a64cc…`). Independent visual review of the final plate
+  (2026-10-01): all five criteria met (coherent, aligned with the
+  collision geometry, stylistically consistent, no false affordances, no
+  visible seams); both artefacts gone; three minor, non-blocking residuals
+  recorded in the implementation register (§5.226). Not an approval of
+  the asset set, which stays PROVISIONAL.
+- Collision is unchanged in kind: it comes only from
+  `src/world/layouts/workshop.ts` (43×19), which was updated in the same
+  unit to match the painting.
+- Status unchanged: PROVISIONAL, not human-approved, asset-set version not
+  bumped, nothing frozen.

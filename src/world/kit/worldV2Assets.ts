@@ -19,8 +19,9 @@ export const WORLD_V2_IMAGE_URLS: Record<string, string> = {
   // Room plates (painted backgrounds; collision is the layout grid).
   'w2-dock-plate': 'assets/world-v2/plates/dock-plate.png',
   'w2-concourse-plate': 'assets/world-v2/plates/concourse-plate.png',
-  // Records Workshop: one stitched two-bay plate (1376×384) — machine bay
-  // west, records office east, joined by the painted doorway vestibule.
+  // Records Workshop: one plate (1376×608) — machine bay west, records
+  // office east, joined by the painted doorway vestibule, and the cutting
+  // annex south of the machine bay (U14-D2).
   'w2-workshop-plate': 'assets/world-v2/plates/workshop-plate.png',
   // Diagnostics Laboratory: one 22×12 plate (signal-analysis case room).
   'w2-laboratory-plate': 'assets/world-v2/plates/laboratory-plate.png',

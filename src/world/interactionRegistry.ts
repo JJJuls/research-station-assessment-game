@@ -349,11 +349,16 @@ const workshopStation = (
 });
 
 /**
- * Records Workshop (World V2 rescue continuation, 43×12 two-bay hall).
- * Every approach point below is the machine-audited safe standing point
- * of its station: the ±12 px landing box is standable (32×42 body), the
- * station itself is strictly nearest at every landing, and the whole
- * book is BFS-connected from the spawn (workshop layout header).
+ * Records Workshop (World V2 rescue continuation, 43×19: the two-bay hall
+ * and the cutting annex). Every approach point below is the
+ * machine-audited safe standing point of its station: the ±12 px landing
+ * box is standable (32×42 body), the station itself is strictly nearest
+ * at every landing, and the whole book is BFS-connected from the spawn
+ * (workshop layout header). One exception, by the approved U14-D2
+ * geometry: the sample cutter is operated from the north at (400, 423),
+ * 4 px off the machine, so the southern part of its landing box is the
+ * cutter itself — every landing the avatar can stand on still names the
+ * cutter.
  */
 export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
   door('records_workshop', 'station_concourse', 'workshop.door_concourse', {
@@ -413,7 +418,8 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Sample Cutter',
     { kind: 'action', id: 'm04_cutting_job' },
     'm04_cutting_o1 / m04_cutting_o2',
-    { x: 348, y: 230 },
+    { x: 400, y: 423 },
+    { w: 3, h: 3 },
   ),
   workshopStation(
     'workshop.storage_locker',

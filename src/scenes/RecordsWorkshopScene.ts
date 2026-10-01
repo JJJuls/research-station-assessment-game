@@ -28,13 +28,19 @@ import {
   removeInventoryItem,
 } from '../gameplay/inventory';
 import { PhysicalManipulationLayer } from '../gameplay/physical';
-import { declareM13Lattice } from '../informationProcessing/m13PipeNetwork';
+import {
+  declareM13Lattice,
+  m13LatticeProbe,
+} from '../informationProcessing/m13PipeNetwork';
 import { openIpOverlay } from '../informationProcessing/ui/openIpOverlay';
 import { ensureInventoryIconTextures } from '../inventory/inventoryTextures';
+import { CONTAINER_IDS } from '../inventory/model';
+import { getInventoryState } from '../inventory/store';
 import {
   installInventoryTelemetry,
   setInventoryTelemetryScene,
 } from '../inventory/telemetry';
+import { guardKeyHandler } from '../inventory/ui/keyGuard';
 import { openInventoryOverlay } from '../inventory/ui/openOverlay';
 import {
   refreshPilotCoverageProbe,
@@ -57,6 +63,7 @@ import {
 import {
   closeM01Surface,
   declareM01,
+  m01State,
   m01Window,
   openM01,
   presentM01,
@@ -65,6 +72,7 @@ import {
 import { m01SurfaceModel } from '../pilot/windows/m01SurfaceModel';
 import {
   declareM02C,
+  m02cState,
   m02cWindow,
   noteM02CEntry,
   presentM02C,
@@ -75,19 +83,25 @@ import {
   m03tIdleLine,
   m03tPhase,
   m03tPresentedBy,
+  m03tState,
   m03tTerminal,
   m03tWindow,
   noteM03TEntry,
   presentM03T,
 } from '../pilot/windows/m03ToolRestore';
 import {
+  createM04BinGate,
   declareM04,
   departM04,
   disposeM04,
   dropM04Carried,
   listM04,
-  M04_REARM_LINE,
+  M04_SET_DOWN_LINE,
+  M04_SET_DOWN_REFUSED_LINE,
   m04AnyProduced,
+  type M04BinGate,
+  m04BinGateStep,
+  m04BinPointerAllowed,
   m04Carried,
   m04CutterIdleLine,
   m04JobOpen,
@@ -103,10 +117,12 @@ import {
   pickUpM04,
   refuseM04SettlingPress,
   runM04SampleJob,
+  setDownM04,
 } from '../pilot/windows/m04Debris';
 import {
   closeM06Surface,
   declareM06,
+  m06State,
   m06Window,
   openM06,
   presentM06,
@@ -124,6 +140,7 @@ import {
 import {
   closeM12Surface,
   declareM12,
+  m12State,
   m12Windows,
   openM12,
   presentM12,
@@ -148,11 +165,14 @@ import {
   m21BenchLeave,
   m21BenchOpen,
   m21Present,
+  m21State,
   m22DeskChipText,
   m22DeskDone,
   m22DeskLeave,
   m22DeskOpen,
   m22Present,
+  m22Ratings,
+  m22State,
   m25AcknowledgeNotice,
   m25PresentNotice,
   m25State,
@@ -183,26 +203,79 @@ import {
   VESTIBULE_FOREGROUND,
   VESTIBULE_OPENINGS,
   vestibuleSpan,
+  WORKSHOP_COLS,
   WORKSHOP_LAYOUT,
+  WORKSHOP_ROWS,
   WORKSHOP_SOLIDS,
 } from '../world/layouts/workshop';
 import type { InteractionNear, InteractionRedirect } from '../world/RoomScene';
+import { worldToDesign } from '../world/viewport';
 
 declare global {
   interface Window {
     /** DEV-only, read-only return-shift probe (Unit 5). */
     __returnProbe?: ReturnType<typeof returnProbeSnapshot> | null;
+    /**
+     * DEV-only, read-only probe of the set-down control (U14-D): shown
+     * only while a piece is carried, beside the line that states what is
+     * carried; the rectangle is the control's pointer target in the
+     * 800 × 600 design space. Never read back into gameplay.
+     */
+    __m04SetDownProbe?: {
+      visible: boolean;
+      /** The control's own line. */
+      text: string | null;
+      /** The carried-item line shown beside it. */
+      status: string | null;
+      key: string;
+      hovered: boolean;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    } | null;
+    /**
+     * DEV-only, read-only probe of the bin as a target (U14-D): the gate
+     * of the carried piece, whether the avatar stands in the bin's range
+     * and whether the bin's outline is shown. Never read back.
+     */
+    __m04BinProbe?: {
+      carrying: string | null;
+      released: boolean;
+      been_outside: boolean;
+      acquired: boolean;
+      drag_held: boolean;
+      in_range: boolean;
+      outlined: boolean;
+      /** The station whose recorded progress is watched (null = none). */
+      watching: string | null;
+    } | null;
   }
 }
 
 const TILE = 32;
 
-/** What the cutter states while the second coupon is not available yet. */
-const CUTTER_REARMS = M04_REARM_LINE;
 const CUTTER_LABEL = 'Sample Cutter';
-/** Keyboard reach of a loose piece and of the bin (px; unchanged from U14). */
+/**
+ * ONE reach (px) for a loose piece and for the bin, by keyboard and by
+ * pointer alike (U14-D2, `m04-cutting-v4`): the pointer layer is given
+ * the same figure, so both input modes lift a piece and use the bin
+ * from the same positions.
+ */
 const PIECE_REACH = 64;
-const BIN_REACH = 96;
+const BIN_REACH = 64;
+/** The key that sets a carried piece down (U14-D); the control states it. */
+const SET_DOWN_KEY = 'X';
+/** The set-down control's line. */
+const SET_DOWN_TEXT = `${SET_DOWN_KEY} — Set down`;
+/**
+ * The carried-item line and the set-down control sit below the avatar's
+ * feet (room px below the avatar's origin), side by side.
+ */
+const SET_DOWN_BELOW_PX = 44;
+const SET_DOWN_GAP_PX = 4;
+const SET_DOWN_FILL = '#1b2a36';
+const SET_DOWN_FILL_TARGETED = '#2f6f66';
 
 /**
  * What a press acts on instead of the station, bundle or floor in range
@@ -252,7 +325,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   protected bundleDropBounds(): { width: number; height: number } {
-    return { width: 43 * TILE, height: 12 * TILE };
+    return { width: WORKSHOP_COLS * TILE, height: WORKSHOP_ROWS * TILE };
   }
 
   protected getSpawn(): { x: number; y: number } {
@@ -279,6 +352,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
     super.create(data);
     this.buildVestibuleForeground();
+    this.buildSetDownControl();
 
     noteM08JobOffered('stow_supplies');
 
@@ -300,9 +374,22 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       m22Present(now);
     }
 
+    // M04 (U14-D): while another station's panel is open this scene is
+    // paused, so the other task's recorded progress is read once per game
+    // step — the first departure is written right after the accepted
+    // action, never at the panel's opening or closing.
+    const readOtherWork = () => this.checkOtherWork();
+
+    this.otherWorkWatch = null;
+    this.binGate = createM04BinGate();
+    this.game.events.on(Phaser.Core.Events.POST_STEP, readOtherWork);
+
     this.events.on('resume', () => {
       const now = Date.now();
 
+      // The panel is closed: whatever it recorded is read one last time.
+      this.checkOtherWork();
+      this.otherWorkWatch = null;
       resumeM06Surface(now);
       resumeM12Surface('o2', now);
       resumeM01Surface('o2', now);
@@ -310,8 +397,13 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       this.refreshReturnChips();
     });
     this.events.once('shutdown', () => {
+      this.game.events.off(Phaser.Core.Events.POST_STEP, readOtherWork);
+      this.otherWorkWatch = null;
+
       if (typeof window !== 'undefined' && import.meta.env.DEV) {
         window.__returnProbe = null;
+        window.__m04SetDownProbe = null;
+        window.__m04BinProbe = null;
       }
     });
 
@@ -339,6 +431,8 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       x: S.workOrderBoard.x,
       y: S.workOrderBoard.y,
       onPromptOpened: () => {
+        // Reading the board is an inspection: it closes no cutting job
+        // (U14-D). Only the optional filter swap is work done here.
         this.logStationOpened('work_order_board');
         noteM08JobOffered('filter_swap');
         return true;
@@ -387,6 +481,19 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         });
         openInventoryOverlay(this, { mode: 'm02case', allowWorldDrop: false });
       },
+      undefined,
+      // Recorded work: a case moved to another tray, a tray labelled, the
+      // workspace handed over, a request answered.
+      () => {
+        const s = m02cState();
+
+        return [
+          s.moveCount,
+          s.labelChanges,
+          s.handedOverAtMs !== null,
+          s.requests.filter((request) => request.answer !== null).length,
+        ].join('|');
+      },
     );
     this.guided(
       'case_workspace',
@@ -411,9 +518,22 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       'proc-crate-components',
       S.storageLocker,
       () => {
+        // The locker's first use is the engagement with the optional
+        // stowing job: the departure is written AFTER that transition
+        // succeeded. A later opening engages nothing again; there the
+        // first change of what the locker holds is the work.
+        const engagedBefore = secondaryState().m08.stow_supplies.engaged;
+
         noteM08JobEngaged('stow_supplies', Date.now());
+
+        if (!engagedBefore && secondaryState().m08.stow_supplies.engaged) {
+          this.noteOtherWorkBegun('storage_locker');
+        }
+
         openInventoryOverlay(this, { mode: 'container', allowWorldDrop: true });
       },
+      undefined,
+      () => this.containerContents([CONTAINER_IDS.labStorage]),
     );
     this.station(
       'assembly_bench',
@@ -423,6 +543,13 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       () => {
         openInventoryOverlay(this, { mode: 'workbench', allowWorldDrop: true });
       },
+      undefined,
+      // Opening the bench is no work: a part laid on it or an assembly is.
+      () =>
+        this.containerContents([
+          CONTAINER_IDS.workbenchInput,
+          CONTAINER_IDS.workbenchOutput,
+        ]),
     );
 
     // ——— M04 sample cutter + disposal chute (Station 080 U14: two
@@ -449,9 +576,9 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       // becomes available after the first job's departure).
       () => m04NextJob() === null,
     );
-    // World V2: the disposal bin is baked into the plate at the cutter's
-    // east side — no chute sprite; the physical container keeps its
-    // radius at the painted bin.
+    // World V2: the cutter and the disposal bin are baked into the plate
+    // in the cutting annex (U14-D2), the bin south of the cutter — no
+    // chute sprite; the physical container sits on the painted bin.
     this.buildPhysicalLayer();
 
     // ——— M06 dispatch console (Station 080 U7: practice, then twelve
@@ -462,10 +589,6 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       'proc-console-scenario',
       WS.dispatchConsole,
       () => {
-        if (activeWorkSurface(this) !== null) {
-          return;
-        }
-
         // Entry state (review U7 S-F5 / S-F6): the route stage at every
         // open and the other Workshop items' window states at the first.
         openM06(Date.now(), {
@@ -486,6 +609,23 @@ export class RecordsWorkshopScene extends PilotZoneScene {
             this.m06TickPending = false;
           },
         });
+      },
+      // A surface already open is not opened again (unchanged).
+      () => activeWorkSurface(this) === null,
+      // Recorded work: a token keyed or removed, the line cleared, a line
+      // sent, the work period begun, the stop armed.
+      () => {
+        const s = m06State();
+
+        return [
+          s.tokenPresses,
+          s.tokensRemoved,
+          s.clears,
+          s.practiceSent,
+          s.typedLines,
+          s.beganAtMs !== null,
+          s.stopArmPresses,
+        ].join('|');
       },
     );
     this.guided(
@@ -520,6 +660,9 @@ export class RecordsWorkshopScene extends PilotZoneScene {
           onClose: () => closeM07Surface(Date.now()),
         });
       },
+      undefined,
+      // Recorded work: a calibration stage carried out.
+      () => String(m07State().stagesCompleted),
     );
     this.guided(
       'calibration_bench',
@@ -552,6 +695,14 @@ export class RecordsWorkshopScene extends PilotZoneScene {
           onClose: () => closeM12Surface('o2', Date.now()),
         });
       },
+      undefined,
+      // Recorded work: a field checked, judged or corrected; the packet
+      // released.
+      () => {
+        const s = m12State('o2');
+
+        return `${s.actions}|${s.released}`;
+      },
     );
     this.guided(
       'qc_packet_o2',
@@ -570,6 +721,23 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       WS.latticeBench,
       () => {
         openIpOverlay(this, key.scene.ipPipeBoard, 'm13', {});
+      },
+      undefined,
+      // Recorded work: a piece seated, moved, turned or returned, a step
+      // undone, the board reset, the lattice submitted. A piece only
+      // lifted, and the help sheet, are not.
+      () => {
+        const s = m13LatticeProbe();
+
+        return [
+          s.placements,
+          s.moves,
+          s.rotations,
+          s.returns,
+          s.undos,
+          s.resets,
+          s.submission_count,
+        ].join('|');
       },
     );
     this.guided(
@@ -658,6 +826,13 @@ export class RecordsWorkshopScene extends PilotZoneScene {
           return true; // unavailable history: prompt states it, no surface
         }
 
+        // Recorded work: the restoration resumed, an indoor stage done.
+        // The console inspected is not.
+        this.watchOtherWork('feed_console', () => {
+          const m20 = returnProbeSnapshot().m20;
+
+          return `${m20.returned}|${m20.useful_resume_actions}`;
+        });
         this.openReturnSurface('m20_feed_console', () =>
           m20FeedConsoleSurfaceModel(this.returnSurfaceHost()),
         );
@@ -680,6 +855,22 @@ export class RecordsWorkshopScene extends PilotZoneScene {
           return true;
         }
 
+        // Recorded work: a post or the selector set, the unit applied,
+        // accepted or set aside. The plate and the manual read are not.
+        this.watchOtherWork('relay_bench', () =>
+          (['o1', 'o2'] as const)
+            .map((caseId) => {
+              const s = m21State(caseId);
+
+              return [
+                s.actions.length,
+                s.applications.length,
+                s.accepted,
+                s.stop_choice ?? 'open',
+              ].join(',');
+            })
+            .join('|'),
+        );
         m21BenchOpen(Date.now(), 'keyboard');
         this.openReturnSurface('m21_relay_bench', () =>
           m21RelayBenchSurfaceModel(this.returnSurfaceHost()),
@@ -711,6 +902,29 @@ export class RecordsWorkshopScene extends PilotZoneScene {
           return true;
         }
 
+        // Recorded work: a line placed or coded, the report submitted or
+        // withdrawn, the setback acknowledged, a rating given. A tray
+        // line selected and the register read are not.
+        this.watchOtherWork('report_desk', () =>
+          [
+            ...(['o1', 'o2'] as const).map((report) => {
+              const s = m22State(report);
+
+              return [
+                s.slots.map((slot) => slot ?? '-').join('/'),
+                Object.values(s.codes)
+                  .map((code) => code ?? '-')
+                  .join('/'),
+                s.submissions.length,
+                s.setback_acknowledged_at_ms !== null,
+                s.stop_choice ?? 'open',
+              ].join(',');
+            }),
+            (['o1', 'o2'] as const)
+              .map((report) => m22Ratings().ratings[report] !== null)
+              .join(','),
+          ].join('|'),
+        );
         m22DeskOpen(Date.now(), 'keyboard');
         this.openReturnSurface('m22_report_desk', () =>
           m22ReportDeskSurfaceModel(this.returnSurfaceHost()),
@@ -763,6 +977,13 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     }
 
     declareM01('o2');
+    // Recorded work: a card placed or returned, a job worked. A card
+    // only lifted is not.
+    this.watchOtherWork('return_orders', () => {
+      const s = m01State('o2');
+
+      return [s.placements, s.returns, s.plan_locked, s.done.length].join('|');
+    });
     openM01('o2', Date.now());
     openWorkSurface(this, {
       surfaceId: 'm01_return_orders',
@@ -930,6 +1151,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
             removeInventoryItem('relay_unit') &&
             noteHandoverPlaced('relay_unit')
           ) {
+            this.noteOtherWorkBegun('handover_desk');
             this.logScenarioEvent(
               'pilotHandoverDesk',
               'pilot_handover_placed',
@@ -953,6 +1175,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
             removeInventoryItem('relay_coupling') &&
             noteHandoverPlaced('relay_coupling')
           ) {
+            this.noteOtherWorkBegun('handover_desk');
             this.logScenarioEvent(
               'pilotHandoverDesk',
               'pilot_handover_placed',
@@ -1005,12 +1228,23 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
   // ——— helpers ————————————————————————————————————————————————————————
 
+  /**
+   * A station that opens a panel or a work surface. `opens` (default:
+   * always) is the station's own refusal to open at all; `progress`
+   * reads what the station's task has RECORDED of the participant's
+   * accepted work (moves, answers, placements, decisions — never the
+   * opening, a reading or a refusal). Opening and closing the panel
+   * closes no cutting job: the first departure of a job still open is
+   * written when that record first changes (U14-D).
+   */
   private station(
     id: string,
     label: string,
     texture: string,
     at: { x: number; y: number },
     open: () => void,
+    opens: () => boolean = () => true,
+    progress: () => string,
   ) {
     this.addStation({
       interactionKey: 'pilotStation',
@@ -1020,6 +1254,12 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       y: at.y,
       onPromptOpened: () => {
         this.logStationOpened(id);
+
+        if (!opens()) {
+          return false;
+        }
+
+        this.watchOtherWork(id, progress);
         open();
         return false;
       },
@@ -1028,11 +1268,77 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   /**
-   * Stations that yield the press to a nearer piece of the open job or to
-   * a nearer bin (label → station id): the Case Workspace, the presses,
-   * the Component Locker, the Assembly Bench and the benches of the first
-   * shift (register §5.171, unchanged). The Work Order Board, the seal
-   * log, the return-shift stations and the door never yield.
+   * What the named containers hold, slot by slot: the record of the
+   * Component Locker and of the Assembly Bench (they keep no task state
+   * of their own).
+   */
+  private containerContents(containerIds: readonly string[]): string {
+    const { containers } = getInventoryState();
+
+    return containerIds
+      .map((containerId) =>
+        (containers[containerId]?.slots ?? [])
+          .map((stack) =>
+            stack === null ? '-' : `${stack.definitionId}x${stack.quantity}`,
+          )
+          .join(','),
+      )
+      .join('|');
+  }
+
+  /**
+   * The station whose panel is open and the record its task held when
+   * the panel was opened (null: no panel of another station is open).
+   */
+  private otherWorkWatch: {
+    stationId: string;
+    recorded: string;
+    progress: () => string;
+  } | null = null;
+
+  /**
+   * A station's panel is about to open while a cutting job awaits its
+   * departure: its task's record is kept, to be compared after every
+   * game step. With no job open nothing is watched.
+   */
+  private watchOtherWork(stationId: string, progress: () => string) {
+    this.otherWorkWatch =
+      m04JobOpen() === null
+        ? null
+        : { stationId, recorded: progress(), progress };
+  }
+
+  /**
+   * The watched task recorded accepted work: that is the first departure
+   * of the cutting job still open. A panel only shown, a refusal, a
+   * record that is closed or held back change nothing and close nothing.
+   */
+  private checkOtherWork() {
+    const watch = this.otherWorkWatch;
+
+    if (watch === null) {
+      return;
+    }
+
+    if (m04JobOpen() === null) {
+      this.otherWorkWatch = null;
+
+      return;
+    }
+
+    if (watch.progress() !== watch.recorded) {
+      this.otherWorkWatch = null;
+      this.noteOtherWorkBegun(watch.stationId);
+    }
+  }
+
+  /**
+   * Stations that yield the press to a nearer bin while a piece is
+   * carried (label → station id): the Case Workspace, the presses, the
+   * Component Locker, the Assembly Bench and the benches of the first
+   * shift. A station never yields to a loose piece (U14-D). The Work
+   * Order Board, the seal log, the return-shift stations and the door
+   * never yield.
    */
   private readonly yieldingStations = new Map<string, string>();
 
@@ -1154,6 +1460,15 @@ export class RecordsWorkshopScene extends PilotZoneScene {
           return false;
         }
 
+        // The panel shown closes no cutting job (U14-D): the press's
+        // recorded work does — the roll moved, a cycle run, a tool moved.
+        // A press held back after a reload records none of them.
+        this.watchOtherWork(`press_${occasion}`, () => {
+          const s = m03tState(occasion);
+
+          return `${s.practiceMoves}|${s.cycles}|${s.moveCount}`;
+        });
+
         if (m03tPhase(occasion) === 'unopened') {
           const other: M03Occasion = occasion === 'a' ? 'b' : 'a';
 
@@ -1213,9 +1528,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
    * the settle window of the cut is refused (a repeated press is never an
    * act on the pieces); otherwise the bench states that it has nothing to
    * cut. A press that names the cutter NEVER lifts or drops a piece
-   * (U14-C): where a piece or the bin is what the press would act on, the
-   * prompt names it and the press never reaches this method
-   * (`interactionRedirect`).
+   * (U14-C): where the bin is what the press would act on, the prompt
+   * names it and the press never reaches this method
+   * (`interactionRedirect`); a piece is never named within the cutter's
+   * range (U14-D).
    */
   private useSampleCutter() {
     if (m04NextJob() !== null && this.cuttingScheduled()) {
@@ -1235,13 +1551,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
       if (result.outcome === 'run') {
         this.player.playActionAnim('dig');
-        // The same line for everyone at the cut: the second coupon is not
-        // available yet (never a word about the pieces).
-        this.showFeedbackMessage(
-          result.number === 1
-            ? `Sample coupon 1 of 2 cut. ${CUTTER_REARMS}`
-            : 'Sample coupon 2 of 2 cut.',
-        );
+        // The same line after both cuts (U14-D): it states the cut and
+        // nothing else — never a word about the pieces, about leaving or
+        // about other work.
+        this.showFeedbackMessage(`Sample coupon ${result.number} of 2 cut.`);
         this.physical?.syncObjects(this.debrisEntries());
         this.refreshGuidance();
 
@@ -1282,32 +1595,34 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   /**
    * THE target decision of a press (U14-C) — read once per frame by the
    * prompt and by the press (`interactionRedirect`), so both always
-   * agree. It names a piece or the bin exactly where Unit 14 let a press
-   * act on one (the rules and reaches are unchanged; register §5.171):
+   * agree (one 64 px reach for a piece and for the bin, U14-D2):
    *
-   * - at the cutter, once no coupon is waiting and the settle window of
-   *   the cut is over: the bin in reach while a piece is carried,
-   *   otherwise the nearest piece in reach;
-   * - at a station that yields, while a cutting job awaits its departure:
-   *   the bin when it lies nearer than the station while a piece is
-   *   carried, otherwise a piece OF THAT JOB that lies nearer than the
-   *   station (leftover pieces of an earlier job never intercept a
-   *   station);
-   * - on open floor: the bin or the nearest piece, unless a supply bundle
-   *   in reach lies nearer.
+   * - a station or a door in range ALWAYS keeps the press against a
+   *   loose piece (U14-D): a press meant for a station never lifts one.
+   *   The pieces lie clear of every station's range, so each is lifted
+   *   by keyboard from open floor, or by pointer;
+   * - with a piece carried, the bin takes the press ONLY once it is the
+   *   acquired target (`binGate`, U14-D): the press that lifted the piece
+   *   is over and the avatar walked into the bin's range from outside
+   *   it. Lifting a piece never names the bin. Acquired, the bin takes
+   *   the press at the cutter (once no coupon is waiting and the settle
+   *   window is over) and at a station that yields, while a cutting job
+   *   awaits its departure, when it lies nearer than the station;
+   * - on open floor: the acquired bin or the nearest piece, unless a
+   *   supply bundle in reach lies nearer.
    *
    * Null = the station, the door or the bundle keeps the press. With the
    * hands full a piece in reach on OPEN FLOOR is still named, and the
-   * press states why nothing is lifted (Unit 14: a silent press); at the
-   * cutter and at every station the press stays theirs, as in Unit 14.
+   * press states why nothing is lifted.
    */
   private debrisTarget(
     near: { kind: 'station' | 'door'; label: string; distance: number } | null,
   ): DebrisTarget | null {
     let nearerThan = Number.POSITIVE_INFINITY;
-    let ofJob: M04Piece['job'] | null = null;
     let origin: M04PickupOrigin = 'open_floor_press';
     let namesBlockedPiece = true;
+
+    const carried = m04Carried();
 
     if (near !== null) {
       if (near.kind === 'door') {
@@ -1325,40 +1640,46 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         }
 
         origin = 'cutter_press';
-        // With the hands full the cutter keeps the press and states its
-        // own line, as in Unit 14 (the re-arm cue is not changed here).
-        namesBlockedPiece = false;
       } else if (stationId !== undefined) {
-        ofJob = m04JobOpen();
-
-        if (ofJob === null) {
+        if (m04JobOpen() === null) {
           return null;
         }
 
         nearerThan = near.distance;
         origin = `station_press:${stationId}`;
-        namesBlockedPiece = false;
       } else {
         return null;
       }
-    } else {
-      const bundle = this.bundles.nearest(this.player.x, this.player.y);
 
-      if (bundle !== null) {
-        nearerThan = Math.hypot(
-          this.player.x - bundle.x,
-          this.player.y - bundle.y,
-        );
-        namesBlockedPiece = false;
+      // The station keeps the press against every loose piece; only the
+      // bin, for a piece already in the hands, may take it.
+      if (carried === null) {
+        return null;
       }
+
+      const toBinHere = Math.hypot(
+        this.player.x - WS.disposalChute.x,
+        this.player.y - WS.disposalChute.y,
+      );
+
+      return this.binGate.acquired &&
+        toBinHere <= BIN_REACH &&
+        toBinHere < nearerThan
+        ? { kind: 'bin', carried, origin }
+        : null;
     }
 
-    const carried = m04Carried();
+    const bundle = this.bundles.nearest(this.player.x, this.player.y);
+
+    if (bundle !== null) {
+      nearerThan = Math.hypot(
+        this.player.x - bundle.x,
+        this.player.y - bundle.y,
+      );
+      namesBlockedPiece = false;
+    }
+
     const piece = m04RemainingDebris()
-      .filter(
-        (candidate) =>
-          carried !== null || ofJob === null || candidate.job === ofJob,
-      )
       .map((candidate) => ({
         candidate,
         d: Math.hypot(
@@ -1375,7 +1696,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         this.player.y - WS.disposalChute.y,
       );
 
-      if (toBin <= BIN_REACH && toBin < nearerThan) {
+      if (this.binGate.acquired && toBin <= BIN_REACH && toBin < nearerThan) {
         return { kind: 'bin', carried, origin };
       }
 
@@ -1406,8 +1727,35 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     const target = this.debrisTarget(near);
 
     if (target === null) {
+      // The station's or the door's own line (above or below it), or the
+      // line of the supply bundle in reach.
+      const bundle =
+        near === null
+          ? this.bundles.nearest(this.player.x, this.player.y)
+          : null;
+
+      this.promptLines =
+        near !== null
+          ? [
+              { x: near.x, y: near.y - 56 },
+              { x: near.x, y: near.y + 56 },
+            ]
+          : bundle !== null
+            ? [{ x: bundle.x, y: bundle.y - 40 }]
+            : [];
+
       return null;
     }
+
+    const named =
+      target.kind === 'bin'
+        ? WS.disposalChute
+        : {
+            x: WS.cutterScatter.x + target.piece.dx,
+            y: WS.cutterScatter.y + target.piece.dy,
+          };
+
+    this.promptLines = [{ x: named.x, y: this.promptAnchorY(named.y) - 40 }];
 
     if (target.kind === 'bin') {
       return {
@@ -1441,6 +1789,8 @@ export class RecordsWorkshopScene extends PilotZoneScene {
           target.kind === 'piece' &&
           pickUpM04(piece.object_id, 'keyboard', target.origin)
         ) {
+          // The bin is no target of this press, however long it is held.
+          this.binGate = createM04BinGate();
           this.player.playActionAnim('pickup');
           this.physical?.syncObjects(this.debrisEntries());
 
@@ -1453,11 +1803,280 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     };
   }
 
+  /**
+   * The bin as a target of the carried piece (U14-D, owner ruling 2):
+   * renewed at every pick-up, stepped every frame.
+   */
+  private binGate: M04BinGate = createM04BinGate();
+  /** Whether the bin's outline was shown in the last frame (DEV probe). */
+  private binOutlined = false;
+  /**
+   * Where the line above the avatar's target was placed in this frame
+   * (room px; none when no line is shown by this scene's own decision):
+   * the set-down control keeps clear of it.
+   */
+  private promptLines: { x: number; y: number }[] = [];
+
+  /**
+   * U14-D: the set-down control. Shown ONLY while a piece is carried, in
+   * the local action hierarchy: below the avatar, beside the line that
+   * states what is carried. It takes X and a pointer press, and shows
+   * that it is targeted (fill and outline) while the pointer is on it.
+   * Neutral: it never names the bin, tidying or disposal, and it never
+   * appears unasked (no piece in the hands, no control).
+   */
+  private setDownControl: Phaser.GameObjects.Text | null = null;
+  private setDownStatus: Phaser.GameObjects.Text | null = null;
+  private setDownOutline: Phaser.GameObjects.Rectangle | null = null;
+  private setDownTargeted = false;
+  /** A pointer press on the control is never also a press on the world. */
+  private setDownPointerHeld = false;
+
+  private buildSetDownControl() {
+    this.setDownTargeted = false;
+    this.setDownPointerHeld = false;
+    this.setDownStatus = this.add
+      .text(0, 0, '', {
+        backgroundColor: '#101820',
+        color: '#dce7f0',
+        font: '13px monospace',
+        padding: { x: 6, y: 4 },
+      })
+      .setOrigin(0)
+      .setDepth(Depth.AboveWorld)
+      .setScrollFactor(0)
+      .setVisible(false);
+    this.setDownControl = this.add
+      .text(0, 0, SET_DOWN_TEXT, {
+        backgroundColor: SET_DOWN_FILL,
+        color: '#ffffff',
+        font: 'bold 13px monospace',
+        padding: { x: 8, y: 4 },
+      })
+      .setOrigin(0)
+      .setDepth(Depth.AboveWorld)
+      .setScrollFactor(0)
+      .setVisible(false);
+    this.setDownOutline = this.add
+      .rectangle(0, 0, 10, 10, 0x000000, 0)
+      .setOrigin(0)
+      .setStrokeStyle(1, 0x5fd3c4, 0.95)
+      .setDepth(Depth.AboveWorld + 1)
+      .setScrollFactor(0)
+      .setVisible(false);
+    this.setDownControl.on('pointerover', () => {
+      this.setDownTargeted = true;
+      this.refreshSetDownControl();
+    });
+    this.setDownControl.on('pointerout', () => {
+      this.setDownTargeted = false;
+      this.refreshSetDownControl();
+    });
+    this.setDownControl.on('pointerdown', () => {
+      // The physical layer reads the same press after this handler: it
+      // is held off until the pointer is released, so the press can
+      // neither lift the piece again nor reach an object under the
+      // control.
+      this.setDownPointerHeld = true;
+      this.setDownCarried('pointer');
+    });
+
+    // Released inside the canvas or outside it: the pointer layer is
+    // handed back either way.
+    const released = () => {
+      this.setDownPointerHeld = false;
+    };
+
+    this.input.on(Phaser.Input.Events.POINTER_UP, released);
+    this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, released);
+    this.input.keyboard!.on(
+      `keydown-${SET_DOWN_KEY}`,
+      guardKeyHandler((event: KeyboardEvent) => {
+        if (event.repeat) {
+          return;
+        }
+
+        this.setDownCarried('keyboard');
+      }),
+    );
+    this.refreshSetDownControl();
+  }
+
+  /**
+   * Sets the carried piece down where it lay. It stays undisposed and no
+   * record already made changes. A set-down that cannot be completed
+   * keeps the piece in the hands and says so in one neutral line.
+   */
+  private setDownCarried(inputMode: 'keyboard' | 'pointer') {
+    const carried = m04Carried();
+
+    if (carried === null || !this.physicalInputEligible() || this.inputLocked) {
+      return;
+    }
+
+    const result = setDownM04(inputMode, this.textures.exists(carried.icon));
+
+    if (result === 'set_down') {
+      this.showFeedbackMessage(M04_SET_DOWN_LINE);
+      this.physical?.syncObjects(this.debrisEntries());
+    } else if (result === 'refused') {
+      this.showFeedbackMessage(M04_SET_DOWN_REFUSED_LINE);
+    }
+
+    this.refreshSetDownControl();
+  }
+
+  /**
+   * Where the carried-item line and the control are drawn (design
+   * space, top left). Always beside the avatar: below the feet, to the
+   * right, to the left, farther below or above the head — the first of
+   * these that covers no machine or bench, no piece, not the bin, not
+   * the figure and not the line above the avatar's target; where the
+   * room leaves none free, the one that covers least. Presentation only.
+   */
+  private setDownPlace(width: number, height: number) {
+    const figure = worldToDesign(this, this.player.x, this.player.y);
+    // Design px per room px.
+    const k =
+      worldToDesign(this, this.player.x + 1, this.player.y).x - figure.x;
+    const rect = (x: number, y: number, w: number, h: number) => {
+      const origin = worldToDesign(this, x, y);
+
+      return { x: origin.x, y: origin.y, w: w * k, h: h * k };
+    };
+    const covered = [
+      // The painted benches and machines rise above their footprints.
+      ...WORKSHOP_SOLIDS.map(([x, y, w, h]) => rect(x, y - 28, w, h + 28)),
+      ...m04RemainingDebris().map((piece) =>
+        rect(
+          WS.cutterScatter.x + piece.dx - 14,
+          WS.cutterScatter.y + piece.dy - 14,
+          28,
+          28,
+        ),
+      ),
+      rect(WS.disposalChute.x - 32, WS.disposalChute.y - 32, 64, 64),
+      // The figure and the piece shown in its hands.
+      rect(this.player.x - 18, this.player.y - 46, 50, 72),
+      ...this.promptLines.map((line) => {
+        const at = worldToDesign(this, line.x, line.y);
+
+        return { x: at.x - 170, y: at.y - 14, w: 340, h: 28 };
+      }),
+    ];
+    const places = [
+      { x: figure.x - width / 2, y: figure.y + SET_DOWN_BELOW_PX * k },
+      { x: figure.x + 36 * k, y: figure.y - height / 2, controlFirst: true },
+      { x: figure.x - 22 * k - width, y: figure.y - height / 2 },
+      { x: figure.x - width / 2, y: figure.y + (SET_DOWN_BELOW_PX + 30) * k },
+      { x: figure.x - width / 2, y: figure.y - 50 * k - height },
+    ].map((place) => ({
+      x: Phaser.Math.Clamp(
+        Math.round(place.x),
+        2,
+        Math.max(2, this.promptClampMaxX() - width - 2),
+      ),
+      y: Phaser.Math.Clamp(Math.round(place.y), 84, 600 - height - 2),
+      controlFirst: place.controlFirst ?? false,
+    }));
+    const coveredBy = (place: { x: number; y: number }) =>
+      covered.reduce(
+        (sum, area) =>
+          sum +
+          Math.max(
+            0,
+            Math.min(place.x + width, area.x + area.w) -
+              Math.max(place.x, area.x),
+          ) *
+            Math.max(
+              0,
+              Math.min(place.y + height, area.y + area.h) -
+                Math.max(place.y, area.y),
+            ),
+        0,
+      );
+
+    return places.reduce((best, place) =>
+      coveredBy(place) < coveredBy(best) ? place : best,
+    );
+  }
+
+  private refreshSetDownControl() {
+    const control = this.setDownControl;
+    const status = this.setDownStatus;
+    const outline = this.setDownOutline;
+
+    if (control === null || status === null || outline === null) {
+      return;
+    }
+
+    const carried = m04Carried();
+    const shown = carried !== null;
+    const line = carried === null ? '' : `Carrying: ${carried.label}`;
+
+    if (status.text !== line) {
+      status.setText(line);
+    }
+
+    if (control.visible !== shown) {
+      control.setVisible(shown);
+
+      if (shown) {
+        control.setInteractive({ useHandCursor: true });
+      } else {
+        control.disableInteractive();
+        this.setDownTargeted = false;
+      }
+    }
+
+    status.setVisible(shown);
+
+    const targeted = shown && this.setDownTargeted;
+
+    control.setBackgroundColor(
+      targeted ? SET_DOWN_FILL_TARGETED : SET_DOWN_FILL,
+    );
+
+    const height = Math.max(status.height, control.height);
+    const place = this.setDownPlace(
+      status.width + SET_DOWN_GAP_PX + control.width,
+      height,
+    );
+    // The control is the element next to the avatar: to the avatar's
+    // right it leads, elsewhere it follows the carried-item line.
+    const controlX = place.controlFirst
+      ? place.x
+      : place.x + status.width + SET_DOWN_GAP_PX;
+
+    status.setPosition(
+      place.controlFirst ? place.x + control.width + SET_DOWN_GAP_PX : place.x,
+      place.y,
+    );
+    control.setPosition(controlX, place.y);
+    outline
+      .setPosition(controlX, place.y)
+      .setSize(control.width, control.height)
+      .setVisible(targeted);
+
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      window.__m04SetDownProbe = {
+        visible: shown,
+        text: shown ? control.text : null,
+        status: shown ? status.text : null,
+        key: SET_DOWN_KEY,
+        hovered: targeted,
+        x: controlX,
+        y: place.y,
+        width: control.width,
+        height: control.height,
+      };
+    }
+  }
+
   private debrisEntries() {
-    // Pieces scatter from the audited origin at the cutter's operator
-    // side (zoneSites) with the window's FIXED offsets — same relative
-    // scatter for every participant; every piece machine-verified
-    // reachable.
+    // Pieces lie at the scatter origin (zoneSites) plus the window's
+    // FIXED offsets — the same places for every participant, on open
+    // floor clear of every station (U14-D).
     return m04RemainingDebris().map((d) => ({
       spec: {
         object_id: d.object_id,
@@ -1474,17 +2093,44 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     this.physical = new PhysicalManipulationLayer({
       scene: this,
       getPlayerPosition: () => ({ x: this.player.x, y: this.player.y }),
-      isEnabled: () => this.physicalInputEligible(),
+      // The keyboard's reach (U14-D2): a click lifts a piece and uses the
+      // bin from exactly the positions a press does.
+      reachRadius: PIECE_REACH,
+      isEnabled: () => this.physicalInputEligible() && !this.setDownPointerHeld,
       onPickup: (objectId) => {
         if (!pickUpM04(objectId, 'pointer', 'pointer')) {
           this.showFeedbackMessage('Hands full.');
           return false;
         }
 
+        // A click lifts the piece when the pointer is released; a drag
+        // lifts it with the pointer still held. Neither names the bin.
+        this.binGate = createM04BinGate(this.input.activePointer.isDown);
         this.physical?.syncObjects(this.debrisEntries());
         return true;
       },
       onPlace: (objectId, containerId) => {
+        // A press on the bin is a gesture of its own (the pointer is
+        // down); the release of the drag that lifted the piece is the one
+        // continuous gesture that may end in the bin (U14-D).
+        if (
+          containerId === 'm04_disposal' &&
+          !m04BinPointerAllowed(
+            this.binGate,
+            this.input.activePointer.isDown ? 'press' : 'drag_release',
+          )
+        ) {
+          const carried = m04Carried();
+
+          return {
+            outcome: 'unavailable',
+            feedback:
+              carried === null
+                ? 'That does not go there.'
+                : `Carrying the ${carried.label}.`,
+          };
+        }
+
         if (
           containerId === 'm04_disposal' &&
           disposeM04(objectId, Date.now(), 'pointer', 'pointer') !== 'invalid'
@@ -1510,6 +2156,16 @@ export class RecordsWorkshopScene extends PilotZoneScene {
             };
       },
       onFeedback: (message) => this.showFeedbackMessage(message),
+      // The bin is outlined once it is the acquired target, or while the
+      // drag that lifted the piece is held over it — never because a
+      // piece was lifted within its range.
+      isContainerCued: (_containerId, gesture) => {
+        this.binOutlined =
+          this.binGate.acquired ||
+          (this.binGate.dragHeld && gesture.dragging && gesture.pointerOver);
+
+        return this.binOutlined;
+      },
     });
     this.physical.syncContainers([
       {
@@ -1605,7 +2261,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
         foreground: this.vestibuleForeground?.visible ?? false,
       };
     }
+    this.stepBinGate();
     this.physical?.update();
+    this.publishBinProbe();
+    this.refreshSetDownControl();
     this.clampWorldReadouts([
       this.consoleChip,
       this.benchChip,
@@ -1616,6 +2275,51 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     if (typeof window !== 'undefined' && import.meta.env.DEV) {
       window.__returnProbe = returnProbeSnapshot();
     }
+  }
+
+  /**
+   * One step of the bin's gate (U14-D): the interaction keys and the
+   * pointer as they are held NOW, and whether the avatar stands within
+   * the bin's range. No time is measured.
+   */
+  private stepBinGate() {
+    // The outline is decided anew by the pointer layer's update.
+    this.binOutlined = false;
+    m04BinGateStep(this.binGate, {
+      carrying: m04Carried() !== null,
+      keysDown:
+        this.player.cursors.space.isDown ||
+        this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E).isDown,
+      pointerDown: this.input.activePointer.isDown,
+      inRange: this.inBinRange(),
+    });
+  }
+
+  private inBinRange(): boolean {
+    return (
+      Math.hypot(
+        this.player.x - WS.disposalChute.x,
+        this.player.y - WS.disposalChute.y,
+      ) <= BIN_REACH
+    );
+  }
+
+  /** DEV probe of the gate, published after the outline was decided. */
+  private publishBinProbe() {
+    if (typeof window === 'undefined' || !import.meta.env.DEV) {
+      return;
+    }
+
+    window.__m04BinProbe = {
+      carrying: m04Carried()?.object_id ?? null,
+      released: this.binGate.released,
+      been_outside: this.binGate.beenOutside,
+      acquired: this.binGate.acquired,
+      drag_held: this.binGate.dragHeld,
+      in_range: this.inBinRange(),
+      outlined: this.binOutlined,
+      watching: this.otherWorkWatch?.stationId ?? null,
+    };
   }
 
   /**
@@ -1642,22 +2346,28 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
   protected onRoomExit(): void {
     // M04 (Unit 14): leaving the room is the first departure of a job
-    // still open (a carried piece is counted, then put back).
+    // still open. The state is recorded FIRST, with the piece still in
+    // the hands (counted undisposed); only then is it put back.
     departM04('room_exit', null, Date.now());
     dropM04Carried();
   }
 
+  /** A press reached a station (route telemetry; closes nothing, U14-D). */
   private logStationOpened(stationId: string) {
     this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
       metadata: { station_id: stationId, zone: this.zoneKey },
     });
+  }
 
-    // M04 (Unit 14): turning to another station is the first departure
-    // of a cutting job still open; it also releases the second coupon.
-    if (
-      stationId !== 'sample_cutter' &&
-      departM04('other_station', stationId, Date.now()).length > 0
-    ) {
+  /**
+   * M04 (U14-D): an accepted action at ANOTHER station changed that
+   * task's recorded state. This is the first departure of a cutting job
+   * still open; it also releases the second coupon. Called AFTER the
+   * other task's transition succeeded, never from a panel or a prompt that is
+   * merely opened and never from a refusal.
+   */
+  private noteOtherWorkBegun(stationId: string) {
+    if (departM04('other_station', stationId, Date.now()).length > 0) {
       this.refreshGuidance();
     }
   }
@@ -1727,8 +2437,18 @@ export class RecordsWorkshopScene extends PilotZoneScene {
               label: 'Acknowledge the seal rule',
               feedback: 'Signed.',
               getEventTypes: () => [],
-              onSelected: () =>
-                acknowledgeM11Obligation(Date.now(), 'keyboard'),
+              onSelected: () => {
+                // Signing the log is the log's accepted action (U14-D):
+                // the departure is written after the log went from
+                // unacknowledged to acknowledged, never for reading it.
+                const before = secondaryState().m11.acknowledged;
+
+                acknowledgeM11Obligation(Date.now(), 'keyboard');
+
+                if (!before && secondaryState().m11.acknowledged) {
+                  this.noteOtherWorkBegun('seal_log');
+                }
+              },
             },
             { label: 'Close log', feedback: '', getEventTypes: () => [] },
           ];
@@ -1743,7 +2463,17 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       label: 'Optional: swap the intake filter',
       tag: 'optional_filter_swap',
       feedback: 'Filter swapped.',
-      onSelected: () => noteM08JobEngaged('filter_swap', Date.now()),
+      onSelected: () => {
+        // The one piece of work done at the board itself (U14-D): the
+        // departure is written after the swap was accepted.
+        const before = secondaryState().m08.filter_swap.engaged;
+
+        noteM08JobEngaged('filter_swap', Date.now());
+
+        if (!before && secondaryState().m08.filter_swap.engaged) {
+          this.noteOtherWorkBegun('work_order_board');
+        }
+      },
     };
 
     switch (pilotStage()) {

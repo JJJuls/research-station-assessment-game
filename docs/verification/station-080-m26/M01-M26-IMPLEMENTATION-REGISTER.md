@@ -163,6 +163,323 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
 
 ## 4. As-built records (appended per unit)
 
+**Unit 14-D2** (M04 only; the final correction of U14-D — the "Unit 14-D"
+record below is kept as written and is superseded only where this record
+says so): as-built. **Status: the owner's ruling on the places is
+implemented with the approved cutting annex and verified by the tests
+named in the unit log as far as they reach; NOT scientifically
+validated** — no response-process, reliability or convergent /
+discriminant evidence exists for M04 (§5.203); nothing here establishes
+validity, reliability, questionnaire equivalence, norms or cut scores.
+M04 stays a provisional behavioural analogue of cleanup / restoration.
+Authority: the owner's M01–M26 decisions, the owner's U14-D2 contract of
+30 September 2026 (the approved annex geometry, every coordinate below)
+and the owner's confirmations of the same day (§5.222–§5.231). The older
+Q01–Q33 material does not govern this unit. Administration version:
+`entry_state_version` `m04-cutting-v4` on every event of the family.
+The four versions: `-v1` Unit 14; `-v2` U14-C; `-v3` the blocked U14-D
+pass recorded below — never committed, never approved and never
+released, so no session carries it; `-v4` this annex. They are told
+apart by that field and pooled by no code (§5.225). M03 is unchanged
+(`m03-tools-v2`). Unchanged: the family `proto_m04_cutting_` and every
+event suffix and field (none added), opportunity and window ids, the
+feature `m04_undisposed_pieces`, its companion, its formula, its meaning
+and the planned denominator of six, two jobs of three pieces, per-job
+values 0–3, direction, every missingness rule, the immutable
+first-departure record, a carried and a lying piece both undisposed,
+later disposal recorded apart, the removal of `by`, the settle window,
+the 72 px station and 44 px bundle ranges; everything stays provisional.
+`src/measurement/features/m04.ts`, the event schema and the scoring plan
+are untouched.
+(1) The room and the places — supersedes (1) of "Unit 14-D" and resolves
+§5.219. The Records Workshop is 43 × 19 tiles (1376 × 608 px;
+`src/world/layouts/workshop.ts`). A 13 × 6-tile cutting annex lies south
+of the machine bay: floor tiles `[6, 12, 13, 6]` (x 192–608, y 384–576);
+doorway region tiles `[11, 10, 3, 2]`, open between the jamb solids
+`[352, 320, 16, 64]` and `[432, 320, 16, 64]` at x 368–432, y 320–384 —
+where the decorative south tool bench stood; bottom wall row y 576–608.
+The Sample Cutter stands at the annex's northern centre (anchor
+400, 456; solid tile units `[11, 14.1, 3, 2.9]`) and is operated from
+the north (approach 400, 423); the disposal bin stands south of it
+(anchor 400, 556; tile units `[11.7, 16.8, 1.6, 1.2]`, §5.223). The old
+cutter island, its attached bin and the tool bench are removed from the
+layout and the painting. The scatter origin is (400, 456). Places (room
+px; offsets from the origin exported as `piece_offsets`): job 1 — west —
+coupon offcut 228, 476 (−172, 20) · swarf tray 212, 516 (−188, 60) ·
+blade wrap 212, 556 (−188, 100); job 2 — the mirror images east —
+offcut 572, 476 (172, 20) · swarf tray 588, 516 (188, 60) · blade wrap
+588, 556 (188, 100). The two clusters do not interleave: 344 px of floor
+and the cutter lie between them. No other station, anchor, approach,
+spawn, window or text of the room changed; no other room changed.
+(2) Reaches — supersedes "96 px by pointer, 96 px bin" of "Unit 14-D".
+One reach of 64 px holds for the keyboard pick-up, the pointer pick-up
+and the bin (`PIECE_REACH`, `BIN_REACH`, the pointer layer's
+`reachRadius`). Keyboard and pointer therefore lift a job's pieces from
+the same floor.
+(3) What the geometry guarantees — measured by the pure test "U14-D2:
+measured from every reachable avatar position …" (`m04_cutting`; the
+scene's own collision rule, a 4 px lattice walked from the spawn). The
+annex floor and the collision footprints of the cutter, the bin and
+both jambs are mirror-symmetric about x 400 (the painted cutter is a
+machine, not a mirror image): a position can be stood at exactly when
+its mirror image can. For each pair of corresponding pieces the positions a piece is
+lifted from are the same in number and are the mirror images of each
+other, by keyboard and by pointer; every one of them lies more than
+76 px from the bin anchor (lifting a piece can never bring the bin into
+reach) and outside every station's 72 px range (no station takes the
+press meant for a piece); the walking distance from the cutter's
+operating position to the nearest pick-up position and from the pick-up
+positions to the nearest position the bin is used from is equal piece by
+piece, and the total is equal for the two jobs; the bin is used from
+mirrored pockets west and east of it, equal in number, none within the
+cutter's range; from within the cutter's range no piece can be lifted;
+no piece can be lifted from the doorway, from the way down to the
+cutter's operating side or from the passage between the bays (more than
+92 px away); the Sample Cutter is the nearest station to every piece;
+the annex is entered through the doorway only and nothing south of the
+records office or beside the annex can be stood on. Figures of the
+writer's scratch run of the same rule (not literals of the test):
+pick-up positions per piece on the 4 px lattice — offcut 456 by keyboard
+/ 599 by pointer, swarf tray 158 / 404, blade wrap 90 / 229, identical
+for the two jobs; nearest pick-up position to the bin 127–130 px;
+walking distance cutter → piece 136 / 192 / 232 px and piece → bin
+80 / 68 / 68 px, 776 px per job; 40 bin positions on each side.
+(4) Kept from "Unit 14-D" and re-verified in the annex: targeting (2) —
+a station or door in range keeps the press; the deliberate-transition
+gate (3), now with the 64 px range — lifting a piece never names or
+outlines the bin, the bin is acquired only after every interaction key
+and the pointer were released and the avatar walked into its range, a
+pointer press on the bin is its own gesture, the release of the drag
+that lifted the piece may end in the bin; set-down (4) — "X — Set down",
+neutral, reversible, never a disposal; the lines (5) — "Sample coupon 1
+of 2 cut.", "Sample coupon 2 of 2 cut.", "No cutting order is
+available."; the first departure (6) and its table; telemetry (7); the
+entry snapshot (8), whose `piece_offsets` now hold the v4 offsets.
+Because every pick-up position now lies outside the bin's range, the
+case "a piece lifted within the range" of (3) no longer occurs for any
+piece. Departure, clarified by the contract and already the behaviour
+of (6) — no code changed for it: walking out of the annex while
+remaining in the workshop closes no job, and neither does a supply
+bundle collected, the questionnaire notice acknowledged or an M04 piece
+handled; the final review's closure stays distinct from a departure.
+(5) Art. The plate `public/assets/world-v2/plates/workshop-plate.png`
+is 1376 × 608, composed locally and reproducibly from the kept source
+`workshop-plate.v2.png` by `scripts/world-v2/plate_edits.py workshop`
+(§5.226); collision still comes from the layout only. PROVISIONAL.
+(6) Changed files of U14-D2 beyond those of "Unit 14-D":
+`src/world/layouts/workshop.ts`, `src/pilot/zoneSites.ts`,
+`src/world/interactionRegistry.ts`, `src/world/kit/worldV2Assets.ts`
+(a comment), the plate, the world-v2 manifest and provenance register,
+`scripts/world-v2/plate_edits.py`,
+`docs/game/rooms/12-workshop-return.md`; tests `e2e/pilotHelpers.ts`
+(the driver walks the annex), `e2e/pilot_episodes_1_2.spec.ts`
+(§5.227), `e2e/world_v2_workshop_look.spec.ts`.
+`src/gameplay/physical.ts` is as "Unit 14-D" left it. Results and their
+limits: unit log, U14-D2.
+NOT resolved here and carried forward: the extractor and piece events
+without a recognised `object_id` (§5.216, a separate later unit); two
+jobs are repeated occasions, not independent situations, and six pieces
+are not six observations (§5.200); job 1 is always the west cluster and
+always first, so side and order are not separated (§5.224); empirical
+evidence is pending (§5.203); the M03 concerns (§5.180, §5.196, §5.198)
+are untouched.
+
+_Unit 14-D (M04 only, a correction of the ADMINISTRATION of Unit 14 /
+14-C — the records below are kept as written and are superseded only
+where this record says so): as-built after review / fix round 1.
+**Status: interaction correction, verified by the tests named in the
+unit log as far as they reach; owner ruling 3 (the places) is BLOCKED
+and NOT implemented (§5.219); NOT scientifically validated** — no
+response-process, reliability or convergent / discriminant evidence
+exists for M04 (§5.203); nothing here establishes validity, reliability,
+questionnaire equivalence, norms or cut scores. Authority: the owner's
+M01–M26 decisions (M04: two jobs of three self-generated pieces,
+disposal optional and accessible, the state recorded at the first
+departure from each job, a carried piece undisposed, later cleanup never
+rewriting it), the owner's U14-D contract and the owner's rulings of
+30 September 2026 on the first independent review — approved U14-D
+administration decisions (§5.211–§5.218 state each); the older Q01–Q33
+material does not govern this unit. Administration version:
+`entry_state_version` `m04-cutting-v3` on every event of the family
+(U14-C: `-v2`, Unit 14: `-v1`); the three are told apart by that field
+and are not pooled by any code (§5.215). `-v3` was never administered
+before this correction: the first U14-D pass was not committed. M03 is
+unchanged (`m03-tools-v2`). Unchanged: the family `proto_m04_cutting_`and every event suffix (none added), opportunity and window ids, the
+feature`m04_undisposed_pieces`and its companion, the planned
+denominator of six, two jobs of three pieces, per-job values 0–3,
+direction, every missingness rule, the immutable first-departure record,
+a carried and a lying piece both undisposed, later disposal recorded
+apart, the reaches (64 px piece by keyboard, 96 px by pointer, 96 px
+bin, 72 px station, 44 px bundle), the settle window, the station
+anchors, the scatter origin and the bin; everything stays provisional.
+(1) Places — UNCHANGED from the first U14-D pass and NOT as the owner
+ruled (ruling 3, blocked, §5.219). The six pieces lie at fixed offsets
+from the unchanged scatter origin (344, 224) — room px: job 1 offcut
+462, 166 · swarf tray 548, 212 · blade wrap 582, 166; job 2 offcut 502,
+166 · swarf tray 584, 212 · blade wrap 542, 166 (offsets 118, −58 ·
+204, −12 · 238, −58 and 158, −58 · 240, −12 · 198, −58; exported as`piece_offsets`). Every place is on the walkable floor, off every
+painted bench and machine, at least 84 px from every station anchor, at
+least 58 px from every supply bundle, outside the bin's pointer zone and
+at least 36 px from every other piece. What the places do NOT meet: the
+places of the two jobs INTERLEAVE along the lane (they are not two
+clusters); and every place has pick-up positions WITHIN the bin's 96 px
+range (all six by pointer, pure test; by keyboard, where the browser
+test's driver stood in the final run, four of six — the first job's
+blade wrap and the second job's swarf tray, which lies at the edge of
+the range, were lifted outside it). The summed
+straight-line distance to the bin agrees within 1 % (249 and 250 px;
+the 1 % tolerance is restored in the pure test) — a continuity check
+only, no evidence that the jobs are administered alike. Measured from
+every position the avatar can stand at (pure test, 4 px lattice walked
+from the spawn, the scene's own collision rule): with the anchors, the
+layout and the reaches as they stand, the machine bay holds TWO patches
+of floor from which every keyboard and pointer pick-up position lies
+outside the bin's range — one beside Label Press B (about 30 px from
+its anchor, 81 px from the cutter) and one in the south-west corner
+under the Relay Bench (292 px from the cutter); each is narrower than
+the 36 px two pieces keep between them, so each holds one piece. Six
+places in two clusters do not fit. No place was moved: a compromise
+would weaken the ruling.
+(2) Targeting. A station or a door in range ALWAYS keeps the press
+against a loose piece: `RecordsWorkshopScene.debrisTarget`names a piece
+on open floor only (unless a supply bundle in reach lies nearer, as
+before). The yielding rule of §5.171 is withdrawn for pieces and kept
+for the bin with a piece already carried — once the bin is the acquired
+target (3). A pick-up carries the origin`pointer`or`open_floor_press`; `cutter_press`and`station_press:<id>` remain for
+a disposal and for the records of v1 / v2.
+(3) Disposal needs a deliberate transition (owner ruling 2). Lifting a
+piece never names the bin: no line "Use disposal bin", no outline, no
+disposal by the press that lifted it. The bin becomes the target of the
+carried piece only after (a) the activation that lifted the piece is
+over — E, SPACE and the pointer were all seen released — and (b) the
+avatar walked INTO the bin's 96 px range from outside it, after that
+release. A piece lifted within the range (every place of this tree
+allows it, (1)) leaves the bin unnamed until the avatar has left the
+range and come back; a key held from the pick-up all the way to the bin
+acquires nothing, nor does its release there. Leaving the range loses
+the target; entering it again acquires it anew. The gate
+(`M04BinGate`, `m04BinGateStep`, pure, in `m04CuttingModel.ts`) reads
+states and input-release boundaries only: no time is measured. It
+writes no event and no field, and is no state of a job. Pointer: a
+PRESS on the bin is a gesture of its own and is accepted once the
+pick-up's activation is over (a click lifts a piece when the pointer is
+released, so the press on the bin is always a second gesture); the
+RELEASE of the drag that lifted the piece, over the bin and with the
+avatar in reach of it, is the one continuous gesture that may end in
+the bin — the bin is outlined while that drag is held over it, and a
+drag released anywhere else leaves the piece in the hands (it can be
+set down). The outline is decided by the scene through the new optional
+`isContainerCued` of the pointer layer (`src/gameplay/physical.ts`,
+default: as before; no other host passes it). The bin stays drawn in
+the room and can be walked up to at any time. Interleaved events of the
+interaction keys are read as held (`isDown`), so a repeated key-down
+changes nothing.
+(4) Set-down (owner ruling 5). While a piece is carried — and only
+then — two elements are shown side by side beside the avatar: the line
+"Carrying: <piece>" and the control "X — Set down". They are placed
+below the avatar's feet, else to its right, to its left, farther below
+or above its head: the first of these that covers no bench or machine,
+no piece, not the bin, not the figure and not the line above the
+avatar's target; where the room leaves none free, the one that covers
+least (§5.221). The control is a pointer target of its own and shows
+that it is targeted (another fill and an outline) while the pointer is
+on it. The X key (wrapped in the project's key guard,
+`guardKeyHandler`) and a pointer press on the control both set the
+piece down: it returns to its own fixed place, from wherever the avatar
+stands; `piece_put_back`is written (the existing suffix;`input_mode`
+`keyboard`or`pointer`); the line is "Set down.". The piece stays
+undisposed; a record already made is untouched (`after_departure:
+true`). A set-down that cannot be completed keeps the piece in the
+hands, writes nothing and answers "Cannot set that down right now." —
+never a disposal. A pointer press on the control is not also read by
+the pointer layer; the latch is cleared when the pointer is released
+inside the canvas or outside it. No line names the bin, tidying or
+disposal, and nothing is shown with empty hands.
+(5) Lines (owner ruling 4). Both cuts are answered "Sample coupon N of
+2 cut." and nothing else. The cutter's status, shown only when the
+participant checks the cutter while the second coupon is not available,
+reads "No cutting order is available." (`M04_NO_ORDER_LINE`; the first
+pass read "The cutter is re-arming."; record `job_unavailable`,
+`job_open`, unchanged). It names no leaving, no tidying and no other
+work. The other lines of the cutter are unchanged. The guidance leaves
+the cutter after each cut alike and returns to it when the second
+coupon is available (unchanged rule).
+(6) First departure (owner ruling 1). `first_departure`is written at
+the first of (a) the first accepted, task-specific action at ANOTHER
+station that changed that task's recorded state, (b) the room left —
+once per job. The record is written AFTER the other task's transition
+succeeded.`pilot_station_opened` closes nothing, and neither does a
+panel shown or closed. No availability predicate is read in place of
+the work (the checks the first pass copied from the windows are
+removed). How (a) is read: stations that act through a prompt (Work
+Order Board, seal log, handover desk, Component Locker's engagement)
+compare the task's own state before and after their accepted action;
+stations that open a panel or a surface keep, at the opening, what
+their task has recorded of the participant's accepted work, and the
+scene — paused under the panel — compares it after every game step and
+once more when the panel closes (`watchOtherWork`, `checkOtherWork`).
+Nothing is inferred from time, distance, facing or proximity, and no
+file outside the allowlist was needed.
+
+| Station (`detail`)                                     | Qualifying action                                                                                         | Successful transition that is read                                                                                                                            | Does not qualify there                                                                                                                                                    | Browser evidence                                             |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Work Order Board (`work_order_board`)                  | the optional filter swap accepted                                                                         | `secondaryState().m08.filter_swap.engaged` false → true, after `noteM08JobEngaged`                                                                            | the board read; "Take the orders."; the sign-off; "Still working."; the swap only shown                                                                                   | yes (`u14_correction`, test 2)                               |
+| Sample Seal Log (`seal_log`)                           | the seal rule acknowledged                                                                                | `secondaryState().m11.acknowledged` false → true, after `acknowledgeM11Obligation`                                                                            | the log read; "Close log"; the acknowledged log read again                                                                                                                | yes (test 1)                                                 |
+| Component Locker (`storage_locker`)                    | its first use — the stowing job engaged; at a later opening, the first change of what the locker holds    | `secondaryState().m08.stow_supplies.engaged` false → true, after `noteM08JobEngaged('stow_supplies')`, read at the opening; later: the slots of `lab_storage` | standing at the locker; a later opening and closing with nothing moved; an item only lifted                                                                               | first use: yes (test 2); later change: no                    |
+| Assembly Bench (`assembly_bench`)                      | a part laid on the bench, an assembly                                                                     | the slots of `workbench_input` / `workbench_output`                                                                                                           | the bench opened and closed (it creates no task progress); an item only lifted; the backpack rearranged                                                                   | opened and closed: yes (test 1); qualifying: no              |
+| Calibration Bench (`calibration_bench`)                | a stage carried out                                                                                       | `m07State().stagesCompleted`                                                                                                                                  | the surface shown; a revisit                                                                                                                                              | both: yes (test 1; `m03_m04_route`)                          |
+| Quality Packet (`qc_packet_o2`)                        | a field checked, judged or corrected; the packet released                                                 | `m12State('o2').actions`, `.released`                                                                                                                         | the surface shown; a released packet shown as a record; a packet held back after a reload                                                                                 | record only: yes (test 2); qualifying: no                    |
+| Case Workspace (`case_workspace`)                      | a case moved to another tray; a tray labelled; the workspace handed over; a request answered              | `m02cState()`: `moveCount`, `labelChanges`, `handedOverAtMs`, answered `requests`                                                                             | the panel shown; a case only lifted or moved within its tray; a closed workspace shown as a record; a workspace held back after a reload                                  | no                                                           |
+| Label Press A / B (`press_a`, `press_b`)               | the roll moved; a cycle run; a tool moved                                                                 | `m03tState()`: `practiceMoves`, `cycles`, `moveCount`                                                                                                         | the panel shown; a run or a move refused; the press idle, not scheduled, out of service or held back after a reload                                                       | refusals (idle, not scheduled): yes (test 1); qualifying: no |
+| Dispatch Console (`dispatch_console`)                  | a token keyed or removed; the line cleared; a line sent; the work period begun; the stop armed            | `m06State()`: `tokenPresses`, `tokensRemoved`, `clears`, `practiceSent`, `typedLines`, `beganAtMs`, `stopArmPresses`                                          | the surface shown; the reference consulted; a press refused in the settle window; a second surface refused; the budget ended by the system; a closed or held-back console | no                                                           |
+| Conduit Lattice Bench (`lattice_bench`)                | a piece seated, moved, turned or returned; a step undone; the board reset; the lattice submitted          | `m13LatticeProbe()`: `placements`, `moves`, `rotations`, `returns`, `undos`, `resets`, `submission_count`                                                     | the panel shown; a piece only lifted; the help sheet; a closed lattice shown as a record                                                                                  | no                                                           |
+| Return shift: Station Feed Console (`feed_console`)    | the restoration resumed; an indoor stage done                                                             | `returnProbeSnapshot().m20`: `returned`, `useful_resume_actions`                                                                                              | standby; an unavailable history; the console inspected                                                                                                                    | no — no job can be open there on the ordinary route          |
+| Return shift: Relay Bench (`relay_bench`)              | a post or the selector set; the unit applied, accepted or set aside                                       | `m21State()`: `actions`, `applications`, `accepted`, `stop_choice`                                                                                            | standby; the plate and the manual read; a refused act                                                                                                                     | no — as above                                                |
+| Return shift: Shift Report Desk (`report_desk`)        | a line placed or coded; the report submitted or withdrawn; the returned note acknowledged; a rating given | `m22State()`: `slots`, `codes`, `submissions`, `setback_acknowledged_at_ms`, `stop_choice`; `m22Ratings()`                                                    | standby; a tray line selected; the register read                                                                                                                          | no — as above                                                |
+| Return shift: return batch (`return_orders`)           | a card placed or returned; a job worked                                                                   | `m01State('o2')`: `placements`, `returns`, `plan_locked`, `done`                                                                                              | the board shown; a card only lifted                                                                                                                                       | no — as above                                                |
+| Return shift: Outbound Handover Desk (`handover_desk`) | an item placed in the outbound tray (the one-action handover)                                             | `removeInventoryItem` and `noteHandoverPlaced` both returned true                                                                                             | the desk read; the questionnaire notice read or acknowledged (not classified by the owner, §5.220)                                                                        | no — as above                                                |
+| The room's door (`room_exit`, no `detail`)             | the door used                                                                                             | the door accepted the press; the state is recorded first, the carried piece put back afterwards                                                               | walking through the room                                                                                                                                                  | yes (`m03_m04_route`)                                        |
+
+Never a departure, at any station: `pilot_station_opened`; a panel
+shown or closed; a refusal, an unavailable action, a closed or
+record-only surface, a prior-administration guard, a reload hold, a
+no-op; the map; the backpack; a supply bundle collected; walking;
+elapsed time; proximity; every act on the pieces and the bin of M04
+itself; the Sample Cutter. The trigger and its station are exported as
+before (`other_station` + `detail`, `room_exit`). The second coupon
+becomes available after the first job's departure, as before; a
+participant who neither does other work nor leaves the room is never
+offered it (§5.214).
+(7) Telemetry (owner ruling 6). The field `by`, added to
+`piece_put_back` by the first pass, is removed: `input_mode` alone
+tells a set-down by the participant (`keyboard`, `pointer`) from the
+put-back at a room exit (`system`). No event suffix, canonical event,
+formula, companion output or scoring rule was added or changed.
+`src/measurement/features/m04.ts` is unchanged.
+(8) Entry snapshot (additive, provisional, as the first pass wrote it):
+`departure: other_station_work_begun_or_room_exit` (v1 / v2:
+`other_station_opened_or_room_exit`), `set_down_available: true`,
+`set_down_counts_as: undisposed`, `cut_feedback:
+same_line_for_both_jobs`. The snapshot names neither the gate nor the
+reading of the other tasks' records (both are described here only).
+Changed files: `src/pilot/windows/m04CuttingModel.ts`,
+`src/pilot/windows/m04Debris.ts`, `src/scenes/RecordsWorkshopScene.ts`,
+`src/gameplay/physical.ts` (the optional outline hook); tests
+`e2e/m04_cutting.spec.ts` (pure), `e2e/u14_correction.spec.ts` and
+`e2e/m03_m04_route.spec.ts` (browser). Results and their limits: unit
+log, U14-D, review / fix round 1.
+NOT resolved here and carried forward: the places (ruling 3, §5.219);
+the extractor `src/measurement/features/m04.ts` (outside this unit, a
+separate later unit by the owner's ruling 6) skips piece-action events
+whose `object_id` is missing or not recognised, so a malformed stream
+can keep an accepted observation (§5.216); repeated jobs are not
+independent situations, the second job can carry learning and
+carry-over from the first, and six pieces are not six observations
+(§5.200); empirical evidence is pending (§5.203); the M03 input-effort
+and exposure-threshold concerns (§5.180, §5.196, §5.198) are untouched.
+For the owner: §5.219 (blocked), §5.220 and §5.221 (the writer's
+application of the rulings where they name no case).\_
+
 _Unit 14-C (M03 / M04, a correction of Unit 14 — the Unit 14 record
 below is kept as written and is superseded only where this record says
 so): as-built. **Status: technical correction verified by the tests
@@ -2931,3 +3248,473 @@ following; defaults applied, reversible, none changes a formula.
      earlier result is rewritten. The fixed label vocabulary (§5.155,
      §5.158), six dependent answers (§5.161) and input-mode cost (§5.151)
      remain pilot limitations, not resolved by this interface correction.
+
+The U14-D correction of the M04 administration (`m04-cutting-v3`) is
+governed by the owner's U14-D contract and by the owner's rulings of
+30 September 2026 on the first independent review. The rulings are
+APPROVED U14-D ADMINISTRATION DECISIONS — they are recorded here as
+such, not as decisions pending. None changes a formula, a denominator,
+a direction or a missingness rule, and none establishes validity. The
+first pass's defaults are kept below only where a ruling refers to
+them. Open for the owner: §5.219 (blocked), §5.220, §5.221.
+
+211. **What a first departure is (U14-D; owner ruling 1, approved;
+     supersedes the first pass's default and, for new sessions, §5.168,
+     its text kept above).** Opening and closing another station's
+     panel is no departure. The first departure is the room left, or
+     the first accepted, task-specific action that successfully changed
+     the other task's recorded state — created a genuine attempt or
+     active-work state, recorded progress, consumed, placed or
+     manipulated an eligible task object, recorded an explicit task
+     decision, or completed a legitimate one-action task. The
+     transition must have succeeded before the departure is written.
+     The first pass's default (a surface opened and closed at once is a
+     departure) is withdrawn. Implemented: §4 "Unit 14-D" (6) and its
+     table; no file outside the allowlist was needed.
+212. **Disposal needs a deliberate transition; the places (U14-D; owner
+     rulings 2 and 3, approved).** Ruling 2 — lifting a piece never
+     names the bin; the bin becomes eligible after the pick-up's
+     activation is over and every interaction key is released, and the
+     participant acquired the bin as a new target; a pointer pick-up
+     and a click on the bin are separate gestures; a continuous drag to
+     the bin may remain — is implemented (§4 (3)). It withdraws the
+     first pass's consequence (b) (the bin's line and outline shown as
+     soon as a piece is lifted). Ruling 3 — every pick-up position
+     outside the bin's automatic reach, two non-interleaved clusters,
+     matched routes — is NOT implemented: blocked, §5.219. Consequence
+     (a) of the first pass stands with the unchanged places: every
+     place lies within about 115 px of the bin, so carrying costs a few
+     steps at most, less than under v1 / v2 (97–212 px, round the
+     island).
+213. **Set-down (U14-D; owner ruling 5, approved; resolves the
+     mechanism left open in §5.170 and §5.199).** Neutral and available
+     whenever a piece is carried: "X — Set down", beside the
+     carried-item line in the local action hierarchy, a legible pointer
+     target with feedback while it is targeted; the original place
+     restored; the piece undisposed; the existing `piece_put_back`
+     event; the first-departure record immutable; neutral failure
+     feedback; keyboard and pointer; the X handler in the project's key
+     guard; the pointer latch cleared at a release inside and outside
+     the canvas. Implemented: §4 (4). The first pass's control in the
+     lower left of the screen is withdrawn. Not known: whether the
+     control makes the carried state, or the absence of a disposal,
+     more salient.
+214. **The cutter's status and the second coupon (U14-D; owner ruling
+     4, approved).** Both cuts are answered "Sample coupon N of 2
+     cut."; the status shown when the participant checks a cutter with
+     no available job reads "No cutting order is available." and tells
+     nobody to leave, to clean or to begin other work. Unchanged rule:
+     the second coupon is available after the first job's departure.
+     Because a panel shown, a board read or a refusal closes no job, a
+     participant who does no other work and does not leave the room is
+     not offered the second coupon; the row then reads `pending` /
+     `incomplete` by the unchanged rules.
+215. **Pooling the three administrations (adds to §5.202, §5.204).**
+     `m04-cutting-v1`, `-v2` and `-v3` differ in the places, the
+     carrying cost, the lines at the cut, the set-down, what a press at
+     a station does, when the bin is named and what closes a job. They
+     are told apart by `entry_state_version` and pooled by no code;
+     equivalence is not claimed.
+216. **The extractor and piece events without a recognised object
+     (outside U14-D; unresolved; a separate later unit by owner ruling
+     6).** `src/measurement/features/m04.ts` leaves out of a job's
+     recount every `piece_picked_up`, `piece_put_back` and
+     `piece_disposed` event whose `object_id` is missing or is not one
+     of the job's three pieces, although the event names the job. A
+     malformed stream can therefore keep an accepted observation. The
+     file was not changed. U14-D does not resolve it.
+217. **The Work Order Board and the seal log (U14-D; owner ruling 1,
+     approved).** The board inspected, its orders taken and its
+     sign-off are no departure; the optional filter swap qualifies only
+     after its accepted state transition succeeded; the seal log read
+     or closed is no departure; its acknowledgement qualifies only
+     after the transition from unacknowledged to acknowledged
+     succeeded. Implemented and browser-tested (unit log).
+218. **Refusals, records and reload holds (U14-D; owner ruling 1,
+     approved; supersedes the first pass's default).** A refusal, an
+     unavailable action, a closed or record-only surface, a
+     prior-administration guard, a reload hold and a no-op are no
+     departure. The first pass asked the windows' own availability
+     checks in the scene; those copied predicates are removed — the
+     scene reads the other task's recorded work, which none of these
+     paths changes. Browser-tested: two refusing presses, a released
+     packet shown as a record. NOT exercisable with a cutting job open:
+     a reload hold — after a reload that follows a cut neither job is
+     run again (register §5.14), so no job is open while a station is
+     held back. Pure and browser tests do not cover a reload (as under
+     U12 and U14).
+219. **The places — BLOCKED (U14-D; owner ruling 3; open for the
+     owner).** Ruling: every piece positioned so that the avatar's
+     actual keyboard and pointer pick-up positions lie outside the
+     bin's automatic interaction reach, validated from reachable avatar
+     positions; two visually coherent, non-interleaved clusters;
+     comparable walkable routes; if six such places cannot fit without
+     changing an out-of-scope anchor or layout file, stop and report.
+     Measured (pure test `m04_cutting`, "measured from every reachable
+     avatar position"; the scene's collision rule on a 4 px lattice
+     walked from the spawn): a piece is lifted by keyboard from within
+     64 px and by pointer from within 96 px, the bin answers within
+     96 px — so a place needs about 160 px (keyboard) and 192 px
+     (pointer) to the bin (492, 235) unless walls bound the positions.
+     The machine bay's floor ends 116 px east of the bin (the wall at
+     x 608); west of the bin, the floor within sight of the cutter lies
+     inside the 72 px ranges of the cutter, the presses, the Case
+     Workspace, the Component Locker and the Relay Bench, or within
+     reach of the three supply bundles. Two patches remain from which
+     every pick-up position lies outside the bin's range: beside Label
+     Press B (x 328, y 176–180; about 30 px from the press's anchor,
+     81 px from the cutter) and the south-west corner under the Relay
+     Bench (x 96–112, y 288–316; 292 px from the cutter). Each holds
+     one piece. The records office (the other bay) has clear floor
+     inside its west doorway and in its north-west corner (within x
+     700–844, y 132–316), about 310 px and more from the cutter and
+     out of its sight (scratch measurement of the writer, the same
+     rule; not part of the pure test). Nothing was moved and nothing
+     weakened: the six places are those of the first pass (§4 (1)), so
+     the required "non-interleaved clusters" and "pick-up outside the
+     bin's reach" are NOT met and the screenshots of the two layouts
+     show the interleaved places. What the gate of ruling 2 already
+     guarantees with these places: no line and no outline for the bin
+     after any pick-up (browser-tested for all six pieces, both modes).
+     What it does not: a participant who lifts a piece within the
+     bin's range must walk out of it and back in (or press the bin by
+     pointer) to dispose — an administration cost that differs by
+     place. Alternatives for the owner, each outside this unit's
+     rulings: (a) another bin anchor or scatter origin / another room
+     layout (`src/pilot/zoneSites.ts`, `src/world/layouts/workshop.ts`
+     — outside the allowlist); (b) shorter reaches for the bin and for
+     the pointer pick-up (in the scene; with 64 px for all three, part
+     of the lane west of the island and small patches at the east wall
+     open up — whether two matched clusters of three fit there was not
+     established); (c) the pieces in the records office, out of sight
+     of the cutter.
+220. **Cases the rulings do not name (U14-D; the writer's application
+     of ruling 1; for the owner's confirmation).** (a) Inside a
+     multi-action surface a reading is no departure: the Dispatch
+     Console's reference consulted, the lattice's help sheet, the Relay
+     Bench's plate and manual, the report desk's register, the feed
+     console inspected — by the ruling's sentence that a surface which
+     displays work is left by "its first accepted manipulation, answer,
+     placement, or decision". These acts are recorded by their tasks
+     and could be read as "changes the other task's recorded state".
+     (b) An object only lifted inside a panel (a case, a tool, a card,
+     a lattice piece, an inventory item) is no departure; its placement
+     is. (c) The questionnaire notice at the Outbound Handover Desk,
+     read or acknowledged, is no departure: the owner classified the
+     seal log's acknowledgement, not this one; no job can be open there
+     on the ordinary route. (d) A calibration stage and an indoor feed
+     stage are read when the task records them (the calibration stage
+     at the press; the feed stage when it is done). (e) The Component
+     Locker opened again after its first use is left by the first
+     change of what it holds.
+221. **Where the set-down control is drawn (U14-D; owner ruling 5;
+     limit recorded).** The ruling asks for a place beside the
+     carried-item status that avoids covering room artwork and is not
+     a far corner. The control follows the avatar and takes the first
+     of five places beside it that covers nothing (§4 (4)). The machine
+     bay is dense: on the lane above the cutter island no place beside
+     the avatar is free of the island, the bin, the presses and the
+     wall, and the control takes the place that covers least. It is
+     never drawn in a corner of the screen.
+
+The U14-D2 correction (`m04-cutting-v4`) is governed by the owner's
+U14-D2 contract of 30 September 2026 — which approves the annex geometry
+coordinate by coordinate — and by the owner's confirmations of the same
+day. They are APPROVED U14-D2 ADMINISTRATION DECISIONS, recorded here as
+such. None changes a formula, a denominator, a direction, a missingness
+rule, an event name or a field, and none establishes validity.
+
+222. **The places — RESOLVED by the cutting annex (U14-D2; owner
+     contract, approved; closes §5.219).** The owner chose alternative
+     (a) of §5.219 in a specific form: a 13 × 6-tile annex south of the
+     machine bay for the cutter and the bin, a 64 px doorway in place
+     of the decorative tool bench, the room 43 × 19 tiles, one 64 px
+     reach for the keyboard pick-up, the pointer pick-up and the bin,
+     job 1's pieces west of the cutter and job 2's at the mirrored
+     places east of it, every pick-up position more than 76 px from
+     the bin anchor. Implemented exactly as approved: §4 "Unit 14-D2"
+     (1)–(3). Ruling 3 of 30 September (pick-up positions outside the
+     bin's reach, two non-interleaved clusters, matched routes) is met
+     and measured by the pure test. The text of §5.219 is kept above as
+     the record of the blocked pass.
+223. **The bin's collision extent is authored symmetrically (U14-D2;
+     owner confirmation 1, approved).** The approved bin figure, tile
+     units `[11.7, 16.8, 1.6, 1.2]`, is x 374.4–425.6. Rounding the
+     position and the width separately — what the layout's footprint
+     helper does — gives x 374–425 and leaves the avatar one pixel more
+     room east of the bin than west of it. The owner gave exact
+     symmetry about x 400 precedence: the bin is the pixel solid
+     `[374, 538, 52, 32]` (x 374–426). The visual anchor stays
+     (400, 556). Consequence: the positions the bin is used from are
+     exact mirror images (pure test: equal in number west and east; no
+     annex position without its mirror image).
+224. **What the mirrored layout does and does not establish (U14-D2;
+     limitation recorded, no decision taken).** The two jobs are
+     matched in GEOMETRY: equal distances, equal numbers of pick-up
+     positions, equal walking cost, the same input sequence and the
+     same lines. They are not thereby equivalent as measurements. Job 1
+     is always the west cluster and always the first; job 2 always the
+     east cluster and always the second, cut while whatever was left of
+     job 1 still lies in view. Side and order are therefore not
+     separated, and the second job can carry learning and carry-over
+     from the first (§5.200). The two jobs are repeated occasions; six
+     pieces are not six independent observations. Counterbalancing the
+     sides was not part of the contract and was not introduced.
+225. **Pooling the four administrations (adds to §5.215).**
+     `m04-cutting-v1`, `-v2` and `-v4` differ in the room, the places,
+     the reaches, the carrying cost, the lines at the cut, the
+     set-down, what a press at a station does, when the bin is named
+     and what closes a job. `-v3` was never committed, approved or
+     released: no session carries it, and it is documented only so
+     that the version numbers are not reused. The versions are told
+     apart by `entry_state_version` and pooled by no code; equivalence
+     is not claimed.
+226. **The plate is a local composition; no `workshop-plate.v3.png`
+     (U14-D2; owner confirmations 2 and 3, approved).** PixelLab was
+     not available. The 1376 × 608 plate is reproduced deterministically
+     from `docs/game/world-v2/plate-sources/workshop-plate.v2.png` by
+     `scripts/world-v2/plate_edits.py workshop` (Pillow; every pixel is
+     copied from the same painting or painted in its palette). No
+     duplicate source image was added. The manifest and the provenance
+     register name the source, the method, the dimensions, the edits
+     and the final SHA-256. The owner made the composition acceptable
+     only if the independent visual review confirms that the annex is
+     coherent, aligned with the collision geometry, stylistically
+     consistent and free of false affordances and visible seams.
+     RESULT — NOT FULLY MET, open for the owner. The first plate met
+     two of the five criteria (collision alignment, no false
+     affordances). After the unit's one fix pass the same reviewer
+     found four met — coherent, aligned with the collision geometry,
+     stylistically consistent, free of false affordances — and "free
+     of visible seams" NOT met, for two small, low-contrast artefacts
+     the fix pass itself introduced in the band under the records
+     office: a weathering patch reflected into an hourglass at the
+     reflection line (about x 1093–1116, y 362–403; a smaller one at
+     x 1255–1260), and a straight-edged dark rectangle in the exterior
+     at the south-east corner (about x 1310–1376, y 392–412). The
+     reviewer could not make either out in the in-game frame of the
+     office, only in enlarged crops. No second fix pass was made (the
+     contract allows one). Also for the owner: the fix pass joined the
+     annex's side walls to the hull, which edits the top 384 rows in
+     two 16 px strips (x 176–191, x 608–623, y 350–383) beyond the two
+     edit areas the contract names; and the doorway stays a stepped
+     recess, because the approved collision leaves the recess below
+     y 384 walkable. The art stays PROVISIONAL and not human-approved
+     as an asset set.
+     CLOSEOUT (1 October 2026; the owner's exceptional closeout
+     authorisation). The owner ratified the two 16 px strips as part
+     of the approved composition. The two artefacts were removed by
+     the same script from the same v2 source, rows 384–413 only (every
+     other pixel byte-identical to the previous plate, measured): the
+     continued hull face no longer reflects the painting's weathering
+     patches — a patch the crop line cuts closes a few rows below it
+     (half its height, rounded off unevenly, seed 53), every other
+     reflected patch becomes plain face, and the continued rows carry
+     seeded weathering of their own in the face's tone (44, 42, 65) at
+     the painting's patch sizes and sparsity (value noise, 22 × 9 px
+     cells, seed 61, faded in under the crop line so no patch is cut
+     flat); and the break-up of the face into the exterior begins
+     gradually over the 28 px past each walled run (the ragged edge
+     starts at the base line and rises) instead of switching on a
+     vertical line, which is what drew the straight-edged rectangle at
+     the south-east corner (the walled columns ended at x 1310). Final
+     plate SHA-256
+     `473f1b4fa33905183c446114a72b7e4b9f38bf41c9013676d7f344fa84fd5dcd`
+     (manifest and provenance register updated). Independent visual
+     review of the final plate, the full frame and the enlarged
+     repaired regions (Opus, read-only): coherent — MET; aligned with the collision
+     geometry — MET; stylistically consistent — MET; free of false
+     affordances — MET; free of visible seams — MET. Both named
+     artefacts are gone (the hourglass's mirror image is plain face and
+     a differently shaped seeded patch; the small patch is no longer
+     reflected; the corner's vertical edge at x 1310 is gone and the
+     exterior rises gradually from about (1312, 411) to (1331, 395), a
+     rounded shadow in the frame). No new seam at y 413 where the
+     changed rows meet the unchanged ones. Three minor residuals, none
+     blocking: the structural reflection mirrors the worn thin band at
+     the top of the face onto the one at its base (x ≈ 1085–1117 and
+     ≈ 1280–1290; 3× / 8× crops only); the seeded patch at x ≈
+     1095–1111, y ≈ 392–405 lies under the painting's triangle at the
+     same column (two stacked patches at 3×–8×, not a reflection); the
+     corner's dark mass has a nearly horizontal top at y ≈ 392–396
+     across x ≈ 1343–1376 at 8× (a rounded shadow at 1× and in the
+     frame). The owner's five-part condition is therefore MET. The
+     reviewer approves nothing; promotion stays with the owner. The
+     stepped doorway is unchanged (forced by the approved collision).
+     The art stays PROVISIONAL and not human-approved as an asset set.
+227. **The episode-2 route test used coordinates of the former room
+     (U14-D2; owner confirmation 4, approved).**
+     `e2e/pilot_episodes_1_2.spec.ts`, "episode 2", failed at this
+     unit's entry state, before any change of U14-D2 and before any M04
+     step: it walked to hand-typed coordinates of the former 25 × 19
+     workshop, stood at no station and timed out waiting for the Case
+     Workspace. A test-fixture problem, not an M04 runtime regression.
+     The test now stands on the interaction registry's own approach
+     points and walks the room's lanes. OPEN FOR THE OWNER — beyond the
+     confirmation's wording: once the coordinates were ported, two
+     expectations behind the point the test used to fail at turned out
+     stale as well, both about other items and neither about M04. (a)
+     M12: the test expected two `proto_m12_check_window_closed` events
+     and the item `completed` after packet 2 was released; in this
+     session packet 1 (Concourse) is never opened, so one window closes
+     and the item is `pending` (occasion o1 `pending`, o2 `completed`)
+     — the expectation was written by Unit 8 (commit `ec2f117`) when
+     the test already stopped before it. (b) M11: the test expected the
+     item `not_applicable` after the seal log; since M11's own unit
+     (commit `e619181`) the item has two custody occasions in the
+     laboratory and the yard and is `pending` in episode 2. Both
+     expectations were changed to what the running game reports, with
+     the reason beside them; no source file of M11 or M12 was touched.
+     Whether these two readings are the intended ones is the owner's
+     to confirm — the writer only observed them. Every M04 assertion
+     of the test is unchanged and passes.
+     RULED (1 October 2026): the owner ratified both corrections —
+     only M12 occasion o2 is completed in this episode while o1 stays
+     pending; M11 stays pending because its two custody occasions
+     occur in later episodes; the seal-log acknowledgement remains
+     secondary telemetry and completes no M11 opportunity. An
+     administration and test ruling; it alters no construct
+     interpretation or scoring. CLOSED.
+228. **The cutter's approach point and its landing box (U14-D2; limit
+     recorded).** The approved approach (400, 423) stands 4 px north of
+     the machine (the avatar's feet end at y 447, the cutter's solid
+     begins at y 451). The registry's usual rule — every position
+     within ±12 px of an approach is standable — cannot hold on the
+     south side: those positions are the cutter itself. Every position
+     of the box the avatar can stand at names the cutter. The
+     coordinates were not changed.
+229. **Cases of §5.220 and §5.221 after the contract (U14-D2).** The
+     contract's list of what closes no job names the questionnaire
+     notice acknowledged, a supply or inventory pick-up, a surface
+     opened or closed, a reading, an idle or refusal message, an M04
+     piece handled and walking out of the annex while remaining in the
+     workshop: §5.220 (c) is thereby confirmed, and (a), (b) stand as
+     the writer applied them ("reading" and "opening or closing a
+     surface" are on the list). (d) and (e) remain the writer's
+     application. No code changed for any of it; only states the
+     allowed files already observe are read, and no hook or event was
+     invented. §5.221: the island is gone and the annex is open floor,
+     so beside a piece the control takes its first place, below the
+     avatar's feet (browser screenshot 5, unit log); the limit of
+     §5.221 remains for the dense parts of the machine bay, where no
+     cutting piece lies any more.
+230. **The collision audit's westward sweeps of the workshop — BLOCKED
+     outside the allowlist (U14-D2; open for the owner).**
+     `e2e/collision_audit.spec.ts` sweeps each lane row of a room from
+     the spawn with a held key, pushing 1000 px, and compares the stop
+     with the pure model, whose prediction it cuts off after 1200 px.
+     Until this unit the workshop's two westward sweeps (rows y 236 and
+     y 262, from the spawn at x 1256) ended at the cutter island's east
+     face (x 491), 765 px away. The island is gone by the approved
+     geometry: the lane now runs on to the Relay Bench (x 107, 1149 px)
+     and to the west wall (x 43, 1213 px). The avatar therefore ARRIVES
+     at the push's own target on open floor (observed x 256.7 and
+     253.8 = start − 1000), the test reads that as a stop and fails:
+     "observed 256.75 vs model 107.17" and "observed 253.83 vs model
+     54.25" (the second model figure is the 1200 px cut-off, not a
+     stop). No collider disagrees with the model: every face of every
+     workshop solid the audit pushed — the two jambs, the cutter and
+     the bin among them — stopped within 0.92 px, both eastward sweeps
+     within 0.33 px, and the other six rooms pass. The fix is two
+     limits in `e2e/collision_audit.spec.ts` (a push and a prediction
+     long enough for a 1376 px room), a file outside this unit's
+     allowlist: it was not changed, and the required command
+     consequently FAILS (35 passed, 1 failed). Evidence inside the
+     allowlist for the part of the lane the audit no longer reaches:
+     `e2e/world_v2_workshop_look.spec.ts` pushes westward along both
+     rows from x 560 and compares the stop with the same model
+     (observed 107.00 vs 107.83; 43.00 vs 43.33). The independent test
+     review reproduced the failure twice, confirmed this reading and
+     added one observation: in one of its two runs the audit also
+     reported the Component Locker's east face 5 px off (observed 379
+     vs model 373.9). The avatar had landed at y 296.08, a twelfth of a
+     pixel inside the new doorway's depth, where the engine — correctly
+     — stops it at the west jamb (x 368 + 11), while the audit's model
+     counts whole pixels and sees no overlap. It depends on where the
+     audit's walk happens to land (one of the reviewer's two runs; one
+     of the writer's two) and is no wrong collider, but the audit will
+     stay intermittent at that face until its landing is snapped to
+     whole pixels — the same file, outside the allowlist.
+     RESOLVED (1 October 2026; the owner put `e2e/collision_audit.spec.ts`
+     on the allowlist for one exceptional closeout pass). The driver
+     was repaired, not weakened: (a) there is no fixed push length any
+     more — the key is held toward a target 400 px OUTSIDE the room on
+     that side, so the leg can only end in the driver's wall clamp,
+     however long the lane, and the audit asserts that it did (a leg
+     ending any other way is an error); the avatar is therefore always
+     driven past the predicted stop, and a missing collider carries it
+     on to the next one and fails the comparison; (b) the prediction's
+     bound is the audited room's own extent on that axis (the grid's
+     outside counts as wall, so a stop always exists; running out of
+     room throws); (c) the comparison tolerance stays 3 px, no room,
+     row or face is excluded and no workshop result is special-cased.
+     The Component Locker result, honestly: the approach to its east
+     face had landed about 4 px off its aimed row (y 296.08 for 300)
+     and about 3 px short on x; at that fraction the engine's feet box
+     is a continuous rectangle (Arcade AABB) whose bottom edge, y + 24
+     = 320.08, overlapped the new west jamb's corner (y 320) by a
+     twelfth of a pixel, so the engine stopped at the jamb (x 379),
+     while the pure model reads whole pixels (rows to y + 23 = 319.08,
+     no overlap) and slid past to the locker (x 373.9): 5.08 px, i.e.
+     the two were evaluating different bodies at the same coordinate.
+     The fix is principled rather than a tighter landing: the model now
+     evaluates the body at every floor / ceiling combination of the
+     landed coordinates — the union of the whole-pixel bodies at
+     floor(y) and ceil(y) covers exactly the pixel rows floor(y + 10)
+     … ceil(y + 24) − 1 of the continuous box, likewise along x — so
+     the pure model and the engine evaluate the same approach
+     coordinate wherever the walk lands; the landing's offset across
+     the push is recorded with every face (it is a record, not a
+     requirement: a landing off its aim changes which approach is
+     compared, never whether the comparison holds — in the Core
+     Chamber the navigator lands one face 39.5 px off its aimed row,
+     a navigator limit outside this unit, and the comparison from
+     there holds to 0.33 px). FINAL EVIDENCE (the complete collision
+     gate, retries off, one run after the last change; evidence under
+     ignored `test-results/u14d2-collision/`): 36 / 36 passed, all seven rooms; the workshop
+     in 4.7 min with every reachable face of every solid and both sweep
+     rows in both directions within 0.83 px of the model — Component
+     Locker east face 379 vs 379.83 (landed 1 px across the push), west
+     jamb east 379 vs 379.75, east jamb north 296 vs 295.67 and west
+     421 vs 420.17, cutter north 427 vs 426.83 / west 341 vs 340.75 /
+     east 459 vs 459.08, bin west 363 vs 362.17 / east 437 vs 437.42;
+     sweeps y 236: 1333 vs 1332.33 eastward, 107 vs 107.17 westward;
+     y 262: 1333 vs 1332.17 eastward, 43 vs 43.25 westward; return to
+     the spawn within 24 px. The other six rooms' largest error is
+     1.00 px. Independent test review (Sonnet, read-only): every
+     requirement satisfied, no blocker, no major. CLOSED.
+231. **Points the independent reviews raised that the contract does not
+     decide (U14-D2; open for the owner; nothing was changed for
+     them).** Scientific review: (a) the first opening of the Component
+     Locker records the stowing job's engagement and therefore closes
+     an open cutting job (§4 "Unit 14-D" (6), unchanged) — the locker
+     now stands beside the annex doorway, and the contract names both
+     "opening a surface" (no departure) and "a change of another task's
+     attempt state" (a departure); (b) the bin is used from two small
+     pockets beside it and a full cleanup costs about 776 px of walking
+     per job — accessible, but costly enough that undisposed pieces may
+     reflect the cost; (c) the pieces appear 172–188 px from the
+     cutter, against the annex's side walls: an undisposed piece may
+     mean it was not noticed rather than left by choice, and M04 has no
+     exposure marker (§5.196 records the same for M03); (d) the sides
+     are not counterbalanced (§5.224). Gameplay review: (e) the cutter
+     cannot be seen from the hall — only the lit doorway can — and the
+     route guidance pool lies on the machine (its anchor is the north
+     face), off-screen from the hall; there is no sign; a participant
+     who never enters the annex is never presented a job (missing, not
+     a zero); (f) the prompt lines of the cutter and of the bin are
+     drawn over the cutter's body, because the avatar stands north of
+     the one and beside the other; (g) the west half of the doorway's
+     threshold lies within the Component Locker's 72 px range, so a
+     press there opens the locker; (h) the camera is not mirrored: the
+     room's west edge clamps the view at the west cluster, so job 1's
+     leftovers can lie outside the view from job 2's far pieces and not
+     the other way round; (i) from U14-C / U14-D, unchanged: "Take
+     <piece>" is offered with full hands and then refused; a piece set
+     down returns to its own place, not beside the avatar. Visual
+     review, outside the plate: (j) the blade wrap's sprite reads as a
+     brass key; (k) the bin is painted full and does not change; (l)
+     the empty marked bay in the hall could be read as a place to put
+     things. None of these was a blocker in the reviews; (a)–(d), (e)
+     and (h) bear on what the measure means and are recorded so that
+     they are not mistaken for settled.

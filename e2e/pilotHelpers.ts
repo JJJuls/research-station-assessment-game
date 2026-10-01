@@ -125,8 +125,8 @@ export const PILOT = {
     eastDoor: doorOf('station_concourse', 'utility_core_deck'),
     westDoor: doorOf('station_concourse', 'records_workshop'),
   },
-  // World V2 rescue continuation: the 43×12 two-bay hall — all
-  // coordinates derive from the machine-audited shared book.
+  // World V2 rescue continuation: the 43×19 room (two-bay hall and the
+  // cutting annex) — all coordinates derive from the shared book.
   workshop: {
     board: { ...WORKSHOP_STATIONS.workOrderBoard },
     filingDesk: { ...WORKSHOP_STATIONS.filingDesk },
@@ -655,15 +655,133 @@ export async function concourseVia(page: Page, x: number, y: number) {
 }
 
 /**
- * Rescue Workshop (43×12 two-bay hall): three walk segments — the machine
- * bay west of the cutter island (x < 500), the mid zone between the
- * island and the vestibule (500–700), and the records office (x > 700).
- * Lane discipline (machine-audited): the island (cols 12–15) is passed on
- * the NORTH lane (y ≈ 156, rows 4–5, x 320–608), the vestibule is crossed
- * at y ≈ 240 (rows 6–8), and the office travels on the y ≈ 252 south
- * lane. Driver only — production geometry is never adjusted for it.
+ * The cutting annex of the Records Workshop (U14-D2) as the driver walks
+ * it: in and out through the doorway on its centre line (x 400), along
+ * the clear row north of the cutter, down the clear columns west and east
+ * of the cutter and the bin. Driver geometry only — production geometry
+ * is never adjusted for it.
+ */
+export const ANNEX_DRIVER = {
+  doorX: 400,
+  /** Machine-bay row in front of the doorway, clear of locker and bench. */
+  bayY: 256,
+  /** The clear row inside the annex, north of the cutter. */
+  rowY: 416,
+  /** Clear columns beside the cutter and the bin. */
+  westX: 320,
+  eastX: 480,
+  /** Where the avatar stands to use the bin: beside it, west or east. */
+  binWest: { x: 352, y: 544 },
+  binEast: { x: 448, y: 544 },
+} as const;
+
+/** The doorway and the annex (the machine bay's floor ends at y 296). */
+function inAnnex(at: { y: number }): boolean {
+  return at.y > 330;
+}
+
+/** Beside or south of the cutter: a straight leg across would meet it. */
+function besideCutter(at: { x: number; y: number }): boolean {
+  return at.x > 336 && at.x < 464 && at.y > 426;
+}
+
+function annexColumn(x: number): number {
+  return x < ANNEX_DRIVER.doorX ? ANNEX_DRIVER.westX : ANNEX_DRIVER.eastX;
+}
+
+/**
+ * Where the avatar stands to lift an annex piece by keyboard: 20 px from
+ * it on the cutter's side, on the floor (the avatar's origin stops at
+ * y 552). The piece is then the nearest one and well within reach.
+ */
+export function annexPieceStand(place: { x: number; y: number }): {
+  x: number;
+  y: number;
+} {
+  return {
+    x: place.x + (place.x < ANNEX_DRIVER.doorX ? 20 : -20),
+    y: Math.min(place.y, 548),
+  };
+}
+
+/** A walk that starts and ends inside the annex. */
+async function annexWalk(page: Page, x: number, y: number) {
+  let at = (await playerProbe(page)) ?? { x, y };
+
+  if (besideCutter(at)) {
+    // Out of the pocket beside the cutter or the bin, sideways.
+    await driveAxisTo(page, 'x', annexColumn(at.x), 6);
+    at = { x: annexColumn(at.x), y: at.y };
+  }
+
+  if (at.y < 404) {
+    // Still in the doorway: down to the clear row first.
+    await driveAxisTo(page, 'y', ANNEX_DRIVER.rowY, 6);
+    at = { x: at.x, y: ANNEX_DRIVER.rowY };
+  }
+
+  const low = (py: number) => py > 426;
+  const target = { x, y };
+  const column = besideCutter(target) ? annexColumn(x) : x;
+
+  if (low(at.y) && low(y) && annexColumn(at.x) !== annexColumn(column)) {
+    // To the other side of the cutter: over the clear row north of it.
+    await driveAxisTo(page, 'y', ANNEX_DRIVER.rowY, 6);
+    at = { x: at.x, y: ANNEX_DRIVER.rowY };
+  }
+
+  if (low(at.y)) {
+    // On the target's side of the cutter: along the column, then across.
+    await driveAxisTo(page, 'y', y, 6);
+    await driveAxisTo(page, 'x', column, 6);
+  } else {
+    // From the clear row: across first, then down the column.
+    await driveAxisTo(page, 'x', column, 6);
+    await driveAxisTo(page, 'y', y, 6);
+  }
+
+  if (column !== x) {
+    // Into the pocket beside the cutter or the bin.
+    await driveAxisTo(page, 'x', x, 6);
+  }
+}
+
+/**
+ * Rescue Workshop (43×19: the two-bay hall and the cutting annex): three
+ * walk segments in the hall — the machine bay (x < 500), the mid zone up
+ * to the vestibule (500–700) and the records office (x > 700) — and the
+ * annex south of the machine bay (U14-D2), entered and left through its
+ * doorway only. Lane discipline (machine-audited): between the bay and
+ * the mid zone the driver keeps the NORTH lane (y ≈ 156, rows 4–5,
+ * x 320–608) it used while the cutter island stood there, the vestibule
+ * is crossed at y ≈ 240 (rows 6–8), and the office travels on the
+ * y ≈ 252 south lane. Driver only — production geometry is never adjusted
+ * for it.
  */
 export async function workshopVia(page: Page, x: number, y: number) {
+  const start = await playerProbe(page);
+
+  if (start !== null && inAnnex(start)) {
+    if (inAnnex({ y })) {
+      await annexWalk(page, x, y);
+
+      return;
+    }
+
+    // Out through the doorway, on its centre line.
+    await annexWalk(page, ANNEX_DRIVER.doorX, ANNEX_DRIVER.rowY);
+    await driveAxisTo(page, 'x', ANNEX_DRIVER.doorX, 4);
+    await driveAxisTo(page, 'y', ANNEX_DRIVER.bayY, 8);
+  } else if (inAnnex({ y })) {
+    // In through the doorway: the machine bay first, then straight down.
+    await workshopVia(page, ANNEX_DRIVER.doorX, ANNEX_DRIVER.bayY);
+    await driveAxisTo(page, 'x', ANNEX_DRIVER.doorX, 4);
+    await driveAxisTo(page, 'y', ANNEX_DRIVER.rowY, 6);
+    await annexWalk(page, x, y);
+
+    return;
+  }
+
   const seg = (px: number) => (px < 500 ? 0 : px < 700 ? 1 : 2);
   const here = await page.evaluate(
     () =>

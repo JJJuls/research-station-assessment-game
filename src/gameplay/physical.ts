@@ -117,6 +117,15 @@ export interface PhysicalLayerConfig {
   onFeedback: (message: string) => void;
   /** Render the carried-item bubble beside the avatar (default true). */
   showCarriedBubble?: boolean;
+  /**
+   * Whether an eligible container may show its drop-zone outline now
+   * (default: always). Presentation only — placement is still decided by
+   * `onPlace`. `dragging` and `pointerOver` describe the live gesture.
+   */
+  isContainerCued?: (
+    containerId: string,
+    gesture: { dragging: boolean; pointerOver: boolean },
+  ) => boolean;
 }
 
 interface RenderedObject {
@@ -376,7 +385,14 @@ export class PhysicalManipulationLayer {
         enabled &&
         manipulating &&
         this.containerAccepts(rendered.entry) &&
-        this.withinReach(player, rendered.entry.x, rendered.entry.y);
+        this.withinReach(player, rendered.entry.x, rendered.entry.y) &&
+        (this.config.isContainerCued?.(rendered.entry.container_id, {
+          dragging: this.draggingObjectId !== null,
+          pointerOver:
+            this.hitContainer(world.x, world.y)?.container_id ===
+            rendered.entry.container_id,
+        }) ??
+          true);
 
       rendered.highlight.setVisible(eligible);
     }
