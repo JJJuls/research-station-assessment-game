@@ -249,3 +249,98 @@ and exterior — not floor.
   both directions, no trap): `e2e/collision_audit.spec.ts`; results in
   `docs/verification/station-080-m26/UNIT-LOG.md` (U14-D2 and its
   closeout).
+
+## Station 080 U14-D3 — annex and Concourse access (2026-10-01)
+
+Research-owner ruling of 1 October 2026, one bounded correction unit. It
+supersedes, for the four elements below only, the U14-D2 table and
+bullets above ("Where the doorway is", the 64 px doorway, the locker
+"beside the annex doorway"). Nothing of M04 — the 43×19 room, the 13×6
+annex, its mirror axis x 400, the cutter, the bin, the scatter origin,
+the six places, the 64 px keyboard / pointer / bin reaches, the
+first-departure rule, `m04-cutting-v4`, events, payloads, the provisional
+/6 — changed; nor did any station's task semantics (Work Order Board,
+Seal Log, Component Locker inventory and M08 engagement, Assembly Bench
+inventory).
+
+| Element                  | Geometry (room px unless noted)                                                     |
+| ------------------------ | ----------------------------------------------------------------------------------- |
+| Annex doorway            | tiles `[10, 10, 5, 2]`; clear opening **x 336–464 (128 px)**, y 320–384              |
+| Jamb solids              | `[320, 320, 16, 64]`, `[464, 320, 16, 64]`                                          |
+| Component Locker         | solid tile units `[16.4, 3, 1.9, 2]` (north wall, right of the third lamp); anchor (555, 148); approach (555, 190) |
+| Assembly Bench           | solid tile units `[15.2, 9, 3.3, 2]` (one tile east); anchor (566, 305); approach (578, 252) |
+| Work Order Board         | anchor (1344, 140), approach (1312, 178) — unchanged; now in the upper alcove       |
+| Sample Seal Log          | anchor (1211, 142), approach (1224, 196) — unchanged                                 |
+| Concourse door           | anchor (1332, 290), approach (1288, 268) — unchanged; now the lower open doorway    |
+| East-wall divider        | solid `[1280, 216, 64, 16]` (the painted rail / lintel between alcove and doorway)   |
+| Withdrawn by the owner   | `[1280, 128, 64, 96]` and `[1312, 224, 32, 32]` — not implemented                   |
+
+- **Why.** The 64 px entrance was narrow for the task it serves and the
+  locker stood at its west jamb (the west half of the old threshold lay
+  in the locker's range — register §5.231 (g)); on the east wall the
+  Work Order Board's approach stood the participant over the painted
+  sliding door, as if at a closed door.
+- **The entrance.** The clear opening is 128 px, centred as before on
+  the annex axis; between the jambs the feet pass at x 348 … 452 (was
+  380 … 420). The annex is still entered through the doorway only, no
+  piece is reachable from the hall, the doorway, the locker, the bench,
+  the board or the door (`e2e/u14_d3_workshop_access.spec.ts`, pure), and
+  every M04 figure of the U14-D2 table holds (`e2e/m04_cutting.spec.ts`).
+- **The locker and the bench.** The Component Locker stands on the
+  machine bay's north wall right of the third lamp and is approached
+  from the south; the Assembly Bench stands one tile east of its U14-D2
+  place. Labels, inventory behaviour and the M08 stowing-job engagement
+  (first opening engages once, a later opening never again) are
+  unchanged. Both ±12 px landing boxes are standable and each station is
+  strictly nearest at every landing.
+- **The east wall.** Two participant-facing places, one above the other:
+  the upper **Work Order Board alcove** — a recess in the wall with the
+  board on its back wall under the lintel lamp and a recess floor the
+  participant stands on at (1312, 178); the lower **open Concourse
+  doorway** — a static open threshold at the door anchor, approached at
+  (1288, 268), using the shared door transition (its sound and fade are
+  unchanged; nothing opens or closes). Between them the painted
+  hazard-striped rail / lintel, the form of the divider solid: it blocks
+  the direct way between the two (a body cannot stand with its feet
+  across y 216–232 at x ≥ 1270) and the way round runs west of x 1280.
+  At the board approach only the board is in range (door 114 px away),
+  at the door approach only the door (board 140 px away).
+- **Driver discipline** (`workshopVia`, e2e only; unchanged file): the
+  annex is still entered and left on the door column x 400 (hall side
+  y 256, annex side y 416); the north lane y ≈ 156 passes under the
+  locker's solid. The shared helper `workshopToConcourse` walks to the
+  stable waypoint (1250, 252), west of the divider, before its final leg
+  to (1288, 268) — a route that signs the board and then uses the helper
+  no longer ends on the rail (closeout amendment of 1 October 2026,
+  register §5.233; `e2e/pilotHelpers.ts`). The U14-D3 spec walks round
+  the rail explicitly as well.
+- **M04 nearest-anchor statement withdrawn (owner's final ruling,
+  register §5.234).** The bench anchor (566, 305) is about 2.1 px nearer
+  to job 2's coupon offcut than the cutter anchor, through the south
+  hull. "The cutter is the nearest station to every piece" by
+  straight-line distance is no longer a guarantee; what holds and is
+  tested is functional: every piece more than 136 px from every station
+  anchor, no station in range from any pick-up position, each piece
+  tied to its job by its own record, mirrored placements and matched
+  walking costs, every M04 figure unchanged.
+- **M08 (owner's ruling, register §5.235 (d)).** The locker's move
+  increased the walking cost of the optional stowing opportunity; no M08
+  event, field, score or marker is added; analyses combining data from
+  different workshop layouts check or stratify by the canonical
+  `game_version`; M08 stays secondary descriptive telemetry.
+- **Plate.** Same source, same script (`plate_edits.py workshop`,
+  functions `_recompose_bay`, `_east_wall`), composed under Python
+  3.12.14 / Pillow 12.3.0; the encoder change alone gives a different
+  byte hash for identical pixels (documented in the provenance register).
+  Final SHA-256 `4ed99f61…`, generated twice with identical hash; changed
+  pixels only inside the four edit regions; rows 414–607 untouched.
+  Status PROVISIONAL.
+- **Verification.** Pure and browser: `e2e/u14_d3_workshop_access.spec.ts`
+  (geometry, unchanged M04 fixtures, piece unreachability, the six
+  landing boxes, the divider, both prompts, the door once, the return
+  spawn, M08 engagement, the six screenshots); `e2e/m04_cutting.spec.ts`,
+  `e2e/world_v1_registry.spec.ts`; the affected cases of
+  `e2e/u14_correction.spec.ts`, `e2e/pilot_records.spec.ts`,
+  `e2e/concourse_interaction_lifecycle.spec.ts`; `e2e/collision_audit.spec.ts`
+  (`COLLISION_ROOM=records_workshop`) and `e2e/world_v2_workshop_look.spec.ts`.
+  Results: `docs/verification/station-080-m26/UNIT-LOG.md` (U14-D3).

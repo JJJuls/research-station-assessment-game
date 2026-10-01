@@ -13,9 +13,8 @@
  *
  * Station 080 U14-D2 (the approved M04 annex): the sample cutter and its
  * disposal bin left the machine bay for a 13×6-tile CUTTING ANNEX south
- * of it (floor cols 6–18, rows 12–17), entered through a 64 px doorway
- * in the south hull (x 368–432, rows 10–11) where the decorative tool
- * bench stood. The plate is 1376×608
+ * of it (floor cols 6–18, rows 12–17), entered through a doorway in the
+ * south hull where the decorative tool bench stood. The plate is 1376×608
  * (`public/assets/world-v2/plates/workshop-plate.png`, composed by
  * `scripts/world-v2/plate_edits.py workshop`); the band south of the
  * office and beside the annex is hull and exterior, never floor. The
@@ -24,12 +23,29 @@
  * not a mirror image), so the two M04 jobs — three pieces west of the
  * cutter, three at the mirrored places east of it — are laid out alike.
  *
+ * Station 080 U14-D3 (workshop access correction, research-owner ruling
+ * of 1 October 2026): the annex doorway is 128 px wide (clear opening
+ * x 336–464, jambs x 320–336 and 464–480, rows 10–11); the Component
+ * Locker left the south hull for the machine bay's north wall, right of
+ * the third lamp (tile units `[16.4, 3, 1.9, 2]`, approached from the
+ * south at (555, 190)); the Assembly Bench moved one tile east
+ * (`[15.2, 9, 3.3, 2]`, approached at (578, 252)). On the office's east
+ * wall the Work Order Board alcove (upper; anchor 1344/140, approach
+ * 1312/178) and the open Concourse doorway (lower; anchor 1332/290,
+ * approach 1288/268) are separated by one divider solid
+ * `[1280, 216, 64, 16]`, painted as the rail/lintel between them: the
+ * way from the one to the other passes west of x 1280. The two earlier
+ * east-wall solids `[1280, 128, 64, 96]` and `[1312, 224, 32, 32]` were
+ * withdrawn by the owner and are not implemented. No M04 coordinate,
+ * reach or piece place changed.
+ *
  * The collision grid is mapped cell-by-cell to the painting; every
  * anchor/approach pair below and in the registry was machine-audited
  * (32×42 body, ±12 px landing box, nearest-wins radius 72, spawn/door
  * clearance, bundle keyboard reach, full BFS connectivity) by the
  * workshop geometry checker before being committed; the annex is
- * measured by the pure M04 test (`e2e/m04_cutting.spec.ts`). Routes: the
+ * measured by the pure M04 test (`e2e/m04_cutting.spec.ts`) and the
+ * U14-D3 geometry by `e2e/u14_d3_workshop_access.spec.ts`. Routes: the
  * south lane (rows 7–8) runs the whole hall now that the cutter island
  * is gone; the annex is reached from it through the doorway only.
  */
@@ -43,13 +59,14 @@ export const WORKSHOP_ROWS = 19;
 /**
  * The cutting annex (U14-D2): its walkable floor and the doorway region
  * cut through the south hull (tile units), the open doorway between the
- * two jambs (px) and the axis the annex is mirrored about (px).
+ * two jambs (px) and the axis the annex is mirrored about (px). The
+ * doorway is 128 px wide since U14-D3 (it was 64 px).
  */
 export const WORKSHOP_ANNEX = {
   floor: [6, 12, 13, 6],
-  doorway: [11, 10, 3, 2],
-  doorX0: 368,
-  doorX1: 432,
+  doorway: [10, 10, 5, 2],
+  doorX0: 336,
+  doorX1: 464,
   axisX: 400,
 } as const satisfies {
   floor: BlockoutRect;
@@ -87,8 +104,8 @@ const WORKSHOP_MASSES: readonly BlockoutRect[] = [
   [6.5, 2, 1.7, 3], // label press A
   [8.6, 2, 1.4, 3], // label press B
   [1, 6, 2.0, 2], // relay bench (west wall)
-  [9.4, 9, 1.9, 2], // component storage locker (south hull)
-  [14.2, 9, 3.3, 2], // assembly bench (south hull)
+  [16.4, 3, 1.9, 2], // component storage locker (north wall, right; U14-D3)
+  [15.2, 9, 3.3, 2], // assembly bench (south hull, one tile east; U14-D3)
   [11, 14.1, 3, 2.9], // sample cutter (annex; operated from the north)
   [27.1, 2, 3.0, 3], // dispatch console desk (office north)
   [34.4, 3, 2.9, 2], // outbound handover desk (office north)
@@ -110,9 +127,15 @@ export const WORKSHOP_FOOTPRINTS: readonly BlockoutRect[] = [];
  */
 export const WORKSHOP_SOLIDS: readonly SolidRect[] = [
   [608, 192, 160, 44], // wall faces above both door sills
-  // The annex doorway's two jambs: the opening is x 368–432 (U14-D2).
-  [352, 320, 16, 64],
-  [432, 320, 16, 64],
+  // The annex doorway's two jambs: the opening is x 336–464 (U14-D3;
+  // 368–432 in U14-D2).
+  [320, 320, 16, 64],
+  [464, 320, 16, 64],
+  // The east wall's divider (U14-D3): the rail/lintel between the Work
+  // Order Board alcove above (approach 1312/178) and the open Concourse
+  // doorway below (approach 1288/268). Both ±12 px landing boxes stay
+  // clear of it; the way between them runs west of x 1280.
+  [1280, 216, 64, 16],
   // The disposal bin, south of the cutter: tile units [11.7, 16.8, 1.6,
   // 1.2] (x 374.4–425.6), authored in whole px as x 374–426 so that the
   // avatar is stopped at mirrored positions west and east of it (the

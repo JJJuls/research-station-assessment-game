@@ -1138,10 +1138,11 @@ test.describe('U14-C / U14-D: M03 / M04 observation order, interaction targeting
     expect(of(m04, M04_FAMILY, 'piece_picked_up')).toHaveLength(0);
 
     // ——— Out of the annex, the pieces lying: nothing is closed ———
-    // The Component Locker's approach in the machine bay. Walking out of
-    // the annex while staying in the Records Workshop is no departure,
-    // and standing at a station is none either.
-    await workshopVia(page, 310, 250);
+    // The Component Locker's approach in the machine bay (U14-D3: on the
+    // north wall, (555, 190)). Walking out of the annex while staying in
+    // the Records Workshop is no departure, and standing at a station is
+    // none either.
+    await workshopVia(page, 555, 190);
     await page.waitForTimeout(250);
     expect(await promptLine(page)).toBe(LOCKER_LINE);
     expect(await lyingPieces(page)).toHaveLength(3);
@@ -1464,7 +1465,7 @@ test.describe('U14-C / U14-D: M03 / M04 observation order, interaction targeting
     // The Assembly Bench opened and closed: a panel shown, no work done.
     let opened = await stationsOpened(page);
 
-    await workshopVia(page, 546, 252);
+    await workshopVia(page, 578, 252);
     await page.waitForTimeout(250);
     expect(await promptLine(page)).toBe('E / Space — Use Assembly Bench');
     await press(page, 'Space');
@@ -1849,6 +1850,10 @@ test.describe('U14-C / U14-D: M03 / M04 observation order, interaction targeting
     await expectNoBinCue(page, 'm04_swarf_b', 'lifted to be carried');
 
     // ——— The work orders read and taken: an inspection, no departure ———
+    // U14-D3: the board alcove is reached along the office's north lane,
+    // west of the east-wall rail (x 1280–1343, y 216–231) — the driver's
+    // straight L from the vestibule can otherwise end under the rail.
+    await workshopVia(page, 1250, 178);
     await workshopVia(page, 1312, 178);
     await openPromptAt(page, PILOT.workshop.board, {
       approachOffset: { x: -32, y: 38 },
@@ -2193,7 +2198,7 @@ test.describe('U14-C / U14-D: M03 / M04 observation order, interaction targeting
     const opened = await stationsOpened(page);
 
     // Out of the annex to the locker: walking there closed nothing.
-    await workshopVia(page, 310, 250);
+    await workshopVia(page, 555, 190);
     await page.waitForTimeout(250);
     expect(await promptLine(page)).toBe(LOCKER_LINE);
     // Standing at the locker closed nothing.

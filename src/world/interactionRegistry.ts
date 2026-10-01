@@ -421,6 +421,9 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
     { x: 400, y: 423 },
     { w: 3, h: 3 },
   ),
+  // U14-D3: the locker stands on the north wall (approached from the
+  // south) and the bench one tile east of its U14-D2 place; the owner's
+  // approach points, both audited with the ±12 px box.
   workshopStation(
     'workshop.storage_locker',
     W.storageLocker,
@@ -428,7 +431,7 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Component Locker',
     { kind: 'inventory', id: 'container' },
     null,
-    { x: 310, y: 250 },
+    { x: 555, y: 190 },
   ),
   workshopStation(
     'workshop.assembly_bench',
@@ -437,7 +440,7 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Assembly Bench',
     { kind: 'inventory', id: 'workbench' },
     null,
-    { x: 546, y: 252 },
+    { x: 578, y: 252 },
   ),
   workshopStation(
     'workshop.dispatch_console',

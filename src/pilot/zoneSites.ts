@@ -84,10 +84,11 @@ export const CONCOURSE_SPAWNS = {
  * and, south of the machine bay, the cutting annex (Station 080 U14-D2)
  * (src/world/layouts/workshop.ts; plate workshop-plate.png). Anchors are
  * mapped to the plates' baked art — machine bay west (case desk, both
- * presses, relay bench, locker, assembly bench, supply pallet zone),
- * records office east (dispatch desk, feed console, seal board, handover
- * desk, four south-hull benches, work-order board by the Concourse
- * door), cutting annex (sample cutter, disposal bin). Every
+ * presses, relay bench, locker on the north wall, assembly bench, supply
+ * pallet zone), records office east (dispatch desk, feed console, seal
+ * board, handover desk, four south-hull benches, work-order board in its
+ * alcove above the Concourse doorway), cutting annex (sample cutter,
+ * disposal bin). Every
  * anchor/approach pair, the spawn and the bundle positions were
  * machine-audited (32×42 body, ±12 px landing box, nearest-wins radius
  * 72, spawn/door clearance, BFS connectivity) — see the layout module
@@ -98,8 +99,16 @@ export const WORKSHOP_STATIONS = {
   filingDesk: { x: 184, y: 170 },
   pressA: { x: 236, y: 160 },
   pressB: { x: 302, y: 160 },
-  storageLocker: { x: 331, y: 300 },
-  assemblyBench: { x: 534, y: 305 },
+  /**
+   * U14-D3: the Component Locker stands on the machine bay's north wall,
+   * right of the third lamp (tile units `[16.4, 3, 1.9, 2]`), and is
+   * approached from the south at (555, 190); the Assembly Bench stands
+   * one tile east of its U14-D2 place (`[15.2, 9, 3.3, 2]`), approached
+   * at (578, 252). Both moved so that the annex doorway could be widened
+   * to 128 px; labels, inventory behaviour and M08 semantics unchanged.
+   */
+  storageLocker: { x: 555, y: 148 },
+  assemblyBench: { x: 566, y: 305 },
   supplyA: { x: 196, y: 244 },
   supplyB: { x: 244, y: 248 },
   supplyC: { x: 220, y: 282 },

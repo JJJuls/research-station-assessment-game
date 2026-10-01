@@ -397,14 +397,15 @@ test.describe('station concourse interaction lifecycle', () => {
     expect((await overlayProbe(page))?.open ?? false).toBe(false);
     await expectCanMove(page);
 
-    // Component Locker — container transfer (audited north-west approach).
+    // Component Locker — container transfer (U14-D3: on the north wall,
+    // audited approach 42 px south of the anchor).
     await openStation(
       page,
       PILOT.workshop.storageLocker,
       'KeyE',
       'container',
       'component-locker-open',
-      { x: -21, y: -50 },
+      { x: 0, y: 42 },
     );
     await closeAndMove(page);
 
@@ -421,8 +422,11 @@ test.describe('station concourse interaction lifecycle', () => {
 
     // Supply bundle — an E/SPACE surface with no overlay at all: it must
     // collect and leave the world running (inside the 64px bundle reach and
-    // outside every 72px station radius).
-    await travelTo(page, 196, 244);
+    // outside every 72px station radius). U14-D3: the stand is 12 px south
+    // of the bundle — the drive now arrives from the north lane, and a
+    // landing 12 px short of (196, 244) is within the Case Workspace's
+    // 72 px (anchor 184/170); from (196, 256) every landing stays outside.
+    await travelTo(page, 196, 256);
     await press(page, 'Space');
     await page.waitForTimeout(400);
     expect((await overlayProbe(page))?.open ?? false).toBe(false);

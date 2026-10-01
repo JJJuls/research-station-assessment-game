@@ -367,14 +367,21 @@ test.describe('M04 own debris (pure)', () => {
         ).toBeGreaterThan(72 + 64);
       }
 
-      // The cutter is the station nearest to every piece: the pieces
-      // belong to it and lie in no other station's territory.
+      // Which station anchor is nearest to a piece by straight-line
+      // distance is NOT a guarantee (research-owner ruling of 1 October
+      // 2026, register §5.234): the Assembly Bench anchor (566, 305) lies
+      // about 2.1 px nearer to job 2's coupon offcut than the cutter —
+      // through the south hull, which describes neither access, nor
+      // interaction competition, nor walking cost. What holds, and is
+      // tested: no station's range reaches any position a piece is
+      // lifted from (the 136 px clearance above, and the U14-D2
+      // measurement from every reachable position below), and every
+      // piece belongs to its own job through its own record.
       expect(
-        [...stations].sort(
-          (a, b) => away(place, a[1]) - away(place, b[1]),
-        )[0][0],
-        `${piece.object_id}: nearest station`,
-      ).toBe('sampleCutter');
+        m04PiecesOf(piece.job).map((entry) => entry.object_id),
+        `${piece.object_id} belongs to ${piece.job}`,
+      ).toContain(piece.object_id);
+      expect(piece.job).toBe(piece.object_id.endsWith('_a') ? 'o1' : 'o2');
 
       // Clear of every supply bundle (collected within 44 px).
       for (const [name, anchor] of bundles) {
@@ -1559,20 +1566,21 @@ test.describe('M04 own debris (pure)', () => {
     expect(WORKSHOP_ROWS).toBe(19);
     expect(grid.widthPx).toBe(1376);
     expect(grid.heightPx).toBe(608);
+    // U14-D3: the doorway is 128 px wide (x 336–464; U14-D2 had 368–432).
     expect(WORKSHOP_ANNEX).toMatchObject({
       axisX: 400,
       floor: [6, 12, 13, 6],
-      doorway: [11, 10, 3, 2],
-      doorX0: 368,
-      doorX1: 432,
+      doorway: [10, 10, 5, 2],
+      doorX0: 336,
+      doorX1: 464,
     });
     // Its cutter, bin and doorway jambs collide where they were approved
     // (the cutter's and the bin's south edges stop 6 px short of their
     // bases, as every painted prop's does).
     expect(WORKSHOP_SOLIDS).toContainEqual([352, 451, 96, 87]);
     expect(WORKSHOP_SOLIDS).toContainEqual([374, 538, 52, 32]);
-    expect(WORKSHOP_SOLIDS).toContainEqual([352, 320, 16, 64]);
-    expect(WORKSHOP_SOLIDS).toContainEqual([432, 320, 16, 64]);
+    expect(WORKSHOP_SOLIDS).toContainEqual([320, 320, 16, 64]);
+    expect(WORKSHOP_SOLIDS).toContainEqual([464, 320, 16, 64]);
     // The bottom row is wall; the band south of the office and beside
     // the annex is never floor.
     expect(WORKSHOP_LAYOUT[18]).toBe('#'.repeat(43));
@@ -1585,7 +1593,7 @@ test.describe('M04 own debris (pure)', () => {
 
     for (const row of [10, 11]) {
       expect(WORKSHOP_LAYOUT[row]).toBe(
-        `${'#'.repeat(11)}...${'#'.repeat(29)}`,
+        `${'#'.repeat(10)}.....${'#'.repeat(28)}`,
       );
     }
 
@@ -1640,13 +1648,14 @@ test.describe('M04 own debris (pure)', () => {
 
     expect(annex.length).toBeGreaterThan(2_500);
     // The annex is entered through the doorway only: between the jambs
-    // the avatar's feet pass at x 380 … 420.
+    // the avatar's feet pass at x 348 … 452 (U14-D3's 128 px opening;
+    // 380 … 420 through U14-D2's 64 px one).
     const threshold = stands.filter(
       (stand) => stand.y >= 312 && stand.y <= 360,
     );
 
-    expect(Math.min(...threshold.map((stand) => stand.x))).toBe(380);
-    expect(Math.max(...threshold.map((stand) => stand.x))).toBe(420);
+    expect(Math.min(...threshold.map((stand) => stand.x))).toBe(348);
+    expect(Math.max(...threshold.map((stand) => stand.x))).toBe(452);
     // Nothing south of the office or beside the annex can be stood on.
     expect(annex.every((stand) => stand.x >= 204 && stand.x <= 596)).toBe(true);
     expect(Math.max(...annex.map((stand) => stand.y))).toBe(552);

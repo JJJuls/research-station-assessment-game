@@ -744,7 +744,8 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
     await waitOverlay(page, false);
 
     // Assembly bench: move both stacks into the workbench input, assemble.
-    await workshopVia(page, 546, 252);
+    // (U14-D3: the bench stands one tile east; approach (578, 252).)
+    await workshopVia(page, 578, 252);
     await openPromptAt(page, PILOT.workshop.assemblyBench, {
       approachOffset: { x: 12, y: -53 },
     }).catch(() => undefined);
@@ -791,10 +792,12 @@ test.describe('pilot route — Records Workshop evidence windows (v2 Unit 2)', (
     await page.keyboard.press('Escape');
     await waitOverlay(page, false);
 
-    // Locker transfer: put the cartridge into the Component Locker.
-    await workshopVia(page, 310, 250);
+    // Locker transfer: put the cartridge into the Component Locker (U14-D3:
+    // on the machine bay's north wall, approached from the south at
+    // (555, 190) — the audited approach, 42 px below the anchor).
+    await workshopVia(page, 555, 190);
     await openPromptAt(page, PILOT.workshop.storageLocker, {
-      approachOffset: { x: -21, y: -50 },
+      approachOffset: { x: 0, y: 42 },
     }).catch(() => undefined);
     await waitOverlay(page, true);
     probe = (await uiProbe(page))!;

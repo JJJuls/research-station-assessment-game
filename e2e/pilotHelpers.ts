@@ -841,6 +841,20 @@ export async function workshopVia(page: Page, x: number, y: number) {
     }
   }
 
+  if (x >= 1270) {
+    // U14-D3: the east wall's divider (x 1280–1343, y 216–231) separates
+    // the Work Order Board alcove above it from the Concourse-door
+    // approach below it, and a body whose origin x is 1270 or more has
+    // its feet over the divider's columns. A straight L to either place
+    // can end on the rail (observed: the y leg from the vestibule
+    // clamped on the wall face at y 226, the x leg then ran under the
+    // rail and the correction leg up to the alcove met it). So every
+    // leg to an east-wall target first reaches the target's row at the
+    // stable waypoint x 1250, west of the rail, and only then goes east.
+    // Driver only — production geometry is never adjusted for it.
+    await walkTo(page, 1250, y, { yFirst: true });
+  }
+
   await walkTo(page, x, y, { yFirst: true });
 }
 
@@ -1102,8 +1116,20 @@ export async function concourseToWorkshop(page: Page) {
   });
 }
 
-/** Records Workshop east door → Concourse. */
+/**
+ * Records Workshop east door → Concourse. U14-D3: the east wall's
+ * divider solid (x 1280–1343, y 216–231) separates the Work Order Board
+ * alcove above from the door approach below, and the feet box at the
+ * door approach's x (1277 … 1298) overlaps the divider's columns — so a
+ * straight leg from the board approach (where the sign-off helpers
+ * leave the avatar) ends on the rail. The route first takes a stable
+ * waypoint west of the divider (x 1250, on the office's y 252 lane) and
+ * only then the final leg to the audited door approach (1288, 268).
+ * Driver only — production geometry, the door anchor, the approach,
+ * the interaction radius and the participant's route are unchanged.
+ */
 export async function workshopToConcourse(page: Page) {
+  await workshopVia(page, 1250, 252);
   await workshopVia(page, 1288, 268);
   await useDoor(page, PILOT.workshop.eastDoor, 'station_concourse', {
     approachOffset: { x: -44, y: -22 },

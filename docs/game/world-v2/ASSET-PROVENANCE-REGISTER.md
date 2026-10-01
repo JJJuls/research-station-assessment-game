@@ -141,3 +141,73 @@ the w1 prop set still used as layered sprites (`w1-evidence-desk`,
   unit to match the painting.
 - Status unchanged: PROVISIONAL, not human-approved, asset-set version not
   bumped, nothing frozen.
+
+## Station 080 U14-D3 (2026-10-01) — workshop access correction, no generation spent
+
+- `plates/workshop-plate.png` stays 1376×608. It is recomposed by the
+  same script from the same source
+  (`docs/game/world-v2/plate-sources/workshop-plate.v2.png`): no
+  `workshop-plate.v3.png` was created, no generator (PixelLab) was used, no
+  imagery was downloaded or generated.
+- **Runtime change (documented, accepted by the research owner):** the
+  plate is now composed under **Python 3.12.14 / Pillow 12.3.0**
+  (`C:\Users\Juls\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe`);
+  U14-D2 used Python 3.12.7 / Pillow 10.4.0. The two encoders write
+  different PNG bytes for the same decoded pixels: the **unchanged U14-D2
+  script re-run under Pillow 12.3.0 reproduces the committed U14-D2 plate
+  pixel for pixel** (0 decoded differences over the whole 1376×608) at
+  SHA-256 `a9f566f45df77c604c573be4e512e57af906fa8b21231db3ec5d852e0b2c52e6`
+  instead of `473f1b4f…`. That byte difference is encoder-only and is not
+  a failure. Under the current runtime the final U14-D3 plate was
+  generated twice in succession with identical SHA-256.
+- **Edits (owner's ruling, `scripts/world-v2/plate_edits.py workshop`,
+  functions `_recompose_bay` and `_east_wall`; every pixel cut from the
+  same painting or painted in its palette):**
+  - the annex doorway widened from 64 px (x 368–432) to **128 px
+    (x 336–464)**, jambs x 320–336 and 464–480, with the painting's
+    door-frame orange on the cut wall ends; the doorway's recess into the
+    annex and the two annex wall lamps (now at x 300–306 and 493–499)
+    follow (rows 384–413 only below the hull);
+  - the **Component Locker** lifted off the south hull (x 299–368,
+    y 282–341; its open leaf folded edge-on as in U14-D2) and set on the
+    machine bay's **north wall right of the third lamp**: body x 524–587,
+    base y 160 over the solid x 525–586 (tile units `[16.4, 3, 1.9, 2]`),
+    the leaf edge-on to x 593 (7 px past the solid; the owner allows 8),
+    a two-row contact shadow under it; the strip it left and the old bench
+    place restored as floor — the plating seam of y 282–283 continued, the
+    hull contact shadow rows 337–341, seeded wear (seed 97);
+  - the **Assembly Bench** moved 32 px east with its cast shadows (painted
+    x 481–592 over the solid x 486–592, tile units `[15.2, 9, 3.3, 2]`;
+    its shadow never lightens the chamfer's);
+  - the **east wall**: inside the painting's own frame (left post
+    x 1291–1297, diagonal lintel, right post x 1335–1340, the lintel lamp)
+    the tall sliding leaf is replaced by (upper) a **recessed Work Order
+    Board alcove** — back wall in the painting's panel tones with a
+    riveted panel joint, a steel-framed slate board with four paper
+    orders and an orange tag at x 1300–1321, y 148–177 under the lamp, a
+    recess floor from the back wall's base down to y 215 that the
+    participant stands on at (1312, 178); (between) a **steel
+    hazard-striped rail** from the floor into the wall at x 1280–1343,
+    y 216–231, with a west post standing on the floor and a small lamp on
+    its face over the opening — the painted form of the divider solid
+    `[1280, 216, 64, 16]`; (lower) an **open Concourse doorway**: a dark
+    opening below the rail with light on its threshold along the floor
+    line, the leaf's handle painted out with the post's own rows. The
+    doorway is a static open threshold (no leaf, no animation).
+  - Changed regions, measured against the U14-D2 plate (decoded pixels):
+    x 299–597 / y 282–383 (south strip and doorway band), x 520–595 /
+    y 96–163 (locker on the north wall), x 1264–1359 / y 96–303 (east
+    wall), x 176–623 / y 384–413 (doorway recess and lamps). **Every
+    other pixel is identical; rows 414–607 — the annex floor, the cutter,
+    the bin, the pieces' places and the exterior — are untouched.**
+- **Final file:** 1376×608, SHA-256
+  `4ed99f6174265737380e4b90db0d187fa48bef288133a12ce73e0aa660540242`
+  (also in the world-v2 manifest). Independent visual review: see the
+  unit log (U14-D3). Not an approval of the asset set, which stays
+  PROVISIONAL.
+- Collision still comes only from `src/world/layouts/workshop.ts`,
+  updated in the same unit (doorway `[10, 10, 5, 2]`, jambs
+  `[320, 320, 16, 64]` / `[464, 320, 16, 64]`, locker and bench masses,
+  divider `[1280, 216, 64, 16]`). No M04 coordinate changed.
+- Status unchanged: PROVISIONAL, not human-approved, asset-set version not
+  bumped, nothing frozen.

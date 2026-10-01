@@ -163,6 +163,114 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
 
 ## 4. As-built records (appended per unit)
 
+**Unit 14-D3** (Records Workshop access only; one room, one bounded
+correction unit under the research owner's revised ruling of 1 October
+2026 — the "Unit 14-D2" record below is kept as written and is superseded
+only where this record says so): as-built and CLOSED by the owner's
+closeout amendment of 1 October 2026, which resolved the two decisions
+the first pass had left to the owner (§5.233, the shared e2e driver;
+§5.234, the nearest-anchor statement) and ruled on M08 (§5.235 (d)).
+**Status: room-access correction; it changes no measurement, no event,
+no payload, no scoring rule and no validity claim; NOT scientifically
+validated** — everything the Unit 14-D2 record says about M04's status
+stands.
+(1) The entrance — supersedes the doorway figures of "Unit 14-D2" (1).
+The annex doorway is 128 px wide: tiles `[10, 10, 5, 2]`, clear opening
+x 336–464 between the jamb solids `[320, 320, 16, 64]` and
+`[464, 320, 16, 64]`; between the jambs the avatar's feet pass at
+x 348 … 452. The annex floor `[6, 12, 13, 6]`, the axis x 400, the cutter
+(anchor 400/456, approach 400/423, solid `[11, 14.1, 3, 2.9]`), the bin
+(400/556; `[374, 538, 52, 32]`), the scatter origin and the six places
+are unchanged; the 64 px keyboard, pointer and bin reaches, the
+first-departure rule, carried and lying pieces undisposed, later cleanup
+immutable, `m04-cutting-v4`, the provisional /6 and the dependence
+warning are unchanged; `src/measurement/features/m04.ts`, the event
+schema and the scoring plan are untouched.
+(2) The Component Locker stands on the machine bay's north wall right of
+the third lamp: solid tile units `[16.4, 3, 1.9, 2]` (px 525–586 ×
+96–154), anchor (555, 148), approach (555, 190); label "Component
+Locker", the container inventory and the M08 stowing-job engagement
+(the first opening engages once; a later opening never again) unchanged.
+The Assembly Bench stands one tile east: `[15.2, 9, 3.3, 2]`, anchor
+(566, 305), approach (578, 252); the workbench inventory unchanged.
+(3) The east wall: the Work Order Board (anchor 1344/140, approach
+1312/178), the Sample Seal Log (1211/142; 1224/196) and the Concourse
+door (1332/290; 1288/268) keep their anchors and approaches. One
+divider solid `[1280, 216, 64, 16]` separates the upper board alcove
+from the lower open doorway; the two earlier solids `[1280, 128, 64, 96]`
+and `[1312, 224, 32, 32]` were withdrawn by the owner and are not
+implemented. The painting is recomposed accordingly (a recessed alcove
+with the board on its back wall and a recess floor, a hazard-striped
+rail / lintel as the divider, an open dark doorway with light on its
+threshold); the door remains a static open threshold using the shared
+door transition (sound and fade unchanged; no opening / closing
+animation). The ±12 px landing boxes of Press B, the locker, the bench,
+the board, the Seal Log and the door are standable and each object is
+strictly nearest at every landing; at the board approach only the board
+is in range (door 114 px away), at the door approach only the door
+(board 140 px). The divider blocks the direct way between them (no body
+stands with its feet across y 216–232 at x ≥ 1270); the way round runs
+west of x 1280.
+(4) What the geometry guarantees, re-measured (`e2e/u14_d3_workshop_access.spec.ts`,
+pure; `e2e/m04_cutting.spec.ts`): from no reachable position of the hall
+or the doorway, and from no position where the locker, the bench, the
+board, the Seal Log or the door answers a press, is a piece within
+64 px; every piece keeps more than 136 px from the locker and the bench
+anchors; the annex is entered through the doorway only; the mirrored
+pick-up and bin positions, the equal walking costs and the 76 px bin
+clearance of "Unit 14-D2" (3) hold unchanged. ONE statement of
+"Unit 14-D2" (3) is WITHDRAWN by the owner's final M04 spatial ruling of
+1 October 2026 (§5.234): "the Sample Cutter is the nearest station to
+every piece" by straight-line anchor distance — the bench anchor
+(566, 305) lies 171.1 px from job 2's coupon offcut (572, 476), the
+cutter anchor 173.2 px, about 2.1 px nearer through the south hull,
+which describes neither access, nor interaction competition, nor
+walking cost. In its place the guarantees are functional and tested
+(`m04_cutting` "register row and fixtures …" and "U14-D2: measured
+from every reachable avatar position …"): every piece lies more than
+the combined station and piece reaches (72 + 64 px) from every station
+anchor; from every position a piece can be lifted from, no station is
+in range; each piece is associated with its originating job through
+its own record (`M04Piece.job`, `m04PiecesOf`); the two jobs keep their
+mirrored placements and matched pick-up-to-bin walking costs; the
+cutter, the bin, the six coordinates, the 64 / 64 / 64 px reaches, the
+first-departure rule, the immutable records, the provisional /6, the
+dependence warning and `m04-cutting-v4` are unchanged.
+(5) Art: `public/assets/world-v2/plates/workshop-plate.png`, recomposed
+by `scripts/world-v2/plate_edits.py workshop` from the same v2 source
+under Python 3.12.14 / Pillow 12.3.0 (encoder-only hash change
+documented in the provenance register, §5.232); generated twice with
+identical SHA-256 `4ed99f6174265737380e4b90db0d187fa48bef288133a12ce73e0aa660540242`;
+changed pixels only inside the four edit regions; rows 414–607
+untouched. PROVISIONAL.
+(6) Changed files: `src/world/layouts/workshop.ts`,
+`src/pilot/zoneSites.ts`, `src/world/interactionRegistry.ts`,
+`src/scenes/RecordsWorkshopScene.ts` (one comment),
+`scripts/world-v2/plate_edits.py`, the plate, the world-v2 manifest,
+`docs/game/world-v2/ASSET-PROVENANCE-REGISTER.md`,
+`docs/game/rooms/12-workshop-return.md`; tests
+`e2e/u14_d3_workshop_access.spec.ts` (new), `e2e/m04_cutting.spec.ts`
+(the doorway figures), `e2e/u14_correction.spec.ts`,
+`e2e/pilot_records.spec.ts`, `e2e/concourse_interaction_lifecycle.spec.ts`
+(the locker's and the bench's audited coordinates only; what they
+measure is unchanged); and the four documents of the unit. Closeout
+amendment (1 October 2026): `e2e/pilotHelpers.ts` (`workshopToConcourse`
+and `workshopVia` reach the east wall west of the divider; driver
+only), `e2e/m04_cutting.spec.ts` (the nearest-anchor assertion replaced
+by the functional guarantees), and — comments only, by the owner's
+final consistency correction — `src/pilot/windows/m04CuttingModel.ts`
+(the header no longer states that every piece is nearer to the cutter
+than to any other station; it states the functional guarantee). Results
+and their limits: unit log, U14-D3 and its closeout amendment.
+Resolved by the closeout amendment: §5.233 (the shared e2e driver) and
+§5.234 (the nearest-anchor statement withdrawn; bench unmoved). Carried
+forward unchanged — the scientific limitations of "Unit 14-D2": the
+extractor and piece events without a recognised `object_id` (§5.216);
+two jobs as repeated occasions, six pieces not six observations
+(§5.200); side and order not separated (§5.224); empirical evidence
+pending (§5.203); the M03 concerns (§5.180, §5.196, §5.198); the art
+PROVISIONAL.
+
 **Unit 14-D2** (M04 only; the final correction of U14-D — the "Unit 14-D"
 record below is kept as written and is superseded only where this record
 says so): as-built. **Status: the owner's ruling on the places is
@@ -3718,3 +3826,154 @@ rule, an event name or a field, and none establishes validity.
      things. None of these was a blocker in the reviews; (a)–(d), (e)
      and (h) bear on what the measure means and are recorded so that
      they are not mistaken for settled.
+232. **The plate's composition runtime changed; the hash difference is
+     encoder-only (U14-D3; accepted by the owner in the ruling).** The
+     workshop plate is now composed under Python 3.12.14 / Pillow 12.3.0
+     (U14-D2: 3.12.7 / 10.4.0). The unchanged U14-D2 script re-run under
+     the current runtime reproduces the committed U14-D2 plate pixel for
+     pixel (0 decoded differences over 1376 × 608) at a different byte
+     hash (`a9f566f4…` instead of `473f1b4f…`), so a byte hash is now a
+     property of the encoder as well as of the pixels. The U14-D3 plate
+     was generated twice in succession under the current runtime with
+     identical SHA-256 `4ed99f61…`, and its decoded differences from the
+     U14-D2 plate lie only inside the four authorised edit regions (rows
+     414–607 untouched). Recorded so that a future hash mismatch is first
+     checked against decoded pixels before it is read as a change.
+233. **The shared e2e driver `workshopToConcourse` is stopped by the
+     divider — blocked outside the allowlist at U14-D3's first pass;
+     RESOLVED by the closeout amendment of 1 October 2026 (see the end
+     of this entry; the analysis below is historical).**
+     `e2e/pilotHelpers.ts` (not on the unit's allowlist at the time) walks
+     from wherever the avatar stands straight to the door approach
+     (1288, 268) with its axis-by-axis driver (`walkTo`, y first, then
+     the reversed L). From the board approach (1312, 178) — where the
+     route helpers `workshopSignOff`, `routeToWorkshopWork` and
+     `returnShiftToDeckClosure` leave the avatar — every such leg now
+     ends on the divider's north face (origin y 192), because the feet
+     box at x 1288 (1277 … 1298) still overlaps the divider's columns
+     (1280 … 1343); `useDoor` then fails after its three attempts. The
+     production geometry is as the owner approved it; a participant
+     simply walks round the rail (west of x 1270). Affected: every spec
+     that signs the board and then calls `workshopToConcourse`
+     (`m01_batches_route`, `m05_start_route`, `m11_custody_route`,
+     `pilot_route`, `pilot_return`, `pilot_episodes_1_2`,
+     `m03_m04_route`, `pilot_deck`, `pilot_lab`, `closureHelpers`); none
+     of them is in this unit's focused verification, and the three
+     affected legacy cases the owner named reach the door from the west
+     and pass. The fix is one helper change — step to x ≤ 1250 before the
+     door leg (as `e2e/u14_d3_workshop_access.spec.ts` does explicitly)
+     — in a file this unit may not edit. Because the file is required
+     for the test suite to keep working after this geometry, the unit
+     stopped before its commit (contract stop condition "a
+     non-allowlisted tracked file is required") and reported it.
+     RESOLVED (closeout amendment, 1 October 2026): the owner added
+     `e2e/pilotHelpers.ts` to the allowlist (21 paths) and ruled the
+     correction an e2e-driver change, not a production route or
+     measurement change. `workshopToConcourse` now takes a stable
+     waypoint west of the divider — `workshopVia(page, 1250, 252)` on
+     the office's south lane — before its final leg to the audited
+     door approach (1288, 268) and the door; and, because the same
+     defect showed at another legitimate starting position — the
+     U14-D3 spec's own walk from Press B to the board approach stalled
+     on the vestibule wall face at y 226, ran under the rail and met it
+     from below at y 222 — `workshopVia` itself now reaches the target's
+     row at x 1250 before going east whenever the target's origin x is
+     1270 or more (the only such targets are the board approach and
+     the door approach). The door anchor, the approach, the interaction
+     radius and the participant's route are unchanged. Verified by the
+     representative callers named in the amendment (`m03_m04_route`,
+     `pilot_route`) and the U14-D3 spec; results in the unit log,
+     "U14-D3 closeout amendment".
+234. **"The Sample Cutter is the nearest station to every piece" no
+     longer holds for one piece — RESOLVED by the owner's final M04
+     spatial ruling (closeout amendment, 1 October 2026): the bench
+     stays at `[15.2, 9, 3.3, 2]`, anchor (566, 305), approach
+     (578, 252), and is NOT moved to satisfy the former straight-line
+     nearest-anchor assertion; that statement is withdrawn (the bench
+     anchor is about 2.1 px nearer to the coupon offcut only through a
+     solid hull wall, which describes neither participant access, nor
+     interaction competition, nor walking cost); `e2e/m04_cutting.spec.ts`
+     and the U14-D3 records now express and test the functional
+     guarantees listed in §4 "Unit 14-D3" (4) instead, with no reach,
+     collision, symmetry or route-cost assertion weakened; the focused
+     gate is green again (unit log, "U14-D3 closeout amendment").
+     The analysis as first recorded follows.** The
+     U14-D2 record's guarantee (3) and the pure test
+     `e2e/m04_cutting.spec.ts` ("register row and fixtures …", the
+     assertion `nearest station … toBe('sampleCutter')`) state that
+     every piece's nearest station, by straight-line anchor distance, is
+     the cutter. The owner's Assembly Bench anchor (566, 305) lies
+     171.1 px from job 2's coupon offcut at (572, 476); the cutter anchor
+     (400, 456) lies 173.2 px from it. The test therefore fails on that
+     one line, deterministically, for job 2 only (job 1's mirror piece
+     keeps the cutter nearest, 173.2 px against 204 px to the next
+     station) — the two jobs' straight-line station neighbourhoods are
+     no longer alike. Every functional guarantee holds: the bench is
+     171 px from the piece (more than the 72 + 64 px that would let a
+     station take a press meant for a piece, which the same test still
+     asserts and passes), the bench and the piece are separated by the
+     south hull (walking distance through the doorway, not 171 px), no
+     piece is reachable from the bench's range, and the mirrored
+     pick-up and bin positions and walking costs are unchanged. The
+     unit did not change the assertion or the record (an M04 guarantee
+     is the owner's), and did not move the bench (its anchor is fixed
+     by the ruling). For the owner: either (a) restate the guarantee as
+     "no other station lies within 136 px of a piece, and no station
+     with a walking route into the annex is nearer than the cutter"
+     and amend the one assertion accordingly, or (b) set the bench
+     anchor 4 px north ((566, 301): 175.1 px) or the bench elsewhere.
+     Until it was decided the focused gate `m04_cutting` showed 11 / 12
+     with this one deterministic failure (historical; green again since
+     the closeout amendment, above).
+235. **Points the U14-D3 reviews raised that the ruling does not decide
+     (recorded, not acted on).** Gameplay review (Opus, read-only;
+     verdict "usable with noted friction", no blocker): (a) the Work
+     Order Board's prompt line is clamped to the HUD and is drawn to the
+     left of the alcove, above the Sample Seal Log's painted cork board
+     (`RoomScene.ts`, the prompt clamp — a protected system, older than
+     this unit), so a first-time participant may tie the board's prompt
+     to the cork board; both objects answer correctly by proximity;
+     (b) at 1280 × 720 the open doorway below the rail reads less like
+     an exit than the lit alcove above it — the threshold light is
+     faint and the alcove carries the orange frame and the lamp; a
+     participant looking for the exit may step into the alcove first
+     and get the board's prompt (mitigated: they arrived through that
+     doorway and its prompt is explicit); (c) the rail reads as the
+     intended striped barrier; its cost is one sidestep per sign-off.
+     Measurement-adjacent, for the scientific reviewer and the owner:
+     (d) **M08 effort changed** — the Component Locker moved from the
+     south hull beside the supply pallet to the north wall; the walk
+     from the pallet to the locker grew from roughly 120 px to roughly
+     340 px, so the optional stowing job costs more effort than before
+     while its meaning, events and engagement rule are unchanged; M08
+     carries no administration-version marker of its own — RULED
+     (closeout amendment, 1 October 2026): the approved locker position
+     is retained; the increased walking cost of the optional M08
+     stowing opportunity is recorded here; no M08-specific event,
+     payload field, score or administration marker is added; the
+     existing canonical `game_version`, attached to raw events and
+     summaries, is the build-level traceability mechanism, so analyses
+     combining data from different workshop layouts must check or
+     stratify by `game_version`; M08 remains secondary descriptive
+     telemetry and gains no validity claim;
+     (e) a press made at the board while looking for the exit logs
+     `pilot_station_opened` (`work_order_board`) and offers the filter
+     swap (`noteM08JobOffered`), as any board visit does — low risk;
+     (f) approaching supply bundle A from the north can bring the Case
+     Workspace (anchor 184/170) into range before the bundle — a
+     geometry older than this unit, exposed by the new driver routes
+     (the test's stand was moved, participants are not). Test review
+     (Sonnet, read-only; both commands green, no flake): (g) the new
+     spec checks the ruling's figures as pixel literals and does not
+     separately test the tile-unit → pixel conversion of the locker and
+     bench masses (it is exact by construction in `workshop.ts`);
+     (h) its pure blocking and reach checks run on the same solids the
+     code uses — consistency with the code, not with the painted art
+     (the collision audit covers engine against model); (i) the 64 px
+     reaches are checked as source strings; (j) the browser tour is one
+     chain, so an early failure hides later steps; (k) the Seal Log's
+     prompt is shown in the browser only by the look tour, not by the
+     new spec. Items (a)–(c) and (g)–(k) are cosmetic or test-shape
+     suggestions and are recorded instead of extending the unit, as the
+     ruling asks; (d)–(f) bear on what M08 and M02 opportunities cost
+     and are recorded so that they are not mistaken for settled.

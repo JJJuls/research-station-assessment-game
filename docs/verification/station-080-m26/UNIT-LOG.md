@@ -5039,3 +5039,377 @@ e2e/world_v2_workshop_look.spec.ts --workers=1 --retries=0` with
   path by path. Nothing was pushed, merged, tagged, deployed, deleted or
   removed; U15 is not started; the deferred M04 extractor correction
   (§5.216) is not begun.
+
+## U14-D3 — Records Workshop access correction (1 October 2026)
+
+- **Owner instruction:** 1 October 2026 — the complete revised
+  research-owner ruling and execution contract for U14-D3 ("Execute
+  U14-D3 now from this existing worktree"): the annex entrance widened to
+  128 px (doorway `[10, 10, 5, 2]`, clear opening x 336–464, jambs
+  `[320, 320, 16, 64]` / `[464, 320, 16, 64]`); the Component Locker to
+  the western bay's north-right wall (`[16.4, 3, 1.9, 2]`, anchor
+  555/148, approach 555/190); the Assembly Bench one tile east
+  (`[15.2, 9, 3.3, 2]`, anchor 566/305, approach 578/252); the east wall
+  recomposed into an upper Work Order Board alcove and a lower open
+  Concourse doorway separated by one divider solid `[1280, 216, 64, 16]`
+  (the earlier solids `[1280, 128, 64, 96]` and `[1312, 224, 32, 32]`
+  withdrawn); every board / Seal Log / door anchor and approach kept; the
+  scientific boundary (no M04 / M08 change); the art and Python ruling
+  (retained source and `plate_edits.py` only, the authorised runtime,
+  the encoder-only hash difference accepted, two generations compared);
+  the authorised stale coordinates in three legacy specs; the focused
+  verification; six screenshots; one Opus and one Sonnet read-only
+  review, one bounded review / fix round; stop conditions; one local
+  commit `fix(workshop): clarify annex and concourse access`.
+- **Entry state (verified before the first edit):** worktree
+  `C:\Users\Juls\.codex\worktrees\u14-d3-workshop-access\research-station-assessment-game`,
+  branch `codex/u14-d3-workshop-access`, HEAD and base
+  `6f13263ef0398db3e9e5a8d2fc05078c749da73a`, tracked tree clean,
+  `node_modules` a Git-ignored junction to the main checkout; the active
+  `CLAUDE_UNIT_ALLOWLIST` carried exactly the 20 authorised paths (the
+  guard was exercised against a payload for `src/scenes/RoomScene.ts`
+  — blocked — and `src/world/layouts/workshop.ts` — allowed — before the
+  first edit; `CLAUDE_PROJECT_DIR` is set by the hook runner, the guard
+  falls back to the payload's cwd, which is this worktree). Runtime:
+  Python 3.12.14, Pillow 12.3.0 at the authorised path.
+- **Model:** Fable 5.1 (`claude-fable-5-1`), sole writer. Reviews:
+  Opus (gameplay / geometry / screenshots / scientific semantics) and
+  Sonnet (focused tests), both read-only (see below).
+- **Changed files (all on the allowlist; 18 of the 20 paths —
+  `e2e/world_v2_workshop_look.spec.ts` and `e2e/collision_audit.spec.ts`
+  needed no change and were only run):**
+  `src/world/layouts/workshop.ts`, `src/pilot/zoneSites.ts`,
+  `src/world/interactionRegistry.ts`, `src/scenes/RecordsWorkshopScene.ts`
+  (one comment), `scripts/world-v2/plate_edits.py`,
+  `public/assets/world-v2/plates/workshop-plate.png`,
+  `public/assets/world-v2/manifest.json`,
+  `e2e/u14_d3_workshop_access.spec.ts` (new), `e2e/m04_cutting.spec.ts`
+  (the doorway figures of the U14-D2 geometry test), `e2e/u14_correction.spec.ts`,
+  `e2e/pilot_records.spec.ts`, `e2e/concourse_interaction_lifecycle.spec.ts`
+  (the locker's and bench's audited coordinates; two route-robustness
+  changes, below), `docs/game/rooms/12-workshop-return.md`,
+  `docs/game/world-v2/ASSET-PROVENANCE-REGISTER.md`,
+  `docs/verification/station-080-m26/IMPLEMENTATION-MATRIX.md`,
+  `M01-M26-IMPLEMENTATION-REGISTER.md` (§4 "Unit 14-D3", §5.232–§5.234)
+  and this log. No file outside the allowlist was changed; the one
+  tracked file a named test overwrites
+  (`docs/verification/screenshots-concourse-hotfix/component-locker-open.png`,
+  written by `concourse_interaction_lifecycle`'s evidence shot) was
+  restored with `git restore -- <path>` after each run.
+- **A. Geometry (register §4 "Unit 14-D3").** Implemented exactly as
+  ruled; the owner's figures are literals in the layout, the station
+  book and the registry. Pure measurement
+  (`e2e/u14_d3_workshop_access.spec.ts`, 5 tests): the approved annex,
+  locker, bench and east-wall geometry and the absence of the withdrawn
+  solids; M04 unchanged (cutter, bin, scatter origin, six places, the
+  scene's `PIECE_REACH` / `BIN_REACH` / `reachRadius` 64 px,
+  `m04-cutting-v4`); between the new jambs the feet pass at x 348 … 452;
+  from no reachable stand of the hall or the doorway, and from none
+  where the locker, bench, board, Seal Log or door answers, is a piece
+  within 64 px; the six ±12 px landing boxes standable and each object
+  strictly nearest at every landing; at the board approach only the
+  board in range (door 114 px), at the door approach only the door
+  (board 140 px); no body stands with its feet across y 216–232 at
+  x ≥ 1270; a slide south from (1312, 178) stops at origin y 192 and one
+  north from (1288, 268) at 222; both approaches reached from the spawn,
+  every reachable stand level with the divider lies west of it; the
+  spawn standable, 89 px from the door, no object in range.
+- **B. Art (register §5.232; provenance register "U14-D3").** Same
+  source, same script, two new functions (`_recompose_bay`,
+  `_east_wall`). Final SHA-256
+  `4ed99f6174265737380e4b90db0d187fa48bef288133a12ce73e0aa660540242`,
+  identical on two consecutive generations under Python 3.12.14 /
+  Pillow 12.3.0. Decoded against the U14-D2 plate: 12 295 px changed in
+  the south strip and doorway band (x 299–597, y 282–383), 3 712 at the
+  locker's new place (x 520–595, y 96–163), 5 426 on the east wall
+  (x 1264–1359, y 96–303), 2 094 in the doorway recess and lamps
+  (x 176–623, y 384–413); 0 px outside those regions; rows 414–607
+  identical. The runtime change is isolated: the unchanged U14-D2 script
+  re-run under Pillow 12.3.0 reproduces the committed U14-D2 plate with
+  0 decoded differences at hash `a9f566f4…` — the historical difference
+  is encoder-only, as the ruling accepts.
+- **C. Two items the unit could not resolve (stop condition "a
+  non-allowlisted tracked file is required" / an owner's guarantee):**
+  (1) `e2e/pilotHelpers.ts` (outside the allowlist): the shared driver
+  `workshopToConcourse` walks straight from the board approach to the
+  door approach and is now stopped by the divider; ten route specs sign
+  the board and then call it (register §5.233). (2) The owner's bench
+  anchor (566, 305) lies 171.1 px from job 2's coupon offcut, the cutter
+  173.2 px: the U14-D2 guarantee and the pure assertion "the Sample
+  Cutter is the nearest station to every piece" fail for that one piece
+  (`m04_cutting` 11 / 12); the unit changed neither the assertion nor
+  the anchor (register §5.234). A third, pre-existing item surfaced in a
+  named legacy case (below, group 4).
+- **Verification (writer; `PW_DEV_PORT=5393`, `--workers=1`,
+  `--retries=0`; `npx playwright` — the Git-Bash shim — used where the
+  contract writes `npx.cmd`, because `cmd.exe` reads the `|` of the
+  `--grep` alternation as a pipe; evidence under ignored
+  `test-results/`, copied aside between runs because each run empties
+  it):**
+  1. `npm.cmd run lint:tsc` — exit 0 (run after the source edits and
+     again on the final tree, below).
+  2. `npm.cmd run build` — exit 0 (Vite's chunk-size warning only).
+  3. `m04_cutting` + `world_v1_registry` — exit 1: **34 passed, 1
+     failed** (4.8 s). The failure is deterministic and is item C (2):
+     `m04_cutting` "register row and fixtures …" at
+     `expect(... 'nearest station').toBe('sampleCutter')` —
+     `Expected: "sampleCutter" / Received: "assemblyBench"` for
+     `m04_offcut_b`. The U14-D2 geometry test ("measured from every
+     reachable avatar position …") passes with the 128 px doorway;
+     `world_v1_registry` 23 / 23 (the workshop's approaches in radius,
+     reachable from the spawn, clear of the door).
+  4. The affected legacy cases, first run — exit 1: **2 passed, 3
+     failed** (15.7 min): `u14_correction` "orders taken" passed (the
+     locker at (555, 190) engages the stowing job once, the second
+     departure follows it, as before); `concourse_interaction_lifecycle`
+     "every other workshop" failed at the supply bundle (an overlay
+     open after SPACE at (196, 244)); `pilot_records` "supply bundles"
+     failed at `expectNoMeasurementEvents` with
+     `proto_m05_start_offer_answered / _opportunity_opened /
+     _window_closed`; `u14_correction` "direct access" failed with
+     "prompt did not open at 1344,140 (target 1312,178; observed
+     (1306.9, 222))". Causes: the second and the fourth are route
+     fragility of the drivers at the new geometry — the straight L from
+     the vestibule to the board can end under the rail, and the bundle
+     stand (196, 244) is 75 px from the Case Workspace so a landing 12 px
+     short opens it now that the walk arrives from the north lane; both
+     fixed inside the allowlisted specs (a waypoint (1250, 178) before
+     the board; the bundle stand moved 12 px south to (196, 256), still
+     12 px from the bundle) without changing what either case measures.
+     The third is pre-existing and unrelated to this unit: the M05
+     start offer on the Concourse (`feat(m05)`, commit `04a976e`) logs
+     `proto_m05_start_*` on the route, and the driver's tolerance list
+     `SYSTEM_DRIVEN` (`e2e/pilotHelpers.ts`, outside the allowlist)
+     still names the superseded `proto_m05_initiation_*`; the case
+     reaches that line only after the locker transfer and the bench
+     assembly at the new coordinates succeeded.
+  4b. Re-run of the three (after the two fixes; the `--grep` also
+     matches `pilot_records` "M02 open workspace … every other workshop
+     family", which ran and passed both times) — exit 1: **3 passed, 1
+     failed** (12.3 min): `concourse_interaction_lifecycle` "every other
+     workshop" passed (the locker on the north wall opened by E with the
+     container panel, the bench by SPACE, the bundle collected without
+     an overlay); `u14_correction` "direct access" passed (the board
+     reached round the rail, read as an inspection, then the filter swap
+     taken); `pilot_records` "supply bundles" failed again at the same
+     line with the same three `proto_m05_start_*` names — deterministic,
+     pre-existing, outside the unit (the locker transfer at the new
+     coordinates, the assembly at the bench and the Concourse crossing
+     from the west all succeeded before it).
+  5. Final evidence pass (run last; `COLLISION_ROOM=records_workshop`,
+     `COLLISION_OUT=test-results/u14d3-workshop-access/collision`,
+     `WV3_OUT=test-results/u14d3-workshop-access/workshop-look`,
+     `WV3_VIEWPORT=1280x720`, `U14D3_OUT=…/evidence`;
+     `npx.cmd playwright test e2e/u14_d3_workshop_access.spec.ts
+     e2e/collision_audit.spec.ts e2e/world_v2_workshop_look.spec.ts`) —
+     exit 0: **10 passed, 6 skipped** (the other six rooms of the
+     audit, by `COLLISION_ROOM`; 10.1 min). `u14_d3_workshop_access`
+     8 / 8 (5 pure, 3 browser: the tour with both prompts, the held
+     DOWN key from the alcove stopped by the rail where the model says,
+     the door used once and the Concourse reached, the reflex press, the
+     return at the spawn with no object in range; the overlay frame; the
+     M08 engagement once and never again). `collision_audit`
+     records_workshop 1 / 1 (5.6 min): 27 faces pushed, 49 recorded as
+     not reachable, every pushed face and all four sweeps within the
+     3 px tolerance — largest |error| 0.92 px (sweep y 262 eastward,
+     1333 vs 1332.08); the new solids: west jamb north 296 vs 295.67,
+     east 347 vs 347.67; east jamb north 296 vs 295.50, west 453 vs
+     452.17; divider north 192 vs 191.50, south 222 vs 222.58, west 1269
+     vs 1268.33; locker south 146 vs 146.17; bench north 264 vs 263.17;
+     return to the spawn within 24 px (no trap).
+     `world_v2_workshop_look` 1 / 1 (2.7 min): every audited approach,
+     the locker's and the bench's new ones among them, shows its own
+     prompt; the annex entered between the new jambs; the east door
+     round trip.
+  6. `git diff --check` — exit 0 (clean).
+  7. `node scripts/claude/verify-unit.mjs --base 6f13263…` with the 20
+     paths — exit 0: "PASS - every change is inside the unit allowlist"
+     (after the test-written screenshot was restored).
+  8. `npm.cmd run lint:tsc` on the final tree — exit 0.
+  Also: Prettier `--check --end-of-line auto` clean on every changed
+  spec, source and the manifest; focused ESLint with the line-ending
+  rule `auto` (the working copies are CRLF) — exit 0 on every changed
+  spec and source file.
+- **Screenshots (git-ignored evidence under
+  `test-results/u14d3-workshop-access/`, 1280 × 720; copied aside in the
+  session scratch directory):** `evidence/01-western-bay-locker-entrance-bench.png`
+  (the machine bay with the locker on the north wall, the 128 px
+  entrance and the bench one tile east), `evidence/02-annex-through-the-widened-entrance.png`,
+  `evidence/03-upper-work-order-board-alcove-prompt.png` (the avatar at
+  (1312, 178) in the alcove, "E / Space — Use Work Order Board"),
+  `evidence/04-lower-open-concourse-threshold-prompt.png` (the avatar at
+  (1288, 268), "E / Space — Go to Station Concourse"),
+  `evidence/05-east-wall-divider-collision-overlay.png` (`?collision=1`,
+  the divider solid over the painted rail),
+  `evidence/06-station-concourse-after-the-door.png`; the collision
+  audit's `collision/records_workshop-clean.png` and `-overlay.png`; the
+  look tour's thirteen frames under `workshop-look/`. Plate crops of the
+  four edit regions at 2×–6× were made in the scratch directory for the
+  writer's own inspection and the review.
+- **Independent review (read-only; 1 October 2026; both run as
+  general agents on their definition files; neither changed a file):**
+  - **Gameplay / geometry / screenshots / semantics (Opus):** verdict
+    "usable with noted friction", no blocker, no major. Geometry
+    matches the ruling literal by literal (layout, station book,
+    registry, the runtime solid list of the collision findings); the
+    divider is the only east-wall solid, neither withdrawn solid is
+    present, the old jambs are gone, every M04 coordinate matches the
+    "Unit 14-D2" record; the scene changed in one comment only; the new
+    spec covers every item of the acceptance list. Route walkthrough:
+    from the spawn the rail, the lit alcove above it and the dark
+    opening below it are in view; the avatar ends inside the recess,
+    not on door artwork; the board-to-door leg takes one sidestep west
+    of the rail; the 128 px opening between the orange-tipped jambs is
+    clearly legible and the cutter is visible on stepping through.
+    Three minor findings (the HUD-clamped board prompt drawn over the
+    Seal Log's cork board; the doorway reading less like an exit than
+    the alcove at 1280 × 720; the rail's one sidestep) and three
+    measurement-adjacent flags (the M08 stowing job's walking cost
+    grew from about 120 to about 340 px with no version marker; a
+    board press while looking for the exit; bundle A's approach near
+    the Case Workspace) — all recorded in register §5.235 and not acted
+    on. On the two open items it agrees with the writer's analysis and
+    recommends holding the commit until the owner decides §5.233 and
+    §5.234.
+  - **Focused tests (Sonnet):** `npm.cmd run lint:tsc` exit 0; the new
+    spec's pure part re-run with `--output test-results/review-pure`
+    5 / 5; no flake, no environmental issue; the three deterministic
+    failures classified as the writer did (the bench-anchor arithmetic
+    171.1 vs 173.2 px verified; the M05 list unreachable by anything
+    this unit changed, "pre-existing" inferred rather than proven for
+    want of a base run; the two route fixes principled, each passed
+    once after the fix); every legacy-spec change a coordinate port or
+    a route-robustness change that alters nothing the test measures;
+    the acceptance list covered item by item; five test-shape
+    weaknesses recorded in §5.235 (g)–(k). It also judges that the unit
+    cannot close while `m04_cutting` is red.
+  - **Fix round:** one, documentation only (register §5.235, this
+    section). No cosmetic suggestion was implemented, as the ruling
+    asks; no test or source file changed after the final evidence pass.
+- **Not verified in a browser:** the ten route specs of item C (1) (not
+  in the focused run; their failure is derived from the driver's code
+  and the geometry, and reproduced in kind by the first run of
+  `u14_correction` "direct access"); the full Playwright suite (not
+  run, as ruled).
+- **Carried forward, unresolved:** everything U14-D2 carries forward
+  (§5.216, §5.224, §5.231; the art PROVISIONAL; empirical evidence
+  pending); items C (1), C (2) and the M05 tolerance list, all for the
+  owner.
+- **Conclusion:** the correction is implemented exactly as ruled and
+  verified as far as the focused gates reach — typecheck, build, the
+  new spec (8 / 8), the registry spec (23 / 23), the collision audit of
+  the workshop (within 0.92 px), the look tour, and three of the four
+  named legacy cases; the plate is deterministic and changed only where
+  authorised; both reviews report no blocker and no major; M04 and M08
+  semantics and `m04-cutting-v4` did not change. **No commit was
+  created.** The contract's stop condition "a non-allowlisted tracked
+  file is required" holds (§5.233: `e2e/pilotHelpers.ts`), and the
+  focused gate `m04_cutting` is red on one owner-level guarantee
+  (§5.234); a third, pre-existing failure (`pilot_records`, the M05
+  tolerance list in the same non-allowlisted file) stands beside them.
+  Every change stays uncommitted in the worktree on
+  `codex/u14-d3-workshop-access` at base `6f13263…`, inside the 20-path
+  allowlist, whitespace-clean, for the owner's decision: amend the
+  allowlist (and rule on §5.234), after which the single commit
+  `fix(workshop): clarify annex and concourse access` can be made
+  without further changes. Nothing was pushed, merged, tagged,
+  deployed, deleted or removed; U15 is not started.
+
+## U14-D3 — closeout amendment (1 October 2026)
+
+- **Owner instruction:** the narrowly bounded closeout amendment of
+  1 October 2026, after the owner reviewed and approved the visual
+  evidence: the allowlist extended by exactly `e2e/pilotHelpers.ts`
+  (21 paths); `workshopToConcourse` to take a stable waypoint at
+  x ≤ 1250 west of the divider before its final leg — an e2e-driver
+  correction, not a production route or measurement change; the final
+  M04 spatial ruling (the bench stays at `[15.2, 9, 3.3, 2]`, anchor
+  (566, 305), approach (578, 252); the straight-line nearest-anchor
+  statement withdrawn; `m04_cutting` and the U14-D3 records to express
+  and test the functional guarantees, none weakened); the M08
+  documentation ruling (locker position retained, the increased walking
+  cost recorded, no M08 event / field / score / marker, `game_version`
+  as the build-level traceability to check or stratify by, M08
+  secondary and without validity claim); focused verification only; no
+  further reviewer round; one local commit.
+- **Entry state:** the same worktree and branch, HEAD and base
+  `6f13263ef0398db3e9e5a8d2fc05078c749da73a`, the U14-D3 changes
+  uncommitted and preserved; `CLAUDE_UNIT_ALLOWLIST` carried the 21
+  paths (the guard admitted the helper's first edit).
+- **Model:** Fable 5.1 (`claude-fable-5-1`), sole writer; no reviewer
+  round (as ruled).
+- **Changed by this amendment:** `e2e/pilotHelpers.ts`
+  (`workshopToConcourse`: `workshopVia(page, 1250, 252)` before the
+  door leg; `workshopVia`: for any target with origin x ≥ 1270 — the
+  board approach and the door approach — the target's row is reached
+  at x 1250 before the eastward leg, after the U14-D3 spec exposed the
+  same defect from Press B, see below), `e2e/m04_cutting.spec.ts` (the
+  "nearest station" assertion replaced by the piece-to-job record
+  check; the 136 px clearance, the ±12 px stand check and the whole
+  U14-D2 measurement unchanged), `docs/game/rooms/12-workshop-return.md`,
+  `IMPLEMENTATION-MATRIX.md`, `M01-M26-IMPLEMENTATION-REGISTER.md`
+  (§4 "Unit 14-D3" (4), §5.233 and §5.234 resolved, §5.235 (d) ruled)
+  and this log. No source file under `src/`, no plate, no manifest
+  and no other spec changed; the approved geometry, every M04
+  coordinate, the 64 / 64 / 64 px reaches, the first-departure rule,
+  the immutable records, the provisional /6, the dependence warning,
+  `m04-cutting-v4`, the M04 and M08 events and payloads and the scoring
+  plan are unchanged.
+- **Focused verification (writer; `PW_DEV_PORT=5393`, `--workers=1`,
+  `--retries=0`, each run with its own `--output` under ignored
+  `test-results/` so the approved evidence frames were not emptied):**
+  1. `npm.cmd run lint:tsc` — exit 0 (after each edit; and on the
+     final tree).
+  2. `m04_cutting` (the whole pure spec) — exit 0, **12 / 12** (4.4 s):
+     the functional guarantees pass with the bench at its approved
+     place; the U14-D2 measurement from every reachable position
+     unchanged and green.
+  3. `m03_m04_route` + `pilot_route` (the representative callers; the
+     first with the `workshopToConcourse` waypoint only) — exit 1:
+     **5 passed, 1 failed** (12.7 min). `m03_m04_route` 2 / 2 — both
+     tests sign at the board and then call `workshopToConcourse`; the
+     helper now leaves the alcove west of the rail and uses the door.
+     `pilot_route` 3 / 4: the six-zone hub-and-loop test walked the
+     whole loop — both `workshopToConcourse` calls after a sign-off
+     passed — and failed only at its last line,
+     `expectNoMeasurementEvents`, with the inherited driver defect the
+     owner excluded from this closeout: `proto_m05_start_*` (and the
+     later `proto_m11_custody_*`) names are not in `SYSTEM_DRIVEN`
+     (`e2e/pilotHelpers.ts`; the same list that fails `pilot_records`
+     "supply bundles"). Recorded, not fixed: it is unrelated to U14-D3
+     and outside this closeout.
+  4. `u14_d3_workshop_access` (first run, with the
+     `workshopToConcourse` waypoint only) — exit 1: **7 passed, 1
+     failed** (1.8 min): the browser tour landed 44 px south of the
+     board approach (y 222, under the rail) — the driver's straight L
+     from Press B clamped on the vestibule wall face at y 226 before
+     the eastward leg, exactly the U14-D3 route defect at another
+     legitimate starting position (it had passed in the final evidence
+     pass by the landing's luck). Fixed in the shared helper only
+     (`workshopVia`, above); no production geometry touched.
+  5. Re-run after the `workshopVia` fix: `u14_d3_workshop_access` +
+     `m03_m04_route` — exit 0, **10 / 10** (10.1 min): the U14-D3 spec
+     8 / 8 (the tour reached the board approach from Press B round the
+     rail, both prompts, the rail stop, the door once, the return
+     spawn, the overlay frame, the M08 engagement) and `m03_m04_route`
+     2 / 2 again through the generalised waypoint.
+  6. `git diff --check` — exit 0 (clean; run immediately before the
+     commit, together with the final `lint:tsc`).
+  7. `node scripts/claude/verify-unit.mjs --base 6f13263…` with the 21
+     paths — exit 0, "PASS - every change is inside the unit
+     allowlist" (run immediately before the commit).
+  Also: Prettier `--check --end-of-line auto` and focused ESLint
+  (line-ending rule `auto`) clean on `e2e/pilotHelpers.ts` and
+  `e2e/m04_cutting.spec.ts`.
+- **Not run (as ruled):** the full suite, the art generation, the
+  collision audit, the look tour, the Opus review, `pilot_records`
+  (its inherited M05 failure recorded above and in the matrix).
+- **Conclusion:** every focused check of the amendment passes on the
+  final tree except the inherited `pilot_route` tolerance-list line
+  the owner excluded; §5.233 and §5.234 are resolved by the owner's
+  rulings and §5.235 (d) is ruled; the minor visual and test-shape
+  observations stay recorded. The unit's single local commit
+  `fix(workshop): clarify annex and concourse access` was created on
+  `codex/u14-d3-workshop-access` (SHA in the handoff report), each
+  file staged by name. Nothing was pushed, merged, tagged, deployed,
+  deleted or removed; U15 is not started.

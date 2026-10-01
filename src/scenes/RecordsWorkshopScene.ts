@@ -417,8 +417,11 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       spawn: 'records_workshop',
       registryId: 'workshop.door_concourse',
     });
-    // The sliding door and its lintel lamp are baked into the plate's
-    // east wall; the generic leaf sprite would double it.
+    // The open Concourse doorway (lower east wall, below the rail that
+    // separates it from the Work Order Board alcove — U14-D3) is baked
+    // into the plate; the generic leaf sprite would double it. The
+    // doorway is a static open threshold: the shared door transition
+    // (its sound and fade) is unchanged and nothing animates here.
     this.doorImage('workshop.door_concourse')?.setVisible(false);
 
     const S = WORKSHOP_STATIONS;

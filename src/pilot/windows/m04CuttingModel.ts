@@ -139,9 +139,16 @@ export interface M04Piece {
  * is not a mirror image): the two jobs are laid out alike. The two
  * clusters are 344 px apart and
  * do not interleave; every piece lies more than 160 px from the cutter,
- * the doorway and the line between them, nearer to the cutter than to
- * any other station, and no position it can be lifted from is within
- * 76 px of the bin (64 px reach plus the approved 12 px margin).
+ * the doorway and the line between them, and no position it can be
+ * lifted from is within 76 px of the bin (64 px reach plus the approved
+ * 12 px margin). Which station anchor is nearest to a piece by
+ * straight-line distance is not a guarantee (research-owner ruling,
+ * Station 080 U14-D3): the guarantee is functional — every piece lies
+ * outside every station's competing interaction range (more than the
+ * 72 px station range plus the 64 px piece reach from every anchor), no
+ * station can answer a press from any valid pick-up position, and a
+ * piece's association with its originating job is carried by its own
+ * immutable `job` record, never by proximity.
  */
 export const M04_PIECES: readonly M04Piece[] = [
   {

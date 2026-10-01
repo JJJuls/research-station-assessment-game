@@ -69,12 +69,15 @@ def workshop_shutter(im):
 #
 # The 1376x384 two-bay painting becomes a 1376x608 plate: the sample
 # cutter and its bin leave the machine bay for a 13x6-tile annex south of
-# it (floor x 192-608, y 384-576), entered through a 64 px doorway
-# (x 368-432) that replaces the south tool bench. Everything is cut from
-# or painted in the colours of the same painting; the top 384 rows are
-# untouched outside the vacated cutter bay, the doorway and the two 16 px
-# strips where the annex's side-wall tops cross the hull band. Always run
-# this script with the room name (`... plate_edits.py workshop`).
+# it (floor x 192-608, y 384-576), entered through a doorway that
+# replaces the south tool bench (64 px, x 368-432, in U14-D2; 128 px,
+# x 336-464, since U14-D3 - see below). Everything is cut from or painted
+# in the colours of the same painting; the top 384 rows are untouched
+# outside the vacated cutter bay, the south strip from the locker's old
+# place to the bench, the locker's new place on the north wall, the
+# office's east wall and the two 16 px strips where the annex's side-wall
+# tops cross the hull band. Always run this script with the room name
+# (`... plate_edits.py workshop`).
 
 def _c(r, g, b):
     return (r, g, b, 255)
@@ -111,10 +114,53 @@ ANNEX_X0, ANNEX_X1 = 192, 608      # walkable floor
 ANNEX_FLOOR_Y = 412                # painted base of the annex north wall
 RIM_SOUTH_Y = 352                  # first row below the hull's wall top
 ANNEX_SOUTH_Y = 578                # first row of the annex south wall
-DOOR_X0, DOOR_X1 = 368, 432        # the open doorway
-JAMB_X0, JAMB_X1 = 352, 448        # doorway incl. both 16 px jambs
+DOOR_X0, DOOR_X1 = 336, 464        # the open doorway (U14-D3: 128 px; U14-D2 had 368-432)
+JAMB_X0, JAMB_X1 = 320, 480        # doorway incl. both 16 px jambs
+LAMP_X = 300                       # the west annex wall lamp (mirrored east); beside the jamb
 WALL_T = 16                        # annex side-wall thickness
 AXIS = 400                         # the annex's mirror axis (cutter centre)
+
+# --- Records Workshop access correction (Station 080 U14-D3, 2026-10-01) --
+#
+# The research owner's ruling: the annex doorway is 128 px wide (clear
+# opening x 336-464 between 16 px jambs at 320-336 and 464-480); the
+# Component Locker leaves the south hull for the machine bay's north
+# wall right of the third lamp (solid x 525-586, base y 160); the
+# Assembly Bench moves one tile east (solid x 486-592); and the office's
+# east wall becomes an upper Work Order Board alcove and a lower open
+# Concourse doorway with a painted divider between them that matches the
+# collision solid [1280, 216, 64, 16]. As in U14-D2 every pixel is cut
+# from the same painting or painted in its palette; no generator, no new
+# source image.
+
+LOCKER_BOX = (299, 282, 369, 342)  # the painted locker in the south hull, leaf folded
+LOCKER_TO = (524, 100)             # its top-left on the north wall: body x 524-587 on the
+                                   # solid 525-586, base y 160 (the leaf edge-on to x 593)
+BENCH_BOX = (449, 296, 566, 342)   # the painted bench with its cast shadows
+BENCH_SHIFT = 32                   # one tile east
+
+# East wall: the niche between the painted frame's left post (x 1291-1297)
+# and right post (1335-1340), under the diagonal painted lintel.
+EW_X0, EW_X1 = 1298, 1335
+DIV_X0, DIV_X1, DIV_Y0, DIV_Y1 = 1280, 1344, 216, 232   # the divider solid
+PALE = _c(232, 220, 200)           # paper (the shutter's lock-plate highlight)
+HAZARD_A = _c(214, 160, 58)        # the painting's hazard stripes
+HAZARD_B = _c(34, 30, 44)
+
+
+def _lintel_y(x):
+    """Underside of the painted diagonal lintel (measured: (1300, 106) to (1336, 168))."""
+    return 106 + (x - 1300) * 1.75
+
+
+def _alcove_base_y(x):
+    """Base line of the alcove's back wall; the recess floor lies below it."""
+    return 178 + (x - EW_X0) * 0.5
+
+
+def _floor_edge_x(y):
+    """Where the room floor meets the east wall, below the divider (measured)."""
+    return 1299 + (y - 216) * 0.45
 
 
 def _warm(c):
@@ -197,26 +243,75 @@ def _vacate_cutter_bay(px, src):
     ), lambda x, y: 386 <= x < 519 and 176 <= y < 269)
 
 
-def _open_doorway(px):
-    """Removes the south tool bench, folds the locker door out of the
-    opening and cuts the doorway through the south hull band."""
-    # Locker door: the open leaf reached x 381, into the new opening. It
-    # becomes a leaf seen edge-on, ending at the west jamb (x 368).
+def _lift(px, box, keep=()):
+    """A prop lifted off the floor: every pixel of `box` that is not a
+    floor tone (plus the tones in `keep`, for a cast shadow), with alpha."""
+    x0, y0, x1, y1 = box
+    out = Image.new('RGBA', (x1 - x0, y1 - y0), (0, 0, 0, 0))
+    op = out.load()
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            c = px[x, y]
+            if (c not in FLOOR_TONES and not _warm(c)) or c in keep:
+                op[x - x0, y - y0] = c
+    return out
+
+
+def _recompose_bay(im):
+    """U14-D3: the Component Locker to the north wall, the Assembly Bench
+    one tile east, the south tool bench gone, and the 128 px doorway cut
+    through the south hull band (U14-D2 cut 64 px here)."""
+    px = im.load()
+    # The locker's open leaf (it reached x 381, into the opening) seen
+    # edge-on, as U14-D2 painted it - then the whole locker is lifted.
     for y in range(302, 342):
         leaf = (INK,) * 6 if y < 304 else (FACE, TOP_B, TOP_B, RIVET, RIVET, INK)
         for i, colour in enumerate(leaf):
             px[362 + i, y] = colour
-    # Tool bench (x 376-448) and what is left of the leaf: open floor.
-    for y in range(296, 342):
-        for x in range(366 if y < 302 else 368, 449):
-            if y < 301 and px[x, y] != SEAM_M:
-                continue                # only the bench's cast shadow
-            px[x, y] = FLOOR
-    for y in range(337, 342):           # contact shadow along the hull
-        for x in range(DOOR_X1, 449):
-            px[x, y] = SEAM_D
+    locker = _lift(px, LOCKER_BOX)
+    bench = _lift(px, BENCH_BOX, keep=(SEAM_M,))
+    # The south strip from the locker to the bench's east shadow becomes
+    # plain floor: props and their cast shadows go, the floor's own seams,
+    # wear and the hull contact shadow (rows 337-341) stay or are restored.
+    for y in range(282, 342):
+        for x in range(LOCKER_BOX[0], BENCH_BOX[2]):
+            c = px[x, y]
+            covered = x < LOCKER_BOX[2] or (
+                y >= 302 and x < BENCH_BOX[0] + BENCH_SHIFT
+            )                           # the locker / the bench stood here entirely
+            if y in (282, 283) and x < LOCKER_BOX[2]:
+                px[x, y] = px[298, y]   # the plating seam runs on under the locker
+            elif y >= 337:
+                px[x, y] = SEAM_D       # contact shadow along the hull
+            elif covered or c not in FLOOR_TONES or c == SEAM_M:
+                px[x, y] = FLOOR
+    _wear(px, random.Random(97), (
+        (318, 300, 3), (344, 322, 2), (308, 332, 3), (462, 306, 3), (470, 326, 2),
+    ), lambda x, y: LOCKER_BOX[0] <= x < BENCH_BOX[2] and 284 <= y < 337)
+    # The bench, one tile east; its shadow never lightens the chamfer's.
+    bp = bench.load()
+    for y in range(bench.height):
+        for x in range(bench.width):
+            c = bp[x, y]
+            if c[3] == 0:
+                continue
+            tx, ty = BENCH_BOX[0] + BENCH_SHIFT + x, BENCH_BOX[1] + y
+            if c == SEAM_M and px[tx, ty] in (SEAM_D, INK):
+                continue
+            px[tx, ty] = c
+    # The locker on the north wall, right of the third lamp, its base on
+    # the floor in front of the wall's plinth; a contact shadow under it.
+    im.alpha_composite(locker, LOCKER_TO)
+    base = LOCKER_TO[1] + locker.height
+    for x in range(LOCKER_TO[0] + 2, LOCKER_TO[0] + locker.width):
+        for dy, tone in ((0, SEAM_D), (1, SEAM_M)):
+            if px[x, base + dy] in FLOOR_TONES:
+                px[x, base + dy] = tone
     # The opening: floor through the hull band, a painted frame on the
-    # two cut wall ends.
+    # two cut wall ends (the painting's own door-frame orange).
+    for y in range(337, 342):           # no contact shadow across the opening
+        for x in range(DOOR_X0 - 4, DOOR_X1 + 4):
+            px[x, y] = FLOOR
     for y in range(342, 384):
         for x in range(DOOR_X0, DOOR_X1):
             px[x, y] = FLOOR
@@ -228,6 +323,109 @@ def _open_doorway(px):
     for i in range(3):                  # soft shadow inside both frames
         for y in range(342, 384):
             px[DOOR_X0 + i, y] = px[DOOR_X1 - 1 - i, y] = SEAM_D if i == 0 else SEAM_M
+
+
+def _east_wall(im):
+    """U14-D3: the office's east wall. The painted sliding door (one tall
+    leaf from the lintel to the floor) becomes two places: above the
+    divider a recessed alcove whose back wall carries the Work Order
+    Board (its anchor 1344/140, approach 1312/178), below it the open
+    Concourse doorway (anchor 1332/290, approach 1288/268), a dark
+    opening with light on its threshold. Between them a steel rail on
+    the floor that runs into the wall as the doorway's lintel - the
+    painted form of the collision solid [1280, 216, 64, 16]. The frame's
+    posts, the diagonal lintel and its lamp are the painting's own."""
+    px = im.load()
+    # --- the alcove: back wall in the painting's panel tones, its base,
+    # the recess floor the participant stands on -------------------------
+    seam_x = 1318                               # a panel joint with its rivets
+    for x in range(EW_X0, EW_X1):
+        top = int(_lintel_y(x)) + 2
+        base = int(_alcove_base_y(x))
+        for y in range(top, DIV_Y0):
+            if y < base:
+                if y < top + 2 or x < EW_X0 + 2:
+                    colour = INK            # shadow under the lintel, inside the left post
+                elif y == top + 2 or x == EW_X0 + 2:
+                    colour = BAND
+                elif x == seam_x:
+                    colour = RIVET if y % 8 == 4 else INK
+                else:
+                    colour = TOP_A if x < seam_x else TOP_B
+            elif y == base:
+                colour = INK
+            elif y == base + 1:
+                colour = SEAM_D
+            else:
+                colour = SEAM_M if x >= EW_X1 - 3 or y == base + 2 else FLOOR
+            px[x, y] = colour
+    # The board, upright on the back wall under the painting's own lamp:
+    # a dark slate in a steel frame, four paper orders and an orange tag.
+    bx, by, bw, bh = 1300, 148, 22, 30
+    cards = (((3, 5), (7, 8), PALE), ((12, 5), (7, 8), PALE), ((3, 16), (7, 8), PALE), ((12, 16), (7, 8), PALE), ((15, 25), (4, 3), ORANGE))
+    for u in range(bw):
+        for v in range(bh):
+            if u in (0, bw - 1) or v in (0, bh - 1):
+                colour = INK
+            elif u in (1, bw - 2) or v in (1, bh - 2):
+                colour = FRAME_D
+            elif v in (2, 3):
+                colour = EDGE
+            else:
+                colour = FACE
+                for (cu, cv), (cw, ch), tone in cards:
+                    if cu <= u < cu + cw and cv <= v < cv + ch:
+                        colour = tone
+                        if tone == PALE and (v - cv) in (2, 4, 6) and 1 <= u - cu < cw - 1:
+                            colour = INK      # a line of writing
+            px[bx + u, by + v] = colour
+    # --- the open doorway below the divider -----------------------------
+    for y in range(DIV_Y1, 302):
+        edge = int(_floor_edge_x(y))
+        for x in range(edge, EW_X1):
+            if y < DIV_Y1 + 2:
+                colour = INK                 # shadow under the rail
+            elif x < edge + 3:
+                colour = LIT                 # light on the threshold
+            elif x < edge + 6:
+                colour = BAND
+            else:
+                colour = DEEP
+            px[x, y] = colour
+    # The leaf's handle on the right post goes: the post's own rows below
+    # it (and, for its last rows, the clean rows above it).
+    for y in range(233, 267):
+        for x in range(1337, 1353):
+            px[x, y] = px[x, y + 32] if y <= 262 else px[x, y - 40]
+    # --- the divider: a steel rail from the floor into the wall ------
+    for y in range(DIV_Y0, DIV_Y1):
+        for x in range(DIV_X0, DIV_X1):
+            if y == DIV_Y0 or y == DIV_Y1 - 1 or x < DIV_X0 + 2:
+                colour = INK
+            elif y == DIV_Y0 + 1:
+                colour = EDGE
+            elif y < DIV_Y0 + 6:
+                colour = RIVET if y == DIV_Y0 + 3 and (x - DIV_X0) % 12 == 6 else TOP_A
+            elif y < DIV_Y0 + 10:
+                colour = HAZARD_A if ((x + y) // 4) % 2 == 0 else HAZARD_B
+            else:
+                colour = TOP_B
+            px[x, y] = colour
+    for y in range(DIV_Y1, DIV_Y1 + 12):     # the rail's west post, standing on the floor
+        for x in range(DIV_X0 + 2, DIV_X0 + 8):
+            px[x, y] = INK if x in (DIV_X0 + 2, DIV_X0 + 7) or y == DIV_Y1 + 11 else TOP_B
+    for y in range(DIV_Y1, DIV_Y1 + 3):      # its cast shadow on the floor
+        for x in range(DIV_X0 + 8, int(_floor_edge_x(y))):
+            if px[x, y] in (FLOOR, LIT):
+                px[x, y] = SEAM_M
+    for x in range(DIV_X0 + 2, DIV_X0 + 10):
+        if px[x, DIV_Y1 + 12] in (FLOOR, LIT):
+            px[x, DIV_Y1 + 12] = SEAM_D
+    # The doorway's lamp on the rail's face, over the opening.
+    for y in range(DIV_Y0 + 3, DIV_Y0 + 10):
+        for x in range(1322, 1332):
+            edge = y in (DIV_Y0 + 3, DIV_Y0 + 9) or x in (1322, 1331)
+            px[x, y] = INK if edge else LAMP if y < DIV_Y0 + 8 else PAINT
 
 
 def _noise(width, height, cell_x, cell_y, seed):
@@ -317,7 +515,7 @@ def _annex_floor(px):
     )):
         for dx, colour in enumerate(row):
             if colour is not None:
-                both(322 + dx, 392 + dy, colour)
+                both(LAMP_X + dx, 392 + dy, colour)
     # Plating seams (two courses, staggered joints).
     for seam_y in (468, 524):
         for x in range(ANNEX_X0, AXIS):
@@ -455,7 +653,9 @@ def workshop_annex(top):
     src = src_im.load()
     px = top.load()
     _vacate_cutter_bay(px, src)
-    _open_doorway(px)
+    _recompose_bay(top)
+    _east_wall(top)
+    px = top.load()
 
     im = Image.new('RGBA', (1376, 608))
     im.paste(_exterior(1376, 608 - 384, 14), (0, 384))
