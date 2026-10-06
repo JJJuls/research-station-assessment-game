@@ -27,7 +27,7 @@ import {
 
 const FAMILIES = [
   'proto_ip_tutorial',
-  'proto_m13_lattice',
+  'proto_m13_networks',
   'proto_m18_fault',
   'proto_m14_packet',
   'proto_m15_cipher',
@@ -60,7 +60,7 @@ test.describe('scientific boundaries (source)', () => {
   test('every module logs exactly one family and never another module’s', () => {
     const modules: [string, string][] = [
       ['src/informationProcessing/tutorial.ts', 'proto_ip_tutorial'],
-      ['src/informationProcessing/m13PipeNetwork.ts', 'proto_m13_lattice'],
+      ['src/informationProcessing/m13PipeNetwork.ts', 'proto_m13_networks'],
       ['src/informationProcessing/m18FaultDiagnosis.ts', 'proto_m18_fault'],
       ['src/informationProcessing/m14PacketSaturation.ts', 'proto_m14_packet'],
       ['src/informationProcessing/m15LayeredCipher.ts', 'proto_m15_cipher'],
@@ -142,7 +142,7 @@ test.describe('scientific boundaries (runtime)', () => {
     for (const id of [
       'proto_m16_protocol_update',
       'proto_m17_criterion',
-      'proto_m13_lattice_construction',
+      'proto_m13_network_series',
       'proto_m18_lattice_fault_diagnosis',
     ]) {
       const record = await ipValidity(page, id);

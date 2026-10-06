@@ -15,9 +15,10 @@ import { M17_FORMS } from '../src/informationProcessing/syntaxForms';
 import { playerProbe } from './helpers';
 import {
   bootIpLab,
-  clickPipeButton,
   clickRect,
   clickTerminalButton,
+  commitLatticeByKeyboard,
+  commitLatticeByPointer,
   composeByClick,
   dragChipToBin,
   dragPieceToCell,
@@ -29,6 +30,7 @@ import {
   ipModule,
   ipModules,
   ipValidity,
+  latticeNext,
   pipeCell,
   pipeProbe,
   rightClickRect,
@@ -462,9 +464,14 @@ test('complete laboratory playthrough: every opportunity valid in one session (t
   await rightClickRect(page, await pipeCell(page, 'C1'));
   await dragPieceToCell(page, 'el4', 'C2');
   await waitCellPiece(page, 'C2', 'el4', 0);
-  await clickPipeButton(page, 'submit');
-  await page.waitForTimeout(300);
-  expect((await pipeProbe(page)).closed).toBe(true);
+  // Unit 16: the sealed run is network 1's first response; networks 2 and
+  // 3 are answered CANNOT SOLVE to complete the scored phase.
+  await commitLatticeByPointer(page, 'layout');
+  await latticeNext(page, 'pointer');
+  await commitLatticeByKeyboard(page, 'cannot_solve');
+  await latticeNext(page);
+  await commitLatticeByKeyboard(page, 'cannot_solve');
+  expect((await pipeProbe(page)).series?.status).toBe('completed');
   await page.keyboard.press('Escape');
   await waitPipeOpen(page, false);
 
@@ -499,7 +506,7 @@ test('complete laboratory playthrough: every opportunity valid in one session (t
     'proto_m15_layered_cipher',
     'proto_m16_protocol_update',
     'proto_m17_criterion',
-    'proto_m13_lattice_construction',
+    'proto_m13_network_series',
     'proto_m18_lattice_fault_diagnosis',
   ]) {
     const record = probe.validity.find((r) => r.opportunity_id === id)!;
@@ -512,7 +519,20 @@ test('complete laboratory playthrough: every opportunity valid in one session (t
   expect(probe.modules.m15.final_reconstruction_valid).toBe(true);
   expect(probe.modules.m16.final_applications_correct).toBe(3);
   expect(probe.modules.m17.trials_completed).toBe(16);
-  expect(probe.modules.m13.final_network_valid).toBe(true);
+  expect(
+    (
+      probe.modules.m13.networks as {
+        first_response: { response_kind: string; correct: boolean };
+      }[]
+    ).map((network) => [
+      network.first_response.response_kind,
+      network.first_response.correct,
+    ]),
+  ).toEqual([
+    ['layout', true],
+    ['cannot_solve', false],
+    ['cannot_solve', false],
+  ]);
   expect(probe.modules.m18.final_solution_valid).toBe(true);
 
   // Automated wall time (NOT human timing) — recorded for the report.

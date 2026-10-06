@@ -242,6 +242,113 @@ Dispositions that compare no positions (`not_presented`, unanswered →
 `no_eligible_event`, `declined`, `interrupted` after a reload) are
 unchanged.
 
+U16 (M13, candidates as before; one new provisional family, no canonical
+event, no scoring-plan variable, no formula changed): the Conduit Lattice
+Bench leaves the v2 family under research-owner ruling D-U16-1 of
+7 October 2026 (register §4 "Unit 16", §5.260).
+
+- **M13** — family `proto_m13_networks_` (IpFamily
+  `proto_m13_networks`); ONE opportunity `proto_m13_network_series`;
+  trial / window ids `m13_network_n1`, `m13_network_n2`,
+  `m13_network_n3`; object `ip_lattice_bench`; `entry_state_version` =
+  `m13-networks-v1`. The v2 family `proto_m13_lattice_` and its
+  opportunity `proto_m13_lattice_construction` are retired from the
+  route and keep their v2 meaning in the frozen ledger; this build
+  writes neither. The Pump House family `proto_m13_*` of the legacy
+  scene is untouched.
+- **Two phases.** The FIRST-RESPONSE phase (`phase: measurement`, the
+  scored phase): networks `n1 → n2 → n3`, one immutable first response
+  each — a confirmed layout or a confirmed CANNOT SOLVE — and no
+  correctness feedback of any kind. RESULTS AND OPTIONAL PRACTICE
+  (`phase: feedback` / `practice`) exist only after the third first
+  response and never enter a value.
+- **Every event** carries `opportunity_id`, `entry_state_version`,
+  `form_id`, `measurement_protocol_version`, `phase` (`measurement`,
+  `feedback`, `practice` or `closure`), `series_active_ms`, and — when it
+  concerns a network — `network_id`, `network_index` (1–3), `trial_id`
+  and `content_version`. `input_mode` is `pointer`, `typed` or `system`.
+  Suffixes:
+  - `series_opened` — entry snapshot: `networks_planned` (3),
+    `assigned_order`, `networks` (per network: id, index, trial id,
+    content version, port relation, feed and intake mount and side,
+    blocked mounts), `piece_set`, `constraints`, `commit`
+    (`explicit_confirmation`), `cannot_solve_available`, `feedback`
+    (`after_all_first_responses`), `practice` (`available_after`,
+    `test_runs_max_per_network` 3,
+    `same_access_for_every_first_response`), `help` (`on_request`),
+    `settle_ms` (400);
+  - `series_reopened`, `panel_left` — `view`;
+  - `network_presented` — `assigned_position`, `realised_position`, the
+    configuration; once per presented network;
+  - `piece_picked`, `piece_placed`, `piece_returned`, `piece_rotated`,
+    `placement_refused`, `undone`, `board_reset` — the v2 fields plus the
+    network and phase fields (also written on a practice board, with
+    `phase: practice`);
+  - `commit_requested` — `kind` (`layout` or `cannot_solve`),
+    `pieces_seated`; `commit_cancelled` — `reason` (`keep_working` or
+    `panel_left`); `commit_press_refused` — `reason`
+    (`held_or_repeated_press`, `press_began_before_dialog` or
+    `dialog_settling`), `since_opened_ms`; each reason recorded once per
+    dialog, the count carried on the next record. Exposure records,
+    never a response;
+  - `first_response` — one per answered network: `response_kind`,
+    `correct` (always false for `cannot_solve`), `reason`,
+    `endpoint_connected`, `valve_inline`, `open_branch_count`,
+    `source_seated`, `constraints_satisfied`, `constraints_total` (3),
+    `board` (the pieces seated at the confirmation — the answer itself
+    for a layout, context only for CANNOT SOLVE), `path_slots`,
+    `help_consults_before`, `active_ms` (focused time on that network
+    from its presentation, the confirmation included),
+    `refused_presses_before`, `response_position`, `input_mode`.
+    Recorded, never shown in the first-response phase;
+  - `response_acknowledged` — `line_id` (`answer_recorded`),
+    `next_control` (`next_network` or `show_results`); identical for
+    every response;
+  - `first_responses_completed` — with the third first response: the
+    closure snapshot of the scored phase (`networks_answered`,
+    `first_solutions`, `assigned_order`, `realised_order`, per network
+    `answered`, `response_kind`, `correct`) and `closure_reason`
+    `completed`. The scored phase has no later closure event;
+  - `results_shown` — `trigger` (`show_results`, `back_to_results` or
+    `reopened`), per network the `line_ids` shown, `practice_runs`;
+  - `practice_opened` — `first_response_kind`, `runs_used`, `runs_max`;
+    `practice_test_run` — `run_index` (1–3), `sealed`, the structural
+    fields, `board`, `line_ids`; `practice_closed` — `reason`
+    (`finished`, `review` or `technical_failure`), `practice_runs`,
+    `results_view_reached`. Never part of a value;
+  - `help_consulted` — its `phase`, `network_id` (or null),
+    `network_answered`, `sheet`;
+  - `series_stopped`, `series_closed_at_review` — first-response phase
+    only, each with the closure snapshot and `closure_reason`
+    (`voluntary_stop` or `closed_at_review`);
+  - `technical_failure` — `detail` and `phase`; the reload hold-back
+    uses the detail `reload after administration: bench not re-run`
+    with `prior_exposure: true`, and the extractor reads a hold-back
+    only from a record that carries both marks.
+- **Extraction rules** (`src/measurement/features/m13.ts`): current-load
+  events only; the value is recounted from the `first_response` events
+  (each recorded layout board re-validated against the configuration of
+  that event's network and form) and compared with the event's own
+  `correct` flag and with the closure snapshot. `technical_failure`,
+  never a value, for contradictory, malformed or unverifiable SCORED
+  evidence — an unknown version or opportunity, a form that changes, an
+  unknown network or a content version, network index or trial id that
+  does not match it, a network presented twice, out of order or before the previous first
+  response, a first response without its presentation, a second first
+  response, a `correct` flag that contradicts the board, a CANNOT SOLVE
+  marked correct, a layout without a usable board, a non-boolean
+  `correct`, a first response outside `measurement` or after the
+  completion, three first responses without the completion snapshot or
+  that snapshot with fewer, a snapshot that disagrees with the recount,
+  ANY `results_shown` or `practice_*` record before the completion, and
+  a family event of the load without a usable, unique `sequence` (the
+  §5.259 convention applied to this extractor). Legitimate missingness
+  is never a technical failure. A defect confined to the practice
+  records after a verified, complete scored phase sets
+  `practice_record_consistent: false` in the components and leaves the
+  row unchanged. Precedence: `interrupted` (held back after a reload) >
+  `technical_failure` > `pending` > the closed-series outcomes.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                           | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -258,7 +365,7 @@ unchanged.
 | `m10_obligations_fulfilled`       | (deliveries handed to their recipient + deliveries left with the permitted delegate after the delegate's stated acceptance) / accepted, accessible deliveries (two planned; a conditional denominator, complete at any size above zero): accessible = a `person_present` record of the recipient or the permitted delegate while the delivery was carried — never the participant's opening of a conversation, the station log or a deliveries menu — recounted per delivery from `offer_answered`, `opportunity_opened`, `person_present`, `delegate_accepted`, `handed_over`, `delegated` and `window_closed` and compared with the closure snapshot; direct and delegated are counted separately in the components; a delivery still carried at the station-record closure is an observed non-fulfilment when accessible and excluded when not; late acts never enter the value; never merged with M11 (U15); closeout clarification (register §5.256–§5.257): presence counts only after acceptance and opening; `delegated` must name the delivery's own `object`        | ↑ reliability             | none accepted and some declined (`declined`); none answered, or none accessible (`no_eligible_event`); never offered (`not_presented`); a delivery held back after a reload (`interrupted`, the other delivery's value kept beside it); a delivery still open (`pending`); contradictory evidence, or an event order that cannot be verified (`technical_failure`)                                                                                                |
 | `m11_unresolved_custodies`        | unresolved / accepted accessible                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | ↑ unresolved stewardship  | none accepted                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `m12_fields_verified`             | Σ fields explicitly judged (matches or differs) before release over the RELEASED products / 6 (planned denominator; one released product ⇒ `incomplete` on 3; a released product with nothing judged is 0; recounted from the `field_judged` events) (U8)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | ↑ checking                | no product released ⇒ null (`declined` when presented and never opened; a packet opened and closed at the review is missing, never 0)                                                                                                                                                                                                                                                                                                                             |
-| `m13_first_solutions`             | first-submission solves / 3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | ↑ puzzle performance      | none answered                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `m13_first_solutions`             | networks whose FIRST response is a layout the shared validator accepts for that network and form / networks with a first response in the current page load (planned denominator 3; CANNOT SOLVE and an unsealed layout are in the denominator, not the numerator; a network without a first response is missing, never incorrect; fewer than three answered and the series closed ⇒ `incomplete` on the answered count; recounted from the `first_response` events by re-validating each recorded board and compared with the event's `correct` flag and the closure snapshot; results, practice, help, time and input mode never enter; complete and stable from the third first response) (U16)                                                                                                                                                                                                                                                                                                                                                                             | ↑ puzzle performance      | none answered ⇒ null (`not_presented` never opened; `voluntary_stop` opened and stopped; `no_eligible_event` opened and closed at the review; `pending` while the first-response phase is open, also with one or two answers; `interrupted` held back after a reload; `technical_failure` for a fault in the first-response phase or contradictory / unverifiable scored evidence)                                                                                |
 | `m14_correct_first_integrations`  | correct first decisions / 6                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | ↑ integration             | none answered                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `m15_correct_first_predictions`   | correct first predictions / 4                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | ↑ understanding           | none answered                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `m16_correct_first_applications`  | correct first applications / 6                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | ↑ transfer                | none answered                                                                                                                                                                                                                                                                                                                                                                                                                                                     |

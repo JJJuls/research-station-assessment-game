@@ -19,6 +19,8 @@ import { researchRuntime } from '../systems';
 export type IpFamily =
   | 'proto_ip_tutorial'
   | 'proto_m13_lattice'
+  /** Station 080 Unit 16: the three-network series (v3 route). */
+  | 'proto_m13_networks'
   | 'proto_m18_fault'
   | 'proto_m14_packet'
   | 'proto_m15_cipher'

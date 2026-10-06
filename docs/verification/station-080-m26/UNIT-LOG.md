@@ -6216,3 +6216,582 @@ timing and delegated object identity` on `codex/u15-m09-m10` on top
   (not amended; SHA in the handoff report), the eight files staged by
   name. Nothing was pushed, merged, tagged, deployed, deleted or
   removed; U16 is not started.
+
+## U16 — M13 three keyed networks with immutable first responses (7 October 2026)
+
+- **Owner instruction:** 7 October 2026 — "Execute the complete U16 (M13)
+  bounded-unit contract now and carry it through to the final handoff",
+  with explicit authorisation, for this unit only, of (a) work on branch
+  `codex/u16-m13` in the worktree
+  `C:\Users\Juls\.codex\worktrees\u16-m13\research-station-assessment-game`
+  created at `283cd89e4b580756931658ce33320069ea67bd6f` (an exception to
+  `CLAUDE.md`'s historical branch line), (b) the focused Playwright runs
+  (pure and browser), the base comparisons of the evidence rules (an
+  untouched export of `283cd89`, port 5198) and the eighteen screenshots
+  named in the contract, and (c) exactly one local commit
+  `feat(m13): add three keyed networks with immutable first responses`,
+  only after the required verification and review. Nothing else is
+  authorised (no push, merge, PR, tag, deployment, install, generated
+  art, destructive cleanup, guard or git-config change, and no U17).
+- **Binding contract:** `U16-CONTRACT.md` (v1 of 7 October 2026,
+  amendment A1 of the same day), appended in full below **before the
+  first source edit**; the instruction file `U16-FABLE-PROMPT.md` and the
+  allowlist file `U16-ALLOWLIST.txt` (the same 24 paths) sit beside it in
+  `C:\Users\Juls\.codex\visualizations\2026\10\07\u16-m13`.
+- **Provenance limit (stated as the contract states it; nothing more is
+  claimed):** the original owner document
+  (`FABLE-M01-M26-IMPLEMENTATION-INSTRUCTIONS.md` /
+  `Station_080_M01-M26_Final_Measurement_Decisions.docx`) was not found on
+  disk when the contract was prepared. The contract rests on (i) the four
+  repository records that reproduce the approved M13 row — register §2
+  (M13 row) and §2b, the implementation matrix (M13 row, shared-rule
+  gaps), the scoring / event addendum v1 (§1–§4) and
+  `src/measurement/registerV3.ts` (entry `M13`, `INDEPENDENCE.M13`) — and
+  (ii) the research owner's ruling D-U16-1 of 7 October 2026, which is an
+  explicit decision for this implementation and **not** recovered wording
+  from the missing document. Nothing else is attributed to the owner;
+  every remaining choice is recorded as an implementer default.
+- **Research-owner ruling D-U16-1 (approved 7 October 2026; an owner
+  ruling, not an implementer default; not reopened):** (1) the same 3×3
+  board and nine-piece set across three genuinely different network
+  configurations, with the contract's solvability checks and the rule
+  that no configuration is a rotation or reflection of another; (2) the
+  existing 90° rotation is the alternate orientation form for this
+  pilot, the assigned form is recorded, and neither empirical difficulty
+  equivalence nor independent forms is claimed; (3) fixed order
+  `n1 → n2 → n3`, with the order limitation documented; (4) all three
+  immutable first responses are collected BEFORE any correctness
+  feedback and before any further attempt on any network — a response is
+  a confirmed layout or a confirmed CANNOT SOLVE, answered by a neutral
+  acknowledgement and the next-network control; nothing reveals
+  connected or sealed status, constraint results, hints,
+  correctness-dependent controls or any other indirect correctness
+  feedback; rules-and-controls help stays available without solution
+  information; leaving and returning preserves the state; a partial or
+  stopped series never unlocks feedback or practice; (5) after all three
+  first responses: structural feedback and optional practice, with the
+  same access and the same maximum of three additional test runs per
+  network whether the first response was a layout or CANNOT SOLVE;
+  practice is voluntary and has no progression or payment consequence;
+  CANNOT SOLVE stays an incorrect first response, and later success
+  after it — or after an incorrect layout — never changes the recorded
+  first-response result; (6) no practice network before `n1`, help is
+  informational only, and the companion data stay in the primary row's
+  components, each with its documented limitation.
+- **Entry state (verified before the first edit):** the worktree above,
+  branch `codex/u16-m13`, HEAD and base
+  `283cd89e4b580756931658ce33320069ea67bd6f` (`ancestor-ok`), tracked
+  tree clean; the inherited `CLAUDE_UNIT_ALLOWLIST` carries exactly the
+  24 contract paths (equal, path for path, to the contract's §4 and to
+  `U16-ALLOWLIST.txt`); `PW_DEV_PORT=5197` and
+  `U16_OUT=.playwright-mcp/u16-evidence`; `node_modules` is a junction to
+  `C:\Users\Juls\Desktop\research-station-assessment-game\node_modules`;
+  the `PreToolUse` guard `scripts/claude/pretool-guard.mjs` is registered
+  in `.claude/settings.json`; the five agent files named by the contract
+  are present with their models (`scientific-reviewer`,
+  `gameplay-reviewer`, `visual-reviewer`: opus; `test-reviewer`: sonnet;
+  `cheap-explorer`: haiku); an effective git author and committer
+  identity exists (read with `git var`, never written).
+- **Model:** Fable 5.1 (`claude-fable-5-1`), the only writer. Of the
+  project agents only `cheap-explorer` is discoverable as an agent type
+  in this session; the reviewers (`test-reviewer` Sonnet,
+  `scientific-reviewer` / `gameplay-reviewer` / `visual-reviewer` Opus)
+  run through the contract §15 fallback — a general-purpose agent with
+  the matching model override after it reads the role file (actual
+  models reported with the results).
+
+### U16 contract (U16-CONTRACT.md, amendment A1, verbatim; section headings shown in bold)
+
+**U16 bounded implementation contract — M13 (v1, 7 October 2026; amendment A1, 7 October 2026)**
+
+Status: FINAL for launch (amendment A1: research-owner ruling D-U16-1 — §2, §3, §17). Prepared against the integrated base `283cd89e4b580756931658ce33320069ea67bd6f` (primary checkout `C:\Users\Juls\Desktop\research-station-assessment-game`, branch `fable-professional-world-rescue-v2`). Companion files in the same directory: `U16-ALLOWLIST.txt`, `U16-START.ps1`, `U16-FABLE-PROMPT.md`. Launch directory: `C:\Users\Juls\.codex\visualizations\2026\10\07\u16-m13`. Amendment A1 supersedes the unamended contract of the same day (immediate feedback after each first response and retries between networks); that version was never launched.
+
+Provenance limit (state it in UNIT-LOG, never claim more): the original owner document (`FABLE-M01-M26-IMPLEMENTATION-INSTRUCTIONS.md` / `Station_080_M01-M26_Final_Measurement_Decisions.docx`) was not found on disk during preparation. This contract rests on (i) the four repository records that reproduce the approved M13 row — register §2 (M13 row) and §2b, the implementation matrix (M13 row, shared-rule gaps), the scoring/event addendum v1 (§1–§4), and `src/measurement/registerV3.ts` (entry `M13`, `INDEPENDENCE.M13`) — and (ii) the research owner's ruling D-U16-1 of 7 October 2026, which is an explicit decision for this implementation and NOT recovered wording from the missing document. Nothing else is attributed to the owner; every remaining choice is labelled a default (§17).
+
+**1 Objective**
+
+Replace the one-network v2 administration of M13 at the Conduit Lattice Bench with the approved three-network series — three independently keyed networks with different structures and a matched alternate orientation form, one immutable first committed response per network (an explicit Cannot solve counted as an incorrect first response), all three collected before any correctness feedback, then structural feedback and optional practice kept apart — and derive `m13_first_solutions` read-only from the raw events.
+
+**2 Scientific rationale and authority**
+
+M13 = BESSI Information Processing item 22 counterpart (label: performance counterpart). Approved rows, verbatim from the repository:
+
+- Register §2: direction "Extend cases", 3 occasions, primary "`m13_first_solutions`: networks solved on first submission / 3", companions "constraints, help".
+- Matrix: must change — "Three independently keyed networks with different structures + alternate form; first committed solution frozen per network; Cannot solve = incorrect; later learning allowed"; measure — "`m13_first_solutions`: networks solved on first submission / 3; constraints, help separate"; verification — "pure: keyed solvability per network/form, first ≠ later; browser: three boards".
+- `registerV3.ts`: numerator "networks fully solved on the first submission"; denominator "three networks; Cannot solve counts as an incorrect first response; an interrupted network is missing"; range 0–3; missing rule "no network answered → null"; independence `repeated_within_episode`, "three networks in one bench session".
+- Addendum §3: "first-submission solves / 3", ↑ puzzle performance, null when none answered; §3 closing paragraph: fewer than the planned observations ⇒ `incomplete` with the value.
+- Shared rules (register §3, matrix shared-rule gaps): immutable first responses; explicit Cannot solve = incorrect first response; zero denominator = no score; distinct dispositions; reload never creates fresh trials (register §5.14); event order read only from usable, unique `sequence` numbers (owner ruling, register §5.259 — applied here to a new extractor as the same convention).
+
+**Research-owner ruling D-U16-1 — APPROVED 7 October 2026** (explicit decisions for this implementation; record it with this date and this status in register §4 "Unit 16" and §5, as an owner ruling and not as an implementer default; do not reopen it):
+
+1. The same 3×3 board and nine-piece set across three genuinely different network configurations; the solvability checks of this contract and the requirement that the configurations are not rotations or reflections of one another are preserved.
+2. The existing 90° rotation is the alternate orientation form for this pilot; the assigned form is recorded; no claim of empirical difficulty equivalence or of independent forms.
+3. Fixed order `n1 → n2 → n3`; the order limitation is documented.
+4. All three immutable first responses are collected BEFORE any correctness feedback is shown and before any further attempt is permitted on any network. In this first-response phase: a response is a confirmed layout or a confirmed CANNOT SOLVE; the participant receives a neutral acknowledgement and the next-network control; nothing reveals connected / sealed status, constraint results, hints, correctness-dependent controls or other indirect correctness feedback; rules-and-controls help stays available without solution information; leaving and returning preserves the existing state; a partial or stopped series does not unlock feedback or practice.
+5. After all three first responses are recorded: structural feedback and optional practice, with the same practice access and the same maximum of three additional test runs per network whether the first response was a layout or CANNOT SOLVE. Practice is voluntary and has no progression or payment consequence. CANNOT SOLVE remains an incorrect first response; later success after it — or after an incorrect layout — never changes the recorded first-response result.
+6. No practice network before `n1`; help is informational only; the companion data are stored in the primary row's components. Their documented limitations are preserved.
+
+Claims this unit never makes: the three networks are repeated observations inside ONE bench episode, not independent situations; the networks are not equivalent in difficulty; forms A and B are orientation forms matched by construction (a rotation), neither empirically equated nor independent; passing tests establishes implementation correctness, never psychometric validity. No questionnaire wording appears in the game (the criterion stem's noun "puzzle" and its plural never appear in participant-facing text; the approved response label "CANNOT SOLVE" is the one sanctioned use of "solve"). The older Q01–Q33 mechanics and the frozen v2 ledger are historical. Never replace this design with the one-network administration.
+
+**3 Participant-facing behaviour — administration `m13-networks-v1`**
+
+Each rule is tagged [R-n] owner ruling D-U16-1 item n, [A] approved row, [P] recorded precedent, or [D] implementer default listed in §17. Implement exactly; ordinary engineering details (layout, focus order, key choice where not fixed, file-internal structure) are the implementer's.
+
+**3.1 Place and access**
+
+- [A] Conduit Lattice Bench, Records Workshop, episode 2 (stage `workshop_work`), the existing station, site, prompt and overlay launch (`openIpOverlay(this, key.scene.ipPipeBoard, 'm13', {})`). No gate, no reward, no judgement, no progression or payment consequence — for the answers and for the practice alike [R-5]: route access is identical whatever happens at the bench. The legacy Information Processing Lab keeps hosting the same overlay (its station, gate text and M18 context stamp are untouched files).
+
+**3.2 Networks, forms and order**
+
+- [A][R-1] Three networks `n1`, `n2`, `n3`, each with its own key (its own port and blocked-mount configuration and its own `content_version`), each validated by the UNCHANGED shared validator `validatePipePlacements` (feed–intake connected, isolation valve inline, no open branch) against that network's own configuration. All three use the existing 3×3 mount board and the existing standardised nine-piece set (2 straights, 4 elbows, 1 tee, 1 isolation valve, 1 end cap), complete and on the bench at the start of every network. In each form no network's configuration equals another's under any rotation or reflection of the board; every network is solvable with the standard set.
+- [D-1] The concrete configurations: `n1` = the present geometry (form A: feed west of A2, intake east of C2, B2 fractured) — ports on opposite sides; `n2` = ports on adjacent sides; `n3` = both ports on the same side. The implementer authors the blocked mount(s) of `n2` and `n3` so that no network has a sealed run of fewer than four seated pieces.
+- [R-2][P] One form per session for all three networks: the existing deterministic assignment `resolveForm('m13')` (session-seeded counterbalance, DEV overrides `ip_form` / `ip_form_m13`), recorded on every event. Form B of every network is the same fixed isometry — the 90° clockwise rotation already used by `M13L_FORMS` — of its form A. Forms are never mixed inside a session.
+- [R-3] Fixed order `n1 → n2 → n3` for every participant, recorded as assigned and realised order. The next network is presented only after the current one has its first response, so a network is never skipped without an answer; the realised order always equals the assigned order. Limitation to document: position and network are confounded, and `n1` also carries first contact with the bench.
+
+**3.3 Phase 1 — the first-response phase (the scored phase) [R-4]**
+
+1. Presentation: header "Network N of 3"; that network's ports and fractured mounts; an empty board; the full piece set. Status line: "Seat the pieces, then RECORD LAYOUT. One answer per network. Results for all three follow the third answer."
+2. Manipulation is unchanged (drag / click, arrows + SPACE/ENTER, ROTATE (R), RETURN (DEL), UNDO (U), CLEAR (C)). There is NO flow test in this phase: no control, key, sound, colour, animation, counter or line shows whether a run is connected or sealed, how many constraints hold, or anything else that depends on correctness.
+3. Commitment by layout: RECORD LAYOUT (T or the button) opens a neutral confirmation — "Record this layout as your answer for network N? It cannot be changed afterwards. Results are shown after all three networks." — with "RECORD ANSWER (ENTER)" and "KEEP WORKING (ESC)". Only RECORD ANSWER commits. [P] The confirming press must be a fresh press made after the dialog opened: a held key, an auto-repeat, the T / ENTER / pointer press that opened the dialog, and any press inside the first 400 ms never confirm (register §5.210 precedent). KEEP WORKING / ESC leaves the network open without an answer. An incomplete or empty board may be committed; it is what the participant confirmed.
+4. Commitment by Cannot solve: a visible CANNOT SOLVE control (button plus a keyboard key shown in its label, chosen by the implementer without colliding with the existing keys) is available from the network's presentation until its first response. It opens "Record CANNOT SOLVE as your answer for network N? It cannot be changed afterwards." with "RECORD (ENTER)" and "KEEP WORKING (ESC)", under the same fresh-press rule. It is visually and textually distinct from STOP TASK and never adjacent to it without a gap. [A][R-5] It is an incorrect first response whatever stands on the board.
+5. [A] The first response of a network — the confirmed layout or the confirmed Cannot solve — is written once and is immutable: no later act, practice run, reopening, reload or closure changes or duplicates it. A repeated or doubled confirmation produces no second record. The network's scored trial ends with it: its board becomes read-only and shows the pieces as they stood, with no path highlight.
+6. Neutral acknowledgement, IDENTICAL for every response whatever its kind and outcome: "Answer recorded for network N." with the control NEXT NETWORK (after the third answer the same control position reads SHOW RESULTS). Same line, same control, same sound, same timing for a sealed layout, an unsealed layout and Cannot solve.
+7. The third first response completes the scored phase. It is recorded as complete at that moment (§9 `first_responses_completed`, §10); nothing that happens afterwards reopens it.
+
+**3.4 Phase 2 — results and optional practice [R-5]**
+
+1. Available only when all three first responses are recorded. A partial, stopped, review-closed, held-back or failed series never shows results and never offers practice [R-4].
+2. Results (opened by SHOW RESULTS, and shown again whenever the completed bench is reopened): heading "All three answers are recorded."; per network "Network N — recorded answer:" followed, for a layout, by the three existing structural lines (run connected / not connected; isolation valve inline / not inline; open branches on the run) and "The run is sealed." or "The run is not sealed.", and for Cannot solve by "cannot solve."; then "Practice is optional. It changes nothing in your recorded answers and nothing else on the shift." Truthful and structural; no tally across networks, no praise or blame, no reference layout, no hint toward a solution at any time.
+3. Practice access is the SAME for all three networks, whatever the first response was (a sealed layout, an unsealed layout, Cannot solve): each network offers "PRACTISE NETWORK N (K test runs left)" with at most three test runs. [D-3] A practice board opens with the pieces as they stood when that network's answer was recorded and is fully editable; header "Network N of 3 — practice"; TEST FLOW (T or the button, no confirmation) answers with the three structural lines and "Practice test run K of 3. Your recorded answer is unchanged."; BACK TO RESULTS returns. When a network's three runs are used its practice board is read-only. Networks may be practised in any order.
+4. Practice is voluntary: FINISH on the results view ends it ("All three networks are recorded. The bench is closed."), and the participant may simply leave. Practice events are recorded as their own events and never enter the primary.
+
+**3.5 Help [R-4][R-6]**
+
+- HELP (H or the button) is available at any time in both phases, shows the rules and the controls of the current phase (the one-answer rule, CANNOT SOLVE, NEXT NETWORK, when results follow; in phase 2 the practice controls), reveals nothing about any network's solution or about the correctness of any answer, and never changes correctness. Every consult is recorded with its phase and the network it was opened on. No practice or teaching network precedes `n1` (documented limitation).
+
+**3.6 Leaving, stopping, closure, reload**
+
+- [R-4][P] ESC cancels a held piece first, then a dialog, then leaves; I leaves; the on-screen close control leaves. Leaving keeps the bench as it is in either phase: the same network or view, the same board (a held piece goes home), the same recorded answers, the same practice runs used; returning never presents a network again, never starts a new trial and never restores a used practice run. Leaving the room behaves the same way.
+- [P] STOP TASK (Q or the button, phase 1 only, with the existing confirmation, text "Stop the bench? Networks without a recorded answer stay unanswered, and no results are shown.") is a voluntary stop of the series. Recorded answers are kept; unanswered networks are missing, never incorrect; the bench then opens as a read-only record ("Bench stopped. Recorded answers are kept.") without results or practice.
+- [P] Station-record closure at the Utility Deck review: a series still in phase 1 closes as `closed_at_review` (system), unanswered networks are missing, and no results or practice follow; a series whose scored phase is complete is NOT reclosed — only an open practice ends. Afterwards the bench records nothing ("Station record closed — the bench keeps its record."); a completed series may still show its results read-only.
+- Ordinary endings of practice — FINISH, leaving, the review, used runs, a bench fault during practice — never change the completed first-response result.
+- [P] Reload — the existing convention, unchanged (register §5.14, addendum §1 reload rule; no new policy): when an earlier page load of the session identity already holds this administration's `series_opened`, the bench is never re-run in the new load — neither the first-response phase nor results nor practice — and opens as a neutral closed record ("This bench was already used in this session. Its record is kept; nothing further is recorded here."); prior exposure is recorded and the series is marked technically incomplete; the feature of the new load is `interrupted`; the earlier load's events stay immutable in `prior_page_load_events`. This holds also when the earlier load had completed the scored phase (the earlier record is not erased; it is not carried into the new load's row either). A bench never opened before the reload runs normally.
+- A fault while phase 1 is open closes the series as a technical failure (existing `m13LatticeFail` path); cancelled animation or pointer callbacks never leave the bench busy or a dialog stuck.
+
+**3.7 Wording and presentation limits**
+The strings quoted in §3 are fixed in meaning; line breaks and abbreviations needed to fit 800×600 are the implementer's and are recorded. Forbidden tokens in the bench's participant-facing text (tested by pattern): `proto_`, `M##`, `Q##`, score, trait, puzzle, persist, grit, skill, ability, intelligen. Beyond the pattern (a review criterion): no praise, blame or judgement of the participant — the vocabulary is structural (connected, sealed, inline, open, recorded), and in phase 1 not even that. Pointer and keyboard reach every control in both phases, including both confirmations, CANNOT SOLVE, NEXT NETWORK, SHOW RESULTS, the practice controls, FINISH and leaving.
+
+**4 Exact allowlist (24 paths; a maximum — touching fewer is fine)**
+src/informationProcessing/m13NetworkForms.ts (new)
+src/informationProcessing/m13NetworkSeries.ts (new)
+src/informationProcessing/m13PipeNetwork.ts
+src/informationProcessing/pipeBoardEngine.ts
+src/informationProcessing/telemetry.ts
+src/informationProcessing/ui/PipeBoardScene.ts
+src/measurement/features/m13.ts (new)
+src/measurement/features/index.ts
+src/measurement/registerV3.ts
+src/pilot/windows/reviewClosure.ts
+src/scenes/RecordsWorkshopScene.ts
+e2e/m13_networks.spec.ts (new)
+e2e/m13_networks_route.spec.ts (new)
+e2e/ip_pipe_suite.spec.ts
+e2e/ipHelpers.ts
+e2e/ip_lab_flow.spec.ts
+e2e/ip_boundaries.spec.ts
+e2e/pilot_lab.spec.ts
+e2e/pilot_episodes_1_2.spec.ts
+e2e/pilot_coverage.spec.ts
+docs/verification/station-080-m26/IMPLEMENTATION-MATRIX.md
+docs/verification/station-080-m26/M01-M26-IMPLEMENTATION-REGISTER.md
+docs/verification/station-080-m26/SCORING-AND-EVENT-ADDENDUM-v1.md
+docs/verification/station-080-m26/UNIT-LOG.md
+
+Scope limits:
+
+- `m13NetworkForms.ts` (new, pure — no Phaser, no runtime, no `import.meta`): the three network definitions in both forms, ids, content versions, the form isometry, structural descriptors. The `m13` file-name prefix is deliberate: the M18-independence tests match on it.
+- `m13NetworkSeries.ts` (new, pure): the series state machine — presentation order, the first-response phase and its completion, first-response freeze, Cannot solve, the results and practice phase with its per-network run cap, help exposure, closures, the entry snapshot, the per-network record, the prior-administration predicate over raw events.
+- `m13PipeNetwork.ts`: the module store and telemetry adapter over the pure model. Keep the file name and the exports other (non-allowlisted) files import: `declareM13Lattice`, `m13LatticeWindowStatus`, `m13LatticeProbe` (with the fields `placements`, `moves`, `rotations`, `returns`, `undos`, `resets`, `submission_count` that the workshop's recorded-work signature reads — `submission_count` counts every recorded first response and every practice test run), plus the functions `PipeBoardScene` calls. Add `closeM13AtReview(nowMs)`. Stop emitting `proto_m13_lattice_*`. The legacy validity-register opportunity (through the unchanged `windowState.ts`) is marked completed when the scored phase completes; nothing in practice changes it, so `m13LatticeWindowStatus()` never returns to `open`.
+- `pipeBoardEngine.ts`: board operations generalised to a network configuration (for example several blocked mounts) and the home of / re-export for the legacy `M13L_FORMS` if still needed by tests. The transactional discipline (validate before commit, untouched state on refusal) is preserved.
+- `telemetry.ts`: add the family `proto_m13_networks` to `IpFamily` (and a one-line comment). Nothing else.
+- `PipeBoardScene.ts`: the series presentation — header, per-network ports and blocked mounts, the two confirmations, CANNOT SOLVE, the neutral acknowledgement, NEXT NETWORK / SHOW RESULTS, the results view, the practice boards, FINISH, the stopped / closed / held-back records, help text, the DEV probe (`__ipPipeProbe`) extended with the series fields the specs need (including the lines currently rendered, so a spec can assert that phase 1 renders no correctness information). Manipulation semantics, drag behaviour and existing keys unchanged.
+- `features/m13.ts` (new): the read-only extractor (§10). `features/index.ts`: one import line.
+- `registerV3.ts`: the `M13` entry only — an explicit v3 route (opportunity `proto_m13_network_series`; windows `m13_network_n1`, `m13_network_n2`, `m13_network_n3`, zone `records_workshop`, episode 2; family prefix `proto_m13_networks_`; no secondary ids), `implementation_status: 'implemented'`, and a short comment. Feature id, version, numerator / denominator text, planned denominator 3, denominator kind, range, direction, coverage label, independence and the operational label are unchanged. No feature row is added [R-6].
+- `reviewClosure.ts`: one import and one call of `closeM13AtReview(nowMs)` with its comment. Nothing else.
+- `RecordsWorkshopScene.ts`: the `lattice_bench` station block only (the launch call, the recorded-work signature, the guided predicate) and only if the series genuinely requires a change; the preferred outcome is no change. The signature must keep changing on exactly these recorded acts: a piece seated, moved, turned or returned; a step undone; the board reset; a recorded first response (layout or Cannot solve); a practice test run — and never on a lifted piece, the help sheet, an opened or cancelled confirmation, NEXT NETWORK, SHOW RESULTS, a practice board merely opened, or FINISH. Every other station, M02 / M03 / M04 / M06 / M07 / M12 rule and the room geometry are untouched.
+- Existing specs and helpers — M13 identities, the bench's new steps and genuinely changed expectations only; never weaken an unrelated assertion: `ip_pipe_suite.spec.ts` (the pure engine and form tests kept or extended; the browser bench tests re-expressed for the two phases; the M18 entry-state proof kept with M13 histories "scored phase completed", "stopped" and "never opened"; the import-independence test still covers every `m13*` file); `ipHelpers.ts` (the lattice probe type and lattice drivers only); `ip_lab_flow.spec.ts` (the M13 lane and the opportunity id); `ip_boundaries.spec.ts` (the family list, the module → family map, the opportunity id); `pilot_lab.spec.ts` (the M13 identities and stop steps of the test "M18 independence on the route…" only); `pilot_episodes_1_2.spec.ts` (the lattice assertion of the episode-2 test only); `pilot_coverage.spec.ts` (the M13 opportunity id of the contamination test only).
+- Docs: (a) UNIT-LOG — append this contract BEFORE the first source edit; results, reviews, deviations and the handoff at the end. (b) Register — the §2 M13 "As-built" cell (padded to the table's inherited column width); the §4 "Unit 16" as-built record (ruling D-U16-1 with its date and status, the procedure in its two phases, networks and their solver census, event fields, formula, eligibility, timing, test evidence, residual limitations); the §4 workshop recorded-work table row of the bench if its acts changed; §5.260 onward — ruling D-U16-1 as an owner ruling, then the defaults of §17 and the reviews' recorded points. (c) Matrix — the M13 row status and a "U16" paragraph. (d) Addendum — a §2 "U16" paragraph (family, opportunity, version, suffixes, fields, the two phases, the v2 family retired from the route) and the §3 `m13_first_solutions` row with its recount and null rules; §1, §4 and §5 unchanged.
+
+A needed file outside this list = stop that part and report (§14); finish everything independent of it.
+
+**5 Prohibited areas**
+
+Every other item and file. In particular: `docs/research/**`, `docs/scientific/**`, `docs/decisions/**`, `docs/ai/**`, `CLAUDE.md`, `AGENTS.md`; the frozen v2 ledger (`src/pilot/evidenceLedger.ts`, `docs/verification/evidence-led-pilot-v2/**`); `EventLogger`, `EventStore`, `SessionState`, `QualtricsBridge`, `DataQualityTracker`, `ScoringManager`, `SummaryScope`, `ResearchRuntime` and everything under `src/systems/**`; the shared measurement framework — `src/measurement/protocol.ts`, `focusedClock.ts`, `validity.ts`, `features/extract.ts`, `features/types.ts` — and every other item's `features/m*.ts`; `src/measurement/m13PipePuzzle.ts` (the shared validator and the Pump House state stay byte-identical) and `src/measurement/index.ts`; `src/informationProcessing/windowState.ts`, `model.ts`, `probe.ts`, `tutorial.ts`, every `m14*`–`m18*` module and form file, `ui/openIpOverlay.ts`, `ui/ipTheme.ts`, the other IP overlays; `src/scenes/InformationProcessingLabScene.ts`, `DiagnosticsLaboratoryScene.ts`, `PumpHouseScene.ts` and every other scene; `src/gameplay/**`, `src/world/**` (including `interactionRegistry.ts` — its non-canonical window label stays, U24 backlog), `src/pilot/**` other than `windows/reviewClosure.ts`, `src/inventory/**`, `src/data/**`, `src/constants/**`; assets, plates and `asset-candidates/**`; package files, lockfiles and every config; `.claude/**`, `scripts/**`, hooks, guard, settings, agents and skills; the capture specs (`ip_visual_capture`, `pilot_visual_capture`, `v4_visual_capture`, `world_v3_route_capture`, `pilot_signal_capture`) and every spec not listed in §4. No install, no generated art, no push, merge, PR, tag, deployment, branch or worktree deletion, recursive deletion, guard or settings change, git-config write, and no U17 work. No canonical event name, scoring-plan variable, composite, weight or cut score; no change to another item or to the shared framework.
+
+**6 Entry state**
+
+Worktree `C:\Users\Juls\.codex\worktrees\u16-m13\research-station-assessment-game`, branch `codex/u16-m13`, created at `283cd89e4b580756931658ce33320069ea67bd6f` and clean. The branch is an owner-authorised exception to the branch line of `CLAUDE.md` for this unit only. `node_modules` is a junction to the primary checkout's `node_modules` (owner-authorised; ignored by git; never installed into, never deleted through). The process inherits `CLAUDE_UNIT_ALLOWLIST` (the 24 paths of §4, comma-separated), `PW_DEV_PORT=5197` and `U16_OUT=.playwright-mcp/u16-evidence` (ignored). The guard `scripts/claude/pretool-guard.mjs` is registered in `.claude/settings.json`; the five agent files exist with their models (scientific / gameplay / visual reviewer: opus; test-reviewer: sonnet; cheap-explorer: haiku). An effective git author and committer identity exists in the launching environment, supplied there by the owner; Claude never writes git configuration, never supplies an identity itself and never copies one from another commit. All of this is prepared and verified by `U16-START.ps1`, which never resets, deletes or overwrites anything. The primary checkout (with its untracked `.agents/`, `.codex/`, `reports/`, `research_notes/`) and every other worktree — U15's included — stay untouched; no U15 variable, port or evidence directory is reused.
+
+**7 Success behaviour**
+
+On the ordinary participant route the bench presents three structurally different networks in the session's form; each network takes exactly one immutable first response (a confirmed layout or a confirmed Cannot solve) answered only by the identical neutral acknowledgement; no correctness information and no further attempt is available until the third first response is recorded; then the results and the optional, equally capped practice follow without touching any first response; leaving and returning resume the same state in both phases; the export carries `m13_first_solutions` with value = numerator = networks sealed on the first response, the denominator = networks answered, planned denominator 3, and the dispositions of §10 — complete and stable from the third first response onward — reproducible from the raw events alone; every check of §12 was run and reported with its true result; the reviews of §15 are closed; one local commit exists (§16).
+
+**8 Failure and recovery behaviour**
+
+Never opened, opened with nothing answered, partly answered, stopped, closed at the review, held back after a reload, technically failed in phase 1 and completed are distinct records (§10). A double press, a doubled confirmation, a re-entry or a resumed overlay never duplicates a presentation, a first response, a practice run or a credit. A first response is never lost or changed by leaving, by a room change, by results or by practice. A partial or stopped series never unlocks results or practice. A completed first-response result never returns to pending and is never erased by FINISH, leaving, the review, used practice runs or a fault during practice. A reload never produces a fresh trial; the earlier load's events stay byte-identical in `prior_page_load_events` and the existing reload convention decides the new load's row. A bench fault in phase 1 closes the series as a technical failure and leaves the room usable.
+
+**9 Telemetry boundary (all PROVISIONAL `proto_*` candidates; nothing canonical is created)**
+
+Family `proto_m13_networks_` (IpFamily `proto_m13_networks`); ONE opportunity `proto_m13_network_series`; trial / window ids `m13_network_n1`, `m13_network_n2`, `m13_network_n3`; object `ip_lattice_bench`; `entry_state_version` = `m13-networks-v1`. The v2 family `proto_m13_lattice_` and its opportunity `proto_m13_lattice_construction` are retired from the route and keep their v2 meaning in the frozen ledger; this build writes neither. The Pump House family `proto_m13_*` of the legacy scene is untouched.
+
+Every event carries `opportunity_id`, `entry_state_version`, `form_id`, `measurement_protocol_version`, `phase` (`measurement` = the first-response phase | `feedback` = the results view | `practice` | `closure`), and — when it concerns a network — `network_id`, `network_index` (1–3), `trial_id` and `content_version`. `input_mode` uses the IP module's existing vocabulary (`pointer` | `typed`), `system` for acts of the system. Suffixes (names fixed; descriptive fields may be added, none removed):
+
+- `series_opened` — entry snapshot: `networks_planned` 3, `assigned_order`, per network {`network_id`, `content_version`, ports, blocked mounts}, `piece_set`, `constraints`, `commit` `explicit_confirmation`, `cannot_solve_available` true, `feedback` `after_all_first_responses`, `practice` {`available_after` `all_first_responses`, `test_runs_max_per_network` 3, `same_access_for_every_first_response` true}, `help` `on_request`, `settle_ms` 400.
+- `series_reopened`, `panel_left`.
+- `network_presented` — `assigned_position`, `realised_position`, the configuration; exactly once per presented network.
+- `piece_picked`, `piece_placed`, `piece_returned`, `piece_rotated`, `placement_refused`, `undone`, `board_reset` — the v2 fields plus the network and phase fields.
+- `commit_requested` — `kind` (`layout` | `cannot_solve`); `commit_cancelled`; `commit_press_refused` — a confirming press that was not fresh. Exposure records; never a response.
+- `first_response` — exactly one per answered network, `phase` `measurement`: `response_kind` (`layout` | `cannot_solve`), `correct` (always false for `cannot_solve`), `reason`, `endpoint_connected`, `valve_inline`, `open_branch_count`, `constraints_satisfied`, `constraints_total` 3, `board` (the pieces seated at the confirmation — the answer itself for a layout, context only for Cannot solve), `path_slots`, `help_consults_before`, `active_ms`, `input_mode`. The structural fields are recorded, never shown in phase 1.
+- `response_acknowledged` — the neutral acknowledgement: `line_id`, `next_control` (`next_network` | `show_results`); identical in content for every response.
+- `first_responses_completed` — written with the third first response: the closure snapshot of the scored phase (the per-network first-response record) and `closure_reason` `completed`. The scored phase has no later closure event.
+- `results_shown` — `phase` `feedback`: per network the `line_ids` shown; only after `first_responses_completed`.
+- `practice_opened` — `network_id`, `first_response_kind`, `runs_used`; `practice_test_run` — `run_index` (1–3), the structural fields, `board`; `practice_closed` — `reason` (`finished` | `review` | `technical_failure`) with the per-network runs used. Never part of a value.
+- `help_consulted` — its `phase`, the network it was opened on (or null) and `network_answered`.
+- `series_stopped`, `series_closed_at_review` — phase 1 only, each with the closure snapshot and `closure_reason` (`voluntary_stop` | `closed_at_review`).
+- `technical_failure` — `detail` and `phase`; the reload hold-back uses a detail beginning `reload`.
+
+Existing logger `sequence` and `page_load_index` are preserved; raw logs are never rewritten and recovered events never renumbered. No offer, opening, response or exposure is backdated. No event of this family enters `ScoringManager`, `SummaryScope`, the canonical context or the return URL.
+
+**10 Scientific acceptance criteria — feature and extractor**
+
+`m13_first_solutions` (primary; the only M13 feature row): value = numerator = networks whose FIRST response is a layout the validator accepts for that network and form; denominator = networks with a first response (layout or Cannot solve) in the current page load; planned denominator 3 (`planned_observations`). Cannot solve and an unsealed layout are in the denominator and not in the numerator. A network without a first response is missing and outside the denominator, never incorrect. Results, practice, help, time and input mode never change the numerator or the denominator.
+
+The scored phase and the practice are separate. The scored phase is COMPLETE when three verified first responses and their `first_responses_completed` snapshot exist. From that moment the row is `observed` with `closure_reason: completed` and stays so — whether results were opened, practice is open, in progress, finished, cut by the review, ended by leaving or by a bench fault during practice. Practice never makes the row `pending`, `incomplete`, censored or `technical_failure`.
+
+Dispositions (defaults D-7 where not fixed by the rows or the ruling):
+
+- scored phase complete ⇒ `observed` (0 is an observed zero);
+- one or two answered, series closed in phase 1 ⇒ `incomplete` with the value and its denominator (`censored`, with `closure_reason` `voluntary_stop` or `closed_at_review`);
+- never opened ⇒ `absentFeature` (`not_presented`; `interrupted` after a reload);
+- opened, nothing answered: stopped ⇒ null `voluntary_stop`; closed at the review ⇒ null `no_eligible_event` (censored, `closure_reason: closed_at_review`); still open ⇒ null `pending`;
+- phase 1 still open with one or two answers (non-terminal export) ⇒ null `pending`, the answers so far in the components;
+- held back after a reload ⇒ null `interrupted` (the existing convention, also when the earlier load had completed the scored phase); a technical failure in phase 1 ⇒ null `technical_failure`, the answers recorded before it kept in the components and never valued;
+- precedence when several apply: `interrupted` > `technical_failure` > `pending` > the closed-series outcomes.
+
+Extraction rules: current-load events only; pure and deterministic; the raw log is byte-identical before and after. The value is RECOUNTED from the `first_response` events — the extractor re-validates each recorded layout `board` with the pure validator against the configuration of that event's network, form and content version, and compares the result with the event's own `correct` flag and with the closure snapshot. `technical_failure` — never an observed value — for contradictory, malformed or unverifiable SCORED evidence only: an unknown or mismatched `entry_state_version`; a `form_id` that changes inside the series; an unknown `network_id` or a `content_version` that does not match the network; two `first_response` events for one network; a `first_response` without that network's preceding `network_presented`; a network presented out of the assigned order or twice; a layout response whose `correct` flag disagrees with the re-validation of its board; a Cannot solve response marked correct; a layout response without a board; a non-boolean `correct`; a `first_response` outside phase `measurement` or after `first_responses_completed`; three first responses without the `first_responses_completed` snapshot, or that snapshot with fewer than three; a closure snapshot that disagrees with the recount; ANY `results_shown`, `practice_opened` or `practice_test_run` whose position precedes the third first response (correctness feedback or practice before the scored phase was complete voids the scored evidence); and — because positions are compared — a family event of the current load without a usable `sequence` (a safe integer of at least 1) or two that share one (the §5.259 convention; a missing number is never read as zero; gaps are normal). Legitimate missingness is never a technical failure: a never-opened bench, an opened bench without answers, a partly answered series, a stop, a review closure, absent help, absent results, absent practice. A defect confined to practice records after a verified, complete scored phase (for example a fourth run on a network) is flagged in the components (`practice_record_consistent: false`) and never changes the row.
+
+Components (companions kept beside the value, never inside it; [R-6]): `form_id`, administration version, assigned and realised order, `observations_share_one_episode: true`, `first_response_phase_complete`, and per network — id, index, content version, the first response (kind, sealed or not, the three constraint facts, constraints satisfied, help consults before it, active time) and its practice (opened, runs used, sealed in practice); help consults by phase; the practice closure; `practice_record_consistent`. No total that mixes first responses with practice; no total across items.
+
+Keys: for every network and form the key is the pair (configuration, shared validator). Solvability and correctness expectations in the tests are derived independently of the implementation (§12 P1).
+
+**11 Gameplay acceptance criteria**
+
+The ordinary route (Dock → Concourse → Records Workshop, episode 2) reaches the bench without state injection; the bench is usable by keyboard alone and by pointer alone in both phases; every state has a way out (no soft lock; ESC order as in §3.6); both confirmations state plainly what is recorded and that it cannot be changed; CANNOT SOLVE cannot be triggered by a carried or doubled press; the header always shows which network is open and, in practice, that it is practice; the board of a new network is visibly a different layout of ports and fractured mounts; in phase 1 nothing on screen or in sound differs with the correctness of an answer; the results view makes plain that the recorded answers are fixed and that practice is optional and without consequence; text is legible and unclipped at 800×600; no forbidden word (§3.7). The workshop's other stations, the Work Order guidance, M02 / M03 / M04 / M06 / M07 / M12 behaviour and the M04 first-departure rule are unchanged. M18 is unchanged and independent: the laboratory's diagnostic board is identical whatever the M13 history, and the only M13 read remains the context stamp `prior_m13_window_status`. The legacy IP Lab still opens the bench.
+
+**12 Required tests (Windows, from the worktree; `--workers=1 --retries=0`; confirm port 5197 is free before each browser invocation)**
+
+Static (S): `npm.cmd run lint:tsc` · `npm.cmd run build` · `npx.cmd eslint --rule "prettier/prettier: [error, {endOfLine: auto}]" <every changed .ts>` · `npx.cmd prettier --check --end-of-line auto <every changed .ts and .md>` · `git diff --check` · `node scripts/claude/verify-unit.mjs --allowlist-file "C:\Users\Juls\.codex\visualizations\2026\10\07\u16-m13\U16-ALLOWLIST.txt" --base 283cd89e4b580756931658ce33320069ea67bd6f` · `node --test scripts/claude/pretool-guard.test.mjs`.
+
+P1 (pure, the unit's own): `npx.cmd playwright test e2e/m13_networks.spec.ts --workers=1 --retries=0`. Written from the first source edit onward, not after the fact. It must contain:
+
+- Keys and solvability, independently derived. A reference checker written inside the spec from the rule text (its own piece-opening table, its own flood of the run, its own rotation of the board; it imports neither `validatePipePlacements`, `pieceOpenings` nor any helper of the forms module for the expected side). For every network × form: (i) hand-authored key layouts — at least one sealed layout and at least three near-misses, each breaking exactly one constraint (run not connected; valve off the run; an open branch) — whose expected verdicts are written by hand; (ii) the implementation's verdict equals the reference checker's on those and on a seeded pseudo-random sample of at least 2,000 layouts; (iii) an independent backtracking search over runs from the feed (tee branches closed by the cap included) finds at least one sealed layout, every layout it emits is accepted by the implementation, and its census (number of distinct sealed layouts up to the identity of same-type pieces; smallest seated-piece count) is identical for forms A and B of a network and is ≥ 4 pieces for every network; (iv) form B's configuration equals the test's own 90° clockwise rotation of form A's; (v) within each form no network equals another under any of the eight symmetries of the square; (vi) `n1` equals the v2 geometry in both forms; (vii) the port relations are opposite / adjacent / same side.
+- The register: `M13` route `v3`, `implemented`, the opportunity, windows and family of §4; the feature row unchanged; schedule and family disjointness intact.
+- No correctness feedback or practice before all three first responses: in every phase-1 state (before an answer, after one, after two; after a sealed layout, an unsealed layout and Cannot solve) the model exposes no structural line, no constraint result, no run counter and no practice or results control; the acknowledgement line and the next control are identical for all three response outcomes; a flow test, a results request and a practice request are refused in phase 1 and write no `results_shown` / `practice_*` event; a stopped series and a review-closed partial series never expose results or practice.
+- The series model, phase 1: fixed order; no network presented before the previous first response; first response written once (a doubled or repeated confirmation, a second RECORD LAYOUT, a Cannot solve after a layout response and a layout after a Cannot solve never create a second one); the fresh-press rule (carried press, auto-repeat, press inside 400 ms refused and recorded); a cancelled confirmation leaves no response; Cannot solve ⇒ incorrect whatever stands on the board; help recorded by phase and without effect on correctness; leave / reopen preserves network, board and answers; STOP; review closure; reload predicate and hold-back; fault closure.
+- The series model, phase 2: results only after the third first response; first responses byte-identical before results, after results, during and after practice and after FINISH; practice is available after Cannot solve, after an unsealed layout and after a sealed layout under the same rule and the same cap of three runs (a fourth run on any network is refused and unrecorded); the practice board starts from the board at the answer; a practice run that seals a network whose first response was Cannot solve or unsealed leaves the numerator unchanged; leave / reopen in practice preserves the runs used; FINISH; the review during practice ends practice only.
+- The extractor, on synthetic logs: 3 / 3, 0 / 3, mixed with Cannot solve; stability of the completed result — identical `observed` row (value, numerator, denominator, `closure_reason: completed`, not censored, never `pending`) with no results opened, results opened, practice open, practice in progress, practice sealed-later, practice finished, practice ended by the review, and a bench fault during practice; 1 and 2 answered (`incomplete`, value and denominator kept; stopped and review variants; phase 1 still open ⇒ `pending`); zero evidence — never opened (`not_presented`), never opened after a reload (`interrupted`), opened and stopped (`voluntary_stop`), opened and closed at the review (`no_eligible_event`), still open (`pending`), held back (`interrupted`), fault in phase 1 (`technical_failure`); reload after a completed scored phase ⇒ `interrupted` in the new load with the earlier load's events unchanged (the existing convention, asserted, not altered); every legitimate-missingness case of §10 asserted NOT to be `technical_failure`; every integrity case of §10 asserted to BE `technical_failure` (duplicate first response, unknown or mismatched version, changing form, unknown network, wrong content version, out-of-order or doubled presentation, response without presentation, `correct` flag contradicting the board, Cannot solve marked correct, missing board, non-boolean `correct`, first response after completion, three responses without the completion snapshot, disagreeing snapshot, results or practice events before the third first response, missing / zero / negative / fractional / string / duplicated `sequence`); a practice-only defect flags the components and leaves the row unchanged; determinism (same log ⇒ identical rows, input not mutated); the row equals what the page's own export would carry (same function).
+- Wording: every participant-facing string of the module free of the forbidden tokens; the two confirmations, the status line, the acknowledgement and the practice notice present; no phase-1 string contains a structural result word (connected, sealed, inline, open branch).
+
+P2 (pure regression, directly affected, unchanged specs unless listed in §4): `npx.cmd playwright test e2e/pilot_coverage.spec.ts e2e/pilot_closure_models.spec.ts e2e/m26_protocol_foundation.spec.ts e2e/final_scientific_gates.spec.ts e2e/signal_incident_models.spec.ts e2e/evidence_ledger.spec.ts --workers=1 --retries=0` (schedule derived from the register; frozen ledger intact; family disjointness; M13 / M18 independence).
+
+B1 (browser evidence run on the real participant route; `U16_OUT` set): `npx.cmd playwright test e2e/m13_networks_route.spec.ts --workers=1 --retries=0`. Every scenario reaches the bench through the ordinary participant route with the existing drivers of `e2e/pilotHelpers.ts` (`bootPilot`, `dockToConcourse`, `concourseToWorkshop`, as `m02_retrieval_route.spec.ts` does for the same room; imported, not edited), injects no M13 state, selects the form only through the documented DEV launch parameter, and asserts the administration version on live events, exactly one family owner, the extractor output equal to the page's export row, and no runtime error. World navigation in every scenario (walking, the station prompt) is done by those drivers with the keyboard; it is navigation, not an M13 response, and the handoff says so.
+
+- R1 (keyboard-only bench input, form A): `n1` a sealed layout, `n2` an unsealed layout, `n3` CANNOT SOLVE — after each answer the rendered lines contain only the neutral acknowledgement and no structural or correctness information, and no results or practice control exists; the three answers recorded ⇒ row 1 / 3 `observed`. SHOW RESULTS ⇒ structural feedback for all three. Practice on `n3` (after CANNOT SOLVE): a test run that seals it; practice on `n2`: one run; ESC out of practice, leave the bench and reopen it — runs used preserved; FINISH. At each of these points the three `first_response` events are byte-identical to their state at completion and the row is the same `observed` 1 / 3 (never `pending`); no `results_shown` or `practice_*` event precedes the third first response.
+- R2 (pointer-only bench input, form B): every act inside the bench overlay is made with the pointer — drag and click manipulation, RECORD LAYOUT and RECORD ANSWER, HELP before `n1`'s answer, NEXT NETWORK, the on-screen close control for leaving, SHOW RESULTS, FINISH; all three layouts sealed (3 / 3); every `first_response` carries `input_mode: pointer`; a double click on RECORD ANSWER yields one `first_response`; the click that opens a confirmation never confirms it; mid-`n2` with pieces seated the bench is left by the on-screen close control, the avatar is walked away and back and the bench reopened — the same network, the same board, no new `network_presented`. That walk and the reopening of the station use the route drivers' keyboard input: the spec marks those steps as keyboard navigation, and the handoff reports them separately from the pointer-only M13 responses. If any in-bench step turns out to have no pointer control, the step and the missing control are reported; it is never silently done by keyboard under a pointer-only label.
+- R3 (partial coverage and route closure): `n1` answered, `n2` opened and left unanswered; on reopening no results and no practice are offered; the route is driven on to the Utility Deck review and the station record is closed ⇒ `series_closed_at_review`; `m13_first_solutions` = value over a denominator of 1, `incomplete`, censored, `closure_reason: closed_at_review`; `n2` and `n3` missing, not incorrect; the bench reopened after the closure shows no results, offers no practice and records no response. If an unrelated, base-reproduced driver failure blocks the way to the review, the browser portion after that point is reported BLOCKED / NOT VERIFIED and the pure closure checks are reported separately, never as a browser pass.
+- R4 (zero eligible evidence and stopping): before the bench is opened the export row is `not_presented`; the bench is opened, pieces are moved, STOP TASK is confirmed without any answer ⇒ null `voluntary_stop`; the bench then opens as a read-only record with no results and no practice.
+- R5 (reload): `n1` answered, then `page.reload()`; the family's events in `prior_page_load_events` are byte-identical to the pre-reload log; the feature is `interrupted`; if the bench is reachable again, opening it shows the hold-back and the new load contains no `series_opened`, `network_presented`, `first_response`, `results_shown` or `practice_*` event. If the driver meets the recorded dock-tutorial replay block (UNIT-LOG "U15", R4), the post-reload browser administration is reported BLOCKED / NOT VERIFIED and the pure reload checks separately.
+
+B2 (browser regression, directly affected, changed specs): `npx.cmd playwright test e2e/ip_pipe_suite.spec.ts --workers=1 --retries=0` · `npx.cmd playwright test e2e/ip_boundaries.spec.ts --workers=1 --retries=0` · `npx.cmd playwright test e2e/ip_lab_flow.spec.ts --workers=1 --retries=0` · `npx.cmd playwright test e2e/pilot_lab.spec.ts --grep "M18 independence on the route" --workers=1 --retries=0` · `npx.cmd playwright test e2e/pilot_episodes_1_2.spec.ts --grep "episode 2" --workers=1 --retries=0`.
+
+Rules of evidence:
+
+- A failure is never called pre-existing because of recorded history or a matching line number. A baseline-failure claim requires the SAME failure reproduced on an untouched export of exactly `283cd89e4b580756931658ce33320069ea67bd6f`: `git archive` of that commit into the session scratchpad, a `node_modules` junction to the primary, `PW_DEV_PORT=5198`, only the affected test (`--grep` its exact title, the base version of the spec), `--workers=1 --retries=0`; compare the failing assertion, its message and the step reached on both trees and keep both outputs. The same assertion, message and step ⇒ pre-existing; anything else ⇒ a U16 regression or unexplained. The export is never deleted recursively (it contains a junction).
+- For every failure state whether it prevents verification of an M13 step: a failure before or at an M13 step leaves that step NOT VERIFIED by that run, even when pre-existing; its evidence must come from another listed run or be reported missing.
+- One repeat may diagnose; a pass only on repetition is a flake and is reported as one. Never rerun until green. A suite that passed is not rerun unless a file it covers changed or a concern about it is open.
+- Formatting: a Prettier or ESLint complaint in a file the unit changed is compared by CONTENT, never by line number — format a scratch copy, diff it against the working file, and separate the differences that fall inside lines this unit added or changed (to be fixed) from those in untouched base text (pre-existing only if the base file at `283cd89` fails the same check; reported, not fixed).
+- Not run, and reported as such: the capture specs (`ip_visual_capture` is known to need the series steps — U24 backlog), `pipe_diagnosis_setback`, `complete_first_shift`, `magnet_salvage_ip` (Pump House legacy route; its files are untouched), and every spec not named above.
+- While writing, Fable may run P1 and single `--grep` scenarios. The final S, P1, P2, B1, B2 matrix is run once by the Sonnet test-reviewer on the final source; after a correction only the affected checks are rerun. A command expected to exceed about nine minutes runs in the background and its completion notification is awaited — no polling, no log-watching loop.
+
+**13 Required screenshots (800×600, written by B1 into `U16_OUT`, inspected, copied to the session scratchpad; none committed)**
+
+01 workshop — the bench prompt on the ordinary route · 02 network 1 untouched (header, ports, fractured mount, phase-1 status line) · 03 network 1 with a piece held by keyboard (focus ring) · 04 the layout-answer confirmation · 05 the neutral acknowledgement after network 1's answer (no structural result; NEXT NETWORK) · 06 network 2 untouched · 07 network 3 untouched · 08 the CANNOT SOLVE confirmation · 09 the acknowledgement after the third answer (SHOW RESULTS) · 10 the results view (structural feedback for the three recorded answers, the practice controls and notice) · 11 practice on the CANNOT SOLVE network after a test run (run counter, "recorded answer is unchanged") · 12 the help sheet in the first-response phase · 13 the STOP TASK confirmation · 14 the bench reopened mid-series (same network, same board) · 15 form B, network 1, with a pointer drag in progress · 16 the stopped bench record (no results, no practice) · 17 the bench after the station record was closed on a partial series (no results, no practice) · 18 the reload hold-back record. A screenshot whose scenario was blocked is reported missing, never substituted.
+
+**14 Stop conditions**
+
+Stop the affected part, finish all independent authorised work, then report — never guess past: a genuine scientific conflict that would change the procedure, eligibility, exposure, key, denominator or formula of §3 / §10, or an instruction that contradicts the approved rows of §2 or ruling D-U16-1; a state in which correctness information would reach the participant before the third first response and cannot be removed inside the allowlist; a needed file outside the allowlist; a guard rejection of a necessary action; a required reviewer model that is unavailable (never substitute Fable); an unexplained deterministic failure in the unit's own tests; an M18, M02–M12 or workshop behaviour that cannot be preserved; a network that cannot satisfy §3.2 with the standard piece set; a material finding still open after the second review / fix round; entry state that does not match §6. Missing git identity, a dirty or foreign worktree, or a wrong base is a stop before the first edit. In every stop case no completion is claimed, nothing is reset, stashed or discarded, and the handoff is resumable (what is done, what is verified, what is open, exactly where to continue). Join every reviewer, test and shell; stop only dev servers this unit started.
+
+**15 Model selection and review**
+
+- Fable 5.1 (`claude-fable-5-1`): the only writer — implementation, tests, docs, fixes, integration.
+- Sonnet 5.5 via `test-reviewer`: the named tests, the static checks and log analysis; edits nothing.
+- Opus 5.5 via `scientific-reviewer` (measurement, keys, the two phases and the absence of correctness information in phase 1, events, extractor, register and addendum text, authority boundaries), `gameplay-reviewer` (flow, commitment controls, keyboard and pointer use, recovery, wording, workshop and M18 preservation) and `visual-reviewer` (the screenshots): independent, read-only, run in parallel on the final source after the Sonnet matrix; each cites file:line, a test or a screenshot.
+- `cheap-explorer` (Haiku 4.5): narrowly bounded read-only lookups only.
+- If a named agent is not discoverable, a general-purpose agent with the matching model override is used after it reads the role file, and this is reported. The actual model of every reviewer is recorded. No reviewer runs on Fable; an unavailable reviewer model is a stop condition, not a reason to substitute.
+- At most two review / fix rounds. Fixes are bounded: inside the allowlist, addressing cited, material findings. After a fix the affected checks are rerun (Sonnet) and the reviewer whose finding it answered confirms the material fix against the final source; no substantive edit after the last review is left unreviewed. Reviewer findings are recommendations: a reviewer never approves a mapping, an event name, a formula or a default, never reopens ruling D-U16-1, and a finding that needs an owner decision is recorded in register §5, not resolved.
+
+**16 Commit expectation and handoff**
+
+Exactly one new local commit on `codex/u16-m13`, only after the verification of §12 and the review of §15 are complete, files staged one by one by explicit name, no amend, no hook bypass:
+
+`feat(m13): add three keyed networks with immutable first responses`
+
+If the gates are not met (correction rounds exhausted, a stop condition, a blocked essential check), there is NO commit: the working tree is left as it is and the handoff says so. Then the bounded-unit 12-field handoff, adding: the exact changed files against the allowlist, the commit hash (or "no commit" with the reason), every command with its true result, screenshot paths, the actual model and status of every reviewer, resolved and unresolved findings, ruling D-U16-1 as implemented with its date, the three network configurations with their census, every default of §17 as implemented, the keyboard-navigation steps of the pointer scenario, process deviations, every failure with its base comparison (or "not compared") and whether it prevents verification of M13, every blocked or unrun check named, and the status of every background task (all joined). No "all checks passed" while any exception remains. Stop before U17; no push, merge, PR, tag, deployment or deletion.
+
+**17 Owner ruling and implementer defaults to record in register §5.260 onward**
+
+Owner ruling (record first, as a ruling with its date; not a default; not to be reopened): **D-U16-1, approved 7 October 2026** — the six items of §2. Its documented limitations travel with it: fixed order confounds position and network; `n1` carries first contact with the bench (no practice network); the orientation forms are a rotation of one another, neither equated nor independent; the three first responses share one episode; because no feedback precedes the third answer, practice and results cannot inform any first response, and practice data describe voluntary later behaviour only.
+
+Implementer defaults (owner-visible, reversible, none changes the approved formula or the ruling):
+
+- D-1 Concrete configurations: `n1` keeps the v2 geometry; `n2` adjacent-side ports; `n3` same-side ports; blocked mounts as authored; smallest sealed run ≥ 4 pieces; the configurations and their solver census are listed. Difficulty equivalence between networks is not claimed.
+- D-2 Commitment: the confirmation before each first response and the 400 ms fresh-press rule follow the M02 precedent (§5.210); an empty or partial board may be committed after confirmation; the phase-1 commit control is named RECORD LAYOUT (a flow test exists only in practice).
+- D-3 Practice mechanics inside the ruling: a practice board starts from the board as it stood at the answer; networks may be practised in any order; a run counter per network; FINISH ends practice; a used run is never restored; a sealed first response has the same practice access as any other.
+- D-4 Results presentation: one results view listing the three recorded answers with the structural lines; Cannot solve shown as such without structural lines; no tally.
+- D-5 Scored-phase closure: the scored phase is closed by `first_responses_completed` at the third first response; the legacy validity-register opportunity is completed at the same moment; practice has its own closure record.
+- D-6 Stopping: STOP TASK exists in phase 1 only; in phase 2 the participant ends practice with FINISH or by leaving.
+- D-7 Dispositions for zero and partial evidence as in §10, including `voluntary_stop` / `no_eligible_event` for an opened, unanswered series (the strain noted in §5.142 applies), a phase-1 technical failure voiding the row with the answers kept in the components, and a practice-only record defect flagged in the components without effect on the row.
+- D-8 Names: the new candidate family, opportunity, window ids, suffixes and `m13-networks-v1`; the v2 family retired from the route. All provisional; alternative names are the owner's.
+- D-9 Event order: the §5.259 convention applied to the M13 extractor, including the rule that results or practice events before the third first response void the scored evidence.
+- D-10 Reload: the existing convention applied unchanged to both phases (§3.6); a reload after a completed scored phase therefore leaves the new load's row `interrupted` with the earlier record in `prior_page_load_events` — a stated limitation of the existing convention, not a new policy.
+- Not updated in this unit (U24 backlog): capture specs, the `interactionRegistry` window label, the legacy IP Lab's presentation of the bench.
+
+### U16 results (7 October 2026)
+
+- **What was built.** The Conduit Lattice Bench runs the three-network
+  series `m13-networks-v1` in two phases under research-owner ruling
+  D-U16-1 (approved 7 October 2026, an owner ruling — register §5.260):
+  first responses to `n1 → n2 → n3` (a confirmed layout or a confirmed
+  CANNOT SOLVE, each written once, answered only by one identical
+  neutral acknowledgement, no flow test and no correctness information),
+  then structural results and optional practice (at most three test runs
+  per network, the same after every kind of first response).
+  `m13_first_solutions` is derived read-only from the raw
+  `first_response` events. As-built record: register §4 "Unit 16"; the
+  ruling, the defaults D-1 … D-10 and the reviews' recorded points:
+  register §5.260–§5.273; events and extraction rules: addendum §2
+  "U16", §3. Every event name and the feature stay PROVISIONAL
+  candidates; nothing canonical was created; not scientifically
+  validated.
+- **Specified before coded.** The administration and the three
+  configurations with their census were written into register §4
+  "Unit 16" (1)–(2) before the series model and the interface; the pure
+  spec `e2e/m13_networks.spec.ts` was written with the model and the
+  extractor and first run before the store and the overlay existed.
+- **The three networks (default D-1; form B = 90° clockwise rotation
+  of form A).** `n1` `m13-n1-opposite-v1`: feed west of A2, intake east
+  of C2, B2 fractured (the v2 geometry). `n2` `m13-n2-adjacent-v1`:
+  feed west of A1, intake south of C3, B1 fractured. `n3`
+  `m13-n3-same-side-v1`: feed west of A1, intake west of A3, A2
+  fractured. Census (independent search in the spec, identical for
+  forms A and B): 18 / 32 / 39 sealed layouts, smallest sealed run five
+  pieces in each. The census differs between networks; no difficulty
+  statement is made.
+- **Changed files (22 of the 24 allowlisted paths; verify-unit PASS).**
+  New: `src/informationProcessing/m13NetworkForms.ts`,
+  `src/informationProcessing/m13NetworkSeries.ts`,
+  `src/measurement/features/m13.ts`, `e2e/m13_networks.spec.ts`,
+  `e2e/m13_networks_route.spec.ts`. Modified:
+  `src/informationProcessing/m13PipeNetwork.ts`,
+  `src/informationProcessing/telemetry.ts`,
+  `src/informationProcessing/ui/PipeBoardScene.ts`,
+  `src/measurement/features/index.ts`, `src/measurement/registerV3.ts`,
+  `src/pilot/windows/reviewClosure.ts`, `e2e/ip_pipe_suite.spec.ts`,
+  `e2e/ipHelpers.ts`, `e2e/ip_lab_flow.spec.ts`,
+  `e2e/ip_boundaries.spec.ts`, `e2e/pilot_lab.spec.ts`,
+  `e2e/pilot_episodes_1_2.spec.ts`, `e2e/pilot_coverage.spec.ts` and
+  the four documents of `docs/verification/station-080-m26/`.
+  Allowlisted and NOT touched: `src/informationProcessing/pipeBoardEngine.ts`
+  (every network has one fractured mount, so the engine needed no
+  change) and `src/scenes/RecordsWorkshopScene.ts` (the preferred
+  outcome of the contract).
+- **Verification — full matrix, run once by the test-reviewer (Sonnet
+  5.5) on the source before the reviews.** S: `npm.cmd run lint:tsc`
+  exit 0; `npm.cmd run build` exit 0 (chunk-size warning only); ESLint
+  on the 18 changed `.ts` files exit 0; `prettier --check` on the 22
+  changed files exit 1 — two documents flagged (below);
+  `git diff --check` clean; `verify-unit.mjs` PASS; the guard's own
+  tests (`node --test scripts/claude/pretool-guard.test.mjs`) 58 / 58.
+  P1 `e2e/m13_networks.spec.ts` 42 passed. P2 (six specs) 78 passed,
+  2 failed (below). B1 `e2e/m13_networks_route.spec.ts` 6 passed in one
+  invocation (10.0 min), none skipped, no `BLOCKED / NOT VERIFIED`, 0
+  driver nudges, 18 frames. B2: `ip_pipe_suite` 19 passed;
+  `ip_boundaries` 2 passed, 1 failed (below); `ip_lab_flow` 4 passed;
+  `pilot_lab --grep "M18 independence on the route"` 1 passed;
+  `pilot_episodes_1_2 --grep "episode 2"` 1 passed.
+- **Verification — affected checks after correction round 1, run by
+  the test-reviewer (Sonnet 5.5).** `lint:tsc` 0; `build` 0; ESLint (18
+  files) 0; `prettier --check` (22 files) — the same two documents
+  flagged, no other; `git diff --check` clean; `verify-unit.mjs` PASS;
+  P1 42 passed; P2 78 passed, the same 2 failed (output identical to
+  the first matrix with timings stripped); B1 6 passed (9.7 min), none
+  skipped, none blocked, 0 nudges, the 18 frames rewritten;
+  `ip_pipe_suite` 19 passed; `ip_lab_flow` 4 passed; the `pilot_lab`
+  and `pilot_episodes_1_2` tests passed. Not rerun because nothing they
+  cover changed: the guard's own tests and `ip_boundaries`.
+- **Failures and their base comparison (untouched `git archive` of
+  `283cd89e4b580756931658ce33320069ea67bd6f` in the session scratchpad,
+  `node_modules` junction to the primary, port 5198, the affected test
+  only; both outputs kept).** (1) `final_scientific_gates.spec.ts:139`
+  "M08 and M11 are questionnaire-primary: no window, no active
+  seconds" — `expect(scheduled.opportunityIds).toEqual([])` at line 146
+  receives `["proto_m08_effort_choice"]`; the same assertion and value
+  on the base. (2) `final_scientific_gates.spec.ts:356` "U8-12
+  (recorded, not resolved): exterior comprehension is still asserted,
+  never checked" — `toHaveLength(10)` at line 368 receives 8; the same
+  on the base. (3) `ip_boundaries.spec.ts:87` "families are pairwise
+  disjoint; missing stays missing; failure never gates the next
+  opportunity" — the family list at line 101 lacks `proto_m17_syntax`;
+  the same assertion at the same line with the same single missing
+  entry on the base (the only difference in the printed message is the
+  M13 family name, `proto_m13_lattice` on the base and
+  `proto_m13_networks` here — this unit's own change). All three are
+  pre-existing and unrelated to M13; none was fixed (they are not this
+  unit's assertions). Effect on M13 verification: (1) and (2) touch no
+  M13 step. (3) stops before the later lines of that test, which
+  include the never-opened M13 opportunity record
+  (`proto_m13_network_series` not entered, pending) — NOT VERIFIED by
+  that run; the same fact is evidenced by R4 (`not_presented` before
+  the bench is opened) and by the `pilot_lab` test (history 1).
+  Formatting: `IMPLEMENTATION-MATRIX.md` and `UNIT-LOG.md` fail
+  `prettier --check` here and on the base. Compared by content:
+  UNIT-LOG's flagged lines are all untouched base text (lines of the
+  U14-D3 record); the matrix's complaint is its table, which Prettier
+  would re-pad throughout because of one overlong base cell (M04) — the
+  M13 row this unit changed keeps the table's existing column widths.
+  Neither was reformatted. The register and the addendum pass.
+- **Screenshots (800 × 600, written by B1 into
+  `.playwright-mcp/u16-evidence`, copied to the session scratchpad
+  `u16-evidence/`; none committed).** `01-workshop-bench-prompt`,
+  `02-network-1-untouched`, `03-network-1-piece-held-keyboard`,
+  `04-layout-answer-confirmation`, `05-acknowledgement-network-1`,
+  `06-network-2-untouched`, `07-network-3-untouched`,
+  `08-cannot-solve-confirmation`, `09-acknowledgement-third-answer`,
+  `10-results-view`, `11-practice-after-cannot-solve`,
+  `12-help-first-response-phase`, `13-stop-task-confirmation`,
+  `14-bench-reopened-mid-series`, `15-form-b-network-1-pointer-drag`,
+  `16-stopped-bench-record`, `17-bench-after-record-closure`,
+  `18-reload-hold-back-record`. All eighteen exist; none was blocked.
+- **Input in the browser scenarios.** In every scenario the walk from
+  the Dock to the bench, the Work Order Board, the station prompt
+  (SPACE at the bench) and — in R3 — the route to the Utility Deck and
+  back are done by the route drivers with the KEYBOARD: navigation, not
+  an M13 response. Inside the bench, R1, R3, R4 and R5 use the keyboard
+  only; R2 uses the pointer only — drag and right-click manipulation,
+  HELP and its closing click, RECORD LAYOUT, RECORD ANSWER, NEXT
+  NETWORK, the close control, SHOW RESULTS, FINISH. The keyboard steps
+  of R2 are exactly: the route to the workshop, opening the station,
+  and — after the bench was left mid network 2 by its close control —
+  walking away, walking back and opening the station again. No in-bench
+  step of R2 lacked a pointer control.
+- **Reviews (independent, read-only; none run on Fable).** Of the
+  project agents only `cheap-explorer` is discoverable in this session,
+  so each reviewer ran as a general-purpose agent with the matching
+  model after reading its role file (contract §15 fallback).
+  test-reviewer: Sonnet 5.5 (`claude-sonnet-5-5`), both passes.
+  scientific-reviewer: Opus 5.5 (`claude-opus-5-5`) — no material
+  defect; seven minor findings. gameplay-reviewer: Opus 5.5 — no
+  material defect; six minor findings and a list of behaviours without
+  browser evidence. visual-reviewer: Opus 5.5 — no material defect, all
+  eighteen frames show what the contract requires; nine minor points.
+- **Correction round 1 (one of at most two; bounded, inside the
+  allowlist, each answering a cited finding).** Extractor
+  (`features/m13.ts`): a reload hold-back is read only from the record
+  that carries both `prior_exposure: true` and a detail beginning
+  `reload`; a scored event's `network_index` and `trial_id` must match
+  its network; the added rule that treated a first-response phase
+  without closure record as cut short under a terminal export was
+  REMOVED — such a phase is `pending`, the contract's literal rule (the
+  question is recorded for the owner, register §5.273 (a)). Overlay
+  (`PipeBoardScene.ts`): the help sheet and the STOP confirmation no
+  longer open during a pointer drag and first return a held piece; a
+  fault of the fault record no longer escapes the store wrappers.
+  Wording (`m13NetworkSeries.ts`): the hint reads "N CANNOT SOLVE" and
+  "T RECORD LAYOUT"; the help line reads "ESC first returns a held
+  piece to where it was, then leaves the bench and keeps your work."
+  Tests: pure cases for the hold-back marker, a fault before the bench
+  opens, an open phase under a terminal export and the index / trial-id
+  check; R1 now sends an ENTER inside the settle window and a held,
+  repeating ENTER on the route and asserts that both are refused and
+  recorded and no answer is written. Documents: register §4 "Unit 16"
+  and §5.267, §5.271, §5.273; addendum §2 "U16".
+- **Confirmation of the corrections against the final source.**
+  scientific-reviewer (Opus 5.5): all seven points addressed or
+  defensibly left; no material scientific or data-integrity defect;
+  three documentation notes (this results list, the register's part
+  (6), one thin cross-reference) — written after its pass, documents
+  only. gameplay-reviewer (Opus 5.5): the points addressed or
+  defensibly left; no material gameplay defect, soft lock or contract
+  violation; four minor notes (two pathological double-fault paths, two
+  gaps in the register's list) — recorded in register §5.273 (e), (h),
+  (i), (j); no source edit followed.
+  visual-reviewer (Opus 5.5), on the regenerated frames: the reworded
+  help line and hint render complete and unambiguous, inside their
+  panels; no structural word, forbidden token or correctness-dependent
+  element in the first-response frames; no material visual defect
+  (noted again, minor and carried over from v2: the console reads
+  "Holding: nothing" during a pointer drag).
+  No second correction round was needed. After the last review only
+  documents were edited (this section and the register's part (6) and
+  §5.273); the document checks were rerun afterwards by the implementer
+  (`prettier --check` on the four documents, `git diff --check`,
+  `verify-unit.mjs`) — results in the handoff.
+- **Open, for the research owner (none decided here).** Register
+  §5.273 (a) what a terminal export should report for a first-response
+  phase without any closure record; (b) whether the rule line should
+  say that pieces may stay unused; (c) practice acts at the bench as
+  M04's first-departure signal, against the notice "nothing else on the
+  shift"; §5.270 whether a completed earlier page load should be
+  recoverable after a reload; §5.261 the choice of the three
+  configurations; §5.268 the names.
+- **Process deviations (reported, not hidden).** (1) Under Git Bash
+  the `npx.cmd` shim fails when an argument contains spaces, `|`, `(`
+  or `[`; ESLint with the `--rule` argument and every `--grep` run were
+  therefore started through the tools' own entry points
+  (`node node_modules/eslint/bin/eslint.js`,
+  `node node_modules/@playwright/test/cli.js`) — the same tools, the
+  same arguments. (2) The `PreToolUse` guard rejected one shell command
+  that wrote a scratch script through a heredoc (it read a `>` inside
+  the script text as a write target); the script was written to the
+  session scratchpad with the Write tool instead — nothing was worked
+  around and the allowlist was never widened. (3) Several edits of
+  allowlisted files were made by commands rather than by the Edit tool:
+  Prettier and ESLint autofix on the unit's own files, a line-ending
+  normalisation, the padded table rows of the three documents, the
+  assembled sections of `ip_pipe_suite.spec.ts`, and the appended
+  sections of this log. All targets are allowlisted;
+  `verify-unit.mjs` confirms the change set. (4) While writing, the
+  implementer ran P1 repeatedly and single browser scenarios once each
+  (the bench tests of `ip_pipe_suite`, R1–R5, the entry-state proof,
+  `ip_boundaries`, `ip_lab_flow`, the `pilot_lab` and
+  `pilot_episodes_1_2` tests) to find defects before the matrix; the
+  results reported above are the test-reviewer's. (5) The base
+  comparison of `ip_boundaries` was first run by the implementer and
+  then repeated by the test-reviewer with the same result. (6) The
+  first hand-back of the test-reviewer was an empty interim message
+  while its browser run was still going; its complete report followed
+  and is the one used. (7) The untouched base export and its
+  `node_modules` junction remain in the session scratchpad; nothing was
+  deleted.
+- **Background tasks.** Every test run, shell and reviewer started in
+  this unit has completed; no dev server started by this unit is
+  running (ports 5197 and 5198 free).
+- **Conclusion.** The contract's verification was run and reported
+  with its exceptions (three pre-existing failures reproduced on the
+  base, two documents that also fail Prettier on the base); the three
+  independent reviews found no material defect and confirmed the
+  corrections. One local commit
+  `feat(m13): add three keyed networks with immutable first responses`
+  on top of `283cd89` (not amended; SHA in the handoff report), the 22
+  files staged by name. Nothing was pushed, merged, tagged, deployed,
+  deleted or removed; U17 is not started.

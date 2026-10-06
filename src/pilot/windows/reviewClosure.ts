@@ -8,6 +8,7 @@
  * low values. The generic `PILOT_SCHEDULE` closure that follows this call
  * (`closePilotCoverageAtFinalCore`) never overwrites a terminal record.
  */
+import { closeM13AtReview } from '../../informationProcessing/m13PipeNetwork';
 import { closeExteriorWindowsAtReview } from './exteriorWindows';
 import { closeM01AtReview } from './m01PlanBoard';
 import { closeM02CAtReview } from './m02CaseWorkspace';
@@ -80,6 +81,11 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
   // open packet is censored (no release, no observation); never opened →
   // absent.
   closeM12AtReview(nowMs);
+  // Station 080 M13 (Unit 16): a series still in its first-response phase
+  // closes with the answers as they stand (unanswered networks stay
+  // missing); a completed scored phase is not reclosed — only an open
+  // practice ends; never opened → left to the generic coverage closure.
+  closeM13AtReview(nowMs);
   closeSurfaceWindow(
     m14Window,
     nowMs,

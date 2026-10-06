@@ -1,27 +1,29 @@
 /**
- * Conduit Lattice Bench overlay (M13 — Information Processing foundation).
+ * Conduit Lattice Bench overlay (M13 — the three-network series, Station
+ * 080 Unit 16, administration `m13-networks-v1`).
  *
  * A genuine manipulable pipe-network board: 3×3 mounts, the complete
- * standardised piece set on a bench, feed and intake ports, a fractured
- * centre mount. Mouse: drag (or click to pick up) a piece, drop/click a
- * mount to seat it, right-click rotates, drop on the bench (or DEL)
- * returns. Keyboard: arrows move a focus ring across mounts and bench,
- * SPACE/ENTER pick/place, R rotates, DEL returns, T tests the flow.
- * Both paths call exactly `m13LatticeAct` with the same semantic actions.
+ * standardised piece set on a bench, feed and intake ports, fractured
+ * mounts. Mouse: drag (or click to pick up) a piece, drop/click a mount to
+ * seat it, right-click rotates, drop on the bench (or DEL) returns.
+ * Keyboard: arrows move a focus ring across mounts and bench, SPACE/ENTER
+ * pick/place, R rotates, DEL returns, U undoes, C clears. Both paths call
+ * exactly `m13LatticeAct` with the same semantic actions.
  *
- * Usability pass (evidence-led pilot v2, Unit 2; sheet 09 M13 "fix
- * usability: snap/rotate feedback, undo/reset, no sloppy hit targets"):
- * every seat/rotate flashes the mount and writes a one-line description
- * to the console; UNDO (U) reverts the last committed change and CLEAR
- * (C) returns every seated piece; both ride `m13LatticeAct` and log their
- * own raw acts. The connectivity validator is untouched.
- *
- * Submission is explicit (TEST FLOW); the board never auto-completes.
- * Invalid runs get neutral structural feedback and can be revised; the
- * window closes on a valid run, on the bounded test-run count, or on an
- * explicit confirmed STOP. Modal pause-and-launch (inventory precedent);
- * ESC cancels a held piece first, then leaves (window stays open); I
- * leaves.
+ * The series (research-owner ruling D-U16-1) is presented in two phases,
+ * all of it read from the pure model's view (`m13LatticeView`):
+ * - first responses: networks 1 → 2 → 3, each answered once — RECORD
+ *   LAYOUT (T) or CANNOT SOLVE (N), each behind a neutral confirmation
+ *   that only a fresh press confirms — and acknowledged by one identical
+ *   neutral line with NEXT NETWORK / SHOW RESULTS. There is no flow test
+ *   here and nothing on screen or in sound depends on correctness;
+ * - results and optional practice, only after the third answer: the three
+ *   recorded answers with their structural lines, a practice board per
+ *   network with TEST FLOW (at most three runs each), FINISH.
+ * A stopped, review-closed, held-back or failed series opens as a
+ * read-only record. Modal pause-and-launch (inventory precedent); ESC
+ * cancels a held piece first, then a dialog, then leaves (the bench keeps
+ * its state); I leaves.
  */
 
 import Phaser from 'phaser';
@@ -43,15 +45,28 @@ import type {
 } from '../../measurement/m13PipePuzzle';
 import { M13_PIECES, M13_SLOT_IDS } from '../../measurement/m13PipePuzzle';
 import { fitOverlayScene } from '../../world/viewport';
-import type { LatticeView, PipeAction } from '../m13PipeNetwork';
+import type { M13NetworkId } from '../m13NetworkForms';
+import {
+  M13N_PIECE_SHORT,
+  M13N_SETTLE_MS,
+  M13N_TEXT,
+} from '../m13NetworkSeries';
+import type { M13SeriesView, PipeAction } from '../m13PipeNetwork';
 import {
   m13LatticeAct,
+  m13LatticeBackToResults,
+  m13LatticeCancelCommit,
+  m13LatticeConfirmCommit,
   m13LatticeFail,
+  m13LatticeFinish,
   m13LatticeHelp,
   m13LatticeLeave,
+  m13LatticeNext,
   m13LatticeOpen,
+  m13LatticeOpenPractice,
+  m13LatticePracticeTest,
+  m13LatticeRequestCommit,
   m13LatticeStop,
-  m13LatticeSubmit,
   m13LatticeView,
 } from '../m13PipeNetwork';
 import type { InputMode } from '../model';
@@ -76,7 +91,21 @@ interface ProbeRect {
 export interface PipeProbe {
   open: boolean;
   form: string | null;
+  /** True when no board can be edited (answered, read-only or a record). */
   closed: boolean;
+  /** The series as the bench shows it. */
+  series: {
+    status: string;
+    view: string;
+    phase: string;
+    header: string;
+    network_id: string | null;
+    network_index: number | null;
+    editable: boolean;
+    answered: { network_id: string; answered: boolean }[];
+    practice_runs: { network_id: string; runs_used: number }[];
+    practice_closed: string | null;
+  } | null;
   cells: (ProbeRect & {
     slot: string;
     piece_id: string | null;
@@ -91,21 +120,25 @@ export interface PipeProbe {
   })[];
   held: { piece_id: string; rotation: number; source: string } | null;
   focus: { kind: 'cell' | 'bench'; id: string } | null;
+  /** The controls currently on screen. */
   buttons: (ProbeRect & { id: string; label: string; enabled: boolean })[];
+  /** Console lines of the current view. */
   feedback: string[];
+  /** Every line of text currently rendered on the bench. */
+  lines: string[];
   /** One-line neutral description of the last successful board act. */
   last_action: string | null;
   undo_available: boolean;
   seated_count: number;
   /** Mount currently showing the seat/rotate flash (null when none). */
   snap_slot: string | null;
-  submissions_used: number;
-  max_submissions: number;
   dragging: boolean;
   drop_target: string | null;
   drop_valid: boolean;
   help_open: boolean;
   confirm_open: boolean;
+  /** Which confirmation is open. */
+  dialog: 'stop' | 'layout' | 'cannot_solve' | null;
 }
 
 declare global {
@@ -136,14 +169,6 @@ const PIECE_TEXTURE: Record<M13PieceType, string> = {
   cap: 'proc-pipe-cap',
 };
 
-const PIECE_SHORT: Record<M13PieceType, string> = {
-  straight: 'straight',
-  elbow: 'elbow',
-  tee: 'tee',
-  valve: 'valve',
-  cap: 'cap',
-};
-
 const L = {
   titleY: 56,
   instrY: 72,
@@ -157,9 +182,14 @@ const L = {
   consoleX: 556,
   consoleW: 188,
   consoleY: 134,
+  consoleButtonY: 352,
   buttonsY: 506,
   helpLineY: 544,
   pieceScale: 1.5,
+  resultsX: 64,
+  resultsY: 104,
+  resultsStep: 116,
+  practiseX: 436,
 } as const;
 
 const DIRECTION_DELTA = [
@@ -168,6 +198,16 @@ const DIRECTION_DELTA = [
   { dx: 0, dy: 1 },
   { dx: -1, dy: 0 },
 ] as const;
+
+/** Flow arrows: the feed points into the board, the intake out of it. */
+const ARROW_IN = ['▼', '◀', '▲', '▶'] as const;
+const ARROW_OUT = ['▲', '▶', '▼', '◀'] as const;
+
+const NETWORK_KEYS: readonly [string, M13NetworkId][] = [
+  ['ONE', 'n1'],
+  ['TWO', 'n2'],
+  ['THREE', 'n3'],
+];
 
 function slotXY(slot: M13SlotId): { col: number; row: number } {
   return { col: slot.charCodeAt(0) - 65, row: Number(slot[1]) - 1 };
@@ -178,6 +218,11 @@ export class PipeBoardScene extends Phaser.Scene {
 
   private dynamic: Phaser.GameObjects.GameObject[] = [];
   private buttons: UiButton[] = [];
+  /** Ids of the controls on screen in the current view. */
+  private shownButtons = new Set<string>();
+  /** Static board / bench / console surfaces (hidden on text-only views). */
+  private surfaces: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text)[] =
+    [];
   private cellRects = new Map<M13SlotId, Phaser.GameObjects.Rectangle>();
   private cellImages = new Map<M13SlotId, Phaser.GameObjects.Image>();
   private benchRect: Phaser.GameObjects.Rectangle | null = null;
@@ -198,9 +243,21 @@ export class PipeBoardScene extends Phaser.Scene {
   private justDragged = false;
   private helpOpen = false;
   private helpObjects: Phaser.GameObjects.GameObject[] = [];
+  private helpLines: string[] = [];
+  /** STOP TASK confirmation. */
   private confirmOpen = false;
   private confirmObjects: Phaser.GameObjects.GameObject[] = [];
-  private lastView: LatticeView | null = null;
+  /** RECORD LAYOUT / CANNOT SOLVE confirmation (driven by the model). */
+  private commitObjects: Phaser.GameObjects.GameObject[] = [];
+  private commitShown: 'layout' | 'cannot_solve' | null = null;
+  private lastView: M13SeriesView | null = null;
+  /** What the board currently shows (focus resets when it changes). */
+  private boardKey = '';
+  /** When the last pointer press went down (fresh-press rule). */
+  private pointerDownAt = 0;
+  /** When the current acknowledgement appeared. */
+  private acknowledgedAt = 0;
+  private rendered: string[] = [];
   /** Seat/rotate flash: the mount that just changed (static highlight). */
   private snapSlot: M13SlotId | null = null;
   private snapTimer: Phaser.Time.TimerEvent | null = null;
@@ -216,6 +273,8 @@ export class PipeBoardScene extends Phaser.Scene {
   create() {
     this.dynamic = [];
     this.buttons = [];
+    this.shownButtons = new Set();
+    this.surfaces = [];
     this.cellRects = new Map();
     this.cellImages = new Map();
     this.benchRect = null;
@@ -232,9 +291,18 @@ export class PipeBoardScene extends Phaser.Scene {
     this.justDragged = false;
     this.helpOpen = false;
     this.helpObjects = [];
+    this.helpLines = [];
     this.confirmOpen = false;
     this.confirmObjects = [];
+    this.commitObjects = [];
+    this.commitShown = null;
     this.lastView = null;
+    this.boardKey = '';
+    this.pointerDownAt = 0;
+    this.acknowledgedAt = 0;
+    this.rendered = [];
+    this.snapSlot = null;
+    this.snapTimer = null;
 
     // Render above the host no matter where this class sorts in the
     // alphabetical scene registry (src/index.ts spreads Object.values of
@@ -279,24 +347,21 @@ export class PipeBoardScene extends Phaser.Scene {
       .setDepth(IP_DEPTH.panel);
 
     this.add
-      .text(
-        IP_PANEL.x + 16,
-        L.titleY,
-        'CONDUIT LATTICE BENCH — RECONSTRUCTION',
-        {
-          color: IP_TEXT.text,
-          font: IP_FONT.title,
-        },
-      )
+      .text(IP_PANEL.x + 16, L.titleY, M13N_TEXT.title, {
+        color: IP_TEXT.text,
+        font: IP_FONT.title,
+      })
       .setOrigin(0, 0.5)
       .setDepth(IP_DEPTH.content);
 
     // Static surfaces: board frame, bench frame, console frame.
-    this.section(
-      L.boardX - 28,
-      L.boardY - 30,
-      3 * (L.cell + L.gap) + 50,
-      3 * (L.cell + L.gap) + 56,
+    this.surfaces.push(
+      this.section(
+        L.boardX - 28,
+        L.boardY - 30,
+        3 * (L.cell + L.gap) + 50,
+        3 * (L.cell + L.gap) + 56,
+      ),
     );
     this.benchRect = this.add
       .rectangle(
@@ -312,20 +377,55 @@ export class PipeBoardScene extends Phaser.Scene {
       .setDepth(IP_DEPTH.panel + 1);
     this.benchRect.setData(KIND_KEY, { kind: 'bench' } satisfies Target);
     this.benchRect.setInteractive({ dropZone: true });
-    this.section(L.consoleX, L.consoleY - 6, L.consoleW, 366);
+    this.surfaces.push(
+      this.benchRect,
+      this.section(L.consoleX, L.consoleY - 6, L.consoleW, 366),
+      this.add
+        .text(L.benchX - 2, L.benchY - 22, M13N_TEXT.bench_label, {
+          color: IP_TEXT.dim,
+          font: IP_FONT.small,
+        })
+        .setDepth(IP_DEPTH.content),
+      this.add
+        .text(L.consoleX + 6, L.consoleY - 2, M13N_TEXT.console_label, {
+          color: IP_TEXT.dim,
+          font: IP_FONT.small,
+        })
+        .setDepth(IP_DEPTH.content),
+    );
 
-    this.add
-      .text(L.benchX - 2, L.benchY - 22, 'BENCH — STANDARD PIECE SET', {
-        color: IP_TEXT.dim,
-        font: IP_FONT.small,
-      })
-      .setDepth(IP_DEPTH.content);
-    this.add
-      .text(L.consoleX + 6, L.consoleY - 2, 'TEST CONSOLE', {
-        color: IP_TEXT.dim,
-        font: IP_FONT.small,
-      })
-      .setDepth(IP_DEPTH.content);
+    const bottom = (
+      id: string,
+      x: number,
+      width: number,
+      label: string,
+      onActivate: () => void,
+      kind?: 'accent' | 'caution',
+    ) =>
+      new UiButton({
+        scene: this,
+        id,
+        x,
+        y: L.buttonsY,
+        width,
+        label,
+        depth: IP_DEPTH.content,
+        onActivate,
+        ...(kind === undefined ? {} : { kind }),
+      });
+    const primaryX = 592;
+    const primaryW = 152;
+    const consoleButton = (id: string, label: string, onActivate: () => void) =>
+      new UiButton({
+        scene: this,
+        id,
+        x: L.consoleX + 6,
+        y: L.consoleButtonY,
+        width: L.consoleW - 12,
+        label,
+        depth: IP_DEPTH.content,
+        onActivate,
+      });
 
     this.buttons.push(
       new UiButton({
@@ -334,98 +434,83 @@ export class PipeBoardScene extends Phaser.Scene {
         x: IP_PANEL.x + IP_PANEL.width - 40,
         y: IP_PANEL.y + 4,
         width: 32,
-        label: 'X',
+        label: M13N_TEXT.close,
         depth: IP_DEPTH.panel + 1,
         onActivate: () => this.leave(),
       }),
-      new UiButton({
-        scene: this,
-        id: 'rotate',
-        x: 40,
-        y: L.buttonsY,
-        width: 92,
-        label: 'ROTATE (R)',
-        depth: IP_DEPTH.content,
-        onActivate: () => this.rotateFocused('pointer'),
-      }),
-      new UiButton({
-        scene: this,
-        id: 'return',
-        x: 138,
-        y: L.buttonsY,
-        width: 100,
-        label: 'RETURN (DEL)',
-        depth: IP_DEPTH.content,
-        onActivate: () => this.returnFocused('pointer'),
-      }),
-      new UiButton({
-        scene: this,
-        id: 'undo',
-        x: 244,
-        y: L.buttonsY,
-        width: 84,
-        label: 'UNDO (U)',
-        depth: IP_DEPTH.content,
-        onActivate: () => this.undoLast('pointer'),
-      }),
-      new UiButton({
-        scene: this,
-        id: 'reset',
-        x: 334,
-        y: L.buttonsY,
-        width: 88,
-        label: 'CLEAR (C)',
-        depth: IP_DEPTH.content,
-        onActivate: () => this.resetBoard('pointer'),
-      }),
-      new UiButton({
-        scene: this,
-        id: 'help',
-        x: 428,
-        y: L.buttonsY,
-        width: 60,
-        label: 'HELP',
-        depth: IP_DEPTH.content,
-        onActivate: () => this.openHelp('pointer'),
-      }),
-      new UiButton({
-        scene: this,
-        id: 'stop',
-        x: 494,
-        y: L.buttonsY,
-        width: 96,
-        label: 'STOP TASK',
-        kind: 'caution',
-        depth: IP_DEPTH.content,
-        onActivate: () => this.openStopConfirm(),
-      }),
-      new UiButton({
-        scene: this,
-        id: 'submit',
-        x: 630,
-        y: L.buttonsY,
-        width: 114,
-        label: 'TEST FLOW (T)',
-        kind: 'accent',
-        depth: IP_DEPTH.content,
-        onActivate: () => this.submit('pointer'),
-      }),
+      // STOP TASK sits at the far end of the row from the answer controls.
+      bottom(
+        'stop',
+        40,
+        96,
+        M13N_TEXT.stop_task,
+        () => this.openStopConfirm(),
+        'caution',
+      ),
+      bottom('rotate', 146, 92, M13N_TEXT.rotate, () =>
+        this.rotateFocused('pointer'),
+      ),
+      bottom('return', 244, 100, M13N_TEXT.return_piece, () =>
+        this.returnFocused('pointer'),
+      ),
+      bottom('undo', 350, 84, M13N_TEXT.undo, () => this.undoLast('pointer')),
+      bottom('reset', 440, 88, M13N_TEXT.clear, () =>
+        this.resetBoard('pointer'),
+      ),
+      bottom('help', 534, 50, M13N_TEXT.help, () => this.openHelp('pointer')),
+      // One control position, four roles (never two at once).
+      bottom(
+        'record_layout',
+        primaryX,
+        primaryW,
+        M13N_TEXT.record_layout,
+        () => this.requestCommit('layout', 'pointer'),
+        'accent',
+      ),
+      bottom(
+        'next',
+        primaryX,
+        primaryW,
+        M13N_TEXT.next_network,
+        () => this.next(),
+        'accent',
+      ),
+      bottom(
+        'test_flow',
+        primaryX,
+        primaryW,
+        M13N_TEXT.test_flow,
+        () => this.practiceTest('pointer'),
+        'accent',
+      ),
+      bottom(
+        'finish',
+        primaryX,
+        primaryW,
+        M13N_TEXT.finish,
+        () => this.finish(),
+        'accent',
+      ),
+      consoleButton('cannot_solve', M13N_TEXT.cannot_solve, () =>
+        this.requestCommit('cannot_solve', 'pointer'),
+      ),
+      consoleButton('back_to_results', M13N_TEXT.back_to_results, () =>
+        this.backToResults(),
+      ),
+      ...NETWORK_KEYS.map(
+        ([, networkId], index) =>
+          new UiButton({
+            scene: this,
+            id: `practise_${networkId}`,
+            x: L.practiseX,
+            y: L.resultsY + index * L.resultsStep,
+            width: 300,
+            label: '',
+            depth: IP_DEPTH.content,
+            onActivate: () => this.openPractice(networkId),
+          }),
+      ),
     );
-
-    this.add
-      .text(
-        400,
-        L.helpLineY,
-        'Drag or click a piece, click a mount to seat it • R / right-click rotates • DEL returns • U undo • C clear\nArrows + SPACE do the same by keyboard • T test flow • H help • Q stop • ESC drops a held piece, then leaves (work stays)',
-        {
-          color: IP_TEXT.dim,
-          font: IP_FONT.small,
-          wordWrap: { width: 700 },
-          align: 'center',
-        },
-      )
-      .setOrigin(0.5)
-      .setDepth(IP_DEPTH.content);
 
     this.wirePointer();
     this.wireKeyboard();
@@ -456,7 +541,7 @@ export class PipeBoardScene extends Phaser.Scene {
    * ---------------------------------------------------------------- */
 
   private section(x: number, y: number, w: number, h: number) {
-    this.add
+    return this.add
       .rectangle(x, y, w, h, IP_COLORS.section, 1)
       .setOrigin(0)
       .setStrokeStyle(1, IP_COLORS.panelStroke)
@@ -473,6 +558,10 @@ export class PipeBoardScene extends Phaser.Scene {
     const object = this.add.text(x, y, value, style).setDepth(depth);
 
     this.dynamic.push(object);
+
+    if (value !== '') {
+      this.rendered.push(value);
+    }
 
     return object;
   }
@@ -516,6 +605,11 @@ export class PipeBoardScene extends Phaser.Scene {
     return image;
   }
 
+  /** True when the current view shows a board (network / answer / practice). */
+  private boardShown(view: M13SeriesView): boolean {
+    return view.network !== null;
+  }
+
   private refresh() {
     for (const object of this.dynamic) {
       object.destroy();
@@ -525,42 +619,97 @@ export class PipeBoardScene extends Phaser.Scene {
     this.cellRects.clear();
     this.cellImages.clear();
     this.benchImages.clear();
+    this.focusRing = null;
+    this.rendered = [M13N_TEXT.title];
 
-    const view = m13LatticeView();
+    let view: M13SeriesView;
+
+    try {
+      view = m13LatticeView();
+    } catch (error) {
+      this.fail(`view: ${String(error)}`);
+      view = m13LatticeView();
+    }
+
+    const previous = this.lastView;
 
     this.lastView = view;
 
-    const config = view.config;
-    const closed = view.closed;
+    const board = this.boardShown(view);
+    const nextBoardKey = `${view.view}:${view.network?.network_id ?? ''}`;
 
-    // Stage label.
-    this.text(
-      IP_PANEL.x + IP_PANEL.width - 56,
-      L.titleY,
-      closed
-        ? view.status === 'completed'
-          ? 'COMPLETE'
-          : 'CLOSED'
-        : `TEST RUNS ${view.submissions_used} / ${view.max_submissions}`,
-      { color: closed ? IP_TEXT.dim : IP_TEXT.accent, font: IP_FONT.section },
-    ).setOrigin(1, 0.5);
+    if (nextBoardKey !== this.boardKey) {
+      // A new network or view: the focus starts at the first mount and no
+      // flash or hover is carried over.
+      this.boardKey = nextBoardKey;
+      this.focus = { kind: 'cell', index: 0 };
+      this.hoverSlot = null;
+      this.snapSlot = null;
+    }
 
-    this.text(
-      56,
-      L.instrY,
-      'Reconstruct the core conduit: seat pieces from the bench so the FEED port reaches the INTAKE port as one sealed run, with the isolation valve inline and no open branch. The fractured centre mount seats nothing. TEST FLOW checks the run — up to four test runs; revise between them.',
-      {
-        color: IP_TEXT.dim,
-        font: IP_FONT.small,
-        lineSpacing: 2,
-        wordWrap: { width: 688 },
-      },
-    );
+    if (view.view === 'acknowledgement' && previous?.view !== view.view) {
+      this.acknowledgedAt = Date.now();
+    }
+
+    for (const surface of this.surfaces) {
+      surface.setVisible(board);
+    }
+
+    if (board) {
+      this.rendered.push(M13N_TEXT.bench_label, M13N_TEXT.console_label);
+    }
+
+    // Which network (and, in practice, that it is practice).
+    this.text(IP_PANEL.x + IP_PANEL.width - 56, L.titleY, view.header, {
+      color: IP_TEXT.accent,
+      font: IP_FONT.section,
+    }).setOrigin(1, 0.5);
+
+    this.text(56, L.instrY, view.instruction, {
+      color: board ? IP_TEXT.dim : IP_TEXT.text,
+      font: board ? IP_FONT.small : IP_FONT.body,
+      lineSpacing: 2,
+      wordWrap: { width: 688 },
+    });
+
+    if (!board) {
+      this.destroyGhost();
+    }
+
+    if (board) {
+      this.renderBoard(view);
+    } else if (view.results !== null) {
+      this.renderResults(view);
+    } else {
+      this.text(L.resultsX, L.resultsY, view.record_lines.join('\n\n'), {
+        color: IP_TEXT.text,
+        font: IP_FONT.body,
+        lineSpacing: 4,
+        wordWrap: { width: 660 },
+      });
+    }
+
+    this.text(400, L.helpLineY, view.hint, {
+      color: IP_TEXT.dim,
+      font: IP_FONT.small,
+      wordWrap: { width: 700 },
+      align: 'center',
+    }).setOrigin(0.5);
+
+    this.reconcileCommitDialog(view);
+    this.layoutButtons(view);
+    this.writeProbe(view);
+  }
+
+  private renderBoard(view: M13SeriesView) {
+    const network = view.network!;
+    const config = network.config;
+    const editable = view.editable;
 
     // — Board cells.
     for (const slot of M13_SLOT_IDS) {
       const { x, y } = this.cellOrigin(slot);
-      const broken = slot === config.broken;
+      const broken = network.blocked.includes(slot);
       const placement = view.placements[slot];
       const isDrop =
         this.dropTarget?.kind === 'cell' && this.dropTarget.slot === slot;
@@ -594,7 +743,7 @@ export class PipeBoardScene extends Phaser.Scene {
       rect.setData('baseFill', broken ? 0x1a1416 : IP_COLORS.slot);
       rect.setData('baseStroke', broken ? 0x5a3a3a : IP_COLORS.slotStroke);
 
-      if (!closed) {
+      if (editable) {
         rect.setInteractive({ dropZone: true, useHandCursor: true });
       }
 
@@ -612,7 +761,7 @@ export class PipeBoardScene extends Phaser.Scene {
         this.text(
           x + L.cell / 2,
           y + L.cell / 2,
-          'FRACTURED',
+          M13N_TEXT.fractured,
           {
             color: '#8c6a6a',
             font: '9px monospace',
@@ -636,7 +785,7 @@ export class PipeBoardScene extends Phaser.Scene {
           piece_id: placement.piece_id,
         } satisfies Target);
 
-        if (!closed) {
+        if (editable) {
           image.setInteractive({ draggable: true, useHandCursor: true });
         }
 
@@ -644,20 +793,17 @@ export class PipeBoardScene extends Phaser.Scene {
       }
     }
 
-    // Ports.
-    const portLabel = (slot: M13SlotId, direction: number, label: string) => {
+    // Ports (the board of each network differs in where they sit).
+    const portLabel = (
+      slot: M13SlotId,
+      direction: number,
+      label: string,
+      arrow: string,
+    ) => {
       const { x, y } = this.cellOrigin(slot);
       const delta = DIRECTION_DELTA[direction];
       const cx = x + L.cell / 2 + delta.dx * (L.cell / 2 + 26);
       const cy = y + L.cell / 2 + delta.dy * (L.cell / 2 + 16);
-      const arrow =
-        direction === 3
-          ? '▶'
-          : direction === 1
-            ? '▶'
-            : direction === 0
-              ? '▼'
-              : '▼';
 
       this.text(cx, cy, `${label}\n${arrow}`, {
         color: IP_TEXT.accent,
@@ -666,15 +812,23 @@ export class PipeBoardScene extends Phaser.Scene {
       }).setOrigin(0.5);
     };
 
-    portLabel(config.source.slot, config.source.direction, 'FEED');
-    portLabel(config.outlet.slot, config.outlet.direction, 'INTAKE');
+    portLabel(
+      config.source.slot,
+      config.source.direction,
+      M13N_TEXT.feed,
+      ARROW_IN[config.source.direction],
+    );
+    portLabel(
+      config.outlet.slot,
+      config.outlet.direction,
+      M13N_TEXT.intake,
+      ARROW_OUT[config.outlet.direction],
+    );
 
     // — Bench slots (stable home per piece).
     M13_PIECES.forEach((piece, index) => {
       const { x, y } = this.benchOrigin(index);
-      const onBench = view.bench.some(
-        (candidate) => candidate.piece_id === piece.piece_id,
-      );
+      const onBench = view.bench.includes(piece.piece_id);
       const slotRect = this.add
         .rectangle(
           x,
@@ -693,7 +847,7 @@ export class PipeBoardScene extends Phaser.Scene {
       this.text(
         x + L.benchCell / 2,
         y + L.benchCell - 7,
-        PIECE_SHORT[piece.type],
+        M13N_PIECE_SHORT[piece.type],
         {
           color: IP_TEXT.faint,
           font: '9px monospace',
@@ -716,7 +870,7 @@ export class PipeBoardScene extends Phaser.Scene {
           index,
         } satisfies Target);
 
-        if (!closed) {
+        if (editable) {
           image.setInteractive({ draggable: true, useHandCursor: true });
         }
 
@@ -724,35 +878,25 @@ export class PipeBoardScene extends Phaser.Scene {
       }
     });
 
-    // — Console: constraints + feedback + held.
-    const consoleLines =
-      view.feedback.length > 0
-        ? view.feedback
-        : [
-            'Run: not yet tested.',
-            'Isolation valve: —',
-            'Open branches: —',
-            '',
-            'Seat the pieces, then TEST FLOW.',
-          ];
-
-    this.text(L.consoleX + 6, L.consoleY + 14, consoleLines.join('\n'), {
+    // — Console: the view's own lines (status, acknowledgement or, in
+    // practice only, the structural lines of a test run), last act, held.
+    this.text(L.consoleX + 6, L.consoleY + 14, view.console_lines.join('\n'), {
       color: IP_TEXT.text,
       font: IP_FONT.small,
       lineSpacing: 3,
       wordWrap: { width: L.consoleW - 12 },
     });
 
-    this.text(L.consoleX + 6, L.consoleY + 258, view.last_action ?? '', {
+    this.text(L.consoleX + 6, L.consoleY + 250, view.last_action ?? '', {
       color: IP_TEXT.accent,
       font: IP_FONT.small,
       wordWrap: { width: L.consoleW - 12 },
     });
     this.text(
       L.consoleX + 6,
-      L.consoleY + 300,
+      L.consoleY + 292,
       view.held === null
-        ? 'Holding: nothing'
+        ? M13N_TEXT.holding_nothing
         : `Holding: ${this.pieceById(view.held.piece_id).label} (${view.held.rotation}°)`,
       {
         color: IP_TEXT.accent,
@@ -762,7 +906,7 @@ export class PipeBoardScene extends Phaser.Scene {
     );
     this.text(
       L.consoleX + 6,
-      L.consoleY + 330,
+      L.consoleY + 326,
       `${config.feed_label} → ${config.intake_label}`,
       {
         color: IP_TEXT.faint,
@@ -774,7 +918,7 @@ export class PipeBoardScene extends Phaser.Scene {
     // — Focus ring.
     const focusRect = this.focusRect();
 
-    if (focusRect !== null && !closed) {
+    if (focusRect !== null && editable) {
       const ring = this.add
         .rectangle(
           focusRect.x - 2,
@@ -811,25 +955,104 @@ export class PipeBoardScene extends Phaser.Scene {
         this.ghost.setPosition(rect.x + rect.w / 2, rect.y - 14);
       }
     }
+  }
 
-    // — Buttons.
-    for (const button of this.buttons) {
-      if (button.id === 'submit') {
-        button.setEnabled(!closed);
-      } else if (
-        button.id === 'rotate' ||
-        button.id === 'return' ||
-        button.id === 'stop'
-      ) {
-        button.setEnabled(!closed);
-      } else if (button.id === 'undo') {
-        button.setEnabled(!closed && view.undo_available);
-      } else if (button.id === 'reset') {
-        button.setEnabled(!closed && view.seated_count > 0);
-      }
+  /** The three recorded answers with their structural lines (phase two only). */
+  private renderResults(view: M13SeriesView) {
+    for (const [index, block] of (view.results ?? []).entries()) {
+      const y = L.resultsY + index * L.resultsStep;
+
+      this.text(L.resultsX, y, block.label, {
+        color: IP_TEXT.accent,
+        font: IP_FONT.section,
+      });
+      this.text(L.resultsX + 12, y + 24, block.lines.join('\n'), {
+        color: IP_TEXT.text,
+        font: IP_FONT.small,
+        lineSpacing: 4,
+      });
     }
 
-    this.writeProbe(view);
+    this.text(L.resultsX, 452, view.record_lines.join('\n'), {
+      color: IP_TEXT.dim,
+      font: IP_FONT.small,
+      lineSpacing: 3,
+      wordWrap: { width: 672 },
+    });
+  }
+
+  /** Shows the controls of the current view and nothing else. */
+  private layoutButtons(view: M13SeriesView) {
+    const board = this.boardShown(view);
+    const controls = view.controls;
+    const shown = new Map<string, boolean>([['close', true]]);
+    const blocked = this.helpOpen || this.confirmOpen || this.commitShown;
+
+    if (board) {
+      shown.set('rotate', view.editable);
+      shown.set('return', view.editable);
+      shown.set('undo', view.editable && view.undo_available);
+      shown.set('reset', view.editable && view.seated_count > 0);
+    }
+
+    if (board || view.results !== null) {
+      shown.set('help', controls.help);
+    }
+
+    if (view.view === 'network' || view.view === 'acknowledgement') {
+      shown.set('stop', controls.stop);
+    }
+
+    if (view.view === 'network') {
+      shown.set('record_layout', controls.record_layout);
+      shown.set('cannot_solve', controls.cannot_solve);
+    } else if (view.view === 'acknowledgement') {
+      shown.set('next', controls.next !== null);
+    } else if (view.view === 'practice') {
+      shown.set('test_flow', controls.test_flow);
+      shown.set('back_to_results', controls.back_to_results);
+    } else if (view.view === 'results' && controls.finish) {
+      shown.set('finish', true);
+    }
+
+    for (const practise of controls.practise) {
+      shown.set(`practise_${practise.network_id}`, true);
+    }
+
+    this.shownButtons = new Set(shown.keys());
+
+    for (const button of this.buttons) {
+      if (
+        button.id === 'confirm_stop' ||
+        button.id === 'cancel_stop' ||
+        button.id === 'confirm_commit' ||
+        button.id === 'cancel_commit'
+      ) {
+        this.shownButtons.add(button.id);
+        continue;
+      }
+
+      const visible = shown.has(button.id);
+
+      button.setVisible(visible);
+      button.setEnabled(visible && shown.get(button.id) === true && !blocked);
+
+      if (button.id === 'next' && controls.next !== null) {
+        button.setLabel(
+          controls.next === 'show_results'
+            ? M13N_TEXT.show_results
+            : M13N_TEXT.next_network,
+        );
+      }
+
+      const practise = controls.practise.find(
+        (control) => `practise_${control.network_id}` === button.id,
+      );
+
+      if (practise !== undefined) {
+        button.setLabel(practise.label);
+      }
+    }
   }
 
   private focusRect(): ProbeRect | null {
@@ -850,48 +1073,62 @@ export class PipeBoardScene extends Phaser.Scene {
       open: false,
       form: null,
       closed: false,
+      series: null,
       cells: [],
       bench: [],
       held: null,
       focus: null,
       buttons: [],
       feedback: [],
+      lines: [],
       last_action: null,
       undo_available: false,
       seated_count: 0,
       snap_slot: null,
-      submissions_used: 0,
-      max_submissions: 0,
       dragging: false,
       drop_target: null,
       drop_valid: false,
       help_open: false,
       confirm_open: false,
+      dialog: null,
     };
   }
 
-  private writeProbe(view: LatticeView) {
+  private writeProbe(view: M13SeriesView) {
     if (typeof window === 'undefined' || !import.meta.env.DEV) {
       return;
     }
 
+    const board = this.boardShown(view);
+    const lines = [...this.rendered];
     const probe: PipeProbe = {
       ...this.emptyProbe(),
       open: true,
       form: view.form,
-      closed: view.closed,
+      closed: !view.editable,
+      series: {
+        status: view.status,
+        view: view.view,
+        phase: view.phase,
+        header: view.header,
+        network_id: view.network?.network_id ?? null,
+        network_index: view.network?.network_index ?? null,
+        editable: view.editable,
+        answered: view.answered,
+        practice_runs: view.practice_runs,
+        practice_closed: view.practice_closed,
+      },
       held: view.held === null ? null : { ...view.held },
-      focus:
-        this.focus.kind === 'cell'
+      focus: !board
+        ? null
+        : this.focus.kind === 'cell'
           ? { kind: 'cell', id: M13_SLOT_IDS[this.focus.index] }
           : { kind: 'bench', id: String(this.focus.index) },
-      feedback: [...view.feedback],
+      feedback: [...view.console_lines],
       last_action: view.last_action,
       undo_available: view.undo_available,
       seated_count: view.seated_count,
       snap_slot: this.snapSlot,
-      submissions_used: view.submissions_used,
-      max_submissions: view.max_submissions,
       dragging: this.dragging,
       drop_target:
         this.dropTarget === null
@@ -901,50 +1138,57 @@ export class PipeBoardScene extends Phaser.Scene {
             : 'bench',
       drop_valid: this.dropValid,
       help_open: this.helpOpen,
-      confirm_open: this.confirmOpen,
+      confirm_open: this.confirmOpen || this.commitShown !== null,
+      dialog: this.confirmOpen ? 'stop' : this.commitShown,
     };
 
-    for (const slot of M13_SLOT_IDS) {
-      const { x, y } = this.cellOrigin(slot);
-      const placement = view.placements[slot];
-      const port =
-        slot === view.config.source.slot
-          ? 'feed'
-          : slot === view.config.outlet.slot
-            ? 'intake'
-            : null;
+    if (board) {
+      const network = view.network!;
 
-      probe.cells.push({
-        slot,
-        x,
-        y,
-        w: L.cell,
-        h: L.cell,
-        piece_id: placement?.piece_id ?? null,
-        rotation: placement?.rotation ?? null,
-        broken: slot === view.config.broken,
-        port,
+      for (const slot of M13_SLOT_IDS) {
+        const { x, y } = this.cellOrigin(slot);
+        const placement = view.placements[slot];
+        const port =
+          slot === network.config.source.slot
+            ? 'feed'
+            : slot === network.config.outlet.slot
+              ? 'intake'
+              : null;
+
+        probe.cells.push({
+          slot,
+          x,
+          y,
+          w: L.cell,
+          h: L.cell,
+          piece_id: placement?.piece_id ?? null,
+          rotation: placement?.rotation ?? null,
+          broken: network.blocked.includes(slot),
+          port,
+        });
+      }
+
+      M13_PIECES.forEach((piece, index) => {
+        const { x, y } = this.benchOrigin(index);
+        const onBench = view.bench.includes(piece.piece_id);
+
+        probe.bench.push({
+          index,
+          x,
+          y,
+          w: L.benchCell,
+          h: L.benchCell,
+          piece_id: onBench ? piece.piece_id : null,
+          type: piece.type,
+        });
       });
     }
 
-    M13_PIECES.forEach((piece, index) => {
-      const { x, y } = this.benchOrigin(index);
-      const onBench = view.bench.some(
-        (candidate) => candidate.piece_id === piece.piece_id,
-      );
-
-      probe.bench.push({
-        index,
-        x,
-        y,
-        w: L.benchCell,
-        h: L.benchCell,
-        piece_id: onBench ? piece.piece_id : null,
-        type: piece.type,
-      });
-    });
-
     for (const button of this.buttons) {
+      if (!this.shownButtons.has(button.id)) {
+        continue;
+      }
+
       const bounds = button.bounds();
 
       probe.buttons.push({
@@ -956,8 +1200,26 @@ export class PipeBoardScene extends Phaser.Scene {
         h: bounds.height,
         enabled: button.isEnabled(),
       });
+      lines.push(button.label());
     }
 
+    if (this.helpOpen) {
+      lines.push(
+        M13N_TEXT.help_title,
+        ...this.helpLines,
+        M13N_TEXT.help_footer,
+      );
+    }
+
+    if (this.confirmOpen) {
+      lines.push(M13N_TEXT.stop_question);
+    }
+
+    if (view.pending_commit !== null) {
+      lines.push(view.pending_commit.question);
+    }
+
+    probe.lines = lines;
     window.__ipPipeProbe = probe;
     refreshIpProbe();
   }
@@ -998,8 +1260,31 @@ export class PipeBoardScene extends Phaser.Scene {
   }
 
   /* ---------------------------------------------------------------- *
-   * Actions (every path ends in m13LatticeAct / m13LatticeSubmit)
+   * Board actions (every path ends in m13LatticeAct)
    * ---------------------------------------------------------------- */
+
+  /**
+   * Closes the bench as a fault. If even that cannot be recorded the error
+   * stops here: the overlay must still redraw and stay leavable.
+   */
+  private fail(detail: string) {
+    try {
+      m13LatticeFail(Date.now(), detail);
+    } catch {
+      // Nothing more can be recorded.
+    }
+  }
+
+  /** Runs one store call; a throw closes the bench as a fault, never stuck. */
+  private guarded<T>(fallback: T, run: () => T): T {
+    try {
+      return run();
+    } catch (error) {
+      this.fail(String(error));
+
+      return fallback;
+    }
+  }
 
   private act(action: PipeAction, mode: InputMode): boolean {
     let ok = false;
@@ -1026,18 +1311,19 @@ export class PipeBoardScene extends Phaser.Scene {
         sfxUnavailable();
       }
     } catch (error) {
-      m13LatticeFail(Date.now(), String(error));
+      this.fail(String(error));
     }
 
     return ok;
   }
 
+  private dialogOpen(): boolean {
+    return this.helpOpen || this.confirmOpen || this.commitShown !== null;
+  }
+
   private canEdit(): boolean {
     return (
-      this.lastView !== null &&
-      !this.lastView.closed &&
-      !this.helpOpen &&
-      !this.confirmOpen
+      this.lastView !== null && this.lastView.editable && !this.dialogOpen()
     );
   }
 
@@ -1203,30 +1489,8 @@ export class PipeBoardScene extends Phaser.Scene {
     this.refresh();
   }
 
-  private submit(mode: InputMode) {
-    if (
-      this.helpOpen ||
-      this.confirmOpen ||
-      this.lastView === null ||
-      this.lastView.closed
-    ) {
-      return;
-    }
-
-    try {
-      m13LatticeSubmit(mode, Date.now());
-      // Neutral tick whether the run was valid or not.
-      sfxUiSelect();
-    } catch (error) {
-      m13LatticeFail(Date.now(), String(error));
-    }
-
-    this.destroyGhost();
-    this.refresh();
-  }
-
   private cancelHeld() {
-    if (this.lastView?.held !== null) {
+    if (this.lastView?.held !== null && this.lastView?.held !== undefined) {
       this.act({ kind: 'cancel' }, 'pointer');
     }
 
@@ -1234,17 +1498,252 @@ export class PipeBoardScene extends Phaser.Scene {
   }
 
   /* ---------------------------------------------------------------- *
+   * The series: commitment, acknowledgement, results, practice
+   * ---------------------------------------------------------------- */
+
+  /** RECORD LAYOUT (T) / CANNOT SOLVE (N): opens the neutral confirmation. */
+  private requestCommit(kind: 'layout' | 'cannot_solve', mode: InputMode) {
+    if (
+      this.dialogOpen() ||
+      this.dragging ||
+      this.lastView?.view !== 'network'
+    ) {
+      return;
+    }
+
+    this.destroyGhost();
+
+    if (
+      this.guarded(false, () => m13LatticeRequestCommit(kind, mode, Date.now()))
+    ) {
+      sfxPromptOpen();
+    }
+
+    this.refresh();
+  }
+
+  /** KEEP WORKING / ESC: the network stays open without an answer. */
+  private cancelCommit(mode: InputMode) {
+    this.guarded(undefined, () => m13LatticeCancelCommit(mode, Date.now()));
+    this.refresh();
+  }
+
+  /**
+   * RECORD ANSWER / RECORD. The store decides whether the press is fresh;
+   * the tick is the same whatever was recorded.
+   */
+  private confirmCommit(mode: InputMode, repeat: boolean, downAt: number) {
+    const outcome = this.guarded('none' as const, () =>
+      m13LatticeConfirmCommit({ repeat, down_at_ms: downAt }, mode, Date.now()),
+    );
+
+    if (outcome === 'recorded') {
+      sfxUiSelect();
+    }
+
+    this.refresh();
+  }
+
+  /** Builds or removes the commitment dialog to match the store. */
+  private reconcileCommitDialog(view: M13SeriesView) {
+    const pending = view.pending_commit;
+
+    if (pending === null) {
+      if (this.commitShown !== null) {
+        this.destroyCommitDialog();
+      }
+
+      return;
+    }
+
+    this.rendered.push(pending.question);
+
+    if (this.commitShown === pending.kind) {
+      return;
+    }
+
+    this.destroyCommitDialog();
+    this.commitShown = pending.kind;
+
+    const scrim = this.add
+      .rectangle(0, 0, 800, 600, 0x000000, 0.5)
+      .setOrigin(0)
+      .setDepth(IP_DEPTH.confirm - 1)
+      .setInteractive();
+    const backdrop = this.add
+      .rectangle(400, 300, 540, 150, IP_COLORS.panel, 1)
+      .setStrokeStyle(1, IP_COLORS.accent)
+      .setDepth(IP_DEPTH.confirm)
+      .setInteractive();
+    const body = this.add
+      .text(400, 274, pending.question, {
+        color: IP_TEXT.text,
+        font: IP_FONT.body,
+        align: 'center',
+        lineSpacing: 3,
+        wordWrap: { width: 500 },
+      })
+      .setOrigin(0.5)
+      .setDepth(IP_DEPTH.confirm + 1);
+
+    this.buttons.push(
+      new UiButton({
+        scene: this,
+        id: 'confirm_commit',
+        x: 200,
+        y: 326,
+        width: 196,
+        label: pending.confirm_label,
+        kind: 'accent',
+        depth: IP_DEPTH.confirm + 1,
+        onActivate: () =>
+          this.confirmCommit('pointer', false, this.pointerDownAt),
+      }),
+      new UiButton({
+        scene: this,
+        id: 'cancel_commit',
+        x: 416,
+        y: 326,
+        width: 184,
+        label: pending.cancel_label,
+        depth: IP_DEPTH.confirm + 1,
+        onActivate: () => this.cancelCommit('pointer'),
+      }),
+    );
+    this.commitObjects = [scrim, backdrop, body];
+  }
+
+  private destroyCommitDialog() {
+    for (const object of this.commitObjects) {
+      object.destroy();
+    }
+
+    this.commitObjects = [];
+    this.commitShown = null;
+    this.buttons = this.buttons.filter((button) => {
+      if (button.id === 'confirm_commit' || button.id === 'cancel_commit') {
+        button.destroy();
+
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  /** NEXT NETWORK / SHOW RESULTS (ENTER or the button). */
+  private next() {
+    if (this.dialogOpen() || this.lastView?.view !== 'acknowledgement') {
+      return;
+    }
+
+    // The acknowledgement stays on screen for a beat whatever was pressed.
+    if (Date.now() - this.acknowledgedAt < M13N_SETTLE_MS) {
+      return;
+    }
+
+    if (
+      this.guarded('none' as const, () => m13LatticeNext(Date.now())) !== 'none'
+    ) {
+      sfxUiSelect();
+    }
+
+    this.destroyGhost();
+    this.refresh();
+  }
+
+  private openPractice(networkId: M13NetworkId) {
+    if (this.dialogOpen() || this.lastView?.view !== 'results') {
+      return;
+    }
+
+    if (
+      this.guarded(false, () => m13LatticeOpenPractice(networkId, Date.now()))
+    ) {
+      sfxUiSelect();
+    }
+
+    this.refresh();
+  }
+
+  /** TEST FLOW (T) — exists on a practice board only. */
+  private practiceTest(mode: InputMode) {
+    if (
+      this.dialogOpen() ||
+      this.dragging ||
+      this.lastView?.view !== 'practice'
+    ) {
+      return;
+    }
+
+    const outcome = this.guarded(null, () =>
+      m13LatticePracticeTest(mode, Date.now()),
+    );
+
+    if (outcome?.recorded === true) {
+      // Neutral tick whether the run was sealed or not.
+      sfxUiSelect();
+    }
+
+    this.destroyGhost();
+    this.refresh();
+  }
+
+  private backToResults() {
+    if (this.dialogOpen() || this.lastView?.view !== 'practice') {
+      return;
+    }
+
+    this.cancelHeld();
+
+    if (this.guarded(false, () => m13LatticeBackToResults(Date.now()))) {
+      sfxUiSelect();
+    }
+
+    this.refresh();
+  }
+
+  private finish() {
+    if (this.dialogOpen() || this.lastView?.view !== 'results') {
+      return;
+    }
+
+    if (this.guarded(false, () => m13LatticeFinish(Date.now()))) {
+      sfxUiSelect();
+    }
+
+    this.refresh();
+  }
+
+  /* ---------------------------------------------------------------- *
    * Help + stop confirm
    * ---------------------------------------------------------------- */
 
   private openHelp(mode: InputMode) {
-    if (this.helpOpen || this.confirmOpen) {
+    if (
+      this.dialogOpen() ||
+      this.dragging ||
+      this.lastView?.controls.help !== true
+    ) {
       return;
     }
 
-    const lines = m13LatticeHelp(mode, Date.now());
+    // A held piece goes home first: nothing is left in the hand behind a
+    // dialog (the commitment dialogs do the same in the store).
+    this.cancelHeld();
+
+    const lines = this.guarded([] as string[], () =>
+      m13LatticeHelp(mode, Date.now()),
+    );
+
+    if (lines.length === 0) {
+      this.refresh();
+
+      return;
+    }
 
     this.helpOpen = true;
+    this.helpLines = lines;
 
     const scrim = this.add
       .rectangle(0, 0, 800, 600, 0x000000, 0.5)
@@ -1253,27 +1752,27 @@ export class PipeBoardScene extends Phaser.Scene {
       .setInteractive();
 
     const backdrop = this.add
-      .rectangle(400, 300, 560, 280, IP_COLORS.panel, 1)
+      .rectangle(400, 300, 580, 320, IP_COLORS.panel, 1)
       .setStrokeStyle(1, IP_COLORS.accent)
       .setDepth(IP_DEPTH.confirm)
       .setInteractive();
     const title = this.add
-      .text(400, 178, 'HELP — LATTICE BENCH', {
+      .text(400, 158, M13N_TEXT.help_title, {
         color: IP_TEXT.accent,
         font: IP_FONT.section,
       })
       .setOrigin(0.5)
       .setDepth(IP_DEPTH.confirm + 1);
     const body = this.add
-      .text(136, 200, lines.join('\n'), {
+      .text(126, 180, lines.join('\n'), {
         color: IP_TEXT.text,
         font: IP_FONT.small,
         lineSpacing: 3,
-        wordWrap: { width: 528 },
+        wordWrap: { width: 548 },
       })
       .setDepth(IP_DEPTH.confirm + 1);
     const footer = this.add
-      .text(400, 422, 'ENTER / ESC / click — close help', {
+      .text(400, 444, M13N_TEXT.help_footer, {
         color: IP_TEXT.dim,
         font: IP_FONT.small,
       })
@@ -1291,6 +1790,7 @@ export class PipeBoardScene extends Phaser.Scene {
     }
 
     this.helpOpen = false;
+    this.helpLines = [];
 
     for (const object of this.helpObjects) {
       object.destroy();
@@ -1301,29 +1801,34 @@ export class PipeBoardScene extends Phaser.Scene {
   }
 
   private openStopConfirm() {
-    if (this.confirmOpen || this.helpOpen || this.lastView?.closed) {
+    if (
+      this.dialogOpen() ||
+      this.dragging ||
+      this.lastView?.controls.stop !== true
+    ) {
       return;
     }
 
+    this.cancelHeld();
     this.confirmOpen = true;
 
+    const scrim = this.add
+      .rectangle(0, 0, 800, 600, 0x000000, 0.5)
+      .setOrigin(0)
+      .setDepth(IP_DEPTH.confirm - 1)
+      .setInteractive();
     const backdrop = this.add
-      .rectangle(400, 300, 460, 120, IP_COLORS.panel, 1)
+      .rectangle(400, 300, 480, 130, IP_COLORS.panel, 1)
       .setStrokeStyle(1, IP_COLORS.caution)
       .setDepth(IP_DEPTH.confirm)
       .setInteractive();
     const body = this.add
-      .text(
-        400,
-        284,
-        'Stop this task? The bench closes without a test run and cannot be reopened.',
-        {
-          color: IP_TEXT.text,
-          font: IP_FONT.body,
-          align: 'center',
-          wordWrap: { width: 420 },
-        },
-      )
+      .text(400, 278, M13N_TEXT.stop_question, {
+        color: IP_TEXT.text,
+        font: IP_FONT.body,
+        align: 'center',
+        wordWrap: { width: 440 },
+      })
       .setOrigin(0.5)
       .setDepth(IP_DEPTH.confirm + 1);
 
@@ -1334,7 +1839,7 @@ export class PipeBoardScene extends Phaser.Scene {
         x: 250,
         y: 318,
         width: 130,
-        label: 'STOP (ENTER)',
+        label: M13N_TEXT.stop_confirm,
         kind: 'caution',
         depth: IP_DEPTH.confirm + 1,
         onActivate: () => this.closeStopConfirm(true),
@@ -1345,12 +1850,12 @@ export class PipeBoardScene extends Phaser.Scene {
         x: 420,
         y: 318,
         width: 130,
-        label: 'KEEP (ESC)',
+        label: M13N_TEXT.stop_keep,
         depth: IP_DEPTH.confirm + 1,
         onActivate: () => this.closeStopConfirm(false),
       }),
     );
-    this.confirmObjects = [backdrop, body];
+    this.confirmObjects = [scrim, backdrop, body];
     this.refresh();
   }
 
@@ -1377,7 +1882,7 @@ export class PipeBoardScene extends Phaser.Scene {
     });
 
     if (confirmed) {
-      m13LatticeStop(Date.now());
+      this.guarded(undefined, () => m13LatticeStop(Date.now()));
       this.destroyGhost();
       sfxUiSelect();
     }
@@ -1394,7 +1899,7 @@ export class PipeBoardScene extends Phaser.Scene {
   }
 
   private dropValidFor(target: Target): boolean {
-    if (this.lastView === null) {
+    if (this.lastView === null || this.lastView.network === null) {
       return false;
     }
 
@@ -1402,7 +1907,7 @@ export class PipeBoardScene extends Phaser.Scene {
       const slot = target.slot!;
 
       return (
-        slot !== this.lastView.config.broken &&
+        !this.lastView.network.blocked.includes(slot) &&
         this.lastView.placements[slot] === undefined
       );
     }
@@ -1411,6 +1916,15 @@ export class PipeBoardScene extends Phaser.Scene {
   }
 
   private wirePointer() {
+    this.input.on(
+      Phaser.Input.Events.POINTER_DOWN,
+      (pointer: Phaser.Input.Pointer) => {
+        if (pointer.button === 0) {
+          this.pointerDownAt = Date.now();
+        }
+      },
+    );
+
     this.input.on(
       Phaser.Input.Events.DRAG_START,
       (
@@ -1785,8 +2299,22 @@ export class PipeBoardScene extends Phaser.Scene {
         return;
       }
 
+      // A held piece first, then a dialog, then leave.
+      if (this.lastView?.held !== null && this.lastView?.held !== undefined) {
+        this.cancelHeld();
+        this.refresh();
+
+        return;
+      }
+
       if (this.confirmOpen) {
         this.closeStopConfirm(false);
+
+        return;
+      }
+
+      if (this.commitShown !== null) {
+        this.cancelCommit('typed');
 
         return;
       }
@@ -1797,21 +2325,22 @@ export class PipeBoardScene extends Phaser.Scene {
         return;
       }
 
-      if (this.lastView?.held !== null && this.lastView?.held !== undefined) {
-        this.cancelHeld();
-        this.refresh();
-
-        return;
-      }
-
       this.leave();
     });
     on('keydown-I', (event) => {
-      if (!event.repeat && !this.confirmOpen && !this.helpOpen) {
+      if (!event.repeat && !this.dialogOpen()) {
         this.leave();
       }
     });
     on('keydown-ENTER', (event) => {
+      // The commitment dialog sees every press, repeats included: the store
+      // refuses and records the ones that are not fresh.
+      if (this.commitShown !== null) {
+        this.confirmCommit('typed', event.repeat, Date.now());
+
+        return;
+      }
+
       if (event.repeat) {
         return;
       }
@@ -1828,10 +2357,16 @@ export class PipeBoardScene extends Phaser.Scene {
         return;
       }
 
+      if (this.lastView?.view === 'acknowledgement') {
+        this.next();
+
+        return;
+      }
+
       this.pickOrPlaceAtFocus('typed');
     });
     on('keydown-SPACE', (event) => {
-      if (!event.repeat && !this.confirmOpen && !this.helpOpen) {
+      if (!event.repeat && !this.dialogOpen()) {
         this.pickOrPlaceAtFocus('typed');
       }
     });
@@ -1865,10 +2400,42 @@ export class PipeBoardScene extends Phaser.Scene {
       }
     });
     on('keydown-T', (event) => {
-      if (!event.repeat) {
-        this.submit('typed');
+      if (event.repeat) {
+        return;
+      }
+
+      // T records the layout in the first-response phase and tests the flow
+      // on a practice board; it does nothing anywhere else.
+      if (this.lastView?.view === 'network') {
+        this.requestCommit('layout', 'typed');
+      } else if (this.lastView?.view === 'practice') {
+        this.practiceTest('typed');
       }
     });
+    on('keydown-N', (event) => {
+      if (!event.repeat) {
+        this.requestCommit('cannot_solve', 'typed');
+      }
+    });
+    on('keydown-B', (event) => {
+      if (!event.repeat) {
+        this.backToResults();
+      }
+    });
+    on('keydown-F', (event) => {
+      if (!event.repeat) {
+        this.finish();
+      }
+    });
+
+    for (const [keyName, networkId] of NETWORK_KEYS) {
+      on(`keydown-${keyName}`, (event) => {
+        if (!event.repeat) {
+          this.openPractice(networkId);
+        }
+      });
+    }
+
     on('keydown-H', (event) => {
       if (!event.repeat) {
         this.openHelp('typed');
@@ -1882,7 +2449,12 @@ export class PipeBoardScene extends Phaser.Scene {
   }
 
   private guardedMove(dx: number, dy: number) {
-    if (this.confirmOpen || this.helpOpen || this.dragging) {
+    if (
+      this.dialogOpen() ||
+      this.dragging ||
+      this.lastView === null ||
+      !this.lastView.editable
+    ) {
       return;
     }
 
@@ -1890,12 +2462,12 @@ export class PipeBoardScene extends Phaser.Scene {
   }
 
   /* ---------------------------------------------------------------- *
-   * Leave (ESC / I / X): held piece goes home, window stays open
+   * Leave (ESC / I / X): held piece goes home, the bench keeps its state
    * ---------------------------------------------------------------- */
 
   private leave() {
     this.cancelHeld();
-    m13LatticeLeave(Date.now());
+    this.guarded(undefined, () => m13LatticeLeave(Date.now()));
     sfxUiSelect();
     this.scene.resume(this.resumeKey);
     this.scene.stop();

@@ -1,16 +1,19 @@
 /**
- * Information Processing foundation — M13 lattice construction + M18
- * fault diagnosis (Unit 2).
+ * Information Processing foundation — M13 lattice bench + M18 fault
+ * diagnosis (Unit 2; the bench re-expressed for the three-network series
+ * of Station 080 Unit 16).
  *
  * Part 1 (pure): the transactional pipe board, the shared connectivity
- * validator on both forms, the fault-form consistency matrix, and the
- * structural independence of the M18 module from M13.
+ * validator on both forms of the v2 geometry (network 1), the fault-form
+ * consistency matrix, and the structural independence of the M18 module
+ * from M13.
  *
  * Part 2 (browser): the lattice bench with REAL drag/right-click/keyboard
- * input, invalid-action losslessness, explicit submission, bounded
- * closure; the diagnosis console with real pointer and keyboard paths;
- * and the M18 entry-state proof across M13 success / exhaustion / exit /
- * direct launch.
+ * input and invalid-action losslessness in its two phases — three first
+ * responses with no correctness information, then results and capped
+ * practice; the diagnosis console with real pointer and keyboard paths;
+ * and the M18 entry-state proof across M13 scored phase completed /
+ * completed with practice / stopped / never opened.
  */
 
 import { readFileSync } from 'node:fs';
@@ -46,6 +49,9 @@ import {
   clickHypothesis,
   clickPipeButton,
   clickRect,
+  commitLatticeByKeyboard,
+  commitLatticeByPointer,
+  completeLatticeByKeyboard,
   diagnosisProbe,
   dragCellToBench,
   dragPieceToCell,
@@ -55,13 +61,19 @@ import {
   ipEvents,
   ipModule,
   ipValidity,
+  LATTICE_LAYOUTS,
+  latticeLayout,
+  latticeNext,
   pipeBenchPiece,
   pipeCell,
   pipeProbe,
+  pipeSeries,
   rightClickRect,
+  seatLatticeByPointer,
   waitCellPiece,
   waitDiagnosisOpen,
   waitPipeOpen,
+  waitPipeView,
   walkAndUseStation,
 } from './ipHelpers';
 import { captureErrors, expectNoRuntimeErrors } from './journey';
@@ -324,33 +336,38 @@ test.describe('fault-form consistency and M18 independence', () => {
  * Part 2 — browser
  * ------------------------------------------------------------------ */
 
-async function solveLatticeByMouse(page: Page) {
-  await dragPieceToCell(page, 'el1', 'A2');
-  await waitCellPiece(page, 'A2', 'el1', 0);
+const FAMILY = 'proto_m13_networks';
+const OPPORTUNITY = 'proto_m13_network_series';
+/** No line of the first-response phase may carry a structural result. */
+const CORRECTNESS_WORDS =
+  /connected|sealed|inline|open branch|test run|test flow/i;
 
-  for (let turn = 0; turn < 3; turn++) {
-    await rightClickRect(page, await pipeCell(page, 'A2'));
-  }
+/** n1 form A with a straight where the valve belongs (valve not inline). */
+const N1_VALVE_OFF = 'A2:el1@270 A1:el2@90 C1:el3@180 C2:el4@0 B1:st1@0';
 
-  await waitCellPiece(page, 'A2', 'el1', 270);
-  await dragPieceToCell(page, 'el2', 'A1');
-  await waitCellPiece(page, 'A1', 'el2', 0);
-  await rightClickRect(page, await pipeCell(page, 'A1'));
-  await waitCellPiece(page, 'A1', 'el2', 90);
-  await dragPieceToCell(page, 'el3', 'C1');
-  await waitCellPiece(page, 'C1', 'el3', 0);
-  await rightClickRect(page, await pipeCell(page, 'C1'));
-  await rightClickRect(page, await pipeCell(page, 'C1'));
-  await waitCellPiece(page, 'C1', 'el3', 180);
-  await dragPieceToCell(page, 'el4', 'C2');
-  await waitCellPiece(page, 'C2', 'el4', 0);
+const firstResponseEvents = async (page: Page) =>
+  JSON.stringify(
+    eventsOfFamily(await ipEvents(page), FAMILY).filter(
+      (event) => event.event_type === `${FAMILY}_first_response`,
+    ),
+  );
+
+async function expectNoCorrectnessOnScreen(page: Page) {
+  const probe = await pipeProbe(page);
+
+  expect(probe.lines.join('\n')).not.toMatch(CORRECTNESS_WORDS);
+  expect(
+    probe.buttons
+      .map((button) => button.id)
+      .filter((id) => /test_flow|practise|finish|back_to_results/.test(id)),
+  ).toEqual([]);
 }
 
 test.describe('M13 lattice bench (browser)', () => {
-  test('mouse: drag, rotate, refused placements, premature test, sealed run', async ({
+  test('mouse: drag, rotate, refused placements; three first responses with no correctness information before the third; results and practice afterwards', async ({
     page,
   }) => {
-    test.setTimeout(240_000);
+    test.setTimeout(300_000);
 
     const errors = captureErrors(page);
 
@@ -364,11 +381,20 @@ test.describe('M13 lattice bench (browser)', () => {
     let probe = await pipeProbe(page);
 
     expect(probe.form).toBe('A');
+    expect(probe.series).toMatchObject({
+      status: 'first_responses',
+      view: 'network',
+      phase: 'measurement',
+      header: 'Network 1 of 3',
+      network_id: 'n1',
+    });
     expect(probe.cells.find((cell) => cell.slot === 'B2')?.broken).toBe(true);
     expect(probe.cells.find((cell) => cell.slot === 'A2')?.port).toBe('feed');
     expect(probe.bench.filter((entry) => entry.piece_id !== null)).toHaveLength(
       9,
     );
+    // There is no flow test in the first-response phase.
+    await expectNoCorrectnessOnScreen(page);
 
     // A drop onto the fractured mount is refused; the piece returns to the
     // bench; nothing else changes.
@@ -379,72 +405,175 @@ test.describe('M13 lattice bench (browser)', () => {
     expect(probe.held).toBeNull();
     await expect(pipeBenchPiece(page, 'cap1')).resolves.toBeTruthy();
 
-    await solveLatticeByMouse(page);
+    await seatLatticeByPointer(page, latticeLayout(N1_VALVE_OFF));
 
     // A drop onto an occupied mount is refused (state lossless).
-    await dragPieceToCell(page, 'st1', 'A2');
+    await dragPieceToCell(page, 'st2', 'A2');
     await page.waitForTimeout(200);
     await waitCellPiece(page, 'A2', 'el1', 270);
-    await expect(pipeBenchPiece(page, 'st1')).resolves.toBeTruthy();
+    await expect(pipeBenchPiece(page, 'st2')).resolves.toBeTruthy();
 
-    // Premature TEST FLOW with a straight where the valve belongs: the run
-    // is connected but the valve is not inline — neutral structural
-    // feedback, window stays open, run counted.
-    await dragPieceToCell(page, 'st1', 'B1');
-    await waitCellPiece(page, 'B1', 'st1', 0);
-    await clickPipeButton(page, 'submit');
-    await page.waitForTimeout(300);
+    // RECORD LAYOUT opens a confirmation; KEEP WORKING leaves no answer.
+    await clickPipeButton(page, 'record_layout');
     probe = await pipeProbe(page);
-    expect(probe.closed).toBe(false);
-    expect(probe.submissions_used).toBe(1);
-    expect(probe.feedback.join(' ')).toMatch(/CONNECTED/);
-    expect(probe.feedback.join(' ')).toMatch(/NOT inline/);
-    expect(probe.feedback.join(' ')).toMatch(/Open branches on the run: 0/);
+    expect(probe.dialog).toBe('layout');
+    expect(probe.lines.join('\n')).toMatch(
+      /Record this layout as your answer for network 1\? It cannot be changed afterwards\./,
+    );
+    await clickPipeButton(page, 'cancel_commit');
+    probe = await pipeProbe(page);
+    expect(probe.dialog).toBeNull();
+    expect(probe.series?.answered[0].answered).toBe(false);
 
-    // Drag the straight back to the bench (return), seat the valve, test
-    // again → sealed run, window completes.
+    // The run is connected but the valve is not inline: recorded as the
+    // answer, acknowledged neutrally — nothing structural is shown.
+    await commitLatticeByPointer(page, 'layout');
+    probe = await pipeProbe(page);
+    expect(probe.feedback).toEqual(['Answer recorded for network 1.']);
+    expect(probe.series).toMatchObject({ view: 'acknowledgement' });
+    expect(probe.closed).toBe(true);
+    await expectNoCorrectnessOnScreen(page);
+
+    await latticeNext(page, 'pointer');
+    probe = await pipeProbe(page);
+    expect(probe.series).toMatchObject({
+      view: 'network',
+      network_id: 'n2',
+      header: 'Network 2 of 3',
+    });
+    // A visibly different board: other ports, another fractured mount.
+    expect(probe.cells.find((cell) => cell.slot === 'A1')?.port).toBe('feed');
+    expect(probe.cells.find((cell) => cell.slot === 'C3')?.port).toBe('intake');
+    expect(probe.cells.find((cell) => cell.slot === 'B1')?.broken).toBe(true);
+    expect(probe.cells.every((cell) => cell.piece_id === null)).toBe(true);
+    await seatLatticeByPointer(
+      page,
+      latticeLayout(LATTICE_LAYOUTS.A.n2.sealed),
+    );
+    await commitLatticeByPointer(page, 'layout');
+    expect((await pipeProbe(page)).feedback).toEqual([
+      'Answer recorded for network 2.',
+    ]);
+    await expectNoCorrectnessOnScreen(page);
+    await latticeNext(page, 'pointer');
+
+    probe = await pipeProbe(page);
+    expect(probe.series).toMatchObject({ view: 'network', network_id: 'n3' });
+    expect(probe.cells.find((cell) => cell.slot === 'A3')?.port).toBe('intake');
+    expect(probe.cells.find((cell) => cell.slot === 'A2')?.broken).toBe(true);
+    await commitLatticeByPointer(page, 'cannot_solve');
+    probe = await pipeProbe(page);
+    expect(probe.feedback).toEqual(['Answer recorded for network 3.']);
+    expect(probe.buttons.find((b) => b.id === 'next')?.label).toBe(
+      'SHOW RESULTS (ENTER)',
+    );
+    expect(probe.lines.join('\n')).not.toMatch(CORRECTNESS_WORDS);
+
+    // The scored phase is complete with the third first response.
+    let m13 = await ipModule(page, 'm13');
+
+    expect(m13.series_status).toBe('completed');
+    expect(m13.window_status).toBe('completed');
+    expect((await ipValidity(page, OPPORTUNITY)).validity).toBe('valid');
+
+    const frozen = await firstResponseEvents(page);
+
+    // Results: structural feedback on the three recorded answers.
+    await latticeNext(page, 'pointer');
+    probe = await pipeProbe(page);
+    expect(probe.series).toMatchObject({ view: 'results', phase: 'feedback' });
+
+    const results = probe.lines.join('\n');
+
+    expect(results).toMatch(/All three answers are recorded\./);
+    expect(results).toMatch(/Network 1 — recorded answer:/);
+    expect(results).toMatch(/Isolation valve: NOT inline\./);
+    expect(results).toMatch(/The run is not sealed\./);
+    expect(results).toMatch(/The run is sealed\./);
+    expect(results).toMatch(/Network 3 — recorded answer: cannot solve\./);
+    expect(results).toMatch(/Practice is optional\./);
+    expect(
+      probe.buttons
+        .filter((b) => b.id.startsWith('practise_'))
+        .map((b) => b.label),
+    ).toEqual([
+      'PRACTISE NETWORK 1 (3 test runs left)',
+      'PRACTISE NETWORK 2 (3 test runs left)',
+      'PRACTISE NETWORK 3 (3 test runs left)',
+    ]);
+
+    // Practice on network 1: the board as it stood; swap in the valve.
+    await clickPipeButton(page, 'practise_n1');
+    await waitPipeView(page, 'practice');
+    probe = await pipeProbe(page);
+    expect(probe.series?.header).toBe('Network 1 of 3 — practice');
+    await waitCellPiece(page, 'B1', 'st1', 0);
     await dragCellToBench(page, 'B1');
     await waitCellPiece(page, 'B1', null);
     await dragPieceToCell(page, 'va1', 'B1');
     await waitCellPiece(page, 'B1', 'va1', 0);
-    await clickPipeButton(page, 'submit');
+    await clickPipeButton(page, 'test_flow');
     await page.waitForTimeout(300);
     probe = await pipeProbe(page);
-    expect(probe.closed).toBe(true);
-    expect(probe.feedback.join(' ')).toMatch(/holds pressure/);
+    expect(probe.feedback.join(' ')).toMatch(/CONNECTED/);
+    expect(probe.feedback.join(' ')).toMatch(/Isolation valve: inline/);
+    expect(probe.feedback.join(' ')).toMatch(/Open branches on the run: 0/);
+    expect(probe.feedback.at(-1)).toBe(
+      'Practice test run 1 of 3. Your recorded answer is unchanged.',
+    );
 
-    const m13 = await ipModule(page, 'm13');
+    // Sealing the network in practice changes no first response.
+    expect(await firstResponseEvents(page)).toBe(frozen);
+    m13 = await ipModule(page, 'm13');
 
+    const networks = m13.networks as {
+      first_response: { response_kind: string; correct: boolean };
+      practice: { runs_used: number; sealed_in_practice: boolean };
+    }[];
+
+    expect(networks.map((network) => network.first_response.correct)).toEqual([
+      false,
+      true,
+      false,
+    ]);
+    expect(networks[2].first_response.response_kind).toBe('cannot_solve');
+    expect(networks[0].practice).toMatchObject({
+      runs_used: 1,
+      sealed_in_practice: true,
+    });
     expect(m13.window_status).toBe('completed');
-    expect(m13.final_network_valid).toBe(true);
-    expect(m13.submission_count).toBe(2);
-    expect(m13.constraints_total).toBe(3);
-    expect(m13.constraints_satisfied_at_submission).toBe(3);
-    expect(m13.open_branch_count_at_submission).toBe(0);
-    expect(m13.endpoint_connected_at_submission).toBe(true);
-    expect(m13.valve_inline_at_submission).toBe(true);
-    expect(m13.placements).toBe(6);
-    expect(m13.returns).toBe(1);
-    expect(m13.rotations).toBe(6);
+    // Recorded work: three first responses and one practice test run.
+    expect(m13.submission_count).toBe(4);
     expect(m13.pieces_available).toBe(9);
-    expect(
-      (await ipValidity(page, 'proto_m13_lattice_construction')).validity,
-    ).toBe('valid');
 
     const events = await ipEvents(page);
-    const family = eventsOfFamily(events, 'proto_m13_lattice');
+    const family = eventsOfFamily(events, FAMILY);
     const types = family.map((event) => event.event_type);
+    const countOf = (suffix: string) =>
+      types.filter((type) => type === `${FAMILY}_${suffix}`).length;
 
-    expect(types).toContain('proto_m13_lattice_window_opened');
-    expect(types).toContain('proto_m13_lattice_placement_refused');
+    expect(countOf('series_opened')).toBe(1);
+    expect(countOf('network_presented')).toBe(3);
+    expect(countOf('placement_refused')).toBeGreaterThan(0);
+    expect(countOf('commit_requested')).toBe(4);
+    expect(countOf('commit_cancelled')).toBe(1);
+    expect(countOf('first_response')).toBe(3);
+    expect(countOf('response_acknowledged')).toBe(3);
+    expect(countOf('first_responses_completed')).toBe(1);
+    expect(countOf('practice_test_run')).toBe(1);
+    // No result or practice record precedes the third first response.
     expect(
-      types.filter((type) => type === 'proto_m13_lattice_submitted'),
-    ).toHaveLength(2);
-    expect(types).toContain('proto_m13_lattice_completed');
-    expect(family.every((event) => event.episode === 'proto_m13_lattice')).toBe(
-      true,
-    );
+      types.findIndex((type) => /results_shown|practice_/.test(type)),
+    ).toBeGreaterThan(types.lastIndexOf(`${FAMILY}_first_response`));
+    expect(family.every((event) => event.episode === FAMILY)).toBe(true);
+    expect(
+      family.every(
+        (event) => event.metadata?.entry_state_version === 'm13-networks-v1',
+      ),
+    ).toBe(true);
     expectProvisionalOnly(family);
+    // The retired one-network family is not written by this build.
+    expect(eventsOfFamily(events, 'proto_m13_lattice')).toHaveLength(0);
     // No M18 event was produced by anything M13 did.
     expect(eventsOfFamily(events, 'proto_m18_fault')).toHaveLength(0);
     expectNoRuntimeErrors(errors);
@@ -526,33 +655,60 @@ test.describe('M13 lattice bench (browser)', () => {
 
     expect(keyboardState).toEqual({ A2: { piece_id: 'el1', rotation: 270 } });
 
-    const keyboardEvents = eventsOfFamily(
-      await ipEvents(page),
-      'proto_m13_lattice',
-    );
+    const keyboardEvents = eventsOfFamily(await ipEvents(page), FAMILY);
     const placedByKeyboard = keyboardEvents.filter(
-      (event) => event.event_type === 'proto_m13_lattice_piece_placed',
+      (event) => event.event_type === `${FAMILY}_piece_placed`,
     );
 
     expect(placedByKeyboard.length).toBeGreaterThan(0);
     expect(
       placedByKeyboard.every((event) => event.metadata?.input_mode === 'typed'),
     ).toBe(true);
+    expect(
+      placedByKeyboard.every(
+        (event) =>
+          event.metadata?.network_id === 'n1' &&
+          event.metadata?.phase === 'measurement',
+      ),
+    ).toBe(true);
 
-    // Stop the task explicitly (Q → ENTER): the window closes as exited,
-    // validity = missing (participant_absent), never "low".
+    // ESC order: a held piece first, then a dialog, then the bench.
+    await key('ArrowDown', 3); // B1 → B2 → B3 → bench[1] (st2)
+    await key('Space');
+    expect((await pipeProbe(page)).held?.piece_id).toBe('st2');
+    await key('Escape');
+    probe = await pipeProbe(page);
+    expect(probe.held).toBeNull();
+    expect(probe.open).toBe(true);
+    await key('n');
+    expect((await pipeProbe(page)).dialog).toBe('cannot_solve');
+    await key('Escape');
+    probe = await pipeProbe(page);
+    expect(probe.dialog).toBeNull();
+    expect(probe.open).toBe(true);
+    expect(probe.series?.answered.some((entry) => entry.answered)).toBe(false);
+
+    // Stop the task explicitly (Q → ENTER): the series closes as stopped,
+    // validity = missing (participant_absent), never "low"; the bench is a
+    // read-only record without results or practice.
     await key('q');
     probe = await pipeProbe(page);
     expect(probe.confirm_open).toBe(true);
+    expect(probe.dialog).toBe('stop');
     await key('Enter');
     probe = await pipeProbe(page);
     expect(probe.closed).toBe(true);
+    expect(probe.series).toMatchObject({ status: 'stopped', view: 'record' });
+    expect(probe.lines).toContain(
+      'Bench stopped. Recorded answers are kept.\n\nNetwork 1: no answer recorded.\n\nNetwork 2: no answer recorded.\n\nNetwork 3: no answer recorded.',
+    );
+    await expectNoCorrectnessOnScreen(page);
 
     const m13 = await ipModule(page, 'm13');
 
     expect(m13.window_status).toBe('exited');
 
-    const validity = await ipValidity(page, 'proto_m13_lattice_construction');
+    const validity = await ipValidity(page, OPPORTUNITY);
 
     expect(validity.validity).toBe('missing');
     expect(validity.invalid_reason).toBe('participant_absent');
@@ -660,80 +816,136 @@ test.describe('M13 lattice bench (browser)', () => {
     await waitCellPiece(page, 'A1', null);
 
     // Raw acts are recorded as their own events — never merged, never scored.
-    const m13 = await ipModule(page, 'm13');
+    let m13 = await ipModule(page, 'm13');
 
     expect(m13.undos).toBe(3);
     expect(m13.resets).toBe(2);
     expect(m13.window_status).toBe('open');
 
     const events = await ipEvents(page);
-    const family = eventsOfFamily(events, 'proto_m13_lattice');
+    const family = eventsOfFamily(events, FAMILY);
     const types = family.map((event) => event.event_type);
 
-    expect(types.filter((t) => t === 'proto_m13_lattice_undone')).toHaveLength(
-      3,
-    );
-    expect(
-      types.filter((t) => t === 'proto_m13_lattice_board_reset'),
-    ).toHaveLength(2);
+    expect(types.filter((t) => t === `${FAMILY}_undone`)).toHaveLength(3);
+    expect(types.filter((t) => t === `${FAMILY}_board_reset`)).toHaveLength(2);
     expect(
       family
-        .filter((e) => e.event_type === 'proto_m13_lattice_undone')
+        .filter((e) => e.event_type === `${FAMILY}_undone`)
         .map((e) => e.metadata?.input_mode),
     ).toEqual(['pointer', 'typed', 'pointer']);
     expectProvisionalOnly(family);
 
-    // The validator is untouched: the same sealed run still completes.
-    await solveLatticeByMouse(page);
-    await dragPieceToCell(page, 'va1', 'B1');
-    await waitCellPiece(page, 'B1', 'va1', 0);
-    await clickPipeButton(page, 'submit');
-    await page.waitForTimeout(300);
+    // The validator is untouched: the same sealed run is recorded as a
+    // sealed first response (nothing on screen says so), and the answered
+    // board is read-only.
+    await seatLatticeByPointer(
+      page,
+      latticeLayout(LATTICE_LAYOUTS.A.n1.sealed),
+    );
+    await commitLatticeByPointer(page, 'layout');
     probe = await pipeProbe(page);
     expect(probe.closed).toBe(true);
-    expect(probe.feedback.join(' ')).toMatch(/holds pressure/);
+    expect(probe.feedback).toEqual(['Answer recorded for network 1.']);
     expect(probe.buttons.find((b) => b.id === 'undo')?.enabled).toBe(false);
+    await expectNoCorrectnessOnScreen(page);
+    m13 = await ipModule(page, 'm13');
+    expect(
+      (m13.networks as { first_response: { correct: boolean } | null }[])[0]
+        .first_response?.correct,
+    ).toBe(true);
+    // One answer of three: the first-response phase stays open.
+    expect(m13.window_status).toBe('open');
     expectNoRuntimeErrors(errors);
   });
 
-  test('bounded closure: four invalid test runs exhaust the window; the station reports review', async ({
+  test('practice cap: three test runs per network after any first response; a fourth is refused; first responses unchanged', async ({
     page,
   }) => {
-    test.setTimeout(150_000);
+    test.setTimeout(200_000);
 
     await bootIpLab(page, {
-      game_session_id: 'GS_IP_M13_EXHAUST',
+      game_session_id: 'GS_IP_M13_PRACTICE_CAP',
       ip_form: 'A',
       module: 'm13',
     });
     await waitPipeOpen(page, true);
+    await completeLatticeByKeyboard(page, 'A', [
+      'empty',
+      'open',
+      'cannot_solve',
+    ]);
 
-    for (let run = 1; run <= 4; run++) {
-      await clickPipeButton(page, 'submit');
-      await page.waitForTimeout(250);
+    const frozen = await firstResponseEvents(page);
 
-      const probe = await pipeProbe(page);
+    await latticeNext(page);
+    await waitPipeView(page, 'results');
 
-      expect(probe.submissions_used).toBe(run);
-      expect(probe.closed).toBe(run === 4);
+    // The same rule after CANNOT SOLVE (3), an unsealed layout (2) and an
+    // empty layout (1): three runs, then the board is read-only.
+    for (const digit of ['3', '2', '1']) {
+      await page.keyboard.press(digit);
+      await waitPipeView(page, 'practice');
+
+      for (let run = 1; run <= 4; run++) {
+        await page.keyboard.press('t');
+        await page.waitForTimeout(200);
+
+        const probe = await pipeProbe(page);
+
+        expect(
+          probe.series?.practice_runs.find(
+            (entry) => entry.network_id === `n${digit}`,
+          )?.runs_used,
+        ).toBe(Math.min(run, 3));
+        expect(probe.closed).toBe(run >= 3);
+      }
+
+      expect((await pipeProbe(page)).feedback.join(' ')).toMatch(
+        /Practice test runs used/,
+      );
+      await page.keyboard.press('b');
+      await waitPipeView(page, 'results');
     }
 
     const probe = await pipeProbe(page);
 
-    expect(probe.feedback.join(' ')).toMatch(/Test runs used/);
+    expect(
+      probe.buttons
+        .filter((b) => b.id.startsWith('practise_'))
+        .map((b) => b.label),
+    ).toEqual([
+      'PRACTISE NETWORK 1 (0 test runs left)',
+      'PRACTISE NETWORK 2 (0 test runs left)',
+      'PRACTISE NETWORK 3 (0 test runs left)',
+    ]);
+
+    // FINISH closes the bench; the first responses are as they were.
+    await page.keyboard.press('f');
+    await page.waitForTimeout(200);
+    expect((await pipeProbe(page)).lines.join('\n')).toMatch(
+      /All three networks are recorded\. The bench is closed\./,
+    );
+    expect(await firstResponseEvents(page)).toBe(frozen);
 
     const m13 = await ipModule(page, 'm13');
 
-    expect(m13.window_status).toBe('exhausted');
-    expect(m13.final_network_valid).toBe(false);
+    expect(m13.window_status).toBe('completed');
+    expect(m13.practice_closed).toBe('finished');
+    expect((await ipValidity(page, OPPORTUNITY)).validity).toBe('valid');
+
+    const types = eventsOfFamily(await ipEvents(page), FAMILY).map(
+      (event) => event.event_type,
+    );
+
     expect(
-      (await ipValidity(page, 'proto_m13_lattice_construction')).validity,
-    ).toBe('valid');
+      types.filter((type) => type === `${FAMILY}_practice_test_run`),
+    ).toHaveLength(9);
     expect(
-      eventsOfFamily(await ipEvents(page), 'proto_m13_lattice')
-        .map((event) => event.event_type)
-        .filter((type) => type === 'proto_m13_lattice_exhausted'),
+      types.filter((type) => type === `${FAMILY}_practice_closed`),
     ).toHaveLength(1);
+    expect(
+      types.filter((type) => type === `${FAMILY}_first_response`),
+    ).toHaveLength(3);
   });
 });
 
@@ -1003,30 +1215,31 @@ test.describe('M18 fault diagnosis (browser)', () => {
     );
   });
 
-  test('entry-state proof: M13 solved, exhausted and never-opened paths open the SAME M18 state', async ({
+  test('entry-state proof: M13 scored phase completed, completed with practice, stopped and never-opened paths open the SAME M18 state', async ({
     browser,
   }) => {
-    test.setTimeout(420_000);
+    test.setTimeout(480_000);
 
     const snapshots: Record<string, unknown>[] = [];
 
-    // (a) M13 solved.
+    // (a) M13 scored phase completed (a sealed layout, CANNOT SOLVE, an
+    //     empty layout); results never opened.
     {
       const context = await browser.newContext();
       const page = await context.newPage();
 
       await bootIpLab(page, {
-        game_session_id: 'GS_IP_IND_SOLVED',
+        game_session_id: 'GS_IP_IND_COMPLETED',
         ip_form: 'A',
       });
       await walkAndUseStation(page, 'm13');
       await waitPipeOpen(page, true);
-      await solveLatticeByMouse(page);
-      await dragPieceToCell(page, 'va1', 'B1');
-      await waitCellPiece(page, 'B1', 'va1', 0);
-      await clickPipeButton(page, 'submit');
-      await page.waitForTimeout(300);
-      expect((await pipeProbe(page)).closed).toBe(true);
+      await completeLatticeByKeyboard(page, 'A', [
+        'sealed',
+        'cannot_solve',
+        'empty',
+      ]);
+      expect((await pipeSeries(page)).status).toBe('completed');
       await page.keyboard.press('Escape');
       await waitPipeOpen(page, false);
       await openDiagnosisFromLab(page);
@@ -1035,30 +1248,31 @@ test.describe('M18 fault diagnosis (browser)', () => {
       await context.close();
     }
 
-    // (b) M13 exhausted after four invalid test runs.
+    // (b) M13 scored phase completed, results opened and practice in
+    //     progress: the lattice status never returns to open.
     {
       const context = await browser.newContext();
       const page = await context.newPage();
 
       await bootIpLab(page, {
-        game_session_id: 'GS_IP_IND_EXHAUST',
+        game_session_id: 'GS_IP_IND_PRACTICE',
         ip_form: 'A',
       });
       await walkAndUseStation(page, 'm13');
       await waitPipeOpen(page, true);
-      await dragPieceToCell(page, 'te1', 'A2');
-
-      for (let run = 0; run < 4; run++) {
-        await clickPipeButton(page, 'submit');
-        await page.waitForTimeout(200);
-      }
-
-      expect((await pipeProbe(page)).closed).toBe(true);
+      await completeLatticeByKeyboard(page, 'A', ['empty', 'empty', 'empty']);
+      await latticeNext(page);
+      await waitPipeView(page, 'results');
+      await page.keyboard.press('2');
+      await waitPipeView(page, 'practice');
+      await page.keyboard.press('t');
+      await page.waitForTimeout(200);
+      expect((await ipModule(page, 'm13')).window_status).toBe('completed');
       await page.keyboard.press('Escape');
       await waitPipeOpen(page, false);
       await openDiagnosisFromLab(page);
       snapshots.push((await m18Entry(page)) as Record<string, unknown>);
-      expect((await ipModule(page, 'm13')).window_status).toBe('exhausted');
+      expect((await ipModule(page, 'm13')).window_status).toBe('completed');
       await context.close();
     }
 
@@ -1105,17 +1319,25 @@ test.describe('M18 fault diagnosis (browser)', () => {
 
       await walkAndUseStation(page, 'm13');
       await waitPipeOpen(page, true);
-      // Re-entry: the seated piece survived and the re-entry was recorded.
+      // Re-entry: the seated piece survived, the same network is open and
+      // the re-entry was recorded — nothing was presented a second time.
       await waitCellPiece(page, 'A2', 'el1', 0);
+      expect((await pipeSeries(page)).network_id).toBe('n1');
+
+      const types = eventsOfFamily(
+        await ipEvents(page),
+        'proto_m13_networks',
+      ).map((event) => event.event_type);
+
+      expect(types).toContain('proto_m13_networks_series_reopened');
       expect(
-        eventsOfFamily(await ipEvents(page), 'proto_m13_lattice').map(
-          (event) => event.event_type,
-        ),
-      ).toContain('proto_m13_lattice_window_reopened');
+        types.filter((type) => type === 'proto_m13_networks_network_presented'),
+      ).toHaveLength(1);
       await clickPipeButton(page, 'stop');
       await page.keyboard.press('Enter');
       await page.waitForTimeout(200);
       expect((await pipeProbe(page)).closed).toBe(true);
+      expect((await pipeSeries(page)).status).toBe('stopped');
       await page.keyboard.press('Escape');
       await waitPipeOpen(page, false);
       await openDiagnosisFromLab(page);
@@ -1143,7 +1365,7 @@ test.describe('M18 fault diagnosis (browser)', () => {
 
       expect(
         JSON.stringify(eventsOfFamily(events, 'proto_m18_fault')),
-      ).not.toMatch(/proto_m13|lattice_construction/);
+      ).not.toMatch(/proto_m13|lattice_construction|network_series/);
       await context.close();
     }
 
@@ -1197,10 +1419,10 @@ test.describe('M18 fault diagnosis (browser)', () => {
 });
 
 test.describe('form B browser lane', () => {
-  test('M13 form B sealed run (north → south) and M18 form B diagnosis', async ({
+  test('M13 form B: three rotated networks, a sealed first response on network 1; M18 form B diagnosis', async ({
     page,
   }) => {
-    test.setTimeout(240_000);
+    test.setTimeout(300_000);
 
     await bootIpLab(page, {
       game_session_id: 'GS_IP_FORM_B',
@@ -1209,38 +1431,72 @@ test.describe('form B browser lane', () => {
     });
     await waitPipeOpen(page, true);
 
-    let probe = await pipeProbe(page);
+    const ports = async () => {
+      const probe = await pipeProbe(page);
 
-    expect(probe.form).toBe('B');
-    expect(probe.cells.find((cell) => cell.slot === 'B1')?.port).toBe('feed');
-    expect(probe.cells.find((cell) => cell.slot === 'B3')?.port).toBe('intake');
+      return {
+        feed: probe.cells.find((cell) => cell.port === 'feed')?.slot,
+        intake: probe.cells.find((cell) => cell.port === 'intake')?.slot,
+        fractured: probe.cells
+          .filter((cell) => cell.broken)
+          .map((cell) => cell.slot),
+      };
+    };
 
-    // SOLUTION_B: B1 el1 r270, A1 el2 r90, A2 va1 r90, A3 el3 r0, B3 el4 r180.
-    await dragPieceToCell(page, 'el1', 'B1');
-    await waitCellPiece(page, 'B1', 'el1', 0);
+    expect((await pipeProbe(page)).form).toBe('B');
+    // Network 1, form B: the v2 geometry turned by 90° (north → south).
+    expect(await ports()).toEqual({
+      feed: 'B1',
+      intake: 'B3',
+      fractured: ['B2'],
+    });
+    await seatLatticeByPointer(
+      page,
+      latticeLayout(LATTICE_LAYOUTS.B.n1.sealed),
+    );
+    await commitLatticeByPointer(page, 'layout');
+    await latticeNext(page, 'pointer');
 
-    for (let turn = 0; turn < 3; turn++) {
-      await rightClickRect(page, await pipeCell(page, 'B1'));
-    }
+    // Network 2, form B: adjacent sides.
+    expect(await ports()).toEqual({
+      feed: 'C1',
+      intake: 'A3',
+      fractured: ['C2'],
+    });
+    await commitLatticeByKeyboard(page, 'cannot_solve');
+    await latticeNext(page);
 
-    await dragPieceToCell(page, 'el2', 'A1');
-    await waitCellPiece(page, 'A1', 'el2', 0);
-    await rightClickRect(page, await pipeCell(page, 'A1'));
-    await dragPieceToCell(page, 'va1', 'A2');
-    await waitCellPiece(page, 'A2', 'va1', 0);
-    await rightClickRect(page, await pipeCell(page, 'A2'));
-    await dragPieceToCell(page, 'el3', 'A3');
-    await waitCellPiece(page, 'A3', 'el3', 0);
-    await dragPieceToCell(page, 'el4', 'B3');
-    await waitCellPiece(page, 'B3', 'el4', 0);
-    await rightClickRect(page, await pipeCell(page, 'B3'));
-    await rightClickRect(page, await pipeCell(page, 'B3'));
-    await waitCellPiece(page, 'B3', 'el4', 180);
-    await clickPipeButton(page, 'submit');
-    await page.waitForTimeout(300);
-    probe = await pipeProbe(page);
-    expect(probe.closed).toBe(true);
-    expect((await ipModule(page, 'm13')).final_network_valid).toBe(true);
+    // Network 3, form B: both ports on the north side.
+    expect(await ports()).toEqual({
+      feed: 'C1',
+      intake: 'A1',
+      fractured: ['B1'],
+    });
+    await commitLatticeByKeyboard(page, 'layout');
+
+    const m13 = await ipModule(page, 'm13');
+
+    expect(m13.form).toBe('B');
+    expect(m13.series_status).toBe('completed');
+    expect(
+      (
+        m13.networks as {
+          first_response: { response_kind: string; correct: boolean };
+        }[]
+      ).map((network) => [
+        network.first_response.response_kind,
+        network.first_response.correct,
+      ]),
+    ).toEqual([
+      ['layout', true],
+      ['cannot_solve', false],
+      ['layout', false],
+    ]);
+    expect(
+      eventsOfFamily(await ipEvents(page), 'proto_m13_networks').every(
+        (event) => event.metadata?.form_id === 'B',
+      ),
+    ).toBe(true);
     await page.keyboard.press('Escape');
     await waitPipeOpen(page, false);
 

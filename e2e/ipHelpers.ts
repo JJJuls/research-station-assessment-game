@@ -410,10 +410,26 @@ export function expectProvisionalOnly(events: IpEventLike[]) {
  * Lattice bench (M13) probe + actions
  * ------------------------------------------------------------------ */
 
+export interface PipeSeriesLike {
+  status: string;
+  view: string;
+  phase: string;
+  header: string;
+  network_id: string | null;
+  network_index: number | null;
+  editable: boolean;
+  answered: { network_id: string; answered: boolean }[];
+  practice_runs: { network_id: string; runs_used: number }[];
+  practice_closed: string | null;
+}
+
 export interface PipeProbeLike {
   open: boolean;
   form: string | null;
+  /** True when no board can be edited (answered, read-only or a record). */
   closed: boolean;
+  /** The three-network series as the bench shows it (Unit 16). */
+  series: PipeSeriesLike | null;
   cells: (Rect & {
     slot: string;
     piece_id: string | null;
@@ -430,17 +446,18 @@ export interface PipeProbeLike {
   focus: { kind: 'cell' | 'bench'; id: string } | null;
   buttons: (Rect & { id: string; label: string; enabled: boolean })[];
   feedback: string[];
+  /** Every line of text currently rendered on the bench. */
+  lines: string[];
   last_action: string | null;
   undo_available: boolean;
   seated_count: number;
   snap_slot: string | null;
-  submissions_used: number;
-  max_submissions: number;
   dragging: boolean;
   drop_target: string | null;
   drop_valid: boolean;
   help_open: boolean;
   confirm_open: boolean;
+  dialog: 'stop' | 'layout' | 'cannot_solve' | null;
 }
 
 export async function pipeProbe(page: Page): Promise<PipeProbeLike> {
@@ -571,6 +588,289 @@ export async function waitCellPiece(
     { slot, pieceId, rotation },
     { timeout: 8_000 },
   );
+}
+
+/* ------------------------------------------------------------------ *
+ * Lattice bench (M13) — the three-network series (Unit 16)
+ * ------------------------------------------------------------------ */
+
+export type LatticeNetworkId = 'n1' | 'n2' | 'n3';
+export type LatticeLayout = Record<
+  string,
+  { piece_id: string; rotation: number }
+>;
+
+/** "A2:el1@270 A1:el2@90" → layout. */
+export function latticeLayout(spec: string): LatticeLayout {
+  return Object.fromEntries(
+    spec.split(' ').map((entry) => {
+      const [slot, rest] = entry.split(':');
+      const [pieceId, rotation] = rest.split('@');
+
+      return [slot, { piece_id: pieceId, rotation: Number(rotation) }];
+    }),
+  );
+}
+
+/**
+ * One sealed layout and one layout with an open branch per network and
+ * form (hand-authored; `m13_networks.spec.ts` proves them against its
+ * reference checker).
+ */
+export const LATTICE_LAYOUTS: Record<
+  'A' | 'B',
+  Record<LatticeNetworkId, { sealed: string; open: string }>
+> = {
+  A: {
+    n1: {
+      sealed: 'A2:el1@270 A1:el2@90 B1:va1@0 C1:el3@180 C2:el4@0',
+      open: 'A2:el1@270 A1:el2@90 B1:va1@0 C1:el3@180 C2:te1@90',
+    },
+    n2: {
+      sealed: 'A1:el1@180 A2:st1@90 A3:el2@0 B3:va1@0 C3:el3@180',
+      open: 'A1:el1@180 A2:st1@90 A3:el2@0 B3:va1@0 C3:te1@180',
+    },
+    n3: {
+      sealed: 'A1:st1@0 B1:el1@180 B2:va1@90 B3:el2@270 A3:st2@0',
+      open: 'A1:st1@0 B1:el1@180 B2:va1@90 B3:te1@0 A3:st2@0',
+    },
+  },
+  B: {
+    n1: {
+      sealed: 'B1:el1@0 C1:el2@180 C2:va1@90 C3:el3@270 B3:el4@90',
+      open: 'B1:el1@0 C1:el2@180 C2:va1@90 C3:el3@270 B3:te1@180',
+    },
+    n2: {
+      sealed: 'C1:el1@270 B1:st1@180 A1:el2@90 A2:va1@90 A3:el3@270',
+      open: 'C1:el1@270 B1:st1@180 A1:el2@90 A2:va1@90 A3:te1@270',
+    },
+    n3: {
+      sealed: 'C1:st1@90 C2:el1@270 B2:va1@180 A2:el2@0 A1:st2@90',
+      open: 'C1:st1@90 C2:el1@270 B2:va1@180 A2:te1@90 A1:st2@90',
+    },
+  },
+};
+
+/** Bench order of the standard piece set (index = bench slot). */
+const LATTICE_BENCH_ORDER = [
+  'st1',
+  'st2',
+  'el1',
+  'el2',
+  'el3',
+  'el4',
+  'te1',
+  'va1',
+  'cap1',
+];
+const LATTICE_SLOTS = ['A1', 'B1', 'C1', 'A2', 'B2', 'C2', 'A3', 'B3', 'C3'];
+
+/** Settle window of the commitment dialog and of the acknowledgement. */
+export const LATTICE_SETTLE_MS = 400;
+
+export async function pipeSeries(page: Page): Promise<PipeSeriesLike> {
+  const series = (await pipeProbe(page)).series;
+
+  if (series === null) {
+    throw new Error('pipe series unavailable');
+  }
+
+  return series;
+}
+
+export async function waitPipeView(page: Page, view: string) {
+  await page.waitForFunction(
+    (expected) =>
+      (window as unknown as { __ipPipeProbe?: PipeProbeLike | null })
+        .__ipPipeProbe?.series?.view === expected,
+    view,
+    { timeout: 8_000 },
+  );
+}
+
+/** Moves the keyboard focus ring to a mount or a bench slot (arrow keys). */
+export async function latticeFocus(
+  page: Page,
+  kind: 'cell' | 'bench',
+  id: string,
+) {
+  // Mounts (rows 0–2) and bench slots (rows 3–5) form one 3-wide column.
+  const position = (focusKind: string, focusId: string) => {
+    const index =
+      focusKind === 'cell' ? LATTICE_SLOTS.indexOf(focusId) : Number(focusId);
+
+    return {
+      col: index % 3,
+      row: Math.floor(index / 3) + (focusKind === 'cell' ? 0 : 3),
+    };
+  };
+  const target = position(kind, id);
+
+  for (let step = 0; step < 12; step += 1) {
+    const focus = (await pipeProbe(page)).focus;
+
+    if (focus === null) {
+      throw new Error('the bench shows no board');
+    }
+
+    const current = position(focus.kind, focus.id);
+
+    if (current.col === target.col && current.row === target.row) {
+      return;
+    }
+
+    await page.keyboard.press(
+      current.col < target.col
+        ? 'ArrowRight'
+        : current.col > target.col
+          ? 'ArrowLeft'
+          : current.row < target.row
+            ? 'ArrowDown'
+            : 'ArrowUp',
+    );
+    await page.waitForTimeout(70);
+  }
+
+  throw new Error(`focus never reached ${kind} ${id}`);
+}
+
+/** Seats a layout with the keyboard alone (arrows, SPACE, R). */
+export async function seatLatticeByKeyboard(page: Page, layout: LatticeLayout) {
+  for (const [slot, piece] of Object.entries(layout)) {
+    await latticeFocus(
+      page,
+      'bench',
+      String(LATTICE_BENCH_ORDER.indexOf(piece.piece_id)),
+    );
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(70);
+
+    for (let turns = piece.rotation / 90; turns > 0; turns -= 1) {
+      await page.keyboard.press('r');
+      await page.waitForTimeout(70);
+    }
+
+    await latticeFocus(page, 'cell', slot);
+    await page.keyboard.press('Space');
+    await waitCellPiece(page, slot, piece.piece_id, piece.rotation);
+  }
+}
+
+/** Seats a layout with the pointer alone (drag, right-click to turn). */
+export async function seatLatticeByPointer(page: Page, layout: LatticeLayout) {
+  for (const [slot, piece] of Object.entries(layout)) {
+    await dragPieceToCell(page, piece.piece_id, slot);
+    await waitCellPiece(page, slot, piece.piece_id, 0);
+
+    for (let turns = piece.rotation / 90; turns > 0; turns -= 1) {
+      await rightClickRect(page, await pipeCell(page, slot));
+    }
+
+    await waitCellPiece(page, slot, piece.piece_id, piece.rotation);
+  }
+}
+
+async function waitPipeDialog(page: Page, dialog: string | null) {
+  await page.waitForFunction(
+    (expected) =>
+      ((window as unknown as { __ipPipeProbe?: PipeProbeLike | null })
+        .__ipPipeProbe?.dialog ?? null) === expected,
+    dialog,
+    { timeout: 8_000 },
+  );
+}
+
+/**
+ * Records the open network's first response by keyboard: T (layout) or N
+ * (CANNOT SOLVE), then a fresh ENTER after the settle window.
+ */
+export async function commitLatticeByKeyboard(
+  page: Page,
+  kind: 'layout' | 'cannot_solve' = 'layout',
+) {
+  await page.keyboard.press(kind === 'layout' ? 't' : 'n');
+  await waitPipeDialog(page, kind);
+  await page.waitForTimeout(LATTICE_SETTLE_MS + 120);
+  await page.keyboard.press('Enter');
+  await waitPipeView(page, 'acknowledgement');
+}
+
+/** The same commitment with the pointer alone. */
+export async function commitLatticeByPointer(
+  page: Page,
+  kind: 'layout' | 'cannot_solve' = 'layout',
+) {
+  await clickPipeButton(
+    page,
+    kind === 'layout' ? 'record_layout' : 'cannot_solve',
+  );
+  await waitPipeDialog(page, kind);
+  await page.waitForTimeout(LATTICE_SETTLE_MS + 120);
+  await clickPipeButton(page, 'confirm_commit');
+  await waitPipeView(page, 'acknowledgement');
+}
+
+/** NEXT NETWORK / SHOW RESULTS after the acknowledgement has settled. */
+export async function latticeNext(
+  page: Page,
+  input: 'keyboard' | 'pointer' = 'keyboard',
+) {
+  await page.waitForTimeout(LATTICE_SETTLE_MS + 120);
+
+  if (input === 'keyboard') {
+    await page.keyboard.press('Enter');
+  } else {
+    await clickPipeButton(page, 'next');
+  }
+
+  await page.waitForFunction(
+    () =>
+      (window as unknown as { __ipPipeProbe?: PipeProbeLike | null })
+        .__ipPipeProbe?.series?.view !== 'acknowledgement',
+    undefined,
+    { timeout: 8_000 },
+  );
+  await page.waitForTimeout(120);
+}
+
+/**
+ * Answers the three networks in order by keyboard and stops on the third
+ * acknowledgement (SHOW RESULTS not yet pressed).
+ */
+export async function completeLatticeByKeyboard(
+  page: Page,
+  form: 'A' | 'B',
+  answers: readonly ('sealed' | 'open' | 'cannot_solve' | 'empty')[],
+) {
+  const ids: LatticeNetworkId[] = ['n1', 'n2', 'n3'];
+
+  for (const [index, answer] of answers.entries()) {
+    await waitPipeView(page, 'network');
+
+    if (answer === 'sealed' || answer === 'open') {
+      await seatLatticeByKeyboard(
+        page,
+        latticeLayout(LATTICE_LAYOUTS[form][ids[index]][answer]),
+      );
+    }
+
+    await commitLatticeByKeyboard(
+      page,
+      answer === 'cannot_solve' ? 'cannot_solve' : 'layout',
+    );
+
+    if (index < answers.length - 1) {
+      await latticeNext(page);
+    }
+  }
+}
+
+/** STOP TASK by keyboard (Q, then ENTER on the confirmation). */
+export async function stopLatticeByKeyboard(page: Page) {
+  await page.keyboard.press('q');
+  await waitPipeDialog(page, 'stop');
+  await page.keyboard.press('Enter');
+  await waitPipeView(page, 'record');
 }
 
 /* ------------------------------------------------------------------ *

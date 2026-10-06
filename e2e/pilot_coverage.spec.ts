@@ -375,7 +375,7 @@ test.describe('pilot coverage schedule (pure)', () => {
     const m13 = PILOT_SCHEDULE.find((entry) => entry.item === 'M13')!;
     const derived = deriveItemCoverage(m13, [
       record({
-        opportunity_id: 'proto_m13_lattice_construction',
+        opportunity_id: 'proto_m13_network_series',
         entered: true,
         prior_exposure: [
           'contamination:developer_scene:pump_house',

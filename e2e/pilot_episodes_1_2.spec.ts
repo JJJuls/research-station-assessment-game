@@ -617,7 +617,13 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
       )
       .catch(() => undefined);
     types = await pilotEventTypes(page);
-    expect(types.some((t) => t.startsWith('proto_m13_lattice_'))).toBe(true);
+    // Unit 16: the three-network series opens on network 1; the retired
+    // one-network family is not written.
+    expect(types).toContain('proto_m13_networks_series_opened');
+    expect(
+      types.filter((t) => t === 'proto_m13_networks_network_presented'),
+    ).toHaveLength(1);
+    expect(types.some((t) => t.startsWith('proto_m13_lattice_'))).toBe(false);
     await page.keyboard.press('Escape');
     await page.waitForTimeout(600);
 

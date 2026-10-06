@@ -521,7 +521,7 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
       await clickDiagnosisButton(page, 'close');
       await waitDiagnosisOpen(page, false);
 
-      const m13 = await ipValidity(page, 'proto_m13_lattice_construction');
+      const m13 = await ipValidity(page, 'proto_m13_network_series');
 
       expect(m13.entered).toBe(false);
       expect(await itemStatus(page, 'M13')).toBe('pending');
@@ -596,7 +596,7 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
 
       // Using the board changed nothing on the M13 record and emitted no
       // M13 event from the laboratory.
-      const m13 = await ipValidity(page, 'proto_m13_lattice_construction');
+      const m13 = await ipValidity(page, 'proto_m13_network_series');
 
       expect(m13.invalid_reason).toBe('participant_absent');
 

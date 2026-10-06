@@ -1112,6 +1112,37 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'performance_counterpart',
     direction: 'extend_occasions',
     occasions: 3,
+    // Unit 16: the approved three-network series landed at the Conduit
+    // Lattice Bench (Records Workshop, episode 2) — ONE opportunity, three
+    // network windows in one bench session. The v2 one-network family
+    // `proto_m13_lattice_*` keeps its v2 meaning in the frozen ledger.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m13_network_series'],
+      windows: [
+        {
+          id: 'm13_network_n1',
+          occasion: 'n1',
+          zone: 'records_workshop',
+          episode: 2,
+        },
+        {
+          id: 'm13_network_n2',
+          occasion: 'n2',
+          zone: 'records_workshop',
+          episode: 2,
+        },
+        {
+          id: 'm13_network_n3',
+          occasion: 'n3',
+          zone: 'records_workshop',
+          episode: 2,
+        },
+      ],
+      family_prefixes: ['proto_m13_networks_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Three independently keyed network puzzles with different structures and a matched alternate form; first committed solution saved; Cannot solve retained; later learning never overwrites the first answer.',
     features: [
