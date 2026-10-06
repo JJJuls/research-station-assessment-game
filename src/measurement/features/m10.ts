@@ -10,20 +10,27 @@
  *
  * Accessibility is objective: a delivery is accessible when its recipient
  * or its permitted delegate was recorded present (`person_present`) while
- * it was carried. It never rests on the participant having opened the
- * recipient's conversation, the station log or a deliveries menu — their
- * absence never makes an accessible delivery inaccessible. An inaccessible
- * delivery is excluded, never failed.
+ * it was carried — after its acceptance and after its opportunity opened.
+ * It never rests on the participant having opened the recipient's
+ * conversation, the station log or a deliveries menu — their absence never
+ * makes an accessible delivery inaccessible. An inaccessible delivery (no
+ * presence record) is excluded, never failed.
  *
  * The invariants are conditional on the outcome claimed. Legitimate
  * missingness is never a technical failure: an offer never answered, a
  * declined delivery with no act, an accepted delivery still carried at the
- * deadline with no act. Only contradictory, malformed or unreproducible
- * evidence is: an act before acceptance, a handover to the wrong person or
- * with the wrong object, a delegation without the delegate's stated
- * acceptance, two credited terminal acts, a closure snapshot that
- * disagrees with the recount, an unknown administration version. A late
- * act after the closure is kept apart and never changes the first outcome.
+ * deadline with no act, an accepted delivery with no presence record. Only
+ * contradictory, malformed or unreproducible evidence is: an act before
+ * acceptance, a handover or a delegation to the wrong person or with the
+ * wrong object, a delegation without the delegate's stated acceptance, two
+ * credited terminal acts, a closure snapshot that disagrees with the
+ * recount, an unknown administration version — and, by the research
+ * owner's rulings of the U15 closeout (register §5.256, §5.257), a
+ * presence record that does not follow the delivery's acceptance and its
+ * opening (it never establishes accessibility and never yields an observed
+ * zero) and a delegation that does not name the delivery's own object. A
+ * late act after the closure is kept apart and never changes the first
+ * outcome.
  */
 import type { RawGameEvent } from '../../systems/EventLogger';
 import { registerEntry } from '../registerV3';
@@ -169,7 +176,17 @@ function analyse(
     closure_reason: null,
   };
 
+  // Research-owner ruling (U15 closeout): a presence record of a delivery
+  // that is not accepted — never offered, never answered, declined — is
+  // malformed evidence, never accessibility.
+  const strayPresence = () =>
+    failure('a presence record without an accepted delivery');
+
   if (presented.length === 0) {
+    if (presence.length > 0) {
+      return strayPresence();
+    }
+
     if (heldBack.length > 0) {
       return { ...record, status: 'held_back' };
     }
@@ -217,6 +234,10 @@ function analyse(
       return failure('an act without an accepted delivery');
     }
 
+    if (presence.length > 0) {
+      return strayPresence();
+    }
+
     return { ...record, status: 'unanswered' };
   }
 
@@ -228,6 +249,10 @@ function analyse(
       return failure('an act on a declined delivery');
     }
 
+    if (presence.length > 0) {
+      return strayPresence();
+    }
+
     return { ...record, status: 'declined' };
   }
 
@@ -237,6 +262,26 @@ function analyse(
 
   if (acts.some((act) => seq(act) <= seq(answer))) {
     return failure('an act before the acceptance');
+  }
+
+  // Research-owner ruling (U15 closeout): presence is evidence of access
+  // only while the delivery is carried — after its acceptance AND after
+  // its opportunity opened. A record before either is malformed evidence
+  // and fails the item; it never establishes accessibility. (No presence
+  // record at all stays legitimate: the delivery is then inaccessible and
+  // excluded, below.)
+  if (presence.some((event) => seq(event) <= seq(answer))) {
+    return failure('a presence record before the acceptance');
+  }
+
+  const opening = of('opportunity_opened')[0];
+
+  if (
+    presence.some(
+      (event) => opening === undefined || seq(event) <= seq(opening),
+    )
+  ) {
+    return failure('a presence record before the opportunity opened');
   }
 
   const credited = [...handed, ...delegated];
@@ -281,6 +326,12 @@ function analyse(
 
     if (!stated) {
       return failure("delegated without the delegate's stated acceptance");
+    }
+
+    // Research-owner ruling (U15 closeout): a delegation must name the
+    // delivery's own object, exactly as a direct handover must.
+    if (meta<string>(delegated[0], 'object') !== terms.object) {
+      return failure('delegated with the wrong object');
     }
 
     record.path = 'delegated';

@@ -1414,6 +1414,343 @@ test.describe('M10 deliveries (pure)', () => {
     }
   });
 
+  test('closeout rulings: a presence record must follow the acceptance and the opening, and a delegation must name the delivery’s own object', () => {
+    // Research-owner rulings of the U15 closeout (register §5.256 and
+    // §5.257): (1) a delivery's `person_present` record before its
+    // acceptance or before its opportunity opened is malformed evidence —
+    // a technical failure, never accessibility and never an observed
+    // zero; (2) a `delegated` event must name the delivery's own object,
+    // as a direct handover must.
+    type Outcome = {
+      disposition: string;
+      value: unknown;
+      numerator: number | null;
+      denominator: number | null;
+      missing_reason: string | null;
+    };
+    const outcome = (events: readonly RawGameEvent[]): Outcome => {
+      const row = feature(events);
+
+      return {
+        disposition: row.disposition,
+        value: row.value,
+        numerator: row.numerator,
+        denominator: row.denominator,
+        missing_reason: row.missing_reason,
+      };
+    };
+    /** A raw presence record, written as the adapter would shape it. */
+    const present = (h: Harness, delivery: M10Delivery) =>
+      h.sink(delivery)('person_present', {
+        delivery,
+        person: M10_DELIVERIES[delivery].recipient,
+        role: 'recipient',
+        zone: 'diagnostics_laboratory',
+        stage: 'lab_work',
+        visit: 1,
+        input_mode: 'system',
+      });
+
+    // The game itself never writes such a record: the model refuses
+    // presence for a delivery that is not carried.
+    const idle = harness();
+    const notCarried = createM10State('d1');
+
+    m10Present(notCarried, 1_000, idle.sink('d1'));
+    expect(
+      m10PersonPresent(
+        notCarried,
+        'kai',
+        'diagnostics_laboratory',
+        'lab_work',
+        1,
+        idle.sink('d1'),
+      ),
+    ).toBe(false);
+    expect(
+      idle.events.filter((e) => e.event_type === typeOf('person_present')),
+    ).toEqual([]);
+
+    const logs: Record<string, RawGameEvent[]> = {};
+
+    // ——— Malformed: presence that does not follow acceptance + opening ———
+    {
+      // Presented, PRESENCE, accepted, opened, still carried at the deadline.
+      const h = harness();
+      const s = createM10State('d1');
+
+      m10Present(s, 1_000, h.sink('d1'));
+      present(h, 'd1');
+      m10Answer(s, 'accept', 1, 3, 1_400, KEY, h.sink('d1'));
+      h.opened('d1');
+      h.close(s, 50_000, 'closed_at_review');
+      logs['presence before the acceptance'] = h.events;
+    }
+
+    {
+      // Presented, accepted, PRESENCE, opened, still carried at the deadline.
+      const h = harness();
+      const s = createM10State('d1');
+
+      m10Present(s, 1_000, h.sink('d1'));
+      m10Answer(s, 'accept', 1, 3, 1_400, KEY, h.sink('d1'));
+      present(h, 'd1');
+      h.opened('d1');
+      h.close(s, 50_000, 'closed_at_review');
+      logs['presence after the acceptance, before the opening'] = h.events;
+    }
+
+    {
+      // Accepted and present, but the opportunity never opened.
+      const h = harness();
+      const s = createM10State('d1');
+
+      m10Present(s, 1_000, h.sink('d1'));
+      m10Answer(s, 'accept', 1, 3, 1_400, KEY, h.sink('d1'));
+      present(h, 'd1');
+      h.close(s, 50_000, 'closed_at_review');
+      logs['presence with no opening at all'] = h.events;
+    }
+
+    {
+      // A malformed early record is not repaired by a valid later one.
+      const h = harness();
+      const s = createM10State('d1');
+
+      m10Present(s, 1_000, h.sink('d1'));
+      present(h, 'd1');
+      m10Answer(s, 'accept', 1, 3, 1_400, KEY, h.sink('d1'));
+      h.opened('d1');
+      m10PersonPresent(
+        s,
+        'kai',
+        'diagnostics_laboratory',
+        'lab_work',
+        2,
+        h.sink('d1'),
+      );
+      h.close(s, 50_000, 'closed_at_review');
+      logs['presence before the acceptance and again after the opening'] =
+        h.events;
+    }
+
+    {
+      // The offer was never answered: there is no acceptance to follow.
+      const h = harness();
+      const s = createM10State('d1');
+
+      m10Present(s, 1_000, h.sink('d1'));
+      present(h, 'd1');
+      h.closeUnanswered(s, 50_000);
+      logs['presence on an unanswered delivery'] = h.events;
+    }
+
+    {
+      const h = harness();
+
+      offer(h, 'd2', 'decline', 1_000);
+      present(h, 'd2');
+      logs['presence on a declined delivery'] = h.events;
+    }
+
+    {
+      const h = harness();
+
+      present(h, 'd1');
+      logs['presence without a presentation'] = h.events;
+    }
+
+    // ——— Malformed: a delegation that does not name its own object ———
+    const fulfilled = bothFulfilled().h.events;
+    const delegatedAt = (events: RawGameEvent[]) =>
+      events.findIndex(
+        (e) =>
+          e.event_type === typeOf('delegated') && e.metadata?.delivery === 'd2',
+      );
+
+    expect(fulfilled[delegatedAt(fulfilled)].metadata?.object).toBe(LOGBOOK);
+    logs['a delegation naming the other delivery’s object'] = rewrite(
+      fulfilled,
+      (copy) => {
+        const event = copy[delegatedAt(copy)];
+
+        event.metadata = { ...event.metadata, object: KEY_CARD };
+
+        return copy;
+      },
+    );
+    logs['a delegation naming no object'] = rewrite(fulfilled, (copy) => {
+      const event = copy[delegatedAt(copy)];
+      const { object: _dropped, ...rest } = event.metadata as Record<
+        string,
+        unknown
+      >;
+
+      void _dropped;
+      event.metadata = rest;
+
+      return copy;
+    });
+
+    // ——— Valid records that must stay as they were ———
+    {
+      // Accepted, opened, THEN the recipient recorded present; no
+      // conversation, log or deliveries menu was ever opened; still
+      // carried at the deadline: accessible, an observed 0 / 1.
+      const h = harness();
+      const s = offer(h, 'd1', 'accept', 1_000);
+
+      m10PersonPresent(
+        s,
+        'kai',
+        'diagnostics_laboratory',
+        'lab_work',
+        1,
+        h.sink('d1'),
+      );
+      h.close(s, 50_000, 'closed_at_review');
+      expect(
+        h.events.some(
+          (e) =>
+            e.event_type === typeOf('obligation_shown') ||
+            e.event_type === typeOf('recipient_prompt_opened'),
+        ),
+      ).toBe(false);
+      logs['valid presence after the opening, no menu exposure'] = h.events;
+    }
+
+    {
+      // Legitimate absence of presence evidence: excluded, never failed.
+      const h = harness();
+      const s = offer(h, 'd1', 'accept', 1_000);
+
+      h.close(s, 50_000, 'closed_at_review');
+      logs['no presence record at all'] = h.events;
+    }
+
+    logs['a valid direct handover and a valid delegation'] = fulfilled;
+
+    // The raw logs are never changed by the extraction.
+    const before = Object.fromEntries(
+      Object.entries(logs).map(([name, events]) => [
+        name,
+        JSON.stringify(events),
+      ]),
+    );
+    const outcomes = Object.fromEntries(
+      Object.keys(logs).map((name) => [
+        name,
+        outcome(deepFreeze(JSON.parse(before[name]) as RawGameEvent[])),
+      ]),
+    );
+    const failed = (missing_reason: string): Outcome => ({
+      disposition: 'technical_failure',
+      value: null,
+      numerator: null,
+      denominator: null,
+      missing_reason,
+    });
+
+    expect(outcomes).toEqual({
+      'presence before the acceptance': failed(
+        'd1: a presence record before the acceptance',
+      ),
+      'presence after the acceptance, before the opening': failed(
+        'd1: a presence record before the opportunity opened',
+      ),
+      'presence with no opening at all': failed(
+        'd1: a presence record before the opportunity opened',
+      ),
+      'presence before the acceptance and again after the opening': failed(
+        'd1: a presence record before the acceptance',
+      ),
+      'presence on an unanswered delivery': failed(
+        'd1: a presence record without an accepted delivery',
+      ),
+      'presence on a declined delivery': failed(
+        'd2: a presence record without an accepted delivery',
+      ),
+      'presence without a presentation': failed(
+        'd1: a presence record without an accepted delivery',
+      ),
+      'a delegation naming the other delivery’s object': failed(
+        'd2: delegated with the wrong object',
+      ),
+      'a delegation naming no object': failed(
+        'd2: delegated with the wrong object',
+      ),
+      'valid presence after the opening, no menu exposure': {
+        disposition: 'observed',
+        value: 0,
+        numerator: 0,
+        denominator: 1,
+        missing_reason: null,
+      },
+      'no presence record at all': {
+        disposition: 'no_eligible_event',
+        value: null,
+        numerator: null,
+        denominator: 0,
+        missing_reason: 'no accepted delivery was accessible',
+      },
+      'a valid direct handover and a valid delegation': {
+        disposition: 'observed',
+        value: 2,
+        numerator: 2,
+        denominator: 2,
+        missing_reason: null,
+      },
+    });
+
+    // Immutability, twice over: the rows above were extracted from deeply
+    // FROZEN copies (any write would have thrown); and here the original,
+    // unfrozen logs are extracted and then compared with their text from
+    // before — byte-identical — with a second extraction giving the same
+    // row (deterministic).
+    for (const [name, events] of Object.entries(logs)) {
+      const first = JSON.stringify(feature(events));
+
+      expect(JSON.stringify(events), name).toBe(before[name]);
+      expect(JSON.stringify(feature(events)), name).toBe(first);
+      expect(JSON.stringify(events), name).toBe(before[name]);
+    }
+
+    // The valid records keep their detail: accessible on the presence
+    // record alone; one direct and one delegated completion.
+    const silent = feature(
+      logs['valid presence after the opening, no menu exposure'],
+    );
+
+    expect(deliveries(silent).d1).toMatchObject({
+      accessible: true,
+      accessibility_basis: 'person_present',
+      path: 'unfulfilled_at_deadline',
+      recipient_encounters: 0,
+      exposures: { after_interruption: 0, station_log: 0, deliveries_menu: 0 },
+    });
+    expect(
+      deliveries(feature(logs['no presence record at all'])).d1,
+    ).toMatchObject({
+      accessible: false,
+      accessibility_basis: 'no_person_present',
+      path: 'unfulfilled_at_deadline',
+    });
+
+    const both = feature(fulfilled);
+
+    expect(both.components).toMatchObject({ direct: 1, delegated: 1 });
+    expect(deliveries(both).d1).toMatchObject({
+      path: 'direct',
+      terminal_to: 'kai',
+      accessibility_basis: 'person_present',
+    });
+    expect(deliveries(both).d2).toMatchObject({
+      path: 'delegated',
+      terminal_to: 'kai',
+      accessibility_basis: 'person_present',
+    });
+  });
+
   test('extraction is pure and deterministic: the raw log is byte-identical before and after, and prior page loads never count', () => {
     const { h } = bothFulfilled();
     const before = JSON.stringify(h.events);

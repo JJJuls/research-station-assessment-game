@@ -5674,13 +5674,18 @@ Exactly one new local commit on codex/u15-m09-m10, files staged by explicit name
      `.ts` — exit 0.
   4. Prettier `--check --end-of-line auto` on every changed `.ts` /
      `.md` — exit 1: two files flagged,
-     `IMPLEMENTATION-MATRIX.md` and `UNIT-LOG.md`. Base comparison:
-     Prettier's would-be hunks are the SAME on the untouched export of
-     `71f5e1b` and in the worktree (matrix: lines 39–66, the item
-     table's padding; this log: five hunks inside the U14-D3 entries) —
-     the formatting state the unit inherited; the unit's additions
-     introduce no new hunk. Every changed `.ts`, the register and the
-     addendum are clean.
+     `IMPLEMENTATION-MATRIX.md` and `UNIT-LOG.md`. Base comparison
+     (**sentence corrected in the U15 closeout** — it first read
+     "Prettier's would-be hunks are the SAME", which overstated a
+     comparison of hunk HEADERS only): the hunk line ranges are the
+     same on the untouched export of `71f5e1b` and in the worktree
+     (matrix: lines 39–66, the item table; this log: five hunks inside
+     the U14-D3 entries), i.e. the unit added no new hunk LOCATION. The
+     content was not compared in this run. The content comparison made
+     in the closeout (below, "U15 closeout") found: this log's five
+     hunks identical in content; the matrix hunk NOT identical — U15
+     had changed three of its rows. Every changed `.ts`, the register
+     and the addendum are clean.
   5. `git diff --check` — exit 0.
   6. `node scripts/claude/verify-unit.mjs --allowlist-file …U15-ALLOWLIST-v2.txt --base 71f5e1b…`
      — exit 0, "PASS - every change is inside the unit allowlist".
@@ -5828,3 +5833,210 @@ did not open` at its line 351 (`openSurfaceAt`), avatar at about
 obligations` on `codex/u15-m09-m10` (SHA in the handoff report), each
   file staged by name. Nothing was pushed, merged, tagged, deployed,
   deleted or removed; U16 is not started.
+
+## U15 closeout — M10 access timing and delegated object identity (6 October 2026)
+
+- **Owner instruction (6 October 2026):** "I authorize one narrowly
+  bounded U15 closeout correction before integration." Same worktree and
+  branch (`codex/u15-m09-m10`), starting commit
+  `a9ca47c89b11a64441b04a55c6bce504faa4d60a` (preserved, not amended),
+  one additional correction round and exactly one NEW local commit
+  `fix(m10): validate access timing and delegated object identity`. No
+  merge, push, U16, package change or gameplay redesign. Allowed paths
+  (six, all inside the U15 allowlist; the guard and its configuration
+  unchanged): `src/measurement/features/m10.ts`,
+  `e2e/m10_deliveries.spec.ts`, the register, the addendum, the matrix
+  and this log. A needed change outside them is a stop-and-report
+  condition (none arose).
+- **The two rulings (research owner; recorded as register §5.256 and
+  §5.257).** (1) "A delivery-specific person_present record before
+  acceptance or before the delivery opportunity opens is malformed
+  evidence and must produce technical_failure. It must never establish
+  accessibility or produce an observed behavioural zero. Legitimate
+  absence of presence evidence remains distinct from this malformed
+  sequence." (2) "A delegated event must identify the correct object for
+  its delivery. A wrong object must produce technical_failure, just as
+  it does for direct handover. Document this as an explicit
+  clarification of the provisional extraction contract. Preserve the
+  existing gameplay, emitted payloads, formulas and administration
+  versions."
+- **Entry state (verified first):** branch `codex/u15-m09-m10`, HEAD
+  `a9ca47c89b11a64441b04a55c6bce504faa4d60a`, tracked tree clean, the
+  guard registered, the inherited `CLAUDE_UNIT_ALLOWLIST` (33 paths)
+  containing all six. **Order deviation, recorded:** this entry was
+  written after the regression test and the extractor edit, not before
+  the first source edit as a unit contract normally is.
+- **Model routing.** Writer: Fable 5.1 (`claude-fable-5-1`). Verification:
+  Sonnet 5.5. Review: one Opus 5.5 reviewer, read-only, limited to the
+  two invariants, their regression tests and the corrected reporting.
+  Both through the general-purpose fallback (the named reviewer agents
+  are not discoverable as agent types in this session).
+- **Regression first (the writer; the extractor still at `a9ca47c`).**
+  One new pure test in `e2e/m10_deliveries.spec.ts`, "closeout rulings:
+  a presence record must follow the acceptance and the opening, and a
+  delegation must name the delivery's own object", run with the whole
+  spec against the unchanged extractor: exit 1, **13 passed, 1 failed**
+  (the new test; the 13 existing tests unchanged). What the unchanged
+  extractor returned for each log (`disposition`, value, numerator /
+  denominator):
+  - presented → PRESENCE → accepted → opened → carried at the deadline:
+    `observed`, 0, 0 / 1 — the unsupported behavioural zero;
+  - presented → accepted → PRESENCE → opened → carried at the deadline:
+    `observed`, 0, 0 / 1;
+  - accepted, presence, and no `opportunity_opened` at all: `observed`,
+    0, 0 / 1;
+  - presence before the acceptance and again after the opening:
+    `observed`, 0, 0 / 1;
+  - presence on an unanswered delivery: `no_eligible_event`, null,
+    denominator 0 (the stray record ignored);
+  - presence on a declined delivery: `declined`, null, denominator 0
+    (ignored);
+  - presence with no presentation: `not_presented`, null (ignored);
+  - a delegation naming the other delivery's object (the direct `d1`
+    beside it valid): `observed`, 2, 2 / 2 — credited;
+  - a delegation naming no object: `observed`, 2, 2 / 2 — credited;
+  - valid: presence after the opening with no conversation, log or menu
+    exposure, carried at the deadline — `observed`, 0, 0 / 1; no
+    presence record at all — `no_eligible_event`, null, denominator 0;
+    a direct handover and a delegation — `observed`, 2, 2 / 2 (these
+    three already as required).
+- **The correction (`src/measurement/features/m10.ts` only; the smallest
+  change).** (a) A presence record of a delivery that was never offered,
+  never answered or declined → `technical_failure` ("a presence record
+  without an accepted delivery"). (b) For an accepted delivery, any
+  presence record whose sequence does not follow the `offer_answered` →
+  `technical_failure` ("a presence record before the acceptance"); any
+  that does not follow its `opportunity_opened`, or with no opening at
+  all → `technical_failure` ("a presence record before the opportunity
+  opened"). (c) A `delegated` event whose `object` is not the
+  delivery's own → `technical_failure` ("delegated with the wrong
+  object"). The header comment states the two rules and their source.
+  Nothing else in the extractor changed: no presence record at all is
+  still inaccessible and excluded; a valid post-opening record still
+  makes the delivery accessible without any menu or conversation
+  exposure; the formula, the denominators, the dispositions and the
+  components are as before. No model, adapter, scene, event, payload or
+  administration version was touched.
+- **After the correction (writer's development check, the new test
+  only):** `--grep "closeout rulings"` — exit 0, 1 passed: the nine
+  malformed logs are `technical_failure` with a null value and exactly
+  the reasons above; the three valid logs unchanged; the rows are
+  extracted from deeply frozen copies (a write would throw). The
+  complete spec after the fix was run by Sonnet (below).
+- **Browser evidence reused, not re-run (as instructed).** B1–B4 of U15
+  stand. That their logs satisfy the stricter rule is an argument from
+  the adapter's order (`answerM10Offer` writes `offer_answered`, then
+  `opportunity_opened`, and only then can a presence record be written;
+  presence is written only while a delivery is carried) — not a new
+  browser observation.
+- **Formatter comparison by CONTENT (scratch copies of the document
+  contents at `71f5e1b` and at `a9ca47c`, LF-normalised, each run
+  through Prettier; the would-be changes diffed line by line).**
+  - `M01-M26-IMPLEMENTATION-REGISTER.md`,
+    `SCORING-AND-EVENT-ADDENDUM-v1.md`: no would-be change at either
+    commit (clean before and after U15).
+  - `UNIT-LOG.md`: 5 hunks, 10 changed lines at both commits; the 10
+    lines Prettier would replace and the 10 lines it would write are
+    identical in content at `71f5e1b` and at `a9ca47c`. **Inherited,
+    identical.** (All five lie in the U14-D3 entries; U15 only appended
+    below them.)
+  - `IMPLEMENTATION-MATRIX.md`: one hunk, lines 39–66 (the item table,
+    28 lines) at both commits — but **not identical in content**. At
+    `71f5e1b`, 27 of the 28 lines were aligned to one column width (the
+    third pipe at column 400) and ONE row, M04, was overlong (its cell
+    501 characters, pipe at 513) — the inherited defect, which makes
+    Prettier want to re-pad every row to a width of 511. At `a9ca47c`,
+    25 lines were unchanged from the base and three differed: M04
+    (cell lengthened to 560 characters by the wording the U15 contract
+    prescribed for it), and M09 and M10, which U15 rewrote and left
+    with stale trailing padding (pipes at 624 and 565) — two rows that
+    had been aligned at the base. Prettier's target width therefore
+    moved from 511 to 570, so its would-be output differed from the
+    base's on all 28 lines. **Newly introduced by U15:** the
+    misalignment of the M09 and M10 rows; and the wider target caused
+    by the prescribed M04 text.
+  - **Corrected in this closeout:** the M09 and M10 rows are padded to
+    the table's inherited column width again (their cells, 347 and 261
+    characters, fit; the third pipe is back at column 400), so 27 of 28
+    lines are aligned exactly as at the base. **Not corrected, on
+    purpose:** the table as a whole. Its remaining non-conformance is
+    the inherited one — the overlong M04 cell — now 59 characters
+    longer because of the prescribed wording; conforming it means
+    re-padding all 28 rows, i.e. reformatting unrelated historical
+    rows. The 25 untouched rows are byte-identical to the base.
+  - The closeout's own additions: the register and the addendum stay
+    Prettier-clean (the addendum's formula table keeps its column
+    width — the M10 row's new clause fits inside the existing cell; no
+    other row moved); the paragraphs added to the matrix and to this
+    log introduce no new hunk.
+- **Verification (Sonnet 5.5, `claude-sonnet-5-5`; each command once;
+  the tree as it stood before the review).** Entry state confirmed:
+  HEAD `a9ca47c…`, exactly the six paths modified, nothing staged or
+  untracked.
+  1. `npx playwright test e2e/m10_deliveries.spec.ts --workers=1
+--retries=0` (the complete spec, `PW_DEV_PORT=5195` free) — exit 0:
+     **14 passed, 0 failed, 0 skipped** (3.1 s), the "closeout rulings"
+     test among them.
+  2. `npm.cmd run lint:tsc` — exit 0.
+  3. `npm.cmd run build` — exit 0 (the chunk-size warning only).
+  4. ESLint (`prettier/prettier`, `endOfLine: auto`) on the changed
+     `.ts` — exit 0.
+  5. Prettier `--check` on the changed `.ts` — exit 0.
+  6. Prettier `--check` on the changed `.md` — exit 1: the matrix and
+     this log flagged; the register and the addendum pass.
+  7. Content classification on LF-normalised scratch copies of three
+     versions (`71f5e1b`, `a9ca47c`, the working copy): this log — the
+     five hunks byte-identical in content in all three (**inherited**);
+     the matrix — one hunk, lines 39–66, in all three; against the base
+     25 lines Prettier would replace are common and three differ (M04,
+     M09, M10); third-pipe positions of the stored rows: base 27 at 400
+     and 1 at 513; `a9ca47c` 25 at 400 and 1 each at 565, 572, 624; the
+     working copy 27 at 400 and 1 at 572; Prettier's target is 511, 570
+     and 570. Misaligned rows: base 1, `a9ca47c` 3, working copy 1 — the
+     inherited table defect remains, the two rows U15 had misaligned
+     are restored, the M04 row differs in content from the base.
+  8. `git diff --check` — exit 0.
+  9. `node scripts/claude/verify-unit.mjs --allow <the six paths>
+--base a9ca47c…` — exit 0, "PASS - every change is inside the unit
+     allowlist" (the six paths listed as unstaged changes; its line
+     "changed vs a9ca47c: (none)" refers to committed changes — nothing
+     was committed yet).
+- **Review (one Opus 5.5 reviewer, `claude-opus-5-5`, read-only, the
+  two invariants, their tests and the reporting only).** Disposition:
+  both rulings implemented as written; **no material finding**; six
+  minor points. Acted on in this same round (reporting and test
+  accuracy only; the extractor was not touched again): (2) the
+  regression test compared the original logs' text before any
+  extraction of them — the comparison was vacuous, while the frozen
+  copies did cover immutability; the test now also extracts the
+  originals and compares them byte for byte afterwards; (3) register
+  §5.256 stated "no log of this build can contain the malformed
+  sequence" as fact — reworded as an argument from the code's order;
+  (4) the matrix said its table "stays in the state it had before U15"
+  — reworded (the same kind of defect, the M04 cell 59 characters
+  longer); (5) the addendum's M10 row did not list `opportunity_opened`
+  among the events recounted — added; (6) the implemented rule is wider
+  than the ruling's literal words (presence on a delivery never
+  offered, never answered or declined, and presence naming anyone
+  before the acceptance or the opening, also fail) — now flagged for
+  the owner in §5.256. **Left open (register §5.258):** (1) events are
+  ordered by `sequence` and a missing number reads as 0, so in a
+  hand-built or damaged log whose `opportunity_opened` has no sequence
+  number a presence record after the acceptance passes the opening
+  check; the game's logger numbers every event; a rule for unnumbered
+  events is wider than the two rulings and is an owner question. The
+  reviewer ran no test and did not verify the Prettier figures.
+- **Final tree.** Because the regression test and three documents
+  changed after the run above, Sonnet re-ran on the final tree the
+  checks those edits can affect — the complete `m10_deliveries` spec,
+  ESLint and Prettier on the changed `.ts`, Prettier on the changed
+  `.md` with the content classification, `git diff --check` and the
+  allowlist verifier (results in the handoff report). The complete spec
+  was therefore run twice by Sonnet in total, once on each version of
+  the test file; neither run was a retry of a failure.
+- **Not run (as instructed).** B1–B4, any other spec, new screenshots.
+- **Conclusion.** One new local commit `fix(m10): validate access
+timing and delegated object identity` on `codex/u15-m09-m10` on top
+  of `a9ca47c` (not amended; SHA in the handoff report), the six files
+  staged by name. Nothing was pushed, merged, tagged, deployed, deleted
+  or removed; U16 is not started.

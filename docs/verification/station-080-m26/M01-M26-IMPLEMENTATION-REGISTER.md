@@ -163,6 +163,40 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
 
 ## 4. As-built records (appended per unit)
 
+**Unit 15 closeout (M10 extractor only; 6 October 2026)** — one bounded
+correction under two research-owner rulings (§5.256, §5.257); the "Unit
+15" record below stands except where this record says so. **Status: an
+explicit clarification of the provisional extraction contract; no
+gameplay, emitted payload, formula or administration version changed;
+NOT scientifically validated.** (1) Access timing: a delivery's
+`person_present` record counts as evidence of access only when it
+follows that delivery's acceptance AND its `opportunity_opened`; a
+record before either — or for a delivery never offered, never answered
+or declined — is malformed evidence and makes the feature a
+`technical_failure` (it never establishes accessibility and never yields
+an observed zero). No presence record at all remains legitimate
+missingness: the delivery is inaccessible and excluded. (2) Delegated
+object: a `delegated` event must carry the delivery's own object, as a
+direct handover must; another object or none is a `technical_failure`.
+This supersedes two sentences of "Unit 15" (5): accessibility is a
+presence record of the recipient or the permitted delegate "while the
+delivery was carried" — now enforced as after acceptance and after the
+opening — and the list of contradictory evidence gains "a presence
+record that does not follow the acceptance and the opening" and "a
+delegation with the wrong object". Tests: pure
+`e2e/m10_deliveries.spec.ts`, "closeout rulings" (nine malformed logs
+with their exact reasons; three valid logs unchanged — a post-opening
+presence without any menu exposure 0 / 1, no presence record excluded, a
+direct handover and a delegation 2 / 2; extraction from deeply frozen
+copies, and the original logs compared byte for byte after their own
+extraction). The browser evidence of Unit 15 (B1–B4) is reused and was
+not re-run: the adapter writes `opportunity_opened` in the same call as
+the acceptance and presence only afterwards, so the live logs satisfy
+the stricter rule by construction — an argument from the code's order,
+not a new browser observation. One point of the closeout review is left
+open (§5.258: events without a sequence number). Results: `UNIT-LOG.md`,
+"U15 closeout".
+
 **Unit 15 (M09 / M10): as-built** — the monitor watch's three checks and
 the two deliveries (bounded unit under contract `U15-CONTRACT-v2.md`,
 amendments A1 and A2 of 6 October 2026). **Status: technical
@@ -4338,7 +4372,11 @@ is not a default.
      acceptance, and does not check the `object` of a `delegated` event
      (the game writes presence only while a delivery is carried and
      delegates only the delivery's own object; only a malformed log
-     could differ); (c) the pure failure cases assert the disposition,
+     could differ) — RESOLVED by the research owner's closeout rulings,
+     §5.256 and §5.257: on such a log the extractor had returned an
+     observed 0 / 1 from a presence record that preceded the acceptance,
+     and credited a delegation naming another object; both now fail the
+     item; (c) the pure failure cases assert the disposition,
      the null value and a non-null reason, not the reason's text;
      (d) the M09 extractor reads a `technical_failure` event only when
      no presentation exists in the load (today only the reload hold-back
@@ -4363,3 +4401,74 @@ is not a default.
      ACTION" / "OPEN ITEMS" labels are very small, the record-closed
      notice uses a different bullet, and the current room's amber border
      mixes with the legend's meaning of amber (outside the unit).
+
+The U15 closeout (6 October 2026) records TWO research-owner rulings.
+They are owner decisions, not implementer defaults; they clarify the
+provisional extraction contract of `m10_obligations_fulfilled` and change
+no gameplay, no emitted payload, no formula and no administration
+version (`m10-deliveries-v1` stands).
+
+256. **RESEARCH-OWNER RULING — presence must follow the acceptance and
+     the opening (U15 closeout).** Source: the owner's closeout
+     instruction of 6 October 2026, ruling 1: "A delivery-specific
+     person_present record before acceptance or before the delivery
+     opportunity opens is malformed evidence and must produce
+     technical_failure. It must never establish accessibility or produce
+     an observed behavioural zero. Legitimate absence of presence
+     evidence remains distinct from this malformed sequence." As built
+     (`src/measurement/features/m10.ts`): a `person_present` record of a
+     delivery whose sequence does not follow BOTH its `offer_answered`
+     (accept) and its `opportunity_opened` fails the item — also when a
+     valid later record exists, when the opportunity never opened, and
+     when the delivery was never offered, never answered or declined
+     (there is then no acceptance to follow). An accepted delivery with
+     NO presence record stays what it was: inaccessible, excluded from
+     the denominator, never a failure and never a zero. A valid record
+     after the opening still makes the delivery accessible without any
+     conversation, log or menu exposure (0 / 1 observed when it is still
+     carried at the deadline). By the code's order the game writes
+     presence only while a delivery is carried and opens the opportunity
+     in the same call as the acceptance, so a log of this build should
+     not contain the malformed sequence — an argument from the code, not
+     an observation; the rule protects the offline reading of an
+     exported log. For the owner's attention — the implementer's reading
+     of "before acceptance", wider than the ruling's literal words: a
+     presence record of a delivery that was never offered, never
+     answered or declined also fails (no acceptance exists for it to
+     follow), and the check is not limited to the recipient and the
+     permitted delegate (a record naming anyone, before the acceptance
+     or the opening, fails).
+     Before the ruling the extractor returned an observed 0 / 1 for
+     "presented → presence → accepted → opened → carried at the
+     deadline" (reproduced by the regression test before the change).
+257. **RESEARCH-OWNER RULING — a delegation must name the delivery's own
+     object (U15 closeout).** Source: the same instruction, ruling 2: "A
+     delegated event must identify the correct object for its delivery.
+     A wrong object must produce technical_failure, just as it does for
+     direct handover. Document this as an explicit clarification of the
+     provisional extraction contract. Preserve the existing gameplay,
+     emitted payloads, formulas and administration versions." As built:
+     a `delegated` event whose `object` is not the delivery's own
+     (`m10_calibration_key_card` for `d1`, `m10_yard_logbook` for `d2`) —
+     another object or none — fails the item. This makes explicit what
+     contract §9 stated only for handovers ("a handover to the wrong
+     person or with the wrong object") and what §8 left implicit (its
+     field list of `delegated` does not name `object`; the event has
+     carried it since U15). The model has always written the delivery's
+     own object on `delegated`; nothing emitted changed. Before the
+     ruling a delegation naming the other delivery's object was credited
+     (2 / 2 in the regression case, reproduced before the change). Not
+     covered by the ruling and unchanged: the `object` of the late acts
+     (`late_handover`, `late_delegation`), which never enter a value.
+258. **Open after the U15 closeout review (recorded, not acted on).**
+     The read-only recheck of 6 October 2026 (Opus) found no material
+     defect in §5.256 / §5.257. One point is left open because it is
+     wider than the two rulings: the extractors order events by their
+     `sequence` number and read a missing number as 0 (the convention of
+     every item extractor). In a hand-built or damaged M10 log whose
+     `opportunity_opened` carries no sequence number, a presence record
+     after the acceptance would pass the opening check wherever it stood
+     in the log, and could still yield accessibility and an observed
+     0 / 1. The game's logger numbers every event, so no session log is
+     affected; whether an event without a sequence number should fail
+     the item — for M10 or for all items — is an owner question.
