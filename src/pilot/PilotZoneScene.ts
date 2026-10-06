@@ -34,6 +34,11 @@ import {
   stationRecordClosed,
 } from './closure/closureSession';
 import { feedsReadyCount } from './closure/utilityCoreClosure';
+import {
+  installInputObservation,
+  type ObservedInput,
+  observeInputNow,
+} from './inputObservation';
 import { pilotLaunchMode, refreshPilotCoverageProbe } from './pilotCoverage';
 import type { PilotBeaconTarget, PilotZoneKey } from './pilotRoute';
 import {
@@ -57,7 +62,36 @@ import {
   storyActTitle,
 } from './storyState';
 import { noteM09ReminderLogViewed } from './windows/m09MonitorWatch';
-import { noteM10ReminderLogViewed } from './windows/m10ComponentPromise';
+import {
+  answerM10Offer,
+  deferM10Offer,
+  delegateM10,
+  handOverM10,
+  M10_DELEGATE_KEEP_LABEL,
+  M10_DELEGATE_LABELS,
+  M10_HANDOVER_FEEDBACK,
+  M10_HANDOVER_LABELS,
+  M10_MENU_ENTRY_LABEL,
+  M10_MENU_NOT_NOW_LABEL,
+  M10_OFFER_LABELS,
+  M10_OFFER_TAGS,
+  m10CarriedDeliveries,
+  m10DelegateConfirmBody,
+  m10DelegateConfirmLabel,
+  m10DelegateFeedback,
+  type M10Delivery,
+  m10MenuActions,
+  m10MenuBody,
+  m10MenuPress,
+  type M10Person,
+  m10StagePress,
+  noteM10DelegateConfirmShown,
+  noteM10MenuShown,
+  noteM10PersonPresent,
+  noteM10RecipientPrompt,
+  noteM10ReminderLogViewed,
+  presentM10Offer,
+} from './windows/m10ComponentPromise';
 import { WorldBundleLayer } from './worldBundles';
 
 /** Guidance target counts as reached inside this radius (arrival). */
@@ -124,6 +158,38 @@ export interface PilotDoorSpec {
   gate?: () => string | null;
   /** World V1: stable registry id. */
   registryId?: string;
+}
+
+/** No NPC state shows more option cards than this. */
+export const NPC_MENU_MAX_OPTIONS = 4;
+
+export type PilotNpcKey =
+  | 'pilotVale'
+  | 'pilotKai'
+  | 'pilotNoor'
+  | 'pilotWorkOrderBoard';
+
+/**
+ * One option of a settle-guarded stage (Unit 15: the M09 / M10 offers,
+ * the recap, the deliveries menu and the delegation confirmation).
+ */
+export interface SettledOption {
+  label: string;
+  /** Telemetry tag recorded with a READ choice (no construct meaning). */
+  tag: string;
+  /**
+   * Runs the option's command with the observed input and its position.
+   * 'refused' = the press fell inside the stage's settle window: nothing
+   * was chosen and the stage is shown again.
+   */
+  run: (
+    input: ObservedInput,
+    optionPosition: number,
+    optionCount: number,
+  ) => 'done' | 'refused';
+  /** Shown after a read choice that opens no further stage. */
+  feedback?: () => string;
+  nextStage?: () => PromptStage | null;
 }
 
 /** A short NPC beat: ≤3 lines of body and ≤4 options. */
@@ -235,6 +301,9 @@ export abstract class PilotZoneScene extends RoomScene {
       window.__pilotZoneTitle = null;
     }
 
+    // Unit 15: the device of a press is observed for the M09 / M10 acts.
+    installInputObservation();
+
     // Route telemetry sink: every pilot_* event rides the unmapped
     // scenario-telemetry path of THIS scene.
     installPilotRouteLogSink((eventType, metadata) =>
@@ -257,11 +326,13 @@ export abstract class PilotZoneScene extends RoomScene {
     this.showZoneTitle();
     this.retargetBeacon();
     this.onStoryStateChanged();
+    this.noteDeliveryPresence();
 
     this.unsubscribeRoute = onPilotRouteChange(() => {
       this.refreshRouteObjective();
       this.retargetBeacon();
       this.onStoryStateChanged();
+      this.noteDeliveryPresence();
     });
 
     // M — station map (modal, pause-and-launch like the inventory overlay).
@@ -376,7 +447,7 @@ export abstract class PilotZoneScene extends RoomScene {
    * `pilot_npc_beat` event (npc + tag) — navigation telemetry, no construct.
    */
   protected npcBeatOptions(
-    npcKey: 'pilotVale' | 'pilotKai' | 'pilotNoor' | 'pilotWorkOrderBoard',
+    npcKey: PilotNpcKey,
     beat: PilotNpcBeat,
   ): PromptOption[] {
     if (beat.options.length === 0 || beat.options.length > 4) {
@@ -388,26 +459,410 @@ export abstract class PilotZoneScene extends RoomScene {
       feedback: option.feedback ?? '',
       getEventTypes: () => [],
       onSelected: () => {
-        this.logScenarioEvent(npcKey, 'pilot_npc_beat', {
-          choice_value: option.tag,
-          metadata: {
-            zone: this.zoneKey,
-            stage: pilotStage(),
-            // Audit 2026-09 A3 (spec Q12 ruling §7): the options' fixed
-            // presentation order and the pre-focused default are
-            // documented IN THE DATA — position of the chosen option,
-            // how many options were shown, and which position carried
-            // the keyboard focus when the prompt opened (always the
-            // first card; RoomScene.focusPromptCard(0)).
-            option_position: index + 1,
-            option_count: beat.options.length,
-            focus_default_position: 1,
-          },
-        });
+        this.logNpcBeat(npcKey, option.tag, index + 1, beat.options.length);
         option.onSelected?.();
       },
       nextStage: option.nextStage,
     }));
+  }
+
+  private logNpcBeat(
+    npcKey: PilotNpcKey,
+    tag: string,
+    optionPosition: number,
+    optionCount: number,
+  ) {
+    this.logScenarioEvent(npcKey, 'pilot_npc_beat', {
+      choice_value: tag,
+      metadata: {
+        zone: this.zoneKey,
+        stage: pilotStage(),
+        // Audit 2026-09 A3 (spec Q12 ruling §7): the options' fixed
+        // presentation order and the pre-focused default are
+        // documented IN THE DATA — position of the chosen option,
+        // how many options were shown, and which position carried
+        // the keyboard focus when the prompt opened (always the
+        // first card; RoomScene.focusPromptCard(0)).
+        option_position: optionPosition,
+        option_count: optionCount,
+        focus_default_position: 1,
+      },
+    });
+  }
+
+  // ——— Unit 15: settle-guarded stages and the deliveries menu ————————————
+
+  /** The device of the press that is being handled right now. */
+  protected observedInput(): ObservedInput {
+    return observeInputNow(Date.now());
+  }
+
+  /**
+   * Keeps an NPC state at four option cards. The menus are composed so
+   * that this never drops anything; if it ever did, the drop is recorded
+   * as route telemetry (never a measurement) instead of passing silently.
+   */
+  protected capNpcMenu(
+    npcKey: PilotNpcKey,
+    options: PilotNpcBeat['options'],
+  ): PilotNpcBeat['options'] {
+    if (options.length <= NPC_MENU_MAX_OPTIONS) {
+      return options;
+    }
+
+    this.logScenarioEvent(npcKey, 'pilot_npc_menu_overflow', {
+      metadata: {
+        zone: this.zoneKey,
+        stage: pilotStage(),
+        option_count: options.length,
+        dropped_tags: options
+          .slice(NPC_MENU_MAX_OPTIONS)
+          .map((option) => option.tag),
+      },
+    });
+
+    return options.slice(0, NPC_MENU_MAX_OPTIONS);
+  }
+
+  /**
+   * A prompt stage whose every option is guarded by a settle window: a
+   * press that the option's command refuses chooses nothing, records no
+   * beat, and shows the same stage again (`restage`). A read choice logs
+   * one `pilot_npc_beat` and then follows the option's own next stage or
+   * feedback.
+   */
+  protected settledStage(
+    npcKey: PilotNpcKey,
+    spec: {
+      body: string;
+      options: SettledOption[];
+      restage: () => PromptStage | null;
+    },
+  ): PromptStage {
+    if (
+      spec.options.length === 0 ||
+      spec.options.length > NPC_MENU_MAX_OPTIONS
+    ) {
+      throw new Error('PilotZoneScene: a settled stage has 1–4 options');
+    }
+
+    let refused = false;
+
+    return {
+      body: spec.body,
+      options: spec.options.map((option, index) => ({
+        label: option.label,
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => {
+          refused =
+            option.run(this.observedInput(), index + 1, spec.options.length) ===
+            'refused';
+
+          if (!refused) {
+            this.logNpcBeat(npcKey, option.tag, index + 1, spec.options.length);
+          }
+        },
+        nextStage: () => {
+          if (refused) {
+            return spec.restage();
+          }
+
+          const next = option.nextStage?.() ?? null;
+          const feedback = next === null ? (option.feedback?.() ?? '') : '';
+
+          if (feedback !== '') {
+            this.showFeedbackMessage(feedback);
+          }
+
+          return next;
+        },
+      })),
+    };
+  }
+
+  /**
+   * The colleagues in this zone who can act on a delivery at the current
+   * stage (zones hosting a recipient or a delegate override this).
+   */
+  protected deliveryPersonsHere(): M10Person[] {
+    return [];
+  }
+
+  /**
+   * Objective accessibility record: a recipient or permitted delegate
+   * stands in the entered zone, able to act, while a delivery is carried.
+   * Called at zone entry and on every route change (once per person and
+   * visit inside the model).
+   */
+  private noteDeliveryPresence() {
+    for (const person of this.deliveryPersonsHere()) {
+      noteM10PersonPresent(person, this.zoneKey);
+    }
+  }
+
+  /**
+   * The explicit offer of one delivery (accept / decline / later — all
+   * deliberate, all settle-guarded). `after` names what follows each read
+   * answer; `feedback` is shown when nothing follows.
+   */
+  protected deliveryOfferStage(
+    npcKey: PilotNpcKey,
+    delivery: M10Delivery,
+    spec: {
+      body: string;
+      feedback?: string;
+      after: (answer: 'accept' | 'decline' | 'defer') => PromptStage | null;
+    },
+  ): PromptStage | null {
+    if (!presentM10Offer(delivery, Date.now())) {
+      return null;
+    }
+
+    const labels = M10_OFFER_LABELS[delivery];
+    const tags = M10_OFFER_TAGS[delivery];
+    const feedback =
+      spec.feedback === undefined ? undefined : () => spec.feedback ?? '';
+    const answer =
+      (choice: 'accept' | 'decline'): SettledOption['run'] =>
+      (input, position, count) =>
+        answerM10Offer(delivery, choice, position, count, Date.now(), input) ===
+        'refused'
+          ? 'refused'
+          : 'done';
+
+    return this.settledStage(npcKey, {
+      body: spec.body,
+      restage: () => this.deliveryOfferStage(npcKey, delivery, spec),
+      options: [
+        {
+          label: labels.accept,
+          tag: tags.accept,
+          run: answer('accept'),
+          feedback,
+          nextStage: () => spec.after('accept'),
+        },
+        {
+          label: labels.decline,
+          tag: tags.decline,
+          run: answer('decline'),
+          feedback,
+          nextStage: () => spec.after('decline'),
+        },
+        {
+          label: labels.defer,
+          tag: tags.defer,
+          run: (_input, position, count) =>
+            deferM10Offer(delivery, position, count, Date.now()) === 'refused'
+              ? 'refused'
+              : 'done',
+          feedback,
+          nextStage: () => spec.after('defer'),
+        },
+      ],
+    });
+  }
+
+  /** The issuer's re-ask entry of a deferred offer (zone-specific copy). */
+  protected deliveryReask(
+    delivery: M10Delivery,
+  ): { label: string; stage: () => PromptStage | null } | null {
+    void delivery;
+
+    return null;
+  }
+
+  /**
+   * "About the deliveries…" for one colleague — to be appended LAST to
+   * their options, and present only while they can act on a delivery here.
+   * Call once per prompt open: it also records that the conversation of a
+   * carried delivery's recipient was opened.
+   */
+  protected deliveriesEntry(
+    npcKey: PilotNpcKey,
+    person: M10Person,
+  ): PilotNpcBeat['options'] {
+    if (!this.deliveryPersonsHere().includes(person)) {
+      return [];
+    }
+
+    noteM10RecipientPrompt(person, this.zoneKey);
+
+    if (this.deliveryMenuOptions(npcKey, person).length === 0) {
+      return [];
+    }
+
+    return [
+      {
+        label: M10_MENU_ENTRY_LABEL,
+        tag: 'deliveries_open',
+        nextStage: () => this.deliveriesMenuStage(npcKey, person, true),
+      },
+    ];
+  }
+
+  /** What this colleague can do about the deliveries, in menu order. */
+  private deliveryMenuOptions(
+    npcKey: PilotNpcKey,
+    person: M10Person,
+  ): SettledOption[] {
+    const press: SettledOption['run'] = (_input, position, count) =>
+      m10MenuPress(person, position, count, Date.now()) ? 'done' : 'refused';
+    const options: SettledOption[] = [];
+
+    for (const action of m10MenuActions(person)) {
+      const { delivery } = action;
+
+      if (action.kind === 'handover') {
+        options.push({
+          label: M10_HANDOVER_LABELS[delivery],
+          tag: `m10_handover_${delivery}`,
+          run: (input, position, count) => {
+            if (!m10MenuPress(person, position, count, Date.now())) {
+              return 'refused';
+            }
+
+            handOverM10(delivery, person, Date.now(), input);
+
+            return 'done';
+          },
+          feedback: () => M10_HANDOVER_FEEDBACK[delivery],
+        });
+      } else if (action.kind === 'delegate') {
+        options.push({
+          label: M10_DELEGATE_LABELS[delivery],
+          tag: `m10_delegate_${delivery}_ask`,
+          run: press,
+          nextStage: () =>
+            this.delegationConfirmStage(npcKey, person, delivery),
+        });
+      } else {
+        const reask = this.deliveryReask(delivery);
+
+        if (reask !== null) {
+          options.push({
+            label: reask.label,
+            tag: 'logbook_offer_again',
+            run: press,
+            nextStage: reask.stage,
+          });
+        }
+      }
+    }
+
+    return options;
+  }
+
+  /**
+   * The deliveries menu: what is carried and when it is due, "Not now."
+   * first (the pre-focused card never acts), then what this colleague can
+   * do. Viewing it is recorded as the obligation shown; choosing nothing
+   * leaves every delivery as it was.
+   */
+  private deliveriesMenuStage(
+    npcKey: PilotNpcKey,
+    person: M10Person,
+    fresh: boolean,
+  ): PromptStage | null {
+    const actions = this.deliveryMenuOptions(npcKey, person);
+
+    if (actions.length === 0) {
+      return null;
+    }
+
+    noteM10MenuShown(person, Date.now(), fresh);
+
+    return this.settledStage(npcKey, {
+      body: m10MenuBody(m10CarriedDeliveries()),
+      restage: () => this.deliveriesMenuStage(npcKey, person, false),
+      options: [
+        {
+          label: M10_MENU_NOT_NOW_LABEL,
+          tag: 'm10_not_now',
+          run: (_input, position, count) =>
+            m10MenuPress(person, position, count, Date.now())
+              ? 'done'
+              : 'refused',
+        },
+        ...actions,
+      ],
+    });
+  }
+
+  /**
+   * The colleague states that the delivery becomes their job, and asks.
+   * "Keep it for now." is first (the pre-focused card never hands the
+   * object over); only the explicit yes leaves it with them.
+   */
+  private delegationConfirmStage(
+    npcKey: PilotNpcKey,
+    person: M10Person,
+    delivery: M10Delivery,
+  ): PromptStage | null {
+    if (!noteM10DelegateConfirmShown(delivery, person, Date.now())) {
+      return null;
+    }
+
+    const allowed = (position: number, count: number) =>
+      m10StagePress(
+        delivery,
+        'delegation_confirm',
+        position,
+        count,
+        Date.now(),
+      );
+
+    return this.settledStage(npcKey, {
+      body: m10DelegateConfirmBody(delivery),
+      restage: () => this.delegationConfirmStage(npcKey, person, delivery),
+      options: [
+        {
+          label: M10_DELEGATE_KEEP_LABEL,
+          tag: 'm10_delegate_keep',
+          run: (_input, position, count) =>
+            allowed(position, count) ? 'done' : 'refused',
+        },
+        {
+          label: m10DelegateConfirmLabel(delivery),
+          tag: `m10_delegate_${delivery}_confirm`,
+          run: (input, position, count) => {
+            if (!allowed(position, count)) {
+              return 'refused';
+            }
+
+            delegateM10(delivery, person, Date.now(), input);
+
+            return 'done';
+          },
+          feedback: () => m10DelegateFeedback(delivery),
+        },
+      ],
+    });
+  }
+
+  /**
+   * The zone a door exit leads to: the pilot door nearest the avatar (an
+   * exit is always taken standing at its door).
+   */
+  protected nearestDoorTarget(): PilotZoneKey | null {
+    let nearest: PilotZoneKey | null = null;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+
+    for (const door of PILOT_DOORS[this.zoneKey]) {
+      const distance = Phaser.Math.Distance.Between(
+        this.player.x,
+        this.player.y,
+        door.x,
+        door.y,
+      );
+
+      if (distance < nearestDistance) {
+        nearest = door.to;
+        nearestDistance = distance;
+      }
+    }
+
+    return nearest;
   }
 
   /** Body text for an NPC beat, injected at prompt-open time. */
@@ -549,7 +1004,8 @@ export abstract class PilotZoneScene extends RoomScene {
     // the M09/M10 reminder exposure the ledger declares as a control
     // variable; it was declared but never recorded before this call.
     // Audit 2026-09 A8: the M10 hook existed but had no call site, so
-    // `reminder_log_views` was a constant 0 in every export.
+    // `reminder_log_views` was a constant 0 in every export. Unit 15: the
+    // hooks record which line the log listed (position, rendered).
     noteM09ReminderLogViewed();
     noteM10ReminderLogViewed();
     this.logScenarioEvent('pilotRoute', 'pilot_map_opened', {

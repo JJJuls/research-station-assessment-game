@@ -34,6 +34,7 @@ import {
   expectNoRuntimeErrors,
 } from './journey';
 import {
+  answerLogbookOffer,
   bootPilot,
   concourseToWorkshop,
   concourseVia,
@@ -216,6 +217,8 @@ test.describe('M11 borrowed instruments on the route', () => {
     );
     await selectPromptOption(page, 2); // "I am finished outside."
     await expectStage(page, 'return_hub');
+    // M10 (Unit 15): Noor's yard-logbook offer follows; deferred here.
+    await answerLogbookOffer(page, 'defer');
     await useDoor(page, PILOT.yard.airlock, 'diagnostics_laboratory', {
       approachOffset: await yardApproach(page, PILOT.yard.airlock),
     });

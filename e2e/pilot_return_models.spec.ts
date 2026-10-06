@@ -1,9 +1,10 @@
 /**
  * Return, Revision & Handover — pure domain tests (evidence-led pilot v2,
  * Unit 5). Playwright test blocks that never touch `page` (repository
- * convention): M03 occasion separation and matched entry forms; M07 / M09
- * / M10 start-end linking against the frozen ledger and the source
- * modules; M09/M10 family disjointness; M20 start→resume linking through
+ * convention): M03 occasion separation and matched entry forms; M07
+ * start-end linking against the frozen ledger and the source modules;
+ * M09 / M10 (Station 080 Unit 15) off the two-phase table, on their v3
+ * register routes, with disjoint families; M20 start→resume linking through
  * `M20_RESUME_WINDOW_ID` and every start history; the M21 two-case
  * repair engine (Unit 10: FIT is the application, truthful faults,
  * restudy relevance, revised applications) and its rollback; the M22
@@ -120,6 +121,17 @@ import {
   RETURN_SINGLE_WINDOWS,
   returnEventTypes,
 } from '../src/pilot/return/returnEpisodeModel';
+import {
+  M09_FAMILY,
+  M09_OBJECT_ID,
+  M09_OPPORTUNITY_ID,
+  M09_WINDOW_IDS,
+} from '../src/pilot/windows/m09WatchModel';
+import {
+  M10_DELIVERIES,
+  M10_DELIVERY_IDS,
+  M10_FAMILY,
+} from '../src/pilot/windows/m10DeliveryModel';
 
 const ROOT = join(__dirname, '..');
 
@@ -147,7 +159,9 @@ const RETURN_SOURCES = [
   'src/pilot/windows/returnSurfaceModels.ts',
   'src/pilot/windows/m07Calibration.ts',
   'src/pilot/windows/m09MonitorWatch.ts',
+  'src/pilot/windows/m09WatchModel.ts',
   'src/pilot/windows/m10ComponentPromise.ts',
+  'src/pilot/windows/m10DeliveryModel.ts',
   'src/inventory/m03Reset.ts',
   'src/pilot/windows/m03RestoreModel.ts',
   'src/pilot/windows/m03ToolRestore.ts',
@@ -244,63 +258,99 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
     expect(m07).not.toMatch(/m09|m10|gauge|promise/i);
   });
 
-  test('4. M09 start/end linking: check 1 and check 2 carry their own ledger window ids and phases; equal reminder bookkeeping', () => {
-    const entry = ledgerEntry('M09');
-    const row = RETURN_LINKED_WINDOWS.find((r) => r.item === 'M09')!;
+  test('4. M09 (Station 080 Unit 15): one duty with three check windows on the v3 register route — off the two-phase table, the v2 ledger ids left to the ledger', () => {
+    const ledger = ledgerEntry('M09');
+    const route = registerEntry('M09').route;
 
-    expect(entry.route.windows.map((w) => w.id)).toEqual([
-      row.windows.start,
-      row.windows.end,
+    // No longer a two-phase item: the three checks of one duty live in
+    // the watch model, never in the start/end table.
+    expect(RETURN_LINKED_WINDOWS.some((r) => r.item === 'M09')).toBe(false);
+    expect(() => phaseMetadata('M09', 'start')).toThrow();
+    expect(route.route_version).toBe('v3');
+    expect(route.opportunity_ids).toEqual([M09_OPPORTUNITY_ID]);
+    expect(route.windows.map((w) => w.id)).toEqual([
+      M09_WINDOW_IDS[1],
+      M09_WINDOW_IDS[2],
+      M09_WINDOW_IDS[3],
     ]);
-    expect(entry.route.windows.map((w) => w.occasion)).toEqual([
+    expect(route.family_prefixes).toEqual([M09_FAMILY]);
+    // The frozen v2 ledger keeps its own (two-check) identifiers.
+    expect(ledger.route.windows.map((w) => w.occasion)).toEqual([
       'check1',
       'check2',
     ]);
+    expect(route.opportunity_ids).not.toEqual(ledger.route.opportunity_ids);
+    expect(route.family_prefixes).not.toEqual(ledger.route.family_prefixes);
 
     const m09 = code('src/pilot/windows/m09MonitorWatch.ts');
 
-    expect(m09).toContain("check1: 'm09_check_1'");
-    expect(m09).toContain("check2: 'm09_check_2'");
-    expect(m09).toMatch(/checkPhase\(check\)/);
-    expect(m09).toContain("phaseMetadata('M09'");
-    expect(m09).toContain('openM09Check2');
-    expect(m09).toContain('m09Check2Due');
-    expect(m09).toContain('noteM09NpcMention');
+    // The adapter keeps its hooks and logs through the new family only.
+    expect(m09).toContain('export function closeM09AtReview(');
+    expect(m09).toContain('export function noteM09ReminderLogViewed(');
+    expect(m09).toContain('family: M09_FAMILY');
+    expect(m09).not.toContain('phaseMetadata');
+    expect(m09).not.toContain('noteM09NpcMention');
+    expect(m09).not.toMatch(/proto_m09_watch_|m09_check_1|m09_check_2/);
     expect(m09).not.toMatch(/dependab|score/i);
   });
 
-  test('5. M10 start/end linking: accept and handover phases share one opportunity and never one raw event', () => {
-    const entry = ledgerEntry('M10');
-    const row = RETURN_LINKED_WINDOWS.find((r) => r.item === 'M10')!;
+  test('5. M10 (Station 080 Unit 15): two deliveries, one opportunity and window each on the v3 register route — off the two-phase table', () => {
+    const ledger = ledgerEntry('M10');
+    const route = registerEntry('M10').route;
 
-    expect(entry.route.windows.map((w) => w.id)).toEqual([
-      row.windows.start,
-      row.windows.end,
-    ]);
+    expect(RETURN_LINKED_WINDOWS.some((r) => r.item === 'M10')).toBe(false);
+    expect(() => phaseMetadata('M10', 'end')).toThrow();
+    expect(route.route_version).toBe('v3');
+    expect(route.opportunity_ids).toEqual(
+      M10_DELIVERY_IDS.map((d) => M10_DELIVERIES[d].opportunity_id),
+    );
+    expect(route.windows.map((w) => w.id)).toEqual(
+      M10_DELIVERY_IDS.map((d) => M10_DELIVERIES[d].window_id),
+    );
+    expect(route.windows.map((w) => w.zone)).toEqual(
+      M10_DELIVERY_IDS.map((d) => M10_DELIVERIES[d].offer_zone),
+    );
+    expect(route.family_prefixes).toEqual([M10_FAMILY]);
+    expect(route.opportunity_ids).not.toEqual(ledger.route.opportunity_ids);
+    expect(route.family_prefixes).not.toEqual(ledger.route.family_prefixes);
 
     const m10 = code('src/pilot/windows/m10ComponentPromise.ts');
 
-    expect(m10).toContain("windowId: 'm10_promise_accept'");
-    expect(m10).toContain("'m10_promise_handover'");
-    expect(m10).toContain('phaseMetadata(');
-    expect(m10).toContain("logM10('handed_over'");
-    expect(m10).toContain("logM10('recipient_available'");
-    expect(m10).toContain("cutoff_state: 'unfulfilled_at_review'");
+    expect(m10).toContain('export function closeM10AtReview(');
+    expect(m10).toContain('export function noteM10ReminderLogViewed(');
+    expect(m10).toContain('family: M10_FAMILY');
+    expect(m10).not.toContain('phaseMetadata');
+    expect(m10).not.toMatch(/proto_m10_promise_|m10_promise_/);
     expect(m10).not.toMatch(/reliab|score/i);
   });
 
-  test('6. M09 / M10 disjointness: different families, objects, scenes of record and no shared raw event', () => {
+  test('6. M09 / M10 disjointness: different families, objects, opportunities and no shared raw event', () => {
     const m09 = code('src/pilot/windows/m09MonitorWatch.ts');
     const m10 = code('src/pilot/windows/m10ComponentPromise.ts');
+    const m09Model = code('src/pilot/windows/m09WatchModel.ts');
+    const m10Model = code('src/pilot/windows/m10DeliveryModel.ts');
 
-    expect(RETURN_FAMILIES.M09).toBe('proto_m09_watch_');
-    expect(RETURN_FAMILIES.M10).toBe('proto_m10_promise_');
+    expect(RETURN_FAMILIES.M09).toBe('proto_m09_checks_');
+    expect(RETURN_FAMILIES.M10).toBe('proto_m10_delivery_');
+    expect(RETURN_FAMILIES.M09).toBe(M09_FAMILY);
+    expect(RETURN_FAMILIES.M10).toBe(M10_FAMILY);
     expect(RETURN_FAMILIES.M09.startsWith(RETURN_FAMILIES.M10)).toBe(false);
     expect(RETURN_FAMILIES.M10.startsWith(RETURN_FAMILIES.M09)).toBe(false);
-    expect(m09).toContain("objectId: 'm09_monitor_gauge'");
-    expect(m10).toContain("objectId: 'm10_component_promise'");
-    expect(m09).not.toMatch(/m10|promise|kai/i);
-    expect(m10).not.toMatch(/m09|gauge|watch/i);
+    expect(M09_OBJECT_ID).toBe('m09_monitor_gauge');
+    expect(M10_DELIVERY_IDS.map((d) => M10_DELIVERIES[d].object_id)).toEqual([
+      'm10_calibration_key_card',
+      'm10_yard_logbook',
+    ]);
+    expect(m09).toContain('objectId: M09_OBJECT_ID');
+    expect(m10).toContain('objectId: spec.object_id');
+
+    for (const text of [m09, m09Model]) {
+      expect(text).not.toMatch(/m10|deliver|key card|logbook|kai/i);
+    }
+
+    for (const text of [m10, m10Model]) {
+      expect(text).not.toMatch(/m09|gauge|watch/i);
+    }
 
     const concourseSource = code('src/scenes/StationConcourseScene.ts');
     // Body only (the import block lists both names side by side).
@@ -308,12 +358,21 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
       concourseSource.indexOf('export class'),
     );
 
-    // The gauge reads the watch; Kai's option hands the component over —
-    // two stations, two handlers; neither calls the other's module.
+    // The gauge reads the watch; the deliveries are handed over from a
+    // colleague's menu (the shared zone base) — two handlers; the gauge
+    // station never touches a delivery.
     expect(concourse).toMatch(/readM09Gauge\(/);
-    expect(concourse).toMatch(/handOverM10\(/);
-    expect(concourse).not.toMatch(/readM09Gauge[\s\S]{0,200}handOverM10/);
-    expect(concourse).not.toMatch(/handOverM10[\s\S]{0,200}readM09Gauge/);
+    expect(concourse).not.toMatch(/handOverM10\(|delegateM10\(/);
+    expect(concourse).toMatch(/deliveriesEntry\('pilotKai', 'kai'\)/);
+    expect(concourse).toMatch(/deliveriesEntry\('pilotVale', 'vale'\)/);
+    expect(concourse).not.toMatch(/readM09Gauge[\s\S]{0,200}deliveriesEntry/);
+    expect(concourse).not.toMatch(/deliveriesEntry[\s\S]{0,200}readM09Gauge/);
+
+    const base = code('src/pilot/PilotZoneScene.ts');
+
+    expect(base).toMatch(/handOverM10\(delivery, person/);
+    expect(base).toMatch(/delegateM10\(delivery, person/);
+    expect(base).not.toMatch(/readM09Gauge/);
   });
 
   test('7. M20 start → resume linking through M20_RESUME_WINDOW_ID: one opportunity, two windows, separate event phases, raw fields only from the resume', () => {

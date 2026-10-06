@@ -1,377 +1,356 @@
 /**
- * M09 — Monitor watch with two scheduled gauge checks (evidence-led pilot
- * v2, Unit 2).
+ * M09 — window adapter of the monitor watch (Station 080 M01–M26 run,
+ * Unit 15). One register window for the ONE accepted duty
+ * (`proto_m09_watch_duty`); its window id names the check that is — or was
+ * last — due (`m09_duty_check_1..3`). Every command delegates to the pure
+ * model (`m09WatchModel.ts`) and logs through the window's
+ * `proto_m09_checks_*` family with the protocol stamp.
  *
- * Ledger (sheet 09): voluntarily accept a monitor watch with two scheduled
- * gauge checks at fixed route milestones, equal reminders and guaranteed
- * access; failures are distinguished from invalid presentation.
- *
- * Mechanic: Vale offers the watch at the incident handover (explicit
- * accept/decline — the offer is presented to everyone). Accepting
- * registers ONE obligation with two due windows on the Concourse monitor
- * gauge:
- *   check 1 — due before the participant first leaves the Concourse for
- *             the workshop (window: acceptance → first west-door exit);
- *   check 2 — due on the return (window: return_hub stage → the shift
- *             review on the deck).
- * Both checks use the same gauge, the same reminder (one mission-log line
- * and one neutral Vale mention), and the gauge is always reachable. A
- * check window that closes without a reading is a COMPLETED observation
- * (check_completed=false) — the opportunity was validly presented; only a
- * never-presented window is missing.
- *
- * Raw components: check1_completed, check2_completed, due_delta_1,
- * due_delta_2 (ms from the window's due milestone to the reading; null
- * when not read), reminder_exposure (log opened / Vale mention while due).
+ * Window lifecycle: presented at Vale's offer; a decline opens and
+ * completes it outside the denominator; acceptance opens it and the first
+ * check with it; it completes when the third check closes (a reading, or
+ * the first Concourse exit of the return visit — owner decision D-U15-1)
+ * or at the shift review with the checks reached so far (an open one
+ * censored). An unanswered offer closes at the review as such; an offer
+ * never presented is absent; an offer presented in an earlier page load is
+ * never re-run. The v2 two-check family keeps its meaning in the frozen
+ * ledger and is no longer on the route.
  */
-import { registerMissionLogEntry } from '../pilotRoute';
-import { phaseMetadata } from '../return/returnEpisodeModel';
-import { type InputMode, ItemWindow } from './windowKit';
+import { protocolStamp } from '../../measurement/protocol';
+import { researchRuntime } from '../../systems';
+import type { ObservedInput } from '../inputObservation';
+import {
+  pilotMissionLog,
+  pilotStage,
+  registerMissionLogEntry,
+} from '../pilotRoute';
+import {
+  createM09State,
+  M09_ENTRY_STATE_VERSION,
+  M09_FAMILY,
+  M09_GAUGE_REGISTRY_ID,
+  M09_OBJECT_ID,
+  M09_OPPORTUNITY_ID,
+  M09_WINDOW_IDS,
+  m09Accepted,
+  type M09Access,
+  m09Answer,
+  type M09AnswerResult,
+  m09CloseAtReview,
+  m09ConcourseEntered,
+  m09ConcourseExited,
+  m09Defer,
+  type M09DeferResult,
+  m09LogLine,
+  type M09LogSink,
+  m09NoteLogViewed,
+  m09OpenAcceptanceCheck,
+  m09Present,
+  m09PriorAdministration,
+  m09RawComponents,
+  m09ReadGauge,
+  type M09ReadResult,
+  type M09State,
+} from './m09WatchModel';
+import { ItemWindow } from './windowKit';
 
-export const M09_OPPORTUNITY_ID = 'proto_m09_monitor_watch';
-export const M09_ENTRY_STATE_VERSION = 'm09-monitor-watch-v1';
-export const M09_FAMILY = 'proto_m09_watch_';
-export const M09_WINDOW_IDS = {
-  check1: 'm09_check_1',
-  check2: 'm09_check_2',
-} as const;
+export {
+  M09_ENTRY_STATE_VERSION,
+  M09_FAMILY,
+  M09_OFFER_BODY,
+  M09_OFFER_LABELS,
+  M09_OPPORTUNITY_ID,
+  M09_REASK_LABEL,
+  M09_SETTLE_MS,
+  m09GaugeFeedback,
+} from './m09WatchModel';
 
-export type M09Check = 'check1' | 'check2';
+const LOG_ENTRY_ID = 'm09_watch';
+/** The station map lists the first seven open lines (StationMapScene). */
+const STATION_LOG_VISIBLE_LINES = 7;
 
-interface M09CheckState {
-  dueAtMs: number | null;
-  readAtMs: number | null;
-  closedAtMs: number | null;
-  reminderLogViews: number;
-  reminderNpcMentions: number;
+/**
+ * The duty's window: every event of the family carries the protocol
+ * stamp, and `presented` carries the offer's snapshot.
+ */
+class WatchWindow extends ItemWindow {
+  private offerSnapshot: Record<string, unknown> = {};
+
+  presentWith(nowMs: number, snapshot: Record<string, unknown>) {
+    this.offerSnapshot = { ...snapshot };
+    this.present(nowMs, snapshot);
+  }
+
+  log(suffix: string, metadata: Record<string, unknown> = {}) {
+    super.log(suffix, {
+      ...protocolStamp(),
+      ...(suffix === 'presented' ? this.offerSnapshot : {}),
+      ...metadata,
+    });
+  }
+
+  reset() {
+    super.reset();
+    this.offerSnapshot = {};
+  }
 }
 
-interface M09State {
-  offered: boolean;
-  accepted: boolean | null;
-  acceptedAtMs: number | null;
-  checks: Record<M09Check, M09CheckState>;
-  gaugeReadings: number;
-}
-
-function initialCheck(): M09CheckState {
-  return {
-    dueAtMs: null,
-    readAtMs: null,
-    closedAtMs: null,
-    reminderLogViews: 0,
-    reminderNpcMentions: 0,
-  };
-}
-
-let state: M09State = {
-  offered: false,
-  accepted: null,
-  acceptedAtMs: null,
-  checks: { check1: initialCheck(), check2: initialCheck() },
-  gaugeReadings: 0,
-};
-
-export const m09Window = new ItemWindow({
+export const m09Window = new WatchWindow({
   item: 'M09',
   opportunityId: M09_OPPORTUNITY_ID,
-  windowId: 'm09_monitor_watch',
+  windowId: M09_WINDOW_IDS[1],
   entryStateVersion: M09_ENTRY_STATE_VERSION,
   family: M09_FAMILY,
   scene: 'station_concourse',
-  objectId: 'm09_monitor_gauge',
+  objectId: M09_OBJECT_ID,
 });
+
+let state: M09State = createM09State();
+/** The reload guard held the offer back in this page load. */
+let heldBack = false;
+
+const sink: M09LogSink = (suffix, metadata) => {
+  m09Window.log(suffix, metadata);
+};
+
+/** The gauge is a registered station of the Concourse in every visit. */
+export const M09_GAUGE_ACCESS: M09Access = {
+  available: true,
+  basis: 'gauge_station_in_scene',
+  registry_id: M09_GAUGE_REGISTRY_ID,
+};
 
 export function declareM09() {
   m09Window.declare();
-}
-
-/**
- * Unit 5: check events carry their phase (check 1 = start, check 2 = end)
- * and BOTH ledger window ids, so the two scheduled checks stay traceably
- * linked while each keeps its own window id and never shares a raw event.
- */
-function checkPhase(check: M09Check) {
-  return phaseMetadata('M09', check === 'check1' ? 'start' : 'end');
 }
 
 export function m09State(): Readonly<M09State> {
   return state;
 }
 
-/** The watch offer was presented (Vale's beat). */
-export function presentM09Offer(nowMs: number) {
+/** The watch answer for a neighbouring window's entry snapshot. */
+export function m09WatchAccepted(): boolean | null {
+  return state.answer === null ? null : state.answer === 'accept';
+}
+
+/**
+ * Reload guard, run at Concourse entry: an offer presented in an earlier
+ * page load of this identity is never re-run — prior exposure recorded,
+ * the opportunity technically incomplete, the feature `interrupted`.
+ */
+export function guardM09Reload(): boolean {
+  if (heldBack) {
+    return true;
+  }
+
+  if (
+    state.presented_at_ms !== null ||
+    !m09PriorAdministration(researchRuntime.getPriorPageLoadEvents())
+  ) {
+    return false;
+  }
+
+  heldBack = true;
+  m09Window.recordPriorExposure(
+    'monitor watch offered in an earlier page load of this identity',
+  );
+  m09Window.technicalFailure('reload after the offer: watch not re-run');
+
+  return true;
+}
+
+/** The offer stage may be shown: not answered, not held back, not closed. */
+export function m09OfferAvailable(): boolean {
+  return state.answer === null && !guardM09Reload() && !m09Window.isClosed();
+}
+
+/** Vale shows the offer stage (presented once; a re-showing moves the settle reference). */
+export function presentM09Offer(nowMs: number): boolean {
+  if (!m09OfferAvailable()) {
+    return false;
+  }
+
   declareM09();
+  m09Present(state, nowMs, (suffix, metadata) => {
+    if (suffix === 'presented') {
+      m09Window.presentWith(nowMs, metadata);
+    } else {
+      sink(suffix, metadata);
+    }
+  });
 
-  if (!state.offered) {
-    state.offered = true;
-    m09Window.present(nowMs, { offer: 'monitor_watch', checks: 2 });
-  }
+  return true;
 }
 
-/** Explicit acceptance/decline (voluntary; declining is a valid observation). */
+function registerWatchLogEntry() {
+  registerMissionLogEntry({
+    id: LOG_ENTRY_ID,
+    kind: 'obligation',
+    order: 10,
+    text: () => m09LogLine(state, pilotStage())?.text ?? '',
+    isClosed: () => m09LogLine(state, pilotStage()) === null,
+  });
+}
+
+function finishDuty(nowMs: number, closureReason: string) {
+  m09Window.complete(nowMs, m09RawComponents(state, closureReason), 'system');
+}
+
+/**
+ * Accept or decline (both deliberate). Acceptance opens the duty and its
+ * first check; a decline is a completed observation outside the
+ * denominator; a press inside the settle window is refused (the caller
+ * re-presents the stage).
+ */
 export function answerM09Offer(
-  accepted: boolean,
+  answer: 'accept' | 'decline',
+  optionPosition: number,
+  optionCount: number,
   nowMs: number,
-  inputMode: InputMode,
-) {
-  presentM09Offer(nowMs);
-
-  if (state.accepted !== null) {
-    return;
+  input: ObservedInput,
+): M09AnswerResult {
+  if (!m09OfferAvailable()) {
+    return 'invalid';
   }
 
-  state.accepted = accepted;
-  state.acceptedAtMs = nowMs;
-
-  if (accepted) {
-    // Phase 1 (check 1) owns the window id from acceptance; phase 2 takes
-    // over at the return milestone (`openM09Check2`).
-    m09Window.spec.windowId = M09_WINDOW_IDS.check1;
-    m09Window.open(nowMs, { accepted: true });
-    // Check 1 is due from acceptance (before leaving the Concourse); the
-    // offer line itself is its one NPC mention (equal to check 2's).
-    state.checks.check1.dueAtMs = nowMs;
-    state.checks.check1.reminderNpcMentions += 1;
-    m09Window.log('check_window_opened', {
-      check: 'check1',
-      window_id: M09_WINDOW_IDS.check1,
-      ...checkPhase('check1'),
-      input_mode: 'system',
-    });
-    registerMissionLogEntry({
-      id: 'm09_check1',
-      kind: 'obligation',
-      order: 10,
-      text: () =>
-        'Monitor watch: read the gauge before you leave the Concourse.',
-      isClosed: () => state.checks.check1.closedAtMs !== null,
-    });
-    registerMissionLogEntry({
-      id: 'm09_check2',
-      kind: 'obligation',
-      order: 11,
-      text: () =>
-        'Monitor watch: read the gauge again when you are back inside.',
-      isClosed: () =>
-        state.checks.check2.dueAtMs === null ||
-        state.checks.check2.closedAtMs !== null,
-    });
-  } else {
-    m09Window.open(nowMs, { accepted: false });
-    m09Window.complete(
-      nowMs,
-      {
-        accepted: false,
-        check1_completed: null,
-        check2_completed: null,
-        due_delta_1: null,
-        due_delta_2: null,
-        reminder_exposure: { check1: 0, check2: 0 },
-      },
-      inputMode,
-    );
-  }
-
-  m09Window.log('offer_answered', { accepted, input_mode: inputMode });
-}
-
-export function m09Accepted(): boolean {
-  return state.accepted === true;
-}
-
-/** Reminder exposure (mission log opened while a check is due). */
-export function noteM09ReminderLogViewed() {
-  for (const check of ['check1', 'check2'] as const) {
-    const c = state.checks[check];
-
-    if (c.dueAtMs !== null && c.closedAtMs === null) {
-      c.reminderLogViews += 1;
-    }
-  }
-}
-
-export function noteM09NpcMention(check: M09Check) {
-  const c = state.checks[check];
-
-  if (c.dueAtMs !== null && c.closedAtMs === null) {
-    c.reminderNpcMentions += 1;
-  }
-}
-
-/** Return milestone reached: check 2 becomes due. */
-export function openM09Check2(nowMs: number) {
-  if (!m09Accepted() || state.checks.check2.dueAtMs !== null) {
-    return;
-  }
-
-  state.checks.check2.dueAtMs = nowMs;
-  m09Window.spec.windowId = M09_WINDOW_IDS.check2;
-  m09Window.log('check_window_opened', {
-    check: 'check2',
-    window_id: M09_WINDOW_IDS.check2,
-    ...checkPhase('check2'),
-    input_mode: 'system',
-  });
-}
-
-function activeCheck(): M09Check | null {
-  for (const check of ['check1', 'check2'] as const) {
-    const c = state.checks[check];
-
-    if (c.dueAtMs !== null && c.closedAtMs === null) {
-      return check;
-    }
-  }
-
-  return null;
-}
-
-/** The gauge was read (E at the monitor gauge). Always available. */
-export function readM09Gauge(nowMs: number, inputMode: InputMode) {
-  state.gaugeReadings += 1;
-
-  const check = activeCheck();
-
-  if (!m09Accepted() || check === null) {
-    // Reading outside a due window: gameplay only, recorded as context.
-    m09Window.log('gauge_read_outside_window', {
-      reading_count: state.gaugeReadings,
-      input_mode: inputMode,
-    });
-
-    return;
-  }
-
-  const c = state.checks[check];
-
-  if (c.readAtMs === null) {
-    c.readAtMs = nowMs;
-  }
-
-  m09Window.log('check_completed', {
-    check,
-    window_id: M09_WINDOW_IDS[check],
-    ...checkPhase(check),
-    due_delta_ms: c.readAtMs - (c.dueAtMs ?? c.readAtMs),
-    input_mode: inputMode,
-  });
-  closeM09Check(check, nowMs, 'read');
-}
-
-/** Milestone passed (left the Concourse / review reached): close the check. */
-export function closeM09Check(
-  check: M09Check,
-  nowMs: number,
-  reason: 'read' | 'milestone_passed' | 'review',
-) {
-  const c = state.checks[check];
-
-  if (!m09Accepted() || c.dueAtMs === null || c.closedAtMs !== null) {
-    return;
-  }
-
-  c.closedAtMs = nowMs;
-  m09Window.log('check_window_closed', {
-    check,
-    window_id: M09_WINDOW_IDS[check],
-    ...checkPhase(check),
-    completed: c.readAtMs !== null,
-    reason,
-    reminder_exposure: {
-      log_views: c.reminderLogViews,
-      npc_mentions: c.reminderNpcMentions,
-    },
-    input_mode: 'system',
-  });
-
-  if (check === 'check2' || reason === 'review') {
-    finishM09(nowMs);
-  }
-}
-
-function finishM09(nowMs: number) {
-  if (!m09Window.isOpen()) {
-    return;
-  }
-
-  const { check1, check2 } = state.checks;
-
-  // Check 2 never became due (review before the return): close it as a
-  // presented-but-not-due window (null, not false).
-  const check2Presented = check2.dueAtMs !== null;
-
-  m09Window.complete(
+  const result = m09Answer(
+    state,
+    answer,
+    optionPosition,
+    optionCount,
     nowMs,
-    {
-      accepted: true,
-      check1_completed: check1.readAtMs !== null,
-      check2_completed: check2Presented ? check2.readAtMs !== null : null,
-      due_delta_1:
-        check1.readAtMs === null || check1.dueAtMs === null
-          ? null
-          : check1.readAtMs - check1.dueAtMs,
-      due_delta_2:
-        check2.readAtMs === null || check2.dueAtMs === null
-          ? null
-          : check2.readAtMs - check2.dueAtMs,
-      reminder_exposure: {
-        check1: check1.reminderLogViews + check1.reminderNpcMentions,
-        check2: check2.reminderLogViews + check2.reminderNpcMentions,
-      },
-      gauge_readings: state.gaugeReadings,
+    input,
+    sink,
+  );
+
+  if (result === 'accepted') {
+    m09Window.open(nowMs, { accepted: true, stage: pilotStage() });
+    m09OpenAcceptanceCheck(state, pilotStage(), M09_GAUGE_ACCESS, nowMs, sink);
+    registerWatchLogEntry();
+  } else if (result === 'declined') {
+    m09Window.open(nowMs, { accepted: false, stage: pilotStage() });
+    finishDuty(nowMs, 'declined');
+  }
+
+  return result;
+}
+
+/** "Ask me again later." — only the settle window applies; nothing is answered. */
+export function deferM09Offer(
+  optionPosition: number,
+  optionCount: number,
+  nowMs: number,
+): M09DeferResult {
+  if (!m09OfferAvailable()) {
+    return 'invalid';
+  }
+
+  return m09Defer(state, optionPosition, optionCount, nowMs, sink);
+}
+
+/** Concourse entry: the lab-pass or the return-pass check opens, once each. */
+export function enterM09Concourse(nowMs: number) {
+  const opened = m09ConcourseEntered(
+    state,
+    pilotStage(),
+    M09_GAUGE_ACCESS,
+    nowMs,
+    (suffix, metadata) => {
+      // The window id follows the check that is due.
+      const index = metadata.check_index as 1 | 2 | 3 | undefined;
+
+      if (suffix === 'check_window_opened' && index !== undefined) {
+        m09Window.spec.windowId = M09_WINDOW_IDS[index];
+      }
+
+      sink(suffix, metadata);
     },
-    'system',
+  );
+
+  return opened;
+}
+
+/** Concourse exit through any door: an open check closes unread. */
+export function exitM09Concourse(exitTo: string | null, nowMs: number) {
+  if (m09ConcourseExited(state, exitTo, nowMs, sink).duty_finished) {
+    finishDuty(nowMs, 'completed');
+  }
+}
+
+/** The gauge was read (always available); the model decides the credit. */
+export function readM09Gauge(nowMs: number, input: ObservedInput) {
+  const result: M09ReadResult = m09ReadGauge(
+    state,
+    pilotStage(),
+    nowMs,
+    input,
+    sink,
+  );
+
+  if (result.duty_finished) {
+    finishDuty(nowMs, 'completed');
+  }
+
+  return result;
+}
+
+/**
+ * The station log was opened: one exposure record while the duty is
+ * active (which line, its position, whether the map could show it).
+ */
+export function noteM09ReminderLogViewed() {
+  if (!m09Accepted(state)) {
+    return;
+  }
+
+  const position =
+    pilotMissionLog().findIndex((entry) => entry.id === LOG_ENTRY_ID) + 1;
+
+  m09NoteLogViewed(
+    state,
+    pilotStage(),
+    {
+      rendered: position >= 1 && position <= STATION_LOG_VISIBLE_LINES,
+      log_position: position >= 1 ? position : null,
+    },
+    sink,
   );
 }
 
 /** Deck review: close whatever is still open (never a low value). */
 export function closeM09AtReview(nowMs: number) {
-  if (!state.offered) {
+  if (heldBack) {
+    return;
+  }
+
+  if (state.presented_at_ms === null) {
     m09Window.markAbsent('offer never presented before the review');
     return;
   }
 
-  if (state.accepted === null) {
+  if (state.answer === null) {
     m09Window.open(nowMs, { accepted: null });
     m09Window.stop(
       nowMs,
       'closed_at_review',
-      { offer_unanswered: true },
+      {
+        ...m09RawComponents(state, 'closed_at_review'),
+        offer_unanswered: true,
+      },
       'system',
     );
     return;
   }
 
-  if (!m09Accepted()) {
-    return;
+  if (m09CloseAtReview(state, nowMs, sink)) {
+    finishDuty(nowMs, 'closed_at_review');
   }
-
-  const active = activeCheck();
-
-  if (active !== null) {
-    closeM09Check(active, nowMs, 'review');
-  } else {
-    finishM09(nowMs);
-  }
-}
-
-/** Whether check 2 is currently due (the return opportunity is open). */
-export function m09Check2Due(): boolean {
-  const c = state.checks.check2;
-
-  return m09Accepted() && c.dueAtMs !== null && c.closedAtMs === null;
 }
 
 /** Test-only escape hatch. */
 export function resetM09State() {
-  state = {
-    offered: false,
-    accepted: null,
-    acceptedAtMs: null,
-    checks: { check1: initialCheck(), check2: initialCheck() },
-    gaugeReadings: 0,
-  };
+  state = createM09State();
+  heldBack = false;
   m09Window.reset();
-  m09Window.spec.windowId = 'm09_monitor_watch';
+  m09Window.spec.windowId = M09_WINDOW_IDS[1];
 }

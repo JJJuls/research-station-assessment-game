@@ -45,11 +45,15 @@ import {
   expectStage,
   interactAt,
   labApproach,
+  type LogbookChoice,
   openPromptAt,
   PILOT,
   pilotCoverage,
   pilotProbe,
+  selectPromptLabel,
+  SETTLE_PAUSE_MS,
   useDoor,
+  waitPromptLabel,
   walkTo,
   workshopToConcourse,
   workshopVia,
@@ -104,8 +108,10 @@ export const OPPORTUNITY = {
   m03a: 'proto_m03_tools_a',
   m03b: 'proto_m03_tools_b',
   m07: 'proto_m07_calibration_project',
-  m09: 'proto_m09_monitor_watch',
-  m10: 'proto_m10_component_promise',
+  // Station 080 Unit 15: one watch duty; one opportunity per delivery.
+  m09: 'proto_m09_watch_duty',
+  m10d1: 'proto_m10_delivery_d1',
+  m10d2: 'proto_m10_delivery_d2',
   m20: 'proto_m20_antenna_restoration',
   m21o1: 'proto_m21_case_o1',
   m21o2: 'proto_m21_case_o2',
@@ -554,6 +560,11 @@ export async function enterConcourseWithOffers(
 
   if (options.promise === 'accept') {
     await selectPromptOption(page, 1); // the standardised interruption
+    // M10 (Unit 15): the recap of the obligation follows the alarm (a
+    // settle-guarded acknowledgement).
+    await waitPromptLabel(page, 'Understood.');
+    await page.waitForTimeout(SETTLE_PAUSE_MS);
+    await selectPromptOption(page, 1);
     await page.waitForTimeout(400);
   }
 
@@ -698,12 +709,12 @@ export type MastHistory = 'full' | 'partial' | 'none';
 export async function exteriorShift(
   page: Page,
   mast: MastHistory,
-  options?: { fillBelt?: boolean },
+  options?: { fillBelt?: boolean; logbook?: LogbookChoice },
 ) {
-  // Kai is an M10 recipient in the laboratory too: with the promise
-  // accepted the handover is his FIRST option, so the briefing / "done"
-  // beats select the first non-handover card (the participant withholds
-  // the component until the return).
+  // Kai receives the key card in the laboratory too (Unit 15: from his
+  // "About the deliveries…" entry, LAST in his menu — never a first
+  // card); the briefing / "done" beats take his first card and the
+  // participant withholds the delivery until the return.
   await useDoor(page, PILOT.concourse.northDoor, 'diagnostics_laboratory', {
     approachOffset: { x: 0, y: 20 },
     yFirst: false,
@@ -741,7 +752,8 @@ export async function exteriorShift(
     }
   }
 
-  await finishOutside(page);
+  // M10 (Unit 15): Noor's yard-logbook offer follows the shift end.
+  await finishOutside(page, { logbook: options?.logbook ?? 'defer' });
 }
 
 /** Opens Kai's prompt and selects the first card that is NOT the handover. */
@@ -778,7 +790,16 @@ export async function kaiViaLane(page: Page) {
   });
 }
 
-/** Kai: hand the component over (the handover option is first while carrying). */
+/** Kai's deliveries entry and the key card's handover option (Unit 15). */
+export const DELIVERIES_ENTRY_LABEL = 'About the deliveries…';
+export const KEY_CARD_HANDOVER_LABEL = 'Hand over the calibration key card.';
+
+/**
+ * Kai on the return shift: hand the key card over from his deliveries
+ * menu ("About the deliveries…" is LAST in his prompt; the menu's first
+ * card is "Not now." — every card is selected by its label). Returns the
+ * labels of his prompt and of the menu.
+ */
 export async function handOverToKai(page: Page) {
   await kaiViaLane(page);
   await openPromptAt(page, RETURN.concourse.kai, {
@@ -787,12 +808,22 @@ export async function handOverToKai(page: Page) {
 
   const labels = await promptCardLabels(page);
 
-  expect(labels[0]).toMatch(/Hand over/);
-  await selectPromptOption(page, 1);
+  expect(labels[0]).toBe('Understood.');
+  expect(labels[labels.length - 1]).toBe(DELIVERIES_ENTRY_LABEL);
+  await selectPromptLabel(page, DELIVERIES_ENTRY_LABEL);
+  await waitPromptLabel(page, KEY_CARD_HANDOVER_LABEL);
+
+  const menu = await promptCardLabels(page);
+
+  expect(menu[0]).toBe('Not now.');
+  await page.waitForTimeout(SETTLE_PAUSE_MS);
+  await selectPromptLabel(page, KEY_CARD_HANDOVER_LABEL);
   await page.waitForTimeout(400);
+
+  return { labels, menu };
 }
 
-/** Kai without handing over: the option exists; "Understood." is taken. */
+/** Kai without handing over: "Understood." is taken; his labels are returned. */
 export async function meetKaiWithoutHandover(page: Page) {
   await kaiViaLane(page);
   await openPromptAt(page, RETURN.concourse.kai, {
@@ -801,7 +832,7 @@ export async function meetKaiWithoutHandover(page: Page) {
 
   const labels = await promptCardLabels(page);
 
-  await selectPromptOption(page, labels.length);
+  await selectPromptLabel(page, 'Understood.');
   await page.waitForTimeout(400);
 
   return labels;

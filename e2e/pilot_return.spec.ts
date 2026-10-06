@@ -5,8 +5,9 @@
  *
  * 1. The complete return shift with every obligation accepted and a valid
  *    antenna start: the ONE purposeful return (yard → laboratory →
- *    Concourse), the changed station status, M10 handover to Kai and the
- *    M09 gauge check 2 as separate acts, Vale's neutral check-in, the
+ *    Concourse), the changed station status, the M10 key card handed to
+ *    Kai from his deliveries menu and the M09 return check (Station 080
+ *    Unit 15) as separate acts, Vale's neutral check-in, the
  *    workshop return shift — M03 occasion 2 (Press B, one tool
  *    restored), M07 end to completion, the persisted M20 feed console
  *    resumed and completed, M21 with a wrong-first application revised
@@ -22,7 +23,8 @@
  *    M22 completed anyway, Press B left untouched (valid observation),
  *    repeated workshop entry preserving every state, the gauge read and
  *    Kai met without a handover.
- * 3. Handover with the gauge omitted, a partial antenna start resumed
+ * 3. Handover with the gauge omitted (the return check closes unread at
+ *    the first Concourse exit — owner decision D-U15-1), a partial antenna start resumed
  *    but not completable inside, M22 withdrawn after the setback (a
  *    completed observation with recovery false), an insufficient-exposure
  *    Press B (invalid, never low), held ENTER never double-submitting, the
@@ -93,8 +95,8 @@ import {
 const RETURN_FAMILIES = [
   'proto_m03tools_',
   'proto_m07_calibration_',
-  'proto_m09_watch_',
-  'proto_m10_promise_',
+  'proto_m09_checks_',
+  'proto_m10_delivery_',
   'proto_m20_antenna_',
   'proto_m21_case_',
   'proto_m22_returned_',
@@ -136,58 +138,69 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     );
     expect(await lastFeedback(page)).not.toMatch(/Mast|gauge|card/);
     expect(await itemStatus(page, 'M20')).toBe('open');
+    // Station 080 Unit 15: the watch has three checks — at acceptance, on
+    // the pass toward the laboratory, and on this return.
     expect(
-      (await eventsByType(page, 'proto_m09_watch_check_window_opened')).map(
-        (e) => meta(e).check,
+      (await eventsByType(page, 'proto_m09_checks_check_window_opened')).map(
+        (e) => meta(e).check_index,
       ),
-    ).toEqual(['check1', 'check2']);
+    ).toEqual([1, 2, 3]);
 
-    // ——— M10 handover to Kai (option chosen; Kai never asks). ———
+    // ——— M10 key card handed to Kai from his deliveries menu (the entry
+    // is chosen; Kai never asks). ———
     await handOverToKai(page);
     expect(await lastFeedback(page)).not.toMatch(/thank|good|well done/i);
 
-    const m10 = await validityRecord(page, OPPORTUNITY.m10);
+    const m10 = await validityRecord(page, OPPORTUNITY.m10d1);
 
     expect(m10.completed).toBe(true);
     expect(m10.validity).toBe('valid');
 
     const m10Closed = (
-      await eventsByType(page, 'proto_m10_promise_window_closed')
-    )[0];
+      await eventsByType(page, 'proto_m10_delivery_window_closed')
+    ).find((e) => meta(e).delivery === 'd1')!;
     const m10Raw = meta(m10Closed).raw_components as Record<string, unknown>;
 
-    expect(m10Raw.promise_fulfilled).toBe(true);
-    expect(m10Raw.interruption_exposure).toBe(true);
-    expect(m10Raw.phase).toBe('end');
-    expect(m10Raw.start_window_id).toBe('m10_promise_accept');
-    expect(m10Raw.end_window_id).toBe('m10_promise_handover');
-    expect(typeof m10Raw.handover_delay_ms).toBe('number');
-    expect(meta(m10Closed).window_id).toBe('m10_promise_handover');
+    expect(m10Raw.path).toBe('direct');
+    expect(m10Raw.terminal_to).toBe('kai');
+    expect(m10Raw.interruption_shown).toBe(true);
+    expect(typeof m10Raw.delay_ms).toBe('number');
+    expect(meta(m10Closed).window_id).toBe('m10_delivery_d1');
+    expect(meta(m10Closed).entry_state_version).toBe('m10-deliveries-v1');
 
-    // ——— M09 gauge check 2 (a separate act on a separate object). ———
+    // ——— M09 return check (a separate act on a separate object). ———
     await readGauge(page);
     expect(await lastFeedback(page)).toContain('1.4 bar');
+    expect(await lastFeedback(page)).toContain('Watch reading logged.');
 
-    const check2 = (
-      await eventsByType(page, 'proto_m09_watch_check_completed')
-    ).find((e) => meta(e).check === 'check2');
+    const check3 = (
+      await eventsByType(page, 'proto_m09_checks_check_fulfilled')
+    ).find((e) => meta(e).check_index === 3);
 
-    expect(check2).toBeDefined();
-    expect(meta(check2!).window_id).toBe('m09_check_2');
-    expect(meta(check2!).phase).toBe('end');
-    expect(meta(check2!).start_window_id).toBe('m09_check_1');
+    expect(check3).toBeDefined();
+    expect(meta(check3!).window_id).toBe('m09_duty_check_3');
+    expect(meta(check3!).entry_state_version).toBe('m09-watch-checks-v1');
     expect(await itemStatus(page, 'M09')).toBe('completed');
 
     const m09Closed = (
-      await eventsByType(page, 'proto_m09_watch_window_closed')
+      await eventsByType(page, 'proto_m09_checks_window_closed')
     )[0];
-    const m09Raw = meta(m09Closed).raw_components as Record<string, unknown>;
+    const m09Raw = meta(m09Closed).raw_components as {
+      checks_fulfilled: number;
+      checks: { outcome: string; due_delta_ms: number | null }[];
+    };
 
-    expect(m09Raw.check1_completed).toBe(true);
-    expect(m09Raw.check2_completed).toBe(true);
-    expect(typeof m09Raw.due_delta_2).toBe('number');
-    expect(m09Raw).not.toHaveProperty('promise_fulfilled');
-    expect(m10Raw).not.toHaveProperty('check2_completed');
+    // Check 1 read at acceptance, the laboratory pass left unread (this
+    // driver walks straight through), the return check read.
+    expect(m09Raw.checks.map((check) => check.outcome)).toEqual([
+      'fulfilled',
+      'missed',
+      'fulfilled',
+    ]);
+    expect(m09Raw.checks_fulfilled).toBe(2);
+    expect(typeof m09Raw.checks[2].due_delta_ms).toBe('number');
+    expect(m09Raw).not.toHaveProperty('path');
+    expect(m10Raw).not.toHaveProperty('checks_fulfilled');
 
     // ——— Vale's neutral check-in → the workshop return shift. ———
     await valeReturnCheckIn(page);
@@ -671,9 +684,10 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
 
     // ——— Timing: item-owned active time vs the 265 s planning envelope.
     // Surface windows report `active_ms` (paused whenever their surface is
-    // closed); M03 o2 is its exposure; M09 check 2 is its due→read delta;
-    // the M10 handover is one prompt option (a few seconds, not measured
-    // separately: its window spans the whole route by design). ———
+    // closed); M03 o2 is its exposure; the M09 return check is its
+    // due→read delta; the M10 handover is two prompt options (a few
+    // seconds, not measured separately: its window spans the route by
+    // design). ———
     const closed = (await getEvents(page)).filter(
       (e) =>
         e.event_type.endsWith('_window_closed') &&
@@ -685,12 +699,12 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
       0,
     );
     const m03Ms = Number(meta(m03Departure).focused_ms ?? 0);
-    const m09Ms = Number(m09Raw.due_delta_2 ?? 0);
+    const m09Ms = Number(m09Raw.checks[2].due_delta_ms ?? 0);
     const total = activeMs + m03Ms + m09Ms;
 
     // eslint-disable-next-line no-console
     console.log(
-      `return shift: item-owned active ${Math.round(total / 1000)} s (surfaces ${Math.round(activeMs / 1000)} s · M03 o2 ${Math.round(m03Ms / 1000)} s · M09 check 2 ${Math.round(m09Ms / 1000)} s); wall ${Math.round((Date.now() - startedAt) / 1000)} s from the Dock`,
+      `return shift: item-owned active ${Math.round(total / 1000)} s (surfaces ${Math.round(activeMs / 1000)} s · M03 o2 ${Math.round(m03Ms / 1000)} s · M09 return check ${Math.round(m09Ms / 1000)} s); wall ${Math.round((Date.now() - startedAt) / 1000)} s from the Dock`,
     );
     expect(total).toBeLessThanOrEqual(265_000);
     expectNoRuntimeErrors(errors);
@@ -734,39 +748,61 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     await press(page, 'Escape');
     await page.waitForTimeout(500);
 
-    // M09 check 2 completed (check 1 was skipped: a completed-false fact).
+    // M09 return check read (checks 1 and 2 were left unread: observed
+    // misses, each closed when the Concourse was left — Unit 15).
     await readGauge(page);
 
     const check1Closed = (
-      await eventsByType(page, 'proto_m09_watch_check_window_closed')
-    ).find((e) => meta(e).check === 'check1')!;
+      await eventsByType(page, 'proto_m09_checks_check_window_closed')
+    ).find((e) => meta(e).check_index === 1)!;
 
-    expect(meta(check1Closed).completed).toBe(false);
-    expect(meta(check1Closed).reason).toBe('milestone_passed');
+    expect(meta(check1Closed).outcome).toBe('missed');
+    expect(meta(check1Closed).reason).toBe('left_concourse');
     expect(await itemStatus(page, 'M09')).toBe('completed');
 
     const m09Raw = meta(
-      (await eventsByType(page, 'proto_m09_watch_window_closed'))[0],
-    ).raw_components as Record<string, unknown>;
+      (await eventsByType(page, 'proto_m09_checks_window_closed'))[0],
+    ).raw_components as {
+      checks_fulfilled: number;
+      checks: { outcome: string }[];
+    };
 
-    expect(m09Raw.check1_completed).toBe(false);
-    expect(m09Raw.check2_completed).toBe(true);
+    expect(m09Raw.checks.map((check) => check.outcome)).toEqual([
+      'missed',
+      'missed',
+      'fulfilled',
+    ]);
+    expect(m09Raw.checks_fulfilled).toBe(1);
     expect((await validityRecord(page, OPPORTUNITY.m09)).validity).toBe(
       'valid',
     );
+    // The station log opened above (the return check due) is the watch's
+    // one recorded reminder exposure.
+    expect(
+      (await eventsByType(page, 'proto_m09_checks_log_viewed')).map((e) => [
+        meta(e).due_check_index,
+        meta(e).rendered,
+      ]),
+    ).toEqual([[3, true]]);
 
-    // The declined promise closed at acceptance; Kai offers nothing to hand over.
+    // The declined delivery closed at the answer; Kai offers no
+    // deliveries entry (nothing is carried).
     const kaiLabels = await meetKaiWithoutHandover(page);
 
-    expect(kaiLabels.some((label) => /Hand over/.test(label))).toBe(false);
+    expect(kaiLabels).toEqual(['Understood.']);
     expect(await lastPromptBody(page)).not.toMatch(/card|hand/i);
+
+    const d1Closed = (
+      await eventsByType(page, 'proto_m10_delivery_window_closed')
+    ).find((e) => meta(e).delivery === 'd1')!;
+
     expect(
-      (
-        meta((await eventsByType(page, 'proto_m10_promise_window_closed'))[0])
-          .raw_components as Record<string, unknown>
-      ).cutoff_state,
+      (meta(d1Closed).raw_components as Record<string, unknown>).answer,
+    ).toBe('decline');
+    expect(
+      (meta(d1Closed).raw_components as Record<string, unknown>).closure_reason,
     ).toBe('declined');
-    expect((await validityRecord(page, OPPORTUNITY.m10)).validity).toBe(
+    expect((await validityRecord(page, OPPORTUNITY.m10d1)).validity).toBe(
       'valid',
     );
 
@@ -963,18 +999,34 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     await exteriorShift(page, 'partial', { fillBelt: true });
     await returnInside(page);
 
-    // M10 fulfilled, M09 check 2 omitted (stays due; never auto-closed).
+    // M10 fulfilled; the M09 return check is due while the participant is
+    // in the Concourse and is left unread.
     await handOverToKai(page);
-    expect((await validityRecord(page, OPPORTUNITY.m10)).completed).toBe(true);
+    expect((await validityRecord(page, OPPORTUNITY.m10d1)).completed).toBe(
+      true,
+    );
     expect(await itemStatus(page, 'M09')).toBe('open');
     expect(
-      (await eventsByType(page, 'proto_m09_watch_check_completed')).map(
-        (e) => meta(e).check,
+      (await eventsByType(page, 'proto_m09_checks_check_fulfilled')).map(
+        (e) => meta(e).check_index,
       ),
-    ).toEqual(['check1']);
+    ).toEqual([1]);
 
     await valeReturnCheckIn(page);
-    expect(await itemStatus(page, 'M09')).toBe('open'); // a detour never closes check 2
+
+    // Research-owner decision D-U15-1 (6 October 2026): the return check
+    // closes at the FIRST Concourse exit after its opening — here the west
+    // door to the workshop — as an observed miss, and the duty ends.
+    const check3Closed = (
+      await eventsByType(page, 'proto_m09_checks_check_window_closed')
+    ).find((e) => meta(e).check_index === 3)!;
+
+    expect(meta(check3Closed)).toMatchObject({
+      outcome: 'missed',
+      reason: 'left_concourse',
+      exit_to: 'records_workshop',
+    });
+    expect(await itemStatus(page, 'M09')).toBe('completed');
 
     // Partial start (one outdoor stage): resume is available; the console
     // stages can all be done, but completion is never manufactured.
@@ -1144,10 +1196,17 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     expect(moved).toBeGreaterThan(frozenAfter + 20);
 
     // Sign-off with the antenna unfinished and the gauge unread: the route
-    // advances; nothing is auto-completed.
+    // advances; nothing is auto-completed (the watch closed with its
+    // observed miss when the Concourse was left — D-U15-1 — and nothing
+    // here changed that record).
     await signOffReturnShift(page);
     expect(await itemStatus(page, 'M20')).toBe('open');
-    expect(await itemStatus(page, 'M09')).toBe('open');
+    expect(await itemStatus(page, 'M09')).toBe('completed');
+    expect(
+      (await eventsByType(page, 'proto_m09_checks_check_fulfilled')).map(
+        (e) => meta(e).check_index,
+      ),
+    ).toEqual([1]);
     expect((await surface(page))?.open ?? false).toBe(false);
     expect(await lastFeedback(page)).not.toMatch(FORBIDDEN_TEXT);
     // V4 story spine: zone-narrowed wayfinding line (see test 1).

@@ -65,7 +65,13 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
   // Station 080 M08 (Unit 2): the support console (never opened → absent;
   // open → censored; slots without an explicit choice stay missing).
   closeM08AtReview(nowMs);
+  // Station 080 M09 (Unit 15): a check still open is censored and the duty
+  // ends with the checks reached; an unanswered offer closes as such;
+  // never offered → absent.
   closeM09AtReview(nowMs);
+  // Station 080 M10 (Unit 15): the review IS both deliveries' deadline —
+  // one still carried closes unfulfilled (a completed observation); an
+  // unanswered offer closes as such; never offered → absent.
   closeM10AtReview(nowMs);
   // Station 080 M11 (Unit 3): never offered → absent; accepted and never
   // departed → unresolved at review; declined / resolved already closed.

@@ -6,9 +6,10 @@
  * Episode-1 windows (ledger): M01 plan board, M05 initiation occasion 1
  * (Station 080 U6: Vale's accepted reading-desk lamp job — offered at the
  * end of the handover chain; the lamp is its start control), M09 monitor watch
- * (offered by Vale; two gauge checks), M10 component promise (offered by
- * Vale; standardised interruption), M12 quality packet 1, M14 incident
- * desk. Every packet is its own object on the work surface; completing one
+ * (Station 080 U15: offered by Vale; three gauge checks, one per Concourse
+ * pass), M10 deliveries (U15: the key card offered by Vale with the
+ * standardised interruption and its recap; Vale receives the yard logbook
+ * on the return), M12 quality packet 1, M14 incident desk. Every packet is its own object on the work surface; completing one
  * never gates another. Doors are always bidirectional.
  *
  * World V2 rescue: a 22×12 painted-plate hall — the plate
@@ -38,7 +39,7 @@ import {
   pilotStageAtOrAfter,
   registerPilotStation,
 } from '../pilot/pilotRoute';
-import type { PilotNpcBeat } from '../pilot/PilotZoneScene';
+import type { PilotNpcBeat, SettledOption } from '../pilot/PilotZoneScene';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
 import {
   type RestorationState,
@@ -75,28 +76,37 @@ import {
 import { m05SurfaceModel } from '../pilot/windows/m05SurfaceModel';
 import {
   answerM09Offer,
-  closeM09Check,
   declareM09,
-  m09Accepted,
-  m09Check2Due,
-  m09State,
-  noteM09NpcMention,
-  openM09Check2,
+  deferM09Offer,
+  enterM09Concourse,
+  exitM09Concourse,
+  guardM09Reload,
+  M09_OFFER_BODY,
+  M09_OFFER_LABELS,
+  M09_REASK_LABEL,
+  m09GaugeFeedback,
+  m09OfferAvailable,
+  m09WatchAccepted,
   presentM09Offer,
   readM09Gauge,
 } from '../pilot/windows/m09MonitorWatch';
 import {
-  answerM10Offer,
   declareM10,
-  handOverM10,
-  M10_COMPONENT_LABEL,
+  guardM10Reload,
+  M10_D1_REASK_LABEL,
+  M10_INTERRUPTION_ACK_LABEL,
   M10_INTERRUPTION_TEXT,
-  m10Carrying,
-  m10State,
+  M10_OFFER_BODY,
+  M10_RECAP_ACK_LABEL,
+  M10_RECAP_BODY,
+  m10DeliveryAccepted,
+  m10InterruptionWasShown,
+  m10OfferAvailable,
+  type M10Person,
+  m10StagePress,
   noteM10InterruptionAcknowledged,
   noteM10InterruptionShown,
-  noteM10KaiEncounter,
-  presentM10Offer,
+  noteM10RecapShown,
 } from '../pilot/windows/m10ComponentPromise';
 import {
   closeM12Surface,
@@ -131,18 +141,6 @@ import { KIT_INDICATOR } from '../world/kit/kitTextures';
 import { CONCOURSE_LAYOUT, CONCOURSE_SOLIDS } from '../world/layouts/concourse';
 
 const TILE = 32;
-
-/**
- * Monitor gauge readings (Unit 5): the monitored loop drifts while the
- * participant is outside, so the return reading is a visibly CHANGED
- * operational state — the physical consequence the second check reads.
- * Values only; no directive, no reminder. World V1: the reading is shown
- * on the gauge read (E), never as a permanent ribbon.
- */
-const GAUGE_READING = {
-  before: 'loop 1.6 bar · bus 26.8 V · relay LOCK',
-  after: 'loop 1.4 bar ▼ · bus 26.1 V ▼ · relay LOCK',
-} as const;
 
 declare global {
   interface Window {
@@ -184,13 +182,13 @@ export class StationConcourseScene extends PilotZoneScene {
   private serviceLamps: Phaser.GameObjects.Image[] = [];
   private stripLights: Phaser.GameObjects.Image[] = [];
 
-  /** The return leg of the route (episode 5) is live. */
-  private returned(): boolean {
-    return pilotStageAtOrAfter('return_hub');
-  }
-
-  private gaugeReading(): string {
-    return this.returned() ? GAUGE_READING.after : GAUGE_READING.before;
+  /**
+   * M10 (Unit 15): on the return shift Vale receives the yard logbook and
+   * Kai, beside the desk, receives the key card or agrees to carry the
+   * logbook. Before the return neither acts on a delivery here.
+   */
+  protected deliveryPersonsHere(): M10Person[] {
+    return pilotStageAtOrAfter('return_hub') ? ['vale', 'kai'] : [];
   }
 
   constructor() {
@@ -232,17 +230,21 @@ export class StationConcourseScene extends PilotZoneScene {
     // re-offered (prior exposure recorded, technically incomplete).
     guardM05Reload('o1', Date.now());
     declareM09();
-    declareM10();
+    declareM10('d1');
+    // M09 / M10 (Unit 15): an offer presented in an earlier page load is
+    // never re-run (prior exposure recorded, technically incomplete).
+    guardM09Reload();
+    guardM10Reload('d1');
     declareM12('o1');
     declareM14();
     stampContaminationNotes();
 
     super.create(data);
 
-    // Return milestone: the second gauge check becomes due on the return.
-    if (pilotStageAtOrAfter('return_hub')) {
-      openM09Check2(Date.now());
-    }
+    // M09 (Unit 15): this entry may be a check's milestone — the pass
+    // toward the laboratory (check 2) or the return from the yard
+    // (check 3). Each opens once, and closes at this visit's first exit.
+    enterM09Concourse(Date.now());
 
     // M05 (Unit 6): while another surface or an overlay pauses this scene
     // the start control is unusable — the focused clock pauses (the lamp
@@ -413,8 +415,12 @@ export class StationConcourseScene extends PilotZoneScene {
       y: S.monitorGauge.y,
       onPromptOpened: () => {
         this.logStationOpened('monitor_gauge');
-        readM09Gauge(Date.now(), 'keyboard');
-        this.showFeedbackMessage(`Gauge read: ${this.gaugeReading()}.`);
+
+        // The reading is shown on every read (never as a standing
+        // ribbon); a reading that fulfils a due check says so.
+        const { credited } = readM09Gauge(Date.now(), this.observedInput());
+
+        this.showFeedbackMessage(m09GaugeFeedback(pilotStage(), credited));
         return false;
       },
     });
@@ -816,16 +822,10 @@ export class StationConcourseScene extends PilotZoneScene {
     // job (a started one keeps its latency; the work cycle as it stands).
     exitM05('o1', now, 'room_left');
 
-    // Leaving the Concourse passes the first gauge-check milestone (the
-    // check-1 window only; check 2 stays due until the deck review so the
-    // return opportunity is never cut short by a detour).
-    if (
-      m09Accepted() &&
-      m09State().checks.check1.closedAtMs === null &&
-      !m09Check2Due()
-    ) {
-      closeM09Check('check1', now, 'milestone_passed');
-    }
+    // M09 (Unit 15): leaving the Concourse through any door closes the
+    // check that is due, unread — the third check included (research-owner
+    // decision D-U15-1, 6 October 2026).
+    exitM09Concourse(this.nearestDoorTarget(), now);
   }
 
   private logStationOpened(stationId: string) {
@@ -836,26 +836,16 @@ export class StationConcourseScene extends PilotZoneScene {
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {
     if (interactionKey === 'pilotVale') {
-      // Audit 2026-09 A7: the reminder mention is recorded HERE, exactly
-      // once per prompt open — valeBeat() is pure. It used to live inside
-      // valeBeat(), which the prompt pipeline calls twice per open (body +
-      // options), double-counting every exposure against the ledger's
-      // equal-reminder gate.
-      if (pilotStage() === 'incident_handover') {
-        noteM09NpcMention('check1');
-      } else if (pilotStage() === 'return_hub') {
-        noteM09NpcMention('check2');
-      }
-
+      // valeBeat() is pure (audit 2026-09 A7: the prompt pipeline calls it
+      // twice per open). Unit 15: Vale's generic lines are not counted as
+      // watch reminders — the station log is the watch's one reminder.
       return this.valeBeat().body;
     }
 
     if (interactionKey === 'pilotKai') {
-      noteM10KaiEncounter();
-
-      // Neutral: Kai never asks for the component (the mission-log line
-      // is the one authorised reminder); the handover is an option the
-      // participant chooses while carrying it.
+      // Neutral: Kai never asks for a delivery (the station-log line is
+      // the one authorised reminder); the deliveries entry is an option
+      // the participant chooses.
       return 'Kai: Back inside — the laboratory is quiet again. Vale has the return-shift orders.';
     }
 
@@ -864,25 +854,26 @@ export class StationConcourseScene extends PilotZoneScene {
 
   protected getPromptOptions(interactionKey: InteractionKey): PromptOption[] {
     if (interactionKey === 'pilotVale') {
-      return this.npcBeatOptions('pilotVale', this.valeBeat());
+      const beat = this.valeBeat();
+
+      // M10 (Unit 15): "About the deliveries…" LAST, and only on the
+      // return shift while Vale can act on one (never in the handover
+      // menu).
+      beat.options = this.capNpcMenu('pilotVale', [
+        ...beat.options,
+        ...this.deliveriesEntry('pilotVale', 'vale'),
+      ]);
+
+      return this.npcBeatOptions('pilotVale', beat);
     }
 
     if (interactionKey === 'pilotKai') {
       return this.npcBeatOptions('pilotKai', {
         body: '',
-        options: [
-          ...(m10Carrying()
-            ? [
-                {
-                  label: `Hand over the ${M10_COMPONENT_LABEL.toLowerCase()}.`,
-                  tag: 'm10_handover',
-                  feedback: 'Kai: Received — logged with the calibration set.',
-                  onSelected: () => handOverM10(Date.now(), 'kai', 'keyboard'),
-                },
-              ]
-            : []),
+        options: this.capNpcMenu('pilotKai', [
           { label: 'Understood.', tag: 'kai_return_ack' },
-        ],
+          ...this.deliveriesEntry('pilotKai', 'kai'),
+        ]),
       });
     }
 
@@ -904,7 +895,6 @@ export class StationConcourseScene extends PilotZoneScene {
               tag: 'briefing_ack',
               onSelected: () => {
                 advancePilotStage('incident_handover', Date.now());
-                presentM09Offer(Date.now());
                 // M01 (Unit 5): the briefing names the plan board on the
                 // storm packet — the first batch is presented here.
                 presentM01('o1', Date.now());
@@ -912,14 +902,19 @@ export class StationConcourseScene extends PilotZoneScene {
                 // quality packet — occasion 1 is presented here.
                 presentM12('o1', Date.now());
               },
-              nextStage: () => this.watchOfferStage(),
+              // The chain: watch offer → delivery offer → (alarm, recap)
+              // → lamp job. An offer held back after a reload is skipped,
+              // never re-run; the chain goes on to the next one.
+              nextStage: () =>
+                this.watchOfferStage() ??
+                this.promiseOfferStage() ??
+                this.lampJobOfferStage(),
             },
           ],
         };
       case 'incident_handover':
-        // Equal reminder exposure (Unit 5): the same neutral "still yours"
-        // line as the return beat; recorded for check 1 while it is due
-        // (in getPromptBody — once per open; audit A7).
+        // The same neutral "still yours" line as the return beat (never
+        // counted as a watch reminder — Unit 15).
         return {
           body: 'Vale: How is the handover going? Anything you leave open stays open for the shift.',
           options: [
@@ -935,19 +930,19 @@ export class StationConcourseScene extends PilotZoneScene {
               tag: 'handover_continue',
               feedback: 'Vale: Take your time.',
             },
-            ...(m09State().accepted === null
+            ...(m09OfferAvailable()
               ? [
                   {
-                    label: 'About the monitor watch…',
+                    label: M09_REASK_LABEL,
                     tag: 'watch_offer_again',
                     nextStage: () => this.watchOfferStage(),
                   },
                 ]
               : []),
-            ...(m10State().accepted === null
+            ...(m10OfferAvailable('d1')
               ? [
                   {
-                    label: 'About the delivery…',
+                    label: M10_D1_REASK_LABEL,
                     tag: 'promise_offer_again',
                     nextStage: () => this.promiseOfferStage(),
                   },
@@ -970,9 +965,7 @@ export class StationConcourseScene extends PilotZoneScene {
           options: [{ label: 'On my way.', tag: 'redirect_lab' }],
         };
       case 'return_hub':
-        // Neutral, equal to the check-1 mention: no gauge named, no
-        // directive — the registered form's one NPC mention per check
-        // (recorded in getPromptBody — once per open; audit A7).
+        // Neutral: no gauge named, no delivery named, no directive.
         return {
           body: 'Vale: Back inside — good. The exterior shift is logged. Anything you accepted earlier is still yours to close. The return shift finishes in the Records Workshop, west door.',
           options: [
@@ -1066,74 +1059,67 @@ export class StationConcourseScene extends PilotZoneScene {
     };
   }
 
-  /** M09: explicit, voluntary watch offer (accept or decline — both valid). */
+  /**
+   * M09 (Unit 15): the explicit, voluntary watch offer — accept, decline
+   * or later, all deliberate. A press inside the settle window after the
+   * stage appears is refused by the model and the stage re-presented in
+   * place. Every read choice goes on to the delivery offer.
+   */
   private watchOfferStage(): PromptStage | null {
-    if (m09State().accepted !== null) {
+    if (!presentM09Offer(Date.now())) {
       return null;
     }
 
-    presentM09Offer(Date.now());
+    const answer =
+      (choice: 'accept' | 'decline'): SettledOption['run'] =>
+      (input, position, count) =>
+        answerM09Offer(choice, position, count, Date.now(), input) === 'refused'
+          ? 'refused'
+          : 'done';
+    const next = () => this.promiseOfferStage();
 
-    return {
-      body: 'Vale: One more thing — would you take the monitor watch this shift? Two gauge readings: one before you leave the Concourse, one when you are back inside. The gauge is on the work surface.',
-      options: this.npcBeatOptions('pilotVale', {
-        body: '',
-        options: [
-          {
-            label: 'I will take the watch.',
-            tag: 'watch_accept',
-            onSelected: () => answerM09Offer(true, Date.now(), 'keyboard'),
-            nextStage: () => this.promiseOfferStage(),
-          },
-          {
-            label: 'Not this shift.',
-            tag: 'watch_decline',
-            onSelected: () => answerM09Offer(false, Date.now(), 'keyboard'),
-            nextStage: () => this.promiseOfferStage(),
-          },
-          {
-            label: 'Ask me again later.',
-            tag: 'watch_defer',
-            nextStage: () => this.promiseOfferStage(),
-          },
-        ],
-      }),
-    };
+    return this.settledStage('pilotVale', {
+      body: M09_OFFER_BODY,
+      restage: () => this.watchOfferStage(),
+      options: [
+        {
+          label: M09_OFFER_LABELS.accept,
+          tag: 'watch_accept',
+          run: answer('accept'),
+          nextStage: next,
+        },
+        {
+          label: M09_OFFER_LABELS.decline,
+          tag: 'watch_decline',
+          run: answer('decline'),
+          nextStage: next,
+        },
+        {
+          label: M09_OFFER_LABELS.defer,
+          tag: 'watch_defer',
+          run: (_input, position, count) =>
+            deferM09Offer(position, count, Date.now()) === 'refused'
+              ? 'refused'
+              : 'done',
+          nextStage: next,
+        },
+      ],
+    });
   }
 
-  /** M10: explicit, voluntary delivery promise; acceptance is followed by the standardised interruption. */
+  /**
+   * M10 delivery 1 (Unit 15): the explicit, voluntary offer of the key
+   * card. Acceptance is followed by the standardised interruption and its
+   * recap; a decline or a deferral goes straight on to the lamp job.
+   */
   private promiseOfferStage(): PromptStage | null {
-    if (m10State().accepted !== null) {
-      return null;
-    }
-
-    presentM10Offer(Date.now());
-
-    return {
-      body: `Vale: Kai asked for the ${M10_COMPONENT_LABEL.toLowerCase()}. Would you carry it and hand it to Kai when you see them?`,
-      options: this.npcBeatOptions('pilotVale', {
-        body: '',
-        options: [
-          {
-            label: 'I will hand it to Kai.',
-            tag: 'promise_accept',
-            onSelected: () => answerM10Offer(true, Date.now(), 'keyboard'),
-            nextStage: () => this.interruptionStage(),
-          },
-          {
-            label: 'Better ask someone else.',
-            tag: 'promise_decline',
-            onSelected: () => answerM10Offer(false, Date.now(), 'keyboard'),
-            nextStage: () => this.lampJobOfferStage(),
-          },
-          {
-            label: 'Ask me again later.',
-            tag: 'promise_defer',
-            nextStage: () => this.lampJobOfferStage(),
-          },
-        ],
-      }),
-    };
+    return this.deliveryOfferStage('pilotVale', 'd1', {
+      body: M10_OFFER_BODY.d1,
+      after: (answer) =>
+        answer === 'accept'
+          ? this.interruptionStage()
+          : this.lampJobOfferStage(),
+    });
   }
 
   /** The identical, non-choice interruption shown right after acceptance. */
@@ -1146,11 +1132,11 @@ export class StationConcourseScene extends PilotZoneScene {
         body: '',
         options: [
           {
-            label: 'Alarm cleared — continue.',
+            label: M10_INTERRUPTION_ACK_LABEL,
             tag: 'interruption_ack',
             onSelected: () =>
-              noteM10InterruptionAcknowledged(Date.now(), 'keyboard'),
-            nextStage: () => this.lampJobOfferStage(),
+              noteM10InterruptionAcknowledged(Date.now(), this.observedInput()),
+            nextStage: () => this.recapStage(true),
           },
         ],
       }),
@@ -1158,11 +1144,36 @@ export class StationConcourseScene extends PilotZoneScene {
   }
 
   /**
+   * M10 (Unit 15): the obligation shown again after the interruption —
+   * what is carried, for whom, and by when. One acknowledgement, then the
+   * lamp job (still the chain's last stage).
+   */
+  private recapStage(fresh: boolean): PromptStage {
+    noteM10RecapShown(Date.now(), fresh);
+
+    return this.settledStage('pilotVale', {
+      body: M10_RECAP_BODY,
+      restage: () => this.recapStage(false),
+      options: [
+        {
+          label: M10_RECAP_ACK_LABEL,
+          tag: 'promise_recap_ack',
+          run: (_input, position, count) =>
+            m10StagePress('d1', 'recap', position, count, Date.now())
+              ? 'done'
+              : 'refused',
+          nextStage: () => this.lampJobOfferStage(),
+        },
+      ],
+    });
+  }
+
+  /**
    * M05 occasion 1 (Unit 6): the explicit offer of the extra lamp job at
    * the END of the handover chain (after the watch offer, the delivery
-   * offer and — when accepted — the interruption), so that acceptance is
-   * followed by a usable start opportunity and never by a required
-   * prompt. Accepting and declining are both deliberate; a press inside
+   * offer and — when accepted — the interruption and its recap), so that
+   * acceptance is followed by a usable start opportunity and never by a
+   * required prompt. Accepting and declining are both deliberate; a press inside
    * the settle window after the stage appears is refused by the model
    * and the stage is re-presented in place (M25 precedent).
    */
@@ -1188,9 +1199,9 @@ export class StationConcourseScene extends PilotZoneScene {
         // Entry-state covariates (review U6 S-F3): the offers answered
         // before this one and the interruption shown.
         {
-          m09_watch_accepted: m09State().accepted,
-          m10_promise_accepted: m10State().accepted,
-          m10_interruption_shown: m10State().interruptionShownAtMs !== null,
+          m09_watch_accepted: m09WatchAccepted(),
+          m10_promise_accepted: m10DeliveryAccepted('d1'),
+          m10_interruption_shown: m10InterruptionWasShown(),
         },
       );
     };

@@ -42,6 +42,7 @@ import {
 import { gridOf, npcSolid } from '../src/world/layouts/grid';
 import { YARD_LAYOUT, YARD_SOLIDS } from '../src/world/layouts/yard';
 import {
+  clickGameRect,
   driveAxisTo,
   getEvents,
   hold,
@@ -213,6 +214,109 @@ export async function pilotProbe(page: Page): Promise<PilotProbe | null> {
       (window as unknown as { __pilotProbe?: PilotProbe | null })
         .__pilotProbe ?? null,
   );
+}
+
+/* ------------------------------------------------------------------ *
+ * Station 080 Unit 15 — prompt cards by label, settle-guarded stages
+ * ------------------------------------------------------------------ */
+
+interface PromptCardLike {
+  index: number;
+  label: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+async function promptCards(page: Page): Promise<PromptCardLike[]> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __promptCards?: PromptCardLike[] | null })
+        .__promptCards ?? [],
+  );
+}
+
+/** Labels of the open prompt's option cards (empty when none is open). */
+export async function promptLabels(page: Page): Promise<string[]> {
+  return (await promptCards(page)).map((card) => card.label);
+}
+
+/** Waits until the open prompt shows a card with this label. */
+export async function waitPromptLabel(page: Page, label: string) {
+  await page.waitForFunction(
+    (wanted) =>
+      (
+        (window as unknown as { __promptCards?: { label: string }[] | null })
+          .__promptCards ?? []
+      ).some((card) => card.label === wanted),
+    label,
+    { timeout: 8_000 },
+  );
+}
+
+async function cardByLabel(page: Page, label: string) {
+  const cards = await promptCards(page);
+  const card = cards.find((candidate) => candidate.label === label);
+
+  if (card === undefined) {
+    throw new Error(
+      `pilotHelpers: no prompt card "${label}" (cards: ${cards.map((c) => c.label).join(' | ')})`,
+    );
+  }
+
+  return { card, position: cards.indexOf(card) + 1 };
+}
+
+/** Selects the card with this exact label by KEYBOARD (its number key). */
+export async function selectPromptLabel(page: Page, label: string) {
+  const { position } = await cardByLabel(page, label);
+
+  await selectPromptOption(page, position);
+}
+
+/** Selects the card with this exact label by POINTER (a click on the card). */
+export async function clickPromptLabel(page: Page, label: string) {
+  const { card } = await cardByLabel(page, label);
+
+  await clickGameRect(page, card);
+}
+
+/**
+ * The watch offer, the delivery offers, the recap, the deliveries menu
+ * and the delegation confirmation refuse a press inside their 300 ms
+ * settle window: a driver pauses this long before it answers one.
+ */
+export const SETTLE_PAUSE_MS = 400;
+
+export type LogbookChoice = 'accept' | 'decline' | 'defer';
+
+/** Noor's yard-logbook offer labels (the stage after "I am finished outside."). */
+export const LOGBOOK_LABELS: Record<LogbookChoice, string> = {
+  accept: 'I will take it to Vale.',
+  decline: 'Better ask someone else.',
+  defer: 'Ask me again later.',
+};
+
+/**
+ * Answers Noor's yard-logbook offer (it follows "I am finished outside.").
+ * The spine defers it — no answer, only the exposure record.
+ */
+export async function answerLogbookOffer(
+  page: Page,
+  choice: LogbookChoice,
+  options?: { pointer?: boolean },
+) {
+  await waitPromptLabel(page, LOGBOOK_LABELS.accept);
+  await page.waitForTimeout(SETTLE_PAUSE_MS);
+
+  if (options?.pointer === true) {
+    await clickPromptLabel(page, LOGBOOK_LABELS[choice]);
+  } else {
+    await selectPromptLabel(page, LOGBOOK_LABELS[choice]);
+  }
+
+  await page.waitForTimeout(300);
 }
 
 export async function pilotCoverage(
@@ -1202,6 +1306,8 @@ export async function yardReturnToConcourse(page: Page) {
   });
   await selectPromptOption(page, 2);
   await expectStage(page, 'return_hub');
+  // M10 (Unit 15): Noor's yard-logbook offer follows; the spine defers it.
+  await answerLogbookOffer(page, 'defer');
   await useDoor(page, PILOT.yard.airlock, 'diagnostics_laboratory', {
     approachOffset: await yardApproach(page, PILOT.yard.airlock),
   });

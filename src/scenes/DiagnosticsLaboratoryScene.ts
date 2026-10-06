@@ -27,7 +27,8 @@
  * lattice window is open" sequencing gate is gone. The lattice closure
  * state is passed to the M18 open event as route context only.
  *
- * Kai stands at the briefing desk (route anchor, M10 recipient). South
+ * Kai stands at the briefing desk (route anchor; Station 080 U15: the
+ * key card's recipient and the yard logbook's permitted delegate). South
  * door → Concourse; north airlock → Exterior Recovery Yard.
  */
 import Phaser from 'phaser';
@@ -76,12 +77,7 @@ import {
   activeWorkSurface,
   openWorkSurface,
 } from '../pilot/ui/WorkSurfaceScene';
-import {
-  handOverM10,
-  M10_COMPONENT_LABEL,
-  m10Carrying,
-  noteM10KaiEncounter,
-} from '../pilot/windows/m10ComponentPromise';
+import type { M10Person } from '../pilot/windows/m10ComponentPromise';
 import {
   answerM11Offer,
   declareM11,
@@ -847,24 +843,9 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       return [];
     }
 
-    noteM10KaiEncounter();
     noteM11OwnerAvailable('lab');
 
     const beat = this.kaiBeat();
-
-    // M10: the hand-over is available whenever the component is carried
-    // (recipient always available; never gated on anything else).
-    if (m10Carrying()) {
-      beat.options = [
-        {
-          label: `Hand over the ${M10_COMPONENT_LABEL.toLowerCase()}.`,
-          tag: 'm10_handover',
-          feedback: 'Kai: Got it. Thanks.',
-          onSelected: () => handOverM10(Date.now(), 'kai', 'keyboard'),
-        },
-        ...beat.options,
-      ];
-    }
 
     // M11 (Unit 3): the hand-back is available whenever Kai's probe is
     // carried — before the first departure it resolves the custody, on
@@ -913,9 +894,26 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
       ];
     }
 
-    beat.options = beat.options.slice(0, 4);
+    // M10 (Unit 15): "About the deliveries…" LAST, after every M11
+    // option, while Kai can act on a delivery here (never inside the
+    // briefing). No state exceeds four cards: 2 route + 1 custody + this
+    // entry during the laboratory work; 1 route + 2 custody + this entry
+    // on the way back.
+    beat.options = this.capNpcMenu('pilotKai', [
+      ...beat.options,
+      ...this.deliveriesEntry('pilotKai', 'kai'),
+    ]);
 
     return this.npcBeatOptions('pilotKai', beat);
+  }
+
+  /**
+   * M10 (Unit 15): Kai receives the key card and may agree to carry the
+   * yard logbook at every stage except his briefing (whose cards are the
+   * briefing's own).
+   */
+  protected deliveryPersonsHere(): M10Person[] {
+    return pilotStage() === 'lab_briefing' ? [] : ['kai'];
   }
 
   /** The workstation accepts the probe back while it is carried. */

@@ -88,8 +88,8 @@ status at this register version — updated by each unit).
 | M06  | Redesign                | 1    | `m06_unique_correct_orders`: distinct orders whose matching dispatch fell inside the one 60 s focused budget; 0–12; more useful output in equal allocated time                                                                                                                                                                 | `m06_work_period_detail` (first-pass accuracy, rework, skips, invalid dispatches, actual stop time, stop kind, per-order records)                                                                                                              | behavioural counterpart | v3 route: `proto_m06_work_period` (Records Workshop, ep 2) — implemented (U7)                                                                                                                                                                                    |
 | M07  | Retain with controls    | 1    | `m07_stages_completed`: stages / 6 at the closing milestone; more routine completion                                                                                                                                                                                                                                           | returns                                                                                                                                                                                                                                        | retained core           | v2-ledger route (P7 valid-zero defect) — planned                                                                                                                                                                                                                 |
 | M08  | Add controlled task     | 1    | `m08_work_choice_fraction`: Work / valid choices; 0–6; more work chosen (exploratory)                                                                                                                                                                                                                                          | fractions by benefit level, practice performance                                                                                                                                                                                               | exploratory             | v3 route: `proto_m08_effort_choice`, Recovery Yard, ep 4 — implemented and reviewed (U2 + U2-R)                                                                                                                                                                  |
-| M09  | Extend checkpoints      | 3    | `m09_due_checks_fulfilled`: fulfilled / eligible due checks; 0–3; more follow-through                                                                                                                                                                                                                                          | acceptance, reminders, access                                                                                                                                                                                                                  | behavioural counterpart | v2-ledger route (two checks) — planned                                                                                                                                                                                                                           |
-| M10  | Add second obligation   | 2    | `m10_obligations_fulfilled`: fulfilled or delegated / accepted accessible; 0–2; more reliability                                                                                                                                                                                                                               | per-obligation outcomes                                                                                                                                                                                                                        | behavioural counterpart | v2-ledger route (one delivery) — planned                                                                                                                                                                                                                         |
+| M09  | Extend checkpoints      | 3    | `m09_due_checks_fulfilled`: fulfilled / eligible due checks; 0–3; more follow-through                                                                                                                                                                                                                                          | acceptance, reminders, access                                                                                                                                                                                                                  | behavioural counterpart | v3 route: `proto_m09_watch_duty` — one accepted duty, three check windows on the Concourse gauge (acceptance ep 1, laboratory pass ep 3, return ep 5) — implemented (U15); the third check closes at the first Concourse exit (owner decision D-U15-1, §5.239)   |
+| M10  | Add second obligation   | 2    | `m10_obligations_fulfilled`: fulfilled or delegated / accepted accessible; 0–2; more reliability                                                                                                                                                                                                                               | per-obligation outcomes                                                                                                                                                                                                                        | behavioural counterpart | v3 route: `proto_m10_delivery_d1` (key card, Vale → Kai, offered in the Concourse, ep 1) + `proto_m10_delivery_d2` (yard logbook, Noor → Vale, offered in the Recovery Yard, ep 4) — implemented (U15)                                                           |
 | M11  | Add task                | 2    | `m11_unresolved_custodies`: unresolved / accepted accessible; 0–2; more unresolved stewardship                                                                                                                                                                                                                                 | understanding, handover records                                                                                                                                                                                                                | exploratory             | v3 route: `proto_m11_custody_lab` (Laboratory, ep 3) + `proto_m11_custody_yard` (Recovery Yard, ep 4) — implemented (U3)                                                                                                                                         |
 | M12  | Redesign interaction    | 2    | `m12_fields_verified`: fields explicitly judged (matches / differs) before release, summed over the released products / 6; 0–6; more checking coverage (a released product with nothing judged is an observed 0; a packet opened but never released is missing)                                                                | `m12_detection_and_correction` (per product: judgement accuracy, faulty field detected = judged "differs", correction attempted, correction successful = entered value equals the reference, unnecessary corrections, per-field records)       | behavioural counterpart | v3 route: `proto_m12_check_o1` (Concourse, ep 1), `proto_m12_check_o2` (Records Workshop, ep 2) — implemented (U8)                                                                                                                                               |
 | M13  | Extend cases            | 3    | `m13_first_solutions`: networks solved on first submission / 3                                                                                                                                                                                                                                                                 | constraints, help                                                                                                                                                                                                                              | performance counterpart | v2-ledger route (one network) — planned                                                                                                                                                                                                                          |
@@ -162,6 +162,223 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
   pinned in `protocol.ts` beside their anchors.
 
 ## 4. As-built records (appended per unit)
+
+**Unit 15 (M09 / M10): as-built** — the monitor watch's three checks and
+the two deliveries (bounded unit under contract `U15-CONTRACT-v2.md`,
+amendments A1 and A2 of 6 October 2026). **Status: technical
+implementation of the approved rows; both features are candidate
+indicators and NOT scientifically validated.** The three checks are
+repeated observations of ONE accepted duty, never three situations; the
+two deliveries are independent occasions but not equivalent forms (a
+different gap, only the key card is interrupted, and the key card's
+delegate is met after its recipient). Prospective memory (R12) and social
+motivation (R13) remain rival explanations of both.
+
+(1) **M09, administration `m09-watch-checks-v1`.** Vale offers the watch
+at the end of the briefing (and again from her handover menu, "About the
+monitor watch…", while it is unanswered): "Vale: One more thing — will
+you take the monitor watch this shift? Three gauge readings: one now, one
+when you come back through on your way to the laboratory, and one when
+you are back inside from the yard. Each is due before you leave the
+Concourse that time. Your station log (M) shows the watch." — "I will
+take the watch." / "Not this shift." / "Ask me again later."; every read
+answer goes on to the key-card offer. Check 1 opens at acceptance and
+closes at the first Concourse exit after it. Check 2 opens at the first
+Concourse entry at a stage of the pass toward the laboratory or the yard
+(`lab_briefing`, `lab_work`, `exterior_briefing`, `exterior_work`) and
+closes at the first exit of that visit. Check 3 opens at the first
+Concourse entry from `return_hub` onwards and closes at the first exit of
+that visit. No other entry opens anything; each check opens at most once.
+
+**Research-owner decision D-U15-1 (approved 6 October 2026; an owner
+decision, not an implementer default).** Source: the owner's launch
+instruction for this unit of 6 October 2026, recorded in contract v2
+amendment A2 (§3 and §6): "I approve D-U15-1: the third M09 check closes
+at the first Concourse exit after its return-from-yard opening, replacing
+the previous until-review deadline. Any exit closes the window; later
+readings cannot change its first outcome." As built: the exit hook of the
+Concourse closes whichever check is open — the third included — through
+ANY of its four doors (`check_window_closed` with `outcome: missed`,
+`reason: left_concourse` and the door taken in `exit_to`); the duty's
+window completes at that closure; every later reading is written as
+`gauge_read_uncredited` and never changes the check's first outcome. This
+deliberately changes the observation window of the return check: in the
+v2 administration it stayed open until the deck review. Data of the two
+administrations are told apart by family and `entry_state_version` and
+are not poolable (§5.239).
+
+The first gauge reading inside an open window fulfils the check and
+closes it (`reason: read`), with the feedback "Gauge read: <values>.
+Watch reading logged."; any other reading shows "Gauge read: <values>."
+and is recorded uncredited (`no_check_due`, `already_fulfilled` — a
+repeat in the visit that fulfilled a check —, `duty_not_accepted`,
+`duty_closed`). The values follow the route band: "loop 1.6 bar · bus
+26.8 V · relay LOCK" before `lab_briefing`, "loop 1.5 bar ▼ · bus 26.4 V
+▼ · relay LOCK" during the laboratory and yard stages, "loop 1.4 bar ▼ ·
+bus 26.1 V ▼ · relay LOCK" from `return_hub`. While the duty is active the
+station log carries ONE watch line (kind obligation, order 10): the due
+line, identical for all three checks, "Monitor watch: reading due — read
+the gauge before you leave the Concourse."; between checks "Monitor
+watch: next reading on your way through to the laboratory." and then
+"Monitor watch: next reading when you are back inside from the yard.";
+none once the third check has closed. There is no popup, HUD cue or
+in-world cue; Vale's generic lines are unchanged and are no longer
+counted as watch reminders.
+
+(2) **M10, administration `m10-deliveries-v1`.** Delivery `d1`: the
+calibration key card, Vale → Kai, permitted delegate Noor; offered in
+Vale's chain after the watch stage (and again from her handover menu,
+"About the delivery…"): "Vale: Kai asked for the calibration key card.
+Will you carry it to Kai? Hand it over before you close the station
+record at the Shift Review Panel — or leave it with a colleague who
+agrees to take it to Kai. Your station log (M) lists it." — "I will take
+it to Kai." / "Better ask someone else." / "Ask me again later.".
+Acceptance is followed by the unchanged pressure alarm ("PRESSURE ALARM —
+coolant loop transient. Hold position until the alarm clears." / "Alarm
+cleared — continue.") and then by the new recap, "Vale: Alarm's clear.
+You are still carrying the calibration key card for Kai — due before you
+close the station record at the Shift Review Panel. Your station log (M)
+lists it." / "Understood.", and only then by the unchanged M05 lamp offer
+(still the chain's last stage); a decline or a deferral goes straight to
+the lamp offer. Delivery `d2`: the yard logbook, Noor → Vale, permitted
+delegate Kai; offered as the stage after "I am finished outside." (the
+shift end is recorded first): "Noor: Logged. Before you go in — will you
+carry my yard logbook to Vale? …" with the same terms and "I will take it
+to Vale." / "Better ask someone else." / "Ask me again later."; every
+read answer is followed by "Noor: Back through the airlock — Vale is
+waiting at the incident desk."; while unanswered it is asked again from
+Noor's deliveries menu ("About the yard logbook…", the same body without
+"Logged. "). Both are due at the station-record closure of the Shift
+Review Panel.
+
+"About the deliveries…" is the LAST card of a colleague's menu (after
+every M11 option) and is shown only while that colleague can act on a
+delivery there: Kai in the Laboratory at every stage except his briefing
+and in the Concourse from `return_hub` (takes `d1`; may agree to carry
+`d2`); Vale in the Concourse from `return_hub` (takes `d2`); Noor in the
+yard from `exterior_work` (may agree to carry `d1`; re-asks `d2`). It is
+never in Vale's handover menu, Kai's briefing, or Noor's briefing and
+flag-job chain. The menu lists what is carried ("Deliveries you are
+carrying:" / "● Calibration key card → Kai" / "● Yard logbook → Vale" /
+"Each is due before you close the station record at the Shift Review
+Panel."), its first card is "Not now.", then "Hand over the calibration
+key card." / "Hand over the yard logbook." (the recipient), "Ask Noor to
+take the calibration key card to Kai." / "Ask Kai to take the yard
+logbook to Vale." (the delegate) and "About the yard logbook…" (Noor).
+A delegation is accountable: the colleague first states "<Noor|Kai>: I
+can take the <object> to <recipient> — from now on that is my job, not
+yours. Leave it with me?" with "Keep it for now." first and "Yes — leave
+it with <Noor|Kai>." second, then "<Noor|Kai>: It is with me. I will hand
+it to <recipient>."; a direct handover answers "Kai: Received — logged
+with the calibration set." / "Vale: Received — logged with the yard
+report.". The station log lists a carried delivery (orders 12 and 13):
+"Delivery: calibration key card to Kai — before the station record is
+closed." / "Delivery: yard logbook to Vale — before the station record is
+closed.". The objects are states of the delivery model and never belt or
+backpack items. After the review the record-closed notice replaces the
+log; a delivery still carried keeps its entry in the colleagues' menus,
+and a handover or delegation there is a LATE act, written separately and
+never part of a value. No offer, acceptance, decline or act changes a
+reward, a judgement, a route or any other item's offer.
+
+(3) **Input.** The watch offer, both delivery offers, the recap, the
+deliveries menu and the delegation confirmation refuse a press inside a
+300 ms settle window after the stage appears (logged; the same stage is
+shown again; a refused press writes no route beat). The pre-focused card
+is the first one, which in the menu and in the confirmation never acts.
+The device of each M09 / M10 act is OBSERVED (`src/pilot/inputObservation.ts`:
+two passive window listeners remember the device and time of the last
+press; a pure classifier yields `keyboard`, `pointer` or `unobserved`);
+it is read only at the M09 / M10 call sites.
+
+(4) **Telemetry (all provisional candidates).** M09: family
+`proto_m09_checks_`, opportunity `proto_m09_watch_duty`, windows
+`m09_duty_check_1` … `_3`, object `m09_monitor_gauge`. M10: family
+`proto_m10_delivery_`, opportunities and windows `…_d1` / `…_d2`, objects
+`m10_calibration_key_card` / `m10_yard_logbook`. The suffixes and fields
+are listed in the addendum (§2, "U15"). A deferral is recorded only by
+the route beat `pilot_npc_beat` (tags `watch_defer`, `promise_defer`,
+`logbook_defer`). With every offer deferred the bare route writes no new
+candidate event other than the three `presented` records (and the
+review's closures of the unanswered offers). The v2 families
+(`proto_m09_watch_*`, `proto_m10_promise_*`) are retired from the route
+and stay in the frozen ledger. No canonical event name and no
+scoring-plan variable was created; `ScoringManager`, the event schema and
+the scoring plan are untouched.
+
+(5) **Features (read-only, recounted from the act events of the current
+page load; the closure snapshot is only compared).**
+`m09_due_checks_fulfilled`: value = numerator = checks fulfilled;
+denominator = eligible checks (opened with access and closed by a reading
+or by leaving the Concourse); three planned, fewer reached ⇒ `incomplete`
+with the value; a zero is an observed zero. Null: declined ⇒ `declined`;
+unanswered ⇒ `no_eligible_event`; never offered ⇒ `not_presented`; held
+back after a reload ⇒ `interrupted`; duty still running ⇒ `pending`.
+`m10_obligations_fulfilled`: value = direct + delegated completions over
+the accepted, accessible deliveries (a conditional denominator, complete
+at any size above zero); direct and delegated are counted separately in
+the components and never merged with M11. Null: none accepted and some
+declined ⇒ `declined`; none answered, or none accessible ⇒
+`no_eligible_event`; never offered ⇒ `not_presented`; a delivery still
+open ⇒ `pending`; any held-back delivery ⇒ `interrupted` with the other
+delivery's value kept and censored. Accessibility is objective: a
+`person_present` record of the recipient or the permitted delegate while
+the delivery was carried — never the participant's opening of a
+conversation, of the station log or of a deliveries menu. The invariants
+are conditional on the outcome claimed: an offer never answered, a
+declined duty or delivery with no act, checks never reached, a missed
+check, a check censored at the review and a delivery still carried at
+the deadline are valid records and never a technical failure; only
+contradictory, malformed or unreproducible evidence is (a duplicate or
+out-of-order opening, an act outside its window or before acceptance, a
+second credited outcome, a handover to the wrong person or with the wrong
+object, a delegation without the delegate's stated acceptance, a closure
+snapshot that disagrees with the recount, an unknown version).
+
+(6) **Reload.** An offer presented in an earlier page load is never
+re-run: at zone entry the adapter records the prior exposure and closes
+the opportunity technically (`technical_failure`), the offer stage and
+its re-ask are skipped, and the feature is `interrupted`; a delivery
+never presented before the reload is offered normally (§5.244).
+
+(7) **What did not change.** M05: both offers keep their stimulus,
+labels, positions, 400 ms settle window, final chain position and clock
+rule; the entry-snapshot keys `m09_watch_accepted`, `m10_promise_accepted`
+and `m10_interruption_shown` are kept (the recap now precedes the lamp
+offer for key-card accepters only). M11: offers, labels, positions,
+custody options and outcomes are unchanged and every M11 option stays
+reachable; Kai's prepended v2 handover card is gone, so his briefing has
+three cards whatever was accepted (§5.245). No NPC state exceeds four
+cards (Kai: 2 route + 1 custody + the entry, or 1 + 2 + the entry; Noor:
+2 + 1 + the entry); an overflow would be written as
+`pilot_npc_menu_overflow` and is asserted absent. Feature ids, formulas,
+directions, ranges, denominator kinds and clustering in `registerV3.ts`
+are unchanged; only the two routes, the implementation status and M10's
+operational label ("Deliveries (Concourse / Recovery Yard)") changed.
+
+(8) **Tests.** Pure: `e2e/m09_watch.spec.ts`, `e2e/m10_deliveries.spec.ts`
+(models, windows, settle, extractor values and dispositions, the
+conditional invariants in both directions, immutability, the copy, the
+input classifier); `e2e/pilot_return_models.spec.ts` (the two items off
+the two-phase table). Browser: `e2e/m09_m10_route.spec.ts` (R1–R4, the 19
+evidence frames), and the adapted `pilot_return`, `pilot_episodes_1_2`
+and `m11_custody_route`. Results: `UNIT-LOG.md`, "U15".
+
+(9) **Limitations.** The watch's only reminder is the station log, which
+the participant must open; a check can be missed by not remembering it,
+so the feature cannot separate follow-through from prospective memory.
+The windows are per Concourse pass: a participant who passes quickly has
+a short window, and the pass durations are recorded (`open_ms`) but not
+standardised. D-U15-1 shortens the third window relative to v2. The two
+deliveries differ in gap, interruption and in whether a delegate is met
+before the recipient; `d2`'s delegate (Kai) stands on the way to its
+recipient. A delivery counts as accessible from a presence record made
+when the colleague can act; the yard is entered at `exterior_briefing`,
+so Noor's presence for `d1` is recorded when her briefing is
+acknowledged. Late acts are kept but not valued. The capture specs
+(`world_v3_route_capture` and others) and the window labels of
+`interactionRegistry.ts` still describe the v2 administration (§5.247).
+Implementer defaults and open points: §5.236–§5.255.
 
 **Unit 14-D3** (Records Workshop access only; one room, one bounded
 correction unit under the research owner's revised ruling of 1 October
@@ -3977,3 +4194,172 @@ rule, an event name or a field, and none establishes validity.
      suggestions and are recorded instead of extending the unit, as the
      ruling asks; (d)–(f) bear on what M08 and M02 opportunities cost
      and are recorded so that they are not mistaken for settled.
+
+The U15 (M09 / M10) implementation took the following implementer
+defaults under the approved rows; each is owner-visible and reversible,
+none changes a feature id, a formula, a direction or a denominator kind.
+§5.239 additionally records ONE research-owner decision (D-U15-1), which
+is not a default.
+
+236. **The second delivery (U15).** Default: `d2` is Noor's yard logbook
+     for Vale, offered at the end of the outside shift (the stage after
+     "I am finished outside.", once the shift end is recorded), so that
+     the two deliveries have distinct objects (key card / logbook),
+     issuers (Vale / Noor), recipients (Kai / Vale) and episodes (1 / 4).
+     The approved row names none of these. Alternatives: a second
+     Concourse delivery (same issuer, clustered offers); a workshop
+     delivery on the return shift (very short gap to the deadline).
+237. **The delegates, and the asymmetry of `d1` (U15).** Default: one
+     permitted delegate per delivery, never its issuer or recipient —
+     Noor for `d1`, Kai for `d2`. On the ordinary route the participant
+     meets `d1`'s recipient (Kai, Laboratory) BEFORE its delegate (Noor,
+     yard), and `d2`'s delegate (Kai, Laboratory) BEFORE its recipient
+     (Vale, Concourse); a delegation of `d1` therefore means the
+     recipient was passed first. The two deliveries are not equivalent
+     forms. Alternative: any colleague may be asked (more menu states,
+     recipients standing beside delegates).
+238. **One deadline (U15).** Default: both deliveries are due at the
+     station-record closure of the Shift Review Panel (stated in the
+     offer, the recap, the menu and the log line); a delivery still
+     carried there closes `unfulfilled_at_deadline`. Alternative: a
+     per-delivery milestone (the approved row says "the stated
+     milestone" without fixing it).
+239. **The watch's check windows; RESEARCH-OWNER DECISION D-U15-1 for
+     the third (U15).** Checks 1 and 2 — implementer default: one
+     window per Concourse pass (check 1 from acceptance to the first
+     exit; check 2 from the first entry at a laboratory / yard stage to
+     that visit's first exit). Check 3 — **not a default: decided by the
+     research owner on 6 October 2026** (source: the owner's launch
+     instruction for Unit 15 of that date, recorded in contract
+     `U15-CONTRACT-v2.md`, amendment A2, §3 and §6): "I approve D-U15-1:
+     the third M09 check closes at the first Concourse exit after its
+     return-from-yard opening, replacing the previous until-review
+     deadline. Any exit closes the window; later readings cannot change
+     its first outcome." Implemented exactly so (§4 "Unit 15" (1)). In
+     the v2 administration the return check stayed open until the deck
+     review; the v3 return window is therefore shorter and the two
+     administrations are not poolable (they differ in family and
+     `entry_state_version`).
+240. **Visibility of the obligations (U15).** Default: the station log
+     is the one reminder of the watch and of the deliveries, plus the
+     recap stage after the alarm (the specification's "show the
+     obligation after interruptions"). Alternative considered and not
+     chosen: an automatic due notice when a check opens — it would
+     overwrite M05's lamp feedback at the moment the lamp job's clock
+     starts; an in-world cue on the gauge would break the route's
+     one-guidance rule. Consequence: a check or a delivery can be missed
+     by not opening the log (R12 stays a rival explanation).
+241. **Settle window 300 ms (U15).** Default: 300 ms on the watch
+     offer, both delivery offers, the recap, the deliveries menu and the
+     delegation confirmation (M05 and M25 use 400 ms). A refused press
+     is logged, writes no route beat and re-presents the stage.
+242. **Observed input mode for M09 / M10 only (U15; narrows §5.35).**
+     Default: the device of each M09 / M10 act is observed per act
+     (`keyboard` / `pointer` / `unobserved` with its basis); every other
+     prompt answer keeps the §5.35 constant. The observation is the
+     most recent physical press within 1 500 ms of the act; it reads no
+     key and no position. Alternative: extend the prompt pipeline
+     itself (`RoomScene`, outside the unit).
+243. **Deferral is route telemetry only (U15).** Default: "Ask me again
+     later." writes no M09 / M10 event; it is counted from the
+     `pilot_npc_beat` tags (`watch_defer`, `promise_defer`,
+     `logbook_defer`) and exported as a component of the M10 delivery
+     records. An extraction run on the item family alone therefore
+     shows zero deferrals.
+244. **Reload hold-back (U15; §5.14, M11 precedent).** Default: an offer
+     presented in an earlier page load is never re-run (prior exposure +
+     technical closure at zone entry; the offer stage and its re-ask are
+     skipped; the feature `interrupted`); a delivery never presented
+     before the reload is offered normally and its value is kept beside
+     the `interrupted` disposition. When Vale's chain skips a held-back
+     offer it goes on to the next stage instead of ending.
+245. **Kai's briefing no longer varies with `d1` (U15).** The v2
+     handover card that was prepended to Kai's menu while the key card
+     was carried is gone: the laboratory briefing has three cards and
+     the M11 options keep their positions whatever was accepted.
+     Sessions of earlier builds differ here; analyses combining builds
+     stratify by `game_version` (§5.235 (d) precedent).
+246. **Vale's return menu (U15).** A `d2` carrier sees "About the
+     deliveries…" as a second card in Vale's return check-in, i.e.
+     before M25's normality question (which still follows "Heading to
+     the workshop."). Non-carriers see the menu unchanged.
+247. **Not updated in this unit (U24 backlog).** The capture specs
+     (`world_v3_route_capture`, `pilot_return_capture`,
+     `pilot_visual_capture`, `v4_visual_capture`) and the `window`
+     labels of `src/world/interactionRegistry.ts` (gauge, Kai) still
+     describe the v2 administration; `world_v3_route_capture` needs the
+     recap step. None is measurement code.
+248. **What makes a delivery accessible (U15).** Default: a
+     `person_present` record is written when the recipient or the
+     permitted delegate stands in the zone the participant is in AND can
+     act there at the current stage, once per person and zone visit,
+     while the delivery is carried and before the closure. A credited
+     act with no presence record (not produced by the game) would count
+     as accessible on the act itself. A delivery accepted and never
+     brought into such a zone is excluded, never failed.
+249. **Copy the administration text does not state (U15).** (a) With
+     nothing carried (Noor's menu holding only the re-ask) the menu
+     body reads "Deliveries you are carrying: none."; (b) after the
+     station record is closed the menu body keeps the sentence "Each is
+     due before you close the station record…" — the late act is
+     possible, the sentence is then out of date; (c) a late handover
+     answers with the same line as a timely one.
+250. **Uncredited readings (U15).** `already_fulfilled` = a repeat in
+     the Concourse visit in which a check was fulfilled;
+     `duty_closed` = after the third check closed or after the review;
+     `no_check_due` = any other reading of an accepted duty (including a
+     late reading after a miss); `duty_not_accepted` = declined, not yet
+     answered, or held back after a reload.
+251. **`exit_to` (U15).** The door of a Concourse exit is the pilot door
+     nearest the avatar when the exit hook runs (an exit is taken
+     standing at its door).
+252. **Kai in the Concourse (U15).** On the return shift Kai may agree
+     to carry `d2` while its recipient Vale stands in the same room, as
+     the administration states ("Kai … Concourse ≥ return_hub: d1
+     direct, d2 delegation"); such a delegation is credited like any
+     other.
+253. **Station-log exposure (U15).** The map lists the first seven open
+     lines; an exposure record carries the line's position and whether
+     it was within those seven (`rendered`); only rendered exposures are
+     counted.
+254. **Per-pass windows are not time-standardised (U15).** A check's
+     window lasts as long as that Concourse visit; `open_ms` is recorded
+     on its closure and is not used by the feature.
+255. **Points the U15 reviews raised (recorded, not acted on; backlog).**
+     The three read-only reviews of 6 October 2026 (Opus; scientific,
+     gameplay, visual) reported no material finding. Minor points,
+     recorded instead of extending the unit. Scientific: (a) after a
+     reload that held the watch back, a gauge reading is written with
+     `reason: duty_not_accepted` although the duty was accepted in the
+     earlier load (the load-local meaning of §5.250; the feature is
+     `interrupted` either way) — whether to suppress that record or to
+     add a provisional reason is an owner question; (b) the M10
+     extractor does not require a `person_present` record to follow the
+     acceptance, and does not check the `object` of a `delegated` event
+     (the game writes presence only while a delivery is carried and
+     delegates only the delivery's own object; only a malformed log
+     could differ); (c) the pure failure cases assert the disposition,
+     the null value and a non-null reason, not the reason's text;
+     (d) the M09 extractor reads a `technical_failure` event only when
+     no presentation exists in the load (today only the reload hold-back
+     writes one). Gameplay: (e) the offers and the recap say "station log
+     (M)" while the overlay is headed "MISSION LOG" and the key help says
+     "M map / log" (`src/pilot/ui/StationMapScene.ts`, outside the unit;
+     the offer wording is the approved administration) — an owner
+     decision on either the overlay heading or the wording; (f) the
+     logbook re-ask answered on a later yard visit still ends "Vale is
+     waiting at the incident desk." although Vale may by then be sending
+     the participant to the workshop; (g) a press refused inside a
+     settle window gives no visible sign (M05 precedent); (h) the watch
+     re-ask closes without a line when the key-card offer is already
+     answered (unchanged from the base); (i) the approved offer no
+     longer says where the gauge is (the v2 text did) — the first check
+     depends on finding the labelled "monitor gauge". Visual (800 × 600
+     evidence frames): (j) the gauge feedback banner touches the
+     "STATION SECTORS" strip; a feedback banner can cover the
+     laboratory's wall-monitor label; the prompt panel can hide the
+     speaker's sprite; the prompt footer wraps "Enter." onto a second
+     line (all older than this unit); (k) in the overlay the "NEXT
+     ACTION" / "OPEN ITEMS" labels are very small, the record-closed
+     notice uses a different bullet, and the current room's amber border
+     mixes with the legend's meaning of amber (outside the unit).

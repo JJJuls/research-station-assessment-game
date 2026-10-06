@@ -221,6 +221,16 @@ import {
 } from '../pilot/windows/m08EffortChoice';
 import { m08SurfaceModel } from '../pilot/windows/m08SurfaceModel';
 import {
+  declareM10,
+  guardM10Reload,
+  M10_D2_ANSWER_FEEDBACK,
+  M10_D2_REASK_BODY,
+  M10_D2_REASK_LABEL,
+  M10_OFFER_BODY,
+  type M10Delivery,
+  type M10Person,
+} from '../pilot/windows/m10ComponentPromise';
+import {
   answerM11Offer,
   declareM11,
   departM11,
@@ -358,6 +368,10 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     guardM05Reload('o2', Date.now());
     declareExteriorWindows();
     declareM08();
+    // M10 (Unit 15): the yard logbook is offered here; an offer presented
+    // in an earlier page load is never re-run.
+    declareM10('d2');
+    guardM10Reload('d2');
     declareM11('yard');
     declareM25Loops();
     stampContaminationNotes();
@@ -1502,6 +1516,14 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
           ].slice(0, 4);
         }
 
+        // M10 (Unit 15): "About the deliveries…" LAST, after the M11
+        // option, once the briefing is through and while Noor can act on
+        // a delivery (at most 2 route + 1 custody + this entry).
+        beat.options = this.capNpcMenu('pilotNoor', [
+          ...beat.options,
+          ...this.deliveriesEntry('pilotNoor', 'noor'),
+        ]);
+
         return this.npcBeatOptions('pilotNoor', beat);
       }
       case 'pilotCoupling':
@@ -2362,6 +2384,10 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
               feedback:
                 'Noor: Logged. Back through the airlock — Vale is waiting at the incident desk.',
               onSelected: () => this.finishOutside(),
+              // M10 (Unit 15): once the shift end is recorded Noor asks
+              // about the yard logbook (the plain feedback above is shown
+              // only when the offer cannot run — held back after a reload).
+              nextStage: () => this.logbookOfferStage(false),
             },
           ],
         };
@@ -2440,6 +2466,40 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
         ],
       }),
     };
+  }
+
+  /**
+   * M10 delivery 2 (Unit 15): Noor's explicit, voluntary offer of the
+   * yard logbook — accept, decline or later, all deliberate and
+   * settle-guarded; every read answer sends the participant back inside.
+   * Asked again (same terms) from Noor's deliveries menu while unanswered.
+   */
+  private logbookOfferStage(reask: boolean): PromptStage | null {
+    return this.deliveryOfferStage('pilotNoor', 'd2', {
+      body: reask ? M10_D2_REASK_BODY : M10_OFFER_BODY.d2,
+      feedback: M10_D2_ANSWER_FEEDBACK,
+      after: () => null,
+    });
+  }
+
+  protected deliveryReask(
+    delivery: M10Delivery,
+  ): { label: string; stage: () => PromptStage | null } | null {
+    return delivery === 'd2'
+      ? {
+          label: M10_D2_REASK_LABEL,
+          stage: () => this.logbookOfferStage(true),
+        }
+      : null;
+  }
+
+  /**
+   * M10 (Unit 15): Noor may agree to carry the key card, and asks again
+   * about a deferred logbook, from the outside work onwards — never
+   * inside her briefing.
+   */
+  protected deliveryPersonsHere(): M10Person[] {
+    return pilotStageAtOrAfter('exterior_work') ? ['noor'] : [];
   }
 
   /** The ONE interruption point: the required return duty begins. */

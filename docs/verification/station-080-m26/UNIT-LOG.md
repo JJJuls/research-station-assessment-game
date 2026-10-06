@@ -5413,3 +5413,418 @@ e2e/world_v2_workshop_look.spec.ts --workers=1 --retries=0` with
   `codex/u14-d3-workshop-access` (SHA in the handoff report), each
   file staged by name. Nothing was pushed, merged, tagged, deployed,
   deleted or removed; U15 is not started.
+
+## U15 — M09 three watch checks / M10 two accountable deliveries (6 October 2026)
+
+- **Owner instruction:** 6 October 2026 — "Implement bounded Unit 15
+  (M09 / M10) under the newer owner-approved Station 080 M01–M26
+  specification", with explicit authorisation for (a) branch
+  `codex/u15-m09-m10` in the worktree
+  `C:\Users\Juls\.codex\worktrees\u15-m09-m10\research-station-assessment-game`
+  created at `71f5e1b3bf3d535771779b7bbb5a63da6cff80a2` (overriding
+  `CLAUDE.md`'s historical branch line for this unit only), (b) the named
+  verification including the Playwright browser runs B1–B4, the base
+  comparisons of the pre-existing-failure rule and the 19 screenshots,
+  and (c) exactly one local commit
+  `feat(m09,m10): three watch checks and two accountable delivery obligations`.
+  Nothing else is authorised (no push, merge, PR, tag, branch or worktree
+  deletion, install, art generation, U16 or integration).
+- **Binding contract:** `U15-CONTRACT-v2.md` (v2 of 5 October 2026,
+  amendments A1 and A2 of 6 October 2026), appended in full below
+  **before the first source edit**. Provenance of the approved M09 / M10
+  rows: `U15-RECOVERED-AUTHORITY.md` (read; not reopened). The older
+  `U15-CONTRACT.md`, `U15-ALLOWLIST.txt`, `U15-START.ps1`,
+  `U15-FABLE-PROMPT.md` and the `codex/u15-responsibility` worktree at
+  `3759b80` are superseded and were not used.
+- **Research-owner decision D-U15-1 (approved 6 October 2026; an owner
+  decision, not an implementer default):** "I approve D-U15-1: the third
+  M09 check closes at the first Concourse exit after its
+  return-from-yard opening, replacing the previous until-review deadline.
+  Any exit closes the window; later readings cannot change its first
+  outcome."
+- **Entry state (verified before the first edit):** the worktree above,
+  branch `codex/u15-m09-m10`, HEAD and base
+  `71f5e1b3bf3d535771779b7bbb5a63da6cff80a2` (`ancestor-ok`), tracked
+  tree clean; the inherited `CLAUDE_UNIT_ALLOWLIST` carries exactly the
+  33 contract paths; `PW_DEV_PORT=5195` (free, as is 5196) and
+  `U15_OUT=.playwright-mcp/u15-evidence`; `node_modules` is a junction
+  to `C:\Users\Juls\Desktop\research-station-assessment-game\node_modules`;
+  the `PreToolUse` guard `scripts/claude/pretool-guard.mjs` is registered
+  in `.claude/settings.json`; all eight agent files are present.
+- **Model:** Fable 5.1 (`claude-fable-5-1`), the only writer. Of the
+  project agents only `cheap-explorer` is discoverable as an agent type
+  in this session; the reviewers (`test-reviewer` Sonnet,
+  `scientific-reviewer` / `gameplay-reviewer` / `visual-reviewer` Opus)
+  run through the contract §14 fallback — a general-purpose agent with
+  the matching model override after it reads the role file (actual
+  models reported with the results).
+
+### U15 contract (U15-CONTRACT-v2.md, verbatim; section headings shown in bold)
+
+**U15 bounded implementation contract — M09 / M10 (v2, 5 October 2026; amendment A1, 6 October 2026)**
+
+Status: FINAL (amendment A2, 6 October 2026: the research owner approved D-U15-1 — §3, §6). Supersedes U15-CONTRACT.md (29 Sep), U15-ALLOWLIST.txt, U15-START.ps1 and U15-FABLE-PROMPT.md, whose base/worktree are stale. U15-RECOVERED-AUTHORITY.md stays the provenance record of the approved M09/M10 rows and shared rules (read it; do not reopen them).
+
+**1 Objective**
+
+Implement the approved M09/M10 rows: three due checks of one voluntarily accepted watch duty, and two separately accepted deliveries with direct or accountable delegated completion, each derived read-only from raw events.
+
+**2 Scientific rationale and authority**
+
+M09 = BFI-2 Responsibility item 13 counterpart (follow-through on an adopted duty); M10 = item 43 counterpart (reliability in adopted obligations). Authority: owner-approved M01–M26 rows (U15-RECOVERED-AUTHORITY.md), register v3 (§2 rows, §2b clustering, §3, §5.2), registerV3.ts, the matrix, addendum v1. Older Q01–Q33 mechanics and the frozen v2 ledger are historical. No questionnaire wording in the game (avoid dependable/steady/reliable/counted on). Candidate indicators only; technical passing ≠ psychometric validity. Prospective memory (R12) and social motivation (R13) remain rival explanations. Three checks are repeated observations of ONE duty; two deliveries are independent occasions but not equivalent forms (different gap, d1 interrupted, delegate before/after the recipient).
+
+**3 Participant-facing behaviour — implement the "U15 administration" exactly**
+
+M09 (`m09-watch-checks-v1`):
+
+- Offer (Vale chain after the briefing "Understood.", re-ask "About the monitor watch…" in incident_handover while unanswered): body "Vale: One more thing — will you take the monitor watch this shift? Three gauge readings: one now, one when you come back through on your way to the laboratory, and one when you are back inside from the yard. Each is due before you leave the Concourse that time. Your station log (M) shows the watch." Options 1 "I will take the watch." 2 "Not this shift." 3 "Ask me again later." → all chain to the d1 offer.
+- Check 1 opens at acceptance; closes at the first Concourse exit after acceptance. Check 2 opens at the first Concourse entry with stage ∈ {lab_briefing, lab_work, exterior_briefing, exterior_work} after acceptance; closes at the first exit of that visit. Check 3 opens at the first Concourse entry with stage ≥ return_hub; closes at the first exit of that visit. No other entry opens anything; each check opens at most once.
+- **D-U15-1 — APPROVED by the research owner (6 October 2026):** "I approve D-U15-1: the third M09 check closes at the first Concourse exit after its return-from-yard opening, replacing the previous until-review deadline. Any exit closes the window; later readings cannot change its first outcome." This is a deliberate change to the observation window (in the v2 administration the return check stayed open until the deck review); implement it exactly as stated: check 3 closes at the first exit through any door after its opening, and every later reading is uncredited and never changes the check's first outcome. Record the decision and its source in register §4 "Unit 15" and §5.
+- First gauge read in an open window = fulfilled, window closes ('read'); feedback "Gauge read: <values>. Watch reading logged." Outside a window: "Gauge read: <values>." and an uncredited record. Readings by band: before lab_briefing "loop 1.6 bar · bus 26.8 V · relay LOCK"; lab/exterior stages "loop 1.5 bar ▼ · bus 26.4 V ▼ · relay LOCK"; ≥ return_hub "loop 1.4 bar ▼ · bus 26.1 V ▼ · relay LOCK".
+- Station-log entry (kind obligation, order 10) while the duty is active: due line, identical for checks 1–3, "Monitor watch: reading due — read the gauge before you leave the Concourse."; after check 1 "Monitor watch: next reading on your way through to the laboratory."; after check 2 "Monitor watch: next reading when you are back inside from the yard."; hidden after check 3 closes. No automatic popup/HUD/in-world cue. Vale's existing generic lines are unchanged and not counted as M09 reminders.
+
+M10 (`m10-deliveries-v1`) — d1 calibration key card Vale→Kai; d2 yard logbook Noor→Vale:
+
+- d1 offer (Vale chain after the watch stage; re-ask "About the delivery…" in incident_handover while unanswered): "Vale: Kai asked for the calibration key card. Will you carry it to Kai? Hand it over before you close the station record at the Shift Review Panel — or leave it with a colleague who agrees to take it to Kai. Your station log (M) lists it." Options "I will take it to Kai." / "Better ask someone else." / "Ask me again later." Accept → the unchanged pressure-alarm stage (M10_INTERRUPTION_TEXT, "Alarm cleared — continue.") → NEW recap stage "Vale: Alarm's clear. You are still carrying the calibration key card for Kai — due before you close the station record at the Shift Review Panel. Your station log (M) lists it." / "Understood." → the unchanged M05 lamp-offer stage (still last). Decline/defer → lamp offer (unchanged).
+- d2 offer: nextStage of Noor's "I am finished outside." (after finishOutside() has run): "Noor: Logged. Before you go in — will you carry my yard logbook to Vale? Hand it over before you close the station record at the Shift Review Panel — or leave it with a colleague who agrees to take it to Vale. Your station log (M) lists it." Options "I will take it to Vale." / "Better ask someone else." / "Ask me again later."; each followed by feedback "Noor: Back through the airlock — Vale is waiting at the incident desk." Re-ask (unanswered) inside Noor's deliveries menu: "About the yard logbook…" (same body without "Logged. ").
+- "About the deliveries…" appended LAST (after any M11 options) only when that NPC has a d1/d2 action: Kai (lab: every stage except lab_briefing; Concourse ≥ return_hub): d1 direct, d2 delegation. Vale (Concourse, stages ≥ return_hub): d2 direct. Noor (exterior_work and later; never exterior_briefing): d1 delegation, d2 re-ask. Never in Vale's incident_handover menu, Kai's lab_briefing or Noor's exterior_briefing/flag chains.
+- Deliveries menu body lists carried deliveries ("Deliveries you are carrying:" + "● Calibration key card → Kai" / "● Yard logbook → Vale" + "Each is due before you close the station record at the Shift Review Panel."); option 1 "Not now." then actions "Hand over the calibration key card." (Kai) · "Hand over the yard logbook." (Vale) · "Ask Noor to take the calibration key card to Kai." (Noor) · "Ask Kai to take the yard logbook to Vale." (Kai) · "About the yard logbook…" (Noor).
+- Delegation confirm: "<Noor|Kai>: I can take the <object> to <recipient> — from now on that is my job, not yours. Leave it with me?" → 1 "Keep it for now." 2 "Yes — leave it with <Noor|Kai>." → "<Noor|Kai>: It is with me. I will hand it to <recipient>." Direct feedback: "Kai: Received — logged with the calibration set." / "Vale: Received — logged with the yard report."
+- Log lines (order 12/13): "Delivery: calibration key card to Kai — before the station record is closed." / "Delivery: yard logbook to Vale — before the station record is closed." Objects are never belt/inventory items. After the review the existing record-closed notice replaces the log; the deliveries entry stays and a handover there is a late act.
+
+Input/menus: 300 ms settle window on the watch offer, both delivery offers, the recap, the deliveries menu and the delegation confirm (refusal re-presents and is logged); pre-focused card = RoomScene default (first). No reward, judgement, score or progression gate; route access identical whatever is accepted.
+
+**4 Exact allowlist (33 paths; a maximum — touching fewer is fine)**
+
+`src/pilot/inputObservation.ts` (new) · `src/pilot/PilotZoneScene.ts` · `src/pilot/windows/m09WatchModel.ts` (new) · `src/pilot/windows/m09MonitorWatch.ts` · `src/pilot/windows/m10DeliveryModel.ts` (new) · `src/pilot/windows/m10ComponentPromise.ts` · `src/pilot/windows/reviewClosure.ts` · `src/pilot/return/returnEpisodeModel.ts` · `src/scenes/StationConcourseScene.ts` · `src/scenes/DiagnosticsLaboratoryScene.ts` · `src/scenes/ExteriorRecoveryYardScene.ts` · `src/measurement/registerV3.ts` · `src/measurement/features/index.ts` · `src/measurement/features/m09.ts` (new) · `src/measurement/features/m10.ts` (new) · `e2e/m09_watch.spec.ts` (new) · `e2e/m10_deliveries.spec.ts` (new) · `e2e/m09_m10_route.spec.ts` (new) · `e2e/pilot_return_models.spec.ts` · `e2e/pilot_return.spec.ts` · `e2e/returnHelpers.ts` · `e2e/pilotHelpers.ts` · `e2e/exteriorHelpers.ts` · `e2e/pilot_episodes_1_2.spec.ts` · `e2e/m11_custody_route.spec.ts` · `e2e/pilot_deck.spec.ts` · `e2e/pilot_coverage.spec.ts` · `e2e/pilot_closure_models.spec.ts` · `e2e/m26_protocol_foundation.spec.ts` · `docs/verification/station-080-m26/IMPLEMENTATION-MATRIX.md` · `docs/verification/station-080-m26/M01-M26-IMPLEMENTATION-REGISTER.md` · `docs/verification/station-080-m26/SCORING-AND-EVENT-ADDENDUM-v1.md` · `docs/verification/station-080-m26/UNIT-LOG.md`
+
+Scope limits:
+
+- inputObservation.ts: pure classifier + idempotent window capture listeners (keydown/pointerdown → {device, at}); used ONLY by M09/M10 call sites.
+- PilotZoneScene: the input helper; shared deliveries-menu / delegation-confirm / settle builders; the overflow route event; the existing reminder dispatch kept (zero-arg noteM09ReminderLogViewed()/noteM10ReminderLogViewed() before 'pilot_map_opened').
+- m09/m10 models: pure (no Phaser/runtime imports, no advancePilotStage, no "score" token in src/pilot). Adapters keep the file names and closeM09AtReview / closeM10AtReview / noteM09ReminderLogViewed / noteM10ReminderLogViewed; they stop emitting `proto_m09_watch_*` / `proto_m10_promise_*`.
+- Scenes: M09/M10 hooks, offers, menus, presence notes, gauge values only. Keep M05 entry-snapshot keys m09_watch_accepted, m10_promise_accepted, m10_interruption_shown. Keep every M05/M11 stage, label, position and call unchanged except: the recap stage before the lamp offer (d1 accepters only); the removal of Kai's prepended v2 handover card; M10 entries appended after M11 options.
+- returnEpisodeModel: remove the M09/M10 rows from RETURN_LINKED_WINDOWS; RETURN_FAMILIES.M09/M10 → new families; header comment. Nothing else.
+- reviewClosure: comments, or a call signature only if forced.
+- registerV3: M09/M10 v3 routes, implementation_status 'implemented', M10 operational label "Deliveries (Concourse / Recovery Yard)". Feature ids, formulas, directions, ranges, denominator kinds and clustering unchanged.
+- features/index: two imports.
+- Existing specs/helpers: M09/M10 identities, stage steps, label-based selection and genuinely changed expectations only; never weaken unrelated assertions. pilotHelpers: export answerLogbookOffer(page, 'accept'|'decline'|'defer'); call it in yardReturnToConcourse (defer). exteriorHelpers.finishOutside(page, options?) answers the logbook stage (default defer). returnHelpers: recap step, submenu-based handOverToKai / meetKaiWithoutHandover (select by label), OPPORTUNITY ids, exteriorShift logbook option. pilot_deck / pilot_coverage / pilot_closure_models / m26_protocol_foundation: only if an M09/M10 assertion genuinely requires it.
+- Docs: (a) UNIT-LOG — append this contract BEFORE the first source edit, results at the end. (b) Register — §2 M09/M10 As-built cells; §4 "Unit 15" as-built record; §5.236+ implementer defaults (§6 below). (c) Matrix — M09/M10 rows; a U15 paragraph; the M04 fix on line 44, replacing `one open nearest-station statement §5.234` with `the nearest-station statement withdrawn, §5.234 resolved by the closeout amendment of 1 October 2026`. (d) Addendum — §2 U15 paragraph (families, versions, fields, legacy families retired from the route) and the §3 m09/m10 rows with recount rules; §5 unchanged.
+
+A needed file outside this list = stop and report.
+
+**5 Prohibited**
+
+All other items and files; docs/research/**, docs/scientific/**, the frozen v2 ledger (evidenceLedger.ts, docs/verification/evidence-led-pilot-v2/**); ScoringManager/SummaryScope/EventLogger/EventStore/ResearchRuntime/Qualtrics/DataQualityTracker/SessionState; protocol.ts, focusedClock, features/extract.ts and types.ts, windowKit.ts; RoomScene, world/**, interactionRegistry, zoneSites, pilotRoute.ts, StationMapScene, inventory; assets/plates; package files; .claude/**, scripts/**, settings/hooks/agents; capture specs (world_v3_route_capture, pilot_return_capture, pilot_visual_capture, v4_visual_capture). No installs, art, push, merge, PR, tag, branch/worktree deletion.
+
+**6 Implementer defaults to record in register §5.236+ (owner-visible, not questions)**
+
+d2 object/issuer/recipient/milestone; delegates (d1 Noor, d2 Kai) and the delegate-after-recipient asymmetry of d1; deadline = station-record closure for both; per-pass M09 windows for checks 1–2 (implementer default) and for check 3 by the owner's approval D-U15-1 of 6 October 2026 (recorded as an owner decision, not a default: the v2 return check stayed open until the review; check 3 now closes at the first Concourse exit after its return opening, and later readings never change its first outcome); log-only visibility + post-alarm recap (alternative: automatic due notice — not chosen: it overwrites M05's lamp feedback at clock start; a world cue breaks the one-guidance rule); 300 ms settle (vs 400 ms M05/M25); input observation for M09/M10 only (§5.35 convention kept elsewhere); deferral recorded only through pilot_npc_beat tags; reload holdback per §5.14/M11; M11 lab-briefing card count no longer varies with d1 acceptance (game_version stratification, §5.235(d) precedent); Vale's return menu gains the entry before M25's question for d2 carriers; capture specs and interactionRegistry window labels not updated (U24 backlog).
+
+**7 Entry state**
+
+Worktree C:\Users\Juls\.codex\worktrees\u15-m09-m10\research-station-assessment-game, branch codex/u15-m09-m10 created at 71f5e1b3bf3d535771779b7bbb5a63da6cff80a2, clean; node_modules junction to the primary (ignored); CLAUDE_UNIT_ALLOWLIST exported with the 33 paths before launch; guard registered; PW_DEV_PORT=5195 free; U15_OUT=.playwright-mcp/u15-evidence (ignored, not cleared by test runs). Prepared by U15-START-v2.ps1 (amendment A1), which validates every prerequisite before creating the worktree, reuses an existing one only after exact verification, and never resets, deletes or overwrites work. Owner-approved: when the worktree's node_modules is absent the script creates the junction to the primary node_modules; an existing node_modules that is not that junction stops the setup. The primary checkout and every other worktree stay untouched.
+
+**8 Telemetry (all PROVISIONAL proto\_\* candidates; no canonical event, no scoring-plan variable)**
+
+M09: family `proto_m09_checks_`, opportunity proto_m09_watch_duty, windows m09_duty_check_1..3, object m09_monitor_gauge. Events: presented (snapshot: checks_planned 3, milestones, wording/line ids, settle_ms), offer_press_refused, offer_answered {answer, option_position, option_count, input_mode, input_mode_basis}, opportunity_opened, check_window_opened {check_index, milestone, stage, access{available, basis, registry_id}}, log_viewed {due_check_index|null, line_id, log_position, rendered}, check_fulfilled {check_index, due_delta_ms, reading_id, input_mode, basis}, gauge_read_uncredited {reason: no_check_due|already_fulfilled|duty_not_accepted|duty_closed, last_closed_check_index, last_closed_outcome}, check_window_closed {check_index, outcome fulfilled|missed|censored, reason read|left_concourse|review, exit_to, log_views_while_due}, window_closed (raw per-check record), technical_failure.
+
+M10: family `proto_m10_delivery_`, opportunities proto_m10_delivery_d1/\_d2, windows m10_delivery_d1/\_d2, occasions d1/d2, objects m10_calibration_key_card / m10_yard_logbook. Events: presented (issuer, recipient, object, deadline 'station_record_closure', permitted_delegate, wording id, offer milestone), press_refused {step}, offer_answered, opportunity_opened, interruption_shown, interruption_acknowledged (d1), obligation_shown {channel after_interruption|station_log|deliveries_menu, deliveries[]}, person_present {delivery, person, role recipient|delegate, zone, stage}, recipient_prompt_opened, delegate_accepted {delivery, delegate, line_id}, handed_over {delivery, to, delay_ms, input_mode, basis}, delegated {delivery, to, for, delay_ms, input_mode, basis}, window_closed, late_handover, late_delegation, technical_failure.
+
+Route telemetry: existing pilot_npc_beat (tags incl. watch_defer, promise_defer, logbook_accept|decline|defer, deliveries_open, m10\_\*); new pilot_npc_menu_overflow (unmapped, never measurement). Spine neutrality: with every offer deferred, the bare route emits no new proto event other than \*\_presented (and the existing review-time unanswered closures). Never backdate an offer, opening, access or exposure. Raw logs are never rewritten; recovered events never renumbered.
+
+**9 Features and scientific acceptance**
+
+m09_due_checks_fulfilled: value = numerator = checks fulfilled; denominator = eligible checks (opened with access, closed read|left_concourse); planned 3 (fewer ⇒ incomplete with the value); 0 = observed zero. Null: declined ⇒ declined; unanswered ⇒ no_eligible_event; never presented ⇒ absentFeature; held back ⇒ interrupted; open ⇒ pending. Components: acceptance record, per-check records, uncredited reads, log views per check, input modes, observations_share_one_duty: true, administration version.
+
+m10_obligations_fulfilled: value = direct + delegated over accepted, accessible, not held back deliveries; conditional denominator (complete at any size > 0). Null: none accepted and some declined ⇒ declined; none answered ⇒ no_eligible_event; not presented ⇒ absentFeature; open ⇒ pending; any held-back delivery ⇒ disposition interrupted (M11 precedent, value kept, censored). Components: per-delivery record (issuer, recipient, object, answer, deferrals from pilot_npc_beat, accessibility + basis, path direct|delegated|unfulfilled_at_deadline, delay, encounters, exposures, interruption, late act); direct and delegated counted separately; never merged with M11.
+
+Both extractors: current-load events only; recount from the act events (never only from the closure snapshot); entry_state_version must match on every family event. Invariants are CONDITIONAL on the outcome being claimed — legitimate missingness is never technical_failure:
+
+- At most one presentation and at most one terminal answer per opportunity. An unanswered offer has NO terminal answer (presented, optionally closed at the review with offer_unanswered) — valid, null no_eligible_event.
+- A declined duty has no check events at all; a declined delivery has no act events. Valid, null declined / excluded.
+- Checks never opened may be absent (not reached, review before the milestone, reload). The check indices that ARE observed must each be unique, within 1–3, in increasing order and after acceptance; all three are never required.
+- A check claimed fulfilled needs its opening, exactly one check_fulfilled inside the window, and its closure (reason read). A check claimed missed needs its opening and its closure (reason left_concourse) and no check_fulfilled. A censored check needs its opening and a review closure.
+- A delivery claimed direct needs acceptance and exactly one handed_over to the delivery's recipient before the closure. A delivery claimed delegated needs acceptance, delegate_accepted for the permitted delegate, then exactly one delegated to that delegate before the closure. A delivery accepted and unfulfilled at the deadline has acceptance, a review closure while carried, and NO handed_over/delegated before it — valid, an observed non-fulfilment when accessible.
+- Accessibility rests on person_present evidence (recipient or permitted delegate in an entered zone while carried), never on recipient_prompt_opened or obligation_shown; their absence never makes an accessible delivery inaccessible.
+- At most one credited terminal outcome per check / delivery. Acts after it (late_handover, late_delegation, gauge_read_uncredited) are kept separately and never change or duplicate it.
+- technical_failure only for genuinely contradictory, malformed or unreproducible evidence: a duplicate or out-of-order opening; an act outside its window or before acceptance; a second credited outcome; a handover to the wrong person or with the wrong object; delegated without a preceding delegate_accepted; a closure snapshot that disagrees with the recount; an unknown version; required fields missing for the outcome claimed.
+
+An inaccessible occasion is excluded, never failed. Late acts never enter a value. Extraction is pure and deterministic; raw logs are byte-identical before and after.
+
+**10 Failure and recovery**
+
+Unanswered, declined, deferred, not reached, inaccessible, missed, unfulfilled at deadline, censored at review, interrupted by reload, technical failure and completed are distinct records. Double input or re-entry never duplicates an offer, window, exposure or credit; the first terminal outcome freezes. Reload: an offer presented in an earlier page load is never re-run (recordPriorExposure + technicalFailure; M11 pattern); a later never-presented d2 runs normally.
+
+**11 Gameplay acceptance**
+
+The ordinary Dock→Concourse→Workshop→Concourse→Lab→Yard→Lab→Concourse→Workshop→Concourse→Deck route exposes both offers, all three checks and both deliveries without state injection. Accepting or declining never changes another item's offer, access or difficulty. M05: both offers keep stimulus, labels, positions, settle window and final chain position; the clock rule is unchanged. M11: offers, labels, positions, custody options and outcomes unchanged; all M11 options stay reachable. No NPC state exceeds 4 options; no overflow event in any run. Text legible at 800×600; log lines ≤ 90 characters; no forbidden words (proto\_, M##, Q##, score, trait, persist, valid, grit, resilien, dependable, reliable).
+
+**12 Verification (Windows, from the worktree, --workers=1 --retries=0; check the port is free before each browser invocation)**
+
+Static: npm.cmd run lint:tsc · npm.cmd run build · npx.cmd eslint --rule "prettier/prettier: [error, {endOfLine: auto}]" <every changed .ts> · npx.cmd prettier --check --end-of-line auto <every changed .ts/.md> · git diff --check · node scripts/claude/verify-unit.mjs --allowlist-file "C:\Users\Juls\.codex\visualizations\2026\10\05\u15-v2\U15-ALLOWLIST-v2.txt" --base 71f5e1b3bf3d535771779b7bbb5a63da6cff80a2
+
+P (pure): npx.cmd playwright test e2e/m09_watch.spec.ts e2e/m10_deliveries.spec.ts e2e/pilot_return_models.spec.ts e2e/pilot_coverage.spec.ts e2e/pilot_closure_models.spec.ts e2e/m26_protocol_foundation.spec.ts e2e/pilot_route_model.spec.ts e2e/final_scientific_gates.spec.ts e2e/world_v1_story_state.spec.ts --workers=1 --retries=0
+
+- m09_watch: offer/answer/settle; check windows open and close (detour, early exit, wrong stage, single opening); access false ⇒ excluded; 0/1/2/3 fulfilled; not reached ⇒ incomplete; declined/unanswered/absent/held back/pending dispositions; late and repeat reads uncredited, no repair; identity/order/disagreement ⇒ technical_failure; immutability and determinism; identical due line, ≤ 90 chars, no forbidden words; input classifier (keyboard / pointer / unobserved; pointer never labelled keyboard).
+- m09_watch conditional-invariant cases (each must NOT be technical_failure): offer presented and never answered (no terminal answer); declined duty with no check events; accepted duty with only check 1 observed (checks 2–3 absent); checks 1 and 3 observed, 2 absent; a missed check with no check_fulfilled; a censored check closed at the review. Cases that MUST be technical_failure: check 2 opened twice; check 3 opened before check 2; check_fulfilled outside its window; two credited fulfilments of one check; a closure snapshot disagreeing with the recount.
+- m10_deliveries: independence of the two offers; accept/decline/defer; direct handover only to the recipient (wrong person or object refused); delegation only to the permitted delegate and only after delegate_accepted; issuer/recipient never a delegate; deadline unfulfilled vs inaccessible; late handover/delegation after closure; d1 interruption and recap only; 2/2 direct + delegated, 1/1 with one declined, 0/1 unfulfilled; dispositions; identity/order/disagreement; immutability; wording; objects disjoint from M11/M03/M04 and no inventory import.
+- m10_deliveries conditional-invariant cases (each must NOT be technical_failure): an offer presented and never answered; a declined delivery with no act events; an accepted delivery unfulfilled at the deadline with no handed_over/delegated (0/1 observed when accessible); an accepted, objectively accessible delivery (person_present for the recipient) with NO recipient_prompt_opened and NO obligation_shown{deliveries_menu} — accessible, 0/1 observed, never inaccessible; a direct handover followed by a late_handover attempt (one credited outcome, late act kept apart); d1 delegated, d2 declined (1/1). Cases that MUST be technical_failure: handed_over to the wrong person or with the wrong object; delegated without delegate_accepted; two credited terminal acts for one delivery; an act before acceptance; a closure snapshot disagreeing with the recount.
+
+B1 (evidence run): U15_OUT set; npx.cmd playwright test e2e/m09_m10_route.spec.ts --workers=1 --retries=0
+
+- R1: watch + key card accepted (keyboard); recap; all three checks read; d1 handed to Kai in lab_work by pointer (input_mode pointer asserted); logbook accepted; d2 delegated to Kai in the Lab on the way back; review; m09 3/3 observed; m10 2/2 (direct 1, delegated 1).
+- R2: probe taken (Kai lab_work 4-option menu, probe handed back); lab-pass check left unread then a late read (uncredited, after_missed); Kai met without handover — the deliveries menu opened and "Not now." chosen (viewing records obligation_shown{deliveries_menu}, no act, the delivery still carried; screenshot 19); driver taken (Noor 4-option menu) then handed back; d1 delegated to Noor; logbook accepted; d2 handed to Vale; m09 2/3; m10 2/2; M11 events intact.
+- R3: watch deferred, never answered (null no_eligible_event; a gauge read ⇒ duty_not_accepted); key card accepted; the route dialogue with Kai is completed (lab briefing, "done", the return line) WITHOUT ever selecting "About the deliveries…" before the deadline; logbook declined by pointer; review ⇒ assert person_present{d1, kai, recipient} in the Laboratory (and the Concourse after the return), zero obligation_shown{deliveries_menu} and zero d1 acts before the closure, and m10 0/1 observed with d1 accessible on the presence basis; then a late handover to Kai in the Concourse (the first deliveries-menu use, after the deadline) ⇒ late_handover, value and first outcome unchanged.
+- R4: accept both Concourse offers, read check 1, page.reload(); prior_page_load_events byte-identical to the pre-reload log; features interrupted; if the Concourse is reachable again, assert no re-offer and the held-back records. If the driver hits the recorded dock-tutorial replay block (m24_m26_boundary_route header), the post-reload browser administration is reported as BLOCKED / NOT VERIFIED (with the pre-reload and prior-log assertions that did run); the pure reload/guard checks are reported separately and never as a browser pass.
+- Every scenario: versions asserted on live events; families owned by one item; extractor output equals the page's own export rows; no pilot_npc_menu_overflow; no runtime errors.
+
+B2: npx.cmd playwright test e2e/m05_start_route.spec.ts e2e/m11_custody_route.spec.ts e2e/pilot_deck.spec.ts --workers=1 --retries=0 (M05/M11 preservation; spine drivers through the review).
+
+B3: npx.cmd playwright test e2e/pilot_return.spec.ts --workers=1 --retries=0 (changed spec; UNIT-LOG records failures of tests 1 and 2 at d8b4d94 — history only, not an exemption).
+
+B4: npx.cmd playwright test e2e/pilot_episodes_1_2.spec.ts --grep "episode 1" --workers=1 --retries=0 (changed spec; UNIT-LOG records a driver stop at the incident desk — history only; its chain steps must pass before it).
+
+Pre-existing-failure rule (replaces any exemption): no failure in B1–B4 or P is treated as pre-existing because of the recorded history or a matching line number. A failure claimed to be pre-existing requires an evidence comparison against the exact base 71f5e1b3bf3d535771779b7bbb5a63da6cff80a2: run only the affected test (--grep its exact title; the base version of the spec, unchanged) on an untouched export of that commit (git archive into the session scratchpad, node_modules junction, PW_DEV_PORT=5196, --workers=1 --retries=0), and compare the failing assertion, its message and the state/step reached on both trees, keeping both outputs. Classify as pre-existing only if the base fails the same assertion with the same message at the same step; otherwise it is a U15 regression or unexplained. For every failure, state whether it prevents verification of U15: a failure BEFORE or AT an M09/M10, M05 or M11 step means that step is NOT VERIFIED by that run (even when pre-existing), and its evidence must come from another listed run or be reported missing; only a failure strictly after all such steps leaves them verified. A changed spec whose U15 steps cannot be reached is reported as not verified for those steps. One repeat may diagnose; a retry-only pass is a flake. Never rerun until green.
+
+Not run (report as such): helper dependents (m24_m26_boundary_route, m25_repetition_route, m21/m22 routes, pilot_yard, m08_effort_route, pilot_exterior_isolation, closure specs) and the capture specs; world_v3_route_capture is known to need the recap step (U24 backlog).
+
+Development: Fable may run P and single --grep scenarios while writing; the full B1–B4 matrix runs once, by Sonnet. Commands longer than about 9 minutes run in the background and wait for their completion notification — no polling or log-watching loops.
+
+**13 Screenshots (800×600, written during B1, inspected, copied to the session scratchpad; none committed)**
+
+01 watch offer · 02 key-card offer · 03 post-alarm recap · 04 log with the check-1 due line · 05 log on the lab pass (check-2 due) · 06 lab-pass gauge feedback · 07 return-pass due line · 08 Kai deliveries menu (d1) · 09 d1 direct feedback · 10 Noor logbook offer · 11 Kai delegation confirm (d2) + feedback · 12 Kai lab_work 4-option menu · 13 Noor 4-option menu · 14 Noor delegation confirm (d1) + feedback · 15 Vale deliveries menu (d2 direct) · 16 R3 log with the unfulfilled key card before the review · 17 R3 declined-logbook feedback · 18 record-closed log after the review · 19 R2 Kai deliveries menu with "Not now." (viewing only).
+
+**14 Models and review**
+
+Fable 5.1 (claude-fable-5-1): the only writer and integrator. Sonnet 5.5 via test-reviewer: runs B1–B4 and the static checks once and analyses the logs; edits nothing. Opus 5.5, one consolidated read-only pass in parallel after B1–B4: scientific-reviewer (measurement, events, extractors, docs), gameplay-reviewer (flow, menus, M05/M11 preservation, wording), visual-reviewer (the 19 screenshots). cheap-explorer (Haiku 4.5): optional narrow lookups only. If a named agent is not discoverable, use a general-purpose agent with the matching model override after it reads the role file; report this. Never run reviewers on Fable. Reviewers cite file:line, test or screenshot. One bounded correction round: fix cited, in-scope, material findings; recheck each against its citation; rerun only the affected checks (Sonnet). Remaining material defects are reported, never called done; minor or unrelated points go to the §5 backlog. No project-wide audit.
+
+**15 Stop conditions**
+
+A launch instruction that contradicts the recorded D-U15-1 approval; a genuine scientific conflict that changes procedure, eligibility, exposure, deadline or formula; a needed file outside the allowlist; a guard rejection; an unavailable required model; an unexplained deterministic failure in the unit's own tests; a protected M05/M11 behaviour that cannot be preserved; a material finding still open after the correction round. In each case finish all independent work, then stop and report. Join every reviewer, test and shell; stop only task-owned dev servers.
+
+**16 Commit and handoff**
+
+Exactly one new local commit on codex/u15-m09-m10, files staged by explicit name, no amend, no hook bypass: `feat(m09,m10): three watch checks and two accountable delivery obligations`. Then the bounded-unit 12-field handoff, adding: screenshot paths, actual model routing with reviewer IDs and status, all background tasks finished, every not-run test named, the D-U15-1 decision as implemented with its source, every failure with its base comparison (or "not compared") and whether it prevents verification of U15, and R4's browser portion reported separately as verified or BLOCKED / NOT VERIFIED. Stop before U16; no push/merge/tag/PR/deletion.
+
+### U15 results (6 October 2026)
+
+- **Changed files (29 of the 33 allowlisted paths; nothing outside the
+  allowlist).** Source: `src/pilot/inputObservation.ts` (new),
+  `src/pilot/PilotZoneScene.ts`, `src/pilot/windows/m09WatchModel.ts`
+  (new), `src/pilot/windows/m09MonitorWatch.ts`,
+  `src/pilot/windows/m10DeliveryModel.ts` (new),
+  `src/pilot/windows/m10ComponentPromise.ts`,
+  `src/pilot/windows/reviewClosure.ts` (comments only),
+  `src/pilot/return/returnEpisodeModel.ts`,
+  `src/scenes/StationConcourseScene.ts`,
+  `src/scenes/DiagnosticsLaboratoryScene.ts`,
+  `src/scenes/ExteriorRecoveryYardScene.ts`,
+  `src/measurement/registerV3.ts`, `src/measurement/features/index.ts`,
+  `src/measurement/features/m09.ts` (new),
+  `src/measurement/features/m10.ts` (new). Tests:
+  `e2e/m09_watch.spec.ts`, `e2e/m10_deliveries.spec.ts`,
+  `e2e/m09_m10_route.spec.ts` (new), `e2e/pilot_return_models.spec.ts`,
+  `e2e/pilot_return.spec.ts`, `e2e/returnHelpers.ts`,
+  `e2e/pilotHelpers.ts`, `e2e/exteriorHelpers.ts`,
+  `e2e/pilot_episodes_1_2.spec.ts`, `e2e/m11_custody_route.spec.ts`.
+  Docs: the matrix, the register, the addendum and this log. Not
+  touched (no M09 / M10 assertion required it): `e2e/pilot_deck.spec.ts`,
+  `e2e/pilot_coverage.spec.ts`, `e2e/pilot_closure_models.spec.ts`,
+  `e2e/m26_protocol_foundation.spec.ts`.
+- **What was built.** Register §4 "Unit 15": the watch's three checks
+  (`m09-watch-checks-v1`) and the two deliveries (`m10-deliveries-v1`),
+  their pure models, window adapters, shared menu / settle builders,
+  observed input mode, read-only extractors and the v3 register routes.
+  Candidate families `proto_m09_checks_` and `proto_m10_delivery_`; no
+  canonical event, no scoring-plan variable, no formula changed.
+- **D-U15-1 as implemented (research-owner decision of 6 October 2026;
+  source: the owner's launch instruction for this unit, contract v2
+  amendment A2 §3 / §6).** The Concourse exit hook closes whichever check
+  is open — the third included — through any door
+  (`m09WatchModel.ts` `m09ConcourseExited`; `StationConcourseScene`
+  `onRoomExit`); the duty's window completes at that closure; later
+  readings are `gauge_read_uncredited` and never change the first
+  outcome. Recorded in register §4 "Unit 15" (1) and §5.239. Browser
+  evidence: B1 R1 and R2 (the third check read before leaving; in R2 the
+  second check closed unread at its exit and a later reading stayed
+  uncredited), B3 test 3 (the third check left unread: closed `missed` /
+  `left_concourse` with `exit_to: records_workshop` at the west door,
+  the record unchanged afterwards), pure `m09_watch` "check windows".
+- **Model routing actually used.** Writer and integrator: Fable 5.1
+  (`claude-fable-5-1`). Test run and log analysis: Sonnet 5.5
+  (`claude-sonnet-5-5`). Reviews, one parallel read-only pass: Opus 5.5
+  (`claude-opus-5-5`) × 3 — scientific, gameplay, visual. The four named
+  reviewer agents were not discoverable as agent types in this session;
+  each ran as a general-purpose agent with the matching model override
+  after reading its role file (contract §14 fallback). No reviewer ran
+  on Fable; no reviewer edited a file.
+- **Writer's development runs (before the official run).** The pure set
+  P repeatedly while writing; B1 scenario R1 twice (the first attempt
+  stopped at an assertion of the NEW spec that compared the whole prompt
+  panel text with the offer body — the spec was corrected to a
+  containment check; no product change), then R2, R3 and both R4 tests
+  once: all passed. No other browser spec was run by the writer.
+- **Official verification (Sonnet 5.5; `PW_DEV_PORT=5195`,
+  `--workers=1 --retries=0`, each command once; logs kept in the session
+  scratchpad `final/logs/`).**
+  1. `npm.cmd run lint:tsc` — exit 0.
+  2. `npm.cmd run build` — exit 0 (the chunk-size warning only).
+  3. ESLint (`prettier/prettier` with `endOfLine: auto`) on every changed
+     `.ts` — exit 0.
+  4. Prettier `--check --end-of-line auto` on every changed `.ts` /
+     `.md` — exit 1: two files flagged,
+     `IMPLEMENTATION-MATRIX.md` and `UNIT-LOG.md`. Base comparison:
+     Prettier's would-be hunks are the SAME on the untouched export of
+     `71f5e1b` and in the worktree (matrix: lines 39–66, the item
+     table's padding; this log: five hunks inside the U14-D3 entries) —
+     the formatting state the unit inherited; the unit's additions
+     introduce no new hunk. Every changed `.ts`, the register and the
+     addendum are clean.
+  5. `git diff --check` — exit 0.
+  6. `node scripts/claude/verify-unit.mjs --allowlist-file …U15-ALLOWLIST-v2.txt --base 71f5e1b…`
+     — exit 0, "PASS - every change is inside the unit allowlist".
+  7. **P** (nine pure specs, 115 tests) — exit 1: **113 passed, 2
+     failed** (7 s). `m09_watch` 14 / 14 and `m10_deliveries` 13 / 13,
+     `pilot_return_models`, `pilot_coverage`, `pilot_closure_models`,
+     `m26_protocol_foundation`, `pilot_route_model`,
+     `world_v1_story_state` all passed. The two failures are in
+     `final_scientific_gates` (below).
+  8. **B1** `m09_m10_route` — exit 0: **5 passed, 0 skipped** (17.4
+     min): R1 5.0 min, R2 5.2 min, R3 3.8 min, R4 (reload) 1.2 min, R4
+     (after the reload) 2.1 min.
+  9. **B2** `m05_start_route` + `m11_custody_route` + `pilot_deck` —
+     exit 0: **5 passed** (11.4 min).
+  10. **B3** `pilot_return` — exit 1: **1 passed, 2 failed** (13.9 min).
+  11. **B4** `pilot_episodes_1_2 --grep "episode 1"` — exit 1: **0
+      passed, 1 failed** (2.0 min).
+- **Every failure, with its base comparison (the same single test run
+  once on an untouched `git archive` export of `71f5e1b`, node_modules
+  junction, `PW_DEV_PORT=5196`, base spec unchanged; both outputs kept;
+  for B3 and B4 the base test was selected by its title prefix). None
+  was repeated on the worktree; no flake was observed.**
+  1. P, `final_scientific_gates` "M08 and M11 are questionnaire-primary:
+     no window, no active seconds" —
+     `expect(scheduled.opportunityIds).toEqual([])` at its line 146,
+     received `["proto_m08_effort_choice"]`. Base: the same assertion,
+     line and received value. **Pre-existing** (a v2 gate older than the
+     M08 / M11 units). It tests no M09 / M10 / M05 step and prevents no
+     verification of U15.
+  2. P, `final_scientific_gates` "U8-12 (recorded, not resolved):
+     exterior comprehension is still asserted, never checked" —
+     `expect(unconditional).toHaveLength(10)` at its line 368, received
+     length 8. Base: identical. **Pre-existing**; a source-text count of
+     the yard scene's `setComprehension('passed')` calls, which this
+     unit did not change. Prevents no verification of U15.
+  3. B3, `pilot_return` test 1 —
+     `expect(await itemStatus(page, 'M25')).toBe('completed')`, received
+     `"pending"`, at line 620 of the changed spec. Base: the same
+     assertion and message at the same step (its line 607; the line
+     differs only because the spec above it changed). **Pre-existing.**
+     The test's M09 / M10 steps (lines 144–199: the three check
+     openings, the key card handed to Kai from his deliveries menu, the
+     return check read, both closure records) lie BEFORE the failure and
+     passed in this run; only the closing timing line that reads the
+     return check's `due_delta_ms` (after line 620) was not reached — it
+     asserts nothing about M09.
+  4. B3, `pilot_return` test 2 —
+     `expect(await itemStatus(page, 'M21')).toBe('open')`, received
+     `"pending"`, at line 879. Base: the same assertion and message at
+     the same step (its line 843). **Pre-existing.** Its M09 / M10 steps
+     (lines 753–805: checks 1 and 2 missed, the return check read, the
+     station-log exposure record, the declined key card and Kai's menu
+     without a deliveries entry) lie BEFORE the failure and passed.
+     `pilot_return` test 3 passed entirely, including the D-U15-1
+     closure of the unread return check at the west door.
+  5. B4, `pilot_episodes_1_2` "episode 1" — `surface m14_incident_desk
+did not open` at its line 351 (`openSurfaceAt`), avatar at about
+     (418, 201) in the Concourse. Base: the same error with the avatar
+     at the same place. **Pre-existing** driver stop at the incident
+     desk. The chain steps of this unit (lines 261–300: watch offer,
+     key-card offer, alarm, recap, lamp job; the M09 / M10 events; no
+     refused press) lie BEFORE it and passed. The steps AFTER it are
+     **NOT VERIFIED by this run**: the check-1 gauge reading (line 384),
+     the M05 lamp-job surface (line 392 ff.), the family-ownership loop
+     and the single `check_window_closed` at the Concourse exit. Their
+     evidence comes from other listed runs: the gauge reading, the
+     closure and the family ownership from B1 (R1–R3), the M05 lamp job
+     from B2 (`m05_start_route`).
+- **R4, reported separately.** Reload portion (pure page-level
+  assertions in the browser): **verified** — the earlier load's events
+  are carried byte-identically as `prior_page_load_events`, no M09 / M10
+  event exists in the new load, both features `interrupted`.
+  Post-reload browser administration: **VERIFIED** (not blocked) — in
+  the official run and in the writer's development run the driver
+  replayed the dock tutorial after the reload and reached the Concourse:
+  both hold-back records were written (`technical_failure` for the watch
+  and for delivery `d1`), Vale's chain and her handover menu offered
+  neither again, a gauge reading was uncredited, nothing was presented
+  in the new load, both features `interrupted` with `held_back: ['d1']`.
+  The pure reload / guard checks (`m09_watch` and `m10_deliveries`
+  "dispositions", "extraction is pure") passed separately in P.
+- **Screenshots (800 × 600, written by B1 to the ignored
+  `.playwright-mcp/u15-evidence`, copied to the session scratchpad
+  `final/screenshots/`; none committed).** 21 frames for the 19 items:
+  `01-watch-offer`, `02-key-card-offer`, `03-post-alarm-recap`,
+  `04-log-check-1-due`, `05-log-lab-pass-check-2-due`,
+  `06-lab-pass-gauge-feedback`, `07-return-pass-due-line`,
+  `08-kai-deliveries-menu-d1`, `09-d1-direct-feedback`,
+  `10-noor-logbook-offer`, `11-kai-delegation-confirm-d2` +
+  `11b-kai-delegation-feedback-d2`, `12-kai-lab-work-4-option-menu`,
+  `13-noor-4-option-menu`, `14-noor-delegation-confirm-d1` +
+  `14b-noor-delegation-feedback-d1`, `15-vale-deliveries-menu-d2`,
+  `16-r3-log-unfulfilled-key-card`, `17-r3-declined-logbook-feedback`,
+  `18-record-closed-log`, `19-kai-deliveries-menu-not-now`. Items 11
+  and 14 have a second frame because a confirmation panel and its
+  feedback line are never on screen together.
+- **Reviews (Opus 5.5, read-only, one parallel pass; findings cited in
+  the reports).** Scientific: no material finding; D-U15-1, the windows,
+  the acts, presence-based accessibility, the conditional invariants,
+  the telemetry and the register diff checked and found as contracted;
+  four minor points. Gameplay: no material finding; every participant
+  string matches contract §3 character by character, no forbidden word,
+  the longest log line about 77 characters, no NPC state above four
+  cards, M05 and M11 preserved; four minor points and one
+  measurement-adjacent note. Visual: no material finding in the 21
+  frames (legible, first card pre-focused with a glyph as well as
+  colour, four-card panels fit, no forbidden wording); minor cosmetic
+  points and observations outside the unit. All minor points are
+  recorded in register §5.255; none was acted on.
+- **Correction round (the one bounded round).** No material finding was
+  open, so no source, test or behaviour changed after the official run.
+  The round is documentation only: register §5.255 (the reviewers'
+  points) and this results section. The checks those edits can affect —
+  Prettier on the changed docs with its base comparison, `git diff
+--check`, `verify-unit` — were run again by Sonnet on the final tree
+  (result in the handoff report).
+- **Guard event (reported, not worked around).** During the official run
+  the test reviewer's shell line contained a stray `rm -rf /dev/null`;
+  the `PreToolUse` guard blocked that command, nothing ran, and the
+  reviewer re-issued the intended read-only command without it. No unit
+  work was rejected by the guard.
+- **Not run (as the contract lists).** The helper dependents
+  `m24_m26_boundary_route`, `m25_repetition_route`, `m21_cases_route`,
+  `m22_setbacks_route`, `pilot_yard`, `m08_effort_route`,
+  `pilot_exterior_isolation`, the closure specs (`pilot_closure`,
+  `pilot_closure_capture`), `pilot_route`, `pilot_records`,
+  `world_v1_interactions`, and the capture specs
+  (`world_v3_route_capture` — known to need the recap step —,
+  `pilot_return_capture`, `pilot_visual_capture`, `v4_visual_capture`,
+  `pilot_exterior_capture`); `pilot_episodes_1_2` "episode 2"; the full
+  suite; `npm run lint` over the whole repository.
+- **Deviations and limits.** 21 evidence frames for 19 items (above).
+  Reviewers through the general-purpose fallback (above). B1's last
+  test is written to SKIP itself as "BLOCKED / NOT VERIFIED" when the
+  driver cannot reach the Concourse after a reload; it did not skip.
+  The four v2-era capture specs and the registry's window labels still
+  describe the v2 administration (register §5.247). Both features are
+  candidate indicators; technical passing is not psychometric validity.
+- **Conclusion.** The unit's own tests pass (P's two unit specs, B1 5 /
+  5, B2 5 / 5); every remaining failure in P, B3 and B4 fails the same
+  assertion with the same message at the same step on the untouched
+  base, and each U15 step it could hide is verified by a passing step
+  of the same run or by B1 / B2. One local commit
+  `feat(m09,m10): three watch checks and two accountable delivery
+obligations` on `codex/u15-m09-m10` (SHA in the handoff report), each
+  file staged by name. Nothing was pushed, merged, tagged, deployed,
+  deleted or removed; U16 is not started.

@@ -29,8 +29,10 @@ import {
   expectNoRuntimeErrors,
 } from './journey';
 import {
+  answerLogbookOffer,
   bootPilot,
   labApproach,
+  type LogbookChoice,
   openPromptAt,
   PILOT,
   pilotCoverage,
@@ -536,8 +538,15 @@ export async function reenterYard(page: Page) {
   });
 }
 
-/** Noor: "I am finished outside." (option 2) → return_hub. */
-export async function finishOutside(page: Page) {
+/**
+ * Noor: "I am finished outside." (option 2) → return_hub, then her
+ * yard-logbook offer (M10, Unit 15) answered as asked — deferred by
+ * default: no answer, only the exposure record.
+ */
+export async function finishOutside(
+  page: Page,
+  options?: { logbook?: LogbookChoice; pointer?: boolean },
+) {
   await ensureOutsideCompound(page);
   await openPromptAt(page, YARD.noor, { approachOffset: APPROACH.noor });
   await selectPromptOption(page, 2);
@@ -548,6 +557,9 @@ export async function finishOutside(page: Page) {
     undefined,
     { timeout: 8000 },
   );
+  await answerLogbookOffer(page, options?.logbook ?? 'defer', {
+    pointer: options?.pointer,
+  });
 }
 
 /* ------------------------------------------------------------------ *

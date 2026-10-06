@@ -7,12 +7,15 @@
  * supports the prospective-memory opportunities; no maze, no hidden route.
  *
  * This module is the ONE table of the episode's item windows: for every
- * two-phase item (M03 occasions, M07 start/end, M09 check 1/2, M10
- * accept/handover, M20 start/resume) it names the SAME opportunity id and
- * the two ledger window ids, so start and end data stay traceably linked
- * while each phase keeps its own window id and `phase` tag on every
- * event. The adapters stamp `phaseMetadata()`; the pure spec proves the
- * table against the frozen ledger and the source modules.
+ * two-phase item (M03 occasions, M07 start/end, M20 start/resume) it
+ * names the SAME opportunity id and the two ledger window ids, so start
+ * and end data stay traceably linked while each phase keeps its own
+ * window id and `phase` tag on every event. The adapters stamp
+ * `phaseMetadata()`; the pure spec proves the table against the frozen
+ * ledger and the source modules. Station 080 Unit 15: M09 (three checks
+ * of one duty) and M10 (two deliveries) are no longer two-phase items —
+ * their windows live in `m09WatchModel.ts` / `m10DeliveryModel.ts`; only
+ * their families stay listed below.
  *
  * Scientific boundary: every identifier is provisional (`proto_*`); no
  * family is a prefix of another; nothing here aggregates, weights or
@@ -28,6 +31,8 @@ import {
   M20_START_WINDOW_ID,
 } from '../exterior/m20AntennaModel';
 import { M03_FAMILY, M03_SPEC } from '../windows/m03RestoreModel';
+import { M09_FAMILY } from '../windows/m09WatchModel';
+import { M10_FAMILY } from '../windows/m10DeliveryModel';
 import {
   M21_EVENT_SUFFIXES,
   M21_FAMILY,
@@ -110,22 +115,6 @@ export const RETURN_LINKED_WINDOWS: readonly ReturnItemWindows[] = [
     episodes: [2, 5],
   },
   {
-    item: 'M09',
-    opportunityIds: ['proto_m09_monitor_watch'],
-    windows: { start: 'm09_check_1', end: 'm09_check_2' },
-    family: 'proto_m09_watch_',
-    objects: { start: 'm09_monitor_gauge', end: 'm09_monitor_gauge' },
-    episodes: [1, 5],
-  },
-  {
-    item: 'M10',
-    opportunityIds: ['proto_m10_component_promise'],
-    windows: { start: 'm10_promise_accept', end: 'm10_promise_handover' },
-    family: 'proto_m10_promise_',
-    objects: { start: 'm10_component_promise', end: 'm10_component_promise' },
-    episodes: [1, 5],
-  },
-  {
     item: 'M20',
     opportunityIds: [M20_OPPORTUNITY_ID],
     windows: { start: M20_START_WINDOW_ID, end: M20_RESUME_WINDOW_ID },
@@ -180,8 +169,8 @@ export const RETURN_SINGLE_WINDOWS = [
 export const RETURN_FAMILIES = {
   M03: M03_FAMILY,
   M07: 'proto_m07_calibration_',
-  M09: 'proto_m09_watch_',
-  M10: 'proto_m10_promise_',
+  M09: M09_FAMILY,
+  M10: M10_FAMILY,
   M20: M20_FAMILY,
   M21: M21_FAMILY,
   M22: M22_FAMILY,

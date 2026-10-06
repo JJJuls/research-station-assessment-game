@@ -284,7 +284,7 @@ const OPERATIONAL_LABELS: Partial<Record<M26ItemId, string>> = {
   M07: 'Calibration bench (Workshop)',
   M08: 'Support console (Recovery Yard)',
   M09: 'Monitor watch (Concourse)',
-  M10: 'Component delivery (Concourse)',
+  M10: 'Deliveries (Concourse / Recovery Yard)',
   M11: 'Borrowed instruments (Laboratory / Recovery Yard)',
   M12: 'Quality packets (Concourse / Workshop)',
   M13: 'Conduit lattice bench (Workshop)',
@@ -895,6 +895,37 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'behavioural_counterpart',
     direction: 'extend_occasions',
     occasions: 3,
+    // Unit 15: the approved three-check duty landed — one accepted watch
+    // (one opportunity), three check windows on the Concourse gauge at the
+    // acceptance, the pass toward the laboratory and the return from the
+    // yard; the v2 two-check family is no longer on the route.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m09_watch_duty'],
+      windows: [
+        {
+          id: 'm09_duty_check_1',
+          occasion: 'check_1',
+          zone: 'station_concourse',
+          episode: 1,
+        },
+        {
+          id: 'm09_duty_check_2',
+          occasion: 'check_2',
+          zone: 'station_concourse',
+          episode: 3,
+        },
+        {
+          id: 'm09_duty_check_3',
+          occasion: 'check_3',
+          zone: 'station_concourse',
+          episode: 5,
+        },
+      ],
+      family_prefixes: ['proto_m09_checks_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Three brief watch checks at distinct route milestones after one voluntary acceptance; duty, due status and access visible; equal reminders; checks voluntary.',
     features: [
@@ -918,6 +949,31 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'behavioural_counterpart',
     direction: 'extend_occasions',
     occasions: 2,
+    // Unit 15: the approved second obligation landed — the calibration
+    // key card (Vale → Kai, offered in the Concourse, episode 1) and the
+    // yard logbook (Noor → Vale, offered in the Recovery Yard, episode 4);
+    // the v2 single-promise family is no longer on the route.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m10_delivery_d1', 'proto_m10_delivery_d2'],
+      windows: [
+        {
+          id: 'm10_delivery_d1',
+          occasion: 'd1',
+          zone: 'station_concourse',
+          episode: 1,
+        },
+        {
+          id: 'm10_delivery_d2',
+          occasion: 'd2',
+          zone: 'exterior_recovery_yard',
+          episode: 4,
+        },
+      ],
+      family_prefixes: ['proto_m10_delivery_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Two separately accepted deliveries with distinct objects and recipients; obligation shown after interruptions; delivery or accountable delegation by the stated milestone.',
     features: [

@@ -41,6 +41,8 @@ import {
   press,
   registryApproach,
   routeToWorkshopWork,
+  SETTLE_PAUSE_MS,
+  waitPromptLabel,
   walkTo,
   workshopToConcourse,
   workshopVia,
@@ -258,30 +260,44 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     await completeDockTutorial(page, 1);
     await dockToConcourse(page);
 
-    // Vale: briefing → watch offer (accept) → promise offer (accept) → interruption.
+    // Vale: briefing → watch offer (accept) → key-card offer (accept) →
+    // interruption → recap (Station 080 Unit 15) → lamp job.
     await openPromptAt(page, PILOT.concourse.vale, {
       approachOffset: { x: 0, y: 40 },
     });
     await selectPromptOption(page, 1);
     await expectStage(page, 'incident_handover');
-    await page.waitForTimeout(400);
+    await waitPromptLabel(page, 'I will take the watch.');
+    await page.waitForTimeout(SETTLE_PAUSE_MS);
     await selectPromptOption(page, 1); // take the watch
-    await page.waitForTimeout(400);
-    await selectPromptOption(page, 1); // carry the component
+    await waitPromptLabel(page, 'I will take it to Kai.');
+    await page.waitForTimeout(SETTLE_PAUSE_MS);
+    await selectPromptOption(page, 1); // carry the key card
+    await waitPromptLabel(page, 'Alarm cleared — continue.');
     await page.waitForTimeout(400);
     await selectPromptOption(page, 1); // interruption acknowledged
+    // M10 (Unit 15): the obligation is shown again after the alarm.
+    await waitPromptLabel(page, 'Understood.');
+    await page.waitForTimeout(SETTLE_PAUSE_MS);
+    await selectPromptOption(page, 1); // recap acknowledged
     // M05 (Unit 6): the extra lamp job closes the chain — accepted here
     // (a deliberate press past the stage's 400 ms settle window).
+    await waitPromptLabel(page, 'Yes — I will take the lamp job.');
     await page.waitForTimeout(450);
     await selectPromptOption(page, 1); // take the lamp job
     await page.waitForTimeout(400);
 
     let types = await pilotEventTypes(page);
 
-    expect(types).toContain('proto_m09_watch_offer_answered');
-    expect(types).toContain('proto_m10_promise_offer_answered');
-    expect(types).toContain('proto_m10_promise_interruption_shown');
-    expect(types).toContain('proto_m10_promise_interruption_acknowledged');
+    expect(types).toContain('proto_m09_checks_offer_answered');
+    expect(types).toContain('proto_m09_checks_check_window_opened');
+    expect(types).toContain('proto_m10_delivery_offer_answered');
+    expect(types).toContain('proto_m10_delivery_interruption_shown');
+    expect(types).toContain('proto_m10_delivery_interruption_acknowledged');
+    expect(types).toContain('proto_m10_delivery_obligation_shown');
+    // Each press was past its settle window: nothing was refused.
+    expect(types).not.toContain('proto_m09_checks_offer_press_refused');
+    expect(types).not.toContain('proto_m10_delivery_press_refused');
 
     // M05 (Unit 6): the accepted lamp job opened at the answer; the start
     // clock became eligible once the briefing chain closed (no prompt).
@@ -365,7 +381,7 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     });
     await page.waitForTimeout(400);
     types = await pilotEventTypes(page);
-    expect(types).toContain('proto_m09_watch_check_completed');
+    expect(types).toContain('proto_m09_checks_check_fulfilled');
 
     // The reading-desk lamp (M05, Unit 6): the accepted extra job's start
     // control is the surface's "Start the job" — the first work action —
@@ -433,7 +449,7 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     await concourseToWorkshop(page);
     types = await pilotEventTypes(page);
     expect(
-      types.filter((t) => t === 'proto_m09_watch_check_window_closed'),
+      types.filter((t) => t === 'proto_m09_checks_check_window_closed'),
     ).toHaveLength(1);
     expectNoRuntimeErrors(errors);
   });
