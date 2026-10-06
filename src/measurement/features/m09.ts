@@ -18,6 +18,12 @@
  * out-of-order opening, a reading credited outside its window, a second
  * credited reading, a closure that contradicts the acts, a snapshot that
  * disagrees with the recount, an unknown administration version.
+ *
+ * Ordering evidence (owner ruling, register §5.259): the order of an
+ * accepted duty's events is read from their sequence numbers only when
+ * every event of the family in the load carries a usable number (an
+ * integer from 1) and no two share one; otherwise the feature is a
+ * technical failure. A missing number is never read as zero.
  */
 import type { RawGameEvent } from '../../systems/EventLogger';
 import { CLOSURE_REASONS, type ClosureReason } from '../protocol';
@@ -54,7 +60,34 @@ interface CheckRecord {
   eligible: boolean;
 }
 
-const seq = (event: RawGameEvent) => event.sequence ?? 0;
+/**
+ * Ordering evidence (research-owner ruling, register §5.259). The logger
+ * numbers every event with an integer from 1, unique within the session;
+ * gaps are normal, because other events lie between the relevant ones. An
+ * outcome that depends on event order is read only from events that carry
+ * such a number, each a different one: a missing or malformed number is
+ * never read as zero, and two events sharing a number have no order.
+ * Returns what is wrong, or null when the order can be verified.
+ */
+function orderDefect(events: readonly RawGameEvent[]): string | null {
+  const numbers = events.map((event) => event.sequence);
+
+  if (
+    numbers.some(
+      (value) =>
+        typeof value !== 'number' || !Number.isSafeInteger(value) || value < 1,
+    )
+  ) {
+    return 'an event without a usable sequence number';
+  }
+
+  return new Set(numbers).size === numbers.length
+    ? null
+    : 'two events share a sequence number';
+}
+
+/** An event's sequence number — read only after `orderDefect` passed. */
+const seq = (event: RawGameEvent) => event.sequence as number;
 
 function closureReason(value: unknown): ClosureReason | null {
   return typeof value === 'string' &&
@@ -212,11 +245,25 @@ registerFeatureExtractor('M09', (events, context) => {
     return fail('the watch answer is neither accept nor decline');
   }
 
+  // Research-owner ruling (register §5.259): everything below reads the
+  // ORDER of the duty's events — acceptance, openings, readings, closures.
+  // Without a usable, distinct sequence number on every event of the
+  // family in this load that order cannot be verified, and the duty gets
+  // no observed value. (The dispositions above read no order.)
+  const defect = orderDefect(family);
+
+  if (defect !== null) {
+    return fail(defect);
+  }
+
   // ——— Recount of the observed checks from the act events ———
   const records: CheckRecord[] = [];
   let previousIndex = 0;
+  // The openings in the order of their own numbers (never by array
+  // position).
+  const openings = [...opened].sort((a, b) => seq(a) - seq(b));
 
-  for (const opening of opened) {
+  for (const opening of openings) {
     const index = meta<number>(opening, 'check_index');
 
     if (index !== 1 && index !== 2 && index !== 3) {

@@ -243,3 +243,16 @@ U15 — one overlong M04 cell, so Prettier would re-pad every row — though
 not the identical state: that cell is 59 characters longer since U15
 (the wording its contract prescribed), so Prettier's target width is 570
 instead of 511 — `UNIT-LOG.md` "U15 closeout".
+
+**U15 event-order integrity** (6 October 2026; one extractor-only
+correction under the research owner's ruling, register §5.259): `m09.ts`
+and `m10.ts` read the order of an accepted duty's / delivery's events
+from the logger's `sequence` numbers only when every such event carries
+a usable number (an integer from 1) and no two share one; a missing or
+malformed number is never read as zero, and an order that cannot be
+verified makes the feature a `technical_failure`, never an observed
+value. Gaps between numbers are normal. No gameplay, administration,
+event, payload, formula or version changed. Regression cases in pure
+`m09_watch` and `m10_deliveries` ("event-order integrity"); browser
+evidence reused, not re-run; limits in register §5.259 (a)–(e) —
+`UNIT-LOG.md` "U15 event-order integrity".

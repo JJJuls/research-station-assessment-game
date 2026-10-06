@@ -31,6 +31,12 @@
  * zero) and a delegation that does not name the delivery's own object. A
  * late act after the closure is kept apart and never changes the first
  * outcome.
+ *
+ * Ordering evidence (owner ruling, register §5.259): the order of an
+ * accepted delivery's events is read from their sequence numbers only
+ * when every one of that delivery's events in the load carries a usable
+ * number (an integer from 1) and no two share one; otherwise the feature
+ * is a technical failure. A missing number is never read as zero.
  */
 import type { RawGameEvent } from '../../systems/EventLogger';
 import { registerEntry } from '../registerV3';
@@ -122,7 +128,34 @@ interface DeliveryRecord {
   closure_reason: string | null;
 }
 
-const seq = (event: RawGameEvent) => event.sequence ?? 0;
+/**
+ * Ordering evidence (research-owner ruling, register §5.259). The logger
+ * numbers every event with an integer from 1, unique within the session;
+ * gaps are normal, because other events lie between the relevant ones. An
+ * outcome that depends on event order is read only from events that carry
+ * such a number, each a different one: a missing or malformed number is
+ * never read as zero, and two events sharing a number have no order.
+ * Returns what is wrong, or null when the order can be verified.
+ */
+function orderDefect(events: readonly RawGameEvent[]): string | null {
+  const numbers = events.map((event) => event.sequence);
+
+  if (
+    numbers.some(
+      (value) =>
+        typeof value !== 'number' || !Number.isSafeInteger(value) || value < 1,
+    )
+  ) {
+    return 'an event without a usable sequence number';
+  }
+
+  return new Set(numbers).size === numbers.length
+    ? null
+    : 'two events share a sequence number';
+}
+
+/** An event's sequence number — read only after `orderDefect` passed. */
+const seq = (event: RawGameEvent) => event.sequence as number;
 
 /** One delivery's record recounted from its events, or the contradiction found. */
 function analyse(
@@ -139,9 +172,8 @@ function analyse(
   const handed = of('handed_over');
   const delegated = of('delegated');
   const delegateAccepted = of('delegate_accepted');
-  const late = [...of('late_handover'), ...of('late_delegation')].sort(
-    (a, b) => seq(a) - seq(b),
-  );
+  // Put in order only once the delivery's ordering evidence is verified.
+  const late = [...of('late_handover'), ...of('late_delegation')];
   const presence = of('person_present');
   const exposures = of('obligation_shown');
   const acts = [...handed, ...delegated, ...delegateAccepted, ...late];
@@ -260,6 +292,19 @@ function analyse(
     return failure('the answer is neither accept nor decline');
   }
 
+  // Research-owner ruling (register §5.259): everything below reads the
+  // ORDER of this delivery's events — acceptance, opening, presence, acts,
+  // closure, late acts. Without a usable, distinct sequence number on
+  // every one of them that order cannot be verified, and the delivery
+  // gets no observed value. (The dispositions above read no order.)
+  const defect = orderDefect(events);
+
+  if (defect !== null) {
+    return failure(defect);
+  }
+
+  late.sort((a, b) => seq(a) - seq(b));
+
   if (acts.some((act) => seq(act) <= seq(answer))) {
     return failure('an act before the acceptance');
   }
@@ -274,7 +319,8 @@ function analyse(
     return failure('a presence record before the acceptance');
   }
 
-  const opening = of('opportunity_opened')[0];
+  // The earliest opening by its own number (never by array position).
+  const opening = of('opportunity_opened').sort((a, b) => seq(a) - seq(b))[0];
 
   if (
     presence.some(

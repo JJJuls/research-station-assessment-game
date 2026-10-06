@@ -894,6 +894,302 @@ test.describe('M09 monitor watch (pure)', () => {
     }
   });
 
+  test('event-order integrity: an order that cannot be verified never yields an observed value', () => {
+    // Research-owner ruling (register §5.259), checked for the watch: an
+    // outcome that depends on event order must not be valued when the
+    // ordering evidence is missing or malformed, and a missing sequence
+    // number is never read as zero. The logger's convention: an integer
+    // from 1, unique within the session; gaps are normal.
+    type Outcome = {
+      disposition: string;
+      value: unknown;
+      numerator: number | null;
+      denominator: number | null;
+      missing_reason: string | null;
+    };
+    const outcome = (events: readonly RawGameEvent[]): Outcome => {
+      const row = feature(events);
+
+      return {
+        disposition: row.disposition,
+        value: row.value,
+        numerator: row.numerator,
+        denominator: row.denominator,
+        missing_reason: row.missing_reason,
+      };
+    };
+    const clone = (events: readonly RawGameEvent[]) =>
+      JSON.parse(JSON.stringify(events)) as RawGameEvent[];
+    const eventOf = (events: RawGameEvent[], suffix: string, check?: number) =>
+      events.find(
+        (e) =>
+          e.event_type === typeOf(suffix) &&
+          (check === undefined || e.metadata?.check_index === check),
+      )!;
+    /** A copy whose one event carries this sequence value (undefined = none). */
+    const resequenced = (
+      events: readonly RawGameEvent[],
+      suffix: string,
+      value: unknown,
+      check?: number,
+    ) => {
+      const copy = clone(events);
+      const event = eventOf(copy, suffix, check) as { sequence?: unknown };
+
+      if (value === undefined) {
+        delete event.sequence;
+      } else {
+        event.sequence = value;
+      }
+
+      return copy;
+    };
+
+    // ——— Valid logs (every event numbered by the harness) ———
+    const allRead = route([true, true, true]).h.events;
+    const oneMissed = route([true, false, true]).h.events;
+
+    const lateRead = harness();
+    const duty = accept(lateRead);
+
+    m09ReadGauge(duty, 'incident_handover', 2_000, KEY, lateRead.sink);
+    m09ConcourseExited(duty, 'records_workshop', 3_000, lateRead.sink);
+    m09ConcourseEntered(duty, 'lab_briefing', ACCESS, 4_000, lateRead.sink);
+    m09ConcourseExited(duty, 'diagnostics_laboratory', 5_000, lateRead.sink);
+    m09ConcourseEntered(duty, 'exterior_work', ACCESS, 5_500, lateRead.sink);
+    // A late reading of the missed check: recorded, uncredited.
+    m09ReadGauge(duty, 'exterior_work', 5_600, KEY, lateRead.sink);
+    m09ConcourseExited(duty, 'diagnostics_laboratory', 5_700, lateRead.sink);
+    m09ConcourseEntered(duty, 'return_hub', ACCESS, 6_000, lateRead.sink);
+    m09ReadGauge(duty, 'return_hub', 6_200, KEY, lateRead.sink);
+    lateRead.close(duty);
+
+    const unanswered = harness();
+
+    m09Present(createM09State(), 1_000, unanswered.sink);
+
+    const declined = harness();
+    const refused = createM09State();
+
+    m09Present(refused, 1_000, declined.sink);
+    m09Answer(refused, 'decline', 2, 3, 1_400, KEY, declined.sink);
+    declined.opened();
+    declined.close(refused, 'declined');
+
+    const logs: Record<string, RawGameEvent[]> = {};
+
+    // ——— The equivalent of register §5.258 for the watch ———
+    {
+      // Check 1 opened, read and closed BEFORE the acceptance in the log —
+      // malformed. With the acceptance's sequence number missing, the
+      // order can no longer be read at all.
+      const moved = rewrite(allRead, (copy) => {
+        const [answer] = copy.splice(
+          copy.findIndex((e) => e.event_type === typeOf('offer_answered')),
+          1,
+        );
+        const closure = copy.findIndex(
+          (e) =>
+            e.event_type === typeOf('check_window_closed') &&
+            e.metadata?.check_index === 1,
+        );
+
+        copy.splice(closure + 1, 0, answer);
+
+        return copy;
+      });
+
+      expect(outcome(moved).missing_reason).toBe(
+        'check 1 was opened before the acceptance',
+      );
+      logs['the acceptance without a sequence number, check 1 before it'] =
+        resequenced(moved, 'offer_answered', undefined);
+    }
+
+    // ——— Missing and malformed numbers on events the order is read from ———
+    logs['a check opening without a sequence number'] = resequenced(
+      allRead,
+      'check_window_opened',
+      undefined,
+      2,
+    );
+    logs['a reading without a sequence number'] = resequenced(
+      allRead,
+      'check_fulfilled',
+      undefined,
+      3,
+    );
+    logs['the duty closure without a sequence number'] = resequenced(
+      allRead,
+      'window_closed',
+      undefined,
+    );
+    logs['an uncredited reading without a sequence number'] = resequenced(
+      lateRead.events,
+      'gauge_read_uncredited',
+      undefined,
+    );
+
+    // An accepted duty that is still open is inside the check: with a
+    // defective number it is a technical failure, not `pending`.
+    const openDuty = harness();
+
+    accept(openDuty);
+    logs['still open, the check opening unnumbered'] = resequenced(
+      openDuty.events,
+      'check_window_opened',
+      undefined,
+      1,
+    );
+    logs['valid, still open'] = openDuty.events;
+
+    for (const [label, value] of [
+      ['null', null],
+      ['zero', 0],
+      ['a negative number', -4],
+      ['a fraction', 2.5],
+      ['a string', '2'],
+      ['an unsafe integer', 2 ** 53],
+    ] as const) {
+      logs[`the acceptance numbered with ${label}`] = resequenced(
+        allRead,
+        'offer_answered',
+        value,
+      );
+    }
+
+    // ——— Ambiguous: two events of the duty share a number ———
+    logs['two events sharing a number'] = resequenced(
+      allRead,
+      'offer_answered',
+      eventOf(clone(allRead), 'presented').sequence,
+    );
+
+    // ——— Valid records that must stay as they were ———
+    // Gaps are normal: other events lie between the relevant ones.
+    logs['valid, numbered with gaps'] = clone(oneMissed).map((event) => ({
+      ...event,
+      sequence: (event.sequence ?? 0) * 10 + 5,
+    }));
+    logs['valid, all three read'] = allRead;
+    logs['valid, one check missed'] = oneMissed;
+    logs['valid, a late reading after a miss'] = lateRead.events;
+    // Dispositions that read no order are untouched by an unnumbered event.
+    logs['unanswered, the presentation unnumbered'] = resequenced(
+      unanswered.events,
+      'presented',
+      undefined,
+    );
+    logs['declined, the answer unnumbered'] = resequenced(
+      declined.events,
+      'offer_answered',
+      undefined,
+    );
+
+    const before = Object.fromEntries(
+      Object.entries(logs).map(([name, events]) => [
+        name,
+        JSON.stringify(events),
+      ]),
+    );
+    const outcomes = Object.fromEntries(
+      Object.keys(logs).map((name) => [
+        name,
+        outcome(deepFreeze(JSON.parse(before[name]) as RawGameEvent[])),
+      ]),
+    );
+    const failed = (missing_reason: string): Outcome => ({
+      disposition: 'technical_failure',
+      value: null,
+      numerator: null,
+      denominator: null,
+      missing_reason,
+    });
+    const unnumbered = 'an event without a usable sequence number';
+    const observed = (value: number): Outcome => ({
+      disposition: 'observed',
+      value,
+      numerator: value,
+      denominator: 3,
+      missing_reason: null,
+    });
+
+    expect(outcomes).toEqual({
+      'the acceptance without a sequence number, check 1 before it':
+        failed(unnumbered),
+      'a check opening without a sequence number': failed(unnumbered),
+      'a reading without a sequence number': failed(unnumbered),
+      'the duty closure without a sequence number': failed(unnumbered),
+      'an uncredited reading without a sequence number': failed(unnumbered),
+      'still open, the check opening unnumbered': failed(unnumbered),
+      'valid, still open': {
+        disposition: 'pending',
+        value: null,
+        numerator: null,
+        denominator: null,
+        missing_reason: 'the watch duty is still open',
+      },
+      'the acceptance numbered with an unsafe integer': failed(unnumbered),
+      'the acceptance numbered with null': failed(unnumbered),
+      'the acceptance numbered with zero': failed(unnumbered),
+      'the acceptance numbered with a negative number': failed(unnumbered),
+      'the acceptance numbered with a fraction': failed(unnumbered),
+      'the acceptance numbered with a string': failed(unnumbered),
+      'two events sharing a number': failed(
+        'two events share a sequence number',
+      ),
+      'valid, numbered with gaps': observed(2),
+      'valid, all three read': observed(3),
+      'valid, one check missed': observed(2),
+      'valid, a late reading after a miss': observed(2),
+      'unanswered, the presentation unnumbered': {
+        disposition: 'no_eligible_event',
+        value: null,
+        numerator: null,
+        denominator: null,
+        missing_reason: 'watch offer not answered',
+      },
+      'declined, the answer unnumbered': {
+        disposition: 'declined',
+        value: null,
+        numerator: null,
+        denominator: null,
+        missing_reason: 'watch duty declined',
+      },
+    });
+
+    // Numbers that are not usable numbers at all (they cannot survive
+    // JSON, so they are checked directly — the value itself unchanged).
+    for (const value of [Number.NaN, Number.POSITIVE_INFINITY]) {
+      const copy = clone(allRead);
+      const closure = eventOf(copy, 'check_window_closed', 2);
+
+      closure.sequence = value;
+      expect(outcome(copy), String(value)).toEqual(failed(unnumbered));
+      expect(Object.is(closure.sequence, value), String(value)).toBe(true);
+    }
+
+    // The late reading is still recorded apart and never credited.
+    expect(
+      (
+        feature(lateRead.events).components as {
+          uncredited_reads: { reason: string }[];
+        }
+      ).uncredited_reads.map((read) => read.reason),
+    ).toEqual(['no_check_due']);
+
+    // Immutability: the rows above came from deeply frozen copies; the
+    // original logs are extracted here and compared with their text from
+    // before, and a second extraction gives the same row.
+    for (const [name, events] of Object.entries(logs)) {
+      const first = JSON.stringify(feature(events));
+
+      expect(JSON.stringify(events), name).toBe(before[name]);
+      expect(JSON.stringify(feature(events)), name).toBe(first);
+      expect(JSON.stringify(events), name).toBe(before[name]);
+    }
+  });
+
   test('extraction is pure and deterministic: the raw log is byte-identical before and after, and prior page loads never count', () => {
     const { h } = route([true, false, true]);
     const before = JSON.stringify(h.events);

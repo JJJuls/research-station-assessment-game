@@ -6040,3 +6040,179 @@ timing and delegated object identity` on `codex/u15-m09-m10` on top
   of `a9ca47c` (not amended; SHA in the handoff report), the six files
   staged by name. Nothing was pushed, merged, tagged, deployed, deleted
   or removed; U16 is not started.
+
+## U15 event-order integrity — unverifiable ordering rejected (6 October 2026)
+
+- **Owner instruction (6 October 2026):** "Implement a bounded U15
+  event-order integrity correction." Same worktree and branch, expected
+  starting HEAD `6809a9cf08e197e351719684c62c82a5f5978308` (the closeout
+  commit; preserved, not amended), one additional local commit
+  `fix(u15): reject unverifiable event ordering`. Permitted edits: the
+  M09 / M10 feature extractors, their two pure test files and the four
+  documents of the closeout. No gameplay, administration, event-schema,
+  scoring-formula or version change; no merge, push or U16.
+- **The ruling (research owner; recorded as register §5.259):** "an M10
+  outcome that depends on event order must not receive an observed
+  behavioural value when required ordering evidence is missing or
+  malformed. Do not manufacture an order by substituting zero for a
+  missing sequence number. Use the existing schema's sequence
+  convention; do not require consecutive numbers, since unrelated events
+  may occur between relevant events." M09: "Check the same specific
+  sequence-number issue in M09; change it only if the equivalent defect
+  exists."
+- **Entry state (verified before editing):** branch
+  `codex/u15-m09-m10`, HEAD `6809a9cf08e197e351719684c62c82a5f5978308`,
+  tracked tree clean, the guard registered; the inherited
+  `CLAUDE_UNIT_ALLOWLIST` covers all eight permitted paths; the existing
+  worktree and its dependencies reused. As in the closeout, this entry
+  was written after the regression tests and the extractor edit.
+- **Model routing.** Writer: Fable 5.1 (`claude-fable-5-1`).
+  Verification: Sonnet 5.5. Review: one Opus 5.5 reviewer, read-only,
+  confined to ordering integrity and its regression tests. Both through
+  the general-purpose fallback.
+- **The convention used.** `sequence` is assigned by the logger
+  (`src/systems/EventLogger.ts`): an integer starting at 1, increased by
+  one per logged event, continued across page loads of one session
+  identity, never reissued. A usable number is therefore a safe integer
+  of at least 1; consecutive numbers are NOT required of one item's
+  events.
+- **Reproduction first (the writer; both extractors still at
+  `6809a9c`).** One new pure test in each spec, "event-order integrity:
+  an order that cannot be verified never yields an observed value", run
+  with both complete specs against the unchanged extractors: exit 1,
+  **28 passed, 2 failed** (the two new tests; the 28 existing tests
+  unchanged). What the unchanged extractors returned:
+  - **M10 — register §5.258 reproduced:** presented → accepted →
+    presence → opened → carried at the deadline, the
+    `opportunity_opened` WITHOUT a sequence number: `observed`, 0,
+    0 / 1 (with the number present the same log fails as "a presence
+    record before the opportunity opened").
+  - M10, the acceptance without a number and a handover before it in
+    the log: `observed`, 1, 1 / 1 — credited.
+  - M10, the acceptance numbered with a string: `observed`, 2 / 2. Two
+    events of one delivery sharing a number: `observed`, 2 / 2.
+  - M10, already failing but for an unrelated reason (a zero
+    manufactured from the missing or malformed number): a presence
+    record without a number ("a presence record before the
+    acceptance"); a late act without a number ("an act before the
+    acceptance"); the closure numbered null, zero, negative, a fraction
+    or a string ("a terminal act recorded after the closure").
+  - **M09 — the equivalent defect exists:** check 1 opened, read and
+    closed before the acceptance in the log, the acceptance WITHOUT a
+    number: `observed`, 3, 3 / 3 (with the number present the same log
+    fails as "check 1 was opened before the acceptance"). The
+    acceptance numbered null, zero, negative, a fraction or a string:
+    `observed`, 3 / 3. Two events sharing a number: `observed`, 3 / 3.
+    Already failing for an unrelated reason: a check opening without a
+    number ("check 2 was opened before the acceptance"), a reading
+    without a number ("a reading was credited outside the window of
+    check 3").
+  - Valid logs, as required before and after: numbered with gaps;
+    direct and delegated 2 / 2; carried at the deadline 0 / 1; a late
+    handover after the deadline 0 / 1 with the late act kept apart;
+    all three checks read 3 / 3; one check missed 2 / 3; a late reading
+    after a miss 2 / 3 and uncredited; an unanswered offer and a
+    declined one with an unnumbered event keep their null dispositions.
+- **The correction (`src/measurement/features/m10.ts` and `m09.ts`
+  only; the same small change in each).** A helper `orderDefect`
+  returns what is wrong with a set of events' numbers — "an event
+  without a usable sequence number" (missing, null, zero, negative, a
+  fraction, a string, NaN, infinite, or an integer beyond the safe
+  range) or "two events share a sequence number" —
+  or nothing. It is applied once, at the point where the extractor
+  starts comparing positions: for M10 to every event of an ACCEPTED
+  delivery in the current page load; for M09 to every event of the
+  watch family in the current page load once the duty is ACCEPTED. A
+  defect makes the feature a `technical_failure` with that reason. The
+  local `seq` helper no longer substitutes zero (`event.sequence ?? 0`
+  is gone from both files) and is read only after the check; M10's
+  ordering of late acts moved behind the check. Nothing else changed:
+  no formula, denominator, component, event, payload or version, and no
+  disposition of a log with sound numbers; the null dispositions that
+  compare no positions are as before. One consequence, stated because
+  it is a change of disposition: an accepted duty or delivery that is
+  STILL OPEN is inside the check, so with a defective number it is now
+  a `technical_failure` and no longer `pending`. No runtime behaviour
+  other than this export-time extraction is touched, and for
+  logger-numbered logs its output is unchanged.
+- **After the correction (writer's development check, the two new
+  tests only):** `--grep "event-order integrity"` — exit 0, 2 passed.
+  The complete specs after the fix were run by Sonnet (below).
+- **Remaining limitations (register §5.259 (a)–(e)).** Dispositions
+  that compare no positions are not failed by an unnumbered event;
+  uniqueness is checked inside the feature's own scope, not across the
+  whole log; a consistently but wrongly renumbered log cannot be
+  detected; the shared current-load sort (`features/extract.ts`) and
+  the other items' extractors still read a missing number as zero
+  (outside this correction); that this build's session logs are
+  unaffected is an argument from the logger's code — the browser
+  evidence of U15 was reused, not re-run.
+- **Verification of the tree as reviewed (Sonnet 5.5; each command
+  once, before the review round below).** Both complete pure specs
+  (`e2e/m09_watch.spec.ts`, `e2e/m10_deliveries.spec.ts`): exit 0,
+  **30 passed, 0 failed, 0 skipped** (15 and 15). `npm.cmd run lint:tsc`
+  exit 0. `npm.cmd run build` exit 0 (the usual chunk-size warning).
+  ESLint on the four changed `.ts` files exit 0. Prettier on the four
+  `.ts` files exit 0. Prettier on the four changed `.md` files exit 1,
+  flagging only `IMPLEMENTATION-MATRIX.md` and `UNIT-LOG.md`; their
+  would-be changes were compared BY CONTENT with those of `6809a9c` and
+  are the same inherited ones — nothing newly introduced; the register
+  and the addendum are clean. `git diff --check` exit 0. The allowlist
+  verifier with the eight permitted paths against `6809a9c`: exit 0,
+  PASS. No `sequence ?? 0` is left in `m09.ts` or `m10.ts`.
+- **Review (one Opus 5.5 reviewer, read-only, ordering integrity and
+  its regression tests only).** No defect found in either extractor.
+  **One MATERIAL finding, in a document:** register §5.259 overstated
+  the M09 reproduction — it read as if the malformed-number cases had
+  also had a check before the acceptance; they were run on a correctly
+  ordered log. Three MINOR points: an accepted but still-open duty or
+  delivery with a defective number becomes a `technical_failure`
+  instead of `pending`, which was neither tested nor stated; some
+  values and events were untested (an infinite value, an integer beyond
+  the safe range, an M10 handover without a number, an M09 duty closure
+  and an uncredited reading without a number); two picks relied on the
+  order in which the shared helper returns events.
+- **Correction round (the writer; one round, after the review).** The
+  register sentence was corrected to say what was actually reproduced.
+  The still-open consequence is now stated (above, and in the register)
+  and tested in both specs, together with the valid still-open log
+  staying `pending`. Regression cases added for the untested values and
+  events named above; the NaN and infinite values are also checked to
+  be unchanged on the event after extraction. M10 now takes the
+  earliest opening by its own number and M09 walks the check openings
+  in the order of their numbers, both after the check. **These
+  corrections were NOT re-reviewed by Opus;** they were re-verified as
+  recorded in the next entry.
+- **Verification of the final tree (Sonnet 5.5; each command once,
+  after the correction round).** Entry: HEAD `6809a9c`, exactly the
+  eight permitted files modified, nothing staged or untracked. Both
+  complete pure specs: exit 0, **30 passed, 0 failed, 0 skipped** (15
+  and 15), both "event-order integrity" tests among them.
+  `npm.cmd run lint:tsc` exit 0. `npm.cmd run build` exit 0 (only the
+  usual chunk-size warning). ESLint on the four changed `.ts` files
+  exit 0. Prettier on the four `.ts` files exit 0. Prettier on the four
+  changed `.md` files exit 1, flagging only `IMPLEMENTATION-MATRIX.md`
+  and `UNIT-LOG.md`; compared by content, the formatter's would-be
+  changes (56 and 20 changed lines) are byte-identical to those of
+  `6809a9c` — inherited, nothing newly introduced; the register and the
+  addendum are clean. `git diff --check` exit 0. The allowlist verifier
+  with the eight paths against `6809a9c`: exit 0, PASS (run before the
+  commit, so it lists no committed change; it is run once more after
+  the commit and that result is in the handoff report). Static checks:
+  no `sequence ?? 0` in either extractor; every use of the local
+  sequence helper for an accepted duty or delivery lies behind the
+  check; `package.json`, `package-lock.json`, the logger and the shared
+  extraction helper are unchanged. This entry itself was written after
+  that run; the writer then repeated only the document checks (the two
+  clean documents, the content comparison of the two flagged ones and
+  `git diff --check`).
+- **Not run, by instruction:** the browser route B1–B4, the screenshots
+  and any broad audit — the change is confined to export-time
+  extraction and its pure tests, and touches no runtime behaviour.
+- **Conclusion.** The reproduction failed before the correction and
+  passes after it; checks and review passed with one material document
+  finding corrected. One new local commit
+  `fix(u15): reject unverifiable event ordering` on top of `6809a9c`
+  (not amended; SHA in the handoff report), the eight files staged by
+  name. Nothing was pushed, merged, tagged, deployed, deleted or
+  removed; U16 is not started.

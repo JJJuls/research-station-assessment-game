@@ -163,6 +163,33 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
 
 ## 4. As-built records (appended per unit)
 
+**Unit 15 event-order integrity (M09 / M10 extractors only; 6 October 2026)** — one bounded correction under the research owner's ruling
+§5.259; the "Unit 15" and "Unit 15 closeout" records below stand except
+where this record says so. **Status: a clarification of the provisional
+extraction contract; no gameplay, administration, event, emitted
+payload, formula or version changed; NOT scientifically validated.**
+Both extractors read the ORDER of an accepted duty's / delivery's events
+from the logger's `sequence` numbers. They now do so only when that
+order can be verified: every event of the delivery (M10) or of the watch
+family (M09) in the current page load carries a usable number — an
+integer from 1 — and no two share one. A missing or malformed number is
+no longer read as zero; with a missing, malformed or duplicated number
+the feature is a `technical_failure` and never an observed value. Gaps
+between numbers are normal and not checked. Dispositions that compare no
+positions (never offered, unanswered, declined, held back) are
+unchanged; an accepted duty or delivery that is still open is inside the
+check, so with a defective number it is a `technical_failure` rather
+than `pending`. This resolves §5.258, which had left open that a presence
+record could pass the opening check when the opening's number was
+missing; the equivalent defect was reproduced in M09 before it was
+changed. Tests: pure `e2e/m10_deliveries.spec.ts` and
+`e2e/m09_watch.spec.ts`, "event-order integrity" (missing, malformed and
+duplicated numbers; valid logs with gaps, valid observed outcomes, valid
+missingness and late acts unchanged; frozen inputs and byte-identical
+originals). The browser evidence of Unit 15 is reused and was not
+re-run. Limits: §5.259 (a)–(e). Results: `UNIT-LOG.md`, "U15 event-order
+integrity".
+
 **Unit 15 closeout (M10 extractor only; 6 October 2026)** — one bounded
 correction under two research-owner rulings (§5.256, §5.257); the "Unit
 15" record below stands except where this record says so. **Status: an
@@ -4472,3 +4499,64 @@ version (`m10-deliveries-v1` stands).
      0 / 1. The game's logger numbers every event, so no session log is
      affected; whether an event without a sequence number should fail
      the item — for M10 or for all items — is an owner question.
+     RESOLVED for M09 and M10 by the research owner's ruling §5.259.
+259. **RESEARCH-OWNER RULING — unverifiable event order gets no observed
+     value (U15 event-order integrity).** Source: the owner's
+     instruction of 6 October 2026 for this correction: "an M10 outcome
+     that depends on event order must not receive an observed
+     behavioural value when required ordering evidence is missing or
+     malformed. Do not manufacture an order by substituting zero for a
+     missing sequence number. Use the existing schema's sequence
+     convention; do not require consecutive numbers, since unrelated
+     events may occur between relevant events." The owner also asked for
+     the same specific issue to be checked in M09 and changed only if
+     the equivalent defect existed — it did. Reproduced before the
+     change: (i) a duty whose first check was opened, read and closed
+     BEFORE the acceptance in the log, with the acceptance's number
+     missing, was valued 3 / 3 (with the number present the same log
+     failed); (ii) separately, on a correctly ordered log, an acceptance
+     numbered null, zero, negative, with a fraction or with a string,
+     and an acceptance sharing its number with the presentation, were
+     each still valued 3 / 3 — the order was read from a number that
+     could not carry it. An owner decision, not an implementer default.
+     As built
+     (`src/measurement/features/m10.ts`, `m09.ts`): the convention is the
+     logger's — every event carries `sequence`, an integer from 1,
+     unique within the session identity, increasing; gaps between the
+     events of one item are normal and are not checked. Before an
+     ACCEPTED delivery (M10) or an ACCEPTED duty (M09) is analysed — the
+     part of each extractor that compares positions: acceptance,
+     opening, presence, acts, closure, late acts; acceptance, check
+     openings, readings, closures — every event of that delivery (M10)
+     or of the family (M09) in the current page load must carry a usable
+     number (a safe integer of at least 1; a missing value, null, zero,
+     a negative number, a fraction, a string, NaN, an infinite value and
+     an integer beyond the safe range are not), and no two of them may
+     share one. Otherwise the feature is a
+     `technical_failure` ("an event without a usable sequence number" /
+     "two events share a sequence number"). The extractors no longer
+     read a missing number as zero. An accepted duty or delivery that is
+     STILL OPEN is inside the check: with a defective number it is a
+     `technical_failure`, no longer `pending` (with sound numbers it
+     stays `pending`). Where an extractor picks among several openings
+     (M10: the earliest opening of a delivery; M09: the check openings
+     in turn) it now orders them by their own numbers after the check,
+     and no longer relies on the order in which the shared helper
+     returned them. Unchanged: valid logs (also when
+     numbered with gaps), every observed value, legitimate missingness,
+     the treatment of late acts and of uncredited readings, formulas,
+     denominators, versions, events and payloads. **Limits, stated so
+     that they are not mistaken for settled:** (a) the dispositions that
+     compare no positions — never offered, unanswered, declined, held
+     back after a reload — are not failed by an unnumbered event (they
+     carry no observed value); (b) uniqueness is checked inside the
+     feature's own scope (one delivery; the watch family), not across
+     the whole log — gaps and duplicates of the whole log remain the
+     export's `event_integrity` record; (c) a log renumbered
+     consistently but wrongly cannot be detected from the numbers;
+     (d) the shared helper that sorts the current load
+     (`features/extract.ts`, outside this correction) and the other
+     items' extractors still read a missing number as zero — the same
+     question is open for them; (e) the game's logger numbers every
+     event, so this build's session logs are unaffected — an argument
+     from the logger's code, not a new browser observation.

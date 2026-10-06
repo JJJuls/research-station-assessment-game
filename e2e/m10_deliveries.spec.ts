@@ -1751,6 +1751,394 @@ test.describe('M10 deliveries (pure)', () => {
     });
   });
 
+  test('event-order integrity: an order that cannot be verified never yields an observed value', () => {
+    // Research-owner ruling (register §5.259): an outcome that depends on
+    // event order must not be valued when the ordering evidence is
+    // missing or malformed, and a missing sequence number is never read
+    // as zero. The logger's convention: an integer from 1, unique within
+    // the session; gaps are normal (other events lie in between).
+    type Outcome = {
+      disposition: string;
+      value: unknown;
+      numerator: number | null;
+      denominator: number | null;
+      missing_reason: string | null;
+    };
+    const outcome = (events: readonly RawGameEvent[]): Outcome => {
+      const row = feature(events);
+
+      return {
+        disposition: row.disposition,
+        value: row.value,
+        numerator: row.numerator,
+        denominator: row.denominator,
+        missing_reason: row.missing_reason,
+      };
+    };
+    const clone = (events: readonly RawGameEvent[]) =>
+      JSON.parse(JSON.stringify(events)) as RawGameEvent[];
+    const eventOf = (
+      events: RawGameEvent[],
+      suffix: string,
+      delivery: M10Delivery,
+    ) =>
+      events.find(
+        (e) =>
+          e.event_type === typeOf(suffix) && e.metadata?.delivery === delivery,
+      )!;
+    /** A copy whose one event carries this sequence value (undefined = none). */
+    const resequenced = (
+      events: readonly RawGameEvent[],
+      suffix: string,
+      delivery: M10Delivery,
+      value: unknown,
+    ) => {
+      const copy = clone(events);
+      const event = eventOf(copy, suffix, delivery) as { sequence?: unknown };
+
+      if (value === undefined) {
+        delete event.sequence;
+      } else {
+        event.sequence = value;
+      }
+
+      return copy;
+    };
+
+    // ——— Valid logs (every event numbered by the harness) ———
+    const fulfilled = bothFulfilled().h.events;
+
+    const carriedLog = harness();
+    const carried = offer(carriedLog, 'd1', 'accept', 1_000);
+
+    m10PersonPresent(
+      carried,
+      'kai',
+      'diagnostics_laboratory',
+      'lab_work',
+      1,
+      carriedLog.sink('d1'),
+    );
+    carriedLog.close(carried, 50_000, 'closed_at_review');
+
+    const lateLog = harness();
+    const late = offer(lateLog, 'd1', 'accept', 1_000);
+
+    m10PersonPresent(
+      late,
+      'kai',
+      'diagnostics_laboratory',
+      'lab_work',
+      1,
+      lateLog.sink('d1'),
+    );
+    lateLog.close(late, 50_000, 'closed_at_review');
+    expect(
+      m10HandOver(late, 'kai', KEY_CARD, 60_000, KEY, lateLog.sink('d1')),
+    ).toBe('late');
+
+    const directLog = harness();
+    const direct = offer(directLog, 'd1', 'accept', 1_000);
+
+    m10PersonPresent(
+      direct,
+      'kai',
+      'diagnostics_laboratory',
+      'lab_work',
+      1,
+      directLog.sink('d1'),
+    );
+    m10HandOver(direct, 'kai', KEY_CARD, 9_000, KEY, directLog.sink('d1'));
+    directLog.close(direct, 9_000);
+
+    const unanswered = harness();
+
+    m10Present(createM10State('d1'), 1_000, unanswered.sink('d1'));
+
+    const declined = harness();
+
+    offer(declined, 'd2', 'decline', 1_000);
+
+    const logs: Record<string, RawGameEvent[]> = {};
+
+    // ——— The reproduction of register §5.258 ———
+    {
+      // Presented, accepted, PRESENCE, opened, carried at the deadline —
+      // malformed (the presence precedes the opening). With the opening's
+      // sequence number missing, the order can no longer be read at all.
+      const h = harness();
+      const s = createM10State('d1');
+
+      m10Present(s, 1_000, h.sink('d1'));
+      m10Answer(s, 'accept', 1, 3, 1_400, KEY, h.sink('d1'));
+      h.sink('d1')('person_present', {
+        delivery: 'd1',
+        person: 'kai',
+        role: 'recipient',
+        zone: 'diagnostics_laboratory',
+        stage: 'lab_work',
+        visit: 1,
+        input_mode: 'system',
+      });
+      h.opened('d1');
+      h.close(s, 50_000, 'closed_at_review');
+      expect(outcome(h.events).missing_reason).toBe(
+        'd1: a presence record before the opportunity opened',
+      );
+      logs['the opening without a sequence number, a presence before it'] =
+        resequenced(h.events, 'opportunity_opened', 'd1', undefined);
+    }
+
+    {
+      // A handover that precedes the acceptance in the log — malformed.
+      // With the acceptance's number missing the order cannot be read.
+      const moved = rewrite(directLog.events, (copy) => {
+        const answer = copy.findIndex(
+          (e) => e.event_type === typeOf('offer_answered'),
+        );
+        const [act] = copy.splice(
+          copy.findIndex((e) => e.event_type === typeOf('handed_over')),
+          1,
+        );
+
+        copy.splice(answer, 0, act);
+
+        return copy;
+      });
+
+      expect(outcome(moved).missing_reason).toBe(
+        'd1: an act before the acceptance',
+      );
+      logs['the acceptance without a sequence number, a handover before it'] =
+        resequenced(moved, 'offer_answered', 'd1', undefined);
+    }
+
+    // ——— Missing and malformed numbers on events the order is read from ———
+    logs['a presence record without a sequence number'] = resequenced(
+      fulfilled,
+      'person_present',
+      'd1',
+      undefined,
+    );
+    logs['a late act without a sequence number'] = resequenced(
+      lateLog.events,
+      'late_handover',
+      'd1',
+      undefined,
+    );
+    logs['a handover without a sequence number'] = resequenced(
+      fulfilled,
+      'handed_over',
+      'd1',
+      undefined,
+    );
+
+    // An accepted delivery that is still open is inside the check: with
+    // a defective number it is a technical failure, not `pending`.
+    const openLog = harness();
+    const stillOpen = offer(openLog, 'd1', 'accept', 1_000);
+
+    m10PersonPresent(
+      stillOpen,
+      'kai',
+      'diagnostics_laboratory',
+      'lab_work',
+      1,
+      openLog.sink('d1'),
+    );
+    logs['still open, a presence record unnumbered'] = resequenced(
+      openLog.events,
+      'person_present',
+      'd1',
+      undefined,
+    );
+    logs['valid, still open'] = openLog.events;
+
+    for (const [label, value] of [
+      ['null', null],
+      ['zero', 0],
+      ['a negative number', -3],
+      ['a fraction', 2.5],
+      ['a string', '9'],
+      ['an unsafe integer', 2 ** 53],
+    ] as const) {
+      logs[`the closure numbered with ${label}`] = resequenced(
+        fulfilled,
+        'window_closed',
+        'd1',
+        value,
+      );
+    }
+
+    logs['the acceptance numbered with a string'] = resequenced(
+      fulfilled,
+      'offer_answered',
+      'd2',
+      String(eventOf(clone(fulfilled), 'offer_answered', 'd2').sequence),
+    );
+
+    // ——— Ambiguous: two events of one delivery share a number ———
+    logs['two events of one delivery sharing a number'] = resequenced(
+      fulfilled,
+      'delegate_accepted',
+      'd2',
+      eventOf(clone(fulfilled), 'person_present', 'd2').sequence,
+    );
+
+    // ——— Valid records that must stay as they were ———
+    // Gaps are normal: other events lie between the relevant ones.
+    logs['valid, numbered with gaps'] = clone(fulfilled).map((event) => ({
+      ...event,
+      sequence: (event.sequence ?? 0) * 7 + 100,
+    }));
+    logs['valid, direct and delegated'] = fulfilled;
+    logs['valid, carried at the deadline'] = carriedLog.events;
+    logs['valid, a late handover after the deadline'] = lateLog.events;
+    // Dispositions that read no order are untouched by an unnumbered event.
+    logs['unanswered, the presentation unnumbered'] = resequenced(
+      unanswered.events,
+      'presented',
+      'd1',
+      undefined,
+    );
+    logs['declined, the answer unnumbered'] = resequenced(
+      declined.events,
+      'offer_answered',
+      'd2',
+      undefined,
+    );
+
+    const before = Object.fromEntries(
+      Object.entries(logs).map(([name, events]) => [
+        name,
+        JSON.stringify(events),
+      ]),
+    );
+    const outcomes = Object.fromEntries(
+      Object.keys(logs).map((name) => [
+        name,
+        outcome(deepFreeze(JSON.parse(before[name]) as RawGameEvent[])),
+      ]),
+    );
+    const failed = (missing_reason: string): Outcome => ({
+      disposition: 'technical_failure',
+      value: null,
+      numerator: null,
+      denominator: null,
+      missing_reason,
+    });
+    const unnumbered = 'an event without a usable sequence number';
+
+    expect(outcomes).toEqual({
+      'the opening without a sequence number, a presence before it': failed(
+        `d1: ${unnumbered}`,
+      ),
+      'the acceptance without a sequence number, a handover before it': failed(
+        `d1: ${unnumbered}`,
+      ),
+      'a presence record without a sequence number': failed(
+        `d1: ${unnumbered}`,
+      ),
+      'a late act without a sequence number': failed(`d1: ${unnumbered}`),
+      'a handover without a sequence number': failed(`d1: ${unnumbered}`),
+      'still open, a presence record unnumbered': failed(`d1: ${unnumbered}`),
+      'valid, still open': {
+        disposition: 'pending',
+        value: null,
+        numerator: null,
+        denominator: null,
+        missing_reason: 'a delivery is still open',
+      },
+      'the closure numbered with an unsafe integer': failed(
+        `d1: ${unnumbered}`,
+      ),
+      'the closure numbered with null': failed(`d1: ${unnumbered}`),
+      'the closure numbered with zero': failed(`d1: ${unnumbered}`),
+      'the closure numbered with a negative number': failed(
+        `d1: ${unnumbered}`,
+      ),
+      'the closure numbered with a fraction': failed(`d1: ${unnumbered}`),
+      'the closure numbered with a string': failed(`d1: ${unnumbered}`),
+      'the acceptance numbered with a string': failed(`d2: ${unnumbered}`),
+      'two events of one delivery sharing a number': failed(
+        'd2: two events share a sequence number',
+      ),
+      'valid, numbered with gaps': {
+        disposition: 'observed',
+        value: 2,
+        numerator: 2,
+        denominator: 2,
+        missing_reason: null,
+      },
+      'valid, direct and delegated': {
+        disposition: 'observed',
+        value: 2,
+        numerator: 2,
+        denominator: 2,
+        missing_reason: null,
+      },
+      'valid, carried at the deadline': {
+        disposition: 'observed',
+        value: 0,
+        numerator: 0,
+        denominator: 1,
+        missing_reason: null,
+      },
+      'valid, a late handover after the deadline': {
+        disposition: 'observed',
+        value: 0,
+        numerator: 0,
+        denominator: 1,
+        missing_reason: null,
+      },
+      'unanswered, the presentation unnumbered': {
+        disposition: 'no_eligible_event',
+        value: null,
+        numerator: null,
+        denominator: 0,
+        missing_reason: 'no delivery offer answered',
+      },
+      'declined, the answer unnumbered': {
+        disposition: 'declined',
+        value: null,
+        numerator: null,
+        denominator: 0,
+        missing_reason: 'every answered offer declined',
+      },
+    });
+
+    // Numbers that are not usable numbers at all (they cannot survive
+    // JSON, so they are checked directly — the value itself unchanged).
+    for (const value of [Number.NaN, Number.POSITIVE_INFINITY]) {
+      const copy = clone(fulfilled);
+      const closure = eventOf(copy, 'window_closed', 'd1');
+
+      closure.sequence = value;
+      expect(outcome(copy), String(value)).toEqual(failed(`d1: ${unnumbered}`));
+      expect(Object.is(closure.sequence, value), String(value)).toBe(true);
+    }
+
+    // The late act is still kept apart from the first outcome.
+    expect(deliveries(feature(lateLog.events)).d1.late_act).toMatchObject({
+      kind: 'late_handover',
+      to: 'kai',
+    });
+    expect(deliveries(feature(lateLog.events)).d1.path).toBe(
+      'unfulfilled_at_deadline',
+    );
+
+    // Immutability: the rows above came from deeply frozen copies; the
+    // original logs are extracted here and compared with their text from
+    // before, and a second extraction gives the same row.
+    for (const [name, events] of Object.entries(logs)) {
+      const first = JSON.stringify(feature(events));
+
+      expect(JSON.stringify(events), name).toBe(before[name]);
+      expect(JSON.stringify(feature(events)), name).toBe(first);
+      expect(JSON.stringify(events), name).toBe(before[name]);
+    }
+  });
+
   test('extraction is pure and deterministic: the raw log is byte-identical before and after, and prior page loads never count', () => {
     const { h } = bothFulfilled();
     const before = JSON.stringify(h.events);
