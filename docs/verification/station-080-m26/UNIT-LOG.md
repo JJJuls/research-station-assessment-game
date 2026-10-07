@@ -6795,3 +6795,189 @@ Implementer defaults (owner-visible, reversible, none changes the approved formu
   on top of `283cd89` (not amended; SHA in the handoff report), the 22
   files staged by name. Nothing was pushed, merged, tagged, deployed,
   deleted or removed; U17 is not started.
+
+## U16 closeout — bench instructions and control regression (7 October 2026)
+
+- **Authorization (research owner).** Four changes are approved for
+  the closeout of U16. (1) The neutral instruction "You may leave
+  pieces unused." is to be visible in the initial task instructions
+  before the first recorded answer and consistent with the help text;
+  no solution, minimum piece count or preferred arrangement is
+  disclosed. (2) The practice notice's claim that practice changes
+  "nothing else on the shift" is to be replaced with "Practice does
+  not change your three recorded answers."; M04's first-departure
+  behaviour is preserved. (3) A focused browser regression of the HELP
+  and STOP corrections recorded in register §5.273 (e), on the real
+  overlay through the route drivers, plus two focused screenshots of
+  the revised initial instruction and practice notice. (4) A corrected
+  description of the `ip_boundaries` baseline comparison. The
+  closeout's allowed subset is seven paths:
+  `src/informationProcessing/ui/PipeBoardScene.ts` (approved wording),
+  `e2e/m13_networks_route.spec.ts`, `e2e/m13_networks.spec.ts` (only if
+  wording expectations require it) and the four documents. The
+  24-path guard stays in place. One additional local commit
+  `fix(m13): clarify bench instructions and verify controls` is made
+  only if the checks and the review support completion; 6a60e34 is not
+  amended.
+- **Routing amendment.** Sonnet 5.5 is the sole writer of this
+  closeout (replacing Fable) and also executes the focused tests; one
+  Opus 5.5 review is read-only; the orchestrating session (Opus 5.5)
+  does not edit.
+- **Entry state.** Worktree
+  `C:\Users\Juls\.codex\worktrees\u16-m13\research-station-assessment-game`,
+  branch `codex/u16-m13`, HEAD
+  `6a60e34ae4d2052842f75a86a100ae82da627520` (the U16 commit; the base
+  of the unit was 283cd89); tracked tree clean. Two UNTRACKED
+  directories exist: `.agents/` (with `skills/`) and `.codex/` (with
+  `agents/`, `config.toml`, `hooks.json`), both created 7 October
+  13:56, after the U16 commit and not by this unit; they are never
+  touched, staged or deleted. The inherited `CLAUDE_UNIT_ALLOWLIST` is
+  the 24 U16 paths; `PW_DEV_PORT=5197`,
+  `U16_OUT=.playwright-mcp/u16-evidence`; `node_modules` is a junction
+  to the primary checkout.
+- **SCOPE FINDING — changes (1) and (2) are NOT implemented in this
+  pass.** The wording of changes (1) and (2) does not live in
+  `PipeBoardScene.ts`: the overlay only renders the view produced by
+  the series model. It lives in
+  `src/informationProcessing/m13NetworkSeries.ts`, which is outside
+  the closeout's subset: `M13N_TEXT.rules` (line 305, the initial
+  instruction); `M13N_TEXT.practice_notice` (line 339, "Practice is
+  optional. It changes nothing in your recorded answers and nothing
+  else on the shift."); the results / practice help sheet
+  `M13N_HELP_RESULTS` (lines 454–455, the same claim); and the
+  first-response help sheet `M13N_HELP_FIRST_RESPONSES` (line 428
+  onwards), which would carry the matching sentence about unused
+  pieces. Changing them means editing a file outside the allowed
+  subset. There is no silent expansion of the subset and no
+  presentation override in the overlay; changes (1) and (2) are put
+  to the owner for a decision on widening the subset. The independent
+  parts (3) and (4) proceed.
+- **Correction — the `ip_boundaries` baseline comparison (change
+  4).** This supersedes two passages of "U16 results" above, whose
+  text is left as written because the log is a record: item (3) of the
+  exceptions list (the `ip_boundaries.spec.ts:87` entry, including the
+  parenthesis that calls the M13 family name "the only difference in
+  the printed message"), and the clause "All three are pre-existing
+  and unrelated to M13". Re-read from the kept outputs (current tree:
+  `matrix/B2b.txt` and `work-ip_boundaries-shakeout.txt`; base export
+  of 283cd89: `matrix/B2b_base.txt` and `base-ip_boundaries.txt`),
+  nothing rerun. Test: `e2e/ip_boundaries.spec.ts:87:7`, "scientific
+  boundaries (runtime) › families are pairwise disjoint; missing stays
+  missing; failure never gates the next opportunity". Failing
+  assertion, on both trees at `e2e/ip_boundaries.spec.ts:101:42`:
+  `expect(Object.keys(families).sort()).toEqual([...FAMILIES].sort())`
+  (the families declared at lab boot against the spec's list). Failing
+  step: both trees stop at that assertion, the first expectation after
+  the lab-boot probe (`ipModules`); the later lines of the test do not
+  run. Diff shown on both: "Expected − 1, Received + 0", the single
+  expected entry `proto_m17_syntax` missing from the received
+  families. Differences between the printed outputs: (a) the context
+  line of the M13 family — `proto_m13_lattice` on the base,
+  `proto_m13_networks` in the working tree (this unit's own rename);
+  (b) the absolute path in the stack frame (the scratchpad
+  `base-283cd89` export against the worktree); (c) the duration (1.7 s
+  and 1.8 s on the base runs, 1.9 s on the current tree); (d) the base
+  runs contained only this one test (`--grep`), the current-tree runs
+  show it as the third test of three (B2b) or of a longer list. The
+  assertion, the line and column, the step and the underlying failure
+  (the missing `proto_m17_syntax` family) are the same.
+- **Limitation of that classification.** The contract's literal
+  criterion for "pre-existing" requires the same assertion, the same
+  message and the same step. Assertion and step are the same, and the
+  underlying failure is the same, but the printed message is NOT
+  identical (difference (a)). The classification of the failure as
+  pre-existing therefore rests on that reasoning, not on a literal
+  match of the printed output.
+- **What that failed run does not verify.** The failed run did not
+  verify the later M13 check of that test (the never-opened
+  `proto_m13_network_series` record not entered, pending). The
+  alternative evidence stays: R4 (`not_presented` before the bench
+  opens) and the `pilot_lab` test "M18 independence on the route"
+  (history 1, never opened: `entered` false, item pending).
+- **Owner decision on the scope finding (7 October 2026).**
+  m13NetworkSeries.ts added to the closeout subset for the approved
+  wording only, by the research owner's answer to the scope question
+  of 7 October 2026; the guard's 24 paths unchanged.
+  `e2e/m13_networks.spec.ts` may be updated where its wording
+  expectations require it. Nothing else changes: no logic, events,
+  scoring, configurations, order, forms, pending handling, reload
+  policy or practice access. Changes (1) and (2) now proceed (the
+  scope-finding bullet above is kept as written; it is the true record
+  of the entry state). Interpretation recorded: the approved sentence
+  "Practice does not change your three recorded answers." replaces
+  only the old claim "It changes nothing in your recorded answers and
+  nothing else on the shift"; the opening words "Practice is optional."
+  are kept, because the ruling makes practice voluntary. The new
+  practice notice reads "Practice is optional. Practice does not
+  change your three recorded answers."
+- **Files changed and runs (closeout, by the sole writer, Sonnet
+  5.5; not yet reviewed or committed).** Files:
+  `src/informationProcessing/m13NetworkSeries.ts` (the rule line gains
+  "You may leave pieces unused."; the same line in the first-response
+  help sheet after "A fractured mount seats nothing."; the practice
+  notice and the two results-help lines carry the new practice
+  sentence), `e2e/m13_networks.spec.ts` (two expectations of the old
+  notice updated; assertions added to the wording test),
+  `e2e/m13_networks_route.spec.ts` (new test R6; R1's notice
+  assertion, plus frames 19 and 20), and the register and matrix
+  (§4 "Unit 16" (3), §5.271 (a), §5.273 (b), (c), (e), the corrected
+  `ip_boundaries` sentence, new §5.274; matrix test line).
+  `PipeBoardScene.ts` was not changed. Other occurrences of the old
+  strings in `src/`: none. Runs: R6 passed (56 s, and again
+  55 s after two lint-only edits); `m13_networks.spec.ts` 42
+  passed; R1 passed (1.5 min) with frames 19, 20 and 12 viewed: the
+  new rule line, the practice notice and the help sheet are complete,
+  unclipped and legible at 800 × 600, and the help sheet fits its
+  panel; ESLint on the three changed code files clean; the type
+  check (`tsc --noEmit -p .`) clean.
+- **Further passages of "U16 results" superseded (record kept as
+  written).** (a) Register §5.273 (b) and (c) are settled by the
+  owner's closeout wording (§5.274); the "Open, for the research
+  owner" bullet of "U16 results" is superseded for those two items
+  (the other items stay open). (b) The "Conclusion" bullet of "U16
+  results" ("three pre-existing failures reproduced on the base") is
+  superseded for `ip_boundaries` by the correction above, together
+  with the other passages named there.
+- **Evidence frames mix two builds.** In
+  `.playwright-mcp/u16-evidence/` frames 01–12, 19 and 20 come from
+  the closeout build (focused R1 / R6 run, 16:06–16:07) and 13–18
+  from the unit build of 6a60e34 (06:10–06:18); 13, 14 and 15 show
+  the earlier rule line. R2–R5 were not rerun, by instruction ("do
+  not rerun the full U16 matrix"); whether to regenerate them is the
+  owner's call. Frames 19 and 20 are second captures of the same
+  views as 02 and 10 (identical files), added as the two focused
+  screenshots.
+- **Focused verification results (test-reviewer, Sonnet 5.5; raw
+  outputs in the session scratchpad `closeout-matrix/`).** Typecheck
+  and build clean; ESLint clean on the three code files; pure spec 42
+  passed; R1 1 passed (1.4 min) and R6 1 passed (54.6 s), no nudges,
+  none skipped or blocked; `git diff --check` clean. Prettier flags
+  `IMPLEMENTATION-MATRIX.md` and `UNIT-LOG.md`, both also failing at
+  6a60e34; by content the closeout added exactly one difference (the
+  indent fixed in review round 1), the rest is unchanged older text.
+  `verify-unit.mjs --base 6a60e34 --allow <the eight subset paths>`
+  fails only on the untracked `.agents/` and `.codex/` files
+  (created after the unit commit, not by this closeout, untouched,
+  not staged); the six changed files are inside the subset. Process
+  deviation: the test-reviewer's first scratch-copy Prettier attempt
+  ran `npx.cmd prettier` outside the project; npx announced it would
+  fetch prettier 3.9.9 into the npm cache (not into the project);
+  that output was discarded and redone with the project's Prettier.
+- **Review (Opus 5.5, both role lenses) and round 1.** One material
+  finding: R6's title, the spec header and register §5.273 (e)
+  claimed that a piece returned from a mount records no
+  `piece_returned` / `piece_placed` event, but R6 asserted the counts
+  only in the bench / HELP case; fixed by strengthening the test (the
+  counts are taken before `q` and asserted unchanged after the STOP
+  dialog opens and after ESC; R6 passed again, 55.9 s). Minor
+  findings left, one reason each: recovery shown by three enabled
+  buttons plus a pointer HELP, with the STOP button and post-drag
+  keyboard manipulation not exercised (the approved scope is the
+  HELP / STOP refusals and return); the drag refusals are negative
+  assertions supported by an earlier H in the same test (the same
+  key opens help when no drag is active); fixed short waits as
+  elsewhere in the spec; ESC during a drag leaves the scene's drag
+  flag set until mouse-up (outside the four approved changes, not
+  changed); neither alternative-evidence run asserts the legacy-lab
+  `ipValidity(...).validity === 'pending'` field exactly (not part of
+  this closeout). Open owner questions: register §5.274 (i)–(iii).

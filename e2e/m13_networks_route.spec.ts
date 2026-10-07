@@ -29,8 +29,11 @@
  *   R5  n1 answered, then a page reload: the earlier load carried
  *       byte-identically, the feature `interrupted`; the bench, when
  *       reachable again, held back.
+ *   R6  HELP and STOP with a held piece (returned without an event) and
+ *       during a pointer drag (both refused); the recorded answer of
+ *       n1 untouched; the controls usable afterwards.
  *
- * Eighteen evidence frames (800 × 600) go to `U16_OUT`. Nothing here
+ * Twenty evidence frames (800 × 600) go to `U16_OUT`. Nothing here
  * establishes psychometric validity.
  */
 import { mkdirSync } from 'node:fs';
@@ -305,6 +308,11 @@ test.describe('M13 three keyed networks on the route (Unit 16)', () => {
     ).toEqual(['B2']);
     await expectNoCorrectnessOnScreen(page);
     await shot(page, '02-network-1-untouched');
+    // The approved closeout wording of the initial instruction.
+    expect(probe.lines.join('\n')).toContain(
+      'Build one run from the FEED port to the INTAKE port. It must pass through the isolation valve and leave no pipe end loose. A fractured mount seats nothing. You may leave pieces unused.',
+    );
+    await shot(page, '19-revised-initial-instruction');
 
     // A piece held by keyboard (the focus ring carries it).
     await latticeFocus(page, 'bench', '2');
@@ -491,11 +499,13 @@ test.describe('M13 three keyed networks on the route (Unit 16)', () => {
     expect(results).toMatch(/Open branches on the run: 1\./);
     expect(results).toMatch(/The run is not sealed\./);
     expect(results).toMatch(/Network 3 — recorded answer: cannot solve\./);
-    expect(results).toMatch(
-      /Practice is optional\. It changes nothing in your recorded answers and nothing else on the shift\./,
+    expect(results).toContain(
+      'Practice is optional. Practice does not change your three recorded answers.',
     );
+    expect(results).not.toMatch(/nothing else on the shift/i);
     expect(results).not.toMatch(FORBIDDEN);
     await shot(page, '10-results-view');
+    await shot(page, '20-revised-practice-notice');
     await stable('results opened');
 
     // ——— Practice on network 3 (after CANNOT SOLVE): sealed in practice ———
@@ -1002,6 +1012,180 @@ test.describe('M13 three keyed networks on the route (Unit 16)', () => {
     expect((await familyEvents(page)).length).toBe(before);
     expect(await countOf(page, 'first_response')).toBe(0);
     await expectStage(page, 'workshop_work');
+    await expectFamilyDiscipline(page, 'A');
+    expectNoRuntimeErrors(errors);
+  });
+
+  test('R6 (HELP and STOP with a held piece and during a pointer drag): a held piece returns without an event; a drag refuses both dialogs and is then dropped normally; the recorded answer is untouched', async ({
+    page,
+  }) => {
+    test.setTimeout(900_000);
+
+    const errors = captureErrors(page);
+
+    await toWorkshop(page, 'u16r6', 'A');
+    // KEYBOARD NAVIGATION: to the bench.
+    await openBench(page);
+
+    // KEYBOARD (in the bench): network 1 answered; network 2 open.
+    await seatLatticeByKeyboard(
+      page,
+      latticeLayout(LATTICE_LAYOUTS.A.n1.sealed),
+    );
+    await commitLatticeByKeyboard(page);
+    await latticeNext(page, 'keyboard');
+    expect((await pipeSeries(page)).network_id).toBe('n2');
+
+    const answered = await firstResponses(page);
+
+    expect(await countOf(page, 'first_response')).toBe(1);
+
+    const emptyMounts = (await pipeProbe(page)).cells
+      .filter((cell) => cell.piece_id === null && !cell.broken)
+      .map((cell) => cell.slot);
+
+    expect(emptyMounts).toEqual(expect.arrayContaining(['A1', 'A3']));
+
+    // ——— A piece held from the bench, then HELP ———
+    // KEYBOARD (in the bench): bench slot 0 is st1; SPACE lifts it.
+    await latticeFocus(page, 'bench', '0');
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(120);
+    expect((await pipeProbe(page)).held).toMatchObject({ piece_id: 'st1' });
+
+    const helpBefore = await countOf(page, 'help_consulted');
+    const returnedBefore = await countOf(page, 'piece_returned');
+    const placedBefore = await countOf(page, 'piece_placed');
+
+    await page.keyboard.press('h');
+    await page.waitForTimeout(200);
+
+    let probe = await pipeProbe(page);
+
+    expect(probe.help_open).toBe(true);
+    expect(probe.held).toBeNull();
+    expect((await pipeBenchPiece(page, 'st1')).index).toBe(0);
+    expect(await countOf(page, 'help_consulted')).toBe(helpBefore + 1);
+    expect(await countOf(page, 'piece_returned')).toBe(returnedBefore);
+    expect(await countOf(page, 'piece_placed')).toBe(placedBefore);
+
+    // One ESC closes the help; the bench stays open.
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+    probe = await pipeProbe(page);
+    expect(probe.help_open).toBe(false);
+    expect(probe.open).toBe(true);
+    expect(probe.dialog).toBeNull();
+
+    // ——— A piece lifted from a mount, turned once, then STOP TASK ———
+    // KEYBOARD (in the bench): seat el1 on the empty mount A1, lift it,
+    // turn it once.
+    await latticeFocus(page, 'bench', '2');
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(70);
+    await latticeFocus(page, 'cell', 'A1');
+    await page.keyboard.press('Space');
+    await waitCellPiece(page, 'A1', 'el1', 0);
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(120);
+    await page.keyboard.press('r');
+    await page.waitForTimeout(120);
+    probe = await pipeProbe(page);
+    expect(probe.held).toMatchObject({ piece_id: 'el1', rotation: 90 });
+
+    const stoppedBefore = await countOf(page, 'series_stopped');
+    const returnedMount = await countOf(page, 'piece_returned');
+    const placedMount = await countOf(page, 'piece_placed');
+
+    await page.keyboard.press('q');
+    await page.waitForTimeout(200);
+    probe = await pipeProbe(page);
+    expect(probe.dialog).toBe('stop');
+    expect(probe.held).toBeNull();
+    // Back on its mount with the rotation it had while held.
+    await waitCellPiece(page, 'A1', 'el1', 90);
+    // The return from the mount records no event.
+    expect(await countOf(page, 'piece_returned')).toBe(returnedMount);
+    expect(await countOf(page, 'piece_placed')).toBe(placedMount);
+
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+    probe = await pipeProbe(page);
+    expect(probe.dialog).toBeNull();
+    expect(probe.open).toBe(true);
+    expect(await countOf(page, 'series_stopped')).toBe(stoppedBefore);
+    expect(await countOf(page, 'piece_returned')).toBe(returnedMount);
+    expect(await countOf(page, 'piece_placed')).toBe(placedMount);
+    expect((await pipeSeries(page)).status).toBe('first_responses');
+
+    // ——— A pointer drag in progress: HELP and STOP refuse ———
+    // POINTER (in the bench): st1 is lifted, nudged past the threshold and
+    // held in mid-air with the button down.
+    {
+      const bench = await pipeBenchPiece(page, 'st1');
+      const from = await rectCenter(page, { ...bench, y: bench.y - 8 });
+      const to = await rectCenter(page, await pipeCell(page, 'A3'));
+      const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
+
+      await page.mouse.move(from.x, from.y);
+      await page.mouse.down();
+      await page.mouse.move(from.x + 12, from.y + 10, { steps: 3 });
+      await page.mouse.move(mid.x, mid.y, { steps: 6 });
+      await page.waitForTimeout(150);
+      expect((await pipeProbe(page)).dragging).toBe(true);
+
+      const helpDuring = await countOf(page, 'help_consulted');
+      const placedDuring = await countOf(page, 'piece_placed');
+
+      // KEYBOARD (in the bench): the keys pressed while the button is down.
+      await page.keyboard.press('h');
+      await page.waitForTimeout(150);
+      probe = await pipeProbe(page);
+      expect(probe.help_open).toBe(false);
+      expect(probe.dialog).toBeNull();
+      expect(probe.dragging).toBe(true);
+      await page.keyboard.press('q');
+      await page.waitForTimeout(150);
+      probe = await pipeProbe(page);
+      expect(probe.help_open).toBe(false);
+      expect(probe.dialog).toBeNull();
+      expect(probe.dragging).toBe(true);
+      expect(await countOf(page, 'help_consulted')).toBe(helpDuring);
+
+      // POINTER: glide to the empty mount and release — a normal drop.
+      await page.mouse.move(to.x, to.y - 6, { steps: 6 });
+      await page.waitForTimeout(150);
+      await page.mouse.move(to.x, to.y, { steps: 3 });
+      await page.waitForTimeout(120);
+      await page.mouse.up();
+      await waitCellPiece(page, 'A3', 'st1');
+      probe = await pipeProbe(page);
+      expect(probe.dragging).toBe(false);
+      expect(await countOf(page, 'piece_placed')).toBe(placedDuring + 1);
+    }
+
+    // ——— Recovery: the controls still work ———
+    for (const id of ['record_layout', 'cannot_solve', 'help']) {
+      expect((await pipeButton(page, id)).enabled, `${id} is enabled`).toBe(
+        true,
+      );
+    }
+
+    // POINTER: a final HELP opens and closes normally.
+    await clickPipeButton(page, 'help');
+    expect((await pipeProbe(page)).help_open).toBe(true);
+    await clickRect(page, { x: 380, y: 290, w: 40, h: 20 });
+    expect((await pipeProbe(page)).help_open).toBe(false);
+
+    expect(await countOf(page, 'first_response')).toBe(1);
+    expect(await countOf(page, 'commit_requested')).toBe(1);
+    expect(await countOf(page, 'series_stopped')).toBe(0);
+    expect(await firstResponses(page)).toBe(answered);
+    expect(await pipeSeries(page)).toMatchObject({
+      status: 'first_responses',
+      view: 'network',
+      network_id: 'n2',
+    });
     await expectFamilyDiscipline(page, 'A');
     expectNoRuntimeErrors(errors);
   });

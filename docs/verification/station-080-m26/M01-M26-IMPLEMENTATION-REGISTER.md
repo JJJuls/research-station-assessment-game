@@ -298,8 +298,9 @@ view). The fixed strings of the contract are used unchanged. Two
 wordings were chosen here: (i) the rule line of the first-response
 phase — "Build one run from the FEED port to the INTAKE port. It must
 pass through the isolation valve and leave no pipe end loose. A
-fractured mount seats nothing." — and (ii) the help sheet of that
-phase. Both are written without the words "connected", "sealed",
+fractured mount seats nothing. You may leave pieces unused." (the
+last sentence added by the owner's closeout wording, §5.274) — and
+(ii) the help sheet of that phase. Both are written without the words "connected", "sealed",
 "inline" and "open branch"; those words appear only after the third
 answer (§5.271).
 
@@ -316,7 +317,8 @@ answer (§5.271).
 - Results. "All three answers are recorded."; per network "Network N —
   recorded answer:" with the three structural lines and "The run is
   sealed." / "The run is not sealed.", or "… recorded answer: cannot
-  solve."; "Practice is optional. …"; PRACTISE NETWORK N (K test runs
+  solve."; "Practice is optional. Practice does not change your three
+  recorded answers." (owner's closeout wording, §5.274); PRACTISE NETWORK N (K test runs
   left) for each network (keys 1 / 2 / 3); FINISH (F).
 - Practice. Header "Network N of 3 — practice"; the board as it stood
   at the answer, editable; TEST FLOW (T) answers with the three
@@ -422,8 +424,10 @@ the register row and route; the two phases of the model; the
 extractor's values, the stability of the completed row through every
 practice state, legitimate missingness, every integrity case of the
 addendum and the sequence convention; the wording. Browser on the
-participant route, `e2e/m13_networks_route.spec.ts` — 6 tests passed,
-eighteen frames: R1 keyboard in the bench, form A (sealed layout,
+participant route, `e2e/m13_networks_route.spec.ts` — seven tests
+(R1–R6, R5 has two), twenty frames (frames 13–18 from the unit build of
+6a60e34, 01–12, 19 and 20 from the closeout build; `UNIT-LOG.md` "U16
+closeout"): R1 keyboard in the bench, form A (sealed layout,
 unsealed layout, CANNOT SOLVE → 1 / 3 observed; a too-early and a held
 ENTER refused; results; practice; leave and reopen; FINISH), R2 pointer
 in the bench, form B (3 / 3; a double click records once; left mid
@@ -431,19 +435,29 @@ network 2 and reopened on the same board), R3 (one answer, then the
 review: incomplete over 1, censored, `closed_at_review`; the bench a
 record afterwards), R4 (`not_presented`, then STOP without an answer:
 null `voluntary_stop`), R5 (reload: the earlier load byte-identical,
-`interrupted`; the bench reached again and held back). No scenario was
+`interrupted`; the bench reached again and held back), R6 (HELP and
+STOP with a held piece and during a pointer drag; added by the
+closeout). No scenario was
 blocked and none skipped. Walking and the station prompt are driver
 keyboard navigation in every scenario, R2 included. Regression:
 `ip_pipe_suite` 19 passed, `ip_lab_flow` 4, the `pilot_lab` M18
 independence test and the `pilot_episodes_1_2` episode-2 test passed.
-Exceptions, all reproduced with the same assertion on an untouched
-export of `283cd89` and none on an M13 step: two tests of
-`final_scientific_gates` (M08 / M11 schedule; exterior comprehension
-count) and the runtime test of `ip_boundaries` (the lab no longer
-declares `proto_m17_syntax`); the lines of that `ip_boundaries` test
-after its failing assertion — among them the never-opened M13
-opportunity record — were not reached in that run, and that record is
-evidenced by R4 and by the `pilot_lab` test instead. Passing tests
+Exceptions, none on an M13 step, each compared with an untouched
+export of `283cd89`: two tests of `final_scientific_gates` (M08 / M11
+schedule; exterior comprehension count), reproduced with the same
+assertion and value, and the runtime test of `ip_boundaries`
+(`ip_boundaries.spec.ts:87`; the lab no longer declares
+`proto_m17_syntax`). For `ip_boundaries` both trees stop at the same
+assertion (line 101, the family list) with the same single missing
+entry, but the printed message is not identical: its context line
+names `proto_m13_lattice` on the base and `proto_m13_networks` here
+(this unit's own rename), and the stack paths and durations differ.
+Its classification as pre-existing therefore rests on the same
+assertion, step and underlying failure, not on a literal match of the
+message the contract asks for (`UNIT-LOG.md` "U16 closeout"). The
+lines of that test after its failing assertion — among them the
+never-opened M13 opportunity record — were not reached in that run, and
+that record is evidenced by R4 and by the `pilot_lab` test instead. Passing tests
 establish that the build does what this record says, not that the
 measure is valid.
 
@@ -4997,7 +5011,9 @@ the ruling, and none is an owner decision.
      question, not decided here.
 271. **Recorded engineering choices of U16 (inside the procedure; none
      changes an answer, a denominator or the formula).** (a) Wording:
-     the fixed strings of the contract are unchanged; the rule line and
+     the fixed strings of the contract are unchanged (except the
+     practice notice and the rule line's last sentence, replaced or
+     added by the owner's closeout wording, §5.274); the rule line and
      the help sheet of the first-response phase were written without
      the words "connected", "sealed", "inline" and "open branch", so
      the rules read "one run from the FEED port to the INTAKE port …
@@ -5039,19 +5055,20 @@ the ruling, and none is an owner decision.
      first-response phase that has no closure record at all: `pending`
      as built (the contract's literal rule, §5.267 (ii)) or cut short
      as M17 does (U9, S-L9). The runtime cannot produce such a log.
-     (b) **For the owner** — the rule line never says that pieces may
-     stay on the bench unused; some participants may believe all nine
-     must be seated. The v2 text did not say it either; adding it is a
-     wording decision with a possible hint value. (c) Practice acts at
+     (b) **Settled by the owner's closeout wording (§5.274)** — the
+     rule line did not say that pieces may stay on the bench unused;
+     the sentence "You may leave pieces unused." is now its last
+     sentence and is in the help sheet. (c) Practice acts at
      the bench (pieces seated, test runs) change the workshop's
      recorded-work signature exactly as the v2 flow tests did; that
      signature is what M04's first-departure rule reads (§4 "Unit
      14-D" (6)), so working at the bench in practice counts as work at
      another station, as any bench act always has. The fixed practice
-     notice says practice changes "nothing else on the shift": true
-     of everything the participant can see or is paid for, while a
-     practice act can still be the M04 first-departure signal — a
-     measurement consequence, **for the owner** to weigh. (d) A refused
+     notice no longer says practice changes "nothing else on the
+     shift" (settled by the owner's closeout wording, §5.274: it now
+     says "Practice does not change your three recorded answers.");
+     the M04 first-departure point itself stands — practice remains
+     an act at another station under the existing rule. (d) A refused
      too-early press (the confirmation's 400 ms, the acknowledgement's
      400 ms) gives no on-screen or audible sign; the participant
      presses again. It is the same for every answer. (e) Behaviours
@@ -5060,10 +5077,18 @@ the ruling, and none is an owner decision.
      pointer drag or with a commitment dialog open; a pointer click
      inside the confirmation's first 400 ms; help opened in the results
      and practice phase; the legacy laboratory's gate while the
-     first-response phase is open; the acknowledgement's 400 ms; and
-     the two overlay corrections of round 1 (help and STOP not opening
-     during a drag, and returning a held piece first), which were
-     confirmed by review of the source, not by a test. The keyboard side of the fresh-press
+     first-response phase is open; the acknowledgement's 400 ms.
+     The two overlay corrections of round 1 (help and STOP not opening
+     during a drag, and returning a held piece first) were confirmed
+     by review of the source only. Since the closeout, R6 of
+     `m13_networks_route.spec.ts` (passed) gives browser evidence of
+     them: a keyboard-held piece taken from the bench is returned to
+     it when HELP opens, and a keyboard-held piece lifted from a mount
+     is returned to that mount with its rotation when the STOP
+     confirmation opens, in both cases with no `piece_returned` and no
+     `piece_placed` event; HELP and STOP refuse during a pointer drag,
+     the drag is then dropped normally, and the recorded answer of
+     network 1 is unchanged. The keyboard side of the fresh-press
      rule (a press inside 400 ms and a held key) is exercised on the
      route (R1). (f) Presentation: the smallest labels (mount ids,
      piece names, the port line) are near the lower limit of
@@ -5087,3 +5112,38 @@ the ruling, and none is an owner decision.
      is not caught. Neither has a known way to occur. (j) The results
      and practice help sheet says "ESC leaves the bench" without
      adding that a held piece is returned first.
+274. **RESEARCH-OWNER DECISION — closeout wording (7 October 2026).**
+     The research owner approved two participant-facing wordings for
+     the closeout of U16: (a) the sentence "You may leave pieces
+     unused." as the last sentence of the rule line of every network
+     view, and as a line of the first-response help sheet directly
+     after "A fractured mount seats nothing."; no solution, minimum
+     piece count or preferred arrangement is disclosed; (b) the
+     practice notice "Practice is optional. Practice does not change
+     your three recorded answers.", in the results view, as the
+     instruction line of every practice board (the `m13sView`
+     practice view) and in the results and practice help sheet (which
+     reads "Practice is
+     optional. Practice does not change your three recorded / answers.
+     ESC leaves the bench."). The owner thereby replaces the
+     contract's fixed practice-notice string (§3.4.2); "Practice is
+     optional." is kept because practice stays voluntary. Nothing else
+     changed: no logic, event, scoring rule, configuration, order,
+     form, pending handling, reload policy or practice access. The
+     file `m13NetworkSeries.ts` was added to the closeout's subset for
+     these wordings only. §5.273 (b) and (c) are settled by this
+     decision (the M04 first-departure point itself is unchanged).
+     **For the owner, not decided here:** (i) the contract's §11
+     criterion "the results view makes plain … practice is optional
+     and without consequence" — the approved notice no longer says
+     "without consequence"; whether §11 is amended together with §3.4.2
+     is the owner's call. (ii) The participant-facing text changed
+     after 6a60e34 while the administration version `m13-networks-v1`
+     and the content versions did not, so a session run on the earlier
+     wording cannot be told apart by version; the owner is to confirm
+     that no such session exists or to treat it as a limitation (the
+     closeout may not change versions or the extractor). (iii) The
+     evidence frames 13–18 come from the unit build and still show the
+     earlier rule line (13, 14, 15) or were not regenerated; R2–R5 were
+     not rerun by instruction; whether to regenerate them is the
+     owner's call.

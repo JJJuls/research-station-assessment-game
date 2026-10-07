@@ -302,7 +302,7 @@ export const M13N_TEXT = {
   holding_nothing: 'Holding: nothing',
   // First-response phase.
   rules:
-    'Build one run from the FEED port to the INTAKE port. It must pass through the isolation valve and leave no pipe end loose. A fractured mount seats nothing.',
+    'Build one run from the FEED port to the INTAKE port. It must pass through the isolation valve and leave no pipe end loose. A fractured mount seats nothing. You may leave pieces unused.',
   status_line:
     'Seat the pieces, then RECORD LAYOUT. One answer per network. Results for all three follow the third answer.',
   record_layout: 'RECORD LAYOUT (T)',
@@ -336,7 +336,7 @@ export const M13N_TEXT = {
   run_sealed: 'The run is sealed.',
   run_not_sealed: 'The run is not sealed.',
   practice_notice:
-    'Practice is optional. It changes nothing in your recorded answers and nothing else on the shift.',
+    'Practice is optional. Practice does not change your three recorded answers.',
   test_flow: 'TEST FLOW (T)',
   back_to_results: 'BACK TO RESULTS (B)',
   finish: 'FINISH (F)',
@@ -429,6 +429,7 @@ export const M13N_HELP_FIRST_RESPONSES: readonly string[] = [
   'Build one run from the FEED port to the INTAKE port. The run must pass',
   'through the isolation valve, and no pipe end may be left loose.',
   'A fractured mount seats nothing.',
+  'You may leave pieces unused.',
   'Drag or click a piece to pick it up, click a mount to seat it.',
   'Right-click / R rotates a piece. DEL / drop on bench returns it.',
   'UNDO (U) reverts the last change; CLEAR (C) returns every piece.',
@@ -451,8 +452,8 @@ export const M13N_HELP_RESULTS: readonly string[] = [
   'PRACTISE NETWORK (1 / 2 / 3) opens that board as you left it, for up to',
   'three test runs. TEST FLOW (T) checks the practice board.',
   'BACK TO RESULTS (B) returns. FINISH (F) closes the bench.',
-  'Practice is optional. It changes nothing in your recorded answers and',
-  'nothing else on the shift. ESC leaves the bench.',
+  'Practice is optional. Practice does not change your three recorded',
+  'answers. ESC leaves the bench.',
 ];
 
 /**

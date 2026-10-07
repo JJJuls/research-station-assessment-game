@@ -283,11 +283,12 @@ independent situations (three observations in one bench episode),
 equal difficulty, equated or independent forms, validity. Tests: pure
 `m13_networks` (keys against an independent reference checker and
 census, the two phases, the extractor's values, missingness and
-integrity cases, wording); browser `m13_networks_route` (R1–R5 on the
-participant route, eighteen frames); re-expressed `ip_pipe_suite`,
+integrity cases, wording); browser `m13_networks_route` (R1–R6 on the
+participant route, twenty frames (13–18 from the unit build; see
+`UNIT-LOG.md` "U16 closeout")); re-expressed `ip_pipe_suite`,
 `ip_lab_flow`, `ip_boundaries` and the M13 identities of `pilot_lab`,
 `pilot_episodes_1_2`, `pilot_coverage`. As-built record, defaults and
-limitations: register §4 "Unit 16", §5.260–§5.273; results, reviewers
+limitations: register §4 "Unit 16", §5.260–§5.274; results, reviewers
 and every failure's base comparison: `UNIT-LOG.md` "U16". Not updated
 (U24 backlog): the capture specs, the `interactionRegistry` window
 label, the legacy laboratory's presentation of the bench.

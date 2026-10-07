@@ -1688,7 +1688,7 @@ test.describe('M13 series model — results and optional practice', () => {
       },
     ]);
     expect(view.record_lines).toEqual([
-      'Practice is optional. It changes nothing in your recorded answers and nothing else on the shift.',
+      'Practice is optional. Practice does not change your three recorded answers.',
     ]);
     // The same practice offer for every network, whatever its first response.
     expect(view.controls.practise.map((control) => control.label)).toEqual([
@@ -2053,8 +2053,21 @@ test.describe('M13 wording', () => {
       'Stop the bench? Networks without a recorded answer stay unanswered, and no results are shown.',
     );
     expect(strings.results_and_practice).toContain(
-      'Practice is optional. It changes nothing in your recorded answers and nothing else on the shift.',
+      'Practice is optional. Practice does not change your three recorded answers.',
     );
+    // The approved closeout wording (7 October 2026).
+    expect(M13N_TEXT.rules.endsWith(' You may leave pieces unused.')).toBe(
+      true,
+    );
+    expect(M13N_HELP_FIRST_RESPONSES).toContain('You may leave pieces unused.');
+    expect(M13N_TEXT.practice_notice).toBe(
+      'Practice is optional. Practice does not change your three recorded answers.',
+    );
+
+    for (const value of all) {
+      expect(value, value).not.toMatch(/nothing else on the shift/i);
+    }
+
     expect(strings.results_and_practice).toContain(
       'Practice test run 2 of 3. Your recorded answer is unchanged.',
     );
