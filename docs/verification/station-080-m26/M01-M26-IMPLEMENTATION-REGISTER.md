@@ -93,7 +93,7 @@ status at this register version — updated by each unit).
 | M11  | Add task                | 2    | `m11_unresolved_custodies`: unresolved / accepted accessible; 0–2; more unresolved stewardship                                                                                                                                                                                                                                 | understanding, handover records                                                                                                                                                                                                                | exploratory             | v3 route: `proto_m11_custody_lab` (Laboratory, ep 3) + `proto_m11_custody_yard` (Recovery Yard, ep 4) — implemented (U3)                                                                                                                                         |
 | M12  | Redesign interaction    | 2    | `m12_fields_verified`: fields explicitly judged (matches / differs) before release, summed over the released products / 6; 0–6; more checking coverage (a released product with nothing judged is an observed 0; a packet opened but never released is missing)                                                                | `m12_detection_and_correction` (per product: judgement accuracy, faulty field detected = judged "differs", correction attempted, correction successful = entered value equals the reference, unnecessary corrections, per-field records)       | behavioural counterpart | v3 route: `proto_m12_check_o1` (Concourse, ep 1), `proto_m12_check_o2` (Records Workshop, ep 2) — implemented (U8)                                                                                                                                               |
 | M13  | Extend cases            | 3    | `m13_first_solutions`: networks solved on first submission / 3                                                                                                                                                                                                                                                                 | constraints, help                                                                                                                                                                                                                              | performance counterpart | v3 route: `proto_m13_network_series` — three keyed networks at the Conduit Lattice Bench (Workshop, ep 2), one immutable first response each before any feedback; results and capped practice after — implemented (U16; owner ruling D-U16-1, §5.260)            |
-| M14  | Extend packets          | 2    | `m14_correct_first_integrations`: correct first decisions / 6                                                                                                                                                                                                                                                                  | by packet, omissions, source use                                                                                                                                                                                                               | performance counterpart | v2-ledger route (one unkeyed packet) — planned                                                                                                                                                                                                                   |
+| M14  | Extend packets          | 2    | `m14_correct_first_integrations`: correct first decisions / 6                                                                                                                                                                                                                                                                  | by packet, omissions, source use                                                                                                                                                                                                               | performance counterpart | v3 route: `proto_m14_integration_series` — two keyed packets at the Concourse incident desk (ep 1), one immutable first response per decision before any feedback; results after the sixth — implemented (U17; owner decisions D-U17-1 / D-U17-2, §5.275–§5.276) |
 | M15  | Extend systems          | 2    | `m15_correct_first_predictions`: correct first predictions / 4                                                                                                                                                                                                                                                                 | model correctness, exploration                                                                                                                                                                                                                 | performance counterpart | v2-ledger route (one system, one intervention) — planned                                                                                                                                                                                                         |
 | M16  | Standardise             | 1    | `m16_correct_first_applications`: correct first applications / 6                                                                                                                                                                                                                                                               | form, example versions                                                                                                                                                                                                                         | performance counterpart | v2-ledger route (familiarisation with feedback) — planned                                                                                                                                                                                                        |
 | M17  | Replace trial structure | 1    | `m17_criterion_trial`: {criterion_trial 3–12, attained} — the first learning trial ending a run of three consecutive correct first responses; reported whenever reached within the administered trials; (12, false, censored) after twelve without attainment; early exit without attainment = incomplete                      | `m17_sequence_baseline_transfer` (baseline 2 / learning 12 / transfer 2 first-response sequences, feedback exposures, reference sequences shown, help, demonstration reviews, per-trial records)                                               | performance counterpart | v3 route: `proto_m17_criterion` (Diagnostics Laboratory, ep 3) — implemented (U9); **criterion values not to be read until §5.87–5.88 are decided**                                                                                                              |
@@ -162,6 +162,231 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
   pinned in `protocol.ts` beside their anchors.
 
 ## 4. As-built records (appended per unit)
+
+**Unit 17 (M14): as-built** — the two-packet incident desk of the
+Station Concourse (bounded unit under contract `U17-CONTRACT.md`,
+amendments A1 of 7 October 2026 and A2 of 8 October 2026). **Status:
+technical implementation of the approved row under research-owner
+decisions D-U17-1 and D-U17-2; `m14_correct_first_integrations` is a
+candidate indicator and NOT scientifically validated.** The six decisions
+are repeated observations inside ONE desk episode, clustered in two
+packets — never six independent situations; packets and decisions are
+not equated in difficulty; the content is one authored form. Passing
+tests establish implementation correctness only.
+
+(0) Authority. **Research-owner decision D-U17-1 — APPROVED 7 October
+2026** and **research-owner decision D-U17-2 — APPROVED 8 October 2026**
+(owner rulings, recorded in §5.275 and §5.276; not implementer defaults
+and not reopened): the approved content, keys and results lines
+(item 1); sources on demand, staying open until closed, openings never
+read as reading (item 2); fixed packet, decision and option order, one
+form (item 3); identical neutral acknowledgements and no correctness
+feedback before the sixth first response (item 4); confirmed option or
+confirmed CANNOT SOLVE as the only responses, drafts never counting,
+LEAVE DESK resumable, no STOP TASK (item 5); the optional desk with the
+never-opened mapping and never `declined` (item 6); the wide frame, the
+one-file allowlist addition and typography T1 (D-U17-2). The approved
+row is §2 (M14), §2b, the matrix row, addendum §3 and `registerV3.ts`
+(entry `M14`). Provenance limit: the original owner documents were not
+on disk when the contract was prepared; the two decisions are explicit
+decisions for this implementation, not recovered wording. Ruling
+D-U16-1 belongs to M13 and approves nothing here. Each rule below
+carries its source: [O-n] decision D-U17-1 item n, [O-7] / [O-8]
+decision D-U17-2, [A] approved row, [P] recorded precedent, [D-n]
+implementer default (§5.277 onward).
+
+(1) Administration `m14-integration-v1` — **specified before the series
+model and the interface were written.**
+
+- Place and access [A][O-6][P]: the existing Concourse incident desk
+  (station `incident_desk`, registry `concourse.incident_desk`, surface
+  `m14_incident_desk`, the generic `WorkSurfaceScene`), episode 1,
+  operational label "Incident desk (Concourse)". Optional, available
+  whenever the station is reachable; Vale's dialogue unchanged; no
+  gate, reward, judgement, progression or payment consequence; non-use
+  is never read as refusal. Acknowledging Vale's briefing
+  (`briefing_ack`) records the briefing exposure through the window
+  kit's `present` (`presented`) because the briefing names the desk —
+  exposure only, not a desk opening and not a decision presentation.
+  The legacy Information Processing Lab module `m14PacketSaturation.ts`
+  (family `proto_m14_packet_`) is untouched.
+- Content and order [O-1][O-3][O-8]: packets `p1` (`m14-p1-v1`, "Night
+  packet: pump bay and power", readings 04:00) then `p2` (`m14-p2-v1`,
+  "Morning packet: mast, yard and uplink", readings 07:00), each with
+  six messages (`p1_m1` … `p1_m6`), three gauges (`p1_g1` … `p1_g3`) and
+  three decisions (`p1_d1` … `p1_d3`) with four options in the preview's
+  order (`p1_d1_a` … `p1_d1_d`); the keys and establishing sets of (2);
+  T1 applied (U+00A0 inside "tank N" / "Tank N" and before "%"). Fixed
+  packet order P1 → P2; within a packet D1 → D3, one at a time, the next
+  presented only after the current first response; one form; no
+  counterbalancing. Gauges show label, reading and reference line only.
+- Objective access [A][O-2]: all nine sources of the current packet are
+  listed from the packet's presentation until the series closes
+  (`packet_presented.sources_available`). A closed message tile shows
+  "time · sender"; a closed gauge tile its label. Activating a tile
+  (pointer, ENTER / SPACE on focus, or keys 1–6 for messages and 7–9 for
+  gauges) opens it — its full text appears in place, left-aligned,
+  top-aligned — or closes it if open; reopening is unlimited; any number
+  may be open; nothing closes a tile automatically; opened tiles stay
+  open across decisions inside the packet and across leaving and
+  returning; sources of packet 2 start closed. Openings and closings are
+  recorded (`source_opened` / `source_closed`) as exposure records and
+  are never read as reading, understanding or use.
+- First opening [D-1]: the orientation card (preview §3.1) with START
+  PACKET 1 (plus HELP and LEAVE DESK); acknowledging it is recorded
+  (`orientation_acknowledged`) and presents packet 1 and decision 1.
+  START accepts a press only 400 ms after the desk opened or after the
+  help sheet closed (a press carried from the station prompt or a
+  doubled CLOSE HELP press never starts the packet). No practice
+  decision, no timing. Left before START, the next opening shows the
+  card again.
+- Drafts [D-2]: activating an option (pointer, ENTER / SPACE, or A–D)
+  makes it the draft; another option replaces it; the draft activated
+  again clears it; a draft survives leaving and returning; a draft is
+  recorded (`option_drafted`) and is never a response.
+- Commitment by option [O-5][D-3][P §5.210, §5.262]: RECORD ANSWER (R or
+  the button) with no draft shows "Choose an answer first." and records
+  `commit_without_draft` only. With a draft it opens "Record this answer
+  for decision N? It cannot be changed afterwards." with RECORD ANSWER
+  (ENTER) and KEEP WORKING (ESC) — while the dialog is open the model
+  renders only the header, the status line and the dialog, the confirm
+  control is the first focusable element (ENTER confirms; A–D, 1–9, R, N
+  do nothing) and the confirm control is not at the screen position of
+  the control that opened the dialog. Only a fresh press confirms: a
+  press inside the first 400 ms after the dialog appeared is refused and
+  recorded (`commit_press_refused`, reason `dialog_settling`; one record
+  per dialog, the count carried on the next record); a held key or an
+  auto-repeat is dropped by the unchanged surface before the host
+  (`event.repeat`) and is therefore never recorded. KEEP WORKING / ESC
+  closes the dialog without a response (`commit_cancelled`). A doubled
+  confirmation records one answer.
+- Commitment by CANNOT SOLVE [A][O-5][D-3]: CANNOT SOLVE (N or the
+  button), visible from the decision's presentation until its first
+  response, opens "Record CANNOT SOLVE for decision N? It cannot be
+  changed afterwards." with RECORD (ENTER) and KEEP WORKING (ESC), same
+  fresh-press rule; it is an incorrect first response whatever the
+  draft; it is textually distinct from LEAVE DESK and separated from it.
+- The first response [A][O-5]: written once (`first_response`) and
+  immutable; no later act, reopening, results view, reload or closure
+  changes or duplicates it; a second RECORD ANSWER, Cannot solve after an
+  option answer and an option after Cannot solve never create a second
+  one (the decision's controls are gone after the response).
+- Acknowledgement [O-4][D-3]: identical for every response whatever its
+  kind or correctness — "Answer recorded for decision N." with NEXT
+  DECISION (NEXT PACKET after decision 3 of packet 1; SHOW RESULTS after
+  the sixth); same line, same control, same timing, no sound; its
+  control accepts a press only 400 ms after it appeared, also after the
+  desk was reopened on it (an earlier press is ignored and not recorded
+  — no suffix exists for it); the status line names the decision
+  ("Decision N of 3 · " before the approved status text) and the
+  subtitle counts answers recorded ("K of 6 recorded"), never correct
+  ones. Nothing in the first-response phase reveals correctness: no
+  colour, glyph, sound, counter, tally or wording differs with the
+  correctness of any answer.
+- Results [O-4][O-1][D-5]: available only when all six first responses
+  are recorded. SHOW RESULTS opens one view per packet (NEXT / BACK
+  between them): "All six answers are recorded."; per decision its
+  short title, "Your recorded answer: …" (or "CANNOT SOLVE"), "Station
+  answer: …" and the approved results line, verbatim; no tally, no
+  praise or blame. FINISH leaves the desk. Reopening a completed desk
+  shows the results again, read-only; only the first showing of each
+  packet's results is recorded (`results_shown`). A partial or
+  review-closed series never shows results.
+- Help [D-4]: HELP (H or the button) at any time while the desk records
+  except while a confirmation dialog is open: the preview §3.3 sheet
+  (orientation text plus controls), informational only, never referring
+  to a packet's content or to correctness; closed by ESC or its CLOSE
+  HELP control; every consult recorded (`help_consulted`) with the
+  phase, packet and decision it was opened on.
+- Leaving and returning [O-5][P]: ESC closes, in order, an open dialog,
+  then the help sheet, then leaves the desk; LEAVE DESK leaves; both take
+  the same path (the window pauses, then the surface closes — the M12
+  host precedent). Leaving keeps everything (packet, decision, opened
+  tiles, draft, answers; `panel_left`); returning (`series_reopened`)
+  never presents a decision again and never starts a new trial. There is
+  no STOP TASK control.
+- Review closure [P][O-5][O-6][D-6]: a series still in its orientation or
+  first-response phase closes at the Utility Deck record closure as
+  `closed_at_review` (`series_closed_at_review` with the closure
+  snapshot; the kit's `window_closed`, censored): answered decisions
+  keep their answers, unanswered ones are missing; no results follow;
+  the desk then opens as the read-only record "Station record closed —
+  the desk keeps its record." with "N of 6 recorded" and records
+  nothing. A completed series is not reclosed. A never-opened desk is
+  recorded absent by the kit's `markAbsent` (validity register
+  `participant_absent`; detail `briefed_not_opened` when the briefing was
+  acknowledged, otherwise `not_briefed_not_opened`), never `declined`.
+- Reload [P §5.14][D-9]: when an earlier page load of the session
+  identity holds this administration's `opportunity_opened`, the desk is
+  never re-run in the new load (`guardM14Reload()` at Concourse entry:
+  prior exposure recorded, the kit's `technical_failure` with a detail
+  beginning `reload`); it opens as the neutral closed record "This desk
+  was already used in this session. Its record is kept; nothing further
+  is recorded here."; the new load's row is `interrupted`; the earlier
+  events stay immutable in `prior_page_load_events`. This holds also
+  when the earlier load completed all six, and when it saw only the
+  orientation (the kit writes `opportunity_opened` at the first
+  opening). A desk never opened before the reload runs normally.
+- Faults: a fault while the orientation or the first-response phase is
+  open closes the series as a technical failure through the window kit
+  (`technical_failure`, the answers so far kept in the closure
+  snapshot) and leaves the room usable; the desk then opens as the
+  record "The desk has a fault and is closed. Recorded answers are
+  kept."; a fault after completion is recorded (`technical_failure`,
+  phase `feedback`) and never changes the scored evidence; a dialog
+  never stays stuck after a cancelled callback (every host callback is
+  guarded).
+- Completion [D-8]: the sixth first response writes
+  `first_responses_completed` (closure snapshot, `closure_reason`
+  `completed`) and the kit's `window_closed` (exit `completed`); the
+  scored phase has no later closure event, and nothing afterwards
+  (results, leaving, the review, a fault) reopens or changes it.
+- Layout [O-7][D-11]: the shared surface launched with `frame: 'wide'`
+  — panel over the whole visible design area minus 8 px at the sides and
+  6 px top and bottom (1050 × 588 design px at (−125, 6), identical at
+  the 1280 × 720 and 1920 × 1080 canvases); title 20 px bold (the packet
+  line "PACKET N OF 2 — …" in a decision view, "INCIDENT DESK — STORM
+  PACKETS" otherwise); subtitle, status, footer, feedback and every
+  element 16 px design; two source columns 354 px wide at panel x 12 and
+  374 (messages 1–4 left; messages 5–6 and the three gauges right, in
+  the source order, no heading or group label) in fixed slots sized for
+  the longer open text of the two packets under the widest of the three
+  fonts measured in the preparation (Consolas, Courier New, Lucida
+  Console: 150 / 54 / 86 / 102 / 102 / 102 / 38 / 54 / 38 design px),
+  top-aligned, padding 6, gaps 4, starting at panel y 90; the readings
+  line "Gauge readings taken at HH:MM. Messages are listed in time
+  order." directly under the gauges in the right column; a 300 px
+  decision column at panel x 738 ("DECISION N OF 3" over the question,
+  the four options as 34 px boxes — 46 px for the one option whose label
+  exceeds 30 characters —, RECORD ANSWER, CANNOT SOLVE, HELP and LEAVE
+  DESK as 34 px boxes, HELP and LEAVE DESK side by side with a 10 px
+  gap). Open tiles differ from closed ones by their text (the open text
+  itself and the glyph "−" against "+"), never by colour alone. Nothing
+  scrolls, no source is capped or closed automatically, no wording is
+  shortened or clipped, no GAUGES heading exists and no larger window is
+  required; the real-game gate (at least 30 design px above the
+  feedback line with all nine open, under the default font and under
+  each forced fallback font) is measured in R7, never assumed from the
+  mockup.
+
+(2) The two packets, keys and establishing sets [O-1] — the approved
+preview r4 §4–§5, transcribed into `m14PacketContent.ts` with T1. Keys by
+id and establishing sets (ids of the content module):
+
+| Decision | Key                              | Establishing set(s)                                                                           |
+| -------- | -------------------------------- | --------------------------------------------------------------------------------------------- |
+| `p1_d1`  | `p1_d1_a` — Loop A only          | {`p1_m1`, `p1_g1`, `p1_m4`}                                                                   |
+| `p1_d2`  | `p1_d2_b` — 3                    | {`p1_m3`, `p1_m5`, `p1_m6`}                                                                   |
+| `p1_d3`  | `p1_d3_d` — Run the sample press | direct {`p1_m6`, `p1_g3`}; elimination {`p1_m4`, `p1_g1`, `p1_m1`, `p1_g2`, `p1_m5`, `p1_g3`} |
+| `p2_d1`  | `p2_d1_b` — Corin                | {`p2_m1`, `p2_m6`, `p2_g1`}                                                                   |
+| `p2_d2`  | `p2_d2_c` — Tank 3               | {`p2_m5`, `p2_g2`}                                                                            |
+| `p2_d3`  | `p2_d3_c` — Text bursts only     | {`p2_m3`, `p2_m4`, `p2_g3`} (P2-M3 necessary — amendment A1, correction A)                    |
+
+Every key needs at least two sources; no single source, alone or with
+the option list, fixes a key; every wrong option is the answer of a
+documented partial reading (the preview's lure tables). The pure spec
+checks all of this against its own transcription of the facts and its
+own evaluator, never against the module's key function alone.
 
 **Unit 16 (M13): as-built** — the three-network series at the Conduit
 Lattice Bench (bounded unit under contract `U16-CONTRACT.md`, amendment
@@ -475,6 +700,246 @@ the first-response phase avoids the vocabulary of the results (§5.271).
 Input mode differs in cost (drag against arrows) and is recorded, not
 controlled. After a reload the new load's row is `interrupted` even
 when the earlier load had completed the scored phase (§5.270).
+
+(3) As built — the desk (`src/pilot/windows/m14PacketContent.ts` — the
+approved content and every participant-facing string, pure;
+`m14IntegrationModel.ts` — the series model, pure; `m14SurfaceModel.ts`
+— the work-surface model, pure (the state reader and the commands are
+injected by the adapter); `m14IncidentDesk.ts` — the window adapter,
+log sink, focused clock and reload guard; `src/pilot/ui/WorkSurfaceScene.ts`
+— the optional wide frame; `src/scenes/StationConcourseScene.ts` — the
+station, host and briefing presentation). The fixed strings of the
+preview are used unchanged (T1 applied). Chosen here: the results short
+titles (§5.281), the fault record line (§5.287 (g)), the footer lines of
+each view and the help sheet's title line "HELP — INCIDENT DESK".
+
+- Orientation. Title "INCIDENT DESK — STORM PACKETS"; the eight lines of
+  preview §3.1 as one left-aligned block; START PACKET 1 (the first
+  focusable element — ENTER starts), HELP (H), LEAVE DESK. Left before
+  START, the card again at the next opening.
+- A decision view. Title: the packet line; subtitle "K of 6 recorded";
+  status line: "Decision N of 3 · " followed by preview §3.2 (also on
+  the dialog, the acknowledgement and the help sheet of that decision —
+  in the status line rather than the subtitle so that a wide fallback
+  font never runs the packet title into it); the nine tiles in their fixed slots (closed:
+  "+ time · sender" or "+ label"; open: "− " and the full text under the
+  header); the readings line under the gauges; the decision column:
+  "DECISION N OF 3" with the question, the four options "A …" to
+  "D …" (the draft shown as the surface's selected state), RECORD
+  ANSWER (R), CANNOT SOLVE (N), HELP (H), LEAVE DESK. Hotkeys 1–6 and
+  7–9 open or close tiles, A–D draft; TAB / arrows move, ENTER / SPACE
+  activate; the footer line names them. The question block is the first
+  focusable element and a neutral landing (its activation does
+  nothing), so a doubled ENTER after NEXT or after a cancelled dialog
+  opens nothing and drafts nothing.
+- A confirmation. The header and the status line, then the dialog text
+  ("Record this answer for decision N? It cannot be changed afterwards."
+  with the drafted option repeated, or "Record CANNOT SOLVE for decision
+  N? …", drawn directly above its two controls and below the status
+  line) with RECORD ANSWER (ENTER) / RECORD (ENTER) first in the focus
+  order and KEEP WORKING (ESC) beside it, both in the bottom row of the
+  panel (panel y 496, below every source slot and every element of the
+  decision column) — never where RECORD ANSWER or CANNOT SOLVE sat, and
+  never where the second click of a doubled click reaches a tile or an
+  option (§5.287 (h)). No tile, option or decision element is drawn.
+- The acknowledgement. The tiles stay on screen and usable; the decision
+  column shows "Answer recorded for decision N." with HELP and LEAVE
+  DESK beneath it, and the one control NEXT DECISION (ENTER) / NEXT
+  PACKET (ENTER) / SHOW RESULTS (ENTER) in the bottom row of the
+  decision column (panel y 496, below every element of the decision view
+  that follows), first in the focus order, accepting a press 400 ms
+  after it appeared, reappeared or the help sheet closed. After the
+  sixth answer the tiles are
+  gone (the series is closed), the status line is empty and only the
+  line and SHOW RESULTS (bottom row) remain.
+- Results. Title "INCIDENT DESK — STORM PACKETS", subtitle "6 of 6
+  recorded", status "All six answers are recorded."; per packet its
+  title line and, per decision, "N. <short title> — Your recorded
+  answer: …", "Station answer: …" and the results line; NEXT (ENTER) /
+  BACK (B) between the packets (sharing one place, so a press inside
+  400 ms of the last change of view changes nothing), FINISH (F), HELP
+  (H). Reopened: the same view, read-only.
+- Help. The orientation lines and the controls line of preview §3.3
+  under "HELP — INCIDENT DESK"; CLOSE HELP (ESC) first in the focus
+  order; the status line kept; nothing else drawn.
+- Records. "Station record closed — the desk keeps its record." / "This
+  desk was already used in this session. Its record is kept; nothing
+  further is recorded here." / "The desk has a fault and is closed.
+  Recorded answers are kept.", the review and fault records with "N of
+  6 recorded" (the hold-back record without a count: its answers belong
+  to the earlier page load) and LEAVE DESK in the bottom row; no
+  results, no help, nothing recorded.
+- ESC closes a dialog, then the help, then leaves; LEAVE DESK and FINISH
+  leave; all take the same path (the window pauses, the surface closes).
+  Pointer and keyboard reach every control.
+- Recording window: events are written while the desk is live
+  (orientation, first-response and feedback phases) and never on a
+  closed record (no reopening or leaving record either).
+- The focused clock (`FocusedClock`, `focusMonitor`, imported unchanged)
+  starts at the first opening, pauses with `surface_closed` while the
+  desk is closed and stops with the sixth answer, the review closure or
+  a fault; each first response carries the focused time since its
+  decision's presentation (`focused_ms`) beside the model's own
+  `active_ms`.
+
+(4) Events and feature. Family `proto_m14_integration_`, ONE
+opportunity `proto_m14_integration_series`, the kit's window id
+`m14_packet_p1`, packet window ids `m14_packet_p1` / `m14_packet_p2`,
+administration `m14-integration-v1`, content versions `m14-p1-v1` /
+`m14-p2-v1`; suffixes and fields in the addendum, §2 "U17". All
+PROVISIONAL candidates; nothing enters `ScoringManager`, `SummaryScope`,
+the canonical context or the return URL; the v2 family
+`proto_m14_desk_*` is retired from the route and not written.
+`m14_correct_first_integrations` (primary, the only M14 row;
+`registerV3.ts` entry `M14` now carries the explicit v3 route,
+`implemented` and the summary's source clause citing D-U17-1 item 2;
+the feature row unchanged): value = numerator = decisions whose FIRST
+response is the keyed option; denominator = decisions with a first
+response in the current page load; planned denominator 6. CANNOT SOLVE
+and a wrong option are in the denominator and not in the numerator; a
+decision without a first response is missing, never incorrect; an
+answer counts whatever sources were opened before it. The extractor
+(`src/measurement/features/m14.ts`, read-only, current load only)
+recounts the value from the `first_response` events against the content
+key and compares it with each event's `correct` flag and with the
+closure snapshot. Dispositions and the integrity list: addendum §2
+"U17" and §5.282, §5.284. Components (companions beside the value, never
+inside it): the exposure stages kept distinct (`briefed`, `desk_opened`,
+`orientation_acknowledged`, `packets_presented`, `decisions_presented`,
+and the explicit `never_opened_reason` — `briefed_not_opened` /
+`not_briefed_not_opened` / null — ruling item 6's "in the components"),
+the administration and content versions, the assigned and realised
+packet and decision orders, `observations_share_one_episode: true`,
+`first_response_phase_complete`, `by_packet` (numerator, denominator,
+planned 3, omissions per packet), `omissions` (presented-unanswered and
+unpresented decisions, apart from Cannot solve), `source_openings` per
+packet (available, opened, open counts — kept apart from the response),
+per decision the response kind, option, correctness, key,
+`sources_opened_before`, per establishing set the sources opened before
+/ the set's size and `all_opened_before`,
+`any_establishing_set_fully_opened_before`, drafts, help consults,
+active and focused time, input mode; `cannot_solve_count`; help consults
+by phase; `results_shown`; `exposure_record_consistent`. No total mixes
+source openings with correctness; no total across items; `declined`
+never.
+
+(5) Integration. `src/pilot/windows/reviewClosure.ts` calls
+`closeM14AtReview` (one import, one call; the generic
+`closeSurfaceWindow` helper, which only M14 used, is removed with it —
+a dead-code consequence of the contract's own change, reported, not a
+widening). `surfaceModels.ts` loses the v2 M14 builder, its imports and
+the two surface-state helpers (verified unused elsewhere); the M07
+builder is byte-identical. `StationConcourseScene.ts`: the M14 import
+block, `guardM14Reload()` after `declareM14()` in `create()`, the
+`incident_desk` station (`openM14` with the route stage,
+`openWorkSurface` with `frame: 'wide'`, `onClose` consuming ESC for an
+open dialog or the help sheet), `presentM14(Date.now())` in the
+`briefing_ack` option beside `presentM01` / `presentM12`, and the private
+`m14SurfaceHost()` (LEAVE DESK, FINISH and ESC take the same path); the
+M12 entry-snapshot field `m14_incident_desk: m14Window.windowStatus()`
+stays; every other station, offer chain, dialogue and rule is untouched.
+`features/index.ts` imports the extractor. `WorkSurfaceScene.ts`: only
+the optional settings of contract §4 — `frame` on the launch data (reset
+in `init()`), `textPx` and `valign` on elements, and in the wide frame
+only the panel over the visible design area (from `CANVAS_WIDTH /
+DESIGN_SCALE`), the scrim and its input interception over the whole
+visible area, the 20 px bold title, 16 px subtitle / status / help /
+feedback, the feedback line placed from the help text's bounds, the
+subtitle inset from the top-right corner, accent-button text `#dfe9f1`
+and the 2 px focus-ring offset; the DEV probe gains `frame`,
+`feedback_top` and per element `text_px` and `text_h` (§5.287 (f)). The
+standard frame's constants, colours, input handling, focus logic, links
+and existing probe fields are not changed (verified: R6 and the
+unchanged `m12_check_route` run). Specs: `e2e/m14_integration.spec.ts`
+(pure, new), `e2e/m14_integration_route.spec.ts` (browser, new); the
+incident-desk step of `e2e/pilot_episodes_1_2.spec.ts` ("episode 1")
+re-expressed for the new administration and reached with the exported
+`concourseVia` lane driver (no other assertion of that test changed).
+Untouched: `windowKit.ts`, every other `src/pilot/windows/*` module,
+`src/informationProcessing/**` (the legacy `m14PacketSaturation.ts`
+included), `interactionRegistry.ts` (its window label `m14_desk_w1`
+stays, U24 backlog), the frozen v2 ledger, the shared measurement
+framework, `e2e/pilotHelpers.ts` and every other helper and spec.
+
+(6) Test evidence (8 October 2026; commands, counts, reviewers and
+every exception in `UNIT-LOG.md` "U17 results"). Pure,
+`e2e/m14_integration.spec.ts` — 71 tests passed: the six keys from an
+independent transcription and evaluator (every establishing set fixes
+its key; leave-one-out never does; no single source does; every wrong
+option stays consistent with its documented partial reading; P2-M3
+necessary for P2-D3); the content cross-check and structure; T1 and
+the wording; the register row, route and family disjointness; the
+series model (no correctness information before the sixth answer,
+identical acknowledgements, immutable first responses, the fresh-press
+rule, drafts, sources, help, leaving, closures, reload, faults, the
+START and acknowledgement settles, the `view` field); the extractor
+(values, source use, stability of the completed row, incomplete and
+pending rows, every zero-evidence case, never `declined`, the reload
+precedence, every integrity case, unscored defects, determinism and
+equality with the page's own row). Browser on the participant route,
+`e2e/m14_integration_route.spec.ts` — ten tests (R1–R4, R6, R7 × 2,
+R5 × 2), twenty-two frames, no scenario blocked or skipped: R1
+keyboard (orientation; P1-D1 correct after its three sources with a
+press inside 400 ms refused and recorded; P1-D2 wrong with none of its
+own sources ever opened and a held ENTER committing nothing; ESC
+during the CANNOT SOLVE dialog closing the dialog only; P1-D3 CANNOT
+SOLVE; help; P2-D1 and P2-D2 correct; P2-D3 wrong with all nine open
+— 52 design px above the feedback line; 3 / 6 observed with by-packet
+1 / 3 and 2 / 3; results; FINISH; reopen read-only; the
+`first_response` events byte-identical throughout), R2 pointer at the
+1280 × 720 canvas and again at `canvas=1080` (every in-desk act by
+click; a double click on the confirm control recording once; option
+D, RECORD ANSWER and LEAVE DESK clicked beyond design x 800; a
+side-band click activating nothing; left mid packet and reopened on
+the same decision, tiles and draft; 5 / 6), R3 (two answers, the
+third decision left, the Utility Deck record closure ⇒ 2 / 2
+`incomplete`, censored, `closed_at_review`, omissions listed; the
+desk a record afterwards, recording nothing), R4 (`not_presented`
+before the briefing; `pending` with `briefed_not_opened` after it; the
+orientation card left and shown again), R5 (reload: the earlier load
+byte-identical, the new load `interrupted`; the desk reached again
+and held back, writing only the kit's reload record), R6 (the quality
+packet after the desk: `frame: 'standard'`, element geometry and text
+sizes equal to a fresh session's, ESC and pointer as before, a
+side-band click inert), R7 (forced Courier New: 54 design px spare;
+forced Lucida Console: 52; every tile's rendered text inside its
+slot). Regression: `m12_check_route` (unchanged spec) 1 passed; the
+pure P2 specs 68 passed with the two `final_scientific_gates` failures
+reproduced identically on an untouched export of `a0871bf`
+(pre-existing, no M14 step); the episode-1 test of
+`pilot_episodes_1_2` passes its re-expressed incident-desk step, the
+quality packet and the gauge check and fails deterministically at the
+M05 lamp-job step after them (`proto_m05_start_started` absent while
+`work_completed` is present — the late-start path after the 60 s
+focused cap; the base stops earlier at the desk stall, so it is not
+comparable on the base; no M14 step is left unverified by it; the
+family-ownership loop and the Concourse exit after it are not
+verified by that run). Walking and the station prompt are driver
+keyboard navigation in every scenario, R2 included. Passing tests
+establish that the build does what this record says, not that the
+measure is valid.
+
+(7) Residual limitations (stated, not resolved by this unit). The six
+decisions share one episode and two packets; fixed order confounds
+packet content and position, and P1 carries first contact with the
+desk; packets and decisions are not equated; by-packet values are
+descriptive. Source openings describe what was opened — never what was
+read, understood or used, and never eligibility; an answer counts
+whatever was opened. Because no feedback precedes the sixth answer, the
+results cannot inform any first response; strategy learned in packet 1
+(the later-message rule) can carry to packet 2 without feedback — part
+of what the clustered /6 samples. A draft left behind is never a
+response; CANNOT SOLVE is an incorrect first response, not a missing
+one. The arrangement does not prevent every advantage from selective
+stopping (ruling item 5). Input mode differs in cost (click against
+keys) and is recorded, not controlled. After a reload the new load's
+row is `interrupted` even when the earlier load had completed the
+series (§5.285). The focused clock's `focused_ms` is a companion only
+and depends on the browser's focus events. The layout gate was measured
+in the real game with Windows fonts only (the default `monospace`,
+Courier New and Lucida Console forced on the canvas context); Menlo /
+DejaVu Sans Mono on macOS / Linux remain the owner's open item
+(§5.276), as does the "tank 3:" wrap in the Fuel tanks gauge.
 
 **Unit 15 event-order integrity (M09 / M10 extractors only; 6 October 2026)** — one bounded correction under the research owner's ruling
 §5.259; the "Unit 15" and "Unit 15 closeout" records below stand except
@@ -5147,3 +5612,351 @@ the ruling, and none is an owner decision.
      earlier rule line (13, 14, 15) or were not regenerated; R2–R5 were
      not rerun by instruction; whether to regenerate them is the
      owner's call.
+
+Unit 17 (M14) is governed by the owner's U17 contract (amendments A1
+and A2) and by the research owner's decisions D-U17-1 and D-U17-2. The
+decisions are recorded first, as rulings; §5.277–§5.288 are IMPLEMENTER
+DEFAULTS — owner-visible, reversible, none of them changes the approved
+formula, the content, the keys or either ruling, and none is an owner
+decision.
+
+275. **RESEARCH-OWNER DECISION D-U17-1 — APPROVED 7 October 2026 (M14;
+     an owner ruling for this implementation, not an implementer
+     default; not reopened).** Source: the owner's instruction and
+     contract of 7–8 October 2026 (`U17-FABLE-PROMPT.md`,
+     `U17-CONTRACT.md` amendment A1, §2.2 and §17; preview r4 §6.4). The
+     ruling is an explicit decision for this implementation and NOT
+     recovered wording from the missing original documents
+     (`UNIT-LOG.md` "U17", provenance limit). Ruling D-U16-1 (M13) is
+     not part of it. Its six items, verbatim in substance: (1) the two
+     packets, the six answer keys and the six results explanations of
+     the preview are approved as the administered content (`m14-p1-v1`,
+     `m14-p2-v1`); their logical correctness does not establish
+     empirical validity; (2) sources open on demand; an open source
+     remains visible until the participant explicitly closes it;
+     reopening is unlimited; any number may be open at the same time;
+     the telemetry records source openings and closings — never proof
+     of reading, understanding or cognitive use; the register summary
+     "sources stay visible" is amended to cite this decision; (3) fixed
+     packet order P1 → P2, fixed decision order D1 → D3 within a packet
+     (one at a time, the next only after the current first response),
+     fixed option order, one form; limitation retained: packet content
+     and position are confounded; (4) identical neutral
+     acknowledgements and no correctness feedback until all six first
+     responses are recorded; then the recorded answers, the keyed
+     answers and the approved explanations are shown; (5) only a
+     confirmed option or a confirmed CANNOT SOLVE is a response; drafts
+     never count; CANNOT SOLVE remains incorrect; LEAVE DESK keeps the
+     desk resumable; there is no separate STOP TASK control; at the
+     review closure unanswered decisions remain missing and partial
+     results remain `incomplete`; no claim is made that this
+     arrangement prevents every advantage from selective stopping; (6)
+     the desk stays optional and non-use is never read as refusal:
+     before the briefing `not_presented`; after the briefing, never
+     opened, `pending` while the opportunity is open; at the review
+     closure, briefed and never opened, a null value with the explicit
+     reason `briefed_not_opened` mapped to the existing disposition
+     `no_eligible_event` (closure `closed_at_review`, censored);
+     `declined` is reserved for an explicit refusal and the desk offers
+     none, so M14 never exports `declined`; briefing exposure, desk
+     opening and decision presentation stay distinguishable; other
+     items' historical conventions are unchanged. **Limitations that
+     travel with the ruling:** the six decisions share one episode and
+     two packets; fixed order confounds packet and position; P1 carries
+     first contact with the desk; packets and decisions are not
+     equated; source openings describe what was opened, never what was
+     read, understood or used, and never eligibility; because no
+     feedback precedes the sixth answer, the results cannot inform any
+     first response. Implemented: §4 "Unit 17".
+276. **RESEARCH-OWNER DECISION D-U17-2 — APPROVED 8 October 2026 (M14;
+     an owner ruling, not an implementer default; not reopened).**
+     Source: `U17-CONTRACT.md` amendment A2 (§2.2b, §3.4 item 2, §4) and
+     the layout memo `layout-evidence\U17-LAYOUT-ALTERNATIVE.md`;
+     preview r4 §6.5, §3.5. Its three items: (1) the desk renders in
+     the WIDE FRAME — the panel over the whole visible design area, two
+     source columns and a 300 px decision column, 16 px design text
+     everywhere (title 20 px), the documented spacing; all nine
+     simultaneously open sources, the source order, content, controls
+     and measurement rules unchanged; no GAUGES heading, scrolling,
+     source limit or larger minimum browser size; (2) the allowlist
+     gains `src/pilot/ui/WorkSurfaceScene.ts` (17 → 18 paths), limited
+     to the documented optional rendering settings: a per-launch frame
+     option reset whenever the shared scene is reused, a per-element
+     text size, a top alignment, and — in the wide frame only — the
+     panel, scrim and input interception over the whole wide area, the
+     header sizes, the feedback placement, the subtitle placement, the
+     accent-button contrast and a focus-ring offset; standard surfaces
+     keep their defaults, which is a requirement to VERIFY (R6 and the
+     unchanged `m12_check_route` run), not an established fact; (3)
+     typography amendment T1: a no-break space (U+00A0) inside "tank 1",
+     "tank 2", "tank 3" (also capitalised) and before "%"; the wording's
+     characters, meaning, numbers and answer keys are unchanged. **Open
+     for the owner, recorded with the decision (not decided here):** (i)
+     the mockup spare was measured with Windows fonts only (Consolas,
+     Courier New, Lucida Console); if participants may use macOS or
+     Linux, where `monospace` resolves to Menlo or DejaVu Sans Mono, the
+     layout gate must also be measured with such a font, or a webfont
+     bundled, before release; (ii) "tank 3:" may still wrap away from
+     its reading ("41 %") in the Fuel tanks gauge; a further no-break
+     space after "tank N:" would go beyond T1 and is the owner's
+     decision; as is, the reading stays unambiguous. Implemented: §4
+     "Unit 17" (1) layout.
+277. **D-1 — orientation card (U17 default).** The first opening shows
+     the orientation card (preview §3.1) with START PACKET 1, HELP and
+     LEAVE DESK; its acknowledgement is recorded
+     (`orientation_acknowledged`) and presents packet 1 and decision 1;
+     no practice decision; left before START, the card is shown again
+     at the next opening (`series_reopened`, view `orientation`).
+278. **D-2 — drafts (U17 default).** A draft survives leaving and
+     returning; activating the draft again clears it (`option_drafted`
+     with `option_id: null`); a draft is never a response and never
+     enters the value.
+279. **D-3 — commitment mechanics inside ruling item 5 (U17 default; M02
+     §5.210 and M13 §5.262 precedent).** The 400 ms fresh-press rule on
+     both confirmations (reason `dialog_settling`; one record per
+     dialog, the count on the next record); RECORD ANSWER without a
+     draft is refused with the approved neutral line and records
+     `commit_without_draft`; the acknowledgement's control accepts a
+     press 400 ms after it appeared (M13 §5.271 (c)) — an earlier press
+     is ignored and not recorded, because the contract's suffix list has
+     no name for it and no suffix is added. A held key or an auto-repeat
+     never reaches the host (`WorkSurfaceScene` drops `event.repeat`)
+     and is therefore never recorded.
+280. **D-4 — help (U17 default).** On request, informational, recorded
+     with the phase, packet and decision it was opened on; never during
+     an open confirmation dialog; closed by ESC or CLOSE HELP; the sheet
+     is the orientation text plus the controls line of preview §3.3.
+281. **D-5 — results mechanics inside ruling items 1 and 4 (U17
+     default).** One view per packet with the approved lines
+     (NEXT / BACK between the packets, FINISH to leave); per decision a
+     short title chosen here (P1: "Coolant loops", "Spare seals", "Job
+     allowed now"; P2: "Mast climb", "Generator tank", "Uplink
+     contact"), "Your recorded answer: …" (or "CANNOT SOLVE"), "Station
+     answer: …" and the results line verbatim; only the first showing
+     per packet is recorded (`results_shown` with its `line_ids`);
+     read-only thereafter.
+282. **D-6 — dispositions for zero and partial evidence (U17 default;
+     the briefing / never-opened mapping is ruling item 6).** As §4
+     "Unit 17" (4): never briefed and never opened `not_presented` (also
+     at the review closure); briefed and never opened `pending`
+     (`briefed_not_opened`) while open and `no_eligible_event`
+     (`briefed_not_opened`, censored, `closed_at_review`) at the review
+     closure; opened and unanswered and closed at the review
+     `no_eligible_event` (`orientation_only` when no decision was
+     presented, else `opened_no_first_response`; the strain noted in
+     §5.142 applies); one to five answered and closed at the review
+     `incomplete` with the value and its denominator, censored; a
+     first-response-phase technical failure voids the row with the
+     answers kept in the components; an unscored-record defect flags the
+     components (`exposure_record_consistent: false`) without effect on
+     the row; `declined` never.
+283. **D-7 — names (U17 default; all provisional, alternatives are the
+     owner's).** Family `proto_m14_integration_`, opportunity
+     `proto_m14_integration_series`, kit window id `m14_packet_p1`,
+     packet window ids `m14_packet_p1` / `m14_packet_p2` (carried as
+     `packet_window_id`), the suffixes of addendum §2 "U17",
+     administration `m14-integration-v1`, content versions `m14-p1-v1`
+     and `m14-p2-v1`, source ids `p1_m1` … `p2_g3`, decision ids `p1_d1`
+     … `p2_d3`, option ids `p1_d1_a` … `p2_d3_d`. The v2 family
+     `proto_m14_desk_` and opportunity `proto_m14_incident_desk` are
+     retired from the route and keep their v2 meaning in the frozen
+     ledger.
+284. **D-8 — event order (U17 default).** The §5.259 convention applied
+     to the M14 extractor: a family event of the current load without a
+     usable `sequence` (a safe integer of at least 1), or two sharing
+     one, make the row a `technical_failure`; gaps are normal; a missing
+     number is never read as zero; a `results_shown` not preceded by
+     `first_responses_completed` — also in a series that never reaches
+     six — voids the scored evidence.
+285. **D-9 — reload (U17 default; the existing convention §5.14,
+     unchanged).** A desk opened in an earlier page load is never re-run
+     (`guardM14Reload()` at Concourse entry; the kit's
+     `technical_failure` with a detail beginning `reload`, after
+     `recordPriorExposure`); the new load's row is `interrupted` with
+     the earlier record in `prior_page_load_events` — also after a
+     completed series, a stated limitation of the convention, and also
+     after the orientation alone, because the kit writes
+     `opportunity_opened` when the orientation card first appears. The
+     kit's `technical_failure` carries `detail` and `input_mode` only
+     (`windowKit.ts` is outside the allowlist, so no `phase` or
+     `prior_exposure` field is added to it); the extractor reads the
+     hold-back from the detail prefix and the absence of any
+     `opportunity_opened` in the load.
+286. **D-10 — companion definitions (U17 default).** "Omissions" =
+     decisions presented without a first response
+     (`unanswered_decision_ids`) plus unpresented decisions
+     (`unpresented_decision_ids`), listed apart and never Cannot solve;
+     "source use" = source openings before each first response
+     (`sources_opened_before`), reported against each establishing set
+     (two for `p1_d3`), kept apart from objective access
+     (`sources_available`) and from the response, and never read as
+     proof of reading.
+287. **D-11 — layout and interface details inside the wide frame (U17
+     default; positions inside the envelope of D-U17-2).** (a) The
+     readings line of the packet-start text sits directly under the
+     three gauges in the right source column rather than in the header,
+     so that the source columns start at panel y 90 and the fixed slots
+     — sized for the widest of the three measured fonts, not for the
+     default font alone — keep about 46 design px above the feedback
+     line with all nine sources open (sized for the default font alone,
+     a wider fallback font would overflow a fixed slot; sized for the
+     widest font with the line in the header, the spare would be at the
+     30 px gate exactly). (b) In a decision view the surface title is
+     the packet line ("PACKET N OF 2 — …") and the subtitle "K of 6
+     recorded"; "DECISION N OF 3" heads the question in the decision
+     column; on the orientation card, the help sheet, the results and
+     the closed records the title is "INCIDENT DESK — STORM PACKETS".
+     (c) Closed tiles carry the glyph "+", open tiles "−" followed by the
+     open text; the draft option is the surface's `selected` state (a
+     "▸" glyph and the fill), never a colour alone. (d) Focus order:
+     the question block (a neutral landing whose activation does
+     nothing), options, RECORD ANSWER, CANNOT SOLVE, HELP, LEAVE DESK,
+     then the tiles in a decision view, so a doubled ENTER after NEXT or
+     after a cancelled dialog lands on the question; the confirm control
+     first in a dialog; the NEXT / NEXT PACKET / SHOW RESULTS control
+     first in the acknowledgement view; CLOSE HELP first on the help
+     sheet; BACK / NEXT, FINISH and HELP on the results. (e) The subtitle in the wide
+     frame is inset from the panel's right edge so the dev-server corner
+     link never covers it (the participant bundle has no corner link).
+     (f) The DEV probe gains `frame`, per element `text_px` (the
+     effective text size) and `text_h` (the rendered label height), and
+     `feedback_top` (the design y of the feedback line's top), so the
+     real-game layout gate (R7) and the text-overflow check are measured
+     from the running surface, not inferred — the implementer's reading
+     of contract §4 (e) "the DEV probe gains `frame` and each element's
+     effective text size", disclosed here. (g) A fault record line
+     "The desk has a fault and is closed. Recorded answers are kept." is
+     added for the fault record; it is not in the preview and carries no
+     forbidden token. (h) Controls that end a view (the two confirmation
+     buttons, START PACKET 1, CLOSE HELP) sit where the view that
+     follows holds nothing activatable at the same place, so the second
+     click of a doubled click or a carried press lands on nothing: the
+     first browser run of R2 showed the second click of a double click on
+     the confirm control toggling the source tile beneath it in the
+     acknowledgement view (an exposure act, never a response); the
+     controls were moved and the run repeated. After the reviews
+     (round 1) the same rule was applied throughout: the confirmation
+     buttons, NEXT / NEXT PACKET / SHOW RESULTS, START PACKET 1, CLOSE
+     HELP and the results controls sit in the bottom row (panel y 496),
+     below every source slot and every element of the decision column,
+     the confirmation's question directly above them and below the
+     status line (the first frames 05 / 07 showed the question drawn
+     over the status line — the reviews' one material finding); the
+     question block became the neutral focus landing of a decision
+     view; START and a reopened acknowledgement settle 400 ms; source
+     events carry `view`; the hold-back record carries no count; the
+     help sheet keeps the packet title and the decision line; the
+     footers name only the controls of their view. Round 2 (after the
+     confirmation passes): CLOSE HELP settles START and the
+     acknowledgement again; NEXT / BACK on the results settle 400 ms
+     against the last change of view; the decision is named in the
+     status line rather than the subtitle (under Courier New and
+     Lucida Console the packet-2 title ran into the longer subtitle,
+     frames 19 / 20 of the first confirmation pass); the records' LEAVE
+     DESK sits in the bottom row; the held-back extractor branch reads a
+     `presented` record of its own load before the components are built.
+288. **D-12 — kit events and the protocol stamp (U17 default; M12
+     precedent).** The kit's own events (`presented`,
+     `opportunity_opened`, `window_closed`, `technical_failure`) carry
+     the kit's fields and `input_mode: 'system'` only; the stamp
+     (`measurement_protocol_version`), `phase` and the packet / decision
+     fields are written on every event the model emits through the
+     sink. The extractor reads version and opportunity from the kit's
+     fields and tolerates the absent stamp on kit events. This default
+     is not among the defaults the contract lists in §17; it is a
+     disclosure of a gap between contract §9 ("every event carries") and
+     the unchanged kit.
+289. **Points recorded from the independent reviews (8 October 2026;
+     scientific, gameplay and visual reviewers, all Opus 5.5; findings
+     are recommendations, none a ruling).** (a) Material (gameplay and
+     visual): the confirmation dialogs' question was drawn over the
+     two-line status line in frames 05 / 07 — corrected in round 1
+     (§5.287 (h)); confirmed on the regenerated frames by the visual
+     reviewer. (b) Minor, corrected in round 1: doubled presses carrying
+     into the next view (NEXT over option A, KEEP WORKING over options,
+     keyboard focus on tile 1) — the bottom-row rule and the neutral
+     focus landing of §5.287 (d) / (h); the hold-back record's "0 of 6
+     recorded" beside "Its record is kept" — the count removed from the
+     hold-back record; the help sheet's header losing the packet and
+     decision — the packet title and the decision subtitle kept; the
+     results footers naming NEXT and BACK on both views, the sixth
+     acknowledgement advertising sources and the decision footer ending
+     "ESC" — footers per view; no browser step for ESC during a
+     confirmation — added to R1; START without a settle and a reopened
+     acknowledgement not settling — both settle 400 ms (§5.277, §5.279);
+     a source opened in the acknowledgement view carrying the decision
+     just answered — the event now carries `view`, and the extractor's
+     attribution to the NEXT decision (correction B) is documented in
+     the addendum; a sequence defect on a load without an opening
+     overriding `interrupted` — the reload branch now precedes the
+     order check (precedence `interrupted` > `technical_failure` holds);
+     ruling item 6's "in the components" — `exposure.never_opened_reason`
+     added. (c) Scientific, recorded and not changed: the lure checks
+     (contract §12 P1 (iv)) assert that every wrong option stays
+     CONSISTENT with its documented partial reading's known sources;
+     for P1-D3 (a, b, c) and P2-D2 (a, d) the partial reading leaves the
+     deciding fact unknown, so the assertion holds through the
+     evaluator's domains rather than by modelling the misreading
+     itself — the claim is "consistent with a partial reading", not
+     "the misreading reproduced"; the implementation matrix and the
+     UNIT-LOG say so. (d) Minor, recorded and not changed (visual): open
+     text in the 38 / 54 px gauge slots leaves one to two CSS px at the
+     bottom under the default font (no clipping measured; the slots
+     are sized for the widest measured font); the "tank 3:" wrap
+     (§5.276 (ii)); wrapped results lines lose their indent; wrapped
+     orientation bullets have no hanging indent; the focus ring is
+     low-contrast on accent-filled buttons; the header count is inset
+     from the panel's right edge (D-11 (e)); the sixth acknowledgement
+     is laid out differently from the first five (by position in the
+     series, never by correctness). (e) Minor, recorded and not changed
+     (gameplay): no participant-facing cue says when the station
+     record will be closed, so omissions at the review may reflect route
+     progress rather than a choice (the owner's design, flagged); the
+     scripted episode-1 route with every optional station reaches the
+     M05 60 s focused cap before the lamp job (see UNIT-LOG "U17
+     results"; an M05 start-window matter, not M14). (f) From the
+     confirmation passes, corrected in round 2: a doubled press after
+     CLOSE HELP could start the packet or continue the series, and NEXT /
+     BACK on the results shared one place (gameplay n1); the held-back
+     row's exposure components were built before the load's `presented`
+     record was read (scientific N1); the packet-2 title ran into the
+     decision subtitle under the fallback fonts (visual). Recorded and not
+     changed: the help sheet's controls line wraps between "R" and
+     "RECORD ANSWER" under the default font; the sixth acknowledgement
+     names the decision, not the packet (the header's count makes it
+     plain); the test-file comment on the lure table was reworded to
+     "consistent with". The scientific reviewer's note that the second
+     `context.reloaded` branch of the extractor is now unreachable is
+     correct and harmless (left for clarity of the dispositions).
+     Residual from the round-2 confirmation (gameplay), recorded and
+     NOT changed because the two correction rounds are used: on the
+     results view CLOSE HELP shares the bottom-row place of NEXT /
+     BACK and does not re-arm the results settle, so a doubled CLOSE
+     HELP press there flips to the other packet's results (feedback
+     phase only; both packets' results are already unlocked; a
+     `results_shown` of the other packet may be written by that press;
+     recoverable with one press). The pure tests cover the re-arm of
+     START after CLOSE HELP but not the acknowledgement's re-arm after
+     CLOSE HELP (code path read by both reviewers, not unit-tested).
+     Both are the owner's to carry into U24 or a later correction. From
+     the round-2 visual confirmation (recorded, not changed): in the
+     acknowledgement view the status line still reads "Decision N of 3 ·
+     Open sources as needed. Choose an answer, …" while the column says
+     "Answer recorded for decision N." (the approved status line is
+     fixed; whether the acknowledgement view should drop it is the
+     owner's call); some open tiles keep only 3–6 CSS px of bottom
+     padding (legible, nothing clipped; the slots are the fixed sizes of
+     D-11 (a)).
+     **For the research owner, not decided here:** (i) a session with a
+     reload before the Concourse, the briefing acknowledged in the
+     current load and the desk never opened exports `interrupted`
+     (addendum §2 "U17"), not `pending` / `no_eligible_event` with
+     `briefed_not_opened` — options: keep it (an opening is the only
+     desk evidence of a load), treat a current-load `presented` as own
+     evidence, or keep `interrupted` with the reason in the components
+     (as now: `exposure.never_opened_reason` is `briefed_not_opened`);
+     (ii) whether `missing_reason` / `censor_reason` plus the exposure
+     components satisfy ruling item 6's "in the components" (now also
+     `never_opened_reason`); (iii) whether the lure checks should model
+     the documented misreadings themselves rather than consistency
+     under unknown facts.

@@ -22,7 +22,7 @@ import { closeM09AtReview } from './m09MonitorWatch';
 import { closeM10AtReview } from './m10ComponentPromise';
 import { closeM11AtReview } from './m11Custody';
 import { closeM12AtReview } from './m12QualityControl';
-import { m14Window } from './m14IncidentDesk';
+import { closeM14AtReview } from './m14IncidentDesk';
 import { closeM25BeliefAtReview, closeM25LoopsAtReview } from './m25Repetition';
 import {
   closeM20ResumeAtReview,
@@ -30,15 +30,6 @@ import {
   closeM22AtReview,
   closeM25AtReview,
 } from './returnWindows';
-import type { ItemWindow } from './windowKit';
-
-function closeSurfaceWindow(window: ItemWindow, nowMs: number, detail: string) {
-  if (window.windowStatus() === 'unopened') {
-    window.markAbsent(detail);
-  } else if (window.isOpen()) {
-    window.stop(nowMs, 'closed_at_review', {}, 'system', 'censored');
-  }
-}
 
 /** Closes every episode 1-5 window at the review (idempotent). */
 export function closeEpisodeWindowsAtReview(nowMs: number) {
@@ -86,11 +77,12 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
   // missing); a completed scored phase is not reclosed — only an open
   // practice ends; never opened → left to the generic coverage closure.
   closeM13AtReview(nowMs);
-  closeSurfaceWindow(
-    m14Window,
-    nowMs,
-    'incident desk never opened before the review',
-  );
+  // Station 080 M14 (Unit 17): a series still in its orientation or
+  // first-response phase closes with the answers as they stand (unanswered
+  // decisions stay missing, no results follow); a completed series is not
+  // reclosed; never opened → absent (`briefed_not_opened` when the briefing
+  // was acknowledged, never `declined` — decision D-U17-1, item 6).
+  closeM14AtReview(nowMs);
   // Episode 5 (Unit 5): a PRESENTED M20 resume opportunity closes as a
   // completed observation (returned / completion as they stand) BEFORE
   // the exterior closure, which censors only a never-resumed start.

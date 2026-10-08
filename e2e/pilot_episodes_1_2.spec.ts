@@ -31,6 +31,7 @@ import {
 import {
   bootPilot,
   concourseToWorkshop,
+  concourseVia,
   dockToConcourse,
   expectStage,
   interactAt,
@@ -340,26 +341,35 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     ).toBe('open');
     expect(await itemStatus(page, 'M01')).toBe('pending');
 
-    // Incident desk: select a message, assign a subsystem and priority, submit twice (warned, then accepted).
-    // Known driver limitation in the U6 verification environment (Chromium
-    // 1228 / SwiftShader, 24 Sep 2026): the eastward leg from the plan
-    // board stalls on Vale's operations desk at x≈418 whatever row it
-    // starts on, and the E press opens Vale's beat — reproduced identically
-    // on the pre-U6 tree (U5-T) against the pre-U6 spec, so it is not an
-    // M05 effect. Left for the U24 end-to-end driver pass; the failure
-    // report below carries the driver state.
+    // Incident desk (Station 080 Unit 17): the two-packet series — the
+    // orientation card, one tile opened, a draft, one recorded first
+    // response, the desk left open and resumable. The desk is reached
+    // with the lane driver (`concourseVia`): the straight-line eastward
+    // leg from the plan board stalls on Vale's operations desk at x≈418
+    // (U6 / U15 B4, driver limitation, left for the U24 driver pass).
+    await concourseVia(
+      page,
+      CONCOURSE.incidentDesk.x,
+      CONCOURSE.incidentDesk.y,
+    );
     await openSurfaceAt(page, CONCOURSE.incidentDesk, 'm14_incident_desk');
-    await clickElement(page, 'msg_1');
-    await clickElement(page, 'node_coolant');
-    await clickElement(page, 'priority_1');
-    await clickElement(page, 'submit');
-    await clickElement(page, 'submit');
+    await page.waitForTimeout(450); // past START's settle window
+    await clickElement(page, 'start');
+    await clickElement(page, 'tile_m1');
+    await clickElement(page, 'option_a');
+    await clickElement(page, 'record_answer');
+    await page.waitForTimeout(450); // past the dialog's settle window
+    await clickElement(page, 'confirm');
     await waitSurface(page, true);
     types = await pilotEventTypes(page);
-    expect(types).toContain('proto_m14_desk_submit_warned');
-    expect(types).toContain('proto_m14_desk_window_closed');
+    expect(types).toContain('proto_m14_integration_orientation_acknowledged');
+    expect(types).toContain('proto_m14_integration_source_opened');
+    expect(types).toContain('proto_m14_integration_first_response');
+    expect(types).not.toContain('proto_m14_integration_results_shown');
+    expect(types.some((t) => t.startsWith('proto_m14_desk_'))).toBe(false);
     await closeSurface(page);
-    expect(await itemStatus(page, 'M14')).toBe('completed');
+    // One of six first responses recorded: the series window stays open.
+    expect(await itemStatus(page, 'M14')).toBe('open');
 
     // Quality packet 1 (Unit 8): check one field (its reference is
     // revealed), judge it past the settle window, release the packet.

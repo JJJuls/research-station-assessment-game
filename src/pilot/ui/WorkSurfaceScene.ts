@@ -17,6 +17,17 @@
  * Presentation: restrained industrial panel, readable at 1280×720; state
  * is always shape/glyph + colour, never colour alone; no reward effects.
  *
+ * Frames (Station 080 Unit 17, research-owner decision D-U17-2): every
+ * surface renders in the STANDARD frame — the 720×516 panel inside the
+ * 800×600 design space, 10 / 12 px element text — unless its launch data
+ * asks for the WIDE frame, which lays the panel over the whole visible
+ * design area of the overlay camera (about 1050×588 design px, identical
+ * at the 1280×720 and 1920×1080 canvases), sizes the header text up and
+ * lets each element carry its own text size. The frame and every other
+ * per-launch setting are reset in `init()` because the scene instance is
+ * reused across launches; a surface that sets none of the optional fields
+ * keeps today's geometry, typography and input behaviour.
+ *
  * DEV probe: window.__workSurfaceProbe (read-only) exposes element rects
  * so Playwright can drive real pointer input and keyboard focus.
  */
@@ -25,7 +36,13 @@ import Phaser from 'phaser';
 import { key } from '../../constants';
 import { guardKeyHandler } from '../../inventory/ui/keyGuard';
 import { prefersReducedMotion } from '../../inventory/ui/theme';
-import { fitOverlayScene } from '../../world/viewport';
+import {
+  CANVAS_WIDTH,
+  DESIGN_HEIGHT,
+  DESIGN_SCALE,
+  DESIGN_WIDTH,
+  fitOverlayScene,
+} from '../../world/viewport';
 import type { InputMode } from '../windows/windowKit';
 
 export type SurfaceElementKind = 'tile' | 'button' | 'readout' | 'text';
@@ -38,11 +55,16 @@ export type SurfaceElementState =
   | 'disabled'
   | 'accent';
 
+export type SurfaceFrame = 'standard' | 'wide';
+
 export interface SurfaceElement {
   id: string;
   kind: SurfaceElementKind;
   label: string;
-  /** Panel-relative position/size (panel is 720×516). */
+  /**
+   * Panel-relative position/size (the standard panel is 720×516; the wide
+   * panel of a surface launched with `frame: 'wide'` is about 1050×588).
+   */
   x: number;
   y: number;
   w: number;
@@ -60,6 +82,14 @@ export interface SurfaceElement {
   small?: boolean;
   /** Text alignment for 'text' elements. */
   align?: 'left' | 'center';
+  /**
+   * Optional label size in design px (Unit 17): overrides the 10 / 12 px
+   * rule for this element; in the wide frame an element with `textPx`
+   * carries no `detail` line.
+   */
+  textPx?: number;
+  /** Optional top-anchored label (Unit 17; fixed slots without uneven padding). */
+  valign?: 'top';
 }
 
 /**
@@ -97,6 +127,11 @@ export interface WorkSurfaceLaunchData {
   onClose: (inputMode: InputMode) => boolean | void;
   /** Called after the surface is fully closed (host resumed). */
   onClosed?: () => void;
+  /**
+   * Optional frame (Unit 17, decision D-U17-2): `'wide'` lays the panel
+   * over the whole visible design area. Defaults to `'standard'`.
+   */
+  frame?: SurfaceFrame;
 }
 
 interface Rendered {
@@ -104,6 +139,7 @@ interface Rendered {
   box: Phaser.GameObjects.Rectangle;
   text: Phaser.GameObjects.Text;
   detail: Phaser.GameObjects.Text | null;
+  textPx: number;
 }
 
 declare global {
@@ -116,6 +152,10 @@ declare global {
       status: string | null;
       focus: string | null;
       feedback: string | null;
+      /** The frame the surface was launched with (Unit 17). */
+      frame: SurfaceFrame;
+      /** Design y of the feedback line's top edge (Unit 17 layout gate). */
+      feedback_top: number;
       elements: {
         id: string;
         kind: string;
@@ -126,6 +166,10 @@ declare global {
         w: number;
         h: number;
         focusable: boolean;
+        /** Effective label size in design px (Unit 17). */
+        text_px: number;
+        /** Rendered label height in design px (Unit 17). */
+        text_h: number;
       }[];
       links: { from: string; to: string }[];
     } | null;
@@ -136,8 +180,36 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
   window.__workSurfaceProbe = null;
 }
 
-const PANEL = { x: 40, y: 42, width: 720, height: 516 } as const;
+interface PanelRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+const PANEL: PanelRect = { x: 40, y: 42, width: 720, height: 516 };
 const DEPTH = { dim: 18, panel: 20, element: 22, focus: 24 } as const;
+
+/** The visible design width of the overlay camera (1066.7 at both canvases). */
+const VISIBLE_DESIGN_WIDTH = CANVAS_WIDTH / DESIGN_SCALE;
+
+/**
+ * The wide panel: the whole visible design area minus an 8 px margin at
+ * the sides and 6 px at the top and bottom — about 1050×588 design px at
+ * (−125, 6), the same at the 1280×720 and 1920×1080 canvases.
+ */
+const WIDE_PANEL: PanelRect = {
+  x: Math.ceil(DESIGN_WIDTH / 2 - VISIBLE_DESIGN_WIDTH / 2) + 8,
+  y: 6,
+  width: Math.floor(VISIBLE_DESIGN_WIDTH) - 16,
+  height: DESIGN_HEIGHT - 12,
+};
+
+/** Wide-frame text sizes (design px): title and every header line. */
+const WIDE_TITLE_PX = 20;
+const WIDE_TEXT_PX = 16;
+/** Wide frame: the subtitle keeps clear of the dev-server corner link. */
+const WIDE_SUBTITLE_INSET = 110;
 
 const COLOR = {
   dim: 0x05080c,
@@ -174,6 +246,8 @@ export class WorkSurfaceScene extends Phaser.Scene {
   private lastFocusId: string | null = null;
   private linkGraphics: Phaser.GameObjects.Graphics | null = null;
   private lastLinks: SurfaceLink[] = [];
+  private frame: SurfaceFrame = 'standard';
+  private panel: PanelRect = PANEL;
 
   constructor() {
     super(key.scene.pilotWorkSurface);
@@ -184,6 +258,10 @@ export class WorkSurfaceScene extends Phaser.Scene {
     this.closing = false;
     this.focusIndex = 0;
     this.lastFocusId = null;
+    // The scene instance is reused across launches: every per-launch
+    // setting is reset here, the frame included.
+    this.frame = data.frame ?? 'standard';
+    this.panel = this.frame === 'wide' ? WIDE_PANEL : PANEL;
   }
 
   create() {
@@ -193,18 +271,30 @@ export class WorkSurfaceScene extends Phaser.Scene {
     // THIS camera's (design) space; pointer.x/y are canvas pixels.
     fitOverlayScene(this);
 
+    const wide = this.frame === 'wide';
+    const panel = this.panel;
+
     this.add
       // Denser scrim (0.62 → 0.9): host status chips and banners outside
       // the panel no longer read as fragments (visual review V1 residual).
-      .rectangle(400, 300, 800, 600, COLOR.dim, 0.9)
+      // Wide frame: the scrim and its input interception cover the whole
+      // visible design area, so a side-band click never reaches beneath.
+      .rectangle(
+        400,
+        300,
+        wide ? VISIBLE_DESIGN_WIDTH + 8 : 800,
+        wide ? DESIGN_HEIGHT + 8 : 600,
+        COLOR.dim,
+        0.9,
+      )
       .setDepth(DEPTH.dim)
       .setInteractive();
     this.add
       .rectangle(
-        PANEL.x + PANEL.width / 2,
-        PANEL.y + PANEL.height / 2,
-        PANEL.width,
-        PANEL.height,
+        panel.x + panel.width / 2,
+        panel.y + panel.height / 2,
+        panel.width,
+        panel.height,
         COLOR.panel,
         0.985,
       )
@@ -212,9 +302,9 @@ export class WorkSurfaceScene extends Phaser.Scene {
       .setDepth(DEPTH.panel);
     this.add
       .rectangle(
-        PANEL.x + PANEL.width / 2,
-        PANEL.y + 40,
-        PANEL.width - 2,
+        panel.x + panel.width / 2,
+        panel.y + 40,
+        panel.width - 2,
         1,
         COLOR.stroke,
         1,
@@ -222,43 +312,50 @@ export class WorkSurfaceScene extends Phaser.Scene {
       .setDepth(DEPTH.panel);
 
     this.titleText = this.add
-      .text(PANEL.x + 18, PANEL.y + 12, '', {
+      .text(panel.x + 18, wide ? panel.y + 10 : panel.y + 12, '', {
         color: COLOR.text,
-        font: 'bold 15px monospace',
+        font: wide
+          ? `bold ${WIDE_TITLE_PX}px monospace`
+          : 'bold 15px monospace',
       })
       .setDepth(DEPTH.element);
     this.subtitleText = this.add
-      .text(PANEL.x + PANEL.width - 18, PANEL.y + 14, '', {
-        color: COLOR.faint,
-        font: '11px monospace',
-      })
+      .text(
+        panel.x + panel.width - (wide ? WIDE_SUBTITLE_INSET : 18),
+        panel.y + 14,
+        '',
+        {
+          color: COLOR.faint,
+          font: wide ? `${WIDE_TEXT_PX}px monospace` : '11px monospace',
+        },
+      )
       .setOrigin(1, 0)
       .setDepth(DEPTH.element);
     this.statusText = this.add
-      .text(PANEL.x + 18, PANEL.y + 48, '', {
+      .text(panel.x + 18, panel.y + 48, '', {
         color: COLOR.faint,
-        font: '11px monospace',
-        wordWrap: { width: PANEL.width - 36 },
+        font: wide ? `${WIDE_TEXT_PX}px monospace` : '11px monospace',
+        wordWrap: { width: panel.width - 36 },
       })
       .setDepth(DEPTH.element);
     this.helpText = this.add
-      .text(PANEL.x + PANEL.width / 2, PANEL.y + PANEL.height - 6, '', {
+      .text(panel.x + panel.width / 2, panel.y + panel.height - 6, '', {
         color: COLOR.dimText,
         // Unit 7 (V16): 11 px minimum for help lines; wrapped inside the
         // panel and anchored at its foot so long lines grow upward
         // (visual review M4/M5).
-        font: '11px monospace',
+        font: wide ? `${WIDE_TEXT_PX}px monospace` : '11px monospace',
         align: 'center',
-        wordWrap: { width: PANEL.width - 40 },
+        wordWrap: { width: panel.width - 40 },
       })
       .setOrigin(0.5, 1)
       .setDepth(DEPTH.element);
     this.feedbackText = this.add
-      .text(PANEL.x + PANEL.width / 2, PANEL.y + PANEL.height - 34, '', {
+      .text(panel.x + panel.width / 2, panel.y + panel.height - 34, '', {
         color: COLOR.amber,
-        font: '11px monospace',
+        font: wide ? `${WIDE_TEXT_PX}px monospace` : '11px monospace',
         align: 'center',
-        wordWrap: { width: PANEL.width - 36 },
+        wordWrap: { width: panel.width - 36 },
       })
       .setOrigin(0.5)
       .setDepth(DEPTH.element);
@@ -296,6 +393,8 @@ export class WorkSurfaceScene extends Phaser.Scene {
           status: null,
           focus: null,
           feedback: null,
+          frame: this.frame,
+          feedback_top: 0,
           elements: [],
           links: [],
         };
@@ -320,6 +419,17 @@ export class WorkSurfaceScene extends Phaser.Scene {
       model.help ??
         'Arrows/TAB focus · ENTER or SPACE activate · click also works · ESC closes',
     );
+
+    if (this.frame === 'wide') {
+      // The feedback line is placed from the help text's bounds, so a
+      // wrapped help line never meets it.
+      this.feedbackText
+        .setOrigin(0.5, 1)
+        .setPosition(
+          this.panel.x + this.panel.width / 2,
+          this.helpText.getBounds().top - 4,
+        );
+    }
 
     for (const item of this.rendered) {
       item.box.destroy();
@@ -432,9 +542,11 @@ export class WorkSurfaceScene extends Phaser.Scene {
   }
 
   private renderElement(element: SurfaceElement): Rendered {
+    const wide = this.frame === 'wide';
+    const panel = this.panel;
     const state = element.state ?? 'idle';
-    const cx = PANEL.x + element.x + element.w / 2;
-    const cy = PANEL.y + element.y + element.h / 2;
+    const cx = panel.x + element.x + element.w / 2;
+    const cy = panel.y + element.y + element.h / 2;
     const fill =
       element.kind === 'text'
         ? COLOR.panel
@@ -479,41 +591,42 @@ export class WorkSurfaceScene extends Phaser.Scene {
           : state === 'selected'
             ? '▸ '
             : '');
-    const font = element.small ? '10px monospace' : '12px monospace';
+    const textPx = element.textPx ?? (element.small ? 10 : 12);
+    const font = `${textPx}px monospace`;
     const color =
       state === 'disabled'
         ? COLOR.dimText
         : element.kind === 'readout'
           ? COLOR.faint
           : element.kind === 'button'
-            ? COLOR.accentText
+            ? // Wide frame: accent buttons use the text colour (contrast).
+              wide && state === 'accent'
+              ? COLOR.text
+              : COLOR.accentText
             : COLOR.text;
-    const hasDetail = element.detail !== undefined && element.detail !== '';
+    const hasDetail =
+      element.detail !== undefined &&
+      element.detail !== '' &&
+      !(wide && element.textPx !== undefined);
+    const left = element.align === 'left' || element.kind === 'text';
+    const top = element.valign === 'top';
     const text = this.add
       .text(
-        element.align === 'left' || element.kind === 'text'
-          ? PANEL.x + element.x + 8
-          : cx,
-        hasDetail ? cy - 8 : cy,
+        left ? panel.x + element.x + 8 : cx,
+        top ? panel.y + element.y + 6 : hasDetail ? cy - 8 : cy,
         `${glyph}${element.label}`,
         {
           color,
           font: element.kind === 'button' ? `bold ${font}` : font,
-          align:
-            element.align === 'left' || element.kind === 'text'
-              ? 'left'
-              : 'center',
+          align: left ? 'left' : 'center',
           wordWrap: { width: element.w - 14 },
         },
       )
-      .setOrigin(
-        element.align === 'left' || element.kind === 'text' ? 0 : 0.5,
-        element.kind === 'text' ? 0 : 0.5,
-      )
+      .setOrigin(left ? 0 : 0.5, element.kind === 'text' || top ? 0 : 0.5)
       .setDepth(DEPTH.element + 1);
 
     if (element.kind === 'text') {
-      text.setPosition(PANEL.x + element.x + 8, PANEL.y + element.y + 6);
+      text.setPosition(panel.x + element.x + 8, panel.y + element.y + 6);
     }
 
     const detail = hasDetail
@@ -528,7 +641,7 @@ export class WorkSurfaceScene extends Phaser.Scene {
           .setDepth(DEPTH.element + 1)
       : null;
 
-    return { element, box, text, detail };
+    return { element, box, text, detail, textPx };
   }
 
   private focusables(): Rendered[] {
@@ -549,10 +662,14 @@ export class WorkSurfaceScene extends Phaser.Scene {
       return;
     }
 
+    // Wide frame: a 2 px offset so the ring never meets a neighbouring
+    // box across the 4 px gaps.
+    const offset = this.frame === 'wide' ? 4 : 6;
+
     this.lastFocusId = current.element.id;
     this.focusRing
       .setPosition(current.box.x, current.box.y)
-      .setSize(current.element.w + 6, current.element.h + 6)
+      .setSize(current.element.w + offset, current.element.h + offset)
       .setVisible(true);
   }
 
@@ -680,6 +797,8 @@ export class WorkSurfaceScene extends Phaser.Scene {
       status: this.statusText.text,
       focus: focusables[this.focusIndex]?.element.id ?? null,
       feedback: this.feedbackText.text || null,
+      frame: this.frame,
+      feedback_top: this.feedbackText.getBounds().top,
       elements: this.rendered.map((item) => ({
         id: item.element.id,
         kind: item.element.kind,
@@ -692,6 +811,8 @@ export class WorkSurfaceScene extends Phaser.Scene {
         focusable:
           item.element.onActivate !== undefined &&
           item.element.state !== 'disabled',
+        text_px: item.textPx,
+        text_h: item.text.getBounds().height,
       })),
       links: this.lastLinks.map((link) => ({ from: link.from, to: link.to })),
     };

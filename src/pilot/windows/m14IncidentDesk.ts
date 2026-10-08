@@ -1,139 +1,79 @@
 /**
- * M14 — Multi-source incident desk (evidence-led pilot v2, Unit 2).
+ * M14 — the window adapter of the two-packet incident desk (Station 080
+ * M01–M26 run, Unit 17; administration `m14-integration-v1`).
  *
- * Ledger (sheet 09): one incident desk combines six messages, three
- * gauges and one station diagram; assign faults and priorities while
- * every source remains externally visible; independent packet/window.
+ * Owns the ONE register window of the series (opportunity
+ * `proto_m14_integration_series`, the kit's window id `m14_packet_p1`,
+ * family `proto_m14_integration_`), the session-scope series state, the
+ * log sink (the kit's required fields plus the protocol stamp), the
+ * optional focused clock and the reload guard; every command delegates to
+ * the pure model (`m14IntegrationModel.ts`) with its input mode, and the
+ * surface model (`m14SurfaceModel.ts`) calls only these commands.
  *
- * Mechanic: a single spatial work surface — six message cards (left),
- * three live gauge readouts (top), the station diagram with three
- * subsystem nodes (right). For each message the participant assigns a
- * subsystem (fault) and a priority (1 = first). Two messages contradict
- * each other; the participant may flag a conflict pair. Explicit SUBMIT
- * (an incomplete first submission is warned once, the second accepted).
- * No memory requirement: every source stays on the surface.
- *
- * Raw components: source_case_links (message→subsystem), omissions,
- * unresolved_conflicts, final_assignments, source_consults (gauge and
- * diagram consults). Never a score.
+ * Closure rules (research-owner decision D-U17-1, 7 October 2026): the
+ * sixth first response completes the window; ESC / LEAVE DESK keep the
+ * desk resumable; the review censors a series still in its orientation or
+ * first-response phase with the answers as they stand and marks a
+ * never-opened desk absent (`briefed_not_opened`, never `declined`); a
+ * desk opened in an earlier page load is never re-run. The v2 family
+ * `proto_m14_desk_*` is retired from the route and is not written by
+ * this build. Nothing here scores.
  */
+import { FocusedClock } from '../../measurement/focusedClock';
 import {
-  assignCounterbalance,
-  currentSessionId,
-  type InputMode,
-  ItemWindow,
-} from './windowKit';
+  registerFocusedClock,
+  releaseFocusedClock,
+} from '../../measurement/focusMonitor';
+import { protocolStamp } from '../../measurement/protocol';
+import { researchRuntime } from '../../systems';
+import {
+  createM14Series,
+  M14_RELOAD_DETAIL,
+  m14ClosureSnapshot,
+  type M14ConfirmOutcome,
+  m14CurrentDecision,
+  m14EntrySnapshot,
+  type M14FailOutcome,
+  m14Live,
+  type M14LogSink,
+  type M14NextOutcome,
+  m14PriorAdministration,
+  type M14RequestOutcome,
+  type M14ResponseKind,
+  m14sCancelCommit,
+  m14sCloseAtReview,
+  m14sCloseHelp,
+  m14sConfirmCommit,
+  m14sDraft,
+  type M14Series,
+  m14sFail,
+  m14sHelp,
+  m14sHoldBack,
+  m14sLeave,
+  m14sNext,
+  m14sOpen,
+  m14sRequestCommit,
+  m14sResultsNavigate,
+  m14sStart,
+  m14sToggleSource,
+} from './m14IntegrationModel';
+import {
+  M14_ENTRY_STATE_VERSION,
+  M14_FAMILY,
+  M14_OBJECT_ID,
+  M14_OPPORTUNITY_ID,
+  M14_SCENE,
+  M14_WINDOW_ID,
+} from './m14PacketContent';
+import type { M14SurfaceHost } from './m14SurfaceModel';
+import { type InputMode, ItemWindow } from './windowKit';
 
-export const M14_OPPORTUNITY_ID = 'proto_m14_incident_desk';
-export const M14_WINDOW_ID = 'm14_desk_w1';
-export const M14_ENTRY_STATE_VERSION = 'm14-incident-desk-v1';
-export const M14_FAMILY = 'proto_m14_desk_';
-
-export type M14Form = 'form_a' | 'form_b';
-export type M14Subsystem = 'coolant' | 'power' | 'comms';
-
-export const M14_SUBSYSTEMS: readonly { id: M14Subsystem; label: string }[] = [
-  { id: 'coolant', label: 'Coolant loop' },
-  { id: 'power', label: 'Power bus' },
-  { id: 'comms', label: 'Comms relay' },
-];
-
-export interface M14Message {
-  id: string;
-  from: string;
-  text: string;
-}
-
-export interface M14Gauge {
-  id: string;
-  label: string;
-  reading: string;
-  band: 'normal' | 'high' | 'low';
-}
-
-/** Standardised packet (identical content; form changes card order only). */
-export const M14_MESSAGES: readonly M14Message[] = [
-  {
-    id: 'msg_1',
-    from: 'Pump bay',
-    text: 'Loop pressure dropping since 04:10; seal weeping at joint 3.',
-  },
-  {
-    id: 'msg_2',
-    from: 'Comms shed',
-    text: 'Uplink to base lost at 04:02. Relay lamp dark.',
-  },
-  {
-    id: 'msg_3',
-    from: 'Night watch',
-    text: 'Bus voltage sagging when the heaters cycle.',
-  },
-  {
-    id: 'msg_4',
-    from: 'Comms shed',
-    text: 'Relay lamp steady green at 04:15; uplink nominal.',
-  },
-  {
-    id: 'msg_5',
-    from: 'Galley',
-    text: 'Hot water intermittent; loop temperature reads low.',
-  },
-  {
-    id: 'msg_6',
-    from: 'Night watch',
-    text: 'Heater breaker tripped twice overnight.',
-  },
-];
-
-/** The designed contradiction pair (comms lost vs comms nominal). */
-export const M14_CONFLICT_PAIR: readonly [string, string] = ['msg_2', 'msg_4'];
-
-export const M14_GAUGES: readonly M14Gauge[] = [
-  { id: 'gauge_loop', label: 'Loop pressure', reading: '1.6 bar', band: 'low' },
-  { id: 'gauge_bus', label: 'Bus voltage', reading: '26.8 V', band: 'low' },
-  {
-    id: 'gauge_relay',
-    label: 'Relay carrier',
-    reading: 'LOCK',
-    band: 'normal',
-  },
-];
-
-interface M14State {
-  form: M14Form;
-  assignments: Record<string, M14Subsystem | null>;
-  priorities: Record<string, 1 | 2 | 3 | null>;
-  conflictFlags: string[][];
-  selectedMessage: string | null;
-  sourceConsults: number;
-  submitAttempts: number;
-  assignmentActs: number;
-}
-
-let state: M14State | null = null;
-
-function ensureState(): M14State {
-  if (state === null) {
-    const form = assignCounterbalance<M14Form>(
-      currentSessionId(),
-      'm14_incident_desk_form',
-      ['form_a', 'form_b'],
-    );
-
-    state = {
-      form,
-      assignments: Object.fromEntries(M14_MESSAGES.map((m) => [m.id, null])),
-      priorities: Object.fromEntries(M14_MESSAGES.map((m) => [m.id, null])),
-      conflictFlags: [],
-      selectedMessage: null,
-      sourceConsults: 0,
-      submitAttempts: 0,
-      assignmentActs: 0,
-    };
-  }
-
-  return state;
-}
+export {
+  M14_ENTRY_STATE_VERSION,
+  M14_FAMILY,
+  M14_OPPORTUNITY_ID,
+  M14_WINDOW_ID,
+} from './m14PacketContent';
 
 export const m14Window = new ItemWindow({
   item: 'M14',
@@ -141,225 +81,322 @@ export const m14Window = new ItemWindow({
   windowId: M14_WINDOW_ID,
   entryStateVersion: M14_ENTRY_STATE_VERSION,
   family: M14_FAMILY,
-  scene: 'station_concourse',
-  objectId: 'm14_incident_desk',
+  scene: M14_SCENE,
+  objectId: M14_OBJECT_ID,
 });
 
-export function declareM14() {
-  const s = ensureState();
+let series: M14Series | null = null;
+let clock: FocusedClock | null = null;
+/** Focused ms at each decision's presentation (per-decision focused time). */
+const focusedMarks: Record<string, number> = {};
+let briefed = false;
 
-  m14Window.spec.form = s.form;
-  m14Window.spec.counterbalance = s.form;
-  m14Window.declare();
+function ensure(): M14Series {
+  if (series === null) {
+    series = createM14Series();
+  }
+
+  return series;
 }
 
-export function m14State(): Readonly<M14State> {
-  return ensureState();
-}
+const sink: M14LogSink = (suffix, metadata) => {
+  m14Window.log(suffix, { ...protocolStamp(), ...metadata });
+};
 
-/** Messages in this form's surface order. */
-export function m14MessageOrder(): M14Message[] {
-  return ensureState().form === 'form_a'
-    ? [...M14_MESSAGES]
-    : [...M14_MESSAGES].reverse();
-}
-
-export function openM14(nowMs: number) {
-  declareM14();
-  m14Window.open(nowMs, {
-    messages: M14_MESSAGES.length,
-    gauges: M14_GAUGES.length,
-    subsystems: M14_SUBSYSTEMS.length,
-    order: m14MessageOrder().map((m) => m.id),
-  });
-}
-
-export function selectM14Message(messageId: string, inputMode: InputMode) {
-  const s = ensureState();
-
-  if (!m14Window.isOpen()) {
+function startClock(nowMs: number) {
+  if (clock !== null) {
     return;
   }
 
-  s.selectedMessage = s.selectedMessage === messageId ? null : messageId;
-  m14Window.log('message_selected', {
-    message_id: messageId,
-    selected: s.selectedMessage === messageId,
-    input_mode: inputMode,
-  });
+  clock = new FocusedClock();
+  clock.start(nowMs);
+  registerFocusedClock(clock);
 }
 
-export function consultM14Source(sourceId: string, inputMode: InputMode) {
-  const s = ensureState();
-
-  if (!m14Window.isOpen()) {
+function stopClock(nowMs: number) {
+  if (clock === null) {
     return;
   }
 
-  s.sourceConsults += 1;
-  m14Window.log('source_consulted', {
-    source_id: sourceId,
-    consult_count: s.sourceConsults,
-    input_mode: inputMode,
-  });
+  clock.stop(nowMs);
+  releaseFocusedClock(clock);
 }
 
-/** Assign the selected message to a subsystem node (toggle to clear). */
-export function assignM14Subsystem(
-  subsystem: M14Subsystem,
-  inputMode: InputMode,
-): boolean {
-  const s = ensureState();
+/** Remembers the focused time at which the current decision was presented. */
+function markCurrentDecision(nowMs: number) {
+  const s = ensure();
 
-  if (!m14Window.isOpen() || s.selectedMessage === null) {
-    return false;
+  if (s.status !== 'first_responses' || clock === null) {
+    return;
   }
 
-  const previous = s.assignments[s.selectedMessage];
+  const id = m14CurrentDecision(s).id;
 
-  s.assignments[s.selectedMessage] = previous === subsystem ? null : subsystem;
-  s.assignmentActs += 1;
-  m14Window.log('fault_assigned', {
-    message_id: s.selectedMessage,
-    subsystem: s.assignments[s.selectedMessage],
-    previous,
-    input_mode: inputMode,
-  });
-
-  return true;
-}
-
-export function setM14Priority(
-  priority: 1 | 2 | 3,
-  inputMode: InputMode,
-): boolean {
-  const s = ensureState();
-
-  if (!m14Window.isOpen() || s.selectedMessage === null) {
-    return false;
+  if (focusedMarks[id] === undefined) {
+    focusedMarks[id] = clock.focusedMs(nowMs);
   }
-
-  const previous = s.priorities[s.selectedMessage];
-
-  s.priorities[s.selectedMessage] = previous === priority ? null : priority;
-  s.assignmentActs += 1;
-  m14Window.log('priority_set', {
-    message_id: s.selectedMessage,
-    priority: s.priorities[s.selectedMessage],
-    previous,
-    input_mode: inputMode,
-  });
-
-  return true;
-}
-
-/** Flag the selected message as conflicting with another (pair). */
-export function flagM14Conflict(
-  otherId: string,
-  inputMode: InputMode,
-): boolean {
-  const s = ensureState();
-
-  if (!m14Window.isOpen() || s.selectedMessage === null) {
-    return false;
-  }
-
-  const pair = [s.selectedMessage, otherId].sort();
-  const existing = s.conflictFlags.findIndex(
-    (flag) => flag[0] === pair[0] && flag[1] === pair[1],
-  );
-
-  if (existing >= 0) {
-    s.conflictFlags.splice(existing, 1);
-  } else {
-    s.conflictFlags.push(pair);
-  }
-
-  m14Window.log('conflict_flagged', {
-    pair,
-    flagged: existing < 0,
-    input_mode: inputMode,
-  });
-
-  return true;
-}
-
-export function m14Omissions(): string[] {
-  const s = ensureState();
-
-  return M14_MESSAGES.filter(
-    (m) => s.assignments[m.id] === null || s.priorities[m.id] === null,
-  ).map((m) => m.id);
-}
-
-export function m14UnresolvedConflicts(): number {
-  const s = ensureState();
-  const designed = [...M14_CONFLICT_PAIR].sort();
-  const flagged = s.conflictFlags.some(
-    (flag) => flag[0] === designed[0] && flag[1] === designed[1],
-  );
-
-  return flagged ? 0 : 1;
 }
 
 /**
- * Explicit submit. An incomplete first submission is warned (returns
- * 'warned'); the second submission is accepted regardless (never a
- * correctness gate).
+ * A fault in the orientation or the first-response phase closes the
+ * series as a technical failure through the kit (invalid, never
+ * behaviour); after completion it is recorded without touching the scored
+ * evidence. Never throws.
  */
-export function submitM14(
-  nowMs: number,
-  inputMode: InputMode,
-): 'accepted' | 'warned' | 'refused' {
-  const s = ensureState();
+export function failM14(detail: string, nowMs: number = Date.now()) {
+  const s = ensure();
+  let outcome: M14FailOutcome;
 
-  if (!m14Window.isOpen()) {
-    return 'refused';
+  try {
+    outcome = m14sFail(s, detail);
+  } catch {
+    outcome = 'none';
   }
 
-  s.submitAttempts += 1;
-
-  const omissions = m14Omissions();
-
-  if (omissions.length > 0 && s.submitAttempts === 1) {
-    m14Window.log('submit_warned', {
-      omissions,
-      input_mode: inputMode,
-    });
-
-    return 'warned';
+  try {
+    if (outcome === 'scored_phase') {
+      stopClock(nowMs);
+      m14Window.technicalFailure(detail);
+    } else if (outcome === 'feedback') {
+      sink('technical_failure', {
+        phase: 'feedback',
+        detail,
+        input_mode: 'system',
+      });
+    }
+  } catch {
+    // The fault record itself failed: the series state already says
+    // technical failure; nothing else can be done here.
   }
-
-  m14Window.complete(
-    nowMs,
-    {
-      source_case_links: Object.entries(s.assignments)
-        .filter(([, subsystem]) => subsystem !== null)
-        .map(([message_id, subsystem]) => ({ message_id, subsystem })),
-      final_assignments: M14_MESSAGES.map((m) => ({
-        message_id: m.id,
-        subsystem: s.assignments[m.id],
-        priority: s.priorities[m.id],
-      })),
-      omissions,
-      omission_count: omissions.length,
-      conflict_flags: s.conflictFlags,
-      unresolved_conflicts: m14UnresolvedConflicts(),
-      source_consults: s.sourceConsults,
-      assignment_acts: s.assignmentActs,
-      submit_attempts: s.submitAttempts,
-    },
-    inputMode,
-  );
-
-  return 'accepted';
 }
 
+/** Runs a command; a thrown fault is routed to `failM14` and `fallback` returned. */
+function guarded<T>(name: string, fallback: T, fn: () => T): T {
+  try {
+    return fn();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    failM14(`${name}: ${message}`);
+
+    return fallback;
+  }
+}
+
+export function declareM14() {
+  ensure();
+  m14Window.declare();
+}
+
+export function m14Series(): Readonly<M14Series> {
+  return ensure();
+}
+
+/** True when the desk is a closed record in this page load. */
+export function m14Closed(): boolean {
+  return !m14Live(ensure()) && ensure().status !== 'unopened';
+}
+
+/**
+ * Vale's briefing names the desk: the briefing exposure is recorded
+ * through the kit's `present` (`presented`) — exposure only, not a desk
+ * opening and not a decision presentation (decision D-U17-1, item 6).
+ */
+export function presentM14(nowMs: number) {
+  declareM14();
+  briefed = true;
+  m14Window.present(nowMs);
+}
+
+/**
+ * Reload guard (register §5.14): a desk opened in an earlier page load of
+ * this identity is never re-run — prior exposure is recorded and the
+ * series is marked technically incomplete; the new load's row is
+ * `interrupted`. Idempotent; called at Concourse entry and at the open.
+ */
+export function guardM14Reload(): boolean {
+  const s = ensure();
+
+  if (s.status !== 'unopened' || m14Window.windowStatus() !== 'unopened') {
+    return false;
+  }
+
+  if (!m14PriorAdministration(researchRuntime.getPriorPageLoadEvents())) {
+    return false;
+  }
+
+  m14sHoldBack(s);
+  m14Window.recordPriorExposure(
+    'incident desk opened in an earlier page load of this identity',
+  );
+  m14Window.technicalFailure(M14_RELOAD_DETAIL);
+
+  return true;
+}
+
+/**
+ * Opens (or reopens) the desk. The first opening writes the kit's
+ * `opportunity_opened` with the entry snapshot (`stage` = the route stage
+ * at the open); every later opening resumes the view as it stood.
+ */
+export function openM14(nowMs: number, entry: { stage?: string | null } = {}) {
+  declareM14();
+  guardM14Reload();
+
+  const s = ensure();
+
+  guarded('open', undefined, () => {
+    if (s.status === 'unopened') {
+      m14Window.setComprehension('not_required');
+      m14Window.open(nowMs, m14EntrySnapshot(entry.stage ?? null));
+      startClock(nowMs);
+    } else if (m14Live(s)) {
+      m14Window.open(nowMs);
+      clock?.resume('surface_closed', nowMs);
+    }
+
+    m14sOpen(s, nowMs, sink);
+    markCurrentDecision(nowMs);
+  });
+}
+
+/** START PACKET 1 on the orientation card. */
+export function startM14(mode: InputMode, nowMs: number): boolean {
+  return guarded('start', false, () => {
+    const done = m14sStart(ensure(), mode, nowMs, sink);
+
+    markCurrentDecision(nowMs);
+
+    return done;
+  });
+}
+
+export function toggleM14Source(
+  sourceId: string,
+  mode: InputMode,
+  nowMs: number,
+) {
+  return guarded('source', 'none' as const, () =>
+    m14sToggleSource(ensure(), sourceId, mode, nowMs, sink),
+  );
+}
+
+export function draftM14Option(
+  optionId: string,
+  mode: InputMode,
+  nowMs: number,
+): boolean {
+  return guarded('draft', false, () =>
+    m14sDraft(ensure(), optionId, mode, nowMs, sink),
+  );
+}
+
+export function requestM14Commit(
+  kind: M14ResponseKind,
+  mode: InputMode,
+  nowMs: number,
+): M14RequestOutcome {
+  return guarded('request', 'none' as const, () =>
+    m14sRequestCommit(ensure(), kind, mode, nowMs, sink),
+  );
+}
+
+export function cancelM14Commit(mode: InputMode, nowMs: number): boolean {
+  return guarded('cancel', false, () =>
+    m14sCancelCommit(ensure(), mode, nowMs, sink),
+  );
+}
+
+/**
+ * The confirming press. A recorded sixth first response completes the
+ * kit window right after the model's `first_responses_completed`.
+ */
+export function confirmM14Commit(
+  mode: InputMode,
+  nowMs: number,
+): M14ConfirmOutcome {
+  return guarded('confirm', 'none' as const, () => {
+    const s = ensure();
+    const id = s.status === 'first_responses' ? m14CurrentDecision(s).id : null;
+    const focused =
+      clock !== null && id !== null
+        ? clock.focusedMs(nowMs) - (focusedMarks[id] ?? 0)
+        : null;
+    const outcome = m14sConfirmCommit(s, mode, nowMs, sink, {
+      focused_ms: focused,
+    });
+
+    if (outcome === 'recorded' && s.status === 'completed') {
+      stopClock(nowMs);
+      m14Window.complete(nowMs, m14ClosureSnapshot(s), mode);
+    }
+
+    return outcome;
+  });
+}
+
+export function nextM14(mode: InputMode, nowMs: number): M14NextOutcome {
+  return guarded('next', 'none' as const, () => {
+    const outcome = m14sNext(ensure(), mode, nowMs, sink);
+
+    markCurrentDecision(nowMs);
+
+    return outcome;
+  });
+}
+
+export function navigateM14Results(
+  direction: 'next' | 'back',
+  mode: InputMode,
+  nowMs: number,
+): boolean {
+  return guarded('results', false, () =>
+    m14sResultsNavigate(ensure(), direction, mode, nowMs, sink),
+  );
+}
+
+export function openM14Help(mode: InputMode, nowMs: number): boolean {
+  return guarded('help', false, () => m14sHelp(ensure(), mode, nowMs, sink));
+}
+
+export function closeM14Help(nowMs: number): boolean {
+  return guarded('close_help', false, () => m14sCloseHelp(ensure(), nowMs));
+}
+
+/**
+ * ESC order: an open dialog closes first, then the help sheet; only then
+ * does ESC leave the desk. Returns true when ESC was consumed.
+ */
+export function m14ConsumesEsc(nowMs: number): boolean {
+  return guarded('esc', false, () => {
+    const s = ensure();
+
+    if (s.pending_commit !== null) {
+      m14sCancelCommit(s, 'keyboard', nowMs, sink);
+
+      return true;
+    }
+
+    return m14sCloseHelp(s, nowMs);
+  });
+}
+
+/** The surface closed (ESC, LEAVE DESK, FINISH): the window pauses; nothing closes. */
 export function closeM14Surface(nowMs: number) {
-  m14Window.pause(nowMs);
-  m14Window.log('surface_closed', {
-    omissions: m14Omissions(),
-    input_mode: 'system',
+  guarded('leave', undefined, () => {
+    const s = ensure();
+
+    if (!s.panel_open) {
+      return;
+    }
+
+    m14sLeave(s, nowMs, sink);
+
+    if (m14Window.isOpen()) {
+      m14Window.pause(nowMs);
+    }
+
+    clock?.pause('surface_closed', nowMs);
   });
 }
 
@@ -367,10 +404,79 @@ export function resumeM14Surface(nowMs: number) {
   m14Window.resume(nowMs);
 }
 
+/**
+ * The station-record closure at the Utility Deck review. A series still
+ * in its orientation or first-response phase closes as `closed_at_review`
+ * (answers kept, unanswered decisions missing, censored); a completed
+ * series is not reclosed; a never-opened desk is recorded absent —
+ * `briefed_not_opened` when the briefing was acknowledged, never
+ * `declined` (decision D-U17-1, item 6).
+ */
+export function closeM14AtReview(nowMs: number) {
+  const s = ensure();
+
+  if (m14Window.windowStatus() === 'unopened') {
+    m14Window.markAbsent(
+      briefed ? 'briefed_not_opened' : 'not_briefed_not_opened',
+    );
+
+    return;
+  }
+
+  guarded('review', undefined, () => {
+    if (m14sCloseAtReview(s, nowMs, sink)) {
+      stopClock(nowMs);
+      m14Window.stop(
+        nowMs,
+        'closed_at_review',
+        { ...m14ClosureSnapshot(s), invalid_detail: 'closed_at_review' },
+        'system',
+        'censored',
+      );
+    }
+  });
+}
+
+/**
+ * Binds the surface model to this adapter: the host scene supplies the
+ * clock, the close path and the feedback line; the state reader and
+ * every command come from here (the surface model stays pure).
+ */
+export function bindM14Surface(base: {
+  now: () => number;
+  close: () => void;
+  feedback: (message: string) => void;
+}): M14SurfaceHost {
+  return {
+    ...base,
+    series: m14Series,
+    commands: {
+      start: startM14,
+      toggleSource: toggleM14Source,
+      draft: draftM14Option,
+      request: requestM14Commit,
+      cancel: cancelM14Commit,
+      confirm: confirmM14Commit,
+      next: nextM14,
+      navigateResults: navigateM14Results,
+      help: openM14Help,
+      closeHelp: closeM14Help,
+    },
+  };
+}
+
 /** Test-only escape hatch. */
 export function resetM14State() {
-  state = null;
+  if (clock !== null) {
+    releaseFocusedClock(clock);
+    clock = null;
+  }
+
+  for (const key of Object.keys(focusedMarks)) {
+    delete focusedMarks[key];
+  }
+
+  series = null;
+  briefed = false;
   m14Window.reset();
-  m14Window.spec.form = null;
-  m14Window.spec.counterbalance = null;
 }

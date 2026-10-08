@@ -1166,8 +1166,33 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'performance_counterpart',
     direction: 'extend_occasions',
     occasions: 2,
+    // Unit 17: the approved two-packet series landed at the Concourse
+    // incident desk (episode 1) — ONE opportunity, two packet windows in
+    // one desk episode. The v2 one-packet family `proto_m14_desk_*` keeps
+    // its v2 meaning in the frozen ledger.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m14_integration_series'],
+      windows: [
+        {
+          id: 'm14_packet_p1',
+          occasion: 'p1',
+          zone: 'station_concourse',
+          episode: 1,
+        },
+        {
+          id: 'm14_packet_p2',
+          occasion: 'p2',
+          zone: 'station_concourse',
+          episode: 1,
+        },
+      ],
+      family_prefixes: ['proto_m14_integration_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
-      'Two distinct packets, each with six messages, three gauges and three keyed integration decisions that require combining sources; sources stay visible.',
+      'Two distinct packets, each with six messages, three gauges and three keyed integration decisions that require combining sources; sources open on demand and stay visible until the participant closes them (research-owner decision D-U17-1, item 2).',
     features: [
       fraction(
         'm14_correct_first_integrations',

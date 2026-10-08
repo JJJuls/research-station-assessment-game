@@ -349,6 +349,158 @@ Bench leaves the v2 family under research-owner ruling D-U16-1 of
   row unchanged. Precedence: `interrupted` (held back after a reload) >
   `technical_failure` > `pending` > the closed-series outcomes.
 
+U17 (M14, candidates as before; one new provisional family, no canonical
+event, no scoring-plan variable, no formula changed): the Concourse
+incident desk leaves the v2 family under research-owner decisions
+D-U17-1 of 7 October 2026 and D-U17-2 of 8 October 2026 (register §4
+"Unit 17", §5.275–§5.276).
+
+- **M14** — family `proto_m14_integration_`; ONE opportunity
+  `proto_m14_integration_series`; the kit's window id `m14_packet_p1`;
+  packet window ids `m14_packet_p1` and `m14_packet_p2` (carried as
+  `packet_window_id`); object `m14_incident_desk`;
+  `entry_state_version` = `m14-integration-v1`; content versions
+  `m14-p1-v1` and `m14-p2-v1`. The v2 family `proto_m14_desk_` and its
+  opportunity `proto_m14_incident_desk` are retired from the route and
+  keep their v2 meaning in the frozen ledger; this build writes neither.
+  The legacy Information Processing Lab family `proto_m14_packet_` is
+  untouched.
+- **Phases.** `orientation` (the card); `measurement` (the
+  first-response phase: packets p1 → p2, decisions D1 → D3, one
+  immutable first response each — a confirmed option or a confirmed
+  CANNOT SOLVE — and no correctness feedback of any kind); `feedback`
+  (the results, only after the sixth first response); `closure`.
+- **Every event the model emits** carries the kit's fields
+  (`measure_id`, `opportunity_id`, `window_id`, `entry_state_version`,
+  `presented_at_ms`, `window_status`, the validity fields),
+  `measurement_protocol_version`, `phase` and — when it concerns a
+  packet or decision — `packet_id`, `packet_index` (1–2),
+  `packet_window_id`, `content_version`, `decision_id`,
+  `decision_index` (1–3) and `decision_global_index` (1–6);
+  `input_mode` is `pointer`, `keyboard` or `system`. The kit's own
+  records (`presented`, `opportunity_opened`, `window_closed`,
+  `technical_failure`) carry the kit's fields and `input_mode: 'system'`
+  only (`windowKit.ts` is outside the unit). Suffixes:
+  - `presented` — Vale's briefing acknowledged: exposure only, not a
+    desk opening and not a decision presentation;
+  - `opportunity_opened` — the first opening; `entry_state_snapshot`:
+    `packets_planned` (2), `decisions_planned` (6),
+    `assigned_packet_order`, per packet {`packet_id`,
+    `packet_window_id`, `content_version`, `source_ids`,
+    `decision_ids`, per decision `option_ids` and `key_option_id`},
+    `commit` (`explicit_confirmation`), `cannot_solve_available` (true),
+    `feedback` (`after_all_first_responses`), `source_presentation`
+    (`on_demand_stay_open`), `stop_control` (false), `settle_ms` (400),
+    `stage`;
+  - `orientation_acknowledged`; `series_reopened` and `panel_left` —
+    `view` (written while the desk is live, never on a closed record);
+  - `packet_presented` — `assigned_position`, `realised_position`,
+    `sources_available` (the nine ids), `decision_ids`; exactly once per
+    packet;
+  - `decision_presented` — `assigned_position` (the global index),
+    `realised_position`, `option_ids`; exactly once per decision;
+  - `source_opened` / `source_closed` — `source_id`, `source_kind`
+    (`message` | `gauge`), `open_count` for that source,
+    `sources_open`, `view` (`decision` or `acknowledgement`), the
+    decision current at the act — a tile toggled in the acknowledgement
+    view carries the decision just answered and counts toward the NEXT
+    decision's `sources_opened_before` (contract correction B);
+    exposure records, never a response and never proof of reading;
+  - `option_drafted` — `option_id` (null when cleared),
+    `previous_option_id`; never a response;
+  - `commit_requested` — `kind` (`option` | `cannot_solve`),
+    `option_id`; `commit_cancelled` — `reason` (`keep_working` |
+    `panel_left`), `refused_presses`; `commit_press_refused` — `reason`
+    (`dialog_settling`), `since_opened_ms`, `settle_ms`; recorded once
+    per dialog, the count carried on the next record;
+    `commit_without_draft` — RECORD ANSWER with no draft;
+  - `first_response` — exactly one per answered decision, `phase`
+    `measurement`: `response_kind` (`option` | `cannot_solve`),
+    `option_id` (null for Cannot solve), `correct` (always false for
+    `cannot_solve`), `key_option_id`, `sources_opened_before` (ids opened
+    at least once in the packet before the confirmation),
+    `establishing_source_sets` (two for `p1_d3`),
+    `establishing_sets_opened_before` (per set the count opened before),
+    `sources_open_at_commit`, `drafts_before`, `help_consults_before`,
+    `active_ms`, `focused_ms` (the focused clock, null if unavailable),
+    `refused_presses`, `draft_at_commit`, `input_mode`;
+  - `response_acknowledged` — `line_id` (`answer_recorded`),
+    `next_control` (`next_decision` | `next_packet` | `show_results`),
+    `answered_count`; identical in content for every response;
+  - `packet_completed` — the packet's three-decision record;
+  - `first_responses_completed` — with the sixth first response: the
+    closure snapshot (`decisions_planned`, `decisions_presented`,
+    `decisions_answered`, `correct_first_decisions`,
+    `cannot_solve_count`, `by_packet`, per decision `presented`,
+    `answered`, `response_kind`, `option_id`, `correct`) and
+    `closure_reason` `completed`; the kit's `window_closed` (exit
+    `completed`) follows; the scored phase has no later closure event;
+  - `results_shown` — `phase` `feedback`, `packet_id`, `line_ids`;
+    only after `first_responses_completed`; once per packet;
+  - `help_consulted` — `phase`, `view`, the packet and decision it was
+    opened on;
+  - `series_closed_at_review` — first-response (or orientation) phase
+    only: the closure snapshot and `closure_reason` `closed_at_review`;
+    the kit's `window_closed` (censored) follows;
+  - `technical_failure` — the kit's record (`detail`); the reload
+    hold-back uses the detail `reload after administration: desk not
+re-run` and is read as a hold-back only in a load without an
+    `opportunity_opened`; a fault after completion is recorded with
+    `phase` `feedback` and never enters the value.
+- **Extraction rules** (`src/measurement/features/m14.ts`): current-load
+  events only; the value is recounted from the `first_response` events
+  (each response's correctness recomputed from the content module's key
+  for that decision and content version) and compared with the event's
+  own `correct` flag and with the closure snapshot. `technical_failure`,
+  never a value, for contradictory, malformed or unverifiable SCORED
+  evidence — an unknown or mismatched version or opportunity, an unknown
+  packet, decision or option, a decision of another packet, a content
+  version that does not match its packet, a packet or decision presented
+  twice, out of the assigned order or before the previous first
+  response, a first response without its presentation, a second first
+  response, a `correct` flag that contradicts the key, a CANNOT SOLVE
+  marked correct or carrying an option, an option response without an
+  option of its own decision, a non-boolean `correct`, a `key_option_id`
+  that disagrees with the content, a first response outside
+  `measurement` or after the completion, six first responses without the
+  completion snapshot or that snapshot with fewer, a snapshot that
+  disagrees with the recount, ANY `results_shown` before the completion
+  (also in a series that never reaches six), and a family event of the
+  load without a usable, unique `sequence` (the §5.259 convention).
+  A held-back load (the kit's reload record and no opening of its own)
+  still reads a `presented` record of its own, so its exposure stage is
+  accurate. Legitimate missingness is never a technical failure. A defect confined
+  to unscored records (a `source_closed` without its opening, an orphan
+  draft, a help record without a decision, a `sources_opened_before` list
+  that disagrees with the openings) sets `exposure_record_consistent:
+false` in the components and leaves the row unchanged. Dispositions:
+  six verified first responses ⇒ `observed` (`completed`), stable
+  whatever follows; one to five answered and closed at the review ⇒
+  `incomplete`, censored; never briefed and never opened ⇒
+  `not_presented`; briefed and never opened ⇒ `pending`
+  (`briefed_not_opened`) while open and null `no_eligible_event`
+  (`briefed_not_opened`, censored, `closed_at_review`) at the review
+  closure; opened and unanswered at the review closure ⇒
+  `no_eligible_event` (`orientation_only` or `opened_no_first_response`);
+  still open ⇒ `pending`; a load after a reload without an
+  `opportunity_opened` of its own ⇒ `interrupted` (read before any
+  position is compared, so a sequence defect on such a load never
+  overrides it); a fault in the
+  first-response phase ⇒ `technical_failure` with the answers kept in
+  the components; never `declined`. Precedence: `interrupted` >
+  `technical_failure` > `pending` > the closed-series outcomes.
+  Components (beside the value, never inside it): the exposure stages
+  (`briefed`, `desk_opened`, `orientation_acknowledged`,
+  `packets_presented`, `decisions_presented`, each with its sequence
+  where recorded, and `never_opened_reason` — `briefed_not_opened`,
+  `not_briefed_not_opened` or null), the versions and orders, `by_packet` (numerator,
+  denominator, planned 3, omissions), `omissions`
+  (`unanswered_decision_ids`, `unpresented_decision_ids`),
+  `source_openings` per packet (available, opened, open counts), per
+  decision the response and its source-use record (per establishing set
+  the sources opened before / the set's size and `all_opened_before`),
+  `help_consults` by phase, `results_shown`, `exposure_record_consistent`.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                           | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -366,7 +518,7 @@ Bench leaves the v2 family under research-owner ruling D-U16-1 of
 | `m11_unresolved_custodies`        | unresolved / accepted accessible                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | ↑ unresolved stewardship  | none accepted                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `m12_fields_verified`             | Σ fields explicitly judged (matches or differs) before release over the RELEASED products / 6 (planned denominator; one released product ⇒ `incomplete` on 3; a released product with nothing judged is 0; recounted from the `field_judged` events) (U8)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | ↑ checking                | no product released ⇒ null (`declined` when presented and never opened; a packet opened and closed at the review is missing, never 0)                                                                                                                                                                                                                                                                                                                             |
 | `m13_first_solutions`             | networks whose FIRST response is a layout the shared validator accepts for that network and form / networks with a first response in the current page load (planned denominator 3; CANNOT SOLVE and an unsealed layout are in the denominator, not the numerator; a network without a first response is missing, never incorrect; fewer than three answered and the series closed ⇒ `incomplete` on the answered count; recounted from the `first_response` events by re-validating each recorded board and compared with the event's `correct` flag and the closure snapshot; results, practice, help, time and input mode never enter; complete and stable from the third first response) (U16)                                                                                                                                                                                                                                                                                                                                                                             | ↑ puzzle performance      | none answered ⇒ null (`not_presented` never opened; `voluntary_stop` opened and stopped; `no_eligible_event` opened and closed at the review; `pending` while the first-response phase is open, also with one or two answers; `interrupted` held back after a reload; `technical_failure` for a fault in the first-response phase or contradictory / unverifiable scored evidence)                                                                                |
-| `m14_correct_first_integrations`  | correct first decisions / 6                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | ↑ integration             | none answered                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `m14_correct_first_integrations`  | correct first decisions / 6: decisions whose FIRST response is the keyed option of that decision / decisions with a first response in the current page load (planned denominator 6; CANNOT SOLVE and a wrong option are in the denominator, not the numerator; a decision without a first response is missing, never incorrect; an answer counts whatever sources were opened before it — source openings never exclude, discount or weight an answer; fewer than six answered and the series closed at the review ⇒ `incomplete` on the answered count; recounted from the `first_response` events against the content key and compared with the event's `correct` flag and the closure snapshot; by-packet results, omissions and source openings in the components, never in the value; complete and stable from the sixth first response) (U17)                                                                                                                                                                                                                           | ↑ integration             | none answered ⇒ null (`not_presented` never briefed and never opened; `pending` briefed and never opened while open, or opened and still open; `no_eligible_event` briefed and never opened at the review closure (`briefed_not_opened`) or opened and unanswered there; `interrupted` held back after a reload; `technical_failure` for a first-response-phase fault or contradictory / unverifiable scored evidence; never `declined`)                          |
 | `m15_correct_first_predictions`   | correct first predictions / 4                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | ↑ understanding           | none answered                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `m16_correct_first_applications`  | correct first applications / 6                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | ↑ transfer                | none answered                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `m17_criterion_trial`             | first learning trial ending 3 consecutive correct FIRST responses (one SUBMIT of exactly two operators per trial; recounted from the `trial_submitted` events), with attained = true, reported whenever reached within the administered trials (even after an early exit, `complete_sequence` false); 12 / false / censored when all twelve ran without attainment (U9)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | earlier = faster          | early exit WITHOUT attainment ⇒ incomplete (not censored); never opened ⇒ null; owner decisions §5.87–5.88 pending before use                                                                                                                                                                                                                                                                                                                                     |

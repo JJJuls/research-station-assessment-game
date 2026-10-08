@@ -118,18 +118,22 @@ import {
 } from '../pilot/windows/m12QualityControl';
 import { m12SurfaceModel } from '../pilot/windows/m12SurfaceModel';
 import {
+  bindM14Surface,
   closeM14Surface,
   declareM14,
+  guardM14Reload,
+  m14ConsumesEsc,
   m14Window,
   openM14,
+  presentM14,
   resumeM14Surface,
 } from '../pilot/windows/m14IncidentDesk';
+import { m14SurfaceModel } from '../pilot/windows/m14SurfaceModel';
 import {
   answerM25Belief,
   askM25Belief,
   m25BeliefDueNow,
 } from '../pilot/windows/m25Repetition';
-import { m14SurfaceModel } from '../pilot/windows/surfaceModels';
 import { CONCOURSE_SPAWNS, CONCOURSE_STATIONS } from '../pilot/zoneSites';
 import type {
   InteractionKey,
@@ -237,6 +241,9 @@ export class StationConcourseScene extends PilotZoneScene {
     guardM10Reload('d1');
     declareM12('o1');
     declareM14();
+    // M14 (Unit 17): a desk opened in an earlier page load is never re-run
+    // (prior exposure recorded, technically incomplete).
+    guardM14Reload();
     stampContaminationNotes();
 
     super.create(data);
@@ -395,11 +402,24 @@ export class StationConcourseScene extends PilotZoneScene {
       3,
       () => m14Window.isClosed(),
       () => {
-        openM14(Date.now());
+        // M14 (Unit 17): the two-packet series in the WIDE frame (decision
+        // D-U17-2); the entry snapshot records the route stage at the open.
+        openM14(Date.now(), { stage: pilotStage() });
         openWorkSurface(this, {
           surfaceId: 'm14_incident_desk',
-          model: () => m14SurfaceModel(this.surfaceHost()),
-          onClose: () => closeM14Surface(Date.now()),
+          frame: 'wide',
+          model: () => m14SurfaceModel(bindM14Surface(this.m14SurfaceHost())),
+          onClose: () => {
+            // ESC closes an open dialog first, then the help sheet, and
+            // only then leaves — the same path as LEAVE DESK.
+            if (m14ConsumesEsc(Date.now())) {
+              return false;
+            }
+
+            closeM14Surface(Date.now());
+
+            return true;
+          },
         });
       },
     );
@@ -735,6 +755,19 @@ export class StationConcourseScene extends PilotZoneScene {
     };
   }
 
+  /** M14 (Unit 17): LEAVE DESK / FINISH and ESC take the SAME path — pause, then close. */
+  private m14SurfaceHost() {
+    return {
+      now: () => Date.now(),
+      close: () => {
+        closeM14Surface(Date.now());
+        activeWorkSurface(this)?.close();
+      },
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+    };
+  }
+
   private m05TickPending = false;
   private m05TickSerial = 0;
 
@@ -901,6 +934,11 @@ export class StationConcourseScene extends PilotZoneScene {
                 // M12 (Unit 8): the briefing names the storm packet's
                 // quality packet — occasion 1 is presented here.
                 presentM12('o1', Date.now());
+                // M14 (Unit 17): the briefing names the incident desk —
+                // the briefing exposure is recorded here (decision D-U17-1,
+                // item 6): exposure only, not a desk opening and not a
+                // decision presentation.
+                presentM14(Date.now());
               },
               // The chain: watch offer → delivery offer → (alarm, recap)
               // → lamp job. An offer held back after a reload is skipped,
