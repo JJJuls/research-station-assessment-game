@@ -329,3 +329,29 @@ regression. As-built record, defaults and limitations: register §4
 comparison: `UNIT-LOG.md` "U17". Not updated (U24 backlog): the capture
 specs, the `interactionRegistry` window label `m14_desk_w1`,
 `world_v1_interactions` / `world_v1_registry` evidence for the desk.
+**U17 closeout** (M14; 9 October 2026; research-owner closeout ruling
+and dispositions — register §5.290; as-built record §4 "Unit 17
+closeout"; results `UNIT-LOG.md` "U17 closeout"): (a) a reload BEFORE
+the desk was opened no longer reads `interrupted` once the absence of
+an earlier opening is established — the reload guard writes the
+provisional `prior_load_checked` record at Concourse entry of a later
+load (the recovered history continuous and without an opening) and the
+extractor then applies the never-opened dispositions (`not_presented`
+before the briefing, `pending` / `no_eligible_event` with
+`briefed_not_opened` after it); a found opening keeps the hold-back
+(orientation-only and completed earlier loads included); a missing or
+discontinuous history keeps `interrupted`; (b) CLOSE HELP on the
+results re-arms the 400 ms settle so a doubled press never switches the
+packet or writes `results_shown`; (c) the exposure fields and
+`never_opened_reason` accepted; the lure tests retained as logical
+consistency checks (no claim of reproduced misreadings or validity);
+typography and non-Windows font checks carried into U24 / release
+verification; the two baseline `final_scientific_gates` failures kept
+as documented exceptions; (d) the M05 timing of the episode-1 route
+diagnosed once, instrumented, with its conclusion recorded. Tests: pure
+`m14_integration` (the reload-check predicate, the results-help settle,
+the established / not-established extractor cases, the hold-back
+contradiction, orientation-only and completed earlier loads); browser
+`m14_integration_route` R8 (a genuine reload before the opening) and
+R9 (doubled ENTER and double click after CLOSE HELP on the results), R5
+re-run with the check record.

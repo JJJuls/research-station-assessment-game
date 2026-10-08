@@ -28,6 +28,11 @@
  *   R4  zero evidence: not_presented before the briefing, pending with
  *       briefed_not_opened after it, the orientation card left and shown
  *       again.
+ *   R8  closeout ruling of 9 October 2026: a reload BEFORE the desk was
+ *       opened — the new load's check establishes the absence of an
+ *       earlier opening (not_presented, then pending) and the desk opens
+ *       normally; R9 closeout correction: CLOSE HELP on the results
+ *       settles NEXT / BACK against a doubled press
  *   R5  reload: one answer, then a page reload — the earlier log carried
  *       byte-identically, the feature interrupted; the desk, when
  *       reachable again, held back.
@@ -1585,16 +1590,27 @@ test.describe('M14 two keyed packets: reload (Unit 17)', () => {
     await page.waitForTimeout(300);
     await leaveDesk(page);
 
-    // The new load holds the hold-back record and nothing else of the desk.
+    // The new load holds its reload check (the opening found) and the
+    // hold-back record, and nothing else of the desk.
     const after = await pagePayload(page);
     const own = after.raw_events.filter((event) =>
       event.event_type.startsWith(FAMILY),
     );
 
     expect(own.map((event) => event.event_type)).toEqual([
+      `${FAMILY}prior_load_checked`,
       `${FAMILY}technical_failure`,
     ]);
-    expect(String(meta(own[0]).detail)).toMatch(/^reload/);
+    expect(meta(own[0])).toMatchObject({
+      page_load_index: 2,
+      prior_page_load_event_count: before.raw_events.length,
+      prior_opening_found: true,
+      prior_briefing_found: true,
+      history_continuous: true,
+      prior_opening_absence_established: false,
+      input_mode: 'system',
+    });
+    expect(String(meta(own[1]).detail)).toMatch(/^reload/);
     expect(
       own.filter((event) =>
         /opportunity_opened|packet_presented|decision_presented|first_response|results_shown/.test(
@@ -1603,11 +1619,262 @@ test.describe('M14 two keyed packets: reload (Unit 17)', () => {
       ),
     ).toEqual([]);
     expect(JSON.stringify(after.prior)).toBe(JSON.stringify(before.raw_events));
-    expect((await reproduce(page)).row).toMatchObject({
+    const held = (await reproduce(page)).row;
+
+    expect(held).toMatchObject({
       value: null,
       numerator: null,
       disposition: 'interrupted',
     });
+    expect(held.components).toMatchObject({
+      held_back_after_reload: true,
+      exposure_record_consistent: true,
+      reload_check: {
+        checked: true,
+        prior_opening_found: true,
+        prior_opening_absence_established: false,
+      },
+    });
+    expectNoRuntimeErrors(errors);
+  });
+
+  test('R8 (closeout ruling of 9 October 2026 — a reload BEFORE the desk was opened): the new load establishes the absence of an earlier opening, reads not_presented before the briefing and pending with briefed_not_opened after it, and opens the desk normally', async ({
+    page,
+  }) => {
+    test.setTimeout(900_000);
+
+    const errors = captureErrors(page);
+
+    // The first load: briefed, the desk never opened.
+    await toConcourse(page, 'u17r8');
+    await briefing(page);
+
+    const before = await pagePayload(page);
+
+    expect(before.page_load_index).toBe(1);
+    expect(
+      before.raw_events
+        .filter((event) => event.event_type.startsWith(FAMILY))
+        .map((event) => event.event_type),
+    ).toEqual([`${FAMILY}presented`]);
+    expect((await reproduce(page)).row).toMatchObject({
+      disposition: 'pending',
+      missing_reason: 'briefed_not_opened',
+    });
+
+    await reload(page);
+
+    // Right after the reload, before the Concourse: no check of this load
+    // yet, so nothing is established and the row is interrupted.
+    const atOpening = await pagePayload(page);
+
+    expect(atOpening.page_load_index).toBe(2);
+    expect(
+      atOpening.raw_events.filter((event) =>
+        event.event_type.startsWith(FAMILY),
+      ),
+    ).toEqual([]);
+    expect((await reproduce(page)).row).toMatchObject({
+      disposition: 'interrupted',
+    });
+
+    let blocked: string | null = null;
+
+    try {
+      await press(page, 'Space');
+      await waitScene(page, 'dock', 60_000);
+      await page.waitForTimeout(1600);
+      await completeDockTutorial(page, 1);
+      await dockToConcourse(page);
+    } catch (error) {
+      blocked = (error as Error).message.split('\n')[0];
+    }
+
+    test.skip(
+      blocked !== null,
+      `BLOCKED / NOT VERIFIED — the driver could not reach the Concourse after the reload (${blocked}); the post-reload classification was not exercised in the browser`,
+    );
+
+    // Concourse entry wrote the check: a continuous history, the earlier
+    // briefing reported, no earlier opening ⇒ absence established.
+    const after = await pagePayload(page);
+    const checks = after.raw_events.filter(
+      (event) => event.event_type === `${FAMILY}prior_load_checked`,
+    );
+
+    expect(JSON.stringify(after.prior)).toBe(JSON.stringify(before.raw_events));
+    expect(checks).toHaveLength(1);
+    expect(meta(checks[0])).toMatchObject({
+      page_load_index: 2,
+      prior_page_load_event_count: before.raw_events.length,
+      prior_opening_found: false,
+      prior_briefing_found: true,
+      history_continuous: true,
+      prior_opening_absence_established: true,
+      input_mode: 'system',
+      entry_state_version: VERSION,
+    });
+
+    // Before this load's briefing: not_presented (the earlier briefing is
+    // in the components, never read as this load's exposure).
+    let row = (await reproduce(page)).row;
+
+    expect(row).toMatchObject({ disposition: 'not_presented', value: null });
+    expect(row.components).toMatchObject({
+      reload_check: {
+        page_reloaded: true,
+        checked: true,
+        prior_opening_found: false,
+        prior_briefing_found: true,
+        history_continuous: true,
+        prior_opening_absence_established: true,
+      },
+      exposure: {
+        briefed: false,
+        desk_opened: false,
+        never_opened_reason: 'not_briefed_not_opened',
+      },
+      exposure_record_consistent: true,
+    });
+
+    // Briefed in this load, never opened: pending with briefed_not_opened.
+    await briefing(page);
+    row = (await reproduce(page)).row;
+    expect(row).toMatchObject({
+      disposition: 'pending',
+      value: null,
+      missing_reason: 'briefed_not_opened',
+    });
+    expect(row.components.exposure).toMatchObject({
+      briefed: true,
+      desk_opened: false,
+      never_opened_reason: 'briefed_not_opened',
+    });
+
+    // The desk opens normally — the orientation card, not the hold-back.
+    await openDesk(page);
+    expect(await ids(page)).toContain('start');
+    expect(await lines(page)).not.toContain(
+      'This desk was already used in this session.',
+    );
+    await expectNoCorrectnessOnScreen(page);
+    await shot(page, 'c01-reload-before-opening-orientation-card');
+    await page.waitForTimeout(SETTLE_MS);
+    await page.keyboard.press('Enter'); // START
+    await page.waitForTimeout(300);
+    expect(await countOf(page, 'opportunity_opened')).toBe(1);
+    expect(await countOf(page, 'orientation_acknowledged')).toBe(1);
+    expect(await countOf(page, 'technical_failure')).toBe(0);
+    expect(await currentDecision(page)).toBe('p1_d1');
+    await leaveDesk(page);
+
+    row = (await reproduce(page)).row;
+    expect(row).toMatchObject({ disposition: 'pending', value: null });
+    expect(row.components.exposure).toMatchObject({
+      briefed: true,
+      desk_opened: true,
+      orientation_acknowledged: true,
+      never_opened_reason: null,
+    });
+    // The earlier load's events are untouched by everything above.
+    expect(JSON.stringify((await pagePayload(page)).prior)).toBe(
+      JSON.stringify(before.raw_events),
+    );
+    await expectFamilyDiscipline(page);
+    expectNoRuntimeErrors(errors);
+  });
+});
+
+test.describe('M14 two keyed packets: CLOSE HELP on the results (U17 closeout, 9 October 2026)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 600 });
+  });
+
+  test('R9 (help on the results): a doubled ENTER and a double click after CLOSE HELP change nothing and write no results_shown; a settled press navigates', async ({
+    page,
+  }) => {
+    test.setTimeout(600_000);
+
+    const errors = captureErrors(page);
+
+    await toConcourse(page, 'u17r9');
+    await briefing(page);
+    await openDesk(page);
+    await page.waitForTimeout(SETTLE_MS);
+    await page.keyboard.press('Enter'); // START
+    await page.waitForTimeout(300);
+
+    // The six keyed answers, then SHOW RESULTS.
+    for (const letter of ['a', 'b', 'd', 'b', 'c', 'c'] as const) {
+      await answerByKeyboard(page, letter);
+      await nextByKeyboard(page);
+    }
+
+    expect(await countOf(page, 'first_response')).toBe(6);
+    expect(await countOf(page, 'results_shown')).toBe(1);
+    expect(await lines(page)).toContain('Station answer: Loop A only');
+
+    // Keyboard: H opens the help sheet; ENTER closes it; a second ENTER
+    // inside 400 ms lands on NEXT (the same place) and changes nothing.
+    await page.waitForTimeout(SETTLE_MS);
+    await page.keyboard.press('h');
+    await page.waitForTimeout(250);
+    expect((await probe(page)).focus).toBe('close_help');
+    expect(await countOf(page, 'help_consulted')).toBe(1);
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(250);
+    expect(await ids(page)).toContain('results_next');
+    expect(await ids(page)).not.toContain('close_help');
+    expect(await countOf(page, 'results_shown')).toBe(1);
+    expect(await lines(page)).toContain('Station answer: Loop A only');
+    expect(await lines(page)).not.toContain('Station answer: Text bursts only');
+    await shot(page, 'c02-results-packet-1-after-doubled-close-help');
+
+    // A settled ENTER on NEXT shows packet 2 (its one results_shown).
+    await page.waitForTimeout(SETTLE_MS);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(250);
+    expect(await countOf(page, 'results_shown')).toBe(2);
+    expect(await lines(page)).toContain('Station answer: Text bursts only');
+
+    // Pointer: HELP by click, then a double click on CLOSE HELP — the
+    // second click lands on BACK (the same place) and changes nothing.
+    await page.waitForTimeout(SETTLE_MS);
+    await clickElement(page, 'help');
+    expect((await probe(page)).focus).toBe('close_help');
+    expect(await countOf(page, 'help_consulted')).toBe(2);
+
+    const closeHelp = (await probe(page)).elements.find(
+      (e) => e.id === 'close_help',
+    )!;
+    const point = await designToPage(page, closeHelp.x, closeHelp.y);
+
+    await page.mouse.dblclick(point.x, point.y);
+    await page.waitForTimeout(250);
+    expect(await ids(page)).toContain('results_back');
+    expect(await ids(page)).not.toContain('close_help');
+    expect(await lines(page)).toContain('Station answer: Text bursts only');
+    expect(await lines(page)).not.toContain('Station answer: Loop A only');
+    expect(await countOf(page, 'results_shown')).toBe(2);
+    await shot(page, 'c03-results-packet-2-after-double-clicked-close-help');
+
+    // A settled click on BACK returns to packet 1; nothing new is recorded.
+    await page.waitForTimeout(SETTLE_MS);
+    await clickElement(page, 'results_back');
+    expect(await lines(page)).toContain('Station answer: Loop A only');
+    expect(await countOf(page, 'results_shown')).toBe(2);
+    expect(await countOf(page, 'help_consulted')).toBe(2);
+    expect(await lines(page)).not.toMatch(FORBIDDEN);
+    await leaveDesk(page);
+
+    expect((await reproduce(page)).row).toMatchObject({
+      value: 6,
+      denominator: 6,
+      disposition: 'observed',
+    });
+    expect(await countOf(page, 'results_shown')).toBe(2);
+    await expectFamilyDiscipline(page);
     expectNoRuntimeErrors(errors);
   });
 });

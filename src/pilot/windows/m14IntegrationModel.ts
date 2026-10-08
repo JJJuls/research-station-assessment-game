@@ -89,6 +89,7 @@ export const M14_EVENT_SUFFIXES = [
   'results_shown',
   'help_consulted',
   'series_closed_at_review',
+  'prior_load_checked',
   'technical_failure',
   'window_closed',
 ] as const;
@@ -230,6 +231,61 @@ export function m14PriorAdministration(
   return priorLoadEvents.some(
     (event) => event.event_type === `${M14_FAMILY}opportunity_opened`,
   );
+}
+
+/** The losslessness evidence the runtime keeps beside the raw events. */
+export interface M14HistoryIntegrity {
+  first_sequence: number | null;
+  sequence_gap_count: number;
+  sequence_duplicate_count: number;
+  /** The store's meta record was unreadable; the history came from chunks. */
+  recovered_from_chunks: boolean;
+}
+
+/** The reload check written once per page load after a reload. */
+export interface M14PriorLoadCheck {
+  page_load_index: number;
+  prior_page_load_event_count: number;
+  prior_opening_found: boolean;
+  prior_briefing_found: boolean;
+  history_continuous: boolean;
+  prior_opening_absence_established: boolean;
+}
+
+/**
+ * The reload check of a later page load (research-owner closeout ruling
+ * of 9 October 2026): the absence of an earlier opening is ESTABLISHED
+ * only when the recovered history is continuous — at least one earlier
+ * record, sequence numbers running from 1 without a gap or a duplicate,
+ * and the store's own meta record readable (a history recovered from
+ * chunks alone may have lost its tail without a visible gap) — and holds
+ * no `opportunity_opened` of this family. A missing or broken history
+ * never establishes absence; a found opening is the hold-back. An earlier
+ * briefing is reported, never read as an opening.
+ */
+export function m14PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly { event_type: string }[],
+  integrity: M14HistoryIntegrity,
+): M14PriorLoadCheck {
+  const found = m14PriorAdministration(priorLoadEvents);
+  const continuous =
+    priorLoadEvents.length > 0 &&
+    integrity.first_sequence === 1 &&
+    integrity.sequence_gap_count === 0 &&
+    integrity.sequence_duplicate_count === 0 &&
+    integrity.recovered_from_chunks === false;
+
+  return {
+    page_load_index: pageLoadIndex,
+    prior_page_load_event_count: priorLoadEvents.length,
+    prior_opening_found: found,
+    prior_briefing_found: priorLoadEvents.some(
+      (event) => event.event_type === `${M14_FAMILY}presented`,
+    ),
+    history_continuous: continuous,
+    prior_opening_absence_established: !found && continuous,
+  };
 }
 
 /** The entry-state snapshot written with `opportunity_opened` (contract §9). */
@@ -1059,13 +1115,18 @@ export function m14sCloseHelp(s: M14Series, nowMs: number): boolean {
   }
 
   s.help_open = false;
-  // The view the help returns to settles again: START PACKET 1 and the
-  // acknowledgement's control refuse a press inside 400 ms, so a doubled
-  // CLOSE HELP press never starts the packet or continues the series.
+  // The view the help returns to settles again: START PACKET 1, the
+  // acknowledgement's control and NEXT / BACK on the results refuse a
+  // press inside 400 ms, so a doubled CLOSE HELP press never starts the
+  // packet, continues the series or switches the results packet.
   s.opened_at_ms = nowMs;
 
   if (s.acknowledgement !== null) {
     s.acknowledgement.opened_at_ms = nowMs;
+  }
+
+  if (s.status === 'completed' && s.view === 'results') {
+    s.results_shown_at_ms = nowMs;
   }
 
   return true;

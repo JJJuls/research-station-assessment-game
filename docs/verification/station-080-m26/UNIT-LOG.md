@@ -7700,3 +7700,260 @@ Implementer defaults (owner-visible, reversible; none changes the approved formu
   `feat(m14): add two keyed packets with immutable first decisions`
   (not amended; SHA in the handoff report), the 18 files staged by name. Nothing was pushed, merged,
   tagged, deployed, deleted or removed; U18 is not started.
+
+## U17 closeout — reload absence and results navigation (9 October 2026)
+
+- **Authorisation (research owner, 9 October 2026; recorded before the
+  first source edit).** An exceptional closeout beyond U17's two
+  correction rounds, limited to: (1) the approved ruling on a reload
+  before the desk was opened (below); (2) the approved correction of
+  CLOSE HELP on the results view (the existing 400 ms fresh-press /
+  settle discipline applied to that transition, so a carried second
+  pointer or keyboard press never activates NEXT / BACK, never switches
+  the displayed packet and never creates its `results_shown` record; a
+  deliberate later navigation remains possible); (3) one focused,
+  instrumented reproduction of the failing episode-1 route for the M05
+  timing (diagnostic only: the route, the M05 rules, the cap and the
+  production telemetry unchanged; no faked time, no injected
+  measurement state, no weakened assertion); (4) the documentation
+  dispositions — the separate exposure fields and `never_opened_reason`
+  accepted as satisfying the intended distinction between briefing,
+  opening and answering; the lure tests retained as logical consistency
+  checks, never claimed to reproduce participants' actual misreadings or
+  to establish empirical validity; the minor typography points and the
+  non-Windows font checks carried into U24 / release verification; the
+  two previously reproduced baseline test failures retained as
+  documented exceptions; (5) verification — the complete M14 pure suite
+  with the new reload-classification and results / help transition
+  cases; the affected real-browser scenarios (a genuine reload before
+  the desk was opened; pointer and keyboard double-press protection when
+  leaving help on the results; the prior-opening hold-back kept for an
+  orientation-only and a completed prior administration); the single
+  instrumented episode-1 reproduction; typecheck, build, targeted lint
+  and format checks, whitespace and verify-unit against the entry
+  commit; (6) exactly one additional local commit
+  `fix(m14): clarify reload absence and guard results navigation`,
+  with 5d95e6e not amended, only after the checks pass, the review
+  confirms the material fixes and the diagnostic is reported honestly.
+  The existing 18-path allowlist is the maximum. Nothing else is
+  authorised: no push, merge, PR, deployment, installation, worktree
+  deletion or U18 work. Authored content, answer keys, the scoring
+  formula, the 400 ms threshold and the canonical schema remain
+  unchanged. Routing: Fable is the sole writer; Sonnet 5.5 runs the
+  focused checks and analyses the timing evidence; one focused parallel
+  Opus 5.5 scientific / gameplay review of the changed behaviour and the
+  diagnostic conclusion; one bounded correction pass after the review,
+  then the affected checks again and confirmation of the material fixes.
+- **The approved ruling (reload before the desk was opened).** When the
+  absence of a prior M14 opening is established, a page reload alone
+  must not classify a subsequently available, never-opened desk as
+  `interrupted`: before the briefing `not_presented`; briefed, never
+  opened, the opportunity still open ⇒ null `pending` with
+  `briefed_not_opened`; briefed, never opened, closed at the review ⇒
+  null `no_eligible_event` with `briefed_not_opened`, censored,
+  `closed_at_review`. An actual prior opening keeps the existing
+  hold-back and `interrupted` classification — an orientation-only
+  opening and a completed series included. A current-load briefing must
+  not erase the evidence of an earlier opening; missing historical
+  evidence must not be treated as proof of no prior exposure. The
+  existing evidence that establishes these cases is identified first;
+  the distinction is implemented inside the M14-specific code and the
+  allowlist; the shared measurement framework and other items' reload
+  policies are not changed; immutable earlier events, current-load
+  extraction and the existing integrity checks are preserved. If the
+  available evidence cannot establish the distinction, the independent
+  work is finished and the precise limitation reported, never guessed.
+- **Acceptance criteria.** (a) The pure suite passes with the new
+  cases: absence established ⇒ `not_presented` / `pending` /
+  `no_eligible_event` as ruled; absence not established (no check record
+  of the load, a discontinuous history, a prior opening found) ⇒
+  `interrupted`; the hold-back with a current-load briefing ⇒
+  `interrupted` with the briefing read; CLOSE HELP on the results
+  re-arms the 400 ms settle so a press inside it changes nothing and
+  writes no `results_shown`, while a settled press navigates. (b) The
+  browser: after a genuine reload before the opening the desk opens
+  normally and the row reads the ruled dispositions; the doubled pointer
+  and keyboard presses after CLOSE HELP on the results change nothing;
+  R5 still shows the hold-back after an actual prior opening. (c) The
+  diagnostic separates measured findings from inference and states
+  whether the trace explains the missing start event, whether M14
+  behaves correctly with respect to the M05 clock, and whether the
+  failure is a scripted-route timing limitation or an identified U17
+  regression; no "pre-existing" label without comparable evidence. (d)
+  Typecheck, build, lint, format, whitespace and verify-unit clean
+  against 5d95e6e. (e) The review confirms the material fixes; one
+  commit; the handoff.
+- **Entry state (verified read-only before any edit).** Worktree
+  `C:\Users\Juls\.codex\worktrees\u17-m14\research-station-assessment-game`,
+  branch `codex/u17-m14`, HEAD
+  `5d95e6e120355df9cef1b6578be49b8bca6a5a4b` (the U17 commit; the
+  unit's base a0871bf is an ancestor); the working tree clean (tracked
+  and untracked); `CLAUDE_UNIT_ALLOWLIST` exported with the 18 paths of
+  `U17-ALLOWLIST.txt`; the `PreToolUse` guard registered in
+  `.claude/settings.json`; `tsc`, `vite`, `eslint`, `prettier` and
+  `playwright` present under `node_modules/.bin`; the Git identity
+  present (read, never changed); ports 5199 and 5200 free. The
+  session's untouched base export of a0871bf and the 22 U17 evidence
+  frames are preserved; the closeout's own evidence goes to a separate
+  directory (`.playwright-mcp/u17-closeout`, copied to the scratchpad).
+
+### U17 closeout results (9 October 2026)
+
+- **Evidence identified first (ruling (a)).** The extractor reads the
+  current page load's raw events only (`pilotCoverage.ts` passes
+  `eventLogger.getEvents()`; `ExtractContext` carries `pageLoadIndex`
+  and `reloaded` and no earlier events); the kit's `presented` record
+  carries fixed fields; no model event precedes an opening — so no
+  existing current-load record could establish the absence of an
+  earlier opening, and every reloaded load without an opening read
+  `interrupted`. The evidence that CAN establish it is the runtime's
+  recovered history (`getPriorPageLoadEvents()`, the list the hold-back
+  guard already reads) with its losslessness block (`getEventIntegrity()`:
+  contiguous sequence numbers from 1, no duplicate, the meta record
+  readable). The guard now writes that finding once per later load as
+  the provisional record `prior_load_checked` at Concourse entry; the
+  extractor reads the ruled dispositions from it. Register §5.290 (a),
+  §4 "Unit 17 closeout" (1).
+- **Before / after examples (extractor rows, the same current-load
+  evidence).** (1) Reload, Concourse entered, no briefing yet: before —
+  `interrupted` ("no current-load desk evidence after a reload"); after —
+  `not_presented` with `reload_check.prior_opening_absence_established:
+  true` (and `prior_briefing_found: true` when the earlier load was
+  briefed). (2) Reload, briefed in the new load, never opened, still
+  open: before — `interrupted`; after — `pending`, `missing_reason`
+  `briefed_not_opened`, `exposure.never_opened_reason` `briefed_not_opened`.
+  (3) The same, closed at the review: before — `interrupted`; after —
+  `no_eligible_event`, `briefed_not_opened`, censored, `closed_at_review`.
+  (4) Reload at the opening screen, the Concourse never reached: before
+  and after — `interrupted` (no check; the desk was never available in
+  that load). (5) Reload after an actual earlier opening (orientation
+  only, one answer, or all six): before and after — `interrupted`
+  (`held_back_after_reload: true`, now beside `reload_check.
+  prior_opening_found: true`); a briefing in the new load is read and
+  erases nothing. (6) A history recovered with a gap, a duplicate, from
+  chunks alone, or empty: `interrupted` ("the absence of an earlier
+  opening not established"). (7) A presented record without a usable
+  sequence, or a check of another opportunity: `technical_failure` on
+  the established path exactly as on a first load (review F1).
+- **Help-navigation evidence (ruling (b)).** Pure: on the results after
+  six answers, HELP then CLOSE HELP, a NEXT press 100 ms later refused
+  (keyboard and pointer), `results_shown` still 1, the packet unchanged;
+  a NEXT press 400 ms later shows packet 2 and writes its one
+  `results_shown`; the same for BACK on packet 2; the decision-view
+  close of help leaves `results_shown_at_ms` null. Browser R9: ENTER
+  ENTER on CLOSE HELP — packet 1 still shown, NEXT focused,
+  `results_shown` 1 (frame c02); a settled ENTER — packet 2,
+  `results_shown` 2; HELP by click, a double click on CLOSE HELP —
+  packet 2 still shown, BACK focused, `results_shown` 2 (frame c03); a
+  settled click on BACK — packet 1; `help_consulted` 2; the row
+  `observed` 6 / 6.
+- **The measured M05 timeline and conclusion (ruling (d)).** Register §4
+  "Unit 17 closeout" (3) carries the full timeline; in short: eligible at
+  0 s; surfaces open 6.1–8.1 s (plan board), 18.5–21.8 s (desk),
+  29.3–31.3 s (quality packet), all excluded (`unusable_controls`
+  7 318 ms against 7 373 ms measured); the gauge step 31.3–58.1 s
+  counted; the cap at 67.3 s wall = 60 012 ms focused, 9.3 s into the
+  walk toward the lamp and 8.7 s before the lamp opened; START on the
+  lamp ⇒ `late_start` (`since_closure_ms` 9 165), `work_completed`
+  (`late: true`), `started` never written. Conclusion: the trace explains
+  the missing event; M14 behaves correctly with respect to the clock;
+  the failure is a limitation of the scripted route's expectation (its
+  cumulative focused time before the lamp exceeds the cap; a participant
+  following Vale's briefed order faces the same cap), the desk step
+  contributing about 10.4 s gross and no single step decisive; not an
+  identified U17 regression; not labelled pre-existing (no comparable
+  baseline — the base stalls at the desk); no product defect beyond the
+  two corrections; the smallest test-side remedy recorded for U24. The
+  diagnostic spec, its config and the report (`m05-timing-report.json`)
+  are in the session scratchpad (`closeout/diag/`), not committed; the
+  committed episode-1 test is untouched and still fails at its lamp
+  assertion for the reason measured.
+- **Verification (the test-reviewer, Sonnet 5.5, on the tree before the
+  correction pass; the writer reran the affected checks after it).**
+  `npm.cmd run lint:tsc` pass; `npm.cmd run build` pass (chunk-size
+  warning only); ESLint with `prettier/prettier` on the five changed
+  `.ts` files clean; Prettier `--check` on those files and on the
+  register and addendum clean; the matrix and UNIT-LOG fail Prettier and
+  the `git show 5d95e6e:` versions fail identically (documented
+  exception); `git diff --check` clean (LF / CRLF notices on stderr
+  only); `verify-unit.mjs --base 5d95e6e` PASS; guard tests 58 / 58; pure
+  `e2e/m14_integration.spec.ts` 75 passed (3.8 s); browser
+  `e2e/m14_integration_route.spec.ts` `-g "R5|R8|R9"` on port 5199 (free
+  before the run): 4 passed (3.8 min), no skip, no flake, no rerun. After
+  the correction pass (the integrity scope, the coherent check, the
+  `recovered_from_chunks` field, the comments; one test case of the
+  writer's corrected — it built page-load-2 events under a page-load-1
+  context): typecheck, ESLint and Prettier clean; the pure suite 75
+  passed; R8 rerun — 1 passed (1.7 min), no skip. The writer's own runs before the
+  reviewer's: the pure suite (74 passed, then 75 after one wrong id
+  expectation of a new test was corrected), R5b / R8 / R9 3 passed
+  (3.3 min), the diagnostic once (its own final assertion failing as
+  the committed test does; the report written).
+- **Reviews (read-only; none on Fable; via general-purpose agents with
+  the role files, the project agents being undiscoverable in this
+  session).** Test-reviewer Sonnet 5.5 (claude-sonnet-5-5): all requested
+  checks pass; its timing analysis agrees with the writer's (the cap
+  9 263 ms into the walk segment; 55 ms sampling discrepancy; no M14
+  interference; a scripted-route limitation; nothing pre-existing
+  claimed; no product defect). Scientific reviewer Opus 5.5
+  (claude-opus-5-5): concerns found, none blocking on an owner decision —
+  F1 MATERIAL, the established path skipped the extractor's integrity
+  checks (corrected: the load is read as a first load; the test
+  expectation changed accordingly); F2 MATERIAL (low), a check claiming
+  absence while not continuous was accepted (corrected: coherent flags
+  required, contradictions flagged); F3 minor, the continuity test
+  narrower than the runtime's losslessness (corrected in part:
+  `recovered_from_chunks` added; `foreign_records_rejected` left out and
+  recorded as the owner's); F4 MATERIAL, the diagnostic not yet recorded
+  (this section and the register record); F5 minor, figures and wording
+  (adopted: 9.3 s, "gross", the gauge step named, the instrumentation's
+  own cost stated, no single step decisive); F6 observation outside the
+  scope, the M05 competing-task confound (recorded §5.290 (e) (i)); F7
+  minor, two unflagged combinations (ii corrected — a found opening
+  beside an opening of the load is flagged; i recorded as the owner's).
+  Gameplay reviewer Opus 5.5 (claude-opus-5-5): usable with noted
+  friction, no material participant-facing defect — F1 minor, two stale
+  comments (corrected); F2 MATERIAL for the record, the diagnostic not
+  yet written (done); F3 MATERIAL to wording, a participant following the
+  briefed order faces the same cap (adopted); F4 informational, no cue
+  about the start window by design (recorded, not changed); the framing
+  note adopted (the desk's behaviour was unchanged; the record and the
+  dispositions changed). Confirmation of the material fixes (both reviewers resumed on the
+  round-2 diffs, read-only): scientific Opus 5.5 — F1 CONFIRMED, F2
+  CONFIRMED (one leftover: the coherent check tested the found flag with
+  `=== true`, so a record lacking the field could establish; restored
+  to `=== false` and the pure suite rerun), F3 CONFIRMED (partial, as
+  described; the `foreign_records_rejected` gloss widened to records
+  without identity fields), F4 CONFIRMED, F5 NOT CONFIRMED as first
+  written — three figures or statements in the register record corrected
+  before the commit: the instrumentation's own cost is "not measured",
+  not "a few tens of ms"; the focused time before the last walk is 50.7 s
+  (60 012 − 9 263 ms), not 49.7; `work_completed` is +78.5 s by its own
+  timestamp (the surface closed +79.4 s); and "exactly its open interval"
+  softened to "consistent with its open time" (the excluded total is not
+  broken down by surface); F6 CONFIRMED, F7 CONFIRMED; gameplay Opus 5.5
+  — F1, F2, F3 and the framing note CONFIRMED, with the same 49.7 s
+  figure flagged (corrected as above). No further round was needed.
+- **Process deviations.** (1) The `PreToolUse` guard rejected one
+  heredoc that wrote a scratchpad patch script (an arrow function read
+  as a shell redirect); the script was written with the file tool
+  instead — nothing worked around, the allowlist never widened. (2) The
+  diagnostic lives in the session scratchpad with its own Playwright
+  config (the repository's `node_modules` reached through `NODE_PATH`;
+  the dev server started from the repository on port 5199); its first
+  launch failed on module resolution before any browser opened and was
+  relaunched once. (3) The scratchpad config's `webServer` reuses the
+  repository's local `vite` through `npx`, as the repository's own
+  config does; nothing was downloaded. (4) The five changed `.ts` files
+  carry LF endings in the working tree (as in U17); Git normalises them.
+- **Background tasks.** Every test run, shell and agent started in this
+  closeout has completed and been read; no dev server started here is
+  running (port 5199 free at the handoff).
+- **Conclusion.** Both approved corrections implemented, verified in the
+  pure suite and the browser, reviewed, corrected once and confirmed; the
+  diagnostic run once and reported with its measured timeline and an
+  honest conclusion; the documentation dispositions recorded. One
+  additional local commit `fix(m14): clarify reload absence and guard
+  results navigation` on top of 5d95e6e (not amended; SHA in the
+  handoff), the changed files staged by name. Nothing pushed, merged,
+  tagged, deployed, installed, deleted or removed; U18 not started.

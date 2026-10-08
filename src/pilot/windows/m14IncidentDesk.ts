@@ -38,6 +38,7 @@ import {
   type M14LogSink,
   type M14NextOutcome,
   m14PriorAdministration,
+  m14PriorLoadCheck,
   type M14RequestOutcome,
   type M14ResponseKind,
   m14sCancelCommit,
@@ -90,6 +91,8 @@ let clock: FocusedClock | null = null;
 /** Focused ms at each decision's presentation (per-decision focused time). */
 const focusedMarks: Record<string, number> = {};
 let briefed = false;
+/** The reload check is written once per page load. */
+let priorLoadChecked = false;
 
 function ensure(): M14Series {
   if (series === null) {
@@ -209,6 +212,33 @@ export function presentM14(nowMs: number) {
 }
 
 /**
+ * The reload check (research-owner closeout ruling of 9 October 2026):
+ * once per page load after a reload, at the first guard run, the family
+ * records whether the recovered history is continuous and whether it
+ * holds an earlier opening or briefing (`prior_load_checked`) — the
+ * current-load evidence from which the extractor reads an ESTABLISHED
+ * absence of an earlier opening. A first page load writes nothing.
+ */
+function recordPriorLoadCheck(prior: readonly { event_type: string }[]) {
+  const pageLoadIndex = researchRuntime.getPageLoadIndex();
+
+  if (priorLoadChecked || pageLoadIndex <= 1) {
+    return;
+  }
+
+  priorLoadChecked = true;
+  sink('prior_load_checked', {
+    phase: 'series',
+    ...m14PriorLoadCheck(
+      pageLoadIndex,
+      prior,
+      researchRuntime.getEventIntegrity(),
+    ),
+    input_mode: 'system',
+  });
+}
+
+/**
  * Reload guard (register §5.14): a desk opened in an earlier page load of
  * this identity is never re-run — prior exposure is recorded and the
  * series is marked technically incomplete; the new load's row is
@@ -221,7 +251,11 @@ export function guardM14Reload(): boolean {
     return false;
   }
 
-  if (!m14PriorAdministration(researchRuntime.getPriorPageLoadEvents())) {
+  const prior = researchRuntime.getPriorPageLoadEvents();
+
+  recordPriorLoadCheck(prior);
+
+  if (!m14PriorAdministration(prior)) {
     return false;
   }
 
@@ -478,5 +512,6 @@ export function resetM14State() {
 
   series = null;
   briefed = false;
+  priorLoadChecked = false;
   m14Window.reset();
 }

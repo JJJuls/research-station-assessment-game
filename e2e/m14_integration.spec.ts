@@ -45,6 +45,7 @@ import {
   m14EntrySnapshot,
   type M14LogSink,
   m14PriorAdministration,
+  m14PriorLoadCheck,
   m14sCancelCommit,
   m14sCloseAtReview,
   m14sCloseHelp,
@@ -1685,6 +1686,167 @@ test.describe('M14 series model — sources, help, leaving, closures, reload', (
     expect(M14_RELOAD_DETAIL.startsWith('reload')).toBe(true);
   });
 
+  test('closeout ruling of 9 October 2026: the reload check establishes the absence of an earlier opening only from a continuous history without one', () => {
+    const sound = {
+      first_sequence: 1,
+      sequence_gap_count: 0,
+      sequence_duplicate_count: 0,
+      recovered_from_chunks: false,
+    };
+    const presented = { event_type: `${M14_FAMILY}presented` };
+    const opened = { event_type: `${M14_FAMILY}opportunity_opened` };
+    const other = { event_type: 'proto_m05_start_eligible' };
+
+    // No earlier record at all: nothing is established.
+    expect(m14PriorLoadCheck(2, [], sound)).toEqual({
+      page_load_index: 2,
+      prior_page_load_event_count: 0,
+      prior_opening_found: false,
+      prior_briefing_found: false,
+      history_continuous: false,
+      prior_opening_absence_established: false,
+    });
+    // A continuous history without an opening establishes the absence.
+    expect(m14PriorLoadCheck(2, [other], sound)).toMatchObject({
+      prior_page_load_event_count: 1,
+      prior_opening_found: false,
+      prior_briefing_found: false,
+      history_continuous: true,
+      prior_opening_absence_established: true,
+    });
+    // An earlier briefing is reported, never read as an opening.
+    expect(m14PriorLoadCheck(2, [other, presented], sound)).toMatchObject({
+      prior_opening_found: false,
+      prior_briefing_found: true,
+      prior_opening_absence_established: true,
+    });
+    // A found opening is the hold-back, whatever the history.
+    expect(
+      m14PriorLoadCheck(2, [other, presented, opened], sound),
+    ).toMatchObject({
+      prior_opening_found: true,
+      history_continuous: true,
+      prior_opening_absence_established: false,
+    });
+    // A gap, a duplicate or a lost beginning: missing history is never
+    // proof of no prior exposure.
+    expect(
+      m14PriorLoadCheck(2, [other, presented], {
+        ...sound,
+        sequence_gap_count: 1,
+      }),
+    ).toMatchObject({
+      history_continuous: false,
+      prior_opening_absence_established: false,
+    });
+    expect(
+      m14PriorLoadCheck(2, [other, presented], {
+        ...sound,
+        sequence_duplicate_count: 1,
+      }),
+    ).toMatchObject({ prior_opening_absence_established: false });
+    expect(
+      m14PriorLoadCheck(2, [other, presented], { ...sound, first_sequence: 2 }),
+    ).toMatchObject({
+      history_continuous: false,
+      prior_opening_absence_established: false,
+    });
+    expect(
+      m14PriorLoadCheck(3, [other], { ...sound, first_sequence: null }),
+    ).toMatchObject({
+      page_load_index: 3,
+      prior_opening_absence_established: false,
+    });
+    // A history recovered from chunks alone may have lost its tail.
+    expect(
+      m14PriorLoadCheck(2, [other, presented], {
+        ...sound,
+        recovered_from_chunks: true,
+      }),
+    ).toMatchObject({
+      history_continuous: false,
+      prior_opening_absence_established: false,
+    });
+    expect(M14_EVENT_SUFFIXES).toContain('prior_load_checked');
+  });
+
+  test('closeout correction of 9 October 2026: CLOSE HELP on the results re-arms the settle — a press inside 400 ms changes nothing and writes no results_shown; a settled press navigates', () => {
+    const r = started();
+
+    for (const id of DECISION_IDS) {
+      answer(r, KEY_LETTERS[id]);
+      next(r);
+    }
+
+    expect(r.s.status).toBe('completed');
+    expect(r.s.view).toBe('results');
+    expect(count(r, 'results_shown')).toBe(1);
+    r.tick(M14_SETTLE_MS + 50);
+    expect(m14sHelp(r.s, 'keyboard', r.tick(10), r.sink)).toBe(true);
+    expect(last(r, 'help_consulted')!.metadata).toMatchObject({
+      phase: 'feedback',
+      view: 'results',
+    });
+    expect(render(r.s).ids[0]).toBe('close_help');
+    // Nothing navigates while the help sheet is open.
+    expect(
+      m14sResultsNavigate(r.s, 'next', 'keyboard', r.tick(500), r.sink),
+    ).toBe(false);
+    expect(m14sCloseHelp(r.s, r.tick(10))).toBe(true);
+    expect(render(r.s).ids).toContain('results_next');
+    // The doubled press (keyboard or pointer) inside 400 ms of the close.
+    expect(
+      m14sResultsNavigate(r.s, 'next', 'keyboard', r.tick(100), r.sink),
+    ).toBe(false);
+    expect(
+      m14sResultsNavigate(r.s, 'next', 'pointer', r.tick(100), r.sink),
+    ).toBe(false);
+    expect(r.s.results_packet).toBe(0);
+    expect(count(r, 'results_shown')).toBe(1);
+    // A deliberate, settled press navigates and records packet 2 once.
+    expect(
+      m14sResultsNavigate(
+        r.s,
+        'next',
+        'keyboard',
+        r.tick(M14_SETTLE_MS),
+        r.sink,
+      ),
+    ).toBe(true);
+    expect(r.s.results_packet).toBe(1);
+    expect(count(r, 'results_shown')).toBe(2);
+    expect(last(r, 'results_shown')!.metadata.packet_id).toBe('p2');
+    // On packet 2 the same for BACK by pointer.
+    expect(m14sHelp(r.s, 'pointer', r.tick(500), r.sink)).toBe(true);
+    expect(m14sCloseHelp(r.s, r.tick(10))).toBe(true);
+    expect(render(r.s).ids).toContain('results_back');
+    expect(
+      m14sResultsNavigate(r.s, 'back', 'pointer', r.tick(150), r.sink),
+    ).toBe(false);
+    expect(r.s.results_packet).toBe(1);
+    expect(
+      m14sResultsNavigate(
+        r.s,
+        'back',
+        'pointer',
+        r.tick(M14_SETTLE_MS),
+        r.sink,
+      ),
+    ).toBe(true);
+    expect(r.s.results_packet).toBe(0);
+    expect(count(r, 'results_shown')).toBe(2);
+    expect(count(r, 'help_consulted')).toBe(2);
+    expect(r.s.help_consults.feedback).toBe(2);
+    // Closing the help in a decision view still re-arms START / the
+    // acknowledgement only; the results settle is untouched there.
+    const d = started();
+
+    answer(d, 'a');
+    expect(m14sHelp(d.s, 'keyboard', d.tick(500), d.sink)).toBe(true);
+    expect(m14sCloseHelp(d.s, d.tick(10))).toBe(true);
+    expect(d.s.results_shown_at_ms).toBeNull();
+  });
+
   test('a fault closes an open first-response phase; after completion it is recorded without touching the scored phase', () => {
     const r = started();
 
@@ -2397,9 +2559,365 @@ test.describe('M14 extractor — zero evidence and legitimate missingness (never
     expect(row(earlier)).toMatchObject({ disposition: 'observed', value: 6 });
   });
 
+  /** The reload check of a later load (closeout ruling of 9 October 2026). */
+  function checkEvent(
+    flags: Record<string, unknown> = {},
+    sequence = 5,
+  ): RawGameEvent {
+    return {
+      session_id: 'GS',
+      timestamp_ms: 4,
+      scene: 'station_concourse',
+      event_type: `${M14_FAMILY}prior_load_checked`,
+      sequence,
+      page_load_index: 2,
+      metadata: {
+        ...kitFields(),
+        phase: 'series',
+        page_load_index: 2,
+        prior_page_load_event_count: 40,
+        prior_opening_found: false,
+        prior_briefing_found: false,
+        history_continuous: true,
+        prior_opening_absence_established: true,
+        input_mode: 'system',
+        ...flags,
+      },
+    };
+  }
+
+  const RELOADED = { ...CONTEXT, pageLoadIndex: 2, reloaded: true };
+  const RELOADED_CLOSED = { ...RELOADED, finalCoreClosed: true };
+
+  test('closeout ruling of 9 October 2026: after a reload an ESTABLISHED absence of an earlier opening yields the never-opened dispositions, never interrupted', () => {
+    const established = checkEvent();
+    const presented = log([], {
+      opened: false,
+      briefed: true,
+      pageLoadIndex: 2,
+    });
+
+    // Before the briefing.
+    expect(row([established], RELOADED)).toMatchObject({
+      disposition: 'not_presented',
+      value: null,
+    });
+    expect(row([established], RELOADED).components).toMatchObject({
+      reload_check: {
+        page_reloaded: true,
+        checked: true,
+        prior_opening_found: false,
+        prior_briefing_found: false,
+        history_continuous: true,
+        prior_opening_absence_established: true,
+      },
+      exposure: {
+        briefed: false,
+        never_opened_reason: 'not_briefed_not_opened',
+      },
+      exposure_record_consistent: true,
+    });
+    // An earlier briefing is reported in the components, never read as an
+    // opening and never as this load's briefing.
+    const earlierBriefing = row(
+      [checkEvent({ prior_briefing_found: true })],
+      RELOADED,
+    );
+
+    expect(earlierBriefing.disposition).toBe('not_presented');
+    expect(earlierBriefing.components).toMatchObject({
+      reload_check: { prior_briefing_found: true },
+      exposure: { briefed: false },
+    });
+    // Briefed in this load, never opened, still open.
+    expect(row([established, ...presented], RELOADED)).toMatchObject({
+      disposition: 'pending',
+      value: null,
+      missing_reason: 'briefed_not_opened',
+    });
+    expect(
+      row([established, ...presented], RELOADED).components.exposure,
+    ).toMatchObject({
+      briefed: true,
+      never_opened_reason: 'briefed_not_opened',
+    });
+    // Briefed in this load, never opened, closed at the review.
+    expect(
+      row(
+        [
+          established,
+          ...log([], {
+            opened: false,
+            briefed: true,
+            absentAtReview: true,
+            pageLoadIndex: 2,
+          }),
+        ],
+        RELOADED_CLOSED,
+      ),
+    ).toMatchObject({
+      disposition: 'no_eligible_event',
+      value: null,
+      missing_reason: 'briefed_not_opened',
+      censored: true,
+      censor_reason: 'briefed_not_opened',
+      closure_reason: 'closed_at_review',
+    });
+    // The established load is read exactly as a first load: the same
+    // integrity checks apply (a presented record without a usable
+    // sequence, or a check of another opportunity, is a technical failure
+    // on both paths — §5.284 preserved).
+    expect(
+      row(
+        [
+          established,
+          ...presented.map((event) => ({ ...event, sequence: undefined })),
+        ],
+        RELOADED,
+      ),
+    ).toMatchObject({ disposition: 'technical_failure' });
+    expect(
+      row(
+        log([], { opened: false, briefed: true }).map((event) => ({
+          ...event,
+          sequence: undefined,
+        })),
+      ),
+    ).toMatchObject({ disposition: 'technical_failure' });
+    expect(
+      row(
+        [
+          {
+            ...established,
+            metadata: { ...established.metadata, opportunity_id: 'other' },
+          },
+          ...presented,
+        ],
+        RELOADED,
+      ),
+    ).toMatchObject({ disposition: 'technical_failure' });
+    // The desk then opened normally in the new load: the ordinary rows.
+    expect(
+      row(
+        [established, ...log([start], { briefed: true, pageLoadIndex: 2 })],
+        RELOADED,
+      ),
+    ).toMatchObject({ disposition: 'pending' });
+    expect(
+      row(
+        [
+          established,
+          ...log([start, answerAll(ALL_KEYS)], {
+            briefed: true,
+            pageLoadIndex: 2,
+          }),
+        ],
+        RELOADED,
+      ),
+    ).toMatchObject({ disposition: 'observed', value: 6, denominator: 6 });
+  });
+
+  test('closeout ruling of 9 October 2026: a missing check, a broken history or a found opening never establishes absence — the load stays interrupted; a contradiction with the hold-back is flagged; orientation-only and completed earlier loads still hold the desk back', () => {
+    const presented = log([], {
+      opened: false,
+      briefed: true,
+      pageLoadIndex: 2,
+    });
+
+    // No check record of the load (the Concourse never entered, or an
+    // older build): interrupted, as before.
+    expect(row(presented, RELOADED)).toMatchObject({
+      disposition: 'interrupted',
+    });
+    expect(row(presented, RELOADED).components.reload_check).toEqual({
+      page_reloaded: true,
+      checked: false,
+      prior_opening_found: null,
+      prior_briefing_found: null,
+      history_continuous: null,
+      prior_opening_absence_established: false,
+    });
+
+    for (const flags of [
+      { history_continuous: false, prior_opening_absence_established: false },
+      { prior_opening_found: true, prior_opening_absence_established: false },
+      { prior_opening_absence_established: false },
+      { prior_opening_found: true, prior_opening_absence_established: true },
+      { prior_opening_absence_established: 'yes' },
+      { prior_opening_absence_established: null },
+      { history_continuous: false },
+      { prior_page_load_event_count: 0 },
+    ]) {
+      const record = row([checkEvent(flags), ...presented], RELOADED);
+
+      expect(record, JSON.stringify(flags)).toMatchObject({
+        disposition: 'interrupted',
+        value: null,
+      });
+      expect(record.components.reload_check).toMatchObject({
+        checked: true,
+        prior_opening_absence_established: false,
+      });
+    }
+
+    // A self-contradictory check (established while not continuous, or
+    // while an opening was found) establishes nothing and is flagged.
+    for (const flags of [
+      { history_continuous: false },
+      { prior_opening_found: true },
+      { prior_page_load_event_count: 0 },
+    ]) {
+      const record = row([checkEvent(flags), ...presented], RELOADED);
+
+      expect(record.disposition, JSON.stringify(flags)).toBe('interrupted');
+      expect(record.components.exposure_record_consistent).toBe(false);
+    }
+
+    // A check that found an earlier opening beside an opening of this
+    // load: the row stands, the contradiction is flagged.
+    const reRun = row(
+      [
+        checkEvent({
+          prior_opening_found: true,
+          prior_opening_absence_established: false,
+        }),
+        ...log([start], { briefed: true, pageLoadIndex: 2 }),
+      ],
+      RELOADED,
+    );
+
+    expect(reRun.disposition).toBe('pending');
+    expect(reRun.components.exposure_record_consistent).toBe(false);
+
+    // Two checks, one of them not established: interrupted and flagged.
+    const mixed = row(
+      [
+        checkEvent(),
+        checkEvent({ prior_opening_absence_established: false }, 6),
+        ...presented,
+      ],
+      RELOADED,
+    );
+
+    expect(mixed.disposition).toBe('interrupted');
+    expect(mixed.components.exposure_record_consistent).toBe(false);
+
+    // Two established checks: the row stands, the duplicate is flagged.
+    const duplicated = row(
+      [checkEvent(), checkEvent({}, 6), ...presented],
+      RELOADED,
+    );
+
+    expect(duplicated.disposition).toBe('pending');
+    expect(duplicated.components.exposure_record_consistent).toBe(false);
+
+    // A check on a first page load: flagged, the row unchanged.
+    const firstLoad = row([
+      { ...checkEvent(), page_load_index: 1 },
+      ...log([], { opened: false, briefed: true }),
+    ]);
+
+    expect(firstLoad.disposition).toBe('pending');
+    expect(firstLoad.components.exposure_record_consistent).toBe(false);
+
+    // The hold-back (the evidence of an earlier opening) wins over a check
+    // that claims absence; the contradiction is flagged.
+    const holdBack: RawGameEvent = {
+      session_id: 'GS',
+      timestamp_ms: 5,
+      scene: 'station_concourse',
+      event_type: `${M14_FAMILY}technical_failure`,
+      sequence: 7,
+      page_load_index: 2,
+      metadata: {
+        ...kitFields(),
+        detail: M14_RELOAD_DETAIL,
+        input_mode: 'system',
+      },
+    };
+    const contradiction = row([checkEvent(), holdBack, ...presented], RELOADED);
+
+    expect(contradiction).toMatchObject({ disposition: 'interrupted' });
+    expect(contradiction.components).toMatchObject({
+      held_back_after_reload: true,
+      exposure_record_consistent: false,
+      exposure: { briefed: true, never_opened_reason: 'briefed_not_opened' },
+    });
+
+    // The hold-back with its own check (the opening found): consistent;
+    // the current-load briefing is read and erases nothing.
+    const held = row(
+      [
+        checkEvent({
+          prior_opening_found: true,
+          prior_opening_absence_established: false,
+        }),
+        holdBack,
+        ...presented,
+      ],
+      RELOADED,
+    );
+
+    expect(held).toMatchObject({ disposition: 'interrupted', value: null });
+    expect(held.components).toMatchObject({
+      held_back_after_reload: true,
+      exposure_record_consistent: true,
+      reload_check: { prior_opening_found: true },
+      exposure: { briefed: true },
+    });
+
+    // The predicate reads the opening alone: an orientation-only earlier
+    // load and a completed earlier load both hold the desk back.
+    expect(m14PriorAdministration(log([]))).toBe(true);
+    expect(m14PriorAdministration(log([start, answerAll(ALL_KEYS)]))).toBe(
+      true,
+    );
+    expect(
+      m14PriorLoadCheck(2, log([]), {
+        first_sequence: 1,
+        sequence_gap_count: 0,
+        sequence_duplicate_count: 0,
+        recovered_from_chunks: false,
+      }),
+    ).toMatchObject({
+      prior_opening_found: true,
+      prior_opening_absence_established: false,
+    });
+  });
+
   test('every legitimate-missingness case is not a technical failure', () => {
     const cases = [
       row([]),
+      row([checkEvent()], RELOADED),
+      row(
+        [
+          checkEvent(),
+          ...log([], { opened: false, briefed: true, pageLoadIndex: 2 }),
+        ],
+        RELOADED,
+      ),
+      row(
+        [
+          checkEvent(),
+          ...log([], {
+            opened: false,
+            briefed: true,
+            absentAtReview: true,
+            pageLoadIndex: 2,
+          }),
+        ],
+        RELOADED_CLOSED,
+      ),
+      row(
+        [
+          checkEvent({
+            history_continuous: false,
+            prior_opening_absence_established: false,
+          }),
+          ...log([], { opened: false, briefed: true, pageLoadIndex: 2 }),
+        ],
+        RELOADED,
+      ),
       row(log([], { opened: false, briefed: true })),
       row(
         log([], { opened: false, briefed: true, absentAtReview: true }),

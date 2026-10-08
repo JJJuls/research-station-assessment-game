@@ -163,6 +163,164 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
 
 ## 4. As-built records (appended per unit)
 
+**Unit 17 closeout (M14; 9 October 2026)** — one exceptional closeout
+under the research owner's closeout ruling and dispositions (§5.290;
+`UNIT-LOG.md` "U17 closeout"); the "Unit 17 (M14): as-built" record
+below stands except where this record says so. **Status: a clarification
+of the provisional reload classification and one interface settle; no
+authored content, answer key, scoring formula, threshold, canonical event
+or administration version changed; NOT scientifically validated.**
+
+(1) Reload before the desk was opened (ruling §5.290 (a)). The product's
+behaviour at the desk is unchanged: the guard already ran the desk
+normally when no earlier opening was found and held it back when one was
+(§5.285). What changed is the RECORD and the DISPOSITIONS: at its first
+run in a later page load (Concourse entry) the guard writes the
+provisional family record `prior_load_checked` from the runtime's
+recovered history and its losslessness block — `page_load_index`,
+`prior_page_load_event_count`, `prior_opening_found`,
+`prior_briefing_found`, `history_continuous` (at least one earlier
+record; sequence numbers from 1 without a gap or a duplicate; the store's
+meta record readable) and `prior_opening_absence_established` (no opening
+found AND continuous) — before the hold-back record when an opening is
+found. The extractor reads a reloaded load without an opening as
+`interrupted` ("the absence of an earlier opening not established") unless
+every check record of the load establishes the absence with its flags
+agreeing; it then reads the load exactly as a first load — the same
+integrity checks (§5.284), then `not_presented` before this load's
+briefing, `pending` (`briefed_not_opened`) after it, `no_eligible_event`
+(`briefed_not_opened`, censored, `closed_at_review`) at the review
+closure. The hold-back (an actual earlier opening — orientation-only or
+completed) keeps `interrupted`; a current-load briefing is read beside it
+and erases nothing; contradictory check records are flagged
+(`exposure_record_consistent: false`) and establish nothing; the
+components carry `reload_check`. Evidence identified first, limitations
+and the owner's open points: §5.290 (a), (e). Files:
+`src/pilot/windows/m14IntegrationModel.ts` (`m14PriorLoadCheck`,
+`M14_EVENT_SUFFIXES`), `src/pilot/windows/m14IncidentDesk.ts`
+(`recordPriorLoadCheck` in `guardM14Reload`, once per load, reset in the
+test hook), `src/measurement/features/m14.ts`.
+
+(2) CLOSE HELP on the results (ruling §5.290 (b)). `m14sCloseHelp`
+re-arms the results settle (`results_shown_at_ms`) as it re-arms START
+and the acknowledgement, so the second press of a doubled ENTER or the
+second click of a double click on CLOSE HELP — which shares the
+bottom-row place of NEXT / BACK — is refused by the existing 400 ms rule
+on `m14sResultsNavigate`: the shown packet stays, no `results_shown` is
+written; a settled press navigates. Nothing measured changes
+(`results_shown_at_ms` serves the settle only; the score is fixed at the
+sixth first response). The two comments of `m14SurfaceModel.ts` that
+claimed placement alone protected CLOSE HELP now name the settle on the
+results view (gameplay review F1). Controls, layout and copy unchanged.
+
+(3) The M05 timing diagnostic (ruling §5.290 (d)). One instrumented
+reproduction of the committed episode-1 route (a scratchpad spec driving
+the same steps with marks between them; no product change, no faked
+time, no injected state; the committed test untouched). MEASURED, times
+relative to M05 'o1' `eligible` (page time 1791467150200, 11 ms after the
+lamp job was accepted, `environment_paused: false`): plan board open
++6.1 s → closed +8.1 s; the incident desk reached +17.6 s (the lane
+driver's walk 9.5 s), opened +18.5 s, first response +20.9 s, closed
++21.8 s; quality packet open +29.3 s → closed +31.3 s; gauge check done
++58.1 s (26.8 s for the driver's approach from above, the interaction and
+its 400 ms wait; the proximity prompt is a world prompt, not a dialog);
+`cap_reached` at +67.3 s wall — `focused_ms` 60 012, `wall_ms` 67 330,
+`excluded_ms.unusable_controls` 7 318, every other cause 0,
+`surface_open: false` — 9.3 s into the 13.3 s walk from the gauge toward
+the lamp, then the kit's `window_closed` (`stopped`, closure `cap`); lamp
+surface open +76.0 s (`control_presented` with `focused_ms` 60 012,
+frozen); START +76.7 s ⇒ `late_start` (`after: cap`, `since_closure_ms`
+9 165; no `started`); `work_completed` +78.5 s (`late: true`; the
+lamp surface closed +79.4 s); the opportunity `completed` / `valid`, the
+item `pending`; no runtime error.
+The three surfaces open inside the window sum to 7 373 ms (plan board
+2 033, desk 3 281, quality packet 2 059) against 7 318 ms excluded; the
+55 ms difference is the marks' own latency around the open / close
+waits, and the running segments sum to 59 957 ms against 60 012 focused;
+the instrumentation's own reads inside the window (about nine marks,
+each reading the events and the coverage probe) are inside both figures
+and their cost was NOT measured. INFERENCE: (a) the trace explains the missing
+`proto_m05_start_started` completely — the 60 s focused cap closed the
+occasion as a censored non-start before the lamp was reached, so the
+press is the model's late start (companion) and `work_completed` follows
+it as designed; (b) M14 behaves correctly with respect to the M05 clock —
+paused under the desk's surface for an interval consistent with its
+open time (the excluded total is not broken down by surface) through
+the Concourse's host-pause hook, resumed at the close, no M14 event or
+state touching M05 (the desk keeps its own clock); (c) the failure is a
+limitation of the scripted test route's EXPECTATION: the route's
+cumulative focused time before the lamp (walking and interaction, 50.7 s
+before the last walk; the gauge step alone 26.8 s) exceeds the cap; the
+re-expressed desk step contributes about 10.4 s gross (the lane walk and
+the approach, not net of the walk a route without the desk would take),
+and no single step is shown to be decisive; a participant who follows
+Vale's briefed order (plan board, quality packet, incident desk, then
+the lamp) walks the same circuit and faces the same cap, so the finding
+is not "driver-only"; it is NOT an identified U17 product regression —
+nothing in the diff touches M05 and every pause and resume followed its
+surface; (d) no comparable baseline exists (the untouched base stalls at
+the desk step), so it is not labelled pre-existing; (e) no product defect
+beyond the two approved corrections is exposed: the cap is the approved
+censoring signal, the late start is recorded as designed, the
+opportunity closes valid. The smallest test-side remedy, for U24 and not
+made here: assert the observed start on a route whose focused time
+before the lamp stays under the cap (the lamp job accepted after the
+optional stations, or the gauge step driven by the lane driver), the M05
+rules and the cap unchanged. The M05 competing-task observation and the
+owner's options: §5.290 (e) (i).
+
+(4) Documentation dispositions (ruling §5.290 (c)): recorded in §5.289
+(the owner questions (i)–(iii) closed), §5.276 (fonts and the "tank 3:"
+wrap carried to U24 / release verification), the addendum §2 "U17"
+(`prior_load_checked`, the dispositions sentence, `reload_check`) and §3
+(the M14 row), the matrix "U17 closeout" paragraph.
+
+(5) Changed files (inside the 18-path allowlist; the closeout touched
+nine): `src/pilot/windows/m14IntegrationModel.ts`,
+`src/pilot/windows/m14IncidentDesk.ts`, `src/pilot/windows/m14SurfaceModel.ts`
+(two comments), `src/measurement/features/m14.ts`,
+`e2e/m14_integration.spec.ts`, `e2e/m14_integration_route.spec.ts`, this
+register, the addendum, the matrix and `UNIT-LOG.md`. Not touched:
+`windowKit.ts`, the extraction framework, `ResearchRuntime`, `EventStore`,
+`StationConcourseScene.ts`, `m14PacketContent.ts` (no copy changed),
+`e2e/pilot_episodes_1_2.spec.ts`, any other item.
+
+(6) Test evidence (9 October 2026; commands, counts, reviewers and every
+exception in `UNIT-LOG.md` "U17 closeout results"). Pure
+`e2e/m14_integration.spec.ts` — 75 passed (the 71 of the unit plus the
+reload-check predicate, the results-help settle, the established and
+not-established extractor cases with the hold-back contradiction and the
+orientation-only / completed hold-backs; the missingness list extended).
+Browser `e2e/m14_integration_route.spec.ts` R5 (both parts, with the check
+record beside the hold-back), R8 (a genuine reload before the opening:
+`interrupted` at the opening screen, the check at Concourse entry with
+`prior_briefing_found: true` and the absence established, `not_presented`
+before this load's briefing, `pending` / `briefed_not_opened` after it,
+the orientation card, START, the earlier load byte-identical) and R9
+(six answers, HELP on the results, ENTER ENTER then a settled ENTER, a
+double click on CLOSE HELP then a settled BACK) — passed; three frames in
+`.playwright-mcp/u17-closeout` (c01–c03; the U17 evidence intact). The
+diagnostic: (3). Static: typecheck, build, ESLint and Prettier on the
+changed `.ts` files and the register and addendum clean, `git diff
+--check` clean, verify-unit PASS against 5d95e6e, guard tests 58 / 58;
+the matrix and UNIT-LOG fail Prettier as at 5d95e6e (compared on the
+committed versions). Reviews: test-reviewer Sonnet 5.5; scientific and
+gameplay reviewers Opus 5.5 (one parallel pass each); material findings
+corrected in the one bounded pass (scientific F1 the integrity scope, F2
+the coherent check, F4 this record; gameplay F1 the comments, F2 this
+record, F3 the conclusion's wording), the affected checks rerun, the
+material fixes confirmed (UNIT-LOG). Passing tests establish that the
+build does what this record says, not that the measure is valid.
+
+(7) Residual limitations. Those of the as-built record's (7) stand, with
+the §5.285 sentence refined: after a reload the new load's row is
+`interrupted` when the earlier load opened the desk (completed or not),
+when no check of the load exists (the Concourse never reached) and when
+the recovered history is not continuous; the continuity test cannot see
+a tail lost while the store's meta record survived (§5.290 (a) (2)). The
+M05 cap on the briefed route is an M05 design observation (§5.290 (e)
+(i)), not an M14 matter.
+
 **Unit 17 (M14): as-built** — the two-packet incident desk of the
 Station Concourse (bounded unit under contract `U17-CONTRACT.md`,
 amendments A1 of 7 October 2026 and A2 of 8 October 2026). **Status:
@@ -327,6 +485,17 @@ model and the interface were written.**
   when the earlier load completed all six, and when it saw only the
   orientation (the kit writes `opportunity_opened` at the first
   opening). A desk never opened before the reload runs normally.
+  Closeout ruling of 9 October 2026 (§5.290 (a)): at the first guard run
+  of a later page load the family writes `prior_load_checked` — whether
+  the recovered history is continuous and whether it holds an earlier
+  opening or briefing; when that record establishes the absence of an
+  earlier opening, the new load's never-opened desk reads
+  `not_presented` before the briefing, `pending` (`briefed_not_opened`)
+  after it and `no_eligible_event` (`briefed_not_opened`, censored,
+  `closed_at_review`) at the review closure — never `interrupted`; a
+  load without the record, a discontinuous history or a found opening
+  keeps `interrupted`; a current-load briefing never erases an earlier
+  opening (the hold-back wins).
 - Faults: a fault while the orientation or the first-response phase is
   open closes the series as a technical failure through the window kit
   (`technical_failure`, the answers so far kept in the closure
@@ -803,12 +972,17 @@ answer counts whatever sources were opened before it. The extractor
 recounts the value from the `first_response` events against the content
 key and compares it with each event's `correct` flag and with the
 closure snapshot. Dispositions and the integrity list: addendum §2
-"U17" and §5.282, §5.284. Components (companions beside the value, never
-inside it): the exposure stages kept distinct (`briefed`, `desk_opened`,
-`orientation_acknowledged`, `packets_presented`, `decisions_presented`,
-and the explicit `never_opened_reason` — `briefed_not_opened` /
-`not_briefed_not_opened` / null — ruling item 6's "in the components"),
-the administration and content versions, the assigned and realised
+"U17" and §5.282, §5.284; the reload-before-opening distinction of the
+closeout ruling: §5.290 (a). Components (companions beside the value,
+never inside it): the exposure stages kept distinct (`briefed`,
+`desk_opened`, `orientation_acknowledged`, `packets_presented`,
+`decisions_presented`, and the explicit `never_opened_reason` —
+`briefed_not_opened` / `not_briefed_not_opened` / null — ruling item
+6's "in the components"), `reload_check` (the load's reload check:
+`page_reloaded`, `checked`, `prior_opening_found`,
+`prior_briefing_found`, `history_continuous`,
+`prior_opening_absence_established` — §5.290 (a)), the administration
+and content versions, the assigned and realised
 packet and decision orders, `observations_share_one_episode: true`,
 `first_response_phase_complete`, `by_packet` (numerator, denominator,
 planned 3, omissions per packet), `omissions` (presented-unanswered and
@@ -934,7 +1108,9 @@ one. The arrangement does not prevent every advantage from selective
 stopping (ruling item 5). Input mode differs in cost (click against
 keys) and is recorded, not controlled. After a reload the new load's
 row is `interrupted` even when the earlier load had completed the
-series (§5.285). The focused clock's `focused_ms` is a companion only
+series (§5.285); a load after a reload that never reaches the Concourse
+(no check record), or whose recovered history is discontinuous, keeps
+`interrupted` as well (§5.290 (a)). The focused clock's `focused_ms` is a companion only
 and depends on the browser's focus events. The layout gate was measured
 in the real game with Windows fonts only (the default `monospace`,
 Courier New and Lucida Console forced on the canvas context); Menlo /
@@ -5781,7 +5957,9 @@ decision.
      (`windowKit.ts` is outside the allowlist, so no `phase` or
      `prior_exposure` field is added to it); the extractor reads the
      hold-back from the detail prefix and the absence of any
-     `opportunity_opened` in the load.
+     `opportunity_opened` in the load. The closeout ruling of 9 October
+     2026 (§5.290 (a)) adds the reload check of a later load; the
+     hold-back itself is unchanged.
 286. **D-10 — companion definitions (U17 default).** "Omissions" =
      decisions presented without a first response
      (`unanswered_decision_ids`) plus unpresented decisions
@@ -5914,7 +6092,9 @@ decision.
      progress rather than a choice (the owner's design, flagged); the
      scripted episode-1 route with every optional station reaches the
      M05 60 s focused cap before the lamp job (see UNIT-LOG "U17
-     results"; an M05 start-window matter, not M14). (f) From the
+     results"; an M05 start-window matter, not M14; diagnosed once,
+     instrumented, in the closeout — §5.290 (d), §4 "Unit 17 closeout"
+     (3)). (f) From the
      confirmation passes, corrected in round 2: a doubled press after
      CLOSE HELP could start the packet or continue the series, and NEXT /
      BACK on the results shared one place (gameplay n1); the held-back
@@ -5929,16 +6109,18 @@ decision.
      `context.reloaded` branch of the extractor is now unreachable is
      correct and harmless (left for clarity of the dispositions).
      Residual from the round-2 confirmation (gameplay), recorded and
-     NOT changed because the two correction rounds are used: on the
-     results view CLOSE HELP shares the bottom-row place of NEXT /
-     BACK and does not re-arm the results settle, so a doubled CLOSE
-     HELP press there flips to the other packet's results (feedback
-     phase only; both packets' results are already unlocked; a
-     `results_shown` of the other packet may be written by that press;
-     recoverable with one press). The pure tests cover the re-arm of
-     START after CLOSE HELP but not the acknowledgement's re-arm after
-     CLOSE HELP (code path read by both reviewers, not unit-tested).
-     Both are the owner's to carry into U24 or a later correction. From
+     NOT changed inside the unit because the two correction rounds were
+     used — CORRECTED in the U17 closeout of 9 October 2026 (§5.290
+     (b)): on the results view CLOSE HELP shares the bottom-row place of
+     NEXT / BACK and did not re-arm the results settle, so a doubled
+     CLOSE HELP press there flipped to the other packet's results
+     (feedback phase only; both packets' results already unlocked; a
+     `results_shown` of the other packet could be written by that
+     press; recoverable with one press). The pure tests covered the
+     re-arm of START after CLOSE HELP but not the acknowledgement's
+     re-arm after CLOSE HELP (code path read by both reviewers); the
+     closeout's pure case covers the results re-arm and the
+     unchanged decision-view path. From
      the round-2 visual confirmation (recorded, not changed): in the
      acknowledgement view the status line still reads "Decision N of 3 ·
      Open sources as needed. Choose an answer, …" while the column says
@@ -5947,16 +6129,169 @@ decision.
      owner's call); some open tiles keep only 3–6 CSS px of bottom
      padding (legible, nothing clipped; the slots are the fixed sizes of
      D-11 (a)).
-     **For the research owner, not decided here:** (i) a session with a
-     reload before the Concourse, the briefing acknowledged in the
-     current load and the desk never opened exports `interrupted`
-     (addendum §2 "U17"), not `pending` / `no_eligible_event` with
-     `briefed_not_opened` — options: keep it (an opening is the only
-     desk evidence of a load), treat a current-load `presented` as own
-     evidence, or keep `interrupted` with the reason in the components
-     (as now: `exposure.never_opened_reason` is `briefed_not_opened`);
-     (ii) whether `missing_reason` / `censor_reason` plus the exposure
-     components satisfy ruling item 6's "in the components" (now also
-     `never_opened_reason`); (iii) whether the lure checks should model
-     the documented misreadings themselves rather than consistency
-     under unknown facts.
+     **For the research owner, not decided here (decided on 9 October
+     2026 — §5.290):** (i) a session with a reload before the Concourse,
+     the briefing acknowledged in the current load and the desk never
+     opened exports `interrupted` (addendum §2 "U17"), not `pending` /
+     `no_eligible_event` with `briefed_not_opened` — options: keep it
+     (an opening is the only desk evidence of a load), treat a
+     current-load `presented` as own evidence, or keep `interrupted`
+     with the reason in the components (as now:
+     `exposure.never_opened_reason` is `briefed_not_opened`) — RULED,
+     §5.290 (a); (ii) whether `missing_reason` / `censor_reason` plus
+     the exposure components satisfy ruling item 6's "in the components"
+     (now also `never_opened_reason`) — ACCEPTED, §5.290 (c); (iii)
+     whether the lure checks should model the documented misreadings
+     themselves rather than consistency under unknown facts — RETAINED
+     as logical consistency checks, §5.290 (c).
+290. **RESEARCH-OWNER CLOSEOUT RULING AND DISPOSITIONS — APPROVED 9
+     October 2026 (M14, the U17 closeout; owner rulings, not implementer
+     defaults; not reopened).** Source: the owner's closeout instruction
+     of 9 October 2026 (`UNIT-LOG.md` "U17 closeout", recorded verbatim
+     in substance before the first source edit). **(a) Reload before
+     the desk was opened.** When the absence of a prior M14 opening is
+     established, a page reload alone must not classify a subsequently
+     available, never-opened desk as `interrupted`: before the briefing
+     `not_presented`; briefed, never opened, the opportunity still open
+     ⇒ null `pending` with `briefed_not_opened`; briefed, never opened,
+     closed at the review ⇒ null `no_eligible_event` with
+     `briefed_not_opened`, censored, `closed_at_review`. An actual prior
+     opening keeps the hold-back and `interrupted` — an orientation-only
+     opening and a completed series included. A current-load briefing
+     never erases the evidence of an earlier opening; missing historical
+     evidence is never proof of no prior exposure. **As implemented
+     (the evidence identified first):** the extractor reads the current
+     page load's raw events only (`pilotCoverage.ts` passes
+     `eventLogger.getEvents()`; `ExtractContext` carries
+     `pageLoadIndex` and `reloaded` and no earlier events), the kit's
+     `presented` record carries fixed fields, and no model event precedes
+     an opening — so no existing current-load record could establish the
+     absence of an earlier opening, and `absentFeature` / the earlier
+     extractor read every reloaded load without an opening as
+     `interrupted`. The evidence that CAN establish it is the runtime's
+     recovered history (`getPriorPageLoadEvents()`, the same list the
+     hold-back guard reads) together with its losslessness block
+     (`getEventIntegrity()`: sequence numbers across the prior and
+     current loads contiguous from 1, no duplicate). The adapter's
+     guard therefore writes, once per page load after a reload and at
+     its first run (Concourse entry), the provisional family record
+     `prior_load_checked` — `page_load_index`,
+     `prior_page_load_event_count`, `prior_opening_found`,
+     `prior_briefing_found`, `history_continuous` (at least one earlier
+     record; `first_sequence` 1, no gap, no duplicate; the store's meta
+     record readable — `recovered_from_chunks` false, added after the
+     review) and
+     `prior_opening_absence_established` (no opening found AND
+     continuous) — before the hold-back when an opening is found (the
+     kit's reload `technical_failure` follows as before). The extractor
+     treats the absence as established only when every check record of
+     the load says so with its flags agreeing (established, continuous,
+     no opening found, at least one earlier record); it then reads the
+     load EXACTLY as a first load — through the same integrity checks
+     (§5.284: a `presented` or check record without a usable sequence,
+     of another opportunity or version, is a `technical_failure` on both
+     paths — the scientific review's F1, corrected before the commit)
+     and on to the never-opened dispositions because nothing was opened.
+     A load without a check (the Concourse never entered after the
+     reload, or an older build), a discontinuous history or a found
+     opening keeps `interrupted` with the reason "the absence of an
+     earlier opening not established", read before any position is
+     compared; a self-contradictory check (established while not
+     continuous, while an opening was found, or with no earlier record —
+     review F2), a check claiming absence beside the hold-back, two
+     checks, a check on a first page load, or a check that found an
+     earlier opening beside an opening of this load (review F7 (ii)) set
+     `exposure_record_consistent: false`, establish nothing, and leave
+     the row otherwise as the other evidence reads it (the hold-back
+     winning); the components carry `reload_check`. The earlier
+     briefing of a prior load is reported in the
+     check and never read as this load's exposure (`briefed: false`
+     before this load's briefing — the ruling's "before briefing:
+     `not_presented`"). Nothing in `windowKit.ts`, the extraction
+     framework, `ResearchRuntime`, `EventStore` or any other item
+     changed; the earlier load's events stay immutable (verified
+     byte-identical in R5 and R8). **Limitations (stated):** (1) the
+     check is made where the desk becomes available — Concourse entry —
+     so a reloaded load that never reaches the Concourse holds no check
+     and stays `interrupted` (its desk was never available in that
+     load); (2) continuity is read from the recovered sequence numbers
+     and the store's readable meta record, which reveal a lost beginning
+     or middle of the earlier history and a lost tail chunk, never a tail
+     lost while the meta record survived: a durable store that stopped
+     writing in an EARLIER load (its `degraded` health is not carried
+     across loads) or a browser closed before the store's per-tick flush
+     would leave a history that looks continuous up to its last
+     persisted number — the same limitation the hold-back guard has had
+     since §5.14 (it then re-runs the desk), and the reason the check
+     reports the count and the continuity rather than claiming a
+     complete history; `foreign_records_rejected` (records of other
+     identities, or without identity fields, on a shared device) is not
+     part of the test, being no evidence about this identity's history — the owner may widen the
+     test (review F3, open below); a desk re-run after a discontinuous
+     history keeps its ordinary row with `reload_check.history_continuous:
+false` visible beside it (review F7 (i), open below); (3)
+     `prior_load_checked` is a
+     PROVISIONAL candidate name of the provisional family (§5.283), the
+     owner's to rename. **(b) CLOSE HELP on the results.** The 400 ms
+     fresh-press / settle discipline applies to the transition out of
+     the help sheet on the results view: `m14sCloseHelp` re-arms the
+     results settle (`results_shown_at_ms`) exactly as it re-arms START
+     and the acknowledgement, so a carried second pointer or keyboard
+     press — the second ENTER, the second click of a double click —
+     landing on NEXT / BACK inside 400 ms changes nothing, switches no
+     packet and writes no `results_shown`; a deliberate later press
+     navigates as before. The scoring, the feedback timing, the
+     controls and the layout are unchanged (the shared bottom-row place
+     of §5.287 (h) stays; only the settle was missing). **(c)
+     Documentation dispositions.** The separate exposure fields and
+     `never_opened_reason` are accepted as satisfying the intended
+     distinction between briefing, opening and answering (closes
+     §5.289 (ii)); the lure tests are retained as logical consistency
+     checks and never claimed to reproduce participants' actual
+     misreadings or to establish empirical validity (closes §5.289
+     (iii) as recorded in (c) there); the minor typography points of
+     §5.289 (d) / (f) and the non-Windows font checks of §5.276 (i)
+     and the "tank 3:" wrap of §5.276 (ii) are carried into U24 /
+     release verification; the two reproduced baseline failures of
+     `final_scientific_gates` remain documented exceptions. **(d) The
+     M05 timing diagnostic** of the episode-1 route (§5.289 (e)) was run
+     once, instrumented; its measured timeline and conclusion are in §4
+     "Unit 17 closeout" (3) and `UNIT-LOG.md` "U17 closeout results";
+     the route, the M05 rules, the cap and the production telemetry are
+     unchanged. In one sentence: the route's cumulative focused time
+     before the lamp exceeds the 60 s cap (the cap closed the occasion
+     9.3 s into the walk from the gauge toward the lamp, 8.7 s before
+     the lamp surface opened; the press on it is the model's late
+     start, so `started` is never written); M14 paused the M05 clock for
+     exactly its open interval and touched no M05 state; the desk step
+     contributes about 10.4 s gross (the lane walk and the approach), the
+     gauge step 26.8 s, and no single step is shown to be decisive; it
+     is a limitation of the scripted test route's EXPECTATION — a route
+     that works the briefed storm-packet stations before the accepted
+     lamp job reaches the cap, for a participant as for the driver — and
+     NOT an identified U17 product regression; not labelled pre-existing
+     (no comparable baseline). **(e) Observations from the reviews,
+     recorded for the owner and not changed (none a closeout item):**
+     (i) M05 'o1' has a briefed competing task — Vale's briefing names
+     the plan board, quality packet and incident desk before the lamp
+     job is offered, and the M05 clock counts walking between briefed
+     stations as initiation latency, so being censored at the cap may go
+     with conscientious task ordering (this predates U17; options for
+     the owner: accept walking between briefed tasks as part of the
+     latency; record detour distance or station visits as a companion;
+     revisit the cap or eligibility rules); (ii) after a reload the
+     participant hears Vale's briefing again — the earlier briefing is
+     reported in the check and never counted as this load's exposure, as
+     ruled; (iii) the lost-tail route of limitation (2) now shows in the
+     data as `history_continuous: false` when the meta record was
+     unreadable, an improvement over §5.14 alone. **Open for the owner
+     (surfaced by the review, no recommendation a resolution):** (1) the
+     integrity scope on the never-opened rows is now the same on both
+     paths (option (a) of the review); the alternative — scoping §5.284
+     to ordered evidence on both paths — remains the owner's; (2)
+     whether "continuous" should also require `foreign_records_rejected:
+0`; (3) whether a desk re-run after a discontinuous history should
+     keep its ordinary row (as now) or be flagged or censored; (4) the
+     M05 competing-task observation of (e) (i). Authored content, answer
+     keys, the scoring formula, the 400 ms threshold and the canonical
+     schema are unchanged.

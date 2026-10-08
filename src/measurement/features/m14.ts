@@ -21,9 +21,13 @@
  * its denominator, censored; never briefed and never opened ⇒
  * `not_presented`; briefed and never opened ⇒ `pending` while open and
  * null `no_eligible_event` (`briefed_not_opened`) at the review closure;
- * never `declined`; held back after a reload ⇒ `interrupted`; a fault in
- * the first-response phase ⇒ `technical_failure` with the answers kept in
- * the components. Contradictory, malformed or unverifiable SCORED
+ * never `declined`; held back after a reload ⇒ `interrupted`; a load after
+ * a reload without an opening of its own ⇒ `interrupted` unless its own
+ * `prior_load_checked` record ESTABLISHES the absence of an earlier opening
+ * (a continuous recovered history without one — the research owner's
+ * closeout ruling of 9 October 2026), in which case the never-opened
+ * dispositions above apply; a fault in the first-response phase ⇒
+ * `technical_failure` with the answers kept in the components. Contradictory, malformed or unverifiable SCORED
  * evidence is a `technical_failure`, never a value; a defect confined to
  * unscored records flags the components and never changes the row.
  * Event order is read only from usable, unique sequence numbers
@@ -157,6 +161,49 @@ registerFeatureExtractor('M14', (events, context) => {
     }),
   ];
 
+  // The reload check of this load (closeout ruling of 9 October 2026):
+  // the absence of an earlier opening counts as established only when
+  // every check record of the load says so with its flags agreeing
+  // (established, continuous, no opening found, at least one earlier
+  // record); a load without a check, a discontinuous history or a found
+  // opening never establishes it, and a self-contradictory record is a
+  // flagged defect that establishes nothing.
+  const checks = family.filter(
+    (event) => suffixOf(event) === 'prior_load_checked',
+  );
+  const checkFlag = (key: string) =>
+    checks.length === 0
+      ? null
+      : checks.some((event) => meta<unknown>(event, key) === true);
+  const checkCoherent = (event: RawGameEvent) => {
+    const established =
+      meta<unknown>(event, 'prior_opening_absence_established') === true;
+    const continuous = meta<unknown>(event, 'history_continuous') === true;
+    const notFound = meta<unknown>(event, 'prior_opening_found') === false;
+    const count = meta<unknown>(event, 'prior_page_load_event_count');
+
+    return (
+      !established ||
+      (continuous && notFound && typeof count === 'number' && count > 0)
+    );
+  };
+  const checksCoherent = checks.every(checkCoherent);
+  const absenceEstablished =
+    checks.length > 0 &&
+    checksCoherent &&
+    checks.every(
+      (event) =>
+        meta<unknown>(event, 'prior_opening_absence_established') === true,
+    );
+  const reloadCheck = () => ({
+    page_reloaded: context.reloaded,
+    checked: checks.length > 0,
+    prior_opening_found: checkFlag('prior_opening_found'),
+    prior_briefing_found: checkFlag('prior_briefing_found'),
+    history_continuous: checkFlag('history_continuous'),
+    prior_opening_absence_established: absenceEstablished,
+  });
+
   // Exposure stages, kept distinct: the briefing (`presented`), the desk
   // opening (`opportunity_opened`), the orientation, packets, decisions.
   let briefed = false;
@@ -267,6 +314,7 @@ registerFeatureExtractor('M14', (events, context) => {
         packets_presented: realisedPackets.length,
         decisions_presented: realisedDecisions.length,
       },
+      reload_check: reloadCheck(),
       first_response_phase_complete: completed,
       first_response_phase_closure: completed
         ? 'completed'
@@ -325,6 +373,41 @@ registerFeatureExtractor('M14', (events, context) => {
     ];
   }
 
+  // More than one check record, one on a first page load, or one whose
+  // flags contradict each other is a defect confined to unscored records:
+  // flagged, never a change of the row.
+  if (
+    checks.length > 1 ||
+    (checks.length > 0 && !context.reloaded) ||
+    !checksCoherent
+  ) {
+    exposureConsistent = false;
+  }
+
+  /** The never-opened dispositions (ruling item 6), order-free. */
+  const neverOpened = () => {
+    if (!briefed) {
+      return empty(
+        'not_presented',
+        'incident desk never briefed and never opened',
+        {
+          components: components(),
+        },
+      );
+    }
+
+    if (reviewClosedAbsent) {
+      return empty('no_eligible_event', 'briefed_not_opened', {
+        closure_reason: 'closed_at_review',
+        censored: true,
+        censor_reason: 'briefed_not_opened',
+        components: components(),
+      });
+    }
+
+    return empty('pending', 'briefed_not_opened', { components: components() });
+  };
+
   // Held back after a reload (the existing convention, register §5.14):
   // the kit's technical failure with a detail beginning `reload` and no
   // opening of its own in this load. Takes precedence over everything.
@@ -337,12 +420,18 @@ registerFeatureExtractor('M14', (events, context) => {
 
   if (heldBack) {
     // The briefing may still be acknowledged in this load after the
-    // hold-back: the exposure stage stays accurate.
+    // hold-back: the exposure stage stays accurate. A check record that
+    // claims an established absence beside the hold-back contradicts it
+    // (flagged; the hold-back — the evidence of an opening — wins).
     for (const event of family) {
       if (suffixOf(event) === 'presented') {
         briefed = true;
         briefedSequence = event.sequence ?? null;
       }
+    }
+
+    if (absenceEstablished) {
+      exposureConsistent = false;
     }
 
     return empty(
@@ -354,10 +443,16 @@ registerFeatureExtractor('M14', (events, context) => {
     );
   }
 
-  // A load after a reload without an opening of its own: `interrupted`
-  // before any position is compared (precedence over `technical_failure`).
+  // A load after a reload without an opening of its own and without an
+  // ESTABLISHED absence of an earlier opening: `interrupted`, read before
+  // any position is compared (precedence over `technical_failure`) — a
+  // missing or broken history is never proof of no prior exposure. With
+  // the absence established the load is read exactly as a first load:
+  // through the same integrity checks below, ending in the never-opened
+  // dispositions because nothing was opened.
   if (
     context.reloaded &&
+    !absenceEstablished &&
     !family.some((event) => suffixOf(event) === 'opportunity_opened')
   ) {
     for (const event of family) {
@@ -369,7 +464,7 @@ registerFeatureExtractor('M14', (events, context) => {
 
     return empty(
       'interrupted',
-      'no current-load desk evidence after a reload: incident desk not opened in this page load',
+      'no current-load desk evidence after a reload: incident desk not opened in this page load and the absence of an earlier opening not established',
       { components: components() },
     );
   }
@@ -836,35 +931,16 @@ registerFeatureExtractor('M14', (events, context) => {
   }
 
   if (!opened) {
-    // No desk evidence of its own in this load.
-    if (context.reloaded) {
-      return empty(
-        'interrupted',
-        'no current-load desk evidence after a reload: incident desk not opened in this page load',
-        { components: components() },
-      );
-    }
+    // No desk evidence of its own in this load: a first load, or a
+    // reloaded load whose check established the absence of an earlier
+    // opening (a reloaded load without that returned above).
+    return neverOpened();
+  }
 
-    if (!briefed) {
-      return empty(
-        'not_presented',
-        'incident desk never briefed and never opened',
-        {
-          components: components(),
-        },
-      );
-    }
-
-    if (reviewClosedAbsent) {
-      return empty('no_eligible_event', 'briefed_not_opened', {
-        closure_reason: 'closed_at_review',
-        censored: true,
-        censor_reason: 'briefed_not_opened',
-        components: components(),
-      });
-    }
-
-    return empty('pending', 'briefed_not_opened', { components: components() });
+  // A check that found an earlier opening beside an opening of this load
+  // contradicts the hold-back the guard would have applied: flagged.
+  if (checkFlag('prior_opening_found') === true) {
+    exposureConsistent = false;
   }
 
   const included = answered().map((entry) => entry.decision_id);

@@ -22,7 +22,9 @@
  * view that follows holds nothing activatable at the same place, and the
  * first focusable element of a decision view is the question itself (a
  * neutral landing whose activation does nothing), so the second click of
- * a doubled click or a doubled ENTER lands on nothing.
+ * a doubled click or a doubled ENTER lands on nothing — except on the
+ * results view, where CLOSE HELP shares the place of NEXT / BACK and the
+ * model's 400 ms settle (re-armed by the close) refuses the carried press.
  */
 import type { SurfaceElement, WorkSurfaceModel } from '../ui/WorkSurfaceScene';
 import {
@@ -428,7 +430,8 @@ export function m14SurfaceModel(host: M14SurfaceHost): WorkSurfaceModel {
   if (s.help_open) {
     // The help sheet alone with the header and the status line; CLOSE
     // HELP is the first focusable element (ENTER closes it) and sits in
-    // the bottom row, where the view that follows holds nothing.
+    // the bottom row, where the view that follows holds nothing — on the
+    // results view it holds NEXT / BACK, which the re-armed settle guards.
     elements.push(
       button(
         'close_help',
