@@ -11,8 +11,9 @@
  * INPUT, stated plainly: the walking, the station prompt (SPACE at the
  * table) and Kai's briefing are done by the route drivers with the
  * KEYBOARD — that is navigation, not an M15 response. Inside the bench R1,
- * R3, R4, R5, R6, R7 and R8 use the keyboard only; R2 uses the pointer
- * only (every in-bench act a real click at the probe's design coordinates).
+ * R3, R4, R5, R6, R7 and R8 use the keyboard only; R2 and R9 use the
+ * pointer only (every in-bench act a real click at the probe's design
+ * coordinates).
  *
  *   R1  keyboard: orientation; box 1 — TEST F, TEST F, TEST G, wiring B,
  *       S1-Q1 correct (C), S1-Q2 wrong (A); box 2 — TEST S only, wiring
@@ -38,6 +39,12 @@
  *   R7  the real-game layout gate under forced fallback fonts.
  *   R8  the other benches after M15: the protocol console still opens, the
  *       display advances, the M14 row is untouched.
+ *   R9  closeout (pointer, at 800 × 600 and at 1280 × 720): HELP, CLOSE
+ *       HELP and LEAVE BENCH by click from every question view of both
+ *       boxes with an unsubmitted draft — the two controls present, usable
+ *       and overlapped by nothing; help keeps the question and the draft;
+ *       leaving submits nothing; reopening restores the same state without
+ *       a second presentation. Its eight frames go to `U18_CLOSEOUT_OUT`.
  *
  * Twenty-four evidence frames (800 × 600) go to `U18_OUT`. Nothing here
  * establishes psychometric validity.
@@ -884,6 +891,35 @@ test.describe('M15 two relay boxes on the route (Unit 18)', () => {
     expectNoRuntimeErrors(errors);
   });
 
+  test('R9 (closeout; pointer access during the questions): HELP, CLOSE HELP and LEAVE BENCH by real clicks from every question view of both boxes with an unsubmitted draft; help keeps the question and the draft; leaving submits nothing; reopening restores the same state (800 × 600)', async ({
+    page,
+  }) => {
+    test.setTimeout(900_000);
+
+    const errors = captureErrors(page);
+
+    await toLab(page, 'u18r9a');
+    await openBench(page);
+    await questionAccessScenario(page, 'closeout-800x600');
+    await expectFamilyDiscipline(page);
+    expectNoRuntimeErrors(errors);
+  });
+
+  test('R9 at 1280 × 720 (the standard desktop viewport): the same pointer access from every question view', async ({
+    page,
+  }) => {
+    test.setTimeout(900_000);
+
+    const errors = captureErrors(page);
+
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await toLab(page, 'u18r9b');
+    await openBench(page);
+    await questionAccessScenario(page, 'closeout-1280x720');
+    await expectFamilyDiscipline(page);
+    expectNoRuntimeErrors(errors);
+  });
+
   test('R3 (partial coverage and route closure): box 1 complete, box 2 wired and S2-Q1 answered, S2-Q2 left; pending before the review; the record closed ⇒ incomplete over 3, censored, closed_at_review; the bench afterwards a record', async ({
     page,
   }) => {
@@ -1314,6 +1350,213 @@ async function dblclickElement(page: Page, id: string) {
 
   await page.mouse.dblclick(point.x, point.y);
   await page.waitForTimeout(300);
+}
+
+/** Where the closeout's evidence frames go (never the contract's 24). */
+const CLOSEOUT_OUT =
+  process.env.U18_CLOSEOUT_OUT ?? 'test-results/u18-closeout';
+
+/**
+ * HELP, CLOSE HELP and LEAVE BENCH by real clicks from one question view
+ * with an unsubmitted draft: the two controls are present, focusable,
+ * idle, inside the panel below every right-column control and above the
+ * feedback line, and overlapped by nothing; help keeps the question and
+ * the draft; leaving records no response and opens no dialog; reopening
+ * shows the same question and draft without a second presentation.
+ */
+async function questionAccessFromView(
+  page: Page,
+  questionId: string,
+  letter: 'a' | 'b' | 'c',
+  shotName: string,
+) {
+  expect(await currentQuestion(page)).toBe(questionId);
+
+  // The question as the SCREEN shows it (the panel title and the question
+  // block's label), compared again after help and after the reopen.
+  const boxIndex = Number(questionId.charAt(1));
+  const questionIndex = Number(questionId.slice(-1));
+  const onScreen = async () => {
+    const view = await probe(page);
+    const block = view.elements.find((e) => e.id === 'question');
+
+    expect(view.title).toBe(`RELAY BOX ${boxIndex} OF 2`);
+    expect(block, `${questionId} question block`).toBeDefined();
+    expect(block!.label).toContain(`QUESTION ${questionIndex} OF 2`);
+
+    return block!.label;
+  };
+  const shownBefore = await onScreen();
+
+  const presented = await countOf(page, 'question_presented');
+  const responses = await countOf(page, 'first_response');
+  const requests = await countOf(page, 'commit_requested');
+  const consults = await countOf(page, 'help_consulted');
+  const left = await countOf(page, 'panel_left');
+  const reopened = await countOf(page, 'series_reopened');
+  const optionId = `option_${letter}`;
+
+  // The draft (unsubmitted).
+  await page.waitForTimeout(SETTLE_MS);
+  await clickElement(page, optionId);
+  expect(await elementState(page, optionId)).toBe('selected');
+
+  // Both controls present and usable, below the right column, above the
+  // feedback line, overlapped by nothing.
+  const view = await probe(page);
+  const rect = (e: { x: number; y: number; w: number; h: number }) => ({
+    left: e.x - e.w / 2,
+    right: e.x + e.w / 2,
+    top: e.y - e.h / 2,
+    bottom: e.y + e.h / 2,
+  });
+
+  for (const id of ['help', 'leave']) {
+    const control = view.elements.find((e) => e.id === id);
+
+    expect(control, `${questionId} ${id}`).toBeDefined();
+    expect(control!.focusable, `${questionId} ${id} focusable`).toBe(true);
+    expect(control!.state, `${questionId} ${id} state`).toBe('idle');
+
+    const r = rect(control!);
+
+    expect(
+      r.bottom,
+      `${questionId} ${id} above the feedback line`,
+    ).toBeLessThan(view.feedback_top);
+
+    for (const other of view.elements) {
+      if (other.id === id) {
+        continue;
+      }
+
+      const o = rect(other);
+      const apart =
+        r.right <= o.left ||
+        r.left >= o.right ||
+        r.bottom <= o.top ||
+        r.top >= o.bottom;
+
+      expect(apart, `${questionId} ${id} overlapped by ${other.id}`).toBe(true);
+
+      if (['record_answer', 'cannot_solve', optionId].includes(other.id)) {
+        expect(r.top, `${questionId} ${id} below ${other.id}`).toBeGreaterThan(
+          o.bottom,
+        );
+      }
+    }
+  }
+
+  mkdirSync(CLOSEOUT_OUT, { recursive: true });
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: `${CLOSEOUT_OUT}/${shotName}.png` });
+
+  // HELP by click: the sheet; CLOSE HELP by click: the question and the
+  // draft as they were; nothing presented or recorded.
+  await clickElement(page, 'help');
+  expect((await ids(page))[0]).toBe('close_help');
+  expect(await lines(page)).toContain('HOW THE BENCH WORKS');
+  expect(await countOf(page, 'help_consulted')).toBe(consults + 1);
+  expect(meta(await lastOf(page, 'help_consulted'))).toMatchObject({
+    question_id: questionId,
+    step: 'question',
+    input_mode: 'pointer',
+  });
+  await page.waitForTimeout(SETTLE_MS);
+  await clickElement(page, 'close_help');
+  expect(await ids(page)).not.toContain('close_help');
+  expect(await ids(page)).toContain('record_answer');
+  expect(await ids(page)).toContain('help');
+  expect(await ids(page)).toContain('leave');
+  expect(await currentQuestion(page)).toBe(questionId);
+  expect(await onScreen()).toBe(shownBefore);
+  expect(await elementState(page, optionId)).toBe('selected');
+  expect(await countOf(page, 'question_presented')).toBe(presented);
+  expect(await countOf(page, 'first_response')).toBe(responses);
+  await page.waitForTimeout(SETTLE_MS);
+
+  // LEAVE BENCH by click with the draft unsubmitted: no response, no
+  // dialog, no CANNOT SOLVE; the surface closes.
+  await clickElement(page, 'leave');
+  await waitSurface(page, false);
+  expect(await countOf(page, 'panel_left')).toBe(left + 1);
+  expect(await countOf(page, 'first_response')).toBe(responses);
+  expect(await countOf(page, 'commit_requested')).toBe(requests);
+  expect(await countOf(page, 'commit_cancelled')).toBe(0);
+
+  // Walk away and back (keyboard navigation, not an M15 response); reopen:
+  // the same question and draft, no second presentation.
+  await labApproach(page, PILOT.lab.kai);
+  await openBench(page);
+  expect(await countOf(page, 'series_reopened')).toBe(reopened + 1);
+  expect(await countOf(page, 'question_presented')).toBe(presented);
+  expect(await countOf(page, 'first_response')).toBe(responses);
+  expect(await currentQuestion(page)).toBe(questionId);
+  expect(await onScreen()).toBe(shownBefore);
+  expect(await elementState(page, optionId)).toBe('selected');
+  expect(await ids(page)).toContain('help');
+  expect(await ids(page)).toContain('leave');
+  await page.waitForTimeout(SETTLE_MS);
+}
+
+/** Records the drafted answer by click and moves on with the acknowledgement's control. */
+async function recordAndNextByPointer(page: Page) {
+  const responses = await countOf(page, 'first_response');
+
+  await clickElement(page, 'record_answer');
+  expect(await ids(page)).toEqual(['confirm', 'keep_working', 'dialog_text']);
+  await page.waitForTimeout(SETTLE_MS + 120);
+  await clickElement(page, 'confirm');
+  expect(await countOf(page, 'first_response')).toBe(responses + 1);
+  await page.waitForTimeout(SETTLE_MS + 120);
+  await clickElement(page, 'next');
+  await page.waitForTimeout(SETTLE_MS);
+}
+
+/**
+ * The closeout scenario: both boxes wired by click (box 1 B, box 2 CANNOT
+ * TELL), then every question view checked with `questionAccessFromView`
+ * before its answer is recorded; four first responses at the end.
+ */
+async function questionAccessScenario(page: Page, shotPrefix: string) {
+  expect((await probe(page)).frame).toBe('wide');
+  await page.waitForTimeout(SETTLE_MS);
+  await clickElement(page, 'start');
+  expect(await countOf(page, 'box_presented')).toBe(1);
+  await page.waitForTimeout(SETTLE_MS);
+
+  // Box 1: wiring B by click.
+  await clickElement(page, 'wiring_b');
+  await clickElement(page, 'record_wiring');
+  await page.waitForTimeout(SETTLE_MS + 120);
+  await clickElement(page, 'confirm');
+  expect(await countOf(page, 'wiring_recorded')).toBe(1);
+  await page.waitForTimeout(SETTLE_MS + 120);
+  await clickElement(page, 'next'); // FIRST QUESTION
+  await page.waitForTimeout(SETTLE_MS);
+
+  await questionAccessFromView(page, 's1_q1', 'c', `${shotPrefix}-s1-q1`);
+  await recordAndNextByPointer(page);
+  await questionAccessFromView(page, 's1_q2', 'a', `${shotPrefix}-s1-q2`);
+  await recordAndNextByPointer(page); // NEXT BOX
+  expect(await countOf(page, 'box_presented')).toBe(2);
+
+  // Box 2: CANNOT TELL by click.
+  await clickElement(page, 'cannot_tell');
+  await page.waitForTimeout(SETTLE_MS + 120);
+  await clickElement(page, 'confirm');
+  expect(await countOf(page, 'wiring_recorded')).toBe(2);
+  await page.waitForTimeout(SETTLE_MS + 120);
+  await clickElement(page, 'next'); // FIRST QUESTION
+  await page.waitForTimeout(SETTLE_MS);
+
+  await questionAccessFromView(page, 's2_q1', 'b', `${shotPrefix}-s2-q1`);
+  await recordAndNextByPointer(page);
+  await questionAccessFromView(page, 's2_q2', 'c', `${shotPrefix}-s2-q2`);
+  await recordAndNextByPointer(page); // SHOW RESULTS
+  expect(await countOf(page, 'first_response')).toBe(4);
+  expect(await countOf(page, 'question_presented')).toBe(4);
+  expect(await countOf(page, 'results_shown')).toBe(1);
 }
 
 /**

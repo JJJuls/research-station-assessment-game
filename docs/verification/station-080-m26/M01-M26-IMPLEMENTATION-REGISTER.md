@@ -7230,3 +7230,40 @@ ruling, and none is an owner decision.
      passed) and R1, R2 and R2 at `canvas=1080` were rerun by the
      implementer on port 5201 after the final matrix had released it
      (UNIT-LOG "U18 results").
+301. **U18 closeout (10 October 2026) — reported absence of HELP / LEAVE
+     BENCH on the question views: NOT REPRODUCED; no product change
+     (`UNIT-LOG.md` "U18 closeout").** The report named frames 07 and 12
+     (box 1 question 1, box 2 question 2) as showing the prediction
+     questions without visible HELP and LEAVE BENCH. Every copy of those
+     frames on disk, and the preparation's mockups, show both controls in
+     the bottom row (panel y 462, HELP at x 12, LEAVE BENCH at x 184 —
+     §5.299); `m15SurfaceModel.ts` pushes `helpAndLeave` unconditionally
+     last on every question view, and no question-view state omits it (only
+     the help sheet and a confirmation dialog are drawn alone, by design).
+     Verified live with real pointer clicks by a new route case R9
+     (test-only; `e2e/m15_systems_route.spec.ts`) at 800 × 600 and 1280 ×
+     720: from every question view of both boxes with an unsubmitted draft,
+     HELP and LEAVE BENCH are present, focusable, idle, above the feedback
+     line, below the right column's controls and overlapped by nothing; HELP
+     / CLOSE HELP keep the question (panel title, question block) and the
+     draft and present nothing anew; LEAVE BENCH records no response and
+     opens no dialog (`first_response`, `commit_requested` unchanged,
+     `commit_cancelled` 0 — leaving never records CANNOT SOLVE); reopening
+     restores the same question and draft with no second
+     `question_presented`. R9's own in-bench M15 responses (wiring B, CANNOT
+     TELL, four answers under the test identities) are needed to reach the
+     four views. Independent read-only confirmation (Opus 5.5, gameplay with
+     the visual role): not reproducible in any frame; the most likely
+     explanation offered, unverified, is low salience — on the question
+     views the bottom-left row sits below an empty band of about 105 design
+     px, far from the teal right column, while on the wiring views it is
+     attached to the tiles — followed by a cropped / zoomed view or a frame
+     set other than the committed one; three test-side notes applied
+     (screen-based question identity in R9, the spec header, a displaced
+     JSDoc). Nothing about stimuli, keys, scoring, reload policy, layout,
+     the settle or any owner choice changed; the twenty-four contract frames
+     were not rewritten (R9's eight frames go to `U18_CLOSEOUT_OUT`, kept in
+     the session scratchpad). The salience observation (H1) is recorded as a
+     candidate interface question for the owner — e.g. whether the bottom
+     row on the question views should sit closer to the recorded wiring —
+     and not acted on.

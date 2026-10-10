@@ -8603,6 +8603,126 @@ Implementer defaults (owner-visible, reversible; none changes the approved formu
   that correct answers require exploration. One local commit follows; no
   push, merge, PR, tag, deployment or deletion; U19 is not started.
 
+### U18 closeout (10 October 2026) — reported absence of HELP / LEAVE BENCH on the question views: not reproduced
+
+- **The report and the entry state.** The research owner's side reported
+  that frames `07-box-1-question-1-draft.png` and
+  `12-box-2-question-2-draft.png` show the prediction questions without
+  visible HELP and LEAVE BENCH controls (the wiring frames 03, 04 and 17
+  showing both), and that the question footer's H / ESC shortcuts do not
+  establish pointer access. Entry: worktree
+  `C:\Users\Juls\.codex\worktrees\u18-m15\research-station-assessment-game`,
+  branch `codex/u18-m15`, HEAD `b397b3efa5a0558cdf3bc3be27a4df10ac2d99e0`
+  (the unit's commit), tree clean. Authorised: focused browser checks and,
+  if a correction were required, one additional local commit; the allowed
+  subset `m15SurfaceModel.ts`, the two M15 specs, the register and this log.
+- **Finding: not reproducible; no product change made.** Every copy of
+  frames 07 and 12 on disk is byte-identical (the worktree's
+  `.playwright-mcp/u18-evidence`, the scratchpad copies `u18-evidence\` and
+  `u18-evidence-round1\`; MD5 `56c3dc6f…` and `869f2fd6…`) and shows HELP
+  [H] and LEAVE BENCH as two full, labelled, idle buttons in the bottom row
+  (panel y 462; screen x 15–280, y 426–452 at 800 × 600), and so do the
+  preparation's mockups `layout-evidence\s1-q1-draft-800x600.png` /
+  `s2-q2-draft-800x600.png`. The surface model pushes `helpAndLeave(host)`
+  unconditionally last on every question view (`m15SurfaceModel.ts`, the "A
+  question view" block), and no question-view state (draft or none, after
+  CLOSE HELP, after a reopen) omits it; only the help sheet and a
+  confirmation dialog are drawn alone, by design (contract §3.4, preview
+  §3.3 / §3.5). Pointer access is therefore not a matter of the footer's
+  shortcuts: the controls exist, are focusable and are clickable.
+- **Live verification (real pointer clicks; a new route case R9, test-only,
+  in `e2e/m15_systems_route.spec.ts`).** R9 drives the participant route by
+  keyboard (navigation), opens the bench and then, by click only: START, box
+  1 wiring B, box 2 CANNOT TELL, and — from EVERY question view of both
+  boxes (`s1_q1` draft C, `s1_q2` draft A, `s2_q1` draft B, `s2_q2` draft
+  C), with the draft unsubmitted — asserts that HELP and LEAVE BENCH are
+  present, focusable, idle, above the feedback line, below RECORD ANSWER /
+  CANNOT SOLVE / the drafted tile and overlapped by no element (probe
+  rectangles, centres read as the probe reports them); clicks HELP (the
+  sheet, `help_consulted` with the question id, `step: 'question'`,
+  `input_mode: 'pointer'`), clicks CLOSE HELP (the same panel title and
+  question block, the draft still `selected`, no new `question_presented`,
+  no `first_response`), clicks LEAVE BENCH (the surface closes; `panel_left` +
+  1; `first_response` and `commit_requested` unchanged; `commit_cancelled` 0
+  — leaving records no CANNOT SOLVE and opens no dialog), walks to Kai's
+  approach and back and reopens (`series_reopened` + 1; the same title,
+  question block and draft; `question_presented` and `first_response`
+  unchanged; both controls present again), then records the drafted answer
+  and moves on; four first responses and one `results_shown` at the end;
+  family discipline and no runtime error. Run at 800 × 600 and at 1280 × 720
+  (the standard desktop viewport). Implementer's runs: the first version 2
+  passed (6.7 min, `scratchpad\closeout-r9-run1.log`), then, after the
+  confirmation's three test-side notes were applied (the question's identity
+  also read from the screen — the panel title and the question block's label
+  — before and after help and reopen; the file header describing R9; the
+  displaced JSDoc restored), the test-reviewer's runs below. Evidence frames
+  (eight, one per question view per viewport, the draft state): scratchpad
+  `closeout-evidence\closeout-800x600-s1-q1 … closeout-1280x720-s2-q2.png`
+  (implementer) and `closeout-evidence-sonnet\` (test-reviewer); the
+  contract's twenty-four frames were not rewritten (R9 writes to
+  `U18_CLOSEOUT_OUT`, never to `U18_OUT`).
+- **Independent confirmation (Opus 5.5, `claude-opus-5-5`, as
+  `gameplay-reviewer` with the visual role file; read-only).** Could not
+  reproduce the defect in any frame on disk; HELP and LEAVE BENCH visible,
+  legible and overlapped by nothing on every question view at both viewports
+  (about 12 design px between them, about 28 design px below CANNOT SOLVE,
+  clear of the footer); R9's assertions establish pointer access and the
+  three behaviours (its in-bench M15 responses — wiring B, CANNOT TELL, four
+  answers, drafts, help consults — are needed to reach the four question
+  views and are written under the test identities `u18r9a` / `u18r9b`; only
+  the walk and the station prompt are navigation); no question-view state
+  can drop the controls; hypotheses for the report, unverified: (H1, judged
+  most likely) low salience — on the question views the bottom-left row sits
+  below an empty band of about 105 design px, far from the high-salience
+  teal right column, whereas on the wiring views the same row is attached to
+  the tiles above it; (H2) a cropped or zoomed view of the frames; (H3) a
+  frame set other than the committed one. Three low-severity test / comment
+  notes (D1 screen-based question identity, D2 the header, D3 the JSDoc) —
+  all applied in the same closeout; by design and pre-existing, for
+  awareness: with the help sheet open a pointer user must click CLOSE HELP
+  before leaving; HELP and CLOSE HELP ignore clicks inside the 400 ms settle
+  without feedback (D-4). Not checked by it: runtime, the 1920 × 1080 real
+  game, the help-open / after-CLOSE-HELP / after-reopen states as images,
+  hit-testing at the control edges, the frame the owner actually viewed.
+- **What changed and what did not.** Changed:
+  `e2e/m15_systems_route.spec.ts` (R9 and its three helpers; the header),
+  this log (this section), the register (§5.301). Not changed: every product
+  file — no stimulus, key, scoring rule, reload policy, layout, settle or
+  owner choice touched; the twenty-four contract frames untouched; no full
+  regression matrix and no base comparison repeated (not authorised and not
+  needed: a test-only change). Models: Fable 5.1 (`claude-fable-5-1`) the
+  only writer; Sonnet 5.5 (`claude-sonnet-5-5`) the focused verification;
+  Opus 5.5 the read-only confirmation — each through the contract §15
+  fallback (general-purpose agent with the model override after reading its
+  role file). Unresolved cross-unit limitations stay as listed in "U18
+  results" (the inherited `final_scientific_gates` and `ip_boundaries`
+  exceptions, the M05 observation of §5.290 (e) (i), the U24 backlog, the
+  owner questions of register §5.300 (l)–(s)). No global memory written,
+  nothing installed, pushed, merged or deleted; no worktree removed; U19 not
+  started.
+- **Focused verification by the test-reviewer (Sonnet 5.5,
+  `claude-sonnet-5-5`; logs `scratchpad\closeout-matrix\` on the first R9
+  version and `closeout-matrix-2\` on the final spec; no reruns to turn
+  anything green, no flake).** First pass: `lint:tsc` exit 0; ESLint
+  (`prettier/prettier`, `endOfLine: auto`) and
+  `prettier --check --end-of-line auto` on the route spec clean;
+  `git diff --check` clean (the LF / CRLF notice only);
+  `e2e/m15_systems.spec.ts` 65 passed (11 s); R9 at 800 × 600 and at 1280 ×
+  720 2 passed (6.7 min), no skip, no BLOCKED / NOT VERIFIED annotation, the
+  eight frames written. Second pass on the final spec (after the three
+  test-side notes): `lint:tsc`, ESLint, Prettier and `git diff --check`
+  clean; R9 2 passed (7.0 min; 3.4 and 3.5 min), no annotation, the eight
+  frames byte-identical in size to the first pass. The pure suite was not
+  rerun for the second pass: the only change between the passes was the
+  route spec, which it does not import. The full regression matrix and the
+  base comparison were not repeated (not authorised for this closeout; no
+  product file changed). The implementer's own static checks on the final
+  tree: `lint:tsc`, ESLint and Prettier on the route spec, Prettier on the
+  register and this log (by content; the inherited exceptions unchanged),
+  `git diff --check`, `verify-unit` PASS. Background tasks: the
+  test-reviewer's and the confirmation agent's runs ended; port 5201 free
+  afterwards; nothing left running.
+
 ### U18 contract (U18-CONTRACT.md, verbatim; section headings shown in bold)
 
 **U18 bounded implementation contract — M15 (v1, prepared 9 October 2026; final 10 October 2026)**
