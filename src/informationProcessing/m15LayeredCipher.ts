@@ -17,6 +17,18 @@
  * correct at submission, rule violations at submission, command-sequence
  * length, revisions, codebook consults, final reconstruction validity,
  * submission count, active time, input mode. Nothing here is a score.
+ *
+ * Station 080 Unit 18 (research-owner decision D-U18-1, 10 October 2026):
+ * this module has moved to the SECONDARY identity
+ * `secondary_m15_layered_cipher` (opportunity) / `secondary_m15_cipher`
+ * (family, events `secondary_m15_cipher_*`). It is reachable only through
+ * the developer alias `?scene=information_processing_lab`, is listed as
+ * M15's `secondary_ids` in the register, is read by no extractor and
+ * contributes nothing to `m15_correct_first_predictions`. The mechanic,
+ * the entry version `m15-cipher-v1`, the probe key `m15` and the form
+ * resolution are unchanged; the identifiers this module carried before
+ * the move keep their v2 meaning in the frozen ledger and are now
+ * declared only by the unimported v2 causal-model module.
  */
 
 import type { CipherForm, CipherReconstruction } from './cipherForms';
@@ -66,11 +78,11 @@ import {
   resolveForm,
 } from './windowState';
 
-export const M15_OPPORTUNITY_ID = 'proto_m15_layered_cipher';
+export const M15_OPPORTUNITY_ID = 'secondary_m15_layered_cipher';
 export const M15_ENTRY_STATE_VERSION = 'm15-cipher-v1';
 const OBJECT_ID = 'ip_cipher_workstation';
 
-export const M15_EVENT_TYPES = declareIpEvents('proto_m15_cipher', [
+export const M15_EVENT_TYPES = declareIpEvents('secondary_m15_cipher', [
   'window_opened',
   'window_reopened',
   'panel_left',
@@ -167,7 +179,7 @@ function context(): CommandContext {
 }
 
 function log(suffix: string, metadata: Record<string, unknown> = {}) {
-  logIpEvent('proto_m15_cipher', OBJECT_ID, suffix, {
+  logIpEvent('secondary_m15_cipher', OBJECT_ID, suffix, {
     ...ipWindowFields(ensure().window),
     ...metadata,
   });

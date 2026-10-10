@@ -94,7 +94,7 @@ status at this register version — updated by each unit).
 | M12  | Redesign interaction    | 2    | `m12_fields_verified`: fields explicitly judged (matches / differs) before release, summed over the released products / 6; 0–6; more checking coverage (a released product with nothing judged is an observed 0; a packet opened but never released is missing)                                                                | `m12_detection_and_correction` (per product: judgement accuracy, faulty field detected = judged "differs", correction attempted, correction successful = entered value equals the reference, unnecessary corrections, per-field records)       | behavioural counterpart | v3 route: `proto_m12_check_o1` (Concourse, ep 1), `proto_m12_check_o2` (Records Workshop, ep 2) — implemented (U8)                                                                                                                                               |
 | M13  | Extend cases            | 3    | `m13_first_solutions`: networks solved on first submission / 3                                                                                                                                                                                                                                                                 | constraints, help                                                                                                                                                                                                                              | performance counterpart | v3 route: `proto_m13_network_series` — three keyed networks at the Conduit Lattice Bench (Workshop, ep 2), one immutable first response each before any feedback; results and capped practice after — implemented (U16; owner ruling D-U16-1, §5.260)            |
 | M14  | Extend packets          | 2    | `m14_correct_first_integrations`: correct first decisions / 6                                                                                                                                                                                                                                                                  | by packet, omissions, source use                                                                                                                                                                                                               | performance counterpart | v3 route: `proto_m14_integration_series` — two keyed packets at the Concourse incident desk (ep 1), one immutable first response per decision before any feedback; results after the sixth — implemented (U17; owner decisions D-U17-1 / D-U17-2, §5.275–§5.276) |
-| M15  | Extend systems          | 2    | `m15_correct_first_predictions`: correct first predictions / 4                                                                                                                                                                                                                                                                 | model correctness, exploration                                                                                                                                                                                                                 | performance counterpart | v2-ledger route (one system, one intervention) — planned                                                                                                                                                                                                         |
+| M15  | Extend systems          | 2    | `m15_correct_first_predictions`: correct first predictions / 4                                                                                                                                                                                                                                                                 | model correctness, exploration                                                                                                                                                                                                                 | performance counterpart | v3 route: `proto_m15_systems_series` — two relay boxes at the Laboratory evidence table (ep 3), one immutable wiring and two immutable first predictions per box before any feedback; results after the fourth — implemented (U18; decision D-U18-1, §5.291)     |
 | M16  | Standardise             | 1    | `m16_correct_first_applications`: correct first applications / 6                                                                                                                                                                                                                                                               | form, example versions                                                                                                                                                                                                                         | performance counterpart | v2-ledger route (familiarisation with feedback) — planned                                                                                                                                                                                                        |
 | M17  | Replace trial structure | 1    | `m17_criterion_trial`: {criterion_trial 3–12, attained} — the first learning trial ending a run of three consecutive correct first responses; reported whenever reached within the administered trials; (12, false, censored) after twelve without attainment; early exit without attainment = incomplete                      | `m17_sequence_baseline_transfer` (baseline 2 / learning 12 / transfer 2 first-response sequences, feedback exposures, reference sequences shown, help, demonstration reviews, per-trial records)                                               | performance counterpart | v3 route: `proto_m17_criterion` (Diagnostics Laboratory, ep 3) — implemented (U9); **criterion values not to be read until §5.87–5.88 are decided**                                                                                                              |
 | M18  | Extend diagnosis        | 3    | `m18_correct_first_diagnoses`: / 3                                                                                                                                                                                                                                                                                             | `m18_correct_consequence_predictions`: / 3                                                                                                                                                                                                     | performance counterpart | v2-ledger route (one case, no prediction) — planned                                                                                                                                                                                                              |
@@ -162,6 +162,571 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
   pinned in `protocol.ts` beside their anchors.
 
 ## 4. As-built records (appended per unit)
+
+**Unit 18 (M15): as-built** — the two relay boxes of the Diagnostics
+Laboratory evidence table (bounded unit under contract `U18-CONTRACT.md`, v1
+of 9 October 2026, final 10 October 2026). **Status: technical
+implementation of the approved row under research-owner decision D-U18-1
+(APPROVED 10 October 2026, against preview revision r5);
+`m15_correct_first_predictions` is a candidate indicator and NOT
+scientifically validated.** The four predictions are repeated observations
+inside ONE bench episode, clustered in two boxes — never four independent
+situations; the boxes are not equated in difficulty; the content is one
+authored form; by-box values are descriptive; model correctness and
+exploration are companions, never part of the value. Passing tests establish
+implementation correctness only, never that correct answers require
+exploration. Parts (0)–(2) below were written BEFORE the series model, the
+adapter and the interface (the contract's "specify before you code"); parts
+(3)–(7) record the build and its evidence.
+
+(0) Authority. **Research-owner decision D-U18-1 — APPROVED 10 October
+2026** (an owner ruling, recorded in §5.291; not an implementer default and
+not reopened): the two boxes, the four wiring options per box, the four
+questions with three options each, the keys and the results lines of preview
+r5 §3–§5 as the administered content, with the owner's selected box 1 option
+A `F raises W. G raises W. P raises Q. W lowers P.` and S2-Q1 asking about
+unit Z (item 1); exploration by single-dial TESTs that close at the wiring
+(item 2); one confirmed, immutable wiring or CANNOT TELL per box before its
+questions, model correctness a companion only (item 3); identical neutral
+acknowledgements and no correctness information before the fourth first
+prediction, then the results for both boxes (item 4); the briefing / non-use
+convention (item 5); the reload hold-back with the `prior_load_checked`
+record at laboratory entry (item 6); fixed box, wiring, question and option
+order, one form, an orientation card with one worked reading example and no
+practice (item 7); one to three answers with the series open ⇒ null
+`pending`, `incomplete` only at the review closure (item 8); the disclosed
+remaining cues, the fixed-order limitations and the provisional measurement
+status retained. The approved row is §2 (M15), §2b, the matrix row, addendum
+§3 and `registerV3.ts` (entry `M15`). Provenance limit: the original owner
+documents are not on disk and were not searched for again; the decision is
+an explicit decision for this implementation, not recovered wording. Rulings
+D-U16-1 (M13), D-U17-1 / D-U17-2 and the closeout ruling §5.290 (M14) are
+precedent only and approve nothing here. Each rule below carries its source:
+[O-n] decision D-U18-1 item n, [A] approved row or owner instruction, [P]
+recorded precedent, [D-n] implementer default (§5.292 onward).
+
+(1) Administration `m15-systems-v1` — **specified before the series model
+and the interface were written.**
+
+- Place and access [A][O-5][P]: the Diagnostics Laboratory evidence table
+  (phase 1 of the signal case; registry `lab.phase_m15`, surface
+  `m15_evidence_table`, the generic `WorkSurfaceScene` in the WIDE frame of
+  decision D-U17-2, unchanged), bench label "Evidence Table", phase name
+  "Causal model", operational label "Signal case — causal model
+  (Laboratory)", episode 3. Optional, as today: enterable whenever no other
+  phase surface is open; Kai's dialogue text unchanged; no gate, reward,
+  judgement or route consequence; non-use never read as refusal. Every one
+  of the FOUR `onSelected` handlers of Kai's briefing acknowledgement
+  (`lab_brief_ack` in the no-loan-offer branch; `lab_brief_ack`,
+  `lab_brief_ack_loan_accept`, `lab_brief_ack_loan_decline` in the
+  loan-offer branch) calls `presentM15(now)` beside
+  `advancePilotStage('lab_work', now)` — briefing exposure only (the kit's
+  `presented`), never a bench opening or a question presentation. The stage
+  at the first opening is recorded in the entry snapshot. The phase order,
+  the beacon, the wall display and Noor's lines are unchanged; the display's
+  "recorded" state follows the M15 window's closure (completed or closed).
+  The legacy layered cipher (`m15LayeredCipher.ts`, developer alias only)
+  keeps its mechanic and entry version `m15-cipher-v1` and moves to the
+  secondary identity `secondary_m15_layered_cipher` /
+  `secondary_m15_cipher`, listed as M15's `secondary_ids` and read by no
+  extractor; the v2 causal-model module (`m15CausalModel.ts`,
+  `causalForms.ts`, `signalSurfaceModels.ts`) stays in the tree, unimported
+  by any scene and unchanged; the frozen v2 ids `proto_m15_layered_cipher` /
+  `proto_m15_cipher_*` / `m15_causal_w1` keep their v2 meaning and are
+  written by nothing on the route.
+- Content, order and forms [O-1][O-7]: boxes `s1` (`m15-s1-v1`, "RELAY BOX 1
+  OF 2", dials `s1_f` F / `s1_g` G, units `s1_p` P / `s1_q` Q / `s1_w` W)
+  then `s2` (`m15-s2-v1`, "RELAY BOX 2 OF 2", dials `s2_s` S / `s2_t` T,
+  units `s2_x` X / `s2_y` Y / `s2_z` Z); per box four wiring options
+  `s1_w_a` … `s1_w_d` as one-line tiles in the preview's order, and two
+  questions `s1_q1`, `s1_q2` (global 1–2), `s2_q1`, `s2_q2` (global 3–4),
+  each with three options in the fixed order A "<unit> goes up" (`s1_q1_a`),
+  B "<unit> goes down" (`s1_q1_b`), C "<unit> does not move" (`s1_q1_c`);
+  the wirings, listings, keys and results lines of (2). Fixed box order 1 →
+  2; within a box exploration and wiring, then question 1, then question 2,
+  one at a time, the next presented only after the current one's first
+  response; realised order always equals assigned order; one form; no
+  counterbalancing. Limitation documented: box content and position are
+  confounded; box 1 carries first contact with the bench. Wording, letters,
+  order and option order never change; line breaks at 800 × 600 are the
+  implementer's (D-9).
+- Objective access and exploration [A][O-2]: both dials' TEST controls
+  (`TEST DIAL <d>  [1]` / `[2]`; pointer, ENTER / SPACE on focus, or keys 1
+  / 2) from the box's presentation until its wiring is recorded; unlimited
+  and deterministic — the bench turns that one dial up one notch from rest
+  and lists the steps (the listing computed by the model's simulator from
+  the content's wiring, never hard-coded beside it, and equal to the
+  preview's); the TEST RECORD shows one line per dial
+  (`TEST <d>  not run yet` until tested, then the latest listing), and stays
+  on the bench through the box's questions; every run is recorded
+  (`test_run`: dial, run index per dial, the listing shown) as an
+  exploration record, never a response. After the wiring is recorded both
+  TEST controls are disabled beside `Tests closed`; activating them records
+  nothing. LOCK, BOOST and joint turns are never available as tests; no
+  question's situation is ever displayed.
+- First opening [O-7][D-2]: the orientation card (preview §3.1, title "RELAY
+  BOXES", the rule lines and the worked example with J, K, M, N — no dial or
+  unit of either box) with START BOX 1, HELP and LEAVE BENCH; acknowledging
+  it is recorded (`orientation_acknowledged`) and presents box 1
+  (`box_presented`); no practice question or practice box; left before
+  START, the card is shown again at the next opening.
+- Wiring step [O-3][D-3]: heading
+  `WIRING OF BOX N — which one fits your tests?`, the four one-line option
+  tiles A–D in the bench column, the right-column instruction,
+  `RECORD WIRING  [R]` and `CANNOT TELL  [N]`. Activating a tile (pointer,
+  ENTER / SPACE on focus, or A–D) makes it the draft; another replaces it;
+  the draft again clears it; drafts are recorded (`wiring_drafted`,
+  `option_id` null when cleared), are never a response, and survive leaving
+  and returning.
+- Wiring commitment [O-3][D-4][P §5.210, §5.262, §5.279]: RECORD WIRING with
+  a draft opens `Record wiring <letter> for box N?` /
+  `The tests then close; the test record stays.` /
+  `It cannot be changed afterwards.` with RECORD WIRING [ENTER] and KEEP
+  WORKING [ESC]; CANNOT TELL opens `Record CANNOT TELL for box N?` with the
+  same two further lines and RECORD [ENTER] / KEEP WORKING [ESC]; RECORD
+  WIRING without a draft shows the neutral line `Choose a wiring first.` and
+  records `commit_without_draft` only. Only a FRESH confirming press
+  records: a press inside the first 400 ms after the dialog appeared, the
+  press that opened it, a held key or an auto-repeat never confirms (a held
+  key or auto-repeat is dropped by the unchanged surface before the host,
+  `event.repeat`, and is never recorded; `commit_press_refused`, reason
+  `dialog_settling`, records the non-fresh presses that reach the host, once
+  per dialog, the count carried on the record). A fresh press writes
+  `wiring_recorded` once (`response_kind` `option` | `cannot_tell`,
+  `option_id` or null, `correct` against the station wiring — false for
+  CANNOT TELL — `key_option_id`, the tests run so far per dial, dials
+  tested, drafts, help consults, active time, input mode); immutable; the
+  tests close; the neutral acknowledgement `Wiring recorded for box N.` with
+  FIRST QUESTION follows (`response_acknowledged`, `next_control`
+  `first_question`; status
+  `Tests closed. The test record stays on the bench.`). No correctness
+  information. KEEP WORKING / ESC closes the dialog without a response
+  (`commit_cancelled`). The confirm control is never at the screen position
+  of the control that opened the dialog; while a confirmation or the help
+  sheet is open the model renders only the header, the status line and that
+  dialog or sheet, the confirm (or close) control is the first focusable
+  element and A–D / 1–2 / R / N do nothing.
+- Question step [O-3][O-4][A][P]: the bench column keeps the test record and
+  adds `YOUR RECORDED WIRING` with the recorded option's text (or
+  `CANNOT TELL`); the right column shows `QUESTION N OF 2`, the question,
+  the three option tiles, `RECORD ANSWER  [R]` and `CANNOT SOLVE  [N]`;
+  status
+  `Use the test record and the wiring you recorded. Choose an answer, then record it.`
+  Drafting as in the wiring step (`option_drafted`). Commitment as in the
+  wiring step with `Record this answer for question N?` /
+  `Record CANNOT SOLVE for question N?` and
+  `It cannot be changed afterwards.`, RECORD ANSWER [ENTER] / RECORD [ENTER]
+  and KEEP WORKING [ESC]; RECORD ANSWER without a draft shows
+  `Choose an answer first.` and records `commit_without_draft` only. CANNOT
+  SOLVE (visually and textually distinct from LEAVE BENCH, never adjacent to
+  it) is an incorrect first response whatever the draft. A first response is
+  written once (`first_response`, phase `measurement`: `response_kind`
+  `option` | `cannot_solve`, `option_id`, `correct`, `key_option_id`,
+  `recorded_wiring_option_id` or `cannot_tell`,
+  `consistent_with_recorded_wiring` — null when the wiring was CANNOT TELL,
+  the response is CANNOT SOLVE or the recorded wiring's answer is
+  magnitude-dependent under the analysis conventions of preview §7.2 (a
+  guard: none of the eight options is) — `tests_before`, `drafts_before`,
+  `help_consults_before`, `active_ms`, `focused_ms`, `input_mode`) and
+  immutable: no later act, reopening, results view, reload or closure
+  changes or duplicates it; a second RECORD ANSWER, CANNOT SOLVE after an
+  answer and an answer after CANNOT SOLVE never create a second one.
+- Acknowledgement [O-4][D-4]: IDENTICAL for every response whatever its kind
+  or correctness — `Answer recorded for question N.` with NEXT QUESTION
+  (after question 1), NEXT BOX (after box 1 question 2) or SHOW RESULTS
+  (after box 2 question 2); same line, same control, same timing, same
+  layout, no sound; the status counts answers recorded
+  (`N of 4 answers recorded.`), never correct ones. Nothing in the
+  first-response phase reveals correctness — no colour, glyph, sound,
+  counter, tally or wording differs with the correctness of any wiring or
+  answer.
+- Settle on EVERY view transition [P §5.290 (b)][D-4]: a press that arrives
+  within 400 ms after a view appeared — the orientation's START, a box's
+  first view, a question's first view, an acknowledgement, the results views
+  (NEXT BOX / BACK / FINISH), the help sheet, a confirmation dialog (its
+  KEEP WORKING) and the view restored by CLOSE HELP — changes nothing (no
+  test, no draft, no navigation, no commit request, no cancel, no
+  `results_shown`, no help, no FINISH); CLOSE HELP re-arms the settle of the
+  view it restores; an early press on anything but a confirmation is ignored
+  and not recorded (no suffix exists for it); inside a confirmation it is
+  the refused press above. So no carried press — the second ENTER, the
+  second click of a double click, a repeated key — can test, draft, request,
+  confirm, navigate or close in a newly opened view.
+- Results [O-4][O-1][D-9]: only when all four first predictions are
+  recorded; a partial or review-closed series never shows results. SHOW
+  RESULTS opens one view per box (title `RESULTS — RELAY BOX N OF 2`, status
+  `Your answers are fixed. This view only shows them.`,
+  `All four answers are recorded.`, `Your recorded wiring: …` or
+  `CANNOT TELL`, `Station wiring: …`, per question
+  `QUESTION k — <short title>`, `Your recorded answer: …` or `CANNOT SOLVE`,
+  `Station answer: …` and the approved results line, verbatim; no tally,
+  praise, blame or reference to the participant) with NEXT BOX (box 1) /
+  BACK (box 2) and FINISH — FINISH closes the surface only after the view
+  settled, so a press carried from NEXT BOX or BACK, on whose place it
+  stands, closes nothing; no subtitle (the title names the box); reopening a
+  completed bench shows the results again, read-only; only the first showing
+  of each box's results is recorded (`results_shown`).
+- Help [D-5]: HELP (H or the button) at any time except while a confirmation
+  is open; the preview §3.5 sheet (title `HOW THE BENCH WORKS`),
+  informational, naming no dial or unit of either box and no correctness;
+  closed by ESC or CLOSE HELP [H]; every consult recorded (`help_consulted`)
+  with the phase, box, step and question it was opened on.
+- Leaving and returning [P]: ESC closes, in order, an open dialog, then the
+  help sheet, then leaves; LEAVE BENCH leaves; both take the SAME path
+  (window pause, clock pause, surface close — the M14 host precedent).
+  Leaving keeps everything (box, step, test record, draft, recorded wiring,
+  answers; `panel_left`); returning (`series_reopened`) never presents a
+  question again and never starts a new trial. There is no STOP control.
+- Review closure [P][O-5][O-8][D-6]: at the Utility Deck record closure
+  (`reviewClosure.ts` → `closeM15AtReview`) a series in its first-response
+  phase (orientation, exploration, wiring or questions) closes as
+  `closed_at_review` (system; `series_closed_at_review` with the closure
+  snapshot, then the kit's `window_closed`, censored): recorded answers and
+  wirings kept, unanswered questions missing, no results afterwards; the
+  bench then opens as the closed record
+  `Station record closed — the bench keeps its record.` with
+  `N of 4 answers recorded.` and records nothing. A completed series is not
+  reclosed. A never-opened bench is recorded absent by the kit's
+  `markAbsent` (`briefed_not_opened` when the briefing was acknowledged,
+  otherwise `not_briefed_not_opened`), never `declined`.
+- Reload [O-6][P §5.14, §5.290 (a)]: the existing hold-back — an opening of
+  this administration in an earlier page load of the session identity ⇒ the
+  bench is never re-run in the new load (prior exposure recorded; the kit's
+  `technical_failure` with a detail beginning `reload`; the closed record
+  `This bench was already used in this session. Its record is kept; nothing further is recorded here.`;
+  the load's row `interrupted`; the earlier events immutable in
+  `prior_page_load_events`), also when the earlier load completed all four
+  or saw only the orientation. In addition, at the first `guardM15Reload`
+  run of a later page load (the Diagnostics Laboratory's `create()`) the
+  adapter writes `prior_load_checked` once per load (the §5.290 (a) fields:
+  `page_load_index`, `prior_page_load_event_count`, `prior_opening_found`,
+  `prior_briefing_found`, `history_continuous`,
+  `prior_opening_absence_established`), before the hold-back record when an
+  opening is found; when it establishes the absence of an earlier opening
+  with continuous history, the load is read exactly as a first load. A bench
+  never opened before the reload runs normally. Absent evidence is never
+  proof of non-exposure, and lossless recovery is never claimed (the
+  limitations of §5.290 (a) apply).
+- Faults: a fault while the first-response phase is open closes the series
+  as a technical failure through the window kit (the answers so far kept in
+  the closure snapshot) and leaves the laboratory usable; the bench then
+  opens as the record
+  `The bench has a fault and is closed. Recorded answers are kept.` (D-9); a
+  fault after completion is recorded (phase `feedback`) and never changes
+  the scored evidence; a dialog never stays stuck after a cancelled callback
+  (every host callback is guarded).
+- Completion [P]: the fourth first response writes
+  `first_responses_completed` (closure snapshot, `closure_reason`
+  `completed`) and the kit's `window_closed` (exit `completed`); the scored
+  phase has no later closure event, and nothing afterwards (results,
+  leaving, the review, a fault) reopens or changes it.
+- Layout [P D-U17-2][D-9]: the shared surface launched with `frame: 'wide'`
+  — panel over the whole visible design area (1050 × 588 design px at (−125,
+  6), identical at the 1280 × 720 and 1920 × 1080 canvases); 16 px design
+  text everywhere, title 20 px; the bench column 714 px wide at panel x 12
+  (dials and units line, the two TEST controls, the TEST RECORD, the wiring
+  option tiles or the recorded wiring); the 300 px right column at panel x
+  738 (instruction or question, option tiles, the commit controls); the
+  bottom row at panel y 462 (HELP, LEAVE BENCH, the view's primary control,
+  CLOSE HELP); the confirmation dialog alone with the header and the status
+  line, its controls at panel y 250 ending at x 720 — left of the right
+  column that holds every opener and clear of the bench column's controls;
+  one-line footer; at least 30 design px between the lowest control and the
+  feedback line's top under the default font and under forced Courier New
+  and Lucida Console (measured in the real game, R7); never smaller text,
+  clipped or shortened wording, scrolling or a larger minimum window.
+  Keyboard and pointer each reach every control.
+
+(2) The two boxes, wirings, questions and keys [O-1] — the approved content
+of preview r5, transcribed unchanged (box 1 option A as selected by the
+owner); their logical correctness establishes no empirical validity.
+"Unseen" as preview §7.3: a question's situation is never an exploration
+act, and its step trace equals no test listing and no test listing with its
+first step removed; sign-mirrored or partial listings are not excluded.
+
+- Box 1 `s1` (`m15-s1-v1`; dials F, G; units P, Q, W). Station wiring: F → P
+  raises, G → P raises, P → Q lowers, P → W raises. Test listings (derived
+  by the simulator, equal to the preview's):
+  `TEST F  step 1: P up · step 2: Q down, W up`;
+  `TEST G  step 1: P up · step 2: Q down, W up`. Wiring options: `s1_w_a`
+  `F raises W. G raises W. P raises Q. W lowers P.` (refuted by TEST F and
+  TEST G), `s1_w_b` `F raises P. G raises P. P lowers Q. P raises W.` (KEY),
+  `s1_w_c` `F raises W. G raises P. P lowers Q. P raises W.` (refuted by
+  TEST F), `s1_w_d` `F raises P. G raises W. P lowers Q. P raises W.`
+  (refuted by TEST G). Questions: `s1_q1` "P locked; F and G up" —
+  `Unit P is LOCKED. Dials F and G are turned up together, one notch each. What does unit W do?`
+  (locked P; dials F, G turned; asked W) — KEY `s1_q1_c` "W does not move" —
+  results line
+  `With P locked, neither dial gets past P, and only P drives W. W does not move.`;
+  `s1_q2` "W locked; P boosted" —
+  `Unit W is LOCKED and unit P is BOOSTED; no dial moves. What does unit Q do?`
+  (locked W; boosted P; asked Q) — KEY `s1_q2_b` "Q goes down" — results
+  line
+  `P lowers Q directly; W drives nothing, so locking W changes nothing for Q. Q goes down.`
+- Box 2 `s2` (`m15-s2-v1`; dials S, T; units X, Y, Z). Station wiring: S → X
+  lowers, X → Y raises, Y → Z lowers, T → Y lowers. Test listings:
+  `TEST S  step 1: X down · step 2: Y down · step 3: Z up`;
+  `TEST T  step 1: Y down · step 2: Z up`. Wiring options: `s2_w_a`
+  `S lowers X. X lowers Y. Y lowers Z. T lowers Y.` (refuted by TEST S),
+  `s2_w_b` `S lowers X. X lowers Y. Y lowers Z. T raises Z.` (refuted by
+  TEST S and TEST T), `s2_w_c`
+  `S lowers X. X raises Y. Y lowers Z. T raises Z.` (refuted by TEST T),
+  `s2_w_d` `S lowers X. X raises Y. Y lowers Z. T lowers Y.` (KEY).
+  Questions: `s2_q1` "X boosted" —
+  `Nothing is locked and no dial moves. Unit X is BOOSTED. What does unit Z do?`
+  (boosted X; asked Z) — KEY `s2_q1_b` "Z goes down" — results line
+  `X raises Y, and Y lowers Z: when X goes up, Y goes up and then Z goes down.`;
+  `s2_q2` "Y locked; T up" —
+  `Unit Y is LOCKED. Dial T is turned up one notch. What does unit Z do?`
+  (locked Y; dial T turned; asked Z) — KEY `s2_q2_c` "Z does not move" —
+  results line
+  `T reaches Z only through Y. With Y locked, the change stops at Y. Z does not move.`
+- What the tests reveal (preview §7.1, §7.4; re-derived by the unit's own
+  independent oracle, P1): each station wiring is the only one of 79 461
+  signed acyclic wirings consistent with both tests; over all wirings S1-Q1
+  needs both tests, S1-Q2 is fixed by either, S2-Q1 is fixed by TEST S alone
+  and S2-Q2 by TEST T alone; among the four OFFERED options treated as
+  equally plausible, TEST F alone leaves B and D and TEST G alone leaves B
+  and C (disagreeing on S1-Q1), TEST S alone leaves C and D (disagreeing on
+  S2-Q2), TEST T alone leaves A and D (disagreeing on S2-Q1). Answers under
+  each option (A / B / C / D): S1-Q1 up / no move / up / up; S1-Q2 up / down
+  / down / down; S2-Q1 up / up / down / down; S2-Q2 no move / up / up / no
+  move — four of the six wrong options imply the key of at least one
+  question, which is why model correctness and prediction correctness are
+  separate companions. The remaining cues of preview §7.5 (link-substitution
+  neighbours, per-dial reach, dial symmetry, the single-verb option, the
+  question kind, option majority) are computed and REPORTED by the pure
+  spec, never asserted; a correct response never proves testing or
+  understanding.
+
+(3) As built — the bench (`src/pilot/windows/m15SystemsContent.ts` — the two
+boxes exactly as the preview: ids, content versions, the links of each box,
+each question's situation as data, the wiring options as link sets with
+their one-line text derived from the links, the keys, the results lines and
+every participant-facing string; `m15SystemsModel.ts` — the step simulator
+of preview §2 with the analysis conventions of §7.2, the series state
+machine, the entry and closure snapshots, the reload predicate and the
+`prior_load_checked` builder; `m15RelayBench.ts` — the window adapter
+(`ItemWindow` item `M15`, opportunity `proto_m15_systems_series`, window
+`m15_system_s1`, family `proto_m15_systems_`, version `m15-systems-v1`,
+scene `diagnostics_laboratory`, object `m15_relay_bench`), the log sink with
+the protocol stamp, the optional focused clock, the reload guard,
+`presentM15`, `declareM15`, `openM15`, the surface commands,
+`m15ConsumesEsc`, `closeM15Surface`, `resumeM15Surface`, `closeM15AtReview`,
+`bindM15Surface`, `m15Window`; `m15SurfaceModel.ts` — the pure work-surface
+model builder for the wide frame). The views: the orientation card (START
+BOX 1, HELP, LEAVE BENCH); a box's wiring step — header `RELAY BOX N OF 2` /
+`Wiring`, the status line, the bench column (the dials and units line,
+`TEST DIAL <d>  [1]` / `[2]`, TEST RECORD with one line per dial, the heading
+and the four one-line option tiles), the right column (the instruction,
+RECORD WIRING [R], CANNOT TELL [N]), HELP and LEAVE BENCH in the bottom row;
+the confirmations drawn alone with the header and the status line; the
+wiring acknowledgement (the test record with both TEST controls disabled
+beside `Tests closed`, YOUR RECORDED WIRING, the line and FIRST QUESTION); a
+question — header `Question N of 2`, the bench column with the test record
+and YOUR RECORDED WIRING, the right column with `QUESTION N OF 2`, the
+question, the three option tiles, RECORD ANSWER [R] and CANNOT SOLVE [N];
+the answer acknowledgement with NEXT QUESTION / NEXT BOX / SHOW RESULTS and
+the status `N of 4 answers recorded.`; the results (one view per box with
+NEXT BOX / BACK, FINISH and HELP); the help sheet alone with CLOSE HELP; the
+closed records. Every activation calls one adapter command with its input
+mode (pointer and keyboard converge); hotkeys 1 / 2 (tests), A–D (wiring
+options) / A–C (answers), R, N, H; ENTER / SPACE on the focused element;
+every control is reachable by pointer and by keyboard. The 400 ms settle of
+every view transition and the fresh-press rule live in the model
+(`view_shown_at_ms`, `pending_commit.opened_at_ms`); a held key never
+reaches the model (the unchanged surface drops `event.repeat`).
+
+(4) Events and feature. Family `proto_m15_systems_`, ONE opportunity
+`proto_m15_systems_series`, the kit's window id `m15_system_s1`, box window
+ids `m15_system_s1` / `m15_system_s2`, administration `m15-systems-v1`,
+content versions `m15-s1-v1` / `m15-s2-v1`; suffixes and fields in the
+addendum, §2 "U18". All PROVISIONAL candidates; nothing enters
+`ScoringManager`, `SummaryScope`, the canonical context or the return URL;
+the v2 ids `proto_m15_layered_cipher` / `proto_m15_cipher_*` /
+`m15_causal_w1` are retired from the route and not written; the cipher's
+secondary identity `secondary_m15_layered_cipher` / `secondary_m15_cipher_*`
+is written only in the developer-alias laboratory and read by no extractor.
+`m15_correct_first_predictions` (primary, the only M15 row; `registerV3.ts`
+entry `M15` now carries the explicit v3 route — the opportunity, the two box
+windows in zone `diagnostics_laboratory`, episode 3, the family prefix and
+`secondary_ids: ['secondary_m15_layered_cipher']` — and `implemented`; the
+feature row, the planned denominator 4, the range, the direction, the
+coverage label, the independence and the operational label unchanged): value
+= numerator = questions whose FIRST response is the keyed option;
+denominator = questions with a first response in the current page load;
+planned denominator 4. CANNOT SOLVE and a wrong option are in the
+denominator and not in the numerator; a question without a first response is
+missing, never incorrect; an answer counts whatever wiring was recorded and
+whatever tests were run. The extractor (`src/measurement/features/m15.ts`,
+read-only, current load only) recounts the value from the `first_response`
+events against the content key and compares it with each event's `correct`
+flag and with the closure snapshot. Dispositions and the integrity list:
+addendum §2 "U18" and §5.296, §5.298; the reload-before-opening distinction:
+§5.290 (a) applied to M15. Components (companions beside the value, never
+inside it): the exposure stages kept distinct (`briefed`, `bench_opened`,
+`orientation_acknowledged`, `boxes_presented`, `questions_presented`,
+`never_opened_reason`), `reload_check`, the administration and content
+versions, the assigned and realised box and question orders,
+`observations_share_one_episode: true`, `first_response_phase_complete`,
+`by_box` (numerator, denominator, planned 2, omissions per box), `omissions`
+(presented-unanswered and unpresented questions, apart from CANNOT SOLVE),
+`model` (per box the recorded wiring, `wiring_correct`, the wiring key;
+`models_recorded` / `models_correct` / planned 2), `exploration` (per box
+the runs per dial before the wiring, the dials tested,
+`both_dials_tested_before_wiring`, the total), per question the response
+kind, option, correctness, key, `recorded_wiring_option_id`,
+`consistent_with_recorded_wiring`, `tests_before`, drafts, help consults,
+active and focused time, input mode; `cannot_solve_count`,
+`cannot_tell_count`; help consults by phase; `results_shown`;
+`exposure_record_consistent`; `model_record_consistent`. No total mixes
+model, exploration and prediction correctness; no total across items;
+`declined` never.
+
+(5) Integration. `src/pilot/windows/reviewClosure.ts` calls
+`closeM15AtReview` after M14's (one import, one call, its comment).
+`DiagnosticsLaboratoryScene.ts`: the four `m15CausalModel` imports and the
+`m15CausalSurfaceModel` import replaced by the adapter's and the surface
+model's; `declareM15()` and `guardM15Reload()` in `create()` in place of
+`declareM15Causal()`; `resumeM15Surface(now)` in the existing RESUME
+handler; the `m15` PHASES entry's `status` (`() => m15Window.windowStatus()`
+— `closed` for every closed state of the kit, read by `windowTerminal` as
+recorded) and `opportunityId` (`proto_m15_systems_series`); the evidence
+table's `onPromptOpened` (`openM15` with the route stage, `openWorkSurface`
+with `frame: 'wide'`, the bound surface model and an `onClose` that returns
+false while ESC closed a dialog or the help sheet); the private
+`m15SurfaceHost()` in place of the v2 `surfaceHost()` (LEAVE BENCH, FINISH
+and ESC take the same path: pause, then close); `presentM15(now)` in each of
+the FOUR `lab_brief_ack*` `onSelected` handlers of both briefing branches
+beside `advancePilotStage('lab_work', now)` [O-5]. Bench label, phase name,
+Noor's lines, Kai's text, every other bench, the M10 / M11 handling and the
+room geometry are untouched. `m15LayeredCipher.ts`: only the identity
+(`M15_OPPORTUNITY_ID` → `secondary_m15_layered_cipher`, the family argument
+of `declareIpEvents` / `logIpEvent` → `secondary_m15_cipher`, the header
+comment); `telemetry.ts`: `secondary_m15_cipher` added to the `IpFamily`
+union (`proto_m15_cipher` kept for the unimported v2 module).
+`features/index.ts` imports the extractor. Specs: `e2e/m15_systems.spec.ts`
+(pure, new) and `e2e/m15_systems_route.spec.ts` (browser, new);
+`pilot_lab.spec.ts` and `pilot_signal_incident.spec.ts` with their M15 steps
+and identity assertions re-expressed (the M16 / M17 / M18 assertions, the
+phase order, the display and intercom progression, the modal-ownership and
+no-score checks kept; M15 leaves the IP-family loop and gets an explicit
+check of equivalent strength; the former STOP step of `pilot_lab` leaves M15
+open and null `pending`); `final_scientific_gates.spec.ts` test U8-13
+re-expressed; the cipher's secondary literals in `ip_boundaries.spec.ts`,
+`ip_decoder.spec.ts` and `ip_lab_flow.spec.ts` (the orientation test's
+pattern extended to `secondary_m15_cipher_`). Untouched: `windowKit.ts`,
+`WorkSurfaceScene.ts` (the wide frame used as is), every other
+`src/pilot/windows/*` module (`signalSurfaceModels.ts` included, now
+unimported), `src/informationProcessing/**` other than the two files
+(`m15CausalModel.ts`, `causalForms.ts` included — in the tree, unimported,
+unchanged), `interactionRegistry.ts` (its window label `m15_layered_cipher`
+stays, U24 backlog), the frozen v2 ledger, the shared measurement framework,
+`e2e/pilotHelpers.ts` and every other helper and spec
+(`signal_incident_models.spec.ts` still describes the unimported v2 module
+and still passes).
+
+(6) Test evidence (10 October 2026; commands, counts, reviewers and every
+exception in `UNIT-LOG.md` "U18 results"; the counts below are those of the
+FINAL source after correction round 1, §5.300). Pure,
+`e2e/m15_systems.spec.ts` — 65 tests passed: the independent oracle (its own
+transcription and simulator; both listings reproduced per box; 79 461 signed
+acyclic wirings per box with exactly one consistent with both tests, the
+transcribed wiring; every key the one answer over that set and equal to the
+module's; the §7.1 answers-possible counts, the §7.1 option answers and the
+association reading's misses; the module's own simulator agreeing with the
+oracle and with the §7.1 table under each offered option for both questions
+— sixteen cells; among the four offered options the §7.4 table — TEST F
+alone leaves B and D, TEST G alone B and C, TEST S alone C and D, TEST T
+alone A and D; each wrong option refuted by exactly the tests the preview
+names; no trace equal to a listing or a shortened one; no
+magnitude-dependent key, listing or option answer; the §7.5 cues computed
+and reported, never asserted), the content cross-check (letters, link sets
+and texts, situations, labels, results lines; no box letter in the
+orientation or the help; the four `lab_brief_ack*` handlers call
+`presentM15` by source), the register row and route, the cipher's secondary
+identity and its inertness for the M15 row, the series model (no correctness
+before the fourth answer, identical acknowledgements, results refused before
+the fourth answer and after a review closure, order, exploration closing at
+the wiring, the fresh-press rule on all four confirmations, the settle on
+every transition including KEEP WORKING and FINISH, drafts, leaving and
+returning, the review closures, the reload predicate and check, faults, the
+entry snapshot and `consistent_with_recorded_wiring`), the extractor (values
+and companions, stability, partial and open series, zero evidence, reload
+paths, every legitimate-missingness case, every integrity case including a
+box presented before every question of the earlier box was answered,
+unscored-record defects, determinism) and the wording. Browser,
+`e2e/m15_systems_route.spec.ts` on the participant route — R1 (with a
+carried ENTER after NEXT BOX that closes nothing), R2 (with a double click
+on CANNOT SOLVE opening one dialog and no dialog control over an opener's
+place), R2 at `canvas=1080`, R3, R4, R5, R6, R7 (Courier New), R7 (Lucida
+Console), R8: 10 passed in the implementer's run after the round's code
+changes (25.0 min) and 10 passed in the final matrix (24.8 min), no scenario
+blocked or skipped, the twenty-four frames rewritten; after the two
+test-only assertions added at the confirmations (the wiring landing in R1,
+the one-system geometry check in R2) R1, R2 and R2 at `canvas=1080` were
+rerun once more and passed (UNIT-LOG "U18 results"); the real-game layout
+gate measured at 52 / 50 / 50 design px (Courier New / Lucida Console /
+`canvas=1080`). Regression on the final source: P2 — 153 passed, 2 failed
+(the two documented `final_scientific_gates` exceptions, reproduced
+identically on the untouched export of `f822eb4`: line 146 `toEqual([])`
+receiving `["proto_m08_effort_choice"]`; `toHaveLength(10)` receiving 8);
+the IP pure tests 12 passed. B2 — `pilot_lab` 3 passed;
+`pilot_signal_incident` 2 passed; `ip_lab_flow` / `ip_decoder` /
+`ip_boundaries` 21 passed, 1 skipped (the spec's own M17 skip), 1 failed —
+`ip_boundaries` "families are pairwise disjoint …" at
+`expect(Object.keys(families).sort()).toEqual([...FAMILIES].sort())` missing
+`proto_m17_syntax`, the same assertion, message and step on the base, the
+received list differing only by the cipher's renamed family;
+`m14_integration_route` R3 1 passed. Static: `lint:tsc`, `build`, ESLint and
+Prettier on the changed `.ts` files, Prettier on the register and the
+addendum, `git diff --check`, `verify-unit` (PASS, 23 of 23 paths) and the
+guard's 58 tests. The matrix and UNIT-LOG fail Prettier at the base and
+after this unit for the inherited reasons only (the matrix's item table
+re-padding, the verbatim contract appendix); the implementer's own
+paragraphs in them are Prettier-clean by content. The first matrix (before
+the round) and the final matrix (after the round's code changes; the
+test-only slice at the confirmations followed and was rerun by the
+implementer) were both run by the test-reviewer (Sonnet 5.5) — UNIT-LOG "U18
+results"; the reviewers' confirmations of the corrections are recorded there
+too.
+
+(7) Residual limitations (stated, not resolved by this unit). The four
+predictions share one bench episode and two boxes
+(`repeated_within_episode`); fixed order confounds box and position; box 1
+carries first contact with the bench and there is no practice box; the boxes
+are not equated; three options per question (chance 1/3). Each dial's test
+is needed for a prediction only if the four offered options are treated as
+equally plausible: the surface preferences disclosed in preview §7.5 and
+reported by the pure spec (box 1 — the link-substitution-neighbour rule and
+"set the odd option A aside, then prefer dial symmetry" pick the key, reach
+ties A and B; box 2 — reach and the single verb split A / D from B / C and
+fix S2-Q2 without TEST T, and "drop the single-verb option, then prefer the
+greatest reach" picks D) can stand in for tests, and across both boxes give
+an expected 3 of 4 keys (neighbours), 3 of 4 (the two-step rule) or 2.5 of 4
+(reach) with no test; the question kind predicts every key ("BOOST present →
+goes down, otherwise → does not move", 4 of 4; the intuitive "lock stops,
+boost raises" 2 of 4); three of four box-1 options imply S1-Q2's key; S1-Q2
+is fixed by either test and its direction can be read off a partial listing;
+S2-Q1 is the sign-mirror of a partial listing; box 1's two test listings are
+identical. No correct response proves testing or understanding; model
+correctness and exploration describe the wiring record and the tests run,
+never what was understood. Absent evidence is never proof of non-exposure
+and lossless recovery is never claimed: the reload limitations of §5.290 (a)
+(a check only where the bench becomes available — laboratory entry;
+continuity read from the recovered sequence numbers and the store's readable
+meta record, never a tail lost while the meta record survived;
+`foreign_records_rejected` not part of the test) apply to M15 unchanged. The
+open M05 matters of §5.290 (e) (i) — the competing briefed tasks and the
+episode-1 cap on the scripted route — are carried forward unchanged and
+untouched (no M05 assertion belongs to this unit; the route scenarios
+decline every M05 job). The capture specs, the `interactionRegistry` window
+label `m15_layered_cipher`, `signal_incident_models.spec.ts`'s description
+of the unimported v2 module and `world_v1_*` evidence for the bench are U24
+backlog. The fault record line and the per-view footers are implementer
+wording (D-9), not preview text. Passing tests establish implementation
+correctness only; this unit establishes no psychometric validity and does
+not show that correct answers require exploration.
 
 **Unit 17 closeout (M14; 9 October 2026)** — one exceptional closeout
 under the research owner's closeout ruling and dispositions (§5.290;
@@ -6295,3 +6860,373 @@ false` visible beside it (review F7 (i), open below); (3)
      M05 competing-task observation of (e) (i). Authored content, answer
      keys, the scoring formula, the 400 ms threshold and the canonical
      schema are unchanged.
+
+Unit 18 (M15) is governed by the owner's U18 contract (v1, final 10 October 2026)
+and by research-owner decision D-U18-1. The decision is recorded first, as a
+ruling; §5.292 onward are IMPLEMENTER DEFAULTS — owner-visible, reversible,
+none of them changes the approved formula, the content, the keys or the
+ruling, and none is an owner decision.
+
+291. **RESEARCH-OWNER DECISION D-U18-1 — APPROVED 10 October 2026 (M15; an
+     owner ruling for this implementation, not an implementer default; not
+     reopened).** Source: the owner's instruction and contract of 10 October
+     2026 (`U18-FABLE-PROMPT.md`, `U18-CONTRACT.md` §2.2 and §17; preview r5
+     §12). The ruling is an explicit decision for this implementation and
+     NOT recovered wording from the missing original documents
+     (`UNIT-LOG.md` "U18", provenance limit). Rulings D-U16-1 (M13), D-U17-1
+     / D-U17-2 and the closeout ruling §5.290 (M14) are not part of it and
+     approve nothing here. The owner's four selections: (1) preview r4
+     adopted with the verified alternative for box 1 option A,
+     `F raises W. G raises W. P raises Q. W lowers P.` — with it the content
+     is preview r5; (2) S2-Q1 keeps asking about unit Z, with its existing
+     key and two-link inference; (3) decision items 2–8 approved as
+     documented; (4) the disclosed remaining cues, the fixed-order
+     limitations and the provisional measurement status retained. The eight
+     items, in substance: [O-1] the two boxes, four wiring options per box,
+     four questions with three options each, the keys (S1-Q1 C "W does not
+     move", S1-Q2 B "Q goes down", S2-Q1 B "Z goes down", S2-Q2 C "Z does
+     not move"; wirings box 1 B, box 2 D) and the results lines of preview
+     r5 §3–§5 are the administered content (`m15-s1-v1`, `m15-s2-v1`); their
+     logical correctness does not establish empirical validity; "unseen" is
+     operationalised as preview §7.3 (sign-mirrored or partial listings are
+     not excluded); blind-choice chance is 1/3 per question; [O-2] TEST
+     turns one dial up one notch from rest and lists the steps — unlimited,
+     deterministic; the latest listing per dial stays on the bench through
+     the box's questions; tests close when the box's wiring is recorded;
+     LOCK, BOOST and joint turns are never available as tests; [O-3] per box
+     one of the four listed wirings or CANNOT TELL, confirmed and immutable,
+     required before that box's questions; the recorded wiring (or CANNOT
+     TELL) shown during the questions; model correctness = the recorded
+     wiring is the station wiring (CANNOT TELL is not correct), a companion
+     only; `consistent_with_recorded_wiring` reported as a component (null
+     for CANNOT TELL, CANNOT SOLVE, or a magnitude-dependent answer under
+     preview §7.2 — none of the eight options); [O-4] identical neutral
+     acknowledgements; no correctness information about any wiring or answer
+     until all four first predictions are recorded; then the results for
+     both boxes; [O-5] the M14 briefing / non-use convention (ruling D-U17-1
+     item 6) applied to M15: Kai's laboratory briefing acknowledgement
+     records the M15 exposure (the kit's `present`) — exposure only;
+     `not_presented` before the briefing; briefed, never opened, the
+     opportunity open ⇒ null `pending` `briefed_not_opened`; at the review
+     closure ⇒ null `no_eligible_event`, `briefed_not_opened`, censored,
+     `closed_at_review`; `declined` never; [O-6] the reload hold-back of
+     §5.14 applied to M15, plus the `prior_load_checked` record of §5.290
+     (a) at the first Diagnostics Laboratory entry of a later page load — an
+     established absence reads the load exactly as a first load; [O-7] fixed
+     box order 1 → 2, within a box exploration and wiring, then question 1,
+     then question 2; fixed wiring, question and option order; one form, no
+     counterbalancing; an orientation card at the first opening with one
+     worked reading example and no practice question or practice box
+     (D-U17-1 item 3 is precedent only); [O-8] one to three first
+     predictions recorded and the series not yet closed ⇒ the row is null
+     `pending` with the recorded answers in the components; at the review
+     closure `incomplete` with the value and its observed denominator; a
+     session that ends before the review therefore exports `pending`.
+     **Limitations that travel with the ruling (preview §11):** four
+     predictions share one episode and two boxes; fixed order confounds box
+     and position; box 1 carries first contact and there is no practice box;
+     boxes are not equated; three options per question (chance 1/3); each
+     dial's test is needed for a prediction only if the four offered options
+     are treated as equally plausible — surface preferences among the
+     options (per-dial reach, link-substitution neighbours, single verb) can
+     stand in for tests and, combined, give all four keys without testing
+     (preview §7.5); the question kind predicts every key ("BOOST present →
+     goes down; otherwise → does not move" matches 4 of 4; the intuitive
+     "lock stops, boost raises" matches 2); three of four box-1 options
+     imply S1-Q2's key; S1-Q2 is fixed by either test and its direction can
+     be read off a partial listing; S2-Q1 is a sign-mirror of a partial
+     listing; box 1's two test listings are identical; no correct response
+     proves testing or understanding; model correctness and exploration
+     describe the wiring record and the tests run, never what was
+     understood; no feedback precedes the fourth answer, so the results
+     cannot inform any first response; a session that ends before the review
+     exports a partial series as `pending` (item 8). This approval does not
+     establish psychometric validity and does not show that correct answers
+     require exploration. Implemented: §4 "Unit 18".
+292. **D-2 — orientation card (U18 default; D-1 moved into ruling item 7).**
+     The first opening shows the orientation card (preview §3.1) with START
+     BOX 1, HELP and LEAVE BENCH; its acknowledgement is recorded
+     (`orientation_acknowledged`) and presents box 1; left before START, the
+     card is shown again at the next opening (`series_reopened`, view
+     `orientation`).
+293. **D-3 — drafts (U18 default).** Wiring drafts and answer drafts survive
+     leaving and returning; activating the draft again clears it
+     (`wiring_drafted` / `option_drafted` with `option_id: null`); a draft
+     is never a response and never enters the value or the model record.
+294. **D-4 — commitment mechanics and the settle (U18 default; M02 §5.210,
+     M13 §5.262, M14 §5.279 and §5.290 (b) precedent).** The 400 ms
+     fresh-press rule on all four confirmations (reason `dialog_settling`;
+     one record per dialog, the count on the record); RECORD WIRING / RECORD
+     ANSWER without a draft refused with the approved neutral line and
+     `commit_without_draft`; the settle on EVERY view transition (START, a
+     box's first view, a question's first view, the acknowledgements, the
+     results views, the help sheet and the view CLOSE HELP restores — the
+     last re-armed by CLOSE HELP): a press inside 400 ms of the view
+     appearing tests, drafts, requests, navigates, opens or closes nothing
+     and, outside a confirmation, is not recorded because the contract's
+     suffix list has no name for it and no suffix is added. A held key or an
+     auto-repeat never reaches the host (`WorkSurfaceScene` drops
+     `event.repeat`) and is therefore never recorded.
+295. **D-5 — help (U18 default).** On request (H or the button),
+     informational, the preview §3.5 sheet (its title set apart from the
+     body by one blank line), never during an open confirmation, closed by
+     ESC or CLOSE HELP; recorded with the phase, box, step and question it
+     was opened on.
+296. **D-6 — dispositions for zero and partial evidence (U18 default; the
+     briefing / never-opened mapping is ruling item 5 and the partial rule
+     item 8).** Never briefed and never opened `not_presented` (also at the
+     review closure); briefed and never opened `pending`
+     (`briefed_not_opened`) while open and `no_eligible_event`
+     (`briefed_not_opened`, censored, `closed_at_review`) at the review
+     closure; opened, nothing answered and closed at the review
+     `no_eligible_event` with `missing_reason` `orientation_only` (no box
+     presented) | `no_wiring_recorded` (a box presented, no wiring recorded) |
+     `wiring_only_no_first_response` (a wiring recorded, no first response),
+     as reached (free text, addendum §1; the strain of §5.142 applies);
+     still open ⇒ `pending`; one to three answered and closed at the review
+     `incomplete` with the value and its denominator, censored; a
+     first-response-phase technical failure voids the row with the answers
+     kept in the components; an unscored-record defect flags the components
+     (`model_record_consistent` / `exposure_record_consistent` false)
+     without effect on the row; `declined` never. Precedence: `interrupted` >
+     `technical_failure` > `pending` > the closed-series outcomes.
+297. **D-7 — names (U18 default; all provisional, alternatives are the
+     owner's; M08's `secondary_m08_optional_job` naming precedent for the
+     cipher).** Family `proto_m15_systems_`, opportunity
+     `proto_m15_systems_series`, kit window id `m15_system_s1`, box window
+     ids `m15_system_s1` / `m15_system_s2` (carried as `box_window_id`),
+     object `m15_relay_bench`, the suffixes of addendum §2 "U18",
+     administration `m15-systems-v1`, content versions `m15-s1-v1` and
+     `m15-s2-v1`, box ids `s1` / `s2`, dial ids `s1_f` … `s2_t`, unit ids
+     `s1_p` … `s2_z`, wiring option ids `s1_w_a` … `s2_w_d`, question ids
+     `s1_q1` … `s2_q2`, answer option ids `s1_q1_a` … `s2_q2_c`; the
+     cipher's secondary identity `secondary_m15_layered_cipher`
+     (opportunity) / `secondary_m15_cipher` (IP family, events
+     `secondary_m15_cipher_*`). The v2 ids `proto_m15_layered_cipher` /
+     `proto_m15_cipher_*` / window `m15_causal_w1` are retired from the
+     route and keep their v2 meaning in the frozen ledger.
+298. **D-8 — event order (U18 default).** The §5.259 convention applied to
+     the M15 extractor: a family event of the current load without a usable
+     `sequence` (a safe integer of at least 1), or two sharing one, make the
+     row a `technical_failure`; gaps are normal; a missing number is never
+     read as zero; ANY `results_shown` not preceded by
+     `first_responses_completed` — also in a series that never reaches four
+     — voids the scored evidence; a `box_presented` before every question of
+     every earlier box has its first response (so a box 2 after box 1's
+     first question alone, or after box 1's wiring alone) voids it too.
+299. **D-9 — companion definitions, results mechanics and interface details
+     (U18 default; the contract §17 numbering — the results mechanics are
+     part of this default, not one of their own).** "Model correctness" =
+     the recorded wiring equals the station wiring (CANNOT TELL not correct;
+     none when the box was never committed); "exploration" = single-dial
+     test runs before the wiring per box (runs per dial, dials tested, both
+     dials tested, total runs); "omissions" = questions presented without a
+     first response (`unanswered_question_ids`) and unpresented questions
+     (`unpresented_question_ids`), listed apart and never CANNOT SOLVE.
+     Results mechanics inside ruling items 1 and 4: one view per box with
+     the approved lines (NEXT BOX on box 1, BACK on box 2, FINISH on both to
+     leave, HELP); per question the preview's short title, "Your recorded
+     answer: …" (or "CANNOT SOLVE"), "Station answer: …" and the results
+     line verbatim; "Your recorded wiring: …" (or "CANNOT TELL") and
+     "Station wiring: …" above them; no subtitle (the title names the box);
+     only the first showing per box is recorded (`results_shown` with its
+     `line_ids`); read-only thereafter; FINISH closes the surface only after
+     the view settled (`m15sFinish`), so a press carried from NEXT BOX or
+     BACK — on whose place FINISH stands in the next view — closes nothing.
+     Interface details inside the envelope of D-U17-2 and contract §3.8
+     (positions are the implementer's and recorded here): the bench column
+     at panel x 12, 714 px wide — the dials and units line at y 90, the two
+     TEST controls (232 px wide at x 12 and 252) at y 122 with
+     `Tests closed` beside them once disabled, TEST RECORD at y 168 with one
+     line per dial at y 196 and 228, then either the wiring heading at y 270
+     and the four option tiles (34 px, 4 px gaps) from y 298, or YOUR
+     RECORDED WIRING at y 270 with the text at y 298; the right column at
+     panel x 738, 300 px wide — the wiring instruction at y 90 with RECORD
+     WIRING at y 210 and CANNOT TELL at y 264, or the question block at y 90
+     (130 px) with the three option tiles from y 224, RECORD ANSWER at y 346
+     and CANNOT SOLVE at y 400 (never adjacent to LEAVE BENCH, which sits in
+     the bottom row); the bottom row at panel y 462 — HELP at x 12 (160 px),
+     LEAVE BENCH at x 184 (180 px), the view's primary control at x 778 (260
+     px: START BOX 1, FIRST QUESTION, NEXT QUESTION, NEXT BOX, SHOW RESULTS,
+     NEXT BOX / FINISH on the results) and CLOSE HELP at x 388 (260 px) on
+     the help sheet alone; the results' BACK at x 184 on box 2; the
+     confirmation dialog drawn alone with the header and the status line —
+     its text at (200, 170) and its two controls at (200, 250) and (466,
+     250), 254 px wide, ending at x 720: left of the right column (x 738)
+     that holds every opener (RECORD WIRING, CANNOT TELL, RECORD ANSWER,
+     CANNOT SOLVE) and clear of the bench column's controls (TEST at y 122,
+     the tiles from y 298), so the second click of a double click on an
+     opener lands on nothing, and a KEEP WORKING inside 400 ms of the dialog
+     opening is ignored (D-4); the acknowledgement line in the right column
+     at y 90 with the bench record kept beneath. Closed and open TEST
+     controls differ by their state and the `Tests closed` text; the draft
+     is the surface's `selected` state (a "▸" glyph and the fill), never a
+     colour alone. Focus order: on the wiring view the instruction and on a
+     question view the question block come first as neutral landings
+     (focusable, their activation does nothing), so that ENTER carried from
+     START, NEXT BOX, KEEP WORKING or CLOSE HELP runs no test and drafts
+     nothing; otherwise the view's primary control first (START, the confirm
+     control, the acknowledgement's control, CLOSE HELP, NEXT BOX / FINISH),
+     then the box's controls in reading order, HELP and LEAVE BENCH last;
+     every control reachable by pointer and by keyboard. Footers:
+     `ENTER starts · H help · ESC leaves` on the orientation (implementer
+     wording); the preview's one-line footer on the box views — wiring,
+     questions and acknowledgements (preview §3.2 "Always");
+     `ENTER records · ESC keeps working` under a confirmation;
+     `H or ESC closes the help` under the help sheet;
+     `ENTER on the focused control · H help · ESC leaves (answers fixed)`
+     under the results; `ESC leaves` under a closed record. The fault record
+     line `The bench has a fault and is closed. Recorded answers are kept.`
+     is added for the fault record (not in the preview; no forbidden token).
+     The kit's own events (`presented`, `opportunity_opened`,
+     `window_closed`, `technical_failure`) carry the kit's fields and
+     `input_mode: 'system'` only; the protocol stamp, `phase` and the box /
+     question fields are written on every event the model emits through the
+     sink (M14 §5.288 precedent; `windowKit.ts` is outside the unit).
+300. **U18 reviews and correction round 1 (10 October 2026; recorded by the
+     implementer — none of it an owner decision, none of it approval).**
+     Three independent read-only reviews on the source of the first matrix
+     (Opus 5.5 through the contract §15 fallback — scientific, gameplay,
+     visual; `UNIT-LOG.md` "U18 results"). Material findings, corrected in
+     one bounded round inside the allowlist: (a) visual F1 / gameplay m3 —
+     the dialog's KEEP WORKING (then at (528, 250), reaching x 782)
+     overlapped the left end of CANNOT TELL (x 738–1038, y 264–298) and the
+     cancel had no settle, so a double click on CANNOT TELL opened and at
+     once cancelled the dialog (`commit_requested` + `commit_cancelled`, no
+     response, a flicker): the controls moved to (200, 250) / (466, 250) and
+     a cancel inside 400 ms of the dialog opening is ignored and unrecorded
+     (D-4, D-9; the pure cancel test and R2's double click on CANNOT SOLVE
+     cover it); (b) gameplay M1 — FINISH closed the bench inside the settle
+     of a results view, where it stands on the place of the NEXT BOX / BACK
+     just pressed (a doubled press after box 2's results had shown for under
+     400 ms; recoverable, nothing scored changed): FINISH now closes only
+     through the model's settle (`m15sFinish`; D-4, D-9; the pure settle
+     test covers FINISH, R1 sends a carried ENTER after NEXT BOX); (c)
+     visual F2 / gameplay m4 — the answer confirmation showed a third line
+     echoing the drafted option (`C  W does not move`), not in preview r5
+     §3.3 and not disclosed: removed, the dialog shows the approved lines
+     only (owner question (k)); (d) visual F3 — the results subtitle
+     `Box N of 2` was neither in the preview nor disclosed and repeated the
+     title: removed. Minor findings corrected in the same round: (e)
+     gameplay m2 — the wiring view's keyboard focus landed on TEST DIAL F /
+     S, so ENTER carried from START, NEXT BOX, KEEP WORKING or CLOSE HELP
+     (once settled) ran a test — a `test_run` the participant did not ask
+     for, able to inflate the exploration companion: a neutral landing (the
+     instruction) added, as the question view had (D-9); (f) gameplay m5
+     (part), visual F10 — the orientation footer named keys that do nothing
+     there, and the results footer said ENTER "continues" where ENTER on box
+     2 is FINISH: both implementer strings reworded (D-9); the box views,
+     including the acknowledgements, keep the preview's footer (§3.2
+     "Always"), and the disabled TEST labels keep their `[1]` / `[2]`
+     (preview text); (g) visual F4 — the help sheet's title now stands apart
+     from its body by one blank line (layout only; the text is the
+     preview's); (h) scientific minor-1 — the extractor refused a
+     `box_presented` only when the last presented question was unanswered: a
+     box now needs every question of every earlier box answered (D-8; test
+     added: box 2 after box 1's first question alone ⇒ `technical_failure`);
+     (i) scientific minor-2 — the pure spec now compares the module's own
+     simulator (`m15AnswerUnder`) with the oracle and with the preview §7.1
+     table under each offered option for both questions (sixteen cells;
+     before, only the oracle's simulator was compared with the table); (j)
+     scientific minor-3 — this register's default numbering realigned with
+     contract §17 (the results mechanics folded into D-9; D-5 help, D-6
+     dispositions, D-7 names, D-8 event order as the contract numbers them;
+     the §4 tags follow); (k) scientific informational-3, -5 and -8 and
+     gameplay i4 — addendum §2 "U18": a `wiring_recorded` for a box never
+     presented, or with an unknown option or kind, leaves the box without a
+     recorded wiring, so that a question presented after it voids the row
+     (the earlier wording overstated "row unchanged"), and the
+     found-opening-beside-opening check is now listed among the exposure
+     defects; the register's listing text `TEST S  step 1` with the bench's
+     two spaces; the oracle test title reads "(over all wirings)"; the
+     register's RECORD ANSWER / CANNOT SOLVE y (342 / 396) corrected to the
+     computed 346 / 400. Recorded, not changed — each a question for the
+     research owner: (l) whether the answer confirmation should echo the
+     drafted option (visual F2 / gameplay m4; removed to match r5 §3.3,
+     where the wiring confirmation names its letter and the answer
+     confirmation does not); (m) D-3 — a draft activated again clears it, so
+     click-then-ENTER on a tile clears the draft and RECORD then shows the
+     neutral line; visible and recoverable, it can inflate `drafts_before`
+     (gameplay m6); (n) the implementer-authored participant strings (the
+     footers, the fault line — scientific minor-4): accept, replace, or
+     remove where the preview has none; (o) names — alternatives are the
+     owner's (D-7); (p) a reloaded load with its own opening whose check did
+     not establish the absence of an earlier opening (a discontinuous
+     history, no opening found) runs and is valued as usual, as contract §10
+     and the M14 extractor read it, with only
+     `reload_check.history_continuous: false` /
+     `prior_opening_absence_established: false` showing it (scientific
+     informational-1: keep; add a component flag; or read such a load
+     `interrupted` — the last two would diverge from M14 unless applied to
+     both); (q) after a reload whose check rules out an earlier opening, an
+     earlier-load briefing does not count as exposure, so a session ending
+     without a new briefing exports `not_presented`
+     (`never_opened_reason: 'not_briefed_not_opened'`) beside
+     `reload_check.prior_briefing_found: true` (scientific informational-2:
+     keep, or add an exposure component "briefed in an earlier load"); (r)
+     the drafted option's "▸" marker shifts its text about 13 px right of
+     the other tiles (visual F5; column alignment bears on comparing
+     options, so no implementer change); (s) with no STOP control and the
+     beacon pinned until the window closes (by the contract), a participant
+     who wants to move on may record CANNOT SOLVE (incorrect) where leaving
+     would have been missing (gameplay i2 — a disposition note). Recorded,
+     informational: the kit window's `window_closed.active_ms` includes time
+     outside the bench, because the kit clock restarts on every laboratory
+     RESUME, including the one the bench's own close fires (the extractor
+     reads the per-question `active_ms`; M14 identical; gameplay i1);
+     `presentM15` runs before the M11 calls in the four briefing handlers —
+     guarded, so a fault there is caught (gameplay i3); the orientation is
+     front-loaded reading, offset by the help sheet and the persistent bench
+     record (gameplay i5); Kai's "transmission" and the "relay boxes" fit
+     loosely (gameplay i6; fixed text); the neutral landings take the focus
+     ring and so look like a selected panel (visual F8; inherent to the
+     surface's focus ring); spacing is tight between the last wiring tile
+     and the bottom row (about 16 design px) and LEAVE BENCH stands alone in
+     the closed records' bottom row (visual F9); `TEST T  not run yet`
+     outlives the closed tests beside `Tests closed` (visual F7; preview
+     text); the oracle's simulator shares its design with the module's and
+     differs only on the boosted unit's own notch, which no question asks
+     about (scientific informational-4); the matrix's and the v3 summary's
+     "two independently authored relay boxes" repeats the approved row's
+     phrase while both boxes came from one search and share one format — the
+     clustering is stated in this record (scientific informational-6); the
+     cipher keeps its owner `M15` and probe key on the developer alias, as
+     contract §4 requires (scientific informational-7); the wall-display
+     frames (01, 24) are outside the unit and were not compared with the
+     base (visual F12). Visual states no screenshot covers (the neutral
+     lines, the CANNOT TELL confirmation, a wrong-answer or CANNOT SOLVE
+     acknowledgement, the fault record, the orientation shown again, the
+     results reopened, the help over the wiring or the results, the forced
+     fonts on the wiring step, true 1280 × 720 / 1920 × 1080 windows) are
+     exercised by the route spec's assertions, not by frames — stated, not
+     claimed as visual evidence. Confirmations (each by the reviewer whose
+     finding it answered, read-only, on the corrected source and the
+     regenerated frames; `UNIT-LOG.md` "U18 results"): visual F1–F4
+     CONFIRMED FIXED, no new overlap, clipping or hierarchy defect, the r5
+     content unchanged, three notes (the wiring landing takes the focus
+     border as the question landing does; the dialog sits left of centre, a
+     consequence of staying left of x 738; the wall display's "PHASE 2 / 4"
+     line wraps in frame 24 — outside the unit, not known to predate it);
+     gameplay M1, m2, m3, m4, m5 CONFIRMED FIXED (m5 as scoped), no new
+     product defect, two test notes acted on in the same round (R1 now
+     asserts the wiring landing — focus on the instruction after START, a
+     settled ENTER there running no test; R2's geometry assertion now reads
+     both sides as the probe reports them, element centres in world
+     coordinates, and requires each dialog control to end left of the
+     opener's left edge), two path notes inside D-4 (an ESC or FINISH inside
+     400 ms of its view does nothing, silently; the keyboard round-trip from
+     the landing to RECORD takes several TABs or the named hotkey);
+     scientific minor-2, minor-3 CONFIRMED FIXED, minor-1 PARTLY — the code
+     right, its test not discriminating (the old check also voided that log,
+     later, at the question order): the test now stops the log right after
+     box 2's `box_presented`, which the old check read as an open series and
+     the rule reads as a technical failure; informational-3 and -8's flag
+     and positions CONFIRMED, the oracle test title NOT yet changed at
+     confirmation time — changed then, with `TEST DIAL <d>  [1]` in §4 (3)
+     given its two spaces; no correctness information before the fourth
+     first response; nothing outside the round's remit touched (content,
+     keys, formula, denominator, 400 ms, event names, the ruling). After
+     these test-only and text-only changes the pure suite was rerun (65
+     passed) and R1, R2 and R2 at `canvas=1080` were rerun by the
+     implementer on port 5201 after the final matrix had released it
+     (UNIT-LOG "U18 results").

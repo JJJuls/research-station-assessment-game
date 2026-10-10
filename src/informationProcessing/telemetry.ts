@@ -24,6 +24,12 @@ export type IpFamily =
   | 'proto_m18_fault'
   | 'proto_m14_packet'
   | 'proto_m15_cipher'
+  /**
+   * Station 080 Unit 18: the legacy layered cipher's SECONDARY identity
+   * (developer alias only; never read by the M15 extractor). The v2
+   * `proto_m15_cipher` stays declared by the unimported v2 module.
+   */
+  | 'secondary_m15_cipher'
   | 'proto_m16_protocol'
   | 'proto_m17_syntax'
   /** Station 080 Unit 9: the sixteen-trial learning series (v3 route). */

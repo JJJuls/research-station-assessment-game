@@ -52,7 +52,7 @@ Global findings that apply to every row:
 | M12  | **as specified (U8)** — was contradicting at the audit base (six lines per product, reference always displayed, opening a line = detected, auto-copied correction; the v2 `proto_m12_qc_*` family is retired)                                                                                                                                                                                         | Three fields per product, one fault each; unchecked release allowed; explicit matches/differs per inspected field; participant-entered correction; references hidden until inspected                | `m12_fields_verified`: fields explicitly judged before release / 6; detection accuracy, successful corrections separate                                          | pure: view ≠ detected, wrong judgement still a check; browser: judgement + entry                                              |
 | M13  | **as specified (U16, administration `m13-networks-v1`; research-owner ruling D-U16-1 of 7 October 2026; not scientifically validated)** — was partial at the audit base (one network, four submissions with feedback between them, no Cannot solve); three keyed networks, one immutable first response each before any feedback, results and capped practice after                                   | Three independently keyed networks with different structures + alternate form; first committed solution frozen per network; Cannot solve = incorrect; later learning allowed                        | `m13_first_solutions`: networks solved on first submission / 3; constraints, help separate                                                                       | pure: keyed solvability per network/form, first ≠ later; browser: three boards                                                |
 | M14  | **as specified (U17, administration `m14-integration-v1`; research-owner decisions D-U17-1 of 7 October 2026 and D-U17-2 of 8 October 2026; not scientifically validated)** — contradicted at the audit base (one packet, no answer key, mutable assignments); two keyed packets, one immutable first response per decision before any feedback, results after the sixth                              | Two packets × (6 messages, 3 gauges, 3 keyed integration decisions); first response frozen; Cannot solve = incorrect                                                                                | `m14_correct_first_integrations`: correct first decisions / 6; by packet, omissions, source use                                                                  | pure: keys require ≥2 sources (independent evaluator); browser: two packets on the route                                      |
-| M15  | **partial** — one causal system (2 forms), one intervention (`causalForms.ts:128-131`); cipher shares id and family (`m15LayeredCipher.ts:68-72`)                                                                                                                                                                                                                                                     | Two independently authored systems; explore → commit model → two unseen predictions each; cipher moved to its own secondary id                                                                      | `m15_correct_first_predictions`: correct first predictions / 4; model correctness, exploration separate                                                          | pure: oracle from system definition; browser: two systems                                                                     |
+| M15  | **as specified (U18, administration `m15-systems-v1`; research-owner decision D-U18-1 of 10 October 2026; not scientifically validated)** — was partial at the audit base (one causal system, one intervention; the cipher shared the id and family); two independently authored boxes, one immutable wiring and two immutable first predictions per box before any feedback, results after the fourth; the cipher moved to its secondary id | Two independently authored systems; explore → commit model → two unseen predictions each; cipher moved to its own secondary id                                                                      | `m15_correct_first_predictions`: correct first predictions / 4; model correctness, exploration separate                                                          | pure: oracle from system definition; browser: two systems                                                                     |
 | M16  | **partial** — base familiarisation with correctness feedback before applications (`m16ProtocolUpdate.ts:701-704`); only one first response frozen; last instruction wins                                                                                                                                                                                                                              | Two identical-structure teaching examples for everyone; six unseen applications with frozen first responses; feedback only after all six; Don't know = incorrect; distinct vocabulary from tutorial | `m16_correct_first_applications`: correct first applications / 6; form and example versions                                                                      | pure: first response immutable; browser: examples then six cases                                                              |
 | M17  | **as specified (U9)** — was contradicting at the audit base (1 practice + 1 transfer trial, live preview on both; the v2 `proto_m17_syntax_*` family is retired); **criterion values not to be read until register §5.87–5.88 are decided** (live preview on learning trials; correct-response rule)                                                                                                  | 2 uncoached baseline + 12 feedback learning + 2 transfer trials; no preview on baseline/transfer; criterion = 3 consecutive correct learning trials; all 12 always run; early exit = incomplete     | `m17_criterion_trial` {criterion_trial, attained}: 3–12, censored at 12; full sequence, baseline, transfer                                                       | pure: early criterion, never attain, transfer-only; browser: 16 trials                                                        |
 | M18  | **partial** — one fault case per session (2 forms); no consequence prediction; forced selection                                                                                                                                                                                                                                                                                                       | Three independent cases with discriminating tests; first diagnosis + keyed consequence prediction before feedback; Cannot solve = incorrect                                                         | `m18_correct_first_diagnoses` / 3 (primary); `m18_correct_consequence_predictions` / 3 (companion)                                                               | pure: ambiguity check rejects; browser: three cases                                                                           |
@@ -355,3 +355,57 @@ contradiction, orientation-only and completed earlier loads); browser
 `m14_integration_route` R8 (a genuine reload before the opening) and
 R9 (doubled ENTER and double click after CLOSE HELP on the results), R5
 re-run with the check record.
+**U18** (M15; bounded unit under `U18-CONTRACT.md`, v1 of 9 October 2026,
+final 10 October 2026; research-owner decision D-U18-1 of 10 October 2026 —
+register §5.291, an owner ruling and not an implementer default): the
+Diagnostics Laboratory evidence table runs the two-box series
+`m15-systems-v1` in the wide frame of `WorkSurfaceScene` (D-U17-2, used as
+is). Two independently authored relay boxes (`m15-s1-v1`: dials F, G
+converging on hub P that drives Q and W; `m15-s2-v1`: the chain S → X → Y →
+Z with T entering at Y), each with two dials, three units, four offered
+wiring options and two keyed questions about situations the bench never
+shows (one LOCK, one BOOST; three options each), in fixed order 1 → 2, one
+form; per box exploration by single-dial TESTs (unlimited, deterministic,
+the listing computed by the model's simulator and recorded as exploration,
+never a response), ONE confirmed and immutable wiring — one of the four
+options or CANNOT TELL — which closes the tests, then the two questions one
+at a time with ONE immutable first response each — a confirmed option or a
+confirmed CANNOT SOLVE (incorrect) — answered only by the identical neutral
+acknowledgement; no correctness information before the fourth first
+response; results for both boxes afterwards, read-only; the 400 ms
+fresh-press rule on every confirmation and a 400 ms settle on every view
+transition. Primary `m15_correct_first_predictions` = keyed first responses
+/ questions answered (planned 4), recounted from the raw `first_response`
+events; model correctness (the recorded wiring is the station wiring; CANNOT
+TELL not correct), exploration (the tests run before the wiring), by-box
+results, omissions and `consistent_with_recorded_wiring` in the row's
+components, never in the value. New provisional family `proto_m15_systems_`,
+one opportunity `proto_m15_systems_series` (addendum §2 "U18"); the v2 ids
+`proto_m15_layered_cipher` / `proto_m15_cipher_*` / `m15_causal_w1` are
+retired from the route; the legacy layered cipher moves to the secondary
+identity `secondary_m15_layered_cipher` / `secondary_m15_cipher_*` (M15's
+`secondary_ids`, read by no extractor); the v2 causal-model module stays in
+the tree, unimported and unchanged. Not claimed: independent situations
+(four observations in one bench episode, two boxes), equated boxes,
+validity, or that correct answers require exploration — the disclosed cues
+of preview r5 §7.5 (link-substitution neighbours and per-dial reach in box
+1, reach and the single-verb option in box 2, the question-kind rule
+matching every key) travel with the ruling (register §5.291) and are
+reported, never asserted, by the pure spec. Tests: pure `m15_systems` (the
+independent oracle — its own transcription and step simulator, the 79 461
+signed acyclic wirings per box, the keys, the test dependence over all
+wirings and among the four offered options, the reported cues, unseen-ness
+on traces; the register and the cipher; the series model; the extractor's
+values, missingness and integrity cases; wording); browser
+`m15_systems_route` (R1–R8 on the participant route, twenty-four frames);
+re-expressed M15 steps of `pilot_lab` and `pilot_signal_incident`;
+re-expressed test U8-13 of `final_scientific_gates`; the cipher's secondary
+identity in `ip_boundaries`, `ip_decoder` and `ip_lab_flow`. As-built
+record, defaults and limitations: register §4 "Unit 18", §5.291–§5.300;
+results, reviewers and every failure's base comparison: `UNIT-LOG.md` "U18".
+Not updated (U24 backlog): the capture specs, the `interactionRegistry`
+window label `m15_layered_cipher`, `signal_incident_models.spec.ts`'s
+description of the unimported v2 module, `world_v1_*` evidence for the
+bench. Carried forward unchanged and open: the M05 competing-task
+observation of register §5.290 (e) (i) and the episode-1 M05 cap on the
+scripted route — an M05 matter that U18 neither tests nor changes.

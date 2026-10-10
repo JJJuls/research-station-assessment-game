@@ -427,7 +427,7 @@ test.describe('M14 packet saturation (browser)', () => {
       true,
     );
     expectProvisionalOnly(family);
-    expect(eventsOfFamily(events, 'proto_m15_cipher')).toHaveLength(0);
+    expect(eventsOfFamily(events, 'secondary_m15_cipher')).toHaveLength(0);
     expect(eventsOfFamily(events, 'proto_m16_protocol')).toHaveLength(0);
     expectNoRuntimeErrors(errors);
   });
@@ -538,22 +538,22 @@ test.describe('M15 layered cipher (browser)', () => {
     expect(m15.final_reconstruction_valid).toBe(true);
     expect(m15.final_message).toEqual(['CORE', 'SEALED', 'HOLDING']);
     expect(m15.input_mode).toBe('mixed');
-    expect((await ipValidity(page, 'proto_m15_layered_cipher')).validity).toBe(
-      'valid',
-    );
+    expect(
+      (await ipValidity(page, 'secondary_m15_layered_cipher')).validity,
+    ).toBe('valid');
 
     const events = await ipEvents(page);
-    const family = eventsOfFamily(events, 'proto_m15_cipher');
+    const family = eventsOfFamily(events, 'secondary_m15_cipher');
 
     expect(family.map((e) => e.event_type)).toContain(
-      'proto_m15_cipher_codebook_consulted',
+      'secondary_m15_cipher_codebook_consulted',
     );
     expect(family.map((e) => e.event_type)).toContain(
-      'proto_m15_cipher_completed',
+      'secondary_m15_cipher_completed',
     );
-    expect(family.every((event) => event.episode === 'proto_m15_cipher')).toBe(
-      true,
-    );
+    expect(
+      family.every((event) => event.episode === 'secondary_m15_cipher'),
+    ).toBe(true);
     expectProvisionalOnly(family);
     expect(eventsOfFamily(events, 'proto_m14_packet')).toHaveLength(0);
     expectNoRuntimeErrors(errors);
@@ -598,7 +598,7 @@ test.describe('M15 layered cipher (browser)', () => {
     expect(m15.input_mode).toBe('typed');
     expect(m15.submission_count).toBe(2);
     expect(
-      (await ipValidity(page, 'proto_m15_layered_cipher')).invalid_reason,
+      (await ipValidity(page, 'secondary_m15_layered_cipher')).invalid_reason,
     ).toBe('invalid_entry_state');
   });
 });
@@ -781,7 +781,7 @@ test.describe('M16 protocol update (browser)', () => {
     expect(order.every((index) => index >= 0)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expectProvisionalOnly(eventsOfFamily(events, 'proto_m16_protocol'));
-    expect(eventsOfFamily(events, 'proto_m15_cipher')).toHaveLength(0);
+    expect(eventsOfFamily(events, 'secondary_m15_cipher')).toHaveLength(0);
     expect(eventsOfFamily(events, 'proto_m17_trials')).toHaveLength(0);
     expectNoRuntimeErrors(errors);
   });

@@ -23,6 +23,7 @@ import { closeM10AtReview } from './m10ComponentPromise';
 import { closeM11AtReview } from './m11Custody';
 import { closeM12AtReview } from './m12QualityControl';
 import { closeM14AtReview } from './m14IncidentDesk';
+import { closeM15AtReview } from './m15RelayBench';
 import { closeM25BeliefAtReview, closeM25LoopsAtReview } from './m25Repetition';
 import {
   closeM20ResumeAtReview,
@@ -83,6 +84,13 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
   // reclosed; never opened → absent (`briefed_not_opened` when the briefing
   // was acknowledged, never `declined` — decision D-U17-1, item 6).
   closeM14AtReview(nowMs);
+  // Station 080 M15 (Unit 18): a series still in its orientation,
+  // exploration, wiring or question phase closes with the wirings and
+  // answers as they stand (unanswered questions stay missing, no results
+  // follow); a completed series is not reclosed; never opened → absent
+  // (`briefed_not_opened` when Kai's briefing was acknowledged, never
+  // `declined` — decision D-U18-1, item 5).
+  closeM15AtReview(nowMs);
   // Episode 5 (Unit 5): a PRESENTED M20 resume opportunity closes as a
   // completed observation (returned / completion as they stand) BEFORE
   // the exterior closure, which censors only a never-resumed start.

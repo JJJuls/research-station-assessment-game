@@ -527,6 +527,204 @@ false` in the components and leaves the row unchanged. Dispositions:
   the sources opened before / the set's size and `all_opened_before`),
   `help_consults` by phase, `results_shown`, `exposure_record_consistent`.
 
+U18 (M15, candidates as before; one new provisional family, no canonical
+event, no scoring-plan variable, no formula changed): the Diagnostics
+Laboratory evidence table leaves the v2 one-system causal-model bench under
+research-owner decision D-U18-1 of 10 October 2026 (register §4 "Unit 18",
+§5.291); the legacy layered cipher moves to a secondary identity that no
+extractor reads.
+
+- **M15** — family `proto_m15_systems_`; ONE opportunity
+  `proto_m15_systems_series`; the kit's window id `m15_system_s1`; box
+  window ids `m15_system_s1` and `m15_system_s2` (carried as
+  `box_window_id`); object `m15_relay_bench`; `entry_state_version` =
+  `m15-systems-v1`; content versions `m15-s1-v1` and `m15-s2-v1`. The v2 ids
+  `proto_m15_layered_cipher` / `proto_m15_cipher_*` / window `m15_causal_w1`
+  are retired from the route and keep their v2 meaning in the frozen ledger;
+  this build writes none of them. The legacy layered cipher (developer alias
+  only) now writes `secondary_m15_layered_cipher` (opportunity) /
+  `secondary_m15_cipher_*` (events) — M15's `secondary_ids` in the register,
+  read by no extractor and never a contributor to the M15 row.
+- **Phases.** `orientation` (the card); `exploration` (the single-dial TESTs
+  of a box before its wiring); `model` (the wiring step's drafts, commitment
+  and acknowledgement); `measurement` (the questions: one immutable first
+  response each — a confirmed option or a confirmed CANNOT SOLVE — and no
+  correctness feedback of any kind); `feedback` (the results, only after the
+  fourth first response); `closure`.
+- **Every event the model emits** carries the kit's fields (`measure_id`,
+  `opportunity_id`, `window_id`, `entry_state_version`, `presented_at_ms`,
+  `window_status`, the validity fields), `measurement_protocol_version`,
+  `phase` and — when it concerns a box or a question — `box_id`, `box_index`
+  (1–2), `box_window_id`, `content_version`, `question_id`, `question_index`
+  (1–2) and `question_global_index` (1–4); `input_mode` is `pointer`,
+  `keyboard` or `system`. The kit's own records (`presented`,
+  `opportunity_opened`, `window_closed`, `technical_failure`) carry the
+  kit's fields and `input_mode: 'system'` only (`windowKit.ts` is outside
+  the unit). Suffixes:
+  - `presented` — Kai's laboratory briefing acknowledged (each of the four
+    `lab_brief_ack*` handlers): exposure only, not a bench opening and not a
+    question presentation;
+  - `opportunity_opened` — the first opening; `entry_state_snapshot`:
+    `boxes_planned` (2), `predictions_planned` (4), `assigned_box_order`,
+    per box {`box_id`, `box_window_id`, `content_version`, `dial_ids`,
+    `unit_ids`, `wiring_option_ids`, `wiring_key_option_id`, `question_ids`,
+    per question `option_ids` and `key_option_id`}, `exploration`
+    (`single_dial_tests_close_at_wiring`), `model_commit`
+    (`required_before_questions`), `cannot_solve_available` (true),
+    `cannot_tell_available` (true), `feedback`
+    (`after_all_first_predictions`), `stop_control` (false), `settle_ms`
+    (400), `stage`;
+  - `orientation_acknowledged`; `series_reopened` and `panel_left` — `view`
+    (written while the bench is live, never on a closed record);
+  - `box_presented` — `assigned_position`, `realised_position`,
+    `dials_available`, `wiring_option_ids`, `question_ids`; exactly once per
+    box, phase `exploration`;
+  - `test_run` — `dial_id`, `run_index` (per dial), `listing` (the text
+    shown) and `steps` (the moves per step); phase `exploration`; an
+    exploration record, never a response; only before the box's
+    `wiring_recorded` (a later request records nothing);
+  - `wiring_drafted` — `option_id` (null when cleared),
+    `previous_option_id`; phase `model`; never a response;
+  - `wiring_recorded` — once per box, phase `model`: `response_kind`
+    (`option` | `cannot_tell`), `option_id` (null for CANNOT TELL),
+    `correct` (the recorded option is the station wiring; false for CANNOT
+    TELL), `key_option_id`, `tests_before` (runs per dial),
+    `dials_tested_before`, `drafts_before`, `help_consults_before`,
+    `active_ms`, `refused_presses`, `draft_at_commit`, `input_mode`;
+  - `question_presented` — `assigned_position` (the global index),
+    `realised_position`, `option_ids`; exactly once per question; only after
+    its box's `wiring_recorded`;
+  - `option_drafted` — `option_id` (null when cleared),
+    `previous_option_id`; never a response;
+  - `commit_requested` — `target` (`wiring` | `question`), `kind` (`option` |
+    `cannot`), `option_id`; `commit_cancelled` — `target`, `kind`, `reason`
+    (`keep_working` | `panel_left`), `refused_presses`;
+    `commit_press_refused` — `target`, `kind`, `reason` (`dialog_settling`),
+    `since_opened_ms`, `settle_ms`; recorded once per dialog, the count
+    carried on the record; `commit_without_draft` — RECORD WIRING / RECORD
+    ANSWER with no draft (`target`);
+  - `first_response` — exactly one per answered question, phase
+    `measurement`: `response_kind` (`option` | `cannot_solve`), `option_id`
+    (null for CANNOT SOLVE), `correct` (always false for `cannot_solve`),
+    `key_option_id`, `recorded_wiring_option_id` (the box's recorded option,
+    or `cannot_tell`), `consistent_with_recorded_wiring` (boolean; null when
+    the wiring was CANNOT TELL, the response is CANNOT SOLVE, or the
+    recorded wiring's answer is magnitude-dependent under preview §7.2 —
+    none of the eight options is), `tests_before` (runs per dial),
+    `drafts_before`, `help_consults_before`, `active_ms`, `focused_ms` (the
+    focused clock, null if unavailable), `refused_presses`,
+    `draft_at_commit`, `input_mode`;
+  - `response_acknowledged` — `line_id` (`wiring_recorded` after a wiring,
+    `answer_recorded` after an answer), `next_control` (`first_question` |
+    `next_question` | `next_box` | `show_results`), `answered_count`;
+    identical in content for every response of its kind;
+  - `box_completed` — the box's record (the wiring and its two questions);
+  - `first_responses_completed` — with the fourth first response: the
+    closure snapshot (`boxes_planned`, `predictions_planned`,
+    `boxes_presented`, `models_recorded`, `models_correct`,
+    `questions_presented`, `predictions_answered`,
+    `correct_first_predictions`, `cannot_solve_count`, `cannot_tell_count`,
+    `by_box`, per question `presented`, `answered`, `response_kind`,
+    `option_id`, `correct`) and `closure_reason` `completed`; the kit's
+    `window_closed` (exit `completed`) follows; the scored phase has no
+    later closure event;
+  - `results_shown` — phase `feedback`, `box_id`, `line_ids`; only after
+    `first_responses_completed`; once per box;
+  - `help_consulted` — `phase`, `step` (`wiring` | the view), `view`, the
+    box and question it was opened on;
+  - `series_closed_at_review` — orientation, exploration, wiring or question
+    phase only: the closure snapshot and `closure_reason`
+    `closed_at_review`; the kit's `window_closed` (censored) follows;
+  - `prior_load_checked` — written once per page load after a reload, at the
+    first run of the reload guard (the Diagnostics Laboratory's `create()`;
+    decision D-U18-1 item 6, the closeout ruling §5.290 (a) applied to M15):
+    `page_load_index`, `prior_page_load_event_count`, `prior_opening_found`,
+    `prior_briefing_found`, `history_continuous` and
+    `prior_opening_absence_established`; `input_mode` `system`; never on a
+    first page load; before the hold-back record when an opening is found;
+  - `technical_failure` — the kit's record (`detail`); the reload hold-back
+    uses the detail `reload after administration: bench not re-run` and is
+    read as a hold-back only in a load without an `opportunity_opened`; a
+    fault after completion is recorded with `phase` `feedback` and never
+    enters the value.
+- **Extraction rules** (`src/measurement/features/m15.ts`): current-load
+  events only; the value is recounted from the `first_response` events (each
+  response's correctness recomputed from the content module's key for that
+  question and content version) and compared with the event's own `correct`
+  flag and with the closure snapshot; an answer counts whatever wiring was
+  recorded and whatever tests were run. `technical_failure`, never a value,
+  for contradictory, malformed or unverifiable SCORED evidence — an unknown
+  or mismatched version or opportunity, an unknown box, question or option,
+  a question of another box, a content version that does not match its box,
+  a box or question presented twice or out of the assigned order, a box
+  presented before every question of the earlier boxes had its first
+  response, a question presented before the previous first response or
+  before its box's wiring, a first response without its presentation, a
+  second first response, a `correct` flag that contradicts the key, a CANNOT
+  SOLVE marked correct or carrying an option, an option response without an
+  option of its own question, a non-boolean `correct`, a `key_option_id`
+  that disagrees with the content, a first response outside `measurement` or
+  after the completion, four first responses without the completion snapshot
+  or that snapshot with fewer, a snapshot that disagrees with the recount,
+  ANY `results_shown` before the completion (also in a series that never
+  reaches four), a family event of the load without a usable, unique
+  `sequence` (the §5.259 convention), and a `presented` or
+  `prior_load_checked` record of another opportunity or version or without a
+  usable sequence. Legitimate missingness is never a technical failure. A
+  defect confined to unscored records sets a component flag and leaves the
+  row unchanged: `model_record_consistent: false` for a `test_run` after the
+  box's `wiring_recorded`, two `wiring_recorded` for one box, a
+  `wiring_recorded` whose `correct` or key disagrees with the wiring key, a
+  `wiring_recorded` for a box never presented or with an unknown option or
+  kind (it leaves the box without a recorded wiring, so a question presented
+  after it voids the row as presented before its box's wiring), or a
+  response whose `recorded_wiring_option_id` / `tests_before` disagree with
+  the box's record; `exposure_record_consistent: false` for an orphan draft,
+  a help record without its box or question, a `results_shown` without a
+  box, a check record on a first load, two check records, a
+  self-contradictory check, a check claiming absence beside the hold-back,
+  or a check that found an earlier opening beside an opening of this load.
+  Dispositions: four verified first responses ⇒ `observed` (`completed`),
+  stable whatever follows; one to three answered and closed at the review ⇒
+  `incomplete` with the value and its denominator, censored; one to three
+  answered and still open ⇒ `pending` with the answers in the components
+  (D-U18-1 item 8); never briefed and never opened ⇒ `not_presented` (also
+  at the review closure); briefed and never opened ⇒ `pending`
+  (`briefed_not_opened`) while open and null `no_eligible_event`
+  (`briefed_not_opened`, censored, `closed_at_review`) at the review
+  closure; opened and unanswered at the review closure ⇒ `no_eligible_event`
+  (`orientation_only` | `no_wiring_recorded` |
+  `wiring_only_no_first_response`, as reached); still open ⇒ `pending`; a
+  load after a reload without an `opportunity_opened` of its own ⇒
+  `interrupted` (read before any position is compared) UNLESS its own
+  `prior_load_checked` record establishes the absence of an earlier opening
+  (flags agreeing: established, continuous, no opening found, at least one
+  earlier record), in which case the load is read exactly as a first load;
+  held back after a reload ⇒ `interrupted` (also when the earlier load
+  completed all four); a fault in the first-response phase ⇒
+  `technical_failure` with the answers kept in the components; never
+  `declined`. Precedence: `interrupted` > `technical_failure` > `pending` >
+  the closed-series outcomes. Components (beside the value, never inside
+  it): the exposure stages (`briefed`, `bench_opened`,
+  `orientation_acknowledged`, `boxes_presented`, `questions_presented`, each
+  with its sequence where recorded, and `never_opened_reason`),
+  `reload_check`, the administration and content versions, the assigned and
+  realised box and question orders, `observations_share_one_episode: true`,
+  `first_response_phase_complete` and its closure, `predictions_answered` /
+  `predictions_planned`, `cannot_solve_count`, `cannot_tell_count`, `by_box`
+  (numerator, denominator, planned 2, omissions per box), `omissions`
+  (`unanswered_question_ids`, `unpresented_question_ids`), `model` (per box
+  the recorded wiring, `wiring_correct`, the wiring key; `models_recorded` /
+  `models_correct` / `models_planned` 2), `exploration` (per box runs per
+  dial before the wiring, the dials tested,
+  `both_dials_tested_before_wiring`, the total), per question the response
+  kind, option, correctness, key, `recorded_wiring_option_id`,
+  `consistent_with_recorded_wiring`, `tests_before`, drafts, help consults,
+  active and focused time, input mode, `help_consults` by phase,
+  `results_shown`, `exposure_record_consistent`, `model_record_consistent`.
+  No total mixes model, exploration and prediction correctness; no total
+  across items.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                           | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -545,7 +743,7 @@ false` in the components and leaves the row unchanged. Dispositions:
 | `m12_fields_verified`             | Σ fields explicitly judged (matches or differs) before release over the RELEASED products / 6 (planned denominator; one released product ⇒ `incomplete` on 3; a released product with nothing judged is 0; recounted from the `field_judged` events) (U8)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | ↑ checking                | no product released ⇒ null (`declined` when presented and never opened; a packet opened and closed at the review is missing, never 0)                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `m13_first_solutions`             | networks whose FIRST response is a layout the shared validator accepts for that network and form / networks with a first response in the current page load (planned denominator 3; CANNOT SOLVE and an unsealed layout are in the denominator, not the numerator; a network without a first response is missing, never incorrect; fewer than three answered and the series closed ⇒ `incomplete` on the answered count; recounted from the `first_response` events by re-validating each recorded board and compared with the event's `correct` flag and the closure snapshot; results, practice, help, time and input mode never enter; complete and stable from the third first response) (U16)                                                                                                                                                                                                                                                                                                                                                                             | ↑ puzzle performance      | none answered ⇒ null (`not_presented` never opened; `voluntary_stop` opened and stopped; `no_eligible_event` opened and closed at the review; `pending` while the first-response phase is open, also with one or two answers; `interrupted` held back after a reload; `technical_failure` for a fault in the first-response phase or contradictory / unverifiable scored evidence)                                                                                                                                                      |
 | `m14_correct_first_integrations`  | correct first decisions / 6: decisions whose FIRST response is the keyed option of that decision / decisions with a first response in the current page load (planned denominator 6; CANNOT SOLVE and a wrong option are in the denominator, not the numerator; a decision without a first response is missing, never incorrect; an answer counts whatever sources were opened before it — source openings never exclude, discount or weight an answer; fewer than six answered and the series closed at the review ⇒ `incomplete` on the answered count; recounted from the `first_response` events against the content key and compared with the event's `correct` flag and the closure snapshot; by-packet results, omissions and source openings in the components, never in the value; complete and stable from the sixth first response) (U17)                                                                                                                                                                                                                           | ↑ integration             | none answered ⇒ null (`not_presented` never briefed and never opened; `pending` briefed and never opened while open, or opened and still open; `no_eligible_event` briefed and never opened at the review closure (`briefed_not_opened`) or opened and unanswered there; `interrupted` held back after a reload, or after a reload without the absence of an earlier opening established (register §5.290 (a)); `technical_failure` for a first-response-phase fault or contradictory / unverifiable scored evidence; never `declined`) |
-| `m15_correct_first_predictions`   | correct first predictions / 4                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | ↑ understanding           | none answered                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `m15_correct_first_predictions`   | correct first predictions / 4: questions whose FIRST response is the keyed option of that question / questions with a first response in the current page load (planned denominator 4; CANNOT SOLVE and a wrong option are in the denominator, not the numerator; a question without a first response — unpresented or presented and unanswered — is missing, never incorrect; an answer counts whatever wiring was recorded and whatever tests were run (wiring, tests, help, drafts, time and input mode never change the count); fewer than four answered and the series closed at the review ⇒ `incomplete` on the answered count; one to three answered and the series still open ⇒ null `pending` (D-U18-1 item 8); recounted from the `first_response` events against the content key and compared with the event's `correct` flag and the closure snapshot; by-box results, omissions, model correctness and exploration in the components, never in the value; complete and stable from the fourth first response) (U18)                                              | ↑ understanding           | none answered ⇒ null (`not_presented` never briefed and never opened; `pending` while open — briefed and never opened, or opened, also with 1–3 answers; `no_eligible_event` at the review closure — briefed and never opened (`briefed_not_opened`) or opened and unanswered (`orientation_only` / `no_wiring_recorded` / `wiring_only_no_first_response`); `interrupted` held back after a reload or an unestablished absence of an earlier opening; `technical_failure` for a fault or unverifiable evidence; never `declined`)      |
 | `m16_correct_first_applications`  | correct first applications / 6                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | ↑ transfer                | none answered                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `m17_criterion_trial`             | first learning trial ending 3 consecutive correct FIRST responses (one SUBMIT of exactly two operators per trial; recounted from the `trial_submitted` events), with attained = true, reported whenever reached within the administered trials (even after an early exit, `complete_sequence` false); 12 / false / censored when all twelve ran without attainment (U9)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | earlier = faster          | early exit WITHOUT attainment ⇒ incomplete (not censored); never opened ⇒ null; owner decisions §5.87–5.88 pending before use                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `m18_correct_first_diagnoses`     | correct first diagnoses / 3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | ↑ diagnosis               | none answered                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |

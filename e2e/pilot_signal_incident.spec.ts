@@ -76,6 +76,7 @@ import {
   press,
   routeToLabWork,
 } from './pilotHelpers';
+import { validityRecord } from './returnHelpers';
 
 interface SurfaceProbe {
   open: boolean;
@@ -212,6 +213,43 @@ function metadata(event: IpEventLike): Record<string, unknown> {
   return (event.metadata ?? {}) as Record<string, unknown>;
 }
 
+/* ------------------------------------------------------------------ *
+ * M15 (Station 080 Unit 18) — the relay bench by keyboard. Every view
+ * settles 400 ms; `press` already waits 450 ms after each key.
+ * ------------------------------------------------------------------ */
+
+/** RECORD (R), the settled confirming ENTER. */
+async function recordByKeyboard(page: Page) {
+  await press(page, 'r');
+  expect((await surface(page))?.focus).toBe('confirm');
+  await press(page, 'Enter');
+}
+
+/** The acknowledgement's control (FIRST QUESTION / NEXT … / SHOW RESULTS). */
+async function continueByKeyboard(page: Page) {
+  expect((await surface(page))?.focus).toBe('next');
+  await press(page, 'Enter');
+}
+
+async function answerByKeyboard(page: Page, letter: 'a' | 'b' | 'c') {
+  await press(page, letter);
+  await recordByKeyboard(page);
+}
+
+/** The page's own feature row of one item, read from the export builder. */
+async function featureRow(page: Page, item: string) {
+  const json = await page.evaluate(`(async () => {
+    const mod = await import('/src/systems/index.ts');
+    const payload = mod.researchRuntime.buildExportPayload();
+
+    return JSON.stringify(
+      (payload.measurement_features ?? []).find((row) => row.item_id === ${JSON.stringify(item)}) ?? null,
+    );
+  })()`);
+
+  return JSON.parse(json as string) as Record<string, unknown> | null;
+}
+
 test.describe('signal-analysis incident — complete case by real input (Unit 3)', () => {
   test('four phases recorded in one continuous case; the display and intercom advance; families, ids and raw components stay item-owned; no score', async ({
     page,
@@ -226,93 +264,74 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     await routeToLabWork(page);
     await completeOrientation(page);
 
-    // ——— Phase 1 — M15 evidence table ———
+    // ——— Phase 1 — M15 evidence table (Station 080 Unit 18: the two relay
+    // boxes, driven through their own controls — tests and answers by
+    // keyboard, box 1's wiring drafted by pointer) ———
     await openBench(page, PILOT.lab.evidenceTable, '__workSurfaceProbe');
 
     let table = (await surface(page))!;
 
     expect(table.surface_id).toBe('m15_evidence_table');
-    expect(table.elements.find((e) => e.id === 'readout_title')?.label).toBe(
-      'WORKED EXAMPLE',
-    );
+    expect(table.elements.find((e) => e.id === 'start')).toBeDefined();
+    await press(page, 'Enter'); // START BOX 1 (the first focusable)
 
-    // Three sources opened (the fourth stays on the table, unread).
-    await clickElement(page, 'source_timing');
-    await clickElement(page, 'source_states');
-    await clickElement(page, 'source_log');
-    table = (await surface(page))!;
-    expect(table.elements.find((e) => e.id === 'readout_title')?.label).toBe(
-      'CASE LOG',
-    );
-
-    // Links by pointer: FEED → GATE, CLOCK → GATE.
-    await clickElement(page, 'node_FEED');
-    await clickElement(page, 'node_GATE');
-    await clickElement(page, 'node_CLOCK');
-    await clickElement(page, 'node_GATE');
-    // Link by keyboard: GATE (pointer focus) → ArrowRight → BUFFER + ENTER.
-    await clickElement(page, 'node_GATE');
-    await press(page, 'ArrowRight');
-    expect((await surface(page))?.focus).toBe('node_BUFFER');
-    await press(page, 'Enter');
-    // BUFFER → OUTPUT by pointer.
-    await clickElement(page, 'node_BUFFER');
-    await clickElement(page, 'node_OUTPUT');
-    // A wrong link (CLOCK → OUTPUT, ruled out by the log) added, then
-    // removed by activating the same pair again — a recorded correction.
-    await clickElement(page, 'node_CLOCK');
-    await clickElement(page, 'node_OUTPUT');
-    table = (await surface(page))!;
-    expect(table.links).toHaveLength(5);
-    await clickElement(page, 'node_CLOCK');
-    await clickElement(page, 'node_OUTPUT');
-    table = (await surface(page))!;
-    expect(table.links).toHaveLength(4);
-    expect(table.links).toEqual(
-      expect.arrayContaining([
-        { from: 'node_FEED', to: 'node_GATE' },
-        { from: 'node_GATE', to: 'node_BUFFER' },
-      ]),
-    );
-
-    // Predict (hotkey 2): mark BUFFER and OUTPUT; submit (hotkey S).
+    // Box 1: both dials tested, wiring B drafted by pointer and recorded.
+    await press(page, '1');
     await press(page, '2');
     table = (await surface(page))!;
-    expect(table.elements.find((e) => e.id === 'board_title')?.label).toMatch(
-      /^PREDICT/,
+    expect(table.elements.find((e) => e.id === 'record_f')?.label).toBe(
+      'TEST F  step 1: P up · step 2: Q down, W up',
     );
-    await clickElement(page, 'node_BUFFER');
-    await clickElement(page, 'node_OUTPUT');
-    await press(page, 's');
-    await page.waitForTimeout(300);
+    expect(table.elements.find((e) => e.id === 'record_g')?.label).toBe(
+      'TEST G  step 1: P up · step 2: Q down, W up',
+    );
+    await clickElement(page, 'wiring_b');
+    expect(
+      (await surface(page))?.elements.find((e) => e.id === 'wiring_b')?.state,
+    ).toBe('selected');
+    await recordByKeyboard(page);
     table = (await surface(page))!;
-    expect(table.elements.find((e) => e.id === 'submit')?.label).toBe(
-      'RECORDED',
+    expect(table.elements.find((e) => e.id === 'test_f')?.state).toBe(
+      'disabled',
     );
+    await continueByKeyboard(page); // FIRST QUESTION
+    await answerByKeyboard(page, 'c'); // S1-Q1
+    await continueByKeyboard(page); // NEXT QUESTION
+    await answerByKeyboard(page, 'b'); // S1-Q2
+    await continueByKeyboard(page); // NEXT BOX
+
+    // Box 2: both dials tested, wiring D, the two questions.
+    await press(page, '1');
+    await press(page, '2');
+    await press(page, 'd');
+    await recordByKeyboard(page);
+    await continueByKeyboard(page);
+    await answerByKeyboard(page, 'b'); // S2-Q1
+    await continueByKeyboard(page);
+    await answerByKeyboard(page, 'c'); // S2-Q2
+    table = (await surface(page))!;
+    expect(table.elements.find((e) => e.id === 'next')?.label).toBe(
+      'SHOW RESULTS',
+    );
+    await continueByKeyboard(page); // SHOW RESULTS
+    table = (await surface(page))!;
+    expect(table.elements.find((e) => e.id === 'results_text')).toBeDefined();
     await press(page, 'Escape');
     await waitSurface(page, false);
 
-    const m15 = await ipModule(page, 'm15');
+    const m15Validity = await validityRecord(page, 'proto_m15_systems_series');
 
-    expect(m15.window_status).toBe('completed');
-    expect(m15.required_causal_edges).toBe(4);
-    expect(m15.required_edges_total).toBe(4);
-    expect(m15.invalid_edge_count).toBe(0);
-    expect(m15.contradictions_present_count).toBe(0);
-    expect(m15.contradictions_resolved).toBe(1);
-    expect(m15.corrections).toBe(1);
-    expect(m15.model_edits).toBe(6);
-    expect(m15.evidence_sources_opened_count).toBe(3);
-    expect(m15.source_transitions).toBe(2);
-    expect(m15.guide_presented).toBe(true);
-    expect(m15.intervention_prediction_correct).toBe(true);
-    expect(m15.intervention_prediction_consistent_with_own_model).toBe(true);
-    expect(m15.submission_complete).toBe(true);
-    expect(m15.input_mode).toBe('mixed');
-    expect(m15.reading_ms_before_first_edit as number).toBeGreaterThanOrEqual(
-      0,
-    );
+    expect(m15Validity.completed).toBe(true);
+    expect(m15Validity.validity).toBe('valid');
     expect(await itemStatus(page, 'M15')).toBe('completed');
+    expect(await featureRow(page, 'M15')).toMatchObject({
+      feature_id: 'm15_correct_first_predictions',
+      value: 4,
+      numerator: 4,
+      denominator: 4,
+      disposition: 'observed',
+      closure_reason: 'completed',
+    });
 
     let display = await signalDisplay(page);
 
@@ -595,17 +614,58 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     // ——— Whole-case invariants ———
     const events = (await getEvents(page)) as unknown as IpEventLike[];
     const families = {
-      m15: eventsOfFamily(events, 'proto_m15_cipher'),
       m16: eventsOfFamily(events, 'proto_m16_protocol'),
       m17: eventsOfFamily(events, 'proto_m17_trials'),
       m18: eventsOfFamily(events, 'proto_m18_fault'),
     };
     const ids = {
-      m15: ['proto_m15_layered_cipher', 'm15_causal_w1'],
       m16: ['proto_m16_protocol_update', 'm16_protocol_w1'],
       m17: ['proto_m17_criterion', 'm17_trials_w1'],
       m18: ['proto_m18_lattice_fault_diagnosis', 'm18_diagnosis_w1'],
     } as const;
+
+    // M15 (Unit 18) is no longer an IP family: an explicit check of
+    // equivalent strength — its own family only, one opportunity, the
+    // kit's window id on every event, both box window ids, exactly one
+    // completion and one window closure, no v2 or secondary cipher event.
+    const m15Events = events.filter((e) =>
+      e.event_type.startsWith('proto_m15_'),
+    );
+
+    expect(m15Events.length).toBeGreaterThan(3);
+    expect(
+      m15Events.every((e) => e.event_type.startsWith('proto_m15_systems_')),
+    ).toBe(true);
+    expect(
+      m15Events.filter(
+        (e) => e.event_type === 'proto_m15_systems_first_responses_completed',
+      ),
+    ).toHaveLength(1);
+    expect(
+      m15Events.filter(
+        (e) => e.event_type === 'proto_m15_systems_window_closed',
+      ),
+    ).toHaveLength(1);
+
+    for (const event of m15Events) {
+      const m = metadata(event);
+
+      expect(m.opportunity_id, event.event_type).toBe(
+        'proto_m15_systems_series',
+      );
+      expect(m.window_id, event.event_type).toBe('m15_system_s1');
+      expect(m.entry_state_version, event.event_type).toBe('m15-systems-v1');
+    }
+
+    expect(
+      new Set(m15Events.map((e) => metadata(e).box_window_id).filter(Boolean)),
+    ).toEqual(new Set(['m15_system_s1', 'm15_system_s2']));
+    expectProvisionalOnly(m15Events);
+    expect(eventsOfFamily(events, 'proto_m15_cipher')).toHaveLength(0);
+    expect(eventsOfFamily(events, 'secondary_m15_cipher')).toHaveLength(0);
+    expect(
+      (await validityRecord(page, 'proto_m15_systems_series')).validity,
+    ).toBe('valid');
 
     for (const [phase, list] of Object.entries(families)) {
       expect(list.length, phase).toBeGreaterThan(3);
@@ -629,12 +689,40 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     }
 
     // Pairwise disjoint: no event belongs to two families.
-    const all = Object.values(families).flat();
+    const all = [...Object.values(families).flat(), ...m15Events];
 
     expect(new Set(all).size).toBe(all.length);
     expect(all.length).toBe(
       events.filter((e) => /^proto_m1[5-8]_/.test(e.event_type)).length,
     );
+
+    // The M15 first-response phase sits between its opening and its window
+    // closure; only the briefing exposure precedes it and only the results
+    // (and leaving) follow it.
+    const m15Index = (type: string) =>
+      events.findIndex((e) => e.event_type === `proto_m15_systems_${type}`);
+    const m15Opened = m15Index('opportunity_opened');
+    const m15Closed = m15Index('window_closed');
+
+    expect(m15Opened).toBeGreaterThan(m15Index('presented'));
+    expect(m15Closed).toBeGreaterThan(m15Opened);
+
+    for (const event of m15Events) {
+      const at = events.indexOf(event);
+      const suffix = event.event_type.slice('proto_m15_systems_'.length);
+
+      if (suffix === 'presented') {
+        expect(at).toBeLessThan(m15Opened);
+      } else if (
+        suffix === 'results_shown' ||
+        suffix === 'panel_left' ||
+        suffix === 'series_reopened'
+      ) {
+        expect(at, event.event_type).toBeGreaterThan(m15Opened);
+      } else {
+        expect(at >= m15Opened && at <= m15Closed, event.event_type).toBe(true);
+      }
+    }
 
     // Completing one phase never emitted another phase's raw events: each
     // phase's events all sit between that phase's window_opened and its
@@ -677,9 +765,17 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     // Planning envelope (sheet 11: 235 s item-owned): the automated run's
     // item-owned active time stays inside it (a human estimate is not
     // claimed here).
-    const activeMs = Object.values(families)
-      .map((list) => list.find((e) => e.event_type.endsWith('_completed'))!)
-      .reduce((sum, e) => sum + Number(metadata(e).active_ms ?? 0), 0);
+    const activeMs =
+      Object.values(families)
+        .map((list) => list.find((e) => e.event_type.endsWith('_completed'))!)
+        .reduce((sum, e) => sum + Number(metadata(e).active_ms ?? 0), 0) +
+      Number(
+        metadata(
+          m15Events.find(
+            (e) => e.event_type === 'proto_m15_systems_window_closed',
+          )!,
+        ).active_ms ?? 0,
+      );
 
     // eslint-disable-next-line no-console
     console.log(
@@ -731,7 +827,7 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     await clickTerminalButton(page, 'close');
     await waitTerminalOpen(page, false);
 
-    // Evidence table: the world is frozen under the surface.
+    // Evidence table (Unit 18): the world is frozen under the surface.
     await openBench(page, PILOT.lab.evidenceTable, '__workSurfaceProbe');
 
     const held = await playerX(page);
@@ -739,48 +835,48 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     await hold(page, 'ArrowRight', 350);
     expect(Math.abs((await playerX(page)) - held)).toBeLessThan(2);
 
-    // A held S (key repeat) with an incomplete model warns exactly once
-    // and never records the submission on the repeat.
-    await page.keyboard.down('s');
+    // The held ArrowRight moved the focus along the bottom row: back to
+    // START (the first focusable) before the held ENTER.
+    while ((await surface(page))?.focus !== 'start') {
+      await page.keyboard.press('ArrowLeft');
+      await page.waitForTimeout(60);
+    }
+
+    // A held ENTER on START BOX 1 (key repeat) starts box 1 exactly once:
+    // the surface drops the repeats, and the box's first view settles.
+    await page.waitForTimeout(450);
+    await page.keyboard.down('Enter');
     await page.waitForTimeout(700);
-    await page.keyboard.up('s');
+    await page.keyboard.up('Enter');
     await page.waitForTimeout(300);
 
-    let m15Events = (await getEvents(page)).filter((e) =>
-      e.event_type.startsWith('proto_m15_cipher_'),
-    );
+    const m15Count = async (suffix: string) =>
+      (await getEvents(page)).filter(
+        (e) => e.event_type === `proto_m15_systems_${suffix}`,
+      ).length;
 
-    expect(
-      m15Events.filter(
-        (e) => e.event_type === 'proto_m15_cipher_submission_incomplete_warned',
-      ),
-    ).toHaveLength(1);
-    expect(
-      m15Events.filter((e) => e.event_type === 'proto_m15_cipher_submitted'),
-    ).toHaveLength(0);
-    expect((await ipModule(page, 'm15')).window_status).toBe('open');
+    expect(await m15Count('orientation_acknowledged')).toBe(1);
+    expect(await m15Count('box_presented')).toBe(1);
+    expect(await m15Count('test_run')).toBe(0);
 
-    // A second distinct press records the incomplete model as it stands —
-    // completeness is a raw fact on the record, never a gate.
-    await press(page, 's');
+    // A held 1 (TEST DIAL F) runs the test exactly once on the first
+    // press; the repeats never reach the bench.
+    await page.keyboard.down('1');
+    await page.waitForTimeout(700);
+    await page.keyboard.up('1');
     await page.waitForTimeout(300);
-    m15Events = (await getEvents(page)).filter((e) =>
-      e.event_type.startsWith('proto_m15_cipher_'),
-    );
-    expect(
-      m15Events.filter((e) => e.event_type === 'proto_m15_cipher_submitted'),
-    ).toHaveLength(1);
+    expect(await m15Count('test_run')).toBe(1);
+    expect(await m15Count('wiring_recorded')).toBe(0);
 
-    const m15 = await ipModule(page, 'm15');
+    const m15 = await validityRecord(page, 'proto_m15_systems_series');
 
-    expect(m15.window_status).toBe('completed');
-    expect(m15.submission_complete).toBe(false);
-    expect(m15.required_causal_edges).toBe(0);
-    expect(m15.intervention_prediction_made).toBe(false);
+    expect(m15.entered).toBe(true);
+    expect(m15.completed).toBe(false);
 
-    // Closing the surface releases the world.
+    // Closing the surface releases the world; the series stays open.
     await press(page, 'Escape');
     await waitSurface(page, false);
+    expect(await itemStatus(page, 'M15')).toBe('open');
 
     const before = await playerX(page);
 

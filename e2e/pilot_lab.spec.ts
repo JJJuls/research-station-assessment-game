@@ -64,9 +64,11 @@ import {
   workshopToConcourse,
   workshopVia,
 } from './pilotHelpers';
+import { validityRecord } from './returnHelpers';
 
 const PHASE_OPPORTUNITY: Record<string, string> = {
-  m15: 'proto_m15_layered_cipher',
+  // Station 080 Unit 18: the two-box series at the evidence table.
+  m15: 'proto_m15_systems_series',
   m16: 'proto_m16_protocol_update',
   m17: 'proto_m17_criterion',
   m18: 'proto_m18_lattice_fault_diagnosis',
@@ -142,12 +144,31 @@ async function workSurface(page: Page) {
             surface_id: string | null;
             title: string | null;
             status: string | null;
+            frame: string;
             elements: { id: string; label: string; state: string }[];
             links: { from: string; to: string }[];
           } | null;
         }
       ).__workSurfaceProbe ?? null,
   );
+}
+
+/** The page's own M15 feature row (Unit 18), read from the export builder. */
+async function m15Row(page: Page) {
+  const json = await page.evaluate(`(async () => {
+    const mod = await import('/src/systems/index.ts');
+    const payload = mod.researchRuntime.buildExportPayload();
+
+    return JSON.stringify(
+      (payload.measurement_features ?? []).find((row) => row.item_id === 'M15') ?? null,
+    );
+  })()`);
+
+  return JSON.parse(json as string) as {
+    disposition: string;
+    value: unknown;
+    missing_reason: string | null;
+  } | null;
 }
 
 async function playerX(page: Page): Promise<number> {
@@ -261,18 +282,22 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
 
     const visibleText: string[] = [];
 
-    // Phase 1 — evidence table (work surface): distinct surface, modal.
+    // Phase 1 — evidence table (work surface; Station 080 Unit 18: the two
+    // relay boxes in the wide frame): distinct surface, modal; opened and
+    // left at the orientation card.
     await openBench(page, PILOT.lab.evidenceTable, '__workSurfaceProbe');
 
     const table = (await workSurface(page))!;
 
     expect(table.surface_id).toBe('m15_evidence_table');
-    expect(
-      table.elements.filter((e) => e.id.startsWith('source_')),
-    ).toHaveLength(4);
-    expect(table.elements.filter((e) => e.id.startsWith('node_'))).toHaveLength(
-      5,
-    );
+    expect(table.frame).toBe('wide');
+    expect(table.title).toBe('RELAY BOXES');
+    expect(table.elements.map((e) => e.id)).toEqual([
+      'start',
+      'orientation',
+      'help',
+      'leave',
+    ]);
     visibleText.push(
       table.title ?? '',
       table.status ?? '',
@@ -352,7 +377,7 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
     await waitDiagnosisOpen(page, false);
 
     // Entered-and-left windows stay OPEN — never auto-failed.
-    for (const id of ['m15', 'm16', 'm17', 'm18']) {
+    for (const id of ['m16', 'm17', 'm18']) {
       const validity = await ipValidity(page, PHASE_OPPORTUNITY[id]);
 
       expect(validity.entered, id).toBe(true);
@@ -360,6 +385,21 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
       expect(validity.invalid_reason, id).toBeNull();
       expect(await itemStatus(page, id.toUpperCase())).toBe('open');
     }
+
+    // M15 (Unit 18) is no longer an IP-lab module: its register record is
+    // read from the measurement validity probe, and its feature row from
+    // the page's own export — opened and left at the orientation, it is
+    // open and null `pending`, never low.
+    const m15Validity = await validityRecord(page, PHASE_OPPORTUNITY.m15);
+
+    expect(m15Validity.entered).toBe(true);
+    expect(m15Validity.completed).toBe(false);
+    expect(m15Validity.invalid_reason).toBeNull();
+    expect(await itemStatus(page, 'M15')).toBe('open');
+    expect(await m15Row(page)).toMatchObject({
+      disposition: 'pending',
+      value: null,
+    });
 
     display = await signalDisplay(page);
     expect(display?.phases_recorded).toEqual([]);
@@ -401,14 +441,15 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
 
     await enterLab(page, 'stop');
 
-    // Phase 1 stopped from the evidence table (STOP TASK) → exited/missing.
+    // Phase 1 — the relay bench (Station 080 Unit 18) has no STOP control:
+    // it is opened and left at the orientation card, so M15 stays an open,
+    // unrecorded window and its row is null `pending` — never low. The
+    // display keeps phase 1 as the next phase while the other benches are
+    // stopped around it (a stopped phase gates nothing).
     await openBench(page, PILOT.lab.evidenceTable, '__workSurfaceProbe');
-    await press(page, 'q'); // arms
-    await press(page, 'q'); // confirms
-    await page.waitForTimeout(300);
-    expect(
-      (await workSurface(page))?.elements.find((e) => e.id === 'submit')?.label,
-    ).toBe('RECORDED'); // the record view stays visible; nothing auto-ejects
+    expect((await workSurface(page))?.elements.map((e) => e.id)).toContain(
+      'start',
+    );
     await press(page, 'Escape');
     await page.waitForFunction(
       () =>
@@ -418,17 +459,22 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
       { timeout: 8000 },
     );
 
-    const m15 = await ipValidity(page, PHASE_OPPORTUNITY.m15);
+    const m15 = await validityRecord(page, PHASE_OPPORTUNITY.m15);
 
     expect(m15.entered).toBe(true);
-    expect(m15.invalid_reason).toBe('participant_absent');
-    expect(await itemStatus(page, 'M15')).toBe('missing');
+    expect(m15.completed).toBe(false);
+    expect(m15.invalid_reason).toBeNull();
+    expect(await itemStatus(page, 'M15')).toBe('open');
+    expect(await m15Row(page)).toMatchObject({
+      disposition: 'pending',
+      value: null,
+    });
 
-    // The display counts a stopped phase as recorded (neutral), never as low.
+    // The display: M15 unrecorded, so phase 1 stays the next phase.
     let display = await signalDisplay(page);
 
-    expect(display?.phases_recorded).toEqual(['m15']);
-    expect(display?.next_phase).toBe('m16');
+    expect(display?.phases_recorded).toEqual([]);
+    expect(display?.next_phase).toBe('m15');
 
     // Phase 2 still opens fully — a stopped phase gates nothing — and is
     // stopped the explicit two-step way (STOP → confirm), then left.
@@ -476,9 +522,15 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
     expect(m17.entered).toBe(false);
     expect(await itemStatus(page, 'M17')).toBe('pending');
 
+    // M15 stays unrecorded (left open, never stopped): the display counts
+    // the two stopped phases as recorded (neutral) and keeps phase 1 next.
     display = await signalDisplay(page);
-    expect(display?.phases_recorded).toEqual(['m15', 'm16', 'm18']);
-    expect(display?.next_phase).toBe('m17');
+    expect(display?.phases_recorded).toEqual(['m16', 'm18']);
+    expect(display?.next_phase).toBe('m15');
+    expect(await m15Row(page)).toMatchObject({
+      disposition: 'pending',
+      value: null,
+    });
 
     // Fail-forward: stopped phases never block the route.
     await openPromptAt(page, PILOT.lab.kai, {

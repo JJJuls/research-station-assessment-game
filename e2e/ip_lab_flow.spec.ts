@@ -163,7 +163,9 @@ test.describe('information processing lab — orientation terminal', () => {
       events.filter((event) => event.event_type.startsWith('proto_')),
     );
     expect(
-      events.some((event) => /^proto_m1[3-8]_/.test(event.event_type)),
+      events.some((event) =>
+        /^(proto_m1[3-8]_|secondary_m15_cipher_)/.test(event.event_type),
+      ),
     ).toBe(false);
 
     expectNoRuntimeErrors(errors);
@@ -503,7 +505,7 @@ test('complete laboratory playthrough: every opportunity valid in one session (t
   for (const id of [
     'proto_ip_terminal_tutorial',
     'proto_m14_packet_saturation',
-    'proto_m15_layered_cipher',
+    'secondary_m15_layered_cipher',
     'proto_m16_protocol_update',
     'proto_m17_criterion',
     'proto_m13_network_series',

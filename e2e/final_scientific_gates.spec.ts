@@ -257,21 +257,41 @@ test.describe('final scientific gates (evidence-led pilot v2)', () => {
     }));
   }
 
-  test('U8-13: proto_m15_layered_cipher is reachable from exactly one module on the participant route', () => {
+  test('U8-13 (re-expressed in U18): the frozen v2 id is declared only by the unimported v2 module; the cipher keeps its secondary identity off the route; the M15 series opportunity has exactly one declarer', () => {
     const src = sourcesUnder('src');
-    const declaring = src.filter(({ text }) =>
-      /OPPORTUNITY_ID = 'proto_m15_layered_cipher'/.test(text),
-    );
+    const sceneFiles = src.filter(({ file }) => file.startsWith('src/scenes/'));
 
-    // Two modules still declare the id (legacy cipher + causal model)…
-    expect(declaring.map((entry) => entry.file).sort()).toEqual([
-      'src/informationProcessing/m15CausalModel.ts',
-      'src/informationProcessing/m15LayeredCipher.ts',
-    ]);
+    // The frozen v2 id `proto_m15_layered_cipher` keeps its v2 meaning and
+    // is declared only by the v2 causal-model module…
+    expect(
+      src
+        .filter(({ text }) =>
+          /OPPORTUNITY_ID = 'proto_m15_layered_cipher'/.test(text),
+        )
+        .map((entry) => entry.file),
+    ).toEqual(['src/informationProcessing/m15CausalModel.ts']);
 
-    // …but the legacy cipher module is imported ONLY by the legacy
-    // (developer-alias) information-processing lab, never by the pilot
-    // route, so a participant can only ever meet the causal model.
+    // …which no scene imports any more (nor its surface model).
+    for (const module of ['m15CausalModel', 'signalSurfaceModels']) {
+      expect(
+        sceneFiles
+          .filter(({ text }) => new RegExp(`${module}'`).test(text))
+          .map((entry) => entry.file),
+        module,
+      ).toEqual([]);
+    }
+
+    // The legacy cipher now declares only its SECONDARY identity and is
+    // imported only by the developer-alias information-processing lab,
+    // never by the pilot route or the Diagnostics Laboratory.
+    expect(
+      src
+        .filter(({ text }) =>
+          /OPPORTUNITY_ID = 'secondary_m15_layered_cipher'/.test(text),
+        )
+        .map((entry) => entry.file),
+    ).toEqual(['src/informationProcessing/m15LayeredCipher.ts']);
+
     const importers = src.filter(
       ({ file, text }) =>
         file !== 'src/informationProcessing/m15LayeredCipher.ts' &&
@@ -284,7 +304,24 @@ test.describe('final scientific gates (evidence-led pilot v2)', () => {
     expect(
       src.some(
         ({ file, text }) =>
-          file.startsWith('src/pilot/') && /m15LayeredCipher/.test(text),
+          (file.startsWith('src/pilot/') ||
+            file === 'src/scenes/DiagnosticsLaboratoryScene.ts') &&
+          /m15LayeredCipher/.test(text),
+      ),
+    ).toBe(false);
+
+    // The route's M15 opportunity is declared by exactly one module, and
+    // no primary family prefix covers the cipher's secondary family.
+    expect(
+      src
+        .filter(({ text }) =>
+          /OPPORTUNITY_ID = 'proto_m15_systems_series'/.test(text),
+        )
+        .map((entry) => entry.file),
+    ).toEqual(['src/pilot/windows/m15SystemsContent.ts']);
+    expect(
+      primaryFamilyPrefixes().some((prefix) =>
+        'secondary_m15_cipher_'.startsWith(prefix),
       ),
     ).toBe(false);
   });

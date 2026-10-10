@@ -36,12 +36,6 @@ import Phaser from 'phaser';
 import { Depth, DepthLayer, key } from '../constants';
 import { m13LatticeWindowStatus } from '../informationProcessing/m13PipeNetwork';
 import {
-  declareM15Causal,
-  leaveM15Causal,
-  m15CausalWindowStatus,
-  openM15Causal,
-} from '../informationProcessing/m15CausalModel';
-import {
   declareM16,
   m16WindowStatus,
 } from '../informationProcessing/m16ProtocolUpdate';
@@ -90,7 +84,18 @@ import {
   presentM11Offer,
   resolveM11,
 } from '../pilot/windows/m11Custody';
-import { m15CausalSurfaceModel } from '../pilot/windows/signalSurfaceModels';
+import {
+  bindM15Surface,
+  closeM15Surface,
+  declareM15,
+  guardM15Reload,
+  m15ConsumesEsc,
+  m15Window,
+  openM15,
+  presentM15,
+  resumeM15Surface,
+} from '../pilot/windows/m15RelayBench';
+import { m15SurfaceModel } from '../pilot/windows/m15SurfaceModel';
 import { LAB_SPAWNS, LAB_STATIONS } from '../pilot/zoneSites';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 import { LAB_LAYOUT, LAB_SOLIDS } from '../world/layouts/laboratory';
@@ -130,8 +135,11 @@ const PHASES: readonly PhaseSpec[] = [
     bench: 'Evidence Table',
     texture: 'proc-desk-closure',
     at: LAB_STATIONS.evidenceTable,
-    status: m15CausalWindowStatus,
-    opportunityId: 'proto_m15_layered_cipher',
+    // Unit 18: the kit window's status — `closed` for every closed state
+    // (completed, closed at the review, technical failure, the reload
+    // hold-back), which `windowTerminal` reads as recorded.
+    status: () => m15Window.windowStatus(),
+    opportunityId: 'proto_m15_systems_series',
   },
   {
     id: 'm16',
@@ -249,7 +257,11 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     // Declarations (register: declared + offered; idempotent) — every
     // phase window is declared at zone entry whether or not it is entered.
     declareTutorial();
-    declareM15Causal();
+    declareM15();
+    // M15 (Unit 18): a bench opened in an earlier page load is never
+    // re-run (prior exposure recorded, technically incomplete); a later
+    // load's first laboratory entry writes the reload check.
+    guardM15Reload();
     declareM16();
     declareM17();
     declareM18Fault();
@@ -259,6 +271,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     super.create(data);
 
     this.events.on(Phaser.Scenes.Events.RESUME, () => {
+      resumeM15Surface(Date.now());
       this.refreshSignalDisplay();
     });
     // V4 (review D3-2): the bay salience follows the route stage, so the
@@ -377,12 +390,25 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
               return false;
             }
 
-            openM15Causal(Date.now());
+            // M15 (Unit 18): the two-box series in the WIDE frame (decision
+            // D-U17-2 used as is); the entry snapshot records the route
+            // stage at the open.
+            openM15(Date.now(), { stage: pilotStage() });
             openWorkSurface(this, {
               surfaceId: 'm15_evidence_table',
-              model: () => m15CausalSurfaceModel(this.surfaceHost()),
+              frame: 'wide',
+              model: () =>
+                m15SurfaceModel(bindM15Surface(this.m15SurfaceHost())),
               onClose: () => {
-                leaveM15Causal(Date.now());
+                // ESC closes an open dialog first, then the help sheet, and
+                // only then leaves — the same path as LEAVE BENCH.
+                if (m15ConsumesEsc(Date.now())) {
+                  return false;
+                }
+
+                closeM15Surface(Date.now());
+
+                return true;
               },
             });
             return false;
@@ -701,10 +727,14 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     );
   }
 
-  private surfaceHost() {
+  /** M15 (Unit 18): LEAVE BENCH / FINISH and ESC take the SAME path — pause, then close. */
+  private m15SurfaceHost() {
     return {
       now: () => Date.now(),
-      close: () => activeWorkSurface(this)?.close(),
+      close: () => {
+        closeM15Surface(Date.now());
+        activeWorkSurface(this)?.close();
+      },
       feedback: (message: string) =>
         activeWorkSurface(this)?.showFeedback(message),
     };
@@ -977,7 +1007,14 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
                 label: 'Understood.',
                 tag: 'lab_brief_ack',
                 onSelected: () => {
-                  advancePilotStage('lab_work', Date.now());
+                  const now = Date.now();
+
+                  advancePilotStage('lab_work', now);
+                  // M15 (Unit 18) [O-5]: the briefing names the evidence
+                  // table — the briefing exposure is recorded here
+                  // (decision D-U18-1, item 5): exposure only, not a bench
+                  // opening and not a question presentation.
+                  presentM15(now);
                 },
               },
             ],
@@ -998,6 +1035,8 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
                 const now = Date.now();
 
                 advancePilotStage('lab_work', now);
+                // M15 (Unit 18) [O-5]: briefing exposure only.
+                presentM15(now);
                 lapseM11Offer('lab', now);
               },
             },
@@ -1008,6 +1047,8 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
                 const now = Date.now();
 
                 advancePilotStage('lab_work', now);
+                // M15 (Unit 18) [O-5]: briefing exposure only.
+                presentM15(now);
 
                 const result = answerM11Offer('lab', true, now, 'keyboard');
 
@@ -1025,6 +1066,8 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
                 const now = Date.now();
 
                 advancePilotStage('lab_work', now);
+                // M15 (Unit 18) [O-5]: briefing exposure only.
+                presentM15(now);
                 answerM11Offer('lab', false, now, 'keyboard');
               },
             },

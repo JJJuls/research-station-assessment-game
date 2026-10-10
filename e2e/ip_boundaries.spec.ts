@@ -30,7 +30,9 @@ const FAMILIES = [
   'proto_m13_networks',
   'proto_m18_fault',
   'proto_m14_packet',
-  'proto_m15_cipher',
+  // Station 080 Unit 18: the cipher's SECONDARY identity (the v2
+  // `proto_m15_cipher` is declared only by the unimported v2 module).
+  'secondary_m15_cipher',
   'proto_m16_protocol',
   'proto_m17_syntax',
   'proto_m17_trials',
@@ -63,7 +65,7 @@ test.describe('scientific boundaries (source)', () => {
       ['src/informationProcessing/m13PipeNetwork.ts', 'proto_m13_networks'],
       ['src/informationProcessing/m18FaultDiagnosis.ts', 'proto_m18_fault'],
       ['src/informationProcessing/m14PacketSaturation.ts', 'proto_m14_packet'],
-      ['src/informationProcessing/m15LayeredCipher.ts', 'proto_m15_cipher'],
+      ['src/informationProcessing/m15LayeredCipher.ts', 'secondary_m15_cipher'],
       ['src/informationProcessing/m16ProtocolUpdate.ts', 'proto_m16_protocol'],
       ['src/informationProcessing/m17SyntaxAcquisition.ts', 'proto_m17_trials'],
     ];

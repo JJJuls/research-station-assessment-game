@@ -1214,6 +1214,34 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'performance_counterpart',
     direction: 'extend_occasions',
     occasions: 2,
+    // Unit 18: the approved two-box series landed at the Diagnostics
+    // Laboratory evidence table (episode 3) — ONE opportunity, two box
+    // windows in one bench episode (research-owner decision D-U18-1 of
+    // 10 October 2026). The legacy layered cipher keeps its mechanic under
+    // the secondary identity listed here and contributes nothing to the
+    // row; the v2 ids `proto_m15_layered_cipher` / `proto_m15_cipher_*`
+    // keep their v2 meaning in the frozen ledger.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m15_systems_series'],
+      windows: [
+        {
+          id: 'm15_system_s1',
+          occasion: 's1',
+          zone: 'diagnostics_laboratory',
+          episode: 3,
+        },
+        {
+          id: 'm15_system_s2',
+          occasion: 's2',
+          zone: 'diagnostics_laboratory',
+          episode: 3,
+        },
+      ],
+      family_prefixes: ['proto_m15_systems_'],
+      secondary_ids: ['secondary_m15_layered_cipher'],
+    },
+    implementation_status: 'implemented',
     summary:
       'Two novel, independently authored causal systems; after exploration and a committed model, two unseen intervention predictions per system; initial model and predictions preserved before feedback. The cipher contributes no primary score.',
     features: [
