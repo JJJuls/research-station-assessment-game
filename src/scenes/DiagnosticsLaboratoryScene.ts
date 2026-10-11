@@ -36,10 +36,6 @@ import Phaser from 'phaser';
 import { Depth, DepthLayer, key } from '../constants';
 import { m13LatticeWindowStatus } from '../informationProcessing/m13PipeNetwork';
 import {
-  declareM16,
-  m16WindowStatus,
-} from '../informationProcessing/m16ProtocolUpdate';
-import {
   declareM17,
   m17WindowStatus,
 } from '../informationProcessing/m17SyntaxAcquisition';
@@ -96,6 +92,18 @@ import {
   resumeM15Surface,
 } from '../pilot/windows/m15RelayBench';
 import { m15SurfaceModel } from '../pilot/windows/m15SurfaceModel';
+import {
+  bindM16Surface,
+  closeM16Surface,
+  declareM16Handling,
+  guardM16Reload,
+  m16ConsumesEsc,
+  m16Window,
+  openM16,
+  presentM16,
+  resumeM16Surface,
+} from '../pilot/windows/m16ProtocolConsole';
+import { m16SurfaceModel } from '../pilot/windows/m16SurfaceModel';
 import { LAB_SPAWNS, LAB_STATIONS } from '../pilot/zoneSites';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 import { LAB_LAYOUT, LAB_SOLIDS } from '../world/layouts/laboratory';
@@ -148,8 +156,11 @@ const PHASES: readonly PhaseSpec[] = [
     bench: 'Protocol Console',
     texture: 'proc-console-scenario',
     at: LAB_STATIONS.protocolConsole,
-    status: m16WindowStatus,
-    opportunityId: 'proto_m16_protocol_update',
+    // Unit 19: the kit window's status — `closed` for every closed state
+    // (completed, closed at the review, technical failure, the reload
+    // hold-back), which `windowTerminal` reads as recorded.
+    status: () => m16Window.windowStatus(),
+    opportunityId: 'proto_m16_handling_series',
   },
   {
     id: 'm17',
@@ -262,7 +273,11 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     // re-run (prior exposure recorded, technically incomplete); a later
     // load's first laboratory entry writes the reload check.
     guardM15Reload();
-    declareM16();
+    // M16 (Unit 19): the same rule for the protocol console — a console
+    // opened in an earlier page load is never re-run; the first laboratory
+    // entry of a later load writes the reload check.
+    declareM16Handling();
+    guardM16Reload();
     declareM17();
     declareM18Fault();
     declareM11('lab');
@@ -272,6 +287,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
 
     this.events.on(Phaser.Scenes.Events.RESUME, () => {
       resumeM15Surface(Date.now());
+      resumeM16Surface(Date.now());
       this.refreshSignalDisplay();
     });
     // V4 (review D3-2): the bay salience follows the route stage, so the
@@ -407,6 +423,46 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
                 }
 
                 closeM15Surface(Date.now());
+
+                return true;
+              },
+            });
+            return false;
+          },
+        });
+        this.registerPhaseStation(phase);
+      } else if (phase.id === 'm16') {
+        this.addStation({
+          interactionKey: 'pilotStation',
+          label: phase.bench,
+          texture: phase.texture,
+          x: phase.at.x,
+          y: phase.at.y,
+          onPromptOpened: () => {
+            this.logPhaseOpened(phase);
+
+            if (this.anyPhaseSurfaceOpen()) {
+              return false;
+            }
+
+            // M16 (Unit 19): the handling-rule administration in the WIDE
+            // frame (decision D-U17-2 used as is); the entry snapshot
+            // records the route stage at the open. The legacy terminal
+            // task is no longer served here (developer alias only).
+            openM16(Date.now(), { stage: pilotStage() });
+            openWorkSurface(this, {
+              surfaceId: 'm16_protocol_console',
+              frame: 'wide',
+              model: () =>
+                m16SurfaceModel(bindM16Surface(this.m16SurfaceHost())),
+              onClose: () => {
+                // ESC closes an open dialog first, then the help sheet, and
+                // only then leaves — the same path as LEAVE CONSOLE.
+                if (m16ConsumesEsc(Date.now())) {
+                  return false;
+                }
+
+                closeM16Surface(Date.now());
 
                 return true;
               },
@@ -740,6 +796,19 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     };
   }
 
+  /** M16 (Unit 19): LEAVE CONSOLE / FINISH and ESC take the SAME path — pause, then close. */
+  private m16SurfaceHost() {
+    return {
+      now: () => Date.now(),
+      close: () => {
+        closeM16Surface(Date.now());
+        activeWorkSurface(this)?.close();
+      },
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+    };
+  }
+
   private logPhaseOpened(phase: PhaseSpec) {
     this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
       metadata: {
@@ -1015,6 +1084,9 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
                   // (decision D-U18-1, item 5): exposure only, not a bench
                   // opening and not a question presentation.
                   presentM15(now);
+                  // M16 (Unit 19) [O-7]: the briefing names the protocol
+                  // console — exposure only (decision D-U19-1, item 7).
+                  presentM16(now);
                 },
               },
             ],
@@ -1037,6 +1109,8 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
                 advancePilotStage('lab_work', now);
                 // M15 (Unit 18) [O-5]: briefing exposure only.
                 presentM15(now);
+                // M16 (Unit 19) [O-7]: briefing exposure only.
+                presentM16(now);
                 lapseM11Offer('lab', now);
               },
             },
@@ -1049,6 +1123,8 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
                 advancePilotStage('lab_work', now);
                 // M15 (Unit 18) [O-5]: briefing exposure only.
                 presentM15(now);
+                // M16 (Unit 19) [O-7]: briefing exposure only.
+                presentM16(now);
 
                 const result = answerM11Offer('lab', true, now, 'keyboard');
 
@@ -1068,6 +1144,8 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
                 advancePilotStage('lab_work', now);
                 // M15 (Unit 18) [O-5]: briefing exposure only.
                 presentM15(now);
+                // M16 (Unit 19) [O-7]: briefing exposure only.
+                presentM16(now);
                 answerM11Offer('lab', false, now, 'keyboard');
               },
             },

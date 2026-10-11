@@ -95,7 +95,7 @@ status at this register version — updated by each unit).
 | M13  | Extend cases            | 3    | `m13_first_solutions`: networks solved on first submission / 3                                                                                                                                                                                                                                                                 | constraints, help                                                                                                                                                                                                                              | performance counterpart | v3 route: `proto_m13_network_series` — three keyed networks at the Conduit Lattice Bench (Workshop, ep 2), one immutable first response each before any feedback; results and capped practice after — implemented (U16; owner ruling D-U16-1, §5.260)            |
 | M14  | Extend packets          | 2    | `m14_correct_first_integrations`: correct first decisions / 6                                                                                                                                                                                                                                                                  | by packet, omissions, source use                                                                                                                                                                                                               | performance counterpart | v3 route: `proto_m14_integration_series` — two keyed packets at the Concourse incident desk (ep 1), one immutable first response per decision before any feedback; results after the sixth — implemented (U17; owner decisions D-U17-1 / D-U17-2, §5.275–§5.276) |
 | M15  | Extend systems          | 2    | `m15_correct_first_predictions`: correct first predictions / 4                                                                                                                                                                                                                                                                 | model correctness, exploration                                                                                                                                                                                                                 | performance counterpart | v3 route: `proto_m15_systems_series` — two relay boxes at the Laboratory evidence table (ep 3), one immutable wiring and two immutable first predictions per box before any feedback; results after the fourth — implemented (U18; decision D-U18-1, §5.291)     |
-| M16  | Standardise             | 1    | `m16_correct_first_applications`: correct first applications / 6                                                                                                                                                                                                                                                               | form, example versions                                                                                                                                                                                                                         | performance counterpart | v2-ledger route (familiarisation with feedback) — planned                                                                                                                                                                                                        |
+| M16  | Standardise             | 1    | `m16_correct_first_applications`: correct first applications / 6                                                                                                                                                                                                                                                               | form, example versions                                                                                                                                                                                                                         | performance counterpart | v3 route: `proto_m16_handling_series` — the handling rule at the Laboratory protocol console (ep 3), two worked examples, then six immutable first responses before any feedback; results after the sixth — implemented (U19; decision D-U19-1 + A1, §5.302)     |
 | M17  | Replace trial structure | 1    | `m17_criterion_trial`: {criterion_trial 3–12, attained} — the first learning trial ending a run of three consecutive correct first responses; reported whenever reached within the administered trials; (12, false, censored) after twelve without attainment; early exit without attainment = incomplete                      | `m17_sequence_baseline_transfer` (baseline 2 / learning 12 / transfer 2 first-response sequences, feedback exposures, reference sequences shown, help, demonstration reviews, per-trial records)                                               | performance counterpart | v3 route: `proto_m17_criterion` (Diagnostics Laboratory, ep 3) — implemented (U9); **criterion values not to be read until §5.87–5.88 are decided**                                                                                                              |
 | M18  | Extend diagnosis        | 3    | `m18_correct_first_diagnoses`: / 3                                                                                                                                                                                                                                                                                             | `m18_correct_consequence_predictions`: / 3                                                                                                                                                                                                     | performance counterpart | v2-ledger route (one case, no prediction) — planned                                                                                                                                                                                                              |
 | M19  | Add second challenge    | 2    | `m19_continuations`: further attempt / eligible difficulty encounters; 0–2                                                                                                                                                                                                                                                     | failed attempts, success, time                                                                                                                                                                                                                 | behavioural counterpart | v2-ledger route (one coupling) — planned                                                                                                                                                                                                                         |
@@ -162,6 +162,616 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
   pinned in `protocol.ts` beside their anchors.
 
 ## 4. As-built records (appended per unit)
+
+**Unit 19 (M16): as-built** — the handling rule at the Diagnostics Laboratory
+protocol console (bounded unit under contract `U19-CONTRACT.md`, v1 of 11
+October 2026, final 11 October 2026 with amendment A1). **Status: technical
+implementation of the approved row under research-owner decision D-U19-1
+(APPROVED 11 October 2026, against preview revision r3) with amendment A1
+(approved the same day); `m16_correct_first_applications` is a candidate
+indicator and NOT scientifically validated.** The six applications are
+repeated observations of ONE rule inside ONE console episode — never six
+independent situations; the vials are not equated in difficulty; the content
+is one authored form; a correct answer is never proof of understanding;
+teaching time, example views, help, drafts and response time are companions,
+never part of the value. Passing tests establish implementation correctness
+only, never psychometric validity or questionnaire equivalence. Parts (0)–(2)
+below were written BEFORE the series model, the adapter and the interface (the
+contract's "specify before you code"); parts (3)–(7) record the build and its
+evidence.
+
+(0) Authority. **Research-owner decision D-U19-1 — APPROVED 11 October 2026,
+with amendment A1** (an owner ruling, recorded in §5.302; not an implementer
+default and not reopened): two passive worked examples of identical structure,
+the same for every participant, before the applications (item 1); the rule,
+the two worked examples, the six vials, the four drawer options plus DON'T
+KNOW, the keys, every participant-facing string and the results explanations
+of preview r3 §3–§5 as the administered content, with the drawer confirmation
+repeating the drafted drawer — selection (a) (item 2); the complete rule card
+visible beside every vial, the worked examples closed at the boundary, earlier
+vials and answers not shown, HELP for controls only (item 3); self-paced
+reading, free movement between the examples, a confirmed boundary that closes
+teaching irreversibly (item 4); identical neutral acknowledgements and no
+correctness information before the sixth first response, then two read-only
+results pages (item 5); one form, fixed vial and option order, the `form_id` /
+`rule_version` / `examples_version` companions (item 6); the briefing-exposure
+/ voluntary non-use convention (item 7); the reload hold-back with the
+`prior_load_checked` record (item 8); one to five answers with the series open
+⇒ null `pending`, `incomplete` only at the review closure (item 9); amendment
+A1 — accurate recording language (A1-1), complete and consistent results and
+acknowledgement controls (A1-2), unambiguous double-click verification (A1-3),
+consistent approval status and documentation corrections (A1-4). The approved
+row is §2 (M16), §2b, the matrix row, addendum §3 and `registerV3.ts` (entry
+`M16`). Provenance limit: the original owner documents are not on disk and
+were not searched for again; the decision is an explicit decision for this
+implementation, not recovered wording. Rulings D-U16-1 (M13), D-U17-1 /
+D-U17-2 and the closeout ruling §5.290 (M14), and D-U18-1 (M15) are precedent
+only and approve nothing here. Each rule below carries its source: [O-n]
+decision D-U19-1 item n, [A1-n] amendment A1 part n, [A] approved row or owner
+instruction, [P] recorded precedent, [D-n] implementer default (§5.303
+onward).
+
+(1) Administration `m16-handling-v1` — **specified before the series model and
+the interface were written.**
+
+- Place and access [A][O-7][P][D-10]: the Diagnostics Laboratory protocol
+  console (phase 2 of the signal case; registry `lab.phase_m16`, its label
+  "Protocol Console" and approach unchanged; surface `m16_protocol_console`,
+  the generic `WorkSurfaceScene` in the WIDE frame of decision D-U17-2,
+  unchanged), bench label "Protocol Console", phase name "Handling protocol",
+  operational label "Signal case — protocol (Laboratory)", episode 3.
+  Optional, as today: enterable whenever no other phase surface is open; Kai's
+  dialogue text unchanged; no gate, reward, judgement or route consequence;
+  non-use never read as refusal. Every one of the FOUR `onSelected` handlers
+  of Kai's briefing acknowledgement (`lab_brief_ack` in the no-loan-offer
+  branch; `lab_brief_ack`, `lab_brief_ack_loan_accept`,
+  `lab_brief_ack_loan_decline` in the loan-offer branch) calls
+  `presentM16(now)` beside `advancePilotStage('lab_work', now)` and
+  `presentM15(now)` — briefing exposure only (the kit's `presented`), never a
+  console opening or a vial presentation. The stage at the first opening is
+  recorded in the entry snapshot. The phase order, the beacon, the wall
+  display (its "Protocol lanes" ticks once M16 is recorded), Noor's line
+  `NOOR · relay: The handling protocol is on the console.` and the case brief
+  are unchanged; the display's "recorded" state follows the M16 window's
+  closure (completed or closed). The legacy module (`m16ProtocolUpdate.ts`,
+  `protocolForms.ts`) stays in the tree UNCHANGED under its frozen v2 identity
+  (`proto_m16_protocol_update`, `proto_m16_protocol_*`, `m16_protocol_w1`,
+  entry `m16-protocol-v1`), reachable only through the developer alias
+  `?scene=information_processing_lab`; the laboratory scene no longer imports
+  it; the v3 extractor never reads its family; the registry's descriptive
+  `opens` / window label for `lab.phase_m16` stay stale (U24 backlog). -
+  Content, order and form [O-2][O-6][A1-1]: the content exactly as preview r3
+  §3–§5 — the first-opening card, the rule card, the worked examples `m16_e1`
+  / `m16_e2`, the boundary confirmation, the vials `m16_v1` … `m16_v6` with
+  options `m16_v<k>_d1` … `_d4` in the fixed order DRAWER 1–4, the keys, the
+  confirmations, the acknowledgements, the help sheet, the results
+  explanations and the closed records; versions `m16-handling-v1`
+  (administration), `m16-form-1` (form), `m16-rule-v1` (rule),
+  `m16-examples-v1` (worked examples). Line breaks are the preview's (fixed);
+  wording, letters, numbers, order and option order never change; the
+  participant strings live in one pure content module
+  (`m16HandlingContent.ts`); no questionnaire wording anywhere. One form,
+  fixed vial order v1 → v6; realised order always equals assigned order; no
+  counterbalancing. Limitation documented: vial content and position are
+  confounded; the likely easiest vial (v1, no mark) comes first. - Objective
+  access while answering [O-3]: the rule card (§3.2 of the preview, nine fixed
+  lines) in the left column of every example, vial and acknowledgement view;
+  the current vial's label; the four option tiles; the status line; HELP
+  (controls only). The worked examples are never rendered after
+  `teaching_closed`; earlier vials' labels and answers are not shown; nothing
+  is hidden on request, so no "consulted the instructions" companion exists. -
+  First opening [D-2]: the first-opening card (preview §3.1, title
+  `HANDLING RULE`, seven lines) with SHOW EXAMPLE 1, HELP and LEAVE CONSOLE;
+  activating SHOW EXAMPLE 1 is recorded (`intro_acknowledged`) and presents
+  worked example 1 (`example_viewed`, navigation `first`); leaving before it
+  shows the card again at the next opening. - Teaching [O-1][O-4][A1-1]:
+  worked example 1 then worked example 2 (subtitle `Worked example N of 2`,
+  status `Worked examples: read them at your own pace.`), each the rule card
+  followed by the seven-line example block of preview §4 in the left column
+  and
+  `Read how the rule places this vial. No answer is requested on this page.`
+  in the right column; NEXT EXAMPLE (example 1) and BACK TO EXAMPLE 1 (example
+  2, right column) move between them any number of times; every view is logged
+  (`example_viewed` with `example_id`, `example_index`, `view_index` per
+  example and `navigation` `first` | `next` | `back` | `resume`) as an
+  interaction, never as an answer; nothing in teaching is a response; no
+  minimum reading time, no comprehension check, no practice vial. Teaching
+  time (`teaching_active_ms`), the views per example and the back-navigations
+  are companions only. - The boundary [O-4]: START THE SIX VIALS (example 2
+  only) opens the boundary confirmation `Start the six vials?` /
+  `The worked examples close and cannot be opened again.` /
+  `The handling rule stays on screen.` with `START [ENTER]` and
+  `KEEP READING [ESC]` (`teaching_close_requested`); only a fresh confirming
+  press — under the same 400 ms rule as the vial confirmations [D-4] — records
+  `teaching_closed` once (`example_views` per example, `back_navigations`,
+  `teaching_active_ms`, `help_consults_before`, `input_mode`) and presents
+  vial 1; KEEP READING / ESC returns to example 2 and records
+  `teaching_close_cancelled`; leaving in the dialog cancels it
+  (`teaching_close_cancelled`, reason `panel_left`). After `teaching_closed`
+  no view renders an example. - A vial [O-2][O-3][D-3][A1-1]: left the rule
+  card and the two-line block `VIAL N OF 6` /
+  `Label: site <SITE> · depth <D> m · marks: <none | STAR | RING | STAR, RING>`;
+  right `Which drawer does vial N go in? Choose a drawer, then record it.`,
+  the four tiles `DRAWER 1 [1]` … `DRAWER 4 [4]`, the opener
+  `RECORD DRAWER [R]`, `DON'T KNOW [N]`; subtitle `Vial N of 6`; status
+  `Use the handling rule. Choose a drawer, then record it.`; bottom row
+  `HELP [H]` and `LEAVE CONSOLE`. Activating a tile (pointer, ENTER / SPACE on
+  focus, or 1–4) makes it the draft, another replaces it, the same again
+  clears it; drafts are logged (`option_drafted`, `option_id` null when
+  cleared, `previous_option_id`) as interactions, never as a response, and
+  survive leaving and returning. Only confirming records an answer. -
+  Commitment [O-2][A1-3][D-4][P §5.210, §5.262, §5.279, §5.294]: the opener
+  `RECORD DRAWER [R]` with a draft opens `Record DRAWER <n> for vial N?` /
+  `It cannot be changed afterwards.` with `RECORD DRAWER [ENTER]` and
+  `KEEP WORKING [ESC]` — the dialog repeats the drafted drawer (selection
+  (a)); `DON'T KNOW [N]` opens `Record DON'T KNOW for vial N?` /
+  `It cannot be changed afterwards.` with `RECORD [ENTER]` and
+  `KEEP WORKING [ESC]` whatever the draft; the opener without a draft shows
+  the neutral line `Choose a drawer first.` and records `commit_without_draft`
+  only. Only the dialog's confirm control records an answer, and only a FRESH
+  confirming press: a press inside the first 400 ms after the dialog appeared,
+  the press that opened it, a held key or an auto-repeat never confirms (a
+  held key or auto-repeat is dropped by the unchanged surface before the host,
+  `event.repeat`, and is never recorded; `commit_press_refused`, reason
+  `dialog_settling`, records the non-fresh presses that reach the host, once
+  per dialog, the count carried on the record); a doubled confirmation records
+  one response. Consequently a double click on the OPENER records zero first
+  responses (the dialog opens with its 400 ms window; the second click lands
+  on no control or is refused and logged), and a fresh press of the CONFIRM
+  after the interval records exactly one `first_response`, a duplicate press
+  immediately after it landing on the acknowledgement inside its settle and
+  changing nothing. The confirm control is never at the screen position of the
+  control that opened the dialog (dialog controls at panel (200, 250) /
+  (466, 250); every opener at x ≥ 738 or in the bottom row). While a dialog or
+  the help sheet is open the model renders only the header, the status line
+  and that dialog or sheet; the confirm (or CLOSE HELP) control is the first
+  focusable element; 1–4 / R / N do nothing. KEEP WORKING / ESC closes the
+  dialog without a response (`commit_cancelled`); a cancel inside 400 ms of
+  the dialog opening is ignored and not recorded (the dialog stays). - DON'T
+  KNOW [A]: an incorrect first response whatever the draft (`response_kind`
+  `dont_know`, `option_id` null, `correct` false); visually and textually
+  distinct from LEAVE CONSOLE (right column against the bottom row) and never
+  adjacent to it; leaving never records DON'T KNOW. - First response [A]:
+  written once (`first_response`, phase `measurement`: `response_kind`
+  `option` | `dont_know`, `option_id`, `correct`, `key_option_id`,
+  `drafts_before`, `help_consults_before`, `active_ms`, `focused_ms` when the
+  focused clock is available, `input_mode`, `refused_presses`,
+  `draft_at_commit`) and immutable: no later act, reopening, results view,
+  reload or closure changes or duplicates it; a second RECORD DRAWER, DON'T
+  KNOW after an answer and an answer after DON'T KNOW never create a second
+  one. - Acknowledgement [O-5][A1-2]: IDENTICAL for every response whatever
+  its kind or correctness — right column `Vial N recorded.`, status
+  `N of 6 vials recorded.` (counting recorded answers, never correct ones),
+  primary NEXT VIAL (vials 1–5) / SHOW RESULTS (vial 6), and in the bottom row
+  `HELP [H]` and `LEAVE CONSOLE`; the rule card and the vial's label stay; the
+  recorded drawer is not repeated; same line, same controls, same timing, same
+  layout, no sound (`response_acknowledged`, `line_id` `vial_recorded`,
+  `next_control`). The next vial is presented only from the acknowledgement
+  (NEXT VIAL), so each vial's presentation follows the previous vial's first
+  response. Nothing before the sixth first response reveals correctness — no
+  colour, glyph, sound, counter, tally or wording differs with the correctness
+  of any answer. - Settle on EVERY view transition [P §5.290 (b),
+  §5.294][D-4][A1-2]: a press that arrives within 400 ms after a view appeared
+  — the first-opening card's SHOW EXAMPLE 1, an example view, the boundary
+  confirmation's restored example 2, a vial's first view, an acknowledgement,
+  each results page (its NEXT / BACK / FINISH / HELP), the help sheet and the
+  view restored by CLOSE HELP — changes nothing (no draft, navigation, close,
+  commit request, help consult or `results_shown`); CLOSE HELP and a cancelled
+  dialog re-arm the restored view's settle; an ESC inside the settle of a view
+  leaves nothing; an early press on anything but a confirmation is ignored and
+  not recorded (no suffix exists for it); inside a confirmation it is the
+  refused press above. So no carried press — the second ENTER, the second
+  click of a double click, a repeated key — drafts, requests, confirms,
+  navigates or closes in a newly opened view. - Results [O-5][A1-2]: only when
+  all six first responses are recorded; a partial or review-closed series
+  never shows results. SHOW RESULTS opens page 1 (title
+  `RESULTS — VIALS 1-3 OF 6`; status
+  `Your answers are fixed. This view only shows them.`; first line
+  `All six vials are recorded.`; per vial `VIAL k — <label>`,
+  `Your recorded drawer: DRAWER n` or `DON'T KNOW`
+  `· Rule's drawer: DRAWER m`, and the two explanation lines of preview §5,
+  verbatim; no tally, praise, blame or reference to the participant beyond
+  "your recorded drawer") with HELP, FINISH and NEXT; NEXT opens page 2
+  (`RESULTS — VIALS 4-6 OF 6`, vials 4–6) with HELP, FINISH and BACK; BACK
+  returns to page 1; NEXT and BACK never share a position (x 778 / x 654).
+  FINISH and ESC close the results surface from either page (through the
+  model's settle, so a press carried from NEXT or BACK closes nothing).
+  Completion is established by the sixth first response
+  (`first_responses_completed`), whichever results pages are later viewed;
+  FINISH from page 1 is legitimate and leaves page 2 unrecorded.
+  `results_shown` (phase `feedback`, `page`, `vial_ids`) is written only when
+  a page is actually displayed, and only at its first display — never on a
+  re-display, a BACK to a page already shown or a CLOSE HELP restore. HELP
+  opens the help sheet; CLOSE HELP returns to the same page with all state
+  preserved and re-arms its settle. No results act changes a response.
+  Reopening a completed console shows page 1 again, read-only; a page first
+  displayed on a reopening is recorded then, once. - Help [D-5][A1-2]: HELP (H
+  or the button) on the first-opening card, both examples, every vial view,
+  every acknowledgement and both results pages — never while a dialog is open;
+  the preview §3.8 sheet (title `HOW THE CONSOLE WORKS`, seven lines),
+  informational, naming no vial and no correctness; every consult logged
+  (`help_consulted`) with the phase and the view it was opened on (`intro`,
+  `example_1`, `example_2`, `vial_<k>`, `ack_<k>`, `results_1`, `results_2`) —
+  an interaction, never an answer; CLOSE HELP (H or the button) or ESC returns
+  to the same view with all state (example, vial, draft, results page)
+  preserved and re-arms its settle. - Leaving and returning [P]: ESC closes,
+  in order, an open dialog (the boundary's or a vial's), then the help sheet,
+  then leaves; LEAVE CONSOLE leaves; both take the SAME path (window pause,
+  clock pause, surface close — the `m15SurfaceHost` / `m14SurfaceHost`
+  precedent). Leaving keeps everything (phase, example view, vial, draft,
+  answers; `panel_left`); returning (`series_reopened`, and in teaching an
+  `example_viewed` with navigation `resume`) never presents a vial again and
+  never starts a new trial; leaving in a dialog cancels the dialog and records
+  no response. There is no STOP control. HELP and LEAVE CONSOLE are reachable
+  through actual controls by pointer and by keyboard on every view where the
+  preview lists them, and HELP and FINISH on both results pages (the results
+  pages have no LEAVE CONSOLE; FINISH or ESC closes them). - Review closure
+  [P][O-7][O-9][D-6]: at the Utility Deck record closure (`reviewClosure.ts` →
+  `closeM16AtReview`, after `closeM15AtReview`) a series opened and not
+  complete (first-opening card, teaching, or 0–5 vials answered) closes as
+  `closed_at_review` (system; `series_closed_at_review` with the closure
+  snapshot, then the kit's `window_closed`, censored): recorded answers kept,
+  unanswered vials missing, no results afterwards; the console then opens as
+  the closed record `Station record closed — the console keeps its record.` /
+  `N of 6 vials recorded.` with LEAVE CONSOLE; while a closed record (review
+  or reload) is shown no answer can be given and no `proto_m16_handling_`
+  event is written. A completed series is not reclosed. A never-opened console
+  is recorded absent by the kit's `markAbsent` (`briefed_not_opened` when the
+  briefing was acknowledged, otherwise `not_briefed_not_opened`), never
+  `declined`. - Reload [O-8][P §5.14, §5.290 (a)]: an opening of this
+  administration in an earlier page load of the session identity ⇒ the console
+  is never re-run in the new load (prior exposure recorded; the kit's
+  `technical_failure` with a detail beginning `reload`; the closed record
+  `This console was already used in this session. Its record is kept; no further answers can be given here.`;
+  the load's row `interrupted`; the earlier events immutable in
+  `prior_page_load_events`), also when the earlier load completed all six. At
+  the first `guardM16Reload` run of a later page load (the Diagnostics
+  Laboratory's `create()`) the adapter writes `prior_load_checked` once per
+  load (the §5.290 (a) fields: `page_load_index`,
+  `prior_page_load_event_count`, `prior_opening_found`,
+  `prior_briefing_found`, `history_continuous`,
+  `prior_opening_absence_established`), before the hold-back record when an
+  opening is found; an established absence with continuous history reads the
+  load exactly as a first load. A console never opened before the reload runs
+  normally. Limitations carried unchanged from §5.290 (a): the check is made
+  only where the console becomes available; continuity is read from recovered
+  sequence numbers and the store's meta record and cannot reveal a lost tail
+  when the meta record survived — prior exposure after a reload is uncertain,
+  never proven absent; after a reload Kai's briefing replays and the earlier
+  briefing is reported in the check, never counted as this load's exposure. -
+  Faults: a fault while the series is open (card, teaching, vials) closes it
+  as a technical failure through the window kit (the answers so far kept in
+  the closure snapshot) and leaves the laboratory usable; the console then
+  opens as the record
+  `The console has a fault and is closed. Recorded answers are kept.` (D-11,
+  implementer wording); a fault after completion is recorded (phase
+  `feedback`) and never changes the scored evidence; a dialog never stays
+  stuck after a cancelled callback (every host callback is guarded). -
+  Completion [P]: the sixth first response writes `first_responses_completed`
+  (closure snapshot, `closure_reason` `completed`) and the kit's
+  `window_closed` (exit `completed`); the scored phase has no later closure
+  event, and nothing afterwards (results, leaving, the review, a fault)
+  reopens or changes it. - Layout [P D-U17-2][D-11]: the shared surface
+  launched with `frame: 'wide'` — panel over the whole visible design area
+  (1050 × 588 design px at (−125, 6), identical at the 1280 × 720 and 1920 ×
+  1080 canvases); 16 px design text everywhere, title 20 px; the rule card at
+  panel (12, 90), 714 × 196; the example or vial block at (12, 294) in the
+  same column; the 300 px right column at panel x 738 (the question block 72
+  high at y 90, the four tiles 34 high with 4 px gaps from y 170, RECORD
+  DRAWER at y 330, DON'T KNOW at y 384); the bottom row at panel y 462 (HELP x
+  12, LEAVE CONSOLE x 184, the view's primary control x 778 w 260, CLOSE HELP
+  x 388; on the results pages HELP x 12, FINISH x 184 w 180, NEXT x 778 w 260
+  on page 1, BACK x 654 w 112 on page 2); the confirmation dialogs alone with
+  the header and the status line, text at (200, 170) and controls at
+  (200, 250) / (466, 250) ending at x 720 — left of the right column that
+  holds every opener and clear of the bottom row; the results explanations on
+  fixed lines; one-line footer; at least 30 design px between the lowest
+  control and the feedback line's top under the default font and under forced
+  Courier New and Lucida Console (measured in the real game, R7); never
+  smaller text, clipped or re-wrapped wording, scrolling or a larger minimum
+  window. Keyboard and pointer each reach every control.
+
+(2) The rule, the worked examples, the vials and the keys [O-2] — the approved
+content of preview r3, transcribed unchanged; their logical correctness
+establishes no empirical validity. "Unseen" as preview §5.2: no vial shares a
+(site, depth class, marks) pattern with a worked example or with another vial,
+and no vial repeats an example's depth; the label FORMAT is the examples'
+format by design (item 1).
+
+- The rule (`m16-rule-v1`; the rule card of preview §3.2, nine fixed lines):
+  the 2 × 2 grid — ORLA column / VESK column, TOP row / BOTTOM row, DRAWER 1
+  (TOP, ORLA), DRAWER 2 (TOP, VESK), DRAWER 3 (BOTTOM, ORLA), DRAWER 4
+  (BOTTOM, VESK); `1 Column: the vial's site, ORLA or VESK.`;
+  `2 Row: depth under 40 m — TOP row. Depth 40 m or more — BOTTOM row.`;
+  `3 STAR mark: use the other row.`; `4 RING mark: use the other column.`;
+  ` A vial with both marks: apply both.` - The worked examples
+  (`m16-examples-v1`; identical seven-line structure, each with exactly one
+  mark present): `m16_e1` — `Label: site ORLA · depth 18 m · marks: STAR` /
+  `1 Site ORLA — ORLA column.` / `2 18 m is under 40 m — TOP row.` /
+  `3 STAR mark — other row: BOTTOM row.` /
+  `4 No RING mark — column stays ORLA.` /
+  `Result: BOTTOM row, ORLA column — DRAWER 3.`; `m16_e2` —
+  `Label: site VESK · depth 63 m · marks: RING` / `1 Site VESK — VESK column.`
+  / `2 63 m is 40 m or more — BOTTOM row.` /
+  `3 No STAR mark — row stays BOTTOM.` /
+  `4 RING mark — other column: ORLA column.` /
+  `Result: BOTTOM row, ORLA column — DRAWER 3.` Both end in DRAWER 3 (a
+  consequence of the chosen coverage — both sites, both depth classes, each
+  mark present and absent, one mark per example); no worked example shows a
+  no-mark or a two-mark vial. - The six vials (`m16-form-1`; fixed order; keys
+  by id): `m16_v1` `site ORLA · depth 12 m · marks: none` — KEY `m16_v1_d1`
+  (DRAWER 1) — results lines `ORLA column; 12 m is under 40 m — TOP row.` /
+  `No marks. DRAWER 1.`; `m16_v2` `site VESK · depth 34 m · marks: STAR, RING`
+  — KEY `m16_v2_d3` (DRAWER 3) — `VESK column; 34 m is under 40 m — TOP row.`
+  / `STAR — other row: BOTTOM. RING — other column: ORLA. DRAWER 3.`; `m16_v3`
+  `site ORLA · depth 46 m · marks: RING` — KEY `m16_v3_d4` (DRAWER 4) —
+  `ORLA column; 46 m is 40 m or more — BOTTOM row.` /
+  `RING — other column: VESK. DRAWER 4.`; `m16_v4`
+  `site VESK · depth 71 m · marks: STAR, RING` — KEY `m16_v4_d1` (DRAWER 1) —
+  `VESK column; 71 m is 40 m or more — BOTTOM row.` /
+  `STAR — other row: TOP. RING — other column: ORLA. DRAWER 1.`; `m16_v5`
+  `site VESK · depth 27 m · marks: STAR` — KEY `m16_v5_d4` (DRAWER 4) —
+  `VESK column; 27 m is under 40 m — TOP row.` /
+  `STAR — other row: BOTTOM. DRAWER 4.`; `m16_v6`
+  `site ORLA · depth 58 m · marks: STAR, RING` — KEY `m16_v6_d2` (DRAWER 2) —
+  `ORLA column; 58 m is 40 m or more — BOTTOM row.` /
+  `STAR — other row: TOP. RING — other column: VESK. DRAWER 2.` Key sequence
+  1, 3, 4, 1, 4, 2 (no consecutive repeat; TOP / BOTTOM 3 / 3; ORLA / VESK
+  column 3 / 3; drawers 1 and 4 keyed twice, 2 and 3 once); every depth at
+  least 6 m from the 40 m threshold; every rule part (both sites, both depth
+  classes, no mark, STAR only, RING only, both marks) required by at least one
+  vial; blind-choice chance 1/4 per vial. - What each incorrect choice
+  represents (preview §5.3, descriptive, never a claim about why a participant
+  chose it): a wrong drawer differs from the key in the row (step 2 or STAR
+  handled differently), the column (step 1 or RING handled differently) or
+  both; the extractor's per-vial `error_kind` (`row` | `column` |
+  `row_and_column`; null for the key and for DON'T KNOW) is recomputed from
+  the content — v1 (key 1): 2 column, 3 row, 4 both; v2 (key 3): 1 row, 2
+  both, 4 column; v3 (key 4): 1 both, 2 row, 3 column; v4 (key 1): 2 column, 3
+  row, 4 both; v5 (key 4): 1 both, 2 row, 3 column; v6 (key 2): 1 column, 3
+  both, 4 row. The disclosed cues of preview §7 (v1 answered correctly by 16
+  of the 23 listed non-guess strategies and passing through worked example 1
+  as an intermediate state; the strongest listed misreadings — swapped mark
+  meanings and the absolute-direction readings — each at 4 of 6, so 4 of 6
+  does not separate slips from one consistent misreading; three of six vials
+  needing both marks; the rule card visible throughout, so a ceiling is
+  plausible) travel with the content and are computed and REPORTED by the pure
+  spec — reproduced against the preview's figures, never asserted as a
+  ceiling.
+
+(3) As built — the console (`src/pilot/windows/m16HandlingContent.ts` — the
+administration exactly as the preview: ids, the four versions, the nine
+rule-card lines, the two worked examples with their seven lines and result
+drawers, the six vials with their labels as data (site, depth, marks), the
+four options per vial in fixed order, the keys as approved data, the two
+results explanation lines per vial, the `error_kind` recount from the 2 × 2
+grid, and every participant-facing string; `m16HandlingModel.ts` — the series
+state machine (card, teaching views and navigation, the boundary and its
+confirmation, vial order, drafts, the confirmations and the fresh-press rule,
+the settle on every transition, the first-response freeze, acknowledgements,
+completion, results access and pages, help, review closure, technical failure,
+hold-back), the entry and closure snapshots, the reload predicate and the
+`prior_load_checked` builder; `m16ProtocolConsole.ts` — the window adapter
+(`ItemWindow` item `M16`, opportunity `proto_m16_handling_series`, window
+`m16_handling_w1`, family `proto_m16_handling_`, version `m16-handling-v1`,
+scene `diagnostics_laboratory`, object `m16_protocol_console`), the log sink
+with the protocol stamp, the optional focused clock, the reload guard with the
+once-per-load check, `presentM16`, `declareM16Handling`, `guardM16Reload`,
+`openM16`, the surface commands, `m16ConsumesEsc`, `closeM16Surface`,
+`resumeM16Surface`, `closeM16AtReview`, `bindM16Surface`, `m16Window`, a test
+reset; `m16SurfaceModel.ts` — the pure work-surface model builder for the wide
+frame). The views: the first-opening card (SHOW EXAMPLE 1, HELP, LEAVE
+CONSOLE); a worked example — header `HANDLING RULE` / `Worked example N of 2`,
+the status line, the rule card and the example block in the left column, the
+teaching note in the right column (a neutral landing), NEXT EXAMPLE
+(example 1) or START THE SIX VIALS with BACK TO EXAMPLE 1 (example 2), HELP
+and LEAVE CONSOLE in the bottom row; the boundary confirmation drawn alone
+with the header and the status line; a vial — header `HANDLING RULE` /
+`Vial N of 6`, the status line, the rule card and the two-line vial block in
+the left column, the question (a neutral landing), the four drawer tiles,
+`RECORD DRAWER [R]` and `DON'T KNOW [N]` in the right column, HELP and LEAVE
+CONSOLE in the bottom row; the drawer and DON'T KNOW confirmations drawn
+alone; the acknowledgement with NEXT VIAL / SHOW RESULTS, the rule card, the
+vial block, `Vial N recorded.`, HELP and LEAVE CONSOLE; the two results pages
+(HELP, FINISH, NEXT on page 1; HELP, FINISH, BACK on page 2); the help sheet
+alone with CLOSE HELP; the closed records. Every activation calls one adapter
+command with its input mode (pointer and keyboard converge); hotkeys 1–4
+(drawers), R, N, H; ENTER / SPACE on the focused element; every control is
+reachable by pointer and by keyboard. The 400 ms settle of every view
+transition and the fresh-press rule live in the model (`view_shown_at_ms`,
+`pending_commit.opened_at_ms`); a held key never reaches the model (the
+unchanged surface drops `event.repeat`); the adapter consumes an ESC that
+arrives inside the settle of a view (D-4), so a carried ESC never leaves.
+
+(4) Events and feature. Family `proto_m16_handling_`, ONE opportunity
+`proto_m16_handling_series`, window `m16_handling_w1`, administration
+`m16-handling-v1`, form `m16-form-1`, rule `m16-rule-v1`, worked examples
+`m16-examples-v1`; suffixes and fields in the addendum, §2 "U19". All
+PROVISIONAL candidates; nothing enters `ScoringManager`, `SummaryScope`, the
+canonical context or the return URL; the v2 ids `proto_m16_protocol_update` /
+`proto_m16_protocol_*` / `m16_protocol_w1` / `m16-protocol-v1` are retired
+from the route and not written; the legacy family is read by no extractor.
+`m16_correct_first_applications` (primary, the only M16 row; `registerV3.ts`
+entry `M16` now carries the explicit v3 route — the opportunity, one window
+`m16_handling_w1` with occasion null in zone `diagnostics_laboratory`, episode
+3, the family prefix and `secondary_ids: []` — and `implemented`; the feature
+row, the planned denominator 6, the denominator kind, the range, the
+direction, the coverage label, the independence, the operational label and the
+summary unchanged): value = numerator = vials whose FIRST response is the
+keyed drawer; denominator = vials with a first response in the current page
+load; planned denominator 6. DON'T KNOW and a wrong drawer are in the
+denominator and not in the numerator; a vial without a first response is
+missing, never incorrect, and is listed apart from DON'T KNOW; teaching
+exposure, help, drafts, time and input mode never change the numerator or the
+denominator. The extractor (`src/measurement/features/m16.ts`, read-only,
+current load only) recounts the value from the `first_response` events against
+the content key and compares it with each event's `correct` flag and with the
+closure snapshot. Dispositions and the integrity list: addendum §2 "U19" and
+§5.307, §5.309; the reload-before-opening distinction: §5.290 (a) applied to
+M16. Components (companions beside the value, never inside it): the versions
+(`administration_version`, `form_id`, `rule_version`, `examples_version`), the
+exposure stages kept distinct (`briefed`, `console_opened`,
+`intro_acknowledged`, `examples_viewed`, `teaching_closed`, `vials_presented`,
+`never_opened_reason`), `teaching` (`examples_viewed`, `back_navigations`,
+`teaching_active_ms`, `teaching_closed`), `reload_check`, the assigned and
+realised vial orders, `observations_share_one_episode: true`,
+`first_response_phase_complete` and its closure, `vials_answered` /
+`vials_planned`, `dont_know_count`, `omissions` (`unanswered_vial_ids`,
+`unpresented_vial_ids`, apart from DON'T KNOW), per vial the response kind,
+option, correctness, key, `error_kind`, drafts, help consults, active and
+focused time, input mode; help consults by phase; `results_shown` per page;
+`feedback_phase_faults`; `exposure_record_consistent`;
+`teaching_record_consistent`. No total mixes teaching and application; no
+total across items; `declined` never.
+
+(5) Integration. `src/pilot/windows/reviewClosure.ts` calls `closeM16AtReview`
+after M15's (one import, one call, its comment).
+`DiagnosticsLaboratoryScene.ts`: the `m16ProtocolUpdate` import (`declareM16`,
+`m16WindowStatus`) replaced by the adapter's and the surface model's;
+`declareM16Handling()` and `guardM16Reload()` in `create()` in place of
+`declareM16()`; `resumeM16Surface(now)` in the existing RESUME handler beside
+`resumeM15Surface`; the `m16` PHASES entry's `status`
+(`() => m16Window.windowStatus()` — `closed` for every closed state of the
+kit, read by `windowTerminal` as recorded) and `opportunityId`
+(`proto_m16_handling_series`); a dedicated `m16` station branch beside the
+`m15` one (`openM16` with the route stage, `openWorkSurface` with
+`surfaceId: 'm16_protocol_console'`, `frame: 'wide'`, the bound surface model
+and an `onClose` that returns false while ESC closed a dialog or the help
+sheet), so `ipStation` no longer serves m16; the private `m16SurfaceHost()`
+modelled on `m15SurfaceHost()` (LEAVE CONSOLE, FINISH and ESC take the same
+path: pause, then close); `presentM16(now)` in each of the FOUR
+`lab_brief_ack*` `onSelected` handlers of both briefing branches beside
+`advancePilotStage('lab_work', now)` and `presentM15(now)` [O-7]. Bench label,
+phase name, Noor's lines, Kai's text, every other bench (M15, M17, M18), the
+M10 / M11 handling, the wall display and the room geometry are untouched.
+`features/index.ts` imports the extractor. Specs: `e2e/m16_handling.spec.ts`
+(pure, new) and `e2e/m16_handling_route.spec.ts` (browser, new);
+`pilot_lab.spec.ts` and `pilot_signal_incident.spec.ts` with their M16 steps
+and identity assertions re-expressed (the protocol console opened as a work
+surface and its distinctness from the evidence table and the training rig
+asserted on what each surface shows; the former M16 STOP of `pilot_lab` leaves
+M16 open and null `pending`; the full-case test drives the console through the
+card, both examples, the boundary and six vials by real input, mixed pointer
+and keyboard, and reads M16 through the extractor row; M16 leaves the
+IP-family loops and gets an explicit check of equivalent strength; the guards
+test's orientation part moved to the Training Rig, whose route module still
+flags a skipped Console Orientation, with the console shown to open without
+any gate); `m15_systems_route.spec.ts` R8's M16 step (the console opens its
+work surface and closes with ESC). Untouched: `windowKit.ts`,
+`WorkSurfaceScene.ts` (the wide frame used as is), every other
+`src/pilot/windows/*` module (`m15*`, `m14*`, `signalSurfaceModels.ts`
+included), all of `src/informationProcessing/**` (`m16ProtocolUpdate.ts` and
+`protocolForms.ts` byte-identical to the base, pinned by SHA-256 in the pure
+spec; `InformationProcessingLabScene.ts` still imports the legacy module for
+the developer alias), `interactionRegistry.ts` (its `opens` / window label
+`m16_protocol_update` for `lab.phase_m16` stay, U24 backlog), the frozen v2
+ledger, the shared measurement framework, `e2e/pilotHelpers.ts` and every
+other helper and spec (`signal_incident_models.spec.ts` still describes the
+legacy module's family by source and still passes).
+
+(6) Test evidence (11 October 2026; commands, counts, reviewers and every
+exception in `UNIT-LOG.md` "U19 results"; the counts below are those of the
+FINAL source as the test-reviewer ran the matrix, §5.313). Pure,
+`e2e/m16_handling.spec.ts` — 48 tests passed: the independent oracle (its own
+transcription of the rule card, the two worked examples and the six labels
+with their keys from preview r3 §2–§5 and its own rule function; every key and
+both worked results re-derived — sequence 1, 3, 4, 1, 4, 2, DRAWER 3 twice —
+and equal to the module's; the rule a function over all sixteen label
+patterns; every depth at least 6 m from the threshold; no vial sharing a
+pattern with an example or another vial and none repeating an example depth;
+every rule part required by at least one vial; the examples' identical
+seven-line structure with exactly one mark each and each step line following
+the rule; the §5.3 error table reproduced by the content's `error_kind`; the
+§7 strategy table computed and REPORTED — 6, 4 (×6, the swapped reading under
+both names and the four absolute-direction readings), 3 (×6), 2 (×3), 1.5, 1
+(×5), 0 (×2) — and v1 answered correctly by 16 of the 23 listed non-guess
+strategies), the content cross-check (every string, line, label, option,
+confirmation, acknowledgement, help line, results line and closed-record line
+as transcribed; no vial and no correctness word on the card or the help; the
+four `lab_brief_ack*` handlers calling `presentM16` and `presentM15` by
+source), the register row and route, the legacy module (the laboratory scene
+not importing it; the opportunity declared by one adapter;
+`m16ProtocolUpdate.ts` and `protocolForms.ts` byte-identical to the base by
+SHA-256), the series model (no correctness information at the card, in
+teaching, in the dialogs or after one to five answers; identical
+acknowledgements; results refused before the sixth answer and after a review
+closure; page 1 → NEXT → page 2 → BACK; FINISH and ESC through the settle;
+`results_shown` once per displayed page, never on a re-display or a CLOSE HELP
+restore; FINISH from page 1 leaving page 2 unrecorded; reopening read-only;
+the card → example 1 ↔ example 2 → boundary order with every view logged; no
+example after `teaching_closed`; fixed vial order and a vial only after the
+previous first response; the first response written once; the fresh-press rule
+on all three confirmations with the opener / confirm distinction; the settle
+on every transition; help refused during a dialog and recorded with its view;
+leaving and returning in every state; the review closures; the reload
+predicate, hold-back and check; faults; the entry snapshot and suffixes) and
+the extractor (6 / 6, 0 / 6 and a mixed series with DON'T KNOW; `error_kind`
+per vial; omissions apart from DON'T KNOW; the versions and the teaching
+exposure in the components; stability; partial and open series; zero evidence
+and every legitimate-missingness case; the reload paths; every integrity case
+of contract §10 including the sequence cases; the unscored-record flags;
+determinism and the full extraction) and the wording. Browser,
+`e2e/m16_handling_route.spec.ts` on the participant route — R1, R2, R2 at
+`canvas=1080`, R3, R4, R7 (Courier New), R7 (Lucida Console), R8, R9, R5, R6:
+11 passed, no scenario blocked or skipped (the dock-tutorial replay after a
+reload succeeded in R5 and R6; the console after the record closure was
+reached in R3), the twenty-six frames written; the real-game layout gate
+measured at 52 / 50 / 50 design px (Courier New / Lucida Console /
+`canvas=1080`), every element's rendered text inside its box, the rule card on
+nine lines, the example block on seven, the vial block on two and results page
+2 on sixteen under both forced fonts. Regression on the final source: P2 — 143
+passed, 2 failed (the two documented `final_scientific_gates` exceptions,
+reproduced identically on the untouched export of `361cb8c`: line 146
+`toEqual([])` receiving `["proto_m08_effort_choice"]`; line 405
+`toHaveLength(10)` receiving 8). B2 — `pilot_lab` 3 passed and
+`pilot_signal_incident` 2 passed (11.3 min); `m15_systems_route` R3 / R4 / R6
+/ R8 4 passed (11.1 min); `m14_integration_route` R3 1 passed (3.1 min);
+`world_v2_lab_look` 1 passed (1.0 min) — every B2 check passed. Static:
+`lint:tsc`, `build`, ESLint and Prettier on the 14 changed `.ts` files,
+Prettier on the register and the addendum, `git diff --check`, `verify-unit`
+(PASS, 18 of 18 paths) and the guard's tests. The matrix and UNIT-LOG fail
+Prettier at the base and after this unit for the inherited reasons only (the
+matrix's item-table re-padding — 56 complaint lines on both trees; UNIT-LOG's
+untouched base text plus the verbatim U19 contract appendix, as the U16–U18
+appendices were); the implementer's own paragraphs in them are Prettier-clean
+by content. The matrix was run ONCE by the test-reviewer (Sonnet 5.5) on the
+final source; the three independent reviews followed it (§5.313).
+
+(7) Residual limitations (stated, not resolved by this unit). The six
+applications share one console episode (`single_episode`, "six applications of
+one rule"); one form, fixed order — vial content and position are confounded
+and the likely easiest vial (v1, no mark) comes first; the rule card is
+visible throughout, so the measure concerns applying a visible rule to labels
+not seen before, not remembering it, and a ceiling at 6 of 6 is plausible;
+both worked examples end in DRAWER 3 (a consequence of the chosen coverage;
+copying their result gives 1 of 6); the vials need the steps in different
+combinations and are not equated; three of six vials need both marks; 1/4
+chance per vial; v1 is answered correctly by 16 of the 23 listed non-guess
+strategies and worked example 1 passes through its answer as an intermediate
+state; the strongest listed misreadings (swapped mark meanings, the
+absolute-direction readings) reach 4 of 6, so 4 of 6 does not separate slips
+from one consistent misreading — the per-vial `error_kind` pattern is reported
+for that reason, never scored; strategies other than those listed are not
+ruled out; no correct answer proves understanding; reading speed and care in
+following a four-step procedure contribute to the answers; teaching time and
+example views are recorded but never adjust the value. Absent evidence is
+never proof of non-exposure and lossless recovery is never claimed: the reload
+limitations of §5.290 (a) (a check only where the console becomes available —
+laboratory entry; continuity read from the recovered sequence numbers and the
+store's readable meta record, never a tail lost while the meta record
+survived; the replayed briefing of a later load reported, never counted as
+this load's exposure) apply to M16 unchanged. A session that ends before the
+review exports a partial series as `pending` (item 9). The open M05 matters of
+§5.290 (e) (i) — the competing briefed tasks and the episode-1 cap on the
+scripted route — are carried forward unchanged and untouched (no M05 assertion
+belongs to this unit; the route scenarios decline every M05 job); the U18
+salience observation H1 (§5.301) is an M15 matter, untouched. The capture
+specs, the `interactionRegistry` `opens` / window label `m16_protocol_update`
+for `lab.phase_m16` and `world_v1_*` evidence for the console are U24 backlog.
+The header title on the non-results views, the fault record line, the dialog
+and help footers are implementer wording (D-11), not preview text. Passing
+tests establish implementation correctness only; this unit establishes no
+psychometric validity and no questionnaire equivalence.
 
 **Unit 18 (M15): as-built** — the two relay boxes of the Diagnostics
 Laboratory evidence table (bounded unit under contract `U18-CONTRACT.md`, v1
@@ -7267,3 +7877,407 @@ ruling, and none is an owner decision.
      candidate interface question for the owner — e.g. whether the bottom
      row on the question views should sit closer to the recorded wiring —
      and not acted on.
+
+Unit 19 (M16) is governed by the owner's U19 contract (v1, final 11 October
+2026 with amendment A1) and by research-owner decision D-U19-1 with amendment
+A1. The decision and the amendment are recorded first, as a ruling; §5.303
+onward are IMPLEMENTER DEFAULTS — owner-visible, reversible, none of them
+changes the approved formula, the content, the keys or the ruling, and none is
+an owner decision.
+
+302. **RESEARCH-OWNER DECISION D-U19-1 — APPROVED 11 October 2026, WITH
+     AMENDMENT A1 — APPROVED 11 October 2026 (M16; an owner ruling for this
+     implementation, not an implementer default; not reopened).** Source: the
+     owner's instruction and contract of 11 October 2026
+     (`U19-FABLE-PROMPT.md`, `U19-CONTRACT.md` §2.2 and §17; preview r3 §12).
+     The ruling is an explicit decision for this implementation and NOT
+     recovered wording from the missing original documents (`UNIT-LOG.md`
+     "U19", provenance limit). Rulings D-U16-1 (M13), D-U17-1 / D-U17-2 and
+     the closeout ruling §5.290 (M14), and D-U18-1 (M15) are not part of it
+     and approve nothing here. The nine items as recommended, including
+     selection (a) of item 2: [O-1] two PASSIVE worked examples (the rule
+     applied step by step and explained; no answer requested; nothing recorded
+     as a response), identical to each other in structure (the application
+     label format, the same four numbered steps in the same order, one result
+     line; each with exactly one mark present and one absent), shown
+     identically, in the same order, to every participant, never contingent on
+     performance — teaching gives no feedback on the participant's own
+     answers; both examples end in DRAWER 3; no worked example shows a no-mark
+     or a two-mark vial; [O-2] the rule, the two worked examples, the six
+     vials, the four drawer options plus DON'T KNOW, the keys, every
+     participant-facing string and the results explanations of preview r3
+     §3–§5 are the administered content (`m16-rule-v1`, `m16-examples-v1`,
+     form `m16-form-1`); their logical correctness does not establish
+     empirical validity; the keys v1 `m16_v1_d1`, v2 `m16_v2_d3`, v3
+     `m16_v3_d4`, v4 `m16_v4_d1`, v5 `m16_v5_d4`, v6 `m16_v6_d2` (sequence 1,
+     3, 4, 1, 4, 2); blind-choice chance 1/4; the disclosed cues of preview §7
+     travel with the content; the drawer confirmation
+     `Record DRAWER <n> for vial N?` / `It cannot be changed afterwards.`
+     repeats the drafted drawer (selection (a); (b)
+     `Record this answer for vial N?` not selected); [O-3] the complete rule
+     card on screen beside every vial; the worked examples closed at the
+     boundary and never shown again; earlier vials' labels and answers not
+     shown; HELP explains controls only — the measure concerns applying a
+     visible rule to unseen labels, not recall; a ceiling is plausible; no
+     "consulted the instructions" companion; [O-4] self-paced reading; free
+     movement between example 1 and example 2 any number of times before the
+     boundary; no minimum reading time, no comprehension check, no practice
+     vial; the boundary START THE SIX VIALS with a confirmation — confirming
+     closes teaching irreversibly and presents vial 1; leaving during teaching
+     keeps the example in view; teaching time and example views are companions
+     only; [O-5] an identical neutral acknowledgement after every first
+     response (`Vial N recorded.`, `N of 6 vials recorded.`, NEXT VIAL / SHOW
+     RESULTS) — no colour, glyph, sound, wording, layout or timing that
+     differs with correctness; no correctness information about any vial until
+     all six first responses are recorded; then two results views (vials 1–3,
+     4–6) with the recorded drawer (or DON'T KNOW), the rule's drawer and the
+     two-line explanation of preview §5 (controls as A1-2); results
+     re-viewable read-only on reopening; a partial or review-closed series
+     never shows results; [O-6] one form, fixed vial order v1 → v6, fixed
+     option order DRAWER 1–4, no counterbalancing; the legacy counterbalanced
+     forms A / B not used on the route; the companions `form_id` `m16-form-1`,
+     `rule_version` `m16-rule-v1`, `examples_version` `m16-examples-v1`
+     (constant in this administration) — vial content and position are
+     confounded, the likely easiest vial first; [O-7] Kai's laboratory
+     briefing records the M16 briefing exposure at its acknowledgement (the
+     kit's `present`, in all four `lab_brief_ack*` handlers) — exposure only;
+     before the briefing `not_presented`; briefed, never opened, open ⇒ null
+     `pending` (`briefed_not_opened`); briefed, never opened, at the review
+     closure ⇒ null `no_eligible_event`, `briefed_not_opened`, censored,
+     `closed_at_review`; `declined` never; no STOP control — leaving is the
+     only exit and never records DON'T KNOW (the M14 / M15 convention,
+     precedent only, approved for M16 by this ruling); [O-8] an opening of
+     this administration in an earlier page load ⇒ the console is never re-run
+     in the new load (the neutral closed record; prior exposure recorded; the
+     load's row `interrupted`; the earlier events immutable); at the first
+     Diagnostics Laboratory entry of a later page load the adapter writes
+     `prior_load_checked`; an established absence with continuous history
+     reads the load exactly as a first load (the §5.290 (a) / D-U18-1 item 6
+     convention, precedent only, approved for M16 by this ruling); [O-9] one
+     to five first responses and the series not yet closed ⇒ null `pending`
+     with the recorded answers in the components; at the review closure ⇒
+     `incomplete` with the value and its observed denominator; a session
+     ending before the review exports `pending` (the D-U18-1 item 8
+     convention, precedent only, approved for M16 by this ruling). **Amendment
+     A1 (approved 11 October 2026; none of it changes the rule, the worked
+     examples, the six labels, the keys, the order, the scoring, the
+     missingness or the reload policies):** [A1-1] accurate recording language
+     — no participant string or contract statement claims that nothing is
+     recorded where views, navigation, drafts or help use are logged; teaching
+     says `No answer is requested on this page.`; the help says
+     `Only confirming records your answer.` and
+     `... then RECORD DRAWER and confirm, or DON'T KNOW and confirm.`; the
+     reload record says
+     `... Its record is kept; no further answers can be given here.`; an
+     ANSWER (a `first_response`) is always distinguished from a LOGGED
+     INTERACTION (a view, navigation, draft, help consult or refused request);
+     [A1-2] complete, consistent controls — results page 1 HELP, FINISH and
+     NEXT; page 2 HELP, FINISH and BACK (NEXT and BACK never share a
+     position); the acknowledgements carry HELP and LEAVE CONSOLE beside NEXT
+     VIAL / SHOW RESULTS; FINISH and ESC close the results surface; completion
+     is established by the sixth first response whatever results pages are
+     later viewed; `results_shown` only for a page actually displayed, once
+     per page; HELP / CLOSE HELP return to the same page with all state
+     preserved; the 400 ms transition protection covers every results
+     transition; reopening stays read-only; the results controls verified
+     through actual pointer and keyboard interaction; [A1-3] unambiguous
+     double-click verification — the opener `RECORD DRAWER [R]` and the
+     dialog's confirm `RECORD DRAWER [ENTER]` are distinct controls; a double
+     click on the opener records ZERO first responses; a fresh confirm after
+     the protection interval records EXACTLY ONE first response and a
+     duplicate press immediately after it changes nothing; the held-key,
+     auto-repeat and carried-press protections stay; [A1-4] consistent
+     approval and package status — D-U19-1 recorded as APPROVED 11 October
+     2026 with A1 in the contract, the preview (r3), the launch prompt and the
+     launcher; documentation overstatements corrected; integrity pins
+     regenerated. **Limitations that travel with the ruling (preview §11):**
+     six applications of one rule in one episode; one form, fixed order (the
+     likely easiest vial first); the rule card always visible (a ceiling is
+     plausible); both worked examples end in DRAWER 3 (a consequence of the
+     chosen coverage); the vials are not equated; chance 1/4; the listed
+     partial, shortcut and absolute-direction strategies reach at most 4 of 6
+     in the computed table, other strategies not ruled out, and 4 of 6 does
+     not separate slips from one consistent misreading; three of six vials
+     need both marks; no correct answer proves understanding; reading speed
+     and care in following a four-step procedure contribute to the answers;
+     teaching exposure is recorded but never adjusts the value; a session
+     ending before the review exports a partial series as `pending`; after a
+     reload prior exposure is uncertain. This approval does not establish
+     psychometric validity, questionnaire equivalence, or that a correct
+     answer shows understanding. Implemented: §4 "Unit 19".
+303. **D-2 — first-opening card (U19 default).** The first opening shows the
+     first-opening card (preview §3.1) with SHOW EXAMPLE 1, HELP and LEAVE
+     CONSOLE; activating SHOW EXAMPLE 1 is recorded (`intro_acknowledged`) and
+     presents worked example 1; left before it, the card is shown again at the
+     next opening (`series_reopened`, view `intro`).
+304. **D-3 — drafts (U19 default).** Drafts survive leaving and returning;
+     activating the drafted tile again clears it (`option_drafted` with
+     `option_id: null`); a draft is never a response and never enters the
+     value.
+305. **D-4 — commitment mechanics and the settle (U19 default; M02 §5.210, M13
+     §5.262, M14 §5.279 and §5.290 (b), M15 §5.294 precedent; [A1-2],
+     [A1-3]).** The 400 ms fresh-press rule on the drawer confirmation, the
+     DON'T KNOW confirmation and the boundary confirmation (reason
+     `dialog_settling`; one `commit_press_refused` record per dialog, the
+     count carried on the record; the boundary dialog's refused press carries
+     `target` `teaching_close`); RECORD DRAWER without a draft refused with
+     the approved neutral line and `commit_without_draft`; the settle on EVERY
+     view transition (SHOW EXAMPLE 1, each example view, the example 2
+     restored by KEEP READING, a vial's first view, the acknowledgements, each
+     results page — SHOW RESULTS, NEXT, BACK, FINISH, HELP — the help sheet
+     and the view CLOSE HELP restores, the last re-armed by CLOSE HELP and by
+     a cancelled dialog): a press inside 400 ms of the view appearing drafts,
+     requests, confirms, navigates, opens or closes nothing and, outside a
+     confirmation, is not recorded because the contract's suffix list has no
+     name for it and no suffix is added; an ESC inside the settle of a view is
+     consumed and leaves nothing; a cancel (KEEP WORKING / KEEP READING / ESC)
+     inside 400 ms of its dialog opening is ignored and not recorded (the
+     dialog stays). The opener / confirm distinction of §4 "Unit 19" (1): the
+     dialog's confirm control stands at panel (200, 250), never under the
+     opener (x ≥ 738 or the bottom row), so a double click on the opener
+     records zero first responses and a fresh confirm records exactly one. A
+     held key or an auto-repeat never reaches the host (`WorkSurfaceScene`
+     drops `event.repeat`) and is therefore never recorded.
+306. **D-5 — help (U19 default; [A1-2]).** On request (H or the button) on the
+     first-opening card, both examples, every vial view, every acknowledgement
+     and both results pages — never while a dialog is open; informational, the
+     preview §3.8 sheet (its title set apart from the body by one blank line);
+     closed by ESC or CLOSE HELP; recorded (`help_consulted`) with the phase
+     and the view it was opened on (`intro`, `example_1`, `example_2`,
+     `vial_<k>`, `ack_<k>`, `results_1`, `results_2`); CLOSE HELP restores the
+     same view, draft or results page and re-arms its settle.
+307. **D-6 — dispositions for zero and partial evidence (U19 default; the
+     briefing / never-opened mapping is ruling item 7 and the partial rule
+     item 9).** Never briefed and never opened `not_presented` (also at the
+     review closure); briefed and never opened `pending`
+     (`briefed_not_opened`) while open and `no_eligible_event`
+     (`briefed_not_opened`, censored, `closed_at_review`) at the review
+     closure; opened, nothing answered and closed at the review
+     `no_eligible_event` with `missing_reason` `intro_only` (SHOW EXAMPLE 1
+     never activated) | `teaching_only` (teaching started, never closed) |
+     `teaching_closed_no_first_response` (vial 1 presented, no first
+     response), as reached (free text, addendum §1; the strain of §5.142
+     applies); still open ⇒ `pending`; one to five answered and closed at the
+     review `incomplete` with the value and its observed denominator,
+     censored; an open-series technical failure voids the row with the answers
+     kept in the components; an unscored-record defect flags the components
+     (`teaching_record_consistent` / `exposure_record_consistent` false)
+     without effect on the row; `declined` never. Precedence: `interrupted` >
+     `technical_failure` > `pending` > the closed-series outcomes.
+308. **D-7 — names (U19 default; all provisional, alternatives are the
+     owner's).** Family `proto_m16_handling_`, opportunity
+     `proto_m16_handling_series`, window `m16_handling_w1`, object and surface
+     id `m16_protocol_console`, the suffixes of addendum §2 "U19",
+     administration `m16-handling-v1`, form `m16-form-1`, rule `m16-rule-v1`,
+     worked examples `m16-examples-v1`, example ids `m16_e1` / `m16_e2`, vial
+     ids `m16_v1` … `m16_v6`, option ids `m16_v<k>_d1` … `m16_v<k>_d4`; DON'T
+     KNOW is the response kind `dont_know`, never an option id; the phases
+     `intro` | `teaching` | `measurement` | `feedback` | `closure`; the
+     acknowledgement `line_id` `vial_recorded`. The v2 ids
+     `proto_m16_protocol_update` / `proto_m16_protocol_*` / `m16_protocol_w1`
+     / `m16-protocol-v1` are retired from the route and keep their v2 meaning
+     in the frozen ledger and on the developer alias.
+309. **D-8 — event order (U19 default).** The §5.259 convention applied to the
+     M16 extractor: a family event of the current load without a usable
+     `sequence` (a safe integer of at least 1), or two sharing one, make the
+     row a `technical_failure`; gaps are normal; a missing number is never
+     read as zero; ANY `results_shown` not preceded by
+     `first_responses_completed` — also in a series that never reaches six —
+     voids the scored evidence; a `vial_presented` before `teaching_closed`,
+     before the previous vial's `first_response`, out of the assigned order or
+     twice voids it too.
+310. **D-9 — companion definitions (U19 default).** "Omissions" = vials
+     presented without a first response (`unanswered_vial_ids`) and
+     unpresented vials (`unpresented_vial_ids`), listed apart and never DON'T
+     KNOW; `error_kind` per preview §5.3 (`row` | `column` | `row_and_column`;
+     null for the key and for DON'T KNOW), recomputed from the content's key
+     and the 2 × 2 grid (row = drawers 1–2 TOP / 3–4 BOTTOM; column = drawers
+     1, 3 ORLA / 2, 4 VESK); "teaching exposure" = the example views per
+     example (`examples_viewed`), the back-navigations and the teaching active
+     time before `teaching_closed`, descriptive only; the exposure stages kept
+     distinct (`briefed`, `console_opened`, `intro_acknowledged`,
+     `examples_viewed`, `teaching_closed`, `vials_presented`,
+     `never_opened_reason`); `dont_know_count`; help consults by phase;
+     `results_shown` per page; `reload_check`.
+311. **D-10 — the legacy module (U19 default).**
+     `src/informationProcessing/m16ProtocolUpdate.ts` and `protocolForms.ts`
+     stay in the tree UNCHANGED (byte-identical to the base; their SHA-256
+     pinned in the pure spec) under the frozen v2 identity, reachable only
+     through the developer alias `?scene=information_processing_lab`
+     (`InformationProcessingLabScene.ts`, unchanged); the laboratory scene no
+     longer imports the module; the v3 extractor never reads the family
+     `proto_m16_protocol_` (disjoint from `proto_m16_handling_`); the
+     interaction registry's descriptive
+     `opens: { kind: 'ip_overlay', id: 'm16' }` and window label
+     `m16_protocol_update` for `lab.phase_m16` are NOT changed (outside the
+     allowlist; U24 backlog, as U18 left `m15_layered_cipher`); the scene's
+     own station construction decides what opens.
+312. **D-11 — layout, focus landings, footers and interface details inside the
+     wide frame (U19 default; positions of preview §10, the mockup evidence
+     `layout-evidence\`; the implementer's choices recorded here).** The
+     header title `HANDLING RULE` on the first-opening card, the example, vial
+     and acknowledgement views and the closed records (the results pages carry
+     the preview's titles); subtitles `Worked example N of 2` / `Vial N of 6`.
+     The rule card at panel (12, 90), 714 × 196 (nine lines); the example
+     block (seven lines) or the vial block (two lines) at (12, 294) in the
+     same column; the first-opening card's text at (12, 90), 1026 wide; the
+     right column at x 738, 300 wide — the teaching note
+     `Read how the rule places this vial. No answer is requested on this page.`
+     at y 90 (a neutral focus landing: focusable, its activation does nothing)
+     with BACK TO EXAMPLE 1 at y 170 on example 2; on a vial view the question
+     block at y 90 (72 high; the neutral focus landing of a vial's first view
+     — the first drawer tile is NOT pre-focused), the four tiles from y 170
+     (34 high, 4 px gaps), RECORD DRAWER at y 330 and DON'T KNOW at y 384
+     (never adjacent to LEAVE CONSOLE in the bottom row); the acknowledgement
+     line at (738, 90); the bottom row at panel y 462 — HELP at x 12 (160 px),
+     LEAVE CONSOLE at x 184 (180 px), the view's primary control at x 778 (260
+     px: SHOW EXAMPLE 1, NEXT EXAMPLE, START THE SIX VIALS, NEXT VIAL, SHOW
+     RESULTS, NEXT on results page 1), CLOSE HELP at x 388 (260 px) on the
+     help sheet alone; on the results pages HELP at x 12, FINISH at x 184 (180
+     px), NEXT at x 778 (260 px, page 1) and BACK at x 654 (112 px, page 2);
+     the dialogs (the boundary, the drawer, DON'T KNOW) drawn alone with the
+     header and the status line — text at (200, 170), the confirm control at
+     (200, 250) and the cancel at (466, 250), 254 px wide, ending at x 720;
+     the results text at (12, 90), 1026 wide, on the preview's fixed lines;
+     the help sheet's text at (12, 90). Focus order: the first-opening card
+     SHOW EXAMPLE 1 first; the example views the teaching note first (so ENTER
+     carried from SHOW EXAMPLE 1, NEXT EXAMPLE, BACK TO EXAMPLE 1, KEEP
+     READING or CLOSE HELP presses no control), then the primary control, BACK
+     TO EXAMPLE 1, HELP and LEAVE CONSOLE; the vial views the question block
+     first, then the tiles, RECORD DRAWER, DON'T KNOW, HELP, LEAVE CONSOLE;
+     the acknowledgements NEXT VIAL / SHOW RESULTS first, then HELP and LEAVE
+     CONSOLE; results page 1 NEXT first, then FINISH and HELP; results page 2
+     FINISH first, then BACK and HELP; a dialog its confirm control first; the
+     help sheet CLOSE HELP first; the closed records LEAVE CONSOLE. The draft
+     is the surface's `selected` state (a "▸" glyph and the fill), never a
+     colour alone. Footers (implementer wording where the preview has none):
+     `H help · ESC leaves (work kept)` on the first-opening card, the example
+     views and the results pages;
+     `1-4 choose · R record · N don't know · H help · ESC leaves (work kept)`
+     on the vial and acknowledgement views (the preview's);
+     `ENTER starts · ESC keeps reading` under the boundary confirmation;
+     `ENTER records · ESC keeps working` under a vial confirmation;
+     `H or ESC closes the help` under the help sheet; `ESC leaves` under a
+     closed record. The fault record line
+     `The console has a fault and is closed. Recorded answers are kept.` is
+     added for the fault record (not in the preview; no forbidden token). A
+     view restored by CLOSE HELP or by a cancelled dialog is not a new
+     `example_viewed`; a reopening in teaching is (`navigation` `resume`). The
+     kit's own events (`presented`, `opportunity_opened`, `window_closed`,
+     `technical_failure`) carry the kit's fields and `input_mode: 'system'`
+     only; the protocol stamp, `phase`, `form_id` and the example / vial
+     fields are written on every event the model emits through the sink (M14
+     §5.288, M15 §5.299 precedent; `windowKit.ts` is outside the unit).
+313. **U19 reviews and correction round 1 (11 October 2026; recorded by the
+     implementer — none of it an owner decision, none of it approval).** Three
+     independent read-only reviews on the source of the final matrix (Opus 5.5
+     through the contract §15 fallback — scientific, gameplay, visual;
+     `UNIT-LOG.md` "U19 results"). No MATERIAL finding. Minor findings
+     corrected in one bounded round inside the allowlist (test-, extractor-
+     and document-only; nothing content-, key-, formula- or event-name-related
+     changed; no reviewer fixed anything): (a) scientific minor-6 — the
+     extractor checked the entry snapshot's `form_id` and `rule_version` but
+     not each vial's `key_option_id` and `option_ids` against the content:
+     `features/m16.ts` now reads a disagreeing or missing snapshot key or
+     option list as `technical_failure` (contract §10, "an event
+     `key_option_id` that disagrees with the content key"), with three new
+     integrity cases in the pure spec; (b) scientific minor-1 — addendum §2
+     "U19" said a `teaching_closed` with another form only flags the teaching
+     record, while the extractor leaves such a record uncounted as the
+     boundary so that a vial presented after it voids the scored evidence (a
+     vial before `teaching_closed`): the addendum now says so, and the pure
+     spec covers both outcomes (flagged and `pending` without a vial;
+     `technical_failure` with one); (c) scientific minor-2 — §4 "Unit 19" (2)
+     and the matrix said the §7 strategy table is "computed and reported,
+     never asserted" while the pure spec asserts its figures equal the
+     preview's: both now say "reproduced against the preview's figures, never
+     asserted as a ceiling" (the contract's requirement); (d) scientific
+     minor-3 — oracle test (v) checked the examples' step lines 3 and 4 by
+     prefix only: it now compares every step line with the rule's intermediate
+     states; (e) scientific minor-4 — the stability test now includes a fault
+     after completion (recorded as `feedback_phase_faults`, the row
+     unchanged); (f) gameplay minor-3 — the route spec moved the keyboard
+     focus with ArrowRight only, where contract §12 R9 says TAB: R9's
+     `accessFromView` now reaches HELP, LEAVE CONSOLE and FINISH with the
+     literal TAB key (`focusByTab`), ArrowRight remaining elsewhere ("by focus
+     and ENTER"); (g) gameplay minor-4 — the R8 title of
+     `e2e/m15_systems_route.spec.ts` still said "terminal overlay" after its
+     M16 step was re-expressed: the title now says "work surface" (the
+     `--grep R8` selection unchanged). Recorded, not changed — each a question
+     for the research owner: (h) the five implementer-authored participant
+     strings not in preview r3 (the fault record line
+     `The console has a fault and is closed. Recorded answers are kept.` and
+     the dialog, help and closed-record footers
+     `ENTER starts · ESC keeps reading`, `ENTER records · ESC keeps working`,
+     `H or ESC closes the help`, `ESC leaves`), recorded as D-11 (§5.312) —
+     preview §3 says every footer that mentions ESC reads "ESC leaves (work
+     kept)", which would be inaccurate under a dialog or the help sheet, where
+     ESC does not leave; options: accept them as written; replace them with
+     preview-only text; or read the preview's footer sentence as applying to
+     views only (scientific minor-5, visual m1); (i) the vial question
+     `Which drawer does vial N go in? Choose a drawer, then record it.` is one
+     soft-wrapped string in the 300 px right column and breaks after "in?"
+     under the default font but after "go" under forced Courier New and Lucida
+     Console (three lines; inside its 72 px box, never clipped — R7 measured
+     45 / 72 and 48 / 72): contract §3.9 rules out re-wrapped wording and the
+     preview fixes no break for this string, so whether to fix a break after
+     "in?" is a content decision (visual m2); (j) no console string names TAB,
+     the arrows or ENTER as the way to move the keyboard focus, and the
+     example and vial views land the focus on a neutral text block (D-11), so
+     a keyboard-only participant who presses ENTER on worked example 1 gets no
+     response until TAB or an arrow reaches NEXT EXAMPLE (frame 03 shows the
+     ring on the teaching note) — the footers and the help line are approved
+     r3 strings; options: accept (M14's earlier footers on the route name TAB
+     / arrows; M15 has the same pattern), or amend the example-view footer
+     (gameplay minor-1); (k) with no STOP control an unfinished M16 keeps the
+     beacon on the protocol console once M15 is recorded (`nextPhase`), where
+     the legacy STOP could release it — approved item 7 as U18 applied it to
+     M15; options: accept, record as a cross-item salience note for M17 / M18
+     entry, or consider a non-scoring release (an amendment) (scientific
+     informational); (l) frame 25's recorded state (the three "Protocol lanes"
+     ticks and the bench-2 lamp tone) is established by R8's probe assertions
+     rather than visibly at 800 × 600 — a close-up of the display would make
+     it visual evidence (visual m4). Recorded, informational: results page 2
+     lands the focus on FINISH (D-11, the M15 precedent) and the results
+     pages' tab order runs NEXT / FINISH / HELP, the reverse of the visual
+     order (gameplay minor-2); the neutral landings wear the surface's focus
+     ring and can read as a selected control (visual m3; `WorkSurfaceScene.ts`
+     is outside the unit, as U18 noted); help opened on the sixth
+     acknowledgement before any results page is tagged `phase` `feedback` with
+     `view` `ack_6` (the M15 mapping; the view tells it apart); the kit's own
+     events carry no `phase`, `form_id` or protocol stamp (`windowKit.ts`
+     outside the unit; disclosed in D-11); events without a `page_load_index`
+     count as current-load, as in M15; a reloaded load with its own opening
+     and a discontinuous history is valued as usual with only `reload_check`
+     showing the uncertainty (the §5.290 (a) limitation); the scene's RESUME
+     handler resumes the kit window right after the surface's close paused it,
+     so the kit's `window_closed.active_ms` includes time outside the console
+     (M14 and M15 identical; the extractor reads the per-vial `active_ms`);
+     the approved help line "The handling rule stays on the left while you
+     work." is shown over the first-opening card and the results pages, where
+     no rule card is on screen (r3 wording); the unchanged case brief says
+     "learn its handling protocol" outside the console (base text, required
+     unchanged); the GitHub-corner badge of `index.html` sits over every frame
+     (outside the unit, predating it; a backlog item for the adult
+     presentation); "Choose a drawer first." is drawn in amber (a usage hint,
+     no correctness signal). Visual states no frame covers (an acknowledgement
+     after a wrong drawer or DON'T KNOW, the examples, the card, the help
+     sheet and results page 1 under the forced fonts, a true 1280 × 720
+     window, the fault record, the help over the card, an example or an
+     acknowledgement, closed records other than "3 of 6") are exercised by the
+     route spec's assertions, not by frames — stated, not claimed as visual
+     evidence. Confirmations (each by the reviewer whose finding it answered,
+     read-only, on the corrected source; Opus 5.5; none an approval):
+     scientific minor-1, minor-2, minor-3, minor-4 and minor-6 CONFIRMED FIXED
+     (minor-6 with one residual note, recorded here and not acted on: the
+     snapshot check accepts a vial's entry when at least one entry with the
+     content key exists, so a duplicate entry with a wrong key or an extra
+     unknown entry would pass it — scoring is unaffected because every
+     `first_response` key is checked on its own); gameplay minor-3 and minor-4
+     CONFIRMED FIXED in source (the runtime pass of R9 with the literal TAB
+     key rests on the rerun recorded in `UNIT-LOG.md` "U19 results"). After
+     the round's changes P1 was rerun (48 passed), R1 and R9 of the route spec
+     and R8 of `m15_systems_route` were rerun in the browser (`UNIT-LOG.md`
+     "U19 results"), and the static checks were rerun on the final files; no
+     frame changed its content, so none was regenerated beyond R1's and R9's
+     own rewrites.

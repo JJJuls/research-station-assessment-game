@@ -53,7 +53,7 @@ Global findings that apply to every row:
 | M13  | **as specified (U16, administration `m13-networks-v1`; research-owner ruling D-U16-1 of 7 October 2026; not scientifically validated)** — was partial at the audit base (one network, four submissions with feedback between them, no Cannot solve); three keyed networks, one immutable first response each before any feedback, results and capped practice after                                   | Three independently keyed networks with different structures + alternate form; first committed solution frozen per network; Cannot solve = incorrect; later learning allowed                        | `m13_first_solutions`: networks solved on first submission / 3; constraints, help separate                                                                       | pure: keyed solvability per network/form, first ≠ later; browser: three boards                                                |
 | M14  | **as specified (U17, administration `m14-integration-v1`; research-owner decisions D-U17-1 of 7 October 2026 and D-U17-2 of 8 October 2026; not scientifically validated)** — contradicted at the audit base (one packet, no answer key, mutable assignments); two keyed packets, one immutable first response per decision before any feedback, results after the sixth                              | Two packets × (6 messages, 3 gauges, 3 keyed integration decisions); first response frozen; Cannot solve = incorrect                                                                                | `m14_correct_first_integrations`: correct first decisions / 6; by packet, omissions, source use                                                                  | pure: keys require ≥2 sources (independent evaluator); browser: two packets on the route                                      |
 | M15  | **as specified (U18, administration `m15-systems-v1`; research-owner decision D-U18-1 of 10 October 2026; not scientifically validated)** — was partial at the audit base (one causal system, one intervention; the cipher shared the id and family); two independently authored boxes, one immutable wiring and two immutable first predictions per box before any feedback, results after the fourth; the cipher moved to its secondary id | Two independently authored systems; explore → commit model → two unseen predictions each; cipher moved to its own secondary id                                                                      | `m15_correct_first_predictions`: correct first predictions / 4; model correctness, exploration separate                                                          | pure: oracle from system definition; browser: two systems                                                                     |
-| M16  | **partial** — base familiarisation with correctness feedback before applications (`m16ProtocolUpdate.ts:701-704`); only one first response frozen; last instruction wins                                                                                                                                                                                                                              | Two identical-structure teaching examples for everyone; six unseen applications with frozen first responses; feedback only after all six; Don't know = incorrect; distinct vocabulary from tutorial | `m16_correct_first_applications`: correct first applications / 6; form and example versions                                                                      | pure: first response immutable; browser: examples then six cases                                                              |
+| M16  | **as specified (U19, administration `m16-handling-v1`; research-owner decision D-U19-1 with amendment A1 of 11 October 2026; not scientifically validated)** — was partial at the audit base (familiarisation with correctness feedback before the applications; one frozen response; last instruction wins); two passive worked examples of identical structure for everyone, a confirmed boundary, six unseen vials in fixed order with one immutable first response each (a drawer or DON'T KNOW) before any feedback, results after the sixth; the legacy module untouched on the developer alias| Two identical-structure teaching examples for everyone; six unseen applications with frozen first responses; feedback only after all six; Don't know = incorrect; distinct vocabulary from tutorial | `m16_correct_first_applications`: correct first applications / 6; form and example versions                                                                      | pure: first response immutable; browser: examples then six cases                                                              |
 | M17  | **as specified (U9)** — was contradicting at the audit base (1 practice + 1 transfer trial, live preview on both; the v2 `proto_m17_syntax_*` family is retired); **criterion values not to be read until register §5.87–5.88 are decided** (live preview on learning trials; correct-response rule)                                                                                                  | 2 uncoached baseline + 12 feedback learning + 2 transfer trials; no preview on baseline/transfer; criterion = 3 consecutive correct learning trials; all 12 always run; early exit = incomplete     | `m17_criterion_trial` {criterion_trial, attained}: 3–12, censored at 12; full sequence, baseline, transfer                                                       | pure: early criterion, never attain, transfer-only; browser: 16 trials                                                        |
 | M18  | **partial** — one fault case per session (2 forms); no consequence prediction; forced selection                                                                                                                                                                                                                                                                                                       | Three independent cases with discriminating tests; first diagnosis + keyed consequence prediction before feedback; Cannot solve = incorrect                                                         | `m18_correct_first_diagnoses` / 3 (primary); `m18_correct_consequence_predictions` / 3 (companion)                                                               | pure: ambiguity check rejects; browser: three cases                                                                           |
 | M19  | **partial** — one coupling with three binds (`m19CouplingModel.ts:67-75`); comprehension asserted (`exteriorWindows.ts:283`)                                                                                                                                                                                                                                                                          | Second distinct solvable challenge; per-challenge first difficulty boundary; teaching step with recorded comprehension                                                                              | `m19_continuations`: challenges with a further work attempt / eligible difficulty encounters (0–2)                                                               | pure: no difficulty → no denominator; browser: both challenges                                                                |
@@ -409,3 +409,63 @@ description of the unimported v2 module, `world_v1_*` evidence for the
 bench. Carried forward unchanged and open: the M05 competing-task
 observation of register §5.290 (e) (i) and the episode-1 M05 cap on the
 scripted route — an M05 matter that U18 neither tests nor changes.
+**U19** (M16; bounded unit under `U19-CONTRACT.md`, v1 of 11 October 2026,
+final 11 October 2026 with amendment A1; research-owner decision D-U19-1 with
+amendment A1 of 11 October 2026 — register §5.302, an owner ruling and not an
+implementer default): the Diagnostics Laboratory protocol console runs the
+handling-rule administration `m16-handling-v1` in the wide frame of
+`WorkSurfaceScene` (D-U17-2, used as is). A first-opening card; the rule card
+(`m16-rule-v1`: a 2 × 2 drawer grid by site column and depth row, STAR moving
+the row, RING moving the column, both marks applied) visible on every example,
+vial and acknowledgement view; two PASSIVE worked examples of identical
+seven-line structure (`m16-examples-v1`, each with exactly one mark present,
+both ending in DRAWER 3), the same for every participant, with free movement
+between them (every view a logged interaction, never an answer); a confirmed
+boundary (START THE SIX VIALS) that closes teaching irreversibly; then six
+unseen vials (`m16-form-1`, fixed order, keys 1, 3, 4, 1, 4, 2) each presented
+only after the previous vial's first response and each taking ONE confirmed
+and immutable first response — a drawer (the confirmation repeating the
+drafted drawer, selection (a)) or DON'T KNOW (incorrect) — answered only by
+the identical neutral acknowledgement with HELP and LEAVE CONSOLE; no
+correctness information before the sixth first response; then two read-only
+results pages (HELP, FINISH, NEXT / BACK; FINISH and ESC close); the 400 ms
+fresh-press rule on every confirmation (the boundary's included) and a 400 ms
+settle on every view transition, so a double click on the opener RECORD DRAWER
+records nothing and a fresh confirm records exactly one. Primary
+`m16_correct_first_applications` = keyed first responses / vials answered
+(planned 6), recounted from the raw `first_response` events; the form, rule
+and example versions, teaching exposure (example views, back-navigations,
+teaching time), per-vial records with `error_kind`, omissions apart from DON'T
+KNOW and help in the row's components, never in the value. New provisional
+family `proto_m16_handling_`, one opportunity `proto_m16_handling_series`,
+window `m16_handling_w1` (addendum §2 "U19"); the v2 ids
+`proto_m16_protocol_update` / `proto_m16_protocol_*` / `m16_protocol_w1` are
+retired from the route; the legacy module (`m16ProtocolUpdate.ts`,
+`protocolForms.ts`) stays in the tree, byte-identical, imported by the
+developer alias only. Not claimed: independent situations (six observations of
+one rule in one console episode), equated vials, validity, questionnaire
+equivalence, or that a correct answer proves understanding — the disclosed
+cues of preview r3 §7 (v1 answered by 16 of the 23 listed non-guess strategies
+and passing through worked example 1 as an intermediate state; the strongest
+listed misreadings at 4 of 6; three of six vials needing both marks; the rule
+card always visible, a ceiling plausible) travel with the ruling (register
+§5.302) and are computed and reported by the pure spec — reproduced against
+the preview's figures, never asserted as a ceiling.
+Tests: pure `m16_handling` (the independent oracle — its own transcription of
+the rule card, the worked examples and the six labels with their keys and its
+own rule function; the sixteen label patterns, the threshold margin,
+unseen-ness, rule-part coverage, the examples' structure, the §5.3 error
+table, the reported §7 strategy table; the content cross-check; the register
+and the legacy module's hashes; the series model; the extractor's values,
+missingness and integrity cases; wording); browser `m16_handling_route` (R1–R9
+on the participant route, twenty-six frames); re-expressed M16 steps of
+`pilot_lab`, `pilot_signal_incident` (its guards test's orientation part moved
+to the Training Rig) and `m15_systems_route` R8. As-built record, the ruling,
+defaults and limitations: register §4 "Unit 19", §5.302–§5.313; results,
+reviewers and every failure's base comparison: `UNIT-LOG.md` "U19". Not
+updated (U24 backlog): the capture specs, the `interactionRegistry` `opens` /
+window label `m16_protocol_update` for `lab.phase_m16`, `world_v1_*` evidence
+for the console. Carried forward unchanged and open: the M05 competing-task
+observation of register §5.290 (e) (i) and the episode-1 M05 cap on the
+scripted route — M05 matters that U19 neither tests nor changes; the U18
+salience observation H1 (§5.301), an M15 matter.

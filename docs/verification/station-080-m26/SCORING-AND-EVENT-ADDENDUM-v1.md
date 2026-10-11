@@ -725,6 +725,193 @@ extractor reads.
   No total mixes model, exploration and prediction correctness; no total
   across items.
 
+U19 (M16, candidates as before; one new provisional family, no canonical
+event, no scoring-plan variable, no formula changed): the Diagnostics
+Laboratory protocol console leaves the v2 protocol-update terminal task under
+research-owner decision D-U19-1 with amendment A1 of 11 October 2026 (register
+§4 "Unit 19", §5.302); the legacy module stays untouched on the developer
+alias and its family is read by no extractor.
+
+- **M16** — family `proto_m16_handling_`; ONE opportunity
+  `proto_m16_handling_series`; window `m16_handling_w1`; object and surface id
+  `m16_protocol_console`; `entry_state_version` = `m16-handling-v1`; `form_id`
+  `m16-form-1`; `rule_version` `m16-rule-v1`; `examples_version`
+  `m16-examples-v1`; example ids `m16_e1` / `m16_e2`; vial ids `m16_v1` …
+  `m16_v6`; option ids `m16_v<k>_d1` … `m16_v<k>_d4`; DON'T KNOW is the
+  response kind `dont_know`, never an option id. The v2 ids
+  `proto_m16_protocol_update` / `proto_m16_protocol_*` / window
+  `m16_protocol_w1` / entry `m16-protocol-v1` are retired from the route and
+  keep their v2 meaning in the frozen ledger and on the developer alias
+  (`InformationProcessingLabScene.ts`); this build writes none of them on the
+  route.
+
+- **Phases.** `intro` (the first-opening card); `teaching` (the two worked
+  examples and the boundary confirmation); `measurement` (the vials: one
+  immutable first response each — a confirmed drawer or a confirmed DON'T KNOW
+  — and no correctness feedback of any kind); `feedback` (the results, only
+  after the sixth first response); `closure`.
+
+- **Every event the model emits** carries the kit's fields (`measure_id`,
+  `opportunity_id`, `window_id`, `entry_state_version`, `presented_at_ms`,
+  `window_status`, the validity fields), `measurement_protocol_version`,
+  `phase`, `form_id` and — when it concerns an example or a vial —
+  `example_id` / `example_index` (1–2) or `vial_id` / `vial_index` (1–6);
+  `input_mode` is `pointer`, `keyboard` or `system`. The kit's own records
+  (`presented`, `opportunity_opened`, `window_closed`, `technical_failure`)
+  carry the kit's fields and `input_mode: 'system'` only (`windowKit.ts` is
+  outside the unit). Suffixes:
+  - `presented` — Kai's laboratory briefing acknowledged (each of the four
+    `lab_brief_ack*` handlers): exposure only, not a console opening and not a
+    vial presentation; a console opened before the briefing writes no later
+    `presented`;
+  - `opportunity_opened` — the first opening; `entry_state_snapshot`:
+    `vials_planned` (6), `examples_planned` (2), `form_id`, `rule_version`,
+    `examples_version`, `example_ids`, `assigned_vial_order`, per vial
+    {`vial_id`, `option_ids`, `key_option_id`}, `teaching`
+    (`passive_worked_examples`), `examples_after_boundary` (`closed`),
+    `rule_card` (`always_visible`), `dont_know_available` (true), `feedback`
+    (`after_all_first_responses`), `stop_control` (false), `settle_ms` (400),
+    `stage`;
+  - `intro_acknowledged` — SHOW EXAMPLE 1; `series_reopened` and `panel_left` —
+    `view` (written while the console is live, never on a closed record);
+  - `example_viewed` — `example_id`, `example_index`, `view_index` (per
+    example), `navigation` (`first` | `next` | `back` | `resume`); a teaching
+    record, never a response; a view restored by CLOSE HELP or by KEEP READING
+    is not a new record, a reopening in teaching is (`resume`);
+  - `teaching_close_requested` — START THE SIX VIALS (`example_views`);
+    `teaching_close_cancelled` — `reason` (`keep_reading` | `panel_left`),
+    `refused_presses`; `teaching_closed` — once: `example_views` per example,
+    `back_navigations`, `teaching_active_ms`, `help_consults_before` (the
+    card's and the examples'), `refused_presses`, `input_mode`;
+  - `vial_presented` — `assigned_position`, `realised_position`, `option_ids`;
+    exactly once per vial; only after `teaching_closed` and, for vial k > 1,
+    after vial k − 1's `first_response`; phase `measurement`;
+  - `option_drafted` — `option_id` (null when cleared), `previous_option_id`;
+    never a response;
+  - `commit_requested` — `kind` (`option` | `dont_know`), `option_id`;
+    `commit_cancelled` — `kind`, `option_id`, `reason` (`keep_working` |
+    `panel_left`), `refused_presses`; `commit_press_refused` — `target`
+    (`vial` | `teaching_close`), `kind`, `reason` (`dialog_settling`),
+    `since_opened_ms`, `settle_ms`; recorded once per dialog, the count
+    carried on the record; `commit_without_draft` — the opener RECORD DRAWER
+    with no draft;
+  - `first_response` — exactly one per answered vial, phase `measurement`:
+    `response_kind` (`option` | `dont_know`), `option_id` (null for DON'T
+    KNOW), `correct` (always false for `dont_know`), `key_option_id`,
+    `drafts_before`, `help_consults_before`, `active_ms`, `focused_ms` (the
+    focused clock, null if unavailable), `refused_presses`, `draft_at_commit`,
+    `input_mode`;
+  - `response_acknowledged` — `line_id` (`vial_recorded`), `next_control`
+    (`next_vial` | `show_results`), `answered_count`; identical in content for
+    every response;
+  - `first_responses_completed` — with the sixth first response: the closure
+    snapshot (`vials_planned`, `examples_planned`, `intro_acknowledged`,
+    `examples_viewed`, `back_navigations`, `teaching_active_ms`,
+    `teaching_closed`, `vials_presented`, `vials_answered`,
+    `correct_first_applications`, `dont_know_count`, per vial `presented`,
+    `answered`, `response_kind`, `option_id`, `correct`) and `closure_reason`
+    `completed`; the kit's `window_closed` (exit `completed`) follows; the
+    scored phase has no later closure event;
+  - `results_shown` — phase `feedback`, `page` (1 | 2), `vial_ids`; only after
+    `first_responses_completed`; only when that page is actually displayed;
+    once per page (a page never displayed has none; a BACK to a page already
+    shown, a re-display and a CLOSE HELP restore write nothing);
+  - `help_consulted` — `phase`, `view` (`intro`, `example_1`, `example_2`,
+    `vial_<k>`, `ack_<k>`, `results_1`, `results_2`) and the example or vial
+    it was opened on; a logged interaction, never an answer;
+  - `series_closed_at_review` — an open series only (the card, teaching, or 0–5
+    vials answered): the closure snapshot and `closure_reason`
+    `closed_at_review`; the kit's `window_closed` (censored) follows;
+  - `prior_load_checked` — written once per page load after a reload, at the
+    first run of the reload guard (the Diagnostics Laboratory's `create()`;
+    decision D-U19-1 item 8, the closeout ruling §5.290 (a) and D-U18-1 item 6
+    applied to M16): `page_load_index`, `prior_page_load_event_count`,
+    `prior_opening_found`, `prior_briefing_found`, `history_continuous` and
+    `prior_opening_absence_established`; `input_mode` `system`; never on a
+    first page load; before the hold-back record when an opening is found;
+  - `technical_failure` — the kit's record (`detail`); the reload hold-back uses
+    the detail `reload after administration: console not re-run` and is read
+    as a hold-back only in a load without an `opportunity_opened`; a fault
+    after completion is recorded with `phase` `feedback` and never enters the
+    value.
+
+- **Extraction rules** (`src/measurement/features/m16.ts`): current-load
+  events only; the value is recounted from the `first_response` events (each
+  response's correctness recomputed from the content module's key for that
+  vial) and compared with the event's own `correct` flag and with the closure
+  snapshot. `technical_failure`, never a value, for contradictory, malformed
+  or unverifiable SCORED evidence — an unknown or mismatched
+  `entry_state_version` or opportunity on any event of the family, a `form_id`
+  other than `m16-form-1` on a `vial_presented` or `first_response`, an entry
+  snapshot whose `form_id` or `rule_version` is unknown or whose per-vial
+  `key_option_id` or `option_ids` disagree with the content, an unknown
+  `vial_id` or `option_id` or an option of another vial, a vial presented
+  twice, before
+  `teaching_closed`, before the previous vial's first response or out of the
+  assigned order, a first response without its presentation, a second first
+  response for one vial, a `correct` flag that contradicts the key, a DON'T
+  KNOW marked correct or carrying an option, an option response without an
+  option of its own vial, a non-boolean `correct`, a `key_option_id` that
+  disagrees with the content, a first response outside `measurement` or after
+  the completion, six first responses without the completion snapshot or that
+  snapshot with fewer than six, a snapshot that disagrees with the recount,
+  ANY `results_shown` before the completion (also in a series that never
+  reaches six), a double closure or a closure after the completion, a family
+  event of the load without a usable, unique `sequence` (the §5.259
+  convention), and a `presented` or `prior_load_checked` record of another
+  opportunity or version or without a usable sequence. Legitimate missingness
+  is never a technical failure. A defect confined to unscored records sets a
+  component flag and leaves the row unchanged:
+  `teaching_record_consistent: false` for an `example_viewed` after
+  `teaching_closed`, before the opening or with an unknown example, a second
+  `teaching_closed`, a `teaching_closed` before the opening or with another
+  form (such a record is not counted as the boundary, so a vial presented
+  after it is a vial before `teaching_closed` and voids the scored
+  evidence), a `teaching_closed` whose `example_views` disagree with the
+  views counted, or an `examples_version` in the snapshot other than
+  `m16-examples-v1`; `exposure_record_consistent: false` for an orphan draft
+  (an unknown or unpresented vial), a help record without a phase or a
+  measurement help record without its vial, a `results_shown` without a page
+  or a page recorded as shown twice, a check record on a first load, two check
+  records, a self-contradictory check, a check claiming absence beside the
+  hold-back, or a check that found an earlier opening beside an opening of
+  this load. Dispositions: six verified first responses ⇒ `observed`
+  (`completed`), stable whatever follows; one to five answered and closed at
+  the review ⇒ `incomplete` with the value and its observed denominator,
+  censored; one to five answered and still open ⇒ `pending` with the answers
+  in the components (D-U19-1 item 9); never briefed and never opened ⇒
+  `not_presented` (also at the review closure); briefed and never opened ⇒
+  `pending` (`briefed_not_opened`) while open and null `no_eligible_event`
+  (`briefed_not_opened`, censored, `closed_at_review`) at the review closure;
+  opened and unanswered at the review closure ⇒ `no_eligible_event`
+  (`intro_only` | `teaching_only` | `teaching_closed_no_first_response`, as
+  reached); still open ⇒ `pending`; a load after a reload without an
+  `opportunity_opened` of its own ⇒ `interrupted` (read before any position is
+  compared) UNLESS its own `prior_load_checked` record establishes the absence
+  of an earlier opening (flags agreeing: established, continuous, no opening
+  found, at least one earlier record), in which case the load is read exactly
+  as a first load; held back after a reload ⇒ `interrupted` (also when the
+  earlier load completed all six); a fault while the series is open ⇒
+  `technical_failure` with the answers kept in the components; never
+  `declined`. Precedence: `interrupted` > `technical_failure` > `pending` >
+  the closed-series outcomes. Components (beside the value, never inside it):
+  the versions (`administration_version`, `form_id`, `rule_version`,
+  `examples_version`), the assigned and realised vial orders,
+  `observations_share_one_episode: true`, the exposure stages kept distinct
+  (`briefed` with its sequence, `console_opened` with its sequence and
+  `stage_at_open`, `intro_acknowledged`, `examples_viewed` per example,
+  `teaching_closed`, `vials_presented`, `never_opened_reason`), `teaching`
+  (`examples_viewed`, `back_navigations`, `teaching_active_ms`,
+  `teaching_closed`), `reload_check`, `first_response_phase_complete` and its
+  closure, `vials_answered` / `vials_planned`, `dont_know_count`, `omissions`
+  (`unanswered_vial_ids`, `unpresented_vial_ids`), per vial the response kind,
+  option, correctness, key, `error_kind` (`row` | `column` | `row_and_column`;
+  null for the key and DON'T KNOW), drafts, help consults, active and focused
+  time, input mode, `help_consults` by phase, `results_shown` per page,
+  `feedback_phase_faults`, `exposure_record_consistent`,
+  `teaching_record_consistent`. No total mixes teaching and application; no
+  total across items.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                           | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -744,7 +931,7 @@ extractor reads.
 | `m13_first_solutions`             | networks whose FIRST response is a layout the shared validator accepts for that network and form / networks with a first response in the current page load (planned denominator 3; CANNOT SOLVE and an unsealed layout are in the denominator, not the numerator; a network without a first response is missing, never incorrect; fewer than three answered and the series closed ⇒ `incomplete` on the answered count; recounted from the `first_response` events by re-validating each recorded board and compared with the event's `correct` flag and the closure snapshot; results, practice, help, time and input mode never enter; complete and stable from the third first response) (U16)                                                                                                                                                                                                                                                                                                                                                                             | ↑ puzzle performance      | none answered ⇒ null (`not_presented` never opened; `voluntary_stop` opened and stopped; `no_eligible_event` opened and closed at the review; `pending` while the first-response phase is open, also with one or two answers; `interrupted` held back after a reload; `technical_failure` for a fault in the first-response phase or contradictory / unverifiable scored evidence)                                                                                                                                                      |
 | `m14_correct_first_integrations`  | correct first decisions / 6: decisions whose FIRST response is the keyed option of that decision / decisions with a first response in the current page load (planned denominator 6; CANNOT SOLVE and a wrong option are in the denominator, not the numerator; a decision without a first response is missing, never incorrect; an answer counts whatever sources were opened before it — source openings never exclude, discount or weight an answer; fewer than six answered and the series closed at the review ⇒ `incomplete` on the answered count; recounted from the `first_response` events against the content key and compared with the event's `correct` flag and the closure snapshot; by-packet results, omissions and source openings in the components, never in the value; complete and stable from the sixth first response) (U17)                                                                                                                                                                                                                           | ↑ integration             | none answered ⇒ null (`not_presented` never briefed and never opened; `pending` briefed and never opened while open, or opened and still open; `no_eligible_event` briefed and never opened at the review closure (`briefed_not_opened`) or opened and unanswered there; `interrupted` held back after a reload, or after a reload without the absence of an earlier opening established (register §5.290 (a)); `technical_failure` for a first-response-phase fault or contradictory / unverifiable scored evidence; never `declined`) |
 | `m15_correct_first_predictions`   | correct first predictions / 4: questions whose FIRST response is the keyed option of that question / questions with a first response in the current page load (planned denominator 4; CANNOT SOLVE and a wrong option are in the denominator, not the numerator; a question without a first response — unpresented or presented and unanswered — is missing, never incorrect; an answer counts whatever wiring was recorded and whatever tests were run (wiring, tests, help, drafts, time and input mode never change the count); fewer than four answered and the series closed at the review ⇒ `incomplete` on the answered count; one to three answered and the series still open ⇒ null `pending` (D-U18-1 item 8); recounted from the `first_response` events against the content key and compared with the event's `correct` flag and the closure snapshot; by-box results, omissions, model correctness and exploration in the components, never in the value; complete and stable from the fourth first response) (U18)                                              | ↑ understanding           | none answered ⇒ null (`not_presented` never briefed and never opened; `pending` while open — briefed and never opened, or opened, also with 1–3 answers; `no_eligible_event` at the review closure — briefed and never opened (`briefed_not_opened`) or opened and unanswered (`orientation_only` / `no_wiring_recorded` / `wiring_only_no_first_response`); `interrupted` held back after a reload or an unestablished absence of an earlier opening; `technical_failure` for a fault or unverifiable evidence; never `declined`)      |
-| `m16_correct_first_applications`  | correct first applications / 6                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | ↑ transfer                | none answered                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `m16_correct_first_applications`  | correct first applications / 6: vials whose FIRST response is the keyed drawer of that vial / vials with a first response in the current page load (planned denominator 6; DON'T KNOW and a wrong drawer are in the denominator, not the numerator; a vial without a first response — unpresented or presented and unanswered — is missing, never incorrect, and is listed apart from DON'T KNOW; teaching exposure, help, drafts, time and input mode never change the count; fewer than six answered and the series closed at the review ⇒ `incomplete` on the answered count; one to five answered and the series still open ⇒ null `pending` (D-U19-1 item 9); recounted from the `first_response` events against the content key and compared with the event's `correct` flag and the closure snapshot; the form, rule and example versions, teaching exposure, per-vial records with `error_kind`, omissions and help in the components, never in the value; complete and stable from the sixth first response) (U19)                                                   | ↑ transfer                | none answered ⇒ null (`not_presented` never briefed and never opened; `pending` while open — briefed and never opened, or opened, also with 1–5 answers; `no_eligible_event` at the review closure — briefed and never opened (`briefed_not_opened`) or opened and unanswered (`intro_only` / `teaching_only` / `teaching_closed_no_first_response`); `interrupted` held back after a reload or an unestablished absence of an earlier opening; `technical_failure` for a fault or unverifiable evidence; never `declined`)             |
 | `m17_criterion_trial`             | first learning trial ending 3 consecutive correct FIRST responses (one SUBMIT of exactly two operators per trial; recounted from the `trial_submitted` events), with attained = true, reported whenever reached within the administered trials (even after an early exit, `complete_sequence` false); 12 / false / censored when all twelve ran without attainment (U9)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | earlier = faster          | early exit WITHOUT attainment ⇒ incomplete (not censored); never opened ⇒ null; owner decisions §5.87–5.88 pending before use                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `m18_correct_first_diagnoses`     | correct first diagnoses / 3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | ↑ diagnosis               | none answered                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `m19_continuations`               | further attempts after first boundary / eligible encounters                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | ↑ continuation            | no difficulty                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |

@@ -1265,6 +1265,27 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'performance_counterpart',
     direction: 'replace_structure',
     occasions: 1,
+    // Unit 19: the approved handling-rule administration landed at the
+    // Diagnostics Laboratory protocol console (episode 3) — ONE opportunity,
+    // one window (research-owner decision D-U19-1 with amendment A1 of
+    // 11 October 2026). The v2 family `proto_m16_protocol_*` keeps its v2
+    // meaning on the developer alias and in the frozen ledger; it
+    // contributes nothing to the row.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m16_handling_series'],
+      windows: [
+        {
+          id: 'm16_handling_w1',
+          occasion: null,
+          zone: 'diagnostics_laboratory',
+          episode: 3,
+        },
+      ],
+      family_prefixes: ['proto_m16_handling_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Two identical-in-structure teaching examples for everyone, then six unseen applications of a genuinely new rule; instructions available; corrective feedback only after all six first responses.',
     features: [

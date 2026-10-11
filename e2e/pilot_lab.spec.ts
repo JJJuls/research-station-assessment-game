@@ -69,7 +69,8 @@ import { validityRecord } from './returnHelpers';
 const PHASE_OPPORTUNITY: Record<string, string> = {
   // Station 080 Unit 18: the two-box series at the evidence table.
   m15: 'proto_m15_systems_series',
-  m16: 'proto_m16_protocol_update',
+  // Station 080 Unit 19: the handling rule at the protocol console.
+  m16: 'proto_m16_handling_series',
   m17: 'proto_m17_criterion',
   m18: 'proto_m18_lattice_fault_diagnosis',
 };
@@ -153,14 +154,14 @@ async function workSurface(page: Page) {
   );
 }
 
-/** The page's own M15 feature row (Unit 18), read from the export builder. */
-async function m15Row(page: Page) {
+/** The page's own feature row of one item (Units 18 / 19), read from the export builder. */
+async function itemRow(page: Page, item: string) {
   const json = await page.evaluate(`(async () => {
     const mod = await import('/src/systems/index.ts');
     const payload = mod.researchRuntime.buildExportPayload();
 
     return JSON.stringify(
-      (payload.measurement_features ?? []).find((row) => row.item_id === 'M15') ?? null,
+      (payload.measurement_features ?? []).find((row) => row.item_id === ${JSON.stringify(item)}) ?? null,
     );
   })()`);
 
@@ -169,6 +170,11 @@ async function m15Row(page: Page) {
     value: unknown;
     missing_reason: string | null;
   } | null;
+}
+
+/** The page's own M15 feature row (Unit 18). */
+async function m15Row(page: Page) {
+  return itemRow(page, 'M15');
 }
 
 async function playerX(page: Page): Promise<number> {
@@ -326,39 +332,71 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
       { timeout: 8000 },
     );
 
-    // Phases 2 and 3 — terminal surfaces with different task contracts.
-    const surfaces: string[] = [];
+    // Phase 2 — protocol console (work surface; Station 080 Unit 19: the
+    // handling rule in the wide frame): distinct from the evidence table
+    // and from the training rig on what each surface shows; opened and
+    // left at the first-opening card.
+    await openBench(page, PILOT.lab.protocolConsole, '__workSurfaceProbe');
 
-    for (const [at, task] of [
-      [PILOT.lab.protocolConsole, 'm16'],
-      [PILOT.lab.trainingRig, 'm17'],
-    ] as const) {
-      await openBench(page, at, '__ipTerminalProbe');
+    const console_ = (await workSurface(page))!;
 
-      const decoder = await terminalProbe(page);
+    expect(console_.surface_id).toBe('m16_protocol_console');
+    expect(console_.frame).toBe('wide');
+    expect(console_.title).toBe('HANDLING RULE');
+    expect(console_.elements.map((e) => e.id)).toEqual([
+      'show_example',
+      'intro_text',
+      'help',
+      'leave',
+    ]);
+    expect(console_.elements.map((e) => e.label).join('\n')).toContain(
+      'A handling rule came in with the storm sample vials.',
+    );
+    expect(console_.title).not.toBe(table.title);
+    expect(console_.elements.map((e) => e.label)).not.toEqual(
+      table.elements.map((e) => e.label),
+    );
+    visibleText.push(
+      console_.title ?? '',
+      console_.status ?? '',
+      ...console_.elements.map((e) => e.label),
+    );
+    await page.waitForTimeout(450);
+    await press(page, 'Escape');
+    await page.waitForFunction(
+      () =>
+        (window as unknown as { __workSurfaceProbe?: { open: boolean } | null })
+          .__workSurfaceProbe?.open !== true,
+      undefined,
+      { timeout: 8000 },
+    );
 
-      expect(decoder.task).toBe(task);
-      surfaces.push(
-        JSON.stringify({
-          chips: decoder.chips.map((chip) => chip.id).sort(),
-          bins: decoder.bins.map((bin) => bin.id).sort(),
-          palette: decoder.palette.map((entry) => entry.token).sort(),
-          stage: decoder.stage,
-        }),
-      );
-      visibleText.push(
-        ...decoder.console,
-        ...decoder.output,
-        ...decoder.codebook,
-        ...decoder.chips.map((chip) => chip.label),
-        ...decoder.buttons.map((button) => button.label),
-        decoder.line,
-      );
-      await clickTerminalButton(page, 'close');
-      await waitTerminalOpen(page, false);
-    }
+    // Phase 3 — the training rig's terminal surface (a different kind of
+    // surface from both work surfaces).
+    await openBench(page, PILOT.lab.trainingRig, '__ipTerminalProbe');
 
-    expect(new Set(surfaces).size).toBe(2);
+    const decoder = await terminalProbe(page);
+
+    expect(decoder.task).toBe('m17');
+    expect(decoder.chips.length + decoder.buttons.length).toBeGreaterThan(0);
+    visibleText.push(
+      ...decoder.console,
+      ...decoder.output,
+      ...decoder.codebook,
+      ...decoder.chips.map((chip) => chip.label),
+      ...decoder.buttons.map((button) => button.label),
+      decoder.line,
+    );
+    // The console's words are not the rig's: no rule-card line on the rig,
+    // no rig token on the console.
+    expect(
+      [...decoder.console, ...decoder.output, ...decoder.codebook].join('\n'),
+    ).not.toContain('HANDLING RULE');
+    expect(console_.elements.map((e) => e.label).join('\n')).not.toMatch(
+      /ROUTE|ARCHIVE|RELAY|SUBMIT/,
+    );
+    await clickTerminalButton(page, 'close');
+    await waitTerminalOpen(page, false);
 
     // Phase 4 — diagnostic board (its own scene, no lattice gate).
     await openBench(page, PILOT.lab.diagnosticBoard, '__ipDiagnosisProbe');
@@ -377,7 +415,7 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
     await waitDiagnosisOpen(page, false);
 
     // Entered-and-left windows stay OPEN — never auto-failed.
-    for (const id of ['m16', 'm17', 'm18']) {
+    for (const id of ['m17', 'm18']) {
       const validity = await ipValidity(page, PHASE_OPPORTUNITY[id]);
 
       expect(validity.entered, id).toBe(true);
@@ -385,6 +423,21 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
       expect(validity.invalid_reason, id).toBeNull();
       expect(await itemStatus(page, id.toUpperCase())).toBe('open');
     }
+
+    // M16 (Unit 19) is no longer an IP-lab module: its register record is
+    // read from the measurement validity probe and its feature row from
+    // the page's own export — opened and left at the first-opening card,
+    // it is open and null `pending`, never low.
+    const m16Validity = await validityRecord(page, PHASE_OPPORTUNITY.m16);
+
+    expect(m16Validity.entered).toBe(true);
+    expect(m16Validity.completed).toBe(false);
+    expect(m16Validity.invalid_reason).toBeNull();
+    expect(await itemStatus(page, 'M16')).toBe('open');
+    expect(await itemRow(page, 'M16')).toMatchObject({
+      disposition: 'pending',
+      value: null,
+    });
 
     // M15 (Unit 18) is no longer an IP-lab module: its register record is
     // read from the measurement validity probe, and its feature row from
@@ -476,17 +529,40 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
     expect(display?.phases_recorded).toEqual([]);
     expect(display?.next_phase).toBe('m15');
 
-    // Phase 2 still opens fully — a stopped phase gates nothing — and is
-    // stopped the explicit two-step way (STOP → confirm), then left.
-    await openBench(page, PILOT.lab.protocolConsole, '__ipTerminalProbe');
-    expect((await terminalProbe(page)).task).toBe('m16');
-    await typeCommand(page, 'STOP');
-    await page.keyboard.press('Enter');
-    await page.waitForTimeout(200);
-    expect((await terminalProbe(page)).closed).toBe(true);
-    await page.keyboard.press('Escape');
-    await waitTerminalOpen(page, false);
-    expect(await itemStatus(page, 'M16')).toBe('missing');
+    // Phase 2 — the protocol console (Station 080 Unit 19) has no STOP
+    // control either: it is opened and left unfinished at the first-opening
+    // card, so M16 stays an open, unrecorded window and its row is null
+    // `pending` — never low; leaving records no DON'T KNOW.
+    await openBench(page, PILOT.lab.protocolConsole, '__workSurfaceProbe');
+    expect((await workSurface(page))?.surface_id).toBe('m16_protocol_console');
+    expect((await workSurface(page))?.elements.map((e) => e.id)).toContain(
+      'show_example',
+    );
+    await page.waitForTimeout(450);
+    await press(page, 'Escape');
+    await page.waitForFunction(
+      () =>
+        (window as unknown as { __workSurfaceProbe?: { open: boolean } | null })
+          .__workSurfaceProbe?.open !== true,
+      undefined,
+      { timeout: 8000 },
+    );
+
+    const m16 = await validityRecord(page, PHASE_OPPORTUNITY.m16);
+
+    expect(m16.entered).toBe(true);
+    expect(m16.completed).toBe(false);
+    expect(m16.invalid_reason).toBeNull();
+    expect(await itemStatus(page, 'M16')).toBe('open');
+    expect(await itemRow(page, 'M16')).toMatchObject({
+      disposition: 'pending',
+      value: null,
+    });
+    expect(
+      (await getEvents(page)).filter(
+        (e) => e.event_type === 'proto_m16_handling_first_response',
+      ),
+    ).toEqual([]);
 
     // Phase 4 opens with no lattice involved at all (the lattice bench is
     // in the workshop; the board never waits for it).
@@ -522,11 +598,16 @@ test.describe('pilot route — Diagnostics Laboratory: signal-analysis incident 
     expect(m17.entered).toBe(false);
     expect(await itemStatus(page, 'M17')).toBe('pending');
 
-    // M15 stays unrecorded (left open, never stopped): the display counts
-    // the two stopped phases as recorded (neutral) and keeps phase 1 next.
+    // M15 and M16 stay unrecorded (left open, never stopped): the display
+    // counts the one stopped phase as recorded (neutral) and keeps phase 1
+    // next.
     display = await signalDisplay(page);
-    expect(display?.phases_recorded).toEqual(['m16', 'm18']);
+    expect(display?.phases_recorded).toEqual(['m18']);
     expect(display?.next_phase).toBe('m15');
+    expect(await itemRow(page, 'M16')).toMatchObject({
+      disposition: 'pending',
+      value: null,
+    });
     expect(await m15Row(page)).toMatchObject({
       disposition: 'pending',
       value: null,

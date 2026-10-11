@@ -24,6 +24,7 @@ import { closeM11AtReview } from './m11Custody';
 import { closeM12AtReview } from './m12QualityControl';
 import { closeM14AtReview } from './m14IncidentDesk';
 import { closeM15AtReview } from './m15RelayBench';
+import { closeM16AtReview } from './m16ProtocolConsole';
 import { closeM25BeliefAtReview, closeM25LoopsAtReview } from './m25Repetition';
 import {
   closeM20ResumeAtReview,
@@ -91,6 +92,13 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
   // (`briefed_not_opened` when Kai's briefing was acknowledged, never
   // `declined` — decision D-U18-1, item 5).
   closeM15AtReview(nowMs);
+  // Station 080 M16 (Unit 19): a series opened and not complete — the
+  // first-opening card, teaching, or zero to five vials answered — closes
+  // with the answers as they stand (unanswered vials stay missing, no
+  // results follow); a completed series is not reclosed; never opened →
+  // absent (`briefed_not_opened` when Kai's briefing was acknowledged,
+  // never `declined` — decision D-U19-1, item 7).
+  closeM16AtReview(nowMs);
   // Episode 5 (Unit 5): a PRESENTED M20 resume opportunity closes as a
   // completed observation (returned / completion as they stand) BEFORE
   // the exterior closure, which censors only a never-resumed start.

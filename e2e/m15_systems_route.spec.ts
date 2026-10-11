@@ -1148,7 +1148,7 @@ test.describe('M15 two relay boxes on the route (Unit 18)', () => {
     expectNoRuntimeErrors(errors);
   });
 
-  test("R8 (other benches after M15): the protocol console still opens its terminal overlay, the wall display, beacon and Noor's line advance, and the M14 row is untouched", async ({
+  test("R8 (other benches after M15): the protocol console still opens its work surface, the wall display, beacon and Noor's line advance, and the M14 row is untouched", async ({
     page,
   }) => {
     test.setTimeout(900_000);
@@ -1196,38 +1196,16 @@ test.describe('M15 two relay boxes on the route (Unit 18)', () => {
     expect(m14Before).toBe(await m14Row(page));
     await shot(page, '24-wall-display-after-m15-recorded');
 
-    // The protocol console (M16) opens its terminal overlay as before.
+    // The protocol console (M16; Station 080 Unit 19) opens its own work
+    // surface and closes with ESC (after its first view settled).
     await interactAt(page, PILOT.lab.protocolConsole, {
       approachOffset: await labApproach(page, PILOT.lab.protocolConsole),
     });
-    await page.waitForFunction(
-      () =>
-        (
-          window as unknown as {
-            __ipTerminalProbe?: { open?: boolean; task?: string } | null;
-          }
-        ).__ipTerminalProbe?.open === true,
-      undefined,
-      { timeout: 8000 },
-    );
-    expect(
-      await page.evaluate(
-        () =>
-          (
-            window as unknown as {
-              __ipTerminalProbe?: { task?: string } | null;
-            }
-          ).__ipTerminalProbe?.task,
-      ),
-    ).toBe('m16');
+    await waitSurface(page, true, 'm16_protocol_console');
+    expect((await probe(page)).title).toBe('HANDLING RULE');
+    await page.waitForTimeout(SETTLE_MS + 50);
     await page.keyboard.press('Escape');
-    await page.waitForFunction(
-      () =>
-        (window as unknown as { __ipTerminalProbe?: { open?: boolean } | null })
-          .__ipTerminalProbe?.open !== true,
-      undefined,
-      { timeout: 8000 },
-    );
+    await waitSurface(page, false);
     expect(m14Before).toBe(await m14Row(page));
     await expectFamilyDiscipline(page);
     expectNoRuntimeErrors(errors);

@@ -340,90 +340,110 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     expect(display?.indicator).toMatch(/PHASE 2 \/ 4/);
     expect(display?.intercom).toMatch(/handling protocol/);
 
-    // ——— Phase 2 — M16 protocol console ———
-    await openBench(page, PILOT.lab.protocolConsole, '__ipTerminalProbe');
+    // ——— Phase 2 — M16 protocol console (Station 080 Unit 19: the
+    // handling rule, driven through its own controls by real input — the
+    // card and the boundary by pointer, the examples by keyboard, the six
+    // vials by keyboard and pointer in turn) ———
+    await openBench(page, PILOT.lab.protocolConsole, '__workSurfaceProbe');
 
-    let terminal = await terminalProbe(page);
+    let console_ = (await surface(page))!;
 
-    expect(terminal.task).toBe('m16');
-    expect(terminal.stage).toBe('FAMILIARISATION');
+    expect(console_.surface_id).toBe('m16_protocol_console');
+    expect(
+      console_.elements.find((e) => e.id === 'show_example'),
+    ).toBeDefined();
+    await page.waitForTimeout(450);
+    await clickElement(page, 'show_example'); // the card, by pointer
+    await page.waitForTimeout(450);
+    console_ = (await surface(page))!;
+    expect(
+      console_.elements.find((e) => e.id === 'example_block')?.label,
+    ).toContain('WORKED EXAMPLE 1 OF 2');
+    await press(page, 'ArrowRight'); // the focus from the teaching note to NEXT EXAMPLE
+    expect((await surface(page))?.focus).toBe('next_example');
+    await press(page, 'Enter'); // example 2, by keyboard
+    console_ = (await surface(page))!;
+    expect(
+      console_.elements.find((e) => e.id === 'example_block')?.label,
+    ).toContain('WORKED EXAMPLE 2 OF 2');
+    await clickElement(page, 'start_vials'); // the boundary, by pointer
+    expect((await surface(page))?.elements.map((e) => e.id)).toEqual([
+      'confirm',
+      'keep_reading',
+      'dialog_text',
+    ]);
+    await page.waitForTimeout(450);
+    await clickElement(page, 'confirm');
+    await page.waitForTimeout(450);
+    expect(
+      (await surface(page))?.elements.find((e) => e.id === 'vial_block')?.label,
+    ).toContain('VIAL 1 OF 6');
 
-    // Base protocol from the console's own reference: NORTH → ARCHIVE,
-    // SOUTH → RELAY. The origin of every report is read from the routing
-    // table preview ("B1  NORTH   → —"), exactly as a participant would.
-    const originOf = (probe: { output: string[] }, id: string) => {
-      const line = probe.output.find((text) => text.startsWith(`${id} `));
-      const match = /\s(NORTH|SOUTH)\s/.exec(line ?? '');
+    // The six keyed drawers (1, 3, 4, 1, 4, 2): vials 1, 3, 4 and 6 by
+    // keyboard, vials 2 and 5 by pointer. `press` already waits 450 ms
+    // after each key, past every view's settle.
+    const keyed = [1, 3, 4, 1, 4, 2];
 
-      if (match === null) {
-        throw new Error(`no origin for ${id}`);
+    for (const [index, drawer] of keyed.entries()) {
+      if (index % 3 === 1) {
+        await clickElement(page, `option_${drawer}`);
+        await clickElement(page, 'record_drawer');
+        await page.waitForTimeout(450);
+        await clickElement(page, 'confirm');
+        await page.waitForTimeout(450);
+      } else {
+        await press(page, String(drawer));
+        await press(page, 'r');
+        expect((await surface(page))?.focus).toBe('confirm');
+        await press(page, 'Enter');
       }
 
-      return match[1];
-    };
-    const baseDestination = (origin: string) =>
-      origin === 'NORTH' ? 'ARCHIVE' : 'RELAY';
+      console_ = (await surface(page))!;
+      expect(
+        console_.elements.find((e) => e.id === 'acknowledgement')?.label,
+      ).toBe(`Vial ${index + 1} recorded.`);
 
-    for (const chip of terminal.chips) {
-      await typeCommand(
-        page,
-        `ROUTE ${chip.id} ${baseDestination(originOf(terminal, chip.id))}`,
-      );
+      if (index < keyed.length - 1) {
+        expect((await surface(page))?.focus).toBe('next');
+        await press(page, 'Enter'); // NEXT VIAL
+      }
     }
 
-    await waitBufferLength(page, 3);
-    await clickTerminalButton(page, 'submit');
-    await clickTerminalButton(page, 'READY');
-    terminal = await terminalProbe(page);
-    expect(terminal.stage).toBe('PROTOCOL UPDATE');
-    await clickTerminalButton(page, 'ACKNOWLEDGE');
-    terminal = await terminalProbe(page);
-    expect(terminal.stage).toBe('APPLY UPDATED PROTOCOL');
-    expect(terminal.chips).toHaveLength(6);
+    console_ = (await surface(page))!;
+    expect(console_.elements.find((e) => e.id === 'next')?.label).toBe(
+      'SHOW RESULTS',
+    );
+    await press(page, 'Enter'); // SHOW RESULTS
+    console_ = (await surface(page))!;
+    expect(
+      console_.elements.find((e) => e.id === 'results_text'),
+    ).toBeDefined();
+    expect(console_.title).toBe('RESULTS — VIALS 1-3 OF 6');
+    await press(page, 'Escape');
+    await waitSurface(page, false);
 
-    // Fresh reports: drag, click-compose and typed aliases converge.
-    const applyProbe = terminal;
-    const destination = (chip: { id: string; label: string }) =>
-      chip.label.includes('!CRITICAL')
-        ? 'HOLD'
-        : baseDestination(originOf(applyProbe, chip.id));
-    const fresh = terminal.chips;
+    const m16Validity = await validityRecord(page, 'proto_m16_handling_series');
 
-    await dragChipToBin(page, fresh[0].id, destination(fresh[0]));
-    await composeByClick(page, ['ROUTE', fresh[1].id, destination(fresh[1])]);
-
-    for (const chip of fresh.slice(2)) {
-      await typeCommand(page, `ROUTE ${chip.id} ${destination(chip)}`);
-    }
-
-    await waitBufferLength(page, 6);
-    await clickTerminalButton(page, 'reference');
-    await page.waitForTimeout(250);
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(250);
-    await clickTerminalButton(page, 'submit');
-    await page.waitForTimeout(300);
-    terminal = await terminalProbe(page);
-    expect(terminal.closed).toBe(true);
-    await page.keyboard.press('Escape');
-    await waitTerminalOpen(page, false);
-
-    const m16 = await ipModule(page, 'm16');
-
-    expect(m16.window_status).toBe('completed');
-    expect(m16.units_correct).toBe(6);
-    expect(m16.new_rule_errors).toBe(0);
-    expect(m16.first_application_correct).toBe(true);
-    expect(m16.codebook_consults_after_rule_presentation).toBe(1);
-    expect(m16.input_mode).toBe('mixed');
+    expect(m16Validity.completed).toBe(true);
+    expect(m16Validity.validity).toBe('valid');
     expect(await itemStatus(page, 'M16')).toBe('completed');
+    expect(await featureRow(page, 'M16')).toMatchObject({
+      feature_id: 'm16_correct_first_applications',
+      value: 6,
+      numerator: 6,
+      denominator: 6,
+      disposition: 'observed',
+      closure_reason: 'completed',
+    });
     display = await signalDisplay(page);
     expect(display?.phases_recorded).toEqual(['m15', 'm16']);
     expect(display?.intercom).toMatch(/register syntax/);
 
     // ——— Phase 3 — M17 training rig (Station 080 Unit 9) ———
     await openBench(page, PILOT.lab.trainingRig, '__ipTerminalProbe');
-    terminal = await terminalProbe(page);
+
+    let terminal = await terminalProbe(page);
+
     expect(terminal.stage).toBe('DEMONSTRATION');
     expect(terminal.output.join(' ')).toContain('VEK B RED');
     await clickTerminalButton(page, 'READY');
@@ -614,15 +634,86 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     // ——— Whole-case invariants ———
     const events = (await getEvents(page)) as unknown as IpEventLike[];
     const families = {
-      m16: eventsOfFamily(events, 'proto_m16_protocol'),
       m17: eventsOfFamily(events, 'proto_m17_trials'),
       m18: eventsOfFamily(events, 'proto_m18_fault'),
     };
     const ids = {
-      m16: ['proto_m16_protocol_update', 'm16_protocol_w1'],
       m17: ['proto_m17_criterion', 'm17_trials_w1'],
       m18: ['proto_m18_lattice_fault_diagnosis', 'm18_diagnosis_w1'],
     } as const;
+
+    // M16 (Unit 19) is no longer an IP family: an explicit check of
+    // equivalent strength — its own family only, one opportunity, the
+    // window id and the administration version on every event, exactly one
+    // completion and one window closure, six first responses, no v2
+    // protocol event.
+    const m16Events = events.filter((e) =>
+      e.event_type.startsWith('proto_m16_'),
+    );
+
+    expect(m16Events.length).toBeGreaterThan(3);
+    expect(
+      m16Events.every((e) => e.event_type.startsWith('proto_m16_handling_')),
+    ).toBe(true);
+    expect(
+      m16Events.filter(
+        (e) => e.event_type === 'proto_m16_handling_first_responses_completed',
+      ),
+    ).toHaveLength(1);
+    expect(
+      m16Events.filter(
+        (e) => e.event_type === 'proto_m16_handling_window_closed',
+      ),
+    ).toHaveLength(1);
+    expect(
+      m16Events.filter(
+        (e) => e.event_type === 'proto_m16_handling_first_response',
+      ),
+    ).toHaveLength(6);
+
+    for (const event of m16Events) {
+      const m = metadata(event);
+
+      expect(m.opportunity_id, event.event_type).toBe(
+        'proto_m16_handling_series',
+      );
+      expect(m.window_id, event.event_type).toBe('m16_handling_w1');
+      expect(m.entry_state_version, event.event_type).toBe('m16-handling-v1');
+    }
+
+    expectProvisionalOnly(m16Events);
+    expect(eventsOfFamily(events, 'proto_m16_protocol')).toHaveLength(0);
+    expect(
+      (await validityRecord(page, 'proto_m16_handling_series')).validity,
+    ).toBe('valid');
+
+    // The M16 first-response phase sits between its opening and its window
+    // closure; only the briefing exposure precedes it and only the results
+    // (and leaving) follow it.
+    const m16Index = (type: string) =>
+      events.findIndex((e) => e.event_type === `proto_m16_handling_${type}`);
+    const m16Opened = m16Index('opportunity_opened');
+    const m16Closed = m16Index('window_closed');
+
+    expect(m16Opened).toBeGreaterThan(m16Index('presented'));
+    expect(m16Closed).toBeGreaterThan(m16Opened);
+
+    for (const event of m16Events) {
+      const at = events.indexOf(event);
+      const suffix = event.event_type.slice('proto_m16_handling_'.length);
+
+      if (suffix === 'presented') {
+        expect(at).toBeLessThan(m16Opened);
+      } else if (
+        suffix === 'results_shown' ||
+        suffix === 'panel_left' ||
+        suffix === 'series_reopened'
+      ) {
+        expect(at, event.event_type).toBeGreaterThan(m16Opened);
+      } else {
+        expect(at >= m16Opened && at <= m16Closed, event.event_type).toBe(true);
+      }
+    }
 
     // M15 (Unit 18) is no longer an IP family: an explicit check of
     // equivalent strength — its own family only, one opportunity, the
@@ -689,7 +780,7 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     }
 
     // Pairwise disjoint: no event belongs to two families.
-    const all = [...Object.values(families).flat(), ...m15Events];
+    const all = [...Object.values(families).flat(), ...m15Events, ...m16Events];
 
     expect(new Set(all).size).toBe(all.length);
     expect(all.length).toBe(
@@ -775,6 +866,13 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
             (e) => e.event_type === 'proto_m15_systems_window_closed',
           )!,
         ).active_ms ?? 0,
+      ) +
+      Number(
+        metadata(
+          m16Events.find(
+            (e) => e.event_type === 'proto_m16_handling_window_closed',
+          )!,
+        ).active_ms ?? 0,
       );
 
     // eslint-disable-next-line no-console
@@ -803,12 +901,14 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     await completeDockTutorial(page, 1);
     await routeToLabWork(page);
 
-    // Straight to the protocol console without the orientation.
-    await openBench(page, PILOT.lab.protocolConsole, '__ipTerminalProbe');
-    expect((await terminalProbe(page)).task).toBe('m16');
+    // Straight to the training rig without the orientation (Unit 19: the
+    // protocol console teaches its own rule and has no orientation gate;
+    // the rig's route module still flags a skipped Console Orientation).
+    await openBench(page, PILOT.lab.trainingRig, '__ipTerminalProbe');
+    expect((await terminalProbe(page)).task).toBe('m17');
 
     const flagged = (await getEvents(page)).filter(
-      (e) => e.event_type === 'proto_m16_protocol_entry_state_flagged',
+      (e) => e.event_type === 'proto_m17_trials_entry_state_flagged',
     );
 
     expect(flagged).toHaveLength(1);
@@ -816,16 +916,33 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
       'invalid_entry_state',
     );
 
-    const m16 = await ipValidity(page, 'proto_m16_protocol_update');
+    const m17 = await ipValidity(page, 'proto_m17_criterion');
 
-    expect(m16.entered).toBe(true);
-    expect(m16.invalid_reason).toBe('invalid_entry_state');
-    expect(m16.validity).toBe('invalid');
-    // The task still runs (invalid ≠ blocked): a command is accepted.
-    await typeCommand(page, 'ROUTE B1 ARCHIVE');
-    await waitBufferLength(page, 1);
+    expect(m17.entered).toBe(true);
+    expect(m17.invalid_reason).toBe('invalid_entry_state');
+    expect(m17.validity).toBe('invalid');
+    // The task still runs (invalid ≠ blocked): the demonstration advances.
+    expect((await terminalProbe(page)).stage).toBe('DEMONSTRATION');
+    await clickTerminalButton(page, 'READY');
+    expect((await terminalProbe(page)).stage).toBe('BASELINE');
     await clickTerminalButton(page, 'close');
     await waitTerminalOpen(page, false);
+
+    // The protocol console (Unit 19) opens without any orientation gate
+    // and flags nothing: its first-opening card, left at once.
+    await openBench(page, PILOT.lab.protocolConsole, '__workSurfaceProbe');
+    expect((await surface(page))?.surface_id).toBe('m16_protocol_console');
+    expect(
+      (await getEvents(page)).filter((e) =>
+        /^proto_m16_.*entry_state_flagged$/.test(e.event_type),
+      ),
+    ).toEqual([]);
+    expect(
+      (await validityRecord(page, 'proto_m16_handling_series')).invalid_reason,
+    ).toBeNull();
+    await page.waitForTimeout(450);
+    await press(page, 'Escape');
+    await waitSurface(page, false);
 
     // Evidence table (Unit 18): the world is frozen under the surface.
     await openBench(page, PILOT.lab.evidenceTable, '__workSurfaceProbe');
