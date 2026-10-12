@@ -820,6 +820,11 @@ test.describe('M16 handling rule on the route (Unit 19)', () => {
     expect((await ids(page))[0]).toBe('close_help');
     expect(await lines(page)).toContain('HOW THE CONSOLE WORKS');
     expect(await lines(page)).toContain('Only confirming records your answer.');
+    // The keyboard line of the closeout ruling 3 (12 October 2026), one
+    // separate line immediately before the approved "Keys:" line.
+    expect(await lines(page)).toContain(
+      "TAB moves focus. ENTER selects the focused control.\nKeys: 1-4 choose · R record · N don't know · H help · ESC leaves (work kept).",
+    );
     await expectNoCorrectnessOnScreen(page);
     await shot(page, '15-help-sheet-over-vial-4-with-draft');
     expect(await countOf(page, 'help_consulted')).toBe(1);
@@ -1278,6 +1283,7 @@ test.describe('M16 handling rule on the route (Unit 19)', () => {
     await fallbackGate(
       page,
       'Courier New',
+      'c1-courier-new',
       '22-vial-4-with-draft-courier-new',
       null,
     );
@@ -1297,6 +1303,7 @@ test.describe('M16 handling rule on the route (Unit 19)', () => {
     await fallbackGate(
       page,
       'Lucida Console',
+      'c2-lucida-console',
       '23-vial-4-with-draft-lucida-console',
       '24-results-page-2-lucida-console',
     );
@@ -1409,6 +1416,62 @@ test.describe('M16 handling rule on the route (Unit 19)', () => {
     expectNoRuntimeErrors(errors);
   });
 
+  test('R8 supplementary capture (closeout ruling 5 of 12 October 2026): the wall display after M16 is recorded at canvas=1080 and a 2560 × 1440 viewport, the display region clipped (frames 27, 27a) — test-side viewport only, no product change', async ({
+    page,
+  }) => {
+    test.setTimeout(900_000);
+
+    const errors = captureErrors(page);
+
+    await toLab(page, 'u19r8c', '&canvas=1080');
+    await openConsole(page);
+    await teachingByKeyboard(page);
+
+    for (const [index, key] of KEYS.entries()) {
+      await answerByKeyboard(page, key);
+
+      if (index < KEYS.length - 1) {
+        await nextByKeyboard(page);
+      }
+    }
+
+    expect(await countOf(page, 'first_responses_completed')).toBe(1);
+    await nextByKeyboard(page); // SHOW RESULTS
+    await leaveConsole(page);
+    await page.waitForTimeout(600);
+
+    const display = await signalDisplay(page);
+
+    expect(display?.phases_recorded).toEqual(['m16']);
+    expect(display?.next_phase).toBe('m15');
+    expect(display?.indicator).toMatch(/PHASE 1 \/ 4/);
+
+    // The larger viewport scales the FIT-letterboxed canvas; the display
+    // region (upper right of the laboratory) is clipped from the canvas box.
+    await page.setViewportSize({ width: 2560, height: 1440 });
+    await page.waitForTimeout(1500);
+
+    const box = await page.locator('canvas').boundingBox();
+
+    expect(box).not.toBeNull();
+    // eslint-disable-next-line no-console
+    console.log(
+      `[R8 supplementary] canvas box ${box!.width.toFixed(0)} × ${box!.height.toFixed(0)} at (${box!.x.toFixed(0)}, ${box!.y.toFixed(0)})`,
+    );
+    await shot(page, '27-wall-display-after-m16-recorded-2560x1440');
+    await page.screenshot({
+      path: `${OUT}/27a-wall-display-close-up-2560x1440.png`,
+      clip: {
+        x: box!.x + box!.width * 0.54,
+        y: box!.y + box!.height * 0.08,
+        width: box!.width * 0.27,
+        height: box!.height * 0.3,
+      },
+    });
+    expect(display).toEqual(await signalDisplay(page));
+    expectNoRuntimeErrors(errors);
+  });
+
   test('R9 (HELP, LEAVE CONSOLE and FINISH on every view by both input modes): from the card, both examples, a vial without and with a draft and an acknowledgement HELP and LEAVE CONSOLE are present, focusable, clickable and overlapped by nothing; on both results pages HELP and FINISH; HELP / CLOSE HELP restore the view; FINISH and ESC close', async ({
     page,
   }) => {
@@ -1516,19 +1579,57 @@ async function measureGate(
   }
 }
 
-/** Example 2, vial 4 with a draft and results page 2 under a forced font (keyboard). */
+/**
+ * Under a forced font (keyboard): the first-opening card, example 1,
+ * example 2, the help sheet over example 2, vial 4 with a draft and results
+ * page 2. The card and example footer of the closeout ruling 3 (12 October
+ * 2026) must render on ONE line: the surface places the feedback line from
+ * the footer's bounds, so its top is compared with its top under the help
+ * sheet, whose 24-character footer is one line by construction — a wrapped
+ * footer would lift the feedback line by one line.
+ */
 async function fallbackGate(
   page: Page,
   font: string,
+  frames: string,
   vialFrame: string,
   resultsFrame: string | null,
 ) {
+  const feedbackTop = async () => (await probe(page)).feedback_top;
+  const tops: [string, number][] = [];
+
+  // The first-opening card: its text inside its box; its seven lines are
+  // checked once the rule card gives the line height.
+  await measureGate(page, font, 'first-opening card', [], null);
+
+  const cardText = (await probe(page)).elements.find(
+    (e) => e.id === 'intro_text',
+  )!.text_h;
+
+  tops.push(['first-opening card', await feedbackTop()]);
+  await shot(page, `${frames}-card`);
   await showExample1ByKeyboard(page);
-  await activateByKeyboard(page, 'next_example');
   // The per-line height, read from the rule card (nine fixed lines).
   const card = (await probe(page)).elements.find((e) => e.id === 'rule_card')!;
   const lineHeight = card.text_h / 9;
 
+  expect(
+    Math.abs(cardText - 7 * lineHeight),
+    `first-opening card on 7 lines (text ${cardText.toFixed(1)}, line ${lineHeight.toFixed(1)})`,
+  ).toBeLessThan(lineHeight / 2);
+  await measureGate(
+    page,
+    font,
+    'example 1',
+    [
+      { id: 'rule_card', lines: 9 },
+      { id: 'example_block', lines: 7 },
+    ],
+    lineHeight,
+  );
+  tops.push(['example 1', await feedbackTop()]);
+  await shot(page, `${frames}-example-1`);
+  await activateByKeyboard(page, 'next_example');
   await measureGate(
     page,
     font,
@@ -1536,6 +1637,41 @@ async function fallbackGate(
     [{ id: 'example_block', lines: 7 }],
     lineHeight,
   );
+  tops.push(['example 2', await feedbackTop()]);
+  await shot(page, `${frames}-example-2`);
+
+  // The help sheet over example 2: the title, a blank and the eight lines
+  // (the keyboard line of the ruling before "Keys:") on ten lines inside
+  // the box; its footer the one-line reference for the footers above.
+  await page.waitForTimeout(SETTLE_MS + 50);
+  await page.keyboard.press('h');
+  await page.waitForTimeout(250);
+  expect((await ids(page))[0]).toBe('close_help');
+  expect(await lines(page)).toContain(
+    'TAB moves focus. ENTER selects the focused control.\nKeys:',
+  );
+  await measureGate(
+    page,
+    font,
+    'help sheet',
+    [{ id: 'help_text', lines: 10 }],
+    lineHeight,
+  );
+
+  const helpTop = await feedbackTop();
+
+  for (const [label, top] of tops) {
+    expect(
+      Math.abs(top - helpTop),
+      `${label}: footer on one line (feedback top ${top.toFixed(1)}; ${helpTop.toFixed(1)} under the help sheet's one-line footer)`,
+    ).toBeLessThan(1);
+  }
+
+  await shot(page, `${frames}-help-over-example-2`);
+  await page.waitForTimeout(SETTLE_MS + 50);
+  await page.keyboard.press('h');
+  await page.waitForTimeout(250);
+  expect((await ids(page))[0]).toBe('teaching_note');
   await startVialsByKeyboard(page);
   await answerByKeyboard(page, KEYS[0]);
   await nextByKeyboard(page);
@@ -1558,6 +1694,9 @@ async function fallbackGate(
     ],
     lineHeight,
   );
+  // The preview's vial footer stays one line as well (the question block
+  // alone may wrap under these fonts — ruling 2 of 12 October 2026).
+  expect(Math.abs((await feedbackTop()) - helpTop)).toBeLessThan(1);
   await shot(page, vialFrame);
   await recordByKeyboard(page, 'r');
   await nextByKeyboard(page);
@@ -2024,6 +2163,11 @@ async function accessFromView(
   await page.waitForTimeout(250);
   expect((await ids(page))[0], `${label} help by keyboard`).toBe('close_help');
   expect(await lines(page)).toContain('HOW THE CONSOLE WORKS');
+  // The keyboard line of the closeout ruling 3 (12 October 2026) sits
+  // immediately before the approved "Keys:" line.
+  expect(await lines(page)).toContain(
+    "TAB moves focus. ENTER selects the focused control.\nKeys: 1-4 choose · R record · N don't know · H help · ESC leaves (work kept).",
+  );
   await page.waitForTimeout(SETTLE_MS + 50);
   expect((await probe(page)).focus).toBe('close_help');
   await page.keyboard.press('Enter');

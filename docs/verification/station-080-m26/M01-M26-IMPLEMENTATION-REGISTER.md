@@ -163,6 +163,136 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
 
 ## 4. As-built records (appended per unit)
 
+**Unit 19 closeout (M16; 12 October 2026)** — one bounded closeout under the
+research owner's closeout rulings of 12 October 2026 (§5.314; `UNIT-LOG.md`
+"U19 closeout", the instruction recorded verbatim before the first source
+edit); the "Unit 19 (M16): as-built" record below stands except where this
+record says so. **Status: two participant-facing instruction strings added and
+one footer re-worded under owner ruling 3, five contextual strings and one
+soft wrap accepted under rulings 1 and 2, the extractor's entry-snapshot check
+corrected to validate the complete declared task definition; no authored
+content, answer key, option, version, event name, scoring formula, threshold
+or administration identity changed; NOT scientifically validated.**
+
+(1) Controls named (ruling 3). `m16HandlingContent.ts`: `footer_card` — the
+footer of the first-opening card and of both worked-example views (the surface
+model uses it for those three views only) — is now
+`TAB moves focus · ENTER selects · H help · ESC leaves (work kept)`;
+`help_lines` carries `TAB moves focus. ENTER selects the focused control.` as
+a separate line immediately before the approved `Keys:` line (eight lines; the
+help sheet's 300 px box holds the title, a blank and the eight lines on ten
+lines under both forced fonts). The results footer, the vial / acknowledgement
+footer, the dialog, help and closed-record footers and the fault line are
+unchanged (rulings 1 and 3). The focus landings, the tab order, the hotkeys,
+the 400 ms fresh-press rule, the settle and every commitment protection of §4
+"Unit 19" (1) are unchanged. The distinction the contextual strings document —
+leaving a view, cancelling a confirmation, closing HELP — is written out in
+§5.314 (1).
+
+(2) The vial question's soft wrap (ruling 2). Accepted for that one string;
+the rule card, the example blocks, the vial labels and the results blocks keep
+their fixed lines, and R7 now also measures the first-opening card (seven
+lines), example 1, example 2 and the help sheet (ten lines) under both forced
+fonts, and checks that the card and example footers render on ONE line (the
+feedback line's position compared with its position under the help sheet's
+one-line footer; the question-only approval does not extend to the footer).
+Nothing about text size, scrolling or layout was relaxed.
+
+(3) Entry-snapshot definition (ruling 6). Reproduced first: a focused pure
+test against the committed extractor (`3e24f5c`) showed the six correct vial
+records accompanied by a conflicting duplicate of `m16_v2` and an extra
+unknown record `m16_v7` accepted as `observed` 6 of 6 (`UNIT-LOG.md` "U19
+closeout results", the reproduction log). `features/m16.ts` now validates the
+complete declared task definition at `opportunity_opened`: a list of exactly
+six records; each a record of a known vial, none twice; each with exactly four
+unique option ids in the content's fixed order and with the content's key —
+otherwise `technical_failure` with the defect named (no vial list; a count
+other than six; a non-record; an unknown vial; a vial twice; options
+disagreeing; a key disagreeing). The responses' rules are untouched: the new
+pure test asserts `observed` on the genuine definition (also with the records
+in another order and with an additive field on every record), `pending` with
+two answers and the series open, `incomplete` 2 of 2 with two answers closed
+at the review, `no_eligible_event` with none, beside nineteen malformed
+definitions (the reported counterexample in three forms, an identical
+duplicate, an extra unknown record, five records, an unknown vial in place of
+a known one, one vial twice and one missing, a duplicate option id, the
+options out of order, a fifth option, another vial's key, a record without its
+options or its key, a null record, a string record, no records, a string in
+place of the list, the list absent) and, after the Opus confirmation
+(correction round 1, tests only), a defective definition with none or two
+answers, open or closed at the review, as `technical_failure` with the defect
+named and no answered ids (the defect is found at the opening, before any
+response is read; the responses stay in the raw log), the raw log
+byte-identical before and after extraction, and a reloaded load without its
+own opening `interrupted` whatever the earlier load's definition. The raw log
+is read, never changed. The owner question the confirmation surfaced
+(`vials_planned` and `assigned_vial_order` as part of the declared definition)
+is recorded in §5.314 (6), unresolved.
+
+(4) Frame 25 (ruling 5). Frame 25 is contextual imagery; the completion state
+rests on R8's probe assertions. A supplementary capture was feasible without
+product change: the new route test "R8 supplementary capture" (the series at
+`canvas=1080`, then a test-side 2560 × 1440 viewport, which the
+FIT-letterboxed canvas filled) saves the whole frame and the display region
+clipped to `.playwright-mcp/u19-closeout`
+(`27-wall-display-after-m16-recorded-2560x1440.png`,
+`27a-wall-display-close-up-2560x1440.png`); the close-up shows the "PHASE 1 /
+4 — CAUSAL MODEL" indicator and the three tick marks legibly (the lamp tone
+outside the clip, not claimed).
+
+(5) The beacon (ruling 4): unchanged; the salience question is carried as an
+explicit U24 walkthrough issue (§5.314 (4)).
+
+(6) Documentation. §5.314 (the rulings as implemented, the reporting
+corrections); §5.313 closed by cross-reference; the addendum §2 "U19" (the
+definition rule, the closeout reference); the matrix (the M16 row, the "U19
+closeout" paragraph); `UNIT-LOG.md` "U19 closeout" and "U19 closeout results".
+
+(7) Changed files (eight of the ten paths the instruction permits, all inside
+the unit's 18-path allowlist): `src/pilot/windows/m16HandlingContent.ts`,
+`src/measurement/features/m16.ts`, `e2e/m16_handling.spec.ts`,
+`e2e/m16_handling_route.spec.ts`, this register, the addendum, the matrix and
+`UNIT-LOG.md`. Not touched: `m16HandlingModel.ts` and `m16SurfaceModel.ts`
+(permitted, not needed), `m16ProtocolConsole.ts`, `reviewClosure.ts`,
+`DiagnosticsLaboratoryScene.ts`, `registerV3.ts`, `features/index.ts`, the
+three re-expressed specs, `windowKit.ts`, `WorkSurfaceScene.ts`, the shared
+framework, the legacy module (hashes unchanged), any other item.
+
+(8) Test evidence (12 October 2026; commands, counts and every exception in
+`UNIT-LOG.md` "U19 closeout results"). Final verification by the test-reviewer
+(Sonnet 5.5, as a general-purpose agent on Sonnet reading the role file — the
+documented fallback; logs `closeout\final\` in the session scratchpad), on the
+final source before correction round 1: tsc exit 0; build exit 0; ESLint with
+the Prettier rule clean on the four changed `.ts` files; Prettier clean on
+them and on the register and the addendum, the matrix and `UNIT-LOG.md`
+flagged for the inherited reasons; `git diff --check` clean; verify-unit:
+whitespace clean and every changed path inside the allowlist, exit 1 only for
+the ten untracked files under `.agents/` and `.codex/` (unrelated, present
+before the closeout, preserved as instructed, never staged); pure
+`e2e/m16_handling.spec.ts` 49 passed; browser R1 and R9 2 passed (10.6 min);
+R7 under both forced fonts 2 passed (4.1 min — the first-opening card 105 /
+112 px on seven lines, the help sheet 150 / 160 px on ten lines inside its 300
+px box, the feedback line at design y 554 / 552 on the card, both examples,
+the help sheet, the vial view and results page 2 alike, so the card and
+example footers are one line; spare 52 / 50 px; the question 45 / 72 and 48 /
+72 px); the R8 supplementary capture 1 passed (2.0 min; canvas box 2560
+× 1440). Correction round 1 (tests only, after the Opus confirmation) was
+followed by the test-reviewer's rerun of the affected checks (tsc, ESLint and
+Prettier on the spec, `git diff --check`, verify-unit, the pure spec): tsc
+exit 0; ESLint and Prettier clean on the spec; `git diff --check` clean;
+verify-unit as before (the ten untracked paths only, nothing else); the pure
+spec 49 passed (3.9 s); no failure, no retry; the changed files the seven of
+the first run (the register's closeout text was spliced after this rerun and
+checked by the document-only rerun reported in the handoff). The documents
+were written after that rerun; the document-only checks (Prettier on the
+register and the addendum, `git diff --check`, verify-unit) were then rerun by
+the test-reviewer and reported in the handoff. Opus 5.5 confirmation
+(read-only; none of it an approval): points 1–3 CONFIRMED WITH NOTE — the
+check enforces the ruling, the fixed option order read as consistent with the
+approved administration, the missingness and reload paths untouched, the raw
+log read only; three test recommendations adopted in correction round 1; one
+owner question surfaced (§5.314 (6)).
+
 **Unit 19 (M16): as-built** — the handling rule at the Diagnostics Laboratory
 protocol console (bounded unit under contract `U19-CONTRACT.md`, v1 of 11
 October 2026, final 11 October 2026 with amendment A1). **Status: technical
@@ -8280,4 +8410,139 @@ an owner decision.
      and R8 of `m15_systems_route` were rerun in the browser (`UNIT-LOG.md`
      "U19 results"), and the static checks were rerun on the final files; no
      frame changed its content, so none was regenerated beyond R1's and R9's
-     own rewrites.
+     own rewrites. Closed by the owner's closeout rulings of 12 October 2026
+     (§5.314): (h) the five strings accepted (ruling 1); (i) the question's
+     soft wrap accepted (ruling 2); (j) the card and example footer and one
+     help line name TAB and ENTER (ruling 3); (k) the beacon unchanged, a U24
+     walkthrough issue (ruling 4); (l) frame 25 contextual imagery with a
+     supplementary close-up (ruling 5); the residual note on the snapshot
+     check corrected after the counterexample was reproduced (ruling 6).
+314. **RESEARCH-OWNER CLOSEOUT RULINGS — APPROVED 12 October 2026 (M16, the
+     U19 closeout; owner rulings, not implementer defaults; not reopened).**
+     Source: the owner's direct instruction and research-owner approval of 12
+     October 2026 (`UNIT-LOG.md` "U19 closeout", recorded verbatim before the
+     first source edit of the closeout). The instruction supersedes the
+     original exact-text requirements and the one-commit limit only where it
+     says so; the preparation package and the historical record stand
+     unchanged. **(1) The five contextual strings accepted** (resolving §5.313
+     (h); D-11 stands with this ruling): the fault record line
+     `The console has a fault and is closed. Recorded answers are kept.`, the
+     boundary dialog footer `ENTER starts · ESC keeps reading`, the vial
+     dialog footer `ENTER records · ESC keeps working`, the help sheet footer
+     `H or ESC closes the help` and the closed-record footer `ESC leaves` stay
+     as written; an accurate contextual instruction is never replaced by the
+     generic ESC footer. The distinction they document: on a VIEW (the
+     first-opening card, an example, a vial, an acknowledgement, a results
+     page) ESC LEAVES the console with the work kept — the window closes
+     resumable (`window_closed`, `exit_state` `panel_left`), the draft and
+     every recorded answer are kept, and the footer says "ESC leaves (work
+     kept)"; under a CONFIRMATION dialog (the boundary, a drawer, DON'T KNOW)
+     ESC CANCELS the pending commitment only — `teaching_close_cancelled` /
+     `commit_cancelled` with `reason` `keep_reading` / `keep_working`, nothing
+     recorded, the view behind the dialog unchanged with its draft, the
+     console open ("keeps reading" / "keeps working"); on the HELP sheet H or
+     ESC CLOSES the help and restores the view behind it with all its state
+     (`help_closed`; nothing left, nothing cancelled, no exposure written); on
+     a closed record (the review closure, the reload hold-back, the fault) ESC
+     leaves a console on which no answer can be given, so "ESC leaves" states
+     what remains. **(2) The vial question's soft wrap accepted** (resolving
+     §5.313 (i)):
+     `Which drawer does vial N go in? Choose a drawer, then record it.` is the
+     one string allowed to wrap differently under the fallback fonts (two
+     lines under the default font, three under forced Courier New and Lucida
+     Console), while contained in its 72 px box, readable and unclipped at the
+     existing 16 px text; the prescribed lines of the rule card (nine), the
+     worked examples (seven), the vial labels (two) and the results blocks
+     (sixteen on page 2) keep their fixed lines — R7 asserts them under both
+     forced fonts. No permission to reduce the text size, to scroll or to
+     relax any other layout requirement. **(3) Keyboard navigation named**
+     (resolving §5.313 (j)): the footer of the first-opening card and of both
+     worked-example views is
+     `TAB moves focus · ENTER selects · H help · ESC leaves (work kept)`
+     (replacing `H help · ESC leaves (work kept)` on those three views only;
+     the results pages keep the preview's footer, the vial and acknowledgement
+     views the preview's key footer); the help sheet carries the separate line
+     `TAB moves focus. ENTER selects the focused control.` immediately before
+     the approved `Keys:` line (eight help lines; the pure spec pins the
+     list). Every other approved string, the focus landings (D-11), the
+     controls and the commitment protections are unchanged; the keys, the
+     content, the versions and the formula are untouched. The new footer
+     renders on one line — the question-only wrapping of (2) does not extend
+     to it: R7 compares the feedback line's position under the card and
+     example footers with its position under the help sheet's one-line footer
+     under both forced fonts (the footer is placed in design px, so the
+     supported viewports — 800 × 600, 1280 × 720 and `canvas=1080` — do not
+     change its wrapping). **(4) The beacon unchanged** (resolving §5.313
+     (k)): an unfinished M16 keeps the beacon on the protocol console once M15
+     is recorded; its possible effect on attention to the later benches (M17 /
+     M18 entry) is an explicit U24 walkthrough issue, not a product change.
+     **(5) Frame 25 is contextual imagery** (resolving §5.313 (l)): the
+     completion-state claim rests on R8's probe assertions (`phases_recorded`
+     `['m16']`, `next_phase` `m15`, the "PHASE 1 / 4" indicator and the
+     evidence-table intercom line). A supplementary capture was feasible
+     through the existing route without product change: the new route test "R8
+     supplementary capture" repeats R8's series by keyboard at `canvas=1080`,
+     asserts the probe's recorded state (`phases_recorded` `['m16']`,
+     `next_phase` `m15`, the indicator), then sets a 2560 × 1440 viewport
+     (test-side only; the FIT-letterboxed canvas filled it — canvas box 2560
+     × 1440) and saves the whole frame
+     (`27-wall-display-after-m16-recorded-2560x1440.png`) and the display
+     region clipped from the canvas box
+     (`27a-wall-display-close-up-2560x1440.png`, 691 × 432) in
+     `.playwright-mcp/u19-closeout`; the close-up shows the display's "PHASE 1
+     / 4 — CAUSAL MODEL" indicator and the three tick marks legibly; the bench
+     lamp tone lies outside the clip and is not claimed. Frame 25 of the
+     unit's evidence stays as it is: contextual imagery. **(6)
+     Snapshot-integrity correction** (resolving the residual note of §5.313 on
+     scientific minor-6): the counterexample was reproduced first by a focused
+     pure test against the committed extractor (`3e24f5c`) — the six correct
+     vial records accompanied by a conflicting duplicate of `m16_v2` (key
+     `m16_v2_d1`) and an extra unknown record `m16_v7` were accepted
+     (`observed`, 6 of 6), because the check asked only that each content vial
+     have SOME matching record (`every` over `some`). The extractor now
+     validates the COMPLETE declared task definition of the entry snapshot:
+     exactly six vial records, each a record, each a known vial, none twice,
+     each with exactly four unique option ids in the content's fixed order and
+     with the content's key; a missing, duplicate, conflicting, unknown or
+     malformed record or list ⇒ `technical_failure` under the scored-metadata
+     integrity rule (contract §10; addendum §2 "U19"). Task-definition
+     metadata only: a participant may answer zero to six vials, and every
+     approved missingness, partial-series, closure and reload disposition is
+     unchanged — the new pure test asserts `observed` on the genuine
+     definition (also with the records in another order and with an additive
+     field), `pending` with two answers and the series open, `incomplete` with
+     two answers closed at the review and `no_eligible_event` with none,
+     beside nineteen malformed definitions. Precedence as implemented
+     (unchanged in kind from the form / rule check): a definition defect is
+     found at the opening, before any response is read, so the row names the
+     defect (`integrity_defect` in the components) and carries no answered ids
+     — the responses stay in the raw log, which is never altered: the
+     extractor reads (the new test pins a defective definition with none or
+     two answers, open or closed at the review, as `technical_failure`, the
+     log byte-identical before and after extraction, and a reloaded load
+     without its own opening `interrupted` whatever the earlier load's
+     definition — the Opus confirmation's recommendations (a)–(c), adopted as
+     tests). Owner question surfaced by the Opus confirmation, NOT resolved
+     here: whether the snapshot's `vials_planned` (6) and
+     `assigned_vial_order` also belong to the declared task definition —
+     option A, unchecked (the ruling names vial records, options and keys; the
+     assigned order is enforced from the content at every `vial_presented`);
+     option B, validated under the same rule (a requirement beyond the ruling
+     of 12 October 2026). **(7) Reporting corrections**, stated as the owner
+     requires: the original full verification matrix (`UNIT-LOG.md` "U19
+     results") PRECEDED correction round 1; the post-correction reruns of 11
+     October 2026 (P1, R1 and R9, the M15 route R8, the static checks) were
+     performed by the IMPLEMENTER, not by the test-reviewer; the vial question
+     wraps differently under the fallback fonts while the specified
+     instructional blocks retain their fixed lines; the unit's commit
+     `3e24f5c` of 11 October 2026 preceded the owner's resolution of the
+     wrapping and wording exceptions — the approval of 12 October 2026
+     resolves them now and is not backdated; the snapshot validation was
+     partially corrected in round 1 (each vial's key and option list checked)
+     with the disclosed duplicate-entry limitation remaining until this
+     closeout. Routing: Fable the sole writer; Sonnet 5.5 the focused closeout
+     verification; one targeted read-only Opus 5.5 scientific confirmation of
+     the snapshot validation and of the preserved missingness; exactly one
+     additional local commit
+     `fix(m16): clarify controls and validate entry snapshots`. The as-built
+     record of the closeout: §4 "Unit 19 closeout".

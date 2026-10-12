@@ -9897,3 +9897,347 @@ Implementer defaults (owner-visible, reversible; none changes the approved formu
 - D-10 The legacy module stays unchanged on the developer alias under its frozen v2 identity; the route no longer imports it; the registry's descriptive `opens` / window label for `lab.phase_m16` stay stale (U24 backlog).
 - D-11 Layout and interface details inside the wide frame (positions of preview §10, focus landings — the first drawer tile on a vial's first view is NOT pre-focused; focus lands on the question text's neutral position as M15's question views do — per-view footers).
 - Not updated in this unit (U24 backlog): the capture specs, the registry's `lab.phase_m16` `opens` and window label, `world_v1_*` evidence. Carried forward unchanged and open: the M05 competing-task observation of §5.290 (e) (i) and the episode-1 M05 cap on the scripted route — M05 matters that U19 neither tests nor changes; the U18 salience observation H1 (§5.301), an M15 matter.
+
+## U19 closeout — controls clarified and entry snapshots validated (12 October 2026)
+
+- **Authorisation (research owner, 12 October 2026; recorded before the first
+  source edit of the closeout).** The owner's direct instruction and
+  research-owner approval of 12 October 2026, reproduced verbatim below,
+  supersedes the original U19 exact-text requirements and the one-commit limit
+  ONLY where it says so explicitly; the original preparation package
+  (`U19-CONTRACT.md`, `U19-STIMULUS-PREVIEW.md` r3, `U19-FABLE-PROMPT.md`,
+  `U19-ALLOWLIST.txt`) and the historical record above ("U19", "U19 results",
+  the contract appendix) stand unchanged. Entry state at the start of the
+  closeout: branch `codex/u19-m16`, HEAD
+  `3e24f5c4dc228100b7fa3724e65b0f926e49fb8b` (the unit's commit), the working
+  tree clean apart from the two unrelated untracked folders `.agents/` and
+  `.codex/` (preserved, never staged), `CLAUDE_UNIT_ALLOWLIST` the unchanged
+  18-path list, the guard unchanged, `PW_DEV_PORT=5203`. The closeout edits
+  only the ten paths the instruction names (a subset of the 18-path allowlist;
+  nothing new); the owner rulings 1–5, the snapshot-integrity correction and
+  the reporting corrections are recorded as owner rulings (register §5.314),
+  never as implementer defaults; the commit
+  `fix(m16): clarify controls and validate entry snapshots` is the one
+  additional local commit the instruction authorises, created only after the
+  closeout gates pass, with `3e24f5c` not amended and no hook bypassed.
+  Nothing else is authorised: no push, merge, PR, tag, deployment,
+  installation, art, deletion, destructive cleanup, guard or git-config
+  change, new file, stimulus redesign, changed key, altered scoring formula,
+  shared-framework change, and no U20.
+
+### U19 closeout amendment (owner instruction of 12 October 2026, verbatim)
+
+Execute this bounded U19/M16 closeout now. This is my direct instruction and research-owner approval, dated 12 October 2026. Do not ask me to approve these decisions again.
+
+Continue in:
+C:\Users\Juls\.codex\worktrees\u19-m16\research-station-assessment-game
+
+Branch: codex/u19-m16
+Expected starting HEAD: 3e24f5c4dc228100b7fa3724e65b0f926e49fb8b
+
+Verify the entry state before editing. Preserve unrelated untracked files. Keep the existing 18-path CLAUDE_UNIT_ALLOWLIST and guard unchanged; this closeout permits edits only to the ten paths listed below.
+
+This dated amendment supersedes the original exact-text requirements and one-commit limit only where explicitly stated here. Preserve the original preparation package and historical record. Record this amendment in UNIT-LOG before the first source edit, then reconcile the current implementation documentation.
+
+**Owner rulings**
+
+1. Accept these five existing contextual strings:
+   - “The console has a fault and is closed. Recorded answers are kept.”
+   - “ENTER starts · ESC keeps reading”
+   - “ENTER records · ESC keeps working”
+   - “H or ESC closes the help”
+   - “ESC leaves”
+
+   Document the distinction between leaving a view, cancelling a confirmation and closing HELP. Do not replace accurate contextual instructions with the generic ESC footer.
+
+2. Accept soft wrapping of this question only:
+   “Which drawer does vial N go in? Choose a drawer, then record it.”
+
+   Its reported three-line rendering under fallback fonts is acceptable while contained, readable and unclipped at the existing text size. Preserve the prescribed lines of the rule, worked examples, vial labels and results blocks. This is not permission to reduce text size, introduce scrolling or relax other layout requirements.
+
+3. Add explicit keyboard navigation instructions.
+
+   On the first-opening card and both worked-example views, use this complete footer:
+   “TAB moves focus · ENTER selects · H help · ESC leaves (work kept)”
+
+   In HELP, insert this separate line immediately before the existing “Keys:” line:
+   “TAB moves focus. ENTER selects the focused control.”
+
+   Preserve the other approved wording, focus behaviour, controls and commitment protections.
+
+4. Leave the beacon behaviour unchanged. Retain its possible effect on attention to later benches as an explicit U24 walkthrough issue.
+
+5. Treat frame 25 as contextual imagery; its completion-state claim rests on the reported R8 probe assertions. Add a readable supplementary capture if feasible through the existing route without product changes. If unavailable, report that limitation honestly. This does not block closeout under this ruling.
+
+**Snapshot-integrity correction**
+
+First reproduce the reported duplicate/conflicting-entry case with a focused pure test against the existing implementation.
+
+When validating the entry snapshot’s declared task definition, require:
+- Exactly six unique, known vial records.
+- Exactly four unique expected option IDs for each vial.
+- The expected key for each vial.
+- Rejection of missing, duplicate, conflicting or unknown vial/option entries as required by the scored-metadata integrity rule.
+
+Validate the complete definition rather than accepting it because one matching entry exists.
+
+This requirement concerns task-definition metadata, not participant responses. A participant may legitimately answer zero through six vials. Preserve all approved missingness, partial-series, closure and reload rules.
+
+Add focused valid and malformed cases, including a correct entry accompanied by a conflicting duplicate and an extra unknown entry. Retain raw-log immutability. If a reported counterexample does not reproduce, document that result and avoid an unsupported production change.
+
+**Exact closeout edit subset**
+
+src/pilot/windows/m16HandlingContent.ts
+src/pilot/windows/m16HandlingModel.ts
+src/pilot/windows/m16SurfaceModel.ts
+src/measurement/features/m16.ts
+e2e/m16_handling.spec.ts
+e2e/m16_handling_route.spec.ts
+docs/verification/station-080-m26/IMPLEMENTATION-MATRIX.md
+docs/verification/station-080-m26/M01-M26-IMPLEMENTATION-REGISTER.md
+docs/verification/station-080-m26/SCORING-AND-EVENT-ADDENDUM-v1.md
+docs/verification/station-080-m26/UNIT-LOG.md
+
+Touch fewer files where possible. Do not expand this subset silently. No new files, stimulus redesign, changed keys, altered scoring formula, shared-framework changes, installation or art work.
+
+**Reporting corrections**
+
+State accurately that:
+- The original full matrix preceded the correction round.
+- The earlier post-correction reruns were performed by the implementer.
+- The question wraps differently under fallback fonts; the specified instructional blocks retain their fixed lines.
+- The original commit preceded the owner’s resolution of the wrapping and wording exceptions. Today’s approval resolves them now; do not backdate it.
+- Snapshot validation was partially corrected previously, with the disclosed duplicate-entry limitation remaining until this closeout.
+
+**Verification and model routing**
+
+Fable remains the sole writer.
+
+Sonnet 5.5 runs the focused final verification after the code changes:
+- TypeScript check and build.
+- ESLint and Prettier on changed files, whitespace and allowlist checks.
+- The complete M16 pure spec.
+- M16 route R1 and R9.
+- R7’s fallback-font checks, extended only as needed to cover the changed opening card, both example footers and HELP text.
+- R8 only if needed for the supplementary display capture.
+
+Check that the added instructions fit at the existing supported viewports and under both fallback fonts. Question-only wrapping approval does not authorise wrapping or clipping the new footer.
+
+Save affected closeout screenshots separately under .playwright-mcp/u19-closeout and report their paths. Preserve the original evidence.
+
+Use one targeted, read-only Opus 5.5 scientific confirmation of the final snapshot validation and preservation of legitimate missingness. Do not repeat the full three-reviewer audit or full regression matrix. Report actual agent models; use the contract’s documented fallback if named agents are unavailable, never Fable as reviewer.
+
+After any subsequent correction, Sonnet reruns only affected checks. Preserve the reported baseline exceptions and distinguish them from these closeout results. Join every agent, test and shell.
+
+**Commit and handoff**
+
+I explicitly authorise the named checks, screenshots, continued use of this branch and worktree, and exactly one additional local commit:
+
+fix(m16): clarify controls and validate entry snapshots
+
+Create it after the closeout gates pass. Do not amend the existing commit or bypass hooks. Use one bounded correction round; if a material blocker remains, finish independent authorised work and provide a resumable handoff without claiming completion.
+
+Provide the standard bounded-unit handoff, including the new commit, exact changed files, owner rulings, counterexample results, Sonnet’s final checks, Opus’s confirmation, screenshot paths, remaining limitations and background-task status.
+
+Stop before push, merge, PR, deletion or U20.
+
+### U19 closeout results (12 October 2026)
+
+- **What changed (eight of the ten permitted paths; the model and the surface
+  model untouched).** `src/pilot/windows/m16HandlingContent.ts`: `footer_card`
+  (the first-opening card and both worked-example views) is
+  `TAB moves focus · ENTER selects · H help · ESC leaves (work kept)`;
+  `help_lines` carries `TAB moves focus. ENTER selects the focused control.`
+  immediately before the approved `Keys:` line (ruling 3); every other string
+  unchanged, the five contextual strings of ruling 1 included.
+  `src/measurement/features/m16.ts`: the entry snapshot's declared task
+  definition validated in full (ruling 6, below). `e2e/m16_handling.spec.ts`:
+  the definition test; the wording test pinned to the ruled footer, the eight
+  help lines, the five accepted strings. `e2e/m16_handling_route.spec.ts`: R1
+  and R9 assert the help line before `Keys:`; R7 measures the first-opening
+  card (seven lines), example 1, example 2 and the help sheet (ten lines)
+  under both forced fonts and checks that the card and example footers render
+  on one line (the feedback line's position compared with its position under
+  the help sheet's one-line footer); the new "R8 supplementary capture" test
+  (ruling 5). The four documents. Register §4 "Unit 19 closeout", §5.313
+  (closed by cross-reference), §5.314; addendum §2 "U19"; the matrix M16 row
+  and "U19 closeout" paragraph.
+- **Counterexample reproduced first (ruling 6).** The focused pure test "entry
+  snapshot definition (closeout, 12 October 2026) …" was written and run
+  against the committed extractor (`3e24f5c`) before any extractor change (log
+  `closeout\p1-repro-before-fix.log` in the session scratchpad): the six
+  correct vial records accompanied by a conflicting duplicate of `m16_v2` (key
+  `m16_v2_d1`) and an extra unknown record `m16_v7` were accepted —
+  `Expected: "technical_failure"`, `Received: "observed"` (6 of 6). The cause:
+  the check asked only that each content vial have SOME matching record
+  (`every` over `some`), so a conflicting duplicate or an unknown record
+  beside the six correct ones passed. Two test-side slips preceded the
+  reproduction and were corrected before it (the value is the count 6, not the
+  fraction; the closed-at-review fixture needs the `closeAtReview` step beside
+  the closed context) — neither an implementation finding. The test stops at
+  its first failing expectation, so the reproduction log documents the
+  reported counterexample; the other malformed definitions are shown failing
+  closed only after the fix.
+- **The correction as implemented.** At `opportunity_opened` the extractor
+  validates the complete declared definition: a list of exactly six records;
+  each a record of a known vial, none twice; each with exactly four unique
+  option ids in the content's fixed order and with the content's key —
+  otherwise `technical_failure` with the defect named. Task-definition
+  metadata only: the responses' rules, every missingness disposition, the
+  closure and reload handling and the raw log are untouched; the new test
+  asserts `observed` on the genuine definition (also reordered and with an
+  additive field), `pending` with two answers and the series open,
+  `incomplete` 2 of 2 closed at the review and `no_eligible_event` with none,
+  beside nineteen malformed definitions. Addendum §2 "U19" states the rule.
+- **Rulings 1–5 as implemented.** (1) The five strings stay; the distinction
+  (leave a view with the work kept / cancel a confirmation with nothing
+  recorded / close HELP with the view restored) is written out in register
+  §5.314 (1). (2) The vial question's three-line rendering under the forced
+  fonts stands (45 / 72 px under both; readable, unclipped, 16 px); the rule
+  card, example blocks, vial labels, results blocks and now the first-opening
+  card and the help sheet are asserted on their lines. (3) The footer and the
+  help line as ruled; the footer measured one line under both forced fonts
+  (the feedback line at design y 554 on the card, both examples, the help
+  sheet, the vial view and results page 2 alike; the footer is placed in
+  design px, so the supported viewports — 800 × 600, 1280 × 720, `canvas=1080`
+  — do not change its wrapping). (4) The beacon unchanged; the U24 walkthrough
+  issue recorded in §5.314 (4). (5) Frame 25 stays contextual imagery; the
+  supplementary capture was feasible without product change — the route test
+  "R8 supplementary capture" (the series by keyboard at `canvas=1080`; the
+  probe's `phases_recorded` `['m16']`, `next_phase` `m15` and the indicator
+  asserted; then a test-side 2560 × 1440 viewport, which the FIT-letterboxed
+  canvas filled: canvas box 2560 × 1440 at (0, 0)) saved the whole frame and
+  the display region clipped from the canvas box (691 × 432); the close-up
+  shows "PHASE 1 / 4 — CAUSAL MODEL" and the three tick marks legibly; the
+  lamp tone lies outside the clip and is not claimed.
+- **Reporting corrections (stated as the owner requires).** The original full
+  verification matrix of 11 October 2026 ("U19 results") PRECEDED correction
+  round 1. The post-correction reruns of 11 October 2026 (P1, R1 and R9, the
+  M15 route R8, the static checks) were performed by the IMPLEMENTER, not by
+  the test-reviewer. The vial question wraps differently under the fallback
+  fonts (two lines under the default font, three under forced Courier New and
+  Lucida Console) while the specified instructional blocks retain their fixed
+  lines. The unit's commit `3e24f5c` of 11 October 2026 preceded the owner's
+  resolution of the wrapping and wording exceptions; the approval of 12
+  October 2026 resolves them now and is not backdated. The snapshot validation
+  was partially corrected in round 1 (each vial's key and option list checked)
+  with the disclosed duplicate-entry limitation remaining until this closeout.
+- **Implementer's own development runs (12 October 2026; before the
+  test-reviewer's final run; not the reported verification).** The focused
+  pure tests after the fix
+  (`--grep "entry snapshot definition|integrity|wording|cross-check"`: 14
+  passed); tsc exit 0; ESLint with the Prettier rule (`--fix`, reformatting
+  two files) and Prettier clean on the four `.ts` files; R7 (Courier New) and
+  the R8 supplementary capture in the browser: 2 passed (3.9 min; log
+  `closeout\dev-r7a-r8c.log`); the complete pure spec: 49 passed (4.4 s;
+  `closeout\p1-dev.log`), after one run that could not start because the
+  background browser run held port 5203 (`Port 5203 is already in use`; not a
+  test failure).
+- **Final verification by the test-reviewer (Sonnet 5.5; general-purpose agent
+  on Sonnet reading the role file — the contract's documented fallback; logs
+  `closeout\final\`).** First run (on the final source before correction round
+  1; logs `01-S1` … `10-E1`): S1 tsc exit 0; S2 build exit 0; S3 ESLint with
+  the Prettier rule clean on the four changed `.ts` files; S4 Prettier: the
+  four `.ts` files, the register and the addendum clean, the matrix and
+  `UNIT-LOG.md` flagged (inherited); S5 `git diff --check` clean; S6
+  verify-unit exit 1 — whitespace clean, every changed path inside the
+  allowlist, the only FAIL lines the ten untracked files under `.agents/` and
+  `.codex/` (unrelated, present before the closeout, preserved as instructed,
+  never staged); P1 `e2e/m16_handling.spec.ts` 49 passed (4.0 s); B1
+  `--grep "R1 |R9 "` 2 passed (10.6 min); B2 `--grep "R7 "` 2 passed (4.1 min)
+  — Courier New: the first-opening card 105 / 200 px (seven lines), the help
+  sheet 150 / 300 px (ten lines), the question 45 / 72, the feedback line at
+  design y 554 on the card, both examples, the help sheet, the vial view and
+  results page 2 alike (spare 52 px); Lucida Console: 112 / 200, 160 / 300, 48
+  / 72, the feedback line at 552 on every measured view (spare 50 px) — so the
+  card and example footers render on one line under both fonts; B3
+  `--grep "R8 supplementary"` 1 passed (2.0 min; canvas box 2560 × 1440 at
+  (0, 0)); E1: twenty-nine files in `u19-closeout`, the twenty-six frames and
+  `wv2lab` of `u19-evidence` intact. No failure, no retry, no flake; the
+  register was not yet changed at that run. Rerun of the affected checks after
+  correction round 1 (logs `11-S1b` … `16-P1b`): tsc exit 0; ESLint and
+  Prettier clean on the spec; `git diff --check` clean; verify-unit as before
+  (the ten untracked paths only, nothing else); the pure spec 49 passed (3.9
+  s); no failure, no retry; the changed files the seven of the first run (the
+  register's closeout text was spliced after this rerun and checked by the
+  document-only rerun reported in the handoff).
+- **Scientific confirmation (Opus 5.5; general-purpose agent on Opus reading
+  the `scientific-reviewer` role file — the fallback; read-only; none of it an
+  approval).** Points 1–3 CONFIRMED WITH NOTE: `snapshotDefinitionDefect`
+  enforces the ruling (an array of exactly six records; each a non-null object
+  of a known vial; none twice; four option ids unique and in the content's
+  order; the content's key), the reported counterexample now fails (eight
+  records fail the count; its six-record variants fail the unknown or
+  duplicate check), the fixed option order is read as consistent with the
+  ruling because the approved administration never shuffles the options, the
+  record order is free and additive fields are ignored; `not_presented`,
+  `interrupted` (the hold-back and the reload-without-opening branches return
+  before the check), `pending`, `no_eligible_event` and `incomplete` are
+  unchanged; the extractor reads only. Notes: `vials_planned` and
+  `assigned_vial_order` are not compared with the content (an owner question,
+  recorded in §5.314 (6), not resolved); the uniqueness test is redundant once
+  the order is required (harmless). Recommendations (a) a precedence case for
+  a defective definition with zero to five answers, (b) a raw-log immutability
+  assertion, (c) a reload case with a malformed earlier definition — all three
+  adopted as tests in correction round 1 (the precedence case pinned to the
+  actual behaviour: the defect is found at the opening, before any response is
+  read, so the row carries no answered ids). The documentation (addendum §2
+  "U19"; the §5.314 (6) draft) states the implemented rule.
+- **Closeout frames (`.playwright-mcp/u19-closeout`, the unit's twenty-six
+  frames in `u19-evidence` untouched).** R1's rewrites 01–15 and 26 (the card,
+  both examples, the help sheet over vial 4 and over results page 2 with the
+  ruled footer and help line under the default font); R7's
+  `22-vial-4-with-draft-courier-new`, `23-vial-4-with-draft-lucida-console`,
+  `24-results-page-2-lucida-console` and the new `c1-courier-new-card`,
+  `c1-courier-new-example-1`, `c1-courier-new-example-2`,
+  `c1-courier-new-help-over-example-2`, `c2-lucida-console-card`,
+  `c2-lucida-console-example-1`, `c2-lucida-console-example-2`,
+  `c2-lucida-console-help-over-example-2` (800 × 600); the R8 supplementary
+  `27-wall-display-after-m16-recorded-2560x1440` (2560 × 1440) and
+  `27a-wall-display-close-up-2560x1440` (691 × 432) — twenty-nine files; the
+  twenty-six frames of `u19-evidence` and its `wv2lab` folder unchanged.
+- **Baseline exceptions, preserved and distinguished.** The two
+  `final_scientific_gates` failures of the unit's matrix (both reproduced on
+  the untouched base export of `361cb8c`) and the Prettier flags on the matrix
+  and `UNIT-LOG.md` (inherited content) are the UNIT's documented exceptions;
+  the closeout did not rerun P2 (not in the owner's list) and reports only the
+  checks above as closeout results.
+- **Process deviations.** (1) The first attempt to splice the amendment into
+  this log was blocked by the pre-tool guard (a shell heredoc into the session
+  scratchpad is a shell write target); the reproduction test's edit of
+  `e2e/m16_handling.spec.ts` sat in the same tool batch and so landed minutes
+  before the record was appended — the amendment text itself had been written
+  before any source edit, and the content and extractor edits followed the
+  record. (2) The named `test-reviewer` and `scientific-reviewer` agents are
+  not discoverable in this session; both ran as general-purpose agents with
+  the model override, reading their role files. (3) A pure-spec run started
+  while the background browser run held port 5203 and could not start its dev
+  server; rerun afterwards. (4) The implementer's own development runs
+  preceded the test-reviewer's final run; the final run is the reported
+  verification; after the results were written into the documents the
+  document-only checks were rerun as the owner's "affected checks". (5)
+  Playwright through the local `cli.js`, as in the unit. (6) The register was
+  not yet changed at the test-reviewer's first run (its Prettier result for
+  the register covered the unit's text; the closeout's register text was
+  checked in the document-only rerun). (7) verify-unit exits 1 on the ten
+  untracked `.agents/` and `.codex/` files (no option excludes untracked
+  paths); every changed path is inside the allowlist and the whitespace check
+  is clean.
+- **Limitations.** Unchanged from the unit (six clustered applications of one
+  rule, one form, no claim of validity, equivalence or understanding; reload
+  exposure uncertain where the history is discontinuous; the M05 matters of
+  §5.290 (e) (i); the registry's `lab.phase_m16` label and the capture specs
+  in the U24 backlog). The beacon salience question is now an explicit U24
+  walkthrough issue. The supplementary display capture is a test-side viewport
+  at full HD, not a product close-up; the lamp tone lies outside the clip.
+  Frames of the examples and the card under the default font are R1's
+  (`.playwright-mcp/u19-closeout` carries its rewrites).
+- **Conclusion.** The owner's closeout rulings of 12 October 2026 are
+  implemented as ruled: the controls are named on the card, the example views
+  and the help sheet, the five contextual strings and the question's soft wrap
+  stand accepted, the entry snapshot's declared definition is validated in
+  full after the counterexample was reproduced, and every key, string of the
+  administered content, version, event name and the formula are unchanged.
+  Passing tests establish implementation correctness only. One additional
+  local commit follows; no push, merge, PR, tag, deployment or deletion; U20
+  is not started.

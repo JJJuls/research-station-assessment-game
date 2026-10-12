@@ -442,6 +442,67 @@ registerFeatureExtractor('M16', (events, context) => {
       components: components(reason),
     });
 
+  /**
+   * The entry snapshot's declared task definition against the content:
+   * exactly six unique known vial records, each with exactly four unique
+   * option ids in the content's order and the content's key. Returns the
+   * defect, or null when the definition is complete and consistent.
+   */
+  const snapshotDefinitionDefect = (vials: unknown): string | null => {
+    if (!Array.isArray(vials)) {
+      return 'the entry snapshot carries no vial list';
+    }
+
+    if (vials.length !== M16_VIALS.length) {
+      return `the entry snapshot declares ${vials.length} vial records, not ${M16_VIALS.length}`;
+    }
+
+    const seen = new Set<string>();
+
+    for (const entry of vials as unknown[]) {
+      if (typeof entry !== 'object' || entry === null) {
+        return 'the entry snapshot carries a vial record that is not a record';
+      }
+
+      const record = entry as {
+        vial_id?: unknown;
+        key_option_id?: unknown;
+        option_ids?: unknown;
+      };
+      const def = M16_VIALS.find(
+        (candidate) => candidate.id === record.vial_id,
+      );
+
+      if (def === undefined) {
+        return 'the entry snapshot declares a vial the content does not have';
+      }
+
+      if (seen.has(def.id)) {
+        return 'the entry snapshot declares a vial twice';
+      }
+
+      seen.add(def.id);
+
+      const optionIds = record.option_ids;
+
+      if (
+        !Array.isArray(optionIds) ||
+        optionIds.length !== def.options.length ||
+        new Set(optionIds).size !== optionIds.length ||
+        !def.options.every((option, index) => optionIds[index] === option.id)
+      ) {
+        return "the entry snapshot's options disagree with the content";
+      }
+
+      if (record.key_option_id !== def.key_option_id) {
+        return "the entry snapshot's key disagrees with the content";
+      }
+    }
+
+    // Six records, none unknown, none twice: every content vial is declared.
+    return null;
+  };
+
   /** A closure snapshot must agree with the recount of the first responses. */
   const snapshotAgrees = (event: RawGameEvent): boolean => {
     const entries = meta<SnapshotVial[]>(event, 'vials');
@@ -545,37 +606,18 @@ registerFeatureExtractor('M16', (events, context) => {
           return fail('the entry snapshot carries an unknown form or rule');
         }
 
-        // The snapshot's keys and option ids are scored evidence too: each
-        // vial's key must be the content's key (contract §10).
-        const snapshotVials = snapshot?.vials;
+        // The snapshot's declared task definition is scored evidence too
+        // (contract §10; the closeout ruling of 12 October 2026, register
+        // §5.314): the COMPLETE definition is validated — exactly the
+        // content's six vial records, each once, each with its four option
+        // ids in the fixed order and its key. A missing, duplicate,
+        // conflicting or unknown record fails the row; one matching record
+        // beside a conflicting one never passes. Task metadata only: the
+        // responses keep their own rules below.
+        const definitionDefect = snapshotDefinitionDefect(snapshot?.vials);
 
-        if (
-          !Array.isArray(snapshotVials) ||
-          !M16_VIALS.every((def) =>
-            snapshotVials.some(
-              (entry: {
-                vial_id?: unknown;
-                key_option_id?: unknown;
-                option_ids?: unknown;
-              }) => {
-                const optionIds = entry.option_ids;
-
-                return (
-                  entry.vial_id === def.id &&
-                  entry.key_option_id === def.key_option_id &&
-                  Array.isArray(optionIds) &&
-                  optionIds.length === def.options.length &&
-                  def.options.every(
-                    (option, index) => optionIds[index] === option.id,
-                  )
-                );
-              },
-            ),
-          )
-        ) {
-          return fail(
-            "the entry snapshot's keys or options disagree with the content",
-          );
+        if (definitionDefect !== null) {
+          return fail(definitionDefect);
         }
 
         if (snapshot?.examples_version !== M16_EXAMPLES_VERSION) {

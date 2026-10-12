@@ -729,8 +729,12 @@ U19 (M16, candidates as before; one new provisional family, no canonical
 event, no scoring-plan variable, no formula changed): the Diagnostics
 Laboratory protocol console leaves the v2 protocol-update terminal task under
 research-owner decision D-U19-1 with amendment A1 of 11 October 2026 (register
-§4 "Unit 19", §5.302); the legacy module stays untouched on the developer
-alias and its family is read by no extractor.
+§4 "Unit 19", §5.302) and the owner's closeout rulings of 12 October 2026
+(register §4 "Unit 19 closeout", §5.314: the card and example footer and one
+help line name the keyboard navigation; the entry snapshot's declared task
+definition is validated in full — no event, key, version or formula changed);
+the legacy module stays untouched on the developer alias and its family is
+read by no extractor.
 
 - **M16** — family `proto_m16_handling_`; ONE opportunity
   `proto_m16_handling_series`; window `m16_handling_w1`; object and surface id
@@ -843,8 +847,14 @@ alias and its family is read by no extractor.
   or unverifiable SCORED evidence — an unknown or mismatched
   `entry_state_version` or opportunity on any event of the family, a `form_id`
   other than `m16-form-1` on a `vial_presented` or `first_response`, an entry
-  snapshot whose `form_id` or `rule_version` is unknown or whose per-vial
-  `key_option_id` or `option_ids` disagree with the content, an unknown
+  snapshot whose `form_id` or `rule_version` is unknown or whose declared task
+  definition is not the content's complete definition — exactly six vial
+  records, each a record of a known vial, none twice, each with exactly four
+  unique option ids in the fixed order and with the content's key; a missing,
+  duplicate, conflicting, unknown or malformed record or list fails the row
+  (the U19 closeout of 12 October 2026, register §5.314 (6): one matching
+  record beside a conflicting one never passes; task-definition metadata
+  only, the responses' own rules unchanged) — an unknown
   `vial_id` or `option_id` or an option of another vial, a vial presented
   twice, before
   `teaching_closed`, before the previous vial's first response or out of the

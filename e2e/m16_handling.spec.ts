@@ -799,6 +799,9 @@ test.describe('M16 content cross-check', () => {
       "Each vial: choose a drawer (1-4), then RECORD DRAWER and confirm, or DON'T KNOW and confirm.",
       'Only confirming records your answer. A recorded answer cannot be changed.',
       'Results come after all six vials; FINISH or ESC closes them.',
+      // The closeout ruling 3 of 12 October 2026 (register §5.314): one
+      // separate line immediately before the approved "Keys:" line.
+      'TAB moves focus. ENTER selects the focused control.',
       "Keys: 1-4 choose · R record · N don't know · H help · ESC leaves (work kept).",
     ]);
     expect(T.close_help).toBe('CLOSE HELP  [H]');
@@ -829,8 +832,20 @@ test.describe('M16 content cross-check', () => {
     expect(T.footer_vial).toBe(
       "1-4 choose · R record · N don't know · H help · ESC leaves (work kept)",
     );
-    expect(T.footer_card).toBe('H help · ESC leaves (work kept)');
+    // The card and example footer of the closeout ruling 3 (12 October
+    // 2026); the results footer stays the preview's; the five contextual
+    // strings accepted by ruling 1 are unchanged.
+    expect(T.footer_card).toBe(
+      'TAB moves focus · ENTER selects · H help · ESC leaves (work kept)',
+    );
     expect(T.footer_results).toBe('H help · ESC leaves (work kept)');
+    expect(T.footer_start_dialog).toBe('ENTER starts · ESC keeps reading');
+    expect(T.footer_dialog).toBe('ENTER records · ESC keeps working');
+    expect(T.footer_help).toBe('H or ESC closes the help');
+    expect(T.footer_record).toBe('ESC leaves');
+    expect(T.fault).toBe(
+      'The console has a fault and is closed. Recorded answers are kept.',
+    );
     // The versions and ids of the approved administration.
     expect(M16_ENTRY_STATE_VERSION).toBe('m16-handling-v1');
     expect(M16_FORM_ID).toBe('m16-form-1');
@@ -3416,6 +3431,232 @@ test.describe('M16 extractor — integrity (technical_failure for contradictory 
       withMeta(events, 'first_response', { response_kind: 'guess' }),
       'unknown kind',
     );
+  });
+
+  test('entry snapshot definition (closeout, 12 October 2026): the complete declared task definition is validated — exactly six unique known vial records, each with its four unique options in the fixed order and its key; a correct record beside a conflicting duplicate or an extra unknown record fails; legitimate missingness is untouched', () => {
+    const events = full();
+    const snapshot = m16EntrySnapshot('lab_work');
+    const withVials = (vials: unknown) =>
+      withMeta(events, 'opportunity_opened', {
+        entry_state_snapshot: { ...snapshot, vials },
+      });
+    const edit = (
+      id: string,
+      change: (entry: (typeof snapshot.vials)[number]) => unknown,
+    ) =>
+      withVials(
+        snapshot.vials.map((entry) =>
+          entry.vial_id === id ? change(entry) : entry,
+        ),
+      );
+    const v2 = snapshot.vials[1];
+    const unknown = {
+      vial_id: 'm16_v7',
+      option_ids: ['m16_v7_d1', 'm16_v7_d2', 'm16_v7_d3', 'm16_v7_d4'],
+      key_option_id: 'm16_v7_d1',
+    };
+
+    // Valid definitions: the genuine one; the same six records in another
+    // order; a record carrying an additive field. The value is unchanged.
+    for (const [vials, label] of [
+      [[...snapshot.vials], 'the genuine definition'],
+      [[...snapshot.vials].reverse(), 'the records in another order'],
+      [
+        snapshot.vials.map((entry) => ({ ...entry, label: 'additive' })),
+        'an additive field on every record',
+      ],
+    ] as const) {
+      expect(row(withVials(vials)), label).toMatchObject({
+        disposition: 'observed',
+        value: 6,
+        numerator: 6,
+        denominator: 6,
+      });
+    }
+
+    // The definition check concerns task metadata, never the responses:
+    // zero to five answers keep their approved dispositions.
+    const twoAnswered = [...taught, series(KEYS.slice(0, 2))];
+
+    expect(row(log(twoAnswered))).toMatchObject({
+      disposition: 'pending',
+      value: null,
+    });
+    expect(row(log([...twoAnswered, closeAtReview]), CLOSED)).toMatchObject({
+      disposition: 'incomplete',
+      value: 2,
+      numerator: 2,
+      denominator: 2,
+      censored: true,
+      closure_reason: 'closed_at_review',
+    });
+    expect(row(log([...taught, closeAtReview]), CLOSED)).toMatchObject({
+      disposition: 'no_eligible_event',
+      value: null,
+      missing_reason: 'teaching_closed_no_first_response',
+    });
+
+    // The reported counterexample: the six correct records accompanied by a
+    // conflicting duplicate of v2 (another key) and an extra unknown record.
+    expectFailure(
+      withVials([
+        ...snapshot.vials,
+        { ...v2, key_option_id: 'm16_v2_d1' },
+        unknown,
+      ]),
+      'a conflicting duplicate and an unknown record beside the six',
+    );
+    expectFailure(
+      withVials([...snapshot.vials, { ...v2, key_option_id: 'm16_v2_d1' }]),
+      'a conflicting duplicate alone',
+    );
+    expectFailure(
+      withVials([{ ...v2, key_option_id: 'm16_v2_d1' }, ...snapshot.vials]),
+      'a conflicting duplicate before the correct record',
+    );
+    expectFailure(
+      withVials([...snapshot.vials, { ...v2 }]),
+      'an identical duplicate (seven records)',
+    );
+    expectFailure(
+      withVials([...snapshot.vials, unknown]),
+      'an extra unknown record',
+    );
+    expectFailure(withVials(snapshot.vials.slice(0, 5)), 'five records');
+    expectFailure(
+      edit('m16_v6', (entry) => ({ ...entry, vial_id: 'm16_v7' })),
+      'an unknown vial in place of a known one',
+    );
+    expectFailure(
+      withVials([...snapshot.vials.slice(0, 5), snapshot.vials[0]]),
+      'six records with one vial twice and one missing',
+    );
+    expectFailure(
+      edit('m16_v3', (entry) => ({
+        ...entry,
+        option_ids: ['m16_v3_d1', 'm16_v3_d1', 'm16_v3_d3', 'm16_v3_d4'],
+      })),
+      'a duplicate option id (four entries, three unique)',
+    );
+    expectFailure(
+      edit('m16_v3', (entry) => ({
+        ...entry,
+        option_ids: [...entry.option_ids].reverse(),
+      })),
+      'the options out of the fixed order',
+    );
+    expectFailure(
+      edit('m16_v4', (entry) => ({
+        ...entry,
+        option_ids: [...entry.option_ids, 'm16_v4_d5'],
+      })),
+      'a fifth option',
+    );
+    expectFailure(
+      edit('m16_v4', (entry) => ({ ...entry, key_option_id: 'm16_v1_d1' })),
+      "another vial's key",
+    );
+    expectFailure(
+      edit('m16_v1', (entry) => ({
+        vial_id: entry.vial_id,
+        key_option_id: entry.key_option_id,
+      })),
+      'a record without its options',
+    );
+    expectFailure(
+      edit('m16_v1', (entry) => ({
+        vial_id: entry.vial_id,
+        option_ids: entry.option_ids,
+      })),
+      'a record without its key',
+    );
+    expectFailure(
+      edit('m16_v5', () => null),
+      'a null record',
+    );
+    expectFailure(
+      edit('m16_v5', () => 'm16_v5'),
+      'a record that is a string',
+    );
+    expectFailure(withVials([]), 'no records');
+    expectFailure(withVials('six'), 'records not a list');
+    expectFailure(withVials(undefined), 'records absent');
+
+    // Precedence (the scored-metadata integrity rule, as for the form and
+    // rule check): a load with its own opening and a defective definition
+    // is technical_failure whatever the number of answers, open or closed
+    // at the review. The defect is found at the opening, before any
+    // response is read, so the row names the defect and carries no
+    // answered ids — the responses stay in the raw log (the Opus
+    // confirmation of 12 October 2026, recommendation (a)).
+    const defective = (steps: Step[]) =>
+      withMeta(log(steps), 'opportunity_opened', {
+        entry_state_snapshot: {
+          ...snapshot,
+          vials: snapshot.vials.map((entry) =>
+            entry.vial_id === 'm16_v2'
+              ? { ...entry, key_option_id: 'm16_v2_d1' }
+              : entry,
+          ),
+        },
+      });
+
+    expectFailure(defective([...taught]), 'defective, none answered, open');
+    expectFailure(
+      defective([...taught, closeAtReview]),
+      'defective, none answered, closed',
+      CLOSED,
+    );
+    expectFailure(defective(twoAnswered), 'defective, two answered, open');
+
+    const closedDefective = row(
+      defective([...twoAnswered, closeAtReview]),
+      CLOSED,
+    );
+
+    expect(closedDefective).toMatchObject({
+      disposition: 'technical_failure',
+      value: null,
+      closure_reason: 'technical_failure',
+      included_ids: [],
+    });
+    expect(closedDefective.components).toMatchObject({
+      integrity_defect: "the entry snapshot's key disagrees with the content",
+    });
+
+    // The raw log is read, never changed: byte-identical before and after
+    // the extraction, for the genuine and for a defective definition
+    // (recommendation (b)).
+    for (const sample of [full(), defective([...twoAnswered, closeAtReview])]) {
+      const before = JSON.stringify(sample);
+
+      row(sample);
+      row(sample, CLOSED);
+      row(sample, RELOADED);
+      expect(JSON.stringify(sample)).toBe(before);
+    }
+
+    // A reloaded load without its own opening stays interrupted, also when
+    // the earlier load's definition was defective: the earlier load's
+    // events never enter the current load's reading (recommendation (c)).
+    const heldBack: RawGameEvent = {
+      session_id: 'GS',
+      timestamp_ms: 1,
+      scene: 'diagnostics_laboratory',
+      event_type: `${M16_FAMILY}technical_failure`,
+      object_id: 'm16_protocol_console',
+      sequence: 5,
+      page_load_index: 2,
+      metadata: {
+        ...kitFields(),
+        detail: M16_RELOAD_DETAIL,
+        input_mode: 'system',
+      },
+    };
+
+    expect(
+      row([...defective([...taught, series(KEYS)]), heldBack], RELOADED),
+    ).toMatchObject({ disposition: 'interrupted', value: null });
   });
 
   test('a response after completion, six responses without the snapshot, a snapshot with fewer or disagreeing, results before the sixth response, a double closure', () => {

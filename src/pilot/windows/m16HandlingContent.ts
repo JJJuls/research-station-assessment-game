@@ -337,6 +337,7 @@ export const M16_TEXT = {
     "Each vial: choose a drawer (1-4), then RECORD DRAWER and confirm, or DON'T KNOW and confirm.",
     'Only confirming records your answer. A recorded answer cannot be changed.',
     'Results come after all six vials; FINISH or ESC closes them.',
+    'TAB moves focus. ENTER selects the focused control.',
     "Keys: 1-4 choose · R record · N don't know · H help · ESC leaves (work kept).",
   ],
   close_help: 'CLOSE HELP  [H]',
@@ -357,7 +358,10 @@ export const M16_TEXT = {
   held_back:
     'This console was already used in this session. Its record is kept; no further answers can be given here.',
   fault: 'The console has a fault and is closed. Recorded answers are kept.',
-  footer_card: 'H help · ESC leaves (work kept)',
+  // The first-opening card and both worked-example views (owner ruling 3 of
+  // 12 October 2026, register §5.314): the keyboard navigation named.
+  footer_card:
+    'TAB moves focus · ENTER selects · H help · ESC leaves (work kept)',
   footer_vial:
     "1-4 choose · R record · N don't know · H help · ESC leaves (work kept)",
   footer_results: 'H help · ESC leaves (work kept)',
