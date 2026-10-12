@@ -853,45 +853,49 @@ read by no extractor.
   unique option ids in the fixed order and with the content's key; a missing,
   duplicate, conflicting, unknown or malformed record or list fails the row
   (the U19 closeout of 12 October 2026, register §5.314 (6): one matching
-  record beside a conflicting one never passes; task-definition metadata
-  only, the responses' own rules unchanged) — an unknown
+  record beside a conflicting one never passes; task-definition metadata only,
+  the responses' own rules unchanged), or whose `vials_planned` is not the
+  number 6 or whose `assigned_vial_order` is not exactly `m16_v1`–`m16_v6` in
+  that order (the owner's correction of 12 October 2026, §5.314 (6): the
+  already-approved count and order enforced; the per-vial records' storage
+  order unrestricted; six planned vials never six answers; `examples_version`
+  and the other snapshot fields are not failure conditions) — an unknown
   `vial_id` or `option_id` or an option of another vial, a vial presented
-  twice, before
-  `teaching_closed`, before the previous vial's first response or out of the
-  assigned order, a first response without its presentation, a second first
-  response for one vial, a `correct` flag that contradicts the key, a DON'T
-  KNOW marked correct or carrying an option, an option response without an
-  option of its own vial, a non-boolean `correct`, a `key_option_id` that
-  disagrees with the content, a first response outside `measurement` or after
-  the completion, six first responses without the completion snapshot or that
-  snapshot with fewer than six, a snapshot that disagrees with the recount,
-  ANY `results_shown` before the completion (also in a series that never
-  reaches six), a double closure or a closure after the completion, a family
-  event of the load without a usable, unique `sequence` (the §5.259
-  convention), and a `presented` or `prior_load_checked` record of another
-  opportunity or version or without a usable sequence. Legitimate missingness
-  is never a technical failure. A defect confined to unscored records sets a
-  component flag and leaves the row unchanged:
+  twice, before `teaching_closed`, before the previous vial's first response
+  or out of the assigned order, a first response without its presentation, a
+  second first response for one vial, a `correct` flag that contradicts the
+  key, a DON'T KNOW marked correct or carrying an option, an option response
+  without an option of its own vial, a non-boolean `correct`, a
+  `key_option_id` that disagrees with the content, a first response outside
+  `measurement` or after the completion, six first responses without the
+  completion snapshot or that snapshot with fewer than six, a snapshot that
+  disagrees with the recount, ANY `results_shown` before the completion (also
+  in a series that never reaches six), a double closure or a closure after the
+  completion, a family event of the load without a usable, unique `sequence`
+  (the §5.259 convention), and a `presented` or `prior_load_checked` record of
+  another opportunity or version or without a usable sequence. Legitimate
+  missingness is never a technical failure. A defect confined to unscored
+  records sets a component flag and leaves the row unchanged:
   `teaching_record_consistent: false` for an `example_viewed` after
   `teaching_closed`, before the opening or with an unknown example, a second
   `teaching_closed`, a `teaching_closed` before the opening or with another
   form (such a record is not counted as the boundary, so a vial presented
-  after it is a vial before `teaching_closed` and voids the scored
-  evidence), a `teaching_closed` whose `example_views` disagree with the
-  views counted, or an `examples_version` in the snapshot other than
-  `m16-examples-v1`; `exposure_record_consistent: false` for an orphan draft
-  (an unknown or unpresented vial), a help record without a phase or a
-  measurement help record without its vial, a `results_shown` without a page
-  or a page recorded as shown twice, a check record on a first load, two check
-  records, a self-contradictory check, a check claiming absence beside the
-  hold-back, or a check that found an earlier opening beside an opening of
-  this load. Dispositions: six verified first responses ⇒ `observed`
-  (`completed`), stable whatever follows; one to five answered and closed at
-  the review ⇒ `incomplete` with the value and its observed denominator,
-  censored; one to five answered and still open ⇒ `pending` with the answers
-  in the components (D-U19-1 item 9); never briefed and never opened ⇒
-  `not_presented` (also at the review closure); briefed and never opened ⇒
-  `pending` (`briefed_not_opened`) while open and null `no_eligible_event`
+  after it is a vial before `teaching_closed` and voids the scored evidence),
+  a `teaching_closed` whose `example_views` disagree with the views counted,
+  or an `examples_version` in the snapshot other than `m16-examples-v1`;
+  `exposure_record_consistent: false` for an orphan draft (an unknown or
+  unpresented vial), a help record without a phase or a measurement help
+  record without its vial, a `results_shown` without a page or a page recorded
+  as shown twice, a check record on a first load, two check records, a
+  self-contradictory check, a check claiming absence beside the hold-back, or
+  a check that found an earlier opening beside an opening of this load.
+  Dispositions: six verified first responses ⇒ `observed` (`completed`),
+  stable whatever follows; one to five answered and closed at the review ⇒
+  `incomplete` with the value and its observed denominator, censored; one to
+  five answered and still open ⇒ `pending` with the answers in the components
+  (D-U19-1 item 9); never briefed and never opened ⇒ `not_presented` (also at
+  the review closure); briefed and never opened ⇒ `pending`
+  (`briefed_not_opened`) while open and null `no_eligible_event`
   (`briefed_not_opened`, censored, `closed_at_review`) at the review closure;
   opened and unanswered at the review closure ⇒ `no_eligible_event`
   (`intro_only` | `teaching_only` | `teaching_closed_no_first_response`, as

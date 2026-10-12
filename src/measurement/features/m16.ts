@@ -443,6 +443,36 @@ registerFeatureExtractor('M16', (events, context) => {
     });
 
   /**
+   * The entry snapshot's declared planned count and assigned order against
+   * the approved administration (the owner's correction of 12 October 2026,
+   * register §5.314 (6)): `vials_planned` is the number 6 and
+   * `assigned_vial_order` is exactly the content's six vial ids in the
+   * assigned order. Six PLANNED vials, never six answers: a participant may
+   * answer zero to six. Only these two fields are validated here; the per-
+   * vial records are the definition check's, and the storage order of those
+   * records stays free. Returns the defect, or null.
+   */
+  const snapshotAdministrationDefect = (
+    snapshot: Record<string, unknown> | null | undefined,
+  ): string | null => {
+    if (snapshot?.vials_planned !== M16_VIALS_PLANNED) {
+      return `the entry snapshot's planned vial count is not the number ${M16_VIALS_PLANNED}`;
+    }
+
+    const order = snapshot.assigned_vial_order;
+
+    if (
+      !Array.isArray(order) ||
+      order.length !== M16_ASSIGNED_VIAL_ORDER.length ||
+      !M16_ASSIGNED_VIAL_ORDER.every((id, index) => order[index] === id)
+    ) {
+      return "the entry snapshot's assigned vial order disagrees with the content";
+    }
+
+    return null;
+  };
+
+  /**
    * The entry snapshot's declared task definition against the content:
    * exactly six unique known vial records, each with exactly four unique
    * option ids in the content's order and the content's key. Returns the
@@ -613,7 +643,15 @@ registerFeatureExtractor('M16', (events, context) => {
         // ids in the fixed order and its key. A missing, duplicate,
         // conflicting or unknown record fails the row; one matching record
         // beside a conflicting one never passes. Task metadata only: the
-        // responses keep their own rules below.
+        // responses keep their own rules below. The planned count and the
+        // assigned order are checked first (the owner's correction of 12
+        // October 2026): the approved administration fixes both.
+        const administrationDefect = snapshotAdministrationDefect(snapshot);
+
+        if (administrationDefect !== null) {
+          return fail(administrationDefect);
+        }
+
         const definitionDefect = snapshotDefinitionDefect(snapshot?.vials);
 
         if (definitionDefect !== null) {

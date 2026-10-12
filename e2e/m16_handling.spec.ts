@@ -3659,6 +3659,273 @@ test.describe('M16 extractor — integrity (technical_failure for contradictory 
     ).toMatchObject({ disposition: 'interrupted', value: null });
   });
 
+  test('entry snapshot planned count and assigned order (correction, 12 October 2026): `vials_planned` is the number 6 and `assigned_vial_order` is exactly m16_v1–m16_v6 in order; the records may be stored in any order; six planned vials are never six answers — a valid partial session keeps its disposition', () => {
+    const events = full();
+    const snapshot = m16EntrySnapshot('lab_work');
+    const order = [...M16_ASSIGNED_VIAL_ORDER];
+    const withFields = (
+      fields: Record<string, unknown>,
+      base: RawGameEvent[] = events,
+    ) =>
+      withMeta(base, 'opportunity_opened', {
+        entry_state_snapshot: { ...snapshot, ...fields },
+      });
+    const withoutField = (field: 'vials_planned' | 'assigned_vial_order') => {
+      const copy: Record<string, unknown> = { ...snapshot };
+
+      delete copy[field];
+
+      return withMeta(events, 'opportunity_opened', {
+        entry_state_snapshot: copy,
+      });
+    };
+
+    // The approved administration's values are the ones the kit writes.
+    expect(snapshot.vials_planned).toBe(6);
+    expect(snapshot.assigned_vial_order).toEqual([
+      'm16_v1',
+      'm16_v2',
+      'm16_v3',
+      'm16_v4',
+      'm16_v5',
+      'm16_v6',
+    ]);
+
+    // Valid: the fields as approved, also with the six definition records
+    // stored in another order (the storage order is unrestricted; the
+    // assigned order is the ordered field, not the records' position).
+    for (const [fields, label] of [
+      [{ vials_planned: 6, assigned_vial_order: order }, 'as approved'],
+      [
+        {
+          vials_planned: 6,
+          assigned_vial_order: order,
+          vials: [...snapshot.vials].reverse(),
+        },
+        'the records stored in reverse, the assigned order as approved',
+      ],
+    ] as const) {
+      expect(row(withFields(fields)), label).toMatchObject({
+        disposition: 'observed',
+        value: 6,
+        numerator: 6,
+        denominator: 6,
+      });
+    }
+
+    // Six planned vials, two answers: a valid partial session keeps its
+    // approved dispositions — pending while open, incomplete 2 of 2 and
+    // censored when closed at the review; the count stays 6.
+    const partial = [...taught, series(KEYS.slice(0, 2))];
+    const partialFields = { vials_planned: 6, assigned_vial_order: order };
+
+    expect(row(withFields(partialFields, log(partial)))).toMatchObject({
+      disposition: 'pending',
+      value: null,
+    });
+
+    const closedPartial = row(
+      withFields(partialFields, log([...partial, closeAtReview])),
+      CLOSED,
+    );
+
+    expect(closedPartial).toMatchObject({
+      disposition: 'incomplete',
+      value: 2,
+      numerator: 2,
+      denominator: 2,
+      censored: true,
+      closure_reason: 'closed_at_review',
+      included_ids: ['m16_v1', 'm16_v2'],
+    });
+    expect(closedPartial.components).toMatchObject({
+      vials_planned: 6,
+      vials_answered: 2,
+      assigned_vial_order: order,
+    });
+
+    // Every failing case names its defect (the scientific confirmation's
+    // recommendation): a count defect and an order defect read differently.
+    const COUNT_DEFECT =
+      "the entry snapshot's planned vial count is not the number 6";
+    const ORDER_DEFECT =
+      "the entry snapshot's assigned vial order disagrees with the content";
+    const expectDefect = (
+      sample: RawGameEvent[],
+      label: string,
+      defect: string,
+      context = CONTEXT,
+    ) => {
+      expectFailure(sample, label, context);
+      expect(row(sample, context).components, label).toMatchObject({
+        integrity_defect: defect,
+      });
+    };
+    const expectCountDefect = (
+      fields: Record<string, unknown>,
+      label: string,
+    ) => expectDefect(withFields(fields), label, COUNT_DEFECT);
+    const expectOrderDefect = (
+      fields: Record<string, unknown>,
+      label: string,
+    ) => expectDefect(withFields(fields), label, ORDER_DEFECT);
+
+    // Missing or malformed count.
+    expectDefect(
+      withoutField('vials_planned'),
+      'the planned count absent',
+      COUNT_DEFECT,
+    );
+    expectCountDefect({ vials_planned: null }, 'a null count');
+    expectCountDefect({ vials_planned: '6' }, 'the count as a string');
+    expectCountDefect({ vials_planned: NaN }, 'the count NaN');
+    expectCountDefect({ vials_planned: [6] }, 'the count in a list');
+
+    // Contradictory count: six records and six assigned ids, another count.
+    expectCountDefect({ vials_planned: 5 }, 'a count of five');
+    expectCountDefect({ vials_planned: 7 }, 'a count of seven');
+    expectCountDefect({ vials_planned: 0 }, 'a count of zero');
+    expectDefect(
+      withFields({ vials_planned: 2 }, log([...partial, closeAtReview])),
+      'a count of two with two answers (answers are not the plan)',
+      COUNT_DEFECT,
+      CLOSED,
+    );
+
+    // Missing or malformed order.
+    expectDefect(
+      withoutField('assigned_vial_order'),
+      'the assigned order absent',
+      ORDER_DEFECT,
+    );
+    expectOrderDefect({ assigned_vial_order: null }, 'a null assigned order');
+    expectOrderDefect(
+      { assigned_vial_order: order.join(',') },
+      'the assigned order as a string',
+    );
+    expectOrderDefect({ assigned_vial_order: [] }, 'an empty assigned order');
+
+    // Contradictory order: the six records as approved, the order not.
+    expectOrderDefect(
+      { assigned_vial_order: [...order].reverse() },
+      'the assigned order reversed',
+    );
+    expectOrderDefect(
+      { assigned_vial_order: [order[1], order[0], ...order.slice(2)] },
+      'two ids swapped',
+    );
+    expectOrderDefect({ assigned_vial_order: order.slice(0, 5) }, 'five ids');
+    expectOrderDefect(
+      { assigned_vial_order: [...order, 'm16_v7'] },
+      'seven ids with an unknown one',
+    );
+    expectOrderDefect(
+      { assigned_vial_order: [...order, order[0]] },
+      'seven ids with one twice',
+    );
+    expectOrderDefect(
+      { assigned_vial_order: [...order.slice(0, 5), order[0]] },
+      'six ids with one twice and one missing',
+    );
+    expectOrderDefect(
+      { assigned_vial_order: [...order.slice(0, 5), 'm16_v7'] },
+      'six ids with an unknown one in place of the sixth',
+    );
+
+    // Order of the checks: the count before the order, both before the
+    // records — a count defect beside an order defect and a defective
+    // record is named as the count defect; an order defect beside a
+    // defective record as the order defect.
+    const badRecords = snapshot.vials.map((entry) =>
+      entry.vial_id === 'm16_v2'
+        ? { ...entry, key_option_id: 'm16_v2_d1' }
+        : entry,
+    );
+
+    expectCountDefect(
+      {
+        vials_planned: 5,
+        assigned_vial_order: [...order].reverse(),
+        vials: badRecords,
+      },
+      'a count defect beside an order defect and a record defect',
+    );
+    expectOrderDefect(
+      { assigned_vial_order: [...order].reverse(), vials: badRecords },
+      'an order defect beside a record defect',
+    );
+    expectDefect(
+      withFields({ vials: badRecords }),
+      'a record defect alone (the count and order as approved)',
+      "the entry snapshot's key disagrees with the content",
+    );
+
+    // Precedence and the defect named: the count and order are read at the
+    // opening before any response, so a defective load with two answers,
+    // closed at the review, is technical_failure with no answered ids; the
+    // responses stay in the raw log, which is byte-identical afterwards.
+    const defectiveCount = withFields(
+      { vials_planned: '6' },
+      log([...partial, closeAtReview]),
+    );
+    const defectiveOrder = withFields(
+      { assigned_vial_order: [...order].reverse() },
+      log([...partial, closeAtReview]),
+    );
+
+    for (const [sample, defect] of [
+      [
+        defectiveCount,
+        "the entry snapshot's planned vial count is not the number 6",
+      ],
+      [
+        defectiveOrder,
+        "the entry snapshot's assigned vial order disagrees with the content",
+      ],
+    ] as const) {
+      const before = JSON.stringify(sample);
+      const record = row(sample, CLOSED);
+
+      expect(record).toMatchObject({
+        disposition: 'technical_failure',
+        value: null,
+        closure_reason: 'technical_failure',
+        included_ids: [],
+      });
+      expect(record.components).toMatchObject({ integrity_defect: defect });
+      row(sample);
+      row(sample, RELOADED);
+      expect(JSON.stringify(sample)).toBe(before);
+    }
+
+    // A reloaded load without its own opening stays interrupted whatever
+    // the earlier load's count or order.
+    const heldBack: RawGameEvent = {
+      session_id: 'GS',
+      timestamp_ms: 1,
+      scene: 'diagnostics_laboratory',
+      event_type: `${M16_FAMILY}technical_failure`,
+      object_id: 'm16_protocol_console',
+      sequence: 5,
+      page_load_index: 2,
+      metadata: {
+        ...kitFields(),
+        detail: M16_RELOAD_DETAIL,
+        input_mode: 'system',
+      },
+    };
+
+    expect(
+      row(
+        [
+          ...withFields({ vials_planned: 5 }, log([...taught, series(KEYS)])),
+          heldBack,
+        ],
+        RELOADED,
+      ),
+    ).toMatchObject({ disposition: 'interrupted', value: null });
+  });
+
   test('a response after completion, six responses without the snapshot, a snapshot with fewer or disagreeing, results before the sixth response, a double closure', () => {
     const events = full();
     const completion = events.find((e) =>

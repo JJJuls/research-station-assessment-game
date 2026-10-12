@@ -10241,3 +10241,200 @@ Stop before push, merge, PR, deletion or U20.
   Passing tests establish implementation correctness only. One additional
   local commit follows; no push, merge, PR, tag, deployment or deletion; U20
   is not started.
+
+## U19 closeout correction — planned count and assigned order (12 October 2026)
+
+- **Authorisation (research owner, 12 October 2026; recorded before the first
+  source edit of the correction).** The owner's instruction of 12 October
+  2026, reproduced verbatim below, follows the closeout of the same day ("U19
+  closeout", "U19 closeout results") and resolves the owner question the
+  closeout's Opus confirmation surfaced (register §5.314 (6)): the approved
+  administration already fixes six planned vials and their assigned order, so
+  the extractor is to validate `vials_planned` as the numeric value 6 and
+  `assigned_vial_order` as exactly the approved `m16_v1`–`m16_v6` ids in
+  order, with the storage order of the separate per-vial definition records
+  left unrestricted, six planned vials never confused with six participant
+  answers, and every approved missingness, partial-answer, closure, reload and
+  raw-log rule preserved. Entry state at the start of the correction: branch
+  `codex/u19-m16`, HEAD `8864e8e6d2a99954ddf6b98547a1c992c57084b0` (the
+  closeout's commit), the working tree clean apart from the ten unrelated
+  untracked metadata files under `.agents/` and `.codex/` (preserved, never
+  staged), `CLAUDE_UNIT_ALLOWLIST` the unchanged 18-path list, the guard
+  unchanged, `PW_DEV_PORT=5203`. The correction edits only the six paths the
+  instruction permits (`src/measurement/features/m16.ts`,
+  `e2e/m16_handling.spec.ts` and the four U19 verification documents — a
+  subset of the allowlist; nothing new); it is not a general snapshot-schema
+  audit; the commit `fix(m16): validate planned count and assigned order` is
+  the one additional local commit the instruction authorises, created only
+  after the focused checks and the reviewer confirmation, with neither
+  existing commit amended and no hook bypassed. Nothing else is authorised: no
+  browser run, screenshot, full matrix, preparation package, broad review,
+  push, merge, PR, tag, deployment, installation, deletion, ignore-rule or
+  verifier change, and no U20.
+
+### U19 closeout correction instruction (owner, 12 October 2026, verbatim)
+
+Complete the two remaining M16 metadata consistency checks. This is my instruction to implement the bounded correction and create one additional local commit.
+
+Continue on codex/u19-m16 in:
+C:\Users\Juls\.codex\worktrees\u19-m16\research-station-assessment-game
+
+Expected starting HEAD:
+8864e8e6d2a99954ddf6b98547a1c992c57084b0
+
+Verify the entry state first. Preserve unrelated untracked files and the existing guard/allowlist.
+
+The approved administration already fixes six planned vials and their assigned order. Validate:
+- vials_planned is the numeric value 6.
+- assigned_vial_order exactly matches the approved v1–v6 IDs in order.
+
+Keep the storage order of the separate per-vial definition records unrestricted. Do not confuse six planned vials with six participant answers. Preserve legitimate missingness, partial answers, closure, reload handling and raw-log immutability.
+
+Add focused pure cases for valid, missing, malformed and contradictory count/order fields, including a valid partial session. Do not extend this into a general snapshot-schema audit.
+
+Permitted edits are limited to:
+- src/measurement/features/m16.ts
+- e2e/m16_handling.spec.ts
+- The four existing U19 verification documents under docs/verification/station-080-m26/
+
+Update §5.314's unresolved question: these checks enforce the already-approved count and order. Describe precisely which snapshot fields are validated; do not imply that every metadata field is checked.
+
+Sonnet 5.5 must run the M16 pure spec and affected static checks on the final files. Obtain a brief read-only confirmation of this validation delta from the scientific reviewer; reuse the existing reviewer if available. No browser runs, screenshots, full matrix, new preparation package or broad review.
+
+Report the scope checker's actual exit status. From its existing output, list the ten untracked metadata paths and confirm they remain unstaged; do not delete them, change ignore rules or alter the verifier. Preserve the formatting exceptions accurately.
+
+After the focused checks and confirmation, create exactly one new local commit:
+fix(m16): validate planned count and assigned order
+
+Do not amend either existing commit. Finish with a concise handoff containing the new SHA, changed files, actual verification results, remaining exceptions and reviewer confirmation. Stop before push, merge or U20.
+
+### U19 closeout correction results (12 October 2026)
+
+- **What changed.** `src/measurement/features/m16.ts`: a new
+  `snapshotAdministrationDefect` inside the extractor, called at
+  `opportunity_opened` after the form and rule check and before the closeout's
+  record check — `vials_planned` must be the number 6 (`M16_VIALS_PLANNED`)
+  and `assigned_vial_order` a list of exactly `m16_v1` … `m16_v6` in that
+  order (`M16_ASSIGNED_VIAL_ORDER`); otherwise `technical_failure` with the
+  defect named ("the entry snapshot's planned vial count is not the number 6"
+  / "the entry snapshot's assigned vial order disagrees with the content").
+  Nothing else in the extractor changed: the records' storage order stays free
+  (the record check is the closeout's, unchanged), the responses' rules, the
+  missingness dispositions, the closure and reload handling and the raw-log
+  reading are untouched. Which snapshot fields are validated and which are not
+  is written out in the register §5.314 (6); no general snapshot-schema audit
+  was made.
+- **Six planned vials, never six answers.** The new pure test "entry snapshot
+  planned count and assigned order (correction, 12 October 2026)" asserts the
+  kit's values, `observed` 6 of 6 with the fields as approved and with the six
+  records stored in reverse, and the valid partial session of two answers —
+  `pending` while open, `incomplete` 2 of 2 censored `closed_at_review` when
+  closed at the review, `included_ids` the two answered vials, `vials_planned`
+  6 beside `vials_answered` 2 in the components — beside the failing cases:
+  five missing or malformed counts (absent, null, the string "6", NaN, a
+  list), four contradictory counts (five, seven, zero; two beside two answers,
+  closed at the review), four missing or malformed orders (absent, null, a
+  string, empty), seven contradictory orders (reversed, two swapped, five ids,
+  seven with an unknown, seven with one twice, six with one twice and one
+  missing, six with an unknown in place of the sixth), each with its defect
+  named; the order of the checks (a count defect beside an order and a record
+  defect named as the count defect; an order defect beside a record defect as
+  the order defect; a record defect alone as the key defect); the precedence
+  for a defective count and a defective order with two answers closed at the
+  review (`technical_failure`, no answered ids, the log byte-identical before
+  and after extraction under the open, closed and reloaded contexts); a
+  reloaded load without its own opening `interrupted` whatever the earlier
+  load's count. 50 tests in the pure spec (49 before).
+- **Scientific confirmation (read-only; Opus 5.5 as a general-purpose agent on
+  Opus reading the role file — the closeout's reviewer no longer reachable, so
+  the documented fallback again; none of it an approval).** Point 1, the
+  extractor: CONFIRMED — the helper does exactly the two checks against the
+  number 6 and the content-derived order and validates no other field; the
+  record check is unchanged and looks records up by id, never by position; the
+  diff touches no `first_response` rule, no `not_presented`, `pending`,
+  `no_eligible_event`, `incomplete` or `interrupted` path, no closure handling
+  and not the raw log; the precedence (form and rule, then count and order,
+  then the records, all at the opening before any response) is scientifically
+  acceptable — a row whose administration record contradicts the approved
+  administration cannot be tied to the administered task. Point 2, the test:
+  CONFIRMED WITH NOTE — the valid, partial, missing, malformed, contradictory,
+  precedence, immutability and reload cases cover the instruction; two
+  optional recommendations (assert the defect text per failing case; pair a
+  count or order defect with a record defect to show which message wins), both
+  adopted as tests before the test-reviewer's rerun; one observation (the
+  components' `vials_planned` and `assigned_vial_order` come from the
+  constants, not echoed from the snapshot — behaviour unaffected, stated
+  here). Point 3: CONFIRMED — no confusion of six planned vials with six
+  answers. No open decision surfaced. Not checked by the reviewer: the test
+  run, the UNIT-LOG diff in detail, the register's §5.314 text, the rest of
+  the snapshot schema.
+- **Test-reviewer verification (Sonnet 5.5 as a general-purpose agent on
+  Sonnet reading the role file — the documented fallback; logs
+  `correction\final\` in the session scratchpad; the implementer's development
+  runs preceded it: tsc exit 0, ESLint and Prettier clean, the pure spec 50
+  passed twice).** First run (logs 01–07, on the final extractor and the spec
+  before the test additions): tsc exit 0; build exit 0 (the usual chunk-size
+  warning); ESLint with the Prettier rule clean on the two changed `.ts`
+  files; Prettier: both `.ts` files clean, `UNIT-LOG.md` flagged (inherited);
+  `git diff --check` exit 0 (the two LF-to-CRLF warnings only); verify-unit
+  ACTUAL exit status 1 — "git diff --check: clean", every FAIL line one of the
+  ten untracked metadata files `.agents/skills/bounded-unit/SKILL.md`,
+  `.agents/skills/pixellab-asset-pipeline/SKILL.md`,
+  `.agents/skills/playwright-game-verify/SKILL.md`,
+  `.agents/skills/psychometric-task-design/SKILL.md`,
+  `.agents/skills/qualtrics-logging-review/SKILL.md`,
+  `.agents/skills/research-game-architect/SKILL.md`,
+  `.agents/skills/room-builder/SKILL.md`, `.codex/agents/cheap-explorer.toml`,
+  `.codex/config.toml`, `.codex/hooks.json` (all `??` in `git status`,
+  unstaged, not deleted, no ignore rule or verifier change), no other path
+  outside the allowlist; `git diff --name-only 8864e8e` the three files then
+  changed; the pure spec NOT run — the agent's permission classifier denied
+  the Playwright command (no reason given); no retry and no workaround at that
+  point. Rerun after the two test recommendations were adopted (logs 08–12):
+  tsc exit 0; ESLint and Prettier clean on both `.ts` files;
+  `git diff --check` exit 0; the pure spec, attempted exactly once more with
+  the same command, ran — exit 0, 50 passed in 4.2 s, the new test (number 43)
+  confirmed passing; port 5203 free before the run. Document-only rerun after
+  the four documents were written (logs 13–17): Prettier exit 1 with the
+  matrix and `UNIT-LOG.md` flagged (inherited), the register and the addendum
+  clean; `git diff --check` exit 0 (the two LF-to-CRLF warnings only);
+  verify-unit actual exit status 1, "git diff --check: clean", the same ten
+  untracked metadata paths the only FAIL lines, all still `??` and unstaged;
+  `git diff --name-only 8864e8e` the six changed files (the two `.ts` files,
+  the four documents); the four documents i/lf w/crlf. A final pass on this
+  results section (Prettier on `UNIT-LOG.md`, `git diff --check`, verify-unit)
+  is reported in the handoff.
+- **Formatting exceptions, preserved accurately.** Prettier flags
+  `IMPLEMENTATION-MATRIX.md` and `UNIT-LOG.md` for the reasons inherited from
+  the unit and the closeout (not introduced here); the register and the
+  addendum are clean. The addendum's `technical_failure` bullet in §2 "U19"
+  was rewrapped as a whole by the splice (wording unchanged, checked by the
+  splice script; Prettier's prose wrap is preserve). The two `.ts` files are
+  LF in the working tree with git's LF-to-CRLF warning, as in the unit; the
+  four documents CRLF in the working tree and LF in the index.
+- **Process deviations.** (1) The pure spec could not be run by the
+  test-reviewer on its first attempt (the permission classifier); the
+  implementer's own run is development evidence only, and the test-reviewer's
+  second attempt is the recorded run. (2) The closeout's reviewer agents were
+  no longer reachable, so both roles ran as fresh general-purpose agents on
+  the named models (the documented fallback), as in the closeout. (3) The
+  addendum bullet was rewrapped as a whole (above). (4) verify-unit exits 1 on
+  the ten untracked metadata paths only (no option excludes untracked paths;
+  the verifier was not altered).
+- **Limitations.** Unchanged from the closeout. This correction validates
+  `vials_planned` and `assigned_vial_order` only; `examples_version` remains a
+  teaching-record flag, and `examples_planned`, `example_ids`, `teaching`,
+  `examples_after_boundary`, `rule_card`, `dont_know_available`, `feedback`,
+  `stop_control` and `settle_ms` are not validated — no claim that every
+  metadata field is checked. No browser evidence was produced for the
+  correction (none authorised; the extractor is pure and the unit's and the
+  closeout's browser evidence stands).
+- **Conclusion.** The owner's correction of 12 October 2026 is implemented as
+  instructed: the already-approved planned count and assigned order are
+  enforced at the opening, the records' storage order is free, six planned
+  vials are never six answers, and every approved missingness, partial-answer,
+  closure, reload and raw-log rule is preserved. Passing tests establish
+  implementation correctness only. One additional local commit
+  `fix(m16): validate planned count and assigned order` follows; neither
+  existing commit amended; no push, merge, PR, tag, deployment or deletion;
+  U20 is not started.
