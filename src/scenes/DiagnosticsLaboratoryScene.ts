@@ -11,7 +11,9 @@
  *   1  Evidence Table   — M15  causal model of the receiver chain
  *   2  Protocol Console — M16  the transmission's handling protocol
  *   3  Training Rig     — M17  register syntax: demo → baseline → learning → transfer
- *   4  Diagnostic Board — M18  the receiver fault behind the anomaly
+ *   4  Diagnostic Board — M18  three diagnosis cases, each an immutable
+ *                              first diagnosis and an immutable first
+ *                              planned-step answer (Station 080 Unit 20)
  *
  * Each phase is its own opportunity, window, event family, form, entry
  * snapshot and validity record (sheet 11: a shared incident is a route,
@@ -22,10 +24,14 @@
  * The Console Orientation is a common tutorial (never item evidence) that
  * the terminal-based phases record as an entry-state control.
  *
- * M18 ↔ M13: the diagnostic board reads NOTHING from the lattice bench
- * (which now lives in the Records Workshop); the former "wait while the
- * lattice window is open" sequencing gate is gone. The lattice closure
- * state is passed to the M18 open event as route context only.
+ * M18 ↔ M13: the diagnostic board — the three-case administration
+ * `m18-cases-v1` of Unit 20 (research-owner decision D-U20-1), a work
+ * surface in the wide frame — reads NOTHING from the lattice bench (which
+ * now lives in the Records Workshop); the former "wait while the lattice
+ * window is open" sequencing gate is gone. The lattice closure state is
+ * stamped into the M18 entry snapshot as route context only. The legacy
+ * v2 board (`m18FaultDiagnosis.ts`) is no longer imported here; it stays
+ * on the developer alias.
  *
  * Kai stands at the briefing desk (route anchor; Station 080 U15: the
  * key card's recipient and the yard logbook's permitted delegate). South
@@ -39,10 +45,6 @@ import {
   declareM17,
   m17WindowStatus,
 } from '../informationProcessing/m17SyntaxAcquisition';
-import {
-  declareM18Fault,
-  m18FaultWindowStatus,
-} from '../informationProcessing/m18FaultDiagnosis';
 import { refreshIpProbe } from '../informationProcessing/probe';
 import {
   declareTutorial,
@@ -104,6 +106,18 @@ import {
   resumeM16Surface,
 } from '../pilot/windows/m16ProtocolConsole';
 import { m16SurfaceModel } from '../pilot/windows/m16SurfaceModel';
+import {
+  bindM18Surface,
+  closeM18Surface,
+  declareM18Cases,
+  guardM18Reload,
+  m18ConsumesEsc,
+  m18Window,
+  openM18,
+  presentM18,
+  resumeM18Surface,
+} from '../pilot/windows/m18DiagnosticBoard';
+import { m18SurfaceModel } from '../pilot/windows/m18SurfaceModel';
 import { LAB_SPAWNS, LAB_STATIONS } from '../pilot/zoneSites';
 import type { InteractionKey, PromptOption, RoomLayout } from '../world';
 import { LAB_LAYOUT, LAB_SOLIDS } from '../world/layouts/laboratory';
@@ -179,8 +193,11 @@ const PHASES: readonly PhaseSpec[] = [
     bench: 'Diagnostic Board',
     texture: 'proc-diag-board',
     at: LAB_STATIONS.diagnosticBoard,
-    status: m18FaultWindowStatus,
-    opportunityId: 'proto_m18_lattice_fault_diagnosis',
+    // Unit 20: the kit window's status — `closed` for every closed state
+    // (completed, closed at the review, technical failure, the reload
+    // hold-back), which `windowTerminal` reads as recorded.
+    status: () => m18Window.windowStatus(),
+    opportunityId: 'proto_m18_cases_series',
   },
 ];
 
@@ -279,7 +296,11 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     declareM16Handling();
     guardM16Reload();
     declareM17();
-    declareM18Fault();
+    // M18 (Unit 20): the same rule for the diagnostic board — a board opened
+    // in an earlier page load is never re-run; the first laboratory entry
+    // of a later load writes the reload check.
+    declareM18Cases();
+    guardM18Reload();
     declareM11('lab');
     stampContaminationNotes();
 
@@ -288,6 +309,7 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     this.events.on(Phaser.Scenes.Events.RESUME, () => {
       resumeM15Surface(Date.now());
       resumeM16Surface(Date.now());
+      resumeM18Surface(Date.now());
       this.refreshSignalDisplay();
     });
     // V4 (review D3-2): the bay salience follows the route stage, so the
@@ -471,11 +493,54 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
           },
         });
         this.registerPhaseStation(phase);
+      } else if (phase.id === 'm18') {
+        this.addStation({
+          interactionKey: 'pilotStation',
+          label: phase.bench,
+          texture: phase.texture,
+          x: phase.at.x,
+          y: phase.at.y,
+          onPromptOpened: () => {
+            this.logPhaseOpened(phase);
+
+            if (this.anyPhaseSurfaceOpen()) {
+              return false;
+            }
+
+            // M18 (Unit 20): the three-case administration in the WIDE
+            // frame (decision D-U17-2 used as is); the entry snapshot
+            // records the route stage at the open and, as route context
+            // only (never an M18 input), the lattice bench's closure state
+            // at the moment the board opens. The legacy v2 board is no
+            // longer served here (developer alias only).
+            openM18(Date.now(), {
+              stage: pilotStage(),
+              prior_m13_window_status: m13LatticeWindowStatus(),
+            });
+            openWorkSurface(this, {
+              surfaceId: 'm18_diagnostic_board',
+              frame: 'wide',
+              model: () =>
+                m18SurfaceModel(bindM18Surface(this.m18SurfaceHost())),
+              onClose: () => {
+                // ESC closes an open dialog first, then the help sheet, and
+                // only then leaves — the same path as LEAVE BOARD.
+                if (m18ConsumesEsc(Date.now())) {
+                  return false;
+                }
+
+                closeM18Surface(Date.now());
+
+                return true;
+              },
+            });
+            return false;
+          },
+        });
+        this.registerPhaseStation(phase);
       } else {
-        const overlay: IpOverlayKey =
-          phase.id === 'm18'
-            ? key.scene.ipDiagnosisConsole
-            : key.scene.ipSignalTerminal;
+        // The Training Rig (M17) keeps its terminal overlay.
+        const overlay: IpOverlayKey = key.scene.ipSignalTerminal;
 
         this.ipStation({
           id: `phase_${phase.id}`,
@@ -487,12 +552,6 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
           status: phase.status,
           isDone: () => windowTerminal(phase.status()),
           order: 1 + phase.index,
-          // Route context only (never an M18 input): the lattice bench
-          // closure state at the moment the board opens.
-          context:
-            phase.id === 'm18'
-              ? () => ({ prior_m13_window_status: m13LatticeWindowStatus() })
-              : undefined,
         });
       }
 
@@ -809,6 +868,19 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
     };
   }
 
+  /** M18 (Unit 20): LEAVE BOARD / FINISH and ESC take the SAME path — pause, then close. */
+  private m18SurfaceHost() {
+    return {
+      now: () => Date.now(),
+      close: () => {
+        closeM18Surface(Date.now());
+        activeWorkSurface(this)?.close();
+      },
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+    };
+  }
+
   private logPhaseOpened(phase: PhaseSpec) {
     this.logScenarioEvent('pilotStation', 'pilot_station_opened', {
       metadata: {
@@ -1087,6 +1159,9 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
                   // M16 (Unit 19) [O-7]: the briefing names the protocol
                   // console — exposure only (decision D-U19-1, item 7).
                   presentM16(now);
+                  // M18 (Unit 20) [O-9]: the briefing names the diagnostic
+                  // board — exposure only (decision D-U20-1, item 9).
+                  presentM18(now);
                 },
               },
             ],
@@ -1111,6 +1186,8 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
                 presentM15(now);
                 // M16 (Unit 19) [O-7]: briefing exposure only.
                 presentM16(now);
+                // M18 (Unit 20) [O-9]: briefing exposure only.
+                presentM18(now);
                 lapseM11Offer('lab', now);
               },
             },
@@ -1125,6 +1202,8 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
                 presentM15(now);
                 // M16 (Unit 19) [O-7]: briefing exposure only.
                 presentM16(now);
+                // M18 (Unit 20) [O-9]: briefing exposure only.
+                presentM18(now);
 
                 const result = answerM11Offer('lab', true, now, 'keyboard');
 
@@ -1146,6 +1225,8 @@ export class DiagnosticsLaboratoryScene extends PilotZoneScene {
                 presentM15(now);
                 // M16 (Unit 19) [O-7]: briefing exposure only.
                 presentM16(now);
+                // M18 (Unit 20) [O-9]: briefing exposure only.
+                presentM18(now);
                 answerM11Offer('lab', false, now, 'keyboard');
               },
             },

@@ -55,7 +55,7 @@ Global findings that apply to every row:
 | M15  | **as specified (U18, administration `m15-systems-v1`; research-owner decision D-U18-1 of 10 October 2026; not scientifically validated)** — was partial at the audit base (one causal system, one intervention; the cipher shared the id and family); two independently authored boxes, one immutable wiring and two immutable first predictions per box before any feedback, results after the fourth; the cipher moved to its secondary id | Two independently authored systems; explore → commit model → two unseen predictions each; cipher moved to its own secondary id                                                                      | `m15_correct_first_predictions`: correct first predictions / 4; model correctness, exploration separate                                                          | pure: oracle from system definition; browser: two systems                                                                     |
 | M16  | **as specified (U19, administration `m16-handling-v1`; research-owner decision D-U19-1 with amendment A1 of 11 October 2026; not scientifically validated)** — was partial at the audit base (familiarisation with correctness feedback before the applications; one frozen response; last instruction wins); two passive worked examples of identical structure for everyone, a confirmed boundary, six unseen vials in fixed order with one immutable first response each (a drawer or DON'T KNOW) before any feedback, results after the sixth; the legacy module untouched on the developer alias; closeout of 12 October 2026 (owner rulings, register §5.314: the five contextual strings and the vial question's soft wrap accepted, TAB / ENTER named on the card and example footer and in HELP, the entry snapshot's declared definition validated in full; the correction of the same day, §5.314 (6): `vials_planned` the number 6 and `assigned_vial_order` the approved order validated, the records' storage order free)| Two identical-structure teaching examples for everyone; six unseen applications with frozen first responses; feedback only after all six; Don't know = incorrect; distinct vocabulary from tutorial | `m16_correct_first_applications`: correct first applications / 6; form and example versions                                                                      | pure: first response immutable; browser: examples then six cases                                                              |
 | M17  | **as specified (U9)** — was contradicting at the audit base (1 practice + 1 transfer trial, live preview on both; the v2 `proto_m17_syntax_*` family is retired); **criterion values not to be read until register §5.87–5.88 are decided** (live preview on learning trials; correct-response rule)                                                                                                  | 2 uncoached baseline + 12 feedback learning + 2 transfer trials; no preview on baseline/transfer; criterion = 3 consecutive correct learning trials; all 12 always run; early exit = incomplete     | `m17_criterion_trial` {criterion_trial, attained}: 3–12, censored at 12; full sequence, baseline, transfer                                                       | pure: early criterion, never attain, transfer-only; browser: 16 trials                                                        |
-| M18  | **partial** — one fault case per session (2 forms); no consequence prediction; forced selection                                                                                                                                                                                                                                                                                                       | Three independent cases with discriminating tests; first diagnosis + keyed consequence prediction before feedback; Cannot solve = incorrect                                                         | `m18_correct_first_diagnoses` / 3 (primary); `m18_correct_consequence_predictions` / 3 (companion)                                                               | pure: ambiguity check rejects; browser: three cases                                                                           |
+| M18  | **as specified (U20, administration `m18-cases-v1`; research-owner decision D-U20-1 of 12 October 2026; not scientifically validated)** — was partial at the audit base (one fault case per session, two forms, no consequence prediction, forced selection); three independently designed cases in fixed order, each with three on-request deterministic tests, one immutable first diagnosis (a part or CANNOT SOLVE) that closes the tests, then one immutable first planned-step answer (an option or CANNOT SOLVE) keyed to the actual case, before any feedback; results after the sixth; the legacy board untouched on the developer alias; the two rows with separate missingness and the slot-local defect scope of item 11 | Three independent cases with discriminating tests; first diagnosis + keyed consequence prediction before feedback; Cannot solve = incorrect                                                         | `m18_correct_first_diagnoses` / 3 (primary); `m18_correct_consequence_predictions` / 3 (companion)                                                               | pure: ambiguity check rejects; browser: three cases                                                                           |
 | M19  | **partial** — one coupling with three binds (`m19CouplingModel.ts:67-75`); comprehension asserted (`exteriorWindows.ts:283`)                                                                                                                                                                                                                                                                          | Second distinct solvable challenge; per-challenge first difficulty boundary; teaching step with recorded comprehension                                                                              | `m19_continuations`: challenges with a further work attempt / eligible difficulty encounters (0–2)                                                               | pure: no difficulty → no denominator; browser: both challenges                                                                |
 | M20  | **partial** — one project, one uncued resume (`returnEpisodeModel.ts:209-214`)                                                                                                                                                                                                                                                                                                                        | Two unfinished components each with a cued return milestone; cue exposure recorded; remaining work shown                                                                                            | `m20_cued_resumptions`: resumed / eligible unfinished components (0–2); spontaneous returns, progress                                                            | pure: resume ≠ new occasion; browser: two cues                                                                                |
 | M21  | **as specified (U10)** — was partial at the audit base (one case, ~130-word manual, a free pre-fit bench test, an irreversible FIT, no restudy concept; the v2 `proto_m21_manual_*` family is retired)                                                                                                                                                                                                | Two independent cases, 240–320 words total; after an incorrect first application: truthful feedback, relevant restudy + revised application / other strategy / exit                                 | `m21_restudy_revisions`: cases with relevant restudy AND revised application / initially incorrect cases; two successes = no score                               | pure: first-time success → null; browser: wrong → restudy → revise                                                            |
@@ -533,3 +533,75 @@ browser run, screenshot or full matrix (none authorised). Commit
 `fix(m16): validate planned count and assigned order`. Not changed: keys,
 content, versions, events, the formula, the browser evidence of the unit and
 the closeout.
+
+**U20** (M18; bounded unit under `U20-CONTRACT.md`, v2 of 12 October 2026,
+amended the same day with the owner's approval; research-owner decision
+D-U20-1 of 12 October 2026 — register §5.315, an owner ruling and not an
+implementer default): the Diagnostics Laboratory diagnostic board runs the
+three-case administration `m18-cases-v1` in the wide frame of
+`WorkSurfaceScene` (D-U17-2, used as is). A first-opening card; then three
+independently designed cases in fixed order (`m18-content-v1`, form
+`m18-form-1`: MAST RECEIVER, COOLING BAY, HATCH WINCH — each with its unit
+sheet always visible, three on-request deterministic tests whose result lines
+stay in the test record, four part options, one planned step with four answer
+options); per case ONE confirmed and immutable first diagnosis — a part (the
+confirmation repeating the draft) or CANNOT SOLVE (incorrect) — that closes
+the case's tests, then, never before, ONE confirmed and immutable first
+planned-step answer — an option or CANNOT SOLVE (incorrect) — keyed to the
+ACTUAL case whatever part was recorded (item 1); the identical neutral
+acknowledgement with HELP and LEAVE BOARD; no correctness information before
+the sixth first response; then three read-only results pages (HELP, FINISH,
+NEXT / BACK; FINISH and ESC close); the 400 ms fresh-press rule on every
+confirmation and a 400 ms settle on every view transition (a refused press
+recorded), so a double click on an opener records nothing and a fresh confirm
+records exactly one; a same-test repeat inside 400 ms refused; the next case
+only from the acknowledgement. Primary `m18_correct_first_diagnoses` = keyed
+first diagnoses / cases with a diagnosis (planned 3); companion
+`m18_correct_consequence_predictions` = keyed first planned-step answers /
+cases with an answer (planned 3), never combined; both recounted from the raw
+`first_response` events with their own numerator, denominator, planned
+denominator and missingness; per-case records, test use, the two descriptive
+indicators (`evidence_sufficient_before_part`,
+`step_answer_implied_by_recorded_part`, with the null rules of item 10 and the
+narrower claim), omissions apart from CANNOT SOLVE and help in the components,
+never in a value. Defect scope (item 11, the approved alternative): a defect
+demonstrably isolated to one slot voids that row only; shared defects of
+administration, content, sequencing, exposure or the shared lifecycle void
+both; where isolation cannot be established both are voided with the reason
+stated; the eight setup declarations validated as part of the approved
+administration. New provisional family `proto_m18_cases_`, one opportunity
+`proto_m18_cases_series`, window `m18_cases_w1` (addendum §2 "U20"); the v2
+ids `proto_m18_lattice_fault_diagnosis` / `proto_m18_fault_*` /
+`m18_diagnosis_w1` retired from the route; the legacy board
+(`m18FaultDiagnosis.ts`, `faultForms.ts`, `ui/DiagnosisConsoleScene.ts`) and
+`src/measurement/m18Diagnosis.ts` byte-identical in the tree, the board on the
+developer alias only; M18 reads nothing from M13 beyond the route-context
+stamp `prior_m13_window_status`. Not claimed: independent situations (six
+clustered observations of three independently designed cases in one episode),
+equated cases, validity, questionnaire equivalence, or that a keyed answer
+proves understanding or a correct diagnosis — the disclosed cues of preview
+§5.3 (case 3's step key the "nothing changes" answer shared with the wrong
+part HATCH, case 2's step key the "repair" answer, case 3's part key named on
+button C, one test then a guess ≈ 1.17 of 3, the procedural carry-over from
+case 1) travel with the ruling (register §5.315) and are computed and reported
+by the pure spec's independent oracle — reproduced against the preview's
+figures, never asserted as a ceiling.
+Tests: pure `m18_diagnosis` (the independent oracle — its own transcription of
+the three sheets, tests, options and planned steps and its own simulator per
+case; every table cell, the consistent and sufficient sets, both keys, the
+implied-by table, the symptom, the margins, the key positions, the reported
+shortcut table, the rejected mutants; the content cross-check and the four
+briefing handlers; the register rows and the legacy module's hashes; the
+series model; the extractor's values, missingness, the §9.4 scopes and the
+X1–X6 acceptance cases; wording); browser `m18_diagnosis_route` (R1–R9 on the
+participant route, twenty-eight frames); re-expressed M18 steps of
+`pilot_lab` and `pilot_signal_incident`. As-built record, the ruling, defaults
+and limitations: register §4 "Unit 20", §5.315–§5.325; results, reviewers and
+every failure's base comparison: `UNIT-LOG.md` "U20". Not updated (U24
+backlog): the capture specs, the `interactionRegistry` `opens` / window label
+`m18_lattice_fault_diagnosis` for `lab.phase_m18`, `world_v1_*` evidence for
+the board, Noor's "test rig" line (agreed with by the card). Carried forward
+unchanged and open: the M16 beacon salience question (§5.314 (4), a U24
+walkthrough issue); the M05 competing-task observation of register §5.290 (e)
+(i) and the episode-1 M05 cap on the scripted route — M05 matters that U20
+neither tests nor changes; the U18 salience observation H1 (§5.301).

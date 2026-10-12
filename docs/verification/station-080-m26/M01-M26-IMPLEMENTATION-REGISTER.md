@@ -97,7 +97,7 @@ status at this register version — updated by each unit).
 | M15  | Extend systems          | 2    | `m15_correct_first_predictions`: correct first predictions / 4                                                                                                                                                                                                                                                                 | model correctness, exploration                                                                                                                                                                                                                 | performance counterpart | v3 route: `proto_m15_systems_series` — two relay boxes at the Laboratory evidence table (ep 3), one immutable wiring and two immutable first predictions per box before any feedback; results after the fourth — implemented (U18; decision D-U18-1, §5.291)     |
 | M16  | Standardise             | 1    | `m16_correct_first_applications`: correct first applications / 6                                                                                                                                                                                                                                                               | form, example versions                                                                                                                                                                                                                         | performance counterpart | v3 route: `proto_m16_handling_series` — the handling rule at the Laboratory protocol console (ep 3), two worked examples, then six immutable first responses before any feedback; results after the sixth — implemented (U19; decision D-U19-1 + A1, §5.302)     |
 | M17  | Replace trial structure | 1    | `m17_criterion_trial`: {criterion_trial 3–12, attained} — the first learning trial ending a run of three consecutive correct first responses; reported whenever reached within the administered trials; (12, false, censored) after twelve without attainment; early exit without attainment = incomplete                      | `m17_sequence_baseline_transfer` (baseline 2 / learning 12 / transfer 2 first-response sequences, feedback exposures, reference sequences shown, help, demonstration reviews, per-trial records)                                               | performance counterpart | v3 route: `proto_m17_criterion` (Diagnostics Laboratory, ep 3) — implemented (U9); **criterion values not to be read until §5.87–5.88 are decided**                                                                                                              |
-| M18  | Extend diagnosis        | 3    | `m18_correct_first_diagnoses`: / 3                                                                                                                                                                                                                                                                                             | `m18_correct_consequence_predictions`: / 3                                                                                                                                                                                                     | performance counterpart | v2-ledger route (one case, no prediction) — planned                                                                                                                                                                                                              |
+| M18  | Extend diagnosis        | 3    | `m18_correct_first_diagnoses`: / 3                                                                                                                                                                                                                                                                                             | `m18_correct_consequence_predictions`: / 3                                                                                                                                                                                                     | performance counterpart | v3 route: `proto_m18_cases_series` — three diagnosis cases at the Laboratory diagnostic board (ep 3), each an immutable first diagnosis then an immutable first step answer before any feedback; results after the sixth — implemented (U20; D-U20-1, §5.315)    |
 | M19  | Add second challenge    | 2    | `m19_continuations`: further attempt / eligible difficulty encounters; 0–2                                                                                                                                                                                                                                                     | failed attempts, success, time                                                                                                                                                                                                                 | behavioural counterpart | v2-ledger route (one coupling) — planned                                                                                                                                                                                                                         |
 | M20  | Extend returns          | 2    | `m20_cued_resumptions`: resumed / eligible unfinished components; 0–2                                                                                                                                                                                                                                                          | spontaneous returns, progress, cue exposure                                                                                                                                                                                                    | behavioural counterpart | v2-ledger route (one uncued resume) — planned                                                                                                                                                                                                                    |
 | M21  | Replace revisit score   | 2    | `m21_restudy_revisions`: cases with a relevant restudy (a section bearing on a fault known at the time) AND a revised application / cases whose first application was incorrect and were resolved by the participant (accepted or set aside — a review-closed case keeps its observed 1); 0–2; two first-time successes → null | per-case strategy (first_correct / restudy_and_revise / revise_without_relevant_restudy / restudy_then_exit / exit / unresolved), applications, faults, restudy sections, comprehension context (sections used, reference depth, mode, plate)  | partial                 | v3 route: `proto_m21_case_o1` / `o2` (Records Workshop, ep 5) — implemented (U10)                                                                                                                                                                                |
@@ -162,6 +162,766 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
   pinned in `protocol.ts` beside their anchors.
 
 ## 4. As-built records (appended per unit)
+
+**Unit 20 (M18): as-built** — the three diagnosis cases at the Diagnostics
+Laboratory diagnostic board (bounded unit under contract `U20-CONTRACT.md`, v2
+of 12 October 2026, amended the same day with the research owner's approval of
+decision D-U20-1). **Status: technical implementation of the approved row under
+research-owner decision D-U20-1 (APPROVED 12 October 2026, against preview
+revision r2 with its explanatory amendment of the same day);
+`m18_correct_first_diagnoses` (primary) and
+`m18_correct_consequence_predictions` (companion) are candidate indicators and
+NOT scientifically validated.** The six responses are clustered observations of
+THREE INDEPENDENTLY DESIGNED cases at ONE board inside ONE episode — never three
+or six independent situations; the cases are not equated in difficulty; the
+content is one authored form; a keyed part never proves that every test was
+used or that the reasoning was the one in the results; a keyed step answer
+never proves a correct diagnosis (case 3's step key is shared with the wrong
+part HATCH); tests run, drafts, help and time are companions, never part of a
+value; the two rows are never combined. Passing tests establish implementation
+correctness only, never psychometric validity or questionnaire equivalence.
+Parts (0)–(2) below were written BEFORE the content module, the series model,
+the adapter, the surface model and the extractor (the contract's "specify
+before you code"); parts (3)–(7) record the build and its evidence.
+
+(0) Authority. **Research-owner decision D-U20-1 — APPROVED 12 October 2026**
+(an owner ruling, recorded in §5.315; not an implementer default and not
+reopened): items 1–10 as recommended with the owner's clarifications — the
+planned-step key is what happens in the ACTUAL case whatever part was recorded,
+one key per case, the step asked after every recorded part, CANNOT SOLVE
+included (item 1); the three r2 cases, their sheets, tests, every result line,
+part options, planned steps, answer options, keys, results explanations and
+every participant-facing string as the administered content, part keys
+`m18_c1_p3` AMPLIFIER, `m18_c2_p4` HEATER, `m18_c3_p2` SENSOR and step keys
+`m18_c1_s2`, `m18_c2_s1`, `m18_c3_s4` (item 2); the three tests of a case
+available on request, unlimited, deterministic and repeatable before the part is
+recorded, closed when it is, a repeat of the same test within 400 ms refused and
+logged, test use never changing a count (item 3); tests and the part first, the
+part confirmed and immutable BEFORE the planned-step question appears, the
+recorded part echoed in the step view's status line in the same form for every
+part (item 4); CANNOT SOLVE for the part and for the step, each an incorrect
+first response in its own count and denominator, the step still asked after a
+CANNOT SOLVE part, leaving never recording CANNOT SOLVE, no STOP control (item
+5); the identical neutral acknowledgement after each case and no correctness
+information before the sixth first response, then three read-only results pages
+(item 6); one form `m18-form-1`, fixed case, test and option order, no
+counterbalancing (item 7); two rows with their own numerator, denominator,
+planned denominator 3 and missingness, never combined (item 8); the M15 / M16
+briefing-exposure, non-use, leaving and reload conventions applied, both rows
+`pending` while the series is open — also with three parts recorded and a step
+pending — and each row by its own count at the review closure (item 9); the two
+descriptive indicators with the null rules and the narrower claim of contract
+§10 (item 10); item 11 the APPROVED ALTERNATIVE — a defect voids only the
+affected row when it is demonstrably isolated, shared defects that compromise
+administration, content, sequencing or exposure void both rows, and where
+isolation cannot be established both rows are voided with the reason stated
+(contract §9.4 "Defect scope", the isolation test I1–I4, the lifecycle and
+closure-snapshot rules); the validation of the eight setup declarations
+`prediction_target`, `tests`, `tests_close`, `step_after`,
+`cannot_solve_available`, `feedback`, `stop_control` and `responses_per_case`
+retained as part of the approved administration; `response_kind` exactly
+`option` or `cannot_solve` on both response types; raw records preserved,
+contradictory evidence never repaired, an uncertain response never counted. All
+events, features and descriptive indicators remain provisional; no canonical
+promotion, combined score or scientific-validity claim. The approved row is §2
+(M18), §2b, the matrix row, addendum §3 and `registerV3.ts` (entry `M18`).
+Provenance limit: the original owner documents are not on disk and were not
+searched for again; the decision is an explicit decision for this
+implementation, not recovered wording. Rulings D-U16-1 (M13), D-U17-1 /
+D-U17-2 and the closeout ruling §5.290 (M14), D-U18-1 (M15), D-U19-1 with
+amendment A1 and the closeout rulings §5.314 (M16) are precedent only and
+approve nothing here. Each rule below carries its source: [O-n] decision
+D-U20-1 item n, [A] approved row or owner instruction, [P] recorded precedent,
+[D-n] implementer default (§5.316 onward).
+
+(1) Administration `m18-cases-v1` — **specified before the content module, the
+series model and the interface were written.**
+
+- Place and access [A][O-9][P][D-10]: the Diagnostics Laboratory diagnostic
+  board (phase 4 of the signal case; registry `lab.phase_m18`, its label
+  "Diagnostic Board" and approach unchanged; surface `m18_diagnostic_board`,
+  the generic `WorkSurfaceScene` in the WIDE frame of decision D-U17-2,
+  unchanged), bench label "Diagnostic Board", phase name "Fault diagnosis",
+  operational label "Signal case — diagnosis (Laboratory)", episode 3.
+  Optional, as today: enterable whenever no other phase surface is open; Kai's
+  dialogue text unchanged; no gate, reward, judgement or route consequence;
+  non-use never read as refusal. Every one of the FOUR `onSelected` handlers of
+  Kai's briefing acknowledgement (`lab_brief_ack` in the no-loan-offer branch;
+  `lab_brief_ack`, `lab_brief_ack_loan_accept`, `lab_brief_ack_loan_decline` in
+  the loan-offer branch) calls `presentM18(now)` beside
+  `advancePilotStage('lab_work', now)`, `presentM15(now)` and
+  `presentM16(now)` — briefing exposure only (the kit's `presented`), never a
+  board opening or a case presentation. The stage at the first opening is
+  recorded in the entry snapshot. The phase order, the beacon, the wall display
+  (its "fault resolved" bracket once M18 is recorded), Noor's line
+  `NOOR · relay: The test rig the storm left faulted is on the diagnostic board.`
+  and the case brief are unchanged; the display's "recorded" state follows the
+  M18 window's closure (completed or closed). Route context, never an input:
+  the lattice bench's window status at the first opening is stamped in the
+  entry snapshot as `prior_m13_window_status` (the U16 convention); M18 reads
+  nothing else from M13 and writes nothing to it. The legacy board
+  (`m18FaultDiagnosis.ts`, `faultForms.ts`, `ui/DiagnosisConsoleScene.ts`)
+  stays in the tree UNCHANGED under its frozen v2 identity
+  (`proto_m18_lattice_fault_diagnosis`, `proto_m18_fault_*`,
+  `m18_diagnosis_w1`, entry `m18-fault-v1`), reachable only through the
+  developer alias `?scene=information_processing_lab`; the laboratory scene no
+  longer imports it; `src/measurement/m18Diagnosis.ts` (Pump House) is
+  untouched; the v3 extractor never reads either family; the registry's
+  descriptive `opens` / window label for `lab.phase_m18` stay stale (U24
+  backlog).
+- Content, order and form [O-2][O-7]: the content exactly as preview §3–§4 —
+  the first-opening card (six fixed lines), the three unit sheets (`m18_c1`
+  MAST RECEIVER, ten lines; `m18_c2` COOLING BAY, eleven lines; `m18_c3` HATCH
+  WINCH, eleven lines; each ≤ 70 characters), the tests `m18_c<k>_ta` / `_tb`
+  / `_tc` with their buttons (`PROBE P1  [A]`, `PROBE P2  [B]`,
+  `SPARE FILTER  [C]`; `AIR AT FAN  [A]`, `AIR AT RACK  [B]`,
+  `SPARE GAUGE  [C]`; `FEELER AT SEAL  [A]`, `POWER AT WINCH  [B]`,
+  `SENSOR LAMP  [C]`), record labels (`A  PROBE P1` …) and the line for every
+  possible result, the "if at fault" tables as data, the part options
+  `m18_c<k>_p1` … `_p4` (MAST, CABLE, AMPLIFIER, FILTER; FAN, DUCT, GAUGE,
+  HEATER; HATCH, SENSOR, LOCK, WINCH) with tile labels `<PART>  [k]`, the
+  planned-step texts, the answer options `m18_c<k>_s1` … `_s4` with tile labels
+  `<answer>  [k]`, the keys (parts at positions 3, 4, 2; steps at positions 2,
+  1, 4; within each case the two differ), the confirmations, the
+  acknowledgement, the help sheet, the six results lines per case and the
+  closed records; versions `m18-cases-v1` (administration), `m18-form-1`
+  (form), `m18-content-v1` (content). Line breaks are the preview's (fixed);
+  wording, letters, numbers, order and option order never change; the
+  participant strings and the tables live in one pure content module
+  (`m18DiagnosisContent.ts`); no questionnaire wording anywhere. One form,
+  fixed case order `m18_c1` → `m18_c2` → `m18_c3`, test order A, B, C, option
+  order as listed; realised order always equals assigned order; no
+  counterbalancing. Limitation documented: case content and position are
+  confounded; case 1 carries first contact with the board; there is no
+  practice case.
+- Objective access [O-3][O-4]: while a case's part is open — the unit sheet,
+  the three test buttons and the test record (the result line of every test
+  run, `not run yet` otherwise), the part question, the four part tiles,
+  RECORD PART, CANNOT SOLVE, HELP, LEAVE BOARD; during the planned step — the
+  unit sheet, the test record as labels (the tests closed; `not run` for a test
+  never run), the recorded part in the status line, the planned-step text, the
+  four answer tiles, RECORD ANSWER, CANNOT SOLVE, HELP, LEAVE BOARD. Earlier
+  cases' sheets, records and answers are not shown during a later case; the
+  step question is never visible before the part is recorded; nothing is hidden
+  on request.
+- First opening [D-2]: the card (title `DIAGNOSTIC BOARD`, the six lines of
+  preview §3.3) with START CASE 1 (the primary control), HELP and LEAVE BOARD;
+  activating START CASE 1 is recorded (`intro_acknowledged`) and presents case
+  1 (`case_presented`); leaving before it shows the card again at the next
+  opening.
+- A case: tests and the part [O-3][O-4][O-5][D-3][D-4]: subtitle
+  `Case N of 3`, status
+  `Run any tests, then choose the part at fault and record it.`. A test
+  (button, A / B / C, or ENTER / SPACE on focus) writes its result line into the
+  test record and logs `test_run` (`test_id`, `result_id`, `run_index` per
+  test, `case_test_runs` after this run, `repeat`) — an interaction, never a
+  response; a repeat shows the same line; a second activation of the SAME test
+  within 400 ms of the previous one is refused and logged (`press_refused`,
+  target `test`, reason `repeat_within_settle`, `since_ms`). Drafts: activating
+  a part tile (pointer, ENTER / SPACE on focus, or 1–4) makes it the draft;
+  another replaces it; the same again clears it; every change is logged
+  (`option_drafted`, slot `diagnosis`) as an interaction, never as a response;
+  the draft survives leaving and returning. Commitment: RECORD PART with a draft
+  opens the part confirmation (`Record <PART> as the part at fault in case N?` /
+  `The tests then close; the test record stays.` /
+  `It cannot be changed afterwards.`, confirm `RECORD PART  [ENTER]`, cancel
+  `KEEP WORKING  [ESC]`); CANNOT SOLVE opens its confirmation whatever the draft
+  (`Record CANNOT SOLVE for the part in case N?` …, confirm `RECORD  [ENTER]`);
+  RECORD PART without a draft shows the neutral line `Choose a part first.` and
+  logs `commit_without_draft` only. Only the dialog's confirm records: it writes
+  `first_response` (slot `diagnosis`), then `tests_closed` (`tests_run` ids,
+  `test_runs`), then presents the planned step (`step_presented`,
+  `step_option_ids`). The recorded part (an option or CANNOT SOLVE) is
+  immutable: no later act, reopening, results view, reload or closure changes
+  or duplicates it.
+- The planned step [O-1][O-4][O-5]: the step view — left the unit sheet and the
+  test record as labels; right the planned-step text (prose; its box the only
+  other prose box), the four answer tiles, `RECORD ANSWER  [R]`,
+  `CANNOT SOLVE  [N]`; status
+  `Recorded part: <PART>. The tests are closed; the record stays.` with `<PART>`
+  the recorded part's name or `CANNOT SOLVE` — an echo of the participant's own
+  record, identical in form for every part, no correctness. Drafts,
+  commitment, CANNOT SOLVE and every protection as the case view (slot
+  `prediction`; the dialog repeats the drafted answer:
+  `Record this answer for case N's planned step?` / `<answer>` /
+  `It cannot be changed afterwards.`, confirm `RECORD ANSWER  [ENTER]`;
+  `Record CANNOT SOLVE for case N's planned step?` /
+  `It cannot be changed afterwards.`, confirm `RECORD  [ENTER]`;
+  `Choose an answer first.` without a draft). The confirm writes
+  `first_response` (slot `prediction`) and the acknowledgement. The step's key
+  is the content's key of the ACTUAL case (`m18_c1_s2`, `m18_c2_s1`,
+  `m18_c3_s4`) whatever part was recorded [O-1]; a step CANNOT SOLVE is
+  incorrect in its own slot. The tests are closed throughout: a test command in
+  the step view does nothing and writes nothing.
+- Commitment mechanics and the settle [P][D-4]: only a FRESH confirming press
+  commits — a press inside the first 400 ms after a dialog appeared, the press
+  that opened it, a held key or an auto-repeat never confirms (held keys and
+  auto-repeat are dropped by `WorkSurfaceScene` before the host and never
+  recorded; the non-fresh presses that reach the host are recorded once per
+  dialog as `commit_press_refused` with their count carried on the record); the
+  confirm control is never at the position of its opener (dialog controls at
+  panel (200, 250) / (466, 250); every opener at x ≥ 738); a double click on an
+  OPENER records zero first responses; a fresh CONFIRM after 400 ms records
+  exactly one, and a duplicate press immediately after it lands on the next view
+  inside its settle and changes nothing. While a dialog or the help sheet is
+  open the model renders only the header, the status line and that dialog or
+  sheet; 1–4, A–C, R and N do nothing. Settle on EVERY view transition: a press
+  arriving within 400 ms after a view appeared — the card, a case view, a step
+  view, an acknowledgement, each results page, the help sheet and the view
+  restored by CLOSE HELP or a cancelled dialog — changes nothing (no test,
+  draft, request, confirm, navigation, help consult or `results_shown`);
+  a press that would otherwise have ACTED on a control is logged as
+  `press_refused` (target `view`, reason `settling`, `since_ms`) — a
+  descriptive record. As built, as the M16 precedent (reviews, correction
+  round 2): LEAVE BOARD and the ESC that leaves are not settle-gated (leaving
+  records no response), ESC closes the help sheet at any time, and neither an
+  ESC consumed inside a live view's settle nor a KEEP WORKING inside the
+  dialog's first 400 ms is logged. Focus on entry
+  is neutral on every view (the first focusable element is a non-acting landing
+  — the card text, the part question, the planned-step text, the
+  acknowledgement line, the results text (also on a page reached by NEXT or
+  BACK: the page controls carry the page in their id, so the scene's
+  focus-by-id carry-over cannot land on them — correction round 2), the
+  closed-record line — so no
+  actionable control is focused until TAB or a hotkey; the M15 / M16
+  question-view mechanism [P]); in a dialog the confirm control is first in the
+  focus order and acts only on a fresh press; on the help sheet CLOSE HELP is
+  first. KEEP WORKING / ESC closes a dialog without a response
+  (`commit_cancelled`, reason `keep_working`); the view the dialog returns to
+  settles again.
+- Acknowledgement and the next case [O-6]: after the step answer, the identical
+  neutral acknowledgement (`Case N recorded.`, status
+  `N of 3 cases recorded.`) with NEXT CASE (cases 1–2) or SHOW RESULTS (case
+  3), HELP and LEAVE BOARD — no colour, glyph, sound, wording, layout or timing
+  that differs with correctness; the unit sheet and the test record of the case
+  stay visible. The next case is presented only from the acknowledgement
+  (`case_presented` with `assigned_position`, `realised_position`, `test_ids`,
+  `part_option_ids`), so each case's presentation follows the previous case's
+  step answer. The sixth first response writes `first_responses_completed`
+  with the closure snapshot; the kit completes the window right after it
+  (`window_closed`, exit `completed`).
+- Results [O-6]: only when all six first responses exist. SHOW RESULTS opens
+  page 1 (case 1; title `RESULTS — CASE 1 OF 3`, status
+  `Your answers are fixed. This view only shows them.`, the line
+  `All three cases are recorded.`, a blank line, then the case's six results
+  lines with `{part}` / `{step}` the recorded part / answer or `CANNOT SOLVE`)
+  with HELP, FINISH and NEXT; page 2 (case 2) HELP, FINISH, BACK and NEXT; page
+  3 (case 3) HELP, FINISH and BACK (NEXT at panel x 778, BACK at x 654 — never
+  sharing a position). FINISH and ESC close the results surface from any page
+  (the same leave path). Completion is established by the sixth first response
+  whichever pages are later viewed; `results_shown` (phase `feedback`, `page`,
+  `case_id`) is written only when a page is actually displayed, once per page.
+  HELP / CLOSE HELP return to the same page with all state preserved and re-arm
+  its settle. Reopening a completed board shows page 1 read-only (its
+  `results_shown` then, once, if page 1 was never displayed). No results act
+  changes a response.
+- Help [D-5]: HELP (H or the button) on the card, every case, step and
+  acknowledgement view and every results page — never while a dialog is open;
+  the sheet (title `HOW THE BOARD WORKS`, the eight lines of preview §3.3);
+  informational; every consult logged (`help_consulted` with `phase` and `view`
+  — `intro`, `case_<k>`, `step_<k>`, `ack_<k>`, `results_<k>`) as an
+  interaction, never an answer. CLOSE HELP (H, ESC or the button) restores the
+  same view with all its state (case, test record, draft, step, results page)
+  and re-arms its settle.
+- Leaving, closure, reload, faults [P][O-9][D-6]: ESC closes, in order, an open
+  dialog (its cancel refused inside the dialog's 400 ms — the dialog stays),
+  then the help sheet, then leaves; LEAVE BOARD leaves; both take the SAME path
+  (window pause, clock pause, surface close — the `m16SurfaceHost` precedent).
+  Leaving keeps everything (card, case, test record, draft, recorded responses,
+  step, acknowledgement; `panel_left` with the view); returning (`series_reopened`)
+  never presents a case or a step again, never re-runs a test and never starts
+  a new trial; leaving in a dialog cancels it (`commit_cancelled`, reason
+  `panel_left`) and records nothing. The station-record closure at the Utility
+  Deck review (`reviewClosure.ts` → `closeM18AtReview(nowMs)`, after
+  `closeM16AtReview`): an opened series not complete (the card, any case, any
+  step) closes as `closed_at_review` (`series_closed_at_review` with the
+  closure snapshot; the kit's `window_closed`, censored): recorded answers
+  kept, unanswered opportunities missing, no results afterwards; the board then
+  opens as the closed record `Station record closed — the board keeps its
+record.` with the status line
+  `Parts recorded: P of 3 · planned steps recorded: S of 3.` and LEAVE BOARD
+  only; while any closed record is shown no answer can be given and no
+  `proto_m18_cases_` event is written. A completed series is not reclosed. A
+  never-opened board is recorded absent with the kit's `markAbsent`
+  (`briefed_not_opened` / `not_briefed_not_opened`) and the series itself
+  becomes the review's closed record (nothing logged — no opening ever
+  happened), so a later opening of the board after the review shows
+  `Station record closed — the board keeps its record.` with
+  `Parts recorded: 0 of 3 · planned steps recorded: 0 of 3.` and LEAVE BOARD
+  only, accepts nothing and writes no event (gameplay review, correction round
+  2 — before it the board came back live); `declined` never occurs.
+  Reload: an opening of this administration in an earlier page load of the
+  session ⇒ the hold-back (the closed record
+  `This board was already used in this session. Its record is kept; no further answers can be given here.`,
+  prior exposure recorded, the series marked technically incomplete with the
+  detail `reload after administration: board not re-run`, the earlier events
+  immutable in `prior_page_load_events`) — also when the earlier load
+  completed all six; `prior_load_checked` once per later page load at the
+  first `guardM18Reload` run (the laboratory's `create()`), before the
+  hold-back record when an opening is found; a board never opened before the
+  reload runs normally. Limitations as §5.290 (a): the check runs only where
+  the board becomes available; continuity is read from recovered sequence
+  numbers and the store's meta record and cannot reveal a lost tail when the
+  meta record survived; after a reload Kai's briefing replays and the earlier
+  briefing is reported in the check, never counted as this load's exposure. A
+  fault while the series is open closes it as a technical failure through the
+  window kit (the closed record
+  `The board has a fault and is closed. Recorded answers are kept.`) and leaves
+  the laboratory usable; a dialog never stays stuck after a cancelled callback;
+  a fault after completion is recorded with phase `feedback` and never enters
+  a value.
+- Layout [D-11] (the mockup positions of preview §3.1, adjustable inside the
+  contract §3.10 envelope; design px, panel-relative, 16 px text): left column
+  x 12 w 714 — the unit sheet at y 90 (h 204), the test table rows at y 302 /
+  340 / 378 (button w 232; the result text at x 256 w 470, h 34); right column
+  x 738 w 300 — the part question at y 90 (h 72), the part tiles at y 170 /
+  208 / 246 / 284, RECORD PART at y 330, CANNOT SOLVE at y 384; the step text
+  at y 90 (h 112), the answer tiles at y 210 / 248 / 286 / 324, RECORD ANSWER at
+  y 368, CANNOT SOLVE at y 412; the bottom row at y 462 — HELP x 12 w 160,
+  LEAVE BOARD x 184 w 180, the primary control x 778 w 260; results — FINISH x
+  184 w 180, BACK x 654 w 112, NEXT x 778 w 260; dialogs — text x 200 y 170 w
+  520 h 72, confirm x 200 y 250 w 254, KEEP WORKING x 466 y 250 w 254; the help
+  sheet text x 12 y 90 w 1026, CLOSE HELP x 388 y 462 w 260. CANNOT SOLVE is
+  never adjacent to LEAVE BOARD. Footers (one line each): the card,
+  acknowledgement and results views
+  `TAB moves focus · ENTER selects · H help · ESC leaves (work kept)`; a case
+  view
+  `A-C test · 1-4 choose · R record · N cannot solve · TAB focus · H help · ESC leaves (work kept)`;
+  a step view
+  `1-4 choose · R record · N cannot solve · TAB focus · H help · ESC leaves (work kept)`;
+  a dialog `ENTER records · ESC keeps working`; the help sheet
+  `H or ESC closes the help`; a closed record `ESC leaves`.
+- Wording [A]: every participant-facing string free of the tokens of contract
+  §3.10 / preview §8; before the sixth first response no correctness word; no
+  praise, blame or judgement; no string claims that nothing is recorded where
+  tests, drafts, views or help are logged; an answer (`first_response`) is
+  never conflated with a logged interaction.
+
+(2) Telemetry, lifecycle and validation — specified before the code.
+
+- Identity [D-7]: family `proto_m18_cases_`; ONE opportunity
+  `proto_m18_cases_series`; window `m18_cases_w1`; object and surface
+  `m18_diagnostic_board`; `entry_state_version` `m18-cases-v1`; `form_id`
+  `m18-form-1`; `content_version` `m18-content-v1`; case ids `m18_c1` …
+  `m18_c3`; test ids `m18_c<k>_ta` / `_tb` / `_tc`; part option ids
+  `m18_c<k>_p1` … `_p4`; step option ids `m18_c<k>_s1` … `_s4`; slots
+  `diagnosis` | `prediction`; CANNOT SOLVE is the response kind
+  `cannot_solve`, never an option id. Result ids of the tests (the content's
+  result keys, never shown): case 1 `tone` / `silent` for each test; case 2
+  `air_6` / `air_1` (A), `air_6` / `air_1` / `air_0` (B), `hot` / `cool` (C);
+  case 3 `no_gap` / `gap` (A), `none` / `on` (B), `off` / `lit` (C). The v2
+  ids `proto_m18_lattice_fault_diagnosis` / `proto_m18_fault_*` /
+  `m18_diagnosis_w1` / `m18-fault-v1` are retired from the route and keep their
+  v2 meaning in the frozen ledger and on the developer alias.
+- Events (contract §9.2; names fixed; descriptive fields may be added, none
+  removed): every event carries the kit's fields plus
+  `measurement_protocol_version`, `phase` (`intro` | `measurement` |
+  `feedback` | `closure`), `form_id`, `content_version` and, when it concerns
+  a case, `case_id` / `case_index` (1–3) and, for responses, `slot`;
+  `input_mode` `pointer` | `keyboard` | `system`. Suffixes: `presented`,
+  `opportunity_opened` (with the entry snapshot of (2) below),
+  `intro_acknowledged`, `series_reopened` / `panel_left` (`view`),
+  `prior_load_checked` (`page_load_index`, `prior_page_load_event_count`,
+  `prior_opening_found`, `prior_briefing_found`, `history_continuous`,
+  `prior_opening_absence_established`), `case_presented`, `test_run`,
+  `press_refused`, `option_drafted` (`slot`, `option_id`, `previous_option_id`),
+  `commit_requested` (`slot`, `kind`, `option_id`), `commit_cancelled` (`slot`,
+  `kind`, `option_id`, `reason` `keep_working` | `panel_left`,
+  `refused_presses`), `commit_press_refused` (`slot`, `kind`, `reason`
+  `dialog_settling`, `since_opened_ms`, `settle_ms`; once per dialog, the
+  count carried), `commit_without_draft` (`slot`), `first_response` (exactly
+  one per case and slot, phase `measurement`: `slot`, `response_kind`,
+  `option_id` (null for `cannot_solve`), `correct` (always false for
+  `cannot_solve`), `key_option_id`, `tests_run_before` (ids), `test_runs_before`
+  (incl. repeats), `drafts_before`, `help_consults_before`, `active_ms`,
+  `focused_ms` (null if unavailable), `refused_presses`, `draft_at_commit`,
+  `input_mode`; the test fields are those of the case at the part record, so on
+  the prediction slot they repeat the diagnosis slot's), `tests_closed`
+  (`tests_run`, `test_runs`), `step_presented` (`step_option_ids`),
+  `response_acknowledged` (`line_id` `case_recorded`, `next_control`
+  `next_case` | `show_results`, `cases_recorded`), `first_responses_completed`
+  (the closure snapshot: `cases_planned`, `cases_presented`, `parts_recorded`,
+  `steps_recorded`, `correct_first_diagnoses`,
+  `correct_consequence_predictions`, `cannot_solve_parts`,
+  `cannot_solve_steps`, `intro_acknowledged`, per case {`case_id`,
+  `case_index`, `presented`, `part` {`answered`, `response_kind`, `option_id`,
+  `correct`}, `step_presented`, `step` {the same four}, `tests_run` (ids),
+  `test_runs`}; `closure_reason` `completed`), `results_shown` (phase
+  `feedback`, `page`, `case_id`), `help_consulted` (`phase`, `view`),
+  `series_closed_at_review` (the closure snapshot, `closure_reason`
+  `closed_at_review`), `technical_failure` (the kit's record; the hold-back
+  detail `reload after administration: board not re-run`; a post-completion
+  fault with phase `feedback`), `window_closed` (the kit's). Existing logger
+  `sequence` and `page_load_index` are preserved; raw logs are never rewritten;
+  nothing is backdated; no event of this family enters `ScoringManager`,
+  `SummaryScope`, the canonical context or the return URL.
+- Entry snapshot (`opportunity_opened.entry_state_snapshot`): `cases_planned`
+  3; `responses_per_case` 2; `form_id`; `content_version`;
+  `assigned_case_order` [`m18_c1`, `m18_c2`, `m18_c3`]; `cases` — one record
+  per case {`case_id`, `test_ids` (3, fixed order), `part_option_ids` (4, fixed
+  order), `key_part_option_id`, `step_option_ids` (4, fixed order),
+  `key_step_option_id`}; `prediction_target` `actual_case`; `tests`
+  `on_request_unlimited`; `tests_close` `at_part_record`; `step_after`
+  `part_record`; `cannot_solve_available` true; `feedback`
+  `after_all_first_responses`; `stop_control` false; `settle_ms` 400; `stage`;
+  `prior_m13_window_status`.
+- Lifecycle (contract §3.12, both rows unless stated): not presented (no
+  current-load `presented`, no opening) ⇒ `not_presented`; briefed, never
+  opened, open ⇒ null `pending` (`briefed_not_opened`); open, nothing recorded
+  ⇒ null `pending`; open, 1–5 responses ⇒ null `pending` with the answers in
+  the components; complete (`first_responses_completed`) ⇒ `observed`,
+  `completed`, stable; closed at the review with responses ⇒ the diagnosis row
+  3 parts `observed` (`censored: false` — fully observed; correction round
+  2; its `censor_reason` still carries the closure detail "series closed at
+  the review after 3 of 3 parts" — descriptive, disclosed), 1–2
+  `incomplete` (the value on the observed denominator,
+  censored), 0 null `no_eligible_event` (`intro_only` |
+  `case_presented_no_response`); the prediction row 3 `observed`, 1–2
+  `incomplete`, 0 with ≥ 1 part null `no_eligible_event` (`diagnosis_only`), 0
+  with no part as the diagnosis row; briefed, never opened, closed ⇒ null
+  `no_eligible_event` (`briefed_not_opened`, censored); interrupted (the
+  hold-back, or a reloaded load without an established absence) ⇒ null
+  `interrupted`; technically invalid (a fault while open — shared; or
+  contradictory / malformed scored evidence with its scope [O-11]) ⇒ null
+  `technical_failure` on the rows the scope names, the other row as the states
+  above, read from the lifecycle. Precedence per row: `interrupted` >
+  `technical_failure` > `pending` > the closed-series outcomes.
+- Features (contract §10; addendum §1): `m18_correct_first_diagnoses` — value
+  = numerator = cases whose FIRST `diagnosis` response is the keyed part;
+  denominator = cases with a `diagnosis` first response (an option or CANNOT
+  SOLVE) in the current page load; planned denominator 3.
+  `m18_correct_consequence_predictions` — value = numerator = cases whose FIRST
+  `prediction` response is the keyed step answer of the ACTUAL case [O-1];
+  denominator = cases with a `prediction` first response; planned denominator 3. Both: the value is the NUMERATOR COUNT on 0–3 with `numerator`,
+  `denominator`, `planned_denominator` and `included_ids` beside it, never a
+  proportion; CANNOT SOLVE and a wrong answer in the denominator, not the
+  numerator; a case without a response of the slot (unpresented, or presented
+  and unanswered; a step never presented) is missing, outside the denominator,
+  never incorrect, listed apart from CANNOT SOLVE; a zero denominator ⇒ `value:
+null` with the lifecycle's disposition; `planned_denominator` 3 on every row;
+  a closed-series row with no response of its slot exports `denominator: 0`
+  with `numerator: null`; a `pending`, `interrupted`, `technical_failure` or
+  `not_presented` row asserts no denominator, its components still carrying
+  `answered` / `planned` per slot. Tests run, drafts, help, time and input mode
+  never change either count. Both rows recounted from the `first_response`
+  events (correctness recomputed from the content's keys) and compared with
+  each event's `correct` flag and with the closure snapshot, each comparison
+  with its scope [O-11]. Components (mirrored on both rows unless stated):
+  `administration_version`, `form_id`, `content_version`, `prediction_target`
+  `actual_case`, `assigned_case_order`, `realised_case_order`,
+  `observations_share_one_episode: true`, `exposure` (`briefed` with its
+  sequence, `board_opened` with its sequence and `stage_at_open`,
+  `intro_acknowledged`, `cases_presented`, `steps_presented`,
+  `never_opened_reason`), `reload_check`, `first_response_phase_complete` and
+  `first_response_phase_closure`, per slot (`slots.diagnosis` /
+  `slots.prediction`) `answered`, `planned`, `cannot_solve_count`,
+  `unanswered_case_ids`, `unpresented_case_ids`, per case (`cases`) `part`
+  {`response_kind`, `option_id`, `correct`, `key_option_id`} and `step` {the
+  same}, `tests_run_before_part`, `test_runs_before_part`,
+  `repeated_test_runs`, `evidence_sufficient_before_part`,
+  `step_answer_implied_by_recorded_part`, drafts, help consults, active and
+  focused time, input modes per slot, `help_consults` by phase, `results_shown`
+  per page, `feedback_phase_faults`, `prior_m13_window_status` (route context),
+  `investigation_record_consistent` (overall and per case),
+  `exposure_record_consistent`; on a voided row `integrity_defect` (every
+  defect found, each with its record's `sequence` and its scope),
+  `defect_scope` (`shared` | `diagnosis` | `prediction` |
+  `isolation_uncertain`), `isolation_failed` (when uncertain) and
+  `records_unscorable`; on a retained row beside a voided one
+  `other_row_defect`. No total across slots or items; the legacy families are
+  never read.
+- Descriptive indicators [O-10] (provisional; never in a value): per case
+  `step_answer_implied_by_recorded_part` — `true` / `false` only when both
+  responses are valid ordinary option responses (attributable, `response_kind`
+  exactly `option`, a known option of its case and slot, no defect on either
+  record) and the comparison is trustworthy (no `shared` or `uncertain` defect
+  in the load, no disagreement in the case's per-case `part` or `step` fields
+  of a closure snapshot): `true` when the recorded step option is the option the
+  recorded part implies under the content's implied-by table (preview §5.2:
+  case 1 MAST 4, CABLE 4, AMPLIFIER 2, FILTER 3; case 2 FAN 3, DUCT 4, GAUGE 2,
+  HEATER 1; case 3 HATCH 4, SENSOR 4, LOCK 1, WINCH 2), `false` for any other
+  option; `null` otherwise (either response missing or CANNOT SOLVE, or the
+  evidence invalid). `evidence_sufficient_before_part` — `null` when the case
+  has no attributable diagnosis record or its investigation record is not
+  trustworthy (`investigation_record_consistent` false for the case, or any
+  `shared` / `uncertain` defect in the load); otherwise from the reliable
+  `test_run` records sequenced before the case's diagnosis record (a CANNOT
+  SOLVE diagnosis included): `true` when those tests leave exactly one
+  consistent part under the content's table, `false` when more than one. An
+  isolated defect of a DETERMINATE diagnosis record (a defective `correct` /
+  `key_option_id`, a later duplicate, a snapshot count) does not make it
+  null; a diagnosis defect that leaves the part undetermined — a
+  `response_kind` that is neither value, an `option` response with a missing
+  or unknown `option_id`, a CANNOT SOLVE record carrying an option or without
+  the field, or a closure-snapshot `part` whose kind or option disagrees with
+  the record — fails I4 and makes it null (contract §10; scientific review,
+  correction round 2). They describe evidence
+  availability and response consistency only — never why an answer was wrong.
+- Two disclosed limits of the extractor's defect list and one of its
+  components (scientific review, correction round 2; §5.326): (i) a
+  sequencing check that an earlier response would satisfy is not raised as
+  `shared` while any uncertain-attribution record exists in the load — that
+  record may be the response; both rows are already voided
+  `isolation_uncertain` and the uncertain record is listed; (ii) the per-case
+  `part.correct` / `step.correct` in the components is the recount against
+  the content key — the record's own `correct` flag is compared and never
+  overwritten, a disagreement is listed as a defect of that slot, and on a
+  voided row the recount is informational only (carrying the recorded flag
+  beside it is a matter for the owner, §5.326).
+- Validation (contract §9.4; the extractor `features/m18.ts`, current-load
+  events only, the raw log read, never changed). Scope classes [O-11]:
+  `shared` (voids BOTH rows — administration: versions, opportunity, the
+  required declarations; content: case definitions, keys, result lines;
+  sequencing: usable order, presentation order, response order; exposure: a
+  test outside its window or of another case, an option or step named before
+  it was presented, a step before its part, results or a results help view
+  before completion; the shared lifecycle: completion, closures, a presentation
+  or test after a closure; a fault while open); `slot` (a defect inside one
+  response slot's own records — a `first_response` of that slot, a duplicate,
+  a response after a closure, that slot's fields of a closure snapshot — voids
+  only that row when the isolation test I1–I4 passes, otherwise both rows as
+  `isolation_uncertain` with `isolation_failed`); `uncertain` (a record not
+  attributable to exactly one slot and case: no / unknown case or slot, an
+  option id of another case or of the other slot, a response labelled outside
+  the measurement phase — both rows `isolation_uncertain`); `flag` (a
+  descriptive record inconsistent — `investigation_record_consistent` or
+  `exposure_record_consistent` false, the dependent indicators null, neither
+  row changed). Labels: `shared` > `isolation_uncertain` > the own slot; slot
+  defects in both slots and nothing else void both rows, each labelled with its
+  own slot. The isolation test: I1 no `shared` or `uncertain` defect in the
+  load; I2 every defective record of the slot attributable (a known case and
+  slot, no option of another case or the other slot, a usable unique sequence,
+  phase `measurement`, valid version, opportunity, form and content); I3 the
+  other slot clean (its own defect voids its own row with its own label); I4
+  the structure the other slot depends on intact and not formed by the
+  defective content — for a DIAGNOSIS defect the case's earliest diagnosis
+  record DETERMINATE (a valid kind; a part option of the case for `option`,
+  present and null for `cannot_solve`), the defect only in `correct` /
+  `key_option_id`, the snapshot's diagnosis count fields or per-case
+  `part.correct`, or a later duplicate; `tests_closed` and `step_presented`,
+  where they exist, after the earliest record with no `test_run` between; the
+  case's prediction, where it exists, after its `step_presented`; a duplicate
+  diagnosis after the case's prediction and either before the next case's
+  `case_presented` (if any) or after `first_responses_completed`, or of a case
+  with no prediction record (a duplicate between the next case's presentation
+  and completion FAILS; an undetermined earliest record, a snapshot
+  `part.response_kind` / `part.option_id` disagreement and a duplicate before
+  an existing prediction of its case FAIL); for a PREDICTION defect the next
+  case's `case_presented`, where it exists, after the case's earliest
+  prediction record, and a duplicate prediction after the first and either
+  before the next case's `case_presented` (if any) or after
+  `first_responses_completed` (between the next case's presentation and
+  completion FAILS); a response after a closure for a case and slot with no
+  earlier record isolable when I1–I3 hold, never counted. The lifecycle (open /
+  complete / closed), the six-response completion and each slot's `answered`
+  are read from ATTRIBUTABLE response records written before any closure (one
+  per case and slot, the earliest by sequence, whatever their content; an
+  uncertain record counts as one present record for the completion check only).
+  Closure snapshots compared field by field by scope: shared fields
+  (`cases_planned`, `cases_presented`, per case `presented` and
+  `step_presented`, `closure_reason`) against the presentation recount;
+  diagnosis fields (`parts_recorded`, `correct_first_diagnoses`,
+  `cannot_solve_parts`, per case `part`) only against the diagnosis recount;
+  prediction fields (`steps_recorded`, `correct_consequence_predictions`,
+  `cannot_solve_steps`, per case `step`) only against the prediction recount;
+  `tests_run` per case a flag; a slot already voided by a record defect not
+  compared again (its snapshot disagreement noted in the same
+  `integrity_defect`). The table of conditions is contract §9.4 (every row with
+  its scope and justification), implemented condition by condition — in
+  particular the required declarations `form_id`, `content_version`,
+  `cases_planned` (the number 3), `responses_per_case` (the number 2),
+  `assigned_case_order`, `cases` (three records, each a known case once, tests,
+  part options and step options equal to the content's in fixed order, both
+  keys the content's; storage order free, additive fields allowed),
+  `prediction_target` `actual_case`, `tests` `on_request_unlimited`,
+  `tests_close` `at_part_record`, `step_after` `part_record`,
+  `cannot_solve_available` true, `feedback` `after_all_first_responses`,
+  `stop_control` false — each `shared`; `settle_ms`, `stage` and
+  `prior_m13_window_status` NOT validated (read into the components). A
+  reloaded load without its own `opportunity_opened` is `interrupted` before
+  any position is compared unless its own `prior_load_checked` record(s)
+  establish the absence with the flags agreeing. Legitimate missingness is
+  never a technical failure; a well-formed CANNOT SOLVE (`cannot_solve`,
+  `option_id` null, `correct` false, the content key) is a valid, incorrect
+  response in its slot's denominator; missing, CANNOT SOLVE and technical
+  failure are three distinct outcomes.
+- Precedents applied, with their sources: the fresh-press rule and the settle
+  (M02 §5.210, M13 §5.262, M14, M15, M16 [P]); tests closing at the part (M15
+  D-U18-1 item 2 [P]); the consistency indicator's null convention (M15
+  `consistent_with_recorded_wiring` [P]); briefing exposure and non-use (M15 /
+  M16 [P]); the reload check and hold-back (§5.284, §5.290 (a) [P]); event
+  order from usable, unique sequences (§5.259 [P]); the wide frame (D-U17-2
+  [P]).
+
+(3) Build. Files (inside the 17-path allowlist of contract §4): NEW
+`src/pilot/windows/m18DiagnosisContent.ts` (pure: the identity constants, the
+three cases with their sheets, tests, result lines, "if at fault" tables,
+part and step options, keys, implied-by tables and results lines, every
+fixed string, the string lists for the wording tests), NEW
+`src/pilot/windows/m18DiagnosisModel.ts` (pure: the series state machine —
+card, cases, tests and the test record, drafts per slot, the confirmations
+with the fresh-press rule, the settle on every transition with the
+`press_refused` record, the first-response freeze, `tests_closed`, the step,
+the acknowledgement, completion, results pages, help, the review closure, the
+fault, the hold-back; the entry snapshot; the closure snapshot; the
+prior-administration predicate and the `prior_load_checked` builder), NEW
+`src/pilot/windows/m18DiagnosticBoard.ts` (the adapter: the `ItemWindow`,
+the log sink with the protocol stamp, the focused clock with per-case,
+per-slot marks, the reload guard, `presentM18`, `declareM18Cases`,
+`guardM18Reload`, `openM18(nowMs, { stage, prior_m13_window_status })`, the
+commands, `m18ConsumesEsc`, `closeM18Surface`, `resumeM18Surface`,
+`closeM18AtReview`, `bindM18Surface`, `m18Window`, `resetM18State`), NEW
+`src/pilot/windows/m18SurfaceModel.ts` (pure: the work-surface model in the
+wide frame), `src/pilot/windows/reviewClosure.ts` (one import, one
+`closeM18AtReview(nowMs)` call after `closeM16AtReview` with its comment),
+`src/scenes/DiagnosticsLaboratoryScene.ts` (the legacy import replaced by the
+adapter's and the surface model's; `declareM18Cases()` and
+`guardM18Reload()` in `create()`; `resumeM18Surface` in the RESUME handler;
+the `m18` PHASES entry's status → `m18Window.windowStatus()` and
+`opportunityId` → `proto_m18_cases_series`; a dedicated `m18` station branch
+opening the adapter with the stage and the route context and the work surface
+`m18_diagnostic_board` in the wide frame with the ESC order; the private
+`m18SurfaceHost()`; `presentM18(now)` in each of the four `lab_brief_ack*`
+handlers; the header comment's M18 lines; the Training Rig branch keeps
+`ipStation`), NEW `src/measurement/features/m18.ts` (the read-only extractor
+producing both rows), `src/measurement/features/index.ts` (one import),
+`src/measurement/registerV3.ts` (the `M18` entry's explicit v3 route,
+`implementation_status: 'implemented'` and a comment; the feature rows
+unchanged), NEW `e2e/m18_diagnosis.spec.ts`, NEW
+`e2e/m18_diagnosis_route.spec.ts`, `e2e/pilot_lab.spec.ts` and
+`e2e/pilot_signal_incident.spec.ts` (the M18 steps and identity assertions
+re-expressed), and the four documents. Untouched, byte-identical to the base
+(SHA-256 pinned in the pure spec): `m18FaultDiagnosis.ts`, `faultForms.ts`,
+`ui/DiagnosisConsoleScene.ts`, `src/measurement/m18Diagnosis.ts`;
+`windowKit.ts`, `WorkSurfaceScene.ts`, every helper, every other item.
+Events: exactly the family and suffixes of (2) above, with the additive
+descriptive fields `view` and `control` on a settle-refused press and
+`responses_per_case`, `intro_acknowledged` and per-case `test_runs` on the
+closure snapshot. Formulas: as (2) — the numerator count on 0–3 with
+`numerator`, `denominator`, `planned_denominator` 3 and `included_ids`
+beside it on every row. Eligibility: a case enters a slot's denominator with
+its attributable earliest first response of that slot written before any
+closure; CANNOT SOLVE is inside, missing outside. Timing: the settle 400 ms;
+the dialog's fresh-press window 400 ms; the same-test repeat window 400 ms;
+no other clock. The legacy module's disposition: [D-10].
+
+(4) Defaults as implemented (§5.316–§5.325; each owner-visible and
+reversible): D-2 the card shown again if the board is left before START CASE
+1, its acknowledgement recorded; D-3 drafts per slot, toggled by the same
+tile, kept across leaving; D-4 the fresh-press rule, the settle on every
+transition (a press that would have acted inside the settle logged as
+`press_refused`, target `view`, reason `settling`, with the view and the
+control refused — no M16 precedent logs it; the contract's §9.2 defines the
+suffix), the same-test repeat refusal, the opener / confirm distinction, the
+neutral landing on every view (the card text, the part question, the step
+text, the acknowledgement line, the results text — on every page, the page
+controls' ids carrying the page (correction round 2) — the closed-record line
+— each a text block whose activation does nothing, first in the focus order;
+LEAVE BOARD, the leaving ESC and the help sheet's ESC not settle-gated, a
+consumed ESC and an early KEEP WORKING not logged — the M16 precedent),
+the confirm control first in a dialog, CLOSE HELP first on the help sheet;
+D-5 help on every live view, logged with the phase and the view; D-6 the
+dispositions and reasons of (2); D-7 the names of (2); D-8 the §5.259 order
+convention; D-9 the companion definitions of (2); D-10 the legacy board
+unchanged on the developer alias; D-11 the layout of (1) "Layout" with these
+details decided in the build — the help sheet's text block at y 90 (not the
+mockup's y 56, which would overlap the status line), h 300, carrying the
+help title `HOW THE BOARD WORKS` as its first line under the kept header
+and status line, with CLOSE HELP at x 388 (the preview's own position); the
+card text at y 90 inside its 200 px landing box under an empty status row
+(the mockup sets it directly under the header); the results text block at y
+90, h 360 (its box ends 12 design px above the bottom row; the text uses at
+most 128 px of it); the test table's buttons rendered as
+labelled readouts (kind `readout`, not focusable) once the tests are closed;
+the closed record's counts line `Parts recorded: P of 3 · planned steps
+recorded: S of 3.` in the STATUS line for the review closure and a fault, and
+an EMPTY status for the reload hold-back (whose counts belong to the earlier
+page load — the M16 precedent); the probe / test ids `intro_text`,
+`start_case`, `question`, `sheet`, `test_a` … `result_c`, `part_1` … `part_4`,
+`record_part`, `cannot_solve`, `step_text`, `answer_1` … `answer_4`,
+`record_answer`, `acknowledgement`, `next`, `results_text`, `results_next_1`
+/ `results_next_2` and `results_back_2` / `results_back_3` (the page in the
+id, so a page change lands on the results text — contract §3.5; correction
+round 2), `finish`, `close_help`, `help_text`, `confirm`,
+`keep_working`, `dialog_text`, `record_text`, `help`, `leave`.
+
+(5) Tests written. Pure `e2e/m18_diagnosis.spec.ts` (51 tests): the
+independent oracle (i)–(viii) with its own transcription of the three sheets,
+tests, options and planned steps and its own simulator per case (every table
+cell, the authored results, exactly one consistent part, both keys, the
+symptom, the §5.1 consistent and sufficient sets, the §5.2 implied-by table,
+the options implied by no part, the wrong part implying the key, the case 2
+margins, the key positions, the §5.3 shortcut table computed and REPORTED and
+reproduced against the preview's figures, the uniqueness checker accepting
+the three genuine cases and rejecting the four mutants — the equality
+mutant through the comparison pairs derived from the hand physics table, a
+stuck HEATER giving 12 units of heat; correction round 2); the content
+cross-check (every string as transcribed; the fixed-line limits; the four
+briefing handlers by source); the register rows, the schedule, the family
+disjointness, the legacy-only log, the legacy hashes, the single declaring
+module, the review closure order; the series model (no correctness
+information in every state, the identical acknowledgement and status echo, a
+results request refused, the results pages, the order and tests, the
+immutability, the fresh-press rule, the settle on every transition with the
+recorded refusals, help, leaving, the review closure, the reload predicate
+and check, the fault, the entry snapshot and suffixes); the extractor (the
+values and companions, stability, partial and open series, zero evidence and
+legitimate missingness, the reload cases, the fault, the §9.4 table by scope
+— administration, content, sequencing, exposure, lifecycle, sequences,
+uncertain attribution — the acceptance cases X1–X6, the flags, determinism,
+no mutation, the equality with the full extraction, the numerator-count
+convention); the wording. Browser `e2e/m18_diagnosis_route.spec.ts`:
+R1–R9 as contract §12 B1 with the twenty-eight frames of §13. Re-expressed:
+`pilot_lab.spec.ts` (the arrival test opens the board as a work surface and
+asserts its distinctness; the stops test opens and leaves the board
+unfinished with both rows `pending`; the independence test keeps its two M13
+histories and asserts the snapshot equal apart from the stamp and the stage),
+`pilot_signal_incident.spec.ts` (the full case drives the three cases by
+mixed pointer and keyboard input; M18 leaves the IP-family loops; an explicit
+M18 check of equivalent strength; the M18 window's active time in the
+envelope sum).
+
+(6) Limitations (restated; nothing beyond the ruling's): six clustered
+responses of three independently designed cases at one board in one episode,
+never independent situations; one authored form, fixed order, case and
+position confounded, first contact in case 1, no practice case; cases not
+equated; chance 1/4; the companion dependent on the diagnosis (case 3's step
+key shared with HATCH; case 3's step needing less evidence than its
+diagnosis); the disclosed cues of preview §5.3; rules always visible (a
+ceiling plausible); test use recorded, never adjusted for; the descriptive
+indicators describe evidence availability and response consistency only; a
+session ending while open exports `pending`; after a reload prior exposure
+is uncertain, never proven absent (§5.290 (a)); the route's `valeHandover`
+declines the M05 lamp job, so no scenario verifies M05 timing; passing tests
+establish implementation correctness only. Not updated (U24 backlog): the
+capture specs, the registry's `lab.phase_m18` `opens` and window label,
+`world_v1_*` evidence, Noor's "test rig" line. Carried forward unchanged and
+open: the M16 beacon (§5.314 (4)); the M05 matters of §5.290 (e) (i) and the
+episode-1 cap; the U18 salience observation H1 (§5.301).
+
+(7) Evidence. The twenty-eight frames of contract §13 in
+`.playwright-mcp/u20-evidence/` (`01-laboratory-diagnostic-board-prompt`
+… `28-wall-display-after-m18-recorded`, 800 × 600 except
+`24-canvas-1080-case-3-with-draft`), plus the twelve R7 frames
+`c1-courier-new-*` and `c2-lucida-console-*` (card, case-1 step with a
+draft, case-2 all tests with a draft, case-2 step with a draft, help over
+case 2, part confirmation), all written by `e2e/m18_diagnosis_route.spec.ts`
+on the participant route and copied to the session scratchpad. The R7
+envelope at both fallback fonts: content bottom 502 design px, feedback top
+554 (Courier New) / 552 (Lucida Console), spare 52 / 50 design px on every
+full view (the confirmation dialog 264 / 262); every text block inside its
+box (the sheet 150–176 of 204, the help text 150–160 of 300, the results
+text 90–128 of 360, every tile and button 15–16 of 34). The matrix (S1–S7,
+P1, P2, B1 R1–R9, B2) run once by the Sonnet test-reviewer, the three
+failures with their base comparisons, the correction-round rerun and the
+three Opus reviews: `UNIT-LOG.md` "U20 results". The pure spec's reported
+shortcut table (`[M18 oracle]`, reproduced against preview §5.3): parts —
+always option 1 / 2 / 3 / 4 = 0 / 1 / 1 / 1 of 3; a part named in the Now
+line 0; the part on button A / B / C = 0 / 0 / 1; a part on no button and
+not in Now 0.83; a part in an abnormal-looking result line 0.50; symptom
+only 0.75; one test then a uniform pick 1.17 (each of A, B, C); steps —
+"repairs everything" 1, "nothing changes" 1, always option 1 / 2 / 3 / 4 =
+1 / 1 / 0 / 1; reported, never a ceiling.
 
 **Unit 19 closeout (M16; 12 October 2026)** — one bounded closeout under the
 research owner's closeout rulings of 12 October 2026 (§5.314; `UNIT-LOG.md`
@@ -8648,3 +9408,232 @@ an owner decision.
      additional local commit
      `fix(m16): clarify controls and validate entry snapshots`. The as-built
      record of the closeout: §4 "Unit 19 closeout".
+315. **RESEARCH-OWNER DECISION D-U20-1 — APPROVED 12 October 2026 (M18, the
+     three diagnosis cases; U20).** An owner ruling with its date, recorded
+     here as the owner's amendment instruction of 12 October 2026 records it
+     (contract `U20-CONTRACT.md` §2.2 "Owner ruling"; `UNIT-LOG.md` "U20");
+     not an implementer default; not reopened by this unit. Items 1–10 of
+     contract §2.2 APPROVED AS RECOMMENDED with the owner's clarifications,
+     quoted: "Keep the three r2 cases, their wording, tests, options, keys and
+     layouts." "Predictions are keyed to the actual case, regardless of the
+     recorded diagnosis." "Tests remain optional, unlimited and repeatable
+     before diagnosis commitment; they close when the diagnosis is recorded."
+     "Diagnosis is immutable before the prediction question appears." "Cannot
+     solve remains available for both responses and counts as incorrect;
+     unanswered remains missing." "Correctness feedback appears only after all
+     six responses." "Keep one form and fixed case/option order." "Keep
+     separate diagnosis and prediction counts and denominators, each with
+     planned denominator 3." "Accept the proposed
+     pending/completion/review/reload policy, including both rows remaining
+     pending while the series is open even if all three diagnoses are
+     recorded." "Keep the descriptive indicators", with the null rules and the
+     narrower claim of contract §10 (the indicators describe evidence
+     availability and response consistency only, never why an answer was
+     wrong). Item 11: the ALTERNATIVE APPROVED — "invalidate only the affected
+     row when a defect is demonstrably isolated. Shared defects that
+     compromise administration, content, sequencing or exposure invalidate
+     both rows. If isolation cannot be established, invalidate both and state
+     why." — implemented by contract §9.4 "Defect scope" (the scope classes
+     `shared` / `slot` / `uncertain` / `flag`, the isolation test I1–I4, the
+     lifecycle and closure-snapshot rules that keep a valid row from being
+     voided through a second, generic check) and tested by contract §12 P1
+     "Defect scope and indicators" (X1–X6). Declarations: "Retain validation of
+     the eight setup declarations: prediction_target, tests, tests_close,
+     step_after, cannot_solve_available, feedback, stop_control and
+     responses_per_case. This is part of the approved administration, not
+     eight additional decisions." Also required by the owner: `response_kind`
+     exactly `option` or `cannot_solve` on both response types; raw records
+     preserved, contradictory evidence never silently repaired, an uncertain
+     response never counted. Boundaries: "All events, features and descriptive
+     indicators remain provisional. No canonical promotion, combined score or
+     scientific-validity claim is authorized." The content is the owner's
+     approved instrument (preview r2 §3–§4; content `m18-content-v1`, form
+     `m18-form-1`): part keys `m18_c1_p3` AMPLIFIER, `m18_c2_p4` HEATER,
+     `m18_c3_p2` SENSOR; step keys `m18_c1_s2` (Only P1, P2 read TONE),
+     `m18_c2_s1` (AIR 12 · GAUGE COOL), `m18_c3_s4` (LAMP OFF · WINCH STILL);
+     chance 1/4 per response. Its documented limitations travel with it
+     (preview §10): six responses clustered in three independently designed
+     cases at one board in one episode; one form, fixed order (case and
+     position confounded; first contact in case 1; no practice case); cases
+     not equated; the step companion depends on the diagnosis (case 3's step
+     key shared with HATCH; case 3's step key needs less evidence than its
+     diagnosis); the disclosed cues of preview §5.3 (case 3's key the "nothing
+     changes" answer, case 2's the "repair" answer, case 3's part key named on
+     button C, one test then a guess ≈ 1.17 of 3 parts, the procedural
+     carry-over from case 1); rules always visible (a ceiling plausible); test
+     use recorded, never adjusted for; a session ending while open exports
+     `pending`; after a reload prior exposure is uncertain, never proven
+     absent; the research support of preview §1.3 is abstract-level. The
+     provenance limit of the contract applies: the original owner documents
+     are not on disk and were not searched for again. Rulings D-U16-1,
+     D-U17-1 / D-U17-2 and §5.290 (M14), D-U18-1 (M15), D-U19-1 with A1 and
+     §5.314 (M16) are precedent only. As-built: §4 "Unit 20".
+316. **D-2 — first-opening card (U20 default).** The first opening shows the
+     card (preview §3.3, six fixed lines) with START CASE 1, HELP and LEAVE
+     BOARD; activating START CASE 1 is recorded (`intro_acknowledged`) and
+     presents case 1; leaving before it shows the card again at the next
+     opening (the M16 precedent). Reversible; owner-visible.
+317. **D-3 — drafts (U20 default).** Activating a part or answer tile makes it
+     the draft, another replaces it, the same again clears it; drafts are kept
+     per slot (the part draft of a case; the answer draft of its step), logged
+     as `option_drafted` interactions, never responses; they survive leaving
+     and returning; only confirming records an answer. Reversible.
+318. **D-4 — commitment mechanics and the settle (U20 default; the M02 §5.210,
+     M13 §5.262, M14, M15 and M16 precedents).** The 400 ms fresh-press rule
+     on every confirmation (a press inside the window refused and recorded
+     once per dialog as `commit_press_refused` with the count carried on the
+     record; held keys and auto-repeat dropped by the surface); RECORD PART /
+     RECORD ANSWER without a draft refused with the neutral line
+     (`commit_without_draft`); the settle on EVERY view transition — the card,
+     a case's first view, a step's first view, the acknowledgement, each
+     results page, the help sheet and the view restored by CLOSE HELP or a
+     cancelled dialog (the §5.290 (b) convention generalised) — a press inside
+     400 ms changing nothing and, when it would otherwise have acted, logged as
+     `press_refused` (target `view`, reason `settling`); a same-test repeat
+     within 400 ms refused and logged (`press_refused`, target `test`, reason
+     `repeat_within_settle`); the opener / confirm distinction (every opener in
+     the right column at x ≥ 738, every dialog control at panel x 200–720, so a
+     double click on an opener records nothing and a fresh confirm records
+     exactly one); neutral focus on entry to every view through a non-acting
+     first focusable element; the confirm control first in a dialog's focus
+     order. Reversible.
+319. **D-5 — help (U20 default).** HELP (H or the button) on the card, every
+     case, step and acknowledgement view and every results page, never while
+     a dialog is open; informational (the eight approved lines); every consult
+     logged (`help_consulted`) with the phase and the view (`intro`,
+     `case_<k>`, `step_<k>`, `ack_<k>`, `results_<k>`) — an interaction, never
+     an answer; CLOSE HELP (H, ESC or the button) restores the same view with
+     all its state and re-arms its settle. Reversible.
+320. **D-6 — dispositions and `missing_reason` values for zero and partial
+     evidence (U20 default; contract §3.12; addendum §1 free text).** Both
+     rows: `not_presented` (never briefed, never opened); `pending`
+     (`briefed_not_opened` while open, or opened and open with 0–5 responses —
+     also with three parts recorded and a step pending [O-9]);
+     `no_eligible_event` at the review closure — `briefed_not_opened`
+     (censored), the diagnosis row `intro_only` (the card only) or
+     `case_presented_no_response`, the prediction row `diagnosis_only` when at
+     least one part exists and no step answer, otherwise the diagnosis row's
+     reason; `incomplete` for 1–2 responses of the slot closed at the review
+     (the value on the observed denominator, censored); `observed` for 3, or
+     at completion; `interrupted` for the hold-back and for a reloaded load
+     without an established absence; `technical_failure` on the rows the
+     defect's scope names; never `declined`. Reversible.
+321. **D-7 — names (U20 default; all provisional, alternatives are the
+     owner's).** Family `proto_m18_cases_`, opportunity
+     `proto_m18_cases_series`, window `m18_cases_w1`, object and surface
+     `m18_diagnostic_board`, entry version `m18-cases-v1`, form `m18-form-1`,
+     content `m18-content-v1`, the case, test, part and step option ids of
+     contract §9.1, the slots `diagnosis` / `prediction`, the response kinds
+     `option` / `cannot_solve`, the result ids of the tests (§4 "Unit 20" (2)),
+     the event suffixes of contract §9.2, the feature ids as in the register.
+322. **D-8 — event order (U20 default).** The §5.259 convention: an outcome
+     that depends on event order is read only from events that each carry a
+     usable, distinct `sequence`; a family event of the load without one
+     voids both rows (`shared`, sequencing); a `results_shown` not preceded by
+     `first_responses_completed` voids both rows (a shared exposure defect);
+     gaps are normal.
+323. **D-9 — companion definitions (U20 default).** Omissions per slot =
+     cases presented without a first response of that slot
+     (`unanswered_case_ids`; a step never presented counts as unanswered for
+     the prediction slot only when its case was presented), unpresented cases
+     listed apart (`unpresented_case_ids`), never CANNOT SOLVE
+     (`cannot_solve_count` per slot); test use = the tests run before the part
+     (`tests_run_before_part` ids in A–C order, `test_runs_before_part`
+     including repeats, `repeated_test_runs`); `evidence_sufficient_before_part`
+     and `step_answer_implied_by_recorded_part` as ruled (item 10).
+324. **D-10 — the legacy board (U20 default).** `m18FaultDiagnosis.ts`,
+     `faultForms.ts` and `ui/DiagnosisConsoleScene.ts` stay in the tree
+     unchanged under their frozen v2 identity, reachable only through the
+     developer alias; the laboratory route no longer imports the legacy
+     module; `src/measurement/m18Diagnosis.ts` untouched; the registry's
+     descriptive `opens` / window label for `lab.phase_m18` stay stale (U24
+     backlog); the v3 extractor reads neither legacy family.
+325. **D-11 — layout and interface details inside the wide frame (U20
+     default).** The positions of preview §3.1 as listed in §4 "Unit 20" (1)
+     "Layout" (adjustable inside the contract §3.10 envelope); the test table's
+     `not run yet` (a case view) / `not run` (after the tests close); the test
+     buttons rendered as labelled readouts once the tests are closed; the
+     per-view footers naming the keys and TAB; the closed-record counts line
+     `Parts recorded: P of 3 · planned steps recorded: S of 3.`; the header
+     `Case N of 3` on case, step, dialog and acknowledgement views; results
+     titles `RESULTS — CASE N OF 3`; the help title `HOW THE BOARD WORKS`.
+     Not updated in this unit (U24 backlog): the capture specs, the registry's
+     `lab.phase_m18` `opens` and window label, `world_v1_*` evidence, Noor's
+     "test rig" line (agreed with by the card, not changed). Carried forward
+     unchanged and open: the M16 beacon salience question (§5.314 (4)); the
+     M05 competing-task observation of §5.290 (e) (i) and the episode-1 M05 cap
+     on the scripted route; the U18 salience observation H1 (§5.301).
+
+326. **U20 reviews, correction rounds and recorded defaults (13 October
+     2026).** Three read-only reviews on Opus 5.5 (scientific, gameplay,
+     visual; general-purpose agents reading their role files — the named
+     agent types were not discoverable in the session) and the Sonnet 5.5
+     test-reviewer's matrix, with two bounded correction rounds inside the
+     allowlist. **Round 1** (the matrix): `signal_incident_models.spec.ts`
+     asserts the laboratory scene's literal
+     `prior_m13_window_status: m13LatticeWindowStatus()`; the adapter's
+     route-context option renamed from `priorM13WindowStatus` to that key —
+     a deviation from the contract's §5 description of `openM18`, governed by
+     the §12 P2 gate; no behaviour changed. **Round 2** (the reviews):
+     (a) MATERIAL, scientific — `evidence_sufficient_before_part` was
+     derived although the case's earliest diagnosis record left the part
+     undetermined (contract §10 nulls it); fixed in the extractor and
+     asserted per X4 case; a closure-snapshot `part` disagreement counts as
+     undetermined (the model state that drove the echo differs from the
+     record). (b) MATERIAL, gameplay — a board never opened before the
+     review was recorded absent but came back live afterwards (the series
+     stayed `unopened`); the adapter now closes the series as the review's
+     record (`m18sCloseUnopenedAtReview`, nothing logged), so a later
+     opening shows `Parts recorded: 0 of 3 · planned steps recorded: 0 of
+3.`, accepts nothing and writes no event; a pure test covers it; the
+     M16 precedent has the same shape (U24 backlog). (c) MATERIAL, visual
+     and gameplay — a results page reached by NEXT or BACK landed on that
+     control (the scene keeps focus by element id; contract §3.5 asks a
+     neutral landing on every results page); the page controls now carry the
+     page in their id (`results_next_1` / `results_next_2`,
+     `results_back_2` / `results_back_3`) so the landing is the results text;
+     R1 asserts the focus on pages 2 and 3 and on BACK; the pure spec, R2,
+     R7 and R9 follow the ids. (d) MINOR, scientific — a 3-of-3 row closed at
+     the review carried `censored: true`; now `censored: denominator < 3`
+     (contract §3.12: 3 ⇒ `observed`). (e) MINOR, scientific, tests — oracle
+     (ii)'s case 1 symptom derived from the rule chain instead of asserted;
+     the equality mutant fed with pairs derived from the hand physics table;
+     the X3 `stop_control` mutation (a no-op: an entry declaration) removed.
+     (f) MINOR, gameplay — `pilot_signal_incident` pressed case 3's TEST A
+     inside the view's settle; it now waits 450 ms and asserts both result
+     lines. (g) MINOR, documentation — §4 "Unit 20" (1), (2), (4), (5)
+     corrected: the settle and `press_refused` claims narrowed to the build
+     (LEAVE BOARD, the leaving ESC and the help sheet's ESC not settle-gated;
+     a consumed ESC and an early KEEP WORKING not logged — M16 precedent);
+     D-11 records the help title inside the sheet's text block (h 300), the
+     card text inside its landing box and the results box height; the
+     mutant disclosure. **Disclosed, not changed** (each owner-visible):
+     (h) a sequencing defect is not re-detected as `shared` while an
+     uncertain-attribution record exists in the load (both rows already
+     voided); (i) the per-case `correct` in the components is the recount —
+     the owner may prefer the recorded flag beside it; (j) after a fault
+     once all six answers are in, the board shows the fault record and a
+     reopening shows the results again (the scored evidence untouched);
+     (k) a double click on a part or answer tile drafts and clears it (the
+     same-tile toggle has no repeat window — D-3; changing it would alter the
+     draft companion); (l) the laboratory RESUME handler resumes the kit
+     window when the surface itself closes, so the kit's `active_ms` accrues
+     until the review (M15 / M16 precedent; the model's per-slot times and
+     the focused clock are unaffected); (m) the part question wraps "case /
+     1?" at the default font (a non-breaking space would change the pinned
+     string — owner's call); (n) the neutral feedback line ("Choose a part
+     first.") can persist up to 2.2 s into the next view (shared surface
+     style; U24); (o) the amber feedback colour is the shared surface style;
+     (p) frame 28's recorded state is a marker on the display trace —
+     contextual imagery; (q) no pre-U20 frame of the current laboratory art
+     exists for a before / after comparison; (r) from the scientific
+     confirmation: a fully observed row at the review closure keeps a
+     non-null `censor_reason` beside `censored: false` (descriptive; a null
+     reason would be the consistent form), and X4's 'derived' branch asserts
+     a boolean rather than the hand value `true` — both left as they stand
+     after the second correction round. **Owner clarifications
+     requested** (no implementer resolution): whether indicators of OTHER
+     cases in a load with an I4 failure should also be null (the contract's
+     text nulls only the undetermined case; other cases stay derived), and
+     (i) above. No finding touched the content, the keys, the rule or the
+     ruling D-U20-1.

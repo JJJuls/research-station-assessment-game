@@ -14,10 +14,11 @@
  *    twelve feedback learning trials (the run of three at trial 4) → two
  *    transfer probes (no preview, no feedback; one demonstration review);
  *    sixteen first responses recorded (Station 080 Unit 9).
- * 4. M18 diagnostic board — evidence read, a test run twice (redundant),
- *    tags ruled out citing the readout (consistent and inconsistent
- *    citations both recorded), the working diagnosis placed by keyboard
- *    and by drag, one explicit submission.
+ * 4. M18 diagnostic board — the three diagnosis cases of Station 080
+ *    Unit 20, driven through their own controls by real input (pointer
+ *    and keyboard in turn): per case tests on request, one immutable first
+ *    diagnosis, one immutable first planned-step answer; results after the
+ *    sixth; both feature rows read from the page's own export.
  *
  * Between phases the wall display changes and Noor's intercom line moves
  * on. Every phase logs exactly its own family with its own opportunity /
@@ -38,16 +39,9 @@ import { M17_FORMS } from '../src/informationProcessing/syntaxForms';
 import { getEvents, selectPromptOption } from './helpers';
 import type { IpEventLike } from './ipHelpers';
 import {
-  clickDiagnosisButton,
-  clickDiagnosisPanel,
-  clickDiagnosisRun,
-  clickHypothesis,
-  clickRect,
   clickTerminalButton,
   composeByClick,
-  diagnosisProbe,
   dragChipToBin,
-  dragRectToRect,
   eventsOfFamily,
   expectProvisionalOnly,
   ipModule,
@@ -56,7 +50,6 @@ import {
   terminalProbe,
   typeCommand,
   waitBufferLength,
-  waitDiagnosisOpen,
   waitTerminalOpen,
 } from './ipHelpers';
 import {
@@ -135,7 +128,7 @@ async function clickElement(page: Page, id: string) {
 async function openBench(
   page: Page,
   at: { x: number; y: number },
-  probeKey: '__ipTerminalProbe' | '__ipDiagnosisProbe' | '__workSurfaceProbe',
+  probeKey: '__ipTerminalProbe' | '__workSurfaceProbe',
 ) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     await interactAt(page, at, {
@@ -234,6 +227,20 @@ async function continueByKeyboard(page: Page) {
 async function answerByKeyboard(page: Page, letter: 'a' | 'b' | 'c') {
   await press(page, letter);
   await recordByKeyboard(page);
+}
+
+/** The page's own feature rows of one item, read from the export builder. */
+async function featureRows(page: Page, item: string) {
+  const json = await page.evaluate(`(async () => {
+    const mod = await import('/src/systems/index.ts');
+    const payload = mod.researchRuntime.buildExportPayload();
+
+    return JSON.stringify(
+      (payload.measurement_features ?? []).filter((row) => row.item_id === ${JSON.stringify(item)}),
+    );
+  })()`);
+
+  return JSON.parse(json as string) as Record<string, unknown>[];
 }
 
 /** The page's own feature row of one item, read from the export builder. */
@@ -553,78 +560,137 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     expect(display?.phases_recorded).toEqual(['m15', 'm16', 'm17']);
     expect(display?.intercom).toMatch(/diagnostic board/);
 
-    // ——— Phase 4 — M18 diagnostic board ———
-    await openBench(page, PILOT.lab.diagnosticBoard, '__ipDiagnosisProbe');
+    // ——— Phase 4 — M18 diagnostic board (Station 080 Unit 20: the three
+    // diagnosis cases, driven through their own controls by real input —
+    // the card by pointer; tests, drafts and confirmations by keyboard and
+    // pointer in turn; `press` already waits 450 ms after each key, past
+    // every view's settle) ———
+    await openBench(page, PILOT.lab.diagnosticBoard, '__workSurfaceProbe');
 
-    let board = await diagnosisProbe(page);
+    let board = (await surface(page))!;
 
-    expect(board.form).toBe('A');
-    expect(board.hypotheses.every((h) => !h.selected && !h.rejected)).toBe(
-      true,
+    expect(board.surface_id).toBe('m18_diagnostic_board');
+    expect(board.elements.find((e) => e.id === 'start_case')).toBeDefined();
+    await page.waitForTimeout(450);
+    await clickElement(page, 'start_case'); // the card, by pointer
+    await page.waitForTimeout(450);
+    board = (await surface(page))!;
+    expect(board.elements.find((e) => e.id === 'sheet')?.label).toContain(
+      'MAST RECEIVER',
     );
 
-    // Read the pressure map, rule out feed_restriction citing it (consistent).
-    await clickDiagnosisPanel(page, 'pressure_map');
-    await clickHypothesis(page, 'feed_restriction', 'reject');
-    // Run the hold test twice (the second run is redundant), rule out
-    // valve_seat_leak citing it (inconsistent: the hold test does not
-    // contradict that hypothesis — recorded as such, never scored).
-    await clickDiagnosisRun(page, 'hold_test');
-    await clickDiagnosisRun(page, 'hold_test');
-    await clickHypothesis(page, 'valve_seat_leak', 'reject');
-    // Working diagnosis by keyboard (digit 3 = the third tag).
-    await page.keyboard.press('3');
-    await page.waitForTimeout(250);
-    board = await diagnosisProbe(page);
-    expect(
-      board.hypotheses.find((h) => h.id === 'intake_segment_leak')?.selected,
-    ).toBe(true);
-    // Drag the last open tag onto RULED OUT (cites the readout: hold test).
-    const sensor = board.hypotheses.find(
-      (h) => h.id === 'intake_sensor_fault',
-    )!;
-    const ruledOut = board.zones.find((zone) => zone.id === 'ruled_out')!;
+    // Case 1: TEST A by keyboard, TEST B by pointer; part 3 (the key) by
+    // keyboard; step 2 (the key) by pointer.
+    await press(page, 'a');
+    await clickElement(page, 'test_b');
+    board = (await surface(page))!;
+    expect(board.elements.find((e) => e.id === 'result_a')?.label).toBe(
+      'P1 reads TONE.',
+    );
+    expect(board.elements.find((e) => e.id === 'result_b')?.label).toBe(
+      'P2 reads SILENT.',
+    );
+    await press(page, '3');
+    await recordByKeyboard(page);
+    board = (await surface(page))!;
+    expect(board.status).toBe(
+      'Recorded part: AMPLIFIER. The tests are closed; the record stays.',
+    );
+    expect(board.elements.find((e) => e.id === 'test_a')?.focusable).toBe(
+      false,
+    );
+    await page.waitForTimeout(450);
+    await clickElement(page, 'answer_2');
+    await clickElement(page, 'record_answer');
+    await page.waitForTimeout(450);
+    await clickElement(page, 'confirm');
+    await page.waitForTimeout(450);
+    board = (await surface(page))!;
+    expect(board.elements.find((e) => e.id === 'acknowledgement')?.label).toBe(
+      'Case 1 recorded.',
+    );
+    await clickElement(page, 'next'); // NEXT CASE, by pointer
 
-    await dragRectToRect(page, sensor, ruledOut);
-    await page.waitForTimeout(300);
-    board = await diagnosisProbe(page);
-    expect(
-      board.hypotheses.find((h) => h.id === 'intake_sensor_fault')?.rejected,
-    ).toBe(true);
-    expect(board.submit_enabled).toBe(true);
-    await clickDiagnosisButton(page, 'submit');
-    await page.waitForTimeout(300);
-    board = await diagnosisProbe(page);
-    expect(board.closed).toBe(true);
-    await clickRect(page, board.buttons.find((b) => b.id === 'close')!);
-    await waitDiagnosisOpen(page, false);
+    // Case 2: TEST B and TEST C by pointer; part 4 (the key) by pointer with
+    // the keyboard confirm; step 1 (the key) by keyboard with the pointer
+    // confirm.
+    await page.waitForTimeout(450);
+    await clickElement(page, 'test_b');
+    await page.waitForTimeout(450);
+    await clickElement(page, 'test_c');
+    await clickElement(page, 'part_4');
+    await press(page, 'r');
+    expect((await surface(page))?.focus).toBe('confirm');
+    await press(page, 'Enter');
+    await press(page, '1');
+    await clickElement(page, 'record_answer');
+    await page.waitForTimeout(450);
+    await clickElement(page, 'confirm');
+    await page.waitForTimeout(450);
+    board = (await surface(page))!;
+    expect(board.elements.find((e) => e.id === 'acknowledgement')?.label).toBe(
+      'Case 2 recorded.',
+    );
+    await clickElement(page, 'next');
+    // Case 3 settles 400 ms after the pointer press before a key acts.
+    await page.waitForTimeout(450);
 
-    const m18 = await ipModule(page, 'm18');
-    const rejections = m18.rejections as Record<string, unknown>[];
+    // Case 3: TEST A and TEST C by keyboard; part 2 (the key) by pointer;
+    // step 4 (the key) by keyboard.
+    await press(page, 'a');
+    await press(page, 'c');
+    await page.waitForTimeout(100);
+    board = (await surface(page))!;
+    for (const id of ['result_a', 'result_c']) {
+      expect(
+        board.elements.find((e) => e.id === id)?.label,
+        `case 3 ${id}`,
+      ).not.toContain('not run');
+    }
+    await clickElement(page, 'part_2');
+    await clickElement(page, 'record_part');
+    await page.waitForTimeout(450);
+    await clickElement(page, 'confirm');
+    // The step view settles 400 ms after the pointer confirm before a key acts.
+    await page.waitForTimeout(450);
+    await press(page, '4');
+    await recordByKeyboard(page);
+    board = (await surface(page))!;
+    expect(board.elements.find((e) => e.id === 'next')?.label).toBe(
+      'SHOW RESULTS',
+    );
+    await page.waitForTimeout(450);
+    await clickElement(page, 'next'); // SHOW RESULTS
+    board = (await surface(page))!;
+    expect(board.elements.find((e) => e.id === 'results_text')).toBeDefined();
+    // Results page 1 settles 400 ms before ESC leaves.
+    await page.waitForTimeout(450);
+    await press(page, 'Escape');
+    await waitSurface(page, false);
 
-    expect(m18.window_status).toBe('completed');
-    expect(m18.final_diagnosis_id).toBe('intake_segment_leak');
-    expect(
-      rejections.map((r) => [
-        r.hypothesis_id,
-        r.cited_evidence,
-        r.evidence_consistent,
-      ]),
-    ).toEqual([
-      ['feed_restriction', 'pressure_map', true],
-      ['valve_seat_leak', 'hold_test', false],
-      ['intake_sensor_fault', 'hold_test', false],
-    ]);
-    // Two ruled-out hypotheses are contradicted by evidence the
-    // participant actually opened (pressure map: feed + valve); one
-    // rule-out cited consistent evidence.
-    expect(m18.contradictions_eliminated).toBe(2);
-    expect(m18.evidence_consistent_steps).toBe(1);
-    expect(m18.evidence_inconsistent_steps).toBe(2);
-    expect(m18.redundant_tests).toBe(1);
-    expect(m18.tests_selected).toEqual(['hold_test']);
-    expect(m18.evidence_panels_viewed).toBe(1);
+    const m18Validity = await validityRecord(page, 'proto_m18_cases_series');
+
+    expect(m18Validity.completed).toBe(true);
+    expect(m18Validity.validity).toBe('valid');
     expect(await itemStatus(page, 'M18')).toBe('completed');
+
+    const m18Rows = await featureRows(page, 'M18');
+
+    expect(m18Rows.map((row) => row.feature_id)).toEqual([
+      'm18_correct_first_diagnoses',
+      'm18_correct_consequence_predictions',
+    ]);
+
+    for (const row of m18Rows) {
+      expect(row).toMatchObject({
+        value: 3,
+        numerator: 3,
+        denominator: 3,
+        planned_denominator: 3,
+        disposition: 'observed',
+        closure_reason: 'completed',
+      });
+    }
     display = await signalDisplay(page);
     expect(display?.phases_recorded).toEqual(['m15', 'm16', 'm17', 'm18']);
     expect(display?.next_phase).toBeNull();
@@ -635,12 +701,79 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     const events = (await getEvents(page)) as unknown as IpEventLike[];
     const families = {
       m17: eventsOfFamily(events, 'proto_m17_trials'),
-      m18: eventsOfFamily(events, 'proto_m18_fault'),
     };
     const ids = {
       m17: ['proto_m17_criterion', 'm17_trials_w1'],
-      m18: ['proto_m18_lattice_fault_diagnosis', 'm18_diagnosis_w1'],
     } as const;
+
+    // M18 (Unit 20) is no longer an IP family: an explicit check of
+    // equivalent strength — its own family only, one opportunity, the
+    // window id and the administration version on every event, exactly one
+    // completion and one window closure, six first responses, no v2 fault
+    // event.
+    const m18Events = events.filter((e) =>
+      e.event_type.startsWith('proto_m18_'),
+    );
+
+    expect(m18Events.length).toBeGreaterThan(3);
+    expect(
+      m18Events.every((e) => e.event_type.startsWith('proto_m18_cases_')),
+    ).toBe(true);
+    expect(
+      m18Events.filter(
+        (e) => e.event_type === 'proto_m18_cases_first_responses_completed',
+      ),
+    ).toHaveLength(1);
+    expect(
+      m18Events.filter((e) => e.event_type === 'proto_m18_cases_window_closed'),
+    ).toHaveLength(1);
+    expect(
+      m18Events.filter(
+        (e) => e.event_type === 'proto_m18_cases_first_response',
+      ),
+    ).toHaveLength(6);
+
+    for (const event of m18Events) {
+      const m = metadata(event);
+
+      expect(m.opportunity_id, event.event_type).toBe('proto_m18_cases_series');
+      expect(m.window_id, event.event_type).toBe('m18_cases_w1');
+      expect(m.entry_state_version, event.event_type).toBe('m18-cases-v1');
+    }
+
+    expectProvisionalOnly(m18Events);
+    expect(eventsOfFamily(events, 'proto_m18_fault')).toHaveLength(0);
+    expect(
+      (await validityRecord(page, 'proto_m18_cases_series')).validity,
+    ).toBe('valid');
+
+    // The M18 first-response phase sits between its opening and its window
+    // closure; only the briefing exposure precedes it and only the results
+    // (and leaving) follow it.
+    const m18Index = (type: string) =>
+      events.findIndex((e) => e.event_type === `proto_m18_cases_${type}`);
+    const m18Opened = m18Index('opportunity_opened');
+    const m18Closed = m18Index('window_closed');
+
+    expect(m18Opened).toBeGreaterThan(m18Index('presented'));
+    expect(m18Closed).toBeGreaterThan(m18Opened);
+
+    for (const event of m18Events) {
+      const at = events.indexOf(event);
+      const suffix = event.event_type.slice('proto_m18_cases_'.length);
+
+      if (suffix === 'presented') {
+        expect(at).toBeLessThan(m18Opened);
+      } else if (
+        suffix === 'results_shown' ||
+        suffix === 'panel_left' ||
+        suffix === 'series_reopened'
+      ) {
+        expect(at, event.event_type).toBeGreaterThan(m18Opened);
+      } else {
+        expect(at >= m18Opened && at <= m18Closed, event.event_type).toBe(true);
+      }
+    }
 
     // M16 (Unit 19) is no longer an IP family: an explicit check of
     // equivalent strength — its own family only, one opportunity, the
@@ -780,7 +913,12 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
     }
 
     // Pairwise disjoint: no event belongs to two families.
-    const all = [...Object.values(families).flat(), ...m15Events, ...m16Events];
+    const all = [
+      ...Object.values(families).flat(),
+      ...m15Events,
+      ...m16Events,
+      ...m18Events,
+    ];
 
     expect(new Set(all).size).toBe(all.length);
     expect(all.length).toBe(
@@ -871,6 +1009,13 @@ test.describe('signal-analysis incident — complete case by real input (Unit 3)
         metadata(
           m16Events.find(
             (e) => e.event_type === 'proto_m16_handling_window_closed',
+          )!,
+        ).active_ms ?? 0,
+      ) +
+      Number(
+        metadata(
+          m18Events.find(
+            (e) => e.event_type === 'proto_m18_cases_window_closed',
           )!,
         ).active_ms ?? 0,
       );

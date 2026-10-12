@@ -1367,6 +1367,28 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'performance_counterpart',
     direction: 'extend_occasions',
     occasions: 3,
+    // Unit 20: the approved three-case administration landed at the
+    // Diagnostics Laboratory diagnostic board (episode 3) — ONE opportunity,
+    // one window (research-owner decision D-U20-1 of 12 October 2026). The
+    // v2 family `proto_m18_fault_*` keeps its v2 meaning on the developer
+    // alias and in the frozen ledger; it contributes nothing to the rows.
+    // "Independent" in the summary means independently DESIGNED cases; the
+    // six responses are clustered within one board episode (INDEPENDENCE).
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m18_cases_series'],
+      windows: [
+        {
+          id: 'm18_cases_w1',
+          occasion: null,
+          zone: 'diagnostics_laboratory',
+          episode: 3,
+        },
+      ],
+      family_prefixes: ['proto_m18_cases_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Three independent fault cases with discriminating tests; for each, a first diagnosis and a keyed prediction of one observable consequence before feedback; independent truth key.',
     features: [
