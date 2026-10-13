@@ -496,7 +496,19 @@ export function closeM18Surface(nowMs: number) {
   });
 }
 
+/**
+ * The laboratory scene resumed. The kit window's active clock restarts only
+ * while the board surface is open (a pause of the whole scene over an open
+ * board); after LEAVE BOARD or ESC the window stays paused until the real
+ * reopening (`openM18`), whatever resumes the scene meanwhile — the
+ * surface's own close, another bench's close (contract §3.11; closeout of
+ * 13 October 2026). The focused clock was never resumed here.
+ */
 export function resumeM18Surface(nowMs: number) {
+  if (series === null || !series.panel_open) {
+    return;
+  }
+
   m18Window.resume(nowMs);
 }
 

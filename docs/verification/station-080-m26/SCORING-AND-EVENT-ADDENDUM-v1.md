@@ -1153,9 +1153,12 @@ never three or six independent situations; the two rows are never combined.
   `repeated_test_runs`, `evidence_sufficient_before_part` and
   `step_answer_implied_by_recorded_part` (the descriptive indicators of
   D-U20-1 item 10 with their null rules: `true` / `false` only from
-  trustworthy, valid ordinary option responses; a diagnosis record that
-  leaves the part undetermined nulls both for its case, an isolated defect of
-  a determinate record nulls only the consistency indicator; they describe
+  trustworthy, valid ordinary option responses; a load whose final scope is
+  `shared` or `isolation_uncertain` nulls both for EVERY case — an uncertain
+  record, an undetermined part or any other I4 failure (owner clarification
+  of 13 October 2026, register §5.327); under genuine isolation an isolated
+  defect of a determinate record nulls only the consistency indicator of its
+  case; they describe
   evidence availability and response consistency, never why an answer was
   wrong),
   `help_consults` by phase, `results_shown` per page,

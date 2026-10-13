@@ -11346,3 +11346,241 @@ Implementer defaults (owner-visible, reversible; none changes the approved formu
   (the development R1 / R9 / `pilot_signal_incident` run) completed with
   exit 0; every Playwright web server stopped with its run; no dev server
   of this unit left running on 5205 or 5206; no polling was used.
+
+### U20 closeout authorization (owner instruction of 13 October 2026, verbatim; section headings shown in bold)
+
+Execute this bounded U20 closeout. I approve the four corrections below and the indicator clarification as research owner on 13 October 2026.
+
+This explicitly authorizes one additional local commit after focused verification and review. It extends the original correction-round and single-commit limits for this closeout only. Do not amend the existing commit, merge, push or start U21.
+
+**1. Entry and scope**
+
+Worktree:
+C:\Users\Juls\.codex\worktrees\u20-m18\research-station-assessment-game
+
+Branch:
+codex/u20-m18
+
+Expected starting HEAD:
+2eed38118bf121a98aeb98792eed7295bbfca6fa
+
+Verify directory, branch, HEAD, tracked status, inherited allowlist, effective Git identity and your model before editing. This explicitly overrides CLAUDE.md’s historical branch restriction for this closeout. Preserve unrelated files and metadata. Do not touch the primary checkout or other worktrees.
+
+Keep the existing 17-path guard environment. The permitted closeout subset is these ten files:
+
+- src/measurement/features/m18.ts
+- src/pilot/windows/m18DiagnosticBoard.ts
+- src/pilot/windows/m18DiagnosisModel.ts
+- src/scenes/DiagnosticsLaboratoryScene.ts
+- e2e/m18_diagnosis.spec.ts
+- e2e/m18_diagnosis_route.spec.ts
+- docs/verification/station-080-m26/IMPLEMENTATION-MATRIX.md
+- docs/verification/station-080-m26/M01-M26-IMPLEMENTATION-REGISTER.md
+- docs/verification/station-080-m26/SCORING-AND-EVENT-ADDENDUM-v1.md
+- docs/verification/station-080-m26/UNIT-LOG.md
+
+Touch fewer where possible. Do not modify the pinned preparation package, shared infrastructure, other items, settings or guard. A necessary change outside this subset is a stop for that part.
+
+Append this closeout authorization to UNIT-LOG before source edits. Record the owner clarification in the next unused register entry after §5.326. Read only the relevant implementation, direct callers and tests; no project-wide audit.
+
+**2. Correct M18 pause/resume timing**
+
+Register §5.326(l) reports that the laboratory RESUME handler resumes the kit window after the board surface closes, allowing active_ms to accumulate until review. Contract §3.11 requires window pause and clock pause on leaving.
+
+Reproduce the reported behavior first. Correct M18 so leaving through LEAVE BOARD or ESC pauses its activity timing, and an ordinary laboratory RESUME notification does not restart it while the board remains closed. Actual reopening should resume only the timing appropriate to that state.
+
+Preserve drafts, tests, responses, approved help/dialog behavior, completion and closure handling. Preserve the other laboratory items’ behavior. Existing behavior in M15/M16 is not authorization to retain this M18 discrepancy.
+
+Verify departure, a measurable interval away, and reopening through the real controls. Include both pointer LEAVE BOARD and keyboard ESC. Confirm no duplicate presentation or response and no change to the score formulas.
+
+**3. Apply the approved indicator clarification**
+
+When the final defect scope is shared or isolation_uncertain, both descriptive indicators must be null for EVERY case in that load:
+
+- evidence_sufficient_before_part
+- step_answer_implied_by_recorded_part
+
+This includes a slot defect that fails I4 and therefore becomes isolation_uncertain.
+
+For genuinely isolated slot defects, retain the existing approved case-specific treatment. In particular, do not unnecessarily erase evidence sufficiency when the diagnosis commitment position and investigation record remain trustworthy.
+
+This clarification changes descriptive indicators only. It changes no diagnosis/prediction formula, key, planned denominator or missing-answer rule.
+
+Replace weak boolean-type assertions with independently derived exact expected values where the test specifies a determinate result. Verify both global nulling and retention under genuine isolation.
+
+**4. Verify sequencing-defect reporting**
+
+Register §5.326(h) describes suppressing sequencing defects whenever an uncertain-attribution record exists. Establish what the implementation actually does.
+
+Distinguish:
+
+- an earlier uncertain record that could explain an apparent missing prerequisite, so an additional ordering defect cannot independently be established;
+- an unrelated or later uncertain record beside an independently provable ordering violation.
+
+The latter must not suppress the proven shared defect. Preserve the contract's narrow protection against inventing a "fewer than six" completion defect from an uncertain sixth response.
+
+Use focused synthetic cases. List independently established defects and apply shared-over-isolation_uncertain precedence. Do not infer uncertain attribution, silently repair records or change retained-row formulas. Correct only demonstrated noncompliance.
+
+**5. Correct output and closeout reporting**
+
+- Where censored is false, censor_reason must be null. Preserve review-closure context in its existing closure field. Test the case where three diagnoses are observed at review while predictions remain incomplete, as well as genuinely censored rows.
+- Keep per-case correct as explicitly documented, independently recomputed correctness. Preserve original event flags and detect disagreements. Adding another raw-flag component is not required for this closeout.
+- Keep the approved question wording and its permitted prose wrapping. The "case / 1?" line break requires no edit or new owner decision.
+- Keep unrelated presentation and other-item limitations in the documented U24 backlog.
+
+Correct the completion account: U20 had reported browser/pure successes, reproduced baseline failures, formatting exceptions and unresolved closeout questions. It was not an exception-free pass. Record that the original commit preceded resolution of the owner clarification.
+
+Report formatting failures by their actual content and provenance. Do not label newly introduced formatting as inherited. Do not reformat historical material merely to obtain a clean result.
+
+Record the absent commit hooks accurately; do not install or reconfigure them.
+
+**6. Focused verification and review**
+
+Fable remains the only writer.
+
+Sonnet 5.5 performs:
+
+- TypeScript, build, focused lint/format checks, diff-check and scope verification.
+- The full focused M18 pure suite, including the new integrity, indicator and censoring cases.
+- One complete M18 route scenario, plus the focused departure/reopening checks needed for section 2.
+- Any additional existing M18 review/reload scenario directly affected by the fixes.
+- A narrowly selected existing laboratory regression if scene RESUME handling changes, confirming other benches remain usable.
+
+Name the selected scenarios and why they are affected. Do not repeat the full original matrix, unchanged baseline comparisons or all screenshots. Reuse earlier evidence only for behavior unaffected by this closeout.
+
+Then one independent read-only Opus 5.5 reviewer checks the changed scientific/data rules and pause/resume behavior against this authorization, the final diff and Sonnet's evidence. Use the relevant scientific and gameplay role instructions. Report actual models; never substitute Fable.
+
+Allow one bounded response to material review findings, followed only by affected Sonnet reruns and reviewer confirmation. Stop with a resumable handoff if a material issue remains or scope must widen.
+
+No visual redesign or screenshot regeneration is needed unless a change actually affects what is shown. Commands exceeding about nine minutes run in the background with completion notifications; no polling loops. Join every agent and shell.
+
+**7. Commit and handoff**
+
+After the required checks and review, and with no unresolved owner-reserved exception, create exactly one additional local commit:
+
+fix(m18): reconcile integrity indicators and pause timing
+
+Keep 2eed381 intact. No amend, push, merge, installation, deletion or U21.
+
+Finish with a concise closeout handoff:
+
+- starting and final commit;
+- exact files changed;
+- disposition of each correction above;
+- the owner clarification as implemented;
+- each check's actual result and source revision;
+- remaining baseline/formatting exceptions and not-run checks;
+- reviewer models and confirmations;
+- any process deviation;
+- confirmation that all background work is finished.
+
+Do not claim "all checks passed" while exceptions remain. Then stop for my review.
+
+### U20 closeout results (13 October 2026)
+
+- **Entry state verified before editing.** The worktree
+  `C:\Users\Juls\.codex\worktrees\u20-m18\research-station-assessment-game`,
+  branch `codex/u20-m18`, HEAD `2eed38118bf121a98aeb98792eed7295bbfca6fa`
+  (descended from `6e934d6`), `git status --porcelain` empty, the 17-path
+  `CLAUDE_UNIT_ALLOWLIST` still exported (kept as instructed; the ten-path
+  closeout subset checked with `verify-unit`), the Git identity
+  `JJJuls <juls.ranft@gmail.com>` (read with `git var GIT_COMMITTER_IDENT`;
+  no git-config read), the writer `claude-fable-5-1`; the primary checkout
+  and the other worktrees untouched. The authorization above was appended
+  verbatim before the first source edit.
+- **Reproduced first, on the unfixed source.** (1) Pause timing: R10 as
+  first designed (LEAVE BOARD by click, 3 s away, reopen, ESC, 3 s away,
+  reopen, the series completed) PASSED on the unfixed adapter (log
+  `closeout-r10-before-fix.log`, 2.1 min) — the kit's `open` resets the open
+  timestamp on a reopening, so the spurious resume accrues only when the
+  window is STOPPED without a reopening; R10 redesigned (LEAVE BOARD by
+  click, 3 s away, reopen, case 1's tests and part, ESC from the step view,
+  the route on to the Utility Deck review, the record closed) FAILED as
+  reported: `active 88999 on board 9449 away before closure 79253` (log
+  `closeout-r10-before-fix-2.log`). (2) The indicators: X4 rewritten to
+  assert both indicators null on all three cases of both rows for every
+  `isolation_uncertain` load failed on the unfixed extractor at "kind absent
+  beside a valid option m18_c2 — Received: true" (an undetermined case-1 part
+  left case 2's evidence indicator derived; log
+  `closeout-p1-before-fix.log`: 3 failed, 50 passed). (3) Sequencing: X7 (b)
+  failed on the unfixed extractor — `Expected: "shared"`,
+  `Received: "isolation_uncertain"` (a case-1 record without a slot suppressed the
+  provable case-2 step-before-diagnosis defect; log
+  `closeout-x7-before-fix.log`); (a), (c) and (d) behave as the code reads
+  (the walk is in event order, so a later record never suppressed a check;
+  the completion count already included uncertain records). (4) The censor
+  reason: the "one to five" test's extended assertion failed —
+  `censor_reason: "series closed at the review after 3 of 3 parts"` beside
+  `censored: false` (the same P1 log).
+- **What changed (seven of the ten permitted paths;
+  `m18DiagnosisModel.ts`, `DiagnosticsLaboratoryScene.ts` and
+  `IMPLEMENTATION-MATRIX.md` untouched).**
+  `src/pilot/windows/m18DiagnosticBoard.ts`: `resumeM18Surface` returns
+  unless the series' `panel_open` is true (the scene's RESUME handler
+  unchanged). `src/measurement/features/m18.ts`: each uncertain record
+  carries the (case, slot) pairs it could be; `sequencing` takes the missing
+  response and withholds `shared` only when an EARLIER uncertain record could
+  be it (a missing step presentation passes `null` ⇒ always shared);
+  `trustworthy = !sharedExists && isolationFailed === null`; `censor_reason`
+  null when the denominator is 3; the per-case `correct` documented as the
+  recount; the header and inline comments. `e2e/m18_diagnosis.spec.ts` (53
+  tests): X7 new ((a)–(d) with exact defect lists; a `movedBefore` helper);
+  X4's helper asserts every case null and its typeof-boolean branch is gone,
+  its isolated pair asserted with the hand values; X1 asserts
+  `evidence_sufficient_before_part: true` on the affected and the other
+  cases; the "one to five" test asserts `censor_reason: null` on the observed
+  row and the reason on the censored one; the scene-source test also asserts
+  the adapter guard. `e2e/m18_diagnosis_route.spec.ts`: R10 new. The
+  register: §4 "Unit 20 closeout" (1)–(6), the (2) indicator, censor and
+  disclosed-limits paragraphs, §5.327. The addendum §2: the indicator
+  sentence. This log: the authorization and this section.
+- **Development evidence on the corrected source.** Prettier
+  (`--end-of-line auto`), ESLint and `tsc --noEmit` clean on the four `.ts`
+  files; the register and the addendum Prettier-clean; P1 53 passed (5.1 s,
+  log `closeout-p1-after-all-2.log`); R10 passed (3.0 min, log
+  `closeout-r10-after-fix.log`); `git diff --check` clean; `verify-unit`
+  exit 0, "PASS - every change is inside the unit allowlist", no FAIL line,
+  on the ten-path subset against `2eed381`.
+- **Test-reviewer (Sonnet 5.5, `claude-sonnet-5-5`, as a general-purpose agent reading the test-reviewer role file) on the digest
+  `3615faeb1c0e4682ba0a4d6795e5035d707cd8c52c248e37a87c7c572ee16317`
+  (`git diff 2eed381 | sha256sum`; logs `so-*` in the session scratchpad
+  `matrix/`).** First run (digest `3615faeb…6317`, logs `so-*`): S1 `npm.cmd run lint:tsc` exit 0; S2 `npm.cmd run build` exit 0 (the chunk-size warning only); S3 ESLint on the four `.ts` files exit 0; S4 `prettier --check --end-of-line auto` on the seven changed paths exit 1 — flags `UNIT-LOG.md` only, the other six clean; S5 `git diff --check` exit 0; S6 `verify-unit` (the ten-path subset, base `2eed381`) exit 0, "PASS - every change is inside the unit allowlist", no FAIL line; P1 exit 0, 53 passed (5.0 s); B1 R1 passed (138 s); B2 R10 passed (186 s); B3 R3 passed (230 s; one earlier invocation with a mangled `--grep` pattern failed to parse its regex in 3 s and ran no test — kept as `so-B3-invalid-grep-harness-error.log`, not a test failure); B4 `pilot_lab` 3 passed (436 s) — the laboratory regression chosen because every bench's surface closes through the same laboratory RESUME handler whose M18 adapter behaviour changed; port 5205 free before each browser run; no `[M18 …]` / `[R…]` console line; the digest identical before and after; the same seven modified files and nothing new. **Affected rerun after the bounded response below (digest `db033fb8d5fc419293f098a06c233fcf16471be9f81c58196d1e543957b206a4`, logs `so2-*`):** S1 exit 0; S3 exit 0; S4 exit 1 (`UNIT-LOG.md` only); S5 exit 0; S6 exit 0 PASS, no FAIL line; P1 exit 0, 53 passed (4.8 s); R10 passed (3.2 min); S2, R1, R3 and `pilot_lab` not rerun (no code they reach changed); the digest identical before and after; nothing listening on 5205 / 5206.
+- **Review (Opus 5.5, `claude-opus-5-5`, as a general-purpose agent reading the scientific-reviewer and gameplay-reviewer role files; read-only, under the scientific and gameplay role
+  files, against the authorization, the final diff and the test-reviewer's
+  evidence).** No MATERIAL finding; five MINOR: (1) R10's first departure (click, then a reopening) cannot discriminate the old defect — only the ESC departure followed by the closure does — while the title claimed both; (2) the candidate set for a response whose option belongs to another case AND the other slot omits the two cross readings (a `shared` where `isolation_uncertain` could apply; both rows voided and every indicator null either way); (3) no test asserted the indicators null for every case under `shared`; (4) the register cited this section before it existed, and quoted the writer's 3.0 min R10 beside the test-reviewer's 3.1 min; (5) one reflowed comment line of 106 characters. Verdicts: A pause timing correct (the guard exits unless `panel_open`; `m18sLeave` clears it before the kit pause; the reopening restarts the window through the kit's `open`; no legitimate resume lost, the scene being paused while the board is open); B the clarification correct (`isolationFailed` covers I1 and every I4 failure; genuine isolation keeps the per-case treatment; exact expected values); C sequencing correct (event-order walk; the three call sites name the right missing response; a missing step presentation stays shared; precedence and the "fewer than six" protection unchanged; no attribution inferred, no record repaired); D output and reporting correct (censor reason null exactly when uncensored; the recount documented; the wrap untouched; the completion account accurate — hooks path absent, provenance right, the original commit before the clarification); E no scope or authority concern (seven of ten paths; no event name, formula, key or participant-facing text changed). **Bounded response (test-only, a comment reflow and register text; the review limit for material findings not used):** X7 gained an `indicatorsNull` helper asserting both indicators null for every case on both rows in (a) [`isolation_uncertain`] and (b), (b′), (c) [`shared`]; R10's title narrowed to what each leg proves; the m18.ts header line reflowed; the register (1) records the click-leg limit and both R10 timings, (3) discloses the omitted cross readings (not changed; owner-visible). **Confirmation (the same reviewer, on the final digest):** all five resolved or disclosed as stated; nothing new; the non-comment code of `m18.ts` and the adapter diff unchanged since the first review.
+- **Formatting exceptions by content and provenance (S4).** `UNIT-LOG.md`:
+  Prettier would change 55 hunks before line 10442 — the same 55 hunks it
+  would change at the base `6e934d6` — inherited; AND ten hunks inside U20's
+  own verbatim contract reproduction (lines 10657–11018: the D-U20-1
+  decision table, the lifecycle table and the §9.4 validation table left
+  unpadded, one list continuation line, six blank lines) — introduced by
+  U20 and reported in "U20 results" as inherited, which was wrong; AND
+  none from this closeout — the appended authorization first lacked the blank line Prettier wants before three of its lists (three whitespace-only hunks), inserted at once, and this section was checked the same way (the whole file 65 hunks: 55 + 10). `IMPLEMENTATION-MATRIX.md`: one 28-row table hunk (lines
+  39–66), the base's own, byte-identical apart from the M18 row U20 replaced
+  inside it in the same style — inherited, U20's row inside it. Nothing
+  historical was reformatted and the verbatim contract is left as pasted.
+  The two pre-existing P2 gate failures (`final_scientific_gates.spec.ts:139`
+  and `:393`) were not rerun — unaffected by this closeout; their base
+  comparisons of "U20 results" stand.
+- **Not run (unaffected; the earlier evidence reused).** R2, R4–R9 (the
+  surfaces, fonts, reload paths and other benches' prompts are unchanged;
+  the adapter change is reached only through the laboratory RESUME, covered
+  by R10, R3 and `pilot_lab`), the other P2 specs, `pilot_signal_incident`,
+  the M14–M16 and world runs, and every screenshot (nothing shown changed;
+  R10 writes no frame).
+- **Process deviations.** (a) The named agent types were again not
+  discoverable; the test-reviewer and the reviewer ran as general-purpose
+  agents with the model override after reading their role files. (b) The
+  first R10 design did not reproduce the report and was replaced (recorded
+  above, not hidden). (c) The adapter-guard regex in the pure spec was first
+  written with broken escapes through an inline `node -e` edit and restored
+  from a script file (two extra P1 runs). (d) The commit hooks: the hooks
+  path `.husky/_` is absent in this worktree, so the pre-commit hook did not
+  run at the closeout commit either; the same checks were run by hand;
+  nothing installed or reconfigured. (e) Pure runs used port 5206 beside
+  the browser runs on 5205. (f) No memory file was written (the PreToolUse
+  guard blocks writes outside the worktree and the scratchpad; not
+  retried). (g) R10's `U20_OUT` pointed at the scratchpad; no frame under
+  `.playwright-mcp/u20-evidence/` was touched.
+- **Commit.** One additional local commit `fix(m18): reconcile integrity indicators and pause timing` on top of `2eed381` (kept intact; no amend), the seven changed files staged by explicit name; the pre-commit hook could not run (`.husky/_` absent); the SHA is in the handoff. No push, merge, tag, PR, installation, deletion or U21.
+- **Background tasks at handoff.** The Sonnet test-reviewer joined after its first run and its rerun; the Opus reviewer joined after its review and its confirmation; the three background R10 runs of the writer (two on the unfixed adapter, one on the fixed) completed with their notifications; no polling; no dev server of this closeout left running on 5205 or 5206.

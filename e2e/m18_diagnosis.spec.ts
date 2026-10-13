@@ -1322,6 +1322,17 @@ test.describe('M18 register rows, route and the legacy module', () => {
     expect(lab).toContain("surfaceId: 'm18_diagnostic_board'");
     expect(lab).toContain('closeM18Surface');
     expect(lab).toContain('resumeM18Surface(Date.now())');
+    // Closeout of 13 October 2026: the laboratory RESUME (fired by the
+    // surface's own close among others) resumes the kit window only while
+    // the board surface is open; a left board stays paused until reopened.
+    const adapter = readFileSync(
+      'src/pilot/windows/m18DiagnosticBoard.ts',
+      'utf8',
+    );
+
+    expect(adapter).toMatch(
+      /export function resumeM18Surface\(nowMs: number\) \{\s*if \(series === null \|\| !series\.panel_open\) \{\s*return;\s*\}\s*m18Window\.resume\(nowMs\);\s*\}/,
+    );
 
     const files = sourceFiles('src');
     const literal = files.filter((file) =>
@@ -3056,6 +3067,26 @@ function duplicateAfter(
   return renumber(copy);
 }
 
+/** Moves one event to the position right before an anchor, renumbered. */
+function movedBefore(
+  events: RawGameEvent[],
+  find: (event: RawGameEvent) => boolean,
+  anchor: (event: RawGameEvent) => boolean,
+): RawGameEvent[] {
+  const copy = copyOf(events);
+  const source = copy.find(find);
+
+  expect(source, 'the event to move').toBeDefined();
+
+  const rest = copy.filter((event) => event !== source);
+  const at = rest.findIndex(anchor);
+
+  expect(at, 'the anchor').toBeGreaterThanOrEqual(0);
+  rest.splice(at, 0, source!);
+
+  return renumber(rest);
+}
+
 function without(
   events: RawGameEvent[],
   find: (event: RawGameEvent) => boolean,
@@ -3394,13 +3425,25 @@ test.describe('M18 extractor — values and companions', () => {
     );
 
     expectObserved(five.diagnosis, 3);
+    // Not censored ⇒ no censor reason; the review-closure context stays in
+    // the closure field (closeout of 13 October 2026).
     expect(five.diagnosis).toMatchObject({
       disposition: 'observed',
       censored: false,
+      censor_reason: null,
       closure_reason: 'closed_at_review',
     });
+    expect(five.diagnosis.components.first_response_phase_closure).toBe(
+      'closed_at_review',
+    );
     expectObserved(five.prediction, 2, 2);
-    expect(five.prediction.censored).toBe(true);
+    expect(five.prediction).toMatchObject({
+      disposition: 'incomplete',
+      censored: true,
+      censor_reason:
+        'series closed at the review after 2 of 3 planned-step answers',
+      closure_reason: 'closed_at_review',
+    });
   });
 });
 
@@ -4389,12 +4432,22 @@ test.describe('M18 extractor — defect scope and indicators (X1–X6)', () => {
         caseOf(out.diagnosis, affected).step_answer_implied_by_recorded_part,
         label,
       ).toBeNull();
+      // The commitment position and the investigation record of the affected
+      // case stay trustworthy: its evidence indicator keeps the hand value.
+      expect(
+        caseOf(out.diagnosis, affected).evidence_sufficient_before_part,
+        label,
+      ).toBe(true);
 
       for (const other of M18_ASSIGNED_CASE_ORDER.filter(
         (id) => id !== affected,
       )) {
         expect(
           caseOf(out.diagnosis, other).step_answer_implied_by_recorded_part,
+          `${label} ${other}`,
+        ).toBe(true);
+        expect(
+          caseOf(out.diagnosis, other).evidence_sufficient_before_part,
           `${label} ${other}`,
         ).toBe(true);
       }
@@ -4631,17 +4684,16 @@ test.describe('M18 extractor — defect scope and indicators (X1–X6)', () => {
 
   test('X4 — isolation that cannot be established voids both rows as isolation_uncertain with the reason; two determinate slot defects void both rows each with its own label', () => {
     const base = clean();
-    // The indicators of case 1 (the case every diagnosis mutation touches):
-    // null with an uncertain record in the load or an undetermined part;
-    // evidence sufficiency still derived after an isolated defect of a
-    // determinate record (a snapshot disagreement, a duplicate) — the
-    // consistency indicator is then null because its responses are
-    // defective (contract §10).
+    // Both indicators of EVERY case are null whenever the load's final scope
+    // is `isolation_uncertain` — an uncertain record, an undetermined part,
+    // or an I4 failure of a determinate record's duplicate (the owner's
+    // clarification of 13 October 2026, register §5.327; before it, an I4
+    // failure left the other cases' indicators derived). Retention under
+    // genuine isolation is asserted in X1 and X2 with the hand values.
     const uncertain = (
       events: RawGameEvent[],
       label: string,
       reason: string,
-      indicators: 'null' | 'derived',
     ) => {
       const out = rows(events);
 
@@ -4652,16 +4704,17 @@ test.describe('M18 extractor — defect scope and indicators (X1–X6)', () => {
         label,
       ).toContain(reason);
 
-      const c1 = caseOf(out.diagnosis, 'm18_c1');
-
-      if (indicators === 'null') {
-        expect(c1.evidence_sufficient_before_part, label).toBeNull();
-        expect(c1.step_answer_implied_by_recorded_part, label).toBeNull();
-      } else {
-        expect(typeof c1.evidence_sufficient_before_part, label).toBe(
-          'boolean',
-        );
-        expect(c1.step_answer_implied_by_recorded_part, label).toBeNull();
+      for (const id of M18_ASSIGNED_CASE_ORDER) {
+        for (const row of [out.diagnosis, out.prediction]) {
+          expect(
+            caseOf(row, id).evidence_sufficient_before_part,
+            `${label} ${id}`,
+          ).toBeNull();
+          expect(
+            caseOf(row, id).step_answer_implied_by_recorded_part,
+            `${label} ${id}`,
+          ).toBeNull();
+        }
       }
     };
 
@@ -4669,7 +4722,6 @@ test.describe('M18 extractor — defect scope and indicators (X1–X6)', () => {
       response('m18_c2', 'prediction', { option_id: 'm18_c2_p4' })(base),
       'slot / option contradiction',
       'I1',
-      'null',
     );
     uncertain(
       withoutFields(base, (e) => isResponse(e, 'm18_c2', 'prediction'), [
@@ -4677,25 +4729,21 @@ test.describe('M18 extractor — defect scope and indicators (X1–X6)', () => {
       ]),
       'no slot',
       'I1',
-      'null',
     );
     uncertain(
       response('m18_c1', 'diagnosis', { case_id: 'm18_c9' })(base),
       'unknown case',
       'I1',
-      'null',
     );
     uncertain(
       response('m18_c3', 'prediction', { case_id: 'm18_c9' })(base),
       'unknown case as the sixth',
       'I1',
-      'null',
     );
     uncertain(
       response('m18_c1', 'diagnosis', { phase: 'feedback' })(base),
       'phase feedback',
       'I1',
-      'null',
     );
     uncertain(
       withoutFields(base, (e) => isResponse(e, 'm18_c1', 'diagnosis'), [
@@ -4703,13 +4751,11 @@ test.describe('M18 extractor — defect scope and indicators (X1–X6)', () => {
       ]),
       'kind absent beside a valid option',
       'undetermined',
-      'null',
     );
     uncertain(
       response('m18_c1', 'diagnosis', { option_id: 'm18_c1_p9' })(base),
       'an unknown option id',
       'undetermined',
-      'null',
     );
     uncertain(
       withSnapshot(base, 'first_responses_completed', (s) => {
@@ -4722,7 +4768,6 @@ test.describe('M18 extractor — defect scope and indicators (X1–X6)', () => {
       }),
       'the snapshot part.option_id',
       'undetermined',
-      'null',
     );
     uncertain(
       duplicateAfter(
@@ -4732,7 +4777,6 @@ test.describe('M18 extractor — defect scope and indicators (X1–X6)', () => {
       ),
       'a duplicate diagnosis before the prediction',
       'before its planned-step answer',
-      'derived',
     );
     uncertain(
       duplicateAfter(
@@ -4742,7 +4786,6 @@ test.describe('M18 extractor — defect scope and indicators (X1–X6)', () => {
       ),
       "a duplicate diagnosis after case 2's presentation",
       "between the next case's presentation and completion",
-      'derived',
     );
     uncertain(
       duplicateAfter(
@@ -4752,7 +4795,6 @@ test.describe('M18 extractor — defect scope and indicators (X1–X6)', () => {
       ),
       "a duplicate prediction after case 2's presentation",
       "between the next case's presentation and completion",
-      'derived',
     );
 
     // Both slots defective, nothing else: each row by its own defect.
@@ -4776,6 +4818,166 @@ test.describe('M18 extractor — defect scope and indicators (X1–X6)', () => {
     expectVoided(both.diagnosis, 'diagnosis');
     expectVoided(both.prediction, 'prediction');
     expect(both.diagnosis.components.isolation_failed).toBeUndefined();
+    // Genuine isolation keeps the case-specific treatment: the sufficient
+    // tests (A, B / B, C / A, C each leave exactly one consistent part) give
+    // `true` for every case; the consistency indicator is null for the two
+    // cases whose own record is defective and `true` for the keyed case 2
+    // (HEATER implies answer 1).
+    for (const row of [both.diagnosis, both.prediction]) {
+      expect(caseOf(row, 'm18_c1')).toMatchObject({
+        evidence_sufficient_before_part: true,
+        step_answer_implied_by_recorded_part: null,
+      });
+      expect(caseOf(row, 'm18_c2')).toMatchObject({
+        evidence_sufficient_before_part: true,
+        step_answer_implied_by_recorded_part: true,
+      });
+      expect(caseOf(row, 'm18_c3')).toMatchObject({
+        evidence_sufficient_before_part: true,
+        step_answer_implied_by_recorded_part: null,
+      });
+    }
+  });
+
+  test('X7 — sequencing beside uncertain records: an earlier record that could be the missing prerequisite leaves the ordering unproven (isolation_uncertain, no shared defect); an unrelated earlier record, a later record or a missing step presentation leaves the proven defect shared beside the listed uncertain record; an uncertain sixth response never invents a completion defect', () => {
+    // An OPEN series (case 3 presented, no closure snapshot), so the defect
+    // list carries exactly the sequencing outcome and the uncertain record.
+    const open = () =>
+      log([
+        start,
+        series(KEYS.slice(0, 2), { tests: SUFFICIENT_TESTS.slice(0, 2) }),
+        nextCase,
+      ]);
+    const listed = (row: Row) =>
+      (row.components.integrity_defect as Comp[]).map(
+        (defect) => `${defect.scope}: ${defect.kind}`,
+      );
+    // Global nulling (owner clarification, §5.327): whatever the final
+    // scope — shared or isolation_uncertain — both indicators of every case
+    // are null on both rows.
+    const indicatorsNull = (out: ReturnType<typeof rows>, label: string) => {
+      for (const id of M18_ASSIGNED_CASE_ORDER) {
+        for (const row of [out.diagnosis, out.prediction]) {
+          expect(
+            caseOf(row, id).evidence_sufficient_before_part,
+            `${label} ${id}`,
+          ).toBeNull();
+          expect(
+            caseOf(row, id).step_answer_implied_by_recorded_part,
+            `${label} ${id}`,
+          ).toBeNull();
+        }
+      }
+    };
+    const stepBeforeDiagnosis = (events: RawGameEvent[], caseId: M18CaseId) =>
+      movedBefore(
+        events,
+        (e) => isSuffix(e, 'step_presented', caseId),
+        (e) => isResponse(e, caseId, 'diagnosis'),
+      );
+
+    // (a) Case 1's diagnosis without a case id: it may be the diagnosis its
+    // step presentation and its planned-step answer lack — no ordering
+    // defect can be established; both rows isolation_uncertain (I1).
+    const a = rows(
+      withoutFields(open(), (e) => isResponse(e, 'm18_c1', 'diagnosis'), [
+        'case_id',
+      ]),
+    );
+
+    expectVoided(a.diagnosis, 'isolation_uncertain');
+    expectVoided(a.prediction, 'isolation_uncertain');
+    indicatorsNull(a, '(a)');
+    // (The tests_closed record of case 1 precedes any attributable diagnosis:
+    // an investigation flag, never a defect of scope.)
+    expect(listed(a.diagnosis)).toEqual([
+      'uncertain: a first response without a known case',
+      'flag: the tests of a case were closed before its diagnosis',
+    ]);
+
+    // (b) An unrelated earlier record — case 1's planned-step answer without
+    // a slot (either slot of case 1, never a case-2 diagnosis) — beside
+    // case 2's step presented before case 2's diagnosis: the ordering
+    // violation is proven by attributable records and stands as shared; the
+    // uncertain record stays listed; shared takes precedence.
+    const b = rows(
+      stepBeforeDiagnosis(
+        withoutFields(open(), (e) => isResponse(e, 'm18_c1', 'prediction'), [
+          'slot',
+        ]),
+        'm18_c2',
+      ),
+    );
+
+    expectVoided(b.diagnosis, 'shared');
+    expectVoided(b.prediction, 'shared');
+    indicatorsNull(b, '(b)');
+    expect(listed(b.diagnosis)).toEqual([
+      'uncertain: a first response without a known slot',
+      'shared: a step was presented before its diagnosis',
+    ]);
+    expect(b.diagnosis.missing_reason).toBe(
+      'shared defect: a step was presented before its diagnosis',
+    );
+
+    // (b′) A missing step presentation is never explained by a response
+    // record: case 1's diagnosis without a case id (any case, the diagnosis
+    // slot) beside case 2's planned-step answer whose step was never
+    // presented — shared; the step draft and its confirmation request,
+    // naming a step option before any step presentation, are shared defects
+    // of their own, each listed.
+    const b2 = rows(
+      without(
+        withoutFields(open(), (e) => isResponse(e, 'm18_c1', 'diagnosis'), [
+          'case_id',
+        ]),
+        (e) => isSuffix(e, 'step_presented', 'm18_c2'),
+      ),
+    );
+
+    expectVoided(b2.diagnosis, 'shared');
+    indicatorsNull(b2, '(b′)');
+    expect(listed(b2.diagnosis)).toEqual([
+      'uncertain: a first response without a known case',
+      'flag: the tests of a case were closed before its diagnosis',
+      'shared: a option_drafted record names a step option before its step was presented',
+      'shared: a commit_requested record names a step option before its step was presented',
+      'shared: a planned-step answer without, or before, its diagnosis or its step presentation',
+    ]);
+
+    // (c) A LATER uncertain record never reaches back: case 1's step
+    // presented before its diagnosis (proven when read), then case 2's
+    // planned-step answer without a case id — shared, the later record
+    // listed; case 3's presentation after that unattributable answer raises
+    // nothing (the record may be case 2's answer).
+    const c = rows(
+      withoutFields(
+        stepBeforeDiagnosis(open(), 'm18_c1'),
+        (e) => isResponse(e, 'm18_c2', 'prediction'),
+        ['case_id'],
+      ),
+    );
+
+    expectVoided(c.diagnosis, 'shared');
+    indicatorsNull(c, '(c)');
+    expect(listed(c.diagnosis)).toEqual([
+      'shared: a step was presented before its diagnosis',
+      'uncertain: a first response without a known case',
+    ]);
+
+    // (d) The narrow protection kept: an uncertain sixth response (case 3's
+    // planned-step answer under an unknown case) beside the completion
+    // snapshot invents no completion defect — both rows isolation_uncertain,
+    // no shared defect of any kind.
+    const d = rows(
+      response('m18_c3', 'prediction', { case_id: 'm18_c9' })(clean()),
+    );
+
+    expectVoided(d.diagnosis, 'isolation_uncertain');
+    expect(listed(d.diagnosis).filter((k) => k.startsWith('shared'))).toEqual(
+      [],
+    );
+    expect(d.diagnosis.components.isolation_failed).toContain('I1');
   });
 
   test('X5 — legitimate missingness and well-formed CANNOT SOLVE stay distinct from technical failure; the indicators null where a response is missing or CANNOT SOLVE', () => {

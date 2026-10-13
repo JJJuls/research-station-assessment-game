@@ -2890,4 +2890,97 @@ test.describe('M18 diagnosis cases: reload (Unit 20)', () => {
     await expectFamilyDiscipline(page);
     expectNoRuntimeErrors(errors);
   });
+
+  test('R10 (pause timing on leaving; closeout of 13 October 2026): LEAVE BOARD by click, a measurable interval away and the real reopening (no case, step or response repeated), then ESC and the review closure without a reopening — the kit window stays paused while the board is closed although the laboratory scene resumes, so the closure records only the time spent on the board (both departures take the one pause path; the closure after ESC is the discriminating leg)', async ({
+    page,
+  }) => {
+    test.setTimeout(900_000);
+
+    const errors = captureErrors(page);
+    const clock = () => page.evaluate(() => Date.now());
+
+    await toLab(page, 'u20r10');
+    await openBoard(page);
+
+    const openedAt = await clock();
+
+    await startCase1ByKeyboard(page);
+    expect(await countOf(page, 'case_presented')).toBe(1);
+    await page.waitForTimeout(1500);
+
+    // Departure 1: LEAVE BOARD by click; a measurable interval away (the
+    // walk to Kai and back plus 3 s); the real reopening.
+    await page.waitForTimeout(SETTLE_MS);
+    await clickElement(page, 'leave');
+    await waitSurface(page, false);
+
+    const leftAt1 = await clock();
+
+    await labApproach(page, PILOT.lab.kai);
+    await page.waitForTimeout(3000);
+    await openBoard(page);
+
+    const reopenedAt1 = await clock();
+
+    expect(await ids(page)).toEqual(CASE_VIEW_IDS);
+    expect(await countOf(page, 'case_presented')).toBe(1);
+    expect(await countOf(page, 'panel_left')).toBe(1);
+    expect(await countOf(page, 'first_response')).toBe(0);
+
+    // Case 1's tests and part on the reopened board (the step view follows).
+    await testByKeyboard(page, 'a');
+    await testByKeyboard(page, 'b');
+    await partByKeyboard(page, 3);
+    expect(await countOf(page, 'first_response')).toBe(1);
+    expect(await countOf(page, 'step_presented')).toBe(1);
+    await page.waitForTimeout(1000);
+
+    // Departure 2: ESC (the same path) from the step view, then the route
+    // on to the Utility Deck review WITHOUT a reopening — the window is
+    // stopped by the closure while still left.
+    await leaveBoard(page);
+
+    const leftAt2 = await clock();
+
+    expect(await countOf(page, 'panel_left')).toBe(2);
+    await labToYardBriefed(page);
+    await yardReturnToConcourse(page);
+    await returnShiftToDeckClosure(page);
+    await concourseToDeck(page);
+    await expectStage(page, 'deck_closure');
+    await closeStationRecord(page);
+
+    const closedAt = await clock();
+    const onBoard = leftAt1 - openedAt + (leftAt2 - reopenedAt1);
+    const awayBeforeClosure = closedAt - leftAt2;
+    const closed = meta(await lastOf(page, 'window_closed'));
+    const active = Number(closed.active_ms);
+
+    expect(closed.exit_state).toBe('closed_at_review');
+    expect(reopenedAt1 - leftAt1).toBeGreaterThanOrEqual(3000);
+    expect(awayBeforeClosure).toBeGreaterThanOrEqual(10_000);
+    // Paused while closed: the kit's active time is the time on the board
+    // (±1.5 s for the surface's own open / close latency), never the
+    // interval between the last departure and the review. Before the
+    // closeout the laboratory RESUME after the departure restarted the kit
+    // clock, so the closure added that whole interval.
+    expect(
+      Math.abs(active - onBoard),
+      `active ${active} on board ${onBoard} away before closure ${awayBeforeClosure}`,
+    ).toBeLessThanOrEqual(1500);
+    expect(await countOf(page, 'case_presented')).toBe(1);
+    expect(await countOf(page, 'step_presented')).toBe(1);
+    expect(await countOf(page, 'first_response')).toBe(1);
+    expect(await countOf(page, 'window_closed')).toBe(1);
+    expect(await countOf(page, 'opportunity_opened')).toBe(1);
+    expect(await countOf(page, 'series_closed_at_review')).toBe(1);
+    expect(meta(await lastOf(page, 'series_closed_at_review'))).toMatchObject({
+      closure_reason: 'closed_at_review',
+      cases_presented: 1,
+      parts_recorded: 1,
+      steps_recorded: 0,
+    });
+    await expectFamilyDiscipline(page);
+    expectNoRuntimeErrors(errors);
+  });
 });

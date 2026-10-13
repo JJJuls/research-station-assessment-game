@@ -44,11 +44,20 @@
  * as `isolation_uncertain` with the failed condition named; an `uncertain`
  * record (not attributable to exactly one slot and case) voids both rows as
  * `isolation_uncertain`; a `flag` (an inconsistent descriptive record) sets
- * a consistency flag and leaves both rows unchanged. The raw log is read,
- * never changed: a contradictory record is never repaired and an uncertain
- * response is never counted. The lifecycle and each slot's `answered` are
- * read from ATTRIBUTABLE response records written before any closure (the
- * earliest per case and slot), so a content defect never moves completion.
+ * a consistency flag and leaves both rows unchanged. Both descriptive
+ * indicators of EVERY case are null when the load's final scope is `shared`
+ * or `isolation_uncertain` (owner clarification of 13 October 2026,
+ * register §5.327); under genuine isolation each case keeps its own
+ * treatment. A sequencing check that an earlier response would satisfy is
+ * raised as `shared` unless an EARLIER uncertain record could be that
+ * response (its possible case and slot cover the missing one); an
+ * unrelated or later uncertain record never suppresses a proven ordering
+ * defect, and a missing step presentation is never explained by a response
+ * record. The raw log is read, never changed: a contradictory record is
+ * never repaired and an uncertain response is never counted. The lifecycle
+ * and each slot's `answered` are read from ATTRIBUTABLE response records
+ * written before any closure (the earliest per case and slot), so a content
+ * defect never moves completion.
  * Event order is read only from usable, unique sequence numbers (register
  * §5.259). Read-only; current page load only; the legacy families
  * `proto_m18_fault_*` and `proto_m18_pressure_*` are never read; no total
@@ -300,8 +309,15 @@ registerFeatureExtractor('M18', (events, context) => {
   let exposureConsistent = true;
   let investigationConsistent = true;
   const defects: Defect[] = [];
-  /** Response records not attributable to exactly one case and slot. */
-  const uncertainRecords: { sequence: number; kind: string }[] = [];
+  /**
+   * Response records not attributable to exactly one case and slot, each
+   * with the (case, slot) pairs it could be (`null` = any).
+   */
+  const uncertainRecords: {
+    sequence: number;
+    kind: string;
+    could_be: { case_id: M18CaseId | null; slot: M18Slot | null }[];
+  }[] = [];
 
   const seq = (event: RawGameEvent) =>
     typeof event.sequence === 'number' ? event.sequence : null;
@@ -314,7 +330,11 @@ registerFeatureExtractor('M18', (events, context) => {
       case_id: typeof caseId === 'string' ? caseId : null,
     });
   };
-  const uncertain = (kind: string, event: RawGameEvent) => {
+  const uncertain = (
+    kind: string,
+    event: RawGameEvent,
+    couldBe: { case_id: M18CaseId | null; slot: M18Slot | null }[],
+  ) => {
     defects.push({
       scope: 'uncertain',
       kind,
@@ -322,16 +342,41 @@ registerFeatureExtractor('M18', (events, context) => {
       slot: null,
       case_id: null,
     });
-    uncertainRecords.push({ sequence: seq(event) ?? -1, kind });
+    uncertainRecords.push({
+      sequence: seq(event) ?? -1,
+      kind,
+      could_be: couldBe,
+    });
   };
   /**
-   * A sequencing check that an earlier response would satisfy: raised as
-   * `shared` only when no uncertain record exists (an uncertain record may
-   * be that response; it already voids both rows as `isolation_uncertain`
-   * and is never re-detected as a shared sequencing defect).
+   * A sequencing check that an earlier response would satisfy. The missing
+   * prerequisite is a response of one case and slot: the defect is raised
+   * as `shared` unless an EARLIER uncertain record could be that response
+   * (closeout of 13 October 2026, register §5.327) — such a record already
+   * voids both rows as `isolation_uncertain`, and the ordering cannot be
+   * established independently of it. An unrelated earlier record, a later
+   * record (never seen here: the walk is in event order) or a prerequisite
+   * that is not a response (`missing: null`, a step presentation) leaves the
+   * proven defect shared.
    */
-  const sequencing = (kind: string, event: RawGameEvent, caseId?: unknown) => {
-    if (uncertainRecords.length === 0) {
+  const sequencing = (
+    kind: string,
+    event: RawGameEvent,
+    caseId: unknown,
+    missing: { case_id: M18CaseId; slot: M18Slot } | null,
+  ) => {
+    const explained =
+      missing !== null &&
+      uncertainRecords.some((record) =>
+        record.could_be.some(
+          (candidate) =>
+            (candidate.case_id === null ||
+              candidate.case_id === missing.case_id) &&
+            (candidate.slot === null || candidate.slot === missing.slot),
+        ),
+      );
+
+    if (!explained) {
       shared(kind, event, caseId);
     }
   };
@@ -425,6 +470,10 @@ registerFeatureExtractor('M18', (events, context) => {
             ? response.response_kind
             : null,
       option_id: response === null ? null : stringOrNull(response.option_id),
+      // Independently recomputed correctness (the recount against the
+      // content key); the record's own `correct` flag is compared during
+      // the walk, never overwritten, and a disagreement is a defect of the
+      // slot (listed in `integrity_defect`).
       correct: response?.recount ?? null,
       key_option_id: m18KeyOptionId(def.id, slot),
       drafts_before: response?.drafts_before ?? null,
@@ -435,9 +484,10 @@ registerFeatureExtractor('M18', (events, context) => {
     });
     // Null without an attributable diagnosis record, when that record
     // leaves the part undetermined (contract §10: an undetermined part fails
-    // I4 and nulls the indicator; an isolated defect of a DETERMINATE record
-    // does not), when the case's investigation record is not trustworthy, or
-    // when any shared or uncertain defect exists in the load.
+    // I4; an isolated defect of a DETERMINATE record does not), when the
+    // case's investigation record is not trustworthy, or when the load's
+    // final scope is `shared` or `isolation_uncertain` (`trustworthy`
+    // false — then every case's indicators are null).
     const evidenceSufficient =
       part === null ||
       !part.determinate ||
@@ -921,6 +971,7 @@ registerFeatureExtractor('M18', (events, context) => {
             "a case was presented before the previous case's planned-step answer",
             event,
             caseId,
+            { case_id: previous, slot: 'prediction' },
           );
         }
 
@@ -1056,12 +1107,19 @@ registerFeatureExtractor('M18', (events, context) => {
         const sequence = event.sequence as number;
 
         if (known === null) {
-          uncertain('a first response without a known case', event);
+          uncertain('a first response without a known case', event, [
+            {
+              case_id: null,
+              slot: slot === 'diagnosis' || slot === 'prediction' ? slot : null,
+            },
+          ]);
           break;
         }
 
         if (slot !== 'diagnosis' && slot !== 'prediction') {
-          uncertain('a first response without a known slot', event);
+          uncertain('a first response without a known slot', event, [
+            { case_id: known.def.id, slot: null },
+          ]);
           break;
         }
 
@@ -1075,13 +1133,19 @@ registerFeatureExtractor('M18', (events, context) => {
             uncertain(
               'a first response carries an option of another case or of the other slot',
               event,
+              [
+                { case_id: known.def.id, slot },
+                { case_id: option.caseId, slot: option.slot },
+              ],
             );
             break;
           }
         }
 
         if (!closed && meta<unknown>(event, 'phase') !== 'measurement') {
-          uncertain('a first response outside the measurement phase', event);
+          uncertain('a first response outside the measurement phase', event, [
+            { case_id: known.def.id, slot },
+          ]);
           break;
         }
 
@@ -1129,16 +1193,23 @@ registerFeatureExtractor('M18', (events, context) => {
             );
           }
 
-          if (
-            slot === 'prediction' &&
-            (earliestBefore(known.def.id, 'diagnosis', index) === null ||
-              !known.step_presented)
-          ) {
-            sequencing(
-              'a planned-step answer without, or before, its diagnosis or its step presentation',
-              event,
-              caseId,
-            );
+          if (slot === 'prediction') {
+            const diagnosisMissing =
+              earliestBefore(known.def.id, 'diagnosis', index) === null;
+
+            if (diagnosisMissing || !known.step_presented) {
+              sequencing(
+                'a planned-step answer without, or before, its diagnosis or its step presentation',
+                event,
+                caseId,
+                // A missing step presentation is never a response record:
+                // only a missing diagnosis beside a presented step can be
+                // explained by an uncertain record.
+                diagnosisMissing && known.step_presented
+                  ? { case_id: known.def.id, slot: 'diagnosis' }
+                  : null,
+              );
+            }
           }
         }
 
@@ -1272,6 +1343,7 @@ registerFeatureExtractor('M18', (events, context) => {
             'a step was presented before its diagnosis',
             event,
             caseId,
+            { case_id: known.def.id, slot: 'diagnosis' },
           );
         }
 
@@ -1820,7 +1892,12 @@ registerFeatureExtractor('M18', (events, context) => {
     }
   }
 
-  const trustworthy = !sharedExists && !uncertainExists;
+  // The descriptive indicators are derived only when the load's final
+  // scope leaves both rows retained or voids one slot in isolation: a
+  // `shared` or `isolation_uncertain` scope — an uncertain record (I1), an
+  // undetermined part or any other I4 failure — nulls both indicators of
+  // EVERY case (owner clarification of 13 October 2026, register §5.327).
+  const trustworthy = !sharedExists && isolationFailed === null;
   const integrityDefect = defects.map((defect) => ({ ...defect }));
   const unscorable = (slot: M18Slot) => [
     ...M18_CASES.flatMap((def) =>
@@ -1931,7 +2008,14 @@ registerFeatureExtractor('M18', (events, context) => {
         // A row with every planned case answered is fully observed; a short
         // count is censored by the closure (contract §3.12).
         censored: denominator < M18_CASES_PLANNED,
-        censor_reason: denominator === 0 ? reason : detail,
+        // Not censored ⇒ no censor reason; the review-closure context stays
+        // in `closure_reason` (closeout of 13 October 2026).
+        censor_reason:
+          denominator >= M18_CASES_PLANNED
+            ? null
+            : denominator === 0
+              ? reason
+              : detail,
         components: extra,
       },
     );

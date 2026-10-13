@@ -572,8 +572,9 @@ record.` with the status line
   the components; complete (`first_responses_completed`) ⇒ `observed`,
   `completed`, stable; closed at the review with responses ⇒ the diagnosis row
   3 parts `observed` (`censored: false` — fully observed; correction round
-  2; its `censor_reason` still carries the closure detail "series closed at
-  the review after 3 of 3 parts" — descriptive, disclosed), 1–2
+  2; its `censor_reason` null from the closeout of 13 October 2026, the
+  closure context in `closure_reason` and
+  `first_response_phase_closure`), 1–2
   `incomplete` (the value on the observed denominator,
   censored), 0 null `no_eligible_event` (`intro_only` |
   `case_presented_no_response`); the prediction row 3 `observed`, 1–2
@@ -643,8 +644,10 @@ null` with the lifecycle's disposition; `planned_denominator` 3 on every row;
   option; `null` otherwise (either response missing or CANNOT SOLVE, or the
   evidence invalid). `evidence_sufficient_before_part` — `null` when the case
   has no attributable diagnosis record or its investigation record is not
-  trustworthy (`investigation_record_consistent` false for the case, or any
-  `shared` / `uncertain` defect in the load); otherwise from the reliable
+  trustworthy (`investigation_record_consistent` false for the case, or the
+  load's final scope `shared` / `isolation_uncertain` — then BOTH indicators
+  of EVERY case are null: owner clarification of 13 October 2026, §5.327);
+  otherwise from the reliable
   `test_run` records sequenced before the case's diagnosis record (a CANNOT
   SOLVE diagnosis included): `true` when those tests leave exactly one
   consistent part under the content's table, `false` when more than one. An
@@ -655,19 +658,29 @@ null` with the lifecycle's disposition; `planned_denominator` 3 on every row;
   or unknown `option_id`, a CANNOT SOLVE record carrying an option or without
   the field, or a closure-snapshot `part` whose kind or option disagrees with
   the record — fails I4 and makes it null (contract §10; scientific review,
-  correction round 2). They describe evidence
-  availability and response consistency only — never why an answer was wrong.
-- Two disclosed limits of the extractor's defect list and one of its
-  components (scientific review, correction round 2; §5.326): (i) a
-  sequencing check that an earlier response would satisfy is not raised as
-  `shared` while any uncertain-attribution record exists in the load — that
-  record may be the response; both rows are already voided
-  `isolation_uncertain` and the uncertain record is listed; (ii) the per-case
-  `part.correct` / `step.correct` in the components is the recount against
-  the content key — the record's own `correct` flag is compared and never
-  overwritten, a disagreement is listed as a defect of that slot, and on a
-  voided row the recount is informational only (carrying the recorded flag
-  beside it is a matter for the owner, §5.326).
+  correction round 2); from the closeout of 13 October 2026 any I4 failure
+  (also a determinate record's duplicate between the next case's
+  presentation and completion) nulls both indicators of every case (§5.327).
+  They describe evidence availability and response consistency only — never
+  why an answer was wrong.
+- Two points of the extractor's defect list and components, disclosed at the
+  scientific review (correction round 2; §5.326) and settled by the closeout
+  of 13 October 2026 (§5.327; §4 "Unit 20 closeout" (3), (4)): (i) a
+  sequencing check that an earlier response would satisfy is withheld from
+  `shared` only while an EARLIER uncertain-attribution record could be that
+  response (its possible case and slot cover the missing one — the ordering
+  cannot be established independently of it; both rows are voided
+  `isolation_uncertain` and the record is listed); an unrelated earlier
+  record, a later record or a missing step presentation leaves the proven
+  defect `shared`, listed beside the uncertain record, `shared` taking
+  precedence; the completion count still includes uncertain records, so an
+  uncertain sixth response never invents a "fewer than six" defect; (ii) the
+  per-case `part.correct` / `step.correct` in the components is the recount
+  against the content key, documented as such in the extractor — the
+  record's own `correct` flag is compared and never overwritten, a
+  disagreement is listed as a defect of that slot, and on a voided row the
+  recount is informational only (no raw-flag component is required — owner,
+  13 October 2026).
 - Validation (contract §9.4; the extractor `features/m18.ts`, current-load
   events only, the raw log read, never changed). Scope classes [O-11]:
   `shared` (voids BOTH rows — administration: versions, opportunity, the
@@ -922,6 +935,123 @@ not in Now 0.83; a part in an abnormal-looking result line 0.50; symptom
 only 0.75; one test then a uniform pick 1.17 (each of A, B, C); steps —
 "repairs everything" 1, "nothing changes" 1, always option 1 / 2 / 3 / 4 =
 1 / 1 / 0 / 1; reported, never a ceiling.
+
+**Unit 20 closeout (M18; 13 October 2026)** — one bounded closeout under the
+research owner's closeout authorization of 13 October 2026 (`UNIT-LOG.md` "U20
+closeout authorization", recorded verbatim before the first source edit; the
+owner's indicator clarification in §5.327); the "Unit 20 (M18): as-built"
+record above stands except where this record says so. **Status: the kit
+window's pause on leaving corrected, both descriptive indicators nulled for
+every case of a `shared` or `isolation_uncertain` load, the
+sequencing-suppression rule narrowed to an earlier uncertain record that could
+be the missing response, the censor reason nulled on an uncensored row; no
+authored content, key, option, version, event name, scoring formula, planned
+denominator, missing-answer rule or administration identity changed; the
+original commit `2eed381` preceded the resolution of the owner clarification;
+NOT scientifically validated.**
+
+(1) Pause timing (authorization §2; §5.326 (l)). Reproduced first on the
+participant route — `e2e/m18_diagnosis_route.spec.ts` R10 on the unfixed
+adapter: FAILED as reported — the review closure of a board left from the step view
+recorded `active_ms` 88999 against 9449 ms on the board, the 79253 ms between
+the ESC departure and the closure having accrued (LEAVE BOARD by click,
+3 s away and a reopening first; log `closeout-r10-before-fix-2.log`). Cause: `WorkSurfaceScene.close()` resumes the
+laboratory scene, whose RESUME handler calls `resumeM18Surface`, which
+resumed the kit window right after `closeM18Surface` had paused it; a
+reopening (`openM18` → the kit's `open`) resets the open timestamp, so the
+spurious resume accrues only when the window is STOPPED without a reopening
+after the departure — the review closure of a left board (a first R10
+design that reopened and completed the series passed on the unfixed adapter
+for that reason and was replaced). Correction (`m18DiagnosticBoard.ts`):
+`resumeM18Surface` resumes the kit window only while the series'
+`panel_open` is true (a pause of the whole scene over an open board); after
+LEAVE BOARD or ESC the window stays paused until the real reopening, whatever
+resumes the scene meanwhile — the surface's own close or another bench's. The
+scene handler, the model, drafts, tests, responses, help and dialog behaviour,
+completion and closure handling, the focused clock and the per-slot times are
+unchanged; M15 / M16 keep their own handlers (U24 backlog). R10 after the fix:
+passed (3.0 min; the test-reviewer's run 3.1 min; log `closeout-r10-after-fix.log`): the closure's `active_ms` within 1.5 s of the time on the board, the ≥ 10 s interval between the ESC departure and the closure not accrued; one presentation of case 1 and of its step, one response, one `window_closed` (`closed_at_review`), one `opportunity_opened`, the closure snapshot 1 / 1 / 0. The pure spec asserts the guard in the adapter's source beside the
+scene's unchanged `resumeM18Surface(Date.now())` call. Review note (Opus,
+MINOR): only R10's second departure (ESC, then the closure without a
+reopening) discriminates the old defect — a departure followed by a reopening
+never showed it, because the kit's `open` resets the timestamp; the click
+departure is covered by the one shared pause path (`host.close` →
+`closeM18Surface` → the surface close → RESUME, the same as ESC's
+`onClose`), and R10's title says so.
+
+(2) The indicator clarification (§5.327) as implemented (`features/m18.ts`):
+`trustworthy` is "no `shared` defect and no isolation failure"
+(`isolationFailed === null`), so `evidence_sufficient_before_part` and
+`step_answer_implied_by_recorded_part` are null for every case when the
+load's final scope is `shared` or `isolation_uncertain` — an uncertain
+record (I1), an undetermined part or any other I4 failure, including a
+determinate record's duplicate between the next case's presentation and
+completion; under genuine isolation each case keeps its treatment (an
+isolated prediction defect leaves every case's evidence indicator and the
+other cases' consistency indicator at their hand values — X1 asserts `true`;
+an isolated diagnosis defect of a determinate record keeps `true` — X2 and
+X4's isolated pair). X4 asserts both indicators null on all three cases of
+both rows for each of its eleven `isolation_uncertain` loads (the
+typeof-boolean assertion of §5.326 (r) removed). No value, key, denominator
+or missingness rule changed.
+
+(3) Sequencing beside uncertain records (authorization §4; §5.326 (h)).
+Established first: the walk is in event order, so only an EARLIER uncertain
+record ever suppressed a check — but any such record did, whatever it could
+be: a case-1 record without a slot suppressed a provable case-2
+step-before-diagnosis defect (X7 (b) on the unfixed extractor:
+`isolation_uncertain` where `shared` is proven). Corrected: each uncertain
+record carries the (case, slot) pairs it could be — an unknown case ⇒ any
+case with the recorded slot (or any slot); an unknown slot ⇒ either slot of
+its case; an option of another case or of the other slot ⇒ the recorded pair
+or the option's pair; a response outside the measurement phase ⇒ its recorded
+pair — and each sequencing check names the missing response; the defect is
+`shared` unless an earlier uncertain record could be that response. A missing
+step presentation is never a response record: `shared`. Precedence unchanged
+(`shared` over `isolation_uncertain`), the uncertain record stays listed,
+no attribution is inferred and no record repaired; the completion count still
+includes uncertain records (an uncertain sixth response invents no "fewer
+than six" defect). X7 (a)–(d) cover the four situations with exact defect
+lists (the step draft and its confirmation request naming a step option
+before any step presentation are shared defects of their own and are listed)
+and assert both indicators null for every case under `shared` as under
+`isolation_uncertain` (review MINOR). Disclosed (review MINOR, owner-visible,
+not changed): for a response whose option belongs to another case AND the
+other slot, the candidate set holds the recorded pair and the option's pair
+only — the two cross readings (the recorded case with the option's slot, the
+option's case with the recorded slot) are left out, so a sequencing defect
+that one of those readings would explain is reported `shared` rather than
+withheld; both rows are voided and every indicator null either way.
+
+(4) Output (authorization §5). A row closed at the review with every planned
+case answered: `censored: false`, `censor_reason: null`,
+`closure_reason: 'closed_at_review'` and `first_response_phase_closure` in
+the components — three parts observed beside two steps incomplete (the pure
+"one to five" test); genuinely censored rows keep their reason. Per-case
+`part.correct` / `step.correct` stay the recount, now documented in the
+extractor; the record's flag is compared and a disagreement listed. The
+"case / 1?" wrap kept (no edit, no decision). Presentation and other-item
+matters stay in the U24 backlog.
+
+(5) Reporting corrected (authorization §5). The U20 pass was not
+exception-free: the S4 Prettier check failed on `IMPLEMENTATION-MATRIX.md`
+(the base's 28-row table hunk, inside which U20's M18 row sits in the same
+style) and on `UNIT-LOG.md` (55 hunks identical to the base's — inherited —
+AND ten hunks introduced by U20's own verbatim contract reproduction: three
+tables left unpadded, one list continuation line, six blank lines; "U20
+results" had called both files' flags inherited, wrong for those ten); the two
+pre-existing P2 gate failures stood; the commit hooks did not run (the hooks
+path `.husky/_` is absent in this worktree; not installed or reconfigured);
+the owner clarifications of §5.326 were open at the commit. Nothing historical
+was reformatted; the ten hunks stay as pasted and are reported as U20's own.
+
+(6) Files (inside the ten-path closeout subset): `features/m18.ts`,
+`m18DiagnosticBoard.ts`, `e2e/m18_diagnosis.spec.ts` (X7 new, X1 / X4 and
+the review-closure test extended, the adapter guard asserted),
+`e2e/m18_diagnosis_route.spec.ts` (R10 new), this register, the addendum §2
+and `UNIT-LOG.md`; untouched: `m18DiagnosisModel.ts`,
+`DiagnosticsLaboratoryScene.ts`, `IMPLEMENTATION-MATRIX.md`. Evidence and
+the review: `UNIT-LOG.md` "U20 closeout results".
 
 **Unit 19 closeout (M16; 12 October 2026)** — one bounded closeout under the
 research owner's closeout rulings of 12 October 2026 (§5.314; `UNIT-LOG.md`
@@ -9637,3 +9767,31 @@ an owner decision.
      text nulls only the undetermined case; other cases stay derived), and
      (i) above. No finding touched the content, the keys, the rule or the
      ruling D-U20-1.
+
+327. **U20 closeout — the owner's indicator clarification and four
+     corrections (13 October 2026).** Research-owner authorization of 13
+     October 2026 (`UNIT-LOG.md` "U20 closeout authorization", verbatim):
+     one additional local commit after focused verification and one
+     read-only review, the correction-round and single-commit limits
+     extended for this closeout only. **The clarification (approved by the
+     owner as the research owner):** when the final defect scope of a load is
+     `shared` or `isolation_uncertain`, BOTH descriptive indicators
+     (`evidence_sufficient_before_part`,
+     `step_answer_implied_by_recorded_part`) are null for EVERY case of that
+     load — including a slot defect that fails I4 and so becomes
+     `isolation_uncertain`; genuinely isolated slot defects keep the approved
+     case-specific treatment, and evidence sufficiency is not erased while
+     the diagnosis commitment position and the investigation record remain
+     trustworthy; descriptive indicators only — no diagnosis / prediction
+     formula, key, planned denominator or missing-answer rule changes. This
+     settles the clarification requested in §5.326 (the other cases'
+     indicators under an I4 failure: null) and the X4 note of §5.326 (r);
+     the per-case `correct` question of §5.326 (i) is settled as the
+     documented recount (no raw-flag component required); the censor reason
+     of §5.326 (r) is null where `censored` is false. Implemented as §4
+     "Unit 20 closeout" (2); the other corrections — the pause timing of
+     §5.326 (l) and the sequencing suppression of §5.326 (h), narrowed to an
+     earlier uncertain record that could be the missing response — as (1),
+     (3) and (4) there. Left as recorded: §5.326 (j), (k), (m) (the "case /
+     1?" wrap needs no edit and no new decision), (n)–(q) (U24 backlog). The
+     original commit `2eed381` preceded this clarification.
