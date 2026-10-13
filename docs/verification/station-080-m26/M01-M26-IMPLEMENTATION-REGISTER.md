@@ -98,7 +98,7 @@ status at this register version — updated by each unit).
 | M16  | Standardise             | 1    | `m16_correct_first_applications`: correct first applications / 6                                                                                                                                                                                                                                                               | form, example versions                                                                                                                                                                                                                         | performance counterpart | v3 route: `proto_m16_handling_series` — the handling rule at the Laboratory protocol console (ep 3), two worked examples, then six immutable first responses before any feedback; results after the sixth — implemented (U19; decision D-U19-1 + A1, §5.302)     |
 | M17  | Replace trial structure | 1    | `m17_criterion_trial`: {criterion_trial 3–12, attained} — the first learning trial ending a run of three consecutive correct first responses; reported whenever reached within the administered trials; (12, false, censored) after twelve without attainment; early exit without attainment = incomplete                      | `m17_sequence_baseline_transfer` (baseline 2 / learning 12 / transfer 2 first-response sequences, feedback exposures, reference sequences shown, help, demonstration reviews, per-trial records)                                               | performance counterpart | v3 route: `proto_m17_criterion` (Diagnostics Laboratory, ep 3) — implemented (U9); **criterion values not to be read until §5.87–5.88 are decided**                                                                                                              |
 | M18  | Extend diagnosis        | 3    | `m18_correct_first_diagnoses`: / 3                                                                                                                                                                                                                                                                                             | `m18_correct_consequence_predictions`: / 3                                                                                                                                                                                                     | performance counterpart | v3 route: `proto_m18_cases_series` — three diagnosis cases at the Laboratory diagnostic board (ep 3), each an immutable first diagnosis then an immutable first step answer before any feedback; results after the sixth — implemented (U20; D-U20-1, §5.315)    |
-| M19  | Add second challenge    | 2    | `m19_continuations`: further attempt / eligible difficulty encounters; 0–2                                                                                                                                                                                                                                                     | failed attempts, success, time                                                                                                                                                                                                                 | behavioural counterpart | v2-ledger route (one coupling) — planned                                                                                                                                                                                                                         |
+| M19  | Add second challenge    | 2    | `m19_continuations`: further attempt / eligible difficulty encounters; 0–2                                                                                                                                                                                                                                                     | failed attempts, success, time                                                                                                                                                                                                                 | behavioural counterpart | v3 route: `proto_m19_lines_series` — two coupling lines at the Yard coupling panel (ep 4) after a panel check; each line's designed obstacle one immutable boundary; continuation = a further executed TRY — implemented (U21; D-U21-1, §5.328)                  |
 | M20  | Extend returns          | 2    | `m20_cued_resumptions`: resumed / eligible unfinished components; 0–2                                                                                                                                                                                                                                                          | spontaneous returns, progress, cue exposure                                                                                                                                                                                                    | behavioural counterpart | v2-ledger route (one uncued resume) — planned                                                                                                                                                                                                                    |
 | M21  | Replace revisit score   | 2    | `m21_restudy_revisions`: cases with a relevant restudy (a section bearing on a fault known at the time) AND a revised application / cases whose first application was incorrect and were resolved by the participant (accepted or set aside — a review-closed case keeps its observed 1); 0–2; two first-time successes → null | per-case strategy (first_correct / restudy_and_revise / revise_without_relevant_restudy / restudy_then_exit / exit / unresolved), applications, faults, restudy sections, comprehension context (sections used, reference depth, mode, plate)  | partial                 | v3 route: `proto_m21_case_o1` / `o2` (Records Workshop, ep 5) — implemented (U10)                                                                                                                                                                                |
 | M22  | Hybrid                  | 2    | `m22_revisions_begun`: reports on which a revision was begun (a code attached after the acknowledgement of the returned note) / reports whose requirement was presented (2 planned; a review-closed report keeps its observed 1 once the revision had begun; a returned note never acknowledged ⇒ excluded)                    | `m22_discouragement_ratings`: two 1–5 ratings, each with its recall delay, its position among the questions and the time since its screen was presented; declined or missing = null, never a midpoint; `acknowledged_reports` beside           | hybrid                  | v3 route: `proto_m22_returned_o1` / `o2` (Records Workshop, ep 5) — implemented (U11)                                                                                                                                                                            |
@@ -162,6 +162,747 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
   pinned in `protocol.ts` beside their anchors.
 
 ## 4. As-built records (appended per unit)
+
+**Unit 21 (M19): as-built** — the two coupling lines at the Exterior Recovery
+Yard coupling panel (bounded unit under contract `U21-CONTRACT.md`, v2 of 13
+October 2026, amending v1 of the same day; research-owner decision D-U21-1).
+**Status: technical implementation of the approved row under research-owner
+decision D-U21-1 (APPROVED 13 October 2026, against preview revision r2);
+`m19_continuations` is a candidate indicator and NOT scientifically
+validated.** The two lines are distinct, independently designed content inside
+ONE yard visit and ONE panel — clustered observations, never two independent
+situations; the lines are not equated in difficulty; who meets an obstacle
+depends on how the participant searches (under Option B eligibility is
+selected); a count of 2 shows only that on each line, after the participant's
+own TRYs had established the line's designed obstacle, at least one more new
+setting was executed; restoring a line, its number of TRYs, help, leaving,
+returning and time are companions, never part of the value; no global or
+cross-item score. Passing tests establish implementation correctness only,
+never psychometric validity, reliability, persistence as a trait or
+questionnaire equivalence. Parts (0)–(2) below were written BEFORE the content
+module, the series model, the adapter, the surface model and the extractor
+(the contract's "specify before you code"); parts (3)–(7) record the build and
+its evidence.
+
+(0) Authority. **Research-owner decision D-U21-1 — APPROVED 13 October 2026**
+(an owner ruling, recorded in §5.328; not an implementer default and not
+reopened): items 1–9 of preview §3 as RECOMMENDED — line 1 HEATER BANK (three
+heaters of 1, 2 and 4 units, FEED SINGLE or DOUBLE; key H1 + H3 with FEED
+DOUBLE) and line 2 PRESSURE TRIM (dial 1–9 and a bypass; key dial 5, bypass
+OPEN) with every string of preview §4 (`m19-content-v2`, form `m19-form-1`)
+(item 1); Option B — a line's first difficulty boundary is the TRY of its
+listed evidence settings that completes its designed obstacle (line 1 the
+all-ON SINGLE TRY; line 2 the later of dial 4 SHUT and dial 5 SHUT), inferred
+routes never establishing it, recorded once per line as an immutable record
+(item 2); nothing on screen at the boundary — the truthful reading and the TRY
+list, TRY and SET ASIDE available throughout, no time limit, SET ASIDE never
+showing a solution (item 3); a further executed TRY after leaving and
+returning qualifies, flagged `continued_after_leaving` (item 4); the check
+outcomes kept apart — `fail` ⇒ `understanding_failed`, `not_completed` and
+`not_reached` ⇒ `no_eligible_event`, a panel presented and never opened ⇒
+`no_eligible_event` (`not_opened`), never `declined`; both lines administered
+whatever the check status (item 5); fixed order, one form, line 2 only after
+line 1 is finished through the same neutral view, a finished line never
+reopening (item 6); an eligible line without a further TRY: SET ASIDE or the
+participant's own end of the outside work ⇒ 0 in the denominator (finish
+kinds kept apart), the station-record review ⇒ censored and excluded (item
+7); null `pending` until BOTH lines are finished or the panel is closed, then
+stable (item 8); a runtime fault line-scoped — the line in work excluded even
+when a further TRY after its boundary was already recorded (its record,
+boundary and TRYs kept in the components; `censored: true`, the reason named),
+lines finished earlier keeping their outcome, a fault with no line in work
+excluding nothing but closing the series, no eligible line left ⇒ null
+`technical_failure` (`technical_only`), never a non-response disposition, a
+recorded `fail` check staying `understanding_failed`, malformed or
+contradictory scored evidence voiding the whole row (item 9). Settled
+consequences [A]: at most one credit per line; only an executed TRY of a new
+complete setting is a work attempt (help, menu navigation, reopening, elapsed
+time, setting changes without TRY, refused TRYs, a cancelled SET ASIDE and the
+restoring itself never qualify); no cue draws the participant back to an
+unfinished line (M20's cued returns stay out of M19); a reload exports only
+current-load evidence. All events and features remain provisional; no
+canonical promotion, combined score or scientific-validity claim. The approved
+row is §2 (M19), §2b, §5 item 2 "Completeness labelling", the matrix row,
+addendum §1 and §3 and `registerV3.ts` (entry `M19`). Provenance limit: the
+original owner documents are not on disk and were not searched for again; the
+decision is an explicit decision for this implementation, not recovered
+wording. Rulings D-U16-1 through D-U20-1 and the U20 closeout of 13 October
+2026 are precedent only and approve nothing here. Each rule below carries its
+source: [O-n] decision D-U21-1 item n, [A] approved row or owner instruction,
+[P] recorded precedent, [D-n] implementer default (§5.329 onward).
+
+(1) Administration `m19-lines-v2` — **specified before the content module, the
+series model and the interface were written.**
+
+- Place and access [A][O-5][P][D-10]: the coupling station of the Exterior
+  Recovery Yard (`YARD_SITES.coupling`, label "Frozen Coolant Coupling",
+  registry `yard.coupling`, Noor's list and the beacon order unchanged) opens
+  the generic `WorkSurfaceScene` in the WIDE frame of decision D-U17-2
+  (unchanged) with surface id `m19_coupling_panel`; operational label "Valve
+  coupling (Yard)", episode 4. Optional; no gate, reward or route consequence;
+  non-use is never read as refusal. Noor's briefing factory `ready` (the one
+  closure behind every "Ready" option) calls `presentM19(now)` beside
+  `presentM08(now)` — briefing exposure only (the kit's `presented`), never an
+  opening. The first opening calls `dismissExteriorSite('coupling')` (guidance
+  only) and the station's `isDone` reads the new window
+  (`m19Window.windowStatus() !== 'unopened'`), so neither the beacon nor the
+  objective line points back to the coupling after the first opening; no chip,
+  NPC line or reminder names an unfinished line; the world chip reads
+  `COUPLING PANEL`, the painted dial shows its static arc with no progress
+  needle and the frost sheet stays hidden — a neutral state, never an
+  unfinished or evaluative one. The stage at the first opening is recorded in
+  the entry snapshot. The legacy coupling `src/pilot/exterior/m19CouplingModel.ts`
+  and its adapter functions inside `exteriorWindows.ts` stay in the tree
+  UNCHANGED under their frozen v2 identity (`proto_m19_progressive_valve`,
+  `proto_m19_valve_*`, `m19_valve_w1`, `m19-coupling-v1`); the yard scene no
+  longer imports or calls them; in `exteriorWindows.ts` only `w.m19.declare();`
+  leaves `declareExteriorWindows()` and the entry
+  `[w.m19, 'coupling never worked before the review']` leaves the review-absent
+  loop of `closeExteriorWindowsAtReview`, so no legacy M19 opportunity is
+  declared, offered or closed on the route; the file keeps exactly 8
+  `setComprehension('passed')` occurrences; the v3 extractor never reads the
+  legacy family; the registry's descriptive `opens` / window label for
+  `yard.coupling` stay stale (U24 backlog).
+- Content, order and form [O-1][O-6]: the content exactly as preview §4 in
+  one pure content module (`m19LinesContent.ts`): the card (ten fixed lines),
+  the check (two questions of three option tiles each, the keys option 2 of
+  question 1 and option 3 of question 2, the four-line explanation), both
+  sheets (six fixed lines each), the controls, readouts, TRY rows, readings,
+  refusals, dialogs, finished views, help (eight lines), closed records,
+  footers and statuses; and, as data, each line's settings, value rule, target
+  and obstacle rule — line 1, value = (1·H1 + 2·H2 + 4·H3) × (FEED DOUBLE ? 2
+  : 1) against 10, obstacle = the all-ON SINGLE setting has been executed; line
+  2, value = 2 × dial − (bypass OPEN ? 1 : 0) against 9, obstacle = dial 4
+  SHUT and dial 5 SHUT have both been executed; reading LOW below the target,
+  OK at it, HIGH above it. Versions `m19-lines-v2` (administration),
+  `m19-form-1` (form), `m19-content-v2` (content). Line breaks are the
+  preview's (fixed); wording, numbers, order and option order never change; no
+  questionnaire wording anywhere. One form; line order fixed (`m19_l1` →
+  `m19_l2`); option order fixed; starting settings line 1 all heaters OFF with
+  FEED SINGLE, line 2 dial 1 with the bypass SHUT (both read LOW). Limitation
+  documented: content and position are confounded; line 1 may teach the use
+  of a second control and change line 2's eligibility.
+- First opening, the card [D-2]: the card (title `COOLANT COUPLING`, subtitle
+  `Two lines`, status `Read the card, then CONTINUE.`, the ten lines) with
+  CONTINUE (the primary control, no hidden key), HELP and LEAVE; activating
+  CONTINUE is recorded (`intro_acknowledged`) and presents the check
+  (`check_presented`, `m19_chk_q1`, attempt 1); leaving before it shows the
+  card again at the next opening.
+- The panel check [O-5][D-3][D-4]: subtitle `Panel check`, status
+  `One short check of how the panel works.`; question 1
+  `After a TRY, the line is not restored. What can you do next?` with the
+  three option tiles `[1]`–`[3]` in the preview's order (key option 2); a tile
+  (pointer, ENTER / SPACE on focus, or 1–3) drafts the option, another
+  replaces it, the same again clears it, each change logged
+  (`option_drafted`, `option_id` or null); `RECORD ANSWER  [R]` records the
+  drafted option once (`check_answered`: `check_id`, `attempt` 1, `option_id`,
+  `correct`); without a draft the neutral line `Choose an answer first.` and
+  nothing recorded. Right ⇒ `check_recorded` with `status` `pass_first`.
+  Wrong ⇒ the explanation view (`explanation_shown`; the four lines; CONTINUE,
+  HELP, LEAVE), then question 2
+  `A TRY has just left a line not restored. Which is true?` (`check_presented`
+  attempt 2; key option 3); right ⇒ `check_recorded` `pass_after_explanation`;
+  wrong ⇒ `check_recorded` `fail`. Then, identical for every status, the line
+  `Check recorded. Line 1 is ready.` with `START LINE 1` (presents line 1),
+  HELP and LEAVE. No correctness is shown anywhere. Each answer is recorded
+  once and is immutable; leaving keeps the draft and the stage. `check_status`
+  is one of `pass_first`, `pass_after_explanation`, `fail`, `not_completed` (a
+  question was shown and the panel closed before an answer was recorded) or
+  `not_reached` (the panel closed at the card) — never merged. The kit's
+  comprehension state follows the record (`pending` from the opening,
+  `passed` on a pass, `failed` on a fail); a failed check never invalidates
+  the kit window, since both lines are still administered [O-5].
+- A line: view and controls [O-1][O-3][D-11]: subtitle `Line N of 2`, status
+  `Working on line N of 2.`; left the sheet (six lines) and the TRY list
+  (header `TRIES (newest last)`, `No TRY yet.` before any TRY, rows
+  `TRY n  <setting>   <reading>`; with more than nine rows the line
+  `… k earlier TRYs not shown` above the newest eight); right the readout (a
+  neutral landing; line 1 `ON: none · FEED SINGLE` and the like, line 2
+  `DIAL 1 · BYPASS SHUT` and the like), the setting controls (line 1 the
+  tiles `H1  [1]`, `H2  [2]`, `H3  [3]` — an ON heater shown as selected,
+  with a marker glyph beside the colour — and `FEED  [4]`; line 2
+  `DIAL DOWN  [1]`, `DIAL UP  [2]`, `BYPASS  [3]`), `TRY  [T]` and
+  `SET ASIDE  [N]`; bottom `HELP  [H]` and `LEAVE  [ESC]`. Setting controls
+  change only the draft setting (`setting_changed` with `control` and
+  `setting_after`, descriptive); they never run the line; at a dial limit the
+  line `The dial is at 9.` / `The dial is at 1.`, nothing changes and nothing
+  is logged. Every setting is complete; the draft survives leaving [D-3].
+- TRY evaluation and refusals [O-2][A][D-4]: TRY (T, the button, or ENTER /
+  SPACE on its focus) is refused and not run — `try_refused` with `reason`
+  `already_tried` (the feedback line
+  `That setting was tried at TRY k; it is not run again.`) or `settling` (a
+  press inside 400 ms after the current view appeared; no feedback) — when
+  the setting equals any earlier executed setting of this line or falls
+  inside the settle; otherwise it is EXECUTED: `attempt` (`attempt_index`
+  1..n consecutive per line, `setting`, `reading` from the content rule,
+  `restored` = reading OK, `after_boundary`, `since_boundary_focused_ms`) and
+  the feedback line `TRY n: the gauge reads <R>. Line N is not restored.` /
+  `… reads OK. Line N is restored.`; the setting stays as it was for editing.
+  A double click on TRY executes at most one attempt (the second press is
+  `already_tried` or settling); nothing is rigged — a TRY of the key always
+  restores the line, from the first TRY onward; no forced failure, deceptive
+  feedback, adaptive difficulty or required number of retries.
+- The obstacle boundary [O-2][O-3]: the first executed attempt after which the
+  line's executed settings include ALL of its listed evidence settings (line
+  1 the all-ON SINGLE setting; line 2 dial 4 SHUT and dial 5 SHUT, in either
+  order) is followed IMMEDIATELY — in the same handler, before any other event
+  — by `difficulty_boundary` (`line_id`, that attempt's `attempt_index` and
+  `attempt_sequence`, `rule` `designed_obstacle`,
+  `evidence_attempt_indices`: the attempts that satisfy the rule),
+  `input_mode: 'system'` — once per line, never moved, repeated or removed; a
+  line restored without meeting its obstacle has none; any other route by
+  which the obstacle could be inferred does not establish it. Nothing else
+  happens at the boundary: no prompt, marker, colour, sound or change of
+  controls.
+- Continuation [A][O-4]: a qualifying continuation is a further executed TRY
+  of a new setting on that line after its boundary and before the line is
+  finished, credited once per line whichever control it changed (changing the
+  second control — FEED DOUBLE on line 1, BYPASS OPEN on line 2 — is a
+  companion); after leaving and returning it qualifies, flagged
+  `continued_after_leaving: true`. Setting changes without TRY, refused TRYs,
+  help, leaving, reopening, a cancelled SET ASIDE, elapsed time and the
+  restoring itself never qualify.
+- SET ASIDE [O-3][O-7][D-4]: SET ASIDE (N or the button) opens its
+  confirmation (`set_aside_requested`): the three dialog lines of preview §4.8
+  (`Set line N aside?` / `It finishes as it is and stays finished.` /
+  `Line 2 comes next.` or `It is the last line.`), `SET ASIDE  [ENTER]` first
+  in focus and `BACK  [ESC]`, footer `ENTER set aside · ESC back`; the dialog
+  controls sit at panel (200, 250) and (466, 250), never at the opener's
+  position (every opener at x ≥ 738), so a double click on SET ASIDE opens one
+  dialog and records nothing further. Only the confirm — a fresh press at
+  least 400 ms after the dialog appeared — finishes the line (`line_finished`,
+  finish `set_aside`); an earlier confirm press is refused and not logged
+  (M16 / M18 precedent); BACK or ESC cancels (`set_aside_cancelled`, reason
+  `back`; refused inside the dialog's 400 ms, the dialog staying) changing
+  nothing; leaving with the dialog open cancels it (reason `panel_left`). SET
+  ASIDE never shows or hints at the solution.
+- Finished views, NEXT LINE, FINISH, the final record [O-6][D-11]: a line
+  restored (the attempt that reads OK) or set aside is finished immediately
+  (`line_finished` with its companions) and shows its finished view — the
+  sheet and the TRY list read-only, the landing `Line N finished: restored.`
+  / `Line N finished: set aside.`, status `1 of 2 lines finished.`,
+  `NEXT LINE` (presents line 2: `line_presented`), HELP and LEAVE; after line
+  2 the landing carries `Line 2 finished: <how>.` and, on its second line,
+  `Both lines finished.`, status `2 of 2 lines finished.`, `FINISH` (closes
+  the panel), HELP and LEAVE; `series_completed` with the closure snapshot and
+  the kit's `window_closed` (`exit_state` `completed`) are written at line 2's
+  finish, so the row is final whether or not FINISH is pressed. A finished
+  line never reopens and accepts nothing. Reopening afterwards shows
+  `Both lines are finished. The panel takes no further settings.` with
+  `LEAVE  [ESC]` (footer `ESC leave`); nothing is written.
+- Help [D-5]: HELP (H or the button) on the card, the check views, the
+  explanation, the recorded line, every line view and the finished views —
+  never inside a dialog; the sheet `PANEL HELP` with the eight lines,
+  `CLOSE HELP  [H]` first in focus, footer `H or ESC close help`; logged
+  (`help_consulted`, `view`); CLOSE HELP (H, ESC or the button) restores the
+  same view with everything kept and re-arms its settle. Help is never a
+  continuation and never pauses the line's clock.
+- Leaving and returning; commitment mechanics [P][D-2][D-3][D-4]: ESC
+  closes, in order, an open dialog, the help sheet, then the panel; LEAVE and
+  ESC take the SAME path (`panel_left` with the `view`, the kit window
+  paused, the line's clock paused with cause `surface_closed`, the surface
+  closed); `closeM19Surface` runs from the surface's `onClose` (before the
+  yard resumes) and from the LEAVE control's host close, never only from
+  `onClosed`. Walking away with the panel closed changes nothing. Leaving
+  keeps everything (card, check draft and stage, line, draft setting, TRY
+  list). Returning (`series_reopened` with the `view`) presents nothing again
+  and never records an attempt; the kit window and the clock resume. Settle on
+  EVERY view transition (the card, the check questions, the explanation, the
+  recorded line, each line view, the finished views, the help sheet, the view
+  restored by CLOSE HELP or BACK, a dialog, a reopened view): a press inside
+  400 ms after the view appeared changes nothing — a TRY inside it is a
+  `try_refused` `settling`, other presses are dropped and not logged; a
+  carried ESC inside the settle is consumed and leaves nothing. Held keys and
+  auto-repeat never act (dropped by `WorkSurfaceScene`). Every view lands on
+  a NEUTRAL focus — a non-acting text landing: the card text, the check
+  question, the explanation, the recorded line, the readout, the finished
+  line, the closed record (the M15 / M16 / M18 mechanism) — so ENTER does
+  nothing until TAB or a hotkey moves focus; in a dialog the confirm control
+  is first in focus, on the help sheet CLOSE HELP. No movement key (W, A, S,
+  D, arrows) and not E is a hotkey on the panel. While a dialog or the help
+  sheet is open only that dialog or sheet acts.
+- Shift end [O-7][D-6]: `finishOutside()` calls `closeM19AtShiftEnd(now)`
+  beside `endExteriorShift(now)` and `closeM08AtShiftEnd(now)` (the card and
+  help say `Telling Noor you are finished outside closes the panel as it is.`).
+  (a) An OPENED, unfinished series: each presented, unfinished line gets
+  `line_finished` with finish `shift_ended`, then `series_closed`
+  (`closure_reason` `shift_ended`, the closure snapshot) and the kit's
+  `window_closed` (`exit_state` `stopped` — a completed observation, the
+  exterior precedent); the check and card states stand. (b) A PRESENTED,
+  NEVER-OPENED panel: one family event `closed_unopened` (`closure_reason`
+  `shift_ended`, `input_mode: 'system'`) — raw evidence that the opportunity
+  ended without an opening; no `opportunity_opened`, no decline and no
+  response is written; the kit window stays unopened until the review records
+  its absence. (c) Not presented: nothing. In (a) and (b) the panel afterwards
+  shows `The coupling panel closed when the outside work ended.` with LEAVE
+  and accepts nothing. A completed series is not reclosed; a finish by the
+  shift end adds no focused time (the clock was paused at LEAVE).
+- Review closure [P][O-7]: `reviewClosure.ts` calls `closeM19AtReview(nowMs)`
+  beside the exterior closure. An opened series still unfinished (reachable
+  only when the shift-end closure did not run) closes with line finishes
+  `closed_at_review`, `series_closed` (`closure_reason` `closed_at_review`)
+  and the kit's `window_closed` (`exit_state` `closed_at_review`, register
+  `censored`); a never-opened panel is recorded absent with the kit's
+  `markAbsent` (`presented_not_opened` / `not_presented_not_opened`) and —
+  when no `closed_unopened` exists yet — `closed_unopened`
+  (`closed_at_review`); a closed or completed series is untouched. The panel
+  afterwards shows `The coupling panel was closed at the station review.` with
+  LEAVE.
+- Reload [P][D-8]: an opening of this administration in an earlier page load
+  of this identity ⇒ the hold-back: `prior_load_checked` once per later load at
+  the first `guardM19Reload()` run (yard `create()`), then the kit's prior
+  exposure note and the kit's `technical_failure` with the detail
+  `reload after administration: panel not re-run`; the panel shows
+  `This panel was opened earlier in the session. It stays closed now.` with
+  LEAVE; the series technically incomplete; the earlier events immutable in
+  `prior_page_load_events`; the row `interrupted`. A panel never opened before
+  the reload runs normally — also when it was presented only before the
+  reload (the briefing is not replayed; the lifecycle keys on the current-load
+  opening; `presented_in_current_load: false`). Limitations as §5.290 (a).
+- Faults [O-9][D-13]: every surface command runs guarded; a thrown fault
+  while a line is in work finishes that line (`line_finished`, finish
+  `technical_failure`), closes the series (`closure_reason`
+  `technical_failure`), writes the kit-shaped family record
+  `technical_failure` (`detail`, `line_id`, `line_index`, `phase` `closure`,
+  `input_mode: 'system'`) and marks the opportunity `technical_failure` in
+  the validity register; the faulted line is excluded from the value even when
+  a continuation was already recorded on it (its boundary and attempts stay
+  in the log; case E21), lines finished earlier keep their records and
+  outcomes, the yard stays usable and no dialog stays stuck (the panel shows
+  the record view with LEAVE; the surface closes on ESC or LEAVE). A fault
+  with no line in work (card, check, between the lines): the same record with
+  `line_id` null; no line record changes. A fault after completion or closure
+  is recorded (`phase` `closure`) without touching the scored evidence.
+- Clock policy [D-12] (companions only; never a value): one `FocusedClock`
+  per line, started at `line_presented`, stopped at the line's finish. Pause
+  causes: `surface_closed` while the panel is closed (LEAVE, ESC, walking
+  away, leaving the yard), `focus_loss` / `hidden` from `focusMonitor`. The
+  help sheet and dialogs do NOT pause the clock. The yard scene's own PAUSE /
+  RESUME events never start, pause or resume the M19 clock or the kit window:
+  only the panel's own open / close do; `resumeM19Surface` resumes the kit
+  window only while the M19 surface is open. A finish by the shift end, the
+  review, a fault or a reload adds nothing. Recorded per line on
+  `line_finished`: `line_focused_ms`, `boundary_to_next_try_focused_ms`
+  (null without a further TRY), `boundary_to_finish_focused_ms` (null without
+  a boundary); on each attempt `since_boundary_focused_ms` (null before the
+  boundary); the kit window's `active_ms` follows the same pause rule.
+- Layout [D-11] (inside contract §3.9; the mockup's positions, adjustable):
+  16 px design text, 20 px title, wide frame; content top 90; the sheet (12,
+  90, 714 × 112) and the TRY list (12, 214, 714 × 176) in the left column;
+  the readout (738, 90, 300 × 34), the setting controls from y 134 (34 high,
+  4 apart), TRY at y 340 and SET ASIDE at y 394 in the right column (x 738,
+  300 wide); the bottom row at y 462 — HELP (12, 160 wide), LEAVE (184, 180
+  wide), the view's primary control (778, 260 wide), CLOSE HELP (388, 260
+  wide); the card text (12, 90, 1026 × 186), the check question (12, 90,
+  1026 × 40) with its tiles from y 140 (714 wide) and RECORD ANSWER (12, 270,
+  300 wide), the explanation (12, 90, 1026 × 96), the recorded line and every
+  closed record (12, 90, 1026 × 34), the finished landing (738, 90, 300 × 34;
+  60 high on the final view), the dialog text (200, 170, 520 × 72) with its
+  controls (200 / 466, 250, 254 wide), the help sheet (12, 56, 1026 × 186).
+  FIXED LINES: every sheet line, card / explanation / help line, TRY row,
+  readout, control label, reading and refusal line, dialog line, status,
+  footer and closed record render on exactly their own number of lines under
+  the default font and forced Courier New and Lucida Console at 800 × 600,
+  1280 × 720 and `canvas=1080`; at least 30 design px between the lowest
+  control and the feedback line's top; the TRY list shows at most nine rows.
+  A wrap, an envelope breach or a needed wording change is an owner-reserved
+  exception.
+
+(2) Telemetry, lifecycle and the feature (contract §9–§10; all provisional;
+nothing canonical is created).
+
+- Identity [D-7]: family `proto_m19_lines_`; ONE opportunity
+  `proto_m19_lines_series`; window `m19_lines_w1`; object and surface
+  `m19_coupling_panel`; `entry_state_version` `m19-lines-v2`; `form_id`
+  `m19-form-1`; `content_version` `m19-content-v2`; line ids `m19_l1`,
+  `m19_l2`; check ids `m19_chk_q1`, `m19_chk_q2`, option ids `m19_chk_q1_o1`
+  … `_o3`, `m19_chk_q2_o1` … `_o3`; settings line 1
+  `{ h1, h2, h3: boolean, feed: 'SINGLE' | 'DOUBLE' }`, line 2
+  `{ dial: 1..9, bypass: 'SHUT' | 'OPEN' }`. The v2 ids are retired from the route and keep their frozen meaning.
+- Events (every event the kit's fields plus `measurement_protocol_version`,
+  `phase` `intro` | `check` | `measurement` | `closure`, `form_id`,
+  `content_version`, and `line_id` / `line_index` when it concerns a line;
+  `input_mode` `pointer` | `keyboard` | `system`): `presented` (kit, Noor's
+  briefing); `opportunity_opened` (kit, the entry snapshot); `intro_acknowledged`;
+  `series_reopened` / `panel_left` (`view`); `prior_load_checked`;
+  `closed_unopened` (`closure_reason`); `check_presented` (`check_id`,
+  `attempt`); `option_drafted` (`check_id`, `option_id` or null,
+  `previous_option_id`); `check_answered` (`check_id`, `attempt`, `option_id`,
+  `correct`); `explanation_shown`; `check_recorded` (`status`);
+  `line_presented` (`line_id`, `assigned_position`, `realised_position`,
+  `starting_setting`); `setting_changed` (`control`, `setting_after`);
+  `try_refused` (`reason`, `setting`, `after_boundary`); `attempt`
+  (`attempt_index`, `setting`, `reading`, `restored`, `after_boundary`,
+  `since_boundary_focused_ms`); `difficulty_boundary` (`attempt_index`,
+  `attempt_sequence`, `rule`, `evidence_attempt_indices`);
+  `set_aside_requested`; `set_aside_cancelled` (`reason` `back` |
+  `panel_left`); `help_consulted` (`view`); `line_finished` (`finish`
+  `restored` | `set_aside` | `shift_ended` | `closed_at_review` |
+  `technical_failure`, `attempts`, `boundary_attempt_index`, `continued`,
+  `restored_at_attempt`, `line_focused_ms`, `boundary_to_next_try_focused_ms`,
+  `boundary_to_finish_focused_ms`, `help_consults`,
+  `panel_leaves_after_boundary`, `continued_after_leaving`,
+  `refused_tries_after_boundary`); `series_completed` (the closure snapshot)
+  and the kit's `window_closed`; `series_closed` (`closure_reason`
+  `shift_ended` | `closed_at_review`, the snapshot) and the kit's
+  `window_closed`; `technical_failure` (`detail`, `line_id`). Logger
+  `sequence` and `page_load_index` preserved; nothing backdated; no event of
+  the family enters `ScoringManager`, `SummaryScope`, the canonical context
+  or the return URL. Entry snapshot: `lines_planned` 2, `line_order`
+  [`m19_l1`, `m19_l2`], `form_id`, `content_version`, `boundary_rule`
+  `designed_obstacle`, `continuation_rule` `further_new_executed_try`,
+  `stop_control` `set_aside`, `time_limit` null, `check`
+  `one_question_one_explanation_one_recheck`, `settle_ms` 400, `stage`.
+  Closure snapshot: `lines_planned`, `check_status`, per line {`line_id`,
+  `line_index`, `presented`, `attempts`, `boundary_attempt_index`,
+  `continued`, `finish`}.
+- Lifecycle (contract §3.8; the lifecycle keys on the current-load OPENING
+  first): not presented (no current-load `presented` and no current-load
+  `opportunity_opened`) ⇒ null `not_presented` (`interrupted` when earlier
+  page loads exist); presented, never opened ⇒ null `pending`, after
+  `closed_unopened` null `no_eligible_event` (`not_opened`); card / check open
+  (opened, no `check_recorded`) ⇒ null `pending`, after the panel's closure
+  null `no_eligible_event` (`check_not_reached` without a `check_presented`,
+  else `check_not_completed`); check failed ⇒ null `understanding_failed`
+  (`check_failed`; stable; the line records in the components); lines in work
+  (check recorded, not both lines finished, no series closure) ⇒ null
+  `pending`; complete / closed (both lines finished, or the series closed by
+  the shift end, the review or a fault) ⇒ denominator ≥ 1 `observed` with the
+  count (`censored: true` when a line was excluded by the review or a fault),
+  denominator 0 ⇒ null — `technical_failure` (`technical_only`) when a fault
+  excluded a line, else `interrupted` (`censored_only`) when the review
+  censored one, else `no_eligible_event` (`obstacle_not_reached` when a TRY
+  was executed on a presented line, `no_try` when none); the reload hold-back
+  ⇒ null `interrupted`; a fault with no line in work ⇒ as "complete / closed"
+  when an eligible line exists, otherwise null `technical_failure`
+  (`technical_only`; `denominator` 0 once the check was passed, null before);
+  technically invalid (a defect of S1–S7) ⇒ null `technical_failure` with the
+  defect named. Precedence: `interrupted` > `technical_failure` (integrity
+  defect) > `understanding_failed` > `pending` > the closed outcomes. Closure
+  reason: `completed`, `shift_ended`, `closed_at_review`, `technical_failure`,
+  or null while open.
+- Field classification and the integrity rules S1–S7 [D-8] (the smallest
+  set; `features/m19.ts`, current-load events only, the raw log read and never
+  changed): SCORED — `sequence`, `page_load_index`, the event suffix,
+  `entry_state_version`, `opportunity_id`, `form_id`, `content_version`,
+  `line_id`, `attempt_index`, `setting`, the STORED `reading` and `restored`
+  of every `attempt` (each must equal the content rule's reading for that
+  setting), every `difficulty_boundary` field, `line_presented`,
+  `line_finished.finish` / `boundary_attempt_index` / `continued`,
+  `check_presented`, `explanation_shown`, `check_answered.attempt` /
+  `option_id` / `correct`, `check_recorded.status`, the series closure and its
+  snapshot, `closed_unopened`, the kit's `technical_failure` (and its
+  `line_id`), `opportunity_opened`; DESCRIPTIVE (never change the value or the
+  disposition; an inconsistency sets a named flag) — `input_mode`, every
+  timing field, `help_consulted`, `panel_left`, `series_reopened`,
+  `setting_changed`, `try_refused`, `option_drafted`, `set_aside_*`,
+  `after_boundary`, `since_boundary_focused_ms`, the per-line counts on
+  `line_finished` other than those listed as scored. S1 identity: every family
+  event has `entry_state_version` `m19-lines-v2` and `opportunity_id`
+  `proto_m19_lines_series`; every `line_presented`, `attempt`,
+  `difficulty_boundary`, `line_finished` and `check_answered` has `form_id`
+  `m19-form-1` and `content_version` `m19-content-v2`; the entry snapshot's
+  `form_id`, `content_version`, `lines_planned` (the number 2) and
+  `line_order` as declared. S2 order: every family event has a usable, unique
+  `sequence` (a safe integer ≥ 1; §5.259). S3 lines: each line presented at
+  most once, in assigned order; line 1 after `check_recorded`; line 2 after
+  line 1's `line_finished`; a known `line_id` on every line record; no
+  `closed_unopened` together with an `opportunity_opened`. S4 attempts: per
+  line, `attempt_index` 1, 2, … consecutive in sequence order; `setting`
+  well-formed for its line; stored `reading` and `restored` equal the content
+  rule's; no setting executed twice on a line; every attempt after its line's
+  `line_presented` and before its `line_finished`. S5 boundary: a line has
+  exactly one `difficulty_boundary` if and only if its executed settings
+  include all of its listed evidence settings; its `attempt_index` is that of
+  the FIRST attempt after which the rule holds, its `evidence_attempt_indices`
+  are the attempts that satisfy it, its `rule` is `designed_obstacle` and its
+  `attempt_sequence` is that attempt's `sequence`; it follows that attempt and
+  precedes any later attempt and the line's finish. S6 finish: at most one
+  `line_finished` per line; finish `restored` if and only if its last attempt
+  restored the line, and then immediately after it; no attempt after
+  `line_finished`; a finish `shift_ended` or `closed_at_review` only together
+  with a `series_closed` of the same reason, both after every attempt and with
+  no later attempt, presentation or finish; a finish `technical_failure` only
+  together with a kit `technical_failure` naming that line, and a kit
+  `technical_failure` naming a line only together with that line's finish
+  `technical_failure`; `boundary_attempt_index` and `continued` equal the
+  recount; a series closure snapshot equals the recount. S7 check: at most two
+  `check_answered`, attempt 1 then 2; attempt 2 only after a wrong attempt 1
+  and after `explanation_shown`; stored `correct` equals the key comparison;
+  `check_recorded.status` equals the recount, once. Each violation makes the
+  row null `technical_failure` with `integrity_defect` (each defect with its
+  record's sequence); no record is chosen between duplicates.
+- The feature (contract §10; addendum §1) [A][O-7][O-8][O-9][D-9]:
+  `m19_continuations` — value = numerator = eligible lines with a further
+  executed TRY after their boundary; denominator = eligible lines; planned
+  denominator 2; `denominator_kind` `conditional_eligibility` (a denominator
+  of 1 is complete, `observed`, never `incomplete`). Per line, from the
+  recount: boundary = the first attempt after which all listed evidence
+  settings have been executed; `continued` = an attempt with a higher index
+  exists. Eligible ⇔ boundary AND finish not `technical_failure` AND
+  (continued OR finish `set_aside` OR finish `shift_ended`); a boundary line
+  finished `closed_at_review` without continuation is CENSORED (excluded); a
+  line finished `technical_failure` is EXCLUDED whether or not a continuation
+  was recorded before the fault (`continued` as recorded, `eligible: false`,
+  `excluded_reason` `technical_failure`; case E21), lines finished before the
+  fault keeping their outcome (W1); an unfinished line ⇒ row `pending` before
+  the series closes. Zero denominator (the framework's `fractionFeature`):
+  `value: null`, `numerator: null`, `denominator: 0`,
+  `planned_denominator: 2`, `included_ids: []` with the disposition above —
+  whenever the lines were read (the check was passed); rows that never reach the lines are the
+  framework's empty rows (`value`, `numerator`, `denominator` null).
+  `included_ids` = the eligible line ids; `censored: true` with
+  `censor_reason` (`technical failure on <line>` /
+  `review closed <line> without a further TRY`) when a line was excluded.
+  Components (beside, never inside): `administration_version`, `form_id`, `content_version`,
+  `presented_in_current_load`, `observations_share_one_episode: true`,
+  `check_status` and both answers (`check`), per line {`line_id`, `presented`,
+  `attempts`, `refused_tries` by reason, `boundary_attempt_index`,
+  `evidence_attempt_indices`, `continued`, `tries_before_boundary`,
+  `tries_after_boundary`, `refused_tries_after_boundary` by reason,
+  `changed_second_control_after_boundary`, `restored`, `restored_at_attempt`,
+  `finish`, `eligible`, `censored`, `excluded_reason`, `line_focused_ms`,
+  `boundary_to_next_try_focused_ms`, `boundary_to_finish_focused_ms`,
+  `help_consults`, `panel_leaves_after_boundary`, `continued_after_leaving`,
+  Option A's `first_unsuccessful_try_index` and
+  `continued_after_first_unsuccessful`}, `nonresponse_kind` (`not_presented`
+  | `not_opened` | `check_not_reached` | `check_not_completed` |
+  `check_failed` | `obstacle_not_reached` | `no_try` | `censored_only` |
+  `technical_only` | null), `reload_check`, `flags` (descriptive
+  inconsistencies), and on a voided row `integrity_defect`. Never a
+  proportion; never combined with another item; the legacy family is never
+  read. Worked outputs (contract §10): W1 value 1 / 1 `observed` censored
+  (technical failure on `m19_l2`); E21 null, numerator null, denominator 0,
+  `technical_failure` (`technical_only`), censored (technical failure on
+  `m19_l1`); W2 null `interrupted`; W3 1 / 1 `observed` censored
+  (`closed_at_review`); W4 1 / 2 `observed` (`shift_ended`); W5 1 / 1
+  `observed`.
+
+(3) The build (after parts (0)–(2)). Four new modules under
+`src/pilot/windows/`: `m19LinesContent.ts` (pure: the ids and versions, every
+participant string of preview §4, both lines' settings, value rules, targets,
+keys and listed evidence settings as data, the check questions, options and
+keys, `m19ParticipantStrings()` for the wording audit), `m19LinesModel.ts`
+(pure: the series state machine — card, check, lines, drafts, TRY evaluation
+through the content rule, refusals, the obstacle boundary written in the same
+handler as its attempt, the finishes, the settle on every view, help,
+leaving, the shift-end and review closures, the never-opened closure, the
+fault, the hold-back; the entry snapshot, the closure snapshot, the
+prior-administration predicate, the reload-check builder; one `FocusedClock`
+per line started at its presentation and stopped at its finish, paused
+`surface_closed` on leaving and resumed on the real reopening; the log sink
+returns the logger sequence so the boundary names its attempt's sequence),
+`m19CouplingPanel.ts` (the adapter: the `ItemWindow` of opportunity
+`proto_m19_lines_series` and window `m19_lines_w1`, the sink with the
+protocol stamp, the clocks' subscription to `focusMonitor`, `presentM19`,
+`declareM19Lines`, `guardM19Reload`, `openM19(nowMs, { stage })`, the surface
+commands, `m19ConsumesEsc`, `closeM19Surface`, `resumeM19Surface`,
+`closeM19AtShiftEnd`, `closeM19AtReview`, `m19TechnicalFailure`,
+`bindM19Surface`, `m19LineInWorkId` for the yard's DEV probe, a test reset)
+and `m19SurfaceModel.ts` (pure: the wide-frame surface model of (1) "Layout",
+every activation routed to the adapter with its input mode).
+`src/measurement/features/m19.ts` (the read-only extractor of (2)) registered
+through `features/index.ts`; `registerV3.ts` entry `M19` with the explicit v3
+route and `implementation_status: 'implemented'` (feature row, texts, range,
+role, denominator kind, planned denominator, coverage label, independence,
+operational label and summary unchanged); `reviewClosure.ts` with the one
+import and the `closeM19AtReview(nowMs)` call before the exterior closure;
+`exteriorWindows.ts` with exactly the two deletions of (1) "Place and access";
+`ExteriorRecoveryYardScene.ts` with the legacy imports, prompt body, option
+cases and `couplingOptions` removed, `declareM19Lines()` and
+`guardM19Reload()` in `create()` right after `declareExteriorWindows()`,
+`presentM19(now)` in the `ready` factory beside `presentM08(now)`,
+`closeM19AtShiftEnd(now)` in `finishOutside()` beside `endExteriorShift(now)`,
+`resumeM19Surface(now)` in the RESUME handler, `buildCouplingSite` opening the
+wide-frame surface from `onPromptOpened` (returning false; the first opening
+dismissing the guidance; `isDone` reading the new window; `onClose` consuming
+the ESC order and calling `closeM19Surface` before the yard resumes),
+`m19SurfaceHost()` with the same close path for LEAVE and FINISH,
+`logStationOpened('frozen_coupling', { window_status })`, the neutral
+`refreshCouplingVisuals`, the `guard` union without `'M19'` (the legacy
+`exteriorTechnicalFailure('M19', …)` branch unreachable from the scene) and
+the DEV probe's `m19_panel` block. Tests: `e2e/m19_lines.spec.ts` (pure, 50
+tests — the independent oracle, the model, the extractor on the derivation
+cases and the integrity rules, the clock policy, the register and source
+checks, the surface model), `e2e/m19_lines_route.spec.ts` (browser, 15
+scenarios R1–R9b with the twenty-nine frames), `e2e/pilot_yard.spec.ts` and
+`e2e/pilot_exterior_isolation.spec.ts` re-expressed for the new identity
+(the panel worked to completion by real keyboard input in test 1; the
+step-away observation replaced by the panel opened, line 1 at its obstacle
+and set aside, line 2 left in work and restored on re-entry in test 2; the
+held E in test 3 opening the panel once and executing no TRY; the
+never-opened panel's `presented` / `closed_unopened` records and the
+contaminated developer-launch record in the isolation spec). Documents: this
+record, §2's M19 as-built cell, §5.328–§5.341, the matrix M19 row and "U21"
+paragraph, the addendum §2 "U21" paragraph and §3 row, the UNIT-LOG entry.
+All eighteen paths of contract §4 were touched and no other; nothing was
+deleted or renamed.
+
+(4) Events, closures and the legacy disposition as built. Identity, suffixes,
+fields, the entry and closure snapshots exactly as (2); the kit's
+`window_closed` follows `series_completed` (exit `completed`), the shift-end
+`series_closed` (exit `stopped` — a completed observation, decision D-U21-1
+item 7) and the review's `series_closed` (exit `closed_at_review`, the
+register `censored`); a never-opened panel at the review gets the kit's
+absence record (`presented_not_opened` / `not_presented_not_opened`) and, when
+the shift end did not write it, `closed_unopened` (`closed_at_review`). The
+row's `closure_reason` uses the framework's enum: `completed`,
+`closed_at_review`, `technical_failure`, and `route_departure` for the shift
+end — the family's own reason (`shift_ended`) travels as the component
+`series_closure_reason` [D-6]. A runtime fault is recorded as §5.340 (a): the
+model finishes the line in work (`line_finished` with finish
+`technical_failure`), the family record `technical_failure` carries `detail`,
+`line_id`, `line_index` and `phase` `closure` through the window's `log`, the
+opportunity is marked `technical_failure` through the framework's
+`markOpportunityInvalid`, the kit window is paused; the reopened panel shows
+the record view with an empty landing and LEAVE (§5.340 (b)). The legacy
+coupling: `m19CouplingModel.ts` and the legacy adapter functions in
+`exteriorWindows.ts` byte-identical with the base apart from the two deleted
+lines; the file's `setComprehension('passed')` count 8; the legacy window
+never declared, offered, presented, opened or closed on the route; no
+`proto_m19_valve_` event on any route run; the probe's legacy `m19` block
+untouched.
+
+(5) Verification evidence (13 October 2026). Development runs by the writer
+(Fable 5.1) while building: `tsc --noEmit`, `vite build`, ESLint with the
+prettier rule on every changed `.ts` file, prettier on the register and the
+addendum (clean; the matrix and the UNIT-LOG fail prettier at the base
+already), `verify-unit` (PASS, exit 0, no FAIL line), `git diff --check`
+(clean), the pure spec 50 / 50, the route spec 15 / 15 after four test-side
+corrections ((6) below), the six pure regression specs 80 passed and 2 failed
+with both failures reproduced on the untouched export of `390d5ce` on port
+5208 with the same assertion, message and received value, `pilot_yard` 3 / 3
+and `pilot_exterior_isolation` 2 / 2. The final matrix of contract §12 was
+then run once, on an unchanged tree, by the test-reviewer — a general-purpose
+agent on model `claude-sonnet-5-5` after reading
+`.claude/agents/test-reviewer.md` (the named type was not discoverable) —
+against source digest `0073ceb1efdfda09305cd812d8495d5e6e126f8faef5a3ece6d488e5e538b2fe`
+(SHA-256 over `git diff 390d5ce` and the seven untracked files) at HEAD
+`390d5ce`, the start and end digests identical: `lint:tsc` exit 0; `build`
+exit 0; ESLint with the prettier rule on the fourteen `.ts` paths exit 0;
+prettier `--check` on the fourteen `.ts` paths and the four documents exit 1
+with exactly the two inherited files flagged (both flagged on the base export
+too); `git diff --check` exit 0; `verify-unit` exit 0, "PASS - every change
+is inside the unit allowlist", no FAIL line; P1 `e2e/m19_lines.spec.ts` 50
+passed; P2 (`pilot_coverage`, `pilot_closure_models`,
+`m26_protocol_foundation`, `pilot_exterior_models`, `evidence_ledger`,
+`final_scientific_gates`) 80 passed, 2 failed — "M08 and M11 are
+questionnaire-primary" (`final_scientific_gates.spec.ts:146`, received
+`proto_m08_effort_choice`) and "U8-12 (recorded, not resolved)" (`:405`,
+expected length 10, received 8) — both identical to the base logs, neither
+touching an M19 step; B1 `e2e/m19_lines_route.spec.ts` 15 passed in 59.7 min
+(R1, R2, R2 at canvas 1080, R3, R4, R5, R5b, R6, R7, R7b, R8 default, R8
+Courier New, R8 Lucida Console, R9, R9b; no retry, no skip); B2 `pilot_yard`
+and `pilot_exterior_isolation` 5 passed, `m24_m26_boundary_route` 1 passed,
+`world_v2_yard_look` 1 passed with its sixteen frames written to the session
+scratchpad (`yard-look/`). Port 5207 was free before every browser run (a
+stale TIME_WAIT entry only); no flake, no retry. The U8-12 gate: received 8
+on both trees — not a regression of this unit; its premise is stale for M19
+because the route's M19 comprehension is now a recorded check in
+`m19CouplingPanel.ts`, and the eight remaining `setComprehension('passed')`
+calls of `exteriorWindows.ts` are the legacy functions off the route plus M20
+and M23; the gate itself is a prohibited file and was not edited. The R8
+envelope (design px, measured in the running game on the real route): content
+bottom 502 and feedback top 552 (default and Lucida Console) / 554 (Courier
+New), spare 50 / 50 / 52 on line 1 at its start, line 1 with ten TRYs, line 1
+finished, line 2 with eight TRYs and the help sheet; the dialog 262 / 262 /
+264; every text block inside its box (readout and tiles 15–17 of 34, the
+sheet 90–96 of 112, the TRY log 160 of 176 at ten rows, the help sheet
+120–128 of 186, the dialog 45–48 of 72); the card on ten lines and the
+question and each option on one line under all three fonts; the title is the
+wide frame's 20 px constant and the text its 16 px body. The twenty-nine
+frames of contract §13 are in `.playwright-mcp/u21-evidence/`
+(`01-yard-coupling-station-prompt` … `29-yard-after-the-first-opening`;
+800 × 600 by their PNG headers except `25-line-1-at-1280x720` and
+`26-line-2-at-canvas-1080`, both 1280 × 720, the latter the full-HD canvas
+inside that viewport; 27 and 28 under the forced fallback fonts), written by
+the test-reviewer's B1 run — frames 05, 06 and 21 by its round-1 rerun of R3
+and R9 at 800 × 600 — and copied to the session scratchpad; the development
+run's frames of the same scenarios were viewed one by one by the writer, the
+matrix run's frames were spot-checked by the writer and read in full by the
+combined review, and the three rerun frames were viewed by the writer.
+Final static checks by the writer on the completed tree after correction
+round 1 and these documents: prettier on the register and the addendum exit
+0, `verify-unit` exit 0 (PASS, no FAIL line, whitespace clean),
+`git diff --check` exit 0, the working tree exactly the eighteen allowlisted
+paths. The reviews: §5.341 and the UNIT-LOG "U21 results".
+
+(6) Deviations, defaults exercised and findings. Deviations from the plan,
+none from the contract: (a) the named agent types `test-reviewer`,
+`scientific-reviewer`, `gameplay-reviewer` and `visual-reviewer` were not
+discoverable in the session, so each reviewer ran as a general-purpose agent
+with the matching model override after reading its role file (test-reviewer
+on `claude-sonnet-5-5`; the one combined review on the opus override), as the
+prompt's fallback allows and requires reporting; (b) the route driver replays
+Noor's briefing after a page reload (the driver does not persist the stage),
+so scenario R7b observes `prior_load_checked` and a fresh `presented` in the
+new load with `presented_in_current_load` true, and case E18's missing
+current-load `presented` is shown by the pure spec only — a limitation of the
+browser evidence, not of the panel; (c) four test-side corrections while the
+route spec was being brought up, none touching a source rule: the R1 row
+equality across a reopening compares the stable fields (the descriptive
+`reopenings`, `panel_leaves_after_boundary` and `supporting_sequences` are
+expected to change with the reopening), a wrong expectation of
+`changed_second_control_after_boundary` on the boundary event was removed
+from R2, R7 drives back to the yard through `routeToYardWork` after the
+tutorial instead of replaying the spine, and R9 compares views without the
+feedback line (which clears itself after 2.2 s) and expects LEAVE from the
+final view to reopen the final record of a completed series; (d) the pure
+clock tests were rewritten to timestamp-based expectations after their first
+version ignored the settle time the harness consumes; (e) the isolation
+spec's first rewrite left two legacy blocks in place (`openSite is not
+defined`); both were removed and the spec rerun. Defaults exercised:
+§5.329–§5.340, in particular D-6 (`route_departure` with
+`series_closure_reason`), D-8 (`attempt_sequence` read back from the
+runtime's events), D-13 (a) (the fault record through `log` and
+`markOpportunityInvalid`) and D-13 (b) (the empty landing after a fault).
+Disclosed to the owner without resolution: the reopened panel after a runtime
+fault shows no record line (a wording decision, §5.340 (b)); the amber
+feedback line of the last TRY stays visible under the help sheet until the
+surface's own auto-clear (frame 21, cosmetic, no rule affected); the inherited
+prettier state of the matrix and the UNIT-LOG; the two inherited gate
+failures. The combined review (§5.341) raised one material and two lesser
+findings that were fixed in correction round 1, inside the allowlist and with
+the affected checks rerun by the test-reviewer ((5) and the UNIT-LOG): (f)
+SC-1 — a fault with no line in work after a passed check and with no
+eligible line (on the recorded view, or between the lines after line 1 was
+finished before its obstacle) was exported as `no_eligible_event` (`no_try` /
+`obstacle_not_reached`); contract §3.8 "fault with no line in work" requires
+null `technical_failure` (`technical_only`), never a non-response — the
+extractor's zero-denominator disposition now names the fault first (pure
+case E19b); (g) SC-3 — a later page load with no current-load `presented`
+and no opening was read `not_presented` when its reload check established
+the absence of an earlier opening; contract §3.8 row 1 requires `interrupted`
+while earlier page loads exist — corrected (pure case E1b; §5.335 amended);
+(h) VI-3 — frames 05, 06 and 21 were written by the 1280 × 720 pointer
+scenario although contract §13 asks for 800 × 600 unless stated — now
+written by R3 and R9 at 800 × 600. The unresolved findings and the questions
+for the owner: §5.341.
+
+(7) Limitations (stated, not resolved; preview §9 and this build). Under
+Option B the eligible group is selected by search strategy — participants
+who anticipate the second control, or who stop before the obstacle, are never
+eligible; eligibility per line is unknown until piloted. The count may vary
+little; this is unknown. Two lines in one episode, fixed order, one form:
+content and position are confounded; the observations are clustered; line 1
+may teach the use of the second control and lower line 2's eligibility.
+Leaving and later returning counts as continuation (flagged); the shift-end
+rule partly reflects route choices although the card and help state it. The
+"finished outside" closure counts an eligible line's non-continuation as 0
+whether the participant walked to Noor from the panel or from elsewhere. A
+fault while a line is in work discards that line's credit even when a
+continuation was recorded (decision D-U21-1 item 9; the raw events stay). The
+focused clock excludes only documented focus loss and the panel's own
+closure; help and the dialog count as working on the line. The reload
+hold-back keeps the earlier load's events in `prior_page_load_events` and
+exports nothing from them (the framework rule); the route driver replays
+Noor's briefing after a reload, so the browser cannot show case E18's missing
+current-load `presented` record (the pure spec shows it). The reopened panel
+after a runtime fault shows no record line (§5.340 (b)). M22's handover
+report line "Coolant coupling — valve serviced" is unchanged whatever M19's
+outcome (U24 backlog). No source validates the count; passing tests establish
+implementation correctness only, never validity, reliability, persistence as
+a trait or questionnaire equivalence.
 
 **Unit 20 (M18): as-built** — the three diagnosis cases at the Diagnostics
 Laboratory diagnostic board (bounded unit under contract `U20-CONTRACT.md`, v2
@@ -9795,3 +10536,294 @@ an owner decision.
      (3) and (4) there. Left as recorded: §5.326 (j), (k), (m) (the "case /
      1?" wrap needs no edit and no new decision), (n)–(q) (U24 backlog). The
      original commit `2eed381` preceded this clarification.
+328. **RESEARCH-OWNER DECISION D-U21-1 — APPROVED 13 October 2026 (M19, the
+     two coupling lines; U21).** An owner ruling with its date, recorded here
+     as the owner's approval of the preparation session records it (contract
+     `U21-CONTRACT.md` gate line; `U21-OWNER-PREVIEW.md` status line;
+     `U21-VERIFICATION-LOG.md` "Owner decision recorded"; `UNIT-LOG.md`
+     "U21"); not an implementer default; not reopened by this unit. Items 1–9
+     of preview §3 APPROVED AS RECOMMENDED, in the owner's words: "I approve
+     D-U21-1 items 1–9 as recommended in the corrected U21 r3 package,
+     including Option B and the E21/W1 runtime-fault distinction. I accept the
+     documented eligibility and fixed-order limitations, with the measure
+     remaining provisional pending pilot evaluation." Item 1: line 1 HEATER
+     BANK (key H1 + H3 with FEED DOUBLE) and line 2 PRESSURE TRIM (key dial 5,
+     bypass OPEN) with every string of preview §4 (`m19-content-v2`,
+     `m19-form-1`). Item 2: Option B — the line's designed obstacle,
+     established only by TRYs of its listed evidence settings (line 1 the
+     all-ON SINGLE setting; line 2 dial 4 SHUT and dial 5 SHUT), inferred
+     routes not counting, recorded once per line as an immutable record. Item
+     3: nothing marks the boundary; TRY and SET ASIDE throughout; no time
+     limit; SET ASIDE never shows a solution. Item 4: a further executed TRY
+     after leaving and returning qualifies, flagged `continued_after_leaving`.
+     Item 5: `check_status` keeps `fail` (⇒ `understanding_failed`),
+     `not_completed` and `not_reached` (⇒ `no_eligible_event`) and a presented,
+     never-opened panel (⇒ `no_eligible_event`, `not_opened`, never
+     `declined`) apart; both lines administered whatever the status. Item 6:
+     fixed order, one form; line 2 only after line 1 is finished through the
+     same neutral view; a finished line never reopens. Item 7: an eligible line
+     without a further TRY — SET ASIDE or the participant's own end of the
+     outside work ⇒ 0 in the denominator (finish kinds `set_aside` and
+     `shift_ended` kept apart); the station-record review ⇒ censored and
+     excluded. Item 8: null `pending` until BOTH lines are finished or the
+     panel is closed; then the value (or a null with its reason), stable. Item
+     9: a runtime fault is line-scoped — the line in work is excluded even when
+     a further TRY after its boundary was already recorded (its record kept;
+     `censored: true`; the reason named), lines finished before the fault keep
+     their outcome, a fault with no line in work excludes nothing but closes
+     the series, no eligible line left ⇒ null `technical_failure`
+     (`technical_only`), never a non-response disposition, a check already
+     recorded as `fail` stays `understanding_failed`, malformed or
+     contradictory scored evidence voids the whole row (contract §9.4). Settled
+     consequences, implemented as [A]: at most one credit per line; only an
+     executed TRY of a new complete setting is a work attempt; no cue draws
+     the participant back to an unfinished line; a reload exports only
+     current-load evidence. Its documented limitations travel with it
+     (preview §9): under Option B who is measured depends on how participants
+     search (early stoppers and participants who anticipate the second control
+     are excluded; eligibility per line unknown until piloted); the count may
+     vary little; two lines in one episode, fixed order, one form (content and
+     position confounded; observations clustered; line 1 may teach the use of
+     a second control); leaving and later returning counts, flagged; the
+     shift-end rule partly reflects route choices; M22's handover line
+     "Coolant coupling — valve serviced" is unchanged whatever M19's outcome
+     (U24 backlog); no source validates the count. Boundaries: all events,
+     features and components remain provisional; no canonical promotion,
+     combined score or scientific-validity claim; no questionnaire wording or
+     pressure to continue or stop in participant-facing text. The provenance
+     limit of the contract applies: the original owner documents are not on
+     disk and were not searched for again. Rulings D-U16-1 through D-U20-1 and
+     the U20 closeout of 13 October 2026 are precedent only. As-built: §4
+     "Unit 21".
+329. **D-2 — first-opening card (U21 default).** The first opening shows the
+     card; CONTINUE records `intro_acknowledged` and presents the check; the
+     card is shown again if the panel is left before CONTINUE; the check's
+     stage (question 1, the explanation, question 2, the recorded line) and
+     its draft survive leaving. Reversible.
+330. **D-3 — drafts (U21 default).** The check option draft (a tile drafts,
+     another replaces, the same again clears; `option_drafted` with the
+     previous option), line 1's heaters and feed and line 2's dial and bypass
+     are drafts that survive leaving and returning; a finished line's setting
+     is frozen with its view; a setting change is `setting_changed`
+     (descriptive) and never a work attempt. Reversible.
+331. **D-4 — commitment mechanics and the settle (U21 default; the M02
+     §5.210, M13 §5.262, M14 §5.290 (b), M15, M16 and M18 precedents).** A
+     400 ms settle on EVERY view transition (the card, the check questions,
+     the explanation, the recorded line, each line view, the finished views,
+     the help sheet, the view restored by CLOSE HELP or BACK, a dialog, a
+     reopened view): a TRY inside it is `try_refused` `settling` (logged; no
+     feedback), any other press is dropped and not logged, a carried ESC is
+     consumed; the dialog's confirm acts only on a fresh press at least 400 ms
+     after the dialog appeared (an earlier press refused and not logged), its
+     cancel is refused inside the same window (the dialog stays); the confirm
+     control is first in focus and never sits where the opener sat (dialog
+     controls at panel x 200 / 466, every opener at x ≥ 738); every other view
+     lands on a neutral, non-acting text landing; no movement key and not E is
+     bound; held keys and auto-repeat are dropped by the surface; LEAVE and the
+     leaving ESC are not settle-gated beyond the consumed carried ESC (M18
+     precedent). Reversible.
+332. **D-5 — help (U21 default).** HELP (H or the button) on the card, the
+     check views, the explanation, the recorded line, every line view and the
+     finished views — never inside a dialog; the sheet of preview §4.9, CLOSE
+     HELP first in focus; logged `help_consulted` with the `view` (`intro`,
+     `check_1`, `explanation`, `check_2`, `recorded`, `line_1`, `line_2`,
+     `finished_1`, `finished_2`) — an interaction, never a continuation and
+     never a clock pause; CLOSE HELP (H, ESC or the button) restores the same
+     view with everything kept and re-arms its settle. Reversible.
+333. **D-6 — dispositions and the free-text `missing_reason` (U21 default;
+     contract §3.8; addendum §1).** `not_presented` (never presented and never
+     opened in this load); `pending` (`presented_not_opened`, `check_open`,
+     `lines_in_work`); `no_eligible_event` with `not_opened`,
+     `check_not_reached`, `check_not_completed`, `obstacle_not_reached` or
+     `no_try`; `understanding_failed` with `check_failed`; `interrupted` with
+     the reload reasons or `censored_only`; `technical_failure` with
+     `technical_only` or the named integrity defect; never `declined`. Each
+     mirrored by the structured `nonresponse_kind` component; the kit's
+     absence details `presented_not_opened` / `not_presented_not_opened` at
+     the review. Reversible.
+334. **D-7 — names (U21 default; all provisional, alternatives the owner's).**
+     Family `proto_m19_lines_`, opportunity `proto_m19_lines_series`, window
+     `m19_lines_w1`, object and surface `m19_coupling_panel`, entry version
+     `m19-lines-v2`, form `m19-form-1`, content `m19-content-v2`, the line,
+     check and option ids of contract §9.1, the setting field names (`h1`,
+     `h2`, `h3`, `feed`; `dial`, `bypass`), the control names (`h1`, `h2`,
+     `h3`, `feed`, `dial_down`, `dial_up`, `bypass`), the event suffixes of
+     contract §9.2 (`closed_unopened`, `line_finished`, `reading`, `restored`
+     included), the feature id as in the register; the surface element ids
+     (`intro`, `continue`, `question`, `option_1` … `option_3`, `record`,
+     `explanation`, `recorded`, `start`, `sheet`, `log`, `readout`,
+     `heater_1` … `heater_3`, `feed`, `dial_down`, `dial_up`, `bypass`, `try`,
+     `set_aside`, `finished_line`, `next`, `finish`, `dialog`, `confirm`,
+     `back`, `help`, `leave`, `help_sheet`, `close_help`, `closed`).
+335. **D-8 — event order, the field classification and the integrity rules
+     S1–S7 (U21 default).** The §5.259 convention: an outcome that depends on
+     event order is read only from events that each carry a usable, distinct
+     `sequence`; the classification and the rules of §4 "Unit 21" (2) are the
+     minimum set; every violation voids the row with the defect named and its
+     sequence; descriptive inconsistencies set named flags only; the
+     `attempt_sequence` of a boundary is the logger sequence of its attempt
+     event, read back from the runtime's event list after the attempt was
+     written (null in no case of the build; a pure sink returns its own
+     number); the reload hold-back is read as the M18 precedent reads it; the
+     lifecycle follows contract §3.8 row 1 — an opening of this load is
+     always read from the opening (case E18), and a later load with neither a
+     `presented` nor an opening of its own is `interrupted` even when its
+     reload check establishes the absence of an earlier opening (correction
+     round 1 after the combined review, finding SC-3; case E1b).
+336. **D-9 — companion definitions (U21 default).** `tries_before_boundary`
+     = attempts with an index below the boundary's (all attempts when there is
+     none); `tries_after_boundary` = attempts above it; `refused_tries` and
+     `refused_tries_after_boundary` by reason from `try_refused` (descriptive);
+     `changed_second_control_after_boundary` = an attempt after the boundary
+     with FEED DOUBLE (line 1) or the bypass OPEN (line 2); `restored` /
+     `restored_at_attempt` from the stored flags (checked against the rule);
+     `help_consults` and `panel_leaves_after_boundary` from the line's
+     records; `continued_after_leaving` = the first attempt after the boundary
+     followed a `panel_left` written after the boundary; Option A's
+     `first_unsuccessful_try_index` = the first attempt with `restored: false`
+     and `continued_after_first_unsuccessful` = a later attempt exists
+     (null without an unsuccessful attempt) — components only, never a value;
+     the timing companions as the clock policy records them.
+337. **D-10 — the legacy coupling (U21 default).** `m19CouplingModel.ts` and
+     the legacy adapter functions in `exteriorWindows.ts` (`m19Present`,
+     `m19Act`, `m19StepAway`, `m19PromptBody`, `closeM19`, the legacy
+     `exteriorTechnicalFailure('M19', …)` branch and the probe's `m19` block)
+     stay in the tree unchanged under their frozen v2 identity; the yard scene
+     no longer imports or calls them; `exteriorWindows.ts` loses only
+     `w.m19.declare();` and the review-absent entry
+     `[w.m19, 'coupling never worked before the review']`, so the legacy
+     window is never declared, offered, presented, opened or closed on the
+     route and the U8-12 count stays 8 (dead legacy calls plus M20 / M23); the
+     exterior departure / resume calls on the undeclared, unopened legacy
+     window are no-ops; the probe's `m19` block reports the untouched legacy
+     state. Not updated (U24 backlog): the capture specs, `exteriorHelpers.ts`
+     `couplingAct` / `completeCoupling` (unused), the M22 report line, the
+     U8-12 gate's stale premise, the registry's `yard.coupling` description.
+338. **D-11 — layout and interface details inside the wide frame (U21
+     default).** The positions of §4 "Unit 21" (1) "Layout" (the mockup's,
+     adjustable inside contract §3.9); the readout as the line view's neutral
+     landing and the check question, the explanation, the recorded line, the
+     finished line and the closed record as landings; the final view's
+     two-line landing (`Line 2 finished: <how>.` over `Both lines finished.`)
+     so both approved lines stay visible; the TRY list's nine-row rule with
+     `… k earlier TRYs not shown` above the newest eight; the per-view footers
+     of preview §4; the neutral world chip `COUPLING PANEL`, the static dial
+     arc and the hidden frost sheet; the ON heater tiles in the surface's
+     `selected` state (a marker glyph beside the colour; the readout names the
+     ON heaters in words, so state is never colour alone); `series_completed`
+     and the kit's completion written at line 2's finish, FINISH only closing
+     the surface. Carried forward unchanged and open: the M16 beacon salience
+     question (§5.314 (4)); the M05 competing-task observation of §5.290 (e)
+     (i).
+339. **D-12 — clock policy (U21 default; contract §9.5; the U20 closeout
+     lesson).** One `FocusedClock` per line in the pure model (started at
+     `line_presented`, stopped at the finish; the adapter registers each with
+     `focusMonitor` for `focus_loss` / `hidden`); `surface_closed` on LEAVE /
+     ESC / walking away / leaving the yard, resumed at the real reopening;
+     help and dialogs never pause; the yard's PAUSE / RESUME never touch the
+     clock or the kit window; `resumeM19Surface` resumes the kit window only
+     while the panel is open; a finish by the shift end, the review, a fault
+     or a reload adds nothing; `line_focused_ms`,
+     `boundary_to_next_try_focused_ms`, `boundary_to_finish_focused_ms` and
+     `since_boundary_focused_ms` as §4 "Unit 21" (1) "Clock policy".
+340. **D-13 — the fault record (U21 default; owner-visible).** (a) The kit's
+     `ItemWindow.technicalFailure` cannot carry the line in work (windowKit is
+     outside this unit), so a runtime fault writes the family record
+     `technical_failure` through the window's `log` with `detail`, `line_id`,
+     `line_index` and `phase` `closure` and marks the opportunity
+     `technical_failure` through the framework's `markOpportunityInvalid`
+     (register and probes refreshed); the kit's private window status is not
+     changed (no later kit event is expected; the kit window is paused). The
+     reload hold-back keeps the kit's own `technicalFailure`. (b) The preview
+     names no closed-record line for a panel reopened after a runtime fault
+     (its §4.10 lists the shift-end, review and reload records only); rather
+     than author one, the reopened panel after a fault shows the header, an
+     empty neutral landing and `LEAVE  [ESC]` (footer `ESC leave`) and accepts
+     nothing. A record line for this state is a wording decision reserved to
+     the owner (U24 backlog); nothing in the value, the eligibility or the
+     dispositions depends on it.
+341. **The U21 reviews, correction round 1 and the open findings
+     (13 October 2026).** The final matrix (§4 "Unit 21" (5)) was run once by
+     the test-reviewer on `claude-sonnet-5-5`; then ONE combined read-only
+     review (the scientific, gameplay and visual roles together) was run by a
+     general-purpose agent on the opus override — it reported model Opus 5.5
+     (`claude-opus-5-5`) — on the matrix digest, the contract, the preview,
+     the four documents, the test-reviewer's report and the twenty-nine
+     frames; it ran nothing and edited nothing (the UNIT-LOG "U21 results"
+     holds its report verbatim). Its verdicts: scientific — concerns found
+     (one MATERIAL); gameplay — usable with noted friction; visual — readable
+     with noted defects, all minor or cosmetic. Confirmed conforming by the
+     reviewer from the code, not from the documents: the boundary written at
+     the attempt that completes the listed evidence settings, once, immutable,
+     inferred routes never counting; continuation = a further attempt only;
+     the check outcomes kept apart and stable; the closure and fault rules
+     with E21 / W1; the field classification and S1–S7; the zero-denominator
+     and empty-row shapes; the clock policy; the oracle's independence; no
+     validity claim in any document and no questionnaire stem or pressure
+     word in any participant string; the legacy separation; the ESC order; a
+     way out of every state; no clipping, overlap or wrapped fixed line in any
+     frame; HELP and LEAVE on every working view; the vocabulary. Fixed in
+     correction round 1 (inside the allowlist; the affected checks rerun by
+     the test-reviewer): SC-1 MATERIAL — the zero-denominator disposition for
+     a fault with no line in work (§4 "Unit 21" (6) (f); pure case E19b);
+     SC-3 MINOR — the reading of a later load without current-load evidence
+     (§5.335; (6) (g); pure case E1b); VI-3 NOTE — frames 05, 06 and 21 at
+     800 × 600 ((6) (h)). Not fixed, disclosed: SC-2 MINOR — the shift-end
+     row's `closure_reason` is the framework's `route_departure` with the
+     family's `shift_ended` beside it as `series_closure_reason` (default
+     D-6, §5.333; the enum lives in a prohibited file); SC-4 NOTE — the kit
+     window's private status stays `open` after a runtime fault (D-13 (a),
+     §5.340); SC-5 NOTE — TRY carries the accent style and SET ASIDE the plain
+     style on every line view, constant over the whole line and present in
+     the owner-seen mock-up, still a salience difference between the "go on"
+     and the "stop" control on the measured choice; SC-6 NOTE — the coupling
+     station has no stage gate (unchanged from the base; contract item [A]),
+     so a panel opened before Noor's briefing writes no `presented` in that
+     load (`stage_at_open` records it; `presented_in_current_load` false);
+     SC-7 NOTE — the reviewer read the `verify-unit` PASS as vacuous because
+     its "changed vs 390d5ce" list was empty before the commit; the script
+     also checks the working tree's staged, unstaged and untracked paths
+     against the allowlist (its candidate set), so the PASS covered the
+     eighteen uncommitted paths, and the base list fills only after the
+     commit, when the check is rerun; GP-1 MINOR — the shared wide frame keeps
+     focus on the same element id across views (a prohibited file), so a
+     hotkey that changes the view while HELP or LEAVE is focused lands on
+     HELP or LEAVE instead of the neutral landing (M15, M16 and M18 share the
+     behaviour; no record is affected; per-view control ids would fix it at
+     the cost of the route spec's id conventions — U24 backlog); GP-2 / VI-1
+     MINOR — the amber feedback line of the last action stays for the
+     surface's 2.2 s auto-clear across a view change (frames 13, 14 and 21;
+     after NEXT LINE within 2.2 s line 2's first view can still show line 1's
+     feedback; the auto-clear is the shared surface's, a prohibited file;
+     cosmetic); GP-3, VI-2 and VI-4 NOTE — naming and fiction, the world chip
+     hidden behind the station prompt in frame 29, the accent focus ring on
+     the neutral landing (precedent). Questions for the research owner raised
+     by the review (options only; nothing resolved here): (1) a fault between
+     the lines with line 1 eligible and line 2 never presented — keep
+     `censored: false` (as built: the fault excluded no presented line) or
+     mark the row censored because line 2 was never given; (2) the shift-end
+     `closure_reason` — keep `route_departure` with `series_closure_reason`
+     beside it, use another existing enum value, or extend the framework enum
+     in a later unit; (3) TRY versus SET ASIDE salience — keep or equalise;
+     (4) the record line for a panel reopened after a fault (§5.340 (b),
+     already queued); (5) the kit window status after a fault (D-13 (a)) —
+     accept or require a kit change later; (6) the per-view focus landing
+     (GP-1) and the feedback auto-clear (GP-2) — accept the shared-surface
+     behaviour or change the wide frame in a later unit. Not checked by the
+     reviewer: it ran nothing; the route spec's assertions step by step; the
+     pilot_yard re-expression in depth; the other items beyond the
+     test-reviewer's results; the R8 figures. The affected checks after round
+     1, rerun by the test-reviewer (`claude-sonnet-5-5`) on the source digest
+     `aca73bbd9fd91b62c1e8b0218b3ac91673e47483bbadb950183e8a896baf5281`
+     (`src` and `e2e`; start and end identical): `lint:tsc` exit 0, `build`
+     exit 0, ESLint with the prettier rule on the three changed files exit 0,
+     `git diff --check` exit 0, the pure spec 52 passed, the six pure
+     regression specs 80 passed with the same two inherited failures and
+     nothing new, the route scenarios R2 (1280 × 720 and canvas 1080), R3, R9
+     and R9b 5 passed in 766 s with no retry and no skip; frames 05, 06 and
+     21 measured 800 × 600 from their PNG headers (every frame 800 × 600
+     except 25 and 26 at 1280 × 720, 26 being the full-HD canvas inside that
+     viewport). B2 was not rerun (no shared file changed; no B2 scenario
+     reloads the page or faults the panel). The final static checks on the
+     completed tree are in §4 "Unit 21" (5). No second correction round was
+     needed.

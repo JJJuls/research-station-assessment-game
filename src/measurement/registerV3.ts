@@ -1421,6 +1421,28 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'behavioural_counterpart',
     direction: 'extend_occasions',
     occasions: 2,
+    // Unit 21: the approved two-line administration landed at the Exterior
+    // Recovery Yard coupling panel (episode 4) — ONE opportunity, one window
+    // (research-owner decision D-U21-1 of 13 October 2026). The v2 family
+    // `proto_m19_valve_*` keeps its frozen v2 meaning in the ledger and is
+    // read by no extractor. The "challenges" of the feature texts are the
+    // two lines; the first difficulty boundary is each line's designed
+    // obstacle (Option B), one immutable record per line.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m19_lines_series'],
+      windows: [
+        {
+          id: 'm19_lines_w1',
+          occasion: null,
+          zone: 'exterior_recovery_yard',
+          episode: 4,
+        },
+      ],
+      family_prefixes: ['proto_m19_lines_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Two distinct, solvable repair challenges with a truthful resistance state; controls taught beforehand; at each first difficulty boundary, another work attempt or a voluntary stop with no progression penalty.',
     features: [

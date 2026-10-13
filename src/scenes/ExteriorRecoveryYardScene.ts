@@ -9,7 +9,7 @@
  * enterable, no site's outcome gates another):
  *
  *   1  airlock apron        Noor, supply crate, the M05 occasion-2 cable flag
- *   2  frozen coupling      M19 progressive valve (west)
+ *   2  frozen coupling      M19 coupling panel — two lines (west; Unit 21)
  *   3  Mast 04              M20 antenna restoration — START only (north)
  *   4  excavation field     M23 scanner-guided recovery (staked, east)
  *   5  Metal Recovery Yard  M24 finite magnet deck + depletion (north-east)
@@ -64,12 +64,6 @@ import {
   exteriorNoteDug,
   exteriorRemoveCache,
 } from '../pilot/exterior/exteriorEpisodeModel';
-import {
-  M19_THAW_MS,
-  M19_TURN_MS,
-  m19Completed,
-  m19Readout,
-} from '../pilot/exterior/m19CouplingModel';
 import {
   M20_STAGE_LABELS,
   M20_STAGE_MS,
@@ -144,10 +138,6 @@ import {
   exteriorResume,
   exteriorSteppedAway,
   exteriorTechnicalFailure,
-  m19Act,
-  m19Present,
-  m19PromptBody,
-  m19StepAway,
   M20_BRIEF,
   m20AcceptTask,
   m20DoStage,
@@ -243,6 +233,20 @@ import {
   resolveM11,
 } from '../pilot/windows/m11Custody';
 import {
+  bindM19Surface,
+  closeM19AtShiftEnd,
+  closeM19Surface,
+  declareM19Lines,
+  guardM19Reload,
+  m19ConsumesEsc,
+  m19LineInWorkId,
+  m19Window,
+  openM19,
+  presentM19,
+  resumeM19Surface,
+} from '../pilot/windows/m19CouplingPanel';
+import { m19SurfaceModel } from '../pilot/windows/m19SurfaceModel';
+import {
   closeM25LoopsAtShiftEnd,
   closeM25Surface,
   declareM25Loops,
@@ -276,6 +280,11 @@ declare global {
       | (ReturnType<typeof exteriorProbeSnapshot> & {
           m05: ReturnType<typeof m05Probe>;
           stage: string;
+          m19_panel: {
+            window: string;
+            exit: string | null;
+            line_in_work: string | null;
+          };
         })
       | null;
   }
@@ -367,6 +376,11 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     // re-offered (prior exposure recorded, technically incomplete).
     guardM05Reload('o2', Date.now());
     declareExteriorWindows();
+    // M19 (Unit 21): the coupling panel's one window is declared here; a
+    // panel opened in an earlier page load is never re-run (the reload
+    // check is written once per later load at this first guard run).
+    declareM19Lines();
+    guardM19Reload();
     declareM08();
     // M10 (Unit 15): the yard logbook is offered here; an offer presented
     // in an earlier page load is never re-run.
@@ -406,6 +420,9 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
 
       m05HostResumed('o2', now);
       exteriorHostResumed(now);
+      // M19 (Unit 21): the kit window resumes only while the coupling
+      // panel itself is open over the yard (never after LEAVE or ESC).
+      resumeM19Surface(now);
       this.refreshAllVisuals();
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -991,22 +1008,49 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       x: site.x,
       y: site.y,
       onPromptOpened: () => {
-        const state = exteriorEpisode().m19;
-
         this.logStationOpened('frozen_coupling', {
-          progress: state.progress,
-          bound: state.bound,
+          window_status: m19Window.windowStatus(),
         });
 
-        if (state.closed || m19Completed(state)) {
-          this.showFeedbackMessage(m19Readout(state));
-
+        if (activeWorkSurface(this) !== null) {
           return false;
         }
 
-        m19Present(Date.now());
+        // M19 (Unit 21): the station opens the coupling panel — the shared
+        // work surface in the wide frame (decision D-U17-2) — as the M08
+        // console opens its surface; no world prompt is shown.
+        const first = m19Window.windowStatus() === 'unopened';
 
-        return true;
+        openM19(Date.now(), { stage: pilotStage() });
+
+        if (first) {
+          // Guidance only: the listed job is reached once the panel opens;
+          // nothing points back to an unfinished line afterwards.
+          dismissExteriorSite('coupling');
+        }
+
+        openWorkSurface(this, {
+          surfaceId: 'm19_coupling_panel',
+          frame: 'wide',
+          model: () => m19SurfaceModel(this.m19SurfaceHost()),
+          onClose: () => {
+            // ESC order: an open dialog, the help sheet, a carried press —
+            // consumed; only then does ESC leave (the same path as LEAVE).
+            if (m19ConsumesEsc(Date.now())) {
+              return false;
+            }
+
+            closeM19Surface(Date.now());
+
+            return true;
+          },
+          onClosed: () => {
+            this.refreshCouplingVisuals();
+            this.refreshGuidance();
+          },
+        });
+
+        return false;
       },
     });
     registerPilotStation({
@@ -1016,11 +1060,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       y: site.y,
       label: 'Frozen Coolant Coupling',
       stages: ['exterior_work'],
-      isDone: () => {
-        const state = exteriorEpisode().m19;
-
-        return state.closed || m19Completed(state);
-      },
+      isDone: () => m19Window.windowStatus() !== 'unopened',
       order: 1,
     });
     // World V2: the pipe assembly, the heater rack and the valve wheel
@@ -1033,6 +1073,21 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       .setDepth(3)
       .setVisible(false);
     this.couplingChip = this.chip(site.x - 40, site.y + 52, '');
+  }
+
+  /** The coupling panel's host: the clock, the close path and the feedback line. */
+  private m19SurfaceHost() {
+    return bindM19Surface({
+      now: () => Date.now(),
+      // LEAVE, FINISH and ESC take the SAME path: the panel is left (the
+      // window and the line's clock pause) before the surface closes.
+      close: () => {
+        closeM19Surface(Date.now());
+        activeWorkSurface(this)?.close();
+      },
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+    });
   }
 
   private buildMastSite() {
@@ -1423,8 +1478,6 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     switch (interactionKey) {
       case 'pilotNoor':
         return this.noorBeat().body;
-      case 'pilotCoupling':
-        return m19PromptBody();
       case 'pilotMast':
         return episode.m20.accepted ? m20MastStatus(episode.m20) : M20_BRIEF;
       case 'pilotPlotStake': {
@@ -1526,8 +1579,6 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
 
         return this.npcBeatOptions('pilotNoor', beat);
       }
-      case 'pilotCoupling':
-        return this.couplingOptions();
       case 'pilotMast':
         return this.mastOptions();
       case 'pilotPlotStake':
@@ -1574,68 +1625,6 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     feedback = '',
   ): PromptOption {
     return { label, feedback, getEventTypes: () => [], onSelected };
-  }
-
-  // ——— M19 ———
-
-  private couplingOptions(): PromptOption[] {
-    const site = YARD_SITES.coupling;
-    const timed = (label: string, durationMs: number, kind: 'turn' | 'thaw') =>
-      this.option(label, () => {
-        const started = performWorldAction({
-          scene: this,
-          x: site.x,
-          y: site.y - 30,
-          label: kind === 'turn' ? 'Turning the wheel…' : 'Thawing the collar…',
-          durationMs,
-          cancellable: true,
-          onComplete: () =>
-            this.guard('M19', () => {
-              const outcome = m19Act(kind, Date.now(), 'keyboard');
-
-              if (outcome !== null) {
-                this.showFeedbackMessage(outcome.message);
-                this.refreshCouplingVisuals();
-                this.refreshGuidance();
-                refreshPilotCoverageProbe();
-              }
-            }),
-        });
-
-        if (started) {
-          this.player.playActionAnim(kind === 'turn' ? 'pickup' : 'scan');
-
-          if (kind === 'thaw') {
-            sfxMachineOn();
-          }
-        }
-      });
-
-    return [
-      timed('Turn the wheel', M19_TURN_MS, 'turn'),
-      timed('Thaw the collar (heat gun)', M19_THAW_MS, 'thaw'),
-      this.option('Inspect the coupling', () => {
-        const outcome = m19Act('inspect', Date.now(), 'keyboard');
-
-        if (outcome !== null) {
-          this.showFeedbackMessage(outcome.message);
-        }
-      }),
-      this.option('Step away', () => {
-        if (!exteriorEpisode().m19.entered) {
-          dismissExteriorSite('coupling');
-          this.refreshGuidance();
-        }
-
-        if (m19StepAway(Date.now(), 'keyboard')) {
-          this.showFeedbackMessage(
-            'You step back from the coupling; it stays as you left it.',
-          );
-          this.refreshGuidance();
-          refreshPilotCoverageProbe();
-        }
-      }),
-    ];
   }
 
   // ——— M20 (start only) ———
@@ -2298,6 +2287,9 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
           advancePilotStage('exterior_work', now);
           // M08 (U2-R): the console is presented by this briefing.
           presentM08(now);
+          // M19 (Unit 21): so is the coupling panel — exposure only, never
+          // an opening.
+          presentM19(now);
           // M25 (Unit 4): so is the field sensor post.
           presentM25Loops(now);
           this.ensureFieldTools();
@@ -2511,6 +2503,9 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     exitM05('o2', now, 'shift_ended');
 
     endExteriorShift(now);
+    // M19 (Unit 21): an opened, unfinished series closes as it stands
+    // (`shift_ended`); a presented, never-opened panel records its closure.
+    closeM19AtShiftEnd(now);
     closeM08AtShiftEnd(now);
     // M25 (Unit 4): the loops close with the shift — the belief question
     // becomes due once this recorded closure exists (never on a score).
@@ -2940,7 +2935,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
   }
 
   /** Runtime errors inside a window become technical failures (invalid). */
-  private guard(item: 'M19' | 'M20' | 'M23' | 'M24' | 'M26', fn: () => void) {
+  private guard(item: 'M20' | 'M23' | 'M24' | 'M26', fn: () => void) {
     try {
       fn();
     } catch (error) {
@@ -2991,8 +2986,13 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     this.refreshUplinkVisuals();
   }
 
+  /**
+   * M19 (Unit 21): the coupling's world readout is NEUTRAL — the painted
+   * dial keeps its static arc without a progress needle, the frost sheet
+   * stays hidden and the chip names the panel; nothing in the world shows
+   * an unfinished, restored or evaluative state (no cue back to a line).
+   */
   private refreshCouplingVisuals() {
-    const state = exteriorEpisode().m19;
     const site = YARD_SITES.coupling;
 
     if (this.couplingDial !== undefined) {
@@ -3000,32 +3000,15 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       // World V2: the dial sits over the painted valve wheel's crown.
       const cx = site.x - 52;
       const cy = site.y - 66;
-      const fraction = state.progress / 100;
-      const angle = -Math.PI * 0.75 + fraction * Math.PI * 1.5;
 
       dial.clear();
       dial.lineStyle(3, 0x33475a, 1);
       dial.arc(cx, cy, 13, -Math.PI * 0.75, Math.PI * 0.75, false);
       dial.strokePath();
-      dial.lineStyle(3, 0x5fd3c4, 1);
-      dial.beginPath();
-      dial.arc(cx, cy, 13, -Math.PI * 0.75, angle, false);
-      dial.strokePath();
-      dial.lineStyle(2, 0xdce7f0, 1);
-      dial.lineBetween(
-        cx,
-        cy,
-        cx + Math.cos(angle - Math.PI / 2) * 11,
-        cy + Math.sin(angle - Math.PI / 2) * 11,
-      );
     }
 
-    this.frostOverlay?.setVisible(state.bound);
-    this.couplingChip?.setText(
-      m19Completed(state)
-        ? 'VALVE OPEN · flow restored'
-        : `VALVE ${state.progress}% · ${state.bound ? '❄ COLLAR ICED' : 'collar free'}`,
-    );
+    this.frostOverlay?.setVisible(false);
+    this.couplingChip?.setText('COUPLING PANEL');
   }
 
   private refreshMastVisuals() {
@@ -3208,6 +3191,13 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       ...exteriorProbeSnapshot(),
       stage: pilotStage(),
       m05: m05Probe('o2'),
+      // M19 (Unit 21): the coupling panel's window and the line in work
+      // (read-only; the legacy `m19` block above is the untouched v2 state).
+      m19_panel: {
+        window: m19Window.windowStatus(),
+        exit: m19Window.exit(),
+        line_in_work: m19LineInWorkId(),
+      },
     };
   }
 }

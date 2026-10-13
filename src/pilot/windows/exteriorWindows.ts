@@ -272,7 +272,6 @@ export function exteriorWindows(): ExteriorWindows {
 export function declareExteriorWindows() {
   const w = exteriorWindows();
 
-  w.m19.declare();
   w.m20.declare();
   w.m23.declare();
   w.m24.declare();
@@ -1737,7 +1736,6 @@ export function closeExteriorWindowsAtReview(nowMs: number) {
   closeM26(nowMs, 'closed_at_review');
 
   for (const [window, detail] of [
-    [w.m19, 'coupling never worked before the review'],
     [w.m23, 'excavation never begun before the review'],
     [w.m24, 'rig tally never begun before the review'],
     [w.m26, 'uplink never used before the review'],

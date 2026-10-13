@@ -25,6 +25,7 @@
  * All checks read DEV probes and the research event buffer; input is real
  * keyboard traffic. Retries 0, workers 1.
  */
+import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 
 import {
@@ -35,9 +36,7 @@ import {
   APPROACH,
   beginExcavation,
   captureErrors,
-  completeCoupling,
   continueUplinkExplanation,
-  couplingAct,
   depleteDeck,
   digFacing,
   doMastStage,
@@ -68,7 +67,6 @@ import {
   validityRecord,
   waitContinuationClosed,
   waitDisconnect,
-  waitNoWorldAction,
   YARD,
 } from './exteriorHelpers';
 import {
@@ -83,13 +81,113 @@ import {
 import {
   interactAt,
   labApproach,
-  openPromptAt,
   PILOT,
   pilotProbe,
   useDoor,
   walkTo,
   yardVia,
 } from './pilotHelpers';
+import { surface, waitSurface } from './returnHelpers';
+
+/** M19 (Unit 21): the coupling panel's new identity. */
+const M19_OPPORTUNITY = 'proto_m19_lines_series';
+const PANEL_SETTLE_MS = 450;
+
+/** Walks to the coupling's audited approach and opens the panel (SPACE at the station). */
+async function openCouplingPanel(page: Page) {
+  await yardVia(
+    page,
+    YARD.coupling.x + APPROACH.coupling.x,
+    YARD.coupling.y + APPROACH.coupling.y,
+  );
+  await interactAt(page, YARD.coupling, { approachOffset: APPROACH.coupling });
+  await waitSurface(page, true, 'm19_coupling_panel');
+}
+
+/** ESC on the panel after its view settled (the same path as LEAVE). */
+async function leaveCouplingPanel(page: Page) {
+  await page.waitForTimeout(PANEL_SETTLE_MS);
+  await press(page, 'Escape');
+  await waitSurface(page, false);
+}
+
+/**
+ * Keyboard input on the panel: a hotkey, ENTER, or `Tab-<id>` (TAB to the
+ * element, then ENTER) — each after the current view settled.
+ */
+async function panelKeys(page: Page, keys: string[]) {
+  for (const key of keys) {
+    await page.waitForTimeout(PANEL_SETTLE_MS);
+
+    if (key.startsWith('Tab-')) {
+      const id = key.slice(4);
+
+      for (
+        let step = 0;
+        step < 20 && (await surface(page))?.focus !== id;
+        step += 1
+      ) {
+        await page.keyboard.press('Tab');
+        await page.waitForTimeout(60);
+      }
+
+      expect((await surface(page))?.focus, `TAB reaches ${id}`).toBe(id);
+      await page.keyboard.press('Enter');
+    } else {
+      await page.keyboard.press(key);
+    }
+
+    await page.waitForTimeout(150);
+  }
+}
+
+/**
+ * Works the panel to completion by real keyboard input: the check right
+ * first; line 1 H1, H2, H3, TRY (its obstacle), FEED, H2 off, TRY
+ * (restored); line 2 dial 4 TRY, dial 5 TRY (its obstacle), SET ASIDE
+ * confirmed; FINISH.
+ */
+async function workCouplingPanel(page: Page) {
+  await openCouplingPanel(page);
+  await panelKeys(page, [
+    'Tab-continue',
+    '2',
+    'r',
+    'Tab-start',
+    '1',
+    '2',
+    '3',
+    't',
+    '4',
+    '2',
+    't',
+    'Tab-next',
+    '2',
+    '2',
+    '2',
+    't',
+    '2',
+    't',
+    'n',
+    'Enter',
+    'Tab-finish',
+  ]);
+  await waitSurface(page, false);
+}
+
+/** The page's own M19 feature row (the runtime's export builder). */
+async function m19Row(page: Page): Promise<Record<string, unknown> | null> {
+  const json = await page.evaluate(`(async () => {
+    const mod = await import('/src/systems/index.ts');
+    const payload = mod.researchRuntime.buildExportPayload();
+
+    return JSON.stringify(
+      (payload.measurement_features ?? []).find((row) => row.item_id === 'M19') ?? null,
+    );
+  })()`);
+
+  return JSON.parse(json as string);
+}
 
 test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
   test('1. the complete recovery operation: six item windows, one route, honest closures, item-owned timing', async ({
@@ -170,71 +268,62 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect(JSON.stringify(o2Raw)).not.toMatch(/aggregate|score|o1/);
     await mark('M05 flag job declined');
 
-    // ——— M19: the frozen coupling to completion. ———
-    await completeCoupling(page);
-    await mark('M19 coupling');
+    // ——— M19 (Unit 21): the coupling panel worked to completion by real
+    // keyboard input — the check right first, line 1 to its obstacle then
+    // restored, line 2 to its obstacle then set aside. ———
+    await workCouplingPanel(page);
+    await mark('M19 coupling panel');
     ext = await exteriorProbe(page);
-    expect(ext.m19.completion).toBe(true);
-    expect(ext.m19.window).toBe('closed');
-    expect(ext.m19.exit).toBe('completed');
-    expect(ext.m19.difficulty_onset?.progress).toBe(30);
-    expect(ext.m19.postdifficulty_reengagement).toBe(true);
-    expect(ext.m19.useful_attempts).toBe(16);
-    expect(ext.m19.strategy_shifts).toBe(0); // the driver thaws without ineffective turns
+    expect(ext.m19_panel.window).toBe('closed');
+    expect(ext.m19_panel.exit).toBe('completed');
+    expect(ext.m19_panel.line_in_work).toBeNull();
     expect(await itemStatus(page, 'M19')).toBe('completed');
-    expect((await validityRecord(page, OPPORTUNITY.m19)).form).toBe(
-      'standard_v1',
-    );
+    expect((await validityRecord(page, M19_OPPORTUNITY)).completed).toBe(true);
 
-    const m19Events = await eventsByPrefix(page, 'proto_m19_valve_');
+    const m19Events = await eventsByPrefix(page, 'proto_m19_lines_');
     const m19Types = new Set(m19Events.map((e) => e.event_type));
 
     for (const required of [
-      'proto_m19_valve_presented',
-      'proto_m19_valve_opportunity_opened',
-      'proto_m19_valve_turn',
-      'proto_m19_valve_difficulty_onset',
-      'proto_m19_valve_thaw',
-      'proto_m19_valve_window_closed',
+      'proto_m19_lines_presented',
+      'proto_m19_lines_opportunity_opened',
+      'proto_m19_lines_check_recorded',
+      'proto_m19_lines_line_presented',
+      'proto_m19_lines_attempt',
+      'proto_m19_lines_difficulty_boundary',
+      'proto_m19_lines_line_finished',
+      'proto_m19_lines_series_completed',
+      'proto_m19_lines_window_closed',
     ]) {
       expect(m19Types, required).toContain(required);
     }
 
     for (const event of m19Events) {
       expect(event.metadata?.measure_id).toBe('M19');
-      expect(event.metadata?.opportunity_id).toBe(OPPORTUNITY.m19);
-      expect(event.metadata?.window_id).toBe('m19_valve_w1');
-      expect(event.metadata?.form).toBe('standard_v1');
+      expect(event.metadata?.opportunity_id).toBe(M19_OPPORTUNITY);
+      expect(event.metadata?.window_id).toBe('m19_lines_w1');
+      expect(event.metadata?.entry_state_version).toBe('m19-lines-v2');
       expect(['keyboard', 'pointer', 'system']).toContain(
         event.metadata?.input_mode,
       );
     }
 
     const m19Closed = (
-      await eventsByType(page, 'proto_m19_valve_window_closed')
+      await eventsByType(page, 'proto_m19_lines_window_closed')
     )[0];
-    const m19Raw = m19Closed.metadata?.raw_components as Record<
-      string,
-      unknown
-    >;
 
-    expect(Object.keys(m19Raw)).toEqual(
-      expect.arrayContaining([
-        'difficulty_onset',
-        'postdifficulty_reengagement',
-        'useful_attempts',
-        'progress',
-        'completion',
-        'stop_choice',
-      ]),
-    );
     expect(m19Closed.metadata?.validity_status).toBe('valid');
     expect(m19Closed.metadata?.exit_state).toBe('completed');
     expect(
-      (await eventsByType(page, 'proto_m19_valve_turn')).filter(
-        (e) => e.metadata?.effective === true,
-      ),
-    ).toHaveLength(10);
+      (await eventsByType(page, 'proto_m19_lines_difficulty_boundary')).length,
+    ).toBe(2);
+    expect(await m19Row(page)).toMatchObject({
+      value: 1,
+      numerator: 1,
+      denominator: 2,
+      disposition: 'observed',
+    });
+    // The retired v2 coupling family is never written on the route.
+    expect((await eventsByPrefix(page, 'proto_m19_valve_')).length).toBe(0);
     probe = await pilotProbe(page);
     expect(probe?.beacon?.label).toBe('Mast 04');
     expect(probe?.objective).toContain('Mast 04');
@@ -573,7 +662,7 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     // Every item-owned event carries the required fields; no item id or
     // validity word reaches the participant (feedback / objective).
     for (const family of [
-      'proto_m19_valve_',
+      'proto_m19_lines_',
       'proto_m23_field_recovery_',
       'proto_m24_rig_',
       'proto_m26_uplink_',
@@ -640,40 +729,45 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
 
     await enterYard(page, 'stops');
 
-    // M19: two turns, an inspection, then the neutral stop.
-    await couplingAct(page, 1);
-    await couplingAct(page, 1);
-    await couplingAct(page, 3);
-    await couplingAct(page, 4);
+    // M19 (Unit 21): the panel opened, line 1 worked to its obstacle and
+    // SET ASIDE confirmed, line 2 left in work (ESC) — a departure is never
+    // terminal; nothing is presented again on re-entry.
+    await openCouplingPanel(page);
+    await panelKeys(page, [
+      'Tab-continue',
+      '2',
+      'r',
+      'Tab-start',
+      '1',
+      '2',
+      '3',
+      't',
+      'n',
+      'Enter',
+      'Tab-next',
+    ]);
+    await leaveCouplingPanel(page);
 
     let ext = await exteriorProbe(page);
 
-    expect(ext.m19.progress).toBe(20);
-    expect(ext.m19.inspections).toBe(1);
-    expect(ext.m19.stop_choice).toBe('step_away');
-    expect(ext.m19.window).toBe('closed');
-    expect(ext.m19.exit).toBe('stopped');
-    expect(await itemStatus(page, 'M19')).toBe('completed');
+    expect(ext.m19_panel.window).toBe('open');
+    expect(ext.m19_panel.line_in_work).toBe('m19_l2');
+    expect(await itemStatus(page, 'M19')).toBe('open');
 
-    const m19Closed = (
-      await eventsByType(page, 'proto_m19_valve_window_closed')
-    )[0];
-
-    expect(m19Closed.metadata?.exit_state).toBe('stopped');
-    expect(
-      (m19Closed.metadata?.raw_components as { completion: boolean })
-        .completion,
-    ).toBe(false);
-    expect((await eventsByType(page, 'proto_m19_valve_inspect')).length).toBe(
-      1,
+    const m19Finished = await eventsByType(
+      page,
+      'proto_m19_lines_line_finished',
     );
 
-    // The closed coupling only reads its state now.
-    await interactAt(page, YARD.coupling, {
-      approachOffset: APPROACH.coupling,
-    });
-    await page.waitForTimeout(400);
-    expect(await lastFeedback(page)).toContain('Valve 20%');
+    expect(m19Finished).toHaveLength(1);
+    expect(m19Finished[0].metadata?.finish).toBe('set_aside');
+    expect(m19Finished[0].metadata?.boundary_attempt_index).toBe(1);
+    expect(
+      (await eventsByType(page, 'proto_m19_lines_line_presented')).length,
+    ).toBe(2);
+    expect(
+      (await eventsByType(page, 'proto_m19_lines_window_closed')).length,
+    ).toBe(0);
 
     // M20: accept + ONE stage.
     await acceptMast(page);
@@ -743,8 +837,8 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     await reenterYard(page);
     ext = await exteriorProbe(page);
     expect(ext.zone_entries).toBe(2);
-    expect(ext.m19.progress).toBe(20);
-    expect(ext.m19.window).toBe('closed');
+    expect(ext.m19_panel.window).toBe('open');
+    expect(ext.m19_panel.line_in_work).toBe('m19_l2');
     expect(ext.m20.accepted).toBe(true);
     expect(ext.m20.stages_done).toEqual(['clear_base_clamp']);
     expect(ext.m20.departures).toBe(1);
@@ -752,6 +846,17 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect((await faProbe(page)).magnet.deckPosition).toBe(2);
     expect((await faProbe(page)).windows.m24_open).toBe(true);
     expect(await lastFeedback(page)).not.toContain('Mast'); // no antenna reminder on re-entry
+    // M19 (Unit 21): the panel reopens on the same state (line 2 in work);
+    // nothing is presented again.
+    await openCouplingPanel(page);
+    expect((await surface(page))?.status).toBe('Working on line 2 of 2.');
+    expect(
+      (await eventsByType(page, 'proto_m19_lines_series_reopened')).length,
+    ).toBe(1);
+    expect(
+      (await eventsByType(page, 'proto_m19_lines_line_presented')).length,
+    ).toBe(2);
+    await leaveCouplingPanel(page);
 
     // Finish the deck WITHOUT taking the check; disconnect the uplink
     // WITHOUT taking the check (Unit 12: knowledge unverified ⇒ invalid).
@@ -853,7 +958,7 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     await faceCell(page, cell.x, cell.y);
     await digFacing(page, 'cached');
 
-    let ext = await exteriorProbe(page);
+    const ext = await exteriorProbe(page);
 
     expect(ext.m23.recovery_complete).toBe(true);
     expect(ext.m23.recovery_delivery).toBe('cache');
@@ -981,31 +1086,30 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
       (await eventsByType(page, 'secondary_field_action_magnet_cycle')).length,
     ).toBe(cyclesBefore);
 
-    // A held E at the coupling opens ONE prompt; the act runs once.
+    // M19 (Unit 21): a held E at the coupling opens the panel ONCE and
+    // executes no TRY (E is not bound on the panel; repeats are dropped).
     await walkTo(page, YARD.coupling.x + APPROACH.coupling.x, YARD.coupling.y, {
       yFirst: true,
     });
     await hold(page, 'e', 700);
+    await waitSurface(page, true, 'm19_coupling_panel');
     await page.waitForTimeout(400);
-    await selectPromptOption(page, 1);
-    await waitNoWorldAction(page);
-    await page.waitForTimeout(300);
-    ext = await exteriorProbe(page);
-    expect(ext.m19.acts).toBe(1);
     expect(
-      (await eventsByType(page, 'proto_m19_valve_opportunity_opened')).length,
+      (await eventsByType(page, 'proto_m19_lines_opportunity_opened')).length,
     ).toBe(1);
-    expect((await eventsByType(page, 'proto_m19_valve_turn')).length).toBe(1);
-
-    // Held SPACE during the act cannot double-submit.
-    await openPromptAt(page, YARD.coupling, {
-      approachOffset: APPROACH.coupling,
-    });
-    await selectPromptOption(page, 1);
+    expect((await eventsByType(page, 'proto_m19_lines_attempt')).length).toBe(
+      0,
+    );
+    // A held SPACE on the panel's neutral landing executes nothing either.
     await hold(page, 'Space', 900);
-    await waitNoWorldAction(page);
     await page.waitForTimeout(300);
-    expect((await exteriorProbe(page)).m19.acts).toBe(2);
+    expect((await eventsByType(page, 'proto_m19_lines_attempt')).length).toBe(
+      0,
+    );
+    expect(
+      (await eventsByType(page, 'proto_m19_lines_opportunity_opened')).length,
+    ).toBe(1);
+    await leaveCouplingPanel(page);
     expectNoRuntimeErrors(errors);
   });
 });

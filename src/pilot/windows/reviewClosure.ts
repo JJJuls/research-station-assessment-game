@@ -26,6 +26,7 @@ import { closeM14AtReview } from './m14IncidentDesk';
 import { closeM15AtReview } from './m15RelayBench';
 import { closeM16AtReview } from './m16ProtocolConsole';
 import { closeM18AtReview } from './m18DiagnosticBoard';
+import { closeM19AtReview } from './m19CouplingPanel';
 import { closeM25BeliefAtReview, closeM25LoopsAtReview } from './m25Repetition';
 import {
   closeM20ResumeAtReview,
@@ -111,7 +112,15 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
   // completed observation (returned / completion as they stand) BEFORE
   // the exterior closure, which censors only a never-resumed start.
   closeM20ResumeAtReview(nowMs);
-  // Episode 4 (Unit 4): M19 / M23 / M24 / M26 close with their honest
+  // Station 080 M19 (Unit 21): a series still unfinished — the card, the
+  // check or a line in work — closes with the lines as they stand (a
+  // boundary line without a further TRY censored, never a 0); a completed
+  // or shift-ended series is not reclosed; never opened → absent
+  // (`presented_not_opened` when Noor's briefing presented it, never
+  // `declined` — decision D-U21-1, item 5) with `closed_unopened` when the
+  // shift end did not record it.
+  closeM19AtReview(nowMs);
+  // Episode 4 (Unit 4): M23 / M24 / M26 close with their honest
   // dispositions; a still-open M20 start window censors.
   closeExteriorWindowsAtReview(nowMs);
   // Station 080 M25 (Unit 4): an open post censors, a never-opened one is

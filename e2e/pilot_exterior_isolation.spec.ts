@@ -17,6 +17,7 @@
 import { expect, test } from '@playwright/test';
 
 import {
+  APPROACH,
   beginExcavation,
   captureErrors,
   enterYard,
@@ -29,7 +30,6 @@ import {
   itemStatus,
   lastFeedback,
   magnetCycle,
-  openSite,
   OPPORTUNITY,
   powerUpUplink,
   scanAt,
@@ -40,13 +40,18 @@ import {
   waitDisconnect,
   YARD,
 } from './exteriorHelpers';
-import { hold, press, selectPromptOption } from './helpers';
+import { hold, press } from './helpers';
 import {
   bootPilotScene,
+  interactAt,
   pilotCoverage,
   pilotProbe,
   yardVia,
 } from './pilotHelpers';
+import { waitSurface } from './returnHelpers';
+
+/** M19 (Unit 21): the coupling panel's new identity. */
+const M19_OPPORTUNITY = 'proto_m19_lines_series';
 
 test.describe('exterior recovery — isolation (Unit 4)', () => {
   test('1. no outcome gates another opportunity; C/D/F outside their windows never create primary evidence; untouched windows stay pending', async ({
@@ -163,18 +168,19 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
     // ——— Coupling / mast never touched: pending on the register. ———
     expect(await itemStatus(page, 'M19')).toBe('pending');
     expect(await itemStatus(page, 'M20')).toBe('pending');
-    expect((await validityRecord(page, OPPORTUNITY.m19)).entered).toBe(false);
-    expect((await validityRecord(page, OPPORTUNITY.m19)).offered).toBe(true);
+    expect((await validityRecord(page, M19_OPPORTUNITY)).entered).toBe(false);
+    expect((await validityRecord(page, M19_OPPORTUNITY)).offered).toBe(true);
     expect((await validityRecord(page, OPPORTUNITY.m20)).entered).toBe(false);
+    // M19 (Unit 21): before the shift end the panel's family holds only
+    // Noor's presentation; the panel was never opened.
+    expect(
+      (await eventsByPrefix(page, 'proto_m19_lines_')).map((e) => e.event_type),
+    ).toEqual(['proto_m19_lines_presented']);
 
     // The beacon still guides to the FIRST unfinished site — never a gate.
     expect((await pilotProbe(page))?.beacon?.label).toBe(
       'Frozen Coolant Coupling',
     );
-    await openSite(page, 'coupling');
-    await selectPromptOption(page, 4); // step away without acting
-    await page.waitForTimeout(300);
-    expect((await validityRecord(page, OPPORTUNITY.m19)).entered).toBe(false);
 
     // Shift end: never-entered windows stay pending (closed at the
     // review as absent), entered ones close honestly, nothing is low.
@@ -187,11 +193,15 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
     expect((await validityRecord(page, OPPORTUNITY.m24)).invalid_reason).toBe(
       'censored',
     );
+    // M19 (Unit 21): the never-opened panel's closure is one family record
+    // (closed_unopened, shift_ended); no opening, no decline, no response.
     expect(
-      (await eventsByPrefix(page, 'proto_m19_valve_')).filter(
-        (e) => e.event_type !== 'proto_m19_valve_presented',
-      ),
-    ).toHaveLength(0);
+      (await eventsByPrefix(page, 'proto_m19_lines_')).map((e) => e.event_type),
+    ).toEqual(['proto_m19_lines_presented', 'proto_m19_lines_closed_unopened']);
+    expect(
+      (await eventsByType(page, 'proto_m19_lines_closed_unopened'))[0].metadata
+        ?.closure_reason,
+    ).toBe('shift_ended');
     expect(
       (await eventsByPrefix(page, 'proto_m20_antenna_')).filter(
         (e) => e.event_type !== 'proto_m20_antenna_presented',
@@ -216,7 +226,14 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
       'exterior_recovery_yard',
     );
 
-    for (const id of Object.values(OPPORTUNITY)) {
+    // M19 (Unit 21): the legacy coupling opportunity is no longer declared
+    // on the route; the panel's window takes its place in the check.
+    for (const id of [
+      ...Object.values(OPPORTUNITY).filter(
+        (entry) => entry !== OPPORTUNITY.m19,
+      ),
+      M19_OPPORTUNITY,
+    ]) {
       const record = await validityRecord(page, id);
 
       expect(record.validity, id).toBe('invalid');
@@ -231,9 +248,26 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
     // The scene is still a working room (developer verification), but no
     // participant stage exists: Noor redirects, the sites stay usable.
     expect((await pilotProbe(page))?.launch_mode).toBe('developer');
-    await openSite(page, 'coupling');
-    await selectPromptOption(page, 4);
-    expect((await exteriorProbe(page)).m19.entered).toBe(false);
+    // M19 (Unit 21): the panel opens on a developer launch too (a working
+    // room); its record stays contaminated, never a valid exposure.
+    await yardVia(
+      page,
+      YARD.coupling.x + APPROACH.coupling.x,
+      YARD.coupling.y + APPROACH.coupling.y,
+    );
+    await interactAt(page, YARD.coupling, {
+      approachOffset: APPROACH.coupling,
+    });
+    await waitSurface(page, true, 'm19_coupling_panel');
+    await page.waitForTimeout(450);
+    await press(page, 'Escape');
+    await waitSurface(page, false);
+    expect((await validityRecord(page, M19_OPPORTUNITY)).validity).toBe(
+      'invalid',
+    );
+    expect((await validityRecord(page, M19_OPPORTUNITY)).invalid_reason).toBe(
+      'contamination',
+    );
     expectNoRuntimeErrors(errors);
   });
 });

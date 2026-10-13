@@ -56,7 +56,7 @@ Global findings that apply to every row:
 | M16  | **as specified (U19, administration `m16-handling-v1`; research-owner decision D-U19-1 with amendment A1 of 11 October 2026; not scientifically validated)** — was partial at the audit base (familiarisation with correctness feedback before the applications; one frozen response; last instruction wins); two passive worked examples of identical structure for everyone, a confirmed boundary, six unseen vials in fixed order with one immutable first response each (a drawer or DON'T KNOW) before any feedback, results after the sixth; the legacy module untouched on the developer alias; closeout of 12 October 2026 (owner rulings, register §5.314: the five contextual strings and the vial question's soft wrap accepted, TAB / ENTER named on the card and example footer and in HELP, the entry snapshot's declared definition validated in full; the correction of the same day, §5.314 (6): `vials_planned` the number 6 and `assigned_vial_order` the approved order validated, the records' storage order free)| Two identical-structure teaching examples for everyone; six unseen applications with frozen first responses; feedback only after all six; Don't know = incorrect; distinct vocabulary from tutorial | `m16_correct_first_applications`: correct first applications / 6; form and example versions                                                                      | pure: first response immutable; browser: examples then six cases                                                              |
 | M17  | **as specified (U9)** — was contradicting at the audit base (1 practice + 1 transfer trial, live preview on both; the v2 `proto_m17_syntax_*` family is retired); **criterion values not to be read until register §5.87–5.88 are decided** (live preview on learning trials; correct-response rule)                                                                                                  | 2 uncoached baseline + 12 feedback learning + 2 transfer trials; no preview on baseline/transfer; criterion = 3 consecutive correct learning trials; all 12 always run; early exit = incomplete     | `m17_criterion_trial` {criterion_trial, attained}: 3–12, censored at 12; full sequence, baseline, transfer                                                       | pure: early criterion, never attain, transfer-only; browser: 16 trials                                                        |
 | M18  | **as specified (U20, administration `m18-cases-v1`; research-owner decision D-U20-1 of 12 October 2026; not scientifically validated)** — was partial at the audit base (one fault case per session, two forms, no consequence prediction, forced selection); three independently designed cases in fixed order, each with three on-request deterministic tests, one immutable first diagnosis (a part or CANNOT SOLVE) that closes the tests, then one immutable first planned-step answer (an option or CANNOT SOLVE) keyed to the actual case, before any feedback; results after the sixth; the legacy board untouched on the developer alias; the two rows with separate missingness and the slot-local defect scope of item 11 | Three independent cases with discriminating tests; first diagnosis + keyed consequence prediction before feedback; Cannot solve = incorrect                                                         | `m18_correct_first_diagnoses` / 3 (primary); `m18_correct_consequence_predictions` / 3 (companion)                                                               | pure: ambiguity check rejects; browser: three cases                                                                           |
-| M19  | **partial** — one coupling with three binds (`m19CouplingModel.ts:67-75`); comprehension asserted (`exteriorWindows.ts:283`)                                                                                                                                                                                                                                                                          | Second distinct solvable challenge; per-challenge first difficulty boundary; teaching step with recorded comprehension                                                                              | `m19_continuations`: challenges with a further work attempt / eligible difficulty encounters (0–2)                                                               | pure: no difficulty → no denominator; browser: both challenges                                                                |
+| M19  | **as specified (U21, administration `m19-lines-v2`; research-owner decision D-U21-1 of 13 October 2026; not scientifically validated)** — was partial at the audit base (one coupling, three binds); two solvable lines at the coupling panel after a recorded check, each line's designed obstacle ONE immutable boundary; the v2 `proto_m19_valve_*` family retired from the route                  | Second distinct solvable challenge; per-challenge first difficulty boundary; teaching step with recorded comprehension                                                                              | `m19_continuations`: challenges with a further work attempt / eligible difficulty encounters (0–2)                                                               | pure: no difficulty → no denominator; browser: both challenges                                                                |
 | M20  | **partial** — one project, one uncued resume (`returnEpisodeModel.ts:209-214`)                                                                                                                                                                                                                                                                                                                        | Two unfinished components each with a cued return milestone; cue exposure recorded; remaining work shown                                                                                            | `m20_cued_resumptions`: resumed / eligible unfinished components (0–2); spontaneous returns, progress                                                            | pure: resume ≠ new occasion; browser: two cues                                                                                |
 | M21  | **as specified (U10)** — was partial at the audit base (one case, ~130-word manual, a free pre-fit bench test, an irreversible FIT, no restudy concept; the v2 `proto_m21_manual_*` family is retired)                                                                                                                                                                                                | Two independent cases, 240–320 words total; after an incorrect first application: truthful feedback, relevant restudy + revised application / other strategy / exit                                 | `m21_restudy_revisions`: cases with relevant restudy AND revised application / initially incorrect cases; two successes = no score                               | pure: first-time success → null; browser: wrong → restudy → revise                                                            |
 | M22  | **as specified (U11)** — was partial at the audit base (one report, one criterion, no rating; the v2 `proto_m22_report_*` family is retired)                                                                                                                                                                                                                                                          | **partial** — one report, one criterion (`m22ReportModel.ts:90-91`); no rating anywhere                                                                                                             | Second report with its own genuine requirement; both after the other PDD tasks; after both decisions, one 1–5 discouragement rating per report with recall delay | `m22_revisions_begun` / 2; `m22_discouragement_ratings` (two ordinal, separate; missing = null)                               | pure: null ≠ midpoint; browser: two reports + ratings                      |
@@ -605,3 +605,57 @@ unchanged and open: the M16 beacon salience question (§5.314 (4), a U24
 walkthrough issue); the M05 competing-task observation of register §5.290 (e)
 (i) and the episode-1 M05 cap on the scripted route — M05 matters that U20
 neither tests nor changes; the U18 salience observation H1 (§5.301).
+
+**U21** (M19; bounded unit under `U21-CONTRACT.md`, v2 of 13 October 2026;
+research-owner decision D-U21-1 of 13 October 2026 — register §5.328, an
+owner ruling and not an implementer default): the Exterior Recovery Yard
+coupling station opens the coupling panel — the administration
+`m19-lines-v2` in the wide frame of `WorkSurfaceScene` (D-U17-2, used as
+is). A first-opening card; one panel check (one question, one explanation
+after a wrong answer, one recheck; the outcomes `pass_first`,
+`pass_after_explanation` and `fail` kept apart, `not_reached` and
+`not_completed` kept apart from them; both lines administered whatever the
+status); then two distinct, solvable, deterministic lines in fixed order
+(`m19-content-v2`, form `m19-form-1`: line 1 HEATER BANK — three heaters of
+1, 2 and 4 units and a SINGLE / DOUBLE feed against 10, key H1 + H3 DOUBLE;
+line 2 PRESSURE TRIM — a dial 1–9 and a bypass against 9, key dial 5 OPEN),
+each with unlimited distinct TRYs (an already-tried setting refused, never
+an attempt), an always-available SET ASIDE behind a fresh-press
+confirmation, a truthful gauge (LOW / OK / HIGH; nothing rigged) and a
+designed obstacle: the first TRY after which the line's executed settings
+include all of its listed evidence settings (line 1 the all-ON SINGLE
+setting; line 2 dial 4 SHUT and dial 5 SHUT) is followed in the same
+handler by ONE immutable `difficulty_boundary` (Option B; inferred routes
+never count); nothing marks it on screen. Line 2 comes up only after line 1
+is finished (restored or set aside) through the same neutral view; a
+finished line never reopens; LEAVE and ESC keep everything; the end of the
+outside work closes an opened series as it stands (`shift_ended`: an
+eligible line without a further TRY counts 0) and records a presented,
+never-opened panel (`closed_unopened`); the review censors a boundary line
+without a further TRY; a runtime fault excludes the line in work only (E21 /
+W1). Primary `m19_continuations` = eligible lines with a further executed
+TRY of a new setting after their boundary / eligible lines (planned 2;
+conditional eligibility — one eligible line is complete); the value is the
+NUMERATOR COUNT (0–2) with the denominator beside it; a zero denominator
+exports `numerator: null`, `denominator: 0` with its disposition
+(`no_eligible_event` `obstacle_not_reached` / `no_try`, `interrupted`
+`censored_only`, `technical_failure` `technical_only`); recounted from the
+`attempt` and `difficulty_boundary` events (every stored reading checked
+against the content rule) under the integrity rules S1–S7; restoring,
+TRY counts, help, leaving, returning and time are companions, never in the
+value; Option A's first-unsuccessful-TRY indicator exported as a component
+only. The legacy coupling (`m19CouplingModel.ts`, its adapter functions in
+`exteriorWindows.ts`) stays in the tree unchanged and leaves the route
+(`exteriorWindows.ts` loses only the legacy declare and review-absent
+entry; its `setComprehension('passed')` count stays 8). Tests: pure
+`m19_lines` (the independent oracle of both lines, the check and every
+string; the model; the extractor on the derivation cases E1–E21 and W1–W5,
+S1–S7 and the descriptive flags; the clock policy; the register and legacy
+source checks); browser `m19_lines_route` R1–R9 with twenty-nine frames;
+`pilot_yard` and `pilot_exterior_isolation` re-expressed for the new
+identity. Not changed (U24 backlog): the capture specs,
+`exteriorHelpers.ts` `couplingAct` / `completeCoupling` (unused), the M22
+report line, the U8-12 gate's stale premise (the route's M19 comprehension
+is now a recorded check in `m19CouplingPanel.ts`), the registry's
+`yard.coupling` description. Clustered observations in one yard visit;
+never a validity claim.
