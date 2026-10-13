@@ -21,7 +21,14 @@
  * first focusable element (the card text, the check question, the
  * explanation, the recorded line, the readout, the finished line, the closed
  * record), so no actionable control is focused until TAB or a hotkey. The
- * model's settle on every view transition refuses a carried press.
+ * model's settle on every view transition refuses a carried press. The
+ * shared frame keeps focus on the same element id across refreshes, so HELP
+ * and LEAVE — the only controls present on more than one view — carry the
+ * view's name in their ids (`help_<view>`, `leave_<view>`, the view named as
+ * `m19HelpView` names it): a hotkey that changes the view while one of them
+ * is focused finds no such id on the new view and lands on its neutral
+ * element (review finding GP-1, fixed locally at the U21 closeout of
+ * 14 October 2026; the frame itself is outside this unit).
  */
 import type { SurfaceElement, WorkSurfaceModel } from '../ui/WorkSurfaceScene';
 import {
@@ -37,6 +44,7 @@ import {
   type M19ChangeOutcome,
   m19CheckOf,
   type M19ConfirmOutcome,
+  m19HelpView,
   type M19LineState,
   m19LogRows,
   m19RecordLine,
@@ -214,10 +222,11 @@ export function m19OptionTileId(index: number): string {
   return `option_${index}`;
 }
 
-function helpAndLeave(host: M19SurfaceHost): SurfaceElement[] {
+/** HELP and LEAVE of a working view; `view` is the view's name (see the header). */
+function helpAndLeave(host: M19SurfaceHost, view: string): SurfaceElement[] {
   return [
     button(
-      'help',
+      `help_${view}`,
       M19_TEXT.help,
       HELP_X,
       M19_BOTTOM_ROW_Y,
@@ -228,7 +237,7 @@ function helpAndLeave(host: M19SurfaceHost): SurfaceElement[] {
       },
     ),
     button(
-      'leave',
+      `leave_${view}`,
       M19_TEXT.leave,
       LEAVE_X,
       M19_BOTTOM_ROW_Y,
@@ -407,6 +416,7 @@ function lineControls(
 function checkView(
   s: Readonly<M19Series>,
   host: M19SurfaceHost,
+  view: string,
 ): SurfaceElement[] {
   const stage = s.check.stage === 'q2' ? 'q2' : 'q1';
   const check = m19CheckOf(stage);
@@ -446,7 +456,7 @@ function checkView(
       s.check.draft === null ? undefined : 'accent',
     ),
   );
-  elements.push(...helpAndLeave(host));
+  elements.push(...helpAndLeave(host, view));
 
   return elements;
 }
@@ -491,16 +501,25 @@ export function m19SurfaceModel(host: M19SurfaceHost): WorkSurfaceModel {
   const s = host.series();
   const elements: SurfaceElement[] = [];
   const recordLine = m19RecordLine(s as M19Series);
+  const view = m19HelpView(s as M19Series);
 
   if (recordLine !== null) {
     // A closed record (or the final record of a completed series): the
-    // line (a neutral landing) and LEAVE; nothing recorded.
+    // line (a neutral landing; the fault record has two lines) and LEAVE;
+    // nothing recorded.
     elements.push(
-      landing('closed', recordLine, FULL_X, M19_CONTENT_TOP, FULL_W, BOX_H),
+      landing(
+        'closed',
+        recordLine,
+        FULL_X,
+        M19_CONTENT_TOP,
+        FULL_W,
+        recordLine.includes('\n') ? 60 : BOX_H,
+      ),
     );
     elements.push(
       button(
-        'leave',
+        `leave_${view}`,
         M19_TEXT.leave,
         LEAVE_X,
         M19_BOTTOM_ROW_Y,
@@ -604,7 +623,7 @@ export function m19SurfaceModel(host: M19SurfaceHost): WorkSurfaceModel {
         host.commands.continue(mode, host.now());
       }),
     );
-    elements.push(...helpAndLeave(host));
+    elements.push(...helpAndLeave(host, view));
 
     return {
       title: M19_TEXT.title,
@@ -632,7 +651,7 @@ export function m19SurfaceModel(host: M19SurfaceHost): WorkSurfaceModel {
           host.commands.continueExplanation(mode, host.now());
         }),
       );
-      elements.push(...helpAndLeave(host));
+      elements.push(...helpAndLeave(host, view));
 
       return {
         title: M19_TEXT.title,
@@ -659,7 +678,7 @@ export function m19SurfaceModel(host: M19SurfaceHost): WorkSurfaceModel {
           host.commands.startLine1(mode, host.now());
         }),
       );
-      elements.push(...helpAndLeave(host));
+      elements.push(...helpAndLeave(host, view));
 
       return {
         title: M19_TEXT.title,
@@ -674,7 +693,7 @@ export function m19SurfaceModel(host: M19SurfaceHost): WorkSurfaceModel {
       title: M19_TEXT.title,
       subtitle: headerSubtitle,
       status: headerStatus,
-      elements: checkView(s, host),
+      elements: checkView(s, host, view),
       help: M19_TEXT.footer_check,
     };
   }
@@ -721,7 +740,7 @@ export function m19SurfaceModel(host: M19SurfaceHost): WorkSurfaceModel {
     );
     elements.push(sheet(def));
     elements.push(log(line));
-    elements.push(...helpAndLeave(host));
+    elements.push(...helpAndLeave(host, view));
 
     return {
       title: M19_TEXT.title,
@@ -740,7 +759,7 @@ export function m19SurfaceModel(host: M19SurfaceHost): WorkSurfaceModel {
   elements.push(sheet(def));
   elements.push(log(line));
   elements.push(...controls);
-  elements.push(...helpAndLeave(host));
+  elements.push(...helpAndLeave(host, view));
 
   return {
     title: M19_TEXT.title,

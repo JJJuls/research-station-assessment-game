@@ -651,11 +651,19 @@ entry; its `setComprehension('passed')` count stays 8). Tests: pure
 `m19_lines` (the independent oracle of both lines, the check and every
 string; the model; the extractor on the derivation cases E1–E21 and W1–W5,
 S1–S7 and the descriptive flags; the clock policy; the register and legacy
-source checks); browser `m19_lines_route` R1–R9 with twenty-nine frames;
-`pilot_yard` and `pilot_exterior_isolation` re-expressed for the new
-identity. Not changed (U24 backlog): the capture specs,
-`exteriorHelpers.ts` `couplingAct` / `completeCoupling` (unused), the M22
-report line, the U8-12 gate's stale premise (the route's M19 comprehension
-is now a recorded check in `m19CouplingPanel.ts`), the registry's
-`yard.coupling` description. Clustered observations in one yard visit;
-never a validity claim.
+source checks); browser `m19_lines_route` R1–R9 with twenty-nine frames
+(R10 added at the closeout); `pilot_yard` and `pilot_exterior_isolation`
+re-expressed for the new identity. Not changed (U24 backlog): the capture
+specs, `exteriorHelpers.ts` `couplingAct` / `completeCoupling` (unused), the
+M22 report line, the U8-12 gate's stale premise (the route's M19
+comprehension is now a recorded check in `m19CouplingPanel.ts`), the
+registry's `yard.coupling` description. Closeout of 14 October 2026 (the
+owner's decisions on the review's questions, register §5.342; a second
+local commit): HELP and LEAVE carry per-view ids so a hotkey view change
+lands on the view's neutral element (review finding GP-1, fixed in M19
+alone; the shared frame untouched); a two-line record for a panel reopened
+after a runtime fault; the shift-end `closure_reason` mapping (D-6) and the
+kit window status after a fault (D-13 (a)) accepted as documented; the
+between-line fault reading retained; no event, field, formula or
+disposition changed. Clustered observations in one yard visit; never a
+validity claim.

@@ -82,16 +82,26 @@ const SURFACE = 'm19_coupling_panel';
 const SETTLE_MS = 400;
 const FORBIDDEN =
   /proto_|secondary_|\bM\d{2}\b|\bQ\d{2}\b|score|trait|persist|grit|tough|\bgoing\b|difficult|\bhard\b|setback|discourag|give up|\bquit|\bfail|success|trying|challenge|\btest|skill|abilit|effort|motivat|wrong|correct|mistake|error|puzzle|solv|solution|\bhint|should|must\b|hurry|quick|fast|\btime\b/i;
-const CARD_IDS = ['intro', 'continue', 'help', 'leave'];
+// HELP and LEAVE carry the view's name in their ids (review finding GP-1,
+// fixed locally at the closeout): `help_<view>` / `leave_<view>`.
+const CARD_IDS = ['intro', 'continue', 'help_intro', 'leave_intro'];
 const CHECK_IDS = [
   'question',
   'option_1',
   'option_2',
   'option_3',
   'record',
-  'help',
-  'leave',
+  'help_check_1',
+  'leave_check_1',
 ];
+const EXPLANATION_IDS = [
+  'explanation',
+  'continue',
+  'help_explanation',
+  'leave_explanation',
+];
+const RECORDED_IDS = ['recorded', 'start', 'help_recorded', 'leave_recorded'];
+const RECORD_IDS = ['closed', 'leave_record'];
 const LINE1_IDS = [
   'readout',
   'sheet',
@@ -102,8 +112,8 @@ const LINE1_IDS = [
   'feed',
   'try',
   'set_aside',
-  'help',
-  'leave',
+  'help_line_1',
+  'leave_line_1',
 ];
 const LINE2_IDS = [
   'readout',
@@ -114,8 +124,8 @@ const LINE2_IDS = [
   'bypass',
   'try',
   'set_aside',
-  'help',
-  'leave',
+  'help_line_2',
+  'leave_line_2',
 ];
 const DIALOG_IDS = ['confirm', 'back', 'dialog'];
 
@@ -639,7 +649,7 @@ test.describe('M19 coupling lines on the route (Unit 21)', () => {
     expect(meta(await lastOf(page, 'check_recorded'))).toMatchObject({
       status: 'pass_first',
     });
-    expect(await ids(page)).toEqual(['recorded', 'start', 'help', 'leave']);
+    expect(await ids(page)).toEqual(RECORDED_IDS);
     expect(await lines(page)).not.toMatch(/right|correct|wrong/i);
     await shot(page, '07-check-recorded-line-1-ready');
     await startLine1ByKeyboard(page);
@@ -780,8 +790,8 @@ test.describe('M19 coupling lines on the route (Unit 21)', () => {
       'next',
       'sheet',
       'log',
-      'help',
-      'leave',
+      'help_finished_1',
+      'leave_finished_1',
     ]);
     expect(await labelOf(page, 'finished_line')).toBe(
       'Line 1 finished: restored.',
@@ -899,7 +909,7 @@ test.describe('M19 coupling lines on the route (Unit 21)', () => {
     const eventsBefore = (await familyEvents(page)).length;
 
     await openPanel(page);
-    expect(await ids(page)).toEqual(['closed', 'leave']);
+    expect(await ids(page)).toEqual(RECORD_IDS);
     expect(await labelOf(page, 'closed')).toBe(
       'Both lines are finished. The panel takes no further settings.',
     );
@@ -926,7 +936,7 @@ test.describe('M19 coupling lines on the route (Unit 21)', () => {
     await openPanel(page);
     expect(await ids(page)).toEqual(CARD_IDS);
     // HELP / CLOSE HELP from the card.
-    await click(page, 'help');
+    await click(page, 'help_intro');
     expect(await ids(page)).toEqual(['close_help', 'help_sheet']);
     expect(meta(await lastOf(page, 'help_consulted'))).toMatchObject({
       view: 'intro',
@@ -937,7 +947,7 @@ test.describe('M19 coupling lines on the route (Unit 21)', () => {
     await click(page, 'continue');
     expect(await ids(page)).toEqual(CHECK_IDS);
     // HELP / CLOSE HELP from the check.
-    await click(page, 'help');
+    await click(page, 'help_check_1');
     expect(meta(await lastOf(page, 'help_consulted'))).toMatchObject({
       view: 'check_1',
     });
@@ -954,12 +964,7 @@ test.describe('M19 coupling lines on the route (Unit 21)', () => {
       input_mode: 'pointer',
     });
     expect(await countOf(page, 'explanation_shown')).toBe(1);
-    expect(await ids(page)).toEqual([
-      'explanation',
-      'continue',
-      'help',
-      'leave',
-    ]);
+    expect(await ids(page)).toEqual(EXPLANATION_IDS);
     expect(await lines(page)).toContain('How the panel works:');
     expect(await lines(page)).not.toMatch(/wrong|correct|right/i);
 
@@ -977,7 +982,7 @@ test.describe('M19 coupling lines on the route (Unit 21)', () => {
     expect(meta(await lastOf(page, 'check_recorded'))).toMatchObject({
       status: 'pass_after_explanation',
     });
-    expect(await ids(page)).toEqual(['recorded', 'start', 'help', 'leave']);
+    expect(await ids(page)).toEqual(RECORDED_IDS);
     await click(page, 'start');
     expect(await ids(page)).toEqual(LINE1_IDS);
     // Line 1 restored at the first TRY: H1, H3, FEED DOUBLE.
@@ -986,7 +991,7 @@ test.describe('M19 coupling lines on the route (Unit 21)', () => {
     await click(page, 'feed');
     expect(await labelOf(page, 'readout')).toBe('ON: H1 H3 · FEED DOUBLE');
     // HELP / CLOSE HELP from line 1 with heaters set: the setting kept.
-    await click(page, 'help');
+    await click(page, 'help_line_1');
     expect(meta(await lastOf(page, 'help_consulted'))).toMatchObject({
       view: 'line_1',
     });
@@ -1035,7 +1040,7 @@ test.describe('M19 coupling lines on the route (Unit 21)', () => {
       evidence_attempt_indices: [2, 3],
     });
     // HELP / CLOSE HELP from line 2 after its boundary.
-    await click(page, 'help');
+    await click(page, 'help_line_2');
     expect(meta(await lastOf(page, 'help_consulted'))).toMatchObject({
       view: 'line_2',
     });
@@ -1072,7 +1077,7 @@ test.describe('M19 coupling lines on the route (Unit 21)', () => {
     });
     expect(await countOf(page, 'series_completed')).toBe(1);
     // HELP / CLOSE HELP from the finished view.
-    await click(page, 'help');
+    await click(page, 'help_finished_2');
     expect(meta(await lastOf(page, 'help_consulted'))).toMatchObject({
       view: 'finished_2',
     });
@@ -1144,12 +1149,7 @@ test.describe('M19 coupling lines on the route (Unit 21)', () => {
     await activateByKeyboard(page, 'continue');
     await hotkey(page, '1');
     await hotkey(page, 'r');
-    expect(await ids(page)).toEqual([
-      'explanation',
-      'continue',
-      'help',
-      'leave',
-    ]);
+    expect(await ids(page)).toEqual(EXPLANATION_IDS);
     // Frames 05 and 06 at 800 × 600 (contract §13; the pointer scenario R2
     // runs at 1280 × 720).
     await shot(page, '05-check-explanation');
@@ -1335,7 +1335,7 @@ test.describe('M19 coupling lines on the route (Unit 21)', () => {
     const before = (await familyEvents(page)).length;
 
     await openPanel(page);
-    expect(await ids(page)).toEqual(['closed', 'leave']);
+    expect(await ids(page)).toEqual(RECORD_IDS);
     expect(await labelOf(page, 'closed')).toBe(
       'The coupling panel closed when the outside work ended.',
     );
@@ -1400,7 +1400,7 @@ test.describe('M19 coupling lines on the route (Unit 21)', () => {
     expect(closed.components.nonresponse_kind).toBe('not_opened');
     // A later visit: the shift-end record; no opening is written.
     await openPanel(page);
-    expect(await ids(page)).toEqual(['closed', 'leave']);
+    expect(await ids(page)).toEqual(RECORD_IDS);
     expect(await labelOf(page, 'closed')).toBe(
       'The coupling panel closed when the outside work ended.',
     );
@@ -1624,7 +1624,7 @@ test.describe('M19 coupling lines: reload (Unit 21)', () => {
       prior_briefing_found: true,
     });
     await openPanel(page);
-    expect(await ids(page)).toEqual(['closed', 'leave']);
+    expect(await ids(page)).toEqual(RECORD_IDS);
     expect(await labelOf(page, 'closed')).toBe(
       'This panel was opened earlier in the session. It stays closed now.',
     );
@@ -1805,8 +1805,8 @@ const LINE1_SINGLES = [
   'feed',
   'try',
   'set_aside',
-  'help',
-  'leave',
+  'help_line_1',
+  'leave_line_1',
 ];
 const LINE2_SINGLES = [
   'readout',
@@ -1815,8 +1815,8 @@ const LINE2_SINGLES = [
   'bypass',
   'try',
   'set_aside',
-  'help',
-  'leave',
+  'help_line_2',
+  'leave_line_2',
 ];
 
 /** Under one font (keyboard): the card, the check, line 1 with ten TRYs, line 2 with eight TRYs, the line 2 dialog and the help sheet. */
@@ -1919,7 +1919,12 @@ async function fontGate(page: Page, font: string, frame: string | null) {
     [
       { id: 'sheet', lines: 6 },
       { id: 'log', lines: 10 },
-      ...ONE_LINE(['finished_line', 'next', 'help', 'leave']),
+      ...ONE_LINE([
+        'finished_line',
+        'next',
+        'help_finished_1',
+        'leave_finished_1',
+      ]),
     ],
     lineHeight,
   );
@@ -2020,14 +2025,18 @@ test.describe('M19 coupling lines: the layout gate (Unit 21)', () => {
  * R9 — HELP and LEAVE on every view by both input modes
  * ------------------------------------------------------------------ */
 
-/** HELP and LEAVE present, focusable, above the feedback line and overlapped by nothing. */
-async function expectHelpAndLeave(page: Page, label: string) {
+/** HELP and LEAVE present (ids `help_<view>` / `leave_<view>` with one view name), focusable, above the feedback line and overlapped by nothing; returns their ids. */
+async function expectHelpAndLeave(
+  page: Page,
+  label: string,
+): Promise<{ help: string; leave: string }> {
   const value = await probe(page);
-  const help = value.elements.find((e) => e.id === 'help');
-  const leave = value.elements.find((e) => e.id === 'leave');
+  const help = value.elements.find((e) => e.id.startsWith('help_'));
+  const leave = value.elements.find((e) => e.id.startsWith('leave_'));
 
   expect(help, `${label}: HELP present`).toBeDefined();
   expect(leave, `${label}: LEAVE present`).toBeDefined();
+  expect(help!.id.slice('help_'.length)).toBe(leave!.id.slice('leave_'.length));
   expect(help!.focusable && leave!.focusable).toBe(true);
   expect(help!.label).toBe('HELP  [H]');
   expect(leave!.label).toBe('LEAVE  [ESC]');
@@ -2052,6 +2061,8 @@ async function expectHelpAndLeave(page: Page, label: string) {
       );
     }
   }
+
+  return { help: help!.id, leave: leave!.id };
 }
 
 /** The rendered view without the feedback line (it auto-clears after 2.2 s). */
@@ -2072,8 +2083,9 @@ async function helpBothModes(page: Page, label: string) {
   const before = await ids(page);
   const state = await viewState(page);
 
-  await expectHelpAndLeave(page, label);
-  await activateByKeyboard(page, 'help');
+  const { help } = await expectHelpAndLeave(page, label);
+
+  await activateByKeyboard(page, help);
   expect(await ids(page), `${label}: help by keyboard`).toEqual([
     'close_help',
     'help_sheet',
@@ -2082,7 +2094,7 @@ async function helpBothModes(page: Page, label: string) {
   await hotkey(page, 'h');
   expect(await ids(page)).toEqual(before);
   expect(await viewState(page)).toBe(state);
-  await click(page, 'help');
+  await click(page, help);
   expect(await ids(page), `${label}: help by pointer`).toEqual([
     'close_help',
     'help_sheet',
@@ -2096,13 +2108,14 @@ async function helpBothModes(page: Page, label: string) {
 async function leaveBothModes(page: Page, label: string) {
   const before = await ids(page);
   const state = await viewState(page);
+  const { leave } = await expectHelpAndLeave(page, label);
 
-  await click(page, 'leave');
+  await click(page, leave);
   await waitSurface(page, false);
   await openPanel(page);
   expect(await ids(page), `${label}: after LEAVE by pointer`).toEqual(before);
   expect(await viewState(page)).toBe(state);
-  await activateByKeyboard(page, 'leave');
+  await activateByKeyboard(page, leave);
   await waitSurface(page, false);
   await openPanel(page);
   expect(await ids(page), `${label}: after LEAVE by keyboard`).toEqual(before);
@@ -2192,19 +2205,19 @@ test.describe('M19 coupling lines: HELP and LEAVE everywhere (Unit 21)', () => {
     // LEAVE from the final view by click: the series is complete, so the
     // reopened panel is the final record (LEAVE only, no HELP on a closed
     // record); its LEAVE by keyboard and by click.
-    await click(page, 'leave');
+    await click(page, 'leave_finished_2');
     await waitSurface(page, false);
     await openPanel(page);
-    expect(await ids(page)).toEqual(['closed', 'leave']);
+    expect(await ids(page)).toEqual(RECORD_IDS);
     expect((await probe(page)).focus).toBe('closed');
     expect(await labelOf(page, 'closed')).toBe(
       'Both lines are finished. The panel takes no further settings.',
     );
-    await activateByKeyboard(page, 'leave');
+    await activateByKeyboard(page, 'leave_record');
     await waitSurface(page, false);
     await openPanel(page);
-    expect(await ids(page)).toEqual(['closed', 'leave']);
-    await click(page, 'leave');
+    expect(await ids(page)).toEqual(RECORD_IDS);
+    await click(page, 'leave_record');
     await waitSurface(page, false);
     await expectFamilyDiscipline(page);
     expectNoRuntimeErrors(errors);
@@ -2222,12 +2235,71 @@ test.describe('M19 coupling lines: HELP and LEAVE everywhere (Unit 21)', () => {
     await leavePanel(page);
     await finishOutside(page);
     await openPanel(page);
-    expect(await ids(page)).toEqual(['closed', 'leave']);
-    await click(page, 'leave');
+    expect(await ids(page)).toEqual(RECORD_IDS);
+    await click(page, 'leave_record');
     await waitSurface(page, false);
     await openPanel(page);
-    await activateByKeyboard(page, 'leave');
+    await activateByKeyboard(page, 'leave_record');
     await waitSurface(page, false);
+    expectNoRuntimeErrors(errors);
+  });
+
+  test("R10 (review finding GP-1): a hotkey that changes the view while HELP or LEAVE is focused lands on the new view's neutral element — the check to the explanation, the recheck to the recorded line, line 1 to its finished view; inside one view the focus is kept", async ({
+    page,
+  }) => {
+    test.setTimeout(900_000);
+
+    const errors = captureErrors(page);
+
+    await toYard(page, 'u21r10');
+    await openPanel(page);
+    expect((await probe(page)).focus).toBe('intro');
+    await activateByKeyboard(page, 'continue');
+    expect(await ids(page)).toEqual(CHECK_IDS);
+    expect((await probe(page)).focus).toBe('question');
+    // A wrong draft, HELP focused by TAB, then R: the explanation lands on
+    // its text, not on HELP.
+    await hotkey(page, '1');
+    await focusByTab(page, 'help_check_1');
+    await hotkey(page, 'r');
+    expect(await ids(page)).toEqual(EXPLANATION_IDS);
+    expect((await probe(page)).focus).toBe('explanation');
+    await activateByKeyboard(page, 'continue');
+    expect((await probe(page)).focus).toBe('question');
+    // The recheck with LEAVE focused, then R: the recorded line.
+    await hotkey(page, '3');
+    await focusByTab(page, 'leave_check_2');
+    await hotkey(page, 'r');
+    expect(await ids(page)).toEqual(RECORDED_IDS);
+    expect((await probe(page)).focus).toBe('recorded');
+    await startLine1ByKeyboard(page);
+    expect((await probe(page)).focus).toBe('readout');
+    // Line 1 set to its restoring setting (H1, H3, FEED DOUBLE), HELP
+    // focused, then T: the finished view lands on its line.
+    await hotkey(page, '1');
+    await hotkey(page, '3');
+    await hotkey(page, '4');
+    expect(await labelOf(page, 'readout')).toBe('ON: H1 H3 · FEED DOUBLE');
+    await focusByTab(page, 'help_line_1');
+    await hotkey(page, 't');
+    expect(await labelOf(page, 'finished_line')).toBe(
+      'Line 1 finished: restored.',
+    );
+    expect((await probe(page)).focus).toBe('finished_line');
+    // Inside one view the frame keeps the focus: TRY focused on line 2, a
+    // setting hotkey, TRY still focused; HELP focused, a TRY that does not
+    // restore, HELP still focused.
+    await nextLineByKeyboard(page);
+    expect((await probe(page)).focus).toBe('readout');
+    await focusByTab(page, 'try');
+    await hotkey(page, '2');
+    expect((await probe(page)).focus).toBe('try');
+    await focusByTab(page, 'help_line_2');
+    await hotkey(page, 't');
+    expect(await countOf(page, 'attempt')).toBe(2);
+    expect((await probe(page)).focus).toBe('help_line_2');
+    await expectFamilyDiscipline(page);
+    await leavePanel(page);
     expectNoRuntimeErrors(errors);
   });
 });

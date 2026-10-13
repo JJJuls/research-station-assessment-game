@@ -1174,7 +1174,11 @@ Yard coupling station leaves the v2 frozen coupling under research-owner
 decision D-U21-1 of 13 October 2026 (register §4 "Unit 21", §5.328); the
 legacy coupling module stays in the tree unchanged, off the route, and its
 family is read by no extractor. The two lines are clustered observations
-inside one yard visit and one panel, never two independent situations.
+inside one yard visit and one panel, never two independent situations. The
+U21 closeout of 14 October 2026 (register §5.342: per-view HELP / LEAVE
+ids, a two-line fault record, the owner's acceptance of the shift-end
+`closure_reason` mapping and of the kit window status after a fault)
+changed no event, field, formula or disposition of this section.
 
 - **M19** — family `proto_m19_lines_`; ONE opportunity
   `proto_m19_lines_series`; window `m19_lines_w1`; object and surface id

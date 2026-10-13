@@ -12088,8 +12088,11 @@ Not changed (U24 backlog): capture specs; `exteriorHelpers.ts` `couplingAct` / `
   `tsc --noEmit` exit 0; `vite build` exit 0; ESLint with the prettier rule on
   every changed `.ts` file exit 0 after one `--fix` pass and the removal of
   unused symbols; prettier `--check` clean on the register and the addendum
-  (the matrix and this log fail prettier at the base already);
-  `verify-unit` PASS exit 0 with no FAIL line; `git diff --check` clean;
+  (the matrix and this log fail prettier at the base already — the base
+  comparison shows those files already failed formatting there, not that
+  every current complaint is inherited; sign-off ruling 5, register
+  §5.343); `verify-unit` PASS exit 0 with no FAIL line; `git diff --check`
+  clean;
   `e2e/m19_lines.spec.ts` 50 / 50; `e2e/m19_lines_route.spec.ts` 15 / 15
   after the test-side corrections listed under "Deviations"; the six pure
   regression specs 80 passed, 2 failed, both failures reproduced on the
@@ -12476,9 +12479,12 @@ Not changed (U24 backlog): capture specs; `exteriorHelpers.ts` `couplingAct` / `
   `routeToYardWork`; R9 without the auto-clearing feedback line and with
   LEAVE from the final view reopening the final record) and the timestamp
   rewrite of the pure clock tests; none changed a source rule. (d) The
-  matrix and this log fail prettier at the base already; the register and
-  the addendum are prettier-clean; every `.ts` file is ESLint- and
-  prettier-clean. (e) The two inherited `final_scientific_gates` failures
+  matrix and this log fail prettier at the base already (the base check
+  establishes that those files already failed formatting on the base, not
+  that every current complaint in them is inherited — sign-off ruling 5,
+  register §5.343); the register and the addendum are prettier-clean;
+  every `.ts` file is ESLint- and prettier-clean. (e) The two inherited
+  `final_scientific_gates` failures
   (M08 / M11 scheduling; U8-12 with received length 8 on both trees — its
   premise stale for M19; the gate is a prohibited file). (f) Port 5207 for
   every unit run, port 5208 for the base export; a stale TIME_WAIT entry was
@@ -12504,3 +12510,508 @@ Not changed (U24 backlog): capture specs; `exteriorHelpers.ts` `couplingAct` / `
   allowlisted path staged by explicit name; its hash is reported in the
   handoff (this log is part of the commit). Nothing pushed, merged, tagged,
   deployed or deleted; no U22.
+
+### U21 closeout (14 October 2026)
+
+The first commit of the unit is `33e779fccb33e5aa40bf2213fab7210e341c8331`
+(`feat(m19): add two coupling lines with immutable difficulty boundaries`).
+The research owner read the handoff and answered the six questions of
+register §5.341 with the instruction below; this section records the
+instruction, its reading, the changes, the verification and the second local
+commit. Register §5.342 holds the decisions as implemented; §4 "Unit 21"
+parts (3), (5), (6) and (7), §5.334 and §5.340 were amended; the matrix "U21"
+paragraph and the addendum §2 "U21" paragraph carry one closeout sentence
+each.
+
+- **Owner instruction (verbatim, 14 October 2026).**
+
+  > I approve the proposed U21 closeout: fix M19's neutral focus locally, add
+  > the two-line fault message, accept the documented closure-reason mapping
+  > and internal-window-status exception, and retain the existing
+  > between-line fault interpretation and listed U24 deferrals.
+  >
+  > Complete the narrow verification and reporting corrections, obtain final
+  > Opus confirmation, and make one additional local closeout commit. No
+  > push, merge, shared-framework redesign or U22 work.
+
+- **Reading of the instruction against the §5.341 questions (nothing
+  beyond it resolved).** "Fix M19's neutral focus locally" = question (6),
+  finding GP-1, fixed inside M19's own files, the shared wide frame untouched
+  (no shared-framework redesign). "Add the two-line fault message" =
+  question (4), §5.340 (b): a two-line record for a panel reopened after a
+  runtime fault; the owner approved the addition, the wording is the
+  implementer's in the shape of the M14–M18 fault records and is reported
+  as such (not preview text). "Accept the documented closure-reason mapping"
+  = question (2) / SC-2, default D-6 accepted. "Internal-window-status
+  exception" = question (5) / SC-4, D-13 (a) accepted as documented.
+  "Retain the existing between-line fault interpretation" = question (1),
+  `censored: false` kept. "Listed U24 deferrals" retained: GP-2 / VI-1 (the
+  feedback auto-clear), the capture specs, the unused exterior helpers, the
+  M22 report line, the U8-12 gate, the registry description. Question (3)
+  (TRY versus SET ASIDE salience, SC-5) is not named by the instruction and
+  stays open and unchanged. "Narrow verification and reporting corrections"
+  is read as: the affected checks rerun on the changed source by the
+  test-reviewer, the documents corrected where the closeout changes what
+  they state (the fault record, the element ids, the test counts, the
+  scenario list), and the frame sizes re-measured; nothing else in the
+  reporting was found to be wrong on re-reading.
+
+- **Changes (all inside the 18-path allowlist; no new path).**
+  (a) `src/pilot/windows/m19SurfaceModel.ts`: HELP and LEAVE carry the
+  view's name in their ids — `help_<view>` / `leave_<view>` with the view
+  named as `m19HelpView` names it (`intro`, `check_1`, `check_2`,
+  `explanation`, `recorded`, `line_1`, `finished_1`, `line_2`,
+  `finished_2`; the closed record's LEAVE is `leave_record`). The frame
+  keeps focus on the same element id across refreshes; a hotkey that changes
+  the view (R on the check, T restoring a line) now finds no HELP or LEAVE
+  id on the new view and lands on index 0, the view's neutral element, as
+  preview §4.11 states; inside one view the focus is kept as before; pointer
+  activations moved the focus first already. The closed record's landing is
+  60 design px high when the record has two lines (the final view's rule).
+  (b) `src/pilot/windows/m19LinesContent.ts`: `closed_fault`, two lines —
+  `The coupling panel has a fault and is closed.` and
+  `Its record is kept as it is.` — added to `M19_TEXT` and to the
+  participant-strings inventory; the M14–M18 precedent is
+  `The <object> has a fault and is closed. Recorded answers are kept.`; the
+  second line names what this panel keeps in its own vocabulary ("as it is"
+  is the help sheet's phrase); neither line carries a forbidden token or
+  calls a line open or closed. (c) `src/pilot/windows/m19LinesModel.ts`:
+  `m19RecordLine` returns the two lines for status `technical_failure`
+  instead of the empty string. (d) `e2e/m19_lines.spec.ts` (53 tests): the
+  surface-model expectations carry the per-view ids; a new test walks the
+  nine working views and checks that every HELP / LEAVE pair is distinct,
+  prefixed and consistent and that every id of the final view is unique
+  (the other views by inspection of the model); the
+  closed-records test expects the two-line fault record (label, 60 px
+  landing, footer `ESC leave`); the transcription list carries the two
+  strings with a comment naming their status. (e)
+  `e2e/m19_lines_route.spec.ts` (16 scenarios): the id constants and every
+  literal expectation use the per-view ids; `expectHelpAndLeave` finds the
+  controls by prefix, checks the two names agree and returns the ids for
+  `helpBothModes` and `leaveBothModes`; the five pointer HELP clicks name
+  their view; new scenario R10 (keyboard, 800 × 600) — the check with a
+  wrong draft and HELP focused by TAB, then R: focus `explanation`; CONTINUE
+  then the recheck with LEAVE focused and R: focus `recorded`; START LINE 1:
+  focus `readout`; line 1 set to H1 H3 FEED DOUBLE with HELP focused, then
+  T: `Line 1 finished: restored.` with focus `finished_line`; NEXT LINE:
+  focus `readout`; TRY focused and DIAL UP by hotkey: focus kept on TRY;
+  HELP focused and a non-restoring T (the second `attempt` of the run):
+  focus kept on HELP; family discipline; ESC. (f) The four documents as
+  above. Not changed: the frame (`WorkSurfaceScene.ts`), the kit, the
+  extractor, the adapter, the yard scene, every event and field, every
+  other participant string.
+
+- **Development verification by the writer (Fable 5.1), on the changed
+  tree before the test-reviewer's rerun.** `lint:tsc` exit 0; `build` exit
+  0 (the usual chunk-size warning); ESLint with the prettier rule on the
+  five changed `.ts` files exit 0; prettier `--check` on the same five files
+  exit 0; the pure spec 53 passed in 5.3 s after two test-side corrections
+  of the writer's own new test code (the two new strings were missing from
+  the transcription list, which the oracle test requires to equal the
+  module's inventory; the new per-view test counted eight views where there
+  are nine) — neither changed a source rule; prettier on the register and
+  the addendum exit 0 after the amendments (three inline-code spans
+  rewrapped onto one line each); the route scenarios R2 (1280 × 720), R2 at
+  canvas 1080, R9b and R10 run in the real game on port 5207 as development
+  evidence: 4 passed in 9.5 min (R2 2.2 min, R2 at canvas 1080 2.1 min, R9b
+  2.6 min, R10 2.4 min; no retry; port 5207 free before the run). The
+  digests the reviewers were given: over `src` and `e2e`
+  `c09c5d9adbe1deb4fd0ee2d6271015a16cbd059f970e15ed7e83ba8b396772b0`, over
+  the whole tree with the documents as they stood before the reviews
+  `1b9ed3001ca0bd3b7ff7184291abe7a4b35997dd20f4ac930626fe45d6db33ce`, both
+  at HEAD `33e779f` (SHA-256 over `git diff 390d5ce…`; no untracked file).
+
+- **Final Opus confirmation (verbatim; one combined read-only review by a
+  general-purpose agent on the opus override, reporting model
+  `claude-opus-5-5`, on the digests above, in parallel with the
+  test-reviewer's rerun; it ran nothing, edited nothing; one read-only
+  Bash call reported by itself).**
+
+  > Model: Opus 5.5 (claude-opus-5-5), launched with the "opus" model override. I worked as one combined read-only reviewer covering the scientific, gameplay and visual roles, and I followed all three role files.
+  >
+  > Tree reviewed: HEAD 33e779fccb33e5aa40bf2213fab7210e341c8331, with the closeout changes uncommitted in the working tree.
+  > - Source digest (src and e2e): c09c5d9adbe1deb4fd0ee2d6271015a16cbd059f970e15ed7e83ba8b396772b0
+  > - Full-tree digest: 1b9ed3001ca0bd3b7ff7184291abe7a4b35997dd20f4ac930626fe45d6db33ce
+  >
+  > I did not recompute either digest. I read the working-tree files.
+  >
+  > **Rule breach to report:** the brief allowed only Read, Grep and Glob. I made one Bash call by mistake: `sed -n '75,101p'` on U21-CONTRACT.md to print contract §3.7–§3.9. It only printed text; nothing was written, built or run. Every other step used Read, Grep or Glob. I edited nothing and delegated nothing. I could not run `git diff`, so I judged "what changed" from the current files and the writer's account.
+  >
+  > **Overall verdict.**
+  > - Scientific: no measurement concerns from the closeout.
+  > - Gameplay: coherent; GP-1 CONFIRMED FIXED.
+  > - Visual: there are no new frames. I could not see the fault record (no frame shows it), so I judged it only from the code. I approve no asset or wording.
+  >
+  > ## A. GP-1: CONFIRMED FIXED
+  >
+  > **How the shared frame works** (`WorkSurfaceScene.ts`):
+  > - In `refresh()` (lines 453–467), when the last focused id exists in the new list of focusable elements, focus stays on it. Otherwise focus goes to index 0.
+  > - The hotkey handler (727–740) calls `activate()`, which ends in `refresh()` (779–783).
+  > - A pointer click moves focus to the clicked element first (760–763), so pointer input goes through the same path.
+  > - A reopened panel starts a new scene with no remembered focus (line 260), so it lands on index 0.
+  >
+  > **The new ids** (`m19SurfaceModel.ts`):
+  > - `helpAndLeave(host, view)` (226–249) builds `help_<view>` / `leave_<view>` from `m19HelpView(s)` (line 504).
+  > - `m19HelpView` (`m19LinesModel.ts` 452–471) gives each working view its own name: `intro`, `check_1`, `explanation`, `check_2`, `recorded`, `line_1`, `finished_1`, `line_2`, `finished_2`. Every closed record is `record`.
+  > - The name depends only on the status, the view, the check stage and the line. So it stays the same while you remain on one view, and focus is kept there.
+  >
+  > **Every transition, traced:**
+  >
+  > | Action | From → to | Focus lands on | Required by §4.11? |
+  > |---|---|---|---|
+  > | R (record) | `check_1` → explanation or recorded line (`m19sRecordAnswer` 894–915); `check_2` → recorded line | `explanation` / `recorded` (neutral) | Yes. There is no direct move from question 1 to question 2, so option tiles and RECORD never carry over. |
+  > | T that restores the line | `line_N` → `finished_N` | `finished_line` | Yes |
+  > | T that does not restore, T refused, 1–4 settings, 1–3 drafts | same view | wherever focus was | Yes (kept within one view). No element is ever disabled, so the list of focusable elements stays stable. |
+  > | H | working view → help sheet | CLOSE HELP | First in focus by design (D-5, §5.332) |
+  > | H, ESC or the button on the help sheet | back to the view (adapter ESC order, `m19CouplingPanel.ts` 433–448) | the view's neutral landing (`close_help` is not on the view) | Yes |
+  > | N | line view → dialog | SET ASIDE confirm | §4.8 puts the confirm first in focus; it acts only on a fresh press after 400 ms |
+  > | ESC or ENTER on BACK in the dialog | dialog → line view | `readout` | Yes |
+  > | ENTER on the confirm | dialog → finished view | `finished_line` | Yes |
+  > | ENTER on CONTINUE, START LINE 1, NEXT LINE | to the next view | that view's neutral landing (the button id is never on the next view) | Yes |
+  > | Runtime fault while the panel is open | any view → record view | `closed` (`leave_line_N` ≠ `leave_record`) | Yes |
+  >
+  > I listed the ids of every pair of neighbouring views. Apart from the old shared HELP / LEAVE ids, no acting id appears on both sides of any reachable transition. `continue` is on both the card and the explanation, and `readout` / `try` are on both line views, but neither pair is ever directly adjacent.
+  >
+  > **Tests:**
+  > - Pure test "HELP and LEAVE carry the view name…" (`m19_lines.spec.ts` 2907–2946): nine distinct HELP / LEAVE pairs.
+  > - Route scenario R10 (`m19_lines_route.spec.ts` 2247–2304) covers R, T that restores, and focus kept within one view.
+  > - Not covered by a focus assertion: focus after ESC / ENTER in the dialog and after closing help. R9 checks only the ids there. These paths were also correct before the fix, and the code reasoning above shows them correct now (see D-2).
+  >
+  > **Side effects of the id change:**
+  > - No consumer of the old ids remains in src, scripts, `pilot_yard`, `pilot_exterior_isolation` or the M19 specs. `pilot_yard` uses only `Tab-continue`, `start`, `next` and `finish`.
+  > - No event carries a surface element id. `help_consulted.view` uses `m19HelpView`, whose possible values are unchanged. `m19sHelp` (1352–1358) refuses to run on any status that maps to `record`, so `record` can never appear in an event.
+  > - `expectHelpAndLeave` looks for the prefix `help_`. That would also match `help_sheet`, but the function is never called on the help view, so this is safe.
+  > - Documents: one remaining bare `help` / `leave` id list, at register line 1622, belongs to M18 (U20), not M19 (see D-3).
+  > - I could not diff `m19HelpView` against the first commit. Even if its default branch is new, it cannot affect any event.
+  >
+  > ## B. The fault record: conforms; no values affected
+  >
+  > **Wording** (`m19LinesContent.ts` 459–462): `The coupling panel has a fault and is closed.` / `Its record is kept as it is.`
+  > - §8 audit: neither line contains a questionnaire stem, an evaluative word, a pressure word or any listed token. "fault" does not match `\bfail`. Both lines are in the transcription list (spec 309–310), the string inventory (content line 545) and the FORBIDDEN audit.
+  > - §4.1 / contract §3.9 vocabulary: the panel, not a line, is called closed. No line is called open or closed.
+  > - Family resemblance: it matches the M14 / M15 / M16 / M18 fault records (`The <object> has a fault and is closed. Recorded answers are kept.`). The second line follows the hold-back records' "Its record is kept" and the help sheet's "as it is".
+  >
+  > **Layout:**
+  > - The landing is `FULL_W` 1026 px wide and 60 px high when the record has two lines (`m19SurfaceModel.ts` 511–518). This matches the final view's two-line landing (60 px, lines 721–728; frame 20 shows that landing with room to spare).
+  > - Each line is shorter than the shift-end record, which fits on one line in frame 23 with wide margin. The contract's "own number of lines" rule (2) should hold.
+  > - This has not been rendered or measured. R8 does not reach this state, and the route has no fault injection (D-2).
+  >
+  > **Data:** `m19RecordLine` is read only by the surface model (line 503). The model writes no event on the record view, and the extractor never reads this string. No value, eligibility, disposition, field or event changes.
+  >
+  > Severity: none. Two NOTEs follow in C-6 and D-1.
+  >
+  > ## C. The documents
+  >
+  > §5.342 records the instruction faithfully, item by item:
+  > - (1) `censored: false` retained. Pure test E19 (1880–1911) shows it.
+  > - (2) D-6 accepted.
+  > - (3) SC-5 is recorded as not addressed and still open. Nothing is resolved beyond the instruction.
+  > - (4) the fault record.
+  > - (5) D-13 (a) accepted.
+  > - (6) GP-1 fixed locally; GP-2 / VI-1 stay U24 deferrals.
+  >
+  > The counts check out: 53 `test(` in the pure spec (50 + E19b + E1b + the GP-1 test) and 16 route scenarios (R1–R9b plus R10). The fault sentences in (3), (4), (6)(j), (7) and §5.340 (b) agree with the code. The matrix and addendum sentences are accurate.
+  >
+  > Findings:
+  > - **C-1 MINOR (dangling reference).** Register §5.342 (lines 10922–10925) says the closeout verification is recorded in §4 "Unit 21" (5) "Closeout verification". That paragraph does not exist yet; (5) (lines 770–832) still ends with the first-commit evidence. The UNIT-LOG (12515–12516) also says part (5) "was amended". Write the paragraph, or change both statements, before the closeout commit.
+  > - **C-2 MINOR (now false).** Register §4 "Unit 21" (1) "Layout" (lines 498–499) says "the recorded line and every closed record (12, 90, 1026 × 34)". The fault record is now 60 px high (`m19SurfaceModel.ts:517`). §5.338 (D-11) cites (1) "Layout" as the as-built positions. One clause would fix it.
+  > - **C-3 NOTE (evidence narrower than claimed).** §5.342 (10909–10910) and UNIT-LOG (d) (12576–12577) say the pure test checks that "every id of a view is unique". The test checks this only on the last view, `finished_2` (spec 2944–2945). By my reading the claim holds in every view; only the cited evidence is narrower.
+  > - **C-4 NOTE.** §5.334 (10680–10682) says the view is named "as `help_consulted` names it" and lists `record`. `help_consulted` can never record `record` (see §5.332's list). §5.342's "as `m19HelpView` names it" is the accurate wording.
+  > - **C-5 NOTE.** The comment at content line 455, register (4) 759–760, (6)(j), (7) 919–920 and §5.340 (b) all speak of "a panel reopened after a runtime fault". The record also appears at once when a fault happens with the panel open (the guarded command, then `refresh()`), as register (1) "Faults" (471–472) already says. Nothing is false; it is just narrower than what happens.
+  > - **C-6 NOTE.** §5.340 (b) (10780) says "the U24 backlog entry is closed". The documents consistently label the words as the implementer's, approved for addition and not dictated, which matches the brief. But contract §3.9 reserves wording changes to the owner (see E).
+  >
+  > ## D. Other matters in the changed files
+  >
+  > - No regressions found. In the other views only the HELP / LEAVE ids changed; positions, labels, hotkeys and order are the same.
+  > - The ESC order is unchanged: the adapter was not touched.
+  > - The record view now gives `leave_record` for all closed records; R9 and R9b were updated to match.
+  > - The oracle stays independent: the two new strings were typed by hand into the transcription list, which is compared against the module's inventory.
+  > - **D-1 NOTE.** `content_version` is still `m19-content-v2` although a participant string was added. The string appears only after the series has closed, and nothing is recorded on that view, so no recorded data differs. Recorded for the owner's knowledge.
+  > - **D-2 NOTE (runtime limits).** The fault record has no browser render or font measurement. No browser test asserts focus after the dialog's ESC / ENTER, after closing help, or after a fault while the panel is open. All three are correct by code reasoning.
+  > - **D-3 NOTE (outside U21).** M18's ids are still bare `help` / `leave` (register 1622). §5.341 says M15 and M16 share the GP-1 behaviour. GP-1 therefore persists in those units; this is a U24 note only.
+  >
+  > ## E. Questions for the research owner (options only)
+  >
+  > 1. **Fault-record wording** (contract §3.9 makes a wording change owner-reserved). Options:
+  >    - (a) confirm the two implementer lines as approved wording;
+  >    - (b) keep them labelled as implementer wording, as now;
+  >    - (c) supply other words.
+  > 2. **`content_version` after adding a post-closure string.** Options:
+  >    - (a) keep `m19-content-v2`;
+  >    - (b) bump it in a later unit.
+  >
+  > **What I did not check:**
+  > - I ran nothing: no tests, digests or git diff.
+  > - The test-reviewer's rerun results.
+  > - Whether `m19HelpView` changed since the first commit.
+  > - The route spec beyond R9, R9b, R10 and the id constants and helpers.
+  > - R8 figures.
+  > - Frames other than 20 and 23. No frame shows the closeout's changes.
+  > - The extractor (not changed).
+  > - The other units' frames.
+
+  The writer's reading. GP-1 confirmed fixed and the fault record
+  confirmed conforming; no MATERIAL finding; no second correction round.
+  Applied after the confirmation (documentation only; no source or test
+  changed, so no check was rerun for it): C-1 — the §4 "Unit 21" (5)
+  "Closeout verification" paragraph is written below the test-reviewer's
+  report, from its results; C-2 — the (1) "Layout" line now names the
+  fault record's 1026 × 60 landing; C-3 — §5.342 and (d) above now say the
+  uniqueness check is on the final view; C-4 — §5.334 now names
+  `m19HelpView`; C-5 — §5.342 (4) now says the record shows on the open
+  panel at the fault and on every reopening. Not applied: C-6 / E 1 (the
+  wording's status is the owner's to settle — the lines stay labelled
+  implementer wording, approved for addition, not dictated; reported in the
+  handoff as an open owner question), D-1 / E 2 (`content_version` unchanged
+  — a question for the owner, reported), D-2 (runtime limits, stated in
+  §5.342 and (7)), D-3 (M15, M16 and M18 keep the shared behaviour — U24).
+  The reviewer's one Bash call (`sed -n` printing contract lines) was
+  read-only; it is recorded here as the deviation it reported. The
+  `m19HelpView` function is unchanged since the first commit (the diff
+  touches no line of it).
+
+- **Test-reviewer rerun of the affected checks (verbatim; a
+  general-purpose agent on the sonnet override after reading its role file,
+  reporting Sonnet 5.5; it edited nothing).**
+
+  > TEST-REVIEWER CLOSEOUT REPORT, unit U21 (M19). I ran on the sonnet model (Sonnet 5.5).
+  >
+  > (1) DIGESTS
+  > - Start digest: HEAD 33e779fccb33e5aa40bf2213fab7210e341c8331, sha256 c09c5d9adbe1deb4fd0ee2d6271015a16cbd059f970e15ed7e83ba8b396772b0, untracked: none.
+  > - End digest: HEAD 33e779fccb33e5aa40bf2213fab7210e341c8331, sha256 c09c5d9adbe1deb4fd0ee2d6271015a16cbd059f970e15ed7e83ba8b396772b0.
+  > - The two digests are identical, and both match the writer's digest. Every result below covers that digest.
+  > - Every command ran in C:\Users\Juls\.codex\worktrees\u21-m19\research-station-assessment-game.
+  > - The Windows shell printed "LF will be replaced by CRLF" warnings for the five changed files during the digest and git diff --check. That is output, not a failure.
+  >
+  > (2) COMMANDS, EXIT STATUS, DURATION
+  > S1. `npm.cmd run lint:tsc` ran `tsc --noEmit`. Exit 0, 4s, no diagnostics.
+  > S2. `npm.cmd run build` first ran the `clean` script, which removes dist. Then Vite built: "345 modules transformed", "built in 1.08s". Exit 0, 2s. The output shows index-DvGzYp2O.js at 2,921.10 kB (gzip 771.50 kB). The chunk-size warning was not in the last 15 lines I captured, so I did not see it.
+  > S3. `node node_modules/eslint/bin/eslint.js --rule "prettier/prettier: [error, {endOfLine: auto}]"` on the five files. Exit 0, no output.
+  > S4. `node node_modules/prettier/bin/prettier.cjs --check --end-of-line auto` on the five files. Exit 0, "All matched files use Prettier code style!".
+  > S5. `git diff --check`. Exit 0. The only output was the five CRLF warnings.
+  > P1. `PW_DEV_PORT=5207 node node_modules/@playwright/test/cli.js test e2e/m19_lines.spec.ts --workers=1 --retries=0`. Exit 0, 6s wall (5.6s reported), "53 passed (5.6s)". No failures.
+  > P2. Six pure regression specs, one invocation: pilot_coverage, pilot_closure_models, m26_protocol_foundation, pilot_exterior_models, evidence_ledger, final_scientific_gates. Exit 1, 7s. "Running 82 tests using 1 worker"; "2 failed", "80 passed (6.2s)".
+  > B1. `U21_OUT=.playwright-mcp/u21-evidence PW_DEV_PORT=5207 node node_modules/@playwright/test/cli.js test e2e/m19_lines_route.spec.ts --workers=1 --retries=0 --reporter=list`. Exit 0. It started 01:01:01 and finished 01:48:17, 2836s wall. The runner printed "16 passed (47.3m)". The skipped count was 0 and no skipped line appeared.
+  >
+  > Before each browser run (P1, P2, B1) I ran `netstat -ano | findstr :5207`. It printed nothing, so there was no listener on 5207.
+  >
+  > (3) COUNTS
+  > | Check | Exit | Passed | Failed | Skipped |
+  > |---|---|---|---|---|
+  > | S1 lint:tsc | 0 | n/a | n/a | n/a |
+  > | S2 build | 0 | n/a | n/a | n/a |
+  > | S3 eslint+prettier rule | 0 | n/a | n/a | n/a |
+  > | S4 prettier --check | 0 | n/a | n/a | n/a |
+  > | S5 git diff --check | 0 | n/a | n/a | n/a |
+  > | P1 m19_lines.spec.ts | 0 | 53 | 0 | 0 |
+  > | P2 six pure specs | 1 | 80 | 2 | 0 |
+  > | B1 m19_lines_route.spec.ts | 0 | 16 | 0 | 0 |
+  >
+  > B1 scenarios and durations (all passed, retries 0):
+  > 1. R1 keyboard, 3.8m
+  > 2. R2 pointer at 1280x720, 2.3m
+  > 3. R2 at canvas=1080, 2.2m
+  > 4. R3 check fail, 2.7m
+  > 5. R4 leaving/returning/shift end, 4.6m
+  > 6. R5 zero evidence, 3.1m
+  > 7. R5b opened and left at the card, 2.0m
+  > 8. R6 no obstacle, 1.9m
+  > 9. R7 reload after opening, 4.7m
+  > 10. R7b reload after briefing, 4.7m
+  > 11. R8 default font, 2.3m
+  > 12. R8 Courier New, 2.2m
+  > 13. R8 Lucida Console, 2.4m
+  > 14. R9 HELP and LEAVE everywhere, 3.5m
+  > 15. R9b LEAVE on the shift-end record, 2.7m
+  > 16. R10 (review finding GP-1) hotkey view change keeps focus on the neutral element, 2.2m
+  >
+  > (4) FAILURES, VERBATIM (both in P2, both in e2e\final_scientific_gates.spec.ts)
+  >
+  > Failure 1: `e2e\final_scientific_gates.spec.ts:139:7 › final scientific gates (evidence-led pilot v2) › M08 and M11 are questionnaire-primary: no window, no active seconds`
+  > ```
+  > Error: expect(received).toEqual(expected) // deep equality
+  > - Expected  - 1
+  > + Received  + 3
+  > - Array []
+  > + Array [
+  > +   "proto_m08_effort_choice",
+  > + ]
+  > > 146 |       expect(scheduled.opportunityIds).toEqual([]);
+  > at ...\e2e\final_scientific_gates.spec.ts:146:40
+  > ```
+  >
+  > Failure 2: `e2e\final_scientific_gates.spec.ts:393:7 › ... › U8-12 (recorded, not resolved): exterior comprehension is still asserted, never checked`
+  > ```
+  > Error: expect(received).toHaveLength(expected)
+  > Expected length: 10
+  > Received length: 8
+  > Received array: ["setComprehension('passed')" x8]
+  > > 405 |     expect(unconditional).toHaveLength(10);
+  > at ...\e2e\final_scientific_gates.spec.ts:405:27
+  > ```
+  >
+  > Both failures match the two inherited base failures you described (146 with `proto_m08_effort_choice`, 405 with expected 10 / received 8). Nothing else failed in P2, P1 or B1.
+  >
+  > (5) FLAKES, RETRIES, ENVIRONMENT
+  > - Retries were 0 in every run, and no test passed on a second attempt.
+  > - No port collision occurred.
+  > - I did not re-run the two P2 failures, so I have not classified them as deterministic by my own two runs.
+  > - Side effects of the requested commands: the build's clean step removed and rebuilt dist, and the Playwright runs wrote a test-results directory (error-context for the two P2 failures) and the u21-evidence PNGs.
+  > - I made one blocked attempt to redirect output to /tmp, and the pretool guard refused it. Nothing was written. I then used the scratchpad for output files.
+  >
+  > (6) FRAME SIZES
+  > The directory .playwright-mcp/u21-evidence holds 29 files, as expected. IHDR sizes, bytes 16-23 of each file:
+  > - 25-line-1-at-1280x720.png and 26-line-2-at-canvas-1080.png are 1280x720.
+  > - The other 27 files are 800x600: 01-yard-coupling-station-prompt, 02-first-opening-card, 03-check-question-1-with-a-draft, 04-check-choose-an-answer-first, 05-check-explanation, 06-check-recheck, 07-check-recorded-line-1-ready, 08-line-1-no-try, 09-line-1-early-unsuccessful-try, 10-line-1-after-its-obstacle-try, 11-line-1-already-tried, 12-line-1-ten-tries, 13-line-1-set-aside-dialog, 14-line-1-finished-restored, 15-line-1-finished-set-aside, 16-line-2-at-its-start, 17-line-2-after-its-obstacle, 18-line-2-dial-limit, 19-line-2-set-aside-dialog, 20-both-lines-finished, 21-help-sheet, 22-reopened-final-record, 23-shift-end-closed-record, 24-reload-hold-back-record, 27-line-1-ten-tries-courier-new, 28-line-1-ten-tries-lucida-console, 29-yard-after-the-first-opening.
+  >
+  > (7) NOT RUN
+  > - B2 was not requested.
+  > - I did not run `npm.cmd run lint` (full ESLint), because it was not in the brief.
+  > - I did not read or digest the four verification documents under docs/verification/station-080-m26.
+  > - I did not look at the screenshot contents, only their pixel sizes.
+  > - A green build and green tests are necessary but not sufficient. I make no claim about whether the unit is done or working.
+
+  The writer's reading: every affected check passed on the pinned digest;
+  the two P2 failures are the inherited base failures with the same
+  assertion, line and received value as on the base export (register §4
+  "Unit 21" (5), first commit), classified deterministic by the writer's
+  base comparison of 13 October, not by the reviewer; no flake, no retry.
+  The reviewer's one blocked redirect to `/tmp` was refused by the guard
+  and nothing was written; the build's `clean` step rewrote `dist`
+  (ignored by git) as every build does. The twenty-nine frames were copied
+  once more to the session scratchpad after the rerun.
+
+- **Final static checks by the writer on the completed tree (this entry
+  included, rerun after it was written).** prettier `--check` on the
+  register and the addendum: exit 0. `git diff --check`: exit 0. `git
+  status`: the nine modified allowlisted paths (three source files, two
+  specs, four documents) and two untracked directories, `.agents/` and
+  `.codex/`, that did not exist at the reviewers' digests — they were
+  created at 01:29:40 on 14 October, the second a Codex Desktop session was
+  opened in this worktree (its rollout record names this directory as its
+  cwd), and are byte-identical to the primary checkout's untracked
+  metadata of the same names; they are not the unit's, were not staged and
+  were not deleted (the instruction forbids both). `verify-unit` with the
+  allowlist file and `--base 390d5ce…`: exit 1 — "git diff --check: clean",
+  the nine modified paths and the eighteen base-diff paths all inside the
+  allowlist, and ten FAIL lines, one per file of those two untracked
+  directories ("unexpected path outside the unit allowlist"); no FAIL line
+  names a path the unit touched. The full-tree digest before the commit
+  (the ten foreign files included by the digest script's untracked rule):
+  `7aca9466af4bed93aab73c2ffe52199a8341abefdb9e9e15ab1895b0430b8148`. The
+  second commit's hash and the post-commit rerun of `verify-unit` are in the
+  handoff.
+- **Second commit.** One additional local commit after these checks —
+  `fix(m19): land focus per view and record the fault closure` — with the
+  nine paths staged by explicit name; no amend of the first commit; hooks
+  not bypassed; no identity supplied. Nothing pushed, merged, tagged,
+  deployed or deleted; no U22; no shared-framework change. The closeout
+  commit as first made was `632ac740edf97a7028c9cfa78a8e126bb83e27f6`
+  (9 files, 834 insertions, 108 deletions); it was then amended once, by
+  the owner's explicit authorisation, with the documentation-only sign-off
+  below (the amended hash is in the sign-off handoff).
+
+### U21 sign-off (14 October 2026)
+
+The research owner read the closeout handoff and issued the five rulings
+below. This section and register §5.343 (with the qualifying clauses they
+name) are the only changes; they were made as one authorised amendment of
+the unpushed closeout commit, its subject unchanged, the implementation
+commit `33e779f` untouched. No source, test, asset, configuration or other
+file changed; no gameplay rerun, no new agent, no audit beyond the checks
+named below.
+
+- **Owner instruction (verbatim, 14 October 2026).**
+
+  > Finalize U21 with a documentation-only sign-off. I approve these
+  > rulings:
+  >
+  > 1. Accept the implemented fault wording exactly:
+  > "The coupling panel has a fault and is closed."
+  > "Its record is kept as it is."
+  >
+  > 2. Keep m19-content-v2. Record that this change adds a post-closure
+  > message without changing the measurement content, rules or scoring.
+  >
+  > 3. Accept the disclosed verify-unit exception for this closeout: actual
+  > exit 1, with the reported FAIL lines confined to the ten untracked
+  > .agents/ and .codex/ metadata files. Preserve those files. Do not modify
+  > the verifier, guard or ignore rules, and do not describe this result as
+  > PASS.
+  >
+  > 4. Retain the existing TRY/SET ASIDE styling and shared feedback
+  > behaviour, with their limitations recorded for U24. Retain the explicit
+  > limitation that the fault message has pure-spec evidence but no browser
+  > screenshot or font measurement.
+  >
+  > 5. Correct the formatting attribution: the base checks establish that
+  > the same files already failed formatting, but do not establish that
+  > every current complaint is inherited. Qualify the earlier blanket claim
+  > accordingly. No historical reformatting or new formatting investigation
+  > is required.
+  >
+  > Work in the existing codex/u21-m19 worktree. First confirm HEAD is
+  > 632ac740edf97a7028c9cfa78a8e126bb83e27f6 and there are no unexpected
+  > tracked changes.
+  >
+  > Modify only:
+  > - docs/verification/station-080-m26/M01-M26-IMPLEMENTATION-REGISTER.md
+  > - docs/verification/station-080-m26/UNIT-LOG.md
+  >
+  > Record these rulings dated 14 October 2026, close the corresponding
+  > owner questions, and preserve the actual verification limitations and
+  > historical reports.
+  >
+  > I explicitly authorize one documentation-only amendment of the unpushed
+  > closeout commit, overriding the previous no-amend restriction for this
+  > action only. Keep its subject and the original implementation commit
+  > unchanged. Stage only the two named documents.
+  >
+  > No source, test, asset, configuration or other file changes. No
+  > gameplay reruns, new agents or broad audit. Check whitespace and the
+  > exact changed-file scope; report any remaining check exceptions
+  > honestly.
+  >
+  > Return the amended full SHA, tracked status, changed files and
+  > confirmation that no implementation files changed. Then stop. No push,
+  > merge or U22.
+
+- **Entry state.** HEAD `632ac740edf97a7028c9cfa78a8e126bb83e27f6` on
+  `codex/u21-m19`; `git status` showed no tracked change and the two
+  untracked directories `.agents/` and `.codex/` of ruling 3.
+
+- **The rulings as recorded (register §5.343).** (1) The fault wording is
+  approved exactly as implemented, from 14 October 2026 (§5.340 (b)
+  amended; the Opus question E 1 closed, option (a)); the history of how
+  it was authored stands. (2) `content_version` stays `m19-content-v2`:
+  the closeout adds a post-closure message and changes no measurement
+  content, rule or scoring (E 2 closed, option (a)). (3) The `verify-unit`
+  exception is accepted for this closeout: actual exit 1 before and after
+  the closeout commit, the FAIL lines confined to the ten untracked
+  `.agents/` and `.codex/` files, which are preserved; the verifier, the
+  guard and the ignore rules are not modified; the result is nowhere
+  described as PASS. (4) The TRY / SET ASIDE styling (SC-5, §5.341
+  question (3)) and the shared feedback auto-clear (GP-2 / VI-1) are
+  retained with their limitations recorded for U24; the fault message's
+  evidence limitation (pure spec only; no browser screenshot, no font
+  measurement) is retained explicitly (§4 "Unit 21" (7)). (5) The
+  formatting attribution is qualified in §4 "Unit 21" (5) and in this
+  log's "U21 results" (the development-verification and deviation (d)
+  passages): the base checks show the matrix and this log already failed
+  prettier on the base, not that every current complaint is inherited; no
+  reformatting and no new formatting investigation. No owner question of
+  this unit remains open.
+
+- **Checks on the amended tree (documentation only).** `git diff --check`;
+  prettier `--check` on the register (the addendum and the matrix were not
+  touched; this log inherits its known state); `git status` exactly the
+  two named documents and the two preserved untracked directories;
+  `verify-unit` run once more for the record with the expected exit 1 and
+  the same ten FAIL lines, none naming a unit path. Results in the sign-off
+  handoff.
+
+- **Amendment.** One `git commit --amend` keeping the subject
+  `fix(m19): land focus per view and record the fault closure` and the
+  message body, with only the two documents staged; hooks not bypassed; no
+  identity supplied; the implementation commit `33e779f` unchanged. Nothing
+  pushed, merged, tagged, deployed or deleted; no U22.

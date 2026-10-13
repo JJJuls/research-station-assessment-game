@@ -496,7 +496,8 @@ series model and the interface were written.**
   wide); the card text (12, 90, 1026 × 186), the check question (12, 90,
   1026 × 40) with its tiles from y 140 (714 wide) and RECORD ANSWER (12, 270,
   300 wide), the explanation (12, 90, 1026 × 96), the recorded line and every
-  closed record (12, 90, 1026 × 34), the finished landing (738, 90, 300 × 34;
+  closed record (12, 90, 1026 × 34; the two-line fault record of the closeout
+  1026 × 60, §5.342), the finished landing (738, 90, 300 × 34;
   60 high on the final view), the dialog text (200, 170, 520 × 72) with its
   controls (200 / 466, 250, 254 wide), the help sheet (12, 56, 1026 × 186).
   FIXED LINES: every sheet line, card / explanation / help line, TRY row,
@@ -722,10 +723,12 @@ the ESC order and calling `closeM19Surface` before the yard resumes),
 `refreshCouplingVisuals`, the `guard` union without `'M19'` (the legacy
 `exteriorTechnicalFailure('M19', …)` branch unreachable from the scene) and
 the DEV probe's `m19_panel` block. Tests: `e2e/m19_lines.spec.ts` (pure, 50
-tests — the independent oracle, the model, the extractor on the derivation
-cases and the integrity rules, the clock policy, the register and source
-checks, the surface model), `e2e/m19_lines_route.spec.ts` (browser, 15
-scenarios R1–R9b with the twenty-nine frames), `e2e/pilot_yard.spec.ts` and
+tests at the first commit and 53 after the closeout of 14 October 2026 — the
+independent oracle, the model, the extractor on the derivation cases and the
+integrity rules, the clock policy, the register and source checks, the
+surface model), `e2e/m19_lines_route.spec.ts` (browser, 15 scenarios R1–R9b
+at the first commit and 16 with R10 after the closeout, with the twenty-nine
+frames), `e2e/pilot_yard.spec.ts` and
 `e2e/pilot_exterior_isolation.spec.ts` re-expressed for the new identity
 (the panel worked to completion by real keyboard input in test 1; the
 step-away observation replaced by the panel opened, line 1 at its obstacle
@@ -733,7 +736,7 @@ and set aside, line 2 left in work and restored on re-entry in test 2; the
 held E in test 3 opening the panel once and executing no TRY; the
 never-opened panel's `presented` / `closed_unopened` records and the
 contaminated developer-launch record in the isolation spec). Documents: this
-record, §2's M19 as-built cell, §5.328–§5.341, the matrix M19 row and "U21"
+record, §2's M19 as-built cell, §5.328–§5.342, the matrix M19 row and "U21"
 paragraph, the addendum §2 "U21" paragraph and §3 row, the UNIT-LOG entry.
 All eighteen paths of contract §4 were touched and no other; nothing was
 deleted or renamed.
@@ -755,7 +758,9 @@ model finishes the line in work (`line_finished` with finish
 `line_id`, `line_index` and `phase` `closure` through the window's `log`, the
 opportunity is marked `technical_failure` through the framework's
 `markOpportunityInvalid`, the kit window is paused; the reopened panel shows
-the record view with an empty landing and LEAVE (§5.340 (b)). The legacy
+the record view with the two-line fault record and LEAVE (§5.340 (b); the
+record was an empty landing at the first commit and was added at the
+closeout of 14 October 2026, §5.342). The legacy
 coupling: `m19CouplingModel.ts` and the legacy adapter functions in
 `exteriorWindows.ts` byte-identical with the base apart from the two deleted
 lines; the file's `setComprehension('passed')` count 8; the legacy window
@@ -767,7 +772,10 @@ untouched.
 (Fable 5.1) while building: `tsc --noEmit`, `vite build`, ESLint with the
 prettier rule on every changed `.ts` file, prettier on the register and the
 addendum (clean; the matrix and the UNIT-LOG fail prettier at the base
-already), `verify-unit` (PASS, exit 0, no FAIL line), `git diff --check`
+already — the base comparison shows those two files already failed
+formatting on the base, not that every current complaint in them is
+inherited; owner ruling 5 of the sign-off, §5.343), `verify-unit` (PASS,
+exit 0, no FAIL line), `git diff --check`
 (clean), the pure spec 50 / 50, the route spec 15 / 15 after four test-side
 corrections ((6) below), the six pure regression specs 80 passed and 2 failed
 with both failures reproduced on the untouched export of `390d5ce` on port
@@ -781,8 +789,10 @@ against source digest `0073ceb1efdfda09305cd812d8495d5e6e126f8faef5a3ece6d488e5e
 `390d5ce`, the start and end digests identical: `lint:tsc` exit 0; `build`
 exit 0; ESLint with the prettier rule on the fourteen `.ts` paths exit 0;
 prettier `--check` on the fourteen `.ts` paths and the four documents exit 1
-with exactly the two inherited files flagged (both flagged on the base export
-too); `git diff --check` exit 0; `verify-unit` exit 0, "PASS - every change
+with exactly the same two files flagged as on the base export (the base
+check establishes that those files already failed formatting there, not
+that every current complaint is inherited — §5.343 ruling 5); `git diff
+--check` exit 0; `verify-unit` exit 0, "PASS - every change
 is inside the unit allowlist", no FAIL line; P1 `e2e/m19_lines.spec.ts` 50
 passed; P2 (`pilot_coverage`, `pilot_closure_models`,
 `m26_protocol_foundation`, `pilot_exterior_models`, `evidence_ledger`,
@@ -827,6 +837,44 @@ round 1 and these documents: prettier on the register and the addendum exit
 `git diff --check` exit 0, the working tree exactly the eighteen allowlisted
 paths. The reviews: §5.341 and the UNIT-LOG "U21 results".
 
+Closeout verification (14 October 2026; §5.342; the UNIT-LOG "U21
+closeout" holds both reports verbatim). Development runs by the writer on
+the changed tree: `tsc`, `build`, ESLint and prettier on the five changed
+`.ts` files all exit 0; the pure spec 53 passed; the route scenarios R2,
+R2 at canvas 1080, R9b and R10 4 passed in 9.5 min. The affected checks
+were then rerun by the test-reviewer (a general-purpose agent on
+`claude-sonnet-5-5`, reporting Sonnet 5.5) on the source digest
+`c09c5d9adbe1deb4fd0ee2d6271015a16cbd059f970e15ed7e83ba8b396772b0` (`src`
+and `e2e` at HEAD `33e779f`; start and end identical): `lint:tsc` exit 0;
+`build` exit 0; ESLint with the prettier rule on the five files exit 0;
+prettier `--check` on the five files exit 0; `git diff --check` exit 0;
+P1 53 passed; P2 (the six pure regression specs) 80 passed, 2 failed — the
+same two inherited `final_scientific_gates` failures (`:146` received
+`proto_m08_effort_choice`; `:405` U8-12 expected 10, received 8), nothing
+else; B1 the whole route spec 16 passed in 47.3 min with no retry and no
+skip (R1 3.8, R2 2.3, R2 at canvas 1080 2.2, R3 2.7, R4 4.6, R5 3.1, R5b
+2.0, R6 1.9, R7 4.7, R7b 4.7, R8 default 2.3, R8 Courier New 2.2, R8 Lucida
+Console 2.4, R9 3.5, R9b 2.7, R10 2.2 min); port 5207 had no listener
+before each browser run; the twenty-nine frames rewritten by that run, 27
+at 800 × 600 and frames 25 and 26 at 1280 × 720 by their PNG headers (the
+same sizes as before; no frame shows the closeout's changes — the ids are
+not drawn and the route never faults the panel). B2 was not rerun: no
+shared file changed and neither spec reads the panel's element ids. The
+Opus confirmation (`claude-opus-5-5`, read-only, in parallel on the same
+source digest and the full-tree digest
+`1b9ed3001ca0bd3b7ff7184291abe7a4b35997dd20f4ac930626fe45d6db33ce`):
+GP-1 confirmed fixed by tracing every hotkey and ENTER transition of the
+frame; the fault record conforming to the vocabulary, the wording audit and
+the layout rule; the documents faithful to the instruction; no MATERIAL
+finding; two MINOR document corrections and three NOTEs applied as
+documentation (§5.342 and the UNIT-LOG name them); its open questions for
+the owner (the wording's status, `content_version`) in the handoff, both
+closed by the owner's sign-off of 14 October 2026 (§5.343). Final
+static checks by the writer on the completed tree after these documents:
+prettier on the register and the addendum, `verify-unit`,
+`git diff --check` and the digest, recorded in the UNIT-LOG "U21 closeout"
+with the second commit.
+
 (6) Deviations, defaults exercised and findings. Deviations from the plan,
 none from the contract: (a) the named agent types `test-reviewer`,
 `scientific-reviewer`, `gameplay-reviewer` and `visual-reviewer` were not
@@ -856,8 +904,11 @@ defined`); both were removed and the spec rerun. Defaults exercised:
 `series_closure_reason`), D-8 (`attempt_sequence` read back from the
 runtime's events), D-13 (a) (the fault record through `log` and
 `markOpportunityInvalid`) and D-13 (b) (the empty landing after a fault).
-Disclosed to the owner without resolution: the reopened panel after a runtime
-fault shows no record line (a wording decision, §5.340 (b)); the amber
+Disclosed to the owner without resolution at the first commit (the first
+two resolved by the closeout of 14 October 2026, §5.342): the reopened panel
+after a runtime fault showed no record line (a wording decision, §5.340 (b));
+the shared frame's focus carried onto HELP or LEAVE across a hotkey view
+change (GP-1); the amber
 feedback line of the last TRY stays visible under the help sheet until the
 surface's own auto-clear (frame 21, cosmetic, no rule affected); the inherited
 prettier state of the matrix and the UNIT-LOG; the two inherited gate
@@ -877,7 +928,19 @@ while earlier page loads exist — corrected (pure case E1b; §5.335 amended);
 (h) VI-3 — frames 05, 06 and 21 were written by the 1280 × 720 pointer
 scenario although contract §13 asks for 800 × 600 unless stated — now
 written by R3 and R9 at 800 × 600. The unresolved findings and the questions
-for the owner: §5.341.
+for the owner: §5.341. The closeout of 14 October 2026 (the owner's decisions
+on those questions, §5.342; a second local commit, inside the allowlist):
+(i) GP-1 fixed locally in M19 — HELP and LEAVE carry the view's name in
+their ids (`help_<view>` / `leave_<view>`), so a hotkey that changes the view
+while one of them is focused lands on the new view's neutral element (the
+shared frame untouched; pure test "HELP and LEAVE carry the view name";
+route scenario R10); (j) the two-line fault record for a panel reopened
+after a runtime fault (§5.340 (b); implementer wording in the shape of the
+M14–M18 fault records, approved for addition by the owner, not preview
+text); (k) the owner accepted D-6 (SC-2) and D-13 (a) (SC-4) as documented,
+retained the between-line fault reading (`censored: false`) and the U24
+deferrals (GP-2 / VI-1 among them); no event, field, formula, disposition or
+other participant string changed.
 
 (7) Limitations (stated, not resolved; preview §9 and this build). Under
 Option B the eligible group is selected by search strategy — participants
@@ -898,7 +961,10 @@ hold-back keeps the earlier load's events in `prior_page_load_events` and
 exports nothing from them (the framework rule); the route driver replays
 Noor's briefing after a reload, so the browser cannot show case E18's missing
 current-load `presented` record (the pure spec shows it). The reopened panel
-after a runtime fault shows no record line (§5.340 (b)). M22's handover
+after a runtime fault shows the two-line fault record of §5.340 (b) —
+implementer wording approved for addition at the closeout, not preview text;
+the browser evidence does not fault the panel (no fault injection on the
+route), so the record is shown by the pure spec only. M22's handover
 report line "Coolant coupling — valve serviced" is unchanged whatever M19's
 outcome (U24 backlog). No source validates the count; passing tests establish
 implementation correctness only, never validity, reliability, persistence as
@@ -10654,7 +10720,13 @@ an owner decision.
      `explanation`, `recorded`, `start`, `sheet`, `log`, `readout`,
      `heater_1` … `heater_3`, `feed`, `dial_down`, `dial_up`, `bypass`, `try`,
      `set_aside`, `finished_line`, `next`, `finish`, `dialog`, `confirm`,
-     `back`, `help`, `leave`, `help_sheet`, `close_help`, `closed`).
+     `back`, `help_<view>` and `leave_<view>` — per view since the closeout
+     of 14 October 2026 (§5.342), the view named as `m19HelpView` names it
+     (`help_consulted` carries the same names except `record`, which no help
+     consult can reach): `intro`, `check_1`, `check_2`, `explanation`,
+     `recorded`, `line_1`, `finished_1`, `line_2`, `finished_2`, `record` —
+     `help_sheet`,
+     `close_help`, `closed`).
 335. **D-8 — event order, the field classification and the integrity rules
      S1–S7 (U21 default).** The §5.259 convention: an outcome that depends on
      event order is read only from events that each carry a usable, distinct
@@ -10741,7 +10813,19 @@ an owner decision.
      empty neutral landing and `LEAVE  [ESC]` (footer `ESC leave`) and accepts
      nothing. A record line for this state is a wording decision reserved to
      the owner (U24 backlog); nothing in the value, the eligibility or the
-     dispositions depends on it.
+     dispositions depends on it. Closeout (14 October 2026, §5.342): the owner
+     approved adding a two-line fault record; as built, the reopened panel
+     after a runtime fault shows, as its neutral landing (60 design px high,
+     like the final view's two-line landing) with `LEAVE  [ESC]`,
+     `The coupling panel has a fault and is closed.` over
+     `Its record is kept as it is.` — implementer wording in the shape of
+     the M14–M18 fault records
+     (`The <object> has a fault and is closed. Recorded answers are kept.`),
+     not preview text, inside the vocabulary of preview §4.1 and the wording
+     audit of §8 (both lines in the pure spec's transcription and audit); the
+     U24 backlog entry is closed. Sign-off (14 October 2026, §5.343 ruling
+     1): the owner accepted this wording exactly; it is approved wording
+     from that date.
 341. **The U21 reviews, correction round 1 and the open findings
      (13 October 2026).** The final matrix (§4 "Unit 21" (5)) was run once by
      the test-reviewer on `claude-sonnet-5-5`; then ONE combined read-only
@@ -10827,3 +10911,113 @@ an owner decision.
      reloads the page or faults the panel). The final static checks on the
      completed tree are in §4 "Unit 21" (5). No second correction round was
      needed.
+342. **The U21 closeout (14 October 2026): the research owner's decisions on
+     the §5.341 questions, as implemented; a second local commit.** The
+     owner's instruction (quoted verbatim in the UNIT-LOG "U21 closeout"):
+     approve the proposed closeout — fix M19's neutral focus locally, add the
+     two-line fault message, accept the documented closure-reason mapping and
+     the internal-window-status exception, retain the existing between-line
+     fault interpretation and the listed U24 deferrals; complete the narrow
+     verification and reporting corrections, obtain the final Opus
+     confirmation, make one additional local closeout commit; no push, merge,
+     shared-framework redesign or U22 work. Item by item: (1) question (1) —
+     a fault between the lines with line 1 eligible and line 2 never
+     presented keeps `censored: false` (as built, pure case E19: the fault
+     excluded no presented line; `faults` in the components names it).
+     (2) question (2) / SC-2 — default D-6 (§5.333) accepted: the shift-end
+     row's `closure_reason` is the framework's `route_departure` with
+     `series_closure_reason` `shift_ended` beside it; no enum change.
+     (3) question (3) / SC-5 — not addressed by the instruction: TRY keeps
+     the accent style and SET ASIDE the plain style as in the owner-seen
+     mock-up; the salience question stayed open at the closeout commit and
+     was closed by the owner's sign-off (§5.343 ruling 4: retained, its
+     limitation recorded for U24).
+     (4) question (4) / §5.340 (b) — the two-line fault record added:
+     `The coupling panel has a fault and is closed.` over
+     `Its record is kept as it is.` (implementer wording in the shape of the
+     M14–M18 fault records; not preview text; the vocabulary and the wording
+     audit hold;
+     `m19RecordLine` returns it for status `technical_failure` — on the
+     open panel at the moment of the fault and on every reopening; the
+     landing 60 design px high; the pure spec's transcription list, the
+     strings inventory and the closed-records test carry it; the browser
+     evidence never faults the panel, so the record is not rendered in any
+     frame). (5) question (5) /
+     SC-4 — D-13 (a) (§5.340) accepted as a documented exception: the kit
+     window's private status stays `open` after a runtime fault; the family
+     record and the framework's `markOpportunityInvalid` carry the fault; no
+     kit change. (6) question (6) / GP-1 — fixed locally in M19, the shared
+     wide frame untouched: HELP and LEAVE carry the view's name in their ids
+     (`help_<view>` / `leave_<view>`, the view named as `m19HelpView` names
+     it — `intro`, `check_1`, `check_2`, `explanation`, `recorded`, `line_1`,
+     `finished_1`, `line_2`, `finished_2`, `record`; the closed record's
+     LEAVE is `leave_record`); the frame keeps focus by element id across
+     refreshes, so a hotkey that changes the view while HELP or LEAVE is
+     focused (R on the check, T restoring a line) finds no such id on the new
+     view and lands on the view's neutral element, as preview §4.11 states
+     ("every view lands on a neutral focus"), while inside one view the
+     focus is kept (a setting hotkey with TRY or HELP focused); pointer
+     activations always moved the focus first and are unaffected. Evidence:
+     the pure test "HELP and LEAVE carry the view name in their ids" (nine
+     distinct pairs across the nine working views; every id unique within
+     the final view, the other views by inspection of the model) and route
+     scenario R10 in the real game (the check with HELP
+     focused and R ⇒ focus `explanation`; the recheck with LEAVE focused and
+     R ⇒ `recorded`; line 1 with HELP focused and a restoring T ⇒
+     `finished_line`; TRY focused and a setting hotkey ⇒ TRY kept; HELP
+     focused and a non-restoring T ⇒ HELP kept). GP-2 / VI-1 (the feedback
+     auto-clear) stays a U24 deferral with the rest of the list. Changed by
+     the closeout, all inside the allowlist: `m19SurfaceModel.ts`,
+     `m19LinesModel.ts`, `m19LinesContent.ts`, the pure spec (53 tests), the
+     route spec (16 scenarios, the per-view ids in every expectation, R10)
+     and the four documents; no event, field, formula, disposition, default
+     other than D-13 (b) or participant string other than the fault record
+     changed; the frame, the kit and every prohibited file untouched. The
+     closeout verification (the affected checks rerun by the test-reviewer,
+     the Opus confirmation, the final static checks) is recorded in §4
+     "Unit 21" (5) "Closeout verification" and in the UNIT-LOG "U21
+     closeout"; the second commit's hash is in the handoff.
+343. **The U21 sign-off (14 October 2026): the research owner's five
+     rulings on the closeout handoff; documentation only.** The owner's
+     instruction (verbatim in the UNIT-LOG "U21 sign-off") closes the
+     questions the closeout handoff left open; this entry and that section
+     are the only changes, made as one authorised amendment of the
+     unpushed closeout commit (its subject unchanged; the implementation
+     commit untouched; no source, test, asset or configuration change).
+     Ruling 1 — the implemented fault wording is accepted exactly:
+     `The coupling panel has a fault and is closed.` and
+     `Its record is kept as it is.` are approved wording from this date
+     (§5.340 (b); the "implementer wording, not preview text" labels of
+     §5.342 and the UNIT-LOG stand as the history of how it was authored;
+     the Opus question E 1 is closed with option (a)). Ruling 2 —
+     `content_version` stays `m19-content-v2`: the closeout adds a
+     post-closure message and changes no measurement content, rule or
+     scoring (the lines, keys, readings, the check, the boundary rule, the
+     extractor and every disposition are as at the first commit; the Opus
+     question E 2 is closed with option (a)). Ruling 3 — the disclosed
+     `verify-unit` result of the closeout is accepted as an exception for
+     this closeout only: the actual exit status is 1, before and after the
+     commit, with the reported FAIL lines confined to the ten untracked
+     `.agents/` and `.codex/` metadata files that a Codex Desktop session
+     materialised in the worktree at 01:29:40 (byte-identical to the
+     primary checkout's); the files are preserved; the verifier, the guard
+     and the ignore rules are not modified; the result is not described as
+     PASS anywhere (the unit's own nine modified and eighteen base-diff
+     paths were inside the allowlist and `git diff --check` was clean, which
+     is what the exit 1 does not cover). Ruling 4 — the TRY / SET ASIDE
+     styling (SC-5, §5.341 question (3)) and the shared feedback auto-clear
+     (GP-2 / VI-1, question (6) second half) are retained as built, their
+     limitations recorded for U24 (the "go on" control carries the accent
+     style on the measured choice; the last action's feedback line can
+     outlive a view change by up to 2.2 s); the limitation that the fault
+     message has pure-spec evidence only — no browser screenshot and no
+     font measurement (§4 "Unit 21" (7); Opus D-2) — is retained
+     explicitly. Ruling 5 — the formatting attribution is corrected: the
+     base checks establish that the matrix and the UNIT-LOG already failed
+     prettier on the base export, but not that every current complaint in
+     them is inherited; the earlier blanket statements in §4 "Unit 21" (5)
+     and the UNIT-LOG are qualified accordingly, without any reformatting
+     and without a new formatting investigation (none required by the
+     owner). Nothing else of §5.342 changes; every verification limitation
+     and every historical report stands as written. No owner question of
+     this unit remains open.

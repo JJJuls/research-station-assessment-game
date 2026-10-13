@@ -438,9 +438,9 @@ export function m19RecordLine(s: M19Series): string | null {
     case 'held_back':
       return M19_TEXT.held_back;
     case 'technical_failure':
-      // No approved record line exists for a reopened panel after a fault
-      // (register §5.340 (b)): the record view carries no text.
-      return '';
+      // The two-line fault record (register §5.340 (b); added at the U21
+      // closeout of 14 October 2026).
+      return M19_TEXT.closed_fault.join('\n');
     case 'completed':
       return s.view === 'record' ? M19_TEXT.final_record : null;
     default:

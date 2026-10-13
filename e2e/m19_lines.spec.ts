@@ -303,6 +303,11 @@ const HAND_STRINGS: string[] = [
   'The coupling panel closed when the outside work ended.',
   'The coupling panel was closed at the station review.',
   'This panel was opened earlier in the session. It stays closed now.',
+  // The fault record (two lines) is not preview text: implementer wording in
+  // the shape of the M14–M18 fault records, approved for addition by the
+  // owner's closeout decision of 14 October 2026 (register §5.340 (b)).
+  'The coupling panel has a fault and is closed.',
+  'Its record is kept as it is.',
   'TAB move · ENTER or SPACE use · H help · ESC leave',
   '1-3 choose · R record · H help · TAB move · ESC leave',
   'TAB move · ENTER or SPACE use · H help · ESC leave',
@@ -2790,7 +2795,12 @@ test.describe('M19 surface model (Unit 21)', () => {
     const r = opened();
 
     expect(focusables(r)[0]).toBe('intro');
-    expect(focusables(r)).toEqual(['intro', 'continue', 'help', 'leave']);
+    expect(focusables(r)).toEqual([
+      'intro',
+      'continue',
+      'help_intro',
+      'leave_intro',
+    ]);
     m19sContinue(r.s, 'keyboard', r.settle(), r.sink);
     expect(focusables(r)).toEqual([
       'question',
@@ -2798,17 +2808,28 @@ test.describe('M19 surface model (Unit 21)', () => {
       'option_2',
       'option_3',
       'record',
-      'help',
-      'leave',
+      'help_check_1',
+      'leave_check_1',
     ]);
     m19sDraft(r.s, 'm19_chk_q1_o1', 'keyboard', r.settle(), r.sink);
     m19sRecordAnswer(r.s, 'keyboard', r.settle(), r.sink);
-    expect(focusables(r)).toEqual(['explanation', 'continue', 'help', 'leave']);
+    expect(focusables(r)).toEqual([
+      'explanation',
+      'continue',
+      'help_explanation',
+      'leave_explanation',
+    ]);
     m19sContinueExplanation(r.s, 'keyboard', r.settle(), r.sink);
     expect(focusables(r)[0]).toBe('question');
+    expect(focusables(r).slice(-2)).toEqual(['help_check_2', 'leave_check_2']);
     m19sDraft(r.s, 'm19_chk_q2_o3', 'keyboard', r.settle(), r.sink);
     m19sRecordAnswer(r.s, 'keyboard', r.settle(), r.sink);
-    expect(focusables(r)).toEqual(['recorded', 'start', 'help', 'leave']);
+    expect(focusables(r)).toEqual([
+      'recorded',
+      'start',
+      'help_recorded',
+      'leave_recorded',
+    ]);
     m19sStartLine1(r.s, 'keyboard', r.settle(), r.sink);
     expect(focusables(r)).toEqual([
       'readout',
@@ -2818,8 +2839,8 @@ test.describe('M19 surface model (Unit 21)', () => {
       'feed',
       'try',
       'set_aside',
-      'help',
-      'leave',
+      'help_line_1',
+      'leave_line_1',
     ]);
     expect(m19sHelp(r.s, 'keyboard', r.settle(), r.sink)).toBe(true);
     expect(focusables(r)).toEqual(['close_help']);
@@ -2840,7 +2861,12 @@ test.describe('M19 surface model (Unit 21)', () => {
     });
     expect(dialog.help).toBe('ENTER set aside · ESC back');
     m19sConfirmSetAside(r.s, 'keyboard', r.settle(), r.sink);
-    expect(focusables(r)).toEqual(['finished_line', 'next', 'help', 'leave']);
+    expect(focusables(r)).toEqual([
+      'finished_line',
+      'next',
+      'help_finished_1',
+      'leave_finished_1',
+    ]);
     expect(m19SurfaceModel(hostOf(r)).status).toBe('1 of 2 lines finished.');
     m19sNextLine(r.s, 'keyboard', r.settle(), r.sink);
     expect(focusables(r)).toEqual([
@@ -2850,13 +2876,18 @@ test.describe('M19 surface model (Unit 21)', () => {
       'bypass',
       'try',
       'set_aside',
-      'help',
-      'leave',
+      'help_line_2',
+      'leave_line_2',
     ]);
     expect(m19SurfaceModel(hostOf(r)).status).toBe('Working on line 2 of 2.');
     m19sRequestSetAside(r.s, 'keyboard', r.settle(), r.sink);
     m19sConfirmSetAside(r.s, 'keyboard', r.settle(), r.sink);
-    expect(focusables(r)).toEqual(['finished_line', 'finish', 'help', 'leave']);
+    expect(focusables(r)).toEqual([
+      'finished_line',
+      'finish',
+      'help_finished_2',
+      'leave_finished_2',
+    ]);
 
     const final = m19SurfaceModel(hostOf(r));
 
@@ -2867,10 +2898,51 @@ test.describe('M19 surface model (Unit 21)', () => {
     expect(m19sFinish(r.s, 'keyboard', r.settle())).toBe(true);
     m19sLeave(r.s, r.tick(100), r.sink);
     m19sOpen(r.s, r.tick(100), r.sink);
-    expect(focusables(r)).toEqual(['closed', 'leave']);
+    expect(focusables(r)).toEqual(['closed', 'leave_record']);
     expect(m19SurfaceModel(hostOf(r)).elements[0].label).toBe(
       'Both lines are finished. The panel takes no further settings.',
     );
+  });
+
+  test('HELP and LEAVE carry the view name in their ids (review finding GP-1, fixed locally at the closeout): the views a hotkey can move between never share an id, so the frame lands on the neutral element', () => {
+    const r = opened();
+    const last = () => focusables(r).slice(-2);
+    const seen: string[][] = [];
+    const note = () => {
+      const pair = last();
+
+      expect(pair[0]).toMatch(/^help_/);
+      expect(pair[1]).toMatch(/^leave_/);
+      expect(pair[0].slice(5)).toBe(pair[1].slice(6));
+      expect(seen).not.toContainEqual(pair);
+      seen.push(pair);
+    };
+
+    note(); // intro
+    m19sContinue(r.s, 'keyboard', r.settle(), r.sink);
+    note(); // check_1 — R with a wrong draft moves to the explanation
+    m19sDraft(r.s, 'm19_chk_q1_o1', 'keyboard', r.settle(), r.sink);
+    m19sRecordAnswer(r.s, 'keyboard', r.settle(), r.sink);
+    note(); // explanation
+    m19sContinueExplanation(r.s, 'keyboard', r.settle(), r.sink);
+    note(); // check_2 — R moves to the recorded line
+    m19sDraft(r.s, 'm19_chk_q2_o3', 'keyboard', r.settle(), r.sink);
+    m19sRecordAnswer(r.s, 'keyboard', r.settle(), r.sink);
+    note(); // recorded
+    m19sStartLine1(r.s, 'keyboard', r.settle(), r.sink);
+    note(); // line_1 — a restoring T moves to the finished view
+    set1(r, KEY1);
+    expect(tryNow(r).kind).toBe('executed');
+    note(); // finished_1
+    m19sNextLine(r.s, 'keyboard', r.settle(), r.sink);
+    note(); // line_2
+    m19sRequestSetAside(r.s, 'keyboard', r.settle(), r.sink);
+    expect(focusables(r)).toEqual(['confirm', 'back']);
+    m19sConfirmSetAside(r.s, 'keyboard', r.settle(), r.sink);
+    note(); // finished_2
+    expect(seen).toHaveLength(9);
+    // Every element id of a line view is unique within the view.
+    expect(new Set(focusables(r)).size).toBe(focusables(r).length);
   });
 
   test('the TRY list shows at most nine rows, then the earlier-TRYs line above the newest eight; every opener sits at x ≥ 738', () => {
@@ -2899,7 +2971,7 @@ test.describe('M19 surface model (Unit 21)', () => {
     }
   });
 
-  test('the closed records: the shift-end, review and hold-back lines; a faulted panel shows no text; the closure snapshot carries the per-line records', () => {
+  test('the closed records: the shift-end, review and hold-back lines; the two-line fault record; the closure snapshot carries the per-line records', () => {
     const shift = opened();
 
     m19sLeave(shift.s, shift.tick(100), shift.sink);
@@ -2931,9 +3003,14 @@ test.describe('M19 surface model (Unit 21)', () => {
     fault(faulted);
     expect(m19SurfaceModel(hostOf(faulted)).elements.map((e) => e.id)).toEqual([
       'closed',
-      'leave',
+      'leave_record',
     ]);
-    expect(m19SurfaceModel(hostOf(faulted)).elements[0].label).toBe('');
+    expect(m19SurfaceModel(hostOf(faulted)).elements[0]).toMatchObject({
+      label:
+        'The coupling panel has a fault and is closed.\nIts record is kept as it is.',
+      h: 60,
+    });
+    expect(m19SurfaceModel(hostOf(faulted)).help).toBe('ESC leave');
     expect(m19ClosureSnapshot(faulted.s)).toMatchObject({
       lines_planned: 2,
       check_status: 'pass_first',

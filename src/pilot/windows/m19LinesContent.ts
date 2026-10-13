@@ -451,6 +451,15 @@ export const M19_TEXT = {
   closed_review: 'The coupling panel was closed at the station review.',
   held_back:
     'This panel was opened earlier in the session. It stays closed now.',
+  /**
+   * The record of a panel reopened after a runtime fault (two lines; the
+   * closeout of 14 October 2026 approved adding it — implementer wording in
+   * the shape of the M14–M18 fault records, register §5.340 (b)).
+   */
+  closed_fault: [
+    'The coupling panel has a fault and is closed.',
+    'Its record is kept as it is.',
+  ],
 
   footer_card: 'TAB move · ENTER or SPACE use · H help · ESC leave',
   footer_check: '1-3 choose · R record · H help · TAB move · ESC leave',
@@ -533,6 +542,7 @@ export function m19ParticipantStrings(): string[] {
     t.closed_shift,
     t.closed_review,
     t.held_back,
+    ...t.closed_fault,
     t.footer_card,
     t.footer_check,
     t.footer_finished,
