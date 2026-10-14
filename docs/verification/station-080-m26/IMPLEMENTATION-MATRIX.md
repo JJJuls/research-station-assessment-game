@@ -57,7 +57,7 @@ Global findings that apply to every row:
 | M17  | **as specified (U9)** — was contradicting at the audit base (1 practice + 1 transfer trial, live preview on both; the v2 `proto_m17_syntax_*` family is retired); **criterion values not to be read until register §5.87–5.88 are decided** (live preview on learning trials; correct-response rule)                                                                                                  | 2 uncoached baseline + 12 feedback learning + 2 transfer trials; no preview on baseline/transfer; criterion = 3 consecutive correct learning trials; all 12 always run; early exit = incomplete     | `m17_criterion_trial` {criterion_trial, attained}: 3–12, censored at 12; full sequence, baseline, transfer                                                       | pure: early criterion, never attain, transfer-only; browser: 16 trials                                                        |
 | M18  | **as specified (U20, administration `m18-cases-v1`; research-owner decision D-U20-1 of 12 October 2026; not scientifically validated)** — was partial at the audit base (one fault case per session, two forms, no consequence prediction, forced selection); three independently designed cases in fixed order, each with three on-request deterministic tests, one immutable first diagnosis (a part or CANNOT SOLVE) that closes the tests, then one immutable first planned-step answer (an option or CANNOT SOLVE) keyed to the actual case, before any feedback; results after the sixth; the legacy board untouched on the developer alias; the two rows with separate missingness and the slot-local defect scope of item 11 | Three independent cases with discriminating tests; first diagnosis + keyed consequence prediction before feedback; Cannot solve = incorrect                                                         | `m18_correct_first_diagnoses` / 3 (primary); `m18_correct_consequence_predictions` / 3 (companion)                                                               | pure: ambiguity check rejects; browser: three cases                                                                           |
 | M19  | **as specified (U21, administration `m19-lines-v2`; research-owner decision D-U21-1 of 13 October 2026; not scientifically validated)** — was partial at the audit base (one coupling, three binds); two solvable lines at the coupling panel after a recorded check, each line's designed obstacle ONE immutable boundary; the v2 `proto_m19_valve_*` family retired from the route                  | Second distinct solvable challenge; per-challenge first difficulty boundary; teaching step with recorded comprehension                                                                              | `m19_continuations`: challenges with a further work attempt / eligible difficulty encounters (0–2)                                                               | pure: no difficulty → no denominator; browser: both challenges                                                                |
-| M20  | **partial** — one project, one uncued resume (`returnEpisodeModel.ts:209-214`)                                                                                                                                                                                                                                                                                                                        | Two unfinished components each with a cued return milestone; cue exposure recorded; remaining work shown                                                                                            | `m20_cued_resumptions`: resumed / eligible unfinished components (0–2); spontaneous returns, progress                                                            | pure: resume ≠ new occasion; browser: two cues                                                                                |
+| M20  | **as specified (U22, administration `m20-feed-returns-v2`; research-owner decision D-U22-1 of 14 October 2026 as the owner's selections — items 1–11 recommended, item 12 the silent release, item 13 the exploratory label; coverage label `exploratory`; not scientifically validated)** — was partial at the audit base (one project, one uncued resume); two held channels of the Mast 04 feed at the Workshop return-shift feed console, each held at its second step, released silently 30 s later and noticed 30 s after that only if still unresumed; a spontaneous resumption (an executed ALIGN in the silent window) recorded separately and excluded from the cued denominator; the v2 `proto_m20_antenna_*` family retired from the route | Two unfinished components each with a cued return milestone; cue exposure recorded; remaining work shown                                                                                            | `m20_cued_resumptions`: cued-eligible channels with an executed ALIGN after their notice / cued-eligible channels (0–2; null without one); `spontaneous_resumptions` beside, never inside                                                            | pure: resume ≠ new occasion, the silent window, the double-count void; browser: two notices, a spontaneous and a cued resumption                               |
 | M21  | **as specified (U10)** — was partial at the audit base (one case, ~130-word manual, a free pre-fit bench test, an irreversible FIT, no restudy concept; the v2 `proto_m21_manual_*` family is retired)                                                                                                                                                                                                | Two independent cases, 240–320 words total; after an incorrect first application: truthful feedback, relevant restudy + revised application / other strategy / exit                                 | `m21_restudy_revisions`: cases with relevant restudy AND revised application / initially incorrect cases; two successes = no score                               | pure: first-time success → null; browser: wrong → restudy → revise                                                            |
 | M22  | **as specified (U11)** — was partial at the audit base (one report, one criterion, no rating; the v2 `proto_m22_report_*` family is retired)                                                                                                                                                                                                                                                          | **partial** — one report, one criterion (`m22ReportModel.ts:90-91`); no rating anywhere                                                                                                             | Second report with its own genuine requirement; both after the other PDD tasks; after both decisions, one 1–5 discouragement rating per report with recall delay | `m22_revisions_begun` / 2; `m22_discouragement_ratings` (two ordinal, separate; missing = null)                               | pure: null ≠ midpoint; browser: two reports + ratings                      |
 | M23  | **partial** — one plot (`m23ExcavationModel.ts:71-82`); no post-failed-dig branch                                                                                                                                                                                                                                                                                                                     | Second independently keyed plot; after each first genuine failed dig, explicit continue-or-stop; keep every attempt                                                                                 | `m23_continuations_after_failure`: plots with another search action / plots with a failed dig (0–2)                                                              | pure: first-dig success → null; browser: two plots                                                                            |
@@ -667,3 +667,94 @@ kit window status after a fault (D-13 (a)) accepted as documented; the
 between-line fault reading retained; no event, field, formula or
 disposition changed. Clustered observations in one yard visit; never a
 validity claim.
+
+**U22** (M20; bounded unit under `U22-CONTRACT.md`, v3 of 14 October 2026;
+research-owner decision D-U22-1 of 14 October 2026 — register §5.344, an
+owner ruling recorded as the owner's SPECIFIC selections: items 1–11 as
+recommended, item 12 the silent-release alternative, item 13 the
+exploratory-label alternative — never "all recommendations"): the Records
+Workshop station feed console opens, in the return shift, the
+administration `m20-feed-returns-v2` in the wide frame of `WorkSurfaceScene`
+(D-U17-2, used as is). A first-opening card; then the two channels of the
+Mast 04 feed (`m20-content-v2`, form `m20-form-1`): six cell-matching
+steps each (3, 3, 4, 4, 5, 5 cells, targets fixed), A first, B once A has
+ever been held; ALIGN refused `as_loaded` / `repeat` / `settling` / `held`
+on the current vector alone, an older vector executing; the system HOLDS a
+channel the moment its second step is aligned; 30 s later the channel is
+released SILENTLY (`channel_released` at `held_at_ms + 30000`, written at
+the first check at or after that time, always before any work on, view of,
+notice for or closure of the channel; nothing outside the console announces
+it — the chip shows step counts only); opening the console shows the
+channel `pass open` with CONTINUE; the first executed ALIGN in that silent
+window is a SPONTANEOUS resumption (status `resumed_spontaneously`, its
+notice cancelled and never shown, the channel excluded from the cued
+denominator); 30 s after the release a two-line station notice becomes due
+and is delivered only with the console closed, the participant in the
+Workshop, nothing else open, the page visible and focused and the channel
+neither resumed nor aligned — A before B, B ≥ 8 s after A's ACTUAL end,
+shown 6 s or ended early by a surface or prompt opening, leaving the
+Workshop or closure, never by focus loss, one per channel; the first
+executed ALIGN after the notice is the CUED credit (walking back or closing
+and reopening in place; no movement threshold). Opening, CONTINUE, cell
+edits and refused ALIGNs are never resumptions; a channel is never counted
+twice; no resumption writes a new hold, release, notice, start, opening or
+occasion. The sign-off closes an opened project as it stands
+(`shift_signed_off`: a noticed channel without a credit counts 0) and
+records a presented, never-opened console (`closed_unopened`); the review
+censors a noticed channel awaiting its return; a reload holds the console
+back (`interrupted`); a fault keeps earned resumptions of both kinds and
+excludes noticed channels awaiting a return. Primary `m20_cued_resumptions`
+= cued-eligible channels with a cued credit / cued-eligible channels
+(planned 2; conditional eligibility — one eligible channel is complete; the
+NUMERATOR COUNT 0–2 with the denominator beside it; a zero denominator
+exports `numerator: null`, `denominator: 0` with its disposition under the
+precedence `technical_only` > `censored_only` > `resumed_before_cue` >
+`cue_not_presented` > `no_hold` > `not_begun`); `spontaneous_resumptions`
+(0–2) a companion beside the value, never inside it; recounted from the
+raw events under the integrity rules S1–S7 (every stored differ count
+against the content rule, every protocol time against the timing rules —
+a release other than hold + 30 000, a notice before release + 30 000, a
+notice after the channel's resumption, B within 8 000 ms of A's actual end,
+B while A's notice was due and undelivered, a notice end after the terminal
+record all void the row). The owner's recorded limitation: the cued outcome
+describes channels NOT resumed before their notice and is no ranking across
+all participants; two spontaneous resumptions with no cued-eligible channel
+give a null primary, denominator 0 and spontaneous 2. The label is
+`exploratory`: a provisional measure of re-engagement whose relation to MPS
+item 2 needs empirical evaluation; `difficulty_established: false` —
+longer remaining copying is not established difficulty. The yard's Mast 04
+keeps its participant experience as unmeasured outdoor preparation
+(`outdoor_*` records, never counted); the legacy antenna family
+(`m20AntennaModel.ts`, the adapter functions of `exteriorWindows.ts` and
+`returnWindows.ts`) stays in the tree unchanged and leaves the route
+(`exteriorWindows.ts` loses only its four legacy M20 records; its
+`setComprehension('passed')` count stays 8). Tests: pure `m20_returns` (the
+independent transcription of the targets, the counts, the constants and
+every string; the model — refusals, the hold, the release whatever the
+context, the notice's timing, delivery, early end and spacing, spontaneous
+versus cued resumption, the double-count prevention; the extractor on the
+preview §7 cases E1–E61 (72 cases) with hand-written expectations, S1–S7
+and the descriptive flags; the clocks; the register, legacy and wiring
+source checks); browser `m20_returns_route` R1–R9 with the thirty-one
+frames of contract §13; `pilot_return`, `pilot_yard`,
+`pilot_exterior_isolation`, `pilot_return_models` test 14 and
+`m03_m04_route` line 987 re-expressed for the new identity and the
+first-beacon guidance (D-U22-1 item 4). Not changed (U24 backlog): the
+capture specs, the legacy e2e helpers, `interactionRegistry.ts`, the
+`returnEpisodeModel.ts` legacy rows, the stale U8-12 premise and the
+prohibited helper `expectNoMeasurementEvents` (the item-11 classification
+of the `pilot_route` "six-zone" failure). Clustered observations of one
+project in one room and one shift; never a validity claim. **Correction
+round 1 (research-owner amendment of 14 October 2026, register
+§5.358–§5.361):** the review found that while the console stays open the
+Workshop scene is paused and no check wrote a due release; the amendment
+supersedes preview §4.6 ("`pass open` only when opened"): due releases are
+now written before every console command and by the open console's own
+≤ 250 ms check (`check: 'console'`), the hold and channel views show current
+availability, CHANNELS [C] on the step and hold views reaches a released
+channel without leaving (no record), an executed ALIGN before the notice is
+presented stays spontaneous while the console is open, a fresh ESC leaves
+like LEAVE inside the settle, a void row exports no spontaneous count or
+channel outcome, a fault after a final result changes nothing scored, the
+notice stands in the top strip right of the mission card and the chip on
+the console's face.

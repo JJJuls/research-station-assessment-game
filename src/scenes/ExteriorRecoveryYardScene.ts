@@ -139,9 +139,6 @@ import {
   exteriorSteppedAway,
   exteriorTechnicalFailure,
   M20_BRIEF,
-  m20AcceptTask,
-  m20DoStage,
-  m20Present,
   M23_BRIEF,
   m23Begin,
   m23Dig,
@@ -246,6 +243,12 @@ import {
   resumeM19Surface,
 } from '../pilot/windows/m19CouplingPanel';
 import { m19SurfaceModel } from '../pilot/windows/m19SurfaceModel';
+import {
+  acceptM20Mast,
+  doM20MastStage,
+  m20OutdoorFault,
+  presentM20MastBrief,
+} from '../pilot/windows/m20FeedConsole';
 import {
   closeM25LoopsAtShiftEnd,
   closeM25Surface,
@@ -1106,7 +1109,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
           accepted: state.accepted,
           stages_done: state.stages_done.length,
         });
-        m20Present(Date.now());
+        presentM20MastBrief(Date.now());
 
         return true;
       },
@@ -1636,7 +1639,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     if (!state.accepted) {
       return [
         this.option('Accept the restoration', () => {
-          if (m20AcceptTask(Date.now(), 'keyboard')) {
+          if (acceptM20Mast(Date.now(), 'keyboard')) {
             this.showFeedbackMessage(
               'Mast 04 restoration accepted — start with the base clamp (E at the mast).',
             );
@@ -1675,7 +1678,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
           cancellable: true,
           onComplete: () =>
             this.guard('M20', () => {
-              if (m20DoStage(next, Date.now(), 'keyboard')) {
+              if (doM20MastStage(next, Date.now(), 'keyboard')) {
                 this.showFeedbackMessage(
                   next === 'clear_base_clamp'
                     ? 'Base clamp cleared of ice. Next: seat the feed line.'
@@ -2939,10 +2942,17 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     try {
       fn();
     } catch (error) {
-      exteriorTechnicalFailure(
-        item,
-        error instanceof Error ? error.message : String(error),
-      );
+      const detail = error instanceof Error ? error.message : String(error);
+
+      if (item === 'M20') {
+        // Unit 22: Mast 04 is unmeasured outdoor preparation of the Workshop
+        // feed console — a fault here is recorded on the outdoor phase and
+        // never invalidates the console's opportunity.
+        m20OutdoorFault(detail);
+      } else {
+        exteriorTechnicalFailure(item, detail);
+      }
+
       throw error;
     }
   }

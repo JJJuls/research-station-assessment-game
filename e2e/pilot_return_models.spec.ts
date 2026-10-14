@@ -1190,9 +1190,11 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
       ledgerEntry('M20').route.opportunity_ids[0],
     );
 
-    // Guidance: the feed console (M20 resume) and the calibration bench
-    // (M07 natural return) are never guided on the return shift; the
-    // board copy carries no directive about either.
+    // Guidance: the calibration bench (M07 natural return) is never guided
+    // on the return shift; the feed console (M20, Unit 22) is guided only
+    // in `workshop_return`, at order 1, until its first opening (decision
+    // D-U22-1 item 4) — the guidance registry lists it, never the board
+    // copy, which carries no directive about either.
     expect(RETURN_GUIDED_ORDER).not.toContain('feed_console');
     expect(RETURN_GUIDED_ORDER).not.toContain('calibration_bench');
     expect(RETURN_BOARD_BODY).not.toMatch(
@@ -1202,7 +1204,9 @@ test.describe('return, revision & handover — pure domain (Unit 5)', () => {
 
     const workshop = code('src/scenes/RecordsWorkshopScene.ts');
 
-    expect(workshop).not.toMatch(/guided\(\s*'feed_console'/);
+    expect(workshop).toMatch(
+      /guided\(\s*'feed_console',\s*S\.feedConsole,\s*'Station Feed Console',\s*\['workshop_return'\],\s*1,\s*\(\) => m20Window\(\)\.windowStatus\(\) !== 'unopened',?\s*\)/,
+    );
     expect(workshop).toMatch(
       /guided\(\s*'calibration_bench',[^\]]{0,200}\[\s*'workshop_work'\s*\]/,
     );

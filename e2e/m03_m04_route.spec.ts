@@ -984,7 +984,10 @@ test.describe('M03 press occasions and M04 cutting jobs on the route', () => {
     await readGauge(page);
     await valeReturnCheckIn(page);
     await expectStage(page, 'workshop_return');
-    expect((await pilotProbe(page))?.beacon?.label).toBe('Label Press B');
+    // Unit 22 (D-U22-1 item 4): the feed console is guided first on the return shift.
+    expect((await pilotProbe(page))?.beacon?.label).toBe(
+      'Station Feed Console',
+    );
 
     // Press B is presented with the return shift.
     expect(

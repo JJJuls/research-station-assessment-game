@@ -27,6 +27,7 @@ import { closeM15AtReview } from './m15RelayBench';
 import { closeM16AtReview } from './m16ProtocolConsole';
 import { closeM18AtReview } from './m18DiagnosticBoard';
 import { closeM19AtReview } from './m19CouplingPanel';
+import { closeM20AtReview } from './m20FeedConsole';
 import { closeM25BeliefAtReview, closeM25LoopsAtReview } from './m25Repetition';
 import {
   closeM20ResumeAtReview,
@@ -112,6 +113,14 @@ export function closeEpisodeWindowsAtReview(nowMs: number) {
   // completed observation (returned / completion as they stand) BEFORE
   // the exterior closure, which censors only a never-resumed start.
   closeM20ResumeAtReview(nowMs);
+  // Station 080 M20 (Unit 22): a project still open — a channel held,
+  // released, noticed or in work — closes with the channels as they stand
+  // (a noticed channel without a credit censored, never a 0; earned cued
+  // credits and spontaneous resumptions kept); a completed or signed-off
+  // project is not reclosed; never opened → absent (`presented_not_opened`
+  // when the Workshop presented it, never `declined`) with `closed_unopened`
+  // when the sign-off did not record it (decision D-U22-1, items 6–8).
+  closeM20AtReview(nowMs);
   // Station 080 M19 (Unit 21): a series still unfinished — the card, the
   // check or a line in work — closes with the lines as they stand (a
   // boundary line without a further TRY censored, never a 0); a completed

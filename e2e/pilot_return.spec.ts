@@ -33,6 +33,7 @@
  * All checks read DEV probes and the research event buffer; input is real
  * keyboard/pointer traffic. Retries 0, workers 1.
  */
+import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 
 import { getEvents, hold, press, selectPromptOption } from './helpers';
@@ -68,7 +69,6 @@ import {
   meetKaiWithoutHandover,
   openFeedConsole,
   openHandoverDesk,
-  openWorkshopPrompt,
   openWorkshopSurface,
   OPPORTUNITY,
   placeOutbound,
@@ -77,7 +77,6 @@ import {
   promptCardLabels,
   readGauge,
   repairRelay,
-  resumeAntenna,
   RETURN,
   returnInside,
   returnProbe,
@@ -97,7 +96,7 @@ const RETURN_FAMILIES = [
   'proto_m07_calibration_',
   'proto_m09_checks_',
   'proto_m10_delivery_',
-  'proto_m20_antenna_',
+  'proto_m20_feed_',
   'proto_m21_case_',
   'proto_m22_returned_',
   'proto_m25_probe_',
@@ -105,6 +104,63 @@ const RETURN_FAMILIES = [
 
 function meta(event: { metadata?: Record<string, unknown> }) {
   return event.metadata ?? {};
+}
+
+/** M20 (Unit 22): the feed console's DEV probe (read-only). */
+interface M20ProbeLike {
+  status: string;
+  view: string;
+  window: string;
+  chip: string;
+  console_open: boolean;
+  notice: { channel_id: string } | null;
+  outdoor: {
+    accepted: boolean;
+    stages_done: string[];
+    outdoor_complete: boolean;
+  };
+  channels: Record<
+    string,
+    {
+      status: string;
+      word: string;
+      step: number;
+      steps_done: number;
+      attempts: number;
+    }
+  >;
+}
+
+async function m20Probe(page: Page): Promise<M20ProbeLike> {
+  const probe = await page.evaluate(
+    () =>
+      (window as unknown as { __m20FeedProbe?: M20ProbeLike | null })
+        .__m20FeedProbe ?? null,
+  );
+
+  if (probe === null) {
+    throw new Error('__m20FeedProbe unavailable (not in the return shift?)');
+  }
+
+  return probe;
+}
+
+/** Opens the feed console surface and CONTINUEs past the card when it shows (keyboard). */
+async function openM20Console(page: Page) {
+  await openWorkshopSurface(page, 'feedConsole', 'm20_feed_console');
+  expect((await surface(page))?.title).toBe('MAST 04 FEED');
+  await page.waitForTimeout(500);
+}
+
+/** Aligns the current step of the console by hotkeys (cells cycle 1 → 2 → 3 → 4 → 1). */
+async function alignStepByKeys(page: Page, target: number[]) {
+  for (let cell = 0; cell < target.length; cell += 1) {
+    for (let k = 1; k < target[cell]; k += 1) {
+      await press(page, String(cell + 1));
+    }
+  }
+
+  await press(page, 'g');
 }
 
 test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
@@ -132,12 +188,13 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     expect(probe?.stage).toBe('return_hub');
     expect(probe?.objective).toContain('Vale');
     expect(probe?.objective).not.toMatch(FORBIDDEN_TEXT);
-    // The obligation stays in the log neutrally; no reminder anywhere else.
-    expect(probe?.mission_log.map((e) => e.text).join(' ')).toContain(
+    // M20 (Unit 22): the yard's mission-log line closes when the return
+    // shift begins; nothing points back to the feed before the Workshop.
+    expect(probe?.mission_log.map((e) => e.text).join(' ')).not.toContain(
       'Mast 04',
     );
     expect(await lastFeedback(page)).not.toMatch(/Mast|gauge|card/);
-    expect(await itemStatus(page, 'M20')).toBe('open');
+    expect(await itemStatus(page, 'M20')).toBe('pending');
     // Station 080 Unit 15: the watch has three checks — at acceptance, on
     // the pass toward the laboratory, and on this return.
     expect(
@@ -208,25 +265,30 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     expect(probe?.stage).toBe('workshop_return');
     expect(probe?.zone).toBe('records_workshop');
     expect(probe?.objective).not.toMatch(FORBIDDEN_TEXT);
-    expect(probe?.beacon?.label).toBe('Label Press B');
+    // M20 (Unit 22, D-U22-1 item 4): the feed console is guided first on the
+    // return shift, until its first opening.
+    expect(probe?.beacon?.label).toBe('Station Feed Console');
 
-    let rp = await returnProbe(page);
+    let rp: Awaited<ReturnType<typeof returnProbe>>;
 
-    // The resume opportunity is PRESENTED on entry with the persisted start.
-    expect(rp.m20.resume_presented).toBe(true);
-    expect(rp.m20.availability).toMatchObject({
-      available: true,
-      history: 'valid',
+    // M20 (Unit 22): the feed console is PRESENTED on entry (exposure only);
+    // the yard's preparation is read into its state, never an opening.
+    const m20 = await m20Probe(page);
+
+    expect(m20.status).toBe('unopened');
+    expect(m20.window).toBe('unopened');
+    expect(m20.chip).toBe('MAST 04 FEED · 2 channels');
+    expect(m20.outdoor).toEqual({
+      accepted: true,
+      stages_done: ['clear_base_clamp', 'seat_feed_line'],
+      outdoor_complete: true,
     });
-    expect(rp.m20.outdoor_stages_done).toEqual([
-      'clear_base_clamp',
-      'seat_feed_line',
-    ]);
-    expect(rp.m20.returned).toBe(false);
-    expect(rp.m20.status).toContain('ALIGNMENT PENDING');
     expect(
-      (await eventsByType(page, 'proto_m20_antenna_resume_presented')).length,
-    ).toBe(1);
+      (await eventsByPrefix(page, 'proto_m20_feed_'))
+        .map((e) => e.event_type)
+        .filter((t) => !t.startsWith('proto_m20_feed_outdoor_')),
+    ).toEqual(['proto_m20_feed_presented']);
+    expect(await eventsByPrefix(page, 'proto_m20_antenna_')).toHaveLength(0);
     expect(
       (await eventsByType(page, 'proto_m07_calibration_end_presented')).length,
     ).toBe(1);
@@ -294,74 +356,83 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
       (await eventsByType(page, 'proto_m07_calibration_returned')).length,
     ).toBe(1);
 
-    // ——— M20 resume at the feed console: resume, three console stages. ———
-    await resumeAntenna(page, 3);
-    rp = await returnProbe(page);
-    expect(rp.m20.returned).toBe(true);
-    expect(rp.m20.completion).toBe(true);
-    expect(rp.m20.useful_resume_actions).toBe(3);
-    expect(rp.m20.window).toBe('closed');
-    expect(rp.m20.exit).toBe('completed');
-    expect(rp.m20.window_id).toBe('m20_antenna_resume');
-    expect(typeof rp.m20.resume_latency).toBe('number');
-    expect(rp.m20.status).toContain('restoration complete');
-    expect(await itemStatus(page, 'M20')).toBe('completed');
+    // ——— M20 (Unit 22): the feed console — the card, channel A's first step
+    // aligned, the console left (the two channels' holds, releases and
+    // notices are the matter of e2e/m20_returns_route.spec.ts). ———
+    await openM20Console(page);
+    expect((await surface(page))?.status).toBe('Read the card, then CONTINUE.');
+    await keyActivate(page, 'continue');
+    await page.waitForTimeout(500);
+    expect((await surface(page))?.status).toBe('Working on channel A.');
+    await alignStepByKeys(page, [2, 4, 3]);
+    expect((await surface(page))?.feedback).toBe('Step 1 aligned.');
+    await closeSurface(page);
+
+    const m20Worked = await m20Probe(page);
+
+    expect(m20Worked.status).toBe('work');
+    expect(m20Worked.window).toBe('open');
+    expect(m20Worked.console_open).toBe(false);
+    expect(m20Worked.chip).toBe('A 1/6 · B 0/6');
+    expect(m20Worked.channels.m20_ch_a).toMatchObject({
+      status: 'in_work',
+      step: 2,
+      steps_done: 1,
+      attempts: 1,
+    });
+    expect(await itemStatus(page, 'M20')).toBe('open');
     expect(
       (await pilotProbe(page))?.mission_log.map((e) => e.text).join(' '),
     ).not.toContain('Mast 04');
 
-    const m20Events = await eventsByPrefix(page, 'proto_m20_antenna_');
-    const startEvents = m20Events.filter(
-      (e) => meta(e).window_id === 'm20_antenna_start',
-    );
-    const resumeEvents = m20Events.filter(
-      (e) => meta(e).window_id === 'm20_antenna_resume',
+    const m20Events = (await eventsByPrefix(page, 'proto_m20_feed_')).filter(
+      (e) => !e.event_type.startsWith('proto_m20_feed_outdoor_'),
     );
 
-    expect(startEvents.map((e) => e.event_type)).toEqual(
-      expect.arrayContaining([
-        'proto_m20_antenna_accepted',
-        'proto_m20_antenna_stage_completed',
-        'proto_m20_antenna_interruption_recorded',
-      ]),
-    );
     expect(
-      startEvents.some((e) => e.event_type.endsWith('window_closed')),
-    ).toBe(false);
-    expect(resumeEvents.map((e) => e.event_type)).toEqual([
-      'proto_m20_antenna_resume_presented',
-      'proto_m20_antenna_console_inspected',
-      'proto_m20_antenna_returned',
-      'proto_m20_antenna_indoor_stage_completed',
-      'proto_m20_antenna_indoor_stage_completed',
-      'proto_m20_antenna_indoor_stage_completed',
-      'proto_m20_antenna_window_closed',
+      m20Events.map((e) => e.event_type.slice('proto_m20_feed_'.length)),
+    ).toEqual([
+      'presented',
+      'opportunity_opened',
+      'intro_acknowledged',
+      'channel_started',
+      'step_presented',
+      ...Array<string>(6).fill('cell_changed'),
+      'align_attempt',
+      'step_aligned',
+      'step_presented',
+      'console_left',
     ]);
 
-    for (const event of resumeEvents) {
-      // The kit's closure carries the linking fields inside raw_components.
-      const phase =
-        meta(event).phase ??
-        (meta(event).raw_components as { phase?: string } | undefined)?.phase;
-
-      expect(phase, event.event_type).toBe('end');
-      expect(meta(event).opportunity_id).toBe(OPPORTUNITY.m20);
+    for (const event of m20Events) {
+      expect(meta(event).opportunity_id).toBe('proto_m20_feed_project');
+      expect(meta(event).window_id).toBe('m20_feed_w1');
+      expect(meta(event).entry_state_version).toBe('m20-feed-returns-v2');
     }
 
-    const m20Raw = meta(resumeEvents[resumeEvents.length - 1])
-      .raw_components as Record<string, unknown>;
-
-    expect(Object.keys(m20Raw)).toEqual(
-      expect.arrayContaining([
-        'progress_pre_interruption',
-        'returned',
-        'resume_latency',
-        'useful_resume_actions',
-        'completion',
-      ]),
-    );
-    expect(m20Raw.progress_pre_interruption).toBe(2);
-    expect(m20Raw.start_history).toBe('valid');
+    expect(
+      meta(m20Events.find((e) => e.event_type.endsWith('opportunity_opened'))!)
+        .entry_state_snapshot,
+    ).toMatchObject({
+      channels_planned: 2,
+      hold_after_step: 2,
+      release_delay_ms: 30000,
+      notice_after_release_ms: 30000,
+      outdoor_prepared: { accepted: true, outdoor_complete: true },
+      stage: 'workshop_return',
+    });
+    expect(
+      meta(m20Events.find((e) => e.event_type.endsWith('align_attempt'))!),
+    ).toMatchObject({
+      channel_id: 'm20_ch_a',
+      step_index: 1,
+      attempt_index: 1,
+      cells: [2, 4, 3],
+      differ: 0,
+      aligned: true,
+      input_mode: 'keyboard',
+    });
+    expect(await eventsByPrefix(page, 'proto_m20_antenna_')).toHaveLength(0);
 
     // ——— M21 (Unit 10): unit 1 — wrong jumper first, truthful fault, relevant
     // restudy, revised application accepted; unit 2 — first-time success. ———
@@ -808,37 +879,34 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
 
     await valeReturnCheckIn(page);
 
-    // Missing antenna start: the console is unavailable, no start fabricated.
-    let rp = await returnProbe(page);
+    // M20 (Unit 22): no yard preparation — the feed console is presented all
+    // the same (the outdoor state is an unmeasured snapshot, never a gate);
+    // it opens on the card; no start is fabricated and no legacy event is
+    // written.
+    let rp: Awaited<ReturnType<typeof returnProbe>>;
+    const m20Unprepared = await m20Probe(page);
 
-    expect(rp.m20.availability).toMatchObject({
-      available: false,
-      history: 'missing',
+    expect(m20Unprepared.status).toBe('unopened');
+    expect(m20Unprepared.outdoor).toEqual({
+      accepted: false,
+      stages_done: [],
+      outdoor_complete: false,
     });
-    expect(rp.m20.resume_presented).toBe(false);
     expect(
-      (await eventsByType(page, 'proto_m20_antenna_resume_unavailable')).length,
-    ).toBe(1);
+      (await eventsByPrefix(page, 'proto_m20_feed_')).map((e) => e.event_type),
+    ).toEqual(['proto_m20_feed_presented']);
+    expect(await eventsByPrefix(page, 'proto_m20_antenna_')).toHaveLength(0);
+    await openM20Console(page);
+    expect((await surface(page))?.status).toBe('Read the card, then CONTINUE.');
+    await closeSurface(page);
     expect(
-      meta(
-        (await eventsByType(page, 'proto_m20_antenna_resume_unavailable'))[0],
-      ).reason,
-    ).toBe('start_missing');
-    expect(await eventsByType(page, 'proto_m20_antenna_accepted')).toHaveLength(
-      0,
-    );
-    expect(
-      await eventsByType(page, 'proto_m20_antenna_resume_presented'),
-    ).toHaveLength(0);
-    await openWorkshopPrompt(page, 'feedConsole');
-    expect(await lastPromptBody(page)).toContain('no feed-alignment job');
-    expect(await promptCardLabels(page)).toEqual(['Step away']);
-    await selectPromptOption(page, 1);
-    await page.waitForTimeout(300);
-    expect(await eventsByType(page, 'proto_m20_antenna_returned')).toHaveLength(
-      0,
-    );
-    expect((await returnProbe(page)).m20.returned).toBe(false);
+      meta((await eventsByType(page, 'proto_m20_feed_opportunity_opened'))[0])
+        .entry_state_snapshot,
+    ).toMatchObject({
+      outdoor_prepared: { accepted: false, outdoor_complete: false },
+    });
+    expect((await m20Probe(page)).status).toBe('intro');
+    expect(await itemStatus(page, 'M20')).toBe('open');
 
     // Missing calibration start: the end opportunity is presented as such.
     const m07Presented = (
@@ -944,10 +1012,11 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     expect(rp.m21.window).toBe('open');
     expect(rp.m21.sections_consulted).toEqual(['s1_identify']);
     expect(rp.m22.o1.phase).toBe('accepted');
-    expect(rp.m20.availability.history).toBe('missing');
-    expect(
-      (await eventsByType(page, 'proto_m20_antenna_resume_unavailable')).length,
-    ).toBe(1); // once
+    // M20 (Unit 22): the console's state persists; it is presented once.
+    expect((await m20Probe(page)).status).toBe('intro');
+    expect((await eventsByType(page, 'proto_m20_feed_presented')).length).toBe(
+      1,
+    ); // once
     expect(
       (await eventsByType(page, 'proto_m07_calibration_end_presented')).length,
     ).toBe(1);
@@ -1028,39 +1097,57 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     });
     expect(await itemStatus(page, 'M09')).toBe('completed');
 
-    // Partial start (one outdoor stage): resume is available; the console
-    // stages can all be done, but completion is never manufactured.
-    let rp = await returnProbe(page);
+    // M20 (Unit 22): a partial yard preparation (one outdoor stage) is a
+    // snapshot only; the console opens on the card and channel A is worked
+    // as always; nothing is manufactured from the yard.
+    let rp: Awaited<ReturnType<typeof returnProbe>>;
 
-    expect(rp.m20.availability.history).toBe('valid');
-    expect(rp.m20.outdoor_stages_done).toEqual(['clear_base_clamp']);
-    expect(rp.m20.status).toContain('1/2 outdoor stages');
-    await resumeAntenna(page, 3);
-    rp = await returnProbe(page);
-    expect(rp.m20.returned).toBe(true);
-    expect(rp.m20.useful_resume_actions).toBe(3);
-    expect(rp.m20.completion).toBeNull();
-    expect(rp.m20.window).toBe('open');
-    expect(rp.m20.console_departures).toBe(1);
+    expect((await m20Probe(page)).outdoor).toEqual({
+      accepted: true,
+      stages_done: ['clear_base_clamp'],
+      outdoor_complete: false,
+    });
+    await openM20Console(page);
+    await keyActivate(page, 'continue');
+    await page.waitForTimeout(500);
+    await alignStepByKeys(page, [2, 4, 3]);
+    expect((await surface(page))?.feedback).toBe('Step 1 aligned.');
+    await closeSurface(page);
+    expect((await m20Probe(page)).channels.m20_ch_a).toMatchObject({
+      status: 'in_work',
+      steps_done: 1,
+    });
     expect(await itemStatus(page, 'M20')).toBe('open');
     expect(
-      await eventsByType(page, 'proto_m20_antenna_window_closed'),
+      await eventsByType(page, 'proto_m20_feed_window_closed'),
     ).toHaveLength(0);
     expect(
-      (await eventsByType(page, 'proto_m20_antenna_console_left')).length,
+      (await eventsByType(page, 'proto_m20_feed_console_left')).length,
     ).toBe(1);
+    expect(
+      meta((await eventsByType(page, 'proto_m20_feed_opportunity_opened'))[0])
+        .entry_state_snapshot,
+    ).toMatchObject({
+      outdoor_prepared: {
+        accepted: true,
+        stages_done: ['clear_base_clamp'],
+        outdoor_complete: false,
+      },
+    });
 
-    // Reopening the console shows the persisted console stages (no resume button).
+    // Reopening the console lands on the channel view with CONTINUE A.
     const console = await openFeedConsole(page);
 
-    expect(console.elements.some((e) => e.id === 'resume')).toBe(false);
-    expect(
-      console.elements.find((e) => e.id === 'indoor_lock_alignment')?.state,
-    ).toBe('done');
-    expect(
-      console.elements.find((e) => e.id === 'outdoor_seat_feed_line')?.state,
-    ).toBe('idle');
+    expect(console.status).toBe('Choose a channel, or LEAVE.');
+    expect(console.elements.some((e) => e.id === 'continue_a')).toBe(true);
+    expect(console.elements.some((e) => e.id === 'start_b')).toBe(false);
+    expect(console.elements.find((e) => e.id === 'rows')?.label).toBe(
+      'CHANNEL A   1 of 6 steps   in work\nCHANNEL B   0 of 6 steps   not started',
+    );
     await closeSurface(page);
+    expect(
+      (await eventsByType(page, 'proto_m20_feed_console_reopened')).length,
+    ).toBe(1);
 
     // Insufficient-exposure Press B: invalid, never low.
     await pressBatchB(page, { store: 0, exposureMs: 200 });
@@ -1200,7 +1287,12 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     // observed miss when the Concourse was left — D-U15-1 — and nothing
     // here changed that record).
     await signOffReturnShift(page);
-    expect(await itemStatus(page, 'M20')).toBe('open');
+    // M20 (Unit 22): the sign-off closes the opened console as it stands
+    // (`shift_signed_off`; no channel was held, so nothing is eligible).
+    expect(await itemStatus(page, 'M20')).toBe('completed');
+    expect(
+      meta((await eventsByType(page, 'proto_m20_feed_project_closed'))[0]),
+    ).toMatchObject({ closure_reason: 'shift_signed_off' });
     expect(await itemStatus(page, 'M09')).toBe('completed');
     expect(
       (await eventsByType(page, 'proto_m09_checks_check_fulfilled')).map(

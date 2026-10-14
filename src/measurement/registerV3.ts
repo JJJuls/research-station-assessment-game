@@ -1463,19 +1463,54 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     instrument: 'MPS',
     item: 'Appendix A 2',
     reverse_keyed: false,
-    coverage_label: 'behavioural_counterpart',
+    // Unit 22: the two held channels of the Mast 04 feed landed at the
+    // Records Workshop return-shift feed console (episode 5) — ONE
+    // opportunity, one window (research-owner decision D-U22-1 of
+    // 14 October 2026, as selected). A channel held at its second step is
+    // released SILENTLY 30 s later (item 12, the silent-release
+    // alternative): an executed ALIGN in the silent window is a spontaneous
+    // resumption, recorded separately and EXCLUDED from the cued denominator;
+    // the notice follows 30 s after the release for a channel still
+    // unresumed, and the cued credit is the first executed ALIGN after it.
+    // The coverage label is `exploratory` (item 13): a provisional measure
+    // of re-engagement whose relation to the source item needs empirical
+    // evaluation; `difficulty_established` stays false. Owner amendment of
+    // 14 October 2026 (register §5.359 (4)) overrides the contract's
+    // "unchanged" for the summary and the feature texts: they describe the
+    // resumption after a station notice operationally, conditional on no
+    // earlier spontaneous resumption, the spontaneous count separate — no
+    // established difficulty, validated persistence, physical departure and
+    // return, or ranking across participants. The v2 family
+    // `proto_m20_antenna_*` keeps its frozen v2 meaning in the ledger and is
+    // read by no extractor.
+    coverage_label: 'exploratory',
     direction: 'extend_occasions',
     occasions: 2,
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m20_feed_project'],
+      windows: [
+        {
+          id: 'm20_feed_w1',
+          occasion: null,
+          zone: 'records_workshop',
+          episode: 5,
+        },
+      ],
+      family_prefixes: ['proto_m20_feed_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
-      'Two cued return milestones for two unfinished components of the difficult project; remaining work displayed, access immediate; no interruption after a component is completed.',
+      'Two channels of one console project, each held once after its second step and released 30 s later; counted: an executed ALIGN after the station notice, among channels not resumed spontaneously before it; spontaneous resumptions recorded separately; exploratory.',
     features: [
       fraction(
         'm20_cued_resumptions',
-        'cued components on which work resumes',
-        'unfinished components that were cued and accessible',
+        'cued-eligible channels with an executed ALIGN after their station notice',
+        'channels released, noticed and not resumed before the notice (cued-eligible)',
         '0–2',
-        'more observed return to difficult work',
-        'no unfinished cued component → null; spontaneous returns kept separately',
+        'more resumptions after a station notice among channels not resumed spontaneously (operational; no ranking across participants)',
+        'no cued-eligible channel → null; spontaneous resumptions reported separately, never added',
       ),
     ],
   }),

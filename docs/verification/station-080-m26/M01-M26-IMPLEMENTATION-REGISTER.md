@@ -99,7 +99,7 @@ status at this register version — updated by each unit).
 | M17  | Replace trial structure | 1    | `m17_criterion_trial`: {criterion_trial 3–12, attained} — the first learning trial ending a run of three consecutive correct first responses; reported whenever reached within the administered trials; (12, false, censored) after twelve without attainment; early exit without attainment = incomplete                      | `m17_sequence_baseline_transfer` (baseline 2 / learning 12 / transfer 2 first-response sequences, feedback exposures, reference sequences shown, help, demonstration reviews, per-trial records)                                               | performance counterpart | v3 route: `proto_m17_criterion` (Diagnostics Laboratory, ep 3) — implemented (U9); **criterion values not to be read until §5.87–5.88 are decided**                                                                                                              |
 | M18  | Extend diagnosis        | 3    | `m18_correct_first_diagnoses`: / 3                                                                                                                                                                                                                                                                                             | `m18_correct_consequence_predictions`: / 3                                                                                                                                                                                                     | performance counterpart | v3 route: `proto_m18_cases_series` — three diagnosis cases at the Laboratory diagnostic board (ep 3), each an immutable first diagnosis then an immutable first step answer before any feedback; results after the sixth — implemented (U20; D-U20-1, §5.315)    |
 | M19  | Add second challenge    | 2    | `m19_continuations`: further attempt / eligible difficulty encounters; 0–2                                                                                                                                                                                                                                                     | failed attempts, success, time                                                                                                                                                                                                                 | behavioural counterpart | v3 route: `proto_m19_lines_series` — two coupling lines at the Yard coupling panel (ep 4) after a panel check; each line's designed obstacle one immutable boundary; continuation = a further executed TRY — implemented (U21; D-U21-1, §5.328)                  |
-| M20  | Extend returns          | 2    | `m20_cued_resumptions`: resumed / eligible unfinished components; 0–2                                                                                                                                                                                                                                                          | spontaneous returns, progress, cue exposure                                                                                                                                                                                                    | behavioural counterpart | v2-ledger route (one uncued resume) — planned                                                                                                                                                                                                                    |
+| M20  | Extend returns          | 2    | `m20_cued_resumptions`: resumed / eligible unfinished components; 0–2                                                                                                                                                                                                                                                          | spontaneous returns, progress, cue exposure                                                                                                                                                                                                    | exploratory             | v3 route: `proto_m20_feed_project` — two held channels at the Workshop feed console (ep 5); silent release 30 s after the hold, notice 30 s later if unresumed; spontaneous resumptions kept apart — implemented (U22; D-U22-1 as selected, §5.344)              |
 | M21  | Replace revisit score   | 2    | `m21_restudy_revisions`: cases with a relevant restudy (a section bearing on a fault known at the time) AND a revised application / cases whose first application was incorrect and were resolved by the participant (accepted or set aside — a review-closed case keeps its observed 1); 0–2; two first-time successes → null | per-case strategy (first_correct / restudy_and_revise / revise_without_relevant_restudy / restudy_then_exit / exit / unresolved), applications, faults, restudy sections, comprehension context (sections used, reference depth, mode, plate)  | partial                 | v3 route: `proto_m21_case_o1` / `o2` (Records Workshop, ep 5) — implemented (U10)                                                                                                                                                                                |
 | M22  | Hybrid                  | 2    | `m22_revisions_begun`: reports on which a revision was begun (a code attached after the acknowledgement of the returned note) / reports whose requirement was presented (2 planned; a review-closed report keeps its observed 1 once the revision had begun; a returned note never acknowledged ⇒ excluded)                    | `m22_discouragement_ratings`: two 1–5 ratings, each with its recall delay, its position among the questions and the time since its screen was presented; declined or missing = null, never a midpoint; `acknowledged_reports` beside           | hybrid                  | v3 route: `proto_m22_returned_o1` / `o2` (Records Workshop, ep 5) — implemented (U11)                                                                                                                                                                            |
 | M23  | Add second plot         | 2    | `m23_continuations_after_failure`: further search / plots with a failed dig; 0–2                                                                                                                                                                                                                                               | attempts, strategy, success                                                                                                                                                                                                                    | behavioural counterpart | v2-ledger route (one plot) — planned                                                                                                                                                                                                                             |
@@ -162,6 +162,656 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
   pinned in `protocol.ts` beside their anchors.
 
 ## 4. As-built records (appended per unit)
+
+**Unit 22 (M20): as-built** — the two held channels of the Mast 04 feed at the
+Records Workshop return-shift feed console (bounded unit under contract
+`U22-CONTRACT.md`, v3 of 14 October 2026; research-owner decision D-U22-1).
+**Status: technical implementation of the approved row under research-owner
+decision D-U22-1 (APPROVED 14 October 2026, recorded as the owner's SPECIFIC
+selections — items 1–11 as recommended, item 12 the silent-release alternative,
+item 13 the exploratory-label alternative — never as "all recommendations";
+against preview revision r3); `m20_cued_resumptions` is a candidate indicator
+with the coverage label `exploratory` and NOT scientifically validated.** The
+two channels are two components of ONE project inside ONE room and ONE shift —
+clustered observations, never two independent situations; A's outcome may
+change B's; longer remaining copying is not established difficulty
+(`difficulty_established: false`); the task is a provisional measure of
+re-engagement with a suspended, attention-demanding transcription channel —
+first spontaneously, in a silent window, then after a specific notice — whose
+relation to MPS item 2 requires empirical evaluation; a cued count of 2 shows
+only that for each channel that was held at step 2, silently released, NOT
+resumed in its silent window and then noticed, the participant executed at
+least one more ALIGN before signing off; the cued outcome is conditional on the
+participant not having resumed spontaneously and is no ranking across all
+participants (the owner's recorded limitation); a spontaneous resumption shows
+only that an executed ALIGN occurred in the silent window after the participant
+opened the console on their own, and is a companion never combined with the
+primary; no global or cross-item score; no questionnaire wording or pressure in
+any participant text. Passing tests establish implementation correctness only,
+never psychometric validity, reliability, persistence as a trait, prospective
+memory or questionnaire equivalence. Parts (0)–(2) below were written BEFORE
+the content module, the project model, the adapter, the surface model and the
+extractor (the contract's "specify before you code"); parts (3)–(7) record the
+build and its evidence.
+
+(0) Authority. **Research-owner decision D-U22-1 — APPROVED 14 October 2026,
+as the owner's selections** (an owner ruling, recorded in §5.344; not an
+implementer default and not reopened): items 1–11 of preview §3.3 as
+RECOMMENDED with the consequential changes item 12 requires — [O-1] the
+return-shift feed console; the legacy antenna start and resume leave the
+route; Mast 04 is re-wired as unmeasured outdoor preparation (its strings,
+actions and state object kept; `outdoor_*` events); [O-2] six steps of 3, 3, 4,
+4, 5, 5 cells per channel, the system hold the moment step 2 is aligned, A
+first, B once A has ever been held; [O-3] the notice with item 12's timing (due
+at `released_at_ms + 30000`), delivered only with the console closed, the
+participant in the Workshop, nothing else open, the page visible and focused,
+and the channel neither resumed nor aligned; shown for 6 s or ended early (a
+surface or prompt opening, leaving the Workshop, closure; never by focus loss);
+A before B, B ≥ 8 s after A's ACTUAL end; one per channel, never repeated;
+protocol times integrity-checked; [O-4] presented at Workshop entry, guided at
+return-shift order 1 until the first opening, access immediate once released;
+[O-5] the vector refusal rule (`as_loaded` / `repeat` / `settling` / `held`)
+and the cued credit = the first EXECUTED ALIGN after the notice; [O-6] notice →
+credit or closure; sign-off ⇒ 0, review ⇒ censored, reload ⇒ `interrupted`;
+the row final once no channel can still become cued-eligible; [O-7]
+cued-eligible ⇔ released AND not resumed before its notice AND notice validly
+presented AND not excluded; one eligible channel = complete; the
+zero-denominator precedence `technical_only` > `censored_only` >
+`resumed_before_cue` > `cue_not_presented` > `no_hold` > `not_begun`; [O-8]
+never opened ⇒ `no_eligible_event` (`not_opened`), never `declined`; no
+comprehension check; [O-9] faults keep earned cued credits and spontaneous
+resumptions, exclude noticed channels awaiting a return, no eligible channel
+⇒ `technical_failure` (`technical_only`), malformed evidence voids the row;
+[O-10] the verify-unit foreign-metadata rule; [O-11] `closed_unopened`
+(`shift_signed_off`) at the sign-off and the `pilot_route` "six-zone"
+classification. **[O-12] The SILENT RELEASE (alternative selected):**
+`channel_released` at `held_at_ms + 30000`, independent of notice
+presentability; the first executed ALIGN after the release and before the
+channel's notice is a spontaneous resumption (status `resumed_spontaneously`,
+counted in `spontaneous_resumptions`, excluded from the cued denominator); a
+notice is never shown for it (`cue_cancelled`, descriptive); never counted
+twice; no new occasion on reopening; the primary stays the cued numerator
+count with its eligible denominator — never a ratio or a combined score; the
+owner's recorded limitation (the cued outcome describes channels not resumed
+before their notice; two spontaneous resumptions with no cued-eligible channel
+⇒ null primary, denominator 0, spontaneous 2 — E47). **[O-13] The EXPLORATORY
+LABEL (alternative selected):** `registerV3.ts` M20 `coverage_label:
+'exploratory'`, `difficulty_established: false`, every researcher-facing
+description consistent; "difficult" never treated as established because more
+copying remains. Not selected: the item-12 recommendation (hold until the
+notice; spontaneous resumption unobservable) and the item-13 recommendation
+(keep `behavioural_counterpart`). D-U22-1 confirms §5 items 2 and 4 for M20.
+Settled consequences [A] (preview §3.1): two unfinished components of one
+project, each with a cued return milestone; the NUMERATOR COUNT 0–2 with the
+cued-eligible denominator, planned 2, `conditional_eligibility`; null without
+an eligible cued component; spontaneous returns kept separately; a resume is
+not a new occasion; clustered; access immediate; no interruption after
+completion; the reload rule; no composite, no canonical promotion, no validity
+claim, no questionnaire wording. The approved row is §2 (M20), §2b, §5 items 2
+and 4, the matrix row, addendum §1 and §3 and `registerV3.ts` (entry `M20`).
+Provenance limit: `D:\latest fabel` was checked once by the preparer and is
+unavailable; the decision is an explicit decision for this implementation,
+not recovered wording. Rulings D-U16-1 through D-U21-1 and the U21 sign-off of
+14 October 2026 are precedent only and approve nothing here. Each rule below
+carries its source: [O-n] decision D-U22-1 item n as selected, [A] approved
+row or owner instruction, [P] recorded precedent, [D-n] implementer default
+(§5.345 onward).
+
+(1) Administration `m20-feed-returns-v2` — **specified before the content
+module, the project model and the interface were written.**
+
+- Place, presentation and guidance [O-1][O-4][P][D-10]: the Station Feed
+  Console of the Records Workshop (`WORKSHOP_STATIONS.feedConsole`, station
+  `pilotFeedConsole`, label "Station Feed Console"; operational label kept
+  "Antenna restoration (Yard / Workshop)", episode 5) opens the generic
+  `WorkSurfaceScene` in the WIDE frame of decision D-U17-2 (unchanged) with
+  surface id `m20_feed_console`. Before the return shift the station is
+  unchanged (the standby prompt). In the return shift the station's
+  `onPromptOpened` logs the route record `pilot_station_opened`
+  (`feed_console`), calls `openM20(now)` and opens the surface; `onClose`
+  calls `closeM20Surface(now)` before the host resumes; the Leave control
+  takes the same path. The scene's `create()` calls `presentM20(now)` in
+  place of the legacy `m20ConsolePresent(now)` (exposure only — the kit's
+  `presented` — never an opening), `declareM20Feed()` and `guardM20Reload()`.
+  Guidance: the station is registered with `this.guided(...)` as
+  `feed_console`, label "Station Feed Console", stages `['workshop_return']`,
+  order 1, done once `m20Window().windowStatus()` is no longer `unopened` —
+  the first beacon of the return shift is the console until its first
+  opening, then Press B (order 2) and the rest; `RETURN_GUIDED_ORDER`
+  and the board copy are unchanged (the console is listed by the guidance
+  registry, not by the board). Nothing names an unfinished channel outside the
+  console: the chip shows step counts only (`m20ChipText()`:
+  `MAST 04 FEED · 2 channels` before the first opening, then `A k/6 · B k/6`,
+  then `closed for the shift`); it never names `held` or `pass open`, so a
+  release changes nothing outside the console. The M04 other-work watcher stays inside the
+  return-shift branch with the signature `m20OtherWorkSignature()` = executed
+  ALIGNs plus aligned steps (an opening, a refusal, a cell edit, help and a
+  notice are never other work begun). No `'proto_…'` literal in the scene. The
+  yard's Mast 04 keeps its participant experience: `presentM20MastBrief`,
+  `acceptM20Mast`, `doM20MastStage` and `m20OutdoorFault` (adapter functions
+  of the new module) call the legacy PURE `m20Accept` / `m20CompleteStage` on
+  `exteriorEpisode().m20` and log `outdoor_brief_presented`,
+  `outdoor_accepted`, `outdoor_stage_completed`, `outdoor_technical_failure`
+  (phase `outdoor`; never counted by the extractor); acceptance registers the
+  mission-log entry `m20_feed_outdoor` (the legacy pure `m20MissionLogText`),
+  closed when `!accepted || pilotStageAtOrAfter('return_hub')`. The legacy
+  antenna family `proto_m20_antenna_*` (`m20AntennaModel.ts`, the adapter
+  functions of `exteriorWindows.ts` and `returnWindows.ts`, the legacy surface
+  model) stays in the tree unchanged and leaves the route: `exteriorWindows.ts`
+  loses only `w.m20.declare();`, the `m20Depart` block, the
+  `m20RecordInterruption` block and the M20 review block (plus the import
+  names they leave unused and one sentence in each of the two describing
+  comments), keeping exactly 8 `setComprehension('passed')`; the yard scene
+  replaces only the three legacy act imports and calls and routes `'M20'` in
+  `guard()` to `m20OutdoorFault` (the guard signature line byte-identical);
+  `reviewClosure.ts` keeps `closeM20ResumeAtReview(nowMs);` (a no-op on the
+  route: the legacy resume is never presented) and adds
+  `closeM20AtReview(nowMs);` directly after it.
+- Content, order and form [O-2]: one pure content module
+  (`m20FeedContent.ts`) holds every string of preview §4.2–§4.9 and, as data,
+  the targets (A: `2 4 3`, `3 1 4`, `4 2 1 3`, `1 3 4 2`, `3 4 2 1 4`,
+  `2 1 3 4 2`; B: `4 1 3`, `2 3 1`, `3 4 1 2`, `2 1 4 3`, `4 2 3 1 3`,
+  `1 4 2 3 4`), the cell counts 3, 3, 4, 4, 5, 5, the loading value 1, the
+  cell cycle 1 → 2 → 3 → 4 → 1, the hold step 2, `RELEASE_MS` 30 000,
+  `NOTICE_AFTER_RELEASE_MS` 30 000, `NOTICE_MS` 6 000, `SPACING_MS` 8 000, the
+  settle 400 and the check period 250. Versions `m20-feed-returns-v2`
+  (administration), `m20-form-1` (form), `m20-content-v2` (content). Channel
+  ids `m20_ch_a` / `m20_ch_b` are also the occasion ids and never change. The
+  differ count of a vector is the number of cells unequal to the target; a
+  step is aligned when it is 0. Line breaks are the preview's (fixed);
+  wording, numbers and order never change; no questionnaire wording anywhere.
+- First opening, the card [D-2]: title `MAST 04 FEED`, subtitle
+  `Two channels`, status `Read the card, then CONTINUE.`, the nine lines of
+  preview §4.3, CONTINUE (primary, no hidden key), `HELP  [H]`,
+  `LEAVE  [ESC]`; CONTINUE records `intro_acknowledged`, starts channel A
+  (`channel_started`) and presents its step 1 (`step_presented`); leaving
+  before it shows the card again at the next opening.
+- A step [O-2][O-5][D-3][D-4][D-11]: subtitle `Channel A · step k of 6`,
+  status `Working on channel A.`, footer
+  `1-5 change a cell · G align · H help · ESC leave`; the board (a neutral
+  landing): `TARGET   …`, `CELLS    …`, a blank line, `Channel A: k of 6
+steps done.`; the cell tiles `CELL k   v  [k]` (a tile cycles its cell,
+  recorded as `cell_changed`, descriptive) and `ALIGN  [G]`; HELP and LEAVE.
+  Cells load at 1 and survive leaving (the step and its cells are kept; a
+  reopening offers CONTINUE, never the step itself). ALIGN on the current
+  vector alone: refused `as_loaded` when every cell is 1 (`The cells are as
+loaded. Change a cell first.`), refused `repeat` when the cells equal this
+  step's last EXECUTED vector (`Same cells as the last ALIGN. Change a cell
+first.`), refused `settling` inside the 400 ms settle of a view (no
+  feedback), refused `held` on a held channel (unreachable through the
+  interface); a refusal records only `align_refused`. Otherwise EXECUTED:
+  `align_attempt` (`step_index`, `attempt_index` — consecutive per channel
+  across its steps — `cells`, `differ`, `aligned`, `after_cue`,
+  `in_silent_window`) with the feedback `Not aligned: n cells differ.` /
+  `Not aligned: 1 cell differs.` or `Step k aligned.`; an older vector
+  executes. An aligned attempt is followed immediately by `step_aligned`; at
+  step 2 immediately by `channel_held` (`held_at_ms`) and the hold view; at
+  step 6 by `channel_aligned` (`Channel A aligned.`); otherwise the next step
+  is presented with its cells at 1.
+- The hold [O-2]: subtitle `Channel A held`, status `Channel A is held until
+its next pass.`, feedback `Step 2 aligned.`, the three lines of preview
+  §4.5 (`Its next pass opens later. This console shows when it is open.`);
+  after A's hold `START CHANNEL B  [B]`, HELP, LEAVE; after B's hold HELP and
+  LEAVE. A held channel accepts nothing: it is never shown as a step, and a
+  reopening while it is held records a blocked approach (`held_visit`).
+- The silent release [O-12][D-12]: at `held_at_ms + 30000` the channel becomes
+  workable whatever the participant is doing. The adapter writes
+  `channel_released` (`released_at_ms = held_at_ms + 30000`, with the
+  descriptive `written_at_ms`, `write_latency_ms` and the check that wrote
+  it) at the first check at or after that time — the Workshop scene's tick
+  (≤ 250 ms while the scene runs), the scene's RESUME, any console opening,
+  the due check, the sign-off, the review or a fault — and always before any
+  work on, view of, notice for or closure record of that channel. Nothing
+  outside the console announces it. Opening the console shows the channel
+  `pass open` with CONTINUE and records `released_visit` for each released,
+  unresumed, unnoticed channel.
+- The channel view [O-2][D-11]: subtitle `Both channels`, status `Choose a
+channel, or LEAVE.`, footer `A / B choose · TAB move · H help · ESC leave`;
+  the rows `CHANNEL A   k of 6 steps   <word>` (a neutral landing) with the
+  word `not started` / `in work` (started, before its hold) / `held` /
+  `pass open` (released, before or after its notice, resumed or not) /
+  `aligned`; `CONTINUE CHANNEL A  [A]` / `CONTINUE CHANNEL B  [B]` for a
+  channel `in work` or `pass open` (from its release on, whether or not its
+  notice has come), `START CHANNEL B  [B]` when B is `not started` and A has
+  ever been held, the line `No channel can be worked until its next pass.`
+  when no button applies, `Both channels are aligned. The feed is restored.`
+  when both are aligned; HELP and LEAVE. CONTINUE presents the channel's
+  current step again (`step_presented`, `resumed: true`) with the cells as
+  they stood; START B records `channel_started` B and presents B's step 1.
+- Spontaneous resumption [O-12]: the first executed ALIGN on a channel after
+  its `channel_released` and before its `cue_presented` sets the channel to
+  `resumed_spontaneously`; the adapter then writes `cue_cancelled` (`reason`
+  `resumed_before_cue`, descriptive) and that channel's notice is never
+  delivered. Opening, CONTINUE, cell edits and refused ALIGNs are not
+  resumptions. A channel aligned in its silent window was resumed
+  spontaneously at its first executed ALIGN there.
+- Transitions [A][O-6] — exactly preview §4.12: card | LEAVE / reopen | the
+  card again; A step 1–2 (before the hold) | LEAVE / reopen | A `in work` →
+  CONTINUE A (same step), no START B; A's hold view | START B / LEAVE | B step
+  1 / on reopen START B; both held, before release | reopen | no button,
+  `held_visit` per channel; A released (silent window), B held | reopen | A
+  `pass open` → CONTINUE A, `released_visit` for A, `held_visit` for B
+  (opening alone, edits or refusals are not a resumption); silent window |
+  CONTINUE A + an executed ALIGN | spontaneous resumption of A, its notice
+  cancelled and never shown; silent window | LEAVE without an executed ALIGN
+  | nothing changes, A's notice stays due; A's notice shown, B not started |
+  reopen | CONTINUE A, START B; after A's notice | CONTINUE A + an executed
+  ALIGN | cued resumption of A; after either resumption, mid-step | LEAVE /
+  reopen | CONTINUE A (same step), `post_resumption_reentries` + 1, no new
+  occasion, notice or release; A aligned before any notice | automatic |
+  spontaneous, completed, no notice; both aligned | automatic | the restored
+  line, `project_completed` and the kit's `window_closed` (exit `completed`).
+  Leaving never holds or releases a channel; a resumption (either kind) never
+  writes another hold, release, notice, channel start, opening or occasion.
+- The notice [O-3][O-12][D-11][D-12]: due at `released_at_ms + 30000`; one
+  adapter clock (`Date.now()`) for every protocol time. `m20CueCheck(nowMs,
+context)` runs from the Workshop scene's per-frame hook at most every 250 ms
+  while the scene runs, and on RESUME. It first writes any due release, then
+  ends an active notice whose 6 000 ms are over (`timeout`), then delivers a
+  notice only if ALL hold: `now ≥ released_at_ms + 30000`; the channel is
+  released, NOT resumed (no executed ALIGN since its release) and NOT aligned,
+  and has no notice yet; the console is closed; the scene runs (the per-frame
+  hook is reached only then); no prompt, dialog, overlay, timed world action
+  or input lock is active (the scene's own eligibility predicate); the
+  environment imposes no pause cause (the page visible and focused); the
+  project is open; for B: A's notice has ended and `now ≥ A.ended_at_ms +
+8000`, OR A will never get a notice (A resumed, aligned or not held), and
+  never while A's notice is due and undelivered. A delivered notice records
+  `cue_presented` (`presented_at_ms`, `released_at_ms`, `due_at_ms`,
+  `deferred_ms`, `page_visible`, `page_focused`, `distance_to_console_px`,
+  `remaining_steps` 4) and shows the two-line station band (preview §4.8:
+  `FEED CONSOLE: the next pass for channel A is open.` / `Channel A can be
+continued · 4 of 6 steps remain.`) in the Workshop HUD — 16 px design text
+  on two lines inside a 16 px margin, below the shared feedback line, never
+  over another surface. The band ends after 6 000 ms, or early on a surface or
+  overlay opening (the scene's PAUSE; the console included:
+  `surface_opened`), a prompt opening (`prompt_opened`), leaving the Workshop
+  (`shutdown`) or closure (`project_closed` / `technical_failure`); focus loss
+  neither ends nor extends it (`focus_lost_during_display` recorded).
+  `cue_notice_ended` (`ended_at_ms`, `ended_reason`, `displayed_ms`,
+  `focus_lost_during_display`) is written BEFORE any terminal record. One
+  notice per channel, never repeated. Any executed ALIGN after the notice
+  qualifies as the cued credit — walking back, or closing and reopening the
+  console in place; there is no movement threshold. Timing validity: SCORED
+  (S6) `held_at_ms`, `released_at_ms`, `presented_at_ms`, `page_visible` /
+  `page_focused` and A's `ended_at_ms`; violations void the row — a release
+  other than hold + 30 000 (E56), a notice before release + 30 000 (E37), a
+  notice after the channel's resumption (E54), B within 8 000 ms of A's
+  actual end (E38), B while A's notice was due and undelivered (E57), a notice
+  end after the terminal record (E45); DESCRIPTIVE `deferred_ms`,
+  `displayed_ms`, `ended_reason`, `focus_lost_during_display`, the distance,
+  `cue_cancelled` and every latency or clock value.
+- Help [D-5]: `HELP  [H]` on every view (card, step, hold, channel view, the
+  closed records excepted); `help_consulted` (`view`); the help sheet (title
+  `HELP`, the seven lines of preview §4.7, `CLOSE HELP  [H]`, footer `H or ESC
+close help`) is exclusive while open and never work.
+- Commitment mechanics and focus [P][D-4][D-11]: the 400 ms settle on every
+  view transition (a press inside it is refused — ALIGN recorded `settling` —
+  or dropped); held keys never act (the frame drops repeats); a neutral
+  landing on every view (the card text, the step board, the hold text, the
+  channel rows, the closed record; the help sheet on CLOSE HELP, the M19
+  precedent); same-view focus stays on the acting control (cell tiles and
+  ALIGN keep their ids on one step; HELP and LEAVE carry the view's name in
+  their ids — `help_<view>` / `leave_<view>` — and the step view's ids carry
+  the channel and step, so a hotkey that changes the view lands on the new
+  view's neutral element, review finding GP-1 of U21 applied); no movement
+  key and not E as a hotkey (the hotkeys are 1–5, G, A, B, H; the avatar moves
+  on the arrow keys only); a double click on ALIGN executes once (the second
+  click is refused `repeat` or `settling`); ESC closes help, then the console
+  (an ESC inside the settle is consumed); LEAVE equals ESC.
+- Leaving, closures, reload, faults [O-6][O-8][O-9][O-11][P][D-6]: leaving
+  records `console_left` (the work clock pauses); a reopening records
+  `console_reopened` plus the `held_visit` / `released_visit` records; leaving
+  keeps everything. **Sign-off** (`workshop_return_signoff` calls
+  `closeM20AtShiftEnd(now)` before advancing): (a) opened, not completed —
+  due releases are written, then any active notice ends (`project_closed`),
+  then `project_closed` (`shift_signed_off`, the closure snapshot) and the
+  kit's `window_closed` (exit `stopped`, a completed observation: a noticed
+  channel without a credit counts 0); pending notices are never delivered;
+  (b) presented, never opened — one `closed_unopened` (`shift_signed_off`);
+  (c) not presented — nothing; in (a) and (b) the console then shows its
+  closed record (`The console closed when the shift was signed off.`).
+  **Review** (`closeM20AtReview(nowMs)`, after `closeM20ResumeAtReview`): an
+  open project ⇒ due releases, the notice's end, `project_closed`
+  (`closed_at_review`) and the kit's `window_closed` (`closed_at_review`,
+  censored: noticed channels without a credit are censored); never opened ⇒
+  the kit's `markAbsent` (`presented_not_opened` when presented, never
+  `declined`) plus `closed_unopened` (`closed_at_review`) when presented and
+  none exists; closed ⇒ untouched; the record `The console closed at the
+shift review.`. **Reload** [P]: a console opened in an earlier page load of
+  this identity is never re-run — `prior_load_checked` (once per load), the
+  kit's `technical_failure` (`reload after administration: console not
+re-run`), the held-back record `This console was opened earlier in the
+session. It stays closed now.`, row `interrupted`. **Faults**
+  (`m20TechnicalFailure(detail, channelId | null)`, the `guarded` command
+  wrapper [P]): due releases are written and any active notice ends
+  (`technical_failure`), the project closes `technical_failure`, the register
+  is marked invalid and the kit-shaped `technical_failure` record carries the
+  channel in work (the kit's own `technicalFailure` cannot name it — the U21
+  precedent §5.340 (a)); earned cued credits and spontaneous resumptions are
+  kept; noticed channels without a credit are excluded; the Workshop stays
+  usable; the console shows `The feed console has a fault and is closed.` /
+  `Its record is kept as it is.`. A completed project is never reclosed.
+- Entry snapshot (§9.3): `channels_planned` 2, `channel_order`,
+  `steps_per_channel` 6, `cells_per_step` [3, 3, 4, 4, 5, 5],
+  `hold_after_step` 2, `release_delay_ms` 30000, `notice_after_release_ms`
+  30000, `notice_ms` 6000, `notice_spacing_ms` 8000, `refusal_rule`
+  `vector_as_loaded_or_last_executed`, `credit_rule`
+  `first_executed_align_after_cue`, `spontaneous_rule`
+  `first_executed_align_after_release_before_cue`, `form_id`,
+  `content_version`, `settle_ms` 400, `outdoor_prepared` (`accepted`,
+  `stages_done`, `outdoor_complete` from the legacy yard state) and `stage`.
+  Closure snapshot (on `project_completed` / `project_closed`):
+  `channels_planned`, `spontaneous_resumptions`, per channel `channel_id`,
+  `occasion_id`, `channel_index`, `started`, `steps_done`, `attempts`, `held`,
+  `held_at_ms`, `released`, `released_at_ms`, `noticed`,
+  `cue_presented_at_ms`, `resumption` (`spontaneous` / `cued` / null),
+  `resumption_attempt_index`, `aligned`, `held_visits`, `released_visits`,
+  `post_resumption_reentries`, `refused_in_silent_window`, the clocks of
+  (2) below.
+
+(2) Clocks, lifecycle, field classification, integrity rules.
+
+- Clocks [D-12] (companions only; one adapter clock for every protocol time):
+  the **work clock** per channel (a `FocusedClock` under the focus monitor)
+  runs while the console is open on that channel's step view (paused
+  `surface_closed` otherwise); the **release-to-spontaneous** clock starts at
+  `released_at_ms` and stops at the spontaneous ALIGN (wall and focused;
+  focused pauses only on focus loss or a hidden page; null without a
+  spontaneous resumption); the **cue-to-credit** clock runs from
+  `presented_at_ms` while the console is closed and stops at the credit, or
+  without a credit at closure (`cue_to_closure_*`). Host PAUSE / RESUME starts
+  or stops nothing; a closure adds nothing after the last pause; no
+  finalisation in a later load. The resumption ALIGN carries its clock values
+  (`release_to_align_*` / `cue_to_align_*`, descriptive).
+- Lifecycle (precedence reload `interrupted` > integrity `technical_failure`
+  > `pending` > the closed outcomes; "final" = a terminal record exists, or
+  > both channels are resumed either way): no current-load opportunity evidence
+  > (`outdoor_*` never counts) ⇒ null `not_presented` (E1, E1c; with the absence
+  > record, closure `closed_at_review`, E1b); reload ⇒ null `interrupted`
+  > (`reload_hold_back` / `reload_no_current_evidence`); presented, never opened
+  > ⇒ `pending`, at `closed_unopened` or the absence record null
+  > `no_eligible_event` (`not_opened`) (E2b, E2c, E2f); opened, not terminal,
+  > some channel not resumed either way ⇒ null `pending`; denominator ≥ 1,
+  > final ⇒ `observed` with the count (`censored` when a noticed channel was
+  > excluded); denominator 0, final ⇒ null / null / 0 / planned 2 with
+  > `technical_only` ⇒ `technical_failure`, `censored_only` ⇒ `interrupted`,
+  > `resumed_before_cue` > `cue_not_presented` > `no_hold` > `not_begun` ⇒
+  > `no_eligible_event`; an integrity defect ⇒ null `technical_failure` (void).
+  > Per channel (recounted from the raw events): `not_begun` (no attempt),
+  > `begun_not_held`, `held` / `released_awaiting` (open) or
+  > `cue_not_presented` (closed) — not resumed, not noticed;
+  > `resumed_spontaneously` (the first executed attempt after the release and
+  > before any notice — excluded from the cued denominator, counted in
+  > `spontaneous_resumptions`); `resumed` (noticed, then a credit — 1);
+  > `not_resumed` (noticed, no credit, sign-off — 0); `censored_review` /
+  > `excluded_technical_failure` (noticed, no credit, review / fault —
+  > excluded, censored); `awaiting_return` (noticed, open — pending).
+- Field classification [D-8] (contract §9.4): SCORED — the identity fields;
+  `step_presented`; every `align_attempt` field; `step_aligned`;
+  `channel_held.held_at_ms`; `channel_released.released_at_ms`;
+  `cue_presented` (`presented_at_ms`, `page_visible`, `page_focused`);
+  `cue_notice_ended.ended_at_ms`; `channel_aligned`; `project_completed`;
+  `project_closed`; `closed_unopened`; the kit's `technical_failure` and
+  `window_closed`; `opportunity_opened`; `presented`; `prior_load_checked`.
+  DESCRIPTIVE (flags only, never the value or the disposition) —
+  `input_mode`, latencies, clocks, `deferred_ms`, `displayed_ms`,
+  `ended_reason`, `focus_lost_during_display`, the distance, `cell_changed`,
+  `align_refused`, `held_visit`, `released_visit`, `cue_cancelled`,
+  `console_*`, `help_consulted`, `after_cue`, `in_silent_window`,
+  `outdoor_*`.
+- Integrity rules S1–S7 [D-8] (a violation ⇒ null `technical_failure` with
+  `integrity_defect`): **S1** identity — versions, the opportunity id, the
+  entry snapshot; **S2** order — usable, unique sequences; **S3** channels
+  and absence — without an opening only `presented`, `closed_unopened` (at
+  most one, after `presented`), the absence `window_closed`,
+  `prior_load_checked` and `outdoor_*` are legitimate (E2d), no
+  `closed_unopened` with an opening (E2e), known channels, B's first step
+  only after A's hold (E43), steps in order with `resumed: true` repeating
+  the current step, no scored record before the opening; **S4** attempts —
+  consecutive indices per channel, on the presented step, stored results
+  equal the content rule (E25), no executed all-1 vector and none repeating
+  the step's last executed vector (E30, E30b), no attempt on a held channel
+  before its `channel_released` (E23), none after `channel_aligned` or the
+  terminal record, `step_aligned` immediately after its aligned attempt;
+  **S5** hold — exactly one `channel_held` per channel iff step 2 was
+  aligned, immediately after it (E27b); **S6** release, notice and timing —
+  at most one `channel_released` per channel, after its hold, with
+  `released_at_ms = held_at_ms + 30000` (E56); at most one `cue_presented`
+  per channel, after its release, visible and focused (E28), with
+  `presented_at_ms ≥ released_at_ms + 30000` (E37); NO `cue_presented` for a
+  channel with an executed ALIGN after its release or one already aligned
+  (E54); at most one `cue_notice_ended` per notice, `≥ presented`; B only
+  after A's notice end with ≥ 8 000 ms (E38) and never while A's notice is
+  due and undelivered (E57); a notice for a channel without a hold or
+  release voids (E24); **S7** closure — at most one terminal record, nothing
+  scored after it except the kit's `window_closed` (a notice end after it:
+  E45), `project_completed` only when both channels are aligned,
+  `channel_aligned` after six steps, the closure snapshot equal to the
+  recount. Descriptive inconsistencies set a named flag only.
+
+(3) The build (after parts (0)–(2); 14 October 2026). Four new modules under
+`src/pilot/windows/`: `m20FeedContent.ts` (pure: the ids and versions —
+family `proto_m20_feed_`, opportunity `proto_m20_feed_project`, window
+`m20_feed_w1`, `entry_state_version` `m20-feed-returns-v2`, form
+`m20-form-1`, content `m20-content-v2`, object and surface
+`m20_feed_console`; the two channel definitions with their targets, the
+cell counts 3, 3, 4, 4, 5, 5, the loading value, the hold after step 2, the
+constants 30 000 / 30 000 / 6 000 / 8 000 / 400 / 250 ms; the content rule
+`m20Differ` / `m20Aligned` / `m20SameCells` / `m20AsLoaded`; every
+participant string of preview §4 as `M20_TEXT` and
+`m20ParticipantStrings()` for the wording audit), `m20FeedModel.ts` (pure:
+the project state machine — the card, the steps, cell edits, ALIGN through
+the content rule with the four refusals `as_loaded` / `repeat` / `settling`
+/ `held`, the hold at the second aligned step, the SILENT release written by
+`m20sWriteDueReleases` with its context `tick` / `resume` / `open` /
+`shift_end` / `review` / `fault` before any work, view, notice or closure of
+the channel, the spontaneous resumption (the first executed ALIGN after the
+release and before the notice; `cue_cancelled` written after the align
+chain), the notice delivery and ordering in `m20sCueCheck` (A before B; B
+not before A's actual end + 8 000 ms; deferred while blocked, the deferral
+recorded), the notice end in `m20sEndCue` with the reasons `timeout` /
+`surface_opened` / `prompt_opened` / `shutdown` / `project_closed` /
+`technical_failure`, the cued credit (the first executed ALIGN after the
+notice), the channel view, help, leaving, the settle on every view, the
+closures `m20sCloseAtShiftEnd` / `m20sCloseAtReview` / `m20sCloseUnopened`,
+the fault `m20sFail`, the hold-back `m20sHoldBack`; the entry snapshot,
+`m20PriorLoadCheck`, the closure snapshot `m20ClosureSnapshot` with the
+per-channel records and `spontaneous_resumptions`; one work `FocusedClock`
+per channel, a release-to-spontaneous `FocusedClock` per release and a
+cue-to-credit accumulator counting console-closed time; `m20ChipText`
+(counts only), `m20NoticeLines`, `m20WorkSignature`; a `step_shown` flag so
+that CONTINUE after a hold presents the next step fresh (`resumed: false`)
+while a step left in work returns `resumed: true`), `m20FeedConsole.ts`
+(the adapter: `m20Window()` — the `ItemWindow` of the opportunity —, the
+sink with the protocol stamp, `guarded()` turning a thrown error into
+`m20TechnicalFailure` (the kit log plus `markOpportunityInvalid`),
+`declareM20Feed`, `guardM20Reload`, `presentM20`, `openM20`, the surface
+commands, `m20ConsumesEsc` (help before the console), `closeM20Surface`,
+`resumeM20Surface`, `m20CueCheck`, `m20CueEnded`, `m20ActiveNotice`,
+`closeM20AtShiftEnd`, `closeM20AtReview`, `bindM20Surface`, `m20ChipText`,
+`m20OtherWorkSignature` (executed ALIGNs plus aligned steps — the M04
+other-work signature, §5 table above), the yard's outdoor preparation
+`presentM20MastBrief` / `acceptM20Mast` / `doM20MastStage` /
+`m20OutdoorFault` (logged as `outdoor_*` through the kit log, never
+counted; the mission-log entry `m20_feed_outdoor` closed at `return_hub`),
+the DEV probe `window.__m20FeedProbe` (`publishM20Probe`) and
+`resetM20State`), and `m20SurfaceModel.ts` (the wide frame: the card
+`intro` with CONTINUE, the step board `board_<l>_<k>` with the cell tiles
+`cell_<l>_<k>_<i>` and `align_<l>_<k>`, the hold view `held_<l>` with
+`start_b`, the channel view `rows` with `continue_a` / `continue_b`, the
+help sheet `help_sheet` / `close_help`, the record `closed` /
+`leave_record`, HELP `help_<view>` and LEAVE `leave_<view>` on every
+working view, the bottom row at y 462, 16 px design text). The feature
+extractor `src/measurement/features/m20.ts` (registered by
+`features/index.ts`): `m20_cued_resumptions` recounted read-only from the
+current load's `proto_m20_feed_` events, the rules S1–S7, the dispositions
+of contract §3.8, the components (`difficulty_established: false`,
+`spontaneous_resumptions`, `project_closure_reason`, the per-channel
+outcomes `resumed` / `not_resumed` / `resumed_spontaneously` /
+`cue_not_presented` / `censored_review` / `excluded_technical_failure` /
+`begun_not_held` / `not_begun`), a post-closure fault as a flag only.
+`registerV3.ts` M20: `route_version` `v3`, `implementation_status`
+`implemented`, `coverage_label` `exploratory`, the comment. Changed
+scenes: `RecordsWorkshopScene.ts` — the return-shift `create` calls
+`declareM20Feed`, `guardM20Reload`, `presentM20`; the two-line notice band
+(`m20Band`, origin 0.5 / 1 at design y 584, wrap width 768, a 16 px margin;
+the DEV probe `window.__m20BandProbe`); the release / due check
+`runM20Check` every 250 ms and on RESUME (blocked while no physical input is
+eligible or input is locked; the distance to the console passed for the
+record); `endM20Notice` on a surface opening (`surface_opened`), a prompt
+(`prompt_opened`) and the scene shutdown (`shutdown`); the Station Feed
+Console station opens the wide surface through `openM20` /
+`m20SurfaceModel` / `m20ConsumesEsc` / `closeM20Surface` with the
+other-work watcher; the console guided at return-shift order 1 until
+`m20Window().windowStatus() !== 'unopened'`; the chip and the prompt
+fallback from `m20ChipText`; the sign-off calls `closeM20AtShiftEnd` before
+`advancePilotStage`; the legacy return-surface case removed.
+`ExteriorRecoveryYardScene.ts` — the Mast 04 brief, acceptance and stages
+go through the adapter's outdoor functions; the guard routes an `M20` fault
+to `m20OutdoorFault`. `exteriorWindows.ts` — the four legacy M20 hooks
+(the declaration, the departure, the interruption, the review block)
+removed with their imports; the eight `setComprehension('passed')`
+assertions kept (U8-12 unchanged). `reviewClosure.ts` — `closeM20AtReview`
+after `closeM20ResumeAtReview`.
+
+(4) Events, closures and the legacy disposition as built. Thirty suffixes
+under `proto_m20_feed_` (`M20_EVENT_SUFFIXES`; all provisional
+candidates): `presented`, `opportunity_opened`, `intro_acknowledged`,
+`console_reopened`, `console_left`, `held_visit`, `released_visit`,
+`prior_load_checked`, `closed_unopened`, `channel_started`,
+`step_presented`, `cell_changed`, `align_refused`, `align_attempt`,
+`step_aligned`, `channel_held`, `channel_released`, `cue_presented`,
+`cue_notice_ended`, `cue_cancelled`, `help_consulted`, `channel_aligned`,
+`project_completed`, `project_closed`, `technical_failure`,
+`window_closed`, and the never-counted `outdoor_brief_presented`,
+`outdoor_accepted`, `outdoor_stage_completed`,
+`outdoor_technical_failure`. The closure reasons are `completed`,
+`shift_signed_off`, `closed_at_review` and `technical_failure`; a
+reload after the administration holds the console back with the detail
+`reload after administration: console not re-run`. The release is written
+at exactly `held_at_ms + 30 000` whatever check finds it due (its
+`context` is descriptive). A resumption of either kind never writes a new
+hold, release, notice, channel start, opening or occasion; opening,
+CONTINUE, a cell edit and a refused ALIGN are never resumptions. The v2
+family `proto_m20_antenna_*` keeps its frozen meaning in the ledger and is
+read by no extractor (`exteriorWindows.ts` no longer writes it). Nothing
+canonical was promoted; `docs/research/event-schema.md` and
+`docs/research/scoring-plan.md` are untouched.
+
+(5) Verification evidence (14 October 2026). Development runs by the
+writers — Fable 5.1 (`claude-fable-5-1`) until the owner's model change,
+then Opus 5.5 (`claude-opus-5-5`) — are recorded in the UNIT-LOG "U22
+results". The final matrix of contract §12 was run once, on an unchanged
+tree (digest: HEAD `f391d2e6934a22915a580ee128db3af6c5226c12`, SHA-256
+`0f3820c34368867ac7b4dc40e084efe2c6c8da98931d7bbb3c47c9d70a92cba2` over
+`git diff f391d2e` and the seven untracked files, identical before and
+after), by the test-reviewer — a general-purpose agent with the model
+override `sonnet`, reporting `claude-sonnet-5-5`: `tsc` 0, `build` 0,
+ESLint 0, prettier 1 (the matrix and the UNIT-LOG only, both failing at
+the base), `git diff --check` clean, `verify-unit` PASS (exit 0, no FAIL
+line), P1 118 / 118, P2 202 passed and 2 failed (M08 / M11 line 146; U8-12
+line 405, received length 8 — both the same on the untouched export of
+`f391d2e`), B1 10 / 10 (R1–R8 with R4b and both R7 fonts), B2: `pilot_yard`
+3 / 3, `pilot_exterior_isolation` 2 / 2, `m03_m04_route` "both presses" 1 /
+1, `m21_cases_route` and `m22_setbacks_route` 2 / 2, `pilot_return` 1 / 3
+(test 2: line 947, M21 `pending` — the same on the base; test 1: line 230
+`'1.4 bar'` — the same step fails on the base — and, on the repeat, line
+691, M25 `pending` — a line the base never reached), `pilot_route`
+"six-zone" failed with the base's thirteen offending types plus
+`proto_m20_feed_closed_unopened` only (the item-11 classification: a
+FAILURE, not commit-blocking). Thirty-five frames (the thirty-one of §13
+plus 01b, 14b, 19b, 25b) in `.playwright-mcp/u22-evidence`, inspected and
+copied to the session scratchpad; none committed.
+
+(6) Reviews, findings and the unit's state. Three read-only reviews after
+the matrix, each a general-purpose agent with the model override `opus`
+that read its role file and reported `claude-opus-5-5`: scientific,
+gameplay and visual. Both the scientific and the gameplay reviewer found,
+independently, that while the console stays open the Workshop scene is
+paused (`openWorkSurface`), so neither the 250 ms check nor any console
+command writes a due release: the channel view that follows the other
+channel's sixth step can show a due channel as `held` before its release is
+written (contract §3.3 item 4 and §10 require the release "whatever the
+context (console open, …)", before any view of the channel), and a
+participant who stays in the console past a channel's due time cannot see
+or work it until leaving and reopening — often losing the silent window,
+since a notice already due is delivered the moment the console closes. Every
+remedy shows `pass open` inside an open console, which preview §4.6 rules
+out ("The console shows `pass open` only when opened"); the contract and the
+preview disagree on this case and it touches the silent-release selection
+(contract §14), so it is an owner-reserved exception: the part was stopped,
+no correction round was applied, and the unit was NOT committed (§5.358).
+The owner then ruled the same day (§5.359, the superseded expectations
+§5.360); correction round 1 is recorded in (8).
+The other findings, all open for the owner, are listed in §5.358. Defaults
+exercised: §5.345–§5.356 as recorded; no deviation from the D-U22-1
+selections was made.
+
+(7) Limitations (stated, not resolved; preview §9 and this build). The
+measure is exploratory and provisional (item 13): it samples re-engagement
+with a suspended, attention-demanding copying channel — first
+spontaneously in a silent window, then after a specific notice — and
+longer remaining copying is not established difficulty
+(`difficulty_established: false`); its relation to MPS Appendix A 2 needs
+empirical evaluation. The cued outcome is selected: it describes channels
+not resumed before their notice, is conditional on no spontaneous
+resumption, and is no ranking across all participants — the promptest
+participants leave the cued denominator, and two spontaneous resumptions
+give a null primary with denominator 0 (E47); the spontaneous count, the
+per-channel outcomes and the eligibility are to be reported together, never
+combined. The silent windows are unequal: a deferred notice (a surface
+open, the participant outside the Workshop) lengthens the window and the
+chance of a spontaneous resumption (`cue_deferred_ms`,
+`release_to_spontaneous_*` are exported to examine this). A spontaneous
+resumption requires the participant to open the console on their own and
+find the channel `pass open`; the card and help say that a pass opens later
+and that a notice follows — demand information identical for all. The
+explicit notice may push the cued count towards a ceiling. Two channels of
+one project in a fixed order, one room and one shift are clustered; A's
+outcome may change B's. Never-openers, participants who stop before a hold
+and those who sign off within about 60 s of a hold are excluded from the
+cued count. Cross-item spill-over (M07's bench, the board's "Anything you
+left open earlier…"), the outdoor preparation and attractive alternative
+jobs are uncontrolled. The browser evidence does not fault the console (no
+fault injection on the route), so the fault record of §5.356 is shown by
+the pure spec only; the browser cannot show the console reached within the
+6 s of A's notice on the keyboard route (the console is too far from the
+relay bench; the pointer route shows it). The capture specs are not updated
+(U24, §5.357). No source validates the count; passing tests establish
+implementation correctness only, never validity, reliability, persistence
+as a trait or questionnaire equivalence.
+
+(8) Correction rounds (14–15 October 2026; the owner's amendment §5.359,
+the superseded expectations §5.360, the defaults §5.361; the UNIT-LOG "U22
+correction round 1" has the full record). Round 1 implemented the seven
+rulings: due releases reconciled while the console is open
+(`check: 'console'`), the hold and channel views showing current
+availability, CHANNELS [C], the released hold view with its CONTINUE, the
+"Last ALIGN" line, state-dependent statuses and footers, ESC equal to LEAVE
+inside the settle, the notice in the top strip right of the mission card,
+the chip on the console's face, void rows without a spontaneous count or
+channel outcome, a fault after a final result changing nothing scored, the
+reworded register texts and the one-time hold sentence; the test-reviewer
+(Sonnet 5.5) verified the corrected source (`tsc`, build, ESLint 0; P1
+130 / 130; B1 12 / 12 including the new R10 and R11; `m03_m04_route "both
+presses"` and `m21_cases_route` / `m22_setbacks_route` passed; the P2
+gates, the `pilot_return` M21 / M25 lines and the six-zone item-11 case
+failed exactly as classified against the base), and the three Opus 5.5
+confirmations found nothing in their domains that blocks the commit. Round
+2 made the scientific confirmation's N2 conform to §5.359 (3): on a void
+row `fault_after_final_result` is null and its recount sits under
+`invalid_diagnostic`. Remaining, non-blocking and stated for the owner:
+the extractor does not check that a view or closure follows the release
+(F5; the producer guarantees the order); a hold or channel view turning
+"pass open" inside an open console may act as a weak in-console cue before
+an ALIGN that counts as spontaneous, and neither the release record nor
+CHANNELS records the view on screen (N1); a quick double ESC now closes
+help and leaves the console, adding a visit if a channel is released; the
+card line "The console shows when a channel's pass is open again." holds
+on the hold and channel views, not on another channel's step view; the
+lone LEAVE, the card's line breaks and the pre-existing M21 chip; the
+success / failure colour (U24).
 
 **Unit 21 (M19): as-built** — the two coupling lines at the Exterior Recovery
 Yard coupling panel (bounded unit under contract `U21-CONTRACT.md`, v2 of 13
@@ -4834,7 +5484,7 @@ file outside the allowlist was needed.
 | Label Press A / B (`press_a`, `press_b`)               | the roll moved; a cycle run; a tool moved                                                                 | `m03tState()`: `practiceMoves`, `cycles`, `moveCount`                                                                                                         | the panel shown; a run or a move refused; the press idle, not scheduled, out of service or held back after a reload                                                       | refusals (idle, not scheduled): yes (test 1); qualifying: no |
 | Dispatch Console (`dispatch_console`)                  | a token keyed or removed; the line cleared; a line sent; the work period begun; the stop armed            | `m06State()`: `tokenPresses`, `tokensRemoved`, `clears`, `practiceSent`, `typedLines`, `beganAtMs`, `stopArmPresses`                                          | the surface shown; the reference consulted; a press refused in the settle window; a second surface refused; the budget ended by the system; a closed or held-back console | no                                                           |
 | Conduit Lattice Bench (`lattice_bench`)                | a piece seated, moved, turned or returned; a step undone; the board reset; a first response; a test run   | `m13LatticeProbe()`: `placements`, `moves`, `rotations`, `returns`, `undos`, `resets`, `submission_count`                                                     | the panel shown; a piece only lifted; help; a confirmation opened or cancelled; NEXT NETWORK; SHOW RESULTS; a practice board opened; FINISH; a record shown (U16)         | no                                                           |
-| Return shift: Station Feed Console (`feed_console`)    | the restoration resumed; an indoor stage done                                                             | `returnProbeSnapshot().m20`: `returned`, `useful_resume_actions`                                                                                              | standby; an unavailable history; the console inspected                                                                                                                    | no — no job can be open there on the ordinary route          |
+| Return shift: Station Feed Console (`feed_console`)    | an executed ALIGN; a step aligned (U22)                                                                   | `m20OtherWorkSignature()`: executed ALIGNs plus aligned steps (`m20WorkSignature`)                                                                            | the console opened, read or closed; the card; CONTINUE; START; a cell changed; a refused ALIGN; help; the notice; a record                                                | no — not exercised by `m20_returns_route`                    |
 | Return shift: Relay Bench (`relay_bench`)              | a post or the selector set; the unit applied, accepted or set aside                                       | `m21State()`: `actions`, `applications`, `accepted`, `stop_choice`                                                                                            | standby; the plate and the manual read; a refused act                                                                                                                     | no — as above                                                |
 | Return shift: Shift Report Desk (`report_desk`)        | a line placed or coded; the report submitted or withdrawn; the returned note acknowledged; a rating given | `m22State()`: `slots`, `codes`, `submissions`, `setback_acknowledged_at_ms`, `stop_choice`; `m22Ratings()`                                                    | standby; a tray line selected; the register read                                                                                                                          | no — as above                                                |
 | Return shift: return batch (`return_orders`)           | a card placed or returned; a job worked                                                                   | `m01State('o2')`: `placements`, `returns`, `plan_locked`, `done`                                                                                              | the board shown; a card only lifted                                                                                                                                       | no — as above                                                |
@@ -11021,3 +11671,460 @@ an owner decision.
      owner). Nothing else of §5.342 changes; every verification limitation
      and every historical report stands as written. No owner question of
      this unit remains open.
+344. **Research-owner decision D-U22-1 — APPROVED 14 October 2026, with these
+     SELECTIONS (an owner ruling, not an implementer default; recorded as the
+     selections, never as "all thirteen recommendations approved"; U22, M20).**
+     Items 1–11 of preview §3.3 as recommended, with the consequential changes
+     item 12 requires: the return-shift feed console as the place and the legacy
+     antenna start and resume off the route (1); six steps of 3, 3, 4, 4, 5, 5
+     cells, the hold at step 2, A first, B once A has ever been held (2); the
+     notice with item 12's timing — due at release + 30 s, delivered only with
+     the console closed, the participant in the Workshop, nothing else open,
+     the page visible and focused, the channel neither resumed nor aligned,
+     shown 6 s or ended early, A before B with B ≥ 8 s after A's actual end,
+     protocol times integrity-checked (3); presented at Workshop entry, guided
+     at return-shift order 1 until the first opening, access immediate once
+     released (4); the cued credit = the first EXECUTED ALIGN after the notice
+     and the vector refusal rule (5); notice → credit or closure, sign-off ⇒ 0,
+     review ⇒ censored, reload ⇒ `interrupted`, the row final once no channel
+     can still become cued-eligible (6); cued-eligible ⇔ released AND not
+     resumed before its notice AND notice validly presented AND not excluded,
+     one eligible channel = complete, the zero-denominator precedence (7);
+     never opened ⇒ `no_eligible_event` (`not_opened`), never `declined`, no
+     comprehension check (8); faults keep earned resumptions of both kinds and
+     exclude noticed channels awaiting a return (9); the verify-unit
+     foreign-metadata rule (10); `closed_unopened` at the sign-off and the
+     `pilot_route` "six-zone" classification (11). **Item 12 — the
+     SILENT-RELEASE alternative:** a channel becomes workable 30 s after its
+     hold independently of whether a notice can be shown; its notice becomes
+     due 30 s later under the existing safeguards and is delivered only if the
+     channel is still unfinished and not resumed; the first executed ALIGN
+     before the notice is an operationally defined spontaneous resumption,
+     recorded separately and excluded from the cued denominator; blocked
+     approaches, opening alone, cell edits alone and refused ALIGNs are never
+     resumptions; the same channel is never counted in both outcomes and no
+     new occasion is created when it is reopened; the primary stays the cued
+     numerator count with its eligible denominator — not a ratio or a
+     combined score. **The owner's recorded limitation:** the cued outcome
+     describes channels not resumed before their notice and must not be read
+     as a ranking across all participants; two spontaneous resumptions with no
+     eligible cued channel give a null primary, denominator 0, and two
+     separately recorded spontaneous resumptions (E47). **Item 13 — the
+     EXPLORATORY-LABEL alternative:** `registerV3.ts` M20 `coverage_label`
+     and the §2 label cell become `exploratory`;
+     `difficulty_established: false` is kept; the researcher-facing
+     descriptions and the planned
+     registration treat the task as a provisional measure of re-engagement
+     whose relation to MPS item 2 requires empirical evaluation; "difficult"
+     is never treated as established because more copying remains. Not
+     selected: the item-12 recommendation (hold until the notice) and the
+     item-13 recommendation (`behavioural_counterpart`). The ruling confirms
+     §5 items 2 and 4 for M20. Rulings D-U16-1 through D-U21-1 and the U21
+     sign-off are precedent only.
+345. **D-2 — the card before CONTINUE (U22 default).** The first opening shows
+     the card (preview §4.3) with CONTINUE, HELP and LEAVE; CONTINUE records
+     `intro_acknowledged`, starts channel A and presents its step 1; leaving
+     before CONTINUE shows the card again. Alternative: start A at the first
+     opening without a card (rejected: the card is the owner's approved
+     content).
+346. **D-3 — cells and the step survive leaving (U22 default).** A channel's
+     current step and its cell values are kept across LEAVE and reopening; a
+     reopening always lands on the channel view (CONTINUE presents the step
+     again with `resumed: true`), never on the step itself. Alternative: reset
+     the cells to the loading value at every reopening (rejected: it would
+     make a `repeat` refusal after a reopening impossible to distinguish from
+     an `as_loaded` one and would discard the participant's state).
+347. **D-4 — commitment mechanics and same-view focus (U22 default).** The
+     400 ms settle on every view transition (ALIGN inside it refused and
+     recorded `settling`; any other press dropped); held keys never act; a
+     neutral landing on every view (the card text, the step board, the hold
+     text, the channel rows, the closed record; the help sheet on CLOSE HELP —
+     the U21 precedent); same-view focus kept by element id (cell tiles and
+     ALIGN on one step), with HELP / LEAVE carrying the view's name and the
+     step view's ids carrying the channel and step so a hotkey view change
+     lands on the new view's neutral element (U21 GP-1); the hotkeys 1–5, G,
+     A, B and H (no movement key — the avatar moves on the arrow keys only —
+     and not E); a double click on ALIGN executes once (the second click is
+     refused `repeat` or `settling`); ESC closes help, then the console.
+348. **D-5 — help (U22 default).** `HELP  [H]` on the card, the step, the hold
+     and the channel view (not on the closed records); `help_consulted` with
+     the view name; the sheet exclusive while open; never work and never a
+     resumption.
+349. **D-6 — dispositions, `nonresponse_kind` and the free-text
+     `missing_reason` (U22 default).** The row's `closure_reason` uses the
+     framework enum (`route_departure` for the sign-off, `closed_at_review`,
+     `completed`, `technical_failure`), with the family's own reason
+     (`shift_signed_off` / `closed_at_review` / `completed`) beside it as
+     `project_closure_reason`; `nonresponse_kind` is one of `not_presented`,
+     `not_opened`, `not_begun`, `no_hold`, `cue_not_presented`,
+     `resumed_before_cue`, `censored_only`, `technical_only`,
+     `reload_hold_back`, `reload_no_current_evidence` or null; the
+     `missing_reason` text names the kind (and the first integrity defect on
+     a void row).
+350. **D-7 — names (U22 default; all provisional, alternatives the
+     owner's).** Family `proto_m20_feed_`; ONE opportunity
+     `proto_m20_feed_project`; window `m20_feed_w1`; object and surface id
+     `m20_feed_console`; `entry_state_version` `m20-feed-returns-v2`;
+     `form_id` `m20-form-1`; `content_version` `m20-content-v2`; channel ids
+     `m20_ch_a` / `m20_ch_b` (also the occasion ids); the suffixes of contract
+     §9.2 — `presented`, `opportunity_opened`, `intro_acknowledged`,
+     `console_reopened`, `console_left`, `held_visit`, `released_visit`,
+     `prior_load_checked`, `closed_unopened`, `channel_started`,
+     `step_presented`, `cell_changed`, `align_refused`, `align_attempt`,
+     `step_aligned`, `channel_held`, `channel_released`, `cue_presented`,
+     `cue_notice_ended`, `cue_cancelled`, `help_consulted`,
+     `channel_aligned`, `project_completed`, `project_closed`,
+     `technical_failure`, `window_closed`, and the outdoor
+     `outdoor_brief_presented`, `outdoor_accepted`, `outdoor_stage_completed`,
+     `outdoor_technical_failure`; the notice-end reasons `timeout`,
+     `surface_opened`, `prompt_opened`, `shutdown`, `project_closed`,
+     `technical_failure`; the mission-log entry `m20_feed_outdoor`; the DEV
+     probe `window.__m20FeedProbe`; the feature `m20_cued_resumptions`
+     unchanged. No canonical name, no scoring-plan variable.
+351. **D-8 — event order, the field classification and the integrity rules
+     S1–S7 (U22 default).** As §4 "Unit 22" (2): order read only from usable,
+     unique sequence numbers; the scored / descriptive split of contract
+     §9.4; S1–S7 as the smallest rules that make every scored field
+     checkable, each voiding the row with the defect named, never a silent
+     repair; the resumption ALIGN's clock values and `cue_cancelled`
+     descriptive.
+352. **D-9 — companion definitions (U22 default).** Beside the value, never in
+     it: `administration_version`, `form_id`, `content_version`,
+     `spontaneous_resumptions` (0–2), per channel `status`, `steps_done`,
+     `held_at_ms`, `released_at_ms`, `cue_presented_at_ms`, `held_to_cue_ms`,
+     `cue_deferred_ms`, `cue_displayed_ms`, `cue_ended_reason`,
+     `focus_lost_during_display`, `distance_to_console_at_cue_px`,
+     `held_visits`, `released_visits`, `refused_in_silent_window`,
+     `spontaneous_attempt_index`, `release_to_spontaneous_wall_ms` /
+     `_focused_ms`, `credited`, `credit_attempt_index`,
+     `arrived_after_cue_without_credit`, `refused_after_cue_before_credit`,
+     `steps_after_cue`, `aligns_after_cue`, `post_resumption_reentries`,
+     `aligned`, `excluded_reason`, `work_focused_ms`, `cue_to_credit_wall_ms`
+     / `_console_closed_ms`, `cue_to_closure_wall_ms` / `_console_closed_ms`;
+     `difficulty_established: false`; `outdoor_prepared`; `nonresponse_kind`;
+     `project_closure_reason`; `observations_share_one_project: true`;
+     `cued_outcome_conditional_on_no_spontaneous_resumption: true`; flags.
+353. **D-10 — the legacy antenna family (U22 default).** `m20AntennaModel.ts`
+     and the legacy adapter functions of `exteriorWindows.ts`,
+     `returnWindows.ts` and `returnSurfaceModels.ts` stay in the tree
+     unchanged under their frozen identity (`proto_m20_antenna_restoration`,
+     `proto_m20_antenna_*`, `m20_antenna_start` / `m20_antenna_resume`,
+     `m20-antenna-v1`) and leave the route: `exteriorWindows.ts` loses only
+     the four legacy M20 records named in the contract (the declare, the
+     departure, the interruption and the review block) with their unused
+     imports and one sentence in each describing comment, keeping exactly 8
+     `setComprehension('passed')`; the yard scene keeps the mast's strings,
+     actions and state object through the new adapter functions; the
+     `exteriorResume` bookkeeping of the never-opened legacy window stays (a
+     no-op); `closeM20ResumeAtReview` stays and is a no-op on the route; the
+     v3 extractor never reads the legacy family; the registry's descriptive
+     `opens` / window label for the console, the legacy e2e helpers
+     (`resumeAntenna`, `openFeedConsole`) and the capture specs stay stale
+     (U24 backlog).
+354. **D-11 — layout, the notice band and the counts-only chip (U22
+     default).** The wide frame of D-U17-2 used as is; 16 px design text on
+     every element, 20 px title; the card text, the step board, the hold text,
+     the channel rows and the closed record as neutral landings; the cell
+     tiles and ALIGN in the right column (x 738, w 300), the step board in
+     the left column; the bottom row at y 462 with HELP (x 12), LEAVE (x 184)
+     and the primary control (x 778) — the M19 geometry; CLOSE HELP in the
+     middle of the bottom row; the channel view's two buttons on one row; the
+     station notice a two-line 16 px band in the Workshop HUD standing at
+     the bottom of the 800 × 600 design space (its base at design y 584,
+     inside the 16 px margin; clear of the shared feedback line at y 128,
+     the mission card and the floating station prompt labels — the
+     preparation mockup's y 184 collided with a prompt label in the real
+     game, frame 31 of the first R1 run), scroll-fixed, hidden when no
+     notice is active, never drawn while a surface is open (the scene's
+     PAUSE ends it); the chip `MAST 04 FEED · 2 channels` / `A k/6 · B k/6`
+     / `closed for the shift` (counts only; never
+     `held` or `pass open`); the console prompt's fallback body (reached only
+     outside the return shift or when a surface cannot open) reads the chip
+     text. The layout gate of R7 / R8 measures the real game; the mockup
+     figures of the preparation never stand in.
+355. **D-12 — the clocks and the ≤ 250 ms release / due check (U22
+     default).** One adapter clock (`Date.now()`) for every protocol time;
+     the check runs from the Workshop scene's per-frame hook at most every
+     250 ms while the scene runs and on RESUME; a due release is also written
+     by any console opening, the sign-off, the review and a fault, always
+     before any work on, view of, notice for or closure record of the
+     channel; the recorded `released_at_ms` is `held_at_ms + 30000` whatever
+     the write latency (`written_at_ms` and `write_latency_ms` descriptive);
+     blocking states are the scene's own eligibility predicate (no prompt, no
+     typewriter, no transition, no timed world action), the input lock, a
+     paused scene (any surface or overlay — the per-frame hook is not
+     reached) and the environment's pause causes (`focus_loss`, `hidden`);
+     the work clock, the release-to-spontaneous clock and the cue-to-credit
+     clock as §4 "Unit 22" (2); the notice's `ended_at_ms` is the actual end
+     observed by the check or the hook that ended it (so B's spacing runs
+     from the actual end, as item 3 requires).
+356. **D-13 — the fault record and the held-back opening (U22 default;
+     owner-visible).** (a) As the U21 precedent §5.340 (a): the kit's
+     `technicalFailure` cannot name the channel in work, so the fault record
+     goes through the window's `log` (`technical_failure` with `channel_id`)
+     and the register through `markOpportunityInvalid`. (b) The console
+     opens on every return-shift press, the closed records included: a
+     held-back, signed-off, reviewed or faulted console shows its record
+     line with LEAVE and writes nothing (contract §3.7, preview §4.9); the
+     contract's "unless held back" is read as "never re-run" — the record is
+     shown, the administration is not.
+357. **Not changed by U22 (U24 backlog), stated for the owner.** The capture
+     specs (`pilot_return_capture`, `world_v2_workshop_look` and the rest);
+     the legacy e2e helpers `openFeedConsole` / `resumeAntenna` (unused by the
+     unit's specs); `interactionRegistry.ts` (the console's descriptive
+     `opens` / window label); the `returnEpisodeModel.ts` legacy rows for M20
+     (`RETURN_LINKED_WINDOWS`, `returnEventTypes`); the stale U8-12 premise;
+     the prohibited helper `expectNoMeasurementEvents`, whose `SYSTEM_DRIVEN`
+     list does not name the U21 / U22 `closed_unopened` records (the item-11
+     classification of the `pilot_route` "six-zone" failure).
+358. **Open for the owner after the U22 review (14 October 2026; not
+     resolved; the unit was not committed).** (1) **The release while the
+     console is open — owner-reserved, blocking the commit.** The Workshop
+     scene is paused while a surface is open, so no due release is written
+     until the console closes or reopens; the channel view after the other
+     channel's sixth step can show a due channel as `held` before its
+     release is written; a participant who stays in the console (B's steps,
+     a hold view, help) past A's due time cannot see or work A, and a notice
+     already due is delivered as the console closes, so how fast B is copied
+     partly decides whether A is spontaneous or cued (scientific F1,
+     gameplay G-1). Contract §3.3 item 4 and §10 require the release
+     whatever the context, console open included, before any view of the
+     channel; preview §4.6 says the console shows `pass open` only when
+     opened, and the hold view's text is fixed. Options for the owner (not
+     decided): (i) write due releases before every console command and on a
+     timer while the console is open, refreshing the channel view (and say
+     whether a hold, step or help view should change); (ii) keep the
+     as-built behaviour and record it as a limitation, naming its effect on
+     the spontaneous / cued split; (iii) another rule. Also open: whether a
+     notice that fell due while the console was open may be delivered the
+     moment the participant leaves it. (2) Void rows still export the
+     recounted `spontaneous_resumptions` and per-channel statuses beside the
+     null value (scientific F2); null or label them? (3) The `registerV3.ts`
+     M20 `summary` ("the difficult project") and the feature's `higher_means`
+     ("difficult work") stay unchanged as contract §4 requires; change them
+     for item 13's consistency? (scientific F3). (4) A fault after a final
+     zero-denominator row (both spontaneous) turns `no_eligible_event` into
+     `technical_failure` as the reference derivation does; keep? (scientific
+     F4). (5) Wording (gameplay G-6, visual MIN-1): "after two steps on a
+     channel, its pass ends" may suggest recurring holds; "Choose a channel,
+     or LEAVE." / "A / B choose" also stand on views with no channel button
+     (the channel view with none workable, the completed view); the
+     preview's strings are used as approved. (6) Presentation (visual MAJ-1,
+     MIN-2, MIN-3, MIN-4; gameplay G-2, G-4): the counts-only chip sits under
+     the console's floating prompt label (base placement) and is never
+     legible in a frame; success and failure feedback share one colour; the
+     notice covers the annex doorway for up to 6 s; the cell tile shows
+     index, value and hotkey alike; a double click on ALIGN replaces the
+     differ count with the `repeat` line; an ESC inside the 400 ms settle is
+     dropped while the LEAVE button is not settled. (7) Evidence gaps for the
+     next round (visual MAJ-2 and frame review): frame 11 is the 1280 × 720
+     capture of R2 (byte-identical to frame 22), not an 800 × 600 frame;
+     frame 26 is taken inside Press B's arrival range, where the beacon's
+     light is hidden; frames 19 and 19b are identical by design (the same
+     record line); `pilot_return` test 1's M25 line (691) has no base
+     comparison that reaches it.
+359. **Research-owner amendment for U22 correction round 1 — APPROVED 14
+     October 2026 (seven rulings on §5.358; an owner ruling, not an
+     implementer default).** Opus 5.5 stays the sole writer, Sonnet 5.5
+     verifies, separate read-only Opus 5.5 agents confirm; the two-round
+     correction limit stands. (1) **Entry state.** The uncommitted U22
+     implementation on `codex/u22-m20` at `f391d2e` is authorised work to
+     preserve; the 22-path allowlist and the guard are inherited. (2)
+     **Release timing and usable access (§5.358 (1)).** A channel becomes
+     workable at `held_at_ms + 30000` whether or not an open surface pauses
+     the Workshop scene; its notice stays due 30 000 ms after the release.
+     Due releases are reconciled independently of the paused scene while
+     the console is active, and before the affected commands, views,
+     notices and closures, with the approved effective release time and
+     honest event order (no earlier raw write time is fabricated); the
+     focus / hidden-page rules and the catch-up before resumed interaction
+     stay. Hold and channel views show current availability without
+     switching the participant out of a step or help, overwriting a draft,
+     stealing focus or restarting the settle on a refresh. A reversible
+     CHANNELS [C] control on the working step and hold views (after the
+     card) opens the existing channel chooser inside the console, keeping
+     each channel's step, cells and relevant feedback, so a released A can
+     be reached while working B without leaving; HELP stays exclusive and
+     closing it restores the prior view with current availability and
+     CHANNELS. Using CHANNELS writes no console-open, console-left,
+     resumption, hold, release or occasion record; the work clock keeps its
+     approved meaning. Preview §4.6 "only when opened" is superseded:
+     availability can update inside an already-open console; the release
+     stays silent outside it and the chip counts only. The notice rule is
+     unchanged (an overdue notice may appear at the first permitted moment
+     after leaving, with every safeguard; no grace period). An executed
+     ALIGN after the release and before the notice is actually presented
+     stays spontaneous, also while the console stays open past the notice's
+     due time; a channel is never counted both spontaneous and cued. (3)
+     **Invalid evidence and later faults (§5.358 (2), (4)).** A whole-row
+     integrity failure keeps the primary null, makes
+     `spontaneous_resumptions` null and exports no per-channel derived
+     outcome as a valid result (any recount only as explicitly invalid
+     diagnostic information); raw events stay. A legitimate runtime fault
+     with otherwise valid evidence keeps the approved retention of earned
+     evidence. A later runtime fault never changes an already-final valid
+     result merely because it occurred: two valid spontaneous resumptions
+     keep the null primary, denominator 0, spontaneous 2 and
+     `no_eligible_event` / `resumed_before_cue`; the fault is recorded
+     separately and the participant-facing fault closure stays. Integrity
+     rules still apply to later malformed or contradictory evidence, and
+     channels not final when the fault occurred keep the approved handling.
+     (4) **Wording (§5.358 (3), (5)).** The contract's instruction to keep
+     the `registerV3.ts` M20 `summary` and `higher_means` is overridden
+     where it conflicts with the exploratory ruling: operational
+     descriptions of resumptions after station notices, conditional on no
+     earlier spontaneous resumption, the spontaneous outcome separate;
+     `exploratory` and `difficulty_established: false` kept; no claim of
+     established difficulty, validated persistence, physical departure and
+     return, or a ranking across participants. The one-time hold reads
+     "Each channel is held once, after step 2." with the help and the card
+     consistent; a released hold view replaces the stale "held" description
+     with the existing "pass open" wording and a usable continuation
+     control; statuses and footers name only the actions available in that
+     state (no channel choice when none can be chosen; no help or channel
+     control on completed or closed views; a clear exit). Ordinary concise
+     copy adjustments these rulings require are authorised inside the
+     existing files; the final strings are recorded. (5) **Input
+     (§5.358 (6)).** A double click on ALIGN executes once and the executed
+     attempt's differ count stays visible (a refused repeat never erases
+     it; refusal evidence stays separate and never becomes an attempt or a
+     resumption). A fresh ESC and LEAVE behave alike as non-committing
+     exits, also inside the settle — an explicit exception to the blanket
+     settle rule — with the protection against carried or held keys and
+     accidental immediate dismissal kept; the 400 ms settle stays for
+     committing actions and real view transitions, with the neutral landing
+     and same-view focus rules; CHANNELS is verified by keyboard and
+     pointer. (6) **Presentation and screenshots (§5.358 (6), (7)).** The
+     counts-only chip readable without overlap from the floating prompt;
+     the notice clear of the annex doorway and usable station controls; the
+     cell index, current value and hotkey told apart by labels or spacing;
+     existing assets and the existing room only (no geometry change, art,
+     shared-frame rewrite or allowlist expansion); fonts, viewports, margins
+     and feedback clearance kept; colour differentiation of success and
+     failure deferred to U24. Frame 11 retaken as a real 800 × 600
+     silent-window capture, frame 26 from outside Press B's arrival range
+     with the beacon visible, and every frame the corrections affect
+     retaken; frames 19 / 19b identical by design is no defect. (7)
+     **Verification.** Real browser coverage of the original defect and the
+     correction (B's step across A's release; HELP across a release;
+     CHANNELS to resume A without closing the console; passive updates on
+     hold and channel views; the console open past the notice's due time —
+     no world notice while blocked, a qualifying ALIGN before presentation
+     spontaneous; leaving without resuming — the overdue notice under the
+     existing safeguards; no duplicate release, notice, resumption or
+     occasion, no lost draft, no stolen focus); Sonnet 5.5 runs the affected
+     static checks, the whole U22 pure and route suites, `m03_m04_route`
+     "both presses" and the neighbouring routes whose scene or surface
+     lifecycle the correction touches; a bounded investigation of the
+     `pilot_return` M25 failure; new editable material formatting-clean; the
+     approved baseline and six-zone classifications unchanged; source frozen
+     during verification with the checked digest; each relevant reviewer
+     confirms. One local commit once these are met. Rulings D-U16-1 to
+     D-U22-1 stay as recorded; this amendment supersedes conflicting
+     contract and preview wording and expected outputs only for these
+     changes.
+360. **Expectations superseded by §5.359 (the frozen preparation package,
+     the verbatim contract in the UNIT-LOG and the earlier §5 entries stay
+     as historical records).** (a) Contract §3.3 item 4, the release's
+     write points ("the scene tick, any console opening, the due check, or
+     closure"): extended by every console command and a ≤ 250 ms
+     reconciliation while the console is open (`check: 'console'`). (b)
+     Preview §4.6 "The console shows `pass open` only when opened": an open
+     console updates availability. (c) Preview §4.5, the hold view's fixed
+     three lines: a released hold view shows the pass-open lines and
+     CONTINUE. (d) Preview §4.3 card lines 4–5 and §4.7 help line 3 ("after
+     two steps on a channel, its pass ends …"): the one-time hold sentence;
+     help gains a CHANNELS line. (e) Preview §4.4 / §4.5 / §4.6 statuses and
+     footers: state-dependent, naming only available actions; the completed
+     channel view shows no status and the footer `ESC leave`. (f) Preview
+     §4.4 cell tile `CELL k   v  [k]`: index, value and hotkey labelled. (g)
+     Preview §4.11 / §4.12 controls and transitions: CHANNELS [C] on the
+     step and hold views; the step board's last-ALIGN line. (h) §5.347 (D-4)
+     "an ESC inside the settle is consumed" / "any other press dropped":
+     a fresh ESC and LEAVE exit inside the settle. (i) §5.354 (D-11) the
+     notice band at the bottom of the design space and the chip at the
+     console's `y − 62`: both moved (§5.361). (j) §5.355 (D-12) the write
+     points: as (a). (k) Contract §4, `registerV3.ts` M20 `summary` and
+     feature texts "unchanged": reworded (§5.359 (4)). (l) The frozen
+     derivation (`derivation/expected-results.mjs`): its rule "a fault ⇒
+     `technical_failure` / `technical_only`" (line 237) no longer applies to
+     a fault after a final result — the post-final case is new and was not
+     among E1–E61; its void rows (`voided`, spontaneous count and channels
+     null) are now matched by the extractor, which had exported a recount
+     there (§5.358 (2)). The 72 cases of preview §7 keep their listed
+     values; the pure spec adds the distinguishing cases (UNIT-LOG "U22
+     correction round 1"). (m) Contract §12 B1 and §13: the new browser
+     scenarios and the retaken frames 11 and 26.
+361. **Implementer defaults of U22 correction round 1 (14 October 2026;
+     inside §5.359; all provisional, alternatives the owner's).** (a) The
+     open console's reconciliation: every console command (CONTINUE,
+     CONTINUE CHANNEL, START B, CHANNELS, a cell, ALIGN, HELP, CLOSE HELP,
+     the ESC that closes help, LEAVE / ESC) first writes any due release,
+     and a page timer started with the console surface (`m20ConsoleTick`,
+     every 250 ms, stopped when the console closes and at the scene's
+     shutdown) writes it while the participant does nothing; the record
+     keeps `released_at_ms = held_at_ms + 30000` and its real
+     `written_at_ms` with the new descriptive `check: 'console'`; the timer
+     re-renders the open view only when it wrote a release (the same view,
+     the same element ids, so the focus stays; no new settle). A page
+     timer, not the surface scene's clock, because the M06 and Core-chamber
+     precedents use one and the surface's clock is not running before its
+     scene starts. (b) CHANNELS [C] (`channels_<view>`, bottom row x 388,
+     w 200) on the step and hold views only — not on the card, help, the
+     channel view or a record; it is a non-committing view change refused
+     inside the settle like any other control and writes no record; the
+     work clock pauses as on every non-step view; CONTINUE on the same
+     channel afterwards writes the existing `step_presented` with
+     `resumed: true` and the draft. (c) The released hold view keeps its
+     landing id (`held_<l>`), shows
+     `Pass open. Channel X can be continued.` /
+     `Channel X: 2 of 6 steps done, 4 remain.`, the subtitle
+     `Channel X · pass open`, the status `Channel X can be continued.` and
+     CONTINUE CHANNEL X (x 12 for A, x 440 for B, y 200, the channel view's
+     positions), START B staying where it was; `m20sContinueChannel` also
+     accepts the channel's own released hold view. (d) The step board's
+     fifth line `Last ALIGN: n cells differed.` (the last executed,
+     non-aligned attempt of the current step) keeps the differ count
+     visible after a refused repeat and after CHANNELS; the feedback line
+     still shows the refusal. (e) Footers: the step view names its cells
+     (`1-3`, `1-4` or `1-5`), as in
+     `1-5 change a cell · G align · C channels · H help · ESC leave`; the
+     hold view
+     `TAB move · ENTER or SPACE use · C channels · H help · ESC leave`;
+     the channel view the keys of its buttons (`A / B choose`,
+     `A choose`, `B choose`) or none (`TAB move · H help · ESC leave`,
+     empty status); the completed view `ESC leave`, empty status. (f) The
+     cell tile `CELL k   value v   [k]`. (g) Help gains
+     `CHANNELS shows both channels without leaving the console.` (eight
+     lines); the card's lines 4–5 read
+     `Each channel is held once, after step 2. Its uplink pass then ends`
+     / `and the channel waits until its next pass opens.`, help line 3
+     `Each channel is held once, after step 2. Its uplink pass ends then.`
+     (h) ESC: help still closes first;
+     otherwise a fresh ESC leaves exactly like LEAVE, also inside the
+     settle; the surface drops repeated (held) key events, and the key that
+     opens the console (E / Space) is not ESC. (i) The notice band in the
+     top strip: left edge 16 design px right of the mission card
+     (`missionCardLeft() + 360 + 16`, design x ≈ 249), top at design y 16,
+     wrap width to the right margin (784); it stays above design y 80,
+     where the room never draws a floating prompt, clear of the feedback
+     line at y 128 and of the south wall. (j) The console chip at the
+     console's `y − 22` (on its face, below the floating prompt anchored at
+     `y − 56`). (k) A runtime fault after a final result (both channels
+     resumed): the console still closes with the fault record (now with
+     `result_final: true`), the window pauses, but the opportunity's
+     validity record is not marked `technical_failure`; the extractor
+     flags the fault (`fault_after_final_result: true`, the flag "a runtime
+     fault after the result was final (recorded, not scored)"), keeps the
+     row's disposition from the evidence and its `closure_reason`
+     `technical_failure`. (l) A void row's `channels` lists only
+     `channel_id`, `occasion_id`, `channel_index`, `status: null`,
+     `outcome_available: false`; `invalid_diagnostic` carries
+     `valid: false`, a note, `spontaneous_recount`, `channels_recount` and
+     (correction round 2, the scientific confirmation's N2)
+     `fault_after_final_result_recount`, the row's own
+     `fault_after_final_result` being null on a void row (the full
+     per-channel recount, as the derivation's `voided` rows omit). (m) The
+     registerV3 M20 texts as recorded in the UNIT-LOG "U22 correction round
+     1"; the `operational_label` "Antenna restoration (Yard / Workshop)" is
+     outside §5.359 (4) and unchanged (U24 backlog, with §5.357).

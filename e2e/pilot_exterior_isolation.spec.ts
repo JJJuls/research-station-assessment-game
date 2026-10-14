@@ -170,7 +170,9 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
     expect(await itemStatus(page, 'M20')).toBe('pending');
     expect((await validityRecord(page, M19_OPPORTUNITY)).entered).toBe(false);
     expect((await validityRecord(page, M19_OPPORTUNITY)).offered).toBe(true);
-    expect((await validityRecord(page, OPPORTUNITY.m20)).entered).toBe(false);
+    // M20 (Unit 22): the mast was never accepted — no record of the feed
+    // family at all (its opportunity is declared only in the Workshop).
+    expect(await eventsByPrefix(page, 'proto_m20_feed_')).toHaveLength(0);
     // M19 (Unit 21): before the shift end the panel's family holds only
     // Noor's presentation; the panel was never opened.
     expect(
@@ -202,11 +204,10 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
       (await eventsByType(page, 'proto_m19_lines_closed_unopened'))[0].metadata
         ?.closure_reason,
     ).toBe('shift_ended');
-    expect(
-      (await eventsByPrefix(page, 'proto_m20_antenna_')).filter(
-        (e) => e.event_type !== 'proto_m20_antenna_presented',
-      ),
-    ).toHaveLength(0);
+    // M20 (Unit 22): the legacy family is never written; the feed family
+    // holds nothing — the mast prompt was never opened.
+    expect(await eventsByPrefix(page, 'proto_m20_antenna_')).toHaveLength(0);
+    expect(await eventsByPrefix(page, 'proto_m20_feed_')).toHaveLength(0);
     expectNoRuntimeErrors(errors);
   });
 
@@ -228,9 +229,12 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
 
     // M19 (Unit 21): the legacy coupling opportunity is no longer declared
     // on the route; the panel's window takes its place in the check.
+    // M20 (Unit 22): the legacy antenna opportunity is no longer declared in
+    // the yard either; the feed console's opportunity is declared only in
+    // the Workshop's return shift, so the yard launch writes nothing of it.
     for (const id of [
       ...Object.values(OPPORTUNITY).filter(
-        (entry) => entry !== OPPORTUNITY.m19,
+        (entry) => entry !== OPPORTUNITY.m19 && entry !== OPPORTUNITY.m20,
       ),
       M19_OPPORTUNITY,
     ]) {
@@ -244,6 +248,9 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
         ),
       ).toBe(true);
     }
+
+    expect(await eventsByPrefix(page, 'proto_m20_feed_')).toHaveLength(0);
+    expect(await eventsByPrefix(page, 'proto_m20_antenna_')).toHaveLength(0);
 
     // The scene is still a working room (developer verification), but no
     // participant stage exists: Noor redirects, the sites stay usable.

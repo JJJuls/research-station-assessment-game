@@ -6,17 +6,20 @@
  * (three tools), M04 two cutting jobs, M06 dispatch console, M07 calibration bench
  * (start), M11 seal log (secondary), M12 quality packet 2, M13 conduit
  * lattice bench. Episode 5 (Unit 5, the return shift): M03 occasion 2
- * (Press B), M07 end (the same bench), M20 resume/end (station feed
- * console), M21 manual-based repair (relay bench + drawer manual), M22
+ * (Press B), M07 end (the same bench), M20 two held feed channels with
+ * cued returns (station feed console, Unit 22), M21 manual-based repair
+ * (relay bench + drawer manual), M22
  * setback/revision (shift report desk), M25 questionnaire-primary handoff
  * (notice at the outbound handover desk). M08 secondary telemetry: the
  * locker stow and the optional filter swap on the board.
  *
  * Every window owns distinct objects, events and validity state; nothing
  * gates on performance; the east door is always open. The Work Order Board
- * is the stage anchor (sign-off only — never a check). The feed console
- * and the calibration bench are never guided on the return: both
- * opportunities must stay uncommanded.
+ * is the stage anchor (sign-off only — never a check). The calibration
+ * bench is never guided on the return; the feed console is guided at
+ * return-shift order 1 until its first opening (Unit 22, decision D-U22-1
+ * item 4) and never afterwards — nothing points back to a held, released
+ * or noticed channel except the console's own station notice.
  */
 import Phaser from 'phaser';
 
@@ -56,6 +59,7 @@ import type { PilotNpcBeat } from '../pilot/PilotZoneScene';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
 import { M25_HANDOFF_TEXT } from '../pilot/return/m25HandoffModel';
 import { RETURN_BOARD_BODY } from '../pilot/return/returnEpisodeModel';
+import { MISSION_CARD } from '../pilot/ui/MissionCard';
 import {
   activeWorkSurface,
   openWorkSurface,
@@ -148,7 +152,25 @@ import {
 } from '../pilot/windows/m12QualityControl';
 import { m12SurfaceModel } from '../pilot/windows/m12SurfaceModel';
 import {
-  m20FeedConsoleSurfaceModel,
+  bindM20Surface,
+  closeM20AtShiftEnd,
+  closeM20Surface,
+  declareM20Feed,
+  guardM20Reload,
+  m20ChipText,
+  m20ConsoleTick,
+  m20ConsumesEsc,
+  m20CueCheck,
+  m20CueEnded,
+  m20OtherWorkSignature,
+  m20Window,
+  openM20,
+  presentM20,
+  publishM20Probe,
+  resumeM20Surface,
+} from '../pilot/windows/m20FeedConsole';
+import { m20SurfaceModel } from '../pilot/windows/m20SurfaceModel';
+import {
   m21RelayBenchSurfaceModel,
   m22ReportDeskSurfaceModel,
   type ReturnSurfaceHost,
@@ -156,10 +178,6 @@ import {
 import {
   declareReturnWindows,
   handoverTray,
-  m20ConsoleLeave,
-  m20ConsoleOpen,
-  m20ConsolePresent,
-  m20ConsoleStatusLine,
   m21AllClosed,
   m21BenchChipText,
   m21BenchLeave,
@@ -209,7 +227,7 @@ import {
   WORKSHOP_SOLIDS,
 } from '../world/layouts/workshop';
 import type { InteractionNear, InteractionRedirect } from '../world/RoomScene';
-import { worldToDesign } from '../world/viewport';
+import { DESIGN_WIDTH, worldToDesign } from '../world/viewport';
 
 declare global {
   interface Window {
@@ -239,6 +257,20 @@ declare global {
      * of the carried piece, whether the avatar stands in the bin's range
      * and whether the bin's outline is shown. Never read back.
      */
+    /**
+     * DEV-only, read-only probe of the M20 station notice band (Unit 22):
+     * whether it shows, its two lines and its bounds in the 800 × 600
+     * design space. Never read back into gameplay.
+     */
+    __m20BandProbe?: {
+      visible: boolean;
+      lines: string[];
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      text_height: number;
+    } | null;
     __m04BinProbe?: {
       carrying: string | null;
       released: boolean;
@@ -254,6 +286,25 @@ declare global {
 }
 
 const TILE = 32;
+
+/**
+ * M20 (Unit 22): the station notice band's margin. Owner amendment of 14
+ * October 2026 (register §5.359 (6)): the band stands in the top strip of
+ * the design space, right of the mission card, inside a 16 px margin — a
+ * strip no floating station prompt reaches (they are clamped below design
+ * y 80), clear of the shared feedback line at y 128 and of the south wall's
+ * annex doorway, which the camera always shows below the avatar. The
+ * bottom placement covered that doorway.
+ */
+const M20_BAND_MARGIN = 16;
+/** M20 (Unit 22): the release / due check period. */
+const M20_CHECK_MS = 250;
+/**
+ * M20: the console chip on the console's face, below the floating station
+ * prompt (anchored 56 world px above the station; owner amendment §5.359
+ * (6) — at `y − 62` the prompt covered it).
+ */
+const M20_CHIP_DY = -22;
 
 const CUTTER_LABEL = 'Sample Cutter';
 /**
@@ -304,6 +355,18 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   private benchChip: Phaser.GameObjects.Text | null = null;
   private deskChip: Phaser.GameObjects.Text | null = null;
   private trayChip: Phaser.GameObjects.Text | null = null;
+  /** M20 (Unit 22): the two-line station notice band of the feed console. */
+  private m20Band: Phaser.GameObjects.Text | null = null;
+  /** M20 (Unit 22): the last release / due check (≤ 250 ms apart). */
+  private m20CheckedAtMs = 0;
+  /**
+   * M20: the open console's check (owner amendment of 14 October 2026,
+   * register §5.359 (2)). The Workshop scene is paused while the console is
+   * open, so a page timer writes any due release every ≤ 250 ms and
+   * re-renders the open view when one was written (same view, same focus,
+   * no new settle). Stopped when the console closes and on shutdown.
+   */
+  private m20ConsoleTicker: number | null = null;
 
   constructor() {
     super(key.scene.recordsWorkshop);
@@ -357,8 +420,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     noteM08JobOffered('stow_supplies');
 
     // The return shift (Unit 5): the end opportunities are PRESENTED on
-    // entry — M07 end (bench available), M20 resume (feed console with the
-    // persisted start), M21 / M22 surfaces. Never a reminder, never a gate.
+    // entry — M07 end (bench available), M20 feed console (Unit 22: the
+    // console's one window is declared, its reload guard run and the
+    // console presented — exposure only, never an opening), M21 / M22
+    // surfaces. Never a reminder, never a gate.
     if (this.returnShift()) {
       const now = Date.now();
 
@@ -369,10 +434,44 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       }
 
       presentM07End(now);
-      m20ConsolePresent(now);
+      declareM20Feed();
+      guardM20Reload();
+      presentM20(now);
       m21Present(now);
       m22Present(now);
     }
+
+    // M20 (Unit 22): the station notice band — two lines of 16 px design
+    // text, scroll-fixed in the top strip right of the mission card (owner
+    // amendment §5.359 (6); see M20_BAND_MARGIN), inside a 16 px margin;
+    // hidden while no notice is active. The release / due check runs from
+    // `onPilotUpdate` (≤ 250 ms) and on RESUME; a surface or overlay opening
+    // (PAUSE), a prompt opening and leaving the Workshop (SHUTDOWN) end an
+    // active notice early.
+    const bandX = Math.max(
+      M20_BAND_MARGIN,
+      this.missionCardLeft() + MISSION_CARD.width + M20_BAND_MARGIN,
+    );
+
+    this.m20Band = this.add
+      .text(bandX, M20_BAND_MARGIN, '', {
+        backgroundColor: '#101820',
+        color: '#dfe9f1',
+        font: '16px monospace',
+        lineSpacing: 4,
+        align: 'left',
+        padding: { x: 10, y: 6 },
+        wordWrap: { width: DESIGN_WIDTH - M20_BAND_MARGIN - bandX - 20 },
+      })
+      .setOrigin(0, 0)
+      .setDepth(Depth.AboveWorld)
+      .setScrollFactor(0)
+      .setVisible(false);
+    this.events.on('pause', () => {
+      // Another surface or overlay opened over the Workshop (the console
+      // included): an active notice ends `surface_opened`.
+      this.endM20Notice('surface_opened');
+    });
 
     // M04 (U14-D): while another station's panel is open this scene is
     // paused, so the other task's recorded progress is read once per game
@@ -393,15 +492,24 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       resumeM06Surface(now);
       resumeM12Surface('o2', now);
       resumeM01Surface('o2', now);
+      // M20 (Unit 22): the kit window resumes only while the console
+      // surface itself is open; the release / due check runs on RESUME.
+      resumeM20Surface(now);
+      this.runM20Check(now, true);
       this.physical?.syncObjects(this.debrisEntries());
       this.refreshReturnChips();
     });
     this.events.once('shutdown', () => {
       this.game.events.off(Phaser.Core.Events.POST_STEP, readOtherWork);
       this.otherWorkWatch = null;
+      // M20 (Unit 22): leaving the Workshop ends an active notice.
+      this.stopM20ConsoleTicker();
+      this.endM20Notice('shutdown');
+      this.m20Band = null;
 
       if (typeof window !== 'undefined' && import.meta.env.DEV) {
         window.__returnProbe = null;
+        window.__m20BandProbe = null;
         window.__m04SetDownProbe = null;
         window.__m04BinProbe = null;
       }
@@ -801,13 +909,13 @@ export class RecordsWorkshopScene extends PilotZoneScene {
    * The four return-shift stations exist in every stage (one consistent
    * world); their windows open only on the return. Placement follows the
    * D-V2-1 rule (see zoneSites.ts). The feed console sits on the upper
-   * machinery block and shows the PERSISTED antenna state on its chip —
-   * visible state, never a reminder.
+   * machinery block; its chip shows step counts only (Unit 22) — visible
+   * state, never a reminder, never `held` or `pass open`.
    */
   private populateReturnShift(): void {
     const S = WORKSHOP_STATIONS;
 
-    // ——— M20 station feed console ———
+    // ——— M20 station feed console (Unit 22) ———
     this.addStation({
       interactionKey: 'pilotFeedConsole',
       label: 'Station Feed Console',
@@ -819,30 +927,64 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
         if (!this.returnShift()) {
           // Standby before the exterior shift is logged: a plain prompt,
-          // no M20 event (the resume opportunity is not presented yet).
+          // no M20 event (the console is not presented yet).
           return true;
         }
 
-        const availability = m20ConsoleOpen(Date.now(), 'keyboard');
-
-        if (!availability.available) {
-          return true; // unavailable history: prompt states it, no surface
+        if (activeWorkSurface(this) !== null) {
+          return true;
         }
 
-        // Recorded work: the restoration resumed, an indoor stage done.
-        // The console inspected is not.
-        this.watchOtherWork('feed_console', () => {
-          const m20 = returnProbeSnapshot().m20;
+        // Recorded work: an executed ALIGN or an aligned step. An opening,
+        // a refusal, a cell edit, help and a notice are not.
+        this.watchOtherWork('feed_console', () => m20OtherWorkSignature());
+        openM20(Date.now(), { stage: pilotStage() });
+        openWorkSurface(this, {
+          surfaceId: 'm20_feed_console',
+          frame: 'wide',
+          model: () => {
+            publishM20Probe(Date.now());
 
-          return `${m20.returned}|${m20.useful_resume_actions}`;
+            return m20SurfaceModel(this.m20SurfaceHost());
+          },
+          onClose: () => {
+            // ESC order: the help sheet closes first; otherwise ESC leaves
+            // (the same path as LEAVE, also inside the settle — owner
+            // amendment §5.359 (5)).
+            if (m20ConsumesEsc(Date.now())) {
+              return false;
+            }
+
+            closeM20Surface(Date.now());
+
+            return true;
+          },
+          onClosed: () => {
+            this.stopM20ConsoleTicker();
+            this.refreshReturnChips();
+            this.refreshGuidance();
+          },
         });
-        this.openReturnSurface('m20_feed_console', () =>
-          m20FeedConsoleSurfaceModel(this.returnSurfaceHost()),
-        );
+        this.startM20ConsoleTicker();
+
         return false;
       },
     });
-    this.consoleChip = this.chip(S.feedConsole.x, S.feedConsole.y - 62, '');
+    this.consoleChip = this.chip(
+      S.feedConsole.x,
+      S.feedConsole.y + M20_CHIP_DY,
+      '',
+    );
+    // Guided at return-shift order 1 until the first opening (decision
+    // D-U22-1 item 4); never afterwards.
+    this.guided(
+      'feed_console',
+      S.feedConsole,
+      'Station Feed Console',
+      ['workshop_return'],
+      1,
+      () => m20Window().windowStatus() !== 'unopened',
+    );
 
     // ——— M21 relay bench (drawer manual) ———
     this.addStation({
@@ -996,8 +1138,8 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   private openReturnSurface(
-    surfaceId: 'm20_feed_console' | 'm21_relay_bench' | 'm22_report_desk',
-    model: () => ReturnType<typeof m20FeedConsoleSurfaceModel>,
+    surfaceId: 'm21_relay_bench' | 'm22_report_desk',
+    model: () => ReturnType<typeof m21RelayBenchSurfaceModel>,
   ) {
     openWorkSurface(this, {
       surfaceId,
@@ -1015,9 +1157,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       onClose: () => {
         const now = Date.now();
 
-        if (surfaceId === 'm20_feed_console') {
-          m20ConsoleLeave(now);
-        } else if (surfaceId === 'm21_relay_bench') {
+        if (surfaceId === 'm21_relay_bench') {
           m21BenchLeave(now);
         } else {
           m22DeskLeave(now);
@@ -1025,6 +1165,120 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       },
       onClosed: () => this.refreshReturnChips(),
     });
+  }
+
+  /** The feed console's host (Unit 22): the clock, the close path and the feedback line. */
+  private m20SurfaceHost() {
+    return bindM20Surface({
+      now: () => Date.now(),
+      // LEAVE and ESC take the SAME path: the console is left (the window
+      // and the work clock pause) before the surface closes.
+      close: () => {
+        closeM20Surface(Date.now());
+        activeWorkSurface(this)?.close();
+      },
+      feedback: (message: string) =>
+        activeWorkSurface(this)?.showFeedback(message),
+    });
+  }
+
+  /**
+   * M20 (Unit 22): the release / due check — at most every 250 ms while
+   * the scene runs, and on RESUME. Due releases are written first; a notice
+   * is delivered only when nothing blocks (no prompt, typewriter,
+   * transition, timed world action or input lock; the console closed; the
+   * page visible and focused). The band shows the active notice's two lines.
+   */
+  private runM20Check(nowMs: number, onResume = false) {
+    if (!this.returnShift()) {
+      return;
+    }
+
+    this.m20CheckedAtMs = nowMs;
+
+    const console = WORKSHOP_STATIONS.feedConsole;
+    const lines = m20CueCheck(nowMs, {
+      blocked: !this.physicalInputEligible() || this.inputLocked,
+      distance_to_console_px: Math.round(
+        Math.hypot(this.player.x - console.x, this.player.y - console.y),
+      ),
+      on_resume: onResume,
+    });
+
+    this.renderM20Notice(lines);
+    publishM20Probe(nowMs);
+  }
+
+  private startM20ConsoleTicker() {
+    this.stopM20ConsoleTicker();
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    this.m20ConsoleTicker = window.setInterval(() => {
+      const surface = activeWorkSurface(this);
+
+      if (surface === null) {
+        this.stopM20ConsoleTicker();
+
+        return;
+      }
+
+      const now = Date.now();
+
+      if (m20ConsoleTick(now)) {
+        surface.refresh();
+      }
+
+      publishM20Probe(now);
+    }, M20_CHECK_MS);
+  }
+
+  private stopM20ConsoleTicker() {
+    if (this.m20ConsoleTicker !== null && typeof window !== 'undefined') {
+      window.clearInterval(this.m20ConsoleTicker);
+    }
+
+    this.m20ConsoleTicker = null;
+  }
+
+  private renderM20Notice(lines: string[] | null) {
+    const band = this.m20Band;
+
+    if (band === null || !band.active) {
+      return;
+    }
+
+    if (lines === null) {
+      band.setVisible(false);
+    } else {
+      band.setText(lines.join('\n')).setVisible(true);
+    }
+
+    if (typeof window !== 'undefined' && import.meta.env.DEV) {
+      const bounds = band.getBounds();
+
+      window.__m20BandProbe = {
+        visible: band.visible,
+        lines: lines ?? [],
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
+        text_height: band.height,
+      };
+    }
+  }
+
+  /** An active notice ends early (a surface, a prompt, leaving the Workshop). */
+  private endM20Notice(
+    reason: 'surface_opened' | 'prompt_opened' | 'shutdown',
+  ) {
+    if (m20CueEnded(reason, Date.now())) {
+      this.renderM20Notice(null);
+      publishM20Probe(Date.now());
+    }
   }
 
   private returnSurfaceHost(): ReturnSurfaceHost {
@@ -1070,9 +1324,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     const live = this.returnShift();
 
     this.consoleChip?.setText(
-      live
-        ? m20ConsoleStatusLine().replace('FEED CONSOLE · ', '')
-        : 'standby — exterior shift not logged',
+      live ? m20ChipText() : 'standby — exterior shift not logged',
     );
 
     this.benchChip?.setText(m21BenchChipText(live));
@@ -2251,6 +2503,13 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   protected onPilotUpdate(): void {
+    // M20 (Unit 22): the release / due check, at most every 250 ms.
+    const now = Date.now();
+
+    if (now - this.m20CheckedAtMs >= M20_CHECK_MS) {
+      this.runM20Check(now);
+    }
+
     const span = vestibuleSpan(this.player.y + 24);
 
     const between = this.player.x > span.west && this.player.x < span.east;
@@ -2376,6 +2635,9 @@ export class RecordsWorkshopScene extends PilotZoneScene {
   }
 
   protected getPromptBody(interactionKey: InteractionKey): string | undefined {
+    // M20 (Unit 22): a prompt opening ends an active station notice.
+    this.endM20Notice('prompt_opened');
+
     if (interactionKey === 'pilotWorkOrderBoard') {
       // M01 (Unit 5): the return beat offers the return orders — the
       // second batch is presented when that beat is read (once).
@@ -2387,10 +2649,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     }
 
     if (interactionKey === 'pilotFeedConsole') {
-      // Only reached when no surface opened: standby or an unavailable
-      // start history (operational statement; no reminder, no directive).
+      // Only reached when no surface opened: standby, or another surface
+      // already active (operational statement; counts only, no directive).
       return this.returnShift()
-        ? m20ConsoleStatusLine()
+        ? `FEED CONSOLE · ${m20ChipText()}`
         : 'FEED CONSOLE · standby — nothing to align until the exterior shift is logged.';
     }
 
@@ -2535,7 +2797,19 @@ export class RecordsWorkshopScene extends PilotZoneScene {
               tag: 'workshop_return_signoff',
               feedback:
                 'Signed. The Utility Deck is through the Concourse, east door.',
-              onSelected: () => advancePilotStage('deck_closure', Date.now()),
+              onSelected: () => {
+                const now = Date.now();
+
+                // M20 (Unit 22): the sign-off closes the feed console
+                // before the route advances — an opened project as it
+                // stands (`shift_signed_off`), a presented, never-opened
+                // console as `closed_unopened`; pending notices are never
+                // delivered.
+                closeM20AtShiftEnd(now);
+                this.renderM20Notice(null);
+                advancePilotStage('deck_closure', now);
+                this.refreshReturnChips();
+              },
             },
             // M01 (Unit 5): the second three-job batch, listed right after
             // the sign-off (never behind "Still working"). Never required

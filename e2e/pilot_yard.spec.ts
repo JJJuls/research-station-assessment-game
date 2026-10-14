@@ -17,7 +17,9 @@
  *    observations; leaving the yard pauses open windows (departed, never
  *    terminal) and re-entry restores the coupling, mast, deck and uplink
  *    state; unacknowledged depletion / disconnect close INVALID (never
- *    low); the M20 obligation survives the return inside.
+ *    low); the Mast 04 preparation (M20, Unit 22: unmeasured `outdoor_*`
+ *    records of the Workshop feed console's family) survives the return
+ *    inside and its mission-log line closes with the return shift.
  * 3. Belt-full recovery is lossless (crate spares → cache → collect),
  *    the inventory / map overlays freeze and resume the world, F outside
  *    the pad and a held E never double-act.
@@ -328,28 +330,33 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect(probe?.beacon?.label).toBe('Mast 04');
     expect(probe?.objective).toContain('Mast 04');
 
-    // ——— M20: accept + both outdoor stages; the start window stays open. ———
+    // ——— M20 (Unit 22): accept + both outdoor stages — unmeasured outdoor
+    // preparation of the Workshop feed console (`outdoor_*` records of the
+    // `proto_m20_feed_` family; the legacy window is never opened). ———
     await startAntenna(page);
     await mark('M20 mast stages');
     ext = await exteriorProbe(page);
     expect(ext.m20.accepted).toBe(true);
     expect(ext.m20.stages_done).toEqual(['clear_base_clamp', 'seat_feed_line']);
     expect(ext.m20.outdoor_complete).toBe(true);
-    expect(ext.m20.window).toBe('open');
+    expect(ext.m20.window).toBe('unopened');
     expect(ext.m20.completion).toBeNull();
     expect(ext.m20.returned).toBeNull();
-    expect(await itemStatus(page, 'M20')).toBe('open');
+    expect(await itemStatus(page, 'M20')).toBe('pending');
     expect(
-      (await eventsByType(page, 'proto_m20_antenna_stage_completed')).length,
-    ).toBe(2);
-    expect(
-      await eventsByType(page, 'proto_m20_antenna_window_closed'),
-    ).toHaveLength(0);
-    // The task itself never ends here: no closure, no resume, no return.
-    for (const event of await eventsByPrefix(page, 'proto_m20_antenna_')) {
-      expect(event.event_type).not.toMatch(
-        /window_closed|resum|return|task_complet/,
-      );
+      (await eventsByPrefix(page, 'proto_m20_feed_')).map((e) => e.event_type),
+    ).toEqual([
+      'proto_m20_feed_outdoor_brief_presented',
+      'proto_m20_feed_outdoor_accepted',
+      'proto_m20_feed_outdoor_stage_completed',
+      'proto_m20_feed_outdoor_stage_completed',
+    ]);
+    expect(await eventsByPrefix(page, 'proto_m20_antenna_')).toHaveLength(0);
+    // The console's own records never start here: no opening, no hold, no
+    // closure.
+    for (const event of await eventsByPrefix(page, 'proto_m20_feed_')) {
+      expect(event.event_type).toMatch(/^proto_m20_feed_outdoor_/);
+      expect(event.metadata?.phase).toBe('outdoor');
     }
     probe = await pilotProbe(page);
     expect(probe?.mission_log.map((entry) => entry.text).join(' ')).toContain(
@@ -648,16 +655,15 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect(await itemStatus(page, 'M23')).toBe('completed');
     expect(await itemStatus(page, 'M24')).toBe('completed');
     expect(await itemStatus(page, 'M26')).toBe('completed');
-    expect(await itemStatus(page, 'M20')).toBe('open');
-    expect(ext.m20.interruption_recorded).toBe(true);
-    expect(ext.m20.progress_pre_interruption).toBe(2);
+    // M20 (Unit 22): the shift end records nothing on the feed — no
+    // interruption, no closure; the console's opportunity is still to come.
+    expect(await itemStatus(page, 'M20')).toBe('pending');
+    expect(ext.m20.interruption_recorded).toBe(false);
+    expect(ext.m20.progress_pre_interruption).toBeNull();
     expect(
-      await eventsByType(page, 'proto_m20_antenna_window_closed'),
+      await eventsByType(page, 'proto_m20_feed_window_closed'),
     ).toHaveLength(0);
-    expect(
-      (await eventsByType(page, 'proto_m20_antenna_interruption_recorded'))
-        .length,
-    ).toBe(1);
+    expect(await eventsByPrefix(page, 'proto_m20_antenna_')).toHaveLength(0);
 
     // Every item-owned event carries the required fields; no item id or
     // validity word reaches the participant (feedback / objective).
@@ -693,11 +699,11 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
         sum + Number((e.metadata as { active_ms?: number }).active_ms ?? 0),
       0,
     );
-    const m20Events = await eventsByPrefix(page, 'proto_m20_antenna_');
+    const m20Events = await eventsByPrefix(page, 'proto_m20_feed_');
     const m20StageMs = Number(
       m20Events.find(
         (e) =>
-          e.event_type === 'proto_m20_antenna_stage_completed' &&
+          e.event_type === 'proto_m20_feed_outdoor_stage_completed' &&
           e.metadata?.stage === 'seat_feed_line',
       )?.metadata?.elapsed_ms ?? 0,
     );
@@ -816,15 +822,22 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     await leaveYard(page);
 
     const departedM24 = await eventsByType(page, 'proto_m24_rig_departed');
-    const departedM20 = await eventsByType(page, 'proto_m20_antenna_departed');
 
     expect(departedM24).toHaveLength(1);
-    expect(departedM20).toHaveLength(1);
+    // M20 (Unit 22): the mast's preparation records no departure.
+    expect(await eventsByPrefix(page, 'proto_m20_antenna_')).toHaveLength(0);
+    expect(
+      (await eventsByPrefix(page, 'proto_m20_feed_')).map((e) => e.event_type),
+    ).toEqual([
+      'proto_m20_feed_outdoor_brief_presented',
+      'proto_m20_feed_outdoor_accepted',
+      'proto_m20_feed_outdoor_stage_completed',
+    ]);
     expect(
       await eventsByType(page, 'proto_m24_rig_window_closed'),
     ).toHaveLength(0);
     expect(await itemStatus(page, 'M24')).toBe('open');
-    expect(await itemStatus(page, 'M20')).toBe('open');
+    expect(await itemStatus(page, 'M20')).toBe('pending');
     // M05 occasion 2 (Unit 6) was declined at the briefing: exactly one
     // closure (the decline) exists for it, and the departure adds none.
     expect(
@@ -841,7 +854,7 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect(ext.m19_panel.line_in_work).toBe('m19_l2');
     expect(ext.m20.accepted).toBe(true);
     expect(ext.m20.stages_done).toEqual(['clear_base_clamp']);
-    expect(ext.m20.departures).toBe(1);
+    expect(ext.m20.departures).toBe(0); // Unit 22: no legacy departure bookkeeping
     expect(ext.m24.open).toBe(true);
     expect((await faProbe(page)).magnet.deckPosition).toBe(2);
     expect((await faProbe(page)).windows.m24_open).toBe(true);
@@ -905,15 +918,19 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
       ).postdepletion_casts,
     ).toBe(0);
 
-    // M20: interruption recorded with progress 1; no closure, no outcome.
+    // M20 (Unit 22): one outdoor stage done; no interruption record, no
+    // closure, no outcome — the feed console's opportunity is the Workshop's.
     ext = await exteriorProbe(page);
-    expect(ext.m20.progress_pre_interruption).toBe(1);
-    expect(ext.m20.window).toBe('open');
+    expect(ext.m20.stages_done).toEqual(['clear_base_clamp']);
+    expect(ext.m20.progress_pre_interruption).toBeNull();
+    expect(ext.m20.window).toBe('unopened');
     expect(
-      await eventsByType(page, 'proto_m20_antenna_window_closed'),
+      await eventsByType(page, 'proto_m20_feed_window_closed'),
     ).toHaveLength(0);
+    expect(await eventsByPrefix(page, 'proto_m20_antenna_')).toHaveLength(0);
 
-    // Return inside: the obligation is still in the mission log.
+    // Return inside: the mission-log line closed with the return shift —
+    // nothing points back to the feed before the Workshop console.
     await leaveYard(page);
     await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
       approachOffset: await labApproach(page, PILOT.lab.southDoor),
@@ -922,10 +939,10 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     const inside = await pilotProbe(page);
 
     expect(inside?.stage).toBe('return_hub');
-    expect(inside?.mission_log.map((entry) => entry.text).join(' ')).toContain(
-      'Mast 04',
-    );
-    expect(await itemStatus(page, 'M20')).toBe('open');
+    expect(
+      inside?.mission_log.map((entry) => entry.text).join(' '),
+    ).not.toContain('Mast 04');
+    expect(await itemStatus(page, 'M20')).toBe('pending');
     expectNoRuntimeErrors(errors);
   });
 

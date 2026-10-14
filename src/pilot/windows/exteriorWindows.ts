@@ -62,15 +62,12 @@ import {
   M20_ENTRY_STATE_VERSION,
   M20_FAMILY,
   M20_OPPORTUNITY_ID,
-  M20_RESUME_WINDOW_ID,
   M20_START_WINDOW_ID,
   m20Accept,
   m20Complete,
   m20CompleteStage,
-  m20Depart,
   m20MissionLogText,
   m20OutdoorComplete,
-  m20RecordInterruption,
   m20Snapshot,
 } from '../exterior/m20AntennaModel';
 import type { M23DigLike, M23ScanLike } from '../exterior/m23ExcavationModel';
@@ -272,7 +269,6 @@ export function exteriorWindows(): ExteriorWindows {
 export function declareExteriorWindows() {
   const w = exteriorWindows();
 
-  w.m20.declare();
   w.m23.declare();
   w.m24.declare();
   w.m26.declare();
@@ -1419,14 +1415,6 @@ export function exteriorDeparture(nowMs: number) {
     w.m19.pause(nowMs);
   }
 
-  if (m20Depart(state.m20)) {
-    w.m20.log('departed', {
-      departures: state.m20.departures,
-      input_mode: 'system',
-    });
-    w.m20.pause(nowMs);
-  }
-
   if (m23Depart(state.m23)) {
     w.m23.log('departed', {
       departures: state.m23.departures,
@@ -1689,9 +1677,9 @@ function closeM23(nowMs: number, choice: ShiftChoice) {
 
 /**
  * The interruption point — Noor's "finished outside". Exterior
- * observations close with their honest dispositions; the M20 start state
- * is frozen (`progress_pre_interruption`) and the M20 window stays OPEN
- * for the Return episode. Idempotent.
+ * observations close with their honest dispositions; the Mast 04 state is
+ * unmeasured outdoor preparation of the Workshop feed console (Unit 22) and
+ * is neither frozen nor recorded here. Idempotent.
  */
 export function endExteriorShift(nowMs: number) {
   const state = exteriorEpisode();
@@ -1705,29 +1693,16 @@ export function endExteriorShift(nowMs: number) {
   closeM23(nowMs, 'ended_shift_outside');
   closeM24(nowMs, 'ended_shift_outside');
   closeM26(nowMs, 'ended_shift_outside');
-
-  if (m20RecordInterruption(state.m20, nowMs)) {
-    exteriorWindows().m20.log('interruption_recorded', {
-      progress_pre_interruption: state.m20.progress_pre_interruption,
-      outdoor_complete: m20OutdoorComplete(state.m20),
-      resume_window: M20_RESUME_WINDOW_ID,
-      input_mode: 'system',
-    });
-    exteriorWindows().m20.pause(nowMs);
-  }
 }
 
 /**
  * Review closure (Utility Deck): never-presented windows record absence;
  * still-open windows close as at the shift end with `closed_at_review`.
- * The M20 window, if still open here, is CENSORED: the return episode's
- * `closeM20ResumeAtReview` (returnWindows.ts, called first by the review
- * closure) has already completed the observation whenever the resume
- * opportunity was PRESENTED; reaching this branch means the participant
- * never came back to the feed console — no M20 outcome exists.
+ * The legacy M20 window is neither declared nor closed here: the Workshop
+ * feed console's own review closure (`closeM20AtReview`, Unit 22) records
+ * M20.
  */
 export function closeExteriorWindowsAtReview(nowMs: number) {
-  const state = exteriorEpisode();
   const w = exteriorWindows();
 
   closeM19(nowMs, 'closed_at_review');
@@ -1743,19 +1718,6 @@ export function closeExteriorWindowsAtReview(nowMs: number) {
     if (window.windowStatus() === 'unopened') {
       window.markAbsent(detail);
     }
-  }
-
-  if (w.m20.windowStatus() === 'unopened') {
-    w.m20.markAbsent('antenna restoration never accepted before the review');
-  } else if (w.m20.isOpen()) {
-    // Censored as it stands: no interruption is fabricated at the review.
-    w.m20.stop(
-      nowMs,
-      'closed_at_review',
-      m20Snapshot(state.m20),
-      'system',
-      'censored',
-    );
   }
 }
 

@@ -1234,6 +1234,101 @@ changed no event, field, formula or disposition of this section.
   `closed_at_review`, `technical_failure`); the family's own reason is
   `series_closure_reason`. No total across items.
 
+U22 (M20, candidates as before; one new provisional family, no canonical
+event, no scoring-plan variable, no formula changed): the Records Workshop
+feed console leaves the v2 antenna restoration under research-owner
+decision D-U22-1 of 14 October 2026, recorded as the owner's SPECIFIC
+selections — items 1–11 as recommended, item 12 the silent-release
+alternative, item 13 the exploratory-label alternative (register §4 "Unit
+22", §5.344); the legacy antenna module and its adapter functions stay in
+the tree unchanged, off the route, and their family is read by no
+extractor. The two channels are clustered observations inside one project,
+one room and one shift, never two independent situations; the cued outcome
+is conditional on no spontaneous resumption and is no ranking across
+participants; the spontaneous count is a companion beside the value, never
+inside it; the label is `exploratory` with `difficulty_established: false`.
+
+- **M20** — family `proto_m20_feed_`; ONE opportunity
+  `proto_m20_feed_project`; window `m20_feed_w1`; object and surface id
+  `m20_feed_console`; `entry_state_version` = `m20-feed-returns-v2`;
+  `form_id` `m20-form-1`; `content_version` `m20-content-v2`; channel ids
+  `m20_ch_a`, `m20_ch_b`, which are also the occasion ids (never changed; a
+  resume is not a new occasion). Suffixes: `presented`, `opportunity_opened`
+  (the entry snapshot: `channels_planned` 2, `channel_order`,
+  `steps_per_channel` 6, `cells_per_step` [3, 3, 4, 4, 5, 5],
+  `hold_after_step` 2, `release_delay_ms` 30000,
+  `notice_after_release_ms` 30000, `notice_ms` 6000, `notice_spacing_ms`
+  8000, `refusal_rule` `vector_as_loaded_or_last_executed`, `credit_rule`
+  `first_executed_align_after_cue`, `spontaneous_rule`
+  `first_executed_align_after_release_before_cue`, `form_id`,
+  `content_version`, `settle_ms` 400, `outdoor_prepared`, `stage`),
+  `intro_acknowledged`, `console_reopened` / `console_left` (`view`),
+  `held_visit` (a blocked approach), `released_visit` (a silent-window
+  visit), `prior_load_checked`, `closed_unopened` (`closure_reason`
+  `shift_signed_off` | `closed_at_review`; a presented, never-opened console
+  only), `channel_started`, `step_presented` (`step_index`, `cells_n`,
+  `cells`, `resumed`), `cell_changed`, `align_refused` (`reason`
+  `as_loaded` | `repeat` | `settling` | `held`), `align_attempt`
+  (`step_index`, `attempt_index`, `cells`, `differ`, `aligned`, `after_cue`,
+  `in_silent_window`, `resumption` and the clock values, descriptive),
+  `step_aligned`, `channel_held` (`held_at_ms`), `channel_released`
+  (`released_at_ms` = `held_at_ms` + 30000; `written_at_ms`,
+  `write_latency_ms` and the check descriptive; `input_mode: 'system'`),
+  `cue_presented` (`presented_at_ms`, `released_at_ms`, `due_at_ms`,
+  `deferred_ms`, `page_visible`, `page_focused`, `distance_to_console_px`,
+  `remaining_steps`), `cue_notice_ended` (`ended_at_ms`, `ended_reason`
+  `timeout` | `surface_opened` | `prompt_opened` | `shutdown` |
+  `project_closed` | `technical_failure`, `displayed_ms`,
+  `focus_lost_during_display`; written before any terminal record),
+  `cue_cancelled` (`reason` `resumed_before_cue`; descriptive),
+  `help_consulted`, `channel_aligned`, `project_completed` and
+  `project_closed` (`closure_reason` `shift_signed_off` | `closed_at_review`;
+  the closure snapshot with the per-channel records and
+  `spontaneous_resumptions`) each with the kit's `window_closed`,
+  `technical_failure` (`detail`, `channel_id`), and the yard's unmeasured
+  `outdoor_brief_presented`, `outdoor_accepted`, `outdoor_stage_completed`,
+  `outdoor_technical_failure` (phase `outdoor`; never counted). Every
+  console event carries `phase` (`intro` | `measurement` | `cue` |
+  `closure`), `form_id`, `content_version` and, for a channel record,
+  `channel_id` / `occasion_id` / `channel_index`. The v2 ids
+  `proto_m20_antenna_restoration` / `proto_m20_antenna_*` /
+  `m20_antenna_start` / `m20_antenna_resume` are retired from the route and
+  keep their frozen meaning. Scored fields (contract §9.4) are
+  integrity-checked by the rules S1–S7; a contradiction voids the row, never
+  a silent repair; descriptive fields set flags only. Components:
+  `administration_version`, `form_id`, `content_version`,
+  `presented_in_current_load`, `observations_share_one_project`,
+  `cued_outcome_conditional_on_no_spontaneous_resumption`,
+  `difficulty_established: false`, `spontaneous_resumptions` (0–2), per
+  channel {`status`, `steps_done`, `attempts`, `held_at_ms`,
+  `released_at_ms`, `cue_presented_at_ms`, `held_to_cue_ms`,
+  `cue_deferred_ms`, `cue_displayed_ms`, `cue_ended_reason`,
+  `focus_lost_during_display`, `distance_to_console_at_cue_px`,
+  `held_visits`, `released_visits`, `refused_in_silent_window`,
+  `spontaneous_attempt_index`, `release_to_spontaneous_wall_ms` /
+  `_focused_ms`, `credited`, `credit_attempt_index`,
+  `arrived_after_cue_without_credit`, `refused_after_cue_before_credit`,
+  `steps_after_cue`, `aligns_after_cue`, `post_resumption_reentries`,
+  `aligned`, `eligible`, `excluded_reason`, `work_focused_ms`,
+  `cue_to_credit_wall_ms` / `_console_closed_ms`, `cue_to_closure_wall_ms` /
+  `_console_closed_ms`}, `nonresponse_kind`, `project_closure_reason`,
+  `outdoor_prepared`, `reload_check`, `flags`, on a voided row
+  `integrity_defect`. The row's `closure_reason` is the framework's enum
+  (`completed`, `route_departure` for the sign-off, `closed_at_review`,
+  `technical_failure`); the family's own reason is `project_closure_reason`.
+  No total across items. **Correction round 1 (research-owner amendment of
+  14 October 2026, register §5.359–§5.361; all provisional):** due releases
+  are also written while the console is open — before every console
+  command and by the open console's ≤ 250 ms check — with the new
+  descriptive `check` value `console` (`released_at_ms` unchanged, the real
+  write time); CHANNELS [C] writes no record; a voided row exports
+  `spontaneous_resumptions: null`, per channel only `status: null` and
+  `outcome_available: false`, and the recount solely under
+  `invalid_diagnostic` (`valid: false`); a runtime fault after the result
+  was final (both channels resumed) leaves the value and the disposition as
+  the evidence gives them, adds `fault_after_final_result: true` and a
+  flag, and writes `result_final` on the `technical_failure` record.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                               | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -1258,7 +1353,7 @@ changed no event, field, formula or disposition of this section.
 | `m18_correct_first_diagnoses`         | correct first diagnoses / 3: cases whose FIRST `diagnosis` response is the keyed part / cases with a diagnosis first response in the current page load (planned denominator 3; CANNOT SOLVE and a wrong part are in the denominator, not the numerator; a case without a diagnosis — unpresented, or presented and unanswered — is missing, never incorrect, listed apart from CANNOT SOLVE; tests, drafts, help, time and input mode never change the count; fewer than three answered and closed at the review ⇒ `incomplete`; the series open ⇒ null `pending`, also with three parts and a step pending (D-U20-1 item 9); recounted from the `first_response` events against the content key and compared with the event's `correct` flag and the closure snapshot, each comparison with its scope (contract §9.4; item 11: a defect isolated to the prediction slot leaves this row its own value); versions, per-case records, test use, the descriptive indicators and omissions in the components, never in the value; stable from the sixth first response) (U20)    | ↑ diagnosis               | none answered ⇒ null (`not_presented` never briefed and never opened; `pending` while open — briefed and never opened, or opened, also with 1–5 responses; `no_eligible_event` at the review closure — `briefed_not_opened`, or opened and unanswered (`intro_only` / `case_presented_no_response`); `interrupted` held back after a reload or an unestablished absence of an earlier opening; `technical_failure` for a fault, a shared or uncertain defect, or an isolated defect of this slot; never `declined`)                     |
 | `m18_correct_consequence_predictions` | correct first planned-step answers / 3 (companion; never combined with the diagnosis count): cases whose FIRST `prediction` response is the keyed answer of the ACTUAL case whatever part was recorded (D-U20-1 item 1; in case 3 the wrong part HATCH implies the keyed answer) / cases with a prediction first response in the current page load (planned denominator 3; CANNOT SOLVE and a wrong answer are in the denominator, not the numerator; a case whose step was never presented or never answered is missing, listed apart from CANNOT SOLVE; a part without a step answer counts in the primary only; fewer than three answered and the series closed at the review ⇒ `incomplete`; the series open ⇒ null `pending`; recounted from the prediction slot's `first_response` events against the content key with the scope rules of contract §9.4 (a defect isolated to the diagnosis slot leaves this row its own value); `step_answer_implied_by_recorded_part` per case in the components, never in the value) (U20)                                           | ↑ prediction (companion)  | none answered ⇒ null (`not_presented`, `pending` and `interrupted` as the primary; `no_eligible_event` at the review closure — `briefed_not_opened`, `diagnosis_only` when at least one part exists and no step answer, otherwise the primary row's reason; `technical_failure` for a fault, a shared or uncertain defect, or an isolated defect of this slot; never `declined`)                                                                                                                                                        |
 | `m19_continuations`                   | eligible lines with a further executed TRY of a NEW setting after their first difficulty boundary / eligible lines (planned denominator 2; conditional, complete at any size above zero): per line, from the `attempt` events alone, the boundary = the first attempt after which the executed settings include all listed evidence settings (line 1 the all-ON SINGLE setting; line 2 dial 4 SHUT and dial 5 SHUT — D-U21-1 item 2, Option B; inferred routes never count), `continued` = a later attempt exists; eligible ⇔ boundary AND finish not `technical_failure` AND (continued OR finish `set_aside` OR `shift_ended`); a boundary line closed at the review without a continuation is censored; a line finished `technical_failure` is excluded with or without a recorded continuation (E21), earlier finished lines keeping their outcome (W1); the value is the NUMERATOR COUNT with the denominator beside it; every stored reading and the boundary record are checked against the recount (S1–S7; a contradiction voids the row) (U21)                       | ↑ continuation            | null `pending` until both lines are finished or the panel is closed; no boundary ⇒ `numerator: null`, `denominator: 0`, `no_eligible_event` (`obstacle_not_reached` / `no_try`), never 0 and never failure; check failed ⇒ `understanding_failed`; check not reached or not answered, or never opened ⇒ `no_eligible_event`, never `declined`; the only boundary line censored by the review ⇒ `interrupted` (`censored_only`); a fault with no eligible line ⇒ `technical_failure` (`technical_only`); reload ⇒ `interrupted`          |
-| `m20_cued_resumptions`                | resumed / cued unfinished components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | ↑ return                  | none unfinished                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `m20_cued_resumptions`                | cued-eligible channels with a cued credit / cued-eligible channels (planned 2; conditional, complete above zero): per channel, from the raw events alone, held = `channel_held` after the aligned second step; released = `channel_released` at `held_at_ms + 30000`; a spontaneous resumption = the first executed `align_attempt` after the release and before the channel's `cue_presented` (or with no notice) — EXCLUDED from the cued denominator, counted in the companion `spontaneous_resumptions` (D-U22-1 item 12); the cued credit = the first executed attempt after `cue_presented`; cued-eligible ⇔ released AND not resumed before its notice AND the notice validly presented (visible, focused, ≥ release + 30000, A before B, B ≥ 8000 ms after A's actual end) AND not excluded; noticed without a credit: 0 at the sign-off, censored at the review, excluded by a fault; the NUMERATOR COUNT with the denominator beside it; every differ count and protocol time checked against the recount (S1–S7; a notice after a resumption voids) (U22)          | ↑ cued re-engagement      | null `pending` until no channel can still become cued-eligible or the project is closed; no cued-eligible channel ⇒ `numerator: null`, `denominator: 0` (`technical_only` ⇒ `technical_failure`, `censored_only` ⇒ `interrupted`, `resumed_before_cue` / `cue_not_presented` / `no_hold` / `not_begun` ⇒ `no_eligible_event`), the value never 0; never opened ⇒ `no_eligible_event` (`not_opened`), never `declined`; reload ⇒ `interrupted`; the spontaneous count beside the primary, never added to it                              |
 | `m21_restudy_revisions`               | cases with a relevant restudy (a section read after application k bearing on a fault known from applications 1..k) AND a revised application (a FIT with a changed configuration) / cases whose first FIT (the application, available once the plate is read) was incorrect and were resolved by the participant — recounted from the `section_consulted` and `applied` events (U10)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | ↑ re-engagement           | no incorrect first application ⇒ null; a review-closed incorrect case without the fact ⇒ censored, excluded                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `m22_revisions_begun`                 | reports with a revision begun (a code attached after the acknowledgement of the returned note) / reports whose requirement was presented (2 planned) and that the participant decided — or the review closed after the revision had begun; recounted from the `setback_acknowledged` and `code_attached` events (U11)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | ↑ re-engagement           | none presented ⇒ null; a returned note never acknowledged ⇒ excluded (`understanding_failed` when it is every one); acknowledged and left to the review without a revision ⇒ censored, excluded                                                                                                                                                                                                                                                                                                                                         |
 | `m23_continuations_after_failure`     | further search after first failed dig / plots with failed dig                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | ↑ trying again            | no failed dig                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
