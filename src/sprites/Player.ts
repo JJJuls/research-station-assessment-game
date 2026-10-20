@@ -66,6 +66,14 @@ type Cursors = Record<
   Phaser.Input.Keyboard.Key
 >;
 
+/** Unit 23: an external movement intent (one flag per direction). */
+export interface PlayerMoveIntent {
+  left: boolean;
+  right: boolean;
+  up: boolean;
+  down: boolean;
+}
+
 const Velocity = {
   Horizontal: 175,
   Vertical: 175,
@@ -334,6 +342,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** Last logical facing (no initializer — see stepTimerMs note). */
   private facing?: ResearcherDirection;
 
+  /**
+   * Station 080 Unit 23 (M23): an optional EXTERNAL movement intent — the
+   * excavation field's on-screen direction pad held by the pointer. It is
+   * OR-ed with the arrow keys and nothing else: no speed, physics, body,
+   * selector or animation change. Unset (undefined / null) in every other
+   * scene, so the default behaviour is byte-identical (no initializer —
+   * see the stepTimerMs note).
+   */
+  private externalIntent?: PlayerMoveIntent | null;
+
+  /** Sets (or clears with null) the external movement intent. */
+  setExternalMoveIntent(intent: PlayerMoveIntent | null): void {
+    this.externalIntent = intent;
+  }
+
   private moveSelector(animation: Animation) {
     const { selector } = this;
     // The selector offsets were authored against the former 32×42 body's
@@ -399,24 +422,32 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Stop any previous movement from the last frame
     body.setVelocity(0);
 
+    // Unit 23: the arrow keys OR the external intent (unset elsewhere, so
+    // every other room reads exactly the arrow keys as before).
+    const intent = this.externalIntent ?? null;
+    const left = cursors.left.isDown || intent?.left === true;
+    const right = cursors.right.isDown || intent?.right === true;
+    const up = cursors.up.isDown || intent?.up === true;
+    const down = cursors.down.isDown || intent?.down === true;
+
     // Horizontal movement
     switch (true) {
-      case cursors.left.isDown:
+      case left:
         body.setVelocityX(-Velocity.Horizontal);
         break;
 
-      case cursors.right.isDown:
+      case right:
         body.setVelocityX(Velocity.Horizontal);
         break;
     }
 
     // Vertical movement
     switch (true) {
-      case cursors.up.isDown:
+      case up:
         body.setVelocityY(-Velocity.Vertical);
         break;
 
-      case cursors.down.isDown:
+      case down:
         body.setVelocityY(Velocity.Vertical);
         break;
     }
@@ -426,19 +457,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Update the animation last and give left/right animations precedence over up/down animations
     switch (true) {
-      case cursors.left.isDown:
+      case left:
         this.playWalk(Animation.Left);
         break;
 
-      case cursors.right.isDown:
+      case right:
         this.playWalk(Animation.Right);
         break;
 
-      case cursors.up.isDown:
+      case up:
         this.playWalk(Animation.Up);
         break;
 
-      case cursors.down.isDown:
+      case down:
         this.playWalk(Animation.Down);
         break;
 

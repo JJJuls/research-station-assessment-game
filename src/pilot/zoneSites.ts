@@ -214,7 +214,14 @@ export const YARD_SITES = {
   mast: { x: 777, y: 334 },
   /** The lattice tower's crown (beacon / restored-signal cue). */
   mastTower: { x: 770, y: 172 },
-  plotStake: { x: 1084, y: 350 },
+  /**
+   * Station 080 Unit 23 (M23, A-adjusted; research-owner decision D-U23-1,
+   * contract §13 R1): the shared stake of the two plots (cols 27–40, rows
+   * 8–13) stands south of their common border, 103.942 px from the cable
+   * flag and 111.866 px from the supply crate; its registry approach is
+   * 44 px east (1116, 488).
+   */
+  plotStake: { x: 1072, y: 488 },
   magnetRig: { x: 1434, y: 294 },
   magnetTray: { x: 1514, y: 403 },
   sortingBench: { x: 1530, y: 350 },

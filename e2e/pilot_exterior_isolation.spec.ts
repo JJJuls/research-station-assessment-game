@@ -18,7 +18,6 @@ import { expect, test } from '@playwright/test';
 
 import {
   APPROACH,
-  beginExcavation,
   captureErrors,
   enterYard,
   eventsByPrefix,
@@ -27,12 +26,12 @@ import {
   exteriorProbe,
   faProbe,
   finishOutside,
+  freeScanAt,
   itemStatus,
   lastFeedback,
   magnetCycle,
   OPPORTUNITY,
   powerUpUplink,
-  scanAt,
   standOnPad,
   startSalvageTally,
   transmitAt,
@@ -40,7 +39,14 @@ import {
   waitDisconnect,
   YARD,
 } from './exteriorHelpers';
-import { hold, press } from './helpers';
+import { press } from './helpers';
+import {
+  m23Events,
+  m23Probe,
+  openSeries,
+  stepAway,
+  walkInsidePlot,
+} from './m23Helpers';
 import {
   bootPilotScene,
   interactAt,
@@ -63,24 +69,21 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
 
     await enterYard(page, 'iso');
 
-    const form = (await exteriorProbe(page)).m23_form;
-    const spots = YARD.scanSpots[form];
     // ——— General C/D outside any window: secondary only. ———
-    // World V2 strip: open apron floor on the west half, > 500 px from
-    // either target cell (the former (400,380) lies in the strip's hull
+    // World V2 strip: open apron floor on the west half, far from both
+    // excavation plots (the former (400,380) lies in the strip's hull
     // band — a 25×19-yard coordinate).
-    await scanAt(page, { x: 400, y: 250 });
+    await freeScanAt(page, { x: 400, y: 250 });
     expect((await faProbe(page)).scan.last?.category).toBe('none');
     await press(page, 'd');
     await page.waitForTimeout(500);
     expect(await lastFeedback(page)).toContain('sealed');
-    expect(await eventsByPrefix(page, 'proto_m23_field_recovery_')).toEqual(
-      expect.arrayContaining([]),
-    );
+    // M23 (Unit 23): nothing of the series exists before the stake is
+    // used — no presentation, no opening; the retired single-plot family
+    // is never written on the route.
+    expect(await eventsByPrefix(page, 'proto_m23_plots_')).toHaveLength(0);
     expect(
-      (await eventsByPrefix(page, 'proto_m23_field_recovery_')).filter(
-        (e) => !e.event_type.endsWith('_presented'),
-      ),
+      await eventsByPrefix(page, 'proto_m23_field_recovery_'),
     ).toHaveLength(0);
     expect(
       (await eventsByType(page, 'secondary_field_action_scan')).length,
@@ -89,22 +92,47 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
       (await eventsByType(page, 'secondary_field_action_refusal')).length,
     ).toBe(1);
 
-    // Inside the staked field before the window: refused, never a fake reading.
-    // (East half — through the drift pass with the pass-aware driver.)
-    await yardVia(page, spots.actionable.x, spots.actionable.y);
+    // Inside plot A before the series was presented: C and D are the
+    // series' own refusals (`plot_not_active`, the pinned line, a record) —
+    // never a reading over the inactive target, never the ground's line
+    // (contract §3, F5); no presentation, no opening, no primary evidence.
+    // (East half — through the drift pass.)
+    await walkInsidePlot(page, 'plot_a');
+    // Round 3 (amendment item 5): the ordinary records are compared before
+    // and after — the earlier legitimate apron scan stays the last ordinary
+    // scan, and the refusals inside the plot write no ordinary record.
+    const fieldBefore = await faProbe(page);
+    const ordinaryScansBefore = (
+      await eventsByType(page, 'secondary_field_action_scan')
+    ).length;
+    const ordinaryRefusalsBefore = (
+      await eventsByType(page, 'secondary_field_action_refusal')
+    ).length;
+
     await press(page, 'c');
     await page.waitForTimeout(600);
-    expect(await lastFeedback(page)).toContain('stake panel');
-    expect((await faProbe(page)).scan.last?.category).toBe('none'); // unchanged
-    // The dig target is null before the window, so face the cell below
-    // with a plain tap (the actionable spot's southern neighbour is inside
-    // the field for both forms).
-    await hold(page, 'ArrowDown', 45);
-    await page.waitForTimeout(150);
+    expect(await lastFeedback(page)).toContain('Open the plot panel');
+    expect((await faProbe(page)).scan.last).toEqual(fieldBefore.scan.last);
+    expect(
+      (await eventsByType(page, 'secondary_field_action_scan')).length,
+    ).toBe(ordinaryScansBefore);
     await press(page, 'd');
     await page.waitForTimeout(600);
-    expect(await lastFeedback(page)).toContain('stake panel');
-    expect((await faProbe(page)).dig.last).toBeNull();
+    expect(await lastFeedback(page)).toContain('Open the plot panel');
+    expect((await faProbe(page)).dig.last).toEqual(fieldBefore.dig.last);
+    expect(
+      (await eventsByType(page, 'secondary_field_action_refusal')).length,
+    ).toBe(ordinaryRefusalsBefore);
+    expect((await m23Events(page)).map((event) => event.event_type)).toEqual([
+      'proto_m23_plots_action_refused',
+      'proto_m23_plots_action_refused',
+    ]);
+    expect(
+      (await eventsByType(page, 'proto_m23_plots_action_refused')).map(
+        (event) => event.metadata?.reason,
+      ),
+    ).toEqual(['plot_not_active', 'plot_not_active']);
+    expect((await faProbe(page)).windows.m23_open).toBe(false);
 
     // ——— F off the pad / before the window: nothing. ———
     await press(page, 'f');
@@ -150,20 +178,31 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
       ),
     ).toBe(true);
 
-    // ——— M23 with M19 never opened and M20 never accepted. ———
-    await beginExcavation(page);
-    expect((await faProbe(page)).windows.m23_open).toBe(true);
+    // ——— M23 (Unit 23) with M19 never opened and M20 never accepted: the
+    // stake's brief, both example pages and the first usable selector are
+    // the series' one measured opening; no plot is opened here. ———
+    await openSeries(page, 'keyboard');
+    expect((await m23Probe(page)).opened).toBe(true);
+    expect((await m23Probe(page)).guidance_addressed).toBe(true);
     expect((await validityRecord(page, OPPORTUNITY.m23)).entered).toBe(true);
 
     // The M23 entry snapshot is identical whatever else happened: the
     // opened event names no other item.
     const m23Open = (
-      await eventsByType(page, 'proto_m23_field_recovery_opportunity_opened')
+      await eventsByType(page, 'proto_m23_plots_opportunity_opened')
     )[0];
 
     expect(JSON.stringify(m23Open.metadata?.entry_state_snapshot)).not.toMatch(
       /m19|m20|m24|m26|M19|M20|M24|M26/,
     );
+    expect(
+      await eventsByType(page, 'proto_m23_plots_opportunity_opened'),
+    ).toHaveLength(1);
+    await stepAway(page, 'keyboard');
+    expect((await faProbe(page)).windows.m23_open).toBe(false);
+    expect(
+      await eventsByType(page, 'proto_m23_plots_plot_opened'),
+    ).toHaveLength(0);
 
     // ——— Coupling / mast never touched: pending on the register. ———
     expect(await itemStatus(page, 'M19')).toBe('pending');
@@ -189,7 +228,36 @@ test.describe('exterior recovery — isolation (Unit 4)', () => {
     await finishOutside(page);
     expect(await itemStatus(page, 'M19')).toBe('pending');
     expect(await itemStatus(page, 'M20')).toBe('pending');
-    expect(await itemStatus(page, 'M23')).toBe('completed'); // stopped observation
+    // M23 (Unit 23): the series was opened (the first usable selector) and
+    // no plot was ever worked — the shift end closes both plots and the
+    // window completes as a no-eligible-event observation (never low).
+    expect(await itemStatus(page, 'M23')).toBe('completed');
+
+    // The page's own feature row (the runtime's export builder, the
+    // production path; the Node-side extraction of the same rules is the
+    // M23 pure / extraction groups' subject).
+    const m23Json = await page.evaluate(`(async () => {
+      const mod = await import('/src/systems/index.ts');
+      const payload = mod.researchRuntime.buildExportPayload();
+
+      return JSON.stringify(
+        (payload.measurement_features ?? []).find((row) => row.item_id === 'M23') ?? null,
+      );
+    })()`);
+    const m23Row = JSON.parse(m23Json as string) as {
+      disposition: string;
+      missing_reason: string | null;
+      value: number | null;
+      denominator: number | null;
+      components: { unopened_ids: string[] };
+    } | null;
+
+    expect(m23Row).not.toBeNull();
+    expect(m23Row!.disposition).toBe('no_eligible_event');
+    expect(m23Row!.missing_reason).toBe('no_failed_dig');
+    expect(m23Row!.value).toBeNull();
+    expect(m23Row!.denominator).toBe(0);
+    expect(m23Row!.components.unopened_ids).toEqual(['plot_a', 'plot_b']);
     expect(await itemStatus(page, 'M24')).toBe('censored'); // never depleted (validity: missing)
     expect(await itemStatus(page, 'M26')).toBe('invalid'); // check never taken (knowledge unverified)
     expect((await validityRecord(page, OPPORTUNITY.m24)).invalid_reason).toBe(

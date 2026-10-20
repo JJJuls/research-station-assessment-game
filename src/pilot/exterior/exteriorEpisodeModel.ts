@@ -88,8 +88,10 @@ export const EXTERIOR_SITE_LABELS: Record<ExteriorSite, string> = {
 export const EXTERIOR_OBJECTIVES: Record<ExteriorSite | 'report', string> = {
   coupling: 'Open the frozen coolant coupling — west side (E at the coupling).',
   mast: 'Start the antenna restoration at Mast 04 — north (E at the mast).',
-  excavation:
-    'Recover the buried relay coupling — staked excavation field, east (E at the stake, then C scan · D dig).',
+  // Station 080 Unit 23 (M23; research-owner decision D-U23-1, contract §4
+  // and §12 M1): the neutral landmark line — no recovery requirement, no
+  // tool hint, no plot named.
+  excavation: 'Excavation field — two staked plots, east (E at the stake).',
   rig: 'Run the salvage tally at the magnet rig — Metal Recovery Yard, north-east (E at the rig panel, then F on the pad).',
   console:
     'Run the six slots at the station support console — open field south of the mast (E at the console).',
@@ -128,6 +130,17 @@ export interface ExteriorEpisodeState {
   guidance_dismissed: ExteriorSite[];
   /** The shift outside was declared finished (the interruption point). */
   shift_ended_at_ms: number | null;
+  /**
+   * Station 080 Unit 23 (M23, contract §12 M1): the excavation's GUIDANCE
+   * is addressed once — on the same actually usable plot-selector
+   * transition that writes the series `opportunity_opened`. It persists
+   * through pauses, plot switches, stops, recoveries, departures and the
+   * reload hold-back; a brief, an example, a stake interaction, a region
+   * entry, a failure, a continuation, a step-away or the legacy
+   * entered / closed / recovered state never sets it. Guidance only — never
+   * completion, comprehension or eligibility.
+   */
+  m23_guidance_addressed: boolean;
 }
 
 export interface ExteriorEpisodeOptions {
@@ -154,7 +167,13 @@ export function createExteriorEpisode(
     zone_entries: 0,
     guidance_dismissed: [],
     shift_ended_at_ms: null,
+    m23_guidance_addressed: false,
   };
+}
+
+/** Unit 23 (M23): the ONE setter of the excavation's guidance (see the field). */
+export function exteriorM23GuidanceAddressed(state: ExteriorEpisodeState) {
+  state.m23_guidance_addressed = true;
 }
 
 /**
@@ -170,6 +189,13 @@ export function exteriorDismissSite(
   state: ExteriorEpisodeState,
   site: ExteriorSite,
 ): void {
+  // Unit 23 (M23): STEP AWAY before the first usable selector does not
+  // address the excavation's guidance (contract §12 M1); the generic
+  // dismissal is no alternate setter.
+  if (site === 'excavation') {
+    return;
+  }
+
   if (!state.guidance_dismissed.includes(site)) {
     state.guidance_dismissed.push(site);
   }
@@ -179,6 +205,13 @@ export function exteriorSiteDone(
   state: ExteriorEpisodeState,
   site: ExteriorSite,
 ): boolean {
+  // Unit 23 (M23): the excavation's guidance has exactly one setter — the
+  // first usable plot selector (`m23_guidance_addressed`); the legacy
+  // single-plot state and the generic dismissal are never read for it.
+  if (site === 'excavation') {
+    return state.m23_guidance_addressed;
+  }
+
   if (state.guidance_dismissed.includes(site)) {
     return true;
   }
@@ -188,8 +221,6 @@ export function exteriorSiteDone(
       return state.m19.entered || state.m19.closed;
     case 'mast':
       return state.m20.accepted;
-    case 'excavation':
-      return state.m23.entered || state.m23.closed;
     case 'rig':
       return state.m24.entered || state.m24.closed;
     case 'console':

@@ -11,18 +11,11 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
-import { M23_TARGET_CELLS } from '../src/pilot/exterior/m23ExcavationModel';
 import { M24_UNDERSTANDING_QUESTION } from '../src/pilot/exterior/m24MagnetRigModel';
 import { M26_UNDERSTANDING_QUESTION } from '../src/pilot/exterior/m26ChannelModel';
 import { UNDERSTANDING_SETTLE_MS } from '../src/pilot/exterior/outcomeUnderstanding';
 import { YARD_SITES } from '../src/pilot/zoneSites';
-import {
-  driveAxisTo,
-  getEvents,
-  hold,
-  selectCardByLabel,
-  selectPromptOption,
-} from './helpers';
+import { getEvents, selectCardByLabel, selectPromptOption } from './helpers';
 import {
   captureErrors,
   completeDockTutorial,
@@ -50,16 +43,11 @@ export { captureErrors, expectNoRuntimeErrors };
 
 /**
  * Yard geometry — World V2 rebuild: every site from the machine-audited
- * shared book (src/pilot/zoneSites.ts YARD_SITES + the registry), the
- * M23 target cells from the model, and sweep spots chosen by distance
- * band from each form's target (none ≥ 160 px; faint 107–159 px;
- * actionable ≤ 106 px), all standable on the painted strip.
+ * shared book (src/pilot/zoneSites.ts YARD_SITES + the registry). The
+ * excavation field (M23, Unit 23: two staked plots, the A-adjusted stake
+ * at (1072, 488)) has its own drivers and geometry in `m23Helpers.ts`;
+ * the former single-plot target cells and sweep spots are gone with it.
  */
-const cellCentre = (cell: { col: number; row: number }) => ({
-  x: cell.col * 32 + 16,
-  y: cell.row * 32 + 16,
-});
-
 export const YARD = {
   noor: { ...YARD_SITES.noor },
   airlock: { ...PILOT.yard.airlock },
@@ -77,23 +65,6 @@ export const YARD = {
   sensorPost: { ...YARD_SITES.sensorPost },
   /** Inside the rig's operating pad (F works only here). */
   pad: { x: 1424, y: 334 },
-  targetCells: {
-    form_a: cellCentre(M23_TARGET_CELLS.form_a),
-    form_b: cellCentre(M23_TARGET_CELLS.form_b),
-  },
-  /** Sweep positions per form: outside the signal, faint, actionable. */
-  scanSpots: {
-    form_a: {
-      none: { x: 1324, y: 410 },
-      faint: { x: 1224, y: 400 },
-      actionable: { x: 1136, y: 360 },
-    },
-    form_b: {
-      none: { x: 1404, y: 280 },
-      faint: { x: 1084, y: 320 },
-      actionable: { x: 1200, y: 340 },
-    },
-  },
 } as const;
 
 /** Approach offsets — derived from the registry's audited approach points. */
@@ -126,7 +97,8 @@ export const OPPORTUNITY = {
   m05o2: 'proto_m05_start_o2',
   m19: 'proto_m19_progressive_valve',
   m20: 'proto_m20_antenna_restoration',
-  m23: 'proto_m23_field_recovery',
+  /** M23 (Unit 23): the two-plot series' opportunity (the legacy single-plot id is no longer declared on the route). */
+  m23: 'proto_m23_excavation_series',
   m24: 'proto_m24_rig_continuation',
   m26: 'proto_m26_uplink_continuation',
 } as const;
@@ -645,41 +617,17 @@ export async function startAntenna(page: Page) {
 }
 
 /* ------------------------------------------------------------------ *
- * M23 — excavation
+ * M23 — excavation (Unit 23)
+ *
+ * The two-plot series has its own drivers in `m23Helpers.ts` (the stake's
+ * surface, the plot panel, the walk into a plot, scans and digs on the
+ * selected plot, the first-failure choice, the selector STOP). The former
+ * single-plot begin / stop / sweep / exact-cell drivers of the retired
+ * `proto_m23_field_recovery` binding are gone with that route.
  * ------------------------------------------------------------------ */
 
-export async function beginExcavation(page: Page) {
-  await openSite(page, 'stake');
-  await selectPromptOption(page, 1);
-  await page.waitForFunction(
-    () =>
-      (
-        window as unknown as {
-          __fieldActionsProbe?: FieldActionsProbeLike | null;
-        }
-      ).__fieldActionsProbe?.windows.m23_open === true,
-    undefined,
-    { timeout: 6000 },
-  );
-}
-
-export async function stopExcavation(page: Page) {
-  await openSite(page, 'stake');
-  await selectPromptOption(page, 2);
-  await page.waitForFunction(
-    () =>
-      (
-        window as unknown as {
-          __fieldActionsProbe?: FieldActionsProbeLike | null;
-        }
-      ).__fieldActionsProbe?.windows.m23_open === false,
-    undefined,
-    { timeout: 6000 },
-  );
-}
-
-/** One sweep from the current position; resolves on the new readout. */
-export async function scanHere(page: Page) {
+/** A free scan (C) from the current position, outside any M23 plot in work; resolves on the readout. */
+export async function freeScanHere(page: Page) {
   await page.waitForFunction(
     () =>
       (
@@ -719,96 +667,13 @@ export async function scanHere(page: Page) {
   return (await faProbe(page)).scan.last!;
 }
 
-/** Walks to a spot and sweeps there. */
-export async function scanAt(page: Page, at: { x: number; y: number }) {
+/** Walks to a spot and free-scans there. */
+export async function freeScanAt(page: Page, at: { x: number; y: number }) {
   await ensureOutsideCompound(page);
   await yardVia(page, at.x, at.y);
   await page.waitForTimeout(250);
 
-  return scanHere(page);
-}
-
-/**
- * Faces a plot cell so the spade probe (Player.selector + 8) lands inside
- * it, VERIFIED on the DEV probe after every short tap. Four approach
- * sides are tried in turn (north, west, south, east): the ridge north of
- * the field clamps a northern approach to row-8/9 cells, so a clamped
- * stand simply falls through to the next side. Real held-key input only.
- */
-export async function faceCell(page: Page, cx: number, cy: number) {
-  await ensureOutsideCompound(page);
-  await yardVia(page, cx, cy - 60);
-  const col = Math.floor(cx / 32);
-  const row = Math.floor(cy / 32);
-  const approaches: { stand: { x: number; y: number }; key: string }[] = [
-    { stand: { x: cx, y: cy - 60 }, key: 'ArrowDown' },
-    { stand: { x: cx - 60, y: cy }, key: 'ArrowRight' },
-    { stand: { x: cx, y: cy + 60 }, key: 'ArrowUp' },
-    { stand: { x: cx + 60, y: cy }, key: 'ArrowLeft' },
-  ];
-  const facing = async () => {
-    const target = (await faProbe(page)).dig.target;
-
-    return target !== null && target.col === col && target.row === row;
-  };
-
-  for (const approach of approaches) {
-    await driveAxisTo(page, 'y', approach.stand.y, 6);
-    await driveAxisTo(page, 'x', approach.stand.x, 6);
-
-    for (let tap = 0; tap < 8; tap++) {
-      await hold(page, approach.key, 45);
-      await page.waitForTimeout(90);
-
-      if (await facing()) {
-        return;
-      }
-    }
-  }
-
-  throw new Error(`could not face cell ${col}:${row}`);
-}
-
-export async function digFacing(
-  page: Page,
-  outcome: 'empty' | 'recovered' | 'cached',
-) {
-  const before = (await faProbe(page)).dig.last;
-
-  await press(page, 'D');
-  await page.waitForFunction(
-    ([prev, expected]) => {
-      const last = (
-        window as unknown as {
-          __fieldActionsProbe?: FieldActionsProbeLike | null;
-        }
-      ).__fieldActionsProbe?.dig.last;
-
-      return (
-        last !== null &&
-        last !== undefined &&
-        last.outcome === expected &&
-        JSON.stringify(last) !== prev
-      );
-    },
-    [JSON.stringify(before), outcome] as const,
-    { timeout: 10_000 },
-  );
-  await waitNoWorldAction(page);
-}
-
-/** Begins (if needed), sweeps once near the target and digs the exact cell. */
-export async function recoverCoupling(page: Page) {
-  const form = (await exteriorProbe(page)).m23_form;
-  const cell = YARD.targetCells[form];
-
-  if (!(await faProbe(page)).windows.m23_open) {
-    await beginExcavation(page);
-  }
-
-  await scanAt(page, YARD.scanSpots[form].actionable);
-  await faceCell(page, cell.x, cell.y);
-  await digFacing(page, 'recovered');
+  return freeScanHere(page);
 }
 
 /* ------------------------------------------------------------------ *

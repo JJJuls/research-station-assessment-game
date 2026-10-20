@@ -117,6 +117,25 @@ export interface WorkSurfaceModel {
   feedback?: string | null;
 }
 
+/**
+ * Station 080 Unit 23 (M23, contract §12 M3): one observed input of an open
+ * surface — an accepted non-repeat navigation key (reported AFTER the focus
+ * moved, with the ids before and after) or an activation (reported BEFORE
+ * the element's own `onActivate`). Observation only: nothing here changes
+ * which element is focused or activated.
+ */
+export interface SurfaceInputObservation {
+  kind: 'navigate' | 'activate';
+  /** The DOM key (`ArrowLeft`, `Tab`, `Enter`, ` `, a hotkey); null for a pointer. */
+  key: string | null;
+  shift: boolean;
+  input_mode: InputMode;
+  /** The focused element before the key (navigate) / the activated element (activate). */
+  from_id: string | null;
+  /** The focused element after the move (navigate) / the activated element (activate). */
+  to_id: string | null;
+}
+
 export interface WorkSurfaceLaunchData {
   resumeKey: string;
   /** Probe/telemetry id of this surface (e.g. 'm01_plan_board'). */
@@ -132,6 +151,13 @@ export interface WorkSurfaceLaunchData {
    * over the whole visible design area. Defaults to `'standard'`.
    */
   frame?: SurfaceFrame;
+  /**
+   * Optional input observer (Unit 23, contract §12 M3): notified of every
+   * accepted non-repeat navigation key after the focus moved and of every
+   * activation before the element's `onActivate`. Absent = the behaviour
+   * is unchanged; no hotkey, focus algorithm or public focus API changes.
+   */
+  onInput?: (observation: SurfaceInputObservation) => void;
 }
 
 interface Rendered {
@@ -700,23 +726,31 @@ export class WorkSurfaceScene extends Phaser.Scene {
       }
       case 'ArrowRight':
       case 'ArrowDown':
-      case 'Tab':
+      case 'Tab': {
         if (event.key === 'Tab') {
           event.preventDefault();
         }
 
+        const from = this.focusedId();
+
         this.moveFocus(event.shiftKey ? -1 : 1);
+        this.observe('navigate', event.key, event.shiftKey, 'keyboard', from);
         return;
+      }
       case 'ArrowLeft':
-      case 'ArrowUp':
+      case 'ArrowUp': {
+        const from = this.focusedId();
+
         this.moveFocus(-1);
+        this.observe('navigate', event.key, event.shiftKey, 'keyboard', from);
         return;
+      }
       case 'Enter':
       case ' ': {
         const current = this.focusables()[this.focusIndex];
 
         if (current !== undefined) {
-          this.activate(current, 'keyboard');
+          this.activate(current, 'keyboard', event.key, event.shiftKey);
         }
         return;
       }
@@ -735,9 +769,33 @@ export class WorkSurfaceScene extends Phaser.Scene {
       );
 
       if (target !== undefined) {
-        this.activate(target, 'keyboard');
+        this.activate(target, 'keyboard', event.key, event.shiftKey);
       }
     }
+  }
+
+  /** The focused element's id (null without a focusable element). */
+  private focusedId(): string | null {
+    return this.focusables()[this.focusIndex]?.element.id ?? null;
+  }
+
+  /** Unit 23: forwards one observed input to the optional observer (no-op without one). */
+  private observe(
+    kind: SurfaceInputObservation['kind'],
+    key: string | null,
+    shift: boolean,
+    inputMode: InputMode,
+    from: string | null,
+    to: string | null = this.focusedId(),
+  ) {
+    this.data_.onInput?.({
+      kind,
+      key,
+      shift,
+      input_mode: inputMode,
+      from_id: from,
+      to_id: to,
+    });
   }
 
   private handlePointer(pointer: Phaser.Input.Pointer) {
@@ -767,7 +825,12 @@ export class WorkSurfaceScene extends Phaser.Scene {
     }
   }
 
-  private activate(item: Rendered, inputMode: InputMode) {
+  private activate(
+    item: Rendered,
+    inputMode: InputMode,
+    key: string | null = null,
+    shift = false,
+  ) {
     if (!prefersReducedMotion()) {
       this.tweens.add({
         targets: item.box,
@@ -776,6 +839,15 @@ export class WorkSurfaceScene extends Phaser.Scene {
       });
     }
 
+    // Unit 23: the observer hears the activation BEFORE the element acts.
+    this.observe(
+      'activate',
+      key,
+      shift,
+      inputMode,
+      item.element.id,
+      item.element.id,
+    );
     item.element.onActivate?.(inputMode);
 
     if (!this.closing) {

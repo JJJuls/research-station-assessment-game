@@ -127,6 +127,12 @@ import {
   m26Transmit,
   m26ViewEvidence,
 } from '../src/pilot/exterior/m26ChannelModel';
+import {
+  M23_FAMILY as M23P_FAMILY,
+  M23P_OPPORTUNITY_ID,
+  M23P_WINDOW_ID,
+} from '../src/pilot/windows/m23PlotsContent';
+import { M23_EVENT_SUFFIXES as M23P_EVENT_SUFFIXES } from '../src/pilot/windows/m23PlotsModel';
 const REPO = join(__dirname, '..');
 
 /** M05's family (ledger); the window module itself is browser-only. */
@@ -842,6 +848,12 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
       ['secondary', [...SECONDARY_FIELD_ACTION_EVENT_TYPES]],
       ['foundation_m24', [...M24MU_EVENT_TYPES]],
       ['foundation_m26', [...M26DS_EVENT_TYPES]],
+      // Unit 23: the current M23 route (the two-plot series) — disjoint
+      // from the retired single-plot family the episode model still lists.
+      [
+        'M23_plots',
+        M23P_EVENT_SUFFIXES.map((suffix) => `${M23P_FAMILY}${suffix}`),
+      ],
     ];
 
     // The developer-lab foundation adapter for M23 shares the LEDGER
@@ -1007,6 +1019,13 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
       'src/pilot/exterior/m26ChannelModel.ts',
       'src/pilot/windows/exteriorWindows.ts',
       'src/scenes/ExteriorRecoveryYardScene.ts',
+      // Unit 23: the two-plot series' own modules.
+      'src/pilot/windows/m23PlotsContent.ts',
+      'src/pilot/windows/m23PlotsModel.ts',
+      'src/pilot/windows/m23SurfaceModel.ts',
+      'src/pilot/windows/m23Plots.ts',
+      'src/pilot/ui/M23FieldControls.ts',
+      'src/measurement/features/m23.ts',
     ];
 
     for (const file of unitFiles) {
@@ -1042,8 +1061,21 @@ test.describe('exterior recovery — pure models (Unit 4)', () => {
       }
     }
 
-    // Identifiers equal the frozen ledger exactly for M19 / M20 / M23 and
-    // the v3 register exactly for M24 / M26 (Unit 12).
+    // Identifiers equal the frozen ledger exactly for M19 / M20 and for
+    // the legacy M23 model (the retired single-plot binding, unchanged);
+    // the v3 register exactly for M24 / M26 (Unit 12) and for the current
+    // M23 route (Unit 23: the two-plot series, whose identity is the
+    // register's, never the ledger's).
+    expect(registerEntry('M23').route.opportunity_ids).toEqual([
+      M23P_OPPORTUNITY_ID,
+    ]);
+    expect(registerEntry('M23').route.windows[0]!.id).toBe(M23P_WINDOW_ID);
+    expect(registerEntry('M23').route.family_prefixes).toEqual([M23P_FAMILY]);
+    expect(M23P_OPPORTUNITY_ID).not.toBe(M23_OPPORTUNITY_ID);
+    expect(M23P_WINDOW_ID).not.toBe(M23_WINDOW_ID);
+    expect(M23P_FAMILY).not.toBe(M23_FAMILY);
+    expect(M23P_FAMILY.startsWith(M23_FAMILY)).toBe(false);
+    expect(M23_FAMILY.startsWith(M23P_FAMILY)).toBe(false);
     expect([
       M19_OPPORTUNITY_ID,
       M20_OPPORTUNITY_ID,

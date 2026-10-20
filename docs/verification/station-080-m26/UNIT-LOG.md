@@ -14585,3 +14585,2577 @@ No push, merge, PR, tag, deployment, installation, deletion, worktree removal or
   named non-blocking classifications). Exactly one local commit follows,
   with the files staged by name and `verify-unit` before and after it; its
   hash and the outputs are in the handoff.
+
+## U23 — M23 two-plot post-failure excavation protocol (18 October 2026)
+
+- **Owner execution instruction (18 October 2026):** Juls, the research owner,
+  issued the explicit execution instruction for U23 / M23 in this session. It
+  is recorded verbatim below ("U23 owner execution instruction"), exactly as
+  received, and is the only execution authorisation this unit relies on. It
+  supersedes the package's HOLD / "implementation unauthorized" wording for
+  execution only (the implementation, this first UNIT-LOG edit, the named
+  verification, the screenshots and the single local commit); it changes no
+  approved specification, decision, fixture, geometry, copy, formula or
+  limitation. The owner also answered `CLAUDE.md`'s branch question for this
+  unit: `codex/u23-m23`, based on `a80629e`, is the authorised branch; the
+  `codex/` prefix is a historical naming convention and Codex compatibility
+  stays unapproved and deferred. Nothing from U22 (approval, exception or
+  limitation) is inherited.
+- **Governing package:** `C:\Users\Juls\.codex\visualizations\2026\10\15\u23-m23`
+  (82 files). Manifest `SHA256SUMS.txt` SHA256
+  `ef22dace97070cfd2503c2630a4e3a5f8e929b96e715094fbeabde8fb3934be2`
+  (re-verified read-only in this session: 81 payload hashes OK, no missing or
+  extra file). Allowlist file `U23-ALLOWLIST-A-ADJUSTED.txt` SHA256
+  `d5e9d7220da93a37e075d6fbf2d40ed6f1cd08fc55ab6fec76bd49d2557368c9`
+  (30 paths). `U23-CONTRACT.md` SHA256
+  `5f77b89b60f7b4ca7234953379996f93d6d4ab0810065607c76df6693c90e629`.
+  Governing documents: `U23-OWNER-RULING.md`, `U23-CONTRACT.md` (incl.
+  §§12–13), `U23-OWNER-PREVIEW.md`, `U23-OUTCOME-FIXTURES.md`,
+  `U23-LAYOUT-CHOICE-EVIDENCE.md`, `U23-FABLE-HANDOFF.md`. All nine D-U23-1
+  decisions (A-adjusted with numeric feedback and final neutral wording, B, C,
+  D1, D2, D3, E(c), F, G) are approved and are implemented as specified, not
+  reopened. The package is preserved byte-for-byte and is never written to.
+- **Launch target (verified, not assumed):** worktree
+  `C:\Users\Juls\.codex\worktrees\u23-m23\research-station-assessment-game`
+  (`git rev-parse --show-toplevel` agrees; `pwd` equals `U23_WORKTREE`);
+  branch `codex/u23-m23`; HEAD `a80629e94b5f49ff944eef3a4c936b0de8cff29a`
+  (the exact base, the head of `fable-professional-world-rescue-v2`;
+  `git merge-base --is-ancestor` confirmed); `git status --porcelain` empty;
+  `git log --oneline -5` = `a80629e feat(m20)…`, `f391d2e fix(m19)…`,
+  `33e779f feat(m19)…`, `390d5ce fix(m18)…`, `2eed381 feat(m18)…`. Session
+  id `4cae0499-efde-4ea3-9568-1e4cd65a18bc`. Evidence directory
+  (`U23_EVIDENCE_DIR`, outside the repository, in this session's scratchpad):
+  `C:\Users\Juls\AppData\Local\Temp\claude\C--Users-Juls--codex-worktrees-u23-m23-research-station-assessment-game\4cae0499-efde-4ea3-9568-1e4cd65a18bc\scratchpad\u23-evidence`.
+  `PW_DEV_PORT=5183` (no listener on 5183 or 5184 at entry).
+  `CLAUDE_UNIT_ALLOWLIST` holds exactly 30 entries, byte-equal line for line to
+  the package allowlist file. `node_modules` is a git-ignored junction to the
+  primary checkout's verified dependencies, so tool caches (for example
+  `node_modules/.vite`) are shared with the primary checkout; the junction is
+  not modified. Commit hooks are inactive: `core.hooksPath` is `.husky/_`,
+  which is generated and absent in this worktree (pre-commit and commit-msg
+  do not run); hooks are not created, installed or bypassed, and their four
+  non-mutating equivalents are run and recorded before the commit. Working
+  files are CRLF over LF blobs (autocrlf).
+- **Remote check (copied from `LAUNCH-RECORD.json`, run by the launcher before
+  this session; the remote is not contacted again in this unit):**
+  `git -c http.sslBackend=schannel -c http.sslVerify=true ls-remote --heads origin fable-professional-world-rescue-v2`
+  → `[PASS] remote: schannel ls-remote with certificate verification ON: origin/fable-professional-world-rescue-v2 = a80629e94b5f49ff944eef3a4c936b0de8cff29a = pinned base`;
+  `[PASS] remote: origin has no codex/u23-m23`;
+  `[PASS] tls: no Git config disables http.sslVerify`.
+- **Entry checks (bounded-unit Step 1, all passed before this edit):**
+  inventory read without change (`CLAUDE.md`,
+  `docs/ai/CLAUDE-OPERATING-MODE.md`, `.claude/settings.json` registering the
+  PreToolUse guard `scripts/claude/pretool-guard.mjs` on Bash / PowerShell /
+  Write / Edit / MultiEdit / NotebookEdit with spawn depth 1 and 3 concurrent
+  subagents, `.claude/agents/` with eight agent files,
+  `.claude/skills/bounded-unit/SKILL.md`, `scripts/claude/`). Guard probes: a
+  Write to the new out-of-allowlist path `src/GUARD-ALLOWLIST-PROBE.ts` was
+  BLOCKED by the guard ("outside the active unit allowlist"); a Write to
+  `U23_EVIDENCE_DIR/guard-probe.txt` succeeded. `U23_FMT_CHECK`
+  (`tools/fmt-scope-check.mjs`) SHA256
+  `91fc033714b746c979fcec69719b7678c667f61d085ea223f7e3ceca4ead64f0` matches
+  the launch record. Effective author/committer identity
+  `JJJuls <juls.ranft@gmail.com>` (read with `git var`; no git configuration
+  read or written).
+- **Allowlist (the exact 30 paths; any other path is a stop-and-report scope
+  gap, never an expansion):**
+  - `src/pilot/windows/m23PlotsContent.ts`
+  - `src/pilot/windows/m23PlotsModel.ts`
+  - `src/pilot/windows/m23Plots.ts`
+  - `src/pilot/windows/m23SurfaceModel.ts`
+  - `src/pilot/ui/M23FieldControls.ts`
+  - `src/pilot/ui/WorkSurfaceScene.ts`
+  - `src/measurement/features/m23.ts`
+  - `src/measurement/features/index.ts`
+  - `src/measurement/registerV3.ts`
+  - `src/pilot/windows/exteriorWindows.ts`
+  - `src/pilot/exterior/exteriorEpisodeModel.ts`
+  - `src/scenes/ExteriorRecoveryYardScene.ts`
+  - `src/sprites/Player.ts`
+  - `src/fieldActions/digController.ts`
+  - `src/fieldActions/scanController.ts`
+  - `docs/game/rooms/11-exterior-recovery-yard.md`
+  - `docs/verification/station-080-m26/IMPLEMENTATION-MATRIX.md`
+  - `docs/verification/station-080-m26/M01-M26-IMPLEMENTATION-REGISTER.md`
+  - `docs/verification/station-080-m26/SCORING-AND-EVENT-ADDENDUM-v1.md`
+  - `docs/verification/station-080-m26/UNIT-LOG.md`
+  - `e2e/m23_plots.spec.ts`
+  - `e2e/m23Helpers.ts`
+  - `e2e/exteriorHelpers.ts`
+  - `e2e/pilot_yard.spec.ts`
+  - `e2e/pilot_exterior_isolation.spec.ts`
+  - `e2e/pilot_exterior_capture.spec.ts`
+  - `e2e/pilot_exterior_models.spec.ts`
+  - `src/world/layouts/yard.ts`
+  - `src/pilot/zoneSites.ts`
+  - `src/world/interactionRegistry.ts`
+- **Models:** the sole implementation writer is Claude Fable 5.1, model id
+  `claude-fable-5-1` (reported from the system context before any edit). The
+  named project agents `test-reviewer`, `scientific-reviewer`,
+  `gameplay-reviewer` and `visual-reviewer` are not discoverable in this
+  session's agent list, so the owner's documented fallback applies: a
+  `general-purpose` agent with the matching model override (`sonnet` for the
+  test-reviewer; `opus` for the three Opus reviewers) that first reads its
+  role file in `.claude/agents/`. This is reported as a fallback; the actual
+  model id each agent reports is recorded in the results below. No reviewer
+  runs on Fable; no model is silently substituted.
+- **Order of work:** this entry first (the owner instruction, the owner
+  ruling and the full approved contract, verbatim, below); then the
+  implementation in the contract's dependency order — the M23 content module,
+  the pure plots model, the surface model, the ItemWindow adapter, the
+  read-only feature extractor and its index registration, the register entry
+  metadata, the default-preserving shared-file additions (`Player`,
+  `digController`, `scanController`, `WorkSurfaceScene`), the A-adjusted yard
+  geometry (`yard.ts` four prop removals, `zoneSites.ts` `plotStake`,
+  `interactionRegistry.ts` stake approach), the exterior route detachment and
+  guidance (`exteriorWindows.ts`, `exteriorEpisodeModel.ts`), the scene
+  integration, the new specs `e2e/m23_plots.spec.ts` / `e2e/m23Helpers.ts` with
+  hand-written fixture expectations, the re-expressed existing specs, the
+  documents; then the scheduled verification matrix (once, by the
+  test-reviewer), the three Opus reviews in parallel, at most two bounded
+  correction rounds, the four hook equivalents, the one commit and the
+  handoff. Results, reviews, deviations and the 12-field handoff are appended
+  at the end of this entry ("U23 results"). Development runs by the writer
+  are labelled development evidence only.
+
+### U23 owner execution instruction (18 October 2026, verbatim)
+
+```text
+# U23 / M23 — owner execution authorization (Juls)
+
+I am Juls, the research owner. This message is my explicit execution instruction for unit U23 / M23. Record it verbatim and dated (use the actual date of this session) as the opening of the U23 UNIT-LOG entry.
+
+## 1. What I authorize
+
+In this session only, I authorize:
+
+1. **Implementation of U23 / M23** exactly as specified by the approved preparation package at `C:\Users\Juls\.codex\visualizations\2026\10\15\u23-m23` (82 files; `SHA256SUMS.txt` SHA256 `ef22dace97070cfd2503c2630a4e3a5f8e929b96e715094fbeabde8fb3934be2`). The governing documents are `U23-OWNER-RULING.md`, `U23-CONTRACT.md` (including §§12–13), `U23-OWNER-PREVIEW.md`, `U23-OUTCOME-FIXTURES.md`, `U23-LAYOUT-CHOICE-EVIDENCE.md` and `U23-FABLE-HANDOFF.md`. All nine D-U23-1 decisions (A-adjusted with numeric feedback and final neutral wording, B, C, D1, D2, D3, E(c), F, G) are already approved. Implement them; do not reopen, reinterpret or re-review them.
+2. **The write boundary**: exactly the 30 paths in `U23-ALLOWLIST-A-ADJUSTED.txt` (SHA256 `d5e9d7220da93a37e075d6fbf2d40ed6f1cd08fc55ab6fec76bd49d2557368c9`), with the per-file limits in contract §7 and §§12–13. Any other path is a stop-and-report scope gap, never an expansion.
+3. **The isolated launch target**: branch `codex/u23-m23` in worktree `C:\Users\Juls\.codex\worktrees\u23-m23\research-station-assessment-game`, created from exact base `a80629e94b5f49ff944eef3a4c936b0de8cff29a` (the head of `fable-professional-world-rescue-v2`).
+4. **A historical branch override.** `CLAUDE.md` names `fable-autonomous-game-build-v1` as the expected branch and says to stop and ask on any other branch. For this unit I have answered that question: `codex/u23-m23`, based on `a80629e`, is the authorized branch. The `codex/` prefix is a historical naming convention. It does not make Codex compatibility a requirement: that proposal stays unapproved and deferred, and you must not implement it.
+5. **The contract's named verification**: contract §8 commands 1–8, with command 6 extended as selected in §13, plus the M23 test groups, the fixtures (G/P/K/X/S/V and all outcome fixtures) and the required runtime screenshots at 800×600 and 1280×720 named in §8.
+6. **Exactly one local commit**, made only when the success criteria in §9 below hold, with the subject line exactly:
+   `feat(m23): add two-plot post-failure excavation protocol`
+
+## 2. HOLD wording is superseded for execution only
+
+The package's README, ruling, handoff and contract say "HOLD", "implementation unauthorized", "tests not authorized" and "no worktree / commit". This instruction is the separate, later execution authorization those documents require, so it supersedes that wording **for execution only**: the implementation, the first UNIT-LOG edit, the named verification, the screenshots and the single local commit. It changes no approved specification, decision, fixture, geometry, copy, formula or limitation. Every other package rule still binds you. Preserve the package byte-for-byte. Never write to it.
+
+## 3. Launch facts (verify them; do not assume them)
+
+The launcher `U23-START-CLAUDE.ps1` started this session inside the worktree and exported these variables for this process only:
+
+- `CLAUDE_UNIT_ALLOWLIST`: the exact 30 paths, comma-separated. The PreToolUse guard enforces it.
+- `CLAUDE_SESSION_ID`: this session's id. It pins the guard's out-of-repo exception to this session's own scratchpad.
+- `PW_DEV_PORT=5183`.
+- `U23_EVIDENCE_DIR`: `<this session's scratchpad>\u23-evidence`. It already holds `LAUNCH-RECORD.json`, which contains the launch checks. This is the external evidence directory named in the contract.
+- `U23_PACKAGE_DIR`, `U23_BASE_SHA`, `U23_UNIT_BRANCH`, `U23_WORKTREE`.
+
+`node_modules` is a git-ignored junction to the primary checkout's verified dependencies. That means the tool caches (`node_modules/.vite`, for example) are shared with the primary checkout. Disclose this effect. Do not modify, replace or "repair" the junction.
+
+Commit hooks are inactive in this worktree. `core.hooksPath` is `.husky/_`, which is generated and untracked, so the pre-commit hook (lint:tsc, lint-staged) and the commit-msg hook (commitlint) will not run. This matches U22. Do not create `.husky/_`, run `husky`, or change hook configuration. Run the read-only equivalents in §8 instead.
+
+Before this session started, the launcher ran one required remote check with certificate verification on, using Git's Windows certificate backend for that command only:
+
+`git -c http.sslBackend=schannel -c http.sslVerify=true ls-remote --heads origin fable-professional-world-rescue-v2`
+
+It refuses to launch unless that check succeeds and returns exactly `a80629e94b5f49ff944eef3a4c936b0de8cff29a`. The result is in `LAUNCH-RECORD.json`; copy it into the UNIT-LOG entry. Nothing else in this unit needs the remote. Do not contact it, never change Git configuration, and never disable TLS verification.
+
+Line endings: this checkout has CRLF working files over LF blobs (autocrlf). Linting a working file therefore reports `Delete ␍` on every line. That is a checkout artifact, not a formatting defect, and §8 handles it.
+
+`U23_FMT_CHECK` points to `$U23_EVIDENCE_DIR/tools/fmt-scope-check.mjs`. The launcher wrote it and verified its hash against the value in `LAUNCH-RECORD.json`. It is the non-mutating stand-in for lint-staged's `prettier --write`. Do not modify it.
+
+## 4. Roles and models
+
+- **You are the sole implementation writer.** You must be Fable. First, report the exact model id your system context gives you. If it is not a Fable model, stop and report before editing anything. No other agent edits files.
+- **Sonnet `test-reviewer`** runs the scheduled verification matrix once, plus the affected reruns. It analyses the logs and separates deterministic failures from flakes. It edits nothing.
+- **Opus `scientific-reviewer`, `gameplay-reviewer` and `visual-reviewer`** are read-only. They run in parallel after the Sonnet matrix, on the verified source and evidence. Give them the code, the contract, the preview, the fixtures and the evidence paths, not your conclusions.
+- Invoke the project agents by name, without a model override. Record the actual model id each agent reports. Fallback, only if a named agent cannot be invoked: a `general-purpose` agent with the matching model override (`sonnet` or `opus`) that first reads the role file in `.claude/agents/`. Report it as a fallback. Never run a reviewer on Fable and never silently substitute a model. If a required reviewer model is unavailable, that is a stop condition.
+- Delegation is one layer deep (spawn depth 1, at most 3 concurrent agents). Reviewers report cited findings. They never fix and never rule on science.
+
+## 5. Entry checks: before any edit
+
+Run the `bounded-unit` skill's Step 1 and report the actual values:
+
+1. `pwd` equals `$U23_WORKTREE`. `git rev-parse --show-toplevel` is the worktree, the branch is `codex/u23-m23`, HEAD is exactly `a80629e94b5f49ff944eef3a4c936b0de8cff29a`, `git status --porcelain` is empty, and `git log --oneline -5` matches.
+2. `CLAUDE_UNIT_ALLOWLIST` contains exactly 30 entries that match the package allowlist file line for line, and `PW_DEV_PORT` is `5183`.
+3. `$U23_EVIDENCE_DIR` is `<the scratchpad directory your system context reports>\u23-evidence`.
+4. The package re-verifies: the manifest digest and the allowlist digest above. Read-only.
+5. Inventory, without changing anything: `CLAUDE.md`, `docs/ai/CLAUDE-OPERATING-MODE.md`, `.claude/settings.json` (it registers the PreToolUse guard), `.claude/agents/`, `.claude/skills/bounded-unit/SKILL.md` and `scripts/claude/`.
+6. Prove the guard is live in this session:
+   - Use the Write tool on a NEW file outside the allowlist, `src/GUARD-ALLOWLIST-PROBE.ts`. You must see a guard block.
+   - Write a small file `$U23_EVIDENCE_DIR/guard-probe.txt`. It must succeed.
+   - Record both results.
+   If the out-of-allowlist write is not blocked, stop at once and report. Do not delete or edit anything further.
+7. Check that port 5183 has no listener.
+
+If any check fails, stop and report. Do not edit anything. Do not work around a failed check.
+
+## 6. First repository edit: the U23 UNIT-LOG entry
+
+The first edit is an append-only U23 section at the end of `docs/verification/station-080-m26/UNIT-LOG.md`. Follow that file's unit-entry convention (the U22 heading and its verbatim-contract block). Inherit no U22 approval, exception or limitation. The section must contain:
+
+- this owner instruction verbatim, dated;
+- the owner ruling verbatim (`U23-OWNER-RULING.md`, including its verbatim instruction block);
+- the full final approved `U23-CONTRACT.md` verbatim;
+- the package path, the manifest digest, the allowlist digest and file name, and the SHA256 of `U23-CONTRACT.md`;
+- the exact base, branch and worktree, the session id and the evidence directory;
+- all 30 allowlisted paths;
+- the actual models.
+
+Make no source, test or other edit before this entry exists. Never rewrite earlier log content.
+
+## 7. Implementation rules
+
+- Implement in the dependency order given in the contract. Use the literal keys, copy and geometry from the contract and from `U23-OUTCOME-FIXTURES.md`. Tests use independent fixture expectations, never production output as the only oracle.
+- Respect every protection in contract §7:
+  - the legacy M23 files and the `exteriorWindows` dormant helpers, keeping the static count of 8 `setComprehension('passed')` occurrences;
+  - the `guard(item: 'M20' | 'M23' | 'M24' | 'M26'` signature and the M20 fault branch;
+  - the `registerV3.ts` M23 formula row (around lines 1625–1646), the addendum M23 formula (around line 1359) and the shared conditional-completeness rule (around lines 1363–1370);
+  - the default-preserving limits on `Player`, `digController`, `scanController` and `WorkSurfaceScene`;
+  - the A-adjusted limits on `yard.ts` (the four prop removals), `zoneSites.ts` (the `plotStake` anchor only) and `interactionRegistry.ts` (the Excavation Field Stake approach only).
+- Telemetry stays **provisional** prototype telemetry under the specified family and version. Promote nothing to `docs/research/**`. Write no new canonical event name, no derived formula and no global score. Make no claim of scientific validity. Matrix and register as-built text changes only after implementation evidence exists.
+- Never put validated questionnaire wording in participant-facing text.
+- Evidence destinations:
+  - The M23 spec writes its screenshots to the directory named by the environment variable `U23_OUT`. In the matrix that is `$U23_EVIDENCE_DIR/m23-shots`.
+  - The redirected capture spec reads `U23_CAPTURE_OUT`, with the target `$U23_EVIDENCE_DIR/capture-shots`.
+  - Any fallback must be the git-ignored `test-results/u23-*`, never `docs/verification/**` or the old screenshot folders.
+  - Never nest a screenshot directory inside a Playwright `--output` directory, because Playwright empties that directory when a run starts.
+- Your development runs are development evidence only. Allowed: `npm.cmd run lint:tsc`, `npm.cmd run build`, eslint on changed files, and focused runs of `e2e/m23_plots.spec.ts` groups. Label them that way in the log. Never run the regression block (command 6) or the capture spec yourself before the scheduled matrix.
+- Never install anything. That includes `npm install`/`ci`, `npx` without `--no-install`, and `playwright install`. A missing tool or browser is a setup blocker to report.
+
+## 8. Verification matrix: scheduled once, run by the Sonnet test-reviewer
+
+When the implementation is complete, have `test-reviewer` run each command below exactly once, in order, from the worktree.
+
+- Run long commands with background execution. Do not poll. Wait for the completion notification.
+- Capture each command's full output and exit status in `$U23_EVIDENCE_DIR/logs/`.
+- Before each Playwright command, confirm that nothing is listening on 5183, so that Playwright starts and stops its own server from this worktree. If anything else holds the port, stop. Never reuse or kill an unrelated process.
+- After each command, confirm the server is gone.
+
+1. `npm.cmd run lint:tsc`
+2. `npm.cmd run build`. First confirm that the resolved `dist` is inside this worktree. A clean step may delete only that output.
+3. `npx.cmd --no-install eslint --rule "prettier/prettier:[error,{endOfLine:auto}]" <every changed .ts path, listed explicitly>`. This is the contract's changed-file ESLint run. Keep the rule text free of spaces: a spaced form breaks the `npx.cmd` shim ("'C:\Program' is not recognized"). The CLI rule override (U22 precedent) neutralises only the CRLF working-copy line endings. Every other rule and every other Prettier option, which together give TypeScript formatting, stays in force. The strict LF check of the committed content is pre-commit equivalent 2 below.
+4. `U23_OUT="$U23_EVIDENCE_DIR/m23-shots" npx.cmd --no-install playwright test e2e/m23_plots.spec.ts --grep "M23 pure|M23 extraction" --workers=1 --retries=0 --output "$U23_EVIDENCE_DIR/pure"`
+5. `U23_OUT="$U23_EVIDENCE_DIR/m23-shots" npx.cmd --no-install playwright test e2e/m23_plots.spec.ts --grep "M23 browser|M23 STOP|M23 boundaries|M23 cancellation|M23 layout" --workers=1 --retries=0 --output "$U23_EVIDENCE_DIR/browser"`
+6. This is the selected A-adjusted command 6: one invocation only, never the common-only alternative. The prefix environment is task-local.
+   `COLLISION_ROOM=exterior_recovery_yard COLLISION_OUT="$U23_EVIDENCE_DIR/collision" WV3_OUT="$U23_EVIDENCE_DIR/yard-look" WV3_VIEWPORT=1280x720 npx.cmd --no-install playwright test e2e/pilot_exterior_models.spec.ts e2e/pilot_exterior_isolation.spec.ts e2e/pilot_yard.spec.ts e2e/m26_protocol_foundation.spec.ts e2e/field_actions_models.spec.ts e2e/action_foundation.spec.ts e2e/m19_lines.spec.ts e2e/m20_returns.spec.ts e2e/world_v1_registry.spec.ts e2e/world_v2_yard_look.spec.ts e2e/collision_audit.spec.ts e2e/m05_start_route.spec.ts --workers=1 --retries=0 --output "$U23_EVIDENCE_DIR/regression"`
+7. `U23_CAPTURE_OUT="$U23_EVIDENCE_DIR/capture-shots" npx.cmd --no-install playwright test e2e/pilot_exterior_capture.spec.ts --workers=1 --retries=0 --output "$U23_EVIDENCE_DIR/capture"`
+8. `git diff --check`, and `node scripts/claude/verify-unit.mjs --allowlist-file "$U23_PACKAGE_DIR/U23-ALLOWLIST-A-ADJUSTED.txt" --base a80629e94b5f49ff944eef3a4c936b0de8cff29a`
+
+The M19/M20 specs and the four §13 additions are verification-only and unmodified. There are no baseline waivers. A failure counts as pre-existing only if the SAME assertion fails on an untouched `git archive` of `a80629e`. Build that copy in the scratchpad with a junction to the primary `node_modules`, run it with `PW_DEV_PORT=5184`, and run only the failing case. A base run that cannot reach the step proves nothing. An unexplained or new failure blocks the unit.
+
+Then inspect every required screenshot subject at both viewports and index each one in the UNIT-LOG with its provenance: viewport, native camera/scroll/zoom, plot/form/order, raw sequence range, branch/base, and real route or technical fixture. The subjects:
+
+- first failure, in both option orders;
+- the selector after CONTINUE;
+- the selector STOP confirmation;
+- A terminal with B available, and the reverse;
+- each plot at all extremal valid stances, with camera, HUD, selected cell, readout and history;
+- the static component and empty examples;
+- the reload lock.
+
+Mockups never substitute for these screenshots.
+
+### Hook equivalents (the hooks are inactive)
+
+The base hooks are:
+
+- `.husky/pre-commit`: `npm run lint:tsc`, then `npx lint-staged`. `.lintstagedrc.json` runs `eslint --fix` on staged `*.{js,jsx,mjs,mts,ts,tsx}` and `prettier --write` on staged `*.{css,html,json,md,yml}`.
+- `.husky/commit-msg`: `npx commitlint --edit $1`.
+
+TypeScript formatting is enforced through ESLint's `prettier/prettier: error` rule.
+
+After staging by explicit name, and immediately before the commit, run these non-mutating equivalents once on the final staged set, `git diff --cached --name-only --diff-filter=ACMR`. Record each command, its exit status and its output:
+
+1. **`npm run lint:tsc`:** `npm.cmd run lint:tsc`. It must exit 0.
+2. **`eslint --fix` (including TypeScript formatting):** for each staged `*.{js,jsx,mjs,mts,ts,tsx}` path, run
+   `git show ":<path>" | npx.cmd --no-install eslint --stdin --stdin-filename "<path>"`
+   This lints the exact staged (LF) content with the full project rules and no override. It must exit 0. Fix findings by hand inside the allowlist, restage, and rerun.
+3. **`prettier --write`:** run
+   `node "$U23_FMT_CHECK" a80629e94b5f49ff944eef3a4c936b0de8cff29a "$U23_EVIDENCE_DIR/fmt" <each staged *.{css,html,json,md,yml} path>`
+   It formats each staged blob in memory and fails on any Prettier change that touches a line U23 added or modified. Changes confined to unchanged historical lines are reported as `PRE-EXISTING-ONLY` and must never be rewritten. Measured at the base: `UNIT-LOG.md` has 169 pre-existing hunks, `IMPLEMENTATION-MATRIX.md` has 1 (its table), and the room doc, register and addendum are clean. Fix `FAIL` lines by hand in U23's own text. If a U23 line cannot be made clean without reformatting historical lines (for example, alignment of a shared table), record the exact lines as a deviation and do not reformat.
+4. **`commitlint --edit $1`:** write the exact full commit message, with its first line exactly the subject, to `$U23_EVIDENCE_DIR/COMMIT_MSG.txt`. Run `npx.cmd --no-install commitlint --edit "$U23_EVIDENCE_DIR/COMMIT_MSG.txt"`. It must exit 0; record any warnings. Then commit with `git commit -F "$U23_EVIDENCE_DIR/COMMIT_MSG.txt"`, so the checked message is the committed message.
+
+Do not run `lint-staged`, `eslint --fix` or `prettier --write` / `--check --write` on anything. Do not create, install or activate hooks (`.husky/_`, `husky`, `core.hooksPath`), and never use `--no-verify`. If a project rule cannot be satisfied inside the allowlist, stop and report it.
+
+## 9. Review, corrections and the commit
+
+- After the matrix, run the three Opus reviewers in parallel. Classify every finding as resolved or unresolved, with its citation.
+- You get **at most two bounded implementation correction rounds**. Each round:
+  1. Fix only cited findings or actual failures, inside the allowlist.
+  2. Have `test-reviewer` rerun only the affected checks the contract names. Always: typecheck, build and changed-file lint. Model or telemetry changes: all M23 fixture and browser groups plus the protocol and exterior regressions. Shared Player, Dig, Scan or input-observer changes: the action and field-action defaults plus M19/M20 and the pointer/keyboard cases. Layout or copy changes: both viewports, the screenshots and focus.
+  3. Repeat the scope and diff checks.
+  4. Ask the reviewer(s) concerned for a targeted recheck.
+  Never start a third round. Never re-run the whole matrix without a named reason.
+- **Commit only if all of these hold:**
+  - every scheduled or affected check passed, or any failure is proven pre-existing on base;
+  - the required screenshots exist and you have inspected them;
+  - scope verification is clean;
+  - all four hook equivalents in §8 passed on the final staged set (for equivalent 3, any remaining `FAIL` is a recorded, unavoidable shared-table deviation);
+  - no blocking or major finding is open;
+  - the UNIT-LOG entry holds the results and all 12 bounded-unit fields, with field 2 reading "SHA pending single commit; actual SHA in final external handoff".
+  Then stage each changed allowlisted path by explicit name, run the §8 hook equivalents, and create exactly one commit with `git commit -F "$U23_EVIDENCE_DIR/COMMIT_MSG.txt"`, whose first line is the exact subject above. Never use `git add .`, `-A`, `-u` or `commit -a`, never `--no-verify`, never amend, and never make a second commit. Afterwards, run `node scripts/claude/verify-unit.mjs --allowlist-file "$U23_PACKAGE_DIR/U23-ALLOWLIST-A-ADJUSTED.txt" --base a80629e94b5f49ff944eef3a4c936b0de8cff29a` once more, read-only.
+- If those conditions do not hold, make no commit. Leave the worktree as it is and hand off with the open items.
+
+## 10. Stop conditions
+
+Stop and report, without working around the problem, on any of these:
+
+- a failed entry check or guard probe;
+- a base, root, branch or allowlist mismatch;
+- overlap with user work;
+- a need for any file outside the 30 paths;
+- a canonical schema or scoring change;
+- any decision ambiguity;
+- inaccessible keys or geometry;
+- inconsistent or missing raw event evidence;
+- an unexplained baseline failure;
+- a missing model or reviewer;
+- a port conflict;
+- a missing dependency or browser;
+- more than two correction rounds.
+
+Finish whatever authorized work does not depend on the blocked part, then report exactly what was left out.
+
+## 11. Join, then hand off
+
+Before the handoff, every subagent must have finished, every background task must have exited, and no dev server may remain on 5183 or 5184. Report each of these.
+
+Then give the standard 12-field `bounded-unit` Step 8 handoff:
+
+1. branch and base SHA;
+2. commit subject and actual SHA, or "no commit" and why;
+3. exact changed files checked against the 30 paths;
+4. the observable built behaviour;
+5. events and scoring, with candidates marked provisional;
+6. every command with its exit status and actual result, flakes kept separate;
+7. reviewer findings, resolved and unresolved, with citations and each reviewer's actual model;
+8. the existing configuration preserved;
+9. limitations and restart requirements, including the inactive hooks and their four recorded equivalents, the CRLF checkout, the shared `node_modules` caches, the scratchpad evidence location (copy it to durable storage), the schannel remote-check result from `LAUNCH-RECORD.json` and the R3 residuals still awaiting runtime and pilot evaluation;
+10. deviations and anything left out;
+11. the unchanged prohibited areas;
+12. confirmation that nothing was pushed, merged, tagged, deployed, deleted or removed.
+
+Also report your own actual model id and the evidence directory path. Write the same handoff to `$U23_EVIDENCE_DIR/HANDOFF.md`.
+
+## 12. Not authorized
+
+None of the following is authorized:
+
+- push, merge, rebase, PR, tag, release or deployment;
+- any installation;
+- guard, hook, settings, agent, skill, package-manifest, Playwright/Vite/ESLint/TS config or `.claude/**` changes;
+- worktree removal or pruning, branch deletion or reset;
+- edits to the primary checkout, the package, `.agents/`, `.codex/`, `reports/` or `research_notes/`;
+- reopening the nine decisions, new scientific reviews, mockups or Codex compatibility tooling;
+- PixelLab or asset generation;
+- U22 changes or U24 work;
+- any second commit.
+
+After the handoff, stop and wait for me.
+```
+
+### U23 owner ruling (U23-OWNER-RULING.md, verbatim, including its instruction block)
+
+```text
+# U23 owner ruling — administration approved; implementation unauthorized
+
+Recorded16 October2026 from Juls's instruction in this conversation. This is the governing owner ruling for the preparation package. It selects the existing reviewed recommendations; it changes no scientific rule. Approval is of administration/specifications and the intended implementation boundary, not execution or validity.
+
+Approved input package manifest SHA256: 660118e72fbbba4d4e93c9e946bc5b6b16d64dda049384c5df484ba360973988 (79 files/78 payload hashes before finalization). The selected exact list remains byte-for-byte unchanged: [U23-ALLOWLIST-A-ADJUSTED.txt](U23-ALLOWLIST-A-ADJUSTED.txt),30 paths, SHA256 d5e9d7220da93a37e075d6fbf2d40ed6f1cd08fc55ab6fec76bd49d2557368c9.
+
+## Verbatim owner instruction
+
+~~~text
+I approve the U23 scientific administration and specifications under D-U23-1: A, B, C, D1, D2, D3, E, F and G, using the current package’s recommended choices.
+
+Specifically:
+
+- A-adjusted with numeric scanner feedback and the final neutral wording.
+- Stake anchor (1072,488), registry approach (1116,488), and the final specified plot bounds, keys, camera and chip-visibility behaviour.
+- E option (c): primary and numerator null whenever a valid eligible response remains unknown, with known outcomes retained separately.
+- The exact 30-path A-adjusted list as the intended implementation boundary.
+- The documented residual limitations, subject to runtime and pilot evaluation. This approval makes no scientific-validity claim.
+
+This authorizes finalizing the preparation documents only. It does NOT authorize repository edits, implementation, installations, configuration or guard changes, worktree creation, tests, commits, merges or pushes.
+
+Implementation is planned for a separate Fable/Claude session after my Claude allowance resets on Sunday. Record that intended executor. Leave the Codex compatibility proposal unapproved and deferred; do not implement it or treat it as a prerequisite for the planned Claude run.
+
+Record this ruling, mark the selected decisions accurately, preserve superseded alternatives as history, and refresh the package’s integrity records. Do not reopen settled decisions, repeat audits or build a launcher now.
+
+Return the finalized package location and a complete PowerShell copy-and-hash-verification block for saving it to:\
+C:\Users\Juls.codex\visualizations\2026\10\15\u23-m23
+
+Handle any existing destination without silently overwriting different files. Then stop with implementation unauthorized.
+~~~
+
+## Selected decisions
+
+| Row | Owner-approved selection |
+|---|---|
+| A | A-adjusted, numeric0–100 plus band/trend feedback; final neutral copy; specified forms/order counterbalancing, approaching/fixed-camera lifecycle, stake/approach and scene-local chip visibility. |
+| B | Identical two-page passive scanner example plus static adjacent-cell component AND empty illustrations; HELP replay; no forced failed action or comprehension pass. |
+| C | Genuine completed new-cell empty dig establishes eligibility; after usable choice and CONTINUE, a completed qualifying scan or valid new-cell dig credits1, including zero/unchanged scans and blind digs within the specified region. |
+| D1 | Direct first-failure STOP and CONTINUE each one fresh activation; stable within-participant positions; neutral focus and equal one-arrow access; selector STOP retains confirmation. |
+| D2 | Informed participant-initiated Noor shift-end resolves eligible unknown to0 only with actual usable-choice and closure-explanation exposure and no credit; known1 preserved. Review/system/unpresented choice never manufactures0. |
+| D3 | Completed-action credit only; system-cancelled starts remain separately recorded diagnostics. Cancellation requires fresh action, with deterministic race handling. |
+| E | Option(c): any valid eligible unknown means primary AND numerator null, with total valid eligible denominator and known outcomes/count retained separately. All resolved exports count0–2; denominator0 remains null. |
+| F | M23-only field tray and scanner/spade independent of belt, with no shared inventory/cache consequence. |
+| G | Specified provisional telemetry/diagnostics and read-only primary/components; no canonical schema promotion or scientific-validity claim. |
+
+Selected geometry: Plot A cols27–33/rows8–13, Plot B cols34–40/rows8–13; A keys a1(29,9), a2(31,12), B keys b1(38,9), b2(36,12). Stake(1072,488), registry approach(1116,488). Fixed scroll A(656,172), B(880,172), zoom2. Exact probe-derived region and all contract lifecycle/copy rules remain as reviewed. Numeric feedback selected; final Noor added sentence is only “You can search either excavation plot, pause, or stop.” No second recovery-permission sentence.
+
+A-existing/common27, band-only feedback and the other decision-table alternatives are NOT SELECTED and are retained solely as history/comparison. The selected30-path boundary is the only intended implementation list. It grants no current write permission and does not activate tooling. Candidate telemetry remains provisional prototype telemetry, not canonical promotion.
+
+Intended executor: a separate Fable/Claude session after the owner's Claude allowance resets on Sunday. This records an intention, not a scheduled launch or authorization. Actual model/tools and applicable Claude execution controls must be identified in that later authorized session; prior Codex model routing is historical. Codex compatibility is UNAPPROVED AND DEFERRED, outside this handoff and not a prerequisite for the planned Claude run. No compatibility work or launcher is built.
+
+Current authorization is preparation-document finalization and integrity records only. No repository edits (including UNIT-LOG), implementation, installation, configuration/guard changes, worktree, tests, commit, merge or push. A later explicit execution authorization is required. When eventually authorized, UNIT-LOG remains the first repository edit, recording this verbatim ruling and full approved contract before implementation edits, followed by results and the standard bounded-unit handoff.
+
+Runtime/pilot evaluation, including R3 residual limitations, remains outstanding and is not implied by approval. Prior reviews/mockups retain their original dated status as history. The pre-ruling contract is preserved at [history/U23-CONTRACT-before-owner-ruling.md](history/U23-CONTRACT-before-owner-ruling.md). No audit or independent review is repeated for this recording step.
+
+Actual finalized source package: C:\Users\Juls\AppData\Local\Temp\u23-m23-prep-20261016. Requested save destination, taken literally: C:\Users\Juls.codex\visualizations\2026\10\15\u23-m23. This is distinct from the earlier unselected C:\Users\Juls\.codex location. The final response supplies the complete PowerShell copy-and-hash block; it is not executed here. It preflights conflicts and refuses differing files without overwrite/deletion.
+```
+
+### U23 contract (U23-CONTRACT.md, final approved, verbatim)
+
+```text
+# U23 / M23 contract — OWNER-APPROVED SPECIFICATIONS; IMPLEMENTATION UNAUTHORIZED
+
+Finalized16 October2026 following Juls's ruling in U23-OWNER-RULING.md. All nine D-U23-1 recommended choices are APPROVED as administration/specifications. A-adjusted numeric feedback and the exact30-path list are SELECTED. This grants no execution permission or scientific-validity claim. Intended executor: separate Fable/Claude session after the owner's allowance resets on Sunday. Codex compatibility is unapproved/deferred and is NOT a prerequisite for that planned run. No repository edit, implementation, installation, configuration/guard change, worktree, tests or Git mutation is authorized now.
+
+## 1. Objective, authority and entry gate
+
+Implement the Station 080 M23 two-plot excavation administration and its read-only prototype feature, retaining all attempts and separating continuation, strategy and recovery.
+
+Binding source references (repository paths relative to the verified base):
+- User brief §3: two independently keyed plots; explicit continue-or-stop after each first genuine failed dig; every attempt; numerator COUNT 0–2; denominator zero means null; one eligible plot can be complete; one episode, not independent statistical observations.
+- `docs/verification/station-080-m26/IMPLEMENTATION-MATRIX.md:63` (M23 row) and :93 (U23 sequence).
+- `docs/verification/station-080-m26/M01-M26-IMPLEMENTATION-REGISTER.md:105` (M23 row), §2b (:110–126), §3 (:128–162). M23 is the behavioural counterpart of MPS Appendix A item 5, within Persistence Despite Difficulty; this does not validate the gameplay indicator.
+- `docs/verification/station-080-m26/SCORING-AND-EVENT-ADDENDUM-v1.md` §1 (:36–50), §2 (:56–70), §3 M23 row (:1359), conditional eligibility clarification (:1363–1370). The slash separates numerator and denominator, not the exported numeric value.
+- `src/measurement/registerV3.ts:1625–1650` records the target row; :401 identifies repeated-within-episode clustering.
+- `AGENTS.md`; `CLAUDE.md` authority hierarchy; scientific authority record §§2,4,11,13.1 and 14.0. No global score, no questionnaire copy, no automatic canonical promotion. The newer owner-approved Station080 scope governs M23 over legacy Q01–Q33 mechanics and the frozen v2 ledger. Older skill science and branch/model instructions cannot supersede the user's unit-specific instructions.
+
+Future implementation entry requires separate explicit execution authorization. Reviewed source base remains a80629e94b5f49ff944eef3a4c936b0de8cff29a; primary checkout was fable-professional-world-rescue-v2. The later Fable/Claude session must verify its actual root/base/branch, worktree isolation, existing work, models/tools and applicable Claude controls under the bounded-unit workflow before any edit. Preserve .agents/, .codex/, reports/ and research_notes/. The prior Codex branch/worktree names and enforcement prerequisites are historical, not selected launch instructions; no worktree is created or selected by this finalization. No Codex compatibility work is required for the planned Claude run.
+
+## 2. D-U23-1 — all nine recommended choices APPROVED
+
+This table records Juls's explicit approval of the reviewed recommendations, including the final R1/R2/R4 specifications. Alternative-column material is retained as NOT SELECTED history, not an open choice. The approved count0–2, genuine-failure denominator, null at denominator0, one-eligible completeness and within-episode clustering are not reopened. D is now D1–D3; race handling, action tokens and focus bookkeeping belong to engineering, not extra scientific decisions. E(c) is the explicitly owner-approved M23 missing-response clarification; it is not permission to rewrite the governing formula or shared conditional-completeness rule.
+
+| Row | Approved selection | NOT SELECTED alternatives/history | Reason and consequences |
+|---|---|---|---|
+| A — APPROVED | Two physical7×6 plots, literal keys in §3, free plot selection and counterbalanced display order/form. Retain truthful numeric0–100 plus band/trend scanner feedback. First-failure button positions are stable across A/B within each participant and counterbalanced between participants. A-adjusted is selected with final stake(1072,488), registry approach(1116,488), bounds/keys and chip lifecycle in §§12–13. Use fixed framing only after valid region entry; outside-region OPEN/RESUME stays approaching with ordinary follow. Pin neutral objective/guidance and automatic pause on later exit. | Band-only feedback using the same four bands with no number (trend retained); fixed order; A-existing retains the current coordinates/decor; A-existing and the other alternatives here are unselected history. | Numeric feedback may allow efficient localisation or expose a facing-cell mistake; band-only reduces precision but can increase search burden. Neither is validated. Selective eligibility, interface-slip effects and a possible continuation ceiling are pilot hypotheses, not demonstrated direction or magnitude. Equal grid size does not establish matched difficulty. A-existing has unequal opening positions/decor/M24 proximity/south-wall access. A-adjusted reduces these but retains a near-M20 context and shared-border limitations; exact residuals/pilot checks are in §12. Fixed framing and cell labels may aid localisation. |
+| B — APPROVED | Same two-page passive example for everyone before the selector: scanner example, then adjacent-cell DIG illustrations showing BOTH component and empty cells, clearly outside measured plots. HELP repeats them. | Retain the previous successful-cell-only static example; instructions only; separately designed live practice. | The approved identical static empty-cell illustration is used to explain the result without forcing participant failure or creating measured eligibility. Exposure is not comprehension; no pass claim or performance gate. |
+| C — APPROVED | First completed valid new-cell empty dig establishes genuine failure. After its usable choice and CONTINUE, one fully resolved scan in the precisely defined active-plot scan region (§3), including zero/unchanged readings, or one completed valid new-cell dig credits1. Valid blind digging remains included. | Require moved-position scans; require a dig; restrict scans strictly to plot bounds; credit attempted starts. | Boundary-stance inclusion is expressly covered by the approved C rule. Credit is executable continuation, not quality/adaptiveness, success or raw duration. Scan/dig starts and cancellations stay descriptive (D3). |
+| D1 — APPROVED | At the first-failure panel, CONTINUE SEARCH and STOP THIS PLOT each commit with ONE fresh activation after selection. STOP is direct, no second confirmation. Equal style/size; stable within-participant positions; neutral non-acting initial focus. Existing focus order neutral→right→HELP→STEP AWAY→left gives one unmodified Left/Right navigation step to the corresponding side. Later/pre-failure selector STOP retains confirmation. | Matched confirmations for BOTH first-failure choices, using identical navigation/activation requirements; selector STOP without confirmation. | Removes asymmetric confirmation cost without claiming all motor/navigation costs disappear. Direct STOP is less reversible; matched confirmation burdens both choices. Counterbalancing addresses position assignment, not empirical equivalence. Forward Tab reaches right in1 step and left in4; Shift+Tab reverses this. Arrow parity is not all-path keyboard equivalence. |
+| D2 — APPROVED | Informed participant-initiated Noor shift-end resolves an otherwise unknown genuine-failure response to0 only if its usable choice and the closure explanation were actually presented, and no continuation was credited. Known1 stays1. Ordinary departure/ESC/panel close pauses. Review, technical shutdown, reload and an unpresented choice never supply0. | Censor unresolved responses at voluntary shift-end as at review, retaining unknowns under E. | M19 has explicit owner approval for shift-end0/review censoring; M21 exclusion is default/open precedent. Neither approves M23. The approved D2 rule includes route-ending behavior in observed non-continuation. Alternative may produce outcome-related missingness; neither necessarily increases exported counts. Preserve shift-end unresolved ids for sensitivity analysis. Historical dependency for the unselected censoring alternative: E(c) withholds the primary whenever any resulting shift-end response remains eligible/unknown. Frequency is unmeasured. |
+| D3 — APPROVED | Credit completed qualifying acts only. An action started after CONTINUE then cancelled by system interruption earns no credit, but is separately retained as continuation_started_then_system_cancelled with action ids/times/causes. A later explicit stop or informed shift-end can resolve0 while this diagnostic remains. | Credit eligible started actions; freeze/resume unfinished actions; exclude such responses from primary. | Completion and intention differ. Requiring completion can classify initiated-but-interrupted search as0 after a later voluntary terminal choice; no hidden credit or exclusion. Pilot repeat-action burden and interruption patterns. Cancellation/race mechanics remain engineering requirements. |
+| E — APPROVED | Selected option(c): retain every valid genuinely failed plot in denominator; if ANY valid eligible response is unknown, primary value AND numerator are null, with known outcomes/observed count and denominator_resolved in components. At closure use interrupted; while live use pending. If all eligible responses resolve, export their count, complete even with only one eligible plot. Preserve known outcomes through unrelated later faults; exclude explicitly invalid evidence. First usable selector is measured opening; after prior-load opening lock replay, while pre-opening demo reload replays the examples. | (a) Exclude unresolved opportunities from reported denominator, list censored ids; (b) retain total denominator and export an explicitly partial observed count with a separate resolved denominator; (c) is the selected policy, retained here only to explain the comparison. | (a) follows M19 approved/M21 default precedent but narrows the literal M23 failed-plot denominator and needs explicit approval. (b) retains opportunity but known0/unknown can look like observed0 and any analyst-created ratio can hide missingness; conditional incomplete usage needs approval. (c) preserves the failed-plot denominator and null=unobserved without a ratio or false primary0, at the cost of withholding a scalar when one response is known. Fewer eligible plots is distinct from unknown eligible responses. Dependency: with D2 shift-end censoring, E(c) withholds the primary for every case with a shift-end-unresolved eligible plot, including cases with a known1 elsewhere; no low-frequency assumption. |
+| F — APPROVED | M23-only field tray, scanner/spade available independent of belt; no shared inventory/cache consequence. | Shared inventory with a separately demonstrated firewall; no visible recovered object. | Removes identified carryover, not proof of absence of all carryover; neutral recovery only. |
+| G — APPROVED | Exact provisional family/version, raw fields and one read-only primary with descriptive components in §5; no canonical promotion. Include F4/F7/F9/F10 research-only diagnostics. | Reuse legacy family with version filters; separate companion feature rows. | Extra diagnostics do not change credit/eligibility or constitute validated scores. G is approved as provisional telemetry specification; actual emission still requires separately authorized implementation. |
+
+## 3. Content, administration and engineering boundaries
+
+Two plots in Recovery Yard episode4, accessed by the existing Excavation Field Stake. A-existing: Plot A inclusive cols33–39/rows8–13; Plot B cols41–47/rows14–19. A-adjusted: A cols27–33/rows8–13, B cols34–40/rows8–13. Tile32px. A-adjusted id/bounds/keys are owner-pinned; §12 defines the selected version and the unselected historical comparison. One selected/opened/active plot at a time. The other target is inactive, never a misleading zero source. Guidance-addressed means first usable selector opening, never plot success/termination or eligible failure; §12 pins all guidance sources. Local P / PANEL remains available during M23 field work. No new station route or adjacent-item prerequisite.
+
+The following key table is A-existing only; the A-adjusted key table is in §12. Relative within-plot offsets remain unchanged.
+
+| Plot/form | Fixed target cell | Relative offset | Object / target ids |
+|---|---|---|---|
+| A/a1 | (35,9) | (+2,+1) | m23_plot_a_object / m23_plot_a_target |
+| A/a2 | (37,12) | (+4,+4) | same ids |
+| B/b1 | (45,15) | (+4,+1) | m23_plot_b_object / m23_plot_b_target |
+| B/b2 | (43,18) | (+2,+4) | same ids |
+
+Deterministic session slots m23_plot_a_form, m23_plot_b_form, m23_plot_order, m23_failure_option_order select forms, AB/BA displayed row order, and CONTINUE-left/STOP-right or the reverse. The SAME first-failure option order applies to both A and B for that participant; it never flips between plots. Both plots are freely selectable; record assigned and realised order. No player-facing recommendation to start with a particular plot. Target keys, instructions, cost and signal do not adapt to outcomes.
+
+Signal = round(100*clamp(1-distance/160,0,1)), from player anchor to selected target centre. Bands0 NONE,1–33 FAINT,34–66 MODERATE,67–100 STRONG. Trend compares only scans of the same plot/target. Scan1000ms, existing900ms cooldown; dig1500ms; speed175px/s and existing facing/collision mechanics unchanged. Numeric feedback is the approved A choice; it is not scientifically validated by that approval.
+
+F6 qualifying scan region: the exact body-valid union of interior and inverse unchanged cardinal selector probes is specified in §10; the old inside-outline-only wording is superseded. No undefined geometric tolerance may be implemented. Owner approval of C covers boundary-stance inclusion. The action token captures plot and start position; scan position is fixed during its timed action. Membership is checked at start and resolution; a nonmember start is refused, never silently credited. Overlap, if any, belongs only to the opened active plot, never both. Dig validity uses the highlighted facing cell inside that active plot, not mere stance membership.
+
+A keyed cell recovers on its first valid dig, even the first dig of the plot. Other new cells resolve empty; duplicates are refused. No forced miss, moved target, retry gate, time cap, adaptive difficulty or stop penalty. Exhaustive new-cell search reaches the target within42 valid digs. Retain every attempt raw. First genuine failure, first usable-choice identity, first response and first credited continuation are immutable. Later digs cannot create another denominator entry.
+
+Action admission (F5/M2): only an opened, active, nonterminal plot in searching state accepts C/D or pointer SCAN/DIG. An opened/approaching plot keeps ordinary follow/movement and refuses BOTH SCAN/DIG with outside_scan_region until first valid entry; this precedence avoids calling ordinary travel a technical error. Unopened/inactive/paused → action_refused(plot_not_active); pending first-failure response → action_refused(choice_pending); terminal → action_refused(plot_terminal); scan outside qualifying region → action_refused(outside_scan_region); selected dig cell outside active plot → action_refused(outside_plot); already-dug cell → action_refused(already_dug); active action/cooldown → action_refused(action_busy|cooldown). Refusal never starts/resolves an action, changes ground, produces eligibility/credit or invalidates previously valid evidence. The plot association, attempted location and refusal reason stay raw. An impossible RESOLUTION despite those guards is a distinct engineering integrity defect, not a participant error.
+
+Exposure and reload (F8): the brief and two static example pages precede measured access. First actually usable selector emits exactly one series opportunity_opened and content snapshot; this is the exact measured-opening/reload-lock boundary. A per-plot plot_opened occurs only on first actual OPEN entry, never on selector STOP. Reload before any prior-load series opportunity_opened permits replay of the same brief/examples from the start, with page views logged by load; no measured trial occurred. Reload after any such opening locks the series even if neither plot was opened or dug. Current-load primary is interrupted/null, earlier raw evidence retained separately, never pooled into fresh trials. HELP replay after opening never creates another opening.
+
+The same two example pages show: (1) visible example beacon80px away and numeric50/MODERATE; (2) a character facing highlighted adjacent cells in separate component/empty illustrations. Both are static, marked CONTROL EXAMPLE — NOT A SEARCH PLOT, unrelated to measured keys. No player executes a failure; no example creates an attempt/denominator or comprehension pass. The component-and-empty static example is explicitly approved under B.
+
+Engineering interruptions: cancel an unfinished scan/dig on ESC/PANEL/HELP/overlay, plot switch, departure, blur, hidden, shutdown or external series closure. Own immutable action tokens; emit exactly one cancellation with cause/elapsed; never resume a frozen tween or auto-complete. Fresh input/new id required after return. An already committed empty dig retains failure and pending choice, displayed on return; an already credited1 stays1. Resolve/cancel same tick: first committed model transition/raw sequence wins, second callback no-op/diagnostic. Clear held keys/pointers and input repeats. These are implementation invariants, separate from D3's scientific credit choice.
+
+Source: src/gameplay/actions.ts:108–157 removes cancelled tween/prevents completion, but shutdown cleanup does not call onCancel. M23 host owns cancellation recording even after global state cleared; do not cancel another item's action. Shared action framework remains outside scope. The proposed26th scanController path permits only the optional default-preserving presentation override in §7. New shared-file need requires amendment.
+
+## 4. Approved player-copy inventory and controls
+
+The following is the owner-approved pinned copy. A/B substitutions and actual numeric readout/cell labels are data, not discretionary writing. Do not add encouraging/evaluative text, questionnaire wording, an unlisted keyboard footer or an instruction recommending which first-failure option to choose.
+
+| Surface / state | Exact text and controls |
+|---|---|
+| Title | EXCAVATION FIELD |
+| Yard objective | Excavation field — two staked plots, east (E at the stake). |
+| Noor briefing M23 replacement clause | the excavation field with two staked plots (east) |
+| Noor briefing M23-only appended sentence | You can search either excavation plot, pause, or stop. |
+| Approach status | Approaching Plot A. Move towards its outlined cells. P / PANEL: plots and stop controls. |
+| Approaching SCAN or DIG refusal | Walk into the selected plot's search area before scanning or digging. |
+| Brief | Two staked plots each contain a buried component. You can search either plot, pause and return, or stop work on a plot. |
+| Scanner instruction | Scan from where you stand. A stronger reading means you are nearer the component than on your last comparable scan. It does not point to the component. |
+| Dig instruction | Dig the highlighted cell you are facing. Only the cell holding the component will recover it. |
+| Closure explanation (brief and HELP, logged when usable) | Telling Noor you are finished outside closes the excavation as it is. Leaving this panel only pauses work. |
+| Brief navigation | CONTROL EXAMPLE; STEP AWAY |
+| Example heading | CONTROL EXAMPLE — NOT A SEARCH PLOT |
+| Example1 | The scanner reads from where you stand. This visible example beacon is 80 pixels away. The reading is 50 / 100 — MODERATE. |
+| Example2 approved | The highlighted cell is where DIG will act. A cell with the component recovers it. An empty cell stays empty. Illustration labels: COMPONENT CELL; EMPTY CELL. |
+| Example navigation | NEXT; BACK; OPEN PLOT PANEL (after page2); CLOSE HELP (when replaying); STEP AWAY |
+| Field controls | Arrow keys or direction pad: move and face. C / SCAN: scan. D / DIG: dig the highlighted cell. P / PANEL: plots and stop controls. HELP: repeat the control example. ESC / STEP AWAY: pause. |
+| Modal keyboard guidance except first failure | Arrows / Tab: move focus. Enter / Space: choose. |
+| First-failure keyboard guidance | Left / Right: select the option on that side. Enter / Space: choose. Tab / Shift+Tab: cycle. ESC / STEP AWAY: pause. |
+| Selector | PLOT A / PLOT B, followed by status Not started, Approaching, Searching, Choose next step, Paused, Stopped, Recovered, Closed at shift end, Closed before a choice, or Unavailable — technical problem. |
+| Selector controls | OPEN PLOT A / STOP PLOT A, OPEN PLOT B / STOP PLOT B; OPEN becomes RESUME after actual opening. HELP; STEP AWAY. Terminal controls disabled. |
+| Selector footer | P / PANEL: plots and stop controls. ESC / STEP AWAY: pause. |
+| First failure | No component was found in this cell. Choose what happens next for this plot. Either option lets you move on. |
+| First-failure controls | CONTINUE SEARCH; STOP THIS PLOT; HELP; STEP AWAY. No option is named first in the body. |
+| After CONTINUE | Search resumed. Scan or dig when ready. |
+| Selector-only STOP confirmation | Stop work on Plot A for this shift? Stopping leaves the other plot unchanged. You can still leave the yard. Controls STOP PLOT A; BACK. |
+| Confirmation footer | BACK: return to the requesting panel. It does not resume a scan or dig. |
+| Stopped | Plot A is stopped for this shift. The other plot is unchanged. You can step away. |
+| Recovery | Component recovered from Plot A and placed in the field tray. Return to the plot panel or step away. |
+| Switching / paused | This plot is paused. Its excavated cells will remain as they are. |
+| Leaving accepted search region | Work paused outside this plot's search area. Open the plot panel (P) to resume. |
+| Local cell-label help | Columns count from the left; rows count from the top. |
+| Ordinary exit | Work is paused. Return to the excavation panel to resume. |
+| Cancellation | The scan was cancelled. Start a new scan when ready. / The dig was cancelled. Start a new dig when ready. |
+| Refused inactive/pending/terminal | Open the plot panel (P) to resume. Terminal status remains visible in the panel; this instruction does not reopen it. |
+| Refused outside scan region | Walk into the selected plot's search area before scanning or digging. |
+| Refused outside dig plot | Face a highlighted cell inside the open plot. |
+| Refused duplicate | This cell has already been dug. |
+| Refused busy/cooldown | Wait for the current action to finish. / The scanner is resetting. |
+| Scanner field readout | PLOT A / SCANNER; before first scan: No reading yet. Thereafter {strength} / 100 — {NONE, FAINT, MODERATE, STRONG}; trend CLOSER / FARTHER / SAME / NO COMPARISON. The A band-only alternative removes only the number and slash100. |
+| Recorded dig/facing readout | PLOT A / LAST DIG; before first dig: No dig recorded. Thereafter C03 R02: EMPTY / C03 R02: COMPONENT RECOVERED (actual local1-based two-digit C/R). Facing: C03 R02 / Facing: outside plot. |
+| Field tray | FIELD TRAY: Plot A component / Plot B component; before recovery: FIELD TRAY: No components recovered. |
+| Series closure | The excavation is closed for this shift. Work already recorded is unchanged. |
+| Reload lock | This excavation was opened before the page reloaded. It cannot be restarted in this session. You can continue through the station. |
+| Plot technical failure | This plot is unavailable because of a technical problem. Work already recorded is saved. The other plot is unchanged. You can leave. |
+
+A first-failure STOP commits directly; selector STOP opens its confirmation. Ongoing/pre-failure/resumed search path remains P/PANEL → selector → STOP PLOT A/B → STOP PLOT A/B. BACK/ESC cancels only selector confirmation and restores paused selector without starting work. Pending-failure RESUME returns the same unanswered choice, never CONTINUE. P is M23-only when no modal is open; ordinary ESC pauses, never stop/shift-end.
+
+Every choice surface lands on an explicit first kind:text guidance element with onActivate as a strict no-op: no domain choice, action or telemetry implying a response. This uses existing WorkSurfaceScene focus mechanics (:647ff, :690–725) unchanged. The sole proposed shared-renderer addition is an optional observational input hook (§12), not a navigation rewrite. First-failure model order is neutral, visual-right option, HELP, STEP AWAY, visual-left option, independently of which label occupies each side. Enter/Space there does nothing until navigation selects a control; pointer may directly select one. All domain commits require a fresh input after prior triggering input release; no held keys, carry-through clicks or repeats. First-failure buttons equal size/style, same assignment across plots; one activation each after selection. Fresh first-failure view and return from HELP/pause reset to neutral via new per-view element ids; ordinary same-view refresh preserves focus. Exact arrow/Tab behavior and diagnostic scope are in §12. Selector confirmation is initially neutral, not pre-focused STOP or BACK.
+
+Exact placement and field readout/history visibility follow §10 and its scale-accurate evidence. No geometry claim is established by copy completeness alone.
+
+## 5. Provisional raw telemetry and reconstruction
+
+Opportunity proto_m23_excavation_series; window m23_plots_w1; family proto_m23_plots_; content/entry m23-plots-v1; object m23_excavation_field; occasion plot_a|plot_b within one episode. Existing ItemWindow → ResearchRuntime → EventLogger only. Canonical study-item/construct context stays empty. Legacy family is retired on this route, not rewritten.
+
+Exact candidate suffixes: approach_ended, search_region_entered, presented, opportunity_opened, example_viewed, closure_explanation_presented, plot_opened, surface_opened, surface_closed, help_opened, help_closed, action_started, action_cancelled, scan_resolved, dig_resolved, action_refused, failure_choice_presented, failure_choice, stop_requested, stop_cancelled, plot_closed, paused, resumed, reload_blocked, invalidated, technical_failure, window_closed. Approved under G as provisional prototype telemetry only; no new canonical schema.
+
+All records retain windowKit identity/validity, protocol/content version, plot/occasion id (null series-only), phase, form, assigned/realised order, input_mode, state_before/after, logger sequence and page_load_index. Entry snapshot has chosen layout_id, exact bounds/keys, scan-region definition/version, signal rule, scanner_display_mode=numeric|band_only, forms/positions, tools, example exposure, visibility state, closure-copy version, prior-load evidence. Keys are research-only.
+
+Action records: immutable within-load action_id, plot, kind, attempt number, start/resolve/cancel times, player anchor and selected cell, zone and membership, target/object, pre-cell state, outcome, actual input origin. scan_resolved records strength/band/trend and comparison identity; dig_resolved records cell/outcome and immutable first-dig/failure references. Recompute flags from raw evidence. action_refused records attempted input/location/plot and exact reason without creating action_started or a resolved attempt. Valid user refusals cannot invalidate scientific evidence.
+
+action_cancelled: action_id/plot/kind, started_at_ms, cancelled_at_ms, elapsed_action_ms, planned_duration_ms, cancellation_reason=esc|panel|help|overlay|plot_switch|yard_departure|search_region_exit|focus_loss|hidden|scene_shutdown|series_boundary, started_input_mode. Explicit UI causes retain keyboard/pointer input_mode; system causes use system. One terminal action transition only; elapsed time is never credit. For valid post-CONTINUE starts cancelled by focus_loss|hidden|scene_shutdown, derive continuation_started_then_system_cancelled=true and linked action ids, even if a later voluntary0 or completed1 resolves the response. Other cancellation causes remain separate.
+
+failure_choice_presented is emitted ONLY when that same first failure's panel is actually visible, focused and operable, with failure_action_id, failure_sequence, presentation_id, option order and usability fields. Resuming it reuses identity and never creates another opportunity. A committed failure with no such record remains eligible but response unknown; retain failure_choice_unpresented_ids. No missing presentation may be repaired from a closing snapshot.
+
+failure_choice records exactly one initial response continue|stop, source first_failure_choice or selector and original failure/presentation links. Direct first-failure STOP writes this stop response and plot_closed in the same committed transition, without stop_requested/confirmation. Selector STOP request/cancel carries stop_request_id, source=selector, origin surface/state, nullable failure references, current response/credit, actual input mode and cancellation reason. Confirmation uses plot_closed(explicit_stop, confirmed_stop=true, stop_request_id, source=selector). If a usable first-failure choice remains unanswered, confirmation also records its single failure_choice(stop). After CONTINUE it never writes a second failure_choice(stop). A pre-failure selector stop has null failure references, emits no new plot_opened/action/failure_choice, and records stopped_before_failure=true. Preserve any earlier real plot opening or scan/cancelled-dig records; stopping an unopened plot fabricates none.
+
+closure_explanation_presented records exact copy/version, surface brief|help, actual visible/usable presentation id and sequence. It records exposure, not comprehension. Informed shift-end needs this earlier record plus a usable failure_choice_presented for that plot and a real participant Noor finishOutside command. The closure payload carries participant_initiated, origin_input_mode, shift_end_command_id/sequence and explanation link; system bookkeeping retains input_mode=system but must not erase its participant source. Missing source/explanation/usable choice never silently implies0.
+
+plot_closed carries plot_closure_reason=recovered|explicit_stop|shift_end|review|technical_failure|reload, immutable outcome/failure refs, observed continuation true|false|null, last resolved action, total attempts, tray state and stop/shift source evidence. A first-failure unpresented or otherwise unresolved response remains null unless actual later usable-choice and voluntary decision satisfy D2/D1. Already terminal plots do not close twice.
+
+window_closed carries actual series_closure_trigger and closure_reason separately, per-plot reasons and audit summaries; snapshots cannot substitute for raw evidence. Source-integrity conflicts, impossible resolved transitions, contradictory keys or missing links invalidate affected evidence with exact reasons. Identical duplicates deduplicate; stale late callbacks are ignored/diagnosed. Sorting is by logger sequence; do not mutate raw log, infer missing evidence from flags or silently truncate attempts. Supporting sequence limit200 only flags summary truncation.
+
+Research-only diagnostics (no thresholds/exclusions/extra score): first_failure_cell_target_distance_px (Euclidean cell-centre distance), first_failure_player_target_distance_px, first_failure_to_choice_ms (null until usable choice appears), last_scan_strength_before_failure (null if none), last_scan_action_id, selected-cell versus player-anchor position/facing, scan region, stopped_before_failure_ids, recovered_without_failure_ids, failure_choice_unpresented_ids, continuation_started_then_system_cancelled action records, shift_end_unresolved_ids and shift_end_resolved_zero_ids. Diagnostics may suggest interface slips; they do not diagnose intent or redefine failure.
+
+## 6. Primary outcome, missingness and closure — APPROVED E(c)
+
+Primary m23_continuations_after_failure, feature_version1, count0–2; planned_denominator2; denominator_kind conditional_eligibility; independence repeated_within_episode. Valid eligible plot = an admissible genuine failed dig with no evidence-integrity exclusion. Denominator D includes ALL such plots, even unknown responses. Per-plot response is1 (qualifying completed act),0 (eligible voluntary stop/informed shift-end with usable choice and no credit), or unknown. Technical exclusions are separate, never zeros.
+
+At final legitimate closure:
+- D=0: value=null, numerator=null, denominator0; no_eligible_event with specific reason, or technical_failure/reload disposition when applicable.
+- D>0 and any valid eligible unknown: value=null, numerator=null, denominatorD, disposition interrupted, censored=true, missing_reason eligible_response_unresolved. Do not export a partial primary0 or1.
+- D>0, every valid eligible resolved: value=numerator=sum of per-plot1s, denominatorD, observed. D=1 is complete conditional evidence; planned2 never forces incomplete.
+- While series remains open: primary value/numerator null and pending, with genuine-failure denominator/current known components. Outcome evidence does not itself close a plot or series.
+
+Components retain observed_count=sum of known1s (may be0 with denominator_resolved0; never confused with a primary0), denominator_resolved, known_outcomes_by_plot, resolved/unknown eligible ids, eligible_plots_total before technical exclusions, invalid ids/reasons, unopened ids, recovered_without_failure_ids, stopped_before_failure_ids, no-failure searched-but-unresolved ids, full closure/attempt/diagnostic summaries and included ids. included_ids matches valid eligible denominator, including unknowns. A later unrelated fault does not erase verified0/1; contradictory earlier evidence can invalidate that plot explicitly.
+
+Technical-invalid plots are excluded transparently. One remaining valid resolved eligible plot yields observed count/denominator1 with technical-excluded components/censor flag, not incomplete solely because planned2. If a valid eligible unknown remains, primary stays null/interrupted. No valid eligible plus a relevant technical exclusion yields null/0 technical_failure. Current-load reload hold-back overrides with null/null/0 interrupted and prior evidence separately identified; never pooled.
+
+| Final evidence (A/B mirrors required) | value; numerator/denominator; disposition | Known details |
+|---|---|---|
+| No presented series, no earlier load | null;null/0;not_presented | no fabricated exposure |
+| Brief/demo but no selector opening at closure | null;null/0;not_presented | presented_not_opened |
+| Both first-dig recoveries | null;null/0;no_eligible_event | recovered_without_failure |
+| Both pre-failure STOPs | null;null/0;no_eligible_event | stopped_before_failure; both ids distinct from recovery |
+| Recovery without failure plus pre-failure STOP | null;null/0;no_eligible_event | mixed_no_eligible_event; both reason lists |
+| One known0 plus ineligible plot | 0;0/1;observed | one eligible complete |
+| One known1 plus ineligible plot | 1;1/1;observed | one eligible complete |
+| known0 / known0 | 0;0/2;observed | all responses observed0 |
+| known0 / known1 OR known1 / known0 | 1;1/2;observed | count1, never ratio0.5 |
+| known1 / known1 | 2;2/2;observed | count2, never ratio1 |
+| known0 / unknown | null;null/2;interrupted | observed_count0; denominator_resolved1 |
+| known1 / unknown | null;null/2;interrupted | observed_count1; denominator_resolved1 |
+| unknown / unknown | null;null/2;interrupted | observed_count0; denominator_resolved0 |
+| Only one eligible unknown; other ineligible | null;null/1;interrupted | not observed0 |
+| Usable choice + closure explanation + participant shift-end, no credited act | that plot0 | shift_end_resolved_zero_ids; known1 elsewhere unchanged |
+| Same but review or ordinary technical shutdown | that plot unknown | review censored; shutdown alone pauses, final external closure applies |
+| Failure choice never presented, even at voluntary shift-end | that plot unknown | failure_choice_unpresented_ids; shift_end_unresolved_ids |
+| Valid known0 OR known1 plus technically invalid plot | value0,numerator0,denominator1 OR value1,numerator1,denominator1;observed | technical exclusion explicit; all valid eligible resolved |
+| Only technically invalid relevant evidence | null;null/0;technical_failure | excluded evidence retained |
+| Prior measured opening, current load locked | null;null/0;interrupted | prior evidence separate; replay blocked |
+
+U23-OUTCOME-FIXTURES.md independently expands each row with literal raw command sequences, all mirrors, disposition and diagnostics. No score ratio is exported or recommended.
+
+Series-closing triggers:
+1. both_plots_terminal only when BOTH are recovered, explicitly stopped or individually technically terminated. A recovery/stop leaves available B open and vice versa. Two pre-failure stops close normally without invented work.
+2. shift_end only the actual participant finishOutside boundary; review actual final-record closure; reload prior-opening lock; whole_series_fault explicit whole-series inability. A plot-specific fault leaves the other plot usable. Ordinary panel close, departure, blur/hidden or shutdown is a pause/cancellation unless an explicit external boundary actually occurs.
+3. External closure cancels pending actions/requests, closes live plots, and applies D2 individually: informed voluntary shift-end can resolve0; review/reload/system boundary cannot. Preserve known1/0; unknowns stay unknown. No invented failure_choice at shift-end. Once closed, no reopening or duplicate window_closed.
+
+closure_reason is assigned only after a trigger: both_plots_terminal → voluntary_stop if any explicit stop, otherwise completed (wholly invalid → technical_failure); shift_end → session_end; review → closed_at_review; reload → session_end with reload reason; whole_series_fault → technical_failure. Per-plot technical/censor details remain separate. Generic closure reason never determines the primary count.
+
+## 7. Architecture, exact scope and protected material
+
+New content/model/window/surface modules own M23 only. Retire legacy M23 binding from current exterior route in exteriorWindows; leave legacy model files unchanged. exteriorEpisodeModel edits limited to M23 guidance/summary references (do not change other site state/order). Scene integrates two target/zone identities, field controls, two outlines, tray display, new first-failure overlay and lifecycle. One series ItemWindow with two plot states uses existing validity and export machinery. Do not add another logger/store/scorer. DigController gains optional delivery override used only by M23; existing callers retain inventory/cache behavior byte-for-byte semantically. Player gains optional external movement intent only, no speed/physics change; unset for other scenes. Tests must prove defaults unchanged.
+
+SELECTED intended implementation boundary: exactly30 paths in U23-ALLOWLIST-A-ADJUSTED.txt, SHA256 d5e9d7220da93a37e075d6fbf2d40ed6f1cd08fc55ab6fec76bd49d2557368c9. The common27 paths below plus the three A-adjusted additions constitute that list. U23-ALLOWLIST.txt is the unselected A-existing alternative/common subset, retained as history; it is not a second active boundary. Scope selection grants no current permission to edit:
+src/pilot/windows/m23PlotsContent.ts
+src/pilot/windows/m23PlotsModel.ts
+src/pilot/windows/m23Plots.ts
+src/pilot/windows/m23SurfaceModel.ts
+src/pilot/ui/M23FieldControls.ts
+src/pilot/ui/WorkSurfaceScene.ts
+src/measurement/features/m23.ts
+src/measurement/features/index.ts
+src/measurement/registerV3.ts
+src/pilot/windows/exteriorWindows.ts
+src/pilot/exterior/exteriorEpisodeModel.ts
+src/scenes/ExteriorRecoveryYardScene.ts
+src/sprites/Player.ts
+src/fieldActions/digController.ts
+src/fieldActions/scanController.ts
+docs/game/rooms/11-exterior-recovery-yard.md
+docs/verification/station-080-m26/IMPLEMENTATION-MATRIX.md
+docs/verification/station-080-m26/M01-M26-IMPLEMENTATION-REGISTER.md
+docs/verification/station-080-m26/SCORING-AND-EVENT-ADDENDUM-v1.md
+docs/verification/station-080-m26/UNIT-LOG.md
+e2e/m23_plots.spec.ts
+e2e/m23Helpers.ts
+e2e/exteriorHelpers.ts
+e2e/pilot_yard.spec.ts
+e2e/pilot_exterior_isolation.spec.ts
+e2e/pilot_exterior_capture.spec.ts
+e2e/pilot_exterior_models.spec.ts
+
+
+A-adjusted-only additional paths: src/world/layouts/yard.ts (the four specified prop removals), src/pilot/zoneSites.ts (plotStake anchor only), and src/world/interactionRegistry.ts (Excavation Field Stake approach point only), limited exactly as §§12–13 specify. No wildcard allowance. The preceding26-path proposal added src/fieldActions/scanController.ts, solely an optional default-preserving presentation override so M23 can render its pinned readable scanner and suppress the duplicate legacy caption; no signal/timing/physics changes. Omitted override must preserve existing behavior. This scope is selected by the owner ruling; execution remains unauthorized. New files: m23PlotsContent/Model/window/SurfaceModel, M23FieldControls, feature m23, m23_plots.spec and m23Helpers. Existing test edits are necessary: pilot_yard has one-plot recovery/stop/full-belt cache assumptions (:370–442,:782–815,:971–1032); exteriorHelpers imports old targets and hardcodes one-window begin/stop (:14,:648–680,:802–815); isolation expects legacy family/validity and shift-end completed (:153–192); capture uses old keys (:100–119); exterior_models compares current route ids to frozen ledger (:1045–1079). Preserve unrelated assertions and old-model pure tests; change only current-route expectations. Capture output goes outside repository to the evidence directory, not old screenshot folders.
+
+Protected: `docs/research/**`, questionnaire/source instruments, frozen `docs/verification/evidence-led-pilot-v2/**`, `src/pilot/evidenceLedger.ts`, legacy `src/pilot/exterior/m23ExcavationModel.ts`, `src/measurement/m23Excavation.ts`, `src/fieldActions/opportunities/m23FieldRecovery.ts`, all system logger/scoring/session/bridge files, canonical contexts, package manifests/locks, configuration/hooks, assets and every unlisted path. No U22 changes or expansion of its limitations; no U24 backlog. Existing shared files permit only named M23 integration/default-preserving input/delivery/presentation work. Preserve the exact private guard(item: 'M20' | 'M23' | 'M24' | 'M26' signature and M20 fault branch. Keep all dormant legacy exteriorWindows M23 helpers unchanged, including their two setComprehension('passed') calls; detach only current-route declaration/dispatch/lifecycle from those helpers to the new M23 module with not_required. Together with other legacy helpers the static count8 stays. Protect src/measurement/registerV3.ts M23 formula row:1625–1646 and addendum M23 formula:1359 and shared conditional-completeness:1363–1370 even within allowlisted files. Only scoped administration/as-built metadata and separately recorded approved M23 clarifications may change; no incidental formula/denominator rewrite. Only the selected exact30-path list is the intended boundary; any further path need requires explicit amendment. WorkSurfaceScene.ts permits only the optional navigation observer/default-preservation work in §12. Conditional yard/zoneSites/interactionRegistry changes do not authorize unrelated objectives, sites, registry rules, floor, assets or props. The four additional unmodified regression specs in §13 are not writable.
+
+## 8. Independently specified verification and evidence
+
+Preparation runs no game suites and claims no passing implementation. U23-OUTCOME-FIXTURES.md fixes independent expected values and sequences; implement tests from that document and literal content keys, never use production output as the only oracle. Verify complete raw transitions and feature records.
+
+Named new spec e2e/m23_plots.spec.ts:
+- M23 pure: all four literal keys, each target first-dig recovery, every other cell empty,42 unique cells, duplicates/refusals not failures. Independent signal arithmetic0px→100,80→50,160→0 and bands. Exact F6 union/body validity, both plots/edges, outside/overlap association; region invalidity is refusal, not low continuation.
+- M23 extraction: EVERY outcome fixture, all A/B mirrors and input/option-order variants. Known0/unknown→null/null/2, known1/unknown→null/null/2, bothunknown→null/null/2, with distinct observed_count/denominator_resolved components. All four two-resolved combinations and one-eligible0/1 complete. No primary ratio. Pre-failure-stop ids distinct from recovery. Unpresented choice never0, including participant shift-end. Genuine informed shift-end0 versus review unknown; missing explanation/source preserves unknown. Technical invalidity/current-load reload exactly as fixtures. Freeze input for no-mutation; shuffled arrays sort by sequence; duplicates deduplicate; contradictory resolves invalidate affected evidence; refusal never invalidates; missing evidence cannot be recovered from snapshots. More than200 supporting sequences flags truncation while raw is complete.
+- M23 browser: real Dock→Concourse→Workshop→Lab→Yard/Noor route, plus separately labelled technical fixtures. Actual keyboard/pointer commands and honest origins; static examples produce no failed attempts; reload during demo replays, first usable selector creates one opening and later reload locks. Both plots accessible, no inventory/cache dependency; adjacent M24/M26 unaffected. Direct first-failure STOP and CONTINUE each one activation, stable positions across plots in both assigned orders, neutral no-op focus, held-input rejection. All usable-choice exposure and closure explanation logs correspond to displayed controls/copy.
+- M23 STOP navigation: pre-failure/post-CONTINUE/resumed search P or pointer PANEL→selector→STOP→confirm; BACK/ESC returns paused selector. Unanswered RESUME shows same first-failure choice. Direct first-failure STOP closes immediately, no confirmation/request. Later STOP after CONTINUE emits no second failure_choice; before act gives0 only with usable choice, after credited act preserves1. Neutral focus/no-op emits no response; selector STOP before plot opening creates no false work.
+- M23 boundaries/refusals: both pre-failure stops close no_eligible_event(stopped_before_failure); A terminal/B available stays open and vice versa, both row orders. C/D/pointer attempted on inactive/unopened/paused/pending/terminal plot emits exact refusal, never resolution/credit/exclusion. Single-plot fault keeps other available; actual external boundary is distinct from ordinary shutdown/pause. Repeated normal/shift/review closure idempotent. Informed sign-off after usable choice resolves0; review never does; failure whose choice never appeared remains unknown.
+- M23 cancellation: after failure+CONTINUE start1000ms scan; blur at500ms → one cancellation, no credit, diagnostic true. Wait after return → no completion; fresh fully resolved scan/newid → known1. Then confirmed stop preserves1. Alternative stop directly after cancellation → known0 with diagnostic retained. Dig cancelled before1500ms creates no failure. Committed empty before interruption retains failure; usable panel absent until returned remains flagged unpresented. Both same-tick resolve/cancel orders produce one terminal action transition. Repeat causes ESC/PANEL/HELP/overlay/switch/departure/search_region_exit/hidden/shutdown, including global action already cleared.
+- M23 layout: both viewports, all plot edges/forms/valid stances and actual camera clamp/restore. Assert active plot, highlighted cell, recorded digs, scanner/history, controls and text are usable under accepted §10 geometry. Capture actual Phaser screenshots, pointer focus, keyboard focus and fresh-input behavior; no debug-state writes establish primary scientific evidence. Camera/scan/delivery defaults outside M23 unchanged. Check fatal console errors.
+
+Deferred verification plan: no commands below run now. They require separate execution authorization, isolated implementation and verified applicable Fable/Claude controls (existing dependencies; no install fallback). Codex compatibility is not a prerequisite:
+1. npm.cmd run lint:tsc
+2. npm.cmd run build (first verify resolved dist is inside actual worktree; clean deletes only that output)
+3. npx.cmd --no-install eslint followed by explicit changed TypeScript paths
+4. Set PW_DEV_PORT=5183 in that session, then npx.cmd --no-install playwright test e2e/m23_plots.spec.ts --grep "M23 pure|M23 extraction" --workers=1 --retries=0 --output <external-evidence>/pure
+5. npx.cmd --no-install playwright test e2e/m23_plots.spec.ts --grep "M23 browser|M23 STOP|M23 boundaries|M23 cancellation|M23 layout" --workers=1 --retries=0 --output <external-evidence>/browser
+6. A-adjusted is selected: run the common command below ONCE with the four unmodified specs and external-output settings in §13 appended. Do not also run the historical common-only alternative. Common command: npx.cmd --no-install playwright test e2e/pilot_exterior_models.spec.ts e2e/pilot_exterior_isolation.spec.ts e2e/pilot_yard.spec.ts e2e/m26_protocol_foundation.spec.ts e2e/field_actions_models.spec.ts e2e/action_foundation.spec.ts e2e/m19_lines.spec.ts e2e/m20_returns.spec.ts --workers=1 --retries=0 --output <external-evidence>/regression
+7. npx.cmd --no-install playwright test e2e/pilot_exterior_capture.spec.ts --workers=1 --retries=0 --output <external-evidence>/capture, after redirecting its screenshot destination to external evidence
+8. git diff --check; applicable existing Fable/Claude read-only scope verification using the selected30-path list/base. Identify the actual supported verifier in the future authorized session; do not require or build Codex compatibility tooling.
+
+M19/M20 specs are verification-only, not writable. Preserve scene guard signature and all8 dormant legacy setComprehension('passed') source occurrences; new M23 module uses not_required. A need to change those assumptions requires explicit scope amendment, not a waived regression.
+
+Verify port free and dedicated server PID/root/base; do not reuse unrelated server. Stop/join after checks. Missing browser/dependency is a setup blocker, no download. No blanket baseline waivers: exact-base matching assertion/environment evidence required; unexplained/new failure blocks. After correction rerun typecheck/build/changed lint and affected cases; model/telemetry → all M23 fixture/browser and protocol/exterior regressions; shared Player/Dig/Scan/input-observer changes → action/field-action defaults plus M19/M20 and pointer/keyboard; layout/copy → both viewports/screenshots and focus. Always repeat scope/diff checks, never broad suite without named reason.
+
+Required runtime screenshot subjects at BOTH800×600 and1280×720: first failure in both assigned option orders; selector after CONTINUE; selector STOP confirmation; A terminal/B available and reverse; each plot at all geometry extremal valid stances with camera/HUD/selectedcell/readout/history; static component+empty example; reload lock. Exact runtime file names may use these subject names with viewport/plot/stance suffix, indexed in the verification log. Preparation mockups are labelled MOCKUP and cannot substitute. Capture provenance includes viewport, native camera/scroll/zoom, plot/form/order, raw sequence range, branch/base and actual route versus technical fixture.
+
+## 9. Success, stop conditions, routing and commit
+
+Audit order is mandatory only after separate explicit execution authorization and applicable launch checks: the FIRST approved repository edit is an append-only U23 section in `docs/verification/station-080-m26/UNIT-LOG.md`, BEFORE the first source/test or other implementation edit. Record dated owner authorisation, the full final approved contract verbatim, the owner's actual D-U23-1 ruling verbatim, approved package hashes, exact base/branch/worktree and all paths in the selected30-path allowlist. The actual owner ruling is in U23-OWNER-RULING.md; its specification approval alone authorizes no log edit or implementation. Preparation does not edit UNIT-LOG. Follow the log's unit-entry convention (`UNIT-LOG.md` heading/intro and U22 entry at:13019, verbatim-contract block at:13170), without inheriting any U22 approval, exception or limitation.
+
+Append actual U23 outcomes and review/correction results to that entry before the single local commit. Use all12 bounded-unit Step8 fields in the log/results and final handoff: (1) branch/base SHA; (2) commit subject and commit SHA status; (3) exact changed files against allowlist; (4) observable built behavior; (5) events/scoring with candidates explicitly provisional; (6) every verification command, exit status and actual result, flakes distinguished; (7) resolved/unresolved reviewer findings with citations; (8) existing configuration preserved; (9) limitations/restart requirements; (10) deviations/left-out work with reasons; (11) unchanged prohibited areas; (12) confirmation nothing pushed, merged, tagged, deployed, deleted or removed. Because a committed file cannot contain its own final SHA, pre-commit log field2 states approved subject and `SHA pending single commit; actual SHA in final external handoff`. After committing once, the external standard12-field handoff supplies actual SHA and references this log entry. Do not amend or make a second commit to insert a self-referential SHA.
+
+Success means the approved administration is reachable and truthful through both input paths; every outcome in §6 reconstructs from raw events; other items and default field actions retain behavior; tests and runtime screenshots support those claims; owner decision copied verbatim into the Station080 as-built record; all changes within the selected30-path allowlist; reviewers finish and all tasks/processes are joined. Matrix/register as-built text is updated only after implementation evidence, never by treating specification approval as completed implementation.
+
+Stop on missing separate execution authorization; failed applicable Claude control/root/allowlist check; base/root mismatch; overlap with user work; key/geometry inaccessible; technical path needs another file; canonical schema/scoring change; decision ambiguity; inconsistent or missing raw event evidence; unexplained baseline failure; missing model/reviewer; more than two implementation correction rounds. Finish independent authorised preparation even if launch tooling is blocked. No U24.
+
+Intended executor selected by owner: separate Fable/Claude session after the Claude allowance resets on Sunday. This is not a scheduled launch or execution authorization. Identify actual writer/test/reviewer models and capabilities in that future session; earlier Astra/Sol/Codex routing is retained only in the historical prompt. Use the applicable existing bounded-unit independent-review workflow, without reopening the approved scientific choices or initiating another broad scientific review now. Reviewers remain read-only; at most two future IMPLEMENTATION correction rounds. No Codex compatibility dependency.
+
+Exactly one proposed local commit after verified implementation and reviews: `feat(m23): add two-plot post-failure excavation protocol`. Stage only explicit allowlisted names; no broad staging or bypass flags; no amend, push, merge, tag, release, deploy, PR, branch deletion, worktree removal or U24. Current preparation creates no commit.
+
+## 10. Approved geometry specification — runtime unverified
+
+The original follow-camera/pad schematic is superseded as visibility evidence. See U23-GEOMETRY-EVIDENCE.md and geometry-evidence/geometry-checks.json for parent source analysis, calculated poses and labelled renders. Static calculations and mockups are not collision/runtime proof.
+
+Actual native canvas1280×720 uses world camera640×360 at zoom2, follow deadzone96×56 and160ms damping, world1792×768, scroll clamp x0..1152/y0..408. At800×600 viewport the canvas FITs800×450 with75px top/bottom letterboxing; factor0.625 native→CSS. Surface/HUD design scale is1.2→native, thus0.75→CSS. Standard720×516 design panel is540×387 CSS.22design text becomes16.5CSS;60design targets become45CSS. No global viewport/zoom/focus-algorithm change; the optional observation hook is explicitly scoped in §12.
+
+The following scroll coordinates are for A-existing; A-adjusted scrolls are in §12. Approved A framing: while actually searching the selected plot, fixed local camera centred on A(1168,352) or B(1424,544), scroll A(848,172), B(1104,364). Both scrolls are inside existing clamp. At either view the entire active plot projects native x416,y168,w448,h384. Camera placement depends only on plot, never form/outcome or found target. OPEN/RESUME while outside the chosen plot region enters approaching and retains follow; apply the fixed frame only on valid entry, before accepting search action input. OPEN/RESUME already inside enters that frame immediately. Pending first-failure choice takes precedence (§12). After searching has begun, crossing outside the accepted scan/search region automatically pauses/cancels M23 and restores ordinary follow; movement remains possible and the participant is never allowed to walk off a fixed view. Restore ordinary follow/previous camera ownership on pause/modal/departure/shutdown; returning through the selector re-evaluates the selected plot through §12's approaching/inside-region rules. Use existing protected camera facilities from the allowlisted scene only. This viewing/navigation behavior is approved under A; unchanged zoom/keys do not prove unchanged difficulty. Unselected historical alternative: retain follow view plus an inspection panel, explicitly accepting that the strict all-cell visibility criterion is unmet; this is not silently treated as approved.
+
+Final field HUD geometry (native coordinates, not the older design-only sketch):
+- Eight-control pad: x968,y300,w288,h307.2; design x673.333333,y250,w240,h256. Two116design columns/gap8, four60design rows/gap4: LEFT/RIGHT, UP/DOWN, SCAN/DIG, HELP/PANEL.
+- Scanner: native x8,y130,w300,h144; design x−126.6667,y108.3333,w250,h120. Up to4 lines,22design text, wrap at words. Copy §4.
+- Last dig/facing: native x8,y304,w300,h208; design x−126.6667,y253.3333,w250,h173.3333. Up to6 lines,22design text, wrap at words. Local plot cell labels C01..C07/R01..R06, consistent across forms; raw coordinates remain world cells.
+- Existing belt native x169.6,y669.6,w451.2,h40.8. Existing mission/status/feedback footprints must remain above plot native y168 or outside its horizontal interval. Proposed local feedback y92design→110.4native, with measured text height below plot top; never assume an unbounded message fits. Scanner default caption is suppressed only through the approved optional presentation override, preventing duplicates.
+
+Model evidence: original follow-camera examples yielded9 HUD-overlapped cells at A centre,19 overlapped plus7 clipped at A north edge, and9 overlapped at B south clamp; overlap/clipping counts are not disjoint. The source-model finite sweep sampled1061 qualifying A stances and882 B stances; every one of42 cells per plot has at least one collision-valid inverse-probe-centre stance. Fixed framing projects all42 cell rectangles visibly with zero reserved-HUD intersections. These are finite/source-model results, not runtime reachability or participant-rate measurements.
+
+Full active plot, recorded empty-cell markings, highlighted facing cell and all last-dig/readout text must remain usable at each valid stance at both viewports. HUD boxes are disjoint from the entire active-plot rectangle. Parent calculations also check extreme physics feet/body overlap with HUD; avatar artwork, transient effects, actual text bounds, dynamic mission card height, tile collision and continuous movement still require runtime evidence. Do not claim the strict visibility criterion passed merely because rectangles are disjoint. If any required cell/readout is obscured, stop for the explicit local layout alternative/amendment before implementation; do not weaken the criterion silently.
+
+Exact F6 recommended region: let P be half-open world rectangle [minCol*32,(maxCol+1)*32) × [minRow*32,(maxRow+1)*32). Use unchanged Player selector probe offsets L(−27,+4), R(+27,+4), U(0,−28), D(0,+36). Qualifying origin p satisfies bodyFits(p) AND p belongs to P ∪ (P−L) ∪ (P−R) ∪ (P−U) ∪ (P−D). Equivalently the anchor is inside P or at least one unchanged cardinal selector probe reaches P. This includes legitimate36px north origins, not a blanket32px ring or square corner expansion. bodyFits uses actual existing collision bounds/walkable terrain; B's invalid below-boundary poses are not approved stances. Record interior or boundary_stance, actual origin and selected cell at start/resolution. Current facing need not point into plot to scan if another cardinal probe establishes membership. Associate ONLY the explicitly active plot; never nearest/both. An origin inside the other plot is refused until that plot is selected/resumed, even if sets overlap. Exact half-open boundaries and bodyFits are independently tested; no adaptive tolerance.
+
+Modal coordinates, panel-relative design:
+- Heading x24,y72,w672,h32,text24; main body x24,y112,w672,h144,text22; first-failure options x24/x372,y272,w324,h64,text22. Stable assigned left/right order across A/B. Direct STOP, no confirmation at this boundary.
+- Selector A status x24,y112,w672,h32; A OPEN/RESUME and STOP x24/x372,y152,w324,h64; B status y228 and B controls y268. Reverse row positions for assigned BA without renaming plots. Terminal controls disabled.
+- HELP x24,y352,w220,h64; STEP AWAY x476,y352,w220,h64. Guidance x24,y428,w672,h78,text20,line-height24, exact §4 keyboard/selector wording; measure wrapping and move only within an owner-reconciled local layout if needed.
+- Selector-only STOP confirmation body/options use same y112/y272 geometry. A neutral first focusable text element has strict no-op activation, not BACK/STOP focus. First-failure and selector use the same neutral-landing mechanism.
+- Static DIG example uses heading x24,y24,w672,h64; body x24,y96,w672,h100; two illustrations x24/x372,y212,w324,h116, each with the same character facing the adjacent highlighted cell. Navigation BACK / STEP AWAY / OPEN PLOT PANEL uses x24/x250/x476,y352,w220,h64; pinned guidance y428. The approved page2 contains component and empty illustrations; no hidden measurement or forced failed input.
+
+No blanket spatial equivalence claim: plots differ in world location, boundary/terrain constraints and context. Fixed framing equalises the projected plot/HUD geometry, not task difficulty or subjective effort.
+
+## 11. Preparation history and remaining gates
+
+Prior preparation established cancellation, STOP navigation and the audit sequence. This additional user-authorised Opus reconciliation supersedes earlier asymmetric first-failure confirmation, within-participant position flipping, generic pre-failure no_failure labels, shift-end/review conflation, partial-primary unknown-response exports and schematic follow-camera reassurance. Historical review/log files document what was known then; current approved selections and fixtures govern the specification; execution remains unauthorized.
+
+All A/B/C/D1/D2/D3/E/F/G are now APPROVED by the owner ruling; the following records prior preparation review history. This round does not consume or extend the future maximum two IMPLEMENTATION correction rounds. The earlier F1–F13 recheck returned two minor F11 findings, corrected and parent-verified. The additional focused M1–M3/m1–m2 round received its one independent consistency recheck: PASS with no blocking, major or minor inconsistency. See U23-CONSISTENCY-REVIEW.md for the separate historical results. No second recheck of this focused amendment was performed. No repository edit, game suite execution, guard/config/dependency change, worktree, commit, merge or push was authorised or performed here. U22 limitations and U24 stay outside scope.
+
+Implementation remains UNAUTHORIZED. Existing Codex-only enforcement/model/browser/remote findings are historical observations, not prerequisites imposed on the planned Fable/Claude run. Codex compatibility stays unapproved and deferred. At a later expressly authorized Claude launch, verify that session's applicable controls and environment without assuming prior evidence transfers. No controls are bypassed or changed in this finalization.
+
+## 12. Approved focused M1–M3 / m1–m2 specifications
+
+This section and U23-FOCUSED-AMENDMENT.md pin the latest focused changes without reopening accepted F1–F13 scientific reasoning. Both layout alternatives preserve two7×6 plots and within-plot form offsets. A-adjusted targets are A/a1(29,9), A/a2(31,12), B/b1(38,9), B/b2(36,12); fixed scroll A(656,172), B(880,172). Exact plot rectangles, shared stake, approach points, four prop removals, temporary mast-chip masking and residual near-M20 context are in that amendment's choice table and U23-LAYOUT-CHOICE-EVIDENCE.md. A-existing retains earlier coordinates/art and documented initial/M24/wall inequalities. A-adjusted is selected and approved as administration; no claim of fully matched nuisance exposure or difficulty. Both use the SAME body-valid inverse-probe region/other-plot-origin refusal (§10), never a generic ring.
+
+### M1 objective and guidance
+
+Use §4's exact objective in exteriorEpisodeModel.EXTERIOR_OBJECTIVES.excavation. Introduce M23-only guidance_addressed, initially false, set once on the SAME actually usable selector transition that emits series opportunity_opened. It persists on pause/plot switch/STOP/recovery/departure and prior-load reload hold-back; it is not reset into a new measured opportunity. Brief/example exposure, a stake interaction, approach/region entry, a failure, a continuation, or merely closing a window is not an alternative setter. Legacy excavation entered/closed/recovered or generic guidance_dismissed must not override this M23 rule. Before the first selector, STEP AWAY does not mark it addressed. This is guidance only, not completion, comprehension or eligibility; denominator remains0 until a genuine failed dig.
+
+Route all M23 guidance views to that fact: exteriorSiteDone(excavation)/exteriorCurrentSite/objective line; dismissExteriorSite's excavation path; registerPilotStation(id=excavation).isDone and the resulting route beacon/MissionCard. Do not edit shared guidance infrastructure or unrelated site conditions. After addressed, an unopened/unresolved/stopped plot cannot reactivate the M23 objective/beacon. Before addressed, only the neutral objective/landmark is allowed, with no unfinished/recover-it language. No new M23 progress/reminder chip. Plot labels and participant-requested selector statuses remain factual. Closed-stake feedback uses the pinned series-closure sentence, never the legacy singular recovered-coupling line.
+
+In Noor's initial briefing replace ONLY “the staked excavation field (east)” with §4's M23 clause, and append §4's neutral M23 sentence to the common briefing body before any optional loan text. Leave every other job's wording/order/objective, loan/flag/logbook flows and response tags unchanged. Noor's existing “Anything you leave stays as you left it” and “I am finished outside” remain; never add a plot-completion nudge on return. D2's separate logged closure explanation still appears in the brief/HELP; the neutral objective/Noor additions do not substitute for that explanation's exposure record.
+
+### M2 opened/approaching and camera lifecycle
+
+Selected/opened is distinct from searching. When a nonterminal plot is OPENed (once) or RESUMEd, first service any pending/unpresented genuine-failure choice: show the same usable-choice identity, neutral focus, without accepting search input. After CONTINUE, or if no choice is pending, inspect the actual player origin. Inside the exact accepted region → searching, apply its fixed frame, then enable fresh SCAN/DIG. Outside → approaching, ordinary follow and movement enabled, selected target/search controls cannot resolve actions. Both SCAN and DIG in approaching emit only action_refused(reason=outside_scan_region), with the exact approach refusal copy. No started/dig_resolved/failure/continuation/invalidity or zero signal is fabricated.
+
+First subsequent body-valid region entry (and not inside the other plot) transitions approaching→searching and engages fixed framing before an action can start. Entry is exposure/camera state, not failure, continuation or another opportunity. Leaving after entry transitions to paused, cancels any action once with search_region_exit and restores follow. Walking back in after this pause does NOT auto-resume; explicit P/PANEL→RESUME is required. Leaving while still approaching has no new pause boundary because no entry occurred. HELP/PANEL/ESC/blur/departure pause either state. RESUME outside creates a new approach segment, preserving all prior cells/choice/credit; inside restores searching. Switching pauses/cancels the previous plot, selects the other, then evaluates that plot's pending-choice/region conditions. No off-screen fixed camera, forced movement/teleport, changed region tolerance or action carried across a transition. A terminal plot remains disabled.
+
+On either layout, open from the actual position within the stake's interaction radius; the stake anchor and nominal approach samples are not guaranteed participant origins. Outside-region refusal takes precedence over an ordinary outside-dig-cell reason while approaching; once searching the existing selected-cell validity rules apply. Near a foreign station, deliberate interaction pauses M23 before opening that station; preserve its existing behavior and M23 outcomes. No foreign prompt suppression is approved.
+
+Narrow provisional G diagnostics: on plot_opened/resumed record approach_id, entry_kind=open|resume, actual start position/time, layout_id and start_inside_region. On search_region_entered close that approach segment with entry position/time, first_plot_region_entry flag, direct_displacement_px=hypot(end−start), travelled_path_length_px=sum of successive actual post-collision positions during this uninterrupted approach segment, movement_sample_count, and path_complete/discontinuity reason. An inside-region open has zero approach displacement/path/time. On pause/switch/closure before entry, approach_ended records the same fields and first-entry time=null. Teleports, missing samples or load changes make travelled length null/incomplete, never silently straight-line distance. Do not log every position, count travel as continuation, infer persistence from elapsed travel/idle time, or create eligibility from these diagnostics. Existing raw search actions retain their own locations; first actual scan remains the first signal exposure.
+
+### M3 focus access and minimal observation
+
+WorkSurfaceScene focuses enabled onActivate elements in model order, starts index0, preserves an existing id on refresh, and wraps negative/positive movement. Guarded key handling ignores repeat. For first failure, supply exactly five focusables in this order: neutral guidance, physical RIGHT option, HELP, STEP AWAY, physical LEFT option. Neutral is strict no-op. Visual left/right positions remain fixed within participant; label assignment is counterbalanced between participants. From neutral, unmodified Left selects left via wrap (0→4), Right selects right (0→1), then fresh Enter/Space commits either once. Up/Down retain the existing previous/next equivalents. Shift+Right follows the renderer's reverse traversal, so the advertised side shortcut refers to unmodified arrows. Forward Tab reaches right in1 and left in4 steps; Shift+Tab reaches left in1 and right in4. Do not call all keyboard routes equal.
+
+Use §4's specific first-failure footer, three lines in the existing78designpx guidance box: “Left / Right: select the option on that side.” / “Enter / Space: choose. Tab / Shift+Tab: cycle.” / “ESC / STEP AWAY: pause.” Set model.help='' locally to suppress the renderer's default footer; other modal copy stays unchanged. Pointer directly chooses either equal target. A fresh view, HELP return, or resumed unanswered choice creates new per-view element ids/focus_epoch_id so the renderer's missing-id fallback lands on neutral. Reuse the scientific failure/presentation identity. A same-view redraw retains current focus. Held/repeat/carry-through input never commits.
+
+Proposed27th common path WorkSurfaceScene.ts adds only an optional input-observation callback in WorkSurfaceLaunchData. Notify accepted nonrepeat navigation after focus moves, and activation before the existing onActivate callback, with key/modifier/input_mode and before/after element ids. No callback means existing behavior unchanged. No new hotkeys, public mutable focus API, global key logger, DEV-probe dependency or altered algorithm. M23 alone supplies it while the first-failure surface is active. HELP/pause stops the collection; return starts a fresh focus epoch.
+
+On the existing failure_choice record, include actual commit input_mode, chosen_visual_side, focus_epoch_id, navigation_family=arrow|tab|mixed|none, navigation_steps, directional/Tab/Shift+Tab counts, and up to32 accepted navigation tokens in order with truncation flag/total count. No free text, unrelated keys, pointer trajectories or score adjustment. A pointer commit retains its own mode even after keyboard navigation. This is the minimum proposed evidence to examine arrow/Tab/position differences; no claim of equal cost or rare effects beyond the specified one-arrow paths. Optional observer/default preservation and genuine input traces must be verified after approval.
+
+### Verification additions and dependency
+
+G01–G05, P01–P10, K01–K07 and X01–X02 in U23-OUTCOME-FIXTURES.md are mandatory independent expectations. Run them under the existing M23 pure/extraction/browser/layout groups and both assigned orders/input modes where relevant. Also verify optional observer absent for existing surfaces; named M19/M20 and action regressions remain required. A-adjusted adds geometry/interaction/mast-chip restoration checks but no permission to alter other tasks or their expectations. Static render/math checks performed during preparation are distinct from these unexecuted runtime fixtures.
+
+D2/E dependency is intentional: if shift-end is censored and any valid eligible response remains unknown, E(c) exports primary null/numerator null with total eligible denominator, retaining known outcomes/count in components. This applies even with known1 elsewhere. No empirical frequency or small-cost assertion is supported. All prior count/eligibility/no-forced-failure/clustering rules remain unchanged and all nine specification decisions are owner-approved, with execution still unauthorized.
+
+## 13. Approved R1/R2/R4 closure specifications and selected scope
+
+### R1 — complete adjusted stake and approach proposal
+
+A-existing remains27 paths and retains its anchor/approach. A-adjusted is now30 paths: common27 plus src/world/layouts/yard.ts (only the four named prop removals and derived lamp solids), src/pilot/zoneSites.ts (only YARD_SITES.plotStake), and src/world/interactionRegistry.ts (only yard.plot_stake.approach). The owner selected the exact30-path A-adjusted list and its recorded hash. The27-path alternative is unselected history; do not activate both. No execution permission is granted.
+
+For A-adjusted pin anchor(1072,488), registry approach(1116,488), exactly44px east. Keep radius72, both plot bounds and all within-plot keys unchanged. This replaces the prior(1088,496) proposal; no station-spacing exception is requested or granted. The old registry approach(1052,384) must not survive the relocation.
+
+D-V2-1, zoneSites.ts:183–187, requires at least100px between stations and uniquely own-nearest approach points even within a±12px landing box. The previous anchor was89.554px from the M05 flag. Opus's candidate(1088,484) improves that to100.658px but still fails a direct dependency: at(1130,518), a permitted corner of the unchanged M05 approach(1142,530)±12, the flag is60.299px away while that candidate stake is54.037px away. Changing the stake's own approach cannot fix that neighbour-ownership failure. Its tested east44px approach(1132,484) also has tolerance positions entering B's region. Reject the candidate; do not waive the rule.
+
+The pinned anchor is103.942px from cableFlag(1124,578),111.866px from supplyCrate(997,571), and at least263.424px from every other registered yard anchor. Check only relationships affected by the relocation, not an assertion that every unchanged historical station pair satisfies100px. The registry approach is44px from its stake; across the entire±12 square x[1104,1128], y[476,500], its maximum stake distance is57.271px<72. The nearest competing flag is at least78px from this square. Unique ownership is checked in BOTH directions: the new approach against every registered station/door, and every unchanged approach against the new stake. Squared-distance differences are affine, so positive minima at all four corners prove unique ownership over each continuous landing square. The tight affected neighbour is M05 at(1130,518): flag60.299px, stake65.299px, squared margin628px². No nearest-wins tie or M05 station/timing edit is introduced.
+
+Anchor and approach are body-valid and outside BOTH exact probe-derived accepted regions. The entire approach±12 box is also outside: its minimum y476 puts the UP probe at448, excluded by the plots' half-open bottom edge; every other probe stays farther south. The feet envelope over this box is x[1093,1139), y[486,524), on walkable floor without intersection with any proposed pixel solid;625 integer samples additionally pass bodyFits. Existing yardVia uses margin9/reach6/landing tolerance8; the stronger±12 envelope covers that landing tolerance. Existing pure registry reachability uses walkingDistance reach12: proposed arrival→approach distance280px on its8px lattice. The inspected pure navGrid planner with the proposed solids plus Noor's foot solid finds margin9/reach6 routes from arrival, mast, rig and M05. Arrival route: snapped(896,560)→(896,488)→(1112,488), the planner endpoint(1112,488) is already within8px of the requested approach(1116,488). Subsequent driver calls retain tolerance8 and may accept that endpoint without travelling the final4px; the remaining segment is geometrically clear, but an exact final position is not guaranteed. This is source-model evidence, not executed held-key navigation or elapsed travel.
+
+The four named prop removals leave the approach/route clear; no new collider, art, waypoint or teleport is proposed. OPEN A/B at anchor, registry approach or any accepted landing-box point remains approaching/follow until actual region entry. Pending failure choice still takes precedence. Nominal plot-entry samples remain A(1072,464)/B(1104,464): displacement from anchor is24px/40px; from registry approach it is√2512=50.120px/√720=26.833px. These are unequal geometric displacements, not path length or duration. Participant positions vary; no equal-route claim. Fixed scrolls remain A(656,172)/B(880,172). Disclosed M20/landmark/shared-border/incidental-traversal limitations remain.
+
+### R2 — scene-local chip visibility lifecycle
+
+For A-adjusted only, the existing ExteriorRecoveryYardScene owns a derived mask condition: it currently owns either M23 fixed frame A or B. The mask is NOT tied merely to a plot being open, approaching, paused or having an outcome. Do not edit PilotZoneScene or the shared chip framework. Its clampWorldReadouts (PilotZoneScene.ts:945–983) sets each processed active chip hidden, then shows at most one nonempty, fully in-view chip whose centre is strictly nearer than120px. Omitting a chip skips even that initial hide.
+
+On fixed-frame entry, after establishing the camera mode and before the next world render, explicitly mastChip.setVisible(false) if the object is alive, and exclude mastChip from the list passed to clampWorldReadouts. Repeat BOTH operations on every onPilotUpdate while masked, after normal M20 text/art updates and before rendering. Keep the other chip entries/order unchanged: coupling, rig, line A, line B. No cached visible flag, alpha/text clearing, chip destruction or alteration of M20 text/state/scoring/timing/interaction/objective/beacon is allowed. Already-visible entry must hide immediately; list omission alone is insufficient.
+
+On leaving fixed framing, clear mask ownership, restore normal camera ownership, include the mast chip in the full original clamp list and immediately recompute against CURRENT player position, view, text bounds and proximity whenever the yard objects are alive and renderable. A previously visible chip may now be hidden, and a previously hidden chip may become visible; never restore remembered visibility. Thereafter the ordinary per-frame clamp continues. If the host is asleep/suspended, retain no rendered intermediate frame: recompute before its first resumed world render. Mask state is ephemeral presentation state, never persisted scientific state.
+
+Lifecycle expectations:
+- Entry and every continued A/B frame: force hidden plus exclude; no stale first-frame flash while within120px.
+- Switching through PANEL: old frame ends and ordinary clamp recomputes while the panel/follow mode is active; choosing the other plot first handles pending choice and position. Only entry into its fixed frame reinstates force-hide/exclusion before rendering. If an atomic fixed-A→fixed-B camera transition occurs without an intervening rendered ordinary frame, keep masking continuously.
+- Pause, region exit, HELP/PANEL/first-failure or another modal, blur and deliberate foreign-station interaction end fixed framing: recompute ordinary eligibility using the restored view. The chip may legitimately show behind a modal if normal rules allow it. Resuming outside remains ordinary; resuming inside reapplies mask before the fixed frame is rendered.
+- Departure: clear mask on relinquishing frame/camera ownership; if the yard still renders during transition, recompute once with the restored view. Return starts with ordinary eligibility; no retained mask/visible flag.
+- Shutdown: clear the mask and unregister the scene-local transition/update hooks through existing scene cleanup; if objects remain alive, explicitly hide the mast chip during teardown, without calling the clamp on destroyed objects. Do not resurrect an object or restore a saved flag. Scene recreation starts unmasked and computes ordinary visibility before first render.
+
+No substitute chip may obscure the active plot. This does NOT mean no other chip can ever appear. Direct source-model check corrects one assertion in the Opus report: B can approach rig chip centre(1434,210) to104.785px at accepted stance(1338,252), inside120px. The rig's current single-line text lies above the plot (plot top256); illustrative TALLY CLOSED bounds y202..218 are clear. A's other chip centres are all more than120px away. Preserve existing rig selection/text, then test ACTUAL getBounds for every visible chip against the active plot, plus full-view clamp rules and all supported M24 text states. If runtime bounds reveal obstruction, stop for a local amendment; do not silently mask another chip or expand the shared framework. The added B edge mockup illustrates an eligible rig chip above the plot, not certified Phaser text dimensions.
+
+### R4 — approved final neutral copy
+
+Append only “You can search either excavation plot, pause, or stop.” to Noor's common briefing before optional loan text. Remove the former second sentence “Recovering a component is not required.” from recommended player-facing copy. Keep the neutral excavation clause/objective, brief, closure explanation and other jobs/loan/flag/logbook wording/tags unchanged. G05 asserts the exact retained sentence and absence of the removed sentence. This final copy is approved by the owner's A ruling; approval makes no scientific-validity claim.
+
+### Direct regression dependencies and bounded evidence
+
+For A-adjusted ONLY, add these four UNMODIFIED specs to the future required regression plan:
+| Spec | Relevant coverage |
+|---|---|
+| e2e/world_v1_registry.spec.ts | All registry approaches inside72px and reachable from arrivals with reach12; unchanged ids/labels/door clearance. The existing spec alone does not prove D-V2-1 ownership/spacing; S01–S04 add those independent expectations in the already-allowed M23 spec. |
+| e2e/world_v2_yard_look.spec.ts | Real-input tour through every audited yard approach, own prompt at stake AND M05, and airlock round trip. |
+| e2e/collision_audit.spec.ts | Yard-only held-key collision/model agreement against remaining props, open-floor sweeps and return to spawn after removing two lamp solids. |
+| e2e/m05_start_route.spec.ts | Participant-route flag offer/start/defer/cap, focused-latency exclusions and raw reconstruction remain unchanged despite relocated nearby stake. |
+
+Schedule each ONCE by extending command6, not by running a second copy of the common regression block. Common specs, including m19_lines and m20_returns, remain once in that invocation. For the adjusted command6 set COLLISION_ROOM=exterior_recovery_yard, COLLISION_OUT=<external-evidence>/collision, WV3_OUT=<external-evidence>/yard-look and WV3_VIEWPORT=1280x720 in that isolated future session; append the four exact spec paths before the existing flags. Preserve/restore those task-local environment settings afterward. Their generated screenshots/logs go to external evidence; execution grants no write permission to their source files. M23 layout cases still cover both800×600 and1280×720 separately. Historical unselected A-existing would use common command6 without these additions; it is not scheduled for the selected implementation. Reruns require an actual failure, correction or unresolved concern, not duplicate scheduling.
+
+S01–S04 and V01–V06 in U23-OUTCOME-FIXTURES.md join the already-allowed e2e/m23_plots.spec.ts M23 pure/browser/layout groups; no new spec path is writable. No game suite is run in preparation. Direct evidence is in choice-evidence/choice-checks.json, source hashes and ten labelled choice PNGs. The new source-level clamp replay uses illustrative Text stubs and actual inspected clamp logic; it cannot prove Phaser bounds/frame timing. Plot keys, count, eligibility, continuation, unresolved-response policy, no forced failure and episode clustering are unchanged. R3 remains disclosed: nearby M20 interaction, different landmarks, shared border and incidental traversal may affect exposure; no empirical equivalence is asserted.
+```
+
+### U23 results (18 October 2026)
+
+- **Writer.** Claude Fable 5.1 (`claude-fable-5-1`), the one writer of the
+  unit. The reviewer roles were not discoverable as agents in this session
+  (`.claude/agents/*.md` present; the Agent tool lists none of them), so each
+  was run as the documented fallback — a general-purpose agent on the role's
+  model (`test-reviewer` on Sonnet; `scientific-reviewer`, `gameplay-reviewer`
+  and `visual-reviewer` on Opus) that reads its role file first; recorded
+  per review below. Evidence directory (outside the repository):
+  `C:\Users\Juls\AppData\Local\Temp\claude\C--Users-Juls--codex-worktrees-u23-m23-research-station-assessment-game\4cae0499-efde-4ea3-9568-1e4cd65a18bc\scratchpad\u23-evidence`
+  (`logs/`, `pure/`, `browser/`, `regression/`, `capture/`, `collision/`,
+  `yard-look/`, `m23-shots/`, `capture-shots/`, `base/`, `tools/`,
+  `LAUNCH-RECORD.json`, `OWNER-INSTRUCTION-2026-10-18.md`,
+  `guard-probe.txt`); the writer's development logs under the scratchpad
+  `devlogs/`. Copy the evidence directory to durable storage: the scratchpad
+  is session-local.
+- **What was built (the contract's §§3–7 and §13, inside the 30-path
+  allowlist; register §4 "Unit 23" (1)–(4) hold the full record).** NEW
+  `src/pilot/windows/m23PlotsContent.ts` (the administration `m23-plots-v1`
+  as data: the two plots' bounds, the four literal keys by form, the stake
+  (1072, 488) and its approach (1116, 488), the probe offsets, the
+  counterbalance slots, the region predicate, the signal and band helpers,
+  every participant string of §4, the modal and HUD geometry of §10; pure),
+  NEW `src/pilot/windows/m23PlotsModel.ts` (the pure series model: opening,
+  examples and help, the first usable selector as the one measured opening,
+  the reload hold-back, plot opening with approach samples and the first
+  body-valid entry, pauses, admission and the eight refusals, timed actions
+  with tokens, scan and dig resolutions, the cancellation with D3's
+  diagnostic, the first-failure presentation and its navigation trace, the
+  D1 choices, the selector STOP with its confirmation, the per-plot and
+  per-series closures, the faults, the entry and closure snapshots), NEW
+  `src/pilot/windows/m23SurfaceModel.ts` (the standard-frame views with
+  view-scoped element ids and a focus epoch), NEW
+  `src/pilot/windows/m23Plots.ts` (the adapter: `ItemWindow` `M23`,
+  opportunity `proto_m23_excavation_series`, window `m23_plots_w1`, family
+  `proto_m23_plots_`; the sink with the protocol stamp; `guarded()`; the
+  reload guard; the stake and panel openings; render-gated exposure
+  records; the commands and the ESC order; the field bridge for C / D / P;
+  the noted shift-end source; departure, resume, shift-end and review
+  closures; the DEV probe `window.__m23PlotsProbe`), NEW
+  `src/pilot/ui/M23FieldControls.ts` (the field HUD with its DEV probe
+  `window.__m23FieldProbe`), `src/pilot/ui/WorkSurfaceScene.ts` (an optional
+  input observer; other surfaces unchanged), `src/sprites/Player.ts` (an
+  optional external movement intent), `src/fieldActions/digController.ts`
+  (optional `deliverRecovery` / `onCancelled`),
+  `src/fieldActions/scanController.ts` (optional `presentation.readout` /
+  `onCancelled`), `src/pilot/exterior/exteriorEpisodeModel.ts` (the neutral
+  objective, the guidance setter), `src/pilot/windows/exteriorWindows.ts`
+  (the legacy binding retired from the route; the eight dormant
+  `setComprehension('passed')` kept), `src/scenes/ExteriorRecoveryYardScene.ts`
+  (two targets / zones / buried objects, the controllers with the
+  overrides, C / D / P routing, the stake station, the HUD, the fixed frame
+  with the mast chip masked, the environment listeners, the noted shift-end
+  source before the unchanged `endExteriorShift(now);`, the feedback
+  routing, the DEV `window.__yardChipProbe`; `guard()` unchanged),
+  `src/world/layouts/yard.ts` (four props removed), `src/pilot/zoneSites.ts`,
+  `src/world/interactionRegistry.ts` (the stake and its approach), NEW
+  `src/measurement/features/m23.ts` (the extractor),
+  `src/measurement/features/index.ts`, `src/measurement/registerV3.ts` (the
+  explicit v3 route, `implemented`; the feature row unchanged), NEW
+  `e2e/m23_plots.spec.ts` (19 pure + 8 extraction + 11 browser tests, with a
+  provenance sidecar `<frame>.json` beside every screenshot) and
+  `e2e/m23Helpers.ts`, the re-expressed `e2e/exteriorHelpers.ts`,
+  `e2e/pilot_yard.spec.ts`, `e2e/pilot_exterior_isolation.spec.ts`,
+  `e2e/pilot_exterior_capture.spec.ts` (frames to `U23_CAPTURE_OUT`),
+  `e2e/pilot_exterior_models.spec.ts`; the room document, the matrix row,
+  the register (§2, §4, §5.362–364), the addendum §2 "U23".
+- **Decision D-U23-1 as implemented (register §5.362; §4 "Unit 23"
+  (0)–(2)).** All nine rows as approved; no scientific decision taken by the
+  implementer; the §3 formula row (addendum :1359) and the partial-accuracy
+  paragraph (:1363–1370) untouched; every family name provisional; nothing
+  written to `event-schema.md` or `scoring-plan.md`. Implementer defaults in
+  register §5.363 (a)–(n); open items for the owner in §5.364 (a)–(d).
+- **Development verification by the writer (development evidence under the
+  scratchpad `devlogs/`; never the matrix).** `npm.cmd run lint:tsc` and
+  `npm.cmd run build` passed after every source change; the changed files
+  were linted through ESLint's non-mutating `--fix-dry-run` reference
+  (`lint-reference.mjs`; prettier / import-sort hunks applied by hand, or —
+  for `src/measurement/features/m23.ts`, `e2e/m23_plots.spec.ts`,
+  `e2e/m23Helpers.ts`, `e2e/pilot_exterior_isolation.spec.ts`,
+  `e2e/pilot_exterior_models.spec.ts`, `e2e/pilot_yard.spec.ts` — the
+  reference's formatted output copied over the file as the writer's own
+  copy: formatting only, no rule other than prettier / import sort; those
+  copies left the working files LF where the checkout is CRLF, which git
+  normalises on add). The four documents checked Prettier-clean in memory
+  (`prettier-diff.mjs`, non-mutating; the two shared tables re-padded by
+  Prettier because the U23 cells are the widest). Focused runs of the new
+  spec's groups: M23 pure 19 / 19, M23 extraction 8 / 8; the browser groups
+  one group at a time (`smoke-7.log`, `b2-5.log`, `browser-batch-1..5.log`):
+  the smoke (B1), B2, B3, B4, S1, S2, X1, X2, C, L1, L2 all passed in their
+  final development runs. Defects found and fixed by those runs: the probe
+  not republished after the stake opening; the brief's exposure record gated
+  on a surface that does not yet count as active during its first render; a
+  boundary closure settling the series as "both plots terminal"; a confirmed
+  stop after CONTINUE left unknown in the model (fixture B03);
+  `not_presented` and hold-back rows exporting a null denominator (O16 /
+  O17 / R02); the HUD's feedback line hidden with the HUD on a closure (the
+  recovery line lost); the dig readout reaching seven lines at a wrapped
+  facing line; a system pause (blur / hidden) cancelling the model's action
+  but not the world's; test-side: serialised predicates closing over
+  variables, the settle after a closed surface, a duplicate `window_closed`
+  in a kit path, the north stance on the region's edge, the HUD's own
+  feedback line read where the room's was expected.
+- **Final verification matrix, first run (contract §8, once, by the
+  test-reviewer — fallback general-purpose on Sonnet reading
+  `.claude/agents/test-reviewer.md`; logs `logs/<n>-<name>.log` /
+  `.exit`; port 5183 empty before and after each Playwright command; no
+  process killed).** Deviation in form, recorded: commands 4–7 ran through
+  the locally installed `node_modules/.bin/playwright` (Version 1.61.1, no
+  install) because the `npx.cmd` shim breaks on the contract's spaced and
+  piped `--grep` strings (`'C:\Program' is not recognized`); command 3 ran
+  through `npx.cmd --no-install` as written. Results: (1) `lint:tsc` exit 0;
+  (2) `build` exit 0 ("built in 949ms", the chunk > 500 kB warning; `dist`
+  inside the worktree); (3) the 25-path changed-file ESLint exit 0, no
+  output; (4) `--grep "M23 pure|M23 extraction"`: 27 passed (11.2 s); (5)
+  `--grep "M23 browser|M23 STOP|M23 boundaries|M23 cancellation|M23 layout"`:
+  11 passed (34.9 m); (6) the selected A-adjusted 12-spec command with
+  `COLLISION_ROOM=exterior_recovery_yard`, `COLLISION_OUT`, `WV3_OUT`,
+  `WV3_VIEWPORT=1280x720`: exit 1 — 3 failed, 6 skipped, 262 passed
+  (38.9 m): `m19_lines.spec.ts:2702` "source: the yard scene no longer
+  imports the legacy coupling…" (the slice of `finishOutside` must contain
+  `endExteriorShift(now);`; it contained `endExteriorShift(now, {…})`),
+  `pilot_exterior_isolation.spec.ts:65` test 1 (the Node-side
+  `extractItemFeatures('M23', …)` row came back `not_implemented`),
+  `pilot_yard.spec.ts:223` test 1 (the beacon read `Excavation Field Stake`
+  while the selector surface was still open, before the host scene ran
+  again); (7) `pilot_exterior_capture.spec.ts`: exit 1 at frame 11
+  (`couplingAct` → "prompt did not open" at the coupling: the retired v2
+  prompt); (8) `git diff --check` clean (one LF → CRLF warning), `verify-unit`
+  PASS. **Baseline rule applied by the test-reviewer** (an untouched
+  `git archive` of `a80629e` in the scratchpad `base-a80629e`, a PowerShell
+  junction to the primary `node_modules` because `cmd mklink /J` fails under
+  Git Bash, port 5184, one failing case each; `logs/9-base.log`): the three
+  command-6 cases PASS on the base — they are U23's own, not pre-existing;
+  the capture spec FAILS on the base with the same assertion (frame 11's
+  `couplingAct`) — pre-existing, and blocking the M23 frames 13 / 14 / 20
+  that command 7 must produce.
+- **Correction round 1 (the writer; inside the allowlist; cited failures
+  only).** (1) `src/pilot/windows/m23Plots.ts`: `noteM23ShiftEndSource()`
+  and an optional source on `closeM23PlotsAtShiftEnd` (the noted source,
+  else the system's); `src/pilot/windows/exteriorWindows.ts`: the default
+  object removed; `src/scenes/ExteriorRecoveryYardScene.ts`: the source
+  noted immediately before the byte-identical `endExteriorShift(now);` —
+  the M19 verification-only source check holds without touching that spec.
+  (2) `e2e/pilot_exterior_isolation.spec.ts`: the M23 row read through the
+  page's own export builder (the production path, as `pilot_yard`'s
+  `m19Row` / `m23Row`); the Node-side extraction of the same rules stays the
+  pure / extraction groups' subject. Diagnosis recorded: imported the
+  isolation spec's way in a scratch Playwright project outside the
+  repository, the M23 extractor registers and returns a row
+  (`not_presented`); the regression worker's `not_implemented` was not
+  reproduced in isolation (a worker-state interaction after the earlier
+  spec's failure forced a fresh worker is the writer's reading, unproven).
+  (3) `e2e/pilot_yard.spec.ts`: the beacon asserted after the surface
+  closed (OPEN PLOT and the walk in). (4) `e2e/pilot_exterior_capture.spec.ts`:
+  frame 11 re-expressed through the current coupling panel (Unit 21: the
+  panel opened at the station, the check, line 1 to its obstacle — frame
+  `11-m19-coupling-obstacle` — then the panel finished by the pilot_yard
+  route's own key path); the retired `couplingAct` / legacy `m19` probe
+  loop removed. Recorded as a deviation: the owner's expected capture edit
+  was the M23 keys (:100–119) only; the pre-existing base failure at frame
+  11 made this re-expression necessary for command 7 to reach the M23
+  frames. (5) `e2e/m23_plots.spec.ts`: a provenance sidecar `<frame>.json`
+  beside every screenshot (viewport, native camera scroll / zoom / view, the
+  series' assignment and per-plot status / form / stance / counts, the raw
+  sequence range, branch / base, participant route versus technical
+  fixture, the test title, the capture time) for the §8 index. Development
+  checks after the round: `lint:tsc` 0, the dry-run lint CLEAN on the seven
+  touched files, `verify-unit` PASS, focused runs X2 (2.8 m) and the smoke
+  (2.5 m) passed with sidecars written. The round-1 reruns by the
+  test-reviewer (commands 1–8, the named reason: a telemetry-path change in
+  the adapter / exterior windows / scene, a screenshot change, three
+  re-expressed specs; logs `logs/r1-<n>-<name>.log`) and the three read-only
+  reviews are recorded below.
+- **Round-1 reruns (the test-reviewer, commands 1–8 once each, logs
+  `logs/r1-<n>-<name>.log`; port 5183 empty before and after each Playwright
+  command, two TIME_WAIT sockets and no LISTEN after command 6; no process
+  killed; the same `node_modules/.bin/playwright` deviation in form).** (1)
+  exit 0; (2) exit 0, "built in 947ms"; (3) exit 0; (4) 27 passed (11.5 s);
+  (5) 11 passed (35.2 m); (6) exit 0 — 265 passed, 6 skipped, 0 failed
+  (43.3 m; the three first-run failures gone); (7) exit 1 — the one capture
+  test failed at the writer's own new assertion
+  (`m19_panel.line_in_work` read from the host probe while the panel was
+  open; the host scene's probe refreshes only once the surface closes — the
+  same stale-probe mistake as the beacon), fixed in round 2 (the panel's own
+  status line); on the base copy the test fails at the earlier prompt step
+  as before (`logs/r1-9-base-capture.log`); (8) `git diff --check` clean,
+  `verify-unit` PASS.
+- **Read-only reviews (contract §9; after the first matrix, in parallel,
+  on the round-1 tree; each a fallback general-purpose agent on Opus 5.5
+  (`claude-opus-5-5`) reading its role file first; findings are
+  recommendations, never rulings; none approves a scientific decision).**
+  - **scientific-reviewer** — verdict "concerns found", no blocking.
+    Major: M-1 an unpresented failure's confirmed selector STOP became a 0
+    in the model and an exclusion in the extractor (contract §5 keeps it
+    eligible and unknown) — RESOLVED in round 2 (model
+    `m23ObservedContinuation`, extractor); M-2 a later plot-scoped fault
+    on a plot holding a verified 1 erased it (E row, §6, T05 / T08) —
+    RESOLVED in round 2 (the extractor keeps an outcome recorded before the
+    fault); M-3 a scan inside a plot before the opening read NONE over a
+    buried component (§3, F5) — RESOLVED in round 2 (the field bridge
+    governs every C / D inside a plot rectangle in every series status:
+    refused `plot_not_active`, the pinned line, a record). Minor: m-4
+    extraction variants thin (RESOLVED: the fixtures also run under the
+    second assignment variant a2 / b2 / BA / stop_left); m-5 the unlogged
+    400 ms settle (RECORDED as default §5.363 (o), owner item §5.364 (f));
+    m-6 the D3 flag set only without a credit (RESOLVED: every
+    system-cancelled start after CONTINUE); m-7 unpinned example captions
+    (RESOLVED: removed); m-8 the review-closed status wording (RECORDED as
+    a limitation, never displayed); m-9 the addendum's decision list
+    (RESOLVED). Notes recorded in register §4 (7). Owner questions 1–3
+    recorded in §5.364 (b), (e) and the closed (g).
+  - **gameplay-reviewer** — verdict "usable with noted friction", no
+    blocking. Major: M1 the stake and foreign stations opened over a plot
+    in work without pausing it (§12 M2, R2 / V04) — RESOLVED in round 2
+    (the stake opens through the panel path; every other yard station's
+    prompt pauses a live plot first); M2 the HUD stayed on screen yard-wide
+    while a plot was paused or pending (§12 M1) — RESOLVED (visible only
+    while approaching / searching); M3 pinned lines never shown (`paused`,
+    the exit line, the field-controls line, the cell-label help, the fault
+    line) — RESOLVED (shown at the pause, on re-entry, once at the first
+    search, once with the first facing label, at the fault); M4 the room's
+    floating station prompt covers the highlighted cell at the entry
+    stances (§10, §13 R2) — OPEN: the prompt is drawn by the base scene
+    (`src/world/RoomScene.ts`, outside the 30-path allowlist, no scene hook,
+    no station-disable API) — a scope gap reported for the owner's layout
+    amendment, not worked around; M5 nothing tells the participant which
+    outline is A or B while approaching — PARTLY RESOLVED (the selected
+    plot's outline is emphasised while approaching; an A / B label or
+    location copy is pinned copy / layout and stays the owner's, §5.364);
+    M6 after a reload hold-back the guidance was never addressed (§12 M1,
+    G04) — RESOLVED. Minor: m1 P acted before the series and before the
+    yard stage (RESOLVED: `exterior_work` only; §5.363 (h) corrected); m2
+    extra example copy (RESOLVED with m-7); m3 the plot-fault line used for
+    a series fault (RESOLVED: the series-closed line); m4 P / HELP
+    cancellations logged as `system` (RESOLVED: the opening mode is kept);
+    m5 the "range console" dig line inside a plot before the opening
+    (RESOLVED by M-3: the M23 refusal precedes the ground's); m6 C / D
+    captured yard-wide while a non-terminal plot was selected (RESOLVED: a
+    selected plot governs only while approaching / searching, a plot
+    rectangle always); m7 the M22 report / Workshop handover still name a
+    recovered relay coupling (OPEN, outside the allowlist, §5.364 (n)); m8
+    browser coverage gaps (PARTLY RESOLVED: the HUD hidden away from the
+    plots and a foreign E while searching are asserted; V04 / V05 stay
+    source-reviewed); m9 presentation items (to the visual review). Owner
+    questions 1–6 recorded in §5.364.
+  - **visual-reviewer** (on the round-1 rerun's 38 frames and sidecars;
+    `capture-shots` partial at review time) — verdict "readable, with
+    defects". Blocking: 1 the room's floating stake prompt covers the
+    highlighted facing cell and the bottom row at both plots' entry stances
+    inside the fixed frame (`plot-a-south-entry-*`, `plot-b-south-entry-*`,
+    `smoke-01-a-searching-entry`; §10's stop rule) — OPEN, the scope gap
+    above (register §5.364 (g)); 2 the page-2 static example has no frame
+    — RESOLVED in round 2 (`static-example-2-*` at both viewports). Major:
+    3 subjects missing per viewport (first failure continue_left, A
+    terminal / B available and Plot A history at 1280 × 720; Plot B history
+    at 800 × 600) — RESOLVED (both plots' history and panel in the layout
+    route; an L3 continue_left route at 1280 × 720); 4 extremal stances
+    incomplete and no selected cell / readout at the boundary stances —
+    RESOLVED (the corner stances and the R2 rig-chip stance (1338, 252)
+    added, the avatar faces into the plot at each stance, the reading and
+    the dig precede the stance frames; the owner's reading of "extremal"
+    recorded §5.364 (k)); 5 the example heading pinned at y 24 collides
+    with the surface's title bar — OPEN, pinned geometry (§5.364 (h)); 6 no
+    visible beacon on page 1, unpinned captions — RESOLVED (a beacon glyph
+    and the pinned reading on page 1, the pinned COMPONENT CELL / EMPTY
+    CELL tiles on page 2, no other caption; §5.364 (i)); 7 no visible stake
+    at the anchor — RESOLVED as a marker (the procedural survey-stake
+    sprite shown at the anchor; §5.364 (l)). Minor: the shared surface's
+    11 px footer and label fonts (RECORDED: `WorkSurfaceScene` defaults for
+    every surface, unchanged); the dig readout's seventh line (RESOLVED:
+    the wrap estimate 19 characters) and the 87-character approach line in
+    the four-line scanner box (RESOLVED: the approach line goes to the
+    feedback line only; the scanner box keeps "No reading yet."); faint
+    grid lines at 800 × 600 (RECORDED); the lock line over the stake prompt
+    (RECORDED: the room's feedback box); the feedback line's height
+    assumed, not measured (RESOLVED: the field probe reports the line's
+    actual bounds, the sidecar records them and the layout group asserts
+    the line clear of the plot while a message shows); the sidecar's
+    `stance` field (RESOLVED: `entry_stance`, with the facing line and the
+    feedback added). Notes recorded in register §4 (7) (the pad's 252 px
+    rows inside the 256 px box; the brief's text box larger than §10's body
+    box so its four pinned paragraphs fit; the stopped plot's dug square
+    under the scanner plate). Owner questions 1–6 recorded in §5.364
+    (g)–(l).
+- **Correction round 2 (the writer; the second and last; the cited
+  findings above; inside the allowlist; register §4 (8)).** Source:
+  `m23PlotsModel.ts` (M-1 `m23ObservedContinuation`; m-6 the diagnostic
+  with or without a credit; M6 the hold-back addresses the guidance),
+  `features/m23.ts` (M-1 the explicit-stop defect only after a usable
+  presentation, `stopped_unpresented_ids`; M-2 `verifiedBeforeFault`,
+  `invalid_ids` the excluded plots, `faulted_ids` every faulted plot),
+  `m23Plots.ts` (M-3 / m6 `m23FieldGoverns`; M1 the stake pauses a plot in
+  work; M3 the paused / region-exit / ordinary-exit / fault lines; m3 the
+  series-closed line; m4 `pendingCancelMode`; M6 the hold-back's guidance
+  call), `m23SurfaceModel.ts` (m-7 / m2 / visual 6 the illustrations on
+  pinned copy at normal size; m3 the record view), `M23FieldControls.ts`
+  (the approach line off the scanner box, the 19-character wrap, the
+  feedback line's actual bounds in the probe),
+  `ExteriorRecoveryYardScene.ts` (M2 the HUD only while in work; M5 the
+  outline emphasis; M1 `m23PauseForForeignStation` in every other
+  station's prompt hook and the stake through the panel path; m1 P in
+  `exterior_work` only; M6 the hold-back guidance after the host install;
+  the field-controls and cell-label lines once; visual 7 the survey-stake
+  sprite). Tests: `m23_plots.spec.ts` (the review-round-2 pure and
+  extraction cases: unpresented stop unknown, a same-plot fault keeps the
+  1, the diagnostic after a credit, the fixtures under both assignment
+  variants; X1 the pre-opening refusals; X2 E at the stake while searching;
+  the layout route's page-2 frame, the corner and rig-chip stances with
+  the facing cell, both histories, the HUD hidden after the pause; L3 at
+  1280 × 720; the sidecar's `entry_stance`, facing and feedback fields),
+  `pilot_exterior_isolation.spec.ts` (the pre-opening refusals),
+  `pilot_exterior_capture.spec.ts` (frame 11's assertion on the panel's own
+  status line). Documents: register §4 (2) / (3) / (7) / (8), §5.363
+  (g)–(i), (o)–(v), §5.364 (b), (e)–(n); addendum §2 the decision list; the
+  room document's C / D bullets. Development checks after the round:
+  `lint:tsc` 0, the dry-run lint CLEAN on every touched file, M23 pure
+  20 / 20 (the new stances members), M23 extraction 9 / 9; the browser
+  groups' development batch and the round-2 reruns by the test-reviewer are
+  recorded below.
+- **Round-2 development browser batch (the writer; `browser-batch-r2*.log`;
+  one group per invocation; development evidence only).** First pass: the
+  smoke, B2, B3, B4, S1, S2, X2 and the cancellation test passed; X1 failed
+  on a missing helper import in the spec, L1 / L2 on the new feedback-bounds
+  assertion (the pinned 190-character field-controls line wraps to four
+  lines at design y 92 and crossed the plot's top row inside the fixed
+  frame — the line now shows once under ordinary follow while the first
+  plot approaches, after the approach line; register §5.364 (p)), and L3 on
+  its assignment request (no session id realises plot order AB with option
+  order `continue_left`: the register's counterbalance hash correlates the
+  slots — register §5.364 (o); L3 asks for the option order only). Second
+  pass: X1 failed on the refusal record's field name (`attempted_kind`,
+  not `kind`), L2 on the R2 rig-chip stance's 1 px margin at the plot's
+  east edge (the walk targets (1334, 252), 4 px inward, with a second nudge
+  in the stance helper). Third pass: X1 and L2 passed (2.3 m / 6.8 m); L1
+  and L3 had passed in the second pass (8.9 m for the two). Final
+  development state: every browser test (B1 smoke, B2, B3, B4, S1, S2, X1,
+  X2, C, L1, L2, L3), M23 pure 20 / 20 and M23 extraction 9 / 9 pass on the
+  round-2 tree; `lint:tsc` 0, the dry-run lint CLEAN, `verify-unit` PASS.
+- **Screenshot index (contract §8; the FINAL frames: the round-2 matrix's
+  command 5, `m23-shots/<frame>.png` with the provenance sidecar
+  `<frame>.json` beside each — viewport, native camera scroll / zoom, the
+  selected plot with its status / form / counts, the assigned order and
+  option order, the facing line, the raw sequence range of the family in
+  that load, participant route versus technical fixture (an assigned
+  session id or a reload), branch / base, capture time). Subjects at both
+  viewports: first failure in both option orders
+  (`first-failure-continue_left-a-*`, `first-failure-stop_left-b-*`,
+  `first-failure-continue_left-a-1280x720` from L3), the selector after
+  CONTINUE, the
+  selector STOP confirmation, A terminal / B available and the reverse,
+  each plot at its mid-edge, corner, interior and (B) rig-chip stances with
+  the reading, the dig and the facing cell (`plot-<a|b>-<stance>-*`),
+  both histories, the static example pages 1 and 2, the reload lock.**
+- `a-terminal-b-available-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected none; order BA / continue_left; Facing: C02 R02; sequences 91–115; participant_route; codex/u23-m23 / a80629e; 2026-10-18T15:22:01.618Z
+  - `a-terminal-b-available-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected none; order BA / continue_left; Facing: C07 R01; sequences 91–123; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:12:04.819Z
+  - `b-terminal-a-available-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected none; order AB / stop_left; Facing: C07 R01; sequences 91–123; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:16:00.899Z
+  - `b-terminal-a-available-800x600.png` — 800 × 600; scroll (841, 275) zoom 2; selected none; order AB / stop_left; Facing: C02 R02; sequences 91–113; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T14:47:23.844Z
+  - `b2-01-b-searching-pointer.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 0 scans, 0 digs); order AB / stop_left; Facing: C04 R03; sequences 91–100; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T14:47:10.920Z
+  - `first-failure-continue_left-a-1280x720.png` — 1280 × 720; scroll (655, 172) zoom 2; selected plot_a (choice_pending, form a2, 1 scans, 1 digs); order BA / continue_left; Facing: C02 R02; sequences 91–108; participant_route; codex/u23-m23 / a80629e; 2026-10-18T15:21:48.171Z
+  - `first-failure-continue_left-a-800x600.png` — 800 × 600; scroll (653, 172) zoom 2; selected plot_a (choice_pending, form a2, 1 scans, 1 digs); order BA / continue_left; Facing: C02 R02; sequences 91–108; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:11:16.578Z
+  - `first-failure-continue_left-b-800x600.png` — 800 × 600; scroll (879, 172) zoom 2; selected plot_b (choice_pending, form b1, 1 scans, 1 digs); order BA / continue_left; Facing: C02 R02; sequences 91–134; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:12:22.526Z
+  - `first-failure-stop-left-800x600.png` — 800 × 600; scroll (879, 172) zoom 2; selected plot_b (choice_pending, form b2, 1 scans, 1 digs); order AB / stop_left; Facing: C02 R02; sequences 91–108; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T14:47:17.321Z
+  - `first-failure-stop_left-a-1280x720.png` — 1280 × 720; scroll (653, 172) zoom 2; selected plot_a (choice_pending, form a1, 1 scans, 1 digs); order AB / stop_left; Facing: C02 R02; sequences 91–134; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:16:21.782Z
+  - `first-failure-stop_left-b-1280x720.png` — 1280 × 720; scroll (879, 172) zoom 2; selected plot_b (choice_pending, form b2, 1 scans, 1 digs); order AB / stop_left; Facing: C02 R02; sequences 91–108; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:15:13.356Z
+  - `plot-a-history-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a1, 2 scans, 1 digs); order AB / stop_left; Facing: C04 R03; sequences 91–140; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:16:28.485Z
+  - `plot-a-history-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order BA / continue_left; Facing: C04 R03; sequences 91–114; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:11:23.264Z
+  - `plot-a-interior-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a1, 2 scans, 1 digs); order AB / stop_left; Facing: C04 R03; sequences 91–140; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:16:30.220Z
+  - `plot-a-interior-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order BA / continue_left; Facing: C04 R03; sequences 91–114; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:11:25.256Z
+  - `plot-a-north-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a1, 2 scans, 1 digs); order AB / stop_left; Facing: C04 R01; sequences 91–140; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:16:39.251Z
+  - `plot-a-north-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order BA / continue_left; Facing: C04 R01; sequences 91–114; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:11:33.605Z
+  - `plot-a-northeast-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a1, 2 scans, 1 digs); order AB / stop_left; Facing: C07 R01; sequences 91–145; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:16:58.926Z
+  - `plot-a-northeast-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order BA / continue_left; Facing: C07 R01; sequences 91–119; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:11:52.154Z
+  - `plot-a-northwest-outer-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a1, 2 scans, 1 digs); order AB / stop_left; Facing: C01 R01; sequences 91–145; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:16:47.498Z
+  - `plot-a-northwest-outer-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order BA / continue_left; Facing: C01 R01; sequences 91–119; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:11:41.944Z
+  - `plot-a-south-entry-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a1, 0 scans, 0 digs); order AB / stop_left; Facing: C07 R06; sequences 91–126; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:16:10.460Z
+  - `plot-a-south-entry-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 0 scans, 0 digs); order BA / continue_left; Facing: C07 R06; sequences 91–100; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:11:06.287Z
+  - `plot-a-southwest-outer-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a1, 2 scans, 1 digs); order AB / stop_left; Facing: C01 R06; sequences 91–145; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:16:51.714Z
+  - `plot-a-southwest-outer-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order BA / continue_left; Facing: C01 R06; sequences 91–119; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:11:46.166Z
+  - `plot-a-west-outer-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a1, 2 scans, 1 digs); order AB / stop_left; Facing: C01 R04; sequences 91–140; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:16:33.773Z
+  - `plot-a-west-outer-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order BA / continue_left; Facing: C01 R04; sequences 91–114; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:11:28.505Z
+  - `plot-b-east-outer-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order AB / stop_left; Facing: C07 R04; sequences 91–114; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:15:25.287Z
+  - `plot-b-east-outer-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b1, 2 scans, 1 digs); order BA / continue_left; Facing: C07 R04; sequences 91–140; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:12:34.436Z
+  - `plot-b-history-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order AB / stop_left; Facing: C04 R03; sequences 91–114; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:15:19.741Z
+  - `plot-b-history-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b1, 2 scans, 1 digs); order BA / continue_left; Facing: C04 R03; sequences 91–140; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:12:29.252Z
+  - `plot-b-interior-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order AB / stop_left; Facing: C04 R03; sequences 91–114; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:15:21.788Z
+  - `plot-b-interior-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b1, 2 scans, 1 digs); order BA / continue_left; Facing: C04 R03; sequences 91–140; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:12:30.949Z
+  - `plot-b-north-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order AB / stop_left; Facing: C04 R01; sequences 91–114; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:15:29.968Z
+  - `plot-b-north-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b1, 2 scans, 1 digs); order BA / continue_left; Facing: C04 R01; sequences 91–140; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:12:39.734Z
+  - `plot-b-northeast-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order AB / stop_left; Facing: C07 R01; sequences 91–119; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:15:48.275Z
+  - `plot-b-northeast-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b1, 2 scans, 1 digs); order BA / continue_left; Facing: C07 R01; sequences 91–145; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:12:56.780Z
+  - `plot-b-rig-chip-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order AB / stop_left; Facing: C07 R01; sequences 91–119; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:15:38.961Z
+  - `plot-b-rig-chip-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b1, 2 scans, 1 digs); order BA / continue_left; Facing: C07 R01; sequences 91–145; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:12:47.490Z
+  - `plot-b-south-entry-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 0 scans, 0 digs); order AB / stop_left; Facing: C01 R06; sequences 91–100; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:15:02.906Z
+  - `plot-b-south-entry-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b1, 0 scans, 0 digs); order BA / continue_left; Facing: C01 R06; sequences 91–126; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:12:12.314Z
+  - `plot-b-southeast-outer-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order AB / stop_left; Facing: C07 R06; sequences 91–119; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:15:43.475Z
+  - `plot-b-southeast-outer-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b1, 2 scans, 1 digs); order BA / continue_left; Facing: C07 R06; sequences 91–145; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:12:52.015Z
+  - `reload-lock-1280x720.png` — 1280 × 720; scroll (741, 341) zoom 2; selected none; order AB / stop_left; —; sequences 212–213; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:19:48.671Z
+  - `reload-lock-800x600.png` — 800 × 600; scroll (744, 338) zoom 2; selected none; order BA / continue_left; —; sequences 243–244; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T14:54:51.697Z
+  - `selector-after-continue-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (paused, form b2, 2 scans, 1 digs); order AB / stop_left; Facing: C07 R01; sequences 91–121; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:15:51.015Z
+  - `selector-after-continue-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (paused, form a2, 2 scans, 1 digs); order BA / continue_left; Facing: C07 R01; sequences 91–121; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:11:55.011Z
+  - `selector-after-continue-ab-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (paused, form a2, 1 scans, 1 digs); order BA / continue_left; Facing: C02 R02; sequences 91–113; participant_route; codex/u23-m23 / a80629e; 2026-10-18T15:21:53.174Z
+  - `selector-stop-confirmation-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (paused, form b2, 2 scans, 1 digs); order AB / stop_left; Facing: C07 R01; sequences 91–122; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:15:56.950Z
+  - `selector-stop-confirmation-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (paused, form a2, 2 scans, 1 digs); order BA / continue_left; Facing: C07 R01; sequences 91–122; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:12:00.880Z
+  - `selector-stop-confirmation-b-800x600.png` — 800 × 600; scroll (751, 338) zoom 2; selected none; order BA / continue_left; —; sequences 91–98; participant_route; codex/u23-m23 / a80629e; 2026-10-18T15:01:23.363Z
+  - `smoke-01-a-searching-entry.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a1, 0 scans, 0 digs); order AB / stop_left; Facing: C07 R06; sequences 91–100; participant_route; codex/u23-m23 / a80629e; 2026-10-18T14:44:58.887Z
+  - `smoke-02-first-failure.png` — 800 × 600; scroll (654, 172) zoom 2; selected plot_a (choice_pending, form a1, 1 scans, 1 digs); order AB / stop_left; Facing: C02 R02; sequences 91–108; participant_route; codex/u23-m23 / a80629e; 2026-10-18T14:45:08.072Z
+  - `smoke-03-selector-after-continue.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (paused, form a1, 2 scans, 1 digs); order AB / stop_left; Facing: C02 R02; sequences 91–116; participant_route; codex/u23-m23 / a80629e; 2026-10-18T14:45:13.974Z
+  - `smoke-04-stop-confirm.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (paused, form a1, 2 scans, 1 digs); order AB / stop_left; Facing: C02 R02; sequences 91–117; participant_route; codex/u23-m23 / a80629e; 2026-10-18T14:45:18.453Z
+  - `static-example-1280x720.png` — 1280 × 720; scroll (743, 335) zoom 2; selected none; order AB / stop_left; —; sequences 91–94; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:14:48.441Z
+  - `static-example-2-1280x720.png` — 1280 × 720; scroll (743, 335) zoom 2; selected none; order AB / stop_left; —; sequences 91–95; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:14:53.025Z
+  - `static-example-2-800x600.png` — 800 × 600; scroll (749, 335) zoom 2; selected none; order BA / continue_left; —; sequences 91–95; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:10:55.940Z
+  - `static-example-800x600.png` — 800 × 600; scroll (749, 335) zoom 2; selected none; order BA / continue_left; —; sequences 91–94; technical_fixture; codex/u23-m23 / a80629e; 2026-10-18T15:10:51.318Z
+    Superseded by the round-2 names and left in the folder from the earlier
+    runs (not evidence): `first-failure-continue_left-800x600.png`, `first-failure-stop_left-1280x720.png`.
+- **Round-2 reruns (the test-reviewer, commands 1–8 once each on the
+  round-2 tree, logs `logs/r2-<n>-<name>.log` / `.exit`; the same
+  `node_modules/.bin/playwright` deviation in form).** (1) exit 0; (2) exit
+  0; (3) exit 0 (no output); (4) exit 0 — 29 passed (11.5 s; the M23 pure
+  and extraction groups including the review-round-2 cases); (5) exit 0 —
+  12 passed (38.9 m: B-smoke, B2, B3, B4, S1, S2, X1, X2, C, L1, L2, L3; the
+  FINAL frames indexed above were written by this run, capture times
+  2026-10-18T14:44:58Z–15:22:01Z, i.e. 01:44–02:22 local); (6) exit 1 — 264
+  passed, 6 skipped, 1 failed (40.5 m): `pilot_exterior_isolation.spec.ts:63`
+  test 1 fails at `:104`, `expect(faProbe.scan.last).toBeNull()` after the
+  pre-opening C inside Plot A — the refusal line is shown as asserted at
+  `:103`, but `scan.last` still holds the ordinary apron scan recorded
+  earlier in the same test at (406, 251), so the assertion reads a stale
+  record rather than a new scan; a test-side assertion defect introduced by
+  the writer in round 2 (the correct check is that `scan.last` did not
+  change), NOT a product failure; left unfixed because a third
+  implementation round is not permitted (owner instruction §9; contract §10)
+  — recorded for the next authorised round; the test-reviewer's baseline
+  run of that test on the a80629e copy (port 5184, no rebuild,
+  `logs/r2-9-base-isolation.log`) passed in 2.7 m — the base spec asserts
+  `scan.last?.category` 'none' at its lines 73 / 98 and has no `toBeNull`
+  assertion, so the failure is new to the round-2 spec and NOT
+  pre-existing; (7) exit 0 — the capture spec's
+  one test passed (5.0 m), the thirteen participant-view frames under
+  `capture-shots/` (frames `13a`–`13c`, `14a`–`14b`, `20` the M23 subjects);
+  (8) `git diff --check` clean (the CRLF warning for
+  `pilot_exterior_isolation.spec.ts` only); `verify-unit` PASS — "every
+  change is inside the unit allowlist", 22 unstaged paths, nothing staged.
+- **Targeted rechecks after round 2 (contract §9; the same three reviewers
+  resumed with their own cited findings only; read-only; nothing run).**
+  _scientific-reviewer_ (`claude-opus-5-5` fallback): M-1 RESOLVED
+  (unpresented stop → unknown; `stopped_unpresented_ids`); M-2 RESOLVED
+  (`verifiedBeforeFault`; `invalid_ids` vs `faulted_ids`); M-3 PARTLY —
+  still major: inside the rectangle C / D are refused in every status, but
+  in the boundary ring that qualifies through a selector probe the series
+  governs only while the plot is approaching or searching, so a participant
+  whose plot paused on leaving the region and who walks back into the ring
+  without RESUME gets the ordinary scan's no-signal reading — register
+  §5.364 (q) with the proposed change (govern on region membership in every
+  status); m-4 PARTLY — the extraction fixtures commit with `keyboard`
+  only, register §5.364 (t); m-6 RESOLVED; m-7 copy RESOLVED but the fix
+  introduced a NEW MAJOR: page 2 lost the character facing the cell and
+  highlights only the COMPONENT CELL tile, against decision B's "same
+  character facing the adjacent highlighted cell" in both versions —
+  register §5.364 (r) with the proposed change; m-9 RESOLVED (addendum §2
+  list). Owner questions raised: the ring refusal rule, the page-2 figure,
+  and `closure_reason` `technical_failure` on an observed row when both
+  plots fault after verified outcomes — register §5.364 (s).
+  _gameplay-reviewer_ (`claude-opus-5-5` fallback): M1 RESOLVED (the stake
+  through `openM23Panel`; `m23PauseForForeignStation` first in all eleven
+  other station hooks; X2 asserts the stake case); M2 RESOLVED (HUD only
+  while approaching / searching; the layout route asserts it hidden); M3
+  PARTLY — the paused, region-exit, ordinary-exit, fault and cell-label
+  lines now show, but the field-controls line appears only after 2.5 s of
+  approaching, which the nominal 24 px entry from the stake rarely reaches
+  (register §5.364 (j) / (p), the owner's placement question; the briefing
+  and the hint chips still name the keys); M4 NOT RESOLVED — scope gap
+  confirmed (`RoomScene.proximityPrompt` is private in
+  `src/world/RoomScene.ts`, outside the allowlist; register §5.364 (g);
+  still a major, so the commit condition is not met; §5.364 (d) reworded in
+  this round to point at (g)); M5 RESOLVED; M6 RESOLVED (no browser assertion of
+  the objective / beacon after the lock — source-reviewed); m1–m6 RESOLVED
+  (m5: C / D inside a plot before any opening now show the pinned "Open the
+  plot panel (P) to resume." line and write `plot_not_active` refusals
+  before presentation and after closure — acceptability of those records is
+  the scientific reviewer's area; m2's side effect is the page-2 figure
+  above); m7 OPEN — scope gap confirmed (`m22ReportModel.ts`,
+  `RecordsWorkshopScene.ts`; minor; §5.364 (n)); m8 PARTLY — no browser
+  assertion for E at a foreign station (`overlay` pause); V04 / V05
+  source-reviewed. The reviewer also confirmed the command-6 isolation
+  failure above as a test-side assertion.
+  _visual-reviewer_ (`claude-opus-5-5` fallback; the round-2 frames):
+  blocking 1 NOT RESOLVED — the band "E / Space — Use Excavation Field
+  Stake" crosses the highlighted entry cell in `plot-a-south-entry-*`,
+  `plot-b-south-entry-800x600` and the participant-route
+  `smoke-01-a-searching-entry` (C07 R06 at 1280: band y 507–533 over the
+  cell y 490–550), scope gap confirmed (§5.364 (g)), still blocking under
+  contract §10; blocking 2 frames RESOLVED (`static-example-2-*` exist),
+  content NOT RESOLVED — no figure, only the COMPONENT CELL tile
+  highlighted, labels about 7 CSS px at 800 × 600, the teal tile fill
+  matches the accent button beside it (§5.364 (r)); major 3 RESOLVED (all
+  four subjects present and correct); major 4 RESOLVED (six corner / rig
+  stances at both viewports, an in-plot facing cell highlighted in every
+  stance frame, no chip over the plot at the rig-chip stance; the south
+  entries remain under blocking 1); major 5 NOT RESOLVED — pinned geometry
+  confirmed (§5.364 (h)); major 6 PARTLY — captions gone, the page-1 beacon
+  is a single "◉" glyph about 6 CSS px at 800 × 600 with no depiction of
+  the 80 px distance (§5.364 (u)); major 7 RESOLVED (the stake post drawn
+  in `reload-lock-*` and the plot frames; the lock line covers the stake
+  prompt almost entirely — note only); dig-readout wrap NOT RESOLVED
+  (minor) — the 19-character estimate counts the field-tray line as two
+  lines where the renderer wraps it to three, so the spacer stays and the
+  box shows 7 rows against §10's six (text still ends inside the box,
+  `plot-a-history-1280x720` rows y 327–499 against the bottom at 512) —
+  §5.364 (v); approach line PARTLY — moved to the feedback line, no frame
+  captures it (static estimate two lines ending about 134 design px, 6 px
+  above the plot top); feedback bounds PARTLY — the real bounds are checked
+  by `expectHudClearOfPlot` when a message is showing, every captured
+  bound is one 24 px line ending at design y 116, but `feedback_bounds` is
+  null in all 24 stance frames so the real-bounds check never ran at a
+  stance and no two-line message is evidenced (§5.364 (v)). Owner
+  decisions listed by the reviewer: the stake-prompt amendment, the page-2
+  figure and double highlight, the heading below the title bar.
+- **Open after round 2 (no third round — owner instruction §9, contract
+  §10 "at most two bounded implementation correction rounds").** Blocking:
+  the base-scene floating stake prompt over the highlighted entry cell
+  (scope gap, `src/world/RoomScene.ts`; §5.364 (g)). Major: the page-2
+  illustration without the figure and the second highlight (§5.364 (r));
+  the example heading geometry (pinned; §5.364 (h)); the boundary-ring
+  refusal while a plot is paused (§5.364 (q)). Minor / recorded: the
+  command-6 isolation assertion defect (above); the dig-readout row count
+  and the unevidenced two-line feedback (§5.364 (v)); the page-1 beacon
+  glyph (§5.364 (u)); the field-controls line's first-approach timing
+  (§5.364 (p)); E at a foreign station without a browser assertion; the
+  pointer variants of the extraction fixtures (§5.364 (t)); the
+  `closure_reason` note (§5.364 (s)); the M22 relay-coupling text (§5.364
+  (n)); the counterbalance hash correlation (§5.364 (o)).
+- **Commit decision.** NOT COMMITTED. The owner's instruction permits the
+  single commit only when "no blocking or major finding is open" and every
+  matrix command passed or was proven pre-existing; one blocking and three
+  major findings are open and command 6 has a new (not pre-existing)
+  test-side failure, so the worktree is left uncommitted with every change
+  in place (30 paths, all inside the allowlist; `verify-unit` PASS) for the
+  owner's decision. Nothing was staged. The hook equivalents (1)–(4) were
+  therefore not run on a staged set; the development equivalents on the
+  working files (lint:tsc 0, the dry-run lint CLEAN, the in-memory Prettier
+  check CLEAN on every touched Markdown file, commitlint exit 0 on the
+  prepared `COMMIT_MSG.txt`) are recorded above and below.
+- **Bounded-unit handoff fields (contract §9; owner instruction §11).**
+  (1) Branch `codex/u23-m23`, worktree
+  `C:\Users\Juls\.codex\worktrees\u23-m23\research-station-assessment-game`,
+  base `a80629e94b5f49ff944eef3a4c936b0de8cff29a` (HEAD unchanged). (2)
+  Commit SHA: none — no commit (conditions not met, above); the prepared
+  subject `feat(m23): add two-plot post-failure excavation protocol` in
+  `COMMIT_MSG.txt`. (3) Changed files: the 30 allowlisted paths exactly —
+  22 modified, 8 new (the m23 model / content / surface / plots / field
+  controls / feature / helpers / spec files); nothing outside. (4) What was
+  built: the two-plot post-failure excavation protocol at the yard's
+  survey stake — selector, brief, two static examples, approach and search
+  in the fixed frame, C scan / D dig with the signal readout, the first
+  failed dig's CONTINUE / STOP choice in a counterbalanced option order,
+  pause / resume, the shift-end and review closures, the reload lock, the
+  provisional telemetry family and the feature extractor rows. (5) Events
+  and scoring: the `proto_m23_plots_*` family is PROVISIONAL (candidate
+  names, not canonical); the `m23_plots_w1` window and the derived rows
+  are candidates under register §5.362 / addendum §2; no scoring formula,
+  weight or global score was added; the registerV3 formula row and the
+  addendum's pinned lines (:1359, :1363–1370) are unchanged. (6)
+  Verification: the round-2 matrix above — commands 1–5, 7, 8 passed;
+  command 6 exit 1 on the one isolation assertion (test-side, new, not
+  pre-existing); 59 FINAL frames indexed (plus two superseded); the
+  capture spec's frames under `capture-shots/` (17 files). (7)
+  Reviewer findings: the three reviews and the three rechecks above —
+  resolved: scientific M-1, M-2, m-6, m-9; gameplay M1, M2, M5, M6, m1–m6;
+  visual majors 3, 4, 7; open: listed under "Open after round 2". (8)
+  Existing configuration preserved: no change under `.claude/**`, hooks,
+  settings, agents, skills, `package.json` / lock; legacy M23 files
+  untouched; 8 `setComprehension('passed')`; the
+  `guard(item: 'M20' | 'M23' | 'M24' | 'M26'` signature unchanged;
+  default-preserving edits only in Player / dig / scan / WorkSurfaceScene;
+  yard / zoneSites / interactionRegistry within the A-adjusted limits. (9) Limitations: the reviewers ran as
+  general-purpose fallbacks on `claude-opus-5-5` / the test-reviewer on
+  Sonnet reading the role files (the project agents were not discoverable
+  by name in this session); the matrix used `node_modules/.bin/playwright`
+  for commands 4–7 because the `npx.cmd` shim breaks on arguments with
+  spaces or `|`; runtime evidence is the round-2 frames and logs under the
+  evidence directory. (10) Deviations and things left out: no commit;
+  `node_modules/.bin/playwright` for the matrix; a PowerShell junction for
+  the a80629e base copy used by the baseline runs; frame 11 of the capture
+  spec re-expressed on the panel's own status line; LF working files
+  (`pilot_exterior_isolation.spec.ts`) noted by `git diff --check`; the
+  third round not started. (11) Did not change: the primary checkout,
+  `package.json` / `package-lock.json`, `.agents/`, `.codex/`, `reports/`,
+  `research_notes/`, `.claude/**`, `scripts/claude/**`, hook configuration,
+  git config, any U22 / U24 file, any approved decision. (12) Nothing was
+  pushed, merged, tagged, deployed, deleted or removed; no PR; no install;
+  no remote contact; no PixelLab call; no second commit (no first).
+
+### U23 round 3 (19 October 2026)
+
+Owner authorization of round 3 (research owner Juls, 19 October 2026),
+recorded verbatim from `U23-FABLE-R3-EXECUTE.md` §A (identical to
+`U23-CLOSEOUT-AMENDMENT.md` §0); the owner's in-session instruction of the
+same day ("I explicitly authorize U23 round 3 under the complete approved
+execution brief at: C:\Users\Juls\.codex\visualizations\2026\10\15\u23-closeout-r3\U23-FABLE-R3-EXECUTE.md
+... Exactly one local commit if all amended acceptance conditions are
+satisfied; otherwise stop uncommitted. No fourth round, push, merge or U24
+work.") replaced only the requirement to paste the brief inline.
+
+```text
+This is my explicit instruction as research owner.
+
+I approve the U23 closeout selections below and ONE additional bounded implementation/review round, round 3. Preserve the existing uncommitted implementation. Fable remains the sole implementation writer; Sonnet runs verification; Opus performs the focused read-only reviews.
+
+Your task in this Opus preparation session is to record this approval, correct the continuation instructions and prepare the executable handoff. Do not begin implementation or launch another session yourself.
+
+APPROVED SELECTIONS
+
+- OD-1: Add src/world/RoomScene.ts as the 31st allowed path, limited to the default-preserving M23 prompt-suppression hook.
+- OD-2: Use ☻▸ at 40 px, both illustrated cells highlighted, illustration labels at 20 px, and the page-1 beacon/figure arrangement proposed in the amendment. Verify the implemented rendering at both viewports.
+- OD-3: Approve the heading box {24, 48, 672, 40}.
+- OD-4: Approve the boundary-ring state table, with no automatic resumption, ordinary scan/dig leakage, or changed eligibility or credit.
+- OD-6: Approve C2, the M23-local joint 16-cell assignment and provisional assignment_scheme field. Keep m23-plots-v1, distinguish pre-amendment evidence, and leave the shared assignment helper unchanged. Describe synthetic distribution results accurately; do not claim guaranteed recruitment balance or scientific validation.
+- OD-8a: Approve the two verbatim controls-guidance parts, four seconds each, without blocking movement or participant actions.
+- OD-8b: Approve the separate field-tray plate and actual rendered-bounds checks.
+- Approve the isolation assertion repair, closure_reason conformance correction, and pointer/mixed extraction fixtures.
+- OD-R: Authorize one additional bounded round under the amended 31-path boundary and its per-file restrictions. The existing two-round limit is superseded only for this specified round.
+
+REQUIRED CONTINUATION CORRECTIONS
+
+1. Resume the existing dirty worktree safely:
+   C:\Users\Juls\.codex\worktrees\u23-m23\research-station-assessment-game
+   Branch: codex/u23-m23
+   Base: a80629e94b5f49ff944eef3a4c936b0de8cff29a
+
+   Preserve all existing U23 changes. Do not require a clean tree, reset anything, recreate the worktree or rerun the original clean-start launcher.
+
+2. Prefer resuming the existing session:
+   4cae0499-efde-4ea3-9568-1e4cd65a18bc
+
+   Make the session ID, guarded scratchpad and evidence location agree. Export the amended allowlist BEFORE starting Claude. Explicitly restore PW_DEV_PORT=5183, package/base/branch/worktree variables, evidence and output paths, and the verified formatter-helper path. Use separate round-3 outputs without overwriting previous evidence.
+
+   Include the existing session-only Git identity instructions and explicit Fable selection. Retain the actual-model gate and both live guard probes before repository edits. Do not assume a new PowerShell window inherited these settings.
+
+3. Preserve .agents/ and .codex/ without staging or changing them. Record their exact pre-existing file inventory and hashes before implementation.
+
+   I authorize a narrowly limited verifier exception only if its failures exclusively identify those recorded, unchanged foreign metadata files. Report the actual exit code and failure lines; never call that result PASS. Every U23 change must satisfy the amended allowlist and all other checks. New metadata files, changed contents or any other violation are not covered by this exception. Do not modify the guard, verifier or ignore configuration.
+
+REQUIRED VERIFICATION CORRECTIONS
+
+- Specify the execution shell and environment for every command.
+- Preserve the approved working-tree line-ending handling, and use strict rules on final staged content.
+- Restore m26_protocol_foundation to the affected regression plan.
+- Cover both plots and the approved inactive-state table for ring refusal. Check ordinary scan, dig and refusal records, as well as M23 state and outcomes.
+- Actually activate the nearby foreign station: verify M23 pauses, that station opens and existing M23 outcomes remain intact.
+- Retain the actual two-line feedback, glyph, heading and tray evidence at both viewports.
+- Retain all four final staged-content hook checks and the post-commit scope check.
+- A baseline comparison must reach the same failing assertion on the untouched base. A passing older test without that assertion is not proof of a pre-existing failure.
+
+EXECUTION BOUNDARY
+
+Fable may perform the one implementation round and ordinary development checks, followed by one Sonnet verification pass and the focused Opus rechecks. No fourth review/fix round.
+
+Make exactly one local commit carrying the complete U23 change only if the amended acceptance conditions are satisfied:
+feat(m23): add two-plot post-failure excavation protocol
+
+Otherwise leave the work uncommitted and report the remaining findings. No push, merge, PR, tag, deployment, installation, configuration changes, reset, deletion, worktree removal or U24 implementation.
+
+Record the other reported assignment-slot coupling as a separate follow-up to resolve before participant collection. The diagnostic names seven other slot keys; do not claim seven active units are affected without establishing their current use. Do not fix them in U23.
+
+DELIVERABLES FROM THIS PREPARATION SESSION
+
+Update the amendment with this dated approval and the requirements above. Prepare:
+- the final amendment;
+- the exact 31-path allowlist;
+- U23-RESUME-R3.ps1, with a genuinely read-only -CheckOnly mode;
+- U23-FABLE-R3-EXECUTE.md, containing explicit owner execution authorization and the inherited boundaries.
+
+Save only in the allowed scratchpad. Return exact hashes and complete user-run copy, check and resume commands. Keep the durable closeout files separate from the frozen 82-file scientific package.
+
+Validate the continuation script without launching it. Do not repeat scientific diagnostics, previews, broad audits or game suites during this preparation. Then stop.
+```
+
+- **Governing closeout set (durable folder
+  `C:\Users\Juls\.codex\visualizations\2026\10\15\u23-closeout-r3`, separate
+  from the frozen 82-file package whose manifest digest
+  `ef22dace97070cfd2503c2630a4e3a5f8e929b96e715094fbeabde8fb3934be2`
+  re-verified).** `U23-CLOSEOUT-AMENDMENT.md` SHA-256
+  `101748e8e5ee3a43782306616750b0aefb67deb91c1d647370b2436b86455c6f`;
+  `U23-FABLE-R3-EXECUTE.md` SHA-256
+  `bdd2ad2511a5a4d0123fa4c66d10dbd78bdc1c2c3974fb4a61b5791e41362c1c`;
+  `U23-RESUME-R3.ps1` SHA-256
+  `8998e43be056609f75c25a7592728635d24b1f3dd89c566af8c9ec9c1e4c9e8a`;
+  `foreign-metadata-check.mjs` SHA-256
+  `5a0f4531515857342125058040d923f3b107705a6e54c8d26990bd1fd3f606ae`.
+- **Amended allowlist `U23-ALLOWLIST-A-AMENDED.txt` (SHA-256
+  `e61d05a048a5eb359c369bcc58681aecef995fb9d3d5d5cce4340a6196c58215`; the
+  selected 30 plus one):** `src/pilot/windows/m23PlotsContent.ts`,
+  `src/pilot/windows/m23PlotsModel.ts`, `src/pilot/windows/m23Plots.ts`,
+  `src/pilot/windows/m23SurfaceModel.ts`, `src/pilot/ui/M23FieldControls.ts`,
+  `src/pilot/ui/WorkSurfaceScene.ts`, `src/measurement/features/m23.ts`,
+  `src/measurement/features/index.ts`, `src/measurement/registerV3.ts`,
+  `src/pilot/windows/exteriorWindows.ts`,
+  `src/pilot/exterior/exteriorEpisodeModel.ts`,
+  `src/scenes/ExteriorRecoveryYardScene.ts`, `src/sprites/Player.ts`,
+  `src/fieldActions/digController.ts`, `src/fieldActions/scanController.ts`,
+  `docs/game/rooms/11-exterior-recovery-yard.md`,
+  `docs/verification/station-080-m26/IMPLEMENTATION-MATRIX.md`,
+  `docs/verification/station-080-m26/M01-M26-IMPLEMENTATION-REGISTER.md`,
+  `docs/verification/station-080-m26/SCORING-AND-EVENT-ADDENDUM-v1.md`,
+  `docs/verification/station-080-m26/UNIT-LOG.md`, `e2e/m23_plots.spec.ts`,
+  `e2e/m23Helpers.ts`, `e2e/exteriorHelpers.ts`, `e2e/pilot_yard.spec.ts`,
+  `e2e/pilot_exterior_isolation.spec.ts`,
+  `e2e/pilot_exterior_capture.spec.ts`, `e2e/pilot_exterior_models.spec.ts`,
+  `src/world/layouts/yard.ts`, `src/pilot/zoneSites.ts`,
+  `src/world/interactionRegistry.ts`, and (new, limited to the
+  default-preserving prompt-suppression hook) `src/world/RoomScene.ts`.
+  Per-file limits: amendment §5.
+- **Pre-existing foreign metadata (not written by U23; preserved, never
+  staged or edited; `FOREIGN-METADATA-INVENTORY.json` SHA-256
+  `a19e672edabf2e3b2b272668ad6ba6c153d36ddfc0c49321efd7b058ba437d9f`; 10
+  files, each `size sha256`):**
+  `.agents/skills/bounded-unit/SKILL.md` 7595
+  `b237bddc153a14eeb15e3cdd55eb5b4f31fc039403538a9c07b50166b8af53b1`;
+  `.agents/skills/pixellab-asset-pipeline/SKILL.md` 5001
+  `02f5a40074102d6f7732b16ff56a290f66f822021659eceaa609f7312edec640`;
+  `.agents/skills/playwright-game-verify/SKILL.md` 6675
+  `c865914da1f4fb38f13a86e53cee5a2e1deec0362bc62ad774cc833f6868d811`;
+  `.agents/skills/psychometric-task-design/SKILL.md` 14398
+  `01104b74d839b4923178346ddc7408f8e30e846ec46ccfd229e644bc201ae354`;
+  `.agents/skills/qualtrics-logging-review/SKILL.md` 8479
+  `477f836039373381281a15c5b7bcacd24dec5682f20a161bc04f4fa093953e01`;
+  `.agents/skills/research-game-architect/SKILL.md` 6829
+  `c06c835822f07263919f5d428031478334dc848d09f54d7f64e3198a533dae69`;
+  `.agents/skills/room-builder/SKILL.md` 8062
+  `665f33cb9430b8e16d84ba835782a2fb7a69680d52deeb5d8ca614fa3cb3943b`;
+  `.codex/agents/cheap-explorer.toml` 2491
+  `29628df4e2dbf286b5d82144ae5d531b598cd2f11912e58ed1782bb7eaeb1bbe`;
+  `.codex/config.toml` 162
+  `fdd01568526e989f6a1e616a7081dfdd7bd9c9c269da5733e007b813c88109ec`;
+  `.codex/hooks.json` 333
+  `ac5a3a8b1be03481638653e7e6be64199523678734eb1e0af8c2710409e552e4`. The
+  owner's narrow verifier exception covers only these recorded, unchanged
+  files; such a result is reported with its exit code and FAIL lines,
+  never as PASS.
+- **Session and evidence.** Resumed session
+  `4cae0499-efde-4ea3-9568-1e4cd65a18bc` (Claude Code CLI 2.1.303 per
+  `RESUME-RECORD.json`; the original launch used 2.1.302); worktree
+  `C:\Users\Juls\.codex\worktrees\u23-m23\research-station-assessment-game`
+  on `codex/u23-m23` at base `a80629e94b5f49ff944eef3a4c936b0de8cff29a`
+  with the round-2 implementation preserved uncommitted; evidence
+  directory
+  `C:\Users\Juls\AppData\Local\Temp\claude\C--Users-Juls--codex-worktrees-u23-m23-research-station-assessment-game\4cae0499-efde-4ea3-9568-1e4cd65a18bc\scratchpad\u23-evidence`,
+  round-3 outputs under its new `r3\` folder only (earlier evidence
+  untouched). Writer: Claude Fable 5.1, actual model id `claude-fable-5-1`.
+- **Entry checks (brief §B, all passed before this edit).** Model gate
+  `claude-fable-5-1`; environment as amendment §6.1 (31 allowlist entries
+  including `src/world/RoomScene.ts`, `PW_DEV_PORT` 5183); repository
+  state (branch, HEAD, nothing staged, 22 modified and 8 untracked U23
+  paths plus the 10 foreign files, nothing else); closeout and package
+  hashes as above; `foreign-metadata-check.mjs check` → INVENTORY-UNCHANGED (exit
+  0); live guard probes — the Write of `src/GUARD-ALLOWLIST-PROBE.ts` was
+  blocked ("outside the active unit allowlist") and the Write of
+  `r3\guard-probe-r3.txt` succeeded; no LISTEN on 5183 / 5184.
+- **Pre-amendment assignment scheme.** Every round-1 and round-2 record
+  above (development runs, both matrices, all 59 indexed frames, the
+  capture frames and the reviews) was produced under the four-slot
+  assignment through the shared helper, which the amendment §3.6
+  diagnostic shows realises only two of the sixteen joint cells
+  (a1·b2·AB·stop_left and a2·b1·BA·continue_left). That evidence is
+  "pre-amendment assignment scheme (correlated)"; round 3 replaces the
+  mechanism (OD-6) without changing the content version `m23-plots-v1`.
+- **Round-3 implementation (the writer, 19 October 2026; the one round the
+  amendment authorises; inside the 31-path allowlist and the amendment §5
+  per-file limits; register §5.365).** `src/world/RoomScene.ts` (the 31st
+  path): the protected `stationPromptSuppressed(station)` hook, default
+  `false`, consulted once in the station branch of `updateProximity`
+  (`.setVisible(!suppressed)`); no other line. `ExteriorRecoveryYardScene.ts`:
+  the override (`pilotPlotStake` while `m23FixedPlot !== null`) with the
+  `RoomStationConfig` type import; the host hook `regionPlots`; the
+  controls-guidance sequence (`M23_CONTROLS_PARTS` split before
+  "P / PANEL", `M23_GUIDANCE_PART_MS` 4000, the per-load counters
+  `m23GuidanceParts` / `m23CellHelpShown`, `tickM23Guidance`, the HUD-line
+  bookkeeping `m23HudLine` in `m23Feedback(message, durationMs)`, the
+  suspension in `m23ReleaseFrame`) replacing the 2.5 s approach trigger and
+  the scene-instance fields `m23ControlsLineAt` / `m23ApproachSince`.
+  `m23Plots.ts`: `M23HostHooks.regionPlots`; `m23FieldGoverns` governs any
+  point in a plot's exact region; `m23FieldAdmit` passes `regionPlot` (the
+  one ring plot; `null` in the overlap band; `undefined` outside both);
+  `ensure()` calls `m23JointAssignment(sessionId)`; the `assignCounterbalance`
+  and `M23_SLOTS` imports gone. `m23PlotsModel.ts`: `m23Admit`'s
+  `selected === null` branch resolves `insidePlot ?? regionPlot` (the overlap
+  band → `plot_not_active` with no plot; outside both → the ungoverned null
+  as before); the entry snapshot's provisional `assignment_scheme`.
+  `m23PlotsContent.ts`: `example_heading` {24, 48, 672, 40}; the sub-boxes
+  `illustration_figure_left/right`, `illustration_cell_left/right`,
+  `illustration_beacon`; `text_illustration_px` 20, `text_figure_px` 40;
+  `M23_FIGURE_GLYPH` ☻▸, `M23_BEACON_GLYPH` ◉; `M23_HUD.tray`
+  {−126.6667, 436, 250, 88}; `M23_ASSIGNMENT_KEY`, `M23_ASSIGNMENT_SCHEME`,
+  `m23AssignmentHash` (FNV-1a 32 + fmix32), `m23JointAssignment` (bits 8 /
+  4 / 2 / 1); `M23_SLOTS` removed; no pinned copy changed.
+  `m23SurfaceModel.ts`: `illustration()` takes the text size and marks a
+  highlighted cell `flag`; page 1 = figure + beacon + reading (20 px);
+  page 2 = figure + COMPONENT CELL tile and figure + EMPTY CELL tile, both
+  highlighted. `M23FieldControls.ts`: the tray plate (a third readout on
+  `M23_HUD.tray`), the dig plate at four rows with no spacer, the
+  default-preserving `durationMs` parameter of `showFeedback` (2200 unless
+  given), the probe's `tray`, `dig_bounds`, `tray_bounds` (the rendered-bounds checks of OD-8b need the dig text's
+  bounds too). `features/m23.ts`: `valid` computed before `closureReason`;
+  `technical_failure` on a both-plots-terminal closure only with
+  `valid.length === 0`. `e2e/pilot_exterior_isolation.spec.ts`: the in-plot
+  C / D block compares the field-action probe's `scan.last` / `dig.last`
+  and the ordinary scan / refusal counts before and after (the apron scan
+  kept). `e2e/m23Helpers.ts`: `expectPlateBounds` (inside
+  `expectHudClearOfPlot`, which now lists the tray plate), `worldPrompt`,
+  `waitFieldFeedback`, `controlsParts`, `expectExampleGeometry`; the
+  independent oracle `jointAssignmentOracle` / `jointCellKey` replacing the
+  restated slot hash in `sessionIdFor`; the probe type's new fields.
+  `e2e/m23_plots.spec.ts`: the describe "M23 pure: round 3" (the OD-2 /
+  OD-3 / OD-8b oracle, the OD-6 oracle on 10 000 synthetic ids, the round-3
+  source assertions incl. the untouched shared helper); the model case
+  "round 3 (OD-4)" (every state-table row, the pointer refusal record); the
+  describe "M23 extraction: round 3 fixtures" (T09a–T09c; the mixed
+  commit); `mirrors()` over keyboard AND pointer with `KIT_MODE` in every
+  fixture helper; X1's pre-opening ring presses on both plots through
+  `ringPress` (one exact refusal; nothing started, resolved, resumed or
+  entered; the ordinary records, the probes, every status, the credit, the
+  row and the follow camera unchanged); the describe "M23 boundaries and
+  refusals — round 3" with X3 (paused own / other ring, choice_pending,
+  terminal, held back; both plots) and X4 (the mast beside Plot A's west
+  ring actually opened); the layout route's assignment-oracle check, the
+  example geometry on both pages, the prompt absent at both south entries
+  and back after the region exit, `expectControlsSequence` (L1 by the
+  approach route, L2 by a direct inside-region OPEN through P) with the
+  frames `controls-part-1-*` / `controls-part-2-*`; the sidecar's `tray`,
+  `dig_bounds`, `tray_bounds` and `world_prompt`; L3 requesting AB with
+  `continue_left`. Documents: register §4 "Unit 23" (round 3), §5.365
+  (the resolutions of §5.364 and the separate assignment-slot follow-up),
+  addendum §2 "U23" (the joint assignment, `assignment_scheme`, the
+  closure-reason rule), the room document (the ring, the controls parts,
+  the tray plate, the stake prompt), this UNIT-LOG record. Unchanged:
+  `WorkSurfaceScene.ts`, `Player.ts`, `digController.ts`,
+  `scanController.ts`, `exteriorWindows.ts`, `exteriorEpisodeModel.ts`,
+  `registerV3.ts`, `features/index.ts`, `yard.ts`, `zoneSites.ts`,
+  `interactionRegistry.ts`, `exteriorHelpers.ts`, `pilot_yard.spec.ts`,
+  `pilot_exterior_capture.spec.ts`, `pilot_exterior_models.spec.ts`,
+  `src/measurement/validity.ts`, `.agents/`, `.codex/`.
+- **Round-3 adaptations recorded against amendment §6.3 (none changes a
+  decision).** (a) §6.3 (3) asks for `m23FieldGoverns` under a host stub in
+  the pure group; the adapter module imports the runtime and cannot load on
+  the Node side, so the ring clause is asserted from source
+  (`host.regionPlots(x, y).length > 0`) and exercised in the browser (X1,
+  X3), while every state-table row runs through `m23Admit` in the pure
+  case. (b) §6.3 (3) asks for pointer presses in the browser ring cases;
+  the pad is hidden in every non-live state, so a pointer SCAN / DIG cannot
+  be issued there by design — the pointer path shares `m23FieldAdmit` and
+  is covered by the pure refusal record (`input_mode: 'pointer'`). (c)
+  §6.3 (2) asks for the mast prompt's actual bounds in the sidecar; the
+  base scene's prompt probe carries no bounds and adding them is outside
+  `RoomScene.ts`'s one-hook limit, so the frame
+  `mast-prompt-west-ring-800x600` (with the prompt probe's text) is captured
+  for the visual recheck instead. (d) §6.3 (2) expects a running action to
+  cancel once on E at the mast; the base scene opens a station prompt only
+  while no world action runs (`updateProximity` returns early during one),
+  so X4 asserts no cancellation and the `overlay` pause. (e) `dig_bounds`
+  joins the probe beside `tray` / `tray_bounds` because OD-8b's
+  rendered-bounds check covers the dig plate's rows as well. (f) The
+  register's working copy was normalised to LF by an editor and restored to
+  CRLF with identical content (the checkout's approved handling). (g) The
+  amendment's "`regionPlot` null outside both regions" is implemented as
+  `undefined` outside both (the ungoverned null the existing admission test
+  pins) and `null` only in the overlap band (`plot_not_active`, no plot).
+- **Development observation (X4 frame `mast-prompt-west-ring-800x600`,
+  the development run; the final frame is the matrix's).** With Plot A
+  searching from its west ring (the avatar at about x 843, facing the
+  mast after the short steps west), the base scene's mast prompt
+  (`E / Space — Use Mast 04`) is drawn at design y about 200–215 over the scanner
+  plate's empty right portion; it covers no readout text, no plot cell
+  and no pad button, and the plot projection (x 213–587) is clear of
+  it. The dig plate renders three rows (`dig_bounds` h 94, four at
+  most) and the tray plate three (`tray_bounds` h 70) inside their
+  plates. The facing line reads "Facing: outside plot" because the
+  stance faces the mast. Recorded for the visual recheck; not a silent
+  mask and, by the writer's reading, not an obstruction of a required
+  cell or readout — the owner judges.
+- **Round-3 development checks (the writer; development evidence only,
+  under `r3/dev-*`; Bash tool, worktree root).** `npm.cmd run lint:tsc`
+  exit 0 (three runs after the source, the test and the fix edits);
+  changed-file ESLint with the CRLF-neutral rule: CLEAN after two rounds of
+  hand formatting (`dev-eslint-3.log` … `dev-eslint-6.log`). M23 pure +
+  extraction: 35 / 35 (`dev-pure-2.log`, 15.3 s; the first run's two
+  failures were the admission contract — `regionPlot` `undefined` outside
+  both regions keeps the existing ungoverned null, `null` only in the
+  overlap band — fixed before the rerun). M23 boundaries: X1, X2, X4
+  passed on the first run; X3 failed on a test-side step (a STEP AWAY after
+  the direct STOP, which closes the surface itself) and passed on the rerun
+  (`dev-boundaries-1.log`, `dev-x3-2.log`, 5.6 m). M23 browser + STOP +
+  cancellation + layout: 9 / 10 on the first run (B-smoke, B2, B3, B4, S1,
+  S2, C, L1, L3; `dev-browser-1.log`, 30.8 m); L2 timed out in `standAt` at
+  Plot B's rig-chip stance after the direct-route controls sequence and all
+  earlier B stances had passed; `standAt` now reports the avatar position
+  and the series state on a timeout, and L2 passed on the rerun
+  (`dev-l2-2.log`, 6.9 m) — the first failure was not reproduced and is
+  recorded as a development flake at the 1 px stance; a recurrence in the
+  matrix blocks (a U23-only test is never pre-existing). Frames inspected
+  from the development runs: `static-example-*` (the heading below the
+  title bar; the figure and the beacon), `static-example-2-*` (both tiles
+  highlighted, the figure facing each), `plot-a-south-entry-800x600` and
+  `plot-b-south-entry-1280x720` (no stake prompt; the entry cell visible;
+  the tray on its own plate), `controls-part-1-800x600` (two lines above
+  the plot), `mast-prompt-west-ring-800x600` (above). Port 5183 free after
+  every run.
+- **Round-3 verification pass (amendment §6.2; the test-reviewer, once, in
+  order — fallback general-purpose agent on Sonnet, actual model
+  `claude-sonnet-5-5`, reading `.claude/agents/test-reviewer.md`; Bash
+  tool, worktree root; logs `r3/logs/<n>-<name>.log` / `.exit`; port 5183
+  free before and after the Playwright commands as checked (the "after 5"
+  and "before 6" checks shared one background command with command 6's
+  launch and their output was not displayed; 5183 was free at every
+  displayed check); the recorded `node_modules/.bin/playwright` deviation
+  in form for commands 4–7; nothing edited, no retries, no process
+  killed).** (1) `npm.cmd run lint:tsc` exit 0. (2) `npm.cmd run build`
+  exit 0 ("built in 1.04s", the chunk-size warning only; `dist` inside the
+  worktree). (3) changed-file ESLint on the 25 changed TypeScript paths
+  with the CRLF-neutral rule: exit 0, no output. (4) M23 pure + extraction:
+  exit 0 — 35 passed (15.6 s). (5) M23 browser + STOP + boundaries +
+  cancellation + layout: exit 0 — 14 passed (48.1 m): B-smoke, B2, B3, B4,
+  S1, S2, X1, X2, X3, X4, C, L1, L2, L3; the 64 FINAL frames with sidecars
+  under `r3/m23-shots` (capture times 2026-10-19T06:00:49Z–06:47:00Z, i.e.
+  17:00–17:47 local). (6) the round-3 regression set (isolation, yard,
+  exterior models, `m26_protocol_foundation`, `world_v1_registry`,
+  `world_v2_yard_look`, `world_v1_interactions`, `m05_start_route`,
+  `m19_lines`, `m20_returns`; `WV3_VIEWPORT=1280x720`): exit 0 — 245
+  passed (29.1 m); the repaired isolation test passes. (7) the capture
+  spec: exit 0 — 1 passed (5.4 m), 17 frames under `r3/capture-shots`. (8a)
+  `git diff --check` exit 0 (the CRLF warning for
+  `pilot_exterior_isolation.spec.ts` only). (8b) `verify-unit` with the
+  amended allowlist: ACTUAL exit code 1 with exactly ten FAIL lines, each
+  "FAIL - unexpected path outside the unit allowlist: <path>" naming one of
+  the ten recorded foreign files (`.agents/skills/bounded-unit/SKILL.md`,
+  `.agents/skills/pixellab-asset-pipeline/SKILL.md`,
+  `.agents/skills/playwright-game-verify/SKILL.md`,
+  `.agents/skills/psychometric-task-design/SKILL.md`,
+  `.agents/skills/qualtrics-logging-review/SKILL.md`,
+  `.agents/skills/research-game-architect/SKILL.md`,
+  `.agents/skills/room-builder/SKILL.md`, `.codex/agents/cheap-explorer.toml`,
+  `.codex/config.toml`, `.codex/hooks.json`); every tracked change inside
+  the 31 paths. (8c) `foreign-metadata-check.mjs verify`: exit 0 —
+  "INVENTORY-UNCHANGED: 10 recorded foreign entries, identical paths, sizes
+  and SHA-256" and "EXCEPTION-CONDITIONS-MET (NOT a PASS): verify-unit exit
+  1; its only failures name the 10 recorded, unchanged foreign metadata
+  files; git diff --check clean." Reported, as the owner requires, as
+  EXCEPTION-CONDITIONS-MET (verify-unit exit 1) — never PASS. No baseline
+  run was needed (no failure).
+- **Screenshot index (the FINAL round-3 frames: `r3/m23-shots/<frame>.png`
+  with the provenance sidecar `<frame>.json` beside each — viewport, native
+  camera, the selected plot with its status / form / counts, the assigned
+  order and option order, the facing line, the dig / tray / feedback
+  bounds, the world prompt probe, the raw sequence range, branch / base,
+  participant route versus technical fixture, capture time). Inspected by
+  the writer at both viewports: the static examples (both pages), the
+  south entries of both plots, the controls parts, the rig-chip stance,
+  the histories, the first failure in both option orders, the selector
+  STOP confirmation, A terminal / B available and the reverse, the reload
+  lock, the mast prompt.** New round-3 subjects: `controls-part-1-*`,
+  `controls-part-2-*`, `mast-prompt-west-ring-800x600`.
+  - `a-terminal-b-available-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected none; order AB / continue_left; Facing: C02 R02; sequences 91–115; participant_route; codex/u23-m23 / a80629e; 2026-10-19T06:47:00.118Z
+  - `a-terminal-b-available-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected none; order BA / continue_left; Facing: C07 R01; sequences 91–126; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:36:30.482Z
+  - `b-terminal-a-available-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected none; order AB / stop_left; Facing: C07 R01; sequences 91–128; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:40:52.771Z
+  - `b-terminal-a-available-800x600.png` — 800 × 600; scroll (852, 276) zoom 2; selected none; order AB / stop_left; Facing: C02 R02; sequences 91–113; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:03:18.795Z
+  - `b2-01-b-searching-pointer.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b1, 0 scans, 0 digs); order AB / stop_left; Facing: C04 R03; sequences 91–100; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:03:05.422Z
+  - `controls-part-1-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 0 scans, 0 digs); order AB / stop_left; Facing: C04 R03; sequences 91–102; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:39:40.741Z
+  - `controls-part-1-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 0 scans, 0 digs); order BA / continue_left; Facing: C07 R06; sequences 91–100; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:35:22.497Z
+  - `controls-part-2-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 1 scans, 0 digs); order AB / stop_left; Facing: C04 R03; sequences 91–105; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:39:43.578Z
+  - `controls-part-2-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 1 scans, 0 digs); order BA / continue_left; Facing: C07 R06; sequences 91–103; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:35:26.060Z
+  - `first-failure-continue_left-a-1280x720.png` — 1280 × 720; scroll (654, 172) zoom 2; selected plot_a (choice_pending, form a2, 1 scans, 1 digs); order AB / continue_left; Facing: C02 R02; sequences 91–108; participant_route; codex/u23-m23 / a80629e; 2026-10-19T06:46:47.789Z
+  - `first-failure-continue_left-a-800x600.png` — 800 × 600; scroll (653, 172) zoom 2; selected plot_a (choice_pending, form a2, 2 scans, 1 digs); order BA / continue_left; Facing: C02 R02; sequences 91–111; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:35:42.285Z
+  - `first-failure-continue_left-b-800x600.png` — 800 × 600; scroll (878, 172) zoom 2; selected plot_b (choice_pending, form b2, 1 scans, 1 digs); order BA / continue_left; Facing: C02 R02; sequences 91–137; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:36:49.065Z
+  - `first-failure-stop-left-800x600.png` — 800 × 600; scroll (878, 172) zoom 2; selected plot_b (choice_pending, form b1, 1 scans, 1 digs); order AB / stop_left; Facing: C02 R02; sequences 91–108; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:03:12.611Z
+  - `first-failure-stop_left-a-1280x720.png` — 1280 × 720; scroll (653, 172) zoom 2; selected plot_a (choice_pending, form a2, 1 scans, 1 digs); order AB / stop_left; Facing: C02 R02; sequences 91–139; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:41:13.715Z
+  - `first-failure-stop_left-b-1280x720.png` — 1280 × 720; scroll (878, 172) zoom 2; selected plot_b (choice_pending, form b2, 2 scans, 1 digs); order AB / stop_left; Facing: C02 R02; sequences 91–113; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:40:04.774Z
+  - `mast-prompt-west-ring-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order BA / stop_left; Facing: outside plot; sequences 91–114; participant_route; codex/u23-m23 / a80629e; 2026-10-19T06:30:35.419Z
+  - `plot-a-history-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order AB / stop_left; Facing: C04 R03; sequences 91–145; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:41:20.260Z
+  - `plot-a-history-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 3 scans, 1 digs); order BA / continue_left; Facing: C04 R03; sequences 91–117; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:35:48.743Z
+  - `plot-a-interior-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order AB / stop_left; Facing: C04 R03; sequences 91–145; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:41:22.449Z
+  - `plot-a-interior-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 3 scans, 1 digs); order BA / continue_left; Facing: C04 R03; sequences 91–117; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:35:50.543Z
+  - `plot-a-north-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order AB / stop_left; Facing: C04 R01; sequences 91–145; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:41:31.904Z
+  - `plot-a-north-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 3 scans, 1 digs); order BA / continue_left; Facing: C04 R01; sequences 91–117; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:35:58.514Z
+  - `plot-a-northeast-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order AB / stop_left; Facing: C06 R01; sequences 91–150; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:41:50.120Z
+  - `plot-a-northeast-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 3 scans, 1 digs); order BA / continue_left; Facing: C07 R01; sequences 91–122; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:36:17.691Z
+  - `plot-a-northwest-outer-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order AB / stop_left; Facing: C01 R01; sequences 91–150; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:41:39.426Z
+  - `plot-a-northwest-outer-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 3 scans, 1 digs); order BA / continue_left; Facing: C01 R01; sequences 91–122; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:36:06.698Z
+  - `plot-a-south-entry-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 0 scans, 0 digs); order AB / stop_left; Facing: C07 R06; sequences 91–131; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:41:02.224Z
+  - `plot-a-south-entry-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 1 scans, 0 digs); order BA / continue_left; Facing: C07 R06; sequences 91–103; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:35:30.846Z
+  - `plot-a-southwest-outer-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order AB / stop_left; Facing: C01 R06; sequences 91–150; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:41:43.816Z
+  - `plot-a-southwest-outer-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 3 scans, 1 digs); order BA / continue_left; Facing: C01 R06; sequences 91–122; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:36:11.288Z
+  - `plot-a-west-outer-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 2 scans, 1 digs); order AB / stop_left; Facing: C01 R03; sequences 91–145; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:41:26.182Z
+  - `plot-a-west-outer-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a2, 3 scans, 1 digs); order BA / continue_left; Facing: C01 R04; sequences 91–117; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:35:53.865Z
+  - `plot-b-east-outer-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 3 scans, 1 digs); order AB / stop_left; Facing: C07 R03; sequences 91–119; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:40:17.485Z
+  - `plot-b-east-outer-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order BA / continue_left; Facing: C07 R04; sequences 91–143; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:37:01.192Z
+  - `plot-b-history-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 3 scans, 1 digs); order AB / stop_left; Facing: C04 R03; sequences 91–119; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:40:11.339Z
+  - `plot-b-history-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order BA / continue_left; Facing: C04 R03; sequences 91–143; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:36:55.876Z
+  - `plot-b-interior-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 3 scans, 1 digs); order AB / stop_left; Facing: C04 R03; sequences 91–119; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:40:13.499Z
+  - `plot-b-interior-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order BA / continue_left; Facing: C04 R03; sequences 91–143; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:36:57.761Z
+  - `plot-b-north-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 3 scans, 1 digs); order AB / stop_left; Facing: C04 R01; sequences 91–119; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:40:22.741Z
+  - `plot-b-north-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order BA / continue_left; Facing: C04 R01; sequences 91–143; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:37:06.458Z
+  - `plot-b-northeast-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 3 scans, 1 digs); order AB / stop_left; Facing: C07 R01; sequences 91–124; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:40:39.968Z
+  - `plot-b-northeast-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order BA / continue_left; Facing: C07 R01; sequences 91–148; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:37:23.044Z
+  - `plot-b-rig-chip-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 3 scans, 1 digs); order AB / stop_left; Facing: C07 R01; sequences 91–124; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:40:30.996Z
+  - `plot-b-rig-chip-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order BA / continue_left; Facing: C07 R01; sequences 91–148; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:37:13.712Z
+  - `plot-b-south-entry-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 1 scans, 0 digs); order AB / stop_left; Facing: C01 R06; sequences 91–105; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:39:53.889Z
+  - `plot-b-south-entry-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 0 scans, 0 digs); order BA / continue_left; Facing: C01 R06; sequences 91–129; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:36:38.384Z
+  - `plot-b-southeast-outer-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 3 scans, 1 digs); order AB / stop_left; Facing: C07 R06; sequences 91–124; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:40:35.394Z
+  - `plot-b-southeast-outer-800x600.png` — 800 × 600; scroll (880, 172) zoom 2; selected plot_b (searching, form b2, 2 scans, 1 digs); order BA / continue_left; Facing: C07 R06; sequences 91–148; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:37:18.151Z
+  - `reload-lock-1280x720.png` — 1280 × 720; scroll (747, 335) zoom 2; selected none; order AB / stop_left; —; sequences 217–218; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:44:48.360Z
+  - `reload-lock-800x600.png` — 800 × 600; scroll (741, 341) zoom 2; selected none; order BA / stop_left; —; sequences 243–244; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:10:46.601Z
+  - `selector-after-continue-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (paused, form b2, 3 scans, 1 digs); order AB / stop_left; Facing: C07 R01; sequences 91–126; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:40:42.796Z
+  - `selector-after-continue-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (paused, form a2, 3 scans, 1 digs); order BA / continue_left; Facing: C07 R01; sequences 91–124; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:36:20.583Z
+  - `selector-after-continue-ab-1280x720.png` — 1280 × 720; scroll (656, 172) zoom 2; selected plot_a (paused, form a2, 1 scans, 1 digs); order AB / continue_left; Facing: C02 R02; sequences 91–113; participant_route; codex/u23-m23 / a80629e; 2026-10-19T06:46:52.847Z
+  - `selector-stop-confirmation-1280x720.png` — 1280 × 720; scroll (880, 172) zoom 2; selected plot_b (paused, form b2, 3 scans, 1 digs); order AB / stop_left; Facing: C07 R01; sequences 91–127; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:40:48.772Z
+  - `selector-stop-confirmation-800x600.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (paused, form a2, 3 scans, 1 digs); order BA / continue_left; Facing: C07 R01; sequences 91–125; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:36:26.481Z
+  - `selector-stop-confirmation-b-800x600.png` — 800 × 600; scroll (741, 335) zoom 2; selected none; order AB / stop_left; —; sequences 91–98; participant_route; codex/u23-m23 / a80629e; 2026-10-19T06:17:28.767Z
+  - `smoke-01-a-searching-entry.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (searching, form a1, 0 scans, 0 digs); order BA / continue_left; Facing: C07 R06; sequences 91–100; participant_route; codex/u23-m23 / a80629e; 2026-10-19T06:00:49.071Z
+  - `smoke-02-first-failure.png` — 800 × 600; scroll (653, 172) zoom 2; selected plot_a (choice_pending, form a1, 1 scans, 1 digs); order BA / continue_left; Facing: C02 R02; sequences 91–108; participant_route; codex/u23-m23 / a80629e; 2026-10-19T06:00:58.923Z
+  - `smoke-03-selector-after-continue.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (paused, form a1, 2 scans, 1 digs); order BA / continue_left; Facing: C02 R02; sequences 91–116; participant_route; codex/u23-m23 / a80629e; 2026-10-19T06:01:05.029Z
+  - `smoke-04-stop-confirm.png` — 800 × 600; scroll (656, 172) zoom 2; selected plot_a (paused, form a1, 2 scans, 1 digs); order BA / continue_left; Facing: C02 R02; sequences 91–117; participant_route; codex/u23-m23 / a80629e; 2026-10-19T06:01:11.078Z
+  - `static-example-1280x720.png` — 1280 × 720; scroll (738, 341) zoom 2; selected none; order AB / stop_left; —; sequences 91–94; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:39:18.690Z
+  - `static-example-2-1280x720.png` — 1280 × 720; scroll (738, 341) zoom 2; selected none; order AB / stop_left; —; sequences 91–95; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:39:23.307Z
+  - `static-example-2-800x600.png` — 800 × 600; scroll (746, 344) zoom 2; selected none; order BA / continue_left; —; sequences 91–95; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:35:13.015Z
+  - `static-example-800x600.png` — 800 × 600; scroll (746, 344) zoom 2; selected none; order BA / continue_left; —; sequences 91–94; technical_fixture; codex/u23-m23 / a80629e; 2026-10-19T06:35:08.284Z
+- **Round-3 focused rechecks (amendment §7; read-only; in parallel after
+  the verification pass; each a fallback general-purpose agent on Opus,
+  actual model `claude-opus-5-5`, reading its role file; findings are
+  recommendations, never rulings; none approves a scientific decision).**
+  _scientific-reviewer (items 4, 6, 7, 8d)_: no blocking measurement
+  concern. Item 4 PARTLY (behaviour conforms — the field governs the ring,
+  association per the state table, refusal only, no ordinary scan or dig
+  leakage, the refusal count descriptive only, no automatic resumption,
+  `ringPress` strong; minor coverage gaps 4-a no host-stub pure test of
+  `m23FieldGoverns` / the two-regions-to-null mapping and no press in the
+  real overlap band, 4-b no pointer press in the browser ring cases; notes
+  4-c, 4-d X1's title still says "no family record"). Item 6 PARTLY (the
+  C2 mechanism, the adapter, the snapshot field, the untouched shared
+  helper, the independent oracle, the kept version and the pre-amendment
+  marking, the synthetic wording and the seven-key follow-up all conform;
+  6-A MAJOR for the SEPARATE pre-collection follow-up, NOT blocking U23:
+  the seven keys were a hand-written list — the tree passes further
+  two-option slots to the same helper (`ip_form_${moduleKey}`,
+  `m02_filing_start`, `m01_batch_form_${occasion}`,
+  `m02_case_workspace_form`, `m06_orders_form`, `m08_benefit_order`,
+  `m12_check_${occasion}_form`, `m21_case_o1/o2_form`,
+  `m22_report_o1/o2_form`) and `m18_option_order` (four options) shares
+  the parity bit in its low index bit, so per-occasion keys within one unit
+  would realise linked levels; which of these are on the participant route
+  is NOT established; U23's own assignment is no longer coupled to any of
+  them; minor 6-B the oracle comparison runs in L1 / L2 / L3 only and
+  against the live probe, not the recorded snapshot; note 6-C the register
+  §4 "Unit 23" sentence "Counterbalance per session from the validity
+  register's hash" is superseded by the appended round-3 paragraph; notes
+  6-D the feature row's `assignment` component omits the scheme (correct
+  as scoped), 6-E the distribution test draws random ids). Item 7
+  RESOLVED (the clause, `valid` first, the count never from the closure
+  reason, T09a–c as tabled). Item 8d PARTLY (both modes run every fixture
+  with the same hand-written rows; the mixed case asserts `input_mode`,
+  `navigation_family`, `navigation_steps`, `chosen_visual_side`; minor
+  8d-a the pointer mirrors do not assert the recorded `input_mode`).
+  _gameplay-reviewer (items 1, 8a, the foreign station)_: item 1 RESOLVED
+  (the `RoomScene.ts` diff is exactly the hook, its single use and the
+  `setVisible(!suppressed)`; the yard override names the stake and the
+  frame; other rooms unchanged — the redirect returns before the hook,
+  the auxiliary prompt untouched, doors excluded, the E press acts on the
+  target, the probe truthful, the regression set passed; the stake still
+  answers E / Space (X2); foreign prompts untouched; minor: the
+  restoration is asserted after a STEP-AWAY pause and a walk, not after a
+  region exit; note: Space at a south entry pauses the plot `panel`, as
+  OD-1 approved). Item 8a RESOLVED in code (verbatim parts, 4000 ms,
+  per-load counters, pre-emption and re-show, suspension with the frame,
+  nothing blocked, no telemetry, no standing reminder, the 2.5 s trigger
+  gone), PARTLY in coverage (minor: only C is exercised during a part; the
+  4 s is checked in source only; pre-emption / re-show and
+  no-repeat-after-completion are not exercised; one plot and one route per
+  viewport; note: `Date.now()` bookkeeping against the scene-clock
+  `delayedCall`, harmless). The foreign station PARTLY: the activation
+  RESOLVED (X4: the known 1, the mast prompt, E for real, the `overlay`
+  pause with the count +1, the mast's cards opened and closed through
+  "Step away", `m20.accepted` false, credit / failure / presentation /
+  counts / Plot B / selection / row unchanged, no `resumed`); adaptation
+  (d) confirmed (the base scene opens a station prompt only with no world
+  action running); NOT done: the prompt's bounds in the sidecar
+  (adaptation (c)); minor: the M20 events are not asserted. NEW MAJOR for
+  the owner: the field HUD plates are created after the base scene's
+  prompt at the same `Depth.AboveWorld` (alpha 0.92), so the scanner plate
+  draws OVER the overlapping part of the mast prompt — in
+  `mast-prompt-west-ring-800x600` the prompt reads only as a dimmed
+  "E / Space —" under the plate and "e Mast 04" past its right edge; no
+  required M23 cell or readout text is obscured (the readout text sits one
+  depth higher; the plot projection is clear), so the amendment's stop
+  criterion is not met, but it is partial masking of a foreign prompt,
+  which contract §12 / amendment §2.1 do not approve, and such cases go to
+  the owner rather than being left as a silent mask; any fix touches the
+  prompt's or the HUD's depth, outside the round-3 per-file limits. (The
+  writer's development observation above, "drawn over the scanner plate's
+  empty right portion", misread the draw order; the reviewer's reading is
+  the correct one.) _visual-reviewer (items 1, 2, 3, 8a, 8b, 8c; the
+  round-3 frames)_: no blocking or major problem inside the cited items.
+  Item 1 RESOLVED (`world_prompt.prompt: false` and no prompt in both
+  south entries at both viewports and on the participant route; the
+  entry cells clear; the prompt back in `reload-lock-*`); the mast prompt
+  measured at design x 0–208, y 165–189: about 5 design px left of the
+  plot's west edge, no cell covered, its left ~60 % inside the scanner
+  plate's third text row with "Use" unreadable under the plate, no
+  readout glyph overlapped in the frame ("FARTHER"); a collision with
+  "NO COMPARISON" (x 11–129) is projected but not captured; the dig
+  plate, feedback line and objective box untouched; rated MINOR as
+  observed, the owner's call; note: in up-facing stances the sprite's
+  helmet covers the lower part of the amber facing cell (worst
+  `plot-a-south-entry-1280x720`), the outline and the readout keep the
+  cell identifiable. Item 2 RESOLVED (both figures, both amber tiles,
+  one-line 20 px labels, every glyph rendered; note: ▸ small, ☻ reads as a
+  face). Item 3 RESOLVED (ring clear of title and divider at both
+  viewports, one line). Item 8a RESOLVED for the frames (two lines, bottom
+  134 < 140 in every controls frame, 4.5 / 7 CSS px clear; note: A /
+  approach at 800 and B / direct at 1280 only; minor provenance: the
+  `b2-01-b-searching-pointer` sidecar's feedback text is part 2 while the
+  frame shows part 1 — the bounds are identical). Item 8b RESOLVED (every
+  history / stance sidecar: dig h 70 = three rows, tray h 70, inside the
+  plates; the tray plate left of the plot and above the belt at both
+  viewports; the four-row dig case only in the mast frame; note: no
+  two-line tray frame). Item 8c RESOLVED (133.33 design px apart at both
+  viewports; the reading at 20 px, muted grey). Round-2 findings closed:
+  blocking 1, blocking 2, major 5, major 6, the seven-row readout. Outside
+  the items, noted: the other plot's dug-cell mark shows as a grey square
+  outside the active grid.
+- **Owner decisions surfaced by the rechecks (none taken by the writer).**
+  (1) Whether the mast prompt partly under the scanner plate at Plot A's
+  west ring is acceptable (gameplay major / visual minor; a depth change
+  is outside the round-3 limits). (2) Whether adaptation (c) — the mast
+  prompt's position evidenced by the frame, no bounds in the sidecar — is
+  acceptable. (3) Whether the coverage gaps 4-a, 4-b, 6-B, 8d-a and the
+  8a / restoration / M20-event gaps are accepted as recorded deviations.
+  (4) The scope of the assignment-slot follow-up (the seven named keys,
+  every two- or even-option slot through the shared helper, or a full
+  inventory first) — before participant collection, outside U23. (5) The
+  sprite over the facing cell in up-facing stances (presentation only).
+- **Commit decision.** NOT COMMITTED. Amendment §6.5 permits the single
+  commit only with "no open blocking or major finding"; the gameplay
+  recheck's major (the scanner plate over the mast prompt) is open and
+  routed to the owner, and there is no fourth round. Every other condition
+  holds: all eight verification commands passed (the verifier
+  EXCEPTION-CONDITIONS-MET, never PASS); the foreign inventory unchanged;
+  every required frame at both viewports inspected; the staged-set hook
+  equivalents were not run because nothing may be staged without a commit
+  (staging is one-way under the no-reset / no-restore rule); the
+  readiness checks that need no staging passed — `lint:tsc` 0,
+  `commitlint --edit r3/COMMIT_MSG.txt` exit 0, the full-rule ESLint on
+  the LF-normalised working content of every changed script 0 failures
+  (`r3/logs/pre-*.log`), the in-memory Prettier check CLEAN on every U23
+  Markdown line. Nothing staged; the worktree left as it is for the
+  owner's decision.
+- **Bounded-unit handoff fields (round 3).** (1) Branch `codex/u23-m23`,
+  worktree
+  `C:\Users\Juls\.codex\worktrees\u23-m23\research-station-assessment-game`,
+  base `a80629e94b5f49ff944eef3a4c936b0de8cff29a` (HEAD unchanged). (2)
+  Commit SHA: none — no commit (one open major finding for the owner;
+  above); the prepared message `r3/COMMIT_MSG.txt` (commitlint exit 0),
+  subject `feat(m23): add two-plot post-failure excavation protocol`. (3)
+  Changed files: the 31 amended paths exactly — 23 modified (the 22 of
+  round 2 plus `src/world/RoomScene.ts`) and 8 new; nothing outside; the
+  10 foreign files untouched and unstaged. (4) Built: the two-plot
+  protocol of round 2 plus round 3 — the default-off stake-prompt hook,
+  the example heading below the title bar, the figure on both example
+  pages beside the beacon and facing both highlighted cells, the ring
+  governed like the rectangle, ONE joint assignment with the provisional
+  `assignment_scheme`, `closure_reason` conformance, the two-part controls
+  guidance, the tray plate, the isolation repair, the pointer and mixed
+  fixtures. (5) Events and scoring: provisional only — `assignment_scheme`
+  is a new provisional entry-snapshot field under G; the `proto_m23_plots_`
+  family, window and rows remain candidates; the registerV3 formula row
+  and addendum :1359 / :1363–1370 unchanged; no canonical name, weight or
+  global score. (6) Verification: the §6.2 pass above — commands 1–7 exit
+  0 (35 / 14 / 245 / 1 passed), 8a clean, 8b exit 1 classified
+  EXCEPTION-CONDITIONS-MET, no baseline run needed; 64 final frames and 17
+  capture frames. (7) Reviewer findings: the three rechecks above —
+  resolved 1, 2, 3, 7, 8a (code), 8b, 8c, the activation; partly 4, 6, 8d
+  (coverage); open: the gameplay major (owner), the 6-A follow-up scope
+  (outside U23), the minors and notes listed. (8) Existing configuration
+  preserved: `.claude/**`, hooks, settings, guard, verifier, ignore files,
+  `package.json` / lock; `WorkSurfaceScene.ts`, `src/measurement/validity.ts`;
+  legacy M23 files; 8 `setComprehension('passed')`; the
+  `guard(item: 'M20' | 'M23' | 'M24' | 'M26'` signature; default-preserving
+  edits only in Player / dig / scan (unchanged this round). (9)
+  Limitations: the reviewers ran as declared fallbacks
+  (`claude-sonnet-5-5`, `claude-opus-5-5`) reading their role files; the
+  `node_modules/.bin/playwright` form for commands 4–7; the hooks inactive
+  (the four staged-set equivalents not run — no staging; readiness checks
+  above); the CRLF checkout (the register restored to CRLF; the eight new
+  files and the isolation spec LF, as recorded since rounds 1–2); the shared
+  `node_modules` caches through the junction; the foreign-metadata
+  exception (verify-unit exit 1, ten FAIL lines naming the recorded files);
+  the assignment-slot follow-up (the seven named keys; the recheck's wider
+  list; current use not established); the §6.3 adaptations (a)–(g); the
+  scratchpad evidence location (copy to durable storage). (10) Deviations
+  and things left out: no commit; the coverage gaps recorded by the
+  rechecks; the mast prompt's bounds not in the sidecar; no 1280 × 720 mast
+  frame; the "after 5" / "before 6" port-check outputs not displayed by
+  the test-reviewer; the register §4 sentence superseded by a pointer
+  (below). (11) Did not change: the primary checkout, the package, the
+  closeout folder, `.agents/`, `.codex/`, `reports/`, `research_notes/`,
+  `.claude/**`, `scripts/claude/**`, hook configuration, git config, any
+  U22 / U24 file, any approved decision, `WorkSurfaceScene.ts`,
+  `validity.ts`. (12) Nothing was pushed, merged, tagged, deployed,
+  deleted or removed; no PR; no install; no remote contact; no PixelLab;
+  no commit.
+
+### U23 round 4 (20 October 2026)
+
+Owner authorization of round 4 (research owner Juls, 20 October 2026, in
+the resumed session; recorded verbatim; it supersedes the round-3 "no
+fourth round" restriction and the presentation restrictions needed for the
+correction below, for this specified work only):
+
+```text
+This is my explicit instruction as research owner, Juls.
+
+I approve and authorize one additional bounded U23 closeout round, round 4, to implement the improvements below. This supersedes the previous "no fourth review/fix round" restriction for this specified work only. Preserve the existing U23 implementation and all previous evidence.
+
+Continue in:
+C:\Users\Juls\.codex\worktrees\u23-m23\research-station-assessment-game
+Branch: codex/u23-m23
+Base: a80629e94b5f49ff944eef3a4c936b0de8cff29a
+
+Use the approved scientific package, round-3 amendment and HANDOFF-R3.md. This instruction supersedes only their round limit and the presentation restrictions necessary for the correction below. All settled scientific decisions remain binding.
+
+1. Recover and record the starting state
+
+Confirm the actual model, worktree, HEAD, staged/unstaged changes, inherited 31-path allowlist, guard protections, evidence paths and active tasks. Preserve the ten inventoried foreign metadata files under the existing approved exception.
+
+Do not require a clean tree, recreate the worktree or rerun the clean-start launcher. If a commit unexpectedly exists, report it before proceeding.
+
+Give a concise list of the exact files and affected checks you intend to use, then proceed without another approval if they fit this authorization. Record this instruction in UNIT-LOG before implementation edits. Use a separate r4 evidence directory within this session's permitted scratchpad.
+
+2. Correct the mast-prompt overlap
+
+Make the mast prompt and M23 scanner information simultaneously readable at Plot A's west ring.
+
+Prefer an M23-local presentation correction in M23FieldControls.ts and, if necessary, its M23 layout constants or yard presentation wiring. This explicitly permits the necessary M23 position/layer adjustment beyond the round-3 restrictions, within the existing 31-path allowlist.
+
+Changing draw order alone is sufficient only if neither the prompt nor required scanner information becomes obscured. Preserve readable plot cells, facing-cell cues, other HUD information and controls.
+
+Preserve station targeting, activation, plot geometry, camera behavior, measurement content, events, eligibility and scoring. Do not introduce global prompt-depth changes or expand the RoomScene hook.
+
+Verify the correction at both 800×600 and 1280×720, including actual mast activation, M23 pause behavior and preservation of recorded outcomes. Record the prompt and HUD bounds in matching screenshot sidecars.
+
+3. Complete the missing acceptance evidence
+
+Address the gaps documented in HANDOFF-R3.md against the existing amendment's requirements:
+
+- Boundary routing: add the missing host-level coverage and actual overlap-band evidence, with correct association and no ordinary scan/dig leakage, automatic resumption or unintended credit.
+- Controls guidance: verify the two parts, their four-second presentation, interruption/pre-emption and resumption, non-repetition after completion, and the required movement/action/help/panel/exit access.
+- Prompt restoration: verify leaving the qualifying region, not only a panel pause.
+- Foreign-station interaction: assert the relevant M20 behavior/events as well as successful opening and preserved M23 outcomes.
+- Assignment and input: complete the required independent-oracle comparisons for recorded browser assignments and assert input_mode in the pointer/mixed extraction fixtures.
+- Evidence consistency: resolve the b2-01 screenshot/sidecar mismatch and provide the missing mast evidence at both viewports.
+
+Test actual available participant controls. If a pointer control is deliberately unavailable in a state, demonstrate that and mark that specific path inapplicable; do not manufacture a hidden-control interaction or claim pointer coverage.
+
+Keep the approved figure glyph and ordinary avatar presentation. Check that the target cell remains identifiable; do not redesign them merely because a reviewer noted their appearance.
+
+These are focused checks of already-approved behavior. If they reveal another product defect, identify whether its correction falls within this authorized scope. Do not silently broaden the scientific or implementation contract.
+
+4. Keep the assignment follow-up separate
+
+Record an explicit prerequisite before participant collection:
+
+Inventory all current callers of the shared assignment helper, including the additional two-option slots and m18_option_order; distinguish active routes from legacy or unused code; assess unintended assignment coupling; then propose corrections and verification for owner approval.
+
+Do not perform that broader audit or alter the shared helper or other units during this closeout. Do not describe the earlier seven-key list as exhaustive.
+
+5. Verification, review and completion
+
+Fable remains the sole writer. Use ordinary development checks to finish the correction before formal verification.
+
+Sonnet runs the affected checks and analyses their outputs. Reuse earlier results only where the relevant implementation and dependencies remain unchanged. Do not automatically repeat the entire regression matrix; explain any broader rerun that is necessary.
+
+Then obtain focused, read-only Opus reviews:
+- Gameplay and visual: the corrected prompt/HUD interaction, target-cell visibility and relevant controls/restoration evidence.
+- Scientific: boundary, assignment, input-mode and outcome-preservation evidence.
+
+Retain the established reviewer roles and declared fallback rules. Report actual models. Do not reopen settled scientific choices or commission a whole-project audit.
+
+Correct the reporting: verify-unit exit 1 under the unchanged approved metadata exception is EXCEPTION-CONDITIONS-MET, never PASS. Distinguish completed working-tree checks from the final staged-content checks.
+
+If the amended acceptance conditions are met and there are no unresolved blocking or major findings, stage only the named allowlisted files, run all four required staged-content hook equivalents and the whitespace check, and make exactly one local commit containing the complete U23 implementation:
+
+feat(m23): add two-plot post-failure excavation protocol
+
+Run the required post-commit scope check. Preserve the actual verifier result and exception evidence.
+
+If acceptance is not met, stop with a precise handoff; do not begin another review/fix cycle automatically.
+
+Join every reviewer, test, server and background task. Finish with the standard 12-field handoff, actual commit SHA if created, changed paths, verification results, remaining limitations and evidence locations. Prepare complete user-run copy-and-hash commands to preserve the evidence durably; do not write outside the permitted roots.
+
+No push, merge, PR, tag, deployment, installation, configuration or guard changes, reset, deletion, worktree removal or U24 implementation.
+```
+
+- **Starting state (recovered read-only before this edit).** Writer Claude
+  Fable 5.1 (`claude-fable-5-1`), resumed session
+  `4cae0499-efde-4ea3-9568-1e4cd65a18bc`; worktree
+  `C:\Users\Juls\.codex\worktrees\u23-m23\research-station-assessment-game`
+  on `codex/u23-m23`, HEAD exactly `a80629e94b5f49ff944eef3a4c936b0de8cff29a`
+  (no commit exists); nothing staged; 23 modified and 18 untracked paths —
+  the 31 allowlisted paths of round 3 plus the 10 inventoried foreign
+  files (`foreign-metadata-check.mjs check` → INVENTORY-UNCHANGED, exit 0);
+  `CLAUDE_UNIT_ALLOWLIST` 31 entries including `src/world/RoomScene.ts`,
+  `PW_DEV_PORT` 5183, the round-3 evidence paths unchanged; the live guard
+  probes repeated — the Write of `src/GUARD-ALLOWLIST-PROBE.ts` blocked
+  ("outside the active unit allowlist"), the Write of
+  `r4/guard-probe-r4.txt` succeeded; no agent, test, server or background
+  task active (no LISTEN on 5183 / 5184). Round-4 outputs go to the new
+  `r4/` folder beside `r3/`; nothing earlier is overwritten.
+- **Files and checks intended for round 4 (inside the 31 paths).**
+  `src/pilot/ui/M23FieldControls.ts` (the HUD layer below the base scene's
+  prompt; the plates / texts / pad depths), `src/pilot/windows/m23PlotsContent.ts`
+  (`M23_HUD.scanner` / `M23_HUD.dig` positions; the pure region-association
+  helper), `src/pilot/windows/m23Plots.ts` (uses that helper),
+  `src/scenes/ExteriorRecoveryYardScene.ts` (only if the presentation wiring
+  needs it), `e2e/m23Helpers.ts` and `e2e/m23_plots.spec.ts` (the evidence of
+  §3: the overlap band, the controls guidance, the region-exit restoration,
+  the M20 assertions, the oracle on recorded assignments, `input_mode` in the
+  pointer / mixed fixtures, the sidecar ordering, the mast at 1280 × 720,
+  the pure association helper), the documents (UNIT-LOG, register §5.365
+  and the follow-up prerequisite, addendum §2, the room document, the
+  matrix). Checks: lint:tsc, build, changed-file ESLint; M23 pure +
+  extraction; the M23 browser groups (every layout frame moves with the
+  HUD geometry, so the whole browser group); the affected route specs
+  (isolation, yard, capture — they render the yard HUD) and the exterior
+  models; `git diff --check`, `verify-unit` with the classifier. The rest
+  of the round-3 regression set is reused unchanged unless a dependency
+  changes.
+- **Round-4 implementation (the writer, 20 October 2026; the authorised
+  closeout round; inside the 31 paths; register §5.366).** _The
+  correction._ `src/pilot/ui/M23FieldControls.ts`: the HUD's plates and
+  pad boxes at `Depth.AboveWorld − 2` and its readout and pad texts at
+  `AboveWorld − 1` (`HUD_PLATE_DEPTH` / `HUD_TEXT_DEPTH`), below the base
+  scene's floating prompt (`AboveWorld`); the feedback line keeps
+  `AboveWorld + 2`; the probe adds `scanner_bounds`.
+  `src/pilot/windows/m23PlotsContent.ts`: `M23_HUD.scanner` moves to design
+  y 84.3333 (rows at 92 / 116 / 140, the third ending at 162.3) and
+  `M23_HUD.dig` to y 245.3333 (its fourth row ending at 347.3), so the mast
+  prompt's 24 px band — design y 164.7–188.7 when the avatar is south of
+  the mast, 351.3–375.3 when north of it — crosses only text-free plate
+  area; the tray plate is unchanged; `m23RegionAssociation()` (one region
+  → that plot; both → null; none → undefined) is the pure host-level
+  mapping the adapter now calls (`m23Plots.ts`).
+  `src/scenes/ExteriorRecoveryYardScene.ts`: the DEV-only
+  `__yardPromptProbe` (the floating prompt's actual design-space bounds,
+  found as the visible HUD-space text carrying the prompt probe's line),
+  nulled on shutdown. No change to `RoomScene.ts`, the hook, station
+  targeting, camera, plot geometry, events, eligibility or scoring. _The
+  evidence._ `e2e/m23Helpers.ts`: `expectRecordedAssignmentMatchesOracle`
+  (the `opportunity_opened` entry snapshot's forms / orders / scheme and
+  the live probe against the independent oracle of the URL's session id),
+  called by `briefToSelector` on every browser opening through the brief
+  (fifteen of the eighteen browser cases; B4, L1 and L2 open inline and
+  compare the live assignment only — the wording narrowed on the
+  round-4 scientific recheck's minor finding b-1); `yardPromptBounds`;
+  the probe type's `scanner_bounds`. `e2e/m23_plots.spec.ts`: the sidecar
+  read immediately BEFORE the capture (the b2-01 mismatch) with
+  `scanner_bounds` and `world_prompt_bounds`; `cont` / `stopDirect` /
+  `selStop` assert `input_mode` = the fixture's mode on the written
+  `failure_choice` / `stop_requested` records (`lastEvent`); X3 asserts the
+  stake prompt back after the REGION EXIT; X4 runs at 800 × 600 AND
+  1280 × 720, asserts the prompt's actual bounds clear of the scanner / dig
+  / tray texts, the pad, the plot and the feedback line, the scanner
+  reading present, exactly one `proto_m20_feed_outdoor_brief_presented`
+  and no `…_outdoor_accepted` with `m20.accepted` false and no stage done,
+  frames `mast-prompt-west-ring-<vp>`; X5 the overlap band
+  (`standInOverlapBand`: the hand-written band x 1088–1114, y 252–255,
+  members of both regions inside neither rectangle) — no plot associated
+  before any opening, the paused selection afterwards, refusal only; G the
+  controls guidance at 800 × 600 — part 1 on the first entry, movement and
+  P during it, suspension on STEP AWAY, part 1 again from its start on
+  RESUME, part 2 after 3.5–5.2 s, C (a scan starts) and a second C (the
+  busy refusal) pre-empting it and the part shown again, HELP from the pad
+  (the example replays) and the part again, D (the first dig → the choice
+  panel → CONTINUE) and the part again, the cell-label help once, ESC
+  pausing, and no part or help line in twenty samples over six seconds
+  after the next entry; the pure describe "M23 pure: round 4" (the
+  association helper and the adapter's use of it; the band points as
+  members of both hand and production regions; the HUD rows against both
+  bands, the plates' depth constants in source). _Inapplicable by design,
+  recorded:_ pointer SCAN / DIG in non-live states — the pad is hidden
+  outside approaching / searching, so no pointer press exists there; the
+  pointer path shares `m23FieldAdmit` and is covered where the pad is
+  visible (B2, S2) and by the pure refusal record. _Documents:_ register
+  §5.365 (the follow-up prerequisite; the seven-key list not exhaustive)
+  and §5.366; the room document; this UNIT-LOG.
+- **Round-4 development runs (the writer, 20 October 2026; `r4/dev-*`;
+  development evidence only — the scheduled pass follows).** `lint:tsc`
+  exit 0 (`dev-lint-tsc-1..4`, `dev-tsc-6..8`); changed-file ESLint CLEAN
+  (`dev-eslint-1..8`); the pure + extraction groups 37 passed
+  (`dev-pure-1.log`); the first full browser run 14 / 17 (`dev-browser-1.log`):
+  X4 at both viewports failed on a null prompt probe (the probe's
+  scroll-factor predicate was wrong — the floating prompt moves with the
+  camera, scrollFactorX 1 — so the predicate now matches the visible
+  `Text` at `Depth.AboveWorld` carrying the prompt probe's line) and the
+  single controls case G on a wrong HUD-hidden assertion; after the fix X4
+  passed at 800 × 600 and 1280 × 720 (`dev-x4g-1.log`; the frames show
+  the prompt fully readable over the scanner plate's text-free area;
+  sidecar prompt bounds {2, 165, 206, 24} against scanner text rows at
+  design y 92.3–162.3). _The controls-guidance case was then split and
+  adapted to the implementation's actual, approved behaviour_ (G1 and G2
+  replace G; `dev-g-1..5`): (i) the "busy refusal" during a scan is not
+  reachable by a key — a second C while the scan runs is dropped by the
+  shared field-action key handler's eligibility gate
+  (`physicalInputEligible()` is false while a world action runs) before
+  `m23FieldAdmit` is reached, so no busy refusal is written; G2 pre-empts
+  part 2 with the scanner's cooldown refusal instead (C, the scan
+  resolves, a second C inside the 900 ms cooldown: `refused_cooldown`,
+  nothing started) and asserts the part shown again afterwards. A first
+  G2 version pre-empted with the outside-plot D after a 40 ms ArrowDown
+  tap, which timed out twice in the test (`dev-g-3.log`, 6293) although a
+  scratchpad replay of the same sequence (the diagnostic
+  `scratchpad/amendment/runtime/g2-r4diag.spec.ts`, `out/g2diag*.json`)
+  showed the refusal line each time; the failing runs recorded no stance,
+  so that cause is not established (the known post-key-up travel under
+  the software renderer can carry the avatar out of the search region,
+  which would pause the plot and route the line to the room), and the
+  step was replaced by a refusal that moves nothing. Its first form waited
+  for the `scan_resolved` record with an event poll whose interval grows
+  to a second, so the second C came after the 900 ms cooldown and started
+  a scan instead (`dev-g-4.log`; the diagnostic `out/g2diag-m23g2.json`
+  shows `action_started` 2, no refusal); the second C is now pressed
+  1300 ms after the first (the scan 1000 ms, the cooldown to 1900 ms).
+  (ii) HELP from the pad is a pause (the plot `paused`, the frame
+  released) and CLOSE HELP returns to the paused yard, not to the search —
+  RESUME is explicit through the panel (contract §12 M2, no automatic
+  resumption), so G2 asserts `paused` after CLOSE HELP and resumes through
+  P → OPEN PLOT before part 2 shows again; (iii) ESC in the field opens
+  the participant's ESC menu over the yard (the plot `paused` with `esc`),
+  and the menu's own ESC returns to the yard with the plot still paused;
+  G1 asserts both states and resumes through the panel; (iv) part 2's four
+  seconds are measured between its two transitions (3600–4600 ms, both
+  detected within a frame) rather than from a wait bound; (v) P during
+  part 1 opens the panel at once and STEP AWAY leaves the plot paused —
+  part 1 shows again from its start on the next entry, then part 2 (the
+  suspension / resumption evidence). G1 passed (`dev-g-3.log`, 1 passed
+  of the pair); G2 passed (`dev-g-5.log`, 1 passed, 2.4 min). No
+  implementation change was needed for G1 / G2 — only the evidence was
+  corrected to the behaviour already specified; register §5.366 names the
+  two cases; the brief for the scheduled pass counts the browser group as
+  18 cases. The scratchpad diagnostic config starts Vite from
+  `node_modules/vite/bin/vite.js` (no `npx`); nothing under the repository
+  was written by the diagnostics.
+- **Round-4 scheduled pass, first run (Sonnet `test-reviewer` role — actual
+  model `claude-sonnet-5-5`, a general-purpose agent reading the role file
+  because the named agent could not be invoked; 20–21 October 2026;
+  `r4/logs/<n>-<name>.log` + `.exit`; one run per command, no retries;
+  port 5183 free before and after every Playwright command).** 1 `lint:tsc`
+  exit 0; 2 `build` exit 0 ("built in 957ms", the usual chunk-size warning,
+  `dist` inside the worktree); 3 changed-file ESLint (25 files,
+  `endOfLine: auto`) exit 0; 4 pure + extraction 37 passed (15.2 s); 5 the
+  browser group (18 cases) exit 1 — **17 passed, 1 failed (54.9 min)**: L1
+  (800 × 600) `TimeoutError: page.waitForFunction: Timeout 9000ms exceeded`
+  in `waitFieldFeedback` (`m23Helpers.ts:1141`) from
+  `expectControlsSequence` (`m23_plots.spec.ts:5974`, the wait for the
+  cell-label help after part 2), L1 at 2.1 min; G1, G2, L2, L3 and every
+  other case passed (X4 at both viewports, X3, X5, B2 … included);
+  6 the narrowed regression (`pilot_exterior_isolation`, `pilot_yard`,
+  `pilot_exterior_models`, `world_v2_yard_look` at 1280 × 720) 18 passed
+  (19.2 min); 7 the capture spec 1 passed (4.8 min); 8a `git diff --check`
+  exit 0 (only the LF→CRLF notice for `pilot_exterior_isolation.spec.ts`);
+  8b `verify-unit` ACTUAL exit 1 with exactly ten FAIL lines
+  ("unexpected path outside the unit allowlist") naming
+  `.agents/skills/{bounded-unit,pixellab-asset-pipeline,playwright-game-verify,psychometric-task-design,qualtrics-logging-review,research-game-architect,room-builder}/SKILL.md`,
+  `.codex/agents/cheap-explorer.toml`, `.codex/config.toml`,
+  `.codex/hooks.json`; 8c the foreign-metadata check exit 0
+  ("INVENTORY-UNCHANGED: 10 recorded foreign entries, identical paths,
+  sizes and SHA-256") and the classifier line verbatim:
+  `EXCEPTION-CONDITIONS-MET (NOT a PASS): verify-unit exit 1; its only failures name the 10 recorded, unchanged foreign metadata files; git diff --check clean.`
+  — reported as EXCEPTION-CONDITIONS-MET (verify-unit exit 1), never PASS.
+  Frames: `r4/m23-shots` 46 PNG + sidecars (index `r4/SHOT-INDEX-pass1.md`),
+  `r4/capture-shots` 17, `r4/yard-look` 16. No baseline run: the failing
+  case exists only in the U23 tree.
+- **The L1 failure, its cause and the bounded evidence correction (the
+  writer, 21 October 2026).** The part-2 sidecar of the failed run
+  (`r4/m23-shots/controls-part-2-800x600.json`, captured 00:35:20 local)
+  shows the avatar at the body-valid south entry of plot A with
+  `"facing": "Facing: outside plot"` — the entry walk's last step left it
+  facing along the boundary (the frame shows it facing down, toward the
+  viewer and away from the plot) — whereas every
+  passing L1 run (round 3 `r3/m23-shots`, `r4/dev-shots`) recorded
+  `Facing: C07 R06` at the same stance. The implementation shows the
+  cell-label help ONCE with the first facing label (`tickM23Guidance`:
+  after both parts, when the line is clear and a `Facing: Cnn Rnn` readout
+  exists), so with no facing cell no help was due and the test's
+  unconditional wait could not be met; the implementation behaved as
+  specified (OD-8a) and no `src/**` file was changed. The test assumed the
+  entry stance faces a cell; G1 already faces up with a 40 ms ArrowUp tap
+  before its help wait, and the same assumption was latent in the shared
+  `expectControlsSequence` (L1 / L2) and before G2's dig. Correction, in
+  `e2e/m23_plots.spec.ts` only: a local `ensureFacingCell(page)` — when the
+  dig readout shows no facing cell it first asserts the help line is NOT
+  showing, taps ArrowUp 40 ms (the entry stances lie south of the plots,
+  the UP probe inside; movement is never blocked by the guidance), waits
+  150 ms and asserts the facing label — called before the help wait in
+  `expectControlsSequence` and in place of G2's bare facing assertion
+  before D. Development checks: `lint:tsc` exit 0 (`dev-tsc-9/10`),
+  changed-file ESLint exit 0 after one prettier wrap (`dev-eslint-9/10`),
+  the formatter check CLEAN, the file still LF; L1 + G2 2 passed
+  (`dev-l1g2-1.log`: L1 4.1 min, G2 2.4 min; the dev sidecar at that stance
+  `Facing: C07 R06`, so the tap branch was not exercised there — its
+  mechanism is the one G1 passes with). The single failed run is recorded
+  as observed: a single-run failure of the evidence, not of the HUD. The
+  affected checks are rerun by the Sonnet role under
+  `scratchpad/r4-test-reviewer-rerun-brief.md`: `lint:tsc`, the changed-file
+  ESLint, the pure + extraction groups and the whole `M23 layout` describe
+  (L1, L2, G1, G2, L3) plus the scope checks, outputs under `r4/rerun/`;
+  the build, the route / capture specs and the regression specs of the
+  first run are reused (no `src/**` change). Visual check by the writer of
+  the first run's frames: `mast-prompt-west-ring-800x600.png` and
+  `-1280x720.png` show the mast prompt ("E / Space — Use Mast 04") fully
+  readable over the scanner plate's text-free band with all three scanner
+  lines (heading, reading, trend) and the dig / tray plates readable at
+  once; the controls-part frames show the two-line guidance above the plot
+  with the HUD intact.
+- **Round-4 scheduled pass, the rerun of the affected checks (Sonnet
+  `test-reviewer` role, actual model `claude-sonnet-5-5`, 21 October 2026;
+  `r4/rerun/logs/<n>-<name>.log` + `.exit`; the first run's logs and frames
+  untouched, confirmed by listing; port 5183 free before and after each
+  Playwright command; one run each, no retries).** After the spec-only
+  correction: 1 `lint:tsc` exit 0; 3 changed-file ESLint (25 files) exit 0;
+  4 pure + extraction 37 passed (14.9 s); 5 the whole `M23 layout` describe
+  5 passed (17.9 min): L1 (800 × 600) 4.0 min, L2 (1280 × 720) 7.1 min, G1
+  2.1 min, G2 2.3 min, L3 2.2 min; 8a `git diff --check` exit 0 (the same
+  LF→CRLF notice only); 8b `verify-unit` ACTUAL exit 1, the same ten FAIL
+  lines naming the recorded `.agents/` and `.codex/` files; 8c the
+  foreign-metadata check `INVENTORY-UNCHANGED` and the classifier
+  `EXCEPTION-CONDITIONS-MET (NOT a PASS)` — never PASS. Commands 2 (build),
+  6 (the narrowed regression) and 7 (the capture spec) of the first run are
+  reused: no `src/**` file changed between the runs. Frames:
+  `r4/rerun/m23-shots` 54 PNG + sidecars (index `r4/SHOT-INDEX-rerun.md`),
+  including the 800 × 600 L1 stance / history / selector frames that the
+  first run had not reached. In the rerun L1's entry stance again faced
+  `C07 R06`, so the conditional tap of `ensureFacingCell` was not exercised
+  by L1 in either passing run; its mechanism (a 40 ms ArrowUp after a
+  sideways move) is the one G1 runs on every pass. Working-tree checks
+  before any staging: the set of changed paths equals the 31-path amended
+  allowlist exactly (`r4/status-paths.txt` = `r4/allowlist-sorted.txt`);
+  the ten foreign files untracked and unstaged.
+- **Round-4 focused scientific recheck (`scientific-reviewer` role played
+  by a general-purpose agent on Opus — actual model `claude-opus-5-5`,
+  read-only; 21 October 2026).** No blocking or major finding. (a) the
+  boundary routing at host level RESOLVED (`m23RegionAssociation`,
+  `m23FieldAdmit`, the `m23Admit` branches, `regionPlots` with the same
+  predicate, the pure round-4 case and X5's two phases with `ringPress`);
+  (b) PARTLY — minor b-1: fifteen of the eighteen browser cases open through
+  `briefToSelector` and compare the recorded snapshot with the oracle; B4,
+  L1 and L2 open inline and compare the live assignment only (L1 / L2) or
+  not at all (B4), so "every browser opening" overstated the coverage;
+  the snapshot has one write path and no consequence for the data is
+  expected. Handled by narrowing the wording (register §5.366 and the
+  round-4 implementation record above), not by widening the tests —
+  amendment §6.3 (8) in the read-only closeout folder keeps its wording
+  and this deviation is reported in the handoff; (c) `input_mode`
+  RESOLVED on the `failure_choice` / `stop_requested` records (note c-1:
+  `stop_confirmed` is not mode-checked — the register wording now names
+  the two record types); (d) outcome preservation across the mast
+  activation RESOLVED at both viewports (note d-1: X4's title says "the
+  known 1" while the assertions are non-null and before / after equality);
+  (e) the assignment-slot follow-up RESOLVED as a recorded prerequisite,
+  the seven-key list not described as exhaustive, the helper and other
+  units untouched (note e-1: the hidden pad in choice_pending / terminal /
+  closed / held-back states rests on the source rule, not a browser
+  assertion). The reviewer judged the L1 correction honest from a
+  measurement standpoint (the tap is ordinary movement writing no record;
+  the help-not-showing assertion confirms rather than masks the rule).
+- **Round-4 focused gameplay and visual rechecks (both roles played by
+  general-purpose agents on Opus — actual model `claude-opus-5-5` each,
+  read-only; 21 October 2026).** _Gameplay:_ no blocking or major finding.
+  (a) the prompt / HUD correction RESOLVED (the depths and plate geometry as
+  register §5.366; no global prompt-depth change; the RoomScene diff only
+  the round-3 hook; targeting / geometry / camera / events unchanged; both
+  mast frames readable at once with the sidecar bounds y 165–189 against
+  scanner text y 92.3–162.3); minor: the prompt's box colour equals the
+  plate colour (`#101820`), so inside the scanner plate the prompt reads
+  like a fourth scanner row and a first-time participant could take "Use
+  Mast 04" for scanner guidance — a presentation-only point for the owner,
+  OPEN (any change would touch the base scene's prompt or the approved
+  plates and a further verification cycle; not made in round 4); note: the
+  second prompt band (design y 351.3–375.3 over the dig plate) is
+  evidenced by the pure geometry case only. (b) the controls guidance
+  PARTLY: every requirement evidenced (parts in order, two lines, part 2's
+  four seconds measured, pre-emption and re-show, suspension and
+  resumption, non-repetition, movement / C / D / P / HELP during a part)
+  except that ESC is pressed during the help line after the parts, not
+  during a part — register §5.366 narrowed accordingly; notes: part 1's
+  duration not measured; suspension on a region exit not exercised for the
+  guidance (it shares `m23ReleaseFrame`); the interaction cases run at
+  800 × 600 on plot A by the approach route. (c) the stake prompt's
+  restoration after the REGION EXIT RESOLVED (X3). (d) the mast activation
+  RESOLVED (M20 brief presented, nothing accepted, the outcomes preserved).
+  Record corrections on its notes: the failed L1 frame shows the avatar
+  facing down toward the viewer (corrected above); the round-4
+  implementation bullet's single case G is superseded by the development
+  record's G1 / G2. _Visual:_ no blocking or major finding. (a) RESOLVED
+  (the prompt clear of the plot by 4–5 screen px; notes: the prompt box
+  merges with the plate edge, the thin margin, the mast art mostly behind
+  the mission card and the scanner plate); (b) RESOLVED (scanner plate
+  below the mission card and clear of the feedback line, dig rows inside
+  the plate, the tray unchanged against round 3, no plate over the plot;
+  note: the neighbouring plot's dug cell shows as an isolated grey square
+  outside the active grid, as noted in round 3); (c) RESOLVED — the amber
+  outline of the facing cell visible on at least two sides at every viewed
+  stance at both viewports and the readout agrees (the avatar covers part
+  of the cue at up-facing and east stances; the approved presentation is
+  unchanged); (d) RESOLVED (two lines each, bottoms at 134 above the plot;
+  the 800 × 600 margin thin); (e) PARTLY — the round-3 b2-01 mismatch
+  RESOLVED (48 frames checked by eye, 100 sidecars as text, all matching);
+  minor, OPEN: `world_prompt_bounds` is stale in ten sidecars of paused
+  panel views (the eight `static-example*` sidecars,
+  `b-terminal-a-available-800x600`, `selector-stop-confirmation-b-800x600`)
+  because the DEV `__yardPromptProbe` is refreshed by the yard's update
+  loop, which does not run while the yard is paused — in each the same
+  sidecar's `world_prompt` correctly records `prompt: false, text: null`
+  and no prompt is visible, and X4 (a live yard) is unaffected; a probe
+  change would be a `src/**` edit requiring the browser checks again, so
+  it is recorded for the owner, not made; note: `field.visible: true` on
+  selector / stop-confirm sidecars reports the objects' flag under the
+  opaque panel (`series.view` tells them apart). Seen outside the items:
+  the reload-lock message box partly covers the stake prompt in
+  `reload-lock-800x600.png`. No asset approved by any reviewer.
+  **Acceptance gate:** every round-4 instruction item is evidenced; no
+  blocking or major finding is open; the open items are the two minors
+  above (prompt box colour; stale paused-panel `world_prompt_bounds`) and
+  the recorded prerequisite of register §5.365.
+- **Round-4 handoff fields (the writer, Claude Fable 5.1 `claude-fable-5-1`,
+  session `4cae0499-efde-4ea3-9568-1e4cd65a18bc`, 21 October 2026).**
+  1. Branch `codex/u23-m23`, base `a80629e94b5f49ff944eef3a4c936b0de8cff29a`,
+     worktree `C:\Users\Juls\.codex\worktrees\u23-m23\research-station-assessment-game`.
+  2. Commit: SHA pending single commit; actual SHA in final external
+     handoff; subject `feat(m23): add two-plot post-failure excavation protocol`.
+  3. Changed files: the 31 amended allowlist paths exactly (23 modified
+     including `src/world/RoomScene.ts`, 8 new); `verify-unit` exit 1 =
+     EXCEPTION-CONDITIONS-MET (never PASS): its only FAIL lines name the ten
+     recorded, unchanged `.agents/` / `.codex/` files, which stay untracked and
+     unstaged (`foreign-metadata-check.mjs` INVENTORY-UNCHANGED).
+  4. Built: rounds 1–3 (the two-plot protocol; OD-1 … OD-8b) and round 4:
+     the field HUD below the base scene's prompt layer with the scanner / dig
+     plates moved so the mast prompt and the scanner readout read at once
+     (register §5.366); the DEV `__yardPromptProbe`; `m23RegionAssociation`;
+     the completed acceptance evidence (X3 restoration, X4 at both viewports
+     with the M20 assertions and bounds sidecars, X5 overlap band, G1 / G2
+     controls guidance, the oracle on every opening through the brief,
+     `input_mode` on the fixtures' `failure_choice` / `stop_requested` records,
+     the sidecar before the capture, the pure round-4 describe) and the
+     `ensureFacingCell` evidence correction.
+  5. Events / scoring: `proto_m23_plots_` provisional only; no canonical
+     name, weight, formula or global score; `assignment_scheme` provisional
+     (round 3); the addendum unchanged in round 4.
+  6. Verification: first run 1–4 exit 0 (37 pure), 5 exit 1 (17 / 18, L1
+     the evidence timeout), 6 exit 0 (18), 7 exit 0 (1), 8a exit 0, 8b exit 1
+     (EXCEPTION-CONDITIONS-MET); the rerun after the spec-only correction: 1
+     exit 0, 3 exit 0, 4 37 passed, 5 `M23 layout` 5 passed, 8a exit 0, 8b
+     exit 1 (EXCEPTION-CONDITIONS-MET); reused unchanged from round 3
+     (`r3/logs/6-regression.log`): `m26_protocol_foundation`,
+     `world_v1_registry`, `world_v1_interactions`, `m05_start_route`,
+     `m19_lines`, `m20_returns`; development runs `r4/dev-*`; no baseline run
+     (the only failure was in a U23-only spec); frames `r4/m23-shots` 46,
+     `r4/rerun/m23-shots` 54, `r4/capture-shots` 17, `r4/yard-look` 16; the
+     staged-content hook equivalents 1–4 and the whitespace check: recorded
+     in the staged-content entry that follows; the post-commit scope check in
+     the final external handoff.
+  7. Reviewer findings: the three focused round-4 rechecks (scientific,
+     gameplay, visual — each a general-purpose agent on Opus,
+     `claude-opus-5-5`; the Sonnet pass `claude-sonnet-5-5`): no blocking or
+     major finding; scientific b-1 and gameplay's ESC wording RESOLVED by
+     narrowing the register / UNIT-LOG wording; OPEN minors for the owner:
+     the mast prompt's box colour equal to the plate colour (gameplay (a)) and
+     the stale `world_prompt_bounds` in ten paused-panel sidecars (visual
+     (e)); the notes as recorded in the two recheck entries above.
+  8. Configuration preserved: `.claude/**`, hooks (inactive; their four
+     equivalents run on the staged content), settings, the guard, the
+     verifier, the ignore configuration, `package.json` / lock,
+     `WorkSurfaceScene.ts` beyond the allowlisted change, `validity.ts`;
+     `.agents/` and `.codex/` untouched.
+  9. Limitations: the foreign-metadata exception (exit 1 + ten FAIL lines);
+     the assignment-slot follow-up prerequisite (register §5.365; the
+     seven-key list NOT exhaustive; no audit performed); the evidence lives in
+     the session scratchpad (user-run copy-and-hash commands in the external
+     handoff); the CRLF checkout with LF new files; the `bin/playwright`
+     form; the G1 / G2 adaptations; the unexplained first G2 timeout
+     (`dev-g-3.log`); the single-run L1 evidence failure of the first pass
+     and its test-only correction (the tap branch exercised by G1, not by L1's
+     passing runs); amendment §6.3 (8)'s "every browser session" wording
+     narrowed in the register (fifteen of eighteen through the brief) without
+     editing the read-only amendment.
+  10. Deviations / left out: `node_modules/.bin/playwright` in place of the
+      `npx.cmd` shim; the named reviewer agents not invocable — general-purpose
+      agents on the stated models played the roles; no fifth round; nothing
+      else descoped.
+  11. Did not change: the primary checkout, the package, the closeout
+      folder, `.agents/`, `.codex/`, `reports/`, `research_notes/`, U22 / U24
+      files, approved decisions, the shared assignment helper.
+  12. Nothing pushed, merged, tagged, deployed, deleted or removed; no
+      install; no remote contact; no PixelLab; no work beyond round 4.
+- **Round-4 staged-content checks (the writer, 21 October 2026; Git Bash
+  from the worktree root; `r4/logs/hook*`).** The 31 amended paths staged
+  by explicit name (`git add <path>` thirty-one times; never `.`, `-A`,
+  `-u` or `commit -a`); the staged list equals the amended allowlist
+  exactly (`r4/staged-paths.txt` = `r4/allowlist-sorted.txt`), nothing
+  unstaged, only `.agents/` and `.codex/` untracked. Hook equivalents on
+  the staged content: (1) `npm.cmd run lint:tsc` exit 0
+  (`hook1-lint-tsc.log`); (2) every staged `.ts` blob through
+  `git show ":<path>" | npx.cmd --no-install eslint --stdin --stdin-filename "<path>"`
+  — 26 files, 0 failures (`hook2-eslint-staged.log`; the staged blobs are
+  LF, so the default line-ending rule applies); (3)
+  `node "$U23_FMT_CHECK" a80629e… <outDir> <the five staged .md files>`:
+  the first two runs into `r4/fmt` and `r4/fmt2` printed
+  `error: Could not access '…REGISTER.md.prettier'` for the register and
+  then a vacuous CLEAN for it — the formatted copy's path in those
+  directories is 261 characters, past the Windows path limit, so
+  `git diff --no-index` could not open it; the run into the short
+  directory `r4/f` (`hook3c-fmt-scope.log`) has no error line and reports
+  CLEAN for the room document, the matrix, the register and the addendum
+  and PRE-EXISTING-ONLY for the UNIT-LOG (169 historical hunks, 0 touching
+  U23 lines), exit 0 — this is the result relied on; the helper itself was
+  not modified; (4) `npx.cmd --no-install commitlint --edit "$U23_EVIDENCE_DIR/r4/COMMIT_MSG.txt"`
+  exit 0 — the first run (`hook4-commitlint.log`) warned
+  `body-max-line-length` for one line, so the message file was rewrapped
+  and its phrase "every recorded browser assignment" narrowed to "the
+  recorded browser assignments" (the scientific recheck's b-1); the rerun
+  (`hook4b-commitlint.log`) exit 0 with no warning; the subject is exactly
+  `feat(m23): add two-plot post-failure excavation protocol` and the
+  message ends with the required co-author trailer.
+  `git diff --cached --check` exit 0 (`hook5-cached-check.log`); a first
+  run of check (3) on the appended record failed on this very line (a code
+  span broken at `--check`, which Prettier would unindent — `r4/g`), so
+  the span was rewritten on one line. After this record was
+  appended the UNIT-LOG was re-staged and checks (3) and the whitespace
+  check were run again on the final staged set (`hook3d-fmt-scope.log`,
+  `hook5b-cached-check.log`); checks (1), (2) and (4) do not read the
+  UNIT-LOG. Session-only Git identity; no configuration change; hooks
+  inactive and not created; no `--no-verify`.

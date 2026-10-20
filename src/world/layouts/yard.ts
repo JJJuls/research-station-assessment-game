@@ -153,22 +153,11 @@ export const YARD_PROPS: readonly YardProp[] = [
     h: 83,
     solids: [[24, 73, 8, 6]],
   },
-  {
-    texture: 'w3-yard-lamp-a',
-    x: 948,
-    y: 440,
-    w: 38,
-    h: 83,
-    solids: [[24, 73, 8, 6]],
-  },
-  {
-    texture: 'w3-yard-lamp-e',
-    x: 1290,
-    y: 300,
-    w: 31,
-    h: 83,
-    solids: [[21, 73, 8, 6]],
-  },
+  // Station 080 Unit 23 (M23, A-adjusted; research-owner decision D-U23-1,
+  // contract §13 R1): the lamps formerly at (948, 440) and (1290, 300) are
+  // removed with their derived solids so the two staked plots (cols 27–40,
+  // rows 8–13) and the relocated stake approach are clear. Their textures
+  // stay on disk.
   {
     texture: 'w3-yard-lamp-e',
     x: 640,
@@ -214,10 +203,9 @@ export const YARD_PROPS: readonly YardProp[] = [
   { texture: 'w3-yard-debris-a', x: 400, y: 440, w: 80, h: 71 },
   { texture: 'w3-yard-debris-sw', x: 470, y: 548, w: 129, h: 78 },
   { texture: 'w3-yard-debris-b', x: 650, y: 470, w: 45, h: 43 },
-  { texture: 'w3-yard-debris-c', x: 1130, y: 470, w: 118, h: 76 },
-  // ——— The staked excavation field's painted stakes (decor; the plot
-  // boundary itself is drawn by the scene over M23_PLOT) ———
-  { texture: 'w3-yard-stake-field', x: 1074, y: 330, w: 135, h: 142 },
+  // Unit 23 (A-adjusted): the debris plate formerly at (1130, 470) and the
+  // painted single-plot stake field formerly at (1074, 330) are removed
+  // (decor, no colliders); the two plot outlines are drawn by the scene.
   {
     texture: 'w3-yard-debris-lean',
     x: 1560,

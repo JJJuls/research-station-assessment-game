@@ -2,11 +2,12 @@
  * Exterior Recovery — participant-view visual evidence capture
  * (evidence-led pilot v2, Unit 4).
  *
- * Thirteen committed frames in
- * docs/verification/screenshots-evidence-led-pilot-v2 (09–21), each
- * produced with REAL keyboard input on the participant route (no
- * developer boot, no state injection) and inspected manually at full
- * resolution; re-running replaces them in place.
+ * Thirteen participant-view frames (09–21), each produced with REAL
+ * keyboard input on the participant route (no developer boot, no state
+ * injection) and inspected manually at full resolution. Unit 23: the
+ * frames are written OUTSIDE the repository, to the external evidence
+ * directory (`U23_CAPTURE_OUT`), with a git-ignored `test-results/`
+ * fallback — never into the old committed screenshot folder.
  */
 import { mkdirSync } from 'node:fs';
 
@@ -16,22 +17,18 @@ import {
   acceptMast,
   answerOpenCheck,
   answerRigCheck,
-  beginExcavation,
+  APPROACH,
   captureErrors,
-  couplingAct,
-  digFacing,
   doMastStage,
   enterYard,
   expectNoRuntimeErrors,
   exteriorProbe,
-  faceCell,
   faProbe,
   finishAtRig,
   finishOutside,
   openSite,
   powerUpUplink,
   pressExpectingEffect,
-  scanAt,
   standOnPad,
   startSalvageTally,
   transmitAt,
@@ -40,13 +37,69 @@ import {
   YARD,
 } from './exteriorHelpers';
 import { press, selectPromptOption } from './helpers';
-import { pilotProbe, walkTo } from './pilotHelpers';
+import {
+  chooseFailure,
+  digFacing,
+  faceCell,
+  failFirst,
+  keyCellOf,
+  openPlot,
+  openSeries,
+  scanHere,
+  walkInsidePlot,
+  walkIntoPlot,
+} from './m23Helpers';
+import { interactAt, pilotProbe, walkTo, yardVia } from './pilotHelpers';
+import { surface, waitSurface } from './returnHelpers';
 
-const OUT = 'docs/verification/screenshots-evidence-led-pilot-v2';
+const OUT = process.env.U23_CAPTURE_OUT ?? 'test-results/u23-capture';
+const PANEL_SETTLE_MS = 450;
 
 async function shot(page: Page, name: string, settleMs = 450) {
   await page.waitForTimeout(settleMs);
   await page.screenshot({ path: `${OUT}/${name}.png` });
+}
+
+/** M19 (Unit 21): walks to the coupling's audited approach and opens the panel (SPACE at the station). */
+async function openCouplingPanel(page: Page) {
+  await yardVia(
+    page,
+    YARD.coupling.x + APPROACH.coupling.x,
+    YARD.coupling.y + APPROACH.coupling.y,
+  );
+  await interactAt(page, YARD.coupling, { approachOffset: APPROACH.coupling });
+  await waitSurface(page, true, 'm19_coupling_panel');
+}
+
+/**
+ * Keyboard input on the panel: a hotkey, ENTER, or `Tab-<id>` (TAB to the
+ * element, then ENTER) — each after the current view settled (the
+ * pilot_yard route's driver).
+ */
+async function panelKeys(page: Page, keys: string[]) {
+  for (const key of keys) {
+    await page.waitForTimeout(PANEL_SETTLE_MS);
+
+    if (key.startsWith('Tab-')) {
+      const id = key.slice(4);
+
+      for (
+        let step = 0;
+        step < 20 && (await surface(page))?.focus !== id;
+        step += 1
+      ) {
+        await page.keyboard.press('Tab');
+        await page.waitForTimeout(60);
+      }
+
+      expect((await surface(page))?.focus, `TAB reaches ${id}`).toBe(id);
+      await page.keyboard.press('Enter');
+    } else {
+      await page.keyboard.press(key);
+    }
+
+    await page.waitForTimeout(150);
+  }
 }
 
 test('exterior recovery — thirteen participant-view frames', async ({
@@ -69,23 +122,44 @@ test('exterior recovery — thirteen participant-view frames', async ({
   await walkTo(page, YARD.flag.x - 60, YARD.flag.y - 44, { yFirst: true });
   await shot(page, '10-m05-cable-flag');
 
-  // 11 — M19: the coupling iced after the third turn (difficulty onset).
-  await couplingAct(page, 1);
-  await couplingAct(page, 1);
-  await couplingAct(page, 1);
-  expect((await exteriorProbe(page)).m19.bound).toBe(true);
-  await shot(page, '11-m19-coupling-iced', 200);
+  // 11 — M19 (Unit 21, the coupling panel): line 1 at its designed
+  // obstacle after the check and three settings (the former prompt-based
+  // "iced after the third turn" of the retired v2 binding).
+  await openCouplingPanel(page);
+  await panelKeys(page, [
+    'Tab-continue',
+    '2',
+    'r',
+    'Tab-start',
+    '1',
+    '2',
+    '3',
+    't',
+  ]);
+  // The panel's own status line (the host scene's probe is refreshed only
+  // once the surface closes).
+  expect((await surface(page))?.status).toContain('line 1');
+  await shot(page, '11-m19-coupling-obstacle', 200);
 
-  // Thaw and finish for the later frames.
-  for (let guard = 0; guard < 30; guard++) {
-    const m19 = (await exteriorProbe(page)).m19;
-
-    if (m19.completion) {
-      break;
-    }
-
-    await couplingAct(page, m19.bound ? 2 : 1);
-  }
+  // Finish the panel for the later frames (line 1 restored, line 2 to its
+  // obstacle and set aside, FINISH — the pilot_yard route's own key path).
+  await panelKeys(page, [
+    '4',
+    '2',
+    't',
+    'Tab-next',
+    '2',
+    '2',
+    '2',
+    't',
+    '2',
+    't',
+    'n',
+    'Enter',
+    'Tab-finish',
+  ]);
+  await waitSurface(page, false);
+  expect((await exteriorProbe(page)).m19_panel.window).toBe('closed');
 
   // 12 — M20: antenna restoration started (feed seated, alignment pending).
   await acceptMast(page);
@@ -96,27 +170,26 @@ test('exterior recovery — thirteen participant-view frames', async ({
   await shot(page, '12-m20-antenna-started');
   await selectPromptOption(page, 1);
 
-  // 13 — scanner readouts: no signal → faint → actionable.
-  const form = (await exteriorProbe(page)).m23_form;
-  const spots = YARD.scanSpots[form];
-  const cell = YARD.targetCells[form];
+  // 13 — M23 (Unit 23): the stake's selector after the brief and both
+  // example pages; plot A in work with the pinned scanner readout (no
+  // reading, then a reading from the interior).
+  await openSeries(page, 'keyboard');
+  await shot(page, '13a-m23-plot-selector');
+  await openPlot(page, 'plot_a', 'keyboard');
+  await walkIntoPlot(page, 'plot_a');
+  await shot(page, '13b-m23-plot-a-searching', 150);
+  await walkInsidePlot(page, 'plot_a');
+  await scanHere(page, 'keyboard');
+  await shot(page, '13c-m23-scanner-reading', 150);
 
-  await beginExcavation(page);
-  await scanAt(page, spots.none);
-  await shot(page, '13a-m23-scan-no-signal', 150);
-  await scanAt(page, spots.faint);
-  expect((await faProbe(page)).scan.last?.category).toBe('faint');
-  await shot(page, '13b-m23-scan-faint', 150);
-  await scanAt(page, spots.actionable);
-  expect(['moderate', 'strong']).toContain(
-    (await faProbe(page)).scan.last?.category,
-  );
-  await shot(page, '13c-m23-scan-actionable', 150);
-
-  // 14 — the exact excavation and recovery.
-  await faceCell(page, cell.x, cell.y);
-  await digFacing(page, 'recovered');
-  await shot(page, '14-m23-recovery', 200);
+  // 14 — the first failed dig and its panel, CONTINUE, the recovery at
+  // the plot's keyed cell (the component goes to the field tray).
+  await failFirst(page, 'keyboard');
+  await shot(page, '14a-m23-first-failure', 200);
+  await chooseFailure(page, 'continue', 'keyboard');
+  await faceCell(page, await keyCellOf(page, 'plot_a'));
+  await digFacing(page, 'keyboard', 'recovered');
+  await shot(page, '14b-m23-recovery', 200);
 
   // 15 — Metal Recovery Yard overview + rig panel.
   await standOnPad(page);
@@ -165,10 +238,12 @@ test('exterior recovery — thirteen participant-view frames', async ({
 
   await transmitAt(page, 'uplinkB');
 
-  // 20 — inventory-full field cache is captured by the belt-full route
-  // test; here the frame shows the yard state with the recovered piece
-  // and the persisted excavation (disturbed ground) for the report.
-  await walkTo(page, cell.x, cell.y - 40, { yFirst: true });
+  // 20 — the yard state with plot A's component in the field tray and the
+  // persisted excavation (the two dug cells) for the report; plot B is
+  // untouched.
+  const key = await keyCellOf(page, 'plot_a');
+
+  await yardVia(page, key.col * 32 + 16, key.row * 32 + 16 - 40);
   await shot(page, '20-m23-persistent-excavation');
 
   // 21 — the return route with the persistent antenna state.

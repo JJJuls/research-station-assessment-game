@@ -2823,6 +2823,11 @@ export abstract class RoomScene extends Phaser.Scene {
       this.activeTarget.x,
       fromAbove ? this.activeTarget.y + 56 : this.activeTarget.y - 56,
     );
+    // Unit 23 amendment: a room may hide its OWN station's prompt while it
+    // owns a fixed frame (presentation only; the press below still acts).
+    const suppressed =
+      this.activeTarget.kind === 'station' &&
+      this.stationPromptSuppressed(this.activeTarget.station!);
 
     this.proximityPrompt
       .setPosition(
@@ -2843,7 +2848,7 @@ export abstract class RoomScene extends Phaser.Scene {
           600 - this.proximityPrompt.height / 2 - 2,
         ),
       )
-      .setVisible(true);
+      .setVisible(!suppressed);
 
     if (this.interactJustPressed()) {
       if (availabilityState !== null) {
@@ -2910,6 +2915,18 @@ export abstract class RoomScene extends Phaser.Scene {
     void near;
 
     return null;
+  }
+
+  /**
+   * Unit 23 amendment: a room may hide the floating prompt of one of its
+   * OWN stations while it owns a fixed task frame. Presentation only — the
+   * station stays the active target and E / Space still acts on it.
+   * Default: never (every room behaves exactly as before).
+   */
+  protected stationPromptSuppressed(station: RoomStationConfig): boolean {
+    void station;
+
+    return false;
   }
 
   /** The redirect's one-line prompt, placed like the auxiliary prompt. */

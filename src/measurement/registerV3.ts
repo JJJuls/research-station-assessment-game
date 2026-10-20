@@ -1631,6 +1631,34 @@ export const REGISTER_V3: readonly RegisterEntry[] = [
     coverage_label: 'behavioural_counterpart',
     direction: 'extend_occasions',
     occasions: 2,
+    // Unit 23: the two-plot excavation protocol landed at the Exterior
+    // Recovery Yard (episode 4) — ONE series opportunity, one window, two
+    // plot occasions (research-owner decision D-U23-1 of 16 October 2026,
+    // all nine rows approved: A-adjusted plots with numeric scanner
+    // feedback and the final neutral wording, B, C, D1, D2, D3, E(c), F, G).
+    // The first completed empty new-cell dig of a plot is its immutable
+    // genuine failure; a direct first-failure CONTINUE / STOP choice; one
+    // completed qualifying scan or new-cell dig after CONTINUE credits 1
+    // (E(c): any valid eligible unknown response ⇒ primary and numerator
+    // null, known outcomes kept in the components). The v2 family
+    // `proto_m23_field_recovery_*` keeps its frozen v2 meaning in the ledger
+    // and is written by no route. The feature row below is the approved
+    // formula and is unchanged.
+    route: {
+      route_version: 'v3',
+      opportunity_ids: ['proto_m23_excavation_series'],
+      windows: [
+        {
+          id: 'm23_plots_w1',
+          occasion: null,
+          zone: 'exterior_recovery_yard',
+          episode: 4,
+        },
+      ],
+      family_prefixes: ['proto_m23_plots_'],
+      secondary_ids: [],
+    },
+    implementation_status: 'implemented',
     summary:
       'Two small independently keyed search plots; after each first genuine unsuccessful dig, another executable scan/dig or stop; every valid attempt kept; failure never fabricated after a correct recovery.',
     features: [

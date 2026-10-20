@@ -915,7 +915,11 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Excavation Field Stake',
     { kind: 'prompt', id: 'pilotPlotStake' },
     'm23_field_recovery',
-    { x: 1052, y: 384 },
+    // Unit 23 (M23, A-adjusted; contract §13 R1): 44 px east of the
+    // relocated stake, outside both plots' qualifying regions, uniquely
+    // own-nearest over its ±12 px landing box (the M05 flag corner
+    // (1130, 518): flag 60.299 px, stake 65.299 px).
+    { x: 1116, y: 488 },
     { w: 1, h: 1 },
   ),
   yardStation(

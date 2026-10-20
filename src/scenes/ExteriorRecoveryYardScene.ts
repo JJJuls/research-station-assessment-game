@@ -11,7 +11,7 @@
  *   1  airlock apron        Noor, supply crate, the M05 occasion-2 cable flag
  *   2  frozen coupling      M19 coupling panel — two lines (west; Unit 21)
  *   3  Mast 04              M20 antenna restoration — START only (north)
- *   4  excavation field     M23 scanner-guided recovery (staked, east)
+ *   4  excavation field     M23 two-plot excavation protocol (staked, east; Unit 23)
  *   5  Metal Recovery Yard  M24 finite magnet deck + depletion (north-east)
  *   6  uplink posts         M26 disconnected channel (north-west)
  *   7  the airlock          the marked return route
@@ -19,8 +19,9 @@
  * Mechanics are the accepted field-actions foundation (scan C / dig D /
  * winch F, deck, caches); the item windows are the Unit 4 models bound in
  * src/pilot/windows/exteriorWindows.ts. C and D work anywhere as ordinary
- * gameplay (secondary_field_action_*); only the open M23 window turns
- * them into M23 evidence. F runs only on the rig's operating pad and only
+ * gameplay (secondary_field_action_*); inside the two staked plots and
+ * while a plot is selected they are the M23 series' own actions (Unit 23,
+ * src/pilot/windows/m23Plots.ts). F runs only on the rig's operating pad and only
  * inside the open M24 window. Leaving the yard pauses every open window
  * (persisted state re-renders on re-entry); Noor's "finished outside" is
  * the one interruption point. Nothing here scores anything.
@@ -48,7 +49,11 @@ import {
   ScanController,
   setFieldActionTelemetryScene,
 } from '../fieldActions';
-import { isWorldActionActive, performWorldAction } from '../gameplay/actions';
+import {
+  cancelActiveWorldAction,
+  isWorldActionActive,
+  performWorldAction,
+} from '../gameplay/actions';
 import { sfxMachineOn, sfxUnavailable } from '../gameplay/audio';
 import { FieldActionController } from '../gameplay/fieldActionKeys';
 import {
@@ -61,7 +66,7 @@ import { prefersReducedMotion } from '../inventory/ui/theme';
 import { refreshValidityProbe } from '../measurement/validity';
 import {
   exteriorAddCache,
-  exteriorNoteDug,
+  exteriorM23GuidanceAddressed,
   exteriorRemoveCache,
 } from '../pilot/exterior/exteriorEpisodeModel';
 import {
@@ -72,17 +77,6 @@ import {
   m20NextStage,
   m20OutdoorComplete,
 } from '../pilot/exterior/m20AntennaModel';
-import {
-  M23_DETECTION_RADIUS,
-  M23_ITEM_ID,
-  M23_OBJECT_ID,
-  M23_PLOT,
-  M23_SCAN_CONTEXT,
-  M23_TARGET_ID,
-  M23_ZONE_ID,
-  m23CellInsidePlot,
-  m23PositionInsidePlot,
-} from '../pilot/exterior/m23ExcavationModel';
 import {
   M24_CHECK_RECORDED,
   M24_DEPLETION_STATEMENT,
@@ -121,6 +115,7 @@ import {
 } from '../pilot/pilotRoute';
 import type { PilotNpcBeat } from '../pilot/PilotZoneScene';
 import { PilotZoneScene } from '../pilot/PilotZoneScene';
+import { M23FieldControls } from '../pilot/ui/M23FieldControls';
 import {
   activeWorkSurface,
   openWorkSurface,
@@ -139,16 +134,6 @@ import {
   exteriorSteppedAway,
   exteriorTechnicalFailure,
   M20_BRIEF,
-  M23_BRIEF,
-  m23Begin,
-  m23Dig,
-  m23Invalid,
-  m23Present,
-  m23Scan,
-  m23Stop,
-  m23TargetActive,
-  m23TargetCell,
-  m23WindowOpen,
   m24Alternative,
   m24AnswerCheck,
   m24Begin,
@@ -250,6 +235,56 @@ import {
   presentM20MastBrief,
 } from '../pilot/windows/m20FeedConsole';
 import {
+  bindM23Surface,
+  closeM23Surface,
+  guardM23Reload,
+  installM23Host,
+  m23ActionPending,
+  m23ConsumesEsc,
+  m23FieldAdmit,
+  m23FieldCancel,
+  m23FieldCancelled,
+  m23FieldDigResolved,
+  m23FieldGoverns,
+  m23FieldScanResolved,
+  m23FieldStarted,
+  m23FieldTick,
+  m23GuidanceAddressed,
+  type M23HostHooks,
+  m23ObserveInput,
+  m23PlotState,
+  m23PresentationRecheck,
+  m23SelectedPlot,
+  m23Series,
+  m23StakeClosedLine,
+  noteM23ShiftEndSource,
+  openM23FieldHelp,
+  openM23Panel,
+  pauseM23,
+  publishM23Probe,
+  uninstallM23Host,
+} from '../pilot/windows/m23Plots';
+import {
+  M23_DETECTION_RADIUS,
+  M23_PLOTS,
+  M23_TEXT,
+  m23CellCentre,
+  m23CellOfPoint,
+  M23P_SURFACE_ID,
+  m23PlotCells,
+  type M23PlotId,
+  m23PlotRect,
+  m23PointInsidePlot,
+  m23RegionMember,
+} from '../pilot/windows/m23PlotsContent';
+import {
+  m23DigLines,
+  type M23PauseCause,
+  m23ScannerLines,
+  m23TrayLine,
+} from '../pilot/windows/m23PlotsModel';
+import { m23SurfaceModel } from '../pilot/windows/m23SurfaceModel';
+import {
   closeM25LoopsAtShiftEnd,
   closeM25Surface,
   declareM25Loops,
@@ -265,7 +300,13 @@ import {
   YARD_SPAWN,
 } from '../pilot/zoneSites';
 import { researchRuntime } from '../systems';
-import type { InteractionKey, PromptOption, PromptStage } from '../world';
+import type {
+  InteractionKey,
+  PromptOption,
+  PromptStage,
+  RoomStationConfig,
+} from '../world';
+import { bodyFits, gridOf } from '../world/layouts/grid';
 import {
   YARD_COLS,
   YARD_LAYOUT,
@@ -276,8 +317,48 @@ import {
 
 const TILE = 32;
 
+/** Unit 23: the M23 field tools (independent of the belt; decision F). */
+const M23_TOOLS = ['field_scanner', 'excavation_spade'] as const;
+/**
+ * Round 3 (amendment OD-8a): the pinned field-controls line shown verbatim
+ * as two consecutive parts (split at the sentence boundary before
+ * "P / PANEL"; the whole line wraps to four rows and crossed the plot's top
+ * row inside the fixed frame), each for 4 s, on the series' first fixed-frame
+ * entry by either route. Guidance only: nothing is blocked while a part
+ * shows.
+ */
+const M23_CONTROLS_PARTS: readonly [string, string] = (() => {
+  const full = M23_TEXT.field_controls;
+  const at = full.indexOf(' P / PANEL');
+
+  return [full.slice(0, at), full.slice(at + 1)];
+})();
+const M23_GUIDANCE_PART_MS = 4000;
+/** Per page load (never per scene instance): parts completed, cell-label help shown. */
+let m23GuidanceParts = 0;
+let m23CellHelpShown = false;
+
 declare global {
   interface Window {
+    /** DEV-only, read-only: the floating station prompt's design-space bounds (round 4). */
+    __yardPromptProbe?: {
+      text: string | null;
+      bounds: { x: number; y: number; w: number; h: number };
+    } | null;
+    /** DEV-only, read-only world-readout chips of the yard (Unit 23, V01–V06). */
+    __yardChipProbe?:
+      | {
+          id: string;
+          text: string;
+          visible: boolean;
+          bounds: {
+            left: number;
+            top: number;
+            right: number;
+            bottom: number;
+          } | null;
+        }[]
+      | null;
     /** DEV-only, read-only exterior-episode probe (never read back). */
     __exteriorProbe?:
       | (ReturnType<typeof exteriorProbeSnapshot> & {
@@ -338,6 +419,34 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
   private checkPrompt: { item: 'M24' | 'M26'; stage: PromptStage } | null =
     null;
 
+  // ——— Unit 23 (M23): the two-plot excavation's scene-local state. ———
+  /** The field HUD (pad, scanner, last dig / tray, local feedback). */
+  private m23Controls?: M23FieldControls;
+  /** The yard's pure collision model for the qualifying-region predicate. */
+  private readonly m23Grid = gridOf(YARD_LAYOUT, YARD_SOLIDS);
+  /** The plot whose fixed frame this scene owns now (the mast-chip mask). */
+  private m23FixedPlot: M23PlotId | null = null;
+  /** The facing-cell highlight inside the active plot. */
+  private m23Facing?: Phaser.GameObjects.Graphics;
+  /** Set while this scene launches an M23 surface itself (no `overlay` pause). */
+  private m23SurfaceOpening = false;
+  /** When the current field-controls part began showing (null: none showing / suspended). */
+  private m23GuidancePartAt: number | null = null;
+  /** The last line routed to the HUD's feedback line and when it clears (pre-emption bookkeeping). */
+  private m23HudLine: { text: string; until: number } | null = null;
+  /** Wall time of the last ESC press (an ESC-caused pause of the yard). */
+  private m23LastEscAt = 0;
+  private m23Hooks: M23HostHooks | null = null;
+  private readonly m23OnBlur = () => this.m23Environment('focus_loss');
+  private readonly m23OnVisibility = () => {
+    if (typeof document !== 'undefined' && document.hidden) {
+      this.m23Environment('hidden');
+    }
+  };
+  private readonly m23OnFocus = () => {
+    m23PresentationRecheck();
+  };
+
   constructor() {
     super(key.scene.exteriorRecoveryYard);
   }
@@ -379,6 +488,9 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     // re-offered (prior exposure recorded, technically incomplete).
     guardM05Reload('o2', Date.now());
     declareExteriorWindows();
+    // M23 (Unit 23): a series whose selector was measured in an earlier
+    // page load is never re-run (the reload check is written once per load).
+    guardM23Reload(Date.now());
     // M19 (Unit 21): the coupling panel's one window is declared here; a
     // panel opened in an earlier page load is never re-run (the reload
     // check is written once per later load at this first guard run).
@@ -417,6 +529,16 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       // M24 / M26 (Unit 12): a paused yard makes the rig and the posts
       // unusable — the continuations' focused clocks pause.
       exteriorHostPaused(now);
+      // M23 (Unit 23): an overlay or another surface over the yard pauses
+      // the selected plot (its running action cancels); the ESC menu is
+      // the participant's ESC; the M23 surfaces pause through the adapter.
+      if (!this.m23SurfaceOpening) {
+        pauseM23(
+          now - this.m23LastEscAt < 80 ? 'esc' : 'overlay',
+          'system',
+          now,
+        );
+      }
     });
     this.events.on(Phaser.Scenes.Events.RESUME, () => {
       const now = Date.now();
@@ -426,17 +548,85 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       // M19 (Unit 21): the kit window resumes only while the coupling
       // panel itself is open over the yard (never after LEAVE or ESC).
       resumeM19Surface(now);
+      this.m23SurfaceOpening = false;
       this.refreshAllVisuals();
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.disconnectTimer?.remove();
       this.disconnectTimer = null;
+      // M23 (Unit 23): a running action is recorded cancelled
+      // (`scene_shutdown`: the framework's cleanup calls no hook); the
+      // fixed frame and the mast-chip mask are released; the window
+      // listeners go.
+      m23FieldCancel('scene_shutdown', Date.now());
       exteriorDeparture(Date.now());
+      this.m23ReleaseFrame(false);
+      this.mastChip?.setVisible(false);
+
+      if (this.m23Hooks !== null) {
+        uninstallM23Host(this.m23Hooks);
+        this.m23Hooks = null;
+      }
+
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('blur', this.m23OnBlur);
+        window.removeEventListener('focus', this.m23OnFocus);
+        document.removeEventListener('visibilitychange', this.m23OnVisibility);
+      }
 
       if (typeof window !== 'undefined' && import.meta.env.DEV) {
         window.__fieldActionsProbe = null;
         window.__exteriorProbe = null;
+        window.__yardChipProbe = null;
+        window.__yardPromptProbe = null;
       }
+    });
+
+    // M23 (Unit 23): the host of the series — the world the adapter reads
+    // and the presentation it drives (contract §12 M2 / §13 R2).
+    this.m23Hooks = this.m23HostHooks();
+    installM23Host(this.m23Hooks);
+
+    // A reload hold-back found before the host was installed: the guidance
+    // stays addressed (§12 M1, G04) — the later yard objectives are never
+    // held behind a locked stake.
+    if (m23Series().status === 'held_back') {
+      exteriorM23GuidanceAddressed(exteriorEpisode());
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('blur', this.m23OnBlur);
+      window.addEventListener('focus', this.m23OnFocus);
+      document.addEventListener('visibilitychange', this.m23OnVisibility);
+    }
+
+    // P / PANEL: the plot panel (M23-only; a running M23 action cancels
+    // first). Inert while a prompt is open or a transition runs.
+    this.input.keyboard!.on('keydown-P', (event: KeyboardEvent) => {
+      if (event.repeat) {
+        return;
+      }
+
+      const eligible =
+        this.physicalInputEligible() ||
+        (isWorldActionActive() &&
+          m23ActionPending() &&
+          !this.isTransitioning());
+
+      // The panel belongs to the exterior work stage (never during Noor's
+      // briefing or after the shift ended).
+      if (
+        !eligible ||
+        activeWorkSurface(this) !== null ||
+        pilotStage() !== 'exterior_work'
+      ) {
+        return;
+      }
+
+      this.m23OpenPanel('keyboard');
+    });
+    this.input.keyboard!.on('keydown-ESC', () => {
+      this.m23LastEscAt = Date.now();
     });
 
     this.refreshAllVisuals();
@@ -509,40 +699,52 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     this.digRegistry = new DigSurfaceRegistry();
     this.caches = new FieldCacheManager(this);
 
-    const cell = m23TargetCell();
-    const centre = this.digRegistry.cellCenter(cell.col, cell.row);
+    // M23 (Unit 23): two independently keyed plots (A-adjusted), each its
+    // own dig zone, hidden target and buried component; only the selected
+    // searching plot's zone and target are active (the adapter's
+    // `onChanged`). Dug cells persist in the series state across scene
+    // creations (a recovered component is never registered again).
+    for (const def of M23_PLOTS) {
+      const plot = m23PlotState(def.id);
+      const centre = m23CellCentre(plot.key);
 
-    this.targets.register({
-      target_id: M23_TARGET_ID,
-      x: centre.x,
-      y: centre.y,
-      detection_radius: M23_DETECTION_RADIUS,
-      form_id: episode.m23_form,
-      zone_id: M23_ZONE_ID,
-      active: m23TargetActive(),
-      recovered: episode.m23.recovered,
-    });
-    this.digRegistry.registerZone({ zone_id: M23_ZONE_ID, ...M23_PLOT });
-
-    if (!episode.m23.recovered) {
-      this.digRegistry.registerBuried({
-        object_id: M23_OBJECT_ID,
-        item_id: M23_ITEM_ID,
-        col: cell.col,
-        row: cell.row,
-        zone_id: M23_ZONE_ID,
+      this.targets.register({
+        target_id: def.target_id,
+        x: centre.x,
+        y: centre.y,
+        detection_radius: M23_DETECTION_RADIUS,
+        form_id: plot.form,
+        zone_id: def.zone_id,
+        active: false,
+        recovered: plot.tray,
       });
+      this.digRegistry.registerZone({
+        zone_id: def.zone_id,
+        ...def.bounds,
+        enabled: false,
+      });
+
+      if (!plot.tray) {
+        this.digRegistry.registerBuried({
+          object_id: def.object_id,
+          item_id: 'm23_component',
+          col: plot.key.col,
+          row: plot.key.row,
+          zone_id: def.zone_id,
+        });
+      }
     }
 
-    // Disturbed ground persists across scene creations (replayed while
-    // the zone is enabled; a recovered object is never registered again,
-    // so a replay can never duplicate it).
-    for (const dug of episode.dug_cells) {
-      this.digRegistry.dig(dug.col, dug.row);
-      this.renderDugCell(dug.col, dug.row);
-    }
+    for (const def of M23_PLOTS) {
+      this.digRegistry.setZoneEnabled(def.zone_id, true);
 
-    this.digRegistry.setZoneEnabled(M23_ZONE_ID, m23WindowOpen());
+      for (const dug of m23PlotState(def.id).dug) {
+        this.digRegistry.dig(dug.cell.col, dug.cell.row);
+        this.renderDugCell(dug.cell.col, dug.cell.row);
+      }
+
+      this.digRegistry.setZoneEnabled(def.zone_id, false);
+    }
 
     // Belt-full recoveries left in the yard come back exactly where they
     // were (item conservation across scene creations).
@@ -557,12 +759,14 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       getPlayerPosition: () => ({ x: this.player.x, y: this.player.y }),
       onResolved: (record) =>
         this.guard('M23', () => this.onScanResolved(record)),
-      showFeedback: (message) => this.showFeedbackMessage(message),
+      showFeedback: (message) => this.m23Feedback(message),
+      // M23: the field HUD renders the pinned readable scanner while a
+      // plot is in work; the default caption everywhere else.
+      presentation: {
+        readout: () => (m23ActionPending() ? 'none' : 'default'),
+      },
+      onCancelled: () => m23FieldCancelled(Date.now()),
     });
-
-    if (m23WindowOpen()) {
-      this.scanController.setContext(M23_SCAN_CONTEXT);
-    }
 
     this.digController = new DigController({
       scene: this,
@@ -576,10 +780,13 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
         this.guard('M23', () => this.onDigResolved(record)),
       onRefused: (refusal) => this.onDigRefused(refusal),
       onCellDug: (col, row) => {
-        exteriorNoteDug(exteriorEpisode(), col, row);
         this.renderDugCell(col, row);
       },
-      showFeedback: (message) => this.showFeedbackMessage(message),
+      showFeedback: (message) => this.m23Feedback(message),
+      // M23 (decision F): a recovered component goes to the field tray (the
+      // series records it on resolution); never the belt or a cache.
+      deliverRecovery: () => undefined,
+      onCancelled: () => m23FieldCancelled(Date.now()),
     });
     this.magnet = new MagnetWinchController({
       scene: this,
@@ -616,30 +823,15 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
         key: 'C',
         label: 'Scan',
         getTarget: () => this.scanTarget(),
-        perform: () => {
-          if (this.scanController.performScan()) {
-            this.player.playActionAnim('scan');
-            playSheetEffect(
-              this,
-              'plv1-fx-scan-pulse',
-              this.player.x,
-              this.player.y - 8,
-            );
-          }
-        },
-        onIneligiblePress: () => this.onScanIneligiblePress(),
+        perform: () => this.performScan('keyboard'),
+        onIneligiblePress: () => this.onScanIneligiblePress('keyboard'),
       },
       {
         key: 'D',
         label: 'Dig',
-        getTarget: () => this.digController.getDigTarget(),
-        perform: (target) => {
-          if (this.digController.performDig(target)) {
-            this.player.playActionAnim('dig');
-            playSheetEffect(this, 'plv1-fx-dig-dust', target.x, target.y - 6);
-          }
-        },
-        onIneligiblePress: () => this.onDigIneligiblePress(),
+        getTarget: () => this.digTarget(),
+        perform: (target) => this.performDig(target, 'keyboard'),
+        onIneligiblePress: () => this.onDigIneligiblePress('keyboard'),
       },
       {
         key: 'F',
@@ -651,6 +843,38 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
         onIneligiblePress: () => this.onRigIneligiblePress(),
       },
     ]);
+
+    // ——— M23 (Unit 23): the field HUD — pointer equivalents of the arrow
+    // keys, C, D, HELP and P, the scanner and last-dig readouts, the tray
+    // line and the local feedback line (contract §10). Hidden until a plot
+    // is selected.
+    this.m23Controls = new M23FieldControls(this, {
+      onMove: (intent) => this.player.setExternalMoveIntent(intent),
+      onScan: () => {
+        if (this.scanTarget() !== null) {
+          this.performScan('pointer');
+        } else {
+          this.onScanIneligiblePress('pointer');
+        }
+      },
+      onDig: () => {
+        const target = this.digTarget();
+
+        if (target !== null) {
+          this.performDig(target, 'pointer');
+        } else {
+          this.onDigIneligiblePress('pointer');
+        }
+      },
+      onHelp: () => this.m23OpenHelp('pointer'),
+      onPanel: () => this.m23OpenPanel('pointer'),
+      eligible: () =>
+        !this.isTransitioning() &&
+        activeWorkSurface(this) === null &&
+        (this.physicalInputEligible() || m23ActionPending()),
+    });
+    this.m23Facing = this.add.graphics().setDepth(DepthLayer.FloorMarking);
+    this.refreshM23();
 
     // ——— World V2: the painted strip IS the terrain and every prop —
     // hide every site marker sprite (interactions, prompts and events
@@ -666,7 +890,9 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
         [
           'proc-valve-relief',
           'proc-beacon-comms',
-          'proc-survey-stake',
+          // Unit 23: the relocated stake (1072, 488) has no painted prop
+          // (the old stake-field prop left with §13 R1); the procedural
+          // survey-stake sprite stays visible as the station's marker.
           'proc-rig-recycler',
           'proc-bench-prep',
           'proc-scan-node',
@@ -750,6 +976,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       verb: 'Use the',
       registryId: 'yard.support_console',
       onPromptOpened: () => {
+        this.m23PauseForForeignStation();
         this.logStationOpened('support_console', {
           window_status: m08Window.windowStatus(),
         });
@@ -862,6 +1089,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       verb: 'Use the',
       registryId: 'yard.sensor_post',
       onPromptOpened: () => {
+        this.m23PauseForForeignStation();
         this.logStationOpened('sensor_post', {
           window_status: m25LoopsWindow.windowStatus(),
         });
@@ -1011,6 +1239,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       x: site.x,
       y: site.y,
       onPromptOpened: () => {
+        this.m23PauseForForeignStation();
         this.logStationOpened('frozen_coupling', {
           window_status: m19Window.windowStatus(),
         });
@@ -1103,6 +1332,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       x: site.x,
       y: site.y,
       onPromptOpened: () => {
+        this.m23PauseForForeignStation();
         const state = exteriorEpisode().m20;
 
         this.logStationOpened('mast_04', {
@@ -1152,6 +1382,12 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
     this.mastChip = this.chip(site.x + 148, site.y + 30, '');
   }
 
+  /**
+   * M23 (Unit 23): the Excavation Field Stake opens the series' panel — the
+   * brief and the two static example pages before the first measured
+   * opening, the plot selector afterwards; a closed or locked series answers
+   * with its pinned line. No world prompt is shown.
+   */
   private buildExcavationSite() {
     const site = YARD_SITES.plotStake;
 
@@ -1162,26 +1398,36 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       x: site.x,
       y: site.y,
       onPromptOpened: () => {
-        const state = exteriorEpisode().m23;
+        const series = m23Series();
 
         this.logStationOpened('excavation_stake', {
-          open: m23WindowOpen(),
-          recovered: state.recovered,
+          series_status: series.status,
+          opened: series.opened,
+          selected: series.selected,
         });
 
-        if (state.closed) {
-          this.showFeedbackMessage(
-            state.recovered
-              ? 'The relay coupling was recovered from this field.'
-              : 'The excavation is closed for this shift.',
-          );
+        if (activeWorkSurface(this) !== null) {
+          return false;
+        }
+
+        // The stake opens through the panel path: a plot in work pauses
+        // first (a running action cancels), then the selector (§12 M2).
+        const outcome = openM23Panel(
+          this.observedInput().input_mode === 'pointer'
+            ? 'pointer'
+            : 'keyboard',
+          Date.now(),
+        );
+
+        if (outcome === 'closed' || outcome === 'locked') {
+          this.showFeedbackMessage(m23StakeClosedLine());
 
           return false;
         }
 
-        m23Present(Date.now());
+        this.openM23Surface();
 
-        return true;
+        return false;
       },
     });
     registerPilotStation({
@@ -1191,16 +1437,13 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       y: site.y,
       label: 'Excavation Field Stake',
       stages: ['exterior_work'],
-      isDone: () => {
-        const state = exteriorEpisode().m23;
-
-        return state.closed || state.recovered;
-      },
+      // Guidance only (contract §12 M1): addressed on the first usable plot
+      // selector; never by a plot's success, stop or failure.
+      isDone: () => m23GuidanceAddressed(),
       order: 3,
     });
 
-    // World V2: the painted stakes and rope mark the field; the dashed
-    // boundary (redrawPlotOverlay) follows M23_PLOT over them.
+    // The two plot outlines are drawn by redrawPlotOutlines over the field.
   }
 
   private buildMetalYard() {
@@ -1215,6 +1458,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       x: rig.x,
       y: rig.y,
       onPromptOpened: () => {
+        this.m23PauseForForeignStation();
         const state = exteriorEpisode().m24;
 
         this.logStationOpened('magnet_rig', {
@@ -1284,6 +1528,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       x: bench.x,
       y: bench.y,
       onPromptOpened: () => {
+        this.m23PauseForForeignStation();
         this.logStationOpened('sorting_bench', {});
 
         return true;
@@ -1303,6 +1548,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       x: postA.x,
       y: postA.y,
       onPromptOpened: () => {
+        this.m23PauseForForeignStation();
         const state = exteriorEpisode().m26;
 
         this.logStationOpened('uplink_post_a', {
@@ -1351,6 +1597,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       x: postB.x,
       y: postB.y,
       onPromptOpened: () => {
+        this.m23PauseForForeignStation();
         const state = exteriorEpisode().m26;
 
         this.logStationOpened('uplink_post_b', {
@@ -1376,6 +1623,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       x: panel.x,
       y: panel.y,
       onPromptOpened: () => {
+        this.m23PauseForForeignStation();
         const state = exteriorEpisode().m26;
 
         this.logStationOpened('line_status_panel', {
@@ -1412,6 +1660,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       x: crate.x,
       y: crate.y,
       onPromptOpened: () => {
+        this.m23PauseForForeignStation();
         this.logStationOpened('supply_crate', {});
         // M11 (Unit 3): the crate is the yard loan's return point.
         noteM11ReturnPointAvailable('yard');
@@ -1434,6 +1683,7 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
       x: flag.x,
       y: flag.y,
       onPromptOpened: () => {
+        this.m23PauseForForeignStation();
         this.logStationOpened('cable_flag', {});
 
         if (activeWorkSurface(this) !== null) {
@@ -1483,15 +1733,6 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
         return this.noorBeat().body;
       case 'pilotMast':
         return episode.m20.accepted ? m20MastStatus(episode.m20) : M20_BRIEF;
-      case 'pilotPlotStake': {
-        const state = episode.m23;
-
-        return state.entered
-          ? `${M23_BRIEF}
-
-Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, ${state.exact_dig_attempts} dig${state.exact_dig_attempts === 1 ? '' : 's'} inside the stakes.`
-          : M23_BRIEF;
-      }
       case 'pilotRigReadout': {
         const state = episode.m24;
 
@@ -1584,8 +1825,6 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       }
       case 'pilotMast':
         return this.mastOptions();
-      case 'pilotPlotStake':
-        return this.stakeOptions();
       case 'pilotRigReadout':
         return this.rigOptions();
       case 'pilotUplinkA':
@@ -1609,9 +1848,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
   }
 
   /** A neutral step-away that releases guidance for this site (never the register). */
-  private stepAway(
-    site: 'mast' | 'excavation' | 'rig' | 'uplink',
-  ): PromptOption {
+  private stepAway(site: 'mast' | 'rig' | 'uplink'): PromptOption {
     return this.option('Step away', () => {
       if (site === 'rig' || site === 'uplink') {
         exteriorSteppedAway(site, Date.now(), 'keyboard');
@@ -1701,50 +1938,422 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     ];
   }
 
-  // ——— M23 ———
+  // ——— M23 (Unit 23) ———
 
-  private stakeOptions(): PromptOption[] {
-    const state = exteriorEpisode().m23;
+  /** The world the series adapter reads and the presentation it drives. */
+  private m23HostHooks(): M23HostHooks {
+    return {
+      origin: () => ({ x: this.player.x, y: this.player.y }),
+      member: (plot, x, y) =>
+        m23RegionMember(plot, x, y, (px, py) => bodyFits(this.m23Grid, px, py)),
+      insidePlot: (x, y) =>
+        M23_PLOTS.find((def) => m23PointInsidePlot(def.bounds, x, y))?.id ??
+        null,
+      // Amendment OD-4: every plot whose exact qualifying region (the
+      // body-valid inverse-probe union, not the other plot) holds the point.
+      regionPlots: (x, y) =>
+        M23_PLOTS.filter(
+          (def) =>
+            m23RegionMember(def.id, x, y, (px, py) =>
+              bodyFits(this.m23Grid, px, py),
+            ).member,
+        ).map((def) => def.id),
+      tools: () => [...M23_TOOLS],
+      stage: () => pilotStage(),
+      usable: () =>
+        typeof document === 'undefined' ||
+        (!document.hidden &&
+          (typeof document.hasFocus !== 'function' || document.hasFocus())),
+      surface: {
+        isOpen: () => activeWorkSurface(this) !== null,
+        open: () => this.openM23Surface(),
+        refresh: () => activeWorkSurface(this)?.refresh(),
+        close: () => activeWorkSurface(this)?.close(),
+      },
+      onSearching: (plot) => this.m23EngageFrame(plot),
+      onNotSearching: () => this.m23ReleaseFrame(true),
+      onChanged: () => this.refreshM23(),
+      onGuidanceAddressed: () => {
+        exteriorM23GuidanceAddressed(exteriorEpisode());
+        this.refreshGuidance();
+        refreshPilotCoverageProbe();
+      },
+      feedback: (message) => this.m23Feedback(message),
+      cancelWorldAction: () => cancelActiveWorldAction(),
+    };
+  }
 
-    if (!state.entered) {
-      return [
-        this.option('Begin the excavation', () => {
-          if (m23Begin(Date.now(), 'keyboard')) {
-            this.targets.setActive(M23_TARGET_ID, true);
-            this.digRegistry.setZoneEnabled(M23_ZONE_ID, true);
-            this.scanController.setContext(M23_SCAN_CONTEXT);
-            this.redrawPlotOverlay();
-            this.showFeedbackMessage(
-              'Excavation open — sweep (C) inside the stakes, dig (D) the cell you face.',
-            );
-            this.refreshGuidance();
-            refreshPilotCoverageProbe();
-          }
-        }),
-        this.stepAway('excavation'),
-      ];
+  /**
+   * Unit 23 amendment (OD-1): the yard hides ONLY its own stake's floating
+   * prompt while it owns a fixed frame (the prompt crossed the highlighted
+   * entry cell). Foreign stations keep their prompts; the stake stays the
+   * active target, so E / Space still opens the panel path.
+   */
+  protected stationPromptSuppressed(station: RoomStationConfig): boolean {
+    return (
+      station.interactionKey === 'pilotPlotStake' && this.m23FixedPlot !== null
+    );
+  }
+
+  /** The series' surface (the shared standard-frame work surface). */
+  private openM23Surface() {
+    if (activeWorkSurface(this) !== null) {
+      return;
     }
 
-    return [
-      this.option('Continue'),
-      this.option('Stop the excavation', () => {
-        if (m23Stop(Date.now(), 'keyboard')) {
-          this.closeExcavationMechanics();
-          this.showFeedbackMessage(
-            'Excavation stopped; the field stays as it is.',
-          );
-          this.refreshGuidance();
-          refreshPilotCoverageProbe();
+    this.m23SurfaceOpening = true;
+    openWorkSurface(this, {
+      surfaceId: M23P_SURFACE_ID,
+      model: () => m23SurfaceModel(bindM23Surface({ now: () => Date.now() })),
+      onInput: (observation) => m23ObserveInput(observation),
+      onClose: (mode) => {
+        // ESC order: the STOP confirmation returns to the selector, HELP
+        // returns to its origin; otherwise ESC pauses (STEP AWAY).
+        if (m23ConsumesEsc(Date.now())) {
+          return false;
         }
-      }),
+
+        closeM23Surface('esc', mode, Date.now());
+
+        return true;
+      },
+      onClosed: () => {
+        this.m23SurfaceOpening = false;
+        this.refreshM23();
+        this.refreshGuidance();
+      },
+    });
+  }
+
+  /**
+   * A deliberate interaction with any OTHER yard station pauses a plot in
+   * work before that station opens (§12 M2; the fixed frame ends with it).
+   * Called first by every non-stake station's prompt hook.
+   */
+  private m23PauseForForeignStation() {
+    const selected = m23SelectedPlot();
+
+    if (
+      selected !== null &&
+      (selected.status === 'approaching' || selected.status === 'searching')
+    ) {
+      pauseM23(
+        'overlay',
+        this.observedInput().input_mode === 'pointer' ? 'pointer' : 'keyboard',
+        Date.now(),
+      );
+    }
+  }
+
+  private m23OpenPanel(mode: 'keyboard' | 'pointer') {
+    if (activeWorkSurface(this) !== null) {
+      return;
+    }
+
+    const outcome = openM23Panel(mode, Date.now());
+
+    if (outcome === 'closed' || outcome === 'locked') {
+      this.m23Feedback(m23StakeClosedLine());
+
+      return;
+    }
+
+    this.openM23Surface();
+  }
+
+  private m23OpenHelp(mode: 'keyboard' | 'pointer') {
+    if (activeWorkSurface(this) !== null) {
+      return;
+    }
+
+    openM23FieldHelp(mode, Date.now());
+    this.openM23Surface();
+  }
+
+  /** The page lost focus / was hidden: the selected plot pauses (its action cancels). */
+  private m23Environment(cause: M23PauseCause) {
+    if (!this.scene.isActive() && !this.scene.isPaused()) {
+      return;
+    }
+
+    pauseM23(cause, 'system', Date.now());
+  }
+
+  /** The selected plot is searching: its fixed frame (contract §10 / §13 R2). */
+  private m23EngageFrame(plot: M23PlotId) {
+    const def = M23_PLOTS.find((candidate) => candidate.id === plot)!;
+
+    this.m23FixedPlot = plot;
+    this.cameraHeld = true;
+    this.plate.snapScroll(def.fixed_scroll.x, def.fixed_scroll.y);
+    // Already-visible entry hides immediately; the clamp list omits the
+    // chip on every masked frame (list omission alone is insufficient).
+    this.mastChip?.setVisible(false);
+    this.scanController.setContext(def.zone_id);
+    this.refreshM23();
+  }
+
+  /** The fixed frame ends: ordinary follow; the chip list recomputed at once. */
+  private m23ReleaseFrame(recompute: boolean) {
+    if (this.m23FixedPlot === null) {
+      return;
+    }
+
+    this.m23FixedPlot = null;
+    this.cameraHeld = false;
+    this.scanController.setContext('free');
+    // The controls guidance suspends with the frame; a pending part is
+    // shown again (from its start) at the next fixed-frame entry.
+    this.m23GuidancePartAt = null;
+
+    if (recompute && this.mastChip !== undefined && this.mastChip.active) {
+      this.clampWorldReadouts(this.m23ChipList());
+    }
+  }
+
+  /** The clamp candidates: the mast chip is excluded while a fixed frame is owned. */
+  private m23ChipList(): (Phaser.GameObjects.Text | null)[] {
+    return [
+      this.couplingChip ?? null,
+      this.m23FixedPlot === null ? (this.mastChip ?? null) : null,
+      this.rigChip ?? null,
+      this.lineAChip ?? null,
+      this.lineBChip ?? null,
     ];
   }
 
-  private closeExcavationMechanics() {
-    this.targets.setActive(M23_TARGET_ID, false);
-    this.digRegistry.setZoneEnabled(M23_ZONE_ID, false);
-    this.scanController.setContext('free');
-    this.redrawPlotOverlay();
+  /** M23 feedback: the local line while the field HUD shows, else the room's. */
+  private m23Feedback(message: string, durationMs = 2200) {
+    // The HUD's own line carries a message only while the plot it belongs
+    // to stays live; a closure line (recovery, stop) outlives the HUD, so
+    // it goes to the room's feedback like every line outside a plot.
+    const selected = m23SelectedPlot();
+    const live =
+      selected !== null &&
+      (selected.status === 'approaching' ||
+        selected.status === 'searching' ||
+        selected.status === 'choice_pending');
+
+    if (live && this.m23Controls?.isVisible()) {
+      this.m23Controls.showFeedback(message, durationMs);
+      // What the HUD line shows now and when it clears: a later line
+      // pre-empts a controls-guidance part, which is shown again afterwards.
+      this.m23HudLine = { text: message, until: Date.now() + durationMs };
+    } else {
+      this.showFeedbackMessage(message);
+    }
+  }
+
+  /**
+   * Round 3 (amendment OD-8a): on the first fixed-frame entry of the load the
+   * two verbatim parts of the pinned field-controls line, 4 s each and in
+   * order, then the pinned cell-label help once with the first facing label.
+   * Another HUD line (a refusal, a cancellation, "Search resumed.") pre-empts
+   * the current part, which is shown again from its start once that line
+   * clears; the sequence suspends while the frame is released and resumes at
+   * the next entry; nothing is blocked while a part shows.
+   */
+  private tickM23Guidance(digLines: readonly string[]) {
+    const nowMs = Date.now();
+    const line = this.m23HudLine;
+    const lineClear = line === null || nowMs >= line.until;
+
+    if (m23GuidanceParts < 2) {
+      const part = M23_CONTROLS_PARTS[m23GuidanceParts];
+
+      if (this.m23GuidancePartAt !== null) {
+        if (line === null || line.text !== part) {
+          // Pre-empted: wait for the other line, then show the part again.
+          this.m23GuidancePartAt = null;
+        } else if (nowMs - this.m23GuidancePartAt >= M23_GUIDANCE_PART_MS) {
+          m23GuidanceParts += 1;
+          this.m23GuidancePartAt = null;
+        }
+      }
+
+      if (
+        this.m23GuidancePartAt === null &&
+        m23GuidanceParts < 2 &&
+        lineClear
+      ) {
+        this.m23GuidancePartAt = nowMs;
+        this.m23Feedback(
+          M23_CONTROLS_PARTS[m23GuidanceParts],
+          M23_GUIDANCE_PART_MS,
+        );
+      }
+
+      return;
+    }
+
+    if (
+      !m23CellHelpShown &&
+      lineClear &&
+      digLines.some((entry) => /Facing: C\d\d R\d\d/.test(entry))
+    ) {
+      m23CellHelpShown = true;
+      this.m23Feedback(M23_TEXT.cell_label_help);
+    }
+  }
+
+  /** Registries, outlines, HUD, guidance and probes follow the series state. */
+  private refreshM23() {
+    const selected = m23SelectedPlot();
+    const searching = selected !== null && selected.status === 'searching';
+
+    for (const def of M23_PLOTS) {
+      const active = searching && selected.id === def.id;
+
+      this.digRegistry.setZoneEnabled(def.zone_id, active);
+
+      if (this.targets.has(def.target_id)) {
+        this.targets.setActive(def.target_id, active);
+
+        if (m23PlotState(def.id).tray) {
+          this.targets.markRecovered(def.target_id);
+        }
+      }
+    }
+
+    if (!searching) {
+      this.m23ReleaseFrame(true);
+    }
+
+    this.redrawPlotOutlines();
+    this.renderM23Controls();
+    this.refreshGuidance();
+    refreshPilotCoverageProbe();
+    publishM23Probe(Date.now());
+  }
+
+  private renderM23Controls() {
+    const controls = this.m23Controls;
+
+    if (controls === undefined) {
+      return;
+    }
+
+    // The HUD belongs to a plot IN WORK (§12 M1: no standing reminder): it
+    // hides on every pause and pending choice, wherever the avatar is.
+    const selected = m23SelectedPlot();
+    const show =
+      selected !== null &&
+      (selected.status === 'approaching' || selected.status === 'searching');
+
+    controls.setVisible(show);
+
+    if (selected === null) {
+      return;
+    }
+
+    const facing = m23CellOfPoint(
+      this.player.selector.x + 8,
+      this.player.selector.y + 8,
+    );
+
+    const digLines = m23DigLines(selected, facing);
+
+    controls.render({
+      letter: selected.letter,
+      approaching: selected.status === 'approaching',
+      scanner: m23ScannerLines(selected),
+      dig: digLines,
+      tray: m23TrayLine(m23Series()),
+    });
+
+    // The controls guidance (the two pinned parts, then the cell-label help)
+    // runs only while the selected plot is searching inside its fixed frame
+    // (round 3, amendment OD-8a — either opening route reaches it).
+    if (show && selected.status === 'searching' && this.m23FixedPlot !== null) {
+      this.tickM23Guidance(digLines);
+    }
+  }
+
+  private scanTarget(): { x: number; y: number } | null {
+    if (m23FieldGoverns(this.player.x, this.player.y)) {
+      const admission = m23FieldAdmit(
+        'scan',
+        {
+          busy: isWorldActionActive(),
+          cooling: this.scanController.isCoolingDown(),
+          cell: null,
+        },
+        'keyboard',
+        false,
+      );
+
+      return admission.admitted ? { x: this.player.x, y: this.player.y } : null;
+    }
+
+    if (this.scanController.isCoolingDown()) {
+      return null;
+    }
+
+    return { x: this.player.x, y: this.player.y };
+  }
+
+  private digTarget(): { x: number; y: number } | null {
+    const target = this.digController.getDigTarget();
+
+    if (target === null) {
+      return null;
+    }
+
+    if (m23FieldGoverns(this.player.x, this.player.y)) {
+      const admission = m23FieldAdmit(
+        'dig',
+        {
+          busy: isWorldActionActive(),
+          cooling: false,
+          cell: m23CellOfPoint(target.x, target.y),
+        },
+        'keyboard',
+        false,
+      );
+
+      return admission.admitted ? target : null;
+    }
+
+    return target;
+  }
+
+  private performScan(mode: 'keyboard' | 'pointer') {
+    const governs = m23FieldGoverns(this.player.x, this.player.y);
+
+    if (this.scanController.performScan()) {
+      this.player.playActionAnim('scan');
+      playSheetEffect(
+        this,
+        'plv1-fx-scan-pulse',
+        this.player.x,
+        this.player.y - 8,
+      );
+
+      if (governs) {
+        m23FieldStarted('scan', null, mode, Date.now());
+      }
+    }
+  }
+
+  private performDig(
+    target: { x: number; y: number },
+    mode: 'keyboard' | 'pointer',
+  ) {
+    const governs = m23FieldGoverns(this.player.x, this.player.y);
+
+    if (this.digController.performDig(target)) {
+      this.player.playActionAnim('dig');
+      playSheetEffect(this, 'plv1-fx-dig-dust', target.x, target.y - 6);
+
+      if (governs) {
+        m23FieldStarted(
+          'dig',
+          m23CellOfPoint(target.x, target.y),
+          mode,
+          Date.now(),
+        );
+      }
+    }
   }
 
   // ——— M24 / M26 — the expected-outcome check (Unit 12) ———
@@ -2282,8 +2891,10 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     switch (pilotStage()) {
       case 'exterior_briefing': {
         const body =
-          'Noor: Storm damage, seven jobs — work them in this order: the frozen coolant coupling (west), Mast 04 (north), the staked excavation field (east), the magnet rig in the Metal Recovery Yard (north-east), the station support console on the open field (south of the mast), the field sensor post (west field, south of the uplinks), then the uplink posts (north-west) for the two recovery reports.\n' +
-          'Each site has its own panel (E). Scanner is C, spade is D, the rig is F. Come back to me when you are finished outside.';
+          // M23 (Unit 23, contract §13 R4): the excavation clause and ONE
+          // appended neutral sentence; every other job's wording unchanged.
+          `Noor: Storm damage, seven jobs — work them in this order: the frozen coolant coupling (west), Mast 04 (north), ${M23_TEXT.noor_clause}, the magnet rig in the Metal Recovery Yard (north-east), the station support console on the open field (south of the mast), the field sensor post (west field, south of the uplinks), then the uplink posts (north-west) for the two recovery reports.\n` +
+          `Each site has its own panel (E). Scanner is C, spade is D, the rig is F. Come back to me when you are finished outside. ${M23_TEXT.noor_sentence}`;
         const ready = (loan: boolean | null) => () => {
           const now = Date.now();
 
@@ -2505,6 +3116,22 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     // started one keeps its latency; the work cycle as it stands).
     exitM05('o2', now, 'shift_ended');
 
+    // M23 (Unit 23, decision D2): Noor's command is the participant's —
+    // its device and the sequence of the beat record just written are the
+    // source the series needs to resolve an informed shift-end response.
+    const events = researchRuntime.getEvents();
+    const beat = events[events.length - 1];
+    const input = this.observedInput().input_mode;
+
+    noteM23ShiftEndSource({
+      participant_initiated: true,
+      origin_input_mode: input === 'pointer' ? 'pointer' : 'keyboard',
+      shift_end_command_id: 'noor_finished_outside',
+      shift_end_sequence:
+        beat !== undefined && typeof beat.sequence === 'number'
+          ? beat.sequence
+          : null,
+    });
     endExteriorShift(now);
     // M19 (Unit 21): an opened, unfinished series closes as it stands
     // (`shift_ended`); a presented, never-opened panel records its closure.
@@ -2513,7 +3140,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     // M25 (Unit 4): the loops close with the shift — the belief question
     // becomes due once this recorded closure exists (never on a score).
     closeM25LoopsAtShiftEnd(now);
-    this.closeExcavationMechanics();
+    this.refreshM23();
     advancePilotStage('return_hub', now);
     this.refreshAllVisuals();
     refreshValidityProbe();
@@ -2532,65 +3159,51 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
 
   // ————————————————————————————————— field-action routing ——
 
-  private scanTarget(): { x: number; y: number } | null {
-    if (this.scanController.isCoolingDown()) {
-      return null;
-    }
+  /**
+   * A C press with no eligible target. Where M23 governs (a plot is
+   * selected, or the avatar stands inside a plot) the refusal is the
+   * series' own record and copy; elsewhere the scanner's cooldown line.
+   */
+  private onScanIneligiblePress(mode: 'keyboard' | 'pointer'): void {
+    if (m23FieldGoverns(this.player.x, this.player.y)) {
+      const admission = m23FieldAdmit(
+        'scan',
+        {
+          busy: isWorldActionActive(),
+          cooling: this.scanController.isCoolingDown(),
+          cell: null,
+        },
+        mode,
+      );
 
-    // Inside the staked field the survey is honest only while the window
-    // is open (before it the target is inert; after a stop it stays
-    // buried) — sweeps there are refused neutrally, never faked.
-    if (
-      m23PositionInsidePlot(this.player.x, this.player.y) &&
-      !m23WindowOpen()
-    ) {
-      return null;
-    }
-
-    return { x: this.player.x, y: this.player.y };
-  }
-
-  private onScanIneligiblePress(): void {
-    if (this.scanController.isCoolingDown()) {
-      this.scanController.showCooldownFeedback();
+      if (admission.copy !== null) {
+        this.m23Feedback(admission.copy);
+      }
 
       return;
     }
 
-    if (
-      m23PositionInsidePlot(this.player.x, this.player.y) &&
-      !m23WindowOpen()
-    ) {
-      this.showFeedbackMessage(
-        exteriorEpisode().m23.closed
-          ? 'The excavation field is closed for this shift.'
-          : 'The field is staked — read the stake panel (E) before surveying it.',
-      );
-      logSecondaryFieldAction('refusal', {
-        action: 'scan',
-        reason: 'plot_window_closed',
-      });
+    if (this.scanController.isCoolingDown()) {
+      this.scanController.showCooldownFeedback();
     }
   }
 
-  private onDigIneligiblePress(): void {
+  private onDigIneligiblePress(mode: 'keyboard' | 'pointer'): void {
     const cell = this.digRegistry.resolveCell(
       this.player.selector.x + 8,
       this.player.selector.y + 8,
     );
 
-    if (m23CellInsidePlot(cell.col, cell.row) && !m23WindowOpen()) {
-      this.showFeedbackMessage(
-        exteriorEpisode().m23.closed
-          ? 'The excavation field is closed for this shift.'
-          : 'The field is staked — read the stake panel (E) before digging.',
+    if (m23FieldGoverns(this.player.x, this.player.y)) {
+      const admission = m23FieldAdmit(
+        'dig',
+        { busy: isWorldActionActive(), cooling: false, cell },
+        mode,
       );
-      logSecondaryFieldAction('refusal', {
-        action: 'dig',
-        reason: 'plot_window_closed',
-        col: cell.col,
-        row: cell.row,
-      });
+
+      if (admission.copy !== null) {
+        this.m23Feedback(admission.copy);
+      }
 
       return;
     }
@@ -2601,15 +3214,15 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
   private onScanResolved(record: ScanRecord): void {
     logSecondaryFieldAction('scan', { ...record });
 
-    if (m23WindowOpen()) {
-      m23Scan(record, Date.now());
+    // M23 (Unit 23): a scan the series started resolves on its own token;
+    // the controller's reading is kept beside the recount.
+    if (m23ActionPending()) {
+      m23FieldScanResolved(record.strength, Date.now());
     }
   }
 
   private onDigResolved(record: DigRecord): void {
     logSecondaryFieldAction('dig', { ...record });
-
-    const now = Date.now();
 
     if (record.outcome === 'cached') {
       const centre = this.digRegistry.cellCenter(record.col, record.row);
@@ -2626,17 +3239,11 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       });
     }
 
-    if (m23WindowOpen()) {
-      const note = m23Dig(record, now, 'keyboard');
-
-      if (note?.recovered) {
-        this.targets.markRecovered(M23_TARGET_ID);
-        this.closeExcavationMechanics();
-        this.showFeedbackMessage(
-          'Relay coupling recovered. Its tag lists a salvage tally for the Metal Recovery Yard rig — north-east.',
-        );
-        this.refreshGuidance();
-      }
+    // M23 (Unit 23): a dig the series started resolves on its own token —
+    // the first empty new cell is the plot's genuine failure (its panel
+    // opens), the keyed cell its recovery (the tray).
+    if (m23ActionPending()) {
+      m23FieldDigResolved(Date.now());
     }
 
     refreshPilotCoverageProbe();
@@ -2649,15 +3256,6 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
       col: refusal.col,
       row: refusal.row,
     });
-
-    if (m23WindowOpen()) {
-      m23Invalid(Date.now(), {
-        action: 'dig',
-        reason: refusal.reason,
-        col: refusal.col,
-        row: refusal.row,
-      });
-    }
   }
 
   private onMagnetCycleResolved(record: MagnetCycleRecord): void {
@@ -2784,14 +3382,22 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
 
   protected onPilotUpdate(): void {
     this.tickContinuations();
+    // M23 (Unit 23): the approach samples and the region entry / exit of
+    // the selected plot, then the HUD readouts (the facing cell changes
+    // every frame).
+    m23FieldTick(Date.now());
+    this.renderM23Controls();
+    this.drawM23Facing();
     this.refreshMastArt();
-    this.clampWorldReadouts([
-      this.couplingChip ?? null,
-      this.mastChip ?? null,
-      this.rigChip ?? null,
-      this.lineAChip ?? null,
-      this.lineBChip ?? null,
-    ]);
+
+    // Contract §13 R2: while this scene owns a fixed frame the mast chip is
+    // explicitly hidden AND omitted from the clamp on every frame; after
+    // the frame ends the full list and the current proximity decide.
+    if (this.m23FixedPlot !== null) {
+      this.mastChip?.setVisible(false);
+    }
+
+    this.clampWorldReadouts(this.m23ChipList());
 
     // M05 occasion 2 (Unit 6): the focused clock starts at the first
     // moment after acceptance with no prompt, transition or world action
@@ -2833,6 +3439,11 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
 
   protected onRoomExit(): void {
     const now = Date.now();
+
+    // M23 (Unit 23): a running scan or dig cancels (`yard_departure`)
+    // before the transition; the departure itself pauses the selection.
+    m23FieldCancel('yard_departure', now);
+    this.m23Controls?.release();
 
     // M05 (Unit 6): leaving the yard exits an unstarted accepted flag job.
     exitM05('o2', now, 'room_left');
@@ -2991,7 +3602,7 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
   private refreshAllVisuals() {
     this.refreshCouplingVisuals();
     this.refreshMastVisuals();
-    this.redrawPlotOverlay();
+    this.redrawPlotOutlines();
     this.refreshRigVisuals();
     this.refreshUplinkVisuals();
   }
@@ -3052,32 +3663,100 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
     }
   }
 
-  private redrawPlotOverlay(): void {
+  /**
+   * M23 (Unit 23): the two plot outlines — a dashed boundary per plot, the
+   * selected searching plot's cells outlined so every one of its 42 cells
+   * reads in the fixed frame; the other plot keeps its faint boundary.
+   */
+  private redrawPlotOutlines(): void {
     this.plotOverlay?.destroy();
 
-    const active = m23WindowOpen();
     const graphics = this.add.graphics().setDepth(DepthLayer.FloorMarking);
-    const x0 = M23_PLOT.minCol * TILE;
-    const y0 = M23_PLOT.minRow * TILE;
-    const w = (M23_PLOT.maxCol - M23_PLOT.minCol + 1) * TILE;
-    const h = (M23_PLOT.maxRow - M23_PLOT.minRow + 1) * TILE;
+    const selected = m23SelectedPlot();
 
-    graphics.lineStyle(active ? 2 : 1, 0x5fd3c4, active ? 0.9 : 0.35);
+    for (const def of M23_PLOTS) {
+      const active =
+        selected !== null &&
+        selected.id === def.id &&
+        selected.status === 'searching';
+      // The selected plot's outline is emphasised while approaching too, so
+      // the participant can tell which outline the opened plot is (the
+      // gameplay review's M5; presentation only, no copy).
+      const emphasised =
+        active ||
+        (selected !== null &&
+          selected.id === def.id &&
+          selected.status === 'approaching');
+      const rect = m23PlotRect(def.bounds);
+      const x0 = rect.x0;
+      const y0 = rect.y0;
+      const w = rect.x1 - rect.x0;
+      const h = rect.y1 - rect.y0;
 
-    // Dashed outline (short segments) — restrained boundary marker.
-    const dash = 10;
+      graphics.lineStyle(emphasised ? 2 : 1, 0x5fd3c4, emphasised ? 0.9 : 0.35);
 
-    for (let x = x0; x < x0 + w; x += dash * 2) {
-      graphics.lineBetween(x, y0, Math.min(x + dash, x0 + w), y0);
-      graphics.lineBetween(x, y0 + h, Math.min(x + dash, x0 + w), y0 + h);
-    }
+      // Dashed outline (short segments) — restrained boundary marker.
+      const dash = 10;
 
-    for (let y = y0; y < y0 + h; y += dash * 2) {
-      graphics.lineBetween(x0, y, x0, Math.min(y + dash, y0 + h));
-      graphics.lineBetween(x0 + w, y, x0 + w, Math.min(y + dash, y0 + h));
+      for (let x = x0; x < x0 + w; x += dash * 2) {
+        graphics.lineBetween(x, y0, Math.min(x + dash, x0 + w), y0);
+        graphics.lineBetween(x, y0 + h, Math.min(x + dash, x0 + w), y0 + h);
+      }
+
+      for (let y = y0; y < y0 + h; y += dash * 2) {
+        graphics.lineBetween(x0, y, x0, Math.min(y + dash, y0 + h));
+        graphics.lineBetween(x0 + w, y, x0 + w, Math.min(y + dash, y0 + h));
+      }
+
+      if (active) {
+        graphics.lineStyle(1, 0x5fd3c4, 0.3);
+
+        for (const cell of m23PlotCells(def.bounds)) {
+          graphics.strokeRect(cell.col * TILE, cell.row * TILE, TILE, TILE);
+        }
+      }
     }
 
     this.plotOverlay = graphics;
+  }
+
+  /** The highlighted facing cell inside the selected searching plot (every frame). */
+  private drawM23Facing(): void {
+    const graphics = this.m23Facing;
+
+    if (graphics === undefined) {
+      return;
+    }
+
+    graphics.clear();
+
+    const selected = m23SelectedPlot();
+
+    if (selected === null || selected.status !== 'searching') {
+      return;
+    }
+
+    const cell = m23CellOfPoint(
+      this.player.selector.x + 8,
+      this.player.selector.y + 8,
+    );
+    const inside =
+      cell.col >= selected.def.bounds.minCol &&
+      cell.col <= selected.def.bounds.maxCol &&
+      cell.row >= selected.def.bounds.minRow &&
+      cell.row <= selected.def.bounds.maxRow;
+
+    if (!inside) {
+      return;
+    }
+
+    graphics.lineStyle(2, 0xe6c68f, 0.95);
+    graphics.strokeRect(
+      cell.col * TILE + 2,
+      cell.row * TILE + 2,
+      TILE - 4,
+      TILE - 4,
+    );
   }
 
   private refreshRigVisuals() {
@@ -3191,12 +3870,71 @@ Excavation in progress — ${state.scans} sweep${state.scans === 1 ? '' : 's'}, 
         depleted: magnetDeckDepleted(),
       },
       windows: {
-        m23_open: m23WindowOpen(),
+        // M23 (Unit 23): a plot is in work (the series' own probe is
+        // `window.__m23PlotsProbe`).
+        m23_open: m23SelectedPlot()?.status === 'searching',
         m24_open: m24WindowOpen(),
         m26_phase: m26Knowledge(episode.m26),
       },
       caches: this.caches.serialize(),
     };
+    // Unit 23 (V01–V06): the world-readout chips' actual visibility and
+    // bounds, read-only.
+    const chips: [string, Phaser.GameObjects.Text | undefined][] = [
+      ['coupling', this.couplingChip],
+      ['mast', this.mastChip],
+      ['rig', this.rigChip],
+      ['line_a', this.lineAChip],
+      ['line_b', this.lineBChip],
+    ];
+
+    // Round 4: the base scene's floating station prompt's ACTUAL
+    // design-space bounds (the one visible HUD-space text carrying the
+    // prompt probe's line), read-only, so the frames' sidecars can place a
+    // foreign prompt against the field HUD and the plot.
+    const promptText = window.__worldPromptProbe?.text ?? null;
+    const promptObject =
+      promptText === null
+        ? undefined
+        : (this.children.list.find(
+            (object) =>
+              object instanceof Phaser.GameObjects.Text &&
+              object.visible &&
+              object.depth === Depth.AboveWorld &&
+              object.text === promptText,
+          ) as Phaser.GameObjects.Text | undefined);
+    const promptBounds = promptObject?.getBounds();
+
+    window.__yardPromptProbe =
+      promptBounds === undefined
+        ? null
+        : {
+            text: promptText,
+            bounds: {
+              x: promptBounds.x,
+              y: promptBounds.y,
+              w: promptBounds.width,
+              h: promptBounds.height,
+            },
+          };
+    window.__yardChipProbe = chips.map(([id, chip]) => {
+      const bounds = chip?.active ? chip.getBounds() : null;
+
+      return {
+        id,
+        text: chip?.text ?? '',
+        visible: chip?.active === true && chip.visible,
+        bounds:
+          bounds === null
+            ? null
+            : {
+                left: bounds.left,
+                top: bounds.top,
+                right: bounds.right,
+                bottom: bounds.bottom,
+              },
+      };
+    });
     window.__exteriorProbe = {
       ...exteriorProbeSnapshot(),
       stage: pilotStage(),

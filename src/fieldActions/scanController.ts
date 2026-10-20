@@ -57,6 +57,22 @@ export interface ScanControllerConfig {
   getPlayerPosition: () => { x: number; y: number };
   onResolved: (record: ScanRecord) => void;
   showFeedback: (message: string) => void;
+  /**
+   * Station 080 Unit 23 (M23): optional PRESENTATION override. `readout:
+   * 'none'` suppresses the controller's own readout caption and cooldown
+   * bar so the host can render its pinned readable scanner without a
+   * duplicate caption; the signal, the timing, the cooldown, the pulse and
+   * the audio are unchanged. Absent or `'default'` = unchanged behaviour.
+   */
+  presentation?: {
+    readout?: 'default' | 'none' | (() => 'default' | 'none');
+  };
+  /**
+   * Unit 23: notified when a started scan is cancelled before it resolved
+   * (ESC or a scene-driven cancel). Absent = no cancel hook is registered,
+   * exactly as before.
+   */
+  onCancelled?: () => void;
 }
 
 interface ScanBaseline {
@@ -127,6 +143,7 @@ export class ScanController {
       durationMs: SCAN_ACTION_DURATION_MS,
       cancellable: true,
       onComplete: () => this.resolveScan(),
+      onCancel: this.config.onCancelled,
     });
 
     if (started) {
@@ -187,7 +204,13 @@ export class ScanController {
       durationMs: 700,
     });
     this.playStrengthAudio(category);
-    this.showReadout(record);
+
+    const readout = this.config.presentation?.readout;
+    const mode = typeof readout === 'function' ? readout() : readout;
+
+    if (mode !== 'none') {
+      this.showReadout(record);
+    }
 
     this.config.onResolved(record);
   }

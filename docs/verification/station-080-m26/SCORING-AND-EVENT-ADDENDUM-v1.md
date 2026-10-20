@@ -1329,6 +1329,146 @@ inside it; the label is `exploratory` with `difficulty_established: false`.
   the evidence gives them, adds `fault_after_final_result: true` and a
   flag, and writes `result_final` on the `technical_failure` record.
 
+U23 (M23, candidates as before; one new provisional family, no canonical
+event, no scoring-plan variable, no formula changed — the §3 row
+`m23_continuations_after_failure` is the approved formula and stays as it
+is): the two-plot excavation series at the Exterior Recovery Yard stake
+replaces the v2 single-plot field recovery under research-owner decision
+D-U23-1 of 16 October 2026 (all nine rows approved — A the A-adjusted
+layout with the numeric reading and the neutral final copy, B the passive
+two-page example, C the genuine new-cell failure as eligibility and the
+completed qualifying scan or new-cell dig after CONTINUE as the credit, D1
+the direct first-failure choice, D2 the informed shift-end resolution, D3
+the diagnostic of a system-cancelled start, E(c) for an unknown eligible
+response, F the M23-only field tray, G provisional telemetry with no
+canonical promotion; register §4 "Unit 23", §5.362). The legacy model and
+adapter functions stay in the tree
+unchanged, off the route, and their family is read by no extractor. The
+two plots are clustered observations inside one series, one yard and one
+shift, never two independent situations; the value is the count of known
+1s with the resolved denominator beside it, never a ratio; while any valid
+eligible plot's response is unknown the value and the numerator are null.
+
+- **M23** — family `proto_m23_plots_`; ONE opportunity
+  `proto_m23_excavation_series`; window `m23_plots_w1`; object and surface
+  id `m23_excavation_field`; `entry_state_version` = `m23-plots-v1`;
+  `layout_id` `a_adjusted_v1`; plot ids `plot_a`, `plot_b`, which are also
+  the occasion ids (never changed; a RESUME is not a new occasion); forms
+  `a1` / `a2` and `b1` / `b2` (the keyed cell), the plot order `AB` /
+  `BA` and the option order `continue_left` / `stop_left` assigned per
+  session by ONE M23-local joint assignment over the sixteen cells (round
+  3, the closeout amendment approved 19 October 2026, OD-6: FNV-1a 32 over
+  `<session id>:m23_plots_assignment` with murmur3's fmix32, cell = hash
+  mod 16; the validity register's shared two-option hash, which realised
+  only two of the sixteen cells, is no longer used by M23 and is itself
+  unchanged). The entry snapshot carries the provisional field
+  `assignment_scheme` = `m23_joint16_fnv1a_fmix32_v1`; `entry_state_version`
+  stays `m23-plots-v1`, and every record produced before the amendment is
+  distinguished as "pre-amendment assignment scheme (correlated)" in the
+  UNIT-LOG. `closure_reason` on a both-plots-terminal closure is
+  `voluntary_stop` if any explicit stop, otherwise `completed`, and
+  `technical_failure` only when the evidence is wholly invalid — two plots
+  that faulted AFTER verified outcomes close `completed` (round 3, the
+  conformance correction; fixtures T09a–T09c). Suffixes:
+  `presented`, `closure_explanation_presented` (the brief's own line,
+  logged on the first USABLE render; `presentation_id`, `copy`,
+  `copy_version`, `usable`), `example_viewed`
+  (`page` 1 | 2, `surface` brief | help), `opportunity_opened` (the entry
+  snapshot: `plots_planned` 2, `layout_id`, the assignment, `stage`,
+  `visibility`, `prior_load`, `tools`), `surface_opened` /
+  `surface_closed` (`view`, `close_reason`), `help_opened` / `help_closed`
+  (`origin`), `plot_opened` / `resumed` (`approach_id`, `entry_kind`,
+  `start_x` / `start_y`, `start_inside_region`, `assigned_position`,
+  `realised_position`, `resume_count`, `choice_pending`),
+  `search_region_entered` (`stance` `interior` | `boundary_stance`,
+  `first_plot_region_entry`, `movement_sample_count`, `path_complete`,
+  `direct_displacement_px`, `travelled_path_length_px`,
+  `first_entry_at_ms`; descriptive), `approach_ended` (the same path
+  fields, `reason`), `paused` (`cause` `esc` | `panel` | `overlay` |
+  `search_region_exit` | `plot_switch` | `yard_departure` | `focus_loss` |
+  `hidden` | `scene_shutdown`, `state_before` / `state_after`),
+  `action_started`
+  (`action_id`, `kind` scan | dig, `attempt_number`, `planned_duration_ms`,
+  `player_x` / `player_y`, `zone_membership`, `selected_cell` and its
+  label, `pre_cell_state`, `after_continue`, `failure_action_id`),
+  `scan_resolved` (`strength` 0–100 and `reported_strength`, `band`,
+  `trend`, `comparison_action_id`, `qualifying_continuation`, `credited`,
+  `after_continue`, `target_distance_px` — research-only, never shown),
+  `dig_resolved` (`cell`, `outcome` empty | recovered,
+  `first_failure`, `object_id`, `delivery` `field_tray`), `action_cancelled`
+  (`cancellation_reason` `esc` | `panel` | `help` | `overlay` |
+  `plot_switch` | `yard_departure` | `search_region_exit` | `focus_loss` |
+  `hidden` | `scene_shutdown` | `series_boundary`, `elapsed_action_ms`,
+  `planned_duration_ms`, `continuation_started_then_system_cancelled` —
+  D3's diagnostic, never a credit), `action_refused` (`reason`
+  `plot_not_active` | `plot_terminal` | `choice_pending` |
+  `outside_scan_region` | `outside_plot` | `already_dug` | `action_busy` |
+  `cooldown`; never a resolution), `failure_choice_presented`
+  (`presentation_id`, `presentation_count`, `resume`, `visible` /
+  `focused` / `operable`, `option_order`, `left_option` / `right_option`,
+  `failure_to_presentation_ms`), `failure_choice` (`response` continue |
+  stop,
+  `chosen_visual_side`, `option_order`, `navigation_family`,
+  `navigation_steps`, `navigation_tokens` (≤ 32, `navigation_tokens_total`
+  and `_truncated` beside), `tab_count` / `shift_tab_count` /
+  `arrow_count`, `input_mode`; at most ONE per failure, never a second
+  after CONTINUE), `stop_requested` / `stop_cancelled` (`stop_request_id`,
+  the selector's confirmation), `plot_closed` (`plot_closure_reason`
+  `recovered` | `explicit_stop` | `shift_end` | `review` | `reload` |
+  `technical_failure`, `source` `first_failure_choice` | `selector` |
+  `system`, `confirmed_stop`, `failure_action_id`,
+  `failure_choice_presented`,
+  `response`, `credited_action_id`, `observed_continuation` true | false |
+  null, `stopped_before_failure`, `recovered_without_failure`,
+  `participant_initiated`, `origin_input_mode`, `shift_end_command_id`,
+  `shift_end_sequence`, `informed_shift_end`,
+  `continuation_started_then_system_cancelled`,
+  `system_cancelled_action_ids`), `reload_blocked` (the hold-back after a
+  measured opening in an earlier load; `detail`, `kind`, `plot_id`),
+  `invalidated` (a declared plot-scoped suffix that this build never
+  writes), `technical_failure` (`scope` plot | series, `detail`) and the
+  kit's
+  `window_closed` (`raw_components` — the closure snapshot: the series
+  trigger, the realised order, the tray, per plot {`status`, `opened`,
+  `attempts`, `scans`, `digs`, `first_failure`, `presentation`, `response`,
+  `credit`, `closure`, `observed_continuation`} — or
+  `raw_components_partial` with `invalid_detail`
+  `eligible_response_unresolved` when an eligible response is unknown).
+  Every series record carries `phase` (`presentation` | `measurement` |
+  `closure`), `content_version`, `layout_id`, `assigned_order`,
+  `realised_order`, `failure_option_order`, `series_status`, `plot_status`,
+  `selected_plot` and, for a plot record, `plot_id` / `occasion_id` /
+  `form`, beside the kit's stamps (`measure_id`, `opportunity_id`,
+  `window_id`, `entry_state_version`, `comprehension_state`
+  `not_required`, `window_status`, `validity_status`, `sequence`,
+  `page_load_index`). The v2 ids
+  `proto_m23_field_recovery`, the family prefix
+  `proto_m23_field_recovery_` and `m23_excavation_w1` are retired from the
+  route and keep their frozen meaning. Scored fields are integrity-checked by the extractor's rules
+  S1–S6 (the family's identity, one record per sequence, order, one
+  terminal transition per action, a resolution needs its start, a response
+  needs its failure, a dig outcome agrees with the plot's key); a
+  contradiction voids the row or excludes the plot, never a silent repair;
+  descriptive fields and the closure snapshots set flags only. Components:
+  `administration_version`, `content_version`, `layout_id`,
+  `presented_in_current_load`, `presented_sequence`, `opened_sequence`,
+  `assignment`, `example_views`, `help_opens`, `surface_opens`,
+  `closure_explanations_presented`, `observations_share_one_episode`,
+  `planned_denominator`, `eligible_plots_total`, `included_ids`,
+  `observed_count`, `denominator_resolved`, `known_outcomes_by_plot`,
+  `resolved_eligible_ids`, `unknown_eligible_ids`, `invalid_ids` /
+  `invalid_reasons`, `unopened_ids`, `recovered_without_failure_ids`,
+  `stopped_before_failure_ids`, `searched_no_failure_ids`,
+  `failure_choice_unpresented_ids`, `shift_end_unresolved_ids`,
+  `shift_end_resolved_zero_ids`,
+  `continuation_started_then_system_cancelled_ids`, `plots` (the
+  per-plot recount), `series_fault`, `window_closed`, `reload_check`,
+  `held_back_after_reload`, `series_closure_trigger`, `flags`. The row's
+  `closure_reason` is the
+  framework's enum (`completed`, `voluntary_stop`, `session_end`,
+  `closed_at_review`, `technical_failure`); the series' own trigger is
+  `series_closure_trigger`. No total across items.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                               | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

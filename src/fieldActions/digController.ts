@@ -22,7 +22,7 @@ import { sfxDig, sfxPickup } from '../gameplay/audio';
 import { burstParticles } from '../gameplay/effects';
 import { addInventoryItem } from '../gameplay/inventory';
 import { getGameItem } from '../gameplay/items';
-import type { DigSurfaceRegistry } from './digSurfaceRegistry';
+import type { BuriedObject, DigSurfaceRegistry } from './digSurfaceRegistry';
 import type { FieldCacheManager } from './fieldCache';
 
 export const DIG_ACTION_DURATION_MS = 1500;
@@ -53,6 +53,24 @@ export interface DigControllerConfig {
   /** Persistent terrain-change hook (the scene draws the decals). */
   onCellDug: (col: number, row: number) => void;
   showFeedback: (message: string) => void;
+  /**
+   * Station 080 Unit 23 (M23): optional DELIVERY OVERRIDE for a recovered
+   * object. When present it receives the buried object and its cell centre
+   * and owns the delivery itself (the excavation field's tray); the
+   * inventory and field-cache path, the pickup sound and the floating label
+   * are skipped. Absent = the behaviour above, unchanged (every existing
+   * caller passes nothing).
+   */
+  deliverRecovery?: (
+    object: BuriedObject,
+    center: { x: number; y: number },
+  ) => void;
+  /**
+   * Unit 23: notified when a started dig is cancelled before it resolved
+   * (ESC or a scene-driven cancel). Absent = no cancel hook is registered,
+   * exactly as before.
+   */
+  onCancelled?: (cell: { col: number; row: number }) => void;
 }
 
 const REFUSAL_MESSAGES: Record<DigRefusal['reason'], string> = {
@@ -105,6 +123,7 @@ export class DigController {
   performDig(target: { x: number; y: number }): boolean {
     const { scene, registry } = this.config;
     const cell = registry.resolveCell(target.x, target.y);
+    const onCancelled = this.config.onCancelled;
     const started = performWorldAction({
       scene,
       x: target.x,
@@ -113,6 +132,10 @@ export class DigController {
       durationMs: DIG_ACTION_DURATION_MS,
       cancellable: true,
       onComplete: () => this.resolveDig(cell.col, cell.row),
+      onCancel:
+        onCancelled === undefined
+          ? undefined
+          : () => onCancelled({ col: cell.col, row: cell.row }),
     });
 
     if (started) {
@@ -172,6 +195,27 @@ export class DigController {
     }
 
     const { object } = resolution;
+
+    if (this.config.deliverRecovery !== undefined) {
+      // Unit 23: the host owns the delivery (no inventory, no cache).
+      registry.markUnearthed(object.object_id);
+      this.config.deliverRecovery(object, center);
+
+      const record: DigRecord = {
+        col,
+        row,
+        zone_id: resolution.zone_id,
+        outcome: 'recovered',
+        object_id: object.object_id,
+        item_id: object.item_id,
+      };
+
+      this.lastRecord = record;
+      this.config.onResolved(record);
+
+      return;
+    }
+
     const item = getGameItem(object.item_id);
 
     if (addInventoryItem(object.item_id)) {

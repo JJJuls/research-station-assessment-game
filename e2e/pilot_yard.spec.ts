@@ -36,18 +36,15 @@ import {
   answerRigCheck,
   answerUplinkCheck,
   APPROACH,
-  beginExcavation,
   captureErrors,
   continueUplinkExplanation,
   depleteDeck,
-  digFacing,
   doMastStage,
   enterYard,
   eventsByPrefix,
   eventsByType,
   expectNoRuntimeErrors,
   exteriorProbe,
-  faceCell,
   faProbe,
   finishAtRig,
   finishOutside,
@@ -59,11 +56,9 @@ import {
   OPPORTUNITY,
   powerUpUplink,
   reenterYard,
-  scanAt,
   standOnPad,
   startAntenna,
   startSalvageTally,
-  stopExcavation,
   transmitAt,
   useSortingBench,
   validityRecord,
@@ -80,6 +75,25 @@ import {
   resetDriverStats,
   selectPromptOption,
 } from './helpers';
+import {
+  chooseFailure,
+  confirmStop,
+  digFacing,
+  faceCell,
+  failFirst,
+  keyCellOf,
+  M23,
+  m23Events,
+  m23Probe,
+  openPanel,
+  openPlot,
+  openSeries,
+  requestStop,
+  scanHere,
+  stepAway,
+  walkInsidePlot,
+  walkIntoPlot,
+} from './m23Helpers';
 import {
   interactAt,
   labApproach,
@@ -185,6 +199,20 @@ async function m19Row(page: Page): Promise<Record<string, unknown> | null> {
 
     return JSON.stringify(
       (payload.measurement_features ?? []).find((row) => row.item_id === 'M19') ?? null,
+    );
+  })()`);
+
+  return JSON.parse(json as string);
+}
+
+/** The page's own M23 feature row (Unit 23; the runtime's export builder). */
+async function m23Row(page: Page): Promise<Record<string, unknown> | null> {
+  const json = await page.evaluate(`(async () => {
+    const mod = await import('/src/systems/index.ts');
+    const payload = mod.researchRuntime.buildExportPayload();
+
+    return JSON.stringify(
+      (payload.measurement_features ?? []).find((row) => row.item_id === 'M23') ?? null,
     );
   })()`);
 
@@ -367,84 +395,111 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     );
     expect(probe?.beacon?.label).toBe('Excavation Field Stake');
 
-    // ——— M23: real scanner feedback, an empty dig, the exact cell. ———
-    ext = await exteriorProbe(page);
+    // ——— M23 (Unit 23): the stake's brief and both example pages, the
+    // first usable selector (the series' one measured opening — the
+    // beacon moves on), plot A opened and entered, a reading, the first
+    // failed dig and its panel, CONTINUE, a comparable second reading, the
+    // recovery at the keyed cell (the field tray); plot B stays
+    // available. ———
+    await openSeries(page, 'keyboard');
+    expect((await m23Probe(page)).guidance_addressed).toBe(true);
+    await openPlot(page, 'plot_a', 'keyboard');
+    await walkIntoPlot(page, 'plot_a');
+    // The guidance moved on at the first usable selector; the world probe
+    // reports it once the host scene runs again (the surface has closed).
+    expect((await pilotProbe(page))?.beacon?.label).toBe('Magnet Recovery Rig');
+    expect((await faProbe(page)).windows.m23_open).toBe(true);
+    await walkInsidePlot(page, 'plot_a');
 
-    const form = ext.m23_form;
-    const spots = YARD.scanSpots[form];
-    const cell = YARD.targetCells[form];
+    const first = await scanHere(page, 'keyboard');
 
-    await beginExcavation(page);
-    expect((await faProbe(page)).scan.context).toBe('m23_excavation');
+    expect(first.trend).toBe('NO COMPARISON');
+    expect(['NONE', 'FAINT', 'MODERATE', 'STRONG']).toContain(first.band);
+    await failFirst(page, 'keyboard');
 
-    const none = await scanAt(page, spots.none);
+    let m23 = await m23Probe(page);
 
-    expect(none.category).toBe('none');
-    expect(none.target_id).toBeNull();
+    expect(m23.plots.plot_a.first_failure?.cell).toEqual(M23.empty.plot_a);
+    expect(m23.plots.plot_a.digs).toBe(1);
+    expect(m23.plots.plot_a.tray).toBe(false);
+    await chooseFailure(page, 'continue', 'keyboard');
+    await walkInsidePlot(page, 'plot_a');
 
-    const faint = await scanAt(page, spots.faint);
+    const second = await scanHere(page, 'keyboard');
 
-    expect(faint.category).toBe('faint');
-    expect(faint.strength).toBeGreaterThan(0);
-    expect(faint.strength).toBeLessThanOrEqual(33);
-
-    const actionable = await scanAt(page, spots.actionable);
-
-    expect(['moderate', 'strong']).toContain(actionable.category);
-    expect(actionable.trend).toBe('stronger');
-
-    // An empty dig on the neighbouring cell, then the exact cell.
-    await faceCell(page, cell.x + 32, cell.y);
-    await digFacing(page, 'empty');
-    ext = await exteriorProbe(page);
-    expect(ext.m23.exact_dig_attempts).toBe(1);
-    expect(ext.m23.recovery_complete).toBe(false);
-    await faceCell(page, cell.x, cell.y);
-    await digFacing(page, 'recovered');
-    ext = await exteriorProbe(page);
-    expect(ext.m23.recovery_complete).toBe(true);
-    expect(ext.m23.recovery_delivery).toBe('inventory');
-    expect(ext.m23.exact_dig_attempts).toBe(2);
-    expect(ext.m23.on_signal_scans).toBe(2);
-    expect(ext.m23.first_actionable_signal_ms).not.toBeNull();
-    expect(ext.m23.window).toBe('closed');
-    expect(await itemStatus(page, 'M23')).toBe('completed');
-    expect(await lastFeedback(page)).toContain('Metal Recovery Yard');
+    expect(['CLOSER', 'FARTHER', 'SAME']).toContain(second.trend);
+    await faceCell(page, await keyCellOf(page, 'plot_a'));
+    await digFacing(page, 'keyboard', 'recovered');
+    m23 = await m23Probe(page);
+    expect(m23.plots.plot_a.status).toBe('recovered');
+    expect(m23.plots.plot_a.tray).toBe(true);
+    expect(m23.plots.plot_a.observed_continuation).toBe(true);
+    expect(m23.plots.plot_a.digs).toBe(2);
+    expect(m23.plots.plot_b.status).toBe('not_started');
+    expect(m23.status).toBe('open');
+    expect(m23.tray).toEqual(['A']);
+    // Decision F: the tray, never the belt or a cache.
+    expect((await exteriorProbe(page)).caches).toHaveLength(0);
+    expect(await itemStatus(page, 'M23')).toBe('open');
+    expect(await lastFeedback(page)).toContain(
+      'Component recovered from Plot A',
+    );
     await mark('M23 excavation');
 
-    const m23Closed = (
-      await eventsByType(page, 'proto_m23_field_recovery_window_closed')
-    )[0];
-    const m23Raw = m23Closed.metadata?.raw_components as Record<
-      string,
-      unknown
-    >;
+    const m23Types = (await m23Events(page)).map((e) => e.event_type);
 
-    expect(Object.keys(m23Raw)).toEqual(
-      expect.arrayContaining([
-        'informative_scan_moves',
-        'signal_strength_changes',
-        'exact_dig_attempts',
-        'useful_strategy_shifts',
-        'recovery_complete',
-      ]),
-    );
-    expect(m23Closed.metadata?.form).toBe(form);
-    expect(JSON.stringify(m23Raw)).not.toMatch(/target_x|target_y|"x":|"y":/); // no coordinates
+    for (const required of [
+      'presented',
+      'closure_explanation_presented',
+      'example_viewed',
+      'opportunity_opened',
+      'plot_opened',
+      'search_region_entered',
+      'action_started',
+      'scan_resolved',
+      'dig_resolved',
+      'failure_choice_presented',
+      'failure_choice',
+      'plot_closed',
+    ].map((suffix) => `proto_m23_plots_${suffix}`)) {
+      expect(m23Types, required).toContain(required);
+    }
+
+    // The retired single-plot family is never written on the route.
     expect(
-      (await eventsByType(page, 'proto_m23_field_recovery_scan')).length,
-    ).toBe(3);
+      await eventsByPrefix(page, 'proto_m23_field_recovery_'),
+    ).toHaveLength(0);
+
+    const m23Closed = (
+      await eventsByType(page, 'proto_m23_plots_plot_closed')
+    )[0];
+
+    expect(m23Closed.metadata?.plot_id).toBe('plot_a');
+    expect(m23Closed.metadata?.plot_closure_reason).toBe('recovered');
+    expect(m23Closed.metadata?.observed_continuation).toBe(true);
+    expect(m23Closed.metadata?.tray).toBe(true);
     expect(
-      (await eventsByType(page, 'proto_m23_field_recovery_dig')).length,
+      (await eventsByType(page, 'proto_m23_plots_scan_resolved')).length,
     ).toBe(2);
     expect(
-      (await eventsByType(page, 'proto_m23_field_recovery_recovered')).length,
+      (await eventsByType(page, 'proto_m23_plots_dig_resolved')).length,
+    ).toBe(2);
+    expect(
+      (await eventsByType(page, 'proto_m23_plots_failure_choice')).length,
     ).toBe(1);
     expect(
       (await eventsByType(page, 'secondary_field_action_scan')).length,
-    ).toBeGreaterThanOrEqual(3);
-    expect((await faProbe(page)).scan.context).toBe('free');
+    ).toBeGreaterThanOrEqual(2);
+    expect((await faProbe(page)).windows.m23_open).toBe(false);
     expect((await pilotProbe(page))?.beacon?.label).toBe('Magnet Recovery Rig');
+    // The page's own feature row: one eligible plot, the known 1, B still
+    // available (pending until the series closes).
+    expect(await m23Row(page)).toMatchObject({
+      value: null,
+      numerator: null,
+      denominator: 1,
+      disposition: 'pending',
+    });
 
     // ——— M24 (Unit 12): the finite deck to explicit depletion, the
     // expected-outcome check (a right first answer), the continuation. ———
@@ -652,7 +707,19 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     expect(ext.shift_ended).toBe(true);
     expect(await itemStatus(page, 'M05')).toBe('completed');
     expect(await itemStatus(page, 'M19')).toBe('completed');
+    // M23 (Unit 23): the shift end closes the untouched plot B; A's known
+    // 1 stands — one eligible plot, complete, never a ratio.
     expect(await itemStatus(page, 'M23')).toBe('completed');
+    expect((await m23Probe(page)).plots.plot_b.status).toBe('closed_shift_end');
+    expect(await m23Row(page)).toMatchObject({
+      value: 1,
+      numerator: 1,
+      denominator: 1,
+      disposition: 'observed',
+    });
+    expect(
+      (await eventsByType(page, 'proto_m23_plots_window_closed')).length,
+    ).toBe(1);
     expect(await itemStatus(page, 'M24')).toBe('completed');
     expect(await itemStatus(page, 'M26')).toBe('completed');
     // M20 (Unit 22): the shift end records nothing on the feed — no
@@ -669,7 +736,7 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     // validity word reaches the participant (feedback / objective).
     for (const family of [
       'proto_m19_lines_',
-      'proto_m23_field_recovery_',
+      'proto_m23_plots_',
       'proto_m24_rig_',
       'proto_m26_uplink_',
     ]) {
@@ -779,38 +846,50 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     await acceptMast(page);
     await doMastStage(page, 1);
 
-    // M23: begin, one sweep, explicit stop (a complete observation).
-    await beginExcavation(page);
-    await scanAt(
-      page,
-      YARD.scanSpots[(await exteriorProbe(page)).m23_form].faint,
-    );
-    await stopExcavation(page);
-    ext = await exteriorProbe(page);
-    expect(ext.m23.window).toBe('closed');
-    expect(ext.m23.exit).toBe('stopped');
-    expect(ext.m23.recovery_complete).toBe(false);
-    expect(ext.m23.stop_choice).toBe('stopped');
-    expect(await itemStatus(page, 'M23')).toBe('completed');
+    // M23 (Unit 23): the series opened, plot A entered, one reading, then
+    // the selector STOP confirmed before any failed dig — a stop before a
+    // failure is no eligible event (never low); plot B stays available and
+    // the series stays open.
+    await openSeries(page, 'keyboard');
+    await openPlot(page, 'plot_a', 'keyboard');
+    await walkIntoPlot(page, 'plot_a');
+    await walkInsidePlot(page, 'plot_a');
+    await scanHere(page, 'keyboard');
+    await openPanel(page, 'keyboard');
+    await requestStop(page, 'plot_a', 'keyboard');
+    await confirmStop(page, 'plot_a', 'keyboard');
+    await stepAway(page, 'keyboard');
 
-    // Sweeping inside the closed field is refused, never faked.
-    await walkTo(
-      page,
-      YARD.scanSpots[ext.m23_form].actionable.x,
-      YARD.scanSpots[ext.m23_form].actionable.y,
-      { yFirst: true },
-    );
+    const m23 = await m23Probe(page);
+
+    expect(m23.plots.plot_a.status).toBe('stopped');
+    expect(m23.plots.plot_a.first_failure).toBeNull();
+    expect(m23.plots.plot_a.observed_continuation).toBeNull();
+    expect(m23.plots.plot_b.status).toBe('not_started');
+    expect(m23.status).toBe('open');
+    expect(await itemStatus(page, 'M23')).toBe('open');
+    expect(
+      (await eventsByType(page, 'proto_m23_plots_plot_closed'))[0].metadata
+        ?.stopped_before_failure,
+    ).toBe(true);
+
+    // Sweeping inside the stopped plot is refused, never faked.
+    await walkInsidePlot(page, 'plot_a');
 
     const scansBefore = (
-      await eventsByType(page, 'proto_m23_field_recovery_scan')
+      await eventsByType(page, 'proto_m23_plots_scan_resolved')
     ).length;
 
     await press(page, 'C');
     await page.waitForTimeout(700);
-    expect(await lastFeedback(page)).toContain('closed for this shift');
+    expect(await lastFeedback(page)).toContain('Open the plot panel');
     expect(
-      (await eventsByType(page, 'proto_m23_field_recovery_scan')).length,
+      (await eventsByType(page, 'proto_m23_plots_scan_resolved')).length,
     ).toBe(scansBefore);
+    expect(
+      (await eventsByType(page, 'proto_m23_plots_action_refused')).pop()
+        ?.metadata?.reason,
+    ).toBe('plot_terminal');
 
     // M24: start, two cycles, then leave the yard with the window open.
     await startSalvageTally(page);
@@ -967,69 +1046,42 @@ test.describe('pilot route — Exterior Recovery (Unit 4)', () => {
     await page.waitForTimeout(300);
     expect(await lastFeedback(page)).toContain('Belt full');
 
-    // Recover the coupling with a full belt → a field cache at the cell.
-    const form = (await exteriorProbe(page)).m23_form;
-    const cell = YARD.targetCells[form];
+    // M23 (Unit 23, decision F): a recovery with a full belt goes to the
+    // field tray — no cache, no belt change, no inventory dependency.
+    await openSeries(page, 'keyboard');
+    await openPlot(page, 'plot_a', 'keyboard');
+    await walkIntoPlot(page, 'plot_a');
+    await faceCell(page, await keyCellOf(page, 'plot_a'));
+    await digFacing(page, 'keyboard', 'recovered');
 
-    await beginExcavation(page);
-    await faceCell(page, cell.x, cell.y);
-    await digFacing(page, 'cached');
+    const m23 = await m23Probe(page);
 
-    const ext = await exteriorProbe(page);
+    expect(m23.plots.plot_a.status).toBe('recovered');
+    expect(m23.plots.plot_a.tray).toBe(true);
+    expect(m23.tray).toEqual(['A']);
+    expect((await exteriorProbe(page)).caches).toHaveLength(0);
+    expect((await faProbe(page)).caches).toHaveLength(0);
+    expect(await lastFeedback(page)).toContain('field tray');
+    expect(await itemStatus(page, 'M23')).toBe('open');
+    expect(
+      (await eventsByType(page, 'secondary_field_action_cache_created')).length,
+    ).toBe(0);
+    expect(
+      (await eventsByType(page, 'proto_m23_plots_dig_resolved')).length,
+    ).toBe(1);
 
-    expect(ext.m23.recovery_complete).toBe(true);
-    expect(ext.m23.recovery_delivery).toBe('cache');
-    expect(ext.caches).toHaveLength(1);
-    expect(ext.caches[0].item_id).toBe('relay_coupling');
-    expect((await faProbe(page)).caches).toHaveLength(1);
-    expect(await itemStatus(page, 'M23')).toBe('completed');
-
-    // The cache survives leaving and re-entering the yard.
+    // The tray and the dug cell survive leaving and re-entering the yard;
+    // the belt is still full, the crate's return path unchanged.
     await leaveYard(page);
     await reenterYard(page);
-    expect((await exteriorProbe(page)).caches).toHaveLength(1);
-    expect((await faProbe(page)).caches).toHaveLength(1);
-    expect((await exteriorProbe(page)).dug_cells).toHaveLength(1);
-
-    // Belt still full → the cache stays; return the spares → collect it.
-    // World V2 yard: the re-entry spawn is on the west half; the cache cell
-    // lies on the east half's staked field (rows 3–8). The pass-aware
-    // driver crosses the drift pass and stands one cell north of the cache
-    // (inside the 56 px collection reach). The former "row 10 lane" was
-    // the 25×19 yard's — rows 9–11 of the strip are the hull band.
-    await yardVia(page, cell.x, cell.y - 28);
-    await press(page, 'Space');
-    await page.waitForTimeout(400);
-    expect(await lastFeedback(page)).toContain('Belt still full');
-    expect((await exteriorProbe(page)).caches).toHaveLength(1);
-
+    expect((await m23Probe(page)).tray).toEqual(['A']);
+    expect((await m23Probe(page)).plots.plot_a.digs).toBe(1);
+    expect((await m23Probe(page)).plots.plot_a.status).toBe('recovered');
+    expect((await exteriorProbe(page)).caches).toHaveLength(0);
     await openSite(page, 'crate');
     await selectPromptOption(page, 3);
     await page.waitForTimeout(300);
     expect(await lastFeedback(page)).toContain('returned');
-    await yardVia(page, cell.x, cell.y - 28);
-    await press(page, 'Space');
-    await page.waitForFunction(
-      () =>
-        (
-          window as unknown as {
-            __exteriorProbe?: { caches: unknown[] } | null;
-          }
-        ).__exteriorProbe?.caches.length === 0,
-      undefined,
-      { timeout: 5000 },
-    );
-    expect((await faProbe(page)).caches).toHaveLength(0);
-    expect(
-      (await eventsByType(page, 'secondary_field_action_cache_created')).length,
-    ).toBe(1);
-    expect(
-      (await eventsByType(page, 'secondary_field_action_cache_recovered'))
-        .length,
-    ).toBe(1);
-    expect(
-      (await eventsByType(page, 'proto_m23_field_recovery_recovered')).length,
-    ).toBe(1);
 
     // Overlays: I freezes the world and resumes it; M likewise. (Back to
     // the west half through the drift pass — pass-aware driver.)

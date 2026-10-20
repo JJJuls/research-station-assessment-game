@@ -78,34 +78,34 @@ feature** (id; numerator / denominator; range; higher means), **Companions**,
 **Label** (coverage label), **As-built** (route version and implementation
 status at this register version — updated by each unit).
 
-| Item | Direction               | Occ. | Primary feature                                                                                                                                                                                                                                                                                                                | Companions                                                                                                                                                                                                                                     | Label                   | As-built                                                                                                                                                                                                                                                         |
-| ---- | ----------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M01  | Redesign                | 2    | `m01_planned_jobs`: jobs placed before the first work action / 6; 0–6; more advance organisation                                                                                                                                                                                                                               | plan structure, job correctness per occasion                                                                                                                                                                                                   | behavioural counterpart | v3 route: `proto_m01_batch_o1` (Concourse, ep 1) + `proto_m01_batch_o2` (Records Workshop, ep 5) — implemented (U5)                                                                                                                                              |
-| M02  | Revise and extend       | 1    | `m02_correct_first_retrievals`: correct first retrievals / 6; 0–6; better traceability                                                                                                                                                                                                                                         | filing choices (`m02_filing_layout`, provisional feature row — §5.146), retrieval latency (`m02_retrieval_latency`)                                                                                                                            | behavioural counterpart | v3 route: `proto_m02_retrieval_series` (Records Workshop, ep 2) — implemented (U13); during the requests the participant's layout and own tray labels stay visible and the system-supplied case codes and contents do not (owner ruling of 28 September, §5.137) |
-| M03  | Retain and verify       | 2    | `m03_tools_restored`: restored / 6; 0–3 per occasion; more tidying                                                                                                                                                                                                                                                             | object states (`m03_object_states`, provisional feature row — §5.175)                                                                                                                                                                          | retained core           | v3 route: `proto_m03_tools_a` (Records Workshop, ep 2) + `proto_m03_tools_b` (Records Workshop, ep 5) — implemented (U14)                                                                                                                                        |
-| M04  | Extend occasions        | 2    | `m04_undisposed_pieces`: undisposed incl. carried / 6; more own mess                                                                                                                                                                                                                                                           | per-job values (`m04_job_values`, provisional feature row — §5.175)                                                                                                                                                                            | behavioural counterpart | v3 route: `proto_m04_cutting_o1` / `o2` (Records Workshop, ep 2) — implemented (U14)                                                                                                                                                                             |
-| M05  | Redesign                | 2    | `m05_start_latency`: per accepted occasion the focused ms from eligibility to the first work action + status started / deferred / exited / cap / interrupted; never a starter-only mean                                                                                                                                        | `m05_acceptance_exposure` (offer, answer, eligibility wait, exposure by cause, control views, work, late start)                                                                                                                                | behavioural counterpart | v3 route: `proto_m05_start_o1` (Concourse, ep 1) + `proto_m05_start_o2` (Recovery Yard, ep 4) — implemented (U6)                                                                                                                                                 |
-| M06  | Redesign                | 1    | `m06_unique_correct_orders`: distinct orders whose matching dispatch fell inside the one 60 s focused budget; 0–12; more useful output in equal allocated time                                                                                                                                                                 | `m06_work_period_detail` (first-pass accuracy, rework, skips, invalid dispatches, actual stop time, stop kind, per-order records)                                                                                                              | behavioural counterpart | v3 route: `proto_m06_work_period` (Records Workshop, ep 2) — implemented (U7)                                                                                                                                                                                    |
-| M07  | Retain with controls    | 1    | `m07_stages_completed`: stages / 6 at the closing milestone; more routine completion                                                                                                                                                                                                                                           | returns                                                                                                                                                                                                                                        | retained core           | v2-ledger route (P7 valid-zero defect) — planned                                                                                                                                                                                                                 |
-| M08  | Add controlled task     | 1    | `m08_work_choice_fraction`: Work / valid choices; 0–6; more work chosen (exploratory)                                                                                                                                                                                                                                          | fractions by benefit level, practice performance                                                                                                                                                                                               | exploratory             | v3 route: `proto_m08_effort_choice`, Recovery Yard, ep 4 — implemented and reviewed (U2 + U2-R)                                                                                                                                                                  |
-| M09  | Extend checkpoints      | 3    | `m09_due_checks_fulfilled`: fulfilled / eligible due checks; 0–3; more follow-through                                                                                                                                                                                                                                          | acceptance, reminders, access                                                                                                                                                                                                                  | behavioural counterpart | v3 route: `proto_m09_watch_duty` — one accepted duty, three check windows on the Concourse gauge (acceptance ep 1, laboratory pass ep 3, return ep 5) — implemented (U15); the third check closes at the first Concourse exit (owner decision D-U15-1, §5.239)   |
-| M10  | Add second obligation   | 2    | `m10_obligations_fulfilled`: fulfilled or delegated / accepted accessible; 0–2; more reliability                                                                                                                                                                                                                               | per-obligation outcomes                                                                                                                                                                                                                        | behavioural counterpart | v3 route: `proto_m10_delivery_d1` (key card, Vale → Kai, offered in the Concourse, ep 1) + `proto_m10_delivery_d2` (yard logbook, Noor → Vale, offered in the Recovery Yard, ep 4) — implemented (U15)                                                           |
-| M11  | Add task                | 2    | `m11_unresolved_custodies`: unresolved / accepted accessible; 0–2; more unresolved stewardship                                                                                                                                                                                                                                 | understanding, handover records                                                                                                                                                                                                                | exploratory             | v3 route: `proto_m11_custody_lab` (Laboratory, ep 3) + `proto_m11_custody_yard` (Recovery Yard, ep 4) — implemented (U3)                                                                                                                                         |
-| M12  | Redesign interaction    | 2    | `m12_fields_verified`: fields explicitly judged (matches / differs) before release, summed over the released products / 6; 0–6; more checking coverage (a released product with nothing judged is an observed 0; a packet opened but never released is missing)                                                                | `m12_detection_and_correction` (per product: judgement accuracy, faulty field detected = judged "differs", correction attempted, correction successful = entered value equals the reference, unnecessary corrections, per-field records)       | behavioural counterpart | v3 route: `proto_m12_check_o1` (Concourse, ep 1), `proto_m12_check_o2` (Records Workshop, ep 2) — implemented (U8)                                                                                                                                               |
-| M13  | Extend cases            | 3    | `m13_first_solutions`: networks solved on first submission / 3                                                                                                                                                                                                                                                                 | constraints, help                                                                                                                                                                                                                              | performance counterpart | v3 route: `proto_m13_network_series` — three keyed networks at the Conduit Lattice Bench (Workshop, ep 2), one immutable first response each before any feedback; results and capped practice after — implemented (U16; owner ruling D-U16-1, §5.260)            |
-| M14  | Extend packets          | 2    | `m14_correct_first_integrations`: correct first decisions / 6                                                                                                                                                                                                                                                                  | by packet, omissions, source use                                                                                                                                                                                                               | performance counterpart | v3 route: `proto_m14_integration_series` — two keyed packets at the Concourse incident desk (ep 1), one immutable first response per decision before any feedback; results after the sixth — implemented (U17; owner decisions D-U17-1 / D-U17-2, §5.275–§5.276) |
-| M15  | Extend systems          | 2    | `m15_correct_first_predictions`: correct first predictions / 4                                                                                                                                                                                                                                                                 | model correctness, exploration                                                                                                                                                                                                                 | performance counterpart | v3 route: `proto_m15_systems_series` — two relay boxes at the Laboratory evidence table (ep 3), one immutable wiring and two immutable first predictions per box before any feedback; results after the fourth — implemented (U18; decision D-U18-1, §5.291)     |
-| M16  | Standardise             | 1    | `m16_correct_first_applications`: correct first applications / 6                                                                                                                                                                                                                                                               | form, example versions                                                                                                                                                                                                                         | performance counterpart | v3 route: `proto_m16_handling_series` — the handling rule at the Laboratory protocol console (ep 3), two worked examples, then six immutable first responses before any feedback; results after the sixth — implemented (U19; decision D-U19-1 + A1, §5.302)     |
-| M17  | Replace trial structure | 1    | `m17_criterion_trial`: {criterion_trial 3–12, attained} — the first learning trial ending a run of three consecutive correct first responses; reported whenever reached within the administered trials; (12, false, censored) after twelve without attainment; early exit without attainment = incomplete                      | `m17_sequence_baseline_transfer` (baseline 2 / learning 12 / transfer 2 first-response sequences, feedback exposures, reference sequences shown, help, demonstration reviews, per-trial records)                                               | performance counterpart | v3 route: `proto_m17_criterion` (Diagnostics Laboratory, ep 3) — implemented (U9); **criterion values not to be read until §5.87–5.88 are decided**                                                                                                              |
-| M18  | Extend diagnosis        | 3    | `m18_correct_first_diagnoses`: / 3                                                                                                                                                                                                                                                                                             | `m18_correct_consequence_predictions`: / 3                                                                                                                                                                                                     | performance counterpart | v3 route: `proto_m18_cases_series` — three diagnosis cases at the Laboratory diagnostic board (ep 3), each an immutable first diagnosis then an immutable first step answer before any feedback; results after the sixth — implemented (U20; D-U20-1, §5.315)    |
-| M19  | Add second challenge    | 2    | `m19_continuations`: further attempt / eligible difficulty encounters; 0–2                                                                                                                                                                                                                                                     | failed attempts, success, time                                                                                                                                                                                                                 | behavioural counterpart | v3 route: `proto_m19_lines_series` — two coupling lines at the Yard coupling panel (ep 4) after a panel check; each line's designed obstacle one immutable boundary; continuation = a further executed TRY — implemented (U21; D-U21-1, §5.328)                  |
-| M20  | Extend returns          | 2    | `m20_cued_resumptions`: resumed / eligible unfinished components; 0–2                                                                                                                                                                                                                                                          | spontaneous returns, progress, cue exposure                                                                                                                                                                                                    | exploratory             | v3 route: `proto_m20_feed_project` — two held channels at the Workshop feed console (ep 5); silent release 30 s after the hold, notice 30 s later if unresumed; spontaneous resumptions kept apart — implemented (U22; D-U22-1 as selected, §5.344)              |
-| M21  | Replace revisit score   | 2    | `m21_restudy_revisions`: cases with a relevant restudy (a section bearing on a fault known at the time) AND a revised application / cases whose first application was incorrect and were resolved by the participant (accepted or set aside — a review-closed case keeps its observed 1); 0–2; two first-time successes → null | per-case strategy (first_correct / restudy_and_revise / revise_without_relevant_restudy / restudy_then_exit / exit / unresolved), applications, faults, restudy sections, comprehension context (sections used, reference depth, mode, plate)  | partial                 | v3 route: `proto_m21_case_o1` / `o2` (Records Workshop, ep 5) — implemented (U10)                                                                                                                                                                                |
-| M22  | Hybrid                  | 2    | `m22_revisions_begun`: reports on which a revision was begun (a code attached after the acknowledgement of the returned note) / reports whose requirement was presented (2 planned; a review-closed report keeps its observed 1 once the revision had begun; a returned note never acknowledged ⇒ excluded)                    | `m22_discouragement_ratings`: two 1–5 ratings, each with its recall delay, its position among the questions and the time since its screen was presented; declined or missing = null, never a midpoint; `acknowledged_reports` beside           | hybrid                  | v3 route: `proto_m22_returned_o1` / `o2` (Records Workshop, ep 5) — implemented (U11)                                                                                                                                                                            |
-| M23  | Add second plot         | 2    | `m23_continuations_after_failure`: further search / plots with a failed dig; 0–2                                                                                                                                                                                                                                               | attempts, strategy, success                                                                                                                                                                                                                    | behavioural counterpart | v2-ledger route (one plot) — planned                                                                                                                                                                                                                             |
-| M24  | Repair boundary         | 1    | `m24_postknowledge_casts`: rig cycles committed inside the 30 s focused continuation that opens only when the expected-outcome check is passed (the first included); a never-depleted deck, an undecided or failed check ⇒ null                                                                                                | `m24_postknowledge_casts_minus_first` (sensitivity, max(n − 1, 0)); `m24_unqualified_casts` (the check's record — attempts, first-pass / post-explanation / fail — casts after the depletion before a pass or after a fail, switch, exit, cap) | behavioural counterpart | v3 route: `proto_m24_rig_continuation` (Recovery Yard, ep 4) — implemented (U12)                                                                                                                                                                                 |
-| M25  | Hybrid                  | 1    | `m25_optional_repeats`                                                                                                                                                                                                                                                                                                         | `m25_normality_belief` 1–5                                                                                                                                                                                                                     | hybrid                  | v3 route: `proto_m25_calibration_loops` (Recovery Yard, ep 4) + `proto_m25_normality_belief` (Concourse, ep 5) — implemented (U4)                                                                                                                                |
-| M26  | Repair boundary         | 1    | `m26_postknowledge_retries`: Post A transmissions attempted inside the 30 s focused continuation that opens only when the expected-outcome check is passed (the FIRST included — the v2 first-probe exclusion is retired); a never-disconnected channel, an undecided or failed check ⇒ null                                   | `m26_postknowledge_retries_minus_first` (sensitivity, max(n − 1, 0)); `m26_unqualified_retries` (the check's record, Post A attempts after the disconnect before a pass or after a fail, switch, exit, cap)                                    | behavioural counterpart | v3 route: `proto_m26_uplink_continuation` (Recovery Yard, ep 4) — implemented (U12)                                                                                                                                                                              |
+| Item | Direction               | Occ. | Primary feature                                                                                                                                                                                                                                                                                                                | Companions                                                                                                                                                                                                                                     | Label                   | As-built                                                                                                                                                                                                                                                                                                                                                                 |
+| ---- | ----------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| M01  | Redesign                | 2    | `m01_planned_jobs`: jobs placed before the first work action / 6; 0–6; more advance organisation                                                                                                                                                                                                                               | plan structure, job correctness per occasion                                                                                                                                                                                                   | behavioural counterpart | v3 route: `proto_m01_batch_o1` (Concourse, ep 1) + `proto_m01_batch_o2` (Records Workshop, ep 5) — implemented (U5)                                                                                                                                                                                                                                                      |
+| M02  | Revise and extend       | 1    | `m02_correct_first_retrievals`: correct first retrievals / 6; 0–6; better traceability                                                                                                                                                                                                                                         | filing choices (`m02_filing_layout`, provisional feature row — §5.146), retrieval latency (`m02_retrieval_latency`)                                                                                                                            | behavioural counterpart | v3 route: `proto_m02_retrieval_series` (Records Workshop, ep 2) — implemented (U13); during the requests the participant's layout and own tray labels stay visible and the system-supplied case codes and contents do not (owner ruling of 28 September, §5.137)                                                                                                         |
+| M03  | Retain and verify       | 2    | `m03_tools_restored`: restored / 6; 0–3 per occasion; more tidying                                                                                                                                                                                                                                                             | object states (`m03_object_states`, provisional feature row — §5.175)                                                                                                                                                                          | retained core           | v3 route: `proto_m03_tools_a` (Records Workshop, ep 2) + `proto_m03_tools_b` (Records Workshop, ep 5) — implemented (U14)                                                                                                                                                                                                                                                |
+| M04  | Extend occasions        | 2    | `m04_undisposed_pieces`: undisposed incl. carried / 6; more own mess                                                                                                                                                                                                                                                           | per-job values (`m04_job_values`, provisional feature row — §5.175)                                                                                                                                                                            | behavioural counterpart | v3 route: `proto_m04_cutting_o1` / `o2` (Records Workshop, ep 2) — implemented (U14)                                                                                                                                                                                                                                                                                     |
+| M05  | Redesign                | 2    | `m05_start_latency`: per accepted occasion the focused ms from eligibility to the first work action + status started / deferred / exited / cap / interrupted; never a starter-only mean                                                                                                                                        | `m05_acceptance_exposure` (offer, answer, eligibility wait, exposure by cause, control views, work, late start)                                                                                                                                | behavioural counterpart | v3 route: `proto_m05_start_o1` (Concourse, ep 1) + `proto_m05_start_o2` (Recovery Yard, ep 4) — implemented (U6)                                                                                                                                                                                                                                                         |
+| M06  | Redesign                | 1    | `m06_unique_correct_orders`: distinct orders whose matching dispatch fell inside the one 60 s focused budget; 0–12; more useful output in equal allocated time                                                                                                                                                                 | `m06_work_period_detail` (first-pass accuracy, rework, skips, invalid dispatches, actual stop time, stop kind, per-order records)                                                                                                              | behavioural counterpart | v3 route: `proto_m06_work_period` (Records Workshop, ep 2) — implemented (U7)                                                                                                                                                                                                                                                                                            |
+| M07  | Retain with controls    | 1    | `m07_stages_completed`: stages / 6 at the closing milestone; more routine completion                                                                                                                                                                                                                                           | returns                                                                                                                                                                                                                                        | retained core           | v2-ledger route (P7 valid-zero defect) — planned                                                                                                                                                                                                                                                                                                                         |
+| M08  | Add controlled task     | 1    | `m08_work_choice_fraction`: Work / valid choices; 0–6; more work chosen (exploratory)                                                                                                                                                                                                                                          | fractions by benefit level, practice performance                                                                                                                                                                                               | exploratory             | v3 route: `proto_m08_effort_choice`, Recovery Yard, ep 4 — implemented and reviewed (U2 + U2-R)                                                                                                                                                                                                                                                                          |
+| M09  | Extend checkpoints      | 3    | `m09_due_checks_fulfilled`: fulfilled / eligible due checks; 0–3; more follow-through                                                                                                                                                                                                                                          | acceptance, reminders, access                                                                                                                                                                                                                  | behavioural counterpart | v3 route: `proto_m09_watch_duty` — one accepted duty, three check windows on the Concourse gauge (acceptance ep 1, laboratory pass ep 3, return ep 5) — implemented (U15); the third check closes at the first Concourse exit (owner decision D-U15-1, §5.239)                                                                                                           |
+| M10  | Add second obligation   | 2    | `m10_obligations_fulfilled`: fulfilled or delegated / accepted accessible; 0–2; more reliability                                                                                                                                                                                                                               | per-obligation outcomes                                                                                                                                                                                                                        | behavioural counterpart | v3 route: `proto_m10_delivery_d1` (key card, Vale → Kai, offered in the Concourse, ep 1) + `proto_m10_delivery_d2` (yard logbook, Noor → Vale, offered in the Recovery Yard, ep 4) — implemented (U15)                                                                                                                                                                   |
+| M11  | Add task                | 2    | `m11_unresolved_custodies`: unresolved / accepted accessible; 0–2; more unresolved stewardship                                                                                                                                                                                                                                 | understanding, handover records                                                                                                                                                                                                                | exploratory             | v3 route: `proto_m11_custody_lab` (Laboratory, ep 3) + `proto_m11_custody_yard` (Recovery Yard, ep 4) — implemented (U3)                                                                                                                                                                                                                                                 |
+| M12  | Redesign interaction    | 2    | `m12_fields_verified`: fields explicitly judged (matches / differs) before release, summed over the released products / 6; 0–6; more checking coverage (a released product with nothing judged is an observed 0; a packet opened but never released is missing)                                                                | `m12_detection_and_correction` (per product: judgement accuracy, faulty field detected = judged "differs", correction attempted, correction successful = entered value equals the reference, unnecessary corrections, per-field records)       | behavioural counterpart | v3 route: `proto_m12_check_o1` (Concourse, ep 1), `proto_m12_check_o2` (Records Workshop, ep 2) — implemented (U8)                                                                                                                                                                                                                                                       |
+| M13  | Extend cases            | 3    | `m13_first_solutions`: networks solved on first submission / 3                                                                                                                                                                                                                                                                 | constraints, help                                                                                                                                                                                                                              | performance counterpart | v3 route: `proto_m13_network_series` — three keyed networks at the Conduit Lattice Bench (Workshop, ep 2), one immutable first response each before any feedback; results and capped practice after — implemented (U16; owner ruling D-U16-1, §5.260)                                                                                                                    |
+| M14  | Extend packets          | 2    | `m14_correct_first_integrations`: correct first decisions / 6                                                                                                                                                                                                                                                                  | by packet, omissions, source use                                                                                                                                                                                                               | performance counterpart | v3 route: `proto_m14_integration_series` — two keyed packets at the Concourse incident desk (ep 1), one immutable first response per decision before any feedback; results after the sixth — implemented (U17; owner decisions D-U17-1 / D-U17-2, §5.275–§5.276)                                                                                                         |
+| M15  | Extend systems          | 2    | `m15_correct_first_predictions`: correct first predictions / 4                                                                                                                                                                                                                                                                 | model correctness, exploration                                                                                                                                                                                                                 | performance counterpart | v3 route: `proto_m15_systems_series` — two relay boxes at the Laboratory evidence table (ep 3), one immutable wiring and two immutable first predictions per box before any feedback; results after the fourth — implemented (U18; decision D-U18-1, §5.291)                                                                                                             |
+| M16  | Standardise             | 1    | `m16_correct_first_applications`: correct first applications / 6                                                                                                                                                                                                                                                               | form, example versions                                                                                                                                                                                                                         | performance counterpart | v3 route: `proto_m16_handling_series` — the handling rule at the Laboratory protocol console (ep 3), two worked examples, then six immutable first responses before any feedback; results after the sixth — implemented (U19; decision D-U19-1 + A1, §5.302)                                                                                                             |
+| M17  | Replace trial structure | 1    | `m17_criterion_trial`: {criterion_trial 3–12, attained} — the first learning trial ending a run of three consecutive correct first responses; reported whenever reached within the administered trials; (12, false, censored) after twelve without attainment; early exit without attainment = incomplete                      | `m17_sequence_baseline_transfer` (baseline 2 / learning 12 / transfer 2 first-response sequences, feedback exposures, reference sequences shown, help, demonstration reviews, per-trial records)                                               | performance counterpart | v3 route: `proto_m17_criterion` (Diagnostics Laboratory, ep 3) — implemented (U9); **criterion values not to be read until §5.87–5.88 are decided**                                                                                                                                                                                                                      |
+| M18  | Extend diagnosis        | 3    | `m18_correct_first_diagnoses`: / 3                                                                                                                                                                                                                                                                                             | `m18_correct_consequence_predictions`: / 3                                                                                                                                                                                                     | performance counterpart | v3 route: `proto_m18_cases_series` — three diagnosis cases at the Laboratory diagnostic board (ep 3), each an immutable first diagnosis then an immutable first step answer before any feedback; results after the sixth — implemented (U20; D-U20-1, §5.315)                                                                                                            |
+| M19  | Add second challenge    | 2    | `m19_continuations`: further attempt / eligible difficulty encounters; 0–2                                                                                                                                                                                                                                                     | failed attempts, success, time                                                                                                                                                                                                                 | behavioural counterpart | v3 route: `proto_m19_lines_series` — two coupling lines at the Yard coupling panel (ep 4) after a panel check; each line's designed obstacle one immutable boundary; continuation = a further executed TRY — implemented (U21; D-U21-1, §5.328)                                                                                                                          |
+| M20  | Extend returns          | 2    | `m20_cued_resumptions`: resumed / eligible unfinished components; 0–2                                                                                                                                                                                                                                                          | spontaneous returns, progress, cue exposure                                                                                                                                                                                                    | exploratory             | v3 route: `proto_m20_feed_project` — two held channels at the Workshop feed console (ep 5); silent release 30 s after the hold, notice 30 s later if unresumed; spontaneous resumptions kept apart — implemented (U22; D-U22-1 as selected, §5.344)                                                                                                                      |
+| M21  | Replace revisit score   | 2    | `m21_restudy_revisions`: cases with a relevant restudy (a section bearing on a fault known at the time) AND a revised application / cases whose first application was incorrect and were resolved by the participant (accepted or set aside — a review-closed case keeps its observed 1); 0–2; two first-time successes → null | per-case strategy (first_correct / restudy_and_revise / revise_without_relevant_restudy / restudy_then_exit / exit / unresolved), applications, faults, restudy sections, comprehension context (sections used, reference depth, mode, plate)  | partial                 | v3 route: `proto_m21_case_o1` / `o2` (Records Workshop, ep 5) — implemented (U10)                                                                                                                                                                                                                                                                                        |
+| M22  | Hybrid                  | 2    | `m22_revisions_begun`: reports on which a revision was begun (a code attached after the acknowledgement of the returned note) / reports whose requirement was presented (2 planned; a review-closed report keeps its observed 1 once the revision had begun; a returned note never acknowledged ⇒ excluded)                    | `m22_discouragement_ratings`: two 1–5 ratings, each with its recall delay, its position among the questions and the time since its screen was presented; declined or missing = null, never a midpoint; `acknowledged_reports` beside           | hybrid                  | v3 route: `proto_m22_returned_o1` / `o2` (Records Workshop, ep 5) — implemented (U11)                                                                                                                                                                                                                                                                                    |
+| M23  | Add second plot         | 2    | `m23_continuations_after_failure`: further search / plots with a failed dig; 0–2                                                                                                                                                                                                                                               | attempts, strategy, success                                                                                                                                                                                                                    | behavioural counterpart | v3 route: `proto_m23_excavation_series` — two independently keyed plots at the Exterior Recovery Yard stake (ep 4), each plot's first genuine failed dig followed by ONE explicit CONTINUE / STOP choice; the known outcomes counted, null while any eligible response is unknown (E(c)); the component to a field tray — implemented (U23; D-U23-1 as approved, §5.362) |
+| M24  | Repair boundary         | 1    | `m24_postknowledge_casts`: rig cycles committed inside the 30 s focused continuation that opens only when the expected-outcome check is passed (the first included); a never-depleted deck, an undecided or failed check ⇒ null                                                                                                | `m24_postknowledge_casts_minus_first` (sensitivity, max(n − 1, 0)); `m24_unqualified_casts` (the check's record — attempts, first-pass / post-explanation / fail — casts after the depletion before a pass or after a fail, switch, exit, cap) | behavioural counterpart | v3 route: `proto_m24_rig_continuation` (Recovery Yard, ep 4) — implemented (U12)                                                                                                                                                                                                                                                                                         |
+| M25  | Hybrid                  | 1    | `m25_optional_repeats`                                                                                                                                                                                                                                                                                                         | `m25_normality_belief` 1–5                                                                                                                                                                                                                     | hybrid                  | v3 route: `proto_m25_calibration_loops` (Recovery Yard, ep 4) + `proto_m25_normality_belief` (Concourse, ep 5) — implemented (U4)                                                                                                                                                                                                                                        |
+| M26  | Repair boundary         | 1    | `m26_postknowledge_retries`: Post A transmissions attempted inside the 30 s focused continuation that opens only when the expected-outcome check is passed (the FIRST included — the v2 first-probe exclusion is retired); a never-disconnected channel, an undecided or failed check ⇒ null                                   | `m26_postknowledge_retries_minus_first` (sensitivity, max(n − 1, 0)); `m26_unqualified_retries` (the check's record, Post A attempts after the disconnect before a pass or after a fail, switch, exit, cap)                                    | behavioural counterpart | v3 route: `proto_m26_uplink_continuation` (Recovery Yard, ep 4) — implemented (U12)                                                                                                                                                                                                                                                                                      |
 
 ### 2b. Occasion count, placement and clustering
 
@@ -162,6 +162,320 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
   pinned in `protocol.ts` beside their anchors.
 
 ## 4. As-built records (appended per unit)
+
+**Unit 23 (M23): as-built** — the two-plot post-failure excavation protocol
+at the Exterior Recovery Yard stake (bounded unit under contract
+`U23-CONTRACT.md`, final of 16 October 2026; research-owner decision D-U23-1;
+owner execution authorization of 18 October 2026). **Status: technical
+implementation of the approved row under research-owner decision D-U23-1
+(APPROVED 16 October 2026 — all nine rows A (A-adjusted layout, numeric 0–100
+reading with band and trend, the final neutral copy), B (the passive two-page
+example, no forced failed action, no comprehension pass), C (a genuine
+completed new-cell empty dig establishes eligibility; a completed qualifying
+scan or a valid new-cell dig after CONTINUE credits 1), D1 (the direct
+first-failure STOP and CONTINUE, one fresh activation each), D2 (the informed
+participant shift end resolves an unanswered usable choice to 0), D3
+(completed-action credit only; a system-cancelled start is a diagnostic), E(c)
+(an unknown eligible response makes the primary and the numerator null with
+the full denominator), F (the M23-only field tray) and G (provisional
+telemetry, read-only primary and components, no canonical promotion));
+`m23_continuations_after_failure` is a candidate indicator with the coverage
+label `behavioural_counterpart` and NOT scientifically validated.** The two
+plots are two occasions of ONE series inside ONE yard visit and ONE shift —
+clustered observations, never two independent situations; A's work may change
+B's; a count of 2 shows only that on each plot whose first new-cell dig came up
+empty the participant chose CONTINUE SEARCH and completed one further scan or
+dig before any closure; a 0 shows an explicit stop (direct, or confirmed from
+the plot panel) or an informed shift end after the usable choice; the primary
+is the count of known 1s with the resolved denominator beside it, null while
+any valid eligible response is unknown, never a ratio and never a ranking; no
+global or cross-item score; no questionnaire wording or pressure in any
+participant text. Passing tests establish implementation correctness only,
+never psychometric validity, reliability, persistence as a trait or
+questionnaire equivalence. Parts (0)–(2) restate the contract's binding
+specification (U23-CONTRACT.md §§3–6, 10, 12–13 and U23-OUTCOME-FIXTURES.md);
+parts (3)–(7) record the build and its evidence.
+
+(0) Authority. **Research-owner decision D-U23-1 — APPROVED 16 October 2026**
+(an owner ruling, U23-OWNER-RULING.md, recorded in §5.362; not an implementer
+default and not reopened) and the owner's execution authorization of 18
+October 2026 (UNIT-LOG "U23", verbatim): the 30-path allowlist
+U23-ALLOWLIST-A-ADJUSTED.txt (SHA-256 `d5e9d722…7368c9`), the branch
+`codex/u23-m23` from base `a80629e94b5f49ff944eef3a4c936b0de8cff29a` in the
+worktree `C:\Users\Juls\.codex\worktrees\u23-m23\research-station-assessment-game`,
+one local commit `feat(m23): add two-plot post-failure excavation protocol`,
+no push, no scientific decision taken by the implementer. Approved scientific
+boundaries unchanged: the §3 formula row `m23_continuations_after_failure`
+(SCORING-AND-EVENT-ADDENDUM-v1.md :1359) and the partial-accuracy paragraph
+(:1363–1370) are untouched; every event name of the family
+`proto_m23_plots_` is provisional telemetry (addendum §2 "U23"); nothing is
+written to `event-schema.md` or `scoring-plan.md`.
+
+(1) Administration `m23-plots-v1` (contract §§3–4, 10, 12–13; content module
+`src/pilot/windows/m23PlotsContent.ts`). The field: plot A cols 27–33 × rows
+8–13 and plot B cols 34–40 × rows 8–13 of the World V3 yard (42 cells each,
+the shared border col 33 / 34), one buried component per plot at its literal
+keyed cell by form — A `a1` (29, 9) / `a2` (31, 12), B `b1` (38, 9) / `b2`
+(36, 12), the within-plot offsets (2, 1) / (4, 4) / (4, 1) / (2, 4) — every
+other cell empty; the stake at (1072, 488) with its registry approach at
+(1116, 488) (§13 R1; the stake-field prop, debris-c and lamps a / e removed
+from the painted layout; S01–S04 spacing and unique ownership); the fixed
+frames A scroll (656, 172) / B scroll (880, 172) at zoom 2 while a plot is in
+work, with the mast chip masked from the world readouts (§13 R2; V01–V06).
+Counterbalance per session (rounds 1–2 from the validity register's hash —
+SUPERSEDED in round 3 by ONE M23-local joint assignment, §5.365 (o)): the
+forms, the plot order AB / BA (the selector's row order) and the
+first-failure option
+order `continue_left` / `stop_left`. The qualifying region (§10 F6): the body
+fits AND (the point is inside the plot's rectangle OR one of the cardinal
+selector probes (−27, +4) / (+27, +4) / (0, −28) / (0, +36) lands inside it)
+AND the point is not inside the other plot's rectangle; checked at every
+start and resolution. The signal: `strength = round(100 · clamp(1 − d /
+160))` from the stance to the keyed cell's centre (0 px → 100, 80 → 50, 160
+→ 0), bands NONE (0) / FAINT (1–33) / MODERATE (34–66) / STRONG (67–100), the
+trend CLOSER / FARTHER / SAME against the same plot's previous reading, NO
+COMPARISON for the first; a scan 1000 ms with a 900 ms cooldown, a dig 1500
+ms, both from a held stance. The surface (`m23_excavation_field`, the
+standard 720 × 516 frame): the brief with its closure explanation, CONTROL
+EXAMPLE (page 1 the visible beacon 80 px away reading `50 / 100 — MODERATE`;
+page 2 the component cell and the empty cell), NEXT / BACK, OPEN PLOT PANEL,
+the selector (both plots in assigned order, each with its status line and
+OPEN / RESUME / STOP; the tray line; HELP; STEP AWAY), the STOP confirmation
+(STOP PLOT X / BACK), the first-failure panel (a neutral landing, CONTINUE
+SEARCH and STOP THIS PLOT on their assigned visual sides, HELP, STEP AWAY; the
+focus order neutral → right → HELP → STEP AWAY → left; Left / Right select the
+option on that side; Enter / Space commit; Tab / Shift+Tab cycle), the record
+views (stopped, recovered, series closed, reload lock, plot fault) and the
+field HUD (scanner readout up to four lines, last dig / facing / tray readout,
+the local feedback line at design y 92, the eight-control pad LEFT / RIGHT,
+UP / DOWN, SCAN / DIG, HELP / PANEL — pointer equivalents of the arrows, C,
+D, HELP and P). Every participant string is the contract's §4 inventory
+verbatim (the pure group's transcription audit); the neutral objective
+`Excavation field — two staked plots, east (E at the stake).`; Noor's common
+briefing carries the excavation clause and the one appended sentence `You can
+search either excavation plot, pause, or stop.` (§13 R4; the former
+recovery-permission sentence absent); no questionnaire wording, no evaluative
+or pressuring word (the forbidden-token audit).
+
+(2) Lifecycle, classification and integrity rules (contract §§5–6, 12; model
+`src/pilot/windows/m23PlotsModel.ts`, extractor
+`src/measurement/features/m23.ts`). Series states `unopened` → `presented`
+(the brief shown) → `open` (the first USABLE selector: the one measured
+opening, `opportunity_opened` with the entry snapshot; the yard guidance
+addressed at that moment, G01–G05) → `closed` / `technical_failure` /
+`held_back` (a reload after the measured opening; R01–R03). Plot states
+`not_started` → `approaching` (OPEN / RESUME from outside the region; path
+samples, `search_region_entered` at the first body-valid entry) or
+`searching` (inside at once; the fixed frame) → `choice_pending` (after the
+genuine failure, until the response) → `paused` (ESC / STEP AWAY, P / PANEL,
+HELP, an overlay, a plot switch, a region exit, the yard departure, a blur, a
+hidden page, the scene shutdown; a running action cancels first) → terminal
+`stopped` (the direct STOP, or the selector STOP confirmed), `recovered` (the
+keyed cell; the component to the tray), `closed_shift_end`, `closed_review`,
+`technical_failure` (that plot only; the other stays usable). Eligibility and
+credit (C, D3): the plot's genuine failure is its first completed EMPTY dig of
+a NEW cell (a duplicate cell is refused, never a failure; a dig cancelled
+before 1500 ms is no failure); the usable choice is the panel's first render
+while the page is visible and focused (`failure_choice_presented`; an
+unpresented choice stays unknown even at the shift end — B10, B15); the credit
+is the first COMPLETED qualifying scan or valid new-cell dig after CONTINUE
+(zero / unchanged readings and blind digs inside the region count; a start
+cancelled by `focus_loss` / `hidden` / `scene_shutdown` after CONTINUE is the
+diagnostic `continuation_started_then_system_cancelled`, never a credit and
+never a second denominator — C01–C06; the same-tick resolve / cancel order
+keeps one terminal transition — C09). Responses (D1, D2): the direct STOP
+writes the single `failure_choice` and closes the plot at once (no request, no
+confirmation); CONTINUE writes the single `failure_choice`, re-evaluates the
+origin (inside → searching, outside → approaching) and never a second response
+(a later confirmed selector STOP is the closure, 0 before an act, 1 preserved
+after one — B01–B05); Noor's informed shift end (participant-initiated, after
+the usable choice and the brief's closure explanation) resolves an unanswered
+choice to 0; the review, a system-labelled boundary, a missing explanation or
+an unpresented choice keep it unknown (B06–B13). Outcome per plot: 1 with a
+credit; 0 on a `stop` response, on a confirmed selector stop after the usable
+choice was presented, or on an informed shift end; unknown otherwise — in
+particular an explicit stop of a failure whose choice was never presented
+stays eligible and unknown (§5 of the contract; never a manufactured 0);
+eligible ⇔ a genuine failure AND not technically invalid, where a plot-scoped
+fault excludes only an outcome still unknown at the fault (a credit or a stop
+response recorded before the fault keeps its verified 1 / 0 — E row, T05 /
+T08). The row (E(c)): with every eligible response known, the
+value is the count of 1s with the eligible denominator (0 / 0 / 1, 1 / 1 / 1,
+0 / 0 / 2, 1 / 1 / 2, 2 / 2 / 2 — never 0.5, never a ratio of 1); with any
+valid eligible unknown, value and numerator null, the full denominator,
+`interrupted` with `eligible_response_unresolved` and the known outcomes in
+the components (O10–O14, X01–X02); no eligible plot ⇒ `no_eligible_event`
+(`recovered_without_failure` / `stopped_before_failure` /
+`mixed_no_eligible_event` / `no_failed_dig`; the brief without a selector
+`not_presented`, `presented_not_opened`; O01–O03, O15–O17); a technically
+invalid plot excluded with the censor flag, only invalid evidence
+`technical_failure` (T01–T07); a reload after the measured opening
+`interrupted` with the denominator 0 and the earlier load never pooled
+(R02–R03). Integrity (S1–S6): the family's identity (opportunity, window,
+version, layout), one record per sequence (identical duplicates deduplicate;
+two different records on one sequence void), the sequence order, one
+terminal transition per action, a resolution needs its start, a response
+needs its failure and comes at most once, a dig outcome agrees with the
+plot's key; a contradiction voids the row or excludes the plot, never a
+silent repair; the closure snapshots never repair missing evidence (a
+disagreement is a flag); more than 200 supporting sequences flag the
+truncation while the raw log stays complete.
+
+(3) The build (18 October 2026; the 30-path allowlist, enforced by the
+PreToolUse guard — a probe outside it was blocked and recorded). NEW
+`src/pilot/windows/m23PlotsContent.ts` (the ids, bounds, keys, stake and
+approach, probe offsets, slots, geometry helpers, the region predicate
+`m23RegionMember`, the signal helpers, every string, the modal and HUD
+geometry; pure), NEW `src/pilot/windows/m23PlotsModel.ts` (the pure series
+model: the assignment, the opening, the examples and help, the selector, the
+hold-back, the plot opening with approach samples and the region entry, the
+pauses, admission and refusals, the timed actions with their tokens, the scan
+and dig resolutions, the cancellation with its diagnostic, the first-failure
+presentation and navigation trace, the choices, the selector stop with its
+confirmation, the closures per plot and per series, the faults, the entry
+and closure snapshots), NEW `src/pilot/windows/m23SurfaceModel.ts` (the
+work-surface views: brief, the two example pages, the selector, the
+first-failure panel, the STOP confirmation, the records; view-scoped element
+ids with a focus epoch), NEW `src/pilot/windows/m23Plots.ts` (the adapter:
+`ItemWindow` item `M23`, opportunity `proto_m23_excavation_series`, window
+`m23_plots_w1`, family `proto_m23_plots_`, entry version `m23-plots-v1`; the
+sink with the protocol stamp; `guarded()` turning a thrown error into the
+fault record; the reload guard; the stake and panel openings; the
+render-gated exposure records; the commands; the ESC order; the field
+bridge for C / D / P with admission, start, resolution and cancellation; the
+departure, resume, shift-end and review closures; the DEV probe
+`window.__m23PlotsProbe`; the test reset), NEW `src/pilot/ui/M23FieldControls.ts`
+(the field HUD: the pad, the two readouts, the feedback line; the DEV probe
+`window.__m23FieldProbe`), `src/pilot/ui/WorkSurfaceScene.ts` (an optional
+input observer on the launch data: navigation observed after the move,
+activation before the handler; defaults unchanged for every other surface),
+`src/sprites/Player.ts` (an optional external movement intent OR-ed with the
+cursors; unset elsewhere; no speed or physics change),
+`src/fieldActions/digController.ts` (optional `deliverRecovery` and
+`onCancelled`; the inventory / cache path unchanged when omitted),
+`src/fieldActions/scanController.ts` (optional `presentation.readout` to
+suppress the default caption and `onCancelled`; the default when omitted),
+`src/pilot/exterior/exteriorEpisodeModel.ts` (the neutral objective,
+`m23_guidance_addressed` with its one setter `exteriorM23GuidanceAddressed`;
+the excavation's dismissal a no-op; the other sites and the order
+unchanged), `src/pilot/windows/exteriorWindows.ts` (the legacy single-plot
+binding retired from the route: the declare, the departure, the resume, the
+shift-end and the review go through the new adapter; the legacy helper
+functions kept, the eight dormant `setComprehension('passed')` occurrences
+kept), `src/scenes/ExteriorRecoveryYardScene.ts` (the two targets, zones and
+buried objects; the controllers with the overrides; the field routing of C /
+D / P; the stake station opening the surface; the field HUD; the fixed frame
+with the mast chip masked (`m23ChipList`, explicit hide); the environment
+listeners (blur, visibility, focus); the participant source of Noor's command
+noted for the series (`noteM23ShiftEndSource`) immediately before the
+unchanged `endExteriorShift(now);` call; the M23 feedback routed to the room
+line once the plot is no longer live; `guard()` unchanged), `src/world/layouts/yard.ts` (the four
+prop removals), `src/pilot/zoneSites.ts` (`plotStake` (1072, 488)),
+`src/world/interactionRegistry.ts` (`yard.plot_stake` approach (1116, 488)),
+NEW `src/measurement/features/m23.ts` (the extractor: the walk, S1–S6, the
+per-plot recount, the dispositions, the components),
+`src/measurement/features/index.ts` (one import),
+`src/measurement/registerV3.ts` (the `M23` entry's explicit v3 route and
+`implemented`; the feature row unchanged), NEW `e2e/m23_plots.spec.ts` and
+`e2e/m23Helpers.ts` (the pure oracle, the model, the extraction fixtures, the
+browser, STOP, boundaries, cancellation and layout groups; real keyboard and
+pointer drivers), `e2e/exteriorHelpers.ts`, `e2e/pilot_yard.spec.ts`,
+`e2e/pilot_exterior_isolation.spec.ts`, `e2e/pilot_exterior_capture.spec.ts`
+(its frames redirected outside the repository) and
+`e2e/pilot_exterior_models.spec.ts` (current-route expectations re-expressed
+for the two-plot protocol; the legacy pure tests kept), the room document,
+this register (§2, §4, §5), the matrix row, the addendum §2 block and the
+UNIT-LOG entry. The legacy `src/pilot/exterior/m23ExcavationModel.ts` and
+`src/fieldActions/opportunities/m23FieldRecovery.ts` are unchanged.
+
+(4) Events, closures and the legacy disposition as built. Twenty-seven
+suffixes of `proto_m23_plots_` (addendum §2 "U23" lists each with its
+fields): `presented`, `closure_explanation_presented`, `example_viewed`,
+`opportunity_opened`, `surface_opened`, `surface_closed`, `help_opened`,
+`help_closed`, `plot_opened`, `resumed`, `approach_ended`,
+`search_region_entered`, `paused`, `action_started`, `action_cancelled`,
+`scan_resolved`, `dig_resolved`, `action_refused`,
+`failure_choice_presented`, `failure_choice`, `stop_requested`,
+`stop_cancelled`, `plot_closed`, `reload_blocked`, `invalidated` (declared,
+never written by this build), `technical_failure`, with the kit's
+`window_closed`. The window completes (`exit_state` `stopped`, the closure
+snapshot as `raw_components`) once both plots are terminal, at the shift end
+or at the review when every eligible response is known; it stops censored
+(`raw_components_partial`, `invalid_detail` `eligible_response_unresolved`)
+when one is unknown; a never-opened series is recorded absent at the review
+(`presented_not_opened` when the brief was shown, never `declined`). The v2
+ids `proto_m23_field_recovery`, `m23_excavation_w1` and the family
+`proto_m23_field_recovery_` are no longer declared or written on the route;
+the frozen ledger keeps them; `EXTERIOR_FAMILIES` in the episode model still
+names the legacy family (unchanged by scope) and the models spec proves the
+new family disjoint from it.
+
+(7) Limitations (stated, not resolved). Two plots in one yard visit are
+clustered, dependent observations; a cued count never establishes a trait,
+the signal rule is a design constant, the region's boundary stances and the
+relocated stake change exposure relative to the historical layout (§13 R3,
+disclosed; no equivalence asserted); the informed shift-end 0 depends on the
+brief's closure explanation having been rendered usable (logged on the first
+usable render, which the launched surface scene reports before it counts as
+active — the render itself is the exposure); the counterbalance is a hash of
+the session id (two forms × two orders × two option orders; a test fixture
+chooses a session id to realise an order, the participant route never does);
+a page reload after the measured opening ends the series for that load with
+no replacement administration; the field HUD's local feedback is hidden with
+the HUD, so closure lines go to the room's line; `invalidated` is declared
+but unused; the pinned status "Closed before a choice" is the one review
+closure status whatever the plot's earlier response (never displayed: the
+selector is unreachable once the series closed); the extractor recomputes a
+scan's strength from the record's own stored target distance (the region
+membership needs the collision grid, which the extractor does not have) and
+accepts a record without `page_load_index` in every load; a 400 ms settle
+gates every surface view (§5.363 (o)); no scientific validity, reliability or
+questionnaire equivalence is claimed.
+
+(8) Correction rounds (18–19 October 2026; the two bounded rounds the owner
+allowed; UNIT-LOG "U23 results"). Round 1 (the first matrix's own three
+failures and the pre-existing capture failure): the participant source of
+Noor's command noted before the byte-identical `endExteriorShift(now);`
+(the M19 verification-only source check); the isolation spec's M23 row read
+through the page's export builder; the beacon asserted after the surface
+closed; the capture's frame 11 re-expressed through the current coupling
+panel; a provenance sidecar beside every M23 frame. Round 2 (the three
+read-only reviews' cited findings): an unpresented failure's confirmed
+selector STOP stays eligible and unknown (model and extractor; the
+component `stopped_unpresented_ids`); a plot-scoped fault keeps an outcome
+verified before it (the extractor's `verifiedBeforeFault`; `invalid_ids`
+holds the excluded plots, `faulted_ids` every faulted plot); the field
+bridge governs every C / D inside a plot rectangle in every series status
+(the pre-opening scan is refused, never a NONE reading) and only a plot in
+work away from the plots; the D3 diagnostic on every system-cancelled start
+after CONTINUE; the guidance addressed on a reload hold-back; the stake and
+every other station pause a plot in work before opening; the HUD only while
+a plot is in work; the pinned paused / region-exit / ordinary-exit /
+field-controls / cell-label / fault lines shown (§5.363 (t)); P only in the
+`exterior_work` stage; the cancellation's input mode kept for P / HELP; the
+selected outline emphasised while approaching; the stake's marker sprite;
+the example illustrations on pinned copy only; the series-closed line for a
+series fault; the HUD readout wrap at 19 characters; the extremal and corner
+stances with the facing cell, the reading and the dig on screen, the page-2
+example frame, both histories and the continue_left panel at 1280 × 720 in
+the layout group; the fixtures also under the second assignment variant
+(a2 / b2 / BA / stop_left). Open after round 2 (§5.364): the base scene's
+floating stake prompt over the highlighted cell at the entry stances (a
+scope gap; the §10 stop rule; no commit while it stands), the example
+heading's pinned y 24 against the surface's title bar, the owner's
+placement, labelling, "extremal", stake-art, M22-fiction and G02 questions.
+Round 3 (the closeout amendment approved 19 October 2026; §5.365): the
+base scene's `stationPromptSuppressed` hook (default off) lets the yard hide
+only its own stake prompt while it owns a fixed frame; the example heading
+at y 48; the figure glyph facing a highlighted cell in both page-2
+illustrations and beside the beacon on page 1; the boundary ring governed
+like the rectangle in every non-live status; ONE M23-local joint assignment
+over the sixteen cells (`assignment_scheme` in the entry snapshot;
+`m23-plots-v1` kept; earlier evidence pre-amendment); `closure_reason`
+`completed` for two plots faulted after verified outcomes; the field-controls
+line as two verbatim parts on the first fixed-frame entry; the field tray on
+its own plate; the isolation assertion repaired; pointer and mixed extraction
+fixtures; the mast actually opened beside Plot A's ring.
 
 **Unit 22 (M20): as-built** — the two held channels of the Mast 04 feed at the
 Records Workshop return-shift feed console (bounded unit under contract
@@ -12128,3 +12442,380 @@ an owner decision.
      registerV3 M20 texts as recorded in the UNIT-LOG "U22 correction round
      1"; the `operational_label` "Antenna restoration (Yard / Workshop)" is
      outside §5.359 (4) and unchanged (U24 backlog, with §5.357).
+
+362. **Research-owner decision D-U23-1 — APPROVED 16 October 2026 (an owner
+     ruling, U23-OWNER-RULING.md; execution authorized 18 October 2026;
+     recorded, not reopened).** All nine rows of the U23 decision table
+     approved as specified: A (the A-adjusted layout with the stake at
+     (1072, 488) and its approach at (1116, 488), the numeric 0–100 reading
+     with band and trend, the final neutral copy, the counterbalanced forms
+     and orders, the approaching / fixed-camera lifecycle, the scene-local
+     chip visibility), B (the passive two-page example, HELP replay, no
+     forced failed action, no comprehension pass), C (the genuine completed
+     new-cell empty dig as eligibility; after the usable choice and
+     CONTINUE, a completed qualifying scan or a valid new-cell dig credits
+     1, including zero / unchanged readings and blind digs inside the
+     region), D1 (the direct first-failure STOP and CONTINUE, one fresh
+     activation each, stable within-participant positions, a neutral
+     landing, the selector STOP with its confirmation), D2 (the informed
+     participant shift end resolves an unanswered usable choice to 0 only
+     with the closure explanation exposed and no credit; the review, a
+     system boundary or an unpresented choice never manufactures a 0), D3
+     (completed-action credit only; a system-cancelled start is a separate
+     diagnostic; deterministic same-tick handling), E(c) (an unknown
+     eligible response makes the primary AND the numerator null with the
+     full denominator and the known outcomes kept in the components; a
+     zero denominator stays null), F (the M23-only field tray; the scanner
+     and spade independent of the belt; no inventory or cache consequence)
+     and G (provisional telemetry and diagnostics, read-only primary and
+     components, no canonical promotion, no validity claim). The §3
+     formula row is unchanged; `m23_continuations_after_failure` remains a
+     candidate indicator with the label `behavioural_counterpart`, not
+     validated. The binding fixtures (U23-OUTCOME-FIXTURES.md O / B / C / R
+     / T / X / G / P / K / S / V) are the independent expected values of
+     `e2e/m23_plots.spec.ts`.
+
+363. **Implementer defaults of U23 (18 October 2026; inside D-U23-1 and the
+     contract; all provisional, alternatives the owner's).** (a) The
+     closure lines (recovery, stop) go to the room's feedback line, the
+     HUD's own line carrying a message only while the selected plot is live
+     (approaching / searching / choice pending): the HUD hides with the
+     closed plot and would hide its line. (b) The brief's closure
+     explanation and the first-failure presentation are recorded on the
+     surface model's first render while the page is visible and focused
+     (the render IS the exposure); the recheck on a focus or visibility
+     change additionally requires the surface to be open. (c) A boundary
+     closure (shift end, review, reload) closes the series under its own
+     trigger (`shift_end`, `review`, `reload`) — the "both plots terminal"
+     settlement applies only to a participant's or a fault's plot closure
+     (`both_plots_terminal` with `completed` / `voluntary_stop` /
+     `technical_failure`). (d) In the model as in the extractor, a confirmed
+     selector STOP after CONTINUE without a credit is the known 0
+     (`observed_continuation: false` on the `plot_closed` record; fixture
+     B03). (e) A row without a resolved count (`not_presented`, the reload
+     hold-back, no current-load evidence) exports `numerator: null`,
+     `denominator: 0` (fixtures O16, O17, R02, R03). (f) A runtime fault
+     raised without a plot while a plot is selected scopes to that plot
+     (the adapter names the plot it serves); without a selection it ends
+     the whole series. (g) Before the series is opened (and after it
+     closed), the plots' targets are inactive and their zones disabled, and
+     the field bridge governs every C / D pressed inside a plot rectangle:
+     the press is refused as `plot_not_active` (or `plot_terminal`) with the
+     pinned line "Open the plot panel (P) to resume." and an
+     `action_refused` record — never a reading over an inactive target
+     (contract §3, F5; the scientific review's M-3: a first build let the
+     ordinary free scan caption "NONE" there, corrected in round 2); P opens
+     the brief before the opening. (h) P / PANEL opens the plot panel
+     anywhere in the yard during the `exterior_work` stage only (never
+     during Noor's briefing or after the shift ended): before the opening it
+     presents the brief, afterwards the selector; a plot in work pauses
+     first (a running action cancels, cause `panel`); after a closure the
+     panel is the stake's line. (i) The HUD (the pad, the two readouts, the
+     feedback line) is visible only while the selected plot is approaching
+     or searching — it hides on every pause and pending choice wherever the
+     avatar is (§12 M1: no standing reminder; the gameplay review's M2);
+     while approaching the scanner box keeps "No reading yet." and the
+     pinned approach line goes to the feedback line (the 87-character line
+     needs five of the box's four lines). (r) E at the stake and every
+     other yard station's prompt pause a plot in work before opening
+     (cause `panel` at the stake, `overlay` elsewhere; §12 M2; the gameplay
+     review's M1). (s) The selected plot's outline is emphasised while
+     approaching as well as searching (the cells only while searching), so
+     the participant can tell which outline the opened plot is; an A / B
+     label in the world is pinned copy / layout and stays the owner's
+     (§5.364). (t) The pinned lines without a §10 placement are shown on
+     the feedback line: the paused line at every pause the participant
+     sees in the field (ESC, P, HELP, an overlay, a blur, a hidden page, a
+     plot switch), the region-exit line at a search-region exit, the
+     ordinary-exit line on re-entry into the yard with a paused plot, the
+     field-controls line once at the series' first search, the cell-label
+     help once with the first facing label after that, the plot-fault line
+     at a plot fault and the series-closed line at a series fault (the
+     gameplay review's M3; the owner's placement question §5.364 (j)). (u)
+     The relocated stake shows the existing procedural survey-stake sprite
+     as its marker (§5.364 (l)). (v) The example pages' illustrations are a
+     beacon glyph with the pinned reading (page 1) and the pinned COMPONENT
+     CELL / EMPTY CELL tiles (page 2), no caption of their own; the tile
+     and readout labels render at the shared work surface's own small tile
+     font (`WorkSurfaceScene`, unchanged for every surface), so their
+     legibility at 800 × 600 is the surface's, recorded with the visual
+     review's minor on the surface's small fonts. (j) `EXTERIOR_FAMILIES` /
+     `exteriorEventTypes()` in `exteriorEpisodeModel.ts` keep the legacy
+     M23 family (outside the contract's "guidance / summary references"
+     edit scope); the models spec adds the new family to the
+     pairwise-disjointness matrix and proves the current route's identity
+     is the register's. (k) The `invalidated` suffix is declared in the
+     family and never written; plot-scoped exclusion is the extractor's own
+     recount. (l) The counterbalance hash (`assignCounterbalance`) is
+     restated in `e2e/m23Helpers.ts` because `src/measurement/validity.ts`
+     reads `import.meta` at load; a technical fixture picks a session id
+     that realises a wanted order (the participant route never does). (m)
+     The capture spec's frames go to `U23_CAPTURE_OUT` (fallback the
+     git-ignored `test-results/u23-capture`), never to the committed
+     screenshot folder. (n) The pure spec's lint formatting was applied from
+     ESLint's non-mutating `--fix-dry-run` output (prettier / import sort
+     only), recorded in the UNIT-LOG. (o) A 400 ms settle after every
+     surface view (the M20 console precedent): a press inside it is refused
+     and nothing is recorded — this is what "one fresh activation" (D1, the
+     K fixtures' held-input rejection) means in this build; the settle is
+     equal for both options and creates no side asymmetry; it is not in
+     contract §4 / §12 (the scientific review's m-5). (p) The example
+     pages' illustrations carry no caption of their own (the pinned body
+     text explains the beacon, the reading, the component cell and the
+     empty cell); a first build's unpinned captions were removed in round 2
+     (the review's m-7). (q) The D3 diagnostic
+     `continuation_started_then_system_cancelled` is set on every
+     system-cancelled start after CONTINUE, with or without an earlier
+     credit, in the model as in the extractor (the review's m-6).
+
+364. **Open for the owner after U23 (18 October 2026; not resolved by the
+     implementer).** (a) Whether `EXTERIOR_FAMILIES.M23` in the episode
+     model should name the new family (a one-line change outside the
+     U23 edit scope for that file). (b) After a failure whose choice was
+     never presented, the build leaves a confirmed selector STOP eligible
+     and unknown (contract §5); whether STOP should instead be unavailable
+     on the selector until the choice has been presented is a design
+     alternative for the owner (the scientific review's question 1). (c)
+     The `invalidated` suffix: keep as a reserved name or drop it
+     from the declared family. (e) Whether "unrelated later fault" (E row,
+     T05) is read, as the build reads it, to include a later plot-scoped
+     fault on the same plot that already holds a verified 1 or 0 (the
+     outcome is kept; the review's question 2). (f) Whether the 400 ms
+     settle (§5.363 (o)) should be shortened, logged as a refused press, or
+     written into the administration's specification. (g) SCOPE GAP (the
+     visual review's blocking 1, the gameplay review's M4; contract §10's
+     stop rule): the room's floating station prompt (the "E / Space — Use
+     Excavation Field Stake" line drawn by `src/world/RoomScene.ts`, outside
+     the 30-path allowlist, with no overridable hook and no station-disable
+     API)
+     covers the highlighted facing cell and the bottom row at both plots'
+     entry stances inside the fixed frame; §12 bans suppressing a FOREIGN
+     prompt and says nothing about M23's own; the build neither hides it
+     (no allowlisted lever) nor weakens the criterion — the owner's layout
+     amendment (a prompt-suppression hook in the base scene while a fixed
+     frame is held, or a changed stake placement) is required before the
+     unit can commit. (h) The example heading box pinned at design y 24
+     collides with the work surface's title bar at both viewports (the
+     visual review's major 5): a local layout change (the heading below the
+     title bar) needs the owner's reconciliation; the build keeps the pinned
+     geometry. (i) Whether the example pages must draw a visible beacon and
+     figure (the build draws labelled boxes: a beacon glyph and the pinned
+     reading on page 1, the pinned COMPONENT CELL / EMPTY CELL tiles on
+     page 2 — round 2 after the review's major 6). (j) Where the §4 rows
+     "Field controls", "Local cell-label help", "Switching / paused" and
+     "Ordinary exit" should appear on screen (§10 gives no placement; the
+     build shows them on the feedback line — §5.363). (k) Whether "all
+     geometry extremal valid stances" means the four mid-edge stances per
+     plot or also the corner stances and the R2 rig-chip stance (1338, 252)
+     (the build's layout group covers the mid-edge stances, the interior,
+     the corner stances and the rig-chip stance after round 2). (l) The
+     relocated stake has no painted art at (1072, 488) (the §13 removal
+     took the old stake-field prop; the V4 pass hides the procedural
+     station sprites): round 2 shows the existing procedural survey-stake
+     sprite at the anchor as a marker; owner art may replace it. (m)
+     Gameplay review question 1: under G02 a STEP AWAY at the excavation no
+     longer dismisses its guidance, so the later yard objectives stay
+     behind the excavation's until the first usable selector — the approved
+     fixture's reading, recorded as a question. (n) The M22 report lines
+     and the Records Workshop handover still name a recovered relay
+     coupling (`m22ReportModel.ts`, `RecordsWorkshopScene.ts`; outside the
+     allowlist, U22 protected) while decision F keeps components in the
+     M23 tray. (o) The validity register's counterbalance hash
+     (`assignCounterbalance`, `src/measurement/validity.ts`, outside the
+     allowlist) is linear in the characters of `<session id>:<slot key>`,
+     and the four M23 slot keys differ only by a constant suffix, so the
+     plot-order and option-order slots (and the two forms) are correlated
+     across session ids: some of the 2 × 2 (× 2 × 2) cells are unreachable
+     for ANY session id (found when a technical fixture asked for AB with
+     `continue_left` and no id realised it). The counterbalance design
+     therefore does not cover its cells evenly — a register-level matter for
+     the owner, not an M23 one; the administration itself is unchanged. (p)
+     The pinned field-controls line (190 characters, four wrapped lines on
+     the feedback line) cannot be shown inside the fixed frame without
+     crossing the plot's top row (§10): the build shows it once under
+     ordinary follow, after the approach line, while the first opened plot
+     is still approaching; a plot opened from inside its region never shows
+     it (the HELP example and the panel remain). (q) OPEN after the
+     scientific recheck of round 2 (M-3 partly resolved; still major):
+     inside a plot rectangle C / D are refused in every status, but in the
+     boundary ring outside the rectangle (a stance that qualifies through a
+     selector probe, §10 F6) the series governs only while that plot is
+     approaching or searching — a participant whose plot paused on leaving
+     the region (P06) and who walks back into the ring without RESUME gets
+     the ordinary scan's "no signal" over the inactive target (§3: never a
+     misleading zero source; F5: `plot_not_active`). The proposed change for
+     the next authorised round: `m23FieldGoverns` also governs when the
+     point is a member of ANY plot's qualifying region
+     (`m23RegionMember` with the host's body-fit) whatever the status, so
+     the ring refuses like the rectangle. (r) OPEN after the same recheck
+     (a new major introduced by the round-2 copy fix): approved decision B
+     and contract §§3 / 10 want page 2's two illustrations "each with the
+     same character facing the adjacent highlighted cell" in a component
+     and an empty version; round 2 removed the unpinned figure glyph and
+     captions and highlights only the COMPONENT CELL tile, so the page pairs
+     "highlighted" with "component" against its own body text. The proposed
+     change: restore the figure glyph (a glyph, not copy) facing each tile
+     and mark BOTH tiles as the highlighted facing cell, with the pinned
+     COMPONENT CELL / EMPTY CELL labels only. (s) Recorded (the recheck's
+     note): when both plots fault after verified outcomes the row's
+     `closure_reason` is `technical_failure` while the row is observed; the
+     count is unaffected; the contract reserves that reason for wholly
+     invalid evidence — the owner may prefer the series' own trigger there.
+     (t) Recorded (m-4 partly): the extraction fixtures commit with
+     `keyboard` only; the extractor's rules do not depend on the input mode;
+     pointer variants remain to be added. (u) Recorded (visual recheck,
+     major 6 partly): page 1's "visible example beacon" is now a single
+     "◉" glyph at the panel centre (about 6 CSS px at 800 × 600) with no
+     depiction of the 80 px distance; the page is legible but the referent
+     is minimal — whether a larger pinned glyph or a distance mark is
+     wanted is the owner's copy / layout question. (v) Recorded (visual
+     recheck, minor): the dig readout's 19-character wrap estimate counts
+     the field-tray line as two lines where the renderer wraps it to three,
+     so the spacer stays and the box shows seven rows against §10's six
+     (the text still ends inside the box); and the sidecar's
+     `feedback_bounds` is null in every stance frame, so the real-bounds
+     clearance check in `expectHudClearOfPlot` has run only on one-line
+     messages at the entry and selector frames — a two-line message's
+     clearance of the plot top is estimated (about 6 px), not evidenced.
+     (d) The interaction prompt chip
+     (`E / Space — Use Excavation Field`) follows the avatar into the fixed
+     frame near the stake (the standard station prompt; it is not a world
+     readout and is not clamped by `clampWorldReadouts`); whether it should
+     be suppressed inside the frame is the owner's layout question in (g).
+365. **Unit 23 round 3 (the closeout amendment `U23-CLOSEOUT-AMENDMENT.md`,
+     APPROVED by the research owner on 19 October 2026 with OD-1, OD-2,
+     OD-3, OD-4, OD-6, OD-8a, OD-8b, the test repairs and OD-R — one
+     additional bounded round under a 31-path allowlist, the earlier
+     two-round limit superseded for that round only; the owner's
+     instruction verbatim in the UNIT-LOG "U23 round 3").** Resolutions of
+     §5.364: (g) RESOLVED by OD-1 — `src/world/RoomScene.ts` (the 31st
+     path) gained the default-off protected hook `stationPromptSuppressed`
+     consulted once in the station branch's visibility; the yard overrides
+     it to hide ONLY its own stake's prompt while it owns a fixed frame; the
+     prompt returns on the first frame after the release; foreign prompts
+     (the mast within 72 px of Plot A's west ring) are not touched and the
+     mast is actually opened in a browser case (X4: M23 pauses `overlay`,
+     the mast's cards open and close through their own control, the known 1
+     / failure / presentation intact, no resumption). (h) RESOLVED by OD-3 —
+     the example heading box is {24, 48, 672, 40} (its focus ring 5 px
+     below the divider). (i), (r), (u) RESOLVED by OD-2 / 8c — both example
+     pages draw the figure glyph ☻▸ (40 px); page 2 shows it facing a
+     `flag`-highlighted cell in BOTH illustrations with only the pinned
+     COMPONENT CELL / EMPTY CELL labels (20 px); page 1 places the figure
+     and the beacon ◉ 133.33 design px apart (80 world px at the field's
+     scale) beside the pinned reading (20 px); glyphs are not copy. (j),
+     (p) RESOLVED by OD-8a — the pinned field-controls line is shown
+     verbatim as two consecutive parts (split before "P / PANEL"), 4 s
+     each, on the load's first fixed-frame entry by either route (approach
+     then entry, or a direct inside-region OPEN), then the cell-label help
+     once; a later HUD line pre-empts a part, which is shown again; the
+     sequence suspends with the frame; nothing is blocked while a part
+     shows; the 2.5 s approach trigger is gone. (o) RESOLVED by OD-6 — the
+     four slot calls to the shared helper are replaced by ONE M23-local
+     joint assignment (`m23JointAssignment`: FNV-1a 32 over
+     `<session id>:m23_plots_assignment`, murmur3 fmix32, cell = hash mod
+     16; scheme `m23_joint16_fnv1a_fmix32_v1` written to the entry snapshot
+     as the provisional field `assignment_scheme`); on synthetic ids every
+     one of the sixteen cells is reached with 5–7.5 % each — a property of
+     the hash on those ids, not a claim of balance in any recruited sample
+     and not a scientific validation; the content version stays
+     `m23-plots-v1` and every round-1 / round-2 record is marked
+     "pre-amendment assignment scheme (correlated)"; the shared helper
+     `src/measurement/validity.ts` is unchanged. SEPARATE FOLLOW-UP
+     (recorded, not fixed in U23, to resolve before participant
+     collection): the diagnostic names seven other two-option slot keys
+     passed to the shared helper (`field_magnet_deck_form`,
+     `m23_excavation_form`, `m23_field_recovery_form`, `horizon_form_a`,
+     `horizon_form_b`, `q30_telemetry_cache`, `q30_work_orders`), any two
+     of which realise perfectly correlated levels in one session; whether
+     each key is on the current participant route, and therefore which
+     units are actually affected, has NOT been established. The round-3
+     scientific recheck found that this hand-written list understates the
+     follow-up's scope: further two-option slots go through the same helper
+     (`ip_form_<module>`, `m02_filing_start`, `m01_batch_form_<occasion>`,
+     `m02_case_workspace_form`, `m06_orders_form`, `m08_benefit_order`,
+     `m12_check_<occasion>_form`, `m21_case_o1/o2_form`,
+     `m22_report_o1/o2_form`) and the four-option `m18_option_order` shares
+     the parity bit in its low index bit — per-occasion keys within one
+     unit would realise linked levels; none of these is on U23's path, their
+     route use is likewise not established, and the owner decides the
+     follow-up's scope (the seven keys, every two- or even-option slot, or
+     a full inventory first) before participant collection. PREREQUISITE
+     BEFORE PARTICIPANT COLLECTION (owner instruction of 20 October 2026,
+     round 4; separate from U23): inventory ALL current callers of the
+     shared assignment helper `assignCounterbalance`, including the
+     additional two-option slots and the four-option `m18_option_order`;
+     distinguish active participant routes from legacy or unused code;
+     assess the unintended assignment coupling the parity identity
+     implies; then propose corrections and their verification for owner
+     approval. That audit was not performed, the helper and the other
+     units were not altered, and the seven-key list above is NOT
+     exhaustive. (q) RESOLVED by
+     OD-4 — the field governs C / D in a plot's exact qualifying region
+     (the boundary ring) in every status as it does the rectangle; with no
+     selection the ring plot is associated, the overlap band on the shared
+     border with neither; no automatic resumption, no ordinary scan or dig
+     leakage, no change to eligibility or credit (the per-plot descriptive
+     refusal count now includes ring refusals). (s) RESOLVED (conformance
+     with contract §6) — `closure_reason` is `technical_failure` on a
+     both-plots-terminal closure only when the evidence is wholly invalid;
+     two plots that faulted after verified outcomes close `completed`
+     (fixtures T09a–T09c). (t) RESOLVED (8d) — every extraction fixture
+     also runs with pointer commits and one mixed fixture (keyboard
+     navigation, pointer activation). (v) RESOLVED by OD-8b — the field
+     tray has its own plate under the dig plate (design
+     {−126.6667, 436, 250, 88}); the dig plate holds at most four rendered
+     rows and the tray plate three, checked from the live text objects'
+     actual bounds; the two-line clearance of the controls parts is
+     evidenced from the live feedback bounds. Still open: (n) the M22
+     relay-coupling text (U22, outside scope); the isolation assertion
+     defect of round 2 is REPAIRED (a before / after comparison that keeps
+     the earlier legitimate apron scan). Round-3 evidence: the UNIT-LOG
+     "U23 round 3".
+366. **Unit 23 round 4 (owner authorization of 20 October 2026, one
+     additional bounded closeout round superseding the round-3 "no fourth
+     round" restriction for this work only; verbatim in the UNIT-LOG "U23
+     round 4").** The round-3 rechecks' open major — the field HUD's
+     scanner plate drew OVER the mast's floating prompt at Plot A's west
+     ring (both at `Depth.AboveWorld`, the HUD created later) — is
+     corrected M23-locally: the HUD's plates, pad boxes and readout texts
+     now sit BELOW the base scene's prompt layer (`M23FieldControls`:
+     plates at `AboveWorld − 2`, texts at `AboveWorld − 1`; the feedback
+     line keeps `AboveWorld + 2`), and the readout rows are placed so the
+     prompt's 24 px band crosses only text-free plate area: the scanner
+     plate moves 24 px up to design {−126.6667, 84.3333, 250, 120} (rows
+     ending at 162.3 against the band from above the mast at 164.7–188.7)
+     and the dig plate 8 px up to {−126.6667, 245.3333, 250, 173.3333}
+     (four rows ending at 347.3 against the band from below the mast at
+     351.3–375.3); the tray plate {−126.6667, 436, 250, 88} is unchanged.
+     No global prompt-depth change, no hook expansion; station targeting,
+     activation, plot geometry, camera, events, eligibility and scoring
+     untouched. The prompt's actual design-space bounds are published by
+     the yard's DEV probe (`__yardPromptProbe`) and recorded in the
+     frames' sidecars beside the HUD bounds (`scanner_bounds`,
+     `dig_bounds`, `tray_bounds`, `feedback_bounds`). The §10 HUD geometry
+     is amended as built by this entry. Evidence completed in the same
+     round (the HANDOFF-R3 gaps): the region association as a pure
+     function (`m23RegionAssociation`) with the overlap band exercised in
+     the browser (X5: no plot associated before any opening, the paused
+     selection afterwards; refusal only); the controls guidance's parts,
+     the four-second presentation, pre-emption and re-show, suspension and
+     resumption, non-repetition, and movement / C / D / P / HELP (the pad)
+     during a part and ESC during the help line that follows the parts
+     (G1 and G2 — as the behaviour is specified: HELP
+     from the pad is a pause whose RESUME is explicit, ESC in the field is
+     the participant's menu with the plot left paused, and a running
+     scan's busy refusal is not reachable by a key, so the pre-empting
+     line is the scanner's cooldown refusal); the stake prompt's restoration after the
+     REGION EXIT (X3); the M20 brief presented and nothing accepted when
+     the mast opens (X4 at both viewports, with the prompt / HUD bounds in
+     the sidecars); the recorded entry snapshot compared with the
+     independent oracle on every browser opening that goes through the
+     brief (fifteen of the eighteen browser cases; B4, L1 and L2 open
+     inline and compare the live assignment only — the snapshot has one
+     write path); `input_mode` asserted on the `failure_choice` /
+     `stop_requested` records of every keyboard and pointer fixture
+     commit; the sidecar read immediately
+     before the capture. Pointer presses in non-live states remain
+     inapplicable by design (the pad is hidden outside approaching /
+     searching) and are recorded as such, not claimed.

@@ -78,7 +78,6 @@ import {
   M23_TARGET_CELLS,
   M23_WINDOW_ID,
   m23Close,
-  m23Depart,
   m23Enter,
   m23NoteDig,
   m23NoteInvalidAction,
@@ -157,6 +156,15 @@ import {
   type UnderstandingStage,
 } from '../exterior/outcomeUnderstanding';
 import { registerMissionLogEntry } from '../pilotRoute';
+import {
+  closeM23PlotsAtReview,
+  closeM23PlotsAtShiftEnd,
+  declareM23Plots,
+  m23PlotsDeparture,
+  m23PlotsResume,
+  type M23ShiftEndSource,
+  m23TechnicalFailure,
+} from './m23Plots';
 import {
   assignCounterbalance,
   currentSessionId,
@@ -265,11 +273,16 @@ export function exteriorWindows(): ExteriorWindows {
   return windows!;
 }
 
-/** Declares + offers every exterior opportunity (zone entry; idempotent). */
+/**
+ * Declares + offers every exterior opportunity (zone entry; idempotent).
+ * Station 080 Unit 23 (M23): the two-plot series (`m23Plots.ts`) is the
+ * declared M23 opportunity on the route; the legacy single-plot window below
+ * stays dormant (declared by no route) and its helpers stay unchanged.
+ */
 export function declareExteriorWindows() {
   const w = exteriorWindows();
 
-  w.m23.declare();
+  declareM23Plots();
   w.m24.declare();
   w.m26.declare();
 }
@@ -1415,13 +1428,9 @@ export function exteriorDeparture(nowMs: number) {
     w.m19.pause(nowMs);
   }
 
-  if (m23Depart(state.m23)) {
-    w.m23.log('departed', {
-      departures: state.m23.departures,
-      input_mode: 'system',
-    });
-    w.m23.pause(nowMs);
-  }
+  // Unit 23 (M23): the two-plot series pauses its live selection and its
+  // window clock; the legacy single-plot departure is not on the route.
+  m23PlotsDeparture(nowMs);
 
   if (m24Depart(state.m24)) {
     w.m24.log('departed', {
@@ -1452,7 +1461,8 @@ export function exteriorResume(nowMs: number) {
 
   w.m19.resume(nowMs);
   w.m20.resume(nowMs);
-  w.m23.resume(nowMs);
+  // Unit 23 (M23): the two-plot series' window resumes its clock.
+  m23PlotsResume(nowMs);
   w.m24.resume(nowMs);
   w.m26.resume(nowMs);
   m24Resume(exteriorEpisode().m24, 'unusable_controls', nowMs);
@@ -1649,39 +1659,37 @@ function closeM19(nowMs: number, choice: ShiftChoice) {
   });
 }
 
-function closeM23(nowMs: number, choice: ShiftChoice) {
-  const state = exteriorEpisode().m23;
-
-  if (!m23Open(state)) {
-    return;
-  }
-
-  m23Close(state, choice);
-
+/**
+ * Unit 23 (M23): the two-plot series closes through its own adapter. At the
+ * shift end the participant source of Noor's command (`m23Source`) decides
+ * whether an eligible unknown response resolves to 0 (decision D2); the
+ * review never does. The legacy single-plot closure helper `closeM23`
+ * is no longer on the route and is not called.
+ */
+function closeM23Plots(
+  nowMs: number,
+  choice: ShiftChoice,
+  m23Source: M23ShiftEndSource | undefined,
+) {
   if (choice === 'closed_at_review') {
-    exteriorWindows().m23.stop(
-      nowMs,
-      'closed_at_review',
-      m23RawComponents(state),
-      'system',
-      'censored',
-    );
+    closeM23PlotsAtReview(nowMs);
 
     return;
   }
 
-  exteriorWindows().m23.complete(nowMs, m23RawComponents(state), 'system', {
-    exitState: 'stopped',
-  });
+  // Unit 23: without an explicit source the adapter takes the one the yard
+  // scene noted for Noor's command, else the system's (never an informed 0).
+  closeM23PlotsAtShiftEnd(nowMs, m23Source);
 }
 
 /**
  * The interruption point — Noor's "finished outside". Exterior
  * observations close with their honest dispositions; the Mast 04 state is
  * unmeasured outdoor preparation of the Workshop feed console (Unit 22) and
- * is neither frozen nor recorded here. Idempotent.
+ * is neither frozen nor recorded here. Idempotent. Unit 23: the yard scene
+ * passes the participant source of Noor's command for the M23 series.
  */
-export function endExteriorShift(nowMs: number) {
+export function endExteriorShift(nowMs: number, m23Source?: M23ShiftEndSource) {
   const state = exteriorEpisode();
 
   if (state.shift_ended_at_ms !== null) {
@@ -1690,7 +1698,7 @@ export function endExteriorShift(nowMs: number) {
 
   state.shift_ended_at_ms = nowMs;
   closeM19(nowMs, 'ended_shift_outside');
-  closeM23(nowMs, 'ended_shift_outside');
+  closeM23Plots(nowMs, 'ended_shift_outside', m23Source);
   closeM24(nowMs, 'ended_shift_outside');
   closeM26(nowMs, 'ended_shift_outside');
 }
@@ -1706,12 +1714,13 @@ export function closeExteriorWindowsAtReview(nowMs: number) {
   const w = exteriorWindows();
 
   closeM19(nowMs, 'closed_at_review');
-  closeM23(nowMs, 'closed_at_review');
+  // Unit 23 (M23): the two-plot series' review closure records absence
+  // itself (`presented_not_opened`, never `declined`).
+  closeM23Plots(nowMs, 'closed_at_review', undefined);
   closeM24(nowMs, 'closed_at_review');
   closeM26(nowMs, 'closed_at_review');
 
   for (const [window, detail] of [
-    [w.m23, 'excavation never begun before the review'],
     [w.m24, 'rig tally never begun before the review'],
     [w.m26, 'uplink never used before the review'],
   ] as const) {
@@ -1739,8 +1748,9 @@ export function exteriorTechnicalFailure(
       w.m20.technicalFailure(detail);
       break;
     case 'M23':
-      state.m23.closed = true;
-      w.m23.technicalFailure(detail);
+      // Unit 23: the two-plot series' own fault handling (the plot in work
+      // terminates, the other stays usable; no selection ⇒ the series).
+      m23TechnicalFailure(detail);
       break;
     case 'M24':
       m24Abort(state.m24, Date.now());
