@@ -17159,3 +17159,536 @@ No push, merge, PR, tag, deployment, installation, configuration or guard change
   `hook5b-cached-check.log`); checks (1), (2) and (4) do not read the
   UNIT-LOG. Session-only Git identity; no configuration change; hooks
   inactive and not created; no `--no-verify`.
+
+## U24 Part A — M07 closure: the calibration project as specified, its extractor and the independent recount (21 October 2026)
+
+- **Owner ruling (21 October 2026):** Juls, the research owner, ruled U24
+  Part A in two messages of 21 October 2026, recorded verbatim below ("U24
+  Part A owner ruling") before any code edit of this unit, from
+  `U24-OWNER-RULING.md` §3 and §4 (SHA-256
+  `6547a4115f9147430fc3c4a1164443abae1418acebf35500222d5c2eedc4eaca`,
+  verified against the launch record). Selections: M07-1 a, M07-2 a, M07-3 a,
+  M07-4 a, P-1 a, P-2 a (Part A only), R-1 a m1; clarification 1 (A-9 and the
+  P-1 exception), clarification 2 (the reload policy); decisions RA-1 (M07's
+  provisional `prior_load_checked` record) and RA-2 (allowlist A = 15 paths;
+  the held-back bench screen). Parts B and C, U25 and their decisions remain
+  unapproved. The ruling overrides `CLAUDE.md`'s historical branch
+  expectation for this named Part A worktree only.
+- **Governing package:** `C:\Users\Juls\.codex\visualizations\2026\10\21\u24-end-to-end`
+  (amendments 1 and 2; manifest SHA-256
+  `fd8ad497f372c340a93f97fc3d582523bd76585824c26ac0e3ec671da91a5682` per
+  the launch record). Allowlist `U24-ALLOWLIST-A.txt` SHA-256
+  `e5c28c43a3f0b57654a73a6c94e6575bfb8897511a929c9efb4c7a8d5aec599c`
+  (15 paths, equal to `CLAUDE_UNIT_ALLOWLIST`). `U24-CONTRACT.md` SHA-256
+  `dd122e49ba2032175b34dee73e7bfe09b2043a83b298d729ae4a1df3655e6443`;
+  `U24-AMENDMENT-2-PART-A.md` SHA-256
+  `6486082d09bc1d0f46f12e5f795b17a77dd10b280cc0e1803804e8c22ef8a490`.
+  U23 acceptance: `OWNER-ACCEPTANCE.md` SHA-256
+  `0400979a2453ef45c33c8717bda4c6a294dec0c6b1b389e74d62d935da5c047b` and
+  `HANDOFF-R4.md` SHA-256
+  `f52a30bba094c6e3a65b4272284dda631b59fbaa442c61dd3005c95f60486bf3`, both
+  verified in the durable folder
+  `…\2026\10\15\u23-evidence-accepted-2026-10-21\evidence\r4`. Its rulings
+  1 to 5b are preserved as accepted exceptions and are never cited as passed
+  checks.
+- **Launch target (verified, not assumed):** worktree
+  `C:\Users\Juls\.codex\worktrees\u24-end-to-end\research-station-assessment-game`;
+  branch `codex/u24-end-to-end`; HEAD
+  `b46b76bf2838a052bd23230e86309e5f18588941`; `git status --porcelain`
+  empty; no `.agents/` or `.codex/` present (empty inventory
+  `A/FOREIGN-INVENTORY.json`). Writer: Opus 5.5 (`claude-opus-5-5`). Live
+  guard probes: a write to `src/GUARD-ALLOWLIST-PROBE.ts` was BLOCKED by the
+  `PreToolUse` guard; a write to `$U24_EVIDENCE_DIR/A/guard-probe.txt`
+  succeeded.
+
+### U24 Part A owner ruling (21 October 2026, both messages verbatim)
+
+**First message:**
+
+```text
+I approve U24 Part A only under amendment 1.
+
+My D-U24-1 selections for Part A are:
+
+M07-1: a
+M07-2: a
+M07-3: a
+M07-4: a
+P-1: a
+P-2: a — for Part A only
+R-1: a m1
+
+This approves:
+- participant opening of the bench as entry;
+- never-entered and never-presented dispositions as specified;
+- closure at the Utility Deck review;
+- the m07-calibration-v2 correction and extractor;
+- the independent M07 recount;
+- Opus as sole writer, Sonnet verification, one focused Fable scientific review and the specified focused Opus reviews;
+- at most one bounded correction round.
+
+Include these two clarifications in the ruling and Part A instructions:
+
+1. A-9 may carry the narrowly approved P-1 foreign-metadata exception when every stated condition holds. Preserve the verifier’s actual exit code and EXCEPTION-CONDITIONS-MET status; never call it PASS. This exception does not excuse any other check failure.
+
+2. Apply the existing approved reload policy explicitly. Distinguish an interrupted prior M07 opportunity from one never presented. Absence of current-load events alone must not decide the disposition. Cite the governing policy, include separate fixtures and have Fable verify the distinction. If the authority does not resolve a case, report that specific ambiguity rather than inventing a rule.
+
+Record my approval verbatim with the actual date. Save the ruling and any necessary amended preparation files in the permitted scratchpad, refreshing affected hashes. Do not restart the audit or use Fable for preparation.
+
+Return one complete, sequential PowerShell block for me to:
+- preserve and hash-verify the original U23 evidence;
+- copy and verify the current U24 package and Part A ruling, without silently overwriting differing files;
+- run Part A’s CheckOnly;
+- launch Part A only after zero FAIL and zero PREREQ.
+
+Keep the actual check result separate from syntax checks. Do not launch from this preparation session.
+
+Once those prerequisites pass, this authorization covers the named Part A worktree and branch at b46b76bf2838a052bd23230e86309e5f18588941, the exact 13-path allowlist, the specified verification including Playwright, and exactly one local commit:
+feat(m07): close the calibration project as specified and add its extractor
+
+The historical branch restriction is overridden for this named Part A worktree only.
+
+Stop after the Part A handoff. No push, merge, installation, configuration change, deletion or automatic continuation.
+
+Parts B and C, U25, and their outstanding scientific decisions or verification exceptions remain unapproved. In particular, I am not approving RC-3’s companion-feature exception through this instruction.
+```
+
+(The "exact 13-path allowlist" of this message is extended to 15 paths by
+the second message, decision 2.)
+
+**Second message (decisions RA-1 and RA-2):**
+
+```text
+Cancelling the question form was not a rejection of the proposals. Here are my explicit decisions. Continue the existing Part A preparation.
+
+1. Prior-load evidence
+
+I approve adding M07’s provisional prior_load_checked record. This narrowly overrides Part A’s “no new event type” restriction for this one M07-family record. Nothing becomes canonical.
+
+Follow register §5.290(a), adapted to M07:
+- Check once per reloaded page load at Workshop entry, before any permitted M07 opening.
+- Establish absence only from complete, consistent recovered history—not merely from finding no opening event.
+- Established absence permits normal current-load administration, including a first opening after reload.
+- An earlier opening retains the hold-back and interrupted disposition.
+- Missing or insufficient history must not become confirmed absence.
+- Preserve the precedent’s integrity and contradictory-record handling.
+
+2. Held-back bench and exact scope extension
+
+I authorize these two additions to Part A’s existing 13-path allowlist:
+- src/pilot/windows/surfaceModels.ts — M07’s held-back presentation only.
+- src/scenes/RecordsWorkshopScene.ts — only the M07 entry/interaction wiring necessary to enforce the approved reload guard.
+
+The amended allowlist therefore has 15 paths. Edit either added file only where necessary; preserve other tasks and shared behavior.
+
+Keep the existing bench title and show:
+“This calibration bench was opened earlier in this session.”
+“It stays closed after a reload.”
+
+Provide LEAVE through the existing keyboard and pointer conventions. No start, advance, resume, complete or reset actions; no restarted 0/6 display. Opening this closed screen must not create another measurement opportunity or alter the recorded outcome.
+
+3. Finish preparation
+
+Keep m07-calibration-v2. Update the provisional event documentation, extractor, independent recount and focused verification consistently. Cover confirmed absence, earlier opening, incomplete history, inconsistent checks, first opening after confirmed absence, and leaving the held-back screen.
+
+Use the already scheduled Fable review for these cases. No additional review round or broad audit.
+
+Record both decisions verbatim. Reconcile the contract, 15-path allowlist, execution prompt, launcher and affected hashes. Retain the previously approved P-1 exception and all other Part A boundaries.
+
+Then return the complete user-run preservation, copy, CheckOnly and launch commands. Do not launch from this preparation session. Parts B/C remain unapproved.
+```
+
+**Transcription note.** Both messages are copied line by line from
+`U24-OWNER-RULING.md` §3 and §4 with only the quotation marker (`> `)
+removed, inside fenced blocks so that the Markdown formatter changes
+nothing in them.
+
+### U24 Part A contract (summary; `U24-CONTRACT.md` Part A governs)
+
+- **Objective:** M07 gets the approved feature contract —
+  `m07_stages_completed` = stages / 6 of an entered project at the common
+  milestone; never entered ⇒ null; `m07_returns` a companion — with the
+  approved reload policy applied explicitly (§5.14, §5.270, §5.290 (a) as
+  adapted by RA-1), and an independent M07 recount (plan A-10).
+- **Scientific rationale:** REG §2 row M07; `registerV3.ts:803-830`;
+  addendum §3 l.1482; MX row M07; D-U24-1 M07-1 to M07-4. A reload is
+  evidence about the record, never a value.
+- **Participant-facing behaviour:** unchanged except (a) at the review an
+  unopened bench is closed, not opened (invisible), and (b) on the reload
+  path only, a bench opened in an earlier page load shows the held-back
+  screen (RA-2).
+- **Allowed files:** `U24-ALLOWLIST-A.txt`, 15 paths (3 new:
+  `src/measurement/features/m07.ts`, `e2e/m07_project.spec.ts`,
+  `e2e/m07Recount.ts`). `e2e/pilot_return_models.spec.ts` and
+  `e2e/pilot_return.spec.ts` are allowlisted only for M07 assertions that
+  encode the superseded valid-zero completion: none does (a grep for M07,
+  `calibration_project`, `opened_by` and `review_closure` across `e2e/`
+  finds no assertion of a review-completed never-opened bench), so both
+  are left unchanged.
+- **Prohibited:** everything outside the allowlist, including
+  `docs/research/**`, `docs/scientific/**`, `docs/decisions/**`,
+  `.claude/**`, `scripts/claude/**`, configs, `package*.json`,
+  `validity.ts`, `windowKit.ts`, `reviewClosure.ts`,
+  `returnEpisodeModel.ts`, every other row's files.
+- **Entry state:** `b46b76b`, clean; launcher checks zero FAIL / PREREQ
+  (`LAUNCH-RECORD.json`).
+- **Success:** plan A-1 to A-12 PASS (A-9 may read EXCEPTION-CONDITIONS-MET
+  (P-1) under clarification 1; no `.agents/` or `.codex/` exists in this
+  worktree, so the exception has nothing to apply to).
+- **Failure / recovery:** the RX cases; malformed, duplicate or
+  out-of-order records or a v1 administration ⇒ `technical_failure`; the
+  window never blocks the route.
+- **Telemetry boundary:** the existing `proto_m07_calibration_` family plus
+  the one provisional `prior_load_checked` record (RA-1); nothing
+  canonical; no score total.
+- **Scientific / gameplay acceptance:** A-1 to A-6, A-10, A-11 (the one
+  Fable review); A-7, A-12 and the return-route regressions (Opus gameplay
+  and visual reviews).
+- **Tests and screenshots:** plan Part A; the bench first view and
+  mid-project and the held-back screen at 800 × 600 and 1280 × 720.
+- **Stop conditions, models, commit:** contract items 15 to 17; writer Opus
+  5.5, verifier Sonnet 5.5, one Fable 5.1 review, Opus gameplay and visual
+  reviews; one local commit
+  `feat(m07): close the calibration project as specified and add its extractor`.
+
+### U24 Part A closeout amendment (22 October 2026, verbatim)
+
+Juls, the research owner, sent this closeout amendment on 22 October 2026,
+after the checkpoint at the reserved Fable review (`A/CHECKPOINT-FABLE.md`)
+and the completed separate Fable review (`A/FABLE-REVIEW.md`,
+`claude-fable-5-1`). It is recorded here before any code edit of the
+closeout. Parts B and C remain unapproved.
+
+**Owner message (22 October 2026):**
+
+```text
+Continue U24 Part A autonomously overnight. This is my explicit closeout amendment, dated 22 October 2026. Record it verbatim in UNIT-LOG and reconcile the affected register entries before implementation.
+
+Use the existing codex/u24-end-to-end worktree and preserve all current work. Do not rerun the clean-start launcher.
+
+1. Review evidence and routing
+
+The completed Fable report is available here:
+C:\Users\Juls\.codex\attachments\58d742f5-2547-48b2-b2ca-d165697bc4bc\Pasted text.txt
+
+Save the report verbatim as A/FABLE-REVIEW.md, identifying claude-fable-5-1 and preserving its limitations. The blocked plan-file write requires no guard change.
+
+Finish the scheduled Opus gameplay and visual reviews before consolidating corrections.
+
+Opus remains the sole writer. Sonnet verifies. For this closeout, I authorize a separate, read-only Opus scientific reviewer to recheck the corrected Fable findings under the explicit decisions below. Report this substitution accurately; do not call it a Fable recheck. Use the existing permitted general-purpose fallback with the role instructions where necessary.
+
+Do not spend further Fable credits overnight, change reviewer configuration, or start a broad audit.
+
+2. Correct the M07 settle-refresh stall
+
+I extend surfaceModels.ts’s permitted purpose to include the normal M07 bench’s settle-refresh correction. The 15-path allowlist remains unchanged.
+
+Preserve the six stages, the existing 1.4-second settle, participant choices and measurement meaning. Restore reliable readiness without requiring departure/reopening, creating extra returns, shortening the settle or automatically advancing a stage. Respect view closure and lifecycle cleanup.
+
+Keep the correction local to M07. Do not change the shared host or M21/M22 behaviour. If a safe correction requires another file or shared behavioural change, checkpoint that dependency rather than bypassing scope.
+
+Verify the reported clock-mismatch case and the ordinary route. Preserve the original failed evidence; repeated runs until one passes are not a correction.
+
+3. Uncertain reload history
+
+For RX-6, I choose conservative hold-back: when absence of an earlier opening cannot be established, do not administer a new M07 opportunity.
+
+Keep its feature null/interrupted with the unestablished-history reason. The validity record must not advertise a valid completed observation. Use existing non-valid reload handling; never fabricate evidence of an earlier opening.
+
+For this uncertain-history screen, keep the bench title and LEAVE only, with:
+“The earlier state of this bench could not be verified.”
+“It stays closed after this reload.”
+
+The existing wording for a confirmed earlier opening remains unchanged. Confirmed absence still permits the first current-load administration.
+
+4. Terminal absence followed by reload
+
+A verified earlier station-review closure of an unopened bench is terminal: do not reopen it after reload.
+
+Preserve that earlier absence record unchanged in prior-load events. The current-load feature remains null/interrupted with a distinct descriptive reason identifying the earlier review closure; do not create a zero, a new opportunity or a carried-forward observed score.
+
+Use the title and LEAVE-only screen with:
+“This calibration bench was closed at the station review.”
+“It stays closed after a reload.”
+
+Document and test these decisions consistently in runtime handling, extraction and recount. Retain m07-calibration-v2 and the provisional boundary; no canonical promotion or additional event type.
+
+5. Part A export evidence
+
+I authorize a narrow evidence-method exception for the four Part A payloads captured through the existing runtime export builder at the review.
+
+It applies only to the capture-method requirement in A-7, A-10 and the export-dependent portions of A-12. Label the files as harness captures. Report the affected acceptance rows as EXCEPTION for this named capture-method limitation only after every other requirement has passed.
+
+This amends the corresponding commit gate for that exception only. It does not excuse a missing export, failed recount, incorrect value or altered raw history. It does not establish participant ingestion or delivery; those remain Part B requirements.
+
+Save and hash all four required exports, including S-M07b at 800×600. Run the independent recount on each export separately so a missing file cannot hide the other results. Preserve the cross-viewport comparison.
+
+6. Other findings
+
+Fix the reported check-payload page-load inconsistency using explicit technical-integrity handling and focused fixtures. Preserve the existing treatment of unrelated prior-load records and the rule that two checks cannot establish absence.
+
+Address the formatting errors, misleading unreachable branch and missing in-page outcome assertion. Record every remaining minor finding with its evidence and disposition.
+
+Leave episode-2 presentation logging unchanged for Part A. Preserve the required final-route disposition and disclose the interim presentation-evidence limitation. Do not describe missing presentation telemetry as proof that the bench was unavailable.
+
+7. Correction and verification budget
+
+I authorize at most TWO focused correction rounds from this checkpoint, replacing Part A’s previous one-round limit for this closeout only.
+
+Run affected checks and finding rechecks; reuse unaffected evidence with justification. No whole-project reruns, retry-until-pass loops or duplicated full reviews. Keep original failures and actual exit codes visible.
+
+Use background completion notifications for long commands. Do useful independent documentation work while checks run. Join all agents, tests and servers before handing off.
+
+8. Completion and remaining work
+
+Make the originally authorized single local Part A commit only when the amended acceptance requirements are satisfied and no blocking/major finding remains. Preserve all original staged-content checks and verifier requirements. Report the SHA and every exception accurately.
+
+After the Part A handoff, you may prepare a concise Parts B/C launch-readiness packet in the permitted scratchpad: remaining owner decisions, exact commands and prerequisites. Do not implement or test Parts B/C, amend their approvals, or bypass their SHA gates.
+
+If a new scientific decision, out-of-scope dependency or unresolved major finding prevents completion, finish independent authorized work and leave a precise resumable checkpoint.
+
+No push, merge, deployment, installation, guard change, deletion or worktree cleanup. Morning handoff: what passed, what failed or was excepted, commit/checkpoint state, evidence paths, actual models, background-task status and the exact next action.
+```
+
+**Transcription note.** The message is copied line by line from the
+owner's text, inside a fenced block so that the Markdown formatter changes
+nothing in it. The same text is kept in
+`A/OWNER-AMENDMENT-2026-10-22.txt` (SHA-256
+`a8c8752ce1b560b0975f7c666ebb2ed751a814ec8d3d5131f1d45a0859e50b38`).
+
+**Register reconciliation (written before the closeout's code edits).**
+
+- REG §5.378 records the amendment as the owner's ruling. Its decisions
+  supersede only what they name.
+- §5.367 P-2 a is amended for this closeout only: at most two focused
+  correction rounds from the checkpoint, in place of one.
+- §5.371 (RX-6 runtime) is RESOLVED by decision 3: conservative hold-back.
+- The open question Fable raised (a reload after the review closed an
+  unopened bench) is RESOLVED by decision 4: terminal.
+- §5.369 (presentation evidence) stays as built. Episode-2 presentation
+  logging is unchanged for Part A, and the interim limitation is disclosed.
+- §5.374 (records of another page load) is preserved. A check whose own
+  `page_load_index` disagrees with its load is now a technical-integrity
+  failure (decision 6).
+- §5.375 (export source) now carries the owner's narrow evidence-method
+  exception (decision 5).
+- §5.370 (two checks) is unchanged: two checks never establish absence.
+- `surfaceModels.ts` may now carry the normal M07 bench's settle-refresh
+  correction (decision 2). The 15-path allowlist is unchanged.
+- REG §4 "Unit 24-A", the addendum §2 "U24-A", the MX and room 12 and 13
+  documents are brought into line after the implementation (§5.379 and
+  onward).
+
+### U24 Part A closeout: round 1 results and checkpoint (22 October 2026)
+
+**State: CHECKPOINT, not committed.** One major finding stays open, G3
+(focus falls to LEAVE after an advance; pre-existing at `b46b76b`). Under
+§5.378 (8) it holds the commit until the owner rules. Proposals P1
+(M07-local, about one line), P2 (shared focus rule, scope extension) and
+P3 (accept as a limitation, then a scoring-plan question) are in
+`A/G3-OWNER-DECISION.md`.
+
+- **Correction round 1** implemented decisions (2), (3), (4) and (6) and
+  the §6 fixes (REG §5.379). Sonnet (`claude-sonnet-5-5`) ran r1-01 to
+  r1-22 once each: every M07 group, route and recount passes, the six
+  exports each recount separately and their hash lists agree, and the base
+  control reproduces the stall on `b46b76b`. `pilot_return.spec.ts:167` and
+  `:784` fail at the base's own assertions, so they are pre-existing.
+- **Rechecks** (`claude-opus-5-5`, read-only): the scientific recheck is the
+  owner-authorised Opus substitute, not a Fable recheck. It, the gameplay
+  recheck and the visual recheck find no blocking finding and no other
+  major finding. Their minor findings and notes are recorded in REG §5.380.
+- **Round 2 (the last allowed)** is open. So far it holds documentation
+  corrections only (§5.379 (f); room 12's qualifier; the §5.380 results).
+  Its code part waits for the G3 ruling so that a P1 change, if chosen, and
+  any owner-confirmed minor correction fall in the same round.
+- **Exceptions to report at commit:** A-7, A-10 and the export parts of
+  A-12, on the capture method only (§5.375, §5.378 (5)). Every other
+  requirement of those rows passed.
+
+### U24 Part A closeout: owner decisions for round 2 (22 October 2026, verbatim)
+
+Recorded before the round-2 code edits. Source:
+`A/OWNER-DECISIONS-2026-10-22-R2.txt` (SHA-256
+`8a4ce4eca178e3d8fd70b548eccb215be8a8d1b013e06a56ad4cc8d1493d45cc`).
+REG §5.381 summarises it.
+
+```text
+I approve the following U24 Part A closeout decisions, dated 22 October 2026. Record them verbatim before the code edits.
+
+1. G3 — approve P1
+
+Extend surfaceModels.ts’s permitted M07 purpose to keep ADVANCE focusable during settling, as proposed in A/G3-OWNER-DECISION.md. Keep the 15-path allowlist unchanged. Do not modify the shared WorkSurfaceScene focus rules or other tasks.
+
+Preserve the “Settling…” label, the 1.4-second settle, and the model’s refusal to advance during settling.
+
+Verification must establish:
+- ADVANCE retains keyboard focus during and after settling.
+- ENTER and SPACE after settling advance exactly one stage without departure or return.
+- ENTER, SPACE, pointer activation and A during settling neither advance a stage nor write measurement events, alter the deadline or queue a later advance.
+- Deliberately selecting LEAVE still works.
+
+Capture the changed settling state at both viewports for the focused visual recheck.
+
+2. Optional correction (a) — approved
+
+Narrow the review-closure explanation to hold-backs whose detail actually identifies that closure. An intervening unverified-history hold-back must not become “verified” merely because an older review closure exists.
+
+Update the runtime check, independent recount and RX10d fixture consistently. This changes the explanation only; both cases remain held back with null/interrupted features. Have the independent Opus scientific reviewer recheck this finding only.
+
+3. Optional confirmation (b)
+
+For Part A, retain the existing technical_failure validity representation with its distinct invalid_detail for a reload after terminal review closure.
+
+Document that this is a non-valid reload disposition, not evidence of an application crash. Preserve the earlier absence record, the current null/interrupted feature and the distinct hold-back reason. Do not change the canonical schema or introduce a new scoring rule.
+
+Keep G4, F-1 and the remaining disclosed evidence limitations visible in the handoff. This is not blanket acceptance for participant collection.
+
+4. Finish the existing round 2
+
+Use Sonnet for affected verification and Opus for the focused finding rechecks. Reuse unaffected evidence with reasons. No additional Fable run, broad audit or third correction round.
+
+Reconcile the Sonnet recount breakdown against the existing log: its listed categories total 53, while the reported total is 58. Correct the reporting without rerunning solely to resolve that discrepancy.
+
+5. Preserve the full commit procedure
+
+The shortened CHECKPOINT-CLOSEOUT procedure does not replace the approved U24-OPUS-EXECUTE-A.md §3.
+
+Retain all staged-content checks: typecheck, ESLint over staged TypeScript blobs, the prescribed staged Markdown/JSON formatting check, commitlint and staged whitespace checks. “Hooks enabled” is not a substitute for those checks.
+
+Use the approved post-commit verifier command:
+node scripts/claude/verify-unit.mjs --allowlist-file "$U24_ALLOWLIST_FILE" --base b46b76b
+
+Preserve its actual output, exit code and exact P-1 exception conditions.
+
+Create the originally authorized single local commit only when the amended gates are satisfied and no blocking/major finding remains. Preserve the capture-method exceptions accurately.
+
+Then provide the final handoff and evidence-preservation commands. No push, merge or Parts B/C implementation.
+```
+
+### U24 Part A closeout: round 2 results and checkpoint (22 October 2026)
+
+**State: CHECKPOINT, not committed.** A new major finding is open: L1
+(REG §5.382 (c), `A/L1-OWNER-DECISION.md`). It was found while verifying
+the owner's "Deliberately selecting LEAVE still works" and was already
+present at `b46b76b`. The bench's Leave button closes the view without
+the bench's close path, so it writes no `departed`, and a later return
+is then counted by production but not by the recount. The writer did not
+fix it: changing which records a participant action writes is outside
+§5.378 (2) and §5.381 (1). Proposal P-L1 is to make LEAVE take the ESC
+path, one line in the M07 builder.
+
+- **Applied:**
+  - **P1 (G3).** ADVANCE is `idle` while the bench settles. The spec's
+    readiness wait was changed, and `pilot_return.spec.ts` has a local
+    five-stage resume.
+  - **Correction (a).** Runtime, recount and `faithful`, plus RX10d and
+    the in-page cases.
+  - **Confirmation (b).** Documented in REG §5.379 (c) and the addendum.
+  - **Recount breakdown.** Corrected from the log in
+    `A/SONNET-R1-RECONCILIATION.md`.
+- **Verification (REG §5.382 (d)):**
+  - **Sonnet (`claude-sonnet-5-5`).** The affected rows pass. "A-7 L1"
+    fails as expected, which documents L1. pilot_return tests 1 and 2
+    fail at the base's own assertions.
+  - **Opus (`claude-opus-5-5`).** G3 is resolved. Correction (a) is exact.
+    F-2 is resolved. There is one new minor visual point: the settling
+    ADVANCE looks live.
+- **Foreign files.** The untracked `.agents/` and `.codex/` files
+  appeared on 2026-10-22 at 06:59:55 +11:00, after the gate's inventory
+  (which found none). This session neither created, edited nor staged
+  them. They are inventoried in
+  `A/FOREIGN-INVENTORY-SUPPLEMENT-2026-10-22.json`.
+- **Round 2 is the last allowed.** Applying P-L1 needs the owner's
+  ruling, including whether its focused verification may run under the
+  round already granted.
+
+### U24 Part A closeout: owner extension for L1 (22 October 2026, verbatim)
+
+Recorded before the L1 code edit. Source:
+`A/OWNER-DECISIONS-2026-10-22-L1.txt` (SHA-256
+`d74a4ae6986753e3f5f051f0ed6b058e852b349a5e40a933696c1490c29650a5`).
+REG §5.383 summarises it. This is an explicit EXTENSION beyond the
+exhausted round-2 limit (one L1-only correction and verification pass),
+not work already authorised.
+
+```text
+I approve P-L1 and the following narrowly bounded U24 Part A closeout extension, dated 22 October 2026.
+
+1. Repair L1
+
+Authorize the normal M07 bench’s LEAVE action in surfaceModels.ts to call closeM07Surface(host.now()) before host.close(), as proposed in A/L1-OWNER-DECISION.md.
+
+This restores the existing ESC close semantics. Keep the 15-path allowlist unchanged. Do not change shared close behaviour, other tasks, scoring formulas or the independent recount to accommodate faulty logging.
+
+Completed and held-back benches must retain their approved behaviour.
+
+2. Focused extension beyond round 2
+
+I authorize one L1-only correction and verification pass beyond the exhausted round-2 limit. Record it as an explicit extension, not as work already authorized.
+
+Sonnet verifies; Opus performs focused gameplay and scientific rechecks of L1. No further Fable use or broad audit.
+
+Verify:
+- Normal LEAVE by keyboard and pointer records exactly one departure with the correct stage snapshot and pauses the window.
+- A subsequent reopening records one return, with production and independent recount agreeing.
+- The active segment before departure is preserved; time spent away is not counted, including when the participant never returns before review.
+- Relevant re-engagement bookkeeping matches the existing ESC path.
+- Rapid LEAVE followed by ESC cannot duplicate a departure.
+- Closing and reopening a completed bench produces no inappropriate departure or return.
+- Held-back screens retain their existing no-new-M07-opportunity behaviour.
+
+Include a hash-pinned browser export that actually uses LEAVE and returns, then independently recount that captured log. Adapt an existing scenario where appropriate. A synthetic fixture alone does not close this evidence gap.
+
+Run the proposed affected pure, settle, recount and static checks. Reuse unaffected evidence with reasons.
+
+3. Reporting corrections
+
+Until L1 is resolved, report its acceptance failure explicitly. Existing fixture/export comparisons may be described as passed, but must not imply coverage of the previously untested LEAVE path. The capture-method exception does not excuse L1.
+
+Preserve historical reviews verbatim. Append a correction explaining that the earlier G3 exit path produced returned without departed, rather than the departure-and-return pair previously described.
+
+Retain the necessary M07-only readiness adjustment in pilot_return.spec.ts, without weakening assertions, bypassing settling or editing the shared helper.
+
+4. Foreign metadata
+
+I accept FOREIGN-INVENTORY-SUPPLEMENT-2026-10-22.json as the first-discovery inventory for its exact ten listed files.
+
+Before applying P-1, verify that those files remain untracked, unstaged, unedited and hash-identical to that inventory, and that the verifier’s only FAIL lines name those exact files. Preserve the original empty gate inventory and the supplement.
+
+Report EXCEPTION-CONDITIONS-MET with the actual exit code, never PASS. This approval covers no additional files or unrelated failure. Do not infer their creator or creation time from modification timestamps.
+
+5. Closeout
+
+Keep the approved settling-button appearance unchanged. Preserve G4, F-1 and all remaining evidence limitations.
+
+Once L1 is resolved and no blocking/major finding remains, execute the complete U24-OPUS-EXECUTE-A.md §3 staged checks and original single-commit procedure, including the prescribed post-commit verifier. No shortened substitute.
+
+Provide the final handoff and a PowerShell 7 evidence-preservation block that copies to a new durable folder, checks the copy exit code, compares relative paths and SHA-256 hashes, and stops on any error or mismatch.
+
+No push, merge, Parts B/C implementation, guard change, installation or deletion.
+```
+
+### U24 Part A closeout: L1 extension results (22 October 2026)
+
+**L1 is RESOLVED** (REG §5.384). This was the one L1-only pass the owner
+authorised beyond round 2.
+
+- **The repair.** The normal bench's LEAVE takes the ESC path
+  (`closeM07Surface`, then the close). The held-back and completed benches
+  are unchanged.
+- **New evidence.** The L1 tests, plus the browser export S-M07g: LEAVE
+  by keyboard and by pointer, a return, and no reopening before the
+  review. It is hash-pinned and recounted independently.
+- **Results.**
+  - Sonnet (`claude-sonnet-5-5`): every L1 row passed.
+  - Opus gameplay and scientific rechecks (`claude-opus-5-5`; the
+    scientific one is the substitute, not Fable): all seven acceptance
+    items resolved, and no new finding.
+- **Coverage note.** The earlier comparisons passed but never covered
+  LEAVE. S-M07g and the L1 tests are its first coverage.
+- **Open owner questions (not blocking).** Pre-fix data handling, the
+  route of departure, and a production guard for a return without a
+  departure (REG §5.384 (d)).
+- **Gate.** No blocking or major finding remains, so the commit procedure
+  of `U24-OPUS-EXECUTE-A.md` §3 follows in full.

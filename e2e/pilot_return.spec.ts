@@ -163,6 +163,50 @@ async function alignStepByKeys(page: Page, target: number[]) {
   await press(page, 'g');
 }
 
+/** Waits until the surface element `id` is in `state` (20 s budget). */
+async function waitBenchElement(page: Page, id: string, state: string) {
+  await page.waitForFunction(
+    ([elementId, wanted]) =>
+      (
+        window as unknown as {
+          __workSurfaceProbe?: {
+            elements: { id: string; state: string }[];
+          } | null;
+        }
+      ).__workSurfaceProbe?.elements.find((e) => e.id === elementId)?.state ===
+      wanted,
+    [id, state],
+    { timeout: 20_000 },
+  );
+}
+
+/**
+ * U24 Part A (REG §5.381 (1)): ADVANCE stays focusable (`idle`) while the
+ * bench settles, so `calibrationReturn`'s "not disabled" wait no longer
+ * means ready for a second advance. This multi-stage resume waits for the
+ * ready state (`accent`) before each advance; otherwise it is the same.
+ */
+async function calibrationResume(page: Page, stages: number) {
+  await openWorkshopSurface(page, 'calibrationBench', 'm07_calibration_bench');
+
+  const before = (await surface(page))!.elements.filter(
+    (e) => e.id.startsWith('stage_') && e.state === 'done',
+  ).length;
+
+  for (let stage = 1; stage <= stages; stage += 1) {
+    await waitBenchElement(page, 'advance', 'accent');
+    await clickElement(page, 'advance');
+    await waitBenchElement(page, `stage_${before + stage}`, 'done');
+    await page.waitForTimeout(300);
+  }
+
+  const probe = await surface(page);
+
+  await closeSurface(page);
+
+  return probe;
+}
+
 test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
   test('1. the complete return shift: one purposeful return, every obligation, the persisted antenna resumed, manual repair, setback revision, questionnaire handoff, item-owned timing', async ({
     page,
@@ -329,7 +373,7 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     expect(await eventsByPrefix(page, 'proto_m03_')).toEqual([]);
 
     // ——— M07 end: the bench resumes at stage 1 and runs to completion. ———
-    const benchProbe = await calibrationReturn(page, 5);
+    const benchProbe = await calibrationResume(page, 5);
 
     expect(benchProbe?.elements.find((e) => e.id === 'stage_6')?.state).toBe(
       'done',

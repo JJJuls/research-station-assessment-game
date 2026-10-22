@@ -31,7 +31,13 @@ from the old core console: never-entered windows record **missing with an
 explicit reason**, entered-unfinished windows **censored with an explicit
 reason** (`closed_at_review`), obligation/project windows their **completed
 observation** (M07 end, M09 check, M10 unfulfilled, M20 presented-not-resumed),
-M25 its **presentation record** — never a low value; already-terminal
+M25 its **presentation record** — never a low value. Since U24 Part A
+(owner ruling of 21 October 2026, M07-4 a) the M07 completed observation is
+written only for a project the participant ENTERED (opened); a calibration
+bench never opened in either phase is closed as missing at the review
+(`markAbsent`, `closed_at_review`, `participant_absent`), never opened or
+completed by the review, and a bench held back after a reload writes
+nothing at the review. Already-terminal
 records are never overwritten.
 
 `deriveRouteReadiness(coverage, context)` is a **read** of the live

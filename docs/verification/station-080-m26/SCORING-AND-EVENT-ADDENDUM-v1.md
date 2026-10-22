@@ -1469,6 +1469,98 @@ eligible plot's response is unknown the value and the numerator are null.
   `closed_at_review`, `technical_failure`); the series' own trigger is
   `series_closure_trigger`. No total across items.
 
+U24-A (M07, candidates as before; the existing family, ONE new provisional
+record type by the owner's decision RA-1, no canonical event, no
+scoring-plan variable, no formula changed — the §3 row
+`m07_stages_completed` is the approved formula and stays as it is): the
+calibration project is closed as specified under the owner's Part A ruling
+of 21 October 2026 (D-U24-1 M07-1 to M07-4 a, clarification 2, RA-1, RA-2;
+register §4 "Unit 24-A", §5.367–§5.377). Provisional throughout; nothing
+becomes canonical.
+
+- **M07** — family `proto_m07_calibration_`; ONE opportunity
+  `proto_m07_calibration_project`; windows `m07_calibration_start` /
+  `m07_calibration_end` (both carried on every record with `phase`);
+  object and surface id `m07_calibration_bench`; `entry_state_version` =
+  `m07-calibration-v2` on every record (v1 — the administration whose
+  review opened and completed a never-opened bench — is read as
+  `technical_failure` "superseded administration"; no participant data
+  exist under it). Existing suffixes, unchanged in name and fields:
+  `opportunity_opened` (written ONLY by the participant's opening — entry,
+  M07-1 a; the entry snapshot carries `stages`, `settle_ms`,
+  `endpoint_visible` and no longer an `opened_by` field, because the review
+  never opens the bench), `stage_advanced` (`stage`, `of`, `visit`,
+  `input_mode`), `departed`, `returned`, `end_presented`,
+  `end_opened_without_start`, `window_closed` (exit `completed` with
+  `raw_components` — completion true at 6/6, false at the review — or exit
+  `closed_at_review` WITHOUT raw components for a never-entered bench, the
+  kit's `markAbsent`: validity `participant_absent`, M07-4 a), and the
+  kit's `technical_failure` (`detail`, `input_mode`).
+- **New provisional record (RA-1): `proto_m07_calibration_prior_load_checked`**
+  — written once per page load with `page_load_index` > 1, at the first
+  Workshop entry of that load, before any M07 opening; never on a first
+  page load. Fields: `page_load_index`, `prior_page_load_event_count`,
+  `prior_opening_found` (an earlier `opportunity_opened` of either phase),
+  `prior_end_presented_found` (an earlier `end_presented`; reported only —
+  the RA-1 adaptation of §5.290 (a)'s `prior_briefing_found`, register
+  §5.368), `history_continuous` (at least one earlier record;
+  `first_sequence` 1, no gap and no duplicate across the prior and current
+  records so far; `recovered_from_chunks` false),
+  `prior_opening_absence_established` (no opening found AND continuous AND
+  no earlier hold-back record that an earlier review closure does not
+  explain, register §5.379; only a hold-back whose detail names that
+  closure is explained, §5.381 (2)), `input_mode: 'system'`, plus the kit's
+  required fields and M07's phase fields. The record precedes the
+  hold-back, which the kit records as `technical_failure` with one of three
+  details (register §5.14 / §5.270 / §5.378): "reload after
+  administration: bench not re-run" (an earlier opening found; preceded by
+  the kit's `recordPriorExposure`), "reload with an unverified earlier
+  state: bench not administered" (the absence not established, §5.378 (3))
+  or "reload after a review closure: bench not reopened" (an earlier
+  review closure of the unopened bench with the absence established,
+  §5.378 (4)). A held-back bench writes nothing else in that load. No new
+  record type is added by the closeout. The `technical_failure` validity of
+  a held-back load (each kind, the terminal review closure included,
+  §5.381 (3)) is a non-valid reload disposition told apart by its
+  `invalid_detail`, not evidence of an application crash; the earlier
+  absence record and the null / interrupted feature stay as they are.
+- **Held-back presentation (RA-2; §5.378 (3) / (4))**, participant-facing
+  on the reload path only: the bench keeps its title and shows the kind's
+  two lines — "This calibration bench was opened earlier in this
+  session." / "It stays closed after a reload."; "The earlier state of
+  this bench could not be verified." / "It stays closed after this
+  reload."; "This calibration bench was closed at the station review." /
+  "It stays closed after a reload." — with LEAVE only; showing or leaving
+  it writes no record of the family. On the normal bench, LEAVE and ESC
+  write the same `departed` (register §5.383 (1)); before that repair the
+  Leave button wrote none (finding L1).
+- **Features.** `m07_stages_completed` = stages completed / 6 of an ENTERED
+  project when the station-record review closes it (`fraction`, planned
+  denominator 6; an entered project left at 0 is an observed 0); never
+  entered ⇒ null — `no_eligible_event` (`presented_not_entered`) when the
+  end was presented, `not_presented` when the bench was never presented,
+  `pending` before the review; `m07_returns` = the voluntary `returned`
+  records (companion, never in the value, null with the primary). Reload:
+  a check record whose own `page_load_index` names another load ⇒
+  `technical_failure` (§5.378 (6)); the hold-back ⇒ `interrupted` with the
+  kind's reason (an earlier opening found; the absence of an earlier
+  opening not established; an earlier review closure — never a zero, a new
+  opportunity or a carried-forward score); a load whose one check record
+  establishes the absence is read exactly as a first load; every other
+  reloaded load ⇒ `interrupted` ("the absence of an earlier opening not
+  established"), also when the bench ran in it (a log the amended runtime
+  cannot write; flagged inconsistent). Integrity: a v1 or unknown
+  administration, another opportunity, a missing, malformed or shared
+  `sequence`, a duplicate, out-of-order or over-6 stage, a hold-back record
+  of an unknown kind, two hold-back records, or a contradictory record ⇒
+  `technical_failure` with the reason. Components:
+  `administration_version`, `stages_planned`, `errors: 'not_defined'`,
+  `exposure`, `stages_completed`, `completion`, `returns`,
+  `departure_state`, `reload_check`, `exposure_record_consistent`, and
+  `held_back_after_reload` with `hold_back_kind`, or
+  `opened_after_unestablished_absence`, where they apply. No total across
+  items.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                               | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

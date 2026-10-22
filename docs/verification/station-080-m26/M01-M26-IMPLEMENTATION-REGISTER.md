@@ -86,7 +86,7 @@ status at this register version — updated by each unit).
 | M04  | Extend occasions        | 2    | `m04_undisposed_pieces`: undisposed incl. carried / 6; more own mess                                                                                                                                                                                                                                                           | per-job values (`m04_job_values`, provisional feature row — §5.175)                                                                                                                                                                            | behavioural counterpart | v3 route: `proto_m04_cutting_o1` / `o2` (Records Workshop, ep 2) — implemented (U14)                                                                                                                                                                                                                                                                                     |
 | M05  | Redesign                | 2    | `m05_start_latency`: per accepted occasion the focused ms from eligibility to the first work action + status started / deferred / exited / cap / interrupted; never a starter-only mean                                                                                                                                        | `m05_acceptance_exposure` (offer, answer, eligibility wait, exposure by cause, control views, work, late start)                                                                                                                                | behavioural counterpart | v3 route: `proto_m05_start_o1` (Concourse, ep 1) + `proto_m05_start_o2` (Recovery Yard, ep 4) — implemented (U6)                                                                                                                                                                                                                                                         |
 | M06  | Redesign                | 1    | `m06_unique_correct_orders`: distinct orders whose matching dispatch fell inside the one 60 s focused budget; 0–12; more useful output in equal allocated time                                                                                                                                                                 | `m06_work_period_detail` (first-pass accuracy, rework, skips, invalid dispatches, actual stop time, stop kind, per-order records)                                                                                                              | behavioural counterpart | v3 route: `proto_m06_work_period` (Records Workshop, ep 2) — implemented (U7)                                                                                                                                                                                                                                                                                            |
-| M07  | Retain with controls    | 1    | `m07_stages_completed`: stages / 6 at the closing milestone; more routine completion                                                                                                                                                                                                                                           | returns                                                                                                                                                                                                                                        | retained core           | v2-ledger route (P7 valid-zero defect) — planned                                                                                                                                                                                                                                                                                                                         |
+| M07  | Retain with controls    | 1    | `m07_stages_completed`: stages / 6 at the closing milestone; more routine completion                                                                                                                                                                                                                                           | returns                                                                                                                                                                                                                                        | retained core           | v2-ledger route: `proto_m07_calibration_project` (Records Workshop, ep 2 + 5), `m07-calibration-v2` — implemented (U24 Part A); errors: `not_defined`; reload check `prior_load_checked` (provisional, RA-1)                                                                                                                                                             |
 | M08  | Add controlled task     | 1    | `m08_work_choice_fraction`: Work / valid choices; 0–6; more work chosen (exploratory)                                                                                                                                                                                                                                          | fractions by benefit level, practice performance                                                                                                                                                                                               | exploratory             | v3 route: `proto_m08_effort_choice`, Recovery Yard, ep 4 — implemented and reviewed (U2 + U2-R)                                                                                                                                                                                                                                                                          |
 | M09  | Extend checkpoints      | 3    | `m09_due_checks_fulfilled`: fulfilled / eligible due checks; 0–3; more follow-through                                                                                                                                                                                                                                          | acceptance, reminders, access                                                                                                                                                                                                                  | behavioural counterpart | v3 route: `proto_m09_watch_duty` — one accepted duty, three check windows on the Concourse gauge (acceptance ep 1, laboratory pass ep 3, return ep 5) — implemented (U15); the third check closes at the first Concourse exit (owner decision D-U15-1, §5.239)                                                                                                           |
 | M10  | Add second obligation   | 2    | `m10_obligations_fulfilled`: fulfilled or delegated / accepted accessible; 0–2; more reliability                                                                                                                                                                                                                               | per-obligation outcomes                                                                                                                                                                                                                        | behavioural counterpart | v3 route: `proto_m10_delivery_d1` (key card, Vale → Kai, offered in the Concourse, ep 1) + `proto_m10_delivery_d2` (yard logbook, Noor → Vale, offered in the Recovery Yard, ep 4) — implemented (U15)                                                                                                                                                                   |
@@ -162,6 +162,202 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
   pinned in `protocol.ts` beside their anchors.
 
 ## 4. As-built records (appended per unit)
+
+**Unit 24-A (M07): as-built** — the six-stage calibration project closed as
+specified, its extractor and the independent M07 recount (U24 Part A,
+bounded unit under `U24-CONTRACT.md` Part A as amended twice on 21 October
+2026; the owner's Part A ruling of 21 October 2026, verbatim in the
+UNIT-LOG "U24 Part A"; §5.367). **Status: technical implementation of the
+approved M07 row under D-U24-1 M07-1 a (entry = the participant opened the
+bench), M07-2 a (`no_eligible_event` / `presented_not_entered`;
+`not_presented` if never presented), M07-3 a (closure at the station-record
+review), M07-4 a (`markAbsent` at the review, `m07-calibration-v2`, v1 ⇒
+`technical_failure`), clarification 2 (the reload policy of §5.14, §5.270
+and §5.290 (a)), RA-1 (the provisional `prior_load_checked` record) and
+RA-2 (the held-back screen). It is not a scientific closeout; U24 Parts B
+and C, U25 and every G.3 prerequisite remain open.**
+
+(1) The window (`src/pilot/windows/m07Calibration.ts`). The administration
+is `m07-calibration-v2` on every family record (provisional id; no
+participant data exist under v1). The stages, the 1.4 s settle, the copy,
+the mission-log line, the start in episode 2 and the natural return in
+episode 5 are unchanged. `openM07` is the participant's opening and the
+only writer of `opportunity_opened` (M07-1 a). `closeM07AtReview` closes a
+bench never opened in EITHER phase through the kit's `markAbsent` (status
+closed, exit `closed_at_review`, validity `participant_absent`, detail
+"bench never opened before the review") whether or not the end opportunity
+was presented on the return — the v1 path that opened such a bench with
+`opened_by: 'review_closure'` and completed it as 0/6 (the P7 defect) is
+removed; an entered, unfinished project still closes as a completed
+observation with completion false (the raw components unchanged). The
+reload guard `guardM07Reload()` (§5.14, §5.270, §5.290 (a) as adapted by
+RA-1) runs at every Workshop entry and again at the open; at its first run
+in a page load with `page_load_index` > 1, while the window is unopened and
+no visit has been made, it writes the provisional
+`proto_m07_calibration_prior_load_checked` — `page_load_index`,
+`prior_page_load_event_count`, `prior_opening_found` (an earlier
+`opportunity_opened` of either phase), `prior_end_presented_found` (RA-1's
+one adapted field, §5.368), `history_continuous` (at least one earlier
+record; `first_sequence` 1, no gap, no duplicate across the prior and the
+current records so far; `recovered_from_chunks` false),
+`prior_opening_absence_established` (no opening found AND continuous AND
+no earlier hold-back record that an earlier review closure does not
+explain, §5.379; only a hold-back whose detail names that closure is
+explained, §5.381 (2)), `input_mode: 'system'` — through the family's own
+logger, so it also carries the kit's required fields and M07's phase
+fields (`phase: 'start'` at a first Workshop entry; both window ids). A
+first page load writes no check. The check is computed once per load and
+written FIRST; the hold-back decision follows (`m07ReloadHoldBack`, in
+this precedence): an earlier opening found ⇒ the kit's
+`recordPriorExposure` ("calibration bench opened in an earlier page load
+of this identity") and `technicalFailure` with "reload after
+administration: bench not re-run"; otherwise, the absence not established
+⇒ `technicalFailure` with "reload with an unverified earlier state: bench
+not administered" (§5.378 (3), closeout amendment of 22 October 2026);
+otherwise, an earlier review closure of the unopened bench found (the
+kit's `window_closed`, exit `closed_at_review`) ⇒ `technicalFailure` with
+"reload after a review closure: bench not reopened" (§5.378 (4)). Prior
+exposure is recorded only for a found opening, never invented. In each
+case the window is closed as invalid (technical failure), the bench is
+HELD BACK with its kind, and `openM07`, `advanceM07`, `presentM07End`,
+`closeM07Surface` and `closeM07AtReview` write nothing further in that
+load. Only an established absence with no earlier review closure lets the
+bench run normally, including a first opening after the reload (RX-3 /
+RX-4). The first build's RX-6 runtime (the bench ran after an
+unestablished absence, §5.371) is superseded.
+
+(2) The held-back screen (`surfaceModels.ts`, RA-2; M07's builder only).
+For a held-back bench `m07SurfaceModel` returns the existing title
+"CALIBRATION BENCH — ROUTINE PROJECT", the status line with the owner's two
+lines exactly ("This calibration bench was opened earlier in this
+session." / "It stays closed after a reload.", `M07_HELD_BACK_LINES`), one
+element — the existing LEAVE button ("Leave bench", the same place; arrows /
+TAB focus, ENTER / SPACE, a click, and ESC on the surface) — and the help
+line without "A advance". There is no subtitle, no stage tile, no endpoint
+readout, no ADVANCE, no 0/6, and no start, resume, complete or reset
+action. Showing or leaving it writes nothing of the family (no
+`opportunity_opened`, no stage, no departure; the scene's generic
+`pilot_station_opened` route record still fires). The closeout adds the
+owner's two further line pairs on the same screen (§5.378 (3) / (4)):
+"The earlier state of this bench could not be verified." / "It stays
+closed after this reload." (`M07_UNVERIFIED_HISTORY_LINES`) and "This
+calibration bench was closed at the station review." / "It stays closed
+after a reload." (`M07_REVIEW_CLOSED_LINES`); `m07HeldBackSurfaceModel`
+takes the kind. The normal bench model gains only the settle refresh
+(§5.378 (2)): every render of a settling bench arms one refresh per visit
+and settle on the surface's own clock (`host.later`); a refresh that fires
+while the bench's wall-clock settle is still running re-arms for the
+remainder (at most 20 times); the activation no longer schedules its own
+refresh. The settle (1.4 s), the stages, the copy, the controls and the
+records are unchanged; the refresh never advances a stage and dies with
+the view. Under §5.381 (1) (G3) ADVANCE stays focusable while the bench
+settles: its state is `idle` instead of `disabled` (still labelled
+"Settling…"; `disabled` only once complete), so focus no longer falls to
+LEAVE after an advance. A press while settling reaches `advanceM07`,
+which refuses it and writes nothing. Under §5.383 (1) (L1) the normal
+bench's LEAVE calls `closeM07Surface(host.now())` before `host.close()`,
+the ESC path: the departure record, the window's pause and the visit's
+bookkeeping. The held-back builder's LEAVE is unchanged. Every other
+builder of the file is byte-identical.
+
+(3) The scene (`RecordsWorkshopScene.ts`, RA-2; M07's entry and
+interaction wiring only). `guardM07Reload()` is called at Workshop entry
+directly after `declareM07()`, before `presentM07End` on the return shift,
+so the check precedes any opening. The guidance predicate of the
+calibration bench (stage `workshop_work`) reads `visits > 0 ||
+m07HeldBack()`: a held-back bench is terminal for the beacon (a route flag,
+not a measurement record), so the guidance never stalls on it. The station
+callback is unchanged: `openM07` returns before writing anything for a
+held-back bench and the surface then shows the held-back model; the
+recorded-work reader (`stagesCompleted`) never changes for a held-back
+bench, so its screen is never "work begun" for the M04 departure rule.
+Episode 5 under the hold-back: no `end_presented`, `returned` or
+`window_closed` is written, the review writes nothing that changes the
+row, the bench is not guided on the return (unchanged), and the mission-log
+line is not registered in that load (it is registered by an opening).
+Every other station, task and shared behaviour is unchanged.
+
+(4) The extractor (`src/measurement/features/m07.ts`, registered in the
+barrel). Current page load only; recounted from the act records
+(`opportunity_opened`, `stage_advanced`, `departed`, `returned`,
+`end_presented`, `window_closed`); the closure and departure snapshots are
+compared, never trusted alone. Rows: `m07_stages_completed` = stages / 6
+of an entered project at the closing milestone (`fractionFeature`, planned
+denominator 6; an entered project left at 0 is an observed zero);
+`m07_returns` = the `returned` records (a companion, never in the value,
+null with the primary). Dispositions: never presented ⇒ `not_presented`;
+presented on the return and never opened ⇒ `pending`
+(`presented_not_entered`) until the review, then `no_eligible_event`
+(`presented_not_entered`, `closure_reason: closed_at_review`); opened and
+not yet closed ⇒ `pending`; entered and closed ⇒ observed with
+`closure_reason` `completed` (6/6) or `closed_at_review` (fewer), not
+censored (the review is the planned milestone, §5.373). Reload (in this
+precedence): a check record of the load whose own `page_load_index` names
+another load ⇒ `technical_failure` "a reload check record describes
+another page load" (§5.378 (6)); the kit's hold-back record (detail
+beginning `reload`) with no opening of the load ⇒ `interrupted` with the
+kind's reason and `held_back_after_reload: true`, `hold_back_kind` —
+"calibration bench opened in an earlier page load; not re-run after the
+reload" (`prior_opening`), "the earlier state of the calibration bench
+could not be verified after a reload: the absence of an earlier opening
+not established; not administered in this page load"
+(`unverified_history`, §5.378 (3)), "calibration bench closed at the
+station review in an earlier page load (never opened there); not reopened
+after the reload" (`prior_review_closure`, §5.378 (4)); a hold-back detail
+of no known kind, or two hold-back records ⇒ `technical_failure`; a
+reloaded load whose ONE check record establishes the absence (flags
+agreeing: established, continuous, no opening found, at least one earlier
+record) ⇒ read exactly as a first load; any other reloaded load (no check,
+a discontinuous history, a found opening, a contradictory check, two checks
+— §5.370) ⇒ `interrupted`, "… the absence of an earlier opening not
+established", read before any position is compared, also when the bench
+ran in that load (`opened_after_unestablished_absence: true`; a log the
+amended runtime cannot write). Contradictory records (two checks, a check
+on a first page load, a self-contradictory check, a check that
+contradicts the hold-back's kind — an established absence beside an
+earlier opening or an unverified history, or none beside a review closure
+— and an opening of a reloaded load without an established absence) set
+`exposure_record_consistent: false` and never change the row otherwise. Integrity on the first-load
+reading (§5.259 / §5.284): every family record of the load — the check
+included — must carry `m07-calibration-v2` (a v1 record ⇒ "superseded
+administration (m07-calibration-v1)"), the M07 opportunity id and a
+usable, distinct `sequence`; a duplicate, out-of-order or over-6 stage, a
+closure that disagrees with the recount or any other contradictory record
+(§5.372) ⇒ `technical_failure` with the reason. Components:
+`administration_version`, `stages_planned`, `errors: 'not_defined'` (no
+error concept exists, MX "must change"), `exposure`, `stages_completed`,
+`completion`, `returns`, `departure_state`, `reload_check`
+(`page_reloaded`, `checked`, `prior_opening_found`,
+`prior_end_presented_found`, `history_continuous`,
+`prior_opening_absence_established`) and `exposure_record_consistent`.
+
+(5) The independent recount (`e2e/m07Recount.ts`, plan §R.1; A-10 /
+A-11). No import at all; the input type carries only `raw_events`,
+`prior_page_load_events`, `page_load_index` and `game_session_id`; each
+rule is transcribed into `RECOUNT_SPEC` with its citation; the decision is
+a cascade (the check's own load, hold-back, unestablished absence,
+administration and ordering, then the bench's "story") written apart from
+the extractor. The hold-back's reason is read from the EARLIER loads (an
+earlier opening; an earlier review closure with the absence established;
+otherwise the absence not established), never from the record's detail,
+so a detail of no known kind is a production-only check (§5.372). A separate
+function recomputes every recorded check's fields from
+`prior_page_load_events` and the current records before the check, with
+the store fact `recovered_from_chunks` passed in by the spec, and compares
+them with the recorded fields — a consistency assertion that never changes
+a row. Author independence is limited (one writer session wrote both;
+plan §R.4 gap 4, §5.377).
+
+(6) Exported values changed: exactly plan §0.5 M07-4 a, RA-1 and RA-2 — the
+M07 entry records carry `m07-calibration-v2`; a presented, never-entered
+bench closes `closed_at_review` / `participant_absent` with no
+`opportunity_opened` and no completed closure; the two M07 features change
+from `not_implemented` to the extracted rows; on the reload path the one
+provisional check record and the kit's existing hold-back records appear,
+and the held-back bench shows the kind's two owner lines (§5.378 (3) /
+(4): three hold-back details on the kit's existing `technical_failure`,
+no new record type). No canonical event, no scoring-plan variable, no
+formula, weight or missingness rule changed; no score total.
 
 **Unit 23 (M23): as-built** — the two-plot post-failure excavation protocol
 at the Exterior Recovery Yard stake (bounded unit under contract
@@ -12819,3 +13015,611 @@ an owner decision.
      before the capture. Pointer presses in non-live states remain
      inapplicable by design (the pad is hidden outside approaching /
      searching) and are recorded as such, not claimed.
+
+Unit 24 Part A (M07) is governed by `U24-CONTRACT.md` Part A (amendments 1
+and 2 of 21 October 2026) and by the owner's Part A ruling of the same
+date. The ruling is recorded first (§5.367); §5.368 to §5.377 are
+IMPLEMENTER DEFAULTS and points left open by the authority — owner-visible,
+reversible, none of them a ruling, and none resolved here. §5.378 records
+the owner's closeout amendment of 22 October 2026 (a ruling); §5.379
+onward are the writer's readings and dispositions under it.
+
+367. **RESEARCH-OWNER RULING — D-U24-1 Part A, APPROVED 21 October 2026
+     (two messages, verbatim in the UNIT-LOG "U24 Part A";
+     `U24-OWNER-RULING.md` SHA-256 `6547a411…eaca`).** M07-1 a: entry = the
+     participant opened the bench. M07-2 a: presented and never entered ⇒
+     null `no_eligible_event` (`presented_not_entered`); never presented ⇒
+     `not_presented`. M07-3 a: closure at the station-record review (§5.3
+     ratified). M07-4 a: the review closes a never-entered bench through
+     `markAbsent`; `m07-calibration-v2`; a v1 record ⇒ `technical_failure`
+     "superseded administration". P-1 a (with clarification 1: A-9 reads
+     EXCEPTION-CONDITIONS-MET, never PASS, when its conditions hold), P-2 a
+     (Part A: at most one bounded correction round; for the closeout of 22
+     October replaced by at most two, §5.378 (7)), R-1 a m1 (the one Fable
+     review on Part A, including the reload cases). Clarification 2: the
+     approved reload policy (§5.14, §5.270, §5.290 (a)) applies explicitly;
+     an interrupted earlier opportunity is distinguished from one never
+     presented; the absence of current-load events alone never decides the
+     disposition; separate fixtures; an unresolved case is reported, never
+     invented. RA-1: M07's provisional `prior_load_checked` record — a
+     narrow override of "no new event type" for this one record, nothing
+     canonical — following §5.290 (a) adapted to M07 (check once per
+     reloaded load at Workshop entry before any opening; absence only from
+     complete, consistent recovered history; an established absence permits
+     normal administration including a first opening; an earlier opening
+     keeps the hold-back and `interrupted`; missing or insufficient history
+     never becomes confirmed absence; the precedent's integrity and
+     contradictory-record handling preserved). RA-2: allowlist A = 15 paths
+     (`surfaceModels.ts` for M07's held-back presentation only,
+     `RecordsWorkshopScene.ts` for the M07 entry and interaction wiring
+     only); the held-back screen keeps the bench title, shows "This
+     calibration bench was opened earlier in this session." and "It stays
+     closed after a reload.", offers LEAVE by the existing conventions, no
+     start, advance, resume, complete or reset and no 0/6, and creates no
+     measurement opportunity. Implemented as §4 "Unit 24-A".
+368. **The RA-1 adapted field (U24-A; the owner's to rename).** M07 has no
+     briefing, so the check carries `prior_end_presented_found` (an earlier
+     `end_presented`) in place of §5.290 (a)'s `prior_briefing_found`;
+     reported only, never read as this load's exposure. This is the one
+     naming adaptation. The check is written through the family's own
+     logger, so it carries M07's phase fields (`phase`, `start_window_id`,
+     `end_window_id`; `phase: 'start'` at a first Workshop entry) beside
+     the kit's required fields — the same convention as every other M07
+     record; `prior_load_checked` stays a PROVISIONAL candidate name.
+369. **Presentation evidence (U24-A default; open point for the owner).**
+     The family records the bench's presentation only by `end_presented`
+     (the return shift's Workshop entry) and by an opening; the episode-2
+     Workshop entry writes no M07 record, and no new record may be added
+     for it (RA-1 permits exactly one new type). Consequences, stated: (i)
+     a mid-route export after an episode-2 Workshop entry with the bench
+     unopened reads `not_presented` until the return shift presents the
+     end (a non-terminal export; at the review the row is
+     `no_eligible_event`); (ii) a review closure without `end_presented`
+     and without an opening reads `not_presented` with the closure reason
+     `closed_at_review` — not reachable by ordinary play (the review requires
+     the return-shift Workshop sign-off, whose entry presents the end), only
+     by developer closure paths. Whether an episode-2 presentation record is
+     wanted is the owner's question. Closeout (§5.378 (6)): episode-2
+     presentation logging stays unchanged for Part A, the review-time
+     disposition is preserved, and this interim limitation is disclosed. A
+     `not_presented` row means that no presentation record exists in the
+     load, never that the bench was unavailable.
+370. **Two check records in one load (U24-A default; a divergence reported,
+     not resolved).** M07 follows the register's own text of §5.290 (a)
+     ("… two checks, a check on a first page load, … establish nothing")
+     and plan RX-7: two check records never establish the absence, even
+     when they agree. The M14, M15, M16, M18, M19 and M20 extractors
+     establish the absence from several agreeing check records (they test
+     every check, not their number). The writer guard of every row writes
+     at most one check per load, so the difference arises only in a
+     corrupted or concatenated log; whether the other rows should follow
+     the text is the owner's question, outside Part A.
+371. **RX-6 runtime — RESOLVED 22 October 2026 by §5.378 (3) (conservative
+     hold-back; the text below is the superseded first build).** The
+     hold-back applies only to a FOUND earlier opening (§5.14; the M14–M16
+     precedent), so after an unestablished absence (no check, or a
+     discontinuous history) the bench runs normally. The row of such a load
+     is `interrupted`, "… the absence of an earlier opening not
+     established", also when the bench was opened, advanced and closed in
+     it (contract Part A item 9, plan RX-6: the observation is not counted
+     and stays in the raw log; `opened_after_unestablished_absence: true`).
+     Two consequences are stated, not resolved: (a) the window's validity
+     register then records a completed observation while the feature row
+     is `interrupted`; (b) the precedent rows differ — M14 keeps the
+     ordinary row of a desk re-run after a discontinuous history (§5.290 (a)
+     limitation (2) and its open question (3)). RA-1 says an established
+     absence permits normal administration and does not say whether an
+     unestablished one forbids it. Question for the owner: should an
+     unestablished absence hold the bench back (as a found opening does),
+     and which row is wanted for a bench run after one?
+372. **Production-only integrity checks (U24-A default; M09 / M14
+     precedent).** Beyond the integrity rules the plan and the register
+     state (duplicate, out-of-order and over-6 stages, a missing or
+     malformed `sequence`, a v1 or unknown administration, another
+     opportunity), the extractor treats other contradictory records as a
+     `technical_failure`: a closure or a departure snapshot that disagrees
+     with the recount, the end presented twice or after the closure, a
+     return or a departure outside the open project, an end opening without
+     the opening, a closure of an unknown kind, a completed closure of a
+     bench never opened, an absence closure of an entered bench, six stages
+     without the completion record, and any non-reload technical-failure
+     record. The independent recount transcribes only the stated rules, so
+     these checks are production-only and are not part of the recount
+     comparison (labelled so in the spec).
+373. **Closure reason and censoring (U24-A default).** An entered project
+     completed in either phase has `closure_reason: completed`; one closed
+     by the review with fewer stages has `closure_reason: closed_at_review`
+     and is observed, NOT censored — the review is the planned common
+     milestone (§5.3, M07-3 a), never a cut. A never-entered bench closed at
+     the review carries `closure_reason: closed_at_review` beside its null
+     value.
+374. **Records of another page load (U24-A default; the framework's
+     convention).** Records stamped with another `page_load_index` are
+     excluded from the row (current page load only), never a technical
+     failure; the earlier loads' records are read only through the check.
+     Preserved by §5.378 (6). The distinct case of a check record of THIS
+     load whose own `page_load_index` field names another load is a
+     technical-integrity failure (§5.379).
+375. **The Part A export (U24-A; a stated deviation from the plan's order of
+     preference).** The participant export request is sent only at session
+     completion, after the review; at the review — the point plan A-7 and
+     A-12 name — it does not exist, and the DEV `exportEventsJSON()`
+     carries the raw events only (no `prior_page_load_events`, no feature
+     rows). The four Part A exports are therefore the runtime's own export
+     builder read in the page (`buildExportPayload()`), labelled a HARNESS
+     READ — the M14–M20 precedent. Closeout (§5.378 (5)): the owner's narrow
+     evidence-method exception covers this capture method only, for A-7,
+     A-10 and the export-dependent parts of A-12. These rows read
+     EXCEPTION, never PASS, once every other requirement has passed. It
+     establishes no participant ingestion or delivery (Part B).
+376. **Limitations carried over unchanged (§5.290 (a)).** (1) A reloaded
+     load that never enters the Workshop holds no check and stays
+     `interrupted` (RX-8). (2) Continuity is read from the recovered
+     sequence numbers and the store's readable meta record, so a tail lost
+     while the meta record survived looks continuous up to its last
+     persisted number — the limitation the hold-back guard has had since
+     §5.14; `foreign_records_rejected` is not part of the test (the owner
+     may widen it, §5.290 open question (2)). (3) `prior_load_checked` is a
+     provisional name.
+377. **Author independence of the M07 recount (U24-A; plan §R.4 gap 4).**
+     The same writer session wrote `features/m07.ts` and
+     `e2e/m07Recount.ts`. The recount is written as a separately structured
+     cascade from cited rules, imports nothing and never reads a snapshot,
+     but it is not an independent author's transcription; the Fable review
+     and Part C's separately written recount are the mitigation.
+378. **RESEARCH-OWNER CLOSEOUT AMENDMENT — U24 Part A, 22 October 2026
+     (verbatim in the UNIT-LOG "U24 Part A closeout amendment";
+     `A/OWNER-AMENDMENT-2026-10-22.txt` SHA-256 `a8c8752c…0b38`).** Given
+     after the completed separate Fable review (`claude-fable-5-1`). It
+     supersedes only what it names:
+     (1) Routing. The Fable report is kept verbatim. The Opus gameplay and
+     visual reviews finish before the corrections are consolidated. Opus
+     remains the sole writer and Sonnet verifies. A separate read-only Opus
+     scientific reviewer rechecks the corrected Fable findings: this is a
+     substitution, never a Fable recheck. No further Fable review overnight.
+     (2) The settle-refresh stall. `surfaceModels.ts` may carry the normal
+     M07 bench's settle-refresh correction (RA-2's purpose extended; the
+     15-path allowlist unchanged). Six stages, the 1.4 s settle, the
+     participant's choices and the measurement meaning are preserved.
+     Readiness must return without departure or reopening, without extra
+     returns, without a shorter settle and without an automatic advance,
+     with view closure and lifecycle cleanup respected. The correction stays
+     local to M07 (no shared host, M21 or M22 change).
+     (3) RX-6. Conservative hold-back: when the absence of an earlier
+     opening cannot be established, no new M07 opportunity is administered.
+     The feature stays null / `interrupted` with the unestablished-history
+     reason. The validity record must not advertise a valid completed
+     observation (existing non-valid reload handling), and evidence of an
+     earlier opening is never fabricated. Screen: the bench title, LEAVE
+     only, and "The earlier state of this bench could not be verified." /
+     "It stays closed after this reload.". The wording for a confirmed
+     earlier opening is unchanged. A confirmed absence still permits the
+     first current-load administration. §5.371 is RESOLVED.
+     (4) A verified earlier station-review closure of an unopened bench is
+     terminal: never reopened after a reload. The earlier absence record
+     stays unchanged in the prior-load events. The current-load feature is
+     null / `interrupted` with a distinct reason naming the earlier review
+     closure — no zero, no new opportunity, no carried-forward score.
+     Screen: the title, LEAVE only, and "This calibration bench was closed
+     at the station review." / "It stays closed after a reload.". These
+     decisions are documented and tested alike in the runtime, the
+     extractor and the recount. `m07-calibration-v2` and the provisional
+     boundary are kept, with no canonical promotion and no new event type.
+     (5) Export evidence. A narrow evidence-method exception covers the four
+     Part A payloads captured through the runtime export builder at the
+     review. It applies only to the capture-method requirement of A-7, A-10
+     and the export-dependent parts of A-12. The files are labelled harness
+     captures. Those rows read EXCEPTION, for that named limitation only,
+     once every other requirement has passed. It excuses no missing export,
+     failed recount, incorrect value or altered raw history, and it does not
+     establish participant ingestion or delivery (Part B). All four exports,
+     S-M07b at 800 × 600 included, are saved and hashed. The recount runs on
+     each export separately, and the cross-viewport comparison is kept.
+     (6) Other findings. The check-payload page-load inconsistency becomes
+     an explicit technical-integrity failure with focused fixtures; §5.374
+     and §5.370 are preserved. The formatting errors, the misleading
+     unreachable branch and the missing in-page outcome assertion are
+     fixed. Every remaining minor finding is recorded with its evidence and
+     disposition. Episode-2 presentation logging stays unchanged for Part A
+     (§5.369): the final-route disposition is preserved and the interim
+     limitation is disclosed. A missing presentation record is never
+     described as proof that the bench was unavailable.
+     (7) Budget. At most TWO focused correction rounds from the
+     checkpoint, in place of §5.367 P-2 a's one, for this closeout only.
+     Only affected checks and finding rechecks are rerun, with unaffected
+     evidence reused and justified. Original failures and actual exit codes
+     stay visible.
+     (8) Completion. The single local Part A commit is made only when the
+     amended acceptance is met and no blocking or major finding remains.
+     Otherwise a resumable checkpoint is left. Parts B and C stay
+     unauthorised.
+379. **Writer's readings under §5.378 (U24-A closeout; IMPLEMENTER
+     DEFAULTS, owner-visible and reversible, none a ruling).**
+     (a) Precedence of the hold-back kinds: an earlier opening found, then
+     an unestablished absence, then an earlier review closure. "Verified"
+     review closure (§5.378 (4)) is read as a review closure found with
+     the absence of an earlier opening ESTABLISHED by the check. A review
+     closure found beside an unverifiable history therefore shows the
+     uncertain-history screen and reason.
+     (b) Carry-forward: `prior_opening_absence_established` is also false
+     when an earlier load holds a hold-back record (a `technical_failure`
+     whose detail begins `reload`) that no earlier review closure
+     explains. Under §5.381 (2) a review closure explains only a hold-back
+     whose detail is "reload after a review closure: bench not reopened",
+     and only with that closure on record; an intervening
+     unverified-history hold-back stays unexplained (fixture RX10d). An
+     earlier load that could not establish the absence leaves
+     it unestablished for every later load, even when the recovered
+     sequence is continuous by then (for example, after a store meta
+     record was rewritten). `history_continuous` keeps its §5.290 (a)
+     meaning unchanged.
+     (c) The validity record of every hold-back kind is the kit's existing
+     `technical_failure` (invalid). Prior exposure is recorded only for a
+     found opening: never for an unverified history (no earlier opening is
+     invented, §5.378 (3)) and never for an earlier review closure (the
+     bench was presented, not administered). Confirmed by the owner for
+     Part A (§5.381 (3)): for the terminal review closure this is a
+     non-valid reload disposition with its own `invalid_detail`, not
+     evidence of an application crash; no schema change, no scoring rule.
+     (d) The details "reload with an unverified earlier state: bench not
+     administered" and "reload after a review closure: bench not reopened",
+     the reasons quoted in §4 "Unit 24-A" (4) and the component
+     `hold_back_kind` are writer's wording on existing record and row
+     fields; no new event type.
+     (e) Check page-load integrity (§5.378 (6)): a check record of the load
+     whose own `page_load_index` differs from the load ⇒ `technical_failure`,
+     ahead of the hold-back. A hold-back record of an unknown kind, or two
+     hold-back records, ⇒ `technical_failure`. The first is production-only;
+     the second is also a recount rule.
+     (f) Settle refresh (§5.378 (2)): arming on every settling render,
+     deduplicated per visit and settle, covers the reopening inside a
+     settle (Opus gameplay review G2a). The callback re-arms while the
+     bench's own clock still reads the settle. If the host runs the
+     callback at once because no surface is active (a render inside the
+     view's `create()`), the arming is cleared and one microtask retry arms
+     it again once the view runs. At most 20 re-arms. The shared host,
+     M21 and M22 are untouched.
+     (g) Fixture RX7f's earlier load now holds the opening, so the
+     recount, which reads the hold-back reason from the earlier loads, and
+     production agree. The contradiction under test is the check's claim.
+     (h) Browser evidence for the two new kinds:
+     - S-M07e (an earlier review closure) uses ordinary play in both loads.
+       Its export is a harness capture taken after the closed screen was
+       left, not at a second review. After a COMPLETED earlier load, other
+       items' own reload guards hold their opportunities back too. For
+       example, M10's yard-logbook offer is "reload after the offer:
+       delivery not re-run", so the route driver cannot replay that load to
+       the review.
+     - S-M07f (an unverified history) is FAULT-INJECTED: the store's meta
+       record is removed on the reload's navigation, so the history is
+       recovered from its chunks. It runs to the review.
+     - The settle cases slow the page's `Date.now()` to induce the
+       clock mismatch. They are never ordinary-play evidence.
+380. **Review findings of U24 Part A and their dispositions (closeout,
+     §5.378 (6)).** Reports, verbatim: `A/FABLE-REVIEW.md`
+     (`claude-fable-5-1`), `A/GAMEPLAY-REVIEW.md` and `A/VISUAL-REVIEW.md`
+     (`claude-opus-5-5`, general-purpose fallback following the role
+     files).
+     **Fable.**
+     - 1 (major: the 800 × 600 S-M07b export missing; A-10 ran no export):
+       the stall is corrected, S-M07b is rerun at both viewports, and each
+       export has its own recount test.
+     - 2 (major: RX-6): resolved by §5.378 (3).
+     - 3 (major: the stall): corrected under §5.378 (2).
+     - 4 (minor: another load's records are excluded): preserved
+       (§5.374, §5.378 (6)).
+     - 5 (minor: the check's own `page_load_index` was not compared): fixed
+       as a `technical_failure` (fixtures RX7k, RX7l).
+     - 6 (minor: unreachable zero-denominator branch): relabelled
+       `technical_failure` "no planned calibration stages (unreachable)".
+     - 7 (minor: one test for four exports): one test per export, plus a
+       manifest test.
+     - 8 (minor: in-page outcome row missing): asserted (observed 1/6,
+       `closed_at_review`, not censored).
+     - 9 (minor: RX-5b had a fixture only): the runtime decision function is
+       now driven in the page over a completed earlier load
+       (`prior_opening`). No browser case was added: the browser path is
+       RX-5a's (S-M07c).
+     - 10 (note: continuity spans the current records so far): unchanged,
+       as in the M14 precedent; stated in §4.
+     - 11 (note: ESLint): fixed.
+     - The owner question it raised (a reload after a review closure):
+       resolved by §5.378 (4).
+
+     **Visual.**
+     - F-1 (minor: small status text on the held-back screen): recorded,
+       unchanged. The layout and wording are owner-ruled, so this needs a
+       new owner decision.
+     - F-2 (minor: focus on LEAVE during the settle): see gameplay G3.
+     - F-3 (note: the next-stage tile looks like a button): pre-existing,
+       recorded, unchanged.
+     - F-4 (note: 4 px edge misalignment): pre-existing, recorded,
+       unchanged.
+     - F-5 (note: the large empty area): acceptable per the reviewer;
+       owner-ruled layout, unchanged.
+     - F-6 (note: a development-only corner badge): outside the
+       participant bundle, unchanged.
+     - The sidecar stage difference (`workshop` against `workshop_work`):
+       the 1280 × 720 frame case now takes the orders first, as at
+       800 × 600.
+
+     **Gameplay.**
+     - G1 (major: A-7 lacked S-M07b and its 800 × 600 mid-project frame): as
+       Fable 1.
+     - G2 (major: the stall): corrected. Its second path G2a (a reopening
+       inside the settle) is covered by arming on every settling render,
+       with a single deferred retry when the view renders from its
+       `create()` (§5.379 (f)). G2b's constraints are followed, and no
+       other `later` user is changed (G2c).
+     - G3 (major, pre-existing: after an advance, focus falls to LEAVE and
+       stays there when ADVANCE re-enables, so ENTER leaves the bench and
+       creates a departure and a later return): OPEN — it needs a new owner
+       decision. A fix changes the bench's focus behaviour (keeping ADVANCE
+       focusable during the settle, or a shared focus change in
+       `WorkSurfaceScene.ts`), which is outside §5.378 (2). Not changed.
+     - G4 (minor, pre-existing: in the same load after the review, the bench
+       opens live but dead): recorded for an owner decision, unchanged.
+     - G5 (constraints): met. The guidance predicate covers every kind, a
+       held-back bench writes nothing after its check and hold-back record
+       (no presentation, return, review closure or settle refresh), and
+       room 12 describes all three screens.
+     - G6 (note: the wording "after a reload" against "after this
+       reload"): recorded; owner-set, unchanged.
+     - G7 (note): recorded.
+     - G8 (note: the generic `pilot_station_opened` still fires): stated in
+       §4 and room 12.
+
+     **Round-1 verification and rechecks** (22 October 2026; verbatim in
+     `A/SONNET-R1-REPORT.md` (`claude-sonnet-5-5`), `A/SCIENTIFIC-RECHECK.md`,
+     `A/GAMEPLAY-RECHECK.md` and `A/VISUAL-RECHECK.md` (`claude-opus-5-5`).
+     The scientific recheck is the owner-authorised Opus substitute of
+     §5.378 (1), not a Fable recheck.)
+     - Sonnet, r1-01 to r1-22, each run once: every M07 group and route
+       passes (r1-16: 58 tests = 1 static, 50 fixture recounts, 1
+       manifest, 6 per-export; the report's "45 fixture recounts" is
+       corrected from the log in `A/SONNET-R1-RECONCILIATION.md`, no
+       rerun); the base control reproduces the stall on `b46b76b`;
+       `pilot_return.spec.ts:167` and `:784` fail at the base's own
+       assertions (:691, :947), so they are pre-existing.
+     - Scientific: Fable 1–8 and 11 and the owner question resolved; 9
+       partly resolved, as disclosed; 10 unchanged. Decisions (2), (3), (4)
+       and (6) are consistent across the runtime, the extractor and the
+       recount; §5.379 (a) and (b) are faithful readings. New and open for
+       the owner: G3 rated major for `m07_returns` and `departure_state`
+       (systematic by input method, not separable afterwards); minor — any
+       earlier review closure explains any earlier hold-back, so a third
+       load after a closure and an unverified hold-back is labelled
+       `prior_review_closure` (the label only; it is always held back, and
+       no fixture covers it); minor — the decision (4) load's validity is
+       `technical_failure`, told apart only by its detail. Notes: the
+       recount's reason is not compared against production for a
+       contradictory check (not runtime-reachable); `offered: true` on a
+       held-back load (§5.14 convention); a review closure in a load with no
+       check is reachable only by developer paths.
+     - Gameplay: G1, G2, G2a–c, G5 and G8 resolved. Two documentation
+       slips corrected in round 2 (§5.379 (f) now names the microtask retry;
+       room 12 qualifies "nothing of the bench recorded"). G3 still open.
+     - Visual: the 800 × 600 mid-project frame now exists; first-view and
+       held-back frames are byte-identical to the first pass; the two new
+       screens show the owner's lines exactly, unclipped, with LEAVE alone;
+       the sidecar stage difference is resolved. F-2 (= G3) remains.
+     - Status: no blocking finding; one major finding open (G3), which
+       holds the commit (§5.378 (8)). Round 2 is open with documentation
+       corrections only; its code part waits for the owner's G3 ruling
+       (`A/G3-OWNER-DECISION.md`).
+
+381. **The owner's round-2 decisions (22 October 2026).** Verbatim in the
+     UNIT-LOG ("U24 Part A closeout: owner decisions for round 2") and
+     `A/OWNER-DECISIONS-2026-10-22-R2.txt`. In summary:
+     (1) G3: P1 approved. `surfaceModels.ts`'s permitted M07 purpose now
+     also covers keeping ADVANCE focusable while the bench settles. The
+     allowlist stays at 15 paths; the shared `WorkSurfaceScene` focus
+     rules and other tasks are unchanged. The "Settling…" label, the 1.4 s
+     settle and the model's refusal to advance while settling are kept.
+     Verification must show: focus stays on ADVANCE during and after the
+     settle; ENTER and SPACE after the settle advance exactly one stage,
+     with no departure or return; ENTER, SPACE, a pointer press and A
+     during the settle advance nothing, write no measurement event, leave
+     the deadline unchanged and queue no later advance; choosing LEAVE
+     deliberately still works. The changed settling state is captured at
+     both viewports for a focused visual recheck.
+     (2) Correction (a) approved: an earlier review closure explains only
+     a hold-back whose detail identifies that closure. An intervening
+     unverified-history hold-back is never made "verified" by an older
+     closure. The runtime check, the independent recount and fixture
+     RX10d change together. Only the explanation changes; both cases stay
+     held back with null / interrupted features. The independent Opus
+     scientific reviewer rechecks this finding only.
+     (3) Confirmation (b): for Part A, a reload after a terminal review
+     closure keeps the `technical_failure` validity with its distinct
+     `invalid_detail`. It is a non-valid reload disposition, not evidence
+     of an application crash. The earlier absence record, the null /
+     interrupted feature and the distinct reason are kept; no schema
+     change and no new scoring rule. G4, F-1 and the other disclosed
+     evidence limitations stay visible in the handoff; this is not
+     acceptance for participant collection.
+     (4) Round 2 finishes with Sonnet verifying what is affected and Opus
+     rechecking the findings; unaffected evidence is reused with reasons.
+     No Fable run, broad audit or third round. The Sonnet round-1 recount
+     breakdown (categories 53, total 58) is reconciled against its log
+     without a rerun.
+     (5) The commit follows `U24-OPUS-EXECUTE-A.md` §3 in full (the
+     staged-content checks: typecheck, ESLint over staged TypeScript blobs,
+     the staged Markdown/JSON formatting check, commitlint, staged
+     whitespace), then the post-commit verifier
+     `node scripts/claude/verify-unit.mjs --allowlist-file "$U24_ALLOWLIST_FILE" --base b46b76b`,
+     with its actual output, exit code and the exact P-1 exception
+     conditions.
+382. **Round 2: implementation notes and a new finding (L1).**
+     (a) P1 is applied as ruled (`surfaceModels.ts`, the M07 builder's
+     ADVANCE state; §4 item (2)). The spec's readiness wait now waits for
+     the ready state (`accent`). `e2e/pilot_return.spec.ts` (allowlisted)
+     gains a local `calibrationResume` for test 1's five-stage resume. The
+     shared `e2e/returnHelpers.ts` (outside the allowlist, unchanged)
+     waits for "not disabled" in `waitAdvanceEnabled`. That is no longer
+     "ready" while the bench settles, so a future multi-stage caller of
+     `calibrationReturn` or `workshopRestorationShift` needs the same
+     wait. Today's callers advance one stage per opening and are
+     unaffected. `e2e/world_v3_route_capture.spec.ts:388` (outside the
+     allowlist) also waits for "not disabled" before its single advance on
+     a fresh view; it too is unaffected. Disclosed, not changed.
+     (b) Correction (a) is applied in the runtime
+     (`priorHoldBackUnexplained`), the recount (`unexplainedHoldBackBefore`,
+     with the review-closure detail transcribed from §4 item (1)) and the
+     spec's `faithful`, with fixture RX10d and two in-page check cases. A
+     review-closure detail without the closure on record explains
+     nothing, so the bench stays held back.
+     (c) **L1 (new, major, pre-existing at `b46b76b`; OPEN for the owner,
+     `A/L1-OWNER-DECISION.md`).** The normal bench's "Leave bench" button
+     calls `host.close()`, which closes the view without the launch's
+     `onClose`. Only ESC reaches `closeM07Surface`. A deliberate LEAVE
+     therefore writes no `departed`, leaves the window running and the
+     surface marked open, and a later opening writes `returned`.
+     Production `m07_returns` counts that return, but the recount (a
+     return only after a departure) does not. That is a
+     production-to-recount divergence on a runtime-writable log, and
+     `departure_state` misses the departure. The primary is unaffected.
+     Every route leaves by ESC, so nothing had exercised it before the
+     owner's requirement "Deliberately selecting LEAVE still works". The
+     test "A-7 L1" asserts the ESC-equivalent record and fails on this
+     tree (`A/dev/r2-dev3.log`). Proposal P-L1 (LEAVE takes the ESC path,
+     one line in the M07 builder) is not applied: it changes which records
+     a participant action writes, which is outside §5.378 (2) and §5.381
+     (1). Under §5.378 (8) the commit waits for the owner's ruling.
+     The gameplay recheck adds two timing effects. A reopening resets
+     the window's opening time, so the LEAVE visit drops out of
+     `active_ms`. With no reopening, the review's closure writes a late
+     `departed` and counts the time away in `active_ms`.
+     (d) **Round-2 results** (22 October 2026; verbatim in
+     `A/SONNET-R2-REPORT.md` (`claude-sonnet-5-5`),
+     `A/SCIENTIFIC-RECHECK-R2a.md`, `A/GAMEPLAY-RECHECK-R2.md` and
+     `A/VISUAL-RECHECK-R2.md` (`claude-opus-5-5`; the scientific recheck is
+     the owner-authorised Opus substitute, not Fable)):
+     - Sonnet r2-01 to r2-22 (affected rows, each run once) all pass,
+       except three. "A-7 L1" fails at its `departed` expectation (L1, open).
+       `pilot_return.spec.ts:211` and `:828` fail at the base's own
+       assertions, M25 :735 and M21 :991; these are pre-existing (the base's
+       :691 and :947, shifted by the added helpers).
+     - The recount ran 59 tests, read from the log: 1 static, 51 fixture
+       recounts, 1 manifest and 6 per-export.
+     - Reused with reasons, and agreed by Sonnet: the base control, S-M07a,
+       S-M07e, S-M07f and pilot_return test 3.
+     - Scientific, correction (a): no finding beyond notes. The narrowing
+       is exact, the runtime and recount are equivalent, and only the
+       explanation and label change. Notes 2 and 3 (a `decide` entry, a
+       docblock citation) were applied before Sonnet's run.
+     - Gameplay: G3 is resolved on all six points the owner set. The
+       disclosure in (a) is correct (`world_v3_route_capture.spec.ts`
+       added). L1's cause is confirmed, major for the data, and P-L1 is
+       judged sound.
+     - Visual: F-2 is resolved at both viewports (focus ring and sidecar
+       on ADVANCE). New minor point, an owner decision: the settling
+       ADVANCE is drawn like the live LEAVE and only its text marks it
+       inert; that is what P1 approved.
+     - Status: G3 is closed. L1 is open (major), so the commit waits.
+383. **The owner's L1 extension (22 October 2026).** Verbatim in the
+     UNIT-LOG ("owner extension for L1") and
+     `A/OWNER-DECISIONS-2026-10-22-L1.txt`. In summary:
+     (1) P-L1 approved. The normal bench's LEAVE calls
+     `closeM07Surface(host.now())` before `host.close()`, which restores
+     the ESC close semantics. The allowlist is unchanged. Shared close
+     behaviour, other tasks, scoring formulas and the independent recount
+     are not changed. Completed and held-back benches keep their approved
+     behaviour.
+     (2) One L1-only correction and verification pass is authorised as an
+     explicit EXTENSION beyond the exhausted round-2 limit. Sonnet
+     verifies; Opus rechecks L1 (gameplay and scientific); no Fable, no
+     broad audit. It must verify:
+     - keyboard and pointer LEAVE each record exactly one departure, with
+       the right stage snapshot, and pause the window;
+     - a reopening records one return, with production and recount
+       agreeing;
+     - the active segment before departure is kept and time away is not
+       counted, also without a return before the review;
+     - the re-engagement bookkeeping matches ESC;
+     - a rapid LEAVE then ESC cannot duplicate a departure;
+     - a completed bench's close and reopening write no departure or
+       return;
+     - the held-back screens still create no new opportunity.
+
+     A hash-pinned browser export that uses LEAVE and a return is
+     recounted independently; a synthetic fixture alone does not close
+     the gap.
+     (3) Reporting: until L1 is resolved, its acceptance failure is
+     reported explicitly. Earlier fixture and export comparisons passed
+     but never covered the LEAVE path. The capture-method exception does
+     not excuse L1. Historical reviews stay verbatim, with an appended
+     correction: the G3 exit path wrote `returned` without `departed`, not
+     the departure-and-return pair earlier described (the scientific
+     recheck's Q8, `A/G3-OWNER-DECISION.md` and §5.380 G3). The M07-only
+     readiness adjustment in `pilot_return.spec.ts` stays.
+     (4) The owner accepts `A/FOREIGN-INVENTORY-SUPPLEMENT-2026-10-22.json`
+     as the first-discovery inventory of its ten files, for P-1, under
+     the stated checks. Report EXCEPTION-CONDITIONS-MET with the actual
+     exit code, never PASS. No creator or creation time is inferred from
+     modification times.
+     (5) The settling-button appearance is kept. G4, F-1 and the other
+     evidence limitations stay visible. Once L1 is resolved and no
+     blocking or major finding remains, `U24-OPUS-EXECUTE-A.md` §3 runs in
+     full, with the post-commit verifier.
+
+384. **The L1 extension pass: results (22 October 2026).**
+     (a) **Applied.**
+     - P-L1 in `surfaceModels.ts`, the normal builder's LEAVE only (§4
+       item (2)).
+     - The spec: the expected-to-fail L1 test is replaced by three L1
+       tests in "M07 settle":
+       - keyboard and pointer LEAVE, a reopening, the pause and the
+         bookkeeping;
+       - a rapid LEAVE then ESC;
+       - a completed bench's Close and its reopening.
+     - The new browser case S-M07g (S-M07b with LEAVE in place of ESC,
+       800 × 600): the export is hash-pinned and recounted as the seventh
+       per-export test.
+     - Room 12 and the addendum describe LEAVE = ESC. The correction to
+       the earlier G3 descriptions is appended in
+       `A/CORRECTION-G3-EXIT-PATH.md`.
+
+     (b) **Verification.** Reports, verbatim:
+     - `A/SONNET-L1-REPORT.md` (`claude-sonnet-5-5`);
+     - `A/GAMEPLAY-RECHECK-L1.md` and `A/SCIENTIFIC-RECHECK-L1.md`
+       (`claude-opus-5-5`; the scientific one is the Opus substitute, not
+       Fable).
+
+     Results:
+     - Sonnet l1-01 to l1-22 each ran once and all passed. l1-04's exit 1
+       is the `--no-index` convention, with CRLF notices only.
+     - "M07 settle" 6/6.
+     - S-M07g passes: departures [2, 5]; `active_ms` equals the two bench
+       segments, so the time away is not counted; its rows and closure raw
+       components equal S-M07b's.
+     - The recount has 60 tests: 1 static, 51 fixtures, 1 manifest and 7
+       per-export.
+     - The held-back pointer LEAVE writes nothing (l1-13).
+     - Both Opus rechecks: all seven acceptance items resolved, no new
+       finding.
+     - Reused with reasons, agreed by Sonnet: the rows that never press the
+       M07 bench's LEAVE.
+
+     (c) **L1 is RESOLVED** and its acceptance passed.
+
+     The earlier fixture and export comparisons (rounds 1 and 2) passed,
+     but they never covered the LEAVE path. S-M07g and the L1 tests are its
+     first coverage. The capture-method exception does not concern L1.
+     (d) **Open owner questions** from the scientific recheck. They are
+     not blocking and are not resolved here:
+     - (i) data collected under a build before this fix: a `returned`
+       without a `departed`, and a distorted `active_ms`. Flag them,
+       recompute them, or note them? This is a scoring-plan question.
+     - (ii) whether the departure route (LEAVE / ESC / review) should be
+       recorded. This is an event-schema question.
+     - (iii) whether production should treat a `returned` with no
+       `departed` before it as an inconsistency, as the recount does.
+
+     Today the two definitions of `m07_returns` agree only because every
+     close path of the bench now records the departure.
+     (e) **Status.** No blocking or major finding is open. Still recorded
+     and visible: G4, F-1, F-3 to F-6, the settling-button appearance
+     (approved, unchanged), the capture-method exceptions, and the
+     interim limitation of §5.369. Two pilot_return failures are present
+     at the base as well (M25 :735 and M21 :991).

@@ -9,6 +9,7 @@ import './m03';
 import './m04';
 import './m05';
 import './m06';
+import './m07';
 import './m08';
 import './m09';
 import './m10';

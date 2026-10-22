@@ -136,6 +136,8 @@ import { m06SurfaceModel } from '../pilot/windows/m06SurfaceModel';
 import {
   closeM07Surface,
   declareM07,
+  guardM07Reload,
+  m07HeldBack,
   m07State,
   m07Window,
   openM07,
@@ -408,6 +410,9 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     declareM04();
     declareM06();
     declareM07();
+    // U24 Part A (register §5.14 / §5.290 (a), owner decision RA-1): the
+    // M07 reload check and hold-back, at Workshop entry before any opening.
+    guardM07Reload();
     declareM12('o2');
     declareM13Lattice();
     declareReturnWindows();
@@ -781,7 +786,9 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       'Calibration Bench',
       ['workshop_work'],
       5,
-      () => m07State().visits > 0,
+      // U24 Part A: a bench held back after a reload is terminal for the
+      // guidance (a route flag, not a measurement record).
+      () => m07State().visits > 0 || m07HeldBack(),
     );
 
     // ——— M12 quality packet (occasion 2) ———

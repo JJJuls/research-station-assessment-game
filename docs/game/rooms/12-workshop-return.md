@@ -71,13 +71,68 @@ every scene creation.
 | Item | Opportunity                     | Phase / window                                        | Entry                                                                                                                                         | Closure                                                                                                                                                                                                                                                                                                                                    |
 | ---- | ------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | M03  | `proto_m03_tools_b`             | occasion `o2`, `m03_tools_o2` (presented on entry)    | the label roll is moved to the feed (the taught movement); the third press cycle puts the three tools on the surface (identical fixed layout) | the participant's first close of the panel = the first departure, terminal (focused exposure < 2000 ms is RECORDED as `exposure_sufficient: false`, never a validity marker); a run never completed → absent at the review (Station 080 U14; as-built record in `docs/verification/station-080-m26/M01-M26-IMPLEMENTATION-REGISTER.md` §4) |
-| M07  | `proto_m07_calibration_project` | `end`, `m07_calibration_end` (presented on entry)     | bench opened; a missing start logs `end_opened_without_start`                                                                                 | 6/6 → completed; review → completed observation (completion false, `start_state` recorded); never opened in either phase → absent                                                                                                                                                                                                          |
+| M07  | `proto_m07_calibration_project` | `end`, `m07_calibration_end` (presented on entry)     | bench opened; a missing start logs `end_opened_without_start`                                                                                 | 6/6 → completed; review → an entered project closes as a completed observation (completion false); never opened in either phase → absent at the review (`markAbsent`, never 0/6; `m07-calibration-v2`, U24 Part A); after a reload: held back if opened earlier, unverified or closed unopened at a review (see below)                     |
 | M09  | `proto_m09_monitor_watch`       | `end`, `m09_check_2` (due at `return_hub`)            | gauge read while due                                                                                                                          | read → check 2 completed; review → completed observation (false); never due → null                                                                                                                                                                                                                                                         |
 | M10  | `proto_m10_component_promise`   | `end`, `m10_promise_handover` (from the interruption) | Kai's handover option while carrying                                                                                                          | handed over → completed; review → `unfulfilled_at_review` (completed observation)                                                                                                                                                                                                                                                          |
 | M20  | `proto_m20_antenna_restoration` | `end`, `m20_antenna_resume` (presented on entry)      | "Resume the restoration" at the console; console stages power→align→lock                                                                      | all outdoor + console stages → completed; review with the resume presented → completed observation; never presented → censored (Unit 4)                                                                                                                                                                                                    |
 | M21  | `proto_m21_manual_repair`       | `m21_manual_w1`                                       | bench surface opened                                                                                                                          | FIT → completed (`correct_rule_application` raw); SET ASIDE → completed observation (stopped); review → censored; never opened → absent                                                                                                                                                                                                    |
 | M22  | `proto_m22_report_revision`     | `m22_report_w1`                                       | desk surface opened                                                                                                                           | accepted → completed; WITHDRAW after acknowledgement → completed observation; unacknowledged setback → invalid; review → censored                                                                                                                                                                                                          |
 | M25  | `proto_m25_belief_probe`        | `m25_probe_w1` (presentation only)                    | notice available at the handover desk (register `entered` = shown)                                                                            | acknowledged → completed presentation record; review → completed presentation record (`handoff_acknowledged` false)                                                                                                                                                                                                                        |
+
+### M07 calibration bench after a reload (U24 Part A)
+
+Owner ruling of 21 October 2026 (RA-1, RA-2; register §4 "Unit 24-A").
+At the first Workshop entry of a page load after a reload, before any
+opening, the bench writes one provisional `prior_load_checked` record. A
+bench that an earlier page load opened (in either phase, also when it was
+completed) is held back: it is never re-run, and the station shows the
+held-back screen — the existing title "CALIBRATION BENCH — ROUTINE
+PROJECT" and exactly the two lines "This calibration bench was opened
+earlier in this session." and "It stays closed after a reload.", with
+"Leave bench" as its only control (focus and ENTER / SPACE, a click, or
+ESC). It has no stage tiles, no ADVANCE and no 0/6, and showing or leaving
+it records nothing of the bench (the scene's generic station-opened record
+still fires). The bench's guidance counts as done, so the beacon moves on;
+on the return shift nothing is presented for it. When the check
+establishes that no earlier opening exists, the bench runs normally,
+including a first opening after the reload.
+
+The owner's closeout amendment of 22 October 2026 (register §5.378) adds
+two further held-back screens, each with the same title, "Leave bench" as
+its only control and nothing of the bench recorded by showing or leaving
+it (the scene's generic station-opened record still fires):
+
+- **The earlier state cannot be verified** (the recovered history is
+  incomplete or discontinuous, there is no earlier record, or an earlier
+  page load already held the bench back for this reason): "The earlier
+  state of this bench could not be verified." and "It stays closed after
+  this reload.". No new opportunity is administered.
+- **An earlier station review closed the bench unopened** (verified: the
+  check establishes the absence of an earlier opening and the earlier
+  load's absence closure is found): "This calibration bench was closed at
+  the station review." and "It stays closed after a reload.". The closure
+  is terminal; the earlier absence record stays unchanged.
+
+The settle refresh (§5.378 (2)): after each advance the bench re-renders
+once the 1.4 s settle has ended. Every render of a settling bench arms one
+refresh for that visit, and a refresh that fires early re-arms for the
+rest of the settle, so ADVANCE comes back without leaving the bench. A
+reopening during the settle arms its own refresh. The settle is never
+shortened and no stage is advanced by it.
+
+ADVANCE keeps keyboard focus through the settle (register §5.381 (1)): it
+reads "Settling…" in the plain button style instead of the dimmed one, and
+a press while settling (ENTER, SPACE, A or a click) does nothing and
+records nothing. Focus therefore never falls to "Leave bench" after an
+advance; leaving needs a deliberate move to LEAVE or ESC.
+
+LEAVE and ESC leave the normal bench by the same path (register §5.383
+(1)): the departure is recorded with the stage reached, the project's
+active time stops until the participant comes back, and a later opening is
+recorded as a return. Before this repair the Leave button closed the view
+without recording the departure (finding L1). A completed bench's "Close"
+records no departure, and reopening it records no return. The held-back
+screens are unchanged: LEAVE there records nothing.
 
 ### M20 start histories at the console
 
