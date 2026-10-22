@@ -672,6 +672,14 @@ export async function pilotEventTypes(page: Page): Promise<string[]> {
  * The bare route emits no behavioural measurement event. Exposure records
  * (`*_presented` — an offer or fault was shown) are the only proto_* events
  * tolerated: they carry the required presented timestamp and never a value.
+ *
+ * U24 B-8: a system-written record is tolerated only by its EXACT type and
+ * only when the event itself carries `input_mode: 'system'` — never by
+ * prefix — so a listed type written in a participant input mode still
+ * fails. The input mode does not separate every listed type (the window
+ * kit writes each `opportunity_opened` as `system`; an accepted M11
+ * custody can close as `system`): a participant episode still fails
+ * through its co-occurring participant records (REG §5.387).
  */
 const SYSTEM_DRIVEN = new Set([
   'proto_m05_initiation_opportunity_opened',
@@ -684,20 +692,52 @@ const SYSTEM_DRIVEN = new Set([
   // (input_mode 'system') — an exposure record; a cutting job is
   // presented only by its cut.
   'proto_m04_cutting_listed',
+  // U24 B-8 (U13, U14-D3, U22 item 11): the records the route writes with
+  // no participant act — an M11 loan offer that lapses at the briefing's
+  // acknowledgement (`offer_lapsed`, then the kit's opening and closure),
+  // and the M19 panel / M20 console closed unopened at the shift end. The
+  // M05 job offers are NOT listed: a declined job writes the participant's
+  // own answer (`offer_answered`, `window_closed` in the answer's input
+  // mode), which must keep failing this check.
+  'proto_m11_custody_offer_lapsed',
+  'proto_m11_custody_opportunity_opened',
+  'proto_m11_custody_window_closed',
+  'proto_m19_lines_closed_unopened',
+  'proto_m20_feed_closed_unopened',
 ]);
 
-export async function expectNoMeasurementEvents(page: Page) {
-  const types = await pilotEventTypes(page);
+/**
+ * The proto_* records of `events` that the bare-route check does not
+ * tolerate (pure; U24 B-8). System-driven registrations are tolerated by
+ * exact type AND `input_mode: 'system'`; everything else is a participant
+ * act or a value, and the bare route must emit none.
+ */
+export function untoleratedMeasurementEvents(
+  events: readonly {
+    event_type: string;
+    metadata?: Record<string, unknown> | null;
+  }[],
+): string[] {
+  return events
+    .filter(
+      (event) =>
+        event.event_type.startsWith('proto_') &&
+        !event.event_type.endsWith('_presented') &&
+        !(
+          SYSTEM_DRIVEN.has(event.event_type) &&
+          event.metadata?.input_mode === 'system'
+        ),
+    )
+    .map((event) => event.event_type);
+}
 
+export async function expectNoMeasurementEvents(page: Page) {
   expect(
-    types.filter(
-      (type) =>
-        type.startsWith('proto_') &&
-        !type.endsWith('_presented') &&
-        // System-driven registrations (a silently presented window opening
-        // and censoring on departure, input_mode 'system') are not
-        // participant acts; the bare route must emit no participant act.
-        !SYSTEM_DRIVEN.has(type),
+    untoleratedMeasurementEvents(
+      (await getEvents(page)) as {
+        event_type: string;
+        metadata?: Record<string, unknown> | null;
+      }[],
     ),
   ).toEqual([]);
 }

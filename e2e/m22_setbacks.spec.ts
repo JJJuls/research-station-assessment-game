@@ -14,6 +14,9 @@
  * failure. The engine's transactions and the rating rules are covered by
  * `pilot_return_models` test 10.
  */
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { expect, test } from '@playwright/test';
 
 import { extractItemFeatures } from '../src/measurement/features';
@@ -25,6 +28,7 @@ import { registerEntry } from '../src/measurement/registerV3';
 import {
   createM22RatingsState,
   createM22ReportState,
+  M22_ENTRY_STATE_VERSION,
   M22_FAMILY,
   M22_OPPORTUNITY_IDS,
   M22_RATING_SETTLE_MS,
@@ -555,5 +559,29 @@ test.describe('M22 two setback reports (pure)', () => {
       expect(rows[0].disposition).toBe('technical_failure');
       expect(rows[1].disposition).toBe('technical_failure');
     }
+  });
+
+  test('U24 I-1 = a: the outcome-neutral report-1 lines and the v4 administration; the Workshop handover names no recovered coupling', () => {
+    // Owner ruling of 22 October 2026 (D-U24-1 §2 I-1 (a)): the exact
+    // neutral strings; requirement logic, forms and formula unchanged.
+    expect(M22_ENTRY_STATE_VERSION).toBe('m22-setbacks-v4');
+
+    const lines = Object.fromEntries(
+      M22_REPORT_DEFS.o1.lines.map((line) => [line.code, line.label]),
+    );
+
+    expect(lines['WO-11']).toBe('Coolant coupling — line check');
+    expect(lines['WO-13']).toBe('Excavation field — survey record');
+
+    const scene = readFileSync(
+      path.resolve('src/scenes/RecordsWorkshopScene.ts'),
+      'utf8',
+    );
+
+    expect(scene).toContain(
+      "`Tray: relay unit ${tray.relay_unit ? 'placed' : '—'} · field components: see the field tray.`",
+    );
+    expect(scene).not.toContain('Place the recovered relay coupling');
+    expect(scene).not.toContain('recovered relay coupling');
   });
 });

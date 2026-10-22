@@ -1391,7 +1391,7 @@ export class RecordsWorkshopScene extends PilotZoneScene {
 
     return (
       'OUTBOUND HANDOVER — RETURN SHIFT\n' +
-      `Tray: relay unit ${tray.relay_unit ? 'placed' : '—'} · recovered relay coupling ${tray.relay_coupling ? 'placed' : '—'}.`
+      `Tray: relay unit ${tray.relay_unit ? 'placed' : '—'} · field components: see the field tray.`
     );
   }
 
@@ -1427,29 +1427,8 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       });
     }
 
-    if (!tray.relay_coupling && hasInventoryItem('relay_coupling')) {
-      options.push({
-        label: 'Place the recovered relay coupling in the tray',
-        feedback: 'Relay coupling placed in the outbound tray.',
-        getEventTypes: () => [],
-        onSelected: () => {
-          if (
-            removeInventoryItem('relay_coupling') &&
-            noteHandoverPlaced('relay_coupling')
-          ) {
-            this.noteOtherWorkBegun('handover_desk');
-            this.logScenarioEvent(
-              'pilotHandoverDesk',
-              'pilot_handover_placed',
-              {
-                metadata: { item: 'relay_coupling', zone: this.zoneKey },
-              },
-            );
-            this.refreshReturnChips();
-          }
-        },
-      });
-    }
+    // U24 (owner ruling I-1 = a): field components go to the field tray
+    // (D-U23-1 F); the outbound tray takes no recovered coupling.
 
     options.push({
       label:

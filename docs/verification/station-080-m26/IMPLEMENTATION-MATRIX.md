@@ -784,3 +784,30 @@ open for the owner: the presentation evidence (§5.369, interim limitation
 disclosed) and the two-check divergence (§5.370). Clustered observation
 of one routine project in one room across two phases; never a validity
 claim.
+
+**U24 Part B** (integration; bounded part under `U24-CONTRACT.md` Part B,
+amendment 3 of 22 October 2026; the owner's Part B ruling and
+clarification of 22 October 2026 — I-1 a, I-2 a, I-3 a, VIS-1 a, VIS-2 a,
+AS-1 a, RC-1 a, P-1 a, P-2, R-1, B-T1, B-T2, P-3, M07-Q; register §4 "Unit
+24-B", §5.385–§5.401) changes no row's design, formula, event family or
+disposition rule. It corrects the approved stale items (B-1 to B-20: the
+registry's window labels, the legacy M20 helper, the U8-12 gate, the
+bare-route check by exact type and system input, the episode-1 lamp-job
+order, the stale probe, the doc and title fixes) and, under I-1 = a, M22's
+two report-1 lines and the Workshop handover text (`m22-setbacks-v4`). It
+adds the end-to-end evidence: S1 (every row worked) at 800 × 600 and
+1280 × 720, S2 (every offer declined, every station unopened), S3 (three
+genuine reloads), S4 (focus and pause), S5 (pointer-only and keyboard-only)
+and S6 (the synthetic launch, the export failure and the hand-off), the
+saved participant exports, L1 (same code) and L2 (scenario expectation)
+reproduction, the V-7 cross-task diagnostics, the owner walkthrough guide
+and `U24-END-TO-END-REPORT.md`. Layer R (the independent raw-event recount)
+is Part C. Still open: gate G.2 (layer R; the reproduced candidates C-6,
+C-7, C-8 and the M14 GP-1 pattern; the pause menu's missing Resume control,
+F-B9), every G.3 item, and the findings F-B1 (the keep-alive export exceeds
+the browser's limit), F-B2 (a reloaded load's reading of a station worked
+earlier and only shown again), F-B3 (the bare-route check's M05 premise),
+F-B4 (report 2's "recovered" line), F-B5 (further stale registry labels),
+F-B6 (the DEV template's external request), F-B7 and F-B8 (two V-5 (b)
+clauses after a reload) and F-B10 (further visual defects). No row is
+scientifically validated.

@@ -746,7 +746,7 @@ function eventStoreKeys(page: Page): Promise<string[]> {
  * ------------------------------------------------------------------ */
 
 test.describe('participant completion handoff (browser)', () => {
-  test('production path: one acknowledged export with status axes, buffer cleared, automatic navigation to the validated survey URL', async ({
+  test('production path: one acknowledged export with status axes, device buffer retained, automatic navigation to the validated survey URL', async ({
     page,
   }) => {
     test.setTimeout(240_000);

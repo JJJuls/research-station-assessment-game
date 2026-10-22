@@ -163,6 +163,89 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
 
 ## 4. As-built records (appended per unit)
 
+**Unit 24-B (integration): as-built** — the connected route verified end
+to end, the approved stale items corrected, the exports saved, the owner
+walkthrough guide and the end-to-end report (U24 Part B, bounded unit
+under `U24-CONTRACT.md` Part B as amended on 22 October 2026, amendment 3;
+the owner's Part B message and clarification of 22 October 2026, verbatim
+in the UNIT-LOG "U24 Part B"; §5.385–§5.403). **Status: integration and
+verification only. No measurement row's design, formula, event family,
+disposition rule or administration changed, except the ruled M22 wording
+and version (I-1 = a). It is not a scientific closeout: gate G.2 is not
+reached (layer R is Part C; reproduced cross-task candidates are open) and
+no G.3 prerequisite is satisfied.**
+
+(1) **Corrections (backlog B-1 to B-20, per-file limits of contract B.7).**
+
+- B-1 / B-2 (`interactionRegistry.ts`, the `window` labels only, after a
+  grep showed no consumer outside the registry and its specs,
+  §5.386): the listed stale labels now name the v3 register windows —
+  Kai (Concourse and Laboratory)
+  `m10_delivery_d1 (recipient) / m10_delivery_d2 (delegate)`; the
+  incident desk `m14_packet_p1 / m14_packet_p2`; the monitor gauge
+  `m09_duty_check_1 / _2 / _3`; the feed console `m20_feed_w1`; the
+  evidence table `m15_system_s1 / m15_system_s2`; the protocol console
+  `m16_handling_w1`; the diagnostic board `m18_cases_w1`; the coupling `m19_lines_w1`; the excavation stake
+  `m23_plots_w1`; Mast 04 `null` (the legacy antenna window left the route
+  in U22, §5.353). The coupling's `opens` (`prompt pilotCoupling`) stays as
+  it is: the contract limits the file to the window labels (B-2 recorded,
+  not changed). `world_v1_registry` pins the corrected labels against the
+  register's windows and the M14–M18 stations (B-17).
+- B-4: the unused `couplingAct` / `completeCoupling` (and their private
+  `waitActs`) removed from `e2e/exteriorHelpers.ts` (no caller).
+- B-5: `e2e/returnHelpers.ts` `openFeedConsole` re-expressed as the v3
+  console route (`m20_returns_route`'s open and view settle); the legacy v2
+  `resumeAntenna` (its `resume` / `stage_action` path left the route in U22)
+  removed. `pilot_return.spec.ts` needed no change: its two console calls
+  already opened the v3 console; Part A's local `waitBenchElement` /
+  `calibrationResume` untouched.
+- B-7: the U8-12 gate in `final_scientific_gates.spec.ts` re-expressed to the
+  current state (§5.389).
+- B-8: `e2e/pilotHelpers.ts` — system-written records tolerated by exact
+  type AND `input_mode: 'system'` (§5.387); a pure negative probe in
+  `u24_end_to_end.spec.ts`.
+- B-9: `pilot_episodes_1_2` episode 1 — the lamp job before the briefed
+  stations; the M05 product untouched.
+- B-10: `signal_incident_models.spec.ts` titles and comments only.
+- B-11 (I-1 = a): §5.390.
+- B-12: the yard's DEV `__yardPromptProbe` cleared on the scene's `pause`
+  event (DEV block only); `m23Helpers.yardPromptBounds` refuses (null)
+  unless the yard is live (§5.391).
+- B-14: not reproduced; no change (§5.392).
+- B-15: room doc 11's M05 row names the current family (`proto_m05_start_`).
+- B-16: the `participant_completion_handoff` production-path title says the
+  device buffer is retained (as its assertion states).
+- B-17: §5.386.
+- B-20 (B-T1): `waitAdvanceEnabled`'s predicate is `state === 'accent'`
+  with its comment; nothing else in the helper changed.
+
+(2) **New evidence code.** `e2e/u24Helpers.ts` (scenario drivers
+re-transcribed from the row route specs, the network isolation and the
+participant-export capture, the input counter and per-stage log, the frame
+recorder, the L2 expectations); `e2e/u24_end_to_end.spec.ts` (pure checks,
+S1 at 800 × 600 and 1280 × 720, S2, S3, S4, S5); `e2e/u24_export_recovery.spec.ts`
+(V-5, V-12 with S6). S1 boots with a FIXED synthetic identity
+(`GS_U24_S1`), so both viewports receive the same assignment. The export
+used for reproduction is the participant pipeline's own request at the Core
+completion (`launch_mode=test`), captured by `page.route` on a same-origin
+mock ingest; every non-localhost request is answered locally and recorded.
+
+S4 also records RESUME by pointer and HELP / CLOSE HELP by pointer, and
+demonstrates that a station is not entered by pointer; V-5 (b) asserts that
+no opportunity is answered in two page loads.
+
+(3) **Results.** S1 (both viewports), S2, S3, S4, S5 and S6 completed by
+ordinary input; L1 byte-equal for every saved export; L2 26 / 26 (S1 × 2,
+S2); the regression set compared with 43f12de failure by failure, with no
+failure shown attributable to U24 and one stop whose own cause is not shown
+(`pilot_records` `:734`, §5.400, §5.402; the owner's named exception
+EX-B-734, §5.403). Row statuses: §5.398 (V-1 and V-8 PASS; V-2, V-3, V-5,
+V-12 FAIL, pre-existing, with V-3 also PARTLY on named gaps; V-4, V-6, V-7,
+V-9 PARTLY; V-10 PASS at the documentation-only amendment of `cbc53dd`,
+PARTLY before it, §5.402–§5.403; V-11 EXCEPTION-CONDITIONS-MET (P-1)).
+Findings F-B1 to F-B10:
+§5.386, §5.387, §5.390, §5.393, §5.394, §5.396, §5.399, §5.401 and the report §7.
+
 **Unit 24-A (M07): as-built** — the six-stage calibration project closed as
 specified, its extractor and the independent M07 recount (U24 Part A,
 bounded unit under `U24-CONTRACT.md` Part A as amended twice on 21 October
@@ -13623,3 +13706,386 @@ onward are the writer's readings and dispositions under it.
      (approved, unchanged), the capture-method exceptions, and the
      interim limitation of §5.369. Two pilot_return failures are present
      at the base as well (M25 :735 and M21 :991).
+
+385. **U24 Part B: the ruling, and the assignment audit as an inventory
+     (22 October 2026).** The owner's Part B message and clarification are
+     verbatim in the UNIT-LOG "U24 Part B" (`U24-OWNER-RULING.md` §5, §6).
+     `U24-ASSIGNMENT-AUDIT.md` (amendment 1) is recorded here as the
+     inventory for U23 acceptance item 5b: sixteen slot keys on the
+     participant route (fifteen two-option keys — fourteen operative and
+     the residual `m23_excavation_form` — and the six-option M02 order); one
+     bit of the session id drives every two-option factor of ten rows (M01,
+     M02, M06, M08, M12, M13, M17, M21, M22, M24) and ties the M02 order to
+     its form; M23's own joint scheme is independent. **The owner has NOT
+     accepted the inventory as complete; item 5b stays open.** Nothing from
+     the audit is implemented (AS-1 = a: U25 scheduled before collection,
+     not authorised); U24's evidence for those ten rows is "pre-correction
+     scheme (single-bit)".
+386. **B-1 / B-2 / B-17: the registry's window labels (U24-B).** A grep
+     (`B/diagnostics/B1-window-consumer-grep.txt`) found no `src/` reader of
+     an entry's `window` or `opens`: `src/` imports only `promptText` and a
+     type from the registry; the e2e readers use approach points, `opens`
+     null-ness (`world_v1_registry`) and two `opens` values in
+     `u14_d3_workshop_access`. The labels the backlog named are corrected
+     (§4 "Unit 24-B" (1)). **Observed and NOT corrected** (not named by
+     B-1; outside its recorded items; listed for a later unit): the plan
+     board `m01_plan_board_w1` (register `m01_batch_o1` / `_o2`), the relay
+     bench `m21_case_o1` (it hosts both cases), the seal log
+     `m11_seal_obligation (secondary)`, the handover desk
+     `m25_belief_probe` (register `m25_belief_w1`), the calibration bench
+     `m07_calibration_project` (an opportunity id), the lattice bench
+     `m13_lattice_construction` (register `m13_network_n1`–`n3`), the
+     support console `m08_effort_choice` (register `m08_effort_w1`) and the
+     sensor post `m25_calibration_loops` (register `m25_loops_w1`); and the
+     stale `opens` of `lab.phase_m16` / `lab.phase_m18` (`ip_overlay`) and
+     `yard.coupling` (`prompt pilotCoupling`; it opens the work surface
+     `m19_coupling_panel`). Contract B.7 limits the file to the window
+     labels of the backlog's items.
+387. **B-8: the bare-route check, and a premise that does not hold.** The
+     check now tolerates a system-written record only by its exact type and
+     only when the event carries `input_mode: 'system'`
+     (`untoleratedMeasurementEvents`); the listed types gained the M11
+     lapse trio (`offer_lapsed`, the kit's opening and closure) and the
+     M19 / M20 `closed_unopened` records. A pure negative probe shows that a
+     listed type written in a participant input mode, a declined offer's
+     answer and an unlisted system record still fail. **Limit of the rule
+     (scientific review m-1):** the input mode does not separate every
+     listed type — the window kit writes every `opportunity_opened` as
+     `system`, also when the participant enters (`windowKit.ts:176-179`), and
+     an accepted M11 custody can close as `system` (`m11Custody.ts:326-330`,
+     `:363`). A participant M11 episode still fails the check through its
+     co-occurring participant records (the keyboard `offer_answered` and the
+     unlisted `custody_started`, `departed`, `resolved`); the check relies on
+     those records for that case, and nothing is masked in effect. **Finding:** the backlog
+     called the bare route's M05 records "system-written"; they are not.
+     The bare route DECLINES both M05 jobs, and a decline writes the
+     participant's own `offer_answered` (keyboard) and closes the window in
+     the answer's input mode (`m05Initiation.ts:210-217`; only the kit's
+     `opportunity_opened` is `system`). They are therefore NOT listed, and
+     `pilot_route` "six-zone" (scheduled run, `reg-pilot_route.log`) and
+     `pilot_records` "supply bundles" (writer diagnostic
+     `diag-pilot-records-706.log`; the scheduled run stopped earlier, at a
+     single-press pickup, `:734`, §5.400) still fail at the same assertion,
+     now on the three M05 decline records only. Whether the bare route's
+     explicit declines are to be tolerated is a question for the owner; it
+     is not resolved here and nothing is masked.
+388. **The S2 expectation and the register's never-opened rule.** S2's L2
+     expectation (`e2e/u24Helpers.ts` `S2_EXPECTATION`) takes each row's
+     disposition from the register documents only
+     (`B/diagnostics/S2-REGISTER-DISPOSITIONS.md`). The register is
+     ambiguous or silent for (line numbers of this register at 43f12de;
+     the Unit 24-B record moves every line after 165 by 69): M24 and M26 presented
+     and never opened (REG L7262–7284: `declined`, `no_eligible_event` and
+     `not_presented` all appear); M23's "the brief without a selector
+     `not_presented`, `presented_not_opened`" (REG L505–506, two readings);
+     M02 (REG L7116 `declined` against the addendum's null rule, which names
+     no declined case). The expectation allows the named set for these rows
+     (M23 two readings; M24 and M26 three of the four non-observed
+     dispositions; M02 matched its single reading, `declined`) and the
+     ambiguity is reported, not resolved. The never-opened rule also
+     differs across units (older units `declined`, later units
+     `no_eligible_event`, M04 / M13 / M17 `not_presented`) — recorded, not
+     reconciled. The S2 production rows matched the expectation 26 / 26 in
+     the scheduled run (`B/reproduction/S2-L2.json`).
+389. **B-7: U8-12 re-expressed.** The gate now states the current state:
+     M19's comprehension is a recorded check in its own panel; the exterior
+     windows keep exactly 8 `setComprehension('passed')` — six without a
+     check, named (`m19Present`, `m19EnsureOpen`, `m20Present`,
+     `m20AcceptTask`, `m23Present`, `m23Begin`; functions no module outside
+     the file calls) and two only in the pass branch of the recorded M24 /
+     M26 checks; every other comprehension state in the file belongs to the
+     M24 / M26 checks. At the Part B start the file failed three tests:
+     U8-12 (pin 10, actual 8), the M08 schedule (the accepted exception) and
+     `no canonical promotion` (only because the baseline archive is not a
+     git repository: its `git diff` fails). After the change the M08
+     schedule assertion is the only failure, at the same assertion and
+     step as at the base (the scheduled run: `:139` at `:146`;
+     `B/logs/reg-final_scientific_gates.log`).
+390. **I-1 = a: the M22 wording (U24-B).** `M22_ENTRY_STATE_VERSION` is
+     `m22-setbacks-v4`; report 1's WO-11 reads "Coolant coupling — line
+     check" and WO-13 "Excavation field — survey record"; the Workshop
+     handover body reads "Tray: relay unit … · field components: see the
+     field tray." and the "Place the recovered relay coupling in the tray"
+     option is removed (the tray's coupling state stays in the model and can
+     no longer be set from the desk). M22's requirement logic, forms and
+     formula are unchanged; the strings are pinned in `m22_setbacks.spec.ts`.
+     **Not covered by the ruling and unchanged:** report 2's line "Relay
+     coupling — recovered" (BAY-B) states an outcome in the same way; it is
+     listed for the owner (report finding F-B4).
+391. **B-12 and V-8.** The probe is cleared when the yard pauses (any
+     surface or overlay over it), so a paused frame's sidecar shows
+     `world_prompt_bounds: null`; the helper refuses a probe unless the yard
+     itself is live. The M23 layout group and X4 reran at both viewports in
+     the scheduled run (`m23_plots`, exit 0; frames `B/v8-frames/`). The S1 frame `u23-mast-prompt-plot-a-west-ring`
+     (both viewports) carries the live bounds of the Mast 04 prompt over the
+     scanner plate for the V-6 named item.
+392. **B-14: not reproduced; no change.** `EXTERIOR_FAMILIES.M23` is read
+     only by two model specs (`pilot_exterior_models`, `pilot_return_models`);
+     no runtime coverage reads it, and the S1 export's `pilot_coverage`
+     counts M23 `completed` / `valid` with its series opportunity. The
+     legacy entry stays (an accepted limitation of that test-only table).
+393. **Finding F-B1: the page-hide keep-alive export is never delivered
+     (pre-existing).** The compact envelope keeps every non-raw part of
+     the payload and drops raw events to fit 60 000 bytes, but the rest of
+     the payload alone exceeds that: 68.7 KB at the Dock and about 124 KB
+     at the route's end with all 1 097 raw events dropped (V-5 (a)
+     harness). Chromium refuses keep-alive bodies of that size: an in-page
+     probe got "TypeError: Failed to fetch" for every keep-alive body from
+     60 006 bytes up and 201 for 50 006 bytes; the S3 reloads' three
+     keep-alive attempts (about 90–101 KB, seen at the network layer) got
+     no response and never reached the ingest. The existing policy test
+     `participant_completion_handoff.spec.ts:1094` fails at the same
+     assertion (:1111, expected 1, received 0) at 43f12de and after Part B.
+     The cause is in `ResearchExportClient.ts` / the payload size, outside
+     allowlist B; V-12 (e) is FAIL until a correction unit or a named owner
+     exception. The completion export (full, about 0.6–1.2 MB, sent by an
+     ordinary request) is unaffected.
+394. **Finding F-B2: a reload's reading of a station worked earlier and only
+     shown again (open question).** In S3's fourth page load, rows guarded at
+     their presentation (M04, M05, M07, M09–M11, M14, M15) read
+     `interrupted` with their hold-back records, as §5.14 states. Rows whose
+     guard runs at the participant's OPENING (M01, M02, M03, M06, M12, M25) were
+     re-presented, not reopened, and read `declined` ("named on the route,
+     never opened") although each was administered in an earlier page load
+     of the identity. §5.14 says an administered item is never re-run and
+     its row is `interrupted`; whether a later load that presents the item
+     again and leaves it unopened should read `declined` or `interrupted` is
+     not stated for these rows. Reported for the owner; not resolved.
+395. **V-7: the cross-task candidates (U24-B).** One diagnostic case each,
+     ordinary play, run on the work tree and on the untouched 43f12de copy
+     (`B/diagnostics/V7-RESULTS.md`; the scheduled run's figures below):
+     C-2 as defined (bare `help` / `leave` ids in M15 / M16 / M18 under a
+     view-changing hotkey) NOT reproduced, by INSPECTION — every such hotkey
+     passes through a dialog or the help sheet, which carry no `help` id,
+     M15's results controls have no hotkey, and the frame keeps focus by id
+     (the runtime help-sheet round trips in M15 and M18 do not test the
+     candidate);
+     the same GP-1 pattern REPRODUCED in M14 (`b` on results page 2 with HELP
+     focused lands page 1 on HELP); C-8 REPRODUCED (M15: NEXT lands results
+     page 2 on FINISH, an actionable control; the code shows M14 and M16 the
+     same; M18 was fixed in U20); C-6 REPRODUCED (M16 opened, left by ESC
+     after 3.7 s and never reopened closes at the review with `active_ms`
+     75 521 ms, 80 192 ms at 43f12de; the guarded M18 control reads 6 298 ms
+     for a 5.2 s span);
+     C-7 REPRODUCED (M16 never opened before the review comes back live
+     after it and writes `intro_acknowledged` and `example_viewed`, unlike
+     the approved M18 shape of §5.326 (b)). Every reproduced case behaves
+     identically at 43f12de (pre-existing). V-2 is FAIL (C-8, the M14 GP-1
+     pattern, C-6) and the affected V-3 cells of M16 are FAIL (C-6, C-7)
+     until a correction unit or a named owner exception; the fixes are in
+     measured windows outside both allowlists.
+396. **Finding F-B6: the DEV page template contacts an external host.**
+     `index.html` loads `https://unpkg.com/github-corners/dist/embed.min.js`
+     unless `BUNDLE=true`. U24's runs answered it locally (no contact). It is
+     listed for the privacy and security gate (G.3 item 9).
+397. **The verification set and its gaps.** The plan's "no dependency
+     changed" check (`git diff --name-only 43f12de` intersected with each
+     spec's import graph; `B/diagnostics/import-graph.json`) moved 76 of 173
+     specs into the rerun set, because every route spec reaches
+     `pilotHelpers.ts` (B-8) and the registry (B-1); all of them were rerun
+     (`B/diagnostics/regression-set.txt`, 78 files with the plan's named
+     members). V-3's REUSED cells (`B/diagnostics/V3-REUSED-CELLS.md`) have
+     no evidence for: the valid zero of M02, M05, M08, M12, M22 and M26; M26
+     declined; the technical / invalid outcome of M08, M11 and M26 — V-3 is
+     PARTLY on those cells (no cell is left blank; each is reported "no
+     evidence").
+398. **U24 Part B row statuses** (plan §0.1; the table with evidence kinds
+     and paths is `U24-END-TO-END-REPORT.md` §3). V-1 PASS; V-2 FAIL (F-B9
+     RESUME by pointer, C-8, the M14 GP-1 pattern, C-6); V-3 FAIL (the M16
+     cells, C-6 / C-7) and PARTLY (named gaps); V-4 PARTLY — layer R pending
+     Part C; V-5 FAIL on (b) (F-B7, F-B8; F-B2 open); V-6 PARTLY; V-7 PARTLY
+     (C-2 by inspection only); V-8 PASS; V-9 PARTLY (B-8's premise, F-B3);
+     V-10 PASS at the documentation-only amendment of `cbc53dd` (PARTLY from
+     the closeout review until then; the owner's closure conditions,
+     §5.403); V-11 EXCEPTION-CONDITIONS-MET (P-1) (verify-unit exit 1 after
+     the commit; its only FAIL lines the ten untracked .agents/ / .codex/
+     files; the handoff); V-12 FAIL on (e) (F-B1). Every FAIL is
+     pre-existing at 43f12de, proved under the baseline rule, and its cause
+     lies outside allowlist B; none is fixed in Part B. Gate G.1 is MET at
+     the documentation-only amendment of `cbc53dd` (PENDING from the
+     closeout review until then; §5.402–§5.403); G.2 is not reached; no G.3
+     item is satisfied.
+399. **Findings F-B7 and F-B8: two V-5 (b) clauses after a reload
+     (U24-B; observed cases for the owner, no disposition proposed).**
+     (a) F-B7: M17, M23, M24 and M26, never presented in any of S3's four
+     page loads, read `interrupted` ("no current-load evidence after a
+     reload") under §3's shared rule, where the plan's V-5 (b) wording
+     expects `not_presented`. M13, opened and answered in load 1, reads
+     `interrupted` in load 4 with the detail text "lattice bench never
+     opened" — the disposition follows §3; the detail describes the current
+     load only. (b) F-B8: the M25 normality-belief question was presented
+     and its opportunity opened in load 2 (after the loops window closed),
+     with no closure before the reload; in load 4 the companion
+     `m25_normality_belief` reads `no_eligible_event` ("not exposed to the
+     repeat opportunity: post listed in the yard briefing, never opened")
+     and its validity record `participant_absent` ("0 required loops
+     completed"), although three loops were completed in load 2. V-5 (b)'s
+     "rows open at the reload are `interrupted`" and §5.14 are not met for
+     this companion. Source: `B/exports/S3.json` (scientific review M-1,
+     m-2). Pre-existing: the same S3 drivers on the untouched 43f12de copy
+     give all 45 feature rows identical, these included
+     (`B/diagnostics/S3-BASE-COMPARISON.md`). Not resolved here.
+400. **The regression set's failures, and its capture byproducts (U24-B).**
+     Twenty of the 79 regression commands exited 1
+     (`B/SONNET-PASS-REPORT.md`). Each was compared with the untouched
+     43f12de copy: eleven fail identically there (`final_scientific_gates`
+     M08 schedule; `participant_completion_handoff` :1094, F-B1;
+     `pilot_return` M25 / M21, the named exception; `pilot_route`, B-8 /
+     §5.387; the legacy capture specs
+     `pilot_return_capture`, `pilot_signal_capture`, `pilot_visual_capture`,
+     `v4_visual_capture`, `v4_core_dev_capture`, `world_v2_slice_capture`;
+     `world_v1_interactions` :184), and seven look / route-capture specs
+     fail identically for an unset capture-output directory (environmental).
+     Two needed a writer diagnostic: `pilot_closure` :154 stopped at `:202`
+     (the Deck's west door) where the base single-case run passed; test 1's
+     own route to that call, run three times per tree, failed there on
+     43f12de in 2 of 3 runs with the regression run's message byte for byte
+     (and on the work tree in 1 of 3) — a landing-dependent driver defect,
+     pre-existing, outside allowlist B
+     (`B/diagnostics/PILOT-CLOSURE-154-CLASSIFICATION.md`). `pilot_records`
+     :706 did NOT fail identically in the scheduled run: it stopped at a
+     single-press pickup (`:734`), before the base's failing step, and that
+     occurrence captured no state, trace or full event list, so its own
+     cause is not shown. One diagnostic rerun, on the work tree only, passed
+     `:734` and failed at the base's `:854` with the base's list
+     (`B/diagnostics/PILOT-RECORDS-706-CLASSIFICATION.md`); a passing rerun
+     does not explain the stop. In the Part B closeout (§5.402) one
+     owner-authorised targeted run per tree, retries disabled, with traces:
+     a fresh extraction of 43f12de stopped at the same assertion and step,
+     and its trace shows the single Space press taken by the Case Workspace
+     station (`pilot_station_opened`, `case_workspace`, at the press
+     position; no pickup event) after the open-loop approach left the
+     avatar about 11 px above the bundle; cbc53dd passed `:734` and failed
+     at the base's `:854`. Observed: 1 stop in 3 runs on the work tree, 1
+     in 2 on 43f12de; no U24 diff touches the path. The scheduled
+     occurrence is consistent with that mechanism but not shown to share
+     it; whether the defect lies in the test's positioning or in
+     overlapping station and bundle ranges is not established. The owner's
+     named exception EX-B-734 (§5.403) covers it for the acceptance of the
+     integration commit and the owner walkthrough only; it stays in the
+     pre-collection queue. The capture specs overwrote 95 tracked
+     screenshots under `docs/verification/` and created 19 new, untracked
+     files under `docs/verification/professional-visual-v4/` (18 PNG and
+     `projection/current.json`). Both sets were first copied with SHA-256
+     hashes to `B/regression-byproducts/` (`tracked\`, `untracked\`,
+     `tracked-list.txt`, `untracked-list.txt`, `SHA256SUMS.txt`, 114 of 114
+     verified in the closeout); then the 95 were restored from HEAD
+     (`git restore -- <paths>`, the U14 precedent) and the 19 were deleted
+     (`rm`). The restore and the deletion themselves were not logged: their
+     effect is shown only by the end state (a clean tree; the 19 absent and
+     untracked at HEAD) and by the preserved copies, all 95 of which differ
+     from HEAD. The owner accepted both operations as a one-time procedural
+     deviation on 23 October 2026, with no permission for further deletion.
+     The commit carries none of these files.
+401. **Finding F-B9: the ESC pause menu shows no Resume control
+     (pre-existing; U24-B).** S4's frame of the pause menu shows "Sound: on"
+     and the Controls card only; the Resume button and the dimming overlay
+     that `Menu.tsx` draws through phaser-jsx are not visible, and the card
+     runs past the canvas bottom. A diagnostic on the work tree and on the
+     untouched 43f12de copy, at 800 × 600 and 1280 × 720, gives
+     byte-identical frames, and a click at the Resume button's position
+     does not resume on either tree (`B/diagnostics/ESC-MENU-CLASSIFICATION.md`).
+     ESC resumes. Both trees log
+     `Invalid JSX type. Expected a class or function but got: undefined`
+     at each ESC-menu run (`B/logs/escdiag-work.log`, `escdiag-base.log`,
+     `r2-06-s4.log`); recorded, not diagnosed. A pointer-only participant
+     has no visible way back except the card's ESC line. V-2 is FAIL on
+     RESUME by pointer and V-6 records it, until a correction unit or a
+     named owner exception; `Menu.tsx` is outside allowlist B and
+     unchanged.
+402. **The Part B closeout corrections (23 October 2026; documentation
+     only).** Under the owner's closeout authorisation of 23 October 2026,
+     after the independent documentation review
+     (`…\u24-end-to-end-evidence\B-closeout\DOCUMENTATION-REVIEW.md`,
+     findings N-1 to N-9), this register, the end-to-end report, the guide
+     and the UNIT-LOG ("U24 Part B closeout") were corrected; no code, test,
+     export or frozen evidence file changed, and commit `cbc53dd` was not
+     then accepted. The superseded wording, kept for the record: §5.398
+     "V-10 PASS (the writer's inspection after the gameplay review's
+     corrections; not re-reviewed); V-11 set at the commit" and "Gate G.1 is
+     assessed met at the Part B commit" — now V-10 PARTLY, V-11
+     EXCEPTION-CONDITIONS-MET (P-1) with verify-unit's actual exit 1, and
+     G.1 PENDING, as the owner directed (N-1) (V-10 and G.1 superseded by
+     §5.403 (c) at the documentation-only amendment); §5.400 "twelve fail
+     identically there (`pilot_records` after the diagnostic below)" and
+     "the `:734` miss is recorded as intermittent, cause not determinable" —
+     now as §5.400 states (N-2); Unit 24-B (3) "with no failure attributable
+     to U24 (§5.400)" and "V-10 PASS on the writer's inspection" (N-2, N-5);
+     §5.400's B-8 item "`pilot_route` and `pilot_records`, B-8 / §5.387"
+     (N-2); §5.401 gains the console warning (N-9). The owner-authorised
+     targeted `:734` runs and their trace analysis are in the closeout
+     evidence (`…\u24-end-to-end-evidence\B-closeout-2\`, copied and
+     hash-verified on 23 October 2026, 59 of 59 files;
+     `PILOT-RECORDS-734-TARGETED-RUNS.md`); the Fable review of F-B2, F-B7
+     and F-B8 there (`FABLE-REVIEW-F-B2-F-B7-F-B8.md`) resolves nothing and
+     changes no row here.
+403. **The owner's closeout ruling of 23 October 2026 (verbatim in the
+     UNIT-LOG "U24 Part B closeout — owner ruling of 23 October 2026").**
+     (a) **The documentation corrections** N-1 to N-9 are accepted,
+     including the disclosed departures and the supplemental corrections to
+     frozen records; §5.400 now accounts for the 95 restored tracked
+     captures and the 19 deleted outputs, their preservation and the absence
+     of an operation log, and the report's V-9, B-8 and F-B3 describe the
+     `:854` baseline failure for the runs that reach that step, the
+     scheduled `pilot_records` run having stopped earlier at `:734`. (b)
+     **EX-B-734**, a named exception separate from contract B.17 and from
+     V-11 (which stays EXCEPTION-CONDITIONS-MET (P-1), verify-unit's actual
+     exit 1): it covers the `pilot_records.spec.ts` `:706` stop at `:734`
+     for accepting the Part B integration commit and beginning the owner
+     walkthrough only. Recorded as directed: the same assertion failed at
+     the same step on untouched 43f12de; that baseline occurrence's trace
+     shows the Case Workspace station taking the Space press instead of the
+     bundle pickup; the original scheduled occurrence had no trace and its
+     mechanism remains unproven; test positioning versus a
+     participant-facing interaction conflict remains unresolved (§5.219
+     records the Workshop floor near the cutter as lying within the 72 px
+     ranges of the Case Workspace and other stations or within reach of the
+     supply bundles); the observed run counts do not establish a failure
+     rate. It does not make the failed test PASS, does not establish
+     harmless flakiness and does not waive investigation before participant
+     collection; the issue stays in the pre-collection queue (report §8,
+     item 13). (c) **Closure of V-10 and G.1** only when the corrected guide
+     meets the existing walkthrough requirements, the evidence preservation
+     is verified and the documentation revision is committed — met at the
+     documentation-only amendment of `cbc53dd`; this closes neither G.2 nor
+     G.3, nor any other failed or partial row, nor any scientific
+     implementation finding. (d) **Reload-policy directions, owner-approved,
+     requiring a bounded implementation specification** (F-B2, F-B7, F-B8;
+     not implemented in U24 Part B; they promote no provisional event or
+     indicator into the canonical schema): direction (a), earlier opening —
+     a later load retains the prior-exposure evidence and applies the
+     approved interruption / hold-back rule without requiring an attempted
+     reopening; re-presentation alone never turns earlier administration
+     into a genuine refusal; direction (b), established absence — the task's
+     approved first-load administration and disposition rules apply only
+     where a logged check establishes the absence of an earlier opening
+     under the approved integrity requirements; a gap-free recorded stream
+     alone is insufficient; direction (c), uncertain history — after a
+     reload, unknown history stays uncertain and prevents potentially
+     repeated administration; missing evidence is never converted into
+     confirmed absence, refusal or low-trait evidence; uncertain history
+     stays distinct from contradictory or malformed evidence; direction (d),
+     separate occasions — the rules apply per occasion where the approved
+     task has separate occasions; prior administration of one does not
+     automatically invalidate another that remains eligible; direction (e),
+     exposure stages — availability or briefing is distinguished from the
+     actual task / stimulus presentation and opening, with defined evidence
+     for each relevant stage; existing presentation events are not silently
+     redefined; direction (f), the M25 belief question — where evidence
+     establishes that it was displayed before the reload, it counts as
+     opened; if unanswered, interruption and the existing no-repeat approach
+     apply; established earlier loop completion is never described as zero
+     loops or absent eligibility because current-load counters reset;
+     direction (g), earlier completed observations — preserved with their
+     provenance; the current-load row is not silently overwritten,
+     historical outcomes are not discarded, partial attempts are not
+     combined across loads and no observation is counted twice; a
+     session-level recovery or scoring mechanism is not authorised by this
+     direction alone; direction (h), Part C — the independent recount tests
+     the approved rules; agreement with production does not justify a
+     classification that violates them, and acceptance criteria are not
+     weakened to obtain agreement. The bounded correction specification is
+     prepared for the owner's approval in the closeout evidence
+     (`…\u24-end-to-end-evidence\B-closeout-3\RELOAD-CORRECTION-SPEC.md`);
+     nothing is implemented, no allowlist is expanded, Part C and U25 are
+     not begun.

@@ -1561,6 +1561,15 @@ becomes canonical.
   `opened_after_unestablished_absence`, where they apply. No total across
   items.
 
+U24-B (M22 only, candidates as before; no event, suffix, field or formula
+added or changed): by the owner's Part B ruling I-1 = a (22 October 2026)
+the M22 administration is `entry_state_version: 'm22-setbacks-v4'`
+(was `m22-setbacks-v3`), because two participant-facing report-1 lines
+changed to the ruled outcome-neutral wording (WO-11 "Coolant coupling — line
+check", WO-13 "Excavation field — survey record"). M22's requirement logic,
+forms and the `m22_revisions_begun` formula are unchanged; the version
+makes records written under the earlier wording self-identifying.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                               | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

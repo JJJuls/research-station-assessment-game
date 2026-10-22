@@ -535,52 +535,6 @@ export async function finishOutside(
 }
 
 /* ------------------------------------------------------------------ *
- * M19 — coupling
- * ------------------------------------------------------------------ */
-
-async function waitActs(page: Page, acts: number) {
-  await page.waitForFunction(
-    (expected) =>
-      ((window as unknown as { __exteriorProbe?: ExteriorProbe | null })
-        .__exteriorProbe?.m19.acts ?? -1) >= expected,
-    acts,
-    { timeout: 10_000 },
-  );
-  await waitNoWorldAction(page);
-}
-
-/** One coupling act by its option index (1 turn, 2 thaw, 3 inspect, 4 step away). */
-export async function couplingAct(page: Page, option: 1 | 2 | 3 | 4) {
-  const before = (await exteriorProbe(page)).m19.acts;
-
-  await openSite(page, 'coupling');
-  await selectPromptOption(page, option);
-
-  if (option === 4) {
-    await page.waitForTimeout(400);
-
-    return;
-  }
-
-  await waitActs(page, before + 1);
-}
-
-/** Works the coupling to completion by turning and thawing as needed. */
-export async function completeCoupling(page: Page, maxActs = 40) {
-  for (let step = 0; step < maxActs; step++) {
-    const probe = (await exteriorProbe(page)).m19;
-
-    if (probe.completion) {
-      return;
-    }
-
-    await couplingAct(page, probe.bound ? 2 : 1);
-  }
-
-  throw new Error('coupling not completed within the act budget');
-}
-
-/* ------------------------------------------------------------------ *
  * M20 — mast (start only)
  * ------------------------------------------------------------------ */
 

@@ -44,7 +44,6 @@ import {
   routeToWorkshopWork,
   SETTLE_PAUSE_MS,
   waitPromptLabel,
-  walkTo,
   workshopToConcourse,
   workshopVia,
 } from './pilotHelpers';
@@ -319,6 +318,34 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
       'proto_m05_start_opportunity_opened',
     );
 
+    // The reading-desk lamp (M05, Unit 6): the accepted extra job's start
+    // control is the surface's "Start the job" — the first work action —
+    // and the standard 2 s work cycle completes the window. U24 B-9: the
+    // driver takes the lamp job FIRST, before the briefed stations, so the
+    // 60 s focused start cap cannot elapse on the scripted route (register
+    // §5.290 (d); U17 closeout (3)); the M05 product is unchanged.
+    await openSurfaceAt(page, CONCOURSE.deskLamp, 'm05_lamp_job');
+    await page.waitForTimeout(450); // past the surface's settle window
+    await clickElement(page, 'start');
+    await page.waitForFunction(
+      () =>
+        (
+          window as unknown as {
+            researchRuntime?: { getEvents: () => { event_type: string }[] };
+          }
+        ).researchRuntime
+          ?.getEvents()
+          .some((e) => e.event_type === 'proto_m05_start_work_completed') ??
+        false,
+      undefined,
+      { timeout: 8000 },
+    );
+    await closeSurface(page);
+    types = await pilotEventTypes(page);
+    expect(types).toContain('proto_m05_start_started');
+    expect(types).toContain('proto_m05_start_work_completed');
+    expect(await itemStatus(page, 'M05')).toBe('pending'); // occasion 2 undeclared until the yard
+
     // Plan board: open the surface (above the host), lift and place a card by pointer, close.
     await openSurfaceAt(page, CONCOURSE.planBoard, 'm01_plan_board');
     const probe = (await surface(page))!;
@@ -392,34 +419,6 @@ test.describe('evidence-led pilot v2 — episodes 1 and 2 (Unit 2)', () => {
     await page.waitForTimeout(400);
     types = await pilotEventTypes(page);
     expect(types).toContain('proto_m09_checks_check_fulfilled');
-
-    // The reading-desk lamp (M05, Unit 6): the accepted extra job's start
-    // control is the surface's "Start the job" — the first work action —
-    // and the standard 2 s work cycle completes the window.
-    // World V1: reach the east–west axis first (the side counter blocks an
-    // x-first leg along the gauge row), then the reading nook.
-    await walkTo(page, CONCOURSE.monitorGauge.x, 13 * 32, { yFirst: true });
-    await openSurfaceAt(page, CONCOURSE.deskLamp, 'm05_lamp_job');
-    await page.waitForTimeout(450); // past the surface's settle window
-    await clickElement(page, 'start');
-    await page.waitForFunction(
-      () =>
-        (
-          window as unknown as {
-            researchRuntime?: { getEvents: () => { event_type: string }[] };
-          }
-        ).researchRuntime
-          ?.getEvents()
-          .some((e) => e.event_type === 'proto_m05_start_work_completed') ??
-        false,
-      undefined,
-      { timeout: 8000 },
-    );
-    await closeSurface(page);
-    types = await pilotEventTypes(page);
-    expect(types).toContain('proto_m05_start_started');
-    expect(types).toContain('proto_m05_start_work_completed');
-    expect(await itemStatus(page, 'M05')).toBe('pending'); // occasion 2 undeclared until the yard
 
     // Families are disjoint: every proto_* event carries exactly its own family
     // and the M09/M10 offers never reuse a raw event.

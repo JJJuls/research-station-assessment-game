@@ -17692,3 +17692,519 @@ authorised beyond round 2.
   departure (REG §5.384 (d)).
 - **Gate.** No blocking or major finding remains, so the commit procedure
   of `U24-OPUS-EXECUTE-A.md` §3 follows in full.
+
+## U24 Part B — integration and end-to-end evidence: the connected route, reproduction and exports (22 October 2026)
+
+- **Owner ruling (22 October 2026):** Juls, the research owner, ruled Part B
+  in the message and the clarification recorded verbatim below ("U24 Part B
+  owner ruling"), from `U24-OWNER-RULING.md` §5 and §6 (SHA-256
+  `07c8a85b23dcee3d6ef52b0603ace7972525a26bdda6d85fe7389ee5ab3ad39e`,
+  verified against the launch record). Selections: I-1 a (the exact neutral
+  wording of D-U24-1 §2, `m22-setbacks-v4`), I-2 a (for this walkthrough
+  only), I-3 a, VIS-1 a, VIS-2 a, AS-1 a (U25 not authorised), RC-1 a
+  (separate Part C; RC-2 and RC-3 undecided), P-1 a (verify-unit exit 1 is
+  EXCEPTION-CONDITIONS-MET, never PASS), P-2 (at most two bounded
+  correction rounds), R-1 (the Part A Fable review retained; an Opus writer,
+  Sonnet verification and read-only Opus reviews; no Fable), B-T1, B-T2,
+  P-3 (mandatory), PKG-3 a, M07-Q (three unresolved pre-collection items).
+  The clarification adds the named commit-only exception of contract B.17
+  (`pilot_return` M25 / M21) and the Part B M07 boundary: "No M07
+  production, measurement or participant-behaviour change. The sole
+  permitted M07-related test change is B-20/B-T1’s exact readiness predicate
+  and comment correction in returnHelpers.ts."
+- **Governing package:** `C:\Users\Juls\.codex\visualizations\2026\10\21\u24-end-to-end`
+  (amendment 3; manifest SHA-256
+  `4b9b27986c4f3a04a88567ee1a931d1dce90b1abeeaf578eb5d3d1b405141878` per the
+  launch record). `U24-CONTRACT.md` SHA-256
+  `ad803f24d92b77ba2f0355dc323f20077824514349c997e557901ad18ff368c8`;
+  `U24-AMENDMENT-3-POST-PART-A.md` SHA-256
+  `a7f8ee04ebd3efa3d9aeac2d9ee2fc012438465cc8a26d290e9d2a9100d0ea25`;
+  allowlist `U24-ALLOWLIST-B.txt` SHA-256
+  `ed0b5e56a9154da514b0a4239b255b0f8a657c61d0b5e41b252c28ae18a07724`
+  (27 paths, equal to `CLAUDE_UNIT_ALLOWLIST`).
+- **Gate (verified, not assumed):** writer Opus 5.5 (`claude-opus-5-5`);
+  worktree
+  `C:\Users\Juls\.codex\worktrees\u24-end-to-end\research-station-assessment-game`,
+  branch `codex/u24-end-to-end`, HEAD
+  `43f12debfe89b7fc97a5911eb9425dddbebcdfa9` (parent
+  `b46b76bf2838a052bd23230e86309e5f18588941`), clean except the ten
+  inventoried foreign files; ports 5187 and 5188 free; the session identity
+  `JJJuls <juls.ranft@gmail.com>` (session only). Ruling continuity: the
+  ruling's §3 / §4 equal the verbatim Part A record above, and its §1 Part B
+  lines equal its §5 message (`B/ruling-continuity.txt`: ALL MATCH). P-3: the
+  durable Part A evidence
+  `C:\Users\Juls\.codex\visualizations\2026\10\22\u24-part-a-43f12de-evidence`
+  re-verified against its `.SHA256-manifest.csv` (manifest SHA-256
+  `e0591cc2…13e`): 4870 files, none missing, extra or changed. P-1 / D10:
+  the ten `.agents/` / `.codex/` files re-hashed against
+  `…\A\FOREIGN-INVENTORY-SUPPLEMENT-2026-10-22.json`: exactly ten,
+  untracked, unstaged and hash-identical (`B/gate-hashes.json`); never
+  staged or edited; their creator and creation time are not inferred. Live
+  guard probes: a write to `src/GUARD-ALLOWLIST-PROBE.ts` was BLOCKED by the
+  `PreToolUse` guard; a write to `$U24_EVIDENCE_DIR/B/guard-probe.txt`
+  succeeded (`B/GUARD-PROBES.txt`).
+- **Part A evidence** is cited in Part B only under the durable root above.
+
+### U24 Part B owner ruling (22 October 2026, verbatim)
+
+**The owner's Part B message (22 October 2026):**
+
+```text
+I approve the following Part B selections and authorize the bounded PKG-3 amendment-3 preparation pass. This authorizes package preparation only, not Part B implementation or launch.
+
+Selections:
+- I-1: a, using the exact proposed neutral wording and m22-setbacks-v4; no change to M22’s requirement logic, forms or formula.
+- I-2: a, accepted for the owner walkthrough only, with a decision still required before participant collection.
+- I-3: a.
+- VIS-1: a.
+- VIS-2: a, including the named visual review and later owner disposition.
+- AS-1: a, scheduling the assignment correction as U25 before collection and refreshing the affected evidence afterward. This does not authorize U25 implementation.
+- RC-1: a, separate Part C. RC-2 and RC-3 remain undecided.
+- P-1: a under the accepted inventory conditions; verify-unit exit 1 remains EXCEPTION-CONDITIONS-MET, never PASS.
+- P-2: at most two bounded correction rounds for Part B. Preserve Part A’s historical rulings and avoid duplicate active P-2 entries.
+- R-1: retain the completed Part A Fable review. Part B uses an Opus writer, Sonnet verification and independent read-only Opus reviews. No additional Fable use.
+- B-T1 and B-T2: approved as proposed.
+- P-3: approved as a mandatory prerequisite.
+- PKG-3: a.
+- M07-Q: record all three questions as unresolved pre-collection items. No M07 change is authorized in Part B. The historical-data question applies only if pre-fix data will be analysed; do not infer that participant data exist.
+
+Use this exact durable evidence root:
+C:\Users\Juls\.codex\visualizations\2026\10\22\u24-part-a-43f12de-evidence
+
+Verify it against its adjacent .SHA256-manifest.csv. Make that verification mandatory in Part B’s prerequisite checks and reconcile all reused-evidence references to this location.
+
+Apply D1–D10 and the approved package changes, retaining the 27-path Part B allowlist. B-T1 permits only the specified M07 readiness predicate/comment correction in returnHelpers.ts, alongside its existing approved purpose. Preserve assertions and Part A’s local helper.
+
+For B-T2, permit cleanup only of the checker’s own newly created temporary directory, after confirming its resolved path is inside the OS temporary directory. Preserve all evidence and pre-existing files.
+
+Do not weaken route or reload acceptance criteria. A pre-existing failure remains a failure unless corrected and verified or explicitly excepted by name.
+
+Finish with updated hashes, one narrow Sonnet consistency check, and Part B check-only. Provide the exact user-run launch command and execution prompt, with no placeholders. If a guard prevents saving the amended package, provide the exact copy-and-verification command instead; do not bypass the guard.
+
+Stop before launch. No repository changes, installation, new worktree, commit, merge, push or Part C execution.
+```
+
+**The owner's clarification (22 October 2026, before the amendment-3
+package was applied; it governs where it differs from the message above):**
+
+```text
+I authorize this narrow clarification of the staged amendment-3 package before it is applied. This remains preparation only.
+
+1. Named commit-only exception
+
+For contract B.17 only, I authorize an exception for these two documented pilot_return regression outcomes:
+- M25: expected completed, observed pending.
+- M21: expected open, observed pending.
+
+The exception applies despite e2e/pilot_return.spec.ts being allowlisted, and only if the baseline comparison confirms the same logical assertions, expected values, observed failures and execution step on untouched 43f12debfe89b7fc97a5911eb9425dddbebcdfa9 and the Part B result.
+
+Preserve the assertions, actual failures and exit codes. Record any effect of the approved driver changes. Do not infer root cause from the assertions or use this exception to excuse a new or worsened failure attributable to Part B.
+
+This is permission to commit under this specific condition only. It does not satisfy any V-row, route-completion requirement, G.1, G.2 or participant-collection gate. All other commit conditions and stop rules remain unchanged. Do not redefine “outside the allowlist” globally.
+
+2. M07 boundary
+
+Replace ambiguous statements such as “No M07 change of any kind” with:
+
+“No M07 production, measurement or participant-behaviour change. The sole permitted M07-related test change is B-20/B-T1’s exact readiness predicate and comment correction in returnHelpers.ts.”
+
+Preserve Part A’s local helper and all behavioural assertions.
+
+Record this instruction verbatim in the ruling and reconcile the affected contract and execution-prompt clauses. Preserve earlier rulings and historical evidence.
+
+Refresh the affected hashes, apply-script pins and handoff commands. Run only the necessary package consistency checks and check-only; no additional scientific review or broad audit.
+
+Keep the durable Part A evidence untouched. Do not apply the package, launch Part B, edit repository files or commit anything. Return the final apply, check-only and launch commands with their updated hashes, then stop.
+```
+
+### U24 Part B — what was done (contract B.7 limits)
+
+- **Corrections B-1 to B-20** (REG §4 "Unit 24-B" (1)), every one inside
+  its per-file limit:
+  - the registry's `window` labels after a no-consumer grep (B-1, B-2,
+    B-17);
+  - the unused coupling helpers removed (B-4);
+  - the legacy M20 helper re-expressed through the v3 console (B-5);
+  - the U8-12 gate restated (B-7);
+  - the bare-route check by exact type and `input_mode: 'system'`, with a
+    pure negative probe (B-8);
+  - the episode-1 lamp-job order (B-9);
+  - titles, comments and the room-doc row (B-10, B-15, B-16);
+  - the M22 wording, `m22-setbacks-v4` and the handover text (B-11, I-1 = a);
+  - the yard probe cleared on pause, with the helper's refusal (B-12);
+  - B-14 not reproduced, so no change;
+  - the M07 readiness predicate `=== 'accent'` and its comment (B-20 /
+    B-T1).
+- **No other M07 change.** None to production, measurement or participant
+  behaviour.
+- **No new event type.** No exported value changed beyond I-1 = a.
+- **New evidence code:**
+  - `e2e/u24Helpers.ts`: the drivers, network isolation, export capture,
+    input counter, stage log, frame recorder and L2 expectations;
+  - `e2e/u24_end_to_end.spec.ts`: the pure checks, S1 at 800 × 600 and
+    1280 × 720, S2 to S5, and the V-6 fallback-font pass;
+  - `e2e/u24_export_recovery.spec.ts`: V-5, V-12 and S6.
+- **Saved exports:** S1 at 800 × 600, S1 at 1280 × 720, S2, S3 and S6,
+  with `EXPORTS-SHA256SUMS.txt`.
+
+### U24 Part B — verification, reviews and correction rounds
+
+- **Scheduled pass** (Sonnet 5.5, `claude-sonnet-5-5`; R.2 substitution
+  for `test-reviewer`; `B/SONNET-PASS-REPORT.md`):
+  - static checks exit 0;
+  - every U24 scenario exit 0;
+  - L1 byte-equal for S1 × 2, S2 and S3;
+  - L2 26 / 26 for S1 × 2 and S2;
+  - V-7 gave identical results on the work tree and at 43f12de;
+  - the fallback-font pass exit 0 (two S1 runs);
+  - in the regression set, 59 of 79 commands exit 0.
+- **Regression failures** (REG §5.400): every one was compared with
+  43f12de, and none is attributable to U24. Two needed writer diagnostics:
+  - `pilot_closure` `:154`: test 1's full route, run three times per tree,
+    fails at the same step on 43f12de;
+  - `pilot_records` `:706`: one rerun ends at the base's failure.
+- **Capture byproducts.** The capture specs' screenshots were preserved
+  with hashes (`B/regression-byproducts/`) and restored from HEAD.
+- **Scientific review** (Opus 5.5, `claude-opus-5-5`; R.2 substitution;
+  `B/SCIENTIFIC-REVIEW.md`). No blocking finding. Dispositions:
+  - M-1: the M25 companion open at reload 2. Recorded as F-B8 (REG §5.399);
+    pre-existing (`B/diagnostics/S3-BASE-COMPARISON.md`). V-5 (b) now also
+    records every feature row and asserts that no opportunity is answered
+    in two loads.
+  - M-2: M03 added to F-B2 and to its V-3 cell.
+  - M-3: `pilot_records` reclassified after a diagnostic
+    (`B/diagnostics/PILOT-RECORDS-706-CLASSIFICATION.md`); §5.387 now cites
+    the run that supports it.
+  - m-1: the limit of the input-mode rule is stated, in REG §5.387 and in
+    the `pilotHelpers.ts` comment.
+  - m-2: M17 added to F-B7, and the never-presented cells are marked.
+  - m-3: the M11 cell corrected to value 1, 1 / 2.
+  - m-4: the register and addendum line citations are labelled as at
+    43f12de, with their offsets.
+  - m-5: the L2 check strengths are stated.
+  - NOTE on the M13 detail text: added to F-B7.
+- **Gameplay review** (Opus 5.5; R.2 substitution; `B/GAMEPLAY-REVIEW.md`).
+  Dispositions:
+  - B1 (BLOCKING), the `pilot_closure` classification: resolved by the
+    full-route runs on both trees
+    (`B/diagnostics/PILOT-CLOSURE-154-CLASSIFICATION.md`). The base fails
+    at `:202` in two of three runs, with the regression run's message byte
+    for byte.
+  - M1, the pause menu's Resume: base-proved at both viewports, and a click
+    does not resume (`B/diagnostics/ESC-MENU-CLASSIFICATION.md`). Recorded
+    as F-B9 (REG §5.401), with V-2 FAIL.
+  - M2, the V-2 pairs: S4 now covers HELP / CLOSE HELP by pointer, RESUME
+    by pointer (recorded) and a demonstrated absence of pointer station
+    entry. The remaining gaps are named in V-2.
+  - M3, the guide: the steps without a frame are listed, and every non-PASS
+    row, finding and regression outcome is listed.
+  - Minors:
+    - the V-7 figures are cited from the scheduled run;
+    - C-2 is labelled INSPECTION;
+    - the guide's C-6 and S3 wording corrected;
+    - the S3 reload-2 deviation stated;
+    - the S4 synthetic focus labelled;
+    - the report's font-pass row corrected;
+    - the preview-build export warning added to the guide;
+    - the harness settings disclosed.
+- **Visual review** (Opus 5.5; R.2 substitution; `B/VISUAL-REVIEW.md`):
+  - M1 (MAJOR) is F-B9, pre-existing.
+  - The MINOR findings are recorded as F-B10, with none changed (outside
+    allowlist B).
+  - The mast-prompt item is judged legible, covers no scanner text and
+    reads as a fourth scanner row. The owner's disposition is G.3 item 6.
+  - V-8 is confirmed.
+- **Correction rounds: two of two** (P-2).
+  - Round 1 (`B/SONNET-ROUND1-REPORT.md`): static checks, pure checks, the
+    export-recovery spec and the L3 pure oracles (472 passed) all passed.
+    S4 failed on the writer's new driver, which read the closed surface
+    probe `{ open: false }` as open; the frame's sidecar shows it closed.
+  - Round 2 (`B/SONNET-ROUND2-REPORT.md`): after the one-line driver fix,
+    the static checks, the pure checks and S4 passed.
+- **Writer diagnostics** (scratchpad, not committed; each on both trees):
+  - the deck west door, reduced and full route;
+  - the pause menu;
+  - S3 on 43f12de;
+  - the `pilot_records` rerun.
+
+### U24 Part B — statuses and what stays open
+
+- **Row statuses** (REG §5.398; report §3):
+  - PASS: V-1, V-8;
+  - FAIL, every one pre-existing at 43f12de and proved: V-2, V-3, V-5 (b),
+    V-12 (e);
+  - PARTLY: V-4 (layer R pending Part C), V-6, V-7, V-9;
+  - V-10: PASS on the writer's inspection after the review corrections;
+  - V-11: set at the commit; the results are in the handoff.
+- **Named commit-only exception** (contract B.17): `pilot_return` M25 and
+  M21. The assertions, values and steps are the same at 43f12de; the
+  approved driver changes (B-5, B-20) left them unchanged; no root cause is
+  inferred.
+- **Gates:**
+  - G.1 is assessed met at this commit; the owner accepts or rejects it.
+  - G.2 is not reached.
+  - No G.3 item is satisfied: G.3 items 1 to 12 in the report §8, M07-Q
+    included.
+- **Not done, by contract:** no fix of any pre-existing defect outside
+  allowlist B, no U25 work, no Part C work. Nothing is pushed or merged.
+  No participant data and no external contact; non-localhost requests were
+  answered locally.
+- **Proposed verification reductions** (for the owner; none applied):
+  - In this unit the import-graph rerun rule pulled 76 of 173 specs,
+    because every route spec reaches `pilotHelpers.ts` and the registry. A
+    comment-only or label-only change could be exempted by a stated
+    no-behaviour-change check.
+  - The legacy look and route-capture specs need a capture-output directory
+    and write into tracked folders. They could be excluded from the
+    regression set, or given a scratch output directory, once the owner
+    confirms that I-3 = a supersedes them.
+
+## U24 Part B closeout — evidence, documentation corrections and the `:734` diagnostic (23 October 2026)
+
+A narrow closeout extension authorised by the owner on 23 October 2026,
+beyond the two completed correction rounds. Commit `cbc53dd` is unchanged
+and not yet accepted; no amendment, new commit, merge, push or Part C work
+is authorised. The entry "U24 Part B" above is kept verbatim; the
+corrections below supersede the statements they name. The closeout evidence
+cited here (`B-closeout-2\`) is in the writer's scratchpad until the owner
+copies it to `…\u24-end-to-end-evidence\B-closeout-2\` and verifies its
+manifest; the copy must not follow the `pr734\base-43f12de\node_modules`
+junction.
+
+### U24 Part B closeout — what was done
+
+- **Evidence preservation.** The owner ran the handoff's copy; the writer
+  re-verified the Part B copy `B\`: 1 864 of 1 864 files match
+  `…\u24-end-to-end-evidence\B.SHA256-manifest.txt` (SHA-256 `C6224BF7…`),
+  none extra, and the seven files of `B-closeout\` match their CSV
+  manifest. The closeout evidence `B-closeout-2\` is not yet copied.
+- **The owner's evidence decisions** (23 October 2026, in summary):
+  - the restoration of the 95 tracked captures and the removal of exactly
+    the 19 inventoried, preserved outputs are accepted as a one-time
+    procedural deviation. The `git restore` and the `rm` themselves were
+    not logged: their effect is shown only by the end state and the
+    preserved, hash-verified copies. No further deletion is permitted;
+  - the retained round-1 S6 export and the round-1 results are accepted
+    only for claims that run supports. The scheduled pass's S6 export is
+    lost; its hash survives only in the writer session's transcript
+    (`…\B-closeout-2\APPENDIX-S6-SCHEDULED-HASH.md`). This makes no
+    failed row pass.
+- **Documentation corrections** (the independent review's N-1 to N-9;
+  REG §5.402): V-11 now reads EXCEPTION-CONDITIONS-MET (P-1), verify-unit's
+  actual exit 1, in the guide, the report and the register; V-10 reads
+  PARTLY and G.1 PENDING, as the owner directed; the `pilot_records` `:734`
+  stop is no longer counted as failing identically or as explained (N-2);
+  the regression outcomes carry their status words and diagnostic paths
+  (N-3); the V-10 row states that the plan's frame check holds for the
+  framed steps only (N-4); the register's Unit 24-B status summary is
+  complete (N-5); the frame folder's availability is stated (N-8); the
+  ESC-menu console warning is recorded (N-9). N-6 (the handoff) is
+  corrected by a supplemental evidence record
+  (`…\u24-end-to-end-evidence\B-closeout-2\SUPPLEMENT-EVIDENCE-CORRECTIONS.md`,
+  S-1), the handoff itself being frozen evidence.
+- **Corrections to the entry above** (kept verbatim there):
+  - "**Writer diagnostics** (scratchpad, not committed; each on both
+    trees)" — the deck door, the pause menu and S3 ran on both trees; the
+    `pilot_records` rerun ran on the work tree only (N-7);
+  - "none is attributable to U24" and "`pilot_records` `:706`: one rerun
+    ends at the base's failure" — none is SHOWN attributable to U24; the
+    rerun does not explain the scheduled run's `:734` stop (N-2);
+  - "V-10: PASS on the writer's inspection after the review corrections"
+    and "V-11: set at the commit; the results are in the handoff" — V-10
+    PARTLY; V-11 EXCEPTION-CONDITIONS-MET (P-1), exit 1 (N-1);
+  - "G.1 is assessed met at this commit" — G.1 PENDING.
+
+### U24 Part B closeout — the `pilot_records` `:734` diagnostic
+
+- Sonnet 5.5 inspected the existing evidence first: cause not determinable
+  (no trace, no state, a truncated event list); the writer's label
+  "intermittent driver miss" was not supported.
+- Under the owner's authorisation, one targeted run per tree
+  (`pilot_records.spec.ts:706`, `--retries=0`, `--trace on`, a fresh
+  folder): a fresh extraction of 43f12de stopped at the same `:734`
+  assertion and step; its trace shows the single Space press taken by the
+  Case Workspace station (`pilot_station_opened`, `case_workspace`, at the
+  press position; no pickup event) after the open-loop approach left the
+  avatar about 11 px above the bundle. The cbc53dd run passed `:734` and
+  failed at the base's `:854`
+  (`…\B-closeout-2\PILOT-RECORDS-734-TARGETED-RUNS.md`).
+- Observed: 1 stop in 3 runs on the work tree, 1 in 2 on 43f12de; no U24
+  diff touches the path. The scheduled occurrence is consistent with the
+  traced mechanism but not shown to share it; whether the defect lies in
+  the test's positioning or in overlapping station and bundle ranges is
+  not established. No exception is granted for it; commit acceptance stays
+  with the owner.
+
+### U24 Part B closeout — reviews
+
+- **Fable** (`claude-fable-5-1`, one fresh read-only review of F-B2, F-B7
+  and F-B8; `…\B-closeout-2\FABLE-REVIEW-F-B2-F-B7-F-B8.md`):
+  recommendations only, no
+  ruling. It corrected the packet: the logged reload check already exists
+  for seven rows (M07, M14, M15, M16, M18, M19, M20), not two; a complete,
+  lossless history does not establish absence under REG §5.290 (a), and
+  for M13 and M17 no presentation record exists; F-B2 is REG §5.270's
+  stated limitation. No row, disposition or scientific choice changed.
+- **Independent Opus check of the corrected findings**
+  (`…\B-closeout-2\DOCUMENTATION-CLOSEOUT-CHECK.md`): every finding
+  addressed (N-1, N-3, N-4, N-8, N-9 with the reviewed wording; N-2, N-5,
+  N-6, N-7 with justified departures); its path, preservation-scope and
+  wording issues were applied before this entry was final.
+
+### U24 Part B closeout — owner ruling of 23 October 2026 (verbatim)
+
+The entries "U24 Part B" and "U24 Part B closeout" above are kept as
+written; where they say that no exception is granted for the `:734` stop,
+that commit acceptance stays with the owner, that no amendment is
+authorised, that `B-closeout-2\` is not yet copied, that V-10 is PARTLY or
+that G.1 is PENDING, this ruling and the record below supersede them.
+
+**The owner's closeout message (23 October 2026):**
+
+```text
+I approve the proposed corrections and the following bounded closeout. Continue in this Opus conversation; do not restart the Part B launcher.
+
+Worktree:
+C:\Users\Juls\.codex\worktrees\u24-end-to-end\research-station-assessment-game
+
+Expected branch: codex/u24-end-to-end
+Expected HEAD: cbc53ddf1d5380492ecd892409d12f8ca6705162
+
+The four existing documentation changes are expected. Preserve them and all unrelated files. Verify the entry state without rerunning the broad audit.
+
+1. Evidence preservation
+
+Confirm that B-closeout-2 has been copied and hash-verified at its intended durable destination, including its 59-file inventory and both traces. Confirm the previously preserved Part B and Part A evidence remains unchanged.
+
+If the latest copy has not occurred, give me the existing copy command. Continue independent preparation, but do not amend the commit or close the walkthrough gate before preservation is confirmed.
+
+Keep frozen evidence immutable. Put additional records in a separately identified supplemental folder.
+
+2. Explicit exception for pilot_records :734
+
+I grant a named exception, EX-B-734, for accepting the Part B integration commit and beginning my owner walkthrough only.
+
+Record precisely:
+- The same assertion failed at the same step on untouched 43f12de.
+- That baseline occurrence’s trace shows the Case Workspace taking the Space press instead of the bundle pickup.
+- The original scheduled occurrence had no trace; its mechanism remains unproven.
+- Test positioning versus a participant-facing interaction conflict remains unresolved.
+- The observed run counts do not establish a failure rate.
+
+This exception does not make the failed test PASS, establish harmless flakiness, or waive investigation before participant collection. Keep the issue in the pre-collection queue.
+
+No additional browser runs are authorized for this documentation closeout.
+
+3. Finish the documentation corrections
+
+I accept the reviewed N-1–N-9 corrections, including the disclosed departures and supplemental corrections to frozen records.
+
+Finish the two remaining factual omissions:
+- REG §5.400 must account for both the 95 restored tracked captures and the 19 deleted outputs, their preservation, and the absence of an operation log.
+- Qualify V-9, B-8 and F-B3 so that the :854 baseline failure describes runs reaching that step; the scheduled run stopped earlier at :734.
+
+Repository edits remain limited to these four files under docs/verification/station-080-m26/:
+- OWNER-WALKTHROUGH-GUIDE.md
+- U24-END-TO-END-REPORT.md
+- M01-M26-IMPLEMENTATION-REGISTER.md
+- UNIT-LOG.md
+
+Preserve verbatim historical reports and append corrections where required. Record this owner ruling and its date.
+
+Keep V-11 as EXCEPTION-CONDITIONS-MET (P-1), with actual exit 1. Record EX-B-734 separately.
+
+V-10 and G.1 may close only after the corrected guide meets the existing walkthrough requirements, evidence preservation is verified, and the documentation revision is committed. This does not close G.2, G.3, other failed or partial rows, or scientific implementation findings.
+
+4. Approved reload-policy directions
+
+Record these as owner-approved directions requiring a bounded implementation specification:
+
+a. Earlier opening:
+A later load must retain prior-exposure evidence and apply the approved interruption/hold-back rule without requiring an attempted reopening. Re-presentation alone must not turn earlier administration into a genuine refusal.
+
+b. Established absence:
+Use the task’s approved first-load administration and disposition rules only where a logged check establishes absence of an earlier opening under the approved integrity requirements. A gap-free recorded stream alone is insufficient.
+
+c. Uncertain history:
+After a reload, unknown history must remain uncertain and prevent potentially repeated administration. Do not convert missing evidence into confirmed absence, refusal or low-trait evidence. Preserve the distinction between uncertain history and contradictory or malformed evidence.
+
+d. Separate occasions:
+Apply these rules per occasion where the approved task has separate occasions. Prior administration of one must not automatically invalidate another that remains eligible.
+
+e. Exposure stages:
+Distinguish availability or briefing from actual task/stimulus presentation and opening. Define the evidence for each relevant stage; do not silently redefine existing presentation events.
+
+f. M25 belief question:
+Where evidence establishes that the question was displayed before the reload, it counts as opened. If unanswered, apply interruption and the existing no-repeat approach. Do not describe established earlier loop completion as zero loops or absent eligibility merely because current-load counters reset.
+
+g. Earlier completed observations:
+Preserve completed observations and their provenance. Do not silently overwrite the current-load row, discard historical outcomes, combine partial attempts across loads or count an observation twice. A session-level recovery/scoring mechanism is not authorized by this direction alone.
+
+h. Part C:
+The independent recount must test the approved rules. Agreement with production does not justify a classification that violates those rules. Do not weaken acceptance criteria to obtain agreement.
+
+These directions do not promote provisional events or indicators into the canonical schema.
+
+5. Prepare the bounded correction scope
+
+Using the existing Fable findings and only necessary dependency checks, prepare one concise correction specification covering the affected reload handling.
+
+Include:
+- the exact proposed writable paths and dependencies;
+- a per-task/per-occasion outcome table;
+- required logged evidence and integrity handling;
+- M23’s computed-but-unlogged check;
+- the missing guards identified for M17, M24 and M26;
+- M25 primary and companion handling;
+- focused runtime, extraction and recount acceptance cases;
+- the exact implications for Part C coverage and acceptance wording;
+- any remaining owner choice that these directions genuinely do not resolve.
+
+Separate current-load dispositions from historical-result recovery. Identify scope changes explicitly.
+
+Do not edit implementation or test files, expand the live allowlist, launch Part C, or begin U25. Present the concrete scope for my approval.
+
+6. Verification and commit authorization
+
+Opus remains the sole writer. Sonnet performs the necessary documentation formatting, whitespace and existing scope checks. Use one focused independent Opus check of the final documentation and proposed correction specification, with only affected follow-up checks if needed.
+
+No further Fable review, broad scientific audit or full runtime matrix is authorized.
+
+Once the documentation conditions above are satisfied, I explicitly authorize exactly one documentation-only amendment to cbc53dd, retaining its subject and existing implementation. Stage only the four named documentation files. Do not change Git configuration.
+
+Report the new SHA, exactly what differs from cbc53dd, the checks performed on the amended revision, and which runtime evidence belongs to the original revision.
+
+No push, merge, deployment, deletion or worktree cleanup.
+
+Finish with the closeout status, durable evidence paths, bounded correction specification and any remaining owner decisions. Join all work and stop.
+```
+
+### U24 Part B closeout — record under the ruling of 23 October 2026
+
+- **Entry state** (verified without rerunning the broad audit): branch
+  `codex/u24-end-to-end`, HEAD `cbc53ddf…`, the four expected
+  documentation changes (blobs `3d3ee52f`, `89e2577e`, `7bdfe63e`,
+  `a0d711e9`), `?? .agents/` and `?? .codex/` only. The worktree's hooks
+  path (`.husky/_`) is absent, as at the original commit; its checks are
+  run explicitly.
+- **Evidence preservation, verified on 23 October 2026** against each
+  manifest: `…\u24-end-to-end-evidence\B-closeout-2\` 59 of 59 files
+  (manifest `544C2DFF…`), both trace archives matching
+  `pr734\SHA256SUMS.txt`, identical to its scratchpad source; `B\` 1 864 of
+  1 864 (`C6224BF7…`); `B-closeout\` 7 of 7; the Part A evidence 4 870 of
+  4 870 against `u24-part-a-43f12de-evidence.SHA256-manifest.csv`. The
+  records of this step are in a separate supplemental folder,
+  `…\u24-end-to-end-evidence\B-closeout-3\`.
+- **Documentation.** REG §5.400 now accounts for the 95 restored captures
+  and the 19 deleted outputs, their preservation and the unlogged
+  operations; the report's V-9, B-8 and F-B3 describe the `:854` failure
+  for the runs that reach that step. EX-B-734 is recorded in the report
+  (§3, §8 item 13, §9), the guide (§5, §6 item 13) and REG §5.403; V-11
+  stays EXCEPTION-CONDITIONS-MET (P-1), actual exit 1. The reload-policy
+  directions are REG §5.403 (d). V-10 PASS and G.1 MET at the
+  documentation-only amendment of `cbc53dd`, under the ruling's three
+  conditions; nothing else closes.
+- **The bounded correction specification** for the approved directions is
+  `…\B-closeout-3\RELOAD-CORRECTION-SPEC.md`, for the owner's approval; no
+  implementation or test file is edited, the live allowlist is unchanged,
+  and Part C and U25 are not begun.

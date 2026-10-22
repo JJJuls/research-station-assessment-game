@@ -1075,7 +1075,11 @@ async function waitStageDone(page: Page, stage: number) {
   );
 }
 
-/** Waits until the ADVANCE control is enabled again (settle re-render on the surface clock). */
+/**
+ * Waits until ADVANCE is ready again (settle re-render on the surface
+ * clock): ready is `accent`; while settling it is `idle` (focusable,
+ * presses refused) and `disabled` once the project is complete (U24 B-20).
+ */
 async function waitAdvanceEnabled(page: Page) {
   await page.waitForFunction(
     () =>
@@ -1085,8 +1089,8 @@ async function waitAdvanceEnabled(page: Page) {
             elements: { id: string; state: string }[];
           } | null;
         }
-      ).__workSurfaceProbe?.elements.find((e) => e.id === 'advance')?.state !==
-      'disabled',
+      ).__workSurfaceProbe?.elements.find((e) => e.id === 'advance')?.state ===
+      'accent',
     undefined,
     { timeout: 20_000 },
   );
@@ -1115,54 +1119,24 @@ export async function calibrationReturn(page: Page, stages: number) {
 }
 
 /* ------------------------------------------------------------------ *
- * M20 resume — feed console
+ * M20 — feed console (v3 route, `m20-feed-returns-v2`)
  * ------------------------------------------------------------------ */
 
-const INDOOR_STAGES = ['power_feed', 'align_feed', 'lock_alignment'] as const;
+/** The console's view settle (`m20_returns_route.spec.ts` SETTLE_MS). */
+const FEED_CONSOLE_SETTLE_MS = 400;
 
-/** Opens the console surface; returns the probe (throws if unavailable). */
+/**
+ * Opens the feed console the way the v3 route driver does
+ * (`m20_returns_route.spec.ts` openConsole: the audited approach, SPACE,
+ * then the view settle); returns the surface probe. U24 B-5: replaces the
+ * legacy v2 drivers, whose `resume` / `stage_action` path left the route in
+ * U22 (register §5.353).
+ */
 export async function openFeedConsole(page: Page) {
   await openWorkshopSurface(page, 'feedConsole', 'm20_feed_console');
+  await page.waitForTimeout(FEED_CONSOLE_SETTLE_MS + 50);
 
   return (await surface(page))!;
-}
-
-/** Resumes and completes `stages` console stages (timed, on the surface clock). */
-export async function resumeAntenna(page: Page, stages: number) {
-  await openFeedConsole(page);
-  await keyActivate(page, 'resume');
-  await page.waitForFunction(
-    () =>
-      (window as unknown as { __returnProbe?: ReturnProbe | null })
-        .__returnProbe?.m20.returned === true,
-    undefined,
-    { timeout: 5000 },
-  );
-
-  for (let stage = 0; stage < stages; stage += 1) {
-    const expected = stage + 1;
-
-    await clickElement(page, 'stage_action');
-    await page.waitForFunction(
-      (count) =>
-        ((window as unknown as { __returnProbe?: ReturnProbe | null })
-          .__returnProbe?.m20.indoor_stages_done.length ?? -1) >= count,
-      expected,
-      { timeout: 8000 },
-    );
-    await page.waitForTimeout(300);
-  }
-
-  const done = (await returnProbe(page)).m20;
-
-  expect(done.indoor_stages_done).toEqual(INDOOR_STAGES.slice(0, stages));
-
-  if (!done.completion) {
-    await closeSurface(page);
-  } else {
-    await clickElement(page, 'leave');
-    await waitSurface(page, false);
-  }
 }
 
 /* ------------------------------------------------------------------ *

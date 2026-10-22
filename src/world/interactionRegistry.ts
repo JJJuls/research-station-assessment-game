@@ -214,7 +214,7 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
       'core_sync',
       'complete',
     ],
-    window: 'm10_promise_handover',
+    window: 'm10_delivery_d1 (recipient) / m10_delivery_d2 (delegate)',
     approach: { x: C.kaiReturn.x, y: C.kaiReturn.y + 56 },
   },
   {
@@ -251,7 +251,7 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     footprint: { w: 2, h: 2 },
     depthAnchor: 'foot',
     stage: 'any',
-    window: 'm14_desk_w1',
+    window: 'm14_packet_p1 / m14_packet_p2',
     // The desk stands in the east strip against the hull; approached
     // from the north.
     approach: { x: C.incidentDesk.x, y: C.incidentDesk.y - 56 },
@@ -289,7 +289,7 @@ export const CONCOURSE_REGISTRY: readonly InteractionRegistryEntry[] = [
     footprint: { w: 2, h: 2 },
     depthAnchor: 'foot',
     stage: 'any',
-    window: 'm09_check_1 / m09_check_2 (non-canonical label)',
+    window: 'm09_duty_check_1 / m09_duty_check_2 / m09_duty_check_3',
     // The pedestal gauge stands on the deck; read from its north side
     // (the same standing point as before the gauge was grounded).
     approach: { x: C.monitorGauge.x, y: C.monitorGauge.y - 20 },
@@ -458,7 +458,7 @@ export const WORKSHOP_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Check the',
     'Station Feed Console',
     { kind: 'work_surface', id: 'm20_feed_console' },
-    'm20_antenna_restoration',
+    'm20_feed_w1',
     { x: 1034, y: 180 },
   ),
   workshopStation(
@@ -578,7 +578,7 @@ export const LAB_REGISTRY: readonly InteractionRegistryEntry[] = [
     footprint: { w: 2, h: 1 },
     depthAnchor: 'foot',
     stage: 'any',
-    window: 'm10_promise_handover (recipient)',
+    window: 'm10_delivery_d1 (recipient) / m10_delivery_d2 (delegate)',
     // Kai stands in front of his briefing desk; approached from the
     // south-west so the ±12 px box stays clear of the east wall.
     approach: { x: 548, y: 216 },
@@ -611,7 +611,7 @@ export const LAB_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Work the',
     'Evidence Table',
     { kind: 'work_surface', id: 'm15_evidence_table' },
-    'm15_layered_cipher',
+    'm15_system_s1 / m15_system_s2',
     { x: 142, y: 252 },
   ),
   labStation(
@@ -620,7 +620,7 @@ export const LAB_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Use the',
     'Protocol Console',
     { kind: 'ip_overlay', id: 'm16' },
-    'm16_protocol_update',
+    'm16_handling_w1',
     { x: 235, y: 250 },
   ),
   labStation(
@@ -638,7 +638,7 @@ export const LAB_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Work the',
     'Diagnostic Board',
     { kind: 'ip_overlay', id: 'm18' },
-    'm18_lattice_fault_diagnosis',
+    'm18_cases_w1',
     { x: 588, y: 252 },
   ),
 ];
@@ -865,7 +865,7 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Work the',
     'Frozen Coolant Coupling',
     { kind: 'prompt', id: 'pilotCoupling' },
-    'm19_progressive_valve',
+    'm19_lines_w1',
     { x: 244, y: 336 },
     { w: 4, h: 3 },
   ),
@@ -904,7 +904,8 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Work',
     'Mast 04',
     { kind: 'prompt', id: 'pilotMast' },
-    'm20_antenna_restoration',
+    // The legacy antenna window left the route in U22 (register §5.353).
+    null,
     { x: 777, y: 378 },
     { w: 3, h: 2 },
   ),
@@ -914,7 +915,7 @@ export const YARD_REGISTRY: readonly InteractionRegistryEntry[] = [
     'Read the',
     'Excavation Field Stake',
     { kind: 'prompt', id: 'pilotPlotStake' },
-    'm23_field_recovery',
+    'm23_plots_w1',
     // Unit 23 (M23, A-adjusted; contract §13 R1): 44 px east of the
     // relocated stake, outside both plots' qualifying regions, uniquely
     // own-nearest over its ±12 px landing box (the M05 flag corner

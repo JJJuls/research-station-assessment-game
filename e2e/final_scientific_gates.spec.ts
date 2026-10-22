@@ -390,19 +390,65 @@ test.describe('final scientific gates (evidence-led pilot v2)', () => {
     expect(runtime).toMatch(/prefers-reduced-motion: reduce/);
   });
 
-  test('U8-12 (recorded, not resolved): exterior comprehension is still asserted, never checked', () => {
-    // An honest gate: the ledger's "comprehension confirmed" validity gates
-    // for the exterior items are satisfied by unconditional
-    // setComprehension('passed') calls. Adding a real check changes the
+  test("U8-12 (re-expressed in U24): M19's comprehension check is recorded; the exterior windows keep 8 asserted passes — six set without a check, named, and two set only by the M24 / M26 recorded checks", () => {
+    // U24 B-7, re-expressed to the current approved state. M19's
+    // comprehension is a recorded check in its own panel (U21): pending at
+    // the first opening, then passed or failed from the recorded answer.
+    // exteriorWindows.ts keeps exactly 8 setComprehension('passed') (U22,
+    // register §5.353): six are set without a check, in the functions named
+    // below, and two only inside the pass branch of a recorded M24 / M26
+    // check. Every other comprehension state in the file (pending at the
+    // start, failed, or derived from the knowledge status) belongs to the
+    // M24 / M26 checks. Adding a real check where none exists changes the
     // participant burden and is a research-owner decision (V3 report §4).
-    // This test pins the current count so a silent change is noticed.
+    // This test pins the current state so a silent change is noticed.
     const exterior = readFileSync(
       path.resolve('src/pilot/windows/exteriorWindows.ts'),
       'utf8',
     );
-    const unconditional = exterior.match(/setComprehension\('passed'\)/g) ?? [];
+    const panel = readFileSync(
+      path.resolve('src/pilot/windows/m19CouplingPanel.ts'),
+      'utf8',
+    );
+    const ownersOf = (pattern: RegExp) =>
+      [...exterior.matchAll(pattern)].map((match) => {
+        const before = exterior.slice(0, match.index);
+        const heads = [
+          ...before.matchAll(/^(?:export )?function (\w+)\(/gm),
+        ].map((head) => head[1]);
 
-    expect(unconditional).toHaveLength(10);
-    expect(exterior).not.toMatch(/setComprehension\('(failed|pending)'\)/);
+        return heads[heads.length - 1];
+      });
+    const owners = ownersOf(/setComprehension\('passed'\)/g);
+
+    expect(owners).toEqual([
+      'm19Present',
+      'm19EnsureOpen',
+      'm20Present',
+      'm20AcceptTask',
+      'm23Present',
+      'm23Begin',
+      'm24AnswerCheck',
+      'm26AnswerCheck',
+    ]);
+
+    for (const checked of ['m24AnswerCheck', 'm26AnswerCheck']) {
+      const start = exterior.indexOf(`export function ${checked}(`);
+      const body = exterior.slice(
+        start,
+        exterior.indexOf('\nexport function ', start + 1),
+      );
+
+      expect(body, checked).toMatch(
+        /result\.status === 'pass_first' \|\|\s+result\.status === 'pass_after_explanation'\s+\)\s*\{\s+w\.setComprehension\('passed'\)/,
+      );
+    }
+
+    for (const owner of ownersOf(/setComprehension\((?!'passed'\))/g)) {
+      expect(owner).toMatch(/^m2[46](Present|Begin|AnswerCheck)$/);
+    }
+
+    expect(panel).toMatch(/m19Window\.setComprehension\('pending'\)/);
+    expect(panel).toMatch(/s\.check\.status === 'fail' \? 'failed' : 'passed'/);
   });
 });

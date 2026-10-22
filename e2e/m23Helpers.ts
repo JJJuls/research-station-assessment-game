@@ -1096,22 +1096,34 @@ export function expectPlateBounds(field: M23FieldProbe) {
   inside(field.tray_bounds, M23_HUD.tray, 3, 'field tray');
 }
 
-/** The floating prompt's actual design-space bounds (the yard's DEV `__yardPromptProbe`; round 4). */
+/**
+ * The floating prompt's actual design-space bounds (the yard's DEV
+ * `__yardPromptProbe`; round 4). U24 B-12: refused (null) unless the yard
+ * itself is live — the player is in the yard and no work surface or
+ * inventory overlay pauses it — so stale bounds never stand for current
+ * prompt geometry (U23 acceptance 4b).
+ */
 export async function yardPromptBounds(page: Page): Promise<{
   text: string | null;
   bounds: { x: number; y: number; w: number; h: number };
 } | null> {
-  return page.evaluate(
-    () =>
-      (
-        window as unknown as {
-          __yardPromptProbe?: {
-            text: string | null;
-            bounds: { x: number; y: number; w: number; h: number };
-          } | null;
-        }
-      ).__yardPromptProbe ?? null,
-  );
+  return page.evaluate(() => {
+    const w = window as unknown as {
+      __yardPromptProbe?: {
+        text: string | null;
+        bounds: { x: number; y: number; w: number; h: number };
+      } | null;
+      __playerProbe?: { scene: string } | null;
+      __workSurfaceProbe?: { open: boolean } | null;
+      __inventoryUiProbe?: { open: boolean } | null;
+    };
+    const live =
+      w.__playerProbe?.scene === 'exterior_recovery_yard' &&
+      w.__workSurfaceProbe?.open !== true &&
+      w.__inventoryUiProbe?.open !== true;
+
+    return live ? (w.__yardPromptProbe ?? null) : null;
+  });
 }
 
 /** The room's floating prompt (RoomScene's DEV `__worldPromptProbe`). */

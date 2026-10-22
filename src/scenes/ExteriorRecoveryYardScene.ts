@@ -539,6 +539,13 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
           now,
         );
       }
+
+      // U24 B-12 (DEV probe only): the prompt probe is refreshed by the
+      // update loop, which stops while the yard is paused — clear it so a
+      // paused frame never reports stale prompt bounds (U23 acceptance 4b).
+      if (typeof window !== 'undefined' && import.meta.env.DEV) {
+        window.__yardPromptProbe = null;
+      }
     });
     this.events.on(Phaser.Scenes.Events.RESUME, () => {
       const now = Date.now();

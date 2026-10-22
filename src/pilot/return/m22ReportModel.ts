@@ -45,7 +45,9 @@ export const M22_WINDOW_IDS: Record<M22Report, string> = {
   o1: 'm22_returned_o1',
   o2: 'm22_returned_o2',
 };
-export const M22_ENTRY_STATE_VERSION = 'm22-setbacks-v3';
+// v4 (U24, owner ruling I-1 = a of 22 October 2026): the outcome-neutral
+// WO-11 / WO-13 line wording; requirement logic, forms and formula unchanged.
+export const M22_ENTRY_STATE_VERSION = 'm22-setbacks-v4';
 export const M22_OBJECT_ID = 'm22_report_desk';
 /** Settle window after the next report is placed (a carried press is refused). */
 export const M22_PLACE_SETTLE_MS = 1500;
@@ -115,13 +117,13 @@ export const M22_REPORT_DEFS: Record<M22Report, M22ReportDef> = {
     lines: [
       {
         id: 'l_coupling',
-        label: 'Coolant coupling — valve serviced',
+        label: 'Coolant coupling — line check',
         code: 'WO-11',
       },
       { id: 'l_loop', label: 'Coolant loop — pressure log', code: 'WO-12' },
       {
         id: 'l_excavation',
-        label: 'Excavation field — buried relay coupling',
+        label: 'Excavation field — survey record',
         code: 'WO-13',
       },
       { id: 'l_metal', label: 'Metal yard — salvage tally', code: 'WO-14' },

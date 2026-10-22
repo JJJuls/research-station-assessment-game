@@ -13,6 +13,12 @@
  * four phases sum to the ledger's 235 s planning envelope; nothing in the
  * laboratory scene imports M13 state into M18; and no canonical schema,
  * scoring rule or trait output references any phase.
+ *
+ * U24 B-10: these are the Unit 3 (v2) phase modules. On the route, M15,
+ * M16 and M18 run their later administrations (`m15-systems-v1`,
+ * `m16-handling-v1`, `m18-cases-v1`; U18–U20); the v2 modules for those
+ * three stay in the tree off the route (the legacy IP lab, or unimported)
+ * and are checked here as such. M17's module is the route's.
  */
 import { readFileSync } from 'node:fs';
 
@@ -42,6 +48,7 @@ import {
 } from '../src/informationProcessing/syntaxForms';
 import { EVIDENCE_LEDGER } from '../src/pilot/evidenceLedger';
 
+// The Unit 3 (v2) phase modules; only M17's is on the route (U24 B-10).
 const PHASE_FILES: [string, string][] = [
   ['src/informationProcessing/m15CausalModel.ts', 'proto_m15_cipher'],
   ['src/informationProcessing/m16ProtocolUpdate.ts', 'proto_m16_protocol'],
@@ -60,7 +67,7 @@ function declaredSuffixes(source: string): string[] {
 }
 
 test.describe('signal incident — families and boundaries (source)', () => {
-  test('M15–M18 phase modules each declare and log exactly one family; the four families and their event types are pairwise disjoint', () => {
+  test('the Unit 3 (v2) M15–M18 phase modules (M17 on the route; M15, M16, M18 off it) each declare and log exactly one family; the four families and their event types are pairwise disjoint', () => {
     const allTypes = new Set<string>();
 
     for (const [file, family] of PHASE_FILES) {
@@ -173,7 +180,7 @@ test.describe('signal incident — families and boundaries (source)', () => {
   });
 });
 
-test.describe('M15 causal model (pure)', () => {
+test.describe('M15 causal model — v2, off the route (pure)', () => {
   for (const formId of ['A', 'B'] as const) {
     test(`form ${formId}: five nodes, four required edges (one join), four sources that together document every edge, one ruled-out distractor, one intervention`, () => {
       const form = M15C_FORMS[formId];
@@ -372,7 +379,7 @@ test.describe('M17 learning series (pure)', () => {
   });
 });
 
-test.describe('M18 fault forms (pure)', () => {
+test.describe('M18 fault forms — v2, off the route (pure)', () => {
   test('both forms keep exactly one evidence-consistent hypothesis and the same structure', () => {
     for (const formId of ['A', 'B'] as const) {
       const form = M18F_FORMS[formId];

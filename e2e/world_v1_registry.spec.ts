@@ -12,6 +12,7 @@
  */
 import { expect, test } from '@playwright/test';
 
+import { REGISTER_V3 } from '../src/measurement/registerV3';
 import { PILOT_DOORS } from '../src/pilot/pilotRoute';
 import {
   CONCOURSE_SPAWNS,
@@ -277,5 +278,84 @@ test.describe('World V1 interaction registry (pure)', () => {
     // (PROFESSIONAL-WORLD-DESIGN-V1.md).
     expect(seconds).toBeLessThan(75);
     void C;
+  });
+
+  // U24 B-1 / B-17: the descriptive window labels corrected to the v3
+  // register's windows, and the Station 080 desk, bench, console and board
+  // rows (M14–M18) pinned. The label is metadata only: no src module reads
+  // it (U24 B-1 grep).
+  test('Station 080 window labels name v3 register windows; the M14–M18 stations are declared', () => {
+    const registerWindows = new Set(
+      REGISTER_V3.flatMap((row) => row.route.windows.map((w) => w.id)),
+    );
+    const entry = (zone: keyof typeof LAYOUTS, id: string) =>
+      WORLD_V1_REGISTRY[zone]!.find((candidate) => candidate.id === id);
+    const corrected: [keyof typeof LAYOUTS, string, string | null][] = [
+      [
+        'station_concourse',
+        'concourse.kai_return',
+        'm10_delivery_d1 (recipient) / m10_delivery_d2 (delegate)',
+      ],
+      [
+        'station_concourse',
+        'concourse.incident_desk',
+        'm14_packet_p1 / m14_packet_p2',
+      ],
+      [
+        'station_concourse',
+        'concourse.monitor_gauge',
+        'm09_duty_check_1 / m09_duty_check_2 / m09_duty_check_3',
+      ],
+      ['records_workshop', 'workshop.feed_console', 'm20_feed_w1'],
+      [
+        'diagnostics_laboratory',
+        'lab.kai',
+        'm10_delivery_d1 (recipient) / m10_delivery_d2 (delegate)',
+      ],
+      [
+        'diagnostics_laboratory',
+        'lab.phase_m15',
+        'm15_system_s1 / m15_system_s2',
+      ],
+      ['diagnostics_laboratory', 'lab.phase_m16', 'm16_handling_w1'],
+      ['diagnostics_laboratory', 'lab.phase_m17', 'm17_trials_w1'],
+      ['diagnostics_laboratory', 'lab.phase_m18', 'm18_cases_w1'],
+      ['exterior_recovery_yard', 'yard.coupling', 'm19_lines_w1'],
+      ['exterior_recovery_yard', 'yard.mast', null],
+      ['exterior_recovery_yard', 'yard.plot_stake', 'm23_plots_w1'],
+    ];
+
+    for (const [zone, id, window] of corrected) {
+      const found = entry(zone, id);
+
+      expect(found, `${id} declared in ${zone}`).toBeDefined();
+      expect(found!.kind, id).toBe(
+        id.endsWith('kai') || id.endsWith('kai_return') ? 'npc' : 'station',
+      );
+      expect(found!.window, id).toBe(window);
+
+      for (const windowId of (window ?? '')
+        .split(' / ')
+        .filter((part) => part.length > 0)
+        .map((part) => part.replace(/ \(.*\)$/, ''))) {
+        expect(registerWindows.has(windowId), `${id}: ${windowId}`).toBe(true);
+      }
+    }
+
+    // The four stations of U17–U20 (desk, bench, console, board) by the
+    // surface each opens.
+    expect(
+      entry('station_concourse', 'concourse.incident_desk')!.opens,
+    ).toEqual({ kind: 'work_surface', id: 'm14_incident_desk' });
+    expect(entry('diagnostics_laboratory', 'lab.phase_m15')!.opens).toEqual({
+      kind: 'work_surface',
+      id: 'm15_evidence_table',
+    });
+    expect(entry('diagnostics_laboratory', 'lab.phase_m16')!.opens).not.toBe(
+      null,
+    );
+    expect(entry('diagnostics_laboratory', 'lab.phase_m18')!.opens).not.toBe(
+      null,
+    );
   });
 });
