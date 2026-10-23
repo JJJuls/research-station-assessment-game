@@ -21,6 +21,7 @@ import {
   M01_BATCHES,
   M01_JOBS,
   m01AdministeredBefore,
+  m01HoldBackClass,
   m01Job,
   type M01Occasion,
   m01PacketOrder,
@@ -40,6 +41,17 @@ export interface M01SurfaceHost {
 
 /** Job controls row — never where the packet cards or the slots sit. */
 const JOB_Y = 330;
+
+/**
+ * U24 RL-1 (owner decision D-5, `RELOAD-CORRECTION-SPEC-r3-exec.md` §9):
+ * the lines of a batch held after a reload because its earlier state
+ * could not be verified or its check is contradictory (U / M). The
+ * existing held-back line of an earlier opening is unchanged.
+ */
+export const M01_UNVERIFIED_LINES = [
+  'The earlier state of this batch could not be verified.',
+  'It stays closed after this reload.',
+] as const;
 
 export function m01SurfaceModel(
   host: M01SurfaceHost,
@@ -201,12 +213,17 @@ export function m01SurfaceModel(
 
   let status: string;
 
+  const holdBack = m01HoldBackClass(occasion);
+
   if (done) {
-    status = m01AdministeredBefore(occasion)
-      ? 'This batch was already opened earlier in this session. Its record is held; it does not run again.'
-      : s.done.length >= M01_JOBS
-        ? 'All three jobs done. The batch is recorded.'
-        : `The batch closed with ${s.done.length} of ${M01_JOBS} jobs done. Its record is held as it stands.`;
+    status =
+      holdBack === 'U' || holdBack === 'M'
+        ? M01_UNVERIFIED_LINES.join('\n')
+        : m01AdministeredBefore(occasion)
+          ? 'This batch was already opened earlier in this session. Its record is held; it does not run again.'
+          : s.done.length >= M01_JOBS
+            ? 'All three jobs done. The batch is recorded.'
+            : `The batch closed with ${s.done.length} of ${M01_JOBS} jobs done. Its record is held as it stands.`;
   } else if (s.plan_locked) {
     status = `${s.done.length} of ${M01_JOBS} jobs done. A job runs once its printed requirement is done.`;
   } else {

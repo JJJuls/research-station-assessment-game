@@ -11,8 +11,25 @@
  * review marks a never-opened console absent and censors an open one; a
  * console already opened in an earlier page load is never re-run (reload
  * guard — technically incomplete, prior exposure recorded).
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §4): the
+ * presentation of a reloaded load writes the family's single
+ * `prior_load_checked` record before any opening, and the console is held
+ * there unless its absence of an earlier opening is established (A): H
+ * with the existing prior-exposure entry and marker, U / M without
+ * administration.
  */
+import {
+  classifyM08Reload,
+  m08PriorLoadCheck,
+} from '../../measurement/features/m08';
 import { protocolStamp } from '../../measurement/protocol';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClass,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import {
   createM08State,
@@ -34,7 +51,6 @@ import {
   type M08LogSink,
   type M08Order,
   m08PresentChoice,
-  m08PriorAdministration,
   m08RawComponents,
   m08SortPractice,
   type M08SortResult,
@@ -60,6 +76,13 @@ export {
 } from '../exterior/m08EffortModel';
 
 export const M08_PRIOR_ADMINISTRATION = 'prior_administration';
+
+/** Closure reasons of a console held after a reload, by its class. */
+const HOLD_BACK_REASON = {
+  H: M08_PRIOR_ADMINISTRATION,
+  U: 'unverified_history',
+  M: 'contradictory_check',
+} as const;
 
 let state: M08State | null = null;
 
@@ -101,11 +124,77 @@ export function declareM08() {
 /**
  * The console was PRESENTED: Noor's briefing lists it as a yard job (review
  * U2-R). Logged once; a presented-but-never-opened console is then
- * `declined` at extraction, never `not_presented`.
+ * `declined` at extraction, never `not_presented`. After a reload the
+ * check is written first and a held console is held here, at its
+ * availability (U24 RL-1).
  */
 export function presentM08(nowMs: number) {
   declareM08();
+  ensurePriorLoadCheck();
   m08Window.present(nowMs, m08EntrySnapshot(ensureState()));
+  guardM08Reload(nowMs);
+}
+
+/** This load's check (undefined until the host ran in this load). */
+let priorLoadCheck: PriorLoadCheck | null | undefined;
+
+/** Writes the load's check once (never on a first load) and returns it. */
+function ensurePriorLoadCheck(): PriorLoadCheck | null {
+  if (priorLoadCheck === undefined) {
+    priorLoadCheck = m08PriorLoadCheck(
+      researchRuntime.getPageLoadIndex(),
+      researchRuntime.getPriorPageLoadEvents(),
+      researchRuntime.getEventIntegrity(),
+    );
+
+    if (priorLoadCheck !== null) {
+      sink(PRIOR_LOAD_CHECK_SUFFIX, {
+        ...priorLoadCheck,
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return priorLoadCheck;
+}
+
+/**
+ * Reload guard (register §5.14; U24 RL-1): an unopened console of a
+ * reloaded load is held unless its class is A — never re-run (no fresh
+ * trials, no double credit); the prior-load evidence stays where it is.
+ * True when it is held.
+ */
+function guardM08Reload(nowMs: number): boolean {
+  if (m08Window.windowStatus() !== 'unopened') {
+    return m08HoldBackClass() !== null;
+  }
+
+  const check = ensurePriorLoadCheck();
+  const cls = classifyM08Reload(
+    researchRuntime.getPageLoadIndex(),
+    check === null ? [] : [check],
+  ).occasions.row.class;
+
+  if (cls === null || cls === 'A') {
+    return false;
+  }
+
+  m08Freeze(ensureState(), nowMs, HOLD_BACK_REASON[cls]);
+
+  if (cls === 'H') {
+    m08Window.recordPriorExposure(
+      'console opened in an earlier page load of this identity',
+    );
+    m08Window.technicalFailure(
+      'reload after administration: console not re-run',
+    );
+  } else {
+    m08Window.technicalFailure(
+      reloadHoldBackDetail(cls, 'console not administered'),
+    );
+  }
+
+  return true;
 }
 
 export function m08State(): Readonly<M08State> {
@@ -129,27 +218,24 @@ export function m08AdministeredBefore(): boolean {
   return ensureState().closureReason === M08_PRIOR_ADMINISTRATION;
 }
 
+/** The class the console is held under after a reload (null when not held). */
+export function m08HoldBackClass(): Exclude<ReloadClass, 'A'> | null {
+  const reason = ensureState().closureReason;
+
+  return (
+    (['H', 'U', 'M'] as const).find(
+      (cls) => HOLD_BACK_REASON[cls] === reason,
+    ) ?? null
+  );
+}
+
 export function openM08(nowMs: number) {
   declareM08();
 
   const s = ensureState();
 
-  if (m08Window.windowStatus() === 'unopened') {
-    // Reload guard: the raw log of an earlier page load already holds an
-    // opened console. Never re-run it (no fresh trials, no double credit);
-    // the prior-load evidence stays where it is and this load records the
-    // opportunity as technically incomplete with the exposure noted.
-    if (m08PriorAdministration(researchRuntime.getPriorPageLoadEvents())) {
-      m08Freeze(s, nowMs, M08_PRIOR_ADMINISTRATION);
-      m08Window.recordPriorExposure(
-        'console opened in an earlier page load of this identity',
-      );
-      m08Window.technicalFailure(
-        'reload after administration: console not re-run',
-      );
-
-      return;
-    }
+  if (guardM08Reload(nowMs)) {
+    return;
   }
 
   if (m08Window.isClosed()) {
@@ -286,6 +372,7 @@ export function resetM08State() {
   }
 
   state = null;
+  priorLoadCheck = undefined;
   m08Window.reset();
   m08Window.spec.form = null;
   m08Window.spec.counterbalance = null;

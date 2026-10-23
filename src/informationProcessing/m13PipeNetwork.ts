@@ -25,9 +25,22 @@
  * PROVISIONAL candidate; raw observables are recorded, never scored here.
  * The v2 family `proto_m13_lattice_*` is retired from the route and is
  * not written by this build. M18 never reads any of this state.
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §4): the
+ * declaration of a reloaded load writes the family's single
+ * `prior_load_checked` record before any opening, and the bench is held
+ * there unless its absence of an earlier opening is established (A): H
+ * with the existing prior-exposure entry and marker, U / M without
+ * administration.
  */
 
 import { getM13Piece, M13_PIECES } from '../measurement/m13PipePuzzle';
+import { MEASUREMENT_PROTOCOL_VERSION } from '../measurement/protocol';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  reloadHoldBackDetail,
+} from '../measurement/reloadCheck';
 import { researchRuntime } from '../systems';
 import {
   M13N_ENTRY_STATE_VERSION,
@@ -46,10 +59,11 @@ import type {
   PipeAction,
 } from './m13NetworkSeries';
 import {
+  classifyM13Reload,
   createM13Series,
   M13N_EVENT_SUFFIXES,
   M13N_RELOAD_DETAIL,
-  m13PriorAdministration,
+  m13PriorLoadCheck,
   m13sAct,
   m13sBackToResults,
   m13sCancelCommit,
@@ -58,6 +72,7 @@ import {
   m13sFail,
   m13sFinish,
   m13sHelp,
+  m13sHoldBack,
   m13sLeave,
   m13sNext,
   m13sOpen,
@@ -184,11 +199,88 @@ function sync(nowMs: number) {
   refreshIpProbe();
 }
 
+/** This load's check (undefined until the bench was declared in this load). */
+let priorLoadCheck: PriorLoadCheck | null | undefined;
+
+/**
+ * Reload guard (register §5.14; U24 RL-1): the first declaration of a
+ * reloaded load writes the check; an unopened bench is held unless its
+ * class is A — neither the first-response phase nor results nor practice
+ * is run again. The hold needs no opening.
+ */
+function guardM13Reload(nowMs: number) {
+  const s = ensure();
+
+  if (priorLoadCheck === undefined) {
+    const fields = ipWindowFields(s.window);
+
+    priorLoadCheck = m13PriorLoadCheck(
+      researchRuntime.getPageLoadIndex(),
+      researchRuntime.getPriorPageLoadEvents(),
+      researchRuntime.getEventIntegrity(),
+    );
+
+    if (priorLoadCheck !== null) {
+      logIpEvent(
+        'proto_m13_networks',
+        M13N_OBJECT_ID,
+        PRIOR_LOAD_CHECK_SUFFIX,
+        {
+          opportunity_id: M13N_OPPORTUNITY_ID,
+          entry_state_version: M13N_ENTRY_STATE_VERSION,
+          form_id: s.series.form,
+          measurement_protocol_version: MEASUREMENT_PROTOCOL_VERSION,
+          entry_state_id: fields.entry_state_id,
+          window_status: fields.window_status,
+          ...priorLoadCheck,
+          input_mode: 'system',
+        },
+      );
+    }
+  }
+
+  if (s.series.status !== 'unopened' || s.series.record_closed) {
+    return;
+  }
+
+  const cls = classifyM13Reload(
+    researchRuntime.getPageLoadIndex(),
+    priorLoadCheck === null ? [] : [priorLoadCheck],
+  ).occasions.row.class;
+
+  if (cls === null || cls === 'A') {
+    return;
+  }
+
+  if (cls === 'H') {
+    noteIpPriorExposure(
+      s.window,
+      'lattice bench opened in an earlier page load of this identity',
+    );
+  }
+
+  m13sHoldBack(
+    s.series,
+    cls === 'H'
+      ? M13N_RELOAD_DETAIL
+      : reloadHoldBackDetail(cls, 'bench not administered'),
+    cls === 'H',
+  );
+  sync(nowMs);
+  closeIpWindow(
+    s.window,
+    'technical_failure',
+    nowMs,
+    s.series.failure_detail ?? 'technical failure',
+  );
+}
+
 export function declareM13Lattice() {
   const s = ensure();
 
   declareIpWindow(s.window);
   registerIpProbeSource('m13', M13N_OPPORTUNITY_ID, m13LatticeProbe);
+  guardM13Reload(Date.now());
   refreshIpProbe();
 }
 
@@ -200,28 +292,15 @@ export function m13LatticeWindowStatus() {
 export function m13LatticeOpen(nowMs: number) {
   const s = ensure();
 
+  // The reload guard runs at the declaration (U24 RL-1): a held bench is
+  // already closed here and opens as its record.
   declareM13Lattice();
-
-  // Reload guard (register §5.14): the raw log of an earlier page load
-  // already holds this administration's opening. Never re-run it — neither
-  // the first-response phase nor results nor practice.
-  const prior =
-    s.series.status === 'unopened' &&
-    !s.series.record_closed &&
-    m13PriorAdministration(researchRuntime.getPriorPageLoadEvents());
 
   if (s.series.status !== 'unopened' || !s.series.record_closed) {
     enterIpWindow(s.window, nowMs);
   }
 
-  if (prior) {
-    noteIpPriorExposure(
-      s.window,
-      'lattice bench opened in an earlier page load of this identity',
-    );
-  }
-
-  const outcome = m13sOpen(s.series, nowMs, { priorAdministration: prior });
+  const outcome = m13sOpen(s.series, nowMs, { priorAdministration: false });
 
   if (outcome === 'held_back') {
     s.series.failure_detail = M13N_RELOAD_DETAIL;
@@ -410,4 +489,5 @@ export function pieceTypeOf(pieceId: string) {
 /** Test-only escape hatch. */
 export function resetM13LatticeState() {
   state = null;
+  priorLoadCheck = undefined;
 }

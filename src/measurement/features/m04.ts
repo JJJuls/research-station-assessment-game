@@ -23,10 +23,38 @@
  * that was held back by a reload is never a value. A pick-up or a
  * disposal issued by a press at another station is counted like any
  * other and FLAGGED beside the value (its origin is part of the record).
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §5; owner
+ * ruling R-2 of 23 October 2026): the load's `prior_load_checked` record
+ * classifies each job H / A / U / M from its own evidence. A job held as
+ * H, U or M also holds the other job, because the two share their
+ * starting state (the approved joint hold-back); a job held only by that
+ * dependency keeps its own class and flags beside its effective class,
+ * with a dependency reason that never says it was opened. A job whose
+ * absence of an earlier opening is established and that no dependency
+ * holds takes the first-load reading. The record is never task evidence.
  */
-import { m04PiecesOf } from '../../pilot/windows/m04CuttingModel';
+import {
+  M04_SPEC,
+  m04PiecesOf,
+  m04PriorAdministration,
+} from '../../pilot/windows/m04CuttingModel';
 import type { RawGameEvent } from '../../systems/EventLogger';
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  type OccasionReloadClass,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  RELOAD_REASON,
+  type ReloadClass,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -74,12 +102,207 @@ function sameSet(a: readonly string[], b: ReadonlySet<string>): boolean {
   );
 }
 
+/**
+ * The load's reload check (U24 RL-1; r1 §1 stage map): per job, stage 1
+ * the coupons listed by the work orders (`listed`, one record for both
+ * jobs), stage 2 the job presented at its cut, stage 3 the job's opening,
+ * and the job's hold-back markers. Null on a first load.
+ */
+export function m04PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  const ofJob = (event: ReloadEvent, job: Job) =>
+    event.metadata?.opportunity_id === M04_SPEC[job].opportunity_id;
+
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    occasions: Object.fromEntries(
+      JOBS.map((job) => [
+        job,
+        {
+          briefing: (event: ReloadEvent) =>
+            event.event_type === `${FAMILY}listed`,
+          presentation: (event: ReloadEvent) =>
+            event.event_type === `${FAMILY}presented` && ofJob(event, job),
+          opening: (event: ReloadEvent) => m04PriorAdministration([event], job),
+          holdBack: (event: ReloadEvent) =>
+            event.event_type === `${FAMILY}technical_failure` &&
+            ofJob(event, job),
+        },
+      ]),
+    ),
+  });
+}
+
+/**
+ * One job after a reload (owner ruling R-2): its own class from its own
+ * evidence, kept apart from the effective class the joint hold-back gives
+ * it, with its own flags from the record as they stand.
+ */
+export interface M04JobReload {
+  own: OccasionReloadClass;
+  effective: OccasionReloadClass;
+  /** True when only the other job's hold-back holds this job. */
+  joint_hold_back: boolean;
+  /** The other job's own class when it holds this one, else null. */
+  held_with: Exclude<ReloadClass, 'A'> | null;
+  /** The job's flags in the record (null without a single record). */
+  prior_opening_found: boolean | null;
+  prior_opening_absence_established: boolean | null;
+  prior_opening_sequences: number[] | null;
+}
+
+export interface M04ReloadClassification {
+  /** Each job's own class (no joint hold-back applied). */
+  own: ReloadClassification;
+  jobs: Record<Job, M04JobReload>;
+}
+
+/**
+ * Each job's own and effective class from the load's check records (r3
+ * §2; owner ruling R-2): a job whose own class is A is held when the
+ * other job's own class is H, U or M — effectively H beside an H, U
+ * otherwise (the helper's rule) — with the dependency as its reason.
+ * An H, U or M job keeps its own class, an M one its contradiction.
+ */
+export function classifyM04Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): M04ReloadClassification {
+  const own = classifyReload({ pageLoadIndex, checks, occasions: JOBS });
+  const joint = classifyReload({
+    pageLoadIndex,
+    checks,
+    occasions: JOBS,
+    jointHoldBack: [JOBS],
+  });
+  const record =
+    checks.length === 1 ? (checks[0] as Record<string, unknown>) : null;
+  const flagsOf = (job: Job) => {
+    const occasions = record?.occasions;
+    const flags =
+      typeof occasions === 'object' && occasions !== null
+        ? (occasions as Record<string, unknown>)[job]
+        : undefined;
+
+    return typeof flags === 'object' && flags !== null
+      ? (flags as Record<string, unknown>)
+      : null;
+  };
+  const jobs = Object.fromEntries(
+    JOBS.map((job) => {
+      const other = JOBS.find((candidate) => candidate !== job) as Job;
+      const otherClass = own.occasions[other].class;
+      const dependent =
+        own.occasions[job].class === 'A' && joint.occasions[job].class !== 'A';
+      const flags = flagsOf(job);
+      const sequences = flags?.prior_opening_sequences;
+
+      return [
+        job,
+        {
+          own: own.occasions[job],
+          effective: dependent
+            ? {
+                ...joint.occasions[job],
+                reason: `the other cutting job is held (${RELOAD_REASON[otherClass ?? 'U']}); this job shares its starting state and is held with it`,
+              }
+            : own.occasions[job],
+          joint_hold_back: dependent,
+          held_with:
+            dependent && otherClass !== null && otherClass !== 'A'
+              ? otherClass
+              : null,
+          prior_opening_found:
+            typeof flags?.prior_opening_found === 'boolean'
+              ? flags.prior_opening_found
+              : null,
+          prior_opening_absence_established:
+            typeof flags?.prior_opening_absence_established === 'boolean'
+              ? flags.prior_opening_absence_established
+              : null,
+          prior_opening_sequences: Array.isArray(sequences)
+            ? sequences.filter(
+                (value): value is number => typeof value === 'number',
+              )
+            : null,
+        } satisfies M04JobReload,
+      ];
+    }),
+  ) as Record<Job, M04JobReload>;
+
+  return { own, jobs };
+}
+
 registerFeatureExtractor('M04', (events, context) => {
   const entry = registerEntry('M04');
   const [primary, values] = entry.features;
   const load = currentLoadEvents(events, context);
-  const family = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const family = withoutPriorLoadChecks(
+    load.filter((e) => e.event_type.startsWith(FAMILY)),
+    FAMILY,
+  );
   const supporting = sequencesOf(family);
+  const checks = eventsOfType(load, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`);
+  const reload = classifyM04Reload(
+    context.pageLoadIndex,
+    checks.map((event) => event.metadata ?? {}),
+  );
+  const established = (job: Job) => reload.jobs[job].effective.class === 'A';
+  // Owner ruling R-2: each job's own class and flags beside its effective
+  // joint hold-back (reported only where a reload or a check exists).
+  const reloadJobs =
+    context.reloaded || checks.length > 0
+      ? {
+          reload_jobs: Object.fromEntries(
+            JOBS.map((job) => {
+              const row = reload.jobs[job];
+
+              return [
+                job,
+                {
+                  own_class: row.own.class,
+                  own_basis: row.own.basis,
+                  effective_class: row.effective.class,
+                  administration_permitted:
+                    row.effective.administration_permitted,
+                  basis: row.effective.basis,
+                  reason: row.effective.reason,
+                  joint_hold_back: row.joint_hold_back,
+                  held_with: row.held_with,
+                  prior_opening_found: row.prior_opening_found,
+                  prior_opening_absence_established:
+                    row.prior_opening_absence_established,
+                  prior_opening_sequences: row.prior_opening_sequences,
+                },
+              ];
+            }),
+          ),
+        }
+      : {};
+
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.own.check_malformed) {
+    const reason =
+      'a reload check record describes another page load or lacks a job';
+
+    return [
+      emptyFeature('M04', primary, 'technical_failure', reason, {
+        closure_reason: 'technical_failure',
+        supporting_sequences: supporting,
+        components: reloadJobs,
+      }),
+      emptyFeature('M04', values, 'technical_failure', reason, {
+        closure_reason: 'technical_failure',
+      }),
+    ];
+  }
+
   const listed = eventsOfType(family, `${FAMILY}listed`).length > 0;
   const of = (suffix: string, job: Job) =>
     eventsOfType(family, `${FAMILY}${suffix}`).filter(
@@ -95,9 +318,10 @@ registerFeatureExtractor('M04', (events, context) => {
     const departure = departures[0] ?? null;
     const atReview = of('state_at_review', job)[0] ?? null;
     const failures = of('technical_failure', job);
-    const heldBack = failures.some((event) =>
+    const holdBacks = failures.filter((event) =>
       (meta<string>(event, 'detail') ?? '').startsWith('reload'),
     );
+    const heldBack = holdBacks.length > 0;
     const faulted = failures.some(
       (event) => !(meta<string>(event, 'detail') ?? '').startsWith('reload'),
     );
@@ -229,16 +453,25 @@ registerFeatureExtractor('M04', (events, context) => {
             ? 'censored'
             : run !== null
               ? 'pending'
-              : context.reloaded
+              : context.reloaded && !established(job)
                 ? // After a reload a job without evidence in this load is
-                  // never "not run": its evidence may lie in an earlier
-                  // load (the M01 / M03 rule).
+                  // never "not run" unless its absence of an earlier
+                  // opening is established and no dependency holds it:
+                  // its evidence may lie in an earlier load (the M01 / M03
+                  // rule; U24 RL-1).
                   'interrupted'
                 : 'not_run';
 
     return {
       job,
       status,
+      holdBackClasses: heldBack
+        ? holdBacks.map((event) =>
+            reloadHoldBackClass(meta<unknown>(event, 'detail')),
+          )
+        : status === 'interrupted' && checks.length > 0
+          ? [reload.jobs[job].own.class]
+          : [],
       routedPickups,
       routedDisposals,
       undisposed: status === 'observed' ? recount : null,
@@ -337,6 +570,7 @@ registerFeatureExtractor('M04', (events, context) => {
       (sum, row) => sum + row.routedDisposals.length,
       0,
     ),
+    ...reloadJobs,
   };
 
   if (family.length === 0 || perJob.every((row) => row.status === 'not_run')) {
@@ -345,6 +579,18 @@ registerFeatureExtractor('M04', (events, context) => {
     const reason = listed
       ? 'no cutting job run (the coupons were listed on the work orders)'
       : 'no cutting job run';
+
+    // An established absence for both jobs takes the first-load reading
+    // (r3 §5, NOP + NOP (A)).
+    if (JOBS.every(established)) {
+      return [
+        emptyFeature('M04', primary, 'not_presented', reason, {
+          supporting_sequences: supporting,
+          components,
+        }),
+        emptyFeature('M04', values, 'not_presented', reason),
+      ];
+    }
 
     return [
       absentFeature('M04', primary, context, reason, {
@@ -393,10 +639,24 @@ registerFeatureExtractor('M04', (events, context) => {
 
   const interrupted = by('interrupted').length > 0;
   const systemClosed = by('censored').length > 0;
+  // A U or M hold-back names its reason (r3 §2); an H one, or a joint one
+  // (R-2), keeps the existing reading.
+  const unverified = [
+    ...new Set(
+      perJob.flatMap((row) =>
+        row.holdBackClasses.flatMap((cls) =>
+          cls === 'U' || cls === 'M' ? [RELOAD_REASON[cls]] : [],
+        ),
+      ),
+    ),
+  ];
   const zero: { disposition: Missing; reason: string } = interrupted
     ? {
         disposition: 'interrupted',
-        reason: 'a cutting job was held back after a reload',
+        reason:
+          unverified.length === 0
+            ? 'a cutting job was held back after a reload'
+            : `a cutting job was held back after a reload: ${unverified.join('; ')}`,
       }
     : systemClosed
       ? {

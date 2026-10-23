@@ -31,8 +31,8 @@ import {
   M06_VALUES,
   M06_VERBS,
   m06ActiveRow,
-  m06AdministeredBefore,
   m06CurrentLine,
+  m06HoldBackClass,
   m06RemainingMs,
   m06State,
   m06StopArmed,
@@ -58,8 +58,20 @@ const CONTROL_Y = 380;
 const SECONDS = (ms: number) => Math.ceil(ms / 1000);
 const orders = (n: number) => `${n} ${n === 1 ? 'order' : 'orders'}`;
 
+/**
+ * U24 RL-1 (owner decision D-5, `RELOAD-CORRECTION-SPEC-r3-exec.md` §9):
+ * the lines of a console held after a reload because its earlier state
+ * could not be verified or its check is contradictory (U / M). The
+ * existing held-back line of an earlier opening is unchanged.
+ */
+export const M06_UNVERIFIED_LINES = [
+  'The earlier state of this console could not be verified.',
+  'It stays closed after this reload.',
+] as const;
+
 export function m06SurfaceModel(host: M06SurfaceHost): WorkSurfaceModel {
   const s = m06State();
+  const holdBack = m06HoldBackClass();
   const now = host.now();
   const done = m06Window.isClosed() || s.phase === 'done';
   const elements: SurfaceElement[] = [];
@@ -156,13 +168,16 @@ export function m06SurfaceModel(host: M06SurfaceHost): WorkSurfaceModel {
       h: 110,
       align: 'left',
     });
-  } else {
+  } else if (holdBack !== 'U' && holdBack !== 'M') {
+    // A U / M screen shows its two status lines only: the readout would
+    // cover the second line (U24 RL-1).
     elements.push({
       id: 'summary',
       kind: 'readout',
-      label: m06AdministeredBefore()
-        ? 'CONSOLE RECORD HELD'
-        : `WORK PERIOD ENDED — ${unique} of ${M06_ORDER_COUNT} ORDERS SENT CORRECTLY`,
+      label:
+        holdBack === 'H'
+          ? 'CONSOLE RECORD HELD'
+          : `WORK PERIOD ENDED — ${unique} of ${M06_ORDER_COUNT} ORDERS SENT CORRECTLY`,
       x: 16,
       y: 64,
       w: 690,
@@ -381,9 +396,11 @@ export function m06SurfaceModel(host: M06SurfaceHost): WorkSurfaceModel {
   let status: string;
   let help = 'Arrows/TAB focus · ENTER press · click also works · ';
 
-  if (m06AdministeredBefore()) {
+  if (holdBack !== null) {
     status =
-      'This console was already used earlier in this session. Its record is held; it does not run again.';
+      holdBack === 'H'
+        ? 'This console was already used earlier in this session. Its record is held; it does not run again.'
+        : M06_UNVERIFIED_LINES.join('\n');
     help += 'ESC close';
   } else if (done) {
     status =

@@ -29,8 +29,8 @@ import {
   confirmM12Correction,
   judgeM12Field,
   M12_PRODUCTS,
-  m12AdministeredBefore,
   m12FieldsJudged,
+  m12HoldBackClass,
   m12KeypadField,
   m12KeypadPress,
   type M12Occasion,
@@ -55,13 +55,25 @@ const KEYPAD_Y = 302;
 const BOTTOM_Y = 428;
 const fields = (n: number) => `${n} ${n === 1 ? 'field' : 'fields'}`;
 
+/**
+ * U24 RL-1 (owner decision D-5, `RELOAD-CORRECTION-SPEC-r3-exec.md` §9):
+ * the lines of a packet held after a reload because its earlier state
+ * could not be verified or its check is contradictory (U / M). The
+ * existing held-back line of an earlier opening is unchanged.
+ */
+export const M12_UNVERIFIED_LINES = [
+  'The earlier state of this packet could not be verified.',
+  'It stays closed after this reload.',
+] as const;
+
 export function m12SurfaceModel(
   occasion: M12Occasion,
   host: M12SurfaceHost,
 ): WorkSurfaceModel {
   const s = m12State(occasion);
   const product = M12_PRODUCTS[occasion];
-  const heldBack = m12AdministeredBefore(occasion);
+  const holdBack = m12HoldBackClass(occasion);
+  const heldBack = holdBack !== null;
   const done = m12Windows[occasion].isClosed() || s.released;
   const elements: SurfaceElement[] = [];
   const keypad = m12KeypadField(s);
@@ -202,7 +214,9 @@ export function m12SurfaceModel(
 
   if (heldBack) {
     status =
-      'This packet was opened earlier in this session. Its record is held; it does not run again.';
+      holdBack === 'H'
+        ? 'This packet was opened earlier in this session. Its record is held; it does not run again.'
+        : M12_UNVERIFIED_LINES.join('\n');
     help += 'ESC close';
   } else if (done) {
     status = `Packet released with ${fields(m12FieldsJudged(s))} checked and judged.`;

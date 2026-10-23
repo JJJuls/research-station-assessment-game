@@ -13,8 +13,25 @@
  * absent; a packet opened in an earlier page load is never re-run. The
  * v2 six-line family (`proto_m12_qc_*`) keeps its v2 meaning in the
  * frozen ledger and is retired from the route.
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §4): the
+ * first presentation of a reloaded load writes the family's single
+ * `prior_load_checked` record, covering both packets, before any opening.
+ * A packet is then held at its availability unless its absence of an
+ * earlier opening is established (A): H with the existing prior-exposure
+ * entry and marker, U / M without administration.
  */
+import {
+  classifyM12Reload,
+  m12PriorLoadCheck,
+} from '../../measurement/features/m12';
 import { protocolStamp } from '../../measurement/protocol';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClass,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import {
   createM12State,
@@ -37,7 +54,6 @@ import {
   m12KeypadDigit,
   type M12LogSink,
   type M12Occasion,
-  m12PriorAdministration,
   m12RawComponents,
   m12Release,
   m12ReopenKeypad,
@@ -68,6 +84,13 @@ export {
 } from './m12CheckModel';
 
 export const M12_PRIOR_ADMINISTRATION = 'prior_administration';
+
+/** Closure reasons of a packet held after a reload, by its class. */
+const HOLD_BACK_REASON = {
+  H: M12_PRIOR_ADMINISTRATION,
+  U: 'unverified_history',
+  M: 'contradictory_check',
+} as const;
 
 const OCCASIONS: readonly M12Occasion[] = ['o1', 'o2'];
 
@@ -143,16 +166,94 @@ export function m12AdministeredBefore(occasion: M12Occasion): boolean {
   return ensureState(occasion).closureReason === M12_PRIOR_ADMINISTRATION;
 }
 
+/** The class a packet is held under after a reload (null when not held). */
+export function m12HoldBackClass(
+  occasion: M12Occasion,
+): Exclude<ReloadClass, 'A'> | null {
+  const reason = ensureState(occasion).closureReason;
+
+  return (
+    (['H', 'U', 'M'] as const).find(
+      (cls) => HOLD_BACK_REASON[cls] === reason,
+    ) ?? null
+  );
+}
+
+/** This load's check (undefined until the first host of the load ran). */
+let priorLoadCheck: PriorLoadCheck | null | undefined;
+
+/** Writes the load's check once (never on a first load) and returns it. */
+function ensurePriorLoadCheck(occasion: M12Occasion): PriorLoadCheck | null {
+  if (priorLoadCheck === undefined) {
+    priorLoadCheck = m12PriorLoadCheck(
+      researchRuntime.getPageLoadIndex(),
+      researchRuntime.getPriorPageLoadEvents(),
+      researchRuntime.getEventIntegrity(),
+    );
+
+    if (priorLoadCheck !== null) {
+      sinkFor(occasion)(PRIOR_LOAD_CHECK_SUFFIX, {
+        ...priorLoadCheck,
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return priorLoadCheck;
+}
+
+/**
+ * Reload guard (register §5.14; U24 RL-1): an unopened packet of a
+ * reloaded load is held unless its class is A — never re-run (no second
+ * observation). True when it is held.
+ */
+function guardM12Reload(occasion: M12Occasion): boolean {
+  const window = m12Windows[occasion];
+
+  if (window.windowStatus() !== 'unopened') {
+    return m12HoldBackClass(occasion) !== null;
+  }
+
+  const check = ensurePriorLoadCheck(occasion);
+  const cls = classifyM12Reload(
+    researchRuntime.getPageLoadIndex(),
+    check === null ? [] : [check],
+  ).occasions[occasion].class;
+
+  if (cls === null || cls === 'A') {
+    return false;
+  }
+
+  m12Freeze(ensureState(occasion), HOLD_BACK_REASON[cls]);
+
+  if (cls === 'H') {
+    window.recordPriorExposure(
+      'quality packet opened in an earlier page load of this identity',
+    );
+    window.technicalFailure('reload after administration: packet not re-run');
+  } else {
+    window.technicalFailure(
+      reloadHoldBackDetail(cls, 'packet not administered'),
+    );
+  }
+
+  return true;
+}
+
 /**
  * The packet was PRESENTED: Vale's briefing names the storm packet's
  * quality packet (o1); the Work Order Board lists the quality packet (o2).
+ * After a reload the check is written first and a held packet is held
+ * here, at its availability (U24 RL-1).
  */
 export function presentM12(occasion: M12Occasion, nowMs: number) {
   declareM12(occasion);
+  ensurePriorLoadCheck(occasion);
   m12Windows[occasion].present(
     nowMs,
     m12EntrySnapshot(occasion, ensureState(occasion).form),
   );
+  guardM12Reload(occasion);
 }
 
 /**
@@ -170,21 +271,11 @@ export function openM12(
   const window = m12Windows[occasion];
   const other: M12Occasion = occasion === 'o1' ? 'o2' : 'o1';
 
+  if (guardM12Reload(occasion)) {
+    return;
+  }
+
   if (window.windowStatus() === 'unopened') {
-    // Reload guard: the raw log of an earlier page load already holds an
-    // opened packet. Never re-run it (no second observation).
-    if (
-      m12PriorAdministration(researchRuntime.getPriorPageLoadEvents(), occasion)
-    ) {
-      m12Freeze(s, M12_PRIOR_ADMINISTRATION);
-      window.recordPriorExposure(
-        'quality packet opened in an earlier page load of this identity',
-      );
-      window.technicalFailure('reload after administration: packet not re-run');
-
-      return;
-    }
-
     if (!realisedOrder.includes(occasion)) {
       realisedOrder.push(occasion);
 
@@ -369,6 +460,11 @@ export function closeM12AtReview(nowMs: number) {
     const s = ensureState(occasion);
 
     if (window.windowStatus() === 'unopened') {
+      // A check of this load holds a packet that is not A (U24 RL-1).
+      if (priorLoadCheck != null && guardM12Reload(occasion)) {
+        continue;
+      }
+
       window.markAbsent(
         `quality packet ${occasion} never opened before the review`,
       );
@@ -396,6 +492,7 @@ export function resetM12State() {
   delete states.o1;
   delete states.o2;
   realisedOrder.length = 0;
+  priorLoadCheck = undefined;
 
   for (const occasion of OCCASIONS) {
     m12Windows[occasion].reset();

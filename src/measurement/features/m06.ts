@@ -8,9 +8,30 @@
  * over the raw `proto_m06_orders_*` events. A period never begun is null
  * (never a zero); an explicit early stop keeps the value with the budget
  * as its denominator; a review-closed open period is a censored value.
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §5): the
+ * load's `prior_load_checked` record classifies the console H / A / U /
+ * M; with its absence of an earlier opening established (A) a load with
+ * no console evidence takes the first-load reading. The record is never
+ * task evidence.
  */
-import { type M06Form, m06OrdersFor } from '../../pilot/windows/m06OrdersModel';
+import {
+  type M06Form,
+  m06OrdersFor,
+  m06PriorAdministration,
+} from '../../pilot/windows/m06OrdersModel';
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -61,14 +82,60 @@ interface M06Raw {
   closure_reason: string;
 }
 
+const FAMILY = 'proto_m06_orders_';
+
+/**
+ * The load's reload check (U24 RL-1; r1 §1 stage map): stage 1 the
+ * console listed by the work orders (`presented`), no stage 2, stage 3
+ * the opening, and the console's hold-back markers. Null on a first load.
+ */
+export function m06PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    stages: {
+      briefing: (event) => event.event_type === `${FAMILY}presented`,
+      opening: (event) => m06PriorAdministration([event]),
+      holdBack: (event) => event.event_type === `${FAMILY}technical_failure`,
+    },
+  });
+}
+
+/** The console's class from the load's check records (r3 §2). */
+export function classifyM06Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks });
+}
+
+/** The current-load reason of a held console, by its marker's class. */
+const HELD_REASON = {
+  H: 'console opened in an earlier page load; not re-run after the reload',
+  U: 'console not administered after a reload: earlier history not verified',
+  M: 'console not administered after a reload: earlier check contradictory',
+} as const;
+
 registerFeatureExtractor('M06', (events, context) => {
   const entry = registerEntry('M06');
   const [primary, detail] = entry.features;
   const load = currentLoadEvents(events, context);
-  const family = load.filter((e) =>
-    e.event_type.startsWith('proto_m06_orders_'),
+  const family = withoutPriorLoadChecks(
+    load.filter((e) => e.event_type.startsWith(FAMILY)),
+    FAMILY,
   );
   const supporting = sequencesOf(family);
+  const reload = classifyM06Reload(
+    context.pageLoadIndex,
+    eventsOfType(load, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
   const presented = eventsOfType(load, 'proto_m06_orders_presented');
   const opened = eventsOfType(load, 'proto_m06_orders_opportunity_opened');
   const closed = eventsOfType(load, 'proto_m06_orders_window_closed');
@@ -112,10 +179,42 @@ registerFeatureExtractor('M06', (events, context) => {
     return correct;
   };
 
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    const reason = 'a reload check record describes another page load';
+
+    return [
+      emptyFeature('M06', primary, 'technical_failure', reason, {
+        closure_reason: 'technical_failure',
+        supporting_sequences: supporting,
+      }),
+      emptyFeature('M06', detail, 'technical_failure', reason, {
+        closure_reason: 'technical_failure',
+      }),
+    ];
+  }
+
   if (opened.length === 0) {
-    if (heldBack.length > 0) {
-      const reason =
-        'console opened in an earlier page load; not re-run after the reload';
+    // Held: the guard's marker, or (U24 RL-1) a reloaded load whose check
+    // does not establish the absence of an earlier opening.
+    const held = (
+      heldBack.length > 0
+        ? heldBack.map(
+            (event) =>
+              reloadHoldBackClass(meta<unknown>(event, 'detail')) ?? 'H',
+          )
+        : context.reloaded &&
+            reload.check_count > 0 &&
+            reload.occasions.row.class !== 'A'
+          ? [reload.occasions.row.class ?? 'U']
+          : []
+    ) as ('H' | 'U' | 'M')[];
+
+    if (held.length > 0) {
+      const reason = [...new Set(held.map((cls) => HELD_REASON[cls]))].join(
+        '; ',
+      );
 
       return [
         emptyFeature('M06', primary, 'interrupted', reason, {
@@ -133,6 +232,19 @@ registerFeatureExtractor('M06', (events, context) => {
           supporting_sequences: supporting,
         }),
         emptyFeature('M06', detail, 'declined', reason),
+      ];
+    }
+
+    // An established absence takes the first-load reading (r3 §5, the
+    // single-occasion rule).
+    if (reload.occasions.row.class === 'A') {
+      const reason = 'dispatch console never opened';
+
+      return [
+        emptyFeature('M06', primary, 'not_presented', reason, {
+          supporting_sequences: supporting,
+        }),
+        emptyFeature('M06', detail, 'not_presented', reason),
       ];
     }
 

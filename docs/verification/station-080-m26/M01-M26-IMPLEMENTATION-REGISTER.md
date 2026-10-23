@@ -14175,3 +14175,115 @@ onward are the writer's readings and dispositions under it.
      `e2e/reload_check.spec.ts` (pure); browser: not applicable (no runtime
      change). M07 is not changed under any option (r3 §8 RL-4); M14–M20 and
      M23 keep their own check code until RL-3 / RL-4.
+405. **U24 RL-1 — the owner's additional ruling for RL-1 (23 October 2026),
+     recorded verbatim before any implementation edit (R-1, R-2; it
+     supplements `RELOAD-CORRECTION-SPEC-r3-exec.md` only on these points;
+     the frozen preparation package is unchanged; UNIT-LOG "U24 RL-1").**
+
+     ```text
+     I am Juls, the research owner. Execute RL-1 under the existing authorizations and the additional ruling below.
+
+     Read completely before implementation:
+     C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-correction\RL-EXECUTE-1.md
+
+     Follow that brief and its referenced authority, verification, review, evidence-preservation and commit requirements. The expected starting commit is 3e5bfce0d234882238eb2ff017eec43d8893f280 on codex/u24-end-to-end. Verify the fresh session has RL-1’s exact 36-path allowlist and report your actual model.
+
+     Additional approved owner ruling
+
+     R-1 — earlier opening with incomplete history:
+     An earlier opening established by the single attributable, well-formed check remains H despite discontinuous history. Preserve and report the incomplete-history flags; this does not establish absence or complete history.
+
+     Keep the approved precedence for missing checks, duplicate checks and malformed records. Distinguish a contradiction invalidating the whole check from an occasion-local contradiction: the latter must not overwrite an unaffected sibling’s own classification merely because an aggregate coherence flag is false.
+
+     R-2 — M04 joint hold-back:
+     Approve blocking an otherwise eligible M04 job when the other job is held as H, U or M, because their starting state is shared.
+
+     For the dependent sibling whose own class was A, report its own evidence/class separately from its effective joint hold-back. Preserve its actual opening flags and sequences. Existing H/U/M members retain their own classifications, including M and its contradiction evidence.
+
+     A joint hold-back must have a truthful dependency reason. Neither its effective H classification nor its wording may imply that the dependent sibling was previously opened. Retain prior-administration wording only where actual earlier administration supports it; U/M-only holds must not create that claim.
+
+     Verification:
+     Alongside the execution brief’s required checks, add one small parameterized fixture table covering H+A, U+A and M+A in both job orders. Assert own classification, effective classification and permission, joint basis/reason, opening flags/sequences and retained contradiction evidence.
+
+     Include the duplicate-check, malformed-opening and discontinuous-H precedence fixtures identified in the RL-0 clarification, plus the distinction between whole-check and occasion-local contradiction.
+
+     Use the scheduled Sonnet verification and Opus review. No additional broad audit or Fable run.
+
+     Scope and recording:
+     Record this ruling verbatim in the register and UNIT-LOG before implementation edits. It supplements the frozen specification only on these points; leave the frozen preparation package unchanged.
+
+     Implement within RL-1’s existing allowlist. Do not amend RL-0 or edit its shared helper. If the required distinction cannot be represented within this scope, identify the exact dependency before editing it.
+
+     Record these requirements for the later independent recount; Part C execution remains unauthorized.
+
+     Complete RL-1’s prescribed verification and reviews, preserve its evidence, and make its one authorized local commit only when its acceptance conditions are met. Stop with the handoff. No push, merge or subsequent unit execution in this session.
+     ```
+
+     **The RL-1 work (UNIT-LOG "U24 RL-1"; addendum §2 "U24 RL-1").** The
+     availability check of r3 §4 G3 is wired for M01, M02, M03, M04, M06,
+     M08, M12 and M13 through RL-0's helper, which is not edited: each
+     family's single `prior_load_checked` record is written by its host
+     (`presentM01`, `presentM02C`, `presentM03T`, `listM04`, `presentM06`,
+     `presentM08`, `presentM12`, `declareM13Lattice`) once per reloaded
+     load, before any opening; an occasion that is not A is held there —
+     H through the existing `recordPriorExposure` / `noteIpPriorExposure`
+     and the existing marker, U and M never administered; A is the
+     first-load administration. The extractors read the record (r3 §5
+     column B under A; the F5 heuristic and `absentFeature`'s reload branch
+     only without a check), exclude it from family evidence and
+     `supporting_sequences`, and keep every formula. The existing held-back
+     texts of M01, M06, M08, M12 and M13 and the closed presentation of M02
+     and M03 are unchanged; the §9 U / M lines are added (batch, console,
+     console, packet, lattice bench). **Owner rulings applied:** R-1 — an
+     earlier opening found by the single attributable, well-formed record
+     is H beside a discontinuous history; the record keeps
+     `history_continuous` false and the absence unestablished, and the row
+     reason names both the earlier opening and the unverified sibling; the
+     precedence of no check, two or more checks (D-6 (i)) and a malformed
+     check over an opening found is kept (U, U, technical failure); a
+     contradiction of the whole check holds every occasion as M, while one
+     confined to an occasion holds only that occasion and its sibling keeps
+     its own class although `check_coherent` is false. R-2 — M04's own and
+     effective classes are reported apart (`classifyM04Reload`; the row's
+     `reload_jobs` component); a job held only because the other is held
+     keeps its own A, flags and sequences, is effectively H beside an H and
+     U otherwise (the helper's joint rule), and carries the dependency
+     reason "the other cutting job is held (⟨reason⟩); this job shares its
+     starting state and is held with it" and a marker prefix ("reload with
+     a joint hold-back") that names no class; an H, U or M job keeps its
+     own class, an M job its contradiction; prior-administration wording
+     (the prior-exposure entry naming the other job) only when the other
+     job's own class is H. **Writer's readings (IMPLEMENTER DEFAULTS,
+     owner-visible and reversible):** (a) the stage maps and the record
+     functions live in the pure extractor modules (M13's in the pure series
+     model), because the rows' pure models are outside RL-1's allowlist; the
+     windows import them; (b) a host writes the record, then its existing
+     presentation record, then the hold-back, so the presentation stays the
+     stage-1 record of a later check; M13 is held at its declaration
+     without an entry, so a held bench is closed `technical_failure` and the
+     generic coverage closure's "offered but never entered" no longer
+     applies to it (r3 §7); (c) the station-review closure holds an
+     unopened occasion that this load's check does not classify A (M01, M03,
+     M12) instead of marking it absent — U is never `participant_absent`
+     and H keeps its prior-exposure entry (r3 §2); with no check in the load
+     the review is unchanged; (d) with a check, an unopened occasion that is
+     not A reads held even without a marker (possible only in a corrupted
+     log, e.g. duplicate checks); (e) a malformed record makes the row a
+     technical failure (the existing rule, as M07); (f) the U / M reasons
+     are the station's held phrase with r3 §2's reason; M03 and M04 append
+     r3 §2's reason to their existing generic one; (g) the U / M lines use
+     each row's existing held screen (same title, the existing controls
+     disabled, Close), only the status lines differ; on M06's and M08's
+     U / M screens the readouts directly under the status line (M06's
+     summary, M08's output and slot readouts) are not drawn, because they
+     would cover the second line (seen in the first browser run) and would
+     state a result on a console that never ran; no new string is added. **Recorded for the later independent recount (Part C layer R; not
+     executed, Part C unauthorised):** the recount must reproduce the class
+     order above (first load; no check, two or more checks ⇒ U; malformed ⇒
+     technical failure; whole-check contradiction ⇒ M for every occasion;
+     per occasion its own contradiction ⇒ M, an opening found ⇒ H even
+     beside a discontinuous history, a discontinuous history ⇒ U, the
+     absence established ⇒ A, else U), keep a whole-check contradiction
+     apart from an occasion-local one, read M04's own and effective classes
+     apart with the dependency reason, and accept prior-administration
+     wording on a dependent job only beside an H job.

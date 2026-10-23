@@ -26,8 +26,29 @@
  * after a reload that follows any cut, neither job is run again. The v2
  * single-job family (`proto_m04_debris_*`) keeps its v2
  * meaning in the frozen ledger and is retired from the route.
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §4; owner
+ * ruling R-2 of 23 October 2026): the guard moves to the listing, which
+ * writes the family's single `prior_load_checked` record before any cut.
+ * A job held as H, U or M holds the other job too, because the two share
+ * their starting state. An H job keeps the existing prior-exposure entry
+ * and marker; a U or M job is not administered; a job held only by that
+ * dependency gets a dependency marker that never says it was cut, and a
+ * prior-exposure entry naming the other job only when that job was
+ * administered earlier. The cutter has no held-back screen (r3 §9).
  */
+import {
+  classifyM04Reload,
+  type M04JobReload,
+  m04PriorLoadCheck,
+} from '../../measurement/features/m04';
 import { protocolStamp } from '../../measurement/protocol';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  RELOAD_REASON,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import {
   createM04State,
@@ -60,7 +81,6 @@ import {
   type M04PickupOrigin,
   type M04Piece,
   m04PiecesOf,
-  m04PriorAdministration,
   m04PutBack,
   m04RawComponents,
   m04RunJob,
@@ -212,9 +232,109 @@ export function noteM04Entry(entry: Record<string, unknown>) {
   entryContext = { ...entry };
 }
 
-/** The work orders listed the sample coupons (exposure record, once). */
+/** This load's check (undefined until the guard ran in this load). */
+let priorLoadCheck: PriorLoadCheck | null | undefined;
+
+/** This load's per-job classes (null before the guard or on a first load). */
+let reloadJobs: Record<M04Job, M04JobReload> | null = null;
+
+/** Each job's own and effective class in this load (owner ruling R-2). */
+export function m04ReloadJobs(): Readonly<Record<M04Job, M04JobReload>> | null {
+  return reloadJobs;
+}
+
+/** The marker and prior-exposure entry of one held job (R-2 wording). */
+function holdM04Job(job: M04Job, row: M04JobReload, nowMs: number) {
+  const cls = row.own.class;
+
+  if (cls === 'H') {
+    m04Freeze(state, job, nowMs, M04_PRIOR_ADMINISTRATION);
+    windows[job].recordPriorExposure(
+      'a cutting job was administered in an earlier page load of this identity',
+    );
+    windows[job].technicalFailure(
+      'reload after administration: cutting job not run',
+    );
+  } else if (cls === 'U' || cls === 'M') {
+    m04Freeze(
+      state,
+      job,
+      nowMs,
+      cls === 'U' ? 'unverified_history' : 'contradictory_check',
+    );
+    windows[job].technicalFailure(
+      reloadHoldBackDetail(cls, 'cutting job not administered'),
+    );
+  } else {
+    // Held only because the other job is held: never "administered",
+    // never "opened"; the earlier administration is named only when the
+    // other job's own class is H.
+    const other = row.held_with ?? 'U';
+
+    m04Freeze(state, job, nowMs, 'joint_hold_back');
+
+    if (other === 'H') {
+      windows[job].recordPriorExposure(
+        'the other cutting job was administered in an earlier page load of this identity; this job, never cut, shares its starting state',
+      );
+    }
+
+    windows[job].technicalFailure(
+      `reload with a joint hold-back: cutting job not run; the other job is held (${RELOAD_REASON[other]}) and shares its starting state`,
+    );
+  }
+}
+
+/**
+ * Reload guard (register §5.14; U24 RL-1, owner ruling R-2): once per
+ * reloaded load, before any cut, the check is written and every job not
+ * yet run whose effective class is not A is held — the first job is never
+ * re-run, and a job sharing its starting state with a held one is never
+ * started from a state this load cannot know.
+ */
+function guardM04Reload(nowMs: number) {
+  if (priorLoadCheck !== undefined) {
+    return;
+  }
+
+  const pageLoadIndex = researchRuntime.getPageLoadIndex();
+
+  priorLoadCheck = m04PriorLoadCheck(
+    pageLoadIndex,
+    researchRuntime.getPriorPageLoadEvents(),
+    researchRuntime.getEventIntegrity(),
+  );
+
+  if (priorLoadCheck === null) {
+    return;
+  }
+
+  sink('o1', PRIOR_LOAD_CHECK_SUFFIX, {
+    ...priorLoadCheck,
+    input_mode: 'system',
+  });
+  reloadJobs = classifyM04Reload(pageLoadIndex, [priorLoadCheck]).jobs;
+
+  for (const job of M04_JOBS) {
+    const row = reloadJobs[job];
+
+    if (
+      state.jobs[job].status === 'not_run' &&
+      row.effective.class !== null &&
+      row.effective.class !== 'A'
+    ) {
+      holdM04Job(job, row, nowMs);
+    }
+  }
+}
+
+/**
+ * The work orders listed the sample coupons (exposure record, once).
+ * After a reload the check and the hold-back come first (U24 RL-1).
+ */
 export function listM04(nowMs: number) {
   declareM04();
+  guardM04Reload(nowMs);
 
   if (m04Listed(state, nowMs)) {
     sink('o1', 'listed', {
@@ -241,31 +361,9 @@ export function runM04SampleJob(
   accessible: (job: M04Job) => boolean,
 ): M04CutResult {
   declareM04();
-
-  // Reload guard (register §5.14): once the raw log of an earlier page
-  // load holds a cut, NEITHER job is run in this load — the first is never
-  // re-run and the second would start from a state this load cannot know
-  // (the first job's pieces and its departure).
-  const prior = researchRuntime.getPriorPageLoadEvents();
-
-  if (
-    m04AvailableJob(state) !== null &&
-    M04_JOBS.some((job) => m04PriorAdministration(prior, job))
-  ) {
-    for (const job of M04_JOBS) {
-      if (state.jobs[job].status !== 'not_run') {
-        continue;
-      }
-
-      m04Freeze(state, job, nowMs, M04_PRIOR_ADMINISTRATION);
-      windows[job].recordPriorExposure(
-        'a cutting job was administered in an earlier page load of this identity',
-      );
-      windows[job].technicalFailure(
-        'reload after administration: cutting job not run',
-      );
-    }
-  }
+  // Reload guard (register §5.14; U24 RL-1): normally already run at the
+  // listing; a cut before any listing runs it here, before the cut.
+  guardM04Reload(nowMs);
 
   const next = m04AvailableJob(state);
   const result = m04RunJob(
@@ -402,4 +500,6 @@ export function resetM04State() {
 
   state = createM04State();
   entryContext = {};
+  priorLoadCheck = undefined;
+  reloadJobs = null;
 }

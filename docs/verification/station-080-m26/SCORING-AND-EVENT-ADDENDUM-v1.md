@@ -1617,6 +1617,55 @@ the M prefix and the reasons are IMPLEMENTER DEFAULTS, owner-visible and
 reversible (register §5.404 readings (a), (c), (d), (h); (a) awaits the
 owner's confirmation). `absentFeature` and `extract.ts` are unchanged.
 
+U24 RL-1 (PROVISIONAL, never canonical; D-4, D-5 and owner ruling R-1 /
+R-2 of 23 October 2026; `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4, §5,
+§9; register §5.405): the record of RL-0 is now written for eight families,
+once per reloaded load, before any opening, by the family's host —
+`proto_m01_batch_prior_load_checked` (`presentM01`; occasions `o1`, `o2`),
+`proto_m02_workspace_prior_load_checked` (`presentM02C`; no occasions),
+`proto_m03tools_prior_load_checked` (`presentM03T`; occasions `o1`, `o2`
+for the press occasions a, b), `proto_m04_cutting_prior_load_checked`
+(`listM04`, or the cut when no listing came first; occasions `o1`, `o2`),
+`proto_m06_orders_prior_load_checked` (`presentM06`),
+`proto_m08_effort_prior_load_checked` (`presentM08`),
+`proto_m12_check_prior_load_checked` (`presentM12`; occasions `o1`, `o2`)
+and `proto_m13_networks_prior_load_checked` (`declareM13Lattice`; the
+suffix is added to the family's declared list). Each carries the window's
+usual fields and RL-0's flags; the stage maps are r1 §1's: stage 1 the
+existing `presented` record (M04: `listed`; M13: none), stage 2 only for
+M03 (`surface_opened`, a panel opened without its tools laying out — never
+an opening) and M04 (`presented` at the cut), stage 3 the existing opening
+(`opportunity_opened`; M13 `series_opened`). **Hold-back markers** (the
+existing `technical_failure`, detail beginning "reload"): H keeps each
+row's existing detail and prior-exposure entry; U "reload with an
+unverified earlier state: ⟨station⟩ not administered" and M "reload with a
+contradictory earlier check: ⟨station⟩ not administered", with no
+prior-exposure entry (M13: `prior_exposure` false). **M04 joint hold-back
+(R-2):** a job held as H, U or M holds the other job; a job held only by
+that dependency keeps its own class and its own record flags and gets the
+detail "reload with a joint hold-back: cutting job not run; the other job
+is held (⟨the other job's reason⟩) and shares its starting state" — a
+prefix that names no class, so D-7's carry-forward never reads it — and a
+prior-exposure entry naming the other job ("the other cutting job was
+administered in an earlier page load of this identity; this job, never
+cut, shares its starting state") only when the other job's own class is H.
+The M04 primary row's components gain `reload_jobs` (after a reload or
+beside a check only): per job `own_class`, `own_basis`, `effective_class`,
+`administration_permitted`, `basis`, `reason`, `joint_hold_back`,
+`held_with` and the job's `prior_opening_found`,
+`prior_opening_absence_established` and `prior_opening_sequences` as the
+record holds them (a writer's shape, provisional). **Readings:** with an
+established check an occasion takes the first-load reading (r3 §5 column
+B); an unopened occasion that is not A is held with its class's reason —
+the H reason unchanged, U "⟨station⟩ not administered after a reload:
+earlier history not verified", M "… earlier check contradictory" (M03 and
+M04 append "earlier history not verified" / "earlier check contradictory"
+to their existing "held back after a reload" reason); a malformed record is
+a technical failure of the row (§5.290 (a)); without any check, the
+existing F5 and `absentFeature` reload readings are unchanged. No formula,
+weight, denominator rule or event name other than the suffix above
+changes.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                               | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

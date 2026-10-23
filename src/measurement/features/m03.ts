@@ -18,10 +18,36 @@
  * reached, whose run was never completed, whose panel was closed by the
  * system, that was never opened or that was held back by a reload is
  * never a zero.
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §5): the
+ * load's `prior_load_checked` record classifies each occasion H / A / U /
+ * M. An occasion whose absence of an earlier opening is established (A)
+ * takes the first-load reading; the F5 reading (no current-load evidence
+ * after a reload ⇒ held) applies only to an occasion without one. The
+ * record is never task evidence.
  */
-import { M03_TOOLS } from '../../pilot/windows/m03RestoreModel';
+import {
+  M03_SPEC,
+  M03_TOOLS,
+  type M03Occasion,
+  m03PriorAdministration,
+  m03PriorPanelExposure,
+  m03PriorPresentation,
+} from '../../pilot/windows/m03RestoreModel';
 import type { RawGameEvent } from '../../systems/EventLogger';
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  RELOAD_REASON,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -58,6 +84,56 @@ const SURFACE: Record<Occasion, string> = {
 const EXPECTED_TOOLS: readonly string[] = M03_TOOLS.map(
   (tool) => tool.definitionId,
 );
+/** The window occasion (`o1`, `o2`) of each press occasion (`a`, `b`). */
+const PRESS: Record<Occasion, M03Occasion> = { o1: 'a', o2: 'b' };
+
+/**
+ * The load's reload check (U24 RL-1; r1 §1 stage map): per occasion, stage
+ * 1 the press batch listed or the press opened first (`presented`), stage
+ * 2 the panel opened (`surface_opened`), stage 3 the tools laid out
+ * (`opportunity_opened`), and the occasion's hold-back markers. A panel
+ * opened earlier without the tools laying out is no opening: the occasion
+ * runs, with the existing prior-exposure entry. Null on a first load.
+ */
+export function m03PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    occasions: Object.fromEntries(
+      OCCASIONS.map((occasion) => {
+        const press = PRESS[occasion];
+
+        return [
+          occasion,
+          {
+            briefing: (event: ReloadEvent) =>
+              m03PriorPresentation([event], press),
+            presentation: (event: ReloadEvent) =>
+              m03PriorPanelExposure([event], press),
+            opening: (event: ReloadEvent) =>
+              m03PriorAdministration([event], press),
+            holdBack: (event: ReloadEvent) =>
+              event.event_type === `${FAMILY}technical_failure` &&
+              event.metadata?.opportunity_id === M03_SPEC[press].opportunity_id,
+          },
+        ];
+      }),
+    ),
+  });
+}
+
+/** Each occasion's class from the load's check records (r3 §2). */
+export function classifyM03Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks, occasions: OCCASIONS });
+}
 
 function sameIds(ids: readonly string[]): boolean {
   return (
@@ -97,8 +173,38 @@ registerFeatureExtractor('M03', (events, context) => {
   const entry = registerEntry('M03');
   const [primary, states] = entry.features;
   const load = currentLoadEvents(events, context);
-  const family = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const family = withoutPriorLoadChecks(
+    load.filter((e) => e.event_type.startsWith(FAMILY)),
+    FAMILY,
+  );
   const supporting = sequencesOf(family);
+  const reload = classifyM03Reload(
+    context.pageLoadIndex,
+    eventsOfType(load, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+  const established = (occasion: Occasion) =>
+    reload.occasions[occasion].class === 'A';
+  const checked = reload.check_count > 0;
+
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    const reason =
+      'a reload check record describes another page load or lacks an occasion';
+
+    return [
+      emptyFeature('M03', primary, 'technical_failure', reason, {
+        closure_reason: 'technical_failure',
+        supporting_sequences: supporting,
+      }),
+      emptyFeature('M03', states, 'technical_failure', reason, {
+        closure_reason: 'technical_failure',
+      }),
+    ];
+  }
+
   const of = (suffix: string, occasion: Occasion) =>
     eventsOfType(family, `${FAMILY}${suffix}`).filter(
       (event) => occasionOf(event) === occasion,
@@ -115,9 +221,10 @@ registerFeatureExtractor('M03', (events, context) => {
     const departure = departures[0] ?? null;
     const systemClose = of('state_at_system_close', occasion)[0] ?? null;
     const failures = of('technical_failure', occasion);
-    const heldBack = failures.some((event) =>
+    const holdBacks = failures.filter((event) =>
       (meta<string>(event, 'detail') ?? '').startsWith('reload'),
     );
+    const heldBack = holdBacks.length > 0;
     const faulted = failures.some(
       (event) => !(meta<string>(event, 'detail') ?? '').startsWith('reload'),
     );
@@ -207,6 +314,14 @@ registerFeatureExtractor('M03', (events, context) => {
     const presentedSequence = presentations[0]?.sequence ?? null;
     const surfacedSequence = surfaces[0]?.sequence ?? null;
 
+    // After a reload, an unopened occasion is held by its own class when
+    // the load's check does not establish its absence (U24 RL-1); without
+    // any check, only one with no current-load evidence is (F5).
+    const classHeld =
+      context.reloaded &&
+      !established(occasion) &&
+      opened === null &&
+      (checked || (!presented && !surfaced));
     const status: Status = heldBack
       ? 'interrupted'
       : faulted
@@ -219,17 +334,25 @@ registerFeatureExtractor('M03', (events, context) => {
             ? 'censored'
             : opened !== null
               ? 'pending'
-              : surfaced
-                ? 'unrun'
-                : presented
-                  ? 'declined'
-                  : context.reloaded
-                    ? 'interrupted'
+              : classHeld
+                ? 'interrupted'
+                : surfaced
+                  ? 'unrun'
+                  : presented
+                    ? 'declined'
                     : 'absent';
 
     return {
       occasion,
       status,
+      holdBackClasses: heldBack
+        ? holdBacks.map(
+            (event) =>
+              reloadHoldBackClass(meta<unknown>(event, 'detail')) ?? 'H',
+          )
+        : status === 'interrupted' && checked
+          ? [reload.occasions[occasion].class ?? 'U']
+          : [],
       restored: status === 'observed' ? recount : null,
       state:
         status === 'absent'
@@ -329,6 +452,17 @@ registerFeatureExtractor('M03', (events, context) => {
   };
 
   if (family.length === 0) {
+    // An established absence for every occasion takes the first-load
+    // reading (r3 §5, NOP + NOP (A)).
+    if (OCCASIONS.every(established)) {
+      const reason = 'no press occasion presented';
+
+      return [
+        emptyFeature('M03', primary, 'not_presented', reason),
+        emptyFeature('M03', states, 'not_presented', reason),
+      ];
+    }
+
     return [
       absentFeature('M03', primary, context, 'no press occasion presented'),
       absentFeature('M03', states, context, 'no press occasion presented'),
@@ -371,10 +505,24 @@ registerFeatureExtractor('M03', (events, context) => {
   const interrupted = by('interrupted').length > 0;
   const systemClosed = by('censored').length > 0;
   const technical = by('technical').length > 0;
+  // A U or M hold-back names its reason (r3 §2); an H one keeps the
+  // existing reading.
+  const unverified = [
+    ...new Set(
+      perOccasion.flatMap((row) =>
+        row.holdBackClasses.flatMap((cls) =>
+          cls === 'H' ? [] : [RELOAD_REASON[cls]],
+        ),
+      ),
+    ),
+  ];
   const zero: { disposition: Missing; reason: string } = interrupted
     ? {
         disposition: 'interrupted',
-        reason: 'a press occasion was held back after a reload',
+        reason:
+          unverified.length === 0
+            ? 'a press occasion was held back after a reload'
+            : `a press occasion was held back after a reload: ${unverified.join('; ')}`,
       }
     : systemClosed
       ? {

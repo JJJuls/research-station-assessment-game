@@ -17,10 +17,20 @@
  * an open packet closed at the review ⇒ never a zero, never opened ≠
  * declined ≠ interrupted ≠ pending, a recount disagreement ⇒ technical
  * failure on both rows.
+ *
+ * U24 RL-1 (`RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §5, §8): every r3 §5
+ * row of M12 after a reload (identical in structure to M01), with each
+ * packet's class and permission to administer as well as the reading, and
+ * F-D and F-E at row level. Streams are built as the runtime writes them;
+ * the expected readings are written from r3 §5.
  */
 import { expect, test } from '@playwright/test';
 
 import { extractItemFeatures } from '../src/measurement/features';
+import {
+  classifyM12Reload,
+  m12PriorLoadCheck,
+} from '../src/measurement/features/m12';
 import { registerEntry } from '../src/measurement/registerV3';
 import {
   createM12State,
@@ -640,5 +650,329 @@ test.describe('M12 quality packets (pure)', () => {
       expect(rows[1].disposition).toBe('technical_failure');
       expect(rows[0].components).toMatchObject({ recount_agrees: false });
     }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-1: the reload check at availability (pure)
+ * ------------------------------------------------------------------ */
+
+const CONTINUOUS = {
+  first_sequence: 1,
+  sequence_gap_count: 0,
+  sequence_duplicate_count: 0,
+  recovered_from_chunks: false,
+};
+const UNVERIFIED = { ...CONTINUOUS, recovered_from_chunks: true };
+/** The window's marker details (r3 §2 validity records). */
+const HOLD_DETAIL = {
+  H: 'reload after administration: packet not re-run',
+  U: 'reload with an unverified earlier state: packet not administered',
+  M: 'reload with a contradictory earlier check: packet not administered',
+} as const;
+const UNVERIFIED_REASON =
+  'packet not administered after a reload: earlier history not verified';
+
+type PriorStep = 'session' | 'presented' | 'opened' | 'H' | 'U' | 'M';
+type Step = 'none' | 'present' | 'release0' | 'release3' | 'open_unreleased';
+
+function priorLoad(
+  index: number,
+  from: number,
+  steps: readonly [M12Occasion | null, PriorStep][],
+): RawGameEvent[] {
+  const h = harness();
+
+  for (const [occasion, step] of steps) {
+    if (occasion === null || step === 'session') {
+      h.events.push({
+        session_id: 's',
+        timestamp_ms: 0,
+        scene: 'dock',
+        event_type: 'session_start',
+        metadata: {},
+      });
+      continue;
+    }
+
+    h.presented(occasion);
+
+    if (step === 'opened') {
+      h.opened(occasion);
+    } else if (step !== 'presented') {
+      h.sink(occasion)('technical_failure', {
+        detail: HOLD_DETAIL[step],
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return h.events.map((event, i) => ({
+    ...event,
+    page_load_index: index,
+    sequence: from + i,
+  }));
+}
+
+/** A reloaded load as the runtime writes it (see the M01 spec). */
+function reloadedLoad(
+  prior: RawGameEvent[],
+  steps: Record<M12Occasion, Step>,
+  options: { integrity?: typeof CONTINUOUS; pageLoadIndex?: number } = {},
+) {
+  const pageLoadIndex = options.pageLoadIndex ?? 2;
+  const record = m12PriorLoadCheck(
+    pageLoadIndex,
+    prior,
+    options.integrity ?? CONTINUOUS,
+  ) as unknown as Record<string, unknown>;
+  const reload = classifyM12Reload(pageLoadIndex, [record]);
+  const h = harness();
+
+  for (const occasion of ['o1', 'o2'] as const) {
+    const step = steps[occasion];
+    const cls = reload.occasions[occasion].class;
+
+    if (step === 'none') {
+      continue;
+    }
+
+    h.presented(occasion);
+
+    if (cls !== 'A') {
+      h.sink(occasion)('technical_failure', {
+        detail: HOLD_DETAIL[cls ?? 'U'],
+        input_mode: 'system',
+      });
+      continue;
+    }
+
+    if (step === 'present') {
+      continue;
+    }
+
+    const s = createM12State(occasion, 'form_a');
+    const at = occasion === 'o1' ? T0 : T0 + 60_000;
+
+    h.opened(occasion);
+
+    if (step === 'open_unreleased') {
+      m12Freeze(s, 'closed_at_review');
+      h.close(s, 'closed_at_review');
+      continue;
+    }
+
+    m12Release(
+      s,
+      step === 'release3' ? checkAll(s, at, h.sink(occasion)) : at,
+      'pointer',
+      h.sink(occasion),
+    );
+    h.close(s);
+  }
+
+  const from = prior.length + 1;
+  const current = [
+    {
+      session_id: 's',
+      timestamp_ms: 0,
+      scene: 'station_concourse',
+      event_type: `${M12_FAMILY}prior_load_checked`,
+      metadata: {
+        opportunity_id: M12_OPPORTUNITY_IDS.o1,
+        occasion: 'o1',
+        ...record,
+        input_mode: 'system',
+      },
+    } as RawGameEvent,
+    ...h.events,
+  ].map((event, i) => ({
+    ...event,
+    page_load_index: pageLoadIndex,
+    sequence: from + i,
+  }));
+  const rows = extractItemFeatures('M12', [...prior, ...current], {
+    finalCoreClosed: true,
+    pageLoadIndex,
+    reloaded: true,
+  });
+
+  return { record, reload, rows };
+}
+
+const NEVER = priorLoad(1, 1, [[null, 'session']]);
+const O1_OPENED = priorLoad(1, 1, [['o1', 'opened']]);
+const BOTH_OPENED = priorLoad(1, 1, [
+  ['o1', 'opened'],
+  ['o2', 'opened'],
+]);
+const O1_EARLIER_U = priorLoad(1, 1, [['o1', 'U']]);
+
+/** r3 §5 M12 (as M01): class, permission, reading. */
+const M12_CASES: readonly {
+  name: string;
+  prior: RawGameEvent[];
+  steps: Record<M12Occasion, Step>;
+  integrity?: typeof CONTINUOUS;
+  classes: [string | null, string | null];
+  row: Record<string, unknown>;
+  reason?: string;
+}[] = [
+  {
+    name: 'HB+OBS ⇒ interrupted · x · x/3',
+    prior: O1_OPENED,
+    steps: { o1: 'present', o2: 'release3' },
+    classes: ['H', 'A'],
+    row: { disposition: 'interrupted', value: 3, numerator: 3, denominator: 3 },
+  },
+  {
+    name: 'H, not reopened, + DEC (S3) ⇒ interrupted · null · null/null (a)',
+    prior: O1_OPENED,
+    steps: { o1: 'present', o2: 'present' },
+    classes: ['H', 'A'],
+    row: { disposition: 'interrupted', value: null },
+  },
+  {
+    name: 'HB+NOP ⇒ interrupted · null · null/null',
+    prior: O1_OPENED,
+    steps: { o1: 'present', o2: 'none' },
+    classes: ['H', 'A'],
+    row: { disposition: 'interrupted', value: null },
+  },
+  {
+    name: 'HB+HB ⇒ interrupted · null · null/null',
+    prior: BOTH_OPENED,
+    steps: { o1: 'present', o2: 'present' },
+    classes: ['H', 'H'],
+    row: { disposition: 'interrupted', value: null },
+  },
+  {
+    name: 'U + DEC ⇒ interrupted · null · null/null, reason unverified (c)',
+    prior: O1_EARLIER_U,
+    steps: { o1: 'present', o2: 'present' },
+    classes: ['U', 'A'],
+    row: { disposition: 'interrupted', value: null },
+    reason: UNVERIFIED_REASON,
+  },
+  {
+    name: 'OBS+OBS ⇒ observed · (x1+x2)/6 (an unchecked release is an observed 0)',
+    prior: NEVER,
+    steps: { o1: 'release3', o2: 'release0' },
+    classes: ['A', 'A'],
+    row: { disposition: 'observed', value: 3, numerator: 3, denominator: 6 },
+  },
+  {
+    name: 'OBS+DEC ⇒ incomplete · x · x/3',
+    prior: NEVER,
+    steps: { o1: 'release3', o2: 'present' },
+    classes: ['A', 'A'],
+    row: { disposition: 'incomplete', value: 3, numerator: 3, denominator: 3 },
+  },
+  {
+    name: 'OBS + NOP (A) ⇒ incomplete · x · x/3, no longer interrupted (b)',
+    prior: NEVER,
+    steps: { o1: 'release3', o2: 'none' },
+    classes: ['A', 'A'],
+    row: { disposition: 'incomplete', value: 3, numerator: 3, denominator: 3 },
+  },
+  {
+    name: 'HB(U) + OBS(A) ⇒ interrupted · x · x/3 (clarification 1; F-D)',
+    prior: O1_EARLIER_U,
+    steps: { o1: 'present', o2: 'release3' },
+    classes: ['U', 'A'],
+    row: { disposition: 'interrupted', value: 3, numerator: 3, denominator: 3 },
+  },
+  {
+    name: 'history-level U holds both packets: interrupted · null · null/null, reason unverified (c)',
+    prior: NEVER,
+    integrity: UNVERIFIED,
+    steps: { o1: 'present', o2: 'none' },
+    classes: ['U', 'U'],
+    row: { disposition: 'interrupted', value: null },
+    reason: UNVERIFIED_REASON,
+  },
+  {
+    name: 'OU + NOP (A) ⇒ no_eligible_event · null · null/0 (b)',
+    prior: NEVER,
+    steps: { o1: 'open_unreleased', o2: 'none' },
+    classes: ['A', 'A'],
+    row: {
+      disposition: 'no_eligible_event',
+      value: null,
+      numerator: null,
+      denominator: 0,
+    },
+  },
+  {
+    name: 'NOP + NOP (A) ⇒ not_presented (b)',
+    prior: NEVER,
+    steps: { o1: 'none', o2: 'none' },
+    classes: ['A', 'A'],
+    row: { disposition: 'not_presented', value: null },
+  },
+  {
+    name: 'DEC+DEC (A) ⇒ declined; DEC+DEC (U) is below',
+    prior: NEVER,
+    steps: { o1: 'present', o2: 'present' },
+    classes: ['A', 'A'],
+    row: { disposition: 'declined', value: null },
+  },
+  {
+    name: 'DEC+DEC (U) ⇒ interrupted · null · null/null (c)',
+    prior: NEVER,
+    integrity: UNVERIFIED,
+    steps: { o1: 'present', o2: 'present' },
+    classes: ['U', 'U'],
+    row: { disposition: 'interrupted', value: null },
+    reason: UNVERIFIED_REASON,
+  },
+];
+
+test.describe('M12 reload at availability (U24 RL-1, pure)', () => {
+  for (const c of M12_CASES) {
+    test(`r3 §5: ${c.name}`, () => {
+      const { reload, rows } = reloadedLoad(c.prior, c.steps, {
+        integrity: c.integrity,
+      });
+
+      expect([reload.occasions.o1.class, reload.occasions.o2.class]).toEqual(
+        c.classes,
+      );
+      expect([
+        reload.occasions.o1.administration_permitted,
+        reload.occasions.o2.administration_permitted,
+      ]).toEqual(c.classes.map((cls) => cls === 'A'));
+      expect(rows[0]).toMatchObject(c.row);
+
+      if (c.reason !== undefined) {
+        expect(rows[0].missing_reason).toBe(c.reason);
+      }
+    });
+  }
+
+  test('F-E: an H marker of one packet leaves its sibling A, administered and observed', () => {
+    const prior = [
+      ...O1_OPENED,
+      ...priorLoad(2, O1_OPENED.length + 1, [
+        ['o1', 'H'],
+        ['o2', 'presented'],
+      ]),
+    ];
+    const { reload, rows } = reloadedLoad(
+      prior,
+      { o1: 'present', o2: 'release3' },
+      { pageLoadIndex: 3 },
+    );
+
+    expect(reload.occasions.o1.class).toBe('H');
+    expect(reload.occasions.o2).toMatchObject({
+      class: 'A',
+      administration_permitted: true,
+    });
+    expect(rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: 3,
+      denominator: 3,
+    });
   });
 });

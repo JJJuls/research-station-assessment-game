@@ -13,8 +13,26 @@
  * disagrees anywhere (a second answer to one request included) is a
  * technical failure, never a value. A workspace never handed over has no
  * request and is never a zero.
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §5): the
+ * load's `prior_load_checked` record classifies the workspace H / A / U /
+ * M; with its absence of an earlier opening established (A) a load with
+ * no workspace evidence takes the first-load reading. The record is never
+ * task evidence.
  */
+import { m02PriorAdministration } from '../../pilot/windows/m02RetrievalModel';
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -29,6 +47,44 @@ import {
 import type { FeatureDisposition, FeatureRecord } from './types';
 
 const FAMILY = 'proto_m02_workspace_';
+
+/**
+ * The load's reload check (U24 RL-1; r1 §1 stage map): stage 1 the
+ * workspace listed by the work orders (`presented`), no stage 2, stage 3
+ * the opening, and the workspace's hold-back markers. Null on a first
+ * load.
+ */
+export function m02PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    stages: {
+      briefing: (event) => event.event_type === `${FAMILY}presented`,
+      opening: (event) => m02PriorAdministration([event]),
+      holdBack: (event) => event.event_type === `${FAMILY}technical_failure`,
+    },
+  });
+}
+
+/** The workspace's class from the load's check records (r3 §2). */
+export function classifyM02Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks });
+}
+
+/** The current-load reason of a held workspace, by its marker's class. */
+const HELD_REASON = {
+  H: 'workspace opened in an earlier page load; not re-run after the reload',
+  U: 'workspace not administered after a reload: earlier history not verified',
+  M: 'workspace not administered after a reload: earlier check contradictory',
+} as const;
 
 interface M02RawRequest {
   request_index: number;
@@ -74,8 +130,17 @@ registerFeatureExtractor('M02', (events, context) => {
   const entry = registerEntry('M02');
   const [primary, latency, layout] = entry.features;
   const load = currentLoadEvents(events, context);
-  const family = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const family = withoutPriorLoadChecks(
+    load.filter((e) => e.event_type.startsWith(FAMILY)),
+    FAMILY,
+  );
   const supporting = sequencesOf(family);
+  const reload = classifyM02Reload(
+    context.pageLoadIndex,
+    eventsOfType(load, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
   const presented = eventsOfType(load, `${FAMILY}presented`);
   const opened = eventsOfType(load, `${FAMILY}opportunity_opened`);
   const closed = eventsOfType(load, `${FAMILY}window_closed`);
@@ -109,17 +174,27 @@ registerFeatureExtractor('M02', (events, context) => {
     }),
   ];
 
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    return all(
+      'technical_failure',
+      'a reload check record describes another page load',
+      { closure_reason: 'technical_failure' },
+    );
+  }
+
   // A technical failure invalidates the observation whatever was opened:
   // the reload guard (held back, `interrupted`) or a fault of the
   // workspace itself (`technical_failure`). Never a low value.
   if (failed.length > 0) {
     const detail = meta<string>(failed[failed.length - 1], 'detail') ?? '';
-    const reload = detail.startsWith('reload');
+    const heldBack = detail.startsWith('reload');
 
     return all(
-      reload ? 'interrupted' : 'technical_failure',
-      reload
-        ? 'workspace opened in an earlier page load; not re-run after the reload'
+      heldBack ? 'interrupted' : 'technical_failure',
+      heldBack
+        ? HELD_REASON[reloadHoldBackClass(detail) ?? 'H']
         : `workspace fault: ${detail}`,
       {
         closure_reason: 'technical_failure',
@@ -136,11 +211,37 @@ registerFeatureExtractor('M02', (events, context) => {
       );
     }
 
+    // A reloaded load whose check does not establish the absence of an
+    // earlier opening holds the workspace (U24 RL-1).
+    const cls = reload.occasions.row.class;
+
+    if (
+      context.reloaded &&
+      reload.check_count > 0 &&
+      (cls === 'H' || cls === 'U' || cls === 'M')
+    ) {
+      return all('interrupted', HELD_REASON[cls]);
+    }
+
     if (presented.length > 0) {
       return all(
         'declined',
         'workspace listed by the work orders, never opened',
       );
+    }
+
+    // An established absence takes the first-load reading (r3 §5, the
+    // single-occasion rule).
+    if (reload.occasions.row.class === 'A') {
+      const reason = 'case workspace never opened';
+
+      return [
+        emptyFeature('M02', primary, 'not_presented', reason, {
+          supporting_sequences: supporting,
+        }),
+        emptyFeature('M02', latency, 'not_presented', reason),
+        emptyFeature('M02', layout, 'not_presented', reason),
+      ];
     }
 
     return [

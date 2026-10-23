@@ -9,8 +9,27 @@
  * Read-only over the raw `proto_m12_check_*` events. An unchecked release
  * is an observed 0 for that product; a packet never released, never
  * opened or held back is never a zero; viewing is never detection.
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §5): the
+ * load's `prior_load_checked` record classifies each packet H / A / U /
+ * M. A packet whose absence of an earlier opening is established (A)
+ * takes the first-load reading; the F5 reading (no current-load evidence
+ * after a reload ⇒ held) applies only to a packet without one. The record
+ * is never task evidence.
  */
+import { m12PriorAdministration } from '../../pilot/windows/m12CheckModel';
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -48,19 +67,93 @@ interface M12Raw {
   realised_order?: string[];
 }
 
+const FAMILY = 'proto_m12_check_';
 const OCCASIONS: readonly Occasion[] = ['o1', 'o2'];
 const FIELDS_PER_PRODUCT = 3;
 
 type Missing = Exclude<FeatureDisposition, 'observed' | 'incomplete'>;
 
+/**
+ * The load's reload check (U24 RL-1; r1 §1 stage map): per packet, stage 1
+ * the packet named on the route (`presented`), no stage 2, stage 3 the
+ * opening, and the packet's hold-back markers. Null on a first load.
+ */
+export function m12PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    occasions: Object.fromEntries(
+      OCCASIONS.map((occasion) => [
+        occasion,
+        {
+          briefing: (event: ReloadEvent) =>
+            event.event_type === `${FAMILY}presented` &&
+            event.metadata?.occasion === occasion,
+          opening: (event: ReloadEvent) =>
+            m12PriorAdministration([event], occasion),
+          holdBack: (event: ReloadEvent) =>
+            event.event_type === `${FAMILY}technical_failure` &&
+            event.metadata?.occasion === occasion,
+        },
+      ]),
+    ),
+  });
+}
+
+/** Each packet's class from the load's check records (r3 §2). */
+export function classifyM12Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks, occasions: OCCASIONS });
+}
+
+/** The current-load reason of a held packet, by its marker's class. */
+const HELD_REASON = {
+  H: 'packet opened in an earlier page load; not re-run after the reload',
+  U: 'packet not administered after a reload: earlier history not verified',
+  M: 'packet not administered after a reload: earlier check contradictory',
+} as const;
+
 registerFeatureExtractor('M12', (events, context) => {
   const entry = registerEntry('M12');
   const [primary, detail] = entry.features;
   const load = currentLoadEvents(events, context);
-  const family = load.filter((e) =>
-    e.event_type.startsWith('proto_m12_check_'),
+  const family = withoutPriorLoadChecks(
+    load.filter((e) => e.event_type.startsWith(FAMILY)),
+    FAMILY,
   );
   const supporting = sequencesOf(family);
+  const reload = classifyM12Reload(
+    context.pageLoadIndex,
+    eventsOfType(load, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+  const established = (occasion: Occasion) =>
+    reload.occasions[occasion].class === 'A';
+
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    const reason =
+      'a reload check record describes another page load or lacks a packet';
+
+    return [
+      emptyFeature('M12', primary, 'technical_failure', reason, {
+        closure_reason: 'technical_failure',
+        supporting_sequences: supporting,
+      }),
+      emptyFeature('M12', detail, 'technical_failure', reason, {
+        closure_reason: 'technical_failure',
+      }),
+    ];
+  }
   const occ = (event: { metadata?: Record<string, unknown> }) =>
     meta<string>(event as never, 'occasion');
   const presented = eventsOfType(load, 'proto_m12_check_presented');
@@ -71,19 +164,44 @@ registerFeatureExtractor('M12', (events, context) => {
 
   const presentedSet = new Set(presented.map(occ));
   const openedSet = new Set(opened.map(occ));
+  const checked = reload.check_count > 0;
+  // The class a packet is held under: the reload guard's marker's; or,
+  // after a reload, an unopened packet's own class when the load's check
+  // does not establish its absence (U24 RL-1) — and, without any check, a
+  // packet with no current-load evidence at all.
+  const heldClass = (occasion: Occasion): 'H' | 'U' | 'M' | null => {
+    const marker = heldBack.find((event) => occ(event) === occasion);
+
+    if (marker !== undefined) {
+      return reloadHoldBackClass(meta<unknown>(marker, 'detail')) ?? 'H';
+    }
+
+    const cls = reload.occasions[occasion].class;
+
+    return context.reloaded &&
+      cls !== 'A' &&
+      !openedSet.has(occasion) &&
+      (checked || !presentedSet.has(occasion))
+      ? (cls ?? 'U')
+      : null;
+  };
   const heldBackSet = new Set([
     ...heldBack.map(occ),
-    ...(context.reloaded
-      ? OCCASIONS.filter(
-          (occasion) => !presentedSet.has(occasion) && !openedSet.has(occasion),
-        )
-      : []),
+    ...OCCASIONS.filter((occasion) => heldClass(occasion) !== null),
   ]);
 
   if (opened.length === 0) {
-    if (heldBack.length > 0) {
+    if (heldBack.length > 0 || (checked && heldBackSet.size > 0)) {
       const reason =
-        'packet opened in an earlier page load; not re-run after the reload';
+        [
+          ...new Set(
+            OCCASIONS.flatMap((occasion) => {
+              const cls = heldClass(occasion);
+
+              return cls === null ? [] : [HELD_REASON[cls]];
+            }),
+          ),
+        ].join('; ') || HELD_REASON.H;
 
       return [
         emptyFeature('M12', primary, 'interrupted', reason, {
@@ -101,6 +219,17 @@ registerFeatureExtractor('M12', (events, context) => {
           supporting_sequences: supporting,
         }),
         emptyFeature('M12', detail, 'declined', reason),
+      ];
+    }
+
+    // An established absence for every packet takes the first-load
+    // reading (r3 §5, NOP + NOP (A)).
+    if (OCCASIONS.every(established)) {
+      return [
+        emptyFeature('M12', primary, 'not_presented', 'no packet opened', {
+          supporting_sequences: supporting,
+        }),
+        emptyFeature('M12', detail, 'not_presented', 'no packet opened'),
       ];
     }
 

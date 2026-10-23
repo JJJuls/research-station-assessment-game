@@ -26,6 +26,14 @@
  * never-completed occasion absent. The v2 five-residual route
  * (`proto_m03_*`, `src/inventory/m03Reset.ts`) keeps its v2 meaning in the
  * frozen ledger and stays with the Inventory Lab workstation.
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §4): the
+ * first presentation of a reloaded load writes the family's single
+ * `prior_load_checked` record, covering both occasions, before any
+ * opening. An occasion is then held at its availability unless its
+ * absence of an earlier opening is established (A): H with the existing
+ * prior-exposure entry and marker, U / M without administration. A held
+ * occasion keeps the existing closed presentation (r3 §9).
  */
 import { containerAccepts } from '../../inventory/engine';
 import type { InventoryChange } from '../../inventory/store';
@@ -34,7 +42,17 @@ import {
   onInventoryStoreChange,
   seedContainerPositional,
 } from '../../inventory/store';
+import {
+  classifyM03Reload,
+  m03PriorLoadCheck,
+} from '../../measurement/features/m03';
 import { protocolStamp } from '../../measurement/protocol';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClass,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import {
   createM03State,
@@ -60,7 +78,6 @@ import {
   type M03Placements,
   type M03PresentedBy,
   m03PressRunnable,
-  m03PriorAdministration,
   m03PriorPanelExposure,
   m03PriorPresentation,
   m03RawComponents,
@@ -89,6 +106,13 @@ export {
 const NAMESPACE = 'm03t';
 const SEED_ROLL = 'seed_m03t_supply';
 const SEED_TOOLS = 'seed_m03t_bench';
+
+/** Closure reasons of an occasion held after a reload, by its class. */
+const HOLD_BACK_REASON = {
+  H: M03_PRIOR_ADMINISTRATION,
+  U: 'unverified_history',
+  M: 'contradictory_check',
+} as const;
 
 function createWindow(occasion: M03Occasion): ItemWindow {
   const spec = M03_SPEC[occasion];
@@ -165,11 +189,89 @@ export function declareM03T() {
   }
 }
 
+/** The class an occasion is held under after a reload (null when not held). */
+export function m03tHoldBackClass(
+  occasion: M03Occasion,
+): Exclude<ReloadClass, 'A'> | null {
+  const reason = states[occasion].closureReason;
+
+  return (
+    (['H', 'U', 'M'] as const).find(
+      (cls) => HOLD_BACK_REASON[cls] === reason,
+    ) ?? null
+  );
+}
+
+/** This load's check (undefined until the first host of the load ran). */
+let priorLoadCheck: PriorLoadCheck | null | undefined;
+
+/** Writes the load's check once (never on a first load) and returns it. */
+function ensurePriorLoadCheck(occasion: M03Occasion): PriorLoadCheck | null {
+  if (priorLoadCheck === undefined) {
+    priorLoadCheck = m03PriorLoadCheck(
+      researchRuntime.getPageLoadIndex(),
+      researchRuntime.getPriorPageLoadEvents(),
+      researchRuntime.getEventIntegrity(),
+    );
+
+    if (priorLoadCheck !== null) {
+      sink(occasion)(PRIOR_LOAD_CHECK_SUFFIX, {
+        ...priorLoadCheck,
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return priorLoadCheck;
+}
+
+/**
+ * Reload guard (register §5.14; U24 RL-1): an occasion of a reloaded load
+ * whose run has not begun is held unless its class is A — its tools are
+ * never laid out again. True when it is held.
+ */
+function guardM03TReload(occasion: M03Occasion, nowMs: number): boolean {
+  const s = states[occasion];
+
+  if (s.phase !== 'unopened') {
+    return m03tHoldBackClass(occasion) !== null;
+  }
+
+  const check = ensurePriorLoadCheck(occasion);
+  const cls = classifyM03Reload(
+    researchRuntime.getPageLoadIndex(),
+    check === null ? [] : [check],
+  ).occasions[M03_SPEC[occasion].tag].class;
+
+  if (cls === null || cls === 'A') {
+    return false;
+  }
+
+  m03Freeze(s, nowMs, HOLD_BACK_REASON[cls]);
+
+  if (cls === 'H') {
+    windows[occasion].recordPriorExposure(
+      'press occasion administered in an earlier page load of this identity',
+    );
+    windows[occasion].technicalFailure(
+      'reload after administration: press occasion not re-run',
+    );
+  } else {
+    windows[occasion].technicalFailure(
+      reloadHoldBackDetail(cls, 'press occasion not administered'),
+    );
+  }
+
+  return true;
+}
+
 /**
  * The occasion was PRESENTED: the work orders list the press batch, or
  * the press was opened before any order named it (`station_direct`).
  * Logged once, by whichever came first; a later listing never rewrites
  * it. A presented-but-never-opened press is `declined` at extraction.
+ * After a reload the check is written first and a held occasion is held
+ * here, at its availability (U24 RL-1).
  */
 export function presentM03T(
   occasion: M03Occasion,
@@ -179,6 +281,8 @@ export function presentM03T(
   if (presentedBy[occasion] !== null) {
     return;
   }
+
+  ensurePriorLoadCheck(occasion);
 
   const by: M03PresentedBy = m03PriorPresentation(
     researchRuntime.getPriorPageLoadEvents(),
@@ -192,6 +296,7 @@ export function presentM03T(
     ...m03EntrySnapshot(occasion),
     presented_by: by,
   });
+  guardM03TReload(occasion, nowMs);
 }
 
 /** What presented the occasion (null = not presented yet). */
@@ -349,19 +454,9 @@ export function openM03TPanel(
   }
 
   if (s.phase === 'unopened') {
-    // Reload guard (register §5.14): the raw log of an earlier page load
-    // already holds this occasion's tools. Never re-run it.
-    if (
-      m03PriorAdministration(researchRuntime.getPriorPageLoadEvents(), occasion)
-    ) {
-      m03Freeze(s, nowMs, M03_PRIOR_ADMINISTRATION);
-      windows[occasion].recordPriorExposure(
-        'press occasion administered in an earlier page load of this identity',
-      );
-      windows[occasion].technicalFailure(
-        'reload after administration: press occasion not re-run',
-      );
-
+    // Reload guard (register §5.14; U24 RL-1): this occasion's tools are
+    // never laid out again unless its class is A.
+    if (guardM03TReload(occasion, nowMs)) {
       return s.phase;
     }
 
@@ -609,6 +704,11 @@ export function closeM03TAtReview(nowMs: number) {
     const window = windows[occasion];
 
     if (window.windowStatus() === 'unopened') {
+      // A check of this load holds an occasion that is not A (U24 RL-1).
+      if (priorLoadCheck != null && guardM03TReload(occasion, nowMs)) {
+        continue;
+      }
+
       window.markAbsent(
         s.phase === 'unopened'
           ? 'press panel never opened before the review'
@@ -640,6 +740,7 @@ export function resetM03TState() {
   }
 
   states = { a: createM03State('a'), b: createM03State('b') };
+  priorLoadCheck = undefined;
   moveInputMode = 'system';
   presentedBy = { a: null, b: null };
 }

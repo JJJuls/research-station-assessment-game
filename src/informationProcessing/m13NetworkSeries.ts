@@ -39,6 +39,15 @@ import {
 } from '../measurement/m13PipePuzzle';
 import { MEASUREMENT_PROTOCOL_VERSION } from '../measurement/protocol';
 import {
+  classifyReload,
+  computePriorLoadCheck,
+  type PriorLoadCheck,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+} from '../measurement/reloadCheck';
+import {
   M13N_ASSIGNED_ORDER,
   M13N_ENTRY_STATE_VERSION,
   M13N_FAMILY_PREFIX,
@@ -110,6 +119,8 @@ export const M13N_EVENT_SUFFIXES = [
   'series_stopped',
   'series_closed_at_review',
   'technical_failure',
+  /** U24 RL-1: the load's reload check (D-4, provisional; never task evidence). */
+  'prior_load_checked',
 ] as const;
 
 export type M13EventSuffix = (typeof M13N_EVENT_SUFFIXES)[number];
@@ -356,6 +367,11 @@ export const M13N_TEXT = {
   review_closed: 'Station record closed — the bench keeps its record.',
   held_back:
     'This bench was already used in this session. Its record is kept; nothing further is recorded here.',
+  // U24 RL-1 (owner decision D-5, r3 §9): a bench held after a reload
+  // because its earlier state is U or M.
+  held_back_unverified:
+    'The earlier state of this lattice bench could not be verified.',
+  held_back_after_this_reload: 'It stays closed after this reload.',
   fault: 'The bench has a fault and is closed. Recorded answers are kept.',
 } as const;
 
@@ -566,6 +582,8 @@ export function m13ParticipantStrings(): {
       T.stopped,
       T.review_closed,
       T.held_back,
+      T.held_back_unverified,
+      T.held_back_after_this_reload,
       T.fault,
       T.hint_record,
       ...indices.flatMap((index) => [
@@ -801,6 +819,62 @@ export function m13PriorAdministration(
 
 export const M13N_RELOAD_DETAIL =
   'reload after administration: bench not re-run';
+
+/**
+ * The load's reload check (U24 RL-1; r1 §1 stage map): no stage 1 or 2
+ * (the bench is declared at room entry; `offered` is a declaration),
+ * stage 3 the series opening, and the bench's hold-back markers. Null on
+ * a first load.
+ */
+export function m13PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    stages: {
+      opening: (event) => m13PriorAdministration([event]),
+      holdBack: (event) =>
+        event.event_type === `${M13N_FAMILY_PREFIX}technical_failure`,
+    },
+  });
+}
+
+/** The bench's class from the load's check records (r3 §2). */
+export function classifyM13Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks });
+}
+
+/**
+ * Holds an unopened bench after a reload (U24 RL-1): at its availability,
+ * without an opening. `detail` names the class; only an earlier opening
+ * (H) carries the prior-exposure mark.
+ */
+export function m13sHoldBack(
+  s: M13Series,
+  detail: string,
+  priorExposure: boolean,
+): boolean {
+  if (s.status !== 'unopened' || s.record_closed) {
+    return false;
+  }
+
+  s.status = 'held_back';
+  s.view = 'record';
+  s.failure_detail = detail;
+  emit(s, 'technical_failure', 'closure', {
+    detail,
+    prior_exposure: priorExposure,
+  });
+
+  return true;
+}
 
 export type M13OpenOutcome = 'opened' | 'reopened' | 'held_back' | 'record';
 
@@ -1904,7 +1978,11 @@ function recordLines(s: M13Series): string[] {
   );
 
   if (s.status === 'held_back') {
-    return [M13N_TEXT.held_back];
+    const cls = reloadHoldBackClass(s.failure_detail);
+
+    return cls === 'U' || cls === 'M'
+      ? [M13N_TEXT.held_back_unverified, M13N_TEXT.held_back_after_this_reload]
+      : [M13N_TEXT.held_back];
   }
 
   if (s.status === 'unopened') {

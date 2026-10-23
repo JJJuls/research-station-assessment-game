@@ -36,6 +36,7 @@ import {
   m13Networks,
 } from '../src/informationProcessing/m13NetworkForms';
 import {
+  classifyM13Reload,
   createM13Series,
   m13AcknowledgementLine,
   M13N_EVENT_SUFFIXES,
@@ -47,6 +48,7 @@ import {
   M13N_TEXT,
   m13ParticipantStrings,
   m13PriorAdministration,
+  m13PriorLoadCheck,
   m13sAct,
   m13sBackToResults,
   m13sCancelCommit,
@@ -3130,5 +3132,188 @@ test.describe('M13 extractor — contradictory or unverifiable scored evidence',
     expect(exported[0].supporting_sequences).toEqual(
       log.map((event) => event.sequence),
     );
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-1: the single-occasion rule after a reload (pure;
+ * `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §5). Streams are built as the
+ * runtime writes them: the record from the row's own stage map, then the
+ * declaration and — unless the class is A — the marker. The expected
+ * readings are written from r3 §2 and §5.
+ * ------------------------------------------------------------------ */
+
+const RL1_CONTINUOUS = {
+  first_sequence: 1,
+  sequence_gap_count: 0,
+  sequence_duplicate_count: 0,
+  recovered_from_chunks: false,
+};
+const RL1_UNVERIFIED = { ...RL1_CONTINUOUS, recovered_from_chunks: true };
+/** The window's marker details (r3 §2 validity records). */
+const RL1_DETAIL = {
+  H: 'reload after administration: bench not re-run',
+  U: 'reload with an unverified earlier state: bench not administered',
+  M: 'reload with a contradictory earlier check: bench not administered',
+} as const;
+const RL1_REASON = {
+  H: 'bench opened in an earlier page load; not re-run after the reload',
+  U: 'bench not administered after a reload: earlier history not verified',
+  M: 'bench not administered after a reload: earlier check contradictory',
+} as const;
+
+function rl1Event(
+  suffix: string,
+  loadIndex: number,
+  sequence: number,
+  metadata: Record<string, unknown> = {},
+): RawGameEvent {
+  return {
+    session_id: 's',
+    timestamp_ms: sequence,
+    scene: 'information_processing_lab',
+    event_type:
+      suffix === 'session_start' ? suffix : `proto_m13_networks_${suffix}`,
+    sequence,
+    page_load_index: loadIndex,
+    metadata: { opportunity_id: M13N_OPPORTUNITY_ID, ...metadata },
+  };
+}
+
+function rl1Load(
+  prior: readonly string[],
+  options: {
+    present: boolean;
+    integrity?: typeof RL1_CONTINUOUS;
+    records?: (record: Record<string, unknown>) => object[];
+  },
+) {
+  const priorEvents = [
+    rl1Event('session_start', 1, 1),
+    ...prior.map((suffix, i) => rl1Event(suffix, 1, i + 2)),
+  ];
+  const record = m13PriorLoadCheck(
+    2,
+    priorEvents,
+    options.integrity ?? RL1_CONTINUOUS,
+  ) as unknown as Record<string, unknown>;
+  const records = options.records?.(record) ?? [record];
+  const reload = classifyM13Reload(2, records);
+  const cls = reload.occasions.row.class;
+  let sequence = priorEvents.length;
+  const current = records.map((r) =>
+    rl1Event('prior_load_checked', 2, (sequence += 1), {
+      ...r,
+      input_mode: 'system',
+    }),
+  );
+
+  if (options.present) {
+    if (cls === 'H' || cls === 'U' || cls === 'M') {
+      current.push(
+        rl1Event('technical_failure', 2, (sequence += 1), {
+          detail: RL1_DETAIL[cls],
+          prior_exposure: cls === 'H',
+          input_mode: 'system',
+        }),
+      );
+    }
+  }
+
+  return {
+    record,
+    reload,
+    rows: extractItemFeatures('M13', [...priorEvents, ...current], {
+      finalCoreClosed: true,
+      pageLoadIndex: 2,
+      reloaded: true,
+    }),
+  };
+}
+
+test.describe('M13 single-occasion rule after a reload (U24 RL-1, pure)', () => {
+  test('A with no current-load evidence ⇒ not_presented: the first-load reading, not interrupted (b); the record is never task evidence', () => {
+    const { reload, rows } = rl1Load([], { present: false });
+
+    expect(reload.occasions.row).toMatchObject({
+      class: 'A',
+      administration_permitted: true,
+    });
+    expect(rows[0]).toMatchObject({
+      disposition: 'not_presented',
+      value: null,
+    });
+    expect(rows[0].missing_reason).toBe('lattice bench never opened');
+  });
+
+  test('H: an earlier opening ⇒ held, refused; interrupted with the earlier-opening reason (a)', () => {
+    const { record, reload, rows } = rl1Load(['series_opened'], {
+      present: true,
+    });
+
+    expect(record).toMatchObject({
+      prior_opening_found: true,
+      prior_opening_sequences: [2],
+    });
+    expect(reload.occasions.row).toMatchObject({
+      class: 'H',
+      administration_permitted: false,
+    });
+    expect(rows[0]).toMatchObject({ disposition: 'interrupted', value: null });
+    expect(rows[0].missing_reason).toBe(RL1_REASON.H);
+  });
+
+  test('history-level U ⇒ held, refused; interrupted, unverified (c)', () => {
+    const { reload, rows } = rl1Load([], {
+      present: true,
+      integrity: RL1_UNVERIFIED,
+    });
+
+    expect(reload.occasions.row).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+      basis: 'history_discontinuous',
+    });
+    expect(rows[0]).toMatchObject({ disposition: 'interrupted', value: null });
+    expect(rows[0].missing_reason).toBe(RL1_REASON.U);
+  });
+
+  test('U read from the check alone, without a marker ⇒ interrupted, unverified; with no check the reload reading is unchanged', () => {
+    const { rows } = rl1Load([], {
+      present: false,
+      integrity: RL1_UNVERIFIED,
+    });
+
+    expect(rows[0]).toMatchObject({ disposition: 'interrupted', value: null });
+    expect(rows[0].missing_reason).toBe(RL1_REASON.U);
+
+    const unchecked = rl1Load([], { present: false, records: () => [] });
+
+    expect(unchecked.reload.occasions.row.basis).toBe('no_check');
+    expect(unchecked.rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+    });
+    expect(unchecked.rows[0].missing_reason).toBe(
+      'no current-load evidence after a reload: lattice bench never opened',
+    );
+  });
+
+  test('M: a self-contradictory check ⇒ refused; interrupted, contradictory', () => {
+    const { reload, rows } = rl1Load([], {
+      present: true,
+      integrity: RL1_UNVERIFIED,
+      records: (record) => [
+        { ...record, prior_opening_absence_established: true },
+      ],
+    });
+
+    expect(reload.check_coherent).toBe(false);
+    expect(reload.occasions.row).toMatchObject({
+      class: 'M',
+      administration_permitted: false,
+    });
+    expect(rows[0]).toMatchObject({ disposition: 'interrupted', value: null });
+    expect(rows[0].missing_reason).toBe(RL1_REASON.M);
   });
 });

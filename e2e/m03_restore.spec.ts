@@ -14,6 +14,13 @@
  * occasion's own, a container the moves do not lead to, a repeated or
  * late record), the exposure order of a press opened before the work
  * orders, the line after a stopped panel, and the raw log left untouched.
+ *
+ * U24 RL-1 (`RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §5, §8): every r3 §5
+ * row of M03 after a reload, with each occasion's class and permission to
+ * administer as well as the reading; F-D and F-E at row level; a panel
+ * opened earlier without its tools laying out is no opening (A). Streams
+ * are built as the runtime writes them; the expected readings are written
+ * from r3 §5.
  */
 import { expect, test } from '@playwright/test';
 
@@ -24,6 +31,10 @@ import {
 import { getItemDefinition } from '../src/inventory/itemDefs';
 import { CONTAINER_IDS } from '../src/inventory/model';
 import { extractItemFeatures } from '../src/measurement/features';
+import {
+  classifyM03Reload,
+  m03PriorLoadCheck,
+} from '../src/measurement/features/m03';
 import { registerEntry } from '../src/measurement/registerV3';
 import { ledgerEntry } from '../src/pilot/evidenceLedger';
 import { M03_MIN_EXPOSURE_MS } from '../src/pilot/return/returnEpisodeModel';
@@ -1323,5 +1334,357 @@ test.describe('M03 tool restoration (pure)', () => {
 
     expect(failedRun.s.phase).toBe('failed');
     expect(m03IdleLine(failedRun.s)).toBe('Label press out of service.');
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-1: the reload check at availability (pure)
+ * ------------------------------------------------------------------ */
+
+const CONTINUOUS = {
+  first_sequence: 1,
+  sequence_gap_count: 0,
+  sequence_duplicate_count: 0,
+  recovered_from_chunks: false,
+};
+const UNVERIFIED = { ...CONTINUOUS, recovered_from_chunks: true };
+/** The window's marker details (r3 §2 validity records). */
+const HOLD_DETAIL = {
+  H: 'reload after administration: press occasion not re-run',
+  U: 'reload with an unverified earlier state: press occasion not administered',
+  M: 'reload with a contradictory earlier check: press occasion not administered',
+} as const;
+
+type PriorStep = 'session' | 'presented' | 'panel' | 'opened' | 'U';
+type Step = 'none' | 'present' | 'observe1' | 'observe3' | 'review_closed';
+
+function priorLoad(
+  index: number,
+  from: number,
+  steps: readonly [M03Occasion | null, PriorStep][],
+): RawGameEvent[] {
+  const h = harness();
+
+  for (const [occasion, step] of steps) {
+    if (occasion === null || step === 'session') {
+      h.events.push({
+        session_id: 's',
+        timestamp_ms: 0,
+        scene: 'dock',
+        event_type: 'session_start',
+        metadata: {},
+      });
+    } else if (step === 'opened') {
+      runOccasion(h, occasion, [BRUSH]);
+    } else {
+      h.push(occasion, 'presented', { input_mode: 'system' });
+
+      if (step === 'panel') {
+        m03SurfaceOpened(
+          createM03State(occasion),
+          1_000,
+          'keyboard',
+          h.sink(occasion),
+        );
+      } else if (step === 'U') {
+        h.push(occasion, 'technical_failure', {
+          detail: HOLD_DETAIL.U,
+          input_mode: 'system',
+        });
+      }
+    }
+  }
+
+  return h.events.map((event, i) => ({
+    ...event,
+    page_load_index: index,
+    sequence: from + i,
+  }));
+}
+
+/** A reloaded load as the runtime writes it (see the M01 spec). */
+function reloadedLoad(
+  prior: RawGameEvent[],
+  steps: Record<M03Occasion, Step>,
+  options: { integrity?: typeof CONTINUOUS; pageLoadIndex?: number } = {},
+) {
+  const pageLoadIndex = options.pageLoadIndex ?? 2;
+  const record = m03PriorLoadCheck(
+    pageLoadIndex,
+    prior,
+    options.integrity ?? CONTINUOUS,
+  ) as unknown as Record<string, unknown>;
+  const reload = classifyM03Reload(pageLoadIndex, [record]);
+  const h = harness();
+  const classOf = (occasion: M03Occasion) =>
+    reload.occasions[M03_SPEC[occasion].tag].class;
+
+  for (const occasion of ['a', 'b'] as const) {
+    const step = steps[occasion];
+    const cls = classOf(occasion);
+
+    if (step === 'none') {
+      continue;
+    }
+
+    if (cls !== 'A' || step === 'present') {
+      h.push(occasion, 'presented', { input_mode: 'system' });
+
+      if (cls !== 'A') {
+        h.push(occasion, 'technical_failure', {
+          detail: HOLD_DETAIL[cls ?? 'U'],
+          input_mode: 'system',
+        });
+      }
+
+      continue;
+    }
+
+    if (step === 'review_closed') {
+      const open = runOccasion(h, occasion, [], { depart: false });
+
+      m03Depart(
+        open.s,
+        open.placements,
+        9_000,
+        'system',
+        h.sink(occasion),
+        'closed_at_review',
+      );
+      continue;
+    }
+
+    runOccasion(
+      h,
+      occasion,
+      step === 'observe3' ? [BRUSH, KEY, GAUGE] : [BRUSH],
+    );
+  }
+
+  const from = prior.length + 1;
+  const current = [
+    {
+      session_id: 's',
+      timestamp_ms: 0,
+      scene: 'records_workshop',
+      event_type: `${M03_FAMILY}prior_load_checked`,
+      metadata: {
+        opportunity_id: M03_SPEC.a.opportunity_id,
+        occasion: 'o1',
+        ...record,
+        input_mode: 'system',
+      },
+    } as RawGameEvent,
+    ...h.events,
+  ].map((event, i) => ({
+    ...event,
+    page_load_index: pageLoadIndex,
+    sequence: from + i,
+  }));
+  const rows = extractItemFeatures('M03', [...prior, ...current], {
+    finalCoreClosed: true,
+    pageLoadIndex,
+    reloaded: true,
+  });
+
+  return {
+    record,
+    classes: [classOf('a'), classOf('b')],
+    permitted: [
+      reload.occasions.o1.administration_permitted,
+      reload.occasions.o2.administration_permitted,
+    ],
+    rows,
+  };
+}
+
+const NEVER = priorLoad(1, 1, [[null, 'session']]);
+const A_OPENED = priorLoad(1, 1, [['a', 'opened']]);
+const BOTH_OPENED = priorLoad(1, 1, [
+  ['a', 'opened'],
+  ['b', 'opened'],
+]);
+const A_EARLIER_U = priorLoad(1, 1, [['a', 'U']]);
+
+/** r3 §5 M03, every row (after the correction): class, permission, reading. */
+const M03_CASES: readonly {
+  name: string;
+  prior: RawGameEvent[];
+  steps: Record<M03Occasion, Step>;
+  integrity?: typeof CONTINUOUS;
+  classes: [string | null, string | null];
+  row: Record<string, unknown>;
+}[] = [
+  {
+    name: 'HB+OBS ⇒ interrupted · x · x/3',
+    prior: A_OPENED,
+    steps: { a: 'present', b: 'observe3' },
+    classes: ['H', 'A'],
+    row: { disposition: 'interrupted', value: 3, numerator: 3, denominator: 3 },
+  },
+  {
+    name: 'HB+DEC ⇒ interrupted · null · null/0; H (not reopened) + DEC (S3) is now this reading (a)',
+    prior: A_OPENED,
+    steps: { a: 'present', b: 'present' },
+    classes: ['H', 'A'],
+    row: { disposition: 'interrupted', value: null, denominator: 0 },
+  },
+  {
+    name: 'HB+HB ⇒ interrupted · null · null/0',
+    prior: BOTH_OPENED,
+    steps: { a: 'present', b: 'present' },
+    classes: ['H', 'H'],
+    row: { disposition: 'interrupted', value: null, denominator: 0 },
+  },
+  {
+    name: 'HB+NOP ⇒ interrupted · null · null/0',
+    prior: A_OPENED,
+    steps: { a: 'present', b: 'none' },
+    classes: ['H', 'A'],
+    row: { disposition: 'interrupted', value: null, denominator: 0 },
+  },
+  {
+    name: 'OBS+OBS ⇒ observed · (x1+x2)/6',
+    prior: NEVER,
+    steps: { a: 'observe3', b: 'observe1' },
+    classes: ['A', 'A'],
+    row: { disposition: 'observed', value: 4, numerator: 4, denominator: 6 },
+  },
+  {
+    name: 'OBS+DEC ⇒ incomplete · x · x/3',
+    prior: NEVER,
+    steps: { a: 'observe1', b: 'present' },
+    classes: ['A', 'A'],
+    row: { disposition: 'incomplete', value: 1, numerator: 1, denominator: 3 },
+  },
+  {
+    name: 'OBS + NOP (A) ⇒ incomplete · x · x/3, no longer interrupted (b)',
+    prior: NEVER,
+    steps: { a: 'observe1', b: 'none' },
+    classes: ['A', 'A'],
+    row: { disposition: 'incomplete', value: 1, numerator: 1, denominator: 3 },
+  },
+  {
+    name: 'DEC + NOP (A) ⇒ declined · null · null/0, no longer interrupted (b)',
+    prior: NEVER,
+    steps: { a: 'present', b: 'none' },
+    classes: ['A', 'A'],
+    row: { disposition: 'declined', value: null, denominator: 0 },
+  },
+  {
+    name: 'NOP + NOP (A) ⇒ not_presented · null · null/null (b)',
+    prior: NEVER,
+    steps: { a: 'none', b: 'none' },
+    classes: ['A', 'A'],
+    row: { disposition: 'not_presented', value: null },
+  },
+  {
+    name: 'system-closed + OBS ⇒ incomplete · x · x/3 (unchanged)',
+    prior: NEVER,
+    steps: { a: 'observe1', b: 'review_closed' },
+    classes: ['A', 'A'],
+    row: { disposition: 'incomplete', value: 1, numerator: 1, denominator: 3 },
+  },
+  {
+    name: 'system-closed + DEC ⇒ interrupted · null · null/0 (unchanged)',
+    prior: NEVER,
+    steps: { a: 'review_closed', b: 'present' },
+    classes: ['A', 'A'],
+    row: { disposition: 'interrupted', value: null, denominator: 0 },
+  },
+  {
+    name: 'HB(U) + OBS(A) ⇒ interrupted · x · x/3 (clarification 1; F-D)',
+    prior: A_EARLIER_U,
+    steps: { a: 'present', b: 'observe3' },
+    classes: ['U', 'A'],
+    row: { disposition: 'interrupted', value: 3, numerator: 3, denominator: 3 },
+  },
+  {
+    name: 'history-level U ⇒ interrupted · null · null/0; nothing administered (c)',
+    prior: NEVER,
+    integrity: UNVERIFIED,
+    steps: { a: 'present', b: 'present' },
+    classes: ['U', 'U'],
+    row: { disposition: 'interrupted', value: null, denominator: 0 },
+  },
+];
+
+test.describe('M03 reload at availability (U24 RL-1, pure)', () => {
+  for (const c of M03_CASES) {
+    test(`r3 §5: ${c.name}`, () => {
+      const { classes, permitted, rows } = reloadedLoad(c.prior, c.steps, {
+        integrity: c.integrity,
+      });
+
+      expect(classes).toEqual(c.classes);
+      expect(permitted).toEqual(c.classes.map((cls) => cls === 'A'));
+      expect(rows[0]).toMatchObject(c.row);
+    });
+  }
+
+  test('a U hold-back names its reason beside the held-back reading', () => {
+    const { rows } = reloadedLoad(
+      NEVER,
+      { a: 'present', b: 'none' },
+      {
+        integrity: UNVERIFIED,
+      },
+    );
+
+    expect(rows[0].missing_reason).toBe(
+      'a press occasion was held back after a reload: earlier history not verified',
+    );
+  });
+
+  test('a panel opened earlier whose tools never lay out is no opening: the occasion is A and runs (its earlier exposure is a presentation)', () => {
+    const { record, classes } = reloadedLoad(
+      priorLoad(1, 1, [['a', 'panel']]),
+      { a: 'observe1', b: 'none' },
+    );
+    const occasions = record.occasions as Record<
+      string,
+      Record<string, unknown>
+    >;
+
+    expect(occasions.o1).toMatchObject({
+      prior_briefing_found: true,
+      prior_presentation_found: true,
+      prior_opening_found: false,
+      prior_opening_absence_established: true,
+    });
+    expect(classes).toEqual(['A', 'A']);
+  });
+
+  test('F-E: an H marker of one occasion leaves its sibling A, administered and observed', () => {
+    const prior = [
+      ...A_OPENED,
+      ...priorLoad(2, A_OPENED.length + 1, [['b', 'presented']]),
+    ];
+    // Load 2 held occasion a (its H marker) and presented b.
+    prior.push({
+      ...prior[0],
+      event_type: `${M03_FAMILY}technical_failure`,
+      page_load_index: 2,
+      sequence: prior.length + 1,
+      metadata: {
+        opportunity_id: M03_SPEC.a.opportunity_id,
+        occasion: 'o1',
+        detail: HOLD_DETAIL.H,
+      },
+    });
+
+    const { classes, permitted, rows } = reloadedLoad(
+      prior,
+      { a: 'present', b: 'observe3' },
+      { pageLoadIndex: 3 },
+    );
+
+    expect(classes).toEqual(['H', 'A']);
+    expect(permitted).toEqual([false, true]);
+    expect(rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: 3,
+      denominator: 3,
+    });
   });
 });

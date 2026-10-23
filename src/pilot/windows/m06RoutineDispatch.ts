@@ -13,8 +13,25 @@
  * earlier page load is never re-run (reload guard). The v2 four-line task
  * (`proto_m06_dispatch_*`) keeps its v2 meaning in the frozen ledger and
  * is no longer on the route.
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §4): the
+ * presentation of a reloaded load writes the family's single
+ * `prior_load_checked` record before any opening, and the console is held
+ * there unless its absence of an earlier opening is established (A): H
+ * with the existing prior-exposure entry and marker, U / M without
+ * administration.
  */
+import {
+  classifyM06Reload,
+  m06PriorLoadCheck,
+} from '../../measurement/features/m06';
 import { protocolStamp } from '../../measurement/protocol';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClass,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import {
   createM06State,
@@ -33,7 +50,6 @@ import {
   m06Freeze,
   type M06LogSink,
   m06PressToken,
-  m06PriorAdministration,
   m06RawComponents,
   m06RemoveLastToken,
   m06Skip,
@@ -77,6 +93,13 @@ export {
 } from './m06OrdersModel';
 
 export const M06_PRIOR_ADMINISTRATION = 'prior_administration';
+
+/** Closure reasons of a console held after a reload, by its class. */
+const HOLD_BACK_REASON = {
+  H: M06_PRIOR_ADMINISTRATION,
+  U: 'unverified_history',
+  M: 'contradictory_check',
+} as const;
 
 let state: M06State | null = null;
 
@@ -124,14 +147,89 @@ export function m06AdministeredBefore(): boolean {
   return ensureState().closureReason === M06_PRIOR_ADMINISTRATION;
 }
 
+/** The class the console is held under after a reload (null when not held). */
+export function m06HoldBackClass(): Exclude<ReloadClass, 'A'> | null {
+  const reason = ensureState().closureReason;
+
+  return (
+    (['H', 'U', 'M'] as const).find(
+      (cls) => HOLD_BACK_REASON[cls] === reason,
+    ) ?? null
+  );
+}
+
+/** This load's check (undefined until the host ran in this load). */
+let priorLoadCheck: PriorLoadCheck | null | undefined;
+
+/** Writes the load's check once (never on a first load) and returns it. */
+function ensurePriorLoadCheck(): PriorLoadCheck | null {
+  if (priorLoadCheck === undefined) {
+    priorLoadCheck = m06PriorLoadCheck(
+      researchRuntime.getPageLoadIndex(),
+      researchRuntime.getPriorPageLoadEvents(),
+      researchRuntime.getEventIntegrity(),
+    );
+
+    if (priorLoadCheck !== null) {
+      sink(PRIOR_LOAD_CHECK_SUFFIX, {
+        ...priorLoadCheck,
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return priorLoadCheck;
+}
+
+/**
+ * Reload guard (register §5.14; U24 RL-1): an unopened console of a
+ * reloaded load is held unless its class is A — never re-run (no fresh
+ * work period, no double credit). True when it is held.
+ */
+function guardM06Reload(nowMs: number): boolean {
+  if (m06Window.windowStatus() !== 'unopened') {
+    return m06HoldBackClass() !== null;
+  }
+
+  const check = ensurePriorLoadCheck();
+  const cls = classifyM06Reload(
+    researchRuntime.getPageLoadIndex(),
+    check === null ? [] : [check],
+  ).occasions.row.class;
+
+  if (cls === null || cls === 'A') {
+    return false;
+  }
+
+  m06Freeze(ensureState(), nowMs, HOLD_BACK_REASON[cls], 'reload');
+
+  if (cls === 'H') {
+    m06Window.recordPriorExposure(
+      'dispatch console opened in an earlier page load of this identity',
+    );
+    m06Window.technicalFailure(
+      'reload after administration: console not re-run',
+    );
+  } else {
+    m06Window.technicalFailure(
+      reloadHoldBackDetail(cls, 'console not administered'),
+    );
+  }
+
+  return true;
+}
+
 /**
  * The console was PRESENTED: the Work Order Board's briefing lists the
  * dispatch lines. Logged once; a presented-but-never-opened console is
- * `declined` at extraction.
+ * `declined` at extraction. After a reload the check is written first and
+ * a held console is held here, at its availability (U24 RL-1).
  */
 export function presentM06(nowMs: number) {
   declareM06();
+  ensurePriorLoadCheck();
   m06Window.present(nowMs, m06EntrySnapshot(ensureState().form));
+  guardM06Reload(nowMs);
 }
 
 /**
@@ -148,21 +246,8 @@ export function openM06(
 
   const s = ensureState();
 
-  if (m06Window.windowStatus() === 'unopened') {
-    // Reload guard: the raw log of an earlier page load already holds an
-    // opened console. Never re-run it (no fresh work period, no double
-    // credit).
-    if (m06PriorAdministration(researchRuntime.getPriorPageLoadEvents())) {
-      m06Freeze(s, nowMs, M06_PRIOR_ADMINISTRATION, 'reload');
-      m06Window.recordPriorExposure(
-        'dispatch console opened in an earlier page load of this identity',
-      );
-      m06Window.technicalFailure(
-        'reload after administration: console not re-run',
-      );
-
-      return;
-    }
+  if (guardM06Reload(nowMs)) {
+    return;
   }
 
   if (m06Window.isClosed()) {
@@ -342,6 +427,7 @@ export function resetM06State() {
   }
 
   state = null;
+  priorLoadCheck = undefined;
   m06Window.reset();
   m06Window.spec.form = null;
   m06Window.spec.counterbalance = null;

@@ -14,10 +14,24 @@
  * separately — unplanned (0) ≠ unobserved (left before any job press) ≠
  * declined ≠ not presented ≠ interrupted ≠ pending; one observed occasion
  * is `incomplete`.
+ *
+ * U24 RL-1 (`RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §5, §8; owner ruling
+ * R-1 of 23 October 2026): every r3 §5 row of M01 after a reload, with the
+ * class and the permission to administer of each occasion as well as the
+ * reading; F-A to F-E at row level; the precedence of duplicate,
+ * malformed and discontinuous checks; and a contradiction of the whole
+ * check kept apart from one confined to an occasion. Each stream is built
+ * the way the runtime writes it: the record from the row's own stage map,
+ * and the marker of a held occasion at its presentation. The expected
+ * readings are written from r3 §5, never from running the extractor.
  */
 import { expect, test } from '@playwright/test';
 
 import { extractItemFeatures } from '../src/measurement/features';
+import {
+  classifyM01Reload,
+  m01PriorLoadCheck,
+} from '../src/measurement/features/m01';
 import { registerEntry } from '../src/measurement/registerV3';
 import {
   createM01State,
@@ -592,6 +606,589 @@ test.describe('M01 three-job batches (pure)', () => {
     });
     expect(noReopenRows[0].components).toMatchObject({
       occasions_interrupted: ['o1'],
+    });
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-1: the reload check at availability (pure)
+ * ------------------------------------------------------------------ */
+
+const CONTINUOUS = {
+  first_sequence: 1,
+  sequence_gap_count: 0,
+  sequence_duplicate_count: 0,
+  recovered_from_chunks: false,
+};
+/** A history that cannot be verified (recovered from chunks). */
+const UNVERIFIED = { ...CONTINUOUS, recovered_from_chunks: true };
+/** The window's marker details (r3 §2 validity records). */
+const HOLD_DETAIL = {
+  H: 'reload after administration: batch not re-run',
+  U: 'reload with an unverified earlier state: batch not administered',
+  M: 'reload with a contradictory earlier check: batch not administered',
+} as const;
+const UNVERIFIED_REASON =
+  'batch not administered after a reload: earlier history not verified';
+const CONTRADICTORY_REASON =
+  'batch not administered after a reload: earlier check contradictory';
+const OPENED_REASON =
+  'batch opened in an earlier page load; not re-run after the reload';
+
+type PriorStep = 'session' | 'presented' | 'opened' | 'H' | 'U' | 'M';
+type Step = 'none' | 'present' | 'observe0' | 'observe1' | 'open_unobserved';
+
+/** One earlier page load: what it holds per occasion. */
+function priorLoad(
+  index: number,
+  from: number,
+  steps: readonly [M01Occasion | null, PriorStep][],
+): RawGameEvent[] {
+  const h = harness();
+
+  for (const [occasion, step] of steps) {
+    if (occasion === null || step === 'session') {
+      h.events.push({
+        session_id: 's',
+        timestamp_ms: 0,
+        scene: 'dock',
+        event_type: 'session_start',
+        metadata: {},
+      });
+      continue;
+    }
+
+    h.presented(occasion);
+
+    if (step === 'opened') {
+      h.opened(occasion);
+    } else if (step !== 'presented') {
+      h.sink(occasion)('technical_failure', {
+        detail: HOLD_DETAIL[step],
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return h.events.map((event, i) => ({
+    ...event,
+    page_load_index: index,
+    sequence: from + i,
+  }));
+}
+
+function checkEvent(record: object, loadIndex: number): RawGameEvent {
+  return {
+    session_id: 's',
+    timestamp_ms: 0,
+    scene: 'station_concourse',
+    event_type: 'proto_m01_batch_prior_load_checked',
+    page_load_index: loadIndex,
+    metadata: {
+      opportunity_id: 'proto_m01_batch_o1',
+      occasion: 'o1',
+      ...record,
+      input_mode: 'system',
+    },
+  };
+}
+
+/**
+ * A reloaded load as the runtime writes it: the record from the row's own
+ * stage map (or `records`, to inject defects), then per occasion its
+ * presentation and — unless its class is A — the marker; an A occasion
+ * goes on as `step` says.
+ */
+function reloadedLoad(
+  prior: RawGameEvent[],
+  steps: Record<M01Occasion, Step>,
+  options: {
+    integrity?: typeof CONTINUOUS;
+    pageLoadIndex?: number;
+    records?: (record: Record<string, unknown>) => object[];
+  } = {},
+) {
+  const pageLoadIndex = options.pageLoadIndex ?? 2;
+  const record = m01PriorLoadCheck(
+    pageLoadIndex,
+    prior,
+    options.integrity ?? CONTINUOUS,
+  ) as unknown as Record<string, unknown>;
+  const records = options.records?.(record) ?? [record];
+  const reload = classifyM01Reload(pageLoadIndex, records);
+  const h = harness();
+
+  for (const occasion of ['o1', 'o2'] as const) {
+    const step = steps[occasion];
+    const cls = reload.occasions[occasion].class;
+
+    if (step === 'none') {
+      continue;
+    }
+
+    h.presented(occasion);
+
+    if (cls !== 'A') {
+      h.sink(occasion)('technical_failure', {
+        detail: HOLD_DETAIL[cls ?? 'U'],
+        input_mode: 'system',
+      });
+      continue;
+    }
+
+    if (step === 'present') {
+      continue;
+    }
+
+    const s = createM01State(occasion, 'form_a');
+
+    h.opened(occasion);
+
+    if (step === 'open_unobserved') {
+      h.close(s, 'closed_at_review', 'closed_at_review');
+      continue;
+    }
+
+    if (step === 'observe1') {
+      m01Pick(
+        s,
+        occasion === 'o1' ? 'isolate_loop' : 'sort_spares',
+        'pointer',
+        h.sink(occasion),
+      );
+      m01Place(s, 0, 'pointer', h.sink(occasion));
+    }
+
+    doAll(
+      s,
+      occasion === 'o1' ? 0 : 100_000,
+      h.sink(occasion),
+      occasion === 'o1'
+        ? ['isolate_loop', 'log_storm', 'replace_seal']
+        : undefined,
+    );
+    h.close(s, 'completed');
+  }
+
+  const from = prior.length + 1;
+  const current = [
+    ...records.map((r) => checkEvent(r, pageLoadIndex)),
+    ...h.events,
+  ].map((event, i) => ({
+    ...event,
+    page_load_index: pageLoadIndex,
+    sequence: from + i,
+  }));
+  const rows = extractItemFeatures('M01', [...prior, ...current], {
+    finalCoreClosed: true,
+    pageLoadIndex,
+    reloaded: true,
+  });
+
+  return { record, reload, rows };
+}
+
+const NEVER = priorLoad(1, 1, [[null, 'session']]);
+const O1_OPENED = priorLoad(1, 1, [['o1', 'opened']]);
+const BOTH_OPENED = priorLoad(1, 1, [
+  ['o1', 'opened'],
+  ['o2', 'opened'],
+]);
+const O1_EARLIER_U = priorLoad(1, 1, [['o1', 'U']]);
+
+type Row = Record<string, unknown> & {
+  disposition: string;
+  value: number | null;
+  numerator?: number | null;
+  denominator?: number | null;
+};
+
+/** r3 §5 M01, every row (after the correction): class, permission, reading. */
+const M01_CASES: readonly {
+  name: string;
+  prior: RawGameEvent[];
+  steps: Record<M01Occasion, Step>;
+  integrity?: typeof CONTINUOUS;
+  classes: [string | null, string | null];
+  row: Row;
+  reason?: string;
+}[] = [
+  {
+    name: 'HB+OBS ⇒ interrupted · x · x/3 (the S-F2 reading, unchanged)',
+    prior: O1_OPENED,
+    steps: { o1: 'present', o2: 'observe1' },
+    classes: ['H', 'A'],
+    row: { disposition: 'interrupted', value: 1, numerator: 1, denominator: 3 },
+  },
+  {
+    name: 'H, not reopened, + DEC (S3) ⇒ interrupted · null · null/null: the marker is written at availability (a)',
+    prior: O1_OPENED,
+    steps: { o1: 'present', o2: 'present' },
+    classes: ['H', 'A'],
+    row: { disposition: 'interrupted', value: null },
+    reason: OPENED_REASON,
+  },
+  {
+    name: 'HB+NOP ⇒ interrupted · null · null/null',
+    prior: O1_OPENED,
+    steps: { o1: 'present', o2: 'none' },
+    classes: ['H', 'A'],
+    row: { disposition: 'interrupted', value: null },
+  },
+  {
+    name: 'HB+HB ⇒ interrupted · null · null/null',
+    prior: BOTH_OPENED,
+    steps: { o1: 'present', o2: 'present' },
+    classes: ['H', 'H'],
+    row: { disposition: 'interrupted', value: null },
+  },
+  {
+    name: 'U + DEC ⇒ interrupted · null · null/null, reason unverified (c)',
+    prior: O1_EARLIER_U,
+    steps: { o1: 'present', o2: 'present' },
+    classes: ['U', 'A'],
+    row: { disposition: 'interrupted', value: null },
+    reason: UNVERIFIED_REASON,
+  },
+  {
+    name: 'OBS+OBS ⇒ observed · x1+x2 · (x1+x2)/6',
+    prior: NEVER,
+    steps: { o1: 'observe1', o2: 'observe0' },
+    classes: ['A', 'A'],
+    row: { disposition: 'observed', value: 1, numerator: 1, denominator: 6 },
+  },
+  {
+    name: 'OBS+DEC ⇒ incomplete · x · x/3',
+    prior: NEVER,
+    steps: { o1: 'observe1', o2: 'present' },
+    classes: ['A', 'A'],
+    row: { disposition: 'incomplete', value: 1, numerator: 1, denominator: 3 },
+  },
+  {
+    name: 'OBS + NOP (A) ⇒ incomplete · x · x/3, no longer interrupted (b)',
+    prior: NEVER,
+    steps: { o1: 'observe1', o2: 'none' },
+    classes: ['A', 'A'],
+    row: { disposition: 'incomplete', value: 1, numerator: 1, denominator: 3 },
+  },
+  {
+    name: 'HB(U) + OBS(A) ⇒ interrupted · x · x/3 (clarification 1; F-D)',
+    prior: O1_EARLIER_U,
+    steps: { o1: 'present', o2: 'observe1' },
+    classes: ['U', 'A'],
+    row: { disposition: 'interrupted', value: 1, numerator: 1, denominator: 3 },
+  },
+  {
+    name: 'history-level U (both occasions) ⇒ interrupted · null · null/null, reason unverified; nothing administered (c)',
+    prior: NEVER,
+    integrity: UNVERIFIED,
+    steps: { o1: 'present', o2: 'none' },
+    classes: ['U', 'U'],
+    row: { disposition: 'interrupted', value: null },
+    reason: UNVERIFIED_REASON,
+  },
+  {
+    name: 'OU + NOP (A) ⇒ no_eligible_event · null · null/0 (b)',
+    prior: NEVER,
+    steps: { o1: 'open_unobserved', o2: 'none' },
+    classes: ['A', 'A'],
+    row: {
+      disposition: 'no_eligible_event',
+      value: null,
+      numerator: null,
+      denominator: 0,
+    },
+  },
+  {
+    name: 'NOP + NOP (A) ⇒ not_presented · null · null/null (b)',
+    prior: NEVER,
+    steps: { o1: 'none', o2: 'none' },
+    classes: ['A', 'A'],
+    row: { disposition: 'not_presented', value: null },
+  },
+  {
+    name: 'DEC+DEC (A) ⇒ declined · null · null/null',
+    prior: NEVER,
+    steps: { o1: 'present', o2: 'present' },
+    classes: ['A', 'A'],
+    row: { disposition: 'declined', value: null },
+  },
+  {
+    name: 'DEC+NOP (A) ⇒ declined · null · null/null',
+    prior: NEVER,
+    steps: { o1: 'present', o2: 'none' },
+    classes: ['A', 'A'],
+    row: { disposition: 'declined', value: null },
+  },
+  {
+    name: 'DEC+DEC (U) ⇒ interrupted · null · null/null (c)',
+    prior: NEVER,
+    integrity: UNVERIFIED,
+    steps: { o1: 'present', o2: 'present' },
+    classes: ['U', 'U'],
+    row: { disposition: 'interrupted', value: null },
+    reason: UNVERIFIED_REASON,
+  },
+];
+
+test.describe('M01 reload at availability (U24 RL-1, pure)', () => {
+  for (const c of M01_CASES) {
+    test(`r3 §5: ${c.name}`, () => {
+      const { reload, rows } = reloadedLoad(c.prior, c.steps, {
+        integrity: c.integrity,
+      });
+
+      expect([reload.occasions.o1.class, reload.occasions.o2.class]).toEqual(
+        c.classes,
+      );
+      // Only A is administered (r3 §2).
+      expect([
+        reload.occasions.o1.administration_permitted,
+        reload.occasions.o2.administration_permitted,
+      ]).toEqual(c.classes.map((cls) => cls === 'A'));
+      expect(rows[0]).toMatchObject(c.row);
+
+      if (c.reason !== undefined) {
+        expect(rows[0].missing_reason).toBe(c.reason);
+      }
+    });
+  }
+
+  test('a first load writes no check and keeps its readings; the record is never task evidence', () => {
+    expect(m01PriorLoadCheck(1, [], CONTINUOUS)).toBeNull();
+
+    const { rows } = reloadedLoad(NEVER, { o1: 'observe1', o2: 'none' });
+
+    // The check record's sequence is not among the supporting sequences.
+    expect(rows[0].supporting_sequences).not.toContain(NEVER.length + 1);
+  });
+
+  test('F-A: two agreeing check records with distinct sequences ⇒ U for both, refused; the U reading', () => {
+    const { reload, rows } = reloadedLoad(
+      NEVER,
+      { o1: 'none', o2: 'none' },
+      { records: (record) => [record, { ...record }] },
+    );
+
+    expect(reload.check_count).toBe(2);
+    expect(reload.check_coherent).toBe(true);
+    expect(reload.occasions.o1).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+      basis: 'duplicate_checks',
+    });
+    expect(reload.occasions.o2.class).toBe('U');
+    expect(rows[0]).toMatchObject({ disposition: 'interrupted', value: null });
+    expect(rows[0].missing_reason).toBe(UNVERIFIED_REASON);
+  });
+
+  test('F-B: conflicting duplicate checks ⇒ U, refused, coherence false', () => {
+    const { reload, rows } = reloadedLoad(
+      O1_OPENED,
+      { o1: 'present', o2: 'none' },
+      {
+        records: (record) => [
+          record,
+          { ...record, prior_opening_found: false },
+        ],
+      },
+    );
+
+    expect(reload.check_coherent).toBe(false);
+    expect(reload.occasions.o1).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+    });
+    expect(rows[0]).toMatchObject({ disposition: 'interrupted', value: null });
+  });
+
+  test('F-C: an earlier U or M hold-back, then a continuous history ⇒ that occasion stays U and refused; its sibling stays A', () => {
+    for (const earlier of ['U', 'M'] as const) {
+      const prior = priorLoad(1, 1, [['o1', earlier]]);
+      const { record, reload } = reloadedLoad(prior, {
+        o1: 'present',
+        o2: 'none',
+      });
+
+      expect(record.history_continuous).toBe(true);
+      expect(reload.occasions.o1).toMatchObject({
+        class: 'U',
+        administration_permitted: false,
+        basis: 'absence_not_established',
+      });
+      expect(reload.occasions.o2.class).toBe('A');
+    }
+  });
+
+  test('F-E: an H marker of one occasion leaves its sibling A, administered and observed', () => {
+    // Load 1 opened o1; load 2 held it (H marker) and presented o2.
+    const prior = [
+      ...O1_OPENED,
+      ...priorLoad(2, O1_OPENED.length + 1, [
+        ['o1', 'H'],
+        ['o2', 'presented'],
+      ]),
+    ];
+    const { record, reload, rows } = reloadedLoad(
+      prior,
+      { o1: 'present', o2: 'observe1' },
+      { pageLoadIndex: 3 },
+    );
+    const o2 = (record.occasions as Record<string, Record<string, unknown>>).o2;
+
+    expect(o2).toMatchObject({
+      prior_briefing_found: true,
+      prior_opening_found: false,
+      prior_opening_absence_established: true,
+    });
+    expect(reload.occasions.o1.class).toBe('H');
+    expect(reload.occasions.o2).toMatchObject({
+      class: 'A',
+      administration_permitted: true,
+    });
+    expect(rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: 1,
+      numerator: 1,
+      denominator: 3,
+    });
+  });
+
+  test('R-1: an earlier opening beside a discontinuous history stays H, the incomplete-history flags kept; the sibling is U', () => {
+    const { record, reload, rows } = reloadedLoad(
+      O1_OPENED,
+      { o1: 'present', o2: 'present' },
+      { integrity: UNVERIFIED },
+    );
+
+    // The record keeps the incomplete history: no absence, no continuity.
+    expect(record).toMatchObject({
+      history_continuous: false,
+      prior_opening_found: true,
+      prior_opening_absence_established: false,
+      prior_opening_sequences: [2],
+    });
+    expect(reload.history_level_uncertain).toBe(true);
+    expect(reload.occasions.o1).toMatchObject({
+      class: 'H',
+      administration_permitted: false,
+      basis: 'opening_found',
+    });
+    expect(reload.occasions.o2).toMatchObject({
+      class: 'U',
+      basis: 'history_discontinuous',
+    });
+    expect(rows[0]).toMatchObject({ disposition: 'interrupted', value: null });
+    expect(rows[0].missing_reason).toBe(
+      `${OPENED_REASON}; ${UNVERIFIED_REASON}`,
+    );
+  });
+
+  test('precedence: duplicate checks that report an earlier opening are U, never H', () => {
+    const { reload } = reloadedLoad(
+      O1_OPENED,
+      { o1: 'present', o2: 'none' },
+      { records: (record) => [record, { ...record }] },
+    );
+
+    expect(reload.occasions.o1).toMatchObject({
+      class: 'U',
+      basis: 'duplicate_checks',
+      administration_permitted: false,
+    });
+  });
+
+  test('precedence: a malformed check that reports an earlier opening is a technical failure, never H', () => {
+    const { reload, rows } = reloadedLoad(
+      O1_OPENED,
+      { o1: 'present', o2: 'none' },
+      { records: (record) => [{ ...record, page_load_index: 1 }] },
+    );
+
+    expect(reload.check_malformed).toBe(true);
+    expect(reload.occasions.o1).toMatchObject({
+      class: 'U',
+      basis: 'malformed_check',
+      administration_permitted: false,
+    });
+    expect(rows[0]).toMatchObject({
+      disposition: 'technical_failure',
+      value: null,
+    });
+    expect(rows[1].disposition).toBe('technical_failure');
+  });
+
+  test('a contradiction of the whole check holds both occasions as M; one confined to an occasion leaves the sibling its own class', () => {
+    // Whole check: the row claims the absence while the history is broken.
+    const whole = reloadedLoad(
+      NEVER,
+      { o1: 'present', o2: 'none' },
+      {
+        integrity: UNVERIFIED,
+        records: (record) => [
+          { ...record, prior_opening_absence_established: true },
+        ],
+      },
+    );
+
+    expect(whole.reload.check_coherent).toBe(false);
+    expect(whole.reload.occasions.o1).toMatchObject({
+      class: 'M',
+      basis: 'check_incoherent',
+    });
+    expect(whole.reload.occasions.o2.class).toBe('M');
+    expect(whole.rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+    });
+    expect(whole.rows[0].missing_reason).toBe(CONTRADICTORY_REASON);
+
+    // Occasion-local: only o1's own flags contradict each other.
+    const local = reloadedLoad(
+      NEVER,
+      { o1: 'present', o2: 'observe1' },
+      {
+        records: (record) => {
+          const occasions = record.occasions as Record<
+            string,
+            Record<string, unknown>
+          >;
+
+          return [
+            {
+              ...record,
+              prior_opening_found: true,
+              prior_opening_absence_established: false,
+              occasions: {
+                ...occasions,
+                o1: {
+                  ...occasions.o1,
+                  prior_opening_found: true,
+                  prior_opening_absence_established: true,
+                },
+              },
+            },
+          ];
+        },
+      },
+    );
+
+    // The aggregate flag is false, but o2 keeps its own A and is observed.
+    expect(local.reload.check_coherent).toBe(false);
+    expect(local.reload.occasions.o1).toMatchObject({
+      class: 'M',
+      basis: 'occasion_incoherent',
+      administration_permitted: false,
+    });
+    expect(local.reload.occasions.o2).toMatchObject({
+      class: 'A',
+      administration_permitted: true,
+    });
+    expect(local.rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: 1,
+      numerator: 1,
+      denominator: 3,
     });
   });
 });

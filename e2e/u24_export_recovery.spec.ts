@@ -236,6 +236,76 @@ test.describe('V-5 (b), (c) — the S3 reloads', () => {
     expect(answeredTwice, 'an opportunity answered in two page loads').toEqual(
       [],
     );
+
+    // U24 RL-1 (RELOAD-CORRECTION-SPEC-r3-exec.md §4 "Expected S3 load-4
+    // readings" and §5): every station of M01, M02, M03, M04, M06, M12 and
+    // M13 opened in load 1 is held at its availability in load 4 —
+    // interrupted, no value (M01 HB + DEC, M03 HB + DEC, M04 HB + HB, M12
+    // HB + HB) — and M08, never opened and presented again, is declined
+    // under its established check. Each reloaded load writes one check per
+    // family; a first load writes none.
+    const RL1_S3_LOAD4: Record<string, string> = {
+      m01_planned_jobs: 'interrupted',
+      m02_correct_first_retrievals: 'interrupted',
+      m03_tools_restored: 'interrupted',
+      m04_undisposed_pieces: 'interrupted',
+      m06_unique_correct_orders: 'interrupted',
+      m08_work_choice_fraction: 'declined',
+      m12_fields_verified: 'interrupted',
+      m13_first_solutions: 'interrupted',
+    };
+
+    for (const [featureId, disposition] of Object.entries(RL1_S3_LOAD4)) {
+      expect(
+        final.payload.measurement_features.find(
+          (feature) => feature.feature_id === featureId,
+        ),
+        featureId,
+      ).toMatchObject({ disposition, value: null });
+    }
+
+    const everyEvent = [
+      ...final.payload.prior_page_load_events,
+      ...final.payload.raw_events,
+    ] as {
+      event_type?: string;
+      page_load_index?: number;
+      metadata?: Record<string, unknown> | null;
+    }[];
+
+    for (const family of [
+      'proto_m01_batch_',
+      'proto_m02_workspace_',
+      'proto_m03tools_',
+      'proto_m04_cutting_',
+      'proto_m06_orders_',
+      'proto_m08_effort_',
+      'proto_m12_check_',
+      'proto_m13_networks_',
+    ]) {
+      for (const load of [1, 2, 3, 4]) {
+        expect(
+          everyEvent.filter(
+            (event) =>
+              event.event_type === `${family}prior_load_checked` &&
+              (event.page_load_index ?? 4) === load,
+          ).length,
+          `${family}prior_load_checked in load ${load}`,
+        ).toBe(load === 1 ? 0 : 1);
+      }
+    }
+
+    expect(
+      everyEvent.find(
+        (event) =>
+          event.event_type === 'proto_m08_effort_prior_load_checked' &&
+          (event.page_load_index ?? 4) === 4,
+      )?.metadata,
+    ).toMatchObject({
+      prior_briefing_found: true,
+      prior_opening_found: false,
+      prior_opening_absence_established: true,
+    });
     write(
       'reproduction/V5bc-S3-integrity.json',
       JSON.stringify(

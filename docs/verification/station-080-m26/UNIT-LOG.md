@@ -18265,3 +18265,135 @@ Finish with the closeout status, durable evidence paths, bounded correction spec
   participant-facing runtime change, no new or changed screen).
 - **Not claimed.** RL-0 makes no row correct by itself; the game is not
   fully verified and not ready for participant collection.
+
+## U24 RL-1 — availability checks for M01, M02, M03, M04, M06, M08, M12, M13 (23 October 2026)
+
+- **The owner's additional ruling for RL-1, verbatim** (recorded before any
+  implementation edit; it supplements `RELOAD-CORRECTION-SPEC-r3-exec.md`
+  only on R-1 and R-2; the frozen preparation package is unchanged;
+  register §5.405):
+
+  ```text
+  I am Juls, the research owner. Execute RL-1 under the existing authorizations and the additional ruling below.
+
+  Read completely before implementation:
+  C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-correction\RL-EXECUTE-1.md
+
+  Follow that brief and its referenced authority, verification, review, evidence-preservation and commit requirements. The expected starting commit is 3e5bfce0d234882238eb2ff017eec43d8893f280 on codex/u24-end-to-end. Verify the fresh session has RL-1’s exact 36-path allowlist and report your actual model.
+
+  Additional approved owner ruling
+
+  R-1 — earlier opening with incomplete history:
+  An earlier opening established by the single attributable, well-formed check remains H despite discontinuous history. Preserve and report the incomplete-history flags; this does not establish absence or complete history.
+
+  Keep the approved precedence for missing checks, duplicate checks and malformed records. Distinguish a contradiction invalidating the whole check from an occasion-local contradiction: the latter must not overwrite an unaffected sibling’s own classification merely because an aggregate coherence flag is false.
+
+  R-2 — M04 joint hold-back:
+  Approve blocking an otherwise eligible M04 job when the other job is held as H, U or M, because their starting state is shared.
+
+  For the dependent sibling whose own class was A, report its own evidence/class separately from its effective joint hold-back. Preserve its actual opening flags and sequences. Existing H/U/M members retain their own classifications, including M and its contradiction evidence.
+
+  A joint hold-back must have a truthful dependency reason. Neither its effective H classification nor its wording may imply that the dependent sibling was previously opened. Retain prior-administration wording only where actual earlier administration supports it; U/M-only holds must not create that claim.
+
+  Verification:
+  Alongside the execution brief’s required checks, add one small parameterized fixture table covering H+A, U+A and M+A in both job orders. Assert own classification, effective classification and permission, joint basis/reason, opening flags/sequences and retained contradiction evidence.
+
+  Include the duplicate-check, malformed-opening and discontinuous-H precedence fixtures identified in the RL-0 clarification, plus the distinction between whole-check and occasion-local contradiction.
+
+  Use the scheduled Sonnet verification and Opus review. No additional broad audit or Fable run.
+
+  Scope and recording:
+  Record this ruling verbatim in the register and UNIT-LOG before implementation edits. It supplements the frozen specification only on these points; leave the frozen preparation package unchanged.
+
+  Implement within RL-1’s existing allowlist. Do not amend RL-0 or edit its shared helper. If the required distinction cannot be represented within this scope, identify the exact dependency before editing it.
+
+  Record these requirements for the later independent recount; Part C execution remains unauthorized.
+
+  Complete RL-1’s prescribed verification and reviews, preserve its evidence, and make its one authorized local commit only when its acceptance conditions are met. Stop with the handoff. No push, merge or subsequent unit execution in this session.
+  ```
+
+- **Authority (by reference).** The owner's ruling of 23 October 2026
+  (`…\2026\10\23\u24-rl-correction\RL-OWNER-RULING-2026-10-23.md`, SHA-256
+  `0baa5383ec36b3921d06d6f14c995224e3115ab8fd931e556546b872c38e39ea`), the
+  binding `RELOAD-CORRECTION-SPEC-r3-exec.md` (SHA-256
+  `03347a9eb86be76f5da7910d98c99997f98f0a3542ff24b5d852f956ca106741`), the
+  unit brief `RL-EXECUTE-1.md` (SHA-256
+  `b33774bb8a3548b432006dd1a0e6346f8abdcb394c2f3059f6ac7e451c627ac0`) and the
+  additional ruling above (R-1, R-2; saved in the unit's evidence as
+  `OWNER-RULING-RL1-2026-10-23.txt`, SHA-256
+  `f115d5caac25604e5dfa2aea1e5d44ba83632e1e13131d82c47276c7246d9d1f`). The
+  frozen preparation package and the frozen r2 are unchanged. The D-1 room
+  exception covers the Concourse (M01 o1, M12 o1), the Workshop, the IP
+  laboratory (M13) and the Yard (M08).
+- **Gate.** Writer `claude-opus-5-5`; root, branch `codex/u24-end-to-end`
+  and HEAD `3e5bfce0…` (the RL-0 commit) as the brief requires; status
+  `?? .agents/`, `?? .codex/` only; `CLAUDE_UNIT_ALLOWLIST` equal to
+  `RL-ALLOWLIST-1.txt` (36 paths); the frozen U24 evidence present with its
+  six manifests unchanged; the ten foreign files hash-identical to
+  `FOREIGN-INVENTORY-SUPPLEMENT-2026-10-22.json`.
+- **Work.** The eight families' checks at availability, the holds, the
+  readings, the U / M lines and the R-1 / R-2 treatment as register §5.405
+  and addendum §2 "U24 RL-1" state, with the writer's readings (a)–(g)
+  there. RL-0's helper (`src/measurement/reloadCheck.ts`) is not edited: the
+  R-2 distinction is represented in `src/measurement/features/m04.ts`
+  (`classifyM04Reload`), which calls the helper without and with the joint
+  rule and replaces only the dependent job's reason. No scene file, no
+  model file, no formula, weight or denominator rule changes; the M22
+  pending-state defect and the unrelated findings stay as recorded.
+- **Recorded for the later independent recount** (Part C layer R; Part C
+  is not authorised): register §5.405's last paragraph, and two review
+  notes: a reloaded load whose check says H while the same load still holds
+  an opening (a guard bypass, possible only in a corrupted log) is read as
+  an ordinary observation and not flagged; an H-dependent M04 job carries a
+  non-empty `prior_exposure` list (the other job's note), so a recount that
+  counts that list counts it as exposed.
+- **For the owner (review findings recorded, not changed within RL-1).**
+  (1) M01 o2: once o2 is held at the Work Order Board's read
+  (`presentM01('o2')`), the board's "Open the return batch" option no longer
+  appears (`RecordsWorkshopScene.ts`), so o2's held screen — and its U / M
+  lines — cannot be reached; the batch is optional, so nothing is trapped.
+  Keeping the option needs a scene edit outside RL-1's allowlist. (2) The
+  M01 U / M screen keeps the existing held screen's subtitle "recorded",
+  which the visual review reads as contradicting the U / M lines ("closed",
+  already used on M06 / M08, would need the owner's approval as new
+  participant text); on M01 and M12 the second U / M line sits close to the
+  column headings below it (legible, no overlap); the M01 and M08 help lines
+  name controls that do nothing on a held screen, as on the existing H
+  screens. (3)
+  On M06's and M08's U / M screens the readouts under the status line are
+  not drawn (register §5.405 reading (g)); it goes beyond "add only the U /
+  M lines" and adds no string. (4) M12's existing context note
+  `exposure:<other>_before` is now written when the other packet was held
+  at its availability (context only). (5) After a reload, a held IP bench
+  is never entered, so `ip_windows_opened_before` of later IP windows and
+  the Workshop entry snapshots read the held state (context only). (6) A
+  presented occasion in a load with no check at all still reads `declined`
+  (the brief keeps the no-check readings; r3 §2 calls a missing check U);
+  every host writes its check before its presentation, so the case needs a
+  log without the host's record. (7) `m13LatticeOpen` keeps an unreachable
+  `held_back` branch (harmless; left to keep the diff minimal).
+- **Verification** (durable evidence
+  `C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-evidence\RL-1\`, with
+  its manifest). Pure: the eight row specs and `reload_check.spec.ts`, 217
+  passed (124 existing, unchanged; 93 new: every r3 §5 row of M01, M03, M04
+  and M12, the single-occasion rule of M02, M06, M08 and M13, F-A to F-E, the
+  R-1 precedence and contradiction fixtures, the R-2 table). Browser
+  (`adversarial_reload_partial_state.spec.ts`, genuine `page.reload()`,
+  traces on, 800 × 600, ordinary input): the existing test and R1 + R4 +
+  R6 (H), R-2 + R1 (M04 joint hold-back, M08 H), R2 and R3 + R6 (U), 5 of 5
+  passed on the final tree; the screenshots are kept. U24: S3 passed and
+  V-5 (b) passed with the RL-1 load-4 expectations (M01, M02, M03, M04, M06,
+  M12 and M13 interrupted with no value; M08 declined; one check per family
+  in each of loads 2–4, none in load 1). Earlier dev runs are kept as
+  superseded (two test-side defects, and the M06 / M08 readout overlap
+  found on the U screens and corrected).
+- **Reviews** (read-only; reports in the evidence's `reviews\`): Opus 5.5
+  scientific, gameplay and visual — each accept with minor corrections, no
+  BLOCKING; the corrections made (the runtime R-2 test, the final-tree
+  browser run) and the rest recorded above for the owner. Sonnet 5.5
+  scheduled verification (`claude-sonnet-5-5`): PASS — `lint:tsc`, build,
+  ESLint, the spec typecheck and `git diff --check` clean; 217 pure passed;
+  V-5 (b) passed; the R-2 + R1 browser case re-run with a genuine reload
+  passed; no BLOCKING or MAJOR finding.
+- **Not claimed.** RL-1 does not make the game fully verified or ready for
+  participant collection; RL-2 to RL-4 and the RL-F recapture remain.

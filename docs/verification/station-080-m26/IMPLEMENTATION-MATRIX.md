@@ -822,3 +822,15 @@ administration permission (D-6 (i), D-7 (i)) — and its pure fixtures
 `e2e/reload_check.spec.ts`. No row is wired and no row's design, formula,
 event family, text or disposition changes; F-B2, F-B7 and F-B8 stay open
 until RL-1 to RL-4 and the RL-F recapture.
+
+**U24 RL-1** (availability checks for M01, M02, M03, M04, M06, M08, M12 and
+M13; the D-1 room exception; owner rulings R-1 and R-2 of 23 October 2026;
+register §5.405, addendum §2 "U24 RL-1", UNIT-LOG "U24 RL-1") writes each
+family's provisional `prior_load_checked` record at its availability host
+and holds an occasion that is not A there (H with the existing
+prior-exposure entry and marker; U and M never administered; M04's joint
+hold-back with each job's own and effective class reported apart). The
+extractors take the first-load reading under an established check (r3 §5);
+the existing held-back texts are unchanged and the §9 U / M lines are
+added. No formula, weight or denominator rule changes. F-B2, F-B7 and F-B8
+stay open until RL-2 to RL-4 and the RL-F recapture.

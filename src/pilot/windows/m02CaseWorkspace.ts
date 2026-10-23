@@ -21,6 +21,14 @@
  * an earlier page load is never re-run. The v2 two-probe family
  * (`proto_m02_case_*`) keeps its v2 meaning in the frozen ledger and is
  * retired from the route.
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §4): the
+ * presentation of a reloaded load writes the family's single
+ * `prior_load_checked` record before any opening, and the workspace is
+ * held there unless its absence of an earlier opening is established
+ * (A): H with the existing prior-exposure entry and marker, U / M without
+ * administration. A held workspace keeps the existing closed
+ * presentation (r3 §9).
  */
 import { CONTAINER_IDS } from '../../inventory/model';
 import type { InventoryChange } from '../../inventory/store';
@@ -29,7 +37,17 @@ import {
   onInventoryStoreChange,
   seedContainerPositional,
 } from '../../inventory/store';
+import {
+  classifyM02Reload,
+  m02PriorLoadCheck,
+} from '../../measurement/features/m02';
 import { protocolStamp } from '../../measurement/protocol';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClass,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import {
   createM02State,
@@ -66,7 +84,6 @@ import {
   type M02OrderId,
   type M02Phase,
   type M02Placements,
-  m02PriorAdministration,
   m02RawComponents,
   m02SetLabel,
   type M02State,
@@ -95,6 +112,13 @@ export const M02C_FAMILY = M02_FAMILY;
 export const M02C_CASES = M02_CASES;
 export const M02C_TRAY_IDS = M02_TRAY_IDS;
 export const M02C_PRIOR_ADMINISTRATION = 'prior_administration';
+
+/** Closure reasons of a workspace held after a reload, by its class. */
+const HOLD_BACK_REASON = {
+  H: M02C_PRIOR_ADMINISTRATION,
+  U: 'unverified_history',
+  M: 'contradictory_check',
+} as const;
 
 export type M02CForm = M02Form;
 export type M02CLabel = M02Label;
@@ -168,6 +192,80 @@ export function m02cCase(definitionId: string): M02Case | undefined {
 /** True when the workspace was administered in an earlier page load. */
 export function m02cAdministeredBefore(): boolean {
   return ensureState().closureReason === M02C_PRIOR_ADMINISTRATION;
+}
+
+/** The class the workspace is held under after a reload (null when not held). */
+export function m02cHoldBackClass(): Exclude<ReloadClass, 'A'> | null {
+  const reason = ensureState().closureReason;
+
+  return (
+    (['H', 'U', 'M'] as const).find(
+      (cls) => HOLD_BACK_REASON[cls] === reason,
+    ) ?? null
+  );
+}
+
+/** This load's check (undefined until the host ran in this load). */
+let priorLoadCheck: PriorLoadCheck | null | undefined;
+
+/** Writes the load's check once (never on a first load) and returns it. */
+function ensurePriorLoadCheck(): PriorLoadCheck | null {
+  if (priorLoadCheck === undefined) {
+    priorLoadCheck = m02PriorLoadCheck(
+      researchRuntime.getPageLoadIndex(),
+      researchRuntime.getPriorPageLoadEvents(),
+      researchRuntime.getEventIntegrity(),
+    );
+
+    if (priorLoadCheck !== null) {
+      sink(PRIOR_LOAD_CHECK_SUFFIX, {
+        ...priorLoadCheck,
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return priorLoadCheck;
+}
+
+/**
+ * Reload guard (register §5.14; U24 RL-1): an unopened workspace of a
+ * reloaded load is held unless its class is A — never re-run. True when
+ * it is held.
+ */
+function guardM02CReload(nowMs: number): boolean {
+  const s = ensureState();
+
+  if (s.phase !== 'unopened') {
+    return m02cHoldBackClass() !== null;
+  }
+
+  const check = ensurePriorLoadCheck();
+  const cls = classifyM02Reload(
+    researchRuntime.getPageLoadIndex(),
+    check === null ? [] : [check],
+  ).occasions.row.class;
+
+  if (cls === null || cls === 'A') {
+    return false;
+  }
+
+  m02Freeze(s, nowMs, HOLD_BACK_REASON[cls]);
+
+  if (cls === 'H') {
+    m02cWindow.recordPriorExposure(
+      'case workspace opened in an earlier page load of this identity',
+    );
+    m02cWindow.technicalFailure(
+      'reload after administration: workspace not re-run',
+    );
+  } else {
+    m02cWindow.technicalFailure(
+      reloadHoldBackDetail(cls, 'workspace not administered'),
+    );
+  }
+
+  return true;
 }
 
 /** Current slot of every case, by definition id (read from the store). */
@@ -263,14 +361,17 @@ function stopObserving() {
 /**
  * The workspace was PRESENTED: the Work Order Board's briefing lists the
  * case workspace. Logged once; a presented-but-never-opened workspace is
- * `declined` at extraction.
+ * `declined` at extraction. After a reload the check is written first and
+ * a held workspace is held here, at its availability (U24 RL-1).
  */
 export function presentM02C(nowMs: number) {
   declareM02C();
+  ensurePriorLoadCheck();
 
   const s = ensureState();
 
   m02cWindow.present(nowMs, m02EntrySnapshot(s.form, s.order));
+  guardM02CReload(nowMs);
 }
 
 /** Opens (or reopens) the workspace; seeds the intake tray on first open. */
@@ -279,21 +380,11 @@ export function openM02CWorkspace(nowMs: number): M02Phase {
 
   const s = ensureState();
 
+  if (guardM02CReload(nowMs)) {
+    return s.phase;
+  }
+
   if (s.phase === 'unopened') {
-    // Reload guard (register §5.14): the raw log of an earlier page load
-    // already holds an opened workspace. Never re-run it.
-    if (m02PriorAdministration(researchRuntime.getPriorPageLoadEvents())) {
-      m02Freeze(s, nowMs, M02C_PRIOR_ADMINISTRATION);
-      m02cWindow.recordPriorExposure(
-        'case workspace opened in an earlier page load of this identity',
-      );
-      m02cWindow.technicalFailure(
-        'reload after administration: workspace not re-run',
-      );
-
-      return s.phase;
-    }
-
     const seed = seedContainerPositional(
       CONTAINER_IDS.m02cDesk,
       m02IntakeOrder(s.form).map((definitionId) => ({
@@ -564,6 +655,7 @@ export function resetM02CState() {
   }
 
   state = null;
+  priorLoadCheck = undefined;
   moveInputMode = 'system';
   entryContext = {};
   m02cWindow.reset();

@@ -20,10 +20,10 @@ import {
   M08_EPOCHS,
   M08_PRACTICE_ITEMS,
   M08_THRESHOLD,
-  m08AdministeredBefore,
   m08CurrentEpoch,
   m08CurrentReading,
   m08EpochRemainingMs,
+  m08HoldBackClass,
   m08State,
   m08Window,
   sortM08Practice,
@@ -56,8 +56,20 @@ function units(n: number): string {
   return `${n} unit${n === 1 ? '' : 's'}`;
 }
 
+/**
+ * U24 RL-1 (owner decision D-5, `RELOAD-CORRECTION-SPEC-r3-exec.md` §9):
+ * the lines of a console held after a reload because its earlier state
+ * could not be verified or its check is contradictory (U / M). The
+ * existing held-back line of an earlier opening is unchanged.
+ */
+export const M08_UNVERIFIED_LINES = [
+  'The earlier state of this console could not be verified.',
+  'It stays closed after this reload.',
+] as const;
+
 export function m08SurfaceModel(host: M08SurfaceHost): WorkSurfaceModel {
   const s = m08State();
+  const holdBack = m08HoldBackClass();
   const now = host.now();
   const done = m08Window.isClosed();
   const elements: SurfaceElement[] = [];
@@ -74,33 +86,37 @@ export function m08SurfaceModel(host: M08SurfaceHost): WorkSurfaceModel {
     });
   }
 
-  elements.push({
-    id: 'tally',
-    kind: 'readout',
-    label: `STATION OUTPUT: ${units(s.outputUnitsTotal)}`,
-    x: 16,
-    y: 64,
-    w: 330,
-    h: 30,
-  });
-  elements.push({
-    id: 'slot',
-    kind: 'readout',
-    label:
-      s.phase === 'practice'
-        ? `PRACTICE  ${Math.min(s.practice.sorted + 1, M08_PRACTICE_ITEMS)} / ${M08_PRACTICE_ITEMS}`
-        : done
-          ? m08AdministeredBefore()
-            ? 'CONSOLE RECORD HELD'
-            : `${completedSlots} / ${M08_EPOCHS} SLOTS RECORDED`
-          : s.phase === 'interval' && s.intervalReason === 'practice'
-            ? 'PRACTICE COMPLETE'
-            : `SLOT ${s.current + 1} / ${M08_EPOCHS}`,
-    x: 376,
-    y: 64,
-    w: 330,
-    h: 30,
-  });
+  // A U / M screen shows its two status lines only: the readouts would
+  // cover the second line, and the console never ran (U24 RL-1).
+  if (holdBack !== 'U' && holdBack !== 'M') {
+    elements.push({
+      id: 'tally',
+      kind: 'readout',
+      label: `STATION OUTPUT: ${units(s.outputUnitsTotal)}`,
+      x: 16,
+      y: 64,
+      w: 330,
+      h: 30,
+    });
+    elements.push({
+      id: 'slot',
+      kind: 'readout',
+      label:
+        s.phase === 'practice'
+          ? `PRACTICE  ${Math.min(s.practice.sorted + 1, M08_PRACTICE_ITEMS)} / ${M08_PRACTICE_ITEMS}`
+          : done
+            ? holdBack === 'H'
+              ? 'CONSOLE RECORD HELD'
+              : `${completedSlots} / ${M08_EPOCHS} SLOTS RECORDED`
+            : s.phase === 'interval' && s.intervalReason === 'practice'
+              ? 'PRACTICE COMPLETE'
+              : `SLOT ${s.current + 1} / ${M08_EPOCHS}`,
+      x: 376,
+      y: 64,
+      w: 330,
+      h: 30,
+    });
+  }
 
   const sortButtons = (
     onSort: (bin: 'A' | 'B', mode: Parameters<typeof sortM08Work>[2]) => void,
@@ -142,11 +158,14 @@ export function m08SurfaceModel(host: M08SurfaceHost): WorkSurfaceModel {
   let status = '';
 
   if (done) {
-    status = m08AdministeredBefore()
-      ? 'This console was already used in an earlier session load. Its record is held; it does not run again.'
-      : completedSlots >= M08_EPOCHS
-        ? `All ${M08_EPOCHS} slots ended. The console is recorded.`
-        : `The console closed with ${completedSlots} of ${M08_EPOCHS} slots ended. Its record is held as it stands.`;
+    status =
+      holdBack === 'U' || holdBack === 'M'
+        ? M08_UNVERIFIED_LINES.join('\n')
+        : holdBack === 'H'
+          ? 'This console was already used in an earlier session load. Its record is held; it does not run again.'
+          : completedSlots >= M08_EPOCHS
+            ? `All ${M08_EPOCHS} slots ended. The console is recorded.`
+            : `The console closed with ${completedSlots} of ${M08_EPOCHS} slots ended. Its record is held as it stands.`;
   } else {
     switch (s.phase) {
       case 'practice':

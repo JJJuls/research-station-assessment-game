@@ -6,8 +6,26 @@
  * events; a slot without an explicit choice is never counted as Rest; a
  * companion with no valid choice is null with the primary's disposition,
  * and one with fewer than three valid choices at a level is `incomplete`.
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §5): the
+ * load's `prior_load_checked` record classifies the console H / A / U /
+ * M; with its absence of an earlier opening established (A) a load with
+ * no console evidence takes the first-load reading. The record is never
+ * task evidence.
  */
+import { m08PriorAdministration } from '../../pilot/exterior/m08EffortModel';
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -45,37 +63,110 @@ interface M08Raw {
 
 const PLANNED_PER_LEVEL = 3;
 
+const FAMILY = 'proto_m08_effort_';
+
+/**
+ * The load's reload check (U24 RL-1; r1 §1 stage map): stage 1 the
+ * console listed in the yard briefing (`presented`), no stage 2, stage 3
+ * the opening (`opportunity_opened`, the guard's own record), and the
+ * console's hold-back markers. Null on a first load.
+ */
+export function m08PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    stages: {
+      briefing: (event) => event.event_type === `${FAMILY}presented`,
+      opening: (event) => m08PriorAdministration([event]),
+      holdBack: (event) => event.event_type === `${FAMILY}technical_failure`,
+    },
+  });
+}
+
+/** The console's class from the load's check records (r3 §2). */
+export function classifyM08Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks });
+}
+
+/** The current-load reason of a held console, by its marker's class. */
+const HELD_REASON = {
+  H: 'console administered in an earlier page load; not re-run after the reload',
+  U: 'console not administered after a reload: earlier history not verified',
+  M: 'console not administered after a reload: earlier check contradictory',
+} as const;
+
 registerFeatureExtractor('M08', (events, context) => {
   const entry = registerEntry('M08');
   const [primary, byBenefit] = entry.features;
   const load = currentLoadEvents(events, context);
-  const presented = eventsOfType(load, 'proto_m08_effort_presented');
-  const opened = eventsOfType(load, 'proto_m08_effort_opportunity_opened');
-  const closed = eventsOfType(load, 'proto_m08_effort_window_closed');
-  const heldBack = eventsOfType(load, 'proto_m08_effort_technical_failure');
-  const family = load.filter((e) =>
-    e.event_type.startsWith('proto_m08_effort_'),
+  const presented = eventsOfType(load, `${FAMILY}presented`);
+  const opened = eventsOfType(load, `${FAMILY}opportunity_opened`);
+  const closed = eventsOfType(load, `${FAMILY}window_closed`);
+  const heldBack = eventsOfType(load, `${FAMILY}technical_failure`);
+  const family = withoutPriorLoadChecks(
+    load.filter((e) => e.event_type.startsWith(FAMILY)),
+    FAMILY,
   );
   const supporting = sequencesOf(family);
+  const reload = classifyM08Reload(
+    context.pageLoadIndex,
+    eventsOfType(load, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    const reason = 'a reload check record describes another page load';
+
+    return [
+      emptyFeature('M08', primary, 'technical_failure', reason, {
+        closure_reason: 'technical_failure',
+        supporting_sequences: supporting,
+      }),
+      emptyFeature('M08', byBenefit, 'technical_failure', reason, {
+        closure_reason: 'technical_failure',
+      }),
+    ];
+  }
 
   if (opened.length === 0) {
-    // The reload guard refused to re-run a console administered in an
-    // earlier page load: the evidence lies in `prior_page_load_events`.
-    if (heldBack.length > 0) {
+    // The reload guard held the console (an earlier administration, or an
+    // earlier state not verified): the evidence lies in
+    // `prior_page_load_events`. A reloaded load whose check does not
+    // establish the absence of an earlier opening holds it too (U24 RL-1).
+    const held = (
+      heldBack.length > 0
+        ? heldBack.map(
+            (event) =>
+              reloadHoldBackClass(meta<unknown>(event, 'detail')) ?? 'H',
+          )
+        : context.reloaded &&
+            reload.check_count > 0 &&
+            reload.occasions.row.class !== 'A'
+          ? [reload.occasions.row.class ?? 'U']
+          : []
+    ) as ('H' | 'U' | 'M')[];
+
+    if (held.length > 0) {
+      const reason = [...new Set(held.map((cls) => HELD_REASON[cls]))].join(
+        '; ',
+      );
+
       return [
-        emptyFeature(
-          'M08',
-          primary,
-          'interrupted',
-          'console administered in an earlier page load; not re-run after the reload',
-          { supporting_sequences: supporting },
-        ),
-        emptyFeature(
-          'M08',
-          byBenefit,
-          'interrupted',
-          'console administered in an earlier page load; not re-run after the reload',
-        ),
+        emptyFeature('M08', primary, 'interrupted', reason, {
+          supporting_sequences: supporting,
+        }),
+        emptyFeature('M08', byBenefit, 'interrupted', reason),
       ];
     }
 
@@ -98,6 +189,19 @@ registerFeatureExtractor('M08', (events, context) => {
           'declined',
           'console listed in the yard briefing, never opened',
         ),
+      ];
+    }
+
+    // An established absence takes the first-load reading (r3 §5, the
+    // single-occasion rule).
+    if (reload.occasions.row.class === 'A') {
+      const reason = 'support console never opened';
+
+      return [
+        emptyFeature('M08', primary, 'not_presented', reason, {
+          supporting_sequences: supporting,
+        }),
+        emptyFeature('M08', byBenefit, 'not_presented', reason),
       ];
     }
 

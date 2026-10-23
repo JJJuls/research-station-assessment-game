@@ -25,10 +25,23 @@
  * reach, each piece is lifted by keyboard and by pointer within 64 px,
  * never within 76 px of the bin, the paired pieces of the two jobs from
  * mirrored positions and at equal walking cost.
+ *
+ * U24 RL-1 (`RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §5, §8; owner ruling
+ * R-2 of 23 October 2026): every r3 §5 row of M04 after a reload with
+ * each job's class and permission as well as the reading; and the R-2
+ * table — H + A, U + A and M + A in both job orders — asserting each
+ * job's own class beside its effective joint hold-back, the permission,
+ * the joint basis and reason, the opening flags and sequences, and the
+ * contradiction evidence an M job keeps. Streams are built as the runtime
+ * writes them; the expected values are written from r3 §5 and R-2.
  */
 import { expect, test } from '@playwright/test';
 
 import { extractItemFeatures } from '../src/measurement/features';
+import {
+  classifyM04Reload,
+  m04PriorLoadCheck,
+} from '../src/measurement/features/m04';
 import { registerEntry } from '../src/measurement/registerV3';
 import { ledgerEntry } from '../src/pilot/evidenceLedger';
 import { M03_TOOLS } from '../src/pilot/windows/m03RestoreModel';
@@ -2048,5 +2061,432 @@ test.describe('M04 own debris (pure)', () => {
         /score|mess|tidy|penalt|correct/i,
       );
     }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-1: the reload check at the listing (pure)
+ * ------------------------------------------------------------------ */
+
+const CONTINUOUS = {
+  first_sequence: 1,
+  sequence_gap_count: 0,
+  sequence_duplicate_count: 0,
+  recovered_from_chunks: false,
+};
+const UNVERIFIED = { ...CONTINUOUS, recovered_from_chunks: true };
+/** The current-load reasons of r3 §2 (the classifier's). */
+const CLASS_REASON = {
+  H: 'earlier opening found',
+  U: 'earlier history not verified',
+  M: 'earlier check contradictory',
+} as const;
+/** The window's marker details (r3 §2; R-2 for a job held with the other). */
+const OWN_DETAIL = {
+  H: 'reload after administration: cutting job not run',
+  U: 'reload with an unverified earlier state: cutting job not administered',
+  M: 'reload with a contradictory earlier check: cutting job not administered',
+} as const;
+const jointDetail = (other: 'H' | 'U' | 'M') =>
+  `reload with a joint hold-back: cutting job not run; the other job is held (${CLASS_REASON[other]}) and shares its starting state`;
+
+type PriorStep = 'session' | 'listed' | 'cut' | 'U';
+type JobStep = 'none' | 'observe' | 'review_closed';
+
+function m04PriorLoad(
+  index: number,
+  from: number,
+  steps: readonly [M04Job | null, PriorStep][],
+): RawGameEvent[] {
+  const h = harness();
+
+  for (const [job, step] of steps) {
+    if (job === null || step === 'session') {
+      h.events.push({
+        session_id: 's',
+        timestamp_ms: 0,
+        scene: 'dock',
+        event_type: 'session_start',
+        metadata: {},
+      });
+    } else if (step === 'listed') {
+      h.push(job, 'listed', { jobs_listed: 2, input_mode: 'system' });
+    } else if (step === 'cut') {
+      h.push(job, 'presented', { input_mode: 'system' });
+      h.push(job, 'opportunity_opened', { input_mode: 'system' });
+    } else {
+      h.push(job, 'technical_failure', {
+        detail: OWN_DETAIL.U,
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return h.events.map((event, i) => ({
+    ...event,
+    page_load_index: index,
+    sequence: from + i,
+  }));
+}
+
+/**
+ * A reloaded load as the runtime writes it: the record from the row's own
+ * stage map (or `records`, to inject defects), the listing, the marker of
+ * every job whose effective class is not A (its own detail, or the joint
+ * one), then the A jobs as `steps` say.
+ */
+function m04ReloadedLoad(
+  prior: RawGameEvent[],
+  steps: Record<M04Job, JobStep>,
+  options: {
+    integrity?: typeof CONTINUOUS;
+    records?: (record: Record<string, unknown>) => object[];
+  } = {},
+) {
+  const record = m04PriorLoadCheck(
+    2,
+    prior,
+    options.integrity ?? CONTINUOUS,
+  ) as unknown as Record<string, unknown>;
+  const records = options.records?.(record) ?? [record];
+  const reload = classifyM04Reload(2, records);
+  const h = harness();
+  const s = createM04State();
+
+  h.push('o1', 'listed', { jobs_listed: 2, input_mode: 'system' });
+
+  for (const job of M04_JOBS) {
+    const row = reload.jobs[job];
+
+    if (row.effective.class !== 'A') {
+      h.push(job, 'technical_failure', {
+        detail:
+          row.own.class === 'A'
+            ? jointDetail(row.held_with ?? 'U')
+            : OWN_DETAIL[row.own.class ?? 'U'],
+        input_mode: 'system',
+      });
+    }
+  }
+
+  let t = 100;
+
+  for (const job of M04_JOBS) {
+    if (reload.jobs[job].effective.class !== 'A' || steps[job] === 'none') {
+      continue;
+    }
+
+    cut(h, s, t);
+
+    if (steps[job] === 'review_closed') {
+      depart(h, s, t + 500, 'closed_at_review', null);
+    } else {
+      carryToBin(h, s, m04PiecesOf(job)[0].object_id, t + 100);
+      depart(h, s, t + 500);
+    }
+
+    t += 1_000;
+  }
+
+  const from = prior.length + 1;
+  const current = [
+    ...records.map(
+      (r): RawGameEvent => ({
+        session_id: 's',
+        timestamp_ms: 0,
+        scene: 'records_workshop',
+        event_type: `${M04_FAMILY}prior_load_checked`,
+        metadata: {
+          opportunity_id: M04_SPEC.o1.opportunity_id,
+          occasion: 'o1',
+          ...r,
+          input_mode: 'system',
+        },
+      }),
+    ),
+    ...h.events,
+  ].map((event, i) => ({ ...event, page_load_index: 2, sequence: from + i }));
+  const rows = extractItemFeatures('M04', [...prior, ...current], {
+    finalCoreClosed: true,
+    pageLoadIndex: 2,
+    reloaded: true,
+  });
+
+  return { record, reload, rows };
+}
+
+const M04_NEVER = m04PriorLoad(1, 1, [[null, 'session']]);
+
+/** r3 §5 M04 (after the correction): own / effective classes and reading. */
+const M04_CASES: readonly {
+  name: string;
+  prior: RawGameEvent[];
+  steps: Record<M04Job, JobStep>;
+  own: [string | null, string | null];
+  effective: [string | null, string | null];
+  row: Record<string, unknown>;
+  reason?: string;
+}[] = [
+  {
+    name: 'HB+HB (both cut earlier) ⇒ interrupted · null · null/0, now written at the listing (a)',
+    prior: m04PriorLoad(1, 1, [
+      ['o1', 'listed'],
+      ['o1', 'cut'],
+      ['o2', 'cut'],
+    ]),
+    steps: { o1: 'none', o2: 'none' },
+    own: ['H', 'H'],
+    effective: ['H', 'H'],
+    row: { disposition: 'interrupted', value: null, denominator: 0 },
+    reason: 'a cutting job was held back after a reload',
+  },
+  {
+    name: 'HB+HB (only job 1 cut earlier: job 2 held with it, R-2) ⇒ interrupted · null · null/0',
+    prior: m04PriorLoad(1, 1, [['o1', 'cut']]),
+    steps: { o1: 'none', o2: 'none' },
+    own: ['H', 'A'],
+    effective: ['H', 'H'],
+    row: { disposition: 'interrupted', value: null, denominator: 0 },
+  },
+  {
+    name: 'OBS+OBS ⇒ observed · (u1+u2)/6',
+    prior: M04_NEVER,
+    steps: { o1: 'observe', o2: 'observe' },
+    own: ['A', 'A'],
+    effective: ['A', 'A'],
+    row: { disposition: 'observed', value: 4, numerator: 4, denominator: 6 },
+  },
+  {
+    name: 'OBS + NOP (A) ⇒ incomplete · x · x/3, no longer a false hold-back (b)',
+    prior: M04_NEVER,
+    steps: { o1: 'observe', o2: 'none' },
+    own: ['A', 'A'],
+    effective: ['A', 'A'],
+    row: { disposition: 'incomplete', value: 2, numerator: 2, denominator: 3 },
+  },
+  {
+    name: 'NOP+NOP, only listed ⇒ not_presented (b)',
+    prior: M04_NEVER,
+    steps: { o1: 'none', o2: 'none' },
+    own: ['A', 'A'],
+    effective: ['A', 'A'],
+    row: { disposition: 'not_presented', value: null },
+  },
+  {
+    name: 'review-closed + OBS ⇒ incomplete · x · x/3 (unchanged)',
+    prior: M04_NEVER,
+    steps: { o1: 'observe', o2: 'review_closed' },
+    own: ['A', 'A'],
+    effective: ['A', 'A'],
+    row: { disposition: 'incomplete', value: 2, numerator: 2, denominator: 3 },
+  },
+  {
+    name: 'review-closed + NOP (A) ⇒ interrupted · null · null/0 with the first-load reason (b)',
+    prior: M04_NEVER,
+    steps: { o1: 'review_closed', o2: 'none' },
+    own: ['A', 'A'],
+    effective: ['A', 'A'],
+    row: {
+      disposition: 'interrupted',
+      value: null,
+      denominator: 0,
+      censor_reason: 'job closed by the system before a departure',
+    },
+    reason:
+      'every job run was closed by the system before a departure occurred',
+  },
+  {
+    name: 'history-level U ⇒ both jobs U, nothing cut: interrupted · null · null/0 (c)',
+    prior: M04_NEVER,
+    steps: { o1: 'none', o2: 'none' },
+    own: ['U', 'U'],
+    effective: ['U', 'U'],
+    row: { disposition: 'interrupted', value: null, denominator: 0 },
+    reason:
+      'a cutting job was held back after a reload: earlier history not verified',
+  },
+];
+
+test.describe('M04 reload at the listing (U24 RL-1, pure)', () => {
+  for (const c of M04_CASES) {
+    test(`r3 §5: ${c.name}`, () => {
+      const { reload, rows } = m04ReloadedLoad(c.prior, c.steps, {
+        integrity: c.name.startsWith('history-level') ? UNVERIFIED : undefined,
+      });
+
+      expect([reload.jobs.o1.own.class, reload.jobs.o2.own.class]).toEqual(
+        c.own,
+      );
+      expect([
+        reload.jobs.o1.effective.class,
+        reload.jobs.o2.effective.class,
+      ]).toEqual(c.effective);
+      expect([
+        reload.jobs.o1.effective.administration_permitted,
+        reload.jobs.o2.effective.administration_permitted,
+      ]).toEqual(c.effective.map((cls) => cls === 'A'));
+      expect(rows[0]).toMatchObject(c.row);
+
+      if (c.reason !== undefined) {
+        expect(rows[0].missing_reason).toBe(c.reason);
+      }
+    });
+  }
+});
+
+/**
+ * Owner ruling R-2: one small table — the other job held as H, U or M, in
+ * both job orders. The held job's class comes from its own evidence: H an
+ * earlier cut, U an earlier U hold-back (carried forward, D-7 (i)), M a
+ * contradiction confined to that job's flags.
+ */
+const R2_TABLE = (['H', 'U', 'M'] as const).flatMap((held) =>
+  (
+    [
+      ['o1', 'o2'],
+      ['o2', 'o1'],
+    ] as const
+  ).map(([heldJob, dependent]) => ({ held, heldJob, dependent })),
+);
+
+test.describe('M04 joint hold-back (owner ruling R-2, pure)', () => {
+  for (const { held, heldJob, dependent } of R2_TABLE) {
+    test(`${held} + A: job ${heldJob} held as ${held}, job ${dependent} held with it`, () => {
+      const prior =
+        held === 'H'
+          ? m04PriorLoad(1, 1, [[heldJob, 'cut']])
+          : held === 'U'
+            ? m04PriorLoad(1, 1, [[heldJob, 'U']])
+            : M04_NEVER;
+      const { record, reload, rows } = m04ReloadedLoad(
+        prior,
+        { o1: 'observe', o2: 'observe' },
+        {
+          records:
+            held === 'M'
+              ? (r) => {
+                  const occasions = r.occasions as Record<
+                    string,
+                    Record<string, unknown>
+                  >;
+
+                  // An occasion-local contradiction: the held job claims the
+                  // absence beside an opening found; the row agrees with
+                  // its occasions, so the check as a whole is not voided.
+                  return [
+                    {
+                      ...r,
+                      prior_opening_found: true,
+                      prior_opening_absence_established: false,
+                      occasions: {
+                        ...occasions,
+                        [heldJob]: {
+                          ...occasions[heldJob],
+                          prior_opening_found: true,
+                          prior_opening_absence_established: true,
+                        },
+                      },
+                    },
+                  ];
+                }
+              : undefined,
+        },
+      );
+      const own = reload.jobs[heldJob];
+      const dep = reload.jobs[dependent];
+
+      // The held job keeps its own classification (and an M its evidence).
+      expect(own.own.class).toBe(held);
+      expect(own.effective).toEqual(own.own);
+      expect(own.joint_hold_back).toBe(false);
+      expect(own.held_with).toBeNull();
+      expect(own.effective.administration_permitted).toBe(false);
+
+      if (held === 'H') {
+        expect(own.prior_opening_found).toBe(true);
+        expect(own.prior_opening_sequences).toEqual([2]);
+      } else if (held === 'M') {
+        expect(own.own.basis).toBe('occasion_incoherent');
+        expect(reload.own.check_coherent).toBe(false);
+        expect(own.prior_opening_found).toBe(true);
+        expect(own.prior_opening_absence_established).toBe(true);
+      } else {
+        expect(own.own.basis).toBe('absence_not_established');
+        expect(own.prior_opening_found).toBe(false);
+        expect(own.prior_opening_absence_established).toBe(false);
+      }
+
+      // The dependent job: its own class and flags are A and unchanged,
+      // the aggregate coherence flag notwithstanding; its effective class
+      // is the joint hold-back with a dependency reason.
+      expect(dep.own).toMatchObject({
+        class: 'A',
+        administration_permitted: true,
+        basis: 'absence_established',
+      });
+      expect(dep.prior_opening_found).toBe(false);
+      expect(dep.prior_opening_absence_established).toBe(true);
+      expect(dep.prior_opening_sequences).toEqual([]);
+      expect(dep.joint_hold_back).toBe(true);
+      expect(dep.held_with).toBe(held);
+      expect(dep.effective).toEqual({
+        class: held === 'H' ? 'H' : 'U',
+        administration_permitted: false,
+        basis: 'joint_hold_back',
+        reason: `the other cutting job is held (${CLASS_REASON[held]}); this job shares its starting state and is held with it`,
+      });
+      // Nothing says the dependent job was opened, cut or administered.
+      expect(dep.effective.reason).not.toMatch(
+        /this job (was|has been) (opened|cut|administered)/,
+      );
+
+      // The record is factual per job; nothing was cut in this load.
+      const flags = (
+        record.occasions as Record<string, Record<string, unknown>>
+      )[dependent];
+
+      expect(flags.prior_opening_found).toBe(false);
+      expect(rows[0]).toMatchObject({
+        disposition: 'interrupted',
+        value: null,
+        denominator: 0,
+      });
+      expect(
+        (rows[0].components.reload_jobs as Record<string, unknown>)[dependent],
+      ).toMatchObject({
+        own_class: 'A',
+        effective_class: held === 'H' ? 'H' : 'U',
+        administration_permitted: false,
+        basis: 'joint_hold_back',
+        joint_hold_back: true,
+        held_with: held,
+        prior_opening_found: false,
+        prior_opening_sequences: [],
+      });
+      expect(
+        (rows[0].components.reload_jobs as Record<string, unknown>)[heldJob],
+      ).toMatchObject({ own_class: held, effective_class: held });
+    });
+  }
+
+  test('A + A: no hold-back, both jobs administered; a first load has no reload component', () => {
+    const { reload, rows } = m04ReloadedLoad(M04_NEVER, {
+      o1: 'observe',
+      o2: 'observe',
+    });
+
+    for (const job of M04_JOBS) {
+      expect(reload.jobs[job].joint_hold_back).toBe(false);
+      expect(reload.jobs[job].effective.administration_permitted).toBe(true);
+    }
+
+    expect(rows[0].disposition).toBe('observed');
+
+    const first = harness();
+
+    first.push('o1', 'listed', { input_mode: 'system' });
+    expect(
+      extractItemFeatures('M04', first.events, CONTEXT)[0].components,
+    ).not.toHaveProperty('reload_jobs');
   });
 });

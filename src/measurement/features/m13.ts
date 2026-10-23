@@ -20,6 +20,12 @@
  * Event order is read only from usable, unique sequence numbers (register
  * §5.259 convention). Read-only over the raw events; current page load
  * only; no total that mixes first responses with practice.
+ *
+ * Reload (U24 RL-1, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §5): the
+ * load's `prior_load_checked` record classifies the bench H / A / U / M;
+ * with its absence of an earlier opening established (A) a load with no
+ * bench evidence takes the first-load reading. The record is never task
+ * evidence.
  */
 import {
   isM13NetworkId,
@@ -31,6 +37,7 @@ import {
   m13Network,
   type M13NetworkId,
 } from '../../informationProcessing/m13NetworkForms';
+import { classifyM13Reload } from '../../informationProcessing/m13NetworkSeries';
 import type { RawGameEvent } from '../../systems/EventLogger';
 import {
   M13_PIECES,
@@ -41,6 +48,11 @@ import {
 } from '../m13PipePuzzle';
 import type { ClosureReason } from '../protocol';
 import { registerEntry } from '../registerV3';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  reloadHoldBackClass,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   emptyFeature,
@@ -157,19 +169,67 @@ interface SnapshotEntry {
   correct?: unknown;
 }
 
+/** The current-load reason of a held bench, by its marker's class. */
+const HELD_REASON = {
+  H: 'bench opened in an earlier page load; not re-run after the reload',
+  U: 'bench not administered after a reload: earlier history not verified',
+  M: 'bench not administered after a reload: earlier check contradictory',
+} as const;
+
 registerFeatureExtractor('M13', (events, context) => {
   const [primary] = registerEntry('M13').features;
-  const family = events.filter(
+  const own = events.filter(
     (event) =>
       (event.page_load_index === undefined ||
         event.page_load_index === context.pageLoadIndex) &&
       event.event_type.startsWith(FAMILY),
   );
+  const family = withoutPriorLoadChecks(own, FAMILY);
+  const reload = classifyM13Reload(
+    context.pageLoadIndex,
+    own
+      .filter(
+        (event) => event.event_type === `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`,
+      )
+      .map((event) => event.metadata ?? {}),
+  );
+
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    return [
+      emptyFeature(
+        'M13',
+        primary,
+        'technical_failure',
+        'a reload check record describes another page load',
+        { supporting_sequences: sequencesOf(family) },
+      ),
+    ];
+  }
+
+  const cls = reload.occasions.row.class;
 
   if (family.length === 0) {
-    return [
-      absentFeature('M13', primary, context, 'lattice bench never opened'),
-    ];
+    // An established absence takes the first-load reading (r3 §5, the
+    // single-occasion rule); a check that does not establish it holds the
+    // bench (U24 RL-1).
+    if (cls === 'A') {
+      return [
+        emptyFeature(
+          'M13',
+          primary,
+          'not_presented',
+          'lattice bench never opened',
+        ),
+      ];
+    }
+
+    return context.reloaded &&
+      reload.check_count > 0 &&
+      (cls === 'H' || cls === 'U' || cls === 'M')
+      ? [emptyFeature('M13', primary, 'interrupted', HELD_REASON[cls])]
+      : [absentFeature('M13', primary, context, 'lattice bench never opened')];
   }
 
   const supporting = sequencesOf(family);
@@ -190,18 +250,27 @@ registerFeatureExtractor('M13', (events, context) => {
   // the bench was administered in an earlier page load and is not re-run.
   // Takes precedence over every other disposition of the new load.
   // The hold-back record carries both marks: a detail beginning `reload`
-  // and `prior_exposure: true`. Another fault is never read as a hold-back.
-  const heldBack = family.some(
-    (event) =>
-      suffixOf(event) === 'technical_failure' &&
-      meta<unknown>(event, 'prior_exposure') === true &&
-      String(meta<unknown>(event, 'detail') ?? '').startsWith('reload'),
-  );
+  // and `prior_exposure: true` — or (U24 RL-1) a U or M detail, which
+  // claims no prior exposure. Another fault is never read as a hold-back.
+  const holdBack = family.find((event) => {
+    const detail = meta<unknown>(event, 'detail');
+    const marked = reloadHoldBackClass(detail);
 
-  if (heldBack) {
+    return (
+      suffixOf(event) === 'technical_failure' &&
+      String(detail ?? '').startsWith('reload') &&
+      (meta<unknown>(event, 'prior_exposure') === true ||
+        marked === 'U' ||
+        marked === 'M')
+    );
+  });
+
+  if (holdBack !== undefined) {
+    const marked = reloadHoldBackClass(meta<unknown>(holdBack, 'detail'));
+
     return empty(
       'interrupted',
-      'bench opened in an earlier page load; not re-run after the reload',
+      HELD_REASON[marked === 'U' || marked === 'M' ? marked : 'H'],
       {
         components: {
           administration_version: M13N_ENTRY_STATE_VERSION,
