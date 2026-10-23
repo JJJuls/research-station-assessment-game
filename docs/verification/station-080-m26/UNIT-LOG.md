@@ -18208,3 +18208,60 @@ Finish with the closeout status, durable evidence paths, bounded correction spec
   `…\B-closeout-3\RELOAD-CORRECTION-SPEC.md`, for the owner's approval; no
   implementation or test file is edited, the live allowlist is unchanged,
   and Part C and U25 are not begun.
+
+## U24 RL-0 — the shared reload-check classifier (23 October 2026)
+
+- **Authority (by reference).** The owner's ruling of 23 October 2026,
+  `C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-correction\RL-OWNER-RULING-2026-10-23.md`,
+  SHA-256 `0baa5383ec36b3921d06d6f14c995224e3115ab8fd931e556546b872c38e39ea`
+  (r2 approved with D-1 to D-8 and binding clarifications 1 to 4; RL-0 to
+  RL-4 authorised in order; one local commit per unit); the binding
+  execution specification `RELOAD-CORRECTION-SPEC-r3-exec.md` in the same
+  folder, SHA-256
+  `03347a9eb86be76f5da7910d98c99997f98f0a3542ff24b5d852f956ca106741`; the
+  unit brief `RL-EXECUTE-0.md`, SHA-256
+  `c83760df2c28cc339a8f5fe96f91c476bfe2d8d8235d9d5b539fe8c6206ce188`. The
+  frozen r2 (`…\B-closeout-4\RELOAD-CORRECTION-SPEC-r2.md`, SHA-256
+  `1d38fe78…7002`) is unchanged. The ruling authorises the branch
+  `codex/u24-end-to-end` and this worktree despite CLAUDE.md's historical
+  branch line.
+- **Gate.** Writer `claude-opus-5-5`; root
+  `C:\Users\Juls\.codex\worktrees\u24-end-to-end\research-station-assessment-game`,
+  branch `codex/u24-end-to-end`, HEAD `243ee092…` (the start commit);
+  status `?? .agents/`, `?? .codex/` only; `CLAUDE_UNIT_ALLOWLIST` equal to
+  `RL-ALLOWLIST-0.txt` (6 paths); the frozen U24 evidence present with its
+  six manifests; the ten foreign files hash-identical to
+  `FOREIGN-INVENTORY-SUPPLEMENT-2026-10-22.json`.
+- **Work.** New `src/measurement/reloadCheck.ts` (pure: the record's
+  computation, the five continuity conditions, D-6 (i), D-7 (i), the
+  coherence rule, H / A / U / M per occasion with the administration
+  permission) and `e2e/reload_check.spec.ts` (pure fixtures: every class;
+  each continuity condition failing alone; a first load; coherent,
+  self-contradictory and malformed records; F-A to F-E). Register §5.404
+  (with the writer's readings (a)–(i)), addendum §2 "U24 RL-0" (the
+  provisional schema and the classifier, never canonical), matrix pointer.
+  No row behaviour changes; nothing is wired.
+- **Reviews and corrections.** Sonnet verification (`claude-sonnet-5-5`):
+  PASS, five MINOR. Opus scientific review (`claude-opus-5-5`): accept
+  with minor corrections, no BLOCKING or MAJOR. The MINOR findings were
+  corrected within scope: coherence judged on the record's whole occasion
+  map (a caller may classify a subset); the row/occasion agreement in both
+  directions; a malformed record's own reason; §5.290 (a)'s
+  `exposure_record_consistent` beside `check_coherent`; M04's joint
+  hold-back on any held job; the departures and writer's shapes stated in
+  register §5.404 and the addendum; fixtures for a row-level contradiction
+  and for agreeing self-contradictory duplicates. Sonnet re-ran the
+  affected checks.
+- **For the owner.** Register §5.404 reading (a): an occasion whose
+  earlier opening is found beside a discontinuous history is H (as
+  implemented, M07's order) or U (r3 §2's literal history-level text).
+  Both refuse administration. Confirmation is requested before Part C, and
+  layer R must use the same order.
+- **Verification.** See the RL-0 handoff in the durable evidence
+  `C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-evidence\RL-0\`
+  (static checks, the pure run, the Sonnet verification and the Opus
+  scientific review with their model IDs). Browser: not applicable (no
+  runtime change). Gameplay and visual reviews: not applicable (no
+  participant-facing runtime change, no new or changed screen).
+- **Not claimed.** RL-0 makes no row correct by itself; the game is not
+  fully verified and not ready for participant collection.

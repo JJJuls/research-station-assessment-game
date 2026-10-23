@@ -1570,6 +1570,53 @@ check", WO-13 "Excavation field — survey record"). M22's requirement logic,
 forms and the `m22_revisions_begun` formula are unchanged; the version
 makes records written under the earlier wording self-identifying.
 
+U24 RL-0 (PROVISIONAL, never canonical; D-4 of the owner's ruling of 23
+October 2026, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2–§3; register §5.404):
+the shared reload check `src/measurement/reloadCheck.ts`, pure and not yet
+wired to any row — no row's administration, event, text, disposition or
+formula changes in RL-0, and §1's reload rule stands until RL-1 to RL-4
+wire their rows. **Record** `<family>prior_load_checked` (the suffix M07
+and M14–M20 already write; at most one per family per load, written by the
+family's first host before any opening, never on a first load; never task
+evidence — excluded from family evidence tests and `supporting_sequences`):
+`page_load_index`, `prior_page_load_event_count`, `history_continuous`
+(exactly r3 §3's five conditions: at least one earlier record,
+`first_sequence` 1, no gap, no duplicate, `recovered_from_chunks` false;
+`store_evictions` is not read), `prior_briefing_found` (stage 1),
+`prior_presentation_found` (stage 2, present only where the family's stage
+map names a stage-2 record), `prior_opening_found` (stage 3),
+`prior_opening_absence_established` (continuous, no opening found, and no
+earlier U or M hold-back of that occasion, D-7 (i)),
+`prior_opening_sequences` (P-1: the sequence numbers of the earlier
+openings found), and, where the task has occasions,
+`occasions: { <id>: { the same four flags, the sequences } }` with the row
+flags summarising them (an opening of any occasion; the absence for the row
+only when established for every occasion). A family may add named boolean
+flags under an occasion's `evidence` object (M25's belief and probe
+fields, D-4; their names and logged shape are RL-3's). **Classifier**
+`classifyReload`, per occasion: a first load ⇒ no class, first-load
+administration; no record, or two or more records (D-6 (i), even when they
+agree) ⇒ U for every occasion; a malformed record (another load's
+`page_load_index`, or an expected occasion missing) ⇒ every occasion held
+with `check_malformed` and the reason "check record malformed" (the
+callers' existing `technical_failure` rules); a self-contradictory record
+(the `checkCoherent` rule, extended to the record's whole occasion map) ⇒ M
+for every occasion; otherwise, per occasion, its own contradictory flags ⇒
+M, an earlier opening found ⇒ H, a discontinuous history ⇒ U, the absence
+established ⇒ A, else U (a carried-forward hold-back); M04's joint
+hold-back is a caller option (an A job is held beside a held job). Only A
+is administered; H, U and M are held. Beside `check_coherent` (the records'
+content) the result carries §5.290 (a)'s existing
+`exposure_record_consistent` (false for two or more records). Hold-back
+details begin "reload after administration" (H), "reload with an
+unverified earlier state" (U) or "reload with a contradictory earlier
+check" (M); reasons "earlier opening found", "earlier history not
+verified", "earlier check contradictory". The H-before-U order beside a
+discontinuous history, the per-occasion M label, the malformed handling,
+the M prefix and the reasons are IMPLEMENTER DEFAULTS, owner-visible and
+reversible (register §5.404 readings (a), (c), (d), (h); (a) awaits the
+owner's confirmation). `absentFeature` and `extract.ts` are unchanged.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                               | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

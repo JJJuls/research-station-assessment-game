@@ -811,3 +811,14 @@ F-B4 (report 2's "recovered" line), F-B5 (further stale registry labels),
 F-B6 (the DEV template's external request), F-B7 and F-B8 (two V-5 (b)
 clauses after a reload) and F-B10 (further visual defects). No row is
 scientifically validated.
+
+**U24 RL-0** (the shared reload-check classifier; the first of five
+reload-correction units under the owner's ruling of 23 October 2026 and
+`RELOAD-CORRECTION-SPEC-r3-exec.md`; register §5.404, addendum §2 "U24
+RL-0", UNIT-LOG "U24 RL-0") adds the pure helper
+`src/measurement/reloadCheck.ts` — the provisional `prior_load_checked`
+record and the per-occasion H / A / U / M classifier with its
+administration permission (D-6 (i), D-7 (i)) — and its pure fixtures
+`e2e/reload_check.spec.ts`. No row is wired and no row's design, formula,
+event family, text or disposition changes; F-B2, F-B7 and F-B8 stay open
+until RL-1 to RL-4 and the RL-F recapture.

@@ -14089,3 +14089,89 @@ onward are the writer's readings and dispositions under it.
      (`…\u24-end-to-end-evidence\B-closeout-3\RELOAD-CORRECTION-SPEC.md`);
      nothing is implemented, no allowlist is expanded, Part C and U25 are
      not begun.
+404. **U24 RL-0 — the shared reload-check classifier (23 October 2026;
+     the first of five reload-correction units under the owner's ruling of
+     23 October 2026, `…\2026\10\23\u24-rl-correction\RL-OWNER-RULING-2026-10-23.md`
+     SHA-256 `0baa5383…e39ea`, which approves r2 with D-1 to D-8 and binding
+     clarifications 1 to 4; binding execution specification
+     `RELOAD-CORRECTION-SPEC-r3-exec.md` SHA-256 `03347a9e…6741`; UNIT-LOG
+     "U24 RL-0").** New pure module `src/measurement/reloadCheck.ts` and pure
+     fixtures `e2e/reload_check.spec.ts`. Nothing is wired: no row's
+     administration, stimulus, text, event, validity semantics, disposition
+     or formula changes in RL-0, and the addendum §1 reload rule stands for
+     every row until RL-1 to RL-4. The module holds
+     `computePriorLoadCheck` (the provisional `prior_load_checked` record
+     of D-4, addendum §2 "U24 RL-0"; never canonical), `classifyReload`
+     (H / A / U / M per occasion, r3 §2, with whether the occasion may be
+     administered: only A, or a first load), the hold-back detail prefixes
+     and `withoutPriorLoadChecks` (the record is never task evidence).
+     Settled decisions implemented as ruled, not reopened: D-6 (i) — two or
+     more check records of a family in one load establish nothing, even when
+     they agree (fixture F-A; conflicting ones also clear the coherence
+     flag, F-B); D-7 (i) — an earlier U or M hold-back of the same occasion
+     keeps that occasion's absence unestablished even when the history is
+     continuous by now (F-C), while an H marker never does and never
+     touches a sibling (F-E); an A sibling of a held U / M occasion is
+     administered (F-D; clarification 1); the five continuity conditions of
+     r3 §3 exactly, `store_evictions` not read; the §5.290 (a)
+     `checkCoherent` rule. **Writer's readings (IMPLEMENTER DEFAULTS,
+     owner-visible and reversible, none a ruling):** (a) per occasion, an
+     earlier opening found is H even beside a discontinuous history (M07's
+     precedence, §5.379 (a)); its siblings are then U. This departs from the
+     literal history-level-U sentence of r3 §2 ("every occasion of that
+     family is then U"), because r3's H condition carries no continuity
+     qualifier and the literal U would drop the prior-exposure entry of a
+     confirmed opening (direction (a); §5.379 (c)) and change M14–M20's
+     existing validity semantics (§5.290 (a): "an actual prior opening keeps
+     the hold-back"; clarification 4). **OWNER CONFIRMATION REQUESTED**: (i)
+     H, as implemented, or (ii) U literally; H and U both refuse
+     administration, so only the class, detail, reason and prior-exposure
+     entry differ, and Part C's layer R must use the same order. Under (ii)
+     a caller relabels H to U where `history_level_uncertain` is true,
+     without a helper change. No record, and two or more records, make every
+     occasion U, whatever they report. (b) The carry-forward is encoded in
+     the occasion's `prior_opening_absence_established`, as M07 encodes it
+     (§5.379 (b)); no carry-forward field is added. (c) `checkCoherent`
+     extended to the occasion map, judged on the record's whole map even
+     when a caller classifies a subset of its occasions: the row's
+     `prior_opening_found` must equal "any occasion's", and the row's
+     absence must equal "every occasion's established and none found"; a
+     breach is a self-contradictory record (M for every occasion). An
+     occasion whose own flags contradict each other is labelled M for that
+     occasion only: r3 §2 lists "a contradiction concerns that occasion
+     only" under occasion-level U, and the M label is the writer's, from r3
+     §2's definition of M (a self-contradictory record) and direction (c)
+     (contradictory kept distinct from uncertain); administration is refused
+     either way. (d) A record naming another page load, or lacking an
+     expected occasion, is malformed: every occasion held with
+     `check_malformed` set and the reason "check record malformed", never
+     the unverified-history reason, so that the callers keep their existing
+     `technical_failure` rules (§5.284, §5.290 (a), §5.379 (e); r3 §2: class
+     M does not change them). Callers branch on `check_malformed` before the
+     class. (e) A record on a first page load is flagged, establishes nothing
+     and changes no first-load administration. (f) M04's approved joint
+     hold-back (an earlier cut holds both jobs, `m04Debris.ts`) is a caller
+     option, `jointHoldBack`, so the record stays factual about which job
+     was opened; an A member is held whenever another member is held (H
+     beside an H, otherwise U), since the second job's start state cannot be
+     known. (g) Families may report named boolean flags under an occasion's
+     `evidence` object for M25's belief and probe fields (D-4); this nesting
+     is a writer's shape and fixes neither their names nor their logged
+     shape: RL-3 emits the D-4 fields (r1 §3 names `prior_belief_displayed`
+     and `prior_belief_answered`) and records the mapping. (h) The reasons
+     and the H / U / M detail prefixes are writer's wording on existing
+     fields; the H and U prefixes are M07's existing ones, and the M prefix
+     is new writer's wording for D-7's "contradictory one"; existing H-type
+     details such as "reload after the offer" carry no class in the helper,
+     which is harmless because an H marker is never carried. The
+     participant-facing §9 lines (D-5) belong to the units that render them.
+     (i) Two flags beside each other: `check_coherent` reads the records'
+     content (true for agreeing duplicates, false for conflicting ones,
+     F-A / F-B); `exposure_record_consistent` keeps §5.290 (a)'s existing
+     meaning (false for two or more records, even agreeing, for a record on
+     a first load, and for a self-contradictory or malformed one), for the
+     extractors that already export it. Verification: `lint:tsc`, build,
+     ESLint, the format check and `git diff --check` on the staged files;
+     `e2e/reload_check.spec.ts` (pure); browser: not applicable (no runtime
+     change). M07 is not changed under any option (r3 §8 RL-4); M14–M20 and
+     M23 keep their own check code until RL-3 / RL-4.
