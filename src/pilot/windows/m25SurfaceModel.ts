@@ -15,6 +15,12 @@
  * controls ("Run more sweeps" / "Finished") use different keys from the
  * sweep key, and the model refuses either inside its settle window, so no
  * press carried from the third sweep can enter the optional phase or stop.
+ *
+ * Held after a reload (U24 RL-3, r3 §9): a post used earlier (H) keeps the
+ * existing held screen unchanged; a post whose earlier state could not be
+ * verified or whose check is contradictory (U / M) shows the two approved
+ * lines with LEAVE only and no readout (the RL-1 M06 / M08 precedent: a
+ * sweep count of this load is no fact about the post's history).
  */
 import {
   m25LoopElapsedMs,
@@ -29,6 +35,7 @@ import {
   M25_LOOP_MS,
   M25_REQUIRED_LOOPS,
   m25AdministeredBefore,
+  m25LoopsHoldBackClass,
   m25LoopsWindow,
   m25State,
   startM25Loop,
@@ -51,10 +58,42 @@ const SWEEP_Y = 300;
 const CHOICE_Y = 300;
 const SECONDS = (ms: number) => (ms / 1000).toFixed(1);
 
+/**
+ * U24 RL-3 (r3 §9, owner decision D-5, ⟨station⟩ = post): the lines of a
+ * post held after a reload because its earlier state could not be verified
+ * or its check is contradictory (U / M). The existing H text is unchanged.
+ */
+const M25_UNVERIFIED_LINES = [
+  'The earlier state of this post could not be verified.',
+  'It stays closed after this reload.',
+] as const;
+
 export function m25SurfaceModel(host: M25SurfaceHost): WorkSurfaceModel {
   const s = m25State();
   const now = host.now();
   const done = m25LoopsWindow.isClosed();
+  const held = m25LoopsHoldBackClass();
+
+  if (held === 'U' || held === 'M') {
+    return {
+      title: 'FIELD SENSOR POST',
+      subtitle: 'closed',
+      status: M25_UNVERIFIED_LINES.join('\n'),
+      elements: [
+        {
+          id: 'leave',
+          kind: 'button',
+          label: 'Close  (ESC)',
+          x: 566,
+          y: 380,
+          w: 140,
+          h: 34,
+          onActivate: () => host.close(),
+        },
+      ],
+      help: 'Arrows/TAB focus · ENTER/SPACE press · click also works · ESC close',
+    };
+  }
   const elements: SurfaceElement[] = [];
   const running = m25RunningLoop(s);
   const required = m25RequiredCompleted(s);

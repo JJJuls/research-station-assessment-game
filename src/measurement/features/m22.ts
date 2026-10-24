@@ -14,8 +14,33 @@
  * a declined or missing rating is null (never a midpoint) and the two
  * ratings are never combined with the behaviour. Read-only over the raw
  * `proto_m22_returned_*` events.
+ *
+ * Reload (U24 RL-3, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G5 and §5;
+ * owner decision D-2 (i)): the load's `prior_load_checked` record
+ * classifies each report H / A / U / M (stage 1 `presented`, stage 3
+ * `opportunity_opened`). A held report is never a zero and never in the
+ * denominator: beside an observed report the row reads `interrupted` with
+ * its contribution kept (overriding `incomplete`); with no report opened
+ * both rows read `interrupted` · null. A reload hold-back marker no longer
+ * makes the rows a technical failure. Under A a report without evidence
+ * takes the first-load reading; a presented, unopened report of a reloaded
+ * load without its check is U (RL-1C decision A). The record is never task
+ * evidence. The existing pending-state finding (r3 §5, out of scope) is
+ * unchanged.
  */
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClass,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -44,11 +69,70 @@ interface M22Raw {
   stop_choice: string | null;
 }
 
+/** The report of an event: the adapter's `report`, else the kit's `occasion`. */
+function reportOf(event: {
+  metadata?: Record<string, unknown> | null;
+}): string | undefined {
+  const value = event.metadata?.report ?? event.metadata?.occasion;
+
+  return typeof value === 'string' ? value : undefined;
+}
+
+/**
+ * The load's reload check (U24 RL-3; r1 §1 stage map, confirmed against the
+ * code): per report, stage 1 the report's `presented` (with the return
+ * shift's work orders), no stage 2, stage 3 its `opportunity_opened` (the
+ * desk entering the report), the report's hold-back markers. Null on a
+ * first load.
+ */
+export function m22PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  const of =
+    (suffix: string, id: ReportId) =>
+    (event: ReloadEvent): boolean =>
+      event.event_type === `${FAMILY}${suffix}` && reportOf(event) === id;
+
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    occasions: Object.fromEntries(
+      REPORTS.map((id) => [
+        id,
+        {
+          briefing: of('presented', id),
+          opening: of('opportunity_opened', id),
+          holdBack: of('technical_failure', id),
+        },
+      ]),
+    ),
+  });
+}
+
+/** Each report's class from the load's check records (r3 §2). */
+export function classifyM22Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks, occasions: REPORTS });
+}
+
+/** The current-load reason of a held report, by its class. */
+const HELD_REASON = {
+  H: 'report opened in an earlier page load; not re-run after the reload',
+  U: 'report not administered after a reload: earlier history not verified',
+  M: 'report not administered after a reload: earlier check contradictory',
+} as const;
+
 registerFeatureExtractor('M22', (events, context) => {
   const entry = registerEntry('M22');
   const [primary, companion] = entry.features;
   const load = currentLoadEvents(events, context);
-  const family = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const own = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const family = withoutPriorLoadChecks(own, FAMILY);
   const supporting = sequencesOf(family);
   const presented = eventsOfType(load, `${FAMILY}presented`);
   const opened = eventsOfType(load, `${FAMILY}opportunity_opened`);
@@ -59,14 +143,76 @@ registerFeatureExtractor('M22', (events, context) => {
   const answered = eventsOfType(load, `${FAMILY}rating_answered`);
   const declined = eventsOfType(load, `${FAMILY}rating_declined`);
   const ratingPresented = eventsOfType(load, `${FAMILY}rating_presented`);
-  const failed = eventsOfType(load, `${FAMILY}technical_failure`);
+  const markerClass = (event: { metadata?: Record<string, unknown> | null }) =>
+    reloadHoldBackClass(event.metadata?.detail);
+  // A reload hold-back marker is not a fault of the report (D-2 (i)); any
+  // other technical failure keeps the existing whole-row rule.
+  const failed = eventsOfType(load, `${FAMILY}technical_failure`).filter(
+    (event) => markerClass(event) === null,
+  );
+  const markers = eventsOfType(load, `${FAMILY}technical_failure`).filter(
+    (event) => markerClass(event) !== null,
+  );
   // The adapter's own events carry `report`; the window kit's closures the
   // window's `occasion` (the same id).
   const rep = (event: { metadata?: Record<string, unknown> }) =>
     meta<string>(event as never, 'report') ??
     meta<string>(event as never, 'occasion');
+  const reload = classifyM22Reload(
+    context.pageLoadIndex,
+    eventsOfType(own, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    const reason = 'a reload check record describes another page load';
+
+    return [
+      emptyFeature('M22', primary, 'technical_failure', reason, {
+        supporting_sequences: supporting,
+      }),
+      emptyFeature('M22', companion, 'technical_failure', reason),
+    ];
+  }
+
+  // Each held report (U24 RL-3): its marker's class; else, after a reload,
+  // an unopened report whose class is not A — with a check always, without
+  // one only once it was presented in this load (RL-1C decision A).
+  const heldClass = (id: ReportId): Exclude<ReloadClass, 'A'> | null => {
+    const marker = markers.find((event) => rep(event) === id);
+
+    if (marker !== undefined) {
+      return markerClass(marker);
+    }
+
+    const cls = reload.occasions[id].class;
+
+    return reload.page_reloaded &&
+      cls !== 'A' &&
+      !opened.some((event) => rep(event) === id) &&
+      (reload.check_count > 0 || presented.some((event) => rep(event) === id))
+      ? (cls ?? 'U')
+      : null;
+  };
+  const held = REPORTS.filter((id) => heldClass(id) !== null);
+  const heldReason =
+    held.length === 0 ? null : HELD_REASON[heldClass(held[0])!];
 
   if (opened.length === 0) {
+    // D-2 (i): no report opened beside a held report ⇒ both rows
+    // interrupted, null (HB + DEC / NOP / HB; U + DEC).
+    if (heldReason !== null) {
+      return [
+        emptyFeature('M22', primary, 'interrupted', heldReason, {
+          supporting_sequences: supporting,
+        }),
+        emptyFeature('M22', companion, 'interrupted', heldReason),
+      ];
+    }
+
     if (presented.length > 0) {
       const reason = 'reports presented, desk never opened';
 
@@ -75,6 +221,31 @@ registerFeatureExtractor('M22', (events, context) => {
           supporting_sequences: supporting,
         }),
         emptyFeature('M22', companion, 'declined', reason),
+      ];
+    }
+
+    // An established absence takes the first-load reading (r3 §5, NOP + NOP
+    // (A)); `absentFeature`'s reload branch is kept for a load without one.
+    if (
+      reload.page_reloaded &&
+      REPORTS.every((id) => reload.occasions[id].class === 'A')
+    ) {
+      return [
+        emptyFeature(
+          'M22',
+          primary,
+          'not_presented',
+          'report desk never opened',
+          {
+            supporting_sequences: supporting,
+          },
+        ),
+        emptyFeature(
+          'M22',
+          companion,
+          'not_presented',
+          'report desk never opened',
+        ),
       ];
     }
 
@@ -320,6 +491,35 @@ registerFeatureExtractor('M22', (events, context) => {
           },
         },
       );
+
+  // D-2 (i) (U24 RL-3): a held report beside the others — never a zero,
+  // never in the denominator. With a resolved count the primary is
+  // `interrupted` and keeps the observed report's contribution (overriding
+  // `incomplete`); without one, a primary that would read
+  // `no_eligible_event` is `interrupted` · null / 0 (M21's "HB + OBS-ok"
+  // row carried over); `pending`, an existing `interrupted` and
+  // `understanding_failed` (an invalidity) keep their readings. The ratings
+  // companion keeps its own reading, as M01's companion beside its
+  // S-F2 primary (register §5.409 reading (n)).
+  if (heldReason !== null && primaryRow.disposition !== 'technical_failure') {
+    if (eligible.length > 0) {
+      return [
+        { ...primaryRow, disposition: 'interrupted' as const },
+        companionRow,
+      ] satisfies FeatureRecord[];
+    }
+
+    if (primaryRow.disposition === 'no_eligible_event') {
+      return [
+        {
+          ...primaryRow,
+          disposition: 'interrupted' as const,
+          missing_reason: heldReason,
+        },
+        companionRow,
+      ] satisfies FeatureRecord[];
+    }
+  }
 
   return [primaryRow, companionRow] satisfies FeatureRecord[];
 });

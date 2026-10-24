@@ -14568,7 +14568,9 @@ onward are the writer's readings and dispositions under it.
      G2's kept rule and §4's expected S3 readings, "unchanged (H)"; RL-0's
      classifier holds only on stage 3); `prior_opening_found` therefore means
      "an earlier presentation" for M09–M11 and "an earlier answer" for M05,
-     and Part C reads it per family. **OWNER CONFIRMATION REQUESTED.** (b) The stage maps and
+     and Part C reads it per family. **OWNER CONFIRMATION REQUESTED.**
+     _[Resolved: confirmed by the owner's RL-2 closeout ruling 1, 24 October
+     2026 — §5.408; RL-2 closeout report.]_ (b) The stage maps and
      record functions live in the pure extractor modules (RL-1 reading
      (a)); the record is logged through the writing host's own window, so
      its `occasion` / `delivery` names that host (as M01's). (c) The station
@@ -14586,6 +14588,9 @@ onward are the writer's readings and dispositions under it.
      value kept — where it read `not_presented` beside an observed sibling
      before. r3 §5 does not enumerate it. **OWNER CONFIRMATION REQUESTED**
      (confirm, or restrict the held reading to occasions whose host ran).
+     _[Resolved: confirmed by the owner's RL-2 closeout ruling 2, 24 October
+     2026, with its note that the change can affect downstream inclusion —
+     §5.408; RL-2 closeout report.]_
      (e) **Consequences of decision A (no new decision):** without a check,
      M05 OBS + an offer left unanswered reads interrupted · {map} (formerly
      observed), and M09, M10 and M11 an offer left unanswered reads held
@@ -14608,7 +14613,9 @@ onward are the writer's readings and dispositions under it.
      empty subtitle as M14's (`m14SurfaceModel.ts`), no subtitle as M07's.
      Applied after the read-only gameplay, visual and scientific reviews
      (each raised it); **for the owner's ratification** (alternatives:
-     RL-1C's "closed", or the readout kept on H). (h) The RL-1C exposure-record
+     RL-1C's "closed", or the readout kept on H). _[Resolved: ratified,
+     with reading (f)'s reachability change, by the owner's RL-2 closeout
+     ruling 3, 24 October 2026 — §5.408; RL-2 closeout report.]_ (h) The RL-1C exposure-record
      diagnostics (decision B) are approved for the eight RL-1 rows and are
      not added to these four rows. (i) The U / M details and reasons are
      writer's wording on existing fields, in RL-1's form ("reload with an
@@ -14621,6 +14628,9 @@ onward are the writer's readings and dispositions under it.
      M05 M screen shares the U branch and lines and is covered by inspection,
      not by an executed browser case — carried into the later Part C
      evidence inventory as a coverage limitation, beside the M12 note's.
+     _[Accepted as inspection-only by the owner's RL-2 closeout ruling 4, 24
+     October 2026 — not a general waiver of M-class testing; B2 open;
+     §5.408.]_
      **Recorded for the later independent recount (Part C layer R; not
      executed, Part C unauthorised):** the stage maps of reading (a) (M09 /
      M10 stage 3 = the presentation; M11 stage 3 = `offer_presented`); the
@@ -14630,3 +14640,322 @@ onward are the writer's readings and dispositions under it.
      the review never marks a non-A occasion absent; these four rows carry
      no RL-1C exposure-record diagnostics (reading (h)), so the recount
      cannot read `exposure_record_consistent` on them.
+
+408. **U24 RL-2 closeout and RL-3 — the owner's RL-2 closeout rulings (24
+     October 2026) and the owner's RL-3 instruction (24 October 2026),
+     recorded verbatim before any RL-3 implementation edit.** The closeout
+     rulings are saved in the frozen RL-2 closeout evidence as
+     `OWNER-RULING-RL2-CLOSEOUT-2026-10-24.txt` (SHA-256
+     `abce165359001631424b1891e0385b2439022e3433596ad655db50d0252882d2`), with the closeout report `C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-evidence\RL-2-closeout\CLOSEOUT-REPORT.md` (SHA-256
+     `cbbadeb34eb299a6f08588605796f1d140f7f8177a73a7d3e58dfd49a7fc52ff`;
+     folder manifest `RL-2-closeout.SHA256-manifest.txt` SHA-256
+     `528236a7…ebeb`); the RL-3 instruction in the RL-3 evidence as
+     `OWNER-INSTRUCTION-RL3-2026-10-24.txt` (SHA-256
+     `ed993366bb3b8fd266d76bf683b06b3bd9206efb53431e99e22a9ef83826148e`). UNIT-LOG "U24 RL-3".
+
+     ```text
+     I confirm the following RL-2 interpretations and authorize a bounded investigation of the traced S3 failure.
+
+     Owner rulings:
+     1. For M09, M10 and M11, retain earlier offer presentation as the existing reload hold-back trigger. The prior_opening_found field and sequence pointers refer to that presentation, not an inferred answer, acceptance or task action. Document this for Part C. Do not generalize it to M05 or redefine the underlying events.
+
+     2. Confirm the M10/M11 held-plus-observed reading where the current family check establishes the held occasion: interrupted, retaining the independently observed sibling’s existing contribution. Add no value or denominator for the held occasion. Preserve A occasions’ first-load readings and the approved fallback for a genuinely unreached family without a check. Record that this disposition change can affect downstream inclusion.
+
+     3. Accept M05’s accessible read-only held screen, including H, without the misleading readout or subtitle. Preserve first-load behaviour and the approved status wording.
+
+     4. Accept the specific absence of a runtime M05 M-screen capture for continuing the correction work, provided it remains explicitly inspection-only in the evidence inventory. This is not a general waiver of M-class testing. B2 remains open.
+
+     Traced S3:
+     I do not waive the two failed traced runs or authorize labelling them pre-existing.
+
+     First inspect the existing failure logs, stack information, trace artifacts and baseline evidence. Identify which operation owns the 120-second limit and distinguish scenario completion, export completion and trace finalization. Compare artifact sizes and available timing evidence. Do not infer a resource cause merely from the large trace.
+
+     If that evidence supports a remedy confined to the permitted scratchpad runner and evidence-finalization settings, document the exact change and its justification, then have Sonnet perform one controlled traced S3 verification. Preserve gameplay/assertion time limits, assertions and trace coverage. Do not disable tracing, reduce required evidence or retry unchanged runs until one passes.
+
+     If the remedy needs repository/configuration changes or another out-of-scope dependency, stop with the exact proposed change and required path. Do not bypass the guard.
+
+     Report the actual exit status, whether the completed trace is readable, and whether all required scenario/export checks passed. Preserve both original failures. A passing adjusted run does not erase them or prove a cause beyond the evidence.
+
+     Record these rulings and the investigation in a separate closeout report, with preservation instructions; leave the frozen RL-2 evidence unchanged. No amend, new commit, broad audit, Fable, RL-3, Part C, push or merge in this step.
+     ```
+
+     ```text
+     I accept the RL-2 closeout for continuing the approved correction sequence. Execute RL-3 only, starting from 5106b0f0a1ffd0c525969bf07a84f9309616d735.
+
+     Read completely:
+     1. C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-correction\RL-EXECUTE-3.md
+     2. C:\Users\Juls\.codex\visualizations\2026\10\24\u24-rl-correction-1c\RL-EXTENSION-NOTE.md
+     3. C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-evidence\RL-2-closeout\CLOSEOUT-REPORT.md
+
+     Follow the RL-3 brief and its referenced authorities, amended by the extension note. My existing authorization covers the named branch/worktree, exact allowlist, verification, reviews and one local commit.
+
+     Before implementation edits, complete the entry gates and PLAN.md. Record the four already-approved RL-2 closeout rulings in the register and UNIT-LOG, resolving the stale “owner confirmation requested” statements by reference to the closeout report. Preserve their qualifications, the inspection-only evidence limitations and B2’s open status.
+
+     I approve --timeout=600000 for the isolated traced S3 invocation, including the later RL-F S3 run when that unit is reached. First confirm that S3’s explicit test timeout and hook/fixture structure still make this adjustment preserve gameplay, assertion and action limits. Keep full tracing, workers 1 and retries 0. Record the exact command and result. Do not apply this setting to the wider suite or edit Playwright configuration. If it cannot remain isolated as described, checkpoint with the specific dependency.
+
+     Preserve both original RL-2 failures and the frozen closeout evidence. Describe the timeout mechanism as established, the reason for slower finalization as unresolved, and the adjusted run as passing without claiming it proves the increased allowance caused that pass.
+
+     Opus 5.5 remains the sole writer, Sonnet 5.5 performs scheduled verification, and the specified Opus reviewers remain read-only. Follow the existing correction and stop conditions; no additional broad audit or repeat of completed RL-2 verification.
+
+     Finish with the single RL-3 commit, verified durable evidence and the required handoff. No Fable, RL-4 execution, Part C, push or merge.
+     ```
+
+     **The four rulings, as applied (closeout report §1; their
+     qualifications kept).** (1) **§5.407 reading (a) is confirmed** — the
+     "OWNER CONFIRMATION REQUESTED" there is resolved by ruling 1: for M09,
+     M10 and M11 the earlier offer's presentation stays the reload
+     hold-back trigger, and in their `prior_load_checked` records
+     `prior_opening_found` and `prior_opening_sequences` refer to that
+     presentation (M09 / M10 `presented`; M11 the model's
+     `offer_presented`), never to an inferred answer, acceptance or task
+     action. Not generalised to M05 (its trigger stays the answer's
+     `opportunity_opened`); no underlying event is redefined. Part C
+     reads these fields per family: M09–M11 "an earlier presentation", M05
+     "an earlier answer". (2) **§5.407 reading (d) is confirmed** — the
+     "OWNER CONFIRMATION REQUESTED" there is resolved by ruling 2: where
+     the current family check establishes the held occasion, M10 / M11
+     read `interrupted` with the independently observed sibling's
+     existing contribution retained; no value and no denominator for the
+     held occasion; A occasions keep their first-load readings; a
+     genuinely unreached family without a check keeps the approved
+     fallback. **This disposition change can affect downstream inclusion**
+     (a row that read observed beside a not-presented sibling now reads
+     interrupted). (3) **§5.407 reading (g) is ratified** — the "for the
+     owner's ratification" there is resolved by ruling 3, together with
+     the reachability change of reading (f): M05's accessible read-only
+     held screen, including H, without the readout or subtitle, is
+     accepted; first-load behaviour and the approved status wording are
+     preserved. (4) **M05 M screen — inspection only** (§5.407 (j)): the
+     absence of a runtime M05 M-screen capture is accepted for continuing
+     the correction work, provided it stays explicitly inspection-only in
+     the evidence inventory; not a general waiver of M-class testing.
+     **B2 remains open.**
+
+     **Carried into the Part C evidence inventory (RL-F; Part C
+     unauthorised):** (i) M12 context note, M class at availability —
+     inspection and reasoning only (§5.407, the owner's RL-2 acceptance);
+     (ii) M05 held screen, M class — inspection only (ruling 4); (iii) the
+     per-family meaning of `prior_opening_found` (ruling 1); (iv) the
+     M10 / M11 inclusion effect (ruling 2).
+
+     **The traced S3 failures (closeout report §2), as the owner directs
+     them to be described.** Both original RL-2 traced S3 failures stand,
+     preserved unchanged in the frozen RL-2 evidence with their truncated,
+     unreadable traces; their test bodies (scenario, export, L1) had
+     passed. **Established:** the 120-second limit that expired belongs to
+     Playwright's trace-finalization slot (`project.timeout`), not to the
+     gameplay, the assertions, the export or the context teardown.
+     **Unresolved:** why finalization was slower in the failed runs (the
+     truncated traces leave larger content and slower throughput
+     indistinguishable; no resource cause is inferred). **The adjusted
+     run** (`--timeout=600000`, full tracing, workers 1, retries 0)
+     passed with a readable trace and all scenario and export checks
+     passing; it does not prove that the increased allowance caused that
+     pass (its finalization took about 112.9 s, below the original limit
+     too). **The owner's RL-3 approval:** `--timeout=600000` on the
+     isolated traced S3 invocation of RL-3, and of RL-F when that unit is
+     reached, after confirming that S3's explicit test timeout and its
+     hook / fixture structure keep gameplay, assertion and action limits
+     unchanged (RL-3 PLAN gate); full tracing, workers 1, retries 0; never
+     the wider suite and never the Playwright configuration.
+
+409. **U24 RL-3 — reload guards for M17, M21, M22, M24 and M26, the logged
+     M23 check and M25 (loops, belief, probe) (24 October 2026; the owner's
+     ruling of 23 October 2026, D-1 to D-5, D-6 (i), D-7 (i); RL-1C's
+     decision A in force; the owner's RL-3 instruction, §5.408;
+     `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G4 / G5, §5, §6, §8 RL-3,
+     §9).** Each family writes its single provisional `prior_load_checked`
+     record (D-4; never canonical) through RL-0's unchanged helper, once per
+     reloaded load, before any opening, at its first host: M17
+     `declareM17` (laboratory entry), M21 `m21Present` and M22 `m22Present`
+     (the return shift's presentation; the bench and desk openings call the
+     same guard first), M23 `guardM23Reload` (yard entry), M24 and M26
+     `declareExteriorWindows` (yard entry), and **one** M25 record
+     (`proto_m25_loops_prior_load_checked`, occasions `loops`, `belief`,
+     `probe`) written by whichever M25 host runs first — `presentM25Loops`
+     (yard briefing), `openM25Loops`, `m25BeliefDueNow` / `askM25Belief`
+     (Vale's check-in) or `declareReturnWindows` (Workshop entry, the probe);
+     each host holds only its own occasion. A station or occasion that is
+     not A is held there: H with a prior-exposure entry and its marker, U
+     and M without administration and without a prior-exposure entry. The
+     extractors read the record (column B under A), keep it out of family
+     evidence and `supporting_sequences`, apply decision A where the row has
+     a presentation record (M21, M22, M23, M24, M26, the M25 post; M17 has
+     none, as M13), and treat a malformed record as a technical failure.
+     **D-2 (i), M21 and M22:** a reload hold-back marker no longer makes the
+     row a technical failure (any other fault still does); a held case or
+     report is never a zero and never in the denominator; beside an
+     observed one the row reads `interrupted` with its contribution kept
+     (M21 x / 1 overriding `observed`, M22 x / 1 overriding `incomplete`);
+     with no observed one `interrupted` · null — null / 0 when a case or
+     report was opened in the load, null / null when none was; no new
+     aggregation. **D-3 = P, M25:** cases 1 and 2 (displayed earlier,
+     answered or not) are never asked again — the belief occasion is H, the
+     companion `interrupted` · null ("normality question displayed / answered
+     in an earlier page load; not asked again after the reload"); case 4
+     (U / M) is never asked ("… not asked after a reload: earlier history
+     not verified / earlier check contradictory"); case 3 — the check
+     establishes the earlier `required_complete` (with the completion screen
+     shown) and the absence of any earlier display — is a first display
+     with `exposure_page_load_index` and the delay rule below; no text says
+     "0 required loops" or "not exposed" once an earlier completion is
+     established. **Screens (§9, D-5):** the new H lines for M17 (training
+     rig), M21 (relay bench), M22 (shift report desk), M24 (magnet rig) and
+     M26 (uplink post); the U / M lines for those five and for M23
+     (excavation stake) and the M25 post; M23's `reload_lock` and the M25
+     post's held text unchanged; no screen for the M25 question or the
+     notice. **Writer's readings (IMPLEMENTER DEFAULTS, owner-visible and
+     reversible, none a ruling):** (a) **The clock finding (D-3, recorded as
+     r3 §6 directs):** `loopsClosedAtMs` is set from the `nowMs` its callers
+     pass, and every caller passes `Date.now()` (the yard surface host
+     `now: () => Date.now()`, the shift end's `const now = Date.now()`, the
+     review closures); event `timestamp_ms` is `Date.now()` at logging
+     (`ResearchRuntime.logInteraction`). Both are epoch milliseconds, a base
+     that does not restart at a page load; `performance.now()` is not
+     involved. The earlier load's `proto_m25_loops_window_closed`
+     `timestamp_ms` is therefore used when it is a finite number not later
+     than this load's `nowMs` (`m25CrossLoadExposureFrom`, pure); otherwise
+     the delay is null with "earlier closure time not comparable with this
+     load's clock". (b) **No earlier closure** (a reload while the post was
+     still open after its required loops): null with the writer's reason
+     "earlier closure time not recorded" — r3 §6 names only the
+     non-comparable case; never zero and never the reload-freeze time, which
+     a reload hold no longer stores. (c) `exposure_page_load_index` (the
+     page load of the earlier `required_complete`) and
+     `delay_since_loops_closed_null_reason` (writer's field name for the
+     approved "explicit reason") are added to `question_presented`, to the
+     belief window's opening snapshot (`exposure_page_load_index`) and to the
+     companion's components **only** on a cross-load first display; a
+     same-load display's payload is unchanged. (d) **Stage maps** (r1 §1,
+     confirmed against the code): M17 stage 3 `window_opened` (no stage 1 or
+     2); M21 / M22 per case / report stage 1 `presented`, stage 3
+     `opportunity_opened`; M23 stage 1 the route's advance to
+     `exterior_work` (r1's "exterior_briefing (no M23 record)"; OC-6's
+     recommendation, informational only — the classifier reads stage 3),
+     stage 2 `presented`, stage 3 `opportunity_opened`, markers
+     `reload_blocked` and the kit's `technical_failure`; M24 / M26 the same
+     stage 1, stage 2 `presented` (panel / post opened), stage 3
+     `opportunity_opened` (tally begun / uplink powered up); M25 loops stage
+     1 `presented`, stage 3 `opportunity_opened`, evidence
+     `prior_required_complete` (`required_complete` with `completion_marked`
+     true); belief stage 2 `question_presented` / `presented`, stage 3 any
+     display (`question_presented`, `presented`, `opportunity_opened`;
+     display = administration, direction (f)), evidence
+     `prior_belief_displayed` and `prior_belief_answered` (r1 §3's names,
+     RL-0 reading (g)); probe stage 1 `presented`, stage 3
+     `opportunity_opened`. (e) **M23:** "log its existing check" is realised
+     as RL-0's record with M23's map, whose head fields equal the existing
+     computation's (asserted by a fixture); the existing check object stays
+     the `s.reload` / `reload_blocked` payload unchanged; D-7 (i)'s
+     carry-forward is added; a U / M series takes the same lock
+     (`reload_blocked` and the kit's technical failure with the U / M
+     detail), no prior exposure; the F8 replay of a brief seen earlier is
+     unchanged (A). When a U comes only from D-7's carry-forward, the
+     `reload_blocked` payload (the existing check's fields, which have no
+     carry-forward) can read `prior_opening_absence_established: true` beside
+     its U detail; the record is authoritative — Part C reads the record, not
+     the marker payload (scientific review MINOR-4). (f) **The M24 / M26 "screen"** is the panels' existing
+     closed-station path: the three panel-open handlers show the two lines
+     as the station's feedback line and open nothing (the one scene edit;
+     two specifiers added to the existing import from `exteriorWindows`);
+     a held rig / uplink is closed in its model (never begun), so the
+     guidance moves on. (g) **M21 / M22 screens:** shown when the case or
+     report on the station is held (a held one is closed / decided, so the
+     station moves to its sibling); the title kept (the bench's unit title;
+     the desk's "SHIFT REPORT DESK"), the two lines, Close only, no readout
+     and no subtitle (the RL-2 M05 precedent ratified by closeout ruling 3);
+     with denominator 0 beside a held case, only a row that would read
+     `no_eligible_event` becomes `interrupted` · null / 0 with the held
+     reason (r3 §5's M21 "HB + OBS-ok" row, carried over to M22 where r3's
+     table lists only HB + OBS); `pending` (a case or report still open
+     before the closure), an existing `interrupted` (review-censored) and
+     M22's `understanding_failed` (an invalidity) keep their readings
+     (narrowed after scientific review MINOR-1). The row's reason names the
+     first held occasion's class; per-occasion classes are in the markers
+     and the record (NOTE-1). (h) **M17:** the held
+     terminal keeps its title and shows stage CLOSED and the two lines in
+     its console strip (a move to the central output panel after the visual
+     review, MAJOR 1, was reverted: that panel does not wrap them and they
+     ran past its border — final-run screenshot); the demonstration, operators and instructions
+     (stimulus) are not drawn; HELP repeats the two lines without logging,
+     so nothing is written. The shared terminal's disabled buttons keep
+     their outlines and its footer still names the typed commands
+     (`SignalTerminalScene.ts`, `UiButton.ts`: outside the RL-3 allowlist;
+     every closed rig shows them; nothing can be entered) — for the owner,
+     not changed. (i)
+     **M25 post, U / M:** the two lines, subtitle "closed" (the existing
+     closed subtitle), Close only, no readout (RL-1's M06 / M08 precedent);
+     the H screen, readouts included, is unchanged. (j) Hold details
+     (writer's wording on the existing fields): H "reload after
+     administration: ⟨training rig | bench unit | report | rig | uplink |
+     question | notice⟩ not re-run / not asked again", U / M "reload with an
+     unverified earlier state / a contradictory earlier check: … not
+     administered"; the M25 post's and M23's existing H details kept. (k)
+     The station reviews (M21, M22, M24 / M26, the M25 post, question and
+     notice) hold a non-A occasion instead of marking it absent, only when a
+     check exists in the load (RL-2 reading (c)); the question's absent text
+     when the post is held U / M reads "post not administered after a
+     reload; exposure unknown in this load" (internal validity detail). (l)
+     The RL-1C exposure-record diagnostics are not added to these rows (as
+     RL-2). (m) **M at the runtime host is not producible** (a host's own
+     record is always coherent): the M class is covered by executed pure
+     fixtures for every row; the M screens share the U branch and lines and
+     are covered by inspection, not by an executed browser case — carried
+     into the Part C evidence inventory as a coverage limitation, beside
+     the M12 and M05 ones. **For the owner's explicit acceptance** (closeout
+     ruling 4 accepted this for M05 only; scientific review MINOR-5): the M
+     screens of M17, M21, M22, M23, M24, M26 and the M25 post by inspection.
+     (n) **The M22 ratings companion beside a held report keeps its own
+     reading** (e.g. `observed` with the held report's rating null); with
+     no report opened both rows read `interrupted` (D-2 (i) rules only the
+     primary; scientific review MAJOR-1). The M01 precedent is partial: M01's
+     companion row does keep its own disposition beside its S-F2
+     `interrupted` primary, but M01's companion value marks a held occasion
+     (`{ occasion, interrupted: true }`), whereas M22's leaves the held
+     report a bare null with no marker (round-2 R2-MINOR-1). Alternatives for
+     the owner: (i) as implemented; (ii) `interrupted` with the observed
+     rating kept; (iii) a provisional held-report marker in the value or the
+     components — the closest analogue of M01. The held report is not in
+     `missing_reports` (not due in this load; an H report was administered
+     earlier); its hold is in its marker. (o)
+     **Recorded review items for the owner (not changed; outside the
+     allowlist or pre-existing):** a held questionnaire notice leaves the
+     Workshop guidance on the Outbound Handover Desk — its "done" test is
+     `handoff === 'acknowledged'` in `RecordsWorkshopScene.ts:1116-1123`,
+     and the desk still shows the notice's text with "Noted.", which logs
+     nothing (gameplay MAJOR-1): while the notice is held the beacon never
+     falls back to the sign-off board and "Noted." leaves the state unchanged
+     (the option never becomes "…again"); not a block — the sign-off board is
+     not gated and the objective and Vale name it; nothing is administered or
+     logged. Smallest remedy: a condition there treating a held notice as
+     done, plus a small exported accessor in `returnWindows.ts` (the held
+     state is module-private) — it needs the scene path; it fixes only the
+     guidance: the notice text stays readable through "Read the
+     questionnaire notice" while the record says it was not presented in
+     this load (gameplay round 2); the bench / desk show the held lines once
+     the eligible sibling is finished (gameplay MINOR-2); the mission card
+     still lists the held M25 post until it is opened, as for M08's console
+     (MINOR-3); with o1 held, o2's opening snapshot carries
+     `previous_case_strategy: 'no_application'` /
+     `previous_report_decision: null` and its settle window starts at its first opening (NOTE-3); the
+     yard feedback box can cover part of the station prompt and wraps the
+     longer U line (visual MINOR 2, 3; the existing `showFeedbackMessage`);
+     the M25 U screen keeps the post's existing "closed" subtitle (visual
+     MINOR 4; RL-1C's approved M01 U / M "closed" beside RL-2's M05 none);
+     the M25 H screen's existing "SWEEPS RECORDED: 0" beside "Its record is
+     held" (MINOR 5, pre-existing, kept by §9); the review closure of a
+     reloaded load where no host ran keeps today's absent marking, e.g. the
+     question's "not exposed … (0 required loops completed)" (scientific
+     NOTE-3; reading (k)); case 3 can follow a history-level U load that
+     never reached the question's host (NOTE-4, D-7 (i) as approved). The
+     held rig's chip now reads the existing "TALLY CLOSED", never "RIG
+     READY" (`m24PanelLine` checks `closed` first; gameplay MINOR-1;
+     verified by a pure fixture and the gameplay re-check — the chip is not
+     visible in the screenshots, which the message box covers).
+     **Recorded for the later independent recount
+     (Part C layer R; not executed, Part C unauthorised):** the stage maps
+     of reading (d); the one M25 record and its three occasions; the
+     companion's own reading by its occasion (cases 1–4) and the case-3
+     fields; the D-2 (i) readings; decision A for the rows with a
+     presentation record; the M23 record's head fields; these rows carry no
+     RL-1C diagnostics.

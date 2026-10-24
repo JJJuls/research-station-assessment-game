@@ -17,15 +17,39 @@
  * "finished outside"): it closes the exterior observations with their
  * honest dispositions and freezes the M20 start state — it never
  * manufactures an M20 outcome (the resume window is episode 5).
+ *
+ * Reload (U24 RL-3, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G5 and §9):
+ * the yard-entry declaration of a reloaded load writes the single
+ * `prior_load_checked` record of M24 and of M26 before any opening, and
+ * each is held there unless the absence of an earlier opening is
+ * established (A): H with the prior-exposure entry and marker, U / M
+ * without administration. A held rig or uplink post opens nothing; its
+ * panel answers with the two approved lines.
  */
 import {
   ensureMagnetDeckForm,
   magnetDeckState,
 } from '../../fieldActions/magnetDeck';
 import {
+  classifyM24Reload,
+  m24PriorLoadCheck,
+} from '../../measurement/features/m24';
+import {
+  classifyM26Reload,
+  m26PriorLoadCheck,
+} from '../../measurement/features/m26';
+import {
   type KnowledgeStatus,
   PILOT_SETTINGS,
 } from '../../measurement/protocol';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClass,
+  type ReloadClassification,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
+import { researchRuntime } from '../../systems';
 import type {
   ExteriorEpisodeState,
   ExteriorSite,
@@ -89,6 +113,7 @@ import type { M24CycleLike } from '../exterior/m24MagnetRigModel';
 import {
   M24_ENTRY_STATE_VERSION,
   M24_FAMILY,
+  M24_HELD_LINES,
   M24_OPPORTUNITY_ID,
   M24_UNDERSTANDING_QUESTION,
   M24_WINDOW_ID,
@@ -119,6 +144,7 @@ import type { M26Channel, M26Transmission } from '../exterior/m26ChannelModel';
 import {
   M26_ENTRY_STATE_VERSION,
   M26_FAMILY,
+  M26_HELD_LINES,
   M26_OPPORTUNITY_ID,
   M26_UNDERSTANDING_QUESTION,
   M26_WINDOW_ID,
@@ -285,6 +311,130 @@ export function declareExteriorWindows() {
   declareM23Plots();
   w.m24.declare();
   w.m26.declare();
+  // U24 RL-3: the reload checks of M24 and M26 and their holds, before any
+  // opening (the scene's panels open nothing for a held station).
+  guardExteriorReload(Date.now());
+}
+
+type HeldClass = Exclude<ReloadClass, 'A'>;
+
+/** This load's checks (undefined until the yard was declared in this load). */
+let m24Check: PriorLoadCheck | null | undefined;
+let m26Check: PriorLoadCheck | null | undefined;
+/** The class each station is held under after a reload (null: not held). */
+let m24Held: HeldClass | null = null;
+let m26Held: HeldClass | null = null;
+
+/** Writes one family's check once (never on a first load) and returns it. */
+function writeCheck(
+  window: ItemWindow,
+  compute: typeof m24PriorLoadCheck,
+): PriorLoadCheck | null {
+  const check = compute(
+    researchRuntime.getPageLoadIndex(),
+    researchRuntime.getPriorPageLoadEvents(),
+    researchRuntime.getEventIntegrity(),
+  );
+
+  if (check !== null) {
+    window.log(PRIOR_LOAD_CHECK_SUFFIX, { ...check, input_mode: 'system' });
+  }
+
+  return check;
+}
+
+/** The class an unopened station's check gives (null: administered). */
+function heldClassOf(
+  classify: (pageLoadIndex: number, checks: object[]) => ReloadClassification,
+  check: PriorLoadCheck | null,
+): HeldClass | null {
+  const cls = classify(
+    researchRuntime.getPageLoadIndex(),
+    check === null ? [] : [check],
+  ).occasions.row.class;
+
+  return cls === null || cls === 'A' ? null : cls;
+}
+
+/**
+ * Reload guard (register §5.14; U24 RL-3): the first yard declaration of a
+ * reloaded load writes the M24 and M26 checks; an unopened rig or uplink is
+ * then held unless its class is A — closed in the model (never begun), the
+ * window's technical failure with the class's detail, the prior-exposure
+ * entry for H only.
+ */
+function guardExteriorReload(nowMs: number) {
+  const state = exteriorEpisode();
+  const w = exteriorWindows();
+
+  if (m24Check === undefined) {
+    m24Check = writeCheck(w.m24, m24PriorLoadCheck);
+  }
+
+  if (m26Check === undefined) {
+    m26Check = writeCheck(w.m26, m26PriorLoadCheck);
+  }
+
+  if (m24Held === null && w.m24.windowStatus() === 'unopened') {
+    const cls = heldClassOf(classifyM24Reload, m24Check);
+
+    if (cls !== null) {
+      m24Held = cls;
+      m24Abort(state.m24, nowMs);
+
+      if (cls === 'H') {
+        w.m24.recordPriorExposure(
+          'magnet rig begun in an earlier page load of this identity',
+        );
+      }
+
+      w.m24.technicalFailure(
+        reloadHoldBackDetail(
+          cls,
+          cls === 'H' ? 'rig not re-run' : 'rig not administered',
+        ),
+      );
+    }
+  }
+
+  if (m26Held === null && w.m26.windowStatus() === 'unopened') {
+    const cls = heldClassOf(classifyM26Reload, m26Check);
+
+    if (cls !== null) {
+      m26Held = cls;
+      m26Abort(state.m26, nowMs);
+
+      if (cls === 'H') {
+        w.m26.recordPriorExposure(
+          'uplink powered up in an earlier page load of this identity',
+        );
+      }
+
+      w.m26.technicalFailure(
+        reloadHoldBackDetail(
+          cls,
+          cls === 'H' ? 'uplink not re-run' : 'uplink not administered',
+        ),
+      );
+    }
+  }
+}
+
+/**
+ * The two approved lines a held rig's panel shows (U24 RL-3, r3 §9), or
+ * null when the rig is not held after a reload.
+ */
+export function m24HeldLines(): string | null {
+  return m24Held === null
+    ? null
+    : M24_HELD_LINES[m24Held === 'H' ? 'H' : 'U'].join('\n');
+}
+
+/** The two approved lines a held uplink post shows (both posts), or null. */
+export function m26HeldLines(): string | null {
+  return m26Held === null
+    ? null
+    : M26_HELD_LINES[m26Held === 'H' ? 'H' : 'U'].join('\n');
 }
 
 /** Explicit step-away from a site panel: guidance only, never the register. */
@@ -1720,6 +1870,12 @@ export function closeExteriorWindowsAtReview(nowMs: number) {
   closeM24(nowMs, 'closed_at_review');
   closeM26(nowMs, 'closed_at_review');
 
+  // A check of this load holds a station that is not A: held, never absent
+  // (U24 RL-3; U is never `participant_absent`).
+  if (m24Check != null || m26Check != null) {
+    guardExteriorReload(nowMs);
+  }
+
   for (const [window, detail] of [
     [w.m24, 'rig tally never begun before the review'],
     [w.m26, 'uplink never used before the review'],
@@ -1820,4 +1976,8 @@ export function resetExteriorEpisode() {
   episode = null;
   windows = null;
   missionLogRegistered = false;
+  m24Check = undefined;
+  m26Check = undefined;
+  m24Held = null;
+  m26Held = null;
 }

@@ -25,7 +25,17 @@
  * page load is never re-run; a fault terminates the plot in work (the other
  * stays usable) or, without one, the whole series. Nothing here scores.
  */
+import {
+  classifyM23Reload,
+  m23PriorLoadRecord,
+} from '../../measurement/features/m23';
 import { protocolStamp } from '../../measurement/protocol';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  reloadHoldBackClass,
+  reloadHoldBackDetail,
+  ROW_OCCASION,
+} from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import type { SurfaceInputObservation } from '../ui/WorkSurfaceScene';
 import {
@@ -346,6 +356,14 @@ function priorLoadCheck() {
  * re-run — prior exposure recorded, the kit's technical failure with the
  * reload detail, the row `interrupted`. A reload before any measured
  * opening permits the replay of the brief and the examples. Idempotent.
+ *
+ * U24 RL-3 (`RELOAD-CORRECTION-SPEC-r3-exec.md` §4 G4): the check is now
+ * logged, once per reloaded load at yard entry, as the provisional
+ * `proto_m23_plots_prior_load_checked` record (RL-0's helper, the existing
+ * head fields), and the series is held unless that record establishes the
+ * absence of an earlier measured opening (A): H as before; U / M take the
+ * same lock with their own detail, no prior exposure and no
+ * administration.
  */
 export function guardM23Reload(nowMs: number = now()): boolean {
   const s = ensure();
@@ -366,17 +384,40 @@ export function guardM23Reload(nowMs: number = now()): boolean {
     return false;
   }
 
+  const record = m23PriorLoadRecord(
+    check.page_load_index,
+    researchRuntime.getPriorPageLoadEvents(),
+    researchRuntime.getEventIntegrity(),
+  );
+
+  if (record !== null) {
+    sink(PRIOR_LOAD_CHECK_SUFFIX, { ...record, input_mode: 'system' });
+  }
+
   s.reload = check;
 
-  if (!check.prior_opening_found) {
+  const cls = classifyM23Reload(
+    check.page_load_index,
+    record === null ? [] : [record],
+  ).occasions[ROW_OCCASION].class;
+
+  if (cls === null || cls === 'A') {
     return false;
   }
 
-  m23sHoldBack(s, check, nowMs, sink);
-  windowInstance.recordPriorExposure(
-    'excavation selector opened in an earlier page load of this identity',
-  );
-  windowInstance.technicalFailure(M23_RELOAD_DETAIL);
+  if (cls === 'H') {
+    m23sHoldBack(s, check, nowMs, sink);
+    windowInstance.recordPriorExposure(
+      'excavation selector opened in an earlier page load of this identity',
+    );
+    windowInstance.technicalFailure(M23_RELOAD_DETAIL);
+  } else {
+    const detail = reloadHoldBackDetail(cls, 'excavation not administered');
+
+    m23sHoldBack(s, check, nowMs, sink, detail);
+    windowInstance.technicalFailure(detail);
+  }
+
   // The guidance stays addressed across the hold-back (§12 M1, G04).
   host?.onGuidanceAddressed();
 
@@ -1509,9 +1550,17 @@ export function m23StakeClosedLine(): string {
 
   // A whole-series fault closed the excavation: the series-closed line (the
   // plot-fault line speaks of "the other plot", true only for a plot fault).
-  return s.status === 'held_back'
-    ? M23_TEXT.reload_lock
-    : M23_TEXT.series_closed;
+  // A held series: the existing lock line (H), or the two approved U / M
+  // lines (U24 RL-3, r3 §9).
+  if (s.status !== 'held_back') {
+    return M23_TEXT.series_closed;
+  }
+
+  const held = reloadHoldBackClass(s.fault_detail);
+
+  return held === 'U' || held === 'M'
+    ? M23_TEXT.reload_lock_unverified.join('\n')
+    : M23_TEXT.reload_lock;
 }
 
 export function m23SelectedPlot(): Readonly<M23PlotState> | null {

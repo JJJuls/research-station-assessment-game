@@ -18,8 +18,28 @@
  * ended at trial k" (`criterion_run_reached`) for the extractor to
  * RECOUNT from the `trial_submitted` events — no learning slope or other
  * derived score is computed here.
+ *
+ * Reload (U24 RL-3, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G5 and §9):
+ * the declaration of a reloaded load (laboratory entry) writes the family's
+ * single `prior_load_checked` record before any opening, and the rig is
+ * held there unless the absence of an earlier opening is established (A):
+ * H with the prior-exposure entry and marker, U / M without
+ * administration — M13's IP held-back path. A held rig's terminal keeps its
+ * title and shows the two approved lines; nothing can be entered and
+ * nothing is written (HELP included).
  */
 
+import {
+  classifyM17Reload,
+  m17PriorLoadCheck,
+} from '../measurement/features/m17';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClass,
+  reloadHoldBackDetail,
+} from '../measurement/reloadCheck';
+import { researchRuntime } from '../systems';
 import { commandToText, paletteFor } from './commands';
 import type {
   CommandContext,
@@ -103,7 +123,28 @@ export const M17_EVENT_TYPES = declareIpEvents('proto_m17_trials', [
   'stopped',
   'technical_failure',
   'entry_state_flagged',
+  // U24 RL-3 (D-4, provisional): the reload check of a later page load.
+  PRIOR_LOAD_CHECK_SUFFIX,
 ]);
+
+/**
+ * U24 RL-3 (r3 §9, owner decision D-5, ⟨station⟩ = training rig): the two
+ * lines of a rig held after a reload — an earlier opening (H), or an
+ * earlier state that could not be verified or a contradictory check (U /
+ * M). No other text is added.
+ */
+export const M17_HELD_LINES: Readonly<
+  Record<'H' | 'U', readonly [string, string]>
+> = {
+  H: [
+    'This training rig was opened earlier in this session.',
+    'It stays closed after a reload.',
+  ],
+  U: [
+    'The earlier state of this training rig could not be verified.',
+    'It stays closed after this reload.',
+  ],
+};
 
 export {
   evaluateTrial,
@@ -167,6 +208,8 @@ interface M17State {
   criterion_run_trial: number | null;
   last_console: string[];
   entry_flagged: boolean;
+  /** The class the rig is held under after a reload (U24 RL-3), or null. */
+  held: Exclude<ReloadClass, 'A'> | null;
 }
 
 function createInitialState(form: FormId): M17State {
@@ -198,6 +241,7 @@ function createInitialState(form: FormId): M17State {
     criterion_run_trial: null,
     last_console: [],
     entry_flagged: false,
+    held: null,
   };
 }
 
@@ -333,12 +377,80 @@ function applyTutorialGate() {
   }
 }
 
+/** This load's check (undefined until the rig was declared in this load). */
+let priorLoadCheck: PriorLoadCheck | null | undefined;
+
+/**
+ * Reload guard (register §5.14; U24 RL-3): the first declaration of a
+ * reloaded load writes the check; an unopened rig is then held unless its
+ * class is A — the demonstration and trials are never run again (H) or at
+ * all (U / M). The hold needs no opening (M13's IP path).
+ */
+function guardM17Reload(nowMs: number) {
+  const s = ensure();
+
+  if (priorLoadCheck === undefined) {
+    priorLoadCheck = m17PriorLoadCheck(
+      researchRuntime.getPageLoadIndex(),
+      researchRuntime.getPriorPageLoadEvents(),
+      researchRuntime.getEventIntegrity(),
+    );
+
+    if (priorLoadCheck !== null) {
+      log(PRIOR_LOAD_CHECK_SUFFIX, {
+        ...priorLoadCheck,
+        input_mode: 'system',
+      });
+    }
+  }
+
+  if (s.window.status !== 'unopened' || s.held !== null) {
+    return;
+  }
+
+  const cls = classifyM17Reload(
+    researchRuntime.getPageLoadIndex(),
+    priorLoadCheck === null ? [] : [priorLoadCheck],
+  ).occasions.row.class;
+
+  if (cls === null || cls === 'A') {
+    return;
+  }
+
+  const detail =
+    cls === 'H'
+      ? reloadHoldBackDetail('H', 'training rig not re-run')
+      : reloadHoldBackDetail(cls, 'training rig not administered');
+
+  s.held = cls;
+
+  if (cls === 'H') {
+    noteIpPriorExposure(
+      s.window,
+      'training rig opened in an earlier page load of this identity',
+    );
+  }
+
+  closeIpWindow(s.window, 'technical_failure', nowMs, detail);
+  log('technical_failure', {
+    detail,
+    prior_exposure: cls === 'H',
+    input_mode: 'system',
+  });
+}
+
 export function declareM17() {
   const s = ensure();
 
   declareIpWindow(s.window);
   registerIpProbeSource('m17', M17_OPPORTUNITY_ID, m17Probe);
+  guardM17Reload(Date.now());
   refreshIpProbe();
+}
+
+/** The class the rig is held under after a reload (null when not held). */
+export function m17HoldBackClass(): Exclude<ReloadClass, 'A'> | null {
+  return ensure().held;
 }
 
 export function m17WindowStatus() {
@@ -383,8 +495,45 @@ function previewAllowed(trial: SyntaxTrial | null): boolean {
   return trial !== null && trial.phase === 'learning';
 }
 
+/**
+ * The terminal of a rig held after a reload (U24 RL-3, r3 §9): the title
+ * kept, the two approved lines in the console strip (the terminal's
+ * message line, where a closed rig's line stands; the output panel does not
+ * wrap them — review round 1), no stimulus, no control but leaving. The
+ * shared terminal's buttons and footer belong to `SignalTerminalScene.ts`
+ * and are left as every closed rig shows them.
+ */
+function heldView(held: Exclude<ReloadClass, 'A'>): TerminalView {
+  return {
+    title: 'SIGNAL CASE — PHASE 3 · REGISTER SYNTAX',
+    stageLabel: 'CLOSED',
+    instructions: [],
+    incomingTitle: '',
+    chips: [],
+    bins: [],
+    palette: [],
+    codebook: [],
+    outputTitle: '',
+    output: [],
+    buffer: [],
+    consoleLines: [...M17_HELD_LINES[held === 'H' ? 'H' : 'U']],
+    primaryAction: null,
+    submitEnabled: false,
+    chipDropVerb: null,
+    chipPairVerb: null,
+    editing: false,
+    closed: true,
+    reference: null,
+  };
+}
+
 function view(): TerminalView {
   const s = ensure();
+
+  if (s.held !== null) {
+    return heldView(s.held);
+  }
+
   const closed = ipWindowIsClosed(s.window);
   const form = M17_FORMS[s.form];
   const trial = currentTrial();
@@ -946,6 +1095,11 @@ function help(mode: InputMode, nowMs: number): readonly string[] {
 
   const s = ensure();
 
+  // A held rig writes nothing (U24 RL-3): HELP repeats its two lines.
+  if (s.held !== null) {
+    return [...M17_HELD_LINES[s.held === 'H' ? 'H' : 'U']];
+  }
+
   bumpIpHelp(s.window);
   s.help_in_trial += 1;
   log('help_consulted', { input_mode: mode });
@@ -1045,4 +1199,5 @@ registerTerminalAdapter(m17Adapter);
 /** Test-only escape hatch. */
 export function resetM17State() {
   state = null;
+  priorLoadCheck = undefined;
 }

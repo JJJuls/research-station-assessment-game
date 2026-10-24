@@ -372,6 +372,128 @@ test.describe('V-5 (b), (c) — the S3 reloads', () => {
         ).toMatchObject({ prior_opening_found: true });
       }
     }
+
+    // U24 RL-3 (RELOAD-CORRECTION-SPEC-r3-exec.md §4 "Expected S3 load-4
+    // readings", r1 §2, §6): in load 4 M17, M23, M24 and M26 — never opened
+    // in any load — take their first-load reading under an established
+    // check (not_presented); M21 and M22, presented with the return shift
+    // in loads 3 and 4 and never opened, are declined; the M25 post, opened
+    // in load 2, is held (H), and the M25 question, displayed in load 2 and
+    // left unanswered when the page reloaded, is never asked again (case
+    // 1): interrupted, never "not exposed". The laboratory and yard
+    // families write one check in each of loads 2–4, the return shift's
+    // only in loads 3 and 4 (load 2 ends at Vale's check-in); a first load
+    // writes none.
+    const RL3_S3_LOAD4: Record<string, string> = {
+      m17_criterion_trial: 'not_presented',
+      m17_sequence_baseline_transfer: 'not_presented',
+      m21_restudy_revisions: 'declined',
+      m22_revisions_begun: 'declined',
+      m22_discouragement_ratings: 'declined',
+      m23_continuations_after_failure: 'not_presented',
+      m24_postknowledge_casts: 'not_presented',
+      m24_postknowledge_casts_minus_first: 'not_presented',
+      m24_unqualified_casts: 'not_presented',
+      m25_optional_repeats: 'interrupted',
+      m25_normality_belief: 'interrupted',
+      m26_postknowledge_retries: 'not_presented',
+      m26_postknowledge_retries_minus_first: 'not_presented',
+      m26_unqualified_retries: 'not_presented',
+    };
+
+    for (const [featureId, disposition] of Object.entries(RL3_S3_LOAD4)) {
+      expect(
+        final.payload.measurement_features.find(
+          (feature) => feature.feature_id === featureId,
+        ),
+        featureId,
+      ).toMatchObject({ disposition, value: null });
+    }
+
+    expect(
+      (
+        final.payload.measurement_features.find(
+          (feature) => feature.feature_id === 'm25_normality_belief',
+        ) as { missing_reason?: string | null } | undefined
+      )?.missing_reason,
+    ).toBe(
+      'normality question displayed in an earlier page load; not asked again after the reload',
+    );
+
+    const RL3_FAMILIES: Record<string, readonly number[]> = {
+      proto_m17_trials_: [2, 3, 4],
+      proto_m23_plots_: [2, 3, 4],
+      proto_m24_rig_: [2, 3, 4],
+      proto_m25_loops_: [2, 3, 4],
+      proto_m26_uplink_: [2, 3, 4],
+      proto_m21_case_: [3, 4],
+      proto_m22_returned_: [3, 4],
+    };
+
+    for (const [family, loads] of Object.entries(RL3_FAMILIES)) {
+      for (const load of [1, 2, 3, 4]) {
+        expect(
+          everyEvent.filter(
+            (event) =>
+              event.event_type === `${family}prior_load_checked` &&
+              (event.page_load_index ?? 4) === load,
+          ).length,
+          `${family}prior_load_checked in load ${load}`,
+        ).toBe(loads.includes(load) ? 1 : 0);
+      }
+    }
+
+    const m25Load4 = everyEvent.find(
+      (event) =>
+        event.event_type === 'proto_m25_loops_prior_load_checked' &&
+        (event.page_load_index ?? 4) === 4,
+    )?.metadata as
+      | { occasions?: Record<string, Record<string, unknown>> }
+      | undefined;
+
+    expect(m25Load4?.occasions?.loops, 'M25 loops in load 4').toMatchObject({
+      prior_opening_found: true,
+      evidence: { prior_required_complete: true },
+    });
+    expect(m25Load4?.occasions?.belief, 'M25 belief in load 4').toMatchObject({
+      prior_opening_found: true,
+      evidence: { prior_belief_displayed: true, prior_belief_answered: false },
+    });
+    // Case 1 and the M25 post in loads 3 and 4: held at their hosts, the
+    // question never displayed again (loads 3 and 4 hold no display).
+    for (const load of [3, 4]) {
+      expect(
+        everyEvent.filter(
+          (event) =>
+            event.event_type === 'proto_m25_belief_question_presented' &&
+            (event.page_load_index ?? 4) === load,
+        ),
+        `M25 question displayed in load ${load}`,
+      ).toEqual([]);
+    }
+
+    // R2 for the M25 post (no earlier opening): load 2's record establishes
+    // the absence and the post is opened after it in that load.
+    const m25Load2 = everyEvent.filter(
+      (event) => (event.page_load_index ?? 4) === 2,
+    );
+    const m25Check2 = m25Load2.find(
+      (event) => event.event_type === 'proto_m25_loops_prior_load_checked',
+    ) as { sequence?: number; metadata?: Record<string, unknown> } | undefined;
+    const m25Open2 = m25Load2.find(
+      (event) => event.event_type === 'proto_m25_loops_opportunity_opened',
+    ) as { sequence?: number } | undefined;
+
+    expect(
+      (
+        m25Check2?.metadata?.occasions as Record<
+          string,
+          Record<string, unknown>
+        >
+      )?.loops,
+      'M25 loops in load 2',
+    ).toMatchObject({ prior_opening_absence_established: true });
+    expect(m25Open2?.sequence ?? 0).toBeGreaterThan(m25Check2?.sequence ?? 0);
     write(
       'reproduction/V5bc-S3-integrity.json',
       JSON.stringify(

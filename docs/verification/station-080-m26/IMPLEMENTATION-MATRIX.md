@@ -859,3 +859,19 @@ under an established check (r3 §5) and apply RL-1C's decision A; M05's
 held station now opens its read-only held screen (the existing H line; the
 §9 U / M lines). No formula, weight or denominator rule changes. F-B2, F-B7
 and F-B8 stay open until RL-3, RL-4 and the RL-F recapture.
+
+**U24 RL-3** (reload guards for M17, M21, M22, M24 and M26, the logged M23
+check and M25's loops, question and notice; the D-1 room exception; D-2
+(i), D-3 = P; the owner's RL-3 instruction of 24 October 2026; register
+§5.408 records the RL-2 closeout rulings, §5.409 the work; addendum §2
+"U24 RL-3", UNIT-LOG "U24 RL-3") writes each family's provisional
+`prior_load_checked` record at its first host (one M25 record for its three
+occasions) and holds a station that is not A there (H with a prior-exposure
+entry; U and M never administered). M21 / M22 read D-2 (i) (a held case
+beside an observed one: interrupted, its contribution kept); the M25
+question is never asked again once displayed and is first displayed after
+a reload only under D-3's conditions, with `exposure_page_load_index` and
+the comparable-clock delay rule. The §9 H and U / M lines are added; M23's
+and the post's existing texts are unchanged. No formula, weight or
+denominator rule changes. F-B2, F-B7 and F-B8 stay open until RL-4 and the
+RL-F recapture.

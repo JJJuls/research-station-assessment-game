@@ -470,6 +470,14 @@ export const M23_TEXT = {
     'The excavation is closed for this shift. Work already recorded is unchanged.',
   reload_lock:
     'This excavation was opened before the page reloaded. It cannot be restarted in this session. You can continue through the station.',
+  // U24 RL-3 (owner decision D-5, r3 §9, ⟨station⟩ = excavation stake): a
+  // series held after a reload because its earlier state could not be
+  // verified or its check is contradictory (U / M). `reload_lock` above
+  // stays the H line, unchanged.
+  reload_lock_unverified: [
+    'The earlier state of this excavation stake could not be verified.',
+    'It stays closed after this reload.',
+  ] as const,
   plot_fault:
     'This plot is unavailable because of a technical problem. Work already recorded is saved. The other plot is unchanged. You can leave.',
   status: {
@@ -566,6 +574,7 @@ export function m23ParticipantStrings(): string[] {
     t.tray(['A', 'B']),
     t.series_closed,
     t.reload_lock,
+    ...t.reload_lock_unverified,
     t.plot_fault,
     ...Object.values(t.status),
   ];

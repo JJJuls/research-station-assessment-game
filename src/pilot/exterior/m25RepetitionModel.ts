@@ -658,14 +658,110 @@ export function m25BeliefDue(
     m24Closed: boolean;
     m26Closed: boolean;
   },
+  /**
+   * U24 RL-3 (owner decision D-3 = P): the exposure established by this
+   * load's reload check — the earlier `required_complete` with the
+   * completion screen shown, and no earlier display of the question. The
+   * question is then due as for a same-load exposure (a first
+   * administration, never a repeat). False when no such check exists.
+   */
+  exposedInEarlierLoad = false,
 ): boolean {
   return (
-    m25Exposed(s) &&
+    (m25Exposed(s) || exposedInEarlierLoad) &&
     closure.loopsClosed &&
     closure.m24Closed &&
     closure.m26Closed &&
     s.belief.value === null
   );
+}
+
+/**
+ * The first display after a reload (U24 RL-3, owner decision D-3 = P):
+ * the load whose `required_complete` exposed the participant, and the
+ * closure time the delay is measured from — the earlier loops closure only
+ * when both clocks share a time base, otherwise null with the reason.
+ */
+export interface M25CrossLoadExposure {
+  exposure_page_load_index: number;
+  /** Epoch ms of the earlier closure, or null (never 0, never the freeze). */
+  loops_closed_at_ms: number | null;
+  /** Why the delay is null; null when it is computed. */
+  delay_null_reason: string | null;
+}
+
+/** The reason a cross-load delay is null when the clocks cannot be compared. */
+export const M25_DELAY_NOT_COMPARABLE =
+  "earlier closure time not comparable with this load's clock";
+/** The reason a cross-load delay is null when no earlier closure exists. */
+export const M25_DELAY_NOT_RECORDED = 'earlier closure time not recorded';
+
+/** The structural part of an earlier load's event that D-3's rule reads. */
+export interface M25PriorEvent {
+  event_type: string;
+  page_load_index?: number;
+  timestamp_ms?: unknown;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * D-3 = P (U24 RL-3; r3 §6 case 3), pure: the earlier page load whose
+ * `required_complete` (with the completion screen shown) exposed the
+ * participant, and the delay's reference. The clock finding (recorded in
+ * the register): an event's `timestamp_ms` is `Date.now()` at logging
+ * (`ResearchRuntime.logInteraction`) and every caller passes the post's
+ * closures `Date.now()`, so the earlier load's `window_closed` time and
+ * this load's `nowMs` share the epoch-millisecond base, which does not
+ * restart at a page load. That time is used only when it is a finite
+ * number not later than `nowMs`; otherwise the delay is null with
+ * `M25_DELAY_NOT_COMPARABLE`, and without an earlier closure null with
+ * `M25_DELAY_NOT_RECORDED` — never zero, never the reload-freeze time.
+ * Null when no earlier exposure is recorded. The caller first establishes
+ * the absence of an earlier display through the load's check.
+ */
+export function m25CrossLoadExposureFrom(
+  priorLoadEvents: readonly M25PriorEvent[],
+  nowMs: number,
+): M25CrossLoadExposure | null {
+  const exposure = priorLoadEvents.find(
+    (event) =>
+      event.event_type === `${M25_LOOPS_FAMILY}required_complete` &&
+      event.metadata?.completion_marked === true,
+  );
+
+  if (exposure === undefined || typeof exposure.page_load_index !== 'number') {
+    return null;
+  }
+
+  const closed = priorLoadEvents.filter(
+    (event) =>
+      event.event_type === `${M25_LOOPS_FAMILY}window_closed` &&
+      event.page_load_index === exposure.page_load_index,
+  );
+
+  if (closed.length === 0) {
+    return {
+      exposure_page_load_index: exposure.page_load_index,
+      loops_closed_at_ms: null,
+      delay_null_reason: M25_DELAY_NOT_RECORDED,
+    };
+  }
+
+  const closedAt = closed[closed.length - 1].timestamp_ms;
+
+  return typeof closedAt === 'number' &&
+    Number.isFinite(closedAt) &&
+    closedAt <= nowMs
+    ? {
+        exposure_page_load_index: exposure.page_load_index,
+        loops_closed_at_ms: closedAt,
+        delay_null_reason: null,
+      }
+    : {
+        exposure_page_load_index: exposure.page_load_index,
+        loops_closed_at_ms: null,
+        delay_null_reason: M25_DELAY_NOT_COMPARABLE,
+      };
 }
 
 /** The question was presented (every presentation counted; the first timed). */
@@ -674,6 +770,7 @@ export function m25AskBelief(
   nowMs: number,
   loopsClosedAtMs: number | null,
   log: M25LogSink,
+  crossLoad: M25CrossLoadExposure | null = null,
 ): boolean {
   if (s.belief.value !== null) {
     return false;
@@ -683,10 +780,15 @@ export function m25AskBelief(
   s.belief.last_asked_at_ms = nowMs;
 
   if (s.belief.first_asked_at_ms === null) {
+    // A cross-load first display measures from the earlier closure (or
+    // records null with its reason); a same-load display is unchanged.
+    const closedAt =
+      crossLoad === null ? loopsClosedAtMs : crossLoad.loops_closed_at_ms;
+
     s.belief.first_asked_at_ms = nowMs;
-    s.belief.loops_closed_at_ms = loopsClosedAtMs;
+    s.belief.loops_closed_at_ms = closedAt;
     s.belief.delay_since_loops_closed_ms =
-      loopsClosedAtMs === null ? null : Math.max(0, nowMs - loopsClosedAtMs);
+      closedAt === null ? null : Math.max(0, nowMs - closedAt);
   }
 
   log('question_presented', {
@@ -697,6 +799,12 @@ export function m25AskBelief(
     delay_since_loops_closed_ms: s.belief.delay_since_loops_closed_ms,
     optional_repeats_completed: m25OptionalCompleted(s),
     phase: 'belief',
+    ...(crossLoad === null
+      ? {}
+      : {
+          exposure_page_load_index: crossLoad.exposure_page_load_index,
+          delay_since_loops_closed_null_reason: crossLoad.delay_null_reason,
+        }),
     input_mode: 'system',
   });
 

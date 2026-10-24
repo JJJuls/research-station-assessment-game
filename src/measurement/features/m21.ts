@@ -14,8 +14,32 @@
  * after application k that bears on a fault known from applications 1..k,
  * followed by a revised application. Read-only over the raw
  * `proto_m21_case_*` events.
+ *
+ * Reload (U24 RL-3, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G5 and §5;
+ * owner decision D-2 (i)): the load's `prior_load_checked` record
+ * classifies each case H / A / U / M (stage 1 `presented`, stage 3
+ * `opportunity_opened`). A held case is never a zero and never in the
+ * denominator: beside an observed case the row reads `interrupted` with
+ * the observed case's contribution kept (overriding `observed`); with no
+ * observed case `interrupted` · null — null / 0 when a case was opened,
+ * null / null when none was. A reload hold-back marker no longer makes the
+ * row a technical failure. Under A a case without evidence takes the
+ * first-load reading; a presented, unopened case of a reloaded load without
+ * its check is U (RL-1C decision A). The record is never task evidence.
  */
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClass,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -52,25 +76,145 @@ interface M21Raw {
   stop_choice: string | null;
 }
 
+/** The case of an event: the adapter's `case`, else the kit's `occasion`. */
+function caseOf(event: {
+  metadata?: Record<string, unknown> | null;
+}): string | undefined {
+  const value = event.metadata?.case ?? event.metadata?.occasion;
+
+  return typeof value === 'string' ? value : undefined;
+}
+
+/**
+ * The load's reload check (U24 RL-3; r1 §1 stage map, confirmed against the
+ * code): per case, stage 1 the case's `presented` (with the return shift's
+ * work orders), no stage 2, stage 3 its `opportunity_opened` (the bench
+ * entering the case), the case's hold-back markers. Null on a first load.
+ */
+export function m21PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  const of =
+    (suffix: string, id: CaseId) =>
+    (event: ReloadEvent): boolean =>
+      event.event_type === `${FAMILY}${suffix}` && caseOf(event) === id;
+
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    occasions: Object.fromEntries(
+      CASES.map((id) => [
+        id,
+        {
+          briefing: of('presented', id),
+          opening: of('opportunity_opened', id),
+          holdBack: of('technical_failure', id),
+        },
+      ]),
+    ),
+  });
+}
+
+/** Each case's class from the load's check records (r3 §2). */
+export function classifyM21Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks, occasions: CASES });
+}
+
+/** The current-load reason of a held case, by its class. */
+const HELD_REASON = {
+  H: 'bench case opened in an earlier page load; not re-run after the reload',
+  U: 'bench case not administered after a reload: earlier history not verified',
+  M: 'bench case not administered after a reload: earlier check contradictory',
+} as const;
+
 registerFeatureExtractor('M21', (events, context) => {
   const entry = registerEntry('M21');
   const [primary] = entry.features;
   const load = currentLoadEvents(events, context);
-  const family = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const own = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const family = withoutPriorLoadChecks(own, FAMILY);
   const supporting = sequencesOf(family);
   const presented = eventsOfType(load, `${FAMILY}presented`);
   const opened = eventsOfType(load, `${FAMILY}opportunity_opened`);
   const closed = eventsOfType(load, `${FAMILY}window_closed`);
   const applied = eventsOfType(load, `${FAMILY}applied`);
   const consulted = eventsOfType(load, `${FAMILY}section_consulted`);
-  const failed = eventsOfType(load, `${FAMILY}technical_failure`);
+  const markerClass = (event: { metadata?: Record<string, unknown> | null }) =>
+    reloadHoldBackClass(event.metadata?.detail);
+  // A reload hold-back marker is not a fault of the case (D-2 (i)); any
+  // other technical failure keeps the existing whole-row rule.
+  const failed = eventsOfType(load, `${FAMILY}technical_failure`).filter(
+    (event) => markerClass(event) === null,
+  );
+  const markers = eventsOfType(load, `${FAMILY}technical_failure`).filter(
+    (event) => markerClass(event) !== null,
+  );
   // The adapter's own events carry `case`; the window kit's closures carry
   // the window's `occasion` (the same id).
   const occ = (event: { metadata?: Record<string, unknown> }) =>
     meta<string>(event as never, 'case') ??
     meta<string>(event as never, 'occasion');
+  const reload = classifyM21Reload(
+    context.pageLoadIndex,
+    eventsOfType(own, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    return [
+      emptyFeature(
+        'M21',
+        primary,
+        'technical_failure',
+        'a reload check record describes another page load',
+        { supporting_sequences: supporting },
+      ),
+    ];
+  }
+
+  // Each held case (U24 RL-3): its marker's class; else, after a reload, an
+  // unopened case whose class is not A — with a check always, without one
+  // only once it was presented in this load (RL-1C decision A).
+  const heldClass = (id: CaseId): Exclude<ReloadClass, 'A'> | null => {
+    const marker = markers.find((event) => occ(event) === id);
+
+    if (marker !== undefined) {
+      return markerClass(marker);
+    }
+
+    const cls = reload.occasions[id].class;
+
+    return reload.page_reloaded &&
+      cls !== 'A' &&
+      !opened.some((event) => occ(event) === id) &&
+      (reload.check_count > 0 || presented.some((event) => occ(event) === id))
+      ? (cls ?? 'U')
+      : null;
+  };
+  const held = CASES.filter((id) => heldClass(id) !== null);
+  const heldReason =
+    held.length === 0 ? null : HELD_REASON[heldClass(held[0])!];
 
   if (opened.length === 0) {
+    // D-2 (i): no case opened beside a held case ⇒ interrupted, null /
+    // null (HB + DEC / NOP / HB; U + DEC).
+    if (heldReason !== null) {
+      return [
+        emptyFeature('M21', primary, 'interrupted', heldReason, {
+          supporting_sequences: supporting,
+        }),
+      ];
+    }
+
     if (presented.length > 0) {
       return [
         emptyFeature(
@@ -79,6 +223,25 @@ registerFeatureExtractor('M21', (events, context) => {
           'declined',
           'bench units presented, never taken up',
           { supporting_sequences: supporting },
+        ),
+      ];
+    }
+
+    // An established absence takes the first-load reading (r3 §5, NOP + NOP
+    // (A)); `absentFeature`'s reload branch is kept for a load without one.
+    if (
+      reload.page_reloaded &&
+      CASES.every((id) => reload.occasions[id].class === 'A')
+    ) {
+      return [
+        emptyFeature(
+          'M21',
+          primary,
+          'not_presented',
+          'relay bench never opened',
+          {
+            supporting_sequences: supporting,
+          },
         ),
       ];
     }
@@ -290,5 +453,29 @@ registerFeatureExtractor('M21', (events, context) => {
   // A conditional denominator is complete at any size above zero; an
   // open second case does not make the first case's observation pending
   // — it is exported as observed with `open_cases` beside it.
+  //
+  // D-2 (i) (U24 RL-3): a held case beside the others — never a zero, never
+  // in the denominator. With a resolved count the row is `interrupted` and
+  // keeps the observed case's contribution (the S-F2 representation, as
+  // M01); without one, a row that would read `no_eligible_event` (the
+  // opened case a first-time success) is `interrupted` · null / 0 (r3 §5,
+  // "HB + OBS-ok"); `pending` and an existing `interrupted` keep their
+  // readings.
+  if (heldReason !== null && row.disposition !== 'technical_failure') {
+    if (eligible.length > 0) {
+      return [{ ...row, disposition: 'interrupted' as const }];
+    }
+
+    if (row.disposition === 'no_eligible_event') {
+      return [
+        {
+          ...row,
+          disposition: 'interrupted' as const,
+          missing_reason: heldReason,
+        },
+      ];
+    }
+  }
+
   return [row] satisfies FeatureRecord[];
 });

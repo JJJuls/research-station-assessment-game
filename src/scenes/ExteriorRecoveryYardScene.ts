@@ -144,6 +144,7 @@ import {
   m24DepletionShown,
   m24DismissExplanation,
   m24Finish,
+  m24HeldLines,
   m24Present,
   m24PresentCheck,
   m24TickContinuation,
@@ -158,6 +159,7 @@ import {
   m26DismissExplanation,
   m26Evidence,
   m26Finish,
+  m26HeldLines,
   m26NextReportId,
   m26Present,
   m26PresentCheck,
@@ -1474,6 +1476,16 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
           knowledge: m24KnowledgeState(state),
         });
 
+        // U24 RL-3 (r3 §9): a rig held after a reload shows the two approved
+        // lines and opens nothing.
+        const held = m24HeldLines();
+
+        if (held !== null) {
+          this.showFeedbackMessage(held);
+
+          return false;
+        }
+
         if (state.closed) {
           this.showFeedbackMessage(
             magnetDeckDepleted()
@@ -1562,6 +1574,16 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
           knowledge: m26Knowledge(state),
         });
 
+        // U24 RL-3 (r3 §9): a post held after a reload shows the two
+        // approved lines and opens nothing.
+        const held = m26HeldLines();
+
+        if (held !== null) {
+          this.showFeedbackMessage(held);
+
+          return false;
+        }
+
         if (state.closed) {
           this.showFeedbackMessage('The uplink log is closed for this shift.');
 
@@ -1610,6 +1632,16 @@ export class ExteriorRecoveryYardScene extends PilotZoneScene {
         this.logStationOpened('uplink_post_b', {
           knowledge: m26Knowledge(state),
         });
+
+        // U24 RL-3 (r3 §9): a post held after a reload shows the two
+        // approved lines and opens nothing.
+        const held = m26HeldLines();
+
+        if (held !== null) {
+          this.showFeedbackMessage(held);
+
+          return false;
+        }
 
         if (state.closed) {
           this.showFeedbackMessage('The uplink log is closed for this shift.');

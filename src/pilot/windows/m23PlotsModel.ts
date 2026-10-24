@@ -1068,12 +1068,18 @@ export function m23PriorLoadCheck(
   };
 }
 
-/** The reload lock: a series opened in an earlier page load is never re-run. */
+/**
+ * The reload lock: a series opened in an earlier page load is never re-run.
+ * U24 RL-3: a series whose earlier state could not be verified, or whose
+ * check is contradictory (U / M), takes the same lock with its own detail
+ * (`reloadHoldBackDetail`); the default is the existing H detail.
+ */
 export function m23sHoldBack(
   s: M23Series,
   check: M23ReloadCheck,
   nowMs: number,
   sink: M23LogSink,
+  detail: string = M23_RELOAD_DETAIL,
 ): boolean {
   if (s.status !== 'unopened' && s.status !== 'presented') {
     return false;
@@ -1081,7 +1087,7 @@ export function m23sHoldBack(
 
   s.reload = check;
   s.status = 'held_back';
-  s.fault_detail = M23_RELOAD_DETAIL;
+  s.fault_detail = detail;
   // The guidance stays addressed across a hold-back (§12 M1, G04): the
   // yard's later objectives are never held behind a locked stake.
   s.guidance_addressed = true;
@@ -1089,7 +1095,7 @@ export function m23sHoldBack(
   sink('reload_blocked', {
     ...fields(s, null, 'closure'),
     ...check,
-    detail: M23_RELOAD_DETAIL,
+    detail,
     input_mode: 'system',
   });
 

@@ -14,9 +14,30 @@
  * value kept). Read-only over the raw `proto_m26_uplink_*` events; the
  * count is recounted from the `postknowledge_retry` events (a disagreeing
  * record ⇒ technical_failure).
+ *
+ * Reload (U24 RL-3, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G5 and §5):
+ * the load's `prior_load_checked` record classifies the uplink H / A / U /
+ * M (stage 1 the yard briefing, stage 2 the post's `presented`, stage 3
+ * `opportunity_opened`). A held uplink reads `interrupted` on all three
+ * rows with its class's reason; under A the first-load readings apply
+ * (`declined` / `not_presented`); a post opened in a reloaded load without
+ * its check, the uplink never powered up, is U (RL-1C decision A). The
+ * record is never task evidence.
  */
 import type { KnowledgeStatus } from '../protocol';
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  ROW_OCCASION,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -66,16 +87,66 @@ interface M26Raw {
   stop_choice: string | null;
 }
 
+/**
+ * The load's reload check (U24 RL-3; r1 §1 stage map, confirmed against the
+ * code): stage 1 the yard briefing (the route's advance to `exterior_work`
+ * — no M26 record), stage 2 the post's `presented`, stage 3 the uplink's
+ * `opportunity_opened` (powered up), the row's hold-back markers. Null on
+ * a first load.
+ */
+export function m26PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    stages: {
+      briefing: (event) =>
+        event.event_type === 'pilot_stage_advanced' &&
+        event.metadata?.to === 'exterior_work',
+      presentation: (event) => event.event_type === `${FAMILY}presented`,
+      opening: (event) => event.event_type === `${FAMILY}opportunity_opened`,
+      holdBack: (event) => event.event_type === `${FAMILY}technical_failure`,
+    },
+  });
+}
+
+/** The uplink's class from the load's check records (r3 §2). */
+export function classifyM26Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks });
+}
+
+/** The current-load reason of a held uplink, by its class. */
+const HELD_REASON = {
+  H: 'uplink powered up in an earlier page load; not re-run after the reload',
+  U: 'uplink not administered after a reload: earlier history not verified',
+  M: 'uplink not administered after a reload: earlier check contradictory',
+} as const;
+
 registerFeatureExtractor('M26', (events, context) => {
   const entry = registerEntry('M26');
   const [primary, sensitivity, companion] = entry.features;
   const load = currentLoadEvents(events, context);
-  const family = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const own = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const family = withoutPriorLoadChecks(own, FAMILY);
   const supporting = sequencesOf(family);
   const presented = eventsOfType(load, `${FAMILY}presented`);
   const opened = eventsOfType(load, `${FAMILY}opportunity_opened`);
   const closed = eventsOfType(load, `${FAMILY}window_closed`);
   const failed = eventsOfType(load, `${FAMILY}technical_failure`);
+  const reload = classifyM26Reload(
+    context.pageLoadIndex,
+    eventsOfType(own, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+  const cls = reload.occasions[ROW_OCCASION].class;
   const retries = eventsOfType(load, `${FAMILY}postknowledge_retry`);
   const answered = eventsOfType(load, `${FAMILY}understanding_answered`);
   const all = (
@@ -94,9 +165,43 @@ registerFeatureExtractor('M26', (events, context) => {
     emptyFeature('M26', companion, disposition, reason, extra),
   ];
 
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    return all(
+      'technical_failure',
+      'a reload check record describes another page load',
+    );
+  }
+
   if (opened.length === 0) {
+    // The hold-back of this load (U24 RL-3): its marker names the class.
+    const marker = failed
+      .map((event) => reloadHoldBackClass(meta<unknown>(event, 'detail')))
+      .find((marked) => marked !== null);
+
+    if (marker !== undefined && marker !== null) {
+      return all('interrupted', HELD_REASON[marker]);
+    }
+
+    // After a reload an uplink whose class is not A is held: with a check
+    // always; without one once its post was opened in this load (U, RL-1C
+    // decision A).
+    if (
+      reload.page_reloaded &&
+      cls !== 'A' &&
+      (reload.check_count > 0 || presented.length > 0)
+    ) {
+      return all('interrupted', HELD_REASON[cls ?? 'U']);
+    }
+
     if (presented.length > 0) {
       return all('declined', 'uplink post opened, never powered up');
+    }
+
+    // An established absence takes the first-load reading (r3 §5).
+    if (cls === 'A') {
+      return all('not_presented', 'uplink never powered up');
     }
 
     return [

@@ -11,10 +11,29 @@
  * the per-phase first-response sequences with feedback exposure and help
  * — null when no trial was answered. Read-only over the raw events; no
  * slope, no speed, no combined score.
+ *
+ * Reload (U24 RL-3, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G5 and §5):
+ * the load's `prior_load_checked` record classifies the rig H / A / U / M
+ * (stage 3 `window_opened`; no presentation record, as M13). With the
+ * absence established (A) a load without rig evidence takes the first-load
+ * reading; a held rig reads `interrupted` with its class's reason. The
+ * record is never task evidence.
  */
 import { m17Criterion } from '../../informationProcessing/syntaxForms';
 import { PILOT_SETTINGS } from '../protocol';
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  ROW_OCCASION,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -45,11 +64,48 @@ interface TrialMeta {
   input_mode: string | null;
 }
 
+/**
+ * The load's reload check (U24 RL-3; r1 §1 stage map): no stage 1 (the
+ * declaration at laboratory entry is no record), no stage 2, stage 3 the
+ * rig's `window_opened`, the row's hold-back markers. Null on a first load.
+ */
+export function m17PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    stages: {
+      opening: (event) => event.event_type === `${FAMILY}window_opened`,
+      holdBack: (event) => event.event_type === `${FAMILY}technical_failure`,
+    },
+  });
+}
+
+/** The rig's class from the load's check records (r3 §2). */
+export function classifyM17Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks });
+}
+
+/** The current-load reason of a held rig, by its class. */
+const HELD_REASON = {
+  H: 'training rig opened in an earlier page load; not re-run after the reload',
+  U: 'training rig not administered after a reload: earlier history not verified',
+  M: 'training rig not administered after a reload: earlier check contradictory',
+} as const;
+
 registerFeatureExtractor('M17', (events, context) => {
   const entry = registerEntry('M17');
   const [primary, companion] = entry.features;
   const load = currentLoadEvents(events, context);
-  const family = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const own = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const family = withoutPriorLoadChecks(own, FAMILY);
   const supporting = sequencesOf(family);
   const opened = eventsOfType(load, `${FAMILY}window_opened`);
   const submitted = eventsOfType(load, `${FAMILY}trial_submitted`);
@@ -57,8 +113,54 @@ registerFeatureExtractor('M17', (events, context) => {
   const stopped = eventsOfType(load, `${FAMILY}stopped`);
   const failed = eventsOfType(load, `${FAMILY}technical_failure`);
   const runReached = eventsOfType(load, `${FAMILY}criterion_run_reached`);
+  const reload = classifyM17Reload(
+    context.pageLoadIndex,
+    eventsOfType(own, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+  const cls = reload.occasions[ROW_OCCASION].class;
+  const both = (
+    disposition: 'interrupted' | 'not_presented' | 'technical_failure',
+    reason: string,
+  ) => [
+    emptyFeature('M17', primary, disposition, reason, {
+      supporting_sequences: supporting,
+    }),
+    emptyFeature('M17', companion, disposition, reason),
+  ];
+
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    return both(
+      'technical_failure',
+      'a reload check record describes another page load',
+    );
+  }
 
   if (opened.length === 0) {
+    // The hold-back of this load (U24 RL-3): its marker names the class.
+    const marker = failed
+      .map((event) => reloadHoldBackClass(meta<unknown>(event, 'detail')))
+      .find((marked) => marked !== null);
+
+    if (marker !== undefined && marker !== null) {
+      return both('interrupted', HELD_REASON[marker]);
+    }
+
+    // An established absence takes the first-load reading (r3 §5, the
+    // single-occasion rule); a check that does not establish it holds the
+    // rig. Without a check the reading of an unreached rig is kept (the rig
+    // has no presentation record, as M13).
+    if (cls === 'A') {
+      return both('not_presented', 'training rig never opened');
+    }
+
+    if (reload.page_reloaded && reload.check_count > 0 && cls !== null) {
+      return both('interrupted', HELD_REASON[cls]);
+    }
+
     return [
       absentFeature('M17', primary, context, 'training rig never opened', {
         supporting_sequences: supporting,

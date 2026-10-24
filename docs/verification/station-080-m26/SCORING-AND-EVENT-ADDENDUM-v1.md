@@ -1738,7 +1738,8 @@ verified" / "earlier check contradictory" to their generic "held back after
 a reload" reason); a held delivery or loan is never counted as offered or
 pending; a malformed record is a technical failure of the item. **Reading
 change (M10, M11; register §5.407 reading (d), owner confirmation
-requested):** with a check, an occasion offered in an earlier load whose
+requested — confirmed by the owner's RL-2 closeout ruling 2, register
+§5.408; it can affect downstream inclusion):** with a check, an occasion offered in an earlier load whose
 room is not reached in this load, or reached only at the review, reads held
 — `interrupted`, the other occasion's value kept — where it read
 `not_presented` beside an observed sibling before. **Without a
@@ -1749,6 +1750,69 @@ occasion; the `absentFeature` reload branch when the load holds nothing).
 The RL-1C exposure-record diagnostics are not added to these rows. No
 formula, weight, denominator rule or event name other than the suffix above
 changes.
+
+U24 RL-3 (PROVISIONAL, never canonical; D-2 (i), D-3 = P, D-4, D-5,
+D-6 (i), D-7 (i) and RL-1C's decision A in force; the owner's RL-3
+instruction of 24 October 2026; `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4
+G4 / G5, §5, §6, §9; register §5.409): RL-0's record is written once per
+reloaded load, before any opening, by the family's first host —
+`proto_m17_trials_prior_load_checked` (`declareM17`; no occasions),
+`proto_m21_case_prior_load_checked` (`m21Present`; occasions `o1`, `o2`),
+`proto_m22_returned_prior_load_checked` (`m22Present`; `o1`, `o2`),
+`proto_m23_plots_prior_load_checked` (`guardM23Reload`; the existing
+check's fields plus RL-0's), `proto_m24_rig_prior_load_checked` and
+`proto_m26_uplink_prior_load_checked` (`declareExteriorWindows`), and ONE
+`proto_m25_loops_prior_load_checked` (occasions `loops`, `belief`, `probe`;
+evidence `prior_required_complete`, `prior_belief_displayed`,
+`prior_belief_answered`) written by the first of `presentM25Loops`,
+`openM25Loops`, `m25BeliefDueNow` / `askM25Belief` or
+`declareReturnWindows`. **Stage maps:** M17 stage 3 `window_opened`; M21 /
+M22 stage 1 `presented`, stage 3 `opportunity_opened` per case / report;
+M23, M24, M26 stage 1 the route's advance to `exterior_work`, stage 2
+`presented`, stage 3 `opportunity_opened`; M25 loops `presented` /
+`opportunity_opened`, the question's display records (display =
+administration), the notice's `presented` / `opportunity_opened`.
+**Hold-back markers** (the family's `technical_failure`; M23 also
+`reload_blocked`): H "reload after administration: ⟨station⟩ not re-run"
+with a prior-exposure entry (the M25 post's and M23's existing H details
+kept); U / M "reload with an unverified earlier state / a contradictory
+earlier check: ⟨station⟩ not administered", no prior-exposure entry; the
+station administers nothing. **D-3 = P:** a first display of the M25
+question after a reload, permitted only when the check establishes the
+earlier `required_complete` and no earlier display, adds to
+`question_presented` `exposure_page_load_index` and
+`delay_since_loops_closed_null_reason`; `delay_since_loops_closed_ms` is
+measured from the earlier `proto_m25_loops_window_closed` `timestamp_ms`
+(both values are `Date.now()` epoch milliseconds) when it is a finite
+number not later than now, otherwise null with "earlier closure time not
+comparable with this load's clock", or, without an earlier closure, null
+with "earlier closure time not recorded"; never zero, never the
+reload-freeze time. A same-load display's payload is unchanged.
+**Readings:** under A the first-load readings (M17, M23, M24, M26
+`not_presented` with no evidence in the load; M21 / M22 `declined` when
+presented and never opened, `not_presented` with none); a held station
+`interrupted` with its class's reason; **D-2 (i)** for M21 / M22 (a reload
+marker is no longer a technical failure of the row; a held case / report
+beside an observed one: `interrupted` · x · x / 1; with none opened
+`interrupted` · null · null / null; with one opened and none eligible, a
+would-be `no_eligible_event` reads `interrupted` · null · null / 0, other
+readings kept); the M25 companion by its own occasion (cases 1 and 2 and 4
+`interrupted`; case 3 the first-load readings, with
+`exposure_page_load_index` and the null reason in the components); RL-1C's
+decision A where the row has a presentation record (not M17); a malformed
+record is a technical failure. **Screens (§9):** the new H lines ("This
+⟨station⟩ was opened earlier in this session." / "It stays closed after a
+reload.") for the training rig, relay bench, shift report desk, magnet rig
+and uplink post; the U / M lines ("The earlier state of this ⟨station⟩
+could not be verified." / "It stays closed after this reload.") for those
+five and the excavation stake and the post; M23's and the post's existing
+H texts unchanged; no screen for the question or the notice. No formula,
+weight, denominator rule or event name changes other than the suffix,
+`exposure_page_load_index` (approved by D-3) and the writer's
+`delay_since_loops_closed_null_reason` (the approved "explicit reason" as a
+field; register §5.409 reading (c)). Beside a held M22 report the ratings
+companion keeps its own reading (reading (n)); with denominator 0 only a
+`no_eligible_event` row becomes `interrupted` · null / 0 (reading (g)).
 
 ## 3. Feature formulas (primary; companions listed in the register)
 

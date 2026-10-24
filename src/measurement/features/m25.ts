@@ -7,8 +7,37 @@
  * `proto_m25_belief_*` events. Required loops are never counted; loops
  * never completed ⇒ primary null and belief null (no exposure); the two
  * features are derived independently and never combined.
+ *
+ * Reload (U24 RL-3, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 and §6;
+ * owner decision D-3 = P): ONE `proto_m25_loops_prior_load_checked` record
+ * per reloaded load covers three occasions — the loops, the belief
+ * question and the questionnaire-notice probe — with the D-4 evidence
+ * fields (`prior_required_complete`; `prior_belief_displayed`,
+ * `prior_belief_answered`). The primary reads the loops occasion (H / U /
+ * M held, A first-load). The companion reads its own occasion, never the
+ * primary's branch: a question displayed earlier (answered or not) is never
+ * asked again and reads `interrupted` (cases 1 and 2); uncertain or
+ * contradictory history reads `interrupted` (case 4); a first display after
+ * a reload, permitted only when the check establishes the earlier required
+ * completion and the absence of an earlier display (case 3), takes the
+ * first-load readings with `exposure_page_load_index` and the delay rule's
+ * fields beside them. No text says "not exposed" or "0 required loops"
+ * when an earlier completion is established. The record is never task
+ * evidence.
  */
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClass,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -46,13 +75,144 @@ interface M25LoopsRaw {
 
 type Missing = Exclude<FeatureDisposition, 'observed' | 'incomplete'>;
 
+const LOOPS = 'proto_m25_loops_';
+const BELIEF = 'proto_m25_belief_';
+const PROBE = 'proto_m25_probe_';
+
+/** The three occasions of the one M25 record (r3 §2, §6; D-4). */
+export const M25_RELOAD_OCCASIONS = ['loops', 'belief', 'probe'] as const;
+
+export type M25ReloadOccasion = (typeof M25_RELOAD_OCCASIONS)[number];
+
+/** An earlier display of the belief question (r3 §6: any of the three). */
+function beliefDisplayed(event: ReloadEvent): boolean {
+  return (
+    event.event_type === `${BELIEF}question_presented` ||
+    event.event_type === `${BELIEF}presented` ||
+    event.event_type === `${BELIEF}opportunity_opened`
+  );
+}
+
+/**
+ * The load's reload check (U24 RL-3; r1 §1 stage map and r3 §6), one record
+ * for the family, written by the first M25 host of the load:
+ * - loops: stage 1 the briefing's `presented`, stage 3
+ *   `opportunity_opened`; evidence `prior_required_complete` = an earlier
+ *   `required_complete` with the completion screen shown (its
+ *   `completion_marked`) — the earlier exposure;
+ * - belief: stage 2 the question's display record, stage 3 any display
+ *   (display = administration, direction f); evidence
+ *   `prior_belief_displayed` and `prior_belief_answered`;
+ * - probe: stage 1 the notice's `presented`, stage 3 its
+ *   `opportunity_opened`.
+ * Each occasion's hold-back markers are its own family's
+ * `technical_failure`. Null on a first load.
+ */
+export function m25PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  const is = (type: string) => (event: ReloadEvent) =>
+    event.event_type === type;
+
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    occasions: {
+      loops: {
+        briefing: is(`${LOOPS}presented`),
+        opening: is(`${LOOPS}opportunity_opened`),
+        holdBack: is(`${LOOPS}technical_failure`),
+        evidence: {
+          prior_required_complete: (event) =>
+            event.event_type === `${LOOPS}required_complete` &&
+            event.metadata?.completion_marked === true,
+        },
+      },
+      belief: {
+        presentation: (event) =>
+          event.event_type === `${BELIEF}question_presented` ||
+          event.event_type === `${BELIEF}presented`,
+        opening: beliefDisplayed,
+        holdBack: is(`${BELIEF}technical_failure`),
+        evidence: {
+          prior_belief_displayed: beliefDisplayed,
+          prior_belief_answered: is(`${BELIEF}question_answered`),
+        },
+      },
+      probe: {
+        briefing: is(`${PROBE}presented`),
+        opening: is(`${PROBE}opportunity_opened`),
+        holdBack: is(`${PROBE}technical_failure`),
+      },
+    },
+  });
+}
+
+/** Each occasion's class from the load's check records (r3 §2). */
+export function classifyM25Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({
+    pageLoadIndex,
+    checks,
+    occasions: M25_RELOAD_OCCASIONS,
+  });
+}
+
+/** A named evidence flag of one occasion in a single check record. */
+export function m25CheckEvidence(
+  check: object | undefined,
+  occasion: M25ReloadOccasion,
+  flag: string,
+): boolean {
+  const occasions = (check as { occasions?: unknown } | undefined)?.occasions;
+  const part =
+    typeof occasions === 'object' && occasions !== null
+      ? (occasions as Record<string, unknown>)[occasion]
+      : undefined;
+  const evidence =
+    typeof part === 'object' && part !== null
+      ? (part as { evidence?: unknown }).evidence
+      : undefined;
+
+  return (
+    typeof evidence === 'object' &&
+    evidence !== null &&
+    (evidence as Record<string, unknown>)[flag] === true
+  );
+}
+
+/** The current-load reasons of a held post, by its class. */
+const LOOPS_HELD_REASON = {
+  H: 'post administered in an earlier page load; not re-run after the reload',
+  U: 'post not administered after a reload: earlier history not verified',
+  M: 'post not administered after a reload: earlier check contradictory',
+} as const;
+
+/** The companion's reasons when the question is held (r3 §6 cases 1, 2, 4). */
+const BELIEF_HELD_REASON = {
+  displayed:
+    'normality question displayed in an earlier page load; not asked again after the reload',
+  answered:
+    'normality question answered in an earlier page load; not asked again after the reload',
+  U: 'normality question not asked after a reload: earlier history not verified',
+  M: 'normality question not asked after a reload: earlier check contradictory',
+} as const;
+
 registerFeatureExtractor('M25', (events, context) => {
   const entry = registerEntry('M25');
   const [primary, belief] = entry.features;
   const load = currentLoadEvents(events, context);
-  const loopsFamily = load.filter((e) =>
-    e.event_type.startsWith('proto_m25_loops_'),
-  );
+  const ownLoops = load.filter((e) => e.event_type.startsWith(LOOPS));
+  const loopsFamily = withoutPriorLoadChecks(ownLoops, LOOPS);
+  const checks = ownLoops
+    .filter((e) => e.event_type === `${LOOPS}${PRIOR_LOAD_CHECK_SUFFIX}`)
+    .map((event) => event.metadata ?? {});
+  const reload = classifyM25Reload(context.pageLoadIndex, checks);
   const beliefFamily = load.filter((e) =>
     e.event_type.startsWith('proto_m25_belief_'),
   );
@@ -71,6 +231,75 @@ registerFeatureExtractor('M25', (events, context) => {
   const asked = eventsOfType(load, 'proto_m25_belief_question_presented');
   const answered = eventsOfType(load, 'proto_m25_belief_question_answered');
   const beliefClosed = eventsOfType(load, 'proto_m25_belief_window_closed');
+  const beliefMarkers = eventsOfType(load, `${BELIEF}technical_failure`)
+    .map((event) => reloadHoldBackClass(meta<unknown>(event, 'detail')))
+    .filter((cls): cls is Exclude<ReloadClass, 'A'> => cls !== null);
+
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    const reason = 'a reload check record describes another page load';
+
+    return [
+      emptyFeature('M25', primary, 'technical_failure', reason, {
+        supporting_sequences: loopsSupporting,
+      }),
+      emptyFeature('M25', belief, 'technical_failure', reason, {
+        supporting_sequences: beliefSupporting,
+      }),
+    ];
+  }
+
+  const loopsClass = reload.occasions.loops.class;
+  const beliefClass = reload.occasions.belief.class;
+  // The companion's own hold (U24 RL-3; r3 §6): its marker's class; else,
+  // with a check of this load, a question not displayed in this load whose
+  // class is not A (displayed earlier ⇒ H; uncertain ⇒ U; contradictory ⇒
+  // M). The question has no presentation apart from its display, so
+  // without a check nothing is inferred (RL-1C decision A needs one).
+  const beliefHeld: Exclude<ReloadClass, 'A'> | null =
+    beliefMarkers[0] ??
+    (reload.page_reloaded &&
+    reload.check_count > 0 &&
+    beliefClass !== 'A' &&
+    beliefClass !== null &&
+    asked.length === 0
+      ? beliefClass
+      : null);
+  const answeredEarlier =
+    reload.check_count === 1 &&
+    m25CheckEvidence(checks[0], 'belief', 'prior_belief_answered');
+  // The earlier required completion, established by this load's check (r3
+  // §6: never "0 required loops" or "not exposed" once it is).
+  const exposedEarlier =
+    reload.page_reloaded &&
+    reload.check_count === 1 &&
+    m25CheckEvidence(checks[0], 'loops', 'prior_required_complete');
+  const beliefHeldFallback = (): { disposition: Missing; reason: string } => ({
+    disposition: 'interrupted',
+    reason:
+      beliefHeld === 'H'
+        ? BELIEF_HELD_REASON[answeredEarlier ? 'answered' : 'displayed']
+        : BELIEF_HELD_REASON[beliefHeld === 'M' ? 'M' : 'U'],
+  });
+  // An exposed participant whose question is still to come (r3 §6 case 3
+  // before its display): the first-load reading of an exposed participant.
+  const exposedFallback = (): { disposition: Missing; reason: string } =>
+    beliefClosed.length > 0 || context.finalCoreClosed
+      ? {
+          disposition: 'not_presented',
+          reason: 'normality question never asked before the review',
+        }
+      : { disposition: 'pending', reason: 'normality question not yet asked' };
+  const ownFallback = (otherwise: {
+    disposition: Missing;
+    reason: string;
+  }): { disposition: Missing; reason: string } =>
+    beliefHeld !== null
+      ? beliefHeldFallback()
+      : exposedEarlier && beliefClass === 'A'
+        ? exposedFallback()
+        : otherwise;
 
   // ——— the belief companion is derived first (independently) ————————
   const beliefRow = (fallback: {
@@ -78,6 +307,21 @@ registerFeatureExtractor('M25', (events, context) => {
     reason: string;
   }): FeatureRecord => {
     const first = answered[0];
+    // A first display after a reload (case 3) carries D-3's fields; a
+    // same-load display carries none (its payload is unchanged).
+    const crossLoad =
+      asked[0] !== undefined &&
+      meta<unknown>(asked[0], 'exposure_page_load_index') !== undefined
+        ? {
+            exposure_page_load_index:
+              meta<number>(asked[0], 'exposure_page_load_index') ?? null,
+            delay_since_loops_closed_null_reason:
+              meta<string | null>(
+                asked[0],
+                'delay_since_loops_closed_null_reason',
+              ) ?? null,
+          }
+        : {};
 
     if (first !== undefined) {
       const value = meta<number>(first, 'value') ?? null;
@@ -95,6 +339,7 @@ registerFeatureExtractor('M25', (events, context) => {
             meta<number>(asked[0] ?? first, 'delay_since_loops_closed_ms') ??
             null,
           later_presses_ignored: Math.max(0, answered.length - 1),
+          ...crossLoad,
         },
       });
     }
@@ -131,15 +376,30 @@ registerFeatureExtractor('M25', (events, context) => {
 
   // ——— never opened ————————————————————————————————————————————————
   if (opened.length === 0) {
-    if (heldBack.length > 0) {
-      const reason =
-        'post administered in an earlier page load; not re-run after the reload';
+    // After a reload a post whose class is not A is held (U24 RL-3): its
+    // marker (any marker of the post keeps the existing H reading unless
+    // it names U or M); else with a check always, without one once the
+    // briefing presented it in this load (U, RL-1C decision A).
+    const marked =
+      heldBack.length > 0
+        ? (reloadHoldBackClass(meta<unknown>(heldBack[0], 'detail')) ?? 'H')
+        : null;
+    const loopsHeld: Exclude<ReloadClass, 'A'> | null =
+      marked ??
+      (reload.page_reloaded &&
+      loopsClass !== 'A' &&
+      (reload.check_count > 0 || presented.length > 0)
+        ? (loopsClass ?? 'U')
+        : null);
+
+    if (loopsHeld !== null) {
+      const reason = LOOPS_HELD_REASON[loopsHeld];
 
       return [
         emptyFeature('M25', primary, 'interrupted', reason, {
           supporting_sequences: loopsSupporting,
         }),
-        beliefRow({ disposition: 'interrupted', reason }),
+        beliefRow(ownFallback({ disposition: 'interrupted', reason })),
       ];
     }
 
@@ -150,10 +410,33 @@ registerFeatureExtractor('M25', (events, context) => {
         emptyFeature('M25', primary, 'declined', reason, {
           supporting_sequences: loopsSupporting,
         }),
-        beliefRow({
-          disposition: 'no_eligible_event',
-          reason: `not exposed to the repeat opportunity: ${reason}`,
-        }),
+        beliefRow(
+          ownFallback({
+            disposition: 'no_eligible_event',
+            reason: `not exposed to the repeat opportunity: ${reason}`,
+          }),
+        ),
+      ];
+    }
+
+    // An established absence takes the first-load reading (r3 §5, the
+    // single-occasion rule); `absentFeature`'s reload branch only without
+    // one.
+    if (loopsClass === 'A') {
+      return [
+        emptyFeature(
+          'M25',
+          primary,
+          'not_presented',
+          'field sensor post never opened',
+          { supporting_sequences: loopsSupporting },
+        ),
+        beliefRow(
+          ownFallback({
+            disposition: 'not_presented',
+            reason: 'post never opened',
+          }),
+        ),
       ];
     }
 
@@ -162,13 +445,15 @@ registerFeatureExtractor('M25', (events, context) => {
         supporting_sequences: loopsSupporting,
       }),
       beliefRow(
-        context.reloaded
-          ? {
-              disposition: 'interrupted',
-              reason:
-                'no current-load evidence after a reload: post never opened',
-            }
-          : { disposition: 'not_presented', reason: 'post never opened' },
+        ownFallback(
+          context.reloaded
+            ? {
+                disposition: 'interrupted',
+                reason:
+                  'no current-load evidence after a reload: post never opened',
+              }
+            : { disposition: 'not_presented', reason: 'post never opened' },
+        ),
       ),
     ];
   }
@@ -187,10 +472,12 @@ registerFeatureExtractor('M25', (events, context) => {
       emptyFeature('M25', primary, 'pending', 'post open, no closure yet', {
         supporting_sequences: loopsSupporting,
       }),
-      beliefRow({
-        disposition: 'pending',
-        reason: 'post open, no closure yet',
-      }),
+      beliefRow(
+        ownFallback({
+          disposition: 'pending',
+          reason: 'post open, no closure yet',
+        }),
+      ),
     ];
   }
 
@@ -244,10 +531,12 @@ registerFeatureExtractor('M25', (events, context) => {
         supporting_sequences: loopsSupporting,
         components,
       }),
-      beliefRow({
-        disposition: 'no_eligible_event',
-        reason: `not exposed to the repeat opportunity: ${reason}`,
-      }),
+      beliefRow(
+        ownFallback({
+          disposition: 'no_eligible_event',
+          reason: `not exposed to the repeat opportunity: ${reason}`,
+        }),
+      ),
     ];
   }
 
@@ -298,5 +587,5 @@ registerFeatureExtractor('M25', (events, context) => {
         }
       : { disposition: 'pending', reason: 'normality question not yet asked' };
 
-  return [primaryRow, beliefRow(beliefFallback)];
+  return [primaryRow, beliefRow(ownFallback(beliefFallback))];
 });

@@ -29,6 +29,7 @@ import {
 } from '../exterior/m20AntennaModel';
 import type { M21Section } from '../return/m21ManualModel';
 import {
+  M21_HELD_LINES,
   M21_SECTION_REFERENCES,
   M21_SECTIONS,
   m21ApplicationReadout,
@@ -37,6 +38,7 @@ import {
   m21UnitReadout,
 } from '../return/m21ManualModel';
 import {
+  M22_HELD_LINES,
   M22_REPORT_DEFS,
   m22Acknowledged,
   m22CanWithdraw,
@@ -66,6 +68,7 @@ import {
   m21ActSetAside,
   m21ActSwitchMode,
   m21AllClosed,
+  m21HoldBackClass,
   m21State,
   m22ActAcknowledge,
   m22ActAttachCode,
@@ -78,10 +81,12 @@ import {
   m22ActWithdraw,
   m22AllDecided,
   m22DeskDone,
+  m22HoldBackClass,
   m22RatingDue,
   m22RatingProgress,
   m22State,
   m22Ui,
+  returnHeldLines,
 } from './returnWindows';
 import type { InputMode } from './windowKit';
 
@@ -258,6 +263,37 @@ const SECTION_SHORT: Record<M21Section, string> = {
   s4_code_table: 'TABLE',
 };
 
+/**
+ * A station held after a reload (U24 RL-3, r3 §9): the title kept, the two
+ * approved lines, LEAVE only, nothing written; no readout and no subtitle
+ * (the RL-2 M05 precedent, ratified by the owner's RL-2 closeout ruling 3).
+ */
+function heldStationModel(
+  host: ReturnSurfaceHost,
+  title: string,
+  status: string,
+): WorkSurfaceModel {
+  return {
+    title,
+    subtitle: '',
+    status,
+    elements: [
+      {
+        id: 'leave',
+        kind: 'button',
+        label: 'Close',
+        x: 176,
+        y: 440,
+        w: 160,
+        h: 28,
+        small: true,
+        onActivate: () => host.close(),
+      },
+    ],
+    help: 'ENTER/SPACE activate · ESC leave',
+  };
+}
+
 export function m21RelayBenchSurfaceModel(
   host: ReturnSurfaceHost,
 ): WorkSurfaceModel {
@@ -265,6 +301,16 @@ export function m21RelayBenchSurfaceModel(
   const def = m21Def(s);
   const spec = m21Spec(s);
   const unitIndex = m21ActiveCase() === 'o1' ? 1 : 2;
+  const held = m21HoldBackClass(m21ActiveCase());
+
+  // U24 RL-3: the unit on the bench is held after a reload.
+  if (held !== null) {
+    return heldStationModel(
+      host,
+      `RELAY BENCH — ${def.unit_name.toUpperCase()} (UNIT ${unitIndex} OF 2)`,
+      returnHeldLines(M21_HELD_LINES, held),
+    );
+  }
   const closed = s.closed || m21AllClosed();
   const lastApplication = s.applications[s.applications.length - 1] ?? null;
   const elements: SurfaceElement[] = [];
@@ -582,6 +628,18 @@ export function m22ReportDeskSurfaceModel(
 
   if (ratingReport !== null) {
     return m22RatingSurfaceModel(ratingReport, host);
+  }
+
+  // U24 RL-3: the report on the desk is held after a reload (a held report
+  // is decided, so it is on the desk only once the other one is decided).
+  const heldReport = m22HoldBackClass(m22ActiveReport());
+
+  if (heldReport !== null) {
+    return heldStationModel(
+      host,
+      'SHIFT REPORT DESK',
+      returnHeldLines(M22_HELD_LINES, heldReport),
+    );
   }
 
   if (m22DeskDone()) {

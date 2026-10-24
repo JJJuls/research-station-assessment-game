@@ -44,6 +44,15 @@
  * (`plot_closed`, `window_closed`) are compared with the recount and never
  * substitute for it. Read-only; the legacy family `proto_m23_field_recovery_*`
  * is never read; no total across items; no validity claim.
+ *
+ * Reload (U24 RL-3, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §3 and §4 G4):
+ * the yard-entry guard's check is now logged as the provisional
+ * `proto_m23_plots_prior_load_checked` record (stage 1 the yard briefing,
+ * stage 2 `presented`, stage 3 `opportunity_opened`), which the extractor
+ * reads: an established absence (A) reaches the first-load readings (the
+ * existing `not_presented` branches) instead of the reload branch; a series
+ * held as U or M reads `interrupted` with its class's reason, as H does with
+ * the existing one. The record is never task evidence.
  */
 import {
   isM23PlotId,
@@ -64,6 +73,18 @@ import type { RawGameEvent } from '../../systems/EventLogger';
 import type { ClosureReason } from '../protocol';
 import { registerEntry } from '../registerV3';
 import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  ROW_OCCASION,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
+import {
   absentFeature,
   emptyFeature,
   fractionFeature,
@@ -75,6 +96,53 @@ import type { FeatureDisposition, FeatureRecord } from './types';
 
 const FAMILY = 'proto_m23_plots_';
 const SYSTEM_CANCEL = new Set(['focus_loss', 'hidden', 'scene_shutdown']);
+
+/**
+ * The load's reload check (U24 RL-3; r1 §1 stage map): stage 1 the yard
+ * briefing (the route's advance to `exterior_work` — no M23 record), stage
+ * 2 the stake brief's `presented`, stage 3 the measured `opportunity_opened`
+ * (the existing F8 rule: a brief seen earlier is replayed), the series'
+ * hold-back markers (`reload_blocked` and the kit's `technical_failure`).
+ * Its head fields are those of the existing guard computation
+ * (`m23PriorLoadCheck`); D-7 (i)'s carry-forward is added. Null on a first
+ * load.
+ */
+export function m23PriorLoadRecord(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    stages: {
+      briefing: (event) =>
+        event.event_type === 'pilot_stage_advanced' &&
+        event.metadata?.to === 'exterior_work',
+      presentation: (event) => event.event_type === `${FAMILY}presented`,
+      opening: (event) => event.event_type === `${FAMILY}opportunity_opened`,
+      holdBack: (event) =>
+        event.event_type === `${FAMILY}reload_blocked` ||
+        event.event_type === `${FAMILY}technical_failure`,
+    },
+  });
+}
+
+/** The series' class from the load's check records (r3 §2). */
+export function classifyM23Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks });
+}
+
+/** The current-load reason of a held series, by its class. */
+const HELD_REASON = {
+  H: 'excavation selector measured in an earlier page load; not re-run after the reload',
+  U: 'excavation not administered after a reload: earlier history not verified',
+  M: 'excavation not administered after a reload: earlier check contradictory',
+} as const;
 
 type Outcome = 1 | 0 | null;
 
@@ -241,7 +309,7 @@ registerFeatureExtractor('M23', (events, context) => {
   // Identical duplicates (the same sequence, the same record) deduplicate;
   // two DIFFERENT records sharing a sequence are an order defect (S2).
   const seen = new Set<string>();
-  const family = events.filter((event) => {
+  const own = events.filter((event) => {
     if (
       !(
         event.page_load_index === undefined ||
@@ -264,6 +332,17 @@ registerFeatureExtractor('M23', (events, context) => {
 
     return true;
   });
+  // The check record is never task evidence (r3 §2).
+  const family = withoutPriorLoadChecks(own, FAMILY);
+  const reload = classifyM23Reload(
+    context.pageLoadIndex,
+    own
+      .filter(
+        (event) => event.event_type === `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`,
+      )
+      .map((event) => event.metadata ?? {}),
+  );
+  const cls = reload.occasions[ROW_OCCASION].class;
   const suffixOf = (event: RawGameEvent) =>
     event.event_type.slice(FAMILY.length);
   const supporting = sequencesOf(family);
@@ -694,7 +773,28 @@ registerFeatureExtractor('M23', (events, context) => {
     }),
   ];
 
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    return empty(
+      'technical_failure',
+      'a reload check record describes another page load',
+    );
+  }
+
   if (family.length === 0) {
+    // An established absence takes the first-load reading (r3 §5); a check
+    // that does not establish it holds the series (U24 RL-3).
+    if (cls === 'A') {
+      return empty('not_presented', 'excavation field never presented');
+    }
+
+    if (reload.page_reloaded && reload.check_count > 0 && cls !== null) {
+      return empty('interrupted', HELD_REASON[cls], {
+        closure_reason: 'session_end',
+      });
+    }
+
     return [
       absentFeature('M23', spec, context, 'excavation field never presented', {
         supporting_sequences: supporting,
@@ -722,9 +822,13 @@ registerFeatureExtractor('M23', (events, context) => {
   }
 
   if (heldBack) {
+    // The marker's detail names the class (U24 RL-3); the existing H detail
+    // ("reload after measured opening") carries none and keeps its reason.
+    const marked = reloadHoldBackClass(reloadBlocked?.detail);
+
     return empty(
       'interrupted',
-      'excavation selector measured in an earlier page load; not re-run after the reload',
+      HELD_REASON[marked === 'U' || marked === 'M' ? marked : 'H'],
       {
         closure_reason: 'session_end',
         components: components({ held_back_after_reload: true }),
@@ -732,11 +836,27 @@ registerFeatureExtractor('M23', (events, context) => {
     );
   }
 
+  const openedNow = family.some(
+    (event) => suffixOf(event) === 'opportunity_opened',
+  );
+
+  // After a reload, an unopened series whose class is not A is held (U24
+  // RL-3): with a check always; without one once its brief was presented in
+  // this load (U, RL-1C decision A).
   if (
-    context.reloaded &&
-    !family.some((event) => suffixOf(event) === 'opportunity_opened') &&
-    !presented
+    reload.page_reloaded &&
+    cls !== 'A' &&
+    !openedNow &&
+    (reload.check_count > 0 || presented)
   ) {
+    return empty('interrupted', HELD_REASON[cls ?? 'U'], {
+      closure_reason: 'session_end',
+    });
+  }
+
+  // `absentFeature`'s reload reading only without an established check (r3
+  // §5): under A the first-load branches below apply.
+  if (context.reloaded && cls !== 'A' && !openedNow && !presented) {
     return empty(
       'interrupted',
       'no current-load excavation evidence after a reload: neither presented nor opened in this page load',

@@ -35,7 +35,17 @@ import type { Page } from '@playwright/test';
 import { expect, test } from '@playwright/test';
 
 import { extractItemFeatures } from '../src/measurement/features';
+import {
+  classifyM23Reload,
+  m23PriorLoadRecord,
+} from '../src/measurement/features/m23';
 import { registerEntry } from '../src/measurement/registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  RELOAD_HOLD_BACK_PREFIX,
+  type ReloadEvent,
+} from '../src/measurement/reloadCheck';
 import { PILOT_SCHEDULE } from '../src/pilot/coverageSchedule';
 import {
   createExteriorEpisode,
@@ -338,6 +348,11 @@ const HAND = {
       'The excavation is closed for this shift. Work already recorded is unchanged.',
     reload_lock:
       'This excavation was opened before the page reloaded. It cannot be restarted in this session. You can continue through the station.',
+    // U24 RL-3: the owner's §9 lines (D-5), ⟨station⟩ = excavation stake.
+    reload_lock_unverified: [
+      'The earlier state of this excavation stake could not be verified.',
+      'It stays closed after this reload.',
+    ],
     plot_fault:
       'This plot is unavailable because of a technical problem. Work already recorded is saved. The other plot is unchanged. You can leave.',
   },
@@ -1156,6 +1171,7 @@ test.describe('M23 pure: the content oracle (Unit 23)', () => {
       'FIELD TRAY: Plot A component / Plot B component',
       HAND.text.series_closed,
       HAND.text.reload_lock,
+      ...HAND.text.reload_lock_unverified,
       HAND.text.plot_fault,
       ...HAND.text.statuses,
     ]);
@@ -6402,5 +6418,303 @@ test.describe('M23 layout (Unit 23)', () => {
     expect(await statusLabel(page, 'plot_b')).toContain('Not started');
     await shot(page, `a-terminal-b-available-${vp}`);
     expectNoRuntimeErrors(errors);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-3 — the logged M23 check (pure)
+ *
+ * Expected values come from RELOAD-CORRECTION-SPEC-r3-exec.md §2 (classes,
+ * permission, H / U / M readings), §3 (the common requirement), §4 G4 (log
+ * the existing check; U / M without administration), §5 (under A the
+ * first-load readings) and r1 §1 / §3 (stage 1 the yard briefing, stage 2
+ * `presented`, stage 3 `opportunity_opened`; the F8 replay unchanged);
+ * records from RL-0's helper with that map written here.
+ * ------------------------------------------------------------------ */
+
+const RL3_CONTINUOUS = {
+  first_sequence: 1,
+  sequence_gap_count: 0,
+  sequence_duplicate_count: 0,
+  recovered_from_chunks: false,
+};
+const RL3_STAGES = {
+  briefing: (event: ReloadEvent) =>
+    event.event_type === 'pilot_stage_advanced' &&
+    event.metadata?.to === 'exterior_work',
+  presentation: (event: ReloadEvent) =>
+    event.event_type === `${HAND.family}presented`,
+  opening: (event: ReloadEvent) =>
+    event.event_type === `${HAND.family}opportunity_opened`,
+  holdBack: (event: ReloadEvent) =>
+    event.event_type === `${HAND.family}reload_blocked` ||
+    event.event_type === `${HAND.family}technical_failure`,
+};
+const RL3_UNVERIFIED = `${RELOAD_HOLD_BACK_PREFIX.U}: excavation not administered`;
+const RL3_CONTRADICTORY = `${RELOAD_HOLD_BACK_PREFIX.M}: excavation not administered`;
+
+function rl3Number(
+  events: readonly RawGameEvent[],
+  load: number,
+  from: number,
+): RawGameEvent[] {
+  return events.map((event, i) => ({
+    ...event,
+    page_load_index: load,
+    sequence: from + i,
+  }));
+}
+
+/** Load 1: the yard briefing; the brief shown, or the selector measured. */
+function rl3Prior(
+  what: 'briefed' | 'brief' | 'opened' | 'held_u',
+): RawGameEvent[] {
+  const kit = makeKit();
+
+  kit.events.push({
+    session_id: 'GS',
+    timestamp_ms: 0,
+    scene: 'exterior_recovery_yard',
+    event_type: 'pilot_stage_advanced',
+    metadata: { from: 'exterior_briefing', to: 'exterior_work' },
+  });
+
+  if (what === 'brief') {
+    kit.kitLog('presented', { input_mode: 'system' });
+  } else if (what === 'opened') {
+    openKit(kit);
+  } else if (what === 'held_u') {
+    kit.kitLog('reload_blocked', {
+      detail: RL3_UNVERIFIED,
+      input_mode: 'system',
+    });
+  }
+
+  return rl3Number(kit.events, 1, 1);
+}
+
+function rl3Record(
+  prior: readonly RawGameEvent[],
+  integrity = RL3_CONTINUOUS,
+  pageLoadIndex = 2,
+) {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents: prior,
+    integrity,
+    stages: RL3_STAGES,
+  }) as unknown as Record<string, unknown>;
+}
+
+/**
+ * A reloaded load as the guard writes it: the record at yard entry (or
+ * `records`), the lock when the class is not A (`reload_blocked` with the
+ * class's detail and the kit's technical failure), then `after`.
+ */
+function rl3Load(
+  prior: RawGameEvent[],
+  options: {
+    integrity?: typeof RL3_CONTINUOUS;
+    records?: (record: Record<string, unknown>) => object[];
+    after?: (kit: Kit) => void;
+    pageLoadIndex?: number;
+  } = {},
+) {
+  const pageLoadIndex = options.pageLoadIndex ?? 2;
+  const record = rl3Record(prior, options.integrity, pageLoadIndex);
+  const records = options.records?.(record) ?? [record];
+  const reload = classifyReload({ pageLoadIndex, checks: records });
+  const cls = reload.occasions.row.class;
+  const kit = makeKit();
+
+  for (const r of records) {
+    kit.kitLog('prior_load_checked', { ...r, input_mode: 'system' });
+  }
+
+  if (cls !== 'A') {
+    const detail =
+      cls === 'H'
+        ? M23_RELOAD_DETAIL
+        : cls === 'M'
+          ? RL3_CONTRADICTORY
+          : RL3_UNVERIFIED;
+
+    kit.kitLog('reload_blocked', { detail, input_mode: 'system' });
+    kit.kitLog('technical_failure', { detail, input_mode: 'system' });
+  } else {
+    options.after?.(kit);
+  }
+
+  const current = rl3Number(kit.events, pageLoadIndex, prior.length + 1);
+  const row = extractItemFeatures('M23', [...prior, ...current], {
+    finalCoreClosed: true,
+    pageLoadIndex,
+    reloaded: true,
+  })[0];
+
+  return { record, reload, row, current };
+}
+
+const rl3Class = (reload: ReturnType<typeof classifyReload>) => [
+  reload.occasions.row.class,
+  reload.occasions.row.administration_permitted,
+];
+
+test.describe('M23 the logged reload check (U24 RL-3, pure)', () => {
+  test('the logged record keeps the existing guard computation’s fields and adds RL-0’s (stage map r1 §1); the extractor’s map is the same; a first load writes none', () => {
+    for (const what of ['briefed', 'brief', 'opened'] as const) {
+      const prior = rl3Prior(what);
+      const existing = m23PriorLoadCheck(2, prior, RL3_CONTINUOUS);
+      const record = m23PriorLoadRecord(2, prior, RL3_CONTINUOUS)!;
+
+      expect(record).toEqual(rl3Record(prior));
+      expect(record).toMatchObject(
+        existing as unknown as Record<string, unknown>,
+      );
+      expect(classifyM23Reload(2, [record])).toEqual(
+        classifyReload({ pageLoadIndex: 2, checks: [record] }),
+      );
+    }
+
+    expect(m23PriorLoadRecord(1, [], RL3_CONTINUOUS)).toBeNull();
+  });
+
+  test('H: a selector measured earlier holds the series (the existing lock and reason); F8: a brief seen earlier is A — permitted, replayed and opened as on a first load', () => {
+    const h = rl3Load(rl3Prior('opened'));
+
+    expect(rl3Class(h.reload)).toEqual(['H', false]);
+    expectRow(h.row, {
+      value: null,
+      numerator: null,
+      denominator: 0,
+      disposition: 'interrupted',
+    });
+    expect(h.row.missing_reason).toBe(
+      'excavation selector measured in an earlier page load; not re-run after the reload',
+    );
+    expect(comps(h.row).held_back_after_reload).toBe(true);
+
+    const replay = rl3Load(rl3Prior('brief'), {
+      after: (kit) => openKit(kit),
+    });
+
+    expect(rl3Class(replay.reload)).toEqual(['A', true]);
+    expect(replay.record).toMatchObject({
+      prior_presentation_found: true,
+      prior_opening_found: false,
+      prior_opening_absence_established: true,
+    });
+    expect(replay.row.disposition).toBe('pending');
+    expect(replay.row.supporting_sequences).not.toContain(
+      replay.current[0].sequence,
+    );
+  });
+
+  test('A without current-load evidence takes the first-load readings: not_presented (nothing in the load; or closed at the review), never the reload branch', () => {
+    const prior = rl3Prior('briefed');
+    const nothing = rl3Load(prior);
+
+    expect(rl3Class(nothing.reload)).toEqual(['A', true]);
+    expectRow(nothing.row, {
+      value: null,
+      numerator: null,
+      denominator: 0,
+      disposition: 'not_presented',
+    });
+
+    const review = rl3Load(prior, {
+      after: (kit) =>
+        kit.kitLog('window_closed', {
+          exit_state: 'closed_at_review',
+          input_mode: 'system',
+        }),
+    });
+
+    expect(review.row.disposition).toBe('not_presented');
+  });
+
+  test('U and M: an unverified history or a contradictory record locks the series without administration — interrupted with its reason; F-C: an earlier U lock is carried forward over a continuous history; a malformed record is a technical failure', () => {
+    const prior = rl3Prior('briefed');
+    const u = rl3Load(prior, {
+      integrity: { ...RL3_CONTINUOUS, sequence_duplicate_count: 1 },
+    });
+
+    expect(rl3Class(u.reload)).toEqual(['U', false]);
+    expect(
+      u.current.some(
+        (event) => event.event_type === `${HAND.family}opportunity_opened`,
+      ),
+    ).toBe(false);
+    expect(u.row).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason:
+        'excavation not administered after a reload: earlier history not verified',
+    });
+
+    const m = rl3Load(prior, {
+      records: (record) => [{ ...record, prior_opening_found: true }],
+    });
+
+    expect(rl3Class(m.reload)).toEqual(['M', false]);
+    expect(m.row.missing_reason).toBe(
+      'excavation not administered after a reload: earlier check contradictory',
+    );
+
+    const carried = rl3Load(rl3Prior('held_u'));
+
+    expect(carried.record.history_continuous).toBe(true);
+    expect(rl3Class(carried.reload)).toEqual(['U', false]);
+
+    const malformed = rl3Load(prior, {
+      records: (record) => [{ ...record, page_load_index: 6 }],
+    });
+
+    expect(malformed.row.disposition).toBe('technical_failure');
+  });
+
+  test('RL-1C decision A: a brief presented and left unopened in a reloaded load without its check is U and held; a first load keeps pending; an unreached reloaded load keeps the reload reading', () => {
+    const prior = rl3Prior('briefed');
+    const kit = makeKit();
+
+    kit.kitLog('presented', { input_mode: 'system' });
+
+    const row = extractItemFeatures(
+      'M23',
+      [...prior, ...rl3Number(kit.events, 2, prior.length + 1)],
+      { finalCoreClosed: false, pageLoadIndex: 2, reloaded: true },
+    )[0];
+
+    expect(row).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason:
+        'excavation not administered after a reload: earlier history not verified',
+    });
+    expect(
+      extractItemFeatures('M23', kit.events, {
+        finalCoreClosed: false,
+        pageLoadIndex: 1,
+        reloaded: false,
+      })[0].disposition,
+    ).toBe('pending');
+    expect(
+      extractItemFeatures('M23', prior, {
+        finalCoreClosed: true,
+        pageLoadIndex: 2,
+        reloaded: true,
+      })[0].disposition,
+    ).toBe('interrupted');
+  });
+
+  test('the U / M lines (r3 §9, ⟨station⟩ = excavation stake) are in the participant-string inventory; the H lock line is unchanged', () => {
+    expect(HAND.text.reload_lock).toBe(
+      'This excavation was opened before the page reloaded. It cannot be restarted in this session. You can continue through the station.',
+    );
+    expect(m23ParticipantStrings()).toEqual(
+      expect.arrayContaining([
+        'The earlier state of this excavation stake could not be verified.',
+        'It stays closed after this reload.',
+      ]),
+    );
   });
 });

@@ -18,8 +18,22 @@
 import { expect, test } from '@playwright/test';
 
 import { extractItemFeatures } from '../src/measurement/features';
+import {
+  classifyM24Reload,
+  m24PriorLoadCheck,
+} from '../src/measurement/features/m24';
+import {
+  classifyM26Reload,
+  m26PriorLoadCheck,
+} from '../src/measurement/features/m26';
 import { PILOT_SETTINGS } from '../src/measurement/protocol';
 import { registerEntry } from '../src/measurement/registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  RELOAD_HOLD_BACK_PREFIX,
+  type ReloadEvent,
+} from '../src/measurement/reloadCheck';
 import {
   createM24State,
   M24_CAP_MS,
@@ -41,6 +55,7 @@ import {
   m24NoteCycle,
   m24NoteDepletionShown,
   m24NoteStepAway,
+  m24PanelLine,
   m24Pause,
   m24PresentTest,
   m24RawComponents,
@@ -1060,4 +1075,301 @@ test.describe('M24 / M26 knowledge boundary (pure)', () => {
       });
     }
   });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-3 — the reload checks of the magnet rig (M24) and the uplink
+ * (M26) (pure)
+ *
+ * Expected values come from RELOAD-CORRECTION-SPEC-r3-exec.md §2 (classes,
+ * permission, H / U / M readings), §5 (single-occasion rows: under A the
+ * first-load reading; RL-1C decision A) and r1 §1's stage map (stage 1 the
+ * yard briefing, stage 2 `presented`, stage 3 `opportunity_opened`);
+ * records from RL-0's helper with that map written here.
+ * ------------------------------------------------------------------ */
+
+const RL3_CONTINUOUS = {
+  first_sequence: 1,
+  sequence_gap_count: 0,
+  sequence_duplicate_count: 0,
+  recovered_from_chunks: false,
+};
+const RL3_ROWS = [
+  {
+    item: 'M24' as const,
+    family: M24_FAMILY,
+    opportunity: M24_OPPORTUNITY_ID,
+    compute: m24PriorLoadCheck,
+    classify: classifyM24Reload,
+    note: { H: 'rig not re-run', U: 'rig not administered' },
+    reason: {
+      H: 'magnet rig begun in an earlier page load; not re-run after the reload',
+      U: 'magnet rig not administered after a reload: earlier history not verified',
+      M: 'magnet rig not administered after a reload: earlier check contradictory',
+    },
+    absent: 'magnet rig never begun',
+    declined: 'rig panel opened, tally never begun',
+  },
+  {
+    item: 'M26' as const,
+    family: M26_FAMILY,
+    opportunity: M26_OPPORTUNITY_ID,
+    compute: m26PriorLoadCheck,
+    classify: classifyM26Reload,
+    note: { H: 'uplink not re-run', U: 'uplink not administered' },
+    reason: {
+      H: 'uplink powered up in an earlier page load; not re-run after the reload',
+      U: 'uplink not administered after a reload: earlier history not verified',
+      M: 'uplink not administered after a reload: earlier check contradictory',
+    },
+    absent: 'uplink never powered up',
+    declined: 'uplink post opened, never powered up',
+  },
+];
+
+type Rl3Row = (typeof RL3_ROWS)[number];
+
+const rl3Stages = (family: string) => ({
+  briefing: (event: ReloadEvent) =>
+    event.event_type === 'pilot_stage_advanced' &&
+    event.metadata?.to === 'exterior_work',
+  presentation: (event: ReloadEvent) =>
+    event.event_type === `${family}presented`,
+  opening: (event: ReloadEvent) =>
+    event.event_type === `${family}opportunity_opened`,
+  holdBack: (event: ReloadEvent) =>
+    event.event_type === `${family}technical_failure`,
+});
+
+function rl3Number(
+  events: readonly RawGameEvent[],
+  load: number,
+  from: number,
+): RawGameEvent[] {
+  return events.map((event, i) => ({
+    ...event,
+    page_load_index: load,
+    sequence: from + i,
+  }));
+}
+
+/** Load 1: the yard briefing; the station opened (presented) or begun. */
+function rl3Prior(
+  row: Rl3Row,
+  what: 'briefed' | 'presented' | 'begun',
+): RawGameEvent[] {
+  const h = harness(row.family, row.opportunity);
+
+  h.events.push({
+    session_id: 's',
+    timestamp_ms: 0,
+    scene: 'exterior_recovery_yard',
+    event_type: 'pilot_stage_advanced',
+    metadata: { from: 'exterior_briefing', to: 'exterior_work' },
+  });
+
+  if (what !== 'briefed') {
+    h.presented();
+  }
+
+  if (what === 'begun') {
+    h.opened();
+  }
+
+  return rl3Number(h.events, 1, 1);
+}
+
+/** Load 2 as the runtime writes it: the record at yard entry, the marker when not A, then `after`. */
+function rl3Load(
+  row: Rl3Row,
+  prior: RawGameEvent[],
+  options: {
+    integrity?: typeof RL3_CONTINUOUS;
+    records?: (record: Record<string, unknown>) => object[];
+    after?: (h: ReturnType<typeof harness>) => void;
+  } = {},
+) {
+  const record = computePriorLoadCheck({
+    pageLoadIndex: 2,
+    priorLoadEvents: prior,
+    integrity: options.integrity ?? RL3_CONTINUOUS,
+    stages: rl3Stages(row.family),
+  }) as unknown as Record<string, unknown>;
+  const records = options.records?.(record) ?? [record];
+  const reload = classifyReload({ pageLoadIndex: 2, checks: records });
+  const cls = reload.occasions.row.class;
+  const h = harness(row.family, row.opportunity);
+
+  for (const r of records) {
+    h.push('prior_load_checked', { ...r, input_mode: 'system' });
+  }
+
+  if (cls !== 'A') {
+    const detail =
+      cls === 'H'
+        ? `${RELOAD_HOLD_BACK_PREFIX.H}: ${row.note.H}`
+        : `${RELOAD_HOLD_BACK_PREFIX[cls ?? 'U']}: ${row.note.U}`;
+
+    h.push('technical_failure', { detail, input_mode: 'system' });
+  } else {
+    options.after?.(h);
+  }
+
+  const current = rl3Number(h.events, 2, prior.length + 1);
+  const rows = extractItemFeatures(row.item, [...prior, ...current], {
+    finalCoreClosed: true,
+    pageLoadIndex: 2,
+    reloaded: true,
+  });
+
+  return { record, reload, rows, current };
+}
+
+const rl3Readings = (
+  rows: readonly { disposition: string; value: unknown }[],
+) => rows.map((row) => [row.disposition, row.value]);
+
+test('review round 1: a rig closed before its tally began (held after a reload) reads the existing "TALLY CLOSED" on its chip, never "RIG READY"; the ordinary readings are unchanged', () => {
+  const held = createM24State('deck_form_A');
+
+  m24Abort(held, 1_000);
+  expect(m24PanelLine(held, false)).toBe('TALLY CLOSED');
+  expect(m24PanelLine(held, true)).toBe('TALLY CLOSED');
+
+  const fresh = createM24State('deck_form_A');
+
+  expect(m24PanelLine(fresh, false)).toBe('RIG READY — read the panel (E)');
+  expect(m24PanelLine(fresh, true)).toBe('CATCHMENT DEPLETED');
+});
+test.describe('M24 / M26 the reload checks (U24 RL-3, pure)', () => {
+  for (const row of RL3_ROWS) {
+    test(`${row.item}: the extractor’s stage map is r1 §1’s; a first load writes none; the same classes`, () => {
+      for (const what of ['briefed', 'presented', 'begun'] as const) {
+        const prior = rl3Prior(row, what);
+        const record = computePriorLoadCheck({
+          pageLoadIndex: 2,
+          priorLoadEvents: prior,
+          integrity: RL3_CONTINUOUS,
+          stages: rl3Stages(row.family),
+        });
+
+        expect(row.compute(2, prior, RL3_CONTINUOUS)).toEqual(record);
+        expect(row.classify(2, [record!])).toEqual(
+          classifyReload({ pageLoadIndex: 2, checks: [record!] }),
+        );
+      }
+
+      expect(row.compute(1, [], RL3_CONTINUOUS)).toBeNull();
+      expect(
+        (
+          row.compute(2, rl3Prior(row, 'briefed'), RL3_CONTINUOUS) as {
+            prior_briefing_found: boolean;
+          }
+        ).prior_briefing_found,
+      ).toBe(true);
+    });
+
+    test(`${row.item}: H (begun earlier) holds all three rows — refused, interrupted with the H reason; a panel only opened earlier is A (no opening found) and declined when opened again`, () => {
+      const h = rl3Load(row, rl3Prior(row, 'begun'));
+
+      expect(h.reload.occasions.row).toMatchObject({
+        class: 'H',
+        administration_permitted: false,
+      });
+      expect(rl3Readings(h.rows)).toEqual([
+        ['interrupted', null],
+        ['interrupted', null],
+        ['interrupted', null],
+      ]);
+      expect(h.rows[0].missing_reason).toBe(row.reason.H);
+
+      const a = rl3Load(row, rl3Prior(row, 'presented'), {
+        after: (hh) => hh.presented(),
+      });
+
+      expect(a.reload.occasions.row).toMatchObject({
+        class: 'A',
+        administration_permitted: true,
+      });
+      expect(a.rows[0]).toMatchObject({
+        disposition: 'declined',
+        missing_reason: row.declined,
+      });
+      expect(a.rows[0].supporting_sequences).not.toContain(
+        a.current[0].sequence,
+      );
+    });
+
+    test(`${row.item}: A with no evidence in the load reads not_presented (first-load reading); U and M hold the station with their reasons; a malformed record is a technical failure`, () => {
+      const prior = rl3Prior(row, 'briefed');
+
+      expect(rl3Readings(rl3Load(row, prior).rows)).toEqual([
+        ['not_presented', null],
+        ['not_presented', null],
+        ['not_presented', null],
+      ]);
+      expect(rl3Load(row, prior).rows[0].missing_reason).toBe(row.absent);
+
+      const u = rl3Load(row, prior, {
+        integrity: { ...RL3_CONTINUOUS, first_sequence: 2 },
+      });
+
+      expect(u.reload.occasions.row.class).toBe('U');
+      expect(u.rows[0]).toMatchObject({
+        disposition: 'interrupted',
+        missing_reason: row.reason.U,
+      });
+
+      const m = rl3Load(row, prior, {
+        records: (record) => [{ ...record, prior_opening_found: true }],
+      });
+
+      expect(m.reload.occasions.row.class).toBe('M');
+      expect(m.rows[2]).toMatchObject({
+        disposition: 'interrupted',
+        missing_reason: row.reason.M,
+      });
+
+      const malformed = rl3Load(row, prior, {
+        records: (record) => [{ ...record, page_load_index: 4 }],
+      });
+
+      expect(malformed.rows.map((r) => r.disposition)).toEqual([
+        'technical_failure',
+        'technical_failure',
+        'technical_failure',
+      ]);
+    });
+
+    test(`${row.item}: RL-1C decision A — the station opened in a reloaded load without its check, never begun, is U and held; a first load keeps declined; an unreached reloaded load keeps the absentFeature reading`, () => {
+      const prior = rl3Prior(row, 'briefed');
+      const h = harness(row.family, row.opportunity);
+
+      h.presented();
+
+      const rows = extractItemFeatures(
+        row.item,
+        [...prior, ...rl3Number(h.events, 2, prior.length + 1)],
+        { finalCoreClosed: true, pageLoadIndex: 2, reloaded: true },
+      );
+
+      expect(rows[0]).toMatchObject({
+        disposition: 'interrupted',
+        missing_reason: row.reason.U,
+      });
+      expect(
+        extractItemFeatures(row.item, h.events, CONTEXT)[0].disposition,
+      ).toBe('declined');
+      expect(
+        extractItemFeatures(row.item, prior, {
+          finalCoreClosed: true,
+          pageLoadIndex: 2,
+          reloaded: true,
+        })[0],
+      ).toMatchObject({
+        disposition: 'interrupted',
+        missing_reason: `no current-load evidence after a reload: ${row.absent}`,
+      });
+    });
+  }
 });

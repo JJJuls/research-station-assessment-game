@@ -13,9 +13,30 @@
  * censor the count (its value kept). Read-only over the raw
  * `proto_m24_rig_*` events; the count is recounted from the
  * `postknowledge_cast` events (a disagreeing record ⇒ technical_failure).
+ *
+ * Reload (U24 RL-3, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G5 and §5):
+ * the load's `prior_load_checked` record classifies the rig H / A / U / M
+ * (stage 1 the yard briefing, stage 2 the panel's `presented`, stage 3
+ * `opportunity_opened`). A held rig reads `interrupted` on all three rows
+ * with its class's reason; under A the first-load readings apply
+ * (`declined` / `not_presented`); a panel opened in a reloaded load without
+ * its check, the tally never begun, is U (RL-1C decision A). The record is
+ * never task evidence.
  */
 import type { KnowledgeStatus } from '../protocol';
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  ROW_OCCASION,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -73,16 +94,66 @@ interface M24Raw {
   stop_choice: string | null;
 }
 
+/**
+ * The load's reload check (U24 RL-3; r1 §1 stage map, confirmed against the
+ * code): stage 1 the yard briefing (the route's advance to `exterior_work`
+ * — no M24 record), stage 2 the rig panel's `presented`, stage 3 the
+ * tally's `opportunity_opened`, the row's hold-back markers. Null on a
+ * first load.
+ */
+export function m24PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    stages: {
+      briefing: (event) =>
+        event.event_type === 'pilot_stage_advanced' &&
+        event.metadata?.to === 'exterior_work',
+      presentation: (event) => event.event_type === `${FAMILY}presented`,
+      opening: (event) => event.event_type === `${FAMILY}opportunity_opened`,
+      holdBack: (event) => event.event_type === `${FAMILY}technical_failure`,
+    },
+  });
+}
+
+/** The rig's class from the load's check records (r3 §2). */
+export function classifyM24Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks });
+}
+
+/** The current-load reason of a held rig, by its class. */
+const HELD_REASON = {
+  H: 'magnet rig begun in an earlier page load; not re-run after the reload',
+  U: 'magnet rig not administered after a reload: earlier history not verified',
+  M: 'magnet rig not administered after a reload: earlier check contradictory',
+} as const;
+
 registerFeatureExtractor('M24', (events, context) => {
   const entry = registerEntry('M24');
   const [primary, sensitivity, companion] = entry.features;
   const load = currentLoadEvents(events, context);
-  const family = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const own = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const family = withoutPriorLoadChecks(own, FAMILY);
   const supporting = sequencesOf(family);
   const presented = eventsOfType(load, `${FAMILY}presented`);
   const opened = eventsOfType(load, `${FAMILY}opportunity_opened`);
   const closed = eventsOfType(load, `${FAMILY}window_closed`);
   const failed = eventsOfType(load, `${FAMILY}technical_failure`);
+  const reload = classifyM24Reload(
+    context.pageLoadIndex,
+    eventsOfType(own, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+  const cls = reload.occasions[ROW_OCCASION].class;
   const casts = eventsOfType(load, `${FAMILY}postknowledge_cast`);
   const answered = eventsOfType(load, `${FAMILY}understanding_answered`);
   const all = (
@@ -101,9 +172,43 @@ registerFeatureExtractor('M24', (events, context) => {
     emptyFeature('M24', companion, disposition, reason, extra),
   ];
 
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    return all(
+      'technical_failure',
+      'a reload check record describes another page load',
+    );
+  }
+
   if (opened.length === 0) {
+    // The hold-back of this load (U24 RL-3): its marker names the class.
+    const marker = failed
+      .map((event) => reloadHoldBackClass(meta<unknown>(event, 'detail')))
+      .find((marked) => marked !== null);
+
+    if (marker !== undefined && marker !== null) {
+      return all('interrupted', HELD_REASON[marker]);
+    }
+
+    // After a reload a rig whose class is not A is held: with a check
+    // always; without one once its panel was opened in this load (U,
+    // RL-1C decision A).
+    if (
+      reload.page_reloaded &&
+      cls !== 'A' &&
+      (reload.check_count > 0 || presented.length > 0)
+    ) {
+      return all('interrupted', HELD_REASON[cls ?? 'U']);
+    }
+
     if (presented.length > 0) {
       return all('declined', 'rig panel opened, tally never begun');
+    }
+
+    // An established absence takes the first-load reading (r3 §5).
+    if (cls === 'A') {
+      return all('not_presented', 'magnet rig never begun');
     }
 
     return [

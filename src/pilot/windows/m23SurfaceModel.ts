@@ -22,6 +22,7 @@
  * examples are marked CONTROL EXAMPLE — NOT A SEARCH PLOT and create no
  * attempt. No questionnaire wording anywhere.
  */
+import { reloadHoldBackClass } from '../../measurement/reloadCheck';
 import type { SurfaceElement, WorkSurfaceModel } from '../ui/WorkSurfaceScene';
 import {
   M23_BEACON_GLYPH,
@@ -530,9 +531,18 @@ function recordView(
 ): WorkSurfaceModel {
   // A whole-series fault closed the excavation: the series-closed line (the
   // plot-fault line speaks of "the other plot", true only for a plot fault,
-  // which the field's feedback line carries at the fault itself).
+  // which the field's feedback line carries at the fault itself). A series
+  // held after a reload shows the existing lock line (H) or, U24 RL-3, the
+  // two approved lines when its earlier state could not be verified or its
+  // check is contradictory (U / M; r3 §9).
+  const heldClass =
+    s.status === 'held_back' ? reloadHoldBackClass(s.fault_detail) : null;
   const line =
-    s.status === 'held_back' ? M23_TEXT.reload_lock : M23_TEXT.series_closed;
+    s.status !== 'held_back'
+      ? M23_TEXT.series_closed
+      : heldClass === 'U' || heldClass === 'M'
+        ? M23_TEXT.reload_lock_unverified.join('\n')
+        : M23_TEXT.reload_lock;
 
   return {
     title: M23_TEXT.title,

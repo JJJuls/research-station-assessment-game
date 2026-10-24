@@ -18674,3 +18674,173 @@ Finish with the closeout status, durable evidence paths, bounded correction spec
   inventory beside the M12 note's limitation. (7) B2 stays open.
 - **Not claimed.** RL-2 does not make the game fully verified or ready for
   participant collection; RL-3, RL-4 and the RL-F recapture remain.
+
+## U24 RL-3 — reload guards for M17, M21, M22, M24, M26, the logged M23 check and M25 (24 October 2026)
+
+- **The owner's RL-2 closeout rulings, verbatim** (recorded before any RL-3
+  implementation edit; frozen in the RL-2 closeout evidence as
+  `OWNER-RULING-RL2-CLOSEOUT-2026-10-24.txt`, SHA-256 `abce165359001631424b1891e0385b2439022e3433596ad655db50d0252882d2`;
+  report `C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-evidence\RL-2-closeout\CLOSEOUT-REPORT.md`; register §5.408):
+
+  ```text
+  I confirm the following RL-2 interpretations and authorize a bounded investigation of the traced S3 failure.
+
+  Owner rulings:
+  1. For M09, M10 and M11, retain earlier offer presentation as the existing reload hold-back trigger. The prior_opening_found field and sequence pointers refer to that presentation, not an inferred answer, acceptance or task action. Document this for Part C. Do not generalize it to M05 or redefine the underlying events.
+
+  2. Confirm the M10/M11 held-plus-observed reading where the current family check establishes the held occasion: interrupted, retaining the independently observed sibling’s existing contribution. Add no value or denominator for the held occasion. Preserve A occasions’ first-load readings and the approved fallback for a genuinely unreached family without a check. Record that this disposition change can affect downstream inclusion.
+
+  3. Accept M05’s accessible read-only held screen, including H, without the misleading readout or subtitle. Preserve first-load behaviour and the approved status wording.
+
+  4. Accept the specific absence of a runtime M05 M-screen capture for continuing the correction work, provided it remains explicitly inspection-only in the evidence inventory. This is not a general waiver of M-class testing. B2 remains open.
+
+  Traced S3:
+  I do not waive the two failed traced runs or authorize labelling them pre-existing.
+
+  First inspect the existing failure logs, stack information, trace artifacts and baseline evidence. Identify which operation owns the 120-second limit and distinguish scenario completion, export completion and trace finalization. Compare artifact sizes and available timing evidence. Do not infer a resource cause merely from the large trace.
+
+  If that evidence supports a remedy confined to the permitted scratchpad runner and evidence-finalization settings, document the exact change and its justification, then have Sonnet perform one controlled traced S3 verification. Preserve gameplay/assertion time limits, assertions and trace coverage. Do not disable tracing, reduce required evidence or retry unchanged runs until one passes.
+
+  If the remedy needs repository/configuration changes or another out-of-scope dependency, stop with the exact proposed change and required path. Do not bypass the guard.
+
+  Report the actual exit status, whether the completed trace is readable, and whether all required scenario/export checks passed. Preserve both original failures. A passing adjusted run does not erase them or prove a cause beyond the evidence.
+
+  Record these rulings and the investigation in a separate closeout report, with preservation instructions; leave the frozen RL-2 evidence unchanged. No amend, new commit, broad audit, Fable, RL-3, Part C, push or merge in this step.
+  ```
+
+- **The owner's RL-3 instruction, verbatim** (saved in the RL-3 evidence as
+  `OWNER-INSTRUCTION-RL3-2026-10-24.txt`, SHA-256 `ed993366bb3b8fd266d76bf683b06b3bd9206efb53431e99e22a9ef83826148e`):
+
+  ```text
+  I accept the RL-2 closeout for continuing the approved correction sequence. Execute RL-3 only, starting from 5106b0f0a1ffd0c525969bf07a84f9309616d735.
+
+  Read completely:
+  1. C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-correction\RL-EXECUTE-3.md
+  2. C:\Users\Juls\.codex\visualizations\2026\10\24\u24-rl-correction-1c\RL-EXTENSION-NOTE.md
+  3. C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-evidence\RL-2-closeout\CLOSEOUT-REPORT.md
+
+  Follow the RL-3 brief and its referenced authorities, amended by the extension note. My existing authorization covers the named branch/worktree, exact allowlist, verification, reviews and one local commit.
+
+  Before implementation edits, complete the entry gates and PLAN.md. Record the four already-approved RL-2 closeout rulings in the register and UNIT-LOG, resolving the stale “owner confirmation requested” statements by reference to the closeout report. Preserve their qualifications, the inspection-only evidence limitations and B2’s open status.
+
+  I approve --timeout=600000 for the isolated traced S3 invocation, including the later RL-F S3 run when that unit is reached. First confirm that S3’s explicit test timeout and hook/fixture structure still make this adjustment preserve gameplay, assertion and action limits. Keep full tracing, workers 1 and retries 0. Record the exact command and result. Do not apply this setting to the wider suite or edit Playwright configuration. If it cannot remain isolated as described, checkpoint with the specific dependency.
+
+  Preserve both original RL-2 failures and the frozen closeout evidence. Describe the timeout mechanism as established, the reason for slower finalization as unresolved, and the adjusted run as passing without claiming it proves the increased allowance caused that pass.
+
+  Opus 5.5 remains the sole writer, Sonnet 5.5 performs scheduled verification, and the specified Opus reviewers remain read-only. Follow the existing correction and stop conditions; no additional broad audit or repeat of completed RL-2 verification.
+
+  Finish with the single RL-3 commit, verified durable evidence and the required handoff. No Fable, RL-4 execution, Part C, push or merge.
+  ```
+
+- **Resolution of the stale requests** (register §5.408, by reference to the
+  closeout report): the "OWNER CONFIRMATION REQUESTED" statements of
+  register §5.407 readings (a) and (d) and the ratification asked for
+  reading (g) — repeated in UNIT-LOG "U24 RL-2" ("For the owner" items 1–3
+  and the reviews' notes) — are resolved by closeout rulings 1–3, with their
+  qualifications: (a) M09–M11 `prior_opening_found` / sequences mean the
+  earlier presentation, M05 the earlier answer, not generalised, no event
+  redefined; (d) the M10 / M11 held-plus-observed reading, which can affect
+  downstream inclusion; (g) M05's read-only held screen including H, no
+  readout or subtitle. Ruling 4: the M05 M screen stays inspection-only in
+  the evidence inventory, beside the M12 note's limitation; not a general
+  waiver of M-class testing. **B2 remains open.** Item 5 of "For the owner"
+  (the traced S3 failures) was investigated in the closeout: the
+  trace-finalization timeout mechanism is established, the reason for the
+  slower finalization unresolved; the adjusted run passed without proving
+  the allowance caused the pass; both original failures stand.
+- **Authority (by reference).** The brief `RL-EXECUTE-3.md` (SHA-256
+  `8dec4700404ea6cabd171e9d1bee6ad7616239118c56ef6020f4ebccb3851ed7`) with
+  `RL-EXTENSION-NOTE.md` (`b2e9559e…f126`), the owner's rulings of 23
+  October 2026 and 24 October 2026 (RL-1C), `RELOAD-CORRECTION-SPEC-r3-exec.md`,
+  the RL-2 closeout report and its rulings (register §5.408) and the owner's
+  RL-3 instruction above. The packages, r2 and the RL-0 to RL-2-closeout
+  evidence are unchanged. The D-1 room exception covers the Laboratory, the
+  Yard, the Concourse and the Workshop return.
+- **Gate.** Writer `claude-opus-5-5`; root, branch `codex/u24-end-to-end`
+  and HEAD `5106b0f…` (the RL-2 commit); status `?? .agents/`, `?? .codex/`
+  only; `CLAUDE_UNIT_ALLOWLIST` equal to `RL-ALLOWLIST-3.txt` (37 paths);
+  the frozen U24 evidence (B to B-closeout-4) and the RL-0, RL-1, RL-1C,
+  RL-2 and RL-2-closeout evidence present with their manifests hashed; the
+  ten foreign files hash-identical to
+  `FOREIGN-INVENTORY-SUPPLEMENT-2026-10-22.json`; the S3 `--timeout`
+  precondition confirmed (S3 sets `test.setTimeout(7_200_000)` itself; no
+  hooks or custom fixtures; the configuration sets only the project timeout);
+  the closeout rulings recorded here and in register §5.408 before any
+  implementation edit; `PLAN.md` written before the first implementation
+  edit.
+- **Work.** As register §5.409 states: the single provisional
+  `prior_load_checked` record of M17, M21, M22, M23 (the existing check now
+  logged), M24, M26 and one M25 record for the post, the question and the
+  notice, each at its first host; H held with a prior-exposure entry, U / M
+  never administered; D-2 (i) for M21 / M22; D-3 = P for the M25 question
+  (`exposure_page_load_index`; the comparable-clock delay); the §9 H and U /
+  M lines (M23's and the post's existing texts kept); the one scene edit in
+  the three M24 / M26 panel-open handlers. Writer's readings (a)–(o) are in
+  §5.409.
+- **Verification** (durable evidence
+  `C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-evidence\RL-3\`,
+  with its manifest). Static: `lint:tsc`, build, ESLint, the spec type-check
+  (one error, pre-existing on the start commit in an existing harness),
+  `git diff --check`, the format check and commitlint. Pure: 46 new RL-3
+  tests (the M21 and M22 D-2 (i) tables, F-D / F-E for both, F-A–F-C for
+  M21, M23 and M25, M25 cases 1–4, F-F, M17 / M23 / M24 / M26 classes and
+  readings, decision A, malformed, the record never evidence), plus two
+  added after review — first run red against an untouched copy of the start
+  commit (46 of 46 failed, several at the missing exports); the affected
+  pure regression 332 passed (`final_scientific_gates` "M08 and M11 are
+  questionnaire-primary" fails identically on the untouched start commit —
+  pre-existing, outside RL-3); M23's pure and extraction tests 43 passed.
+  Browser (genuine `page.reload()`, traces on, 800 × 600, ordinary input),
+  evidence of record on the final source: 4 of 4 passed (31.6 min) — R1 +
+  R4 + R6 (H) + R5 case 2; R2 + R5 case 3 (first display in load 3,
+  `exposure_page_load_index` 2, the delay from load 2's closure within 50
+  ms); R3 + R6 (U, fault-injected); R5 case 4; 16 screenshots. Regressions:
+  M23's B3 reload lock and the M24 / M26 first-load route, 2 of 2. U24: S3
+  traced with `--timeout=600000` (the owner-approved, isolated setting; full
+  tracing, workers 1, retries 0) passed, exit 0, 22.2 min; the trace archive
+  complete and readable (21 556 entries; merge ≈109.4 s); L1 byte-equal;
+  V-5 (b) with the RL-3 expectations passed (load-4 readings; checks per
+  load; M25 case 1; the post's R2 in load 2). As the owner directed: the
+  timeout mechanism is established (the trace-finalization slot), the
+  reason for the slower finalization in the two RL-2 failures stays
+  unresolved, and this pass does not prove that the larger allowance caused
+  it; both RL-2 failures and the frozen closeout evidence are unchanged.
+- **Reviews** (read-only; reports in the evidence's `reviews\`). Opus 5.5
+  (`claude-opus-5-5`) scientific, two rounds: no BLOCKING; MAJOR-1 (the M22
+  companion beside a held report) recorded as reading (n) with the owner's
+  alternatives; MINOR-1 (M22's `understanding_failed` overwritten) fixed —
+  the denominator-0 override narrowed to a would-be `no_eligible_event`;
+  MINOR-3 (addendum wording) fixed; MINOR-2, -4, -5 and NOTE-1–4 recorded;
+  round 2 resolved, the precedent wording refined. Opus 5.5 gameplay, two
+  rounds: usable, no BLOCKING; MAJOR-1 (a held notice leaves the Workshop
+  guidance on the handover desk — the fix is in `RecordsWorkshopScene.ts`,
+  outside the allowlist) recorded for the owner with the smallest remedy;
+  MINOR-1 (the held rig's chip read "RIG READY") fixed; the rest recorded.
+  Opus 5.5 visual, two rounds: the §9 strings exact on all 16 screens;
+  MAJOR 1 (the held M17 terminal does not look "LEAVE only": the shared
+  terminal's outlined disabled buttons and typing footer, outside the
+  allowlist) recorded for the owner — a move of the lines into the output
+  panel overflowed it and was reverted; MINOR 2–5 recorded.
+  Sonnet 5.5 (`claude-sonnet-5-5`) scheduled verification, two rounds: no
+  BLOCKING or MAJOR — `lint:tsc`, build, `git diff --check` clean; the spec
+  type-check only the one pre-existing error; pure specs 97 and 43 passed;
+  R3 + R6 (U) re-run with a genuine reload passed (4.9 min); V-5 (b) passed
+  on the final S3 export; the S3 account (command, exit, readable trace,
+  timeout precondition) confirmed; 10 of 11 sampled expectations trace to
+  r3, the ruling or first-load rules (the null / null beside a held and a
+  declined case is r3 §5's "null/null if none was [opened]"). MINOR-1 (six
+  prettier errors in the new U24 spec lines) fixed by `eslint --fix`; round
+  2: ESLint exit 0, V-5 (b) passed again. MINOR-3 (writer-chosen reason
+  strings and the "not later than now" comparability test) recorded.
+- **For the owner (recorded, not decided here).** (1) The M22 ratings
+  companion beside a held report (reading (n); three alternatives). (2) The
+  null reason "earlier closure time not recorded" (reading (b)). (3)
+  Inspection-only coverage of the M screens of M17, M21, M22, M23, M24, M26
+  and the M25 post (reading (m); ruling 4 covered M05 only). (4) The held
+  notice's Workshop guidance (gameplay MAJOR-1; needs `RecordsWorkshopScene.ts`
+  and an accessor). (5) The held M17 terminal's shared-scene controls and
+  footer (visual MAJOR 1; needs `SignalTerminalScene.ts` / `UiButton.ts`).
+  (6) The review items of reading (o). (7) B2 stays open; every other open
+  decision stays open; nothing promoted to canonical.
+- **Not claimed.** RL-3 does not make the game fully verified or ready for
+  participant collection; RL-4 and the RL-F recapture remain.

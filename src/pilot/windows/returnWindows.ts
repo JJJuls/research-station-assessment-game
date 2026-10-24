@@ -19,11 +19,36 @@
  * - M25 is a presentation window only (questionnaire-primary handoff).
  *
  * Session-scope singleton (page lifetime, like every pilot window).
+ *
+ * Reload (U24 RL-3, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G5, §5 and
+ * §9): the return shift's presentation of M21 and M22 writes each family's
+ * single `prior_load_checked` record before any opening and holds every
+ * case / report whose class is not A — closed for this load (H with the
+ * prior-exposure entry and marker; U / M without administration); the
+ * bench and desk never enter a held one and show the two approved lines
+ * when the one on them is held. The Workshop's declaration ensures the
+ * M25 record (`ensureM25PriorLoadCheck`) and holds the questionnaire
+ * notice the same way: a held notice is not presented.
  */
+import {
+  classifyM21Reload,
+  m21PriorLoadCheck,
+} from '../../measurement/features/m21';
+import {
+  classifyM22Reload,
+  m22PriorLoadCheck,
+} from '../../measurement/features/m22';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClass,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
 import {
   opportunityValidity,
   serializeOpportunities,
 } from '../../measurement/validity';
+import { researchRuntime } from '../../systems';
 import type { M20IndoorStage } from '../exterior/m20AntennaModel';
 import {
   M20_INDOOR_STAGE_MS,
@@ -136,6 +161,11 @@ import {
 } from '../return/m25HandoffModel';
 import { phaseMetadata } from '../return/returnEpisodeModel';
 import { exteriorEpisode, exteriorWindows } from './exteriorWindows';
+import {
+  ensureM25PriorLoadCheck,
+  m25PriorLoadCheckWritten,
+  m25ReloadHeldClass,
+} from './m25Repetition';
 import {
   assignCounterbalance,
   currentSessionId,
@@ -307,6 +337,212 @@ export function declareReturnWindows() {
   w.m22.o1.declare();
   w.m22.o2.declare();
   w.m25.declare();
+  // U24 RL-3: the Workshop is an M25 host (the probe): the family's one
+  // record is ensured and a notice that is not A is held before any
+  // presentation.
+  ensureM25PriorLoadCheck();
+  guardM25Probe();
+}
+
+// ——— U24 RL-3: the reload checks of the return shift ——————————————————
+
+type HeldClass = Exclude<ReloadClass, 'A'>;
+
+/** This load's checks (undefined until their host ran in this load). */
+let m21Check: PriorLoadCheck | null | undefined;
+let m22Check: PriorLoadCheck | null | undefined;
+/** Held cases / reports / notice of this load, by class. */
+let m21Held: Partial<Record<M21Case, HeldClass>> = {};
+let m22Held: Partial<Record<M22Report, HeldClass>> = {};
+let m25ProbeHeld: HeldClass | null = null;
+
+/** The class an unopened occasion's check gives (null: administered). */
+function heldOf(
+  classification: { occasions: Record<string, { class: ReloadClass | null }> },
+  occasion: string,
+): HeldClass | null {
+  const cls = classification.occasions[occasion]?.class ?? null;
+
+  return cls === null || cls === 'A' ? null : cls;
+}
+
+/** Writes M21's check once (never on a first load), through unit 1's window. */
+function ensureM21Check(): PriorLoadCheck | null {
+  if (m21Check === undefined) {
+    m21Check = m21PriorLoadCheck(
+      researchRuntime.getPageLoadIndex(),
+      researchRuntime.getPriorPageLoadEvents(),
+      researchRuntime.getEventIntegrity(),
+    );
+
+    if (m21Check !== null) {
+      returnWindows().m21.o1.log(PRIOR_LOAD_CHECK_SUFFIX, {
+        ...m21Check,
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return m21Check;
+}
+
+/** Writes M22's check once (never on a first load), through report 1's window. */
+function ensureM22Check(): PriorLoadCheck | null {
+  if (m22Check === undefined) {
+    m22Check = m22PriorLoadCheck(
+      researchRuntime.getPageLoadIndex(),
+      researchRuntime.getPriorPageLoadEvents(),
+      researchRuntime.getEventIntegrity(),
+    );
+
+    if (m22Check !== null) {
+      returnWindows().m22.o1.log(PRIOR_LOAD_CHECK_SUFFIX, {
+        ...m22Check,
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return m22Check;
+}
+
+/**
+ * Reload guard of the bench (register §5.14; U24 RL-3): each unopened case
+ * of a reloaded load is held unless its class is A — closed for this load,
+ * the window's technical failure with the class's detail, the prior-exposure
+ * entry for H only. Its sibling keeps its own class (D-2 (i); direction d).
+ */
+function guardM21Reload() {
+  const check = ensureM21Check();
+  const classes = classifyM21Reload(
+    researchRuntime.getPageLoadIndex(),
+    check === null ? [] : [check],
+  );
+
+  for (const caseId of M21_CASES) {
+    const w = m21CaseWindow(caseId);
+
+    if (m21Held[caseId] !== undefined || w.windowStatus() !== 'unopened') {
+      continue;
+    }
+
+    const cls = heldOf(classes, caseId);
+
+    if (cls === null) {
+      continue;
+    }
+
+    const s = m21CaseState(caseId);
+    const detail = reloadHoldBackDetail(
+      cls,
+      cls === 'H' ? 'bench unit not re-run' : 'bench unit not administered',
+    );
+
+    m21Held[caseId] = cls;
+    s.technical_failure = detail;
+    s.closed = true;
+
+    if (cls === 'H') {
+      w.recordPriorExposure(
+        'relay bench unit opened in an earlier page load of this identity',
+      );
+    }
+
+    w.technicalFailure(detail);
+  }
+}
+
+/** The same rule for the report desk's two reports (U24 RL-3). */
+function guardM22Reload() {
+  const check = ensureM22Check();
+  const classes = classifyM22Reload(
+    researchRuntime.getPageLoadIndex(),
+    check === null ? [] : [check],
+  );
+
+  for (const report of M22_REPORTS) {
+    const w = m22ReportWindow(report);
+
+    if (m22Held[report] !== undefined || w.windowStatus() !== 'unopened') {
+      continue;
+    }
+
+    const cls = heldOf(classes, report);
+
+    if (cls === null) {
+      continue;
+    }
+
+    const s = m22ReportState(report);
+    const detail = reloadHoldBackDetail(
+      cls,
+      cls === 'H' ? 'report not re-run' : 'report not administered',
+    );
+
+    m22Held[report] = cls;
+    s.technical_failure = detail;
+    s.phase = 'closed';
+
+    if (cls === 'H') {
+      w.recordPriorExposure(
+        'shift report opened in an earlier page load of this identity',
+      );
+    }
+
+    w.technicalFailure(detail);
+  }
+}
+
+/**
+ * Reload guard of the questionnaire notice (U24 RL-3): an unopened notice
+ * of a reloaded load is held unless its class in the one M25 record is A —
+ * never presented (no screen: the notice is simply not offered as new).
+ */
+function guardM25Probe() {
+  const w = returnWindows().m25;
+
+  if (m25ProbeHeld !== null || w.windowStatus() !== 'unopened') {
+    return;
+  }
+
+  const cls = m25ReloadHeldClass('probe');
+
+  if (cls === null) {
+    return;
+  }
+
+  m25ProbeHeld = cls;
+
+  if (cls === 'H') {
+    w.recordPriorExposure(
+      'questionnaire notice presented in an earlier page load of this identity',
+    );
+  }
+
+  w.technicalFailure(
+    reloadHoldBackDetail(
+      cls,
+      cls === 'H' ? 'notice not re-run' : 'notice not administered',
+    ),
+  );
+}
+
+/** The class a bench unit is held under after a reload (null: not held). */
+export function m21HoldBackClass(caseId: M21Case): HeldClass | null {
+  return m21Held[caseId] ?? null;
+}
+
+/** The class a report is held under after a reload (null: not held). */
+export function m22HoldBackClass(report: M22Report): HeldClass | null {
+  return m22Held[report] ?? null;
+}
+
+/** The two approved lines of the bench / desk when the one on it is held. */
+export function returnHeldLines(
+  lines: Readonly<Record<'H' | 'U', readonly [string, string]>>,
+  cls: HeldClass,
+): string {
+  return lines[cls === 'H' ? 'H' : 'U'].join('\n');
 }
 
 function elapsedSince(openedAt: number | null, nowMs: number): number {
@@ -581,14 +817,22 @@ function m21Snapshot(caseId: M21Case): Record<string, unknown> {
   };
 }
 
-/** Both cases are PRESENTED with the return shift's work orders. */
+/**
+ * Both cases are PRESENTED with the return shift's work orders. After a
+ * reload the check is written first and each case that is not A is held
+ * here, at its availability (U24 RL-3).
+ */
 export function m21Present(nowMs: number) {
+  ensureM21Check();
+
   for (const caseId of M21_CASES) {
     const w = m21CaseWindow(caseId);
 
     w.setComprehension('not_required');
     w.present(nowMs, m21Snapshot(caseId));
   }
+
+  guardM21Reload();
 }
 
 export function m21State(
@@ -618,6 +862,10 @@ function m21EnterCase(caseId: M21Case, nowMs: number, inputMode: InputMode) {
 
 /** Bench surface opened: entry (once per case) or a reopening. */
 export function m21BenchOpen(nowMs: number, inputMode: InputMode) {
+  // U24 RL-3: the check precedes any opening; a held case is closed, so
+  // the bench never enters it.
+  guardM21Reload();
+
   if (m21AllClosed()) {
     return;
   }
@@ -1043,6 +1291,12 @@ export function m21BenchLeave(nowMs: number) {
 
 /** Never opened → absent; open at the review → censored (no resolution, no observation). */
 export function closeM21AtReview(nowMs: number) {
+  // A check of this load holds a case that is not A: held, never absent
+  // (U24 RL-3; U is never `participant_absent`).
+  if (m21Check != null) {
+    guardM21Reload();
+  }
+
   for (const caseId of M21_CASES) {
     const s = m21CaseState(caseId);
     const w = m21CaseWindow(caseId);
@@ -1149,14 +1403,22 @@ function m22Snapshot(report: M22Report): Record<string, unknown> {
   };
 }
 
-/** Both reports are PRESENTED with the return shift's work orders. */
+/**
+ * Both reports are PRESENTED with the return shift's work orders. After a
+ * reload the check is written first and each report that is not A is held
+ * here, at its availability (U24 RL-3).
+ */
 export function m22Present(nowMs: number) {
+  ensureM22Check();
+
   for (const report of M22_REPORTS) {
     const w = m22ReportWindow(report);
 
     w.setComprehension('not_required');
     w.present(nowMs, m22Snapshot(report));
   }
+
+  guardM22Reload();
 }
 
 export function m22State(
@@ -1263,6 +1525,9 @@ export function m22RatingProgress(): { position: number; total: number } {
 
 /** Desk surface opened: entry (once per report) or a reopening. */
 export function m22DeskOpen(nowMs: number, inputMode: InputMode) {
+  // U24 RL-3: the check precedes any opening; a held report is decided
+  // (closed), so the desk never enters it.
+  guardM22Reload();
   returnEpisode().m22_ui.selected = null;
 
   if (m22AllDecided()) {
@@ -1731,6 +1996,12 @@ export function m22DeskLeave(nowMs: number) {
 }
 
 export function closeM22AtReview(nowMs: number) {
+  // A check of this load holds a report that is not A: held, never absent
+  // (U24 RL-3; U is never `participant_absent`).
+  if (m22Check != null) {
+    guardM22Reload();
+  }
+
   for (const report of M22_REPORTS) {
     const s = m22ReportState(report);
     const w = m22ReportWindow(report);
@@ -1808,7 +2079,11 @@ export function m25PresentNotice(nowMs: number) {
   const s = returnEpisode().m25;
   const w = returnWindows().m25;
 
-  if (!m25Present(s, nowMs)) {
+  // U24 RL-3: a notice held after a reload is never presented again.
+  ensureM25PriorLoadCheck();
+  guardM25Probe();
+
+  if (m25ProbeHeld !== null || !m25Present(s, nowMs)) {
     return;
   }
 
@@ -1847,6 +2122,15 @@ export function closeM25AtReview(nowMs: number) {
   const w = returnWindows().m25;
 
   if (w.windowStatus() === 'unopened') {
+    // A check of this load holds a notice that is not A (U24 RL-3).
+    if (m25PriorLoadCheckWritten()) {
+      guardM25Probe();
+    }
+
+    if (m25ProbeHeld !== null) {
+      return;
+    }
+
     w.markAbsent('questionnaire notice never presented before the review');
 
     return;
@@ -1960,4 +2244,9 @@ export function returnProbeSnapshot() {
 export function resetReturnEpisode() {
   state = null;
   windows = null;
+  m21Check = undefined;
+  m22Check = undefined;
+  m21Held = {};
+  m22Held = {};
+  m25ProbeHeld = null;
 }

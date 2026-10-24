@@ -21,10 +21,20 @@ import { expect, test } from '@playwright/test';
 
 import { extractItemFeatures } from '../src/measurement/features';
 import {
+  classifyM22Reload,
+  m22PriorLoadCheck,
+} from '../src/measurement/features/m22';
+import {
   M22_DISCOURAGEMENT_OPTIONS,
   M22_DISCOURAGEMENT_PROMPT,
 } from '../src/measurement/protocol';
 import { registerEntry } from '../src/measurement/registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  RELOAD_HOLD_BACK_PREFIX,
+  type ReloadEvent,
+} from '../src/measurement/reloadCheck';
 import {
   createM22RatingsState,
   createM22ReportState,
@@ -583,5 +593,477 @@ test.describe('M22 two setback reports (pure)', () => {
     );
     expect(scene).not.toContain('Place the recovered relay coupling');
     expect(scene).not.toContain('recovered relay coupling');
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-3 — the reload check for the desk's two reports (pure)
+ *
+ * Expected values come from RELOAD-CORRECTION-SPEC-r3-exec.md §2 (classes
+ * and permission), §5 "M22" (the after column, owner decision D-2 (i)) and
+ * §8 (fixtures F-D, F-E), and r1 §1's stage map (stage 1 `presented`,
+ * stage 3 `opportunity_opened`); the records are computed by RL-0's helper
+ * with that map written here, independently of the extractor's own map.
+ * ------------------------------------------------------------------ */
+
+const RL3_CONTINUOUS = {
+  first_sequence: 1,
+  sequence_gap_count: 0,
+  sequence_duplicate_count: 0,
+  recovered_from_chunks: false,
+};
+const RL3_GAP = { ...RL3_CONTINUOUS, sequence_gap_count: 1 };
+const RL3_DETAIL = {
+  H: `${RELOAD_HOLD_BACK_PREFIX.H}: report not re-run`,
+  U: `${RELOAD_HOLD_BACK_PREFIX.U}: report not administered`,
+  M: `${RELOAD_HOLD_BACK_PREFIX.M}: report not administered`,
+} as const;
+const reportOfEvent = (event: ReloadEvent) =>
+  event.metadata?.report ?? event.metadata?.occasion;
+const RL3_STAGES = Object.fromEntries(
+  M22_REPORTS.map((id) => [
+    id,
+    {
+      briefing: (event: ReloadEvent) =>
+        event.event_type === `${M22_FAMILY}presented` &&
+        reportOfEvent(event) === id,
+      opening: (event: ReloadEvent) =>
+        event.event_type === `${M22_FAMILY}opportunity_opened` &&
+        reportOfEvent(event) === id,
+      holdBack: (event: ReloadEvent) =>
+        event.event_type === `${M22_FAMILY}technical_failure` &&
+        reportOfEvent(event) === id,
+    },
+  ]),
+);
+
+type Rl3Step = 'none' | 'presented' | Play;
+
+function rl3Number(
+  events: readonly RawGameEvent[],
+  load: number,
+  from: number,
+): RawGameEvent[] {
+  return events.map((event, i) => ({
+    ...event,
+    page_load_index: load,
+    sequence: from + i,
+  }));
+}
+
+function rl3Marker(
+  h: ReturnType<typeof harness>,
+  id: M22Report,
+  cls: 'H' | 'U' | 'M',
+) {
+  h.push(id, 'technical_failure', {
+    occasion: id,
+    detail: RL3_DETAIL[cls],
+    input_mode: 'system',
+  });
+}
+
+/** One earlier page load built from per-report steps, renumbered. */
+function rl3Prior(
+  load: number,
+  from: number,
+  steps: Partial<Record<M22Report, Rl3Step | 'U'>>,
+): RawGameEvent[] {
+  const h = harness();
+
+  h.events.push({
+    session_id: 's',
+    timestamp_ms: 0,
+    scene: 'dock',
+    event_type: 'session_start',
+    metadata: {},
+  });
+
+  for (const id of M22_REPORTS) {
+    const step = steps[id] ?? 'none';
+
+    if (step === 'U') {
+      h.presented(id);
+      rl3Marker(h, id, 'U');
+    } else if (step === 'presented') {
+      h.presented(id);
+    } else if (step !== 'none') {
+      playReport(h, id, step);
+    }
+  }
+
+  return rl3Number(h.events, load, from);
+}
+
+function rl3Record(
+  pageLoadIndex: number,
+  prior: readonly RawGameEvent[],
+  integrity = RL3_CONTINUOUS,
+) {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents: prior,
+    integrity,
+    occasions: RL3_STAGES,
+  }) as unknown as Record<string, unknown>;
+}
+
+/**
+ * A reloaded load as the runtime writes it: the record at the return
+ * shift's presentation (or `records`, to inject defects), both reports
+ * presented, a report that is not A held there, each A report's step,
+ * then the ratings given.
+ */
+function rl3Load(
+  prior: RawGameEvent[],
+  steps: Record<M22Report, Rl3Step>,
+  options: {
+    integrity?: typeof RL3_CONTINUOUS;
+    pageLoadIndex?: number;
+    records?: (record: Record<string, unknown>) => object[];
+    presentation?: boolean;
+    ratings?: Partial<Record<M22Report, number>>;
+  } = {},
+) {
+  const pageLoadIndex = options.pageLoadIndex ?? 2;
+  const record = rl3Record(pageLoadIndex, prior, options.integrity);
+  const records = options.records?.(record) ?? [record];
+  const reload = classifyReload({
+    pageLoadIndex,
+    checks: records,
+    occasions: M22_REPORTS,
+  });
+  const h = harness();
+
+  for (const id of M22_REPORTS) {
+    const cls = reload.occasions[id].class;
+
+    if (options.presentation === false) {
+      continue;
+    }
+
+    if (cls !== 'A') {
+      h.presented(id);
+      rl3Marker(h, id, cls ?? 'U');
+    } else if (steps[id] === 'presented') {
+      h.presented(id);
+    } else if (steps[id] !== 'none') {
+      playReport(h, id, steps[id] as Play);
+    }
+  }
+
+  for (const [id, value] of Object.entries(options.ratings ?? {})) {
+    h.rated(id as M22Report, value, 5_000);
+  }
+
+  const from = (prior.at(-1)?.sequence ?? 0) + 1;
+  const checks = records.map((r) => ({
+    session_id: 's',
+    timestamp_ms: 0,
+    scene: 'records_workshop',
+    event_type: `${M22_FAMILY}prior_load_checked`,
+    metadata: {
+      opportunity_id: M22_OPPORTUNITY_IDS.o1,
+      occasion: 'o1',
+      ...r,
+      input_mode: 'system',
+    },
+  }));
+  const current = rl3Number([...checks, ...h.events], pageLoadIndex, from);
+  const rows = extractItemFeatures('M22', [...prior, ...current], {
+    finalCoreClosed: true,
+    pageLoadIndex,
+    reloaded: true,
+  });
+
+  return { record, reload, primary: rows[0], companion: rows[1], current };
+}
+
+const rl3Permit = (reload: ReturnType<typeof classifyReload>) =>
+  M22_REPORTS.map((id) => [
+    id,
+    reload.occasions[id].class,
+    reload.occasions[id].administration_permitted,
+  ]);
+
+test.describe('M22 the reload check (U24 RL-3, pure)', () => {
+  test('the extractor’s stage map is r1 §1’s (the same record for every history); a first load writes none; the same classes', () => {
+    const histories = [
+      rl3Prior(1, 1, { o1: 'revise_accept', o2: 'presented' }),
+      rl3Prior(1, 1, { o1: 'presented', o2: 'presented' }),
+      rl3Prior(1, 1, { o2: 'U' }),
+      rl3Prior(1, 1, {}),
+    ];
+
+    for (const prior of histories) {
+      expect(m22PriorLoadCheck(3, prior, RL3_CONTINUOUS)).toEqual(
+        rl3Record(3, prior),
+      );
+      expect(classifyM22Reload(3, [rl3Record(3, prior)])).toEqual(
+        classifyReload({
+          pageLoadIndex: 3,
+          checks: [rl3Record(3, prior)],
+          occasions: M22_REPORTS,
+        }),
+      );
+    }
+
+    expect(m22PriorLoadCheck(1, [], RL3_CONTINUOUS)).toBeNull();
+  });
+
+  test('r3 §5 M22, A (established absence): OBS + OBS, OBS + DEC, DEC + DEC and NOP + NOP take the first-load readings', () => {
+    const prior = rl3Prior(1, 1, {});
+    const both = rl3Load(prior, { o1: 'revise_accept', o2: 'exit' });
+
+    expect(rl3Permit(both.reload)).toEqual([
+      ['o1', 'A', true],
+      ['o2', 'A', true],
+    ]);
+    expect(both.primary).toMatchObject({
+      disposition: 'observed',
+      value: 1,
+      numerator: 1,
+      denominator: 2,
+    });
+    expect(
+      rl3Load(prior, { o1: 'revise_accept', o2: 'presented' }).primary,
+    ).toMatchObject({
+      disposition: 'incomplete',
+      value: 1,
+      numerator: 1,
+      denominator: 1,
+    });
+
+    const dec = rl3Load(prior, { o1: 'presented', o2: 'presented' });
+
+    expect(dec.primary).toMatchObject({ disposition: 'declined', value: null });
+    expect(dec.companion).toMatchObject({
+      disposition: 'declined',
+      value: null,
+    });
+
+    const nop = rl3Load(
+      prior,
+      { o1: 'none', o2: 'none' },
+      { presentation: false },
+    );
+
+    expect(nop.primary).toMatchObject({
+      disposition: 'not_presented',
+      value: null,
+      numerator: null,
+      denominator: null,
+    });
+    expect(nop.companion.disposition).toBe('not_presented');
+  });
+
+  test('r3 §5 M22 under D-2 (i): a held report beside an observed report reads interrupted · x · x/1 (overriding incomplete), the ratings companion its own reading; beside a declined or held report both rows interrupted · null; F-E: an H report leaves its sibling A, administered and observed', () => {
+    const prior = rl3Prior(1, 1, { o1: 'exit', o2: 'presented' });
+    const obs = rl3Load(
+      prior,
+      { o1: 'none', o2: 'revise_accept' },
+      { ratings: { o2: 4 } },
+    );
+
+    expect(rl3Permit(obs.reload)).toEqual([
+      ['o1', 'H', false],
+      ['o2', 'A', true],
+    ]);
+    expect(obs.primary).toMatchObject({
+      disposition: 'interrupted',
+      value: 1,
+      numerator: 1,
+      denominator: 1,
+    });
+    expect(obs.primary.included_ids).toEqual(['m22_returned_o2']);
+    expect(obs.companion).toMatchObject({
+      disposition: 'observed',
+      value: { o1: null, o2: { value: 4, declined: false } },
+    });
+    expect(rl3Load(prior, { o1: 'none', o2: 'exit' }).primary).toMatchObject({
+      disposition: 'interrupted',
+      value: 0,
+      numerator: 0,
+      denominator: 1,
+    });
+
+    const dec = rl3Load(prior, { o1: 'none', o2: 'presented' });
+
+    expect(dec.primary).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      numerator: null,
+      denominator: null,
+      missing_reason:
+        'report opened in an earlier page load; not re-run after the reload',
+    });
+    expect(dec.companion).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+    });
+
+    const both = rl3Load(rl3Prior(1, 1, { o1: 'exit', o2: 'exit' }), {
+      o1: 'none',
+      o2: 'none',
+    });
+
+    expect(rl3Permit(both.reload)).toEqual([
+      ['o1', 'H', false],
+      ['o2', 'H', false],
+    ]);
+    expect(both.primary).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      denominator: null,
+    });
+  });
+
+  test('F-D: an earlier U hold of one report, then a continuous history ⇒ it stays U and refused; its eligible A sibling is administered and observed — HB(U) + OBS(A) reads interrupted · x · x/1', () => {
+    const load1 = rl3Prior(1, 1, {});
+    const load2 = rl3Prior(2, load1.length + 1, { o1: 'U', o2: 'presented' });
+    const fd = rl3Load(
+      [...load1, ...load2],
+      { o1: 'none', o2: 'revise_accept' },
+      { pageLoadIndex: 3 },
+    );
+
+    expect(fd.record.history_continuous).toBe(true);
+    expect(rl3Permit(fd.reload)).toEqual([
+      ['o1', 'U', false],
+      ['o2', 'A', true],
+    ]);
+    expect(fd.primary).toMatchObject({
+      disposition: 'interrupted',
+      value: 1,
+      numerator: 1,
+      denominator: 1,
+    });
+  });
+
+  test('U (history-level): a discontinuous history holds both reports — nothing administered, both rows interrupted · null with the unverified reason (U + DEC)', () => {
+    const u = rl3Load(
+      rl3Prior(1, 1, {}),
+      { o1: 'revise_accept', o2: 'revise_accept' },
+      { integrity: RL3_GAP },
+    );
+
+    expect(rl3Permit(u.reload)).toEqual([
+      ['o1', 'U', false],
+      ['o2', 'U', false],
+    ]);
+    expect(
+      u.current.filter(
+        (event) => event.event_type === `${M22_FAMILY}opportunity_opened`,
+      ),
+    ).toEqual([]);
+    expect(u.primary).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      denominator: null,
+      missing_reason:
+        'report not administered after a reload: earlier history not verified',
+    });
+    expect(u.companion.disposition).toBe('interrupted');
+  });
+
+  test('review round 1: beside a held report, a report that would read no_eligible_event (never submitted) reads interrupted · null · null / 0; one that would read understanding_failed (the note never acknowledged) keeps that invalidity', () => {
+    const prior = rl3Prior(1, 1, { o1: 'exit', o2: 'presented' });
+    const never = rl3Load(prior, { o1: 'none', o2: 'never_submitted' });
+
+    expect(never.primary).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      numerator: null,
+      denominator: 0,
+      missing_reason:
+        'report opened in an earlier page load; not re-run after the reload',
+    });
+
+    const unacknowledged = rl3Load(prior, {
+      o1: 'none',
+      o2: 'unacknowledged_review',
+    });
+
+    expect(unacknowledged.primary).toMatchObject({
+      disposition: 'understanding_failed',
+      value: null,
+      denominator: 0,
+    });
+  });
+  test('a malformed record (another load’s index) is a technical failure of both rows; a reload marker is never one, another fault still is', () => {
+    const prior = rl3Prior(1, 1, {});
+    const malformed = rl3Load(
+      prior,
+      { o1: 'presented', o2: 'presented' },
+      { records: (record) => [{ ...record, page_load_index: 9 }] },
+    );
+
+    expect(malformed.reload.check_malformed).toBe(true);
+    expect(malformed.primary.disposition).toBe('technical_failure');
+    expect(malformed.companion.disposition).toBe('technical_failure');
+
+    const h = harness();
+
+    h.presented('o1');
+    h.opened('o1');
+    h.failed('o1');
+    expect(
+      extractItemFeatures('M22', rl3Number(h.events, 2, prior.length + 1), {
+        finalCoreClosed: true,
+        pageLoadIndex: 2,
+        reloaded: true,
+      })[0].disposition,
+    ).toBe('technical_failure');
+  });
+
+  test('the record is never task evidence: absent from the supporting sequences', () => {
+    const a = rl3Load(rl3Prior(1, 1, {}), {
+      o1: 'revise_accept',
+      o2: 'presented',
+    });
+    const check = a.current.find(
+      (event) => event.event_type === `${M22_FAMILY}prior_load_checked`,
+    )!;
+
+    expect(a.primary.supporting_sequences).not.toContain(check.sequence);
+  });
+
+  test('RL-1C decision A: both reports presented and left unopened in a reloaded load without its check are U, refused, and read held; a first load keeps declined; a genuinely unreached reloaded load keeps the absentFeature reading', () => {
+    const prior = rl3Prior(1, 1, {});
+    const h = harness();
+
+    h.presented('o1');
+    h.presented('o2');
+    expect(rl3Permit(classifyM22Reload(2, []))).toEqual([
+      ['o1', 'U', false],
+      ['o2', 'U', false],
+    ]);
+
+    const rows = extractItemFeatures(
+      'M22',
+      [...prior, ...rl3Number(h.events, 2, prior.length + 1)],
+      { finalCoreClosed: true, pageLoadIndex: 2, reloaded: true },
+    );
+
+    expect(rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason:
+        'report not administered after a reload: earlier history not verified',
+    });
+    expect(rows[1].disposition).toBe('interrupted');
+    expect(extractItemFeatures('M22', h.events, CONTEXT)[0].disposition).toBe(
+      'declined',
+    );
+    expect(
+      extractItemFeatures('M22', prior, {
+        finalCoreClosed: true,
+        pageLoadIndex: 2,
+        reloaded: true,
+      })[0],
+    ).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason:
+        'no current-load evidence after a reload: report desk never opened',
+    });
   });
 });

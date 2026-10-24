@@ -83,7 +83,28 @@ export const M26_EVENT_SUFFIXES = [
   'departed',
   'window_closed',
   'technical_failure',
+  // U24 RL-3 (D-4, provisional): the reload check of a later page load.
+  'prior_load_checked',
 ] as const;
+
+/**
+ * U24 RL-3 (r3 §9, owner decision D-5, ⟨station⟩ = uplink post): the two
+ * lines of an uplink held after a reload — powered up earlier (H), or an
+ * earlier state that could not be verified or a contradictory check (U /
+ * M). Both posts show them.
+ */
+export const M26_HELD_LINES: Readonly<
+  Record<'H' | 'U', readonly [string, string]>
+> = {
+  H: [
+    'This uplink post was opened earlier in this session.',
+    'It stays closed after a reload.',
+  ],
+  U: [
+    'The earlier state of this uplink post could not be verified.',
+    'It stays closed after this reload.',
+  ],
+};
 
 export type M26Channel = 'A' | 'B';
 

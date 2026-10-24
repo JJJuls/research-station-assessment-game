@@ -35,8 +35,18 @@ import {
   type SyntaxTrial,
 } from '../src/informationProcessing/syntaxForms';
 import { extractItemFeatures } from '../src/measurement/features';
+import {
+  classifyM17Reload,
+  m17PriorLoadCheck,
+} from '../src/measurement/features/m17';
 import { PILOT_SETTINGS } from '../src/measurement/protocol';
 import { registerEntry } from '../src/measurement/registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  RELOAD_HOLD_BACK_PREFIX,
+  type ReloadEvent,
+} from '../src/measurement/reloadCheck';
 import type { RawGameEvent } from '../src/systems/EventLogger';
 
 const FAMILY = 'proto_m17_trials_';
@@ -545,5 +555,219 @@ test.describe('M17 learning series (pure)', () => {
       expect(rows[0].disposition).toBe('technical_failure');
       expect(rows[1].disposition).toBe('technical_failure');
     }
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-3 — the training rig's reload check (pure)
+ *
+ * Expected values come from RELOAD-CORRECTION-SPEC-r3-exec.md §2 (classes,
+ * permission, the H / U / M readings), §5 (single-occasion rows: under A
+ * the first-load reading) and r1 §1's stage map (no stage 1 or 2; stage 3
+ * `window_opened`); records from RL-0's helper with that map written here.
+ * ------------------------------------------------------------------ */
+
+const RL3_CONTINUOUS = {
+  first_sequence: 1,
+  sequence_gap_count: 0,
+  sequence_duplicate_count: 0,
+  recovered_from_chunks: false,
+};
+const RL3_STAGES = {
+  opening: (event: ReloadEvent) =>
+    event.event_type === `${FAMILY}window_opened`,
+  holdBack: (event: ReloadEvent) =>
+    event.event_type === `${FAMILY}technical_failure`,
+};
+const RL3_DETAIL = {
+  H: `${RELOAD_HOLD_BACK_PREFIX.H}: training rig not re-run`,
+  U: `${RELOAD_HOLD_BACK_PREFIX.U}: training rig not administered`,
+  M: `${RELOAD_HOLD_BACK_PREFIX.M}: training rig not administered`,
+} as const;
+
+function rl3Number(
+  events: readonly RawGameEvent[],
+  load: number,
+  from: number,
+) {
+  return events.map((event, i) => ({
+    ...event,
+    page_load_index: load,
+    sequence: from + i,
+  }));
+}
+
+/** Load 1: the session start, the rig opened (or not). */
+function rl3Prior(opened: boolean): RawGameEvent[] {
+  const h = harness();
+
+  h.events.push({
+    session_id: 's',
+    timestamp_ms: 0,
+    scene: 'dock',
+    event_type: 'session_start',
+    metadata: {},
+  });
+
+  if (opened) {
+    play(h, [true, true, true]);
+  }
+
+  return rl3Number(h.events, 1, 1);
+}
+
+/** Load 2 as the runtime writes it: the record at the declaration, the marker when not A, then `after`. */
+function rl3Load(
+  prior: RawGameEvent[],
+  options: {
+    integrity?: typeof RL3_CONTINUOUS;
+    records?: (record: Record<string, unknown>) => object[];
+    after?: (h: ReturnType<typeof harness>) => void;
+  } = {},
+) {
+  const record = computePriorLoadCheck({
+    pageLoadIndex: 2,
+    priorLoadEvents: prior,
+    integrity: options.integrity ?? RL3_CONTINUOUS,
+    stages: RL3_STAGES,
+  }) as unknown as Record<string, unknown>;
+  const records = options.records?.(record) ?? [record];
+  const reload = classifyReload({ pageLoadIndex: 2, checks: records });
+  const cls = reload.occasions.row.class;
+  const h = harness();
+  const events: RawGameEvent[] = records.map((r) => ({
+    session_id: 's',
+    timestamp_ms: 0,
+    scene: 'diagnostics_laboratory',
+    event_type: `${FAMILY}prior_load_checked`,
+    metadata: { ...r, input_mode: 'system' },
+  }));
+
+  if (cls !== 'A') {
+    events.push({
+      session_id: 's',
+      timestamp_ms: 0,
+      scene: 'diagnostics_laboratory',
+      event_type: `${FAMILY}technical_failure`,
+      metadata: { detail: RL3_DETAIL[cls ?? 'U'], input_mode: 'system' },
+    });
+  } else {
+    options.after?.(h);
+  }
+
+  const current = rl3Number([...events, ...h.events], 2, prior.length + 1);
+  const rows = extractItemFeatures('M17', [...prior, ...current], {
+    finalCoreClosed: true,
+    pageLoadIndex: 2,
+    reloaded: true,
+  });
+
+  return { record, reload, rows, current };
+}
+
+const rl3Class = (reload: ReturnType<typeof classifyReload>) => [
+  reload.occasions.row.class,
+  reload.occasions.row.administration_permitted,
+];
+
+test.describe('M17 the reload check (U24 RL-3, pure)', () => {
+  test('the extractor’s stage map is r1 §1’s; a first load writes none; the same classes', () => {
+    for (const opened of [true, false]) {
+      const prior = rl3Prior(opened);
+      const record = computePriorLoadCheck({
+        pageLoadIndex: 2,
+        priorLoadEvents: prior,
+        integrity: RL3_CONTINUOUS,
+        stages: RL3_STAGES,
+      });
+
+      expect(m17PriorLoadCheck(2, prior, RL3_CONTINUOUS)).toEqual(record);
+      expect(classifyM17Reload(2, [record!])).toEqual(
+        classifyReload({ pageLoadIndex: 2, checks: [record!] }),
+      );
+    }
+
+    expect(m17PriorLoadCheck(1, [], RL3_CONTINUOUS)).toBeNull();
+  });
+
+  test('H: a rig opened earlier is held — refused, both rows interrupted with the H reason, nothing administered', () => {
+    const h = rl3Load(rl3Prior(true));
+
+    expect(rl3Class(h.reload)).toEqual(['H', false]);
+    expect(h.rows.map((row) => [row.disposition, row.value])).toEqual([
+      ['interrupted', null],
+      ['interrupted', null],
+    ]);
+    expect(h.rows[0].missing_reason).toBe(
+      'training rig opened in an earlier page load; not re-run after the reload',
+    );
+  });
+
+  test('A: an established absence takes the first-load readings — not_presented with no rig evidence, and an ordinary administration after the check', () => {
+    const prior = rl3Prior(false);
+    const nop = rl3Load(prior);
+
+    expect(rl3Class(nop.reload)).toEqual(['A', true]);
+    expect(
+      nop.rows.map((row) => [row.disposition, row.missing_reason]),
+    ).toEqual([
+      ['not_presented', 'training rig never opened'],
+      ['not_presented', 'training rig never opened'],
+    ]);
+
+    const run = rl3Load(prior, {
+      after: (h) => play(h, [true, true, true]),
+    });
+
+    expect(run.rows[0]).toMatchObject({
+      disposition: 'observed',
+      value: { criterion_trial: 3, attained: true },
+    });
+    expect(run.rows[0].supporting_sequences).not.toContain(
+      run.current[0].sequence,
+    );
+  });
+
+  test('U and M: an unverified history or a contradictory record holds the rig — refused, interrupted with its reason; a malformed record is a technical failure; without a check an unreached rig keeps its reading', () => {
+    const prior = rl3Prior(false);
+    const u = rl3Load(prior, {
+      integrity: { ...RL3_CONTINUOUS, recovered_from_chunks: true },
+    });
+
+    expect(rl3Class(u.reload)).toEqual(['U', false]);
+    expect(u.rows[0].missing_reason).toBe(
+      'training rig not administered after a reload: earlier history not verified',
+    );
+
+    const m = rl3Load(prior, {
+      records: (record) => [{ ...record, history_continuous: false }],
+    });
+
+    expect(rl3Class(m.reload)).toEqual(['M', false]);
+    expect(m.rows[1]).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason:
+        'training rig not administered after a reload: earlier check contradictory',
+    });
+
+    const malformed = rl3Load(prior, {
+      records: (record) => [{ ...record, page_load_index: 3 }],
+    });
+
+    expect(malformed.rows.map((row) => row.disposition)).toEqual([
+      'technical_failure',
+      'technical_failure',
+    ]);
+    expect(
+      extractItemFeatures('M17', prior, {
+        finalCoreClosed: true,
+        pageLoadIndex: 2,
+        reloaded: true,
+      })[0],
+    ).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason:
+        'no current-load evidence after a reload: training rig never opened',
+    });
   });
 });

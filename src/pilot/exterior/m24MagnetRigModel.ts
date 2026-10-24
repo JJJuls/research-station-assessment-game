@@ -79,7 +79,27 @@ export const M24_EVENT_SUFFIXES = [
   'departed',
   'window_closed',
   'technical_failure',
+  // U24 RL-3 (D-4, provisional): the reload check of a later page load.
+  'prior_load_checked',
 ] as const;
+
+/**
+ * U24 RL-3 (r3 §9, owner decision D-5, ⟨station⟩ = magnet rig): the two
+ * lines of a rig held after a reload — begun earlier (H), or an earlier
+ * state that could not be verified or a contradictory check (U / M).
+ */
+export const M24_HELD_LINES: Readonly<
+  Record<'H' | 'U', readonly [string, string]>
+> = {
+  H: [
+    'This magnet rig was opened earlier in this session.',
+    'It stays closed after a reload.',
+  ],
+  U: [
+    'The earlier state of this magnet rig could not be verified.',
+    'It stays closed after this reload.',
+  ],
+};
 
 /** The participant-facing depletion statement (identical for everyone). */
 export const M24_DEPLETION_STATEMENT =
@@ -681,12 +701,14 @@ export function m24ClosureDisposition(state: M24State): M24Closure {
 
 /** Participant-facing rig panel line (no remaining count before depletion). */
 export function m24PanelLine(state: M24State, depleted: boolean): string {
-  if (!state.entered) {
-    return depleted ? 'CATCHMENT DEPLETED' : 'RIG READY — read the panel (E)';
-  }
-
+  // A rig closed before its tally began (held after a reload, U24 RL-3)
+  // reads the existing closed line, never "RIG READY".
   if (state.closed) {
     return 'TALLY CLOSED';
+  }
+
+  if (!state.entered) {
+    return depleted ? 'CATCHMENT DEPLETED' : 'RIG READY — read the panel (E)';
   }
 
   return `CYCLES ${state.cycles_committed} · RECOVERED ${state.useful_outcomes}`;
