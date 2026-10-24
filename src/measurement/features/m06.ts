@@ -13,13 +13,16 @@
  * load's `prior_load_checked` record classifies the console H / A / U /
  * M; with its absence of an earlier opening established (A) a load with
  * no console evidence takes the first-load reading. The record is never
- * task evidence.
+ * task evidence. U24 RL-1C (register §5.406): a presented, unopened
+ * console of a load without its check is U (`no_check`) and held; the
+ * primary row reports the exposure-record diagnostic.
  */
 import {
   type M06Form,
   m06OrdersFor,
   m06PriorAdministration,
 } from '../../pilot/windows/m06OrdersModel';
+import type { RawGameEvent } from '../../systems/EventLogger';
 import { registerEntry } from '../registerV3';
 import {
   classifyReload,
@@ -42,7 +45,7 @@ import {
   registerFeatureExtractor,
   sequencesOf,
 } from './extract';
-import type { FeatureRecord } from './types';
+import type { ExtractContext, FeatureExtractor, FeatureRecord } from './types';
 
 interface M06Raw {
   form: string;
@@ -121,7 +124,48 @@ const HELD_REASON = {
   M: 'console not administered after a reload: earlier check contradictory',
 } as const;
 
-registerFeatureExtractor('M06', (events, context) => {
+/**
+ * The provisional exposure-record diagnostic (U24 RL-1C, decision B;
+ * register §5.406), after a reload or beside a check only: the primary
+ * row's components gain `exposure_record_consistent` — §5.290 (a), as in
+ * M14–M20: the helper's record part, and false when the record found an
+ * earlier opening (H) while this load opens the console too. A flag only:
+ * the row's values are never changed.
+ */
+function withExposureDiagnostics(
+  rows: FeatureRecord[],
+  events: readonly RawGameEvent[],
+  context: ExtractContext,
+): FeatureRecord[] {
+  const load = currentLoadEvents(events, context);
+  const reload = classifyM06Reload(
+    context.pageLoadIndex,
+    eventsOfType(load, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+
+  if (!context.reloaded && reload.check_count === 0) {
+    return rows;
+  }
+
+  const [first, ...rest] = rows;
+
+  return [
+    {
+      ...first,
+      components: {
+        ...first.components,
+        exposure_record_consistent:
+          reload.exposure_record_consistent &&
+          !(reload.occasions.row.class === 'H' && m06PriorAdministration(load)),
+      },
+    },
+    ...rest,
+  ];
+}
+
+const m06Rows: FeatureExtractor = (events, context) => {
   const entry = registerEntry('M06');
   const [primary, detail] = entry.features;
   const load = currentLoadEvents(events, context);
@@ -197,7 +241,8 @@ registerFeatureExtractor('M06', (events, context) => {
 
   if (opened.length === 0) {
     // Held: the guard's marker, or (U24 RL-1) a reloaded load whose check
-    // does not establish the absence of an earlier opening.
+    // does not establish the absence of an earlier opening — or, without a
+    // check, a presented console, U (`no_check`; U24 RL-1C, decision A).
     const held = (
       heldBack.length > 0
         ? heldBack.map(
@@ -205,7 +250,8 @@ registerFeatureExtractor('M06', (events, context) => {
               reloadHoldBackClass(meta<unknown>(event, 'detail')) ?? 'H',
           )
         : context.reloaded &&
-            reload.check_count > 0 &&
+            (reload.check_count > 0 ||
+              (reload.page_reloaded && presented.length > 0)) &&
             reload.occasions.row.class !== 'A'
           ? [reload.occasions.row.class ?? 'U']
           : []
@@ -407,4 +453,8 @@ registerFeatureExtractor('M06', (events, context) => {
       supporting_sequences: supporting,
     }),
   ];
-});
+};
+
+registerFeatureExtractor('M06', (events, context) =>
+  withExposureDiagnostics(m06Rows(events, context), events, context),
+);

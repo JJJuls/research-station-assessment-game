@@ -67,6 +67,7 @@ import {
 import {
   closeM01Surface,
   declareM01,
+  m01HoldBackClass,
   m01State,
   m01Window,
   openM01,
@@ -2800,7 +2801,9 @@ export class RecordsWorkshopScene extends PilotZoneScene {
             // M01 (Unit 5): the second three-job batch, listed right after
             // the sign-off (never behind "Still working"). Never required
             // for the sign-off; opened from this beat like any other order.
-            ...(m01Window('o2').isClosed()
+            // A batch held after a reload stays listed: it opens its
+            // read-only held screen and runs nothing (U24 RL-1C, decision C).
+            ...(m01Window('o2').isClosed() && m01HoldBackClass('o2') === null
               ? []
               : [
                   {

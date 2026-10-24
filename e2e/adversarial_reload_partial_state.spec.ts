@@ -35,7 +35,7 @@ import {
   workshopVia,
   yardVia,
 } from './pilotHelpers';
-import { surface, waitSurface } from './returnHelpers';
+import { surface, waitSurface, workshopApproach } from './returnHelpers';
 import {
   boardFirstCard,
   concourseToLab,
@@ -45,8 +45,11 @@ import {
   openKai,
   openNoor,
   openVale,
+  qualityPacket1,
   reloadToDock,
+  replayToWorkshopReturn,
   supportConsole,
+  valeChainAccept,
 } from './u24Helpers';
 
 /**
@@ -480,6 +483,23 @@ async function rl1OpenSupportConsole(page: Page) {
 const RL1_H_DETAIL = /^reload after administration: /;
 const RL1_U_DETAIL = /^reload with an unverified earlier state: /;
 
+/**
+ * U24 RL-1C: the open M01 surface's subtitle, read from its model in the
+ * page — the text the work surface renders (`WorkSurfaceScene` sets the
+ * subtitle from `model.subtitle`); a harness read, as the surface probe
+ * carries no subtitle.
+ */
+async function rl1cM01Subtitle(
+  page: Page,
+  occasion: 'o1' | 'o2',
+): Promise<string | null> {
+  return (await page.evaluate(`(async () => {
+    const mod = await import('/src/pilot/windows/m01SurfaceModel.ts');
+    const host = { now: () => Date.now(), close: () => {}, feedback: () => {} };
+    return mod.m01SurfaceModel(host, '${occasion}').subtitle ?? null;
+  })()`)) as string | null;
+}
+
 test.describe('U24 RL-1: reload at availability (browser)', () => {
   test.describe.configure({ timeout: 1_500_000 });
 
@@ -535,13 +555,15 @@ test.describe('U24 RL-1: reload at availability (browser)', () => {
       },
     });
 
-    // R6 (H): the existing lines, unchanged.
+    // R6 (H): the existing lines, unchanged; the H subtitle stays
+    // "recorded" (RL-1C, decision D).
     await rl1OpenSurface(
       page,
       RL1_CONCOURSE.planBoard,
       'm01_plan_board',
       (x, y) => concourseVia(page, x, y),
     );
+    expect(await rl1cM01Subtitle(page, 'o1')).toBe('recorded');
     expect(await rl1ReadAndLeave(page, 'rl1-h-m01-o1')).toBe(RL1_H_STATUS.M01);
     await rl1OpenSurface(
       page,
@@ -883,6 +905,8 @@ test.describe('U24 RL-1: reload at availability (browser)', () => {
       'm01_plan_board',
       (x, y) => concourseVia(page, x, y),
     );
+    // The U subtitle reads "closed" (RL-1C, decision D).
+    expect(await rl1cM01Subtitle(page, 'o1')).toBe('closed');
     expect(await rl1ReadAndLeave(page, 'rl1-u-m01-o1')).toBe(
       rl1ULines('batch').join('\n'),
     );
@@ -990,4 +1014,314 @@ test.describe('U24 RL-1: reload at availability (browser)', () => {
 
     expectNoRuntimeErrors(capture);
   });
+});
+
+/* ================================================================== *
+ * U24 RL-1C (owner ruling of 24 October 2026; register §5.406): the
+ * return batch's held screen (decisions C, D) and the M12 context note
+ * (qualification 3), with genuine `page.reload()`s and ordinary input.
+ * ================================================================== */
+
+const RL1C_RETURN_BATCH = 'Open the return batch (three jobs).';
+
+/** The Work Order Board's prompt at the return shift; returns its labels. */
+async function rl1cReturnBoard(page: Page): Promise<string[]> {
+  await workshopApproach(page, 'board');
+  await openPromptAt(page, PILOT.workshop.board, {
+    approachOffset: { x: -32, y: 38 },
+  });
+
+  return promptLabels(page);
+}
+
+test.describe('U24 RL-1C: held screens and the M12 note (browser)', () => {
+  test.describe.configure({ timeout: 1_500_000 });
+
+  test('C + D (U): in a load whose earlier state cannot be verified (store meta record removed — fault-injected), the board keeps "Open the return batch" while batch 2 is held; it opens the read-only U screen ("closed", the §9 lines) and administers nothing', async ({
+    page,
+  }) => {
+    const capture = captureErrors(page);
+
+    await bootPilot(page, 'RL1CRB');
+    await completeDockTutorial(page, 1);
+    await dockToConcourse(page);
+    await page.addInitScript(() => {
+      if (sessionStorage.getItem('rl1c-meta-removed') !== null) {
+        return;
+      }
+
+      sessionStorage.setItem('rl1c-meta-removed', '1');
+
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('research-events:v1:') && key.endsWith(':meta')) {
+          localStorage.removeItem(key);
+        }
+      }
+    });
+    await reloadToDock(page);
+    await replayToWorkshopReturn(page);
+
+    let now = await rl1Payload(page);
+
+    expect(now.page_load_index).toBe(2);
+    expect(now.event_integrity.recovered_from_chunks).toBe(true);
+
+    await concourseToWorkshop(page);
+    await page.waitForTimeout(400);
+
+    // The board's read presents batch 2 and holds it (U) at availability.
+    const labels = await rl1cReturnBoard(page);
+
+    expect(labels).toContain(RL1C_RETURN_BATCH);
+    now = await rl1Payload(page);
+    expectHeld(now.raw_events, 'M01', RL1_U_DETAIL);
+    expect(
+      rl1Own(now.raw_events, 'M01')
+        .filter((event) => rl1Suffix(event, 'M01') === 'technical_failure')
+        .map((event) => event.metadata?.occasion),
+    ).toContain('o2');
+
+    await selectPromptLabel(page, RL1C_RETURN_BATCH);
+    await waitSurface(page, true, 'm01_return_orders');
+    await page.waitForTimeout(500);
+    expect(await rl1cM01Subtitle(page, 'o2')).toBe('closed');
+    expect(await rl1ReadAndLeave(page, 'rl1c-u-m01-o2')).toBe(
+      rl1ULines('batch').join('\n'),
+    );
+
+    // Nothing administered; no prior exposure claimed; never absent.
+    now = await rl1Payload(page);
+    expect(
+      rl1Own(now.raw_events, 'M01').filter(
+        (event) => rl1Suffix(event, 'M01') === 'opportunity_opened',
+      ),
+    ).toEqual([]);
+
+    const record = rl1Validity(now, 'proto_m01_batch_o2');
+
+    expect(record?.prior_exposure ?? []).toEqual([]);
+    expect(record?.absent ?? false).toBe(false);
+
+    // Still listed while the batch is held.
+    expect(await rl1cReturnBoard(page)).toContain(RL1C_RETURN_BATCH);
+    await selectPromptLabel(page, 'Still working.');
+
+    expectNoRuntimeErrors(capture);
+  });
+
+  test('Q3: packet 1 opened in load 1, packet 2 never; after a genuine reload packet 1 is held (H) at its availability and never touched, packet 2 is opened — packet 2 carries no "exposure:proto_m12_check_o1_before" note', async ({
+    page,
+  }) => {
+    const capture = captureErrors(page);
+
+    await bootPilot(page, 'RL1CM12');
+    await completeDockTutorial(page, 1);
+    await dockToConcourse(page);
+    await valeChainAccept(page);
+    await qualityPacket1(page);
+
+    let now = await rl1Payload(page);
+
+    expect(
+      rl1Own(now.raw_events, 'M12')
+        .filter((event) => rl1Suffix(event, 'M12') === 'opportunity_opened')
+        .map((event) => event.metadata?.occasion),
+    ).toEqual(['o1']);
+
+    // Load 2: packet 1 held at Vale's briefing; packet 2 listed by the
+    // work orders (A).
+    await reloadToDock(page);
+    await rl1ReplayToWorkshopStage(page);
+    await concourseToWorkshop(page);
+    await boardFirstCard(page, 'workshop_work');
+    now = await rl1Payload(page);
+    expect(expectHeld(now.raw_events, 'M12', RL1_H_DETAIL)).toMatchObject({
+      occasions: {
+        o1: { prior_opening_found: true },
+        o2: {
+          prior_opening_found: false,
+          prior_opening_absence_established: true,
+        },
+      },
+    });
+
+    await rl1OpenSurface(
+      page,
+      RL1_WORKSHOP.packet2,
+      'm12_qc_packet_o2',
+      (x, y) => workshopVia(page, x, y),
+    );
+    await rl1ReadAndLeave(page, 'rl1c-m12-o2-opened');
+
+    now = await rl1Payload(page);
+    expect(
+      rl1Own(now.raw_events, 'M12')
+        .filter((event) => rl1Suffix(event, 'M12') === 'opportunity_opened')
+        .map((event) => event.metadata?.occasion),
+    ).toEqual(['o2']);
+    expect(rl1Validity(now, 'proto_m12_check_o2')?.prior_exposure).toEqual([]);
+    expect(rl1Validity(now, 'proto_m12_check_o1')?.prior_exposure).toEqual([
+      'quality packet opened in an earlier page load of this identity',
+    ]);
+
+    expectNoRuntimeErrors(capture);
+  });
+});
+
+/* ================================================================== *
+ * U24 RL-1C qualification 3 — the M12 context note, in-page harness
+ * fixtures (the M07 A-5 precedent): the window module is driven through
+ * the dev server's module graph in a booted page, the runtime's reload
+ * inputs (page-load index, earlier events, event integrity) injected per
+ * fixture. NEVER ordinary-play evidence; the ordinary-input check is the
+ * Q3 browser test above. The note `exposure:<other>_before` is written
+ * when the other packet was opened, or its held screen opened, in this
+ * load — never for a hold at availability alone. M (a contradictory
+ * check) cannot be produced at the host: its own record is always
+ * coherent, so the guard holds only H or U; the rule reads no class.
+ * ================================================================== */
+
+interface Rl1cNote {
+  name: string;
+  /** The other packet's earlier history: none, opened (H), held as U. */
+  prior: 'first_load' | 'none' | 'H' | 'U';
+  /** The other packet opened (A) or its held screen opened (H / U). */
+  openOther: boolean;
+  note: boolean;
+  otherClass: 'H' | 'U' | null;
+}
+
+const RL1C_NOTES: readonly Rl1cNote[] = [
+  {
+    name: 'the other packet opened (first load) ⇒ the note',
+    prior: 'first_load',
+    openOther: true,
+    note: true,
+    otherClass: null,
+  },
+  {
+    name: 'the other packet opened (reloaded, both A) ⇒ the note',
+    prior: 'none',
+    openOther: true,
+    note: true,
+    otherClass: null,
+  },
+  {
+    name: 'the other packet held (H) and its held screen opened ⇒ the note',
+    prior: 'H',
+    openOther: true,
+    note: true,
+    otherClass: 'H',
+  },
+  {
+    name: 'the other packet held (U) and its held screen opened ⇒ the note',
+    prior: 'U',
+    openOther: true,
+    note: true,
+    otherClass: 'U',
+  },
+  {
+    name: 'the other packet held (H) at availability only ⇒ no note',
+    prior: 'H',
+    openOther: false,
+    note: false,
+    otherClass: 'H',
+  },
+  {
+    name: 'the other packet held (U) at availability only ⇒ no note',
+    prior: 'U',
+    openOther: false,
+    note: false,
+    otherClass: 'U',
+  },
+];
+
+test.describe('U24 RL-1C: the M12 context note (in-page harness, never ordinary play)', () => {
+  for (const [other, self] of [
+    ['o1', 'o2'],
+    ['o2', 'o1'],
+  ] as const) {
+    test(`packet ${other} first, then ${self} opened: ${RL1C_NOTES.length} fixtures`, async ({
+      page,
+    }) => {
+      await bootPilot(page, `rl1c_note_${other}`, { skipOpening: false });
+
+      for (const fixture of RL1C_NOTES) {
+        const out = JSON.parse(
+          (await page.evaluate(`(async () => {
+            const m12 = await import('/src/pilot/windows/m12QualityControl.ts');
+            const validity = await import('/src/measurement/validity.ts');
+            const systems = await import('/src/systems/index.ts');
+            const rt = systems.researchRuntime;
+            const other = '${other}';
+            const self = '${self}';
+            const fixture = ${JSON.stringify(fixture)};
+            const prior = [
+              { event_type: 'session_start', sequence: 1, page_load_index: 1, metadata: {} },
+              ...(fixture.prior === 'H'
+                ? [{ event_type: 'proto_m12_check_opportunity_opened', sequence: 2,
+                     page_load_index: 1, metadata: { occasion: other } }]
+                : fixture.prior === 'U'
+                  ? [{ event_type: 'proto_m12_check_technical_failure', sequence: 2,
+                       page_load_index: 1, metadata: { occasion: other,
+                         detail: 'reload with an unverified earlier state: packet not administered' } }]
+                  : []),
+            ];
+
+            m12.resetM12State();
+            validity.resetMeasurementValidity();
+
+            if (fixture.prior !== 'first_load') {
+              rt.getPageLoadIndex = () => 2;
+              rt.getPriorPageLoadEvents = () => prior;
+              rt.getEventIntegrity = () => ({ first_sequence: 1, sequence_gap_count: 0,
+                sequence_duplicate_count: 0, recovered_from_chunks: false });
+            }
+
+            try {
+              const t = Date.now();
+
+              m12.presentM12(other, t);
+
+              if (fixture.openOther) {
+                m12.openM12(other, t + 10);
+              }
+
+              m12.presentM12(self, t + 20);
+              m12.openM12(self, t + 30);
+
+              const record = validity.serializeOpportunities()
+                .find((r) => r.opportunity_id === 'proto_m12_check_' + self);
+
+              return JSON.stringify({
+                otherClass: m12.m12HoldBackClass(other),
+                selfClass: m12.m12HoldBackClass(self),
+                selfStatus: m12.m12Windows[self].windowStatus(),
+                notes: record?.prior_exposure ?? null,
+              });
+            } finally {
+              delete rt.getPageLoadIndex;
+              delete rt.getPriorPageLoadEvents;
+              delete rt.getEventIntegrity;
+              m12.resetM12State();
+              validity.resetMeasurementValidity();
+            }
+          })()`)) as string,
+        ) as {
+          otherClass: string | null;
+          selfClass: string | null;
+          selfStatus: string;
+          notes: string[] | null;
+        };
+
+        expect(out.otherClass, fixture.name).toBe(fixture.otherClass);
+        // This packet is administered in every fixture.
+        expect(out.selfClass, fixture.name).toBeNull();
+        expect(out.selfStatus, fixture.name).toBe('open');
+        expect(out.notes, fixture.name).toEqual(
+          fixture.note ? [`exposure:proto_m12_check_${other}_before`] : [],
+        );
+      }
+    });
+  }
 });

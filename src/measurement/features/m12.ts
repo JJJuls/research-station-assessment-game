@@ -15,9 +15,12 @@
  * M. A packet whose absence of an earlier opening is established (A)
  * takes the first-load reading; the F5 reading (no current-load evidence
  * after a reload ⇒ held) applies only to a packet without one. The record
- * is never task evidence.
+ * is never task evidence. U24 RL-1C (register §5.406): a presented,
+ * unopened packet of a load without its check is U (`no_check`) and held;
+ * the primary row reports the exposure-record diagnostics.
  */
 import { m12PriorAdministration } from '../../pilot/windows/m12CheckModel';
+import type { RawGameEvent } from '../../systems/EventLogger';
 import { registerEntry } from '../registerV3';
 import {
   classifyReload,
@@ -41,7 +44,12 @@ import {
   registerFeatureExtractor,
   sequencesOf,
 } from './extract';
-import type { FeatureDisposition, FeatureRecord } from './types';
+import type {
+  ExtractContext,
+  FeatureDisposition,
+  FeatureExtractor,
+  FeatureRecord,
+} from './types';
 
 type Occasion = 'o1' | 'o2';
 
@@ -120,7 +128,53 @@ const HELD_REASON = {
   M: 'packet not administered after a reload: earlier check contradictory',
 } as const;
 
-registerFeatureExtractor('M12', (events, context) => {
+/**
+ * The provisional exposure-record diagnostics (U24 RL-1C, decision B;
+ * register §5.406), after a reload or beside a check only: the primary
+ * row's components gain `exposure_record_consistent` — §5.290 (a), as in
+ * M14–M20: the helper's record part, and false when a packet whose own
+ * record found an earlier opening (H) is opened in this load too — and the
+ * offending packets. A flag only: the row's values are never changed.
+ */
+function withExposureDiagnostics(
+  rows: FeatureRecord[],
+  events: readonly RawGameEvent[],
+  context: ExtractContext,
+): FeatureRecord[] {
+  const load = currentLoadEvents(events, context);
+  const reload = classifyM12Reload(
+    context.pageLoadIndex,
+    eventsOfType(load, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+
+  if (!context.reloaded && reload.check_count === 0) {
+    return rows;
+  }
+
+  const inconsistent = OCCASIONS.filter(
+    (occasion) =>
+      reload.occasions[occasion].class === 'H' &&
+      m12PriorAdministration(load, occasion),
+  );
+  const [first, ...rest] = rows;
+
+  return [
+    {
+      ...first,
+      components: {
+        ...first.components,
+        exposure_record_consistent:
+          reload.exposure_record_consistent && inconsistent.length === 0,
+        exposure_record_inconsistent_occasions: inconsistent,
+      },
+    },
+    ...rest,
+  ];
+}
+
+const m12Rows: FeatureExtractor = (events, context) => {
   const entry = registerEntry('M12');
   const [primary, detail] = entry.features;
   const load = currentLoadEvents(events, context);
@@ -167,8 +221,9 @@ registerFeatureExtractor('M12', (events, context) => {
   const checked = reload.check_count > 0;
   // The class a packet is held under: the reload guard's marker's; or,
   // after a reload, an unopened packet's own class when the load's check
-  // does not establish its absence (U24 RL-1) — and, without any check, a
-  // packet with no current-load evidence at all.
+  // does not establish its absence (U24 RL-1) — U (`no_check`) for a
+  // reloaded load without a check, presented or not (U24 RL-1C, decision
+  // A) — and a packet with no current-load evidence at all (F5).
   const heldClass = (occasion: Occasion): 'H' | 'U' | 'M' | null => {
     const marker = heldBack.find((event) => occ(event) === occasion);
 
@@ -181,7 +236,7 @@ registerFeatureExtractor('M12', (events, context) => {
     return context.reloaded &&
       cls !== 'A' &&
       !openedSet.has(occasion) &&
-      (checked || !presentedSet.has(occasion))
+      (checked || reload.page_reloaded || !presentedSet.has(occasion))
       ? (cls ?? 'U')
       : null;
   };
@@ -191,7 +246,13 @@ registerFeatureExtractor('M12', (events, context) => {
   ]);
 
   if (opened.length === 0) {
-    if (heldBack.length > 0 || (checked && heldBackSet.size > 0)) {
+    // Without a check, a load that presented nothing keeps the F5 /
+    // `absentFeature` reading below (U24 RL-1C).
+    if (
+      heldBack.length > 0 ||
+      (heldBackSet.size > 0 &&
+        (checked || (reload.page_reloaded && presented.length > 0)))
+    ) {
       const reason =
         [
           ...new Set(
@@ -494,4 +555,8 @@ registerFeatureExtractor('M12', (events, context) => {
       supporting_sequences: supporting,
     }),
   ] satisfies FeatureRecord[];
-});
+};
+
+registerFeatureExtractor('M12', (events, context) =>
+  withExposureDiagnostics(m12Rows(events, context), events, context),
+);

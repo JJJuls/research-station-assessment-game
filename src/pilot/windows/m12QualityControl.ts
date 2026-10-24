@@ -96,6 +96,12 @@ const OCCASIONS: readonly M12Occasion[] = ['o1', 'o2'];
 
 const states: Partial<Record<M12Occasion, M12State>> = {};
 const realisedOrder: M12Occasion[] = [];
+/**
+ * Held packets whose held screen was opened in this load (U24 RL-1C):
+ * with the realised order, the only exposure the context note
+ * `exposure:<other>_before` names — a hold at availability alone does not.
+ */
+const heldScreensOpened = new Set<M12Occasion>();
 
 function ensureState(occasion: M12Occasion): M12State {
   let s = states[occasion];
@@ -272,6 +278,8 @@ export function openM12(
   const other: M12Occasion = occasion === 'o1' ? 'o2' : 'o1';
 
   if (guardM12Reload(occasion)) {
+    heldScreensOpened.add(occasion);
+
     return;
   }
 
@@ -279,7 +287,9 @@ export function openM12(
     if (!realisedOrder.includes(occasion)) {
       realisedOrder.push(occasion);
 
-      if (m12Windows[other].windowStatus() !== 'unopened') {
+      // The other packet was opened, or its held screen viewed, in this
+      // load (the note's meaning before U24 RL-1; RL-1C).
+      if (realisedOrder.includes(other) || heldScreensOpened.has(other)) {
         window.recordPriorExposure(
           `exposure:${M12_OPPORTUNITY_IDS[other]}_before`,
         );
@@ -492,6 +502,7 @@ export function resetM12State() {
   delete states.o1;
   delete states.o2;
   realisedOrder.length = 0;
+  heldScreensOpened.clear();
   priorLoadCheck = undefined;
 
   for (const occasion of OCCASIONS) {

@@ -244,8 +244,12 @@ export function m01SurfaceModel(
 
   return {
     title: batch.title,
+    // A batch held as U / M was never run: "closed" (U24 RL-1C, decision
+    // D); H and a first load keep "recorded".
     subtitle: done
-      ? 'recorded'
+      ? holdBack === 'U' || holdBack === 'M'
+        ? 'closed'
+        : 'recorded'
       : s.plan_locked
         ? `${s.done.length} / ${M01_JOBS} done`
         : 'three jobs',

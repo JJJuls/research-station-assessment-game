@@ -1666,6 +1666,34 @@ existing F5 and `absentFeature` reload readings are unchanged. No formula,
 weight, denominator rule or event name other than the suffix above
 changes.
 
+U24 RL-1C (PROVISIONAL, never canonical; the owner's RL-1C ruling of 24
+October 2026, decisions A–D; register §5.406, which supersedes the
+sentence "without any check, the existing F5 and `absentFeature` reload
+readings are unchanged" above **only** for a presented, unopened
+occasion): in a reloaded load without the family's check, a presented,
+unopened occasion (M04: coupons `listed`) is U (`no_check`), refused, and
+reads held with the row's U reason; M13, which has no presentation record,
+is unchanged; a genuinely unreached occasion keeps the F5 / `absentFeature`
+reading and a first load its own reading. **Diagnostics** (after a reload
+or beside a check only; a first load's shape is unchanged): the primary
+row's components of M01, M02, M03, M04, M06, M08, M12 and M13 gain
+`exposure_record_consistent` (the existing name of §5.290 (a); on these
+rows only two of its conditions are wired: the check-record part, and false
+when an occasion whose own record found an earlier opening is opened in
+this load too — register §5.406 reading (h)), and the occasion rows (M01,
+M03, M04, M12) gain `exposure_record_inconsistent_occasions` (the offending
+occasions only); M04's `reload_jobs` entries gain
+`joint_hold_back_bypassed` (a job held only with the other and cut in this
+load; B2 open). The M12 context note `exposure:<other>_before` again names
+only the other packet opened, or its held screen opened, in this load.
+**Reading changes (decision A only):** without a check, a presented,
+unopened occasion changes from declined (M03 / M04: the generic held
+reason) to held with the U reason, and — a consequence of the same rule —
+M01 / M12 / M03 OBS + DEC without a check reads interrupted · x · x/3 (the
+S-F2 reading) instead of `incomplete`. The diagnostics change no
+disposition, value, numerator or denominator. No formula, weight,
+denominator rule or event name changes.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                               | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

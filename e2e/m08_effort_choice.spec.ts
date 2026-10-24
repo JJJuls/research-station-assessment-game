@@ -505,6 +505,10 @@ function rl1Load(
     present: boolean;
     integrity?: typeof RL1_CONTINUOUS;
     records?: (record: Record<string, unknown>) => object[];
+    /** False: no marker for a held class (a host without its guard). */
+    marker?: boolean;
+    /** A complete current-load stream written after the record. */
+    work?: readonly RawGameEvent[];
   },
 ) {
   const priorEvents = [
@@ -532,7 +536,10 @@ function rl1Load(
       rl1Event('presented', 2, (sequence += 1), { input_mode: 'system' }),
     );
 
-    if (cls === 'H' || cls === 'U' || cls === 'M') {
+    if (
+      options.marker !== false &&
+      (cls === 'H' || cls === 'U' || cls === 'M')
+    ) {
       current.push(
         rl1Event('technical_failure', 2, (sequence += 1), {
           detail: RL1_DETAIL[cls],
@@ -540,6 +547,10 @@ function rl1Load(
         }),
       );
     }
+  }
+
+  for (const event of options.work ?? []) {
+    current.push({ ...event, page_load_index: 2, sequence: (sequence += 1) });
   }
 
   return {
@@ -647,5 +658,166 @@ test.describe('M08 single-occasion rule after a reload (U24 RL-1, pure)', () => 
     });
     expect(rows[0]).toMatchObject({ disposition: 'interrupted', value: null });
     expect(rows[0].missing_reason).toBe(RL1_REASON.M);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-1C (owner ruling of 24 October 2026; register §5.406)
+ * ------------------------------------------------------------------ */
+
+/**
+ * A complete console of this load (presented, opened, six explicit
+ * choices: work at benefit 3, rest at benefit 1), with the H marker after
+ * the presentation when named.
+ */
+function rl1cConsole(marker: boolean): RawGameEvent[] {
+  const h = harness();
+  const s = createM08State('order_b');
+
+  h.present();
+  h.open();
+
+  let now = runPractice(s, 0, h.sink);
+
+  for (let slot = 0; slot < 6; slot += 1) {
+    expect(m08Continue(s, now, 'pointer', h.sink)).toBe(true);
+
+    const epoch = m08CurrentEpoch(s)!;
+
+    m08Choose(
+      s,
+      epoch.benefit_units === 3 ? 'work' : 'rest',
+      now,
+      'pointer',
+      h.sink,
+    );
+
+    if (epoch.benefit_units === 3) {
+      expect(m08SortWork(s, 'B', now + 1_000, 'keyboard', h.sink)).toBe(true);
+    }
+
+    now += M08_EPOCH_MS;
+    m08Tick(s, now, h.sink);
+  }
+
+  h.close(s, 'completed', 'completed');
+
+  const events = [...h.events];
+
+  if (marker) {
+    events.splice(
+      1,
+      0,
+      rl1Event('technical_failure', 2, 0, {
+        detail: RL1_DETAIL.H,
+        input_mode: 'system',
+      }),
+    );
+  }
+
+  return events;
+}
+
+test.describe('M08 RL-1C: a missing check and the exposure-record diagnostics (pure)', () => {
+  test.beforeEach(() => {
+    resetFocusMonitor();
+  });
+
+  test('Q1 (A): a presented, unopened console of a reloaded load without its check is U (no_check), refused, and reads held with the U reason', () => {
+    const { reload, rows } = rl1Load([], {
+      present: true,
+      records: () => [],
+      marker: false,
+    });
+
+    expect(reload).toMatchObject({
+      check_count: 0,
+      check_coherent: null,
+      exposure_record_consistent: true,
+      check_malformed: false,
+      history_level_uncertain: true,
+    });
+    expect(reload.occasions.row).toMatchObject({
+      class: 'U',
+      basis: 'no_check',
+      administration_permitted: false,
+    });
+
+    for (const row of rows) {
+      expect(row).toMatchObject({
+        disposition: 'interrupted',
+        value: null,
+        missing_reason: RL1_REASON.U,
+      });
+    }
+  });
+
+  test('Q1 contrasts: the first load keeps declined; a genuinely unreached load keeps the absentFeature reading', () => {
+    const h = harness();
+
+    h.present();
+
+    const first = extractItemFeatures('M08', h.events, CONTEXT);
+
+    for (const row of first) {
+      expect(row).toMatchObject({
+        disposition: 'declined',
+        value: null,
+        missing_reason: 'console listed in the yard briefing, never opened',
+      });
+    }
+
+    expect(first[0].components).not.toHaveProperty(
+      'exposure_record_consistent',
+    );
+
+    const unreached = rl1Load([], { present: false, records: () => [] });
+
+    expect(unreached.rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason:
+        'no current-load evidence after a reload: support console never opened',
+    });
+  });
+
+  // Q2 (B): the record found the earlier opening while this load opens the
+  // console again. Expected from the existing rules: a marker is read only
+  // while nothing was opened (m08.ts, the `opened.length === 0` branch), so
+  // with or without it the current-load observation stands (3 work
+  // choices of 6).
+  for (const marker of [false, true]) {
+    test(`Q2 (B): an H record beside an opening of this load, ${marker ? 'with its H marker' : 'no marker'} ⇒ observed · 3 · 3/6, flagged`, () => {
+      const { reload, rows } = rl1Load(['opportunity_opened'], {
+        present: false,
+        work: rl1cConsole(marker),
+      });
+
+      expect(reload.occasions.row.class).toBe('H');
+      expect(rows[0]).toMatchObject({
+        disposition: 'observed',
+        value: 3,
+        numerator: 3,
+        denominator: 6,
+      });
+      expect(rows[0].components).toMatchObject({
+        exposure_record_consistent: false,
+      });
+      expect(rows[0].components).not.toHaveProperty(
+        'exposure_record_inconsistent_occasions',
+      );
+    });
+  }
+
+  test('Q2 contrast: an A record beside the opening raises no flag', () => {
+    const { rows } = rl1Load([], {
+      present: false,
+      work: rl1cConsole(false),
+    });
+
+    expect(rows[0]).toMatchObject({ disposition: 'observed', value: 3 });
+    expect(rows[0].components).toMatchObject({
+      exposure_record_consistent: true,
+    });
   });
 });

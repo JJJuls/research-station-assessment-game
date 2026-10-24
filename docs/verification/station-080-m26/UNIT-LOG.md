@@ -18397,3 +18397,148 @@ Finish with the closeout status, durable evidence paths, bounded correction spec
   passed; no BLOCKING or MAJOR finding.
 - **Not claimed.** RL-1 does not make the game fully verified or ready for
   participant collection; RL-2 to RL-4 and the RL-F recapture remain.
+
+## U24 RL-1C — close out RL-1: missing-check readings, exposure-consistency diagnostics, the M12 note and the held screens (24 October 2026)
+
+- **The owner's RL-1C ruling, verbatim** (recorded before any
+  implementation edit; section 1 of
+  `…\2026\10\24\u24-rl-correction-1c\RL-OWNER-RULING-1C-2026-10-24.md`,
+  SHA-256 `b5c6555725e9277e050a0ce09dd62ea5377c97e400a0927f7e1906c53ed1eb4a`, which also holds the approved proposal verbatim;
+  register §5.406):
+
+  ```text
+  I approve the RL-1C proposal from 5a20af541846828e0c8a12defb0c4ae8044d5c14, including decisions A, B, C and D, with the following binding qualifications.
+
+  1. Missing-check readings
+  Apply the proposed U/interrupted treatment to a presented-but-unopened occasion after a reload when its required check is missing. Keep genuinely unreached occasions distinct.
+
+  Preserve each task’s own first-load reading and value/numerator/denominator shape. Do not assert that every first-load contrast is declined: M04’s listed-only case, for example, keeps its existing not_presented reading.
+
+  2. Integrity flags and preserved values
+  Approve the proposed provisional exposure_record_consistent, exposure_record_inconsistent_occasions and M04 joint_hold_back_bypassed reporting.
+
+  For the same complete event fixture, preserve the existing disposition, value, numerator and denominator while adding these diagnostics. Do not remove the check record to generate the comparison expectation. Write expected outcomes from the applicable existing rules.
+
+  Test both presence and absence of a hold-back marker, preserving its existing precedence. Include an unaffected A sibling; the inconsistent-occasion list must identify only the offending occasion.
+
+  For B2, retain current values in RL-1C and expose the joint hold-back violation. This does not approve the observation’s validity or settle its later exclusion. Keep that decision explicitly open. Part C must distinguish consistency of the job’s own exposure evidence from a joint_hold_back_bypassed violation.
+
+  3. M12 context note
+  Approve restoring the note’s pre-RL-1 meaning. Add compact positive and negative fixtures:
+  - actual opening of the other packet still produces the note;
+  - viewing its held screen still produces it;
+  - an availability-only H/U/M hold does not;
+  - the rule works in both packet orders.
+
+  Keep the proposed focused browser check. Do not treat M04’s prior_exposure list length as its own exposure; retain the structured own-versus-dependent distinction.
+
+  4. Screens
+  Approve “closed” for M01 U/M only, preserving H and first-load text.
+  Approve the narrowly scoped RecordsWorkshopScene.ts import/condition change that keeps access to the return batch’s read-only held screen without administration.
+  Ratify omission of the M06/M08 readouts on U/M held screens only.
+
+  5. Exact scope
+  The listed scope totals 24 paths: eight extractors, three runtime/screen files, nine test files and four documents. Correct the stated count and verify the literal allowlist against that list. No additional paths are authorized.
+
+  6. Commit, package and verification
+  Authorize one inserted RL-1C unit and one local commit with the proposed subject. Do not amend RL-0 or RL-1.
+
+  Prepare a separately versioned execution-package extension, preserving the existing package and frozen evidence. Update all subsequent chain and scope-audit checks to include RL-1C, while preserving the other units’ substantive scopes. RL-2 will start from the verified RL-1C commit.
+
+  Use the proposed focused tests, the existing 217-test regression, Sonnet verification, and one focused independent Opus review covering the changed scientific rules and held-screen behaviour/layout. No broad audit or Fable run.
+
+  This authorizes implementation in a fresh RL-1C session with its exact allowlist. In the current session, prepare the package only in permitted locations, validate it, and provide complete copy/hash/check/launch commands. Do not implement under RL-1’s old permissions.
+
+  Record this ruling before implementation. Preserve the actual P-1 verifier outcome. Stop after the verified RL-1C commit and durable handoff. No push, merge, RL-2 or Part C execution.
+  ```
+
+- **Authority (by reference).** The owner's RL-1C ruling above and the
+  approved proposal (`RL-OWNER-RULING-1C-2026-10-24.md`, SHA-256
+  `b5c6555725e9277e050a0ce09dd62ea5377c97e400a0927f7e1906c53ed1eb4a`, in
+  the extension package `…\2026\10\24\u24-rl-correction-1c`, manifest
+  `SHA256SUMS.txt` `57a1be41…6daf`); the unit brief `RL-EXECUTE-1C.md`
+  (SHA-256 `90efb026f2dd642fdcc7f2813cdacffdc96e0dec70a754592587164fc96f1c01`);
+  the ruling's section 1 saved in the unit's evidence as
+  `OWNER-RULING-RL1C-2026-10-24.txt` (SHA-256
+  `c250780e2915123a88118b0dc9eea39831ff97724f436623ca12d6b46caff232`). The
+  existing package (`…\2026\10\23\u24-rl-correction`, its ruling, r3 and
+  briefs), the RL-1 ruling (register §5.405) and the frozen r2 are
+  unchanged. The D-1 room exception covers the Concourse, the Workshop, the
+  IP laboratory and the Yard (extractor readings) and the Workshop (the
+  return-batch option).
+- **Gate.** Writer `claude-opus-5-5`; root, branch `codex/u24-end-to-end`
+  and HEAD `5a20af5…` (the RL-1 commit); status `?? .agents/`, `?? .codex/`
+  only; `CLAUDE_UNIT_ALLOWLIST` equal to `RL-ALLOWLIST-1C.txt` (24 paths);
+  the frozen U24 evidence (B to B-closeout-4) and the RL-0 and RL-1 evidence
+  present with their manifests unchanged; the ten foreign files
+  hash-identical to `FOREIGN-INVENTORY-SUPPLEMENT-2026-10-22.json`; the
+  ruling recorded here and in register §5.406 before any implementation
+  edit; `PLAN.md` written before the first implementation edit.
+- **Work.** As register §5.406 states: (1) decision A in the extractors of
+  M01, M02, M03, M04, M06, M08 and M12 (M13 unchanged); (2) the provisional
+  `exposure_record_consistent` / `exposure_record_inconsistent_occasions`
+  diagnostics on the eight rows and M04's `joint_hold_back_bypassed`,
+  values unchanged; (3) the M12 context note restored
+  (`m12QualityControl.ts`); (4) the M01 U / M subtitle "closed"
+  (`m01SurfaceModel.ts`) and the return-batch option kept while batch 2 is
+  held (`RecordsWorkshopScene.ts`, one import and the condition); the
+  context-change addendum and the Part C requirements; B2 recorded as open.
+  The "today" cells of the brief were verified against the code at
+  `5a20af5` (the red run of the new pure tests, evidence
+  `logs/today-cells.txt`): all agree, including the corrected M03 row. No
+  helper, model or other scene file, no event name, formula, weight or
+  denominator rule changes. Writer's readings (h)–(l) are in §5.406.
+- **Recorded for the later independent recount** (Part C layer R; Part C
+  is not authorised): register §5.406's requirements beside §5.405's — M04's
+  own exposure from `reload_jobs` (`own_class` H with `prior_opening_found`
+  true) and its dependency from `joint_hold_back` with `held_with`, never
+  from the length of `prior_exposure`; the job's own exposure consistency
+  kept apart from `joint_hold_back_bypassed`; on these eight rows
+  `exposure_record_consistent` carries only the record part and the
+  H-beside-opening condition (reading (h)), so it does not mean the same as
+  on M14–M20; the context changes (a)–(e) are context only.
+- **Open decision B2 (owner):** whether the observation of an M04 job held
+  only with the other and cut anyway (`joint_hold_back_bypassed` true)
+  should ever be excluded. Not resolved; current values kept.
+- **Verification** (durable evidence
+  `C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-evidence\RL-1C\`,
+  with its manifest). Pure: the eight row specs and `reload_check.spec.ts`,
+  259 passed (217 existing, unchanged in outcome; 42 new); the new tests
+  were first run red against the unchanged extractors (225 passed, 34
+  failed: every Q1 test at its reading, every Q2 test at its components
+  assertion after its value assertions had passed). Browser
+  (`adversarial_reload_partial_state.spec.ts`, genuine `page.reload()`,
+  traces on, 800 × 600, ordinary input; the M12 note fixtures in-page,
+  labelled harness): the whole spec once, 9 of 9 passed (37.9 min) — the
+  existing test, RL-1's R1 (now asserting the H subtitle "recorded"), R-2 +
+  R1, R2 and R3 (now asserting the U subtitle "closed"), and RL-1C's return
+  batch in a U load (option listed, U screen, "closed", nothing
+  administered, still listed after), the M12 note (packet 1 H at
+  availability, packet 2 opened: no note) and the harness fixtures in both
+  packet orders (opened ⇒ note, held screen opened ⇒ note,
+  availability-only H / U ⇒ no note; M is not producible at the host). The
+  subtitles are read from the open surface's model in the page; the kept
+  screenshots show the rendered "recorded" and "closed". U24 S3 / V-5 (b):
+  not run (not required: every S3 host writes its record; the U24 specs are
+  unchanged).
+- **Reviews** (read-only; reports in the evidence's `reviews\`). One
+  focused Opus 5.5 review (`claude-opus-5-5`; `scientific-reviewer.md` and
+  `visual-reviewer.md`): scientific — accept with minor corrections (Q1, Q2,
+  Q3 correct; the OBS + DEC consequence follows from the approved rule; the
+  claim that M cannot be produced at the host verified); the addendum's
+  closing sentence, which read alone denied the Q1 reading changes, and its
+  "existing meaning" wording were corrected; the redundant `presentedSet`
+  clause in `heldClass` (M01, M12) left as it is; visual — accept (the
+  board change is one import and the condition; nothing administered; the
+  U screen legible). Sonnet 5.5 scheduled verification
+  (`claude-sonnet-5-5`): PASS — `lint:tsc`, build, ESLint, the spec
+  typecheck and `git diff --check` clean; 259 pure passed; the return-batch
+  U case re-run with a genuine reload passed; no finding.
+- **For the owner (recorded, not changed within RL-1C).** (1) The OBS + DEC
+  consequence of decision A (M01 / M12 / M03 without a check: interrupted ·
+  x · x/3, formerly `incomplete`) is not in the ruling's table; it follows
+  from the approved rule. (2) On the M01 held screens the second status line
+  sits about 8 px above the "JOB CARDS" heading, and the help line still
+  names "1/2/3 jobs" (both unchanged since RL-1). (3) B2 stays open.
+- **Not claimed.** RL-1C does not make the game fully verified or ready for
+  participant collection; RL-2 to RL-4 and the RL-F recapture remain.

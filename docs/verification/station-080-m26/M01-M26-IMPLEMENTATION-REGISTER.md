@@ -14287,3 +14287,195 @@ onward are the writer's readings and dispositions under it.
      apart from an occasion-local one, read M04's own and effective classes
      apart with the dependency reason, and accept prior-administration
      wording on a dependent job only beside an H job.
+
+406. **U24 RL-1C — the owner's RL-1C ruling (24 October 2026), recorded
+     verbatim before any implementation edit (section 1 of
+     `…\2026\10\24\u24-rl-correction-1c\RL-OWNER-RULING-1C-2026-10-24.md`,
+     SHA-256 `b5c6555725e9277e050a0ce09dd62ea5377c97e400a0927f7e1906c53ed1eb4a`; the file also holds the approved proposal
+     verbatim; UNIT-LOG "U24 RL-1C").**
+
+     ```text
+     I approve the RL-1C proposal from 5a20af541846828e0c8a12defb0c4ae8044d5c14, including decisions A, B, C and D, with the following binding qualifications.
+
+     1. Missing-check readings
+     Apply the proposed U/interrupted treatment to a presented-but-unopened occasion after a reload when its required check is missing. Keep genuinely unreached occasions distinct.
+
+     Preserve each task’s own first-load reading and value/numerator/denominator shape. Do not assert that every first-load contrast is declined: M04’s listed-only case, for example, keeps its existing not_presented reading.
+
+     2. Integrity flags and preserved values
+     Approve the proposed provisional exposure_record_consistent, exposure_record_inconsistent_occasions and M04 joint_hold_back_bypassed reporting.
+
+     For the same complete event fixture, preserve the existing disposition, value, numerator and denominator while adding these diagnostics. Do not remove the check record to generate the comparison expectation. Write expected outcomes from the applicable existing rules.
+
+     Test both presence and absence of a hold-back marker, preserving its existing precedence. Include an unaffected A sibling; the inconsistent-occasion list must identify only the offending occasion.
+
+     For B2, retain current values in RL-1C and expose the joint hold-back violation. This does not approve the observation’s validity or settle its later exclusion. Keep that decision explicitly open. Part C must distinguish consistency of the job’s own exposure evidence from a joint_hold_back_bypassed violation.
+
+     3. M12 context note
+     Approve restoring the note’s pre-RL-1 meaning. Add compact positive and negative fixtures:
+     - actual opening of the other packet still produces the note;
+     - viewing its held screen still produces it;
+     - an availability-only H/U/M hold does not;
+     - the rule works in both packet orders.
+
+     Keep the proposed focused browser check. Do not treat M04’s prior_exposure list length as its own exposure; retain the structured own-versus-dependent distinction.
+
+     4. Screens
+     Approve “closed” for M01 U/M only, preserving H and first-load text.
+     Approve the narrowly scoped RecordsWorkshopScene.ts import/condition change that keeps access to the return batch’s read-only held screen without administration.
+     Ratify omission of the M06/M08 readouts on U/M held screens only.
+
+     5. Exact scope
+     The listed scope totals 24 paths: eight extractors, three runtime/screen files, nine test files and four documents. Correct the stated count and verify the literal allowlist against that list. No additional paths are authorized.
+
+     6. Commit, package and verification
+     Authorize one inserted RL-1C unit and one local commit with the proposed subject. Do not amend RL-0 or RL-1.
+
+     Prepare a separately versioned execution-package extension, preserving the existing package and frozen evidence. Update all subsequent chain and scope-audit checks to include RL-1C, while preserving the other units’ substantive scopes. RL-2 will start from the verified RL-1C commit.
+
+     Use the proposed focused tests, the existing 217-test regression, Sonnet verification, and one focused independent Opus review covering the changed scientific rules and held-screen behaviour/layout. No broad audit or Fable run.
+
+     This authorizes implementation in a fresh RL-1C session with its exact allowlist. In the current session, prepare the package only in permitted locations, validate it, and provide complete copy/hash/check/launch commands. Do not implement under RL-1’s old permissions.
+
+     Record this ruling before implementation. Preserve the actual P-1 verifier outcome. Stop after the verified RL-1C commit and durable handoff. No push, merge, RL-2 or Part C execution.
+     ```
+
+     **Supersession (decision A, qualification 1).** This ruling supersedes
+     §5.405's writer reading "with no check in the load the review is
+     unchanged" (reading (c)) and addendum §2 "U24 RL-1"'s "without any
+     check, the existing F5 and `absentFeature` reload readings are
+     unchanged" **only** for a presented, unopened occasion of a reloaded
+     load: such an occasion is U (`no_check`), refused, and reads held with
+     the U reason. A genuinely unreached occasion (no record, no
+     presentation) keeps the F5 / `absentFeature` reading, and a first
+     load keeps each task's own first-load reading. §5.405's text is left
+     unchanged.
+
+     **The RL-1C work (UNIT-LOG "U24 RL-1C"; addendum §2 "U24 RL-1C").**
+     (1) **Missing check (decision A, qualification 1).** In a reloaded
+     load (`page_reloaded`) without the family's check, a presented,
+     unopened occasion is U (`no_check`), refused, and reads held with the
+     row's U reason; the helper's flags are unchanged (`check_count` 0,
+     `check_coherent` null, `exposure_record_consistent` true,
+     `check_malformed` false, `history_level_uncertain` true). M01 and M12:
+     interrupted · null · null/null, "batch / packet not administered after
+     a reload: earlier history not verified"; M02, M06, M08: interrupted on
+     every row with the U reason; M03: interrupted · null · null/0, "a press
+     occasion was held back after a reload: earlier history not verified",
+     both occasions presented or one presented and the other unreached (the
+     reason, not the disposition, changes there); M04 (coupons `listed`,
+     nothing cut): interrupted · null · null/0 with the reason ending
+     "earlier history not verified". M13 is unchanged: it has no
+     presentation record, so a host without its record cannot be told from
+     an unreached one. A first load keeps each row's own first-load reading
+     (M01, M02, M06, M08, M12 declined; M03 declined · null/0; M04 listed
+     only `not_presented`), and a genuinely unreached occasion (no record,
+     no presentation) keeps the F5 / `absentFeature` reading. The "today"
+     cells of the brief were verified against the code at `5a20af5` before
+     any fixture was written: all agree, including the brief's corrected M03
+     row. **A consequence of the approved rule (no new decision):** without a
+     check, a presented, unopened occasion beside an observed sibling is now
+     held, so M01 / M12 OBS + DEC read interrupted · x · x/3 (the S-F2
+     reading) where they read `incomplete` before (M03 likewise); the rule
+     "an unopened occasion that is not A is held; without a check only when
+     presented" covers it. A load whose context says reloaded while its page
+     index is 1 (an inconsistent context the existing M08 spec keeps) is not
+     classified by the helper, so the no-check rule does not apply there.
+     (2) **Exposure-record diagnostics (decision B, qualification 2;
+     PROVISIONAL, never canonical).** After a reload or beside a check only
+     (a first load's shape is unchanged), the primary row's components of
+     M01, M02, M03, M04, M06, M08, M12 and M13 gain
+     `exposure_record_consistent` — the existing name and meaning (§5.290
+     (a); `m14.ts`, the H-beside-opening flag): the helper's check-record
+     part (false for two or more records, a record on a first page load, a
+     self-contradictory or malformed one) and false when an occasion whose
+     OWN record found an earlier opening (H) is opened in this load too —
+     and the occasion rows (M01, M03, M04, M12) gain
+     `exposure_record_inconsistent_occasions`, listing only the offending
+     occasion(s); an A sibling with its own observation is never listed and
+     never clears the flag. No disposition, value, numerator or denominator
+     changes: with a marker its existing precedence stands (M01 / M12 the
+     S-F2 reading over the observed set; M03 / M04 the occasion's held
+     status before its departure; M02's technical-failure branch; M13's
+     hold-back branch; M06 / M08 read a marker only while nothing was
+     opened), without one the current-load observation counts. **M04's
+     dependent job (B2):** a job held only with the other (own A, effective
+     H / U) and cut anyway keeps `exposure_record_consistent` true (its own
+     exposure evidence is consistent) and reports
+     `reload_jobs.<job>.joint_hold_back_bypassed: true` (false otherwise,
+     on every job after a reload); its reading keeps its current values.
+     (3) **The M12 context note (qualification 3).**
+     `exposure:<other>_before` is written again only when the other packet
+     was opened in this load (`realisedOrder`) or its held screen was opened
+     in this load; a hold of the other packet at its availability alone (H,
+     U or M) writes no note. (4) **Screens (decisions C and D).** The M01
+     subtitle reads "closed" on a U / M held screen only (H "recorded" and
+     the first load unchanged); the Work Order Board keeps "Open the return
+     batch (three jobs)." while batch 2 is held
+     (`m01HoldBackClass('o2') !== null`), which opens the existing read-only
+     held screen and
+     administers nothing (`RecordsWorkshopScene.ts`, one import and the
+     option's condition); the RL-1 omission of the M06 / M08 readouts on U /
+     M screens only is kept as ratified. **Writer's readings (IMPLEMENTER
+     DEFAULTS, owner-visible and reversible):** (h) the row flag includes
+     the helper's check-record part, as the helper's own contract and M14
+     state ("an extractor still clears the flag for its current-load
+     conditions"); only the H-beside-opening current-load condition is
+     added — the "absence claimed beside the hold-back" condition of §5.290
+     (a) is not wired on these eight rows (it was not part of the approved
+     proposal); (i) the "opening" is each row's own stage-3 predicate on
+     this load's events (`opportunity_opened`; M13 `series_opened`; M04 the
+     cut's `opportunity_opened`); (j) the diagnostics are added by a wrapper
+     around each row's unchanged extractor body (M04 beside its existing
+     `reload_jobs`); (k) M03 treats a surfaced panel as presented for the
+     no-check rule (its stage 2), as the F5 condition already did; (l) for
+     M04, `listed` or the job's own `presented` is a presentation.
+
+     **The context changes of RL-1 (addendum, qualification 3; proposal
+     §3; none enters a derived measure).** (a) M12 `exposure:<other>_before`
+     (validity `prior_exposure`): before RL-1 written when the other packet
+     had been opened, or held at an open attempt, in this load; after RL-1
+     also when the other packet was merely held at its availability;
+     **restored by RL-1C** to the first meaning (opened, or held screen
+     opened, in this load). Consumers: the validity export; coverage reads
+     only `contamination:` notes; `opportunityValidity` ignores it. (b) M13
+     `entered` and `openedOrder` → `ip_windows_opened_before`: before RL-1 a
+     held bench whose record screen was opened counted as entered and
+     "opened before"; after RL-1 a bench held at room entry is never
+     entered. Consumers: IP event metadata and probes, coverage status
+     (`invalid` takes precedence); no extractor reads it. Unchanged by
+     RL-1C. (c) M18 `prior_m13_window_status` (entry snapshot, exported in
+     M18's components): before RL-1 `unopened` until the participant opened
+     the held bench; after RL-1 `technical_failure` from room entry onward —
+     the hold state, not a bench fault. Context only; Part C must read it as
+     hold state. Unchanged by RL-1C. (d) The neighbour statuses in entry
+     snapshots (`m01_batch_o1`, `m02_case_workspace`, `m06_orders`,
+     `m12_packet_o2`): before RL-1 `unopened` until clicked; after RL-1
+     `closed` from availability — held, not closed by the participant. The
+     extractors read only `stage`, `presented_by`, `reachability`, `form`,
+     `rule`. Unchanged by RL-1C. (e) M04's dependent job's `prior_exposure`:
+     before RL-1 both jobs got "a cutting job was administered…"; after
+     RL-1 an own-H job gets that note and a dependent job beside an H job
+     gets "the other cutting job was administered in an earlier page load
+     of this identity; this job, never cut, shares its starting state" —
+     truthful, but not the job's own exposure. Consumers: the validity
+     export; Part C. Unchanged by RL-1C.
+
+     **Recorded for the later independent recount (Part C layer R; not
+     executed, Part C unauthorised), in addition to §5.405's:** M04's own
+     exposure is read from `reload_jobs` (`own_class` H with
+     `prior_opening_found` true), the dependency from `joint_hold_back`
+     true with `held_with`; never from the length of `prior_exposure` (the
+     note text is corroboration only); the job's own exposure consistency
+     (`exposure_record_consistent`) is kept apart from a
+     `joint_hold_back_bypassed` violation; a presented, unopened occasion of
+     a reloaded load without its check is U (`no_check`) and held, a
+     genuinely unreached one keeps the F5 / `absentFeature` reading; the
+     diagnostics flag a record without changing the row.
+
+     **Open decision B2 (owner; not resolved here):** whether the
+     observation of an M04 job held only with the other job (R-2) and cut in
+     the same load anyway — `joint_hold_back_bypassed` true — should ever be
+     excluded. RL-1C keeps its current values and exposes the violation;
+     this approves neither the observation's validity nor its later
+     exclusion.

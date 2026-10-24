@@ -25,7 +25,9 @@
  * load's `prior_load_checked` record classifies the bench H / A / U / M;
  * with its absence of an earlier opening established (A) a load with no
  * bench evidence takes the first-load reading. The record is never task
- * evidence.
+ * evidence. U24 RL-1C (register §5.406): the primary row reports the
+ * exposure-record diagnostic; a bench has no presentation record, so a
+ * load without its check keeps the reading of an unreached bench.
  */
 import {
   isM13NetworkId,
@@ -37,7 +39,10 @@ import {
   m13Network,
   type M13NetworkId,
 } from '../../informationProcessing/m13NetworkForms';
-import { classifyM13Reload } from '../../informationProcessing/m13NetworkSeries';
+import {
+  classifyM13Reload,
+  m13PriorAdministration,
+} from '../../informationProcessing/m13NetworkSeries';
 import type { RawGameEvent } from '../../systems/EventLogger';
 import {
   M13_PIECES,
@@ -61,7 +66,12 @@ import {
   registerFeatureExtractor,
   sequencesOf,
 } from './extract';
-import type { FeatureDisposition, FeatureRecord } from './types';
+import type {
+  ExtractContext,
+  FeatureDisposition,
+  FeatureExtractor,
+  FeatureRecord,
+} from './types';
 
 const FAMILY = M13N_FAMILY_PREFIX;
 const PRACTICE_RUNS_MAX = 3;
@@ -176,14 +186,65 @@ const HELD_REASON = {
   M: 'bench not administered after a reload: earlier check contradictory',
 } as const;
 
-registerFeatureExtractor('M13', (events, context) => {
-  const [primary] = registerEntry('M13').features;
-  const own = events.filter(
+/** The family's events of the current page load (the record included). */
+function ownEvents(
+  events: readonly RawGameEvent[],
+  context: ExtractContext,
+): RawGameEvent[] {
+  return events.filter(
     (event) =>
       (event.page_load_index === undefined ||
         event.page_load_index === context.pageLoadIndex) &&
       event.event_type.startsWith(FAMILY),
   );
+}
+
+/**
+ * The provisional exposure-record diagnostic (U24 RL-1C, decision B;
+ * register §5.406), after a reload or beside a check only: the row's
+ * components gain `exposure_record_consistent` — §5.290 (a), as in
+ * M14–M20: the helper's record part, and false when the record found an
+ * earlier opening (H) while this load opens the series too. A flag only:
+ * the row's values are never changed.
+ */
+function withExposureDiagnostics(
+  rows: FeatureRecord[],
+  events: readonly RawGameEvent[],
+  context: ExtractContext,
+): FeatureRecord[] {
+  const own = ownEvents(events, context);
+  const reload = classifyM13Reload(
+    context.pageLoadIndex,
+    own
+      .filter(
+        (event) => event.event_type === `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`,
+      )
+      .map((event) => event.metadata ?? {}),
+  );
+
+  if (!context.reloaded && reload.check_count === 0) {
+    return rows;
+  }
+
+  const [first, ...rest] = rows;
+
+  return [
+    {
+      ...first,
+      components: {
+        ...first.components,
+        exposure_record_consistent:
+          reload.exposure_record_consistent &&
+          !(reload.occasions.row.class === 'H' && m13PriorAdministration(own)),
+      },
+    },
+    ...rest,
+  ];
+}
+
+const m13Rows: FeatureExtractor = (events, context) => {
+  const [primary] = registerEntry('M13').features;
+  const own = ownEvents(events, context);
   const family = withoutPriorLoadChecks(own, FAMILY);
   const reload = classifyM13Reload(
     context.pageLoadIndex,
@@ -794,4 +855,8 @@ registerFeatureExtractor('M13', (events, context) => {
       },
     ),
   ] satisfies FeatureRecord[];
-});
+};
+
+registerFeatureExtractor('M13', (events, context) =>
+  withExposureDiagnostics(m13Rows(events, context), events, context),
+);

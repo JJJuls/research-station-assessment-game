@@ -834,3 +834,16 @@ extractors take the first-load reading under an established check (r3 §5);
 the existing held-back texts are unchanged and the §9 U / M lines are
 added. No formula, weight or denominator rule changes. F-B2, F-B7 and F-B8
 stay open until RL-2 to RL-4 and the RL-F recapture.
+
+**U24 RL-1C** (the owner's RL-1C ruling of 24 October 2026, decisions A–D;
+register §5.406, addendum §2 "U24 RL-1C", UNIT-LOG "U24 RL-1C") closes out
+RL-1: a presented, unopened occasion of a reloaded load without its check
+is U (`no_check`) and held (M13 unchanged); the primary rows of M01, M02,
+M03, M04, M06, M08, M12 and M13 report the provisional
+`exposure_record_consistent` (and, for occasion rows,
+`exposure_record_inconsistent_occasions`; M04
+`reload_jobs.<job>.joint_hold_back_bypassed`, B2 open) without changing a
+value; the M12 context note regains its meaning; the M01 U / M subtitle
+reads "closed" and the return batch's held screen stays reachable from the
+Work Order Board. No formula, weight or denominator rule changes. F-B2,
+F-B7 and F-B8 stay open until RL-2 to RL-4 and the RL-F recapture.

@@ -693,6 +693,47 @@ function checkEvent(record: object, loadIndex: number): RawGameEvent {
   };
 }
 
+/** An administered occasion's work after its presentation, as `step` says. */
+function runStep(
+  h: ReturnType<typeof harness>,
+  occasion: M01Occasion,
+  step: Step,
+) {
+  if (step === 'none' || step === 'present') {
+    return;
+  }
+
+  const s = createM01State(occasion, 'form_a');
+
+  h.opened(occasion);
+
+  if (step === 'open_unobserved') {
+    h.close(s, 'closed_at_review', 'closed_at_review');
+
+    return;
+  }
+
+  if (step === 'observe1') {
+    m01Pick(
+      s,
+      occasion === 'o1' ? 'isolate_loop' : 'sort_spares',
+      'pointer',
+      h.sink(occasion),
+    );
+    m01Place(s, 0, 'pointer', h.sink(occasion));
+  }
+
+  doAll(
+    s,
+    occasion === 'o1' ? 0 : 100_000,
+    h.sink(occasion),
+    occasion === 'o1'
+      ? ['isolate_loop', 'log_storm', 'replace_seal']
+      : undefined,
+  );
+  h.close(s, 'completed');
+}
+
 /**
  * A reloaded load as the runtime writes it: the record from the row's own
  * stage map (or `records`, to inject defects), then per occasion its
@@ -736,38 +777,7 @@ function reloadedLoad(
       continue;
     }
 
-    if (step === 'present') {
-      continue;
-    }
-
-    const s = createM01State(occasion, 'form_a');
-
-    h.opened(occasion);
-
-    if (step === 'open_unobserved') {
-      h.close(s, 'closed_at_review', 'closed_at_review');
-      continue;
-    }
-
-    if (step === 'observe1') {
-      m01Pick(
-        s,
-        occasion === 'o1' ? 'isolate_loop' : 'sort_spares',
-        'pointer',
-        h.sink(occasion),
-      );
-      m01Place(s, 0, 'pointer', h.sink(occasion));
-    }
-
-    doAll(
-      s,
-      occasion === 'o1' ? 0 : 100_000,
-      h.sink(occasion),
-      occasion === 'o1'
-        ? ['isolate_loop', 'log_storm', 'replace_seal']
-        : undefined,
-    );
-    h.close(s, 'completed');
+    runStep(h, occasion, step);
   }
 
   const from = prior.length + 1;
@@ -1189,6 +1199,194 @@ test.describe('M01 reload at availability (U24 RL-1, pure)', () => {
       value: 1,
       numerator: 1,
       denominator: 3,
+    });
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-1C (owner ruling of 24 October 2026; register §5.406)
+ * ------------------------------------------------------------------ */
+
+interface RawOccasion {
+  present?: boolean;
+  marker?: 'H' | 'U' | 'M';
+  step?: Step;
+}
+
+/**
+ * A load written event by event — logs the runtime never writes: a host
+ * that ran without its record (Q1), or an occasion opened beside a check
+ * that found its earlier opening (Q2, a guard bypass). The records given,
+ * then per occasion its presentation, its marker if named, and its work.
+ */
+function rawLoad(
+  prior: RawGameEvent[],
+  records: object[],
+  occasions: Record<M01Occasion, RawOccasion>,
+  pageLoadIndex = 2,
+) {
+  const h = harness();
+
+  for (const occasion of ['o1', 'o2'] as const) {
+    const { present = false, marker, step = 'present' } = occasions[occasion];
+
+    if (present) {
+      h.presented(occasion);
+    }
+
+    if (marker !== undefined) {
+      h.sink(occasion)('technical_failure', {
+        detail: HOLD_DETAIL[marker],
+        input_mode: 'system',
+      });
+    }
+
+    runStep(h, occasion, step);
+  }
+
+  const from = prior.length + 1;
+  const current = [
+    ...records.map((r) => checkEvent(r, pageLoadIndex)),
+    ...h.events,
+  ].map((event, i) => ({
+    ...event,
+    page_load_index: pageLoadIndex,
+    sequence: from + i,
+  }));
+
+  return extractItemFeatures('M01', [...prior, ...current], {
+    finalCoreClosed: true,
+    pageLoadIndex,
+    reloaded: pageLoadIndex > 1,
+  });
+}
+
+const RECORD_O1_H = m01PriorLoadCheck(2, O1_OPENED, CONTINUOUS)!;
+
+test.describe('M01 RL-1C: a missing check and the exposure-record diagnostics (pure)', () => {
+  test('Q1 (A): a presented, unopened batch of a reloaded load without its check is U (no_check), refused, and reads held with the U reason', () => {
+    const reload = classifyM01Reload(2, []);
+
+    // The helper's flags, unchanged.
+    expect(reload).toMatchObject({
+      check_count: 0,
+      check_coherent: null,
+      exposure_record_consistent: true,
+      check_malformed: false,
+      history_level_uncertain: true,
+    });
+
+    for (const occasion of ['o1', 'o2'] as const) {
+      expect(reload.occasions[occasion]).toMatchObject({
+        class: 'U',
+        basis: 'no_check',
+        administration_permitted: false,
+      });
+    }
+
+    // o1 presented, o2 unreached; and both presented.
+    for (const o2 of [{}, { present: true }]) {
+      const rows = rawLoad(NEVER, [], { o1: { present: true }, o2 });
+
+      expect(rows[0]).toMatchObject({
+        disposition: 'interrupted',
+        value: null,
+        numerator: null,
+        denominator: null,
+        missing_reason: UNVERIFIED_REASON,
+      });
+      expect(rows[1]).toMatchObject({
+        disposition: 'interrupted',
+        value: null,
+        missing_reason: UNVERIFIED_REASON,
+      });
+    }
+  });
+
+  test('Q1 contrasts: the first load keeps declined; a genuinely unreached load keeps the F5 / absentFeature reading', () => {
+    const first = rawLoad([], [], { o1: { present: true }, o2: {} }, 1);
+
+    expect(first[0]).toMatchObject({
+      disposition: 'declined',
+      value: null,
+      numerator: null,
+      denominator: null,
+      missing_reason: 'batch named on the route, never opened',
+    });
+    // The first-load shape: no reload diagnostics.
+    expect(first[0].components).not.toHaveProperty(
+      'exposure_record_consistent',
+    );
+
+    const unreached = rawLoad(NEVER, [], {
+      o1: { step: 'none' },
+      o2: { step: 'none' },
+    });
+
+    expect(unreached[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason:
+        'no current-load evidence after a reload: no batch opened',
+    });
+  });
+
+  test('Q1 rule: without a check, a presented-unopened batch beside an observed one is held — interrupted · x · x/3 (the S-F2 reading), no longer incomplete', () => {
+    const rows = rawLoad(NEVER, [], {
+      o1: { present: true, step: 'observe1' },
+      o2: { present: true },
+    });
+
+    expect(rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: 1,
+      numerator: 1,
+      denominator: 3,
+    });
+    expect(rows[0].components).toMatchObject({
+      occasions_interrupted: ['o2'],
+      occasions_declined: [],
+    });
+  });
+
+  // Q2 (B): o1's own record says H (opened in load 1) while this load also
+  // opens it; o2 is A and observed. Expected values from the existing
+  // rules, never from a run without the record: without a marker both
+  // closures are observations (m01.ts observed set; planned 0 + 1 of 6 ⇒
+  // observed); with the H marker o1 is held (marker precedence) and the
+  // S-F2 override makes the row interrupted, the observed set unchanged.
+  for (const c of [
+    { marker: undefined, disposition: 'observed' },
+    { marker: 'H' as const, disposition: 'interrupted' },
+  ]) {
+    test(`Q2 (B): an H record beside an opening of the same batch, ${c.marker === undefined ? 'no marker' : 'with its H marker'} ⇒ ${c.disposition} · 1 · 1/6, flagged; the A sibling is never listed`, () => {
+      const rows = rawLoad(O1_OPENED, [RECORD_O1_H], {
+        o1: { present: true, marker: c.marker, step: 'observe0' },
+        o2: { present: true, step: 'observe1' },
+      });
+
+      expect(classifyM01Reload(2, [RECORD_O1_H]).occasions.o2.class).toBe('A');
+      expect(rows[0]).toMatchObject({
+        disposition: c.disposition,
+        value: 1,
+        numerator: 1,
+        denominator: 6,
+      });
+      expect(rows[0].components).toMatchObject({
+        occasions_observed: ['o1', 'o2'],
+        exposure_record_consistent: false,
+        exposure_record_inconsistent_occasions: ['o1'],
+      });
+    });
+  }
+
+  test('Q2 contrast: an H record whose batch stays held raises no flag', () => {
+    const { rows } = reloadedLoad(O1_OPENED, { o1: 'present', o2: 'observe1' });
+
+    expect(rows[0]).toMatchObject({ disposition: 'interrupted', value: 1 });
+    expect(rows[0].components).toMatchObject({
+      exposure_record_consistent: true,
+      exposure_record_inconsistent_occasions: [],
     });
   });
 });

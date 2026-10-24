@@ -740,6 +740,10 @@ function rl1Load(
     present: boolean;
     integrity?: typeof RL1_CONTINUOUS;
     records?: (record: Record<string, unknown>) => object[];
+    /** False: no marker for a held class (a host without its guard). */
+    marker?: boolean;
+    /** A complete current-load stream written after the record. */
+    work?: readonly RawGameEvent[];
   },
 ) {
   const priorEvents = [
@@ -767,7 +771,10 @@ function rl1Load(
       rl1Event('presented', 2, (sequence += 1), { input_mode: 'system' }),
     );
 
-    if (cls === 'H' || cls === 'U' || cls === 'M') {
+    if (
+      options.marker !== false &&
+      (cls === 'H' || cls === 'U' || cls === 'M')
+    ) {
       current.push(
         rl1Event('technical_failure', 2, (sequence += 1), {
           detail: RL1_DETAIL[cls],
@@ -775,6 +782,10 @@ function rl1Load(
         }),
       );
     }
+  }
+
+  for (const event of options.work ?? []) {
+    current.push({ ...event, page_load_index: 2, sequence: (sequence += 1) });
   }
 
   return {
@@ -882,5 +893,145 @@ test.describe('M06 single-occasion rule after a reload (U24 RL-1, pure)', () => 
     });
     expect(rows[0]).toMatchObject({ disposition: 'interrupted', value: null });
     expect(rows[0].missing_reason).toBe(RL1_REASON.M);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-1C (owner ruling of 24 October 2026; register §5.406)
+ * ------------------------------------------------------------------ */
+
+/**
+ * A complete work period of this load (presented, opened, three correct
+ * orders to the budget end), with the H marker after the presentation
+ * when named.
+ */
+function rl1cWorkPeriod(marker: boolean): RawGameEvent[] {
+  const h = harness();
+  const s = createM06State('form_a');
+
+  h.presented();
+  h.opened();
+
+  const t = begin(s, T0, h.sink);
+
+  expect(sendCurrent(s, t + 2_000, h.sink)).toBe('correct');
+  expect(sendCurrent(s, t + 4_000, h.sink)).toBe('correct');
+  expect(sendCurrent(s, t + 6_000, h.sink)).toBe('correct');
+  expect(m06Tick(s, t + 60_000, h.sink)).toBe('budget');
+  h.close(s, 'completed', t + 60_000);
+
+  const events = [...h.events];
+
+  if (marker) {
+    events.splice(
+      1,
+      0,
+      rl1Event('technical_failure', 2, 0, {
+        detail: RL1_DETAIL.H,
+        input_mode: 'system',
+      }),
+    );
+  }
+
+  return events;
+}
+
+test.describe('M06 RL-1C: a missing check and the exposure-record diagnostics (pure)', () => {
+  test('Q1 (A): a presented, unopened console of a reloaded load without its check is U (no_check), refused, and reads held with the U reason', () => {
+    const { reload, rows } = rl1Load([], {
+      present: true,
+      records: () => [],
+      marker: false,
+    });
+
+    expect(reload).toMatchObject({
+      check_count: 0,
+      check_coherent: null,
+      exposure_record_consistent: true,
+      check_malformed: false,
+      history_level_uncertain: true,
+    });
+    expect(reload.occasions.row).toMatchObject({
+      class: 'U',
+      basis: 'no_check',
+      administration_permitted: false,
+    });
+
+    for (const row of rows) {
+      expect(row).toMatchObject({
+        disposition: 'interrupted',
+        value: null,
+        missing_reason: RL1_REASON.U,
+      });
+    }
+  });
+
+  test('Q1 contrasts: the first load keeps declined; a genuinely unreached load keeps the absentFeature reading', () => {
+    const h = harness();
+
+    h.presented();
+
+    const first = extractItemFeatures('M06', h.events, CONTEXT);
+
+    for (const row of first) {
+      expect(row).toMatchObject({
+        disposition: 'declined',
+        value: null,
+        missing_reason: 'console listed by the work orders, never opened',
+      });
+    }
+
+    expect(first[0].components).not.toHaveProperty(
+      'exposure_record_consistent',
+    );
+
+    const unreached = rl1Load([], { present: false, records: () => [] });
+
+    expect(unreached.rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason:
+        'no current-load evidence after a reload: dispatch console never opened',
+    });
+  });
+
+  // Q2 (B): the record found the earlier opening while this load opens the
+  // console again. Expected from the existing rules: a marker is read only
+  // while nothing was opened (m06.ts, the `opened.length === 0` branch), so
+  // with or without it the current-load observation stands (3 correct;
+  // the denominator is null, a count).
+  for (const marker of [false, true]) {
+    test(`Q2 (B): an H record beside an opening of this load, ${marker ? 'with its H marker' : 'no marker'} ⇒ observed · 3 · 3/null, flagged`, () => {
+      const { reload, rows } = rl1Load(['opportunity_opened'], {
+        present: false,
+        work: rl1cWorkPeriod(marker),
+      });
+
+      expect(reload.occasions.row.class).toBe('H');
+      expect(rows[0]).toMatchObject({
+        disposition: 'observed',
+        value: 3,
+        numerator: 3,
+        denominator: null,
+      });
+      expect(rows[0].components).toMatchObject({
+        exposure_record_consistent: false,
+      });
+      expect(rows[0].components).not.toHaveProperty(
+        'exposure_record_inconsistent_occasions',
+      );
+    });
+  }
+
+  test('Q2 contrast: an A record beside the opening raises no flag', () => {
+    const { rows } = rl1Load([], {
+      present: false,
+      work: rl1cWorkPeriod(false),
+    });
+
+    expect(rows[0]).toMatchObject({ disposition: 'observed', value: 3 });
+    expect(rows[0].components).toMatchObject({
+      exposure_record_consistent: true,
+    });
   });
 });

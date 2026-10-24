@@ -24,7 +24,10 @@
  * M. An occasion whose absence of an earlier opening is established (A)
  * takes the first-load reading; the F5 reading (no current-load evidence
  * after a reload ⇒ held) applies only to an occasion without one. The
- * record is never task evidence.
+ * record is never task evidence. U24 RL-1C (register §5.406): a presented,
+ * unopened occasion of a load without its check is U (`no_check`) and held
+ * with that reason; the primary row reports the exposure-record
+ * diagnostics.
  */
 import {
   M03_SPEC,
@@ -59,7 +62,12 @@ import {
   registerFeatureExtractor,
   sequencesOf,
 } from './extract';
-import type { FeatureDisposition, FeatureRecord } from './types';
+import type {
+  ExtractContext,
+  FeatureDisposition,
+  FeatureExtractor,
+  FeatureRecord,
+} from './types';
 
 const FAMILY = 'proto_m03tools_';
 const TOOLS_PER_OCCASION = 3;
@@ -169,7 +177,54 @@ function occasionOf(event: RawGameEvent): string | undefined {
   return meta<string>(event, 'occasion') ?? meta<string>(event, 'occasion_id');
 }
 
-registerFeatureExtractor('M03', (events, context) => {
+/**
+ * The provisional exposure-record diagnostics (U24 RL-1C, decision B;
+ * register §5.406), after a reload or beside a check only: the primary
+ * row's components gain `exposure_record_consistent` — §5.290 (a), as in
+ * M14–M20: the helper's record part, and false when an occasion whose own
+ * record found an earlier opening (H) has its tools laid out in this load
+ * too — and the offending occasions. A flag only: the row's values are
+ * never changed.
+ */
+function withExposureDiagnostics(
+  rows: FeatureRecord[],
+  events: readonly RawGameEvent[],
+  context: ExtractContext,
+): FeatureRecord[] {
+  const load = currentLoadEvents(events, context);
+  const reload = classifyM03Reload(
+    context.pageLoadIndex,
+    eventsOfType(load, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+
+  if (!context.reloaded && reload.check_count === 0) {
+    return rows;
+  }
+
+  const inconsistent = OCCASIONS.filter(
+    (occasion) =>
+      reload.occasions[occasion].class === 'H' &&
+      m03PriorAdministration(load, PRESS[occasion]),
+  );
+  const [first, ...rest] = rows;
+
+  return [
+    {
+      ...first,
+      components: {
+        ...first.components,
+        exposure_record_consistent:
+          reload.exposure_record_consistent && inconsistent.length === 0,
+        exposure_record_inconsistent_occasions: inconsistent,
+      },
+    },
+    ...rest,
+  ];
+}
+
+const m03Rows: FeatureExtractor = (events, context) => {
   const entry = registerEntry('M03');
   const [primary, states] = entry.features;
   const load = currentLoadEvents(events, context);
@@ -315,13 +370,14 @@ registerFeatureExtractor('M03', (events, context) => {
     const surfacedSequence = surfaces[0]?.sequence ?? null;
 
     // After a reload, an unopened occasion is held by its own class when
-    // the load's check does not establish its absence (U24 RL-1); without
-    // any check, only one with no current-load evidence is (F5).
+    // the load's check does not establish its absence (U24 RL-1) — U
+    // (`no_check`) in a reloaded load without a check (U24 RL-1C, decision
+    // A) — and one with no current-load evidence at all (F5).
     const classHeld =
       context.reloaded &&
       !established(occasion) &&
       opened === null &&
-      (checked || (!presented && !surfaced));
+      (checked || reload.page_reloaded || (!presented && !surfaced));
     const status: Status = heldBack
       ? 'interrupted'
       : faulted
@@ -345,12 +401,14 @@ registerFeatureExtractor('M03', (events, context) => {
     return {
       occasion,
       status,
+      // An occasion held by the F5 reading (no check, no current-load
+      // evidence) names no class: the generic reason stays.
       holdBackClasses: heldBack
         ? holdBacks.map(
             (event) =>
               reloadHoldBackClass(meta<unknown>(event, 'detail')) ?? 'H',
           )
-        : status === 'interrupted' && checked
+        : status === 'interrupted' && (checked || presented || surfaced)
           ? [reload.occasions[occasion].class ?? 'U']
           : [],
       restored: status === 'observed' ? recount : null,
@@ -595,4 +653,8 @@ registerFeatureExtractor('M03', (events, context) => {
           supporting_sequences: supporting,
         }),
   ] satisfies FeatureRecord[];
-});
+};
+
+registerFeatureExtractor('M03', (events, context) =>
+  withExposureDiagnostics(m03Rows(events, context), events, context),
+);

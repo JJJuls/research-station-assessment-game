@@ -3186,6 +3186,10 @@ function rl1Load(
     present: boolean;
     integrity?: typeof RL1_CONTINUOUS;
     records?: (record: Record<string, unknown>) => object[];
+    /** False: no marker for a held class (a host without its guard). */
+    marker?: boolean;
+    /** A complete current-load stream written after the record. */
+    work?: readonly RawGameEvent[];
   },
 ) {
   const priorEvents = [
@@ -3209,7 +3213,10 @@ function rl1Load(
   );
 
   if (options.present) {
-    if (cls === 'H' || cls === 'U' || cls === 'M') {
+    if (
+      options.marker !== false &&
+      (cls === 'H' || cls === 'U' || cls === 'M')
+    ) {
       current.push(
         rl1Event('technical_failure', 2, (sequence += 1), {
           detail: RL1_DETAIL[cls],
@@ -3218,6 +3225,10 @@ function rl1Load(
         }),
       );
     }
+  }
+
+  for (const event of options.work ?? []) {
+    current.push({ ...event, page_load_index: 2, sequence: (sequence += 1) });
   }
 
   return {
@@ -3315,5 +3326,115 @@ test.describe('M13 single-occasion rule after a reload (U24 RL-1, pure)', () => 
     });
     expect(rows[0]).toMatchObject({ disposition: 'interrupted', value: null });
     expect(rows[0].missing_reason).toBe(RL1_REASON.M);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-1C (owner ruling of 24 October 2026; register §5.406)
+ * ------------------------------------------------------------------ */
+
+/**
+ * A completed 3 / 3 series of this load, with the H hold-back record
+ * (both of its marks) before the series opening when named.
+ */
+function rl1cSeries(marker: boolean): RawGameEvent[] {
+  const events = rawLog(
+    completed(['sealed', 'sealed', 'sealed']).series.events,
+    2,
+  );
+
+  return marker
+    ? [
+        rl1Event('technical_failure', 2, 0, {
+          detail: RL1_DETAIL.H,
+          prior_exposure: true,
+          input_mode: 'system',
+        }),
+        ...events,
+      ]
+    : events;
+}
+
+test.describe('M13 RL-1C: the exposure-record diagnostics; the missing-check reading unchanged (pure)', () => {
+  test('Q1: M13 has no presentation record, so a host without its record cannot be told from an unreached one — the absentFeature reading stays', () => {
+    const { reload, rows } = rl1Load([], {
+      present: true,
+      records: () => [],
+      marker: false,
+    });
+
+    expect(reload.occasions.row).toMatchObject({
+      class: 'U',
+      basis: 'no_check',
+    });
+    expect(rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason:
+        'no current-load evidence after a reload: lattice bench never opened',
+    });
+  });
+
+  // Q2 (B): the record found the earlier opening while this load opens the
+  // bench again. Expected from the existing rules: without a marker the
+  // current-load observation (3 / 3); with the H hold-back record the
+  // hold-back branch takes precedence over every other disposition of the
+  // load (m13.ts) — interrupted, the earlier-opening reason.
+  test('Q2 (B): an H record beside an opening of this load, no marker ⇒ observed · 3 · 3/3, flagged', () => {
+    const { reload, rows } = rl1Load(['series_opened'], {
+      present: false,
+      work: rl1cSeries(false),
+    });
+
+    expect(reload.occasions.row.class).toBe('H');
+    expect(rows[0]).toMatchObject({
+      disposition: 'observed',
+      value: 3,
+      numerator: 3,
+      denominator: 3,
+    });
+    expect(rows[0].components).toMatchObject({
+      exposure_record_consistent: false,
+    });
+    expect(rows[0].components).not.toHaveProperty(
+      'exposure_record_inconsistent_occasions',
+    );
+  });
+
+  test('Q2 (B): the same with its H hold-back record ⇒ interrupted · null · null/null (the hold-back branch), flagged', () => {
+    const { rows } = rl1Load(['series_opened'], {
+      present: false,
+      work: rl1cSeries(true),
+    });
+
+    expect(rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      numerator: null,
+      denominator: null,
+      missing_reason: RL1_REASON.H,
+    });
+    expect(rows[0].components).toMatchObject({
+      held_back_after_reload: true,
+      exposure_record_consistent: false,
+    });
+  });
+
+  test('Q2 contrast: an A record beside the opening raises no flag; a first load carries no diagnostics', () => {
+    const { rows } = rl1Load([], {
+      present: false,
+      work: rl1cSeries(false),
+    });
+
+    expect(rows[0]).toMatchObject({ disposition: 'observed', value: 3 });
+    expect(rows[0].components).toMatchObject({
+      exposure_record_consistent: true,
+    });
+
+    const first = feature(
+      rawLog(completed(['sealed', 'sealed', 'sealed']).series.events),
+    );
+
+    expect(first.components).not.toHaveProperty('exposure_record_consistent');
   });
 });

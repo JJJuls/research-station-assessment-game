@@ -714,6 +714,53 @@ function priorLoad(
   }));
 }
 
+/** An administered packet's work after its presentation, as `step` says. */
+function runStep(
+  h: ReturnType<typeof harness>,
+  occasion: M12Occasion,
+  step: Step,
+) {
+  if (step === 'none' || step === 'present') {
+    return;
+  }
+
+  const s = createM12State(occasion, 'form_a');
+  const at = occasion === 'o1' ? T0 : T0 + 60_000;
+
+  h.opened(occasion);
+
+  if (step === 'open_unreleased') {
+    m12Freeze(s, 'closed_at_review');
+    h.close(s, 'closed_at_review');
+
+    return;
+  }
+
+  m12Release(
+    s,
+    step === 'release3' ? checkAll(s, at, h.sink(occasion)) : at,
+    'pointer',
+    h.sink(occasion),
+  );
+  h.close(s);
+}
+
+/** The family's check record as the window logs it. */
+function checkEvent(record: object): RawGameEvent {
+  return {
+    session_id: 's',
+    timestamp_ms: 0,
+    scene: 'station_concourse',
+    event_type: `${M12_FAMILY}prior_load_checked`,
+    metadata: {
+      opportunity_id: M12_OPPORTUNITY_IDS.o1,
+      occasion: 'o1',
+      ...record,
+      input_mode: 'system',
+    },
+  };
+}
+
 /** A reloaded load as the runtime writes it (see the M01 spec). */
 function reloadedLoad(
   prior: RawGameEvent[],
@@ -747,46 +794,11 @@ function reloadedLoad(
       continue;
     }
 
-    if (step === 'present') {
-      continue;
-    }
-
-    const s = createM12State(occasion, 'form_a');
-    const at = occasion === 'o1' ? T0 : T0 + 60_000;
-
-    h.opened(occasion);
-
-    if (step === 'open_unreleased') {
-      m12Freeze(s, 'closed_at_review');
-      h.close(s, 'closed_at_review');
-      continue;
-    }
-
-    m12Release(
-      s,
-      step === 'release3' ? checkAll(s, at, h.sink(occasion)) : at,
-      'pointer',
-      h.sink(occasion),
-    );
-    h.close(s);
+    runStep(h, occasion, step);
   }
 
   const from = prior.length + 1;
-  const current = [
-    {
-      session_id: 's',
-      timestamp_ms: 0,
-      scene: 'station_concourse',
-      event_type: `${M12_FAMILY}prior_load_checked`,
-      metadata: {
-        opportunity_id: M12_OPPORTUNITY_IDS.o1,
-        occasion: 'o1',
-        ...record,
-        input_mode: 'system',
-      },
-    } as RawGameEvent,
-    ...h.events,
-  ].map((event, i) => ({
+  const current = [checkEvent(record), ...h.events].map((event, i) => ({
     ...event,
     page_load_index: pageLoadIndex,
     sequence: from + i,
@@ -973,6 +985,170 @@ test.describe('M12 reload at availability (U24 RL-1, pure)', () => {
       disposition: 'interrupted',
       value: 3,
       denominator: 3,
+    });
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-1C (owner ruling of 24 October 2026; register §5.406)
+ * ------------------------------------------------------------------ */
+
+interface RawOccasion {
+  present?: boolean;
+  marker?: 'H' | 'U' | 'M';
+  step?: Step;
+}
+
+/**
+ * A load written event by event (see the M01 spec): a host without its
+ * record (Q1), or a packet opened beside a check that found its earlier
+ * opening (Q2).
+ */
+function rawLoad(
+  prior: RawGameEvent[],
+  records: object[],
+  occasions: Record<M12Occasion, RawOccasion>,
+  pageLoadIndex = 2,
+) {
+  const h = harness();
+
+  for (const occasion of ['o1', 'o2'] as const) {
+    const { present = false, marker, step = 'present' } = occasions[occasion];
+
+    if (present) {
+      h.presented(occasion);
+    }
+
+    if (marker !== undefined) {
+      h.sink(occasion)('technical_failure', {
+        detail: HOLD_DETAIL[marker],
+        input_mode: 'system',
+      });
+    }
+
+    runStep(h, occasion, step);
+  }
+
+  const from = prior.length + 1;
+  const current = [...records.map(checkEvent), ...h.events].map((event, i) => ({
+    ...event,
+    page_load_index: pageLoadIndex,
+    sequence: from + i,
+  }));
+
+  return extractItemFeatures('M12', [...prior, ...current], {
+    finalCoreClosed: true,
+    pageLoadIndex,
+    reloaded: pageLoadIndex > 1,
+  });
+}
+
+const RECORD_O1_H = m12PriorLoadCheck(2, O1_OPENED, CONTINUOUS)!;
+
+test.describe('M12 RL-1C: a missing check and the exposure-record diagnostics (pure)', () => {
+  test('Q1 (A): a presented, unopened packet of a reloaded load without its check is U (no_check), refused, and reads held with the U reason', () => {
+    const reload = classifyM12Reload(2, []);
+
+    expect(reload).toMatchObject({
+      check_count: 0,
+      check_coherent: null,
+      exposure_record_consistent: true,
+      check_malformed: false,
+      history_level_uncertain: true,
+    });
+
+    for (const occasion of ['o1', 'o2'] as const) {
+      expect(reload.occasions[occasion]).toMatchObject({
+        class: 'U',
+        basis: 'no_check',
+        administration_permitted: false,
+      });
+    }
+
+    for (const o2 of [{}, { present: true }]) {
+      const rows = rawLoad(NEVER, [], { o1: { present: true }, o2 });
+
+      expect(rows[0]).toMatchObject({
+        disposition: 'interrupted',
+        value: null,
+        numerator: null,
+        denominator: null,
+        missing_reason: UNVERIFIED_REASON,
+      });
+      expect(rows[1]).toMatchObject({
+        disposition: 'interrupted',
+        missing_reason: UNVERIFIED_REASON,
+      });
+    }
+  });
+
+  test('Q1 contrasts: the first load keeps declined; a genuinely unreached load keeps the F5 / absentFeature reading', () => {
+    const first = rawLoad([], [], { o1: { present: true }, o2: {} }, 1);
+
+    expect(first[0]).toMatchObject({
+      disposition: 'declined',
+      value: null,
+      numerator: null,
+      denominator: null,
+      missing_reason: 'packet named on the route, never opened',
+    });
+    expect(first[0].components).not.toHaveProperty(
+      'exposure_record_consistent',
+    );
+
+    const unreached = rawLoad(NEVER, [], {
+      o1: { step: 'none' },
+      o2: { step: 'none' },
+    });
+
+    expect(unreached[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason:
+        'no current-load evidence after a reload: no packet opened',
+    });
+  });
+
+  // Q2 (B): o1's own record says H while this load opens and releases it
+  // unjudged; o2 is A, three judged. Expected from the existing rules:
+  // without a marker both releases count (0 + 3 of 6 ⇒ observed); with the
+  // H marker o1 is held (marker precedence) and the row is interrupted by
+  // the S-F2 override, the released set unchanged.
+  for (const c of [
+    { marker: undefined, disposition: 'observed' },
+    { marker: 'H' as const, disposition: 'interrupted' },
+  ]) {
+    test(`Q2 (B): an H record beside an opening of the same packet, ${c.marker === undefined ? 'no marker' : 'with its H marker'} ⇒ ${c.disposition} · 3 · 3/6, flagged; the A sibling is never listed`, () => {
+      const rows = rawLoad(O1_OPENED, [RECORD_O1_H], {
+        o1: { present: true, marker: c.marker, step: 'release0' },
+        o2: { present: true, step: 'release3' },
+      });
+
+      expect(classifyM12Reload(2, [RECORD_O1_H]).occasions.o2.class).toBe('A');
+      expect(rows[0]).toMatchObject({
+        disposition: c.disposition,
+        value: 3,
+        numerator: 3,
+        denominator: 6,
+      });
+      expect(rows[0].components).toMatchObject({
+        occasions_released: ['o1', 'o2'],
+        exposure_record_consistent: false,
+        exposure_record_inconsistent_occasions: ['o1'],
+      });
+    });
+  }
+
+  test('Q2 contrast: an H record whose packet stays held raises no flag', () => {
+    const { rows } = reloadedLoad(O1_OPENED, {
+      o1: 'present',
+      o2: 'release3',
+    });
+
+    expect(rows[0]).toMatchObject({ disposition: 'interrupted', value: 3 });
+    expect(rows[0].components).toMatchObject({
+      exposure_record_consistent: true,
+      exposure_record_inconsistent_occasions: [],
     });
   });
 });

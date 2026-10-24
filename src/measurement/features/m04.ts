@@ -33,6 +33,10 @@
  * with a dependency reason that never says it was opened. A job whose
  * absence of an earlier opening is established and that no dependency
  * holds takes the first-load reading. The record is never task evidence.
+ * U24 RL-1C (register §5.406): listed coupons of a load without its check
+ * are U (`no_check`) with that reason; the primary row reports the
+ * exposure-record diagnostics and, per job, whether a joint hold-back was
+ * bypassed.
  */
 import {
   M04_SPEC,
@@ -253,11 +257,25 @@ registerFeatureExtractor('M04', (events, context) => {
     checks.map((event) => event.metadata ?? {}),
   );
   const established = (job: Job) => reload.jobs[job].effective.class === 'A';
+  const cutNow = (job: Job) => m04PriorAdministration(family, job);
+  // The provisional exposure-record diagnostics (U24 RL-1C, decision B;
+  // register §5.406): §5.290 (a), as in M14–M20 — the helper's record part,
+  // and false when a job whose OWN record found an earlier cut (H) is cut
+  // in this load too. A job held only with the other (R-2) and cut anyway
+  // keeps its own consistency and reports `joint_hold_back_bypassed`
+  // (whether such an observation is ever excluded is open, B2). Flags
+  // only: no value changes.
+  const inconsistent = JOBS.filter(
+    (job) => reload.jobs[job].own.class === 'H' && cutNow(job),
+  );
   // Owner ruling R-2: each job's own class and flags beside its effective
   // joint hold-back (reported only where a reload or a check exists).
   const reloadJobs =
     context.reloaded || checks.length > 0
       ? {
+          exposure_record_consistent:
+            reload.own.exposure_record_consistent && inconsistent.length === 0,
+          exposure_record_inconsistent_occasions: inconsistent,
           reload_jobs: Object.fromEntries(
             JOBS.map((job) => {
               const row = reload.jobs[job];
@@ -274,6 +292,7 @@ registerFeatureExtractor('M04', (events, context) => {
                   reason: row.effective.reason,
                   joint_hold_back: row.joint_hold_back,
                   held_with: row.held_with,
+                  joint_hold_back_bypassed: row.joint_hold_back && cutNow(job),
                   prior_opening_found: row.prior_opening_found,
                   prior_opening_absence_established:
                     row.prior_opening_absence_established,
@@ -465,11 +484,15 @@ registerFeatureExtractor('M04', (events, context) => {
     return {
       job,
       status,
+      // Without a check, a job of listed coupons is U (`no_check`) and names
+      // that reason (U24 RL-1C, decision A); one held by the F5 reading (no
+      // current-load evidence) keeps the generic reason.
       holdBackClasses: heldBack
         ? holdBacks.map((event) =>
             reloadHoldBackClass(meta<unknown>(event, 'detail')),
           )
-        : status === 'interrupted' && checks.length > 0
+        : status === 'interrupted' &&
+            (checks.length > 0 || listed || of('presented', job).length > 0)
           ? [reload.jobs[job].own.class]
           : [],
       routedPickups,

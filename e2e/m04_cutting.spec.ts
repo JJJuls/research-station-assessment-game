@@ -2490,3 +2490,240 @@ test.describe('M04 joint hold-back (owner ruling R-2, pure)', () => {
     ).not.toHaveProperty('reload_jobs');
   });
 });
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-1C (owner ruling of 24 October 2026; register §5.406)
+ * ------------------------------------------------------------------ */
+
+interface RawJob {
+  /** The job's own marker, or the joint one (R-2) naming the other job. */
+  marker?: 'own' | 'joint';
+  /** Cut in this load (one piece disposed, then the departure). */
+  cut?: boolean;
+}
+
+/**
+ * A load written event by event — logs the runtime never writes: a host
+ * without its record (Q1), or a job cut beside a check that holds it (Q2,
+ * a guard bypass). The records given, the listing, each job's marker if
+ * named, then the jobs cut in this load.
+ */
+function m04RawLoad(
+  prior: RawGameEvent[],
+  records: object[],
+  jobs: Record<M04Job, RawJob>,
+  pageLoadIndex = 2,
+) {
+  const reload = classifyM04Reload(pageLoadIndex, records);
+  const h = harness();
+  const s = createM04State();
+
+  h.push('o1', 'listed', { jobs_listed: 2, input_mode: 'system' });
+
+  for (const job of M04_JOBS) {
+    const row = reload.jobs[job];
+
+    if (jobs[job].marker !== undefined) {
+      h.push(job, 'technical_failure', {
+        detail:
+          jobs[job].marker === 'joint' || row.own.class === 'A'
+            ? jointDetail(row.held_with ?? 'U')
+            : OWN_DETAIL[row.own.class ?? 'U'],
+        input_mode: 'system',
+      });
+    }
+  }
+
+  let t = 100;
+
+  for (const job of M04_JOBS) {
+    if (jobs[job].cut !== true) {
+      // Settled without a cut, as the held job stands in the cutter.
+      s.jobs[job].status = 'failed';
+      continue;
+    }
+
+    expect(cut(h, s, t)).toBe(job);
+    carryToBin(h, s, m04PiecesOf(job)[0].object_id, t + 100);
+    depart(h, s, t + 500);
+    t += 1_000;
+  }
+
+  const from = prior.length + 1;
+  const current = [
+    ...records.map(
+      (r): RawGameEvent => ({
+        session_id: 's',
+        timestamp_ms: 0,
+        scene: 'records_workshop',
+        event_type: `${M04_FAMILY}prior_load_checked`,
+        metadata: {
+          opportunity_id: M04_SPEC.o1.opportunity_id,
+          occasion: 'o1',
+          ...r,
+          input_mode: 'system',
+        },
+      }),
+    ),
+    ...h.events,
+  ].map((event, i) => ({
+    ...event,
+    page_load_index: pageLoadIndex,
+    sequence: from + i,
+  }));
+  const rows = extractItemFeatures('M04', [...prior, ...current], {
+    finalCoreClosed: true,
+    pageLoadIndex,
+    reloaded: pageLoadIndex > 1,
+  });
+
+  return { reload, rows };
+}
+
+const O1_CUT = m04PriorLoad(1, 1, [['o1', 'cut']]);
+const RECORD_O1_CUT = m04PriorLoadCheck(2, O1_CUT, CONTINUOUS)!;
+const reloadJobs = (row: { components: Record<string, unknown> }) =>
+  row.components.reload_jobs as Record<M04Job, Record<string, unknown>>;
+
+test.describe('M04 RL-1C: a missing check, the exposure-record diagnostics and the joint hold-back bypass (pure)', () => {
+  test('Q1 (A): coupons listed, nothing cut, in a reloaded load without its check ⇒ both jobs U (no_check), refused; interrupted · null · null/0 with the reason ending "earlier history not verified"', () => {
+    const { reload, rows } = m04RawLoad(M04_NEVER, [], { o1: {}, o2: {} });
+
+    expect(reload.own).toMatchObject({
+      check_count: 0,
+      check_coherent: null,
+      exposure_record_consistent: true,
+      check_malformed: false,
+      history_level_uncertain: true,
+    });
+
+    for (const job of M04_JOBS) {
+      expect(reload.jobs[job].own).toMatchObject({
+        class: 'U',
+        basis: 'no_check',
+        administration_permitted: false,
+      });
+      expect(reload.jobs[job].joint_hold_back).toBe(false);
+    }
+
+    expect(rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      numerator: null,
+      denominator: 0,
+      missing_reason:
+        'a cutting job was held back after a reload: earlier history not verified',
+    });
+  });
+
+  test('Q1 contrasts: the first load keeps the listed-only not_presented; a genuinely unreached load keeps the absentFeature reading', () => {
+    const first = harness();
+
+    first.push('o1', 'listed', { jobs_listed: 2, input_mode: 'system' });
+
+    const firstRows = extractItemFeatures('M04', first.events, CONTEXT);
+
+    expect(firstRows[0]).toMatchObject({
+      disposition: 'not_presented',
+      value: null,
+      missing_reason:
+        'no cutting job run (the coupons were listed on the work orders)',
+    });
+    expect(firstRows[0].components).not.toHaveProperty(
+      'exposure_record_consistent',
+    );
+
+    const unreached = extractItemFeatures('M04', M04_NEVER, {
+      finalCoreClosed: true,
+      pageLoadIndex: 2,
+      reloaded: true,
+    });
+
+    expect(unreached[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason:
+        'no current-load evidence after a reload: no cutting job run',
+    });
+  });
+
+  // Q2 (B): job 1's own record says H (cut in load 1) while this load cuts
+  // it again; job 2 is held with it (its joint marker) and not cut.
+  // Expected from the existing rules: without a marker job 1 is an
+  // observation (two pieces left of three) beside a held job — the S-F2
+  // reading, interrupted · 2 · 2/3; with job 1's own marker the marker
+  // takes precedence over its departure (m04.ts status order), so both
+  // jobs are held — interrupted · null · null/0 with the generic reason.
+  for (const c of [
+    { marker: undefined, row: { value: 2, numerator: 2, denominator: 3 } },
+    {
+      marker: 'own' as const,
+      row: { value: null, numerator: null, denominator: 0 },
+    },
+  ]) {
+    test(`Q2 (B): job 1 H in its own record and cut in this load, ${c.marker === undefined ? 'no marker' : 'with its H marker'} ⇒ interrupted · ${c.row.value} · ${c.row.numerator}/${c.row.denominator}, flagged for job 1 only`, () => {
+      const { reload, rows } = m04RawLoad(O1_CUT, [RECORD_O1_CUT], {
+        o1: { marker: c.marker, cut: true },
+        o2: { marker: 'joint' },
+      });
+
+      expect(reload.jobs.o1.own.class).toBe('H');
+      expect(reload.jobs.o2.own.class).toBe('A');
+      expect(rows[0]).toMatchObject({ disposition: 'interrupted', ...c.row });
+      expect(rows[0].components).toMatchObject({
+        exposure_record_consistent: false,
+        exposure_record_inconsistent_occasions: ['o1'],
+      });
+      expect(reloadJobs(rows[0]).o1).toMatchObject({
+        own_class: 'H',
+        joint_hold_back_bypassed: false,
+      });
+      expect(reloadJobs(rows[0]).o2).toMatchObject({
+        own_class: 'A',
+        joint_hold_back: true,
+        joint_hold_back_bypassed: false,
+      });
+    });
+  }
+
+  // B2 (open): the dependent job 2 (own A, effectively H with job 1) is cut
+  // in this load. Its own exposure evidence is consistent; the joint
+  // hold-back was bypassed. The reading keeps its current values: without
+  // its joint marker job 2 is an observation beside the held job 1
+  // (interrupted · 2 · 2/3); with it, both jobs are held.
+  for (const c of [
+    { marker: undefined, row: { value: 2, numerator: 2, denominator: 3 } },
+    {
+      marker: 'joint' as const,
+      row: { value: null, numerator: null, denominator: 0 },
+    },
+  ]) {
+    test(`B2: the dependent job cut in this load, ${c.marker === undefined ? 'no marker' : 'with its joint marker'} ⇒ consistent, joint_hold_back_bypassed, interrupted · ${c.row.value} · ${c.row.numerator}/${c.row.denominator}`, () => {
+      const { reload, rows } = m04RawLoad(O1_CUT, [RECORD_O1_CUT], {
+        o1: { marker: 'own' },
+        o2: { marker: c.marker, cut: true },
+      });
+
+      expect(reload.jobs.o2).toMatchObject({
+        joint_hold_back: true,
+        held_with: 'H',
+      });
+      expect(rows[0]).toMatchObject({ disposition: 'interrupted', ...c.row });
+      expect(rows[0].components).toMatchObject({
+        exposure_record_consistent: true,
+        exposure_record_inconsistent_occasions: [],
+      });
+      expect(reloadJobs(rows[0]).o2).toMatchObject({
+        own_class: 'A',
+        effective_class: 'H',
+        joint_hold_back: true,
+        held_with: 'H',
+        joint_hold_back_bypassed: true,
+      });
+      expect(reloadJobs(rows[0]).o1).toMatchObject({
+        own_class: 'H',
+        joint_hold_back_bypassed: false,
+      });
+    });
+  }
+});
