@@ -17,8 +17,24 @@
  * page load is never re-run (a later, never-presented delivery runs
  * normally). The v2 single-promise family keeps its meaning in the frozen
  * ledger and is no longer on the route.
+ *
+ * Reload (U24 RL-2, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §4 G2): the
+ * first guard of a reloaded load writes the family's single
+ * `prior_load_checked` record, covering both deliveries, before any
+ * offer. A delivery is then held unless the absence of an earlier offer
+ * is established (A): H with the existing prior-exposure entry and marker,
+ * U / M never offered. No screen: the offer is simply not presented.
  */
+import {
+  classifyM10Reload,
+  m10PriorLoadCheck,
+} from '../../measurement/features/m10';
 import { protocolStamp } from '../../measurement/protocol';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import type { ObservedInput } from '../inputObservation';
 import {
@@ -56,7 +72,6 @@ import {
   m10PersonPresent,
   m10Present,
   m10PressAllowed,
-  m10PriorAdministration,
   m10RawComponents,
   m10RecipientPromptOpened,
   type M10State,
@@ -170,30 +185,70 @@ export function m10InterruptionWasShown(): boolean {
 
 // ——— Offer ————————————————————————————————————————————————————————————
 
+/** This load's check (undefined until the first guard of the load ran). */
+let priorLoadCheck: PriorLoadCheck | null | undefined;
+
+/** Writes the load's check once (never on a first load) and returns it. */
+function ensurePriorLoadCheck(delivery: M10Delivery): PriorLoadCheck | null {
+  if (priorLoadCheck === undefined) {
+    priorLoadCheck = m10PriorLoadCheck(
+      researchRuntime.getPageLoadIndex(),
+      researchRuntime.getPriorPageLoadEvents(),
+      researchRuntime.getEventIntegrity(),
+    );
+
+    if (priorLoadCheck !== null) {
+      sinkFor(delivery)(PRIOR_LOAD_CHECK_SUFFIX, {
+        ...priorLoadCheck,
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return priorLoadCheck;
+}
+
 /**
- * Reload guard: an offer presented in an earlier page load of this
- * identity is never re-run — prior exposure recorded, the opportunity
- * technically incomplete, the feature `interrupted`.
+ * Reload guard (register §5.14; U24 RL-2): the load's check is written
+ * first; a delivery not yet offered in this load is then held unless its
+ * class is A — H (offered in an earlier page load): never re-run, prior
+ * exposure recorded, the opportunity technically incomplete, the feature
+ * `interrupted`; U / M: never offered, no prior exposure claimed.
  */
 export function guardM10Reload(delivery: M10Delivery): boolean {
+  const check = ensurePriorLoadCheck(delivery);
+
   if (heldBack.has(delivery)) {
     return true;
   }
 
-  if (
-    states[delivery].presented_at_ms !== null ||
-    !m10PriorAdministration(researchRuntime.getPriorPageLoadEvents(), delivery)
-  ) {
+  if (states[delivery].presented_at_ms !== null) {
+    return false;
+  }
+
+  const cls = classifyM10Reload(
+    researchRuntime.getPageLoadIndex(),
+    check === null ? [] : [check],
+  ).occasions[delivery].class;
+
+  if (cls === null || cls === 'A') {
     return false;
   }
 
   heldBack.add(delivery);
-  windows[delivery].recordPriorExposure(
-    `${M10_DELIVERIES[delivery].object_label} delivery offered in an earlier page load of this identity`,
-  );
-  windows[delivery].technicalFailure(
-    'reload after the offer: delivery not re-run',
-  );
+
+  if (cls === 'H') {
+    windows[delivery].recordPriorExposure(
+      `${M10_DELIVERIES[delivery].object_label} delivery offered in an earlier page load of this identity`,
+    );
+    windows[delivery].technicalFailure(
+      'reload after the offer: delivery not re-run',
+    );
+  } else {
+    windows[delivery].technicalFailure(
+      reloadHoldBackDetail(cls, 'delivery not administered'),
+    );
+  }
 
   return true;
 }
@@ -592,7 +647,12 @@ export function closeM10AtReview(nowMs: number) {
     const s = states[delivery];
     const w = windows[delivery];
 
-    if (heldBack.has(delivery)) {
+    // A check of this load holds a delivery that is not A: held, never
+    // absent (U24 RL-2; U is never `participant_absent`).
+    if (
+      heldBack.has(delivery) ||
+      (priorLoadCheck != null && guardM10Reload(delivery))
+    ) {
       continue;
     }
 
@@ -633,4 +693,5 @@ export function resetM10State() {
   }
 
   heldBack.clear();
+  priorLoadCheck = undefined;
 }

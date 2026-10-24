@@ -847,3 +847,15 @@ value; the M12 context note regains its meaning; the M01 U / M subtitle
 reads "closed" and the return batch's held screen stays reachable from the
 Work Order Board. No formula, weight or denominator rule changes. F-B2,
 F-B7 and F-B8 stay open until RL-2 to RL-4 and the RL-F recapture.
+
+**U24 RL-2** (logged checks for the offer rows M05, M09, M10 and M11; the
+D-1 room exception; the owner's RL-2 instruction of 24 October 2026;
+register §5.407, addendum §2 "U24 RL-2", UNIT-LOG "U24 RL-2") writes each
+family's provisional `prior_load_checked` record at its first host and
+holds an occasion that is not A there (H with the existing prior-exposure
+entry and marker; U and M never offered), keeping each row's existing
+per-occasion held-back rule. The extractors take the first-load reading
+under an established check (r3 §5) and apply RL-1C's decision A; M05's
+held station now opens its read-only held screen (the existing H line; the
+§9 U / M lines). No formula, weight or denominator rule changes. F-B2, F-B7
+and F-B8 stay open until RL-3, RL-4 and the RL-F recapture.

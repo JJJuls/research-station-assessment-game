@@ -14,6 +14,16 @@
  * start is a companion, never a rewrite) and "Not now" is not offered
  * again; a running work cycle keeps ticking on a wall-clock timer while
  * the surface is open and pauses when it is closed.
+ *
+ * Held after a reload (U24 RL-2, `RELOAD-CORRECTION-SPEC-r3-exec.md` §9):
+ * the title kept, LEAVE only, nothing written. An earlier answer (H) keeps
+ * the existing held line; an earlier state that could not be verified or
+ * a contradictory check (U / M) shows the two approved lines. No held
+ * screen draws the job readout ("a moment once started" for a job that
+ * cannot start, covering the second U / M line: the RL-1 M06 / M08
+ * precedent) or a subtitle (the model's "job open" would contradict "It
+ * stays closed"; M14's empty subtitle, M07's none) — no string is added
+ * (register §5.407 reading (g), for the owner's ratification).
  */
 import type { SurfaceElement, WorkSurfaceModel } from '../ui/WorkSurfaceScene';
 import {
@@ -22,6 +32,7 @@ import {
   M05_JOBS,
   M05_WORK_MS,
   m05AdministeredBefore,
+  m05HoldBackClass,
   type M05Occasion,
   m05State,
   pollM05,
@@ -46,6 +57,17 @@ export interface M05SurfaceHost {
 const TICK_MS = 250;
 const CONTROL_Y = 300;
 const SECONDS = (ms: number) => (ms / 1000).toFixed(1);
+
+/**
+ * U24 RL-2 (r3 §9, owner decision D-5, ⟨station⟩ = job): the lines of a
+ * job held after a reload because its earlier state could not be verified
+ * or its check is contradictory (U / M). The existing held-back line of
+ * an earlier answer is unchanged.
+ */
+const M05_UNVERIFIED_LINES = [
+  'The earlier state of this job could not be verified.',
+  'It stays closed after this reload.',
+] as const;
 
 export function m05SurfaceModel(
   host: M05SurfaceHost,
@@ -82,26 +104,33 @@ export function m05SurfaceModel(
     s.closed_at_ms !== null &&
     s.last_control_view_at_ms !== null &&
     s.closed_at_ms >= s.last_control_view_at_ms;
+  const holdBack = m05HoldBackClass(occasion);
+  const unverified = holdBack === 'U' || holdBack === 'M';
 
-  elements.push({
-    id: 'job',
-    kind: 'readout',
-    label: `JOB: ${job.job.toUpperCase()}`,
-    detail: done
-      ? job.done
-      : running
-        ? `${job.working} ${SECONDS(Math.min(m05WorkElapsedMs(s, now) ?? 0, M05_WORK_MS))} s of ${SECONDS(M05_WORK_MS)} s`
-        : 'a moment once started',
-    x: 16,
-    y: 64,
-    w: 690,
-    h: 60,
-  });
+  if (holdBack === null) {
+    elements.push({
+      id: 'job',
+      kind: 'readout',
+      label: `JOB: ${job.job.toUpperCase()}`,
+      detail: done
+        ? job.done
+        : running
+          ? `${job.working} ${SECONDS(Math.min(m05WorkElapsedMs(s, now) ?? 0, M05_WORK_MS))} s of ${SECONDS(M05_WORK_MS)} s`
+          : 'a moment once started',
+      x: 16,
+      y: 64,
+      w: 690,
+      h: 60,
+    });
+  }
 
   let status: string;
   let help = 'Arrows/TAB focus · ENTER/SPACE press · click also works · ';
 
-  if (m05AdministeredBefore(occasion)) {
+  if (unverified) {
+    status = M05_UNVERIFIED_LINES.join('\n');
+    help += 'ESC close';
+  } else if (m05AdministeredBefore(occasion)) {
     status =
       'This job was answered earlier in this session. Its record is held; it is not offered again.';
     help += 'ESC close';
@@ -168,13 +197,16 @@ export function m05SurfaceModel(
 
   return {
     title: job.title,
-    subtitle: done
-      ? 'complete'
-      : running
-        ? 'in progress'
-        : s.status === null
-          ? 'accepted job'
-          : 'job open',
+    subtitle:
+      holdBack !== null
+        ? ''
+        : done
+          ? 'complete'
+          : running
+            ? 'in progress'
+            : s.status === null
+              ? 'accepted job'
+              : 'job open',
     status,
     elements,
     help,

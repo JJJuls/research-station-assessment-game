@@ -9,9 +9,29 @@
  * `proto_m05_start_*` events. A declined job is outside the set (never
  * low); a non-start keeps its exposure and reason; no starter-only mean
  * (or any mean) is formed; a cap is never a start.
+ *
+ * Reload (U24 RL-2, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G2 and §5
+ * M05): the load's `prior_load_checked` record classifies each job H / A /
+ * U / M. A job whose absence of an earlier answer is established (A) takes
+ * the first-load reading; the F5 reading (no current-load evidence after a
+ * reload ⇒ held) applies only to a job without one. A job offered and left
+ * unanswered in a reloaded load without its check is U and held (RL-1C
+ * decision A). The record is never task evidence.
  */
+import { m05PriorAdministration } from '../../pilot/windows/m05StartModel';
 import { CLOSURE_REASONS, type ClosureReason } from '../protocol';
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -72,14 +92,91 @@ const STATUSES = new Set([
 
 type Missing = Exclude<FeatureDisposition, 'observed' | 'incomplete'>;
 
+const FAMILY = 'proto_m05_start_';
+
+/**
+ * The load's reload check (U24 RL-2; r3 §4 G2 stage map): per job, stage 1
+ * the offer's `presented`, no stage 2, stage 3 the existing guard's record
+ * (the answer opens the window, accepted or declined), and the job's
+ * hold-back markers. Null on a first load.
+ */
+export function m05PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    occasions: Object.fromEntries(
+      OCCASIONS.map((occasion) => [
+        occasion,
+        {
+          briefing: (event: ReloadEvent) =>
+            event.event_type === `${FAMILY}presented` &&
+            event.metadata?.occasion === occasion,
+          opening: (event: ReloadEvent) =>
+            m05PriorAdministration([event], occasion),
+          holdBack: (event: ReloadEvent) =>
+            event.event_type === `${FAMILY}technical_failure` &&
+            event.metadata?.occasion === occasion,
+        },
+      ]),
+    ),
+  });
+}
+
+/** Each job's class from the load's check records (r3 §2). */
+export function classifyM05Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks, occasions: OCCASIONS });
+}
+
+/** The current-load reason of a held job, by its marker's class. */
+const HELD_REASON = {
+  H: 'job answered in an earlier page load; not re-offered after the reload',
+  U: 'job not administered after a reload: earlier history not verified',
+  M: 'job not administered after a reload: earlier check contradictory',
+} as const;
+
 registerFeatureExtractor('M05', (events, context) => {
   const entry = registerEntry('M05');
   const [primary, exposure] = entry.features;
   const load = currentLoadEvents(events, context);
-  const family = load.filter((e) =>
-    e.event_type.startsWith('proto_m05_start_'),
+  const family = withoutPriorLoadChecks(
+    load.filter((e) => e.event_type.startsWith(FAMILY)),
+    FAMILY,
   );
   const supporting = sequencesOf(family);
+  const reload = classifyM05Reload(
+    context.pageLoadIndex,
+    eventsOfType(load, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+  const established = (occasion: Occasion) =>
+    reload.occasions[occasion].class === 'A';
+
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    const reason =
+      'a reload check record describes another page load or lacks an occasion';
+
+    return [
+      emptyFeature('M05', primary, 'technical_failure', reason, {
+        closure_reason: 'technical_failure',
+        supporting_sequences: supporting,
+      }),
+      emptyFeature('M05', exposure, 'technical_failure', reason, {
+        closure_reason: 'technical_failure',
+      }),
+    ];
+  }
+
   const occ = (event: { metadata?: Record<string, unknown> }) =>
     meta<string>(event as never, 'occasion');
   const presented = eventsOfType(load, 'proto_m05_start_presented');
@@ -94,22 +191,52 @@ registerFeatureExtractor('M05', (events, context) => {
 
   const presentedSet = new Set(presented.map(occ));
   const openedSet = new Set(opened.map(occ));
-  // Held back: the reload guard's marker, OR — after a reload — an
-  // occasion with no current-load evidence at all (its evidence may lie
-  // in an earlier page load; review U5 F5): never `not presented`.
+  const checked = reload.check_count > 0;
+  // The class a job is held under: the reload guard's marker's; or, after
+  // a reload, an unanswered job's own class when the load's check does not
+  // establish its absence (U24 RL-2) — U (`no_check`) for a job offered in
+  // a reloaded load without a check (RL-1C decision A) — and the F5
+  // reading of a job with no current-load evidence at all (its evidence
+  // may lie in an earlier page load; review U5 F5): never `not presented`.
+  const heldClass = (occasion: Occasion): 'H' | 'U' | 'M' | null => {
+    const marker = heldBack.find((event) => occ(event) === occasion);
+
+    if (marker !== undefined) {
+      return reloadHoldBackClass(meta<unknown>(marker, 'detail')) ?? 'H';
+    }
+
+    const cls = reload.occasions[occasion].class;
+
+    return context.reloaded &&
+      cls !== 'A' &&
+      !openedSet.has(occasion) &&
+      (checked || reload.page_reloaded || !presentedSet.has(occasion))
+      ? (cls ?? 'U')
+      : null;
+  };
   const heldBackSet = new Set([
     ...heldBack.map(occ),
-    ...(context.reloaded
-      ? OCCASIONS.filter(
-          (occasion) => !presentedSet.has(occasion) && !openedSet.has(occasion),
-        )
-      : []),
+    ...OCCASIONS.filter((occasion) => heldClass(occasion) !== null),
   ]);
 
   if (opened.length === 0) {
-    if (heldBack.length > 0) {
+    // Without a check, a load that offered nothing keeps the F5 /
+    // `absentFeature` reading below (U24 RL-1C).
+    if (
+      heldBack.length > 0 ||
+      (heldBackSet.size > 0 &&
+        (checked || (reload.page_reloaded && presented.length > 0)))
+    ) {
       const reason =
-        'job answered in an earlier page load; not re-offered after the reload';
+        [
+          ...new Set(
+            OCCASIONS.flatMap((occasion) => {
+              const cls = heldClass(occasion);
+
+              return cls === null ? [] : [HELD_REASON[cls]];
+            }),
+          ),
+        ].join('; ') || HELD_REASON.H;
 
       return [
         emptyFeature('M05', primary, 'interrupted', reason, {
@@ -127,6 +254,18 @@ registerFeatureExtractor('M05', (events, context) => {
           supporting_sequences: supporting,
         }),
         emptyFeature('M05', exposure, 'pending', reason),
+      ];
+    }
+
+    // An established absence for both jobs takes the first-load reading
+    // (r3 §5, NOP + NOP (A)); `absentFeature`'s reload branch is kept for
+    // a load without one.
+    if (OCCASIONS.every(established)) {
+      return [
+        emptyFeature('M05', primary, 'not_presented', 'no job offered', {
+          supporting_sequences: supporting,
+        }),
+        emptyFeature('M05', exposure, 'not_presented', 'no job offered'),
       ];
     }
 

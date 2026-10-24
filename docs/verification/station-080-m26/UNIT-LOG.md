@@ -18542,3 +18542,135 @@ Finish with the closeout status, durable evidence paths, bounded correction spec
   names "1/2/3 jobs" (both unchanged since RL-1). (3) B2 stays open.
 - **Not claimed.** RL-1C does not make the game fully verified or ready for
   participant collection; RL-2 to RL-4 and the RL-F recapture remain.
+
+## U24 RL-2 — logged checks for the offer rows M05, M09, M10, M11 (24 October 2026)
+
+- **The owner's RL-2 instruction and narrow acceptance, verbatim**
+  (recorded before any implementation edit; saved in the unit's evidence as
+  `OWNER-RULING-RL2-2026-10-24.txt`, SHA-256 `0eb132326848aa4c853a1bd248954cb3d9d43c37615298c88618683cd3143a6a`; register §5.407):
+
+  ```text
+  I am Juls, the research owner. Continue with the already-authorized RL-2 from d7dc6e00a1fd256a74b6e9bdf26555705b54eee5.
+
+  Read completely before implementation:
+  1. C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-correction\RL-EXECUTE-2.md
+  2. C:\Users\Juls\.codex\visualizations\2026\10\24\u24-rl-correction-1c\RL-EXTENSION-NOTE.md
+
+  Apply both, including the referenced authority, exact RL-2 allowlist, entry checks, verification, model routing, evidence preservation and single-local-commit requirements. The extension governs the updated commit chain and starting commit.
+
+  Narrow owner acceptance:
+  I accept the omission of the direct M12 M-class context-note fixture from RL-1C for proceeding with the reload corrections. H/U cases and both packet orders were tested; the direct M case rests on the documented inspection and carry-forward reasoning, not an executed fixture. Record that distinction explicitly. This is not a general waiver of M-class tests or other verification requirements.
+
+  Record this acceptance in the register and UNIT-LOG before implementation edits, and carry the coverage limitation into the later Part C evidence inventory. Do not amend RL-1C or alter its frozen evidence.
+
+  B2 remains open. Preserved values accompanied by integrity diagnostics do not establish the validity of prohibited administrations.
+
+  Follow the extension’s missing-check ruling: a presented, unopened occasion after a reload without its required check is U. Preserve task-specific first-load readings and the distinction from genuinely unreached occasions.
+
+  Complete RL-2’s required verification and reviews, preserve its evidence, and make its one authorized local commit when its acceptance conditions are met. Opus is the sole writer, Sonnet verifies, and the named Opus reviews remain read-only. No Fable or broad re-audit.
+
+  Stop with the RL-2 handoff. No push, merge, subsequent unit or Part C execution.
+  ```
+
+- **The distinction the acceptance records** (register §5.407): RL-1C's M12
+  context-note fixtures executed the H and U holds (availability only ⇒ no
+  note; held screen opened ⇒ the note) and the opened cases, in both packet
+  orders; the direct M-class case was **not** executed — it rests on
+  documented inspection ("M: not producible by the host (its own record is
+  always coherent)") and carry-forward reasoning. Accepted for proceeding
+  only; not a general waiver of M-class tests or other verification. RL-1C
+  and its frozen evidence are unchanged. Carried into the later Part C
+  evidence inventory as a coverage limitation. B2 stays open.
+- **Authority (by reference).** The brief `RL-EXECUTE-2.md` (SHA-256
+  `fa9af2e2eb26a9dc5b20dd4e000e12bc4ab884830ff0f4c54fefcfc5d0890cfd`) with
+  `RL-EXTENSION-NOTE.md` (`b2e9559e2940f6f0d115ca305409ed4975aba32dc008da6877c82c9f9b18f126`;
+  RL-2 starts from the RL-1C commit), the owner's rulings of 23 October
+  2026 (`0baa5383…e39ea`) and 24 October 2026 (RL-1C, `b5c65557…d4eb4a`),
+  `RELOAD-CORRECTION-SPEC-r3-exec.md` (`03347a9e…6741`) and the owner's
+  RL-2 instruction above. The packages, r2 and the RL-0, RL-1 and RL-1C
+  evidence are unchanged. The D-1 room exception covers the Concourse, the
+  Yard and the Laboratory.
+- **Gate.** Writer `claude-opus-5-5`; root, branch `codex/u24-end-to-end`
+  and HEAD `d7dc6e0…` (the RL-1C commit); status `?? .agents/`, `?? .codex/`
+  only; `CLAUDE_UNIT_ALLOWLIST` equal to `RL-ALLOWLIST-2.txt` (19 paths);
+  the frozen U24 evidence (B to B-closeout-4) and the RL-0, RL-1 and RL-1C
+  evidence present with their manifests unchanged; the ten foreign files
+  hash-identical to `FOREIGN-INVENTORY-SUPPLEMENT-2026-10-22.json`; the
+  owner's instruction recorded here and in register §5.407 before any
+  implementation edit; `PLAN.md` written before the first implementation
+  edit.
+- **Work.** As register §5.407 states: the single `prior_load_checked`
+  record of M05, M09, M10 and M11 at the first host of each reloaded load;
+  H held with the existing entry and marker, U / M never offered; each
+  row's existing per-occasion held-back rule kept; the extractors' column B
+  under A, RL-1C's decision A, the record outside family evidence; M05's
+  held station opens the existing read-only surface (existing H line; the
+  §9 U / M lines; no readout and no subtitle). Writer's readings (a)–(j)
+  are in §5.407; three ask for the owner's confirmation or ratification:
+  (a) the stage-3 reconciliation, (d) the M10 / M11 held reading where the
+  occasion's host did not run, (g) the M05 held-screen omissions. No
+  helper, model or scene file, no event name other than the provisional
+  suffix, and no formula, weight or denominator rule changes.
+- **Verification** (durable evidence
+  `C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-evidence\RL-2\`,
+  with its manifest). Pure: the four row specs and `reload_check.spec.ts`,
+  150 passed (43 existing row tests and RL-0's 33, unchanged in outcome; 74
+  new, one of them added in the correction round); the new tests were first
+  run red against the unchanged extractors
+  (79 passed, 37 failed, each at an intended change: the U / M reasons, r3
+  (b)'s first-load readings, decision A, malformed ⇒ technical failure, the
+  record excluded from evidence, and the not yet existing exports). Browser
+  (`e2e/m05_start.spec.ts`, genuine `page.reload()`, traces on, 800 × 600,
+  ordinary input), evidence of record on the final source: R1 + R4 + R6
+  (H), R2, R3 + R6 (U), 3 of 3 passed (12.1 min) — the family's one check
+  before its markers, nothing offered again, the prior-exposure entries
+  (none under U), never absent, one check per family in loads 2 and 3 and
+  none in load 1, the §9 lines exact on the lamp and flag screens. U24: V-5
+  (b) with the RL-2 expectations passed on the S3 export of the final
+  source; S3 itself completed its scenario and L1 (byte-equal) in both
+  traced runs on the work tree but **failed both times at fixture teardown**
+  ("Test timeout of 120000ms exceeded" while the ≈1.7 GB trace was written,
+  ≈4 min after the last assertion); on an untouched copy of `d7dc6e0` the
+  same traced S3 passed (22.0 min), so the brief's baseline rule does not
+  make it pre-existing; the untraced S3 on the final source passed (17.6
+  min) and V-5 (b) passed on its export; all 45 feature rows of the S3
+  export equal the start commit's (M05, M09, M10, M11 interrupted · null,
+  H, as r3 §4 expects). Not repeated to obtain a pass; recorded for the
+  owner. Regressions: the M05 first-load "lamp declined" route case, the
+  M09 / M10 route R4 reload cases and RL-1's R3 (U) case passed.
+- **Reviews** (read-only; reports in the evidence's `reviews\`). Opus 5.5
+  (`claude-opus-5-5`) scientific: concerns, nothing blocking — the classes,
+  permission and readings match r3 §2 / §5 and decision A; four MINOR
+  findings (the stage-map reconciliation to be labelled and confirmed; the
+  M10 / M11 reading change to be stated; the U / M details to say "not
+  administered" as RL-1's; the M05 subtitle) — all applied; notes recorded.
+  Opus 5.5 gameplay: usable, no blocking finding; MAJOR M-1 (the held
+  screens' subtitle "job open" and the H readout contradicted the held
+  lines) — applied as omissions; MINOR / NOTE items recorded. Opus 5.5
+  visual: MAJOR F1 (subtitle) and MINOR F2 (H readout) — applied; the
+  affected re-check confirms both resolved, no new defect. Sonnet 5.5
+  (`claude-sonnet-5-5`) scheduled verification: no blocking finding —
+  `lint:tsc`, build, ESLint, the spec type-check and `git diff --check`
+  clean; 150 pure passed; R3 + R6 (U) re-run with a genuine reload passed;
+  V-5 (b) passed; the sampled expected values trace to r3 §2 / §4 / §5 /
+  §9 and decision A (first-load readings to the unchanged first-load
+  rules); the S3 account above confirmed. **Open MAJOR (Sonnet):** the
+  traced S3 teardown failure has no established cause (the test sets a
+  two-hour timeout, so the 120 s limit is the teardown slot; both traced
+  work runs and the passing baseline spent about four minutes between the
+  export and the end) — for the owner to accept or have investigated.
+  MINOR (pre-existing, unspecified): an offer left unanswered reads
+  `no_eligible_event` for M09 / M10 and `pending` for M11.
+- **For the owner (recorded, not decided here).** (1) Reading (a): M09 /
+  M10 / M11 stage 3 is the presentation (the existing rule). (2) Reading
+  (d): M10 / M11 an occasion offered earlier whose room is not reached in
+  this load reads held, no longer `not_presented`. (3) Reading (g): no
+  readout and no subtitle on M05's held screens (alternative: RL-1C's
+  "closed"). (4) The M05 held surface was unreachable before RL-2 and is
+  now shown, including for H. (5) The traced S3 teardown failure above
+  (Sonnet's open MAJOR).
+  (6) The M class at the runtime host is not producible; its M05 screen is
+  covered by inspection only (§5.407 (j)), carried into the Part C evidence
+  inventory beside the M12 note's limitation. (7) B2 stays open.
+- **Not claimed.** RL-2 does not make the game fully verified or ready for
+  participant collection; RL-3, RL-4 and the RL-F recapture remain.

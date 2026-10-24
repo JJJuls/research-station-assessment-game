@@ -37,9 +37,33 @@
  * when every one of that delivery's events in the load carries a usable
  * number (an integer from 1) and no two share one; otherwise the feature
  * is a technical failure. A missing number is never read as zero.
+ *
+ * Reload (U24 RL-2, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G2 and §5
+ * "M10 (d1, d2)"): the load's `prior_load_checked` record classifies each
+ * delivery H / A / U / M — H when its offer was presented in an earlier
+ * load (the existing rule). The existing per-delivery held-back rule is
+ * kept (a held delivery `interrupted`, the other's value beside it); with
+ * every absence established (A) a load without offers reads by the
+ * first-load rule, `absentFeature`'s reload branch only without one. An
+ * offer presented and left unanswered in a reloaded load without its
+ * check is U and held (RL-1C decision A). The record is never task
+ * evidence.
  */
+import { m10PriorAdministration } from '../../pilot/windows/m10DeliveryModel';
 import type { RawGameEvent } from '../../systems/EventLogger';
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  RELOAD_REASON,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -157,11 +181,65 @@ function orderDefect(events: readonly RawGameEvent[]): string | null {
 /** An event's sequence number — read only after `orderDefect` passed. */
 const seq = (event: RawGameEvent) => event.sequence as number;
 
-/** One delivery's record recounted from its events, or the contradiction found. */
+/**
+ * The load's reload check (U24 RL-2; r3 §4 G2 stage map): per delivery,
+ * stage 1 the offer's `presented`, no stage 2, stage 3 the existing
+ * guard's record — the same presentation (an offer presented earlier is
+ * held, answered or not) — and the delivery's hold-back markers. Null on
+ * a first load.
+ */
+export function m10PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    occasions: Object.fromEntries(
+      DELIVERIES.map((delivery) => [
+        delivery,
+        {
+          briefing: (event: ReloadEvent) =>
+            event.event_type === `${FAMILY}presented` &&
+            event.metadata?.delivery === delivery,
+          opening: (event: ReloadEvent) =>
+            m10PriorAdministration([event], delivery),
+          holdBack: (event: ReloadEvent) =>
+            event.event_type === `${FAMILY}technical_failure` &&
+            event.metadata?.delivery === delivery,
+        },
+      ]),
+    ),
+  });
+}
+
+/** Each delivery's class from the load's check records (r3 §2). */
+export function classifyM10Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks, occasions: DELIVERIES });
+}
+
+/** The current-load reason of a load whose deliveries are all held. */
+const HELD_REASON = {
+  H: 'delivery offered in an earlier page load; not re-run after the reload',
+  U: 'delivery not administered after a reload: earlier history not verified',
+  M: 'delivery not administered after a reload: earlier check contradictory',
+} as const;
+
+/**
+ * One delivery's record recounted from its events, or the contradiction
+ * found. `held`: after a reload its class is not A and it was never
+ * answered (U24 RL-2).
+ */
 function analyse(
   delivery: Delivery,
   events: readonly RawGameEvent[],
   deferrals: number,
+  held: boolean,
 ): DeliveryRecord | { failure: string } {
   const terms = TERMS[delivery];
   const of = (suffix: string) => eventsOfType(events, `${FAMILY}${suffix}`);
@@ -227,6 +305,10 @@ function analyse(
       return failure('events without a presentation');
     }
 
+    if (held) {
+      return { ...record, status: 'held_back' };
+    }
+
     // Never offered (a review closure of the absent window may exist).
     return record;
   }
@@ -270,7 +352,7 @@ function analyse(
       return strayPresence();
     }
 
-    return { ...record, status: 'unanswered' };
+    return { ...record, status: held ? 'held_back' : 'unanswered' };
   }
 
   record.answer = meta<string>(answer, 'answer') ?? null;
@@ -467,8 +549,18 @@ registerFeatureExtractor('M10', (events, context) => {
   const entry = registerEntry('M10');
   const [primary] = entry.features;
   const load = currentLoadEvents(events, context);
-  const family = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const family = withoutPriorLoadChecks(
+    load.filter((e) => e.event_type.startsWith(FAMILY)),
+    FAMILY,
+  );
   const supporting = sequencesOf(family);
+  const reload = classifyM10Reload(
+    context.pageLoadIndex,
+    eventsOfType(load, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+  const checked = reload.check_count > 0;
   const fail = (reason: string): FeatureRecord[] => [
     emptyFeature('M10', primary, 'technical_failure', reason, {
       supporting_sequences: supporting,
@@ -476,11 +568,34 @@ registerFeatureExtractor('M10', (events, context) => {
     }),
   ];
 
-  if (family.length === 0) {
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    return fail(
+      'a reload check record describes another page load or lacks a delivery',
+    );
+  }
+
+  const established = DELIVERIES.every(
+    (delivery) => reload.occasions[delivery].class === 'A',
+  );
+
+  // Nothing in the load: the first-load reading under an established
+  // absence (r3 §5, NOP + NOP (A); the first-load row's shape), the
+  // `absentFeature` reload branch without a check.
+  if (family.length === 0 && (!checked || established)) {
+    const extra = { components: { administration_version: VERSION } };
+
     return [
-      absentFeature('M10', primary, context, 'no delivery offered', {
-        components: { administration_version: VERSION },
-      }),
+      established
+        ? emptyFeature(
+            'M10',
+            primary,
+            'not_presented',
+            'no delivery offered',
+            extra,
+          )
+        : absentFeature('M10', primary, context, 'no delivery offered', extra),
     ];
   }
 
@@ -504,17 +619,45 @@ registerFeatureExtractor('M10', (events, context) => {
   }
 
   const records: DeliveryRecord[] = [];
+  const own = (delivery: Delivery) =>
+    family.filter((event) => meta<string>(event, 'delivery') === delivery);
+  // After a reload, an unanswered delivery whose class is not A is held
+  // (U24 RL-2): always with a check; without one only once its offer was
+  // presented in this load (U (`no_check`), RL-1C decision A). A delivery
+  // never reached without a check keeps its `not_presented` status.
+  const classHeld = (delivery: Delivery) => {
+    const types = new Set(
+      own(delivery).map((event) => event.event_type.slice(FAMILY.length)),
+    );
+
+    return (
+      reload.page_reloaded &&
+      reload.occasions[delivery].class !== 'A' &&
+      !types.has('offer_answered') &&
+      !types.has('opportunity_opened') &&
+      (checked || types.has('presented'))
+    );
+  };
+  // The class a held delivery is held under: its marker's, else its own.
+  const heldClass = (delivery: Delivery): 'H' | 'U' | 'M' => {
+    const marker = eventsOfType(own(delivery), `${FAMILY}technical_failure`)[0];
+
+    return marker === undefined
+      ? ((reload.occasions[delivery].class as 'H' | 'U' | 'M' | null) ?? 'U')
+      : (reloadHoldBackClass(meta<unknown>(marker, 'detail')) ?? 'H');
+  };
 
   for (const delivery of DELIVERIES) {
     const result = analyse(
       delivery,
-      family.filter((event) => meta<string>(event, 'delivery') === delivery),
+      own(delivery),
       // A deferral is route telemetry only (never an answer).
       load.filter(
         (event) =>
           event.event_type === 'pilot_npc_beat' &&
           event.choice_value === TERMS[delivery].defer_tag,
       ).length,
+      classHeld(delivery),
     );
 
     if ('failure' in result) {
@@ -556,6 +699,20 @@ registerFeatureExtractor('M10', (events, context) => {
     late_acts: records.filter((record) => record.late_act !== null).length,
   };
 
+  // r3 §2's reasons of the held deliveries that are U or M (M03's form).
+  const unverified = [
+    ...new Set(
+      heldBack
+        .map((record) => heldClass(record.delivery))
+        .filter((cls) => cls !== 'H')
+        .map((cls) => RELOAD_REASON[cls]),
+    ),
+  ];
+  const heldGeneric = [
+    'a delivery was held back after a reload',
+    ...unverified,
+  ].join(': ');
+
   if (offered.length === 0) {
     if (heldBack.length > 0) {
       return [
@@ -563,9 +720,24 @@ registerFeatureExtractor('M10', (events, context) => {
           'M10',
           primary,
           'interrupted',
-          'delivery offered in an earlier page load; not re-run after the reload',
+          [
+            ...new Set(
+              heldBack.map((record) => HELD_REASON[heldClass(record.delivery)]),
+            ),
+          ].join('; '),
           { supporting_sequences: supporting, components },
         ),
+      ];
+    }
+
+    // Every absence established: the first-load reading (r3 §5, NOP +
+    // NOP (A)); `absentFeature`'s reload branch is kept without one.
+    if (established) {
+      return [
+        emptyFeature('M10', primary, 'not_presented', 'no delivery offered', {
+          supporting_sequences: supporting,
+          components,
+        }),
       ];
     }
 
@@ -601,10 +773,7 @@ registerFeatureExtractor('M10', (events, context) => {
       eligible.map((record) => `m10_delivery_${record.delivery}`),
       supporting,
       interrupted
-        ? {
-            disposition: 'interrupted',
-            reason: 'a delivery was held back after a reload',
-          }
+        ? { disposition: 'interrupted', reason: heldGeneric }
         : accepted.length > 0
           ? {
               disposition: 'no_eligible_event',

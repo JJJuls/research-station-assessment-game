@@ -15,8 +15,25 @@
  * re-offered (reload guard). The v2 silent-fault family
  * (`proto_m05_initiation_*`) keeps its v2 meaning in the frozen ledger and
  * is no longer on the route.
+ *
+ * Reload (U24 RL-2, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §4 G2): the
+ * first guard of a reloaded load writes the family's single
+ * `prior_load_checked` record, covering both jobs, before any offer. A job
+ * is then held at its zone entry unless its absence of an earlier answer
+ * is established (A): H with the existing prior-exposure entry and marker,
+ * U / M never offered. A held job's station opens its held screen.
  */
+import {
+  classifyM05Reload,
+  m05PriorLoadCheck,
+} from '../../measurement/features/m05';
 import { protocolStamp } from '../../measurement/protocol';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClass,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import {
   createM05State,
@@ -39,7 +56,6 @@ import {
   m05Open,
   m05Poll,
   m05Present,
-  m05PriorAdministration,
   m05RawComponents,
   m05SetBlock,
   m05Start,
@@ -63,6 +79,13 @@ export {
 } from './m05StartModel';
 
 export const M05_PRIOR_ADMINISTRATION = 'prior_administration';
+
+/** Closure reasons of a job held after a reload, by its class. */
+const HOLD_BACK_REASON = {
+  H: M05_PRIOR_ADMINISTRATION,
+  U: 'unverified_history',
+  M: 'contradictory_check',
+} as const;
 
 const OCCASIONS: readonly M05Occasion[] = ['o1', 'o2'];
 
@@ -117,29 +140,77 @@ export function m05AdministeredBefore(occasion: M05Occasion): boolean {
   return states[occasion].closureReason === M05_PRIOR_ADMINISTRATION;
 }
 
+/** The class a job is held under after a reload (null when not held). */
+export function m05HoldBackClass(
+  occasion: M05Occasion,
+): Exclude<ReloadClass, 'A'> | null {
+  const reason = states[occasion].closureReason;
+
+  return (
+    (['H', 'U', 'M'] as const).find(
+      (cls) => HOLD_BACK_REASON[cls] === reason,
+    ) ?? null
+  );
+}
+
+/** This load's check (undefined until the first guard of the load ran). */
+let priorLoadCheck: PriorLoadCheck | null | undefined;
+
+/** Writes the load's check once (never on a first load) and returns it. */
+function ensurePriorLoadCheck(occasion: M05Occasion): PriorLoadCheck | null {
+  if (priorLoadCheck === undefined) {
+    priorLoadCheck = m05PriorLoadCheck(
+      researchRuntime.getPageLoadIndex(),
+      researchRuntime.getPriorPageLoadEvents(),
+      researchRuntime.getEventIntegrity(),
+    );
+
+    if (priorLoadCheck !== null) {
+      sinkFor(occasion)(PRIOR_LOAD_CHECK_SUFFIX, {
+        ...priorLoadCheck,
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return priorLoadCheck;
+}
+
 /**
- * Reload guard, run at zone entry: an occasion opened in an earlier page
- * load of this identity is never re-offered — prior exposure recorded,
- * the opportunity technically incomplete, features `interrupted`.
+ * Reload guard, run at zone entry (register §5.14; U24 RL-2): the load's
+ * check is written first; an unanswered job is then held unless its class
+ * is A — H (answered in an earlier page load): never re-offered, prior
+ * exposure recorded, the opportunity technically incomplete, features
+ * `interrupted`; U / M (earlier state unverified or contradictory): never
+ * offered, no prior exposure claimed.
  */
 export function guardM05Reload(occasion: M05Occasion, nowMs: number) {
   const w = m05Windows[occasion];
+  const check = ensurePriorLoadCheck(occasion);
 
   if (w.windowStatus() !== 'unopened' || states[occasion].accepted !== null) {
     return false;
   }
 
-  if (
-    !m05PriorAdministration(researchRuntime.getPriorPageLoadEvents(), occasion)
-  ) {
+  const cls = classifyM05Reload(
+    researchRuntime.getPageLoadIndex(),
+    check === null ? [] : [check],
+  ).occasions[occasion].class;
+
+  if (cls === null || cls === 'A') {
     return false;
   }
 
-  m05Freeze(states[occasion], nowMs, M05_PRIOR_ADMINISTRATION, 'reload');
-  w.recordPriorExposure(
-    `${M05_JOBS[occasion].title.toLowerCase()} job answered in an earlier page load of this identity`,
-  );
-  w.technicalFailure('reload after administration: job not re-offered');
+  m05Freeze(states[occasion], nowMs, HOLD_BACK_REASON[cls], 'reload');
+
+  if (cls === 'H') {
+    w.recordPriorExposure(
+      `${M05_JOBS[occasion].title.toLowerCase()} job answered in an earlier page load of this identity`,
+    );
+    w.technicalFailure('reload after administration: job not re-offered');
+  } else {
+    w.technicalFailure(reloadHoldBackDetail(cls, 'job not administered'));
+  }
 
   return true;
 }
@@ -153,8 +224,14 @@ export function m05OfferAvailable(occasion: M05Occasion): boolean {
   );
 }
 
-/** The NPC presents the offer stage (the window's `presented` once; re-presentations logged). */
+/**
+ * The NPC presents the offer stage (the window's `presented` once;
+ * re-presentations logged). The reload guard runs first, so the load's
+ * check always precedes an offer (U24 RL-2).
+ */
 export function presentM05Offer(occasion: M05Occasion, nowMs: number) {
+  guardM05Reload(occasion, nowMs);
+
   if (!m05OfferAvailable(occasion)) {
     return false;
   }
@@ -271,19 +348,28 @@ export function m05HostResumed(occasion: M05Occasion, nowMs: number) {
 
 // ——— the job surface ————————————————————————————————————————————————
 
-export type M05ControlResult = 'not_accepted' | 'presented' | 'reopened';
+export type M05ControlResult =
+  | 'not_accepted'
+  | 'presented'
+  | 'reopened'
+  | 'held';
 
 /**
- * The job site's station was used. Before acceptance (or after a
- * decline) the object simply reads as in order; otherwise the job surface
- * opens — a first view logs the control presentation, a reopen resumes a
- * paused work cycle.
+ * The job site's station was used. A job held after a reload opens its
+ * read-only held screen and logs nothing (U24 RL-2). Before acceptance
+ * (or after a decline) the object simply reads as in order; otherwise the
+ * job surface opens — a first view logs the control presentation, a
+ * reopen resumes a paused work cycle.
  */
 export function openM05Control(
   occasion: M05Occasion,
   nowMs: number,
 ): M05ControlResult {
   const s = states[occasion];
+
+  if (m05HoldBackClass(occasion) !== null) {
+    return 'held';
+  }
 
   if (!m05Accepted(s)) {
     return 'not_accepted';
@@ -426,6 +512,12 @@ export function closeM05AtReview(occasion: M05Occasion, nowMs: number) {
   const w = m05Windows[occasion];
 
   if (w.windowStatus() === 'unopened') {
+    // A check of this load holds a job that is not A: held, never absent
+    // (U24 RL-2; U is never `participant_absent`).
+    if (priorLoadCheck != null && guardM05Reload(occasion, nowMs)) {
+      return;
+    }
+
     w.markAbsent(
       s.offer_presentations > 0
         ? `${M05_JOBS[occasion].title.toLowerCase()} job offered, never answered before the review`
@@ -465,6 +557,8 @@ export function m05Probe(occasion: M05Occasion) {
 
 /** Test-only escape hatch. */
 export function resetM05State() {
+  priorLoadCheck = undefined;
+
   for (const occasion of OCCASIONS) {
     m05Freeze(states[occasion], 0, 'reset', null);
     states[occasion] = createM05State(occasion);

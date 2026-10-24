@@ -14479,3 +14479,154 @@ onward are the writer's readings and dispositions under it.
      excluded. RL-1C keeps its current values and exposes the violation;
      this approves neither the observation's validity nor its later
      exclusion.
+
+407. **U24 RL-2 — the owner's RL-2 instruction and narrow acceptance (24
+     October 2026), recorded verbatim before any implementation edit (saved
+     in the unit's evidence as `OWNER-RULING-RL2-2026-10-24.txt`, SHA-256
+     `0eb132326848aa4c853a1bd248954cb3d9d43c37615298c88618683cd3143a6a`; UNIT-LOG "U24 RL-2").**
+
+     ```text
+     I am Juls, the research owner. Continue with the already-authorized RL-2 from d7dc6e00a1fd256a74b6e9bdf26555705b54eee5.
+
+     Read completely before implementation:
+     1. C:\Users\Juls\.codex\visualizations\2026\10\23\u24-rl-correction\RL-EXECUTE-2.md
+     2. C:\Users\Juls\.codex\visualizations\2026\10\24\u24-rl-correction-1c\RL-EXTENSION-NOTE.md
+
+     Apply both, including the referenced authority, exact RL-2 allowlist, entry checks, verification, model routing, evidence preservation and single-local-commit requirements. The extension governs the updated commit chain and starting commit.
+
+     Narrow owner acceptance:
+     I accept the omission of the direct M12 M-class context-note fixture from RL-1C for proceeding with the reload corrections. H/U cases and both packet orders were tested; the direct M case rests on the documented inspection and carry-forward reasoning, not an executed fixture. Record that distinction explicitly. This is not a general waiver of M-class tests or other verification requirements.
+
+     Record this acceptance in the register and UNIT-LOG before implementation edits, and carry the coverage limitation into the later Part C evidence inventory. Do not amend RL-1C or alter its frozen evidence.
+
+     B2 remains open. Preserved values accompanied by integrity diagnostics do not establish the validity of prohibited administrations.
+
+     Follow the extension’s missing-check ruling: a presented, unopened occasion after a reload without its required check is U. Preserve task-specific first-load readings and the distinction from genuinely unreached occasions.
+
+     Complete RL-2’s required verification and reviews, preserve its evidence, and make its one authorized local commit when its acceptance conditions are met. Opus is the sole writer, Sonnet verifies, and the named Opus reviews remain read-only. No Fable or broad re-audit.
+
+     Stop with the RL-2 handoff. No push, merge, subsequent unit or Part C execution.
+     ```
+
+     **The narrow acceptance, as recorded (RL-1C is not amended).** RL-1C's
+     M12 context-note fixtures (§5.406 (3); qualification 3) executed the H
+     and U cases — the other packet held at its availability only (no note)
+     and held with its held screen opened (the note) — and the opened cases
+     (first load; reloaded with both packets A), each in both packet
+     orders. **No fixture executed the direct M-class case.** That an
+     availability-only M hold writes no note rests on documented inspection
+     (RL-1C's plan: "M: not producible by the host (its own record is always
+     coherent)") and on carry-forward reasoning, not on an executed fixture.
+     The owner accepts that omission for proceeding with the reload
+     corrections only; it is not a general waiver of M-class tests or of any
+     other verification requirement. RL-1C's commit `d7dc6e0` and its
+     frozen evidence (`…\2026\10\23\u24-rl-evidence\RL-1C\`, manifest
+     `RL-1C.SHA256-manifest.txt` SHA-256 `7dc3e93a…8798`) are unchanged.
+     **Carried into the later Part C evidence inventory (RL-F; Part C
+     unauthorised):** M12 context note, M class at availability — covered by
+     inspection and reasoning, not by an executed fixture.
+
+     **B2 stays open.** Values preserved beside integrity diagnostics (M04
+     `joint_hold_back_bypassed`, §5.406 (2)) do not establish the validity
+     of a prohibited administration.
+
+     **Applied in RL-2:** the RL-1C missing-check rule (decision A) — in a
+     reloaded load without its required check, a presented, unopened
+     occasion is U, refused and held — with each task's own first-load
+     reading kept and a genuinely unreached occasion kept distinct.
+
+     **The RL-2 work (UNIT-LOG "U24 RL-2"; addendum §2 "U24 RL-2"; r3 §4
+     G2, §5 M05 and the M10 / M11 line, §8 RL-2, §9).** The logged check of
+     r3 §4 G2 is wired for the offer rows M05, M09, M10 and M11 through
+     RL-0's helper, which is not edited: each family's single
+     `prior_load_checked` record is written once per reloaded load, before
+     any offer, by its first host (`guardM05Reload` — also run by
+     `presentM05Offer` —, `guardM09Reload`, `guardM10Reload`,
+     `m11OfferAvailable`); an occasion that is not A is held there — H
+     through the existing `recordPriorExposure` and the existing marker, U
+     and M never offered and without a prior-exposure entry; A is the
+     first-load administration. Each row's existing per-occasion held-back
+     rule is kept (M05 o1 / o2, M10 d1 / d2, M11 lab / yard; a held
+     occasion `interrupted`, the other occasion's value beside it). The
+     extractors read the record (r3 §5 column B under A), exclude it from
+     family evidence (M09 / M10's version, order and delivery tests
+     included) and `supporting_sequences`, apply RL-1C's decision A, and
+     keep every formula. M09, M10 and M11 have no screen: the offer is not
+     presented. M05's existing held line is kept and the §9 U / M lines are
+     added ("job"). **Writer's readings (IMPLEMENTER DEFAULTS,
+     owner-visible and reversible, none a ruling):** (a) stage 3 of each
+     record is the row's existing guard predicate, so that the existing
+     held-back rule is kept literally (r3 §4 G2): M05 the answer's
+     `opportunity_opened`; M09 and M10 the offer's `presented` (r3's
+     "stage 3 is the offer answer or opening record" read through the
+     existing rule, under which an offer presented earlier is held whether
+     or not it was answered; the record's stage-1 and stage-3 flags then
+     coincide); M11 the model's `offer_presented`. An offer presented and
+     left unanswered in an earlier load is therefore H for M09, M10 and M11
+     and A (offered again) for M05, as before RL-2. This reconciles an
+     inconsistency in r3 (§4's literal "stage 3 is the offer answer" against
+     G2's kept rule and §4's expected S3 readings, "unchanged (H)"; RL-0's
+     classifier holds only on stage 3); `prior_opening_found` therefore means
+     "an earlier presentation" for M09–M11 and "an earlier answer" for M05,
+     and Part C reads it per family. **OWNER CONFIRMATION REQUESTED.** (b) The stage maps and
+     record functions live in the pure extractor modules (RL-1 reading
+     (a)); the record is logged through the writing host's own window, so
+     its `occasion` / `delivery` names that host (as M01's). (c) The station
+     review holds an unoffered occasion that this load's check does not
+     classify A instead of marking it absent (RL-1 reading (c)). (d) With a
+     check, an unanswered occasion that is not A reads held even where its
+     host did not run in the load — from r3 §2 (each occasion's class comes
+     from the load's record; H takes the held-back reading; U is never
+     `participant_absent`), as r3 §5's listed (a) change does for M01 / M03.
+     RL-1 reading (d) stated the same rule only for corrupted logs; **for M10
+     and M11, which have no per-occasion F5, it reaches ordinary play and is
+     a reading change:** an occasion offered in an earlier load whose room is
+     not reached in this load (or reached only at the review, which now
+     writes its marker) reads held — `interrupted`, the other occasion's
+     value kept — where it read `not_presented` beside an observed sibling
+     before. r3 §5 does not enumerate it. **OWNER CONFIRMATION REQUESTED**
+     (confirm, or restrict the held reading to occasions whose host ran).
+     (e) **Consequences of decision A (no new decision):** without a check,
+     M05 OBS + an offer left unanswered reads interrupted · {map} (formerly
+     observed), and M09, M10 and M11 an offer left unanswered reads held
+     (formerly `no_eligible_event` / `pending`); a held delivery or loan is
+     never counted as offered or pending (M11 aligned with M10). (f) **M05's
+     held screen was unreachable before RL-2:** `openM05Control` opened the
+     surface only for a job accepted in the same load, so a held job's
+     station showed the idle line ("Lamp steady." / "Guy-line flag tied
+     off.") and the existing held line (r3 §9, D-5) was never drawn.
+     `openM05Control` now returns a non-logging `held` result for a held job
+     and the existing scene code opens the existing surface (no scene
+     edit). This makes the existing H line visible for the first time — a
+     participant-facing change for H, recorded for the owner. (g) On every
+     M05 held screen (H, U, M) the job readout and the subtitle are not
+     drawn; no string is added. The readout would cover the second U / M
+     line and, on the H screen, read "a moment once started" for a job that
+     cannot be started (the RL-1 M06 / M08 precedent); the subtitle the model
+     computed for a held job was "job open" (pre-existing, never shown before
+     RL-2), which contradicts "It stays closed after this reload." — an
+     empty subtitle as M14's (`m14SurfaceModel.ts`), no subtitle as M07's.
+     Applied after the read-only gameplay, visual and scientific reviews
+     (each raised it); **for the owner's ratification** (alternatives:
+     RL-1C's "closed", or the readout kept on H). (h) The RL-1C exposure-record
+     diagnostics (decision B) are approved for the eight RL-1 rows and are
+     not added to these four rows. (i) The U / M details and reasons are
+     writer's wording on existing fields, in RL-1's form ("reload with an
+     unverified earlier state: ⟨station⟩ not administered"); M10 and M11
+     append r3 §2's reason to their generic interrupted reason (M03's form).
+     (j) **M at the runtime host is not producible:** the host computes its
+     own record, which is always coherent. The M class is covered by
+     executed pure fixtures for all four rows (a self-contradictory record;
+     for M05 also an occasion-local contradiction beside an A sibling); the
+     M05 M screen shares the U branch and lines and is covered by inspection,
+     not by an executed browser case — carried into the later Part C
+     evidence inventory as a coverage limitation, beside the M12 note's.
+     **Recorded for the later independent recount (Part C layer R; not
+     executed, Part C unauthorised):** the stage maps of reading (a) (M09 /
+     M10 stage 3 = the presentation; M11 stage 3 = `offer_presented`); the
+     held reading of a non-A occasion whose host did not run (reading (d));
+     a presented, unanswered occasion of a reloaded load without its check
+     is U and held, a genuinely unreached one keeps its existing reading;
+     the review never marks a non-A occasion absent; these four rows carry
+     no RL-1C exposure-record diagnostics (reading (h)), so the recount
+     cannot read `exposure_record_consistent` on them.

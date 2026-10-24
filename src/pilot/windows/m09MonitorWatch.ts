@@ -15,8 +15,25 @@
  * never presented is absent; an offer presented in an earlier page load is
  * never re-run. The v2 two-check family keeps its meaning in the frozen
  * ledger and is no longer on the route.
+ *
+ * Reload (U24 RL-2, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §4 G2): the
+ * guard's first run in a reloaded load writes the family's single
+ * `prior_load_checked` record before any offer; the offer is then held
+ * unless the absence of an earlier offer is established (A): H with the
+ * existing prior-exposure entry and marker, U / M never offered. No
+ * screen: the offer is simply not presented.
  */
+import {
+  classifyM09Reload,
+  m09PriorLoadCheck,
+} from '../../measurement/features/m09';
 import { protocolStamp } from '../../measurement/protocol';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  reloadHoldBackDetail,
+  ROW_OCCASION,
+} from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import type { ObservedInput } from '../inputObservation';
 import {
@@ -46,7 +63,6 @@ import {
   m09NoteLogViewed,
   m09OpenAcceptanceCheck,
   m09Present,
-  m09PriorAdministration,
   m09RawComponents,
   m09ReadGauge,
   type M09ReadResult,
@@ -133,28 +149,68 @@ export function m09WatchAccepted(): boolean | null {
   return state.answer === null ? null : state.answer === 'accept';
 }
 
+/** This load's check (undefined until the guard's first run in the load). */
+let priorLoadCheck: PriorLoadCheck | null | undefined;
+
+/** Writes the load's check once (never on a first load) and returns it. */
+function ensurePriorLoadCheck(): PriorLoadCheck | null {
+  if (priorLoadCheck === undefined) {
+    priorLoadCheck = m09PriorLoadCheck(
+      researchRuntime.getPageLoadIndex(),
+      researchRuntime.getPriorPageLoadEvents(),
+      researchRuntime.getEventIntegrity(),
+    );
+
+    if (priorLoadCheck !== null) {
+      sink(PRIOR_LOAD_CHECK_SUFFIX, {
+        ...priorLoadCheck,
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return priorLoadCheck;
+}
+
 /**
- * Reload guard, run at Concourse entry: an offer presented in an earlier
- * page load of this identity is never re-run — prior exposure recorded,
- * the opportunity technically incomplete, the feature `interrupted`.
+ * Reload guard, run at Concourse entry (register §5.14; U24 RL-2): the
+ * load's check is written first; the offer is then held unless its class
+ * is A — H (presented in an earlier page load): never re-run, prior
+ * exposure recorded, the opportunity technically incomplete, the feature
+ * `interrupted`; U / M: never offered, no prior exposure claimed.
  */
 export function guardM09Reload(): boolean {
+  const check = ensurePriorLoadCheck();
+
   if (heldBack) {
     return true;
   }
 
-  if (
-    state.presented_at_ms !== null ||
-    !m09PriorAdministration(researchRuntime.getPriorPageLoadEvents())
-  ) {
+  if (state.presented_at_ms !== null) {
+    return false;
+  }
+
+  const cls = classifyM09Reload(
+    researchRuntime.getPageLoadIndex(),
+    check === null ? [] : [check],
+  ).occasions[ROW_OCCASION].class;
+
+  if (cls === null || cls === 'A') {
     return false;
   }
 
   heldBack = true;
-  m09Window.recordPriorExposure(
-    'monitor watch offered in an earlier page load of this identity',
-  );
-  m09Window.technicalFailure('reload after the offer: watch not re-run');
+
+  if (cls === 'H') {
+    m09Window.recordPriorExposure(
+      'monitor watch offered in an earlier page load of this identity',
+    );
+    m09Window.technicalFailure('reload after the offer: watch not re-run');
+  } else {
+    m09Window.technicalFailure(
+      reloadHoldBackDetail(cls, 'watch not administered'),
+    );
+  }
 
   return true;
 }
@@ -319,7 +375,9 @@ export function noteM09ReminderLogViewed() {
 
 /** Deck review: close whatever is still open (never a low value). */
 export function closeM09AtReview(nowMs: number) {
-  if (heldBack) {
+  // A check of this load holds an offer that is not A: held, never absent
+  // (U24 RL-2; U is never `participant_absent`).
+  if (heldBack || (priorLoadCheck != null && guardM09Reload())) {
     return;
   }
 
@@ -351,6 +409,7 @@ export function closeM09AtReview(nowMs: number) {
 export function resetM09State() {
   state = createM09State();
   heldBack = false;
+  priorLoadCheck = undefined;
   m09Window.reset();
   m09Window.spec.windowId = M09_WINDOW_IDS[1];
 }

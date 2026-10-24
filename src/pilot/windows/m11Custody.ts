@@ -13,6 +13,13 @@
  * window (companion). The review closes an accepted custody that never
  * left its room as unresolved at review, and marks a never-offered one
  * absent. A reload after the offer was presented never re-offers.
+ *
+ * Reload (U24 RL-2, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §4 G2): the
+ * first availability check of a reloaded load writes the family's single
+ * `prior_load_checked` record, covering both occasions, before any offer.
+ * An occasion is then held unless the absence of an earlier offer is
+ * established (A): H with the existing prior-exposure entry and marker,
+ * U / M never offered. No screen: the briefing carries no loan.
  */
 import { addInventoryItem } from '../../gameplay/inventory';
 import { CONTAINER_IDS } from '../../inventory/model';
@@ -20,7 +27,16 @@ import {
   getInventoryState,
   invTakeStackOutForLegacyRemove,
 } from '../../inventory/store';
+import {
+  classifyM11Reload,
+  m11PriorLoadCheck,
+} from '../../measurement/features/m11';
 import { protocolStamp } from '../../measurement/protocol';
+import {
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import { registerMissionLogEntry } from '../pilotRoute';
 import {
@@ -38,7 +54,6 @@ import {
   type M11Occasion,
   m11Offer,
   m11OwnerAvailable,
-  m11PriorAdministration,
   m11RawComponents,
   m11Resolve,
   m11ReturnPointAvailable,
@@ -150,34 +165,73 @@ export function declareM11(occasion: M11Occasion) {
   windows[occasion].declare();
 }
 
+/** This load's check (undefined until the first host of the load ran). */
+let priorLoadCheck: PriorLoadCheck | null | undefined;
+
+/** Writes the load's check once (never on a first load) and returns it. */
+function ensurePriorLoadCheck(occasion: M11Occasion): PriorLoadCheck | null {
+  if (priorLoadCheck === undefined) {
+    priorLoadCheck = m11PriorLoadCheck(
+      researchRuntime.getPageLoadIndex(),
+      researchRuntime.getPriorPageLoadEvents(),
+      researchRuntime.getEventIntegrity(),
+    );
+
+    if (priorLoadCheck !== null) {
+      sinkFor(occasion)(PRIOR_LOAD_CHECK_SUFFIX, {
+        ...priorLoadCheck,
+        input_mode: 'system',
+      });
+    }
+  }
+
+  return priorLoadCheck;
+}
+
 /**
  * Whether the briefing may carry the loan offer: false once answered, and
- * false after a reload whose earlier page load already presented it (the
- * guard records prior exposure and closes the window technically).
+ * false after a reload unless the occasion's class is A (register §5.14;
+ * U24 RL-2) — the load's check is written first; H (offered in an earlier
+ * page load): prior exposure recorded, the window closed technically;
+ * U / M: never offered, no prior exposure claimed.
  */
 export function m11OfferAvailable(occasion: M11Occasion): boolean {
   const s = states[occasion];
+  const check = ensurePriorLoadCheck(occasion);
 
   if (s.accepted !== null || heldBack.has(occasion)) {
     return false;
   }
 
-  if (
-    s.offered_at_ms === null &&
-    m11PriorAdministration(researchRuntime.getPriorPageLoadEvents(), occasion)
-  ) {
-    heldBack.add(occasion);
+  if (s.offered_at_ms !== null) {
+    return true;
+  }
+
+  const cls = classifyM11Reload(
+    researchRuntime.getPageLoadIndex(),
+    check === null ? [] : [check],
+  ).occasions[occasion].class;
+
+  if (cls === null || cls === 'A') {
+    return true;
+  }
+
+  heldBack.add(occasion);
+
+  if (cls === 'H') {
     windows[occasion].recordPriorExposure(
       'loan offered in an earlier page load of this identity',
     );
     windows[occasion].technicalFailure(
       'reload after the offer: custody not re-run',
     );
-
-    return false;
+  } else {
+    windows[occasion].technicalFailure(
+      reloadHoldBackDetail(cls, 'custody not administered'),
+    );
   }
 
-  return true;
+  return false;
 }
 
 /** The briefing shows the offer (terms stated); logged once. */
@@ -338,7 +392,13 @@ export function closeM11AtReview(nowMs: number) {
     const w = windows[occasion];
 
     if (s.offered_at_ms === null) {
-      if (!heldBack.has(occasion)) {
+      // A check of this load holds an occasion that is not A: held, never
+      // absent (U24 RL-2; U is never `participant_absent`).
+      const held =
+        heldBack.has(occasion) ||
+        (priorLoadCheck != null && !m11OfferAvailable(occasion));
+
+      if (!held) {
         w.markAbsent(
           `${s.spec.item_label} loan never offered before the review`,
         );
@@ -373,6 +433,7 @@ export function resetM11State() {
   }
 
   heldBack.clear();
+  priorLoadCheck = undefined;
 }
 
 export function m11ItemLabel(occasion: M11Occasion): string {

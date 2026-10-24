@@ -1694,6 +1694,62 @@ S-F2 reading) instead of `incomplete`. The diagnostics change no
 disposition, value, numerator or denominator. No formula, weight,
 denominator rule or event name changes.
 
+U24 RL-2 (PROVISIONAL, never canonical; D-4, D-5 and RL-1C's decision A in
+force; the owner's RL-2 instruction of 24 October 2026;
+`RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G2, §5, §9; register §5.407):
+the record of RL-0 is now written for the four offer families, once per
+reloaded load, before any offer, by the family's first host —
+`proto_m05_start_prior_load_checked` (`guardM05Reload` at the Concourse or
+Yard entry, or `presentM05Offer`; occasions `o1`, `o2`),
+`proto_m09_checks_prior_load_checked` (`guardM09Reload`; no occasions),
+`proto_m10_delivery_prior_load_checked` (`guardM10Reload`; occasions `d1`,
+`d2`) and `proto_m11_custody_prior_load_checked` (`m11OfferAvailable`;
+occasions `lab`, `yard`), each with the window's usual fields and RL-0's
+flags. **Stage maps** (r3 §4 G2): stage 1 the offer's `presented`; no stage
+2; stage 3 the row's existing guard record, so that each row's existing
+per-occasion held-back rule is kept — M05 the answer's `opportunity_opened`
+(accepted or declined), M09 and M10 the offer's `presented` itself (an offer
+presented earlier is held, answered or not; their stage-1 and stage-3 flags
+coincide), M11 the model's `offer_presented`. **Hold-back markers:** H keeps
+each row's existing detail and prior-exposure entry ("reload after
+administration: job not re-offered"; "reload after the offer: watch /
+delivery / custody not re-run"); U "reload with an unverified earlier
+state: ⟨job | watch | delivery | custody⟩ not administered" and M "reload
+with a contradictory earlier check: … not administered", with no
+prior-exposure entry;
+the offer is then not presented (M09, M10 and M11 have no screen). The
+station review holds an unoffered occasion that this load's check does not
+classify A instead of marking it absent. **M05's held screen:** a held
+job's station opens the existing read-only surface and logs nothing (before
+RL-2 the station opened only for a job accepted in the same load, so the
+held surface was never shown); H keeps the existing line, U / M show the
+§9 lines "The earlier state of this job could not be verified." / "It stays
+closed after this reload."; no held screen draws the job readout or a
+subtitle (register §5.407 reading (g), for the owner's ratification).
+**Readings:** with an
+established check an occasion takes the first-load reading (r3 §5): M05
+OBS + NOP observed, NOP + NOP `not_presented`; M09, M10 and M11 with
+nothing offered `not_presented` with their first-load reasons; an
+unanswered occasion that is not A is held with its class's reason — H
+unchanged, U "⟨job | watch | delivery | custody⟩ not administered after a
+reload: earlier history not verified", M "… earlier check contradictory"
+(beside an offered occasion M10 and M11 append "earlier history not
+verified" / "earlier check contradictory" to their generic "held back after
+a reload" reason); a held delivery or loan is never counted as offered or
+pending; a malformed record is a technical failure of the item. **Reading
+change (M10, M11; register §5.407 reading (d), owner confirmation
+requested):** with a check, an occasion offered in an earlier load whose
+room is not reached in this load, or reached only at the review, reads held
+— `interrupted`, the other occasion's value kept — where it read
+`not_presented` beside an observed sibling before. **Without a
+check** (RL-1C decision A): an offer presented and left unanswered in a
+reloaded load is U and held; a genuinely unreached occasion keeps its
+existing reading (M05's F5; M10 / M11 `not_presented` beside the other
+occasion; the `absentFeature` reload branch when the load holds nothing).
+The RL-1C exposure-record diagnostics are not added to these rows. No
+formula, weight, denominator rule or event name other than the suffix above
+changes.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                               | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

@@ -11,6 +11,15 @@
  * (legitimate missingness is never a technical failure; contradictory
  * evidence is); immutability and determinism; the participant-facing copy;
  * and the input classifier.
+ *
+ * U24 RL-2 (`RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G2, §5, §8;
+ * register §5.406 decision A, §5.407): the watch after a reload — H (the
+ * offer presented in an earlier load: the existing rule), A (first-load
+ * readings), U and M (never offered) — with the class and the permission
+ * to administer as well as the reading; F-A to F-C; the RL-1C
+ * missing-check rule with its contrasts. The records are built here from
+ * r3 §4's stage map with the RL-0 helper; the expected readings come from
+ * r3 §5, never from running the extractor.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -18,7 +27,17 @@ import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 
 import { extractItemFeatures } from '../src/measurement/features';
+import {
+  classifyM09Reload,
+  m09PriorLoadCheck,
+} from '../src/measurement/features/m09';
 import { registerEntry } from '../src/measurement/registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  type ReloadEvent,
+  ROW_OCCASION,
+} from '../src/measurement/reloadCheck';
 import {
   classifyObservedInput,
   INPUT_OBSERVATION_MAX_AGE_MS,
@@ -1445,5 +1464,407 @@ test.describe('M09 monitor watch (pure)', () => {
       /m09|gauge|watch/i,
     );
     expect(model).not.toMatch(/m10|deliver|key card|logbook/i);
+  });
+});
+
+/* ================================================================== *
+ * U24 RL-2: the logged reload check of the watch (pure)
+ * ================================================================== */
+
+const RL2_CONTINUOUS = {
+  first_sequence: 1,
+  sequence_gap_count: 0,
+  sequence_duplicate_count: 0,
+  recovered_from_chunks: false,
+};
+const RL2_UNVERIFIED = { ...RL2_CONTINUOUS, recovered_from_chunks: true };
+const RL2_DETAIL = {
+  H: 'reload after the offer: watch not re-run',
+  U: 'reload with an unverified earlier state: watch not administered',
+  M: 'reload with a contradictory earlier check: watch not administered',
+} as const;
+const RL2_REASON = {
+  H: 'watch offered in an earlier page load; not re-run after the reload',
+  U: 'watch not administered after a reload: earlier history not verified',
+  M: 'watch not administered after a reload: earlier check contradictory',
+} as const;
+
+/**
+ * r3 §4 G2's stage map as reconciled in register §5.407 reading (a) (a
+ * writer's reconciliation, for the owner; the stage-3 predicate is the
+ * row's existing guard rule from its read-only model): stage 1 the
+ * offer's `presented`; stage 3 the existing guard's record, which for the
+ * watch is the same presentation (an offer presented earlier is held,
+ * whether or not it was answered); the row's markers.
+ */
+const RL2_STAGES = {
+  briefing: (event: ReloadEvent) =>
+    event.event_type === `${M09_FAMILY}presented`,
+  opening: (event: ReloadEvent) => m09PriorAdministration([event]),
+  holdBack: (event: ReloadEvent) =>
+    event.event_type === `${M09_FAMILY}technical_failure`,
+};
+
+function rl2Record(
+  pageLoadIndex: number,
+  prior: readonly RawGameEvent[],
+  integrity = RL2_CONTINUOUS,
+) {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents: prior,
+    integrity,
+    stages: RL2_STAGES,
+  });
+}
+
+type Rl2Step = 'none' | 'offer' | 'decline' | 'route';
+
+/** One load's own events (page load 1, renumbered later). */
+function rl2Events(step: Rl2Step | 'H' | 'U' | 'M'): RawGameEvent[] {
+  if (step === 'route') {
+    return route([true, true, true]).h.events;
+  }
+
+  const h = harness();
+
+  if (step === 'H' || step === 'U' || step === 'M') {
+    h.sink('technical_failure', {
+      detail: RL2_DETAIL[step],
+      input_mode: 'system',
+    });
+  } else if (step !== 'none') {
+    const s = createM09State();
+
+    m09Present(s, 1_000, h.sink);
+
+    if (step === 'decline') {
+      expect(m09Answer(s, 'decline', 2, 3, 1_400, KEY, h.sink)).toBe(
+        'declined',
+      );
+      h.opened();
+      h.close(s, 'declined');
+    }
+  }
+
+  return h.events;
+}
+
+/** Events placed in load `index` from sequence `from`. */
+function rl2Place(
+  events: readonly RawGameEvent[],
+  index: number,
+  from: number,
+): RawGameEvent[] {
+  return events.map((event, i) => ({
+    ...event,
+    page_load_index: index,
+    sequence: from + i,
+  }));
+}
+
+const RL2_SESSION: RawGameEvent = {
+  session_id: 's',
+  timestamp_ms: 0,
+  scene: 'dock',
+  event_type: 'session_start',
+  metadata: {},
+};
+const RL2_NEVER = rl2Place([RL2_SESSION], 1, 1);
+const RL2_OFFERED = rl2Place([RL2_SESSION, ...rl2Events('offer')], 1, 1);
+const RL2_DECLINED = rl2Place([RL2_SESSION, ...rl2Events('decline')], 1, 1);
+const RL2_EARLIER_U = rl2Place([RL2_SESSION, ...rl2Events('U')], 1, 1);
+
+function rl2CheckEvent(record: object): RawGameEvent {
+  return {
+    session_id: 's',
+    timestamp_ms: 0,
+    scene: 'station_concourse',
+    event_type: `${M09_FAMILY}prior_load_checked`,
+    metadata: {
+      opportunity_id: M09_OPPORTUNITY_ID,
+      entry_state_version: M09_ENTRY_STATE_VERSION,
+      ...record,
+      input_mode: 'system',
+    },
+  };
+}
+
+/** A load exactly as given after the prior loads: records, then events. */
+function rl2Raw(
+  prior: RawGameEvent[],
+  records: readonly object[],
+  events: readonly RawGameEvent[],
+  pageLoadIndex = 2,
+) {
+  const current = rl2Place(
+    [...records.map(rl2CheckEvent), ...events],
+    pageLoadIndex,
+    (prior.at(-1)?.sequence ?? 0) + 1,
+  );
+
+  return {
+    current,
+    row: extractItemFeatures('M09', [...prior, ...current], {
+      finalCoreClosed: true,
+      pageLoadIndex,
+      reloaded: pageLoadIndex > 1,
+    })[0],
+  };
+}
+
+/**
+ * A reloaded load as the runtime writes it: the record (or `records`),
+ * then — the class not A ⇒ the guard's marker at Concourse entry, the
+ * offer never shown; A ⇒ the step.
+ */
+function rl2Load(
+  prior: RawGameEvent[],
+  step: Rl2Step,
+  options: {
+    integrity?: typeof RL2_CONTINUOUS;
+    records?: (record: Record<string, unknown>) => object[];
+  } = {},
+) {
+  const record = rl2Record(2, prior, options.integrity) as unknown as Record<
+    string,
+    unknown
+  >;
+  const records = options.records?.(record) ?? [record];
+  const reload = classifyReload({ pageLoadIndex: 2, checks: records });
+  const cls = reload.occasions[ROW_OCCASION].class;
+  const events =
+    step === 'none' ? [] : cls === 'A' ? rl2Events(step) : rl2Events(cls!);
+
+  return { record, reload, cls, ...rl2Raw(prior, records, events) };
+}
+
+test.describe('M09 the logged reload check (U24 RL-2, pure)', () => {
+  const cases: readonly {
+    name: string;
+    prior: RawGameEvent[];
+    step: Rl2Step;
+    integrity?: typeof RL2_CONTINUOUS;
+    cls: string;
+    row: Record<string, unknown>;
+    reason?: string;
+  }[] = [
+    {
+      name: 'H: the offer presented in an earlier load ⇒ held, interrupted · null',
+      prior: RL2_DECLINED,
+      step: 'offer',
+      cls: 'H',
+      row: { disposition: 'interrupted', value: null },
+      reason: RL2_REASON.H,
+    },
+    {
+      name: 'H: an offer presented and left unanswered earlier is held too (the existing rule)',
+      prior: RL2_OFFERED,
+      step: 'offer',
+      cls: 'H',
+      row: { disposition: 'interrupted', value: null },
+      reason: RL2_REASON.H,
+    },
+    {
+      name: 'A, never offered in this load ⇒ not_presented · null (b)',
+      prior: RL2_NEVER,
+      step: 'none',
+      cls: 'A',
+      row: { disposition: 'not_presented', value: null },
+      reason: 'watch never offered',
+    },
+    {
+      name: 'A, offered and unanswered ⇒ no_eligible_event (the first-load reading)',
+      prior: RL2_NEVER,
+      step: 'offer',
+      cls: 'A',
+      row: { disposition: 'no_eligible_event', value: null },
+      reason: 'watch offer not answered',
+    },
+    {
+      name: 'A, declined ⇒ declined · null',
+      prior: RL2_NEVER,
+      step: 'decline',
+      cls: 'A',
+      row: { disposition: 'declined', value: null },
+    },
+    {
+      name: 'A, accepted and every check read ⇒ observed · 3 · 3/3',
+      prior: RL2_NEVER,
+      step: 'route',
+      cls: 'A',
+      row: {
+        disposition: 'observed',
+        value: 3,
+        numerator: 3,
+        denominator: 3,
+      },
+    },
+    {
+      name: 'U, history level ⇒ never offered, interrupted · null, reason unverified (c)',
+      prior: RL2_NEVER,
+      integrity: RL2_UNVERIFIED,
+      step: 'offer',
+      cls: 'U',
+      row: { disposition: 'interrupted', value: null },
+      reason: RL2_REASON.U,
+    },
+  ];
+
+  for (const c of cases) {
+    test(`${c.name}`, () => {
+      const { cls, reload, row } = rl2Load(c.prior, c.step, {
+        integrity: c.integrity,
+      });
+
+      expect(cls).toBe(c.cls);
+      expect(reload.occasions[ROW_OCCASION].administration_permitted).toBe(
+        c.cls === 'A',
+      );
+      expect(row).toMatchObject(c.row);
+
+      if (c.reason !== undefined) {
+        expect(row.missing_reason).toBe(c.reason);
+      }
+    });
+  }
+
+  test('the extractor’s stage map is r3 §4’s; a first load writes none; the record is never task evidence', () => {
+    for (const prior of [RL2_NEVER, RL2_OFFERED, RL2_DECLINED, RL2_EARLIER_U]) {
+      for (const integrity of [RL2_CONTINUOUS, RL2_UNVERIFIED]) {
+        const record = rl2Record(2, prior, integrity);
+
+        expect(m09PriorLoadCheck(2, prior, integrity)).toEqual(record);
+        expect(classifyM09Reload(2, [record!])).toEqual(
+          classifyReload({ pageLoadIndex: 2, checks: [record!] }),
+        );
+      }
+    }
+
+    expect(m09PriorLoadCheck(1, [], RL2_CONTINUOUS)).toBeNull();
+    expect(rl2Record(2, RL2_DECLINED)).toMatchObject({
+      prior_briefing_found: true,
+      prior_opening_found: true,
+      prior_opening_absence_established: false,
+      prior_opening_sequences: [2],
+    });
+
+    const { row, current } = rl2Load(RL2_NEVER, 'route');
+
+    expect(row.disposition).toBe('observed');
+    expect(row.supporting_sequences).not.toContain(current[0].sequence);
+    // Not read by the family's version and order tests either: a record
+    // without the window's version leaves the first-load reading intact.
+    expect(
+      rl2Raw(
+        RL2_NEVER,
+        [
+          {
+            ...rl2Record(2, RL2_NEVER)!,
+            entry_state_version: undefined,
+          },
+        ],
+        [],
+      ).row,
+    ).toMatchObject({ disposition: 'not_presented' });
+  });
+
+  test('F-A: two agreeing check records with distinct sequences ⇒ U, refused; the U reading', () => {
+    const { reload, row, current } = rl2Load(RL2_NEVER, 'offer', {
+      records: (record) => [record, { ...record }],
+    });
+
+    expect(current.slice(0, 2).map((event) => event.sequence)).toEqual([2, 3]);
+    expect(reload).toMatchObject({ check_count: 2, check_coherent: true });
+    expect(reload.occasions[ROW_OCCASION]).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+      basis: 'duplicate_checks',
+    });
+    expect(row).toMatchObject({ disposition: 'interrupted', value: null });
+    expect(row.missing_reason).toBe(RL2_REASON.U);
+  });
+
+  test('F-B: conflicting duplicate checks ⇒ U, refused, coherence false', () => {
+    const { reload, row } = rl2Load(RL2_DECLINED, 'offer', {
+      records: (record) => [record, { ...record, prior_opening_found: false }],
+    });
+
+    expect(reload.check_coherent).toBe(false);
+    expect(reload.occasions[ROW_OCCASION]).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+    });
+    expect(row).toMatchObject({ disposition: 'interrupted', value: null });
+  });
+
+  test('F-C: an earlier U or M hold-back, then a continuous history ⇒ U, refused', () => {
+    for (const earlier of ['U', 'M'] as const) {
+      const prior = rl2Place([RL2_SESSION, ...rl2Events(earlier)], 1, 1);
+      const { record, reload, row } = rl2Load(prior, 'offer');
+
+      expect(record.history_continuous).toBe(true);
+      expect(reload.occasions[ROW_OCCASION]).toMatchObject({
+        class: 'U',
+        administration_permitted: false,
+        basis: 'absence_not_established',
+      });
+      expect(row.missing_reason).toBe(RL2_REASON.U);
+    }
+  });
+
+  test('M: a self-contradictory record ⇒ M, refused, reason contradictory; a malformed record ⇒ technical failure', () => {
+    const m = rl2Load(RL2_NEVER, 'offer', {
+      integrity: RL2_UNVERIFIED,
+      records: (record) => [
+        { ...record, prior_opening_absence_established: true },
+      ],
+    });
+
+    expect(m.reload.occasions[ROW_OCCASION]).toMatchObject({
+      class: 'M',
+      administration_permitted: false,
+    });
+    expect(m.row).toMatchObject({ disposition: 'interrupted', value: null });
+    expect(m.row.missing_reason).toBe(RL2_REASON.M);
+
+    const malformed = rl2Load(RL2_DECLINED, 'offer', {
+      records: (record) => [{ ...record, page_load_index: 1 }],
+    });
+
+    expect(malformed.reload.check_malformed).toBe(true);
+    expect(malformed.row).toMatchObject({
+      disposition: 'technical_failure',
+      value: null,
+    });
+  });
+
+  test('RL-1C decision A: an offer presented and left unanswered in a reloaded load without its check is U (no_check), refused, and reads held', () => {
+    expect(classifyM09Reload(2, []).occasions[ROW_OCCASION]).toMatchObject({
+      class: 'U',
+      basis: 'no_check',
+      administration_permitted: false,
+    });
+    expect(rl2Raw(RL2_NEVER, [], rl2Events('offer')).row).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason: RL2_REASON.U,
+    });
+    // An answered offer is not unopened: its first-load reading stands.
+    expect(rl2Raw(RL2_NEVER, [], rl2Events('decline')).row).toMatchObject({
+      disposition: 'declined',
+    });
+  });
+
+  test('decision A contrasts: a first load keeps no_eligible_event; a genuinely unreached reloaded load keeps the F5 / absentFeature reading', () => {
+    expect(rl2Raw([], [], rl2Events('offer'), 1).row).toMatchObject({
+      disposition: 'no_eligible_event',
+      missing_reason: 'watch offer not answered',
+    });
+    expect(rl2Raw(RL2_NEVER, [], []).row).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason:
+        'no current-load evidence after a reload: watch never offered',
+    });
   });
 });

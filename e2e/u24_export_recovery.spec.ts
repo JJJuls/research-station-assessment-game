@@ -306,6 +306,72 @@ test.describe('V-5 (b), (c) — the S3 reloads', () => {
       prior_opening_found: false,
       prior_opening_absence_established: true,
     });
+
+    // U24 RL-2 (RELOAD-CORRECTION-SPEC-r3-exec.md §4 "Expected S3 load-4
+    // readings": M05, M09, M10 and M11 unchanged — H, prior exposure):
+    // every offer of the four rows was answered or presented in load 1 or
+    // 2, so in load 4 each occasion is held at its host — interrupted, no
+    // value — and each reloaded load writes one check per family, whose
+    // load-4 record finds the earlier offer of every occasion; a first
+    // load writes none.
+    const RL2_S3_LOAD4: Record<string, string> = {
+      m05_start_latency: 'interrupted',
+      m05_acceptance_exposure: 'interrupted',
+      m09_due_checks_fulfilled: 'interrupted',
+      m10_obligations_fulfilled: 'interrupted',
+      m11_unresolved_custodies: 'interrupted',
+      m11_custody_records: 'interrupted',
+    };
+
+    for (const [featureId, disposition] of Object.entries(RL2_S3_LOAD4)) {
+      expect(
+        final.payload.measurement_features.find(
+          (feature) => feature.feature_id === featureId,
+        ),
+        featureId,
+      ).toMatchObject({ disposition, value: null });
+    }
+
+    const RL2_FAMILIES: Record<string, readonly string[]> = {
+      proto_m05_start_: ['o1', 'o2'],
+      proto_m09_checks_: [],
+      proto_m10_delivery_: ['d1', 'd2'],
+      proto_m11_custody_: ['lab', 'yard'],
+    };
+
+    for (const [family, occasions] of Object.entries(RL2_FAMILIES)) {
+      const checks = (load: number) =>
+        everyEvent.filter(
+          (event) =>
+            event.event_type === `${family}prior_load_checked` &&
+            (event.page_load_index ?? 4) === load,
+        );
+
+      for (const load of [1, 2, 3, 4]) {
+        expect(
+          checks(load).length,
+          `${family}prior_load_checked in load ${load}`,
+        ).toBe(load === 1 ? 0 : 1);
+      }
+
+      const record = checks(4)[0]?.metadata ?? {};
+
+      expect(record, `${family} load-4 record`).toMatchObject({
+        page_load_index: 4,
+        history_continuous: true,
+        prior_opening_found: true,
+        prior_opening_absence_established: false,
+      });
+
+      for (const occasion of occasions) {
+        expect(
+          (record.occasions as Record<string, Record<string, unknown>>)?.[
+            occasion
+          ],
+          `${family} ${occasion}`,
+        ).toMatchObject({ prior_opening_found: true });
+      }
+    }
     write(
       'reproduction/V5bc-S3-integrity.json',
       JSON.stringify(

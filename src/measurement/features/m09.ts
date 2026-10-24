@@ -24,10 +24,32 @@
  * every event of the family in the load carries a usable number (an
  * integer from 1) and no two share one; otherwise the feature is a
  * technical failure. A missing number is never read as zero.
+ *
+ * Reload (U24 RL-2, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G2 and §5):
+ * the load's `prior_load_checked` record classifies the watch H / A / U /
+ * M — H when its offer was presented in an earlier load (the existing
+ * rule). With the absence established (A) the first-load readings apply;
+ * `absentFeature`'s reload branch only without one. An offer presented and
+ * left unanswered in a reloaded load without its check is U and held
+ * (RL-1C decision A). The record is never task evidence: it is outside the
+ * family's version, order and supporting-sequence tests.
  */
+import { m09PriorAdministration } from '../../pilot/windows/m09WatchModel';
 import type { RawGameEvent } from '../../systems/EventLogger';
 import { CLOSURE_REASONS, type ClosureReason } from '../protocol';
 import { registerEntry } from '../registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  PRIOR_LOAD_CHECK_SUFFIX,
+  type PriorLoadCheck,
+  type ReloadClassification,
+  type ReloadEvent,
+  type ReloadHistoryIntegrity,
+  reloadHoldBackClass,
+  ROW_OCCASION,
+  withoutPriorLoadChecks,
+} from '../reloadCheck';
 import {
   absentFeature,
   currentLoadEvents,
@@ -96,12 +118,61 @@ function closureReason(value: unknown): ClosureReason | null {
     : null;
 }
 
+/**
+ * The load's reload check (U24 RL-2; r3 §4 G2 stage map): stage 1 the
+ * offer's `presented`, no stage 2, stage 3 the existing guard's record —
+ * for the watch the same presentation (an offer presented earlier is
+ * held, answered or not) — and the row's hold-back markers. Null on a
+ * first load.
+ */
+export function m09PriorLoadCheck(
+  pageLoadIndex: number,
+  priorLoadEvents: readonly ReloadEvent[],
+  integrity: ReloadHistoryIntegrity,
+): PriorLoadCheck | null {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents,
+    integrity,
+    stages: {
+      briefing: (event) => event.event_type === `${FAMILY}presented`,
+      opening: (event) => m09PriorAdministration([event]),
+      holdBack: (event) => event.event_type === `${FAMILY}technical_failure`,
+    },
+  });
+}
+
+/** The watch's class from the load's check records (r3 §2). */
+export function classifyM09Reload(
+  pageLoadIndex: number,
+  checks: readonly object[],
+): ReloadClassification {
+  return classifyReload({ pageLoadIndex, checks });
+}
+
+/** The current-load reason of a held watch, by its class. */
+const HELD_REASON = {
+  H: 'watch offered in an earlier page load; not re-run after the reload',
+  U: 'watch not administered after a reload: earlier history not verified',
+  M: 'watch not administered after a reload: earlier check contradictory',
+} as const;
+
 registerFeatureExtractor('M09', (events, context) => {
   const entry = registerEntry('M09');
   const [primary] = entry.features;
   const load = currentLoadEvents(events, context);
-  const family = load.filter((e) => e.event_type.startsWith(FAMILY));
+  const family = withoutPriorLoadChecks(
+    load.filter((e) => e.event_type.startsWith(FAMILY)),
+    FAMILY,
+  );
   const supporting = sequencesOf(family);
+  const reload = classifyM09Reload(
+    context.pageLoadIndex,
+    eventsOfType(load, `${FAMILY}${PRIOR_LOAD_CHECK_SUFFIX}`).map(
+      (event) => event.metadata ?? {},
+    ),
+  );
+  const cls = reload.occasions[ROW_OCCASION].class;
   const of = (suffix: string) => eventsOfType(family, `${FAMILY}${suffix}`);
 
   const presented = of('presented');
@@ -163,6 +234,12 @@ registerFeatureExtractor('M09', (events, context) => {
     }),
   ];
 
+  // A malformed check record stays under the existing rule (r3 §2;
+  // §5.290 (a)): a technical failure, never uncertain history.
+  if (reload.check_malformed) {
+    return fail('a reload check record describes another page load');
+  }
+
   if (
     family.some(
       (event) => meta<string>(event, 'entry_state_version') !== VERSION,
@@ -171,16 +248,47 @@ registerFeatureExtractor('M09', (events, context) => {
     return fail('an event of the family carries an unknown version');
   }
 
+  // After a reload, an unanswered watch whose class is not A is held (U24
+  // RL-2): always with a check; without one only once its offer was
+  // presented in this load (U (`no_check`), RL-1C decision A).
+  const unanswered =
+    answered.length === 0 && of('opportunity_opened').length === 0;
+  const heldClass =
+    reload.page_reloaded &&
+    cls !== 'A' &&
+    unanswered &&
+    (reload.check_count > 0 || presented.length > 0)
+      ? (cls ?? 'U')
+      : null;
+
   if (presented.length === 0) {
     if (heldBack.length > 0) {
       return empty(
         'interrupted',
-        'watch offered in an earlier page load; not re-run after the reload',
+        HELD_REASON[
+          reloadHoldBackClass(meta<unknown>(heldBack[0], 'detail')) ?? 'H'
+        ],
       );
     }
 
     if (answered.length + opened.length + fulfilled.length > 0) {
       return fail('watch events without a presentation');
+    }
+
+    if (heldClass !== null) {
+      return empty('interrupted', HELD_REASON[heldClass]);
+    }
+
+    // An established absence takes the first-load reading (r3 §5, NOP
+    // (A)); `absentFeature`'s reload branch is kept for a load without
+    // one.
+    if (cls === 'A') {
+      return [
+        emptyFeature('M09', primary, 'not_presented', 'watch never offered', {
+          supporting_sequences: supporting,
+          components: baseComponents,
+        }),
+      ];
     }
 
     return [
@@ -225,6 +333,13 @@ registerFeatureExtractor('M09', (events, context) => {
     // Presented and never answered: no terminal answer, no duty, no check.
     if (checkEvents > 0) {
       return fail('check events without an accepted duty');
+    }
+
+    if (heldClass !== null) {
+      return empty('interrupted', HELD_REASON[heldClass], {
+        acceptance,
+        checks: [],
+      });
     }
 
     return empty('no_eligible_event', 'watch offer not answered', {

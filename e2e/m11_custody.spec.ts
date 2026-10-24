@@ -9,11 +9,29 @@
  * prior offer, and the extractor reproduces unresolved / accepted
  * accessible with declined ≠ no eligible event ≠ pending ≠ interrupted ≠
  * not presented, plus the per-occasion records companion.
+ *
+ * U24 RL-2 (`RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §4 G2, §5 "M11 (lab,
+ * yard)", §8; register §5.406 decision A, §5.407): each occasion's class
+ * after a reload (H = its loan offered in an earlier load, the existing
+ * rule), the permission to administer and the reading — the existing
+ * per-occasion held-back rule, OBS + NOP (A) and NOP + NOP (A) by the
+ * first-load rule, U and M never offered; F-D, F-E and F-A; the RL-1C
+ * missing-check rule. Records from r3 §4's stage map with the RL-0 helper;
+ * expected readings from r3 §5, never from running the extractor.
  */
 import { expect, test } from '@playwright/test';
 
 import { extractItemFeatures } from '../src/measurement/features';
+import {
+  classifyM11Reload,
+  m11PriorLoadCheck,
+} from '../src/measurement/features/m11';
 import { registerEntry } from '../src/measurement/registerV3';
+import {
+  classifyReload,
+  computePriorLoadCheck,
+  type ReloadEvent,
+} from '../src/measurement/reloadCheck';
 import {
   createM11State,
   m11Answer,
@@ -397,5 +415,536 @@ test.describe('M11 borrowed-instrument custody (pure)', () => {
     expect(
       (mixedRows[1].value as { lab: { interrupted: boolean } | null }).lab,
     ).toEqual({ interrupted: true });
+  });
+});
+
+/* ================================================================== *
+ * U24 RL-2: the logged reload check of the two custodies (pure)
+ * ================================================================== */
+
+const RL2_CONTINUOUS = {
+  first_sequence: 1,
+  sequence_gap_count: 0,
+  sequence_duplicate_count: 0,
+  recovered_from_chunks: false,
+};
+const RL2_UNVERIFIED = { ...RL2_CONTINUOUS, recovered_from_chunks: true };
+const RL2_DETAIL = {
+  H: 'reload after the offer: custody not re-run',
+  U: 'reload with an unverified earlier state: custody not administered',
+  M: 'reload with a contradictory earlier check: custody not administered',
+} as const;
+const RL2_REASON = {
+  H: 'loan offered in an earlier page load; not re-run after the reload',
+  U: 'custody not administered after a reload: earlier history not verified',
+  M: 'custody not administered after a reload: earlier check contradictory',
+} as const;
+const RL2_OCCASIONS = ['lab', 'yard'] as const;
+const RL2_OWNER = { lab: 'kai', yard: 'noor' } as const;
+
+/**
+ * r3 §4 G2's stage map as reconciled in register §5.407 reading (a) (a
+ * writer's reconciliation, for the owner; the stage-3 predicate is the
+ * row's existing guard rule from its read-only model): stage 1 the
+ * window's `presented`; stage 3 the existing guard's record (the model's
+ * `offer_presented`: a loan offered earlier is held); the markers.
+ */
+const RL2_STAGES = Object.fromEntries(
+  RL2_OCCASIONS.map((occasion) => [
+    occasion,
+    {
+      briefing: (event: ReloadEvent) =>
+        event.event_type === 'proto_m11_custody_presented' &&
+        event.metadata?.occasion === occasion,
+      opening: (event: ReloadEvent) =>
+        m11PriorAdministration([event], occasion),
+      holdBack: (event: ReloadEvent) =>
+        event.event_type === 'proto_m11_custody_technical_failure' &&
+        event.metadata?.occasion === occasion,
+    },
+  ]),
+);
+
+function rl2Record(
+  pageLoadIndex: number,
+  prior: readonly RawGameEvent[],
+  integrity = RL2_CONTINUOUS,
+) {
+  return computePriorLoadCheck({
+    pageLoadIndex,
+    priorLoadEvents: prior,
+    integrity,
+    occasions: RL2_STAGES,
+  });
+}
+
+type Rl2Step = 'none' | 'offer' | 'decline' | 'returned' | 'unresolved';
+
+/**
+ * One occasion's events as the window adapter writes them: the model's
+ * offer, then the window's `presented`; an answer, then the window's
+ * opening; the closure.
+ */
+function rl2Occasion(
+  h: ReturnType<typeof harness>,
+  occasion: M11Occasion,
+  step: Rl2Step | 'H' | 'U' | 'M',
+) {
+  const log = h.sink(occasion);
+  const s = createM11State(occasion);
+
+  if (step === 'none') {
+    return;
+  }
+
+  if (step === 'H' || step === 'U' || step === 'M') {
+    log('technical_failure', {
+      detail: RL2_DETAIL[step],
+      input_mode: 'system',
+    });
+
+    return;
+  }
+
+  expect(m11Offer(s, 10, log)).toBe(true);
+  log('presented', { input_mode: 'system' });
+
+  if (step === 'offer') {
+    return;
+  }
+
+  const accepted = step !== 'decline';
+
+  m11Answer(s, accepted, accepted, 20, 'keyboard', log);
+  log('opportunity_opened', { input_mode: 'system' });
+
+  if (step === 'returned') {
+    expect(
+      m11Resolve(s, 'owner_handover', RL2_OWNER[occasion], 50, 'keyboard', log),
+    ).toBe('resolved');
+  }
+
+  m11Depart(s, 60, log);
+  h.close(s);
+}
+
+function rl2Place(
+  events: readonly RawGameEvent[],
+  index: number,
+  from: number,
+): RawGameEvent[] {
+  return events.map((event, i) => ({
+    ...event,
+    page_load_index: index,
+    sequence: from + i,
+  }));
+}
+
+function rl2Prior(
+  index: number,
+  from: number,
+  steps: Partial<Record<M11Occasion, Rl2Step | 'H' | 'U' | 'M'>>,
+): RawGameEvent[] {
+  const h = harness();
+
+  for (const occasion of RL2_OCCASIONS) {
+    rl2Occasion(h, occasion, steps[occasion] ?? 'none');
+  }
+
+  return rl2Place(
+    [
+      {
+        session_id: 's',
+        timestamp_ms: 0,
+        scene: 'dock',
+        event_type: 'session_start',
+        metadata: {},
+      },
+      ...h.events,
+    ],
+    index,
+    from,
+  );
+}
+
+function rl2CheckEvent(record: object): RawGameEvent {
+  return {
+    session_id: 's',
+    timestamp_ms: 0,
+    scene: 'diagnostics_laboratory',
+    event_type: 'proto_m11_custody_prior_load_checked',
+    metadata: {
+      opportunity_id: 'proto_m11_custody_lab',
+      occasion: 'lab',
+      ...record,
+      input_mode: 'system',
+    },
+  };
+}
+
+function rl2Raw(
+  prior: RawGameEvent[],
+  records: readonly object[],
+  steps: Record<M11Occasion, Rl2Step | 'H' | 'U' | 'M'>,
+  pageLoadIndex = 2,
+) {
+  const h = harness();
+
+  for (const occasion of RL2_OCCASIONS) {
+    rl2Occasion(h, occasion, steps[occasion]);
+  }
+
+  const current = rl2Place(
+    [...records.map(rl2CheckEvent), ...h.events],
+    pageLoadIndex,
+    (prior.at(-1)?.sequence ?? 0) + 1,
+  );
+
+  return {
+    current,
+    rows: extractItemFeatures('M11', [...prior, ...current], {
+      finalCoreClosed: true,
+      pageLoadIndex,
+      reloaded: pageLoadIndex > 1,
+    }),
+  };
+}
+
+/** A reloaded load as the runtime writes it (not A ⇒ marker, never offered). */
+function rl2Load(
+  prior: RawGameEvent[],
+  steps: Record<M11Occasion, Rl2Step>,
+  options: {
+    integrity?: typeof RL2_CONTINUOUS;
+    pageLoadIndex?: number;
+    records?: (record: Record<string, unknown>) => object[];
+  } = {},
+) {
+  const pageLoadIndex = options.pageLoadIndex ?? 2;
+  const record = rl2Record(
+    pageLoadIndex,
+    prior,
+    options.integrity,
+  ) as unknown as Record<string, unknown>;
+  const records = options.records?.(record) ?? [record];
+  const reload = classifyReload({
+    pageLoadIndex,
+    checks: records,
+    occasions: RL2_OCCASIONS,
+  });
+  const runtime = Object.fromEntries(
+    RL2_OCCASIONS.map((occasion) => {
+      const cls = reload.occasions[occasion].class;
+
+      return [
+        occasion,
+        steps[occasion] === 'none' || cls === 'A' ? steps[occasion] : cls!,
+      ];
+    }),
+  ) as Record<M11Occasion, Rl2Step | 'H' | 'U' | 'M'>;
+
+  return {
+    record,
+    reload,
+    ...rl2Raw(prior, records, runtime, pageLoadIndex),
+  };
+}
+
+const RL2_NEVER = rl2Prior(1, 1, {});
+const RL2_LAB_OFFERED = rl2Prior(1, 1, { lab: 'decline' });
+const RL2_BOTH_OFFERED = rl2Prior(1, 1, { lab: 'decline', yard: 'offer' });
+const RL2_LAB_EARLIER_U = rl2Prior(1, 1, { lab: 'U' });
+
+test.describe('M11 the logged reload check (U24 RL-2, pure)', () => {
+  const cases: readonly {
+    name: string;
+    prior: RawGameEvent[];
+    steps: Record<M11Occasion, Rl2Step>;
+    integrity?: typeof RL2_CONTINUOUS;
+    classes: [string, string];
+    row: Record<string, unknown>;
+    records?: Record<string, unknown>;
+    reason?: string;
+  }[] = [
+    {
+      name: 'HB + OBS ⇒ interrupted, the other occasion’s value kept (the existing per-occasion rule)',
+      prior: RL2_LAB_OFFERED,
+      steps: { lab: 'offer', yard: 'unresolved' },
+      classes: ['H', 'A'],
+      row: {
+        disposition: 'interrupted',
+        value: 1,
+        numerator: 1,
+        denominator: 1,
+      },
+      records: { lab: { interrupted: true } },
+    },
+    {
+      name: 'HB + NOP ⇒ interrupted · null',
+      prior: RL2_LAB_OFFERED,
+      steps: { lab: 'offer', yard: 'none' },
+      classes: ['H', 'A'],
+      row: { disposition: 'interrupted', value: null },
+      reason: RL2_REASON.H,
+    },
+    {
+      name: 'HB + HB ⇒ interrupted · null',
+      prior: RL2_BOTH_OFFERED,
+      steps: { lab: 'offer', yard: 'offer' },
+      classes: ['H', 'H'],
+      row: { disposition: 'interrupted', value: null },
+      reason: RL2_REASON.H,
+    },
+    {
+      name: 'OBS + NOP (A) ⇒ observed · 0 · 0/1 (the first-load rule)',
+      prior: RL2_NEVER,
+      steps: { lab: 'returned', yard: 'none' },
+      classes: ['A', 'A'],
+      row: { disposition: 'observed', value: 0, numerator: 0, denominator: 1 },
+      records: { yard: null },
+    },
+    {
+      name: 'NOP + NOP (A) ⇒ not_presented · null (b)',
+      prior: RL2_NEVER,
+      steps: { lab: 'none', yard: 'none' },
+      classes: ['A', 'A'],
+      row: { disposition: 'not_presented', value: null },
+      reason: 'no loan offered',
+    },
+    {
+      name: 'A, offered and unanswered ⇒ pending (the first-load reading)',
+      prior: RL2_NEVER,
+      steps: { lab: 'offer', yard: 'none' },
+      classes: ['A', 'A'],
+      row: { disposition: 'pending', value: null },
+      reason: 'a custody is still open',
+    },
+    {
+      name: 'U, history level ⇒ neither offered, interrupted · null, reason unverified (c)',
+      prior: RL2_NEVER,
+      integrity: RL2_UNVERIFIED,
+      steps: { lab: 'offer', yard: 'none' },
+      classes: ['U', 'U'],
+      row: { disposition: 'interrupted', value: null },
+      reason: RL2_REASON.U,
+    },
+    {
+      name: 'F-D: HB(U) + OBS(A) ⇒ interrupted, the A occasion administered and its value kept (clarification 1)',
+      prior: RL2_LAB_EARLIER_U,
+      steps: { lab: 'offer', yard: 'returned' },
+      classes: ['U', 'A'],
+      row: {
+        disposition: 'interrupted',
+        value: 0,
+        numerator: 0,
+        denominator: 1,
+      },
+      records: { lab: { interrupted: true } },
+    },
+  ];
+
+  for (const c of cases) {
+    test(`r3 §5: ${c.name}`, () => {
+      const { reload, rows } = rl2Load(c.prior, c.steps, {
+        integrity: c.integrity,
+      });
+
+      expect([reload.occasions.lab.class, reload.occasions.yard.class]).toEqual(
+        c.classes,
+      );
+      expect([
+        reload.occasions.lab.administration_permitted,
+        reload.occasions.yard.administration_permitted,
+      ]).toEqual(c.classes.map((cls) => cls === 'A'));
+      expect(rows[0]).toMatchObject(c.row);
+
+      if (c.reason !== undefined) {
+        expect(rows[0].missing_reason).toBe(c.reason);
+        expect(rows[1].missing_reason).toBe(c.reason);
+      }
+
+      if (c.records !== undefined) {
+        expect(rows[1].value).toMatchObject(c.records);
+      }
+    });
+  }
+
+  test('the extractor’s stage map is r3 §4’s; a first load writes none; the record is never task evidence', () => {
+    for (const prior of [
+      RL2_NEVER,
+      RL2_LAB_OFFERED,
+      RL2_BOTH_OFFERED,
+      RL2_LAB_EARLIER_U,
+    ]) {
+      for (const integrity of [RL2_CONTINUOUS, RL2_UNVERIFIED]) {
+        const record = rl2Record(2, prior, integrity);
+
+        expect(m11PriorLoadCheck(2, prior, integrity)).toEqual(record);
+        expect(classifyM11Reload(2, [record!])).toEqual(
+          classifyReload({
+            pageLoadIndex: 2,
+            checks: [record!],
+            occasions: RL2_OCCASIONS,
+          }),
+        );
+      }
+    }
+
+    expect(m11PriorLoadCheck(1, [], RL2_CONTINUOUS)).toBeNull();
+    expect(rl2Record(2, RL2_LAB_OFFERED)).toMatchObject({
+      occasions: {
+        lab: { prior_briefing_found: true, prior_opening_found: true },
+        yard: { prior_opening_absence_established: true },
+      },
+    });
+
+    const { rows, current } = rl2Load(RL2_NEVER, {
+      lab: 'returned',
+      yard: 'none',
+    });
+
+    expect(rows[0].disposition).toBe('observed');
+    expect(rows[0].supporting_sequences).not.toContain(current[0].sequence);
+  });
+
+  test('F-A: two agreeing check records ⇒ U for both, refused; F-B: conflicting ⇒ U, coherence false', () => {
+    const fa = rl2Load(
+      RL2_NEVER,
+      { lab: 'offer', yard: 'none' },
+      { records: (record) => [record, { ...record }] },
+    );
+
+    expect(fa.reload).toMatchObject({ check_count: 2, check_coherent: true });
+    expect(fa.reload.occasions.lab).toMatchObject({
+      class: 'U',
+      basis: 'duplicate_checks',
+      administration_permitted: false,
+    });
+    expect(fa.rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason: RL2_REASON.U,
+    });
+
+    const fb = rl2Load(
+      RL2_LAB_OFFERED,
+      { lab: 'offer', yard: 'none' },
+      {
+        records: (record) => [
+          record,
+          { ...record, prior_opening_found: false },
+        ],
+      },
+    );
+
+    expect(fb.reload.check_coherent).toBe(false);
+    expect(fb.reload.occasions.lab.class).toBe('U');
+  });
+
+  test('F-E: an H marker of one occasion leaves the other A, administered and observed', () => {
+    const prior = [
+      ...RL2_LAB_OFFERED,
+      ...rl2Prior(2, RL2_LAB_OFFERED.length + 1, { lab: 'H' }),
+    ];
+    const { reload, rows } = rl2Load(
+      prior,
+      { lab: 'offer', yard: 'unresolved' },
+      { pageLoadIndex: 3 },
+    );
+
+    expect(reload.occasions.lab.class).toBe('H');
+    expect(reload.occasions.yard).toMatchObject({
+      class: 'A',
+      administration_permitted: true,
+    });
+    expect(rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: 1,
+      denominator: 1,
+    });
+  });
+
+  test('M and malformed: a self-contradictory record holds both as M; a malformed one is a technical failure on both rows', () => {
+    const m = rl2Load(
+      RL2_NEVER,
+      { lab: 'offer', yard: 'none' },
+      {
+        integrity: RL2_UNVERIFIED,
+        records: (record) => [
+          { ...record, prior_opening_absence_established: true },
+        ],
+      },
+    );
+
+    expect(m.reload.occasions.lab).toMatchObject({
+      class: 'M',
+      administration_permitted: false,
+    });
+    expect(m.rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason: RL2_REASON.M,
+    });
+
+    const malformed = rl2Load(
+      RL2_LAB_OFFERED,
+      { lab: 'offer', yard: 'none' },
+      { records: (record) => [{ ...record, page_load_index: 1 }] },
+    );
+
+    expect(malformed.reload.check_malformed).toBe(true);
+    expect(malformed.rows[0].disposition).toBe('technical_failure');
+    expect(malformed.rows[1].disposition).toBe('technical_failure');
+  });
+
+  test('RL-1C decision A: a loan offered and left unanswered in a reloaded load without its check is U (no_check), refused, and reads held', () => {
+    expect(classifyM11Reload(2, []).occasions.lab).toMatchObject({
+      class: 'U',
+      basis: 'no_check',
+      administration_permitted: false,
+    });
+
+    const { rows } = rl2Raw(RL2_NEVER, [], { lab: 'offer', yard: 'none' });
+
+    expect(rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason: RL2_REASON.U,
+    });
+    expect(rows[1].missing_reason).toBe(RL2_REASON.U);
+  });
+
+  test('decision A contrasts: a first load keeps pending; a genuinely unreached reloaded load keeps the F5 / absentFeature reading; an unreached occasion beside an observed one is not held', () => {
+    expect(
+      rl2Raw([], [], { lab: 'offer', yard: 'none' }, 1).rows[0],
+    ).toMatchObject({
+      disposition: 'pending',
+      missing_reason: 'a custody is still open',
+    });
+    expect(
+      rl2Raw(RL2_NEVER, [], { lab: 'none', yard: 'none' }).rows[0],
+    ).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason:
+        'no current-load evidence after a reload: no loan offered',
+    });
+    expect(
+      rl2Raw(RL2_NEVER, [], { lab: 'returned', yard: 'none' }).rows[0],
+    ).toMatchObject({ disposition: 'observed', value: 0, denominator: 1 });
+  });
+
+  test('with a check, an occasion whose class is not A reads held even where its room was not reached in this load (its offer lies in an earlier load)', () => {
+    const prior = rl2Prior(1, 1, { yard: 'offer' });
+    const { reload, rows } = rl2Load(prior, { lab: 'returned', yard: 'none' });
+
+    expect(reload.occasions.yard.class).toBe('H');
+    expect(rows[0]).toMatchObject({
+      disposition: 'interrupted',
+      value: 0,
+      denominator: 1,
+    });
+    expect(rows[0].components).toMatchObject({
+      interrupted_occasions: ['yard'],
+    });
   });
 });
