@@ -85,6 +85,7 @@ import {
   m16sCancelCommit,
   m16sCloseAtReview,
   m16sCloseHelp,
+  m16sCloseUnopenedAtReview,
   m16sConfirmCommit,
   m16sDraft,
   type M16Series,
@@ -1578,6 +1579,55 @@ test.describe('M16 series model — no correctness information before the sixth 
     m16sLeave(left.s, left.tick(10), left.sink);
     m16sOpen(left.s, left.tick(10), left.sink);
     expect(count(left, 'results_shown')).toBe(1);
+  });
+});
+
+test.describe('U24 completion S3 — C-6 and C-7 for M16 (V-7 reproduced on 6bd81c7; the M18 precedents)', () => {
+  test('C-7: the review closure of a console never opened — the series becomes the closed record; a later opening shows it, accepts nothing and writes no event; the adapter closes it right after the absence record', () => {
+    const r = run();
+
+    expect(m16sCloseUnopenedAtReview(r.s)).toBe(true);
+    expect(m16sCloseUnopenedAtReview(r.s)).toBe(false);
+    expect(r.s.status).toBe('closed_at_review');
+    expect(r.s.closure_reason).toBe('closed_at_review');
+    expect(m16sOpen(r.s, r.tick(10), r.sink)).toBe('record');
+    expect(r.s.view).toBe('record');
+    expect(m16RecordLine(r.s)).toBe(M16_TEXT.closed_at_review);
+
+    const view = render(r.s);
+
+    expect(view.ids).toEqual(['record_text', 'leave']);
+    expect(view.text).toContain(M16_TEXT.closed_at_review);
+    expect(view.ids).not.toContain('show_example');
+    expect(m16sShowExample1(r.s, 'keyboard', r.settle(), r.sink)).toBe(false);
+    m16sLeave(r.s, r.tick(10), r.sink);
+    expect(r.events).toEqual([]);
+
+    // An opened series is never closed this way.
+    const opened = run();
+
+    expect(m16sOpen(opened.s, opened.tick(10), opened.sink)).toBe('opened');
+    expect(m16sCloseUnopenedAtReview(opened.s)).toBe(false);
+
+    const adapter = readFileSync(
+      'src/pilot/windows/m16ProtocolConsole.ts',
+      'utf8',
+    );
+
+    expect(adapter).toMatch(
+      /markAbsent\([\s\S]{0,160}?\);[\s\S]{0,400}?m16sCloseUnopenedAtReview\(s\);/,
+    );
+  });
+
+  test('C-6: the laboratory RESUME restarts the kit window only while the console surface is open (the M18 guard, closeout of 13 October 2026)', () => {
+    const adapter = readFileSync(
+      'src/pilot/windows/m16ProtocolConsole.ts',
+      'utf8',
+    );
+
+    expect(adapter).toMatch(
+      /export function resumeM16Surface\(nowMs: number\) \{\s*if \(series === null \|\| !series\.panel_open\) \{\s*return;\s*\}\s*m16Window\.resume\(nowMs\);\s*\}/,
+    );
   });
 });
 

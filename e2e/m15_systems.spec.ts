@@ -85,6 +85,7 @@ import {
   m15sCancelCommit,
   m15sCloseAtReview,
   m15sCloseHelp,
+  m15sCloseUnopenedAtReview,
   m15sConfirmCommit,
   m15sDraft,
   type M15Series,
@@ -1824,6 +1825,48 @@ test.describe('M15 series model — no correctness information before the fourth
         ),
       ),
     ).toBe(before);
+  });
+});
+
+test.describe('U24 completion S3 — C-6 and the C-7 shape for M15 (V-7 runs A and B2 on 6bd81c7; the M18 precedents)', () => {
+  test('C-7 shape: the review closure of a bench never opened — the series becomes the closed record; a later opening shows it, accepts nothing and writes no event; the adapter closes it right after the absence record', () => {
+    const r = run();
+
+    expect(m15sCloseUnopenedAtReview(r.s)).toBe(true);
+    expect(m15sCloseUnopenedAtReview(r.s)).toBe(false);
+    expect(r.s.status).toBe('closed_at_review');
+    expect(r.s.closure_reason).toBe('closed_at_review');
+    expect(m15sOpen(r.s, r.tick(10), r.sink)).toBe('record');
+    expect(r.s.view).toBe('record');
+    expect(m15RecordLine(r.s)).toBe(M15_TEXT.closed_at_review);
+
+    const view = render(r.s);
+
+    expect(view.ids).not.toContain('start');
+    expect(view.ids).toContain('leave');
+    expect(m15sStart(r.s, 'keyboard', r.settle(), r.sink)).toBe(false);
+    m15sLeave(r.s, r.tick(10), r.sink);
+    expect(r.events).toEqual([]);
+
+    // An opened series is never closed this way.
+    const opened = run();
+
+    expect(m15sOpen(opened.s, opened.tick(10), opened.sink)).toBe('opened');
+    expect(m15sCloseUnopenedAtReview(opened.s)).toBe(false);
+
+    const adapter = readFileSync('src/pilot/windows/m15RelayBench.ts', 'utf8');
+
+    expect(adapter).toMatch(
+      /markAbsent\([\s\S]{0,160}?\);[\s\S]{0,400}?m15sCloseUnopenedAtReview\(s\);/,
+    );
+  });
+
+  test('C-6: the laboratory RESUME restarts the kit window only while the bench surface is open (the M18 guard, closeout of 13 October 2026)', () => {
+    const adapter = readFileSync('src/pilot/windows/m15RelayBench.ts', 'utf8');
+
+    expect(adapter).toMatch(
+      /export function resumeM15Surface\(nowMs: number\) \{\s*if \(series === null \|\| !series\.panel_open\) \{\s*return;\s*\}\s*m15Window\.resume\(nowMs\);\s*\}/,
+    );
   });
 });
 

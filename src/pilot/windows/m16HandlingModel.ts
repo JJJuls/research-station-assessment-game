@@ -1341,6 +1341,26 @@ export function m16sCloseAtReview(
   return true;
 }
 
+/**
+ * The review closure of a console never opened (U24 completion S3, C-7;
+ * the M18 precedent `m18sCloseUnopenedAtReview`, REG §5.326 (b)). The kit
+ * records the absence (`briefed_not_opened` / `not_briefed_not_opened`,
+ * the adapter); the series itself becomes the review's closed record, so a
+ * later opening shows that record, accepts no work and writes no event of
+ * the family. Nothing is logged here: no opening ever happened.
+ */
+export function m16sCloseUnopenedAtReview(s: M16Series) {
+  if (s.status !== 'unopened') {
+    return false;
+  }
+
+  s.status = 'closed_at_review';
+  s.closure_reason = 'closed_at_review';
+  s.view = 'record';
+
+  return true;
+}
+
 export type M16FailOutcome = 'scored_phase' | 'feedback' | 'none';
 
 /**

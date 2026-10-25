@@ -58,6 +58,7 @@ import {
   m15sCancelCommit,
   m15sCloseAtReview,
   m15sCloseHelp,
+  m15sCloseUnopenedAtReview,
   m15sConfirmCommit,
   m15sDraft,
   type M15Series,
@@ -485,7 +486,18 @@ export function closeM15Surface(nowMs: number) {
   });
 }
 
+/**
+ * The laboratory scene resumed. The kit window's active clock restarts only
+ * while the bench surface is open; after LEAVE or ESC the window stays
+ * paused until the real reopening (`openM15`) — the M18 guard (closeout of
+ * 13 October 2026), applied here by U24 completion S3 (C-6, reproduced in
+ * M16; M15 shares the unguarded shape).
+ */
 export function resumeM15Surface(nowMs: number) {
+  if (series === null || !series.panel_open) {
+    return;
+  }
+
   m15Window.resume(nowMs);
 }
 
@@ -504,6 +516,10 @@ export function closeM15AtReview(nowMs: number) {
     m15Window.markAbsent(
       briefed ? 'briefed_not_opened' : 'not_briefed_not_opened',
     );
+    // U24 completion S3 (C-7's shape in M15, V-7 run B2; the M18
+    // precedent): the series becomes the review's closed record — a later
+    // opening shows it, accepts nothing and writes nothing.
+    m15sCloseUnopenedAtReview(s);
 
     return;
   }

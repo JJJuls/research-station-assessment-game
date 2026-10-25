@@ -1508,6 +1508,56 @@ test.describe('M14 series model — order, immutability, commitment', () => {
   });
 });
 
+test.describe('U24 completion S3 — C-8 for M14 (the results landing; the M18 precedent)', () => {
+  test('each results page leads with the results text as a neutral focusable landing (a no-op activation), so a page reached by NEXT or BACK lands there and never on an actionable control', () => {
+    const r = started();
+
+    for (const id of DECISION_IDS) {
+      answer(r, KEY_LETTERS[id]);
+      next(r);
+    }
+
+    expect(r.s.status).toBe('completed');
+
+    const page1 = render(r.s);
+
+    expect(page1.ids[0]).toBe('results_text');
+    expect(typeof page1.model.elements[0].onActivate).toBe('function');
+    expect(page1.ids).toContain('results_next');
+    expect(page1.ids).not.toContain('results_back');
+    expect(
+      m14sResultsNavigate(
+        r.s,
+        'next',
+        'keyboard',
+        r.tick(M14_SETTLE_MS),
+        r.sink,
+      ),
+    ).toBe(true);
+
+    const page2 = render(r.s);
+
+    expect(page2.ids[0]).toBe('results_text');
+    expect(typeof page2.model.elements[0].onActivate).toBe('function');
+    expect(page2.ids).toContain('results_back');
+    expect(page2.ids).not.toContain('results_next');
+    // The landing's activation changes nothing: no event, the same page.
+    page2.model.elements[0].onActivate!('keyboard');
+    expect(r.s.results_packet).toBe(1);
+    expect(count(r, 'results_shown')).toBe(2);
+    expect(
+      m14sResultsNavigate(
+        r.s,
+        'back',
+        'keyboard',
+        r.tick(M14_SETTLE_MS),
+        r.sink,
+      ),
+    ).toBe(true);
+    expect(render(r.s).ids[0]).toBe('results_text');
+  });
+});
+
 test.describe('M14 series model — sources, help, leaving, closures, reload', () => {
   test('source openings and closings are recorded apart from answering; opened tiles stay open across decisions and leaving; packet-2 sources start closed', () => {
     const r = started();

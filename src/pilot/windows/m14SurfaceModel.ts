@@ -514,8 +514,13 @@ export function m14SurfaceModel(host: M14SurfaceHost): WorkSurfaceModel {
       const shown = M14_PACKETS[s.results_packet];
       const status = M14_TEXT.results_heading;
 
-      elements.push(
-        text(
+      // U24 completion S3 (C-8; the M18 precedent, `m18SurfaceModel.ts`):
+      // the results text is the view's neutral first focusable landing — a
+      // text block whose activation does nothing — so a results page
+      // reached by NEXT or BACK (whose control is not on the new page) lands
+      // here, never on an actionable control.
+      elements.push({
+        ...text(
           'results_text',
           m14ResultsText(shown, s),
           FULL_X,
@@ -523,7 +528,8 @@ export function m14SurfaceModel(host: M14SurfaceHost): WorkSurfaceModel {
           FULL_W,
           390,
         ),
-      );
+        onActivate: () => undefined,
+      });
 
       if (s.results_packet === 0) {
         elements.push(

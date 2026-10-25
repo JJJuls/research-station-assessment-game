@@ -59,6 +59,7 @@ import {
   m16sCancelCommit,
   m16sCloseAtReview,
   m16sCloseHelp,
+  m16sCloseUnopenedAtReview,
   m16sConfirmCommit,
   m16sDraft,
   type M16Series,
@@ -503,7 +504,19 @@ export function closeM16Surface(nowMs: number) {
   });
 }
 
+/**
+ * The laboratory scene resumed. The kit window's active clock restarts only
+ * while the console surface is open; after LEAVE CONSOLE or ESC the window
+ * stays paused until the real reopening (`openM16`) — the M18 guard
+ * (closeout of 13 October 2026), applied here by U24 completion S3 (C-6:
+ * a console left mid-series counted the time after leaving in its
+ * review-closed `active_ms`).
+ */
 export function resumeM16Surface(nowMs: number) {
+  if (series === null || !series.panel_open) {
+    return;
+  }
+
   m16Window.resume(nowMs);
 }
 
@@ -522,6 +535,10 @@ export function closeM16AtReview(nowMs: number) {
     m16Window.markAbsent(
       briefed ? 'briefed_not_opened' : 'not_briefed_not_opened',
     );
+    // U24 completion S3 (C-7, the M18 precedent): the series becomes the
+    // review's closed record — a later opening shows it, accepts nothing
+    // and writes nothing.
+    m16sCloseUnopenedAtReview(s);
 
     return;
   }

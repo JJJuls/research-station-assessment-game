@@ -1782,6 +1782,26 @@ export function m15sCloseAtReview(
   return true;
 }
 
+/**
+ * The review closure of a bench never opened (U24 completion S3, C-7's
+ * shape reproduced in M15 too — V-7 run B2; the M18 precedent
+ * `m18sCloseUnopenedAtReview`, REG §5.326 (b)). The kit records the
+ * absence (the adapter); the series becomes the review's closed record, so
+ * a later opening shows that record, accepts no work and writes no event of
+ * the family. Nothing is logged here: no opening ever happened.
+ */
+export function m15sCloseUnopenedAtReview(s: M15Series) {
+  if (s.status !== 'unopened') {
+    return false;
+  }
+
+  s.status = 'closed_at_review';
+  s.closure_reason = 'closed_at_review';
+  s.view = 'record';
+
+  return true;
+}
+
 export type M15FailOutcome = 'scored_phase' | 'feedback' | 'none';
 
 /**
