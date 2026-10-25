@@ -26,6 +26,7 @@ import {
   releaseFocusedClock,
 } from '../../measurement/focusMonitor';
 import { protocolStamp } from '../../measurement/protocol';
+import { classifyReload, ROW_OCCASION } from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import type { M15SurfaceHost } from './m15SurfaceModel';
 import {
@@ -38,7 +39,9 @@ import {
 } from './m15SystemsContent';
 import {
   createM15Series,
+  M15_CONTRADICTORY_DETAIL,
   M15_RELOAD_DETAIL,
+  M15_UNVERIFIED_DETAIL,
   m15ClosureSnapshot,
   type M15CommitKind,
   type M15ConfirmOutcome,
@@ -48,7 +51,8 @@ import {
   m15Live,
   type M15LogSink,
   type M15NextOutcome,
-  m15PriorAdministration,
+  type M15PriorEvent,
+  type M15PriorLoadCheck,
   m15PriorLoadCheck,
   type M15RequestOutcome,
   m15sCancelCommit,
@@ -96,6 +100,7 @@ const focusedMarks: Record<string, number> = {};
 let briefed = false;
 /** The reload check is written once per page load. */
 let priorLoadChecked = false;
+let priorLoadCheck: M15PriorLoadCheck | null = null;
 
 function ensure(): M15Series {
   if (series === null) {
@@ -228,30 +233,41 @@ export function presentM15(nowMs: number) {
  * extractor reads an ESTABLISHED absence of an earlier opening. A first
  * page load writes nothing.
  */
-function recordPriorLoadCheck(prior: readonly { event_type: string }[]) {
+function recordPriorLoadCheck(
+  prior: readonly M15PriorEvent[],
+): M15PriorLoadCheck | null {
   const pageLoadIndex = researchRuntime.getPageLoadIndex();
 
-  if (priorLoadChecked || pageLoadIndex <= 1) {
-    return;
+  if (pageLoadIndex <= 1) {
+    return null;
   }
 
-  priorLoadChecked = true;
-  sink('prior_load_checked', {
-    phase: 'closure',
-    ...m15PriorLoadCheck(
+  if (!priorLoadChecked) {
+    priorLoadChecked = true;
+    priorLoadCheck = m15PriorLoadCheck(
       pageLoadIndex,
       prior,
       researchRuntime.getEventIntegrity(),
-    ),
-    input_mode: 'system',
-  });
+    );
+    sink('prior_load_checked', {
+      phase: 'closure',
+      ...priorLoadCheck,
+      input_mode: 'system',
+    });
+  }
+
+  return priorLoadCheck;
 }
 
 /**
- * Reload guard (register §5.14): a bench opened in an earlier page load
- * of this identity is never re-run — prior exposure is recorded and the
- * series is marked technically incomplete; the new load's row is
- * `interrupted`. Idempotent; called at laboratory entry and at the open.
+ * Reload guard (register §5.14; U24 RL-4, `RELOAD-CORRECTION-SPEC-r3-exec.md`
+ * §2 and §4 G1, direction c): the load's single check record is classified
+ * by RL-0's helper. H — a bench opened in an earlier page load of this
+ * identity — is never re-run: prior exposure is recorded and the series is
+ * marked technically incomplete. U (the earlier history not verified) and M
+ * (a self-contradictory record) are never administered either, without a
+ * prior-exposure entry. Only A (or a first load) administers. Idempotent;
+ * called at laboratory entry and at the open.
  */
 export function guardM15Reload(): boolean {
   const s = ensure();
@@ -260,19 +276,30 @@ export function guardM15Reload(): boolean {
     return false;
   }
 
-  const prior = researchRuntime.getPriorPageLoadEvents();
+  const check = recordPriorLoadCheck(researchRuntime.getPriorPageLoadEvents());
+  const cls = classifyReload({
+    pageLoadIndex: researchRuntime.getPageLoadIndex(),
+    checks: check === null ? [] : [check],
+  }).occasions[ROW_OCCASION].class;
 
-  recordPriorLoadCheck(prior);
-
-  if (!m15PriorAdministration(prior)) {
+  if (cls === null || cls === 'A') {
     return false;
   }
 
-  m15sHoldBack(s);
-  m15Window.recordPriorExposure(
-    'relay bench opened in an earlier page load of this identity',
-  );
-  m15Window.technicalFailure(M15_RELOAD_DETAIL);
+  if (cls === 'H') {
+    m15sHoldBack(s);
+    m15Window.recordPriorExposure(
+      'relay bench opened in an earlier page load of this identity',
+    );
+    m15Window.technicalFailure(M15_RELOAD_DETAIL);
+
+    return true;
+  }
+
+  const detail = cls === 'U' ? M15_UNVERIFIED_DETAIL : M15_CONTRADICTORY_DETAIL;
+
+  m15sHoldBack(s, detail);
+  m15Window.technicalFailure(detail);
 
   return true;
 }
@@ -538,5 +565,6 @@ export function resetM15State() {
   series = null;
   briefed = false;
   priorLoadChecked = false;
+  priorLoadCheck = null;
   m15Window.reset();
 }

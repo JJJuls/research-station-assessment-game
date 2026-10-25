@@ -33,6 +33,10 @@
  */
 import { FocusedClock } from '../../measurement/focusedClock';
 import {
+  reloadHoldBackClass,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
+import {
   isM19LineId,
   M19_CHECKS,
   M19_CONTENT_VERSION,
@@ -135,6 +139,20 @@ export const M19_EVENT_SUFFIXES = [
 
 export const M19_RELOAD_DETAIL =
   'reload after administration: panel not re-run';
+/**
+ * The U / M hold-back details (U24 RL-4; `RELOAD-CORRECTION-SPEC-r3-exec.md`
+ * §2, direction c): a load whose earlier history is not verified (U) or
+ * whose check contradicts itself (M) never administers the panel; no prior
+ * exposure is claimed. The class prefix is RL-0's.
+ */
+export const M19_UNVERIFIED_DETAIL = reloadHoldBackDetail(
+  'U',
+  'panel not administered',
+);
+export const M19_CONTRADICTORY_DETAIL = reloadHoldBackDetail(
+  'M',
+  'panel not administered',
+);
 
 /* ------------------------------------------------------------------ *
  * State
@@ -293,12 +311,37 @@ export function createM19Series(hooks: M19ClockHooks = {}): M19Series {
  * ------------------------------------------------------------------ */
 
 /** True when an earlier page load of this identity already opened the panel. */
+/** The structural part of an earlier load's record the check reads. */
+export interface M19PriorEvent {
+  event_type: string;
+  metadata?: Record<string, unknown>;
+}
+
 export function m19PriorAdministration(
-  priorLoadEvents: readonly { event_type: string }[],
+  priorLoadEvents: readonly M19PriorEvent[],
 ): boolean {
   return priorLoadEvents.some(
     (event) => event.event_type === `${M19_FAMILY}opportunity_opened`,
   );
+}
+
+/**
+ * D-7 (i) (U24 RL-4): an earlier load's U or M hold-back of this family
+ * keeps the absence of an earlier opening unestablished in every later
+ * load; an H marker never triggers this.
+ */
+export function m19PriorHoldBackCarried(
+  priorLoadEvents: readonly M19PriorEvent[],
+): boolean {
+  return priorLoadEvents.some((event) => {
+    if (event.event_type !== `${M19_FAMILY}technical_failure`) {
+      return false;
+    }
+
+    const cls = reloadHoldBackClass(event.metadata?.detail);
+
+    return cls === 'U' || cls === 'M';
+  });
 }
 
 export interface M19HistoryIntegrity {
@@ -326,7 +369,7 @@ export interface M19PriorLoadCheck {
  */
 export function m19PriorLoadCheck(
   pageLoadIndex: number,
-  priorLoadEvents: readonly { event_type: string }[],
+  priorLoadEvents: readonly M19PriorEvent[],
   integrity: M19HistoryIntegrity,
 ): M19PriorLoadCheck {
   const found = m19PriorAdministration(priorLoadEvents);
@@ -345,7 +388,9 @@ export function m19PriorLoadCheck(
       (event) => event.event_type === `${M19_FAMILY}presented`,
     ),
     history_continuous: continuous,
-    prior_opening_absence_established: !found && continuous,
+    // D-7 (i): an earlier U / M hold-back of this family is carried forward.
+    prior_opening_absence_established:
+      !found && continuous && !m19PriorHoldBackCarried(priorLoadEvents),
   };
 }
 
@@ -435,8 +480,15 @@ export function m19RecordLine(s: M19Series): string | null {
       return s.closure_reason === 'closed_at_review'
         ? M19_TEXT.closed_review
         : M19_TEXT.closed_shift;
-    case 'held_back':
-      return M19_TEXT.held_back;
+    case 'held_back': {
+      // U24 RL-4 (r3 §9): a U / M hold shows the two approved lines; the
+      // existing H text is unchanged.
+      const cls = reloadHoldBackClass(s.failure_detail);
+
+      return cls === 'U' || cls === 'M'
+        ? M19_TEXT.held_unverified.join('\n')
+        : M19_TEXT.held_back;
+    }
     case 'technical_failure':
       // The two-line fault record (register §5.340 (b); added at the U21
       // closeout of 14 October 2026).
@@ -1484,13 +1536,16 @@ export function m19sFail(
 }
 
 /** The reload hold-back: the panel is never re-run in this page load. */
-export function m19sHoldBack(s: M19Series): boolean {
+export function m19sHoldBack(
+  s: M19Series,
+  detail: string = M19_RELOAD_DETAIL,
+): boolean {
   if (s.status !== 'unopened') {
     return false;
   }
 
   s.status = 'held_back';
-  s.failure_detail = M19_RELOAD_DETAIL;
+  s.failure_detail = detail;
   s.view = 'record';
 
   return true;

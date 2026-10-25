@@ -454,6 +454,15 @@ export const M14_TEXT = {
   closed_at_review: 'Station record closed — the desk keeps its record.',
   held_back:
     'This desk was already used in this session. Its record is kept; nothing further is recorded here.',
+  /**
+   * The U / M hold after a reload (U24 RL-4; `RELOAD-CORRECTION-SPEC-r3-exec.md`
+   * §9, D-5: the approved two lines, ⟨station⟩ = incident desk). The H text
+   * above is unchanged.
+   */
+  held_unverified: [
+    'The earlier state of this incident desk could not be verified.',
+    'It stays closed after this reload.',
+  ],
   fault: 'The desk has a fault and is closed. Recorded answers are kept.',
   footer_orientation: 'ENTER or SPACE starts · H help · ESC leaves',
   footer_decision:
@@ -547,6 +556,7 @@ export function m14FirstResponsePhaseStrings(): string[] {
     T.show_results,
     T.closed_at_review,
     T.held_back,
+    ...T.held_unverified,
     T.fault,
     T.footer_orientation,
     T.footer_decision,

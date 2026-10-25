@@ -18844,3 +18844,130 @@ Finish with the closeout status, durable evidence paths, bounded correction spec
   decision stays open; nothing promoted to canonical.
 - **Not claimed.** RL-3 does not make the game fully verified or ready for
   participant collection; RL-4 and the RL-F recapture remain.
+
+## U24 RL-4 — uncertain history for M14, M15, M16, M18, M19 and M20 (25 October 2026)
+
+- **Authority (by reference).** The owner's authorisation of 25 October
+  2026 for the consolidated U24 completion run (verbatim in the frozen
+  package `C:\Users\Juls\.codex\visualizations\2026\10\25\u24-completion\OWNER-AUTHORISATION-2026-10-25.md`;
+  it names Fable 5.1 the integration lead and main repository writer for the
+  rest of U24, Sonnet 5.5 for scheduled verification and Opus 5.5 for the
+  read-only reviews, replaces the Opus-only-writer and per-stage-approval
+  limits for this run only, and keeps the scientific rules binding; the
+  completion brief `U24-COMPLETION-BRIEF.md`, SHA-256
+  `638d9008c79070c8517c880d11802a7662be565af506d2c9f414ff691099ef9e`); the
+  RL-4 brief `RL-EXECUTE-4.md` (its work and verification sections) with
+  `RL-EXTENSION-NOTE.md`; the owner's rulings of 23 October 2026 (D-1 to
+  D-8) and of 24 October 2026 (RL-1C); `RELOAD-CORRECTION-SPEC-r3-exec.md`
+  §2, §3, §4 G1, §8 RL-4, §9; register §5.408 (the RL-2 closeout rulings and
+  the RL-3 instruction) and §5.409 (RL-3's record). The owner's answers to
+  the preparation decisions D-1 to D-4 (25 October 2026: D-1 b, D-2 a, D-3
+  a, D-4 b) do not bear on RL-4. The D-1 room exception covers the
+  Concourse (M14), the Laboratory (M15, M16, M18), the Yard (M19) and the
+  Workshop return (M20). The frozen packages and evidence are unchanged.
+- **Gate.** Writer `claude-fable-5-1`; root the U24 worktree, branch
+  `codex/u24-end-to-end`, HEAD `060758c…` (the RL-3 commit); status
+  `?? .agents/`, `?? .codex/` only; `CLAUDE_UNIT_ALLOWLIST` equal to the
+  completion allowlist (81 paths; the RL-4 commit stays inside
+  `RL-ALLOWLIST-4.txt`, 36 paths); the frozen manifests verified by the
+  launcher (`LAUNCH-RECORD.json`); the ten foreign files hash-identical to
+  `FOREIGN-INVENTORY-SUPPLEMENT-2026-10-22.json`; `PLAN.md` and `GATE.md`
+  written before the first edit.
+- **Work.** As register §5.410 states: the six guards classify their load's
+  single `prior_load_checked` record with RL-0's classifier and administer
+  only under A — U and M are held with a class-prefixed marker, no prior
+  exposure, nothing administered (direction c); the check functions carry
+  an earlier U / M hold-back of the family forward (D-7 (i)); the extractors
+  establish the absence from exactly one coherent record (D-6 (i)) and read
+  a U / M marker as `interrupted` with the family's existing not-established
+  reason (r3 §8 RL-4); the §9 U / M lines for the six stations, rendered by
+  the existing record views; the U24 S3 expectations for the six rows.
+  Writer's readings (a)–(g) are in §5.410. Changed paths: the six guard
+  modules, six check-function models, six content files, six extractors,
+  the six row specs, `e2e/u24_export_recovery.spec.ts`, and the four docs
+  — all inside `RL-ALLOWLIST-4.txt`; `e2e/u24Helpers.ts` unchanged.
+- **Verification** (evidence in the completion run's folder and its durable
+  checkpoints under
+  `C:\Users\Juls\.codex\visualizations\2026\10\25\u24-completion-evidence\`).
+  Static: `lint:tsc`, build, ESLint on the changed files (`endOfLine: auto`,
+  the plan's setting; the worktree checks out CRLF while the index is LF),
+  the spec type-check (18 errors, every one pre-existing at `060758c` —
+  the same error set on the untouched baseline copy, `logs/tsc-spec-*`),
+  `git diff --cached --check`, the format check and commitlint. Pure: 30
+  new RL-4 tests (per row: F-A, F-B, F-C, the U / M hold at the model with
+  the exact §9 lines and the classifier's permission per class, the
+  extractor's U / M / H readings and the first load), all passed on the
+  work tree (`logs/dev-pure-rl4-1`); run red first on an untouched
+  `060758c` archive with the six specs copied in (`logs/dev-red-pure-1`,
+  `red-exp-specs.sha256`): 24 of 30 failed — the six F-B fixtures pass on
+  the old code too, because conflicting records already failed its
+  every-record test; they are acceptance fixtures, not behavioural changes.
+  Browser (genuine `page.reload()`, traces on, 800 × 600, ordinary input;
+  `logs/rl4-browser-*`, `pw/rl4-browser-*`): run 1 (`rl4-browser-1`, three
+  cases) — case B (R2: a reload before any opening administers the six
+  rows) and case C (R3 + R6 under U: the earlier check record stripped, the
+  six stations held with the §9 lines, the U marker, no prior exposure, the
+  route finished to the Workshop return) passed, 2 of 3 in 42.1 min; case A
+  (R1 + R4 + R6 under H) failed with "Test timeout of 120000ms exceeded"
+  after 39.5 min — the trace-finalization slot of `project.timeout`, the
+  RL-2 closeout's established mechanism, after its six load-2 H screenshots
+  were taken; the failure, its log and its trace are preserved and nothing
+  is relabelled. Run 2 (`rl4-browser-2`, case A alone, the source diff
+  hashed in `logs/src-diff-at-rl4-browser-2.sha256`; the only change since
+  run 1 is case A's load 1 — the minimal route with an open-and-leave of
+  each of the six stations instead of the engaged S1 segments; the
+  assertions are unchanged): passed, 1 of 1 in 11.2 min — load 2 holds the
+  six rows under H with the existing text and the `prior_exposure` entry,
+  load 3 (R4) administers again. The U24 S3 scenario re-run traced on the
+  RL-4 source (`logs/u24-s3-rl4`; the owner's isolated `--timeout=600000`
+  allowance, precondition logged): passed, 22.9 min, export `B/exports/S3.json`
+  (SHA-256 `45f1b207…ec81f`), the trace readable; V-5 (b) over that export
+  with the RL-4 block (`logs/rl4-u24-v5b`): passed. Both are also listed in
+  the completion run's `RUN-REQUIREMENT-MAP.md`.
+- **Reviews** (read-only, R.2 substitutions — general-purpose agents given
+  the role files and a no-edit instruction; the verbatim reports with the
+  writer's dispositions in `reviews/rl4/`). Visual (`claude-opus-5-5`,
+  `OPUS-VISUAL-1.md`): the U screens read correctly at 800 × 600; MINOR 1–2
+  and NOTE 3–4 are pre-existing presentation points, recorded. Scientific
+  (`claude-opus-5-5`, `OPUS-SCIENTIFIC-1.md`): no blocking finding; F-1
+  (the docs named `exposure_record_consistent` for M19 / M20, whose signal
+  is the `flags` entry) fixed in §5.410 and the addendum; F-2 (M shares U's
+  reason text in these six families) recorded for the owner; F-3 (the S3
+  expectations did not assert M14 / M15's `prior_exposure` entry) fixed in
+  `e2e/u24_export_recovery.spec.ts`; F-4 / F-6 notes; F-5 (H browser
+  evidence) supplied by `rl4-browser-2`. Gameplay (`claude-opus-5-5`,
+  `OPUS-GAMEPLAY-1.md`): "usable, with some friction"; F1 MAJOR — the
+  Yard's objective line stays on a held coupling panel for the whole
+  exterior stage (pre-existing for H since U21; RL-4 extends it to U / M;
+  the beacon and Noor's briefing list still guide; case C finished the
+  route) — needs `ExteriorRecoveryYardScene.ts` / `exteriorWindows.ts`,
+  outside both the RL-4 and the completion allowlists, so it is an owner
+  item, not changed; F2 / F3 (the Laboratory wall display counts held
+  phases as recorded; the Console Orientation is skipped once a phase is
+  held — both pre-existing for H) and F4 (the M15 bench's three names; §9
+  wording approved) recorded for the owner; F5 note. Scheduled
+  verification (`claude-sonnet-5-5`, the `test-reviewer` role file,
+  read-only; `SONNET-VERIFY-1.md`, `logs/sonnet-rl4-*`): `lint:tsc`, build,
+  ESLint and `git diff --check` clean; the 30 RL-4 fixtures passed again;
+  the six rows' complete pure suites with RL-0's and M07's — 550 passed, 4
+  failed: the M14 and M16 "two established checks: the row stands"
+  expectations of the 9 / 14 October 2026 closeout rulings, superseded in
+  their own domain by D-6 (i) (two records establish nothing; the row reads
+  interrupted) — corrected with the ruling cited; and the M19 / M20 oracle
+  hand transcriptions, which lacked the two new §9 lines — transcribed. The
+  four corrected tests re-run once and passed (`logs/dev-regress-fix-1`).
+- **For the owner** (none resolved here). (1) The M reason for M14–M20:
+  (i) keep the family's existing not-established reason, M told from U by
+  the consistency flag (`exposure_record_consistent` in M14 / M15 / M16 /
+  M18, the `flags` entry in M19 / M20) and by the marker detail — the
+  current behaviour under r3 §8 RL-4; or (ii) r3 §2's "earlier check
+  contradictory" for M only. (2) Inspection-only M-screen coverage for the
+  six rows (M cannot be produced at the runtime host): accept, as for the
+  RL-3 rows on 25 October, or require executed coverage. (3) Gameplay F1,
+  the held coupling panel's objective line (smallest remedy: an M19
+  "guidance stays addressed" branch on the M23 precedent, or
+  `state.m19.closed` set by the guard) — out of scope for this run. (4)
+  Gameplay F2, F3, F4 as recorded.
+- **Not claimed.** RL-4 does not make the game fully verified or ready for
+  participant collection; the final recapture of S1–S3 and Part C follow in
+  this run.

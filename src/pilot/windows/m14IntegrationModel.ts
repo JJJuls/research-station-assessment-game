@@ -27,6 +27,10 @@
  * feature is recounted read-only by `features/m14.ts`.
  */
 import {
+  reloadHoldBackClass,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
+import {
   M14_ASSIGNED_PACKET_ORDER,
   M14_DECISIONS_PLANNED,
   M14_FAMILY,
@@ -95,6 +99,20 @@ export const M14_EVENT_SUFFIXES = [
 ] as const;
 
 export const M14_RELOAD_DETAIL = 'reload after administration: desk not re-run';
+/**
+ * The U / M hold-back details (U24 RL-4; `RELOAD-CORRECTION-SPEC-r3-exec.md`
+ * §2, direction c): a load whose earlier history is not verified (U) or
+ * whose check contradicts itself (M) never administers the desk; no prior
+ * exposure is claimed. The class prefix is RL-0's.
+ */
+export const M14_UNVERIFIED_DETAIL = reloadHoldBackDetail(
+  'U',
+  'desk not administered',
+);
+export const M14_CONTRADICTORY_DETAIL = reloadHoldBackDetail(
+  'M',
+  'desk not administered',
+);
 export const M14_ACK_LINE_ID = 'answer_recorded';
 
 export interface M14FirstResponse {
@@ -224,13 +242,39 @@ export function createM14Series(): M14Series {
  * Reload guard and entry snapshot
  * ------------------------------------------------------------------ */
 
+/** The structural part of an earlier load's record the check reads. */
+export interface M14PriorEvent {
+  event_type: string;
+  metadata?: Record<string, unknown>;
+}
+
 /** True when an earlier page load of this identity already opened the desk. */
 export function m14PriorAdministration(
-  priorLoadEvents: readonly { event_type: string }[],
+  priorLoadEvents: readonly M14PriorEvent[],
 ): boolean {
   return priorLoadEvents.some(
     (event) => event.event_type === `${M14_FAMILY}opportunity_opened`,
   );
+}
+
+/**
+ * D-7 (i) (U24 RL-4): an earlier load's U or M hold-back of this family
+ * keeps the absence of an earlier opening unestablished in every later
+ * load — that load could not verify the history, so it stays uncertain. An
+ * H marker never triggers this (its opening is found on its own).
+ */
+export function m14PriorHoldBackCarried(
+  priorLoadEvents: readonly M14PriorEvent[],
+): boolean {
+  return priorLoadEvents.some((event) => {
+    if (event.event_type !== `${M14_FAMILY}technical_failure`) {
+      return false;
+    }
+
+    const cls = reloadHoldBackClass(event.metadata?.detail);
+
+    return cls === 'U' || cls === 'M';
+  });
 }
 
 /** The losslessness evidence the runtime keeps beside the raw events. */
@@ -265,7 +309,7 @@ export interface M14PriorLoadCheck {
  */
 export function m14PriorLoadCheck(
   pageLoadIndex: number,
-  priorLoadEvents: readonly { event_type: string }[],
+  priorLoadEvents: readonly M14PriorEvent[],
   integrity: M14HistoryIntegrity,
 ): M14PriorLoadCheck {
   const found = m14PriorAdministration(priorLoadEvents);
@@ -284,7 +328,9 @@ export function m14PriorLoadCheck(
       (event) => event.event_type === `${M14_FAMILY}presented`,
     ),
     history_continuous: continuous,
-    prior_opening_absence_established: !found && continuous,
+    // D-7 (i): an earlier U / M hold-back of this family is carried forward.
+    prior_opening_absence_established:
+      !found && continuous && !m14PriorHoldBackCarried(priorLoadEvents),
   };
 }
 
@@ -371,8 +417,15 @@ export function m14RecordLine(s: M14Series): string | null {
   switch (s.status) {
     case 'closed_at_review':
       return M14_TEXT.closed_at_review;
-    case 'held_back':
-      return M14_TEXT.held_back;
+    case 'held_back': {
+      // U24 RL-4 (r3 §9): a U / M hold keeps the title and shows the two
+      // approved lines; the existing H text is unchanged.
+      const cls = reloadHoldBackClass(s.failure_detail);
+
+      return cls === 'U' || cls === 'M'
+        ? M14_TEXT.held_unverified.join('\n')
+        : M14_TEXT.held_back;
+    }
     case 'technical_failure':
       return M14_TEXT.fault;
     default:
@@ -1197,14 +1250,17 @@ export function m14sFail(s: M14Series, detail: string): M14FailOutcome {
   return 'none';
 }
 
-/** The reload hold-back: the desk is never re-run in this page load. */
-export function m14sHoldBack(s: M14Series) {
+/**
+ * The reload hold-back: the desk is never re-run (H) or never administered
+ * (U / M, U24 RL-4) in this page load. The detail names the class.
+ */
+export function m14sHoldBack(s: M14Series, detail: string = M14_RELOAD_DETAIL) {
   if (s.status !== 'unopened') {
     return false;
   }
 
   s.status = 'held_back';
-  s.failure_detail = M14_RELOAD_DETAIL;
+  s.failure_detail = detail;
   s.view = 'record';
 
   return true;

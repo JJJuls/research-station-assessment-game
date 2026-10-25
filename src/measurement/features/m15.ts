@@ -55,6 +55,7 @@ import {
 } from '../../pilot/windows/m15SystemsContent';
 import type { RawGameEvent } from '../../systems/EventLogger';
 import { registerEntry } from '../registerV3';
+import { reloadHoldBackClass } from '../reloadCheck';
 import {
   absentFeature,
   emptyFeature,
@@ -202,13 +203,18 @@ registerFeatureExtractor('M15', (events, context) => {
     );
   };
   const checksCoherent = checks.every(checkCoherent);
+  // Exactly ONE coherent record per load establishes the absence (U24 RL-4,
+  // D-6 (i); §5.290 (a): "two checks … establish nothing", even when they
+  // agree — the M07 rule, now applied to this family too).
   const absenceEstablished =
-    checks.length > 0 &&
+    checks.length === 1 &&
     checksCoherent &&
-    checks.every(
-      (event) =>
-        meta<unknown>(event, 'prior_opening_absence_established') === true,
-    );
+    meta<unknown>(checks[0], 'prior_opening_absence_established') === true;
+  // The U reading's reason (r3 §8 RL-4: this family's existing wording is
+  // kept; it differs from the newer families' "earlier history not
+  // verified", which is stated, not unified).
+  const notEstablishedReason =
+    'no current-load bench evidence after a reload: relay bench not opened in this page load and the absence of an earlier opening not established';
   const reloadCheck = () => ({
     page_reloaded: context.reloaded,
     checked: checks.length > 0,
@@ -475,21 +481,31 @@ registerFeatureExtractor('M15', (events, context) => {
     return empty('pending', 'briefed_not_opened', { components: components() });
   };
 
-  // Held back after a reload (register §5.14): the kit's technical failure
-  // with a detail beginning `reload` and no opening of its own in this
-  // load. Takes precedence over everything.
+  // Held back after a reload (register §5.14; U24 RL-4, r3 §2): the kit's
+  // technical failure with a detail beginning `reload` and no opening of
+  // its own in this load. Takes precedence over everything. The detail's
+  // class prefix (RL-0) tells H — an earlier opening found, the existing
+  // reading — from U / M — the earlier history not verified or the check
+  // contradictory: the bench was not administered, and the row reads the
+  // existing not-established reason.
+  const holdBackMarker = family.find(
+    (event) =>
+      suffixOf(event) === 'technical_failure' &&
+      String(meta<unknown>(event, 'detail') ?? '').startsWith('reload'),
+  );
+  const holdBackClass =
+    holdBackMarker === undefined
+      ? null
+      : reloadHoldBackClass(meta<unknown>(holdBackMarker, 'detail'));
   const heldBack =
-    family.some(
-      (event) =>
-        suffixOf(event) === 'technical_failure' &&
-        String(meta<unknown>(event, 'detail') ?? '').startsWith('reload'),
-    ) && !family.some((event) => suffixOf(event) === 'opportunity_opened');
+    holdBackMarker !== undefined &&
+    !family.some((event) => suffixOf(event) === 'opportunity_opened');
 
   if (heldBack) {
     // The briefing may still be acknowledged in this load after the
     // hold-back: the exposure stage stays accurate. A check record that
     // claims an established absence beside the hold-back contradicts it
-    // (flagged; the hold-back — the evidence of an opening — wins).
+    // (flagged; the hold-back wins).
     for (const event of family) {
       if (suffixOf(event) === 'presented') {
         briefed = true;
@@ -503,7 +519,9 @@ registerFeatureExtractor('M15', (events, context) => {
 
     return empty(
       'interrupted',
-      'bench opened in an earlier page load; not re-run after the reload',
+      holdBackClass === 'U' || holdBackClass === 'M'
+        ? notEstablishedReason
+        : 'bench opened in an earlier page load; not re-run after the reload',
       {
         components: { ...components(), held_back_after_reload: true },
       },
@@ -527,11 +545,9 @@ registerFeatureExtractor('M15', (events, context) => {
       }
     }
 
-    return empty(
-      'interrupted',
-      'no current-load bench evidence after a reload: relay bench not opened in this page load and the absence of an earlier opening not established',
-      { components: components() },
-    );
+    return empty('interrupted', notEstablishedReason, {
+      components: components(),
+    });
   }
 
   // Everything below compares positions.

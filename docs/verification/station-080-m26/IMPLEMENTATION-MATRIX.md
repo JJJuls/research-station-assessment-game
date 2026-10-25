@@ -875,3 +875,19 @@ the comparable-clock delay rule. The §9 H and U / M lines are added; M23's
 and the post's existing texts are unchanged. No formula, weight or
 denominator rule changes. F-B2, F-B7 and F-B8 stay open until RL-4 and the
 RL-F recapture.
+
+**U24 RL-4** (uncertain history for M14, M15, M16, M18, M19 and M20; the
+D-1 room exception; D-6 (i), D-7 (i); the owner's authorisation of 25
+October 2026 for the consolidated completion run, Fable 5.1 as writer;
+register §5.410, addendum §2 "U24 RL-4", UNIT-LOG "U24 RL-4") makes the six
+existing guards classify their load's single check with RL-0's classifier
+and administer only under A: U (the earlier history not verified, including
+an earlier U / M hold-back carried forward, D-7 (i)) and M (a contradictory
+record) are now held with a class-prefixed marker, no prior exposure and no
+administration, beside the existing H hold. The six extractors establish
+the absence from exactly one coherent record (D-6 (i)) and read a U / M
+marker as `interrupted` with the family's existing not-established reason.
+The §9 U / M lines are added to the six stations' record views; the
+existing held-back texts are unchanged. No formula, weight or denominator
+rule changes. F-B2, F-B7 and F-B8 close only with the final recapture of
+S1–S3 (the completion run's S5).

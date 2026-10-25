@@ -72,6 +72,7 @@ import {
 import type { RawGameEvent } from '../../systems/EventLogger';
 import type { ClosureReason } from '../protocol';
 import { registerEntry } from '../registerV3';
+import { reloadHoldBackClass } from '../reloadCheck';
 import {
   absentFeature,
   emptyFeature,
@@ -257,13 +258,18 @@ registerFeatureExtractor('M19', (events, context) => {
     );
   };
   const checksCoherent = checks.every(checkCoherent);
+  // Exactly ONE coherent record per load establishes the absence (U24 RL-4,
+  // D-6 (i); §5.290 (a): "two checks … establish nothing", even when they
+  // agree — the M07 rule, now applied to this family too).
   const absenceEstablished =
-    checks.length > 0 &&
+    checks.length === 1 &&
     checksCoherent &&
-    checks.every(
-      (event) =>
-        meta<unknown>(event, 'prior_opening_absence_established') === true,
-    );
+    meta<unknown>(checks[0], 'prior_opening_absence_established') === true;
+  // The U reading's reason (r3 §8 RL-4: this family's existing wording is
+  // kept; it differs from the newer families' "earlier history not
+  // verified", which is stated, not unified).
+  const notEstablishedReason =
+    'no current-load panel evidence after a reload: coupling panel not opened in this page load and the absence of an earlier opening not established';
   const reloadCheck = () => ({
     page_reloaded: context.reloaded,
     checked: checks.length > 0,
@@ -552,14 +558,24 @@ registerFeatureExtractor('M19', (events, context) => {
     flag('the reload check records are inconsistent', null);
   }
 
-  // Held back after a reload: the kit's technical failure with a detail
-  // beginning `reload` and no opening of its own in this load.
+  // Held back after a reload (U24 RL-4, r3 §2): the kit's technical failure
+  // with a detail beginning `reload` and no opening of its own in this
+  // load. The detail's class prefix (RL-0) tells H — an earlier opening
+  // found, the existing reading — from U / M — the earlier history not
+  // verified or the check contradictory: the panel was not administered,
+  // and the row reads the existing not-established reason.
+  const holdBackMarker = family.find(
+    (event) =>
+      suffixOf(event) === 'technical_failure' &&
+      String(meta<unknown>(event, 'detail') ?? '').startsWith('reload'),
+  );
+  const holdBackClass =
+    holdBackMarker === undefined
+      ? null
+      : reloadHoldBackClass(meta<unknown>(holdBackMarker, 'detail'));
   const heldBack =
-    family.some(
-      (event) =>
-        suffixOf(event) === 'technical_failure' &&
-        String(meta<unknown>(event, 'detail') ?? '').startsWith('reload'),
-    ) && !family.some((event) => suffixOf(event) === 'opportunity_opened');
+    holdBackMarker !== undefined &&
+    !family.some((event) => suffixOf(event) === 'opportunity_opened');
 
   if (heldBack) {
     for (const event of family) {
@@ -571,7 +587,9 @@ registerFeatureExtractor('M19', (events, context) => {
 
     return empty(
       'interrupted',
-      'coupling panel opened in an earlier page load; not re-run after the reload',
+      holdBackClass === 'U' || holdBackClass === 'M'
+        ? notEstablishedReason
+        : 'coupling panel opened in an earlier page load; not re-run after the reload',
       null,
       { components: components(null, { held_back_after_reload: true }) },
     );
@@ -597,7 +615,7 @@ registerFeatureExtractor('M19', (events, context) => {
         'interrupted',
         absenceEstablished
           ? 'no current-load panel evidence after a reload: coupling panel neither presented nor opened in this page load (the absence of an earlier opening established)'
-          : 'no current-load panel evidence after a reload: coupling panel not opened in this page load and the absence of an earlier opening not established',
+          : notEstablishedReason,
         null,
       );
     }

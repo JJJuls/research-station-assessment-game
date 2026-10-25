@@ -443,6 +443,109 @@ test.describe('V-5 (b), (c) — the S3 reloads', () => {
       }
     }
 
+    // U24 RL-4 (RELOAD-CORRECTION-SPEC-r3-exec.md §4 "Expected S3 load-4
+    // readings", §8 RL-4): M14 and M15, opened in load 1 (the incident desk
+    // in episode 1; the evidence table, open at reload 1), are held in every
+    // later load — H, interrupted with prior exposure recorded; M16, M18,
+    // M19 and M20, never opened in any load, take their first-load reading
+    // under an established check (A): briefed / presented and closed at the
+    // review, no_eligible_event. The Concourse, laboratory and yard
+    // families write one check in each of loads 2–4 (the replay enters
+    // every room), the Workshop return's feed console in loads 3 and 4
+    // only (load 2 ends at Vale's check-in); a first load writes none; no
+    // U / M hold arises in S3 (its history is continuous).
+    const RL4_S3_LOAD4: Record<string, string> = {
+      m14_correct_first_integrations: 'interrupted',
+      m15_correct_first_predictions: 'interrupted',
+      m16_correct_first_applications: 'no_eligible_event',
+      m18_correct_first_diagnoses: 'no_eligible_event',
+      m18_correct_consequence_predictions: 'no_eligible_event',
+      m19_continuations: 'no_eligible_event',
+      m20_cued_resumptions: 'no_eligible_event',
+    };
+
+    for (const [featureId, disposition] of Object.entries(RL4_S3_LOAD4)) {
+      expect(
+        final.payload.measurement_features.find(
+          (feature) => feature.feature_id === featureId,
+        ),
+        featureId,
+      ).toMatchObject({ disposition, value: null });
+    }
+
+    const RL4_FAMILIES: Record<string, readonly number[]> = {
+      proto_m14_integration_: [2, 3, 4],
+      proto_m15_systems_: [2, 3, 4],
+      proto_m16_handling_: [2, 3, 4],
+      proto_m18_cases_: [2, 3, 4],
+      proto_m19_lines_: [2, 3, 4],
+      proto_m20_feed_: [3, 4],
+    };
+
+    for (const [family, loads] of Object.entries(RL4_FAMILIES)) {
+      for (const load of [1, 2, 3, 4]) {
+        expect(
+          everyEvent.filter(
+            (event) =>
+              event.event_type === `${family}prior_load_checked` &&
+              (event.page_load_index ?? 4) === load,
+          ).length,
+          `${family}prior_load_checked in load ${load}`,
+        ).toBe(loads.includes(load) ? 1 : 0);
+      }
+
+      // The hold-back markers of load 4 carry the H prefix only (M14, M15);
+      // the A rows carry none.
+      const held = everyEvent.filter(
+        (event) =>
+          event.event_type === `${family}technical_failure` &&
+          (event.page_load_index ?? 4) === 4 &&
+          String(
+            (event.metadata as { detail?: unknown } | undefined)?.detail ?? '',
+          ).startsWith('reload'),
+      );
+
+      if (
+        family === 'proto_m14_integration_' ||
+        family === 'proto_m15_systems_'
+      ) {
+        expect(held, `${family} held in load 4`).toHaveLength(1);
+        expect(
+          String((held[0].metadata as { detail?: unknown }).detail),
+        ).toMatch(/^reload after administration: /);
+      } else {
+        expect(held, `${family} not held in load 4`).toEqual([]);
+      }
+    }
+
+    // r3 §4 "H, prior exposure": the H rows' validity records of load 4
+    // carry the existing prior-exposure entry; the A rows' carry none
+    // (scientific review of RL-4, F-3).
+    const validity = (
+      (final.payload as { measurement_validity?: unknown })
+        .measurement_validity as {
+        owner?: string;
+        prior_exposure?: unknown[];
+      }[]
+    ).filter((record) => typeof record?.owner === 'string');
+
+    for (const [owner, exposed] of [
+      ['M14', true],
+      ['M15', true],
+      ['M16', false],
+      ['M18', false],
+      ['M19', false],
+      ['M20', false],
+    ] as const) {
+      const records = validity.filter((record) => record.owner === owner);
+
+      expect(records.length, `${owner} validity records`).toBeGreaterThan(0);
+      expect(
+        records.some((record) => (record.prior_exposure ?? []).length > 0),
+        `${owner} prior exposure in load 4`,
+      ).toBe(exposed);
+    }
+
     const m25Load4 = everyEvent.find(
       (event) =>
         event.event_type === 'proto_m25_loops_prior_load_checked' &&

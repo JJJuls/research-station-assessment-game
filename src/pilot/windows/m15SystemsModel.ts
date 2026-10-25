@@ -35,6 +35,10 @@
  * serve only `consistent_with_recorded_wiring` and the pure tests.
  */
 import {
+  reloadHoldBackClass,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
+import {
   M15_ANSWER_LETTERS,
   M15_ASSIGNED_BOX_ORDER,
   M15_BOX_WINDOW_IDS,
@@ -126,6 +130,20 @@ export const M15_EVENT_SUFFIXES = [
 
 export const M15_RELOAD_DETAIL =
   'reload after administration: bench not re-run';
+/**
+ * The U / M hold-back details (U24 RL-4; `RELOAD-CORRECTION-SPEC-r3-exec.md`
+ * §2, direction c): a load whose earlier history is not verified (U) or
+ * whose check contradicts itself (M) never administers the bench; no prior
+ * exposure is claimed. The class prefix is RL-0's.
+ */
+export const M15_UNVERIFIED_DETAIL = reloadHoldBackDetail(
+  'U',
+  'bench not administered',
+);
+export const M15_CONTRADICTORY_DETAIL = reloadHoldBackDetail(
+  'M',
+  'bench not administered',
+);
 export const M15_ACK_LINE_ID = 'answer_recorded';
 export const M15_WIRING_ACK_LINE_ID = 'wiring_recorded';
 export const M15_CANNOT_TELL = 'cannot_tell';
@@ -481,12 +499,37 @@ export function createM15Series(): M15Series {
  * ------------------------------------------------------------------ */
 
 /** True when an earlier page load of this identity already opened the bench. */
+/** The structural part of an earlier load's record the check reads. */
+export interface M15PriorEvent {
+  event_type: string;
+  metadata?: Record<string, unknown>;
+}
+
 export function m15PriorAdministration(
-  priorLoadEvents: readonly { event_type: string }[],
+  priorLoadEvents: readonly M15PriorEvent[],
 ): boolean {
   return priorLoadEvents.some(
     (event) => event.event_type === `${M15_FAMILY}opportunity_opened`,
   );
+}
+
+/**
+ * D-7 (i) (U24 RL-4): an earlier load's U or M hold-back of this family
+ * keeps the absence of an earlier opening unestablished in every later
+ * load; an H marker never triggers this.
+ */
+export function m15PriorHoldBackCarried(
+  priorLoadEvents: readonly M15PriorEvent[],
+): boolean {
+  return priorLoadEvents.some((event) => {
+    if (event.event_type !== `${M15_FAMILY}technical_failure`) {
+      return false;
+    }
+
+    const cls = reloadHoldBackClass(event.metadata?.detail);
+
+    return cls === 'U' || cls === 'M';
+  });
 }
 
 /** The losslessness evidence the runtime keeps beside the raw events. */
@@ -520,7 +563,7 @@ export interface M15PriorLoadCheck {
  */
 export function m15PriorLoadCheck(
   pageLoadIndex: number,
-  priorLoadEvents: readonly { event_type: string }[],
+  priorLoadEvents: readonly M15PriorEvent[],
   integrity: M15HistoryIntegrity,
 ): M15PriorLoadCheck {
   const found = m15PriorAdministration(priorLoadEvents);
@@ -539,7 +582,9 @@ export function m15PriorLoadCheck(
       (event) => event.event_type === `${M15_FAMILY}presented`,
     ),
     history_continuous: continuous,
-    prior_opening_absence_established: !found && continuous,
+    // D-7 (i): an earlier U / M hold-back of this family is carried forward.
+    prior_opening_absence_established:
+      !found && continuous && !m15PriorHoldBackCarried(priorLoadEvents),
   };
 }
 
@@ -642,8 +687,15 @@ export function m15RecordLine(s: M15Series): string | null {
   switch (s.status) {
     case 'closed_at_review':
       return M15_TEXT.closed_at_review;
-    case 'held_back':
-      return M15_TEXT.held_back;
+    case 'held_back': {
+      // U24 RL-4 (r3 §9): a U / M hold shows the two approved lines; the
+      // existing H text is unchanged.
+      const cls = reloadHoldBackClass(s.failure_detail);
+
+      return cls === 'U' || cls === 'M'
+        ? M15_TEXT.held_unverified.join('\n')
+        : M15_TEXT.held_back;
+    }
     case 'technical_failure':
       return M15_TEXT.fault;
     default:
@@ -1761,13 +1813,13 @@ export function m15sFail(s: M15Series, detail: string): M15FailOutcome {
 }
 
 /** The reload hold-back: the bench is never re-run in this page load. */
-export function m15sHoldBack(s: M15Series) {
+export function m15sHoldBack(s: M15Series, detail: string = M15_RELOAD_DETAIL) {
   if (s.status !== 'unopened') {
     return false;
   }
 
   s.status = 'held_back';
-  s.failure_detail = M15_RELOAD_DETAIL;
+  s.failure_detail = detail;
   s.view = 'record';
 
   return true;

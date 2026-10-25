@@ -39,6 +39,10 @@ import {
   extractMeasurementFeatures,
 } from '../src/measurement/features';
 import { REGISTER_V3, registerEntry } from '../src/measurement/registerV3';
+import {
+  classifyReload,
+  reloadHoldBackClass,
+} from '../src/measurement/reloadCheck';
 import { PILOT_SCHEDULE } from '../src/pilot/coverageSchedule';
 import {
   type M15SurfaceHost,
@@ -65,15 +69,19 @@ import {
 import {
   createM15Series,
   M15_ACK_LINE_ID,
+  M15_CONTRADICTORY_DETAIL,
   M15_EVENT_SUFFIXES,
   M15_RELOAD_DETAIL,
+  M15_UNVERIFIED_DETAIL,
   M15_WIRING_ACK_LINE_ID,
   m15AnsweredCount,
   m15AnswerUnder,
   m15EntrySnapshot,
   type M15LogSink,
   m15PriorAdministration,
+  m15PriorHoldBackCarried,
   m15PriorLoadCheck,
+  m15RecordLine,
   m15sCancelCommit,
   m15sCloseAtReview,
   m15sCloseHelp,
@@ -3911,5 +3919,335 @@ test.describe('M15 wording', () => {
     expect(m15ParticipantStrings().some((line) => CORRECTNESS.test(line))).toBe(
       true,
     );
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-4 — uncertain history (RELOAD-CORRECTION-SPEC-r3-exec.md §2, §3,
+ * §8 RL-4, §9; D-6 (i), D-7 (i)): D-6 (i) in the extractor, D-7 (i) in the
+ * check function, the U / M hold at the model and its reading. Expected
+ * readings come from r3 §2 and §8 RL-4 (the existing not-established
+ * reason is kept for this family).
+ * ------------------------------------------------------------------ */
+
+test.describe('U24 RL-4 — M15 under uncertain history (D-6 (i), D-7 (i), the U / M hold)', () => {
+  const SOUND = {
+    first_sequence: 1,
+    sequence_gap_count: 0,
+    sequence_duplicate_count: 0,
+    recovered_from_chunks: false,
+  };
+  const NOT_ESTABLISHED =
+    'no current-load bench evidence after a reload: relay bench not opened in this page load and the absence of an earlier opening not established';
+  const other = { event_type: 'proto_m14_integration_presented' };
+  const U_LINES = [
+    'The earlier state of this relay bench could not be verified.',
+    'It stays closed after this reload.',
+  ];
+
+  function check(
+    flags: Record<string, unknown> = {},
+    sequence = 5,
+  ): RawGameEvent {
+    return {
+      session_id: 'GS',
+      timestamp_ms: 4,
+      scene: 'diagnostics_laboratory',
+      event_type: `${M15_FAMILY}prior_load_checked`,
+      object_id: 'm15_relay_bench',
+      sequence,
+      page_load_index: 2,
+      metadata: {
+        ...kitFields(),
+        phase: 'closure',
+        page_load_index: 2,
+        prior_page_load_event_count: 40,
+        prior_opening_found: false,
+        prior_briefing_found: true,
+        history_continuous: true,
+        prior_opening_absence_established: true,
+        input_mode: 'system',
+        ...flags,
+      },
+    };
+  }
+
+  function marker(detail: string, sequence = 7): RawGameEvent {
+    return {
+      session_id: 'GS',
+      timestamp_ms: 5,
+      scene: 'diagnostics_laboratory',
+      event_type: `${M15_FAMILY}technical_failure`,
+      object_id: 'm15_relay_bench',
+      sequence,
+      page_load_index: 2,
+      metadata: { ...kitFields(), detail, input_mode: 'system' },
+    };
+  }
+
+  const presented = () =>
+    log([], { opened: false, briefed: true, pageLoadIndex: 2 });
+  const flagsOf = (events: RawGameEvent[]) =>
+    events.map((event) => event.metadata ?? {});
+
+  test('F-A (D-6 (i)): two agreeing check records with distinct sequence numbers establish nothing — U, refused, the not-established reading', () => {
+    const checks = [check({}, 5), check({}, 6)];
+    const cls = classifyReload({ pageLoadIndex: 2, checks: flagsOf(checks) });
+
+    expect(cls.occasions.row).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+      basis: 'duplicate_checks',
+    });
+    expect(cls.check_coherent).toBe(true);
+    expect(cls.exposure_record_consistent).toBe(false);
+
+    const read = row([...checks, ...presented()], RELOADED);
+
+    expect(read).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason: NOT_ESTABLISHED,
+    });
+    expect(read.components).toMatchObject({
+      exposure_record_consistent: false,
+      reload_check: {
+        checked: true,
+        prior_opening_absence_established: false,
+      },
+    });
+  });
+
+  test('F-B (D-6 (i)): two conflicting check records ⇒ U, refused, coherence false; the not-established reading', () => {
+    const checks = [
+      check({}, 5),
+      check(
+        { history_continuous: false, prior_opening_absence_established: false },
+        6,
+      ),
+    ];
+    const cls = classifyReload({ pageLoadIndex: 2, checks: flagsOf(checks) });
+
+    expect(cls.occasions.row).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+    });
+    expect(cls.check_coherent).toBe(false);
+
+    const read = row([...checks, ...presented()], RELOADED);
+
+    expect(read).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason: NOT_ESTABLISHED,
+    });
+    expect(read.components.exposure_record_consistent).toBe(false);
+  });
+
+  test('F-C (D-7 (i)): an earlier U / M hold-back of this family keeps the absence unestablished in a later load with a continuous history; an H marker, another family’s marker or no marker never does', () => {
+    const priorU = [
+      other,
+      {
+        event_type: `${M15_FAMILY}technical_failure`,
+        metadata: { detail: M15_UNVERIFIED_DETAIL },
+      },
+    ];
+    const priorM = [
+      other,
+      {
+        event_type: `${M15_FAMILY}technical_failure`,
+        metadata: { detail: M15_CONTRADICTORY_DETAIL },
+      },
+    ];
+    const priorH = [
+      other,
+      {
+        event_type: `${M15_FAMILY}technical_failure`,
+        metadata: { detail: M15_RELOAD_DETAIL },
+      },
+    ];
+
+    expect(m15PriorHoldBackCarried(priorU)).toBe(true);
+    expect(m15PriorHoldBackCarried(priorM)).toBe(true);
+    expect(m15PriorHoldBackCarried(priorH)).toBe(false);
+    expect(m15PriorHoldBackCarried([other])).toBe(false);
+    expect(
+      m15PriorHoldBackCarried([
+        {
+          event_type: 'proto_m16_handling_technical_failure',
+          metadata: { detail: M15_UNVERIFIED_DETAIL },
+        },
+      ]),
+    ).toBe(false);
+
+    const carried = m15PriorLoadCheck(3, priorU, SOUND);
+
+    expect(carried).toMatchObject({
+      page_load_index: 3,
+      prior_opening_found: false,
+      history_continuous: true,
+      prior_opening_absence_established: false,
+    });
+    expect(
+      m15PriorLoadCheck(3, priorM, SOUND).prior_opening_absence_established,
+    ).toBe(false);
+    expect(
+      m15PriorLoadCheck(3, priorH, SOUND).prior_opening_absence_established,
+    ).toBe(true);
+    expect(
+      classifyReload({ pageLoadIndex: 3, checks: [carried] }).occasions.row,
+    ).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+      basis: 'absence_not_established',
+    });
+  });
+
+  test('the U / M hold (direction c): the bench is never administered — held with the class detail, the record shows exactly the §9 lines and LEAVE, START is refused, nothing is written; the H hold keeps its text; permission per class', () => {
+    for (const [detail, cls] of [
+      [M15_UNVERIFIED_DETAIL, 'U'],
+      [M15_CONTRADICTORY_DETAIL, 'M'],
+    ] as const) {
+      const r = run();
+
+      expect(reloadHoldBackClass(detail)).toBe(cls);
+      expect(m15sHoldBack(r.s, detail)).toBe(true);
+      expect(r.s.status).toBe('held_back');
+      expect(r.s.failure_detail).toBe(detail);
+      expect(m15RecordLine(r.s)).toBe(U_LINES.join('\n'));
+      expect(m15sStart(r.s, 'keyboard', r.settle(), r.sink)).toBe(false);
+      expect(r.events).toEqual([]);
+
+      const view = render(r.s);
+
+      expect(view.ids).toEqual(['record_text', 'leave']);
+      expect(view.lines).toContain(U_LINES[0]);
+      expect(view.lines).toContain(U_LINES[1]);
+      expect(view.lines).not.toContain(M15_TEXT.held_back);
+      expect(view.lines).not.toContain('of 4 answers');
+    }
+
+    const h = createM15Series();
+
+    expect(m15sHoldBack(h)).toBe(true);
+    expect(m15RecordLine(h)).toBe(M15_TEXT.held_back);
+    expect([...M15_TEXT.held_unverified]).toEqual(U_LINES);
+
+    for (const line of U_LINES) {
+      expect(m15ParticipantStrings()).toContain(line);
+    }
+
+    expect(
+      classifyReload({
+        pageLoadIndex: 2,
+        checks: [
+          m15PriorLoadCheck(2, [other], { ...SOUND, sequence_gap_count: 1 }),
+        ],
+      }).occasions.row,
+    ).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+      basis: 'history_discontinuous',
+    });
+    expect(
+      classifyReload({
+        pageLoadIndex: 2,
+        checks: [m15PriorLoadCheck(2, [other], SOUND)],
+      }).occasions.row,
+    ).toMatchObject({ class: 'A', administration_permitted: true });
+    expect(
+      classifyReload({ pageLoadIndex: 1, checks: [] }).occasions.row,
+    ).toMatchObject({ class: null, administration_permitted: true });
+  });
+
+  test('the extractor reads a U / M marker: interrupted with the existing not-established reason (r3 §8 RL-4), held_back_after_reload, consistent with its own check; an established check beside the marker is flagged; the H reading and the first load are unchanged', () => {
+    const u = row(
+      [
+        check({
+          history_continuous: false,
+          prior_opening_absence_established: false,
+        }),
+        marker(M15_UNVERIFIED_DETAIL),
+        ...presented(),
+      ],
+      RELOADED,
+    );
+
+    expect(u).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason: NOT_ESTABLISHED,
+    });
+    expect(u.components).toMatchObject({
+      held_back_after_reload: true,
+      exposure_record_consistent: true,
+      reload_check: {
+        checked: true,
+        history_continuous: false,
+        prior_opening_absence_established: false,
+      },
+      exposure: { briefed: true, bench_opened: false },
+    });
+
+    const m = row(
+      [
+        check({
+          history_continuous: false,
+          prior_opening_absence_established: true,
+        }),
+        marker(M15_CONTRADICTORY_DETAIL),
+        ...presented(),
+      ],
+      RELOADED,
+    );
+
+    expect(m).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason: NOT_ESTABLISHED,
+    });
+    expect(m.components).toMatchObject({
+      held_back_after_reload: true,
+      exposure_record_consistent: false,
+    });
+
+    const contradiction = row(
+      [check(), marker(M15_UNVERIFIED_DETAIL), ...presented()],
+      RELOADED,
+    );
+
+    expect(contradiction).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason: NOT_ESTABLISHED,
+    });
+    expect(contradiction.components.exposure_record_consistent).toBe(false);
+
+    const h = row(
+      [
+        check({
+          prior_opening_found: true,
+          prior_opening_absence_established: false,
+        }),
+        marker(M15_RELOAD_DETAIL),
+        ...presented(),
+      ],
+      RELOADED,
+    );
+
+    expect(h).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason:
+        'bench opened in an earlier page load; not re-run after the reload',
+    });
+    expect(h.components).toMatchObject({
+      held_back_after_reload: true,
+      exposure_record_consistent: true,
+    });
+
+    expect(row(presented(), RELOADED)).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason: NOT_ESTABLISHED,
+    });
+    expect(row(log([], { opened: false, briefed: true }))).toMatchObject({
+      disposition: 'pending',
+    });
   });
 });

@@ -452,6 +452,15 @@ export const M19_TEXT = {
   held_back:
     'This panel was opened earlier in the session. It stays closed now.',
   /**
+   * The U / M hold after a reload (U24 RL-4; `RELOAD-CORRECTION-SPEC-r3-exec.md`
+   * §9, D-5: the approved two lines, ⟨station⟩ = coupling panel). The H text
+   * above is unchanged.
+   */
+  held_unverified: [
+    'The earlier state of this coupling panel could not be verified.',
+    'It stays closed after this reload.',
+  ],
+  /**
    * The record of a panel reopened after a runtime fault (two lines; the
    * closeout of 14 October 2026 approved adding it — implementer wording in
    * the shape of the M14–M18 fault records, register §5.340 (b)).
@@ -542,6 +551,7 @@ export function m19ParticipantStrings(): string[] {
     t.closed_shift,
     t.closed_review,
     t.held_back,
+    ...t.held_unverified,
     ...t.closed_fault,
     t.footer_card,
     t.footer_check,

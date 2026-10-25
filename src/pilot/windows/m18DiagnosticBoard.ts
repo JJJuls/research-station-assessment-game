@@ -28,6 +28,7 @@ import {
   releaseFocusedClock,
 } from '../../measurement/focusMonitor';
 import { protocolStamp } from '../../measurement/protocol';
+import { classifyReload, ROW_OCCASION } from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import {
   M18_ENTRY_STATE_VERSION,
@@ -40,7 +41,9 @@ import {
 } from './m18DiagnosisContent';
 import {
   createM18Series,
+  M18_CONTRADICTORY_DETAIL,
   M18_RELOAD_DETAIL,
+  M18_UNVERIFIED_DETAIL,
   m18ClosureSnapshot,
   type M18CommitKind,
   type M18ConfirmOutcome,
@@ -51,7 +54,8 @@ import {
   m18Live,
   type M18LogSink,
   type M18NextOutcome,
-  m18PriorAdministration,
+  type M18PriorEvent,
+  type M18PriorLoadCheck,
   m18PriorLoadCheck,
   type M18RequestOutcome,
   m18sCancelCommit,
@@ -102,6 +106,7 @@ const focusedMarks: Record<string, number> = {};
 let briefed = false;
 /** The reload check is written once per page load. */
 let priorLoadChecked = false;
+let priorLoadCheck: M18PriorLoadCheck | null = null;
 
 function ensure(): M18Series {
   if (series === null) {
@@ -233,30 +238,42 @@ export function presentM18(nowMs: number) {
  * evidence from which the extractor reads an ESTABLISHED absence of an
  * earlier opening. A first page load writes nothing.
  */
-function recordPriorLoadCheck(prior: readonly { event_type: string }[]) {
+function recordPriorLoadCheck(
+  prior: readonly M18PriorEvent[],
+): M18PriorLoadCheck | null {
   const pageLoadIndex = researchRuntime.getPageLoadIndex();
 
-  if (priorLoadChecked || pageLoadIndex <= 1) {
-    return;
+  if (pageLoadIndex <= 1) {
+    return null;
   }
 
-  priorLoadChecked = true;
-  sink('prior_load_checked', {
-    phase: 'closure',
-    ...m18PriorLoadCheck(
+  if (!priorLoadChecked) {
+    priorLoadChecked = true;
+    priorLoadCheck = m18PriorLoadCheck(
       pageLoadIndex,
       prior,
       researchRuntime.getEventIntegrity(),
-    ),
-    input_mode: 'system',
-  });
+    );
+    sink('prior_load_checked', {
+      phase: 'closure',
+      ...priorLoadCheck,
+      input_mode: 'system',
+    });
+  }
+
+  return priorLoadCheck;
 }
 
 /**
- * Reload guard (register §5.14): a board opened in an earlier page load of
- * this identity is never re-run — prior exposure is recorded and the series
- * is marked technically incomplete; the new load's rows are `interrupted`.
- * Idempotent; called at laboratory entry and at the open.
+ * Reload guard (register §5.14; U24 RL-4, `RELOAD-CORRECTION-SPEC-r3-exec.md`
+ * §2 and §4 G1, direction c): the load's single check record is classified
+ * by RL-0's helper. H — a board opened in an earlier page load of this
+ * identity — is never re-run: prior exposure is recorded and the series is
+ * marked technically incomplete; the new load's rows are `interrupted`. U
+ * (the earlier history not verified) and M (a self-contradictory record)
+ * are never administered either, without a prior-exposure entry. Only A (or
+ * a first load) administers. Idempotent; called at laboratory entry and at
+ * the open.
  */
 export function guardM18Reload(): boolean {
   const s = ensure();
@@ -265,19 +282,30 @@ export function guardM18Reload(): boolean {
     return false;
   }
 
-  const prior = researchRuntime.getPriorPageLoadEvents();
+  const check = recordPriorLoadCheck(researchRuntime.getPriorPageLoadEvents());
+  const cls = classifyReload({
+    pageLoadIndex: researchRuntime.getPageLoadIndex(),
+    checks: check === null ? [] : [check],
+  }).occasions[ROW_OCCASION].class;
 
-  recordPriorLoadCheck(prior);
-
-  if (!m18PriorAdministration(prior)) {
+  if (cls === null || cls === 'A') {
     return false;
   }
 
-  m18sHoldBack(s);
-  m18Window.recordPriorExposure(
-    'diagnostic board opened in an earlier page load of this identity',
-  );
-  m18Window.technicalFailure(M18_RELOAD_DETAIL);
+  if (cls === 'H') {
+    m18sHoldBack(s);
+    m18Window.recordPriorExposure(
+      'diagnostic board opened in an earlier page load of this identity',
+    );
+    m18Window.technicalFailure(M18_RELOAD_DETAIL);
+
+    return true;
+  }
+
+  const detail = cls === 'U' ? M18_UNVERIFIED_DETAIL : M18_CONTRADICTORY_DETAIL;
+
+  m18sHoldBack(s, detail);
+  m18Window.technicalFailure(detail);
 
   return true;
 }
@@ -590,5 +618,6 @@ export function resetM18State() {
   series = null;
   briefed = false;
   priorLoadChecked = false;
+  priorLoadCheck = null;
   m18Window.reset();
 }

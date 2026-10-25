@@ -34,6 +34,7 @@ import {
   releaseFocusedClock,
 } from '../../measurement/focusMonitor';
 import { protocolStamp } from '../../measurement/protocol';
+import { classifyReload, ROW_OCCASION } from '../../measurement/reloadCheck';
 import {
   markOpportunityInvalid,
   refreshValidityProbe,
@@ -61,7 +62,9 @@ import {
 } from './m20FeedContent';
 import {
   createM20Project,
+  M20_CONTRADICTORY_DETAIL,
   M20_RELOAD_DETAIL,
+  M20_UNVERIFIED_DETAIL,
   type M20AlignOutcome,
   m20ChannelStatus,
   m20ChannelWord,
@@ -75,7 +78,8 @@ import {
   type M20LogSink,
   m20NoticeLines,
   type M20OutdoorPrepared,
-  m20PriorAdministration,
+  type M20PriorEvent,
+  type M20PriorLoadCheck,
   m20PriorLoadCheck,
   type M20Project,
   m20sAlign,
@@ -184,6 +188,7 @@ let presented = false;
 let closedUnopened = false;
 /** The reload check is written once per page load. */
 let priorLoadChecked = false;
+let priorLoadCheck: M20PriorLoadCheck | null = null;
 let briefPresented = false;
 let missionLogRegistered = false;
 let lastCheckAtMs: number | null = null;
@@ -317,30 +322,42 @@ export function presentM20(nowMs: number) {
   windowInstance.present(nowMs);
 }
 
-function recordPriorLoadCheck(prior: readonly { event_type: string }[]) {
+function recordPriorLoadCheck(
+  prior: readonly M20PriorEvent[],
+): M20PriorLoadCheck | null {
   const pageLoadIndex = researchRuntime.getPageLoadIndex();
 
-  if (priorLoadChecked || pageLoadIndex <= 1) {
-    return;
+  if (pageLoadIndex <= 1) {
+    return null;
   }
 
-  priorLoadChecked = true;
-  sink('prior_load_checked', {
-    phase: 'closure',
-    ...m20PriorLoadCheck(
+  if (!priorLoadChecked) {
+    priorLoadChecked = true;
+    priorLoadCheck = m20PriorLoadCheck(
       pageLoadIndex,
       prior,
       researchRuntime.getEventIntegrity(),
-    ),
-    input_mode: 'system',
-  });
+    );
+    sink('prior_load_checked', {
+      phase: 'closure',
+      ...priorLoadCheck,
+      input_mode: 'system',
+    });
+  }
+
+  return priorLoadCheck;
 }
 
 /**
- * Reload guard: a console opened in an earlier page load of this identity is
- * never re-run — prior exposure is recorded and the project is marked
- * technically incomplete; the new load's row is `interrupted`. Idempotent;
- * called at Workshop entry and at the open.
+ * Reload guard (U24 RL-4, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §4 G1,
+ * direction c): the load's single check record is classified by RL-0's
+ * helper. H — a console opened in an earlier page load of this identity —
+ * is never re-run: prior exposure is recorded and the project is marked
+ * technically incomplete; the new load's row is `interrupted`. U (the
+ * earlier history not verified) and M (a self-contradictory record) are
+ * never administered either, without a prior-exposure entry. Only A (or a
+ * first load) administers. Idempotent; called at Workshop entry and at the
+ * open.
  */
 export function guardM20Reload(): boolean {
   const s = ensure();
@@ -349,19 +366,30 @@ export function guardM20Reload(): boolean {
     return false;
   }
 
-  const prior = researchRuntime.getPriorPageLoadEvents();
+  const check = recordPriorLoadCheck(researchRuntime.getPriorPageLoadEvents());
+  const cls = classifyReload({
+    pageLoadIndex: researchRuntime.getPageLoadIndex(),
+    checks: check === null ? [] : [check],
+  }).occasions[ROW_OCCASION].class;
 
-  recordPriorLoadCheck(prior);
-
-  if (!m20PriorAdministration(prior)) {
+  if (cls === null || cls === 'A') {
     return false;
   }
 
-  m20sHoldBack(s);
-  windowInstance.recordPriorExposure(
-    'feed console opened in an earlier page load of this identity',
-  );
-  windowInstance.technicalFailure(M20_RELOAD_DETAIL);
+  if (cls === 'H') {
+    m20sHoldBack(s);
+    windowInstance.recordPriorExposure(
+      'feed console opened in an earlier page load of this identity',
+    );
+    windowInstance.technicalFailure(M20_RELOAD_DETAIL);
+
+    return true;
+  }
+
+  const detail = cls === 'U' ? M20_UNVERIFIED_DETAIL : M20_CONTRADICTORY_DETAIL;
+
+  m20sHoldBack(s, detail);
+  windowInstance.technicalFailure(detail);
 
   return true;
 }
@@ -936,6 +964,7 @@ export function resetM20State() {
   presented = false;
   closedUnopened = false;
   priorLoadChecked = false;
+  priorLoadCheck = null;
   briefPresented = false;
   missionLogRegistered = false;
   lastCheckAtMs = null;

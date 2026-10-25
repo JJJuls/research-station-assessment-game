@@ -357,6 +357,15 @@ export const M16_TEXT = {
   closed_at_review: 'Station record closed — the console keeps its record.',
   held_back:
     'This console was already used in this session. Its record is kept; no further answers can be given here.',
+  /**
+   * The U / M hold after a reload (U24 RL-4; `RELOAD-CORRECTION-SPEC-r3-exec.md`
+   * §9, D-5: the approved two lines, ⟨station⟩ = protocol console). The H
+   * text above is unchanged.
+   */
+  held_unverified: [
+    'The earlier state of this protocol console could not be verified.',
+    'It stays closed after this reload.',
+  ],
   fault: 'The console has a fault and is closed. Recorded answers are kept.',
   // The first-opening card and both worked-example views (owner ruling 3 of
   // 12 October 2026, register §5.314): the keyboard navigation named.
@@ -483,6 +492,7 @@ export function m16PreCompletionStrings(): string[] {
     T.close_help,
     T.closed_at_review,
     T.held_back,
+    ...T.held_unverified,
     T.fault,
     T.footer_card,
     T.footer_vial,

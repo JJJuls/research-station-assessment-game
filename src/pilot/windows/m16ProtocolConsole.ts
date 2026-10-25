@@ -28,6 +28,7 @@ import {
   releaseFocusedClock,
 } from '../../measurement/focusMonitor';
 import { protocolStamp } from '../../measurement/protocol';
+import { classifyReload, ROW_OCCASION } from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import {
   M16_ENTRY_STATE_VERSION,
@@ -39,7 +40,9 @@ import {
 } from './m16HandlingContent';
 import {
   createM16Series,
+  M16_CONTRADICTORY_DETAIL,
   M16_RELOAD_DETAIL,
+  M16_UNVERIFIED_DETAIL,
   m16ClosureSnapshot,
   type M16CommitKind,
   type M16ConfirmOutcome,
@@ -49,7 +52,8 @@ import {
   m16Live,
   type M16LogSink,
   type M16NextOutcome,
-  m16PriorAdministration,
+  type M16PriorEvent,
+  type M16PriorLoadCheck,
   m16PriorLoadCheck,
   type M16RequestOutcome,
   m16sCancelCommit,
@@ -99,6 +103,7 @@ const focusedMarks: Record<string, number> = {};
 let briefed = false;
 /** The reload check is written once per page load. */
 let priorLoadChecked = false;
+let priorLoadCheck: M16PriorLoadCheck | null = null;
 
 function ensure(): M16Series {
   if (series === null) {
@@ -226,30 +231,41 @@ export function presentM16(nowMs: number) {
  * which the extractor reads an ESTABLISHED absence of an earlier opening.
  * A first page load writes nothing.
  */
-function recordPriorLoadCheck(prior: readonly { event_type: string }[]) {
+function recordPriorLoadCheck(
+  prior: readonly M16PriorEvent[],
+): M16PriorLoadCheck | null {
   const pageLoadIndex = researchRuntime.getPageLoadIndex();
 
-  if (priorLoadChecked || pageLoadIndex <= 1) {
-    return;
+  if (pageLoadIndex <= 1) {
+    return null;
   }
 
-  priorLoadChecked = true;
-  sink('prior_load_checked', {
-    phase: 'closure',
-    ...m16PriorLoadCheck(
+  if (!priorLoadChecked) {
+    priorLoadChecked = true;
+    priorLoadCheck = m16PriorLoadCheck(
       pageLoadIndex,
       prior,
       researchRuntime.getEventIntegrity(),
-    ),
-    input_mode: 'system',
-  });
+    );
+    sink('prior_load_checked', {
+      phase: 'closure',
+      ...priorLoadCheck,
+      input_mode: 'system',
+    });
+  }
+
+  return priorLoadCheck;
 }
 
 /**
- * Reload guard (register §5.14): a console opened in an earlier page load
- * of this identity is never re-run — prior exposure is recorded and the
- * series is marked technically incomplete; the new load's row is
- * `interrupted`. Idempotent; called at laboratory entry and at the open.
+ * Reload guard (register §5.14; U24 RL-4, `RELOAD-CORRECTION-SPEC-r3-exec.md`
+ * §2 and §4 G1, direction c): the load's single check record is classified
+ * by RL-0's helper. H — a console opened in an earlier page load of this
+ * identity — is never re-run: prior exposure is recorded and the series is
+ * marked technically incomplete. U (the earlier history not verified) and M
+ * (a self-contradictory record) are never administered either, without a
+ * prior-exposure entry. Only A (or a first load) administers. Idempotent;
+ * called at laboratory entry and at the open.
  */
 export function guardM16Reload(): boolean {
   const s = ensure();
@@ -258,19 +274,30 @@ export function guardM16Reload(): boolean {
     return false;
   }
 
-  const prior = researchRuntime.getPriorPageLoadEvents();
+  const check = recordPriorLoadCheck(researchRuntime.getPriorPageLoadEvents());
+  const cls = classifyReload({
+    pageLoadIndex: researchRuntime.getPageLoadIndex(),
+    checks: check === null ? [] : [check],
+  }).occasions[ROW_OCCASION].class;
 
-  recordPriorLoadCheck(prior);
-
-  if (!m16PriorAdministration(prior)) {
+  if (cls === null || cls === 'A') {
     return false;
   }
 
-  m16sHoldBack(s);
-  m16Window.recordPriorExposure(
-    'protocol console opened in an earlier page load of this identity',
-  );
-  m16Window.technicalFailure(M16_RELOAD_DETAIL);
+  if (cls === 'H') {
+    m16sHoldBack(s);
+    m16Window.recordPriorExposure(
+      'protocol console opened in an earlier page load of this identity',
+    );
+    m16Window.technicalFailure(M16_RELOAD_DETAIL);
+
+    return true;
+  }
+
+  const detail = cls === 'U' ? M16_UNVERIFIED_DETAIL : M16_CONTRADICTORY_DETAIL;
+
+  m16sHoldBack(s, detail);
+  m16Window.technicalFailure(detail);
 
   return true;
 }
@@ -557,5 +584,6 @@ export function resetM16State() {
   series = null;
   briefed = false;
   priorLoadChecked = false;
+  priorLoadCheck = null;
   m16Window.reset();
 }

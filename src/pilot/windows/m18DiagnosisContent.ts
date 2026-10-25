@@ -615,6 +615,15 @@ export const M18_TEXT = {
   closed_at_review: 'Station record closed — the board keeps its record.',
   held_back:
     'This board was already used in this session. Its record is kept; no further answers can be given here.',
+  /**
+   * The U / M hold after a reload (U24 RL-4; `RELOAD-CORRECTION-SPEC-r3-exec.md`
+   * §9, D-5: the approved two lines, ⟨station⟩ = diagnostic board). The H
+   * text above is unchanged.
+   */
+  held_unverified: [
+    'The earlier state of this diagnostic board could not be verified.',
+    'It stays closed after this reload.',
+  ],
   fault: 'The board has a fault and is closed. Recorded answers are kept.',
   footer_card:
     'TAB moves focus · ENTER selects · H help · ESC leaves (work kept)',
@@ -725,6 +734,7 @@ function sharedStrings(): string[] {
     ...T.help_lines,
     T.closed_at_review,
     T.held_back,
+    ...T.held_unverified,
     T.fault,
     T.footer_card,
     T.footer_case,

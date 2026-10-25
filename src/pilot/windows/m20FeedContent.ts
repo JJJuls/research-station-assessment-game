@@ -303,6 +303,15 @@ export const M20_TEXT = {
   closed_review: 'The console closed at the shift review.',
   held_back:
     'This console was opened earlier in the session. It stays closed now.',
+  /**
+   * The U / M hold after a reload (U24 RL-4; `RELOAD-CORRECTION-SPEC-r3-exec.md`
+   * §9, D-5: the approved two lines, ⟨station⟩ = feed console). The H text
+   * above is unchanged.
+   */
+  held_unverified: [
+    'The earlier state of this feed console could not be verified.',
+    'It stays closed after this reload.',
+  ],
   closed_fault: [
     'The feed console has a fault and is closed.',
     'Its record is kept as it is.',
@@ -393,6 +402,7 @@ export function m20ParticipantStrings(): string[] {
     t.closed_signoff,
     t.closed_review,
     t.held_back,
+    ...t.held_unverified,
     ...t.closed_fault,
     ...t.cue('A'),
     ...t.cue('B'),

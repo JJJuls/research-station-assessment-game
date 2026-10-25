@@ -1814,6 +1814,34 @@ field; register §5.409 reading (c)). Beside a held M22 report the ratings
 companion keeps its own reading (reading (n)); with denominator 0 only a
 `no_eligible_event` row becomes `interrupted` · null / 0 (reading (g)).
 
+U24 RL-4 (PROVISIONAL, never canonical; D-5, D-6 (i), D-7 (i); the owner's
+ruling of 23 October 2026 and the owner's authorisation of 25 October 2026;
+`RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §3, §4 G1, §8 RL-4, §9; register
+§5.410): the existing `prior_load_checked` records of M14, M15, M16, M18,
+M19 and M20 (their field sets unchanged) are classified at each guard with
+RL-0's classifier; only A administers. **Hold-back markers** (the family's
+`technical_failure`): H keeps the existing detail ("reload after
+administration: ⟨desk | bench | console | board | panel | console⟩ not
+re-run") with a prior-exposure entry; U / M add "reload with an unverified
+earlier state / a contradictory earlier check: ⟨…⟩ not administered", with
+no prior-exposure entry and no administration. **D-7 (i):** the check's
+`prior_opening_absence_established` is false when an earlier load holds a
+U / M marker of the family (never for an H marker). **D-6 (i):** the
+extractor establishes the absence from exactly one coherent record of the
+load; two or more establish nothing and are flagged — `exposure_record_consistent`
+false in M14, M15, M16 and M18; in M19 and M20, which carry no such
+component, the `flags` entry "the reload check records are inconsistent".
+**Readings:** a U / M marker without an opening of the load ⇒ `interrupted`
+with the family's existing not-established reason (kept, not unified with
+the newer families' "earlier history not verified"; r3 §8 RL-4),
+`held_back_after_reload: true`; the H reading and the first load are
+unchanged. **Screens (§9):** the U / M lines ("The earlier state of this
+⟨station⟩ could not be verified." / "It stays closed after this reload.")
+for the incident desk, relay bench, protocol console, diagnostic board,
+coupling panel and feed console, rendered by the existing record view
+(text and LEAVE only); the existing held-back texts unchanged. No formula,
+weight, denominator rule, event name or component field changes.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                               | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

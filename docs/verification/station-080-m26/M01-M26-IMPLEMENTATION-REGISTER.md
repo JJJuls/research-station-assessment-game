@@ -14959,3 +14959,103 @@ onward are the writer's readings and dispositions under it.
      fields; the D-2 (i) readings; decision A for the rows with a
      presentation record; the M23 record's head fields; these rows carry no
      RL-1C diagnostics.
+410. **U24 RL-4 — uncertain history for M14, M15, M16, M18, M19 and M20
+     (25 October 2026; the owner's ruling of 23 October 2026, D-1, D-5,
+     D-6 (i), D-7 (i); `RELOAD-CORRECTION-SPEC-r3-exec.md` §2, §3, §4 G1,
+     §8 RL-4, §9; the owner's authorisation of 25 October 2026 for the
+     consolidated completion run, which names Fable 5.1 the writer for the
+     rest of U24 and keeps the scientific rules binding; RL-1C's decision A
+     and the RL-2 / RL-3 closeout rulings in force).** The six guards
+     (`guardM14Reload` … `guardM20Reload`) classify the load's single
+     `prior_load_checked` record with RL-0's classifier and administer only
+     under A (or on a first load): H is the existing hold (prior exposure
+     recorded, the existing marker detail); U — no continuous history, no
+     record, or an earlier U / M hold-back of the family carried forward —
+     and M — a self-contradictory record — are now held too (direction c),
+     with a marker whose detail carries RL-0's class prefix ("reload with an
+     unverified earlier state: ⟨desk | bench | console | board | panel |
+     console⟩ not administered", or "… a contradictory earlier check: …"),
+     no prior-exposure entry and nothing administered. **D-7 (i):** each
+     check function's `prior_opening_absence_established` is false when an
+     earlier load holds a U or M marker of the family (`m14PriorHoldBackCarried`
+     and its siblings); an H marker, another family's marker or no marker
+     never triggers it. **D-6 (i):** each extractor establishes the absence
+     only from exactly ONE coherent record of the load
+     (`checks.length === 1`, the M07 rule); two or more records establish
+     nothing even when they agree, and `exposure_record_consistent` is false
+     as before. **Screens
+     (§9, D-5):** the U / M lines ("The earlier state of this ⟨station⟩ could
+     not be verified." / "It stays closed after this reload."; incident desk,
+     relay bench, protocol console, diagnostic board, coupling panel, feed
+     console) are returned by each model's record-line function for a U / M
+     detail and rendered by the unchanged surface models' existing record
+     view (the text and LEAVE only; M18's status line empty as for H); the
+     existing held-back texts are unchanged; the lines are in each
+     participant-string inventory. **Readings:** a U / M marker without an
+     opening of the load reads `interrupted` with the family's EXISTING
+     not-established reason ("no current-load ⟨…⟩ evidence after a reload:
+     ⟨station⟩ not opened in this page load and the absence of an earlier
+     opening not established"), as r3 §8 RL-4 directs — the wording differs
+     from the newer families' "earlier history not verified" and is stated,
+     not unified; the H reading is unchanged; a first load is unchanged. The
+     U24 S3 expectations (`u24_export_recovery.spec.ts`) add M14 and M15
+     `interrupted` (H), M16, M18, M19 and M20 `no_eligible_event` (A,
+     unchanged, r3 §4), the checks per load (Concourse, laboratory and yard
+     families in loads 2–4, the feed console in loads 3–4, none in load 1)
+     and the H-only markers of load 4. No formula, weight, denominator rule,
+     event name or component field changes; the guards' module-level
+     `m1XPriorAdministration` predicates stay exported and unchanged (the
+     guards now read the classifier instead). **Writer's readings
+     (IMPLEMENTER DEFAULTS, owner-visible and reversible, none a ruling):**
+     (a) the M class shares the U reading's reason text in these six
+     families (r3 §2's "earlier check contradictory" is the newer families'
+     wording; r3 §8 RL-4 names these families' existing wording — the two
+     readings are for the owner: keep as implemented, or r3 §2's M reason
+     for M only); the marker's detail and the row's inconsistency signal —
+     `exposure_record_consistent: false` in M14, M15, M16 and M18, the
+     `flags` entry "the reload check records are inconsistent" in M19 and
+     M20, which carry no such component — tell M from U in the export
+     (scientific review F-1, F-2). (b) The existing
+     `held_back_after_reload: true` component is set for a U / M marker as
+     for H: the station was held after a reload; no new field is added. (c)
+     `prior_opening_absence_established` is read from the single record's
+     own flag once D-6 (i) and coherence hold, so a record that reports an
+     unestablished absence (a discontinuous history, or D-7's carry-forward
+     computed by the host) is U at the extractor exactly as at the host. (d)
+     An H marker alone in the earlier history (without its opening) does not
+     carry forward; the fixture tests the rule in isolation — at runtime an
+     H marker always stands beside the opening it found. (e) **M at the
+     runtime host is not producible** (a host's own record is always
+     coherent; RL-3 reading (m)): M is covered by executed pure fixtures for
+     each of the six rows; the M screens share the U branch and lines and are
+     covered by inspection, as the owner accepted for the RL-3 rows
+     (decision 3 of 25 October 2026 names M17, M21, M22, M23, M24, M26 and
+     the M25 post; the six RL-4 rows are added to that inspection-only list
+     for the owner's explicit acceptance, not assumed). (f) The browser
+     cases cover the six rows together on one route (the Concourse desk,
+     the laboratory's three stations, the yard panel, the Workshop return's
+     feed console): A (H: every station opened in load 1 — in the run that
+     passed, by the minimal route with an open-and-leave of each station;
+     the first run's engaged S1 segments overran the trace-finalization
+     slot, and that failure is preserved — held in load 2, one check per
+     family again in load 3), B (A: nothing opened, each station
+     administered after its check) and C (U: the store's meta record
+     removed before the reload, RL-1's fault injection; every station held
+     with the U marker, the §9 lines). The gameplay review (Opus 5.5,
+     read-only) found that a held coupling panel leaves the Yard's
+     objective line on the coupling for the whole exterior stage
+     (pre-existing for H since U21; RL-4 extends it to U / M; the beacon and
+     Noor's briefing list still guide and case C finished the route); the
+     remedy lives in `ExteriorRecoveryYardScene.ts` / `exteriorWindows.ts`,
+     outside the RL-4 and completion allowlists, so it is recorded for the
+     owner with the review's other points (UNIT-LOG, "U24 RL-4"). (g)
+     The surface models are not edited: the record view's existing
+     hold-back path renders the two lines (M14–M18 a `record_text` landing;
+     M19 / M20 the `closed` landing), so no new control appears. **Recorded
+     for the later independent recount (Part C layer R):** the six rows'
+     U / M markers (detail prefix) beside their single record; D-6 (i) at
+     the extractor (one record only); D-7 (i) read from the record's flag
+     (the recount recomputes it from `prior_page_load_events`: a U / M
+     marker of the family in an earlier load keeps the absence
+     unestablished); the kept not-established reason for U and M; the H
+     reading unchanged; these rows carry no RL-1C diagnostics.

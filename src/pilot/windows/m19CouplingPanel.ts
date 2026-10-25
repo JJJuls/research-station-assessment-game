@@ -30,6 +30,7 @@ import {
   releaseFocusedClock,
 } from '../../measurement/focusMonitor';
 import { protocolStamp } from '../../measurement/protocol';
+import { classifyReload, ROW_OCCASION } from '../../measurement/reloadCheck';
 import {
   markOpportunityInvalid,
   refreshValidityProbe,
@@ -47,7 +48,9 @@ import {
 } from './m19LinesContent';
 import {
   createM19Series,
+  M19_CONTRADICTORY_DETAIL,
   M19_RELOAD_DETAIL,
+  M19_UNVERIFIED_DETAIL,
   type M19ChangeOutcome,
   m19ClosureSnapshot,
   type M19ConfirmOutcome,
@@ -55,7 +58,8 @@ import {
   m19LineInWork,
   m19Live,
   type M19LogSink,
-  m19PriorAdministration,
+  type M19PriorEvent,
+  type M19PriorLoadCheck,
   m19PriorLoadCheck,
   type M19RecordOutcome,
   m19sCancelSetAside,
@@ -109,6 +113,7 @@ let briefed = false;
 let closedUnopened = false;
 /** The reload check is written once per page load. */
 let priorLoadChecked = false;
+let priorLoadCheck: M19PriorLoadCheck | null = null;
 
 function ensure(): M19Series {
   if (series === null) {
@@ -223,30 +228,41 @@ export function presentM19(nowMs: number) {
   m19Window.present(nowMs);
 }
 
-function recordPriorLoadCheck(prior: readonly { event_type: string }[]) {
+function recordPriorLoadCheck(
+  prior: readonly M19PriorEvent[],
+): M19PriorLoadCheck | null {
   const pageLoadIndex = researchRuntime.getPageLoadIndex();
 
-  if (priorLoadChecked || pageLoadIndex <= 1) {
-    return;
+  if (pageLoadIndex <= 1) {
+    return null;
   }
 
-  priorLoadChecked = true;
-  sink('prior_load_checked', {
-    phase: 'closure',
-    ...m19PriorLoadCheck(
+  if (!priorLoadChecked) {
+    priorLoadChecked = true;
+    priorLoadCheck = m19PriorLoadCheck(
       pageLoadIndex,
       prior,
       researchRuntime.getEventIntegrity(),
-    ),
-    input_mode: 'system',
-  });
+    );
+    sink('prior_load_checked', {
+      phase: 'closure',
+      ...priorLoadCheck,
+      input_mode: 'system',
+    });
+  }
+
+  return priorLoadCheck;
 }
 
 /**
- * Reload guard: a panel opened in an earlier page load of this identity is
- * never re-run — prior exposure is recorded and the series is marked
- * technically incomplete; the new load's row is `interrupted`. Idempotent;
- * called at yard entry and at the open.
+ * Reload guard (U24 RL-4, `RELOAD-CORRECTION-SPEC-r3-exec.md` §2 and §4 G1,
+ * direction c): the load's single check record is classified by RL-0's
+ * helper. H — a panel opened in an earlier page load of this identity — is
+ * never re-run: prior exposure is recorded and the series is marked
+ * technically incomplete; the new load's row is `interrupted`. U (the
+ * earlier history not verified) and M (a self-contradictory record) are
+ * never administered either, without a prior-exposure entry. Only A (or a
+ * first load) administers. Idempotent; called at yard entry and at the open.
  */
 export function guardM19Reload(): boolean {
   const s = ensure();
@@ -255,19 +271,30 @@ export function guardM19Reload(): boolean {
     return false;
   }
 
-  const prior = researchRuntime.getPriorPageLoadEvents();
+  const check = recordPriorLoadCheck(researchRuntime.getPriorPageLoadEvents());
+  const cls = classifyReload({
+    pageLoadIndex: researchRuntime.getPageLoadIndex(),
+    checks: check === null ? [] : [check],
+  }).occasions[ROW_OCCASION].class;
 
-  recordPriorLoadCheck(prior);
-
-  if (!m19PriorAdministration(prior)) {
+  if (cls === null || cls === 'A') {
     return false;
   }
 
-  m19sHoldBack(s);
-  m19Window.recordPriorExposure(
-    'coupling panel opened in an earlier page load of this identity',
-  );
-  m19Window.technicalFailure(M19_RELOAD_DETAIL);
+  if (cls === 'H') {
+    m19sHoldBack(s);
+    m19Window.recordPriorExposure(
+      'coupling panel opened in an earlier page load of this identity',
+    );
+    m19Window.technicalFailure(M19_RELOAD_DETAIL);
+
+    return true;
+  }
+
+  const detail = cls === 'U' ? M19_UNVERIFIED_DETAIL : M19_CONTRADICTORY_DETAIL;
+
+  m19sHoldBack(s, detail);
+  m19Window.technicalFailure(detail);
 
   return true;
 }
@@ -622,5 +649,6 @@ export function resetM19State() {
   briefed = false;
   closedUnopened = false;
   priorLoadChecked = false;
+  priorLoadCheck = null;
   m19Window.reset();
 }

@@ -27,25 +27,35 @@
  * repeated observations inside one desk episode, clustered in two
  * packets, and are not claimed to be equal in difficulty.
  */
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 import {
   extractItemFeatures,
   extractMeasurementFeatures,
 } from '../src/measurement/features';
 import { REGISTER_V3, registerEntry } from '../src/measurement/registerV3';
+import {
+  classifyReload,
+  reloadHoldBackClass,
+} from '../src/measurement/reloadCheck';
 import { PILOT_SCHEDULE } from '../src/pilot/coverageSchedule';
+import { M09_OFFER_LABELS } from '../src/pilot/windows/m09WatchModel';
+import { M10_OFFER_LABELS } from '../src/pilot/windows/m10DeliveryModel';
 import {
   createM14Series,
   M14_ACK_LINE_ID,
+  M14_CONTRADICTORY_DETAIL,
   M14_EVENT_SUFFIXES,
   M14_RELOAD_DETAIL,
+  M14_UNVERIFIED_DETAIL,
   m14AnsweredCount,
   m14ClosureSnapshot,
   m14EntrySnapshot,
   type M14LogSink,
   m14PriorAdministration,
+  m14PriorHoldBackCarried,
   m14PriorLoadCheck,
+  m14RecordLine,
   m14sCancelCommit,
   m14sCloseAtReview,
   m14sCloseHelp,
@@ -84,6 +94,44 @@ import {
   m14SurfaceModel,
 } from '../src/pilot/windows/m14SurfaceModel';
 import type { RawGameEvent } from '../src/systems/EventLogger';
+import {
+  APPROACH,
+  ensureOutsideCompound,
+  leaveYard,
+  YARD,
+} from './exteriorHelpers';
+import { press, selectPromptOption } from './helpers';
+import {
+  captureErrors,
+  completeDockTutorial,
+  expectNoRuntimeErrors,
+} from './journey';
+import {
+  bootPilot,
+  concourseToWorkshop,
+  concourseVia,
+  dockToConcourse,
+  expectStage,
+  interactAt,
+  labApproach,
+  openPromptAt,
+  PILOT,
+  promptLabels,
+  registryApproach,
+  selectPromptLabel,
+  useDoor,
+  workshopToConcourse,
+  yardVia,
+} from './pilotHelpers';
+import { openWorkshopSurface, surface, waitSurface } from './returnHelpers';
+import {
+  boardFirstCard,
+  concourseToLab,
+  openKai,
+  openNoor,
+  openVale,
+  reloadToDock,
+} from './u24Helpers';
 
 /* ------------------------------------------------------------------ *
  * 1. The facts, transcribed by hand from the preview (r4 §4–§5).
@@ -2802,14 +2850,21 @@ test.describe('M14 extractor — zero evidence and legitimate missingness (never
     expect(mixed.disposition).toBe('interrupted');
     expect(mixed.components.exposure_record_consistent).toBe(false);
 
-    // Two established checks: the row stands, the duplicate is flagged.
+    // Two established checks: flagged, and (U24 RL-4, the owner's D-6 (i)
+    // of 23 October 2026: two or more records establish nothing, even when
+    // they agree) the absence is not established — interrupted. Until RL-4
+    // this read `pending` ("the row stands").
     const duplicated = row(
       [checkEvent(), checkEvent({}, 6), ...presented],
       RELOADED,
     );
 
-    expect(duplicated.disposition).toBe('pending');
+    expect(duplicated.disposition).toBe('interrupted');
     expect(duplicated.components.exposure_record_consistent).toBe(false);
+    expect(duplicated.components.reload_check).toMatchObject({
+      checked: true,
+      prior_opening_absence_established: false,
+    });
 
     // A check on a first page load: flagged, the row unchanged.
     const firstLoad = row([
@@ -3299,5 +3354,1045 @@ test.describe('M14 extractor — integrity (technical_failure for contradictory 
     expect(full).toHaveLength(1);
     expect(full[0]).toEqual(first);
     expect(first.supporting_sequences).toEqual(events.map((e) => e.sequence));
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 RL-4 — uncertain history (RELOAD-CORRECTION-SPEC-r3-exec.md §2, §3,
+ * §8 RL-4, §9; the owner's ruling of 23 October 2026, D-6 (i) and D-7 (i)):
+ * D-6 (i) in the extractor, D-7 (i) in the check function, the U / M hold
+ * at the model and its reading. Expected readings come from r3 §2 and §8
+ * RL-4 (the existing not-established reason is kept for this family).
+ * ------------------------------------------------------------------ */
+
+test.describe('U24 RL-4 — M14 under uncertain history (D-6 (i), D-7 (i), the U / M hold)', () => {
+  const SOUND = {
+    first_sequence: 1,
+    sequence_gap_count: 0,
+    sequence_duplicate_count: 0,
+    recovered_from_chunks: false,
+  };
+  const RELOADED = { ...CONTEXT, pageLoadIndex: 2, reloaded: true };
+  const NOT_ESTABLISHED =
+    'no current-load desk evidence after a reload: incident desk not opened in this page load and the absence of an earlier opening not established';
+  const other = { event_type: 'proto_m05_start_eligible' };
+  const U_LINES = [
+    'The earlier state of this incident desk could not be verified.',
+    'It stays closed after this reload.',
+  ];
+
+  /** A check record of load 2 with the hosts' field set, with overrides. */
+  function check(
+    flags: Record<string, unknown> = {},
+    sequence = 5,
+  ): RawGameEvent {
+    return {
+      session_id: 'GS',
+      timestamp_ms: 4,
+      scene: 'station_concourse',
+      event_type: `${M14_FAMILY}prior_load_checked`,
+      sequence,
+      page_load_index: 2,
+      metadata: {
+        ...kitFields(),
+        phase: 'series',
+        page_load_index: 2,
+        prior_page_load_event_count: 40,
+        prior_opening_found: false,
+        prior_briefing_found: false,
+        history_continuous: true,
+        prior_opening_absence_established: true,
+        input_mode: 'system',
+        ...flags,
+      },
+    };
+  }
+
+  /** The family's hold-back marker of load 2 with the given detail. */
+  function marker(detail: string, sequence = 7): RawGameEvent {
+    return {
+      session_id: 'GS',
+      timestamp_ms: 5,
+      scene: 'station_concourse',
+      event_type: `${M14_FAMILY}technical_failure`,
+      sequence,
+      page_load_index: 2,
+      metadata: { ...kitFields(), detail, input_mode: 'system' },
+    };
+  }
+
+  const presented = () =>
+    log([], { opened: false, briefed: true, pageLoadIndex: 2 });
+  const flagsOf = (events: RawGameEvent[]) =>
+    events.map((event) => event.metadata ?? {});
+
+  test('F-A (D-6 (i)): two agreeing check records with distinct sequence numbers establish nothing — the class is U, administration is refused, and the row reads the not-established reason', () => {
+    const checks = [check({}, 5), check({}, 6)];
+    const cls = classifyReload({ pageLoadIndex: 2, checks: flagsOf(checks) });
+
+    expect(cls.occasions.row).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+      basis: 'duplicate_checks',
+    });
+    expect(cls.check_coherent).toBe(true);
+    expect(cls.exposure_record_consistent).toBe(false);
+
+    const read = row([...checks, ...presented()], RELOADED);
+
+    expect(read).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason: NOT_ESTABLISHED,
+    });
+    expect(read.components).toMatchObject({
+      exposure_record_consistent: false,
+      reload_check: {
+        checked: true,
+        prior_opening_absence_established: false,
+      },
+    });
+  });
+
+  test('F-B (D-6 (i)): two conflicting check records ⇒ U, refused, coherence false; the row reads the not-established reason', () => {
+    const checks = [
+      check({}, 5),
+      check(
+        { history_continuous: false, prior_opening_absence_established: false },
+        6,
+      ),
+    ];
+    const cls = classifyReload({ pageLoadIndex: 2, checks: flagsOf(checks) });
+
+    expect(cls.occasions.row).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+      basis: 'duplicate_checks',
+    });
+    expect(cls.check_coherent).toBe(false);
+
+    const read = row([...checks, ...presented()], RELOADED);
+
+    expect(read).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason: NOT_ESTABLISHED,
+    });
+    expect(read.components.exposure_record_consistent).toBe(false);
+  });
+
+  test('F-C (D-7 (i)): an earlier U / M hold-back of this family keeps the absence unestablished in a later load with a continuous history; an H marker, another family’s marker or no marker never does', () => {
+    const priorU = [
+      other,
+      {
+        event_type: `${M14_FAMILY}technical_failure`,
+        metadata: { detail: M14_UNVERIFIED_DETAIL },
+      },
+    ];
+    const priorM = [
+      other,
+      {
+        event_type: `${M14_FAMILY}technical_failure`,
+        metadata: { detail: M14_CONTRADICTORY_DETAIL },
+      },
+    ];
+    const priorH = [
+      other,
+      {
+        event_type: `${M14_FAMILY}technical_failure`,
+        metadata: { detail: M14_RELOAD_DETAIL },
+      },
+    ];
+
+    expect(m14PriorHoldBackCarried(priorU)).toBe(true);
+    expect(m14PriorHoldBackCarried(priorM)).toBe(true);
+    expect(m14PriorHoldBackCarried(priorH)).toBe(false);
+    expect(m14PriorHoldBackCarried([other])).toBe(false);
+    expect(
+      m14PriorHoldBackCarried([
+        {
+          event_type: 'proto_m15_systems_technical_failure',
+          metadata: { detail: M14_UNVERIFIED_DETAIL },
+        },
+      ]),
+    ).toBe(false);
+
+    const carried = m14PriorLoadCheck(3, priorU, SOUND);
+
+    expect(carried).toMatchObject({
+      page_load_index: 3,
+      prior_opening_found: false,
+      history_continuous: true,
+      prior_opening_absence_established: false,
+    });
+    expect(
+      m14PriorLoadCheck(3, priorM, SOUND).prior_opening_absence_established,
+    ).toBe(false);
+    expect(
+      m14PriorLoadCheck(3, priorH, SOUND).prior_opening_absence_established,
+    ).toBe(true);
+    expect(
+      m14PriorLoadCheck(3, [other], SOUND).prior_opening_absence_established,
+    ).toBe(true);
+    // The carried occasion stays U and is not administered.
+    expect(
+      classifyReload({ pageLoadIndex: 3, checks: [carried] }).occasions.row,
+    ).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+      basis: 'absence_not_established',
+    });
+  });
+
+  test('the U / M hold (direction c): the desk is never administered — the model holds it with the class detail, the record shows exactly the §9 lines and LEAVE, START is refused and nothing is written; the H hold keeps its existing text; the classifier’s permission per class', () => {
+    for (const [detail, cls] of [
+      [M14_UNVERIFIED_DETAIL, 'U'],
+      [M14_CONTRADICTORY_DETAIL, 'M'],
+    ] as const) {
+      const r = run();
+
+      expect(reloadHoldBackClass(detail)).toBe(cls);
+      expect(m14sHoldBack(r.s, detail)).toBe(true);
+      expect(r.s.status).toBe('held_back');
+      expect(r.s.failure_detail).toBe(detail);
+      expect(m14RecordLine(r.s)).toBe(U_LINES.join('\n'));
+      expect(m14sOpen(r.s, r.now, r.sink)).toBe('record');
+      expect(m14sStart(r.s, 'keyboard', r.tick(10), r.sink)).toBe(false);
+      expect(r.events).toEqual([]);
+
+      const view = render(r.s);
+
+      expect(view.ids).toEqual(['record_text', 'leave']);
+      expect(view.lines).toContain(U_LINES[0]);
+      expect(view.lines).toContain(U_LINES[1]);
+      expect(view.lines).not.toContain(M14_TEXT.held_back);
+      expect(view.lines).not.toContain('of 6 recorded');
+    }
+
+    const h = run();
+
+    expect(m14sHoldBack(h.s)).toBe(true);
+    expect(h.s.failure_detail).toBe(M14_RELOAD_DETAIL);
+    expect(m14RecordLine(h.s)).toBe(M14_TEXT.held_back);
+
+    // The exact §9 strings (D-5), in the participant-string inventory.
+    expect([...M14_TEXT.held_unverified]).toEqual(U_LINES);
+
+    for (const line of U_LINES) {
+      expect(m14ParticipantStrings()).toContain(line);
+    }
+
+    // Permission per class (RL-0's classifier over this family's check).
+    expect(
+      classifyReload({
+        pageLoadIndex: 2,
+        checks: [
+          m14PriorLoadCheck(2, [other], { ...SOUND, sequence_gap_count: 1 }),
+        ],
+      }).occasions.row,
+    ).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+      basis: 'history_discontinuous',
+    });
+    expect(
+      classifyReload({
+        pageLoadIndex: 2,
+        checks: [m14PriorLoadCheck(2, [other], SOUND)],
+      }).occasions.row,
+    ).toMatchObject({ class: 'A', administration_permitted: true });
+    expect(
+      classifyReload({ pageLoadIndex: 2, checks: [] }).occasions.row,
+    ).toMatchObject({
+      class: 'U',
+      administration_permitted: false,
+      basis: 'no_check',
+    });
+    expect(
+      classifyReload({ pageLoadIndex: 1, checks: [] }).occasions.row,
+    ).toMatchObject({ class: null, administration_permitted: true });
+  });
+
+  test('the extractor reads a U / M marker: interrupted with the existing not-established reason (r3 §8 RL-4: this family’s wording is kept, not unified), held_back_after_reload, consistent with its own check; an established check beside the marker is flagged; the H reading and the first load are unchanged', () => {
+    const u = row(
+      [
+        check({
+          history_continuous: false,
+          prior_opening_absence_established: false,
+        }),
+        marker(M14_UNVERIFIED_DETAIL),
+        ...presented(),
+      ],
+      RELOADED,
+    );
+
+    expect(u).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason: NOT_ESTABLISHED,
+    });
+    expect(u.components).toMatchObject({
+      held_back_after_reload: true,
+      exposure_record_consistent: true,
+      reload_check: {
+        checked: true,
+        history_continuous: false,
+        prior_opening_absence_established: false,
+      },
+      exposure: { briefed: true },
+    });
+
+    // M: the self-contradictory record (established while not continuous)
+    // is flagged; the row reads the same held reading.
+    const m = row(
+      [
+        check({
+          history_continuous: false,
+          prior_opening_absence_established: true,
+        }),
+        marker(M14_CONTRADICTORY_DETAIL),
+        ...presented(),
+      ],
+      RELOADED,
+    );
+
+    expect(m).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason: NOT_ESTABLISHED,
+    });
+    expect(m.components).toMatchObject({
+      held_back_after_reload: true,
+      exposure_record_consistent: false,
+    });
+
+    // An established check beside a U marker contradicts it: flagged, the
+    // hold wins.
+    const contradiction = row(
+      [check(), marker(M14_UNVERIFIED_DETAIL), ...presented()],
+      RELOADED,
+    );
+
+    expect(contradiction).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason: NOT_ESTABLISHED,
+    });
+    expect(contradiction.components.exposure_record_consistent).toBe(false);
+
+    // The H marker keeps its reading.
+    const h = row(
+      [
+        check({
+          prior_opening_found: true,
+          prior_opening_absence_established: false,
+        }),
+        marker(M14_RELOAD_DETAIL),
+        ...presented(),
+      ],
+      RELOADED,
+    );
+
+    expect(h).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason:
+        'desk opened in an earlier page load; not re-run after the reload',
+    });
+    expect(h.components).toMatchObject({
+      held_back_after_reload: true,
+      exposure_record_consistent: true,
+    });
+
+    // No marker and no check (the host never ran): unchanged.
+    expect(row(presented(), RELOADED)).toMatchObject({
+      disposition: 'interrupted',
+      missing_reason: NOT_ESTABLISHED,
+    });
+    // A first load writes no check and keeps its readings.
+    expect(row(log([], { opened: false, briefed: true }))).toMatchObject({
+      disposition: 'pending',
+    });
+  });
+});
+
+/* ================================================================== *
+ * U24 RL-4 — M14, M15, M16, M18, M19 and M20 after a genuine reload
+ * (browser; RELOAD-CORRECTION-SPEC-r3-exec.md §8 "Runtime" R1–R4, R6)
+ *
+ * Ordinary input from the Dock, a genuine `page.reload()`, 800 × 600,
+ * traces on in the evidence runs. The six rows share one route (the
+ * Concourse desk, the three laboratory stations, the yard panel and the
+ * Workshop return's feed console), so the cases cover them together:
+ *   A (H): every station opened in load 1; load 2 holds each at its room
+ *          entry — the check first, nothing re-run, prior exposure
+ *          recorded, the existing held-back texts (R1, R6 H); load 3
+ *          writes one check per family again (R4);
+ *   B (A): nothing opened before the reload; load 2's checks establish the
+ *          absence and each station administers normally (R2);
+ *   C (U): the store's meta record removed before the reload (RL-1's
+ *          fault injection): every station held with the U marker, no
+ *          prior exposure, never absent, the exact §9 U lines (R3, R6 U).
+ * Expected strings and readings come from r3 §2, §8 RL-4 and §9 and the
+ * content files' existing held-back texts (unchanged by RL-4).
+ * ================================================================== */
+
+type Rl4Row = 'M14' | 'M15' | 'M16' | 'M18' | 'M19' | 'M20';
+
+const RL4_ROWS: readonly Rl4Row[] = ['M14', 'M15', 'M16', 'M18', 'M19', 'M20'];
+const RL4_FAMILY: Record<Rl4Row, string> = {
+  M14: 'proto_m14_integration_',
+  M15: 'proto_m15_systems_',
+  M16: 'proto_m16_handling_',
+  M18: 'proto_m18_cases_',
+  M19: 'proto_m19_lines_',
+  M20: 'proto_m20_feed_',
+};
+const RL4_SURFACE: Record<Rl4Row, string> = {
+  M14: 'm14_incident_desk',
+  M15: 'm15_evidence_table',
+  M16: 'm16_protocol_console',
+  M18: 'm18_diagnostic_board',
+  M19: 'm19_coupling_panel',
+  M20: 'm20_feed_console',
+};
+const RL4_PRIMARY: Record<Rl4Row, string> = {
+  M14: 'm14_correct_first_integrations',
+  M15: 'm15_correct_first_predictions',
+  M16: 'm16_correct_first_applications',
+  M18: 'm18_correct_first_diagnoses',
+  M19: 'm19_continuations',
+  M20: 'm20_cued_resumptions',
+};
+/** r3 §9's ⟨station⟩ per row. */
+const RL4_STATION: Record<Rl4Row, string> = {
+  M14: 'incident desk',
+  M15: 'relay bench',
+  M16: 'protocol console',
+  M18: 'diagnostic board',
+  M19: 'coupling panel',
+  M20: 'feed console',
+};
+/** The existing held-back texts (r3 §9: unchanged), as the content files state them. */
+const RL4_H_TEXT: Record<Rl4Row, string> = {
+  M14: 'This desk was already used in this session. Its record is kept; nothing further is recorded here.',
+  M15: 'This bench was already used in this session. Its record is kept; nothing further is recorded here.',
+  M16: 'This console was already used in this session. Its record is kept; no further answers can be given here.',
+  M18: 'This board was already used in this session. Its record is kept; no further answers can be given here.',
+  M19: 'This panel was opened earlier in the session. It stays closed now.',
+  M20: 'This console was opened earlier in the session. It stays closed now.',
+};
+/** The existing H reasons of the six extractors (unchanged). */
+const RL4_H_REASON: Record<Rl4Row, string> = {
+  M14: 'desk opened in an earlier page load; not re-run after the reload',
+  M15: 'bench opened in an earlier page load; not re-run after the reload',
+  M16: 'console opened in an earlier page load; not re-run after the reload',
+  M18: 'board opened in an earlier page load; not re-run after the reload',
+  M19: 'coupling panel opened in an earlier page load; not re-run after the reload',
+  M20: 'feed console opened in an earlier page load; not re-run after the reload',
+};
+/** The existing not-established reasons, kept for U / M (r3 §8 RL-4). */
+const RL4_U_REASON: Record<Rl4Row, string> = {
+  M14: 'no current-load desk evidence after a reload: incident desk not opened in this page load and the absence of an earlier opening not established',
+  M15: 'no current-load bench evidence after a reload: relay bench not opened in this page load and the absence of an earlier opening not established',
+  M16: 'no current-load console evidence after a reload: protocol console not opened in this page load and the absence of an earlier opening not established',
+  M18: 'no current-load board evidence after a reload: diagnostic board not opened in this page load and the absence of an earlier opening not established',
+  M19: 'no current-load panel evidence after a reload: coupling panel not opened in this page load and the absence of an earlier opening not established',
+  M20: 'no current-load console evidence after a reload: feed console not opened in this page load and the absence of an earlier opening not established',
+};
+const rl4U = (row: Rl4Row) => [
+  `The earlier state of this ${RL4_STATION[row]} could not be verified.`,
+  'It stays closed after this reload.',
+];
+const RL4_H_PREFIX = /^reload after administration: /;
+const RL4_U_PREFIX = /^reload with an unverified earlier state: /;
+/** The minimal replay's cards (declines, defers, route beats). */
+const RL4_CARDS = [
+  'Handover confirmed — what is next?',
+  M09_OFFER_LABELS.decline,
+  M10_OFFER_LABELS.d1.decline,
+  'No — leave the lamp job.',
+  'No — leave the flag job.',
+  'Understood — no need for the probe.',
+  'Ready — no need for the driver.',
+  'Heading to the workshop.',
+  'Understood.',
+  'Ready.',
+] as const;
+
+interface Rl4Event {
+  event_type: string;
+  sequence?: number;
+  page_load_index?: number;
+  metadata?: Record<string, unknown>;
+}
+
+interface Rl4Envelope {
+  page_load_index: number;
+  raw_events: Rl4Event[];
+  prior_page_load_events: Rl4Event[];
+  event_integrity: Record<string, unknown>;
+  measurement_validity: unknown;
+  measurement_features: {
+    feature_id: string;
+    disposition: string;
+    value: unknown;
+    missing_reason?: string | null;
+    components?: Record<string, unknown>;
+  }[];
+}
+
+interface Rl4Screen {
+  title: string | null;
+  status: string;
+  elements: [string, string][];
+}
+
+/** The runtime's own export builder read in the page (a harness read). */
+async function rl4Payload(page: Page): Promise<Rl4Envelope> {
+  const json = await page.evaluate(`(async () => {
+    const mod = await import('/src/systems/index.ts');
+    return JSON.stringify(mod.researchRuntime.buildExportPayload());
+  })()`);
+
+  return JSON.parse(json as string) as Rl4Envelope;
+}
+
+/** Every validity record of one row (by owner), wherever the export nests it. */
+function rl4Validity(
+  envelope: Rl4Envelope,
+  row: Rl4Row,
+): Record<string, unknown>[] {
+  const seen: unknown[] = [envelope.measurement_validity];
+  const found: Record<string, unknown>[] = [];
+
+  while (seen.length > 0) {
+    const value = seen.pop();
+
+    if (Array.isArray(value)) {
+      seen.push(...value);
+    } else if (typeof value === 'object' && value !== null) {
+      const record = value as Record<string, unknown>;
+
+      if (record.owner === row && typeof record.opportunity_id === 'string') {
+        found.push(record);
+      } else {
+        seen.push(...Object.values(record));
+      }
+    }
+  }
+
+  return found;
+}
+
+const rl4Of = (events: readonly Rl4Event[], row: Rl4Row, suffix: string) =>
+  events.filter((event) => event.event_type === `${RL4_FAMILY[row]}${suffix}`);
+const rl4Feature = (envelope: Rl4Envelope, row: Rl4Row) =>
+  envelope.measurement_features.find(
+    (feature) => feature.feature_id === RL4_PRIMARY[row],
+  );
+
+/**
+ * R1 / R3: the row's ONE check of this load comes before its marker; the
+ * marker carries the class prefix; nothing of the row is administered in
+ * this load. Returns the check's payload.
+ */
+function rl4ExpectHeld(
+  events: readonly Rl4Event[],
+  row: Rl4Row,
+  prefix: RegExp,
+): Record<string, unknown> {
+  const checks = rl4Of(events, row, 'prior_load_checked');
+  const held = rl4Of(events, row, 'technical_failure').filter((event) =>
+    String(event.metadata?.detail ?? '').startsWith('reload'),
+  );
+
+  expect(checks, `${row}: one check in this load`).toHaveLength(1);
+  expect(held, `${row}: one hold-back marker`).toHaveLength(1);
+  expect(String(held[0].metadata?.detail), `${row} marker`).toMatch(prefix);
+  expect(held[0].sequence ?? 0, `${row}: the check first`).toBeGreaterThan(
+    checks[0].sequence ?? 0,
+  );
+  expect(
+    rl4Of(events, row, 'opportunity_opened'),
+    `${row}: nothing administered`,
+  ).toEqual([]);
+
+  return checks[0].metadata ?? {};
+}
+
+/** R2: the row's one check precedes its first administration in the load. */
+function rl4ExpectAdministered(
+  events: readonly Rl4Event[],
+  row: Rl4Row,
+): Record<string, unknown> {
+  const checks = rl4Of(events, row, 'prior_load_checked');
+  const openings = rl4Of(events, row, 'opportunity_opened');
+
+  expect(checks, `${row}: one check in this load`).toHaveLength(1);
+  expect(openings, `${row}: administered in this load`).toHaveLength(1);
+  expect(openings[0].sequence ?? 0, `${row}: the check first`).toBeGreaterThan(
+    checks[0].sequence ?? 0,
+  );
+  expect(
+    rl4Of(events, row, 'technical_failure').filter((event) =>
+      String(event.metadata?.detail ?? '').startsWith('reload'),
+    ),
+    `${row}: no hold-back`,
+  ).toEqual([]);
+
+  return checks[0].metadata ?? {};
+}
+
+async function rl4Stage(page: Page): Promise<string | null> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __pilotProbe?: { stage: string } | null })
+        .__pilotProbe?.stage ?? null,
+  );
+}
+
+async function rl4AnswerBy(page: Page, limit = 8) {
+  for (let step = 0; step < limit; step += 1) {
+    await page.waitForTimeout(450);
+
+    const labels = await promptLabels(page);
+
+    if (labels.length === 0) {
+      return;
+    }
+
+    const choice = RL4_CARDS.find((label) => labels.includes(label));
+
+    if (choice === undefined) {
+      throw new Error(`RL-4 route: no expected card among ${labels}`);
+    }
+
+    await selectPromptLabel(page, choice);
+    await page.waitForTimeout(400);
+  }
+}
+
+/** Opens a surface by E at its approach point (retried), like the S1 drivers. */
+async function rl4OpenAt(
+  page: Page,
+  at: { x: number; y: number },
+  offset: { x: number; y: number },
+  via: ((x: number, y: number) => Promise<void>) | null,
+  id: string,
+) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (via !== null) {
+      await via(at.x + offset.x, at.y + offset.y);
+    }
+
+    await interactAt(page, at, { approachOffset: offset });
+
+    if (
+      await waitSurface(page, true, id).then(
+        () => true,
+        () => false,
+      )
+    ) {
+      await page.waitForTimeout(500);
+
+      return;
+    }
+  }
+
+  throw new Error(`RL-4: surface ${id} did not open`);
+}
+
+async function rl4Open(page: Page, row: Rl4Row) {
+  switch (row) {
+    case 'M14': {
+      const at = registryApproach('concourse.incident_desk');
+
+      await rl4OpenAt(
+        page,
+        at,
+        { x: 0, y: 0 },
+        (x, y) => concourseVia(page, x, y),
+        RL4_SURFACE.M14,
+      );
+
+      return;
+    }
+    case 'M15':
+    case 'M16':
+    case 'M18': {
+      const at =
+        row === 'M15'
+          ? PILOT.lab.evidenceTable
+          : row === 'M16'
+            ? PILOT.lab.protocolConsole
+            : PILOT.lab.diagnosticBoard;
+
+      await rl4OpenAt(
+        page,
+        at,
+        await labApproach(page, at),
+        null,
+        RL4_SURFACE[row],
+      );
+
+      return;
+    }
+    case 'M19':
+      await ensureOutsideCompound(page);
+      await rl4OpenAt(
+        page,
+        YARD.coupling,
+        APPROACH.coupling,
+        (x, y) => yardVia(page, x, y),
+        RL4_SURFACE.M19,
+      );
+
+      return;
+    case 'M20':
+      await openWorkshopSurface(page, 'feedConsole', RL4_SURFACE.M20);
+      await page.waitForTimeout(500);
+  }
+}
+
+/** Reads (and photographs) the open surface, then leaves it by ESC. */
+async function rl4ReadSurface(page: Page, shot: string): Promise<Rl4Screen> {
+  await page.screenshot({ path: test.info().outputPath(`${shot}.png`) });
+
+  const probe = await surface(page);
+  const screen: Rl4Screen = {
+    title: probe?.title ?? null,
+    status: probe?.status ?? '',
+    elements: (probe?.elements ?? []).map((element) => [
+      element.id,
+      element.label,
+    ]),
+  };
+
+  test.info().annotations.push({
+    type: `rl4-screen ${shot}`,
+    description: JSON.stringify(screen),
+  });
+  await press(page, 'Escape');
+  await waitSurface(page, false);
+
+  return screen;
+}
+
+/** The record text of a held screen: the one text element (M14–M18 `record_text`, M19 / M20 `closed`). */
+function rl4RecordText(screen: Rl4Screen): string | null {
+  const element = screen.elements.find(
+    ([id]) => id === 'record_text' || id === 'closed',
+  );
+
+  return element === undefined ? null : element[1];
+}
+
+/**
+ * The participant route by ordinary input (every offer declined), with the
+ * six rows' hosts on it: the Concourse (M14), the laboratory (M15, M16,
+ * M18), the yard (M19) and the Workshop return (M20). Each hook runs in its
+ * room after the room's guards have run.
+ */
+async function rl4Route(
+  page: Page,
+  hooks: {
+    concourse?: () => Promise<void>;
+    lab?: () => Promise<void>;
+    yard?: () => Promise<void>;
+    workshop?: () => Promise<void>;
+  } = {},
+) {
+  await completeDockTutorial(page, 1);
+  await dockToConcourse(page);
+  await openPromptAt(page, PILOT.concourse.vale, {
+    approachOffset: { x: 0, y: 40 },
+  });
+  await selectPromptOption(page, 1);
+  await rl4AnswerBy(page);
+
+  if ((await rl4Stage(page)) !== 'workshop') {
+    await openVale(page);
+    await rl4AnswerBy(page);
+  }
+
+  await expectStage(page, 'workshop');
+  await hooks.concourse?.();
+  await concourseToWorkshop(page);
+  await boardFirstCard(page, 'workshop_work');
+  await boardFirstCard(page, 'lab_briefing');
+  await workshopToConcourse(page);
+  await concourseToLab(page);
+  await openKai(page);
+  await rl4AnswerBy(page, 1);
+  await expectStage(page, 'lab_work');
+  await hooks.lab?.();
+  await openKai(page);
+  await selectPromptLabel(page, 'I am done here — what is next?');
+  await expectStage(page, 'exterior_briefing');
+  await useDoor(page, PILOT.lab.airlock, 'exterior_recovery_yard', {
+    approachOffset: await labApproach(page, PILOT.lab.airlock),
+  });
+  await openNoor(page);
+  await rl4AnswerBy(page);
+  await expectStage(page, 'exterior_work');
+  await hooks.yard?.();
+  await openNoor(page);
+  await selectPromptLabel(page, 'I am finished outside.');
+  await expectStage(page, 'return_hub');
+  await page.waitForTimeout(450);
+
+  if ((await promptLabels(page)).includes('Better ask someone else.')) {
+    await selectPromptLabel(page, 'Better ask someone else.');
+    await page.waitForTimeout(400);
+  }
+
+  await leaveYard(page);
+  await useDoor(page, PILOT.lab.southDoor, 'station_concourse', {
+    approachOffset: await labApproach(page, PILOT.lab.southDoor),
+  });
+  await openVale(page);
+  await selectPromptOption(page, 1);
+  await expectStage(page, 'workshop_return');
+  await page.waitForTimeout(700);
+
+  if ((await promptLabels(page)).length > 0) {
+    await press(page, 'Escape');
+    await page.waitForTimeout(400);
+  }
+
+  await concourseToWorkshop(page);
+  await page.waitForTimeout(400);
+  await hooks.workshop?.();
+}
+
+/** Hooks that open every station of the room and read its screen. */
+function rl4ReadHooks(
+  page: Page,
+  screens: Partial<Record<Rl4Row, Rl4Screen>>,
+  tag: string,
+) {
+  const read = async (row: Rl4Row) => {
+    await rl4Open(page, row);
+    screens[row] = await rl4ReadSurface(
+      page,
+      `rl4-${tag}-${row.toLowerCase()}`,
+    );
+  };
+
+  return {
+    concourse: () => read('M14'),
+    lab: async () => {
+      await read('M15');
+      await read('M16');
+      await read('M18');
+    },
+    yard: () => read('M19'),
+    workshop: () => read('M20'),
+  };
+}
+
+test.describe('U24 RL-4 browser — M14 to M20 after a genuine reload', () => {
+  test.describe.configure({ timeout: 3_600_000 });
+
+  test('A: R1 + R4 + R6 (H) — every station opened in load 1 is held at its room entry after a genuine reload (the check first, nothing re-run, prior exposure recorded, the existing held-back texts), and a third load writes one check per family again', async ({
+    page,
+  }) => {
+    const capture = captureErrors(page);
+
+    await bootPilot(page, 'RL4H');
+    // Load 1: the minimal route, each of the six stations opened (its
+    // `opportunity_opened` written) and left. The first traced run used the
+    // engaged S1 segments for load 1 (39.5 min) and expired in Playwright's
+    // trace-finalization slot (`logs/rl4-browser-1`, the RL-2 closeout's
+    // established mechanism); opening alone is the administration R1 needs.
+    const opened: Partial<Record<Rl4Row, Rl4Screen>> = {};
+
+    await rl4Route(page, rl4ReadHooks(page, opened, 'h1'));
+
+    const before = await rl4Payload(page);
+
+    for (const row of RL4_ROWS) {
+      expect(
+        rl4Of(before.raw_events, row, 'opportunity_opened').length,
+        `${row} administered in load 1`,
+      ).toBeGreaterThan(0);
+    }
+
+    // Load 2: the minimal replay; every station held at its room's entry.
+    await reloadToDock(page);
+
+    const screens: Partial<Record<Rl4Row, Rl4Screen>> = {};
+
+    await rl4Route(page, rl4ReadHooks(page, screens, 'h'));
+
+    let now = await rl4Payload(page);
+
+    expect(now.page_load_index).toBe(2);
+    expect(now.event_integrity.recovered_from_chunks).toBe(false);
+
+    for (const row of RL4_ROWS) {
+      expect(rl4ExpectHeld(now.raw_events, row, RL4_H_PREFIX)).toMatchObject({
+        page_load_index: 2,
+        prior_opening_found: true,
+        history_continuous: true,
+        prior_opening_absence_established: false,
+      });
+
+      // The existing prior-exposure entry of an earlier opening (direction a).
+      const records = rl4Validity(now, row);
+
+      expect(records.length, `${row} validity records`).toBeGreaterThan(0);
+      expect(
+        records.some(
+          (record) => ((record.prior_exposure as unknown[]) ?? []).length > 0,
+        ),
+        `${row} prior exposure recorded`,
+      ).toBe(true);
+
+      expect(rl4Feature(now, row), `${row} row`).toMatchObject({
+        disposition: 'interrupted',
+        value: null,
+        missing_reason: RL4_H_REASON[row],
+      });
+
+      // R6 (H): the existing held-back text, unchanged; nothing else offered.
+      expect(rl4RecordText(screens[row]!), `${row} held screen`).toBe(
+        RL4_H_TEXT[row],
+      );
+      expect(screens[row]!.elements.length, `${row} held screen controls`).toBe(
+        2,
+      );
+    }
+
+    // R4: a second genuine reload; load 3 writes one check per family, and
+    // load 2's stays one per family; a first load writes none.
+    await reloadToDock(page);
+    await rl4Route(page);
+    now = await rl4Payload(page);
+    expect(now.page_load_index).toBe(3);
+
+    for (const row of RL4_ROWS) {
+      const count = (events: readonly Rl4Event[]) =>
+        rl4Of(events, row, 'prior_load_checked').length;
+
+      expect(count(now.raw_events), `${row} checks in load 3`).toBe(1);
+      expect(
+        count(
+          now.prior_page_load_events.filter(
+            (event) => event.page_load_index === 2,
+          ),
+        ),
+        `${row} checks in load 2`,
+      ).toBe(1);
+      expect(
+        count(
+          now.prior_page_load_events.filter(
+            (event) => event.page_load_index === 1,
+          ),
+        ),
+        `${row} checks in load 1`,
+      ).toBe(0);
+      rl4ExpectHeld(now.raw_events, row, RL4_H_PREFIX);
+    }
+
+    expectNoRuntimeErrors(capture);
+  });
+
+  test('B: R2 — nothing opened before a genuine reload: each room’s check establishes the absence and every station is administered normally on its first opening', async ({
+    page,
+  }) => {
+    const capture = captureErrors(page);
+
+    await bootPilot(page, 'RL4A');
+    await completeDockTutorial(page, 1);
+    await reloadToDock(page);
+
+    const screens: Partial<Record<Rl4Row, Rl4Screen>> = {};
+
+    await rl4Route(page, rl4ReadHooks(page, screens, 'a'));
+
+    const now = await rl4Payload(page);
+
+    expect(now.page_load_index).toBe(2);
+
+    for (const row of RL4_ROWS) {
+      expect(rl4ExpectAdministered(now.raw_events, row)).toMatchObject({
+        page_load_index: 2,
+        history_continuous: true,
+        prior_opening_found: false,
+        prior_opening_absence_established: true,
+      });
+      expect(
+        rl4Validity(now, row).every(
+          (record) => ((record.prior_exposure as unknown[]) ?? []).length === 0,
+        ),
+        `${row} no prior exposure`,
+      ).toBe(true);
+      // The first view is the station's own (not a held record).
+      expect(rl4RecordText(screens[row]!), `${row} first view`).toBeNull();
+    }
+
+    expectNoRuntimeErrors(capture);
+  });
+
+  test('C: R3 + R6 (U) — an earlier state that cannot be verified (store meta record removed before the reload — fault-injected) holds every station at its room entry with the U marker, administers nothing, claims no prior exposure, never marks one absent, and shows the exact §9 U lines', async ({
+    page,
+  }) => {
+    const capture = captureErrors(page);
+
+    await bootPilot(page, 'RL4U');
+    await completeDockTutorial(page, 1);
+    await dockToConcourse(page);
+    await page.addInitScript(() => {
+      if (sessionStorage.getItem('rl4-meta-removed') !== null) {
+        return;
+      }
+
+      sessionStorage.setItem('rl4-meta-removed', '1');
+
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('research-events:v1:') && key.endsWith(':meta')) {
+          localStorage.removeItem(key);
+        }
+      }
+    });
+    await reloadToDock(page);
+
+    const screens: Partial<Record<Rl4Row, Rl4Screen>> = {};
+
+    await rl4Route(page, rl4ReadHooks(page, screens, 'u'));
+
+    const now = await rl4Payload(page);
+
+    expect(now.page_load_index).toBe(2);
+    expect(now.event_integrity.recovered_from_chunks).toBe(true);
+
+    for (const row of RL4_ROWS) {
+      expect(rl4ExpectHeld(now.raw_events, row, RL4_U_PREFIX)).toMatchObject({
+        page_load_index: 2,
+        history_continuous: false,
+        prior_opening_found: false,
+        prior_opening_absence_established: false,
+      });
+
+      for (const record of rl4Validity(now, row)) {
+        expect(record.prior_exposure ?? [], `${row} prior exposure`).toEqual(
+          [],
+        );
+        expect(record.absent ?? false, `${row} absent`).toBe(false);
+      }
+
+      expect(rl4Feature(now, row), `${row} row`).toMatchObject({
+        disposition: 'interrupted',
+        value: null,
+        missing_reason: RL4_U_REASON[row],
+      });
+
+      // R6 (U): the approved lines, exactly, and nothing else offered.
+      expect(rl4RecordText(screens[row]!), `${row} U screen`).toBe(
+        rl4U(row).join('\n'),
+      );
+      expect(screens[row]!.elements.length, `${row} U screen controls`).toBe(2);
+      expect(screens[row]!.status, `${row} U screen status`).toBe('');
+    }
+
+    expectNoRuntimeErrors(capture);
   });
 });

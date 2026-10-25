@@ -34,6 +34,10 @@
  * derives a key from a rule function.
  */
 import {
+  reloadHoldBackClass,
+  reloadHoldBackDetail,
+} from '../../measurement/reloadCheck';
+import {
   M18_ASSIGNED_CASE_ORDER,
   M18_CASES,
   M18_CASES_PLANNED,
@@ -108,6 +112,20 @@ export const M18_EVENT_SUFFIXES = [
 
 export const M18_RELOAD_DETAIL =
   'reload after administration: board not re-run';
+/**
+ * The U / M hold-back details (U24 RL-4; `RELOAD-CORRECTION-SPEC-r3-exec.md`
+ * §2, direction c): a load whose earlier history is not verified (U) or
+ * whose check contradicts itself (M) never administers the board; no prior
+ * exposure is claimed. The class prefix is RL-0's.
+ */
+export const M18_UNVERIFIED_DETAIL = reloadHoldBackDetail(
+  'U',
+  'board not administered',
+);
+export const M18_CONTRADICTORY_DETAIL = reloadHoldBackDetail(
+  'M',
+  'board not administered',
+);
 export const M18_ACK_LINE_ID = 'case_recorded';
 
 /* ------------------------------------------------------------------ *
@@ -246,12 +264,37 @@ export function createM18Series(): M18Series {
  * ------------------------------------------------------------------ */
 
 /** True when an earlier page load of this identity already opened the board. */
+/** The structural part of an earlier load's record the check reads. */
+export interface M18PriorEvent {
+  event_type: string;
+  metadata?: Record<string, unknown>;
+}
+
 export function m18PriorAdministration(
-  priorLoadEvents: readonly { event_type: string }[],
+  priorLoadEvents: readonly M18PriorEvent[],
 ): boolean {
   return priorLoadEvents.some(
     (event) => event.event_type === `${M18_FAMILY}opportunity_opened`,
   );
+}
+
+/**
+ * D-7 (i) (U24 RL-4): an earlier load's U or M hold-back of this family
+ * keeps the absence of an earlier opening unestablished in every later
+ * load; an H marker never triggers this.
+ */
+export function m18PriorHoldBackCarried(
+  priorLoadEvents: readonly M18PriorEvent[],
+): boolean {
+  return priorLoadEvents.some((event) => {
+    if (event.event_type !== `${M18_FAMILY}technical_failure`) {
+      return false;
+    }
+
+    const cls = reloadHoldBackClass(event.metadata?.detail);
+
+    return cls === 'U' || cls === 'M';
+  });
 }
 
 /** The losslessness evidence the runtime keeps beside the raw events. */
@@ -285,7 +328,7 @@ export interface M18PriorLoadCheck {
  */
 export function m18PriorLoadCheck(
   pageLoadIndex: number,
-  priorLoadEvents: readonly { event_type: string }[],
+  priorLoadEvents: readonly M18PriorEvent[],
   integrity: M18HistoryIntegrity,
 ): M18PriorLoadCheck {
   const found = m18PriorAdministration(priorLoadEvents);
@@ -304,7 +347,9 @@ export function m18PriorLoadCheck(
       (event) => event.event_type === `${M18_FAMILY}presented`,
     ),
     history_continuous: continuous,
-    prior_opening_absence_established: !found && continuous,
+    // D-7 (i): an earlier U / M hold-back of this family is carried forward.
+    prior_opening_absence_established:
+      !found && continuous && !m18PriorHoldBackCarried(priorLoadEvents),
   };
 }
 
@@ -420,8 +465,15 @@ export function m18RecordLine(s: M18Series): string | null {
   switch (s.status) {
     case 'closed_at_review':
       return M18_TEXT.closed_at_review;
-    case 'held_back':
-      return M18_TEXT.held_back;
+    case 'held_back': {
+      // U24 RL-4 (r3 §9): a U / M hold shows the two approved lines; the
+      // existing H text is unchanged.
+      const cls = reloadHoldBackClass(s.failure_detail);
+
+      return cls === 'U' || cls === 'M'
+        ? M18_TEXT.held_unverified.join('\n')
+        : M18_TEXT.held_back;
+    }
     case 'technical_failure':
       return M18_TEXT.fault;
     default:
@@ -1413,13 +1465,13 @@ export function m18sFail(s: M18Series, detail: string): M18FailOutcome {
 }
 
 /** The reload hold-back: the board is never re-run in this page load. */
-export function m18sHoldBack(s: M18Series) {
+export function m18sHoldBack(s: M18Series, detail: string = M18_RELOAD_DETAIL) {
   if (s.status !== 'unopened') {
     return false;
   }
 
   s.status = 'held_back';
-  s.failure_detail = M18_RELOAD_DETAIL;
+  s.failure_detail = detail;
   s.view = 'record';
 
   return true;

@@ -529,6 +529,15 @@ export const M15_TEXT = {
   closed_at_review: 'Station record closed — the bench keeps its record.',
   held_back:
     'This bench was already used in this session. Its record is kept; nothing further is recorded here.',
+  /**
+   * The U / M hold after a reload (U24 RL-4; `RELOAD-CORRECTION-SPEC-r3-exec.md`
+   * §9, D-5: the approved two lines, ⟨station⟩ = relay bench). The H text
+   * above is unchanged.
+   */
+  held_unverified: [
+    'The earlier state of this relay bench could not be verified.',
+    'It stays closed after this reload.',
+  ],
   fault: 'The bench has a fault and is closed. Recorded answers are kept.',
   footer_dialog: 'ENTER records · ESC keeps working',
   footer_help: 'H or ESC closes the help',
@@ -664,6 +673,7 @@ export function m15FirstResponsePhaseStrings(): string[] {
     T.close_help,
     T.closed_at_review,
     T.held_back,
+    ...T.held_unverified,
     T.fault,
     T.footer_dialog,
     T.footer_help,

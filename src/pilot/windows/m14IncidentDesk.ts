@@ -25,10 +25,13 @@ import {
   releaseFocusedClock,
 } from '../../measurement/focusMonitor';
 import { protocolStamp } from '../../measurement/protocol';
+import { classifyReload, ROW_OCCASION } from '../../measurement/reloadCheck';
 import { researchRuntime } from '../../systems';
 import {
   createM14Series,
+  M14_CONTRADICTORY_DETAIL,
   M14_RELOAD_DETAIL,
+  M14_UNVERIFIED_DETAIL,
   m14ClosureSnapshot,
   type M14ConfirmOutcome,
   m14CurrentDecision,
@@ -37,7 +40,8 @@ import {
   m14Live,
   type M14LogSink,
   type M14NextOutcome,
-  m14PriorAdministration,
+  type M14PriorEvent,
+  type M14PriorLoadCheck,
   m14PriorLoadCheck,
   type M14RequestOutcome,
   type M14ResponseKind,
@@ -91,8 +95,9 @@ let clock: FocusedClock | null = null;
 /** Focused ms at each decision's presentation (per-decision focused time). */
 const focusedMarks: Record<string, number> = {};
 let briefed = false;
-/** The reload check is written once per page load. */
+/** The reload check is written once per page load (null on a first load). */
 let priorLoadChecked = false;
+let priorLoadCheck: M14PriorLoadCheck | null = null;
 
 function ensure(): M14Series {
   if (series === null) {
@@ -219,30 +224,42 @@ export function presentM14(nowMs: number) {
  * current-load evidence from which the extractor reads an ESTABLISHED
  * absence of an earlier opening. A first page load writes nothing.
  */
-function recordPriorLoadCheck(prior: readonly { event_type: string }[]) {
+function recordPriorLoadCheck(
+  prior: readonly M14PriorEvent[],
+): M14PriorLoadCheck | null {
   const pageLoadIndex = researchRuntime.getPageLoadIndex();
 
-  if (priorLoadChecked || pageLoadIndex <= 1) {
-    return;
+  if (pageLoadIndex <= 1) {
+    return null;
   }
 
-  priorLoadChecked = true;
-  sink('prior_load_checked', {
-    phase: 'series',
-    ...m14PriorLoadCheck(
+  if (!priorLoadChecked) {
+    priorLoadChecked = true;
+    priorLoadCheck = m14PriorLoadCheck(
       pageLoadIndex,
       prior,
       researchRuntime.getEventIntegrity(),
-    ),
-    input_mode: 'system',
-  });
+    );
+    sink('prior_load_checked', {
+      phase: 'series',
+      ...priorLoadCheck,
+      input_mode: 'system',
+    });
+  }
+
+  return priorLoadCheck;
 }
 
 /**
- * Reload guard (register §5.14): a desk opened in an earlier page load of
- * this identity is never re-run — prior exposure is recorded and the
- * series is marked technically incomplete; the new load's row is
- * `interrupted`. Idempotent; called at Concourse entry and at the open.
+ * Reload guard (register §5.14; U24 RL-4, `RELOAD-CORRECTION-SPEC-r3-exec.md`
+ * §2 and §4 G1, direction c): the load's single check record is classified
+ * by RL-0's helper. H — a desk opened in an earlier page load of this
+ * identity — is never re-run: prior exposure is recorded and the series is
+ * marked technically incomplete. U (the earlier history not verified: no
+ * continuous history, or an earlier U / M hold-back carried forward) and M
+ * (a self-contradictory record) are never administered either, without a
+ * prior-exposure entry. Only A (or a first load) administers. Idempotent;
+ * called at Concourse entry and at the open.
  */
 export function guardM14Reload(): boolean {
   const s = ensure();
@@ -251,19 +268,30 @@ export function guardM14Reload(): boolean {
     return false;
   }
 
-  const prior = researchRuntime.getPriorPageLoadEvents();
+  const check = recordPriorLoadCheck(researchRuntime.getPriorPageLoadEvents());
+  const cls = classifyReload({
+    pageLoadIndex: researchRuntime.getPageLoadIndex(),
+    checks: check === null ? [] : [check],
+  }).occasions[ROW_OCCASION].class;
 
-  recordPriorLoadCheck(prior);
-
-  if (!m14PriorAdministration(prior)) {
+  if (cls === null || cls === 'A') {
     return false;
   }
 
-  m14sHoldBack(s);
-  m14Window.recordPriorExposure(
-    'incident desk opened in an earlier page load of this identity',
-  );
-  m14Window.technicalFailure(M14_RELOAD_DETAIL);
+  if (cls === 'H') {
+    m14sHoldBack(s);
+    m14Window.recordPriorExposure(
+      'incident desk opened in an earlier page load of this identity',
+    );
+    m14Window.technicalFailure(M14_RELOAD_DETAIL);
+
+    return true;
+  }
+
+  const detail = cls === 'U' ? M14_UNVERIFIED_DETAIL : M14_CONTRADICTORY_DETAIL;
+
+  m14sHoldBack(s, detail);
+  m14Window.technicalFailure(detail);
 
   return true;
 }
@@ -513,5 +541,6 @@ export function resetM14State() {
   series = null;
   briefed = false;
   priorLoadChecked = false;
+  priorLoadCheck = null;
   m14Window.reset();
 }
