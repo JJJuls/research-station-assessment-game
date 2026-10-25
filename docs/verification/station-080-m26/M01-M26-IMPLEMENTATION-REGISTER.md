@@ -15059,3 +15059,73 @@ onward are the writer's readings and dispositions under it.
      marker of the family in an earlier load keeps the absence
      unestablished); the kept not-established reason for U and M; the H
      reading unchanged; these rows carry no RL-1C diagnostics.
+411. **U24 completion S2 — the RL-3 closeout decisions (25 October 2026;
+     the owner's authorisation of 25 October 2026 for the consolidated
+     completion run, "OWNER DECISIONS" 1–5, read with §5.409 (m), (n) and
+     the RL-3 handoff's open items; writer Fable 5.1).** None of the five
+     changes an event name, a field set, a formula, a weight or a reading;
+     the two that touch data add one provisional component and ratify an
+     existing rule. **(1) M22 ratings companion** (`features/m22.ts`): a
+     provisional component `held_reports: [{ report, class }]` names every
+     held report with its class on every companion row that carries
+     components — the observed companion, the empty companion and the
+     D-2 (i) early return — and is `[]` when nothing is held; it stands
+     apart from `missing_reports` (a due report whose rating was not
+     given): a held report is never due, never rated, never a denominator
+     and no rating is fabricated or copied; the disposition rules, the
+     independently observed sibling rating and the primary D-2 (i) rule are
+     unchanged. Fixtures (`m22_setbacks.spec.ts`): H beside an observed
+     sibling (companion observed on the sibling alone, `held_reports`
+     [o1 H], `missing_reports` []); H beside an ordinarily missing rating
+     (companion `interrupted` "the ratings were never answered" with
+     `held_reports` [o1 H]; the primary's denominator 1); the D-2 (i) early
+     return; an earlier U hold carried forward (class U); no hold (`[]`).
+     **(2) M25 cross-load delay** (`m25RepetitionModel.ts`, unchanged): the
+     F-F fixture now proves NaN, +Infinity, −Infinity and a future
+     timestamp (null, "earlier closure time not comparable with this load's
+     clock"), no recorded closure (null, "earlier closure time not
+     recorded"), never zero, never the reload-freeze time, and that every
+     null keeps `exposure_page_load_index` — the ratification the owner
+     asked for; no clause failed, so no code changed. **(3) Inspection-only
+     M-screen coverage** of M17, M21, M22, M23, M24, M26 and the M25 post is
+     reported as INSPECTION in the ledger, in a column apart from executed
+     browser coverage; the six RL-4 rows are listed in the same column for
+     the owner's explicit acceptance (§5.410 (e)); the screens this run adds
+     or changes (the M17 held view, the handover desk without the notice)
+     carry executed browser evidence. **(4) M17 held view** (`model.ts`,
+     `m17SyntaxAcquisition.ts`, `ui/SignalTerminalScene.ts`): the terminal
+     view gains `held?: boolean`, set only by the rig's held view; the shared
+     scene then hides HELP, CLEAR, STOP TASK, ADD, SUBMIT and the X, the
+     `CMD>` command line and the typing footer, and shows a single LEAVE
+     button beside the title, the stage label CLOSED and the two approved
+     lines; the footer reads "ESC leaves" (M13's existing record hint); ESC
+     and LEAVE both leave; every other key is ignored (nothing typed,
+     dispatched or written); the DEV probe lists only the visible controls.
+     Ordinary terminals (M13, M17 live, the tutorial) are untouched: the
+     branch is gated on `held`. **(5) Held questionnaire notice**
+     (`returnWindows.ts`, `RecordsWorkshopScene.ts`): `m25NoticeHeld()`
+     reads the probe's existing hold (set by the unchanged guard at the
+     Workshop's return-shift entry); while held, the handover desk offers
+     neither "Read the questionnaire notice" nor "Noted." (the option is
+     absent — no new wording) and the desk's guided step counts as done, so
+     the guidance moves on without an acknowledgement being written or
+     implied; the eligible path is unchanged. **Writer's readings
+     (IMPLEMENTER DEFAULTS, owner-visible and reversible):** (a) the LEAVE
+     label is the decision's own word for the control; the footer hint is
+     M13's existing "ESC leaves" rather than a bare screen, so a keyboard
+     participant knows how to leave; (b) the stage label CLOSED of the RL-3
+     held view is kept (it names the state, not a control); (c) `held` is
+     optional on `TerminalView` so no other adapter changes; (d) the held
+     notice's guided step is done from Workshop entry (where the guard runs),
+     so the beacon never points at a desk that cannot present the notice;
+     (e) the terminal's empty section panels and their static headings
+     (PALETTE, PROGRAM BUFFER) remain on the held view — panel chrome, not
+     controls; removing them would need the scene's static layout to become
+     view-dependent, which the decision does not ask for.
+     **Verification:** pure (M22, M25 fixtures), browser (the M17 held view
+     on a genuine reload with screenshots and control inventories of the
+     ordinary and the held terminal; the RL-3 H case with the desk's labels,
+     the beacon and the absence of an acknowledgement; the RL-3 R2 case as
+     the eligible-path regression) — results in UNIT-LOG "U24 completion".
+     **Recorded for Part C:** `held_reports` is a companion component only;
+     the recount does not read it (RC-3 = b).

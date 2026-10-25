@@ -183,6 +183,12 @@ export interface TerminalView {
   /** The window is terminally closed (read-only record view). */
   closed: boolean;
   /**
+   * The window is held after a page reload (U24 RL-3 / completion, r3 §9):
+   * the scene shows the title, the console lines and LEAVE only — no
+   * command line, no typing footer, none of the task controls.
+   */
+  held?: boolean;
+  /**
    * Optional in-task reference (e.g. a codebook table) opened through a
    * dedicated control; each opening is a counted consult.
    */

@@ -195,6 +195,7 @@ import {
   m22Ratings,
   m22State,
   m25AcknowledgeNotice,
+  m25NoticeHeld,
   m25PresentNotice,
   m25State,
   m25ViewNotice,
@@ -1119,7 +1120,10 @@ export class RecordsWorkshopScene extends PilotZoneScene {
       'Outbound Handover Desk',
       ['workshop_return'],
       5,
-      () => m25State().handoff === 'acknowledged',
+      // U24 completion (RL-3 closeout decision 5): a notice held after a
+      // reload is not presented, so the guidance moves on from the desk
+      // once it has been visited — no acknowledgement is written or implied.
+      () => m25State().handoff === 'acknowledged' || m25NoticeHeld(),
     );
   }
 
@@ -1431,16 +1435,22 @@ export class RecordsWorkshopScene extends PilotZoneScene {
     // U24 (owner ruling I-1 = a): field components go to the field tray
     // (D-U23-1 F); the outbound tray takes no recovered coupling.
 
-    options.push({
-      label:
-        m25State().handoff === 'acknowledged'
-          ? 'Read the questionnaire notice again'
-          : 'Read the questionnaire notice',
-      feedback: '',
-      getEventTypes: () => [],
-      onSelected: () => m25ViewNotice(),
-      nextStage: () => this.questionnaireNoticeStage(),
-    });
+    // U24 completion (RL-3 closeout decision 5): while the notice is held
+    // after a reload, neither its content nor an inert acknowledgement is
+    // offered; the option is simply absent (no new wording).
+    if (!m25NoticeHeld()) {
+      options.push({
+        label:
+          m25State().handoff === 'acknowledged'
+            ? 'Read the questionnaire notice again'
+            : 'Read the questionnaire notice',
+        feedback: '',
+        getEventTypes: () => [],
+        onSelected: () => m25ViewNotice(),
+        nextStage: () => this.questionnaireNoticeStage(),
+      });
+    }
+
     options.push({ label: 'Step away', feedback: '', getEventTypes: () => [] });
 
     return options;

@@ -18971,3 +18971,87 @@ Finish with the closeout status, durable evidence paths, bounded correction spec
 - **Not claimed.** RL-4 does not make the game fully verified or ready for
   participant collection; the final recapture of S1–S3 and Part C follow in
   this run.
+
+## U24 completion — the consolidated completion run (25 October 2026)
+
+- **Authority (by reference).** The owner's authorisation of 25 October 2026
+  (`OWNER-AUTHORISATION-2026-10-25.md` in the frozen package
+  `C:\Users\Juls\.codex\visualizations\2026\10\25\u24-completion\`) and the
+  completion brief `U24-COMPLETION-BRIEF.md` (SHA-256
+  `638d9008c79070c8517c880d11802a7662be565af506d2c9f414ff691099ef9e`); the
+  owner's answers to the preparation decisions D-1 to D-4 (25 October 2026:
+  D-1 b, D-2 a, D-3 a, D-4 b); the RL-3 closeout decisions 1–5; the
+  earlier U24 authorities by reference (the U24 plan, contract, rulings
+  D-U24-1, RC-1 = a, RC-2 = a, RC-3 = b; the RL correction spec r3 and the
+  rulings of 23 and 24 October 2026). Writer `claude-fable-5-1` (Fable
+  5.1, the integration lead and sole repository writer for this run);
+  scheduled verification Sonnet 5.5; read-only reviews Opus 5.5; the Part C
+  recount module authored by a fresh-context Opus 5.5 analyst outside the
+  repository. Allowlist: `U24-COMPLETION-ALLOWLIST.txt` (81 paths), exported
+  as `CLAUDE_UNIT_ALLOWLIST` and enforced by the PreToolUse guard; every
+  commit is checked with `verify-unit`, the whole-branch scope audit and
+  the foreign-file check (the ten `.agents/` / `.codex/` files hash-identical
+  to the P-1 inventory: EXCEPTION-CONDITIONS-MET, never PASS).
+- **Evidence.** The session folder is copied to immutable durable
+  checkpoints under
+  `C:\Users\Juls\.codex\visualizations\2026\10\25\u24-completion-evidence\`
+  (`CP-01-rl4-committed`, 2427 files, hash-verified both ways; later
+  checkpoints are listed in `CHECKPOINT.md` there). `RUN-REQUIREMENT-MAP.md`
+  maps every run to the requirements it satisfies, with its revision.
+- **S1 — RL-4.** Recorded above ("U24 RL-4"); commit
+  `5c895adb5afabaa68ac98cbf84d1465f52cbb9e0`.
+- **S2 — the RL-3 closeout decisions (register §5.411; addendum §2 "U24
+  completion S2"; matrix "U24 completion S2").** (1) M22: the provisional
+  `held_reports` component on the ratings companion, apart from
+  `missing_reports`; fixtures for H beside an observed sibling, H beside an
+  ordinarily missing rating, the D-2 (i) early return, a carried U hold and
+  no hold. (2) M25 delay: the F-F fixture extended to NaN, ±Infinity and a
+  future timestamp beside the existing no-closure clause; every clause held
+  on the existing code, so the rule is ratified without a code change.
+  (3) Inspection-only M-screen coverage is reported as INSPECTION (see the
+  completion ledger `U24-END-TO-END-REPORT.md`), apart from executed browser
+  coverage; it is not a waiver — the M17 held view and the handover desk
+  without the notice, which this run changes, carry executed browser
+  evidence. (4) M17 held view: `TerminalView.held`; the shared terminal
+  scene shows the title, the stage label CLOSED, the two approved lines and
+  LEAVE only, hides HELP / CLEAR / STOP TASK / ADD / SUBMIT / X, the `CMD>`
+  line and the typing footer, reads "ESC leaves" (M13's existing record
+  hint), takes no key but ESC, and lists only the visible controls in the
+  DEV probe; ordinary terminals unchanged (gated on `held`). (5) Held M25
+  notice: `m25NoticeHeld()` (side-effect free; the guard still runs at the
+  Workshop's return-shift entry); the handover desk offers neither the
+  notice nor "Noted." while held, and its guided step counts as done so the
+  guidance moves on without writing or implying an acknowledgement; the
+  eligible path is unchanged. Changed paths: `src/measurement/features/m22.ts`,
+  `e2e/m22_setbacks.spec.ts`, `e2e/m25_repetition.spec.ts`,
+  `src/informationProcessing/model.ts`,
+  `src/informationProcessing/m17SyntaxAcquisition.ts`,
+  `src/informationProcessing/ui/SignalTerminalScene.ts`,
+  `e2e/m17_trials.spec.ts`, `src/pilot/windows/returnWindows.ts`,
+  `src/scenes/RecordsWorkshopScene.ts`, and the four docs — all inside the
+  completion allowlist (`src/measurement/features/m25.ts` and
+  `src/pilot/exterior/m25RepetitionModel.ts` were allowlisted and not
+  needed). Verification: `lint:tsc`, build, ESLint (`endOfLine: auto`);
+  pure — the M22 and M25 RL-3 describes with the new fixtures
+  (`logs/s2-pure-1`, 19 passed); browser (genuine `page.reload()`, traces
+  on, 800 × 600) — the M17 held view case (`logs/s2-m17-held-1`), the RL-3
+  H case with the held-notice assertions (`logs/s2-m25-h-1`) and the RL-3
+  R2 case as the eligible-path regression (`logs/s2-m25-r2-1`): see the S2
+  result line below.
+- **S2 browser results** (genuine `page.reload()`, traces on, 800 × 600,
+  ordinary input, one run each, retries 0). The M17 held view
+  (`logs/s2-m17-held-2`, 3.9 min, passed; `s2-m17-held-1` ran no test —
+  the spec had imported the M17 module, which imports the runtime's
+  `import.meta`; the approved lines are transcribed instead, log kept):
+  load 1 the ordinary terminal with ADD, X, HELP, CLEAR, STOP TASK, SUBMIT
+  and no LEAVE (`m17-held-1-ordinary.png`); load 2 the held rig —
+  `closed`, stage CLOSED, the two approved H lines, an empty command line,
+  the control inventory exactly `[leave]` (`m17-held-2-held.png`); typing
+  HELP + ENTER changed nothing on the screen, opened no help and wrote no
+  event of the family; ESC left; LEAVE by pointer left. The RL-3 H case
+  (`logs/s2-m25-h-1`, 16.6 min, passed): the beacon is not on the handover
+  desk, the desk's cards carry neither the notice nor "Noted." and end in
+  "Step away", no `handoff_acknowledged` in the reloaded load, and every
+  earlier RL-3 H assertion holds. The RL-3 R2 case (`logs/s2-m25-r2-1`,
+  16.1 min, passed): the eligible path unchanged (the notice acknowledged
+  in load 2 as before).

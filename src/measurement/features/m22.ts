@@ -200,6 +200,15 @@ registerFeatureExtractor('M22', (events, context) => {
   const held = REPORTS.filter((id) => heldClass(id) !== null);
   const heldReason =
     held.length === 0 ? null : HELD_REASON[heldClass(held[0])!];
+  // U24 completion (the owner's RL-3 closeout decision 1, 25 October 2026;
+  // PROVISIONAL component, never a value): every held report named on the
+  // ratings companion with its class, apart from an ordinarily missing
+  // rating (`missing_reports`: a due report whose rating was not given). A
+  // held report is never due, never rated, never in a denominator.
+  const heldReports = held.map((id) => ({
+    report: id,
+    class: heldClass(id) as Exclude<ReloadClass, 'A'>,
+  }));
 
   if (opened.length === 0) {
     // D-2 (i): no report opened beside a held report ⇒ both rows
@@ -209,7 +218,9 @@ registerFeatureExtractor('M22', (events, context) => {
         emptyFeature('M22', primary, 'interrupted', heldReason, {
           supporting_sequences: supporting,
         }),
-        emptyFeature('M22', companion, 'interrupted', heldReason),
+        emptyFeature('M22', companion, 'interrupted', heldReason, {
+          components: { held_reports: heldReports },
+        }),
       ];
     }
 
@@ -462,6 +473,7 @@ registerFeatureExtractor('M22', (events, context) => {
           missing_reports: dueReports
             .filter((row) => row.rating === null)
             .map((row) => row.report),
+          held_reports: heldReports,
         },
       })
     : emptyFeature(
@@ -488,6 +500,7 @@ registerFeatureExtractor('M22', (events, context) => {
             rating_presented: ratingPresented.length > 0,
             rating_screens_presented: ratingPresented.length,
             acknowledged_reports: acknowledgedReports,
+            held_reports: heldReports,
           },
         },
       );

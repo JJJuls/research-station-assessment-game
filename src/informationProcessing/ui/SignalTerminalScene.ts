@@ -133,6 +133,15 @@ const L = {
 
 const MAX_LINE_CHARS = 40;
 const META_WORDS = new Set(['REMOVE', 'CLEAR', 'SUBMIT', 'HELP', 'STOP']);
+/** The shared controls a held view hides (U24 completion, RL-3 decision 4). */
+const HELD_HIDDEN_BUTTONS = new Set([
+  'help',
+  'clear',
+  'stop',
+  'submit',
+  'add',
+  'close',
+]);
 /** Typed aliases for the optional reference control. */
 const REFERENCE_WORDS = new Set(['CODEBOOK', 'REFERENCE', 'TABLE']);
 
@@ -153,6 +162,12 @@ export class SignalTerminalScene extends Phaser.Scene {
   private typedChars = 0;
   private composerText!: Phaser.GameObjects.Text;
   private footerText!: Phaser.GameObjects.Text;
+  private cmdLabel!: Phaser.GameObjects.Text;
+  private composerSection: Phaser.GameObjects.Rectangle | null = null;
+  /** The lone control of a held view (U24 completion, RL-3 decision 4). */
+  private leaveButton: UiButton | null = null;
+  /** Buttons a held view hides; they are left out of the DEV probe. */
+  private hiddenButtons = new Set<string>();
   private caretTween: Phaser.Tweens.Tween | null = null;
 
   private dragging = false;
@@ -189,6 +204,9 @@ export class SignalTerminalScene extends Phaser.Scene {
     this.referenceButton = null;
     this.submitButton = null;
     this.addButton = null;
+    this.leaveButton = null;
+    this.composerSection = null;
+    this.hiddenButtons = new Set();
     this.lineText = '';
     this.pointerTokens = 0;
     this.typedChars = 0;
@@ -258,10 +276,10 @@ export class SignalTerminalScene extends Phaser.Scene {
     this.section(L.col2.x, L.outputTitleY - 14, L.col2.w, 170);
     this.section(L.col3.x, L.bandY, L.col3.w, 90);
     this.section(L.col3.x, L.bufferTitleY - 14, L.col3.w, 194);
-    this.section(L.col1.x, L.composerY - 6, 688, 26);
+    this.composerSection = this.section(L.col1.x, L.composerY - 6, 688, 26);
     this.section(L.col1.x, L.consoleY - 6, 688, 36);
 
-    this.add
+    this.cmdLabel = this.add
       .text(L.col1.x, L.composerY + 7, 'CMD>', {
         color: IP_TEXT.accent,
         font: IP_FONT.section,
@@ -410,7 +428,7 @@ export class SignalTerminalScene extends Phaser.Scene {
    * ---------------------------------------------------------------- */
 
   private section(x: number, y: number, w: number, h: number) {
-    this.add
+    return this.add
       .rectangle(x, y, w, h, IP_COLORS.section, 1)
       .setOrigin(0)
       .setStrokeStyle(1, IP_COLORS.panelStroke)
@@ -833,7 +851,60 @@ export class SignalTerminalScene extends Phaser.Scene {
         ? `${this.lineText}▮`
         : '',
     );
+    this.applyHeldChrome(view.held === true);
     this.writeProbe(view);
+  }
+
+  /**
+   * A held view (U24 completion, the owner's RL-3 closeout decision 4): the
+   * task controls (HELP, CLEAR, STOP TASK, ADD, SUBMIT, the X), the command
+   * line and the typing footer are hidden and a LEAVE button stands alone;
+   * ESC leaves as well. An ordinary view shows the usual chrome. Idempotent,
+   * so every refresh may call it.
+   */
+  private applyHeldChrome(held: boolean) {
+    for (const button of this.buttons) {
+      if (!HELD_HIDDEN_BUTTONS.has(button.id)) {
+        continue;
+      }
+
+      button.setVisible(!held);
+
+      if (held) {
+        button.setEnabled(false);
+        this.hiddenButtons.add(button.id);
+      } else {
+        this.hiddenButtons.delete(button.id);
+
+        if (button.id === 'help' || button.id === 'close') {
+          button.setEnabled(true);
+        }
+      }
+    }
+
+    this.cmdLabel.setVisible(!held);
+    this.composerSection?.setVisible(!held);
+
+    if (held) {
+      this.footerText.setText('ESC leaves');
+      this.composerText.setText('');
+
+      if (this.leaveButton === null) {
+        this.leaveButton = new UiButton({
+          scene: this,
+          id: 'leave',
+          x: L.col1.x,
+          y: L.buttonsY,
+          width: 96,
+          label: 'LEAVE',
+          depth: IP_DEPTH.content,
+          onActivate: () => this.leave(),
+        });
+      }
+    } else if (this.leaveButton !== null) {
+      this.leaveButton.destroy();
+      this.leaveButton = null;
+    }
   }
 
   /**
@@ -987,7 +1058,9 @@ export class SignalTerminalScene extends Phaser.Scene {
       });
     });
 
-    const buttons = [...this.buttons];
+    const buttons = this.buttons.filter(
+      (button) => !this.hiddenButtons.has(button.id),
+    );
 
     if (this.primaryButton !== null) {
       buttons.push(this.primaryButton);
@@ -995,6 +1068,10 @@ export class SignalTerminalScene extends Phaser.Scene {
 
     if (this.referenceButton !== null) {
       buttons.push(this.referenceButton);
+    }
+
+    if (this.leaveButton !== null) {
+      buttons.push(this.leaveButton);
     }
 
     for (const button of buttons) {
@@ -1726,6 +1803,16 @@ export class SignalTerminalScene extends Phaser.Scene {
       'keydown',
       guardKeyHandler((event: KeyboardEvent) => {
         if (event.repeat && event.key !== 'Backspace') {
+          return;
+        }
+
+        // A held view (U24 completion, RL-3 decision 4) takes no input but
+        // ESC, which leaves; nothing is typed, dispatched or written.
+        if (this.lastView?.held === true) {
+          if (event.key === 'Escape' && !this.dragging) {
+            this.leave();
+          }
+
           return;
         }
 

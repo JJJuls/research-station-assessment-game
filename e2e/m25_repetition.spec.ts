@@ -100,6 +100,7 @@ import {
   labApproach,
   openPromptAt,
   PILOT,
+  pilotProbe,
   promptLabels,
   selectPromptLabel,
   useDoor,
@@ -109,6 +110,7 @@ import {
 import {
   acknowledgeQuestionnaireNotice,
   clickElement,
+  openHandoverDesk,
   openWorkshopSurface,
   repairRelay,
   surface,
@@ -1330,8 +1332,17 @@ test.describe('M25 the one reload check: loops, belief and probe (U24 RL-3, pure
     expect(sa.belief.loops_closed_at_ms).toBe(closedAt);
 
     // A closure stamped by a clock that is not this load's (later than now,
-    // or not an epoch number) is not comparable.
-    for (const stamp of [now + 1, Number.NaN, 'later']) {
+    // or not an epoch number) is not comparable. U24 completion (the owner's
+    // RL-3 closeout decision 2): NaN, both infinities and a future timestamp
+    // are each proved here; every null keeps `exposure_page_load_index` (the
+    // established exposure is never erased by missing delay evidence).
+    for (const stamp of [
+      now + 1,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      Number.NEGATIVE_INFINITY,
+      'later',
+    ]) {
       const skewed = prior.map((event) =>
         event.event_type === 'proto_m25_loops_window_closed'
           ? { ...event, timestamp_ms: stamp as number }
@@ -2204,10 +2215,31 @@ test.describe('U24 RL-3: the seven rows after a genuine reload (browser)', () =>
 
     const screens: Rl3bScreens = {};
 
+    const hHooks = rl3bScreenHooks(page, screens, 'h');
+
     await rl3bRoute(page, {
-      ...rl3bScreenHooks(page, screens, 'h'),
+      ...hHooks,
       vale: async () => {
         expect(await promptLabels(page)).not.toContain('Very normal');
+      },
+      workshop: async () => {
+        await hHooks.workshop();
+        // U24 completion (the owner's RL-3 closeout decision 5): the held
+        // notice is neither offered nor acknowledged; the guidance has
+        // moved on from the handover desk without an acknowledgement.
+        expect((await pilotProbe(page))?.beacon?.label ?? null).not.toBe(
+          'Outbound Handover Desk',
+        );
+
+        const desk = await openHandoverDesk(page);
+
+        expect(desk.some((label) => /questionnaire notice/i.test(label))).toBe(
+          false,
+        );
+        expect(desk).not.toContain('Noted.');
+        expect(desk.at(-1)).toBe('Step away');
+        await selectPromptOption(page, desk.length);
+        await page.waitForTimeout(400);
       },
     });
 
@@ -2314,6 +2346,11 @@ test.describe('U24 RL-3: the seven rows after a genuine reload (browser)', () =>
     // Viewing the held stations wrote nothing of their families.
     expect(
       rl3bOf(now.raw_events, 'proto_m17_trials_', 'help_consulted'),
+    ).toEqual([]);
+    // The held notice: no acknowledgement written or fabricated (RL-3
+    // closeout decision 5).
+    expect(
+      rl3bOf(now.raw_events, 'proto_m25_probe_', 'handoff_acknowledged'),
     ).toEqual([]);
 
     // R4: a second genuine reload; load 3 writes one check per family.

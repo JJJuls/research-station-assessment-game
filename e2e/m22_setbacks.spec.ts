@@ -918,6 +918,86 @@ test.describe('M22 the reload check (U24 RL-3, pure)', () => {
     });
   });
 
+  test('U24 completion (RL-3 closeout decision 1): the ratings companion names each held report with its class in the provisional held_reports component — beside an observed sibling, beside an ordinarily missing rating (kept apart in missing_reports), and empty when nothing is held; no rating fabricated, no denominator, D-2 (i) unchanged', () => {
+    const prior = rl3Prior(1, 1, { o1: 'exit', o2: 'presented' });
+
+    // H beside an observed sibling: the companion is observed on the
+    // sibling's rating alone; o1 is held, not missing.
+    const observed = rl3Load(
+      prior,
+      { o1: 'none', o2: 'revise_accept' },
+      { ratings: { o2: 4 } },
+    );
+
+    expect(rl3Permit(observed.reload)).toEqual([
+      ['o1', 'H', false],
+      ['o2', 'A', true],
+    ]);
+    expect(observed.companion).toMatchObject({
+      disposition: 'observed',
+      value: { o1: null, o2: { value: 4, declined: false } },
+      components: {
+        held_reports: [{ report: 'o1', class: 'H' }],
+        missing_reports: [],
+        declined_reports: [],
+      },
+    });
+    expect(observed.primary).toMatchObject({ numerator: 1, denominator: 1 });
+
+    // H beside an ordinarily missing rating: the sibling was due and never
+    // rated, so the companion is empty for THAT reason; the held report is
+    // listed apart from it and is never in the denominator.
+    const missing = rl3Load(prior, { o1: 'none', o2: 'exit' });
+
+    expect(missing.companion).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason: 'the ratings were never answered',
+      components: { held_reports: [{ report: 'o1', class: 'H' }] },
+    });
+    expect(missing.primary).toMatchObject({ denominator: 1 });
+
+    // D-2 (i) early return (no report opened beside the held one): the
+    // companion still names the held report.
+    const none = rl3Load(prior, { o1: 'none', o2: 'presented' });
+
+    expect(none.companion).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      components: { held_reports: [{ report: 'o1', class: 'H' }] },
+    });
+
+    // An earlier U hold carried forward names its class.
+    const load1 = rl3Prior(1, 1, {});
+    const load2 = rl3Prior(2, load1.length + 1, { o1: 'U', o2: 'presented' });
+    const carried = rl3Load(
+      [...load1, ...load2],
+      { o1: 'none', o2: 'revise_accept' },
+      { pageLoadIndex: 3, ratings: { o2: 2 } },
+    );
+
+    expect(carried.companion.components).toMatchObject({
+      held_reports: [{ report: 'o1', class: 'U' }],
+      missing_reports: [],
+    });
+
+    // No hold: the component is present and empty.
+    const clean = rl3Load(
+      load1,
+      { o1: 'revise_accept', o2: 'exit' },
+      { ratings: { o1: 3 } },
+    );
+
+    expect(rl3Permit(clean.reload)).toEqual([
+      ['o1', 'A', true],
+      ['o2', 'A', true],
+    ]);
+    expect(clean.companion).toMatchObject({
+      disposition: 'observed',
+      components: { held_reports: [], missing_reports: ['o2'] },
+    });
+  });
+
   test('F-D: an earlier U hold of one report, then a continuous history ⇒ it stays U and refused; its eligible A sibling is administered and observed — HB(U) + OBS(A) reads interrupted · x · x/1', () => {
     const load1 = rl3Prior(1, 1, {});
     const load2 = rl3Prior(2, load1.length + 1, { o1: 'U', o2: 'presented' });

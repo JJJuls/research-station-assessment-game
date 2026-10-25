@@ -15,7 +15,7 @@
  * the recount ⇒ technical failure on both rows, the companion sequence
  * kept apart from the criterion pair.
  */
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 import {
   allSingleCommands,
@@ -47,7 +47,36 @@ import {
   RELOAD_HOLD_BACK_PREFIX,
   type ReloadEvent,
 } from '../src/measurement/reloadCheck';
+import { M09_OFFER_LABELS } from '../src/pilot/windows/m09WatchModel';
+import { M10_OFFER_LABELS } from '../src/pilot/windows/m10DeliveryModel';
 import type { RawGameEvent } from '../src/systems/EventLogger';
+import { designToPage, press, selectPromptOption } from './helpers';
+import { terminalProbe, waitTerminalOpen } from './ipHelpers';
+import {
+  captureErrors,
+  completeDockTutorial,
+  expectNoRuntimeErrors,
+} from './journey';
+import {
+  bootPilot,
+  concourseToWorkshop,
+  dockToConcourse,
+  expectStage,
+  interactAt,
+  labApproach,
+  openPromptAt,
+  PILOT,
+  promptLabels,
+  selectPromptLabel,
+  workshopToConcourse,
+} from './pilotHelpers';
+import {
+  boardFirstCard,
+  concourseToLab,
+  openKai,
+  openVale,
+  reloadToDock,
+} from './u24Helpers';
 
 const FAMILY = 'proto_m17_trials_';
 const CONTEXT = { finalCoreClosed: true, pageLoadIndex: 1, reloaded: false };
@@ -769,5 +798,226 @@ test.describe('M17 the reload check (U24 RL-3, pure)', () => {
       missing_reason:
         'no current-load evidence after a reload: training rig never opened',
     });
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * U24 completion — the owner's RL-3 closeout decision 4 (M17 held view)
+ * ------------------------------------------------------------------ */
+
+/**
+ * The approved H lines of a held rig (r3 §9, owner decision D-5; the
+ * module's `M17_HELD_LINES.H`, transcribed here because the module imports
+ * the runtime, which Node cannot load in a spec).
+ */
+const M17_HELD_H_LINES = [
+  'This training rig was opened earlier in this session.',
+  'It stays closed after a reload.',
+];
+
+/** The cards the route declines (every offer refused), as RL-3 / RL-4 did. */
+const M17_ROUTE_CARDS = [
+  'Handover confirmed — what is next?',
+  M09_OFFER_LABELS.decline,
+  M10_OFFER_LABELS.d1.decline,
+  'No — leave the lamp job.',
+  'Understood — no need for the probe.',
+  'Heading to the workshop.',
+  'Understood.',
+] as const;
+
+async function m17RouteStage(page: Page): Promise<string | null> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __pilotProbe?: { stage: string } | null })
+        .__pilotProbe?.stage ?? null,
+  );
+}
+
+async function m17AnswerBy(page: Page, limit = 8) {
+  for (let step = 0; step < limit; step += 1) {
+    await page.waitForTimeout(450);
+
+    const labels = await promptLabels(page);
+
+    if (labels.length === 0) {
+      return;
+    }
+
+    const choice = M17_ROUTE_CARDS.find((label) => labels.includes(label));
+
+    if (choice === undefined) {
+      throw new Error(`M17 route: no expected card among ${labels}`);
+    }
+
+    await selectPromptLabel(page, choice);
+    await page.waitForTimeout(400);
+  }
+}
+
+/** The participant route by ordinary input from the Dock to the laboratory. */
+async function m17RouteToLab(page: Page) {
+  await completeDockTutorial(page, 1);
+  await dockToConcourse(page);
+  await openPromptAt(page, PILOT.concourse.vale, {
+    approachOffset: { x: 0, y: 40 },
+  });
+  await selectPromptOption(page, 1);
+  await m17AnswerBy(page);
+
+  if ((await m17RouteStage(page)) !== 'workshop') {
+    await openVale(page);
+    await m17AnswerBy(page);
+  }
+
+  await expectStage(page, 'workshop');
+  await concourseToWorkshop(page);
+  await boardFirstCard(page, 'workshop_work');
+  await boardFirstCard(page, 'lab_briefing');
+  await workshopToConcourse(page);
+  await concourseToLab(page);
+  await openKai(page);
+  await m17AnswerBy(page, 1);
+  await expectStage(page, 'lab_work');
+}
+
+/** Opens the training rig's terminal (E at its approach point, retried). */
+async function m17OpenRig(page: Page) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await interactAt(page, PILOT.lab.trainingRig, {
+      approachOffset: await labApproach(page, PILOT.lab.trainingRig),
+    });
+
+    if (
+      await waitTerminalOpen(page, true).then(
+        () => true,
+        () => false,
+      )
+    ) {
+      await page.waitForTimeout(500);
+
+      return;
+    }
+  }
+
+  throw new Error('the training rig did not open');
+}
+
+/** The control inventory of the open terminal (ids, labels, enabled). */
+async function m17Controls(page: Page) {
+  const probe = await terminalProbe(page);
+
+  return {
+    stage: probe.stage,
+    closed: probe.closed,
+    console: probe.console,
+    line: probe.line,
+    buttons: probe.buttons
+      .map((b) => ({ id: b.id, label: b.label, enabled: b.enabled }))
+      .sort((a, b) => a.id.localeCompare(b.id)),
+  };
+}
+
+async function m17FamilyEvents(page: Page): Promise<string[]> {
+  return page.evaluate(() =>
+    (
+      window as unknown as {
+        researchRuntime: { getEvents: () => { event_type: string }[] };
+      }
+    ).researchRuntime
+      .getEvents()
+      .map((event) => event.event_type)
+      .filter((type) => type.startsWith('proto_m17_trials_')),
+  );
+}
+
+test.describe('U24 completion — the M17 held view (RL-3 closeout decision 4, browser)', () => {
+  test.describe.configure({ timeout: 3_600_000 });
+
+  test('a rig held after a genuine reload shows the title, the approved lines and LEAVE only — no HELP / CLEAR / STOP TASK / ADD / SUBMIT, no command line, no typing footer; typing writes nothing; ESC and LEAVE both leave; the ordinary terminal is unchanged', async ({
+    page,
+  }) => {
+    const capture = captureErrors(page);
+
+    await bootPilot(page, 'M17HELD');
+    // Load 1: the ordinary terminal — its full control inventory.
+    await m17RouteToLab(page);
+    await m17OpenRig(page);
+
+    const ordinary = await m17Controls(page);
+
+    await page.screenshot({
+      path: test.info().outputPath('m17-held-1-ordinary.png'),
+    });
+    test.info().annotations.push({
+      type: 'm17 ordinary terminal controls',
+      description: JSON.stringify(ordinary),
+    });
+
+    const ordinaryIds = ordinary.buttons.map((b) => b.id);
+
+    expect(ordinary.closed).toBe(false);
+
+    for (const id of ['add', 'clear', 'close', 'help', 'stop', 'submit']) {
+      expect(ordinaryIds, `ordinary terminal shows ${id}`).toContain(id);
+    }
+
+    expect(ordinaryIds).not.toContain('leave');
+    await press(page, 'Escape');
+    await waitTerminalOpen(page, false);
+
+    // Load 2: a genuine reload; the rig is held (H).
+    await reloadToDock(page);
+    await m17RouteToLab(page);
+    await m17OpenRig(page);
+
+    const held = await m17Controls(page);
+
+    await page.screenshot({
+      path: test.info().outputPath('m17-held-2-held.png'),
+    });
+    test.info().annotations.push({
+      type: 'm17 held terminal controls',
+      description: JSON.stringify(held),
+    });
+    expect(held.closed).toBe(true);
+    expect(held.stage).toBe('CLOSED');
+    expect(held.console).toEqual(M17_HELD_H_LINES);
+    expect(held.line).toBe('');
+    expect(held.buttons).toEqual([
+      { id: 'leave', label: 'LEAVE', enabled: true },
+    ]);
+
+    // Typing a command and ENTER on the held terminal writes nothing of
+    // the family and changes nothing on the screen.
+    const before = await m17FamilyEvents(page);
+
+    for (const key of ['H', 'E', 'L', 'P']) {
+      await page.keyboard.press(key);
+      await page.waitForTimeout(60);
+    }
+
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(400);
+    expect(await m17Controls(page)).toEqual(held);
+    expect((await terminalProbe(page)).help_open).toBe(false);
+    expect(await m17FamilyEvents(page)).toEqual(before);
+
+    // ESC leaves.
+    await press(page, 'Escape');
+    await waitTerminalOpen(page, false);
+
+    // LEAVE by pointer leaves.
+    await m17OpenRig(page);
+
+    const leave = (await terminalProbe(page)).buttons.find(
+      (b) => b.id === 'leave',
+    )!;
+    const at = await designToPage(page, leave.x + leave.w / 2, leave.y + 12);
+
+    await page.mouse.click(at.x, at.y);
+    await waitTerminalOpen(page, false);
+    expect(await m17FamilyEvents(page)).toEqual(before);
+    expectNoRuntimeErrors(capture);
   });
 });

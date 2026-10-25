@@ -500,8 +500,9 @@ function previewAllowed(trial: SyntaxTrial | null): boolean {
  * kept, the two approved lines in the console strip (the terminal's
  * message line, where a closed rig's line stands; the output panel does not
  * wrap them — review round 1), no stimulus, no control but leaving. The
- * shared terminal's buttons and footer belong to `SignalTerminalScene.ts`
- * and are left as every closed rig shows them.
+ * shared terminal (`SignalTerminalScene.ts`) reads `held` and shows LEAVE
+ * only — no HELP / CLEAR / STOP TASK / ADD / SUBMIT, no command line and no
+ * typing footer (U24 completion, the owner's RL-3 closeout decision 4).
  */
 function heldView(held: Exclude<ReloadClass, 'A'>): TerminalView {
   return {
@@ -523,6 +524,7 @@ function heldView(held: Exclude<ReloadClass, 'A'>): TerminalView {
     chipPairVerb: null,
     editing: false,
     closed: true,
+    held: true,
     reference: null,
   };
 }

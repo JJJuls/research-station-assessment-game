@@ -2074,6 +2074,17 @@ export function m25State(): Readonly<M25State> {
   return returnEpisode().m25;
 }
 
+/**
+ * The questionnaire notice is held after a reload (U24 completion, the
+ * owner's RL-3 closeout decision 5): recorded as not presented, so the
+ * Workshop offers neither the notice nor an acknowledgement and its guidance
+ * moves on without writing one. Side-effect free: the guard runs where it
+ * always ran (the desk's presentation, the review).
+ */
+export function m25NoticeHeld(): boolean {
+  return m25ProbeHeld !== null;
+}
+
 /** The notice is available (handover desk on the return shift; once). */
 export function m25PresentNotice(nowMs: number) {
   const s = returnEpisode().m25;

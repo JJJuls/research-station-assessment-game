@@ -1842,6 +1842,31 @@ coupling panel and feed console, rendered by the existing record view
 (text and LEAVE only); the existing held-back texts unchanged. No formula,
 weight, denominator rule, event name or component field changes.
 
+U24 completion S2 (PROVISIONAL, never canonical; the owner's RL-3 closeout
+decisions 1–5 of 25 October 2026 in the authorisation of the consolidated
+completion run; register §5.411). **M22 ratings companion (decision 1):**
+a provisional component `held_reports: [{ report, class }]` names every
+report held after a reload (class H, U or M from its marker or its class in
+the one record) on every companion row that carries components — the
+observed companion, the empty companion and the D-2 (i) early return; it is
+`[]` when nothing is held. It is kept apart from `missing_reports` (a due
+report whose rating was not given): a held report is never due, never rated,
+never in a denominator, and no rating is fabricated or copied. The
+disposition rules, the independently observed sibling rating and the primary
+D-2 (i) rule are unchanged. **M25 cross-load delay (decision 2):** the
+existing `m25CrossLoadExposureFrom` rule is ratified by fixtures without a
+code change — a non-finite (NaN, ±Infinity) or future closure timestamp
+gives null with "earlier closure time not comparable with this load's
+clock"; no recorded closure gives null with "earlier closure time not
+recorded"; never the reload time, never zero; every null keeps
+`exposure_page_load_index`, so missing delay evidence never erases an
+established exposure. **Decisions 3–5** change no event, field or reading:
+the M17 held view and the held questionnaire notice are presentation-only
+(the scene reads a new `held` flag of the terminal view; the Workshop reads
+the probe's existing hold), and a held notice still writes nothing — no
+acknowledgement, no presentation. Inspection-only M-screen coverage is
+reported as INSPECTION in the ledger, apart from executed browser coverage.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                               | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

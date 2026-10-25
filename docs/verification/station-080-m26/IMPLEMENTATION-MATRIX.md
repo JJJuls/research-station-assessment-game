@@ -891,3 +891,19 @@ The §9 U / M lines are added to the six stations' record views; the
 existing held-back texts are unchanged. No formula, weight or denominator
 rule changes. F-B2, F-B7 and F-B8 close only with the final recapture of
 S1–S3 (the completion run's S5).
+
+**U24 completion S2** (the owner's RL-3 closeout decisions 1–5 of 25
+October 2026; register §5.411; addendum §2 "U24 completion S2"): M22's
+ratings companion names each held report in the provisional `held_reports`
+component, apart from an ordinarily missing rating; M25's cross-load delay
+rule is ratified by fixtures (NaN, ±Infinity, a future timestamp, no
+recorded closure) with no code change; inspection-only M-screen coverage is
+reported as INSPECTION; the shared terminal shows a held M17 rig as the
+title, the approved lines and LEAVE only (no HELP / CLEAR / STOP TASK / ADD
+/ SUBMIT, no command line, no typing footer; ESC and LEAVE both leave); a
+held M25 questionnaire notice is neither offered nor acknowledged and the
+Workshop guidance moves on without writing anything. Rows touched: M17
+(`model.ts`, `m17SyntaxAcquisition.ts`, `SignalTerminalScene.ts`), M22
+(`features/m22.ts`), M25 (`returnWindows.ts`, `RecordsWorkshopScene.ts`;
+`m25RepetitionModel.ts` unchanged). No event name, formula or weight
+changes.
