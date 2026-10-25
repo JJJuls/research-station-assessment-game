@@ -37,19 +37,29 @@ export class Menu extends Scene {
     const centerX = DESIGN_WIDTH / 2;
     const centerY = DESIGN_HEIGHT / 2;
 
+    // U24 completion S3 (F-B9): the two roots are rendered separately, not
+    // inside a `<>` fragment. The automatic runtime's `Fragment` binding is
+    // snapshotted as `undefined` when this module is evaluated (Vite's CJS
+    // interop of phaser-jsx's lazy `Fragment` getter), so a fragment root
+    // had `type: undefined`, phaser-jsx warned "Invalid JSX type … got:
+    // undefined" and dropped the Overlay AND the Resume button; the menu
+    // could then be left by ESC only. Each root below is a function
+    // component (a valid type); the Overlay is drawn first, the button
+    // above it, exactly as before. The click handler is bound to this
+    // scene: phaser-jsx invokes `onPointerDown` without the scene as
+    // `this`, so an unbound `this.exit` could never resume the host (the
+    // diagnostic after the fragment correction: no warning, button drawn,
+    // click without effect).
+    render(<Overlay />, this);
     render(
-      <>
-        <Overlay />
-
-        <Button
-          center
-          fixed
-          onClick={this.exit}
-          text="Resume"
-          x={centerX}
-          y={centerY - 10}
-        />
-      </>,
+      <Button
+        center
+        fixed
+        onClick={() => this.exit()}
+        text="Resume"
+        x={centerX}
+        y={centerY - 10}
+      />,
       this,
     );
 
