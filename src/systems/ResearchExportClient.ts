@@ -224,7 +224,19 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_BACKOFF_MS = 1_000;
 const MAX_ID_LENGTH = 128;
 const STORAGE_KEY_PREFIX = 'research-export:v2';
-/** Browsers cap in-flight keep-alive bodies at 64 KiB; stay under it. */
+/**
+ * The Fetch standard allows a keep-alive request only while the total size of
+ * keep-alive request bodies outstanding in the same fetch group stays within
+ * 64 KiB (65 536 bytes) — the limit counts bodies still in flight, not one
+ * body alone. This envelope budget keeps ONE page-hide body below that
+ * figure; it does not make delivery certain, and an envelope whose fixed
+ * part (features, validity, protocol, summary) alone exceeds the budget is
+ * sent over the limit and is refused by the browser (U24 F-B1, named
+ * exception of 25 October 2026: abrupt departure may leave data only on the
+ * device; server receipt is not established). The evidence of that failure
+ * shows the current envelope exceeds the limit; it does not show that every
+ * alternative client design would.
+ */
 export const KEEPALIVE_BODY_LIMIT_BYTES = 60_000;
 
 const UUID_PATTERN =
