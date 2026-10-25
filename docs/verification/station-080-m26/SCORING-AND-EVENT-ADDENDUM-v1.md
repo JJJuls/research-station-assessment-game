@@ -1867,6 +1867,20 @@ the probe's existing hold), and a held notice still writes nothing — no
 acknowledgement, no presentation. Inspection-only M-screen coverage is
 reported as INSPECTION in the ledger, apart from executed browser coverage.
 
+U24 completion S3 (register §5.412): no formula, weight, denominator rule,
+event name or field changes. Two corrections touch what a window RECORDS
+under rules this addendum already states: **C-6** — the M15 bench and M16
+console windows' active clock (`active_ms` and the derived focused time)
+restarts only while the surface is open, as M18's already did (the 13
+October 2026 closeout), so a surface left mid-series no longer accrues the
+time after LEAVE / ESC into its review-closed record; **C-7** — an M15 or
+M16 window never opened before the Deck review becomes the review's closed
+record (the M18 rule, §5.326 (b)): the kit's absence record
+(`briefed_not_opened` / `not_briefed_not_opened`) is unchanged, and a later
+opening writes no event of the family. The V-3 fixtures (M02, M08, M12,
+M22, M26 valid zeros; M08 and M26 technical paths) exercise the rules of
+§3 as written and changed none of them.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                               | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

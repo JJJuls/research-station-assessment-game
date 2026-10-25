@@ -40,6 +40,7 @@ import { getEvents, hold, press, selectPromptOption } from './helpers';
 import {
   concourseToWorkshop,
   expectStage,
+  pilotCoverage,
   pilotProbe,
   walkTo,
   workshopToConcourse,
@@ -732,7 +733,24 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
       in_game_response: null,
       administration: 'questionnaire_primary_pending_external',
     });
-    expect(await itemStatus(page, 'M25')).toBe('completed');
+    // U24 completion S3 (reproduced on 6bd81c7, `s3-pilot-return-5`): since
+    // the M25 redesign (93c1f80, 23 September 2026) the item's route
+    // coverage is the worst status of its two v3 opportunities — the yard's
+    // calibration loops and Vale's normality question (registerV3 M25 row;
+    // coverageSchedule's least-terminal rule) — neither of which this
+    // return-shift route reaches; the questionnaire notice
+    // (`proto_m25_probe_*`, completed above) is the handoff shell, not an
+    // M25 route opportunity (register §5.359 (7) record). The expectation
+    // `completed` dated from a066a75 (30 August 2026), before the redesign.
+    expect(await itemStatus(page, 'M25')).toBe('pending');
+    expect(
+      (await pilotCoverage(page))?.items
+        .find((item) => item.item === 'M25')
+        ?.opportunities.map((o) => [o.opportunity_id, o.status]),
+    ).toEqual([
+      ['proto_m25_calibration_loops', 'pending'],
+      ['proto_m25_normality_belief', 'pending'],
+    ]);
 
     const m25Events = await eventsByPrefix(page, 'proto_m25_probe_');
 
@@ -988,7 +1006,22 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     expect(rp.m21.o1.departures).toBe(1);
     expect(rp.m21.o1.accepted).toBe(false);
     expect(rp.m21.o2.window).toBe('unopened');
-    expect(await itemStatus(page, 'M21')).toBe('open');
+    // U24 completion S3 (reproduced on 6bd81c7, `s3-pilot-return-6`): M21
+    // has two independent cases since U10 (registerV3 M21 row:
+    // `proto_m21_case_o1`, `proto_m21_case_o2`); the item's route coverage
+    // is the worst of its opportunities (coverageSchedule's least-terminal
+    // rule, STATUS_RANK since 03523b2): unit 1 open, unit 2 never opened ⇒
+    // `pending`. The expectation `open` dated from a066a75 (30 August 2026),
+    // the single-case M21.
+    expect(await itemStatus(page, 'M21')).toBe('pending');
+    expect(
+      (await pilotCoverage(page))?.items
+        .find((item) => item.item === 'M21')
+        ?.opportunities.map((o) => [o.opportunity_id, o.status]),
+    ).toEqual([
+      ['proto_m21_case_o1', 'open'],
+      ['proto_m21_case_o2', 'pending'],
+    ]);
 
     // M22 completes regardless of M21 (independence).
     const placed = await assembleReport(page);
@@ -1016,7 +1049,10 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     expect(rp.m22.o2.window).toBe('open'); // report 2 placed, then left
     expect(rp.m21.o1.accepted).toBe(false);
     expect(await itemStatus(page, 'M22')).toBe('open');
-    expect(await itemStatus(page, 'M21')).toBe('open');
+    // M21: unit 1 still open, unit 2 still never opened ⇒ `pending` (the
+    // two-case M21 and the least-terminal rule, as above; U24 completion S3,
+    // `s3-pilot-return-8`).
+    expect(await itemStatus(page, 'M21')).toBe('pending');
 
     // Press B left untouched with sufficient exposure: a valid observation.
     await pressBatchB(page, { store: 0, exposureMs: 2600 });
@@ -1053,8 +1089,9 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     await workshopToConcourse(page);
     await concourseToWorkshop(page);
     rp = await returnProbe(page);
-    expect(rp.m21.window).toBe('open');
-    expect(rp.m21.sections_consulted).toEqual(['s1_identify']);
+    // The two-case M21 probe (U10): unit 1's state, as above.
+    expect(rp.m21.o1.window).toBe('open');
+    expect(rp.m21.o1.sections_consulted).toEqual(['s1_identify']);
     expect(rp.m22.o1.phase).toBe('accepted');
     // M20 (Unit 22): the console's state persists; it is presented once.
     expect((await m20Probe(page)).status).toBe('intro');
@@ -1079,13 +1116,31 @@ test.describe('pilot route — Return, Revision & Handover (Unit 5)', () => {
     rp = await returnProbe(page);
     expect(rp.m21.o1.reengagement).toBe(1);
     await clickElement(page, 'set_aside');
-    await waitSurface(page, false);
+    // The two-case bench (U10) closes its surface by itself only when BOTH
+    // units are closed; after unit 1 is set aside it shows unit 2, so the
+    // surface is left explicitly here (the single-case bench closed itself).
+    await page.waitForTimeout(400);
+    await closeSurface(page);
     rp = await returnProbe(page);
     expect(rp.m21.o1.window).toBe('closed');
     expect(rp.m21.o1.exit).toBe('stopped');
     expect(rp.m21.o1.stop_choice).toBe('set_aside');
     expect(rp.m21.o1.accepted).toBe(false);
-    expect(await itemStatus(page, 'M21')).toBe('completed');
+    // Unit 1 closed; the bench then showed unit 2, whose window is open when
+    // the surface is left ⇒ the item reads `open` (the least-terminal rule
+    // over the two cases); unit 1's own record is closed.
+    const m21After = (await pilotCoverage(page))?.items.find(
+      (item) => item.item === 'M21',
+    );
+    const m21Status = Object.fromEntries(
+      (m21After?.opportunities ?? []).map((o) => [o.opportunity_id, o.status]),
+    );
+
+    expect(await itemStatus(page, 'M21')).toBe('open');
+    expect(['completed', 'censored']).toContain(
+      m21Status.proto_m21_case_o1 ?? 'missing',
+    );
+    expect(m21Status.proto_m21_case_o2).toBe('open');
     expect((await validityRecord(page, OPPORTUNITY.m21o1)).validity).toBe(
       'valid',
     );

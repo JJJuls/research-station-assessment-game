@@ -19054,4 +19054,48 @@ Finish with the closeout status, durable evidence paths, bounded correction spec
   "Step away", no `handoff_acknowledged` in the reloaded load, and every
   earlier RL-3 H assertion holds. The RL-3 R2 case (`logs/s2-m25-r2-1`,
   16.1 min, passed): the eligible path unchanged (the notice acknowledged
-  in load 2 as before).
+  in load 2 as before). S2 commit: `6bd81c71a949c971127c96e4cb7fe5dc2021e677`
+  (U24-C1).
+- **S3 — the demonstrated defects (register §5.412; addendum §2 "U24
+  completion S3"; matrix "U24 completion S3").** Reproduce → correct → re-run,
+  one recorded run each; the diagnostic specs live in the evidence folder
+  (`diag/`), never in the repository. Reproduced on `6bd81c7`: F-B9 at both
+  viewports (`diag-esc-menu-4`, `-5` with the warning's call stack); V-7 C-2
+  M14 (GP-1), C-8 M15, C-6 M16, C-7 M16 and the C-7 shape in M15 (added run
+  B2) — C-2 M15 / M18 not reproduced (`diag-v7-A-1`, `-B-1`, `-B2-1`;
+  `diag/V7-RESULTS-S3.md`); `pilot_return` `:735` and `:991` on an untouched
+  archive of `6bd81c7` (`s3-pilot-return-5`, `-6`); F-B3 on the six-zone
+  route (`s3-pilot-route-1`); `pilot_records :706` — the `:734` pickup
+  registered in the traced run (the Part B miss not reproduced), the test
+  failing at `:854` = F-B3 (`s3-pilot-records-1`); the three M05 decline
+  records recorded with metadata (`s3-pilot-records-2`,
+  `diag/F-B3-M05-DECLINE-RECORDS.txt`). Corrections and re-runs, one commit
+  per group: **U24-C2** `62fef8927e72fd7709422f25d1c028b6a500ca1e` (C-6
+  guards M15 / M16, C-7 closures M15 / M16, C-8 landing M14; pure 210 / 210
+  in the three row suites, `s3-pure-1`; V-7 re-runs `diag-v7-A-2`, `-B-2`,
+  `-B2-2`: C-6 `active_ms` 4 984 ms for a 3 807 ms span, C-7 not reproduced
+  for M16 or M15; C-2 M14 and C-8 M15 still reproduced — blocked outside
+  the allowlist, below); **U24-C3** `a2ed8c87bde66c47ac2d1de27c053ddcf2421f87`
+  (F-B9: two roots and the bound handler; `diag-esc-menu-6` showed the
+  warning gone but the click still inert — the unbound handler — and
+  `diag-esc-menu-7` resumed by one click at both viewports with no
+  warning or error; `diag/F-B9-DIAGNOSIS.md` rev 2); **U24-C5**
+  `61693d779e0db4a203750689b4c4387daecae4ab` (F-B3 under D-2 = a; the B-8
+  probe and the D-2 a test `s3-pure-2` 2 / 2; `s3-pilot-route-2` and
+  `s3-pilot-records-3` (traced) passed; also the S4 pointer-RESUME
+  assertion); **U24-C6** `1b5d399741fd27c208125ff4a8d65c194447f124` (the
+  V-3 fixtures; `s3-v3-pure-1` 5 / 6 — the M26 check-record case needed one
+  attempt in the record, fixture corrected, `s3-v3-pure-2` 1 / 1);
+  **U24-C7** (`pilot_return` expectations `:735`, `:991`, `:1052` → `pending`
+  with the per-opportunity statuses and citations; test 1 `s3-pilot-return-7`
+  passed; test 2 `s3-pilot-return-8` passed `:991` and showed the same stale
+  M21 line at `:1052`, corrected; the re-run is `s3-pilot-return-9`). The
+  label U24-C4 is unused (reserved for `pilot_return`, committed after C5
+  and C6 once its re-run had passed). **Stop items collected for the owner
+  (essential dependencies outside the allowlist, brief §9; nothing worked
+  around):** C-8 for M15 / M16 (`e2e/m15_systems_route.spec.ts:824`,
+  `e2e/m16_handling_route.spec.ts:922, 954, 966` assert the current landing
+  and element order); M14 GP-1 (`e2e/m14_integration_route.spec.ts:1844`
+  clicks `help` on results page 2); the M05 valid zero (a scientific
+  question: no register treatment of a 0 ms start latency). Post-commit
+  checks after the last S3 commit: see the run map and the checkpoint.

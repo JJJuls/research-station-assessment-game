@@ -907,3 +907,20 @@ Workshop guidance moves on without writing anything. Rows touched: M17
 (`features/m22.ts`), M25 (`returnWindows.ts`, `RecordsWorkshopScene.ts`;
 `m25RepetitionModel.ts` unchanged). No event name, formula or weight
 changes.
+
+**U24 completion S3** (register §5.412; addendum §2 "U24 completion S3"):
+the demonstrated defects, each reproduced on the current source, corrected
+under the cited precedent and re-run — C-6 (M15 / M16 RESUME guard, the
+M18 rule), C-7 (M15 / M16 never-opened consoles closed at the review, the
+M18 rule), C-8 for M14 (the results landing, the M18 pattern), F-B9 (the
+pause menu's Resume button: no fragment root, the click bound to the
+scene), the `pilot_return` M25 / M21 coverage expectations (stale against
+the v3 opportunities and the least-terminal rule), F-B3 (D-2 = a: the three
+recorded M05 decline records tolerated by type and metadata), and the V-3
+valid-zero / technical fixtures (M02, M08, M12, M22, M26). Not corrected
+and reported: C-8 for M15 / M16 and M14 GP-1 (their corrections contradict
+expectations in route specs outside the allowlist); the M05 valid zero (no
+register treatment). Rows touched: M14 (`m14SurfaceModel.ts`), M15
+(`m15RelayBench.ts`, `m15SystemsModel.ts`), M16 (`m16ProtocolConsole.ts`,
+`m16HandlingModel.ts`), the pause menu (`Menu.tsx`); tests only for M02,
+M08, M12, M22, M26, the pilot route specs and the integrated spec.

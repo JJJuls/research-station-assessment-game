@@ -15129,3 +15129,108 @@ onward are the writer's readings and dispositions under it.
      the eligible-path regression) — results in UNIT-LOG "U24 completion".
      **Recorded for Part C:** `held_reports` is a companion component only;
      the recount does not read it (RC-3 = b).
+412. **U24 completion S3 — the demonstrated defects (25 October 2026; the
+     completion brief's S3 list; the owner's answers D-2 = a and D-4 = b;
+     writer Fable 5.1). Every item was reproduced on the current source
+     first (HEAD `6bd81c7`, one recorded run each; the diagnostic specs,
+     results and logs are in the completion run's evidence folder), then
+     corrected under the cited rule or precedent, then re-run.**
+     **V-7 cross-task candidates** (`diag/V7-RESULTS-S3.md`): C-2 for M15
+     and M18 NOT reproduced (no change, the brief's rule); C-2 for M14
+     (GP-1) REPRODUCED; C-8 for M15 REPRODUCED; C-6 for M16 REPRODUCED (a
+     console left mid-series by ESC after 3.7 s and never reopened carried
+     `active_ms` 84 770 ms into its review-closed record); C-7 for M16
+     REPRODUCED (a console never opened before the Deck review came back
+     LIVE afterwards and wrote `intro_acknowledged`, `example_viewed`); the
+     same C-7 shape REPRODUCED in M15 (an added run B2: the bench came back
+     live and wrote `orientation_acknowledged`, `box_presented`).
+     Corrections (commit U24-C2): C-6 — `resumeM15Surface` and
+     `resumeM16Surface` restart the kit window only while the surface is
+     open (the M18 guard of the 13 October 2026 closeout), so the active
+     clock no longer counts the time after LEAVE / ESC (re-run: M16
+     `active_ms` 4 984 ms for a 3 807 ms open span; the M18 control 6 570 /
+     5 540); C-7 — `m15sCloseUnopenedAtReview` / `m16sCloseUnopenedAtReview`
+     make a never-opened series the review's closed record right after the
+     kit's absence record (the `closeM18AtReview` /
+     `m18sCloseUnopenedAtReview` precedent, §5.326 (b)); a later opening
+     shows the record, accepts nothing and writes nothing (re-run: no event
+     for either row); C-8 for M14 — the results text is the view's neutral
+     first focusable landing (the `m18SurfaceModel` precedent), so a page
+     reached by NEXT or BACK lands there. Pure tests on the M18 pattern in
+     the three row specs. **Not corrected, reported (essential dependencies
+     outside the allowlist, brief §9):** C-8 for M15 and M16 — the same
+     landing correction changes the element order / landing that the
+     non-allowlisted route specs assert (`e2e/m15_systems_route.spec.ts:824`
+     focus `results_next`; `e2e/m16_handling_route.spec.ts:922, 954, 966`
+     the ordered id lists and focus); M14 GP-1 — the M19 precedent
+     (view-named HELP ids, §5.342 (6)) collides with
+     `e2e/m14_integration_route.spec.ts:1844` (`clickElement(page, 'help')`
+     on results page 2). Both stay reproduced; V-2 keeps them as FAIL rows
+     until the owner extends the allowlist or excepts them by name.
+     **F-B9** (commit U24-C3; `diag/F-B9-DIAGNOSIS.md`): reproduced at
+     800 × 600 and 1280 × 720 — on ESC phaser-jsx warned "Invalid JSX type …
+     got: undefined" and a click at Resume's position did not resume. Two
+     causes: the `<>` fragment root (the automatic runtime's `Fragment`
+     binding is snapshotted as undefined at module evaluation under Vite's
+     CJS interop, so the Overlay AND the Resume button were dropped) and the
+     unbound click handler (`onClick={this.exit}`; phaser-jsx invokes it
+     without the scene as `this`). `Menu.tsx` now renders two roots and
+     binds the handler; no configuration, package or lock-file change. Re-run:
+     no warning or error, `resumed_by_click` true at both viewports; S4 now
+     asserts the pointer RESUME. The controls card running off the canvas at
+     800 × 600 (the visual review's other half of M1, F-B10 minor) is not
+     changed and is reported as it stands.
+     **`pilot_return` `:211` / `:828`** (commit U24-C7): reproduced on an
+     untouched archive of `6bd81c7` (`:735` M25 `pending`, expected
+     `completed`; `:991` M21 `pending`, expected `open`; the re-run then
+     showed the same stale M21 expectation at `:1052`). Stale expectations
+     from `a066a75` (30 August 2026) against approved rules that came later:
+     M25's route coverage is the worst status of its two v3 opportunities
+     (`proto_m25_calibration_loops`, `proto_m25_normality_belief`; the
+     redesign `93c1f80`, §5.359 (7)), which the return-shift route never
+     reaches, the questionnaire notice being the handoff shell; M21's two
+     independent cases (U10) with unit 2 never opened read `pending` by the
+     least-terminal rule (`STATUS_RANK`, `03523b2`). The expectations now
+     assert `pending` with each opportunity's own status and cite the
+     rules; no production code was found defective (`pilotCoverage.ts` /
+     `coverageSchedule.ts` untouched — not a stop item).
+     **`pilot_records` `:734`** (D-4 b, authorised diagnosis): one traced run
+     on `6bd81c7` — the pickup at `:734` REGISTERED (the Part B miss did not
+     reproduce; no station-range conflict was shown, REG §5.219 not
+     engaged); the test's terminal failure was F-B3 at `:854`, now corrected
+     (below); the traced re-run passed.
+     **F-B3** (commit U24-C5; the owner's D-2 = a): the three explicit
+     records of ONE declined M05 job offer were RECORDED FIRST with their
+     full metadata (`s3-pilot-records-2`, `diag/F-B3-M05-DECLINE-RECORDS.txt`)
+     and are now tolerated by exact type AND metadata (`offer_answered`
+     `accepted: false`; the kit's system `opportunity_opened` with the entry
+     snapshot `accepted: false`; `window_closed` whose `raw_components` say
+     `closure_reason: 'declined'`, `accepted: false`, `eligible: false`);
+     nothing else of M05 is tolerated (an accepted offer, a worked window,
+     any other closure, a declined closure claiming eligibility, an answer
+     without `accepted` — each still fails; the B-8 negative probe now uses
+     an accepted offer as its participant act). The check's failure output
+     carries each record's metadata. Re-runs: the six-zone route and
+     `pilot_records :706` passed.
+     **V-3 gaps** (commit U24-C6; `diag/V3-GAP-MAP.md`): fixtures against the
+     register's stated rules — M02 0 / 6 observed (six "Cannot locate"); M08
+     0 / 6 observed with the per-benefit companion, and the malformed
+     reload-check record as `technical_failure` on both rows (§5.404 (d),
+     §5.405 (e)); M12 0 / 6 observed (two unchecked releases, §2 "a released
+     product with nothing judged is an observed 0"); M22 0 / 2 observed (both
+     reports withdrawn, Unit 11, §5.109–§5.110); M26 0 retries observed with
+     the sensitivity row 0, and the three technical paths Unit 12 defines (a
+     disagreeing retry count — count and sensitivity fail, companion kept; a
+     check record disagreeing with its events; a fault after opening). Cells
+     already covered at HEAD by RL-2 / RL-3 and cited instead of
+     duplicated: M11 technical (`m11_custody.spec.ts` L867), M26 declined
+     (`m24_m26_boundary.spec.ts` L1344, L1272), M26 malformed (L1303). Every
+     fixture passed on the existing extractors (nothing in `features/` was
+     changed). **Not written — a scientific question for the owner:** the
+     M05 valid zero; the only possible zero is a 0 ms start latency, and the
+     register defines no treatment of it (its range is stated only in
+     `registerV3.ts`, "0–60 s per occasion with status"); the V-3 cell stays
+     "no evidence" with that reason.
+     **Commit numbering:** the S3 groups were committed as U24-C2, C3, C5,
+     C6 and C7; the label U24-C4 (reserved for `pilot_return`) is unused,
+     because that group was committed after its second re-run had passed.
