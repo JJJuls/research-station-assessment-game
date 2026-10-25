@@ -210,6 +210,96 @@ function harness(family: string, opportunity: string) {
 }
 
 test.describe('M24 / M26 knowledge boundary (pure)', () => {
+  test('U24 completion V-3 for M26: the valid zero (a passed check and no retry reads 0 observed, the sensitivity row 0), and the technical paths the register defines (Unit 12: a disagreeing retry count fails the count and its sensitivity with the companion kept; a check record that disagrees with its events, or a fault after opening, fails all three rows)', () => {
+    // The valid zero: pass at the first attempt, no transmission afterwards,
+    // the continuation capped.
+    const zero = disconnectedUplink();
+
+    m26PresentTest(zero, 'attempt_1', 4000);
+    m26AnswerTest(zero, 'not_received', 5000);
+    m26Tick(zero, 5000 + M26_CAP_MS, false);
+
+    const z = harness(M26_FAMILY, M26_OPPORTUNITY_ID);
+
+    z.presented();
+    z.opened();
+    z.answered(1, true, 'pass_first');
+    z.close(m26RawComponents(zero), 'completed');
+
+    const zeroRows = extractItemFeatures('M26', z.events, CONTEXT);
+
+    expect(zeroRows.map((r) => r.feature_id)).toEqual([
+      'm26_postknowledge_retries',
+      'm26_postknowledge_retries_minus_first',
+      'm26_unqualified_retries',
+    ]);
+    expect(zeroRows[0]).toMatchObject({
+      value: 0,
+      disposition: 'observed',
+      missing_reason: null,
+    });
+    expect(zeroRows[1]).toMatchObject({ value: 0, disposition: 'observed' });
+    expect(JSON.stringify(zeroRows)).not.toMatch(
+      /score|resilien|grit|persist/i,
+    );
+
+    // A disagreeing retry count: two retries in the record, one in the
+    // events — the count and its sensitivity fail, the companion stays.
+    const two = disconnectedUplink();
+
+    m26PresentTest(two, 'attempt_1', 4000);
+    m26AnswerTest(two, 'not_received', 5000);
+    m26Transmit(two, 'A', 7000);
+    m26Transmit(two, 'A', 9000);
+    m26Tick(two, 5000 + M26_CAP_MS, false);
+
+    const bad = harness(M26_FAMILY, M26_OPPORTUNITY_ID);
+
+    bad.presented();
+    bad.opened();
+    bad.answered(1, true, 'pass_first');
+    bad.acts('postknowledge_retry', 1);
+    bad.close(m26RawComponents(two), 'completed');
+
+    const badRows = extractItemFeatures('M26', bad.events, CONTEXT);
+
+    expect(badRows[0]).toMatchObject({
+      value: null,
+      disposition: 'technical_failure',
+    });
+    expect(badRows[1]).toMatchObject({ disposition: 'technical_failure' });
+    expect(badRows[2]).toMatchObject({ disposition: 'observed' });
+
+    // A check record that disagrees with its events (one attempt in the
+    // record, no understanding_answered event) fails all three rows.
+    const d = harness(M26_FAMILY, M26_OPPORTUNITY_ID);
+
+    d.presented();
+    d.opened();
+    d.close(
+      {
+        ...m26RawComponents(zero),
+        invalid_detail: 'understanding_not_tested',
+      },
+      'departed',
+      true,
+    );
+    expect(
+      extractItemFeatures('M26', d.events, CONTEXT).map((r) => r.disposition),
+    ).toEqual(['technical_failure', 'technical_failure', 'technical_failure']);
+
+    // A fault after the opening fails all three rows.
+    const f = harness(M26_FAMILY, M26_OPPORTUNITY_ID);
+
+    f.presented();
+    f.opened();
+    f.answered(1, true, 'pass_first');
+    f.failed();
+    expect(
+      extractItemFeatures('M26', f.events, CONTEXT).map((r) => r.disposition),
+    ).toEqual(['technical_failure', 'technical_failure', 'technical_failure']);
+  });
+
   test('register rows: v3 routes, a count + a sensitivity count + a companion each; the two questions keep the key off the first card in both forms and name no item', () => {
     for (const [id, opportunity, window, family] of [
       ['M24', 'proto_m24_rig_continuation', 'm24_rig_w1', 'proto_m24_rig_'],

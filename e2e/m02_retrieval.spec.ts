@@ -563,6 +563,35 @@ test.describe('M02 retrieval requests (pure)', () => {
     });
   });
 
+  test('U24 completion V-3 (the valid zero): six requests all answered "Cannot locate" read 0 / 6 observed — an observed zero, never a missing value (register §2 M02 "correct first retrievals / 6; 0–6", §3 "a zero is always an observed zero")', () => {
+    const { h, s } = started('order_1');
+    const layout = trayLayout();
+    const sequence = m02RequestSequence('order_1');
+    let t = T0;
+
+    m02HandOver(s, layout, t, 'pointer', h.sink);
+
+    for (let i = 0; i < sequence.length; i += 1) {
+      t += STEP;
+      m02CannotLocate(s, t, 'keyboard', h.sink);
+    }
+
+    m02Finish(s, t, h.sink);
+    h.close(s);
+
+    const rows = extractItemFeatures('M02', h.events, CONTEXT);
+
+    expect(rows[0]).toMatchObject({
+      feature_id: 'm02_correct_first_retrievals',
+      value: 0,
+      numerator: 0,
+      denominator: 6,
+      disposition: 'observed',
+      missing_reason: null,
+    });
+    expect(rows[0].included_ids).toHaveLength(6);
+  });
+
   test('extractor: 6/6 observed; a mixed series 3/6 with Cannot locate and wrong selections inside the denominator; latency and layout kept beside, never inside', () => {
     const { h, s } = started('order_1');
     const layout = trayLayout();

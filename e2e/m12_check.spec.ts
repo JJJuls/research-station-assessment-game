@@ -155,6 +155,39 @@ function checkAll(s: M12State, at: number, log: M12LogSink): number {
 }
 
 test.describe('M12 quality packets (pure)', () => {
+  test('U24 completion V-3 (the valid zero): both products released with nothing judged read 0 / 6 observed — "a released product with nothing judged is an observed 0" (register §2 M12; Unit 8; §5.74, §5.80)', () => {
+    const h = harness();
+    const a = createM12State('o1', 'form_b');
+    const b = createM12State('o2', 'form_a');
+
+    h.presented('o1');
+    h.opened('o1');
+    m12Release(a, T0, 'keyboard', h.sink('o1'));
+    h.close(a);
+    h.presented('o2');
+    h.opened('o2');
+    m12Release(b, T0 + 60_000, 'keyboard', h.sink('o2'));
+    h.close(b);
+
+    const rows = extractItemFeatures('M12', h.events, CONTEXT);
+
+    expect(rows[0]).toMatchObject({
+      value: 0,
+      numerator: 0,
+      denominator: 6,
+      disposition: 'observed',
+      censored: false,
+      missing_reason: null,
+    });
+    expect(rows[0].included_ids).toEqual(['m12_check_o1', 'm12_check_o2']);
+    expect(rows[1]).toMatchObject({ disposition: 'observed' });
+    expect(rows[1].value).toMatchObject({
+      o1: { fields_judged: 0, released: true },
+      o2: { fields_judged: 0, released: true },
+    });
+    expect(JSON.stringify(rows)).not.toMatch(/score|careless|careful/i);
+  });
+
   test('register row: v3 route with two windows, a reverse-keyed fraction primary over six fields and a detail companion; two products with three fields and one fault each, counterbalanced by form', () => {
     const entry = registerEntry('M12');
 

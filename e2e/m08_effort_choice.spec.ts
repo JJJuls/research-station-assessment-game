@@ -90,6 +90,42 @@ function runPractice(s: M08State, now: number, sink: M08LogSink): number {
 const CONTEXT = { finalCoreClosed: true, pageLoadIndex: 1, reloaded: false };
 
 test.describe('M08 support console (pure)', () => {
+  test('U24 completion V-3 (the valid zero): six rest choices read 0 / 6 observed with the per-benefit companion at work 0 of valid 3 and 3 — an observed zero, never a missing value (register §2 M08 "Work / valid choices; 0–6", §3)', () => {
+    const h = harness();
+    const s = createM08State('order_b');
+
+    h.present();
+    h.open();
+
+    let now = runPractice(s, 0, h.sink);
+
+    for (let slot = 0; slot < 6; slot += 1) {
+      expect(m08Continue(s, now, 'pointer', h.sink)).toBe(true);
+      m08Choose(s, 'rest', now, 'pointer', h.sink);
+      now += M08_EPOCH_MS;
+      expect(m08Tick(s, now, h.sink)).toBe(slot === 5 ? 'done' : 'epoch');
+    }
+
+    expect(s.phase).toBe('done');
+    h.close(s, 'completed', 'completed');
+
+    const rows = extractItemFeatures('M08', h.events, CONTEXT);
+
+    expect(rows[0]).toMatchObject({
+      value: 0,
+      numerator: 0,
+      denominator: 6,
+      disposition: 'observed',
+      closure_reason: 'completed',
+      missing_reason: null,
+    });
+    expect(rows[1]).toMatchObject({ disposition: 'observed' });
+    expect(rows[1].value).toEqual({
+      benefit_1: { work: 0, valid: 3 },
+      benefit_3: { work: 0, valid: 3 },
+    });
+  });
+
   test.beforeEach(() => {
     resetFocusMonitor();
   });
@@ -565,6 +601,23 @@ function rl1Load(
 }
 
 test.describe('M08 single-occasion rule after a reload (U24 RL-1, pure)', () => {
+  test('U24 completion V-3 (the technical outcome): a malformed reload-check record (another page load) is a technical failure on both rows — the existing rule (§5.404 (d), §5.405 (e)); the only non-reload technical path M08 defines', () => {
+    const malformed = rl1Load([], {
+      present: false,
+      records: (record) => [{ ...record, page_load_index: 4 }],
+    });
+
+    expect(malformed.reload.check_malformed).toBe(true);
+    expect(malformed.rows[0]).toMatchObject({
+      disposition: 'technical_failure',
+      value: null,
+    });
+    expect(malformed.rows[1]).toMatchObject({
+      disposition: 'technical_failure',
+      value: null,
+    });
+  });
+
   test('A with no current-load evidence ⇒ not_presented: the first-load reading, not interrupted (b); the record is never task evidence', () => {
     const { reload, rows } = rl1Load([], { present: false });
 

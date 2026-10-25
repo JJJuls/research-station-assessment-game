@@ -213,6 +213,35 @@ function playReport(
 }
 
 test.describe('M22 two setback reports (pure)', () => {
+  test('U24 completion V-3 (the valid zero): both requirements presented and both reports withdrawn without a revision read 0 / 2 observed — "an explicit Withdraw is an observed 0" (register Unit 11; §5.109–§5.110); the ratings companion keeps its own reading', () => {
+    const h = harness();
+
+    playReport(h, 'o1', 'exit');
+    playReport(h, 'o2', 'exit');
+
+    const rows = extractItemFeatures('M22', h.events, CONTEXT);
+
+    expect(rows[0]).toMatchObject({
+      feature_id: 'm22_revisions_begun',
+      value: 0,
+      numerator: 0,
+      denominator: 2,
+      disposition: 'observed',
+      missing_reason: null,
+    });
+    expect(rows[0].included_ids).toEqual([
+      'm22_returned_o1',
+      'm22_returned_o2',
+    ]);
+    // No rating was given: the companion is empty for that reason, apart
+    // from the behaviour.
+    expect(rows[1]).toMatchObject({
+      disposition: 'interrupted',
+      value: null,
+      missing_reason: 'the ratings were never answered',
+    });
+  });
+
   test('register row: v3 route with two return-shift windows, a planned fraction and an ordinal companion; the pinned stem and five options; two report definitions with different requirements and a shared structure', () => {
     const entry = registerEntry('M22');
 
