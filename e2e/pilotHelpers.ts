@@ -712,33 +712,90 @@ const SYSTEM_DRIVEN = new Set([
  * exact type AND `input_mode: 'system'`; everything else is a participant
  * act or a value, and the bare route must emit none.
  */
+/**
+ * U24 completion S3 (the owner's answer D-2 = a, 25 October 2026): the
+ * three explicit records of ONE declined M05 job offer, tolerated by exact
+ * type AND metadata — the participant's own "no" to the offer
+ * (`offer_answered`, `accepted: false`), the kit's system opening of the
+ * declined window (`opportunity_opened`, `input_mode: 'system'`, the entry
+ * snapshot `accepted: false`) and its closure as declined (`window_closed`,
+ * `raw_components.closure_reason: 'declined'`, `accepted: false`,
+ * `eligible: false`). The records were recorded first
+ * (`s3-pilot-records-2`, pilot_records.spec.ts:854). Nothing else of M05
+ * is tolerated: an accepted offer, an opened-and-worked window or any
+ * other closure still fails this check.
+ */
+function m05DeclineRecord(event: {
+  event_type: string;
+  metadata?: Record<string, unknown> | null;
+}): boolean {
+  const meta = event.metadata ?? {};
+
+  switch (event.event_type) {
+    case 'proto_m05_start_offer_answered':
+      return meta.accepted === false;
+    case 'proto_m05_start_opportunity_opened':
+      return (
+        meta.input_mode === 'system' &&
+        (meta.entry_state_snapshot as { accepted?: unknown } | undefined)
+          ?.accepted === false
+      );
+    case 'proto_m05_start_window_closed': {
+      const raw = meta.raw_components as
+        | { closure_reason?: unknown; accepted?: unknown; eligible?: unknown }
+        | undefined;
+
+      return (
+        raw?.closure_reason === 'declined' &&
+        raw.accepted === false &&
+        raw.eligible === false
+      );
+    }
+    default:
+      return false;
+  }
+}
+
+export function untoleratedMeasurementRecords<
+  T extends { event_type: string; metadata?: Record<string, unknown> | null },
+>(events: readonly T[]): T[] {
+  return events.filter(
+    (event) =>
+      event.event_type.startsWith('proto_') &&
+      !event.event_type.endsWith('_presented') &&
+      !(
+        SYSTEM_DRIVEN.has(event.event_type) &&
+        event.metadata?.input_mode === 'system'
+      ) &&
+      !m05DeclineRecord(event),
+  );
+}
+
 export function untoleratedMeasurementEvents(
   events: readonly {
     event_type: string;
     metadata?: Record<string, unknown> | null;
   }[],
 ): string[] {
-  return events
-    .filter(
-      (event) =>
-        event.event_type.startsWith('proto_') &&
-        !event.event_type.endsWith('_presented') &&
-        !(
-          SYSTEM_DRIVEN.has(event.event_type) &&
-          event.metadata?.input_mode === 'system'
-        ),
-    )
-    .map((event) => event.event_type);
+  return untoleratedMeasurementRecords(events).map((event) => event.event_type);
 }
 
+/**
+ * The bare-route check. Its failure output carries each untolerated record
+ * with its metadata (U24 completion S3: the records are recorded before any
+ * premise question is put), not only the type.
+ */
 export async function expectNoMeasurementEvents(page: Page) {
   expect(
-    untoleratedMeasurementEvents(
+    untoleratedMeasurementRecords(
       (await getEvents(page)) as {
         event_type: string;
         metadata?: Record<string, unknown> | null;
       }[],
-    ),
+    ).map((event) => ({
+      event_type: event.event_type,
+      metadata: event.metadata ?? null,
+    })),
   ).toEqual([]);
 }
 

@@ -199,9 +199,9 @@ test.describe('U24 — pure checks', () => {
         { event_type: 'proto_m05_start_presented', metadata: {} },
       ]),
     ).toEqual([]);
-    // A participant-driven record of a LISTED type (keyboard), a declined
-    // job (the participant's answer), and an unlisted system record: each
-    // still fails — nothing is tolerated by prefix.
+    // A participant-driven record of a LISTED type (keyboard), an ACCEPTED
+    // job offer (the participant's answer), and an unlisted system record:
+    // each still fails — nothing is tolerated by prefix.
     expect(
       untoleratedMeasurementEvents([
         {
@@ -210,7 +210,7 @@ test.describe('U24 — pure checks', () => {
         },
         {
           event_type: 'proto_m05_start_offer_answered',
-          metadata: { input_mode: 'keyboard', accepted: false },
+          metadata: { input_mode: 'keyboard', accepted: true },
         },
         system('proto_m11_custody_resolved'),
         { event_type: 'proto_m19_lines_closed_unopened', metadata: {} },
@@ -220,6 +220,97 @@ test.describe('U24 — pure checks', () => {
       'proto_m05_start_offer_answered',
       'proto_m11_custody_resolved',
       'proto_m19_lines_closed_unopened',
+    ]);
+  });
+
+  test('D-2 = a (25 October 2026): the three explicit records of a declined M05 offer are tolerated by exact type and metadata — recorded first (s3-pilot-records-2) — and any other M05 act still fails', () => {
+    // The three records as the route writes them (pilot_records.spec.ts:854,
+    // s3-pilot-records-2; the fields the premise reads, and nothing else).
+    const declined = [
+      {
+        event_type: 'proto_m05_start_offer_answered',
+        metadata: { accepted: false, input_mode: 'keyboard', occasion: 'o1' },
+      },
+      {
+        event_type: 'proto_m05_start_opportunity_opened',
+        metadata: {
+          input_mode: 'system',
+          entry_state_snapshot: { acceptance: 'explicit', accepted: false },
+        },
+      },
+      {
+        event_type: 'proto_m05_start_window_closed',
+        metadata: {
+          input_mode: 'keyboard',
+          exit_state: 'stopped',
+          raw_components: {
+            accepted: false,
+            closure_reason: 'declined',
+            eligible: false,
+          },
+        },
+      },
+    ];
+
+    expect(untoleratedMeasurementEvents(declined)).toEqual([]);
+
+    // An unexpected act still fails: an accepted offer, the system opening
+    // of an accepted window, a worked window's closure, a declined closure
+    // whose record claims eligibility, and the decline's answer by pointer
+    // with `accepted` missing.
+    expect(
+      untoleratedMeasurementEvents([
+        {
+          event_type: 'proto_m05_start_offer_answered',
+          metadata: { accepted: true, input_mode: 'pointer' },
+        },
+        {
+          event_type: 'proto_m05_start_opportunity_opened',
+          metadata: {
+            input_mode: 'system',
+            entry_state_snapshot: { acceptance: 'explicit', accepted: true },
+          },
+        },
+        {
+          event_type: 'proto_m05_start_window_closed',
+          metadata: {
+            input_mode: 'system',
+            exit_state: 'completed',
+            raw_components: {
+              accepted: true,
+              closure_reason: 'completed',
+              eligible: true,
+            },
+          },
+        },
+        {
+          event_type: 'proto_m05_start_window_closed',
+          metadata: {
+            input_mode: 'keyboard',
+            exit_state: 'stopped',
+            raw_components: {
+              accepted: false,
+              closure_reason: 'declined',
+              eligible: true,
+            },
+          },
+        },
+        {
+          event_type: 'proto_m05_start_offer_answered',
+          metadata: { input_mode: 'pointer' },
+        },
+        {
+          event_type: 'proto_m05_start_started',
+          metadata: { input_mode: 'keyboard' },
+        },
+      ]),
+    ).toEqual([
+      'proto_m05_start_offer_answered',
+      'proto_m05_start_opportunity_opened',
+      'proto_m05_start_window_closed',
+      'proto_m05_start_window_closed',
+      'proto_m05_start_offer_answered',
+      'proto_m05_start_started',
     ]);
   });
 
@@ -503,11 +594,18 @@ test('S4 focus and pause at 800 × 600: blur and hidden excluded from the M05 cl
   expect(Math.abs(record!.esc_menu.moved_after_resume)).toBeGreaterThan(4);
   expect(record!.help.opened).toContain('close_help');
   expect(record!.help.closed).not.toContain('close_help');
-  // The pointer pairs (U24-B review). RESUME by pointer is recorded only:
-  // the menu shows no Resume control at 43f12de either (report F-B9).
+  // The pointer pairs (U24-B review). RESUME by pointer is asserted since
+  // the U24 completion run corrected F-B9 (the pause menu's fragment root
+  // dropped the Overlay and the Resume button; Menu.tsx now renders two
+  // roots): the world stands still while the menu is open and moves again
+  // after one click on Resume.
   expect(Math.abs(record!.esc_menu_pointer.moved_while_menu_open)).toBeLessThan(
     1,
   );
+  expect(record!.esc_menu_pointer.resumed_by_click).toBe(true);
+  expect(
+    Math.abs(record!.esc_menu_pointer.moved_after_resume_click),
+  ).toBeGreaterThan(4);
   expect(record!.help_pointer.opened).toContain('close_help');
   expect(record!.help_pointer.closed).not.toContain('close_help');
   expect(record!.station_pointer_entry).toEqual({
