@@ -1881,6 +1881,14 @@ opening writes no event of the family. The V-3 fixtures (M02, M08, M12,
 M22, M26 valid zeros; M08 and M26 technical paths) exercise the rules of
 §3 as written and changed none of them.
 
+U24 completion S5–S8 (register §5.413): nothing added or ratified. The
+recapture, the Part C recount and the ledger changed no formula, weight,
+denominator rule, event name, field or disposition rule; the recount's
+disagreements with production (the ledger §12) are diagnosed against the
+register only and are never resolved here — a rule the register does not
+settle is a question for the owner. The keep-alive claim corrected under
+D-1 b (U24-C8) is a comment in `ResearchExportClient.ts`, not a rule.
+
 ## 3. Feature formulas (primary; companions listed in the register)
 
 | Feature                               | Formula                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Direction                 | Null rule                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

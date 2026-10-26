@@ -163,6 +163,39 @@ interrupted | technical_failure | pending | not_implemented`; `null` is the
 
 ## 4. As-built records (appended per unit)
 
+**Unit 24 completion (the consolidated completion run): as-built** — RL-4
+(uncertain history for M14–M20), the RL-3 closeout decisions 1–5, the
+demonstrated defects of Part B corrected where their remedies lay inside
+the completion allowlist, the integrated recapture of every scenario on the
+final source `287dcc6`, the Part C independent recount over the re-pinned
+final exports, the final reviews and the completion ledger (the owner's
+authorisation and answers D-1 b, D-2 a, D-3 a, D-4 b of 25 October 2026;
+UNIT-LOG "U24 completion"; §5.410–§5.413). **Status: integration,
+correction and verification only — not a scientific closeout and not
+clearance for collection.** Changed behaviour, each under a cited rule or
+precedent: the U / M hold-back of M14–M20 (r3 §2, §5.410); M22's
+provisional `held_reports` component (never a value or denominator); the
+M17 held view and the held M25 notice; the M15 / M16 RESUME guard (C-6) and
+review closure (C-7) on the M18 precedent; M14's neutral results landing
+(C-8); the pause menu's Resume button and bound click (F-B9); the test
+premise of the three M05 decline records (D-2 a); `pilot_return`'s
+expectations read by the v3 opportunities. No formula, weight, denominator
+rule, exclusion rule, event name or disposition rule of any row changed;
+no candidate was promoted; open decision B2 stays open. **Gates:** G.1 MET
+at this revision (re-established on the final source); G.2 NOT REACHED
+(V-2 — C-8 for M15 / M16 and the M14 GP-1 pattern remain, their remedies
+outside the allowlist; V-3 PARTLY on the M05 valid zero; V-4 PARTLY and
+IR-4 / IR-7 FAIL on the recount's diagnosed, undecided comparisons and the
+production departures F-C1 / F-C4 / F-C5; IR-3 PARTLY on the reviewer
+clause; V-6 PARTLY on the steps without a frame; V-7 PARTLY; V-9 FAIL on
+one regression of this unit's own change — the M14 route spec's R1 / R9
+press ENTER on the results page as NEXT, which the C-8 landing of §5.412
+made neutral; the spec is outside the allowlist, owner item C7); G.3 none
+satisfied. V-12 (e) carries the owner's named
+exception D-1 b for F-B1, which remains a pre-collection blocker. The
+scientific questions and the dependencies outside the allowlist collected
+during the run are bundled for the owner (the ledger §7; the handoff).
+
 **Unit 24-B (integration): as-built** — the connected route verified end
 to end, the approved stale items corrected, the exports saved, the owner
 walkthrough guide and the end-to-end report (U24 Part B, bounded unit
@@ -15234,3 +15267,101 @@ onward are the writer's readings and dispositions under it.
      **Commit numbering:** the S3 groups were committed as U24-C2, C3, C5,
      C6 and C7; the label U24-C4 (reserved for `pilot_return`) is unused,
      because that group was committed after its second re-run had passed.
+413. **U24 completion S5–S8 — the integrated recapture, the Part C recount,
+     the final reviews and the completion ledger (25 October 2026; the
+     completion brief §S5–S8; the owner's answers D-1 b, D-3 a, D-4 b;
+     writer Fable 5.1).** **S5 (the final source `287dcc6`).** Every
+     scenario and every browser case of RL-4 and of the S2 / S3 corrections
+     was re-run once on the final source by ordinary input (the run map in
+     the evidence; UNIT-LOG "U24 completion" S5): S1 at both viewports, S2,
+     the traced S3 (the isolated `--timeout=600000`, the precondition
+     recorded first), S4 with the pointer-RESUME assertion and the
+     pointer RESUME at 1280 × 720, S5, S6 / V-12, the RL-4 cases A / B / C,
+     the M17 held view, the RL-3 H / R2 / U cases, the V-7 and ESC-menu
+     diagnostics, the Lucida Console and Courier New passes, and the
+     settled completion notice at both viewports (the S2 route driven by an
+     evidence-folder diagnostic; Part B's V-6 gap). All passed; the
+     environmental failures were re-run under new names and nothing was
+     relabelled. The four exports were re-pinned (S1 × 2, S2, S3; SHA-256 in
+     the ledger and `EXPORTS-SHA256SUMS.txt`) and copied to the immutable
+     checkpoint `CP-02-final-exports`; every difference from the Part B
+     exports and from the RL-3 S3 export is explained at the feature level
+     (timing leaves; the C-8 landing's one fewer
+     `proto_m14_integration_results_shown`; the driver's pace in M08's
+     time-boxed epochs; S2's `held_reports` component; against Part B only,
+     the RL-0 … RL-3 reload corrections already ruled on in r3). **No
+     primary reading differs from RL-3 in S3 or from Part B in S1 / S2.**
+     **D-1 b as applied (V-12 (e) / F-B1).** The owner's named exception of
+     25 October 2026 is applied within its scope only: the ledger reports
+     the byte sizes (the compact S1 envelope 123 871 bytes after omitting
+     all raw events; S3's page-hide bodies 100 712 / 92 107 / 92 817 bytes,
+     none delivered; the completion export 741 217 bytes delivered 201),
+     states plainly that an abrupt departure may leave data only on the
+     device and that server receipt is not established for such a
+     departure, keeps F-B1 an explicit pre-collection blocker, and does not
+     infer the device store's or the later loads' success from the
+     existence of local storage (V-5 (b) / (c) are verified on their own).
+     The explanatory claim in `src/systems/ResearchExportClient.ts` now
+     states the Fetch standard's limit as 64 KiB including the outstanding
+     keep-alive bodies of the fetch group (U24-C8, a comment); the evidence
+     establishes that the current envelope exceeds it, not that every
+     alternative client design is impossible. No measurement-field
+     omission, payload flag, server change, transport investigation or
+     deployment. **D-3 a as applied (V-6).** "Non-Windows fonts not
+     verified" satisfies that clause; the Windows fallback-font checks, both
+     viewports and the final-state screenshots were re-done; cross-platform
+     visual correctness is not established (G.3 item 7). **S6 (Part C,
+     RC-1 = a, RC-2 = a, RC-3 = b).** The analyst's module (v4, frozen,
+     byte for byte in `e2e/u24RawRecount.ts`; the writer's spec
+     `e2e/u24_raw_recount.spec.ts`, IR-1 … IR-8) recounts all 45 inventory
+     features from the raw events alone. Every primary's disposition
+     matches production in every export and every primary matches L2; the
+     disagreements that remain after the analyst's diagnosis against the
+     register (`C/analyst/DIAGNOSIS-1.md`) are not resolved here and keep
+     IR-4 / IR-7 FAIL and V-4 PARTLY: (a) structured values whose shape
+     differs while every register-named fact agrees — the register defines
+     the content of a companion value, never its keys or nesting
+     (G-GEN-3); (b) the exported denominator of a declined M10 / M11 row
+     (`null` or `0`; §3 names the reason, not the shape — G-DEN-1), the
+     `m08_work_choice_by_benefit` row denominator (G-M08-2) and the M03
+     companion's declined / held entries (G-M03-2); (c) **production
+     departs from a stated rule** — `m01_plan_structure` exports `null`
+     where §5.409 (n) and the M01 companion text define `{declined}` /
+     `{ occasion, interrupted: true }` markers (S2, S3) and
+     `m05_acceptance_exposure` exports `null` where its text defines
+     `{interrupted}` markers (S3) — findings F-C4 / F-C5; (d) **the six
+     RL-4 extractors (M14–M20) drop a check record of the current load
+     whose own `page_load_index` field names another load before the
+     classifier runs**, so the row reads from the remaining evidence
+     (`interrupted` in the mutated S3 copy) where RL-0 (d), §5.405 (e) and
+     §5.374 give `technical_failure` — finding F-C1 (the analyst's F-3; the
+     RL-1 family M08 reads it as malformed). None of (c) / (d) is changed in
+     this run: a value shape or a reading rule is a scientific decision for
+     the owner, and (d) would extend RL-4. v4 itself corrected six of the
+     analyst's transcriptions on cited bases (M23's `not_presented`
+     denominator 0 under §5.363 (e); M04, M11, M12 content; M07's exclusion
+     of records stamped with another load, §5.374) — never toward
+     production. **S7.** Two final read-only Opus reviews (gameplay,
+     visual; `reviews/final/`); by the owner's direction of 25 October 2026
+     no further review was started (the final scientific review and the
+     Sonnet verification not run; IR-3's reviewer clause open) and one
+     consolidated fix round was made: the M14 results copy
+     (`m14PacketContent.ts`: "NEXT (ENTER)" → "NEXT"; the two results
+     footers say "ENTER on the focused control", as M15's does — the C-8
+     landing of §5.412 kept, verified by the M14 pure suite and the
+     recapture of every frame set showing the results view); the blockers
+     outside the allowlist recorded (Noor's yard briefing running past the
+     canvas with the "C — Scan" chip over its third choice,
+     `RoomScene.ts` / `fieldActionKeys.ts`; the completion notice's footer
+     during its control delay, `CoreChamberScene.ts`). **S8.** The single
+     final regression pass on the final source (99 specs once each): 84
+     pass, 15 fail, each mapped to its acceptance row with baseline
+     provenance (D-4 b; the ledger §9.2). This run's own regression: the
+     M14 route spec's ENTER-as-NEXT under the C-8 landing of §5.412 (C7;
+     V-9 FAIL). Load artefacts (two tests pass alone), a harness
+     module-identity artefact (the Part A M07 settle probes against the
+     long-lived dev servers; the group passes against a fresh server), the
+     F-B1 keep-alive test, and pre-existing failures identical at `060758c`
+     (the A-12 S-M07f 800 × 600 frame test, the M13 route's stale R5
+     expectation, the Deck-door closure test, six legacy capture specs) make
+     up the rest. Nothing in this entry changes a rule of any row.

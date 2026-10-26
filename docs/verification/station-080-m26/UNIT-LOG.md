@@ -19099,3 +19099,141 @@ Finish with the closeout status, durable evidence paths, bounded correction spec
   clicks `help` on results page 2); the M05 valid zero (a scientific
   question: no register treatment of a 0 ms start latency). Post-commit
   checks after the last S3 commit: see the run map and the checkpoint.
+- **S5 — the integrated recapture on the final source `287dcc6`** (one run
+  each, retries 0, ordinary input; every run in `RUN-REQUIREMENT-MAP.md`).
+  S1 at 800 × 600 (`s5-s1-800-2`) and 1280 × 720 (`s5-s1-1280-2`): complete,
+  L1 byte-equal, L2 26 / 26, 91 frames each; S2 (`s5-s2-2`, 3.7 min): 44 of
+  45 features byte-identical to Part B's S2; the traced S3
+  (`s5-s3-traced-1`, 33.4 min, the owner-approved isolated
+  `--timeout=600000`; the precondition — S3 sets its own `test.setTimeout`,
+  no hooks or custom fixtures — recorded first): complete in load 4, L1
+  byte-equal, lossless (812 events), V-5 (b) / (c) passed (`s5-v5b-1`); V-5
+  (a) over the final S1 export (`s5-v5a-1`): the compact envelope 123 871
+  bytes after omitting all 1 084 raw events; S4 with the pointer-RESUME
+  assertion (`s5-s4-2`) and the pointer RESUME at 1280 × 720
+  (`s5-s4-pointer-1280-1`); S5 (`s5-s5-1`); S6 / V-12 (`s5-s6-export-1`);
+  the RL-4 browser cases A / C (`s5-rl4-browser-1`) and B
+  (`s5-rl4-browser-b-2`, after an environmental first attempt); the M17 held
+  view (`s5-m17-held-1`); the RL-3 H / R2 / U cases (`s5-rl3-h-1`,
+  `s5-rl3-r2-1`, `s5-rl3-u-1`); the V-7 diagnostics A / B / B2 and the
+  ESC-menu diagnostics at both viewports (`s5-diag-*`); the fallback fonts
+  Lucida Console (`s5-v6-fonts-1`) and Courier New (`s5-v6-courier-2`,
+  after an environmental first attempt under three concurrent runs); the
+  settled completion notice at both viewports (`s5-notice-settled-1`, an
+  evidence-folder diagnostic driving the committed S2 route, Part B's V-6
+  gap). Every S5 run passed; the environmental failures (`s5-s4-1`,
+  `s5-s1-800-1` after the writer's own source edit, `s5-s1-1280-1`, the
+  first Courier New pass, case B's `bootPilot` timeout) keep their logs and
+  were re-run under new names, nothing relabelled. **Exports re-pinned**
+  (`B/exports/EXPORTS-SHA256SUMS.txt`, `EXPORTS-SOURCES.txt`): S1-800x600
+  `4ed127cf…3ede19`, S1-1280x720 `506b69e0…956a68`, S2 `9c97ce94…27ef78`, S3
+  `917e945f…269d5f`, all on `287dcc6`; every difference from the Part B
+  exports and from the RL-3 S3 export is explained at the feature level
+  (`B/EXPORTS-DIFFERENCES-EXPLAINED.md`): timing leaves; the C-8 landing
+  (one fewer `proto_m14_integration_results_shown`); the driver's pace in
+  M08's time-boxed epochs; the S2 `held_reports` component; and, against
+  Part B only, the RL-0 … RL-3 reload corrections. No primary reading
+  differs from RL-3 in S3 or from Part B in S1 / S2. The final exports are
+  copied to the immutable checkpoint `CP-02-final-exports` (manifest
+  SHA-256 `b9bebb70…918e`), the Part C input (`C/PART-C-ENTRY-STATE.md`).
+  The RC3B inventory (45 features: 26 primary, 17 companion, 2 sensitivity)
+  was generated from `registerV3.ts` at `287dcc6`.
+- **S6 — Part C, the independent raw-event recount (RC-1 = a, RC-2 = a,
+  RC-3 = b).** The analyst (a fresh-context Opus 5.5 general-purpose agent,
+  never a fork, writing only in its own evidence area; `C/PROVENANCE.md`,
+  `C/ISOLATION-AUDIT.md`: it never read `src/measurement/features/`) wrote
+  `u24RawRecount.ts` from the register, the addendum and r3 alone, against
+  stripped inputs and the RC3B inventory. Versions: v1, v2 (formatted to
+  the repository's ESLint rules, no semantic change), v3 (frozen; the first
+  integrated run `s6-recount-1`), v4 (frozen after mismatch dossier 1:
+  `C/MISMATCH-DOSSIER-1.md` listed every differing comparison with both
+  values and the family event sequences; the analyst diagnosed each against
+  the register only — `C/analyst/DIAGNOSIS-1.md` — and corrected six
+  transcription errors with cited bases, `CHANGELOG-v4.md`,
+  `DIFF-v3-v4.patch`; the recount was never edited merely to agree with
+  production). The module (byte for byte in `e2e/u24RawRecount.ts`, SHA-256
+  `dab3cdc8…8468`) imports nothing and names no forbidden key; the writer's
+  spec `e2e/u24_raw_recount.spec.ts` implements IR-1 … IR-7 (IR-8 is the
+  static and scope check of the commit): the exports pinned by SHA-256 from
+  the durable checkpoint, 45 `RECOUNT_SPEC` entries with citations, 180
+  recount-versus-production comparisons writing `C/reproduction/<export>-R.json`,
+  78 recount-versus-L2 comparisons, the S3 readings under r3 with and
+  without the earlier loads, 15 mutation cases on in-memory copies with the
+  exports' hashes re-checked. Results (`s6-recount-2` on the CP-02 pins and
+  the final run `s6-recount-3` on the fix-round pins of
+  `CP-03-final-exports-fixround`, the same picture: 13 passed, 5 failed):
+  IR-1, IR-2, IR-5, IR-6 pass; IR-3 passes on coverage
+  (the scientific reviewer's per-entry register check was not run, by the
+  owner's direction not to start another review); IR-4 — every primary's
+  disposition matches production in every export, and every primary's
+  value, numerator and denominator match except `m05_start_latency`'s
+  structured shape (S1 × 2) and the M10 / M11 declined denominators (S2,
+  `null` against `0`); 32 / 32 / 39 / 42 of 45 comparisons match in every
+  field; what differs is (a) structured values whose shape differs while
+  every register-named fact agrees (the register defines content, never
+  keys — G-GEN-3), (b) the register-silent denominators (G-DEN-1, G-M08-2)
+  and M03's declined / held entries (G-M03-2), (c) production's `null`
+  where the register defines markers for `m01_plan_structure` (S2, S3)
+  and `m05_acceptance_exposure` (S3) — the analyst's findings F-1 / F-2;
+  IR-7 — the recount reads all 15 cases as their rules, production agrees
+  in 14, and X-PLI-1 (a reload-check record of this load whose own
+  `page_load_index` field names another load, M14) reads `interrupted` in
+  production where RL-0 (d), §5.405 (e) and §5.374 give `technical_failure`
+  — the analyst's finding F-3: the six RL-4 extractors drop such a record
+  before the classifier. No production change was made for F-1 / F-2 / F-3
+  (a value shape or reading rule is a scientific decision, and F-3 would
+  extend RL-4); each is an owner item. IR-4 and IR-7 read FAIL in the
+  ledger on those comparisons, as brief §6.5 step 5 requires.
+- **S7 — the final reviews.** Two read-only Opus 5.5 reviews on the final
+  source and the working-tree docs (`reviews/final/OPUS-GAMEPLAY-FINAL.md`,
+  `OPUS-VISUAL-FINAL.md`, verbatim): gameplay — usable with friction, one
+  MAJOR (M-1: the M14 results copy promised ENTER after the C-8 landing)
+  and the guide's `n` hotkey (M-2) plus minors; visual — readable with
+  noted defects, one MAJOR (V-M1: Noor's yard briefing runs past the canvas
+  at both viewports and the "C — Scan" chip is drawn over its third
+  choice; pre-existing) plus minors. The owner then directed (~21:25): no
+  further reviews or agents, one consolidated fix round, then the single
+  final regression pass; the final scientific review and the final Sonnet
+  verification were therefore not run (their briefs stand in
+  `reviews/final/`; the reviewers' measurement-adjacent flags are appended
+  to the scientific brief and listed in the ledger §7). Dispositions
+  (`reviews/final/DISPOSITIONS-FINAL.md`): M-1 corrected (copy only,
+  `m14PacketContent.ts`; the C-8 landing kept; the M14 pure suite 81 / 81;
+  the frame sets that show the results view recaptured as `s5b-*`, the
+  pre-fix frames kept in `B/pre-fixround/`); M-2 and g-1 … g-7 corrected in
+  the guide and the ledger; V-M1 (F-C3) and the completion-notice footer
+  (`RoomScene.ts`, `fieldActionKeys.ts`, `CoreChamberScene.ts` — outside
+  the allowlist) recorded as owner items C5 / C6; the pause menu's keyboard
+  limits, the M18–M20 held screens' unfocused LEAVE, the M25
+  acknowledgement's hard-coded input mode and the rest recorded (D7–D11).
+- **S8 — the final pass, the ledger and the commits.** The single final
+  regression pass (`regf-*`, 99 specs selected by the import-graph rule
+  against `060758c`, one runner command each, `--retries=0`, 23:05 on 25
+  October to 13:12 on 26 October 2026): 84 exit 0, 15 exit 1, every
+  failure mapped in the ledger §9.2 with its baseline provenance (D-4 b).
+  One regression is this run's own: `m14_integration_route` R1 / R9 press
+  ENTER on the results page as NEXT, which the C-8 landing of U24-C2 made
+  neutral — the spec is outside the allowlist (owner item C7; V-9 FAIL).
+  Two failures pass alone (`pilot_return` test 1, `m20_returns_route` R4);
+  the M07 settle group fails on the long-lived dev servers and passes
+  against a fresh one (the Part A tests read `m07State()` through a bare
+  dynamic import while the servers serve the game an HMR-stamped module
+  instance since the fix-round edit — a harness artefact, owner item D14),
+  and its A-10 tests pass against the durable Part A root; the A-12 S-M07f
+  800 × 600 frame test, the M13 route's stale R5 expectation (C8), the Deck
+  door closure test and six legacy capture specs fail identically at the
+  `060758c` baseline (one legacy capture baseline inconclusive: the spec
+  needs a git checkout); the keep-alive export test is F-B1. The Courier
+  New recapture passed on the third attempt, run alone with no other test
+  or browser run in its window (two attempts under concurrent streams had
+  failed environmentally). Six legacy capture specs wrote 51 tracked
+  screenshots and two new files; preserved with hashes, restored from HEAD
+  by name and the new files removed, never staged
+  (`logs/tracked-write-reconciliation.log`). Commits: U24-C9 `a30cc0e`
+  (the M14 results copy, the Part C module and spec, the e2e additions) and
+  U24-C10 (this documentation); the post-commit checks, the durable checkpoint
+  `CP-04-FINAL` and the handoff are recorded in the ledger §11 and the
+  evidence `HANDOFF.md`. Not run, by the owner's direction: the final
+  scientific review and the Sonnet verification. G.1 MET at this revision;
+  G.2 NOT REACHED; G.3 none satisfied. Nothing here is a scientific
+  closeout or clearance for collection.

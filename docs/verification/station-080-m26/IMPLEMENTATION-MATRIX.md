@@ -924,3 +924,28 @@ register treatment). Rows touched: M14 (`m14SurfaceModel.ts`), M15
 (`m15RelayBench.ts`, `m15SystemsModel.ts`), M16 (`m16ProtocolConsole.ts`,
 `m16HandlingModel.ts`), the pause menu (`Menu.tsx`); tests only for M02,
 M08, M12, M22, M26, the pilot route specs and the integrated spec.
+
+**U24 completion S5–S8** (register §5.413; the ledger
+`U24-END-TO-END-REPORT.md`): no row's implementation changed. S5 re-ran
+every scenario and browser case on the final source `287dcc6` and
+re-pinned the four exports (every difference from Part B and from RL-3
+explained at the feature level; no primary reading differs). S6 ran the
+Part C independent recount (`e2e/u24RawRecount.ts`, the analyst's frozen
+module byte for byte; `e2e/u24_raw_recount.spec.ts`, IR-1 … IR-8) over the
+re-pinned exports: every primary of every export matches L2 and, in
+disposition, production; the recount's remaining disagreements are
+diagnosed by the analyst against the register (structured-value shapes the
+register does not define, denominators it does not state, two places where
+production omits the markers it defines, and the RL-4 extractors' handling
+of a check record naming another page load) and are owner items, none
+resolved here (the ledger §12; `C/analyst/DIAGNOSIS-1.md`). S7: two final
+read-only Opus reviews (gameplay, visual); the scientific review and the
+Sonnet verification not run by the owner's direction; one consolidated fix
+round — the M14 results copy (`m14PacketContent.ts`: plain "NEXT" and
+honest footers after the C-8 landing) — and the blockers outside the
+allowlist recorded (Noor's briefing overflow, the completion-notice
+footer). S8: the
+completion ledger (A-1–A-12, V-1–V-12, IR-1–IR-8), the walkthrough guide
+rewritten from the final frames, this matrix, the register §4 / §5.413,
+UNIT-LOG "U24 completion" and the addendum. G.1 MET at this revision; G.2
+NOT REACHED; G.3 none satisfied.
