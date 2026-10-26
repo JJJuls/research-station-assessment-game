@@ -448,7 +448,11 @@ export const M14_TEXT = {
   your_answer: 'Your recorded answer:',
   station_answer: 'Station answer:',
   cannot_solve_answer: 'CANNOT SOLVE',
-  results_next: 'NEXT (ENTER)',
+  // U24 completion (the final gameplay review, M-1): since the C-8 landing
+  // (U24-C2) each results page lands on its text, so ENTER no longer means
+  // NEXT; the label follows the M18 precedent (plain NEXT) and the footers
+  // say what ENTER does, as M15's does.
+  results_next: 'NEXT',
   results_back: 'BACK (B)',
   finish: 'FINISH (F)',
   closed_at_review: 'Station record closed — the desk keeps its record.',
@@ -470,8 +474,10 @@ export const M14_TEXT = {
   footer_dialog: 'ENTER records · ESC keeps working',
   footer_acknowledgement: 'ENTER continues · 1-9 sources · H help · ESC leaves',
   footer_sixth_acknowledgement: 'ENTER shows the results · H help · ESC leaves',
-  footer_results_first: 'ENTER next · F finish · H help · ESC leaves',
-  footer_results_second: 'ENTER or B back · F finish · H help · ESC leaves',
+  footer_results_first:
+    'TAB or arrows to NEXT · ENTER on the focused control · F finish · H help · ESC leaves',
+  footer_results_second:
+    'B back · TAB or arrows · ENTER on the focused control · F finish · H help · ESC leaves',
   footer_record: 'ESC leaves',
   footer_help: 'ENTER or ESC closes the help',
 } as const;

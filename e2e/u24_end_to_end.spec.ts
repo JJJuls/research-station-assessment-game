@@ -26,7 +26,12 @@ import { expect, type Page, test } from '@playwright/test';
 import { extractMeasurementFeatures } from '../src/measurement/features';
 import { primaryFeatureIds } from '../src/measurement/registerV3';
 import type { RawGameEvent } from '../src/systems/EventLogger';
-import { captureErrors, expectNoRuntimeErrors } from './journey';
+import { designToPage, hold, press } from './helpers';
+import {
+  captureErrors,
+  completeDockTutorial,
+  expectNoRuntimeErrors,
+} from './journey';
 import { untoleratedMeasurementEvents } from './pilotHelpers';
 import {
   bootU24,
@@ -617,6 +622,65 @@ test('S4 focus and pause at 800 × 600: blur and hidden excluded from the M05 cl
     record!.leave_return.decision_before,
   );
   expect(record!.leave_return.surface_closed_events).toBeGreaterThanOrEqual(1);
+  expectNoRuntimeErrors(errors);
+});
+
+/** The avatar's x in the world (the DEV player probe), or NaN. */
+async function avatarWorldX(page: Page): Promise<number> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { __playerProbe?: { x: number } | null })
+        .__playerProbe?.x ?? Number.NaN,
+  );
+}
+
+test('S4 pointer RESUME at 1280 × 720: the pause menu opened by ESC in the Dock stands the world still and one click on Resume resumes it (the F-B9 correction at the second viewport; S4 proper runs at 800 × 600)', async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
+
+  const errors = captureErrors(page);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await installPipeline(page);
+  await bootU24(page, {
+    participant_id: 'PT_U24_S4W',
+    game_session_id: 'GS_U24_S4W',
+  });
+  await completeDockTutorial(page, 1);
+  await page.waitForTimeout(600);
+
+  const x0 = await avatarWorldX(page);
+
+  await press(page, 'Escape');
+  await page.waitForTimeout(800);
+  await hold(page, 'ArrowRight', 300);
+
+  const x1 = await avatarWorldX(page);
+  // The Resume button's design position (`Menu.tsx`: centre x, centre y − 10).
+  const at = await designToPage(page, 400, 290);
+
+  await page.mouse.click(at.x, at.y);
+  await page.waitForTimeout(800);
+
+  const x2 = await avatarWorldX(page);
+
+  await hold(page, 'ArrowRight', 300);
+
+  const x3 = await avatarWorldX(page);
+  const record = {
+    viewport: '1280x720',
+    moved_while_menu_open: x1 - x0,
+    moved_after_resume_click: x3 - x2,
+    resumed_by_click: Math.abs(x3 - x2) > 4,
+  };
+
+  write(
+    'reproduction/S4-pointer-resume-1280x720.json',
+    JSON.stringify(record, null, 1),
+  );
+  expect(Math.abs(record.moved_while_menu_open)).toBeLessThan(1);
+  expect(record.resumed_by_click).toBe(true);
   expectNoRuntimeErrors(errors);
 });
 
